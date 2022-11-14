@@ -63,6 +63,8 @@ export class DotContainerPropertiesComponent implements OnInit {
                         containerStructures.length ? [Validators.minLength(1)] : null
                     )
                 });
+
+                this.showContentTypeAndCode();
             });
         this.form.valueChanges.pipe(takeUntil(this.destroy$)).subscribe((values) => {
             this.store.updateIsContentTypeButtonEnabled(values.maxContentlets > 0);

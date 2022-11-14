@@ -49,9 +49,11 @@ export class DotContentEditorComponent implements ControlValueAccessor, OnInit {
         this.init();
     }
 
-    public writeValue(value: DotContainerContent[] | null): void {
-        value = value ?? [];
-        this.containerContents.setValue(value);
+    public writeValue(values: DotContainerContent[] | null): void {
+        values = values ?? [];
+        values.forEach((containerContent) =>
+            this.containerContents.push(new FormControl<DotContainerContent>(containerContent))
+        );
     }
 
     public setDisabledState(isDisabled: boolean): void {
