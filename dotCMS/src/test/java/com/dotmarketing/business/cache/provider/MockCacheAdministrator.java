@@ -7,6 +7,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import com.dotmarketing.business.DotCacheAdministrator;
 import com.dotmarketing.business.DotCacheException;
 import com.dotmarketing.business.cache.transport.CacheTransport;
+import io.vavr.control.Try;
 
 public class MockCacheAdministrator implements DotCacheAdministrator {
 
@@ -33,7 +34,7 @@ public class MockCacheAdministrator implements DotCacheAdministrator {
 
     @Override
     public void flushGroup(String group) {
-        mockCache.getOrDefault(group, new ConcurrentHashMap<>()).clear();
+        mockCache.computeIfAbsent(group, c->new ConcurrentHashMap<>()).clear();
 
     }
 
@@ -42,34 +43,40 @@ public class MockCacheAdministrator implements DotCacheAdministrator {
         mockCache.clear();
 
     }
+    
+    @Override
+    public Object getNoThrow(String key, String group) {
+
+        return Try.of(()-> this.get(key, group)).getOrNull();
+    }
 
     @Override
     public void flushGroupLocalOnly(String group, boolean ignoreDistributed) {
-        mockCache.getOrDefault(group, new ConcurrentHashMap<>()).clear();
+        mockCache.computeIfAbsent(group, c->new ConcurrentHashMap<>()).clear();
 
     }
 
     @Override
     public Object get(String key, String group) throws DotCacheException {
 
-        return mockCache.getOrDefault(group, new ConcurrentHashMap<>()).get(key);
+        return mockCache.computeIfAbsent(group, c->new ConcurrentHashMap<>()).get(key);
     }
 
     @Override
     public void put(String key, Object content, String group) {
-        mockCache.getOrDefault(group, new ConcurrentHashMap<>()).put(key, content);
+        mockCache.computeIfAbsent(group, c->new ConcurrentHashMap<>()).put(key, content);
 
     }
 
     @Override
     public void remove(String key, String group) {
-        mockCache.getOrDefault(group, new ConcurrentHashMap<>()).remove(key);
+        mockCache.computeIfAbsent(group, c->new ConcurrentHashMap<>()).remove(key);
 
     }
 
     @Override
     public void removeLocalOnly(String key, String group, boolean ignoreDistributed) {
-        mockCache.getOrDefault(group, new ConcurrentHashMap<>()).remove(key);
+        mockCache.computeIfAbsent(group, c->new ConcurrentHashMap<>()).remove(key);
 
     }
 

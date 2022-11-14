@@ -12,7 +12,6 @@ public abstract class BlockDirectiveCache implements Cachable {
 
     public abstract Map<String, Serializable> get(String key);
 
-
     public abstract void remove(String key);
 
 }

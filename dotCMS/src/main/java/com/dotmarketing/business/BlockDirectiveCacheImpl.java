@@ -40,7 +40,7 @@ public class BlockDirectiveCacheImpl extends BlockDirectiveCache {
 
     @Override
     public void add(String key, Map<String, Serializable> value, int ttl) {
-        if (key == null || value == null) {
+        if (key == null || value == null || !canCache) {
             return;
         }
         BlockDirectiveCacheObject cto = new BlockDirectiveCacheObject(value, ttl);
@@ -75,7 +75,7 @@ public class BlockDirectiveCacheImpl extends BlockDirectiveCache {
             return EMPTY_MAP;
         }
 
-        if (cto.getCreated() + (cto.getTtl() * 1000) > System.currentTimeMillis()) {
+        if ((cto.getTtl() * 1000) +  cto.getCreated() > System.currentTimeMillis()) {
             return cto.getMap();
         }
 

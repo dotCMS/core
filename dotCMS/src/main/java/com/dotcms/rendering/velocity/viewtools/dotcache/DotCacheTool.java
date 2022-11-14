@@ -2,23 +2,38 @@ package com.dotcms.rendering.velocity.viewtools.dotcache;
 
 import java.io.Serializable;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 import org.apache.velocity.tools.view.tools.ViewTool;
+import com.dotcms.concurrent.Debouncer;
 import com.dotmarketing.business.BlockDirectiveCache;
 import com.dotmarketing.business.BlockDirectiveCacheImpl;
+import com.dotmarketing.business.DotCacheAdministrator;
 import com.dotmarketing.util.Logger;
+import com.google.common.annotations.VisibleForTesting;
+import io.vavr.Function0;
 import io.vavr.Lazy;
 
 public class DotCacheTool implements ViewTool {
 
-    final Lazy<BlockDirectiveCache> cache = Lazy.of(BlockDirectiveCacheImpl::new);
+    final Lazy<BlockDirectiveCache> cache ;
 
-
+    
 
     public DotCacheTool() {
-        Logger.debug(getClass(), "starting dotvelocitycache");
+        cache= Lazy.of(Function0.of(BlockDirectiveCacheImpl::new));
+        cache.get();
+        Logger.debug(getClass(), "starting DotCacheTool");
+    }
+    
+    
+    @VisibleForTesting
+    public DotCacheTool(final DotCacheAdministrator admin) {
+
+        cache = Lazy.of(()->new BlockDirectiveCacheImpl(admin, true));
+        cache.get();
+        Logger.debug(getClass(), "starting DotCacheTool");
 
     }
-
 
 
     @Override
@@ -35,18 +50,22 @@ public class DotCacheTool implements ViewTool {
 
 
     public void put(final String key, final Serializable value) {
-        Map<String, Serializable> map = Map.of(key, value);
-        cache.get().add(key, map, Integer.MAX_VALUE);
+        this.put(key, value, Integer.MAX_VALUE);
     }
 
-    
+    Debouncer debounceAdd = new Debouncer();
     public void put(final String key, final Serializable value, int ttl) {
-        if (ttl == 0) {
+        if (ttl <= 0) {
             cache.get().remove(key);
             return;
         }
+        
+        
         Map<String, Serializable> map = Map.of(key, value);
-        cache.get().add(key, map, ttl);
+        
+
+        debounceAdd.debounce(key, () -> cache.get().add(key, map, ttl), 1, TimeUnit.SECONDS);
+
     }
 
 
@@ -54,6 +73,14 @@ public class DotCacheTool implements ViewTool {
         cache.get().remove(key);
     }
 
+    public void clear() {
+        
+        cache.get().clearCache();
+        
+    }
+    
+    
+    
 
 
 }

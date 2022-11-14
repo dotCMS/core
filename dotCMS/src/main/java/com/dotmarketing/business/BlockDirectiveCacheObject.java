@@ -8,11 +8,11 @@ public class BlockDirectiveCacheObject implements Serializable {
 
     private static final long serialVersionUID = 1L;
     private final long created;
-    private final int ttl;
+    private final long ttl;
     private final Map<String, Serializable> map;
 
 
-    public int getTtl() {
+    public long getTtl() {
         return this.ttl;
     }
 
