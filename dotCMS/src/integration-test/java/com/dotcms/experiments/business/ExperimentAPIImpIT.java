@@ -5,6 +5,7 @@ import static junit.framework.TestCase.assertTrue;
 import static org.junit.Assert.assertFalse;
 
 import com.dotcms.datagen.ExperimentDataGen;
+import com.dotcms.experiments.model.AbstractExperiment.Status;
 import com.dotcms.experiments.model.Experiment;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.business.APILocator;
@@ -13,6 +14,7 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import java.sql.SQLException;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -64,7 +66,13 @@ public class ExperimentAPIImpIT {
             assertFalse(experiemtnsId.contains(stoppedExperiment.getIdentifier()));
         } finally {
             ExperimentDataGen.end(runningExperiment);
-            ExperimentDataGen.end(stoppedExperiment);
+
+            final Optional<Experiment> experiment = APILocator.getExperimentsAPI()
+                    .find(stoppedExperiment.getIdentifier(), APILocator.systemUser());
+
+            if (experiment.isPresent() && experiment.get().status() == Status.RUNNING) {
+                ExperimentDataGen.end(experiment.get());
+            }
         }
     }
 }
