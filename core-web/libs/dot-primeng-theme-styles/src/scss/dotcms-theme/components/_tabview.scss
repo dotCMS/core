@@ -1,8 +1,6 @@
 @use "variables" as *;
 @use "dotcms-theme/utils/theme-variables" as *;
 
-$tabView-scroll-btn-width: 40px;
-
 .p-tabview .p-tabview-nav {
     border: solid rgba(0, 0, 0, 0.12);
     border-width: 0 0 1px 0;
