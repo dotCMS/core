@@ -18,6 +18,7 @@ import {
     ImageUpload,
     DotConfigExtension,
     BubbleFormExtension,
+    DotFloatingButton,
     ImageNode,
     SetDocAttrStep,
     formatHTML
@@ -29,7 +30,6 @@ import { Link } from '@tiptap/extension-link';
 import { TextAlign } from '@tiptap/extension-text-align';
 import { Underline } from '@tiptap/extension-underline';
 import CharacterCount, { CharacterCountStorage } from '@tiptap/extension-character-count';
-import { DotFloatingButton } from '../../extensions/floating-button/floating-button.extension';
 
 function toTitleCase(str) {
     return str.replace(/\p{L}+('\p{L}+)?/gu, function (txt) {

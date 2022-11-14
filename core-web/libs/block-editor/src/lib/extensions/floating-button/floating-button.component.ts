@@ -1,5 +1,5 @@
 import { Component, EventEmitter, Input, Output } from '@angular/core';
-import { take } from 'rxjs/operators';
+import { take, tap } from 'rxjs/operators';
 
 import { DotCMSContentlet } from '@dotcms/dotcms-models';
 import {
@@ -24,7 +24,11 @@ export class FloatingButtonComponent {
     get title() {
         if (!this.label) return '';
 
-        return this.label[0].toUpperCase() + this.label?.substring(1);
+        return this.label[0].toUpperCase() + this.label?.substring(1).toLowerCase();
+    }
+
+    get isCompleted() {
+        return this.label === this.status.COMPLETED;
     }
 
     constructor(private readonly dotImageService: DotImageService) {}
@@ -36,12 +40,14 @@ export class FloatingButtonComponent {
                 data: this.url,
                 statusCallback: this.updateButtonLabel.bind(this)
             })
-            .pipe(take(1))
+            .pipe(
+                take(1),
+                tap(() => (this.isLoading = false))
+            )
             .subscribe(
                 (data) => {
                     const contentlet = data[0];
-                    this.isLoading = false;
-                    this.label = this.status.COMPLATED;
+                    this.label = this.status.COMPLETED;
                     this.dotAsset.emit(contentlet[Object.keys(contentlet)[0]]);
                 },
                 (error) => {

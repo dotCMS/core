@@ -12,13 +12,13 @@ import { FloatingButtonComponent, ImageNode, getNodeCoords } from '@dotcms/block
 import { DotCMSContentlet } from '@dotcms/dotcms-models';
 
 export const setCoords = ({ viewCoords, nodeCoords }): DOMRect => {
-    const { bottom: nodeBottom, left } = nodeCoords;
+    const { bottom: nodeBottom, left, top } = nodeCoords;
     const { bottom: viewBottom } = viewCoords;
     const isBottomOverflow = Math.ceil(viewBottom - nodeBottom) < 0;
 
     return {
         ...nodeCoords.toJSON(),
-        top: isBottomOverflow ? viewBottom : nodeBottom,
+        top: isBottomOverflow ? viewBottom : top - 65,
         left: left - 10
     };
 };
@@ -144,7 +144,6 @@ export class DotFloatingButtonPluginView {
     }
 
     private setPreventHide(): void {
-        this.component.instance.isLoading = false;
         this.preventHide = true;
     }
 }

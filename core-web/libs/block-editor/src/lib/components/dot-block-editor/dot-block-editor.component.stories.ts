@@ -20,7 +20,8 @@ import {
     LoaderComponent,
     DotImageService,
     DotLanguageService,
-    DotBlockEditorComponent
+    DotBlockEditorComponent,
+    FileStatus
 } from '@dotcms/block-editor';
 
 export default {
@@ -225,7 +226,7 @@ export const primary = () => ({
                             /* */
                         }
                     }) {
-                        statusCallback('downloading');
+                        statusCallback(FileStatus.IMPORT);
 
                         return of([
                             {
@@ -259,7 +260,7 @@ export const primary = () => ({
                             }
                         ]).pipe(
                             delay(800),
-                            tap(() => statusCallback('Importing'))
+                            tap(() => statusCallback(FileStatus.IMPORT))
                         );
                     }
                 }

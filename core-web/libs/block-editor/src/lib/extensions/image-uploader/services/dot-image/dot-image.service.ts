@@ -8,7 +8,7 @@ import { HttpClient } from '@angular/common/http';
 export enum FileStatus {
     DOWNLOAD = 'DOWNLOADING',
     IMPORT = 'IMPORTING',
-    COMPLATED = 'COMPLETED',
+    COMPLETED = 'COMPLETED',
     ERROR = 'ERROR'
 }
 

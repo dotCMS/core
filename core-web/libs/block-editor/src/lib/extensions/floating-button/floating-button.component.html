@@ -1,12 +1,14 @@
-<p-button
+<button
     *ngIf="label !== status.ERROR; else error"
     [label]="title"
-    [icon]="label === status.COMPLATED ? 'pi pi-check' : null"
+    [icon]="isCompleted ? 'pi pi-check' : null"
+    [ngClass]="{ completed: isCompleted }"
     [loading]="isLoading"
-    (onClick)="importImage()"
+    [disabled]="isCompleted || isLoading"
+    (click)="importImage()"
+    pButton
     iconPos="left"
->
-</p-button>
+></button>
 
 <ng-template #error>
     <div class="alert">
