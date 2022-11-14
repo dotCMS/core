@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, OnInit, ViewChild } from '@angular/core';
+import { ChangeDetectionStrategy, Component, ViewChild } from '@angular/core';
 import { Observable } from 'rxjs';
 import { DotExperiment } from '../shared/models/dot-experiments.model';
 import { ExperimentsStatusList } from '@portlets/dot-experiments/shared/models/dot-experiments-constants';
@@ -9,16 +9,18 @@ import {
 } from '@portlets/dot-experiments/dot-experiments-list/store/dot-experiments-list-store.service';
 import { DotDynamicDirective } from '@portlets/shared/directives/dot-dynamic.directive';
 import { DotExperimentsCreateComponent } from '@portlets/dot-experiments/dot-experiments-create/dot-experiments-create.component';
-import { delay, take } from 'rxjs/operators';
+import { take } from 'rxjs/operators';
+import { Router } from '@angular/router';
+import { provideComponentStore } from '@ngrx/component-store';
 
 @Component({
     selector: 'dot-experiments-list',
     templateUrl: './dot-experiments-list.component.html',
     styleUrls: ['./dot-experiments-list.component.scss'],
-    providers: [DotExperimentsListStore, DotMessagePipe],
+    providers: [DotMessagePipe, provideComponentStore(DotExperimentsListStore)],
     changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class DotExperimentsListComponent implements OnInit {
+export class DotExperimentsListComponent {
     @ViewChild(DotDynamicDirective, { static: true }) dotDynamicHost!: DotDynamicDirective;
 
     vm$: Observable<VmListExperiments> = this.dotExperimentsListStore.vm$;
@@ -29,12 +31,9 @@ export class DotExperimentsListComponent implements OnInit {
 
     constructor(
         private readonly dotExperimentsListStore: DotExperimentsListStore,
-        private readonly dotMessagePipe: DotMessagePipe
+        private readonly dotMessagePipe: DotMessagePipe,
+        private readonly router: Router
     ) {}
-
-    ngOnInit() {
-        this.dotExperimentsListStore.loadExperiments();
-    }
 
     /**
      * Update the list of selected statuses
@@ -58,7 +57,7 @@ export class DotExperimentsListComponent implements OnInit {
         const componentRef = viewContainerRef.createComponent<DotExperimentsCreateComponent>(
             DotExperimentsCreateComponent
         );
-        componentRef.instance.closedSidebar.pipe(delay(500), take(1)).subscribe(() => {
+        componentRef.instance.closedSidebar.pipe(take(1)).subscribe(() => {
             viewContainerRef.clear();
         });
     }
@@ -81,5 +80,14 @@ export class DotExperimentsListComponent implements OnInit {
      */
     deleteExperiment(experiment: DotExperiment) {
         this.dotExperimentsListStore.deleteExperiment(experiment);
+    }
+
+    /**
+     * Back to Edit Page / Content
+     * @returns void
+     * @memberof DotExperimentsShellComponent
+     */
+    goToBrowserBack() {
+        this.router.navigate(['edit-page/content'], { queryParamsHandling: 'preserve' });
     }
 }

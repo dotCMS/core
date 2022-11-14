@@ -170,7 +170,6 @@ export const replaceInlineContent = (content) => {
         : images.join('');
 };
 
-
 export const replaceInlineLinkImage = (content) => {
     const container = document.createElement('div');
     container.innerHTML = content;

@@ -34,7 +34,6 @@ public class BayesianAPIImpl implements BayesianAPI {
     private static final int SAMPLE_SIZE = Config.getIntProperty("BETA_DISTRIBUTION_SAMPLE_SIZE", 1000);
     private static final BiFunction<Integer, Integer, Double> LOG_BETA_FN = LogBeta::value;
 
-
     /**
      * {@inheritDoc}
      */
@@ -50,10 +49,10 @@ public class BayesianAPIImpl implements BayesianAPI {
         // call calculation
         return BayesianResult.builder()
                 .result(calcABTesting(
-                        input.controlSuccesses(),
-                        input.controlFailures(),
-                        input.testSuccesses(),
-                        input.testFailures()))
+                        input.controlSuccesses() + 1,
+                        input.controlFailures() + 1,
+                        input.testSuccesses() + 1,
+                        input.testFailures() + 1))
                 .distributionPdfs(calcDistributionsPdfs(controlData, testData))
                 .differenceData(differenceData)
                 .quantiles(calcQuantiles(differenceData.differences(), null, null))
@@ -70,13 +69,15 @@ public class BayesianAPIImpl implements BayesianAPI {
      * @return result representing probability that B beats A
      */
     private double calcABTesting(final int alphaA, final int betaA, final int alphaB, final int betaB) {
-        return IntStream.range(0, alphaB)
-                .mapToDouble(i -> Math.exp(
-                        logBeta(alphaA + i, betaB + betaA)
-                                - Math.log(betaB + i)
-                                - logBeta(1 + i, betaB)
-                                - logBeta(alphaA, betaA)))
-                .sum();
+        double result = 0.0;
+        for(int i = 0; i < alphaB; i++) {
+            result += Math.exp(
+                logBeta(alphaA + i, betaB + betaA)
+                    - Math.log(betaB + i)
+                    - logBeta(1 + i, betaB)
+                    - logBeta(alphaA, betaA));
+        }
+        return result;
     }
 
     /**

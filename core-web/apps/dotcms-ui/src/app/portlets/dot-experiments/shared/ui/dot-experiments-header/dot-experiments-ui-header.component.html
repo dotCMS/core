@@ -1,0 +1,10 @@
+<a (click)="goBack.emit()" data-testId="goback-button">
+    <dot-icon name="arrow_back_ios" size="24"></dot-icon>
+</a>
+<ng-container *ngIf="!isLoading; else loadingTpl">
+    <span data-testId="title">{{ title }}</span>
+</ng-container>
+
+<ng-template #loadingTpl>
+    <p-skeleton height="1rem" width="12rem"></p-skeleton>
+</ng-template>

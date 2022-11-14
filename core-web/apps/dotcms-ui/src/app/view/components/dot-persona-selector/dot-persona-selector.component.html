@@ -1,18 +1,18 @@
 <dot-searchable-dropdown
     #searchableDropdown
-    (switch)="personaChange($event)"
-    (filterChange)="handleFilterChange($event)"
-    (pageChange)="handlePageChange($event)"
     [(ngModel)]="value"
     [action]="addAction"
     [data]="personas"
-    width="448px"
     [rows]="paginationPerPage"
     [totalRecords]="paginationService.totalRecords"
-    labelPropertyName="name"
     [disabled]="disabled"
+    (switch)="personaChange($event)"
+    (filterChange)="handleFilterChange($event)"
+    (pageChange)="handlePageChange($event)"
     (hide)="iframeOverlayService.hide()"
     (display)="iframeOverlayService.show()"
+    width="448px"
+    labelPropertyName="name"
 >
     <ng-template let-persona="item" pTemplate="select">
         <dot-persona-selected-item
@@ -20,12 +20,16 @@
             [isEditMode]="isEditMode"
             [persona]="persona"
             [pTooltip]="!disabled ? persona?.name || ('modes.persona.no.persona' | dm) : ''"
+            (click)="!disabled && searchableDropdown.toggleOverlayPanel($event)"
             tooltipPosition="bottom"
             appendTo="target"
-            (click)="!disabled && searchableDropdown.toggleOverlayPanel($event)"
         ></dot-persona-selected-item>
     </ng-template>
-    <ng-template let-personaData="item" let-selectedOptionValue="selectedOptionValue" pTemplate="listItem">
+    <ng-template
+        let-personaData="item"
+        let-selectedOptionValue="selectedOptionValue"
+        pTemplate="listItem"
+    >
         <dot-persona-selector-option
             [canDespersonalize]="canDespersonalize"
             [persona]="value && value.identifier === personaData.identifier ? value : personaData"

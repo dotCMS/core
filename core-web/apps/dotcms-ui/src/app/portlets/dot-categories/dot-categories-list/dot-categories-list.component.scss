@@ -1,0 +1,24 @@
+@use "variables" as *;
+
+dot-portlet-base {
+    overflow-y: scroll;
+}
+
+.category_listing ::ng-deep {
+    .tableHeader {
+        padding-top: $spacing-4;
+        padding-bottom: $spacing-4;
+    }
+
+    .category_listing__sortOrder__field {
+        width: 60px;
+        border: none;
+    }
+
+    .category_listing-datatable__empty {
+        display: flex;
+        justify-content: center;
+        font-size: $spacing-9;
+        font-size: $font-size-xx-large;
+    }
+}
