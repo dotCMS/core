@@ -592,57 +592,6 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
     return transactionalSave(newFields, newFieldVariables, contentType);
   }
 
-  @NotNull
-  private ContentType resolveSite(ContentType contentType)
-          throws DotDataException, DotSecurityException {
-    if (UtilMethods.isSet(contentType.host()) && !UUIDUtil.isUUID(contentType.host())
-            && !Host.SYSTEM_HOST.equalsIgnoreCase(contentType.host())) {
-      throw new DotDataException(
-              "property [host] should only be used to set ids, site names must be set through the [siteName] property.");
-    }
-
-    // Sets the host:
-    // We can set host and folder in two different ways we can use the host/siteName property pair
-    // Or we can set the folder using the property pair folder/folderPath
-    // The properties siteName/folderPath take precedence
-    try {
-      final HostAPI hostAPI = APILocator.getHostAPI();
-      // First thing here we need to work on is the siteName property which takes precede over host id
-      // SiteName takes the human-readable and more approachable site name while host is expected to have an id
-      if(UtilMethods.isSet(contentType.siteName()) || contentType.fixed()){
-        final List<Field> existingFields = contentType.fields();
-        final Host resolvedSite = hostAPI.resolveHostName(contentType.siteName(), APILocator.systemUser(), true);
-        //if site-name resolution fails it will fall back to default-host
-        contentType = ContentTypeBuilder.builder(contentType).host(resolvedSite.getIdentifier()).build();
-        contentType.constructWithFields(existingFields);
-      }
-
-      //if a site/host id has been provided it better be valid
-      if (UtilMethods.isSet(contentType.host())) {
-        final Host resolvedHost = hostAPI.find(contentType.host(), APILocator.systemUser(), true);
-        if (null == resolvedHost) {
-          throw new DotDataException(String.format(
-                  "Unable to resolve the provided site-id [%s] with any existing site. ",
-                  contentType.host()));
-        }
-      }
-
-      //if no siteName was provided we must rely on the host prop
-      if (UtilMethods.isNotSet(contentType.host()) || contentType.fixed()) {
-        //if the host prop wasn't provided either we default to system-host
-        final List<Field> existingFields = contentType.fields();
-        contentType = ContentTypeBuilder.builder(contentType).host(Host.SYSTEM_HOST).build();
-        contentType.constructWithFields(existingFields);
-      }
-
-    } catch (DotDataException e) {
-      throw new DotDataException("unable to resolve host:" + contentType.host(), e);
-    } catch (DotSecurityException es) {
-      throw new DotSecurityException("invalid permissions to:" + contentType.host(), es);
-    }
-    return contentType;
-  }
-
   @WrapInTransaction
   private ContentType transactionalSave(final List<Field> newFields,
                                         final List<FieldVariable> newFieldVariables,
@@ -665,16 +614,13 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
 
     if (oldType != null) {
 
-        final ContentType oldOldType = oldType;
-        if (fireUpdateIdentifiers(oldType.expireDateVar(), contentTypeToSave.expireDateVar())) {
-            IdentifierDateJob.triggerJobImmediately(oldOldType, user);
-        } else if (fireUpdateIdentifiers(oldType.publishDateVar(), contentTypeToSave.publishDateVar())) {
-            IdentifierDateJob.triggerJobImmediately(oldOldType, user);
-        }
-
-
-
-        perms.resetPermissionReferences(contentTypeToSave);
+      final ContentType oldOldType = oldType;
+      if (fireUpdateIdentifiers(oldType.expireDateVar(), contentTypeToSave.expireDateVar())
+              || fireUpdateIdentifiers(oldType.publishDateVar(),
+              contentTypeToSave.publishDateVar())) {
+        IdentifierDateJob.triggerJobImmediately(oldOldType, user);
+      }
+      perms.resetPermissionReferences(contentTypeToSave);
     }
     ActivityLogger.logInfo(getClass(), "Save ContentType Action",
         "User " + user.getUserId() + "/" + user.getFullName() + " added ContentType " + contentTypeToSave.name()
@@ -745,6 +691,76 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
     return savedContentType;
   }
 
+  /**
+   * takes an incoming CT object with siteId or siteName
+   * siteName takes precedence over siteId
+   * meaning that if both are provided siteName will be used to resole
+   * if a site-name is passed and the resolution fails we fall-back to default site
+   * if nothing is passed the site is resolved to SYSTEM_HOST
+   * @param contentType
+   * @return
+   * @throws DotDataException
+   * @throws DotSecurityException
+   */
+  @NotNull
+  private ContentType resolveSite(ContentType contentType)
+          throws DotDataException, DotSecurityException {
+    if (UtilMethods.isSet(contentType.host()) && !UUIDUtil.isUUID(contentType.host())
+            && !Host.SYSTEM_HOST.equalsIgnoreCase(contentType.host())) {
+      throw new DotDataException(
+              "property [host] should only be used to set ids, site names must be set through the [siteName] property.");
+    }
+
+    // Sets the host:
+    // We can set host and folder in two different ways we can use the host/siteName property pair
+    // Or we can set the folder using the property pair folder/folderPath
+    // The properties siteName/folderPath take precedence
+    try {
+      final HostAPI hostAPI = APILocator.getHostAPI();
+      // First thing here we need to work on is the siteName property which takes precede over host id
+      // SiteName takes the human-readable and more approachable site name while host is expected to have an id
+      if(UtilMethods.isSet(contentType.siteName()) || contentType.fixed()){
+        final List<Field> existingFields = contentType.fields();
+        final Host resolvedSite = hostAPI.resolveHostName(contentType.siteName(), APILocator.systemUser(), true);
+        //if site-name resolution fails it will fall back to default-host
+        contentType = ContentTypeBuilder.builder(contentType).host(resolvedSite.getIdentifier()).build();
+        contentType.constructWithFields(existingFields);
+      }
+
+      //if a site/host id has been provided it better be valid
+      if (UtilMethods.isSet(contentType.host())) {
+        final Host resolvedHost = hostAPI.find(contentType.host(), APILocator.systemUser(), true);
+        if (null == resolvedHost) {
+          throw new DotDataException(String.format(
+                  "Unable to resolve the provided site-id [%s] with any existing site. ",
+                  contentType.host()));
+        }
+      }
+
+      //if no siteName was provided we must rely on the host prop
+      if (UtilMethods.isNotSet(contentType.host()) || contentType.fixed()) {
+        //if the host prop wasn't provided either we default to system-host
+        final List<Field> existingFields = contentType.fields();
+        contentType = ContentTypeBuilder.builder(contentType).host(Host.SYSTEM_HOST).build();
+        contentType.constructWithFields(existingFields);
+      }
+
+    } catch (DotDataException e) {
+      throw new DotDataException("unable to resolve host:" + contentType.host(), e);
+    } catch (DotSecurityException es) {
+      throw new DotSecurityException("invalid permissions to:" + contentType.host(), es);
+    }
+    return contentType;
+  }
+
+
+  /**
+   * takes an incoming CT object with valid hostId and from there the folder id is resolved
+   * @param contentTypeToSave
+   * @return
+   * @throws DotDataException
+   * @throws DotSecurityException
+   */
   private ContentType resolveFolder(ContentType contentTypeToSave)
           throws DotDataException, DotSecurityException {
 
