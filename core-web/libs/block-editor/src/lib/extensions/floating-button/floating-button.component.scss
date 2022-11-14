@@ -1,0 +1,23 @@
+@use "variables" as *;
+
+:host ::ng-deep {
+    .p-button-label {
+        text-transform: unset;
+    }
+}
+
+.alert {
+    background: $white;
+    color: $error;
+    border: 1px solid $error;
+    border-radius: $border-radius;
+    padding: 0.625 * $dot-editor-size;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.3125 * $dot-editor-size;
+
+    a {
+        color: $error;
+    }
+}
