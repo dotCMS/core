@@ -69,8 +69,8 @@ public class HttpMethodConditionlet extends Conditionlet<HttpMethodConditionlet.
         public final Comparison<String> comparison;
 
         public Instance(final Conditionlet<?> definition, final Map<String, ParameterModel> parameters) {
-            checkState(parameters != null && parameters.size() == 2, "Http Method requires parameters %s and %s.",
-                    COMPARISON_KEY, HTTP_METHOD);
+            checkState(parameters != null && parameters.size() == 2 && null != parameters.get(HTTP_METHOD) && null != parameters.get(COMPARISON_KEY),
+                    "Http Method requires parameters %s and %s.", COMPARISON_KEY, HTTP_METHOD);
             this.httpMethodValue = parameters.get(HTTP_METHOD).getValue();
             final String comparisonValue = parameters.get(COMPARISON_KEY).getValue();
             try {
