@@ -18,13 +18,13 @@ public  class SelectedVariant implements Serializable {
      * {@link com.dotcms.variant.model.Variant}'s name
      */
     @JsonProperty("name")
-    private String name;
+    private final String name;
 
     /**
      * URL to render the {@link com.dotcms.experiments.model.Experiment}'s page in this {@link com.dotcms.variant.model.Variant}
      */
     @JsonProperty("url")
-    private String url;
+    private final String url;
 
     public SelectedVariant(String name, String url) {
         this.name = name;

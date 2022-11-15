@@ -1,8 +1,6 @@
 package com.dotcms.experiments.business.web;
 
 import static com.dotcms.util.CollectionsUtils.list;
-import static com.dotcms.util.CollectionsUtils.map;
-import static org.junit.Assert.assertEquals;
 
 import com.dotcms.experiments.model.Experiment;
 import com.dotcms.experiments.model.ExperimentVariant;
@@ -29,7 +27,6 @@ import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import net.bytebuddy.utility.RandomString;
-import org.jetbrains.annotations.NotNull;
 
 /**
  * Default implementation of {@link ExperimentWebAPI}
@@ -55,7 +52,6 @@ public class ExperimentWebAPIImpl implements ExperimentWebAPI {
         }
     }
 
-    @NotNull
     private SelectedExperiment createSelectedExperimentAndCreateCookie(
             final HttpServletResponse response,
             final Experiment experiment) {
@@ -90,7 +86,6 @@ public class ExperimentWebAPIImpl implements ExperimentWebAPI {
         return "runningExperiment_" + experimentSelected.id();
     }
 
-    @NotNull
     private String getCookieValue(final SelectedExperiment experimentSelected) {
         final String cookieValue = Arrays.stream((new String[]{"experiment:" + experimentSelected.id(),
                         "variant:" + experimentSelected.variant().name(),

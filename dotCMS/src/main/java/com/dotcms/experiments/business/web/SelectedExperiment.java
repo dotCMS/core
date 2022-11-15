@@ -18,25 +18,25 @@ public class SelectedExperiment implements Serializable {
      * Experiment's name
      */
     @JsonProperty("name")
-    private String name;
+    private final String name;
 
     /**
      * Experiment's ID
      */
     @JsonProperty("id")
-    private String id;
+    private final String id;
 
     /**
      * Experiment;s page URL
      */
     @JsonProperty("pageUrl")
-    private String pageUrl;
+    private final String pageUrl;
 
     /**
      * Selected Variant for the User
      */
     @JsonProperty("variant")
-    private SelectedVariant variant;
+    private final SelectedVariant variant;
 
     public SelectedExperiment(final String id, final String name, final String pageUrl,
             final SelectedVariant variant) {
