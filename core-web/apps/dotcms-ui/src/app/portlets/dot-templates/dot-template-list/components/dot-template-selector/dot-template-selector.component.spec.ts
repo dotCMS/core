@@ -25,7 +25,7 @@ const messageServiceMock = new MockDotMessageService({
         '<b>Template Advanced</b> allows you to create templates using HTML code'
 });
 
-fdescribe('DotTemplateSelectorComponent', () => {
+describe('DotTemplateSelectorComponent', () => {
     let fixture: ComponentFixture<DotTemplateSelectorComponent>;
     let de: DebugElement;
     let dynamicDialogRef: DynamicDialogRef;
