@@ -9,10 +9,8 @@ import com.dotcms.experiments.model.AbstractExperiment.Status;
 import com.dotcms.experiments.model.Experiment;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.business.APILocator;
-import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
-import java.sql.SQLException;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -27,7 +25,7 @@ public class ExperimentAPIImpIT {
     }
 
     /**
-     * Method to test: {@link ExperimentsAPI#getExperimentRunning()}
+     * Method to test: {@link ExperimentsAPI#getRunningExperiment()}
      * When: You have tree Experiment:
      * - First one in DRAFT state, it has never been running.
      * - Second one in RUNNING state, it was already started and it was not stopped yet
@@ -45,7 +43,7 @@ public class ExperimentAPIImpIT {
 
         try {
             List<Experiment> experimentRunning = APILocator.getExperimentsAPI()
-                    .getExperimentRunning();
+                    .getRunningExperiment();
 
             List<String> experiemtnsId = experimentRunning.stream()
                     .map(experiment -> experiment.getIdentifier()).collect(Collectors.toList());
@@ -57,7 +55,7 @@ public class ExperimentAPIImpIT {
             ExperimentDataGen.end(stoppedExperiment);
 
             experimentRunning = APILocator.getExperimentsAPI()
-                    .getExperimentRunning();
+                    .getRunningExperiment();
             experiemtnsId = experimentRunning.stream()
                     .map(experiment -> experiment.getIdentifier()).collect(Collectors.toList());
 

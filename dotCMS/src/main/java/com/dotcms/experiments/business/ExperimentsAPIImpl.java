@@ -7,6 +7,7 @@ import static com.dotcms.experiments.model.AbstractExperimentVariant.EXPERIMENT_
 import static com.dotcms.util.CollectionsUtils.set;
 
 import com.dotcms.analytics.metrics.MetricsUtil;
+import com.dotcms.business.CloseDB;
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.enterprise.rules.RulesAPI;
@@ -489,8 +490,9 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
 
     }
 
+    @CloseDBIfOpened
     @Override
-    public List<Experiment> getExperimentRunning() throws DotDataException {
+    public List<Experiment> getRunningExperiment() throws DotDataException {
         return FactoryLocator.getExperimentsFactory().list(
                 ExperimentFilter.builder().statuses(set(Status.RUNNING)).build()
         );
