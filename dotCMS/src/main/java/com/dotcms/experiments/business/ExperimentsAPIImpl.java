@@ -490,7 +490,7 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
     }
 
     @Override
-    public List<Experiment> getExperimentRunning() throws DotDataException {
+    public List<Experiment> getRunningExperiment() throws DotDataException {
         return FactoryLocator.getExperimentsFactory().list(
                 ExperimentFilter.builder().statuses(set(Status.RUNNING)).build()
         );
