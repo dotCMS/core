@@ -2,10 +2,10 @@
     <p-sidebar [(visible)]="vm.isOpenSidebar" (onHide)="closeSidebar()" dotSidebar>
         <dot-sidebar-header
             [actionButtonTpl]="actionHeaderBtnTpl"
-            dotTitle="{{ 'experiments.create.form.sidebar.header' | dm }}"
+            dotTitle="{{ 'experiments.configure.variants.add' | dm }}"
         ></dot-sidebar-header>
 
-        <div class="experiment-create__form-wrapper">
+        <div class="experiment-variant-add__form-wrapper">
             <form
                 class="experiment-create__form p-fluid"
                 id="new-experiment-form"
@@ -16,7 +16,7 @@
             >
                 <div class="field">
                     <label class="p-label-input-required" for="name">{{
-                        'experiments.create.form.name.label' | dm
+                        'experiments.configure.variant.add.form.name.label' | dm
                     }}</label>
                     <input
                         id="name"
@@ -26,33 +26,14 @@
                         formControlName="name"
                         name="name"
                         pInputText
-                        placeholder="{{ 'experiments.create.form.name.placeholder' | dm }}"
+                        placeholder="{{
+                            'experiments.configure.variant.add.form.name.placeholder' | dm
+                        }}"
                         required
                         type="text"
                     />
                     <dot-field-validation-message
                         [field]="form.controls.name"
-                    ></dot-field-validation-message>
-                </div>
-
-                <div class="field">
-                    <label class="p-label-input-required" for="description">{{
-                        'experiments.create.form.description.label' | dm
-                    }}</label>
-                    <textarea
-                        id="description"
-                        [tabindex]="2"
-                        data-testId="add-experiment-description-textarea"
-                        formControlName="description"
-                        name="description"
-                        pInputTextarea
-                        placeholder="{{ 'experiments.create.form.description.placeholder' | dm }}"
-                        required
-                        rows="6"
-                    ></textarea>
-
-                    <dot-field-validation-message
-                        [field]="form.controls.description"
                     ></dot-field-validation-message>
                 </div>
             </form>
@@ -62,7 +43,7 @@
     <ng-template #actionHeaderBtnTpl>
         <button
             [disabled]="!form.valid"
-            [loading]="vm.isLoading"
+            [loading]="vm.isSaving"
             (click)="handleSubmit()"
             data-testId="add-experiment-button"
             form="new-experiment-form"

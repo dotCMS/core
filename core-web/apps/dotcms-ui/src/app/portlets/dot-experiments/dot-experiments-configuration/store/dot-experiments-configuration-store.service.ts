@@ -2,25 +2,33 @@ import { Injectable } from '@angular/core';
 import { ComponentStore, OnStoreInit, tapResponse } from '@ngrx/component-store';
 import { LoadingState } from '@portlets/shared/models/shared-models';
 import { ActivatedRoute } from '@angular/router';
-import { DotExperiment } from '@portlets/dot-experiments/shared/models/dot-experiments.model';
+import {
+    DotExperiment,
+    TrafficProportion,
+    Variant
+} from '@portlets/dot-experiments/shared/models/dot-experiments.model';
 import { Observable, pipe, throwError } from 'rxjs';
 import { switchMap, tap, withLatestFrom } from 'rxjs/operators';
 import { HttpErrorResponse } from '@angular/common/http';
 import { DotExperimentsService } from '@portlets/dot-experiments/shared/services/dot-experiments.service';
 import { Title } from '@angular/platform-browser';
+import { DotMessageService } from '@services/dot-message/dot-messages.service';
+import { MessageService } from 'primeng/api';
 
 export interface DotExperimentsConfigurationState {
     pageId: string;
     experimentId: string;
     experiment: DotExperiment | null;
     status: LoadingState;
+    childIsSaving: boolean;
 }
 
 const initialState: DotExperimentsConfigurationState = {
     pageId: '',
     experimentId: '',
     experiment: null,
-    status: LoadingState.LOADING
+    status: LoadingState.LOADING,
+    childIsSaving: false
 };
 
 // Vm Interfaces
@@ -39,6 +47,13 @@ export class DotExperimentsConfigurationStore
     // Selectors
     readonly isLoading$ = this.select(({ status }) => status === LoadingState.LOADING);
 
+    readonly getExperimentId$ = this.select(({ experimentId }) => experimentId);
+
+    readonly getTrafficProportion$ = this.select(({ experiment }) => experiment.trafficProportion);
+    readonly isVariantDone$ = this.select(
+        ({ experiment }) => experiment.trafficProportion.variants.length > 1
+    );
+
     // Updaters
     readonly setComponentStatus = this.updater((state, status: LoadingState) => ({
         ...state,
@@ -48,6 +63,11 @@ export class DotExperimentsConfigurationStore
         ...state,
         status: LoadingState.LOADED,
         experiment: experiment
+    }));
+    readonly setTrafficProportion = this.updater((state, trafficProportion: TrafficProportion) => ({
+        ...state,
+        status: LoadingState.LOADED,
+        experiment: { ...state.experiment, trafficProportion }
     }));
 
     // Effects
@@ -70,6 +90,33 @@ export class DotExperimentsConfigurationStore
         )
     );
 
+    readonly deleteVariant = this.effect((variant$: Observable<Variant>) => {
+        return variant$.pipe(
+            withLatestFrom(this.getExperimentId$),
+            switchMap(([variant, experimentId]) =>
+                this.dotExperimentsService.removeVariant(experimentId, variant.id).pipe(
+                    tapResponse(
+                        (experiment) => {
+                            this.messageService.add({
+                                severity: 'info',
+                                summary: this.dotMessageService.get(
+                                    'experiments.configure.variant.delete.confirm-title'
+                                ),
+                                detail: this.dotMessageService.get(
+                                    'experiments.configure.variant.delete.confirm-message',
+                                    variant.name
+                                )
+                            });
+
+                            this.setTrafficProportion(experiment.trafficProportion);
+                        },
+                        (error: HttpErrorResponse) => throwError(error)
+                    )
+                )
+            )
+        );
+    });
+
     readonly vm$: Observable<VmConfigurationExperiments> = this.select(
         this.state$,
         this.isLoading$,
@@ -81,8 +128,22 @@ export class DotExperimentsConfigurationStore
         })
     );
 
+    readonly variantsVm$: Observable<{
+        trafficProportion: TrafficProportion;
+        isVariantDone: boolean;
+    }> = this.select(
+        this.getTrafficProportion$,
+        this.isVariantDone$,
+        (trafficProportion, isVariantDone) => ({
+            trafficProportion,
+            isVariantDone
+        })
+    );
+
     constructor(
         private readonly dotExperimentsService: DotExperimentsService,
+        private readonly dotMessageService: DotMessageService,
+        private readonly messageService: MessageService,
         private readonly route: ActivatedRoute,
         private readonly title: Title
     ) {

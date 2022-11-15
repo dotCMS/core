@@ -40,3 +40,8 @@ interface RangeOfDateAndTime {
     startDate: Date;
     endDate: Date;
 }
+
+export interface DotStoreWithSidebar {
+    isOpenSidebar: boolean;
+    isSaving: boolean;
+}

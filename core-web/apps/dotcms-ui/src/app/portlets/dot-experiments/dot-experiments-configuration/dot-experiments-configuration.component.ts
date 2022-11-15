@@ -26,6 +26,11 @@ export class DotExperimentsConfigurationComponent {
         private readonly router: Router
     ) {}
 
+    /**
+     * Go to Experiment List
+     * @returns void
+     * @memberof DotExperimentsConfigurationComponent
+     */
     goToExperimentList() {
         this.router.navigate(['/edit-page/experiments/', this.pageId], {
             queryParamsHandling: 'preserve'
