@@ -166,3 +166,5 @@ This maintenance release includes the following code fixes:
 94. https://github.com/dotCMS/core/issues/20491 : Many-to-many relationships between a single content type removes relationships on save/publish #20491
 95. https://github.com/dotCMS/core/issues/21482 : [REST] : Updating one Binary Field is removing the value from the other Binary Field #21482
 96. https://github.com/dotCMS/core/issues/22852 : Update java version of java-base #22852
+
+**Release-21.06.12**
