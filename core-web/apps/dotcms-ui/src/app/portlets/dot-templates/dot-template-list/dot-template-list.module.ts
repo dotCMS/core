@@ -17,6 +17,7 @@ import { DotMessagePipeModule } from '@pipes/dot-message/dot-message-pipe.module
 import { DotTemplateSelectorModule } from './components/dot-template-selector/dot-template-selector.module';
 import { DotEmptyStateModule } from '@components/_common/dot-empty-state/dot-empty-state.module';
 import { DotSiteBrowserService } from '@services/dot-site-browser/dot-site-browser.service';
+import { AutoFocusModule } from 'primeng/autofocus';
 
 @NgModule({
     declarations: [DotTemplateListComponent],
@@ -34,7 +35,8 @@ import { DotSiteBrowserService } from '@services/dot-site-browser/dot-site-brows
         DynamicDialogModule,
         DotBulkInformationModule,
         DotTemplateSelectorModule,
-        DotEmptyStateModule
+        DotEmptyStateModule,
+        AutoFocusModule
     ],
     providers: [DotTemplateListResolver, DotTemplatesService, DialogService, DotSiteBrowserService]
 })
