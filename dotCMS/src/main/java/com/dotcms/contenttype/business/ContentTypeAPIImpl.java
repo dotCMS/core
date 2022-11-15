@@ -39,6 +39,7 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.exception.InvalidLicenseException;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
+import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.structure.model.SimpleStructureURLMap;
 import com.dotmarketing.quartz.job.IdentifierDateJob;
@@ -719,7 +720,7 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
       final HostAPI hostAPI = APILocator.getHostAPI();
       // First thing here we need to work on is the siteName property which takes precede over host id
       // SiteName takes the human-readable and more approachable site name while host is expected to have an id
-      if(UtilMethods.isSet(contentType.siteName()) || contentType.fixed()){
+      if(UtilMethods.isSet(contentType.siteName())){
         final List<Field> existingFields = contentType.fields();
         final Host resolvedSite = hostAPI.resolveHostName(contentType.siteName(), APILocator.systemUser(), true);
         //if site-name resolution fails it will fall back to default-host
@@ -728,7 +729,7 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
       }
 
       //if a site/host id has been provided it better be valid
-      if (UtilMethods.isSet(contentType.host())) {
+      if (UtilMethods.isSet(contentType.host()) && !Host.SYSTEM_HOST.equals(contentType.host())) {
         final Host resolvedHost = hostAPI.find(contentType.host(), APILocator.systemUser(), true);
         if (null == resolvedHost) {
           throw new DotDataException(String.format(
@@ -773,6 +774,7 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
 
     // Now Check if the folder has been set
     // First try with the folderPath
+    final FolderAPI folderAPI = APILocator.getFolderAPI();
     if (UtilMethods.isSet(contentTypeToSave.folderPath()) && !Folder.SYSTEM_FOLDER.equals(
             contentTypeToSave.folderPath())) {
 
@@ -785,13 +787,13 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
 
       //trying the incoming folder as a path but in order to do that we must have a valid host
       if (UtilMethods.isSet(siteId)) {
-        Logger.info(ContentTypeAPIImpl.class,
-                () -> String.format("Trying folder [%s] as a path on given host [%s]", folderPath,
-                        siteId));
-        folder = APILocator.getFolderAPI()
-                .findFolderByPath(folderPath, siteId, APILocator.systemUser(), false);
-        if (null == folder || UtilMethods.isNotSet(folder.getIdentifier())) {
-          folder = APILocator.getFolderAPI().findSystemFolder();
+        Logger.info(ContentTypeAPIImpl.class, () -> String.format("Trying folder [%s] as a path on given host [%s]", folderPath, siteId));
+        //We have a site and we have a path
+        folder = folderAPI.findFolderByPath(folderPath, siteId, APILocator.systemUser(), false);
+        if (null != folder && UtilMethods.isSet(folder.getIdentifier())) {
+          contentTypeToSave = ContentTypeBuilder.builder(contentTypeToSave).folder(siteId).build();
+        } else {
+          folder = folderAPI.findSystemFolder();
           final Host defaultHost = APILocator.getHostAPI()
                   .findDefaultHost(APILocator.systemUser(), false);
           contentTypeToSave = ContentTypeBuilder.builder(contentTypeToSave)
@@ -808,7 +810,12 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
         throw new DotDataException(
                 "property [folder] should only be used to set ids, folder names/paths must be set through the [folderPath] property.");
       }
-      folder = APILocator.getFolderAPI().find(folderId, user, false);
+      folder = folderAPI.find(folderId, user, false);
+      if(null != folder){
+           // if the folder is provided we have no choice but to use the folder's host id
+           // Otherwise will get a `Cannot assign host/folder to structure, folder does not belong to given host`
+          contentTypeToSave = ContentTypeBuilder.builder(contentTypeToSave).folder(folder.getIdentifier()).host(folder.getHostId()).build();
+      }
     }
 
     //Still no folder eh?
