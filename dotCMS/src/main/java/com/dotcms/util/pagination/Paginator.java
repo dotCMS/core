@@ -2,10 +2,7 @@ package com.dotcms.util.pagination;
 
 import com.dotmarketing.util.PaginatedArrayList;
 import com.liferay.portal.model.User;
-
-import java.io.Serializable;
 import java.util.Map;
-import static com.dotcms.util.CollectionsUtils.map;
 
 
 /**

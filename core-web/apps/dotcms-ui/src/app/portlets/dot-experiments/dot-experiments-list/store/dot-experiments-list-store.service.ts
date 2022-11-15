@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { ComponentStore, tapResponse } from '@ngrx/component-store';
+import { ComponentStore, OnStoreInit, tapResponse } from '@ngrx/component-store';
 import { LoadingState } from '@portlets/shared/models/shared-models';
 import { DotExperimentsService } from '@portlets/dot-experiments/shared/services/dot-experiments.service';
 import { catchError, switchMap, tap, withLatestFrom } from 'rxjs/operators';
@@ -15,14 +15,20 @@ import {
 import { ActivatedRoute } from '@angular/router';
 
 export interface DotExperimentsState {
-    pageId: string;
+    page: {
+        pageId: string;
+        pageTitle: string;
+    };
     experiments: DotExperiment[];
     filterStatus: Array<string>;
     status: LoadingState;
 }
 
 const initialState: DotExperimentsState = {
-    pageId: '',
+    page: {
+        pageId: '',
+        pageTitle: ''
+    },
     experiments: [],
     filterStatus: [
         DotExperimentStatusList.DRAFT,
@@ -36,16 +42,25 @@ const initialState: DotExperimentsState = {
 
 // Vm Interfaces
 export interface VmListExperiments {
+    page: {
+        pageId: string;
+        pageTitle: string;
+    };
     isLoading: boolean;
     experiments: DotExperiment[];
     experimentsFiltered: { [key: string]: DotExperiment[] };
     filterStatus: Array<string>;
 }
 
-@Injectable()
-export class DotExperimentsListStore extends ComponentStore<DotExperimentsState> {
+@Injectable({
+    providedIn: 'root'
+})
+export class DotExperimentsListStore
+    extends ComponentStore<DotExperimentsState>
+    implements OnStoreInit
+{
     // Selectors
-    readonly getPageId$ = this.select((state) => state.pageId);
+    readonly getPage$ = this.select((state) => state.page);
     readonly getStatus$ = this.select((state) => state.status);
 
     readonly getExperiments$ = this.select((state) => state.experiments);
@@ -72,6 +87,11 @@ export class DotExperimentsListStore extends ComponentStore<DotExperimentsState>
     readonly initStore = this.updater((state) => ({
         ...state,
         status: LoadingState.INIT
+    }));
+
+    readonly setPageId = this.updater((state, pageId: string) => ({
+        ...state,
+        pageId
     }));
 
     readonly setComponentStatus = this.updater((state, status: LoadingState) => ({
@@ -112,9 +132,9 @@ export class DotExperimentsListStore extends ComponentStore<DotExperimentsState>
     readonly loadExperiments = this.effect<void>(
         pipe(
             tap(() => this.setComponentStatus(LoadingState.LOADING)),
-            withLatestFrom(this.getPageId$),
-            switchMap(([, pageId]) =>
-                this.dotExperimentsService.get(pageId).pipe(
+            withLatestFrom(this.getPage$),
+            switchMap(([, { pageId }]) =>
+                this.dotExperimentsService.getAll(pageId).pipe(
                     tapResponse(
                         (experiments) => this.setExperiments(experiments),
                         (error: HttpErrorResponse) => throwError(error),
@@ -182,11 +202,13 @@ export class DotExperimentsListStore extends ComponentStore<DotExperimentsState>
     });
 
     readonly vm$: Observable<VmListExperiments> = this.select(
+        this.getPage$,
         this.isLoading$,
         this.getExperiments$,
         this.getExperimentsFilteredAndGroupedByStatus$,
         this.getFilterStatusList$,
-        (isLoading, experiments, experimentsFiltered, filterStatus) => ({
+        (page, isLoading, experiments, experimentsFiltered, filterStatus) => ({
+            page,
             isLoading,
             experiments,
             experimentsFiltered,
@@ -200,6 +222,16 @@ export class DotExperimentsListStore extends ComponentStore<DotExperimentsState>
         private readonly messageService: MessageService,
         private readonly route: ActivatedRoute
     ) {
-        super({ ...initialState, pageId: route.snapshot.params.pageId });
+        super({
+            ...initialState,
+            page: {
+                pageId: route.snapshot.params.pageId,
+                pageTitle: route.snapshot.parent?.parent?.parent?.parent.data?.content?.page?.title
+            }
+        });
+    }
+
+    ngrxOnStoreInit() {
+        this.loadExperiments();
     }
 }

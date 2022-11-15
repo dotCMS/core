@@ -15,11 +15,11 @@ export const ExperimentMocks: Array<DotExperiment> = [
         readyToStart: false,
         description: 'Praesent at molestie mauris, quis vulputate augue.',
         name: 'Praesent at molestie mauris',
-        trafficAllocation: 100.0,
+        trafficAllocation: '100.0',
         scheduling: null,
         trafficProportion: {
-            percentages: {},
-            type: TrafficProportionTypes.SPLIT_EVENLY
+            type: TrafficProportionTypes.SPLIT_EVENLY,
+            variants: [{ id: '111', name: 'DEFAULT', weight: 100.0 }]
         },
         creationDate: new Date('2022-08-21 14:50:03'),
         modDate: new Date('2022-08-21 18:50:03')
@@ -33,28 +33,17 @@ export const ExperimentMocks: Array<DotExperiment> = [
         readyToStart: false,
         description: 'Praesent at molestie mauris, quis vulputate augue.',
         name: 'Praesent at molestie mauris',
-        trafficAllocation: 100.0,
+        trafficAllocation: '100.0',
         scheduling: null,
         trafficProportion: {
-            percentages: {},
-            type: TrafficProportionTypes.SPLIT_EVENLY
+            type: TrafficProportionTypes.SPLIT_EVENLY,
+            variants: [{ id: '222', name: 'DEFAULT', weight: 100.0 }]
         },
         creationDate: new Date('2022-08-21 14:50:03'),
         modDate: new Date('2022-08-21 18:50:03')
     }
 ];
 
-/*export class DotExperimentsShellStoreMock {
-    getPageId$(): Observable<string> {
-        return of('spy it');
-    }
-}*/
-
-/*export class DotExperimentsListStoreMock {
-    loadExperiments() {
-        return of(ExperimentMocks);
-    }
-}*/
 export const dotExperimentsCreateStoreStub = {
     state$: () =>
         of({
@@ -68,7 +57,9 @@ export const dotExperimentsCreateStoreStub = {
 export const DotExperimentsListStoreMock = {
     addExperiment: () => of({}),
     setCloseSidebar: () => of({}),
-    getPageId$: of('1111-1111')
+    getPage$: of({
+        pageId: '1111'
+    })
 };
 
 export const DotExperimentsShellStoreMock = {
@@ -90,6 +81,31 @@ export class ActivatedRouteMock {
                     snapshot: {
                         params: {
                             pageId: 'pageId'
+                        }
+                    }
+                }
+            }
+        };
+    }
+}
+
+export class ActivatedRouteListStoreMock {
+    get snapshot() {
+        return {
+            params: {
+                pageId: '1111'
+            },
+            parent: {
+                parent: {
+                    parent: {
+                        parent: {
+                            data: {
+                                content: {
+                                    page: {
+                                        title: 'title'
+                                    }
+                                }
+                            }
                         }
                     }
                 }
