@@ -13,16 +13,21 @@
         height: 100%;
     }
     .p-tabview-panels {
+        // hiding because it is add content type tab there is no need to show this content
+        p-tabpanel:first-child {
+            display: none;
+        }
         height: 100%;
         flex-grow: 1;
         flex-basis: 0;
         overflow: auto;
     }
+
+    .p-tabview-nav-content {
+        border: 1px solid $input-border-color;
+    }
     .p-tabview-nav {
         padding: 0;
-        background: $white;
-        border: 1px solid $input-border-color;
-        border-bottom: none;
     }
 
     .p-tabview-panel {
@@ -34,14 +39,28 @@
     }
 
     .p-tabview-nav-next {
-        width: 40px;
-        background-color: #f1f3f4;
+        width: $tabView-scroll-btn-width;
         border: 1px solid $input-border-color;
         border-left: none;
-        border-bottom: none;
+        background: $gray-bg;
+    }
+
+    .p-tabview-nav-prev {
+        width: $tabView-scroll-btn-width;
+        border: 1px solid $input-border-color;
+        border-right: none;
+        background: $gray-bg;
+    }
+
+    .p-tabview .p-tabview-nav {
+        border: none;
     }
 
     .p-tabview .p-tabview-nav li.p-highlight .p-tabview-nav-link {
+        border-bottom: 2px solid var(--color-sec);
+    }
+
+    .p-tabview .p-tabview-nav li:not(.p-highlight):not(.p-disabled):hover .p-tabview-nav-link {
         border-bottom: 2px solid var(--color-sec);
     }
 
