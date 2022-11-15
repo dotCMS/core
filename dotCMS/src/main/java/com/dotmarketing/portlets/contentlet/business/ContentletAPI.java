@@ -542,8 +542,10 @@ public interface ContentletAPI {
 	 * @param contentletId The Contentlet ID whose references will be retrieved.
 	 *
 	 * @return The number of times the specified Contentlet is added to a Container in any HTML Page.
+	 *
+	 * @throws DotDataException An error occurred when interacting with the data source.
 	 */
-	Optional<Integer> getContentletReferenceCount(final String contentletId);
+	Optional<Integer> getAllContentletReferencesCount(final String contentletId) throws DotDataException;
 
     /**
      * Gets the value of a field with a given contentlet

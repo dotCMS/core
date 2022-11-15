@@ -1145,7 +1145,7 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
     }
 
     @Override
-    public int getContentletReferenceCount(final String contentletId) throws DotDataException {
+    public int getAllContentletReferencesCount(final String contentletId) throws DotDataException {
         final Optional<Integer> referenceCount = this.multiTreeCache.get().getContentletReferenceCount(contentletId);
         if (referenceCount.isPresent()) {
             return referenceCount.get();
@@ -1156,7 +1156,7 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
     }
 
     @CloseDBIfOpened
-    public Long getContentletReferenceCountFromDB(final String contentletId) throws DotDataException {
+    private Long getContentletReferenceCountFromDB(final String contentletId) throws DotDataException {
         return ((Long) new DotConnect().setSQL(SELECT_CONTENTLET_REFERENCES).addParam(contentletId).loadObjectResults().get(0).get("count"));
     }
 

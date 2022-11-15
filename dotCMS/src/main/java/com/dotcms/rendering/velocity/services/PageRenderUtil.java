@@ -47,6 +47,7 @@ import com.google.common.collect.Maps;
 import com.google.common.collect.Table;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
+import io.vavr.control.Try;
 import org.apache.velocity.context.Context;
 
 import javax.servlet.http.HttpServletRequest;
@@ -342,9 +343,8 @@ public class PageRenderUtil implements Serializable {
     private void addContentletPageReferenceCount(final Contentlet contentlet) {
         if (this.mode.isEditMode()) {
             final Optional<Integer> pageReferences =
-                    this.contentletAPI.getContentletReferenceCount(contentlet.getIdentifier());
-            pageReferences.ifPresent(integer -> contentlet.getMap().put(Contentlet.ON_NUMBER_OF_PAGES,
-                    integer));
+                    Try.of(() -> this.contentletAPI.getAllContentletReferencesCount(contentlet.getIdentifier())).getOrElse(Optional.empty());
+            pageReferences.ifPresent(integer -> contentlet.getMap().put(Contentlet.ON_NUMBER_OF_PAGES, integer));
         }
     }
 

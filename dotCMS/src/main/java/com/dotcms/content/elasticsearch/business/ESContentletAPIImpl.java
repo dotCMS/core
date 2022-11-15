@@ -1442,18 +1442,9 @@ public class ESContentletAPIImpl implements ContentletAPI {
         return results;
     }
 
-    @CloseDBIfOpened
     @Override
-    public Optional<Integer> getContentletReferenceCount(final String contentletId) {
-        try {
-            return Optional.of(this.multiTreeAPI.get().getContentletReferenceCount(contentletId));
-        } catch (final DotDataException e) {
-            final String errorMsg = String.format("An error occurred when getting the page references for Contentlet " +
-                                                          "ID '%s': %s", contentletId, e.getMessage());
-            Logger.warn(this, errorMsg);
-            Logger.debug(this, errorMsg, e);
-        }
-        return Optional.empty();
+    public Optional<Integer> getAllContentletReferencesCount(final String contentletId) throws DotDataException {
+        return Optional.of(this.multiTreeAPI.get().getAllContentletReferencesCount(contentletId));
     }
 
     private String getPersonaNameByMultitree(final MultiTree tree) throws DotSecurityException, DotDataException {

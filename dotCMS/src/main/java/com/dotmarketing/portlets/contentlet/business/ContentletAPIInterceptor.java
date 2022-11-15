@@ -1158,15 +1158,15 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 	}
 
 	@Override
-	public Optional<Integer> getContentletReferenceCount(final String contentletId) {
+	public Optional<Integer> getAllContentletReferencesCount(final String contentletId) throws DotDataException {
 		for (final ContentletAPIPreHook pre : this.preHooks) {
-			final boolean preResult = pre.getContentletReferenceCount(contentletId);
+			final boolean preResult = pre.getAllContentletReferencesCount(contentletId);
 			if (!preResult) {
 				Logger.error(this, "The following prehook failed: " + pre.getClass().getName());
 				throw new DotRuntimeException("The following prehook failed: " + pre.getClass().getName());
 			}
 		}
-		final Optional<Integer> count = this.conAPI.getContentletReferenceCount(contentletId);
+		final Optional<Integer> count = this.conAPI.getAllContentletReferencesCount(contentletId);
 		for (final ContentletAPIPostHook post : this.postHooks) {
 			post.getContentletReferenceCount(contentletId);
 		}

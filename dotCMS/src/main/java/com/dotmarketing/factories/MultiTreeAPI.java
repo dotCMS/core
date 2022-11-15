@@ -488,6 +488,6 @@ public interface MultiTreeAPI {
      *
      * @return The number of times the specified Contentlet is added to a Container in any HTML Page.
      */
-    int getContentletReferenceCount(final String contentletId) throws DotDataException;
+    int getAllContentletReferencesCount(final String contentletId) throws DotDataException;
 
 }

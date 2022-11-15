@@ -344,9 +344,10 @@ public interface ContentletAPIPreHook {
 	 *
 	 * @param contentletId The Contentlet ID whose references will be retrieved.
 	 *
-	 * @return The number of times the specified Contentlet is added to a Container in any HTML Page.
+	 * @return The execution status of the Pre-Hook. If such a status is {@code false}, a Runtime Exception will be
+	 * thrown.
 	 */
-	default boolean getContentletReferenceCount(final String contentletId) {
+	default boolean getAllContentletReferencesCount(final String contentletId) {
 		return true;
 	}
 	
