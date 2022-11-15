@@ -35,6 +35,6 @@ export class DotAddVariableComponent implements OnInit {
      * @memberof DotAddVariableComponent
      */
     private applyMask(variable: string): string {
-        return `$!{${variable}}`;
+        return `$!{dotContentMap.${variable}}`;
     }
 }
