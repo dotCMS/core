@@ -1,6 +1,7 @@
 package com.dotcms.rendering.velocity.services;
 
 import com.dotcms.util.ConversionUtils;
+import com.dotmarketing.util.UtilMethods;
 import java.io.File;
 import java.io.InputStream;
 import java.util.ArrayList;
@@ -49,6 +50,10 @@ public class PageLoader implements DotLoader {
 
     @Override
     public void invalidate(final Object obj, final PageMode mode) {
+        invalidate(obj, null, mode);
+    }
+
+    public void invalidate(final Object obj, final String variantName, final PageMode mode) {
         HTMLPageAsset htmlPage =null;
         if(obj instanceof IHTMLPage) {
             htmlPage = (HTMLPageAsset) obj;
@@ -58,11 +63,11 @@ public class PageLoader implements DotLoader {
        if(htmlPage==null) {
            return;
        }
-        
-
 
         for(Language lang : APILocator.getLanguageAPI().getLanguages()) {
-            VelocityResourceKey key = new VelocityResourceKey(htmlPage, mode, lang.getId());
+            VelocityResourceKey key = UtilMethods.isSet(variantName) ?
+                    new VelocityResourceKey(htmlPage, mode, lang.getId(), variantName) :
+                    new VelocityResourceKey(htmlPage, mode, lang.getId());
             DotResourceCache vc = CacheLocator.getVeloctyResourceCache();
             vc.remove(key);
         }

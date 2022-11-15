@@ -479,7 +479,7 @@ describe('SearchableDropdownComponent', () => {
     it('should allow keyboad nav on filter Input - ArrowDown', () => {
         hostFixture.detectChanges();
         const searchInput = de.query(By.css('[data-testid="searchInput"]'));
-        const keyboardEvent = new KeyboardEvent('keyup', {key: 'ArrowDown'});
+        const keyboardEvent = new KeyboardEvent('keyup', { key: 'ArrowDown' });
         searchInput.nativeElement.dispatchEvent(keyboardEvent);
 
         expect(comp.selectedOptionIndex).toBe(1);
@@ -488,10 +488,10 @@ describe('SearchableDropdownComponent', () => {
 
     it('should allow keyboad nav on filter Input - ArrowUp', () => {
         comp.selectedOptionIndex = 3;
-        
+
         hostFixture.detectChanges();
         const searchInput = de.query(By.css('[data-testid="searchInput"]'));
-        const keyboardEvent = new KeyboardEvent('keyup', {key: 'ArrowUp'});
+        const keyboardEvent = new KeyboardEvent('keyup', { key: 'ArrowUp' });
         searchInput.nativeElement.dispatchEvent(keyboardEvent);
 
         expect(comp.selectedOptionIndex).toBe(2);
@@ -501,13 +501,13 @@ describe('SearchableDropdownComponent', () => {
     it('should allow keyboad nav on filter Input - Enter', () => {
         comp.selectedOptionIndex = 3;
         spyOn(comp, 'handleClick');
-        
+
         hostFixture.detectChanges();
         const searchInput = de.query(By.css('[data-testid="searchInput"]'));
-        const keyboardEvent = new KeyboardEvent('keyup', {key: 'Enter'});
+        const keyboardEvent = new KeyboardEvent('keyup', { key: 'Enter' });
         searchInput.nativeElement.dispatchEvent(keyboardEvent);
 
-        expect(comp.handleClick).toHaveBeenCalledWith(data[3])
+        expect(comp.handleClick).toHaveBeenCalledWith(data[3]);
     });
 
     it('should render external listItem template', () => {
