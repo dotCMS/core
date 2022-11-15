@@ -490,7 +490,7 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
 
     }
 
-    @CloseDB
+    @CloseDBIfOpened
     @Override
     public List<Experiment> getRunningExperiment() throws DotDataException {
         return FactoryLocator.getExperimentsFactory().list(
