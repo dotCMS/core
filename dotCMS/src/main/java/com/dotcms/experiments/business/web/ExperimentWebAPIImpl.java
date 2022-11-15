@@ -37,7 +37,7 @@ public class ExperimentWebAPIImpl implements ExperimentWebAPI {
     public SelectedExperiment isUserIncluded(final HttpServletRequest request, final HttpServletResponse response)
             throws DotDataException, DotSecurityException {
         final List<Experiment> experimentRunning = APILocator.getExperimentsAPI()
-                .getExperimentRunning();
+                .getRunningExperiment();
 
         final Optional<Experiment> experiment = pickOneExperiment(experimentRunning, request,
                 response);
