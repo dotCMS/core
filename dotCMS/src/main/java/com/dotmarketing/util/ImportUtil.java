@@ -1334,8 +1334,18 @@ public class ImportUtil {
                             csvRelationshipRecordsParentOnly, csvRelationshipRecordsChildOnly,
                             csvRelationshipRecords, cont);
 
+                    final boolean skipRelationshipsValidation = headers.values().stream()
+                            .noneMatch((field -> field.getFieldType()
+                                    .equals(FieldType.RELATIONSHIP.toString())));
+
                     try {
-                        conAPI.validateContentlet(cont, contentletRelationships, new ArrayList<>(categories));
+                        if(skipRelationshipsValidation) {
+                            conAPI.validateContentletNoRels(cont, new ArrayList<>(categories));
+
+                        } else {
+                            conAPI.validateContentlet(cont, contentletRelationships,
+                                    new ArrayList<>(categories));
+                        }
                     } catch (DotContentletValidationException ex) {
                         StringBuffer sb = new StringBuffer("Line #" + lineNumber + " contains errors\n");
                         HashMap<String,List<Field>> errors = (HashMap<String,List<Field>>) ex.getNotValidFields();
@@ -1412,6 +1422,8 @@ public class ImportUtil {
 
                         if (userCanExecuteAction) {
                           cont.setIndexPolicy(IndexPolicy.DEFER);
+
+                          cont.setBoolProperty(Contentlet.SKIP_RELATIONSHIPS_VALIDATION, skipRelationshipsValidation);
 
                           Logger.debug(ImportUtil.class, "fireContentWorkflow: " + executeWfAction.getName() + ", id: " + executeWfAction.getId());
                             cont = workflowAPI.fireContentWorkflow(cont,
