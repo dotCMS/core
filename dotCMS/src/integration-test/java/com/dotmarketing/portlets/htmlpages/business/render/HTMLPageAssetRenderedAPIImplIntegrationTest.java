@@ -15,6 +15,7 @@ import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.datagen.ContainerDataGen;
 import com.dotcms.datagen.ContentTypeDataGen;
 import com.dotcms.datagen.ContentletDataGen;
+import com.dotcms.datagen.ExperimentDataGen;
 import com.dotcms.datagen.FieldDataGen;
 import com.dotcms.datagen.FolderDataGen;
 import com.dotcms.datagen.HTMLPageDataGen;
@@ -23,8 +24,10 @@ import com.dotcms.datagen.MultiTreeDataGen;
 import com.dotcms.datagen.RoleDataGen;
 import com.dotcms.datagen.SiteDataGen;
 import com.dotcms.datagen.TemplateDataGen;
+import com.dotcms.datagen.ThemeDataGen;
 import com.dotcms.datagen.UserDataGen;
 import com.dotcms.datagen.VariantDataGen;
+import com.dotcms.experiments.model.Experiment;
 import com.dotcms.util.CollectionsUtils;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotcms.variant.VariantAPI;
@@ -1157,13 +1160,40 @@ public class HTMLPageAssetRenderedAPIImplIntegrationTest extends IntegrationTest
         return createHtmlPageAsset(language, host, container, VariantAPI.DEFAULT_VARIANT);
     }
 
-    private HTMLPageAsset createHtmlPageAsset(final Language language, final Host host, final Container container, final Variant variant)
+    private HTMLPageAsset createHtmlPageAsset(
+            final Language language,
+            final Host host,
+            final Container container,
+            final Variant variant)
+
             throws WebAssetException, DotSecurityException, DotDataException {
 
         final Folder folder = new FolderDataGen().site(host).nextPersisted();
         final Template template = createTemplate(host, container);
 
         return createHtmlPageAsset(language, folder, template, variant);
+    }
+
+    private HTMLPageAsset createHtmlPageAssetWithHead(
+            final Language language,
+            final Host host,
+            final Container container,
+            final String bodyHead)
+
+            throws WebAssetException, DotSecurityException, DotDataException {
+
+        final Folder folder = new FolderDataGen().site(host).nextPersisted();
+
+        final Template template = new TemplateDataGen()
+                .host(host)
+                .withContainer(container.getIdentifier(), "1")
+                .addBodyHead(bodyHead)
+                .nextPersisted();
+
+
+        PublishFactory.publishAsset(template, APILocator.systemUser(), false, false);
+
+        return createHtmlPageAsset(language, folder, template, VariantAPI.DEFAULT_VARIANT);
     }
 
     private void addToPage(Container container, HTMLPageAsset page, Contentlet contentlet) {
@@ -1240,7 +1270,7 @@ public class HTMLPageAssetRenderedAPIImplIntegrationTest extends IntegrationTest
         return page;
     }
 
-    private Template createTemplate(Host host, Container container)
+    private Template createTemplate(final Host host, final Container container)
             throws WebAssetException, DotSecurityException, DotDataException {
 
         final Template template = new TemplateDataGen()
@@ -1298,4 +1328,60 @@ public class HTMLPageAssetRenderedAPIImplIntegrationTest extends IntegrationTest
                 contentlet, APILocator.systemUser(), false);
     }
 
+    @Test
+    public void aaa() throws WebAssetException, DotDataException, DotSecurityException {
+        final Experiment experiment = new ExperimentDataGen().nextPersisted();
+        ExperimentDataGen.start(experiment);
+
+        final Language language = new LanguageDataGen().nextPersisted();
+        final Host host = new SiteDataGen().nextPersisted();
+
+        final ContentType contentType = createContentType();
+        final Container container = createAndPublishContainer(host, contentType);
+        final HTMLPageAsset page = createHtmlPageAssetWithHead(language, host, container,"<head><title>This is a testing</title></head>");
+        final Contentlet contentlet = createContentlet(language, host, contentType);
+
+        addToPage(container, page, contentlet);
+
+        final HttpServletRequest mockRequest = createHttpServletRequest(language, host,
+                VariantAPI.DEFAULT_VARIANT, page);
+
+        final HttpServletResponse mockResponse = mock(HttpServletResponse.class);
+        final HttpSession session = createHttpSession(mockRequest);
+        when(session.getAttribute(WebKeys.VISITOR)).thenReturn(null);
+
+        String html = APILocator.getHTMLPageAssetRenderedAPI().getPageHtml(
+                PageContextBuilder.builder()
+                        .setUser(APILocator.systemUser())
+                        .setPageUri(page.getURI())
+                        .setPageMode(PageMode.LIVE)
+                        .build(),
+                mockRequest, mockResponse);
+        final String expectedContentRender = "<div>DEFAULT content-default-" + language.getId() + "</div>";
+        final String expectedHead = "<head>"
+                + "<script src=\"/s/lib.js\" data-key=\"\"\n"
+                        + "        data-init-only=\"false\"\n"
+                        + "        defer>\n"
+                        + "</script>\n"
+                        + "\n"
+                        + "<script>window.jitsu = window.jitsu || (function(){(window.jitsuQ = window.jitsuQ || []).push(arguments);})</script>"
+                + "<SCRIPT>"
+                + "var isInExperiment = document.cookie.includes('runningExperiment');\n"
+                        + "\n"
+                        + "if (!isInExperiment) {\n"
+                        + "    fetch('/api/v1/experiment')\n"
+                        + "    .then(response => response.json())\n"
+                        + "    .then(data => {\n"
+                        + "        if (data.experiment) {\n"
+                        + "            localStorage.setItem('experiment_data', JSON.stringify(data));\n"
+                        + "        }\n"
+                        + "    });\n"
+                        + "}"
+                + "</SCRIPT>"
+                + "<title>This is a testing</title>"
+                + "</head>";
+        final String expectedCode = expectedHead + expectedContentRender;
+
+        Assert.assertEquals(expectedCode, html);
+    }
 }

@@ -21,6 +21,7 @@ import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.templates.business.TemplateAPI;
 import com.dotmarketing.portlets.templates.design.bean.TemplateLayout;
 import com.dotmarketing.portlets.templates.model.Template;
+import com.dotmarketing.util.UtilMethods;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.liferay.portal.model.User;
@@ -55,6 +56,7 @@ public class TemplateDataGen extends AbstractDataGen<Template> {
     private static final String type = "template";
     private boolean setBodyAsNull = false;
     private Date modDate;
+    private String bodyHead;
 
     /**
      * Sets body property to the TemplateDataGen instance. This will be used when a new {@link
@@ -242,6 +244,11 @@ public class TemplateDataGen extends AbstractDataGen<Template> {
         return this;
     }
 
+    public TemplateDataGen addBodyHead(final String head) {
+        this.bodyHead = head;
+        return this;
+    }
+
     /**
      * {@inheritDoc}
      * <p>It will also include a '#parseContainer('containerId')' string to the body of the
@@ -283,7 +290,7 @@ public class TemplateDataGen extends AbstractDataGen<Template> {
             }
 
             // include the parseContainer for every container added
-            StringBuilder sb = new StringBuilder();
+            StringBuilder sb = new StringBuilder(UtilMethods.isSet(bodyHead) ? bodyHead : StringPool.BLANK);
             for (Map<String, String> containerMap : containers) {
                 sb.append("#parseContainer(")
                         .append(StringPool.APOSTROPHE)

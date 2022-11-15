@@ -1,5 +1,7 @@
 package com.dotmarketing.portlets.htmlpageasset.business.render;
 
+import static com.dotmarketing.util.FileUtil.getFileContentFromResourceContext;
+
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.rendering.velocity.services.PageLoader;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
@@ -39,8 +41,10 @@ import com.dotmarketing.util.WebKeys;
 import com.liferay.portal.model.User;
 
 import com.liferay.util.StringPool;
+import io.vavr.Lazy;
 import io.vavr.control.Try;
 
+import java.io.IOException;
 import java.util.Optional;
 import java.util.Set;
 import javax.servlet.http.HttpServletRequest;
@@ -52,6 +56,8 @@ import javax.ws.rs.core.Context;
  * {@link HTMLPageAssetRenderedAPI} implementation
  */
 public class HTMLPageAssetRenderedAPIImpl implements HTMLPageAssetRenderedAPI {
+
+    private Lazy<String> EXPERIMENT_SCRIPT = Lazy.of(() -> getExperimentJSCode());
 
     private final HostWebAPI hostWebAPI;
     private final HTMLPageAssetAPI htmlPageAssetAPI;
@@ -273,7 +279,7 @@ public class HTMLPageAssetRenderedAPIImpl implements HTMLPageAssetRenderedAPI {
         final HTMLPageUrl htmlPageUrl = getHtmlPageAsset(context, host, request);
         final HTMLPageAsset page = htmlPageUrl.getHTMLPage();
 
-        return new HTMLPageAssetRenderedBuilder()
+        final String pageHTML = new HTMLPageAssetRenderedBuilder()
                 .setHtmlPageAsset(page)
                 .setUser(context.getUser())
                 .setRequest(request)
@@ -282,6 +288,12 @@ public class HTMLPageAssetRenderedAPIImpl implements HTMLPageAssetRenderedAPI {
                 .setURLMapper(htmlPageUrl.getPageUrlMapper())
                 .setLive(htmlPageUrl.hasLive())
                 .getPageHTML(context.getPageMode());
+        return !APILocator.getExperimentsAPI().getExperimentRunning().isEmpty() ?
+                injectExperimentJSCode(pageHTML) : pageHTML;
+    }
+
+    private String injectExperimentJSCode(final String pageHTML) {
+        return pageHTML.replace("<head>", "<head>" + EXPERIMENT_SCRIPT.get());
     }
 
     private HTMLPageUrl getHtmlPageAsset(final PageContext context, final Host host, final HttpServletRequest request)
@@ -505,5 +517,17 @@ public class HTMLPageAssetRenderedAPIImpl implements HTMLPageAssetRenderedAPI {
                 .setLive(false).build(true, PageMode.PREVIEW_MODE)).getHtml();
 
         return new PageLivePreviewVersionBean(renderLive, renderWorking);
+    }
+
+    private String getExperimentJSCode() {
+        try {
+            final String jsJitsuCode =  getFileContentFromResourceContext("experiment/html/experiment_head.html")
+                    .replaceAll("\\$\\{jitsu_key}", "");
+
+            final String shouldBeInExperimentCalled =  getFileContentFromResourceContext("experiment/js/init_script.js");
+            return jsJitsuCode + "<SCRIPT>" + shouldBeInExperimentCalled + "</SCRIPT>";
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 }
