@@ -12,13 +12,17 @@ import { FloatingButtonComponent, ImageNode, getNodeCoords } from '@dotcms/block
 import { DotCMSContentlet } from '@dotcms/dotcms-models';
 
 export const setCoords = ({ viewCoords, nodeCoords }): DOMRect => {
+    const offset = 65;
     const { bottom: nodeBottom, left, top } = nodeCoords;
     const { bottom: viewBottom } = viewCoords;
     const isBottomOverflow = Math.ceil(viewBottom - nodeBottom) < 0;
+    const newTop = isBottomOverflow ? viewBottom : top - offset;
+    // Is the top image is lower than editor button, then use image top.
+    const pos = top < viewBottom ? newTop : top + offset;
 
     return {
         ...nodeCoords.toJSON(),
-        top: isBottomOverflow ? viewBottom : top - 65,
+        top: pos,
         left: left - 10
     };
 };
