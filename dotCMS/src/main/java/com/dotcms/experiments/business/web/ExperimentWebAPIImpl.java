@@ -28,6 +28,9 @@ import javax.servlet.http.HttpServletResponse;
 import net.bytebuddy.utility.RandomString;
 import org.jetbrains.annotations.NotNull;
 
+/**
+ * Default implementation of {@link ExperimentWebAPI}
+ */
 public class ExperimentWebAPIImpl implements ExperimentWebAPI {
 
     @Override
@@ -100,7 +103,9 @@ public class ExperimentWebAPIImpl implements ExperimentWebAPI {
             }
         }
 
-        throw new IllegalStateException("Should return one variant");
+        throw new IllegalStateException(
+                String.format("Should return one variant for the Experiment: %s - %s", experiment.id(),
+                        experiment.name()));
     }
 
     private int nextRandomNumber() {

@@ -2,14 +2,39 @@ package com.dotcms.experiments.business.web;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.io.Serializable;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 
+/**
+ * This is a {@link com.dotcms.experiments.model.Experiment} selected to a User, this mean this user
+ * is going to be into this {@link com.dotcms.experiments.model.Experiment}.
+ * 
+ * @see ExperimentWebAPI#isUserIncluded(HttpServletRequest, HttpServletResponse)
+ * @see com.dotcms.experiments.model.Experiment
+ */
 public class SelectedExperiment implements Serializable {
+
+    /**
+     * Experiment's name
+     */
     @JsonProperty("name")
     private String name;
+
+    /**
+     * Experiment's ID
+     */
     @JsonProperty("id")
     private String id;
+
+    /**
+     * Experiment;s page URL
+     */
     @JsonProperty("pageUrl")
     private String pageUrl;
+
+    /**
+     * Selected Variant for the User
+     */
     @JsonProperty("variant")
     private SelectedVariant variant;
 
