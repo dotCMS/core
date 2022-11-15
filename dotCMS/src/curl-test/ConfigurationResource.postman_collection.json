@@ -48,13 +48,12 @@
                 "method": "GET",
                 "header": [],
                 "url": {
-                  "raw": "{{serverURL}}/api//v1/configuration",
+                  "raw": "{{serverURL}}/api/v1/configuration",
                   "host": [
                     "{{serverURL}}"
                   ],
                   "path": [
                     "api",
-                    "",
                     "v1",
                     "configuration"
                   ]
