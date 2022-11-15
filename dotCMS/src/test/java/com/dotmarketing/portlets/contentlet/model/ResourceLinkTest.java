@@ -4,6 +4,7 @@ import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.FileAssetContentType;
 import com.dotcms.repackage.com.google.common.collect.ImmutableMap;
 import com.dotcms.repackage.com.google.common.collect.ImmutableMap.Builder;
+import com.dotcms.rest.api.v1.temp.TempFileAPI;
 import com.dotcms.storage.model.Metadata;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
@@ -64,15 +65,15 @@ public class ResourceLinkTest {
     private Metadata mockMetadata(final File binary) {
         final Builder<String, Serializable> builder = new Builder<>();
         final ImmutableMap<String, Serializable> immutableMap =
-         builder.put("contentType", "text/html")
-                .put("fileSize", binary.length())
-                .put("length", binary.length())
-                .put("isImage", false)
-                .put("path",binary.getPath())
-                .put("sha256","9e2d4ab5bf0aba3113f90791b2975251a92bf1585125838bb73b6cec515ada41")
-                .put("name",binary.getName())
-                .put("title",binary.getName())
-                .put("modDate", 1614790279000L).build();
+                builder.put("contentType", "text/html")
+                        .put("fileSize", binary.length())
+                        .put("length", binary.length())
+                        .put("isImage", false)
+                        .put("path",binary.getPath())
+                        .put("sha256","9e2d4ab5bf0aba3113f90791b2975251a92bf1585125838bb73b6cec515ada41")
+                        .put("name",binary.getName())
+                        .put("title",binary.getName())
+                        .put("modDate", 1614790279000L).build();
         return new Metadata(binary.getName(), immutableMap);
     }
 
@@ -89,7 +90,7 @@ public class ResourceLinkTest {
             @Override
             Identifier getIdentifier(final Contentlet contentlet) throws DotDataException {
                 if(contentlet.isNew()){
-                   return null;
+                    return null;
                 }
                 final Identifier identifier = mock(Identifier.class);
                 when(identifier.getInode()).thenReturn("83864b2c-3988-4acc-953d-ff8d0ba5e093");
@@ -105,7 +106,7 @@ public class ResourceLinkTest {
 
             @Override
             boolean isDownloadPermissionBasedRestricted(final Contentlet contentlet,
-                    final User user) throws DotDataException {
+                                                        final User user) throws DotDataException {
                 return !USER_ADMIN_ID.equals(user.getUserId());
             }
 
@@ -115,6 +116,10 @@ public class ResourceLinkTest {
 
                 return Tuple.of("/dA/" + APILocator.getShortyAPI().shortify(contentlet.getInode()) + "/" + velocityVarName + "/" + binary.getName(),
                         "/dA/" + APILocator.getShortyAPI().shortify(contentlet.getIdentifier()) + "/" + velocityVarName + "/" + binary.getName());
+            }
+            @Override
+            String replaceUrlPattern(final String pattern, final Contentlet contentlet, final Identifier identifier, final Metadata metadata, final Host site) {
+                return String.format("/dA/%s/%s", contentlet.getInode(), htmlFileName);
             }
         };
         return resourceLinkBuilder;
@@ -183,7 +188,7 @@ public class ResourceLinkTest {
         final long languageId = 1L;
         final boolean isSecure = false;
 
-        final File file = FileUtil.createTemporaryFile("comments-list", "html", "This is a test temporal file");
+        final File file = FileUtil.createTemporaryFile(TempFileAPI.TEMP_RESOURCE_PREFIX + "comments-list", "html", "This is a test temporal file");
 
         final String htmlFileName = file.getName();
 
