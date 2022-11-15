@@ -54,11 +54,15 @@ export class DotEditContentToolbarHtmlService {
             .subscribe((isEnterpriseLicense: boolean) => {
                 this.isEnterpriseLicense = isEnterpriseLicense;
 
-                const containers = Array.from(
-                    doc.querySelectorAll('[data-dot-object="container"]')
-                );
-                containers.forEach((container: HTMLElement) => {
-                    this.createContainerToolbar(container);
+                doc.addEventListener('mouseover', (e) => {
+                    const container: HTMLElement = (e.target as Element).closest(
+                        '[data-dot-object="container"]:not([data-dot-toolbar="true"]'
+                    );
+
+                    if (container) {
+                        container.setAttribute('data-dot-toolbar', 'true');
+                        this.createContainerToolbar(container);
+                    }
                 });
             });
     }

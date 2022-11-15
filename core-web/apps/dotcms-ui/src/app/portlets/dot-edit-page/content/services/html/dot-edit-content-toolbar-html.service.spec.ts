@@ -24,9 +24,14 @@ describe('DotEditContentToolbarHtmlService', () => {
     let testDoc: Document;
     let dummyContainer: HTMLDivElement;
 
-    function dispatchMouseOver() {
-        const el = testDoc.querySelector('.large-column');
-        el.dispatchEvent(mouseoverEvent);
+    function dispatchMouseOver(query, selectAll = true) {
+        if (selectAll) {
+            const elements = testDoc.querySelectorAll(query) || [];
+            elements.forEach((el) => el.dispatchEvent(mouseoverEvent));
+        } else {
+            const el = testDoc.querySelector(query);
+            el.dispatchEvent(mouseoverEvent);
+        }
     }
 
     const messageServiceMock = new MockDotMessageService({
@@ -80,6 +85,7 @@ describe('DotEditContentToolbarHtmlService', () => {
                     const htmlElement: HTMLHtmlElement = testDoc.getElementsByTagName('html')[0];
                     htmlElement.appendChild(dummyContainer);
                     service.addContainerToolbar(testDoc);
+                    dispatchMouseOver('[data-dot-object="container"]');
                 });
 
                 it('should create container toolbar', () => {
@@ -102,6 +108,7 @@ describe('DotEditContentToolbarHtmlService', () => {
                     const htmlElement: HTMLHtmlElement = testDoc.getElementsByTagName('html')[0];
                     htmlElement.appendChild(dummyContainer);
                     service.addContainerToolbar(testDoc);
+                    dispatchMouseOver('[data-dot-object="container"]');
                     menuItems = testDoc.querySelectorAll('.dotedit-menu__item a');
                     const menuItemsLabels = Array.from(menuItems).map((item) =>
                         item.textContent.replace(/\s/g, '')
@@ -117,6 +124,7 @@ describe('DotEditContentToolbarHtmlService', () => {
                     const htmlElement: HTMLHtmlElement = testDoc.getElementsByTagName('html')[0];
                     htmlElement.appendChild(dummyContainer);
                     service.addContainerToolbar(testDoc);
+                    dispatchMouseOver('[data-dot-object="container"]');
                     menuItems = testDoc.querySelectorAll('.dotedit-menu__item a');
                     const menuItemsLabels = Array.from(menuItems).map((item) =>
                         item.textContent.replace(/\s/g, '')
@@ -132,6 +140,7 @@ describe('DotEditContentToolbarHtmlService', () => {
                     const htmlElement: HTMLHtmlElement = testDoc.getElementsByTagName('html')[0];
                     htmlElement.appendChild(dummyContainer);
                     service.addContainerToolbar(testDoc);
+                    dispatchMouseOver('[data-dot-object="container"]');
                     menuItems = testDoc.querySelectorAll('.dotedit-menu__item a');
                     const menuItemsLabels = Array.from(menuItems).map((item) =>
                         item.textContent.replace(/\s/g, '')
@@ -152,11 +161,12 @@ describe('DotEditContentToolbarHtmlService', () => {
                     it('should have content, widget and form', () => {
                         dummyContainer.innerHTML =
                             '<div data-dot-object="container" data-dot-can-add="CONTENT,WIDGET,FORM"></div>';
-                        const htmlElement: HTMLHtmlElement = testDoc.getElementsByTagName(
-                            'html'
-                        )[0];
+                        const htmlElement: HTMLHtmlElement =
+                            testDoc.getElementsByTagName('html')[0];
                         htmlElement.appendChild(dummyContainer);
                         service.addContainerToolbar(testDoc);
+                        dispatchMouseOver('[data-dot-object="container"]');
+
                         menuItems = testDoc.querySelectorAll('.dotedit-menu__item ');
 
                         expect(menuItems.length).toEqual(3);
@@ -182,11 +192,11 @@ describe('DotEditContentToolbarHtmlService', () => {
                                 </div>
                             </div>
                         `;
-                        const htmlElement: HTMLHtmlElement = testDoc.getElementsByTagName(
-                            'html'
-                        )[0];
+                        const htmlElement: HTMLHtmlElement =
+                            testDoc.getElementsByTagName('html')[0];
                         htmlElement.appendChild(dummyContainer);
                         service.addContainerToolbar(testDoc);
+                        dispatchMouseOver('[data-dot-object="container"]');
                     });
 
                     it('should create container toolbar', () => {
@@ -240,6 +250,7 @@ describe('DotEditContentToolbarHtmlService', () => {
                 `;
                 htmlElement.appendChild(dummyContainer);
                 service.addContainerToolbar(testDoc);
+                dispatchMouseOver('[data-dot-object="container"]');
 
                 containerEl = testDoc.querySelector('[data-dot-object="container"]');
                 addButtonEl = testDoc.querySelector('.dotedit-container__add');
@@ -289,7 +300,7 @@ describe('DotEditContentToolbarHtmlService', () => {
             });
 
             it('should create buttons', () => {
-                dispatchMouseOver();
+                dispatchMouseOver('.large-column');
 
                 expect(testDoc.querySelectorAll('.dotedit-contentlet__drag').length).toEqual(1);
                 expect(testDoc.querySelectorAll('.dotedit-contentlet__edit').length).toEqual(1);
@@ -303,7 +314,7 @@ describe('DotEditContentToolbarHtmlService', () => {
             });
 
             it('should have edit button disabled', () => {
-                dispatchMouseOver();
+                dispatchMouseOver('.large-column');
 
                 expect(
                     testDoc
@@ -329,7 +340,7 @@ describe('DotEditContentToolbarHtmlService', () => {
             });
 
             it('should create buttons for only one contentlet', () => {
-                dispatchMouseOver();
+                dispatchMouseOver('.large-column', false);
 
                 expect(testDoc.querySelectorAll('.dotedit-contentlet__drag').length).toEqual(1);
                 expect(testDoc.querySelectorAll('.dotedit-contentlet__edit').length).toEqual(1);
@@ -350,7 +361,7 @@ describe('DotEditContentToolbarHtmlService', () => {
             });
 
             it('should have edit button disabled', () => {
-                dispatchMouseOver();
+                dispatchMouseOver('.large-column');
 
                 expect(
                     testDoc
