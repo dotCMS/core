@@ -443,11 +443,10 @@ export class DotContainerListStore extends ComponentStore<DotContainerListState>
 
     /**
      * Handle selected container.
-     *
      * @param {DotContainer} container
      * @memberof DotContainerListComponent
      */
-    private editContainer(container: DotContainer): void {
+    editContainer(container: DotContainer): void {
         this.isContainerAsFile(container)
             ? this.dotSiteBrowserService
                   .setSelectedFolder(container.identifier)

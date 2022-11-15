@@ -147,7 +147,7 @@ export function encodeChars(value: string): string {
  * @param string value
  * @returns string
  */
- export function decodeChars(value: string): string {
+export function decodeChars(value: string): string {
     let decodedValue = value
         .replace(/&#34;/gi, '"')
         .replace(/&#92;/gi, '\\')

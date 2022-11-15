@@ -60,6 +60,15 @@ export class ContainerListComponent implements OnDestroy {
     }
 
     /**
+     * Get the clicked container row and redirect to edit container page.
+     * @param {DotContainer} container
+     * @memberof ContainerListComponent
+     */
+    handleRowClick(container: DotContainer) {
+        this.store.editContainer(container);
+    }
+
+    /**
      * Handle filter for hide / show archive containers
      * @param {boolean} checked
      *

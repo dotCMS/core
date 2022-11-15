@@ -16,6 +16,8 @@ import com.dotcms.content.business.json.ContentletJsonAPI;
 import com.dotcms.content.business.json.ContentletJsonHelper;
 import com.dotcms.content.elasticsearch.ESQueryCache;
 import com.dotcms.content.elasticsearch.util.RestHighLevelClientProvider;
+import com.dotcms.contenttype.business.StoryBlockReferenceResult;
+import com.dotcms.contenttype.model.field.DataTypes;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.enterprise.license.LicenseManager;
 import com.dotcms.exception.ExceptionUtil;
@@ -85,6 +87,7 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;
 import com.google.common.primitives.Ints;
 import com.liferay.portal.model.User;
+import io.vavr.Tuple2;
 import io.vavr.control.Try;
 import java.io.Serializable;
 import java.sql.Connection;
@@ -144,6 +147,7 @@ import org.jetbrains.annotations.NotNull;
  */
 public class ESContentFactoryImpl extends ContentletFactory {
 
+    private static final boolean REFRESH_BLOCK_EDITOR_REFERENCES = Config.getBooleanProperty("REFRESH_BLOCK_EDITOR_REFERENCES", true);
     private static final String[] ES_FIELDS = {"inode", "identifier"};
     public static final int ES_TRACK_TOTAL_HITS_DEFAULT = 10000000;
     public static final String ES_TRACK_TOTAL_HITS = "ES_TRACK_TOTAL_HITS";
@@ -854,7 +858,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
             if (CACHE_404_CONTENTLET.equals(contentlet.getInode())) {
                 return null;
             }
-            return contentlet;
+            return processContentletCache(contentlet);
         }
 
         final Optional<Contentlet> dbContentlet = this.findInDb(inode);
@@ -867,6 +871,31 @@ public class ESContentFactoryImpl extends ContentletFactory {
             return null;
         }
 
+    }
+
+    /*
+     * When a contentlet is being cached, may need some process since the value may be invalid.
+     * One of the things to check would be the contentlet references on the story block, if the contentlet
+     * has a story block field and contentlets referred in it, the code checks if the contentlets have been
+     * changed, if so updates the content and stores the json updated again to the contentlet
+     */
+    private Contentlet processContentletCache (final Contentlet contentletCached) {
+
+        if (REFRESH_BLOCK_EDITOR_REFERENCES) {
+
+            final StoryBlockReferenceResult storyBlockRefreshedResult =
+                    APILocator.getStoryBlockAPI().refreshReferences(contentletCached);
+
+            if (storyBlockRefreshedResult.isRefreshed()) {
+
+                Logger.debug(this, () -> "Refreshed story block dependencies for the contentlet: " + contentletCached.getIdentifier());
+                final Contentlet refreshedContentlet = (Contentlet) storyBlockRefreshedResult.getValue();
+                contentletCache.add(refreshedContentlet.getInode(), refreshedContentlet);
+                return refreshedContentlet;
+            }
+        }
+
+        return contentletCached;
     }
 
 	@Override
@@ -1094,7 +1123,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
     for (String i : inodes) {
       final Contentlet contentlet = contentletCache.get(i);
       if (contentlet != null && InodeUtils.isSet(contentlet.getInode())) {
-        conMap.put(contentlet.getInode(), contentlet);
+        conMap.put(contentlet.getInode(), processContentletCache(contentlet));
       }
     }
     

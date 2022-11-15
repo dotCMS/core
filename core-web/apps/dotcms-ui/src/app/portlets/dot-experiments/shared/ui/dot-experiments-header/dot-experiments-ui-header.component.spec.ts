@@ -25,17 +25,4 @@ describe('ExperimentsHeaderComponent', () => {
 
         expect(dotIconComponent).toExist();
     });
-
-    it('should trigger the go Back Output', () => {
-        let output;
-        const backLinkIcon: HTMLAnchorElement = spectator.query(byTestId('goback-button'));
-
-        spectator.output('goBack').subscribe((result) => {
-            output = result;
-        });
-
-        backLinkIcon.click();
-
-        expect(output).toEqual(true);
-    });
 });

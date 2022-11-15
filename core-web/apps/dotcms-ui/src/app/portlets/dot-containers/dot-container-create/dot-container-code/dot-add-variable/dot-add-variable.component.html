@@ -11,6 +11,7 @@
                 <div class="dot-add-variable-list__action">
                     <button
                         class="p-button-outlined p-button-secondary"
+                        [attr.data-testId]="variable.variable"
                         [label]="'Add' | dm"
                         (click)="onSave(variable.variable)"
                         pButton

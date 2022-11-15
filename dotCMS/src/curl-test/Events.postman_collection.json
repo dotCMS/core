@@ -1,9 +1,9 @@
 {
 	"info": {
-		"_postman_id": "c79a8f30-dcc8-49d4-9c54-f5459b1f64dc",
+		"_postman_id": "e15e3802-2e1d-4eea-a989-96ab18a5e00e",
 		"name": "Events",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
-		"_exporter_id": "4500400"
+		"_exporter_id": "11174695"
 	},
 	"item": [
 		{
@@ -88,6 +88,76 @@
 					]
 				},
 				"description": "Imports a Bundle that includes:\n* A piece of content with a tag field without any tags selected"
+			},
+			"response": []
+		},
+		{
+			"name": "analytics-app-save",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code is 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "basic",
+					"basic": [
+						{
+							"key": "password",
+							"value": "admin",
+							"type": "string"
+						},
+						{
+							"key": "username",
+							"value": "admin@dotCMS.com",
+							"type": "string"
+						},
+						{
+							"key": "saveHelperData",
+							"type": "any"
+						},
+						{
+							"key": "showPassword",
+							"value": false,
+							"type": "boolean"
+						}
+					]
+				},
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"name": "Content-Type",
+						"type": "text",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{ \n\t \"clientId\": {\n         \"value\": \"analytics-customer-customer1\"\n     },\n     \"clientSecret\": {\n         \"value\": \"testsecret\"\n     },\n     \"analyticsKey\": {\n         \"value\": \"\"\n     },\n     \"analyticsConfigUrl\": {\n         \"value\": \"http://localhost:8088/c/customer1/cluster1/keys\"\n     },\n     \"analyticsWriteUrl\": {\n         \"value\": \"http://localhost:8081/api/v1/s2s/event\"\n     },\n     \"analyticsReadUrl\": {\n         \"value\": \"https://localhost:4110\"\n     }\n}\n"
+				},
+				"url": {
+					"raw": "{{serverURL}}/api/v1/apps/dotAnalytics-config/48190c8c-42c4-46af-8d1a-0cd5db894797",
+					"host": [
+						"{{serverURL}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"apps",
+						"dotAnalytics-config",
+						"48190c8c-42c4-46af-8d1a-0cd5db894797"
+					]
+				},
+				"description": "This tests the endpoint that brings back one specific App/integration given the App-key followed by the site-id"
 			},
 			"response": []
 		},
@@ -211,6 +281,85 @@
 				}
 			},
 			"response": []
+		},
+		{
+			"name": "getJitsuLib",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"var response = pm.response.text(); ",
+							"",
+							"pm.test(\"Jitsu lib is fetched\", function () { ",
+							"    pm.response.to.have.status(200);",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{serverURL}}/s/lib.js",
+					"host": [
+						"{{serverURL}}"
+					],
+					"path": [
+						"s",
+						"lib.js"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "postJitsuEvents",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"var response = pm.response.text(); ",
+							"",
+							"pm.test(\"Jitsu events are posted\", function () { ",
+							"    pm.response.to.have.status(200);",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json",
+						"type": "text"
+					}
+				],
+				"url": {
+					"raw": "{{serverURL}}/api/v1/event",
+					"host": [
+						"{{serverURL}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"event"
+					]
+				}
+			},
+			"response": []
+		}
+	],
+	"variable": [
+		{
+			"key": "key",
+			"value": ""
 		}
 	]
 }

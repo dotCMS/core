@@ -1,0 +1,50 @@
+<p-card>
+    <ng-template pTemplate="title">
+        <div class="title">
+            <h2>{{ 'experiments.configure.variants.name' | dm }}</h2>
+            <dot-experiments-configuration-items-count
+                [count]="trafficProportion.variants.length"
+                [maxLength]="maxLength"
+            >
+            </dot-experiments-configuration-items-count>
+        </div>
+    </ng-template>
+    <ng-container *ngFor="let variant of trafficProportion.variants">
+        <p-card>
+            <div class="flex flex-row align-items-center align-content-between gap-2">
+                <div class="title flex flex-grow-1 flex-column">
+                    <span data-testId="variant-name">{{ variant.name }}</span>
+                    <span class="muted" *ngIf="variant.url" data-testId="variant-url">{{
+                        variant.url
+                    }}</span>
+                </div>
+
+                <span class="separator">|</span>
+
+                <p-button
+                    (onClick)="changeTrafficProportionType()"
+                    data-testId="variant-weight"
+                    label="{{ variant.weight }}% {{ 'experiments.configure.variants.weight' | dm }}"
+                    styleClass="p-button-sm p-button-link"
+                ></p-button>
+
+                <p-button
+                    (onClick)="viewVariant()"
+                    data-testId="variant-view-button"
+                    label="{{ 'experiments.configure.variants.view' | dm }}"
+                    pRipple
+                    styleClass="p-button-sm p-button-outlined no-padding"
+                    type="button"
+                ></p-button>
+            </div>
+        </p-card>
+    </ng-container>
+
+    <ng-template pTemplate="footer">
+        <p-button
+            (onClick)="addNewVariant()"
+            label="{{ 'experiments.configure.variants.add' | dm }}"
+            styleClass="p-button-sm p-button-link"
+        ></p-button>
+    </ng-template>
+</p-card>
