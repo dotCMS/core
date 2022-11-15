@@ -77,7 +77,7 @@
 					"response": []
 				},
 				{
-					"name": "createDraftExperiment_shoudSucceed",
+					"name": "createDraftExperiment",
 					"event": [
 						{
 							"listen": "test",
@@ -282,9 +282,9 @@
 									"pm.test(\"Status code should be ok 200\", function () {",
 									"    pm.response.to.have.status(200);",
 									"    ",
-									"    pm.expect(jsonData.entity.id).to.be.eq(pm.variables.get(\"experimentId\"));",
+									"    pm.expect(jsonData.entity[0].id).to.be.eq(pm.variables.get(\"experimentId\"));",
 									"",
-									"    pm.expect(jsonData.entity.pageUrl).to.be.eq(\"page_isUserIncluded_1\");",
+									"    pm.expect(jsonData.entity[0].pageUrl).to.be.eq(\"page_isUserIncluded_1\");",
 									"    var cookie = postman.getResponseCookie('runningExperiment');",
 									"    pm.expect(cookie).to.not.eq(null);",
 									"});",
@@ -449,7 +449,7 @@
 					"response": []
 				},
 				{
-					"name": "createDraftExperiment_shoudSucceed",
+					"name": "createDraftExperiment",
 					"event": [
 						{
 							"listen": "test",
@@ -718,9 +718,9 @@
 									"pm.test(\"Status code should be ok 200\", function () {",
 									"    pm.response.to.have.status(200);",
 									"    ",
-									"    pm.expect(jsonData.entity.id).to.be.eq(pm.variables.get(\"experimentId\"));",
+									"    pm.expect(jsonData.entity[0].id).to.be.eq(pm.variables.get(\"experimentId\"));",
 									"",
-									"    pm.expect(jsonData.entity.pageUrl).to.be.eq(\"page_isUserIncluded_2\");",
+									"    pm.expect(jsonData.entity[0].pageUrl).to.be.eq(\"page_isUserIncluded_2\");",
 									"    var cookie = postman.getResponseCookie('runningExperiment');",
 									"    pm.expect(cookie).to.not.eq(null);",
 									"});",
@@ -767,7 +767,7 @@
 									"pm.test(\"Status code should be ok 200\", function () {",
 									"    pm.response.to.have.status(200);",
 									"    ",
-									"    pm.expect(jsonData.entity.id).to.be.eq(\"NONE\");",
+									"    pm.expect(jsonData.entity[0].id).to.be.eq(\"NONE\");",
 									"});",
 									""
 								],
@@ -802,6 +802,20 @@
 				}
 			],
 			"description": "Steps in this Test:\n\n*   Create a new Page, it is going to be blank but it really no matter for this test\n*   Create a new Experiment with a rules, the condition for this rule sis the should exists the 'Testing' parameter into the request.\n*   Create a new Variant for the Experiment created before.\n*   Start this Experiment.\n*   Call the isUserInclude with the query params, it should.\n    *   Return the Experiment.\n    *   Return the experiment page's url\n    *   Create the cookie.\n*   Call the isUserInclude without the query params, it should.\n    *   Return the NONE Experiment"
+		}
+	],
+	"variable": [
+		{
+			"key": "page_id",
+			"value": ""
+		},
+		{
+			"key": "experimentId",
+			"value": ""
+		},
+		{
+			"key": "experimentShortId",
+			"value": ""
 		}
 	]
 }

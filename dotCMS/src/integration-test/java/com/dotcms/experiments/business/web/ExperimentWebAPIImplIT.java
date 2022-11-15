@@ -2,6 +2,7 @@ package com.dotcms.experiments.business.web;
 
 import static com.dotcms.util.CollectionsUtils.map;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
@@ -65,16 +66,61 @@ public class ExperimentWebAPIImplIT {
             for (int i = 0; i < 10; i++) {
                 final DotCMSMockResponse response = new DotCMSMockResponse();
 
-                final SelectedExperiment experimentSelected = WebAPILocator.getExperimentWebAPI()
+                final List<SelectedExperiment> experimentsSelected = WebAPILocator.getExperimentWebAPI()
                         .isUserIncluded(request, response);
 
-                assertEquals(experiment.id().get(), experimentSelected.id());
-                assertEquals(htmlPageAsset.getPageUrl(), experimentSelected.pageUrl());
+                assertFalse(experimentsSelected.isEmpty());
+                assertEquals(experiment.id().get(), experimentsSelected.get(0).id());
+                assertEquals(htmlPageAsset.getPageUrl(), experimentsSelected.get(0).pageUrl());
 
-                checkCookie(response, experimentSelected, experimentStarted.scheduling().get().endDate().get());
+                checkCookie(response, experimentsSelected.get(0), experimentStarted.scheduling().get().endDate().get());
             }
         } finally {
             ExperimentDataGen.end(experiment);
+        }
+    }
+    /**
+     * Method to test: {@link ExperimentWebAPIImpl#isUserIncluded(HttpServletRequest, HttpServletResponse)}
+     * When: You have 2 experiments running with 100% of traffic allocation and without targeting
+     * Should: Return the two experiments all the time
+     *
+     * @throws DotDataException
+     */
+    @Test
+    public void isUserIncludedInMoreThanOneExperiment() throws DotDataException, DotSecurityException {
+        final Experiment experiment_1 = new ExperimentDataGen().trafficAllocation(100).nextPersisted();
+        final Experiment experiment_2 = new ExperimentDataGen().trafficAllocation(100).nextPersisted();
+
+        try {
+            final Experiment experimentStarted_1 = ExperimentDataGen.start(experiment_1);
+            final Experiment experimentStarted_2 = ExperimentDataGen.start(experiment_2);
+
+            final HTMLPageAsset htmlPageAsset_1 = getExperimentPage(experimentStarted_1);
+            final HTMLPageAsset htmlPageAsset_2 = getExperimentPage(experimentStarted_2);
+
+            final HttpServletRequest request = mock(HttpServletRequest.class);
+
+            for (int i = 0; i < 10; i++) {
+                final DotCMSMockResponse response = new DotCMSMockResponse();
+
+                final List<SelectedExperiment> experimentsSelected = WebAPILocator.getExperimentWebAPI()
+                        .isUserIncluded(request, response);
+
+                assertTrue(experimentsSelected.size() == 2);
+
+                for (SelectedExperiment selectedExperiment : experimentsSelected) {
+                    if (selectedExperiment.id().equals(experiment_1.id())) {
+                        assertEquals(htmlPageAsset_1.getPageUrl(), selectedExperiment.pageUrl());
+                        checkCookie(response, selectedExperiment, experiment_1.scheduling().get().endDate().get());
+                    } else if (selectedExperiment.id().equals(experiment_2.id())) {
+                        assertEquals(htmlPageAsset_2.getPageUrl(), selectedExperiment.pageUrl());
+                        checkCookie(response, selectedExperiment, experiment_2.scheduling().get().endDate().get());
+                    }
+                }
+            }
+        } finally {
+            ExperimentDataGen.end(experiment_1);
+            ExperimentDataGen.end(experiment_2);
         }
     }
 
@@ -86,9 +132,9 @@ public class ExperimentWebAPIImplIT {
     private void checkCookie(final DotCMSMockResponse response,
             final SelectedExperiment experimentSelected, final Instant expire)  {
 
-        final Cookie runningExperimentCookie = response.getCookie("runningExperiment")
+        final Cookie runningExperimentCookie = response.getCookie("runningExperiment_" + experimentSelected.id())
                 .orElseThrow(() -> new AssertionError(
-                        "The cookie runningExperiment should exists"));
+                        "The cookie " + "runningExperiment_" + experimentSelected.id() +" should exists"));
 
         final String[] cookieValues = runningExperimentCookie.getValue().split(StringPool.AMPERSAND);
         final Map<String, String> cookiesValueMap = new HashMap<>();
@@ -124,13 +170,14 @@ public class ExperimentWebAPIImplIT {
         for (int i = 0; i < 10; i++) {
 
             final DotCMSMockResponse response = new DotCMSMockResponse();
-            final SelectedExperiment experimentSelected = WebAPILocator.getExperimentWebAPI()
+            final List<SelectedExperiment> experimentsSelected = WebAPILocator.getExperimentWebAPI()
                     .isUserIncluded(request, response);
 
-            assertEquals(ExperimentWebAPI.NONE_EXPERIMENT.id(), experimentSelected.id());
-            assertEquals(ExperimentWebAPI.NONE_EXPERIMENT.pageUrl(), experimentSelected.pageUrl());
+            assertFalse(experimentsSelected.isEmpty());
+            assertEquals(ExperimentWebAPI.NONE_EXPERIMENT.id(), experimentsSelected.get(0).id());
+            assertEquals(ExperimentWebAPI.NONE_EXPERIMENT.pageUrl(), experimentsSelected.get(0).pageUrl());
 
-            checkCookie(response, experimentSelected, expireDate);
+            checkCookie(response, experimentsSelected.get(0), expireDate);
         }
     }
 
@@ -153,11 +200,13 @@ public class ExperimentWebAPIImplIT {
 
             for (int i = 0; i < 10; i++) {
                 final DotCMSMockResponse response = new DotCMSMockResponse();
-                final SelectedExperiment experimentSelected = WebAPILocator.getExperimentWebAPI()
+                final List<SelectedExperiment> experimentsSelectedFromMethod = WebAPILocator.getExperimentWebAPI()
                         .isUserIncluded(request, response);
-                experimentsSelected.add(experimentSelected);
 
-                checkCookie(response, experimentSelected);
+                assertFalse(experimentsSelectedFromMethod.isEmpty());
+                experimentsSelected.add(experimentsSelectedFromMethod.get(0));
+
+                checkCookie(response, experimentsSelectedFromMethod.get(0));
             }
 
             final boolean anyNoneExperiment = experimentsSelected.stream()
@@ -195,10 +244,13 @@ public class ExperimentWebAPIImplIT {
 
             for (int i = 0; i < 10; i++) {
                 final DotCMSMockResponse response = new DotCMSMockResponse();
-                final SelectedExperiment experimentSelected = WebAPILocator.getExperimentWebAPI()
+                final List<SelectedExperiment> experimentsSelectedFromMethod = WebAPILocator.getExperimentWebAPI()
                         .isUserIncluded(request, response);
-                experimentsSelected.add(experimentSelected);
-                checkCookie(response, experimentSelected);
+
+                assertFalse(experimentsSelectedFromMethod.isEmpty());
+
+                experimentsSelected.add(experimentsSelectedFromMethod.get(0));
+                checkCookie(response, experimentsSelectedFromMethod.get(0));
             }
 
             final boolean anyNoneExperiment = experimentsSelected.stream()
@@ -256,13 +308,14 @@ public class ExperimentWebAPIImplIT {
 
             for (int i = 0; i < 10; i++) {
                 final DotCMSMockResponse response = new DotCMSMockResponse();
-                final SelectedExperiment experimentSelected = WebAPILocator.getExperimentWebAPI()
+                final List<SelectedExperiment> experimentsSelected = WebAPILocator.getExperimentWebAPI()
                         .isUserIncluded(request, response);
 
-                assertEquals(ExperimentWebAPI.NONE_EXPERIMENT.id(), experimentSelected.id());
-                assertEquals(ExperimentWebAPI.NONE_EXPERIMENT.pageUrl(), experimentSelected.pageUrl());
+                assertFalse(experimentsSelected.isEmpty());
+                assertEquals(ExperimentWebAPI.NONE_EXPERIMENT.id(), experimentsSelected.get(0).id());
+                assertEquals(ExperimentWebAPI.NONE_EXPERIMENT.pageUrl(), experimentsSelected.get(0).pageUrl());
 
-                checkCookie(response, experimentSelected);
+                checkCookie(response, experimentsSelected.get(0));
             }
         } finally {
             ExperimentDataGen.end(experiment);
@@ -272,7 +325,7 @@ public class ExperimentWebAPIImplIT {
     /**
      * Method to test: {@link ExperimentWebAPIImpl#isUserIncluded(HttpServletRequest, HttpServletResponse)}
      * When: You have one experiment with a rules but the rules conditions is TRUE
-     * Should: Return {@link ExperimentWebAPIImpl#NONE_EXPERIMENT} all the times
+     * Should: Return Experiment as selected all the time
      *
      * @throws DotDataException
      * @throws DotSecurityException
@@ -302,16 +355,79 @@ public class ExperimentWebAPIImplIT {
             for (int i = 0; i < 10; i++) {
                 final DotCMSMockResponse response = new DotCMSMockResponse();
 
-                final SelectedExperiment experimentSelected = WebAPILocator.getExperimentWebAPI()
+                final List<SelectedExperiment> experimentsSelected = WebAPILocator.getExperimentWebAPI()
                         .isUserIncluded(request, response);
 
-                assertEquals(experiment.id().get(), experimentSelected.id());
-                assertEquals(htmlPageAsset.getPageUrl(), experimentSelected.pageUrl());
+                assertFalse(experimentsSelected.isEmpty());
+                assertEquals(experiment.id().get(), experimentsSelected.get(0).id());
+                assertEquals(htmlPageAsset.getPageUrl(), experimentsSelected.get(0).pageUrl());
 
-                checkCookie(response, experimentSelected);
+                checkCookie(response, experimentsSelected.get(0));
             }
         } finally {
             ExperimentDataGen.end(experiment);
+        }
+    }
+
+    /**
+     * Method to test: {@link ExperimentWebAPIImpl#isUserIncluded(HttpServletRequest, HttpServletResponse)}
+     * When: You have 2 experiments with a rules and the rules conditions is TRUE for both of them
+     * Should: Return {@link ExperimentWebAPIImpl#NONE_EXPERIMENT} all the times
+     *
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    @Test
+    public void severalExperimenstWithTrueRules() throws DotDataException, DotSecurityException {
+        final TargetingCondition targetingCondition = TargetingCondition.builder()
+                .conditionKey("RequestAttributeConditionlet")
+                .values((Map<String, String>) map("comparison", "is", "request-attribute",
+                        "testing-attribute", "request-attribute-value", "testing"))
+                .operator(LogicalOperator.AND)
+                .build();
+
+        final Experiment experiment_1 = new ExperimentDataGen()
+                .trafficAllocation(100)
+                .addTargetingConditions(targetingCondition)
+                .nextPersisted();
+
+
+        final Experiment experiment_2 = new ExperimentDataGen()
+                .trafficAllocation(100)
+                .addTargetingConditions(targetingCondition)
+                .nextPersisted();
+
+        final HTMLPageAsset htmlPageAsset_1 = getExperimentPage(experiment_1);
+        final HTMLPageAsset htmlPageAsset_2 = getExperimentPage(experiment_2);
+
+        try{
+            ExperimentDataGen.start(experiment_1);
+            ExperimentDataGen.start(experiment_2);
+
+            final HttpServletRequest request = mock(HttpServletRequest.class);
+            when(request.getAttribute("testing-attribute")).thenReturn("testing");
+
+            for (int i = 0; i < 10; i++) {
+                final DotCMSMockResponse response = new DotCMSMockResponse();
+
+                final List<SelectedExperiment> experimentsSelected = WebAPILocator.getExperimentWebAPI()
+                        .isUserIncluded(request, response);
+
+                assertEquals(experimentsSelected.size(), 2);
+
+                for (final SelectedExperiment selectedExperiment : experimentsSelected) {
+                    if (selectedExperiment.id().equals(experiment_1.id())) {
+                        assertEquals(htmlPageAsset_1.getPageUrl(), selectedExperiment.pageUrl());
+                        checkCookie(response, selectedExperiment, experiment_1.scheduling().get().endDate().get());
+                    } else if (selectedExperiment.id().equals(experiment_2.id())) {
+                        assertEquals(htmlPageAsset_2.getPageUrl(), selectedExperiment.pageUrl());
+                        checkCookie(response, selectedExperiment, experiment_2.scheduling().get().endDate().get());
+                    }
+                }
+            }
+        } finally {
+            ExperimentDataGen.end(experiment_1);
+            ExperimentDataGen.end(experiment_2);
         }
     }
 
@@ -343,15 +459,16 @@ public class ExperimentWebAPIImplIT {
 
             for (int i = 0; i < 20; i++) {
                 final DotCMSMockResponse response = new DotCMSMockResponse();
-                final SelectedExperiment experimentSelected = WebAPILocator.getExperimentWebAPI()
+                final List<SelectedExperiment> experimentsSelected = WebAPILocator.getExperimentWebAPI()
                         .isUserIncluded(request, response);
 
-                assertEquals(experiment.id().get(), experimentSelected.id());
-                assertEquals(htmlPageAsset.getPageUrl(), experimentSelected.pageUrl());
+                assertFalse(experimentsSelected.isEmpty());
+                assertEquals(experiment.id().get(), experimentsSelected.get(0).id());
+                assertEquals(htmlPageAsset.getPageUrl(), experimentsSelected.get(0).pageUrl());
 
-                experiments.add(experimentSelected);
+                experiments.add(experimentsSelected.get(0));
 
-                checkCookie(response, experimentSelected);
+                checkCookie(response, experimentsSelected.get(0));
             }
 
             final TrafficProportion trafficProportion = experiment.trafficProportion();

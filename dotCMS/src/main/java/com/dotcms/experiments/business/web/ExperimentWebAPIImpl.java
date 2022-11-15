@@ -1,5 +1,6 @@
 package com.dotcms.experiments.business.web;
 
+import static com.dotcms.util.CollectionsUtils.list;
 import static com.dotcms.util.CollectionsUtils.map;
 import static org.junit.Assert.assertEquals;
 
@@ -8,6 +9,7 @@ import com.dotcms.experiments.model.ExperimentVariant;
 import com.dotcms.experiments.model.TrafficProportion;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
@@ -18,6 +20,7 @@ import com.liferay.util.StringPool;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
@@ -34,20 +37,32 @@ import org.jetbrains.annotations.NotNull;
 public class ExperimentWebAPIImpl implements ExperimentWebAPI {
 
     @Override
-    public SelectedExperiment isUserIncluded(final HttpServletRequest request, final HttpServletResponse response)
+    public List<SelectedExperiment> isUserIncluded(final HttpServletRequest request, final HttpServletResponse response)
             throws DotDataException, DotSecurityException {
         final List<Experiment> experimentRunning = APILocator.getExperimentsAPI()
                 .getRunningExperiment();
 
-        final Optional<Experiment> experiment = pickOneExperiment(experimentRunning, request,
-                response);
-        final SelectedExperiment selectedExperiment = experiment.isPresent() ?
-                createSelectedExperiment(experiment.get()) : NONE_EXPERIMENT;
+        final List<Experiment> experiments = pickExperiments(experimentRunning, request, response);
 
-        final Instant instant = experiment.isPresent() ?
-                experiment.get().scheduling().get().endDate().get() : getDefaultExpireDate();
+        if (!experiments.isEmpty()) {
+            return  experiments.stream()
+                        .map(experiment -> createSelectedExperimentAndCreateCookie(response,
+                                experiment))
+                        .collect(Collectors.toList());
+        } else {
+            setCookie(NONE_EXPERIMENT, response, getDefaultExpireDate());
+            return list(NONE_EXPERIMENT);
+        }
+    }
+
+    @NotNull
+    private SelectedExperiment createSelectedExperimentAndCreateCookie(
+            final HttpServletResponse response,
+            final Experiment experiment) {
+        final SelectedExperiment selectedExperiment = createSelectedExperiment(
+                experiment);
+        final Instant instant = experiment.scheduling().get().endDate().get();
         setCookie(selectedExperiment, response, instant);
-
         return selectedExperiment;
     }
 
@@ -62,12 +77,17 @@ public class ExperimentWebAPIImpl implements ExperimentWebAPI {
             final HttpServletResponse response, final Instant expire) {
 
         final String cookieValue = getCookieValue(experimentSelected);
-        final  Cookie runningExperimentCookie = new Cookie("runningExperiment", cookieValue);
+        final String cookieName = getCookieName(experimentSelected);
+        final  Cookie runningExperimentCookie = new Cookie(cookieName, cookieValue);
 
         final Duration res = Duration.between(Instant.now(), expire);
         runningExperimentCookie.setMaxAge((int) res.getSeconds());
 
         response.addCookie(runningExperimentCookie);
+    }
+
+    private String getCookieName(final SelectedExperiment experimentSelected) {
+        return "runningExperiment_" + experimentSelected.id();
     }
 
     @NotNull
@@ -83,8 +103,7 @@ public class ExperimentWebAPIImpl implements ExperimentWebAPI {
         return new RandomString(20).nextString();
     }
 
-    private SelectedExperiment createSelectedExperiment(final Experiment experiment)
-            throws DotDataException {
+    private SelectedExperiment createSelectedExperiment(final Experiment experiment) {
         final SelectedVariant variantSelected = pickOneVariant(experiment);
         return getExperimentSelected(experiment, variantSelected);
     }
@@ -113,8 +132,7 @@ public class ExperimentWebAPIImpl implements ExperimentWebAPI {
     }
 
     private SelectedExperiment getExperimentSelected(final Experiment experiment,
-            final SelectedVariant variantSelected)
-            throws DotDataException {
+            final SelectedVariant variantSelected) {
 
         final HTMLPageAsset htmlPageAsset = getHtmlPageAsset(experiment);
 
@@ -126,30 +144,36 @@ public class ExperimentWebAPIImpl implements ExperimentWebAPI {
                 variantSelected);
     }
 
-    private Optional<Experiment> pickOneExperiment(final List<Experiment> experiments,
+    private List<Experiment> pickExperiments(final List<Experiment> runningExperiments,
             final HttpServletRequest request, final HttpServletResponse response)
             throws DotDataException, DotSecurityException {
 
-        for (final Experiment experiment : experiments) {
+        final List<Experiment> experiments = new ArrayList<>();
+
+        for (final Experiment experiment : runningExperiments) {
             final int randomValue = nextRandomNumber();
 
             if (randomValue < experiment.trafficAllocation()) {
                 if (this.checkRule(experiment, request, response)) {
-                    return Optional.of(experiment);
+                    experiments.add(experiment);
                 }
             }
         }
 
-        return Optional.empty();
+        return experiments;
     }
 
-    private HTMLPageAsset getHtmlPageAsset(final Experiment experiment) throws DotDataException {
+    private HTMLPageAsset getHtmlPageAsset(final Experiment experiment) {
 
-        final Contentlet contentlet = APILocator.getContentletAPI()
-                .findContentletByIdentifierAnyLanguage(experiment.pageId(), false);
-        final HTMLPageAsset htmlPageAsset = APILocator.getHTMLPageAssetAPI()
-                .fromContentlet(contentlet);
-        return htmlPageAsset;
+        try {
+            final Contentlet contentlet = APILocator.getContentletAPI()
+                    .findContentletByIdentifierAnyLanguage(experiment.pageId(), false);
+            final HTMLPageAsset htmlPageAsset = APILocator.getHTMLPageAssetAPI()
+                    .fromContentlet(contentlet);
+            return htmlPageAsset;
+        } catch (DotDataException e) {
+            throw new DotRuntimeException(e);
+        }
     }
 
     private boolean checkRule(final Experiment experiment, final HttpServletRequest request,
