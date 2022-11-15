@@ -31,4 +31,11 @@
     <p [innerHTML]="map[value]" data-testId="description"></p>
 </div>
 
-<button [label]="'next' | dm" (click)="onClick()" pButton data-testId="button"></button>
+<button
+    [autofocus]="true"
+    [label]="'next' | dm"
+    (click)="onClick()"
+    pAutoFocus
+    pButton
+    data-testId="button"
+></button>
