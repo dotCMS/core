@@ -19,7 +19,7 @@ class DotLicenseServiceMock {
     }
 }
 
-describe('DotEditContentToolbarHtmlService', () => {
+fdescribe('DotEditContentToolbarHtmlService', () => {
     let service: DotEditContentToolbarHtmlService;
     let testDoc: Document;
     let dummyContainer: HTMLDivElement;
@@ -85,7 +85,6 @@ describe('DotEditContentToolbarHtmlService', () => {
                     const htmlElement: HTMLHtmlElement = testDoc.getElementsByTagName('html')[0];
                     htmlElement.appendChild(dummyContainer);
                     service.addContainerToolbar(testDoc);
-                    dispatchMouseOver('[data-dot-object="container"]');
                 });
 
                 it('should create container toolbar', () => {
@@ -108,7 +107,6 @@ describe('DotEditContentToolbarHtmlService', () => {
                     const htmlElement: HTMLHtmlElement = testDoc.getElementsByTagName('html')[0];
                     htmlElement.appendChild(dummyContainer);
                     service.addContainerToolbar(testDoc);
-                    dispatchMouseOver('[data-dot-object="container"]');
                     menuItems = testDoc.querySelectorAll('.dotedit-menu__item a');
                     const menuItemsLabels = Array.from(menuItems).map((item) =>
                         item.textContent.replace(/\s/g, '')
@@ -124,7 +122,6 @@ describe('DotEditContentToolbarHtmlService', () => {
                     const htmlElement: HTMLHtmlElement = testDoc.getElementsByTagName('html')[0];
                     htmlElement.appendChild(dummyContainer);
                     service.addContainerToolbar(testDoc);
-                    dispatchMouseOver('[data-dot-object="container"]');
                     menuItems = testDoc.querySelectorAll('.dotedit-menu__item a');
                     const menuItemsLabels = Array.from(menuItems).map((item) =>
                         item.textContent.replace(/\s/g, '')
@@ -140,7 +137,6 @@ describe('DotEditContentToolbarHtmlService', () => {
                     const htmlElement: HTMLHtmlElement = testDoc.getElementsByTagName('html')[0];
                     htmlElement.appendChild(dummyContainer);
                     service.addContainerToolbar(testDoc);
-                    dispatchMouseOver('[data-dot-object="container"]');
                     menuItems = testDoc.querySelectorAll('.dotedit-menu__item a');
                     const menuItemsLabels = Array.from(menuItems).map((item) =>
                         item.textContent.replace(/\s/g, '')
@@ -165,7 +161,6 @@ describe('DotEditContentToolbarHtmlService', () => {
                             testDoc.getElementsByTagName('html')[0];
                         htmlElement.appendChild(dummyContainer);
                         service.addContainerToolbar(testDoc);
-                        dispatchMouseOver('[data-dot-object="container"]');
 
                         menuItems = testDoc.querySelectorAll('.dotedit-menu__item ');
 
@@ -196,7 +191,6 @@ describe('DotEditContentToolbarHtmlService', () => {
                             testDoc.getElementsByTagName('html')[0];
                         htmlElement.appendChild(dummyContainer);
                         service.addContainerToolbar(testDoc);
-                        dispatchMouseOver('[data-dot-object="container"]');
                     });
 
                     it('should create container toolbar', () => {
@@ -250,7 +244,6 @@ describe('DotEditContentToolbarHtmlService', () => {
                 `;
                 htmlElement.appendChild(dummyContainer);
                 service.addContainerToolbar(testDoc);
-                dispatchMouseOver('[data-dot-object="container"]');
 
                 containerEl = testDoc.querySelector('[data-dot-object="container"]');
                 addButtonEl = testDoc.querySelector('.dotedit-container__add');
