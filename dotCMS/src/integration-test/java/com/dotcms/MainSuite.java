@@ -15,7 +15,6 @@ import com.dotcms.content.elasticsearch.util.ESMappingUtilHelperTest;
 import com.dotcms.content.model.hydration.MetadataDelegateTest;
 import com.dotcms.contenttype.business.ContentTypeInitializerTest;
 import com.dotcms.contenttype.business.DotAssetBaseTypeToContentTypeStrategyImplTest;
-import com.dotcms.contenttype.business.StoryBlockAPITest;
 import com.dotcms.contenttype.test.DotAssetAPITest;
 import com.dotcms.csspreproc.CSSCacheTest;
 import com.dotcms.csspreproc.CSSPreProcessServletTest;
@@ -125,6 +124,24 @@ import com.dotmarketing.portlets.fileassets.business.FileAssetAPIImplIntegration
 import com.dotmarketing.portlets.fileassets.business.FileAssetFactoryIntegrationTest;
 import com.dotmarketing.portlets.folders.business.FolderFactoryImplTest;
 import com.dotmarketing.portlets.folders.model.FolderTest;
+import com.dotmarketing.portlets.rules.actionlet.PersonaActionletTest;
+import com.dotmarketing.portlets.rules.actionlet.SendRedirectActionletTest;
+import com.dotmarketing.portlets.rules.actionlet.SetRequestAttributeActionletTest;
+import com.dotmarketing.portlets.rules.actionlet.StopProcessingActionletTest;
+import com.dotmarketing.portlets.rules.conditionlet.DateTimeConditionletTest;
+import com.dotmarketing.portlets.rules.conditionlet.HttpMethodConditionletTest;
+import com.dotmarketing.portlets.rules.conditionlet.PagesViewedConditionletTest;
+import com.dotmarketing.portlets.rules.conditionlet.PersonaConditionletTest;
+import com.dotmarketing.portlets.rules.conditionlet.ReferrerURLConditionletTest;
+import com.dotmarketing.portlets.rules.conditionlet.RequestAttributeConditionletTest;
+import com.dotmarketing.portlets.rules.conditionlet.RequestHeaderConditionletTest;
+import com.dotmarketing.portlets.rules.conditionlet.RequestParameterConditionletTest;
+import com.dotmarketing.portlets.rules.conditionlet.SessionAttributeConditionletTest;
+import com.dotmarketing.portlets.rules.conditionlet.UsersBrowserConditionletTest;
+import com.dotmarketing.portlets.rules.conditionlet.UsersCountryConditionletTest;
+import com.dotmarketing.portlets.rules.conditionlet.UsersPlatformConditionletTest;
+import com.dotmarketing.portlets.rules.conditionlet.VisitorsCurrentURLConditionletTest;
+import com.dotmarketing.portlets.rules.conditionlet.VisitorsGeolocationConditionletTest;
 import com.dotmarketing.portlets.templates.business.FileAssetTemplateUtilTest;
 import com.dotmarketing.portlets.templates.business.TemplateFactoryImplTest;
 import com.dotmarketing.portlets.workflows.actionlet.MoveContentActionletTest;
@@ -177,14 +194,9 @@ import com.dotmarketing.startup.runonce.Task220512UpdateNoHTMLRegexValueTest;
 import com.dotmarketing.startup.runonce.Task220606UpdatePushNowActionletNameTest;
 import com.dotmarketing.startup.runonce.Task220822CreateVariantTableTest;
 import com.dotmarketing.startup.runonce.Task220824CreateDefaultVariantTest;
-import com.dotmarketing.startup.runonce.Task220829CreateExperimentsTableTest;
-
 import com.dotmarketing.startup.runonce.Task220825CreateVariantFieldTest;
-
 import com.dotmarketing.startup.runonce.Task220825MakeSomeSystemFieldsRemovableTest;
-
 import com.dotmarketing.startup.runonce.Task220829CreateExperimentsTableTest;
-
 import com.dotmarketing.startup.runonce.Task220912UpdateCorrectShowOnMenuPropertyTest;
 import com.dotmarketing.startup.runonce.Task220928AddLookbackWindowColumnToExperimentTest;
 import com.dotmarketing.startup.runonce.Task221007AddVariantIntoPrimaryKeyTest;
@@ -603,7 +615,26 @@ import org.junit.runners.Suite.SuiteClasses;
         BayesianAPIImplTest.class,
         ContentletDependenciesTest.class,
         UtilMethodsITest.class,
-        Task220912UpdateCorrectShowOnMenuPropertyTest.class
+        Task220912UpdateCorrectShowOnMenuPropertyTest.class,
+        PersonaActionletTest.class,
+        SendRedirectActionletTest.class,
+        SetRequestAttributeActionletTest.class,
+        StopProcessingActionletTest.class,
+        DateTimeConditionletTest.class,
+        HttpMethodConditionletTest.class,
+        PagesViewedConditionletTest.class,
+        PersonaConditionletTest.class,
+        ReferrerURLConditionletTest.class,
+        RequestAttributeConditionletTest.class,
+        RequestParameterConditionletTest.class,
+        RequestHeaderConditionletTest.class,
+        RequestParameterConditionletTest.class,
+        SessionAttributeConditionletTest.class,
+        UsersBrowserConditionletTest.class,
+        UsersCountryConditionletTest.class,
+        UsersPlatformConditionletTest.class,
+        VisitorsCurrentURLConditionletTest.class,
+        VisitorsGeolocationConditionletTest.class
 })
 public class MainSuite {
 
