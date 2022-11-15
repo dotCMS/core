@@ -32,7 +32,6 @@ export class DotCategoriesUtillService {
      * @returns Observable<DotCategory>
      * @memberof DotCategoriesUtillService
      */
-
     create(values: DotCategoryPayload): Observable<DotCategory> {
         return this.request<DotCategory>({
             method: 'POST',

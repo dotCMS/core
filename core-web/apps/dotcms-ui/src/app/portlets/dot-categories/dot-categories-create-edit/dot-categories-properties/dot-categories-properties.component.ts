@@ -9,6 +9,7 @@ import {
     DotCategoriesPropertiesStore,
     DotCategoriesPropertiesState
 } from './store/dot-categories-properties.store';
+import { DotCategoryPayload } from '@dotcms/app/shared/models/dot-categories/dot-categories.model';
 
 @Component({
     selector: 'dot-categories-properties',
@@ -31,24 +32,31 @@ export class DotCategoriesPropertiesComponent implements OnInit {
     }
 
     ngOnInit(): void {
-        this.store.categoryAndStructure$
-            .pipe(take(1))
-            .subscribe((state: DotCategoriesPropertiesState) => {
-                const { category } = state;
-                this.form = this.fb.group({
-                    categoryName: new FormControl(category?.categoryName ?? '', [
-                        Validators.required
-                    ]),
-                    categoryVelocityVarName: new FormControl(
-                        category?.categoryVelocityVarName ?? ''
-                    ),
-                    key: new FormControl(category?.key ?? ''),
-                    keywords: new FormControl(category?.keyWords ?? '')
-                });
+        this.store.category$.pipe(take(1)).subscribe((state: DotCategoriesPropertiesState) => {
+            const { category } = state;
+            this.form = this.fb.group({
+                categoryName: new FormControl(category?.categoryName ?? '', [Validators.required]),
+                categoryVelocityVarName: new FormControl(category?.categoryVelocityVarName ?? ''),
+                key: new FormControl(category?.key ?? ''),
+                keywords: new FormControl(category?.keyWords ?? '')
             });
-        this.form.valueChanges.pipe(takeUntil(this.destroy$)).subscribe((values) => {
-            this.store.updateIsContentTypeButtonEnabled(values.maxContentlets > 0);
         });
+        this.form.valueChanges.pipe(takeUntil(this.destroy$)).subscribe(() => {
+            this.store.updateIsContentTypeButtonEnabled(this.form.invalid);
+        });
+    }
+
+    slugify(text: string): string {
+        return text
+            ? text
+                  .toString()
+                  .toLowerCase()
+                  .replace(/\s+/g, '-') // Replace spaces with -
+                  .replace(/[^\w-]+/g, '') // Remove all non-word chars
+                  .replace(/--+/g, '-') // Replace multiple - with single -
+                  .replace(/^-+/, '') // Trim - from start of text
+                  .replace(/-+$/, '') // Trim - from end of text
+            : null;
     }
 
     /**
@@ -57,11 +65,15 @@ export class DotCategoriesPropertiesComponent implements OnInit {
      * @memberof DotCategoriesPropertiesComponent
      */
     save(): void {
-        const formValues = this.form.value;
+        const formValues: DotCategoryPayload = this.form.value;
+
         if (formValues.identifier) {
             this.store.editCategory(formValues);
         } else {
             delete formValues.identifier;
+            formValues.categoryVelocityVarName = this.slugify(
+                this.form.value.categoryVelocityVarName
+            );
             this.store.saveCategory(formValues);
         }
     }

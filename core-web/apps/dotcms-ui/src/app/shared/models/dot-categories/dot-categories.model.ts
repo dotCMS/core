@@ -26,6 +26,7 @@ export interface DotCategory {
 }
 
 export interface DotCategoryPayload {
+    identifier: string;
     categoryName: string;
     key: string;
     keyWords: string;

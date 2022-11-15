@@ -1,10 +1,10 @@
 @use "variables" as *;
 
 .dot-categories-properties__button-categories {
-    padding-top: 14px;
+    padding-top: $spacing-3;
 
     button:first-child {
-        margin-right: 14px;
+        margin-right: $spacing-3;
     }
 }
 
@@ -33,5 +33,5 @@
 }
 
 .dot-categories-properties__form {
-    margin-left: 22px;
+    margin-left: $spacing-4;
 }

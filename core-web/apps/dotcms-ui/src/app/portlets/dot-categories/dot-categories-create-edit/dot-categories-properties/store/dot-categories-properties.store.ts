@@ -39,21 +39,30 @@ export class DotCategoriesPropertiesStore extends ComponentStore<DotCategoriesPr
         return state;
     });
 
-    readonly categoryAndStructure$ = this.select(({ category }: DotCategoriesPropertiesState) => {
+    readonly category$ = this.select(({ category }: DotCategoriesPropertiesState) => {
         return {
             category
         };
     });
 
+    /**
+     * Updates the content type state.
+     * @return boolean
+     * @memberof DotCategoriesPropertiesStore
+     */
     readonly updateIsContentTypeButtonEnabled = this.updater<boolean>(
-        (state: DotCategoriesPropertiesState, isContentTypeButtonEnabled: boolean) => {
+        (state: DotCategoriesPropertiesState) => {
             return {
-                ...state,
-                isContentTypeButtonEnabled
+                ...state
             };
         }
     );
 
+    /**
+     * Updates the category state.
+     * @return DotCategory
+     * @memberof DotCategoriesPropertiesStore
+     */
     readonly updateCategoryState = this.updater<DotCategory>(
         (state: DotCategoriesPropertiesState, category: DotCategory) => {
             return {
@@ -63,6 +72,11 @@ export class DotCategoriesPropertiesStore extends ComponentStore<DotCategoriesPr
         }
     );
 
+    /**
+     * Saves the category state make http call and updates the state.
+     * @return DotCategoryPayload
+     * @memberof DotCategoriesPropertiesStore
+     */
     readonly saveCategory = this.effect((origin$: Observable<DotCategoryPayload>) => {
         return origin$.pipe(
             switchMap((category: DotCategoryPayload) => {
@@ -86,6 +100,11 @@ export class DotCategoriesPropertiesStore extends ComponentStore<DotCategoriesPr
         );
     });
 
+    /**
+     * Updated the category state make http call and updates the state.
+     * @return DotCategoryPayload
+     * @memberof DotCategoriesPropertiesStore
+     */
     readonly editCategory = this.effect((origin$: Observable<DotCategoryPayload>) => {
         return origin$.pipe(
             switchMap((category: DotCategoryPayload) => {
