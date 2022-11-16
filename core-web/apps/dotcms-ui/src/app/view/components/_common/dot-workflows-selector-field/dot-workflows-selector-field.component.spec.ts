@@ -6,12 +6,15 @@ import { waitForAsync } from '@angular/core/testing';
 import { DotWorkflowsSelectorFieldComponent } from './dot-workflows-selector-field.component';
 
 import { MultiSelect } from 'primeng/multiselect';
-import { DotMessageService, DotWorkflowService } from '@dotcms/data-access';
 import { UntypedFormGroup, UntypedFormBuilder } from '@angular/forms';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
-import { MockDotMessageService } from '@dotcms/utils-testing';
-import { mockWorkflows, DotWorkflowServiceMock } from '@dotcms/utils-testing';
 import { DOTTestBed } from '@dotcms/app/test/dot-test-bed';
+import { DotMessageService, DotWorkflowService } from '@dotcms/data-access';
+import {
+    DotWorkflowServiceMock,
+    MockDotMessageService,
+    mockWorkflows
+} from '@dotcms/utils-testing';
 
 const messageServiceMock = new MockDotMessageService({
     'dot.common.select.workflows': 'Pick it up',
@@ -101,31 +104,48 @@ describe('DotWorkflowsSelectorFieldComponent', () => {
                 expect(dotWorkflowService.get).toHaveBeenCalledTimes(1);
             });
 
-            describe('show options', () => {
-                beforeEach(() => {
-                    de.query(By.css('.p-multiselect')).triggerEventHandler('click', {
-                        target: {
-                            isSameNode: () => false
+            it('should have options', () => {
+                expect(multiselect.options).toEqual(
+                    jasmine.objectContaining([
+                        {
+                            id: '85c1515c-c4f3-463c-bac2-860b8fcacc34',
+                            creationDate: jasmine.any(Date),
+                            name: 'Default Scheme',
+                            description:
+                                'This is the default workflow scheme that will be applied to all content',
+                            archived: false,
+                            mandatory: false,
+                            defaultScheme: true,
+                            modDate: jasmine.any(Date),
+                            entryActionId: null,
+                            system: false
+                        },
+                        {
+                            id: '77a9bf3f-a402-4c56-9b1f-1050b9d345dc',
+                            creationDate: jasmine.any(Date),
+                            name: 'Document Management',
+                            description: 'Default workflow for documents',
+                            archived: true,
+                            mandatory: false,
+                            defaultScheme: false,
+                            modDate: jasmine.any(Date),
+                            entryActionId: null,
+                            system: false
+                        },
+                        {
+                            id: 'd61a59e1-a49c-46f2-a929-db2b4bfa88b2',
+                            creationDate: jasmine.any(Date),
+                            name: 'System Workflow',
+                            description: '',
+                            archived: false,
+                            mandatory: false,
+                            defaultScheme: false,
+                            modDate: jasmine.any(Date),
+                            entryActionId: null,
+                            system: true
                         }
-                    });
-                    fixture.detectChanges();
-                });
-
-                it('should fill the workflows options', () => {
-                    const itemsLabels = de
-                        .queryAll(By.css('.p-multiselect-items .workflow__label'))
-                        .map((item) => item.nativeElement.innerText);
-                    expect(itemsLabels).toEqual(mockWorkflows.map((workflow) => workflow.name));
-                });
-
-                it('should have archived item and message', () => {
-                    const archivedItems = de.queryAll(By.css('.workflow__archive-label'));
-                    expect(archivedItems.length).toBe(1, 'archivedItems');
-                    expect(archivedItems[0].nativeElement.innerText).toBe(mockWorkflows[1].name);
-                    const archivedMessage = de.queryAll(By.css('.workflow__archive-message'));
-                    expect(archivedMessage.length).toBe(1, 'archivedMessage');
-                    expect(archivedMessage[0].nativeElement.innerText).toBe('(Archivado)');
-                });
+                    ])
+                );
             });
         });
     });

@@ -15,8 +15,10 @@ import { DialogService, DynamicDialogModule } from 'primeng/dynamicdialog';
 import { DotMessagePipeModule } from '@pipes/dot-message/dot-message-pipe.module';
 import { DotTemplateSelectorModule } from './components/dot-template-selector/dot-template-selector.module';
 import { DotEmptyStateModule } from '@components/_common/dot-empty-state/dot-empty-state.module';
+
 import { DotSiteBrowserService } from '@dotcms/data-access';
 import { DotTemplatesService } from '@dotcms/app/api/services/dot-templates/dot-templates.service';
+import { AutoFocusModule } from 'primeng/autofocus';
 
 @NgModule({
     declarations: [DotTemplateListComponent],
@@ -34,7 +36,8 @@ import { DotTemplatesService } from '@dotcms/app/api/services/dot-templates/dot-
         DynamicDialogModule,
         DotBulkInformationModule,
         DotTemplateSelectorModule,
-        DotEmptyStateModule
+        DotEmptyStateModule,
+        AutoFocusModule
     ],
     providers: [DotTemplateListResolver, DotTemplatesService, DialogService, DotSiteBrowserService]
 })
