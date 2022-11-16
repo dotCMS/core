@@ -15,11 +15,13 @@ import { DotLoopEditorModule } from '@portlets/dot-containers/dot-container-crea
 import { DotContentEditorModule } from '@portlets/dot-containers/dot-container-create/dot-container-code/dot-container-code.module';
 import { DotContainersService } from '@services/dot-containers/dot-containers.service';
 import { DotApiLinkModule } from '@components/dot-api-link/dot-api-link.module';
+import { AutoFocusModule } from 'primeng/autofocus';
 
 @NgModule({
     declarations: [DotContainerPropertiesComponent],
     exports: [DotContainerPropertiesComponent],
     imports: [
+        AutoFocusModule,
         CommonModule,
         InplaceModule,
         SharedModule,
