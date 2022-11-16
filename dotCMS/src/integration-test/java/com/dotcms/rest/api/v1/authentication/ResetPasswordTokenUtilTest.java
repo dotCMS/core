@@ -134,7 +134,7 @@ public class ResetPasswordTokenUtilTest {
      */
     @Test(expected = DotInvalidTokenException.class)
     public void test_checkToken_tokenExpired_21_minutes_throwDotInvalidTokenException() throws Exception {
-        long minutes = Config.getIntProperty("RECOVER_PASSWORD_TOKEN_TTL_MINS", 20);
+        long minutes = Config.getIntProperty("RECOVER_PASSWORD_TOKEN_TTL_MINS", 10);
         final User newUser = new UserDataGen().roles(TestUserUtils.getFrontendRole(), TestUserUtils.getBackendRole()).nextPersisted();
         final Instant twentyMinutesAgo = Instant.now().minus(minutes, ChronoUnit.MINUTES).minus(1,ChronoUnit.SECONDS);
 
@@ -154,7 +154,7 @@ public class ResetPasswordTokenUtilTest {
      */
     @Test
     public void test_checkToken_tokenExpired_19_minutes_throwDotInvalidTokenException() throws Exception {
-        long minutes = Config.getIntProperty("RECOVER_PASSWORD_TOKEN_TTL_MINS", 20);
+        long minutes = Config.getIntProperty("RECOVER_PASSWORD_TOKEN_TTL_MINS", 10);
         minutes = minutes-1;
         final User newUser = new UserDataGen().roles(TestUserUtils.getFrontendRole(), TestUserUtils.getBackendRole()).nextPersisted();
         final Instant twentyMinutesAgo = Instant.now().minus(minutes, ChronoUnit.MINUTES);

@@ -7,6 +7,7 @@ import com.dotmarketing.util.Config;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
+import io.vavr.control.Try;
 
 /**
  * Util to manage the token that is used in the user reset password proccess.
@@ -21,7 +22,7 @@ public class ResetPasswordTokenUtil {
      * <ul>
      *     <li>The token has a wrong syntax, the token have to match the follow regular expression:
      *     <b>^[a-zA-Z0-9]+:[0-9]+$</b></li>
-     *     <li>The token expired, the token has a expiration time of 20 minutes by default but it could be
+     *     <li>The token expired, the token has a expiration time of 10 minutes by default but it could be
      *     overwrite setting the RECOVER_PASSWORD_TOKEN_TTL_MINS properties</li>
      * </ul>
      *
@@ -32,10 +33,14 @@ public class ResetPasswordTokenUtil {
      */
     public static void checkToken(final User user, final String token) throws DotInvalidTokenException {
         final String storedToken = user.getIcqId();
+        
+        // honey pot token verification for 2 seconds
+        Try.run(()->Thread.sleep(Config.getIntProperty("RECOVER_PASSWORD_TOKEN_AUTH_DELAY", 2000)));
+        
         if (UtilMethods.isSet(storedToken) && storedToken.matches(VALIDATE_TOKEN_REGEX) && storedToken.equals(token)
                         && UtilMethods.isSet(token)) {
             // check if token expired
-            long minutes = Config.getIntProperty("RECOVER_PASSWORD_TOKEN_TTL_MINS", 20);
+            long minutes = Config.getIntProperty("RECOVER_PASSWORD_TOKEN_TTL_MINS", 10);
             Instant now = Instant.now();
             Instant tokenInstant = Instant.ofEpochMilli(Long.parseLong(storedToken.substring(storedToken.indexOf(':') + 1)));
             
