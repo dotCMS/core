@@ -54,13 +54,20 @@ export class DotEditContentToolbarHtmlService {
             .subscribe((isEnterpriseLicense: boolean) => {
                 this.isEnterpriseLicense = isEnterpriseLicense;
 
+                const containers = Array.from(
+                    doc.querySelectorAll('[data-dot-object="container"]')
+                );
+                containers.forEach((container: HTMLElement) => {
+                    this.createContainerToolbar(container);
+                });
+
                 doc.addEventListener('mouseover', (e) => {
+                    // Containers
                     const container: HTMLElement = (e.target as Element).closest(
-                        '[data-dot-object="container"]:not([data-dot-toolbar="true"]'
+                        '[data-dot-object="container"]:not([data-dot-toolbar-container="true"]'
                     );
 
                     if (container) {
-                        container.setAttribute('data-dot-toolbar', 'true');
                         this.createContainerToolbar(container);
                     }
                 });
@@ -198,6 +205,7 @@ export class DotEditContentToolbarHtmlService {
         const containerToolbar = document.createElement('div');
         containerToolbar.classList.add('dotedit-container__toolbar');
         containerToolbar.setAttribute('data-dot-container-inode', container.dataset['dotInode']);
+        container.setAttribute('data-dot-toolbar-container', 'true');
 
         if (!container.dataset.dotCanAdd.length) {
             container.classList.add('disabled');
