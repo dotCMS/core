@@ -379,7 +379,7 @@
 			"description": "Steps in this Test:\n\n*   Create a new Page, it is going to be blank but it really no matter for this test\n*   Create a new Experiment.\n*   Create a new Variant for the Experiment created before.\n*   Start this Experiment.\n*   Call the isUserInclude it should:\n    *   Return the Experiment all the time\n    *   Return the url of the page\n    *   Create the cookie"
 		},
 		{
-			"name": "One Experiment - with rules - 100% traffic location Copy",
+			"name": "One Experiment - with rules - 100% traffic location",
 			"item": [
 				{
 					"name": "Create page",
@@ -797,6 +797,69 @@
 								}
 							]
 						}
+					},
+					"response": []
+				},
+				{
+					"name": "Stop Experiment",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"",
+									"",
+									"pm.test(\"Status code should be ok 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"pageId\": \"{{page_id}}\",\n    \"name\": \"Add/Remove content Experiment\",\n    \"description\": \"Expriment ro Add/Remove contentlet from a specific variant page\" \n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/experiments/{{experimentId}}/_end",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"experiments",
+								"{{experimentId}}",
+								"_end"
+							]
+						},
+						"description": "Create a new Experiment named \"Add/Remove content Experiment\" with the page created in the previous request."
 					},
 					"response": []
 				}
