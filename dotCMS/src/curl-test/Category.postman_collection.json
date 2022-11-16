@@ -2797,8 +2797,8 @@
 							"});",
 							"",
 							"pm.test('sort_order are in desc sorted order', () => {    ",
-							"    const isAscending = jsonData.entity.map(item => item.sortOrder).every((current, index, ids) => index === 0 || current <= ids[index-1]);    ",
-							"    pm.expect(isAscending).to.be.true;",
+							"    const isDescending = jsonData.entity.map(item => item.sortOrder).every((current, index, ids) => index === 0 || current <= ids[index-1]);    ",
+							"    pm.expect(isDescending).to.be.true;",
 							"});"
 						],
 						"type": "text/javascript"
