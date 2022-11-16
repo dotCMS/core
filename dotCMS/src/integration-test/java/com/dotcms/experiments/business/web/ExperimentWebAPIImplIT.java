@@ -73,6 +73,9 @@ public class ExperimentWebAPIImplIT {
                 assertEquals(experiment.id().get(), selectedExperiments.getExperiments().get(0).id());
                 assertEquals(htmlPageAsset.getPageUrl(), selectedExperiments.getExperiments().get(0).pageUrl());
 
+                assertEquals(1, selectedExperiments.getIncludeExperimentIds().size());
+                assertEquals(experiment.id().get(), selectedExperiments.getIncludeExperimentIds().get(0));
+
                 checkCookie(response, selectedExperiments.getExperiments().get(0),
                         experimentStarted.scheduling().get().endDate().get());
             }
@@ -80,6 +83,7 @@ public class ExperimentWebAPIImplIT {
             ExperimentDataGen.end(experiment);
         }
     }
+
     /**
      * Method to test: {@link ExperimentWebAPIImpl#isUserIncluded(HttpServletRequest, HttpServletResponse)}
      * When: You have 2 experiments running with 100% of traffic allocation and without targeting
@@ -107,7 +111,7 @@ public class ExperimentWebAPIImplIT {
                 final SelectedExperiments selectedExperiments = WebAPILocator.getExperimentWebAPI()
                         .isUserIncluded(request, response);
 
-                assertTrue(selectedExperiments.getExperiments().size() == 2);
+                assertEquals(2, selectedExperiments.getExperiments().size());
 
                 for (SelectedExperiment selectedExperiment : selectedExperiments.getExperiments()) {
                     if (selectedExperiment.id().equals(experiment_1.id())) {
@@ -118,6 +122,11 @@ public class ExperimentWebAPIImplIT {
                         checkCookie(response, selectedExperiment, experiment_2.scheduling().get().endDate().get());
                     }
                 }
+
+
+                assertEquals(2, selectedExperiments.getIncludeExperimentIds().size());
+                assertTrue(selectedExperiments.getIncludeExperimentIds().contains(experiment_1.id().get()));
+                assertTrue(selectedExperiments.getIncludeExperimentIds().contains(experiment_2.id().get()));
             }
         } finally {
             ExperimentDataGen.end(experiment_1);
@@ -182,6 +191,8 @@ public class ExperimentWebAPIImplIT {
                             .get(0).pageUrl());
 
             checkCookie(response, selectedExperiments.getExperiments().get(0), expireDate);
+
+            assertTrue(selectedExperiments.getIncludeExperimentIds().isEmpty());
         }
     }
 
@@ -211,6 +222,10 @@ public class ExperimentWebAPIImplIT {
                 experimentsSelected.add(selectedExperiments.getExperiments().get(0));
 
                 checkCookie(response, selectedExperiments.getExperiments().get(0));
+
+
+                assertEquals(1, selectedExperiments.getIncludeExperimentIds().size());
+                assertEquals(experiment.id().get(), selectedExperiments.getIncludeExperimentIds().get(0));
             }
 
             final boolean anyNoneExperiment = experimentsSelected.stream()
@@ -258,6 +273,10 @@ public class ExperimentWebAPIImplIT {
                     experimentsSelected.add(selectedExperiment);
                     checkCookie(response, selectedExperiment);
                 }
+
+                assertEquals(2, selectedExperiments.getIncludeExperimentIds().size());
+                assertTrue(selectedExperiments.getIncludeExperimentIds().contains(experiment_1.id().get()));
+                assertTrue(selectedExperiments.getIncludeExperimentIds().contains(experiment_2.id().get()));
             }
 
             final boolean anyNoneExperiment = experimentsSelected.stream()
@@ -323,6 +342,9 @@ public class ExperimentWebAPIImplIT {
                 assertEquals(ExperimentWebAPI.NONE_EXPERIMENT.pageUrl(), selectedExperiments.getExperiments().get(0).pageUrl());
 
                 checkCookie(response, selectedExperiments.getExperiments().get(0));
+
+                assertEquals(1, selectedExperiments.getIncludeExperimentIds().size());
+                assertTrue(selectedExperiments.getIncludeExperimentIds().contains(experiment.id().get()));
             }
         } finally {
             ExperimentDataGen.end(experiment);
@@ -370,6 +392,9 @@ public class ExperimentWebAPIImplIT {
                 assertEquals(htmlPageAsset.getPageUrl(), selectedExperiments.getExperiments().get(0).pageUrl());
 
                 checkCookie(response, selectedExperiments.getExperiments().get(0));
+
+                assertEquals(1, selectedExperiments.getIncludeExperimentIds().size());
+                assertTrue(selectedExperiments.getIncludeExperimentIds().contains(experiment.id().get()));
             }
         } finally {
             ExperimentDataGen.end(experiment);
@@ -431,6 +456,10 @@ public class ExperimentWebAPIImplIT {
                         checkCookie(response, selectedExperiment, experiment_2.scheduling().get().endDate().get());
                     }
                 }
+
+                assertEquals(2, selectedExperiments.getIncludeExperimentIds().size());
+                assertTrue(selectedExperiments.getIncludeExperimentIds().contains(experiment_1.id().get()));
+                assertTrue(selectedExperiments.getIncludeExperimentIds().contains(experiment_2.id().get()));
             }
         } finally {
             ExperimentDataGen.end(experiment_1);
@@ -476,6 +505,9 @@ public class ExperimentWebAPIImplIT {
                 experiments.add(selectedExperiments.getExperiments().get(0));
 
                 checkCookie(response, selectedExperiments.getExperiments().get(0));
+
+                assertEquals(1, selectedExperiments.getIncludeExperimentIds().size());
+                assertTrue(selectedExperiments.getIncludeExperimentIds().contains(experiment.id().get()));
             }
 
             final TrafficProportion trafficProportion = experiment.trafficProportion();
