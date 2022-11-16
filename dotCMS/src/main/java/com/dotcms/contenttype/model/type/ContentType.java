@@ -6,6 +6,7 @@ import com.dotcms.publisher.util.PusheableAsset;
 import com.dotcms.publishing.manifest.ManifestItem;
 import com.dotcms.repackage.com.google.common.base.Preconditions;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.UUIDUtil;
 import com.google.common.collect.ImmutableList;
 import com.dotcms.util.CollectionsUtils;
 import com.dotmarketing.beans.Host;
@@ -26,7 +27,9 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo.Id;
 import com.google.common.collect.ImmutableMap;
 
 
+import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
+import io.vavr.control.Try;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.time.DateUtils;
 import javax.annotation.Nullable;
@@ -168,7 +171,17 @@ public abstract class ContentType implements Serializable, Permissionable, Conte
    */
   @Nullable
   @Value.Default
-  public String siteName() {return null; }
+  public String siteName() {
+    return null;
+//    final String host = host();
+//    if(Host.SYSTEM_HOST.equals(host)){
+//      return Host.SYSTEM_HOST;
+//    }
+//    if(UUIDUtil.isUUID(host)){
+//       return Try.of(()->APILocator.getHostAPI().find(host, APILocator.systemUser(), false).getHostname()).getOrNull();
+//    }
+//    return Try.of(()->APILocator.getHostAPI().resolveHostName(host, APILocator.systemUser(), false).getHostname()).getOrNull();
+  }
 
   @Nullable
   @Value.Default
@@ -244,9 +257,15 @@ public abstract class ContentType implements Serializable, Permissionable, Conte
    * By default, our system folder is "/"
    * @return
    */
-  @Nullable
   @Value.Default
-  public String folderPath() { return null; }
+  public String folderPath() {
+    return Folder.SYSTEM_FOLDER_PATH;
+  //  final String folder = folder();
+  //  if(Folder.SYSTEM_FOLDER.equals(folder)){
+  //     return Folder.SYSTEM_FOLDER_PATH;
+  //  }
+  //  return Try.of(()->APILocator.getFolderAPI().find(folder, APILocator.systemUser(), false).getPath()).getOrNull();
+  }
 
   @JsonIgnore
   public Permissionable permissionable() {
