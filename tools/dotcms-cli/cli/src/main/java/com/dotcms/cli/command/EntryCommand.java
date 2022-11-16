@@ -12,7 +12,7 @@ import picocli.CommandLine.Command;
         description = {},
         header = "dotCMS cli tool",
         subcommands = {
-           LoginCommand.class, StatusCommand.class, InstanceCommand.class, SiteCommand.class
+           LoginCommand.class, StatusCommand.class, InstanceCommand.class, SiteCommand.class, ContentTypeCommand.class
         }
 )
 public class EntryCommand {

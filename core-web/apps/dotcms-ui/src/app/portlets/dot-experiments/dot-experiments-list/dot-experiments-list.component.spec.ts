@@ -15,12 +15,17 @@ import {
     DotExperimentsListStore,
     VmListExperiments
 } from '@portlets/dot-experiments/dot-experiments-list/store/dot-experiments-list-store.service';
-import { DotExperimentsListStoreMock, ExperimentMocks } from '@portlets/dot-experiments/test/mocks';
+import {
+    ActivatedRouteListStoreMock,
+    DotExperimentsListStoreMock,
+    ExperimentMocks
+} from '@portlets/dot-experiments/test/mocks';
 import { DotMessagePipe } from '@dotcms/app/view/pipes';
 import { DotMessageService } from '@services/dot-message/dot-messages.service';
 import { DotExperimentsCreateComponent } from '@portlets/dot-experiments/dot-experiments-create/dot-experiments-create.component';
 import { ButtonModule } from 'primeng/button';
 import { CUSTOM_ELEMENTS_SCHEMA } from '@angular/core';
+import { ActivatedRoute } from '@angular/router';
 
 describe('ExperimentsListComponent', () => {
     let spectator: Spectator<DotExperimentsListComponent>;
@@ -51,7 +56,13 @@ describe('ExperimentsListComponent', () => {
             DotExperimentsEmptyExperimentsComponent,
             DotExperimentsListTableComponent
         ],
-        providers: [mockProvider(DotMessagePipe)],
+        providers: [
+            mockProvider(DotMessagePipe),
+            {
+                provide: ActivatedRoute,
+                useClass: ActivatedRouteListStoreMock
+            }
+        ],
         schemas: [CUSTOM_ELEMENTS_SCHEMA]
     });
 
@@ -63,6 +74,10 @@ describe('ExperimentsListComponent', () => {
 
     it('should show the skeleton component when is loading', () => {
         const vmListExperimentsMock$: VmListExperiments = {
+            page: {
+                pageId: '',
+                pageTitle: ''
+            },
             experiments: [],
             filterStatus: [],
             experimentsFiltered: {},
@@ -77,6 +92,10 @@ describe('ExperimentsListComponent', () => {
 
     it('should show the empty component when is not loading and no experiments', () => {
         const vmListExperimentsMock$: VmListExperiments = {
+            page: {
+                pageId: '',
+                pageTitle: ''
+            },
             experiments: [],
             filterStatus: [],
             experimentsFiltered: {},
@@ -93,6 +112,10 @@ describe('ExperimentsListComponent', () => {
 
     it('should show the filters component and add experiment button exist when has experiments', () => {
         const vmListExperimentsMock$: VmListExperiments = {
+            page: {
+                pageId: '1111',
+                pageTitle: 'title'
+            },
             experiments: ExperimentMocks,
             filterStatus: [],
             experimentsFiltered: {},

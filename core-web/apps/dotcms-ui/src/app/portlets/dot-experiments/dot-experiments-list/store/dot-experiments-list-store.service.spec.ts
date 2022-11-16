@@ -27,7 +27,8 @@ const ActivatedRouteMock = {
     snapshot: {
         params: {
             pageId: routerParamsPageId
-        }
+        },
+        parent: { parent: { parent: { parent: { data: { content: { page: { title: '' } } } } } } }
     }
 };
 
@@ -42,7 +43,8 @@ describe('DotExperimentsListStore', () => {
     beforeEach(() => {
         const dotExperimentsServiceSpy = jasmine.createSpyObj('DotExperimentsService', [
             'add',
-            'get',
+            'getAll',
+            'getById',
             'archive',
             'delete'
         ]);
@@ -67,7 +69,10 @@ describe('DotExperimentsListStore', () => {
 
     it('should set initial data', (done) => {
         const expectedInitialState: DotExperimentsState = {
-            pageId: routerParamsPageId,
+            page: {
+                pageId: routerParamsPageId,
+                pageTitle: ''
+            },
             experiments: [],
             filterStatus: [
                 DotExperimentStatusList.DRAFT,
@@ -145,11 +150,11 @@ describe('DotExperimentsListStore', () => {
                 readyToStart: false,
                 description: 'Praesent at molestie mauris, quis vulputate augue.',
                 name: 'Praesent at molestie mauris',
-                trafficAllocation: 100.0,
+                trafficAllocation: '100.0',
                 scheduling: null,
                 trafficProportion: {
-                    percentages: {},
-                    type: TrafficProportionTypes.SPLIT_EVENLY
+                    type: TrafficProportionTypes.SPLIT_EVENLY,
+                    variants: [{ id: '111', name: 'DEFAULT', weight: 100.0 }]
                 },
                 creationDate: new Date('2022-08-21 14:50:03'),
                 modDate: new Date('2022-08-21 18:50:03')
@@ -165,11 +170,11 @@ describe('DotExperimentsListStore', () => {
                 readyToStart: false,
                 description: 'Praesent at molestie mauris, quis vulputate augue.',
                 name: 'Praesent at molestie mauris',
-                trafficAllocation: 100.0,
+                trafficAllocation: '100.0',
                 scheduling: null,
                 trafficProportion: {
-                    percentages: {},
-                    type: TrafficProportionTypes.SPLIT_EVENLY
+                    type: TrafficProportionTypes.SPLIT_EVENLY,
+                    variants: [{ id: '222', name: 'DEFAULT', weight: 100.0 }]
                 },
                 creationDate: new Date('2022-08-21 14:50:03'),
                 modDate: new Date('2022-08-21 18:50:03')
@@ -190,13 +195,13 @@ describe('DotExperimentsListStore', () => {
 
     describe('Effects', () => {
         beforeEach(() => {
-            dotExperimentsService.get.and.returnValue(of(ExperimentMocks));
+            dotExperimentsService.getAll.and.returnValue(of(ExperimentMocks));
 
             store.initStore();
             store.loadExperiments();
         });
         it('should load experiments to store', (done) => {
-            expect(dotExperimentsService.get).toHaveBeenCalledWith(routerParamsPageId);
+            expect(dotExperimentsService.getAll).toHaveBeenCalledWith(routerParamsPageId);
             store.getExperiments$.subscribe((exp) => {
                 expect(exp).toEqual(ExperimentMocks);
                 done();
