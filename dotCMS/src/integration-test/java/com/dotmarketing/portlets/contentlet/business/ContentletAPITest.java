@@ -7743,4 +7743,64 @@ public class ContentletAPITest extends ContentletBaseTest {
         assertEquals(null, contentletWithDate.getStringProperty(typeWithDateTimeField.variable()));
     }
 
+    /**
+     * Method to test: {@link ESContentletAPIImpl#publish(Contentlet, User, boolean)}
+     * When: You have a Contentlet with two different version in different {@link Variant}
+     * Should: Publish each version by its own
+     * @throws DotDataException
+     */
+    @Test
+    public void publichWithToDifferentVarianst() throws DotDataException {
+        final Variant variant = new VariantDataGen().nextPersisted();
+        final ContentType contentType = new ContentTypeDataGen().nextPersisted();
+
+        final Contentlet contentlet = new ContentletDataGen(contentType).nextPersisted();
+        final Contentlet checkout = ContentletDataGen.checkout(contentlet);
+        checkout.setVariantId(variant.name());
+
+        final Contentlet contentletInVariant = ContentletDataGen.checkin(checkout);
+
+        ArrayList<Map<String, Object>> results = new DotConnect()
+                .setSQL("SELECT * FROM contentlet_version_info WHERE identifier = ?")
+                .addParam(contentlet.getIdentifier())
+                .loadResults();
+
+        assertEquals(2, results.size());
+        assertFalse(UtilMethods.isSet(results.get(0).get("live_inode").toString()));
+        assertFalse(UtilMethods.isSet(results.get(1).get("live_inode").toString()));
+
+        ContentletDataGen.publish(contentlet);
+
+        results = new DotConnect()
+                .setSQL("SELECT * FROM contentlet_version_info WHERE identifier = ?")
+                .addParam(contentlet.getIdentifier())
+                .loadResults();
+
+        assertEquals(2, results.size());
+
+        for (Map<String, Object> result : results) {
+            if (result.get("variant_id").toString().equals("DEFAULT")) {
+                assertEquals(contentlet.getInode(), result.get("live_inode"));
+            } else {
+                assertFalse(UtilMethods.isSet(result.get("live_inode").toString()));
+            }
+        }
+
+        ContentletDataGen.publish(checkout);
+
+        results = new DotConnect()
+                .setSQL("SELECT * FROM contentlet_version_info WHERE identifier = ?")
+                .addParam(contentlet.getIdentifier())
+                .loadResults();
+
+        assertEquals(2, results.size());
+
+        for (Map<String, Object> result : results) {
+            if (result.get("variant_id").toString().equals("DEFAULT")) {
+                assertEquals(contentlet.getInode(), result.get("live_inode"));
+            } else {
+                assertEquals(checkout.getInode(), result.get("live_inode"));
+            }
+        }
+    }
 }

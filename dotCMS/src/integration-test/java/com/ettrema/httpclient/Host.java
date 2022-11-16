@@ -1,15 +1,15 @@
 package com.ettrema.httpclient;
 
-import com.dotcms.repackage.com.bradmcevoy.common.Path;
-import com.dotcms.repackage.com.bradmcevoy.http.Range;
-import com.dotcms.repackage.com.bradmcevoy.http.Response;
-import com.dotcms.repackage.com.bradmcevoy.http.exceptions.BadRequestException;
-import com.dotcms.repackage.com.bradmcevoy.http.exceptions.ConflictException;
-import com.dotcms.repackage.com.bradmcevoy.http.exceptions.NotAuthorizedException;
-import com.dotcms.repackage.com.bradmcevoy.http.exceptions.NotFoundException;
+import com.bradmcevoy.common.Path;
+import com.bradmcevoy.http.Range;
+import com.bradmcevoy.http.Response;
+import com.bradmcevoy.http.exceptions.BadRequestException;
+import com.bradmcevoy.http.exceptions.ConflictException;
+import com.bradmcevoy.http.exceptions.NotAuthorizedException;
+import com.bradmcevoy.http.exceptions.NotFoundException;
 import com.ettrema.cache.Cache;
 import com.ettrema.cache.MemoryCache;
-import com.dotcms.repackage.com.ettrema.common.LogUtils;
+import com.ettrema.common.LogUtils;
 import com.ettrema.httpclient.Utils.CancelledException;
 import com.ettrema.httpclient.zsyncclient.FileSyncer;
 import java.io.*;
@@ -31,8 +31,8 @@ import com.dotcms.repackage.org.apache.commons.httpclient.methods.multipart.Part
 import com.dotcms.repackage.org.apache.commons.httpclient.params.HttpMethodParams;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
-import com.dotcms.repackage.org.slf4j.Logger;
-import com.dotcms.repackage.org.slf4j.LoggerFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  *
@@ -469,7 +469,6 @@ public class Host extends Folder {
      * @param path - encoded path, but not fully qualified. Must not be prefixed
      * with a slash, as it will be appended to the host's URL
      * @throws java.net.ConnectException
-     * @throws Unauthorized
      * @throws UnknownHostException
      * @throws SocketTimeoutException
      * @throws IOException
@@ -751,7 +750,7 @@ public class Host extends Folder {
             if (i > 0) {
                 url += "/";
             }
-            url += com.dotcms.repackage.com.bradmcevoy.http.Utils.percentEncode(s);
+            url += com.bradmcevoy.http.Utils.percentEncode(s);
         }
         return url;
     }

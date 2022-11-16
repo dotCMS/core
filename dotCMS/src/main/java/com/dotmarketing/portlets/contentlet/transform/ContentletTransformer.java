@@ -1,6 +1,7 @@
 package com.dotmarketing.portlets.contentlet.transform;
 
 import com.dotcms.content.business.json.ContentletJsonAPI;
+import com.dotcms.contenttype.business.StoryBlockReferenceResult;
 import com.dotcms.contenttype.model.field.LegacyFieldTypes;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.FileAssetContentType;
@@ -32,6 +33,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.StringTokenizer;
+
 import org.jetbrains.annotations.NotNull;
 
 /**
@@ -109,6 +111,8 @@ public class ContentletTransformer implements DBTransformer {
            if(!hasJsonFields) {
                populateFields(contentlet, map);
            }
+
+            refreshStoryBlockReferences(contentlet);
             populateWysiwyg(map, contentlet);
             populateFolderAndHost(contentlet, contentletId, contentTypeId);
         } catch (final Exception e) {
@@ -122,6 +126,16 @@ public class ContentletTransformer implements DBTransformer {
 
         return contentlet;
     }
+
+    private static void refreshStoryBlockReferences(final Contentlet contentlet) {
+
+        final StoryBlockReferenceResult result = APILocator.getStoryBlockAPI().refreshReferences(contentlet);
+        if (result.isRefreshed()) {
+            Logger.debug(ContentletTransformer.class,
+                    ()-> "Refreshed story block dependencies for the contentlet: " + contentlet.getIdentifier());
+        }
+    }
+
 
     private static void populateFolderAndHost(final Contentlet contentlet, final String contentletId,
             final String contentTypeId) throws DotDataException, DotSecurityException {
