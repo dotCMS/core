@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { AfterViewInit, Component, ElementRef, OnInit, ViewChild } from '@angular/core';
 import {
     FormArray,
     FormControl,
@@ -24,7 +24,8 @@ import { Subject } from 'rxjs';
     styleUrls: ['./dot-container-properties.component.scss'],
     providers: [DotContainerPropertiesStore]
 })
-export class DotContainerPropertiesComponent implements OnInit {
+export class DotContainerPropertiesComponent implements OnInit, AfterViewInit {
+    @ViewChild('titleInput') titleInput: ElementRef;
     vm$ = this.store.vm$;
     editor: MonacoEditor;
     form: UntypedFormGroup;
@@ -67,6 +68,10 @@ export class DotContainerPropertiesComponent implements OnInit {
         this.form.valueChanges.pipe(takeUntil(this.destroy$)).subscribe((values) => {
             this.store.updateIsContentTypeButtonEnabled(values.maxContentlets > 0);
         });
+    }
+
+    ngAfterViewInit(): void {
+        this.titleInput.nativeElement.focus();
     }
 
     /**
