@@ -234,7 +234,7 @@
                     const field = document.querySelector('#<%=field.getVelocityVarName()%>');
 
                     if (content) {
-                        blockEditor.setValue = content;
+                        blockEditor.value = content;
                         field.value = JSON.stringify(block.editor.getJSON());
                     }
 
