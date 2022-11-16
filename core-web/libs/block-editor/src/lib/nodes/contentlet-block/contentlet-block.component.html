@@ -1,4 +1,3 @@
-<!-- <img src="https://demo.dotcms.com/dA/${data.identifier}/100wh" /> -->
 <p-card>
     <ng-template pTemplate="header">
         <dot-contentlet-thumbnail
@@ -10,7 +9,7 @@
         </dot-contentlet-thumbnail>
     </ng-template>
 
-    <h3 *pTemplate="'title'">{{ data.title }}</h3>
+    <h3 class="title" *pTemplate="'title'" [ngStyle]="{ padding: '0px' }">{{ data.title }}</h3>
     <span *pTemplate="'subtitle'">{{ data.contentType }}</span>
 
     <ng-template pTemplate="footer">
