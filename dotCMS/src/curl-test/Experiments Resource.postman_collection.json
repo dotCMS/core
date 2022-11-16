@@ -3701,7 +3701,7 @@
 					}
 				},
 				"url": {
-					"raw": "{{serverURL}}/api/v1/experiments/{{experimentNoGoalsId}}/_end",
+					"raw": "{{serverURL}}/api/v1/experiments/{{experimentToAddVariant}}/_end",
 					"host": [
 						"{{serverURL}}"
 					],
@@ -3709,7 +3709,7 @@
 						"api",
 						"v1",
 						"experiments",
-						"{{experimentNoGoalsId}}",
+						"{{experimentToAddVariant}}",
 						"_end"
 					]
 				},
