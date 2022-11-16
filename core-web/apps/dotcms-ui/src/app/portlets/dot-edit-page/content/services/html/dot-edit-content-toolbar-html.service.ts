@@ -55,7 +55,9 @@ export class DotEditContentToolbarHtmlService {
                 this.isEnterpriseLicense = isEnterpriseLicense;
 
                 const containers = Array.from(
-                    doc.querySelectorAll('[data-dot-object="container"]')
+                    doc.querySelectorAll(
+                        '[data-dot-object="container"]:not([data-dot-toolbar-container="true"]'
+                    )
                 );
                 containers.forEach((container: HTMLElement) => {
                     this.createContainerToolbar(container);
