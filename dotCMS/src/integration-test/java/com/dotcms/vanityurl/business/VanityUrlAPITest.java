@@ -1,8 +1,6 @@
 package com.dotcms.vanityurl.business;
 
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.fail;
 import java.util.List;
 import java.util.Optional;
 import java.util.Random;
@@ -33,6 +31,8 @@ import com.dotmarketing.util.UUIDGenerator;
 import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
+
+import static org.junit.Assert.*;
 
 /**
  * This class test the {@link VanityUrlAPI} methods
@@ -446,7 +446,7 @@ public class VanityUrlAPITest {
             contentletAPI.checkin(vanityURLContentletUpdated, user, false);
             fail("Using an invalid 600 action code, the checking method should fail...");
         } catch (Exception e) {
-            assertEquals(e.getMessage(),"The action code of the Vanity URL is not valid");
+            assertTrue(e.getMessage().contains("The action code of the Vanity URL is not valid"));
         }
     }
 
