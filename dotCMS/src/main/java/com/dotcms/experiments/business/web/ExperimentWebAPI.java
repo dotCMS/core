@@ -37,6 +37,6 @@ public interface ExperimentWebAPI {
      * @throws DotDataException
      * @throws DotSecurityException
      */
-    List<SelectedExperiment> isUserIncluded(final HttpServletRequest request, final HttpServletResponse response)
+    SelectedExperiments isUserIncluded(final HttpServletRequest request, final HttpServletResponse response)
             throws DotDataException, DotSecurityException;
 }

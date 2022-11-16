@@ -50,6 +50,7 @@ import java.util.Set;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.core.Context;
+import org.apache.commons.lang3.StringUtils;
 
 
 /**
@@ -288,12 +289,19 @@ public class HTMLPageAssetRenderedAPIImpl implements HTMLPageAssetRenderedAPI {
                 .setURLMapper(htmlPageUrl.getPageUrlMapper())
                 .setLive(htmlPageUrl.hasLive())
                 .getPageHTML(context.getPageMode());
-        return !APILocator.getExperimentsAPI().getExperimentRunning().isEmpty() ?
+
+        return !APILocator.getExperimentsAPI().isAnyExperimentRunning() ?
                 injectExperimentJSCode(pageHTML) : pageHTML;
     }
 
     private String injectExperimentJSCode(final String pageHTML) {
-        return pageHTML.replace("<head>", "<head>" + EXPERIMENT_SCRIPT.get());
+
+        if (StringUtils.containsIgnoreCase(pageHTML, "<head>")) {
+            return StringUtils.replaceIgnoreCase(pageHTML, "<head>",
+                    "<head>" + EXPERIMENT_SCRIPT.get());
+        } else {
+            return EXPERIMENT_SCRIPT.get() + pageHTML;
+        }
     }
 
     private HTMLPageUrl getHtmlPageAsset(final PageContext context, final Host host, final HttpServletRequest request)

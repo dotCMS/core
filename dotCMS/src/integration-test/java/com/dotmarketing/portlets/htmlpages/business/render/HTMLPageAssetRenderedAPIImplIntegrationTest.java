@@ -1328,8 +1328,16 @@ public class HTMLPageAssetRenderedAPIImplIntegrationTest extends IntegrationTest
                 contentlet, APILocator.systemUser(), false);
     }
 
+    /**
+     * Method to test: {@link HTMLPageAssetRenderedAPI#getPageHtml(PageContext, HttpServletRequest, HttpServletResponse)}
+     * When: You have at least one {@link Experiment} RUNNING and try to render a page and the page had a HEAD section
+     * Should inject the JS Code need for Experiment to work into the head tag
+     * @throws WebAssetException
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
     @Test
-    public void aaa() throws WebAssetException, DotDataException, DotSecurityException {
+    public void injectJSCodeWithHead() throws WebAssetException, DotDataException, DotSecurityException {
         final Experiment experiment = new ExperimentDataGen().nextPersisted();
         ExperimentDataGen.start(experiment);
 
@@ -1380,6 +1388,69 @@ public class HTMLPageAssetRenderedAPIImplIntegrationTest extends IntegrationTest
                 + "</SCRIPT>"
                 + "<title>This is a testing</title>"
                 + "</head>";
+        final String expectedCode = expectedHead + expectedContentRender;
+
+        Assert.assertEquals(expectedCode, html);
+    }
+
+    /**
+     * Method to test: {@link HTMLPageAssetRenderedAPI#getPageHtml(PageContext, HttpServletRequest, HttpServletResponse)}
+     * When: You have at least one {@link Experiment} RUNNING and try to render a page and the page does not had a HEAD section
+     * Should inject the JS Code need for Experiment to work on the top of the HTML code
+     * @throws WebAssetException
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    @Test
+    public void injectJSCodeWithoutHead() throws WebAssetException, DotDataException, DotSecurityException {
+        final Experiment experiment = new ExperimentDataGen().nextPersisted();
+        ExperimentDataGen.start(experiment);
+
+        final Language language = new LanguageDataGen().nextPersisted();
+        final Host host = new SiteDataGen().nextPersisted();
+
+        final ContentType contentType = createContentType();
+        final Container container = createAndPublishContainer(host, contentType);
+        final HTMLPageAsset page = createHtmlPageAsset(language, host, container);
+        final Contentlet contentlet = createContentlet(language, host, contentType);
+
+        addToPage(container, page, contentlet);
+
+        final HttpServletRequest mockRequest = createHttpServletRequest(language, host,
+                VariantAPI.DEFAULT_VARIANT, page);
+
+        final HttpServletResponse mockResponse = mock(HttpServletResponse.class);
+        final HttpSession session = createHttpSession(mockRequest);
+        when(session.getAttribute(WebKeys.VISITOR)).thenReturn(null);
+
+        String html = APILocator.getHTMLPageAssetRenderedAPI().getPageHtml(
+                PageContextBuilder.builder()
+                        .setUser(APILocator.systemUser())
+                        .setPageUri(page.getURI())
+                        .setPageMode(PageMode.LIVE)
+                        .build(),
+                mockRequest, mockResponse);
+        final String expectedContentRender = "<div>DEFAULT content-default-" + language.getId() + "</div>";
+        final String expectedHead = "<script src=\"/s/lib.js\" data-key=\"\"\n"
+                + "        data-init-only=\"false\"\n"
+                + "        defer>\n"
+                + "</script>\n"
+                + "\n"
+                + "<script>window.jitsu = window.jitsu || (function(){(window.jitsuQ = window.jitsuQ || []).push(arguments);})</script>"
+                + "<SCRIPT>"
+                + "var isInExperiment = document.cookie.includes('runningExperiment');\n"
+                + "\n"
+                + "if (!isInExperiment) {\n"
+                + "    fetch('/api/v1/experiment')\n"
+                + "    .then(response => response.json())\n"
+                + "    .then(data => {\n"
+                + "        if (data.experiment) {\n"
+                + "            localStorage.setItem('experiment_data', JSON.stringify(data));\n"
+                + "        }\n"
+                + "    });\n"
+                + "}"
+                + "</SCRIPT>"
+                + "<title>This is a testing</title>";
         final String expectedCode = expectedHead + expectedContentRender;
 
         Assert.assertEquals(expectedCode, html);

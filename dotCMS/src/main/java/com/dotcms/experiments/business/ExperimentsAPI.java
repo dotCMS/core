@@ -133,4 +133,9 @@ public interface ExperimentsAPI {
     Optional<Rule> getRule(final Experiment experiment)
             throws DotDataException, DotSecurityException;
 
+    /**
+     * Return true if any {@link Experiment} is running right now, otherwise return false.
+     * @return
+     */
+    boolean isAnyExperimentRunning() throws DotDataException;
 }

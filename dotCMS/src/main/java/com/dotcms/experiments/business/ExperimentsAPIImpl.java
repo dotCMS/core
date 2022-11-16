@@ -507,6 +507,11 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
         return UtilMethods.isSet(rules) ? Optional.of(rules.get(0)) : Optional.empty();
     }
 
+    @Override
+    public boolean isAnyExperimentRunning() throws DotDataException {
+        return !APILocator.getExperimentsAPI().getRunningExperiment().isEmpty();
+    }
+
     private TreeSet<ExperimentVariant> redistributeWeights(final Set<ExperimentVariant> variants) {
 
         final int count = variants.size();

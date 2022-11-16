@@ -27,6 +27,7 @@ import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import net.bytebuddy.utility.RandomString;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * Default implementation of {@link ExperimentWebAPI}
@@ -34,22 +35,32 @@ import net.bytebuddy.utility.RandomString;
 public class ExperimentWebAPIImpl implements ExperimentWebAPI {
 
     @Override
-    public List<SelectedExperiment> isUserIncluded(final HttpServletRequest request, final HttpServletResponse response)
+    public SelectedExperiments isUserIncluded(final HttpServletRequest request, final HttpServletResponse response)
             throws DotDataException, DotSecurityException {
         final List<Experiment> experimentRunning = APILocator.getExperimentsAPI()
                 .getRunningExperiment();
 
         final List<Experiment> experiments = pickExperiments(experimentRunning, request, response);
+        final List<SelectedExperiment> selectedExperiments = !experiments.isEmpty() ?
+                getSelectedExperimentsResult(response, experiments)
+                : getNoneExperimentListResult(response);
 
-        if (!experiments.isEmpty()) {
-            return  experiments.stream()
-                        .map(experiment -> createSelectedExperimentAndCreateCookie(response,
-                                experiment))
-                        .collect(Collectors.toList());
-        } else {
-            setCookie(NONE_EXPERIMENT, response, getDefaultExpireDate());
-            return list(NONE_EXPERIMENT);
-        }
+        return new SelectedExperiments(selectedExperiments,
+                experimentRunning.stream().map(experiment -> experiment.id().get())
+                        .collect(Collectors.toList()));
+    }
+
+    private List<SelectedExperiment> getSelectedExperimentsResult(HttpServletResponse response,
+            List<Experiment> experiments) {
+        return experiments.stream()
+                    .map(experiment -> createSelectedExperimentAndCreateCookie(response,
+                            experiment))
+                    .collect(Collectors.toList());
+    }
+
+    private List<SelectedExperiment> getNoneExperimentListResult(HttpServletResponse response) {
+        setCookie(NONE_EXPERIMENT, response, getDefaultExpireDate());
+        return list(NONE_EXPERIMENT);
     }
 
     private SelectedExperiment createSelectedExperimentAndCreateCookie(
