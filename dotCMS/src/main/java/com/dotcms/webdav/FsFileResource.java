@@ -19,21 +19,21 @@
 
 package com.dotcms.webdav;
 
-import com.dotcms.repackage.com.bradmcevoy.common.ContentTypeUtils;
-import com.dotcms.repackage.com.bradmcevoy.http.Auth;
-import com.dotcms.repackage.com.bradmcevoy.http.CopyableResource;
-import com.dotcms.repackage.com.bradmcevoy.http.DeletableResource;
-import com.dotcms.repackage.com.bradmcevoy.http.GetableResource;
-import com.dotcms.repackage.com.bradmcevoy.http.MoveableResource;
-import com.dotcms.repackage.com.bradmcevoy.http.PropFindableResource;
-import com.dotcms.repackage.com.bradmcevoy.http.PropPatchableResource;
-import com.dotcms.repackage.com.bradmcevoy.http.Range;
-import com.dotcms.repackage.com.bradmcevoy.http.Request;
-import com.dotcms.repackage.com.bradmcevoy.http.entity.PartialEntity;
-import com.dotcms.repackage.com.bradmcevoy.http.exceptions.NotFoundException;
-import com.dotcms.repackage.com.bradmcevoy.http.webdav.PropPatchHandler.Fields;
-import com.dotcms.repackage.com.bradmcevoy.io.ReadingException;
-import com.dotcms.repackage.com.bradmcevoy.io.WritingException;
+import com.bradmcevoy.common.ContentTypeUtils;
+import com.bradmcevoy.http.Auth;
+import com.bradmcevoy.http.CopyableResource;
+import com.bradmcevoy.http.DeletableResource;
+import com.bradmcevoy.http.GetableResource;
+import com.bradmcevoy.http.MoveableResource;
+import com.bradmcevoy.http.PropFindableResource;
+import com.bradmcevoy.http.PropPatchableResource;
+import com.bradmcevoy.http.Range;
+import com.bradmcevoy.http.Request;
+import com.bradmcevoy.http.entity.PartialEntity;
+import com.bradmcevoy.http.exceptions.NotFoundException;
+import com.bradmcevoy.http.webdav.PropPatchHandler.Fields;
+import com.bradmcevoy.io.ReadingException;
+import com.bradmcevoy.io.WritingException;
 import com.dotmarketing.util.Logger;
 import java.io.File;
 import java.io.FileNotFoundException;

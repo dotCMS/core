@@ -1,6 +1,6 @@
 package com.ettrema.httpclient.zsyncclient;
 
-import com.dotcms.repackage.com.bradmcevoy.http.Range;
+import com.bradmcevoy.http.Range;
 import java.util.List;
 
 /**

@@ -4,7 +4,11 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
+import com.dotcms.datagen.MultiTreeDataGen;
 import com.dotcms.util.IntegrationTestInitService;
+import com.dotmarketing.beans.MultiTree;
+import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.common.db.DotDatabaseMetaData;
 import com.dotmarketing.db.DbConnectionFactory;
@@ -13,7 +17,10 @@ import graphql.Assert;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import org.junit.After;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -39,10 +46,12 @@ public class Task221018CreateVariantFieldInMultiTreeTest {
     @Test
     public void createField() throws SQLException, DotDataException {
         cleanUp();
+
+        final DotConnect dotConnect = new DotConnect();
+        dotConnect.executeStatement("INSERT INTO multi_tree (parent1, parent2, child, relation_type) VALUES('htmlPage', 'container', 'content', '1')");
+
         final DotDatabaseMetaData databaseMetaData = new DotDatabaseMetaData();
 
-        assertFalse(databaseMetaData
-                .hasColumn("multi_tree", "variant_id"));
         assertEquals(5, DotDatabaseMetaData.getPrimaryKeysFields("multi_tree").size());
 
         final Task221018CreateVariantFieldInMultiTree task221018CreateMultiTreeField = new Task221018CreateVariantFieldInMultiTree();
@@ -53,6 +62,14 @@ public class Task221018CreateVariantFieldInMultiTreeTest {
         checkIfFieldExist();
         checkIfFieldIsIntoPrimaryKey();
         assertFalse(task221018CreateMultiTreeField.forceRun());
+
+        dotConnect.executeStatement("INSERT INTO multi_tree (parent1, parent2, child, relation_type) VALUES('htmlPage_2', 'container', 'content', '1')");
+
+        final ArrayList multiTrees = dotConnect.setSQL(
+                "SELECT variant_id FROM multi_tree WHERE parent1 = 'htmlPage_2'").loadResults();
+
+        assertEquals(1, multiTrees.size());
+        assertEquals("DEFAULT", ((Map) multiTrees.get(0)).get("variant_id"));
     }
 
     /**
@@ -94,15 +111,15 @@ public class Task221018CreateVariantFieldInMultiTreeTest {
                 .orElse("multi_tree_pkey");
 
         try {
-            new DotConnect().executeStatement(
-                    "ALTER TABLE multi_tree DROP COLUMN variant_id");
-        } catch (SQLException e) {
+            DotDatabaseMetaData.dropPrimaryKey("multi_tree");
+        } catch (Exception e) {
             //ignore
         }
 
         try {
-            DotDatabaseMetaData.dropPrimaryKey("multi_tree");
-        } catch (Exception e) {
+            new DotConnect().executeStatement(
+                    "ALTER TABLE multi_tree DROP COLUMN variant_id");
+        } catch (SQLException e) {
             //ignore
         }
 

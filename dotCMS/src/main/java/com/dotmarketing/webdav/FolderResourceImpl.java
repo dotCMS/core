@@ -3,23 +3,23 @@
  */
 package com.dotmarketing.webdav;
 
-import com.dotcms.repackage.com.bradmcevoy.http.Auth;
-import com.dotcms.repackage.com.bradmcevoy.http.CollectionResource;
-import com.dotcms.repackage.com.bradmcevoy.http.FolderResource;
-import com.dotcms.repackage.com.bradmcevoy.http.HttpManager;
-import com.dotcms.repackage.com.bradmcevoy.http.LockInfo;
-import com.dotcms.repackage.com.bradmcevoy.http.LockResult;
-import com.dotcms.repackage.com.bradmcevoy.http.LockTimeout;
-import com.dotcms.repackage.com.bradmcevoy.http.LockToken;
-import com.dotcms.repackage.com.bradmcevoy.http.LockableResource;
-import com.dotcms.repackage.com.bradmcevoy.http.LockingCollectionResource;
-import com.dotcms.repackage.com.bradmcevoy.http.MakeCollectionableResource;
-import com.dotcms.repackage.com.bradmcevoy.http.Request;
-import com.dotcms.repackage.com.bradmcevoy.http.Request.Method;
-import com.dotcms.repackage.com.bradmcevoy.http.Resource;
-import com.dotcms.repackage.com.bradmcevoy.http.exceptions.BadRequestException;
-import com.dotcms.repackage.com.bradmcevoy.http.exceptions.ConflictException;
-import com.dotcms.repackage.com.bradmcevoy.http.exceptions.NotAuthorizedException;
+import com.bradmcevoy.http.Auth;
+import com.bradmcevoy.http.CollectionResource;
+import com.bradmcevoy.http.FolderResource;
+import com.bradmcevoy.http.HttpManager;
+import com.bradmcevoy.http.LockInfo;
+import com.bradmcevoy.http.LockResult;
+import com.bradmcevoy.http.LockTimeout;
+import com.bradmcevoy.http.LockToken;
+import com.bradmcevoy.http.LockableResource;
+import com.bradmcevoy.http.LockingCollectionResource;
+import com.bradmcevoy.http.MakeCollectionableResource;
+import com.bradmcevoy.http.Request;
+import com.bradmcevoy.http.Request.Method;
+import com.bradmcevoy.http.Resource;
+import com.bradmcevoy.http.exceptions.BadRequestException;
+import com.bradmcevoy.http.exceptions.ConflictException;
+import com.bradmcevoy.http.exceptions.NotAuthorizedException;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.PermissionAPI;
@@ -56,7 +56,7 @@ public class FolderResourceImpl extends BasicFolderResourceImpl implements Locka
 	}
 	
 	/* (non-Javadoc)
-	 * @see com.dotcms.repackage.com.bradmcevoy.http.MakeCollectionableResource#createCollection(java.lang.String)
+	 * @see com.bradmcevoy.http.MakeCollectionableResource#createCollection(java.lang.String)
 	 */
 	public CollectionResource createCollection(String newName) throws DotRuntimeException {
 
@@ -97,7 +97,7 @@ public class FolderResourceImpl extends BasicFolderResourceImpl implements Locka
 	}
 
 	/* (non-Javadoc)
-	 * @see com.dotcms.repackage.com.bradmcevoy.http.CollectionResource#child(java.lang.String)
+	 * @see com.bradmcevoy.http.CollectionResource#child(java.lang.String)
 	 */
 	public Resource child(String childName) {
 
@@ -141,7 +141,7 @@ public class FolderResourceImpl extends BasicFolderResourceImpl implements Locka
 	}
 
 	/* (non-Javadoc)
-	 * @see com.dotcms.repackage.com.bradmcevoy.http.CollectionResource#getChildren()
+	 * @see com.bradmcevoy.http.CollectionResource#getChildren()
 	 */
 	public List<? extends Resource> getChildren() {
 	    User user=(User)HttpManager.request().getAuthorization().getTag();
@@ -156,7 +156,7 @@ public class FolderResourceImpl extends BasicFolderResourceImpl implements Locka
 	}
 
 	/* (non-Javadoc)
-	 * @see com.dotcms.repackage.com.bradmcevoy.http.Resource#authenticate(java.lang.String, java.lang.String)
+	 * @see com.bradmcevoy.http.Resource#authenticate(java.lang.String, java.lang.String)
 	 */
 	public Object authenticate(String username, String password) {
 		try {
@@ -168,7 +168,7 @@ public class FolderResourceImpl extends BasicFolderResourceImpl implements Locka
 	}
 
 	/* (non-Javadoc)
-	 * @see com.dotcms.repackage.com.bradmcevoy.http.Resource#authorise(com.dotcms.repackage.com.bradmcevoy.http.Request, com.dotcms.repackage.com.bradmcevoy.http.Request.Method, com.dotcms.repackage.com.bradmcevoy.http.Auth)
+	 * @see com.bradmcevoy.http.Resource#authorise(com.bradmcevoy.http.Request, com.bradmcevoy.http.Request.Method, com.bradmcevoy.http.Auth)
 	 */
 	public boolean authorise(Request req, Method method, Auth auth) {
 		try {
@@ -193,49 +193,49 @@ public class FolderResourceImpl extends BasicFolderResourceImpl implements Locka
 	}
 
 	/* (non-Javadoc)
-	 * @see com.dotcms.repackage.com.bradmcevoy.http.Resource#checkRedirect(com.dotcms.repackage.com.bradmcevoy.http.Request)
+	 * @see com.bradmcevoy.http.Resource#checkRedirect(com.bradmcevoy.http.Request)
 	 */
 	public String checkRedirect(Request req) {
 		return null;
 	}
 
 	/* (non-Javadoc)
-	 * @see com.dotcms.repackage.com.bradmcevoy.http.Resource#getContentLength()
+	 * @see com.bradmcevoy.http.Resource#getContentLength()
 	 */
 	public Long getContentLength() {
 		return (long)0;
 	}
 
 	/* (non-Javadoc)
-	 * @see com.dotcms.repackage.com.bradmcevoy.http.Resource#getContentType(java.lang.String)
+	 * @see com.bradmcevoy.http.Resource#getContentType(java.lang.String)
 	 */
 	public String getContentType(String arg0) {
 		return "folder";
 	}
 
 	/* (non-Javadoc)
-	 * @see com.dotcms.repackage.com.bradmcevoy.http.Resource#getModifiedDate()
+	 * @see com.bradmcevoy.http.Resource#getModifiedDate()
 	 */
 	public Date getModifiedDate() {
 		return folder.getIDate();
 	}
 
 	/* (non-Javadoc)
-	 * @see com.dotcms.repackage.com.bradmcevoy.http.Resource#getRealm()
+	 * @see com.bradmcevoy.http.Resource#getRealm()
 	 */
 	public String getRealm() {
 		return CompanyUtils.getDefaultCompany().getName();
 	}
 
 	/* (non-Javadoc)
-	 * @see com.dotcms.repackage.com.bradmcevoy.http.Resource#getUniqueId()
+	 * @see com.bradmcevoy.http.Resource#getUniqueId()
 	 */
 	public String getUniqueId() {
 		return folder.getInode();
 	}
 
 	/* (non-Javadoc)
-	 * @see com.dotcms.repackage.com.bradmcevoy.http.DeletableResource#delete()
+	 * @see com.bradmcevoy.http.DeletableResource#delete()
 	 */
 	public void delete() throws DotRuntimeException{
 	    User user=(User)HttpManager.request().getAuthorization().getTag();
@@ -248,7 +248,7 @@ public class FolderResourceImpl extends BasicFolderResourceImpl implements Locka
 	}
 
 	/* (non-Javadoc)
-	 * @see com.dotcms.repackage.com.bradmcevoy.http.GetableResource#getMaxAgeSeconds()
+	 * @see com.bradmcevoy.http.GetableResource#getMaxAgeSeconds()
 	 */
 	public Long getMaxAgeSeconds() {
 		return new Long(0);
@@ -290,7 +290,7 @@ public class FolderResourceImpl extends BasicFolderResourceImpl implements Locka
     }
 
 	/* (non-Javadoc)
-	 * @see com.dotcms.repackage.com.bradmcevoy.http.MoveableResource#moveTo(com.dotcms.repackage.com.bradmcevoy.http.CollectionResource, java.lang.String)
+	 * @see com.bradmcevoy.http.MoveableResource#moveTo(com.bradmcevoy.http.CollectionResource, java.lang.String)
 	 */
 	public void moveTo(CollectionResource collRes, String name) throws DotRuntimeException{
 	    User user=(User)HttpManager.request().getAuthorization().getTag();
@@ -350,7 +350,7 @@ public class FolderResourceImpl extends BasicFolderResourceImpl implements Locka
 	}
 
 	/* (non-Javadoc)
-	 * @see com.dotcms.repackage.com.bradmcevoy.http.PropFindableResource#getCreateDate()
+	 * @see com.bradmcevoy.http.PropFindableResource#getCreateDate()
 	 */
 	public Date getCreateDate() {
 		return folder.getIDate();
