@@ -2706,7 +2706,7 @@
 							"if(jsonData.entity.length>0){",
 							"pm.test('sort_order are in asc sorted order', () => {    ",
 							"    const isAscending = jsonData.entity.map(item => item.sortOrder).every((current, index, ids) => index === 0 || current >= ids[index-1]);    ",
-							"    pm.expect(isAscending).to.be.true;",
+							"    pm.expect(isAscending).to.eql(true);",
 							"});",
 							"}"
 						],
@@ -2801,7 +2801,7 @@
 							"if(jsonData.entity.length>0){",
 							"pm.test('sort_order are in desc sorted order', () => {    ",
 							"    const isDescending = jsonData.entity.map(item => item.sortOrder).every((current, index, ids) => index === 0 || current <= ids[index-1]);    ",
-							"    pm.expect(isDescending).to.be.true;",
+							"    pm.expect(isDescending).to.eql(true);",
 							"});",
 							"}"
 						],
