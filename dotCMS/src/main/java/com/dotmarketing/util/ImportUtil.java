@@ -1330,10 +1330,6 @@ public class ImportUtil {
 
                 if(!ignoreLine){
                     //Check the new contentlet with the validator
-                    ContentletRelationships contentletRelationships = loadRelationshipRecords(
-                            csvRelationshipRecordsParentOnly, csvRelationshipRecordsChildOnly,
-                            csvRelationshipRecords, cont);
-
                     final boolean skipRelationshipsValidation = headers.values().stream()
                             .noneMatch((field -> field.getFieldType()
                                     .equals(FieldType.RELATIONSHIP.toString())));
@@ -1343,6 +1339,10 @@ public class ImportUtil {
                             conAPI.validateContentletNoRels(cont, new ArrayList<>(categories));
 
                         } else {
+                            ContentletRelationships contentletRelationships = loadRelationshipRecords(
+                                    csvRelationshipRecordsParentOnly, csvRelationshipRecordsChildOnly,
+                                    csvRelationshipRecords, cont);
+
                             conAPI.validateContentlet(cont, contentletRelationships,
                                     new ArrayList<>(categories));
                         }
@@ -1419,6 +1419,10 @@ public class ImportUtil {
                     //If not preview save the contentlet
                     if (!preview) {
                         cont.setLowIndexPriority(true);
+
+                        ContentletRelationships contentletRelationships = loadRelationshipRecords(
+                                csvRelationshipRecordsParentOnly, csvRelationshipRecordsChildOnly,
+                                csvRelationshipRecords, cont);
 
                         if (userCanExecuteAction) {
                           cont.setIndexPolicy(IndexPolicy.DEFER);
