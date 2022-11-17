@@ -360,33 +360,29 @@ export class DotContainerListStore extends ComponentStore<DotContainerListState>
     }
 
     private setCopyContainerOptions(container: DotContainer): DotActionMenuItem[] {
-        return !container.locked
-            ? [
-                  {
-                      menuItem: {
-                          label: this.dotMessageService.get('Duplicate'),
-                          command: () => {
-                              this.copyContainer(container.identifier);
-                          }
-                      }
-                  }
-              ]
-            : [];
+        return [
+            {
+                menuItem: {
+                    label: this.dotMessageService.get('Duplicate'),
+                    command: () => {
+                        this.copyContainer(container.identifier);
+                    }
+                }
+            }
+        ];
     }
 
     private setBaseContainerOptions(container: DotContainer): DotActionMenuItem[] {
         const options: DotActionMenuItem[] = [];
 
-        if (!container.locked) {
-            options.push({
-                menuItem: {
-                    label: this.dotMessageService.get('edit'),
-                    command: () => {
-                        this.editContainer(container);
-                    }
+        options.push({
+            menuItem: {
+                label: this.dotMessageService.get('edit'),
+                command: () => {
+                    this.editContainer(container);
                 }
-            });
-        }
+            }
+        });
 
         options.push({
             menuItem: {
@@ -402,6 +398,27 @@ export class DotContainerListStore extends ComponentStore<DotContainerListState>
 
     private setArchiveContainerActions(container: DotContainer): DotActionMenuItem[] {
         const options: DotActionMenuItem[] = [];
+        const { isEnterprise } = this.get();
+        if (isEnterprise) {
+            options.push({
+                menuItem: {
+                    label: this.dotMessageService.get('edit'),
+                    command: () => {
+                        this.editContainer(container);
+                    }
+                }
+            });
+
+            options.push({
+                menuItem: {
+                    label: this.dotMessageService.get('publish'),
+                    command: () => {
+                        this.publishContainer([container.identifier]);
+                    }
+                }
+            });
+        }
+
         if (!container.live) {
             options.push({
                 menuItem: {
