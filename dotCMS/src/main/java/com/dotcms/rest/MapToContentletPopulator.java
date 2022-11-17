@@ -1,8 +1,11 @@
 package com.dotcms.rest;
 
+import static com.dotmarketing.portlets.contentlet.model.Contentlet.WORKFLOW_ASSIGN_KEY;
+import static com.dotmarketing.portlets.contentlet.model.Contentlet.WORKFLOW_COMMENTS_KEY;
+import static com.liferay.util.StringPool.*;
+
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.business.CloseDBIfOpened;
-import com.dotcms.contenttype.business.StoryBlockAPI;
 import com.dotcms.contenttype.model.field.CategoryField;
 import com.dotcms.contenttype.model.field.RelationshipField;
 import com.dotcms.contenttype.model.type.BaseContentType;
@@ -34,16 +37,12 @@ import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.json.JSONObject;
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.liferay.portal.model.User;
-import io.vavr.Lazy;
+import com.liferay.util.StringPool;
 import io.vavr.control.Try;
-import org.jetbrains.annotations.NotNull;
-
-import javax.servlet.http.HttpServletRequest;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -55,11 +54,8 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
-
-import static com.dotmarketing.portlets.contentlet.model.Contentlet.WORKFLOW_ASSIGN_KEY;
-import static com.dotmarketing.portlets.contentlet.model.Contentlet.WORKFLOW_COMMENTS_KEY;
-import static com.liferay.util.StringPool.BLANK;
-import static com.liferay.util.StringPool.COMMA;
+import javax.servlet.http.HttpServletRequest;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * Complete populator to populate a contentlet from a map (from a resources form) using all logic needed
@@ -69,8 +65,6 @@ import static com.liferay.util.StringPool.COMMA;
 public class MapToContentletPopulator  {
 
     public  static final MapToContentletPopulator INSTANCE = new MapToContentletPopulator();
-    private final Lazy<StoryBlockAPI> storyBlockAPI = Lazy.of(APILocator::getStoryBlockAPI);
-
     private static final String RELATIONSHIP_KEY           = Contentlet.RELATIONSHIP_KEY;
     private static final String LANGUAGE_ID                = "languageId";
     private static final String IDENTIFIER                 = "identifier";
@@ -223,8 +217,6 @@ public class MapToContentletPopulator  {
                        ) {
 
                     this.processFileOrImageField(contentlet, value, field);
-                } else if (field.getFieldType().equals(FieldType.STORY_BLOCK_FIELD.toString())) {
-                    this.processStoryBlockField(contentlet, field, value);
                 } else {
                     APILocator.getContentletAPI()
                             .setContentletProperty(contentlet, field, value);
@@ -232,25 +224,6 @@ public class MapToContentletPopulator  {
             }
         }
     } // fillFields.
-
-    /**
-     * Takes the value of the Story Block field in the form of a {@link Map} and transforms it into a JSON String.
-     *
-     * @param contentlet The {@link Contentlet} whose value is being transformed.
-     * @param field      The Contentlet's {@link Field}.
-     * @param value      The field's current value.
-     */
-    private void processStoryBlockField(final Contentlet contentlet, final Field field, final Object value) {
-        String fieldValue;
-        try {
-            fieldValue = this.storyBlockAPI.get().toJson((Map<String, Object>) value);
-        } catch (final JsonProcessingException e) {
-            Logger.error(this, String.format("An error occurred when parsing JSON value in field '%s': " +
-                                                     "%s", field.getFieldName(), e.getMessage()));
-            fieldValue = BLANK;
-        }
-        contentlet.setProperty(field.getVelocityVarName(), fieldValue);
-    }
 
     private void processFileOrImageField(final Contentlet contentlet,
                                          final Object value,
