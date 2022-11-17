@@ -70,7 +70,7 @@ public class ImageFilterApiImpl implements ImageFilterAPI {
                                     .getOrElse(ResampleOp.FILTER_TRIANGLE);
 
     @Override
-    public Map<String, Class> resolveFilters(final Map<String, String[]> parameters) {
+    public Map<String, Class<ImageFilter>> resolveFilters(final Map<String, String[]> parameters) {
 
         final List<String> filters = new ArrayList<>();
 
@@ -89,7 +89,7 @@ public class ImageFilterApiImpl implements ImageFilterAPI {
             }
         });
 
-        final Map<String, Class> classes = new LinkedHashMap<>();
+        final Map<String, Class<ImageFilter>> classes = new LinkedHashMap<>();
         filters.forEach(s -> {
             final String filter = s.toLowerCase();
             if (!classes.containsKey(filter) && filterClasses.containsKey(filter)) {
