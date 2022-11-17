@@ -6,9 +6,7 @@ import {
     ImageNode
 } from '@dotcms/block-editor';
 
-const hideBubbleMenuOn = {
-    dotContent: true
-};
+const hideBubbleMenuOn = {};
 
 /**
  * Determine when the bubble menu can or cannot be displayed.
@@ -77,12 +75,33 @@ export const getNodePosition = (node: HTMLElement, type: string): DOMRect => {
     return node.getBoundingClientRect();
 };
 
+export const getNodeCoords = (node: HTMLElement, type: string): DOMRect => {
+    if (type === ImageNode.name && node?.firstElementChild) {
+        return node.firstElementChild.getBoundingClientRect();
+    }
+
+    return node.getBoundingClientRect();
+};
+
+export const setBubbleMenuCoords = ({ viewCoords, nodeCoords, padding }): DOMRect => {
+    const { top: nodeTop, bottom: nodeBottom } = nodeCoords;
+    const { top: viewTop, bottom: viewBottom } = viewCoords;
+
+    const isTopOverflow = Math.ceil(nodeTop - viewTop) < padding;
+    const isBottomOverflow = Math.ceil(viewBottom - nodeBottom) < padding;
+
+    return {
+        ...nodeCoords.toJSON(),
+        top: isTopOverflow && isBottomOverflow ? viewTop + padding : nodeTop
+    };
+};
+
 export const isListNode = (editor): boolean => {
     return editor.isActive('bulletList') || editor.isActive('orderedList');
 };
 
 /* Bubble Menu Items*/
-export const bubbleMenuItems: Array<BubbleMenuItem> = [
+const bubbleMenuDefaultItems: Array<BubbleMenuItem> = [
     {
         icon: 'format_bold',
         markAction: 'bold',
@@ -160,7 +179,7 @@ export const bubbleMenuItems: Array<BubbleMenuItem> = [
     }
 ];
 
-export const bubbleMenuImageItems: Array<BubbleMenuItem> = [
+const imageOptions: Array<BubbleMenuItem> = [
     {
         icon: 'format_align_left',
         markAction: 'left',
@@ -189,6 +208,27 @@ export const bubbleMenuImageItems: Array<BubbleMenuItem> = [
         active: false
     }
 ];
+
+const dotContentOptions: Array<BubbleMenuItem> = [
+    {
+        icon: 'delete',
+        markAction: 'deleteNode',
+        active: false
+    }
+];
+
+export const getBubbleMenuItem = (nodeType: string = ''): Array<BubbleMenuItem> => {
+    switch (nodeType) {
+        case 'dotImage':
+            return imageOptions;
+
+        case 'dotContent':
+            return dotContentOptions;
+
+        default:
+            return bubbleMenuDefaultItems;
+    }
+};
 
 // Tippy Modifiers
 export const popperModifiers = [

@@ -37,6 +37,7 @@ declare module '@tiptap/core' {
                 type: { name: string; level?: number };
             }) => ReturnType;
             addContentletBlock: ({ range: Range, payload: unknown }) => ReturnType;
+            addNextLine: () => ReturnType;
         };
     }
 }
@@ -91,7 +92,11 @@ function execCommand({
 }) {
     const whatToDo = {
         dotContent: () => {
-            editor.chain().addContentletBlock({ range, payload: props.payload }).run();
+            editor
+                .chain()
+                .addContentletBlock({ range, payload: props.payload })
+                .addNextLine()
+                .run();
         },
         heading: () => {
             editor.chain().addHeading({ range, type: props.type }).run();
@@ -265,11 +270,25 @@ export const ActionsMenu = (viewContainerRef: ViewContainerRef) => {
                     ({ chain }) => {
                         return chain()
                             .deleteRange(range)
-                            .command((data) => {
-                                const node = data.editor.schema.nodes.dotContent.create({
+                            .command((props) => {
+                                const node = props.editor.schema.nodes.dotContent.create({
                                     data: payload
                                 });
-                                data.tr.replaceSelectionWith(node);
+                                props.tr.replaceSelectionWith(node);
+
+                                return true;
+                            })
+                            .run();
+                    },
+                addNextLine:
+                    () =>
+                    ({ chain }) => {
+                        return chain()
+                            .command((props) => {
+                                const { selection } = props.state;
+                                props.commands.insertContentAt(selection.head, {
+                                    type: 'paragraph'
+                                });
 
                                 return true;
                             })

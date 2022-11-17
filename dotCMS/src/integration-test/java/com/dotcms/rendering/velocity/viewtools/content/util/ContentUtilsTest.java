@@ -969,21 +969,24 @@ public class ContentUtilsTest {
      * Should: contentlet with the sessionLang
      */
     @Test
-    public void test_find_multilingual_contentlet_getContentletSuccessfully() throws DotSecurityException, DotDataException {
+    public void test_find_multilingual_contentlet_getContentletSuccessfully() throws DotSecurityException,
+                                                                                                 DotDataException {
         final Host host = new SiteDataGen().nextPersisted();
         final long spanishLangId = TestDataUtils.getSpanishLanguage().getId();
-        Contentlet contentlet = TestDataUtils.getGenericContentContent(true,1,host);
-        Contentlet contentletNewLang = APILocator.getContentletAPI().checkout(contentlet.getInode(),user,false);
+        final int sessionLanguage = 1;
+        final Contentlet contentlet = TestDataUtils.getGenericContentContent(true, sessionLanguage, host);
+        final Contentlet contentletNewLang = APILocator.getContentletAPI().checkout(contentlet.getInode(), user, false);
         contentletNewLang.setLanguageId(spanishLangId);
-        APILocator.getContentletAPI().checkin(contentletNewLang,user,false);
+        APILocator.getContentletAPI().checkin(contentletNewLang, user, false);
+        final boolean workingVersion = Boolean.TRUE;
+        final Contentlet contentletFound = ContentUtils.find(contentlet.getIdentifier(), user, workingVersion,
+                sessionLanguage);
 
-        Contentlet contentletFound = ContentUtils.find(contentlet.getIdentifier(),user,false,1);
-
-        assertEquals(contentlet.getInode(),contentletFound.getInode());
-        assertEquals(contentlet.getLanguageId(),contentletFound.getLanguageId());
-
+        assertEquals("Contentlet created with session language must match the one retrieved via the API",
+                contentlet.getInode(), contentletFound.getInode());
+        assertEquals("Contentlet created with session language and the one retrieved via the API must have the same " +
+                             "language ID", contentlet.getLanguageId(), contentletFound.getLanguageId());
     }
-
 
     /**
      * Method to test: {@link ContentUtils#pullRelatedField(Relationship, String, String, int, int, String, User, String, boolean, long, Boolean)}
