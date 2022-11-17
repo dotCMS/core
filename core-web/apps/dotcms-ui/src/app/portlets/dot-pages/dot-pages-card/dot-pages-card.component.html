@@ -1,0 +1,33 @@
+<p-card>
+    <ng-template pTemplate="header">
+        <div
+            class="dot-pages-favorite-card-content__image"
+            [ngStyle]="{ 'background-image': 'url(' + imageUri + ')' }"
+            src="#"
+            alt="Card"
+        ><img [src]="imageUri" />
+    </div>
+    </ng-template>
+
+    <dot-icon-button
+        [icon]="ownerPage ? 'grade' : 'star_outline'"
+        [ngClass]="{
+            'dot-favorite-page-highlight': ownerPage
+        }"
+        [pTooltip]="'favoritePage.listing.star.icon.tooltip' | dm"
+        size="18"
+        data-testId="favoriteCardIconButton"
+        tooltipPosition="bottom"
+    ></dot-icon-button>
+
+    <div class="dot-pages-favorite-card-content__container">
+        <div class="dot-pages-favorite-card-content__title">{{ title }}</div>
+        <div
+            class="dot-pages-favorite-card-content__subtitle"
+            [pTooltip]="url | dm"
+            tooltipPosition="bottom"
+        >
+            {{ url }}
+        </div>
+    </div>
+</p-card>

@@ -1,0 +1,39 @@
+<div class="dot-pages__container" *ngIf="vm$ | async as vm">
+    <p-panel
+        [ngClass]="{
+            'dot-pages-panel__expanded': vm.favoritePages.total === vm.favoritePages.items.length
+        }"
+        [toggleable]="true"
+        [header]="'favorites' | dm"
+        iconPos="start"
+        expandIcon="pi pi-angle-down"
+        collapseIcon="pi pi-angle-up"
+    >
+        <ng-template pTemplate="icons">
+            <button
+                class="p-button-secondary dot-pages-panel-action__button"
+                [label]="
+                    vm.favoritePages.total > vm.favoritePages.items.length
+                        ? ('see.all' | dm)
+                        : ('see.less' | dm)
+                "
+                (click)="
+                    toggleFavoritePagesData(
+                        vm.favoritePages.total === vm.favoritePages.items.length
+                    )
+                "
+                pButton
+                type="button"
+                data-testid="seeAllBtn"
+            ></button>
+        </ng-template>
+
+        <dot-pages-card
+            *ngFor="let item of vm.favoritePages.items"
+            [imageUri]="item.screenshot"
+            [title]="item.title"
+            [url]="item.url"
+            [ownerPage]="item.owner === vm.loggedUserId"
+        ></dot-pages-card>
+    </p-panel>
+</div>

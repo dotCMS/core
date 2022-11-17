@@ -137,6 +137,11 @@ const PORTLETS_IFRAME = [
         ]
     },
     {
+        path: 'pages',
+        loadChildren: () =>
+            import('@portlets/dot-pages/dot-pages.module').then((m) => m.DotPagesModule)
+    },
+    {
         canActivateChild: [ContentletGuardService],
         path: 'add',
         children: [
