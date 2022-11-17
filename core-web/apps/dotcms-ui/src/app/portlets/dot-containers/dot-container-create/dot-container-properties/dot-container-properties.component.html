@@ -18,15 +18,15 @@
             ></button>
         </div>
         <div class="dot-container-properties__title-container">
-            <p-inplace #editText [active]="!form?.value?.identifier">
+            <p-inplace #editText [active]="!form?.value?.identifier" data-testId="inplace">
                 <ng-template pTemplate="content">
                     <span class="p-input-icon-right">
                         <i class="pi pi-times" (click)="editText.deactivate()"></i>
                         <input
                             class="dot-container-properties__title-input"
-                            #titleInput
                             [required]="true"
                             data-testId="title"
+                            dotAutofocus
                             type="text"
                             pInputText
                             formControlName="title"

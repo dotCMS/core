@@ -33,7 +33,7 @@ import { DotActionMenuButtonModule } from '@components/_common/dot-action-menu-b
 import { DotAddToBundleModule } from '@components/_common/dot-add-to-bundle';
 import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
-import { Component, CUSTOM_ELEMENTS_SCHEMA } from '@angular/core';
+import { Component, CUSTOM_ELEMENTS_SCHEMA, DebugElement } from '@angular/core';
 import { DotContainersService } from '@services/dot-containers/dot-containers.service';
 import { DotGlobalMessageService } from '@components/_common/dot-global-message/dot-global-message.service';
 import { DotEventsService } from '@dotcms/app/api/services/dot-events/dot-events.service';
@@ -41,12 +41,9 @@ import { DotContentTypeService } from '@dotcms/app/api/services/dot-content-type
 import { InplaceModule } from 'primeng/inplace';
 import { ReactiveFormsModule } from '@angular/forms';
 import { DotTextareaContentModule } from '@components/_common/dot-textarea-content/dot-textarea-content.module';
+import { By } from '@angular/platform-browser';
+import { DotAutofocusModule } from '@directives/dot-autofocus/dot-autofocus.module';
 
-@Component({
-    selector: 'dot-test-host-component',
-    template: `<dot-container-properties></dot-container-properties>`
-})
-class TestHostComponent {}
 @Component({
     selector: 'dot-container-code',
     template: '<div></div>'
@@ -69,14 +66,18 @@ const messages = {
 
 describe('DotContainerPropertiesComponent', () => {
     let fixture: ComponentFixture<DotContainerPropertiesComponent>;
-    let comp: DotContainerPropertiesComponent;
+    let de: DebugElement;
     let coreWebService: CoreWebService;
 
     const messageServiceMock = new MockDotMessageService(messages);
 
     beforeEach(async () => {
         await TestBed.configureTestingModule({
-            declarations: [DotContainerPropertiesComponent, TestHostComponent],
+            declarations: [
+                DotContainerPropertiesComponent,
+                DotContentEditorComponent,
+                DotLoopEditorComponent
+            ],
             providers: [
                 { provide: DotMessageService, useValue: messageServiceMock },
                 { provide: CoreWebService, useClass: CoreWebServiceMock },
@@ -129,12 +130,13 @@ describe('DotContainerPropertiesComponent', () => {
                 DotAddToBundleModule,
                 HttpClientTestingModule,
                 DynamicDialogModule,
+                DotAutofocusModule,
                 BrowserAnimationsModule
             ],
             schemas: [CUSTOM_ELEMENTS_SCHEMA]
         }).compileComponents();
         fixture = TestBed.createComponent(DotContainerPropertiesComponent);
-        comp = fixture.componentInstance;
+        de = fixture.debugElement;
         coreWebService = TestBed.inject(CoreWebService);
     });
 
@@ -147,13 +149,14 @@ describe('DotContainerPropertiesComponent', () => {
                 })
             );
             fixture.detectChanges();
-            spyOn(comp.titleInput.nativeElement, 'focus');
         });
 
         it('should focus on title field', async () => {
-            fixture.detectChanges();
-            await fixture.whenStable();
-            expect(comp.titleInput.nativeElement.focus).toHaveBeenCalled();
+            const inplace = de.query(By.css('[data-testId="inplace"]'));
+            const title = de.query(By.css('[data-testId="title"]'));
+
+            expect(inplace.componentInstance.active).toBe(true);
+            expect(title.attributes.dotAutofocus).toBeDefined();
         });
     });
 });
