@@ -322,10 +322,10 @@
     </servlet>
 	<servlet>
 		<servlet-name>WebDav</servlet-name>
-		<servlet-class>com.dotcms.repackage.com.bradmcevoy.http.MiltonServlet</servlet-class>
+		<servlet-class>com.bradmcevoy.http.MiltonServlet</servlet-class>
 		<init-param>
 				<param-name>resource.factory.class</param-name>
-				<param-value>com.dotmarketing.webdav.ResourceFactorytImpl</param-value>
+				<param-value>com.dotmarketing.webdav.ResourceFactoryImpl</param-value>
 		</init-param>
 	</servlet>
 	

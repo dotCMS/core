@@ -52,7 +52,11 @@ public class VelocityResourceKey implements Serializable {
 
 
     public VelocityResourceKey(final HTMLPageAsset asset, final PageMode mode, final long language) {
-        this(getHTMLPageFilePath(asset, mode, language));
+        this(asset, mode, language, asset.getVariantId());
+    }
+
+    public VelocityResourceKey(final HTMLPageAsset asset, final PageMode mode, final long language, final String variantName) {
+        this(getHTMLPageFilePath(asset.getIdentifier(), mode, language, variantName));
     }
 
     public static String getHTMLPageFilePath(HTMLPageAsset asset, PageMode mode, long language) {

@@ -17,12 +17,12 @@ package com.dotcms.webdav;
 
 import java.io.File;
 
-import com.dotcms.repackage.com.bradmcevoy.common.Path;
-import com.dotcms.repackage.com.bradmcevoy.http.Resource;
-import com.dotcms.repackage.com.bradmcevoy.http.ResourceFactory;
-import com.dotcms.repackage.com.bradmcevoy.http.SecurityManager;
-import com.dotcms.repackage.com.ettrema.http.fs.LockManager;
-import com.dotcms.repackage.com.ettrema.http.fs.NullSecurityManager;
+import com.bradmcevoy.common.Path;
+import com.bradmcevoy.http.Resource;
+import com.bradmcevoy.http.ResourceFactory;
+import com.bradmcevoy.http.SecurityManager;
+import com.ettrema.http.fs.LockManager;
+import com.ettrema.http.fs.NullSecurityManager;
 import com.dotmarketing.util.Logger;
 
 

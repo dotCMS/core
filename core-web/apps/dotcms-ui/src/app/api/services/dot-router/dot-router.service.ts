@@ -197,6 +197,29 @@ export class DotRouterService {
         ]);
     }
 
+    /**
+     * Redirects to the create container page
+     * @returns {void}
+     * @memberof DotRouterService
+     */
+    goToCreateContainer(): void {
+        this.router.navigate(['/containers/create']);
+    }
+
+    /**
+     * Redirect to edit the container.
+     * If the inode is passed, load a specific version of the container
+     *
+     * @param {string} id
+     * @param {string} inode
+     * @memberof DotRouterService
+     */
+    goToEditContainer(id: string, inode?: string): void {
+        this.router.navigate([
+            inode ? `/containers/edit/${id}/inode/${inode}` : `/containers/edit/${id}`
+        ]);
+    }
+
     goToURL(url: string): void {
         this.router.navigate([url]);
     }

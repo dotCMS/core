@@ -381,7 +381,7 @@ public class VersionableFactoryImpl extends VersionableFactory {
 	@Override
 	public Optional<ContentletVersionInfo> findAnyContentletVersionInfo(final String identifier)
 			throws DotDataException {
-		final List<ContentletVersionInfo> result = findContentletVersionInfos(identifier, 1);
+		final List<ContentletVersionInfo> result = findContentletVersionInfos(identifier, null, 1);
 		return !result.isEmpty() ? Optional.of(result.get(0)) : Optional.empty();
 	}
 
@@ -404,9 +404,23 @@ public class VersionableFactoryImpl extends VersionableFactory {
 
 	private List<ContentletVersionInfo> findContentletVersionInfos(final String identifier,
 			final int maxResults) throws DotDataException, DotStateException {
-		final DotConnect dotConnect = new DotConnect()
-				.setSQL("SELECT * FROM contentlet_version_info WHERE identifier=?")
-				.addParam(identifier);
+		return 	findContentletVersionInfos(identifier, null, maxResults);
+	}
+
+	private List<ContentletVersionInfo> findContentletVersionInfos(final String identifier, final String variantName,
+			final int maxResults) throws DotDataException, DotStateException {
+		final DotConnect dotConnect = new DotConnect();
+
+		if (UtilMethods.isSet(variantName)) {
+			dotConnect.setSQL(
+							"SELECT * FROM contentlet_version_info WHERE identifier=? AND variant_id = ?")
+					.addParam(identifier)
+					.addParam(variantName);
+		} else {
+			dotConnect.setSQL(
+							"SELECT * FROM contentlet_version_info WHERE identifier=?")
+					.addParam(identifier);
+		}
 
 		if (maxResults > 0) {
 			dotConnect.setMaxRows(maxResults);
@@ -424,6 +438,12 @@ public class VersionableFactoryImpl extends VersionableFactory {
 	protected List<ContentletVersionInfo> findAllContentletVersionInfos(final String identifier)
 			throws DotDataException, DotStateException {
 		return findContentletVersionInfos(identifier, -1);
+	}
+
+	@Override
+	protected List<ContentletVersionInfo> findAllContentletVersionInfos(final String identifier, final String variantName)
+			throws DotDataException, DotStateException {
+		return findContentletVersionInfos(identifier, variantName, -1);
 	}
 
     @Override

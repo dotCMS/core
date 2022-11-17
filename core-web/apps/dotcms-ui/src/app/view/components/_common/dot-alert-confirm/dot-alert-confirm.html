@@ -6,9 +6,9 @@
 >
     <p-footer>
         <button
+            class="p-button-secondary"
             type="button"
             pButton
-            class="p-button-secondary"
             tabindex="-1"
             [label]="dotAlertConfirmService.confirmModel.footerLabel.reject"
             (click)="onClickConfirm('reject')"
@@ -35,10 +35,10 @@
     <div [innerHTML]="dotAlertConfirmService.alertModel.message"></div>
     <p-footer>
         <button
+            class="p-button-secondary"
             *ngIf="dotAlertConfirmService.alertModel.footerLabel.reject"
             type="button"
             pButton
-            class="p-button-secondary"
             (click)="dotAlertConfirmService.alertReject($event)"
             [label]="dotAlertConfirmService.alertModel.footerLabel.reject"
         ></button>

@@ -53,16 +53,18 @@ const run = () => __awaiter(void 0, void 0, void 0, function* () {
     core.info("Running Core's postman tests");
     const results = yield postman.runTests();
     setOutput('tests_results_location', resultsFolder);
-    setOutput('tests_results_report_location', reportFolder);
+    setOutput('tests_results_report_location', reportFolder, true);
     setOutput('tests_results_status', results.testsResultsStatus);
     setOutput('tests_results_skip_report', results.skipResultsReport);
     if (results.testsRunExitCode !== 0) {
         core.setFailed(`Postman tests failed: ${JSON.stringify(results)}`);
     }
 });
-const setOutput = (name, value) => {
-    const val = value === undefined ? '' : value;
-    core.notice(`Setting output '${name}' with value: '${val}'`);
+const setOutput = (name, value, notify = false) => {
+    const val = value || '';
+    if (notify && !!val) {
+        core.notice(`Setting output '${name}' with value: '${val}'`);
+    }
     core.setOutput(name, value);
 };
 // Run main function
@@ -115,13 +117,7 @@ const exec = __importStar(__nccwpck_require__(1514));
 const fs = __importStar(__nccwpck_require__(7147));
 const path = __importStar(__nccwpck_require__(1017));
 const shelljs = __importStar(__nccwpck_require__(3516));
-// const resolveTomcat = (): string => {
-//   const dotServerFolder = path.join(projectRoot, 'dist', 'dotserver')
-//   const tomcatFolder = shelljs.ls(dotServerFolder).find(folder => folder.startsWith('tomcat-'))
-//   return path.join(dotServerFolder, tomcatFolder || '')
-// }
 const projectRoot = core.getInput('project_root');
-// const buildEnv = core.getInput('build_env')
 const builtImageName = core.getInput('built_image_name');
 const waitForDeps = core.getInput('wait_for_deps');
 const dbType = core.getInput('db_type');
@@ -129,6 +125,7 @@ const licenseKey = core.getInput('license_key');
 const customStarterUrl = core.getInput('custom_starter_url');
 const tests = core.getInput('tests');
 const exportReport = core.getBooleanInput('export_report');
+const includeAnalytics = core.getBooleanInput('include_analytics');
 const cicdFolder = path.join(projectRoot, 'cicd');
 const resourcesFolder = path.join(cicdFolder, 'resources', 'postman');
 const dockerFolder = path.join(cicdFolder, 'docker');
@@ -155,12 +152,13 @@ const DEPS_ENV = {
     JVM_ENDPOINT_TEST_PASS: 'obfuscate_me'
 };
 /*
+ * Run postman tests and provides a summary of such.
  *
- * @returns a number representing the command exit code
+ * @returns a object representing run status
  */
 const runTests = () => __awaiter(void 0, void 0, void 0, function* () {
     yield setup();
-    startDeps();
+    yield startDeps();
     printInfo();
     try {
         return yield runPostmanCollections();
@@ -196,6 +194,9 @@ const setup = () => __awaiter(void 0, void 0, void 0, function* () {
     yield prepareLicense();
     yield printInfo();
 });
+/**
+ * Prints docker command info
+ */
 const printInfo = () => __awaiter(void 0, void 0, void 0, function* () {
     yield execCmd(toCommand('docker', ['images']));
     yield execCmd(toCommand('docker', ['ps']));
@@ -210,58 +211,46 @@ const installDeps = () => __awaiter(void 0, void 0, void 0, function* () {
         npmArgs.push('newman-reporter-htmlextra');
     }
     yield execCmd(toCommand('npm', npmArgs));
-    // if (!fs.existsSync(tomcatRoot) && buildEnv === 'gradle') {
-    //   core.info(`Tomcat root does not exist, creating it`)
-    //   await exec.exec('./gradlew', ['clonePullTomcatDist'])
-    //   tomcatRoot = resolveTomcat()
-    //   if (!tomcatRoot) {
-    //     throw new Error('Cannot find any Tomcat root folder')
-    //   }
-    // }
 });
 /**
  * Start postman depencies: db, ES and DotCMS isntance.
  */
-const startDeps = () => {
+const startDeps = () => __awaiter(void 0, void 0, void 0, function* () {
     // Starting dependencies
     core.info(`
     =======================================
     Starting postman tests dependencies
     =======================================`);
+    if (includeAnalytics) {
+        execCmdAsync(toCommand('docker-compose', ['-f', 'analytics-compose.yml', 'up'], dockerFolder));
+        yield waitFor(140, 'Analytics Infrastructure');
+    }
     execCmdAsync(toCommand('docker-compose', ['-f', 'open-distro-compose.yml', '-f', `${dbType}-compose.yml`, '-f', 'dotcms-compose.yml', 'up'], dockerFolder, DEPS_ENV));
-    //await startDotCMS()
-};
+});
 /**
  * Stop postman depencies: db, ES and DotCMS isntance.
  */
 const stopDeps = () => __awaiter(void 0, void 0, void 0, function* () {
-    //await stopDotCMS()
     // Stopping dependencies
     core.info(`
     ===================================
     Stopping postman tests dependencies
     ===================================`);
+    if (includeAnalytics) {
+        try {
+            yield execCmd(toCommand('docker-compose', ['-f', 'analytics-compose.yml', 'down', '-v'], dockerFolder));
+        }
+        catch (err) {
+            console.error(`Error stopping dependencies: ${err}`);
+        }
+    }
     try {
-        yield execCmd(toCommand('docker-compose', ['-f', 'open-distro-compose.yml', '-f', `${dbType}-compose.yml`, '-f', 'dotcms-compose.yml', 'down'], dockerFolder, DEPS_ENV));
+        yield execCmd(toCommand('docker-compose', ['-f', 'open-distro-compose.yml', '-f', `${dbType}-compose.yml`, '-f', 'dotcms-compose.yml', 'down', '-v'], dockerFolder, DEPS_ENV));
     }
     catch (err) {
         console.error(`Error stopping dependencies: ${err}`);
     }
 });
-// const startDotCMS = async () => {
-//   core.info(`
-//     =======================================
-//     Starting DotCMS instance
-//     =======================================`)
-//   exec.exec(path.join(tomcatRoot, 'bin', 'startup.sh'))
-// }
-// const stopDotCMS = async () => {
-//   core.info(`
-//     =======================================
-//     Stopping DotCMS instance
-//     =======================================`)
-//   await exec.exec(path.join(tomcatRoot, 'bin', 'shutdown.sh'))
-// }
 /**
  * Run postman tests.
  *
@@ -442,6 +431,12 @@ const resolveSpecific = () => {
     core.info(`Resolved specific collections:\n${resolved.join(',')}`);
     return resolved;
 };
+/**
+ * Extracts postman tests from commit message.
+ *
+ * @param message commit message
+ * @returns filtered tests
+ */
 const extractFromMessg = (message) => {
     if (!message) {
         return [];
@@ -456,6 +451,15 @@ const extractFromMessg = (message) => {
     }
     return extracted;
 };
+/**
+ * Gather values and build a Command instance.
+ *
+ * @param cmd command
+ * @param args arguments
+ * @param workingDir working dir
+ * @param env environment variables
+ * @returns Command object
+ */
 const toCommand = (cmd, args, workingDir, env) => {
     return {
         cmd,
@@ -464,6 +468,11 @@ const toCommand = (cmd, args, workingDir, env) => {
         env
     };
 };
+/**
+ * Prints string Command representation.
+ *
+ * @param cmd Command object
+ */
 const printCmd = (cmd) => {
     var _a;
     let message = `Executing cmd: ${cmd.cmd} ${((_a = cmd.args) === null || _a === void 0 ? void 0 : _a.join(' ')) || ''}`;
@@ -475,10 +484,21 @@ const printCmd = (cmd) => {
     }
     core.info(message);
 };
+/**
+ * Executes command contained in Command object.
+ *
+ * @param cmd Command object
+ * @returns Promise with process number
+ */
 const execCmd = (cmd) => __awaiter(void 0, void 0, void 0, function* () {
     printCmd(cmd);
     return yield exec.exec(cmd.cmd, cmd.args || [], { cwd: cmd.workingDir, env: cmd.env });
 });
+/**
+ * Async executes command contained in Command object.
+ *
+ * @param cmd Command object
+ */
 const execCmdAsync = (cmd) => {
     printCmd(cmd);
     exec.exec(cmd.cmd, cmd.args || [], { cwd: cmd.workingDir, env: cmd.env });

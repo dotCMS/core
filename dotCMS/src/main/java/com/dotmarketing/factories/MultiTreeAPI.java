@@ -396,6 +396,16 @@ public interface MultiTreeAPI {
     }
 
     /**
+     * Copy all the {@link MultiTree} from a page;s variant to another page's variant
+     * @param pageId String page id
+     * @param baseVariant Name of the variant that will be using to get the {@link MultiTree} and them apply a new variant over a copy of the {@link MultiTree} on the page.
+     * @param newVariant Name of the variant that  is the new variant for the set of {@link MultiTree}
+     * @return List MultiTree
+     */
+    List<MultiTree> copyVariantForPage (String pageId, String baseVariant, String newVariant) throws DotDataException;
+
+
+    /**
      * Deletes the personalization for the page
      * @param pageId {@link String} page id
      * @param personalization {@link String} personalization

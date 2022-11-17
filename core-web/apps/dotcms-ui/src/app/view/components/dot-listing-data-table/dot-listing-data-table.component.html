@@ -1,9 +1,10 @@
 <dot-action-header [options]="actionHeaderOptions">
+    <ng-container [ngTemplateOutlet]="beforeSearchTemplate"></ng-container>
     <input
         #gf
+        [(ngModel)]="filter"
         (input)="dataTable.filterGlobal($event.target.value, 'contains')"
         (keydown.arrowdown)="focusFirstRow()"
-        [(ngModel)]="filter"
         pInputText
         placeholder="{{ 'global-search' | dm }}"
         type="text"
@@ -12,12 +13,6 @@
 </dot-action-header>
 <p-table
     #dataTable
-    (onContextMenuSelect)="contextMenuSelect.emit($event.data)"
-    (onFilter)="handleFilter()"
-    (onHeaderCheckboxToggle)="handleRowCheck()"
-    (onLazyLoad)="loadDataPaginationEvent($event)"
-    (onRowSelect)="handleRowCheck()"
-    (onRowUnselect)="handleRowCheck()"
     [(selection)]="selected"
     [columns]="columns"
     [contextMenu]="contextMenu ? cm : null"
@@ -32,6 +27,12 @@
     [sortOrder]="sortOrder && sortOrder.toLowerCase() === 'desc' ? -1 : 1"
     [totalRecords]="totalRecords"
     [value]="items"
+    (onContextMenuSelect)="contextMenuSelect.emit($event.data)"
+    (onFilter)="handleFilter()"
+    (onHeaderCheckboxToggle)="handleRowCheck()"
+    (onLazyLoad)="loadDataPaginationEvent($event)"
+    (onRowSelect)="handleRowCheck()"
+    (onRowUnselect)="handleRowCheck()"
     loadingIcon="fa fa-circle-o-notch fa-spin"
 >
     <ng-template let-columns pTemplate="header">
@@ -48,22 +49,22 @@
 
     <ng-template let-columns="columns" let-rowData pTemplate="body">
         <tr
-            (click)="handleRowClick(rowData)"
-            (keyup.enter)="handleRowClick(rowData)"
             [ngClass]="{ 'disabled-row': rowData?.owner === 'system' }"
             [pSelectableRowDisabled]="rowData?.owner === 'system'"
             [pContextMenuRowDisabled]="rowData.disableInteraction"
             [attr.data-testRowId]="rowData.identifier"
             [pContextMenuRow]="rowData"
             [pSelectableRow]="rowData"
+            (click)="handleRowClick(rowData)"
+            (keyup.enter)="handleRowClick(rowData)"
             data-testClass="testTableRow"
         >
             <td *ngIf="checkbox">
                 <p-tableCheckbox
-                    (click)="$event.stopPropagation()"
                     *ngIf="!rowData.disableInteraction"
                     [value]="rowData"
                     [attr.test-id]="rowData.friendlyName"
+                    (click)="$event.stopPropagation()"
                 ></p-tableCheckbox>
             </td>
             <ng-container
@@ -74,8 +75,8 @@
     </ng-template>
     <ng-template pTemplate="emptymessage">
         <div
-            *ngIf="isContentFiltered; else emptyState"
             class="listing-datatable__empty"
+            *ngIf="isContentFiltered; else emptyState"
             data-testId="listing-datatable__empty"
         >
             {{ 'No-Results-Found' | dm }}
@@ -101,7 +102,7 @@
 
 <ng-template #defaultRowTemplate let-rowData="rowData">
     <td *ngFor="let col of columns" [ngStyle]="{ width: col.width, 'text-align': getAlign(col) }">
-        <div *ngIf="col.icon" class="listing-datatable__column-icon">
+        <div class="listing-datatable__column-icon" *ngIf="col.icon">
             <dot-icon name="{{ col.icon(rowData) }}"></dot-icon>
             <span>{{ col.textContent || rowData[col.fieldName] }}</span>
         </div>
@@ -109,10 +110,10 @@
             {{ rowData[col.fieldName] }}
         </span>
         <a
-            (click)="$event.stopPropagation()"
             *ngIf="col.fieldName === 'nEntries'"
             [queryParams]="rowData.variable === 'Host' ? {} : { filter: rowData.variable }"
             [routerLink]="rowData.variable === 'Host' ? '/c/sites' : '/c/content'"
+            (click)="$event.stopPropagation()"
         >
             {{
                 col.textContent
@@ -123,9 +124,10 @@
     </td>
     <td class="listing-datatable__action-column" style="width: 5%">
         <dot-action-menu-button
+            class="listing-datatable__action-button"
+            *ngIf="actions"
             [actions]="actions"
             [item]="rowData"
-            class="listing-datatable__action-button"
         >
         </dot-action-menu-button>
     </td>
