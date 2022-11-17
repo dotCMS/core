@@ -114,6 +114,9 @@ testem.log
 /core-web/typings
 karma_html/
 
+## SonarQube Nx Plugin
+**/.scannerwork/
+
 # e2e
 /core-web/e2e/*.js
 /core-web/e2e/*.map
@@ -122,3 +125,6 @@ karma_html/
 /core-web/out*/
 dist-docs/
 **/test-reports/
+
+#env
+/core-web/**/.env

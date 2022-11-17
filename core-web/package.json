@@ -122,6 +122,7 @@
     "@angular/language-service": "14.2.0",
     "@babel/core": "^7.12.9",
     "@compodoc/compodoc": "^1.1.11",
+    "@koliveira15/nx-sonarqube": "^2.1.0",
     "@materia-ui/ngx-monaco-editor": "^6.0.0",
     "@mdx-js/react": "^2.1.2",
     "@ngneat/spectator": "^11.3.0",
