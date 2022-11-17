@@ -374,7 +374,7 @@ public class ExperimentsResource {
      * one by one if finally the user is not going into any experiment then it return a
      * {@link com.dotcms.experiments.business.web.ExperimentWebAPI#NONE_EXPERIMENT}
      *
-     * @see com.dotcms.experiments.business.web.ExperimentWebAPI#isUserIncluded(HttpServletRequest, HttpServletResponse)
+     * @see com.dotcms.experiments.business.web.ExperimentWebAPI#isUserIncluded(HttpServletRequest, HttpServletResponse, List) 
      */
     @GET
     @NoCache
@@ -385,7 +385,7 @@ public class ExperimentsResource {
     ) throws DotDataException, DotSecurityException {
 
         return new ResponseEntityExperimentSelectedView(
-                WebAPILocator.getExperimentWebAPI().isUserIncluded(request, response)
+                WebAPILocator.getExperimentWebAPI().isUserIncluded(request, response, null)
         );
     }
 

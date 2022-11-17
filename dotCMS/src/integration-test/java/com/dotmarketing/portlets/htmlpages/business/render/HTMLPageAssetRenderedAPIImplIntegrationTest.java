@@ -1339,58 +1339,86 @@ public class HTMLPageAssetRenderedAPIImplIntegrationTest extends IntegrationTest
     @Test
     public void injectJSCodeWithHead() throws WebAssetException, DotDataException, DotSecurityException {
         final Experiment experiment = new ExperimentDataGen().nextPersisted();
-        ExperimentDataGen.start(experiment);
 
-        final Language language = new LanguageDataGen().nextPersisted();
-        final Host host = new SiteDataGen().nextPersisted();
+        try {
+            ExperimentDataGen.start(experiment);
 
-        final ContentType contentType = createContentType();
-        final Container container = createAndPublishContainer(host, contentType);
-        final HTMLPageAsset page = createHtmlPageAssetWithHead(language, host, container,"<head><title>This is a testing</title></head>");
-        final Contentlet contentlet = createContentlet(language, host, contentType);
+            final Language language = new LanguageDataGen().nextPersisted();
+            final Host host = new SiteDataGen().nextPersisted();
 
-        addToPage(container, page, contentlet);
+            final ContentType contentType = createContentType();
+            final Container container = createAndPublishContainer(host, contentType);
+            final HTMLPageAsset page = createHtmlPageAssetWithHead(language, host, container,
+                    "<head><title>This is a testing</title></head>");
+            final Contentlet contentlet = createContentlet(language, host, contentType);
 
-        final HttpServletRequest mockRequest = createHttpServletRequest(language, host,
-                VariantAPI.DEFAULT_VARIANT, page);
+            addToPage(container, page, contentlet);
 
-        final HttpServletResponse mockResponse = mock(HttpServletResponse.class);
-        final HttpSession session = createHttpSession(mockRequest);
-        when(session.getAttribute(WebKeys.VISITOR)).thenReturn(null);
+            final HttpServletRequest mockRequest = createHttpServletRequest(language, host,
+                    VariantAPI.DEFAULT_VARIANT, page);
 
-        String html = APILocator.getHTMLPageAssetRenderedAPI().getPageHtml(
-                PageContextBuilder.builder()
-                        .setUser(APILocator.systemUser())
-                        .setPageUri(page.getURI())
-                        .setPageMode(PageMode.LIVE)
-                        .build(),
-                mockRequest, mockResponse);
-        final String expectedContentRender = "<div>DEFAULT content-default-" + language.getId() + "</div>";
-        final String expectedHead = "<head>"
-                + "<script src=\"/s/lib.js\" data-key=\"\"\n"
-                        + "        data-init-only=\"false\"\n"
-                        + "        defer>\n"
-                        + "</script>\n"
-                        + "\n"
-                        + "<script>window.jitsu = window.jitsu || (function(){(window.jitsuQ = window.jitsuQ || []).push(arguments);})</script>"
-                + "<SCRIPT>"
-                + "var isInExperiment = document.cookie.includes('runningExperiment');\n"
-                        + "\n"
-                        + "if (!isInExperiment) {\n"
-                        + "    fetch('/api/v1/experiment')\n"
-                        + "    .then(response => response.json())\n"
-                        + "    .then(data => {\n"
-                        + "        if (data.experiment) {\n"
-                        + "            localStorage.setItem('experiment_data', JSON.stringify(data));\n"
-                        + "        }\n"
-                        + "    });\n"
-                        + "}"
-                + "</SCRIPT>"
-                + "<title>This is a testing</title>"
-                + "</head>";
-        final String expectedCode = expectedHead + expectedContentRender;
+            final HttpServletResponse mockResponse = mock(HttpServletResponse.class);
+            final HttpSession session = createHttpSession(mockRequest);
+            when(session.getAttribute(WebKeys.VISITOR)).thenReturn(null);
 
-        Assert.assertEquals(expectedCode, html);
+            String html = APILocator.getHTMLPageAssetRenderedAPI().getPageHtml(
+                    PageContextBuilder.builder()
+                            .setUser(APILocator.systemUser())
+                            .setPageUri(page.getURI())
+                            .setPageMode(PageMode.LIVE)
+                            .build(),
+                    mockRequest, mockResponse);
+            final String expectedContentRender =
+                    "<div>DEFAULT content-default-" + language.getId() + "</div>";
+            final String expectedHead = "<head>"
+                    + "<script src=\"/s/lib.js\" data-key=\"\"\n"
+                    + "        data-init-only=\"false\"\n"
+                    + "        defer>\n"
+                    + "</script>\n"
+                    + "\n"
+                    + "<script>window.jitsu = window.jitsu || (function(){(window.jitsuQ = window.jitsuQ || []).push(arguments);})</script>\n"
+                    + "<SCRIPT>\n"
+                    + "let currentRunningExperimentsId = ['" + experiment.id().get() + "']\n"
+                    + "\n"
+                    + "function shouldHitEndPoint() {\n"
+                    + "    let experimentData = localStorage.getItem('experiment_data');\n"
+                    + "    if (experimentData) {\n"
+                    + "        let includedExperimentIds = JSON.stringify(\n"
+                    + "            experimentData).includedExperimentIds;\n"
+                    + "        return includedExperimentIds.every(element => {\n"
+                    + "        return currentRunningExperimentsId.includes(element);\n"
+                    + "        });\n"
+                    + "    } else {\n"
+                    + "        return false;\n"
+                    + "    }\n"
+                    + "}\n"
+                    + "\n"
+                    + "let shouldHitEndPoint = shouldHitEndPoint();\n"
+                    + "\n"
+                    + "if (!shouldHitEndPoint) {\n"
+                    + "    fetch('/api/v1/experiment')\n"
+                    + "        .then(response => response.json())\n"
+                    + "        .then(data => {\n"
+                    + "            if (data.experiments) {\n"
+                    + "                let dataToStorage = Object.assign({}, data);\n"
+                    + "                delete dataToStorage['excludedExperimentIds'];\n"
+                    + "                dataToStorage['includedExperimentIds'] = [\n"
+                    + "                    ...dataToStorage['includedExperimentIds'],\n"
+                    + "                    ...dataToStorage['excludedExperimentIds']\n"
+                    + "                ];\n"
+                    + "                localStorage.setItem('experiment_data', JSON.stringify(dataToStorage));\n"
+                    + "            }\n"
+                    + "        });\n"
+                    + "}"
+                    + "</SCRIPT>"
+                    + "<title>This is a testing</title>"
+                    + "</head>";
+            final String expectedCode = expectedHead + expectedContentRender;
+
+            Assert.assertEquals(expectedCode, html);
+        } finally {
+            ExperimentDataGen.end(experiment);
+        }
     }
 
     /**
@@ -1404,55 +1432,81 @@ public class HTMLPageAssetRenderedAPIImplIntegrationTest extends IntegrationTest
     @Test
     public void injectJSCodeWithoutHead() throws WebAssetException, DotDataException, DotSecurityException {
         final Experiment experiment = new ExperimentDataGen().nextPersisted();
-        ExperimentDataGen.start(experiment);
 
-        final Language language = new LanguageDataGen().nextPersisted();
-        final Host host = new SiteDataGen().nextPersisted();
+        try {
+            ExperimentDataGen.start(experiment);
 
-        final ContentType contentType = createContentType();
-        final Container container = createAndPublishContainer(host, contentType);
-        final HTMLPageAsset page = createHtmlPageAsset(language, host, container);
-        final Contentlet contentlet = createContentlet(language, host, contentType);
+            final Language language = new LanguageDataGen().nextPersisted();
+            final Host host = new SiteDataGen().nextPersisted();
 
-        addToPage(container, page, contentlet);
+            final ContentType contentType = createContentType();
+            final Container container = createAndPublishContainer(host, contentType);
+            final HTMLPageAsset page = createHtmlPageAsset(language, host, container);
+            final Contentlet contentlet = createContentlet(language, host, contentType);
 
-        final HttpServletRequest mockRequest = createHttpServletRequest(language, host,
-                VariantAPI.DEFAULT_VARIANT, page);
+            addToPage(container, page, contentlet);
 
-        final HttpServletResponse mockResponse = mock(HttpServletResponse.class);
-        final HttpSession session = createHttpSession(mockRequest);
-        when(session.getAttribute(WebKeys.VISITOR)).thenReturn(null);
+            final HttpServletRequest mockRequest = createHttpServletRequest(language, host,
+                    VariantAPI.DEFAULT_VARIANT, page);
 
-        String html = APILocator.getHTMLPageAssetRenderedAPI().getPageHtml(
-                PageContextBuilder.builder()
-                        .setUser(APILocator.systemUser())
-                        .setPageUri(page.getURI())
-                        .setPageMode(PageMode.LIVE)
-                        .build(),
-                mockRequest, mockResponse);
-        final String expectedContentRender = "<div>DEFAULT content-default-" + language.getId() + "</div>";
-        final String expectedHead = "<script src=\"/s/lib.js\" data-key=\"\"\n"
-                + "        data-init-only=\"false\"\n"
-                + "        defer>\n"
-                + "</script>\n"
-                + "\n"
-                + "<script>window.jitsu = window.jitsu || (function(){(window.jitsuQ = window.jitsuQ || []).push(arguments);})</script>"
-                + "<SCRIPT>"
-                + "var isInExperiment = document.cookie.includes('runningExperiment');\n"
-                + "\n"
-                + "if (!isInExperiment) {\n"
-                + "    fetch('/api/v1/experiment')\n"
-                + "    .then(response => response.json())\n"
-                + "    .then(data => {\n"
-                + "        if (data.experiment) {\n"
-                + "            localStorage.setItem('experiment_data', JSON.stringify(data));\n"
-                + "        }\n"
-                + "    });\n"
-                + "}"
-                + "</SCRIPT>"
-                + "<title>This is a testing</title>";
-        final String expectedCode = expectedHead + expectedContentRender;
+            final HttpServletResponse mockResponse = mock(HttpServletResponse.class);
+            final HttpSession session = createHttpSession(mockRequest);
+            when(session.getAttribute(WebKeys.VISITOR)).thenReturn(null);
 
-        Assert.assertEquals(expectedCode, html);
+            String html = APILocator.getHTMLPageAssetRenderedAPI().getPageHtml(
+                    PageContextBuilder.builder()
+                            .setUser(APILocator.systemUser())
+                            .setPageUri(page.getURI())
+                            .setPageMode(PageMode.LIVE)
+                            .build(),
+                    mockRequest, mockResponse);
+            final String expectedContentRender =
+                    "<div>DEFAULT content-default-" + language.getId() + "</div>";
+            final String expectedHead = "<script src=\"/s/lib.js\" data-key=\"\"\n"
+                    + "        data-init-only=\"false\"\n"
+                    + "        defer>\n"
+                    + "</script>\n"
+                    + "\n"
+                    + "<script>window.jitsu = window.jitsu || (function(){(window.jitsuQ = window.jitsuQ || []).push(arguments);})</script>\n"
+                    + "<SCRIPT>\n"
+                    + "let currentRunningExperimentsId = ['" + experiment.id().get() + "']\n"
+                    + "\n"
+                    + "function shouldHitEndPoint() {\n"
+                    + "    let experimentData = localStorage.getItem('experiment_data');\n"
+                    + "    if (experimentData) {\n"
+                    + "        let includedExperimentIds = JSON.stringify(\n"
+                    + "            experimentData).includedExperimentIds;\n"
+                    + "        return includedExperimentIds.every(element => {\n"
+                    + "        return currentRunningExperimentsId.includes(element);\n"
+                    + "        });\n"
+                    + "    } else {\n"
+                    + "        return false;\n"
+                    + "    }\n"
+                    + "}\n"
+                    + "\n"
+                    + "let shouldHitEndPoint = shouldHitEndPoint();\n"
+                    + "\n"
+                    + "if (!shouldHitEndPoint) {\n"
+                    + "    fetch('/api/v1/experiment')\n"
+                    + "        .then(response => response.json())\n"
+                    + "        .then(data => {\n"
+                    + "            if (data.experiments) {\n"
+                    + "                let dataToStorage = Object.assign({}, data);\n"
+                    + "                delete dataToStorage['excludedExperimentIds'];\n"
+                    + "                dataToStorage['includedExperimentIds'] = [\n"
+                    + "                    ...dataToStorage['includedExperimentIds'],\n"
+                    + "                    ...dataToStorage['excludedExperimentIds']\n"
+                    + "                ];\n"
+                    + "                localStorage.setItem('experiment_data', JSON.stringify(dataToStorage));\n"
+                    + "            }\n"
+                    + "        });\n"
+                    + "}"
+                    + "</SCRIPT>\n";
+            final String expectedCode = expectedHead + expectedContentRender;
+
+            Assert.assertEquals(expectedCode, html);
+        }  finally {
+            ExperimentDataGen.end(experiment);
+        }
     }
 }

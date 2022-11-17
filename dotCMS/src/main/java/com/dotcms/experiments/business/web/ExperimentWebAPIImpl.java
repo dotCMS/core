@@ -20,6 +20,7 @@ import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -35,19 +36,24 @@ import org.jetbrains.annotations.NotNull;
 public class ExperimentWebAPIImpl implements ExperimentWebAPI {
 
     @Override
-    public SelectedExperiments isUserIncluded(final HttpServletRequest request, final HttpServletResponse response)
+    public SelectedExperiments isUserIncluded(final HttpServletRequest request,
+            final HttpServletResponse response, final List<String> idsToExclude)
             throws DotDataException, DotSecurityException {
         final List<Experiment> experimentRunning = APILocator.getExperimentsAPI()
                 .getRunningExperiment();
+        final List<Experiment> experimentFiltered = UtilMethods.isSet(idsToExclude) ?
+                experimentRunning.stream()
+                    .filter(experiment -> !idsToExclude.contains(experiment.id().get()))
+                    .collect(Collectors.toList()) : experimentRunning;
 
-        final List<Experiment> experiments = pickExperiments(experimentRunning, request, response);
+        final List<Experiment> experiments = pickExperiments(experimentFiltered, request, response);
         final List<SelectedExperiment> selectedExperiments = !experiments.isEmpty() ?
                 getSelectedExperimentsResult(response, experiments)
                 : getNoneExperimentListResult(response);
 
         return new SelectedExperiments(selectedExperiments,
-                experimentRunning.stream().map(experiment -> experiment.id().get())
-                        .collect(Collectors.toList()));
+                experimentFiltered.stream().map(experiment -> experiment.id().get()).collect(Collectors.toList()),
+                UtilMethods.isSet(idsToExclude) ? new ArrayList(idsToExclude) : Collections.EMPTY_LIST);
     }
 
     private List<SelectedExperiment> getSelectedExperimentsResult(HttpServletResponse response,

@@ -47,6 +47,7 @@ import io.vavr.control.Try;
 import java.io.IOException;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.core.Context;
@@ -290,7 +291,7 @@ public class HTMLPageAssetRenderedAPIImpl implements HTMLPageAssetRenderedAPI {
                 .setLive(htmlPageUrl.hasLive())
                 .getPageHTML(context.getPageMode());
 
-        return !APILocator.getExperimentsAPI().isAnyExperimentRunning() ?
+        return APILocator.getExperimentsAPI().isAnyExperimentRunning() ?
                 injectExperimentJSCode(pageHTML) : pageHTML;
     }
 
@@ -300,7 +301,7 @@ public class HTMLPageAssetRenderedAPIImpl implements HTMLPageAssetRenderedAPI {
             return StringUtils.replaceIgnoreCase(pageHTML, "<head>",
                     "<head>" + EXPERIMENT_SCRIPT.get());
         } else {
-            return EXPERIMENT_SCRIPT.get() + pageHTML;
+            return EXPERIMENT_SCRIPT.get() + "\n" + pageHTML;
         }
     }
 
@@ -532,9 +533,15 @@ public class HTMLPageAssetRenderedAPIImpl implements HTMLPageAssetRenderedAPI {
             final String jsJitsuCode =  getFileContentFromResourceContext("experiment/html/experiment_head.html")
                     .replaceAll("\\$\\{jitsu_key}", "");
 
-            final String shouldBeInExperimentCalled =  getFileContentFromResourceContext("experiment/js/init_script.js");
-            return jsJitsuCode + "<SCRIPT>" + shouldBeInExperimentCalled + "</SCRIPT>";
-        } catch (IOException e) {
+            final String runningExperimentsId = APILocator.getExperimentsAPI().getRunningExperiment().stream()
+                    .map(experiment -> "'" + experiment.id().get() + "'")
+                    .collect(Collectors.joining(","));
+
+            final String shouldBeInExperimentCalled =  getFileContentFromResourceContext("experiment/js/init_script.js")
+                    .replaceAll("\\$\\{running_experiments_list}", runningExperimentsId);
+
+            return jsJitsuCode + "\n<SCRIPT>" + shouldBeInExperimentCalled + "</SCRIPT>";
+        } catch (IOException | DotDataException e) {
             throw new RuntimeException(e);
         }
     }

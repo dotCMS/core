@@ -1,5 +1,6 @@
 package com.dotcms.experiments.business.web;
 
+import static com.dotcms.util.CollectionsUtils.list;
 import static com.dotcms.util.CollectionsUtils.map;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -9,6 +10,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import com.dotcms.datagen.ExperimentDataGen;
+import com.dotcms.experiments.model.AbstractExperiment.Status;
 import com.dotcms.experiments.model.Experiment;
 import com.dotcms.experiments.model.ExperimentVariant;
 import com.dotcms.experiments.model.TargetingCondition;
@@ -22,7 +24,6 @@ import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.rules.model.LogicalOperator;
-import com.dotmarketing.util.Calendar;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.util.StringPool;
 import java.time.Duration;
@@ -32,6 +33,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -46,7 +48,7 @@ public class ExperimentWebAPIImplIT {
     }
 
     /**
-     * Method to test: {@link ExperimentWebAPIImpl#isUserIncluded(HttpServletRequest, HttpServletResponse)}
+     * Method to test: {@link ExperimentWebAPIImpl#isUserIncluded(HttpServletRequest, HttpServletResponse, List)}
      * When: You have one experiment running with 100% of traffic allocation and without targeting
      * Should: Return this experiment all the time
      *
@@ -67,14 +69,16 @@ public class ExperimentWebAPIImplIT {
                 final DotCMSMockResponse response = new DotCMSMockResponse();
 
                 final SelectedExperiments selectedExperiments = WebAPILocator.getExperimentWebAPI()
-                        .isUserIncluded(request, response);
+                        .isUserIncluded(request, response, null);
 
                 assertEquals(1, selectedExperiments.getExperiments().size());
                 assertEquals(experiment.id().get(), selectedExperiments.getExperiments().get(0).id());
                 assertEquals(htmlPageAsset.getPageUrl(), selectedExperiments.getExperiments().get(0).pageUrl());
 
-                assertEquals(1, selectedExperiments.getIncludeExperimentIds().size());
-                assertEquals(experiment.id().get(), selectedExperiments.getIncludeExperimentIds().get(0));
+                assertEquals(1, selectedExperiments.getIncludedExperimentIds().size());
+                assertEquals(experiment.id().get(), selectedExperiments.getIncludedExperimentIds().get(0));
+
+                assertTrue(selectedExperiments.getExcludedExperimentIds().isEmpty());
 
                 checkCookie(response, selectedExperiments.getExperiments().get(0),
                         experimentStarted.scheduling().get().endDate().get());
@@ -85,7 +89,7 @@ public class ExperimentWebAPIImplIT {
     }
 
     /**
-     * Method to test: {@link ExperimentWebAPIImpl#isUserIncluded(HttpServletRequest, HttpServletResponse)}
+     * Method to test: {@link ExperimentWebAPIImpl#isUserIncluded(HttpServletRequest, HttpServletResponse, List)}
      * When: You have 2 experiments running with 100% of traffic allocation and without targeting
      * Should: Return the two experiments all the time
      *
@@ -109,7 +113,7 @@ public class ExperimentWebAPIImplIT {
                 final DotCMSMockResponse response = new DotCMSMockResponse();
 
                 final SelectedExperiments selectedExperiments = WebAPILocator.getExperimentWebAPI()
-                        .isUserIncluded(request, response);
+                        .isUserIncluded(request, response, null);
 
                 assertEquals(2, selectedExperiments.getExperiments().size());
 
@@ -124,9 +128,11 @@ public class ExperimentWebAPIImplIT {
                 }
 
 
-                assertEquals(2, selectedExperiments.getIncludeExperimentIds().size());
-                assertTrue(selectedExperiments.getIncludeExperimentIds().contains(experiment_1.id().get()));
-                assertTrue(selectedExperiments.getIncludeExperimentIds().contains(experiment_2.id().get()));
+                assertEquals(2, selectedExperiments.getIncludedExperimentIds().size());
+                assertTrue(selectedExperiments.getIncludedExperimentIds().contains(experiment_1.id().get()));
+                assertTrue(selectedExperiments.getIncludedExperimentIds().contains(experiment_2.id().get()));
+
+                assertTrue(selectedExperiments.getExcludedExperimentIds().isEmpty());
             }
         } finally {
             ExperimentDataGen.end(experiment_1);
@@ -165,7 +171,7 @@ public class ExperimentWebAPIImplIT {
     }
 
     /**
-     * Method to test: {@link ExperimentWebAPIImpl#isUserIncluded(HttpServletRequest, HttpServletResponse)}
+     * Method to test: {@link ExperimentWebAPIImpl#isUserIncluded(HttpServletRequest, HttpServletResponse, List)}
      * When: You have none experiment
      * Should: Should return {@link ExperimentWebAPIImpl#NONE_EXPERIMENT}
      *
@@ -181,7 +187,7 @@ public class ExperimentWebAPIImplIT {
 
             final DotCMSMockResponse response = new DotCMSMockResponse();
             final SelectedExperiments selectedExperiments = WebAPILocator.getExperimentWebAPI()
-                    .isUserIncluded(request, response);
+                    .isUserIncluded(request, response,  null);
 
             assertEquals(1, selectedExperiments.getExperiments().size());
             assertEquals(ExperimentWebAPI.NONE_EXPERIMENT.id(), selectedExperiments.getExperiments()
@@ -192,12 +198,13 @@ public class ExperimentWebAPIImplIT {
 
             checkCookie(response, selectedExperiments.getExperiments().get(0), expireDate);
 
-            assertTrue(selectedExperiments.getIncludeExperimentIds().isEmpty());
+            assertTrue(selectedExperiments.getIncludedExperimentIds().isEmpty());
+            assertTrue(selectedExperiments.getExcludedExperimentIds().isEmpty());
         }
     }
 
     /**
-     * Method to test: {@link ExperimentWebAPIImpl#isUserIncluded(HttpServletRequest, HttpServletResponse)}
+     * Method to test: {@link ExperimentWebAPIImpl#isUserIncluded(HttpServletRequest, HttpServletResponse, List)}
      * When: You have one experiment running with 50% of traffic allocation and without targeting
      * Should: Return this experiment sometimes and sometimes return {@link ExperimentWebAPIImpl#NONE_EXPERIMENT}
      *
@@ -216,7 +223,7 @@ public class ExperimentWebAPIImplIT {
             for (int i = 0; i < 10; i++) {
                 final DotCMSMockResponse response = new DotCMSMockResponse();
                 final SelectedExperiments selectedExperiments = WebAPILocator.getExperimentWebAPI()
-                        .isUserIncluded(request, response);
+                        .isUserIncluded(request, response, null);
 
                 assertEquals(1, selectedExperiments.getExperiments().size());
                 experimentsSelected.add(selectedExperiments.getExperiments().get(0));
@@ -224,8 +231,9 @@ public class ExperimentWebAPIImplIT {
                 checkCookie(response, selectedExperiments.getExperiments().get(0));
 
 
-                assertEquals(1, selectedExperiments.getIncludeExperimentIds().size());
-                assertEquals(experiment.id().get(), selectedExperiments.getIncludeExperimentIds().get(0));
+                assertEquals(1, selectedExperiments.getIncludedExperimentIds().size());
+                assertEquals(experiment.id().get(), selectedExperiments.getIncludedExperimentIds().get(0));
+                assertTrue(selectedExperiments.getExcludedExperimentIds().isEmpty());
             }
 
             final boolean anyNoneExperiment = experimentsSelected.stream()
@@ -243,7 +251,7 @@ public class ExperimentWebAPIImplIT {
     }
 
     /**
-     * Method to test: {@link ExperimentWebAPIImpl#isUserIncluded(HttpServletRequest, HttpServletResponse)}
+     * Method to test: {@link ExperimentWebAPIImpl#isUserIncluded(HttpServletRequest, HttpServletResponse, List)}
      * When: You have two experiment running with 50% of traffic allocation each one and without targeting
      * Should: Return both experiment or {@link ExperimentWebAPIImpl#NONE_EXPERIMENT} sometimes
      *
@@ -264,7 +272,7 @@ public class ExperimentWebAPIImplIT {
             for (int i = 0; i < 10; i++) {
                 final DotCMSMockResponse response = new DotCMSMockResponse();
                 final SelectedExperiments selectedExperiments = WebAPILocator.getExperimentWebAPI()
-                        .isUserIncluded(request, response);
+                        .isUserIncluded(request, response, null);
 
                 assertTrue(selectedExperiments.getExperiments().size() == 2 ||
                         selectedExperiments.getExperiments().size() == 1);
@@ -274,9 +282,10 @@ public class ExperimentWebAPIImplIT {
                     checkCookie(response, selectedExperiment);
                 }
 
-                assertEquals(2, selectedExperiments.getIncludeExperimentIds().size());
-                assertTrue(selectedExperiments.getIncludeExperimentIds().contains(experiment_1.id().get()));
-                assertTrue(selectedExperiments.getIncludeExperimentIds().contains(experiment_2.id().get()));
+                assertEquals(2, selectedExperiments.getIncludedExperimentIds().size());
+                assertTrue(selectedExperiments.getIncludedExperimentIds().contains(experiment_1.id().get()));
+                assertTrue(selectedExperiments.getIncludedExperimentIds().contains(experiment_2.id().get()));
+                assertTrue(selectedExperiments.getExcludedExperimentIds().isEmpty());
             }
 
             final boolean anyNoneExperiment = experimentsSelected.stream()
@@ -306,7 +315,7 @@ public class ExperimentWebAPIImplIT {
     }
 
     /**
-     * Method to test: {@link ExperimentWebAPIImpl#isUserIncluded(HttpServletRequest, HttpServletResponse)}
+     * Method to test: {@link ExperimentWebAPIImpl#isUserIncluded(HttpServletRequest, HttpServletResponse, List)}
      * When: You have one experiment with a rules but the rules conditions is not TRUE
      * Should: Return {@link ExperimentWebAPIImpl#NONE_EXPERIMENT} all the times
      *
@@ -335,7 +344,7 @@ public class ExperimentWebAPIImplIT {
             for (int i = 0; i < 10; i++) {
                 final DotCMSMockResponse response = new DotCMSMockResponse();
                 final SelectedExperiments selectedExperiments = WebAPILocator.getExperimentWebAPI()
-                        .isUserIncluded(request, response);
+                        .isUserIncluded(request, response, null);
 
                 assertEquals(1, selectedExperiments.getExperiments().size());
                 assertEquals(ExperimentWebAPI.NONE_EXPERIMENT.id(), selectedExperiments.getExperiments().get(0).id());
@@ -343,8 +352,9 @@ public class ExperimentWebAPIImplIT {
 
                 checkCookie(response, selectedExperiments.getExperiments().get(0));
 
-                assertEquals(1, selectedExperiments.getIncludeExperimentIds().size());
-                assertTrue(selectedExperiments.getIncludeExperimentIds().contains(experiment.id().get()));
+                assertEquals(1, selectedExperiments.getIncludedExperimentIds().size());
+                assertTrue(selectedExperiments.getIncludedExperimentIds().contains(experiment.id().get()));
+                assertTrue(selectedExperiments.getExcludedExperimentIds().isEmpty());
             }
         } finally {
             ExperimentDataGen.end(experiment);
@@ -352,7 +362,7 @@ public class ExperimentWebAPIImplIT {
     }
 
     /**
-     * Method to test: {@link ExperimentWebAPIImpl#isUserIncluded(HttpServletRequest, HttpServletResponse)}
+     * Method to test: {@link ExperimentWebAPIImpl#isUserIncluded(HttpServletRequest, HttpServletResponse, List)}
      * When: You have one experiment with a rules but the rules conditions is TRUE
      * Should: Return Experiment as selected all the time
      *
@@ -385,7 +395,7 @@ public class ExperimentWebAPIImplIT {
                 final DotCMSMockResponse response = new DotCMSMockResponse();
 
                 final SelectedExperiments selectedExperiments = WebAPILocator.getExperimentWebAPI()
-                        .isUserIncluded(request, response);
+                        .isUserIncluded(request, response, null);
 
                 assertEquals(1, selectedExperiments.getExperiments().size());
                 assertEquals(experiment.id().get(), selectedExperiments.getExperiments().get(0).id());
@@ -393,8 +403,9 @@ public class ExperimentWebAPIImplIT {
 
                 checkCookie(response, selectedExperiments.getExperiments().get(0));
 
-                assertEquals(1, selectedExperiments.getIncludeExperimentIds().size());
-                assertTrue(selectedExperiments.getIncludeExperimentIds().contains(experiment.id().get()));
+                assertEquals(1, selectedExperiments.getIncludedExperimentIds().size());
+                assertTrue(selectedExperiments.getIncludedExperimentIds().contains(experiment.id().get()));
+                assertTrue(selectedExperiments.getExcludedExperimentIds().isEmpty());
             }
         } finally {
             ExperimentDataGen.end(experiment);
@@ -402,7 +413,7 @@ public class ExperimentWebAPIImplIT {
     }
 
     /**
-     * Method to test: {@link ExperimentWebAPIImpl#isUserIncluded(HttpServletRequest, HttpServletResponse)}
+     * Method to test: {@link ExperimentWebAPIImpl#isUserIncluded(HttpServletRequest, HttpServletResponse, List)}
      * When: You have 2 experiments with a rules and the rules conditions is TRUE for both of them
      * Should: Return {@link ExperimentWebAPIImpl#NONE_EXPERIMENT} all the times
      *
@@ -443,7 +454,7 @@ public class ExperimentWebAPIImplIT {
                 final DotCMSMockResponse response = new DotCMSMockResponse();
 
                 final SelectedExperiments selectedExperiments = WebAPILocator.getExperimentWebAPI()
-                        .isUserIncluded(request, response);
+                        .isUserIncluded(request, response, null);
 
                 assertEquals(selectedExperiments.getExperiments().size(), 2);
 
@@ -457,9 +468,10 @@ public class ExperimentWebAPIImplIT {
                     }
                 }
 
-                assertEquals(2, selectedExperiments.getIncludeExperimentIds().size());
-                assertTrue(selectedExperiments.getIncludeExperimentIds().contains(experiment_1.id().get()));
-                assertTrue(selectedExperiments.getIncludeExperimentIds().contains(experiment_2.id().get()));
+                assertEquals(2, selectedExperiments.getIncludedExperimentIds().size());
+                assertTrue(selectedExperiments.getIncludedExperimentIds().contains(experiment_1.id().get()));
+                assertTrue(selectedExperiments.getIncludedExperimentIds().contains(experiment_2.id().get()));
+                assertTrue(selectedExperiments.getExcludedExperimentIds().isEmpty());
             }
         } finally {
             ExperimentDataGen.end(experiment_1);
@@ -468,7 +480,7 @@ public class ExperimentWebAPIImplIT {
     }
 
     /**
-     * Method to test: {@link ExperimentWebAPIImpl#isUserIncluded(HttpServletRequest, HttpServletResponse)}
+     * Method to test: {@link ExperimentWebAPIImpl#isUserIncluded(HttpServletRequest, HttpServletResponse, List)}
      * When: You have one experiment running with 100% of traffic allocation and without targeting
      * and two variants each one with 50% of traffic location
      * Should: Return this experiment all the time and some time the first variant and sometimes the second one
@@ -496,7 +508,7 @@ public class ExperimentWebAPIImplIT {
             for (int i = 0; i < 20; i++) {
                 final DotCMSMockResponse response = new DotCMSMockResponse();
                 final SelectedExperiments selectedExperiments = WebAPILocator.getExperimentWebAPI()
-                        .isUserIncluded(request, response);
+                        .isUserIncluded(request, response, null);
 
                 assertEquals(1, selectedExperiments.getExperiments().size());
                 assertEquals(experiment.id().get(), selectedExperiments.getExperiments().get(0).id());
@@ -506,8 +518,9 @@ public class ExperimentWebAPIImplIT {
 
                 checkCookie(response, selectedExperiments.getExperiments().get(0));
 
-                assertEquals(1, selectedExperiments.getIncludeExperimentIds().size());
-                assertTrue(selectedExperiments.getIncludeExperimentIds().contains(experiment.id().get()));
+                assertEquals(1, selectedExperiments.getIncludedExperimentIds().size());
+                assertTrue(selectedExperiments.getIncludedExperimentIds().contains(experiment.id().get()));
+                assertTrue(selectedExperiments.getExcludedExperimentIds().isEmpty());
             }
 
             final TrafficProportion trafficProportion = experiment.trafficProportion();
@@ -520,6 +533,59 @@ public class ExperimentWebAPIImplIT {
             }
         } finally {
             ExperimentDataGen.end(experiment);
+        }
+    }
+
+    /**
+     * Method to test: {@link ExperimentWebAPIImpl#isUserIncluded(HttpServletRequest, HttpServletResponse, List)}
+     * When:
+     * - You have one experiment running with 100% of traffic allocation and without targeting and called the method
+     * it should return this experiments, and also include it into the included list, the excluded list should be empty.
+     * - Start a new experiment with 100% of traffic allocation and without targeting and called the method
+     * with the fisrt ecperiment in the excluded list.
+     * it should return this new experiments, and also include it into the included list, the excluded list should contain the first experiment.
+     *
+     * @throws DotDataException
+     */
+    @Test
+    public void excludeExperiments() throws DotDataException, DotSecurityException {
+        final Experiment experiment_1 = new ExperimentDataGen().trafficAllocation(100).nextPersisted();
+        final Experiment experiment_2 = new ExperimentDataGen().trafficAllocation(100).nextPersisted();
+
+        try {
+            ExperimentDataGen.start(experiment_1);
+
+            final HttpServletRequest request = mock(HttpServletRequest.class);
+
+            final DotCMSMockResponse response = new DotCMSMockResponse();
+
+            final SelectedExperiments selectedExperiments_1 = WebAPILocator.getExperimentWebAPI()
+                    .isUserIncluded(request, response, null);
+
+            assertEquals(1, selectedExperiments_1.getIncludedExperimentIds().size());
+            assertEquals(experiment_1.id().get(), selectedExperiments_1.getIncludedExperimentIds().get(0));
+
+            assertTrue(selectedExperiments_1.getExcludedExperimentIds().isEmpty());
+
+            ExperimentDataGen.start(experiment_2);
+
+            final SelectedExperiments selectedExperiments_2 = WebAPILocator.getExperimentWebAPI()
+                    .isUserIncluded(request, response, list(experiment_1.id().get()));
+
+            assertEquals(1, selectedExperiments_2.getIncludedExperimentIds().size());
+            assertEquals(experiment_2.id().get(), selectedExperiments_2.getIncludedExperimentIds().get(0));
+
+            assertEquals(1, selectedExperiments_2.getExcludedExperimentIds().size());
+            assertEquals(experiment_1.id().get(), selectedExperiments_2.getExcludedExperimentIds().get(0));
+        } finally {
+            ExperimentDataGen.end(experiment_1);
+
+            final Optional<Experiment> experiment = APILocator.getExperimentsAPI()
+                    .find(experiment_2.id().get(), APILocator.systemUser());
+
+            if (experiment.isPresent() && experiment.get().status() == Status.RUNNING) {
+                ExperimentDataGen.end(experiment_2);
+            }
         }
     }
 }
