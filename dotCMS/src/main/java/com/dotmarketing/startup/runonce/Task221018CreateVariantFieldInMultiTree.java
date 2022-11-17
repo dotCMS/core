@@ -39,7 +39,7 @@ public class Task221018CreateVariantFieldInMultiTree extends AbstractJDBCStartup
         final String dataBaseFieldType = DbConnectionFactory.isMsSql() ? "NVARCHAR" : "varchar";
 
         return String.format(
-                "ALTER TABLE multi_tree ADD variant_id %s(255) NOT NULL",
+                "ALTER TABLE multi_tree ADD variant_id %s(255) NOT NULL default 'DEFAULT'",
                 dataBaseFieldType);
     }
 
