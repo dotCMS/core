@@ -12,12 +12,7 @@ import com.dotmarketing.util.Config;
 
 
 public class PDFImageFilter extends ImageFilter {
-    public String[] getAcceptedParameters() {
-        return new String[] {
 
-
-        };
-    }
 
     static final long PDF_RENDERER_MAX_MEMORY_BYTES = Config.getLongProperty("PDF_RENDERER_MAX_MEMORY_BYTES", 1024L * 1024 * 50);
 
