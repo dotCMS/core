@@ -6,6 +6,7 @@ import com.dotcms.contenttype.model.field.CategoryField;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.transform.field.LegacyFieldTransformer;
+import com.dotcms.rest.api.FailedResultView;
 import com.dotcms.util.CollectionsUtils;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
@@ -17,6 +18,7 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.categories.model.Category;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.util.ActivityLogger;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
@@ -25,6 +27,7 @@ import com.liferay.portal.model.User;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Objects;
@@ -558,6 +561,62 @@ public class CategoryAPIImpl implements CategoryAPI {
 			}
 		}
 		return categoryTree;
+	}
+	@WrapInTransaction
+	public HashMap<String, Category> deleteCategoryAndChildren(final List<String> categoriesToDelete, final User user,
+			final boolean respectFrontendRoles)
+			throws DotDataException, DotSecurityException {
+
+		final HashMap<String, Category> parentCategoryUnableToDelete = new HashMap<>();
+
+		for(final String parentCategoryInode : categoriesToDelete) {
+
+			final Category parentCategory = categoryFactory.find(parentCategoryInode);
+
+			if(parentCategory != null) {
+				if (!permissionAPI.doesUserHavePermission(parentCategory,
+						PermissionAPI.PERMISSION_EDIT,
+						user, respectFrontendRoles)) {
+					throw new DotSecurityException(
+							String.format("User '%s' doesn't have permission to edit Category '%s'",
+									null != user ? user.getUserId() : null,
+									parentCategory.getInode()));
+				}
+
+				final List<Category> childrenCategoriesToDelete = getChildren(parentCategory, user,
+						false);
+				childrenCategoriesToDelete.forEach((category) -> {
+					try {
+						delete(category, user, false);
+					} catch (final DotDataException | DotSecurityException e) {
+						Logger.error(this, String.format(
+								"Child Category '%s' has dependencies. It couldn't be removed from "
+										+
+										"parent Category '%s'", category.getInode(),
+								parentCategory.getInode()));
+						parentCategoryUnableToDelete.put(parentCategory.getInode(),parentCategory);
+					}
+				});
+
+				try {
+					if (!parentCategoryUnableToDelete.containsKey(parentCategory.getInode())) {
+						categoryFactory.delete(parentCategory);
+					}
+				} catch (final DotDataException e) {
+					Logger.error(this, String.format(
+							"Parent Category '%s' couldn't be removed", parentCategory.getInode(),
+							parentCategory.getInode()));
+					parentCategoryUnableToDelete.put(parentCategory.getInode(), parentCategory);
+				}
+			}
+			else{
+				Category notFound = new Category();
+				notFound.setInode(parentCategoryInode);
+				parentCategoryUnableToDelete.put(parentCategoryInode, notFound);
+			}
+		}
+
+		return parentCategoryUnableToDelete;
 	}
 
 	@CloseDBIfOpened

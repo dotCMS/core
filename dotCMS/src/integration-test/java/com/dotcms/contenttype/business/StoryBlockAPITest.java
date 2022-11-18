@@ -182,4 +182,5 @@ public class StoryBlockAPITest extends IntegrationTestBase {
         Assert.assertTrue(contentletIdList.contains(richTextContentlet2.getIdentifier()));
         Assert.assertTrue(contentletIdList.contains(richTextContentlet3.getIdentifier()));
     }
+
 }

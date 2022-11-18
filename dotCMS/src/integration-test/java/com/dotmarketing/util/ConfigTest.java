@@ -288,6 +288,28 @@ public class ConfigTest {
         assertTrue(Config.getBooleanProperty(MY_BOOLEAN_PROPERTY,false));
     }
 
+    /**
+     * Method to test {@link Config#isKeyEnvBased(String)}
+     * Given a property name verify if it belongs to the properties set by environment variables, that is with the
+     * 'DOT_' prefix.
+     */
+    @Test
+    public void test_isKeyEnvBased() {
+        final String DOT_MY_ENV_VAR_PROPERTY = "DOT_MY_ENV_VAR_PROPERTY";
+        final String MY_ENV_VAR_PROPERTY = "my.env.var.property";
+
+        // no sight of property
+        assertFalse(Config.isKeyEnvBased(MY_ENV_VAR_PROPERTY));
+
+        // add empty property
+        Config.setProperty(DOT_MY_ENV_VAR_PROPERTY, null);
+        assertFalse(Config.isKeyEnvBased(MY_ENV_VAR_PROPERTY));
+
+        // add property with actual value
+        Config.setProperty(DOT_MY_ENV_VAR_PROPERTY, "not null");
+        assertTrue(Config.isKeyEnvBased(MY_ENV_VAR_PROPERTY));
+    }
+
     /*
      *
      * Restore default variables for each test

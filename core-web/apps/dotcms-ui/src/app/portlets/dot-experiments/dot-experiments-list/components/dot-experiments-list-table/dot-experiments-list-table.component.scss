@@ -6,6 +6,7 @@
         flex-direction: column;
         gap: $spacing-4;
         margin-bottom: $spacing-5;
+        overflow: auto;
     }
 
     //ng-table overwritte

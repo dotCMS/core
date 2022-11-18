@@ -15,7 +15,17 @@
                 </ng-template>
                 <ng-template let-experiment pTemplate="body">
                     <tr data-testId="experiment-row">
-                        <td data-testId="experiment-row__name">{{ experiment.name }}</td>
+                        <td
+                            [routerLink]="[
+                                '/edit-page/experiments/configuration',
+                                experiment.pageId,
+                                experiment.id
+                            ]"
+                            data-testId="experiment-row__name"
+                            queryParamsHandling="preserve"
+                        >
+                            {{ experiment.name }}
+                        </td>
                         <td data-testId="experiment-row__createdDate">
                             {{ experiment.creationDate | date: 'longDate' }}
                         </td>

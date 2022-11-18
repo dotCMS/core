@@ -554,10 +554,7 @@ const getAppends = (propertyMap) => {
             },
             {
                 file: `${itResourcesFolder}/it-dotcms-config-cluster.properties`,
-                lines: [
-                    'ES_ENDPOINTS=http://localhost:9200',
-                    'ES_PROTOCOL=http'
-                ]
+                lines: ['ES_ENDPOINTS=http://localhost:9200', 'ES_PROTOCOL=http']
             },
             {
                 file: `${dotCmsFolder}/src/main/webapp/WEB-INF/elasticsearch/config/elasticsearch-override.yml`,
@@ -648,16 +645,18 @@ const run = () => __awaiter(void 0, void 0, void 0, function* () {
     const result = yield integration.runTests(cmds);
     const skipReport = !(result.outputDir && fs.existsSync(result.outputDir));
     setOutput('tests_results_location', result.outputDir);
-    setOutput('tests_results_report_location', result.reportDir);
+    setOutput('tests_results_report_location', result.reportDir, true);
     setOutput('ci_index', result.ciIndex);
     setOutput('tests_results_status', result.exitCode === 0 ? 'PASSED' : 'FAILED');
     setOutput('tests_results_skip_report', skipReport);
-    setOutput(`${dbType}_tests_results_status`, result.exitCode === 0 ? 'PASSED' : 'FAILED');
+    setOutput(`${dbType}_tests_results_status`, result.exitCode === 0 ? 'PASSED' : 'FAILED', true);
     setOutput(`${dbType}_tests_results_skip_report`, skipReport);
 });
-const setOutput = (name, value) => {
-    const val = value === undefined ? '' : value;
-    core.notice(`Setting output '${name}' with value: '${val}'`);
+const setOutput = (name, value, notify = false) => {
+    const val = value || '';
+    if (notify && !!val) {
+        core.notice(`Setting output '${name}' with value: '${val}'`);
+    }
     core.setOutput(name, value);
 };
 // Run main function

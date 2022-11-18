@@ -204,7 +204,6 @@ export class SearchableDropdownComponent
         });
     }
 
-
     /**
      * Emits hide event and clears any value on filter's input
      *
