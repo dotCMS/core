@@ -1727,7 +1727,11 @@ public interface ContentletAPI {
 	 * Use the notValidFields property of the exception to get which fields where not valid
 	 */
 	public void validateContentlet(Contentlet contentlet,Map<Relationship, List<Contentlet>> contentRelationships,List<Category> cats) throws DotContentletValidationException;
-	
+
+	@CloseDBIfOpened
+	void validateContentletNoRels(Contentlet contentlet,
+			List<Category> cats) throws DotContentletValidationException;
+
 	/**
 	 * Use to validate your contentlet.
 	 * @param contentlet

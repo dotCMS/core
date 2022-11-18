@@ -978,8 +978,16 @@ public interface ContentletAPIPostHook {
 	 * @param contentRelationships
 	 * @param cats - categories
 	 */
-	public default void validateContentlet(Contentlet contentlet, ContentletRelationships contentRelationships, List<Category> cats){} 
-	
+	public default void validateContentlet(Contentlet contentlet, ContentletRelationships contentRelationships, List<Category> cats){}
+
+	/**
+	 * Use to validate your contentlet.
+	 * @param contentlet
+	 * @param cats - categories
+	 */
+	default void validateContentletNoRels(Contentlet contentlet, List<Category> cats){}
+
+
 	/**
 	 * Use to determine if if the field value is a String value withing the contentlet object
 	 * @param field

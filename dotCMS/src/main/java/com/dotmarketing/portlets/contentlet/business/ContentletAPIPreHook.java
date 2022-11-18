@@ -1143,8 +1143,17 @@ public interface ContentletAPIPreHook {
 	 */
 	public default boolean validateContentlet(Contentlet contentlet, ContentletRelationships contentRelationships, List<Category> cats){
       return true;
-    } 
-	
+    }
+
+	/**
+	 * Use to validate your contentlet.
+	 * @param contentlet
+	 * @param cats - categories
+	 */
+	default boolean validateContentletNoRels(Contentlet contentlet, List<Category> cats){
+		return true;
+	}
+
 	/**
 	 * Use to determine if if the field value is a String value withing the contentlet object
 	 * @param field
