@@ -30,6 +30,8 @@ import com.dotcms.contenttype.business.DotAssetAPI;
 import com.dotcms.contenttype.business.DotAssetAPIImpl;
 import com.dotcms.contenttype.business.FieldAPI;
 import com.dotcms.contenttype.business.FieldAPIImpl;
+import com.dotcms.contenttype.business.StoryBlockAPI;
+import com.dotcms.contenttype.business.StoryBlockAPIImpl;
 import com.dotcms.device.DeviceAPI;
 import com.dotcms.device.DeviceAPIImpl;
 import com.dotcms.dotpubsub.DotPubSubProvider;
@@ -91,6 +93,8 @@ import com.dotcms.uuid.shorty.ShortyIdAPI;
 import com.dotcms.uuid.shorty.ShortyIdAPIImpl;
 import com.dotcms.vanityurl.business.VanityUrlAPI;
 import com.dotcms.vanityurl.business.VanityUrlAPIImpl;
+import com.dotcms.variant.VariantAPI;
+import com.dotcms.variant.VariantAPIImpl;
 import com.dotcms.visitor.business.VisitorAPI;
 import com.dotcms.visitor.business.VisitorAPIImpl;
 import com.dotmarketing.beans.Host;
@@ -141,8 +145,6 @@ import com.dotmarketing.portlets.structure.business.StructureAPI;
 import com.dotmarketing.portlets.structure.business.StructureAPIImpl;
 import com.dotmarketing.portlets.templates.business.TemplateAPI;
 import com.dotmarketing.portlets.templates.business.TemplateAPIImpl;
-import com.dotcms.variant.VariantAPI;
-import com.dotcms.variant.VariantAPIImpl;
 import com.dotmarketing.portlets.widget.business.WidgetAPI;
 import com.dotmarketing.portlets.widget.business.WidgetAPIImpl;
 import com.dotmarketing.portlets.workflows.business.WorkflowAPI;
@@ -156,6 +158,7 @@ import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.liferay.portal.model.User;
 import io.vavr.Lazy;
+
 import java.io.Closeable;
 import java.io.IOException;
 import java.util.Queue;
@@ -171,10 +174,10 @@ import java.util.concurrent.ConcurrentLinkedQueue;
  * @version 1.6.5
  * @since 1.6
  */
-public class APILocator extends Locator<APIIndex>{
+public class APILocator extends Locator<APIIndex> {
 
 	protected static APILocator instance;
-	private static Queue<Closeable> closeableQueue = new ConcurrentLinkedQueue<>();
+	private static final Queue<Closeable> closeableQueue = new ConcurrentLinkedQueue<>();
 
 	/**
 	 * Private constructor for the singleton.
@@ -269,6 +272,15 @@ public class APILocator extends Locator<APIIndex>{
 		return getAPILocatorInstance().getCompanyAPIImpl();
 	}
 
+	/**
+	 * Returns a single instance of the {@link StoryBlockAPI} class.
+	 *
+	 * @return The {@link StoryBlockAPI} singleton.
+	 */
+	public static StoryBlockAPI getStoryBlockAPI() {
+		return (StoryBlockAPI)getInstance(APIIndex.STORY_BLOCK_API);
+	}
+
 	@VisibleForTesting
 	protected CompanyAPI getCompanyAPIImpl() {
 		return (CompanyAPI) getInstance(APIIndex.COMPANY_API);
@@ -310,7 +322,7 @@ public class APILocator extends Locator<APIIndex>{
 		return (UserAPI)getInstance(APIIndex.USER_API);
 	}
 
-	private static Lazy<MailAPI> lazyMail = Lazy.of(MailAPIImpl::new);
+	private static final Lazy<MailAPI> lazyMail = Lazy.of(MailAPIImpl::new);
 	                
     public static MailAPI getMailApi() {
         return lazyMail.get();
@@ -489,7 +501,6 @@ public class APILocator extends Locator<APIIndex>{
 	 *
 	 * @return The {@link ReindexQueueAPI} class.
 	 */
-	@SuppressWarnings("unchecked")
 	public static ReindexQueueAPI getReindexQueueAPI(){
 		return (ReindexQueueAPI) getInstance(APIIndex.REINDEX_QUEUE_API);
 	}
@@ -1259,6 +1270,7 @@ enum APIIndex
 	DEVICE_API,
 	DETERMINISTIC_IDENTIFIER_API,
 	CONTENTLET_JSON_API,
+	STORY_BLOCK_API,
 	VARIANT_API,
 	EXPERIMENTS_API,
 
@@ -1346,6 +1358,7 @@ enum APIIndex
 			case DEVICE_API: return new DeviceAPIImpl();
 			case DETERMINISTIC_IDENTIFIER_API: return new DeterministicIdentifierAPIImpl();
 			case CONTENTLET_JSON_API: return new ContentletJsonAPIImpl();
+			case STORY_BLOCK_API: return new StoryBlockAPIImpl();
 			case VARIANT_API: return new VariantAPIImpl();
 			case EXPERIMENTS_API: return new ExperimentsAPIImpl();
 			case BAYESIAN_API: return new BayesianAPIImpl();

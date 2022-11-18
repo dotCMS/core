@@ -1,9 +1,5 @@
 package com.dotmarketing.portlets.contentlet.model;
 
-import static com.dotcms.util.CollectionsUtils.map;
-import static com.dotmarketing.portlets.contentlet.business.MetadataCache.EMPTY_METADATA_MAP;
-import static com.dotmarketing.util.UtilMethods.isSet;
-
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.contenttype.exception.NotFoundInDbException;
 import com.dotcms.contenttype.model.field.BinaryField;
@@ -59,6 +55,9 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableSet;
 import com.liferay.portal.model.User;
 import io.vavr.control.Try;
+import org.apache.commons.lang.builder.ToStringBuilder;
+import org.apache.commons.lang3.BooleanUtils;
+
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -73,8 +72,9 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
-import org.apache.commons.lang.builder.ToStringBuilder;
-import org.apache.commons.lang3.BooleanUtils;
+
+import static com.dotmarketing.portlets.contentlet.business.MetadataCache.EMPTY_METADATA_MAP;
+import static com.dotmarketing.util.UtilMethods.isSet;
 
 /**
  * Represents a content unit in the system. Ideally, every single domain object
@@ -158,9 +158,11 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
   public static final String PATH_TO_MOVE = "_path_to_move";
   public static final String TEMP_BINARY_IMAGE_INODES_LIST = "tempBinaryImageInodesList";
   public static final String RELATIONSHIP_KEY = "__##relationships##__";
+  public static final String CONTENT_TYPE_ICON = "contentTypeIcon";
+  public static final String HAS_LIVE_VERSION = "hasLiveVersion";
 
   private transient ContentType contentType;
-  protected Map<String, Object> map = new ContentletHashMap();
+  protected Map<String, Object> map;
 
   private boolean lowIndexPriority = false;
 
@@ -169,7 +171,7 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
   private transient IndexPolicy indexPolicy = null;
   private transient IndexPolicy indexPolicyDependencies = null;
 
-  private transient boolean needsReindex = false;
+  private transient boolean needsReindex;
 
   private transient boolean loadedTags = false;
 

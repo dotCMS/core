@@ -1,5 +1,6 @@
 package com.dotcms.publisher.util.dependencies;
 
+import com.dotcms.contenttype.business.StoryBlockAPI;
 import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
 import com.dotcms.languagevariable.business.LanguageVariableAPI;
 import com.dotcms.publisher.pusher.PushPublisherConfig;
@@ -11,7 +12,11 @@ import com.dotcms.publishing.manifest.ManifestItem;
 import com.dotcms.publishing.manifest.ManifestReason;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
-import com.dotmarketing.business.*;
+import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.CacheLocator;
+import com.dotmarketing.business.DotStateException;
+import com.dotmarketing.business.IdentifierAPI;
+import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.cache.FieldsCache;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
@@ -39,10 +44,16 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
+import io.vavr.Lazy;
 import io.vavr.control.Try;
 
-import java.util.*;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
 
@@ -67,6 +78,8 @@ public class PushPublishigDependencyProcesor implements DependencyProcessor {
 
     private final DependencyModDateUtil dependencyModDateUtil;
     private final PushedAssetUtil pushedAssetUtil;
+    private final Lazy<StoryBlockAPI> storyBlockAPI = Lazy.of(APILocator::getStoryBlockAPI);
+    private final Lazy<ContentletAPI> contentletAPI = Lazy.of(APILocator::getContentletAPI);
 
     /**
      * Creates an instance of the Push Publishing Dependency Processor mechanism, and initializes all the different data
@@ -341,11 +354,6 @@ public class PushPublishigDependencyProcesor implements DependencyProcessor {
         }
     }
 
-    /**
-     *
-     * @throws DotDataException
-     * @throws DotSecurityException
-     */
     private void processContentTypeDependency(final Structure contentType) {
         try {
             // Site Dependency
@@ -414,9 +422,7 @@ public class PushPublishigDependencyProcesor implements DependencyProcessor {
     }
 
     /**
-     *
-     * @throws DotDataException
-     * @throws DotSecurityException
+     * Takes the specified {@link Contentlet} object and analyzes the different object dependencies it may have.
      */
     private void processContentDependency(final Contentlet contentlet)
             throws  DotBundleException {
@@ -427,14 +433,15 @@ public class PushPublishigDependencyProcesor implements DependencyProcessor {
             final List<Contentlet> contentList =
                     APILocator.getContentletAPI().findAllVersions(ident, false, user, false);
 
-            final Set<Contentlet> contentsToProcess = new HashSet<Contentlet>();
-            final Set<Contentlet> contentsWithDependenciesToProcess = new HashSet<Contentlet>();
+            final Set<Contentlet> contentsToProcess = new HashSet<>();
+            final Set<Contentlet> contentsWithDependenciesToProcess = new HashSet<>();
 
             for (final Contentlet contentletVersion : contentList) {
 
                 if (contentletVersion.isHTMLPage()) {
                     processHTMLPagesDependency(contentletVersion.getIdentifier());
                 }
+                processStoryBockDependencies(contentletVersion);
 
                 // Site Dependency
                 tryToAddSilently(PusheableAsset.SITE,
@@ -470,7 +477,7 @@ public class PushPublishigDependencyProcesor implements DependencyProcessor {
 
                 contentsWithDependenciesToProcess.add(contentletToProcess);
                 //Copy asset files to bundle folder keeping original folders structure
-                final List<Field> fields= FieldsCache.getFieldsByStructureInode(contentletToProcess.getStructureInode());
+                final List<Field> fields= FieldsCache.getFieldsByStructureInode(contentletToProcess.getContentTypeId());
 
                 for(final Field field : fields) {
                     if (field.getFieldType().equals(Field.FieldType.IMAGE.toString())
@@ -481,7 +488,7 @@ public class PushPublishigDependencyProcesor implements DependencyProcessor {
                                 value = APILocator.getContentletAPI().getFieldValue(contentletToProcess, field).toString();
                             }
                             final Identifier id = APILocator.getIdentifierAPI().find(value);
-                            if (InodeUtils.isSet(id.getInode()) && id.getAssetType().equals("contentlet")) {
+                            if (InodeUtils.isSet(id.getId()) && id.getAssetType().equals("contentlet")) {
                                 final List<Contentlet> fileAssets = APILocator.getContentletAPI()
                                         .findAllVersions(id, false, user, false);
 
@@ -563,6 +570,32 @@ public class PushPublishigDependencyProcesor implements DependencyProcessor {
                             contentlet.getIdentifier(), e.getMessage());
             Logger.error(this, errorMsg, e);
             throw new DotBundleException(errorMsg, e);
+        }
+    }
+
+    /**
+     * Analyzes the specified {@link Contentlet} and determines whether it has at least one Story Block field. If it
+     * does, then its contents are retrieved in order to determine if any other Contentlets are being referenced in it
+     * or not. And if they are, the Dependency Processor needs to determine whether they need to be added to the Bundle
+     * or not.
+     *
+     * @param contentlet The {@link Contentlet} whose Story Block fields will be analyzed.
+     */
+    private void processStoryBockDependencies(final Contentlet contentlet) {
+        if (contentlet.getContentType().hasStoryBlockFields()) {
+            this.storyBlockAPI.get().getDependencies(contentlet).forEach(contentletId -> {
+                Contentlet contentInStoryBlock = new Contentlet();
+                try {
+                    contentInStoryBlock = this.contentletAPI.get().findContentletByIdentifier(contentletId,
+                            contentlet.isLive(), contentlet.getLanguageId(), APILocator.systemUser(), false);
+                    tryToAddAndProcessDependencies(PusheableAsset.CONTENTLET, contentInStoryBlock,
+                            ManifestReason.INCLUDE_DEPENDENCY_FROM.getMessage(contentlet));
+                } catch (final DotDataException | DotSecurityException e) {
+                    Logger.warn(this, String.format("Could not analyze dependent Contentlet '%s' referenced in Story "
+                                                            + "Block field from Contentlet Inode " + "'%s': %s",
+                            contentInStoryBlock, contentlet.getInode(), e.getMessage()));
+                }
+            });
         }
     }
 
@@ -818,6 +851,17 @@ public class PushPublishigDependencyProcesor implements DependencyProcessor {
                 ManifestReason.INCLUDE_DEPENDENCY_FROM.getMessage(from));
     }
 
+    /**
+     * This method tries to add the specified dotCMS asset by dependency. If it cannot be added to the bundle, then a
+     * new entry will be added to the bundle's MANIFEST file indicating the reason why.
+     * <p>Additionally, the very same asset will be added to the Dependency Processor queue in order to determine what
+     * other dependent assets might need to be added to the bundle as well.</p>
+     *
+     * @param pusheableAsset The type of asset that is being added to the bundle.
+     * @param asset          The actual dotCMS object that is being added.
+     * @param reason         The reason why this asset is being added to the bundle. Refer to {@link ManifestReason} for
+     *                       more details.
+     */
     private <T> void tryToAddAndProcessDependencies(final PusheableAsset pusheableAsset,
             final T asset, final String reason) {
         if (UtilMethods.isSet(asset)) {
@@ -878,10 +922,6 @@ public class PushPublishigDependencyProcesor implements DependencyProcessor {
     private synchronized <T> TryToAddResult tryToAdd(final PusheableAsset pusheableAsset, final T asset,
             final String reason)
             throws AssetExcludeException {
-        if (null == asset) {
-            return new TryToAddResult(TryToAddResult.Result.EXCLUDE);
-        }
-
         if (config.contains(asset, pusheableAsset)) {
             return new TryToAddResult(TryToAddResult.Result.ALREADY_INCLUDE);
         }
