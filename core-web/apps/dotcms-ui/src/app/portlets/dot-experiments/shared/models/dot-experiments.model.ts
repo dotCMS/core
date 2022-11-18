@@ -32,7 +32,7 @@ export interface TrafficProportion {
 export interface Variant {
     id: string;
     name: string;
-    weight: number;
+    weight: string;
     url?: string;
 }
 
@@ -45,3 +45,5 @@ export interface DotStoreWithSidebar {
     isOpenSidebar: boolean;
     isSaving: boolean;
 }
+
+export type EditPageTabs = 'edit' | 'preview';

@@ -18,9 +18,14 @@ import { DotExperimentsConfigurationTrafficComponent } from '@portlets/dot-exper
 import { DotExperimentsConfigurationSchedulingComponent } from '@portlets/dot-experiments/dot-experiments-configuration/components/dot-experiments-configuration-scheduling/dot-experiments-configuration-scheduling.component';
 import { DotExperimentsConfigurationSkeletonComponent } from '@portlets/dot-experiments/dot-experiments-configuration/components/dot-experiments-configuration-skeleton/dot-experiments-configuration-skeleton.component';
 import { DotExperimentsConfigurationGoalsComponent } from '@portlets/dot-experiments/dot-experiments-configuration/components/dot-experiments-configuration-goals/dot-experiments-configuration-goals.component';
-import { ExperimentMocks } from '@portlets/dot-experiments/test/mocks';
+import {
+    DotExperimentsConfigurationStoreMock,
+    ExperimentMocks
+} from '@portlets/dot-experiments/test/mocks';
 import { MockDotMessageService } from '@tests/dot-message-service.mock';
 import { DotMessageService } from '@services/dot-message/dot-messages.service';
+import { MessageService } from 'primeng/api';
+import { DotExperimentsSessionStorageService } from '@portlets/dot-experiments/shared/services/dot-experiments-session-storage.service';
 
 const ActivatedRouteMock = {
     snapshot: {
@@ -53,9 +58,10 @@ describe('DotExperimentsConfigurationComponent', () => {
             DotExperimentsConfigurationExperimentStatusBarComponent
         ],
         component: DotExperimentsConfigurationComponent,
-        componentProviders: [DotExperimentsConfigurationStore],
+        componentProviders: [
+            mockProvider(DotExperimentsConfigurationStore, DotExperimentsConfigurationStoreMock)
+        ],
         providers: [
-            mockProvider(DotExperimentsService),
             {
                 provide: ActivatedRoute,
                 useValue: ActivatedRouteMock
@@ -64,6 +70,9 @@ describe('DotExperimentsConfigurationComponent', () => {
                 provide: DotMessageService,
                 useValue: messageServiceMock
             },
+            mockProvider(DotExperimentsService),
+            mockProvider(DotExperimentsSessionStorageService),
+            mockProvider(MessageService),
             mockProvider(Router),
             mockProvider(Title)
         ]
@@ -78,13 +87,6 @@ describe('DotExperimentsConfigurationComponent', () => {
     });
 
     it('should show the skeleton component when is loading', () => {
-        const vmMock$: VmConfigurationExperiments = {
-            pageId: '',
-            experimentId: '',
-            experiment: null,
-            isLoading: true
-        };
-        spectator.component.vm$ = of(vmMock$);
         spectator.detectChanges();
 
         expect(spectator.query(DotExperimentsUiHeaderComponent)).toExist();

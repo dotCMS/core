@@ -8,10 +8,10 @@
         <div class="experiment-variant-add__form-wrapper">
             <form
                 class="experiment-create__form p-fluid"
-                id="new-experiment-form"
+                id="new-variant-form"
                 #myForm="ngForm"
                 [formGroup]="form"
-                data-testId="new-experiment-form"
+                data-testId="new-variant-form"
                 novalidate
             >
                 <div class="field">
@@ -45,8 +45,8 @@
             [disabled]="!form.valid"
             [loading]="vm.isSaving"
             (click)="handleSubmit()"
-            data-testId="add-experiment-button"
-            form="new-experiment-form"
+            data-testId="add-variant-button"
+            form="new-variant-form"
             label="{{ 'experiments.action.add' | dm }}"
             pButton
             pRipple

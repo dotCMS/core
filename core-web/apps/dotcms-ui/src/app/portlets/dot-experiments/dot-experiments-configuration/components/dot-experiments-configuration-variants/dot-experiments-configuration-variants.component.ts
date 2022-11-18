@@ -14,14 +14,17 @@ import { DotExperimentsConfigurationVariantsAddComponent } from '@portlets/dot-e
 import { DotExperimentsConfigurationStore } from '@portlets/dot-experiments/dot-experiments-configuration/store/dot-experiments-configuration-store.service';
 import { Subject } from 'rxjs';
 import { delay, takeUntil } from 'rxjs/operators';
-import { Variant } from '@portlets/dot-experiments/shared/models/dot-experiments.model';
+import {
+    EditPageTabs,
+    Variant
+} from '@portlets/dot-experiments/shared/models/dot-experiments.model';
 import { DotExperimentsSessionStorageService } from '@portlets/dot-experiments/shared/services/dot-experiments-session-storage.service';
 import { Router } from '@angular/router';
 import { UiDotIconButtonModule } from '@components/_common/dot-icon-button/dot-icon-button.module';
 import { UiDotIconButtonTooltipModule } from '@components/_common/dot-icon-button-tooltip/dot-icon-button-tooltip.module';
 
 /**
- * Container Component to handle al related to add/delete variants
+ * Container Component to handle  add/delete/view variants
  */
 @Component({
     selector: 'dot-experiments-configuration-variants',
@@ -95,12 +98,17 @@ export class DotExperimentsConfigurationVariantsComponent implements OnDestroy {
 
     /**
      * Go to Edit Page / Content, set the VariantId to SessionStorage
+     * @param {Variant} variant
+     * @param {EditPageTabs} tab
      * @returns void
      * @memberof DotExperimentsConfigurationVariantsComponent
      */
-    viewVariant(variant: Variant) {
+    goToEditPage(variant: Variant, tab: EditPageTabs) {
         this.dotExperimentsSessionStorageService.setVariationId(variant.id);
-        this.router.navigate(['edit-page/content'], { queryParamsHandling: 'preserve' });
+        this.router.navigate(['edit-page/content'], {
+            queryParams: { editPageTab: tab, variationName: variant.id },
+            queryParamsHandling: 'merge'
+        });
     }
 
     /**

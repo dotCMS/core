@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { ComponentStore, OnStoreInit, tapResponse } from '@ngrx/component-store';
+import { ComponentStore, OnStateInit, tapResponse } from '@ngrx/component-store';
 import { LoadingState } from '@portlets/shared/models/shared-models';
 import { ActivatedRoute } from '@angular/router';
 import {
@@ -20,15 +20,13 @@ export interface DotExperimentsConfigurationState {
     experimentId: string;
     experiment: DotExperiment | null;
     status: LoadingState;
-    childIsSaving: boolean;
 }
 
 const initialState: DotExperimentsConfigurationState = {
     pageId: '',
     experimentId: '',
     experiment: null,
-    status: LoadingState.LOADING,
-    childIsSaving: false
+    status: LoadingState.LOADING
 };
 
 // Vm Interfaces
@@ -42,7 +40,7 @@ export interface VmConfigurationExperiments {
 @Injectable()
 export class DotExperimentsConfigurationStore
     extends ComponentStore<DotExperimentsConfigurationState>
-    implements OnStoreInit
+    implements OnStateInit
 {
     // Selectors
     readonly isLoading$ = this.select(({ status }) => status === LoadingState.LOADING);
@@ -50,7 +48,7 @@ export class DotExperimentsConfigurationStore
     readonly getExperimentId$ = this.select(({ experimentId }) => experimentId);
 
     readonly getTrafficProportion$ = this.select(({ experiment }) => experiment.trafficProportion);
-    readonly isVariantDone$ = this.select(
+    readonly isVariantStepDone$ = this.select(
         ({ experiment }) => experiment.trafficProportion.variants.length > 1
     );
 
@@ -130,13 +128,13 @@ export class DotExperimentsConfigurationStore
 
     readonly variantsVm$: Observable<{
         trafficProportion: TrafficProportion;
-        isVariantDone: boolean;
+        isVariantStepDone: boolean;
     }> = this.select(
         this.getTrafficProportion$,
-        this.isVariantDone$,
-        (trafficProportion, isVariantDone) => ({
+        this.isVariantStepDone$,
+        (trafficProportion, isVariantStepDone) => ({
             trafficProportion,
-            isVariantDone
+            isVariantStepDone
         })
     );
 
@@ -154,7 +152,7 @@ export class DotExperimentsConfigurationStore
         });
     }
 
-    ngrxOnStoreInit() {
+    ngrxOnStateInit() {
         this.loadExperiment();
     }
 

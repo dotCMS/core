@@ -9,6 +9,12 @@ import {
 import { createServiceFactory, mockProvider, SpectatorService, SpyObject } from '@ngneat/spectator';
 import { Title } from '@angular/platform-browser';
 import { of } from 'rxjs';
+import {
+    DotExperiment,
+    Variant
+} from '@portlets/dot-experiments/shared/models/dot-experiments.model';
+import { DotMessageService } from '@services/dot-message/dot-messages.service';
+import { MessageService } from 'primeng/api';
 
 const EXPERIMENT_ID = '1111';
 const PAGE_ID = '222';
@@ -30,6 +36,8 @@ describe('DotExperimentsConfigurationStore', () => {
         service: DotExperimentsConfigurationStore,
         providers: [
             mockProvider(DotExperimentsService),
+            mockProvider(DotMessageService),
+            mockProvider(MessageService),
             mockProvider(Title),
             {
                 provide: ActivatedRoute,
@@ -111,6 +119,47 @@ describe('DotExperimentsConfigurationStore', () => {
             expect(dotExperimentsService.getById).toHaveBeenCalledWith(EXPERIMENT_ID);
             store.state$.subscribe(({ experiment }) => {
                 expect(experiment).toEqual(ExperimentMocks[0]);
+                done();
+            });
+        });
+
+        it('should delete a variant from a experiment', (done) => {
+            const variants: Variant[] = [
+                { id: 'DEFAULT', name: 'DEFAULT', weight: 'xxx' },
+                {
+                    id: '111',
+                    name: '1111',
+                    weight: 'xxx'
+                }
+            ];
+
+            const experimentWithTwoVariants: DotExperiment = {
+                ...ExperimentMocks[1],
+                trafficProportion: {
+                    ...ExperimentMocks[1].trafficProportion,
+                    variants: [...variants]
+                }
+            };
+            const expectedResponseRemoveVariant: DotExperiment = {
+                ...ExperimentMocks[1],
+                trafficProportion: {
+                    ...ExperimentMocks[1].trafficProportion,
+                    variants: [{ id: 'DEFAULT', name: 'DEFAULT', weight: 'xxx' }]
+                }
+            };
+
+            dotExperimentsService.getById.and.returnValue(of(experimentWithTwoVariants));
+            dotExperimentsService.removeVariant.and.returnValue(of(expectedResponseRemoveVariant));
+
+            store.loadExperiment();
+            expect(dotExperimentsService.getById).toHaveBeenCalledWith(EXPERIMENT_ID);
+
+            store.deleteVariant(variants[1]);
+
+            store.state$.subscribe(({ experiment }) => {
+                expect(experiment.trafficProportion.variants).toEqual(
+                    expectedResponseRemoveVariant.trafficProportion.variants
+                );
                 done();
             });
         });
