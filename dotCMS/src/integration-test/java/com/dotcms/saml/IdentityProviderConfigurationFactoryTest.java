@@ -5,6 +5,7 @@ import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.util.Config;
+import com.liferay.portal.model.User;
 import org.apache.felix.framework.OSGIUtil;
 import org.junit.Assert;
 import org.junit.BeforeClass;
@@ -12,9 +13,9 @@ import org.junit.Test;
 
 import java.security.UnrecoverableKeyException;
 
-import static org.mockito.Matchers.anyCollection;
-import static org.mockito.Matchers.anyObject;
-import static org.mockito.Matchers.anyString;
+import static org.mockito.ArgumentMatchers.anyCollection;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -37,7 +38,7 @@ public class IdentityProviderConfigurationFactoryTest {
         final HostAPI hostAPI = mock(HostAPI.class);
 
         when(appsAPI.filterSitesForAppKey(anyString(),
-                anyCollection(), anyObject())).thenThrow(new RuntimeException(new UnrecoverableKeyException()));
+                anyCollection(), any(User.class))).thenThrow(new RuntimeException(new UnrecoverableKeyException()));
         final IdentityProviderConfigurationFactory configurationFactory   = new DotIdentityProviderConfigurationFactoryImpl(appsAPI, hostAPI);
         final IdentityProviderConfiguration identityProviderConfiguration = configurationFactory.findIdentityProviderConfigurationById("xxx");
 

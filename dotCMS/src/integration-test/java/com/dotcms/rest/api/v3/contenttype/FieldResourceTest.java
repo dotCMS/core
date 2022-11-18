@@ -33,7 +33,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 import static com.dotcms.util.CollectionsUtils.*;
-import static junit.framework.TestCase.assertTrue;
+import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.*;
 
 public class FieldResourceTest {

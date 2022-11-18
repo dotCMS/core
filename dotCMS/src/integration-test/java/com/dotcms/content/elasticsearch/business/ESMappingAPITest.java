@@ -101,7 +101,7 @@ import org.elasticsearch.action.search.SearchResponse;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
-import org.mockito.Matchers;
+import org.mockito.ArgumentMatchers;
 
 /**
  * @author nollymar
@@ -328,9 +328,9 @@ public class ESMappingAPITest {
         final VersionableAPI versionableAPI = mock(VersionableAPIImpl.class);
         final ContentletVersionInfo versionInfo = mock(ContentletVersionInfo.class);
         when(versionableAPI.getContentletVersionInfo(
-                Matchers.any(String.class),
-                Matchers.any(Long.class),
-                Matchers.any(String.class)))
+                ArgumentMatchers.any(String.class),
+                ArgumentMatchers.any(Long.class),
+                ArgumentMatchers.any(String.class)))
                 .thenReturn(Optional.of(versionInfo));
 
         final ESMappingAPIImpl esMappingAPI = new ESMappingAPIImpl(
@@ -384,9 +384,9 @@ public class ESMappingAPITest {
         final ContentletVersionInfo versionInfo = mock(ContentletVersionInfo.class);
         when(versionableAPI
                 .getContentletVersionInfo(
-                        Matchers.any(String.class),
-                        Matchers.any(Long.class),
-                        Matchers.any(String.class)))
+                        ArgumentMatchers.any(String.class),
+                        ArgumentMatchers.any(Long.class),
+                        ArgumentMatchers.any(String.class)))
                 .thenReturn(Optional.of(versionInfo));
 
         final ESMappingAPIImpl esMappingAPI = new ESMappingAPIImpl(

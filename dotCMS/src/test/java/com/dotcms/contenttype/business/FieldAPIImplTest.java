@@ -26,7 +26,7 @@ import java.util.Map;
 
 import static com.dotcms.util.CollectionsUtils.map;
 import static org.junit.Assert.assertTrue;
-import static org.mockito.Matchers.*;
+import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import static org.junit.Assert.assertEquals;
@@ -153,7 +153,7 @@ public class FieldAPIImplTest {
         final DotRuntimeException dotRuntimeException = new DotRuntimeException(connectException);
 
         when(
-                this.languageVariableAPI.getLanguageVariable(anyString(), anyLong(), anyObject(), anyBoolean(), anyBoolean())
+                this.languageVariableAPI.getLanguageVariable(anyString(), anyLong(), any(User.class), anyBoolean(), anyBoolean())
         ).thenThrow(dotRuntimeException);
 
 

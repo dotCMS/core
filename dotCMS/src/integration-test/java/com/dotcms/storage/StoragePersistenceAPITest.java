@@ -2,11 +2,11 @@ package com.dotcms.storage;
 
 import static com.dotcms.storage.StoragePersistenceProvider.DEFAULT_STORAGE_TYPE;
 import static com.dotcms.unittest.TestUtil.upperCaseRandom;
-import static junit.framework.Assert.assertNotSame;
-import static junit.framework.TestCase.assertEquals;
-import static junit.framework.TestCase.assertFalse;
-import static junit.framework.TestCase.assertNotNull;
-import static junit.framework.TestCase.assertTrue;
+import static org.junit.Assert.assertNotSame;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
 import com.dotcms.datagen.TestDataUtils.TestFile;
 import com.dotcms.storage.StoragePersistenceProvider.INSTANCE;

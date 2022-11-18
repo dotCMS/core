@@ -3,7 +3,7 @@ package com.dotmarketing.cms.urlmap;
 import static com.dotcms.datagen.TestDataUtils.getNewsLikeContentType;
 import static org.jgroups.util.Util.*;
 import static org.mockito.Mockito.mock;
-import static org.powermock.api.mockito.PowerMockito.when;
+import static org.mockito.Mockito.when;
 
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.contenttype.business.ContentTypeAPI;
@@ -94,7 +94,7 @@ public class URLMapAPIImplTest {
      * UrlMapped Content that lives on the system host should be available on every host where the map
      * detail page exists (by path). If content does not live on the system host, it should only be
      * available on the host it is currently one
-     * 
+     *
      * @throws Exception
      */
 

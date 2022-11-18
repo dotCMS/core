@@ -20,7 +20,6 @@ import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.datagen.ContentTypeDataGen;
 import com.dotcms.datagen.ContentletDataGen;
-import com.dotcms.datagen.FieldDataGen;
 import com.dotcms.datagen.FolderDataGen;
 import com.dotcms.datagen.SiteDataGen;
 import com.dotcms.datagen.TestDataUtils;
@@ -40,7 +39,6 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.exception.WebAssetException;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
-import com.dotmarketing.portlets.contentlet.business.ContentletFactory;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.IndexPolicy;
 import com.dotmarketing.portlets.folders.model.Folder;
@@ -48,7 +46,6 @@ import com.dotmarketing.portlets.languagesmanager.business.LanguageDataGen;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.UtilMethods;
 import com.google.common.collect.ImmutableList;
 import com.liferay.portal.model.User;
@@ -65,15 +62,12 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Random;
 import java.util.Set;
-import java.util.stream.Collectors;
-import junit.framework.TestCase;
+import java.util.stream.Collectors;;
 import org.apache.commons.lang3.BooleanUtils;
 import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.search.SearchHits;
 import org.elasticsearch.search.builder.SearchSourceBuilder;
-import org.elasticsearch.search.internal.SearchContext;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -1015,10 +1009,10 @@ public class ESContentFactoryImplTest extends IntegrationTestBase {
                 assertEquals("field : " + key + " should has value 0. ", 0, number.intValue());
             }
             if ("text_area".equals(prefix) || "text".equals(prefix)) {
-                junit.framework.TestCase.assertNull("field: " + key + " should be null. ", object);
+                org.junit.Assert.assertNull("field: " + key + " should be null. ", object);
             }
             if ("date".equals(prefix)) {
-                junit.framework.TestCase.assertNull("field : " + key + " should be null. ", object);
+                org.junit.Assert.assertNull("field : " + key + " should be null. ", object);
             }
             if ("bool".equals(prefix)) {
                 if (object instanceof Number) {

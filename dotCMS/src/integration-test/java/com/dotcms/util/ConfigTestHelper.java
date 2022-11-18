@@ -10,7 +10,7 @@ import java.nio.file.Paths;
 import javax.servlet.ServletContext;
 
 import com.liferay.util.FileUtil;
-import org.mockito.Matchers;
+import org.mockito.ArgumentMatchers;
 import org.mockito.Mockito;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
@@ -49,8 +49,8 @@ public class ConfigTestHelper extends Config {
             final String topPath = Files.createTempDir().getCanonicalPath();
             final String velocityPath = Config.getStringProperty("VELOCITY_ROOT", "/WEB-INF/velocity");
             copyVelocityFolder(topPath, velocityPath);
-            Mockito.when(context.getRealPath(Matchers.anyString())).thenAnswer(new Answer<String>() {
-            //Mockito.when(context.getRealPath(Matchers.matches("^(?!/WEB-INF/felix)(?:[\\S\\s](?!/WEB-INF/felix))*+$"))).thenAnswer(new Answer<String>() {
+            Mockito.when(context.getRealPath(ArgumentMatchers.anyString())).thenAnswer(new Answer<String>() {
+            //Mockito.when(context.getRealPath(ArgumentMatchers.matches("^(?!/WEB-INF/felix)(?:[\\S\\s](?!/WEB-INF/felix))*+$"))).thenAnswer(new Answer<String>() {
                 @Override
                 public String answer(InvocationOnMock invocation) throws Throwable {
                     String path = (String) invocation.getArguments()[0];
@@ -59,8 +59,8 @@ public class ConfigTestHelper extends Config {
                     return path;
                 }
             });
-            Mockito.when(context.getResource(Matchers.anyString())).thenAnswer(new Answer<URL>() {
-            //Mockito.when(context.getRealPath(Matchers.matches("^(?!/WEB-INF/felix)(?:[\\S\\s](?!/WEB-INF/felix))*+$"))).thenAnswer(new Answer<String>() {
+            Mockito.when(context.getResource(ArgumentMatchers.anyString())).thenAnswer(new Answer<URL>() {
+            //Mockito.when(context.getRealPath(ArgumentMatchers.matches("^(?!/WEB-INF/felix)(?:[\\S\\s](?!/WEB-INF/felix))*+$"))).thenAnswer(new Answer<String>() {
                 @Override
                 public URL answer(InvocationOnMock invocation) throws Throwable {
                   final String path = (String) invocation.getArguments()[0];

@@ -1,7 +1,7 @@
 package com.dotmarketing.portlets.fileassets.business;
 
-import static junit.framework.TestCase.assertEquals;
-import static junit.framework.TestCase.assertTrue;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.assertNotEquals;
 
 import com.dotcms.api.tree.Parentable;

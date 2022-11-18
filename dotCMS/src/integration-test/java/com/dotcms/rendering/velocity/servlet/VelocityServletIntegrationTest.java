@@ -3,8 +3,8 @@ package com.dotcms.rendering.velocity.servlet;
 import static com.dotcms.datagen.TestDataUtils.getNewsLikeContentType;
 import static com.dotmarketing.util.WebKeys.LOGIN_MODE_PARAMETER;
 import static org.junit.Assert.assertEquals;
-import static org.mockito.Matchers.anyInt;
-import static org.mockito.Mockito.anyObject;
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.anyString;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
@@ -94,7 +94,7 @@ public class VelocityServletIntegrationTest {
                 attributes.put(key, value);
                 return null;
             }
-        }).when(request).setAttribute(anyString(), anyObject());
+        }).when(request).setAttribute(anyString(), any(Object.class));
 
         // Mock getAttribute
         doAnswer(new Answer<Object>() {

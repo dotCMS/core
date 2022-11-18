@@ -440,7 +440,7 @@ task integrationTest(type: Test, dependsOn:['prepareIntegrationTests']) {
 
 
 tasks.withType(Test) {
-    useJUnit()
+    useJUnitPlatform()
     maxHeapSize = '1G'
     // jvmArgs = ["--add-opens=java.base/jdk.internal.loader=ALL-UNNAMED", "-javaagent:${configurations.byteBuddyAgent.singleFile}"]
 

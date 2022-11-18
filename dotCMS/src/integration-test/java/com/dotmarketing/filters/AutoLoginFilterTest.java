@@ -2,26 +2,21 @@ package com.dotmarketing.filters;
 
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
-import static org.powermock.api.mockito.PowerMockito.when;
+import static org.mockito.Mockito.when;
 
-import com.dotcms.api.system.event.SystemEventType;
 import com.dotcms.filters.interceptor.FilterWebInterceptorProvider;
 import com.dotcms.filters.interceptor.SimpleWebInterceptorDelegateImpl;
-import com.dotcms.listeners.SessionMonitor;
 import com.dotcms.util.ConfigTestHelper;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.util.Config;
-import java.io.IOException;
 import javax.servlet.FilterChain;
 import javax.servlet.FilterConfig;
 import javax.servlet.RequestDispatcher;
 import javax.servlet.ServletContext;
-import javax.servlet.ServletException;
 import javax.servlet.ServletRequest;
 import javax.servlet.ServletResponse;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import javax.servlet.http.HttpSessionEvent;
 import org.junit.BeforeClass;
 import org.junit.Test;
 

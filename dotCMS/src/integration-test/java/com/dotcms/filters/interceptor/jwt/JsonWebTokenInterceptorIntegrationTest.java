@@ -31,8 +31,9 @@ import java.util.TimeZone;
 
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
-import static org.mockito.Matchers.anyObject;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.when;
 
 public class JsonWebTokenInterceptorIntegrationTest {
 
@@ -155,7 +156,7 @@ public class JsonWebTokenInterceptorIntegrationTest {
 
         userAPI.loadUserById(userId).setModificationDate(new Date());
 
-        when(loginService.doCookieLogin(anyObject(), anyObject(), anyObject())).thenAnswer(new Answer<Boolean>() {
+        when(loginService.doCookieLogin(any(String.class), any(HttpServletRequest.class), any(HttpServletResponse.class))).thenAnswer(new Answer<Boolean>() {
 
             @Override
             public Boolean answer(InvocationOnMock invocation) throws Throwable {
@@ -216,7 +217,16 @@ public class JsonWebTokenInterceptorIntegrationTest {
             }
         });
 
-        when(loginService.doCookieLogin(anyObject(), anyObject(), anyObject())).thenAnswer(new Answer<Boolean>() {
+        // Need to mock or null gets passed as first parameter to doCookieLogin
+        when(encryptor.encryptString(any(String.class))).thenAnswer(new Answer<String>() {
+
+            @Override
+            public String answer(InvocationOnMock invocation) throws Throwable {
+                return "encryptedString";
+            }
+        });
+
+        when(loginService.doCookieLogin(any(String.class), any(HttpServletRequest.class), any(HttpServletResponse.class))).thenAnswer(new Answer<Boolean>() {
 
             @Override
             public Boolean answer(InvocationOnMock invocation) throws Throwable {

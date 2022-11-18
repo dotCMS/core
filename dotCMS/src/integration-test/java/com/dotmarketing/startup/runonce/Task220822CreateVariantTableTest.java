@@ -2,8 +2,8 @@ package com.dotmarketing.startup.runonce;
 
 import static com.dotcms.util.CollectionsUtils.map;
 import static graphql.Assert.assertTrue;
-import static junit.framework.TestCase.assertEquals;
-import static junit.framework.TestCase.assertFalse;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.common.db.DotConnect;

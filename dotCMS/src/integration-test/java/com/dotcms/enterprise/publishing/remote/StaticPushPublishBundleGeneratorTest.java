@@ -3,7 +3,7 @@ package com.dotcms.enterprise.publishing.remote;
 import static com.dotcms.enterprise.publishing.remote.PushPublishBundleGeneratorTest.createBundle;
 import static com.dotcms.enterprise.publishing.remote.PushPublishBundleGeneratorTest.defaultFilterKey;
 
-import static junit.framework.TestCase.assertTrue;
+import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.assertEquals;
 
 import com.dotcms.IntegrationTestBase;

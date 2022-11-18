@@ -24,7 +24,7 @@ import java.util.Map;
 import com.tngtech.java.junit.dataprovider.DataProvider;
 import com.tngtech.java.junit.dataprovider.DataProviderRunner;
 import com.tngtech.java.junit.dataprovider.UseDataProvider;
-import junit.framework.Assert;
+import org.junit.Assert;
 import com.dotcms.repackage.net.sf.hibernate.Session;
 import org.junit.After;
 import org.junit.Before;

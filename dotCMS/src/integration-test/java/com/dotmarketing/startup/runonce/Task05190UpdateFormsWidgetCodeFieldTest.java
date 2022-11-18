@@ -1,6 +1,6 @@
 package com.dotmarketing.startup.runonce;
 
-import static junit.framework.TestCase.assertTrue;
+import static org.junit.Assert.assertTrue;
 
 import org.junit.BeforeClass;
 import org.junit.Test;

@@ -14,7 +14,7 @@ import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.Role;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
-import static junit.framework.TestCase.assertEquals;
+import static org.junit.Assert.assertEquals;
 import static org.mockito.Mockito.*;
 
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
@@ -83,7 +83,7 @@ public class HostWebAPIImplIntegrationTest extends IntegrationTestBase {
 
         assertEquals(anotherHost.getIdentifier(), currentHost.getIdentifier());
         verify(request).setAttribute(WebKeys.CURRENT_HOST, currentHost);
-        verify(session, never()).setAttribute(anyString(), anyObject());
+        verify(session, never()).setAttribute(anyString(), any(Object.class));
     }
 
     /**
@@ -111,8 +111,8 @@ public class HostWebAPIImplIntegrationTest extends IntegrationTestBase {
 
         }
 
-        verify(request, never()).setAttribute(anyString(), anyObject());
-        verify(session, never()).setAttribute(anyString(), anyObject());
+        verify(request, never()).setAttribute(anyString(), any(Object.class));
+        verify(session, never()).setAttribute(anyString(), any(Object.class));
     }
 
     /**
@@ -165,7 +165,7 @@ public class HostWebAPIImplIntegrationTest extends IntegrationTestBase {
         assertEquals(host.getIdentifier(), currentHost.getIdentifier());
 
         verify(request).setAttribute(WebKeys.CURRENT_HOST, currentHost);
-        verify(session, never()).setAttribute(anyString(), anyObject());
+        verify(session, never()).setAttribute(anyString(), any(Object.class));
     }
 
     /**
@@ -194,8 +194,8 @@ public class HostWebAPIImplIntegrationTest extends IntegrationTestBase {
 
         }
 
-        verify(request, never()).setAttribute(anyString(), anyObject());
-        verify(session, never()).setAttribute(anyString(), anyObject());
+        verify(request, never()).setAttribute(anyString(), any(Object.class));
+        verify(session, never()).setAttribute(anyString(), any(Object.class));
     }
 
     /**
@@ -221,7 +221,7 @@ public class HostWebAPIImplIntegrationTest extends IntegrationTestBase {
         assertEquals(host.getIdentifier(), currentHost.getIdentifier());
 
         verify(request).setAttribute(WebKeys.CURRENT_HOST, currentHost);
-        verify(session, never()).setAttribute(anyString(), anyObject());
+        verify(session, never()).setAttribute(anyString(), any(Object.class));
     }
 
     /**
@@ -248,7 +248,7 @@ public class HostWebAPIImplIntegrationTest extends IntegrationTestBase {
         assertEquals(host.getIdentifier(), currentHost.getIdentifier());
 
         verify(request).setAttribute(WebKeys.CURRENT_HOST, currentHost);
-        verify(session, never()).setAttribute(anyString(), anyObject());
+        verify(session, never()).setAttribute(anyString(), any(Object.class));
     }
 
     /**
@@ -277,8 +277,8 @@ public class HostWebAPIImplIntegrationTest extends IntegrationTestBase {
 
         }
 
-        verify(request, never()).setAttribute(anyString(), anyObject());
-        verify(session, never()).setAttribute(anyString(), anyObject());
+        verify(request, never()).setAttribute(anyString(), any(Object.class));
+        verify(session, never()).setAttribute(anyString(), any(Object.class));
     }
 
     /**
@@ -304,7 +304,7 @@ public class HostWebAPIImplIntegrationTest extends IntegrationTestBase {
         assertEquals(host.getIdentifier(), currentHost.getIdentifier());
 
         verify(request).setAttribute(WebKeys.CURRENT_HOST, currentHost);
-        verify(session, never()).setAttribute(anyString(), anyObject());
+        verify(session, never()).setAttribute(anyString(), any(Object.class));
     }
 
     /**
@@ -364,8 +364,8 @@ public class HostWebAPIImplIntegrationTest extends IntegrationTestBase {
 
         }
 
-        verify(request, never()).setAttribute(anyString(), anyObject());
-        verify(session, never()).setAttribute(anyString(), anyObject());
+        verify(request, never()).setAttribute(anyString(), any(Object.class));
+        verify(session, never()).setAttribute(anyString(), any(Object.class));
     }
 
     /**
@@ -394,7 +394,7 @@ public class HostWebAPIImplIntegrationTest extends IntegrationTestBase {
         assertEquals(defaultHost.getIdentifier(), currentHost.getIdentifier());
 
         verify(request).setAttribute(WebKeys.CURRENT_HOST, currentHost);
-        verify(session, never()).setAttribute(anyString(), anyObject());
+        verify(session, never()).setAttribute(anyString(), any(Object.class));
     }
 
     /**
@@ -455,7 +455,7 @@ public class HostWebAPIImplIntegrationTest extends IntegrationTestBase {
         assertEquals(defaultHost.getIdentifier(),  currentHost.getIdentifier());
 
         verify(request).setAttribute(WebKeys.CURRENT_HOST, currentHost);
-        verify(session, never()).setAttribute(anyString(), anyObject());
+        verify(session, never()).setAttribute(anyString(), any(Object.class));
     }
 
     /**
@@ -488,8 +488,8 @@ public class HostWebAPIImplIntegrationTest extends IntegrationTestBase {
 
         }
 
-        verify(request, never()).setAttribute(anyString(), anyObject());
-        verify(session, never()).setAttribute(anyString(), anyObject());
+        verify(request, never()).setAttribute(anyString(), any(Object.class));
+        verify(session, never()).setAttribute(anyString(), any(Object.class));
     }
 
     /**
@@ -513,7 +513,7 @@ public class HostWebAPIImplIntegrationTest extends IntegrationTestBase {
         assertEquals(host.getIdentifier(), currentHost.getIdentifier());
 
         verify(request).setAttribute(WebKeys.CURRENT_HOST, currentHost);
-        verify(session, never()).setAttribute(anyString(), anyObject());
+        verify(session, never()).setAttribute(anyString(), any(Object.class));
     }
 
     /**
@@ -542,7 +542,7 @@ public class HostWebAPIImplIntegrationTest extends IntegrationTestBase {
         assertEquals(defaultHost.getIdentifier(), currentHost.getIdentifier());
 
         verify(request).setAttribute(WebKeys.CURRENT_HOST, currentHost);
-        verify(session, never()).setAttribute(anyString(), anyObject());
+        verify(session, never()).setAttribute(anyString(), any(Object.class));
     }
 
     /**
@@ -590,8 +590,8 @@ public class HostWebAPIImplIntegrationTest extends IntegrationTestBase {
 
         }
 
-        verify(request, never()).setAttribute(anyString(), anyObject());
-        verify(session, never()).setAttribute(anyString(), anyObject());
+        verify(request, never()).setAttribute(anyString(), any(Object.class));
+        verify(session, never()).setAttribute(anyString(), any(Object.class));
     }
 
     /**
