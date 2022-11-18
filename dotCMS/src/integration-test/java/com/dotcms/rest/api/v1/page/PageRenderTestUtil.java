@@ -2,7 +2,14 @@ package com.dotcms.rest.api.v1.page;
 
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
-import com.dotcms.datagen.*;
+import com.dotcms.datagen.ContainerDataGen;
+import com.dotcms.datagen.ContentletDataGen;
+import com.dotcms.datagen.FolderDataGen;
+import com.dotcms.datagen.HTMLPageDataGen;
+import com.dotcms.datagen.TemplateDataGen;
+import com.dotcms.datagen.TemplateLayoutDataGen;
+import com.dotcms.datagen.ThemeDataGen;
+import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.MultiTree;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
@@ -14,11 +21,14 @@ import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.structure.model.Structure;
-import com.dotmarketing.beans.Host;
 import com.dotmarketing.portlets.templates.design.bean.TemplateLayout;
 import com.dotmarketing.portlets.templates.model.Template;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 public final class PageRenderTestUtil {
 
@@ -64,10 +74,6 @@ public final class PageRenderTestUtil {
 
             templateTest.addContainer(container);
         }
-    }
-
-    private static HTMLPageAsset createHTMLPageAsset(final Template template, final Host host) throws DotSecurityException, DotDataException {
-        return createHTMLPageAsset(template, host, true);
     }
 
     private static HTMLPageAsset createHTMLPageAsset(final Template template, final Host host, final boolean publish)
@@ -140,9 +146,31 @@ public final class PageRenderTestUtil {
             return containers.values().iterator().next();
         }
 
-        public Contentlet createContent(final Container container) {
+        /**
+         * Adds a random generic Contentlet to the specified Container.
+         *
+         * @param container
+         * @return
+         */
+        public Contentlet addContent(final Container container) {
+            final Contentlet contentlet;
             try {
-                final Contentlet contentlet = createGenericContent();
+                contentlet = createGenericContent();
+            } catch (DotSecurityException | DotDataException e) {
+                throw new RuntimeException(e);
+            }
+            return addContent(container, contentlet);
+        }
+
+        /**
+         * Adds a specific Contentlet to the specified Container.
+         *
+         * @param container
+         * @param contentlet
+         * @return
+         */
+        public Contentlet addContent(final Container container, final Contentlet contentlet) {
+            try {
                 final List<Contentlet> contents = this.contents.getContents(container.getIdentifier());
                 final int nContents = contents == null ? 0 : contents.size();
 
@@ -154,7 +182,7 @@ public final class PageRenderTestUtil {
                 this.contents.addContent(container.getIdentifier(), contentlet);
 
                 return contentlet;
-            } catch (DotSecurityException | DotDataException e) {
+            } catch (final DotDataException e) {
                 throw new DotRuntimeException(e);
             }
         }
