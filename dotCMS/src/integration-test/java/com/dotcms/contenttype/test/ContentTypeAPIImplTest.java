@@ -85,6 +85,7 @@ import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
 import com.liferay.portal.model.User;
+import com.liferay.util.StringPool;
 import com.tngtech.java.junit.dataprovider.DataProvider;
 import com.tngtech.java.junit.dataprovider.DataProviderRunner;
 import com.tngtech.java.junit.dataprovider.UseDataProvider;
@@ -2458,7 +2459,39 @@ public class ContentTypeAPIImplTest extends ContentTypeBaseTest {
 	}
 
 	@Test
-	public void Test_Create_Content_Type_Providing_Folder_Only()
+	public void testDisconnectLazyCalculations() {
+
+		final Host site = new SiteDataGen().nextPersisted();
+		final Folder folder = new FolderDataGen().site(site).nextPersisted();
+		final long timeMark1 = System.currentTimeMillis();
+
+		ContentType contentType = ImmutableSimpleContentType.builder()
+				.name("ContentTypeTesting" + timeMark1)
+				.variable("velocityVarNameTesting" + timeMark1)
+				.folder(folder.getInode())
+				.host(site.getIdentifier())
+				.id("fake-id-required-for-testing")
+				.build();
+
+		final String id = contentType.id();
+		final List<Field> fields = contentType.fields();
+
+		Assert.assertEquals(site.getHostname(),contentType.siteName());
+		Assert.assertEquals(site.getHostname() + StringPool.COLON +folder.getPath(), contentType.folderPath());
+        //id-less CT.
+		final ContentType built = ContentTypeBuilder.builder(contentType).id(null).build();
+		built.constructWithFields(fields);
+		Assert.assertNotNull(built.siteName());
+		Assert.assertNotNull(built.folderPath());
+
+		final ContentType rebuilt = ContentTypeBuilder.builder(contentType).id(id).build();
+		built.constructWithFields(fields);
+		Assert.assertEquals(site.getHostname(), rebuilt.siteName());
+		Assert.assertEquals(site.getHostname() + StringPool.COLON + folder.getPath(), rebuilt.folderPath());
+	}
+
+	@Test
+	public void testCreateContentTypeProvidingFolderOnly()
 			throws DotDataException, DotSecurityException {
 
 		final Host site = new SiteDataGen().nextPersisted();

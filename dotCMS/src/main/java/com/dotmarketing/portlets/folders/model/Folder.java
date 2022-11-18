@@ -43,6 +43,7 @@ public class Folder implements Serializable, Permissionable, Treeable, Ruleable,
 	public static final String SYSTEM_FOLDER = "SYSTEM_FOLDER";
 
 	public static final String SYSTEM_FOLDER_PATH = StringPool.FORWARD_SLASH;
+
 	private String identifier;
 
     /** nullable persistent field */

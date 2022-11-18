@@ -26,7 +26,6 @@ import com.dotcms.system.event.local.business.LocalSystemEventsAPI;
 import com.dotcms.util.ContentTypeUtil;
 import com.dotcms.util.DotPreconditions;
 import com.dotcms.util.LowerKeyMap;
-import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotStateException;
@@ -38,15 +37,12 @@ import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.exception.InvalidLicenseException;
-import com.dotmarketing.portlets.contentlet.business.HostAPI;
-import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.structure.model.SimpleStructureURLMap;
 import com.dotmarketing.quartz.job.IdentifierDateJob;
 import com.dotmarketing.util.ActivityLogger;
 import com.dotmarketing.util.AdminLogger;
 import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.UUIDUtil;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.json.JSONArray;
 import com.dotmarketing.util.json.JSONObject;
@@ -61,7 +57,6 @@ import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
 import org.elasticsearch.action.search.SearchResponse;
-import org.jetbrains.annotations.NotNull;
 
 /**
  * Implementation class for the {@link ContentTypeAPI}. Each content item in dotCMS is an instance of a Content Type. The
@@ -567,8 +562,7 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
               IllegalArgumentException.class);
     }
 
-    contentType = resolveSite(contentType);
-    contentType = resolveFolder(contentType);
+    contentType = SiteAndFolderResolver.newInstance(user).resolveSiteAndFolder(contentType);
 
     // check perms
     Permissionable parent = contentType.getParentPermissionable();
@@ -591,33 +585,6 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
     }
 
     return transactionalSave(newFields, newFieldVariables, contentType);
-    ///return addCalculatedProperties(savedContentType);
-
-  }
-
-  /**
-   * Add additional props not returned directly from database
-   * @param savedContentType
-   * @return
-   * @throws DotDataException
-   * @throws DotSecurityException
-   */
-  private ContentType addCalculatedProperties(final ContentType savedContentType)
-          throws DotDataException, DotSecurityException {
-    final List<Field> fields = savedContentType.fields();
-    ContentType contentType;
-    if(Host.SYSTEM_HOST.equals(savedContentType.host())){
-      contentType = ContentTypeBuilder.builder(savedContentType).folderPath(Folder.SYSTEM_FOLDER_PATH).siteName(Host.SYSTEM_HOST).build();
-    } else {
-      final User systemUser = APILocator.systemUser();
-      final Folder folder = APILocator.getFolderAPI()
-              .find(savedContentType.folder(), systemUser, false);
-      final Host site = APILocator.getHostAPI().find(savedContentType.host(), systemUser, false);
-      contentType = ContentTypeBuilder.builder(savedContentType)
-              .folderPath(folder.getPath()).siteName(site.getName()).build();
-    }
-    contentType.constructWithFields(fields);
-    return contentType;
   }
 
   @WrapInTransaction
@@ -719,158 +686,6 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
     return savedContentType;
   }
 
-  /**
-   * takes an incoming CT object with siteId or siteName.
-   * The last one takes precedence over siteId
-   * meaning that if both are provided siteName will be used to resole
-   * if a site-name is passed and the resolution fails we fall back to default site
-   * if nothing is passed the site is resolved to SYSTEM_HOST
-   * @param contentType
-   * @return
-   * @throws DotDataException
-   * @throws DotSecurityException
-   */
-  @NotNull
-  private ContentType resolveSite(ContentType contentType)
-          throws DotDataException, DotSecurityException {
-    // Sets the host:
-    // We can set host and folder in two different ways we can use the host/siteName property pair
-    // Or we can set the folder using the property pair folder/folderPath
-    // The properties siteName/folderPath take precedence
-    try {
-      //Save fields to reconstruct the resulting CT
-      final List<Field> existingFields = contentType.fields();
-      // Resolved host
-      Host resolvedSite = null;
-      final HostAPI hostAPI = APILocator.getHostAPI();
-
-      // First thing's first.
-      // Here we need to work on the siteName property which takes precede over host
-      // SiteName takes the human-readable and more approachable site name while host is expected to have an id
-      if (UtilMethods.isSet(contentType.siteName()) && !Host.SYSTEM_HOST.equals(contentType.siteName()) ) {
-          resolvedSite = hostAPI.resolveHostName(contentType.siteName(), APILocator.systemUser(), true);
-          //if site-name resolution fails it will fall back to the default host.
-          contentType = ContentTypeBuilder.builder(contentType).host(resolvedSite.getIdentifier()).build();
-          contentType.constructWithFields(existingFields);
-          Logger.debug(ContentTypeAPIImpl.class, String.format("Attempt to resolve property [siteName] with value [%s] as [%s] ", contentType.host(), resolvedSite.getHostname()));
-      }
-
-      if (null == resolvedSite && UtilMethods.isSet(contentType.host())) {
-         // Attempt resolve host
-         if (!UUIDUtil.isUUID(contentType.host()) && !Host.SYSTEM_HOST.equalsIgnoreCase(contentType.host())) {
-            //Resolve prop as site-name
-            resolvedSite = hostAPI.resolveHostName(contentType.host(), APILocator.systemUser(), true);
-            contentType = ContentTypeBuilder.builder(contentType).host(resolvedSite.getIdentifier()).build();
-            contentType.constructWithFields(existingFields);
-            Logger.debug(ContentTypeAPIImpl.class, String.format("Attempt to resolve property [host] with value [%s] as a siteName ", contentType.host()));
-         } else {
-            if(!Host.SYSTEM_HOST.equals(contentType.host())) {
-              //Resolve property as an id
-              resolvedSite = hostAPI.find(contentType.host(), APILocator.systemUser(), true);
-               if (null == resolvedSite) {
-                 Logger.warn(ContentTypeAPIImpl.class, String.format("Unable to resolve the provided value in prop host[%s]. Default-Site will be used instead.", contentType.host()));
-                 resolvedSite = hostAPI.findDefaultHost(APILocator.systemUser(), false);
-                 contentType = ContentTypeBuilder.builder(contentType).host(resolvedSite.getIdentifier()).build();
-                 contentType.constructWithFields(existingFields);
-               }
-            }
-         }
-      }
-
-      // If no host has been resolved or provided at all
-      // we must default to System-host (for backwards compatibility)
-      if (UtilMethods.isNotSet(contentType.host()) || contentType.fixed()) {
-        //if the host prop wasn't provided either we default to system-host
-        contentType = ContentTypeBuilder.builder(contentType).host(Host.SYSTEM_HOST).build();
-        contentType.constructWithFields(existingFields);
-
-        Logger.warn(ContentTypeAPIImpl.class,  "Unable to resolve host or no host has been provided at all. Will default to [%s].");
-      }
-
-    } catch (DotDataException e) {
-      throw new DotDataException("unable to resolve host:" + contentType.host(), e);
-    } catch (DotSecurityException es) {
-      throw new DotSecurityException("invalid permissions to:" + contentType.host(), es);
-    }
-    return contentType;
-  }
-
-
-  /**
-   * takes an incoming CT object with valid hostId and from there the folder id is resolved
-   * @param contentTypeToSave
-   * @return
-   * @throws DotDataException
-   * @throws DotSecurityException
-   */
-  private ContentType resolveFolder(ContentType contentTypeToSave)
-          throws DotDataException, DotSecurityException {
-
-    final List<Field> existingFields = contentTypeToSave.fields();
-
-    //At this point we must relay that a valid hostId has been already set
-    final String siteId = contentTypeToSave.host();
-
-    Folder folder = null;
-
-    // Now Check if the folder has been set
-    // First try with the folderPath
-    final FolderAPI folderAPI = APILocator.getFolderAPI();
-    final HostAPI hostAPI = APILocator.getHostAPI();
-    if (UtilMethods.isSet(contentTypeToSave.folderPath()) && !Folder.SYSTEM_FOLDER_PATH.equals(contentTypeToSave.folderPath())) {
-
-      final String folderPath = contentTypeToSave.folderPath();
-
-      if (UUIDUtil.isUUID(folderPath) && !Folder.SYSTEM_FOLDER_PATH.equals(folderPath)) {
-        throw new DotDataException(
-                "property [folderPath] should only be used to set ids, folder names must be set through the [folder] property.");
-      }
-
-      //trying the incoming folder as a path but in order to do that we must have a valid host
-      if (UtilMethods.isSet(siteId) && !Host.SYSTEM_HOST.equals(siteId)) {
-        Logger.info(ContentTypeAPIImpl.class, () -> String.format("Trying folder [%s] as a path on given host [%s]", folderPath, siteId));
-        //We have a site and we have a path
-        folder = folderAPI.findFolderByPath(folderPath, siteId, APILocator.systemUser(), false);
-        if (null != folder && UtilMethods.isSet(folder.getIdentifier())) {
-          contentTypeToSave = ContentTypeBuilder.builder(contentTypeToSave).folder(folder.getInode()).host(siteId).build();
-        } else {
-          folder = folderAPI.findSystemFolder();
-          final Host defaultHost = hostAPI.findDefaultHost(APILocator.systemUser(), false);
-          contentTypeToSave = ContentTypeBuilder.builder(contentTypeToSave).folder(Folder.SYSTEM_FOLDER).host(defaultHost.getIdentifier()).build();
-        }
-      }
-    }
-
-    //If we haven't established what our folder is yet. try folder as an id
-    if (null == folder && UtilMethods.isSet(contentTypeToSave.folder()) && !Folder.SYSTEM_FOLDER.equals(contentTypeToSave.folder())) {
-      final String folderId = contentTypeToSave.folder();
-      if (!UUIDUtil.isUUID(folderId) && !Folder.SYSTEM_FOLDER.equals(folderId)) {
-        throw new DotDataException(
-                "property [folder] should only be used to set ids, folder names/paths must be set through the [folderPath] property.");
-      }
-      folder = folderAPI.find(folderId, user, false);
-      if(null != folder){
-           // if the folder is provided we have no choice but to use the folder's host id
-           // Otherwise will get a `Cannot assign host/folder to structure, folder does not belong to given host`
-          contentTypeToSave = ContentTypeBuilder.builder(contentTypeToSave).folder(folder.getInode()).host(folder.getHostId()).build();
-      }
-    }
-
-    //Still no folder eh?
-    if (null == folder || UtilMethods.isNotSet(folder.getIdentifier())) {
-      // If there's no folder set, Default to System-Folder
-      Logger.info(ContentTypeAPIImpl.class,
-              () -> String.format("For no folder info was provided defaulting to [%s].",
-                      Folder.SYSTEM_FOLDER));
-      contentTypeToSave = ContentTypeBuilder.builder(contentTypeToSave).folder(Folder.SYSTEM_FOLDER)
-              .build();
-    }
-
-    if (!existingFields.isEmpty()) {
-      contentTypeToSave.constructWithFields(existingFields);
-    }
-    return contentTypeToSave;
-  }
 
   private Field checkContentTypeFields(final ContentType contentType, final Field field) {
 
