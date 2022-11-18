@@ -19,9 +19,9 @@ export class DotExperimentsService {
      */
     add(
         experiment: Pick<DotExperiment, 'pageId' | 'name' | 'description'>
-    ): Observable<DotExperiment[]> {
+    ): Observable<DotExperiment> {
         return this.http
-            .post<DotCMSResponse<DotExperiment[]>>(API_ENDPOINT, experiment)
+            .post<DotCMSResponse<DotExperiment>>(API_ENDPOINT, experiment)
             .pipe(pluck('entity'));
     }
 
@@ -31,9 +31,21 @@ export class DotExperimentsService {
      * @returns Observable<DotExperiment[]>
      * @memberof DotExperimentsService
      */
-    get(pageId: string): Observable<DotExperiment[]> {
+    getAll(pageId: string): Observable<DotExperiment[]> {
         return this.http
             .get<DotCMSResponse<DotExperiment[]>>(`${API_ENDPOINT}?pageId=${pageId}`)
+            .pipe(pluck('entity'));
+    }
+
+    /**
+     * Get details of an experiment
+     * @param {string} experimentId
+     * @returns Observable<DotExperiment>
+     * @memberof DotExperimentsService
+     */
+    getById(experimentId: string): Observable<DotExperiment> {
+        return this.http
+            .get<DotCMSResponse<DotExperiment>>(`${API_ENDPOINT}/${experimentId}`)
             .pipe(pluck('entity'));
     }
 

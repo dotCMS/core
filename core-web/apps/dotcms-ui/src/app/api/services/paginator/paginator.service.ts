@@ -260,7 +260,7 @@ export class PaginatorService {
     }
 
     private setLinks(linksString: string): void {
-        const linkSplit = linksString.split(',');
+        const linkSplit = linksString?.split(',') || [];
 
         linkSplit.forEach((linkRel) => {
             const linkrealSplit = linkRel.split(';');

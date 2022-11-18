@@ -1,0 +1,12 @@
+@use "variables" as *;
+
+h2 {
+    margin: 0;
+    font-size: $font-size-large;
+    font-weight: 500;
+    text-transform: uppercase;
+}
+
+:host ::ng-deep p-card .p-card-footer .p-button-link {
+    padding: $spacing-0;
+}

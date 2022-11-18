@@ -17,14 +17,16 @@ const run = async () => {
 
   const exitCode = await unit.runTests(cmd)
   setOutput('tests_results_location', cmd.outputDir)
-  setOutput('tests_results_report_location', cmd.reportDir)
+  setOutput('tests_results_report_location', cmd.reportDir, true)
   setOutput('tests_results_status', exitCode === 0 ? 'PASSED' : 'FAILED')
   setOutput('tests_results_skip_report', !fs.existsSync(cmd.outputDir))
 }
 
-const setOutput = (name: string, value: string | boolean | number | undefined) => {
-  const val = value === undefined ? '' : value
-  core.notice(`Setting output '${name}' with value: '${val}'`)
+const setOutput = (name: string, value?: string | boolean | number, notify = false) => {
+  const val = value || ''
+  if (notify && !!val) {
+    core.notice(`Setting output '${name}' with value: '${val}'`)
+  }
   core.setOutput(name, value)
 }
 

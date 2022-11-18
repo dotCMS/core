@@ -1,9 +1,9 @@
 package com.ettrema.httpclient;
 
-import com.dotcms.repackage.com.bradmcevoy.http.exceptions.BadRequestException;
-import com.dotcms.repackage.com.bradmcevoy.http.exceptions.ConflictException;
-import com.dotcms.repackage.com.bradmcevoy.http.exceptions.NotAuthorizedException;
-import com.dotcms.repackage.com.bradmcevoy.http.exceptions.NotFoundException;
+import com.bradmcevoy.http.exceptions.BadRequestException;
+import com.bradmcevoy.http.exceptions.ConflictException;
+import com.bradmcevoy.http.exceptions.NotAuthorizedException;
+import com.bradmcevoy.http.exceptions.NotFoundException;
 import java.io.BufferedOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
