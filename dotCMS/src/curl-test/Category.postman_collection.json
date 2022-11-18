@@ -3721,7 +3721,7 @@
 							"    pm.expect(jsonData.errors).to.have.lengthOf(0);",
 							"});",
 							"",
-							"pm.test('velocity_var_name are in sorted order', () => {",
+							"pm.test('category_velocity_var_name are in sorted order', () => {",
 							"    var expectedSortedOrder = _.orderBy(jsonData.entity, ['categoryVelocityVarName'],['asc']);",
 							"    pm.expect(jsonData.entity).to.eql(expectedSortedOrder);    ",
 							"});"
@@ -3758,7 +3758,7 @@
 				"method": "GET",
 				"header": [],
 				"url": {
-					"raw": "{{serverURL}}/api/v1/categories/children?filter=&page=0&per_page=5&orderby=velocity_var_name&direction=ASC&inode={{categoryINodeId}}",
+					"raw": "{{serverURL}}/api/v1/categories/children?filter=&page=0&per_page=5&orderby=category_velocity_var_name&direction=ASC&inode={{categoryINodeId}}",
 					"host": [
 						"{{serverURL}}"
 					],
@@ -3783,7 +3783,7 @@
 						},
 						{
 							"key": "orderby",
-							"value": "velocity_var_name"
+							"value": "category_velocity_var_name"
 						},
 						{
 							"key": "direction",
@@ -3817,7 +3817,7 @@
 							"    pm.expect(jsonData.errors).to.have.lengthOf(0);",
 							"});",
 							"",
-							"pm.test('velocity_var_name are in sorted order', () => {",
+							"pm.test('category_velocity_var_name are in sorted order', () => {",
 							"    var expectedSortedOrder = _.orderBy(jsonData.entity, ['categoryVelocityVarName'],['desc']);",
 							"    pm.expect(jsonData.entity).to.eql(expectedSortedOrder);    ",
 							"});"
@@ -3854,7 +3854,7 @@
 				"method": "GET",
 				"header": [],
 				"url": {
-					"raw": "{{serverURL}}/api/v1/categories/children?filter=&page=0&per_page=5&orderby=velocity_var_name&direction=DESC&inode={{categoryINodeId}}",
+					"raw": "{{serverURL}}/api/v1/categories/children?filter=&page=0&per_page=5&orderby=category_velocity_var_name&direction=DESC&inode={{categoryINodeId}}",
 					"host": [
 						"{{serverURL}}"
 					],
@@ -3879,7 +3879,7 @@
 						},
 						{
 							"key": "orderby",
-							"value": "velocity_var_name"
+							"value": "category_velocity_var_name"
 						},
 						{
 							"key": "direction",
