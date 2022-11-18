@@ -154,9 +154,9 @@
         "sonar": {
             "executor": "@koliveira15/nx-sonarqube:scan",
             "options": {
-                "name": "dotcms-ui",
+                "name": "core-web",
                 "hostUrl": "https://sonarqube.dotcms.site",
-                "projectKey": "dotCMS_core_AYQvQCMIJs0IgspqN39B",
+                "projectKey": "core-web",
                 "skipTargetDefaults": false,
                 "branches": false,
                 "qualityGate": true,
