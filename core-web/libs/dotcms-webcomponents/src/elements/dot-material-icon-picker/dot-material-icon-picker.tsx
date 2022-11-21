@@ -242,7 +242,8 @@ export class DotMaterialIcon {
     private scrollIntoSelectedOption(index: number) {
         const optionsList = this.element.querySelectorAll('.dot-material-icon__option');
         optionsList[index].scrollIntoView({
-            behavior: 'smooth', block: 'nearest'
+            behavior: 'smooth',
+            block: 'nearest'
         });
     }
 

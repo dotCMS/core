@@ -1,0 +1,16 @@
+@use "variables" as *;
+
+.wrapper {
+    display: flex;
+    background-color: $gray;
+    height: $navigation-item-height;
+    align-items: center;
+    border-radius: $border-radius-md;
+    padding: 0 $spacing-3;
+
+    h1 {
+        margin: 0;
+        font-size: $font-size-large;
+        color: $white;
+    }
+}

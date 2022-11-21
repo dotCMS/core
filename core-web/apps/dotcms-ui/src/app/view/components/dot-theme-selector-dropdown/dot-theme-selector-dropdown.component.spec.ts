@@ -3,7 +3,12 @@
 import { DebugElement, Input } from '@angular/core';
 import { Component } from '@angular/core';
 import { ComponentFixture, fakeAsync, TestBed, tick } from '@angular/core/testing';
-import { UntypedFormBuilder, UntypedFormGroup, FormsModule, ReactiveFormsModule } from '@angular/forms';
+import {
+    UntypedFormBuilder,
+    UntypedFormGroup,
+    FormsModule,
+    ReactiveFormsModule
+} from '@angular/forms';
 import { of } from 'rxjs';
 
 import { SiteService } from '@dotcms/dotcms-js';
@@ -236,7 +241,6 @@ describe('DotThemeSelectorDropdownComponent', () => {
 
                 const searchableButton = de.query(By.css('dot-searchable-dropdown button'));
                 searchableButton.nativeElement.click();
-                
             });
 
             it('should system to true', () => {
@@ -274,7 +278,7 @@ describe('DotThemeSelectorDropdownComponent', () => {
                 fixture.detectChanges();
                 await fixture.whenStable();
                 const input = de.query(By.css('[data-testId="searchInput"]')).nativeElement;
-                const event = new KeyboardEvent('keyup', {key: 'ArrowDown'});
+                const event = new KeyboardEvent('keyup', { key: 'ArrowDown' });
                 input.dispatchEvent(event);
                 await fixture.whenStable();
                 expect(component.selectedOptionIndex).toBe(1);
@@ -285,7 +289,7 @@ describe('DotThemeSelectorDropdownComponent', () => {
                 fixture.detectChanges();
                 await fixture.whenStable();
                 const input = de.query(By.css('[data-testId="searchInput"]')).nativeElement;
-                const event = new KeyboardEvent('keyup', {key: 'ArrowUp'});
+                const event = new KeyboardEvent('keyup', { key: 'ArrowUp' });
                 input.dispatchEvent(event);
                 await fixture.whenStable();
                 expect(component.selectedOptionIndex).toBe(0);
@@ -297,11 +301,10 @@ describe('DotThemeSelectorDropdownComponent', () => {
                 fixture.detectChanges();
                 await fixture.whenStable();
                 const input = de.query(By.css('[data-testId="searchInput"]')).nativeElement;
-                const event = new KeyboardEvent('keyup', {key: 'Enter'});
+                const event = new KeyboardEvent('keyup', { key: 'Enter' });
                 input.dispatchEvent(event);
                 await fixture.whenStable();
-                expect(component.onChange).toHaveBeenCalledWith(mockDotThemes[0])
-
+                expect(component.onChange).toHaveBeenCalledWith(mockDotThemes[0]);
             });
         });
     });

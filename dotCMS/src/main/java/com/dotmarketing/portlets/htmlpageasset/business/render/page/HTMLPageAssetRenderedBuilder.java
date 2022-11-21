@@ -12,12 +12,9 @@ import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.LayoutAPI;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.PermissionLevel;
-import com.dotmarketing.business.UserAPI;
-import com.dotmarketing.business.VersionableAPI;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.factories.MultiTreeAPI;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.hostvariable.model.HostVariable;
@@ -35,19 +32,24 @@ import com.dotmarketing.util.WebKeys;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
 import io.vavr.control.Try;
+import org.apache.velocity.context.Context;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import org.apache.velocity.context.Context;
 
 /**
- * Builder of {@link HTMLPageAssetRendered}
+ * This class will be in charge of building the Metadata object for an HTML Page.
+ *
+ * @author Freddy Rodriguez
+ * @since Apr 12th, 2018
  */
 public class HTMLPageAssetRenderedBuilder {
+
     private HTMLPageAsset htmlPageAsset;
     private User user;
     private HttpServletRequest request;
@@ -55,24 +57,20 @@ public class HTMLPageAssetRenderedBuilder {
     private Host site;
 
     private final PermissionAPI  permissionAPI;
-    private final UserAPI        userAPI;
     private final ContentletAPI  contentletAPI;
     private final LayoutAPI      layoutAPI;
-    private final VersionableAPI versionableAPI;
-    private final MultiTreeAPI   multiTreeAPI;
     private final HTMLPageAssetRenderedAPI htmlPageAssetRenderedAPI;
     private String pageUrlMapper;
     private boolean live;
     private boolean parseJSON;
 
+    /**
+     * Creates an instance of this Builder, along with all the required dotCMS APIs.
+     */
     public HTMLPageAssetRenderedBuilder() {
-
         this.permissionAPI  = APILocator.getPermissionAPI();
-        this.userAPI        = APILocator.getUserAPI();
         this.contentletAPI  = APILocator.getContentletAPI();
         this.layoutAPI      = APILocator.getLayoutAPI();
-        this.versionableAPI = APILocator.getVersionableAPI();
-        this.multiTreeAPI   = APILocator.getMultiTreeAPI();
         this.htmlPageAssetRenderedAPI   = APILocator.getHTMLPageAssetRenderedAPI();
     }
 
@@ -116,9 +114,23 @@ public class HTMLPageAssetRenderedBuilder {
         return this;
     }
 
+    /**
+     * Generates the metadata of the specified HTML Page. All the internal data structures that make up the page will be
+     * retrieved from the content repository and will be returned to the User in the form of a {@link PageView} object.
+     *
+     * @param rendered If the {@link PageView} object needs to contain the rendered version of the HTML Page, i.e., the
+     *                 resulting HTML code, set this to {@code true}.
+     * @param mode     The {@link PageMode} used to get the HTML Page metadata.
+     *
+     * @return The {@link PageView} object with the HTML Page metadata.
+     *
+     * @throws DotDataException     An error occurred when accessing the data source.
+     * @throws DotSecurityException The user does not have the specified permissions to perform
+     *                              this action.
+     */
     @CloseDBIfOpened
     public PageView build(final boolean rendered, final PageMode mode) throws DotDataException, DotSecurityException {
-        final Template template = getTemplate(mode);
+        final Template template = this.getTemplate(mode);
         if(!UtilMethods.isSet(template) && mode.equals(PageMode.ADMIN_MODE)){
             throw new DotStateException(
                     Try.of(() -> LanguageUtil.get(user.getLocale(), "template.archived.page.live.mode.error"))
@@ -214,6 +226,16 @@ public class HTMLPageAssetRenderedBuilder {
         return VelocityModeHandler.modeHandler(htmlPageAsset, pageMode, request, response, site).eval();
     }
 
+    /**
+     * Returns the Template used by the current HTML Page being rendered.
+     *
+     * @param mode The {@link PageMode} that the HTML Page is being returned in. If the Live version is required, then
+     *             the Live version of the Template must always be returned. Otherwise, the Working version is returned.
+     *
+     * @return The {@link Template} used by the HTML Page.
+     *
+     * @throws DotDataException An error occurred when accessing the data source.
+     */
     private Template getTemplate(final PageMode mode) throws DotDataException {
         try {
             final User systemUser = APILocator.getUserAPI().getSystemUser();
@@ -225,4 +247,5 @@ public class HTMLPageAssetRenderedBuilder {
             return null;
         }
     }
+
 }

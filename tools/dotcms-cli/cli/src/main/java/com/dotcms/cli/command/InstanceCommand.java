@@ -46,7 +46,7 @@ public class InstanceCommand implements Callable<Integer> {
     //This combination should give me one or both but at least one selection needs to be made
     static class RequireOneOrBothNotNoneGroup {
 
-        @CommandLine.Option(names = {"-l", "--list"}, description = "Prints out a list of available params.")
+        @CommandLine.Option(names = {"-ls", "--list"}, description = "Prints out a list of Content-types")
         Boolean list;
 
         @CommandLine.Option(names = {"-a", "--activate"}, arity = "1", description = "Activate a profile by entering it's name.")

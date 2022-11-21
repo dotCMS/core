@@ -20,17 +20,19 @@ const run = async () => {
   const result = await integration.runTests(cmds)
   const skipReport = !(result.outputDir && fs.existsSync(result.outputDir))
   setOutput('tests_results_location', result.outputDir)
-  setOutput('tests_results_report_location', result.reportDir)
+  setOutput('tests_results_report_location', result.reportDir, true)
   setOutput('ci_index', result.ciIndex)
   setOutput('tests_results_status', result.exitCode === 0 ? 'PASSED' : 'FAILED')
   setOutput('tests_results_skip_report', skipReport)
-  setOutput(`${dbType}_tests_results_status`, result.exitCode === 0 ? 'PASSED' : 'FAILED')
+  setOutput(`${dbType}_tests_results_status`, result.exitCode === 0 ? 'PASSED' : 'FAILED', true)
   setOutput(`${dbType}_tests_results_skip_report`, skipReport)
 }
 
-const setOutput = (name: string, value: string | boolean | number | undefined) => {
-  const val = value === undefined ? '' : value
-  core.notice(`Setting output '${name}' with value: '${val}'`)
+const setOutput = (name: string, value?: string | boolean | number, notify = false) => {
+  const val = value || ''
+  if (notify && !!val) {
+    core.notice(`Setting output '${name}' with value: '${val}'`)
+  }
   core.setOutput(name, value)
 }
 
