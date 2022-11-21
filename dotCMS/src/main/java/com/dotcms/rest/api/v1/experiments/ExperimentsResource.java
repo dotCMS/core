@@ -381,11 +381,14 @@ public class ExperimentsResource {
     @Path("/isUserIncluded")
     @Produces({MediaType.APPLICATION_JSON})
     public ResponseEntityExperimentSelectedView isUserIncluded(@Context final HttpServletRequest request,
-            @Context final HttpServletResponse response
+            @Context final HttpServletResponse response,
+            final ExcludedExperimentListForm excludedExperimentListForm
     ) throws DotDataException, DotSecurityException {
 
         return new ResponseEntityExperimentSelectedView(
-                WebAPILocator.getExperimentWebAPI().isUserIncluded(request, response, null)
+                WebAPILocator.getExperimentWebAPI().isUserIncluded(request, response,
+                        UtilMethods.isSet(excludedExperimentListForm) ? excludedExperimentListForm.getExclude()
+                                : Collections.emptyList())
         );
     }
 

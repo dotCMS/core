@@ -3,31 +3,40 @@ let currentRunningExperimentsId = [${running_experiments_list}]
 
 function shouldHitEndPoint() {
     let experimentData = localStorage.getItem('experiment_data');
+
     if (experimentData) {
-        let includedExperimentIds = JSON.stringify(
+        let includedExperimentIds = JSON.parse(
             experimentData).includedExperimentIds;
-        return includedExperimentIds.every(element => {
-        return currentRunningExperimentsId.includes(element);
-        });
+
+        return includedExperimentIds.every(element => currentRunningExperimentsId.includes(element));
     } else {
         return false;
     }
 }
 
-let shouldHitEndPoint = shouldHitEndPoint();
+if (!shouldHitEndPoint()) {
+    fetch('/api/v1/experiments/isUserIncluded')
+    .then(response => response.json())
+    .then(data => {
+        if (data.entity.experiments) {
+            let dataToStorage = Object.assign({}, data.entity);
+            let oldExperimentData = JSON.parse(localStorage.getItem('experiment_data'));
 
-if (!shouldHitEndPoint) {
-    fetch('/api/v1/experiment')
-        .then(response => response.json())
-        .then(data => {
-            if (data.experiments) {
-                let dataToStorage = Object.assign({}, data);
-                delete dataToStorage['excludedExperimentIds'];
-                dataToStorage['includedExperimentIds'] = [
-                    ...dataToStorage['includedExperimentIds'],
-                    ...dataToStorage['excludedExperimentIds']
+            delete dataToStorage['excludedExperimentIds'];
+
+            dataToStorage.includedExperimentIds = [
+                ...dataToStorage.includedExperimentIds,
+                ...data.entity.excludedExperimentIds
+            ];
+
+            if (oldExperimentData) {
+                dataToStorage.experiments = [
+                    ...oldExperimentData.experiments,
+                    ...dataToStorage.experiments
                 ];
-                localStorage.setItem('experiment_data', JSON.stringify(dataToStorage));
             }
-        });
+
+            localStorage.setItem('experiment_data', JSON.stringify(dataToStorage));
+        }
+    });
 }
