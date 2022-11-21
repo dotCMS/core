@@ -1,22 +1,5 @@
 package com.dotmarketing.factories;
 
-
-import com.dotcms.variant.VariantAPI;
-
-import com.dotcms.variant.model.Variant;
-import java.sql.SQLException;
-import java.util.Collection;
-import java.util.Date;
-import java.util.HashSet;
-import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
-import java.util.TreeSet;
-import java.util.function.Predicate;
-import java.util.stream.Collectors;
-import org.apache.commons.lang.StringUtils;
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.contenttype.exception.NotFoundInDbException;
@@ -25,11 +8,14 @@ import com.dotcms.rendering.velocity.directive.ParseContainer;
 import com.dotcms.rendering.velocity.services.PageLoader;
 import com.dotcms.rendering.velocity.viewtools.DotTemplateTool;
 import com.dotcms.util.transform.TransformerLocator;
+import com.dotcms.variant.VariantAPI;
+import com.dotcms.variant.model.Variant;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.MultiTree;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotStateException;
+import com.dotmarketing.cache.MultiTreeCache;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.common.db.Params;
 import com.dotmarketing.db.DbConnectionFactory;
@@ -56,8 +42,22 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Table;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
+import io.vavr.Lazy;
 import io.vavr.control.Try;
+import org.apache.commons.lang.StringUtils;
 
+import java.sql.SQLException;
+import java.util.Collection;
+import java.util.Date;
+import java.util.HashSet;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
+import java.util.TreeSet;
+import java.util.function.Predicate;
+import java.util.stream.Collectors;
 
 /**
  * This class provides utility routines to interact with the Multi-Tree structures in the system. A
@@ -72,7 +72,7 @@ import io.vavr.control.Try;
  */
 public class MultiTreeAPIImpl implements MultiTreeAPI {
 
-
+    private final Lazy<MultiTreeCache> multiTreeCache = Lazy.of(CacheLocator::getMultiTreeCache);
 
     private static final String DELETE_ALL_MULTI_TREE_RELATED_TO_IDENTIFIER_SQL =
             "delete from multi_tree where child = ? or parent1 = ? or parent2 = ?";
@@ -108,16 +108,22 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
 
     private static final String SELECT_BY_PARENTS_AND_RELATIONS =
             " select * from multi_tree where parent1 = ? and parent2 = ? and relation_type = ? and personalization = ? and variant_id = 'DEFAULT' order by tree_order";
-
     private static final String SELECT_BY_CONTAINER_AND_STRUCTURE = "SELECT mt.* FROM multi_tree mt JOIN contentlet c "
             + " ON c.identifier = mt.child WHERE mt.parent2 = ? AND c.structure_inode = ? ";
-
+    private static final String SELECT_CONTENTLET_REFERENCES = "SELECT COUNT(*) FROM multi_tree WHERE child = ?";
+    private static final String SELECT_CHILD_BY_PARENT = "SELECT child FROM multi_tree WHERE multi_tree.parent1 = ? AND relation_type != ?";
+    private static final String SELECT_CHILD_BY_PARENT_RELATION_PERSONALIZATION_VARIANT =
+            SELECT_CHILD_BY_PARENT + " AND personalization = ? AND variant_id = ? ";
+    private static final String SELECT_CHILD_BY_PARENT_RELATION_PERSONALIZATION_VARIANT_LANGUAGE =
+            SELECT_CHILD_BY_PARENT_RELATION_PERSONALIZATION_VARIANT + " AND child IN (SELECT DISTINCT identifier FROM contentlet, multi_tree " +
+                    "WHERE multi_tree.child = contentlet.identifier AND multi_tree.parent1 = ? AND language_id = ?)";
 
     @WrapInTransaction
     @Override
     public void deleteMultiTree(final MultiTree mTree) throws DotDataException {
-        Logger.info(this, String.format("Deleting MutiTree: %s", mTree));
+        Logger.info(this, String.format("Deleting MultiTree: %s", mTree));
         _dbDelete(mTree);
+        this.multiTreeCache.get().removeContentletReferenceCount(mTree.getContentlet());
         updateHTMLPageVersionTS(mTree.getHtmlPage(), mTree.getVariantId());
         refreshPageInCache(mTree.getHtmlPage(), mTree.getVariantId());
     }
@@ -133,6 +139,7 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
 
         if (UtilMethods.isSet(pagesRelatedList)) {
             for (final MultiTree multiTree : pagesRelatedList) {
+                this.multiTreeCache.get().removeContentletReferenceCount(multiTree.getContentlet());
                 updateHTMLPageVersionTS(multiTree.getHtmlPage());
                 refreshPageInCache(multiTree.getHtmlPage(), multiTree.getVariantId());
             }
@@ -401,12 +408,12 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
 
         Logger.debug(this, "Removing personalization for: " + pageId +
                                 ", personalization: " + personalization);
-
+        final List<MultiTree> pageMultiTrees = this.getMultiTreesByPersonalizedPage(pageId, personalization);
         new DotConnect().setSQL(DELETE_SQL_PERSONALIZATION_PER_PAGE)
                 .addParam(pageId)
                 .addParam(personalization)
                 .loadResult();
-
+        pageMultiTrees.forEach(multiTree -> this.multiTreeCache.get().removeContentletReferenceCount(multiTree.getContentlet()));
         updateHTMLPageVersionTS(pageId);
         refreshPageInCache(pageId, VariantAPI.DEFAULT_VARIANT.name());
     } // deletePersonalizationForPage.
@@ -537,8 +544,9 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
     @Override
     @WrapInTransaction
     public void saveMultiTree(final MultiTree mTree) throws DotDataException {
-        Logger.debug(this, () -> String.format("Saving MutiTree: %s", mTree));
+        Logger.debug(this, () -> String.format("Saving MultiTree: %s", mTree));
         _dbUpsert(mTree);
+        this.multiTreeCache.get().removeContentletReferenceCount(mTree.getContentlet());
         updateHTMLPageVersionTS(mTree.getHtmlPage(), mTree.getVariantId());
         refreshPageInCache(mTree.getHtmlPage(), mTree.getVariantId());
 
@@ -547,7 +555,7 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
     @Override
     @WrapInTransaction
     public void saveMultiTreeAndReorder(final MultiTree mTree) throws DotDataException {
-        Logger.debug(this, () -> String.format("Saving MutiTree and Reordering: %s", mTree));
+        Logger.debug(this, () -> String.format("Saving MultiTree and Reordering: %s", mTree));
         _reorder(mTree);
         updateHTMLPageVersionTS(mTree.getHtmlPage(), mTree.getVariantId());
         refreshPageInCache(mTree.getHtmlPage(), mTree.getVariantId());
@@ -577,6 +585,7 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
         int i = 0;
         for (final MultiTree tree : mTrees) {
             _dbUpsert(tree.setTreeOrder(i++));
+            this.multiTreeCache.get().removeContentletReferenceCount(tree.getContentlet());
         }
 
         final MultiTree mTree = mTrees.get(0);
@@ -622,7 +631,7 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
                                                     final String variantId) throws DotDataException {
 
         Logger.info(this, String.format(
-                "Overriding MutiTrees: pageId -> %s personalization -> %s multiTrees-> %s ",
+                "Overriding MultiTrees: pageId -> %s personalization -> %s multiTrees-> %s ",
                 pageId, personalization, multiTrees));
 
         if (multiTrees == null) {
@@ -631,12 +640,14 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
         }
 
         Logger.debug(MultiTreeAPIImpl.class, ()->String.format("Saving page's content: %s", multiTrees));
-
+        Set<String> originalContentletIds = new HashSet<>();
         final DotConnect db = new DotConnect();
         if (languageIdOpt.isPresent()) {
             if (DbConnectionFactory.isMySql()) {
                 deleteMultiTreeToMySQL(pageId, personalization, languageIdOpt, variantId);
            } else {
+                originalContentletIds = this.getOriginalContentlets(pageId, ContainerUUID.UUID_DEFAULT_VALUE,
+                        personalization, variantId, languageIdOpt.get());
                 db.setSQL(DELETE_ALL_MULTI_TREE_SQL_BY_RELATION_AND_PERSONALIZATION_PER_LANGUAGE_NOT_SQL)
                         .addParam(variantId)
                         .addParam(ContainerUUID.UUID_DEFAULT_VALUE)
@@ -647,7 +658,8 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
                         .loadResult();
             }
         } else {
-
+            originalContentletIds = this.getOriginalContentlets(pageId, ContainerUUID.UUID_DEFAULT_VALUE,
+                    personalization, variantId);
             db.setSQL(DELETE_ALL_MULTI_TREE_SQL_BY_RELATION_AND_PERSONALIZATION)
                     .addParam(pageId)
                     .addParam(ContainerUUID.UUID_DEFAULT_VALUE)
@@ -659,7 +671,6 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
         if (!multiTrees.isEmpty()) {
 
             final List<Params> insertParams = Lists.newArrayList();
-            final Set<String> newContainers = new HashSet<>();
 
             for (final MultiTree tree : multiTrees) {
                 //This is for checking if the content we are trying to add is already added into the container
@@ -673,7 +684,9 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
                 final int contentExist = Integer.parseInt(db.loadObjectResults().get(0).get("cc").toString());
                 if(contentExist != 0){
                     final String contentletTitle = APILocator.getContentletAPI().findContentletByIdentifierAnyLanguage(tree.getContentlet()).getTitle();
-                    final String errorMsg = String.format("This content: '%s' has already been added to this section. Content ID: %s",contentletTitle,tree.getContentlet());
+                    final String errorMsg = String.format("Content '%s' [ %s ] has already been added to Container " +
+                                                                  "'%s'", contentletTitle, tree.getContentlet(),
+                            tree.getContainer());
                     Logger.debug(this,errorMsg);
                     throw new IllegalArgumentException(errorMsg);
                 }
@@ -681,12 +694,10 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
                 insertParams
                         .add(new Params(pageId, tree.getContainerAsID(), tree.getContentlet(),
                                 tree.getRelationType(), tree.getTreeOrder(), tree.getPersonalization(), tree.getVariantId()));
-                newContainers.add(tree.getContainer());
             }
-
             db.executeBatch(INSERT_SQL, insertParams);
         }
-
+        this.refreshContentletReferenceCount(originalContentletIds, multiTrees);
         updateHTMLPageVersionTS(pageId, variantId);
         refreshPageInCache(pageId, variantId);
     }
@@ -702,8 +713,7 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
     private void deleteMultiTreeToMySQL(
             final String pageId,
             final String personalization,
-            final Optional<Long> languageIdOpt, String variantId) throws DotDataException {
-
+            final Optional<Long> languageIdOpt, final String variantId) throws DotDataException {
         final DotConnect db = new DotConnect();
 
         final List<String> multiTreesId = db.setSQL(SELECT_MULTI_TREE_BY_LANG)
@@ -754,24 +764,25 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
     }
 
     /**
-     * Save a collection of {@link MultiTree} and link them with a page, Also delete all the
-     * {@link MultiTree} linked previously with the page.
+     * Saves a collection of {@link MultiTree} objects and links them to an HTML Page. It deletes all the
+     * {@link MultiTree} previously linked with the page before adding the new data.
      *
-     * @param pageId Page's identifier
-     * @param mTrees
-     * @throws DotDataException
+     * @param pageId The Page's identifier.
+     * @param mTrees The list of {@link MultiTree} objects that make up the HTML Page contents.
+     *
+     * @throws DotDataException The list of MultiTree entries is null.
      */
     @Override
     @WrapInTransaction
     public void saveMultiTrees(final String pageId, final List<MultiTree> mTrees) throws DotDataException {
         Logger.debug(this, () -> String
-                .format("Saving MutiTrees: pageId -> %s multiTrees-> %s", pageId, mTrees));
+                .format("Saving MultiTrees: pageId -> %s multiTrees-> %s", pageId, mTrees));
         if (mTrees == null) {
-            throw new DotDataException("empty list passed in");
+            throw new DotDataException(String.format("MultiTree list for page ID '%s' cannot be null", pageId));
         }
 
         Logger.debug(MultiTreeAPIImpl.class, ()->String.format("Saving page's content: %s", mTrees));
-
+        final Set<String> originalContents = this.getOriginalContentlets(pageId, ContainerUUID.UUID_DEFAULT_VALUE);
         final DotConnect db = new DotConnect();
         db.setSQL(DELETE_ALL_MULTI_TREE_SQL).addParam(pageId).addParam(ContainerUUID.UUID_DEFAULT_VALUE).loadResult();
 
@@ -779,24 +790,20 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
 
         if (!mTrees.isEmpty()) {
             final List<Params> insertParams = Lists.newArrayList();
-            final Set<String> newContainers = new HashSet<>();
-
             for (final MultiTree tree : mTrees) {
                 insertParams
                         .add(new Params(pageId, tree.getContainerAsID(), tree.getContentlet(),
                                 tree.getRelationType(), tree.getTreeOrder(), tree.getPersonalization(), tree.getVariantId()));
-                newContainers.add(tree.getContainer());
                 variants.add(tree.getVariantId());
             }
 
             db.executeBatch(INSERT_SQL, insertParams);
         }
-
+        this.refreshContentletReferenceCount(originalContents, mTrees);
         for (String variantId : variants) {
             updateHTMLPageVersionTS(pageId, variantId);
             refreshPageInCache(pageId,variantId );
         }
-
     }
 
     @Override
@@ -831,7 +838,7 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
 
     private void _dbInsert(final MultiTree multiTree) throws DotDataException {
 
-        Logger.debug(this, () -> String.format("_dbInsert -> Saving MutiTree: %s", multiTree));
+        Logger.debug(this, () -> String.format("_dbInsert -> Saving MultiTree: %s", multiTree));
 
         new DotConnect().setSQL(INSERT_SQL).addParam(multiTree.getHtmlPage()).addParam(multiTree.getContainerAsID()).addParam(multiTree.getContentlet())
                 .addParam(multiTree.getRelationType()).addParam(multiTree.getTreeOrder()).addObject(multiTree.getPersonalization()).addParam(multiTree.getVariantId()).loadResult();
@@ -867,7 +874,7 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
             updateHTMLPageVersionTS(pageId, variant.name());
         }
     }
-    
+
     private void refreshPageInCache(final String pageIdentifier, final String variantName) throws DotDataException {
 
         CacheLocator.getMultiTreeCache()
@@ -946,7 +953,8 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
                 final String sInodeIds = StringUtils.join(identifiers, StringPool.COMMA);
                 new DotConnect().executeStatement("delete from multi_tree where child in (" + sInodeIds + ") or parent1 in (" + sInodeIds
                         + ") or parent2 in (" + sInodeIds + ")");
-            } catch (SQLException e) {
+                identifiers.forEach(contentletId -> this.multiTreeCache.get().removeContentletReferenceCount(contentletId));
+            } catch (final SQLException e) {
                 throw new DotDataException(e);
             }
         }
@@ -1135,4 +1143,124 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
             return false;
         }
     }
+
+    @Override
+    public int getAllContentletReferencesCount(final String contentletId) throws DotDataException {
+        final Optional<Integer> referenceCount = this.multiTreeCache.get().getContentletReferenceCount(contentletId);
+        if (referenceCount.isPresent()) {
+            return referenceCount.get();
+        }
+        final Long count = this.getContentletReferenceCountFromDB(contentletId);
+        this.multiTreeCache.get().putContentletReferenceCount(contentletId, count.intValue());
+        return count.intValue();
+    }
+
+    @CloseDBIfOpened
+    private Long getContentletReferenceCountFromDB(final String contentletId) throws DotDataException {
+        return ((Long) new DotConnect().setSQL(SELECT_CONTENTLET_REFERENCES).addParam(contentletId).loadObjectResults().get(0).get("count"));
+    }
+
+    /**
+     * Returns the list of Contentlet IDs in an HTML Page before they're overwritten with the updated information. This
+     * data is used to clear the page reference count ONLY on the Contentlets that were added or removed.
+     *
+     * @param pageId       The ID of the HTML Page whose original Contentlets will be retrieved.
+     * @param relationType The relation type for the Multi-Trees.
+     *
+     * @return The list of Contentlet IDs.
+     *
+     * @throws DotDataException An error occurred when accessing the data source.
+     */
+    private Set<String> getOriginalContentlets(final String pageId, final String relationType) throws DotDataException {
+        final List<Object> params = List.of(pageId, relationType);
+        return this.getOriginalContentlets(SELECT_CHILD_BY_PARENT, params);
+    }
+
+    /**
+     * Returns the list of Contentlet IDs in an HTML Page before they're overwritten with the updated information. This
+     * data is used to clear the page reference count ONLY on the Contentlets that were added or removed.
+     *
+     * @param pageId          The ID of the HTML Page whose original Contentlets will be retrieved.
+     * @param relationType    The relation type for the Multi-Trees.
+     * @param personalization The Persona set for the Multi-Tree entry.
+     * @param variantId       The ID of the selected Contentlet Variant.
+     *
+     * @return The list of Contentlet IDs.
+     *
+     * @throws DotDataException An error occurred when accessing the data source.
+     */
+    private Set<String> getOriginalContentlets(final String pageId, final String relationType, final String personalization,
+                                               final String variantId) throws DotDataException {
+        final List<Object> params = List.of(pageId,
+                relationType,
+                personalization,
+                variantId);
+        return this.getOriginalContentlets(SELECT_CHILD_BY_PARENT_RELATION_PERSONALIZATION_VARIANT, params);
+    }
+
+    /**
+     * Returns the list of Contentlet IDs in an HTML Page before they're overwritten with the updated information. This
+     * data is used to clear the page reference count ONLY on the Contentlets that were added or removed.
+     *
+     * @param pageId          The ID of the HTML Page whose original Contentlets will be retrieved.
+     * @param relationType    The relation type for the Multi-Trees.
+     * @param personalization The Persona set for the Multi-Tree entry.
+     * @param variantId       The ID of the selected Contentlet Variant.
+     * @param languageId      The Language ID of the Contentlets being updated.
+     *
+     * @return The list of Contentlet IDs.
+     *
+     * @throws DotDataException An error occurred when accessing the data source.
+     */
+    private Set<String> getOriginalContentlets(final String pageId, final String relationType, final String personalization,
+                                               final String variantId, final Long languageId) throws DotDataException {
+        final List<Object> params = List.of(pageId,
+                relationType,
+                personalization,
+                variantId,
+                pageId,
+                languageId);
+        return this.getOriginalContentlets(SELECT_CHILD_BY_PARENT_RELATION_PERSONALIZATION_VARIANT_LANGUAGE, params);
+    }
+
+    /**
+     * Executes the specified SQL query with the provided parameters to get list of Contentlet IDs added to an HTML
+     * Page.
+     *
+     * @param sqlQuery The SQL query.
+     * @param params The parameters of the query.
+     *
+     * @return The list of Contentlet IDs.
+     *
+     * @throws DotDataException An error occurred when accessing the data source.
+     */
+    private Set<String> getOriginalContentlets(final String sqlQuery, final List<Object> params) throws DotDataException {
+        final DotConnect db = new DotConnect().setSQL(sqlQuery);
+        params.forEach(db::addParam);
+        final List<Map<String, Object>> contentletData = db.loadObjectResults();
+        return contentletData.stream().map(dataMap -> dataMap.get("child").toString()).collect(Collectors.toSet());
+    }
+
+    /**
+     * Takes the list of Contentlet IDs present in an HTML Page before any change is made, and the list of
+     * {@link MultiTree} objects representing the updated Contentlets. Then, compares both lists and determines what
+     * specific Contentlets must have their page reference counter reset. This improves the overall performance as it
+     * will avoid re-calculating the page reference on Contentlets that were not added or removed from any HTML Page at
+     * all.
+     *
+     * @param originalContentletIds The list of Contentlet IDs that existed in the page before any change has been made.
+     * @param multiTrees            The Multi-Tree objects representing added/removed Contentlets.
+     */
+    private void refreshContentletReferenceCount(final Set<String> originalContentletIds, final List<MultiTree> multiTrees) {
+        if (!UtilMethods.isSet(multiTrees)) {
+            originalContentletIds.forEach(id -> this.multiTreeCache.get().removeContentletReferenceCount(id));
+        } else {
+            final Set<String> updatedContentletIds = multiTrees.stream().map(MultiTree::getContentlet).collect(Collectors.toSet());
+            final Set<String> modifiedIds = originalContentletIds.size() > updatedContentletIds.size() ?
+                                                    originalContentletIds.stream().filter(id -> !updatedContentletIds.contains(id)).collect(Collectors.toSet()) :
+                                                    updatedContentletIds.stream().filter(id -> !originalContentletIds.contains(id)).collect(Collectors.toSet());
+            modifiedIds.forEach(id -> this.multiTreeCache.get().removeContentletReferenceCount(id));
+        }
+    }
+
 }

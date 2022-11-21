@@ -19,9 +19,9 @@
 
 package com.dotcms.webdav;
 
-import com.dotcms.repackage.com.bradmcevoy.http.*;
-import com.dotcms.repackage.com.bradmcevoy.http.exceptions.NotAuthorizedException;
-import com.dotcms.repackage.com.ettrema.http.fs.LockManager;
+import com.bradmcevoy.http.*;
+import com.bradmcevoy.http.exceptions.NotAuthorizedException;
+import com.ettrema.http.fs.LockManager;
 import com.dotmarketing.util.Logger;
 
 import java.io.File;
