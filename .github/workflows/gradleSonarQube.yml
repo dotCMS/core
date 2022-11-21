@@ -3,13 +3,12 @@ on:
   push:
     branches:
       - master # or the name of your main branch
-
+      - testing-sonarqube
   pull_request:
     # Sequence of patterns matched against refs/heads
     branches:    
       - master
       - release-*
-      - testing-sonarqube
 
 jobs:
   build:
