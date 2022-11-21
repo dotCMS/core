@@ -14,6 +14,7 @@ import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
+import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UUIDUtil;
 import com.dotmarketing.util.UtilMethods;
@@ -38,7 +39,7 @@ public class SiteAndFolderResolverImpl implements SiteAndFolderResolver {
 
         final List<Field> fields = contentType.fields();
         if(contentType.fixed()){
-            //CT marked as fixed are mean to live under SYSTEM_HOST
+            //CT marked as fixed are meant to live under SYSTEM_HOST
             final ContentType build = ContentTypeBuilder.builder(contentType)
                     .host(Host.SYSTEM_HOST)
                     .folder(Folder.SYSTEM_FOLDER).build();
@@ -89,50 +90,17 @@ public class SiteAndFolderResolverImpl implements SiteAndFolderResolver {
         // Or we can set the folder using the property pair folder/folderPath
         // The properties siteName/folderPath take precedence
 
-        final HostAPI hostAPI = APILocator.getHostAPI();
 
         // First thing's first.
         // Here we need to work on the siteName property which takes precede over host
         // SiteName takes the human-readable and more approachable site name while host is expected to have an id
         if (UtilMethods.isSet(params.siteName()) && !Host.SYSTEM_HOST.equals(params.siteName())) {
-            Host resolvedSite = hostAPI.resolveHostName(params.siteName(), APILocator.systemUser(),
-                    true);
-            //if site-name resolution fails it will fall back to the default host.
-            //Logger.debug(ContentTypeAPIImpl.class, String.format("Attempt to resolve property [siteName] with value [%s] as [%s] ", contentType.host(), resolvedSite.getHostname()));
-            return resolvedSite.getIdentifier();
+            return resolveOrFallback(params.siteName());
         }
 
-        if (UtilMethods.isSet(params.host())) {
-            // Attempt resolve host
-            if (!UUIDUtil.isUUID(params.host()) && !Host.SYSTEM_HOST.equalsIgnoreCase(
-                    params.host())) {
-                //Resolve prop as site-name
-                Host resolvedSite = hostAPI.resolveHostName(params.host(), APILocator.systemUser(),
-                        true);
-                Logger.debug(ContentTypeAPIImpl.class,
-                        String.format(
-                                "Attempt to resolve property [host] with value [%s] as a siteName ",
-                                params.host()));
-                return resolvedSite.getIdentifier();
-            } else {
-                if (!Host.SYSTEM_HOST.equals(params.host())) {
-                    //Resolve property as an id
-                    Host resolvedSite = hostAPI.find(params.host(), APILocator.systemUser(), true);
-                    if (null != resolvedSite) {
-                        return resolvedSite.getIdentifier();
-                    } else {
-                        final String fallBackSiteIdentifier = Try.of(
-                                () -> hostAPI.findDefaultHost(APILocator.systemUser(), false)
-                                        .getIdentifier()).getOrElse(Host.SYSTEM_HOST);
-                        Logger.warn(ContentTypeAPIImpl.class, String.format(
-                                "Unable to resolve the provided value in prop host[%s] using fallback [%s].",
-                                params.host(), fallBackSiteIdentifier));
-                        return fallBackSiteIdentifier;
-                    }
-                }
-            }
+        if (UtilMethods.isSet(params.host()) && !Host.SYSTEM_HOST.equals(params.host())) {
+            return resolveOrFallback(params.host());
         }
-
         return Host.SYSTEM_HOST;
     }
 
@@ -153,36 +121,16 @@ public class SiteAndFolderResolverImpl implements SiteAndFolderResolver {
         // Now Check if the folder has been set
         // First try with the folderPath
         final FolderAPI folderAPI = APILocator.getFolderAPI();
-        final HostAPI hostAPI = APILocator.getHostAPI();
         if (UtilMethods.isSet(params.folderPath()) && !Folder.SYSTEM_FOLDER_PATH.equals(params.folderPath())) {
 
             final String folderPath = params.folderPath();
             if(UtilMethods.isSet(folderPath)) {
-                //default://application/containers
                 final Optional<Folder> fromPath = fromPath(folderPath);
                 if (fromPath.isPresent()) {
                     final Folder folder = fromPath.get();
                     return ImmutableResolvedSiteAndFolder.builder()
                             .resolvedFolder(folder.getInode())
                             .resolvedSite(folder.getHostId()).build();
-                }
-            }
-
-            //trying the incoming folder as a path but in order to do that we must have a valid host
-            if (UtilMethods.isSet(resolvedSiteId) && !Host.SYSTEM_HOST.equals(resolvedSiteId)) {
-                Logger.info(ContentTypeAPIImpl.class,
-                        () -> String.format("Trying folder [%s] as a path on given host [%s]", folderPath, resolvedSiteId));
-
-                //We have a site and we have a path
-                Folder folder = folderAPI.findFolderByPath(folderPath, resolvedSiteId, APILocator.systemUser(), false);
-                if (null != folder && UtilMethods.isSet(folder.getIdentifier())) {
-                    //contentTypeToSave = ContentTypeBuilder.builder(contentTypeToSave).folder(folder.getInode()).host(folder.getHostId()).build();
-                    return ImmutableResolvedSiteAndFolder.builder().resolvedFolder(folder.getInode()).resolvedSite(folder.getHostId()).build();
-                } else {
-                    folder = folderAPI.findSystemFolder();
-                    final Host defaultHost = hostAPI.findDefaultHost(APILocator.systemUser(), false);
-                    //contentTypeToSave = ContentTypeBuilder.builder(contentTypeToSave).folder(Folder.SYSTEM_FOLDER).host(defaultHost.getIdentifier()).build();
-                    return ImmutableResolvedSiteAndFolder.builder().resolvedFolder(Folder.SYSTEM_FOLDER).resolvedSite(defaultHost.getIdentifier()).build();
                 }
             }
         }
@@ -198,7 +146,6 @@ public class SiteAndFolderResolverImpl implements SiteAndFolderResolver {
             if(null != folder){
                 // if the folder is provided we have no choice but to use the folder's host id
                 // Otherwise will get a `Cannot assign host/folder to structure, folder does not belong to given host`
-                //contentTypeToSave = ContentTypeBuilder.builder(contentTypeToSave).folder(folder.getInode()).host(folder.getHostId()).build();
                 return ImmutableResolvedSiteAndFolder.builder().resolvedFolder(folder.getInode()).resolvedSite(folder.getHostId()).build();
             }
         }
@@ -207,6 +154,12 @@ public class SiteAndFolderResolverImpl implements SiteAndFolderResolver {
         return ImmutableResolvedSiteAndFolder.builder().resolvedFolder(Folder.SYSTEM_FOLDER).resolvedSite(resolvedSiteId).build();
     }
 
+    /**
+     * Handle a folder path of the form site-name + :/ + folder-path
+     * default:/application/containers
+     * @param path
+     * @return
+     */
     Optional<Folder> fromPath(final String path) {
         final String[] parts = path.split(StringPool.COLON);
         if(parts.length == 2){
@@ -229,5 +182,28 @@ public class SiteAndFolderResolverImpl implements SiteAndFolderResolver {
         return Optional.empty();
     }
 
+    /**
+     * Main function takes a siteId or hostName and attempts to resolve the site
+     * IF it does exist all good returns the site id
+     * If it doesn't then return the fallback
+     * @param siteIdOrName
+     * @return
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    String resolveOrFallback(final String siteIdOrName) throws DotDataException, DotSecurityException {
+                final HostAPI hostAPI = APILocator.getHostAPI();
+        final Optional<Host> resolvedSite = UUIDUtil.isUUID(siteIdOrName) ?
+              Optional.ofNullable(hostAPI.find(siteIdOrName, APILocator.systemUser(), true)) :
+              hostAPI.resolveHostNameWithoutDefault(siteIdOrName, APILocator.systemUser(), false);
+        if (resolvedSite.isPresent()) {
+            return resolvedSite.get().getIdentifier();
+        }
+        if (Config.getBooleanProperty(CT_FALLBACK_DEFAULT_SITE, true)) {
+            final Host defaultHost = hostAPI.findDefaultHost(APILocator.systemUser(), false);
+            return defaultHost.getIdentifier();
+        }
+        return Host.SYSTEM_HOST;
+    }
 
 }

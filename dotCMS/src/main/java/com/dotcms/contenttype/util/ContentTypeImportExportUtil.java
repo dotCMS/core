@@ -1,5 +1,7 @@
 package com.dotcms.contenttype.util;
 
+import static com.dotcms.contenttype.business.SiteAndFolderResolver.CT_FALLBACK_DEFAULT_SITE;
+
 import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.business.FieldAPI;
 import com.dotcms.contenttype.model.field.Field;
@@ -9,6 +11,7 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.util.Config;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.core.JsonEncoding;
 import com.fasterxml.jackson.core.JsonFactory;
@@ -56,24 +59,22 @@ public class ContentTypeImportExportUtil {
     }
 
     public void importContentTypes(File fileOrDirectory) throws IOException, DotDataException {
+        Config.setProperty(CT_FALLBACK_DEFAULT_SITE, false);
+        try {
+            if (!fileOrDirectory.isDirectory()) {
+                streamingJsonImport(fileOrDirectory);
+            } else {
+                String[] files = fileOrDirectory.list(
+                        (dir, name) -> (name.endsWith(CONTENT_TYPE_FILE_EXTENSION)));
 
-        if(!fileOrDirectory.isDirectory()){
-            streamingJsonImport(fileOrDirectory);
-        }else{
-            String[] files =fileOrDirectory.list(new FilenameFilter() {
-                
-                @Override
-                public boolean accept(File dir, String name) {
-                    return (name.endsWith(CONTENT_TYPE_FILE_EXTENSION));
+                for (String fileStr : files) {
+                    File file = new File(fileOrDirectory, fileStr);
+                    streamingJsonImport(file);
                 }
-            });
-
-            for (String fileStr : files) {
-                File file = new File(fileOrDirectory,fileStr);
-                streamingJsonImport(file);
             }
+        }finally {
+            Config.setProperty(CT_FALLBACK_DEFAULT_SITE, true);
         }
-
     }
 
     private void streamingJsonExport(File file, int run) throws DotDataException, DotSecurityException, IOException {

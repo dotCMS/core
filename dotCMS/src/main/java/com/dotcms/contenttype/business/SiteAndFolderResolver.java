@@ -7,6 +7,8 @@ import com.liferay.portal.model.User;
 
 public interface SiteAndFolderResolver {
 
+    String CT_FALLBACK_DEFAULT_SITE = "CT_FALLBACK_DEFAULT_SITE";
+
     ContentType resolveSiteAndFolder(ContentType contentType)
             throws DotDataException, DotSecurityException;
 

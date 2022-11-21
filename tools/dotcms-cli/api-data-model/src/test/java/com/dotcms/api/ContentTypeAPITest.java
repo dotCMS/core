@@ -399,5 +399,28 @@ public class ContentTypeAPITest {
 
     }
 
+    @Test
+    public void Test_Send_Send_Folder_Path_Only() {
+
+        final long timeStamp = System.currentTimeMillis();
+        final ContentTypeAPI client = apiClientFactory.getClient(ContentTypeAPI.class);
+
+        //First Scenario here to test is we send a CT with a Folder that we know does not exist
+        final String varName1 = "varCT"+timeStamp;
+        final ImmutableSimpleContentType contentType1 = ImmutableSimpleContentType.builder()
+                .description("ct for testing folders.")
+                .name("name")
+                .variable(varName1)
+                .folderPath("default:/foo/")
+                .addFields(
+                        ImmutableBinaryField.builder()
+                                .variable("binVar"+timeStamp)
+                                .build()
+                ).build();
+
+        final ResponseEntityView<List<ContentType>> contentTypeResponse2 = client.createContentTypes(ImmutableList.of(contentType1));
+        Assertions.assertNotNull(contentTypeResponse2);
+
+    }
 
 }
