@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { Component } from '@angular/core';
+import { Component, Injectable } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ControlValueAccessor, FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { DynamicDialogRef, DynamicDialogConfig } from 'primeng/dynamicdialog';
@@ -12,10 +12,29 @@ import { DotFieldValidationMessageModule } from '@components/_common/dot-field-v
 import { DotCategoriesPropertiesComponent } from '@dotcms/app/portlets/dot-categories/dot-categories-create-edit/dot-categories-properties/dot-categories-properties.component';
 import { DotGlobalMessageService } from '@components/_common/dot-global-message/dot-global-message.service';
 import { DotEventsService } from '@dotcms/app/api/services/dot-events/dot-events.service';
-import { DotCategoriesUtillService } from '@dotcms/app/api/services/dot-categories/dot-categories-utill.service';
-import { CoreWebService } from '@dotcms/dotcms-js';
+import { CoreWebService, HttpCode, ResponseView } from '@dotcms/dotcms-js';
 // import { DotGlobalMessageService } from '@components/_common/dot-global-message/dot-global-message.service';
-import { CoreWebServiceMock } from '@tests/core-web.service.mock';
+import { DotCategoriesPropertiesStore } from './store/dot-categories-properties.store';
+import { DotCategoriesUtillService } from '@dotcms/app/api/services/dot-categories/dot-categories-utill.service';
+import { CoreWebServiceMock } from '@dotcms/app/test/core-web.service.mock';
+import { HttpClientTestingModule } from '@angular/common/http/testing';
+import {
+    DotHttpErrorHandled,
+    DotHttpErrorManagerService
+} from '@dotcms/app/api/services/dot-http-error-manager/dot-http-error-manager.service';
+import { Observable, of } from 'rxjs';
+import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
+import { MockDotRouterService } from '@dotcms/app/test/dot-router-service.mock';
+
+@Injectable()
+class MockDotHttpErrorManagerService {
+    handle(_err: ResponseView): Observable<DotHttpErrorHandled> {
+        return of({
+            redirected: false,
+            status: HttpCode.BAD_REQUEST
+        });
+    }
+}
 @Component({
     selector: 'dot-container-properties',
     template: '<ng-content></ng-content>',
@@ -54,7 +73,12 @@ fdescribe('DotCategoryPropsComponent', () => {
                 DotMessagePipe,
                 DotThemeSelectorDropdownMockComponent
             ],
-            imports: [FormsModule, ReactiveFormsModule, DotFieldValidationMessageModule],
+            imports: [
+                FormsModule,
+                ReactiveFormsModule,
+                DotFieldValidationMessageModule,
+                HttpClientTestingModule
+            ],
             providers: [
                 {
                     provide: DotMessageService,
@@ -81,13 +105,16 @@ fdescribe('DotCategoryPropsComponent', () => {
                         }
                     }
                 },
-                DotCategoriesUtillService,
                 {
                     provide: CoreWebService,
                     useClass: CoreWebServiceMock
                 },
+                { provide: DotHttpErrorManagerService, useClass: MockDotHttpErrorManagerService },
+                { provide: DotRouterService, useClass: MockDotRouterService },
                 DotGlobalMessageService,
-                DotEventsService
+                DotEventsService,
+                DotCategoriesPropertiesStore,
+                DotCategoriesUtillService
             ]
         }).compileComponents();
     });
