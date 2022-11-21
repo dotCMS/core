@@ -1,6 +1,5 @@
 package com.dotcms.rest.api.v1.page;
 
-import com.dotcms.business.WrapInTransaction;
 import com.dotcms.content.elasticsearch.business.ESSearchResults;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
@@ -59,12 +58,30 @@ import org.glassfish.jersey.server.JSONP;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
-import javax.ws.rs.*;
+import javax.ws.rs.Consumes;
+import javax.ws.rs.DefaultValue;
+import javax.ws.rs.GET;
+import javax.ws.rs.POST;
+import javax.ws.rs.PUT;
+import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
+import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import java.io.IOException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
 
@@ -393,24 +410,43 @@ public class PageResource {
     }
 
     /**
-     * Update all the content's page receive a json object with the follow format:
+     * Updates all the contents in an HTML Page. This method is used to update changes when both adding or removing
+     * Contentlets from Containers. It takes a JSON object -- serialized as a {@link PageContainerForm} object -- in
+     * the following format:
+     * <pre>
+     *     {@code
+     *     [
+     *          {
+     *              "identifier": "{CONTAINER-1-ID}",
+     *              "uuid": "dotParser_{UNIQUE-ID}",
+     *              "modified": "{ADDED-OR-REMOVED-CONTENTLET-ID}", // Optional
+     *              "contentletsId": [
+     *                  "CONTENTLET-IDENTIFIER-1",
+     *                  "CONTENTLET-IDENTIFIER-2",
+     *                  "CONTENTLET-IDENTIFIER-3",
+     *                  "..."
+     *              ]
+     *          },
+     *          {
+     *              "identifier": "{CONTAINER-2-ID}",
+     *              "uuid": "dotParser_{UNIQUE-ID}",
+     *              "modified": "{ADDED-OR-REMOVED-CONTENTLET-ID}", // Optional
+     *              "contentletsId": [
+     *                  "CONTENTLET-IDENTIFIER-4",
+     *                  "CONTENTLET-IDENTIFIER-5",
+     *                  "CONTENTLET-IDENTIFIER-6",
+     *                  "..."
+     *              ]
+     *          }
+     *      ]
+     *     }
+     * </pre>
      *
-     * {
-     *     container_1_id: [contentlet_1_id, contentlet_2_id,...,contentlet_n_id],
-     *     container_2_id: [contentlet_1_id, contentlet_2_id,...,contentlet_n_id],
-     *     ...
-     *     container_n_id: [contentlet_1_id, contentlet_2_id,...,contentlet_n_id],
-     * }
-     *
-     * where:
-     *
-     * - container_1_id, container_2_id,..., container_n_id: Each container's identifier
-     * - contentlet_1_id, contentlet_2_id,...,contentlet_n_id: each contentlet identifier
-     *
-     * @param request
-     * @param pageId
-     * @param pageContainerForm
-     * @return
+     * @param request The current instance of the {@link HttpServletRequest}.
+     * @param pageId The ID of the HTML Page whose contents are being updated.
+     * @param pageContainerForm The {@link PageContainerForm} containing the basic information of every Container and
+     *                          their respective Contentlets.
+     * @return The {@link Response} entity.
      */
     @POST
     @JSONP
@@ -421,8 +457,12 @@ public class PageResource {
     public final Response addContent(@Context final HttpServletRequest request,
             @Context final HttpServletResponse response,
             @PathParam("pageId") final String pageId,
+            @QueryParam("variantName") final String variantNameParam,
             final PageContainerForm pageContainerForm)
             throws DotSecurityException, DotDataException {
+
+        final String variantName = UtilMethods.isSet(variantNameParam) ? variantNameParam :
+                VariantAPI.DEFAULT_VARIANT.name();
 
         Logger.debug(this, ()->String.format("Saving page's content: %s",
                 pageContainerForm != null ? pageContainerForm.getRequestJson() : null));
@@ -443,7 +483,7 @@ public class PageResource {
             final Language language = WebAPILocator.getLanguageWebAPI().getLanguage(request);
             this.validateContainerEntries(pageContainerForm.getContainerEntries());
 
-            pageResourceHelper.saveContent(pageId, this.reduce(pageContainerForm.getContainerEntries()), language);
+            pageResourceHelper.saveContent(pageId, this.reduce(pageContainerForm.getContainerEntries()), language, variantName);
 
             return Response.ok(new ResponseEntityView("ok")).build();
         } catch(HTMLPageAssetNotFoundException e) {
@@ -502,7 +542,6 @@ public class PageResource {
      * @return List
      */
     private List<PageContainerForm.ContainerEntry> reduce(final List<PageContainerForm.ContainerEntry> containerEntries) {
-
         final Map<MultiKey, Set<String>> containerEntryMap = new HashMap<>();
 
         for (final PageContainerForm.ContainerEntry containerEntry : containerEntries) {
@@ -661,7 +700,7 @@ public class PageResource {
     @JSONP
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
-    public List<MulitreeView> getContentTree (@Context final HttpServletRequest  request,
+    public ResponseEntityView<List<MulitreeView>> getContentTree (@Context final HttpServletRequest  request,
                                                    @Context final HttpServletResponse response,
                                                    @PathParam("pageId") final String  pageId) throws SystemException, PortalException, DotDataException, DotSecurityException {
 
@@ -671,11 +710,13 @@ public class PageResource {
 
         final List<MultiTree> multiTrees = APILocator.getMultiTreeAPI().getMultiTrees(pageId);
 
-        return null != multiTrees? multiTrees.stream().map(multiTree ->
+        final List<MulitreeView> mulitreeViews = null != multiTrees? multiTrees.stream().map(multiTree ->
                 new MulitreeView(multiTree.getHtmlPage(), multiTree.getContainer(),
                         multiTree.getContentlet(), multiTree.getRelationType(), multiTree.getTreeOrder(),
                         multiTree.getPersonalization(), multiTree.getVariantId())).collect(Collectors.toList()):
                 Collections.emptyList();
+
+        return new ResponseEntityView<>(mulitreeViews);
     } // getPersonalizedPersonasOnPage
 
     /**
@@ -846,7 +887,7 @@ public class PageResource {
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
     @Path("/copyContent")
-    public final  Map<String, Object> copyContent(
+    public final  ResponseEntityView<Map<String, Object>> copyContent(
                                       @Context final HttpServletRequest request,
                                       @Context final HttpServletResponse response,
                                       final CopyContentletForm copyContentletForm)
@@ -864,12 +905,48 @@ public class PageResource {
         final User user               = initData.getUser();
         final Language language       = WebAPILocator.getLanguageWebAPI().getLanguage(request); // todo: not sure if this should be received on the form.
         final Contentlet copiedContentlet = this.pageResourceHelper.copyContentlet(copyContentletForm, user, pageMode, language);
-
-        return new DotTransformerBuilder().defaultOptions().content(copiedContentlet).build()
+        final Map<String, Object> entity = (Map<String, Object>)new DotTransformerBuilder().defaultOptions().content(copiedContentlet).build()
                 .toMaps().stream().findFirst().orElse(Collections.emptyMap());
+        return new ResponseEntityView<>(entity);
     }
 
+    /**
+     * Do a deep copy of a page:
+     * 1. Creates a page copy
+     * 2. For each contentlet on the multitree related on the page, creates a copy.
+     * @param request {@link HttpServletRequest}
+     * @param response {@link HttpServletResponse}
+     * @param copyContentletForm {@link CopyContentletForm}
+     * @return Contentlet Map
+     */
+    @PUT
+    @JSONP
+    @NoCache
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_JSON)
+    @Path("/{pageId}/_deepcopy")
+    public final  ResponseEntityView<Map<String, Object>> deepCopyPage(
+            @Context final HttpServletRequest request,
+            @Context final HttpServletResponse response,
+            @PathParam("pageId") final String pageId)
+            throws DotSecurityException, DotDataException {
 
+        Logger.debug(this, ()-> "Copying the page: " + pageId);
 
+        final InitDataObject initData = webResource.init(request, response,true);
+        final PageMode pageMode       = PageMode.get(request);
+        final User user               = initData.getUser();
+        final IHTMLPage  page         = this.pageResourceHelper.getPage(user, pageId, request);
+        final Language language       = WebAPILocator.getLanguageWebAPI().getLanguage(request); // todo: not sure if this should be received on the form.
 
-}
+        if (null == page) {
+
+            throw new DoesNotExistException("The page: " +  pageId + " does not exists.");
+        }
+
+        final Contentlet copiedContentlet = this.pageResourceHelper.copyPage(page, user, pageMode, language);
+
+        return new ResponseEntityView<>(new DotTransformerBuilder().defaultOptions().content(copiedContentlet).build()
+                .toMaps().stream().findFirst().orElse(Collections.emptyMap()));
+    } // deepCopyPage.
+} // E:O:F:PageResource

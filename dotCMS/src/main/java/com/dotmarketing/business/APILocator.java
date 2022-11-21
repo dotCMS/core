@@ -32,6 +32,8 @@ import com.dotcms.contenttype.business.DotAssetAPI;
 import com.dotcms.contenttype.business.DotAssetAPIImpl;
 import com.dotcms.contenttype.business.FieldAPI;
 import com.dotcms.contenttype.business.FieldAPIImpl;
+import com.dotcms.contenttype.business.StoryBlockAPI;
+import com.dotcms.contenttype.business.StoryBlockAPIImpl;
 import com.dotcms.device.DeviceAPI;
 import com.dotcms.device.DeviceAPIImpl;
 import com.dotcms.dotpubsub.DotPubSubProvider;
@@ -269,6 +271,10 @@ public class APILocator extends Locator<APIIndex>{
 	 */
 	public static CompanyAPI getCompanyAPI() {
 		return getAPILocatorInstance().getCompanyAPIImpl();
+	}
+
+	public static StoryBlockAPI getStoryBlockAPI() {
+		return (StoryBlockAPI)getInstance(APIIndex.STORY_BLOCK_API);
 	}
 
 	@VisibleForTesting
@@ -1269,6 +1275,7 @@ enum APIIndex
 	DEVICE_API,
 	DETERMINISTIC_IDENTIFIER_API,
 	CONTENTLET_JSON_API,
+	STORY_BLOCK_API,
 	VARIANT_API,
 	EXPERIMENTS_API,
 	BAYESIAN_API,
@@ -1356,6 +1363,7 @@ enum APIIndex
 			case DEVICE_API: return new DeviceAPIImpl();
 			case DETERMINISTIC_IDENTIFIER_API: return new DeterministicIdentifierAPIImpl();
 			case CONTENTLET_JSON_API: return new ContentletJsonAPIImpl();
+			case STORY_BLOCK_API: return new StoryBlockAPIImpl();
 			case VARIANT_API: return new VariantAPIImpl();
 			case EXPERIMENTS_API: return new ExperimentsAPIImpl();
 			case BAYESIAN_API: return new BayesianAPIImpl();

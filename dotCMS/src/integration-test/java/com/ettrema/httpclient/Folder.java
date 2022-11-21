@@ -1,12 +1,12 @@
 package com.ettrema.httpclient;
 
-import com.dotcms.repackage.com.bradmcevoy.common.Path;
-import com.dotcms.repackage.com.bradmcevoy.http.exceptions.BadRequestException;
-import com.dotcms.repackage.com.bradmcevoy.http.exceptions.ConflictException;
-import com.dotcms.repackage.com.bradmcevoy.http.exceptions.NotAuthorizedException;
-import com.dotcms.repackage.com.bradmcevoy.http.exceptions.NotFoundException;
+import com.bradmcevoy.common.Path;
+import com.bradmcevoy.http.exceptions.BadRequestException;
+import com.bradmcevoy.http.exceptions.ConflictException;
+import com.bradmcevoy.http.exceptions.NotAuthorizedException;
+import com.bradmcevoy.http.exceptions.NotFoundException;
 import com.ettrema.cache.Cache;
-import com.dotcms.repackage.com.ettrema.common.LogUtils;
+import com.ettrema.common.LogUtils;
 import com.ettrema.httpclient.PropFindMethod.Response;
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -16,8 +16,8 @@ import java.net.URLConnection;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import com.dotcms.repackage.org.slf4j.Logger;
-import com.dotcms.repackage.org.slf4j.LoggerFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  *
@@ -162,8 +162,13 @@ public class Folder extends Resource {
      *
      * @param f
      * @param listener
-     * @param throttle - optional, can be used to slow down the transfer
      * @throws IOException
+     * @throws HttpException
+     * @throws NotAuthorizedException
+     * @throws ConflictException
+     * @throws BadRequestException
+     * @throws FileNotFoundException
+     * @throws NotFoundException
      */
     public void upload(File f, ProgressListener listener) throws IOException, HttpException , NotAuthorizedException, ConflictException, BadRequestException, FileNotFoundException, NotFoundException {
         if (f.isDirectory()) {
@@ -224,7 +229,7 @@ public class Folder extends Resource {
 
     public com.ettrema.httpclient.File upload(String name, InputStream content, Long contentLength, ProgressListener listener) throws IOException, HttpException, NotAuthorizedException, ConflictException, BadRequestException, NotFoundException {
         children(); // ensure children are loaded
-        String newUri = encodedUrl() + com.dotcms.repackage.com.bradmcevoy.http.Utils.percentEncode(name);
+        String newUri = encodedUrl() + com.bradmcevoy.http.Utils.percentEncode(name);
         String contentType = URLConnection.guessContentTypeFromName(name);
         log.trace("upload: " + newUri);
         int result = host().doPut(newUri, content, contentLength, contentType, listener);
@@ -238,15 +243,13 @@ public class Folder extends Resource {
 
     public Folder createFolder(String name) throws IOException, HttpException , NotAuthorizedException, ConflictException, BadRequestException, NotFoundException {
         children(); // ensure children are loaded
-        String newUri = encodedUrl() + com.dotcms.repackage.com.bradmcevoy.http.Utils.percentEncode(name);
+        String newUri = encodedUrl() + com.bradmcevoy.http.Utils.percentEncode(name);
         try {
             host().doMkCol(newUri);
             flush();
             Folder child = (Folder) child(name);
             notifyOnChildAdded(child);
             return child;
-        } catch (ConflictException e) {
-            return handlerCreateFolderException(newUri, name);
         } catch (MethodNotAllowedException e) {
             return handlerCreateFolderException(newUri, name);
         }

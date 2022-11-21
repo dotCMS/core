@@ -55,13 +55,15 @@ const run = () => __awaiter(void 0, void 0, void 0, function* () {
     }
     const exitCode = yield unit.runTests(cmd);
     setOutput('tests_results_location', cmd.outputDir);
-    setOutput('tests_results_report_location', cmd.reportDir);
+    setOutput('tests_results_report_location', cmd.reportDir, true);
     setOutput('tests_results_status', exitCode === 0 ? 'PASSED' : 'FAILED');
     setOutput('tests_results_skip_report', !fs.existsSync(cmd.outputDir));
 });
-const setOutput = (name, value) => {
-    const val = value === undefined ? '' : value;
-    core.notice(`Setting output '${name}' with value: '${val}'`);
+const setOutput = (name, value, notify = false) => {
+    const val = value || '';
+    if (notify && !!val) {
+        core.notice(`Setting output '${name}' with value: '${val}'`);
+    }
     core.setOutput(name, value);
 };
 // Run main function
