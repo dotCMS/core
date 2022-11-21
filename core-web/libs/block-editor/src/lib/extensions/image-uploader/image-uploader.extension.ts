@@ -12,7 +12,7 @@ import { LoaderComponent, MessageType } from '@dotcms/block-editor';
 import { DotImageService } from './services/dot-image/dot-image.service';
 
 import { PlaceholderPlugin } from './plugins/placeholder.plugin';
-import { ImageNode } from '@dotcms/block-editor';
+import { ImageNode, deselectCurrentNode } from '@dotcms/block-editor';
 
 function checkImageURL(url) {
     return url.match(/\.(jpeg|jpg|gif|png)$/) != null;
@@ -106,6 +106,7 @@ export const ImageUpload = (injector: Injector, viewContainerRef: ViewContainerR
                         remove: { id }
                     })
                 );
+                deselectCurrentNode(view);
             }
 
             /**

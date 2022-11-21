@@ -1,4 +1,4 @@
- <style>
+<style>
 .system_container {
     border: 1px solid #b3b1b8;
     gap: 20px;
@@ -124,33 +124,24 @@
 }
 </style>
 
-#set($contentMap = $dotcontent.find($!{ContentIdentifier}))
-#set($contentlet = $contentMap.getContentObject())
-#set($contentType = $contentlet.getContentType())
-#set($language = $languagewebapi.getLanguage("$!{contentlet.languageId}"))
 
-#if($!{contentMap})
+#set($language = $languagewebapi.getLanguage("$!{dotContentMap.languageId}"))
+
 <div class="system_container">
-    <div class="card_logo" id="logo-image-$!{contentlet.inode}"></div>
+    <div class="card_logo" id="logo-image-$!{dotContentMap.inode}"></div>
     <div class="card_body">
         <div class="card_header">
             <div class="card_title">
-                <h1>#if($title)$title#{else}$!contentlet.title#end</h1>
+                <h1>$!{dotContentMap.title}</h1>
             </div>
-           <span class="content_type">$contentType.name()</span>
+           <span class="content_type">$!{dotContentMap.contentType.name}</span>
         </div>
         <div class="card_footer">
-            <div class="status #if($contentlet.isLive())live#{else}working#end"></div>
+            <div class="status #if($dotContentMap.isLive())live#{else}working#end"></div>
             <span class="lang">$!{language}</span>
         </div>
     </div>
 </div>
-#else
-<div style="width: auto; overflow-wrap: break-word;">
-<h1>$text.get('message.contentlet.not.have.live.version')</h1>
-<h2>Contentlet Identifier: $!{ContentIdentifier}</h2>
-</div>
-#end
 
 <script type="text/javascript">
 
@@ -159,16 +150,16 @@
         const image = new Image();
         image.onload=imageFound;
         image.onerror=imageNotFound;
-        image.src="/dA/$!{contentlet.inode}";
+        image.src="/dA/$!{dotContentMap.inode}";
 
         function imageFound() {
-            const div = document.getElementById(`logo-image-$!{contentlet.inode}`);
+            const div = document.getElementById(`logo-image-$!{dotContentMap.inode}`);
             div.appendChild(image);
         }
 
         function imageNotFound() {
-            const div = document.getElementById(`logo-image-$!{contentlet.inode}`);
-            div.innerHTML = `<span class="material-icons">$!{contentType.icon()}</span>`;
+            const div = document.getElementById(`logo-image-$!{dotContentMap.inode}`);
+            div.innerHTML = `<span class="material-icons">$!{dotContentMap.contentType.icon}</span>`;
         }
     })()
     

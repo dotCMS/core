@@ -19,8 +19,8 @@
 
 package com.dotcms.webdav;
 
-import com.dotcms.repackage.com.bradmcevoy.http.*;
-import com.dotcms.repackage.com.bradmcevoy.http.exceptions.NotAuthorizedException;
+import com.bradmcevoy.http.*;
+import com.bradmcevoy.http.exceptions.NotAuthorizedException;
 import com.dotmarketing.util.Logger;
 
 
