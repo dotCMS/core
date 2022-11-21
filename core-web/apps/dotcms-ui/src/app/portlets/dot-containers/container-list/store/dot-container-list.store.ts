@@ -397,29 +397,7 @@ export class DotContainerListStore extends ComponentStore<DotContainerListState>
     }
 
     private setArchiveContainerActions(container: DotContainer): DotActionMenuItem[] {
-        let options: DotActionMenuItem[] = [];
-        const { hasEnvironments } = this.get();
-        if (hasEnvironments) {
-            options.push({
-                menuItem: {
-                    label: this.dotMessageService.get('edit'),
-                    command: () => {
-                        this.editContainer(container);
-                    }
-                }
-            });
-
-            options.push({
-                menuItem: {
-                    label: this.dotMessageService.get('publish'),
-                    command: () => {
-                        this.publishContainer([container.identifier]);
-                    }
-                }
-            });
-
-            options = [...options, ...this.setCopyContainerOptions(container)];
-        }
+        const options: DotActionMenuItem[] = [];
 
         if (!container.live) {
             options.push({

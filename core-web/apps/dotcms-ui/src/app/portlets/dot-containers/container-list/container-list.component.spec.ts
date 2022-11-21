@@ -295,9 +295,6 @@ describe('ContainerListComponent', () => {
             ).componentInstance;
 
             const actions = [
-                { menuItem: { label: 'Edit', command: jasmine.any(Function) } },
-                { menuItem: { label: 'Publish', command: jasmine.any(Function) } },
-                { menuItem: { label: 'Duplicate', command: jasmine.any(Function) } },
                 { menuItem: { label: 'Unarchive', command: jasmine.any(Function) } },
                 { menuItem: { label: 'Delete', command: jasmine.any(Function) } }
             ];
