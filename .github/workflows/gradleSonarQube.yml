@@ -9,6 +9,7 @@ on:
     branches:    
       - master
       - release-*
+      - testing-sonarqube
 
 jobs:
   build:
@@ -36,6 +37,7 @@ jobs:
           restore-keys: ${{ runner.os }}-gradle
       - name: Build and analyze
         env:
+          SONAR_SCANNER_OPTS: "-Xmx3g"
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}  # Needed to get PR information, if any
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
           SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
