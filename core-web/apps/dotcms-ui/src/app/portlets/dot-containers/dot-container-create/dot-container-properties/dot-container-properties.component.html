@@ -18,17 +18,18 @@
             ></button>
         </div>
         <div class="dot-container-properties__title-container">
-            <p-inplace #editText [active]="!form?.value?.identifier">
+            <p-inplace #editText [active]="!form?.value?.identifier" data-testId="inplace">
                 <ng-template pTemplate="content">
                     <span class="p-input-icon-right">
                         <i class="pi pi-times" (click)="editText.deactivate()"></i>
                         <input
                             class="dot-container-properties__title-input"
                             [required]="true"
+                            data-testId="title"
+                            dotAutofocus
                             type="text"
                             pInputText
                             formControlName="title"
-                            autofocus
                         />
                     </span>
                 </ng-template>
@@ -44,7 +45,7 @@
                     <i class="pi pi-pencil"></i>
                 </ng-template>
             </p-inplace>
-            <dot-api-link [href]="vm.apiLink"></dot-api-link>
+            <dot-api-link *ngIf="form?.value?.identifier" [href]="vm.apiLink"></dot-api-link>
         </div>
         <div class="field">
             <label class="block" for="description">{{
@@ -92,6 +93,7 @@
             <dot-loop-editor
                 [isEditorVisible]="vm.showPrePostLoopInput"
                 (buttonClick)="showLoopInput()"
+                label="pre_loop"
                 formControlName="preLoop"
             ></dot-loop-editor>
             <dot-container-code
@@ -103,6 +105,7 @@
                 [isEditorVisible]="vm.showPrePostLoopInput"
                 (buttonClick)="showLoopInput()"
                 formControlName="postLoop"
+                label="post_loop"
             ></dot-loop-editor>
         </div>
         <div class="field" *ngIf="!vm.isContentTypeVisible">

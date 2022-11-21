@@ -15,6 +15,7 @@ import { DotLoopEditorModule } from '@portlets/dot-containers/dot-container-crea
 import { DotContentEditorModule } from '@portlets/dot-containers/dot-container-create/dot-container-code/dot-container-code.module';
 import { DotContainersService } from '@services/dot-containers/dot-containers.service';
 import { DotApiLinkModule } from '@components/dot-api-link/dot-api-link.module';
+import { DotAutofocusModule } from '@directives/dot-autofocus/dot-autofocus.module';
 
 @NgModule({
     declarations: [DotContainerPropertiesComponent],
@@ -33,7 +34,8 @@ import { DotApiLinkModule } from '@components/dot-api-link/dot-api-link.module';
         DotMessagePipeModule,
         DotLoopEditorModule,
         DotContentEditorModule,
-        DotApiLinkModule
+        DotApiLinkModule,
+        DotAutofocusModule
     ],
     providers: [DotContainersService]
 })
