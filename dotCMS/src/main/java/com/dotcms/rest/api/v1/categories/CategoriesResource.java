@@ -167,7 +167,8 @@ public class CategoriesResource {
                 page, perPage));
 
         try {
-           response = showChildrenCount == false ?  this.paginationUtil.getPage(httpRequest, user, filter, page, perPage) : this.extendedPaginationUtil.getPage(httpRequest, user, filter, page, perPage);
+           response = showChildrenCount == false ? this.paginationUtil.getPage(httpRequest, user, filter, page, perPage, orderBy, direction)
+                   : this.extendedPaginationUtil.getPage(httpRequest, user, filter, page, perPage, orderBy, direction);
         } catch (Exception e) {
             Logger.error(this, e.getMessage(), e);
             if (ExceptionUtil.causedBy(e, DotSecurityException.class)) {
@@ -198,7 +199,7 @@ public class CategoriesResource {
      * <li>direction: asc for upward order and desc for downward order</li>
      * </ul>
      * <p>
-     * Url example: v1/categories/children?filter=test&page=2&orderby=categoryName
+     * Url example: v1/categories/children?filter=test&page=0&per_page=5&orderby=category_name
      *
      * @param httpRequest
      * @return
@@ -213,7 +214,7 @@ public class CategoriesResource {
             @QueryParam(PaginationUtil.FILTER) final String filter,
             @QueryParam(PaginationUtil.PAGE) final int page,
             @QueryParam(PaginationUtil.PER_PAGE) final int perPage,
-            @DefaultValue("categoryName") @QueryParam(PaginationUtil.ORDER_BY) final String orderBy,
+            @DefaultValue("category_name") @QueryParam(PaginationUtil.ORDER_BY) final String orderBy,
             @DefaultValue("ASC") @QueryParam(PaginationUtil.DIRECTION) final String direction,
             @QueryParam("inode") final String inode) throws DotDataException, DotSecurityException {
 
@@ -233,7 +234,7 @@ public class CategoriesResource {
 
         PaginatedCategories list = this.categoryAPI.findChildren(user, inode,
                 pageMode.respectAnonPerms, page, perPage,
-                filter, direction);
+                filter, direction.toLowerCase().equals("asc") ? orderBy : "-" + orderBy);
 
         return getPage(list.getCategories(), list.getTotalCount(), page, perPage);
     }
