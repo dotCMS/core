@@ -14,7 +14,18 @@ import java.util.Set;
 import java.util.function.Predicate;
 
 /**
- * API for {@link com.dotmarketing.beans.MultiTree}
+ * This API provides access to HTML Page Multi-Tree data in dotCMS.
+ * <p>In simple words, this is how HTML Pages in the system are put together:</p>
+ * <ul>
+ *     <li>The HTML Page.</li>
+ *     <li>One or more Containers.</li>
+ *     <li>One Container can have one or more Contentlets.</li>
+ * </ul>
+ * So, {@link MultiTree} objects contain important information on what Contentlets are added to Containers in a page.
+ * This API allows developers to access and modify this information as required. Every time Users edit an HTML Page --
+ * either adding or deleting Contentlets from it -- the Multi-Tree data is updated to reflect such an update.
+ *
+ * @author root
  */
 public interface MultiTreeAPI {
 
@@ -466,5 +477,17 @@ public interface MultiTreeAPI {
      */
     void updatePersonalization(String currentPersonalization, String newPersonalization) throws DotDataException;
 
+    /**
+     * Queries the database to return the number of Containers that include the specified Contentlet ID.
+     * <p>The result provided by this method can be used to customize or determine specific behaviors. For example,
+     * this piece of information is used by the dotCMS UI to ask the User whether they want to edit a Contentlet
+     * referenced everywhere, or if dotCMS should create a copy of such a Contentlet so they can edit that one
+     * version.</p>
+     *
+     * @param contentletId The Contentlet ID whose references will be retrieved.
+     *
+     * @return The number of times the specified Contentlet is added to a Container in any HTML Page.
+     */
+    int getAllContentletReferencesCount(final String contentletId) throws DotDataException;
 
 }

@@ -27,6 +27,7 @@ plugins {
 sonarqube {
   properties {
     property "sonar.projectKey", "dotCMS_core_AYQvQCMIJs0IgspqN39B"
+    property "sonar.projectName", "dotcms-core"
   }
 }
 

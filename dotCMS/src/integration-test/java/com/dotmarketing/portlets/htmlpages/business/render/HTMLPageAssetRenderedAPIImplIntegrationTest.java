@@ -647,7 +647,7 @@ public class HTMLPageAssetRenderedAPIImplIntegrationTest extends IntegrationTest
      * @throws DotSecurityException
      */
     @Test
-    public void emptyPageWitlMultiContentletVersion() throws WebAssetException, DotDataException, DotSecurityException {
+    public void emptyPageWithMultiContentletVersion() throws WebAssetException, DotDataException, DotSecurityException {
         final Language language_1 = new LanguageDataGen().nextPersisted();
         final Language language_2 = new LanguageDataGen().nextPersisted();
         final Host host = new SiteDataGen().nextPersisted();
@@ -1031,6 +1031,74 @@ public class HTMLPageAssetRenderedAPIImplIntegrationTest extends IntegrationTest
         when(session.getAttribute(WebKeys.VISITOR)).thenReturn(null);
 
 
+        final String html = APILocator.getHTMLPageAssetRenderedAPI().getPageHtml(
+                PageContextBuilder.builder()
+                        .setUser(APILocator.systemUser())
+                        .setPageUri(page.getURI())
+                        .setPageMode(PageMode.LIVE)
+                        .build(),
+                mockRequest, mockResponse);
+        Assert.assertEquals(
+                "<div>" + variant.name() + " second-content-default-" + language.getId()
+                        + "</div>", html);
+    }
+
+    /**
+     * Method to test: {@link HTMLPageAssetRenderedAPI#getPageHtml(PageContext, HttpServletRequest, HttpServletResponse)}
+     * When:
+     * - Create two {@link Contentlet}.
+     * - Create a {@link HTMLPageAsset}.
+     * - Create a new {@link Variant}
+     * - Add the first contentlet into the Page for the DEFAULT {@link Variant}
+     * - Add the second contentlet into the Page for the specific {@link Variant}
+     * should:
+     * - When the page is render to the DEFAULT variant should render the first contentlet.
+     * - When the page is render to the specific variant should render the second contentlet.
+     *
+     * @throws WebAssetException
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    @Test
+    public void usingLiveRenderCache() throws WebAssetException, DotDataException, DotSecurityException {
+        final Language language = new LanguageDataGen().nextPersisted();
+        final Variant variant = new VariantDataGen().nextPersisted();
+        final Host host = new SiteDataGen().nextPersisted();
+
+        final ContentType contentType = createContentType();
+        final Container container = createAndPublishContainer(host, contentType);
+        final HTMLPageAsset page = createHtmlPageAsset(language, host, container, VariantAPI.DEFAULT_VARIANT);
+        final Contentlet contentlet = createContentlet(language, host, contentType);
+        createNewVersion(contentlet, language, variant);
+
+        addToPage(container, page, contentlet);
+
+        final Contentlet contentlet_2 = new ContentletDataGen(contentType)
+                .languageId(language.getId())
+                .host(host)
+                .setProperty("title", "DEFAULT second-content-default-" + language.getId())
+                .variant(VariantAPI.DEFAULT_VARIANT)
+                .nextPersistedAndPublish();
+        createNewVersion(contentlet_2, language, variant, "title",
+                variant.name() + " second-content-default-" + language.getId());
+
+        new MultiTreeDataGen()
+                .setPage(page)
+                .setContentlet(contentlet_2)
+                .setInstanceID(ContainerUUID.UUID_START_VALUE)
+                .setTreeOrder(0)
+                .setContainer(container)
+                .setVariant(variant)
+                .nextPersisted();
+
+        HttpServletRequest mockRequest = createHttpServletRequest(language, host,
+                variant, page);
+
+        HttpServletResponse mockResponse = mock(HttpServletResponse.class);
+        HttpSession session = createHttpSession(mockRequest);
+        when(session.getAttribute(WebKeys.VISITOR)).thenReturn(null);
+
+
         String html = APILocator.getHTMLPageAssetRenderedAPI().getPageHtml(
                 PageContextBuilder.builder()
                         .setUser(APILocator.systemUser())
@@ -1041,6 +1109,115 @@ public class HTMLPageAssetRenderedAPIImplIntegrationTest extends IntegrationTest
         Assert.assertEquals(
                 "<div>" + variant.name() + " second-content-default-" + language.getId()
                         + "</div>", html);
+
+        mockRequest = createHttpServletRequest(language, host,
+                VariantAPI.DEFAULT_VARIANT, page);
+
+        mockResponse = mock(HttpServletResponse.class);
+        session = createHttpSession(mockRequest);
+        when(session.getAttribute(WebKeys.VISITOR)).thenReturn(null);
+
+
+        html = APILocator.getHTMLPageAssetRenderedAPI().getPageHtml(
+                PageContextBuilder.builder()
+                        .setUser(APILocator.systemUser())
+                        .setPageUri(page.getURI())
+                        .setPageMode(PageMode.LIVE)
+                        .build(),
+                mockRequest, mockResponse);
+        Assert.assertEquals(
+                "<div>DEFAULT content-default-" + language.getId() + "</div>", html);
+    }
+
+    /**
+     * Method to test: {@link HTMLPageAssetRenderedAPI#getPageHtml(PageContext, HttpServletRequest, HttpServletResponse)}
+     * When:
+     * - Create two {@link Contentlet}.
+     * - Create a {@link HTMLPageAsset}, with a cacheTTL of 600.
+     * - Create a new {@link Variant}
+     * - Add the first contentlet into the Page for the DEFAULT {@link Variant}
+     * - Add the second contentlet into the Page for the specific {@link Variant}
+     * should:
+     * - When the page is render to the DEFAULT variant should render the first contentlet.
+     * - When the page is render to the specific variant should render the second contentlet.
+     *
+     * @throws WebAssetException
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    @Test
+    public void usingCacheTTL() throws WebAssetException, DotDataException, DotSecurityException {
+        final Language language = new LanguageDataGen().nextPersisted();
+        final Variant variant = new VariantDataGen().nextPersisted();
+        final Host host = new SiteDataGen().nextPersisted();
+
+        final ContentType contentType = createContentType();
+        final Container container = createAndPublishContainer(host, contentType);
+        final HTMLPageAsset page = createHtmlPageAsset(language, host, container, VariantAPI.DEFAULT_VARIANT, 600);
+        final Contentlet contentlet = createContentlet(language, host, contentType);
+        createNewVersion(contentlet, language, variant);
+
+        addToPage(container, page, contentlet);
+
+        final Contentlet contentlet_2 = new ContentletDataGen(contentType)
+                .languageId(language.getId())
+                .host(host)
+                .setProperty("title", "DEFAULT second-content-default-" + language.getId())
+                .variant(VariantAPI.DEFAULT_VARIANT)
+                .nextPersistedAndPublish();
+        createNewVersion(contentlet_2, language, variant, "title",
+                variant.name() + " second-content-default-" + language.getId());
+
+        new MultiTreeDataGen()
+                .setPage(page)
+                .setContentlet(contentlet_2)
+                .setInstanceID(ContainerUUID.UUID_START_VALUE)
+                .setTreeOrder(0)
+                .setContainer(container)
+                .setVariant(variant)
+                .nextPersisted();
+
+        HttpServletRequest mockRequest = createHttpServletRequest(language, host,
+                variant, page);
+        when(mockRequest.getMethod()).thenReturn("GET");
+
+        HttpServletResponse mockResponse = mock(HttpServletResponse.class);
+        when(mockResponse.getStatus()).thenReturn(200);
+
+        HttpSession session = createHttpSession(mockRequest);
+        when(session.getAttribute(WebKeys.VISITOR)).thenReturn(null);
+
+
+        String html = APILocator.getHTMLPageAssetRenderedAPI().getPageHtml(
+                PageContextBuilder.builder()
+                        .setUser(APILocator.systemUser())
+                        .setPageUri(page.getURI())
+                        .setPageMode(PageMode.LIVE)
+                        .build(),
+                mockRequest, mockResponse);
+        Assert.assertEquals(
+                "<div>" + variant.name() + " second-content-default-" + language.getId()
+                        + "</div>", html);
+
+        mockRequest = createHttpServletRequest(language, host,
+                VariantAPI.DEFAULT_VARIANT, page);
+        when(mockRequest.getMethod()).thenReturn("GET");
+
+        mockResponse = mock(HttpServletResponse.class);
+        when(mockResponse.getStatus()).thenReturn(200);
+        session = createHttpSession(mockRequest);
+        when(session.getAttribute(WebKeys.VISITOR)).thenReturn(null);
+
+
+        html = APILocator.getHTMLPageAssetRenderedAPI().getPageHtml(
+                PageContextBuilder.builder()
+                        .setUser(APILocator.systemUser())
+                        .setPageUri(page.getURI())
+                        .setPageMode(PageMode.LIVE)
+                        .build(),
+                mockRequest, mockResponse);
+        Assert.assertEquals(
+                "<div>DEFAULT content-default-" + language.getId() + "</div>", html);
     }
 
     /**
@@ -1163,7 +1340,18 @@ public class HTMLPageAssetRenderedAPIImplIntegrationTest extends IntegrationTest
         final Folder folder = new FolderDataGen().site(host).nextPersisted();
         final Template template = createTemplate(host, container);
 
-        return createHtmlPageAsset(language, folder, template, variant);
+        return createHtmlPageAsset(language, folder, template, variant, 0);
+    }
+
+
+    private HTMLPageAsset createHtmlPageAsset(final Language language, final Host host,
+            final Container container, final Variant variant, final int cacheTTL)
+            throws WebAssetException, DotSecurityException, DotDataException {
+
+        final Folder folder = new FolderDataGen().site(host).nextPersisted();
+        final Template template = createTemplate(host, container);
+
+        return createHtmlPageAsset(language, folder, template, variant, cacheTTL);
     }
 
     private void addToPage(Container container, HTMLPageAsset page, Contentlet contentlet) {
@@ -1224,14 +1412,15 @@ public class HTMLPageAssetRenderedAPIImplIntegrationTest extends IntegrationTest
         return checkin;
     }
 
-    private HTMLPageAsset createHtmlPageAsset(Language language, Folder folder, Template template, Variant variant)
+    private HTMLPageAsset createHtmlPageAsset(
+            final Language language, final Folder folder,final  Template template, final Variant variant, final int cacheTTL)
             throws DotSecurityException, DotDataException {
         final String pageName = "variant-render-test-" + System.currentTimeMillis();
         final HTMLPageAsset page = new HTMLPageDataGen(folder, template)
                 .languageId(language.getId())
                 .pageURL(pageName)
                 .title(pageName)
-                .cacheTTL(0)
+                .cacheTTL(cacheTTL)
                 .next();
 
         page.setVariantId(variant.name());

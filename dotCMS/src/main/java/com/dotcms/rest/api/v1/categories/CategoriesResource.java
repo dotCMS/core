@@ -172,7 +172,8 @@ public class CategoriesResource {
                 page, perPage));
 
         try {
-            response = showChildrenCount == false ?  this.paginationUtil.getPage(httpRequest, user, filter, page, perPage,orderBy,direction) : this.extendedPaginationUtil.getPage(httpRequest, user, filter, page, perPage, orderBy,direction);
+           response = showChildrenCount == false ? this.paginationUtil.getPage(httpRequest, user, filter, page, perPage, orderBy, direction)
+                   : this.extendedPaginationUtil.getPage(httpRequest, user, filter, page, perPage, orderBy, direction);
         } catch (Exception e) {
             Logger.error(this, e.getMessage(), e);
             if (ExceptionUtil.causedBy(e, DotSecurityException.class)) {
@@ -255,7 +256,7 @@ public class CategoriesResource {
      * @param httpRequest
      * @param httpResponse
      * @param idOrKey
-     * @return
+     * @return CategoryView
      */
 
     @GET
