@@ -1,0 +1,54 @@
+@use "variables" as *;
+
+:host {
+    color: $gray-dark;
+
+    .wrapper {
+        padding: $spacing-6;
+    }
+
+    .form-control {
+        align-items: flex-start;
+        display: flex;
+        flex-direction: column;
+        justify-content: flex-start;
+        margin-bottom: $spacing-4;
+        width: 100%;
+
+        label {
+            display: inline-block;
+            margin-bottom: $spacing-2;
+        }
+
+        .required:after {
+            content: " \002A";
+            color: $error;
+        }
+    }
+}
+
+:host p-multiselect::ng-deep {
+    color: $gray-dark;
+    min-width: 100%;
+
+    .p-multiselect {
+        min-width: 100%;
+    }
+
+    .p-multiselect-label {
+        display: flex;
+        gap: 10px;
+    }
+
+    .p-multiselect-token {
+        align-items: center;
+        background: rgba($brand-primary_rgb, 0.1);
+        border-radius: $border-radius-md;
+        color: rgb($brand-primary_rgb);
+        display: flex;
+        gap: 4px;
+        justify-content: center;
+        margin-right: 5px;
+        padding: 5px;
+    }
+}

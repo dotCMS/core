@@ -18,6 +18,13 @@ export class DotContentTypeFieldsVariablesComponent implements OnChanges, OnDest
     field: DotCMSContentTypeField;
 
     fieldVariables: DotFieldVariable[] = [];
+    blackList = {
+        'com.dotcms.contenttype.model.field.ImmutableStoryBlockField': {
+            allowedBlocks: true
+            // contentAssets: true
+        }
+    };
+
     private destroy$: Subject<boolean> = new Subject<boolean>();
 
     constructor(
@@ -81,7 +88,9 @@ export class DotContentTypeFieldsVariablesComponent implements OnChanges, OnDest
             .load(this.field)
             .pipe(takeUntil(this.destroy$))
             .subscribe((fieldVariables: DotFieldVariable[]) => {
-                this.fieldVariables = fieldVariables;
+                this.fieldVariables = fieldVariables.filter(
+                    (item) => !this.blackList[this.field.clazz][item.key]
+                );
             });
     }
 

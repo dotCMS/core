@@ -128,18 +128,7 @@ export class ContentTypeFieldsDropZoneComponent implements OnInit, OnChanges, On
     }
 
     ngOnInit(): void {
-        this.dialogActions = {
-            accept: {
-                action: () => {
-                    this.propertiesForm.saveFieldProperties();
-                },
-                label: this.dotMessageService.get('contenttypes.dropzone.action.save'),
-                disabled: true
-            },
-            cancel: {
-                label: this.dotMessageService.get('contenttypes.dropzone.action.cancel')
-            }
-        };
+        this.setDefaultActions();
 
         this.fieldDragDropService.fieldDropFromSource$
             .pipe(takeUntil(this.destroy$))
@@ -380,6 +369,10 @@ export class ContentTypeFieldsDropZoneComponent implements OnInit, OnChanges, On
      * @param index
      */
     handleTabChange(index: number): void {
+        if (index === this.OVERVIEW_TAB_INDEX) {
+            this.setDefaultActions();
+        }
+
         this.hideButtons = index !== this.OVERVIEW_TAB_INDEX;
     }
 
@@ -421,5 +414,26 @@ export class ContentTypeFieldsDropZoneComponent implements OnInit, OnChanges, On
                 return this.down && drake.dragging;
             }
         });
+    }
+
+    private setDefaultActions() {
+        this.dialogActions = {
+            accept: {
+                action: () => {
+                    this.propertiesForm.saveFieldProperties();
+                },
+                label: this.dotMessageService.get('contenttypes.dropzone.action.save'),
+                disabled: true
+            },
+            cancel: {
+                label: this.dotMessageService.get('contenttypes.dropzone.action.cancel')
+            }
+        };
+    }
+
+    changeControls(controls: DotDialogActions) {
+        this.dialogActions = controls;
+        // REMOVE
+        requestAnimationFrame(() => (this.hideButtons = false));
     }
 }

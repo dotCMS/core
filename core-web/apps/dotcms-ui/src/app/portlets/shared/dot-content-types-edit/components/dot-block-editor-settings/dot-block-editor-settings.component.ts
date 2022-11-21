@@ -1,0 +1,149 @@
+import {
+    Component,
+    EventEmitter,
+    Input,
+    OnDestroy,
+    OnInit,
+    Output,
+    ChangeDetectionStrategy
+} from '@angular/core';
+import { FormGroup, FormBuilder } from '@angular/forms';
+import { HttpErrorResponse } from '@angular/common/http';
+
+import { forkJoin, Subject } from 'rxjs';
+import { catchError, take, takeUntil } from 'rxjs/operators';
+
+// Services
+import { DotHttpErrorManagerService } from '@services/dot-http-error-manager/dot-http-error-manager.service';
+import { DotFieldVariablesService } from '../fields/dot-content-type-fields-variables/services/dot-field-variables.service';
+
+// Interfaces
+import { DotCMSContentTypeField } from '@dotcms/dotcms-models';
+import { DotFieldVariable } from '../fields/dot-content-type-fields-variables/models/dot-field-variable.interface';
+import { DotDialogActions } from '@components/dot-dialog/dot-dialog.component';
+import { DotMessageService } from '@dotcms/app/api/services/dot-message/dot-messages.service';
+
+const BLOCK_EDITOR_BLOCKS = [
+    { label: 'Block Quote', code: 'blockquote' },
+    { label: 'Bullet List', code: 'bulletList' },
+    { label: 'Code Block', code: 'codeBlock' },
+    { label: 'Contentlet', code: 'contentlets' },
+    { label: 'Heading', code: 'heading' },
+    { label: 'Horizontal Rule', code: 'horizontalRule' },
+    { label: 'Image', code: 'image' },
+    { label: 'Ordered List', code: 'orderedList' },
+    { label: 'Tables', code: 'tables' }
+];
+
+/* Uncomment this when Content Assets variable is ready
+const BLOCK_EDITOR_ASSETS = [
+    { label: 'Youtube Videos', code: 'videos'},
+    { label: 'Images', code: 'images'},
+    { label: 'PDF Files', code: 'PDF'}
+]
+*/
+
+@Component({
+    selector: 'dot-dot-block-editor-settings',
+    templateUrl: './dot-block-editor-settings.component.html',
+    styleUrls: ['./dot-block-editor-settings.component.scss'],
+    changeDetection: ChangeDetectionStrategy.OnPush
+})
+export class DotBlockEditorSettingsComponent implements OnInit, OnDestroy {
+    @Output() changeControls = new EventEmitter<DotDialogActions>();
+    @Output() valid = new EventEmitter<boolean>();
+    @Output() save = new EventEmitter<DotFieldVariable[]>();
+
+    @Input() field: DotCMSContentTypeField;
+    @Input() set isDisplayed(value) {
+        if (value) {
+            this.changeControls.emit(this.dialogActions());
+        }
+    }
+
+    private destroy$: Subject<boolean> = new Subject<boolean>();
+
+    public form: FormGroup;
+    public settings = [
+        {
+            label: 'Allowed Content',
+            placeholder: 'Select Blocks',
+            options: BLOCK_EDITOR_BLOCKS,
+            key: 'allowedBlocks'
+        }
+        /* Uncomment this when Content Assets variable is ready
+        {
+            label: 'Allowed Content Assets',
+            placeholder: 'Select Assets',
+            options: BLOCK_EDITOR_ASSETS,
+            key: 'contentAssets',
+            required: true
+        }
+        */
+    ];
+
+    constructor(
+        private readonly dotHttpErrorManagerService: DotHttpErrorManagerService,
+        private readonly fieldVariablesService: DotFieldVariablesService,
+        private readonly dotMessageService: DotMessageService,
+        private readonly fb: FormBuilder
+    ) {}
+
+    ngOnInit(): void {
+        this.form = this.fb.group({
+            allowedBlocks: [null]
+            /* Uncomment this when Content Assets variable is ready
+            contentAssets: [null, Validators.required]
+            */
+        });
+
+        this.fieldVariablesService
+            .load(this.field)
+            .pipe(take(1))
+            .subscribe((fieldVariables: DotFieldVariable[]) => {
+                fieldVariables.forEach(({ key, value }) => {
+                    this.form.get(key)?.setValue(value.split(','));
+                });
+            });
+
+        this.form.valueChanges.pipe(takeUntil(this.destroy$)).subscribe(() => {
+            this.valid.emit(this.form.valid);
+        });
+    }
+
+    ngOnDestroy(): void {
+        this.destroy$.next(true);
+        this.destroy$.complete();
+    }
+
+    private saveSettings(): void {
+        forkJoin(
+            this.settings.map(({ key }) =>
+                this.fieldVariablesService.save(this.field, {
+                    key: key,
+                    value: this.form.get(key).value.join(',')
+                })
+            )
+        )
+            .pipe(
+                take(1),
+                catchError((err: HttpErrorResponse) =>
+                    this.dotHttpErrorManagerService.handle(err).pipe(take(1))
+                )
+            )
+            .subscribe((value: DotFieldVariable[]) => this.save.emit(value));
+    }
+
+    private dialogActions() {
+        return {
+            accept: {
+                action: () => this.saveSettings(),
+                label: this.dotMessageService.get('contenttypes.dropzone.action.save'),
+                disabled: this.form.invalid
+            },
+            cancel: {
+                label: this.dotMessageService.get('contenttypes.dropzone.action.cancel')
+            }
+        };
+    }
+}
