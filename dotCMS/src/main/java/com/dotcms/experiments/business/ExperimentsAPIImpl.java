@@ -4,11 +4,8 @@ import static com.dotcms.experiments.model.AbstractExperiment.Status.DRAFT;
 import static com.dotcms.experiments.model.AbstractExperiment.Status.ENDED;
 import static com.dotcms.experiments.model.AbstractExperimentVariant.EXPERIMENT_VARIANT_NAME_PREFIX;
 import static com.dotcms.experiments.model.AbstractExperimentVariant.EXPERIMENT_VARIANT_NAME_SUFFIX;
-<<<<<<< HEAD
 import static com.dotcms.util.CollectionsUtils.set;
-=======
 import static com.dotcms.experiments.model.AbstractExperimentVariant.ORIGINAL_VARIANT;
->>>>>>> origin/master
 
 import com.dotcms.analytics.metrics.MetricsUtil;
 import com.dotcms.business.CloseDB;

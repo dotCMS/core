@@ -39,4 +39,13 @@ if (!shouldHitEndPoint()) {
             localStorage.setItem('experiment_data', JSON.stringify(dataToStorage));
         }
     });
+} else {
+    let experimentData = JSON.parse(localStorage.getItem('experiment_data'));
+
+    for (let experiment in experimentData){
+        if (window.location.href.includes(JSON.parse(experiment.pageUrl))) {
+            window.location = experiment.variant.url;
+            break;
+        }
+    }
 }

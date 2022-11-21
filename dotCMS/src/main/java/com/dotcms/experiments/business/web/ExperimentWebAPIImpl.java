@@ -130,7 +130,7 @@ public class ExperimentWebAPIImpl implements ExperimentWebAPI {
             totalWeight += variant.weight();
 
             if (randomValue < totalWeight) {
-                return new SelectedVariant(variant.id(), "");
+                return new SelectedVariant(variant.id(), variant.url().get());
             }
         }
 
@@ -152,8 +152,12 @@ public class ExperimentWebAPIImpl implements ExperimentWebAPI {
             throw new RuntimeException("Page not found: " + experiment.pageId());
         }
 
-        return new SelectedExperiment(experiment.id().get(), experiment.name(), htmlPageAsset.getPageUrl(),
-                variantSelected);
+        try {
+            return new SelectedExperiment(experiment.id().get(), experiment.name(), htmlPageAsset.getURI(),
+                    variantSelected);
+        } catch (DotDataException e) {
+            throw new DotRuntimeException(e);
+        }
     }
 
     private List<Experiment> pickExperiments(final List<Experiment> runningExperiments,
