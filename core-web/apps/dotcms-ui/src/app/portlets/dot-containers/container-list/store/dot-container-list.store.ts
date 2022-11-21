@@ -154,13 +154,13 @@ export class DotContainerListStore extends ComponentStore<DotContainerListState>
             options = this.setArchiveContainerActions(container);
         } else {
             options = this.setBaseContainerOptions(container);
-            options = [...options, ...this.setCopyContainerOptions(container)];
-
             options = [
                 ...options,
                 ...this.getLicenseAndRemotePublishContainerOptions(container),
                 ...this.getUnPublishAndArchiveContainerOptions(container)
             ];
+
+            options = [...options, ...this.setCopyContainerOptions(container)];
         }
 
         return options;
@@ -397,9 +397,9 @@ export class DotContainerListStore extends ComponentStore<DotContainerListState>
     }
 
     private setArchiveContainerActions(container: DotContainer): DotActionMenuItem[] {
-        const options: DotActionMenuItem[] = [];
-        const { isEnterprise } = this.get();
-        if (isEnterprise) {
+        let options: DotActionMenuItem[] = [];
+        const { hasEnvironments } = this.get();
+        if (hasEnvironments) {
             options.push({
                 menuItem: {
                     label: this.dotMessageService.get('edit'),
@@ -417,6 +417,8 @@ export class DotContainerListStore extends ComponentStore<DotContainerListState>
                     }
                 }
             });
+
+            options = [...options, ...this.setCopyContainerOptions(container)];
         }
 
         if (!container.live) {
