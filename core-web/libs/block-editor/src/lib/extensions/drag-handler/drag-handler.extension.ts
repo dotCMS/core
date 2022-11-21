@@ -58,6 +58,8 @@ export const DragHandler = (viewContainerRef: ViewContainerRef) => {
                     e.dataTransfer.clearData();
                     e.dataTransfer.setDragImage(nodeToBeDragged, 10, 10);
                     view.dragging = { slice, move: true };
+
+                    nodeToBeDragged.type;
                 }
             }
 
@@ -73,7 +75,6 @@ export const DragHandler = (viewContainerRef: ViewContainerRef) => {
 
                     node = node.parentNode;
                 }
-                // console.log('getDirectChild: ', node);
 
                 return node;
             }
@@ -100,7 +101,6 @@ export const DragHandler = (viewContainerRef: ViewContainerRef) => {
             }
 
             function canDragNode(node): boolean {
-                // console.log('canDragNode: ', node);
                 return (
                     node &&
                     !node.classList?.contains('ProseMirror') && // is not root node.
@@ -144,6 +144,11 @@ export const DragHandler = (viewContainerRef: ViewContainerRef) => {
                                     }
 
                                     dragHandler.classList.remove('visible');
+                                    // remove node because prosmirror duplicate the node on D&D
+                                    // https://github.com/ueberdosis/tiptap/issues/2250
+                                    if (nodeToBeDragged.nodeName === 'TABLE') {
+                                        removeNode(nodeToBeDragged);
+                                    }
                                 });
 
                                 return false;
@@ -154,12 +159,9 @@ export const DragHandler = (viewContainerRef: ViewContainerRef) => {
                                     top: event.clientY
                                 };
                                 const position = view.posAtCoords(coords);
-                                //console.log(position);
                                 nodeToBeDragged = getDirectChild(view.nodeDOM(position?.inside));
 
                                 if (position && nodeHasContent(view, position.inside)) {
-                                    //console.log('nodeToBeDragged', nodeToBeDragged);
-
                                     if (canDragNode(nodeToBeDragged)) {
                                         const { top, left } = getPositon(
                                             view.dom.parentElement,
@@ -170,7 +172,6 @@ export const DragHandler = (viewContainerRef: ViewContainerRef) => {
                                         dragHandler.style.top = top < 0 ? 0 : top + 'px';
                                         dragHandler.classList.add('visible');
                                     } else {
-                                        // console.log('visible', false);
                                         dragHandler.classList.remove('visible');
                                     }
                                 } else {
