@@ -20,22 +20,18 @@ export interface DotExperimentsConfigurationState {
     experimentId: string;
     experiment: DotExperiment | null;
     status: LoadingState;
+    isSidebarOpen: boolean;
+    isSaving: boolean;
 }
 
 const initialState: DotExperimentsConfigurationState = {
     pageId: '',
     experimentId: '',
     experiment: null,
-    status: LoadingState.LOADING
+    status: LoadingState.LOADING,
+    isSidebarOpen: false,
+    isSaving: false
 };
-
-// Vm Interfaces
-export interface VmConfigurationExperiments {
-    pageId: string;
-    experimentId: string;
-    experiment: DotExperiment;
-    isLoading: boolean;
-}
 
 @Injectable()
 export class DotExperimentsConfigurationStore
@@ -57,6 +53,20 @@ export class DotExperimentsConfigurationStore
         ...state,
         status
     }));
+    readonly setIsSavingStatus = this.updater((state, isSaving: boolean) => ({
+        ...state,
+        isSaving
+    }));
+    readonly closeSidebar = this.updater((state) => ({
+        ...state,
+        isSidebarOpen: false,
+        isSaving: false
+    }));
+    readonly openSidebar = this.updater((state) => ({
+        ...state,
+        isSidebarOpen: true
+    }));
+
     readonly setExperiment = this.updater((state, experiment: DotExperiment) => ({
         ...state,
         status: LoadingState.LOADED,
@@ -88,6 +98,35 @@ export class DotExperimentsConfigurationStore
         )
     );
 
+    readonly addVariant = this.effect((variant$: Observable<Pick<DotExperiment, 'name'>>) => {
+        return variant$.pipe(
+            tap(() => this.setIsSavingStatus(true)),
+            withLatestFrom(this.getExperimentId$),
+            switchMap(([variant, experimentId]) =>
+                this.dotExperimentsService.addVariant(experimentId, variant).pipe(
+                    tapResponse(
+                        (experiment) => {
+                            this.messageService.add({
+                                severity: 'info',
+                                summary: this.dotMessageService.get(
+                                    'experiments.configure.variant.add.confirm-title'
+                                ),
+                                detail: this.dotMessageService.get(
+                                    'experiments.configure.variant.add.confirm-message',
+                                    experiment.name
+                                )
+                            });
+
+                            this.setTrafficProportion(experiment.trafficProportion);
+                        },
+                        (error: HttpErrorResponse) => throwError(error),
+                        () => this.closeSidebar()
+                    )
+                )
+            )
+        );
+    });
+
     readonly deleteVariant = this.effect((variant$: Observable<Variant>) => {
         return variant$.pipe(
             withLatestFrom(this.getExperimentId$),
@@ -115,7 +154,12 @@ export class DotExperimentsConfigurationStore
         );
     });
 
-    readonly vm$: Observable<VmConfigurationExperiments> = this.select(
+    readonly vm$: Observable<{
+        pageId: string;
+        experimentId: string;
+        experiment: DotExperiment;
+        isLoading: boolean;
+    }> = this.select(
         this.state$,
         this.isLoading$,
         ({ pageId, experiment, experimentId }, isLoading) => ({
@@ -125,14 +169,18 @@ export class DotExperimentsConfigurationStore
             isLoading
         })
     );
-
-    readonly variantsVm$: Observable<{
+    readonly vmVariants$: Observable<{
+        isSidebarOpen: boolean;
+        isSaving: boolean;
         trafficProportion: TrafficProportion;
         isVariantStepDone: boolean;
     }> = this.select(
+        this.state$,
         this.getTrafficProportion$,
         this.isVariantStepDone$,
-        (trafficProportion, isVariantStepDone) => ({
+        ({ isSidebarOpen, isSaving }, trafficProportion, isVariantStepDone) => ({
+            isSidebarOpen,
+            isSaving,
             trafficProportion,
             isVariantStepDone
         })

@@ -1,11 +1,20 @@
 import { DotExperimentsConfigurationVariantsAddComponent } from './dot-experiments-configuration-variants-add.component';
-import { byTestId, createComponentFactory, mockProvider, Spectator } from '@ngneat/spectator';
+import {
+    byTestId,
+    createComponentFactory,
+    mockProvider,
+    Spectator,
+    SpyObject
+} from '@ngneat/spectator';
 import { MockDotMessageService } from '@tests/dot-message-service.mock';
 import { DotExperimentsConfigurationStore } from '@portlets/dot-experiments/dot-experiments-configuration/store/dot-experiments-configuration-store.service';
 import { DotExperimentsService } from '@portlets/dot-experiments/shared/services/dot-experiments.service';
 import { DotMessageService } from '@services/dot-message/dot-messages.service';
 import { MessageService } from 'primeng/api';
-import { DotExperimentsConfigurationStoreMock } from '@portlets/dot-experiments/test/mocks';
+import {
+    DotExperimentsConfigurationStoreMock,
+    ExperimentMocks
+} from '@portlets/dot-experiments/test/mocks';
 import { ButtonModule } from 'primeng/button';
 import { DotSidebarHeaderComponent } from '@shared/dot-sidebar-header/dot-sidebar-header.component';
 import { DotSidebarDirective } from '@portlets/shared/directives/dot-sidebar.directive';
@@ -13,6 +22,7 @@ import { DotFieldValidationMessageModule } from '@components/_common/dot-field-v
 import { InputTextModule } from 'primeng/inputtext';
 import { SidebarModule } from 'primeng/sidebar';
 import { InputTextareaModule } from 'primeng/inputtextarea';
+import { of } from 'rxjs';
 
 const messageServiceMock = new MockDotMessageService({
     'experiments.create.form.sidebar.header': 'Add a new experiment',
@@ -21,6 +31,7 @@ const messageServiceMock = new MockDotMessageService({
 
 describe('DotExperimentsConfigurationVariantsAddComponent', () => {
     let spectator: Spectator<DotExperimentsConfigurationVariantsAddComponent>;
+    let dotExperimentsConfigurationStore: SpyObject<DotExperimentsConfigurationStore>;
 
     const createComponent = createComponentFactory({
         imports: [
@@ -38,25 +49,37 @@ describe('DotExperimentsConfigurationVariantsAddComponent', () => {
                 provide: DotMessageService,
                 useValue: messageServiceMock
             },
-            {
-                provide: DotExperimentsConfigurationStore,
-                useValue: DotExperimentsConfigurationStoreMock
-            },
-            //
+            mockProvider(DotExperimentsConfigurationStore, DotExperimentsConfigurationStoreMock),
             mockProvider(MessageService),
             mockProvider(DotExperimentsService)
         ]
     });
 
     beforeEach(() => {
-        spectator = createComponent();
+        spectator = createComponent({
+            detectChanges: false
+        });
+
+        dotExperimentsConfigurationStore = spectator.inject(DotExperimentsConfigurationStore);
+
+        spectator.component.vm$ = of({
+            isSidebarOpen: true,
+            isSaving: false,
+            trafficProportion: ExperimentMocks[0].trafficProportion,
+            isVariantStepDone: false
+        });
+        spectator.detectChanges();
     });
 
     it('should have a form', () => {
         expect(spectator.query(byTestId('new-variant-form'))).toExist();
     });
     it('should call handleSubmit() on add button click and form valid', () => {
+        spyOn(dotExperimentsConfigurationStore, 'openSidebar');
+
         spectator.component.ngOnInit();
+        expect(dotExperimentsConfigurationStore.openSidebar).toHaveBeenCalled();
+
         const formValues = {
             name: 'name'
         };

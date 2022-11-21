@@ -65,6 +65,8 @@ export const DotExperimentsListStoreMock = {
 export const DotExperimentsConfigurationStoreMock = {
     deleteVariant: () => of([]),
     addVariant: () => of([]),
+    openSidebar: () => of([]),
+    closeSidebar: () => of([]),
     getExperimentId$: of('1111111'),
     vm$: of({
         pageId: '',

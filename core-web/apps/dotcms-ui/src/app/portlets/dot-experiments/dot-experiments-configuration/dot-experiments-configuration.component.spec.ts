@@ -3,10 +3,7 @@ import { createComponentFactory, mockProvider, Spectator, SpyObject } from '@ngn
 import { DotExperimentsService } from '@portlets/dot-experiments/shared/services/dot-experiments.service';
 import { ActivatedRoute, Router } from '@angular/router';
 import { Title } from '@angular/platform-browser';
-import {
-    DotExperimentsConfigurationStore,
-    VmConfigurationExperiments
-} from '@portlets/dot-experiments/dot-experiments-configuration/store/dot-experiments-configuration-store.service';
+import { DotExperimentsConfigurationStore } from '@portlets/dot-experiments/dot-experiments-configuration/store/dot-experiments-configuration-store.service';
 import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { ButtonModule } from 'primeng/button';
 import { of } from 'rxjs';
@@ -94,7 +91,7 @@ describe('DotExperimentsConfigurationComponent', () => {
     });
 
     it('should load all the components', () => {
-        const vmMock$: VmConfigurationExperiments = {
+        const vmMock$ = {
             pageId: ExperimentMocks[0].pageId,
             experimentId: ExperimentMocks[0].id,
             experiment: ExperimentMocks[0],

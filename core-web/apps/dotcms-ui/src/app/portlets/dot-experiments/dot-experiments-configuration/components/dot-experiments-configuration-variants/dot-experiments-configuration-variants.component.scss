@@ -15,32 +15,36 @@ h2 {
     color: $gray-lighter;
 }
 
-:host ::ng-deep p-card .p-card-footer .p-button-link {
-    padding: $spacing-0;
-}
+:host ::ng-deep {
+    dot-icon {
+        color: $gray-light;
 
-:host ::ng-deep dot-icon {
-    color: $gray-light;
-
-    &.isDone {
-        color: $success;
-    }
-}
-
-:host ::ng-deep p-card .p-card p-card {
-    .p-card {
-        border-radius: 0;
-        border-bottom: none;
+        &.isDone {
+            color: $success;
+        }
     }
 
-    &.first .p-card {
-        border-top-right-radius: $border-radius-md;
-        border-top-left-radius: $border-radius-md;
-    }
+    p-card {
+        .p-card p-card {
+            .p-card {
+                border-radius: 0;
+                border-bottom: none;
+            }
 
-    &.last .p-card {
-        border-bottom-right-radius: $border-radius-md;
-        border-bottom-left-radius: $border-radius-md;
-        border: 1px solid $gray-lighter;
+            &.first .p-card {
+                border-top-right-radius: $border-radius-md;
+                border-top-left-radius: $border-radius-md;
+            }
+
+            &.last .p-card {
+                border-bottom-right-radius: $border-radius-md;
+                border-bottom-left-radius: $border-radius-md;
+                border: 1px solid $gray-lighter;
+            }
+        }
+
+        .p-card-footer .p-button-link {
+            padding: $spacing-0;
+        }
     }
 }

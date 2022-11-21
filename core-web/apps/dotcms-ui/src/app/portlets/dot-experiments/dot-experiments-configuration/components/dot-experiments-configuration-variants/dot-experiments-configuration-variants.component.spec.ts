@@ -39,7 +39,6 @@ describe('DotExperimentsConfigurationVariantsComponent', () => {
         ],
         component: DotExperimentsConfigurationVariantsComponent,
         providers: [
-            //DotExperimentsSessionStorageService,
             {
                 provide: DotMessageService,
                 useValue: messageServiceMock
@@ -50,7 +49,6 @@ describe('DotExperimentsConfigurationVariantsComponent', () => {
                 useValue: DotExperimentsConfigurationStoreMock
             },
             mockProvider(Router),
-            //mockProvider(DotExperimentsConfigurationStore, DotExperimentsConfigurationStoreMock),
             mockProvider(DotExperimentsSessionStorageService)
         ]
     });
@@ -68,6 +66,8 @@ describe('DotExperimentsConfigurationVariantsComponent', () => {
     describe('should render', () => {
         it('a DEFAULT variant', () => {
             const variantsVm = {
+                isSidebarOpen: false,
+                isSaving: false,
                 trafficProportion: {
                     ...ExperimentMocks[0].trafficProportion,
                     variants: [{ id: DEFAULT_VARIANT_ID, name: 'a', weight: '100' }]
@@ -91,6 +91,8 @@ describe('DotExperimentsConfigurationVariantsComponent', () => {
 
         it('the variant(s)', () => {
             const variantsVm = {
+                isSidebarOpen: false,
+                isSaving: false,
                 trafficProportion: {
                     ...ExperimentMocks[0].trafficProportion,
                     variants: [

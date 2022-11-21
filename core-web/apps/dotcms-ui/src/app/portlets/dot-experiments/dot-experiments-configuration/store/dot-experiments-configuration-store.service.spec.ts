@@ -59,7 +59,9 @@ describe('DotExperimentsConfigurationStore', () => {
             pageId: PAGE_ID,
             experimentId: EXPERIMENT_ID,
             experiment: null,
-            status: LoadingState.LOADING
+            status: LoadingState.LOADING,
+            isSidebarOpen: false,
+            isSaving: false
         };
 
         store.state$.subscribe((state) => {

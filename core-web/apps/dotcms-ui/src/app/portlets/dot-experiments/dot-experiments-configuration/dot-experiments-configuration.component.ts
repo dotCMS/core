@@ -1,9 +1,5 @@
 import { ChangeDetectionStrategy, Component } from '@angular/core';
-import {
-    DotExperimentsConfigurationStore,
-    VmConfigurationExperiments
-} from '@portlets/dot-experiments/dot-experiments-configuration/store/dot-experiments-configuration-store.service';
-import { Observable } from 'rxjs';
+import { DotExperimentsConfigurationStore } from '@portlets/dot-experiments/dot-experiments-configuration/store/dot-experiments-configuration-store.service';
 import { tap } from 'rxjs/operators';
 import { Router } from '@angular/router';
 import { provideComponentStore } from '@ngrx/component-store';
@@ -17,9 +13,7 @@ import { provideComponentStore } from '@ngrx/component-store';
 })
 export class DotExperimentsConfigurationComponent {
     pageId: string;
-    vm$: Observable<VmConfigurationExperiments> = this.dotExperimentsConfigurationStore.vm$.pipe(
-        tap((vm) => (this.pageId = vm.pageId))
-    );
+    vm$ = this.dotExperimentsConfigurationStore.vm$.pipe(tap((vm) => (this.pageId = vm.pageId)));
 
     constructor(
         private readonly dotExperimentsConfigurationStore: DotExperimentsConfigurationStore,

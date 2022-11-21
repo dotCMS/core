@@ -1,5 +1,5 @@
 <ng-container *ngIf="vm$ | async as vm">
-    <p-sidebar [(visible)]="vm.isOpenSidebar" (onHide)="closeSidebar()" dotSidebar>
+    <p-sidebar [(visible)]="vm.isSidebarOpen" (onHide)="closedSidebar.emit()" dotSidebar>
         <dot-sidebar-header
             [actionButtonTpl]="actionHeaderBtnTpl"
             dotTitle="{{ 'experiments.configure.variants.add' | dm }}"
@@ -9,7 +9,6 @@
             <form
                 class="experiment-create__form p-fluid"
                 id="new-variant-form"
-                #myForm="ngForm"
                 [formGroup]="form"
                 data-testId="new-variant-form"
                 novalidate

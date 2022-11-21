@@ -13,7 +13,7 @@ import { DotDynamicDirective } from '@portlets/shared/directives/dot-dynamic.dir
 import { DotExperimentsConfigurationVariantsAddComponent } from '@portlets/dot-experiments/dot-experiments-configuration/components/dot-experiments-configuration-variants-add/dot-experiments-configuration-variants-add.component';
 import { DotExperimentsConfigurationStore } from '@portlets/dot-experiments/dot-experiments-configuration/store/dot-experiments-configuration-store.service';
 import { Subject } from 'rxjs';
-import { delay, takeUntil } from 'rxjs/operators';
+import { takeUntil } from 'rxjs/operators';
 import {
     EditPageTabs,
     Variant
@@ -49,7 +49,7 @@ export class DotExperimentsConfigurationVariantsComponent implements OnDestroy {
     @ViewChild(DotDynamicDirective, { static: true })
     dotDynamicHost!: DotDynamicDirective;
 
-    vm$ = this.dotExperimentsConfigurationStore.variantsVm$;
+    vm$ = this.dotExperimentsConfigurationStore.vmVariants$;
 
     maxVariantsAllowed = MAX_VARIANTS_ALLOWED;
     defaultVariantId = DEFAULT_VARIANT_ID;
@@ -80,11 +80,9 @@ export class DotExperimentsConfigurationVariantsComponent implements OnDestroy {
                 DotExperimentsConfigurationVariantsAddComponent
             );
 
-        componentRef.instance.closedSidebar
-            .pipe(takeUntil(this.destroy$), delay(500))
-            .subscribe(() => {
-                viewContainerRef.clear();
-            });
+        componentRef.instance.closedSidebar.pipe(takeUntil(this.destroy$)).subscribe(() => {
+            viewContainerRef.clear();
+        });
     }
 
     /**
