@@ -8,6 +8,7 @@ import com.dotcms.cache.lettuce.LettuceCacheTest;
 import com.dotcms.cache.lettuce.RedisClientTest;
 import com.dotcms.content.business.ObjectMapperTest;
 import com.dotcms.content.business.json.ContentletJsonAPITest;
+import com.dotcms.content.elasticsearch.business.ESContentFactoryImplTest;
 import com.dotcms.content.elasticsearch.business.ESContentletAPIImplTest;
 import com.dotcms.content.elasticsearch.business.ESIndexAPITest;
 import com.dotcms.content.elasticsearch.business.ElasticsearchUtilTest;
@@ -198,6 +199,7 @@ import com.dotmarketing.startup.runonce.Task220824CreateDefaultVariantTest;
 import com.dotmarketing.startup.runonce.Task220825CreateVariantFieldTest;
 import com.dotmarketing.startup.runonce.Task220825MakeSomeSystemFieldsRemovableTest;
 import com.dotmarketing.startup.runonce.Task220829CreateExperimentsTableTest;
+import com.dotmarketing.startup.runonce.Task220912UpdateCorrectShowOnMenuPropertyTest;
 import com.dotmarketing.startup.runonce.Task220928AddLookbackWindowColumnToExperimentTest;
 import com.dotmarketing.startup.runonce.Task221007AddVariantIntoPrimaryKeyTest;
 import com.dotmarketing.util.ConfigTest;
@@ -615,7 +617,7 @@ import org.junit.runners.Suite.SuiteClasses;
         BayesianAPIImplTest.class,
         ContentletDependenciesTest.class,
         UtilMethodsITest.class,
-        StoryBlockAPITest.class
+        StoryBlockAPITest.class,
         UtilMethodsITest.class,
         Task220912UpdateCorrectShowOnMenuPropertyTest.class,
         PersonaActionletTest.class,
