@@ -3,8 +3,6 @@ import { mergeAttributes } from '@tiptap/core';
 
 export function DotTableHeaderExtension() {
     return TableHeader.extend({
-        content: 'block',
-
         renderHTML({ HTMLAttributes }) {
             return [
                 'th',

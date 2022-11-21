@@ -1,28 +1,11 @@
-import { EditorState, Plugin, PluginKey, NodeSelection } from 'prosemirror-state';
+import { EditorState, Plugin, PluginKey } from 'prosemirror-state';
 import { Decoration, DecorationSet, EditorView } from 'prosemirror-view';
 
 import { Editor } from '@tiptap/core';
 import tippy, { Instance, Props } from 'tippy.js';
 import { ComponentRef } from '@angular/core';
 import { popperModifiers, SuggestionsComponent } from '@dotcms/block-editor';
-import { quoteIcon } from '../../shared/components/suggestions/suggestion-icons';
 import { getCellsOptions } from './utils';
-import { MenuItem } from '@dotcms/dotcms-js';
-
-// export const DotTableCellPlugin = (options: any) => {
-//     const component = options.component.instance;
-//
-//     return new Plugin<any>({
-//         key: options.pluginKey as PluginKey,
-//         state: {
-//             init() {},
-//             apply(tr, state) {
-//                 const action = tr.getMeta(this);
-//                 console.log(action);
-//             }
-//         }
-//     });
-//};
 
 class DotTableCellPluginView {
     public editor: Editor;
@@ -34,31 +17,15 @@ class DotTableCellPluginView {
     public component?: ComponentRef<SuggestionsComponent>;
 
     constructor(view, tippy) {
-        // this.editor = editor;
-        // this.element = element;
         this.view = view;
         this.tippy = tippy;
-        //
-        // this.tippyOptions = tippyOptions;
-        //
-        // // Detaches menu content from its current parent
-        // // this.element.remove();
-        // // this.element.style.visibility = 'visible';
-        // this.pluginKey = pluginKey;
-        // this.component = component;
     }
 
-    init(): void {
-        console.log('INIT');
-    }
+    init(): void {}
 
-    update(view: EditorView, prevState?: EditorState): void {
-        // console.log('view updated');
-        //debugger;
-    }
+    update(view: EditorView, prevState?: EditorState): void {}
 
     destroy() {
-        console.log('---------DESTROY------');
         this.tippy.destroy();
     }
 }
@@ -78,18 +45,23 @@ export const DotTableCellPlugin = (options) => {
     }
 
     function displayTableOptions(event: MouseEvent): void {
+        event.preventDefault();
+        event.stopPropagation();
         tippyCellOptions?.setProps({
             getReferenceClientRect: () => (event.target as HTMLElement).getBoundingClientRect()
         });
         tippyCellOptions.show();
     }
 
+    function isArrowClicked(element: HTMLButtonElement): boolean {
+        return element?.classList.contains('dot-cell-arrow');
+    }
+
     return new Plugin({
         key: new PluginKey('dotTableCell'),
         state: {
+            apply: (tr) => {},
             init: (config, state) => {
-                console.log('-----INIT-----');
-
                 const component = options.viewContainerRef.createComponent(SuggestionsComponent);
                 const element = component.location.nativeElement;
                 component.instance.currentLanguage = options.editor.storage.dotConfig.lang;
@@ -125,7 +97,6 @@ export const DotTableCellPlugin = (options) => {
 
                         mergeCellsOption.disabled = !options.editor.can().mergeCells();
                         splitCellsOption.disabled = !options.editor.can().splitCell();
-                        console.log('mergeCellsOption.disabled ', component.instance.items);
                         setTimeout(() => {
                             component.changeDetectorRef.detectChanges();
                         });
@@ -136,12 +107,9 @@ export const DotTableCellPlugin = (options) => {
                 component.instance.title = '';
                 //this.changeToElement.remove();
                 component.changeDetectorRef.detectChanges();
-            },
-            apply: (tr, value, oldState, newState) => {
-                //console.log('----apply-----', tr.getMeta(''));
             }
         },
-        // view: (view) => new DotTableCellPluginView(view),
+
         view: (view) => new DotTableCellPluginView(view, tippyCellOptions),
         props: {
             decorations(state) {
@@ -153,27 +121,15 @@ export const DotTableCellPlugin = (options) => {
                     grandpaSelectedNode?.type?.name == 'tableCell' ||
                     grandpaSelectedNode?.type?.name == 'tableHeader'
                 ) {
-                    console.log(grandpaSelectedNode?.type?.name);
                     return DecorationSet.create(state.doc, [
                         setFocusDecoration(state.selection, grandpaSelectedNode)
                     ]);
                 }
-                console.log(grandpaSelectedNode?.type?.name);
+
                 return null;
             },
 
-            handleClick: (editorView, number, event) => {
-                if ((event.target as HTMLButtonElement)?.classList.contains('dot-cell-arrow')) {
-                    event.preventDefault();
-                    event.stopPropagation();
-                    // debugger;
-                    displayTableOptions(event);
-                }
-            },
-
             handleDOMEvents: {
-                click: (view, event) => {},
-
                 contextmenu: (view, event) => {
                     const grandpaSelectedNode = view.state.selection.$from.node(
                         view.state.selection.$from.depth - 1
@@ -184,9 +140,24 @@ export const DotTableCellPlugin = (options) => {
                         grandpaSelectedNode.type.name === 'tableHeader' ||
                         grandpaSelectedNode.type.name === 'tableRow'
                     ) {
-                        event.preventDefault();
-                        event.stopPropagation();
                         displayTableOptions(event);
+                    }
+                },
+
+                mousedown: (view, event) => {
+                    const grandpaSelectedNode = view.state.selection.$from.node(
+                        view.state.selection.$from.depth - 1
+                    );
+
+                    if (isArrowClicked(event.target as HTMLButtonElement)) {
+                        displayTableOptions(event);
+                    } else if (
+                        event.button === 2 &&
+                        (grandpaSelectedNode.type.name === 'tableCell' ||
+                            grandpaSelectedNode.type.name === 'tableHeader' ||
+                            grandpaSelectedNode.type.name === 'tableRow')
+                    ) {
+                        event.preventDefault();
                     }
                 }
             }

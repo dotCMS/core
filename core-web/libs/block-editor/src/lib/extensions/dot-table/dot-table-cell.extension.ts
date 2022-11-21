@@ -5,8 +5,6 @@ import { DotTableCellPlugin } from './dot-table-cell.plugin';
 
 export function DotTableCellExtension(viewContainerRef: ViewContainerRef) {
     return TableCell.extend({
-        content: 'block',
-
         renderHTML({ HTMLAttributes }) {
             return [
                 'td',
