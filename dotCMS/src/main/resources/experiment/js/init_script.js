@@ -59,15 +59,16 @@ if (shouldHitEndPoint()) {
 
     for (let i = 0; i < experimentData.experiments.length; i++){
         let pageUrl = experimentData.experiments[i].pageUrl;
+
         let alternativePageUrl = experimentData.experiments[i].pageUrl.endsWith("/index") ?
             experimentData.experiments[i].pageUrl.replace("/index", "") :
             experimentData.experiments[i].pageUrl;
 
         if (window.location.href.includes(pageUrl) || window.location.href.includes(alternativePageUrl)) {
-            let url = experimentData.experiments[i].variant.url.includes("?") ?
-                experimentData.experiments[i].variant.url + "&redirect=true" :
-                experimentData.experiments[i].variant.url + "?redirect=true"
-            window.location = url;
+
+            let url = experimentData.experiments[i].variant.url
+            const param = (url.includes("?") ? "&" : "?") + "redirect=true";
+            window.location.url = url + param;
             break;
         }
     }
