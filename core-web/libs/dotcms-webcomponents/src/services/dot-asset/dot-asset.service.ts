@@ -16,6 +16,7 @@ export class DotAssetService {
     create(options: DotAssetCreateOptions): Promise<DotCMSContentlet[] | DotHttpErrorResponse[]> {
         const promises = [];
         let filesCreated = 1;
+
         options.files.map((file: DotCMSTempFile) => {
             const data = {
                 contentlet: {

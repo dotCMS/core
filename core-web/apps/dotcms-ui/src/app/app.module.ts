@@ -21,7 +21,6 @@ import { MonacoEditorModule } from '@materia-ui/ngx-monaco-editor';
 import { MarkdownModule } from 'ngx-markdown';
 
 // `AppModule` is the main entry point into Angular2's bootstraping process
-
 @NgModule({
     bootstrap: [AppComponent],
     declarations: [AppComponent, ...COMPONENTS],
