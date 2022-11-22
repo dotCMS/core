@@ -8,6 +8,8 @@
 
 set -e
 
+export LANG=${LANG:-"C.UTF-8"}
+
 ## Tomcat config
 
 # Auto-set Tomcat version from container build var, used for proper pathing
