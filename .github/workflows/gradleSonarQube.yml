@@ -2,13 +2,15 @@ name: Sonar Qube Scan Gradle
 on:
   push:
     branches:
-      - master # or the name of your main branch
+      - master 
       - testing-sonarqube
+    paths: ['dotCMS/**']
   pull_request:
     # Sequence of patterns matched against refs/heads
     branches:    
       - master
       - release-*
+    paths: ['dotCMS/**']
 
 jobs:
   build:
