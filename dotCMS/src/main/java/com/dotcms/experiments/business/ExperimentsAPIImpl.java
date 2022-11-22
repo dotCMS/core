@@ -7,8 +7,6 @@ import static com.dotcms.experiments.model.AbstractExperimentVariant.EXPERIMENT_
 
 import static com.dotcms.util.CollectionsUtils.set;
 
-import static com.dotcms.util.CollectionsUtils.set;
-
 import static com.dotcms.experiments.model.AbstractExperimentVariant.ORIGINAL_VARIANT;
 
 import com.dotcms.analytics.metrics.MetricsUtil;
