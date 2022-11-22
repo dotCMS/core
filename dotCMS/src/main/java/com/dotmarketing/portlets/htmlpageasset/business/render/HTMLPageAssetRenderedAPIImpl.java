@@ -45,7 +45,6 @@ import com.liferay.util.StringPool;
 import io.vavr.Lazy;
 import io.vavr.control.Try;
 
-
 import java.io.IOException;
 import java.util.Optional;
 import java.util.Set;
@@ -55,12 +54,10 @@ import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.core.Context;
 import org.apache.commons.lang3.StringUtils;
 
-
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.util.Optional;
 import java.util.Set;
-
 
 /**
  * Implementation class for the {@link HTMLPageAssetRenderedAPI}.
@@ -69,8 +66,6 @@ import java.util.Set;
  * @since Apr 12th, 2018
  */
 public class HTMLPageAssetRenderedAPIImpl implements HTMLPageAssetRenderedAPI {
-
-    private Lazy<String> EXPERIMENT_SCRIPT = Lazy.of(() -> getExperimentJSCode());
 
     private final HostWebAPI hostWebAPI;
     private final HTMLPageAssetAPI htmlPageAssetAPI;
@@ -303,9 +298,9 @@ public class HTMLPageAssetRenderedAPIImpl implements HTMLPageAssetRenderedAPI {
 
         if (StringUtils.containsIgnoreCase(pageHTML, "<head>")) {
             return StringUtils.replaceIgnoreCase(pageHTML, "<head>",
-                    "<head>" + EXPERIMENT_SCRIPT.get());
+                    "<head>" + getExperimentJSCode());
         } else {
-            return EXPERIMENT_SCRIPT.get() + "\n" + pageHTML;
+            return getExperimentJSCode() + "\n" + pageHTML;
         }
     }
 

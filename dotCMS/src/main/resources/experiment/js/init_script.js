@@ -8,14 +8,29 @@ function shouldHitEndPoint() {
         let includedExperimentIds = JSON.parse(
             experimentData).includedExperimentIds;
 
-        return includedExperimentIds.every(element => currentRunningExperimentsId.includes(element));
+        return !currentRunningExperimentsId.every(element => includedExperimentIds.includes(element));
     } else {
-        return false;
+        return true;
     }
 }
 
-if (!shouldHitEndPoint()) {
-    fetch('/api/v1/experiments/isUserIncluded')
+if (shouldHitEndPoint()) {
+    let experimentData = localStorage.getItem('experiment_data');
+    let body = experimentData ?
+        {
+            exclude: JSON.parse(experimentData).includedExperimentIds
+        } : {
+            exclude: []
+        };
+
+    fetch('/api/v1/experiments/isUserIncluded', {
+        method: 'POST',
+        body: JSON.stringify(body),
+        headers: {
+            'Accept': 'application/json',
+            'Content-Type': 'application/json'
+        }
+    })
     .then(response => response.json())
     .then(data => {
         if (data.entity.experiments) {
@@ -39,13 +54,22 @@ if (!shouldHitEndPoint()) {
             localStorage.setItem('experiment_data', JSON.stringify(dataToStorage));
         }
     });
-} else {
+} else if (!window.location.href.includes("redirect=true")) {
     let experimentData = JSON.parse(localStorage.getItem('experiment_data'));
 
-    for (let experiment in experimentData){
-        if (window.location.href.includes(JSON.parse(experiment.pageUrl))) {
-            window.location = experiment.variant.url;
+    for (let i = 0; i < experimentData.experiments.length; i++){
+        let pageUrl = experimentData.experiments[i].pageUrl;
+        let alternativePageUrl = experimentData.experiments[i].pageUrl.endsWith("/index") ?
+            experimentData.experiments[i].pageUrl.replace("/index", "") :
+            experimentData.experiments[i].pageUrl;
+
+        if (window.location.href.includes(pageUrl) || window.location.href.includes(alternativePageUrl)) {
+            let url = experimentData.experiments[i].variant.url.includes("?") ?
+                experimentData.experiments[i].variant.url + "&redirect=true" :
+                experimentData.experiments[i].variant.url + "?redirect=true"
+            window.location = url;
             break;
         }
     }
 }
+

@@ -4,7 +4,11 @@ import static com.dotcms.experiments.model.AbstractExperiment.Status.DRAFT;
 import static com.dotcms.experiments.model.AbstractExperiment.Status.ENDED;
 import static com.dotcms.experiments.model.AbstractExperimentVariant.EXPERIMENT_VARIANT_NAME_PREFIX;
 import static com.dotcms.experiments.model.AbstractExperimentVariant.EXPERIMENT_VARIANT_NAME_SUFFIX;
+
 import static com.dotcms.util.CollectionsUtils.set;
+
+import static com.dotcms.util.CollectionsUtils.set;
+
 import static com.dotcms.experiments.model.AbstractExperimentVariant.ORIGINAL_VARIANT;
 
 import com.dotcms.analytics.metrics.MetricsUtil;

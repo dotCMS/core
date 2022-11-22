@@ -40,6 +40,5 @@ public interface ExperimentWebAPI {
      * @throws DotSecurityException
      */
     SelectedExperiments isUserIncluded(final HttpServletRequest request,
-            final HttpServletResponse response, final List<String> idsToExclude)
-            throws DotDataException, DotSecurityException;
+            final HttpServletResponse response, final List<String> idsToExclude) throws DotDataException, DotSecurityException ;
 }

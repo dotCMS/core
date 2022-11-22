@@ -287,7 +287,7 @@
 									"    pm.expect(jsonData.entity.includedExperimentIds.includes(pm.variables.get(\"experimentId\"))).to.be.eq(true);",
 									"    pm.expect(jsonData.entity.excludedExperimentIds.length).to.be.eq(0);",
 									"",
-									"    pm.expect(jsonData.entity.experiments[0].pageUrl).to.be.eq(\"page_isUserIncluded_1\");",
+									"    pm.expect(jsonData.entity.experiments[0].pageUrl).to.be.eq(\"/page_isUserIncluded_1\");",
 									"    var cookie = postman.getResponseCookie('runningExperiment_' + pm.variables.get(\"experimentId\"));",
 									"    pm.expect(cookie).to.not.eq(null);",
 									"});",
@@ -298,7 +298,7 @@
 						}
 					],
 					"request": {
-						"method": "GET",
+						"method": "POST",
 						"header": [],
 						"url": {
 							"raw": "{{serverURL}}/api/v1/experiments/isUserIncluded",
@@ -726,7 +726,7 @@
 									"    pm.expect(jsonData.entity.includedExperimentIds.includes(pm.variables.get(\"experimentId\"))).to.be.eq(true);",
 									"    pm.expect(jsonData.entity.excludedExperimentIds.length).to.be.eq(0);",
 									"",
-									"    pm.expect(jsonData.entity.experiments[0].pageUrl).to.be.eq(\"page_isUserIncluded_2\");",
+									"    pm.expect(jsonData.entity.experiments[0].pageUrl).to.be.eq(\"/page_isUserIncluded_2\");",
 									"    var cookie = postman.getResponseCookie('runningExperiment' + pm.variables.get(\"experimentId\"));",
 									"    pm.expect(cookie).to.not.eq(null);",
 									"});"
@@ -736,7 +736,7 @@
 						}
 					],
 					"request": {
-						"method": "GET",
+						"method": "POST",
 						"header": [],
 						"url": {
 							"raw": "{{serverURL}}/api/v1/experiments/isUserIncluded?Testing=Testing",
@@ -784,7 +784,7 @@
 						}
 					],
 					"request": {
-						"method": "GET",
+						"method": "POST",
 						"header": [],
 						"url": {
 							"raw": "{{serverURL}}/api/v1/experiments/isUserIncluded",
@@ -1418,7 +1418,7 @@
 						}
 					],
 					"request": {
-						"method": "GET",
+						"method": "POST",
 						"header": [],
 						"url": {
 							"raw": "{{serverURL}}/api/v1/experiments/isUserIncluded",
@@ -1726,11 +1726,8 @@
 							}
 						}
 					],
-					"protocolProfileBehavior": {
-						"disableBodyPruning": true
-					},
 					"request": {
-						"method": "GET",
+						"method": "POST",
 						"header": [],
 						"body": {
 							"mode": "raw",

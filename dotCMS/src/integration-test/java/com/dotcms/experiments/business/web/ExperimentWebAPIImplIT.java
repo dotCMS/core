@@ -1,5 +1,6 @@
 package com.dotcms.experiments.business.web;
 
+
 import static com.dotcms.util.CollectionsUtils.list;
 import static com.dotcms.util.CollectionsUtils.map;
 import static org.junit.Assert.assertEquals;
@@ -24,6 +25,9 @@ import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.rules.model.LogicalOperator;
+
+import com.dotmarketing.util.Calendar;
+
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.util.StringPool;
 import java.time.Duration;
@@ -33,7 +37,9 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
 import java.util.Optional;
+
 import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -82,6 +88,7 @@ public class ExperimentWebAPIImplIT {
 
                 checkCookie(response, selectedExperiments.getExperiments().get(0),
                         experimentStarted.scheduling().get().endDate().get());
+
             }
         } finally {
             ExperimentDataGen.end(experiment);
@@ -112,6 +119,7 @@ public class ExperimentWebAPIImplIT {
             for (int i = 0; i < 10; i++) {
                 final DotCMSMockResponse response = new DotCMSMockResponse();
 
+
                 final SelectedExperiments selectedExperiments = WebAPILocator.getExperimentWebAPI()
                         .isUserIncluded(request, response, null);
 
@@ -126,7 +134,6 @@ public class ExperimentWebAPIImplIT {
                         checkCookie(response, selectedExperiment, experiment_2.scheduling().get().endDate().get());
                     }
                 }
-
 
                 assertEquals(2, selectedExperiments.getIncludedExperimentIds().size());
                 assertTrue(selectedExperiments.getIncludedExperimentIds().contains(experiment_1.id().get()));
@@ -393,7 +400,6 @@ public class ExperimentWebAPIImplIT {
 
             for (int i = 0; i < 10; i++) {
                 final DotCMSMockResponse response = new DotCMSMockResponse();
-
                 final SelectedExperiments selectedExperiments = WebAPILocator.getExperimentWebAPI()
                         .isUserIncluded(request, response, null);
 
@@ -452,13 +458,13 @@ public class ExperimentWebAPIImplIT {
 
             for (int i = 0; i < 10; i++) {
                 final DotCMSMockResponse response = new DotCMSMockResponse();
-
                 final SelectedExperiments selectedExperiments = WebAPILocator.getExperimentWebAPI()
                         .isUserIncluded(request, response, null);
 
                 assertEquals(selectedExperiments.getExperiments().size(), 2);
 
                 for (final SelectedExperiment selectedExperiment : selectedExperiments.getExperiments()) {
+
                     if (selectedExperiment.id().equals(experiment_1.id())) {
                         assertEquals(htmlPageAsset_1.getPageUrl(), selectedExperiment.pageUrl());
                         checkCookie(response, selectedExperiment, experiment_1.scheduling().get().endDate().get());

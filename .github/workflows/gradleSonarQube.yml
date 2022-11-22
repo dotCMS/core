@@ -2,13 +2,15 @@ name: Sonar Qube Scan Gradle
 on:
   push:
     branches:
-      - master # or the name of your main branch
-
+      - master 
+      - testing-sonarqube
+    paths: ['dotCMS/**']
   pull_request:
     # Sequence of patterns matched against refs/heads
     branches:    
       - master
       - release-*
+    paths: ['dotCMS/**']
 
 jobs:
   build:
@@ -36,6 +38,7 @@ jobs:
           restore-keys: ${{ runner.os }}-gradle
       - name: Build and analyze
         env:
+          SONAR_SCANNER_OPTS: "-Xmx3g"
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}  # Needed to get PR information, if any
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
           SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
