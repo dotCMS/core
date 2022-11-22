@@ -207,10 +207,6 @@ else {
     targetCompatibility = JavaVersion.current()
 }
 
-
-
-def eeType = dotcmsReleaseVersion == "master" ? '-SNAPSHOT' : ''
-
 dependencies {
 
     //ajc "org.aspectj:aspectjtools:$aspectjVersion"
@@ -266,12 +262,6 @@ dependencies {
 
     //individualTestCompile sourceSets.test.output
     //integrationTestCompile sourceSets.test.output
-
-
-    if (!(project.gradle.startParameter.taskNames.contains('deployWarTomcatDev') || project.gradle.startParameter.taskNames.contains('testDev'))) {
-
-        implementation group: 'com.dotcms.enterprise', name: 'ee', version: dotcmsReleaseVersion + eeType, changing: true
-    }
 }
 
 import groovy.json.JsonSlurper
