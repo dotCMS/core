@@ -20,7 +20,9 @@ import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Arrays;
+
 import java.util.Collections;
+
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -28,7 +30,9 @@ import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import net.bytebuddy.utility.RandomString;
+
 import org.jetbrains.annotations.NotNull;
+
 
 /**
  * Default implementation of {@link ExperimentWebAPI}
@@ -39,6 +43,7 @@ public class ExperimentWebAPIImpl implements ExperimentWebAPI {
     public SelectedExperiments isUserIncluded(final HttpServletRequest request,
             final HttpServletResponse response, final List<String> idsToExclude)
             throws DotDataException, DotSecurityException {
+
         final List<Experiment> experimentRunning = APILocator.getExperimentsAPI()
                 .getRunningExperiment();
         final List<Experiment> experimentFiltered = UtilMethods.isSet(idsToExclude) ?

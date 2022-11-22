@@ -1764,6 +1764,12 @@
 		{
 			"key": "page_id",
 			"value": ""
+		}
+	],
+	"variable": [
+		{
+			"key": "page_id",
+			"value": ""
 		},
 		{
 			"key": "experimentId",
