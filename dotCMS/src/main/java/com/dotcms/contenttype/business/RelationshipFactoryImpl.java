@@ -625,16 +625,17 @@ public class RelationshipFactoryImpl implements RelationshipFactory{
             final String relationType, final boolean live,
             final String orderBy, final int limit, final int offset) throws DotDataException {
 
-        final StringBuilder query = new StringBuilder("select cont1.inode from contentlet cont1 join inode ci1 on (cont1.inode = ci1.inode) join contentlet_version_info vi1 on "
-                        + "(" + (live?"vi1.live_inode":"vi1.working_inode") + " = cont1.inode) join tree tree1 on (tree1.parent = cont1.identifier) ")
-                .append("where tree1.child = ? and tree1.relation_type = ?");
+        final StringBuilder query = new StringBuilder("select parent "
+                + "from tree "
+                + "where child = ? "
+                + "  and relation_type = ? ");
 
 
         if (UtilMethods.isSet(orderBy) && !(orderBy.trim().equals("sort_order") || orderBy.trim().equals("tree_order"))) {
             query.append(" order by cont1.")
                     .append(orderBy);
         } else {
-            query.append(" order by tree1.tree_order, cont1.language_id");
+            query.append(" order by tree_order");
         }
 
         final DotConnect dc = new DotConnect();

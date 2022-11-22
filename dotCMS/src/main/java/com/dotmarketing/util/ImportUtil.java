@@ -95,7 +95,7 @@ public class ImportUtil {
     private final static String languageCodeHeader = "languageCode";
     private final static String countryCodeHeader = "countryCode";
 
-    private final static int commitGranularity = 10;
+    private final static int commitGranularity = 500;
     private final static int sleepTime = 200;
 
     public static final String[] IMP_DATE_FORMATS = new String[] { "d-MMM-yy", "MMM-yy", "MMMM-yy", "d-MMM", "dd-MMM-yyyy",
@@ -278,7 +278,7 @@ public class ImportUtil {
 
                             if ( !preview && (lineNumber % commitGranularity == 0) ) {
                                 HibernateUtil.closeAndCommitTransaction();
-                                Thread.sleep( sleepTime );
+//                                Thread.sleep( sleepTime );
                                 HibernateUtil.startTransaction();
                             }
                         } catch (final DotRuntimeException ex) {
