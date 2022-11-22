@@ -8,7 +8,7 @@ function shouldHitEndPoint() {
         let includedExperimentIds = JSON.parse(
             experimentData).includedExperimentIds;
 
-        return includedExperimentIds.every(element => currentRunningExperimentsId.includes(element));
+        return !currentRunningExperimentsId.every(element => includedExperimentIds.includes(element));
     } else {
         return true;
     }
@@ -54,4 +54,23 @@ if (shouldHitEndPoint()) {
             localStorage.setItem('experiment_data', JSON.stringify(dataToStorage));
         }
     });
+} else if (!window.location.href.includes("redirect=true")) {
+    let experimentData = JSON.parse(localStorage.getItem('experiment_data'));
+
+    for (let i = 0; i < experimentData.experiments.length; i++){
+        let pageUrl = experimentData.experiments[i].pageUrl;
+
+        let alternativePageUrl = experimentData.experiments[i].pageUrl.endsWith("/index") ?
+            experimentData.experiments[i].pageUrl.replace("/index", "") :
+            experimentData.experiments[i].pageUrl;
+
+        if (window.location.href.includes(pageUrl) || window.location.href.includes(alternativePageUrl)) {
+
+            let url = experimentData.experiments[i].variant.url
+            const param = (url.includes("?") ? "&" : "?") + "redirect=true";
+            window.location.url = url + param;
+            break;
+        }
+    }
 }
+
