@@ -44,12 +44,12 @@ public class ExperimentWebAPIImpl implements ExperimentWebAPI {
             final HttpServletResponse response, final List<String> idsToExclude)
             throws DotDataException, DotSecurityException {
 
-        final List<Experiment> experimentRunning = APILocator.getExperimentsAPI()
+        final List<Experiment> experimentsRunning = APILocator.getExperimentsAPI()
                 .getRunningExperiment();
         final List<Experiment> experimentFiltered = UtilMethods.isSet(idsToExclude) ?
-                experimentRunning.stream()
+                experimentsRunning.stream()
                     .filter(experiment -> !idsToExclude.contains(experiment.id().get()))
-                    .collect(Collectors.toList()) : experimentRunning;
+                    .collect(Collectors.toList()) : experimentsRunning;
 
         final List<Experiment> experiments = pickExperiments(experimentFiltered, request, response);
         final List<SelectedExperiment> selectedExperiments = !experiments.isEmpty() ?
