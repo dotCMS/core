@@ -99,6 +99,7 @@ export class DotTimeComponent {
     componentDidLoad(): void {
         const attrException = ['dottype'];
         const htmlElement = this.el.querySelector('input[type="time"]');
+
         setTimeout(() => {
             const attrs = getDotAttributesFromElement(
                 Array.from(this.el.attributes),
