@@ -13,17 +13,20 @@ import {
     DotBubbleMenuViewProps,
     // Suggestions
     suggestionOptions,
+    changeToItems,
     SuggestionsComponent,
     // Utils
     setBubbleMenuCoords,
     getNodeCoords,
     deleteByRange,
-    deleteByNode
+    deleteByNode,
+    ImageNode
 } from '@dotcms/block-editor';
 
 import { LINK_FORM_PLUGIN_KEY, BUBBLE_FORM_PLUGIN_KEY } from '@dotcms/block-editor';
 
 import { getBubbleMenuItem, isListNode, popperModifiers } from '../utils';
+import { filter, take } from 'rxjs/operators';
 
 export const DotBubbleMenuPlugin = (options: DotBubbleMenuPluginProps) => {
     const component = options.component.instance;
@@ -330,6 +333,47 @@ export class DotBubbleMenuPluginView extends BubbleMenuView {
                 // eslint-disable-next-line
                 const { open } = BUBBLE_FORM_PLUGIN_KEY.getState(this.editor.state);
                 open ? this.editor.commands.closeForm() : this.editor.commands.openForm();
+                // eslint-disable-next-line
+                const { alt, src, title, data } = this.editor.getAttributes(ImageNode.name);
+                // eslint-disable-next-line
+                const { title: dotTitle = '', asset } = data || {};
+                open
+                    ? this.editor.commands.closeForm()
+                    : this.editor.commands
+                          .openForm([
+                              {
+                                  value: src || asset,
+                                  key: 'src',
+                                  label: 'path',
+                                  required: true,
+                                  controlType: 'text',
+                                  type: 'text'
+                              },
+                              {
+                                  value: alt || dotTitle,
+                                  key: 'alt',
+                                  label: 'alt',
+                                  controlType: 'text',
+                                  type: 'text'
+                              },
+                              {
+                                  value: title || dotTitle,
+                                  key: 'title',
+                                  label: 'caption',
+                                  controlType: 'text',
+                                  type: 'text'
+                              }
+                          ])
+                          .pipe(
+                              take(1),
+                              filter((data) => data != null)
+                          )
+                          .subscribe((data) => {
+                              requestAnimationFrame(() => {
+                                  this.editor.commands.setImage({ ...data });
+                                  this.editor.commands.closeForm();
+                              });
+                          });
                 break;
 
             case 'deleteNode':
@@ -361,7 +405,7 @@ export class DotBubbleMenuPluginView extends BubbleMenuView {
         const changeToOptions =
             allowedBlocks.length > 1
                 ? suggestionOptions.filter((item) => allowedBlocks.includes(item.id))
-                : suggestionOptions.filter((item) => item.id != 'horizontalLine');
+                : changeToItems;
         const changeTopCommands = {
             heading1: () => {
                 this.editor.chain().focus().clearNodes().setHeading({ level: 1 }).run();

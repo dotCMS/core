@@ -3,10 +3,15 @@ import {
     BubbleMenuItem,
     ShouldShowProps,
     LINK_FORM_PLUGIN_KEY,
-    ImageNode
+    ImageNode,
+    findParentNode
 } from '@dotcms/block-editor';
 
-const hideBubbleMenuOn = {};
+const hideBubbleMenuOn = {
+    tableCell: true,
+    table: true,
+    doc: true
+};
 
 /**
  * Determine when the bubble menu can or cannot be displayed.
@@ -22,7 +27,7 @@ export const shouldShowBubbleMenu = ({ editor, state, from, to }: ShouldShowProp
     const { isOpen, openOnClick } = LINK_FORM_PLUGIN_KEY.getState(state);
 
     // Current selected node
-    const node = editor.state.doc.nodeAt(editor.state.selection.from);
+    const node = findParentNode(editor.state.selection.$from);
 
     // Sometime check for `empty` is not enough.
     // Doubleclick an empty paragraph returns a node size of 2.
