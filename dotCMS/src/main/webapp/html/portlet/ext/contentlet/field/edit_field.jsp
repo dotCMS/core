@@ -216,9 +216,9 @@
                      */
                     const JSONValue = JSON.stringify(<%=JSONValue%>) !== JSON.stringify({}) ? <%=JSONValue%> : null;
                     let content;
-    
+
                     /**
-                     * Try/catch will tell us if the content in the DB is html string (WYSIWYG)  
+                     * Try/catch will tell us if the content in the DB is html string (WYSIWYG)
                      * or JSON (block editor)
                      */
                     try {

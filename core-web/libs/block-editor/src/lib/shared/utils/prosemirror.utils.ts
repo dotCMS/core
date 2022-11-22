@@ -1,6 +1,6 @@
 import { ResolvedPos } from 'prosemirror-model';
 import { EditorView } from 'prosemirror-view';
-import { SelectionRange } from 'prosemirror-state';
+import { SelectionRange, TextSelection } from 'prosemirror-state';
 import { Editor } from '@tiptap/core';
 import { Step, StepResult } from 'prosemirror-transform';
 
@@ -183,6 +183,20 @@ export const replaceInlineLinkImage = (content) => {
         .replace(imgTagRex, (content) => {
             return content.replace(/img/gm, `img href="${href}" title="${title}" alt="${alt}"`);
         });
+};
+
+/**
+ * This method is used to deselect current node.
+ * Placing the cursor at the end of the node.
+ *
+ * @param {EditorView} view
+ */
+export const deselectCurrentNode = (view: EditorView) => {
+    const { state } = view;
+    const { doc } = state.tr;
+    const resolvedEnd = state.selection.to;
+    const selection = TextSelection.create(doc, resolvedEnd, resolvedEnd);
+    view.dispatch(state.tr.setSelection(selection));
 };
 
 // Adapted from https://discuss.prosemirror.net/t/changing-doc-attrs/784

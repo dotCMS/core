@@ -38,7 +38,7 @@ public enum PageMode {
     EDIT_MODE(false, true),
     NAVIGATE_EDIT_MODE(false, true);
 
-    private static PageMode DEFAULT_PAGE_MODE = LIVE;
+    private static final PageMode DEFAULT_PAGE_MODE = LIVE;
 
     public final boolean showLive;
     public final boolean isAdmin;
@@ -54,9 +54,8 @@ public enum PageMode {
         this.respectAnonPerms = respectAnonPerms;
     }
 
-
     public static PageMode get() {
-        final HttpServletRequest req = Try.of(()->HttpServletRequestThreadLocal.INSTANCE.getRequest()).getOrNull();
+        final HttpServletRequest req = Try.of(HttpServletRequestThreadLocal.INSTANCE::getRequest).getOrNull();
         return get(req);
 
     }
@@ -123,7 +122,6 @@ public enum PageMode {
 
     }
 
-
     /**
      * Page mode can only be set for back end users, not for front end users (even logged in Front end users)
      * @param request
@@ -175,8 +173,18 @@ public enum PageMode {
                 request.getAttribute(WebKeys.PAGE_MODE_PARAMETER) == null ;
     }
 
+    /**
+     * Checks if the current Page Mode belongs to Edit Mode.
+     *
+     * @return If only working Contentlet versions are being returned and the Admin Mode is set, returns {@code true}.
+     */
+    public boolean isEditMode() {
+        return this.equals(PageMode.EDIT_MODE);
+    }
+
     @Override
     public String toString() {
         return this.name();
     }
+
 }
