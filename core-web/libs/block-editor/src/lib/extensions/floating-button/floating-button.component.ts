@@ -1,11 +1,6 @@
 import { Component, EventEmitter, Input, Output } from '@angular/core';
-import { take, tap } from 'rxjs/operators';
 
-import { DotCMSContentlet } from '@dotcms/dotcms-models';
-import {
-    DotImageService,
-    FileStatus
-} from '../image-uploader/services/dot-image/dot-image.service';
+import { FileStatus } from '@dotcms/block-editor';
 
 @Component({
     selector: 'dot-floating-button',
@@ -13,11 +8,9 @@ import {
     styleUrls: ['./floating-button.component.scss']
 })
 export class FloatingButtonComponent {
-    @Input() url = '';
     @Input() label = '';
     @Input() isLoading = false;
-
-    @Output() dotAsset: EventEmitter<DotCMSContentlet> = new EventEmitter();
+    @Output() byClick: EventEmitter<void> = new EventEmitter();
 
     public status = FileStatus;
 
@@ -29,35 +22,5 @@ export class FloatingButtonComponent {
 
     get isCompleted() {
         return this.label === this.status.COMPLETED;
-    }
-
-    constructor(private readonly dotImageService: DotImageService) {}
-
-    importImage() {
-        this.isLoading = true;
-        this.dotImageService
-            .publishContent({
-                data: this.url,
-                statusCallback: this.updateButtonLabel.bind(this)
-            })
-            .pipe(
-                take(1),
-                tap(() => (this.isLoading = false))
-            )
-            .subscribe(
-                (data) => {
-                    const contentlet = data[0];
-                    this.label = this.status.COMPLETED;
-                    this.dotAsset.emit(contentlet[Object.keys(contentlet)[0]]);
-                },
-                (error) => {
-                    this.label = this.status.ERROR;
-                    this.dotAsset.error(error);
-                }
-            );
-    }
-
-    private updateButtonLabel(status: string) {
-        this.label = status;
     }
 }

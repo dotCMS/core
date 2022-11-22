@@ -126,7 +126,7 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy {
             BubbleLinkFormExtension(this.viewContainerRef),
             DotBubbleMenuExtension(this.viewContainerRef),
             BubbleFormExtension(this.viewContainerRef),
-            DotFloatingButton(this.viewContainerRef),
+            DotFloatingButton(this.injector, this.viewContainerRef),
             // Marks Extensions
             Underline,
             CharacterCount,

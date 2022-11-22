@@ -1,6 +1,6 @@
 import { ComponentRef } from '@angular/core';
 import { Subject } from 'rxjs';
-import { takeUntil } from 'rxjs/operators';
+import { take, takeUntil, tap } from 'rxjs/operators';
 
 import { EditorState, Plugin, PluginKey } from 'prosemirror-state';
 import { EditorView } from 'prosemirror-view';
@@ -8,7 +8,13 @@ import { Editor } from '@tiptap/core';
 
 import tippy, { Instance } from 'tippy.js';
 
-import { FloatingButtonComponent, ImageNode, getNodeCoords } from '@dotcms/block-editor';
+import {
+    FloatingButtonComponent,
+    DotImageService,
+    ImageNode,
+    getNodeCoords,
+    FileStatus
+} from '@dotcms/block-editor';
 import { DotCMSContentlet } from '@dotcms/dotcms-models';
 
 export const setCoords = ({ viewCoords, nodeCoords }): DOMRect => {
@@ -42,18 +48,20 @@ export class DotFloatingButtonPluginView {
     private tippy: Instance | undefined;
     private preventHide = false;
     private $destroy = new Subject<boolean>();
+    private dotImageService: DotImageService;
+    private imageUrl: string;
 
     /* @Overrrider */
-    constructor({ editor, component, element, view }) {
+    constructor({ dotImageService, editor, component, element, view }) {
         this.editor = editor;
         this.element = element;
         this.view = view;
         this.component = component;
+        this.dotImageService = dotImageService;
 
-        this.component.instance.dotAsset.pipe(takeUntil(this.$destroy)).subscribe(
-            (data) => this.updateImageNode(data),
-            () => this.setPreventHide()
-        );
+        this.component.instance.byClick
+            .pipe(takeUntil(this.$destroy))
+            .subscribe(() => this.uploadImagedotCMS());
         // Detaches menu content from its current parent
         this.element.remove();
         this.element.style.visibility = 'visible';
@@ -83,9 +91,8 @@ export class DotFloatingButtonPluginView {
             return;
         }
 
-        this.component.instance.url = props?.src;
-        this.component.instance.label = 'Import to dotCMS';
-        this.component.changeDetectorRef.detectChanges();
+        this.imageUrl = props?.src;
+        this.updateButtonLabel('Import to dotCMS');
 
         this.createTooltip();
 
@@ -149,5 +156,39 @@ export class DotFloatingButtonPluginView {
 
     private setPreventHide(): void {
         this.preventHide = true;
+    }
+
+    private uploadImagedotCMS() {
+        this.updateButtonLoading(true);
+        this.dotImageService
+            .publishContent({
+                data: this.imageUrl,
+                statusCallback: (status: string) => this.updateButtonLabel(status)
+            })
+            .pipe(
+                take(1),
+                tap(() => this.updateButtonLoading(false))
+            )
+            .subscribe(
+                (data) => {
+                    const contentlet = data[0];
+                    this.updateButtonLabel(FileStatus.COMPLETED);
+                    this.updateImageNode(contentlet[Object.keys(contentlet)[0]]);
+                },
+                () => {
+                    this.updateButtonLabel(FileStatus.ERROR);
+                    this.setPreventHide();
+                }
+            );
+    }
+
+    private updateButtonLabel(label: string) {
+        this.component.instance.label = label;
+        this.component.changeDetectorRef.detectChanges();
+    }
+
+    private updateButtonLoading(isLoading: boolean) {
+        this.component.instance.isLoading = isLoading;
+        this.component.changeDetectorRef.detectChanges();
     }
 }
