@@ -8,6 +8,7 @@ import com.dotcms.cache.lettuce.LettuceCacheTest;
 import com.dotcms.cache.lettuce.RedisClientTest;
 import com.dotcms.content.business.ObjectMapperTest;
 import com.dotcms.content.business.json.ContentletJsonAPITest;
+import com.dotcms.content.elasticsearch.business.ESContentFactoryImplTest;
 import com.dotcms.content.elasticsearch.business.ESContentletAPIImplTest;
 import com.dotcms.content.elasticsearch.business.ESIndexAPITest;
 import com.dotcms.content.elasticsearch.business.ElasticsearchUtilTest;
@@ -15,6 +16,7 @@ import com.dotcms.content.elasticsearch.util.ESMappingUtilHelperTest;
 import com.dotcms.content.model.hydration.MetadataDelegateTest;
 import com.dotcms.contenttype.business.ContentTypeInitializerTest;
 import com.dotcms.contenttype.business.DotAssetBaseTypeToContentTypeStrategyImplTest;
+import com.dotcms.contenttype.business.StoryBlockAPITest;
 import com.dotcms.contenttype.test.DotAssetAPITest;
 import com.dotcms.csspreproc.CSSCacheTest;
 import com.dotcms.csspreproc.CSSPreProcessServletTest;
@@ -618,6 +620,8 @@ import org.junit.runners.Suite.SuiteClasses;
         TailLogResourceTest.class,
         BayesianAPIImplTest.class,
         ContentletDependenciesTest.class,
+        UtilMethodsITest.class,
+        StoryBlockAPITest.class,
         UtilMethodsITest.class,
         Task220912UpdateCorrectShowOnMenuPropertyTest.class,
         PersonaActionletTest.class,
