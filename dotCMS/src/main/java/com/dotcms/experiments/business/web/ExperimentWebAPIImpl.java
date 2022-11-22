@@ -31,8 +31,6 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import net.bytebuddy.utility.RandomString;
 
-import org.jetbrains.annotations.NotNull;
-
 
 /**
  * Default implementation of {@link ExperimentWebAPI}
@@ -45,7 +43,7 @@ public class ExperimentWebAPIImpl implements ExperimentWebAPI {
             throws DotDataException, DotSecurityException {
 
         final List<Experiment> experimentsRunning = APILocator.getExperimentsAPI()
-                .getRunningExperiment();
+                .getRunningExperiments();
         final List<Experiment> experimentFiltered = UtilMethods.isSet(idsToExclude) ?
                 experimentsRunning.stream()
                     .filter(experiment -> !idsToExclude.contains(experiment.id().get()))

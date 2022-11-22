@@ -51,13 +51,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import javax.ws.rs.core.Context;
 import org.apache.commons.lang3.StringUtils;
-
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import java.util.Optional;
-import java.util.Set;
 
 /**
  * Implementation class for the {@link HTMLPageAssetRenderedAPI}.
@@ -594,7 +588,7 @@ public class HTMLPageAssetRenderedAPIImpl implements HTMLPageAssetRenderedAPI {
             final String jsJitsuCode =  getFileContentFromResourceContext("experiment/html/experiment_head.html")
                     .replaceAll("\\$\\{jitsu_key}", "");
 
-            final String runningExperimentsId = APILocator.getExperimentsAPI().getRunningExperiment().stream()
+            final String runningExperimentsId = APILocator.getExperimentsAPI().getRunningExperiments().stream()
                     .map(experiment -> "'" + experiment.id().get() + "'")
                     .collect(Collectors.joining(","));
 
