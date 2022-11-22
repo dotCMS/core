@@ -22,8 +22,9 @@
     <div class="field">
         <label class="form__label">{{ 'contenttypes.content.push_publish.filters' | dm }}: </label>
         <p-dropdown
-            [pAutoFocus]="true"
+            [autofocus]="true"
             [options]="filterOptions"
+            pAutoFocus
             formControlName="filterKey"
             appendTo="body"
         ></p-dropdown>

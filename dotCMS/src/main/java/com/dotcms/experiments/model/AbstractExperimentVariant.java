@@ -5,6 +5,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import java.io.Serializable;
+import java.util.Optional;
 import org.immutables.value.Value;
 
 /**
@@ -21,12 +22,16 @@ public interface AbstractExperimentVariant extends Serializable, Comparable<Expe
     String EXPERIMENT_VARIANT_NAME_PREFIX = "dotexperiment-";
     String EXPERIMENT_VARIANT_NAME_SUFFIX = "-variant-";
     String EXPERIMENT_VARIANT_DESCRIPTION = "Variant ";
+    String ORIGINAL_VARIANT = "Original";
 
     @JsonProperty("id")
     String id();
     @JsonProperty("name")
     String description();
+    @JsonProperty("weight")
     float weight();
+    @JsonProperty("url")
+    Optional<String> url();
 
     default int compareTo(final ExperimentVariant o) {
         if(id().equals(VariantAPI.DEFAULT_VARIANT.name())) {

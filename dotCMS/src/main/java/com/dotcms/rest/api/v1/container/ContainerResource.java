@@ -173,7 +173,8 @@ public class ContainerResource implements Serializable {
             @DefaultValue("title") @QueryParam(PaginationUtil.ORDER_BY) final String orderBy,
             @DefaultValue("ASC") @QueryParam(PaginationUtil.DIRECTION)  final String direction,
             @QueryParam(ContainerPaginator.HOST_PARAMETER_ID)           final String hostId,
-            @QueryParam(ContainerPaginator.SYSTEM_PARAMETER_NAME)       final Boolean showSystemContainer) {
+            @QueryParam(ContainerPaginator.SYSTEM_PARAMETER_NAME)       final Boolean showSystemContainer,
+            @QueryParam(ContainerPaginator.ARCHIVE_PARAMETER_NAME)       final Boolean showArchiveContainer) {
 
         final InitDataObject initData = webResource.init(null, httpRequest, httpResponse, true, null);
         final User user = initData.getUser();
@@ -186,6 +187,7 @@ public class ContainerResource implements Serializable {
                 extraParams.put(ContainerPaginator.HOST_PARAMETER_ID, checkedHostId.get());
             }
             extraParams.put(ContainerPaginator.SYSTEM_PARAMETER_NAME, showSystemContainer);
+            extraParams.put(ContainerPaginator.ARCHIVE_PARAMETER_NAME, showArchiveContainer);
             return this.paginationUtil.getPage(httpRequest, user, filter, page, perPage, orderBy, OrderDirection.valueOf(direction),
                     extraParams);
         } catch (final Exception e) {

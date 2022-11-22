@@ -90,7 +90,7 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy {
 
     ngOnInit() {
         this.editor = new Editor({
-            extensions: [...this.dotExtentsions(), ...this.setEditorExtensions()]
+            extensions: this.setEditorExtensions()
         });
 
         this.editor.on('create', () => this.updateChartCount());
@@ -113,11 +113,47 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy {
     }
 
     private setEditorExtensions(): AnyExtension[] {
+        const defaultExtensions: AnyExtension[] = [
+            DotConfigExtension({
+                lang: this.lang,
+                allowedContentTypes: this.allowedContentTypes,
+                allowedBlocks: this._allowedBlocks
+            }),
+            ActionsMenu(this.viewContainerRef),
+            DragHandler(this.viewContainerRef),
+            ImageUpload(this.injector, this.viewContainerRef),
+            BubbleLinkFormExtension(this.viewContainerRef),
+            DotBubbleMenuExtension(this.viewContainerRef),
+            BubbleFormExtension(this.viewContainerRef),
+            // Marks Extensions
+            Underline,
+            CharacterCount,
+            TextAlign.configure({ types: ['heading', 'paragraph', 'listItem', 'dotImage'] }),
+            Highlight.configure({ HTMLAttributes: { style: 'background: #accef7;' } }),
+            Link.configure({ autolink: false, openOnClick: false }),
+            Placeholder.configure({
+                placeholder: ({ node }) => {
+                    if (node.type.name === 'heading') {
+                        return `${toTitleCase(node.type.name)} ${node.attrs.level}`;
+                    }
+
+                    return 'Type "/" for commmands';
+                }
+            })
+        ];
+        const customExtensions: Map<string, AnyExtension> = new Map([
+            ['contentlets', ContentletBlock(this.injector)],
+            ['image', ImageNode]
+        ]);
+
         return [
-            ...this.setCustomExtensions(),
-            this._allowedBlocks.length > 1
-                ? StarterKit.configure(this.setStarterKitOptions())
-                : StarterKit
+            ...defaultExtensions,
+            ...(this._allowedBlocks.length > 1
+                ? [
+                      StarterKit.configure(this.setStarterKitOptions()),
+                      ...this.setCustomExtensions(customExtensions)
+                  ]
+                : [StarterKit, ...customExtensions.values()])
         ];
     }
 
@@ -159,55 +195,12 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy {
         };
     }
 
-    private setCustomExtensions() {
-        const customExtensions: Map<string, AnyExtension> = new Map([
-            ['contentlets', ContentletBlock(this.injector)],
-            ['image', ImageNode]
-        ]);
-
-        if (!this._allowedBlocks.length) {
-            return customExtensions.values();
-        }
-
-        const newExtension = [];
-
-        for (const [key, value] of customExtensions) {
-            if (this._allowedBlocks.includes(key)) {
-                newExtension.push(value);
-            }
-        }
-
-        return newExtension;
-    }
-
-    private dotExtentsions(): AnyExtension[] {
+    private setCustomExtensions(customExtensions: Map<string, AnyExtension>): AnyExtension[] {
         return [
-            DotConfigExtension({
-                lang: this.lang,
-                allowedContentTypes: this.allowedContentTypes,
-                allowedBlocks: this._allowedBlocks
-            }),
-            ActionsMenu(this.viewContainerRef),
-            DragHandler(this.viewContainerRef),
-            ImageUpload(this.injector, this.viewContainerRef),
-            BubbleLinkFormExtension(this.viewContainerRef),
-            DotBubbleMenuExtension(this.viewContainerRef),
-            BubbleFormExtension(this.viewContainerRef),
-            // Marks Extensions
-            Underline,
-            CharacterCount,
-            TextAlign.configure({ types: ['heading', 'paragraph', 'listItem', 'dotImage'] }),
-            Highlight.configure({ HTMLAttributes: { style: 'background: #accef7;' } }),
-            Link.configure({ autolink: false, openOnClick: false }),
-            Placeholder.configure({
-                placeholder: ({ node }) => {
-                    if (node.type.name === 'heading') {
-                        return `${toTitleCase(node.type.name)} ${node.attrs.level}`;
-                    }
-
-                    return 'Type "/" for commmands';
-                }
-            })
+            ...(this._allowedBlocks.includes('contentlets')
+                ? [customExtensions.get('contentlets')]
+                : []),
+            ...(this._allowedBlocks.includes('dotImage') ? [customExtensions.get('dotImage')] : [])
         ];
     }
 }
