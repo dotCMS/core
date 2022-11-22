@@ -79,7 +79,7 @@ public class ExperimentWebAPIImplIT {
 
                 assertEquals(1, selectedExperiments.getExperiments().size());
                 assertEquals(experiment.id().get(), selectedExperiments.getExperiments().get(0).id());
-                assertEquals(htmlPageAsset.getPageUrl(), selectedExperiments.getExperiments().get(0).pageUrl());
+                assertEquals(htmlPageAsset.getURI(), selectedExperiments.getExperiments().get(0).pageUrl());
 
                 assertEquals(1, selectedExperiments.getIncludedExperimentIds().size());
                 assertEquals(experiment.id().get(), selectedExperiments.getIncludedExperimentIds().get(0));
@@ -405,7 +405,7 @@ public class ExperimentWebAPIImplIT {
 
                 assertEquals(1, selectedExperiments.getExperiments().size());
                 assertEquals(experiment.id().get(), selectedExperiments.getExperiments().get(0).id());
-                assertEquals(htmlPageAsset.getPageUrl(), selectedExperiments.getExperiments().get(0).pageUrl());
+                assertEquals(htmlPageAsset.getURI(), selectedExperiments.getExperiments().get(0).pageUrl());
 
                 checkCookie(response, selectedExperiments.getExperiments().get(0));
 
@@ -518,7 +518,7 @@ public class ExperimentWebAPIImplIT {
 
                 assertEquals(1, selectedExperiments.getExperiments().size());
                 assertEquals(experiment.id().get(), selectedExperiments.getExperiments().get(0).id());
-                assertEquals(htmlPageAsset.getPageUrl(), selectedExperiments.getExperiments().get(0).pageUrl());
+                assertEquals(htmlPageAsset.getURI(), selectedExperiments.getExperiments().get(0).pageUrl());
 
                 experiments.add(selectedExperiments.getExperiments().get(0));
 
