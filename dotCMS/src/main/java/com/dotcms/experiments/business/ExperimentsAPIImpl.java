@@ -10,7 +10,6 @@ import static com.dotcms.util.CollectionsUtils.set;
 import static com.dotcms.experiments.model.AbstractExperimentVariant.ORIGINAL_VARIANT;
 
 import com.dotcms.analytics.metrics.MetricsUtil;
-import com.dotcms.business.CloseDB;
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.enterprise.rules.RulesAPI;
@@ -509,7 +508,7 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
 
     @CloseDBIfOpened
     @Override
-    public List<Experiment> getRunningExperiment() throws DotDataException {
+    public List<Experiment> getRunningExperiments() throws DotDataException {
         return FactoryLocator.getExperimentsFactory().list(
                 ExperimentFilter.builder().statuses(set(Status.RUNNING)).build()
         );
@@ -522,6 +521,11 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
         final List<Rule> rules = APILocator.getRulesAPI()
                 .getAllRulesByParent(experiment, APILocator.systemUser(), false);
         return UtilMethods.isSet(rules) ? Optional.of(rules.get(0)) : Optional.empty();
+    }
+
+    @Override
+    public boolean isAnyExperimentRunning() throws DotDataException {
+        return !APILocator.getExperimentsAPI().getRunningExperiments().isEmpty();
     }
 
     private TreeSet<ExperimentVariant> redistributeWeights(final Set<ExperimentVariant> variants) {
