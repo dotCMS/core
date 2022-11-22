@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, OnDestroy, ViewChild } from '@angular/core';
+import { ChangeDetectionStrategy, Component, EventEmitter, Input, Output } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { CardModule } from 'primeng/card';
 import { DotMessagePipeModule } from '@pipes/dot-message/dot-message-pipe.module';
@@ -11,21 +11,17 @@ import { DotExperimentsConfigurationItemsCountComponent } from '@portlets/dot-ex
 import { DotIconModule } from '@dotcms/ui';
 import { DotDynamicDirective } from '@portlets/shared/directives/dot-dynamic.directive';
 import { DotExperimentsConfigurationVariantsAddComponent } from '@portlets/dot-experiments/dot-experiments-configuration/components/dot-experiments-configuration-variants-add/dot-experiments-configuration-variants-add.component';
-import { DotExperimentsConfigurationStore } from '@portlets/dot-experiments/dot-experiments-configuration/store/dot-experiments-configuration-store.service';
-import { Subject } from 'rxjs';
-import { takeUntil } from 'rxjs/operators';
 import {
+    DotExperiment,
     EditPageTabs,
+    ExperimentSteps,
+    StepStatus,
     Variant
 } from '@portlets/dot-experiments/shared/models/dot-experiments.model';
-import { DotExperimentsSessionStorageService } from '@portlets/dot-experiments/shared/services/dot-experiments-session-storage.service';
-import { Router } from '@angular/router';
 import { UiDotIconButtonModule } from '@components/_common/dot-icon-button/dot-icon-button.module';
 import { UiDotIconButtonTooltipModule } from '@components/_common/dot-icon-button-tooltip/dot-icon-button-tooltip.module';
+import { Status } from '@portlets/shared/models/shared-models';
 
-/**
- * Container Component to handle  add/delete/view variants
- */
 @Component({
     selector: 'dot-experiments-configuration-variants',
     standalone: true,
@@ -39,83 +35,24 @@ import { UiDotIconButtonTooltipModule } from '@components/_common/dot-icon-butto
         //PrimeNg
         CardModule,
         ButtonModule,
-        UiDotIconButtonTooltipModule
+        UiDotIconButtonTooltipModule,
+        DotExperimentsConfigurationVariantsAddComponent
     ],
     templateUrl: './dot-experiments-configuration-variants.component.html',
     styleUrls: ['./dot-experiments-configuration-variants.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class DotExperimentsConfigurationVariantsComponent implements OnDestroy {
-    @ViewChild(DotDynamicDirective, { static: true })
-    dotDynamicHost!: DotDynamicDirective;
-
-    vm$ = this.dotExperimentsConfigurationStore.vmVariants$;
-
+export class DotExperimentsConfigurationVariantsComponent {
+    currentStep = ExperimentSteps.VARIANTS;
+    currentStatus = Status;
     maxVariantsAllowed = MAX_VARIANTS_ALLOWED;
     defaultVariantId = DEFAULT_VARIANT_ID;
 
-    private destroy$: Subject<boolean> = new Subject<boolean>();
-
-    constructor(
-        private readonly dotExperimentsConfigurationStore: DotExperimentsConfigurationStore,
-        private readonly dotExperimentsSessionStorageService: DotExperimentsSessionStorageService,
-        private readonly router: Router
-    ) {}
-
-    ngOnDestroy(): void {
-        this.destroy$.next(true);
-        this.destroy$.complete();
-    }
-
-    /**
-     * Load dynamically the sidebar and form
-     * to add a new variant
-     * @returns void
-     * @memberof DotExperimentsConfigurationVariantsComponent
-     */
-    addNewVariant() {
-        const viewContainerRef = this.dotDynamicHost.viewContainerRef;
-        const componentRef =
-            viewContainerRef.createComponent<DotExperimentsConfigurationVariantsAddComponent>(
-                DotExperimentsConfigurationVariantsAddComponent
-            );
-
-        componentRef.instance.closedSidebar.pipe(takeUntil(this.destroy$)).subscribe(() => {
-            viewContainerRef.clear();
-        });
-    }
-
-    /**
-     * Call the sidebar of change Traffic Proportion
-     * @returns void
-     * @memberof DotExperimentsConfigurationVariantsComponent
-     */
-    changeTrafficProportionType() {
-        // to  be implemented
-    }
-
-    /**
-     * Go to Edit Page / Content, set the VariantId to SessionStorage
-     * @param {Variant} variant
-     * @param {EditPageTabs} tab
-     * @returns void
-     * @memberof DotExperimentsConfigurationVariantsComponent
-     */
-    goToEditPage(variant: Variant, tab: EditPageTabs) {
-        this.dotExperimentsSessionStorageService.setVariationId(variant.id);
-        this.router.navigate(['edit-page/content'], {
-            queryParams: { editPageTab: tab, variationName: variant.id },
-            queryParamsHandling: 'merge'
-        });
-    }
-
-    /**
-     * Delete a specific variant
-     * @param {Variant} variant
-     * @returns void
-     * @memberof DotExperimentsConfigurationVariantsComponent
-     */
-    deleteVariant(variant: Variant) {
-        this.dotExperimentsConfigurationStore.deleteVariant(variant);
-    }
+    @Input() status: StepStatus;
+    @Input() variants: Variant[];
+    @Output() showSidebar = new EventEmitter<void>();
+    @Output() hiddenSidebar = new EventEmitter<void>();
+    @Output() delete = new EventEmitter<Variant>();
+    @Output() save = new EventEmitter<Pick<DotExperiment, 'name'>>();
+    @Output() goToEditPage = new EventEmitter<{ variant: Variant; mode: EditPageTabs }>();
 }

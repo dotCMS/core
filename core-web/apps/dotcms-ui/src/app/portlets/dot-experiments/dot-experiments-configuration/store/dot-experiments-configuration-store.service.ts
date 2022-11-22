@@ -1,13 +1,15 @@
 import { Injectable } from '@angular/core';
-import { ComponentStore, OnStateInit, tapResponse } from '@ngrx/component-store';
-import { LoadingState } from '@portlets/shared/models/shared-models';
+import { ComponentStore, tapResponse } from '@ngrx/component-store';
+import { LoadingState, Status } from '@portlets/shared/models/shared-models';
 import { ActivatedRoute } from '@angular/router';
 import {
     DotExperiment,
+    ExperimentSteps,
+    StepStatus,
     TrafficProportion,
     Variant
 } from '@portlets/dot-experiments/shared/models/dot-experiments.model';
-import { Observable, pipe, throwError } from 'rxjs';
+import { Observable, throwError } from 'rxjs';
 import { switchMap, tap, withLatestFrom } from 'rxjs/operators';
 import { HttpErrorResponse } from '@angular/common/http';
 import { DotExperimentsService } from '@portlets/dot-experiments/shared/services/dot-experiments.service';
@@ -17,93 +19,106 @@ import { MessageService } from 'primeng/api';
 
 export interface DotExperimentsConfigurationState {
     pageId: string;
-    experimentId: string;
     experiment: DotExperiment | null;
     status: LoadingState;
     isSidebarOpen: boolean;
     isSaving: boolean;
+    stepStatus: StepStatus;
 }
 
 const initialState: DotExperimentsConfigurationState = {
     pageId: '',
-    experimentId: '',
     experiment: null,
     status: LoadingState.LOADING,
     isSidebarOpen: false,
-    isSaving: false
+    isSaving: false,
+    stepStatus: {
+        status: Status.IDLE,
+        isOpenSidebar: false,
+        step: null
+    }
 };
 
 @Injectable()
-export class DotExperimentsConfigurationStore
-    extends ComponentStore<DotExperimentsConfigurationState>
-    implements OnStateInit
-{
+export class DotExperimentsConfigurationStore extends ComponentStore<DotExperimentsConfigurationState> {
+    experimentId: string;
     // Selectors
     readonly isLoading$ = this.select(({ status }) => status === LoadingState.LOADING);
-
-    readonly getExperimentId$ = this.select(({ experimentId }) => experimentId);
-
     readonly getTrafficProportion$ = this.select(({ experiment }) => experiment.trafficProportion);
-    readonly isVariantStepDone$ = this.select(
-        ({ experiment }) => experiment.trafficProportion.variants.length > 1
-    );
 
     // Updaters
     readonly setComponentStatus = this.updater((state, status: LoadingState) => ({
         ...state,
         status
     }));
-    readonly setIsSavingStatus = this.updater((state, isSaving: boolean) => ({
+
+    readonly savingStepStatus = this.updater((state, step: ExperimentSteps) => ({
         ...state,
-        isSaving
+        stepStatus: {
+            ...state.stepStatus,
+            status: Status.SAVING,
+            step
+        }
     }));
-    readonly closeSidebar = this.updater((state) => ({
+    readonly doneStepStatus = this.updater((state, step: ExperimentSteps) => ({
         ...state,
-        isSidebarOpen: false,
-        isSaving: false
-    }));
-    readonly openSidebar = this.updater((state) => ({
-        ...state,
-        isSidebarOpen: true
+        stepStatus: {
+            ...state.stepStatus,
+            status: Status.DONE,
+            step
+        }
     }));
 
-    readonly setExperiment = this.updater((state, experiment: DotExperiment) => ({
+    readonly closeSidebar = this.updater((state) => ({
         ...state,
-        status: LoadingState.LOADED,
-        experiment: experiment
+        stepStatus: {
+            status: Status.DONE,
+            isOpenSidebar: false,
+            step: null
+        }
     }));
+    readonly openSidebar = this.updater((state, step: ExperimentSteps) => ({
+        ...state,
+        stepStatus: {
+            ...state.stepStatus,
+            isOpenSidebar: true,
+            step
+        }
+    }));
+
     readonly setTrafficProportion = this.updater((state, trafficProportion: TrafficProportion) => ({
         ...state,
-        status: LoadingState.LOADED,
         experiment: { ...state.experiment, trafficProportion }
     }));
 
     // Effects
-    readonly loadExperiment = this.effect<void>(
-        pipe(
+    readonly loadExperiment = this.effect((experimentId$: Observable<string>) => {
+        return experimentId$.pipe(
             tap(() => this.setComponentStatus(LoadingState.LOADING)),
-            withLatestFrom(this.state$),
-            switchMap(([, { experimentId }]) =>
+            switchMap((experimentId) =>
                 this.dotExperimentsService.getById(experimentId).pipe(
                     tapResponse(
-                        (experiments) => {
-                            this.setExperiment(experiments);
-                            this.updateTitles(experiments);
+                        (experiment) => {
+                            this.patchState({
+                                experiment: experiment
+                            });
+                            this.updateTabTitle(experiment);
                         },
                         (error: HttpErrorResponse) => throwError(error),
                         () => this.setComponentStatus(LoadingState.LOADED)
                     )
                 )
             )
-        )
-    );
+        );
+    });
 
+    // Variants
     readonly addVariant = this.effect((variant$: Observable<Pick<DotExperiment, 'name'>>) => {
         return variant$.pipe(
-            tap(() => this.setIsSavingStatus(true)),
-            withLatestFrom(this.getExperimentId$),
-            switchMap(([variant, experimentId]) =>
-                this.dotExperimentsService.addVariant(experimentId, variant).pipe(
+            tap(() => this.savingStepStatus(ExperimentSteps.VARIANTS)),
+            withLatestFrom(this.state$),
+            switchMap(([variant, { experiment }]) =>
+                this.dotExperimentsService.addVariant(experiment.id, variant).pipe(
                     tapResponse(
                         (experiment) => {
                             this.messageService.add({
@@ -118,9 +133,12 @@ export class DotExperimentsConfigurationStore
                             });
 
                             this.setTrafficProportion(experiment.trafficProportion);
+                            this.closeSidebar();
                         },
-                        (error: HttpErrorResponse) => throwError(error),
-                        () => this.closeSidebar()
+                        (error: HttpErrorResponse) => {
+                            this.doneStepStatus(ExperimentSteps.VARIANTS);
+                            throwError(error);
+                        }
                     )
                 )
             )
@@ -129,9 +147,10 @@ export class DotExperimentsConfigurationStore
 
     readonly deleteVariant = this.effect((variant$: Observable<Variant>) => {
         return variant$.pipe(
-            withLatestFrom(this.getExperimentId$),
-            switchMap(([variant, experimentId]) =>
-                this.dotExperimentsService.removeVariant(experimentId, variant.id).pipe(
+            tap(() => this.savingStepStatus(ExperimentSteps.VARIANTS)),
+            withLatestFrom(this.state$),
+            switchMap(([variant, { experiment }]) =>
+                this.dotExperimentsService.removeVariant(experiment.id, variant.id).pipe(
                     tapResponse(
                         (experiment) => {
                             this.messageService.add({
@@ -147,7 +166,8 @@ export class DotExperimentsConfigurationStore
 
                             this.setTrafficProportion(experiment.trafficProportion);
                         },
-                        (error: HttpErrorResponse) => throwError(error)
+                        (error: HttpErrorResponse) => throwError(error),
+                        () => this.doneStepStatus(ExperimentSteps.VARIANTS)
                     )
                 )
             )
@@ -156,33 +176,17 @@ export class DotExperimentsConfigurationStore
 
     readonly vm$: Observable<{
         pageId: string;
-        experimentId: string;
         experiment: DotExperiment;
+        stepStatus: StepStatus;
         isLoading: boolean;
     }> = this.select(
         this.state$,
         this.isLoading$,
-        ({ pageId, experiment, experimentId }, isLoading) => ({
+        ({ pageId, experiment, stepStatus }, isLoading) => ({
             pageId,
             experiment,
-            experimentId,
+            stepStatus,
             isLoading
-        })
-    );
-    readonly vmVariants$: Observable<{
-        isSidebarOpen: boolean;
-        isSaving: boolean;
-        trafficProportion: TrafficProportion;
-        isVariantStepDone: boolean;
-    }> = this.select(
-        this.state$,
-        this.getTrafficProportion$,
-        this.isVariantStepDone$,
-        ({ isSidebarOpen, isSaving }, trafficProportion, isVariantStepDone) => ({
-            isSidebarOpen,
-            isSaving,
-            trafficProportion,
-            isVariantStepDone
         })
     );
 
@@ -193,18 +197,11 @@ export class DotExperimentsConfigurationStore
         private readonly route: ActivatedRoute,
         private readonly title: Title
     ) {
-        super({
-            ...initialState,
-            experimentId: route.snapshot.params.experimentId,
-            pageId: route.snapshot.params.pageId
-        });
+        super({ ...initialState, pageId: route.snapshot.params.pageId });
+        this.loadExperiment(route.snapshot.params.experimentId);
     }
 
-    ngrxOnStateInit() {
-        this.loadExperiment();
-    }
-
-    private updateTitles(experiment: DotExperiment) {
+    private updateTabTitle(experiment: DotExperiment) {
         this.title.setTitle(`${experiment.name} - ${this.title.getTitle()}`);
     }
 }

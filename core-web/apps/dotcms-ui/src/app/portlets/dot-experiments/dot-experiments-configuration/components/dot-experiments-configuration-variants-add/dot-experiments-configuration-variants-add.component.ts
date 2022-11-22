@@ -1,11 +1,4 @@
-import {
-    ChangeDetectionStrategy,
-    Component,
-    EventEmitter,
-    OnDestroy,
-    OnInit,
-    Output
-} from '@angular/core';
+import { ChangeDetectionStrategy, Component, EventEmitter, Input, Output } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { DotExperiment } from '@portlets/dot-experiments/shared/models/dot-experiments.model';
 import { DotSidebarHeaderComponent } from '@shared/dot-sidebar-header/dot-sidebar-header.component';
@@ -16,7 +9,6 @@ import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angula
 import { ButtonModule } from 'primeng/button';
 import { DotSidebarDirective } from '@portlets/shared/directives/dot-sidebar.directive';
 import { InputTextModule } from 'primeng/inputtext';
-import { DotExperimentsConfigurationStore } from '@portlets/dot-experiments/dot-experiments-configuration/store/dot-experiments-configuration-store.service';
 
 interface AddForm {
     name: FormControl<string>;
@@ -42,32 +34,39 @@ interface AddForm {
     styleUrls: ['./dot-experiments-configuration-variants-add.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class DotExperimentsConfigurationVariantsAddComponent implements OnInit, OnDestroy {
+export class DotExperimentsConfigurationVariantsAddComponent {
+    @Input()
+    isSaving: boolean;
+
+    @Input()
+    isSidebarOpen: boolean;
+
     /**
      * Emit when the sidebar is closed
      */
     @Output()
     closedSidebar = new EventEmitter<void>();
 
-    vm$ = this.dotExperimentsConfigurationStore.vmVariants$;
+    /**
+     * Emit a valid form values
+     */
+    @Output()
+    formValues = new EventEmitter<Pick<DotExperiment, 'name'>>();
+
     form: FormGroup<AddForm>;
 
-    constructor(
-        private readonly dotExperimentsConfigurationStore: DotExperimentsConfigurationStore
-    ) {}
-
-    ngOnDestroy(): void {
-        this.dotExperimentsConfigurationStore.closeSidebar();
-    }
-
-    handleSubmit(): void {
+    saveForm(): void {
         const formValues = this.form.value as Pick<DotExperiment, 'name'>;
-        this.dotExperimentsConfigurationStore.addVariant(formValues);
+        this.formValues.emit(formValues);
     }
 
     ngOnInit(): void {
         this.initForm();
-        this.dotExperimentsConfigurationStore.openSidebar();
+    }
+
+    closedSidebarEvent() {
+        this.form.reset();
+        this.closedSidebar.emit();
     }
 
     private initForm() {

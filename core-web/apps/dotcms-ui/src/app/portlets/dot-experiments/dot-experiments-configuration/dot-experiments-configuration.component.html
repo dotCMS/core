@@ -14,7 +14,15 @@
 
             <p>{{ vm.experiment.description }}</p>
 
-            <dot-experiments-configuration-variants></dot-experiments-configuration-variants>
+            <dot-experiments-configuration-variants
+                [status]="vm.stepStatus"
+                [variants]="vm.experiment.trafficProportion.variants"
+                (delete)="deleteVariant($event)"
+                (goToEditPage)="goToEditPageVariant($event)"
+                (hiddenSidebar)="closeSidebar()"
+                (save)="saveVariant($event)"
+                (showSidebar)="showAddVariant()"
+            ></dot-experiments-configuration-variants>
 
             <dot-experiments-configuration-goals></dot-experiments-configuration-goals>
 
