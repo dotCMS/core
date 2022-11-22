@@ -88,7 +88,13 @@ public abstract class ContentType {
     public abstract String siteName();
 
     @Nullable
+    public abstract String canonicalSiteName();
+
+    @Nullable
     public abstract String folderPath();
+
+    @Nullable
+    public abstract String canonicalFolderPath();
 
     @Nullable
     public abstract String icon();

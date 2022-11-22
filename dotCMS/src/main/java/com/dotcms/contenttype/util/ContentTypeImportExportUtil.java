@@ -1,6 +1,6 @@
 package com.dotcms.contenttype.util;
 
-import static com.dotcms.contenttype.business.SiteAndFolderResolver.CT_FALLBACK_DEFAULT_SITE;
+import static com.dotcms.contenttype.business.SiteAndFolderResolver.CT_SKIP_RESOLVE_SITE;
 
 import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.business.FieldAPI;
@@ -24,7 +24,6 @@ import com.fasterxml.jackson.databind.SerializationFeature;
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.File;
-import java.io.FilenameFilter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -59,7 +58,7 @@ public class ContentTypeImportExportUtil {
     }
 
     public void importContentTypes(File fileOrDirectory) throws IOException, DotDataException {
-        Config.setProperty(CT_FALLBACK_DEFAULT_SITE, false);
+        Config.setProperty(CT_SKIP_RESOLVE_SITE, true);
         try {
             if (!fileOrDirectory.isDirectory()) {
                 streamingJsonImport(fileOrDirectory);
@@ -73,7 +72,7 @@ public class ContentTypeImportExportUtil {
                 }
             }
         }finally {
-            Config.setProperty(CT_FALLBACK_DEFAULT_SITE, true);
+            Config.setProperty(CT_SKIP_RESOLVE_SITE, false);
         }
     }
 

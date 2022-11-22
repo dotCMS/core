@@ -15,6 +15,7 @@ import com.dotcms.content.elasticsearch.util.ESMappingUtilHelperTest;
 import com.dotcms.content.model.hydration.MetadataDelegateTest;
 import com.dotcms.contenttype.business.ContentTypeInitializerTest;
 import com.dotcms.contenttype.business.DotAssetBaseTypeToContentTypeStrategyImplTest;
+import com.dotcms.contenttype.business.SiteAndFolderResolverImplTest;
 import com.dotcms.contenttype.test.DotAssetAPITest;
 import com.dotcms.csspreproc.CSSCacheTest;
 import com.dotcms.csspreproc.CSSPreProcessServletTest;
@@ -634,7 +635,8 @@ import org.junit.runners.Suite.SuiteClasses;
         UsersCountryConditionletTest.class,
         UsersPlatformConditionletTest.class,
         VisitorsCurrentURLConditionletTest.class,
-        VisitorsGeolocationConditionletTest.class
+        VisitorsGeolocationConditionletTest.class,
+        SiteAndFolderResolverImplTest.class
 })
 public class MainSuite {
 

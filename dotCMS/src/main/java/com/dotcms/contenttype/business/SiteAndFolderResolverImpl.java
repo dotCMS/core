@@ -14,7 +14,6 @@ import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
-import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UUIDUtil;
 import com.dotmarketing.util.UtilMethods;
@@ -25,12 +24,30 @@ import java.util.List;
 import java.util.Optional;
 import org.jetbrains.annotations.NotNull;
 
+/**
+ * Centralized class to resolve Site and Folder for Content-Type Construction
+ */
 public class SiteAndFolderResolverImpl implements SiteAndFolderResolver {
 
     private final User user;
 
-    SiteAndFolderResolverImpl(final User user) {
+    private final boolean skipResolveSite;
+
+    private final boolean fallbackToDefaultSite;
+
+    final FolderAPI folderAPI = APILocator.getFolderAPI();
+    final HostAPI hostAPI = APILocator.getHostAPI();
+
+    /**
+     * Main constructor
+     * @param user Required for folder permission validation
+     * @param skipResolveSite Set to true when loading starter
+     * @param fallbackToDefaultSite Set to true if we want to switch to System-Host
+     */
+    SiteAndFolderResolverImpl(final User user, final boolean skipResolveSite, final boolean fallbackToDefaultSite) {
         this.user = user;
+        this.skipResolveSite = skipResolveSite;
+        this.fallbackToDefaultSite = fallbackToDefaultSite;
     }
 
     @Override
@@ -42,31 +59,26 @@ public class SiteAndFolderResolverImpl implements SiteAndFolderResolver {
             //CT marked as fixed are meant to live under SYSTEM_HOST
             final ContentType build = ContentTypeBuilder.builder(contentType)
                     .host(Host.SYSTEM_HOST)
-                    .folder(Folder.SYSTEM_FOLDER).build();
+                    .siteName(Host.SYSTEM_HOST_NAME)
+                    .folder(Folder.SYSTEM_FOLDER)
+                    .folderPath(Folder.SYSTEM_FOLDER_PATH)
+                    .build();
             build.constructWithFields(fields);
             return build;
         }
 
-        final String id = contentType.id();
-
         //by setting a null id we block all lazy calculations happening within ContentType
         //when lazy calculations are blocked we can get null values when nothing has been set on those fields instead of the lazy calculation
         //Immutables work in such a way that if a getter
-        final ContentType idLess = ContentTypeBuilder.builder(contentType).id(null).build();
-        ImmutableSiteAndFolderParams siteAndFolderParams =
-                ImmutableSiteAndFolderParams.builder()
-                        .host(idLess.host())
-                        .folder(idLess.folder())
-                        .siteName(idLess.siteName())
-                        .folderPath(idLess.folderPath())
-                        .build();
 
-        final String resolvedSite = resolveSite(siteAndFolderParams);
-        final ResolvedSiteAndFolder resolvedSiteAndFolder = resolveFolder(siteAndFolderParams, resolvedSite);
+        final SiteAndFolderParams params = contentType.siteAndFolderParams();
+        final String resolvedSite = resolveSite(params);
+        final ResolvedSiteAndFolder resolvedSiteAndFolder = resolveFolder(params, resolvedSite);
 
         final ContentType build = ContentTypeBuilder.builder(contentType)
                 .host(resolvedSiteAndFolder.resolvedSite())
-                .folder(resolvedSiteAndFolder.resolvedFolder()).id(id).build();
+                .folder(resolvedSiteAndFolder.resolvedFolder())
+                .build();
         build.constructWithFields(fields);
         return build;
     }
@@ -85,11 +97,18 @@ public class SiteAndFolderResolverImpl implements SiteAndFolderResolver {
     @NotNull
     String resolveSite(final SiteAndFolderParams params)
             throws DotDataException, DotSecurityException {
+
+        //Typically, this should be set only when loading starter.
+        //Therefore, we trust that the incoming values are set correctly, and they can be trusted
+        //Additionally we can not count on APIs being available at Booting time
+        if(skipResolveSite){
+            return UtilMethods.isSet(params.host()) ? params.host() : Host.SYSTEM_HOST;
+        }
+
         // Sets the host:
         // We can set host and folder in two different ways we can use the host/siteName property pair
         // Or we can set the folder using the property pair folder/folderPath
         // The properties siteName/folderPath take precedence
-
 
         // First thing's first.
         // Here we need to work on the siteName property which takes precede over host
@@ -101,7 +120,8 @@ public class SiteAndFolderResolverImpl implements SiteAndFolderResolver {
         if (UtilMethods.isSet(params.host()) && !Host.SYSTEM_HOST.equals(params.host())) {
             return resolveOrFallback(params.host());
         }
-        return Host.SYSTEM_HOST;
+        //
+        return fallbackHost();
     }
 
 
@@ -116,16 +136,35 @@ public class SiteAndFolderResolverImpl implements SiteAndFolderResolver {
     ResolvedSiteAndFolder resolveFolder(final SiteAndFolderParams params, final String resolvedSiteId)
             throws DotDataException, DotSecurityException {
 
+        //Typically, this should be set only when loading starter.
+        //Therefore, we trust that the incoming values are set correctly, and they can be trusted
+        //Additionally we can not count on APIs being available at Booting time
+        if(skipResolveSite){
+            final String folder = UtilMethods.isSet(params.folder()) ? params.folder() : Folder.SYSTEM_FOLDER;
+            return ImmutableResolvedSiteAndFolder.builder().resolvedFolder(folder).resolvedSite(resolvedSiteId).build();
+        }
+
         //At this point we must relay that a valid hostId has been already set
 
         // Now Check if the folder has been set
         // First try with the folderPath
-        final FolderAPI folderAPI = APILocator.getFolderAPI();
         if (UtilMethods.isSet(params.folderPath()) && !Folder.SYSTEM_FOLDER_PATH.equals(params.folderPath())) {
 
             final String folderPath = params.folderPath();
             if(UtilMethods.isSet(folderPath)) {
-                final Optional<Folder> fromPath = fromPath(folderPath);
+            // There are two possibilities
+
+                Optional<Folder> fromPath = fromPath(folderPath);
+
+                if (fromPath.isPresent()) {
+                    final Folder folder = fromPath.get();
+                    return ImmutableResolvedSiteAndFolder.builder()
+                            .resolvedFolder(folder.getInode())
+                            .resolvedSite(folder.getHostId()).build();
+                }
+
+                fromPath = fromPath(folderPath, resolvedSiteId);
+
                 if (fromPath.isPresent()) {
                     final Folder folder = fromPath.get();
                     return ImmutableResolvedSiteAndFolder.builder()
@@ -138,11 +177,7 @@ public class SiteAndFolderResolverImpl implements SiteAndFolderResolver {
         //If we haven't established what our folder is yet. try folder as an id
         if (UtilMethods.isSet(params.folder()) && !Folder.SYSTEM_FOLDER.equals(params.folder())) {
             final String folderId = params.folder();
-            if (!UUIDUtil.isUUID(folderId) && !Folder.SYSTEM_FOLDER.equals(folderId)) {
-                throw new DotDataException(
-                        "property [folder] should only be used to set ids, folder names/paths must be set through the [folderPath] property.");
-            }
-            Folder folder = folderAPI.find(folderId, user, false);
+            final Folder folder = folderAPI.find(folderId, user, true);
             if(null != folder){
                 // if the folder is provided we have no choice but to use the folder's host id
                 // Otherwise will get a `Cannot assign host/folder to structure, folder does not belong to given host`
@@ -160,24 +195,35 @@ public class SiteAndFolderResolverImpl implements SiteAndFolderResolver {
      * @param path
      * @return
      */
-    Optional<Folder> fromPath(final String path) {
+    Optional<Folder> fromPath(final String path) throws DotDataException, DotSecurityException {
         final String[] parts = path.split(StringPool.COLON);
         if(parts.length == 2){
             final String siteNamePart = parts[0];
             final String folderPathPart = parts[1];
-            final FolderAPI folderAPI = APILocator.getFolderAPI();
-            final HostAPI hostAPI = APILocator.getHostAPI();
-            try {
-                final Host site = hostAPI.resolveHostName(siteNamePart, APILocator.systemUser(), false);
-                final Folder folder = folderAPI.findFolderByPath(folderPathPart, site,
-                        APILocator.systemUser(), false);
-                if (null != folder && UtilMethods.isSet(folder.getIdentifier())) {
-                    return Optional.of(folder);
-                }
-            }catch (DotDataException |  DotSecurityException e){
-                Logger.error(ContentTypeAPIImpl.class,
-                        String.format("An error occurred while calculating folderPath from given string [%s]", path), e);
+            final Host site = hostAPI.resolveHostName(siteNamePart, APILocator.systemUser(), true);
+            final Folder folder = folderAPI.findFolderByPath(folderPathPart, site,
+                    user, true);
+            if (null != folder && UtilMethods.isSet(folder.getIdentifier())) {
+                return Optional.of(folder);
             }
+        }
+        return Optional.empty();
+    }
+
+    /**
+     * Handle a folder path given a siteId
+     * @param path
+     * @param resolvedSiteId
+     * @return
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    Optional<Folder> fromPath(final String path, final String resolvedSiteId) throws DotDataException, DotSecurityException {
+        final Host site = hostAPI.resolveHostName(resolvedSiteId, APILocator.systemUser(), true);
+        final Folder folder = folderAPI.findFolderByPath(path, site,
+                user, true);
+        if (null != folder && UtilMethods.isSet(folder.getIdentifier())) {
+            return Optional.of(folder);
         }
         return Optional.empty();
     }
@@ -192,17 +238,21 @@ public class SiteAndFolderResolverImpl implements SiteAndFolderResolver {
      * @throws DotSecurityException
      */
     String resolveOrFallback(final String siteIdOrName) throws DotDataException, DotSecurityException {
-                final HostAPI hostAPI = APILocator.getHostAPI();
         final Optional<Host> resolvedSite = UUIDUtil.isUUID(siteIdOrName) ?
               Optional.ofNullable(hostAPI.find(siteIdOrName, APILocator.systemUser(), true)) :
-              hostAPI.resolveHostNameWithoutDefault(siteIdOrName, APILocator.systemUser(), false);
+              hostAPI.resolveHostNameWithoutDefault(siteIdOrName, APILocator.systemUser(), true);
         if (resolvedSite.isPresent()) {
             return resolvedSite.get().getIdentifier();
         }
-        if (Config.getBooleanProperty(CT_FALLBACK_DEFAULT_SITE, true)) {
-            final Host defaultHost = hostAPI.findDefaultHost(APILocator.systemUser(), false);
-            return defaultHost.getIdentifier();
+        return fallbackHost();
+    }
+
+    String fallbackHost() {
+        // if we fail to validate the incoming site's id we fall back to the default site
+        if (fallbackToDefaultSite) {  // We can disallow this behavior via properties
+            return Try.of(()->hostAPI.findDefaultHost(user, true).getIdentifier()).getOrElse(Host.SYSTEM_HOST);
         }
+        // Then we fall back to SYSTEM-HOST
         return Host.SYSTEM_HOST;
     }
 

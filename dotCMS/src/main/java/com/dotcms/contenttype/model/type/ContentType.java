@@ -1,5 +1,7 @@
 package com.dotcms.contenttype.model.type;
 
+import com.dotcms.contenttype.model.component.ImmutableSiteAndFolderParams;
+import com.dotcms.contenttype.model.component.SiteAndFolderParams;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.publisher.util.PusheableAsset;
 import com.dotcms.publishing.manifest.ManifestItem;
@@ -43,6 +45,7 @@ import javax.annotation.Nullable;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.time.DateUtils;
 import org.immutables.value.Value;
+import org.immutables.value.Value.Auxiliary;
 import org.immutables.value.Value.Default;
 
 @JsonTypeInfo(
@@ -177,21 +180,31 @@ public abstract class ContentType implements Serializable, Permissionable, Conte
   @Nullable
   @Value.Default
   public String siteName() {
-    if(UtilMethods.isNotSet(inode())){
-      return null;
+    if(null == canonicalSiteName){
+      canonicalSiteName = canonicalSiteName();
     }
-    //No reason to calculate this field if the object hasn't been saved already.
+    return canonicalSiteName;
+  }
+
+  private String canonicalSiteName = null;
+
+  private String canonicalSiteName(){
+
     final String host = host();
 
-    if( UtilMethods.isNotSet(host) || Host.SYSTEM_HOST.equals(host)){
-      return null;
+    if (UtilMethods.isNotSet(host) || Host.SYSTEM_HOST.equals(host)) {
+      return Host.SYSTEM_HOST_NAME;
     }
-    if(UUIDUtil.isUUID(host)){
-       return Try.of(()->APILocator.getHostAPI().find(host, APILocator.systemUser(), false).getHostname()).getOrNull();
+    if (UUIDUtil.isUUID(host)) {
+      return Try.of(() -> APILocator.getHostAPI().find(host, APILocator.systemUser(), false)
+              .getHostname()).getOrElse("unk");
     }
-    return Try.of(()->APILocator.getHostAPI().resolveHostName(host, APILocator.systemUser(), false).getHostname()).getOrNull();
+    return Try.of(
+            () -> APILocator.getHostAPI().resolveHostName(host, APILocator.systemUser(), false)
+                    .getHostname()).getOrElse("unk");
 
   }
+
 
   @Nullable
   @Value.Default
@@ -270,14 +283,18 @@ public abstract class ContentType implements Serializable, Permissionable, Conte
   @Nullable
   @Value.Default
   public String folderPath() {
-    if (UtilMethods.isNotSet(inode())) {
-      return null;
+    if(null == canonicalFolderPath){
+      canonicalFolderPath = canonicalFolderPath();
     }
-    // It only makes sense to calculate this if we're looking at a saved object
-    // Meaning an object with a given inode
+    return canonicalFolderPath;
+  }
+
+  private String canonicalFolderPath;
+
+  private String canonicalFolderPath(){
     final String folder = folder();
     if (Folder.SYSTEM_FOLDER.equals(folder)) {
-      return Folder.SYSTEM_FOLDER_PATH;
+        return Folder.SYSTEM_FOLDER_PATH;
     }
 
     final String host = host();
@@ -291,7 +308,16 @@ public abstract class ContentType implements Serializable, Permissionable, Conte
               final String path = folderAPI.find(folder, APILocator.systemUser(), false).getPath();
               return String.format("%s%s%s", hostName, StringPool.COLON, path);
             }
-    ).getOrNull();
+    ).getOrElse("unk");
+  }
+
+  @JsonIgnore
+  @Auxiliary
+  public SiteAndFolderParams siteAndFolderParams() {
+    return ImmutableSiteAndFolderParams.builder()
+            .folder(folder()).host(host())
+            .folderPath(canonicalFolderPath != null ? null : canonicalFolderPath())
+            .siteName(canonicalSiteName != null ? null : canonicalSiteName()).build();
   }
 
   @JsonIgnore

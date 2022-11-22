@@ -400,7 +400,7 @@ public class ContentTypeAPITest {
     }
 
     @Test
-    public void Test_Send_Send_Folder_Path_Only() {
+    void Test_Send_Send_Folder_Path_Only_Invalid_Folder_Expect_System_Folder_Fallback() {
 
         final long timeStamp = System.currentTimeMillis();
         final ContentTypeAPI client = apiClientFactory.getClient(ContentTypeAPI.class);
@@ -420,7 +420,10 @@ public class ContentTypeAPITest {
 
         final ResponseEntityView<List<ContentType>> contentTypeResponse2 = client.createContentTypes(ImmutableList.of(contentType1));
         Assertions.assertNotNull(contentTypeResponse2);
-
+        final ContentType contentTypes = contentTypeResponse2.entity().get(0);
+        Assertions.assertEquals(ContentType.SYSTEM_FOLDER, contentTypes.folder());
+        //Here we get System host as the fallback site because we failed locating
+        Assertions.assertEquals(ContentType.SYSTEM_HOST.toLowerCase(), contentTypes.siteName());
     }
 
 }
