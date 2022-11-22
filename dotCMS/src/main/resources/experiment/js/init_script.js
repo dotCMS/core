@@ -10,12 +10,27 @@ function shouldHitEndPoint() {
 
         return includedExperimentIds.every(element => currentRunningExperimentsId.includes(element));
     } else {
-        return false;
+        return true;
     }
 }
 
-if (!shouldHitEndPoint()) {
-    fetch('/api/v1/experiments/isUserIncluded')
+if (shouldHitEndPoint()) {
+    let experimentData = localStorage.getItem('experiment_data');
+    let body = experimentData ?
+        {
+            exclude: JSON.parse(experimentData).includedExperimentIds
+        } : {
+            exclude: []
+        };
+
+    fetch('/api/v1/experiments/isUserIncluded', {
+        method: 'POST',
+        body: JSON.stringify(body),
+        headers: {
+            'Accept': 'application/json',
+            'Content-Type': 'application/json'
+        }
+    })
     .then(response => response.json())
     .then(data => {
         if (data.entity.experiments) {

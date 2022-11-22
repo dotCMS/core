@@ -298,7 +298,7 @@
 						}
 					],
 					"request": {
-						"method": "GET",
+						"method": "POST",
 						"header": [],
 						"url": {
 							"raw": "{{serverURL}}/api/v1/experiments/isUserIncluded",
@@ -736,7 +736,7 @@
 						}
 					],
 					"request": {
-						"method": "GET",
+						"method": "POST",
 						"header": [],
 						"url": {
 							"raw": "{{serverURL}}/api/v1/experiments/isUserIncluded?Testing=Testing",
@@ -784,7 +784,7 @@
 						}
 					],
 					"request": {
-						"method": "GET",
+						"method": "POST",
 						"header": [],
 						"url": {
 							"raw": "{{serverURL}}/api/v1/experiments/isUserIncluded",
@@ -1418,7 +1418,7 @@
 						}
 					],
 					"request": {
-						"method": "GET",
+						"method": "POST",
 						"header": [],
 						"url": {
 							"raw": "{{serverURL}}/api/v1/experiments/isUserIncluded",
@@ -1726,11 +1726,8 @@
 							}
 						}
 					],
-					"protocolProfileBehavior": {
-						"disableBodyPruning": true
-					},
 					"request": {
-						"method": "GET",
+						"method": "POST",
 						"header": [],
 						"body": {
 							"mode": "raw",
@@ -1758,12 +1755,6 @@
 				}
 			],
 			"description": "*   Create two no pages\n*   Create two new Experiments without rules\n*   Starting the two experiments.\n*   Hit the ens point should return both Experiments\n*   Create and start a new Experiment without rules\n*   Hit the End point again end send the fisrt two experiment as excluded list.\n*   Should return just the last experiment."
-		}
-	],
-	"variable": [
-		{
-			"key": "page_id",
-			"value": ""
 		}
 	],
 	"variable": [
