@@ -122,7 +122,7 @@ public interface ExperimentsAPI {
      *
      * @return
      */
-    List<Experiment> getRunningExperiment() throws DotDataException;
+    List<Experiment> getRunningExperiments() throws DotDataException;
 
     /**
      * Return a {@link Experiment}'s {@link Rule}

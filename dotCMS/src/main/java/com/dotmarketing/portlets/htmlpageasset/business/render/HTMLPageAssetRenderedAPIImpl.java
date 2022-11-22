@@ -46,6 +46,7 @@ import io.vavr.Lazy;
 import io.vavr.control.Try;
 
 import java.io.IOException;
+
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -56,8 +57,13 @@ import org.apache.commons.lang3.StringUtils;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import org.apache.commons.lang3.StringUtils;
 
 /**
  * Implementation class for the {@link HTMLPageAssetRenderedAPI}.
@@ -66,6 +72,8 @@ import java.util.Set;
  * @since Apr 12th, 2018
  */
 public class HTMLPageAssetRenderedAPIImpl implements HTMLPageAssetRenderedAPI {
+
+    private Lazy<String> EXPERIMENT_SCRIPT = Lazy.of(() -> getExperimentJSCode());
 
     private final HostWebAPI hostWebAPI;
     private final HTMLPageAssetAPI htmlPageAssetAPI;
@@ -300,7 +308,7 @@ public class HTMLPageAssetRenderedAPIImpl implements HTMLPageAssetRenderedAPI {
             return StringUtils.replaceIgnoreCase(pageHTML, "<head>",
                     "<head>" + getExperimentJSCode());
         } else {
-            return getExperimentJSCode() + "\n" + pageHTML;
+            return EXPERIMENT_SCRIPT.get() + "\n" + pageHTML;
         }
     }
 
@@ -592,7 +600,7 @@ public class HTMLPageAssetRenderedAPIImpl implements HTMLPageAssetRenderedAPI {
             final String jsJitsuCode =  getFileContentFromResourceContext("experiment/html/experiment_head.html")
                     .replaceAll("\\$\\{jitsu_key}", "");
 
-            final String runningExperimentsId = APILocator.getExperimentsAPI().getRunningExperiment().stream()
+            final String runningExperimentsId = APILocator.getExperimentsAPI().getRunningExperiments().stream()
                     .map(experiment -> "'" + experiment.id().get() + "'")
                     .collect(Collectors.joining(","));
 

@@ -546,10 +546,10 @@ public class ExperimentWebAPIImplIT {
      * Method to test: {@link ExperimentWebAPIImpl#isUserIncluded(HttpServletRequest, HttpServletResponse, List)}
      * When:
      * - You have one experiment running with 100% of traffic allocation and without targeting and called the method
-     * it should return this experiments, and also include it into the included list, the excluded list should be empty.
+     * it should return this experiment, and also include it into the included list, the excluded list should be empty.
      * - Start a new experiment with 100% of traffic allocation and without targeting and called the method
-     * with the fisrt ecperiment in the excluded list.
-     * it should return this new experiments, and also include it into the included list, the excluded list should contain the first experiment.
+     * with the first experiment in the excluded list.
+     * it should return this new experiment, and also include it into the included list, the excluded list should contain the first experiment.
      *
      * @throws DotDataException
      */

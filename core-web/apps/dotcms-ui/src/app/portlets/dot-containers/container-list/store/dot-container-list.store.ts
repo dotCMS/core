@@ -154,15 +154,13 @@ export class DotContainerListStore extends ComponentStore<DotContainerListState>
             options = this.setArchiveContainerActions(container);
         } else {
             options = this.setBaseContainerOptions(container);
-            options = [...options, ...this.setCopyContainerOptions(container)];
+            options = [
+                ...options,
+                ...this.getLicenseAndRemotePublishContainerOptions(container),
+                ...this.getUnPublishAndArchiveContainerOptions(container)
+            ];
 
-            if (!container.live) {
-                options = [
-                    ...options,
-                    ...this.getLicenseAndRemotePublishContainerOptions(container),
-                    ...this.getUnPublishAndArchiveContainerOptions(container)
-                ];
-            }
+            options = [...options, ...this.setCopyContainerOptions(container)];
         }
 
         return options;
@@ -362,50 +360,45 @@ export class DotContainerListStore extends ComponentStore<DotContainerListState>
     }
 
     private setCopyContainerOptions(container: DotContainer): DotActionMenuItem[] {
-        return !container.locked
-            ? [
-                  {
-                      menuItem: {
-                          label: this.dotMessageService.get('Duplicate'),
-                          command: () => {
-                              this.copyContainer(container.identifier);
-                          }
-                      }
-                  }
-              ]
-            : [];
+        return [
+            {
+                menuItem: {
+                    label: this.dotMessageService.get('Duplicate'),
+                    command: () => {
+                        this.copyContainer(container.identifier);
+                    }
+                }
+            }
+        ];
     }
 
     private setBaseContainerOptions(container: DotContainer): DotActionMenuItem[] {
         const options: DotActionMenuItem[] = [];
 
-        if (!container.locked) {
-            options.push({
-                menuItem: {
-                    label: this.dotMessageService.get('edit'),
-                    command: () => {
-                        this.editContainer(container);
-                    }
+        options.push({
+            menuItem: {
+                label: this.dotMessageService.get('edit'),
+                command: () => {
+                    this.editContainer(container);
                 }
-            });
-        }
+            }
+        });
 
-        if (!container.live) {
-            options.push({
-                menuItem: {
-                    label: this.dotMessageService.get('publish'),
-                    command: () => {
-                        this.publishContainer([container.identifier]);
-                    }
+        options.push({
+            menuItem: {
+                label: this.dotMessageService.get('publish'),
+                command: () => {
+                    this.publishContainer([container.identifier]);
                 }
-            });
-        }
+            }
+        });
 
         return options;
     }
 
     private setArchiveContainerActions(container: DotContainer): DotActionMenuItem[] {
         const options: DotActionMenuItem[] = [];
+
         if (!container.live) {
             options.push({
                 menuItem: {
