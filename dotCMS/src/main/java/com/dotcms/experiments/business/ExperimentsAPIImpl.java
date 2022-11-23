@@ -4,6 +4,9 @@ import static com.dotcms.experiments.model.AbstractExperiment.Status.DRAFT;
 import static com.dotcms.experiments.model.AbstractExperiment.Status.ENDED;
 import static com.dotcms.experiments.model.AbstractExperimentVariant.EXPERIMENT_VARIANT_NAME_PREFIX;
 import static com.dotcms.experiments.model.AbstractExperimentVariant.EXPERIMENT_VARIANT_NAME_SUFFIX;
+
+import static com.dotcms.util.CollectionsUtils.set;
+
 import static com.dotcms.experiments.model.AbstractExperimentVariant.ORIGINAL_VARIANT;
 
 import com.dotcms.analytics.metrics.MetricsUtil;
@@ -501,6 +504,28 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
 
         return toReturn.get();
 
+    }
+
+    @CloseDBIfOpened
+    @Override
+    public List<Experiment> getRunningExperiments() throws DotDataException {
+        return FactoryLocator.getExperimentsFactory().list(
+                ExperimentFilter.builder().statuses(set(Status.RUNNING)).build()
+        );
+    }
+
+    @Override
+    public Optional<Rule> getRule(final Experiment experiment)
+            throws DotDataException, DotSecurityException {
+
+        final List<Rule> rules = APILocator.getRulesAPI()
+                .getAllRulesByParent(experiment, APILocator.systemUser(), false);
+        return UtilMethods.isSet(rules) ? Optional.of(rules.get(0)) : Optional.empty();
+    }
+
+    @Override
+    public boolean isAnyExperimentRunning() throws DotDataException {
+        return !APILocator.getExperimentsAPI().getRunningExperiments().isEmpty();
     }
 
     private TreeSet<ExperimentVariant> redistributeWeights(final Set<ExperimentVariant> variants) {

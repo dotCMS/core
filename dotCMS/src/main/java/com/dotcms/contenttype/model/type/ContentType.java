@@ -2,38 +2,46 @@ package com.dotcms.contenttype.model.type;
 
 
 import com.dotcms.contenttype.model.field.Field;
+import com.dotcms.contenttype.model.field.StoryBlockField;
 import com.dotcms.publisher.util.PusheableAsset;
 import com.dotcms.publishing.manifest.ManifestItem;
 import com.dotcms.repackage.com.google.common.base.Preconditions;
-import com.dotmarketing.util.Logger;
-import com.google.common.collect.ImmutableList;
 import com.dotcms.util.CollectionsUtils;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.PermissionableProxy;
-import com.dotmarketing.business.*;
+import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.DotStateException;
+import com.dotmarketing.business.PermissionAPI;
+import com.dotmarketing.business.PermissionSummary;
+import com.dotmarketing.business.Permissionable;
+import com.dotmarketing.business.RelatedPermissionableGroup;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.util.Config;
+import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonSubTypes.Type;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.annotation.JsonTypeInfo.Id;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
-
-
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.time.DateUtils;
-import javax.annotation.Nullable;
 import org.immutables.value.Value;
 import org.immutables.value.Value.Default;
 
+import javax.annotation.Nullable;
 import java.io.Serializable;
-import java.util.*;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @JsonTypeInfo(
@@ -70,6 +78,8 @@ public abstract class ContentType implements Serializable, Permissionable, Conte
   }
 
   static final long serialVersionUID = 1L;
+
+  Boolean hasStoryBlockFields = null;
 
   public abstract String name();
 
@@ -176,6 +186,7 @@ public abstract class ContentType implements Serializable, Permissionable, Conte
   @Value.Lazy
   public List<Field> fields() {
     if (innerFields == null) {
+      this.hasStoryBlockFields = null;
       try {
         innerFields = APILocator.getContentTypeFieldAPI().byContentTypeId(this.id());
       } catch (final DotDataException e) {
@@ -353,6 +364,19 @@ public abstract class ContentType implements Serializable, Permissionable, Conte
         .siteId(this.host())
         .folderId(this.folder())
         .build();
+  }
+
+  /**
+   * Checks whether this Content Type has any {@link StoryBlockField} fields or not.
+   *
+   * @return If there is at least one field of type Story Block, returns {@code true}.
+   */
+  @JsonIgnore
+  public boolean hasStoryBlockFields() {
+    if (null == this.hasStoryBlockFields) {
+      this.hasStoryBlockFields = !this.fields(StoryBlockField.class).isEmpty();
+    }
+    return this.hasStoryBlockFields;
   }
 
 }

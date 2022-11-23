@@ -576,16 +576,18 @@ public class RelationshipFactoryImpl implements RelationshipFactory{
             final String relationType, final boolean live,
             final String orderBy, final int limit, final int offset) throws DotDataException {
 
-	    final StringBuilder query = new StringBuilder("select cont1.inode from contentlet cont1, inode ci1, tree tree1, "
-                + "contentlet_version_info vi1 where tree1.parent = ? and tree1.relation_type = ? ")
-                .append("and tree1.child = cont1.identifier and cont1.inode = ci1.inode and vi1.identifier = cont1.identifier and " + (live?"vi1.live_inode":"vi1.working_inode"))
-                .append(" = cont1.inode");
+        final StringBuilder query = new StringBuilder("select c.inode "
+                + "from tree t join contentlet c on t.child = c.identifier "
+                + "join contentlet_version_info cvi on c.identifier = cvi.identifier "
+                + " where t.parent = ? "
+                + " and "+ (live? "cvi.live_inode": "cvi.working_inode") + "= c.inode "
+                + "  and t.relation_type = ? ");
 
         if (UtilMethods.isSet(orderBy) && !(orderBy.trim().equals("sort_order") || orderBy.trim().equals("tree_order"))) {
-            query.append(" order by cont1.")
+            query.append(" order by c.")
                     .append(orderBy);
         } else {
-            query.append(" order by tree1.tree_order, cont1.language_id");
+            query.append(" order by t.tree_order");
         }
 
         final DotConnect dc = new DotConnect();
@@ -625,16 +627,18 @@ public class RelationshipFactoryImpl implements RelationshipFactory{
             final String relationType, final boolean live,
             final String orderBy, final int limit, final int offset) throws DotDataException {
 
-        final StringBuilder query = new StringBuilder("select cont1.inode from contentlet cont1 join inode ci1 on (cont1.inode = ci1.inode) join contentlet_version_info vi1 on "
-                        + "(" + (live?"vi1.live_inode":"vi1.working_inode") + " = cont1.inode) join tree tree1 on (tree1.parent = cont1.identifier) ")
-                .append("where tree1.child = ? and tree1.relation_type = ?");
-
+        final StringBuilder query = new StringBuilder("select c.inode "
+                + "from tree t join contentlet c on t.parent = c.identifier "
+                + "join contentlet_version_info cvi on c.identifier = cvi.identifier "
+                + " where t.child = ? "
+                + " and "+ (live? "cvi.live_inode": "cvi.working_inode") + "= c.inode "
+                + "  and t.relation_type = ? ");
 
         if (UtilMethods.isSet(orderBy) && !(orderBy.trim().equals("sort_order") || orderBy.trim().equals("tree_order"))) {
-            query.append(" order by cont1.")
+            query.append(" order by c.")
                     .append(orderBy);
         } else {
-            query.append(" order by tree1.tree_order, cont1.language_id");
+            query.append(" order by t.tree_order");
         }
 
         final DotConnect dc = new DotConnect();
