@@ -9,6 +9,7 @@
             [columns]="vm.tableColumns"
             [actions]="[]"
             [checkbox]="true"
+            [mapItems]="getContainersWithDisabledEntities"
             (selectedItems)="updateSelectedContainers($event)"
             (rowWasClicked)="handleRowClick($event)"
             url="v1/containers?system=true"
