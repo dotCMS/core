@@ -227,7 +227,7 @@ public class SQLUtil {
 				.replaceAll(_DESC, StringPool.BLANK)
 				.replaceAll("-", StringPool.BLANK).toLowerCase();
 
-		testParam = convertCamelToSnake(testParam);
+		testParam = com.dotmarketing.util.StringUtils.convertCamelToSnake(testParam);
 		testParam = translateSortBy(testParam);
 
 		if(ORDERBY_WHITELIST.contains(testParam)){
@@ -262,40 +262,6 @@ public class SQLUtil {
 				.replace("parentrelationname","parent_relation_name");
 
 			return  result;
-	}
-
-	/**
-	 * Method to convert camel case convention into snake case
-	 * @param parameter
-	 * @return
-	 */
-	public static String convertCamelToSnake(String parameter)
-	{
-		String result = "";
-
-		// Append first character(in lower case)
-		char c = parameter.charAt(0);
-		result = result + Character.toLowerCase(c);
-
-		// Traverse the string
-		for (int i = 1; i < parameter.length(); i++) {
-
-			char ch = parameter.charAt(i);
-
-			// Check if the character is upper case then append '_' and such character (in lower case) to result string
-			if (Character.isUpperCase(ch)) {
-				result = result + '_';
-				result = result + Character.toLowerCase(ch);
-			}
-
-			// If the character is lower case then add such character into result string
-			else {
-				result = result + ch;
-			}
-		}
-
-		// return the result
-		return result;
 	}
 
 	/**
