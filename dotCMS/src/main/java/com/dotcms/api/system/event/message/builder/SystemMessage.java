@@ -22,14 +22,14 @@ import java.util.Objects;
  */
 public class SystemMessage implements Serializable {
 
-    private final Object message;
+    private final Serializable message;
     private final String[] portletIdList;
     private final long life;
     private final MessageSeverity severity;
     private final MessageType type;
 
     @JsonCreator
-    protected SystemMessage( @JsonProperty("message") final Object message,
+    protected SystemMessage( @JsonProperty("message") final Serializable message,
             @JsonProperty("portletIdList") final String[] portletIdList,
             @JsonProperty("life") final long life,
             @JsonProperty("severity") final MessageSeverity severity,
@@ -41,7 +41,7 @@ public class SystemMessage implements Serializable {
         this.type = type;
     }
 
-    public Object getMessage() {
+    public Serializable getMessage() {
         return message;
     }
 

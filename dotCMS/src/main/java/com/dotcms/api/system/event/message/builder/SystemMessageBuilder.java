@@ -4,6 +4,8 @@ import com.dotcms.api.system.event.message.MessageSeverity;
 import com.dotcms.api.system.event.message.MessageType;
 import com.dotmarketing.util.DateUtil;
 
+import java.io.Serializable;
+
 /**
  * Buider to create the SystemMessage (Approach to show message to specific users and/or porlets as a popup).
  * - life time is by default 3 secs (the time displaying on the UI).
@@ -12,7 +14,7 @@ import com.dotmarketing.util.DateUtil;
  * Builder for {@link SystemMessage}
  */
 public class SystemMessageBuilder {
-    private Object message;
+    private Serializable message;
     private String[] portletIdList;
     private long life = DateUtil.THREE_SECOND_MILLIS;
     private MessageSeverity severity = MessageSeverity.INFO;
@@ -20,7 +22,7 @@ public class SystemMessageBuilder {
 
     public SystemMessageBuilder(){}
 
-    public SystemMessageBuilder setMessage(final Object message) {
+    public SystemMessageBuilder setMessage(final Serializable message) {
         this.message = message;
         return this;
     }

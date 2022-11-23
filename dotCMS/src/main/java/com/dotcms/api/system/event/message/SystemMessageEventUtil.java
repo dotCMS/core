@@ -78,13 +78,13 @@ public class SystemMessageEventUtil {
 
     /**
      * Sends a Simple text event (RAW MESSAGE) based on the parameters
-     * @param message Object the message
+     * @param message Serializable the message
      * @param users   user or list of user you want to send the message (null or empty means, send the message to all users)
      * @param portletIds String array of portlet id that the message applies, could be null (null means all of them)
      *                   the concept of portlet basically means, if the user is working on a specific portlet when the message is delivered, the message will be showed to the user,
      *                   otherwise even if the message is for that particular user, if it is not in the portlet will be skipped. (note: this validation will happens on the client, Angular or whatever is the consumer)
      */
-    public void pushSimpleTextEvent (final Object message, final List<String> users, final String... portletIds) {
+    public void pushSimpleTextEvent (final Serializable message, final List<String> users, final String... portletIds) {
 
         this.pushSimpleEvent (MessageType.SIMPLE_MESSAGE, message, users, portletIds);
     } // pushSimpleTextEvent.
@@ -136,22 +136,22 @@ public class SystemMessageEventUtil {
 
     /**
      * Sends a Simple rich media event (by now just html string) (RICH_MEDIA_MESSAGE), it will be send to all user, not matter what portlet is looking.
-     * @param richMediaMessage {@link Object} a rich media message
+     * @param richMediaMessage {@link Serializable} a rich media message
      */
-    public void pushRichMediaEvent (final Object richMediaMessage) {
+    public void pushRichMediaEvent (final Serializable richMediaMessage) {
 
         this.pushRichMediaEvent(richMediaMessage, Collections.emptyList());
     } // pushRichMediaEvent.
 
     /**
      * Sends a Simple rich media event (by now just html string) (RICH_MEDIA_MESSAGE) based on the parameters
-     * @param richMediaMessage   {@link Object} a rich media message
+     * @param richMediaMessage   {@link Serializable} a rich media message
      * @param users   user or list of user you want to send the message (null or empty means, send the message to all users)
      * @param portletIds String array of portlet id that the message applies, could be null (null means all of them)
      *                   the concept of portlet basically means, if the user is working on a specific portlet when the message is delivered, the message will be showed to the user,
      *                   otherwise even if the message is for that particular user, if it is not in the portlet will be skipped. (note: this validation will happens on the client, Angular or whatever is the consumer)
      */
-    public void pushRichMediaEvent (final Object richMediaMessage, final List<String> users, final String... portletIds) {
+    public void pushRichMediaEvent (final Serializable richMediaMessage, final List<String> users, final String... portletIds) {
 
         this.pushSimpleEvent (MessageType.SIMPLE_MESSAGE, richMediaMessage, users, portletIds);
     } // pushRichMediaEvent.
@@ -215,9 +215,9 @@ public class SystemMessageEventUtil {
      * Sends a Simple rich media Confirmation event (by now just html string) (CONFIRMATION_MESSAGE + RICH_MEDIA_MESSAGE), it will be send to all user, not matter what portlet is looking.
      * @param callbackOnYes String callback to call when users confirm the message (it is a must)
      * @param callbackOnNo String  callback to call when users does not confirm the message (it is an optional, could be null)
-     * @param message Object a rich media
+     * @param message Serializable a rich media
      */
-    public void pushConfirmationRichMediaEvent (final String callbackOnYes, final String callbackOnNo, final Object message) {
+    public void pushConfirmationRichMediaEvent (final String callbackOnYes, final String callbackOnNo, final Serializable message) {
 
         this.pushConfirmationRichMediaEvent(callbackOnYes, callbackOnNo, message, Collections.emptyList());
     } // pushConfirmationRichMediaEvent.
@@ -232,7 +232,7 @@ public class SystemMessageEventUtil {
      *                   the concept of portlet basically means, if the user is working on a specific portlet when the message is delivered, the message will be showed to the user,
      *                   otherwise even if the message is for that particular user, if it is not in the portlet will be skipped. (note: this validation will happens on the client, Angular or whatever is the consumer)
      */
-    public void pushConfirmationRichMediaEvent (final String callbackOnYes, final String callbackOnNo, final Object message, final String userId, final String... portletIds) {
+    public void pushConfirmationRichMediaEvent (final String callbackOnYes, final String callbackOnNo, final Serializable message, final String userId, final String... portletIds) {
 
         this.pushConfirmationRichMediaEvent(callbackOnYes, callbackOnNo, message, Arrays.asList(userId), portletIds);
     } // pushConfirmationRichMediaEvent.
@@ -248,7 +248,7 @@ public class SystemMessageEventUtil {
      *                   otherwise even if the message is for that particular user, if it is not in the portlet will be skipped. (note: this validation will happens on the client, Angular or whatever is the consumer)
      */
     public void pushConfirmationRichMediaEvent (final String callbackOnYes, final String callbackOnNo,
-                                                 final Object message, final List<String> users, final String... portletIds) {
+                                                 final Serializable message, final List<String> users, final String... portletIds) {
 
         final Payload payload = this.createPayload(new SystemConfirmationMessage(message, portletIds, callbackOnYes,
                 callbackOnNo), users);
@@ -322,7 +322,7 @@ public class SystemMessageEventUtil {
     } // pushMessage.
 
     private Payload createPayload (final MessageType messageType,
-                                   final Object message,
+                                   final Serializable message,
                                    final List<String> users,
                                    final String... portletIds) {
 
@@ -344,7 +344,7 @@ public class SystemMessageEventUtil {
         return new Payload(message, visibility, visibilityValue);
     }
 
-    private void pushSimpleEvent (final MessageType messageType, final Object message,
+    private void pushSimpleEvent (final MessageType messageType, final Serializable message,
                                   final List<String> users, final String... portletIds) {
 
         try {

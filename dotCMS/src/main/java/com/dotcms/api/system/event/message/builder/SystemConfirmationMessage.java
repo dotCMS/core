@@ -15,7 +15,7 @@ public class SystemConfirmationMessage extends SystemMessage implements Serializ
     private final String callbackOnNo;      // optional
 
 
-    public SystemConfirmationMessage(final Object message,
+    public SystemConfirmationMessage(final Serializable message,
                                      final String[] portletIdList,
                                      final String callbackOnYes,
                                      final String callbackOnNo) {
