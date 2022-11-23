@@ -61,10 +61,10 @@ export class DotTextareaContentMockComponent implements ControlValueAccessor {
 
 const messages = {
     'message.containers.create.pre_loop': 'Pre-loop',
-    'message.containers.create.post_loop': 'Post-loop'
+    'message.containers.create.post_loop': 'Post-loop',
 };
 
-fdescribe('DotLoopEditorComponent', () => {
+describe('DotLoopEditorComponent', () => {
     let component: DotTestHostComponent;
     let fixture: ComponentFixture<DotTestHostComponent>;
     let de: DebugElement;
@@ -88,16 +88,16 @@ fdescribe('DotLoopEditorComponent', () => {
         fixture.detectChanges();
     });
 
-    fit('should create', () => {
+    it('should create', () => {
         expect(component).toBeTruthy();
     });
 
-    fit('should show pre_loop', () => {
+    it('should show pre_loop', () => {
         const label = de.query(By.css('[data-testId="label"]')).nativeElement;
         expect(label.innerText).toBe('Pre-loop');
     });
 
-    fit('should show pre_loop', fakeAsync(() => {
+    it('should show pre_loop', fakeAsync(() => {
         component.label = 'post_loop';
         fixture.detectChanges();
         tick();
