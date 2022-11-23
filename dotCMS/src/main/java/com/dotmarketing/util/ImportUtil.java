@@ -278,7 +278,6 @@ public class ImportUtil {
 
                             if ( !preview && (lineNumber % commitGranularity == 0) ) {
                                 HibernateUtil.closeAndCommitTransaction();
-//                                Thread.sleep( sleepTime );
                                 HibernateUtil.startTransaction();
                             }
                         } catch (final DotRuntimeException ex) {
