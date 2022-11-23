@@ -145,4 +145,8 @@ public class JsonWebTokenUtils {
         }
     }
 
+    public boolean parseToken(final String token){
+         return jsonWebTokenService.parseToken(token) != null;
+    }
+
 } // E:O:F:JsonWebTokenUtils.
