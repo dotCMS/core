@@ -227,8 +227,11 @@ public class SQLUtil {
 				.replaceAll(_DESC, StringPool.BLANK)
 				.replaceAll("-", StringPool.BLANK).toLowerCase();
 
+		testParam = convertCamelToSnake(testParam);
+		testParam = translateSortBy(testParam);
+
 		if(ORDERBY_WHITELIST.contains(testParam)){
-			return parameter;
+			return  parameter.contains(_DESC) ?  testParam + " " + _DESC : testParam;
 		}
 
 		Exception e = new DotStateException("Invalid or pernicious sql parameter passed in : " + parameter);
@@ -237,6 +240,64 @@ public class SQLUtil {
 		SecurityLogger.logDebug(SQLUtil.class, "Invalid or pernicious sql parameter passed in : " + parameter);
 		return StringPool.BLANK;
 	}
+
+	/**
+	 * Method to translate UI field into SQL columns naming
+	 * @param parameter
+	 * @return
+	 */
+	public  static String translateSortBy(String parameter){
+
+		String result = "";
+		result = parameter.replace("moddate","mod_date")
+				.replace("categoryname","category_name")
+				.replace("categoryvelocityvarname","category_velocity_var_name")
+				.replace("categorykey","category_key")
+				.replace("pageurl", "page_url")
+				.replace("velocityvarname","velocity_var_name")
+				.replace("sortorder","sort_order")
+				.replace("hostname","hostName")
+				.replace("relationtypevalue","relation_type_value")
+				.replace("childrelationname","child_relation_name")
+				.replace("parentrelationname","parent_relation_name");
+
+			return  result;
+	}
+
+	/**
+	 * Method to convert camel case convention into snake case
+	 * @param parameter
+	 * @return
+	 */
+	public static String convertCamelToSnake(String parameter)
+	{
+		String result = "";
+
+		// Append first character(in lower case)
+		char c = parameter.charAt(0);
+		result = result + Character.toLowerCase(c);
+
+		// Traverse the string
+		for (int i = 1; i < parameter.length(); i++) {
+
+			char ch = parameter.charAt(i);
+
+			// Check if the character is upper case then append '_' and such character (in lower case) to result string
+			if (Character.isUpperCase(ch)) {
+				result = result + '_';
+				result = result + Character.toLowerCase(ch);
+			}
+
+			// If the character is lower case then add such character into result string
+			else {
+				result = result + ch;
+			}
+		}
+
+		// return the result
+		return result;
+	}
+
 	/**
 	 * Applies the sanitize to the parameter argument in order to avoid evil sql words for a PARAMETER.
 	 * @param parameter SQL to filter.
