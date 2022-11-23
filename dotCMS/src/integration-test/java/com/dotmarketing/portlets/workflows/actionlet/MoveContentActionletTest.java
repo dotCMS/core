@@ -51,7 +51,7 @@ public class MoveContentActionletTest extends BaseWorkflowIntegrationTest {
     private static ContentType customContentType = null;
     private static String destinyFolder = "";
 
-    @BeforeClass
+    //@BeforeClass
     public static void prepare() throws Exception {
         //Setting web app environment
 
@@ -109,7 +109,7 @@ public class MoveContentActionletTest extends BaseWorkflowIntegrationTest {
     /**
      * Remove the content type and workflows created
      */
-    @AfterClass
+    //@AfterClass
     public static void cleanup()
             throws DotDataException, DotSecurityException, AlreadyExistException {
 
