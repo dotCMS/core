@@ -97,9 +97,9 @@
                 formControlName="preLoop"
             ></dot-loop-editor>
             <dot-container-code
+                *ngIf="vm.contentTypes.length > 0"
                 [contentTypes]="vm.contentTypes"
-                (valueChange)="updateContainerStructure($event)"
-                formControlName="containerStructures"
+                [fg]="form"
             ></dot-container-code>
             <dot-loop-editor
                 [isEditorVisible]="vm.showPrePostLoopInput"

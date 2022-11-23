@@ -1,11 +1,5 @@
 import { Component, OnInit } from '@angular/core';
-import {
-    FormArray,
-    FormControl,
-    UntypedFormBuilder,
-    UntypedFormGroup,
-    Validators
-} from '@angular/forms';
+import { FormArray, FormControl, FormGroup, UntypedFormBuilder, Validators } from '@angular/forms';
 import {
     DotContainerPropertiesStore,
     DotContainerPropertiesState
@@ -17,6 +11,7 @@ import { DotRouterService } from '@services/dot-router/dot-router.service';
 import { take, takeUntil } from 'rxjs/operators';
 import { MenuItem } from 'primeng/api';
 import { Subject } from 'rxjs';
+import { DotContainerStructure } from '@dotcms/app/shared/models/container/dot-container.model';
 
 @Component({
     selector: 'dot-container-properties',
@@ -27,7 +22,7 @@ import { Subject } from 'rxjs';
 export class DotContainerPropertiesComponent implements OnInit {
     vm$ = this.store.vm$;
     editor: MonacoEditor;
-    form: UntypedFormGroup;
+    form: FormGroup;
     private destroy$: Subject<boolean> = new Subject<boolean>();
 
     constructor(
@@ -59,16 +54,44 @@ export class DotContainerPropertiesComponent implements OnInit {
                     preLoop: container?.preLoop ?? '',
                     postLoop: container?.postLoop ?? '',
                     containerStructures: this.fb.array(
-                        containerStructures ?? [],
+                        [],
                         containerStructures.length ? [Validators.minLength(1)] : null
                     )
                 });
 
-                this.showContentTypeAndCode();
+                this.mapContainerStructureIntoFormControl(containerStructures);
             });
         this.form.valueChanges.pipe(takeUntil(this.destroy$)).subscribe((values) => {
             this.store.updateIsContentTypeButtonEnabled(values.maxContentlets > 0);
         });
+    }
+
+    /**
+     * Map Container Strcutures into FormControl
+     * @param {DotContainerStructure[]} containerStructures
+     * @memberof DotContainerPropertiesComponent
+     */
+    mapContainerStructureIntoFormControl(containerStructures: DotContainerStructure[]) {
+        if (containerStructures && containerStructures.length > 0) {
+            containerStructures.forEach(
+                ({ code, structureId, containerId, containerInode, contentTypeVar }) => {
+                    (this.form.get('containerStructures') as FormArray).push(
+                        this.fb.group({
+                            code: new FormControl(code, [Validators.required]),
+                            structureId: new FormControl(structureId, [Validators.required]),
+                            containerId: new FormControl(containerId),
+                            containerInode: new FormControl(containerInode),
+                            contentTypeVar: new FormControl(contentTypeVar)
+                        })
+                    );
+                }
+            );
+
+            // Using setTimeout because dotGlobal Message Service throwing ExpressionChangedAfterItHasBeenCheckedError Error
+            setTimeout(() => {
+                this.showContentTypeAndCode();
+            }, 0);
+        }
     }
 
     /**

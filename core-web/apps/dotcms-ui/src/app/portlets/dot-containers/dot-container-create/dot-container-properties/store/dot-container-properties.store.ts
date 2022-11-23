@@ -67,7 +67,7 @@ export class DotContainerPropertiesStore extends ComponentStore<DotContainerProp
                     this.updateContainerState(containerEntity);
                 }
 
-                this.updateApiLink(container.identifier);
+                this.updateApiLink(this.getApiLink(container.identifier));
             });
     }
 
