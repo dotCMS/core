@@ -22,7 +22,6 @@ services:
       - 8443:8443
       - 8000:8000
     environment:
-      LANG: 'C.UTF-8'
       databaseType: "${DB_TYPE}"
       CATALINA_OPTS: "-XX:+PrintFlagsFinal"
       DB_BASE_URL: "jdbc:postgresql://database/dotcms"
