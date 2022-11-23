@@ -1,5 +1,5 @@
 import { Component, OnInit } from '@angular/core';
-import { FormArray, FormControl, FormGroup, UntypedFormBuilder, Validators } from '@angular/forms';
+import { FormArray, FormBuilder, FormControl, FormGroup, Validators } from '@angular/forms';
 import {
     DotContainerPropertiesStore,
     DotContainerPropertiesState
@@ -28,7 +28,7 @@ export class DotContainerPropertiesComponent implements OnInit {
     constructor(
         private store: DotContainerPropertiesStore,
         private dotMessageService: DotMessageService,
-        private fb: UntypedFormBuilder,
+        private fb: FormBuilder,
         private dotAlertConfirmService: DotAlertConfirmService,
         private dotRouterService: DotRouterService
     ) {
