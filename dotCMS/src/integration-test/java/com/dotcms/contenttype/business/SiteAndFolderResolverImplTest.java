@@ -5,6 +5,7 @@ import com.dotcms.contenttype.model.component.SiteAndFolderParams;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.ContentTypeBuilder;
 import com.dotcms.contenttype.model.type.FileAssetContentType;
+import com.dotcms.contenttype.model.type.ImmutableFileAssetContentType;
 import com.dotcms.datagen.SiteDataGen;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
@@ -35,11 +36,16 @@ public class SiteAndFolderResolverImplTest extends IntegrationTestBase {
 
     @Test
     public void Test_CT_SiteAndFolderParams() throws DotDataException, DotSecurityException {
+
         final User user = APILocator.systemUser();
-        final String variable = "varName" + System.currentTimeMillis();
+        final Host host = new SiteDataGen().nextPersisted();
+        final Folder foo = folderAPI
+                .createFolders("/foo"+System.currentTimeMillis(), host, user, false);
+
+        final String variable = "variableName" + System.currentTimeMillis();
         ContentType contentType = ContentTypeBuilder.builder(FileAssetContentType.class)
-                .folder("fakeValidFolderId")
-                .host("fakeValidHostId")
+                .folder(foo.getInode())
+                .host(host.getIdentifier())
                 .name(variable)
                 .id(UUIDUtil.uuid())
                 .owner(user.getUserId()).build();
@@ -55,8 +61,17 @@ public class SiteAndFolderResolverImplTest extends IntegrationTestBase {
         Assert.assertNull(siteAndFolder1.folderPath());
         Assert.assertNull(siteAndFolder1.siteName());
 
+        final ImmutableFileAssetContentType copy = ImmutableFileAssetContentType.copyOf(
+                (FileAssetContentType) contentType);
+        final SiteAndFolderParams siteAndFolder = copy.siteAndFolderParams();
+        Assert.assertNotNull(siteAndFolder.folder());
+        Assert.assertNotNull(siteAndFolder.host());
+        Assert.assertNull(siteAndFolder.folderPath());
+        Assert.assertNull(siteAndFolder.siteName());
+
         // TODO: Fix me This builder copy thing is not right!!!
         //  It'll initialize the default methods
+
         final ContentType copyContentType = ContentTypeBuilder.builder(contentType).build();
 
         final SiteAndFolderParams siteAndFolder2 = copyContentType.siteAndFolderParams();
@@ -135,8 +150,8 @@ public class SiteAndFolderResolverImplTest extends IntegrationTestBase {
 
         final String variable = "varName" + System.currentTimeMillis();
         ContentType contentType = ContentTypeBuilder.builder(FileAssetContentType.class)
-                .folder("anyFolder")
-                .host("anyHost")
+                .folder("anyFolder"+System.currentTimeMillis())
+                .host("any_Host"+System.currentTimeMillis())
                 .name(variable)
                 .id(UUIDUtil.uuid())
                 .owner(user.getUserId()).build();

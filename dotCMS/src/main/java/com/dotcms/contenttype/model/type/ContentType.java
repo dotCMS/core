@@ -197,11 +197,11 @@ public abstract class ContentType implements Serializable, Permissionable, Conte
     }
     if (UUIDUtil.isUUID(host)) {
       return Try.of(() -> APILocator.getHostAPI().find(host, APILocator.systemUser(), false)
-              .getHostname()).getOrElse("unk");
+              .getHostname()).getOrNull();
     }
     return Try.of(
             () -> APILocator.getHostAPI().resolveHostName(host, APILocator.systemUser(), false)
-                    .getHostname()).getOrElse("unk");
+                    .getHostname()).getOrNull();
 
   }
 
@@ -308,7 +308,7 @@ public abstract class ContentType implements Serializable, Permissionable, Conte
               final String path = folderAPI.find(folder, APILocator.systemUser(), false).getPath();
               return String.format("%s%s%s", hostName, StringPool.COLON, path);
             }
-    ).getOrElse("unk");
+    ).getOrNull();
   }
 
   @JsonIgnore
@@ -316,8 +316,8 @@ public abstract class ContentType implements Serializable, Permissionable, Conte
   public SiteAndFolderParams siteAndFolderParams() {
     return ImmutableSiteAndFolderParams.builder()
             .folder(folder()).host(host())
-            .folderPath(canonicalFolderPath != null ? null : canonicalFolderPath())
-            .siteName(canonicalSiteName != null ? null : canonicalSiteName()).build();
+            .folderPath(canonicalFolderPath != null ? null : folderPath())
+            .siteName(canonicalSiteName != null ? null : siteName()).build();
   }
 
   @JsonIgnore

@@ -240,7 +240,7 @@ public class SiteAndFolderResolverImpl implements SiteAndFolderResolver {
     String resolveOrFallback(final String siteIdOrName) throws DotDataException, DotSecurityException {
         final Optional<Host> resolvedSite = UUIDUtil.isUUID(siteIdOrName) ?
               Optional.ofNullable(hostAPI.find(siteIdOrName, APILocator.systemUser(), true)) :
-              hostAPI.resolveHostNameWithoutDefault(siteIdOrName, APILocator.systemUser(), true);
+              Optional.ofNullable(hostAPI.findByName(siteIdOrName, APILocator.systemUser(), true));
         if (resolvedSite.isPresent()) {
             return resolvedSite.get().getIdentifier();
         }
