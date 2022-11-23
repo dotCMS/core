@@ -1,4 +1,11 @@
-import { ChangeDetectionStrategy, Component, EventEmitter, Input, Output } from '@angular/core';
+import {
+    ChangeDetectionStrategy,
+    Component,
+    EventEmitter,
+    Input,
+    OnInit,
+    Output
+} from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { DotExperiment } from '@portlets/dot-experiments/shared/models/dot-experiments.model';
 import { DotSidebarHeaderComponent } from '@shared/dot-sidebar-header/dot-sidebar-header.component';
@@ -34,9 +41,9 @@ interface AddForm {
     styleUrls: ['./dot-experiments-configuration-variants-add.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class DotExperimentsConfigurationVariantsAddComponent {
+export class DotExperimentsConfigurationVariantsAddComponent implements OnInit {
     @Input()
-    isSaving: boolean;
+    isSaving = false;
 
     @Input()
     isSidebarOpen: boolean;
@@ -45,7 +52,7 @@ export class DotExperimentsConfigurationVariantsAddComponent {
      * Emit when the sidebar is closed
      */
     @Output()
-    closedSidebar = new EventEmitter<void>();
+    closedSidebar = new EventEmitter<boolean>();
 
     /**
      * Emit a valid form values
@@ -57,6 +64,7 @@ export class DotExperimentsConfigurationVariantsAddComponent {
 
     saveForm(): void {
         const formValues = this.form.value as Pick<DotExperiment, 'name'>;
+
         this.formValues.emit(formValues);
     }
 
@@ -66,7 +74,7 @@ export class DotExperimentsConfigurationVariantsAddComponent {
 
     closedSidebarEvent() {
         this.form.reset();
-        this.closedSidebar.emit();
+        this.closedSidebar.emit(true);
     }
 
     private initForm() {

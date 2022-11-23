@@ -1,21 +1,14 @@
 import { DotExperimentsConfigurationVariantsComponent } from './dot-experiments-configuration-variants.component';
-import { byTestId, createComponentFactory, mockProvider, Spectator } from '@ngneat/spectator';
+import { byTestId, createComponentFactory, Spectator } from '@ngneat/spectator';
 import { ButtonModule } from 'primeng/button';
 import { Card, CardModule } from 'primeng/card';
 import { DotMessageService } from '@services/dot-message/dot-messages.service';
 import { MockDotMessageService } from '@tests/dot-message-service.mock';
-import { DotExperimentsConfigurationStore } from '@portlets/dot-experiments/dot-experiments-configuration/store/dot-experiments-configuration-store.service';
-import { DotExperimentsSessionStorageService } from '@portlets/dot-experiments/shared/services/dot-experiments-session-storage.service';
-import {
-    DotExperimentsConfigurationStoreMock,
-    ExperimentMocks
-} from '@portlets/dot-experiments/test/mocks';
-import { of } from 'rxjs';
 import { DecimalPipe } from '@angular/common';
 import { DEFAULT_VARIANT_ID } from '@portlets/dot-experiments/shared/models/dot-experiments-constants';
 import { DotExperimentsConfigurationVariantsAddComponent } from '@portlets/dot-experiments/dot-experiments-configuration/components/dot-experiments-configuration-variants-add/dot-experiments-configuration-variants-add.component';
-import { Router } from '@angular/router';
-import SpyObj = jasmine.SpyObj;
+import { Status } from '@portlets/shared/models/shared-models';
+import { ExperimentSteps } from '@portlets/dot-experiments/shared/models/dot-experiments.model';
 
 const messageServiceMock = new MockDotMessageService({
     'experiments.configure.variants.weight': 'weight',
@@ -26,9 +19,6 @@ const messageServiceMock = new MockDotMessageService({
 });
 describe('DotExperimentsConfigurationVariantsComponent', () => {
     let spectator: Spectator<DotExperimentsConfigurationVariantsComponent>;
-    let dotExperimentsSessionStorageService: SpyObj<DotExperimentsSessionStorageService>;
-    let dotExperimentsConfigurationStore: SpyObj<DotExperimentsConfigurationStore>;
-    let router: SpyObj<Router>;
 
     const createComponent = createComponentFactory({
         imports: [
@@ -42,14 +32,7 @@ describe('DotExperimentsConfigurationVariantsComponent', () => {
             {
                 provide: DotMessageService,
                 useValue: messageServiceMock
-            },
-
-            {
-                provide: DotExperimentsConfigurationStore,
-                useValue: DotExperimentsConfigurationStoreMock
-            },
-            mockProvider(Router),
-            mockProvider(DotExperimentsSessionStorageService)
+            }
         ]
     });
 
@@ -57,32 +40,27 @@ describe('DotExperimentsConfigurationVariantsComponent', () => {
         spectator = createComponent({
             detectChanges: false
         });
-
-        dotExperimentsSessionStorageService = spectator.inject(DotExperimentsSessionStorageService);
-        dotExperimentsConfigurationStore = spectator.inject(DotExperimentsConfigurationStore);
-        router = spectator.inject(Router);
     });
 
     describe('should render', () => {
         it('a DEFAULT variant', () => {
             const variantsVm = {
-                isSidebarOpen: false,
-                isSaving: false,
-                trafficProportion: {
-                    ...ExperimentMocks[0].trafficProportion,
-                    variants: [{ id: DEFAULT_VARIANT_ID, name: 'a', weight: '100' }]
+                status: {
+                    status: Status.IDLE,
+                    step: ExperimentSteps.VARIANTS,
+                    isOpenSidebar: false
                 },
-                isVariantStepDone: false
+                variants: [{ id: DEFAULT_VARIANT_ID, name: 'a', weight: '100' }]
             };
-            spectator.component.vm$ = of(variantsVm);
 
+            spectator.setInput(variantsVm);
             spectator.detectChanges();
 
             expect(spectator.query(byTestId('variant-name'))).toHaveText(
-                variantsVm.trafficProportion.variants[0].name
+                variantsVm.variants[0].name
             );
             expect(spectator.query(byTestId('variant-weight'))).toHaveText(
-                variantsVm.trafficProportion.variants[0].weight + '.00% weight'
+                variantsVm.variants[0].weight + '.00% weight'
             );
             expect(spectator.query(byTestId('variant-preview-button'))).toExist();
 
@@ -91,45 +69,39 @@ describe('DotExperimentsConfigurationVariantsComponent', () => {
 
         it('the variant(s)', () => {
             const variantsVm = {
-                isSidebarOpen: false,
-                isSaving: false,
-                trafficProportion: {
-                    ...ExperimentMocks[0].trafficProportion,
-                    variants: [
-                        { id: DEFAULT_VARIANT_ID, name: 'a', weight: '33.33', url: 'link1' },
-                        { id: '1111111', name: 'b', weight: '33.33', url: 'link2' },
-                        { id: '2222222', name: 'c', weight: '33.33', url: 'link3' }
-                    ]
+                status: {
+                    status: Status.IDLE,
+                    step: ExperimentSteps.VARIANTS,
+                    isOpenSidebar: false
                 },
-                isVariantStepDone: true
+                variants: [
+                    { id: DEFAULT_VARIANT_ID, name: 'a', weight: '33.33', url: 'link1' },
+                    { id: '1111111', name: 'b', weight: '33.33', url: 'link2' },
+                    { id: '2222222', name: 'c', weight: '33.33', url: 'link3' }
+                ]
             };
 
-            spectator.component.vm$ = of(variantsVm);
+            spectator.setInput(variantsVm);
+
             spectator.detectChanges();
 
             expect(spectator.query(byTestId('variant-title-step-done'))).toHaveClass('isDone');
             expect(spectator.queryAll(Card).length).toBe(4);
 
             const variantsName = spectator.queryAll(byTestId('variant-name'));
-            expect(variantsName[0]).toContainText(variantsVm.trafficProportion.variants[0].name);
-            expect(variantsName[1]).toContainText(variantsVm.trafficProportion.variants[1].name);
-            expect(variantsName[2]).toContainText(variantsVm.trafficProportion.variants[2].name);
+            expect(variantsName[0]).toContainText(variantsVm.variants[0].name);
+            expect(variantsName[1]).toContainText(variantsVm.variants[1].name);
+            expect(variantsName[2]).toContainText(variantsVm.variants[2].name);
 
             const variantsUrl = spectator.queryAll(byTestId('variant-url'));
-            expect(variantsUrl[0]).toContainText(variantsVm.trafficProportion.variants[0].url);
-            expect(variantsUrl[1]).toContainText(variantsVm.trafficProportion.variants[1].url);
-            expect(variantsUrl[2]).toContainText(variantsVm.trafficProportion.variants[2].url);
+            expect(variantsUrl[0]).toContainText(variantsVm.variants[0].url);
+            expect(variantsUrl[1]).toContainText(variantsVm.variants[1].url);
+            expect(variantsUrl[2]).toContainText(variantsVm.variants[2].url);
 
             const variantsWeight = spectator.queryAll(byTestId('variant-weight'));
-            expect(variantsWeight[0]).toContainText(
-                variantsVm.trafficProportion.variants[0].weight
-            );
-            expect(variantsWeight[1]).toContainText(
-                variantsVm.trafficProportion.variants[1].weight
-            );
-            expect(variantsWeight[2]).toContainText(
-                variantsVm.trafficProportion.variants[2].weight
-            );
+            expect(variantsWeight[0]).toContainText(variantsVm.variants[0].weight);
+            expect(variantsWeight[1]).toContainText(variantsVm.variants[1].weight);
+            expect(variantsWeight[2]).toContainText(variantsVm.variants[2].weight);
 
             const variantsViewButton = spectator.queryAll(
                 byTestId('variant-preview-button')
@@ -161,25 +133,26 @@ describe('DotExperimentsConfigurationVariantsComponent', () => {
     });
 
     describe('interactions', () => {
-        let variantsVm;
         beforeEach(() => {
-            variantsVm = {
-                trafficProportion: {
-                    ...ExperimentMocks[0].trafficProportion,
-                    variants: [
-                        { id: DEFAULT_VARIANT_ID, name: 'a', weight: '33.33', url: 'link1' },
-                        { id: '1111111', name: 'b', weight: '33.33', url: 'link2' }
-                    ]
+            const variantsVm = {
+                status: {
+                    status: Status.IDLE,
+                    step: ExperimentSteps.VARIANTS,
+                    isOpenSidebar: false
                 },
-                isVariantStepDone: true
+                variants: [
+                    { id: DEFAULT_VARIANT_ID, name: 'a', weight: '33.33', url: 'link1' },
+                    { id: '1111111', name: 'b', weight: '33.33', url: 'link2' }
+                ]
             };
 
-            spectator.component.vm$ = of(variantsVm);
+            spectator.setInput(variantsVm);
+
             spectator.detectChanges();
         });
 
         it('should call addNewVariant()', () => {
-            const addNewVariantSpy = spyOn(spectator.component, 'addNewVariant');
+            const addNewVariantSpy = spyOn(spectator.component, 'showSidebar');
             const addButton = spectator.query(byTestId('variant-add-button')) as HTMLButtonElement;
 
             expect(addButton.disabled).not.toBe(true);
@@ -189,6 +162,8 @@ describe('DotExperimentsConfigurationVariantsComponent', () => {
         });
 
         it('should go to Edit Page with the queryParams editPageTab=preview and variationName set', () => {
+            const viewButtontSpy = spyOn(spectator.component, 'goToEditPage');
+
             const viewButton = spectator.query(
                 byTestId('variant-preview-button')
             ) as HTMLButtonElement;
@@ -196,18 +171,11 @@ describe('DotExperimentsConfigurationVariantsComponent', () => {
             expect(viewButton.disabled).not.toBe(true);
             spectator.click(viewButton);
 
-            expect(dotExperimentsSessionStorageService.setVariationId).toHaveBeenCalledWith(
-                DEFAULT_VARIANT_ID
-            );
-            expect(router.navigate).toHaveBeenCalledWith(['edit-page/content'], {
-                queryParamsHandling: 'merge',
-                queryParams: {
-                    editPageTab: 'preview',
-                    variationName: variantsVm.trafficProportion.variants[0].id
-                }
-            });
+            expect(viewButtontSpy).toHaveBeenCalled();
         });
         it('should go to Edit Page with the queryParams editPageTab=edit and variationName set', () => {
+            const editButtontSpy = spyOn(spectator.component, 'goToEditPage');
+
             const editButton = spectator.query(
                 byTestId('variant-edit-button')
             ) as HTMLButtonElement;
@@ -215,19 +183,11 @@ describe('DotExperimentsConfigurationVariantsComponent', () => {
             expect(editButton.disabled).not.toBe(true);
             spectator.click(editButton);
 
-            expect(dotExperimentsSessionStorageService.setVariationId).toHaveBeenCalledWith(
-                variantsVm.trafficProportion.variants[1].id
-            );
-            expect(router.navigate).toHaveBeenCalledWith(['edit-page/content'], {
-                queryParamsHandling: 'merge',
-                queryParams: {
-                    editPageTab: 'edit',
-                    variationName: variantsVm.trafficProportion.variants[1].id
-                }
-            });
+            expect(editButtontSpy).toHaveBeenCalledWith();
         });
         it('should delete a variant', () => {
-            spyOn(dotExperimentsConfigurationStore, 'deleteVariant');
+            const deleteButtontSpy = spyOn(spectator.component, 'delete');
+
             const deleteButtons = spectator.queryAll(
                 byTestId('variant-delete-button')
             ) as HTMLButtonElement[];
@@ -237,9 +197,7 @@ describe('DotExperimentsConfigurationVariantsComponent', () => {
 
             spectator.click(deleteButtons[1]);
 
-            expect(dotExperimentsConfigurationStore.deleteVariant).toHaveBeenCalledWith(
-                variantsVm.trafficProportion.variants[1]
-            );
+            expect(deleteButtontSpy).toHaveBeenCalled();
         });
     });
 });

@@ -1,4 +1,4 @@
-import { LoadingState } from '@portlets/shared/models/shared-models';
+import { LoadingState, Status } from '@portlets/shared/models/shared-models';
 import { DotExperimentsService } from '@portlets/dot-experiments/shared/services/dot-experiments.service';
 import { ActivatedRoute } from '@angular/router';
 import { ExperimentMocks } from '@portlets/dot-experiments/test/mocks';
@@ -57,11 +57,15 @@ describe('DotExperimentsConfigurationStore', () => {
     it('should set initial data', (done) => {
         const expectedInitialState: DotExperimentsConfigurationState = {
             pageId: PAGE_ID,
-            experimentId: EXPERIMENT_ID,
             experiment: null,
             status: LoadingState.LOADING,
             isSidebarOpen: false,
-            isSaving: false
+            isSaving: false,
+            stepStatus: {
+                status: Status.IDLE,
+                isOpenSidebar: false,
+                step: null
+            }
         };
 
         store.state$.subscribe((state) => {
@@ -78,14 +82,14 @@ describe('DotExperimentsConfigurationStore', () => {
     });
 
     it('should have getExperimentId$ from the store', (done) => {
-        store.state$.subscribe(({ experimentId }) => {
-            expect(experimentId).toEqual(EXPERIMENT_ID);
+        store.state$.subscribe(({ experiment }) => {
+            expect(experiment.id).toEqual(EXPERIMENT_ID);
             done();
         });
     });
 
     it('should have getExperiment$ from the store', (done) => {
-        store.loadExperiment();
+        store.loadExperiment(EXPERIMENT_ID);
         store.state$.subscribe(({ experiment }) => {
             expect(experiment).toEqual(ExperimentMocks[0]);
             done();
@@ -107,17 +111,9 @@ describe('DotExperimentsConfigurationStore', () => {
         });
     });
 
-    it('should update experiments to the store', (done) => {
-        store.setExperiment(ExperimentMocks[0]);
-        store.state$.subscribe(({ experiment }) => {
-            expect(experiment).toEqual(ExperimentMocks[0]);
-            done();
-        });
-    });
-
     describe('Effects', () => {
         it('should load experiment to store', (done) => {
-            store.loadExperiment();
+            store.loadExperiment(EXPERIMENT_ID);
             expect(dotExperimentsService.getById).toHaveBeenCalledWith(EXPERIMENT_ID);
             store.state$.subscribe(({ experiment }) => {
                 expect(experiment).toEqual(ExperimentMocks[0]);
@@ -153,7 +149,7 @@ describe('DotExperimentsConfigurationStore', () => {
             dotExperimentsService.getById.and.returnValue(of(experimentWithTwoVariants));
             dotExperimentsService.removeVariant.and.returnValue(of(expectedResponseRemoveVariant));
 
-            store.loadExperiment();
+            store.loadExperiment(EXPERIMENT_ID);
             expect(dotExperimentsService.getById).toHaveBeenCalledWith(EXPERIMENT_ID);
 
             store.deleteVariant(variants[1]);

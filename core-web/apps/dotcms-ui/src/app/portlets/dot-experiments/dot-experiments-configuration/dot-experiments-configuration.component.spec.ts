@@ -23,6 +23,7 @@ import { MockDotMessageService } from '@tests/dot-message-service.mock';
 import { DotMessageService } from '@services/dot-message/dot-messages.service';
 import { MessageService } from 'primeng/api';
 import { DotExperimentsSessionStorageService } from '@portlets/dot-experiments/shared/services/dot-experiments-session-storage.service';
+import { Status } from '@portlets/shared/models/shared-models';
 
 const ActivatedRouteMock = {
     snapshot: {
@@ -37,6 +38,7 @@ const messageServiceMock = new MockDotMessageService({
     'experiments.configure.scheduling.name': 'Scheduling',
     'experiments.configure.scheduling.start': 'When the experiment start'
 });
+
 describe('DotExperimentsConfigurationComponent', () => {
     let spectator: Spectator<DotExperimentsConfigurationComponent>;
     let dotExperimentsService: SpyObject<DotExperimentsService>;
@@ -93,8 +95,12 @@ describe('DotExperimentsConfigurationComponent', () => {
     it('should load all the components', () => {
         const vmMock$ = {
             pageId: ExperimentMocks[0].pageId,
-            experimentId: ExperimentMocks[0].id,
             experiment: ExperimentMocks[0],
+            stepStatus: {
+                status: Status.IDLE,
+                isOpenSidebar: false,
+                step: null
+            },
             isLoading: false
         };
         spectator.component.vm$ = of(vmMock$);
