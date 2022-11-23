@@ -1,7 +1,6 @@
 package com.dotcms.api.system.event.dto;
 
 import java.io.Serializable;
-
 import com.dotmarketing.util.UtilMethods;
 
 /**

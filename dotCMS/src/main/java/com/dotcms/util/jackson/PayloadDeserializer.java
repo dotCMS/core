@@ -12,6 +12,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.vavr.control.Try;
 import java.io.IOException;
+import java.io.Serializable;
 import java.util.function.Function;
 
 public class PayloadDeserializer extends JsonDeserializer<Payload> {
@@ -30,15 +31,15 @@ public class PayloadDeserializer extends JsonDeserializer<Payload> {
         final String payLoadType = Try.of(()-> node.get(TYPE).asText()).getOrElseThrow((Function<Throwable, IOException>) IOException::new);
         final Class<?> payLoadClazz = getClassFor(payLoadType);
 
-        final Object payLoadData = readValueAs(node.get(DATA), payLoadClazz, parser);
+        final Serializable payLoadData = (Serializable) readValueAs(node.get(DATA), payLoadClazz, parser);
 
-        Object visibilityValue = null;
+        Serializable visibilityValue = null;
 
         final Visibility visibility = Try.of(()->  Visibility.valueOf(node.get(VISIBILITY_VALUE).asText())).getOrElse(Visibility.GLOBAL);
         final String visibilityType = Try.of(()-> node.get(VISIBILITY_TYPE).asText()).getOrNull();
         if(null != visibilityType) {
             final Class<?> visibilityClazz = getClassFor(visibilityType);
-            visibilityValue = readValueAs(node.get(VISIBILITY_VALUE), visibilityClazz, parser);
+            visibilityValue = (Serializable) readValueAs(node.get(VISIBILITY_VALUE), visibilityClazz, parser);
 
         }
         return new Payload(payLoadData, visibility, visibilityValue);

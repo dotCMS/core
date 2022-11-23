@@ -1,5 +1,6 @@
 package com.dotcms.api.system.event;
 
+import com.dotcms.util.ConversionUtils;
 import com.dotcms.util.jackson.PayloadDeserializer;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnore;
@@ -8,6 +9,7 @@ import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import java.io.Serializable;
+import java.util.Map;
 import java.util.Objects;
 
 /**
@@ -23,11 +25,11 @@ import java.util.Objects;
 @JsonDeserialize(using = PayloadDeserializer.class)
 public class Payload implements Serializable {
 
-	private final Object data;
+	private final Serializable data;
 	private final Visibility visibility;
 	private final String type;
 
-    private final Object visibilityValue; // this could be anything: an user id, role uid or permission, or event a meta object with several things.
+    private final Serializable visibilityValue; // this could be anything: an user id, role uid or permission, or event a meta object with several things.
 	private final String visibilityType;
 	/**
 	 * Creates a payload object.
@@ -35,7 +37,7 @@ public class Payload implements Serializable {
 	 * @param data {@link Object}
 	 *            - Any Java object that represents the payload.
 	 */
-	public Payload(final Object data) {
+	public Payload(final Serializable data) {
 
 		this(data, Visibility.GLOBAL, null);
 	}
@@ -63,8 +65,14 @@ public class Payload implements Serializable {
 	 * 			  - Depending of the visibility type, this could be an userId or roleId, for global just keep it null.
 	 */
 	public Payload(final Visibility visibility,
-				   final Object visibilityValue) {
+				   final Serializable visibilityValue) {
 		this(new Void(), visibility, visibilityValue);
+	}
+
+	public Payload(final Map data,
+				   final Visibility visibility,
+				   final Serializable visibilityValue) {
+		this(ConversionUtils.mapToSerializable(data), visibility, visibilityValue);
 	}
 
 	/**
@@ -78,9 +86,9 @@ public class Payload implements Serializable {
 	 *                     - Depending of the visibility type, this could be an userId or roleId, for global just keep it null.
 	 */
 	@JsonCreator
-	public Payload(@JsonProperty("data") final Object data,
+	public Payload(@JsonProperty("data") final Serializable data,
 			@JsonProperty("visibility") final Visibility visibility,
-			@JsonProperty("visibilityValue") final Object visibilityValue) {
+			@JsonProperty("visibilityValue") final Serializable visibilityValue) {
 		this.data = data;
 		this.visibility = visibility;
 		this.visibilityValue = visibilityValue;
@@ -94,9 +102,9 @@ public class Payload implements Serializable {
 	 * 
 	 * @return The payload.
 	 */
-	public Object getData() {
+	public Serializable getData() {
 
-		Object data = this.data;
+		Serializable data = this.data;
 
 		if (data instanceof DataWrapper){
 			data = DataWrapper.class.cast(data).getData();
@@ -131,7 +139,7 @@ public class Payload implements Serializable {
 	 * Returns the visibility value
 	 * @return Object
 	 */
-	public Object getVisibilityValue() {
+	public Serializable getVisibilityValue() {
 		return visibilityValue;
 	}
 

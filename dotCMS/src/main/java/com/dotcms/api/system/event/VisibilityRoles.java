@@ -1,4 +1,4 @@
-package com.dotcms.api.system.event;
+    package com.dotcms.api.system.event;
 
 import com.dotmarketing.business.Role;
 
@@ -23,7 +23,7 @@ public class VisibilityRoles implements Serializable {
     public VisibilityRoles(final VisibilityRoles.Operator operator, final Set<Role> roles) {
 
         this.operator    = operator;
-        this.rolesId     = roles.stream().map( role ->  role.getId()).collect(Collectors.toList());
+        this.rolesId     = roles.stream().map(Role::getId).collect(Collectors.toList());
     }
 
 

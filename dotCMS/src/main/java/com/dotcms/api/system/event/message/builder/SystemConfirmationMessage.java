@@ -4,7 +4,6 @@ import com.dotcms.api.system.event.message.MessageSeverity;
 import com.dotcms.api.system.event.message.MessageType;
 
 import java.io.Serializable;
-import java.util.Set;
 
 /**
  * A confirmation message is a {@link SystemMessage} but includes callback to execute if the user choose YES or an optional if the answers is NO.
@@ -32,6 +31,7 @@ public class SystemConfirmationMessage extends SystemMessage implements Serializ
     public String getCallbackOnNo() {
         return callbackOnNo;
     }
+
 
     @Override
     public String toString() {

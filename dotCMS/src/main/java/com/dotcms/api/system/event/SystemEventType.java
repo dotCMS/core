@@ -45,17 +45,17 @@ public enum SystemEventType {
 	/**
 	 * When a site is saved
 	 */
-	SAVE_SITE, // todo: not used
+	SAVE_SITE,
 
 	/**
 	 * When a site is published
 	 */
-	PUBLISH_SITE, // todo: not used
+	PUBLISH_SITE,
 
 	/**
 	 * When a site is updated
 	 */
-	UPDATE_SITE, // todo: not used
+	UPDATE_SITE,
 
 	/**
 	 * When a site is archived
@@ -110,45 +110,45 @@ public enum SystemEventType {
 	/**
 	 * When saving a page
 	 */
-	SAVE_PAGE_ASSET,  // todo: not used
+	SAVE_PAGE_ASSET,
 
 	/**
 	 * When updates a page
 	 */
-	UPDATE_PAGE_ASSET, // todo: not used
+	UPDATE_PAGE_ASSET,
 
 	/**
 	 * When archive a page
 	 */
-	ARCHIVE_PAGE_ASSET, // todo: not used
+	ARCHIVE_PAGE_ASSET,
 
 	/**
 	 * When un archives a page
 	 */
-	UN_ARCHIVE_PAGE_ASSET,  // todo: not used
+	UN_ARCHIVE_PAGE_ASSET,
 
 	/**
 	 * When deletes a page
 	 */
-	DELETE_PAGE_ASSET,  // todo: not used
+	DELETE_PAGE_ASSET,
 
 	/**
 	 * When published a page
 	 */
-	PUBLISH_PAGE_ASSET,  // todo: not used
+	PUBLISH_PAGE_ASSET,
 
 	/**
 	 * When unpublish a page
 	 */
-	UN_PUBLISH_PAGE_ASSET, // todo: not used
+	UN_PUBLISH_PAGE_ASSET,
 
-	SAVE_FILE_ASSET, // todo: not used
-	UPDATE_FILE_ASSET, // todo: not used
-	ARCHIVE_FILE_ASSET,  // todo: not used
-	UN_ARCHIVE_FILE_ASSET,  // todo: not used
-	DELETE_FILE_ASSET,  // todo: not used
-	PUBLISH_FILE_ASSET,   // todo: not used
-	UN_PUBLISH_FILE_ASSET,   // todo: not used
+	SAVE_FILE_ASSET,
+	UPDATE_FILE_ASSET,
+	ARCHIVE_FILE_ASSET,
+	UN_ARCHIVE_FILE_ASSET,
+	DELETE_FILE_ASSET,
+	PUBLISH_FILE_ASSET,
+	UN_PUBLISH_FILE_ASSET,
 
 	/**
 	 * When creates a link
@@ -164,7 +164,7 @@ public enum SystemEventType {
 	 * When archives a link
 	 */
 	ARCHIVE_LINK,
-	UN_ARCHIVE_LINK,  // todo: not used
+	UN_ARCHIVE_LINK,
 
 	/**
 	 * When moves a link
@@ -206,16 +206,16 @@ public enum SystemEventType {
 	 */
 	MOVE_FILE_ASSET,
 
-	COPY_FILE_ASSET,  // todo: not used
+	COPY_FILE_ASSET,
 
 	/**
 	 * When move a page
 	 */
 	MOVE_PAGE_ASSET,
 
-	COPY_PAGE_ASSET,  // todo: not used
+	COPY_PAGE_ASSET,
 
-	SESSION_CREATED,   // todo: not used
+	SESSION_CREATED,
 
 	/**
 	 * When the session is being destroyed

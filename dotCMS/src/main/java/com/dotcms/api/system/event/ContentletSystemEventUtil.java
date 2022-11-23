@@ -61,8 +61,9 @@ public class ContentletSystemEventUtil {
      * @param contentlet is the Payload data
      * @param isNew
      */
-    public void pushSaveEvent(Contentlet contentlet, boolean isNew){
-        String actionName = getActionName(contentlet, isNew);
+    public void pushSaveEvent(final Contentlet contentlet, final boolean isNew) {
+
+        final String actionName = getActionName(isNew);
         sendEvent(contentlet, actionName);
     }
 
@@ -170,7 +171,7 @@ public class ContentletSystemEventUtil {
      * @param isNew
      * @return
      */
-    private String getActionName(Contentlet contentlet, boolean isNew) {
+    private String getActionName(final boolean isNew) {
         return isNew ? SAVE_EVENT_PREFIX : UPDATE_EVENT_PREFIX;
     }
 

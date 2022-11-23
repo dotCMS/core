@@ -1,11 +1,13 @@
 package com.dotcms.rest.api.v1.system.logger;
 
+import java.io.Serializable;
+
 /**
  * Event to notify when a level has changed
  * Note: this event is mostly to notify cluster wide, rather than the current node.
  * @author jsanca
  */
-public class ChangeLoggerLevelEvent {
+public class ChangeLoggerLevelEvent implements Serializable {
 
     /**
      * Name of the logger

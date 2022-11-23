@@ -5,6 +5,8 @@ import com.dotmarketing.util.UtilMethods;
 
 import java.io.Serializable;
 import java.lang.reflect.Array;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Supplier;
@@ -47,6 +49,36 @@ public class ConversionUtils implements Serializable {
 
         return d;
     } // convert
+
+	/**
+	 * Cast a map to serializable
+	 * @param map
+	 * @return Serializable
+	 */
+	public static Serializable mapToSerializable (final Map map) {
+
+		if (map instanceof Serializable) {
+
+			return (Serializable) map;
+		}
+
+		return new HashMap(map);
+	}
+
+	/**
+	 * Cast a list to serializable
+	 * @param list
+	 * @return Serializable
+	 */
+	public static Serializable mapToSerializable (final List list) {
+
+		if (list instanceof Serializable) {
+
+			return (Serializable) list;
+		}
+
+		return new ArrayList<>(list);
+	}
 
 	/**
 	 * Converts from the array of Original objects to Destiny beans using a

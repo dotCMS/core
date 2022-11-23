@@ -1,9 +1,9 @@
 package com.dotcms.api.system.event;
 
 import com.dotmarketing.util.UtilMethods;
-
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
+
 import java.io.Serializable;
 import java.util.Date;
 
@@ -62,7 +62,7 @@ public class SystemEvent implements Serializable {
 	 * 
 	 * @param id
 	 *            - The event ID. If a new event is being created, please use
-	 *            {@link #SystemEvent(SystemEventType, Object, Date)} to let
+	 *            {@link #SystemEvent(SystemEventType, Serializable, Date)} to let
 	 *            dotCMS generate an appropriate ID.
 	 * @param event
 	 *            - The {@link SystemEventType} set for this event.

@@ -5,7 +5,7 @@ import java.io.Serializable;
 /**
  * Wrapper for the {@link Payload}'s data
  */
-public interface DataWrapper<T>  extends Serializable {
+public interface DataWrapper<T extends Serializable>  extends Serializable {
 
     public T getData();
 }

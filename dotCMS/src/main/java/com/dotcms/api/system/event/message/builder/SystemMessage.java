@@ -2,13 +2,12 @@ package com.dotcms.api.system.event.message.builder;
 
 import com.dotcms.api.system.event.message.MessageSeverity;
 import com.dotcms.api.system.event.message.MessageType;
-
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
+
 import java.io.Serializable;
 import java.util.Arrays;
 import java.util.Objects;
-import java.util.Set;
 
 /**
  * A system message encapsulates a simple message (could be raw or rich) and a list of portlets (optional) that can apply the

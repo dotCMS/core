@@ -22,7 +22,6 @@ import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.UtilMethods;
-import io.vavr.control.Try;
 
 import java.io.Serializable;
 import java.math.BigDecimal;
@@ -45,8 +44,8 @@ public class SystemEventsFactory implements Serializable {
 
 	public static final String EVENTS_THREAD_POOL_SUBMITTER_NAME = "events";
 	private final DotConcurrentFactory concurrentFactory		 = DotConcurrentFactory.getInstance();
-	private final SystemEventsDAO systemEventsDAO = new SystemEventsDAOImpl();
-	private final SystemEventsAPI systemEventsAPI = new SystemEventsAPIImpl();
+	private final transient SystemEventsDAO systemEventsDAO = new SystemEventsDAOImpl();
+	private final transient SystemEventsAPI systemEventsAPI = new SystemEventsAPIImpl();
 
 
 	/**
@@ -321,17 +320,17 @@ public class SystemEventsFactory implements Serializable {
 		 * Converts the physical representation of a System Event (i.e., the
 		 * information as stored in the database) to the logical representation.
 		 * 
-		 * @param record
+		 * @param recordMap
 		 *            - The {@link SystemEventDTO} object.
 		 * @return The {@link Notification} object.
 		 */
-		private SystemEvent convertSystemEventDTO(final SystemEventDTO record) {
-			final String id = record.getId();
-			final SystemEventType eventType = SystemEventType.valueOf(record.getEventType());
-			final String payloadStr = record.getPayload();
+		private SystemEvent convertSystemEventDTO(final SystemEventDTO recordMap) {
+			final String id = recordMap.getId();
+			final SystemEventType eventType = SystemEventType.valueOf(recordMap.getEventType());
+			final String payloadStr = recordMap.getPayload();
 			final Payload payload = marshalUtils.unmarshal(payloadStr, Payload.class);
-			final Date created = new Date(record.getCreationDate());
-			final String serverId = record.getServerId();
+			final Date created = new Date(recordMap.getCreationDate());
+			final String serverId = recordMap.getServerId();
 			return new SystemEvent(id, eventType, payload, created, serverId);
 		}
 
@@ -418,7 +417,7 @@ public class SystemEventsFactory implements Serializable {
 			Long created = 0L;
 			if (DbConnectionFactory.isOracle()) {
 				BigDecimal result = (BigDecimal) record.get("created");
-				created = new Long(result.toPlainString());
+				created = ConversionUtils.toLong(result.toPlainString(), 0l);
 			} else {
 				created = (Long) record.get("created");
 			}

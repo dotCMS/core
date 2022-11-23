@@ -38,7 +38,7 @@ public class RoleHelper {
                                 final SystemEventsAPI systemEventsAPI) throws DotDataException {
 
         final List<Layout> layouts      = layoutAPI.loadLayoutsForRole(role);
-        final List<String> layoutsAdded = new ArrayList<>();
+        final ArrayList<String> layoutsAdded = new ArrayList<>();
         final Map<String, Layout> currentLayoutMaps = layouts.stream().collect(
                 Collectors.toMap(layout -> layout.getId(), layout -> layout));
 
@@ -81,7 +81,7 @@ public class RoleHelper {
                                         final LayoutAPI layoutAPI, final RoleAPI roleAPI,
                                         final SystemEventsAPI systemEventsAPI) throws DotDataException {
 
-        final List<String> layoutsDeleted = new ArrayList<>();
+        final ArrayList<String> layoutsDeleted = new ArrayList<>();
         // Delete layout new layouts
         for(final String toDeleteLayout : layoutIds) {
 

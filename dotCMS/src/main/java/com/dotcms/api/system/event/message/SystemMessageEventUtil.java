@@ -1,6 +1,11 @@
 package com.dotcms.api.system.event.message;
 
-import com.dotcms.api.system.event.*;
+import com.dotcms.api.system.event.CanNotPushSystemEventException;
+import com.dotcms.api.system.event.Payload;
+import com.dotcms.api.system.event.SystemEvent;
+import com.dotcms.api.system.event.SystemEventType;
+import com.dotcms.api.system.event.SystemEventsAPI;
+import com.dotcms.api.system.event.Visibility;
 import com.dotcms.api.system.event.message.builder.SystemConfirmationMessage;
 import com.dotcms.api.system.event.message.builder.SystemMessage;
 import com.dotcms.api.system.event.message.builder.SystemMessageBuilder;
@@ -8,12 +13,16 @@ import com.dotcms.business.expiring.ExpiringMap;
 import com.dotcms.business.expiring.ExpiringMapBuilder;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.rest.ErrorEntity;
+import com.dotcms.util.ConversionUtils;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 
-import java.util.*;
+import java.io.Serializable;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 
 /**
  * This class encapsulates the logic to create the System Message for the System Events.
@@ -301,7 +310,7 @@ public class SystemMessageEventUtil {
             }
     } // pushMessage.
 
-    public void pushLargeMessage (final Object message, final List<String> users) {
+    public void pushLargeMessage (final Serializable message, final List<String> users) {
 
         try {
 
@@ -317,7 +326,6 @@ public class SystemMessageEventUtil {
                                    final List<String> users,
                                    final String... portletIds) {
 
-        final Set<String> portletIdSet = (null != portletIds) ? new HashSet<>(Arrays.asList(portletIds)) : null;
         final SystemMessage systemMessage = new SystemMessageBuilder()
                 .setMessage(message)
                 .setPortletIdList(portletIds)
@@ -327,11 +335,11 @@ public class SystemMessageEventUtil {
         return this.createPayload(systemMessage, users);
     }
 
-    private Payload createPayload (final Object message,
+    private Payload createPayload (final Serializable message,
                                    final List<String> users) {
 
         final Visibility visibility = (null == users || users.isEmpty())  ? Visibility.GLOBAL : Visibility.USERS;
-        final Object visibilityValue = (null == users || users.isEmpty()) ? null : users;
+        final Serializable visibilityValue = (null == users || users.isEmpty()) ? null : ConversionUtils.mapToSerializable(users);
 
         return new Payload(message, visibility, visibilityValue);
     }

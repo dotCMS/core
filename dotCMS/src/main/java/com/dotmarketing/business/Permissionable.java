@@ -1,10 +1,11 @@
 package com.dotmarketing.business;
 
+import java.io.Serializable;
 import java.util.List;
 
 import com.dotmarketing.exception.DotDataException;
 
-public interface Permissionable {
+public interface Permissionable extends Serializable {
 
 	/**
 	 * Sets the id to be used for checking permissions 

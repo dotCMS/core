@@ -8,11 +8,11 @@ import java.io.Serializable;
  */
 public class ExcludeOwnerVerifierBean implements Serializable {
     private final String userId;
-    private final Object visibilityValue;
+    private final Serializable visibilityValue;
     private final Visibility visibility;
 
     public ExcludeOwnerVerifierBean(final String userId,
-                                    final Object visibilityValue,
+                                    final Serializable visibilityValue,
                                     final Visibility visibility) {
         this.userId = userId;
         this.visibilityValue = visibilityValue;
@@ -23,7 +23,7 @@ public class ExcludeOwnerVerifierBean implements Serializable {
         return userId;
     }
 
-    public Object getVisibilityValue() {
+    public Serializable getVisibilityValue() {
         return visibilityValue;
     }
 

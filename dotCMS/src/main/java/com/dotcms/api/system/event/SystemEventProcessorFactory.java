@@ -1,9 +1,7 @@
 package com.dotcms.api.system.event;
 
-import com.dotcms.rest.api.v1.system.websocket.SessionWrapper;
 import com.liferay.portal.model.User;
 
-import javax.websocket.Session;
 import java.io.Serializable;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
