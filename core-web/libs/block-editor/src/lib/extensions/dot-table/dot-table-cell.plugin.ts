@@ -99,7 +99,6 @@ export const DotTableCellPlugin = (options) => {
 
                 component.instance.items = getCellsOptions(options.editor, tippyCellOptions);
                 component.instance.title = '';
-                //this.changeToElement.remove();
                 component.changeDetectorRef.detectChanges();
             }
         },

@@ -141,7 +141,7 @@ export const DragHandler = (viewContainerRef: ViewContainerRef) => {
                                 requestAnimationFrame(() => {
                                     hideDragHandler();
                                     deselectCurrentNode(view);
-                                    // remove node because prosmirror duplicate the node on D&D
+                                    // remove table node because prosmirror duplicate the node on D&D
                                     // https://github.com/ueberdosis/tiptap/issues/2250
                                     if (nodeToBeDragged.nodeName === 'TABLE') {
                                         removeNode(nodeToBeDragged);
