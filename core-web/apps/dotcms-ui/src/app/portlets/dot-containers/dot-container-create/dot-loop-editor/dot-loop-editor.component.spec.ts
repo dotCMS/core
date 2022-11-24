@@ -1,5 +1,5 @@
 import { DotLoopEditorComponent } from './dot-loop-editor.component';
-import { ComponentFixture, fakeAsync, TestBed, tick } from '@angular/core/testing';
+import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { DotMessagePipeModule } from '@pipes/dot-message/dot-message-pipe.module';
 import { Component, CUSTOM_ELEMENTS_SCHEMA, DebugElement, forwardRef, Input } from '@angular/core';
 import {
@@ -97,12 +97,11 @@ describe('DotLoopEditorComponent', () => {
         expect(label.innerText).toBe('Pre-loop');
     });
 
-    it('should show pre_loop', fakeAsync(() => {
+    it('should show pre_loop', () => {
         component.label = 'post_loop';
         fixture.detectChanges();
-        tick();
         de = fixture.debugElement.query(By.css('dot-loop-editor'));
         const label = de.query(By.css('[data-testId="label"]')).nativeElement;
         expect(label.innerText).toBe('Post-loop');
-    }));
+    });
 });

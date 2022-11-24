@@ -59,7 +59,7 @@ export class DotContainerPropertiesComponent implements OnInit {
                     )
                 });
 
-                this.mapContainerStructureIntoFormControl(containerStructures);
+                this.addContainerFormControl(containerStructures);
             });
         this.form.valueChanges.pipe(takeUntil(this.destroy$)).subscribe((values) => {
             this.store.updateIsContentTypeButtonEnabled(values.maxContentlets > 0);
@@ -67,11 +67,11 @@ export class DotContainerPropertiesComponent implements OnInit {
     }
 
     /**
-     * Map Container Strcutures into FormControl
+     * Add Container Strcutures into FormControl
      * @param {DotContainerStructure[]} containerStructures
      * @memberof DotContainerPropertiesComponent
      */
-    mapContainerStructureIntoFormControl(containerStructures: DotContainerStructure[]) {
+    addContainerFormControl(containerStructures: DotContainerStructure[]) {
         if (containerStructures && containerStructures.length > 0) {
             containerStructures.forEach(
                 ({ code, structureId, containerId, containerInode, contentTypeVar }) => {

@@ -48,6 +48,30 @@ const mockContentTypes: DotCMSContentType[] = [
         workflows: [],
         fields: [],
         layout: []
+    },
+    {
+        baseType: 'CONTENT',
+        clazz: 'com.dotcms.contenttype.model.type.ImmutableSimpleContentType',
+        defaultType: false,
+        description: 'Activities available at desitnations',
+        detailPage: 'e5f131d2-1952-4596-bbbf-28fb28021b68',
+        fixed: false,
+        folder: 'SYSTEM_FOLDER',
+        host: '48190c8c-42c4-46af-8d1a-0cd5db894797',
+        iDate: 1567778770000,
+        icon: 'paragliding',
+        id: '12345',
+        modDate: 1663219138000,
+        multilingualable: false,
+        nEntries: 10,
+        name: 'Activity 2',
+        system: false,
+        urlMapPattern: '/activities/{urlTitle}',
+        variable: 'Activity2',
+        versionable: true,
+        workflows: [],
+        fields: [],
+        layout: []
     }
 ];
 
@@ -125,6 +149,7 @@ const messageServiceMock = new MockDotMessageService({
 
 describe('DotContentEditorComponent', () => {
     let hostFixture: ComponentFixture<HostTestComponent>;
+    let hostComponent: HostTestComponent;
     let de: DebugElement;
     let coreWebService: CoreWebService;
     let menu: Menu;
@@ -158,11 +183,12 @@ describe('DotContentEditorComponent', () => {
         });
 
         hostFixture = TestBed.createComponent(HostTestComponent);
+        hostComponent = hostFixture.componentInstance;
         de = hostFixture.debugElement;
         coreWebService = TestBed.inject(CoreWebService);
     });
 
-    describe('dot-add-variable-dialog', () => {
+    describe('with data', () => {
         beforeEach(fakeAsync(() => {
             spyOn<CoreWebService>(coreWebService, 'requestView').and.returnValue(
                 of({
@@ -173,18 +199,38 @@ describe('DotContentEditorComponent', () => {
             tick();
             hostFixture.detectChanges();
             de = hostFixture.debugElement;
+            hostComponent = hostFixture.componentInstance;
         }));
 
         it('should set labels', () => {
             menu = de.query(By.css('p-menu')).componentInstance;
-            const actions = [{ label: 'Activity', command: jasmine.any(Function) }];
+            const actions = [
+                { label: 'Activity', command: jasmine.any(Function) },
+                { label: 'Activity 2', command: jasmine.any(Function) }
+            ];
 
             expect(menu.model).toEqual(actions);
         });
 
-        it('should have content types', () => {
+        it('should have add content type', () => {
+            menu = de.query(By.css('p-menu')).componentInstance;
+            menu.model[0].command();
+            hostFixture.detectChanges();
+            const contentTypes = de.queryAll(By.css('p-tabpanel'));
+            expect(contentTypes.length).toEqual(3);
+            expect((hostComponent.form.get('containerStructures') as FormArray).length).toEqual(2);
+        });
+
+        it('should have remove content type', () => {
+            menu = de.query(By.css('p-menu')).componentInstance;
+            menu.model[0].command();
+            hostFixture.detectChanges();
+            const tabCloseBtn = de.query(By.css('.p-tabview-close'));
+            tabCloseBtn.triggerEventHandler('click');
+            hostFixture.detectChanges();
             const contentTypes = de.queryAll(By.css('p-tabpanel'));
             expect(contentTypes.length).toEqual(2);
+            expect((hostComponent.form.get('containerStructures') as FormArray).length).toEqual(1);
         });
     });
 });

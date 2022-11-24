@@ -26,6 +26,7 @@ export class DotContentEditorComponent implements OnInit {
     menuItems: MenuItem[];
     activeTabIndex = 1;
     monacoEditors = {};
+    contentTypeNamesById = {};
 
     constructor(
         private dialogService: DialogService,
@@ -33,9 +34,19 @@ export class DotContentEditorComponent implements OnInit {
     ) {}
 
     ngOnInit() {
+        this.contentTypes.forEach(({ id, name }: DotCMSContentType) => {
+            this.contentTypeNamesById[id] = name;
+        });
+
         this.init();
     }
 
+    /**
+     * Get ContainerStrcuture as FormArray
+     * @readonly
+     * @type {FormArray}
+     * @memberof DotContentEditorComponent
+     */
     get getcontainerStructures(): FormArray {
         return this.fg.get('containerStructures') as FormArray;
     }
@@ -64,7 +75,7 @@ export class DotContentEditorComponent implements OnInit {
      * @param close - This is the function that closes the modal.
      * @memberof DotContentEditorComponent
      */
-    handleClose(index: number = null, close: () => void): void {
+    removeItem(index: number = null, close: () => void): void {
         this.getcontainerStructures.removeAt(index - 1);
         close();
     }
@@ -94,19 +105,6 @@ export class DotContentEditorComponent implements OnInit {
     }
 
     /**
-     * Get content type name
-     * @param {string} id
-     * @return {*}
-     * @memberof DotContentEditorComponent
-     */
-    getContentTypeNameById(id: string) {
-        return (
-            this.contentTypes.find((contentType: DotCMSContentType) => contentType.id === id)
-                ?.name || ''
-        );
-    }
-
-    /**
      * It pushes the monaco instance into the monacoEditor array.
      * @param monacoInstance - The monaco instance that is created by the component.
      * @memberof DotContentEditorComponent
@@ -116,7 +114,7 @@ export class DotContentEditorComponent implements OnInit {
     }
 
     private init(): void {
-        this.menuItems = this.mapMenuItems(this.contentTypes);
+        this.menuItems = this.getMenuItems(this.contentTypes);
     }
 
     /**
@@ -128,7 +126,7 @@ export class DotContentEditorComponent implements OnInit {
         this.activeTabIndex = index;
     }
 
-    private mapMenuItems(contentTypes: DotCMSContentType[]): MenuItem[] {
+    private getMenuItems(contentTypes: DotCMSContentType[]): MenuItem[] {
         return contentTypes.map((contentType) => {
             return {
                 label: contentType.name,

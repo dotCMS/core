@@ -7,7 +7,7 @@
         [activeIndex]="activeTabIndex"
         [controlClose]="true"
         (onChange)="handleTabClick($event, $event.index)"
-        (onClose)="handleClose($event.index, $event.close)"
+        (onClose)="removeItem($event.index, $event.close)"
     >
         <p-tabPanel headerStyleClass="tab-panel-btn">
             <ng-template pTemplate="header">
@@ -20,7 +20,7 @@
         </p-tabPanel>
         <p-tabPanel
             *ngFor="let containerContent of getcontainerStructures.controls; let i = index"
-            [header]="getContentTypeNameById(containerContent.value.structureId)"
+            [header]="contentTypeNamesById[containerContent.value.structureId]"
             [selected]="activeTabIndex === i + 1"
             formArrayName="containerStructures"
             closable="true"
