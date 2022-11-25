@@ -3,10 +3,10 @@
         <div
             class="dot-pages-favorite-card-content__image"
             [ngStyle]="{ 'background-image': 'url(' + imageUri + ')' }"
-            src="#"
             alt="Card"
-        ><img [src]="imageUri" />
-    </div>
+        >
+            <img [src]="imageUri" />
+        </div>
     </ng-template>
 
     <dot-icon-button
@@ -24,10 +24,9 @@
         <div class="dot-pages-favorite-card-content__title">{{ title }}</div>
         <div
             class="dot-pages-favorite-card-content__subtitle"
-            [pTooltip]="url | dm"
+            [pTooltip]="url"
+            [innerHTML]="url"
             tooltipPosition="bottom"
-        >
-            {{ url }}
-        </div>
+        ></div>
     </div>
 </p-card>

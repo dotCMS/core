@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { ComponentStore, tapResponse } from '@ngrx/component-store';
-import { forkJoin, Observable, of } from 'rxjs';
+import { forkJoin, Observable } from 'rxjs';
 import { switchMap, take } from 'rxjs/operators';
 import { DotCMSContentlet } from '@dotcms/dotcms-models';
 import { DotCurrentUserService } from '@dotcms/app/api/services/dot-current-user/dot-current-user.service';
@@ -12,11 +12,6 @@ import {
 import { ESContent } from '@dotcms/app/shared/models/dot-es-content/dot-es-content.model';
 import { DotHttpErrorManagerService } from '@dotcms/app/api/services/dot-http-error-manager/dot-http-error-manager.service';
 import { HttpErrorResponse } from '@angular/common/http';
-
-export const enum DotFavoritePageActionState {
-    SAVED = 'SAVED',
-    DELETED = 'DELETED'
-}
 
 export interface DotPagesState {
     favoritePages: {

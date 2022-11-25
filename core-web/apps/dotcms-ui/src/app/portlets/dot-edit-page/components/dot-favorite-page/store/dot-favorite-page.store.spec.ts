@@ -34,7 +34,7 @@ class MockDotCurrentUserService {
 }
 
 @Injectable()
-class MockDotHttpErrorManagerService {
+export class MockDotHttpErrorManagerService {
     public handle(): Observable<unknown> {
         return null;
     }

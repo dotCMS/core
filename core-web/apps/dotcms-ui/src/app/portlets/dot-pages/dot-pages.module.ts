@@ -4,7 +4,6 @@ import { DotPagesComponent } from './dot-pages.component';
 import { DotPagesRoutingModule } from './dot-pages-routing.module';
 import { DotPagesCardModule } from './dot-pages-card/dot-pages-card.module';
 import { DotESContentService } from '@dotcms/app/api/services/dot-es-content/dot-es-content.service';
-import { ScrollerModule } from 'primeng/scroller';
 import { TabViewModule } from 'primeng/tabview';
 import { DotPipesModule } from '@dotcms/app/view/pipes/dot-pipes.module';
 import { DotIconModule } from '@dotcms/ui';
@@ -17,7 +16,6 @@ import { ButtonModule } from 'primeng/button';
         CommonModule,
         DotPagesRoutingModule,
         DotPagesCardModule,
-        ScrollerModule,
         DotPipesModule,
         DotIconModule,
         PanelModule,
