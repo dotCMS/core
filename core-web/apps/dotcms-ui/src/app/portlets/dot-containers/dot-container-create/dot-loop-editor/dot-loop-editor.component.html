@@ -9,7 +9,9 @@
         ></button>
     </div>
     <div *ngIf="isEditorVisible">
-        <label class="block field">{{ 'message.containers.create.pre_loop' | dm }}</label>
+        <label class="block field" data-testId="label">{{
+            'message.containers.create.' + label | dm
+        }}</label>
         <dot-textarea-content
             [formControl]="loopControl"
             [show]="['code']"

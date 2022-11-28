@@ -8,6 +8,7 @@ import com.dotcms.cache.lettuce.LettuceCacheTest;
 import com.dotcms.cache.lettuce.RedisClientTest;
 import com.dotcms.content.business.ObjectMapperTest;
 import com.dotcms.content.business.json.ContentletJsonAPITest;
+import com.dotcms.content.elasticsearch.business.ESContentFactoryImplTest;
 import com.dotcms.content.elasticsearch.business.ESContentletAPIImplTest;
 import com.dotcms.content.elasticsearch.business.ESIndexAPITest;
 import com.dotcms.content.elasticsearch.business.ElasticsearchUtilTest;
@@ -15,6 +16,7 @@ import com.dotcms.content.elasticsearch.util.ESMappingUtilHelperTest;
 import com.dotcms.content.model.hydration.MetadataDelegateTest;
 import com.dotcms.contenttype.business.ContentTypeInitializerTest;
 import com.dotcms.contenttype.business.DotAssetBaseTypeToContentTypeStrategyImplTest;
+import com.dotcms.contenttype.business.StoryBlockAPITest;
 import com.dotcms.contenttype.test.DotAssetAPITest;
 import com.dotcms.csspreproc.CSSCacheTest;
 import com.dotcms.csspreproc.CSSPreProcessServletTest;
@@ -42,6 +44,8 @@ import com.dotcms.enterprise.publishing.staticpublishing.AWSS3PublisherTest;
 import com.dotcms.enterprise.publishing.staticpublishing.LanguageFolderTest;
 import com.dotcms.enterprise.publishing.staticpublishing.StaticPublisherIntegrationTest;
 import com.dotcms.enterprise.rules.RulesAPIImplIntegrationTest;
+import com.dotcms.experiments.business.ExperimentAPIImpIT;
+import com.dotcms.experiments.business.web.ExperimentWebAPIImplIT;
 import com.dotcms.filters.interceptor.meta.MetaWebInterceptorTest;
 import com.dotcms.graphql.DotGraphQLHttpServletTest;
 import com.dotcms.integritycheckers.HostIntegrityCheckerTest;
@@ -124,6 +128,24 @@ import com.dotmarketing.portlets.fileassets.business.FileAssetAPIImplIntegration
 import com.dotmarketing.portlets.fileassets.business.FileAssetFactoryIntegrationTest;
 import com.dotmarketing.portlets.folders.business.FolderFactoryImplTest;
 import com.dotmarketing.portlets.folders.model.FolderTest;
+import com.dotmarketing.portlets.rules.actionlet.PersonaActionletTest;
+import com.dotmarketing.portlets.rules.actionlet.SendRedirectActionletTest;
+import com.dotmarketing.portlets.rules.actionlet.SetRequestAttributeActionletTest;
+import com.dotmarketing.portlets.rules.actionlet.StopProcessingActionletTest;
+import com.dotmarketing.portlets.rules.conditionlet.DateTimeConditionletTest;
+import com.dotmarketing.portlets.rules.conditionlet.HttpMethodConditionletTest;
+import com.dotmarketing.portlets.rules.conditionlet.PagesViewedConditionletTest;
+import com.dotmarketing.portlets.rules.conditionlet.PersonaConditionletTest;
+import com.dotmarketing.portlets.rules.conditionlet.ReferrerURLConditionletTest;
+import com.dotmarketing.portlets.rules.conditionlet.RequestAttributeConditionletTest;
+import com.dotmarketing.portlets.rules.conditionlet.RequestHeaderConditionletTest;
+import com.dotmarketing.portlets.rules.conditionlet.RequestParameterConditionletTest;
+import com.dotmarketing.portlets.rules.conditionlet.SessionAttributeConditionletTest;
+import com.dotmarketing.portlets.rules.conditionlet.UsersBrowserConditionletTest;
+import com.dotmarketing.portlets.rules.conditionlet.UsersCountryConditionletTest;
+import com.dotmarketing.portlets.rules.conditionlet.UsersPlatformConditionletTest;
+import com.dotmarketing.portlets.rules.conditionlet.VisitorsCurrentURLConditionletTest;
+import com.dotmarketing.portlets.rules.conditionlet.VisitorsGeolocationConditionletTest;
 import com.dotmarketing.portlets.templates.business.FileAssetTemplateUtilTest;
 import com.dotmarketing.portlets.templates.business.TemplateFactoryImplTest;
 import com.dotmarketing.portlets.workflows.actionlet.MoveContentActionletTest;
@@ -176,14 +198,9 @@ import com.dotmarketing.startup.runonce.Task220512UpdateNoHTMLRegexValueTest;
 import com.dotmarketing.startup.runonce.Task220606UpdatePushNowActionletNameTest;
 import com.dotmarketing.startup.runonce.Task220822CreateVariantTableTest;
 import com.dotmarketing.startup.runonce.Task220824CreateDefaultVariantTest;
-import com.dotmarketing.startup.runonce.Task220829CreateExperimentsTableTest;
-
 import com.dotmarketing.startup.runonce.Task220825CreateVariantFieldTest;
-
 import com.dotmarketing.startup.runonce.Task220825MakeSomeSystemFieldsRemovableTest;
-
 import com.dotmarketing.startup.runonce.Task220829CreateExperimentsTableTest;
-
 import com.dotmarketing.startup.runonce.Task220912UpdateCorrectShowOnMenuPropertyTest;
 import com.dotmarketing.startup.runonce.Task220928AddLookbackWindowColumnToExperimentTest;
 import com.dotmarketing.startup.runonce.Task221007AddVariantIntoPrimaryKeyTest;
@@ -205,6 +222,9 @@ import org.junit.runners.Suite.SuiteClasses;
 
 @RunWith(MainBaseSuite.class)
 @SuiteClasses({
+        RulesAPIImplIntegrationTest.class,
+        ExperimentAPIImpIT.class,
+        ExperimentWebAPIImplIT.class,
         Task220825CreateVariantFieldTest.class,
         Task221007AddVariantIntoPrimaryKeyTest.class,
         ContentletWebAPIImplIntegrationTest.class, // moved to top because of failures on GHA
@@ -441,7 +461,6 @@ import org.junit.runners.Suite.SuiteClasses;
         VelocityServletIntegrationTest.class,
         DotAssetAPITest.class,
         DotAssetBaseTypeToContentTypeStrategyImplTest.class,
-        RulesAPIImplIntegrationTest.class,
         FileAssetAPIImplIntegrationTest.class,
         FileAssetFactoryIntegrationTest.class,
         UserResourceIntegrationTest.class,
@@ -602,7 +621,28 @@ import org.junit.runners.Suite.SuiteClasses;
         BayesianAPIImplTest.class,
         ContentletDependenciesTest.class,
         UtilMethodsITest.class,
-        Task220912UpdateCorrectShowOnMenuPropertyTest.class
+        StoryBlockAPITest.class,
+        UtilMethodsITest.class,
+        Task220912UpdateCorrectShowOnMenuPropertyTest.class,
+        PersonaActionletTest.class,
+        SendRedirectActionletTest.class,
+        SetRequestAttributeActionletTest.class,
+        StopProcessingActionletTest.class,
+        DateTimeConditionletTest.class,
+        HttpMethodConditionletTest.class,
+        PagesViewedConditionletTest.class,
+        PersonaConditionletTest.class,
+        ReferrerURLConditionletTest.class,
+        RequestAttributeConditionletTest.class,
+        RequestParameterConditionletTest.class,
+        RequestHeaderConditionletTest.class,
+        RequestParameterConditionletTest.class,
+        SessionAttributeConditionletTest.class,
+        UsersBrowserConditionletTest.class,
+        UsersCountryConditionletTest.class,
+        UsersPlatformConditionletTest.class,
+        VisitorsCurrentURLConditionletTest.class,
+        VisitorsGeolocationConditionletTest.class
 })
 public class MainSuite {
 

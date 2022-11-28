@@ -1,9 +1,5 @@
 package com.dotmarketing.portlets.contentlet.model;
 
-import static com.dotcms.util.CollectionsUtils.map;
-import static com.dotmarketing.portlets.contentlet.business.MetadataCache.EMPTY_METADATA_MAP;
-import static com.dotmarketing.util.UtilMethods.isSet;
-
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.contenttype.exception.NotFoundInDbException;
 import com.dotcms.contenttype.model.field.BinaryField;
@@ -59,6 +55,9 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableSet;
 import com.liferay.portal.model.User;
 import io.vavr.control.Try;
+import org.apache.commons.lang.builder.ToStringBuilder;
+import org.apache.commons.lang3.BooleanUtils;
+
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -73,8 +72,9 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
-import org.apache.commons.lang.builder.ToStringBuilder;
-import org.apache.commons.lang3.BooleanUtils;
+
+import static com.dotmarketing.portlets.contentlet.business.MetadataCache.EMPTY_METADATA_MAP;
+import static com.dotmarketing.util.UtilMethods.isSet;
 
 /**
  * Represents a content unit in the system. Ideally, every single domain object
@@ -125,6 +125,7 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
   public static final String URL_MAP_FOR_CONTENT_KEY = "URL_MAP_FOR_CONTENT";
 
   public static final String CONTENTLET_AS_JSON = "contentletAsJson";
+  public static final String ON_NUMBER_OF_PAGES = "onNumberOfPages";
 
   public static final String DONT_VALIDATE_ME = "_dont_validate_me";
   public static final String DISABLE_WORKFLOW = "__disable_workflow__";
@@ -158,9 +159,13 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
   public static final String PATH_TO_MOVE = "_path_to_move";
   public static final String TEMP_BINARY_IMAGE_INODES_LIST = "tempBinaryImageInodesList";
   public static final String RELATIONSHIP_KEY = "__##relationships##__";
+  public static final String CONTENT_TYPE_ICON = "contentTypeIcon";
+  public static final String HAS_LIVE_VERSION = "hasLiveVersion";
+
+  public static final String SKIP_RELATIONSHIPS_VALIDATION = "__skipRelationshipValidation__";
 
   private transient ContentType contentType;
-  protected Map<String, Object> map = new ContentletHashMap();
+  protected Map<String, Object> map;
 
   private boolean lowIndexPriority = false;
 
@@ -169,7 +174,7 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
   private transient IndexPolicy indexPolicy = null;
   private transient IndexPolicy indexPolicyDependencies = null;
 
-  private transient boolean needsReindex = false;
+  private transient boolean needsReindex;
 
   private transient boolean loadedTags = false;
 
@@ -1465,20 +1470,6 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 		return this.getStringProperty(Contentlet.WORKFLOW_ACTION_KEY);
 	}
 
-	/**
-	 * If at least one tag is set, returns true, otherwise false
-	 * @return boolean
-	 * @throws DotDataException
-	 */
-    @JsonIgnore
-	public boolean hasTags () throws DotDataException {
-
-		final List<TagInode> foundTagInodes = APILocator.getTagAPI().getTagInodesByInode(this.getInode());
-		return foundTagInodes != null && !foundTagInodes.isEmpty() && foundTagInodes.stream()
-				.anyMatch(foundTagInode -> isSet(
-						this.get(foundTagInode.getFieldVarName())));
-	}
-
     /**
      * Set the tags to the contentlet
      * @throws DotDataException
@@ -1756,13 +1747,6 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 		this.contentletAPI = contentletAPI;
 	}
 
-	private UserAPI getUserAPI() {
-		if(userAPI==null) {
-			userAPI = APILocator.getUserAPI();
-		}
-		return userAPI;
-	}
-
 	@VisibleForTesting
 	protected void setUserAPI(UserAPI userAPI) {
 		this.userAPI = userAPI;
@@ -1928,4 +1912,5 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 		return null != this.getMap().get(Contentlet.WORKFLOW_IN_PROGRESS) &&
 				Boolean.TRUE.equals(this.getMap().get(Contentlet.WORKFLOW_IN_PROGRESS));
 	}
+
 }
