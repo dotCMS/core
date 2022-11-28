@@ -3,6 +3,7 @@
  */
 package com.dotmarketing.util;
 
+import java.util.zip.ZipInputStream;
 import org.apache.commons.io.IOUtils;
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
@@ -110,24 +111,38 @@ public class ZipUtil {
 	        if (! parentDir.exists()){
 	            parentDir.mkdirs();
 	        }
-	        
-	        BufferedInputStream bis = null;
-	        BufferedOutputStream bos = null;
-	        try{
-	            final InputStream istr = zipFile.getInputStream(zipEntry);
-	            bis = new BufferedInputStream(istr);
-	            final OutputStream os = Files.newOutputStream(file.toPath());
-	            bos  = new BufferedOutputStream(os);
-	            IOUtils.copy(bis, bos);
-	        } finally {
-	            if (bis !=  null){
-	                bis.close();
-	            }
-	            if (bos != null){
-	                bos.close();
-	            }
-	        }
+
+			try (
+					final InputStream istr = zipFile.getInputStream(zipEntry);
+					BufferedInputStream bis = new BufferedInputStream(istr);
+					final OutputStream os = Files.newOutputStream(file.toPath());
+					BufferedOutputStream bos = new BufferedOutputStream(os);
+			) {
+				IOUtils.copy(bis, bos);
+			}
 	    }
+
+
+	public static void extract(final InputStream zipFile, final String outputDirStr) throws IOException {
+		final File outputDir = new File(outputDirStr);
+		outputDir.mkdirs();
+
+		ZipEntry ze = null;
+		try (ZipInputStream zin = new ZipInputStream(zipFile)) {
+			while ((ze = zin.getNextEntry()) != null) {
+				Logger.info(ZipUtil.class, "Unzipping " + ze.getName());
+				final File newFile = new File(outputDir + File.separator + ze.getName());
+				checkSecurity(outputDir, newFile);
+				try (OutputStream os = Files.newOutputStream(newFile.toPath())) {
+					IOUtils.copy(zin, os);
+				}
+			}
+		} catch (final IOException e) {
+			final String errorMsg = String.format("Error while unzipping Data in file '%s': %s", null != ze ? ze.getName() : "", e.getMessage());
+			Logger.error(ZipUtil.class, errorMsg, e);
+			throw e;
+		}
+	}
 
 
 	/**
@@ -152,7 +167,7 @@ public class ZipUtil {
 	 * @return
 	 * @throws IOException
 	 */
-	static boolean checkSecurity(final File parentDir, final File newFile) throws IOException {
+	public static boolean checkSecurity(final File parentDir, final File newFile) throws IOException {
 		if (!isNewFileDestinationSafe(parentDir, newFile)) {
 			//Log detailed info into the security logger
 			parentDir.delete();

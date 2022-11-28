@@ -3,7 +3,6 @@ package com.dotcms.integritycheckers;
 import static com.dotcms.content.business.json.ContentletJsonAPI.SAVE_CONTENTLET_AS_JSON;
 import static org.junit.Assert.assertEquals;
 
-import com.dotcms.IntegrationTestBase;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.datagen.ContentTypeDataGen;
 import com.dotcms.datagen.ContentletDataGen;
@@ -14,8 +13,8 @@ import com.dotcms.datagen.LanguageDataGen;
 import com.dotcms.datagen.RoleDataGen;
 import com.dotcms.datagen.SiteDataGen;
 import com.dotcms.datagen.TemplateDataGen;
-import com.dotcms.repackage.com.csvreader.CsvReader;
 import com.dotcms.repackage.com.csvreader.CsvWriter;
+import com.dotcms.repackage.com.google.common.io.Files;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
@@ -34,16 +33,20 @@ import com.tngtech.java.junit.dataprovider.DataProvider;
 import com.tngtech.java.junit.dataprovider.DataProviderRunner;
 import com.tngtech.java.junit.dataprovider.UseDataProvider;
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.net.URL;
+import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipOutputStream;
 import org.apache.commons.io.FileUtils;
-import org.apache.commons.lang.StringUtils;
 import org.junit.Before;
-import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -496,4 +499,61 @@ public class IntegrityUtilTest  {
                 false
         };
     }
+
+    @Test(expected = SecurityException.class)
+    public void testUnzipUtilSecurityCheckExpectException() throws IOException {
+        final long time = java.lang.System.nanoTime();
+        final File zipEntry = File.createTempFile("zip-entry-" + time, ".txt");
+        FileUtils.writeStringToFile(zipEntry, "File was written @ " + time, Charset.defaultCharset());
+        final File zip = File.createTempFile("zip-test" + time, ".zip");
+        makeZip(zipEntry, zip.getCanonicalPath());
+        final File destinationDir = Files.createTempDir();
+        try (
+            final FileInputStream inputStream = new FileInputStream(zip);
+        ) {
+            IntegrityUtil.unzipFile(inputStream, destinationDir.getCanonicalPath());
+        }
+    }
+
+    @Test
+    public void testUnzipUtilSecurityCheckHappyScenario() throws IOException {
+        final long time = java.lang.System.nanoTime();
+        final File zipEntry = File.createTempFile("zip-entry-" + time, ".txt");
+        FileUtils.writeStringToFile(zipEntry, "" + System.currentTimeMillis(),
+                Charset.defaultCharset());
+        final File zip = File.createTempFile("zip-test" + time, ".zip");
+        makeZip(zipEntry, zip.getCanonicalPath());
+        final String destinationDir = ConfigUtils.getIntegrityPath();
+        try (
+            final FileInputStream inputStream = new FileInputStream(zip);
+        ) {
+            IntegrityUtil.unzipFile(inputStream, destinationDir);
+        }
+    }
+
+    private static void makeZip(final File file, final String zipFileName) throws IOException {
+
+        try (
+                //create ZipOutputStream to write to the zip file
+                FileOutputStream fos = new FileOutputStream(zipFileName);
+                ZipOutputStream zos = new ZipOutputStream(fos);
+        ) {
+            //add a new Zip Entry to the ZipOutputStream
+            ZipEntry ze = new ZipEntry(file.getName());
+            zos.putNextEntry(ze);
+            //read the file and write to ZipOutputStream
+
+            try (FileInputStream fis = new FileInputStream(file);) {
+                byte[] buffer = new byte[1024];
+                int len;
+                while ((len = fis.read(buffer)) > 0) {
+                    zos.write(buffer, 0, len);
+                }
+            }
+
+        }
+
+
+    }
+
 }
