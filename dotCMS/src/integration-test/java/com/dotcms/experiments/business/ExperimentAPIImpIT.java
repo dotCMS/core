@@ -25,7 +25,7 @@ public class ExperimentAPIImpIT {
     }
 
     /**
-     * Method to test: {@link ExperimentsAPI#getRunningExperiment()}
+     * Method to test: {@link ExperimentsAPI#getRunningExperiments()}
      * When: You have tree Experiment:
      * - First one in DRAFT state, it has never been running.
      * - Second one in RUNNING state, it was already started and it was not stopped yet
@@ -43,7 +43,7 @@ public class ExperimentAPIImpIT {
 
         try {
             List<Experiment> experimentRunning = APILocator.getExperimentsAPI()
-                    .getRunningExperiment();
+                    .getRunningExperiments();
 
             List<String> experiemtnsId = experimentRunning.stream()
                     .map(experiment -> experiment.getIdentifier()).collect(Collectors.toList());
@@ -55,7 +55,7 @@ public class ExperimentAPIImpIT {
             ExperimentDataGen.end(stoppedExperiment);
 
             experimentRunning = APILocator.getExperimentsAPI()
-                    .getRunningExperiment();
+                    .getRunningExperiments();
             experiemtnsId = experimentRunning.stream()
                     .map(experiment -> experiment.getIdentifier()).collect(Collectors.toList());
 

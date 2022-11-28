@@ -9,7 +9,7 @@ import javax.servlet.http.HttpServletResponse;
  * This is a {@link com.dotcms.variant.model.Variant selected to a User, this mean this user
  * is going to be into the {@link com.dotcms.variant.model.Variant}'s {@link com.dotcms.experiments.model.Experiment}.
  *
- * @see ExperimentWebAPI#isUserIncluded(HttpServletRequest, HttpServletResponse)
+ * @see ExperimentWebAPI#isUserIncluded(HttpServletRequest, HttpServletResponse, List)
  * @see com.dotcms.variant.model.Variant
  */
 public  class SelectedVariant implements Serializable {
