@@ -1,7 +1,6 @@
 package com.dotcms.rendering.velocity.services;
 
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
-import com.dotcms.contenttype.exception.NotFoundInDbException;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.enterprise.LicenseUtil;
@@ -23,9 +22,6 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.factories.MultiTreeAPI;
 import com.dotmarketing.factories.PersonalizedContentlet;
-import com.dotmarketing.portlets.containers.business.ContainerFinderByIdOrPathStrategy;
-import com.dotmarketing.portlets.containers.business.LiveContainerFinderByIdOrPathStrategyResolver;
-import com.dotmarketing.portlets.containers.business.WorkingContainerFinderByIdOrPathStrategyResolver;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.business.DotContentletStateException;
@@ -36,7 +32,6 @@ import com.dotmarketing.portlets.htmlpageasset.business.render.ContainerRaw;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
-import com.dotmarketing.portlets.personas.business.PersonaAPI;
 import com.dotmarketing.portlets.personas.model.IPersona;
 import com.dotmarketing.portlets.personas.model.Persona;
 import com.dotmarketing.portlets.templates.design.bean.ContainerUUID;
@@ -52,17 +47,23 @@ import com.google.common.collect.Maps;
 import com.google.common.collect.Table;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
-import com.rainerhahnekamp.sneakythrow.Sneaky;
+import io.vavr.control.Try;
 import org.apache.velocity.context.Context;
 
 import javax.servlet.http.HttpServletRequest;
 import java.io.Serializable;
 import java.io.StringWriter;
 import java.text.SimpleDateFormat;
-import java.util.*;
-import java.util.function.Supplier;
+import java.util.Collection;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
 
-import static com.dotmarketing.business.PermissionAPI.*;
+import static com.dotmarketing.business.PermissionAPI.PERMISSION_CAN_ADD_CHILDREN;
+import static com.dotmarketing.business.PermissionAPI.PERMISSION_PUBLISH;
+import static com.dotmarketing.business.PermissionAPI.PERMISSION_READ;
+import static com.dotmarketing.business.PermissionAPI.PERMISSION_WRITE;
 
 /**
  * Utility class that provides commonly used methods for rendering HTML Pages in dotCMS.
@@ -91,6 +92,19 @@ public class PageRenderUtil implements Serializable {
     final Host site;
     final TemplateLayout templateLayout;
 
+    /**
+     * Creates an instance of this class for a given HTML Page.
+     *
+     * @param htmlPage   The {@link IHTMLPage} that is being rendered.
+     * @param user       The {@link User} accessing the page.
+     * @param mode       The {@link PageMode} that this page is being rendered in.
+     * @param languageId The ID of the language that the page is being rendered in.
+     * @param site       The {@link Host} that the page lives in.
+     *
+     * @throws DotSecurityException The user does not have the specified permissions to perform
+     *                              this action.
+     * @throws DotDataException     An error occurred when accessing the data source.
+     */
     public PageRenderUtil(
             final IHTMLPage htmlPage,
             final User user,
@@ -116,11 +130,32 @@ public class PageRenderUtil implements Serializable {
         this.containersRaw = populateContainers();
     }
 
+    /**
+     * Creates an instance of this class for a given HTML Page.
+     *
+     * @param htmlPage   The {@link IHTMLPage} that is being rendered.
+     * @param user       The {@link User} accessing the page.
+     * @param mode       The {@link PageMode} that this page is being rendered in.
+     *
+     * @throws DotSecurityException The user does not have the specified permissions to perform
+     *                              this action.
+     * @throws DotDataException     An error occurred when accessing the data source.
+     */
     public PageRenderUtil(final HTMLPageAsset htmlPage, final User user, final PageMode mode)
             throws DotSecurityException, DotDataException {
         this(htmlPage, user, mode, htmlPage.getLanguageId(), APILocator.getHostAPI().find(htmlPage.getHost(), user, false));
     }
 
+    /**
+     * Creates a Context Data Map with useful information about the HTML Page that is being rendered. This can be passed
+     * down to the Velocity Engine to use such information as required.
+     *
+     * @return The {@link Map} with page data.
+     *
+     * @throws DotDataException     An error occurred when accessing the data source.
+     * @throws DotSecurityException The {@link User} accessing the  page doesn't have the required permissions to
+     *                              perform this action.
+     */
     private Map<String, Object> populateContext() throws DotDataException, DotSecurityException {
         final Map<String, Object> ctxMap = Maps.newHashMap();
         ctxMap.put(mode.name(), Boolean.TRUE);
@@ -165,8 +200,8 @@ public class PageRenderUtil implements Serializable {
         ctxMap.put("PUBLISH_HTMLPAGE_PERMISSION", hasPublishPermOverHTMLPage);
         ctxMap.put("REMOTE_PUBLISH_HTMLPAGE_PERMISSION", hasRemotePublishPermOverHTMLPage);
         ctxMap.put("REMOTE_PUBLISH_END_POINTS", hasEndPoints);
-        ctxMap.put("canAddForm", LicenseUtil.getLevel() >= LicenseLevel.STANDARD.level ? true : false);
-        ctxMap.put("canViewDiff", LicenseUtil.getLevel() >= LicenseLevel.STANDARD.level ? true : false);
+        ctxMap.put("canAddForm", LicenseUtil.getLevel() >= LicenseLevel.STANDARD.level);
+        ctxMap.put("canViewDiff", LicenseUtil.getLevel() >= LicenseLevel.STANDARD.level);
         ctxMap.put("pageChannel", pageChannel);
         ctxMap.put("HTMLPAGE_ASSET_STRUCTURE_TYPE", true);
         ctxMap.put("HTMLPAGE_IS_CONTENT", true);
@@ -196,6 +231,16 @@ public class PageRenderUtil implements Serializable {
         return ctxMap;
     }
 
+    /**
+     * Reads the Containers that are present in an HTML Page and loads all the Contentlets in them. This information can
+     * be used, for example, by the UI layer to display the contents in a page and allow Users to edit it.
+     *
+     * @return The list of {@link ContainerRaw} objects with their respective Contentlets.
+     *
+     * @throws DotDataException     An error occurred when accessing the data source.
+     * @throws DotSecurityException The {@link User} accessing the  page doesn't have the required permissions to
+     *                              perform this action.
+     */
     private List<ContainerRaw> populateContainers() throws DotDataException, DotSecurityException {
 
         final HttpServletRequest request = HttpServletRequestThreadLocal.INSTANCE.getRequest();
@@ -243,6 +288,7 @@ public class PageRenderUtil implements Serializable {
                     final DotContentletTransformer transformer = new DotTransformerBuilder()
                             .defaultOptions().content(nonHydratedContentlet).build();
                     final Contentlet contentlet = transformer.hydrate().get(0);
+                    this.addContentletPageReferenceCount(contentlet);
 
                     final long contentsSize = containerUuidPersona
                             .getSize(container, uniqueUUIDForRender, personalizedContentlet);
@@ -286,6 +332,31 @@ public class PageRenderUtil implements Serializable {
         return raws;
     }
 
+    /**
+     * When <b>in Edit Mode only</b>, we need to read the number of Containers in any HTML Page in the repository that
+     * might be referencing a given Contentlet. This piece of information will be added to the Contentlet's map so that
+     * the UI can let the editing User choose whether they want to edit just that piece of Content, or if they want to
+     * edit the "global" content. This new property is specified in {@link Contentlet#ON_NUMBER_OF_PAGES}.
+     *
+     * @param contentlet The {@link Contentlet} whose HTML Page references will be counted.
+     */
+    private void addContentletPageReferenceCount(final Contentlet contentlet) {
+        if (this.mode.isEditMode()) {
+            final Optional<Integer> pageReferences =
+                    Try.of(() -> this.contentletAPI.getAllContentletReferencesCount(contentlet.getIdentifier())).getOrElse(Optional.empty());
+            pageReferences.ifPresent(integer -> contentlet.getMap().put(Contentlet.ON_NUMBER_OF_PAGES, integer));
+        }
+    }
+
+    /**
+     * Checks if live content must be returned based on information in the current HTTP Request. So, if the
+     * {@code "tm_date"} Session attribute is present -- a Time Machine request -- then working content must always be
+     * returned. Otherwise, the result will be given by the value provided by {@link PageMode#showLive}.
+     *
+     * @param request The current {@link HttpServletRequest} object.
+     *
+     * @return If live content must be displayed, returned {@code true}.
+     */
     private boolean isLive(final HttpServletRequest request) {
 
         return request != null && request.getSession(false) != null && request.getSession(false).getAttribute("tm_date") != null ?
@@ -293,12 +364,30 @@ public class PageRenderUtil implements Serializable {
                 mode.showLive;
     }
 
+    /**
+     * Retrieves the specified Container ID from the dotCMS repository.
+     *
+     * @param live        If the live version of the Container must be loaded, set this to {@code true}.
+     * @param containerId The Container ID being retrieved.
+     *
+     * @return The {@link Container} object.
+     *
+     * @throws DotSecurityException The specified User does not have the required permissions to perform this action.
+     * @throws DotDataException     An error occurred when interacting with the data source.
+     */
     private Container getContainer(final boolean live, final String containerId) throws DotSecurityException, DotDataException {
         final Optional<Container> optionalContainer =
                 APILocator.getContainerAPI().findContainer(containerId, APILocator.systemUser(), live, false);
         return optionalContainer.isPresent() ? optionalContainer.get() : null;
     }
 
+    /**
+     * Adds the values of several Container-specific permissions to the HTML Page's Context Map.
+     *
+     * @param container The {@link Container} whose permissions are being checked.
+     *
+     * @throws DotDataException An error occurred when interacting with the data source.
+     */
     private void addPermissions(final Container container) throws DotDataException {
 
         final boolean hasWritePermissionOnContainer = permissionAPI.doesUserHavePermission(container, PERMISSION_WRITE, user, false)
@@ -315,8 +404,12 @@ public class PageRenderUtil implements Serializable {
         }
     }
 
-    /* Check if we want to accrue the tags associated to each contentlet on
-     * this page
+    /**
+     * Checks if we want to accrue the tags associated to each contentlet on this page.
+     *
+     * @param contentlet The {@link Contentlet} with potential Tags in it.
+     *
+     * @throws DotDataException An error occurred when interacting with the data source.
      */
     private void addAccrueTags(final Contentlet contentlet) throws DotDataException {
 
@@ -330,6 +423,11 @@ public class PageRenderUtil implements Serializable {
         }
     }
 
+    /**
+     * Sets the Widget Pre-Execute code for the specified Contentlet.
+     *
+     * @param contentlet The {@link Contentlet} object.
+     */
     private void widgetPreExecute(final Contentlet contentlet) {
 
         final ContentType type = contentlet.getContentType();
@@ -433,6 +531,11 @@ public class PageRenderUtil implements Serializable {
         }
     }
 
+    /**
+     * Resolves the currently selected Language ID from the Thread Local object, or the current HTTP Request.
+     *
+     * @return The selected Language ID.
+     */
     private long resolveLanguageId () {
 
         final HttpServletRequest request = HttpServletRequestThreadLocal.INSTANCE.getRequest();
@@ -478,12 +581,6 @@ public class PageRenderUtil implements Serializable {
             throw new DotStateException(e);
         }
     }
-
-
-    public List<Tag> getPageFoundTags() {
-        return this.pageFoundTags;
-    }
-
 
     final String getWidgetPreExecute() {
         return this.widgetPreExecute.toString();

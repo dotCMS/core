@@ -76,7 +76,7 @@ export const ImageUpload = (injector: Injector, viewContainerRef: ViewContainerR
                 const placeHolderName = files[0].name;
                 setPlaceHolder(view, position, placeHolderName);
                 dotImageService
-                    .publishContent(files)
+                    .publishContent({ data: files })
                     .pipe(take(1))
                     .subscribe(
                         (dotAssets: DotCMSContentlet[]) => {

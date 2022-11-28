@@ -32,12 +32,12 @@ import com.dotmarketing.portlets.categories.model.Category;
 import com.dotmarketing.util.ActivityLogger;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PageMode;
-import com.dotmarketing.util.PaginatedArrayList;
 import com.dotmarketing.util.UtilMethods;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
+import io.vavr.control.Try;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
@@ -51,7 +51,6 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.stream.Collectors;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -62,17 +61,16 @@ import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
 import org.apache.commons.beanutils.BeanUtils;
 import org.glassfish.jersey.media.multipart.FormDataContentDisposition;
 import org.glassfish.jersey.media.multipart.FormDataMultiPart;
 import org.glassfish.jersey.media.multipart.FormDataParam;
-import org.glassfish.jersey.message.internal.OutboundJaxrsResponse;
 import org.glassfish.jersey.server.JSONP;
 
 /**
@@ -141,7 +139,14 @@ public class CategoriesResource {
      * Url example: /api/v1/categories?filter=&page=0&per_page=5&ordeby=category_name&direction=ASC&showChildrenCount=true
      *
      * @param httpRequest
-     * @return
+     * @param httpResponse
+     * @param filter
+     * @param page
+     * @param perPage
+     * @param orderBy
+     * @param direction
+     * @param showChildrenCount
+     * @return Response
      */
     @GET
     @JSONP
@@ -167,7 +172,8 @@ public class CategoriesResource {
                 page, perPage));
 
         try {
-           response = showChildrenCount == false ?  this.paginationUtil.getPage(httpRequest, user, filter, page, perPage) : this.extendedPaginationUtil.getPage(httpRequest, user, filter, page, perPage);
+           response = showChildrenCount == false ? this.paginationUtil.getPage(httpRequest, user, filter, page, perPage, orderBy, direction)
+                   : this.extendedPaginationUtil.getPage(httpRequest, user, filter, page, perPage, orderBy, direction);
         } catch (Exception e) {
             Logger.error(this, e.getMessage(), e);
             if (ExceptionUtil.causedBy(e, DotSecurityException.class)) {
@@ -198,10 +204,17 @@ public class CategoriesResource {
      * <li>direction: asc for upward order and desc for downward order</li>
      * </ul>
      * <p>
-     * Url example: v1/categories/children?filter=test&page=2&orderby=categoryName
+     * Url example: v1/categories/children?filter=test&page=0&per_page=5&orderby=category_name
      *
      * @param httpRequest
-     * @return
+     * @param httpResponse
+     * @param filter
+     * @param page
+     * @param perPage
+     * @param orderBy
+     * @param direction
+     * @param inode
+     * @return Response
      */
     @GET
     @Path(("/children"))
@@ -213,7 +226,7 @@ public class CategoriesResource {
             @QueryParam(PaginationUtil.FILTER) final String filter,
             @QueryParam(PaginationUtil.PAGE) final int page,
             @QueryParam(PaginationUtil.PER_PAGE) final int perPage,
-            @DefaultValue("categoryName") @QueryParam(PaginationUtil.ORDER_BY) final String orderBy,
+            @DefaultValue("category_name") @QueryParam(PaginationUtil.ORDER_BY) final String orderBy,
             @DefaultValue("ASC") @QueryParam(PaginationUtil.DIRECTION) final String direction,
             @QueryParam("inode") final String inode) throws DotDataException, DotSecurityException {
 
@@ -233,9 +246,54 @@ public class CategoriesResource {
 
         PaginatedCategories list = this.categoryAPI.findChildren(user, inode,
                 pageMode.respectAnonPerms, page, perPage,
-                filter, direction);
+                filter, direction.toLowerCase().equals("asc") ? orderBy : "-" + orderBy);
 
         return getPage(list.getCategories(), list.getTotalCount(), page, perPage);
+    }
+
+    /**
+     * Lookup operation. Categories can be retrieved by category id or key
+     * @param httpRequest
+     * @param httpResponse
+     * @param idOrKey
+     * @return CategoryView
+     */
+
+    @GET
+    @JSONP
+    @Path("/{idOrKey}")
+    @NoCache
+    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    public final CategoryView getCategoryByIdOrKey(@Context final HttpServletRequest httpRequest,
+            @Context final HttpServletResponse httpResponse,
+            @PathParam("idOrKey") final String idOrKey)
+            throws DotSecurityException, DotDataException {
+
+        final InitDataObject initData = new WebResource.InitBuilder(webResource)
+                .requestAndResponse(httpRequest, httpResponse).rejectWhenNoUser(true).init();
+        final User user = initData.getUser();
+        Logger.debug(this, () -> "Getting the category by id or key : " + idOrKey);
+
+        final Host host = WebAPILocator.getHostWebAPI().getHost(httpRequest);
+        final PageMode pageMode = PageMode.get(httpRequest);
+
+        DotPreconditions.checkArgument(UtilMethods.isSet(idOrKey),
+                "The idOrKey is required");
+
+        Category category = Try.of(() -> this.categoryAPI.find(idOrKey, user, pageMode.respectAnonPerms))
+                .getOrNull();
+        if (category == null) {
+            category = Try.of(
+                            () -> this.categoryAPI.findByKey(idOrKey, user, pageMode.respectAnonPerms))
+                    .getOrNull();
+        }
+
+        if (category == null) {
+            Logger.error(this, "Category with idOrKey: " + idOrKey + " does not exist");
+            throw new DoesNotExistException(
+                    "Category with idOrKey: " + idOrKey + " does not exist");
+        }
+        return this.categoryHelper.toCategoryView(category, user);
     }
 
     /**
