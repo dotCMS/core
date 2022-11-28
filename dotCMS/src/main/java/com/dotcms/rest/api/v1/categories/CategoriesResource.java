@@ -32,6 +32,7 @@ import com.dotmarketing.portlets.categories.model.Category;
 import com.dotmarketing.util.ActivityLogger;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PageMode;
+import com.dotmarketing.util.PaginatedArrayList;
 import com.dotmarketing.util.UtilMethods;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -91,6 +92,9 @@ public class CategoriesResource {
     private final PermissionAPI permissionAPI;
     private final CategoryHelper categoryHelper;
 
+    private static final String PAGINATION_PER_PAGE_HEADER_NAME = "X-Pagination-Per-Page";
+    private static final String PAGINATION_CURRENT_PAGE_HEADER_NAME = "X-Pagination-Current-Page";
+    private static final String PAGINATION_TOTAL_ENTRIES_HEADER_NAME = "X-Pagination-Total-Entries";
 
     public CategoriesResource() {
         this(new WebResource(), new PaginationUtil(new CategoriesPaginator()),
@@ -228,7 +232,8 @@ public class CategoriesResource {
             @QueryParam(PaginationUtil.PER_PAGE) final int perPage,
             @DefaultValue("category_name") @QueryParam(PaginationUtil.ORDER_BY) final String orderBy,
             @DefaultValue("ASC") @QueryParam(PaginationUtil.DIRECTION) final String direction,
-            @QueryParam("inode") final String inode) throws DotDataException, DotSecurityException {
+            @QueryParam("inode") final String inode,
+            @QueryParam("showChildrenCount") final boolean showChildrenCount) throws DotDataException, DotSecurityException {
 
         final InitDataObject initData = webResource.init(null, httpRequest, httpResponse, true,
                 null);
@@ -244,11 +249,52 @@ public class CategoriesResource {
         DotPreconditions.checkArgument(UtilMethods.isSet(inode),
                 "The inode is required");
 
+        return getChildrenCategories(user, inode, pageMode.respectAnonPerms, page, perPage,
+                filter, direction, orderBy, showChildrenCount);
+    }
+
+    private Response getChildrenCategories(final User user, final String inode,
+            final boolean respectFrontendRoles, final int page, final int perPage,
+            final String filter, final String direction, final String orderBy,
+            final boolean showChildrenCount)
+            throws DotDataException, DotSecurityException {
+
         PaginatedCategories list = this.categoryAPI.findChildren(user, inode,
-                pageMode.respectAnonPerms, page, perPage,
+                respectFrontendRoles, page, perPage,
                 filter, direction.toLowerCase().equals("asc") ? orderBy : "-" + orderBy);
 
-        return getPage(list.getCategories(), list.getTotalCount(), page, perPage);
+        if(list.getCategories() != null)
+        {
+            if(showChildrenCount) {
+                final List<CategoryListDTO> result = new ArrayList<>();
+
+                for (var category : list.getCategories()) {
+                    CategoryListDTO categoryListDTO = new CategoryListDTO(
+                            category.getCategoryName(), category.getCategoryVelocityVarName(),
+                            category.getKey(),
+                            category.getKeywords(), category.getSortOrder(),
+                            category.getDescription(), category.isActive(), category.getModDate(),
+                            category.getIDate(), category.getType(), category.getOwner(),
+                            category.getInode(), category.getIdentifier(),
+                            this.categoryAPI.findChildren(user, category.getInode(),
+                                    respectFrontendRoles, page, perPage, filter,
+                                    direction.toString()).getTotalCount());
+
+                    result.add(categoryListDTO);
+                }
+                return getPage(result, perPage, page, result.size());
+            }
+        }
+        return getPage(list.getCategories(), perPage, page, list.getTotalCount());
+    }
+
+    private Response getPage(final Object data, final int perPage, final int page, final Integer totalCount){
+        return Response.
+                ok(new ResponseEntityView(data))
+                .header(PAGINATION_PER_PAGE_HEADER_NAME, perPage)
+                .header(PAGINATION_CURRENT_PAGE_HEADER_NAME, page)
+                .header(PAGINATION_TOTAL_ENTRIES_HEADER_NAME, totalCount)
+                .build();
     }
 
     /**
@@ -437,7 +483,7 @@ public class CategoriesResource {
                 : this.getChildren(httpRequest, httpResponse, categoryEditForm.getFilter(),
                         categoryEditForm.getPage(),
                         categoryEditForm.getPerPage(), "", categoryEditForm.getDirection(),
-                        categoryEditForm.getParentInode());
+                        categoryEditForm.getParentInode(), true);
     }
 
     /**
@@ -810,17 +856,6 @@ public class CategoriesResource {
                         host.getTitle() != null ? host.getTitle() : "default");
             }
         }
-    }
-
-    private Response getPage(final List<Category> list, final int totalCount, final int page,
-            final int perPage) {
-
-        return Response.
-                ok(new ResponseEntityView((Object) list))
-                .header("X-Pagination-Per-Page", perPage)
-                .header("X-Pagination-Current-Page", page)
-                .header("X-Pagination-Total-Entries", totalCount)
-                .build();
     }
 
     private String getObjectToJsonString(final Object object) {
