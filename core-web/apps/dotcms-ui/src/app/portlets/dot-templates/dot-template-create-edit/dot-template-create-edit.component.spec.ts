@@ -62,6 +62,7 @@ export class DotTemplateBuilderMockComponent {
 export class DotPortletBaseMockComponent {
     @Input() boxed;
 }
+//
 
 @Component({
     selector: 'dot-portlet-toolbar',
