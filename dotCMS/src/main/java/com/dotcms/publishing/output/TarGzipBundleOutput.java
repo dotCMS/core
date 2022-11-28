@@ -32,20 +32,18 @@ public class TarGzipBundleOutput extends BundleOutput {
 
     @Override
     public void create() throws IOException {
-        final OutputStream outputStream = Files.newOutputStream(tarGzipFile.toPath());
+        try(final OutputStream outputStream = Files.newOutputStream(tarGzipFile.toPath())){
 
         tarArchiveOutputStream = new TarArchiveOutputStream(new GZIPOutputStream(outputStream, GZIP_OUTPUT_STREAM_BUFFER_SIZE));
 
         tarArchiveOutputStream.setBigNumberMode(TarArchiveOutputStream.BIGNUMBER_STAR);
         // TAR originally didn't support long file names, so enable the support for it
         tarArchiveOutputStream.setLongFileMode(TarArchiveOutputStream.LONGFILE_GNU);
+        }
     }
 
     public static File getBundleTarGzipFile(final String bundleId) {
-        final String fileName = String.format(
-                ConfigUtils.getBundlePath() + File.separator + bundleId + ".tar.gz"
-        );
-
+        final String fileName = String.format("%s%s%s.tar.gz",ConfigUtils.getBundlePath(),File.separator,bundleId);
         return new File(fileName);
     }
 
