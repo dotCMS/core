@@ -15,6 +15,7 @@ import { ControlValueAccessor, FormControl, NG_VALUE_ACCESSOR } from '@angular/f
 })
 export class DotLoopEditorComponent implements ControlValueAccessor, OnInit {
     @Input() isEditorVisible = false;
+    @Input() label = '';
     @Output() buttonClick = new EventEmitter();
 
     public readonly loopControl = new FormControl('');
