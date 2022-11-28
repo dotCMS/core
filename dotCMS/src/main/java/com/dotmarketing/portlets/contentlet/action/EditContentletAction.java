@@ -90,6 +90,7 @@ import com.dotmarketing.util.PortletURLUtil;
 import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableList;
 import com.liferay.portal.PortalException;
 import com.liferay.portal.SystemException;
@@ -2010,7 +2011,7 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 							} else if (field instanceof RelationshipField) {
 								text = loadRelationships(((ContentletRelationships)value).getRelationshipsRecords());
 							} else if (field instanceof KeyValueField) {
-								text = exportKeyValueField((LinkedHashMap) value);
+								text = new ObjectMapper().writeValueAsString(value);
                             } else if (BaseContentType.HTMLPAGE.equals(contentType.baseType()) && PageContentType
                                     .PAGE_URL_FIELD_VAR.equalsIgnoreCase(field.variable())) {
                                 final Identifier id = APILocator.getIdentifierAPI().find(content.getIdentifier());
@@ -2093,19 +2094,6 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 								Collectors.toList()))));
 
 		return result.toString();
-	}
-
-	/**
-	 * Builds the expected way of a KeyValueField when it's exported. Which is:
-	 * "{'key1':'value','key2':'value2'}"
-	 */
-	private String exportKeyValueField(final LinkedHashMap<String,String> keyValueMap){
-		String text = StringPool.OPEN_CURLY_BRACE;
-		for (Map.Entry<String, String> entry : keyValueMap.entrySet()) {
-			text = text + "'" + entry.getKey() + "':'" + entry.getValue() + "'" + StringPool.COMMA;
-		}
-		text = text.substring(0,text.lastIndexOf(StringPool.COMMA)) + StringPool.CLOSE_CURLY_BRACE;
-		return text;
 	}
 
 	/**
