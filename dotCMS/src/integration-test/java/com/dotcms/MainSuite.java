@@ -537,7 +537,7 @@ import org.junit.runners.Suite.SuiteClasses;
         StaticPushPublishBundleGeneratorTest.class,
         CookieToolTest.class,
         CSVManifestBuilderTest.class,
-        MoveContentActionletTest.class,
+        //MoveContentActionletTest.class, //comment because the only one test there was commente by now
         ImageFilterAPIImplTest.class,
         DeterministicIdentifierAPITest.class,
         Task210527DropReviewFieldsFromContentletTableTest.class,
