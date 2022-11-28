@@ -50,6 +50,7 @@ export class ContentTypeFieldsDropZoneComponent implements OnInit, OnChanges, On
     currentField: DotCMSContentTypeField;
     currentFieldType: FieldType;
     dialogActions: DotDialogActions;
+    defaultDialogActions: DotDialogActions;
     fieldRows: DotCMSContentTypeLayoutRow[];
     hideButtons = false;
     activeTab = 0;
@@ -128,7 +129,20 @@ export class ContentTypeFieldsDropZoneComponent implements OnInit, OnChanges, On
     }
 
     ngOnInit(): void {
-        this.setDefaultActions();
+        this.defaultDialogActions = {
+            accept: {
+                action: () => {
+                    this.propertiesForm.saveFieldProperties();
+                },
+                label: this.dotMessageService.get('contenttypes.dropzone.action.save'),
+                disabled: true
+            },
+            cancel: {
+                label: this.dotMessageService.get('contenttypes.dropzone.action.cancel')
+            }
+        };
+
+        this.dialogActions = this.defaultDialogActions;
 
         this.fieldDragDropService.fieldDropFromSource$
             .pipe(takeUntil(this.destroy$))
@@ -370,7 +384,7 @@ export class ContentTypeFieldsDropZoneComponent implements OnInit, OnChanges, On
      */
     handleTabChange(index: number): void {
         if (index === this.OVERVIEW_TAB_INDEX) {
-            this.setDefaultActions();
+            this.dialogActions = this.defaultDialogActions;
         }
 
         this.hideButtons = index !== this.OVERVIEW_TAB_INDEX;
@@ -389,6 +403,17 @@ export class ContentTypeFieldsDropZoneComponent implements OnInit, OnChanges, On
             block: 'start',
             inline: 'nearest'
         });
+    }
+
+    /**
+     * Change dialogActions
+     *
+     * @param {DotDialogActions} controls
+     * @memberof ContentTypeFieldsDropZoneComponent
+     */
+    changeControls(controls: DotDialogActions) {
+        this.dialogActions = controls;
+        requestAnimationFrame(() => (this.hideButtons = false));
     }
 
     private setDroppedField(droppedField: DotCMSContentTypeField): void {
@@ -414,26 +439,5 @@ export class ContentTypeFieldsDropZoneComponent implements OnInit, OnChanges, On
                 return this.down && drake.dragging;
             }
         });
-    }
-
-    private setDefaultActions() {
-        this.dialogActions = {
-            accept: {
-                action: () => {
-                    this.propertiesForm.saveFieldProperties();
-                },
-                label: this.dotMessageService.get('contenttypes.dropzone.action.save'),
-                disabled: true
-            },
-            cancel: {
-                label: this.dotMessageService.get('contenttypes.dropzone.action.cancel')
-            }
-        };
-    }
-
-    changeControls(controls: DotDialogActions) {
-        this.dialogActions = controls;
-        // REMOVE
-        requestAnimationFrame(() => (this.hideButtons = false));
     }
 }

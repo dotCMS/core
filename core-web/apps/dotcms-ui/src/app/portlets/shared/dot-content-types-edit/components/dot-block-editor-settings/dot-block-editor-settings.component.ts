@@ -23,7 +23,7 @@ import { DotFieldVariable } from '../fields/dot-content-type-fields-variables/mo
 import { DotDialogActions } from '@components/dot-dialog/dot-dialog.component';
 import { DotMessageService } from '@dotcms/app/api/services/dot-message/dot-messages.service';
 
-const BLOCK_EDITOR_BLOCKS = [
+export const BLOCK_EDITOR_BLOCKS = [
     { label: 'Block Quote', code: 'blockquote' },
     { label: 'Bullet List', code: 'bulletList' },
     { label: 'Code Block', code: 'codeBlock' },
@@ -44,7 +44,7 @@ const BLOCK_EDITOR_ASSETS = [
 */
 
 @Component({
-    selector: 'dot-dot-block-editor-settings',
+    selector: 'dot-block-editor-settings',
     templateUrl: './dot-block-editor-settings.component.html',
     styleUrls: ['./dot-block-editor-settings.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush
@@ -55,6 +55,8 @@ export class DotBlockEditorSettingsComponent implements OnInit, OnDestroy {
     @Output() save = new EventEmitter<DotFieldVariable[]>();
 
     @Input() field: DotCMSContentTypeField;
+
+    // Change this to an Input and use the OnChanges lifecycle hook
     @Input() set isDisplayed(value) {
         if (value) {
             this.changeControls.emit(this.dialogActions());
@@ -97,6 +99,7 @@ export class DotBlockEditorSettingsComponent implements OnInit, OnDestroy {
             */
         });
 
+        // Idea: apps/dotcms-ui/src/app/portlets/dot-edit-page/components/dot-favorite-page/dot-favorite-page.component.ts
         this.fieldVariablesService
             .load(this.field)
             .pipe(take(1))

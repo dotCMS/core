@@ -80,13 +80,13 @@
             [header]="'Settings'"
             [disabled]="!currentField?.id"
         >
-            <dot-dot-block-editor-settings
+            <dot-block-editor-settings
                 [field]="currentField"
                 [isDisplayed]="panel._selected"
                 (changeControls)="changeControls($event)"
                 (save)="toggleDialog()"
                 (valid)="setDialogOkButtonState($event)"
-            ></dot-dot-block-editor-settings>
+            ></dot-block-editor-settings>
         </p-tabPanel>
 
         <p-tabPanel

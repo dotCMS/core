@@ -88,9 +88,14 @@ export class DotContentTypeFieldsVariablesComponent implements OnChanges, OnDest
             .load(this.field)
             .pipe(takeUntil(this.destroy$))
             .subscribe((fieldVariables: DotFieldVariable[]) => {
-                this.fieldVariables = fieldVariables.filter(
-                    (item) => !this.blackList[this.field.clazz][item.key]
-                );
+                this.fieldVariables = fieldVariables.filter((item) => {
+                    const fieldBlackList = this.blackList[this.field.clazz];
+                    if (fieldBlackList) {
+                        return !fieldBlackList[item?.key];
+                    }
+
+                    return true;
+                });
             });
     }
 
