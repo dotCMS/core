@@ -1699,7 +1699,11 @@ public interface ContentletAPI {
 	 * @throws DotContentletValidationException will be thrown if the contentlet is not valid.  
 	 * Use the notValidFields property of the exception to get which fields where not valid  
 	 */
-	public void validateContentlet(Contentlet contentlet,List<Category> cats)throws DotContentletValidationException; 
+	public void validateContentlet(Contentlet contentlet,List<Category> cats)throws DotContentletValidationException;
+
+	@CloseDBIfOpened
+	void validateContentletNoRels(Contentlet contentlet,
+								  List<Category> cats) throws DotContentletValidationException;
 	
 	/**
 	 * Use to validate your contentlet.

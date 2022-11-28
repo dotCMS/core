@@ -970,7 +970,7 @@ public interface ContentletAPIPostHook {
 	 * @param cats - categories
 	 * Use the notValidFields property of the exception to get which fields where not valid
 	 */
-	public default void validateContentlet(Contentlet contentlet,Map<Relationship, List<Contentlet>> contentRelationships,List<Category> cats){} 
+	public default void validateContentlet(Contentlet contentlet,Map<Relationship, List<Contentlet>> contentRelationships,List<Category> cats){}
 	
 	/**
 	 * Use to validate your contentlet.
@@ -978,7 +978,14 @@ public interface ContentletAPIPostHook {
 	 * @param contentRelationships
 	 * @param cats - categories
 	 */
-	public default void validateContentlet(Contentlet contentlet, ContentletRelationships contentRelationships, List<Category> cats){} 
+	public default void validateContentlet(Contentlet contentlet, ContentletRelationships contentRelationships, List<Category> cats){}
+
+	/**
+	 * Use to validate your contentlet.
+	 * @param contentlet
+	 * @param cats - categories
+	 */
+	default void validateContentletNoRels(Contentlet contentlet, List<Category> cats){}
 	
 	/**
 	 * Use to determine if if the field value is a String value withing the contentlet object

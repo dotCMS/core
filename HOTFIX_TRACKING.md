@@ -70,3 +70,5 @@ This maintenance release includes the following code fixes:
 59. https://github.com/dotCMS/core/issues/22910 : Multilingual content related slows down edit content screen #22910
 
 **Release-22.03.4**
+
+60. https://github.com/dotCMS/core/issues/23015 : Bulk update while importing is extremely slow #23015
