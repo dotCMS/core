@@ -34,40 +34,38 @@ public class ZipUtilTest  {
 
      @Test(expected = SecurityException.class)
      public void testUnzipInvalidInputStream() throws Exception {
-          File badZipFile = createBadZip();
-          File tmpDir = com.google.common.io.Files.createTempDir();
-          try (InputStream in = Files.newInputStream(badZipFile.toPath())) {
+          final File evilZipFile = createEvilZip();
+          final File tmpDir = com.google.common.io.Files.createTempDir();
+          try (InputStream in = Files.newInputStream(evilZipFile.toPath())) {
                ZipUtil.extract(in, tmpDir.getAbsolutePath());
           }
      }
 
 
      /**
-      * Creates a zipfile that includes a file that attempts a directory traversal
+      * Creates a zip file that includes a file that attempts a directory traversal
       * @return
       * @throws Exception
       */
-     File createBadZip() throws Exception {
+     File createEvilZip() throws Exception {
 
-          File tmpDir = com.google.common.io.Files.createTempDir();
-          File goodFile = new File(tmpDir, System.currentTimeMillis() + ".tmp");
+          final File tmpDir = com.google.common.io.Files.createTempDir();
+          final File goodFile = new File(tmpDir, System.currentTimeMillis() + ".tmp");
 
           FileUtils.touch(goodFile);
 
-          String badFileName = "../../../../../../../../../../tmp/" + System.currentTimeMillis() + ".tmp";
+          final String badFileName = "../../../../../../../../../../tmp/" + System.currentTimeMillis() + ".tmp";
           File badFile = new File(badFileName);
 
           FileUtils.touch(badFile);
 
-          List<File> files = List.of(tmpDir, goodFile, badFile);
+          final List<File> files = List.of(tmpDir, goodFile, badFile);
 
-          File badZipFile = File.createTempFile("badzip-", ".zip");
+          final File badZipFile = File.createTempFile("badzip-", ".zip");
           try (ZipOutputStream zout = new ZipOutputStream(Files.newOutputStream(badZipFile.toPath()))) {
-
-
+               
                for (File file : files) {
-                    ZipEntry ze = file.getPath().contains("..") ? new ZipEntry(file.getPath()) : new ZipEntry(file.getName());
-
+                    final ZipEntry ze = file.getPath().contains("..") ? new ZipEntry(file.getPath()) : new ZipEntry(file.getName());
                     zout.putNextEntry(ze);
                     zout.closeEntry();
                }

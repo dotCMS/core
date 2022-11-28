@@ -500,6 +500,11 @@ public class IntegrityUtilTest  {
         };
     }
 
+    /**
+     * Simply test that we cn only unzip under the properly configured out dir
+     * here we expect failure
+     * @throws IOException
+     */
     @Test(expected = SecurityException.class)
     public void testUnzipUtilSecurityCheckExpectException() throws IOException {
         final long time = java.lang.System.nanoTime();
@@ -515,6 +520,11 @@ public class IntegrityUtilTest  {
         }
     }
 
+    /**
+     * Simply test that we cn only unzip under the properly configured out dir
+     * Here we expecte success
+     * @throws IOException
+     */
     @Test
     public void testUnzipUtilSecurityCheckHappyScenario() throws IOException {
         final long time = java.lang.System.nanoTime();
@@ -531,6 +541,12 @@ public class IntegrityUtilTest  {
         }
     }
 
+    /**
+     * Dummy zip
+     * @param file
+     * @param zipFileName
+     * @throws IOException
+     */
     private static void makeZip(final File file, final String zipFileName) throws IOException {
 
         try (
@@ -550,10 +566,7 @@ public class IntegrityUtilTest  {
                     zos.write(buffer, 0, len);
                 }
             }
-
         }
-
-
     }
 
 }
