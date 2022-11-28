@@ -397,8 +397,7 @@ export class ContentTypeFieldsDropZoneComponent implements OnInit, OnChanges, On
 
         this.hideButtons =
             index !== this.OVERVIEW_TAB_INDEX &&
-            this.isBlockEditorField &&
-            index !== this.BLOCK_EDITOR_SETTINGS_TAB_INDEX;
+            !(index === this.BLOCK_EDITOR_SETTINGS_TAB_INDEX && this.isBlockEditorField);
     }
 
     /**
