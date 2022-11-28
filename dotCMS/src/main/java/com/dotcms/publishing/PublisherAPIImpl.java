@@ -339,10 +339,16 @@ public class PublisherAPIImpl implements PublisherAPI, DotInitializer {
             Logger.warn(this, ()-> String.format("Filter '%s' does not exist", filterKey));
             return Boolean.FALSE;
         }
-        final File filterPathFile = new File(new File(PUBLISHING_FILTERS_FOLDER.get()), filterKey);
-        if (FileUtils.deleteQuietly(filterPathFile)) {
-            this.init();
-            return Boolean.TRUE;
+        final String parentFolder = PUBLISHING_FILTERS_FOLDER.get();
+        final File filterPathFile = new File(parentFolder, filterKey);
+
+        try {
+            if (filterPathFile.getCanonicalPath().startsWith(parentFolder) &&  FileUtils.deleteQuietly(filterPathFile)) {
+                this.init();
+                return Boolean.TRUE;
+            }
+        }catch (IOException e){
+           Logger.error(PublisherAPIImpl.class, String.format("Exception trying to get canonical path from file [%s]",filterPathFile), e);
         }
         return Boolean.FALSE;
     }

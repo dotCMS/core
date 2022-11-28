@@ -63,7 +63,7 @@ public class ZipUtilTest  {
 
           final File badZipFile = File.createTempFile("badzip-", ".zip");
           try (ZipOutputStream zout = new ZipOutputStream(Files.newOutputStream(badZipFile.toPath()))) {
-               
+
                for (File file : files) {
                     final ZipEntry ze = file.getPath().contains("..") ? new ZipEntry(file.getPath()) : new ZipEntry(file.getName());
                     zout.putNextEntry(ze);

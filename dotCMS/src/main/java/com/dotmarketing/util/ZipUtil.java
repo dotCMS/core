@@ -123,7 +123,8 @@ public class ZipUtil {
 	    }
 
 
-	public static void extract(final InputStream zipFile, final String outputDirStr) throws IOException {
+	public static void extract(final InputStream zipFile, final String outputDirStr)
+			throws IOException {
 		final File outputDir = new File(outputDirStr);
 		outputDir.mkdirs();
 
@@ -132,13 +133,18 @@ public class ZipUtil {
 			while ((ze = zin.getNextEntry()) != null) {
 				Logger.info(ZipUtil.class, "Unzipping " + ze.getName());
 				final File newFile = new File(outputDir + File.separator + ze.getName());
-				checkSecurity(outputDir, newFile);
-				try (OutputStream os = Files.newOutputStream(newFile.toPath())) {
-					IOUtils.copy(zin, os);
+				if (newFile.getCanonicalPath().startsWith(outputDirStr)) {
+					try (OutputStream os = Files.newOutputStream(newFile.toPath())) {
+						IOUtils.copy(zin, os);
+					}
+				} else {
+					//in case of an invalid attempt this will report the exception
+					checkSecurity(outputDir, newFile);
 				}
 			}
 		} catch (final IOException e) {
-			final String errorMsg = String.format("Error while unzipping Data in file '%s': %s", null != ze ? ze.getName() : "", e.getMessage());
+			final String errorMsg = String.format("Error while unzipping Data in file '%s': %s",
+					null != ze ? ze.getName() : "", e.getMessage());
 			Logger.error(ZipUtil.class, errorMsg, e);
 			throw e;
 		}
@@ -167,7 +173,7 @@ public class ZipUtil {
 	 * @return
 	 * @throws IOException
 	 */
-	public static boolean checkSecurity(final File parentDir, final File newFile) throws IOException {
+	static boolean checkSecurity(final File parentDir, final File newFile) throws IOException {
 		if (!isNewFileDestinationSafe(parentDir, newFile)) {
 			//Log detailed info into the security logger
 			parentDir.delete();
