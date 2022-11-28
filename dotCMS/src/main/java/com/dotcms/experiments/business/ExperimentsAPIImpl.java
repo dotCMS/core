@@ -437,7 +437,7 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
 
         final ExperimentVariant experimentVariant = ExperimentVariant.builder().id(variantName)
                 .description(variantDescription).weight(0)
-                .url(page.getPageUrl()+"?variantName="+variantName)
+                .url(page.getURI()+"?variantName="+variantName)
                 .build();
         return experimentVariant;
     }
