@@ -434,9 +434,7 @@ class TestDotBlockEditorSettingsComponent {
     @Output() save = new EventEmitter<DotFieldVariable[]>();
 
     @Input() field: DotCMSContentTypeField;
-    @Input() set isDisplayed(_value) {
-        /** */
-    }
+    @Input() isVisible = false;
 }
 
 describe('Load fields and drag and drop', () => {
@@ -931,7 +929,7 @@ describe('Load fields and drag and drop', () => {
                 label: 'Cancel'
             }
         };
-        comp.changeControls(newDialogActions);
+        comp.changesDialogActions(newDialogActions);
         expect(comp.dialogActions).toEqual(newDialogActions);
     });
 
@@ -951,7 +949,7 @@ describe('Load fields and drag and drop', () => {
         };
 
         // Changes Dialog Actions
-        comp.changeControls(newDialogActions);
+        comp.changesDialogActions(newDialogActions);
         expect(comp.dialogActions).toEqual(newDialogActions);
 
         // Change to Overview Tab
@@ -975,7 +973,7 @@ describe('Load fields and drag and drop', () => {
         };
 
         // Changes Dialog Actions
-        comp.changeControls(newDialogActions);
+        comp.changesDialogActions(newDialogActions);
         expect(comp.dialogActions).toEqual(newDialogActions);
 
         // Change to Overview Tab

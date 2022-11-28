@@ -22,6 +22,7 @@ import { DotCMSContentTypeField } from '@dotcms/dotcms-models';
 import { DotFieldVariable } from '../fields/dot-content-type-fields-variables/models/dot-field-variable.interface';
 import { DotDialogActions } from '@components/dot-dialog/dot-dialog.component';
 import { DotMessageService } from '@dotcms/app/api/services/dot-message/dot-messages.service';
+import { OnChanges, SimpleChanges } from '@angular/core';
 
 export const BLOCK_EDITOR_BLOCKS = [
     { label: 'Block Quote', code: 'blockquote' },
@@ -49,19 +50,13 @@ const BLOCK_EDITOR_ASSETS = [
     styleUrls: ['./dot-block-editor-settings.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class DotBlockEditorSettingsComponent implements OnInit, OnDestroy {
+export class DotBlockEditorSettingsComponent implements OnInit, OnDestroy, OnChanges {
     @Output() changeControls = new EventEmitter<DotDialogActions>();
     @Output() valid = new EventEmitter<boolean>();
     @Output() save = new EventEmitter<DotFieldVariable[]>();
 
     @Input() field: DotCMSContentTypeField;
-
-    // Change this to an Input and use the OnChanges lifecycle hook
-    @Input() set isDisplayed(value) {
-        if (value) {
-            this.changeControls.emit(this.dialogActions());
-        }
-    }
+    @Input() isVisible = false;
 
     private destroy$: Subject<boolean> = new Subject<boolean>();
 
@@ -99,7 +94,6 @@ export class DotBlockEditorSettingsComponent implements OnInit, OnDestroy {
             */
         });
 
-        // Idea: apps/dotcms-ui/src/app/portlets/dot-edit-page/components/dot-favorite-page/dot-favorite-page.component.ts
         this.fieldVariablesService
             .load(this.field)
             .pipe(take(1))
@@ -112,6 +106,13 @@ export class DotBlockEditorSettingsComponent implements OnInit, OnDestroy {
         this.form.valueChanges.pipe(takeUntil(this.destroy$)).subscribe(() => {
             this.valid.emit(this.form.valid);
         });
+    }
+
+    ngOnChanges(changes: SimpleChanges) {
+        const { isVisible } = changes;
+        if (isVisible?.currentValue) {
+            this.changeControls.emit(this.dialogActions());
+        }
     }
 
     ngOnDestroy(): void {

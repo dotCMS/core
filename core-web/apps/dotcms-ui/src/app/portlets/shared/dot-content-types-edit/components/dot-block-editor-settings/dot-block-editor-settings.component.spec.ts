@@ -1,4 +1,4 @@
-import { DebugElement } from '@angular/core';
+import { DebugElement, SimpleChange } from '@angular/core';
 import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing';
 import { of } from 'rxjs';
 import { DotFieldVariablesService } from '../fields/dot-content-type-fields-variables/services/dot-field-variables.service';
@@ -15,7 +15,7 @@ import { MultiSelect, MultiSelectModule } from 'primeng/multiselect';
 import { By } from '@angular/platform-browser';
 import { CommonModule } from '@angular/common';
 
-fdescribe('DotContentTypeFieldsVariablesComponent', () => {
+describe('DotContentTypeFieldsVariablesComponent', () => {
     let fixture: ComponentFixture<DotBlockEditorSettingsComponent>;
     let component: DotBlockEditorSettingsComponent;
     let de: DebugElement;
@@ -78,10 +78,13 @@ fdescribe('DotContentTypeFieldsVariablesComponent', () => {
         expect(selector).toBeTruthy();
     });
 
-    it('should emit changeControls when isDisplay input is true', () => {
+    it('should emit changeControls when isVisible input is true', () => {
         fixture.detectChanges();
         spyOn(component.changeControls, 'emit');
-        component.isDisplayed = true;
+        component.ngOnChanges({
+            isVisible: new SimpleChange(false, true, false)
+        });
+        fixture.detectChanges();
         expect(component.changeControls.emit).toHaveBeenCalled();
     });
 
@@ -92,7 +95,14 @@ fdescribe('DotContentTypeFieldsVariablesComponent', () => {
         expect(component.valid.emit).toHaveBeenCalled();
     });
 
-    describe('MultiSelector settings', () => {
+    it('should emit valid output on form change', () => {
+        spyOn(component.valid, 'emit');
+        fixture.detectChanges();
+        component.form.get('allowedBlocks').setValue('codeblock');
+        expect(component.valid.emit).toHaveBeenCalled();
+    });
+
+    describe('MultiSelector', () => {
         let multiselect: MultiSelect;
         beforeEach(() => {
             fixture.detectChanges();
@@ -107,7 +117,7 @@ fdescribe('DotContentTypeFieldsVariablesComponent', () => {
             expect(multiselect.appendTo).toEqual('body');
         });
 
-        it('should have options', () => {
+        it('should have BLOCK_EDITOR_BLOCKS options', () => {
             expect(multiselect.options).toEqual(BLOCK_EDITOR_BLOCKS);
         });
     });

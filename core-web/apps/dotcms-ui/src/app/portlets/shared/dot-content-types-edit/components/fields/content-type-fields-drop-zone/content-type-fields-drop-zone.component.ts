@@ -45,6 +45,7 @@ import * as autoScroll from 'dom-autoscroller';
 })
 export class ContentTypeFieldsDropZoneComponent implements OnInit, OnChanges, OnDestroy {
     readonly OVERVIEW_TAB_INDEX = 0;
+    readonly BLOCK_EDITOR_SETTINGS_TAB_INDEX = 1;
 
     displayDialog = false;
     currentField: DotCMSContentTypeField;
@@ -75,6 +76,13 @@ export class ContentTypeFieldsDropZoneComponent implements OnInit, OnChanges, On
 
     private _loading: boolean;
     private destroy$: Subject<boolean> = new Subject<boolean>();
+
+    get isBlockEditorField() {
+        return (
+            this.currentFieldType?.clazz ===
+            'com.dotcms.contenttype.model.field.ImmutableStoryBlockField'
+        );
+    }
 
     constructor(
         private dotMessageService: DotMessageService,
@@ -387,7 +395,10 @@ export class ContentTypeFieldsDropZoneComponent implements OnInit, OnChanges, On
             this.dialogActions = this.defaultDialogActions;
         }
 
-        this.hideButtons = index !== this.OVERVIEW_TAB_INDEX;
+        this.hideButtons =
+            index !== this.OVERVIEW_TAB_INDEX &&
+            this.isBlockEditorField &&
+            index !== this.BLOCK_EDITOR_SETTINGS_TAB_INDEX;
     }
 
     /**
@@ -411,9 +422,8 @@ export class ContentTypeFieldsDropZoneComponent implements OnInit, OnChanges, On
      * @param {DotDialogActions} controls
      * @memberof ContentTypeFieldsDropZoneComponent
      */
-    changeControls(controls: DotDialogActions) {
+    changesDialogActions(controls: DotDialogActions) {
         this.dialogActions = controls;
-        requestAnimationFrame(() => (this.hideButtons = false));
     }
 
     private setDroppedField(droppedField: DotCMSContentTypeField): void {

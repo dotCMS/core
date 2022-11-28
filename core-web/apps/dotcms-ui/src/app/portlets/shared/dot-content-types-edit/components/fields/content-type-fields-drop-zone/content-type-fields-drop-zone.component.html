@@ -72,18 +72,14 @@
         </p-tabPanel>
         <p-tabPanel
             #panel
-            *ngIf="
-                !!currentField?.id &&
-                currentFieldType?.clazz ===
-                    'com.dotcms.contenttype.model.field.ImmutableStoryBlockField'
-            "
+            *ngIf="!!currentField?.id && isBlockEditorField"
             [header]="'Settings'"
             [disabled]="!currentField?.id"
         >
             <dot-block-editor-settings
                 [field]="currentField"
-                [isDisplayed]="panel._selected"
-                (changeControls)="changeControls($event)"
+                [isVisible]="panel._selected"
+                (changeControls)="changesDialogActions($event)"
                 (save)="toggleDialog()"
                 (valid)="setDialogOkButtonState($event)"
             ></dot-block-editor-settings>
