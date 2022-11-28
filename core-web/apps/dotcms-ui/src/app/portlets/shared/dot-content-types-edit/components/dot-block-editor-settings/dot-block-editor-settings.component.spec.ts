@@ -1,6 +1,6 @@
 import { DebugElement, SimpleChange } from '@angular/core';
 import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing';
-import { of } from 'rxjs';
+import { of, throwError } from 'rxjs';
 import { DotFieldVariablesService } from '../fields/dot-content-type-fields-variables/services/dot-field-variables.service';
 import {
     DotBlockEditorSettingsComponent,
@@ -14,12 +14,14 @@ import { FormBuilder, ReactiveFormsModule, FormsModule } from '@angular/forms';
 import { MultiSelect, MultiSelectModule } from 'primeng/multiselect';
 import { By } from '@angular/platform-browser';
 import { CommonModule } from '@angular/common';
+import { mockFieldVariables } from '@dotcms/app/test/field-variable-service.mock';
 
 describe('DotContentTypeFieldsVariablesComponent', () => {
     let fixture: ComponentFixture<DotBlockEditorSettingsComponent>;
     let component: DotBlockEditorSettingsComponent;
     let de: DebugElement;
     let dotFieldVariableService: DotFieldVariablesService;
+    let dotHttpErrorManagerService: DotHttpErrorManagerService;
 
     const messageServiceMock = new MockDotMessageService({
         'contenttypes.dropzone.action.save': 'Save',
@@ -44,7 +46,8 @@ describe('DotContentTypeFieldsVariablesComponent', () => {
                                     key: 'allowedBlocks',
                                     value: 'orderList,unorderList,table'
                                 }
-                            ])
+                            ]),
+                        save: () => of([])
                     }
                 },
                 {
@@ -53,7 +56,9 @@ describe('DotContentTypeFieldsVariablesComponent', () => {
                 },
                 {
                     provide: DotHttpErrorManagerService,
-                    useValue: {}
+                    useValue: {
+                        handle: () => of([])
+                    }
                 }
             ]
         }).compileComponents();
@@ -62,6 +67,7 @@ describe('DotContentTypeFieldsVariablesComponent', () => {
         de = fixture.debugElement;
         component = de.componentInstance;
         dotFieldVariableService = de.injector.get(DotFieldVariablesService);
+        dotHttpErrorManagerService = de.injector.get(DotHttpErrorManagerService);
     }));
 
     it('should not setup form values', () => {
@@ -100,6 +106,25 @@ describe('DotContentTypeFieldsVariablesComponent', () => {
         fixture.detectChanges();
         component.form.get('allowedBlocks').setValue('codeblock');
         expect(component.valid.emit).toHaveBeenCalled();
+    });
+
+    it('should save properties on saveSettings', () => {
+        spyOn(dotFieldVariableService, 'save').and.returnValue(of(mockFieldVariables[0]));
+        spyOn(component.save, 'emit');
+        fixture.detectChanges();
+        component.saveSettings();
+        expect(dotFieldVariableService.save).toHaveBeenCalledTimes(1);
+        expect(component.save.emit).toHaveBeenCalledTimes(1);
+    });
+
+    it('should handler error if save proprties faild', () => {
+        spyOn(dotFieldVariableService, 'save').and.returnValue(throwError({}));
+        spyOn(dotHttpErrorManagerService, 'handle').and.returnValue(of());
+        spyOn(component.save, 'emit');
+        fixture.detectChanges();
+        component.saveSettings();
+        expect(dotHttpErrorManagerService.handle).toHaveBeenCalledTimes(1);
+        expect(component.save.emit).not.toHaveBeenCalled();
     });
 
     describe('MultiSelector', () => {

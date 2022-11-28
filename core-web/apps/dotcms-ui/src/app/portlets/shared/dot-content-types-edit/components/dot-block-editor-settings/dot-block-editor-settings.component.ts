@@ -120,7 +120,7 @@ export class DotBlockEditorSettingsComponent implements OnInit, OnDestroy, OnCha
         this.destroy$.complete();
     }
 
-    private saveSettings(): void {
+    saveSettings(): void {
         forkJoin(
             this.settings.map(({ key }) =>
                 this.fieldVariablesService.save(this.field, {
