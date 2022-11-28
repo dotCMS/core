@@ -529,13 +529,12 @@ public class ApiTokenAPITest {
     }
 
     @Test
-    public void Test_Non_Well_Formed_Token(){
+    public void testNonWellFormedToken(){
         assertFalse(apiTokenAPI.isWellFormedToken("any"));
     }
 
     @Test
-    public void Test_Well_Formed_Token() {
-
+    public void testWellFormedToken() {
         ApiToken skinnyToken = ApiToken.from(getSkinnyToken()).withUserId(APILocator.systemUser().getUserId()).build();
         assert (!skinnyToken.isValid());
         skinnyToken = apiTokenAPI.persistApiToken(skinnyToken, APILocator.systemUser());

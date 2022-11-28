@@ -17,14 +17,18 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.MaintenanceUtil;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.ZipUtil;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Path;
-import org.apache.commons.lang3.StringUtils;
-
-import java.io.*;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.io.Serializable;
 import java.math.BigDecimal;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -36,8 +40,8 @@ import java.util.Optional;
 import java.util.Properties;
 import java.util.function.BiConsumer;
 import java.util.zip.ZipEntry;
-import java.util.zip.ZipInputStream;
 import java.util.zip.ZipOutputStream;
+import org.apache.commons.lang3.StringUtils;
 
 /**
  * During the push publish process, user structures such as Folders, Content

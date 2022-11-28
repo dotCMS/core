@@ -522,7 +522,7 @@ public class IntegrityUtilTest  {
 
     /**
      * Simply test that we cn only unzip under the properly configured out dir
-     * Here we expecte success
+     * Here we expect success
      * @throws IOException
      */
     @Test
