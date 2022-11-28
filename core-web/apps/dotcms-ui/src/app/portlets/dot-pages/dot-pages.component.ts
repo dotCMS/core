@@ -15,6 +15,12 @@ export class DotPagesComponent {
         this.store.setInitialStateData();
     }
 
+    /**
+     * Event to load more/less Favorite page data
+     *
+     * @param {boolean} areAllFavoritePagesLoaded
+     * @memberof DotPagesComponent
+     */
     toggleFavoritePagesData(areAllFavoritePagesLoaded: boolean): void {
         if (areAllFavoritePagesLoaded) {
             this.store.limitFavoritePages();

@@ -117,6 +117,11 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
             });
     }
 
+    /**
+     * Limit Favorite page data
+     *
+     * @memberof DotFavoritePageStore
+     */
     limitFavoritePages(): void {
         this.setFavoritePages(this.favoritePages.slice(0, this.initialFavoritePagesLimit));
     }
