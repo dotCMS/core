@@ -31,6 +31,7 @@ sonarqube {
     property "sonar.host.url", "https://sonarqube.dotcms.site"
     property "sonar.sourceEncoding", "UTF-8"
     property "sonar.exclusions", "src/main/webapp/dotcms-webcomponents/**,src/main/webapp/dotcms-webcomponents/**, src/main/plugins/**, src/main/java/org/**, src/main/java/com/liferay/**, src/main/java/net/**"
+    properties["sonar.tests"] += sourceSets.integTest.allSource.srcDirs
   }
 }
 
@@ -257,10 +258,10 @@ dependencies {
 
     //// starter config
 
-    starter group: 'com.dotcms', name: 'starter', version: 'empty_20221018', ext: 'zip'
+    //starter group: 'com.dotcms', name: 'starter', version: 'empty_20221018', ext: 'zip'
     //Uncomment this line if you want to download the starter that comes with data
-    //starter group: 'com.dotcms', name: 'starter', version: '20221010', ext: 'zip'
-    testsStarter group: 'com.dotcms', name: 'starter', version: 'empty_20220718', ext: 'zip'
+    starter group: 'com.dotcms', name: 'starter', version: '20221010', ext: 'zip'
+    //testsStarter group: 'com.dotcms', name: 'starter', version: 'empty_20220718', ext: 'zip'
     
     profiler group: 'glowroot-custom', name: 'glowroot-agent', version: '0.13.1'
     profilerDependencies group: 'glowroot-custom', name: 'collector-https-linux', version: '0.13.1'
@@ -540,7 +541,7 @@ class ClonePullTomcatTask extends DefaultTask{
         } else {
 
             def tomcatGit = Grgit.open(dir: folder)
-            tomcatGit.pull()
+           // tomcatGit.pull()
         }
     }
 
