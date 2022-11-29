@@ -541,7 +541,7 @@ class ClonePullTomcatTask extends DefaultTask{
         } else {
 
             def tomcatGit = Grgit.open(dir: folder)
-           // tomcatGit.pull()
+            tomcatGit.pull()
         }
     }
 
