@@ -317,10 +317,12 @@ describe('ContainerListComponent', () => {
         baseTypesSelector = fixture.debugElement.query(
             By.css('dot-base-type-selector')
         ).componentInstance;
-        spyOn(comp, 'changeBaseTypeSelector');
+        spyOn(comp.listing.paginatorService, 'setExtraParams');
+        spyOn(comp.listing, 'loadFirstPage');
         baseTypesSelector.selected.emit('test');
 
-        expect(comp.changeBaseTypeSelector).toHaveBeenCalledWith('test');
+        expect(comp.listing.paginatorService.setExtraParams).toHaveBeenCalledWith('type', 'test');
+        expect(comp.listing.loadFirstPage).toHaveBeenCalledWith();
     });
 
     function setBasicOptions() {
