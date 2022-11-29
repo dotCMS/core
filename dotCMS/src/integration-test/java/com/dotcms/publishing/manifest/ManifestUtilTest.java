@@ -1,20 +1,17 @@
 package com.dotcms.publishing.manifest;
 
-import static org.junit.Assert.*;
-
+import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.util.ConfigUtils;
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.Reader;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.Optional;
 import java.util.zip.GZIPOutputStream;
 import org.apache.commons.compress.archivers.tar.TarArchiveEntry;
@@ -22,9 +19,15 @@ import org.apache.commons.compress.archivers.tar.TarArchiveOutputStream;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.junit.Assert;
+import org.junit.BeforeClass;
 import org.junit.Test;
 
 public class ManifestUtilTest {
+
+    @BeforeClass
+    public static void prepare() throws Exception {
+        IntegrationTestInitService.getInstance().init();
+    }
 
     @Test
     public void TestConfigFilePath(){
@@ -41,9 +44,10 @@ public class ManifestUtilTest {
      */
     @Test
     public void getManifestInputStreamExpectSuccess() throws IOException {
+        final String tempDir = System.getProperty("java.io.tmpdir");
         final long time = java.lang.System.nanoTime();
         final File gzip = Path.of(ConfigUtils.getBundlePath(), "any"+time+"").toFile();
-        final File file =  Path.of(System.getProperty("java.io.tmpdir"), ManifestBuilder.MANIFEST_NAME).toFile()   ;
+        final File file =  Path.of(tempDir, ManifestBuilder.MANIFEST_NAME).toFile()   ;
         if(!file.exists()) {
             FileUtils.writeStringToFile(file, " ::: " + System.currentTimeMillis(),
                     Charset.defaultCharset());
@@ -60,9 +64,10 @@ public class ManifestUtilTest {
      */
     @Test
     public void getManifestInputStreamExpectFail() throws IOException {
+        final String tempDir = System.getProperty("java.io.tmpdir");
         final long time = java.lang.System.nanoTime();
-        final File gzip = Path.of(System.getProperty("java.io.tmpdir"), "any"+time+"").toFile();
-        final File file =  Path.of(System.getProperty("java.io.tmpdir"), ManifestBuilder.MANIFEST_NAME).toFile()   ;
+        final File gzip = Path.of(tempDir, "any"+time+"").toFile();
+        final File file =  Path.of(tempDir, ManifestBuilder.MANIFEST_NAME).toFile()   ;
         if(!file.exists()) {
             FileUtils.writeStringToFile(file, " ::: " + System.currentTimeMillis(),
                     Charset.defaultCharset());
