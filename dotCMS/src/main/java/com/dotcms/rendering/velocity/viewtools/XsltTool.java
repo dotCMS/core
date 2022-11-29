@@ -22,9 +22,11 @@ import com.liferay.portal.SystemException;
 import com.liferay.portal.model.User;
 import java.io.ByteArrayOutputStream;
 import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.util.Date;
 import javax.servlet.http.HttpServletRequest;
+import javax.xml.XMLConstants;
 import javax.xml.transform.Source;
 import javax.xml.transform.Transformer;
 import javax.xml.transform.TransformerConfigurationException;
@@ -88,10 +90,8 @@ public class XsltTool implements ViewTool {
 
 	
 	
-	public String transform(String XMLPath, String XSLPath, int ttl) throws Exception {
-		String x = XSLTTransform(XMLPath, XSLPath, ttl).getXmlTransformation();
-		return x;
-	
+	public String transform(String xmlPath, String xslPath, int ttl) throws Exception {
+		return XSLTTransform(xmlPath, xslPath, ttl).getXmlTransformation();
 	}
 	
 	
@@ -100,8 +100,8 @@ public class XsltTool implements ViewTool {
 	
 	/**
 	 * Transform the XML into the string according to the specification of the xsl file
-	 * @param XMLPath Location of the XML file
-	 * @param XSLPath Location of the XSL file
+	 * @param xmlPath Location of the XML file
+	 * @param xslPath Location of the XSL file
 	 * @param ttl Time to Live
 	 * @throws TransformerConfigurationException 
 	 * @throws DotSecurityException 
@@ -109,7 +109,7 @@ public class XsltTool implements ViewTool {
 	 * @throws SystemException 
 	 * @throws PortalException 
 	 */
-	public XSLTranformationDoc XSLTTransform(String XMLPath, String XSLPath, long ttl) throws Exception {
+	public XSLTranformationDoc XSLTTransform(String xmlPath, String xslPath, long ttl) throws Exception {
 
 			if(!canUserEvalute()){
 				Logger.error(XsltTool.class, "XSLTTool user does not have scripting access ");
@@ -118,15 +118,15 @@ public class XsltTool implements ViewTool {
 			String outputXML = null;
 			Source xmlSource = null;
 			XSLTranformationDoc doc = null;
-			Host host = hostWebAPI.getCurrentHost(request);
+			final Host site = hostWebAPI.getCurrentHost(request);
 
 			/*Validate if in cache exists a valid version*/
-			doc = XSLTransformationCache.getXSLTranformationDocByXMLPath(XMLPath,XSLPath);
+			doc = XSLTransformationCache.getXSLTranformationDocByXMLPath(xmlPath,xslPath);
 
 			if(doc == null){
 				/*Get the XSL source*/
 				java.io.File binFile = null;
-				Identifier xslId = APILocator.getIdentifierAPI().find(host, XSLPath);
+				Identifier xslId = APILocator.getIdentifierAPI().find(site, xslPath);
 				if(xslId!=null && InodeUtils.isSet(xslId.getId()) && xslId.getAssetType().equals("contentlet")){
 					Contentlet cont = APILocator.getContentletAPI().findContentletByIdentifier(xslId.getId(), true, APILocator.getLanguageAPI().getDefaultLanguage().getId(), userAPI.getSystemUser(),false);
 					if(cont!=null && InodeUtils.isSet(cont.getInode())){
@@ -136,27 +136,33 @@ public class XsltTool implements ViewTool {
 				
 				
 				/*Get the XML Source from file or from URL*/
-				if(!XMLPath.startsWith("http")){
-					Identifier xmlId = APILocator.getIdentifierAPI().find(host, XMLPath);
+				if(!xmlPath.startsWith("http")){
+					Identifier xmlId = APILocator.getIdentifierAPI().find(site, xmlPath);
 					if(xmlId!=null && InodeUtils.isSet(xmlId.getId()) && xmlId.getAssetType().equals("contentlet")){
 						Contentlet cont = APILocator.getContentletAPI().findContentletByIdentifier(xmlId.getId(), true, APILocator.getLanguageAPI().getDefaultLanguage().getId(), userAPI.getSystemUser(),false);
 						if(cont!=null && InodeUtils.isSet(cont.getInode())){
 							xmlSource = new StreamSource(new InputStreamReader(Files.newInputStream(
-									cont.getBinary(FileAssetAPI.BINARY_FIELD).toPath()), "UTF8"));
+									cont.getBinary(FileAssetAPI.BINARY_FIELD).toPath()),
+									StandardCharsets.UTF_8));
 						}
 					}
 
 				}else{
-					xmlSource = new StreamSource(XMLPath);
+					xmlSource = new StreamSource(xmlPath);
 				}
 
 				final Source xsltSource = new StreamSource(
-						new InputStreamReader(Files.newInputStream(binFile.toPath()), "UTF8"));
+						new InputStreamReader(Files.newInputStream(binFile.toPath()),
+								StandardCharsets.UTF_8));
 
 				// create an instance of TransformerFactory
-				TransformerFactory transFact = TransformerFactory.newInstance();
+				TransformerFactory factory = TransformerFactory.newInstance();
+				//Disable access to external entities in XML parsing.
+				factory.setAttribute(XMLConstants.ACCESS_EXTERNAL_DTD, "");
+				factory.setAttribute(XMLConstants.ACCESS_EXTERNAL_STYLESHEET, "");
+
 				StreamResult result = new StreamResult(new ByteArrayOutputStream());
-				Transformer trans = transFact.newTransformer(xsltSource);
+				Transformer trans = factory.newTransformer(xsltSource);
 
 				try{
 					trans.transform(xmlSource, result);
@@ -170,8 +176,8 @@ public class XsltTool implements ViewTool {
 				doc = new XSLTranformationDoc();
 				doc.setIdentifier(xslId.getId());
 				doc.setInode(xslId.getInode());
-				doc.setXslPath(XSLPath);
-				doc.setXmlPath(XMLPath);
+				doc.setXslPath(xslPath);
+				doc.setXmlPath(xmlPath);
 				doc.setXmlTransformation(outputXML);
 				doc.setTtl(new Date().getTime()+ttl);
 
