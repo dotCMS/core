@@ -370,4 +370,33 @@ public class StringUtilsTest {
         assertFalse(StringUtils.shareSamePath("/a/b/c/d.ext", "/g/f/e/d.ext"));
     }
 
+    @Test
+    public void Test_ConvertCamelToSnake_NullParameter_ShouldReturnBlankString(){
+        final String output =  StringUtils.convertCamelToSnake(null);
+        assertEquals(StringPool.BLANK, output);
+    }
+
+    @Test
+    public void Test_ConvertCamelToSnake_BlankStringParameter_ShouldReturnBlankString(){
+        final String output =  StringUtils.convertCamelToSnake(StringPool.BLANK);
+        assertEquals(StringPool.BLANK, output);
+    }
+
+    @Test
+    public void Test_ConvertCamelToSnake_StringOfLength1Parameter_ShouldReturnLowerCaseString(){
+        final String output =  StringUtils.convertCamelToSnake("A");
+        assertEquals("a", output);
+    }
+
+    @Test
+    public void Test_ConvertCamelToSnake_CamelCaseStringParameter_ShouldReturnSnakeCaseString(){
+        final String output =  StringUtils.convertCamelToSnake("inputString");
+        assertEquals("input_string", output);
+    }
+
+    @Test
+    public void Test_ConvertCamelToSnake_SnakeCaseStringParameter_ShouldReturnSnakeCaseString(){
+        final String output =  StringUtils.convertCamelToSnake("input_string");
+        assertEquals("input_string", output);
+    }
 }
