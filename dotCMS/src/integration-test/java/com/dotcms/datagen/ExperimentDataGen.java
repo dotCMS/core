@@ -4,8 +4,11 @@ import com.dotcms.analytics.metrics.AbstractCondition.Operator;
 import com.dotcms.analytics.metrics.Condition;
 import com.dotcms.analytics.metrics.Metric;
 import com.dotcms.analytics.metrics.MetricType;
+import com.dotcms.cache.DotJSONCacheAddTestCase;
+import com.dotcms.cache.DotJSONCacheAddTestCase.Builder;
 import com.dotcms.experiments.model.Experiment;
 import com.dotcms.experiments.model.Goals;
+import com.dotcms.experiments.model.Scheduling;
 import com.dotcms.experiments.model.TargetingCondition;
 import com.dotcms.variant.model.Variant;
 import com.dotmarketing.beans.Host;
@@ -31,6 +34,7 @@ public class ExperimentDataGen  extends AbstractDataGen<Experiment> {
     private Float trafficAllocation = 100f;
     private User user = APILocator.systemUser();
     private List<TargetingCondition> targetingConditions = new ArrayList<>();
+    private Scheduling scheduling;
 
     public ExperimentDataGen name(final String name){
         this.name = name;
@@ -81,6 +85,9 @@ public class ExperimentDataGen  extends AbstractDataGen<Experiment> {
 
         final Goals goal = Goals.builder().primary(metric).build();
 
+        final Scheduling innerScheduling = UtilMethods.isSet(scheduling) ? scheduling :
+                Scheduling.builder().build();
+
         return Experiment.builder()
                 .name(innerName)
                 .description(innerDescription)
@@ -89,6 +96,7 @@ public class ExperimentDataGen  extends AbstractDataGen<Experiment> {
                 .pageId(page.getIdentifier())
                 .goals(goal)
                 .trafficAllocation(trafficAllocation)
+                .scheduling(innerScheduling)
                 .build();
     }
 
@@ -156,4 +164,8 @@ public class ExperimentDataGen  extends AbstractDataGen<Experiment> {
         }
     }
 
+    public ExperimentDataGen scheduling(final Scheduling scheduling) {
+        this.scheduling = scheduling;
+        return this;
+    }
 }
