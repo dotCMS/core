@@ -73,3 +73,4 @@ This maintenance release includes the following code fixes:
 
 60. https://github.com/dotCMS/core/issues/23015 : Bulk update while importing is extremely slow #23015
 61. https://github.com/dotCMS/core/issues/21966 : Unable to save/publish Page on auth #21966
+62. https://github.com/dotCMS/core/issues/22582 : Import/Export Content Tool generating diff key/value field #22582
