@@ -81,13 +81,16 @@ public class ZipUtil {
 		   if (!toDir.exists()){
 		   		toDir.mkdirs();
 		   }
-		   final Enumeration entries = zipFile.entries();
+		   final Enumeration<?> entries = zipFile.entries();
 		   while (entries.hasMoreElements()) {
 			   final ZipEntry zipEntry = (ZipEntry) entries.nextElement();
 			   if (zipEntry.isDirectory()) {
 				   final File dir = new File(toDir, zipEntry.getName());
-				   if (checkSecurity(toDir,dir) && !dir.exists()){ // make sure also empty directories get created!
+				   if (dir.getCanonicalPath().startsWith(toDir.getCanonicalPath()) && !dir.exists()){ // make sure also empty directories get created!
 					   dir.mkdirs();
+				   } else {
+					   //This throws an exception if something suspicious is found
+					   checkSecurity(toDir, dir);
 				   }
 			   } else {
 				   extract(zipFile, zipEntry, toDir);
