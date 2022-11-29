@@ -1,6 +1,7 @@
 buildscript {
     repositories {
         maven  {
+            mavenLocal()
             url "https://repo.dotcms.com/artifactory/libs-release"
             mavenCentral()
         }
@@ -35,6 +36,7 @@ sonarqube {
 }
 
 repositories {
+    mavenLocal()
     maven { url "https://repo.dotcms.com/artifactory/libs-release" }
     maven { url "https://repo.dotcms.com/artifactory/libs-snapshot-local" }
     maven { url 'https://jitpack.io' }
@@ -55,6 +57,8 @@ project.ext {
     serverFolder = "$tomcatDistInstallLocation-$tomcatInstallVersion"
     homeFolder = serverFolder + webAppRootFolder
     dotcmsHome = serverFolder + webAppRootFolder
+
+
 
 
     if (project.gradle.startParameter.taskNames.contains('deployWarTomcat') || project.gradle.startParameter.taskNames.contains('createDist')|| project.gradle.startParameter.taskNames.contains('docker')){
@@ -197,6 +201,7 @@ configurations {
     profiler
     profilerDependencies
     byteBuddyAgent
+    mavenUi { transitive = false }
 }
 
 
@@ -214,6 +219,7 @@ else {
 
 
 def eeType = dotcmsReleaseVersion == "master" ? '-SNAPSHOT' : ''
+def mavenUiVersion = "1.0.0-SNAPSHOT"
 
 dependencies {
 
@@ -276,6 +282,8 @@ dependencies {
 
         implementation group: 'com.dotcms.enterprise', name: 'ee', version: dotcmsReleaseVersion + eeType, changing: true
     }
+
+    mavenUi "com.dotcms:core-web:${mavenUiVersion}"
 }
 
 import groovy.json.JsonSlurper
@@ -550,17 +558,27 @@ class ClonePullTomcatTask extends DefaultTask{
 // WAR
 
 task deleteDotCmsUi(type: Delete) {
-    delete "./build/$angularFolder/package"
+    delete "./build/extracted-ui"
+}
+
+
+task compileUI(type: Exec) {
+        workingDir "${project.projectDir}/../core-web"
+        commandLine '../mvnw', 'clean', 'install', '-DskipTests'
+}
+
+task unpackMavenUI(type: Copy, dependsOn:['compileUI']) {
+       from(zipTree(project.configurations.mavenUi.singleFile)) {
+                include "dotAdmin/**"
+                include "dotcms-webcomponents/**"
+                includeEmptyDirs = true
+            }
+        into layout.buildDirectory.dir("extracted-ui")
+
 }
 
 
 
-
-task extractDotCmsUi(type: NpmArtifactExtractTask) {
-    artifact = 'dotcms-ui'
-    version = coreWebReleaseVersion
-    outputDir = file("$buildDir/packages")
-}
 
 task cleanDotCmsUi {
     outputs.upToDateWhen { false }
@@ -568,8 +586,8 @@ task cleanDotCmsUi {
     delete "./src/main/webapp/$angularFolder"
 }
 
-task copyDotCmsUi(type: Copy) {
-    from (extractDotCmsUi.outputDir.dir('package'))
+task copyDotCmsUi(type: Copy, dependsOn:['unpackMavenUI']) {
+    from (layout.buildDirectory.dir("extracted-ui/dotAdmin"))
     into "./src/main/webapp/$angularFolder"
     dependsOn cleanDotCmsUi
 }
@@ -585,17 +603,9 @@ task cleanDotCmsWebComponents {
 }
 
 
-task extractDotCmsWebComponents(type: NpmArtifactExtractTask) {
-    group = 'extract dotcms-webcomponents'
-    description = 'Extracts package from dotcms-webcomponents to dotcms-webcomponents'
-    artifact = 'dotcms-webcomponents'
-    version = webComponentsReleaseVersion
-    outputDir = file("$buildDir/dotcms-webcomponents")
-    dependsOn 'cleanDotCmsWebComponents'
-}
 
-task copyDotCmsWebComponents(type: Copy) {
-    from (extractDotCmsWebComponents.outputDir.dir('package/dist'))
+task copyDotCmsWebComponents(type: Copy, dependsOn:['unpackMavenUI']) {
+    from (layout.buildDirectory.dir("extracted-ui/dotcms-webcomponents/dist"))
     into "./src/main/webapp"
     include 'dotcms-webcomponents/*'
     dependsOn cleanDotCmsWebComponents
