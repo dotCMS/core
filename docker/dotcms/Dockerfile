@@ -32,7 +32,7 @@ RUN chmod -R 666 /srv && find /srv/ -type d -exec chmod a+x {} \;
 RUN chmod 755 /srv/dotserver/tomcat-*/webapps/ROOT/WEB-INF/bin/dart-sass-*/sass
 
 # ensure only one tomcat directory exists
-RUN [ $(ls -d /srv/dotserver/tomcat-* | wc -l) == 1 ] || exit 1
+RUN ["/bin/bash", "-c", "[ $(ls -d /srv/dotserver/tomcat-* | wc -l) == 1 ] || exit 1" ]
 # provide stable path to tomcat dir
 RUN ln -s $(ls -d /srv/dotserver/tomcat-*) /srv/dotserver/tomcat
 
