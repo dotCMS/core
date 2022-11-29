@@ -157,9 +157,9 @@ export class BubbleFormView extends BubbleMenuView {
             },
 
             onShow: () => {
-                requestAnimationFrame(() =>
-                    this.component.instance.inputs.first.nativeElement.focus()
-                );
+                requestAnimationFrame(() => {
+                    this.component.instance.inputs.first.nativeElement.focus();
+                });
             }
         });
     }

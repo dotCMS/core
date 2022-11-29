@@ -1,5 +1,5 @@
 <form *ngIf="form" [ngClass]="options?.customClass" [formGroup]="form" (ngSubmit)="onSubmit()">
-    <div class="form-row" *ngFor="let control of dynamicControls" [ngClass]="control.type">
+    <div class="field form-row" *ngFor="let control of dynamicControls" [ngClass]="control.type">
         <ng-container [ngSwitch]="control.type">
             <ng-container *ngSwitchCase="'checkbox'">
                 <p-checkbox

@@ -51,6 +51,14 @@ export const DotTableCellPlugin = (options) => {
         return element?.classList.contains('dot-cell-arrow');
     }
 
+    function isNodeRelatedToTable(node): boolean {
+        return (
+            node.type.name === 'tableCell' ||
+            node.type.name === 'tableHeader' ||
+            node.type.name === 'tableRow'
+        );
+    }
+
     return new Plugin({
         key: new PluginKey('dotTableCell'),
         state: {
@@ -128,11 +136,7 @@ export const DotTableCellPlugin = (options) => {
                         view.state.selection.$from.depth - 1
                     );
 
-                    if (
-                        grandpaSelectedNode.type.name === 'tableCell' ||
-                        grandpaSelectedNode.type.name === 'tableHeader' ||
-                        grandpaSelectedNode.type.name === 'tableRow'
-                    ) {
+                    if (isNodeRelatedToTable(grandpaSelectedNode)) {
                         displayTableOptions(event);
                     }
                 },
@@ -144,12 +148,7 @@ export const DotTableCellPlugin = (options) => {
 
                     if (isArrowClicked(event.target as HTMLButtonElement)) {
                         displayTableOptions(event);
-                    } else if (
-                        event.button === 2 &&
-                        (grandpaSelectedNode?.type?.name === 'tableCell' ||
-                            grandpaSelectedNode?.type?.name === 'tableHeader' ||
-                            grandpaSelectedNode?.type?.name === 'tableRow')
-                    ) {
+                    } else if (event.button === 2 && isNodeRelatedToTable(grandpaSelectedNode)) {
                         event.preventDefault();
                     }
                 }

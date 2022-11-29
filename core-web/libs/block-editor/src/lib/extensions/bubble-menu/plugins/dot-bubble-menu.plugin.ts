@@ -267,6 +267,50 @@ export class DotBubbleMenuPluginView extends BubbleMenuView {
         this.component.instance.items = getBubbleMenuItem(type);
     }
 
+    openImageProperties() {
+        const { open } = BUBBLE_FORM_PLUGIN_KEY.getState(this.editor.state);
+        const { alt, src, title, data } = this.editor.getAttributes(ImageNode.name);
+        const { title: dotTitle = '', asset } = data || {};
+
+        open
+            ? this.editor.commands.closeForm()
+            : this.editor.commands
+                  .openForm([
+                      {
+                          value: src || asset,
+                          key: 'src',
+                          label: 'path',
+                          required: true,
+                          controlType: 'text',
+                          type: 'text'
+                      },
+                      {
+                          value: alt || dotTitle,
+                          key: 'alt',
+                          label: 'alt',
+                          controlType: 'text',
+                          type: 'text'
+                      },
+                      {
+                          value: title || dotTitle,
+                          key: 'title',
+                          label: 'caption',
+                          controlType: 'text',
+                          type: 'text'
+                      }
+                  ])
+                  .pipe(
+                      take(1),
+                      filter((data) => data != null)
+                  )
+                  .subscribe((data) => {
+                      requestAnimationFrame(() => {
+                          this.editor.commands.setImage({ ...data });
+                          this.editor.commands.closeForm();
+                      });
+                  });
+    }
+
     /* Run commands */
     exeCommand(item: BubbleMenuItem) {
         const { markAction: action, active } = item;
@@ -330,50 +374,7 @@ export class DotBubbleMenuPluginView extends BubbleMenuView {
                 break;
 
             case 'properties':
-                // eslint-disable-next-line
-                const { open } = BUBBLE_FORM_PLUGIN_KEY.getState(this.editor.state);
-                open ? this.editor.commands.closeForm() : this.editor.commands.openForm();
-                // eslint-disable-next-line
-                const { alt, src, title, data } = this.editor.getAttributes(ImageNode.name);
-                // eslint-disable-next-line
-                const { title: dotTitle = '', asset } = data || {};
-                open
-                    ? this.editor.commands.closeForm()
-                    : this.editor.commands
-                          .openForm([
-                              {
-                                  value: src || asset,
-                                  key: 'src',
-                                  label: 'path',
-                                  required: true,
-                                  controlType: 'text',
-                                  type: 'text'
-                              },
-                              {
-                                  value: alt || dotTitle,
-                                  key: 'alt',
-                                  label: 'alt',
-                                  controlType: 'text',
-                                  type: 'text'
-                              },
-                              {
-                                  value: title || dotTitle,
-                                  key: 'title',
-                                  label: 'caption',
-                                  controlType: 'text',
-                                  type: 'text'
-                              }
-                          ])
-                          .pipe(
-                              take(1),
-                              filter((data) => data != null)
-                          )
-                          .subscribe((data) => {
-                              requestAnimationFrame(() => {
-                                  this.editor.commands.setImage({ ...data });
-                                  this.editor.commands.closeForm();
-                              });
-                          });
+                this.openImageProperties();
                 break;
 
             case 'deleteNode':
