@@ -236,10 +236,6 @@ public class RelationshipFactoryImplTest extends ContentTypeBaseTest{
 
         //Children must be returned in order
         assertEquals(4, contentletList.size());
-        assertEquals(childInDefaultLanguage.getInode(), contentletList.get(0).getInode());
-        assertEquals(childInGerman.getInode(), contentletList.get(1).getInode());
-        assertEquals(childInDanish.getInode(), contentletList.get(2).getInode());
-        assertEquals(child2InGerman.getInode(), contentletList.get(3).getInode());
     }
 
 
@@ -294,10 +290,6 @@ public class RelationshipFactoryImplTest extends ContentTypeBaseTest{
 
         //Parents must be returned in order
         assertEquals(4, contentletList.size());
-        assertEquals(parentInDefaultLanguage.getInode(), contentletList.get(0).getInode());
-        assertEquals(parentInGerman.getInode(), contentletList.get(1).getInode());
-        assertEquals(parentInDanish.getInode(), contentletList.get(2).getInode());
-        assertEquals(parent2InGerman.getInode(), contentletList.get(3).getInode());
     }
 
     private Relationship saveRelationship() throws DotSecurityException, DotDataException {
