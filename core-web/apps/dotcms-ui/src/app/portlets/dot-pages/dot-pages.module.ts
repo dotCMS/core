@@ -9,6 +9,7 @@ import { DotPipesModule } from '@dotcms/app/view/pipes/dot-pipes.module';
 import { DotIconModule } from '@dotcms/ui';
 import { PanelModule } from 'primeng/panel';
 import { ButtonModule } from 'primeng/button';
+import { DotPagesCardEmptyModule } from './dot-pages-card-empty/dot-pages-card-empty.module';
 
 @NgModule({
     declarations: [DotPagesComponent],
@@ -16,6 +17,7 @@ import { ButtonModule } from 'primeng/button';
         CommonModule,
         DotPagesRoutingModule,
         DotPagesCardModule,
+        DotPagesCardEmptyModule,
         DotPipesModule,
         DotIconModule,
         PanelModule,

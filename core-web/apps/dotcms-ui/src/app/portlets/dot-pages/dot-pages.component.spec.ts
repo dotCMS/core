@@ -17,6 +17,7 @@ import { Observable } from 'rxjs';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { By } from '@angular/platform-browser';
 import { PanelModule } from 'primeng/panel';
+import { DotPagesCardEmptyModule } from './dot-pages-card-empty/dot-pages-card-empty.module';
 
 @Component({
     selector: 'dot-pages-card',
@@ -33,7 +34,9 @@ export class DotPagesCardMockComponent {
 const messageServiceMock = new MockDotMessageService({
     favorites: 'Favorites',
     'see.all': 'See All',
-    'see.less': 'See Less'
+    'see.less': 'See Less',
+    'favoritePage.listing.empty.header': 'Header',
+    'favoritePage.listing.empty.content': 'Content'
 });
 
 @Injectable()
@@ -75,6 +78,7 @@ describe('DotPagesComponent', () => {
                 BrowserAnimationsModule,
                 CommonModule,
                 DotPagesCardModule,
+                DotPagesCardEmptyModule,
                 DotPipesModule,
                 DotIconModule,
                 PanelModule,
@@ -89,6 +93,55 @@ describe('DotPagesComponent', () => {
                 { provide: DotESContentService, useClass: MockESPaginatorService }
             ]
         }).compileComponents();
+    });
+
+    describe('Empty State', () => {
+        beforeEach(() => {
+            TestBed.overrideProvider(DotPageStore, {
+                useValue: {
+                    loadAllFavoritePages: jasmine.createSpy(),
+                    setLoading: jasmine.createSpy(),
+                    setLoaded: jasmine.createSpy(),
+                    setInitialStateData: jasmine.createSpy(),
+                    limitFavoritePages: jasmine.createSpy(),
+                    vm$: of({
+                        favoritePages: {
+                            items: [],
+                            total: 0
+                        },
+                        loggedUserId: 'admin'
+                    })
+                }
+            });
+            store = TestBed.inject(DotPageStore);
+            fixture = TestBed.createComponent(DotPagesComponent);
+            de = fixture.debugElement;
+            fixture.detectChanges();
+        });
+
+        it('should init store', () => {
+            expect(store.setInitialStateData).toHaveBeenCalled();
+        });
+
+        it('should set panel with empty state class', () => {
+            const elem = de.query(By.css('p-panel'));
+            expect(
+                elem.nativeElement.classList.contains('dot-pages-panel__empty-state')
+            ).toBeTruthy();
+        });
+
+        it('should load empty pages cards container', () => {
+            expect(de.queryAll(By.css('dot-pages-card-empty')).length).toBe(5);
+            expect(
+                de.query(By.css('.dot-pages-empty__container dot-icon')).componentInstance.name
+            ).toBe('library_add');
+            expect(de.query(By.css('.dot-pages-empty__header')).nativeElement.outerText).toBe(
+                'Header'
+            );
+            expect(de.query(By.css('.dot-pages-empty__container p')).nativeElement.outerText).toBe(
+                'Content'
+            );
+        });
     });
 
     describe('Loading 2 of items', () => {
@@ -131,7 +184,7 @@ describe('DotPagesComponent', () => {
 
         it('should set secondary button in panel', () => {
             const elem = de.query(By.css('.dot-pages-panel-action__button span'));
-            expect(elem.nativeElement.outerText).toBe('SEE ALL');
+            expect(elem.nativeElement.outerText).toBe('See All');
         });
 
         it('should load pages cards with attributes', () => {
@@ -188,7 +241,7 @@ describe('DotPagesComponent', () => {
 
         it('should set secondary button in panel', () => {
             const elem = de.query(By.css('.dot-pages-panel-action__button span'));
-            expect(elem.nativeElement.outerText).toBe('SEE LESS');
+            expect(elem.nativeElement.outerText).toBe('See Less');
         });
 
         describe('Show less items', () => {

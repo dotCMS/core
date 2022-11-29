@@ -1,7 +1,9 @@
 <div class="dot-pages__container" *ngIf="vm$ | async as vm">
     <p-panel
         [ngClass]="{
-            'dot-pages-panel__expanded': vm.favoritePages.total === vm.favoritePages.items.length
+            'dot-pages-panel__expanded': vm.favoritePages.total === vm.favoritePages.items.length,
+            'dot-pages-panel__hide-panel-actions': vm.favoritePages.total < 6,
+            'dot-pages-panel__empty-state': vm.favoritePages?.items?.length === 0
         }"
         [toggleable]="true"
         [header]="'favorites' | dm"
@@ -28,12 +30,28 @@
             ></button>
         </ng-template>
 
-        <dot-pages-card
-            *ngFor="let item of vm.favoritePages.items"
-            [imageUri]="item.screenshot"
-            [title]="item.title"
-            [url]="item.url"
-            [ownerPage]="item.owner === vm.loggedUserId"
-        ></dot-pages-card>
+        <ng-template [ngIf]="vm.favoritePages?.items?.length !== 0" [ngIfElse]="emptyState">
+            <dot-pages-card
+                *ngFor="let item of vm.favoritePages.items"
+                [imageUri]="item.screenshot"
+                [title]="item.title"
+                [url]="item.url"
+                [ownerPage]="item.owner === vm.loggedUserId"
+            ></dot-pages-card>
+        </ng-template>
+
+        <ng-template #emptyState>
+            <dot-pages-card-empty *ngFor="let item of [1, 2, 3, 4, 5]"></dot-pages-card-empty>
+
+            <div class="dot-pages-empty__container">
+                <dot-icon name="library_add" size="40"></dot-icon>
+                <div class="dot-pages-empty__header">
+                    {{ 'favoritePage.listing.empty.header' | dm }}
+                </div>
+                <p>
+                    {{ 'favoritePage.listing.empty.content' | dm }}
+                </p>
+            </div>
+        </ng-template>
     </p-panel>
 </div>
