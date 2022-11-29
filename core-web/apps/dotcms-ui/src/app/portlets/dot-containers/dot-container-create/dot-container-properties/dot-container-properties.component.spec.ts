@@ -233,13 +233,16 @@ describe('DotContainerPropertiesComponent', () => {
         it('should button enable when max content greater then zero', fakeAsync(() => {
             fixture.componentInstance.form.get('maxContentlets').setValue(2);
             const contentTypeButton = de.query(By.css('[data-testId=showContentTypeAndCode]'));
+            spyOn(fixture.componentInstance, 'showContentTypeAndCode');
             contentTypeButton.triggerEventHandler('click');
             tick();
+            fixture.detectChanges();
             const preLoopComponent = de.query(By.css('dot-loop-editor'));
             const codeEditoromponent = de.query(By.css('dot-container-code'));
             expect(contentTypeButton.attributes.disable).not.toBeDefined();
             expect(preLoopComponent).toBeDefined();
             expect(codeEditoromponent).toBeDefined();
+            expect(fixture.componentInstance.showContentTypeAndCode).toHaveBeenCalled();
         }));
     });
 });

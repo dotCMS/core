@@ -7,6 +7,7 @@ import {
     FormBuilder,
     FormControl,
     FormGroup,
+    FormsModule,
     NG_VALUE_ACCESSOR,
     ReactiveFormsModule
 } from '@angular/forms';
@@ -163,6 +164,7 @@ describe('DotContentEditorComponent', () => {
             ],
             imports: [
                 ReactiveFormsModule,
+                FormsModule,
                 DynamicDialogModule,
                 DotAddVariableModule,
                 TabViewModule,
@@ -197,13 +199,12 @@ describe('DotContentEditorComponent', () => {
             );
             hostFixture.detectChanges();
             tick();
-            hostFixture.detectChanges();
             de = hostFixture.debugElement;
             hostComponent = hostFixture.componentInstance;
+            menu = de.query(By.css('p-menu')).componentInstance;
         }));
 
         it('should set labels', () => {
-            menu = de.query(By.css('p-menu')).componentInstance;
             const actions = [
                 { label: 'Activity', command: jasmine.any(Function) },
                 { label: 'Activity 2', command: jasmine.any(Function) }
@@ -213,7 +214,6 @@ describe('DotContentEditorComponent', () => {
         });
 
         it('should have add content type', () => {
-            menu = de.query(By.css('p-menu')).componentInstance;
             menu.model[0].command();
             hostFixture.detectChanges();
             const contentTypes = de.queryAll(By.css('p-tabpanel'));
@@ -222,7 +222,6 @@ describe('DotContentEditorComponent', () => {
         });
 
         it('should have remove content type', () => {
-            menu = de.query(By.css('p-menu')).componentInstance;
             menu.model[0].command();
             hostFixture.detectChanges();
             const tabCloseBtn = de.query(By.css('.p-tabview-close'));
