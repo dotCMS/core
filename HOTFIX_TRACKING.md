@@ -72,3 +72,4 @@ This maintenance release includes the following code fixes:
 **Release-22.03.4**
 
 60. https://github.com/dotCMS/core/issues/23015 : Bulk update while importing is extremely slow #23015
+61. https://github.com/dotCMS/core/issues/21966 : Unable to save/publish Page on auth #21966
