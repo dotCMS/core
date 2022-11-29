@@ -32,7 +32,7 @@ public class OSGIAJAX extends OSGIBaseAJAX {
     public void undeploy ( HttpServletRequest request, HttpServletResponse response ) throws ServletException, IOException, InterruptedException {
         validateUser() ;
         
-        String jar = request.getParameter( "jar" );
+        String jarName = request.getParameter( "jar" );
         String bundleId = request.getParameter( "bundleId" );
 
         //First uninstall the bundle
@@ -54,21 +54,21 @@ public class OSGIAJAX extends OSGIBaseAJAX {
         String loadPath = OSGIUtil.getInstance().getFelixDeployPath();
         String undeployedPath = OSGIUtil.getInstance().getFelixUndeployPath();
 
-        File from = new File(loadPath + File.separator + jar);
-        File to = new File(undeployedPath + File.separator + jar);
+        File from = new File(loadPath + File.separator + jarName);
+        File to = new File(undeployedPath + File.separator + jarName);
 
-        if(to.exists()) {
+        if(to.getCanonicalPath().startsWith(undeployedPath) && to.exists()) {
             to.delete();
         }
 
-        Boolean success = FileUtil.move( from, to );
+        boolean success = FileUtil.move( from, to );
         if ( success ) {
-        	Logger.info( OSGIAJAX.class, "OSGI Bundle "+jar+ " Undeployed");
+        	Logger.info( OSGIAJAX.class, "OSGI Bundle "+jarName+ " Undeployed");
             remove();// removes portlets and actionlets references
-            writeSuccess( response, "OSGI Bundle "+jar+ " Undeployed" );
+            writeSuccess( response, "OSGI Bundle "+jarName+ " Undeployed" );
         } else {
-            Logger.error( OSGIAJAX.class, "Error undeploying OSGI Bundle "+jar );
-            writeError( response, "Error undeploying OSGI Bundle "+jar );
+            Logger.error( OSGIAJAX.class, "Error undeploying OSGI Bundle "+jarName );
+            writeError( response, "Error undeploying OSGI Bundle "+jarName );
         }
     }
 
