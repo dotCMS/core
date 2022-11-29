@@ -30,7 +30,7 @@ public class ManifestUtilTest {
     }
 
     @Test
-    public void TestConfigFilePath(){
+    public void testConfigFilePath(){
         final String bundlePathStr = ConfigUtils.getBundlePath();
         final File bundlePath = Path.of(bundlePathStr).toFile();
         Assert.assertTrue(bundlePathStr.startsWith(APILocator.getFileAssetAPI().getRealAssetsRootPath()));
