@@ -199,7 +199,7 @@
                 </property>
             </activation>
             <properties>
-                <nx.build.options></nx.build.options>
+                <nx.build.options>-dev</nx.build.options>
             </properties>
             <build>
             </build>

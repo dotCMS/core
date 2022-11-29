@@ -564,7 +564,7 @@ task deleteDotCmsUi(type: Delete) {
 
 task compileUI(type: Exec) {
         workingDir "${project.projectDir}/../core-web"
-        commandLine '../mvnw', 'clean', 'install', '-DskipTests'
+        commandLine '../mvnw', 'clean', 'install', '-DskipTests', "-Dnx.build.options=${nxBuildOptions}"
 }
 
 task unpackMavenUI(type: Copy, dependsOn:['compileUI']) {
