@@ -7,13 +7,11 @@ import com.dotcms.datagen.ContentletDataGen;
 import com.dotcms.datagen.FileAssetDataGen;
 import com.dotcms.datagen.FolderDataGen;
 import com.dotcms.datagen.SiteDataGen;
-import com.dotcms.datagen.TemplateDataGen;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.folders.model.Folder;
-import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.util.Config;
 import com.liferay.portal.model.User;
 import com.liferay.portal.util.WebKeys;
@@ -40,7 +38,7 @@ public class XsltToolTest {
 
 
     /**
-     * Test Our View Tool still works using the example from our documentation https://www.dotcms.com/docs/latest/xslttool
+     * Test Our View Tool still works using the example from our documentation <a href="https://www.dotcms.com/docs/latest/xslttool">xslTool</a>
      * Even after adding the security changes
      * @throws Exception
      */
