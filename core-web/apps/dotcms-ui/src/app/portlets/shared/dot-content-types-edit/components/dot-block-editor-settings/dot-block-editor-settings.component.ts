@@ -23,6 +23,7 @@ import { DotFieldVariable } from '../fields/dot-content-type-fields-variables/mo
 import { DotDialogActions } from '@components/dot-dialog/dot-dialog.component';
 import { DotMessageService } from '@dotcms/app/api/services/dot-message/dot-messages.service';
 import { OnChanges, SimpleChanges } from '@angular/core';
+// import { getFieldVariableValue } from '.';
 
 export const BLOCK_EDITOR_BLOCKS = [
     { label: 'Block Quote', code: 'blockquote' },
@@ -61,12 +62,13 @@ export class DotBlockEditorSettingsComponent implements OnInit, OnDestroy, OnCha
     private destroy$: Subject<boolean> = new Subject<boolean>();
 
     public form: FormGroup;
-    public settings = [
-        {
+    public settingsMap = {
+        allowedBlocks: {
             label: 'Allowed Content',
             placeholder: 'Select Blocks',
             options: BLOCK_EDITOR_BLOCKS,
-            key: 'allowedBlocks'
+            key: 'allowedBlocks',
+            variable: null
         }
         /* Uncomment this when Content Assets variable is ready
         {
@@ -77,7 +79,11 @@ export class DotBlockEditorSettingsComponent implements OnInit, OnDestroy, OnCha
             required: true
         }
         */
-    ];
+    };
+
+    get settings() {
+        return Object.values(this.settingsMap);
+    }
 
     constructor(
         private readonly dotHttpErrorManagerService: DotHttpErrorManagerService,
@@ -98,7 +104,10 @@ export class DotBlockEditorSettingsComponent implements OnInit, OnDestroy, OnCha
             .load(this.field)
             .pipe(take(1))
             .subscribe((fieldVariables: DotFieldVariable[]) => {
-                fieldVariables.forEach(({ key, value }) => {
+                fieldVariables.forEach((variable) => {
+                    const { key, value } = variable;
+
+                    this.settingsMap[key].variable = variable;
                     this.form.get(key)?.setValue(value.split(','));
                 });
             });
@@ -122,12 +131,17 @@ export class DotBlockEditorSettingsComponent implements OnInit, OnDestroy, OnCha
 
     saveSettings(): void {
         forkJoin(
-            this.settings.map(({ key }) =>
-                this.fieldVariablesService.save(this.field, {
-                    key: key,
-                    value: this.form.get(key).value.join(',')
-                })
-            )
+            this.settings.map(({ variable, key }) => {
+                const value = this.form.get(key).value.join(',');
+                const fieldVariable = {
+                    ...variable,
+                    value
+                };
+
+                return value
+                    ? this.fieldVariablesService.save(this.field, fieldVariable)
+                    : this.fieldVariablesService.delete(this.field, fieldVariable);
+            })
         )
             .pipe(
                 take(1),

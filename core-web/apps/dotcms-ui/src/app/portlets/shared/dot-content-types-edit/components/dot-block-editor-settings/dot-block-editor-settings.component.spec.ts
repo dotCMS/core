@@ -22,6 +22,7 @@ describe('DotContentTypeFieldsVariablesComponent', () => {
     let de: DebugElement;
     let dotFieldVariableService: DotFieldVariablesService;
     let dotHttpErrorManagerService: DotHttpErrorManagerService;
+    let amountFields: number;
 
     const messageServiceMock = new MockDotMessageService({
         'contenttypes.dropzone.action.save': 'Save',
@@ -47,7 +48,8 @@ describe('DotContentTypeFieldsVariablesComponent', () => {
                                     value: 'orderList,unorderList,table'
                                 }
                             ]),
-                        save: () => of([])
+                        save: () => of([]),
+                        delete: () => of([])
                     }
                 },
                 {
@@ -68,6 +70,7 @@ describe('DotContentTypeFieldsVariablesComponent', () => {
         component = de.componentInstance;
         dotFieldVariableService = de.injector.get(DotFieldVariablesService);
         dotHttpErrorManagerService = de.injector.get(DotHttpErrorManagerService);
+        amountFields = component.settings.length;
     }));
 
     it('should not setup form values', () => {
@@ -97,14 +100,7 @@ describe('DotContentTypeFieldsVariablesComponent', () => {
     it('should emit valid output on form change', () => {
         spyOn(component.valid, 'emit');
         fixture.detectChanges();
-        component.form.get('allowedBlocks').setValue('codeblock');
-        expect(component.valid.emit).toHaveBeenCalled();
-    });
-
-    it('should emit valid output on form change', () => {
-        spyOn(component.valid, 'emit');
-        fixture.detectChanges();
-        component.form.get('allowedBlocks').setValue('codeblock');
+        component.form.get('allowedBlocks').setValue(['codeblock']);
         expect(component.valid.emit).toHaveBeenCalled();
     });
 
@@ -113,8 +109,18 @@ describe('DotContentTypeFieldsVariablesComponent', () => {
         spyOn(component.save, 'emit');
         fixture.detectChanges();
         component.saveSettings();
-        expect(dotFieldVariableService.save).toHaveBeenCalledTimes(1);
-        expect(component.save.emit).toHaveBeenCalledTimes(1);
+        expect(dotFieldVariableService.save).toHaveBeenCalledTimes(amountFields);
+        expect(component.save.emit).toHaveBeenCalled();
+    });
+
+    it('should delete properties on saveSettings when is empty', () => {
+        spyOn(dotFieldVariableService, 'delete').and.returnValue(of(mockFieldVariables[0]));
+        spyOn(component.save, 'emit');
+        fixture.detectChanges();
+        component.form.get('allowedBlocks').setValue([]);
+        component.saveSettings();
+        expect(dotFieldVariableService.delete).toHaveBeenCalled();
+        expect(component.save.emit).toHaveBeenCalled();
     });
 
     it('should handler error if save proprties faild', () => {
