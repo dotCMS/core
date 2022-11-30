@@ -14,8 +14,8 @@ export class DotSessionStorageService {
     /**
      * Get the variationId from the SessionStorage Key
      */
-    getVariationId(): void {
-        sessionStorage.getItem(SESSION_STORAGE_VARIATION_KEY);
+    getVariationId(): string {
+        return sessionStorage.getItem(SESSION_STORAGE_VARIATION_KEY);
     }
 
     /**

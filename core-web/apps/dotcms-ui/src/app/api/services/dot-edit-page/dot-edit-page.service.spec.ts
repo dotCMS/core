@@ -4,6 +4,7 @@ import { TestBed, getTestBed } from '@angular/core/testing';
 import { HttpTestingController, HttpClientTestingModule } from '@angular/common/http/testing';
 import { CoreWebService } from '@dotcms/dotcms-js';
 import { CoreWebServiceMock } from '@tests/core-web.service.mock';
+import { DotSessionStorageService } from '@shared/services/dot-session-storage.service';
 
 describe('DotEditPageService', () => {
     let injector: TestBed;
@@ -15,7 +16,8 @@ describe('DotEditPageService', () => {
             imports: [HttpClientTestingModule],
             providers: [
                 { provide: CoreWebService, useClass: CoreWebServiceMock },
-                DotEditPageService
+                DotEditPageService,
+                DotSessionStorageService
             ]
         });
         injector = getTestBed();

@@ -4,10 +4,14 @@ import { CoreWebService, DotRequestOptionsArgs } from '@dotcms/dotcms-js';
 import { DotPageContainer } from '@models/dot-page-container/dot-page-container.model';
 import { Observable } from 'rxjs';
 import { DotWhatChanged } from '@models/dot-what-changed/dot-what-changed.model';
+import { DotSessionStorageService } from '@shared/services/dot-session-storage.service';
 
 @Injectable()
 export class DotEditPageService {
-    constructor(private coreWebService: CoreWebService) {}
+    constructor(
+        private coreWebService: CoreWebService,
+        private readonly dotSessionStorageService: DotSessionStorageService
+    ) {}
 
     /**
      * Save a page's content
@@ -24,7 +28,7 @@ export class DotEditPageService {
             url: `v1/page/${pageId}/content`
         };
 
-        const currentVariantName = window.sessionStorage.getItem('variantName');
+        const currentVariantName = this.dotSessionStorageService.getVariationId();
 
         if (currentVariantName) {
             requestOptions.params = {
