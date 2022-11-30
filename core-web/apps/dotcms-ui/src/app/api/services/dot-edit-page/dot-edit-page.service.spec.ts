@@ -60,4 +60,35 @@ describe('DotEditPageService', () => {
     afterEach(() => {
         httpMock.verify();
     });
+
+    describe('DotEditPageService with variantName', () => {
+        it('should do a request for save content with variant', () => {
+            window.sessionStorage.setItem('variantName', 'Testing');
+
+            const pageId = '1';
+            const model: DotPageContainer[] = [
+                {
+                    identifier: '1',
+                    uuid: '2',
+                    contentletsId: ['3', '4']
+                },
+                {
+                    identifier: '5',
+                    uuid: '6',
+                    contentletsId: ['7', '8']
+                }
+            ];
+
+            dotEditPageService.save(pageId, model).subscribe();
+
+            const req = httpMock.expectOne(`v1/page/${pageId}/content?variantName=Testing`);
+            expect(req.request.method).toBe('POST');
+            expect(req.request.body).toBe(model);
+            req.flush({});
+        });
+
+        afterEach(() => {
+            window.sessionStorage.removeItem('variantName');
+        });
+    });
 });
