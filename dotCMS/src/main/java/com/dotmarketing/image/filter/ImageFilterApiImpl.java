@@ -5,17 +5,13 @@ import java.awt.image.BufferedImage;
 import java.awt.image.BufferedImageOp;
 import java.io.File;
 import java.io.IOException;
-import java.util.AbstractMap.SimpleEntry;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 import javax.imageio.ImageIO;
 import javax.imageio.ImageReadParam;
 import javax.imageio.ImageReader;
@@ -23,55 +19,52 @@ import javax.imageio.stream.ImageInputStream;
 import org.apache.commons.codec.digest.DigestUtils;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.util.Config;
-import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
+import com.google.common.collect.ImmutableMap;
 import com.liferay.util.StringPool;
 import com.twelvemonkeys.image.ResampleOp;
 import io.vavr.control.Try;
-import jersey.repackaged.com.google.common.collect.ImmutableMap;
 
 public class ImageFilterApiImpl implements ImageFilterAPI {
 
-    public File getImageFileFromUri(final String uri) {
-        return null;
-    }
 
-    public String getVariableFromPath(final String path) {
-        return null;
-    }
+
 
     /**
      * List of image filter classes accessable by a case insensitive key
      */
-    protected static Map<String, Class> filterClasses = new HashMap<String, Class>(Stream.of(
-                    new SimpleEntry<>(CROP, CropImageFilter.class),
-                    new SimpleEntry<>(EXPOSURE, ExposureImageFilter.class),
-                    new SimpleEntry<>(FLIP, FlipImageFilter.class),
-                    new SimpleEntry<>(FOCAL_POINT, FocalPointImageFilter.class),
-                    new SimpleEntry<>(GAMMA, GammaImageFilter.class), new SimpleEntry<>(GIF, GifImageFilter.class),
-                    new SimpleEntry<>(GRAY_SCALE, GrayscaleImageFilter.class),
-                    new SimpleEntry<>(HSB, HsbImageFilter.class), new SimpleEntry<>(JPEG, JpegImageFilter.class),
-                    new SimpleEntry<>(JPG, JpegImageFilter.class), new SimpleEntry<>(PDF, PDFImageFilter.class),
-                    new SimpleEntry<>(PNG, PngImageFilter.class), new SimpleEntry<>(RESIZE, ResizeImageFilter.class),
-                    new SimpleEntry<>(SCALE, ScaleImageFilter.class),
-                    new SimpleEntry<>(ROTATE, RotateImageFilter.class),
-                    new SimpleEntry<>(THUMBNAIL, ThumbnailImageFilter.class),
-                    new SimpleEntry<>(THUMB, ThumbnailImageFilter.class),
-                    new SimpleEntry<>(WEBP, WebPImageFilter.class))
-                    .collect(Collectors.toMap((e) -> e.getKey(), (e) -> e.getValue())));
+    protected static final  Map<String, Class> filterClasses = new ImmutableMap.Builder<String, Class>()
+                    .put(CROP, CropImageFilter.class)
+                    .put(EXPOSURE, ExposureImageFilter.class)
+                    .put(FLIP, FlipImageFilter.class)
+                    .put(FOCAL_POINT, FocalPointImageFilter.class)
+                    .put(GAMMA, GammaImageFilter.class)
+                    .put(GIF, GifImageFilter.class)
+                    .put(GRAY_SCALE, GrayscaleImageFilter.class)
+                    .put(HSB, HsbImageFilter.class)
+                    .put(JPEG, JpegImageFilter.class)
+                    .put(JPG, JpegImageFilter.class)
+                    .put(PDF, PDFImageFilter.class)
+                    .put(PNG, PngImageFilter.class)
+                    .put(RESIZE, ResizeImageFilter.class)
+                    .put(SCALE, ScaleImageFilter.class)
+                    .put(ROTATE, RotateImageFilter.class)
+                    .put(THUMBNAIL, ThumbnailImageFilter.class)
+                    .put(THUMB, ThumbnailImageFilter.class)
+                    .put(WEBP, WebPImageFilter.class)
+                    .build();
 
     /**
      * Anything w or h greater than this pixel size will be shrunk down to this
      */
-    private final static int maxSize =
+    private static final int MAX_SIZE =
                     Try.of(() -> Config.getIntProperty("IMAGE_MAX_PIXEL_SIZE", 5000)).getOrElse(5000);
-    public final static int DEFAULT_RESAMPLE_OPT =
+    public static final int DEFAULT_RESAMPLE_OPT =
                     Try.of(() -> Config.getIntProperty("IMAGE_DEFAULT_RESAMPLE_OPT", ResampleOp.FILTER_TRIANGLE))
                                     .getOrElse(ResampleOp.FILTER_TRIANGLE);
 
     @Override
-    public Map<String, Class> resolveFilters(final Map<String, String[]> parameters) {
-
+    public Map<String, Class<ImageFilter>> resolveFilters(final Map<String, String[]> parameters) {
         final List<String> filters = new ArrayList<>();
 
         if (parameters.containsKey("filter")) {
@@ -89,7 +82,7 @@ public class ImageFilterApiImpl implements ImageFilterAPI {
             }
         });
 
-        final Map<String, Class> classes = new LinkedHashMap<>();
+        final Map<String, Class<ImageFilter>> classes = new LinkedHashMap<>();
         filters.forEach(s -> {
             final String filter = s.toLowerCase();
             if (!classes.containsKey(filter) && filterClasses.containsKey(filter)) {
@@ -109,7 +102,7 @@ public class ImageFilterApiImpl implements ImageFilterAPI {
                 reader.setInput(inputStream, true, true);
                 return new Dimension(reader.getWidth(0), reader.getHeight(0));
             } finally {
-                Try.run(() -> reader.dispose());
+                Try.run(reader::dispose);
 
             }
         } catch (Exception e) {
@@ -134,10 +127,7 @@ public class ImageFilterApiImpl implements ImageFilterAPI {
         if(readers.size()>1) {
             readers.removeIf(r -> r instanceof net.sf.javavp8decoder.imageio.WebPImageReader);
         }
-        if (readers.isEmpty()) {
-            throw new DotRuntimeException("Unable to find reader for image:" + imageFile);
-        }
-        return readers.stream().findFirst().get();
+        return readers.stream().findFirst().orElseThrow(()->new DotRuntimeException("Unable to find reader for image:" + imageFile));
 
     }
 
@@ -151,9 +141,10 @@ public class ImageFilterApiImpl implements ImageFilterAPI {
     @Override
     public BufferedImage resizeImage(final BufferedImage srcImage, int width, int height, int resampleOption) {
 
-        width = Math.min(maxSize, width);
-        height = Math.min(maxSize, height);
-        resampleOption = (resampleOption < 0) ? 0 : (resampleOption > 15) ? 15 : resampleOption;
+        width = Math.min(MAX_SIZE, width);
+        height = Math.min(MAX_SIZE, height);
+        resampleOption = (resampleOption < 0) ? 0 : resampleOption;
+        resampleOption = (resampleOption > 15) ? 15 : resampleOption;
 
         BufferedImageOp resampler = new ResampleOp(width, height, resampleOption);
         return resampler.filter(srcImage, null);
@@ -205,14 +196,14 @@ public class ImageFilterApiImpl implements ImageFilterAPI {
         Dimension originalSize = getWidthHeight(incomingImage);
 
         
-        width = Math.min(maxSize, width);
-        height = Math.min(maxSize, height);
+        width = Math.min(MAX_SIZE, width);
+        height = Math.min(MAX_SIZE, height);
         
         // resample huge images to a maxSize (prevents OOM)
-        if ((originalSize.width > maxSize || originalSize.height  > maxSize)) {
-            final Map<String, String[]> params = ImmutableMap.of(
-                            "subsample_w", new String[] {String.valueOf(maxSize)},
-                            "subsample_h", new String[] {String.valueOf(maxSize)},
+        if ((originalSize.width > MAX_SIZE || originalSize.height  > MAX_SIZE)) {
+            final Map<String, String[]> params = Map.of(
+                            "subsample_w", new String[] {String.valueOf(MAX_SIZE)},
+                            "subsample_h", new String[] {String.valueOf(MAX_SIZE)},
                             "subsample_hash", new String[] {hash},
                             "filter", new String[] {"subsample"}
             );
@@ -232,7 +223,7 @@ public class ImageFilterApiImpl implements ImageFilterAPI {
             try {
                 return this.subsampleImage(inputStream, reader, width, height);
             } finally {
-                Try.run(() -> reader.dispose());
+                Try.run(reader::dispose);
             }
         } catch (Exception e) {
             throw new DotRuntimeException(e);

@@ -68,7 +68,7 @@ describe('ExperimentsListComponent', () => {
 
     beforeEach(() => {
         spectator = createComponent({
-            detectChanges: false // <-- no trigger ngOnInit
+            detectChanges: false
         });
     });
 
