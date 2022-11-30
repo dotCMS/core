@@ -105,25 +105,29 @@ public class ZipUtil {
 	     * @param toDir the target directory
 	     * @throws java.io.IOException
 	     */
-	    private static void extract(final ZipFile zipFile, final ZipEntry zipEntry, final File toDir) throws IOException {
-	        final File file = new File(toDir, zipEntry.getName());
+		private static void extract(final ZipFile zipFile, final ZipEntry zipEntry,
+				final File toDir) throws IOException {
+			final File file = new File(toDir, zipEntry.getName());
 
-            checkSecurity(toDir,file);
-
-	        final File parentDir = file.getParentFile();
-	        if (! parentDir.exists()){
-	            parentDir.mkdirs();
-	        }
-
-			try (
-					final InputStream istr = zipFile.getInputStream(zipEntry);
-					BufferedInputStream bis = new BufferedInputStream(istr);
-					final OutputStream os = Files.newOutputStream(file.toPath());
-					BufferedOutputStream bos = new BufferedOutputStream(os);
-			) {
-				IOUtils.copy(bis, bos);
+			if (file.getCanonicalPath().startsWith(toDir.getCanonicalPath())) {
+				final File parentDir = file.getParentFile();
+				if (!parentDir.exists()) {
+					parentDir.mkdirs();
+				}
+				try (
+						final InputStream istr = zipFile.getInputStream(zipEntry);
+						BufferedInputStream bis = new BufferedInputStream(istr);
+						final OutputStream os = Files.newOutputStream(file.toPath());
+						BufferedOutputStream bos = new BufferedOutputStream(os);
+				) {
+					IOUtils.copy(bis, bos);
+				}
+			} else {
+				//in case of any suspicious file name we check and report the exception
+				checkSecurity(toDir, file);
 			}
-	    }
+
+		}
 
 
 	public static void extract(final InputStream zipFile, final String outputDirStr)
