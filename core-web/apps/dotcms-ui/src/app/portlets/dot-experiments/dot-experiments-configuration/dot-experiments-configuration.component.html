@@ -2,24 +2,25 @@
     <dot-experiments-header
         [isLoading]="vm.isLoading"
         [title]="vm.experiment?.name"
-        (goBack)="goToExperimentList()"
-        backUrl="{{ '/edit-page/experiments/' + vm.pageId }}"
-    ></dot-experiments-header>
+        (goBack)="goToExperimentList(vm.experiment.pageId)"
+    >
+    </dot-experiments-header>
 
     <div class="dot-experiment-config-content">
         <ng-container *ngIf="!vm.isLoading; else loadingTpl">
-            <dot-experiments-configuration-experiment-status-bar
-                [status]="vm.experiment.status"
-            ></dot-experiments-configuration-experiment-status-bar>
+            <dot-experiments-configuration-experiment-status-bar [status]="vm.experiment.status">
+            </dot-experiments-configuration-experiment-status-bar>
 
-            <p>
-                {{ vm.experiment.description }}
-            </p>
+            <p>{{ vm.experiment.description }}</p>
 
             <dot-experiments-configuration-variants
-                [trafficProportion]="vm.experiment.trafficProportion"
-            >
-            </dot-experiments-configuration-variants>
+                [stepStatus]="vm.stepStatusSidebar"
+                [variants]="vm.experiment.trafficProportion.variants"
+                (delete)="deleteVariant($event)"
+                (goToEditPage)="goToEditPageVariant($event)"
+                (save)="saveVariant($event)"
+                (sidebarStatusChanged)="sidebarStatusChanged($event)"
+            ></dot-experiments-configuration-variants>
 
             <dot-experiments-configuration-goals></dot-experiments-configuration-goals>
 
@@ -28,7 +29,8 @@
             <dot-experiments-configuration-traffic
                 [TrafficProportionTypes]="vm.experiment.trafficProportion.type"
                 [trafficAllocation]="vm.experiment.trafficAllocation"
-            ></dot-experiments-configuration-traffic>
+            >
+            </dot-experiments-configuration-traffic>
 
             <dot-experiments-configuration-scheduling></dot-experiments-configuration-scheduling>
         </ng-container>
