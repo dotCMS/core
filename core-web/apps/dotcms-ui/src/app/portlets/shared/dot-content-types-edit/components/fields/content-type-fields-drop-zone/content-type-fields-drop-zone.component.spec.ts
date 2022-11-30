@@ -1079,10 +1079,8 @@ describe('Load fields and drag and drop', () => {
                 blockEditorComponent.save.emit([]);
                 fixture.detectChanges();
                 expect(comp.displayDialog).toBe(false);
-            });
-
-            it('show change visibility of dot-block-editor-settings', () => {
-                pending();
+                expect(comp.dialogActions).toEqual(comp.defaultDialogActions);
+                expect(comp.activeTab).toBe(comp.OVERVIEW_TAB_INDEX);
             });
         });
 

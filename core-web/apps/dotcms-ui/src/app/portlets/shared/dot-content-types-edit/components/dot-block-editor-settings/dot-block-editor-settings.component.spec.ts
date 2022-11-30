@@ -22,7 +22,7 @@ describe('DotContentTypeFieldsVariablesComponent', () => {
     let de: DebugElement;
     let dotFieldVariableService: DotFieldVariablesService;
     let dotHttpErrorManagerService: DotHttpErrorManagerService;
-    let amountFields: number;
+    let amountFields;
 
     const messageServiceMock = new MockDotMessageService({
         'contenttypes.dropzone.action.save': 'Save',
@@ -123,6 +123,17 @@ describe('DotContentTypeFieldsVariablesComponent', () => {
         expect(component.save.emit).toHaveBeenCalled();
     });
 
+    it('should not call save or delete when is empty and not previus vairable exist', () => {
+        spyOn(dotFieldVariableService, 'load').and.returnValue(of([]));
+        spyOn(dotFieldVariableService, 'delete');
+        spyOn(dotFieldVariableService, 'save');
+        fixture.detectChanges();
+        component.form.get('allowedBlocks').setValue([]);
+        component.saveSettings();
+        expect(dotFieldVariableService.delete).not.toHaveBeenCalled();
+        expect(dotFieldVariableService.save).not.toHaveBeenCalled();
+    });
+
     it('should handler error if save proprties faild', () => {
         spyOn(dotFieldVariableService, 'save').and.returnValue(throwError({}));
         spyOn(dotHttpErrorManagerService, 'handle').and.returnValue(of());
@@ -135,13 +146,10 @@ describe('DotContentTypeFieldsVariablesComponent', () => {
 
     describe('MultiSelector', () => {
         let multiselect: MultiSelect;
+
         beforeEach(() => {
             fixture.detectChanges();
             multiselect = de.query(By.css('p-multiSelect')).componentInstance;
-        });
-
-        it('should have a multiselect', () => {
-            expect(multiselect).toBeTruthy();
         });
 
         it('should have append to bobdy', () => {

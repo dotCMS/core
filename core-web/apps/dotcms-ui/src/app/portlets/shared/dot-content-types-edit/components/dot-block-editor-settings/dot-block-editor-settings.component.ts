@@ -10,7 +10,7 @@ import {
 import { FormGroup, FormBuilder } from '@angular/forms';
 import { HttpErrorResponse } from '@angular/common/http';
 
-import { forkJoin, Subject } from 'rxjs';
+import { forkJoin, Subject, of } from 'rxjs';
 import { catchError, take, takeUntil } from 'rxjs/operators';
 
 // Services
@@ -23,7 +23,6 @@ import { DotFieldVariable } from '../fields/dot-content-type-fields-variables/mo
 import { DotDialogActions } from '@components/dot-dialog/dot-dialog.component';
 import { DotMessageService } from '@dotcms/app/api/services/dot-message/dot-messages.service';
 import { OnChanges, SimpleChanges } from '@angular/core';
-// import { getFieldVariableValue } from '.';
 
 export const BLOCK_EDITOR_BLOCKS = [
     { label: 'Block Quote', code: 'blockquote' },
@@ -71,7 +70,7 @@ export class DotBlockEditorSettingsComponent implements OnInit, OnDestroy, OnCha
             variable: null
         }
         /* Uncomment this when Content Assets variable is ready
-        {
+        contentAssets: {
             label: 'Allowed Content Assets',
             placeholder: 'Select Assets',
             options: BLOCK_EDITOR_ASSETS,
@@ -107,8 +106,10 @@ export class DotBlockEditorSettingsComponent implements OnInit, OnDestroy, OnCha
                 fieldVariables.forEach((variable) => {
                     const { key, value } = variable;
 
-                    this.settingsMap[key].variable = variable;
-                    this.form.get(key)?.setValue(value.split(','));
+                    if (this.form.get(key)) {
+                        this.settingsMap[key].variable = variable;
+                        this.form.get(key)?.setValue(value.split(','));
+                    }
                 });
             });
 
@@ -132,11 +133,19 @@ export class DotBlockEditorSettingsComponent implements OnInit, OnDestroy, OnCha
     saveSettings(): void {
         forkJoin(
             this.settings.map(({ variable, key }) => {
-                const value = this.form.get(key).value.join(',');
+                const value = this.form.get(key).value?.join(',');
                 const fieldVariable = {
                     ...variable,
+                    key,
                     value
                 };
+
+                // This is to prevent endpoints from breaking.
+                // fieldVariablesService.save -> breaks if there is not current value.
+                // fieldVariablesService.delete -> breaks if there is not previus exinting variable.
+                if (!value && !variable) {
+                    return of({});
+                }
 
                 return value
                     ? this.fieldVariablesService.save(this.field, fieldVariable)

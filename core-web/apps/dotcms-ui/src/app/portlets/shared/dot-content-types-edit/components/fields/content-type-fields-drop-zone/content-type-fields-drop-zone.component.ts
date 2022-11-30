@@ -431,6 +431,8 @@ export class ContentTypeFieldsDropZoneComponent implements OnInit, OnChanges, On
     }
 
     private toggleDialog(): void {
+        this.dialogActions = this.defaultDialogActions;
+        this.activeTab = this.OVERVIEW_TAB_INDEX;
         this.displayDialog = !this.displayDialog;
     }
 
