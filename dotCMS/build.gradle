@@ -31,7 +31,7 @@ sonarqube {
     property "sonar.host.url", "https://sonarqube.dotcms.site"
     property "sonar.sourceEncoding", "UTF-8"
     property "sonar.exclusions", "src/main/webapp/dotcms-webcomponents/**,src/main/webapp/dotcms-webcomponents/**, src/main/plugins/**, src/main/java/org/**, src/main/java/com/liferay/**, src/main/java/net/**"
-    property "sonar.test", "src/tests/**, src/integration-test/**"
+    property "sonar.test", "src/tests/**/*, src/integration-test/**/*"
   }
 }
 
