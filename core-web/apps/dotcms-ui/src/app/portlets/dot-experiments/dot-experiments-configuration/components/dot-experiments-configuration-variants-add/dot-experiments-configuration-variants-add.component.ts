@@ -16,10 +16,7 @@ import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angula
 import { ButtonModule } from 'primeng/button';
 import { DotSidebarDirective } from '@portlets/shared/directives/dot-sidebar.directive';
 import { InputTextModule } from 'primeng/inputtext';
-
-interface AddForm {
-    name: FormControl<string>;
-}
+import { DotAutofocusModule } from '@directives/dot-autofocus/dot-autofocus.module';
 
 @Component({
     selector: 'dot-experiments-configuration-variants-add',
@@ -32,6 +29,8 @@ interface AddForm {
         DotMessagePipeModule,
         DotFieldValidationMessageModule,
         DotSidebarDirective,
+        DotAutofocusModule,
+
         //PrimeNg
         SidebarModule,
         ButtonModule,
@@ -60,7 +59,7 @@ export class DotExperimentsConfigurationVariantsAddComponent implements OnInit {
     @Output()
     formValues = new EventEmitter<Pick<DotExperiment, 'name'>>();
 
-    form: FormGroup<AddForm>;
+    form: FormGroup;
 
     saveForm(): void {
         const formValues = this.form.value as Pick<DotExperiment, 'name'>;
@@ -78,7 +77,7 @@ export class DotExperimentsConfigurationVariantsAddComponent implements OnInit {
     }
 
     private initForm() {
-        this.form = new FormGroup<AddForm>({
+        this.form = new FormGroup({
             name: new FormControl<string>('', {
                 nonNullable: true,
                 validators: [Validators.required, Validators.maxLength(255)]

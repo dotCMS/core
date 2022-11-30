@@ -1,60 +1,60 @@
-import { ChangeDetectionStrategy, Component } from '@angular/core';
+import { ChangeDetectionStrategy, Component, OnInit } from '@angular/core';
 import { DotExperimentsConfigurationStore } from '@portlets/dot-experiments/dot-experiments-configuration/store/dot-experiments-configuration-store.service';
-import { tap } from 'rxjs/operators';
-import { Router } from '@angular/router';
-import { provideComponentStore } from '@ngrx/component-store';
+import { ActivatedRoute, Router } from '@angular/router';
 import {
     DotExperiment,
     EditPageTabs,
     ExperimentSteps,
     Variant
 } from '@portlets/dot-experiments/shared/models/dot-experiments.model';
-import { DotExperimentsSessionStorageService } from '@portlets/dot-experiments/shared/services/dot-experiments-session-storage.service';
+import { DotSessionStorageService } from '@shared/services/dot-session-storage.service';
+import { SidebarStatus } from '@portlets/dot-experiments/shared/models/dot-experiments-constants';
 
 @Component({
     selector: 'dot-experiments-configuration',
     templateUrl: './dot-experiments-configuration.component.html',
     styleUrls: ['./dot-experiments-configuration.component.scss'],
-    providers: [provideComponentStore(DotExperimentsConfigurationStore)],
+    providers: [DotExperimentsConfigurationStore],
     changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class DotExperimentsConfigurationComponent {
-    pageId: string;
-    vm$ = this.dotExperimentsConfigurationStore.vm$.pipe(tap((vm) => (this.pageId = vm.pageId)));
+export class DotExperimentsConfigurationComponent implements OnInit {
+    vm$ = this.dotExperimentsConfigurationStore.vm$;
 
     constructor(
         private readonly dotExperimentsConfigurationStore: DotExperimentsConfigurationStore,
-        private readonly dotExperimentsSessionStorageService: DotExperimentsSessionStorageService,
-        private readonly router: Router
+        private readonly dotSessionStorageService: DotSessionStorageService,
+        private readonly router: Router,
+        private readonly route: ActivatedRoute
     ) {}
+
+    ngOnInit(): void {
+        this.dotExperimentsConfigurationStore.loadExperiment(
+            this.route.snapshot.params.experimentId
+        );
+    }
 
     /**
      * Go to Experiment List
      * @returns void
      * @memberof DotExperimentsConfigurationComponent
      */
-    goToExperimentList() {
-        this.router.navigate(['/edit-page/experiments/', this.pageId], {
+    goToExperimentList(pageId: string) {
+        this.router.navigate(['/edit-page/experiments/', pageId], {
             queryParamsHandling: 'preserve'
         });
     }
 
     /**
-     * Show the sidebar form to add variant
+     * Open/Close sidebar
      * @returns void
      * @memberof DotExperimentsConfigurationComponent
      */
-    showAddVariant() {
-        this.dotExperimentsConfigurationStore.openSidebar(ExperimentSteps.VARIANTS);
-    }
-
-    /**
-     * Hide sidebar
-     * @returns void
-     * @memberof DotExperimentsConfigurationComponent
-     */
-    closeSidebar() {
-        this.dotExperimentsConfigurationStore.closeSidebar();
+    sidebarStatusChanged(action: SidebarStatus) {
+        if (action === SidebarStatus.OPEN) {
+            this.dotExperimentsConfigurationStore.openSidebar(ExperimentSteps.VARIANTS);
+        } else {
+            this.dotExperimentsConfigurationStore.closeSidebar();
+        }
     }
 
     /**
@@ -85,7 +85,7 @@ export class DotExperimentsConfigurationComponent {
      * @memberof DotExperimentsConfigurationVariantsComponent
      */
     goToEditPageVariant(variant: { variant: Variant; mode: EditPageTabs }) {
-        this.dotExperimentsSessionStorageService.setVariationId(variant.variant.id);
+        this.dotSessionStorageService.setVariationId(variant.variant.id);
         this.router.navigate(['edit-page/content'], {
             queryParams: { editPageTab: variant.mode, variationName: variant.variant.id },
             queryParamsHandling: 'merge'

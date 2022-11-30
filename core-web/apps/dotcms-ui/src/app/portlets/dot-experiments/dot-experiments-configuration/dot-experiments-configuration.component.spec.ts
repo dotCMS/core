@@ -22,7 +22,7 @@ import {
 import { MockDotMessageService } from '@tests/dot-message-service.mock';
 import { DotMessageService } from '@services/dot-message/dot-messages.service';
 import { MessageService } from 'primeng/api';
-import { DotExperimentsSessionStorageService } from '@portlets/dot-experiments/shared/services/dot-experiments-session-storage.service';
+import { DotSessionStorageService } from '@shared/services/dot-session-storage.service';
 import { Status } from '@portlets/shared/models/shared-models';
 
 const ActivatedRouteMock = {
@@ -70,7 +70,7 @@ describe('DotExperimentsConfigurationComponent', () => {
                 useValue: messageServiceMock
             },
             mockProvider(DotExperimentsService),
-            mockProvider(DotExperimentsSessionStorageService),
+            mockProvider(DotSessionStorageService),
             mockProvider(MessageService),
             mockProvider(Router),
             mockProvider(Title)
@@ -94,12 +94,11 @@ describe('DotExperimentsConfigurationComponent', () => {
 
     it('should load all the components', () => {
         const vmMock$ = {
-            pageId: ExperimentMocks[0].pageId,
             experiment: ExperimentMocks[0],
-            stepStatus: {
+            stepStatusSidebar: {
                 status: Status.IDLE,
-                isOpenSidebar: false,
-                step: null
+                isOpen: false,
+                experimentStep: null
             },
             isLoading: false
         };

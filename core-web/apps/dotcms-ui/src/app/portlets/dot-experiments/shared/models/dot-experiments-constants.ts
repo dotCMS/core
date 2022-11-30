@@ -39,3 +39,8 @@ export const ExperimentsStatusList = [
         value: DotExperimentStatusList.SCHEDULED
     }
 ];
+
+export enum SidebarStatus {
+    OPEN = 'OPEN',
+    CLOSE = 'CLOSED'
+}

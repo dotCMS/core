@@ -2,8 +2,7 @@
     <dot-experiments-header
         [isLoading]="vm.isLoading"
         [title]="vm.experiment?.name"
-        (goBack)="goToExperimentList()"
-        backUrl="{{ '/edit-page/experiments/' + vm.pageId }}"
+        (goBack)="goToExperimentList(vm.experiment.pageId)"
     >
     </dot-experiments-header>
 
@@ -15,13 +14,12 @@
             <p>{{ vm.experiment.description }}</p>
 
             <dot-experiments-configuration-variants
-                [status]="vm.stepStatus"
+                [stepStatus]="vm.stepStatusSidebar"
                 [variants]="vm.experiment.trafficProportion.variants"
                 (delete)="deleteVariant($event)"
                 (goToEditPage)="goToEditPageVariant($event)"
-                (hiddenSidebar)="closeSidebar()"
                 (save)="saveVariant($event)"
-                (showSidebar)="showAddVariant()"
+                (sidebarStatusChanged)="sidebarStatusChanged($event)"
             ></dot-experiments-configuration-variants>
 
             <dot-experiments-configuration-goals></dot-experiments-configuration-goals>

@@ -44,8 +44,8 @@ interface RangeOfDateAndTime {
 
 export interface StepStatus {
     status: Status;
-    isOpenSidebar: boolean;
-    step: ExperimentSteps | null;
+    isOpen: boolean;
+    experimentStep: ExperimentSteps | null;
 }
 
 export interface DotStoreWithSidebar {

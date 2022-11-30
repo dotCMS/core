@@ -1,7 +1,6 @@
 import { Injectable } from '@angular/core';
 import { ComponentStore, tapResponse } from '@ngrx/component-store';
 import { LoadingState, Status } from '@portlets/shared/models/shared-models';
-import { ActivatedRoute } from '@angular/router';
 import {
     DotExperiment,
     ExperimentSteps,
@@ -18,33 +17,25 @@ import { DotMessageService } from '@services/dot-message/dot-messages.service';
 import { MessageService } from 'primeng/api';
 
 export interface DotExperimentsConfigurationState {
-    pageId: string;
     experiment: DotExperiment | null;
     status: LoadingState;
-    isSidebarOpen: boolean;
-    isSaving: boolean;
-    stepStatus: StepStatus;
+    stepStatusSidebar: StepStatus;
 }
 
 const initialState: DotExperimentsConfigurationState = {
-    pageId: '',
     experiment: null,
     status: LoadingState.LOADING,
-    isSidebarOpen: false,
-    isSaving: false,
-    stepStatus: {
+    stepStatusSidebar: {
         status: Status.IDLE,
-        isOpenSidebar: false,
-        step: null
+        isOpen: false,
+        experimentStep: null
     }
 };
 
 @Injectable()
 export class DotExperimentsConfigurationStore extends ComponentStore<DotExperimentsConfigurationState> {
-    experimentId: string;
     // Selectors
     readonly isLoading$ = this.select(({ status }) => status === LoadingState.LOADING);
-    readonly getTrafficProportion$ = this.select(({ experiment }) => experiment.trafficProportion);
 
     // Updaters
     readonly setComponentStatus = this.updater((state, status: LoadingState) => ({
@@ -52,37 +43,29 @@ export class DotExperimentsConfigurationStore extends ComponentStore<DotExperime
         status
     }));
 
-    readonly savingStepStatus = this.updater((state, step: ExperimentSteps) => ({
+    readonly setSidebarStatus = this.updater((state, status: Status) => ({
         ...state,
-        stepStatus: {
-            ...state.stepStatus,
-            status: Status.SAVING,
-            step
-        }
-    }));
-    readonly doneStepStatus = this.updater((state, step: ExperimentSteps) => ({
-        ...state,
-        stepStatus: {
-            ...state.stepStatus,
-            status: Status.DONE,
-            step
+        stepStatusSidebar: {
+            ...state.stepStatusSidebar,
+            status
         }
     }));
 
     readonly closeSidebar = this.updater((state) => ({
         ...state,
-        stepStatus: {
+        stepStatusSidebar: {
             status: Status.DONE,
-            isOpenSidebar: false,
-            step: null
+            isOpen: false,
+            experimentStep: null
         }
     }));
-    readonly openSidebar = this.updater((state, step: ExperimentSteps) => ({
+
+    readonly openSidebar = this.updater((state, experimentStep: ExperimentSteps) => ({
         ...state,
-        stepStatus: {
-            ...state.stepStatus,
-            isOpenSidebar: true,
-            step
+        stepStatusSidebar: {
+            status: Status.IDLE,
+            isOpen: true,
+            experimentStep
         }
     }));
 
@@ -115,7 +98,7 @@ export class DotExperimentsConfigurationStore extends ComponentStore<DotExperime
     // Variants
     readonly addVariant = this.effect((variant$: Observable<Pick<DotExperiment, 'name'>>) => {
         return variant$.pipe(
-            tap(() => this.savingStepStatus(ExperimentSteps.VARIANTS)),
+            tap(() => this.setSidebarStatus(Status.SAVING)),
             withLatestFrom(this.state$),
             switchMap(([variant, { experiment }]) =>
                 this.dotExperimentsService.addVariant(experiment.id, variant).pipe(
@@ -136,7 +119,7 @@ export class DotExperimentsConfigurationStore extends ComponentStore<DotExperime
                             this.closeSidebar();
                         },
                         (error: HttpErrorResponse) => {
-                            this.doneStepStatus(ExperimentSteps.VARIANTS);
+                            this.setSidebarStatus(Status.IDLE);
                             throwError(error);
                         }
                     )
@@ -147,7 +130,6 @@ export class DotExperimentsConfigurationStore extends ComponentStore<DotExperime
 
     readonly deleteVariant = this.effect((variant$: Observable<Variant>) => {
         return variant$.pipe(
-            tap(() => this.savingStepStatus(ExperimentSteps.VARIANTS)),
             withLatestFrom(this.state$),
             switchMap(([variant, { experiment }]) =>
                 this.dotExperimentsService.removeVariant(experiment.id, variant.id).pipe(
@@ -166,8 +148,7 @@ export class DotExperimentsConfigurationStore extends ComponentStore<DotExperime
 
                             this.setTrafficProportion(experiment.trafficProportion);
                         },
-                        (error: HttpErrorResponse) => throwError(error),
-                        () => this.doneStepStatus(ExperimentSteps.VARIANTS)
+                        (error: HttpErrorResponse) => throwError(error)
                     )
                 )
             )
@@ -175,17 +156,15 @@ export class DotExperimentsConfigurationStore extends ComponentStore<DotExperime
     });
 
     readonly vm$: Observable<{
-        pageId: string;
         experiment: DotExperiment;
-        stepStatus: StepStatus;
+        stepStatusSidebar: StepStatus;
         isLoading: boolean;
     }> = this.select(
         this.state$,
         this.isLoading$,
-        ({ pageId, experiment, stepStatus }, isLoading) => ({
-            pageId,
+        ({ experiment, stepStatusSidebar }, isLoading) => ({
             experiment,
-            stepStatus,
+            stepStatusSidebar,
             isLoading
         })
     );
@@ -194,11 +173,9 @@ export class DotExperimentsConfigurationStore extends ComponentStore<DotExperime
         private readonly dotExperimentsService: DotExperimentsService,
         private readonly dotMessageService: DotMessageService,
         private readonly messageService: MessageService,
-        private readonly route: ActivatedRoute,
         private readonly title: Title
     ) {
-        super({ ...initialState, pageId: route.snapshot.params.pageId });
-        this.loadExperiment(route.snapshot.params.experimentId);
+        super(initialState);
     }
 
     private updateTabTitle(experiment: DotExperiment) {

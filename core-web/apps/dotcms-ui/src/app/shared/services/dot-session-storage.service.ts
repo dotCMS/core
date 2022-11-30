@@ -2,7 +2,7 @@ import { Injectable } from '@angular/core';
 import { SESSION_STORAGE_VARIATION_KEY } from '@portlets/dot-experiments/shared/models/dot-experiments-constants';
 
 @Injectable()
-export class DotExperimentsSessionStorageService {
+export class DotSessionStorageService {
     /**
      * Set the variantId to the SessionStorage Key
      * @param {string} variationId

@@ -5,9 +5,9 @@ export const enum LoadingState {
 }
 
 export enum Status {
-    'SAVING',
-    'IDLE',
-    'DONE'
+    'SAVING' = 'SAVING',
+    'IDLE' = 'IDLE',
+    'DONE' = 'DONE'
 }
 
 export const enum FeaturedFlags {

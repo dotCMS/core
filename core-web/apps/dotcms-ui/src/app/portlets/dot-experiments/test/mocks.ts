@@ -67,6 +67,7 @@ export const DotExperimentsConfigurationStoreMock = {
     addVariant: () => of([]),
     openSidebar: () => of([]),
     closeSidebar: () => of([]),
+    loadExperiment: () => of([]),
     getExperimentId$: of('1111111'),
     vm$: of({
         pageId: '',
@@ -81,7 +82,9 @@ export const DotExperimentsServiceMock = {
     get: () => of({}),
     delete: () => of({}),
     archive: () => of({}),
-    getById: () => of({})
+    getById: () => of({}),
+    removeVariant: () => of({}),
+    addVariant: () => of({})
 };
 
 export class ActivatedRouteMock {

@@ -11,13 +11,14 @@ import { Title } from '@angular/platform-browser';
 import { of } from 'rxjs';
 import {
     DotExperiment,
+    ExperimentSteps,
     Variant
 } from '@portlets/dot-experiments/shared/models/dot-experiments.model';
 import { DotMessageService } from '@services/dot-message/dot-messages.service';
 import { MessageService } from 'primeng/api';
 
-const EXPERIMENT_ID = '1111';
-const PAGE_ID = '222';
+const EXPERIMENT_ID = ExperimentMocks[0].id;
+const PAGE_ID = ExperimentMocks[0].pageId;
 const ActivatedRouteMock = {
     snapshot: {
         params: {
@@ -48,62 +49,41 @@ describe('DotExperimentsConfigurationStore', () => {
 
     beforeEach(() => {
         spectator = createStoreService({});
-        dotExperimentsService = spectator.inject(DotExperimentsService);
-        store = spectator.inject(DotExperimentsConfigurationStore);
 
-        dotExperimentsService.getById.and.returnValue(of(ExperimentMocks[0]));
+        store = spectator.inject(DotExperimentsConfigurationStore);
+        dotExperimentsService = spectator.inject(DotExperimentsService);
+        dotExperimentsService.getById.and.callThrough().and.returnValue(of(ExperimentMocks[0]));
     });
 
     it('should set initial data', (done) => {
+        spectator.service.loadExperiment(EXPERIMENT_ID);
+
         const expectedInitialState: DotExperimentsConfigurationState = {
-            pageId: PAGE_ID,
-            experiment: null,
-            status: LoadingState.LOADING,
-            isSidebarOpen: false,
-            isSaving: false,
-            stepStatus: {
+            experiment: ExperimentMocks[0],
+            status: LoadingState.LOADED,
+            stepStatusSidebar: {
                 status: Status.IDLE,
-                isOpenSidebar: false,
-                step: null
+                isOpen: false,
+                experimentStep: null
             }
         };
 
+        expect(dotExperimentsService.getById).toHaveBeenCalledWith(EXPERIMENT_ID);
         store.state$.subscribe((state) => {
             expect(state).toEqual(expectedInitialState);
             done();
         });
     });
 
-    it('should have getPageId$ from the store', (done) => {
-        store.state$.subscribe(({ pageId }) => {
-            expect(pageId).toEqual(PAGE_ID);
-            done();
-        });
-    });
-
-    it('should have getExperimentId$ from the store', (done) => {
-        store.state$.subscribe(({ experiment }) => {
-            expect(experiment.id).toEqual(EXPERIMENT_ID);
-            done();
-        });
-    });
-
-    it('should have getExperiment$ from the store', (done) => {
-        store.loadExperiment(EXPERIMENT_ID);
-        store.state$.subscribe(({ experiment }) => {
-            expect(experiment).toEqual(ExperimentMocks[0]);
-            done();
-        });
-    });
-
     it('should have isLoading$ from the store', (done) => {
+        spectator.service.loadExperiment(ExperimentMocks[0].id);
         store.isLoading$.subscribe((data) => {
-            expect(data).toEqual(true);
+            expect(data).toEqual(false);
             done();
         });
     });
 
-    it('should update status to the store', (done) => {
+    it('should update component status to the store', (done) => {
         store.setComponentStatus(LoadingState.LOADED);
         store.isLoading$.subscribe((status) => {
             expect(status).toEqual(false);
@@ -111,12 +91,71 @@ describe('DotExperimentsConfigurationStore', () => {
         });
     });
 
+    it('should update sidebar status(SAVING/IDLE/DONE) to the store', (done) => {
+        store.setSidebarStatus(Status.SAVING);
+        store.state$.subscribe(({ stepStatusSidebar }) => {
+            expect(stepStatusSidebar.status).toEqual(Status.SAVING);
+            done();
+        });
+    });
+
+    it('should update open sidebar and set the experiment step (card)', (done) => {
+        store.openSidebar(ExperimentSteps.VARIANTS);
+        store.state$.subscribe(({ stepStatusSidebar }) => {
+            expect(stepStatusSidebar.experimentStep).toEqual(ExperimentSteps.VARIANTS);
+            expect(stepStatusSidebar.isOpen).toEqual(true);
+            done();
+        });
+    });
+
+    it('should update close sidebar and initialize stepStatusSidebar', (done) => {
+        store.closeSidebar();
+        store.state$.subscribe(({ stepStatusSidebar }) => {
+            expect(stepStatusSidebar.status).toEqual(Status.DONE);
+            expect(stepStatusSidebar.isOpen).toEqual(false);
+            expect(stepStatusSidebar.experimentStep).toEqual(null);
+            done();
+        });
+    });
+
     describe('Effects', () => {
         it('should load experiment to store', (done) => {
+            dotExperimentsService.getById.and.callThrough().and.returnValue(of(ExperimentMocks[1]));
+
             store.loadExperiment(EXPERIMENT_ID);
             expect(dotExperimentsService.getById).toHaveBeenCalledWith(EXPERIMENT_ID);
             store.state$.subscribe(({ experiment }) => {
-                expect(experiment).toEqual(ExperimentMocks[0]);
+                expect(experiment).toEqual(ExperimentMocks[1]);
+                done();
+            });
+        });
+
+        it('should add a variant to the store', (done) => {
+            dotExperimentsService.getById.and.callThrough().and.returnValue(of(ExperimentMocks[1]));
+            const newVariant: Variant = {
+                id: '333',
+                name: '3333',
+                weight: '333'
+            };
+
+            const expectedExperiment = {
+                ...ExperimentMocks[1],
+                trafficProportion: {
+                    ...ExperimentMocks[1].trafficProportion,
+                    variants: [...ExperimentMocks[1].trafficProportion.variants, newVariant]
+                }
+            };
+
+            dotExperimentsService.addVariant.and
+                .callThrough()
+                .and.returnValue(of(expectedExperiment));
+
+            store.loadExperiment(EXPERIMENT_ID);
+            store.addVariant(newVariant);
+
+            store.state$.subscribe(({ experiment, stepStatusSidebar }) => {
+                expect(experiment).toEqual(expectedExperiment);
+                expect(stepStatusSidebar.isOpen).toEqual(false);
                 done();
             });
         });
@@ -146,8 +185,12 @@ describe('DotExperimentsConfigurationStore', () => {
                 }
             };
 
-            dotExperimentsService.getById.and.returnValue(of(experimentWithTwoVariants));
-            dotExperimentsService.removeVariant.and.returnValue(of(expectedResponseRemoveVariant));
+            dotExperimentsService.getById.and
+                .callThrough()
+                .and.returnValue(of(experimentWithTwoVariants));
+            dotExperimentsService.removeVariant.and
+                .callThrough()
+                .and.returnValue(of(expectedResponseRemoveVariant));
 
             store.loadExperiment(EXPERIMENT_ID);
             expect(dotExperimentsService.getById).toHaveBeenCalledWith(EXPERIMENT_ID);

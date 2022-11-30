@@ -5,7 +5,10 @@ import { Card, CardModule } from 'primeng/card';
 import { DotMessageService } from '@services/dot-message/dot-messages.service';
 import { MockDotMessageService } from '@tests/dot-message-service.mock';
 import { DecimalPipe } from '@angular/common';
-import { DEFAULT_VARIANT_ID } from '@portlets/dot-experiments/shared/models/dot-experiments-constants';
+import {
+    DEFAULT_VARIANT_ID,
+    SidebarStatus
+} from '@portlets/dot-experiments/shared/models/dot-experiments-constants';
 import { DotExperimentsConfigurationVariantsAddComponent } from '@portlets/dot-experiments/dot-experiments-configuration/components/dot-experiments-configuration-variants-add/dot-experiments-configuration-variants-add.component';
 import { Status } from '@portlets/shared/models/shared-models';
 import { ExperimentSteps } from '@portlets/dot-experiments/shared/models/dot-experiments.model';
@@ -19,6 +22,8 @@ const messageServiceMock = new MockDotMessageService({
 });
 describe('DotExperimentsConfigurationVariantsComponent', () => {
     let spectator: Spectator<DotExperimentsConfigurationVariantsComponent>;
+
+    let configurationVariantsAddComponent: DotExperimentsConfigurationVariantsAddComponent;
 
     const createComponent = createComponentFactory({
         imports: [
@@ -45,10 +50,10 @@ describe('DotExperimentsConfigurationVariantsComponent', () => {
     describe('should render', () => {
         it('a DEFAULT variant', () => {
             const variantsVm = {
-                status: {
+                stepStatus: {
                     status: Status.IDLE,
-                    step: ExperimentSteps.VARIANTS,
-                    isOpenSidebar: false
+                    experimentStep: ExperimentSteps.VARIANTS,
+                    isOpen: false
                 },
                 variants: [{ id: DEFAULT_VARIANT_ID, name: 'a', weight: '100' }]
             };
@@ -69,10 +74,10 @@ describe('DotExperimentsConfigurationVariantsComponent', () => {
 
         it('the variant(s)', () => {
             const variantsVm = {
-                status: {
+                stepStatus: {
                     status: Status.IDLE,
-                    step: ExperimentSteps.VARIANTS,
-                    isOpenSidebar: false
+                    experimentStep: ExperimentSteps.VARIANTS,
+                    isOpen: false
                 },
                 variants: [
                     { id: DEFAULT_VARIANT_ID, name: 'a', weight: '33.33', url: 'link1' },
@@ -113,6 +118,7 @@ describe('DotExperimentsConfigurationVariantsComponent', () => {
             const variantsEditButton = spectator.queryAll(
                 byTestId('variant-edit-button')
             ) as HTMLButtonElement[];
+
             expect(variantsEditButton.length).toBe(2);
             expect(variantsEditButton[0]).toContainText('edit');
 
@@ -133,36 +139,41 @@ describe('DotExperimentsConfigurationVariantsComponent', () => {
     });
 
     describe('interactions', () => {
+        const variantsVm = {
+            stepStatus: {
+                status: Status.IDLE,
+                experimentStep: ExperimentSteps.VARIANTS,
+                isOpen: false
+            },
+            variants: [
+                { id: DEFAULT_VARIANT_ID, name: 'a', weight: '33.33', url: 'link1' },
+                { id: '1111111', name: 'b', weight: '33.33', url: 'link2' }
+            ]
+        };
         beforeEach(() => {
-            const variantsVm = {
-                status: {
-                    status: Status.IDLE,
-                    step: ExperimentSteps.VARIANTS,
-                    isOpenSidebar: false
-                },
-                variants: [
-                    { id: DEFAULT_VARIANT_ID, name: 'a', weight: '33.33', url: 'link1' },
-                    { id: '1111111', name: 'b', weight: '33.33', url: 'link2' }
-                ]
-            };
-
             spectator.setInput(variantsVm);
 
             spectator.detectChanges();
+            configurationVariantsAddComponent = spectator.query(
+                DotExperimentsConfigurationVariantsAddComponent
+            );
         });
 
-        it('should call addNewVariant()', () => {
-            const addNewVariantSpy = spyOn(spectator.component, 'showSidebar');
+        it('should sidebarStatusChanged emit OPEN when add new variant button is enable and clicked', () => {
+            let output;
+            spectator.output('sidebarStatusChanged').subscribe((result) => (output = result));
+
             const addButton = spectator.query(byTestId('variant-add-button')) as HTMLButtonElement;
 
             expect(addButton.disabled).not.toBe(true);
             spectator.click(addButton);
 
-            expect(addNewVariantSpy).toHaveBeenCalledTimes(1);
+            expect(output).toEqual(SidebarStatus.OPEN);
         });
 
-        it('should go to Edit Page with the queryParams editPageTab=preview and variationName set', () => {
-            const viewButtontSpy = spyOn(spectator.component, 'goToEditPage');
+        it('should goToEditPage emit a variant and mode(preview) when View button is clicked', () => {
+            let output;
+            spectator.output('goToEditPage').subscribe((result) => (output = result));
 
             const viewButton = spectator.query(
                 byTestId('variant-preview-button')
@@ -171,22 +182,24 @@ describe('DotExperimentsConfigurationVariantsComponent', () => {
             expect(viewButton.disabled).not.toBe(true);
             spectator.click(viewButton);
 
-            expect(viewButtontSpy).toHaveBeenCalled();
+            expect(output).toEqual({ variant: variantsVm.variants[0], mode: 'preview' });
         });
-        it('should go to Edit Page with the queryParams editPageTab=edit and variationName set', () => {
-            const editButtontSpy = spyOn(spectator.component, 'goToEditPage');
+        it('should goToEditPage emit a variant and mode(edit) when edit button is clicked', () => {
+            let output;
+            spectator.output('goToEditPage').subscribe((result) => (output = result));
 
-            const editButton = spectator.query(
+            const viewButton = spectator.query(
                 byTestId('variant-edit-button')
             ) as HTMLButtonElement;
 
-            expect(editButton.disabled).not.toBe(true);
-            spectator.click(editButton);
+            expect(viewButton.disabled).not.toBe(true);
+            spectator.click(viewButton);
 
-            expect(editButtontSpy).toHaveBeenCalledWith();
+            expect(output).toEqual({ variant: variantsVm.variants[1], mode: 'edit' });
         });
         it('should delete a variant', () => {
-            const deleteButtontSpy = spyOn(spectator.component, 'delete');
+            let output;
+            spectator.output('delete').subscribe((result) => (output = result));
 
             const deleteButtons = spectator.queryAll(
                 byTestId('variant-delete-button')
@@ -197,7 +210,18 @@ describe('DotExperimentsConfigurationVariantsComponent', () => {
 
             spectator.click(deleteButtons[1]);
 
-            expect(deleteButtontSpy).toHaveBeenCalled();
+            expect(output).toEqual(variantsVm.variants[1]);
+        });
+
+        it('should emit a the form values when when save', () => {
+            let output;
+            spectator.output('save').subscribe((result) => (output = result));
+
+            configurationVariantsAddComponent.form.patchValue({ name: 'value' });
+            configurationVariantsAddComponent.saveForm();
+            spectator.detectChanges();
+
+            expect(output).toEqual({ name: 'value' });
         });
     });
 });

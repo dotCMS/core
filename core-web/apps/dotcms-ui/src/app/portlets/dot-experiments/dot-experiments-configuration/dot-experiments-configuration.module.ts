@@ -12,7 +12,7 @@ import { DotExperimentsConfigurationSkeletonComponent } from '@portlets/dot-expe
 import { DotExperimentsUiHeaderComponent } from '@portlets/dot-experiments/shared/ui/dot-experiments-header/dot-experiments-ui-header.component';
 import { ButtonModule } from 'primeng/button';
 import { DotDynamicDirective } from '@portlets/shared/directives/dot-dynamic.directive';
-import { DotExperimentsSessionStorageService } from '@portlets/dot-experiments/shared/services/dot-experiments-session-storage.service';
+import { DotSessionStorageService } from '@shared/services/dot-session-storage.service';
 
 @NgModule({
     declarations: [DotExperimentsConfigurationComponent],
@@ -32,6 +32,6 @@ import { DotExperimentsSessionStorageService } from '@portlets/dot-experiments/s
         // PrimeNg
         ButtonModule
     ],
-    providers: [DotExperimentsSessionStorageService]
+    providers: [DotSessionStorageService]
 })
 export class DotExperimentsConfigurationModule {}

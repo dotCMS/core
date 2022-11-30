@@ -5,11 +5,11 @@ import { DotMessagePipeModule } from '@pipes/dot-message/dot-message-pipe.module
 import { ButtonModule } from 'primeng/button';
 import {
     DEFAULT_VARIANT_ID,
-    MAX_VARIANTS_ALLOWED
+    MAX_VARIANTS_ALLOWED,
+    SidebarStatus
 } from '@portlets/dot-experiments/shared/models/dot-experiments-constants';
 import { DotExperimentsConfigurationItemsCountComponent } from '@portlets/dot-experiments/dot-experiments-configuration/components/dot-experiments-configuration-items-count/dot-experiments-configuration-items-count.component';
 import { DotIconModule } from '@dotcms/ui';
-import { DotDynamicDirective } from '@portlets/shared/directives/dot-dynamic.directive';
 import { DotExperimentsConfigurationVariantsAddComponent } from '@portlets/dot-experiments/dot-experiments-configuration/components/dot-experiments-configuration-variants-add/dot-experiments-configuration-variants-add.component';
 import {
     DotExperiment,
@@ -30,7 +30,6 @@ import { Status } from '@portlets/shared/models/shared-models';
         DotExperimentsConfigurationItemsCountComponent,
         DotMessagePipeModule,
         DotIconModule,
-        DotDynamicDirective,
         UiDotIconButtonModule,
         //PrimeNg
         CardModule,
@@ -43,15 +42,16 @@ import { Status } from '@portlets/shared/models/shared-models';
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotExperimentsConfigurationVariantsComponent {
-    currentStep = ExperimentSteps.VARIANTS;
-    currentStatus = Status;
+    statusList = Status;
+    sidebarStatusList = SidebarStatus;
     maxVariantsAllowed = MAX_VARIANTS_ALLOWED;
     defaultVariantId = DEFAULT_VARIANT_ID;
+    experimentStepName = ExperimentSteps.VARIANTS;
 
-    @Input() status: StepStatus;
+    @Input() stepStatus: StepStatus;
     @Input() variants: Variant[];
-    @Output() showSidebar = new EventEmitter<void>();
-    @Output() hiddenSidebar = new EventEmitter<void>();
+
+    @Output() sidebarStatusChanged = new EventEmitter<SidebarStatus>();
     @Output() delete = new EventEmitter<Variant>();
     @Output() save = new EventEmitter<Pick<DotExperiment, 'name'>>();
     @Output() goToEditPage = new EventEmitter<{ variant: Variant; mode: EditPageTabs }>();
