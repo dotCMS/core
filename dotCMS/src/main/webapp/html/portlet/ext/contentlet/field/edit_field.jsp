@@ -626,9 +626,15 @@
 
         <!--  display -->
         <% if(UtilMethods.isSet(value)){
+            String mimeType="application/octet-stream";
+            fileName="unknown";
+            
+            
+
             try{
                 java.io.File fileValue = (java.io.File)value;
                 fileName = fileValue.getName();
+                mimeType = com.dotcms.util.MimeTypeUtils.getMimeType(fileValue);
             }
 
             catch(Exception e){
@@ -641,8 +647,25 @@
                 Logger.error(this.getClass(), "-----------------------------------");
                 fileName = value.toString();
             }
-        %>
+            %>
+        
 
+        
+
+        <%if(mimeType.startsWith("video/")){%>
+            <div id="thumbnailParent<%=field.getVelocityVarName()%>">
+                <video controls src="/dA/<%=inode%>/<%=field.getVelocityVarName()%>/<%=fileName%>" class="thumbnailDiv" style="max-width:75%;max-height:300px;">
+            </div>
+        <%}else if(fileName!=null && fileName.toLowerCase().endsWith("pdf")){%>
+            <div id="thumbnailParent<%=field.getVelocityVarName()%>">
+                <a href="/dA/<%=inode%>/<%=field.getVelocityVarName()%>/<%=fileName%>" target="downloadMe">
+                    <img src="/dA/<%=inode%>/<%=field.getVelocityVarName()%>/<%=fileName%>/1000h" class="thumbnailDiv" style="max-width:75%;max-height:300px;">
+                </a>
+            </div>
+        <%}%>
+        
+
+    
 
         <%if(UtilMethods.isImage(fileName)){%>
         <%int showDim=300; %>

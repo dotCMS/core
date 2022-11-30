@@ -50,6 +50,18 @@ export class ContainerListComponent implements OnDestroy {
     }
 
     /**
+     * Change base type to the selected one
+     * @param {string} value
+     * @memberof ContainerListComponent
+     */
+    changeBaseTypeSelector(value: string) {
+        value !== ''
+            ? this.listing.paginatorService.setExtraParams('type', value)
+            : this.listing.paginatorService.deleteExtraParams('type');
+        this.listing.loadFirstPage();
+    }
+
+    /**
      * Get the attributes that define the state of a container.
      * @param {DotContainer} { live, working, deleted, hasLiveVersion}
      * @returns DotContentState
