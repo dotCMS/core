@@ -1181,10 +1181,10 @@ public class ESContentletAPIImpl implements ContentletAPI {
             final boolean respectFrontendRoles, final String...variantNames) throws DotDataException, DotStateException,
             DotSecurityException {
 
-        final String OR = Arrays.stream(variantNames).map((variant)->"variant:"+variant)
+        final String queryWithoutParenthesis = Arrays.stream(variantNames).map((variant)->"variant:"+variant)
                 .collect(Collectors.joining(" OR "));
 
-        final String query = "+(" + OR + ")";
+        final String query = "+(" + queryWithoutParenthesis + ")";
 
         return search(query, -1, 0, null,
                 user, respectFrontendRoles);

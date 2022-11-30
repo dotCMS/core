@@ -95,60 +95,68 @@ public class ExperimentAPIImpIT {
     @Test
     public void testStartExperiment_shouldPublishContent()
             throws DotDataException, DotSecurityException {
-        
+
         final Experiment newExperiment = new ExperimentDataGen()
                 .addVariant("Test Green Button")
                 .nextPersisted();
 
-        final String pageId = newExperiment.pageId();
-        final Container container = new ContainerDataGen().nextPersisted();
+        try {
 
-        final List<Optional<Variant>> variants =
-                newExperiment.trafficProportion().variants().stream().map(
-                        variant ->
-                                Try.of(()->APILocator.getVariantAPI().get(variant.id())).getOrNull())
-                        .collect(Collectors.toList());
+            final String pageId = newExperiment.pageId();
+            final Container container = new ContainerDataGen().nextPersisted();
 
-        final Variant variant1 = variants.get(0).orElseThrow();
-        final Variant variant2 = variants.get(1).orElseThrow();
+            final List<Optional<Variant>> variants =
+                    newExperiment.trafficProportion().variants().stream().map(
+                                    variant ->
+                                            Try.of(() -> APILocator.getVariantAPI().get(variant.id()))
+                                                    .getOrNull())
+                            .collect(Collectors.toList());
 
+            final Variant variant1 = variants.get(0).orElseThrow();
+            final Variant variant2 = variants.get(1).orElseThrow();
 
-        final ContentType contentType = new ContentTypeDataGen().nextPersisted();
-        final Contentlet content1Working = new ContentletDataGen(contentType).variant(variant1)
-                .nextPersisted();
-        final Contentlet content2Working = new ContentletDataGen(contentType).variant(variant2)
-                .nextPersisted();
-        final Contentlet content1Live = new ContentletDataGen(contentType).variant(variant1)
-                .nextPersisted();
-        final Contentlet content2Live = new ContentletDataGen(contentType).variant(variant2)
-                .nextPersisted();
+            final ContentType contentType = new ContentTypeDataGen().nextPersisted();
+            final Contentlet content1Working = new ContentletDataGen(contentType).variant(variant1)
+                    .nextPersisted();
+            final Contentlet content2Working = new ContentletDataGen(contentType).variant(variant2)
+                    .nextPersisted();
+            final Contentlet content1Live = new ContentletDataGen(contentType).variant(variant1)
+                    .nextPersisted();
+            final Contentlet content2Live = new ContentletDataGen(contentType).variant(variant2)
+                    .nextPersisted();
 
-        final Contentlet pageAsContentlet = APILocator.getContentletAPI()
-                .findContentletByIdentifierAnyLanguage(pageId);
-        final HTMLPageAsset page = APILocator.getHTMLPageAssetAPI().fromContentlet(pageAsContentlet);
+            final Contentlet pageAsContentlet = APILocator.getContentletAPI()
+                    .findContentletByIdentifierAnyLanguage(pageId);
+            final HTMLPageAsset page = APILocator.getHTMLPageAssetAPI()
+                    .fromContentlet(pageAsContentlet);
 
-        new MultiTreeDataGen().setPage(page).setContainer(container)
-                .setContentlet(content1Working).nextPersisted();
+            new MultiTreeDataGen().setPage(page).setContainer(container)
+                    .setContentlet(content1Working).nextPersisted();
 
-        new MultiTreeDataGen().setPage(page).setContainer(container)
-                .setContentlet(content2Working).nextPersisted();
+            new MultiTreeDataGen().setPage(page).setContainer(container)
+                    .setContentlet(content2Working).nextPersisted();
 
-        new MultiTreeDataGen().setPage(page).setContainer(container)
-                .setContentlet(content1Live).nextPersisted();
+            new MultiTreeDataGen().setPage(page).setContainer(container)
+                    .setContentlet(content1Live).nextPersisted();
 
-        new MultiTreeDataGen().setPage(page).setContainer(container)
-                .setContentlet(content2Live).nextPersisted();
+            new MultiTreeDataGen().setPage(page).setContainer(container)
+                    .setContentlet(content2Live).nextPersisted();
 
-        ExperimentDataGen.start(newExperiment);
+            ExperimentDataGen.start(newExperiment);
 
-        List<Contentlet> experimentContentlets = APILocator.getContentletAPI()
-                .getAllContentByVariants(APILocator.systemUser(),
-                false, newExperiment.trafficProportion().variants()
-                        .stream().map(ExperimentVariant::id).toArray(String[]::new));
+            List<Contentlet> experimentContentlets = APILocator.getContentletAPI()
+                    .getAllContentByVariants(APILocator.systemUser(),
+                            false, newExperiment.trafficProportion().variants()
+                                    .stream().map(ExperimentVariant::id).toArray(String[]::new));
 
-        experimentContentlets.forEach((contentlet -> {
-            assertTrue(Try.of(contentlet::isLive).getOrElse(false));
-        }));
+            experimentContentlets.forEach((contentlet -> {
+                assertTrue(Try.of(contentlet::isLive).getOrElse(false));
+            }));
+
+        } finally {
+            APILocator.getExperimentsAPI().end(newExperiment.id().orElseThrow()
+                    , APILocator.systemUser());
+        }
 
     }
 }
