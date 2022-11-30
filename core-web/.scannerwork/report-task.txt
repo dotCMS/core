@@ -1,0 +1,7 @@
+projectKey=core-web
+serverUrl=https://sonarqube.dotcms.site
+serverVersion=9.7.1.62043
+branch=
+dashboardUrl=https://sonarqube.dotcms.site/dashboard?id=core-web
+ceTaskId=AYSLq32iK43eThAXTlsr
+ceTaskUrl=https://sonarqube.dotcms.site/api/ce/task?id=AYSLq32iK43eThAXTlsr

@@ -1,0 +1,559 @@
+
+@apps_dotcms_ui_src_app_test_dot_containers_mock_ts_3_36_A_1918_0j
+`/Users/fmontes/Developer/dotcms/core/core-web/apps/dotcms-ui/src/app/test/dot-containers.mock.ts# (:"s2_1*Æ`
+s2_1
+<synthetic> (M
+K
+
+__unknown_file (
+%sc-P_890_0"__id**
+
+%env"
+%scope-P_890M
+K
+
+__unknown_file (
+%sc-P_890_1"__id**
+
+%env"
+%scope-P_890T
+R
+
+__unknown_file (	
+%expr_0"__id*%*#
+
+%sc-P_890_1"
+CONTAINER_SOURCEŒ‰
+j
+`/Users/fmontes/Developer/dotcms/core/core-web/apps/dotcms-ui/src/app/test/dot-containers.mock.ts" (
+	%object_0Object"Object­
+ª
+j
+`/Users/fmontes/Developer/dotcms/core/core-web/apps/dotcms-ui/src/app/test/dot-containers.mock.ts (+!
+
+	%object_0Object"
+
+hostname"__id*
+demo.dotcms.comŒ‰
+j
+`/Users/fmontes/Developer/dotcms/core/core-web/apps/dotcms-ui/src/app/test/dot-containers.mock.ts0 (	
+	%object_1Object"Object¤
+¡
+j
+`/Users/fmontes/Developer/dotcms/core/core-web/apps/dotcms-ui/src/app/test/dot-containers.mock.ts (
+
+	%object_1Object"
+type"__id*
+
+containersÄ
+Á
+j
+`/Users/fmontes/Developer/dotcms/core/core-web/apps/dotcms-ui/src/app/test/dot-containers.mock.ts (>#
+
+	%object_1Object"
+
+identifier"__id*(&
+$5363c6c6-5ba0-4946-b7af-cf875188ac2e®
+«
+j
+`/Users/fmontes/Developer/dotcms/core/core-web/apps/dotcms-ui/src/app/test/dot-containers.mock.ts ((
+
+	%object_1Object"
+name"__id*
+Medium Column (md-1)Ä
+Á
+j
+`/Users/fmontes/Developer/dotcms/core/core-web/apps/dotcms-ui/src/app/test/dot-containers.mock.ts	 	(>#
+
+	%object_1Object"
+
+categoryId"__id*(&
+$9ab97328-e72f-4d7e-8be6-232f53218a93«
+¨
+j
+`/Users/fmontes/Developer/dotcms/core/core-web/apps/dotcms-ui/src/app/test/dot-containers.mock.ts
+ 
+('
+
+	%object_1Object"
+source"__id**
+	
+%expr_0"
+DB»
+¸
+j
+`/Users/fmontes/Developer/dotcms/core/core-web/apps/dotcms-ui/src/app/test/dot-containers.mock.ts (-
+
+	%object_1Object"
+parentPermissionable"__id*
+
+	%object_0ObjectM
+K
+
+__unknown_file (
+%sc-P_890_2"__id**
+
+%env"
+%scope-P_890T
+R
+
+__unknown_file (	
+%expr_1"__id*%*#
+
+%sc-P_890_2"
+CONTAINER_SOURCEŒ‰
+j
+`/Users/fmontes/Developer/dotcms/core/core-web/apps/dotcms-ui/src/app/test/dot-containers.mock.ts" (
+	%object_2Object"Object­
+ª
+j
+`/Users/fmontes/Developer/dotcms/core/core-web/apps/dotcms-ui/src/app/test/dot-containers.mock.ts (+!
+
+	%object_2Object"
+
+hostname"__id*
+demo.dotcms.comŒ‰
+j
+`/Users/fmontes/Developer/dotcms/core/core-web/apps/dotcms-ui/src/app/test/dot-containers.mock.ts0 (	
+	%object_3Object"Object¤
+¡
+j
+`/Users/fmontes/Developer/dotcms/core/core-web/apps/dotcms-ui/src/app/test/dot-containers.mock.ts (
+
+	%object_3Object"
+type"__id*
+
+containersÄ
+Á
+j
+`/Users/fmontes/Developer/dotcms/core/core-web/apps/dotcms-ui/src/app/test/dot-containers.mock.ts (>#
+
+	%object_3Object"
+
+identifier"__id*(&
+$56bd55ea-b04b-480d-9e37-5d6f9217dcc3­
+ª
+j
+`/Users/fmontes/Developer/dotcms/core/core-web/apps/dotcms-ui/src/app/test/dot-containers.mock.ts ('
+
+	%object_3Object"
+name"__id*
+Large Column (lg-1)Ä
+Á
+j
+`/Users/fmontes/Developer/dotcms/core/core-web/apps/dotcms-ui/src/app/test/dot-containers.mock.ts (>#
+
+	%object_3Object"
+
+categoryId"__id*(&
+$dde0b865-6cea-4ff0-8582-85e5974cf94f­
+ª
+j
+`/Users/fmontes/Developer/dotcms/core/core-web/apps/dotcms-ui/src/app/test/dot-containers.mock.ts ()
+
+	%object_3Object"
+source"__id**
+	
+%expr_1"
+FILE©
+¦
+j
+`/Users/fmontes/Developer/dotcms/core/core-web/apps/dotcms-ui/src/app/test/dot-containers.mock.ts (#
+
+	%object_3Object"
+path"__id*
+/container/path»
+¸
+j
+`/Users/fmontes/Developer/dotcms/core/core-web/apps/dotcms-ui/src/app/test/dot-containers.mock.ts (-
+
+	%object_3Object"
+parentPermissionable"__id*
+
+	%object_2ObjectM
+K
+
+__unknown_file (
+%sc-P_890_3"__id**
+
+%env"
+%scope-P_890T
+R
+
+__unknown_file (	
+%expr_2"__id*%*#
+
+%sc-P_890_3"
+CONTAINER_SOURCEŒ‰
+j
+`/Users/fmontes/Developer/dotcms/core/core-web/apps/dotcms-ui/src/app/test/dot-containers.mock.ts!" #(
+	%object_4Object"Object­
+ª
+j
+`/Users/fmontes/Developer/dotcms/core/core-web/apps/dotcms-ui/src/app/test/dot-containers.mock.ts" "(+!
+
+	%object_4Object"
+
+hostname"__id*
+demo.dotcms.comŒ‰
+j
+`/Users/fmontes/Developer/dotcms/core/core-web/apps/dotcms-ui/src/app/test/dot-containers.mock.ts $(	
+	%object_5Object"Object¤
+¡
+j
+`/Users/fmontes/Developer/dotcms/core/core-web/apps/dotcms-ui/src/app/test/dot-containers.mock.ts (
+
+	%object_5Object"
+type"__id*
+
+containersÄ
+Á
+j
+`/Users/fmontes/Developer/dotcms/core/core-web/apps/dotcms-ui/src/app/test/dot-containers.mock.ts (>#
+
+	%object_5Object"
+
+identifier"__id*(&
+$56bd55ea-b04b-480d-9e37-5d6f9217dcc3­
+ª
+j
+`/Users/fmontes/Developer/dotcms/core/core-web/apps/dotcms-ui/src/app/test/dot-containers.mock.ts ('
+
+	%object_5Object"
+name"__id*
+Large Column (lg-1)Ä
+Á
+j
+`/Users/fmontes/Developer/dotcms/core/core-web/apps/dotcms-ui/src/app/test/dot-containers.mock.ts (>#
+
+	%object_5Object"
+
+categoryId"__id*(&
+$dde0b865-6cea-4ff0-8582-85e5974cf94f­
+ª
+j
+`/Users/fmontes/Developer/dotcms/core/core-web/apps/dotcms-ui/src/app/test/dot-containers.mock.ts ()
+
+	%object_5Object"
+source"__id**
+	
+%expr_2"
+FILE©
+¦
+j
+`/Users/fmontes/Developer/dotcms/core/core-web/apps/dotcms-ui/src/app/test/dot-containers.mock.ts   (#
+
+	%object_5Object"
+path"__id*
+/container/path»
+¸
+j
+`/Users/fmontes/Developer/dotcms/core/core-web/apps/dotcms-ui/src/app/test/dot-containers.mock.ts! #(-
+
+	%object_5Object"
+parentPermissionable"__id*
+
+	%object_4ObjectM
+K
+
+__unknown_file (
+%sc-P_890_4"__id**
+
+%env"
+%scope-P_890T
+R
+
+__unknown_file (	
+%expr_3"__id*%*#
+
+%sc-P_890_4"
+CONTAINER_SOURCEŒ‰
+j
+`/Users/fmontes/Developer/dotcms/core/core-web/apps/dotcms-ui/src/app/test/dot-containers.mock.ts+" -(
+	%object_6Object"Object­
+ª
+j
+`/Users/fmontes/Developer/dotcms/core/core-web/apps/dotcms-ui/src/app/test/dot-containers.mock.ts, ,(+!
+
+	%object_6Object"
+
+hostname"__id*
+demo.dotcms.comŒ‰
+j
+`/Users/fmontes/Developer/dotcms/core/core-web/apps/dotcms-ui/src/app/test/dot-containers.mock.ts%0 .(	
+	%object_7Object"Object¤
+¡
+j
+`/Users/fmontes/Developer/dotcms/core/core-web/apps/dotcms-ui/src/app/test/dot-containers.mock.ts& &(
+
+	%object_7Object"
+type"__id*
+
+containersÄ
+Á
+j
+`/Users/fmontes/Developer/dotcms/core/core-web/apps/dotcms-ui/src/app/test/dot-containers.mock.ts' '(>#
+
+	%object_7Object"
+
+identifier"__id*(&
+$6a12bbda-0ae2-4121-a98b-ad8069eaff3aª
+§
+j
+`/Users/fmontes/Developer/dotcms/core/core-web/apps/dotcms-ui/src/app/test/dot-containers.mock.ts( (($
+
+	%object_7Object"
+name"__id*
+Banner Carousel Ä
+Á
+j
+`/Users/fmontes/Developer/dotcms/core/core-web/apps/dotcms-ui/src/app/test/dot-containers.mock.ts) )(>#
+
+	%object_7Object"
+
+categoryId"__id*(&
+$427c47a4-c380-439f-a6d0-97d81deed57e«
+¨
+j
+`/Users/fmontes/Developer/dotcms/core/core-web/apps/dotcms-ui/src/app/test/dot-containers.mock.ts* *('
+
+	%object_7Object"
+source"__id**
+	
+%expr_3"
+DB»
+¸
+j
+`/Users/fmontes/Developer/dotcms/core/core-web/apps/dotcms-ui/src/app/test/dot-containers.mock.ts+ -(-
+
+	%object_7Object"
+parentPermissionable"__id*
+
+	%object_6ObjectM
+K
+
+__unknown_file (
+%sc-P_890_5"__id**
+
+%env"
+%scope-P_890T
+R
+
+__unknown_file (	
+%expr_4"__id*%*#
+
+%sc-P_890_5"
+CONTAINER_SOURCEŒ‰
+j
+`/Users/fmontes/Developer/dotcms/core/core-web/apps/dotcms-ui/src/app/test/dot-containers.mock.ts5" 7(
+	%object_8Object"Object­
+ª
+j
+`/Users/fmontes/Developer/dotcms/core/core-web/apps/dotcms-ui/src/app/test/dot-containers.mock.ts6 6(+!
+
+	%object_8Object"
+
+hostname"__id*
+demo.dotcms.comŒ‰
+j
+`/Users/fmontes/Developer/dotcms/core/core-web/apps/dotcms-ui/src/app/test/dot-containers.mock.ts/0 8(	
+	%object_9Object"Object¤
+¡
+j
+`/Users/fmontes/Developer/dotcms/core/core-web/apps/dotcms-ui/src/app/test/dot-containers.mock.ts0 0(
+
+	%object_9Object"
+type"__id*
+
+containersÄ
+Á
+j
+`/Users/fmontes/Developer/dotcms/core/core-web/apps/dotcms-ui/src/app/test/dot-containers.mock.ts1 1(>#
+
+	%object_9Object"
+
+identifier"__id*(&
+$a6e9652b-8183-4c09-b775-26196b09a300²
+¯
+j
+`/Users/fmontes/Developer/dotcms/core/core-web/apps/dotcms-ui/src/app/test/dot-containers.mock.ts2 2(,
+
+	%object_9Object"
+name"__id*
+Default 4 (Page Content)Ä
+Á
+j
+`/Users/fmontes/Developer/dotcms/core/core-web/apps/dotcms-ui/src/app/test/dot-containers.mock.ts3 3(>#
+
+	%object_9Object"
+
+categoryId"__id*(&
+$8cbcb97e-8e04-4691-8555-da82c3dc4a91«
+¨
+j
+`/Users/fmontes/Developer/dotcms/core/core-web/apps/dotcms-ui/src/app/test/dot-containers.mock.ts4 4('
+
+	%object_9Object"
+source"__id**
+	
+%expr_4"
+DB»
+¸
+j
+`/Users/fmontes/Developer/dotcms/core/core-web/apps/dotcms-ui/src/app/test/dot-containers.mock.ts5 7(-
+
+	%object_9Object"
+parentPermissionable"__id*
+
+	%object_8ObjectM
+K
+
+__unknown_file (
+%sc-P_890_6"__id**
+
+%env"
+%scope-P_890T
+R
+
+__unknown_file (	
+%expr_5"__id*%*#
+
+%sc-P_890_6"
+CONTAINER_SOURCEŠ
+j
+`/Users/fmontes/Developer/dotcms/core/core-web/apps/dotcms-ui/src/app/test/dot-containers.mock.ts?" A(
+
+%object_10Object"Object®
+«
+j
+`/Users/fmontes/Developer/dotcms/core/core-web/apps/dotcms-ui/src/app/test/dot-containers.mock.ts@ @(+"
+
+
+%object_10Object"
+
+hostname"__id*
+demo.dotcms.comŠ
+j
+`/Users/fmontes/Developer/dotcms/core/core-web/apps/dotcms-ui/src/app/test/dot-containers.mock.ts90 B(	
+
+%object_11Object"Object¥
+¢
+j
+`/Users/fmontes/Developer/dotcms/core/core-web/apps/dotcms-ui/src/app/test/dot-containers.mock.ts: :(
+
+
+%object_11Object"
+type"__id*
+
+containersÅ
+Â
+j
+`/Users/fmontes/Developer/dotcms/core/core-web/apps/dotcms-ui/src/app/test/dot-containers.mock.ts; ;(>$
+
+
+%object_11Object"
+
+identifier"__id*(&
+$d71d56b4-0a8b-4bb2-be15-ffa5a23366eaª
+§
+j
+`/Users/fmontes/Developer/dotcms/core/core-web/apps/dotcms-ui/src/app/test/dot-containers.mock.ts< <(#
+
+
+%object_11Object"
+name"__id*
+Blank ContainerÅ
+Â
+j
+`/Users/fmontes/Developer/dotcms/core/core-web/apps/dotcms-ui/src/app/test/dot-containers.mock.ts= =(>$
+
+
+%object_11Object"
+
+categoryId"__id*(&
+$3ba890c5-670c-467d-890d-bd8e9b9bb5ef¬
+©
+j
+`/Users/fmontes/Developer/dotcms/core/core-web/apps/dotcms-ui/src/app/test/dot-containers.mock.ts> >(' 
+
+
+%object_11Object"
+source"__id**
+	
+%expr_5"
+DB½
+º
+j
+`/Users/fmontes/Developer/dotcms/core/core-web/apps/dotcms-ui/src/app/test/dot-containers.mock.ts? A(.
+
+
+%object_11Object"
+parentPermissionable"__id*
+
+
+%object_10ObjectŠ
+j
+`/Users/fmontes/Developer/dotcms/core/core-web/apps/dotcms-ui/src/app/test/dot-containers.mock.ts C(
+
+%object_12Object"ObjectÌ
+É
+j
+`/Users/fmontes/Developer/dotcms/core/core-web/apps/dotcms-ui/src/app/test/dot-containers.mock.ts (	>
+
+
+%object_12Object"&
+$5363c6c6-5ba0-4946-b7af-cf875188ac2e"__id*
+
+	%object_1ObjectÌ
+É
+j
+`/Users/fmontes/Developer/dotcms/core/core-web/apps/dotcms-ui/src/app/test/dot-containers.mock.ts (	>
+
+
+%object_12Object"&
+$56bd55ea-b04b-480d-9e37-5d6f9217dcc3"__id*
+
+	%object_3Object·
+´
+j
+`/Users/fmontes/Developer/dotcms/core/core-web/apps/dotcms-ui/src/app/test/dot-containers.mock.ts $(	)
+
+
+%object_12Object"
+/container/path"__id*
+
+	%object_5ObjectÌ
+É
+j
+`/Users/fmontes/Developer/dotcms/core/core-web/apps/dotcms-ui/src/app/test/dot-containers.mock.ts% .(	>
+
+
+%object_12Object"&
+$6a12bbda-0ae2-4121-a98b-ad8069eaff3a"__id*
+
+	%object_7ObjectÌ
+É
+j
+`/Users/fmontes/Developer/dotcms/core/core-web/apps/dotcms-ui/src/app/test/dot-containers.mock.ts/ 8(	>
+
+
+%object_12Object"&
+$a6e9652b-8183-4c09-b775-26196b09a300"__id*
+
+	%object_9ObjectÍ
+Ê
+j
+`/Users/fmontes/Developer/dotcms/core/core-web/apps/dotcms-ui/src/app/test/dot-containers.mock.ts9 B(	>
+
+
+%object_12Object"&
+$d71d56b4-0a8b-4bb2-be15-ffa5a23366ea"__id*
+
+
+%object_11Object"„
+j
+`/Users/fmontes/Developer/dotcms/core/core-web/apps/dotcms-ui/src/app/test/dot-containers.mock.ts C(
+
+
+%object_12Object:
+%envB 
