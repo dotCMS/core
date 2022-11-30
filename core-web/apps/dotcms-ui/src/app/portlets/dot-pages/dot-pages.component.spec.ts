@@ -99,14 +99,13 @@ describe('DotPagesComponent', () => {
         beforeEach(() => {
             TestBed.overrideProvider(DotPageStore, {
                 useValue: {
-                    loadAllFavoritePages: jasmine.createSpy(),
-                    setLoading: jasmine.createSpy(),
-                    setLoaded: jasmine.createSpy(),
+                    getFavoritePages: jasmine.createSpy(),
                     setInitialStateData: jasmine.createSpy(),
                     limitFavoritePages: jasmine.createSpy(),
                     vm$: of({
                         favoritePages: {
                             items: [],
+                            showLoadMoreButton: false,
                             total: 0
                         },
                         loggedUserId: 'admin'
@@ -120,7 +119,7 @@ describe('DotPagesComponent', () => {
         });
 
         it('should init store', () => {
-            expect(store.setInitialStateData).toHaveBeenCalled();
+            expect(store.setInitialStateData).toHaveBeenCalledWith(5);
         });
 
         it('should set panel with empty state class', () => {
@@ -128,6 +127,7 @@ describe('DotPagesComponent', () => {
             expect(
                 elem.nativeElement.classList.contains('dot-pages-panel__empty-state')
             ).toBeTruthy();
+            expect(de.query(By.css('.dot-pages-panel-action__button'))).toBeFalsy();
         });
 
         it('should load empty pages cards container', () => {
@@ -144,18 +144,17 @@ describe('DotPagesComponent', () => {
         });
     });
 
-    describe('Loading 2 of items', () => {
+    describe('Loading 2 of 4 items', () => {
         beforeEach(() => {
             TestBed.overrideProvider(DotPageStore, {
                 useValue: {
-                    loadAllFavoritePages: jasmine.createSpy(),
-                    setLoading: jasmine.createSpy(),
-                    setLoaded: jasmine.createSpy(),
+                    getFavoritePages: jasmine.createSpy(),
                     setInitialStateData: jasmine.createSpy(),
                     limitFavoritePages: jasmine.createSpy(),
                     vm$: of({
                         favoritePages: {
                             items: pagesInitialTestData,
+                            showLoadMoreButton: true,
                             total: 4
                         },
                         loggedUserId: 'admin'
@@ -169,7 +168,7 @@ describe('DotPagesComponent', () => {
         });
 
         it('should init store', () => {
-            expect(store.setInitialStateData).toHaveBeenCalled();
+            expect(store.setInitialStateData).toHaveBeenCalledWith(5);
         });
 
         it('should set panel inputs and attributes', () => {
@@ -184,7 +183,7 @@ describe('DotPagesComponent', () => {
 
         it('should set secondary button in panel', () => {
             const elem = de.query(By.css('.dot-pages-panel-action__button span'));
-            expect(elem.nativeElement.outerText).toBe('See All');
+            expect(elem.nativeElement.outerText.toUpperCase()).toBe('See All'.toUpperCase());
         });
 
         it('should load pages cards with attributes', () => {
@@ -205,7 +204,7 @@ describe('DotPagesComponent', () => {
                         //
                     }
                 });
-                expect(store.loadAllFavoritePages).toHaveBeenCalledTimes(1);
+                expect(store.getFavoritePages).toHaveBeenCalledWith(4);
             });
         });
     });
@@ -214,14 +213,13 @@ describe('DotPagesComponent', () => {
         beforeEach(() => {
             TestBed.overrideProvider(DotPageStore, {
                 useValue: {
-                    loadAllFavoritePages: jasmine.createSpy(),
-                    setLoading: jasmine.createSpy(),
-                    setLoaded: jasmine.createSpy(),
+                    getFavoritePages: jasmine.createSpy(),
                     setInitialStateData: jasmine.createSpy(),
                     limitFavoritePages: jasmine.createSpy(),
                     vm$: of({
                         favoritePages: {
                             items: [...pagesInitialTestData, ...pagesInitialTestData],
+                            showLoadMoreButton: true,
                             total: 4
                         },
                         loggedUserId: 'admin'
@@ -241,7 +239,7 @@ describe('DotPagesComponent', () => {
 
         it('should set secondary button in panel', () => {
             const elem = de.query(By.css('.dot-pages-panel-action__button span'));
-            expect(elem.nativeElement.outerText).toBe('See Less');
+            expect(elem.nativeElement.outerText.toUpperCase()).toBe('See Less'.toUpperCase());
         });
 
         describe('Show less items', () => {
@@ -252,7 +250,7 @@ describe('DotPagesComponent', () => {
                         //
                     }
                 });
-                expect(store.limitFavoritePages).toHaveBeenCalledTimes(1);
+                expect(store.limitFavoritePages).toHaveBeenCalledWith(5);
             });
         });
     });

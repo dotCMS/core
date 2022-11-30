@@ -2,7 +2,7 @@
     <p-panel
         [ngClass]="{
             'dot-pages-panel__expanded': vm.favoritePages.total === vm.favoritePages.items.length,
-            'dot-pages-panel__hide-panel-actions': vm.favoritePages.total < 6,
+            'dot-pages-panel__hide-panel-actions': !vm.favoritePages.showLoadMoreButton,
             'dot-pages-panel__empty-state': vm.favoritePages?.items?.length === 0
         }"
         [toggleable]="true"
@@ -11,7 +11,7 @@
         expandIcon="pi pi-angle-down"
         collapseIcon="pi pi-angle-up"
     >
-        <ng-template pTemplate="icons">
+        <ng-template *ngIf="vm.favoritePages.showLoadMoreButton" pTemplate="icons">
             <button
                 class="p-button-secondary dot-pages-panel-action__button"
                 [label]="
@@ -21,7 +21,8 @@
                 "
                 (click)="
                     toggleFavoritePagesData(
-                        vm.favoritePages.total === vm.favoritePages.items.length
+                        vm.favoritePages.total === vm.favoritePages.items.length,
+                        vm.favoritePages.total
                     )
                 "
                 pButton

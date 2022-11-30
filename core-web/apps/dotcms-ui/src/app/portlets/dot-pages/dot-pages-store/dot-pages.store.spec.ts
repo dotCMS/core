@@ -10,7 +10,7 @@ import { DotCurrentUser } from '@dotcms/app/shared/models/dot-current-user/dot-c
 import { CurrentUserDataMock } from '../../dot-starter/dot-starter-resolver.service.spec';
 import { DotHttpErrorManagerService } from '@dotcms/app/api/services/dot-http-error-manager/dot-http-error-manager.service';
 import { pagesInitialTestData } from '../dot-pages.component.spec';
-import { MockDotHttpErrorManagerService } from '../../dot-edit-page/components/dot-favorite-page/store/dot-favorite-page.store.spec';
+import { MockDotHttpErrorManagerService } from '@dotcms/app/test/dot-http-error-manager.service.mock';
 
 @Injectable()
 class MockDotCurrentUserService {
@@ -50,12 +50,13 @@ describe('DotPageStore', () => {
         dotPageStore = TestBed.inject(DotPageStore);
         dotESContentService = TestBed.inject(DotESContentService);
 
-        dotPageStore.setInitialStateData();
+        dotPageStore.setInitialStateData(5);
     });
 
     it('should load Favorite Pages initial data', () => {
         dotPageStore.state$.subscribe((data) => {
             expect(data.favoritePages.items).toEqual(pagesInitialTestData);
+            expect(data.favoritePages.showLoadMoreButton).toEqual(false);
             expect(data.favoritePages.total).toEqual(pagesInitialTestData.length);
             expect(data.loggedUserId).toEqual(CurrentUserDataMock.userId);
         });
@@ -63,7 +64,7 @@ describe('DotPageStore', () => {
 
     it('should limit Favorite Pages', () => {
         spyOn(dotPageStore, 'setFavoritePages').and.callThrough();
-        dotPageStore.limitFavoritePages();
+        dotPageStore.limitFavoritePages(5);
         expect(dotPageStore.setFavoritePages).toHaveBeenCalledWith(
             pagesInitialTestData.slice(0, 5)
         );
@@ -78,22 +79,23 @@ describe('DotPageStore', () => {
     });
 
     it('should set all Favorite Pages value in store', () => {
+        const expectedInputArray = [...pagesInitialTestData, ...pagesInitialTestData];
         spyOn(dotPageStore, 'setFavoritePages').and.callThrough();
         spyOn(dotESContentService, 'get').and.returnValue(
             of({
                 contentTook: 0,
                 jsonObjectView: {
-                    contentlets: pagesInitialTestData as unknown as DotCMSContentlet[]
+                    contentlets: expectedInputArray as unknown as DotCMSContentlet[]
                 },
                 queryTook: 1,
-                resultsSize: 20
+                resultsSize: 4
             })
         );
-        dotPageStore.loadAllFavoritePages();
+        dotPageStore.getFavoritePages(4);
 
+        dotPageStore.state$.subscribe((data) => {
+            expect(data.favoritePages.items).toEqual(expectedInputArray);
+        });
         expect(dotESContentService.get).toHaveBeenCalledTimes(1);
-
-        const expectedInputArray = [...pagesInitialTestData, ...pagesInitialTestData];
-        expect(dotPageStore.setFavoritePages).toHaveBeenCalledWith(expectedInputArray);
     });
 });

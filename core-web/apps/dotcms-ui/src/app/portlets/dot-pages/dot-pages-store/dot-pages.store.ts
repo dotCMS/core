@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { ComponentStore, tapResponse } from '@ngrx/component-store';
 import { forkJoin, Observable } from 'rxjs';
-import { switchMap, take } from 'rxjs/operators';
+import { mergeMap, take } from 'rxjs/operators';
 import { DotCMSContentlet } from '@dotcms/dotcms-models';
 import { DotCurrentUserService } from '@dotcms/app/api/services/dot-current-user/dot-current-user.service';
 import { DotCurrentUser } from '@dotcms/app/shared/models/dot-current-user/dot-current-user';
@@ -16,6 +16,7 @@ import { HttpErrorResponse } from '@angular/common/http';
 export interface DotPagesState {
     favoritePages: {
         items: DotCMSContentlet[];
+        showLoadMoreButton: boolean;
         total: number;
     };
     loggedUserId: string;
@@ -25,15 +26,13 @@ const FAVORITE_PAGES_ES_QUERY = `+contentType:dotFavoritePage +deleted:false +wo
 
 @Injectable()
 export class DotPageStore extends ComponentStore<DotPagesState> {
-    private initialFavoritePagesLimit = 5;
-    private favoritePagesTotalSize = 0;
     private favoritePages = [];
 
     readonly vm$ = this.state$;
 
     /** A function that updates the Favorite Pages Items in the state of the store.
-     * @param state DotPagesState
-     * @param categories DotCMSContentlet[]
+     * @param DotPagesState state
+     * @param DotCMSContentlet[] favoritePages
      * @memberof DotPageStore
      */
     readonly setFavoritePages = this.updater<DotCMSContentlet[]>(
@@ -49,34 +48,40 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
     );
 
     // EFFECTS
-    readonly loadAllFavoritePages = this.effect<void>((trigger$: Observable<unknown>) =>
-        trigger$.pipe(
-            switchMap(() =>
-                this.dotESContentService
-                    .get({
-                        itemsPerPage: this.favoritePagesTotalSize - this.initialFavoritePagesLimit,
-                        offset: this.initialFavoritePagesLimit.toString(),
-                        query: FAVORITE_PAGES_ES_QUERY,
-                        sortField: 'dotFavoritePage.order',
-                        sortOrder: ESOrderDirection.ASC
-                    })
-                    .pipe(
-                        tapResponse(
-                            (items) => {
-                                this.favoritePages = [
-                                    ...this.favoritePages.slice(0, this.initialFavoritePagesLimit),
-                                    ...items.jsonObjectView.contentlets
-                                ];
-                                this.setFavoritePages(this.favoritePages);
-                            },
-                            (error: HttpErrorResponse) => {
-                                return this.httpErrorManagerService.handle(error);
-                            }
-                        )
+    readonly getFavoritePages = this.effect((itemsPerPage$: Observable<number>) => {
+        return itemsPerPage$.pipe(
+            mergeMap((itemsPerPage: number) =>
+                this.getFavoritePagesData(itemsPerPage).pipe(
+                    tapResponse(
+                        (items) => {
+                            this.patchState({
+                                favoritePages: {
+                                    items: [...items.jsonObjectView.contentlets],
+                                    showLoadMoreButton:
+                                        items.jsonObjectView.contentlets.length <=
+                                        items.resultsSize,
+                                    total: items.resultsSize
+                                }
+                            });
+                        },
+                        (error: HttpErrorResponse) => {
+                            return this.httpErrorManagerService.handle(error);
+                        }
                     )
+                )
             )
-        )
-    );
+        );
+    });
+
+    private getFavoritePagesData = (limit: number) => {
+        return this.dotESContentService.get({
+            itemsPerPage: limit,
+            offset: '0',
+            query: FAVORITE_PAGES_ES_QUERY,
+            sortField: 'dotFavoritePage.order',
+            sortOrder: ESOrderDirection.ASC
+        });
+    };
 
     constructor(
         private dotCurrentUser: DotCurrentUserService,
@@ -88,29 +93,23 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
 
     /**
      * Sets initial state data from props, roles and current logged user data
-     *
+     * @param number initialFavoritePagesLimit
      * @memberof DotFavoritePageStore
      */
-    setInitialStateData(): void {
+    setInitialStateData(initialFavoritePagesLimit: number): void {
         forkJoin([
-            this.dotESContentService.get({
-                itemsPerPage: this.initialFavoritePagesLimit,
-                offset: '0',
-                query: FAVORITE_PAGES_ES_QUERY,
-                sortField: 'dotFavoritePage.order',
-                sortOrder: ESOrderDirection.ASC
-            }),
+            this.getFavoritePagesData(initialFavoritePagesLimit),
             this.dotCurrentUser.getCurrentUser()
         ])
             .pipe(take(1))
             .subscribe(([favoritePages, currentUser]: [ESContent, DotCurrentUser]): void => {
-                this.favoritePages = favoritePages?.jsonObjectView.contentlets;
-                this.favoritePagesTotalSize = favoritePages?.resultsSize;
-
                 this.setState({
                     favoritePages: {
                         items: favoritePages?.jsonObjectView.contentlets,
-                        total: this.favoritePagesTotalSize
+                        showLoadMoreButton:
+                            favoritePages.jsonObjectView.contentlets.length <
+                            favoritePages.resultsSize,
+                        total: favoritePages.resultsSize
                     },
                     loggedUserId: currentUser.userId
                 });
@@ -119,10 +118,11 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
 
     /**
      * Limit Favorite page data
-     *
+     * @param number limit
      * @memberof DotFavoritePageStore
      */
-    limitFavoritePages(): void {
-        this.setFavoritePages(this.favoritePages.slice(0, this.initialFavoritePagesLimit));
+    limitFavoritePages(limit: number): void {
+        const favoritePages = this.get().favoritePages.items;
+        this.setFavoritePages(favoritePages.slice(0, limit));
     }
 }
