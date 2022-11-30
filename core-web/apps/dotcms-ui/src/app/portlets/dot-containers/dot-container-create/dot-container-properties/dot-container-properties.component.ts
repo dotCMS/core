@@ -87,10 +87,7 @@ export class DotContainerPropertiesComponent implements OnInit {
                 }
             );
 
-            // Using setTimeout because dotGlobal Message Service throwing ExpressionChangedAfterItHasBeenCheckedError Error
-            setTimeout(() => {
-                this.showContentTypeAndCode();
-            }, 0);
+            this.showContentTypeAndCode();
         }
     }
 

@@ -19,6 +19,7 @@ import { By } from '@angular/platform-browser';
         [formControl]="editor"
         [label]="label"
         [isEditorVisible]="isEditorVisible"
+        (buttonClick)="showLoopInput()"
     ></dot-loop-editor>`
 })
 class DotTestHostComponent {
@@ -61,7 +62,8 @@ export class DotTextareaContentMockComponent implements ControlValueAccessor {
 
 const messages = {
     'message.containers.create.pre_loop': 'Pre-loop',
-    'message.containers.create.post_loop': 'Post-loop'
+    'message.containers.create.post_loop': 'Post-loop',
+    'message.containers.create.add_pre_post': 'Add PRE POST'
 };
 
 describe('DotLoopEditorComponent', () => {
@@ -84,8 +86,8 @@ describe('DotLoopEditorComponent', () => {
 
         fixture = TestBed.createComponent(DotTestHostComponent);
         component = fixture.componentInstance;
-        de = fixture.debugElement.query(By.css('dot-loop-editor'));
         fixture.detectChanges();
+        de = fixture.debugElement.query(By.css('dot-loop-editor'));
     });
 
     it('should create', () => {
@@ -97,11 +99,22 @@ describe('DotLoopEditorComponent', () => {
         expect(label.innerText).toBe('Pre-loop');
     });
 
-    it('should show pre_loop', () => {
+    it('should show post_loop', () => {
         component.label = 'post_loop';
         fixture.detectChanges();
         de = fixture.debugElement.query(By.css('dot-loop-editor'));
         const label = de.query(By.css('[data-testId="label"]')).nativeElement;
         expect(label.innerText).toBe('Post-loop');
+    });
+
+    it('should show pre post loop button when Editor is not visible', () => {
+        component.isEditorVisible = false;
+        fixture.detectChanges();
+        de = fixture.debugElement.query(By.css('dot-loop-editor'));
+        const showEditorBtn = de.query(By.css('[data-testId="showEditorBtn"]'));
+        spyOn(de.componentInstance.buttonClick, 'emit');
+        showEditorBtn.triggerEventHandler('click');
+        expect(showEditorBtn).toBeDefined();
+        expect(de.componentInstance.buttonClick.emit).toHaveBeenCalled();
     });
 });

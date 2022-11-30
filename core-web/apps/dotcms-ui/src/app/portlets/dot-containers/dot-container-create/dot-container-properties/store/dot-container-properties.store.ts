@@ -167,17 +167,13 @@ export class DotContainerPropertiesStore extends ComponentStore<DotContainerProp
     readonly loadContentTypesAndUpdateVisibility = this.effect<void>(
         pipe(
             switchMap(() => {
-                this.dotGlobalMessageService.loading(this.dotMessageService.get('loading'));
-
                 return this.dotContentTypeService.getContentTypes({ page: 999 });
             }),
             tap((contentTypes: DotCMSContentType[]) => {
-                this.dotGlobalMessageService.success(this.dotMessageService.get('loaded'));
                 this.updateContentTypes(contentTypes);
                 this.updateContentTypeVisibility(true);
             }),
             catchError((err: HttpErrorResponse) => {
-                this.dotGlobalMessageService.error(err.statusText);
                 this.dotHttpErrorManagerService.handle(err);
 
                 return of(null);

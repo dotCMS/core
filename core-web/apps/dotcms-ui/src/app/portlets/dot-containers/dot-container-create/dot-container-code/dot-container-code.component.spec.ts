@@ -213,10 +213,25 @@ describe('DotContentEditorComponent', () => {
             expect(menu.model).toEqual(actions);
         });
 
+        it('should check Dot', () => {
+            const actions = [
+                { label: 'Activity', command: jasmine.any(Function) },
+                { label: 'Activity 2', command: jasmine.any(Function) }
+            ];
+
+            expect(menu.model).toEqual(actions);
+        });
+
         it('should have add content type', () => {
             menu.model[0].command();
             hostFixture.detectChanges();
             const contentTypes = de.queryAll(By.css('p-tabpanel'));
+            const code = de.query(By.css(`[data-testid="${mockContentTypes[0].id}"]`));
+
+            expect(code).not.toBeNull();
+            expect(code.attributes.formControlName).toBe('code');
+            expect(code.attributes.language).toBe('html');
+            expect(code.attributes['ng-reflect-show']).toBe('code');
             expect(contentTypes.length).toEqual(3);
             expect((hostComponent.form.get('containerStructures') as FormArray).length).toEqual(2);
         });
@@ -225,11 +240,33 @@ describe('DotContentEditorComponent', () => {
             menu.model[0].command();
             hostFixture.detectChanges();
             const tabCloseBtn = de.query(By.css('.p-tabview-close'));
+
             tabCloseBtn.triggerEventHandler('click');
             hostFixture.detectChanges();
+            const code = de.query(By.css(`[data-testid="${mockContentTypes[1].id}"]`));
             const contentTypes = de.queryAll(By.css('p-tabpanel'));
+
+            expect(code).toBeNull();
             expect(contentTypes.length).toEqual(2);
             expect((hostComponent.form.get('containerStructures') as FormArray).length).toEqual(1);
+        });
+
+        it('should have select content type', () => {
+            menu.model[0].command();
+            hostFixture.detectChanges();
+            const tabLists = de.query(By.css('[role="tablist"]')).children;
+            tabLists[2].children[0].triggerEventHandler('click');
+            hostFixture.detectChanges();
+            const selectedContentType = de.query(By.css('.p-highlight'));
+            const code = de.query(By.css(`[data-testid="${mockContentTypes[0].id}"]`));
+
+            expect(code).not.toBeNull();
+            expect(code.attributes.formControlName).toBe('code');
+            expect(code.attributes.language).toBe('html');
+            expect(code.attributes['ng-reflect-show']).toBe('code');
+            expect(selectedContentType.nativeElement.innerText.toLowerCase()).toBe(
+                mockContentTypes[0].name.toLowerCase()
+            );
         });
     });
 });

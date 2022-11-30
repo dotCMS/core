@@ -34,6 +34,7 @@
                 ></button>
                 <dot-textarea-content
                     #body
+                    [attr.data-testid]="containerContent.value.structureId"
                     [value]="containerContent.value.code"
                     [editorName]="containerContent.value.structureId"
                     [show]="['code']"
