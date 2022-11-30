@@ -168,8 +168,11 @@
                     text-align: left;
                 }
 
-                .selectedCell:after {
+                .selectedCell {
                     background-color: $gray-lighter;
+                }
+
+                .selectedCell:after {
                     content: "";
                     left: 0;
                     right: 0;
@@ -177,7 +180,6 @@
                     bottom: 0;
                     pointer-events: none;
                     position: absolute;
-                    z-index: 2;
                 }
 
                 .column-resize-handle {
