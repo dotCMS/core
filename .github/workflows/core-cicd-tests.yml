@@ -319,6 +319,7 @@ jobs:
           image_name: dotcms:${{ env.BUILD_HASH }}
       - id: run-postman-tests
         name: Run Postman Tests
+        timeout-minutes: 180
         uses: ./.github/actions/run-postman-tests
         with:
           built_image_name: ${{ steps.build-dotcms-image.outputs.built_image_name }}
