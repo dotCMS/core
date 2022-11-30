@@ -20,7 +20,7 @@ plugins {
     id 'org.ajoberstar.grgit' version '4.1.1'
     id "com.palantir.docker" version "0.32.0"  // reference:  https://github.com/palantir/gradle-docker
     id "org.sonarqube" version "3.4.0.2513"
-
+    id "jacoco"
 
 }
 
@@ -34,6 +34,13 @@ sonarqube {
     property "sonar.tests", "src/test/java, src/integration-test/java"
     property "sonar.junit.reportPaths" ,"build/test-results/test"
   }
+}
+
+jacocoTestReport {
+    reports {
+        xml.enabled true
+    }
+    dependsOn 'test', 'integrationTest'
 }
 
 repositories {
