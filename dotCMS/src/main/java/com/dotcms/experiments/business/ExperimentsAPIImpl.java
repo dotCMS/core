@@ -8,6 +8,7 @@ import static com.dotcms.experiments.model.AbstractExperimentVariant.EXPERIMENT_
 import static com.dotcms.util.CollectionsUtils.set;
 
 import static com.dotcms.experiments.model.AbstractExperimentVariant.ORIGINAL_VARIANT;
+import static com.dotcms.variant.VariantAPI.DEFAULT_VARIANT;
 
 import com.dotcms.analytics.metrics.MetricsUtil;
 import com.dotcms.business.CloseDBIfOpened;
@@ -346,9 +347,24 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
             experimentToStart = experimentFromFactory.withScheduling(scheduling);
         }
 
-        final Experiment running = experimentToStart.withStatus(Status.RUNNING);
-        return save(running, user);
+        Experiment running = experimentToStart.withStatus(Status.RUNNING);
+        running = save(running, user);
 
+        publishContentOnExperimentVariants(user, running);
+
+        return running;
+
+    }
+
+    private void publishContentOnExperimentVariants(User user, Experiment running)
+            throws DotDataException, DotSecurityException {
+
+        final List<Contentlet> contentByVariants = contentletAPI.getAllContentByVariants(user, false,
+                running.trafficProportion().variants().stream()
+                        .map(ExperimentVariant::id).filter((id) -> !id.equals(DEFAULT_VARIANT.name()))
+                        .toArray(String[]::new));
+
+        contentletAPI.publish(contentByVariants, user, false);
     }
 
     @Override
@@ -428,7 +444,7 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
                 .description(Optional.of(variantDescription)).build());
 
         APILocator.getMultiTreeAPI().copyVariantForPage(experiment.pageId(),
-                VariantAPI.DEFAULT_VARIANT.name(), variantName);
+                DEFAULT_VARIANT.name(), variantName);
 
         final Contentlet pageContentlet = contentletAPI
                 .findContentletByIdentifierAnyLanguage(experiment.pageId(), false);
