@@ -2,6 +2,7 @@ package com.dotcms.experiments.business;
 
 import static com.dotcms.experiments.model.AbstractExperiment.Status.DRAFT;
 import static com.dotcms.experiments.model.AbstractExperiment.Status.ENDED;
+import static com.dotcms.experiments.model.AbstractExperiment.Status.RUNNING;
 import static com.dotcms.experiments.model.AbstractExperimentVariant.EXPERIMENT_VARIANT_NAME_PREFIX;
 import static com.dotcms.experiments.model.AbstractExperimentVariant.EXPERIMENT_VARIANT_NAME_SUFFIX;
 
@@ -356,11 +357,14 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
 
     }
 
-    private void publishContentOnExperimentVariants(User user, Experiment running)
+    private void publishContentOnExperimentVariants(final User user,
+            final Experiment runningExperiment)
             throws DotDataException, DotSecurityException {
+        DotPreconditions.isTrue(runningExperiment.status().equals(RUNNING),
+                "Experiment needs to be RUNNING");
 
         final List<Contentlet> contentByVariants = contentletAPI.getAllContentByVariants(user, false,
-                running.trafficProportion().variants().stream()
+                runningExperiment.trafficProportion().variants().stream()
                         .map(ExperimentVariant::id).filter((id) -> !id.equals(DEFAULT_VARIANT.name()))
                         .toArray(String[]::new));
 
