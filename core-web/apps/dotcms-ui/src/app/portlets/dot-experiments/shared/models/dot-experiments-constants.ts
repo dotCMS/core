@@ -1,5 +1,9 @@
 export const MAX_VARIANTS_ALLOWED = 3;
 
+export const DEFAULT_VARIANT_ID = 'DEFAULT';
+
+export const SESSION_STORAGE_VARIATION_KEY = 'variantName';
+
 export enum TrafficProportionTypes {
     SPLIT_EVENLY = 'SPLIT_EVENLY',
     CUSTOM_PERCENTAGES = 'CUSTOM_PERCENTAGES'
@@ -35,3 +39,8 @@ export const ExperimentsStatusList = [
         value: DotExperimentStatusList.SCHEDULED
     }
 ];
+
+export enum SidebarStatus {
+    OPEN = 'OPEN',
+    CLOSE = 'CLOSED'
+}

@@ -68,7 +68,7 @@ if (shouldHitEndPoint()) {
 
             let url = experimentData.experiments[i].variant.url
             const param = (url.includes("?") ? "&" : "?") + "redirect=true";
-            window.location.url = url + param;
+            window.location.href = url + param;
             break;
         }
     }
