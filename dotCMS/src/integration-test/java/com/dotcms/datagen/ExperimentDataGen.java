@@ -5,8 +5,8 @@ import com.dotcms.analytics.metrics.Condition;
 import com.dotcms.analytics.metrics.Metric;
 import com.dotcms.analytics.metrics.MetricType;
 import com.dotcms.cache.DotJSONCacheAddTestCase;
-import com.dotcms.cache.DotJSONCacheAddTestCase.Builder;
 import com.dotcms.experiments.model.Experiment;
+import com.dotcms.experiments.model.Experiment.Builder;
 import com.dotcms.experiments.model.Goals;
 import com.dotcms.experiments.model.Scheduling;
 import com.dotcms.experiments.model.TargetingCondition;
@@ -85,19 +85,17 @@ public class ExperimentDataGen  extends AbstractDataGen<Experiment> {
 
         final Goals goal = Goals.builder().primary(metric).build();
 
-        final Scheduling innerScheduling = UtilMethods.isSet(scheduling) ? scheduling :
-                Scheduling.builder().build();
-
-        return Experiment.builder()
+        final Builder experimentBuilder = Experiment.builder()
                 .name(innerName)
                 .description(innerDescription)
                 .createdBy(user.getUserId())
                 .lastModifiedBy(user.getUserId())
                 .pageId(page.getIdentifier())
                 .goals(goal)
-                .trafficAllocation(trafficAllocation)
-                .scheduling(innerScheduling)
-                .build();
+                .trafficAllocation(trafficAllocation);
+
+        return UtilMethods.isSet(scheduling) ? experimentBuilder.scheduling(scheduling).build() :
+                experimentBuilder.build();
     }
 
     private HTMLPageAsset createPage() {
