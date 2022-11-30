@@ -72,7 +72,7 @@ describe('DotExperimentsConfigurationVariantsComponent', () => {
             expect(spectator.query(byTestId('variant-title-step-done'))).not.toHaveClass('isDone');
         });
 
-        it('the variant(s)', () => {
+        it('should load the variant(s)', () => {
             const variantsVm = {
                 stepStatus: {
                     status: Status.IDLE,
