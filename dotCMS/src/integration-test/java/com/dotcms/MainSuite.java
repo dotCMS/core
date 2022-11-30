@@ -577,6 +577,7 @@ import org.junit.runners.Suite.SuiteClasses;
         Task211103RenameHostNameLabelTest.class,
         ContentSecurityPolicyUtilTest.class,
         MessageToolTest.class,
+        XsltToolTest.class,
         XmlToolTest.class,
         LanguageFolderTest.class,
         MailAPIImplTest.class,
@@ -647,7 +648,6 @@ import org.junit.runners.Suite.SuiteClasses;
         VisitorsCurrentURLConditionletTest.class,
         VisitorsGeolocationConditionletTest.class,
         ManifestUtilTest.class,
-        XsltToolTest.class,
         ZipUtilTest.class
 })
 public class MainSuite {
