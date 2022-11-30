@@ -34,7 +34,6 @@ sonarqube {
     property "sonar.tests", "src/test/java, src/integration-test/java"
     property "sonar.junit.reportPaths" , "build/reports/tests/test, build/reports/tests/integrationTest"
     property "sonar.jacoco.reportPaths" ,"build/reports/jacoco"
-    property "sonar.java.coveragePlugin=jacoco"
   }
 }
 
