@@ -19,7 +19,8 @@ import com.dotmarketing.util.RegEX;
 import com.dotmarketing.util.WebKeys;
 
 public abstract class ImageFilter implements ImageFilterIf {
-	protected final static String FILE_EXT = "png";
+	protected static final String FILE_EXT = "png";
+	public    static final String CROP     = "crop";
 
 	/**
 	 * the value of this field is used to insure that the generated cache files
@@ -96,7 +97,7 @@ public abstract class ImageFilter implements ImageFilterIf {
 	}
 
 	private static String convertToHex(byte[] data) {
-		StringBuffer buf = new StringBuffer();
+		StringBuilder buf = new StringBuilder();
 		for (int i = 0; i < data.length; i++) {
 			int halfbyte = (data[i] >>> 4) & 0x0F;
 			int two_halfs = 0;
@@ -190,5 +191,11 @@ public abstract class ImageFilter implements ImageFilterIf {
 			throw new DotRuntimeException("Cannot find the inode of the file : " + e.getMessage(),e);
 		}
 	}
+	
+    public String[] getAcceptedParameters() {
+        return new String[] {
+        };
+    }
+	
 
 }

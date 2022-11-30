@@ -5,22 +5,25 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
-
-import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.UserAPI;
+import java.util.concurrent.Semaphore;
+import com.dotcms.api.web.HttpServletResponseThreadLocal;
 import com.dotmarketing.image.filter.ImageFilter;
 import com.dotmarketing.image.filter.PDFImageFilter;
 import com.dotmarketing.portlets.contentlet.business.BinaryContentExporter;
 import com.dotmarketing.portlets.contentlet.business.BinaryContentExporterException;
-import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
+import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.UtilMethods;
+import io.vavr.control.Try;
+
+
 
 /**
  * 
  * A exporter that can take 1 or more filters in a chain
  * 
  * the chain is provided by the "filter=" parameter
- * You can chain filters so that you resize then crop to 
+ * You can chain filters so that you resize then crop to
  * produce the resulting image
  * 
  * 
@@ -28,69 +31,75 @@ import com.dotmarketing.util.Logger;
 
 public class ImageFilterExporter implements BinaryContentExporter {
 
-	
+    private final int allowedRequests = Config.getIntProperty("IMAGE_GENERATION_SIMULTANEOUS_REQUESTS", 10);
+
+    private final Semaphore semaphore  = new Semaphore(allowedRequests);
+
+
+
 	/* (non-Javadoc)
 	 * @see com.dotmarketing.portlets.contentlet.business.BinaryContentExporter#exportContent(java.io.File, java.util.Map)
 	 */
 	public BinaryContentExporterData exportContent(File file, Map<String, String[]> parameters) throws BinaryContentExporterException {
 
 
-		BinaryContentExporterData data;
-		
-		try {
+        Class<ImageFilter> errorClass = ImageFilter.class;
+        try {
 
-			List<String> filters=new ArrayList<>();
+            final Map<String,Class<ImageFilter>> filters = new ImageFilterApiImpl().resolveFilters(parameters);
+            parameters.put("filter", filters.keySet().toArray(new String[filters.size()]));
+            parameters.put("filters", filters.keySet().toArray(new String[filters.size()]));
 
-			if(parameters.get("filter") != null){
-				filters.addAll( Arrays.asList(parameters.get("filter")[0].split(",")));
-			}
-			else if(parameters.get("filters") != null){
-			  filters.addAll( Arrays.asList(parameters.get("filters")[0].split(",")));
-			}
+            // run pdf filter first (if a pdf)
+            if(!filters.isEmpty() && "pdf".equals(UtilMethods.getFileExtension(file.getName())) && !filters.containsKey("pdf")) {
+                file = new PDFImageFilter().runFilter(file, parameters);
+            }
 
+            for (final Class<ImageFilter> filter : filters.values()) {
+                errorClass=filter;
+                file = runFilter(filter, file, parameters);
+            }
 
-	       if(file.getAbsolutePath().toLowerCase().endsWith(".pdf")){
-	         filters.remove("PDF");
-	         filters.add(0, "PDF");
-           }
+            return new BinaryContentExporterData(file);
+        } catch (Exception e) {
 
-	       else if(filters.size()== 0 ){
-	         filters.remove("Png");
-	         filters.add(0, "Png");
-	       }
+            Logger.warnAndDebug(errorClass,  e);
+            throw new BinaryContentExporterException(e.getMessage(), e);
+        }
 
-
-           parameters.put("filter", filters.toArray(new String[filters.size()]));
-           parameters.put("filters", filters.toArray(new String[filters.size()]));
-			for(String s : filters){
-				String clazz =null;
-				try {
-					clazz ="com.dotmarketing.image.filter." + s + "ImageFilter";
-					Class<ImageFilter> iFilter = (Class<ImageFilter>) Class.forName( clazz );
-					ImageFilter i=	iFilter.newInstance();
-					file = i.runFilter(file,   parameters);
-				} catch (ClassNotFoundException e) {
-					Logger.error(ImageFilterExporter.class, "Unable to instanciate : " +  clazz );
-				} catch (InstantiationException e) {
-					Logger.error(ImageFilterExporter.class, "InstantiationException : " +  clazz );
-				} catch (IllegalAccessException e) {
-					Logger.error(ImageFilterExporter.class, "IllegalAccessException : " +  clazz );
-				}
-				catch (Exception e) {
-					Logger.error(ImageFilterExporter.class, "Exception in " +  clazz + " :" + e.getMessage() + e.getStackTrace()[0] );
-				}
-			}
+    }
 
 
-			data = new BinaryContentExporterData(file);
-			
-		} catch (Exception e) {
-			Logger.error(ImageFilterExporter.class, e.getMessage(), e);
-			throw new BinaryContentExporterException(e.getMessage(), e);
-		}
-		
-		return data;
-	}
+    private File runFilter(Class<ImageFilter> clazz, final File fileIn,final Map<String, String[]> parameters) throws Exception {
+
+        boolean canRun=false;
+        try {
+
+            canRun = semaphore.tryAcquire();
+            Logger.warn(getClass(), "Image permits/requests : " + allowedRequests + "/" + (allowedRequests-semaphore.availablePermits()));
+
+            if(!canRun) {
+                Logger.warn(getClass(), "Image permits exhausted : " + allowedRequests + "/" + (allowedRequests-semaphore.availablePermits()));
+
+                Try.run(()->{HttpServletResponseThreadLocal.INSTANCE.getResponse().setHeader("cache-control", "max-age=0");});
+
+                return fileIn;
+
+            }
+            final ImageFilter imageFilter =  clazz.getDeclaredConstructor().newInstance();
+            return imageFilter.runFilter(fileIn, parameters);
+        }
+        finally {
+            if(canRun) {
+                semaphore.release();
+            }
+        }
+    }
+
+
+
+
+
 
 	public String getName() {
 		return "Image Filter Exporter";
