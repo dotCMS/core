@@ -1,15 +1,9 @@
 @use "variables" as *;
 
-.title {
-    display: flex;
-    justify-content: space-between;
-}
-
 h2 {
     margin: 0;
     font-size: $font-size-large;
-    font-weight: 500;
-    text-transform: uppercase;
+    font-weight: $font-weight-semi-bold;
 }
 
 .muted {
@@ -21,6 +15,36 @@ h2 {
     color: $gray-lighter;
 }
 
-:host ::ng-deep p-card .p-card-footer .p-button-link {
-    padding: $spacing-0;
+:host ::ng-deep {
+    dot-icon {
+        color: $gray-light;
+
+        &.isDone {
+            color: $success;
+        }
+    }
+
+    p-card {
+        .p-card p-card {
+            .p-card {
+                border-radius: 0;
+                border-bottom: none;
+            }
+
+            &.first .p-card {
+                border-top-right-radius: $border-radius-md;
+                border-top-left-radius: $border-radius-md;
+            }
+
+            &.last .p-card {
+                border-bottom-right-radius: $border-radius-md;
+                border-bottom-left-radius: $border-radius-md;
+                border: 1px solid $gray-lighter;
+            }
+        }
+
+        .p-card-footer .p-button-link {
+            padding: $spacing-0;
+        }
+    }
 }
