@@ -1,9 +1,9 @@
 <dot-secondary-toolbar>
     <div class="main-toolbar-left">
         <dot-edit-page-info
+            [apiLink]="apiLink"
             [title]="pageState.page.title"
             [url]="pageState.page.pageURI"
-            [apiLink]="apiLink"
         ></dot-edit-page-info>
         <dot-icon-button
             *ngIf="showFavoritePageStar"
@@ -26,7 +26,7 @@
         ></dot-edit-page-workflows-actions>
     </div>
 
-    <div class="lower-toolbar-left">
+    <div class="lower-toolbar-left w-7">
         <dot-edit-page-state-controller
             [pageState]="pageState"
             (modeChange)="stateChange()"
@@ -41,8 +41,8 @@
         ></p-checkbox>
     </div>
 
-    <div class="lower-toolbar-right">
-        <dot-edit-page-view-as-controller [pageState]="pageState">
+    <div class="lower-toolbar-right w-5">
+        <dot-edit-page-view-as-controller class="flex w-full gap-2" [pageState]="pageState">
         </dot-edit-page-view-as-controller>
     </div>
 </dot-secondary-toolbar>
