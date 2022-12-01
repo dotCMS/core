@@ -534,10 +534,10 @@ import org.junit.runners.Suite.SuiteClasses;
         Task210506UpdateStorageTableTest.class,
         Task210520UpdateAnonymousEmailTest.class,
         Task210510UpdateStorageTableDropMetadataColumnTest.class,
-        StaticPushPublishBundleGeneratorTest.class,
+        //StaticPushPublishBundleGeneratorTest.class, //comment because the only one test there was commented by now
         CookieToolTest.class,
         CSVManifestBuilderTest.class,
-        //MoveContentActionletTest.class, //comment because the only one test there was commente by now
+        //MoveContentActionletTest.class, //comment because the only one test there was commented by now
         ImageFilterAPIImplTest.class,
         DeterministicIdentifierAPITest.class,
         Task210527DropReviewFieldsFromContentletTableTest.class,
@@ -623,7 +623,7 @@ import org.junit.runners.Suite.SuiteClasses;
         UtilMethodsITest.class,
         StoryBlockAPITest.class,
         UtilMethodsITest.class,
-        Task220912UpdateCorrectShowOnMenuPropertyTest.class,
+        //Task220912UpdateCorrectShowOnMenuPropertyTest.class, //comment because the only one test there was commented by now
         PersonaActionletTest.class,
         SendRedirectActionletTest.class,
         SetRequestAttributeActionletTest.class,
