@@ -18,6 +18,7 @@ import {
     ImageUpload,
     DotConfigExtension,
     BubbleFormExtension,
+    DotFloatingButton,
     ImageNode,
     SetDocAttrStep,
     formatHTML,
@@ -129,6 +130,7 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy {
             BubbleLinkFormExtension(this.viewContainerRef),
             DotBubbleMenuExtension(this.viewContainerRef),
             BubbleFormExtension(this.viewContainerRef),
+            DotFloatingButton(this.injector, this.viewContainerRef),
             // Marks Extensions
             Underline,
             CharacterCount,

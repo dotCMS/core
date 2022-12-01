@@ -26,8 +26,11 @@ plugins {
 
 sonarqube {
   properties {
-    property "sonar.projectKey", "dotCMS_core_AYQvQCMIJs0IgspqN39B"
+    property "sonar.projectKey", "dotCMS_core_AYSbIemxK43eThAXTlt-"
     property "sonar.projectName", "dotcms-core"
+    property "sonar.host.url", "https://sonarqube.dotcms.site"
+    property "sonar.sourceEncoding", "UTF-8"
+    property "sonar.exclusions", "src/main/webapp/dotcms-webcomponents/**,src/main/webapp/dotcms-webcomponents/**, src/main/plugins/**, src/main/java/org/**, src/main/java/com/liferay/**, src/main/java/net/**"
   }
 }
 

@@ -1,18 +1,46 @@
 package com.dotcms.enterprise.publishing.remote.bundler;
 
+import com.dotcms.contenttype.business.StoryBlockAPI;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.ImageField;
+import com.dotcms.contenttype.model.field.ImmutableStoryBlockField;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
-import com.dotcms.datagen.*;
+import com.dotcms.datagen.BundleDataGen;
+import com.dotcms.datagen.CategoryDataGen;
+import com.dotcms.datagen.ContainerDataGen;
+import com.dotcms.datagen.ContentTypeDataGen;
+import com.dotcms.datagen.ContentletDataGen;
+import com.dotcms.datagen.EnvironmentDataGen;
+import com.dotcms.datagen.FieldDataGen;
+import com.dotcms.datagen.FieldRelationshipDataGen;
+import com.dotcms.datagen.FileAssetDataGen;
+import com.dotcms.datagen.FilterDescriptorDataGen;
+import com.dotcms.datagen.FolderDataGen;
+import com.dotcms.datagen.HTMLPageDataGen;
+import com.dotcms.datagen.LinkDataGen;
+import com.dotcms.datagen.PushPublishingEndPointDataGen;
+import com.dotcms.datagen.PushedAssetDataGen;
+import com.dotcms.datagen.SiteDataGen;
+import com.dotcms.datagen.TemplateDataGen;
+import com.dotcms.datagen.TemplateLayoutDataGen;
+import com.dotcms.datagen.WorkflowDataGen;
+import com.dotcms.datagen.WorkflowStepDataGen;
 import com.dotcms.publisher.assets.bean.PushedAsset;
 import com.dotcms.publisher.bundle.bean.Bundle;
 import com.dotcms.publisher.bundle.business.BundleFactoryImpl;
 import com.dotcms.publisher.endpoint.bean.impl.PushPublishingEndPoint;
 import com.dotcms.publisher.environment.bean.Environment;
 import com.dotcms.publisher.pusher.PushPublisherConfig;
-import com.dotcms.publishing.*;
+import com.dotcms.publishing.BundlerStatus;
+import com.dotcms.publishing.DotBundleException;
+import com.dotcms.publishing.FilterDescriptor;
+import com.dotcms.publishing.ManifestItemsMapTest;
+import com.dotcms.publishing.Publisher;
+import com.dotcms.publishing.PublisherAPIImpl;
+import com.dotcms.publishing.PublisherAPIImplTest;
 import com.dotcms.publishing.PublisherConfig.Operation;
+import com.dotcms.publishing.PublisherFilter;
 import com.dotcms.publishing.manifest.CSVManifestBuilder;
 import com.dotcms.publishing.manifest.ManifestBuilder;
 import com.dotcms.publishing.manifest.ManifestItem;
@@ -28,6 +56,7 @@ import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.image.focalpoint.FocalPointAPITest;
 import com.dotmarketing.portlets.categories.model.Category;
 import com.dotmarketing.portlets.containers.model.Container;
+import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.IndexPolicy;
 import com.dotmarketing.portlets.folders.model.Folder;
@@ -57,17 +86,34 @@ import java.io.File;
 import java.io.IOException;
 import java.io.Serializable;
 import java.net.URL;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Calendar;
+import java.util.Collection;
+import java.util.Date;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import static com.dotcms.publishing.PublisherAPIImplTest.getLanguagesVariableDependencies;
-import static com.dotcms.util.CollectionsUtils.*;
+import static com.dotcms.util.CollectionsUtils.list;
+import static com.dotcms.util.CollectionsUtils.map;
+import static com.dotcms.util.CollectionsUtils.set;
 import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toList;
 import static org.jgroups.util.Util.assertEquals;
 import static org.jgroups.util.Util.assertTrue;
 import static org.mockito.Mockito.mock;
 
+/**
+ * This Integration Test verifies that the information added to Bundles for Push Publishing will contain the expected
+ * data in terms of data dependencies, exclusions, Publishing Filters, and so on.
+ *
+ * @author Freddy Rodriguez
+ * @since Feb 9th, 2021
+ */
 @RunWith(DataProviderRunner.class)
 public class DependencyBundlerTest {
 
@@ -75,8 +121,8 @@ public class DependencyBundlerTest {
     private static  Map<String, List<ManifestItem>> excludeSystemFolderAndSystemHost;
 
     public static final String EXCLUDE_SYSTEM_FOLDER_HOST = "Excluded System Folder/Host/Container/Template";
-    private static String FILTER_EXCLUDE_REASON = "Excluded by filter";
-    private static String FILTER_EXCLUDE_BY_OPERATION = "Excluded by Operation: ";
+    private static final String FILTER_EXCLUDE_REASON = "Excluded by filter";
+    private static final String FILTER_EXCLUDE_BY_OPERATION = "Excluded by Operation: ";
     private BundlerStatus status = null;
 
     private DependencyBundler bundler = null;
@@ -102,12 +148,10 @@ public class DependencyBundlerTest {
                 .dependencies(false)
                 .next();
 
-        // Revisar con integration tests aqui
         filterDescriptorNotRelationship = new FilterDescriptorDataGen()
                 .relationships(false)
                 .next();
 
-        // Revisar con integration tests aqui
         filterDescriptorNotDependenciesRelationship = new FilterDescriptorDataGen()
                 .relationships(false)
                 .dependencies(false)
@@ -115,7 +159,7 @@ public class DependencyBundlerTest {
     }
 
     @Before
-    public void initTest() throws IOException {
+    public void initTest() {
         status = mock(BundlerStatus.class);
         bundler = new DependencyBundler();
     }
@@ -142,8 +186,55 @@ public class DependencyBundlerTest {
         all.addAll(createLinkWithThirdPartyTestCase());
         all.addAll(createRuleWithThirdPartyTestCase());
         all.addAll(createContentletWithThirdPartyTestCase());
+        all.addAll(createContentletWithBlockEditorField());
 
         return all.toArray();
+    }
+
+    /**
+     * Creates a Contentlet with a Story Block field, which has some text inside a {@code <p>} tag and a referenced
+     * Contentlet as well. All Contentlets referenced inside a Story Block field must be pushed to the receiving
+     * instance.
+     *
+     * @return The list of {@link TestData} objects used to feed the Data Provider.
+     *
+     * @throws DotDataException     An error occurred when interacting with the data source
+     * @throws DotSecurityException The specified User does not have the required permissions to execute a given
+     * operation.
+     */
+    private static Collection<?> createContentletWithBlockEditorField() throws DotDataException, DotSecurityException {
+        final StoryBlockAPI storyBlockAPI = APILocator.getStoryBlockAPI();
+        final ContentletAPI contentletAPI = APILocator.getContentletAPI();
+        final Host site = new SiteDataGen().nextPersisted();
+        final Language language = new LanguageDataGen().nextPersisted();
+        final ContentType contentType = new ContentTypeDataGen().host(site).nextPersisted();
+        final ContentType referencedContentType = new ContentTypeDataGen().host(site).nextPersisted();
+        final Field storyBlockField =
+                new FieldDataGen().name("Story Block").type(ImmutableStoryBlockField.class).contentTypeId(contentType.id()).nextPersisted();
+
+        final Contentlet referencedContentlet =
+                new ContentletDataGen(referencedContentType.id()).languageId(language.getId()).host(site).nextPersisted();
+        Contentlet mainContentlet =
+                new ContentletDataGen(contentType.id()).languageId(language.getId()).host(site).nextPersisted();
+        final String dummyStoryBlock = "{\"type\":\"doc\",\"content\":[{\"type\":\"paragraph\"," +
+         "\"attrs\":{\"textAlign\":\"left\"}," + "\"content\":[{\"type\":\"text\",\"text\":\"this is paragraph\"}]}]}";
+        mainContentlet.setProperty(storyBlockField.variable(), dummyStoryBlock);
+        mainContentlet.setInode("");
+        mainContentlet = contentletAPI.checkin(mainContentlet, APILocator.systemUser(), false);
+
+        final Object storyBlockValue = mainContentlet.get(storyBlockField.variable());
+        final Object updatedStoryBlockValue = storyBlockAPI.addContentlet(storyBlockValue, referencedContentlet);
+        mainContentlet.setProperty(storyBlockField.variable(), updatedStoryBlockValue);
+        mainContentlet.setIndexPolicy(IndexPolicy.WAIT_FOR);
+        mainContentlet.setBoolProperty(Contentlet.DISABLE_WORKFLOW, true);
+        mainContentlet.setInode("");
+        contentletAPI.checkin(mainContentlet, APILocator.systemUser(), false);
+
+        final Map<ManifestItem, Collection<ManifestItem>> dependencies = map(mainContentlet, list(site, language,
+                contentType, referencedContentlet), referencedContentlet, list(language, referencedContentType));
+
+        return list(new TestData(mainContentlet, dependencies, excludeSystemFolderAndSystemHost,
+                filterDescriptorAllDependencies, "Content with Story Block and another content within"));
     }
 
     private static Collection<TestData> createContentletWithThirdPartyTestCase()
@@ -210,7 +301,7 @@ public class DependencyBundlerTest {
     }
 
     private static Collection<TestData> createRuleWithThirdPartyTestCase()
-            throws DotDataException, DotSecurityException {
+            throws DotDataException {
 
         final Host host = createHostWithDependencies();
         final Rule rule = new RuleDataGen().host(host).nextPersisted();
@@ -278,7 +369,7 @@ public class DependencyBundlerTest {
         );
     }
 
-    private static TestData createHTMLPageWithDependencies() throws DotDataException {
+    private static TestData createHTMLPageWithDependencies() {
         final Language defaultLanguage = APILocator.getLanguageAPI().getDefaultLanguage();
         final Host host = new SiteDataGen().nextPersisted();
         final ContentType contentTypeToPage = new ContentTypeDataGen().host(host).nextPersisted();
@@ -447,7 +538,7 @@ public class DependencyBundlerTest {
         return createContentTypeWithDependencies(null);
     }
 
-    private static TestData createContentTypeWithDependencies(Folder folder) throws DotDataException, DotSecurityException {
+    private static TestData createContentTypeWithDependencies(Folder folder) throws DotDataException {
         final Host host = folder != null ? folder.getHost() : new SiteDataGen().nextPersisted();
         final WorkflowScheme workflowScheme = APILocator.getWorkflowAPI().findSystemWorkflowScheme();
         final Category category = new CategoryDataGen().nextPersisted();
@@ -821,7 +912,7 @@ public class DependencyBundlerTest {
         );
     }
 
-    private static Collection<TestData> createLinkTestCase() throws DotDataException {
+    private static Collection<TestData> createLinkTestCase() {
         final Host host = new SiteDataGen().nextPersisted();
         final Folder folder = new FolderDataGen().site(host).nextPersisted();
 
@@ -967,7 +1058,7 @@ public class DependencyBundlerTest {
         );
     }
 
-    private static Collection<TestData> createContainerTestCase() throws DotDataException, DotSecurityException {
+    private static Collection<TestData> createContainerTestCase() throws DotDataException {
         final Host host = new SiteDataGen().nextPersisted();
 
         final ContentType contentType = new ContentTypeDataGen().host(host).nextPersisted();
@@ -1009,7 +1100,7 @@ public class DependencyBundlerTest {
         );
     }
 
-    private static List<TestData> createTemplatesTestCase() throws DotDataException, DotSecurityException {
+    private static List<TestData> createTemplatesTestCase() throws DotDataException {
         final Host host = new SiteDataGen().nextPersisted();
         final Template advancedTemplateWithoutContainer = new TemplateDataGen().host(host).nextPersisted();
 

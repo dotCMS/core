@@ -19,6 +19,11 @@ export * from './bubble-menu/components/bubble-menu-button/bubble-menu-button.co
 export * from './bubble-menu/models';
 export * from './bubble-menu/utils';
 
+// Floating Button
+export * from './floating-button/floating-button.component';
+export * from './floating-button/floating-button.extension';
+export * from './floating-button/plugin/floating-button.plugin';
+
 // Dot Config
 export * from './dot-config/dot-config.extension';
 
