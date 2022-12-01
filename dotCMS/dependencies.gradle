@@ -212,6 +212,9 @@ dependencies {
     implementation (group: 'commons-collections', name: 'commons-collections', version: '3.2.2'){
         transitive = false
     }
+    implementation (group: 'commons-io', name: 'commons-io', version: '2.11.0'){
+        transitive = false
+    }
 
     // https://mvnrepository.com/artifact/io.vavr/vavr
     implementation group: 'io.vavr', name: 'vavr', version: '0.10.3'
@@ -533,7 +536,6 @@ dependencies {
 
 
     implementation group: 'org.aspectj', name: 'aspectjrt', version:'1.9.2'
-    implementation group: 'io.bit3', name: 'jsass', version: '5.10.3'
 
     // https://github.com/lukas-krecan/ShedLock
     implementation group: 'net.javacrumbs.shedlock', name: 'shedlock-core', version: '4.33.0'
