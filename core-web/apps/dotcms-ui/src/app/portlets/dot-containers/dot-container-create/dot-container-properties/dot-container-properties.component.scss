@@ -33,14 +33,6 @@
     font-size: $font-size-large;
 }
 
-.dot-container-properties__title-input {
-    width: 20rem;
-}
-
-.dot-container-properties__description-input {
-    width: 20rem;
-}
-
 .dot-container-properties__max-contents-input {
     width: 7rem;
     margin-right: $spacing-2;
@@ -56,10 +48,14 @@
 .dot-container-properties__code-loop-container {
     background: $white;
     border: 1px solid $input-border-color;
-    padding-bottom: 4rem;
 }
 
 :host ::ng-deep {
+    dot-api-link a {
+        width: $dot-api-link-width;
+        justify-content: center;
+    }
+
     .tab-panel-btn {
         background: $brand-background;
 

@@ -2,7 +2,7 @@
 
 :host {
     .dot-loop-editor__pre-post-loop {
-        margin: $spacing-4;
+        margin: $dot-container-spacing;
     }
 
     .dot-loop-editor__pre-post-loop-inplace {
@@ -14,10 +14,10 @@
     }
 
     dot-textarea-content {
-        height: 20vh !important;
+        height: $dot-textarea-content-height !important;
     }
 
     ::ng-deep .textarea-content__code-field {
-        height: 20vh !important;
+        height: $dot-textarea-content-height !important;
     }
 }
