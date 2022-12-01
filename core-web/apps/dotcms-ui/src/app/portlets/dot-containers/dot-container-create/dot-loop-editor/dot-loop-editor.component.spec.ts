@@ -65,7 +65,7 @@ const messages = {
     'message.containers.create.post_loop': 'Post-loop'
 };
 
-fdescribe('DotLoopEditorComponent', () => {
+describe('DotLoopEditorComponent', () => {
     let component: DotTestHostComponent;
     let fixture: ComponentFixture<DotTestHostComponent>;
     let de: DebugElement;
