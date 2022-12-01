@@ -448,6 +448,13 @@ public interface ContentletAPI {
 	public List<Contentlet> search(String luceneQuery, int limit, int offset, String sortBy, User user, boolean respectFrontendRoles, int requiredPermission) throws DotDataException, DotSecurityException;
 
 	/**
+	 * Returns all the contentlets with versions on the provided {@link com.dotcms.variant.model.Variant}s
+	 */
+	List<Contentlet> getAllContentByVariants(final User user,
+			final boolean respectFrontendRoles, final String...variantName) throws DotDataException, DotStateException,
+			DotSecurityException;
+
+	/**
 	 * Adds the permissions query fragment to the given query based on the given user and roles
 	 *
 	 * @param buffy
