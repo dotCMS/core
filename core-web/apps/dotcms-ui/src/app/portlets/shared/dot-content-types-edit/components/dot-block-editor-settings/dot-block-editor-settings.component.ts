@@ -29,8 +29,10 @@ export const BLOCK_EDITOR_BLOCKS = [
     { label: 'Bullet List', code: 'bulletList' },
     { label: 'Code Block', code: 'codeBlock' },
     { label: 'Contentlet', code: 'contentlets' },
-    { label: 'Heading', code: 'heading' },
-    { label: 'Horizontal Rule', code: 'horizontalRule' },
+    { label: 'Heading 1', code: 'heading1' },
+    { label: 'Heading 2', code: 'heading2' },
+    { label: 'Heading 3', code: 'heading3' },
+    { label: 'Horizontal Line', code: 'horizontalRule' },
     { label: 'Image', code: 'image' },
     { label: 'Ordered List', code: 'orderedList' },
     { label: 'Tables', code: 'tables' }
