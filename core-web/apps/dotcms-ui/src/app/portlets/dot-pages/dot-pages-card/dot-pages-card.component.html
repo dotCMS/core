@@ -3,9 +3,8 @@
         <div
             class="dot-pages-favorite-card-content__image"
             [ngStyle]="{ 'background-image': 'url(' + imageUri + ')' }"
-            alt="Card"
         >
-            <img [src]="imageUri" />
+            <img [alt]="title" [src]="imageUri" />
         </div>
     </ng-template>
 

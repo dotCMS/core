@@ -1,5 +1,6 @@
 import { TestBed } from '@angular/core/testing';
 import { MockDotPropertiesService } from '@dotcms/app/portlets/dot-edit-page/main/dot-edit-page-nav/dot-edit-page-nav.component.spec';
+import { FeaturedFlags } from '@dotcms/app/portlets/shared/models/shared-models';
 import { of } from 'rxjs';
 import { DotPropertiesService } from '../dot-properties/dot-properties.service';
 import { PagesGuardService } from './pages-guard.service';
@@ -24,7 +25,9 @@ describe('PagesGuardService', () => {
         let result: boolean;
         spyOn(dotPropertiesService, 'getKey').and.returnValue(of('true'));
         pagesGuardService.canActivate().subscribe((res) => (result = res));
-        expect(dotPropertiesService.getKey).toHaveBeenCalledWith('DOTFAVORITEPAGE_FEATURE_ENABLE');
+        expect(dotPropertiesService.getKey).toHaveBeenCalledWith(
+            FeaturedFlags.DOTFAVORITEPAGE_FEATURE_ENABLE
+        );
         expect(result).toBe(true);
     });
 
@@ -32,7 +35,9 @@ describe('PagesGuardService', () => {
         let result: boolean;
         spyOn(dotPropertiesService, 'getKey').and.returnValue(of('false'));
         pagesGuardService.canActivate().subscribe((res) => (result = res));
-        expect(dotPropertiesService.getKey).toHaveBeenCalledWith('DOTFAVORITEPAGE_FEATURE_ENABLE');
+        expect(dotPropertiesService.getKey).toHaveBeenCalledWith(
+            FeaturedFlags.DOTFAVORITEPAGE_FEATURE_ENABLE
+        );
         expect(result).toBe(false);
     });
 });

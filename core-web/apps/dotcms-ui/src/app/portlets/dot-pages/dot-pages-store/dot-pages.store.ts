@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { ComponentStore, tapResponse } from '@ngrx/component-store';
 import { forkJoin, Observable } from 'rxjs';
-import { mergeMap, take } from 'rxjs/operators';
+import { switchMap, take } from 'rxjs/operators';
 import { DotCMSContentlet } from '@dotcms/dotcms-models';
 import { DotCurrentUserService } from '@dotcms/app/api/services/dot-current-user/dot-current-user.service';
 import { DotCurrentUser } from '@dotcms/app/shared/models/dot-current-user/dot-current-user';
@@ -50,7 +50,7 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
     // EFFECTS
     readonly getFavoritePages = this.effect((itemsPerPage$: Observable<number>) => {
         return itemsPerPage$.pipe(
-            mergeMap((itemsPerPage: number) =>
+            switchMap((itemsPerPage: number) =>
                 this.getFavoritePagesData(itemsPerPage).pipe(
                     tapResponse(
                         (items) => {
