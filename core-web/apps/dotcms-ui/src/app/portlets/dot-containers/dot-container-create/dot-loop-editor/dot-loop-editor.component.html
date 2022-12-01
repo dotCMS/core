@@ -15,6 +15,7 @@
         <dot-textarea-content
             [formControl]="loopControl"
             [show]="['code']"
+            [customStyles]="{ height: '140px' }"
             (blur)="onTouched()"
             (input)="onTouched()"
             language="html"
