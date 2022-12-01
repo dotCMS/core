@@ -15,7 +15,7 @@ import {
     dotExperimentsCreateStoreStub,
     DotExperimentsListStoreMock
 } from '@portlets/dot-experiments/test/mocks';
-import { DotExperimentsCreateStore } from '@portlets/dot-experiments/dot-experiments-create/store/dot-experiments-create-store.service';
+import { DotExperimentsCreateStore } from '@portlets/dot-experiments/dot-experiments-create/store/dot-experiments-create-store';
 import { DotMessageService } from '@services/dot-message/dot-messages.service';
 import { MessageService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';

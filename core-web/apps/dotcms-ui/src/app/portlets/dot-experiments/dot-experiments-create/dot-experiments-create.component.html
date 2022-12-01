@@ -15,7 +15,9 @@
                 novalidate
             >
                 <div class="field">
-                    <label for="name">{{ 'experiments.create.form.name.label' | dm }}</label>
+                    <label class="p-label-input-required" for="name">{{
+                        'experiments.create.form.name.label' | dm
+                    }}</label>
                     <input
                         id="name"
                         [tabindex]="1"
@@ -34,7 +36,7 @@
                 </div>
 
                 <div class="field">
-                    <label for="description">{{
+                    <label class="p-label-input-required" for="description">{{
                         'experiments.create.form.description.label' | dm
                     }}</label>
                     <textarea
