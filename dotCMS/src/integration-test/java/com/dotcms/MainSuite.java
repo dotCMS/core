@@ -577,7 +577,7 @@ import org.junit.runners.Suite.SuiteClasses;
         Task211103RenameHostNameLabelTest.class,
         ContentSecurityPolicyUtilTest.class,
         MessageToolTest.class,
-        XsltToolTest.class,
+        //XsltToolTest.class,
         XmlToolTest.class,
         LanguageFolderTest.class,
         MailAPIImplTest.class,
