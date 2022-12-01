@@ -40,7 +40,9 @@ public interface StoryBlockAPI {
      * @param contentlet The Contentlet containing the Story Block field(s).
      *
      * @return The {@link StoryBlockReferenceResult} object containing the final result of the refreshing process.
+     * Encapsulates the allowed types for contentlets on the story block
      */
+
     StoryBlockReferenceResult refreshReferences(final Contentlet contentlet);
 
     /**
