@@ -1,6 +1,8 @@
 package com.dotcms;
 
 import com.dotcms.analytics.bayesian.BayesianAPIImplTest;
+import com.dotcms.auth.providers.jwt.JsonWebTokenUtilsIntegrationTest;
+import com.dotcms.auth.providers.jwt.factories.ApiTokenAPITest;
 import com.dotcms.auth.providers.saml.v1.DotSamlResourceTest;
 import com.dotcms.auth.providers.saml.v1.SAMLHelperTest;
 import com.dotcms.cache.lettuce.DotObjectCodecTest;
@@ -577,7 +579,6 @@ import org.junit.runners.Suite.SuiteClasses;
         Task211103RenameHostNameLabelTest.class,
         ContentSecurityPolicyUtilTest.class,
         MessageToolTest.class,
-        //XsltToolTest.class,
         XmlToolTest.class,
         LanguageFolderTest.class,
         MailAPIImplTest.class,
@@ -648,7 +649,11 @@ import org.junit.runners.Suite.SuiteClasses;
         VisitorsCurrentURLConditionletTest.class,
         VisitorsGeolocationConditionletTest.class,
         ManifestUtilTest.class,
-        ZipUtilTest.class
+        ZipUtilTest.class,
+        XsltToolTest.class,
+        ApiTokenAPITest.class,
+        JsonWebTokenUtilsIntegrationTest.class,
+
 })
 public class MainSuite {
 
