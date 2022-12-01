@@ -18,6 +18,8 @@ import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { By } from '@angular/platform-browser';
 import { PanelModule } from 'primeng/panel';
 import { DotPagesCardEmptyModule } from './dot-pages-card-empty/dot-pages-card-empty.module';
+import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
+import { MockDotRouterService } from '@dotcms/app/test/dot-router-service.mock';
 
 @Component({
     selector: 'dot-pages-card',
@@ -54,7 +56,7 @@ export const pagesInitialTestData = [
         ...dotcmsContentletMock,
         title: 'preview1',
         screenshot: 'test1',
-        url: '/index1',
+        url: '/index1?host_id=A&language_id=1&device_inode=123',
         owner: 'admin'
     },
     {
@@ -70,6 +72,7 @@ describe('DotPagesComponent', () => {
     let fixture: ComponentFixture<DotPagesComponent>;
     let de: DebugElement;
     let store: DotPageStore;
+    let dotRouterService: DotRouterService;
 
     beforeEach(() => {
         TestBed.configureTestingModule({
@@ -86,6 +89,7 @@ describe('DotPagesComponent', () => {
                 TabViewModule
             ],
             providers: [
+                { provide: DotRouterService, useClass: MockDotRouterService },
                 {
                     provide: DotMessageService,
                     useValue: messageServiceMock
@@ -162,6 +166,7 @@ describe('DotPagesComponent', () => {
                 }
             });
             store = TestBed.inject(DotPageStore);
+            dotRouterService = TestBed.inject(DotRouterService);
             fixture = TestBed.createComponent(DotPagesComponent);
             de = fixture.debugElement;
             fixture.detectChanges();
@@ -196,7 +201,7 @@ describe('DotPagesComponent', () => {
             expect(elem[1].componentInstance.ownerPage).toBe(false);
         });
 
-        describe('Load all items', () => {
+        describe('Events', () => {
             it('should call event to load all items', () => {
                 const elem = de.query(By.css('[data-testId="seeAllBtn"]'));
                 elem.triggerEventHandler('click', {
@@ -205,6 +210,22 @@ describe('DotPagesComponent', () => {
                     }
                 });
                 expect(store.getFavoritePages).toHaveBeenCalledWith(4);
+            });
+
+            it('should call redirect method in DotRouterService', () => {
+                const elem = de.query(By.css('dot-pages-card'));
+                elem.triggerEventHandler('click', {
+                    stopPropagation: () => {
+                        //
+                    }
+                });
+
+                expect(dotRouterService.goToEditPage).toHaveBeenCalledWith({
+                    device_inode: '123',
+                    host_id: 'A',
+                    language_id: '1',
+                    url: '/index1'
+                });
             });
         });
     });
