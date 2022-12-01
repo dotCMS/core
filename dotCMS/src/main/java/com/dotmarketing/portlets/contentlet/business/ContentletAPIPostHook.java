@@ -1653,4 +1653,7 @@ public interface ContentletAPIPostHook {
 	 */
 	default void move(final Contentlet contentlet, User user, Host host, Folder folder, boolean respectFrontendRoles) {}
 
+	default void getAllContentByVariants(User user, boolean respectFrontendRoles, String[] variantNames) {
+
+	}
 }
