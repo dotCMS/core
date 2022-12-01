@@ -43,7 +43,7 @@ public class IPUtils {
 
     }
     
-    final static private String[] REMOTE_CALL_SUBNET_BLACKLIST_DEFAULT = {"127.0.0.1/32","10.0.0.0/8","172.16.0.0/12", "192.168.0.0/16"};
+    final static private String[] REMOTE_CALL_SUBNET_BLACKLIST_DEFAULT = {"127.0.0.1/32","10.0.0.0/8","172.16.0.0/12", "192.168.0.0/16", "169.254.169.254/32"};
     
     
     final static Lazy<String[]> disallowedSubnets = Lazy.of(() -> 
