@@ -1,34 +1,33 @@
 <ng-container *ngIf="isEnterpriseLicense$ | async as isEnterpriseLicense; else language">
+    <dot-device-selector
+        [pTooltip]="pageState.viewAs.device?.name || ('editpage.viewas.default.device' | dm)"
+        [value]="pageState.viewAs.device"
+        (selected)="changeDeviceHandler($event)"
+        appendTo="body"
+        tooltipPosition="bottom"
+        tooltipStyleClass="dot-device-selector__dialog"
+    ></dot-device-selector>
+
     <dot-language-selector
         [pTooltip]="pageState.viewAs.language.language"
+        [value]="pageState.viewAs.language"
+        (selected)="changeLanguageHandler($event)"
+        appendTo="body"
         tooltipPosition="bottom"
         tooltipStyleClass="dot-language-selector__dialog"
-        appendTo="body"
-        (selected)="changeLanguageHandler($event)"
-        [value]="pageState.viewAs.language"
     ></dot-language-selector>
 
-    <ng-template [ngIf]="isEnterpriseLicense">
-        <dot-device-selector
-            [pTooltip]="pageState.viewAs.device?.name || ('editpage.viewas.default.device' | dm)"
-            tooltipPosition="bottom"
-            tooltipStyleClass="dot-device-selector__dialog"
-            appendTo="body"
-            (selected)="changeDeviceHandler($event)"
-            [value]="pageState.viewAs.device"
-        ></dot-device-selector>
-        <dot-persona-selector
-            (delete)="deletePersonalization($event)"
-            [disabled]="(dotPageStateService.haveContent$ | async) === false"
-            (selected)="changePersonaHandler($event)"
-            [pageState]="pageState"
-        ></dot-persona-selector>
-    </ng-template>
+    <dot-persona-selector
+        [disabled]="(dotPageStateService.haveContent$ | async) === false"
+        [pageState]="pageState"
+        (delete)="deletePersonalization($event)"
+        (selected)="changePersonaHandler($event)"
+    ></dot-persona-selector>
 </ng-container>
 
 <ng-template #language>
     <dot-language-selector
-        (selected)="changeLanguageHandler($event)"
         [value]="pageState.viewAs.language"
+        (selected)="changeLanguageHandler($event)"
     ></dot-language-selector>
 </ng-template>
