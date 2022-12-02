@@ -1,5 +1,10 @@
 package com.dotmarketing.listeners;
 
+import java.io.File;
+import javax.servlet.ServletContext;
+import javax.servlet.ServletContextEvent;
+import javax.servlet.ServletContextListener;
+import javax.websocket.server.ServerContainer;
 import com.dotcms.business.bytebuddy.ByteBuddyFactory;
 import com.dotcms.concurrent.DotConcurrentFactory;
 import com.dotcms.enterprise.LicenseUtil;
@@ -10,15 +15,8 @@ import com.dotmarketing.common.reindex.ReindexThread;
 import com.dotmarketing.loggers.Log4jUtil;
 import com.dotmarketing.quartz.QuartzUtils;
 import com.dotmarketing.util.Config;
-import com.dotmarketing.util.ConfigUtils;
 import com.dotmarketing.util.Logger;
 import io.vavr.control.Try;
-
-import javax.servlet.ServletContext;
-import javax.servlet.ServletContextEvent;
-import javax.servlet.ServletContextListener;
-import javax.websocket.server.ServerContainer;
-import java.io.File;
 
 /**
  *
@@ -34,30 +32,30 @@ public class ContextLifecycleListener implements ServletContextListener {
     public void contextDestroyed(ServletContextEvent arg0) {
         Logger.info(this, "Shutdown : Started, executing a clean shutdown.");
 
-        Try.run(() -> QuartzUtils.stopSchedulers())
-                        .onFailure(e -> Logger.warn(ContextLifecycleListener.class, "Shutdown : " + e.getMessage()));
+        Try.run(QuartzUtils::stopSchedulers)
+                        .onFailure(e -> Logger.debug(ContextLifecycleListener.class, "Shutdown : " + e.getMessage()));
         
-        Try.run(() -> LicenseUtil.freeLicenseOnRepo())
-                        .onFailure(e -> Logger.warn(ContextLifecycleListener.class, "Shutdown : " + e.getMessage()));
+        Try.run(LicenseUtil::freeLicenseOnRepo)
+                        .onFailure(e -> Logger.debug(ContextLifecycleListener.class, "Shutdown : " + e.getMessage()));
 
         
         Try.run(() -> CacheLocator.getCacheAdministrator().shutdown())
-                        .onFailure(e -> Logger.warn(ContextLifecycleListener.class, "Shutdown : " + e.getMessage()));
+                        .onFailure(e -> Logger.debug(ContextLifecycleListener.class, "Shutdown : " + e.getMessage()));
         
 
 
         Try.run(() -> DotConcurrentFactory.getInstance().shutdownAndDestroy())
-                        .onFailure(e -> Logger.warn(ContextLifecycleListener.class, "Shutdown : " + e.getMessage()));
+                        .onFailure(e -> Logger.debug(ContextLifecycleListener.class, "Shutdown : " + e.getMessage()));
 
-        Try.run(() -> ReindexThread.stopThread())
-                        .onFailure(e -> Logger.warn(ContextLifecycleListener.class, "Shutdown : " + e.getMessage()));
+        Try.run(ReindexThread::stopThread)
+                        .onFailure(e -> Logger.debug(ContextLifecycleListener.class, "Shutdown : " + e.getMessage()));
 
         Logger.info(this, "Shutdown : Finished.");
 
     }
 
 	public void contextInitialized(ServletContextEvent arg0) {
-
+	    Config.setTestingMode(false);
         ByteBuddyFactory.init();
 
 		Config.setMyApp(arg0.getServletContext());

@@ -56,9 +56,7 @@ public class ConfigTest {
         System.getenv().put(DOT_TESTING_STRING_WITH_SPACES, "VALUE1 VALUE2");
         System.getenv().put(DOT_TESTING_STRING, "VALUE_ABC");
         System.getenv().put(UNABLE_TO_READ_VAR, "NOPE");
-        //This forces a re-load.
-        Config.props = null;
-        Config.initializeConfig();
+        Config.reloadProps();
     }
 
 
@@ -80,23 +78,23 @@ public class ConfigTest {
     @Test
     public void Test_Multiple_Calls_To_AddProperty_On_The_Same_Key() {
 
-        Config.props.addProperty("anyKey","anyValue");
-        assertEquals ("anyValue",Config.props.getProperty("anyKey"));
+        Config.setProperty("anyKey","anyValue");
+        assertEquals ("anyValue",Config.getStringProperty("anyKey"));
 
-        Config.props.addProperty("anyKey","anyValue");
-        final List<String> values1 = Arrays.asList("anyValue", "anyValue");
+        Config.addProperty("anyKey","anyValue");
+        final String[] values1 = new String[] {"anyValue", "anyValue"};
 
-        final Object property1 = Config.props.getProperty("anyKey");
-        final boolean equals1 = values1.equals(property1);
+        final String[] property1 = Config.getStringArrayProperty("anyKey");
+        final boolean equals1 = Arrays.equals(values1,property1);
         assertTrue(equals1);
 
-        Config.props.addProperty("anyKey","anyValue");
-        final List<String> values2 = Arrays.asList("anyValue", "anyValue", "anyValue");
-        final Object property2 = Config.props.getProperty("anyKey");
-        final boolean equals2 = values2.equals(property2);
+        Config.addProperty("anyKey","anyValue");
+        final String[]values2 = new String[] {"anyValue", "anyValue", "anyValue"};
+        final String[] property2 = Config.getStringArrayProperty("anyKey");
+        final boolean equals2 = Arrays.equals(values2,property2);
         assertTrue(equals2);
     }
-
+    
     /**
      * Method to rest: {@link Config#getStringProperty(String)}
      * Given Scenario: We set an environment prop that starts with DOT_ and certain value. Lets say X then we test getting that value through the property name that does not stat with such prefix.
@@ -109,7 +107,7 @@ public class ConfigTest {
         final String fictionalProperty = Config.getStringProperty(propertyName);
         assertEquals("var",fictionalProperty);
         System.getenv().put("DOT_FICTIONAL_PROPERTY", "foo");
-        Config.props = null; //force props reload
+        Config.reloadProps();
 
         final String fictionalPropertyOverride = Config.getStringProperty(propertyName);
         assertEquals("foo",fictionalPropertyOverride);
@@ -327,7 +325,6 @@ public class ConfigTest {
 
     @BeforeClass
     public static void accessFields() throws Exception {
-
         envMap.putAll(DEFAULTS);
         Class<?> clazz = Class.forName("java.lang.ProcessEnvironment");
         //Field theCaseInsensitiveEnvironmentField = clazz.getDeclaredField("theCaseInsensitiveEnvironment");

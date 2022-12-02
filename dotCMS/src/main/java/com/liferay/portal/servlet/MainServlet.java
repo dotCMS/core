@@ -97,7 +97,6 @@ public class MainServlet extends ActionServlet {
     synchronized (MainServlet.class) {
       ByteBuddyFactory.init();
       super.init(config);
-      Config.initializeConfig();
       com.dotmarketing.util.Config.setMyApp(config.getServletContext());
       // Need the plugin root dir before Hibernate comes up
       try {

@@ -27,11 +27,17 @@ import com.liferay.portal.util.WebAppPool;
  */
 public class ConfigTestHelper extends Config {
 
+    public ConfigTestHelper() {
+        super(true);
+    }
     /**
      * This method will set up a dummy ServletContext needed for testing. The main purpose here
      * is to be able to run the integration tests without the web app container i.e. Tomcat.
      */
     public static void _setupFakeTestingContext() throws Exception {
+        setTestingMode(true);
+        propertyFiles = new String[] {"it-dotmarketing-config.properties","it-dotcms-config-cluster.properties"};
+        reloadProps();
         // if we need a fake ServletContext
         if (CONTEXT == null) {
             ServletContext context = Mockito.mock(ServletContext.class);
@@ -92,9 +98,7 @@ public class ConfigTestHelper extends Config {
 
         }
 
-        props = null;
-        dotmarketingPropertiesUrl = getUrlToTestResource("it-dotmarketing-config.properties");
-        clusterPropertiesUrl = getUrlToTestResource("it-dotcms-config-cluster.properties");
+        
         setToolboxPath();
     }
 
