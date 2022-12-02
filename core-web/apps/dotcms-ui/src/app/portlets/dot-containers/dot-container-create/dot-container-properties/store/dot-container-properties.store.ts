@@ -135,6 +135,25 @@ export class DotContainerPropertiesStore extends ComponentStore<DotContainerProp
             };
         }
     );
+    /**
+     * Update Content Type and PrePost loop visibility
+     * @memberof DotContainerPropertiesStore
+     */
+    readonly updateContentTypeAndPrePostLoopVisibility = this.updater<{
+        isContentTypeVisible: boolean;
+        showPrePostLoopInput: boolean;
+    }>(
+        (
+            state: DotContainerPropertiesState,
+            { isContentTypeVisible, showPrePostLoopInput }: DotContainerPropertiesState
+        ) => {
+            return {
+                ...state,
+                isContentTypeVisible,
+                showPrePostLoopInput
+            };
+        }
+    );
 
     readonly updateContainerState = this.updater<DotContainerEntity>(
         (state: DotContainerPropertiesState, container: DotContainerEntity) => {

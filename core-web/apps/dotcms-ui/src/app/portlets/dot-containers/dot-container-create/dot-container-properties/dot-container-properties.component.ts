@@ -158,10 +158,14 @@ export class DotContainerPropertiesComponent implements OnInit {
     clearContent(): void {
         this.dotAlertConfirmService.confirm({
             accept: () => {
-                this.store.updateContentTypeVisibility(false);
-                this.form.reset();
+                this.store.updateContentTypeAndPrePostLoopVisibility({
+                    isContentTypeVisible: false,
+                    showPrePostLoopInput: false
+                });
                 this.form.get('containerStructures').clearValidators();
                 this.form.get('containerStructures').reset();
+                this.form.get('preLoop').reset();
+                this.form.get('postLoop').reset();
                 // clear containerStructures array
                 (this.form.get('containerStructures') as FormArray).clear();
                 this.form.get('code').addValidators(Validators.required);
