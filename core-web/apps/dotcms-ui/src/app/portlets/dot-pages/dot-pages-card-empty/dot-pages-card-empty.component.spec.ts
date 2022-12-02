@@ -24,7 +24,7 @@ describe('DotPagesCardEmptyComponent', () => {
     describe('Init', () => {
         it('should have header and body with star icon and skeleton', () => {
             expect(
-                fixture.debugElement.query(By.css('.dot-pages-card-empty__header'))
+                fixture.debugElement.query(By.css('[data-testid="favoriteCardEmptyHeader"]'))
             ).toBeTruthy();
             expect(fixture.debugElement.query(By.css('dot-icon')).attributes.name).toBe('star');
             expect(fixture.debugElement.queryAll(By.css('p-skeleton')).length).toBe(2);

@@ -26,8 +26,6 @@ const FAVORITE_PAGES_ES_QUERY = `+contentType:dotFavoritePage +deleted:false +wo
 
 @Injectable()
 export class DotPageStore extends ComponentStore<DotPagesState> {
-    private favoritePages = [];
-
     readonly vm$ = this.state$;
 
     /** A function that updates the Favorite Pages Items in the state of the store.

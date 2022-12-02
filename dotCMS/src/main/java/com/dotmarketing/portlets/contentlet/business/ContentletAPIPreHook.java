@@ -1916,4 +1916,7 @@ public interface ContentletAPIPreHook {
 
 	default boolean move(final Contentlet contentlet, User user, Host host, Folder folder, boolean respectFrontendRoles) { return true; }
 
+	default boolean getAllContentByVariants(User user, boolean respectFrontendRoles, String[] variantNames) {
+    	return true;
+	}
 }

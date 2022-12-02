@@ -56,16 +56,13 @@ describe('DotPersonaSelectedItemComponent', () => {
 
     it('should have dot-avatar with right properties', () => {
         const avatar: DebugElement = de.query(By.css('dot-avatar'));
-        expect(avatar.componentInstance.label).toBe(mockDotPersona.name);
         expect(avatar.componentInstance.showDot).toBe(mockDotPersona.personalized);
         expect(avatar.componentInstance.url).toBe(mockDotPersona.photo);
-        expect(avatar.componentInstance.size).toBe(32);
+        expect(avatar.componentInstance.size).toBe(24);
     });
 
     it('should render persona name and label', () => {
-        const label = de.query(By.css('.dot-persona-selector__label')).nativeElement;
         const name = de.query(By.css('.dot-persona-selector__name')).nativeElement;
-        expect(label.innerText.trim()).toBe('Previewing As');
         expect(name.innerText).toBe('Global Investor');
     });
 

@@ -79,12 +79,6 @@ describe('DotDeviceSelectorComponent', () => {
         expect(icon.attributes.big).toBeDefined();
     });
 
-    it('should have label', () => {
-        fixtureHost.detectChanges();
-        const label = de.query(By.css('label')).nativeElement;
-        expect(label.textContent).toBe('Device');
-    });
-
     it('should emmit the selected Device', () => {
         const pDropDown: DebugElement = de.query(By.css('p-dropdown'));
 

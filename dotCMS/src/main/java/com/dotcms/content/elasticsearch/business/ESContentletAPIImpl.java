@@ -1177,6 +1177,20 @@ public class ESContentletAPIImpl implements ContentletAPI {
     }
 
     @Override
+    public List<Contentlet> getAllContentByVariants(final User user,
+            final boolean respectFrontendRoles, final String...variantNames) throws DotDataException, DotStateException,
+            DotSecurityException {
+
+        final String queryWithoutParenthesis = Arrays.stream(variantNames).map((variant)->"variant:"+variant)
+                .collect(Collectors.joining(" OR "));
+
+        final String query = "+(" + queryWithoutParenthesis + ")";
+
+        return search(query, -1, 0, null,
+                user, respectFrontendRoles);
+    }
+
+    @Override
     public void addPermissionsToQuery(StringBuffer buffy, User user, List<Role> roles, boolean respectFrontendRoles) throws DotSecurityException, DotDataException  {
         if(user != null)
             buffy.append(" +((+owner:" + user.getUserId() + " +ownerCanRead:true) ");

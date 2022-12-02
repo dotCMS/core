@@ -12,6 +12,7 @@ import { MockDotMessageService } from '@dotcms/app/test/dot-message-service.mock
 import { DotMessageService } from '@dotcms/app/api/services/dot-message/dot-messages.service';
 import { ButtonModule } from 'primeng/button';
 import { By } from '@angular/platform-browser';
+import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 
 @Component({
     selector: `dot-host-component`,
@@ -77,7 +78,12 @@ describe('DotLoopEditorComponent', () => {
                 DotTextareaContentMockComponent,
                 DotTestHostComponent
             ],
-            imports: [DotMessagePipeModule, ButtonModule, ReactiveFormsModule],
+            imports: [
+                DotMessagePipeModule,
+                ButtonModule,
+                ReactiveFormsModule,
+                BrowserAnimationsModule
+            ],
             providers: [{ provide: DotMessageService, useValue: messageServiceMock }],
             schemas: [CUSTOM_ELEMENTS_SCHEMA]
         }).compileComponents();

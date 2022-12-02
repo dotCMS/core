@@ -14,7 +14,7 @@ import { Observable } from 'rxjs';
 import {
     DotExperimentCreateStore,
     DotExperimentsCreateStore
-} from '@portlets/dot-experiments/dot-experiments-create/store/dot-experiments-create-store.service';
+} from '@portlets/dot-experiments/dot-experiments-create/store/dot-experiments-create-store';
 import { DotExperiment } from '@portlets/dot-experiments/shared/models/dot-experiments.model';
 import { take } from 'rxjs/operators';
 import { DotExperimentsListStore } from '@portlets/dot-experiments/dot-experiments-list/store/dot-experiments-list-store.service';

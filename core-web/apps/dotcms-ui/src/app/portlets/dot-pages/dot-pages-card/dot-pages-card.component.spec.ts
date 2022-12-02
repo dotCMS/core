@@ -52,7 +52,7 @@ describe('DotPagesCardComponent', () => {
         it('should set preview img ', () => {
             expect(
                 fixture.debugElement
-                    .query(By.css('.dot-pages-favorite-card-content__image'))
+                    .query(By.css('[data-testid="favoriteCardImageContainer"]'))
                     .nativeElement.style['background-image'].includes(component.imageUri)
             ).toBeTrue();
             expect(
