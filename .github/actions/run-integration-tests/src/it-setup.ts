@@ -246,7 +246,9 @@ const getAppends = (propertyMap: Map<string, string>): AppendProperties => {
           `felix.felix.fileinstall.dir=${felixFolder}/load`,
           `felix.felix.undeployed.dir=${felixFolder}/undeploy`,
           'dotcms.concurrent.locks.disable=false',
-          `system.felix.base.dir=${systemFelixFolder}`
+          `system.felix.base.dir=${systemFelixFolder}`,
+          'analytics.idp.url=http://localhost:61111/realms/dotcms/protocol/openid-connect/token',
+          'analytics.app.config.url=http://localhost:8088/c/customer1/cluster1/keys'
         ]
       },
       {

@@ -1,5 +1,6 @@
 package com.dotcms;
 
+import com.dotcms.analytics.AnalyticsAPIImplTest;
 import com.dotcms.analytics.bayesian.BayesianAPIImplTest;
 import com.dotcms.auth.providers.jwt.JsonWebTokenUtilsIntegrationTest;
 import com.dotcms.auth.providers.jwt.factories.ApiTokenAPITest;
@@ -10,7 +11,6 @@ import com.dotcms.cache.lettuce.LettuceCacheTest;
 import com.dotcms.cache.lettuce.RedisClientTest;
 import com.dotcms.content.business.ObjectMapperTest;
 import com.dotcms.content.business.json.ContentletJsonAPITest;
-import com.dotcms.content.elasticsearch.business.ESContentFactoryImplTest;
 import com.dotcms.content.elasticsearch.business.ESContentletAPIImplTest;
 import com.dotcms.content.elasticsearch.business.ESIndexAPITest;
 import com.dotcms.content.elasticsearch.business.ElasticsearchUtilTest;
@@ -158,6 +158,7 @@ import com.dotmarketing.portlets.workflows.actionlet.VelocityScriptActionletAbor
 import com.dotmarketing.portlets.workflows.model.TestWorkflowAction;
 import com.dotmarketing.portlets.workflows.util.WorkflowEmailUtilTest;
 import com.dotmarketing.quartz.DotStatefulJobTest;
+import com.dotmarketing.quartz.job.AccessTokenRenewJobTest;
 import com.dotmarketing.quartz.job.CleanUpFieldReferencesJobTest;
 import com.dotmarketing.quartz.job.IntegrityDataGenerationJobTest;
 import com.dotmarketing.startup.StartupTasksExecutorTest;
@@ -650,8 +651,9 @@ import org.junit.runners.Suite.SuiteClasses;
         VisitorsCurrentURLConditionletTest.class,
         VisitorsGeolocationConditionletTest.class,
         ManifestUtilTest.class,
-        ZipUtilTest.class
-
+        ZipUtilTest.class,
+        AnalyticsAPIImplTest.class,
+        AccessTokenRenewJobTest.class
 })
 public class MainSuite {
 

@@ -1,0 +1,125 @@
+package com.dotcms.analytics;
+
+import com.dotcms.analytics.app.AnalyticsApp;
+import com.dotcms.analytics.cache.AnalyticsCache;
+import com.dotcms.analytics.helper.AnalyticsHelper;
+import com.dotcms.analytics.model.AccessToken;
+import com.dotcms.analytics.model.TokenStatus;
+import com.dotcms.exception.AnalyticsException;
+import com.dotcms.exception.UnrecoverableAnalyticsException;
+import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.CacheLocator;
+import com.dotmarketing.quartz.job.AccessTokenRenewJob;
+import com.dotmarketing.util.Logger;
+import io.vavr.Tuple2;
+
+import java.util.List;
+import java.util.Optional;
+import java.util.stream.Collectors;
+
+/**
+ * Access Token renew thread.
+ * Meant to perform several attempts to renew {@link AccessToken} when is required to.
+ *
+ * @author vico
+ */
+public class AccessTokenRenewRunnable implements Runnable {
+
+    private final AccessTokenRenewJob callerJob;
+    private final List<Tuple2<AnalyticsApp, TokenStatus>> appsWithStatus;
+    private final AnalyticsAPI analyticsAPI;
+    private final AnalyticsCache analyticsCache;
+
+    public AccessTokenRenewRunnable(final AccessTokenRenewJob callerJob,
+                                    final List<Tuple2<AnalyticsApp, TokenStatus>> appsWithStatus) {
+        this.callerJob = callerJob;
+        this.appsWithStatus = appsWithStatus;
+        analyticsAPI = APILocator.getAnalyticsAPI();
+        analyticsCache = CacheLocator.getAnalyticsCache();
+    }
+
+    /**
+     * Run access token renew thread's main logic.
+     */
+    @Override
+    public void run() {
+        final String clientIds = appsWithStatus
+            .stream()
+            .map(app -> app._1.getAnalyticsProperties().clientId())
+            .collect(Collectors.joining(","));
+
+        synchronized (this) {
+            if (callerJob.isRenewRunning()) {
+                Logger.info(
+                    this,
+                    String.format(
+                        "Renewing thread for clientIds %s is already running, skipping this execution",
+                        clientIds));
+                return;
+            }
+
+            callerJob.setRenewRunning(true);
+
+            Logger.info(this, String.format("Starting access token renew thread for clientIds %s", clientIds));
+            appsWithStatus.forEach(this::renewToken);
+
+            callerJob.setRenewRunning(false);
+        }
+    }
+
+    /**
+     * Renews access token for provided {@link AnalyticsApp} by refreshing token from the IDP host and if everything
+     * works successfully it will put the new token to the cache.
+     *
+     * @param appWithStatus provided analytics app - token status tuple
+     */
+    private void renewToken(final Tuple2<AnalyticsApp, TokenStatus> appWithStatus) {
+        final AnalyticsApp analyticsApp = appWithStatus._1;
+        final String clientId = analyticsApp.getAnalyticsProperties().clientId();
+        final TokenStatus tokenStatus = appWithStatus._2;
+        Logger.info(
+            this,
+            String.format(
+                "Starting access token renew thread for clientId %s and tokenStatus %s",
+                clientId,
+                tokenStatus));
+
+        boolean restore = false;
+        final AccessToken found = analyticsAPI.getAccessToken(analyticsApp);
+        final AccessToken blocked = AnalyticsHelper.createBlockedToken(
+            analyticsApp,
+            "ACCESS_TOKEN is blocked due to access token renew");
+        if (tokenStatus == TokenStatus.EXPIRED) {
+            analyticsCache.putAccessToken(blocked);
+        }
+
+        try {
+            analyticsAPI.refreshAccessToken(analyticsApp);
+        } catch (AnalyticsException e) {
+            Logger.error(this, String.format("Could not renew token for clientId %s", clientId), e);
+            if (e instanceof UnrecoverableAnalyticsException) {
+                Logger.error(
+                    this,
+                    String.format("Unrecoverable error while renewing ACCESS_TOKEN for clientId %s", clientId),
+                    e);
+                final AccessToken noop = AnalyticsHelper.createNoopToken(
+                    analyticsApp,
+                    String.format("Setting NOOP ACCESS_TOKEN for clientId %s due to %s", clientId, e.getMessage()));
+                analyticsCache.putAccessToken(noop);
+            } else {
+                restore = tokenStatus == TokenStatus.EXPIRED;
+            }
+        } finally {
+            if (restore) {
+                Optional.ofNullable(found)
+                    .ifPresentOrElse(
+                        token -> {
+                            Logger.info(this, String.format("Restoring ACCESS_TOKEN for clientId %s", clientId));
+                            analyticsCache.putAccessToken(token);
+                            },
+                        () -> analyticsCache.removeAccessToken(blocked));
+            }
+        }
+    }
+
+}

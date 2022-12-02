@@ -58,7 +58,8 @@ public class AnalyticsApp {
      * @return if required properties are set.
      */
     public boolean isConfigValid() {
-        return Stream.of(analyticsProperties.clientId(), analyticsProperties.clientSecret())
+        return Stream
+            .of(analyticsProperties.clientId(), analyticsProperties.clientSecret())
             .allMatch(StringUtils::isNotBlank);
     }
 

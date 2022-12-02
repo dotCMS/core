@@ -21,7 +21,7 @@ import java.time.Instant;
 @JsonIgnoreProperties(ignoreUnknown = true)
 public interface AbstractAccessToken {
 
-    @JsonProperty("access_token")
+    @JsonProperty(value = "access_token", access = JsonProperty.Access.WRITE_ONLY)
     String accessToken();
 
     @JsonProperty("token_type")
@@ -40,18 +40,22 @@ public interface AbstractAccessToken {
     Integer refreshExpiresIn();
 
     @Nullable
-    @JsonProperty("refresh_token")
+    @JsonProperty(value = "refresh_token", access = JsonProperty.Access.WRITE_ONLY)
     String refreshToken();
 
     @JsonProperty("scope")
     String scope();
 
     @Nullable
-    @JsonProperty("clientId")
+    @JsonProperty("client_id")
     String clientId();
 
     @Nullable
     @JsonProperty("aud")
     String aud();
+
+    @Nullable
+    @JsonProperty("status")
+    AccessTokenStatus status();
 
 }
