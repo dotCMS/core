@@ -3,6 +3,7 @@
 
 :host {
     display: inline-flex;
+    color: $dark;
 
     &[tiny] i {
         font-size: $md-icon-size-tiny;
