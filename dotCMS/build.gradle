@@ -41,14 +41,13 @@ sonarqube {
 }
 
 tasks.named('sonarqube').configure {
-    dependsOn jacocoTestReport
+    dependsOn test,integrationTest,jacocoTestReport
 }
 
 jacocoTestReport {
     reports {
         xml.enabled true
     }
-    dependsOn test
 }
 
 repositories {
