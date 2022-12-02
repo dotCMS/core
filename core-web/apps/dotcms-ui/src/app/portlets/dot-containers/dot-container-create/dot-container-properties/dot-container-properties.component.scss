@@ -15,6 +15,7 @@
     flex-direction: row;
     gap: $spacing-2;
     padding: $spacing-2 0;
+    align-items: center;
 
     ::ng-deep .p-inplace.p-component {
         display: flex;
@@ -33,14 +34,6 @@
     font-size: $font-size-large;
 }
 
-.dot-container-properties__title-input {
-    width: 20rem;
-}
-
-.dot-container-properties__description-input {
-    width: 20rem;
-}
-
 .dot-container-properties__max-contents-input {
     width: 7rem;
     margin-right: $spacing-2;
@@ -56,7 +49,6 @@
 .dot-container-properties__code-loop-container {
     background: $white;
     border: 1px solid $input-border-color;
-    padding-bottom: 4rem;
 }
 
 :host ::ng-deep {
