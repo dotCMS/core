@@ -41,7 +41,7 @@ sonarqube {
 }
 
 tasks.named('sonarqube').configure {
-    dependsOn test,integrationTest,jacocoTestReport
+    dependsOn 'test','integrationTest','jacocoTestReport'
 }
 
 jacocoTestReport {
