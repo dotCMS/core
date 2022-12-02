@@ -1,0 +1,44 @@
+@use "variables" as *;
+
+::ng-deep {
+    .p-card .p-card-header {
+        padding: 0;
+    }
+
+    .p-card-content {
+        display: flex;
+    }
+
+    .dot-favorite-page-highlight ::ng-deep i {
+        color: $brand-primary;
+    }
+
+    .dot-pages-favorite-card-content__image {
+        background-position: center;
+        background-repeat: no-repeat;
+        background-size: contain;
+        padding-bottom: 75.25%;
+        display: block;
+
+        img {
+            height: 0;
+            position: absolute;
+            width: 0;
+        }
+    }
+
+    .dot-pages-favorite-card-content__container {
+        margin-left: $spacing-1;
+        min-width: 0;
+    }
+
+    .dot-pages-favorite-card-content__title {
+        font-weight: bold;
+    }
+
+    .dot-pages-favorite-card-content__subtitle {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+}
