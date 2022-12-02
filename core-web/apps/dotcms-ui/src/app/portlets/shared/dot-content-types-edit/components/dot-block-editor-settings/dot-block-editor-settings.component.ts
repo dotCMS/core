@@ -168,7 +168,7 @@ export class DotBlockEditorSettingsComponent implements OnInit, OnDestroy, OnCha
             accept: {
                 action: () => this.saveSettings(),
                 label: this.dotMessageService.get('contenttypes.dropzone.action.save'),
-                disabled: this.form.invalid
+                disabled: this.form.invalid || this.form.pristine
             },
             cancel: {
                 label: this.dotMessageService.get('contenttypes.dropzone.action.cancel')
