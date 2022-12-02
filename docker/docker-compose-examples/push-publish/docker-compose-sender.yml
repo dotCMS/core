@@ -33,7 +33,7 @@ services:
       - opensearch-net_sender
 
   dotcms-sender:
-    image: dotcms/dotcms:22.11_16e848e4_SNAPSHOT
+    image: dotcms/dotcms:latest
     environment:
         CMS_JAVA_OPTS: '-Xmx1g '
         LANG: 'C.UTF-8'
@@ -48,9 +48,9 @@ services:
     depends_on:
       - opensearch-sender
       - db-sender
-    #volumes:
+    volumes:
       #- {local_data_path}:/data/shared
-      #- ./license.zip:/data/shared/assets/license.zip
+      - {license_local_path}/license.zip:/data/shared/assets/license.zip
     networks:
       - db_net_sender
       - opensearch-net_sender
