@@ -33,6 +33,12 @@ export const shouldShowBubbleMenu = ({ editor, state, from, to }: ShouldShowProp
     // Doubleclick an empty paragraph returns a node size of 2.
     // So we check also for an empty text size.
     const isEmptyTextBlock = !doc.textBetween(from, to).length && isTextSelection(state.selection);
+    const isTextInsideTable = node?.type.name === 'text' && parentNode?.type.name === 'table';
+
+    // Is a text node inside the table
+    if (isTextInsideTable && !isEmptyTextBlock) {
+        return true;
+    }
 
     // If it's empty or the parent and node itself is part of the hideBubbleMenuOn , it will not open.
     if (
@@ -216,6 +222,59 @@ const imageOptions: Array<BubbleMenuItem> = [
     }
 ];
 
+/* Table text node Items*/
+const tableOptions: Array<BubbleMenuItem> = [
+    {
+        icon: 'format_bold',
+        markAction: 'bold',
+        active: false
+    },
+    {
+        icon: 'format_italic',
+        markAction: 'italic',
+        active: false
+    },
+    {
+        icon: 'strikethrough_s',
+        markAction: 'strike',
+        active: false,
+        divider: true
+    },
+    {
+        icon: 'format_align_left',
+        markAction: 'left',
+        active: false
+    },
+    {
+        icon: 'format_align_center',
+        markAction: 'center',
+        active: false
+    },
+    {
+        icon: 'format_align_right',
+        markAction: 'right',
+        active: false,
+        divider: true
+    },
+    {
+        icon: 'link',
+        markAction: 'link',
+        active: false,
+        divider: true
+    },
+    {
+        icon: 'format_clear',
+        markAction: 'clearAll',
+        active: false,
+        divider: true
+    },
+    {
+        icon: 'delete',
+        markAction: 'deleteNode',
+        active: false
+    }
+];
+
 const dotContentOptions: Array<BubbleMenuItem> = [
     {
         icon: 'delete',
@@ -231,6 +290,9 @@ export const getBubbleMenuItem = (nodeType: string = ''): Array<BubbleMenuItem> 
 
         case 'dotContent':
             return dotContentOptions;
+
+        case 'table':
+            return tableOptions;
 
         default:
             return bubbleMenuDefaultItems;
