@@ -3,6 +3,7 @@ package com.dotcms.rendering.velocity.viewtools;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+import com.dotcms.IntegrationTestBase;
 import com.dotcms.datagen.ContentletDataGen;
 import com.dotcms.datagen.FileAssetDataGen;
 import com.dotcms.datagen.FolderDataGen;
@@ -26,14 +27,18 @@ import org.apache.velocity.tools.view.context.ViewContext;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
-public class XsltToolTest {
+public class XsltToolTest extends IntegrationTestBase {
 
     static final String ENABLE_SCRIPTING = "ENABLE_SCRIPTING";
+
+    static Host site;
 
     @BeforeClass
     public static void prepare() throws Exception{
         //Setting web app environment
         IntegrationTestInitService.getInstance().init();
+        APILocator.getHostAPI().findDefaultHost(APILocator.systemUser(), false);
+        site = new SiteDataGen().nextPersisted();
     }
 
 
@@ -43,11 +48,10 @@ public class XsltToolTest {
      * @throws Exception
      */
     @Test
-    public void transform() throws Exception {
+    public void TestTransform() throws Exception {
 
         final File binary = new File(Objects.requireNonNull(
                 Thread.currentThread().getContextClassLoader().getResource("xml/demo-stylesheet.xsl")).getFile());
-        final Host site = new SiteDataGen().nextPersisted();
         final Folder folder = new FolderDataGen().name("test").site(site).nextPersisted();
         final Contentlet stylesheetAsset = new FileAssetDataGen(folder, binary).nextPersisted();
         ContentletDataGen.publish(stylesheetAsset);

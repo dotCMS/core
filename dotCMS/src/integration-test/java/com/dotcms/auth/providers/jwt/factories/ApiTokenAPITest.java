@@ -7,6 +7,7 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
+import com.dotcms.IntegrationTestBase;
 import com.dotcms.auth.providers.jwt.beans.ApiToken;
 import com.dotcms.auth.providers.jwt.beans.JWToken;
 import com.dotcms.datagen.CompanyDataGen;
@@ -33,7 +34,7 @@ import java.util.NoSuchElementException;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
-public class ApiTokenAPITest {
+public class ApiTokenAPITest extends IntegrationTestBase {
 
     static ApiTokenAPI apiTokenAPI;
 
