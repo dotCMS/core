@@ -1,6 +1,6 @@
 import { ComponentRef, ViewContainerRef } from '@angular/core';
 import { Subject } from 'rxjs';
-import { take, takeUntil } from 'rxjs/operators';
+import { filter, take, takeUntil } from 'rxjs/operators';
 
 import { PluginKey } from 'prosemirror-state';
 import { Editor, Extension, Range } from '@tiptap/core';
@@ -136,7 +136,10 @@ function execCommand({
                     ],
                     { customClass: 'dotTableForm' }
                 )
-                .pipe(take(1))
+                .pipe(
+                    take(1),
+                    filter((value) => !!value)
+                )
                 .subscribe((value) => {
                     requestAnimationFrame(() => {
                         editor
