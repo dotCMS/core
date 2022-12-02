@@ -1,104 +1,89 @@
 package com.dotmarketing.business;
 
+import java.io.Serializable;
+import java.util.Map;
 import com.dotcms.enterprise.LicenseUtil;
 import com.dotcms.enterprise.license.LicenseLevel;
-import com.dotmarketing.business.CacheLocator;
-import com.dotmarketing.business.DotCacheAdministrator;
-import com.dotmarketing.business.DotCacheException;
-import com.dotmarketing.util.Logger;
+import com.google.common.annotations.VisibleForTesting;
 
 public class BlockDirectiveCacheImpl extends BlockDirectiveCache {
 
-	@Override
-	 public void add(String key, String value, int ttl) {
-		if(key ==null || value == null){
-			return;
-		}
-		BlockDirectiveCacheObject cto = new BlockDirectiveCacheObject(value, ttl);
-		cache.put(key, cto, group);
 
-	}
-	
-	private boolean canCache;
-	private DotCacheAdministrator cache;
 
-	private String group = "BlockDirectiveCache";
-	private String secondaryGroup = "BlockDirectiveHTMLPageCache";
+    private boolean canCache;
+    private final DotCacheAdministrator cache;
 
-	// regions name for the cache
-	private String[] groupNames = { group, secondaryGroup };
+    private final String group = "BlockDirectiveCache";
+    private final String secondaryGroup = "BlockDirectiveHTMLPageCache";
 
-	public BlockDirectiveCacheImpl() {
-		cache = CacheLocator.getCacheAdministrator();
-		//delete everything on startup
-		//clearCache();
-		canCache = LicenseUtil.getLevel() >= LicenseLevel.COMMUNITY.level;
-		
-		
-	}
+    // regions name for the cache
+    private final String[] groupNames = {
+            group,
+            secondaryGroup};
 
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see com.dotmarketing.business.PermissionCache#clearCache()
-	 */
-	 public void clearCache() {
-		// clear the cache
-		cache.flushGroup(group);
-		cache.flushGroup(secondaryGroup);
-	}
+    public BlockDirectiveCacheImpl() {
+        this(CacheLocator.getCacheAdministrator(), (LicenseUtil.getLevel() >= LicenseLevel.COMMUNITY.level));
 
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see com.dotmarketing.business.PermissionCache#remove(java.lang.String)
-	 */
-	 public void remove(String key) {
-		try {
-			cache.remove(key, group);
-		} catch (Exception e) {
-			Logger.debug(this, "Cache not able to be removed", e);
-		}
+    }
 
-	}
+    @VisibleForTesting
+    public BlockDirectiveCacheImpl(DotCacheAdministrator cache, boolean canCache) {
+        this.cache = cache;
+        this.canCache = canCache;
+    }
 
-	public String[] getGroups() {
-		return groupNames;
-	}
+    public void clearCache() {
+        // clear the cache
+        cache.flushGroup(group);
+        cache.flushGroup(secondaryGroup);
+    }
 
-	public String getPrimaryGroup() {
-		return group;
-	}
+    @Override
+    public void add(String key, Map<String, Serializable> value, int ttl) {
+        if (key == null || value == null || !canCache) {
+            return;
+        }
+        BlockDirectiveCacheObject cto = new BlockDirectiveCacheObject(value, ttl);
+        cache.put(key, cto, group);
 
-	@Override
-	 public String get(String key, int ttl) {
-		if(!canCache)return null;
-		try {
-			BlockDirectiveCacheObject cto = (BlockDirectiveCacheObject) cache.get(key, group);
-			if (cto == null) {
-				return null;
-			}
-			if (cto.getCreated() + (ttl * 1000) > System.currentTimeMillis()) {
-				return cto.getValue();
-			} else {
-				remove(key);
-			}
+    }
+    
 
-		} catch (DotCacheException e) {
-			Logger.error(this.getClass(), "cache entry :" + key + " not found");
-		}
-		return null;
-	}
-	@Override
-	 public BlockDirectiveCacheObject get(String key) {
-		if(!canCache)return null;
-		try {
-			return (BlockDirectiveCacheObject) cache.get(key, group);
-		
-		} catch (DotCacheException e) {
-			Logger.error(this.getClass(), "cache entry :" + key + " not found");
-			return null;
-		}
-	}
-	
+    
+    public void remove(String key) {
+        cache.remove(key, group);
+    }
+
+    public String[] getGroups() {
+        return groupNames;
+    }
+
+    public String getPrimaryGroup() {
+        return group;
+    }
+
+    private static final Map<String, Serializable> EMPTY_MAP = Map.of();
+
+    @Override
+    public Map<String, Serializable> get(String key) {
+        if (!canCache) {
+            return EMPTY_MAP;
+        }
+
+        BlockDirectiveCacheObject cto = (BlockDirectiveCacheObject) cache.getNoThrow(key, group);
+        if (cto == null) {
+            return EMPTY_MAP;
+        }
+
+        if ((cto.getTtl() * 1000) +  cto.getCreated() > System.currentTimeMillis()) {
+            return cto.getMap();
+        }
+
+        cache.removeLocalOnly(key, group, true);
+        return EMPTY_MAP;
+    }
+    
+
+
+
 }

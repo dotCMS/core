@@ -152,15 +152,16 @@ public class VelocityLiveMode extends VelocityModeHandler {
             final Context context = VelocityUtil.getInstance().getContext(request, response);
 
             final PageCacheParameters cacheParameters =
-                    new PageCacheParameters(userId, 
-                                    language, 
-                                    urlMap, 
-                                    queryString, 
+                    new PageCacheParameters(userId,
+                                    language,
+                                    urlMap,
+                                    queryString,
                                     persona,
-                                    originalUrl, 
-                                    htmlPage.getInode(), 
+                                    originalUrl,
+                                    htmlPage.getInode(),
                                     String.valueOf(htmlPage.getModDate()),
-                                    vanityUrl
+                                    vanityUrl,
+                                    WebAPILocator.getVariantWebAPI().currentVariantId()
                                     );
             
             final boolean shouldCache = VelocityUtil.shouldPageCache(request, htmlPage);

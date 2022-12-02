@@ -7,7 +7,7 @@ import { ListboxModule } from 'primeng/listbox';
 import { OrderListModule } from 'primeng/orderlist';
 import { MenuModule } from 'primeng/menu';
 
-import { debounceTime, delay } from 'rxjs/operators';
+import { debounceTime, delay, tap } from 'rxjs/operators';
 import { BubbleLinkFormComponent } from '@dotcms/block-editor';
 
 import {
@@ -20,7 +20,8 @@ import {
     LoaderComponent,
     DotImageService,
     DotLanguageService,
-    DotBlockEditorComponent
+    DotBlockEditorComponent,
+    FileStatus
 } from '@dotcms/block-editor';
 
 export default {
@@ -219,16 +220,48 @@ export const primary = () => ({
             {
                 provide: DotImageService,
                 useValue: {
-                    publishContent() {
+                    publishContent({
+                        data: _data,
+                        statusCallback = (_status) => {
+                            /* */
+                        }
+                    }) {
+                        statusCallback(FileStatus.IMPORT);
+
                         return of([
                             {
                                 cd769844de530f7b5d3434b1b5cfdd62: {
                                     asset: 'https://media.istockphoto.com/vectors/costa-rica-vector-id652225694?s=170667a',
                                     mimeType: 'image/png',
-                                    name: 'costarica.png'
+                                    name: 'costarica.png',
+                                    icon: 'inventory_2',
+                                    url: '/inventory/product-in-the-store',
+                                    path: '/inventory/product-in-the-store',
+                                    variable: 'inventory',
+                                    title: 'Cras ornare tristique elit.',
+                                    inode: '1213',
+                                    image: 'https://images.unsplash.com/photo-1433883669848-fa8a7ce070b2?ixlib=rb-1.2.1&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=2988&q=80',
+                                    languageId: 2,
+                                    modDate: '2021-10-20 14:56:53.052',
+                                    baseType: 'CONTENT',
+                                    archived: false,
+                                    working: true,
+                                    locked: false,
+                                    live: true,
+                                    identifier: 'f1d378c9-b784-45d0-a43c-9790af678f13',
+                                    titleImage: 'image',
+                                    hasLiveVersion: true,
+                                    folder: 'SYSTEM_FOLDER',
+                                    hasTitleImage: true,
+                                    __icon__: 'contentIcon',
+                                    contentTypeIcon: 'file_copy',
+                                    contentType: 'Blog'
                                 }
                             }
-                        ]).pipe(delay(800));
+                        ]).pipe(
+                            delay(800),
+                            tap(() => statusCallback(FileStatus.IMPORT))
+                        );
                     }
                 }
             },

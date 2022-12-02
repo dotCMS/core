@@ -32,9 +32,7 @@ class DotMessageMockPipe implements PipeTransform {
 }
 
 @Component({
-    template: `<dot-form-dialog
-        ><form>Hello World</form
-    ></dot-form-dialog>`
+    template: `<dot-form-dialog><form>Hello World</form></dot-form-dialog>`
 })
 class TestHostComponent {}
 

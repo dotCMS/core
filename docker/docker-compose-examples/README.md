@@ -16,7 +16,7 @@ The following examples are provided:
 - **with-oracle:** basic dotcms instance running with oracle database
 - **with-redis:** dotcms cluster with redis cache and pub/sub provider
 
+The following scripts are provided:
 
-
-
-
+- **dotcms-get-demo-site-starter-urls.sh:** prints demo site starter URL for each dotCMS version
+- **dotcms_properties_to_env_vars.py:** prints ENV variables based on dotCMS properties in a "binary" install - helpful for upgrades

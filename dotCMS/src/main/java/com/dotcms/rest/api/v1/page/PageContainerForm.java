@@ -1,22 +1,23 @@
 package com.dotcms.rest.api.v1.page;
 
+import com.dotcms.rest.exception.BadRequestException;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.DeserializationContext;
 import com.fasterxml.jackson.databind.JsonDeserializer;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.google.common.collect.ImmutableList;
-import com.dotcms.rest.exception.BadRequestException;
 
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
-
 /**
- * {@link PageResource#addContent(HttpServletRequest, String, PageContainerForm)}'s form
+ * This class contains all the Contentlets that make up an HTML Page. It provides the list of Containers in it, and the
+ * sub-list of Contentlets in each of them.
+ *
+ * @author Freddy Rodriguez
+ * @since Jan 11th, 2018
  */
 @JsonDeserialize(using = PageContainerForm.ContainerDeserialize.class)
 public class PageContainerForm {
@@ -25,7 +26,6 @@ public class PageContainerForm {
     private final String requestJson;
 
     public PageContainerForm(final List<ContainerEntry> entries, final String requestJson) {
-
         this.entries     = ImmutableList.copyOf(entries);
         this.requestJson = requestJson;
     }
@@ -38,6 +38,9 @@ public class PageContainerForm {
         return requestJson;
     }
 
+    /**
+     * This is a custom JSON deserializer for the data stored in the {@link PageContainerForm} class.
+     */
     static final class ContainerDeserialize extends JsonDeserializer<PageContainerForm> {
 
         private static final String CONTAINER_ID_ATTRIBUTE_NAME = "identifier";
@@ -80,6 +83,10 @@ public class PageContainerForm {
         }
     }
 
+    /**
+     * Holds the data received from the UI or the REST Endpoint related to the Contentlets that are referenced in a
+     * Container.
+     */
     static final class ContainerEntry {
 
         private final String personaTag;
@@ -120,5 +127,7 @@ public class PageContainerForm {
         public String getContainerUUID() {
             return uuid;
         }
+
     }
+
 }

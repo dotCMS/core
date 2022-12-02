@@ -302,8 +302,9 @@
 		<scope>request</scope>
 		<class>com.dotcms.rendering.velocity.viewtools.MarkdownTool</class>
 	</tool>
-	<!-- Dotmarketing View Tools End -->
-	<!-- Don't ever delete the following comment tags, it will break the plugin system -->
-	<!-- BEGIN PLUGINS -->
- 	<!-- END PLUGINS -->
+    <tool>
+        <key>dotcache</key>
+        <scope>application</scope>
+        <class>com.dotcms.rendering.velocity.viewtools.dotcache.DotCacheTool</class>
+    </tool>
 </toolbox>

@@ -703,7 +703,12 @@ public class VersionableAPIImpl implements VersionableAPI {
 	  return versionableFactory.findAllContentletVersionInfos(identifier);
 	}
 
-
+    @Override
+    @CloseDBIfOpened
+    public List<ContentletVersionInfo> findContentletVersionInfos(final String identifier, final String variantName)
+            throws DotDataException, DotStateException {
+        return versionableFactory.findAllContentletVersionInfos(identifier, variantName);
+    }
 	
 	
 	@WrapInTransaction

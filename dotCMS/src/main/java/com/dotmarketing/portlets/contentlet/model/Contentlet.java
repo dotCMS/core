@@ -125,6 +125,7 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
   public static final String URL_MAP_FOR_CONTENT_KEY = "URL_MAP_FOR_CONTENT";
 
   public static final String CONTENTLET_AS_JSON = "contentletAsJson";
+  public static final String ON_NUMBER_OF_PAGES = "onNumberOfPages";
 
   public static final String DONT_VALIDATE_ME = "_dont_validate_me";
   public static final String DISABLE_WORKFLOW = "__disable_workflow__";
@@ -160,6 +161,8 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
   public static final String RELATIONSHIP_KEY = "__##relationships##__";
   public static final String CONTENT_TYPE_ICON = "contentTypeIcon";
   public static final String HAS_LIVE_VERSION = "hasLiveVersion";
+
+  public static final String SKIP_RELATIONSHIPS_VALIDATION = "__skipRelationshipValidation__";
 
   private transient ContentType contentType;
   protected Map<String, Object> map;
@@ -1467,20 +1470,6 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 		return this.getStringProperty(Contentlet.WORKFLOW_ACTION_KEY);
 	}
 
-	/**
-	 * If at least one tag is set, returns true, otherwise false
-	 * @return boolean
-	 * @throws DotDataException
-	 */
-    @JsonIgnore
-	public boolean hasTags () throws DotDataException {
-
-		final List<TagInode> foundTagInodes = APILocator.getTagAPI().getTagInodesByInode(this.getInode());
-		return foundTagInodes != null && !foundTagInodes.isEmpty() && foundTagInodes.stream()
-				.anyMatch(foundTagInode -> isSet(
-						this.get(foundTagInode.getFieldVarName())));
-	}
-
     /**
      * Set the tags to the contentlet
      * @throws DotDataException
@@ -1758,13 +1747,6 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 		this.contentletAPI = contentletAPI;
 	}
 
-	private UserAPI getUserAPI() {
-		if(userAPI==null) {
-			userAPI = APILocator.getUserAPI();
-		}
-		return userAPI;
-	}
-
 	@VisibleForTesting
 	protected void setUserAPI(UserAPI userAPI) {
 		this.userAPI = userAPI;
@@ -1930,4 +1912,5 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 		return null != this.getMap().get(Contentlet.WORKFLOW_IN_PROGRESS) &&
 				Boolean.TRUE.equals(this.getMap().get(Contentlet.WORKFLOW_IN_PROGRESS));
 	}
+
 }

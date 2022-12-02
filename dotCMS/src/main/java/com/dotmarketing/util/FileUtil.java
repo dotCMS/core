@@ -1,10 +1,13 @@
 package com.dotmarketing.util;
 
 import com.dotcms.util.CloseUtils;
+import com.dotcms.util.DotPreconditions;
 import com.liferay.util.Encryptor;
 import com.liferay.util.HashBuilder;
+import com.liferay.util.StringPool;
 import io.vavr.Lazy;
 import io.vavr.control.Try;
+import java.net.URL;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.commons.lang3.StringUtils;
 
@@ -356,6 +359,20 @@ public class FileUtil {
 		} catch (final IOException e) {
 			throw e;
 		}
+	}
+
+	/**
+	 * Get the content of a File from the resource folder
+	 * @param path relative path from the resource folder
+	 * @return
+	 * @throws IOException
+	 */
+	public static String getFileContentFromResourceContext(final String path) throws IOException {
+		DotPreconditions.checkArgument(!path.startsWith(StringPool.FORWARD_SLASH), "Path must be relative");
+
+		final ClassLoader classLoader = FileUtil.class.getClassLoader();
+		final URL initFileURL = classLoader.getResource(path);
+		return new String (com.liferay.util.FileUtil.getBytes(new File(initFileURL.getPath())));
 	}
 
 }

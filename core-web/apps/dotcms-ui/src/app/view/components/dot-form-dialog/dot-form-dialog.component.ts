@@ -1,4 +1,12 @@
-import { Component, ElementRef, EventEmitter, Input, OnDestroy, OnInit, Output } from '@angular/core';
+import {
+    Component,
+    ElementRef,
+    EventEmitter,
+    Input,
+    OnDestroy,
+    OnInit,
+    Output
+} from '@angular/core';
 import { DynamicDialogRef } from 'primeng/dynamicdialog';
 import { fromEvent, Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
@@ -21,8 +29,7 @@ export class DotFormDialogComponent implements OnInit, OnDestroy {
     @Output()
     cancel: EventEmitter<MouseEvent> = new EventEmitter(null);
 
-    constructor(private dynamicDialog: DynamicDialogRef,
-        private el: ElementRef) {}
+    constructor(private dynamicDialog: DynamicDialogRef, private el: ElementRef) {}
 
     ngOnInit(): void {
         const content = document.querySelector('p-dynamicdialog .p-dialog-content');
