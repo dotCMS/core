@@ -1,0 +1,47 @@
+<div class="container">
+    <p-tabView>
+        <p-tabPanel header="dotCMS" leftIcon="pi pi-images">
+            <div class="wrapper">
+                <form class="search-box" [formGroup]="form">
+                    <input class="search" placeholder="Search" formControlName="search" />
+                    <span class="material-icons">search</span>
+                </form>
+
+                <!-- <p-virtualScroller [value]="contentlets" scrollHeight="500px" [itemSize]="100">
+                    <ng-template pTemplate="item" let-contentlet>
+                        <div class="card">
+                            <div>
+                                <img
+                                    [src]="'https://demo.dotcms.com' + contentlet.fileAsset"
+                                />
+                            </div>
+                            <div class="body">
+                                <h2>{{ contentlet?.fileName || contentlet.title }}</h2>
+                                <div class="footer">
+                                    <span>en_US</span>
+                                    <dot-state-icon [state]="state" size="16px"></dot-state-icon>
+                                </div>
+                            </div>
+                        </div>
+                    </ng-template>
+                </p-virtualScroller> -->
+                <div class="card-wrapper">
+                    <div class="card" *ngFor="let contentlet of contentlets">
+                        <div>
+                            <img [src]="'https://demo.dotcms.com' + contentlet.fileAsset" />
+                        </div>
+                        <div class="body">
+                            <h2>{{ contentlet?.fileName || contentlet.title }}</h2>
+                            <div class="footer">
+                                <span>en_US</span>
+                                <dot-state-icon [state]="state" size="16px"></dot-state-icon>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </p-tabPanel>
+        <p-tabPanel header="Upload" leftIcon="pi pi-upload"> Content 2 </p-tabPanel>
+        <p-tabPanel header="Image URL" leftIcon="pi pi-link"> Content 3 </p-tabPanel>
+    </p-tabView>
+</div>

@@ -10,6 +10,8 @@ import { InputTextModule } from 'primeng/inputtext';
 import { CardModule } from 'primeng/card';
 import { OrderListModule } from 'primeng/orderlist';
 import { ListboxModule } from 'primeng/listbox';
+import { TabViewModule } from 'primeng/tabview';
+import { VirtualScrollerModule } from 'primeng/virtualscroller';
 
 // DotCMS JS
 import { LoggerService } from '@dotcms/dotcms-js';
@@ -42,6 +44,7 @@ import { BubbleFormComponent } from './extensions/bubble-form/bubble-form.compon
 import { DotBlockEditorComponent } from './components/dot-block-editor/dot-block-editor.component';
 import { DotEditorCountBarComponent } from './components/dot-editor-count-bar/dot-editor-count-bar.component';
 import { FloatingButtonComponent } from './extensions/floating-button/floating-button.component';
+import { ImageFormComponent } from './extensions/image-form/image-form.component';
 
 @NgModule({
     imports: [
@@ -55,7 +58,9 @@ import { FloatingButtonComponent } from './extensions/floating-button/floating-b
         InputTextModule,
         SharedModule,
         OrderListModule,
-        ListboxModule
+        ListboxModule,
+        TabViewModule,
+        VirtualScrollerModule
     ],
     declarations: [
         EditorDirective,
@@ -71,7 +76,8 @@ import { FloatingButtonComponent } from './extensions/floating-button/floating-b
         SuggestionPageComponent,
         DotBlockEditorComponent,
         DotEditorCountBarComponent,
-        FloatingButtonComponent
+        FloatingButtonComponent,
+        ImageFormComponent
     ],
     providers: [DotImageService, LoggerService, StringUtils],
     exports: [
