@@ -1,0 +1,32 @@
+@use "variables" as *;
+
+:host {
+    color: $gray-dark;
+
+    .wrapper {
+        padding: $spacing-6;
+    }
+
+    .form-control {
+        align-items: flex-start;
+        display: flex;
+        flex-direction: column;
+        justify-content: flex-start;
+        margin-bottom: $spacing-4;
+        width: 100%;
+
+        label {
+            display: inline-block;
+            margin-bottom: $spacing-2;
+        }
+
+        .required:after {
+            content: " \002A";
+            color: $error;
+        }
+    }
+
+    p-multiselect {
+        width: 100%;
+    }
+}

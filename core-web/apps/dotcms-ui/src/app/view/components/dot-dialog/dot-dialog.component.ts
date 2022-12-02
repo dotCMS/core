@@ -134,9 +134,9 @@ export class DotDialogComponent implements OnChanges {
      */
     onContentScroll(event: { target: HTMLInputElement }) {
         /*
-            Absolute positioned overlays panels (in dropdowns, menus, etc...) inside the
-            dialog content needs to be append to the body, this click is to hide them on
-            scroll because they mantain their position relative to the body.
+            Absolute positioned overlay panels (in dropdowns, menus, etc...) inside the
+            dialog content need to be appended to the body, this click is to hide them on
+            scroll because they maintain their position relative to the body [appendTo="body"].
         */
         event.target.click();
 
