@@ -42,7 +42,7 @@ public interface ImageFilterAPI {
      * @param parameters
      * @return
      */
-    Map<String, Class> resolveFilters(Map<String, String[]> parameters);
+    Map<String, Class<ImageFilter>> resolveFilters(Map<String, String[]> parameters);
 
 
 

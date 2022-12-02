@@ -86,6 +86,7 @@ import { mockDotLanguage } from '@dotcms/app/test/dot-language.mock';
 import { mockDotRenderedPageState } from '@dotcms/app/test/dot-rendered-page-state.mock';
 import { DotWorkflowActionsFireService } from '@dotcms/app/api/services/dot-workflow-actions-fire/dot-workflow-actions-fire.service';
 import { DialogService } from 'primeng/dynamicdialog';
+import { DotSessionStorageService } from '@shared/services/dot-session-storage.service';
 
 @Component({
     selector: 'dot-global-message',
@@ -229,6 +230,7 @@ describe('DotEditContentComponent', () => {
                 ])
             ],
             providers: [
+                DotSessionStorageService,
                 DialogService,
                 DotContentletLockerService,
                 DotPageRenderService,

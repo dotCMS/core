@@ -18,7 +18,7 @@ import { DotEventsSocketURL } from '@dotcms/dotcms-js';
 import { dotEventSocketURLFactory } from '@tests/dot-test-bed';
 import { StringUtils } from '@dotcms/dotcms-js';
 import { DotHttpErrorManagerService } from '@services/dot-http-error-manager/dot-http-error-manager.service';
-import { ConfirmationService, SharedModule } from 'primeng/api';
+import { ConfirmationService, SelectItem, SharedModule } from 'primeng/api';
 import { LoginService } from '@dotcms/dotcms-js';
 import { DotcmsEventsService } from '@dotcms/dotcms-js';
 import { DotEventsSocket } from '@dotcms/dotcms-js';
@@ -36,7 +36,7 @@ import { DotActionMenuButtonModule } from '@components/_common/dot-action-menu-b
 import { DotAddToBundleModule } from '@components/_common/dot-add-to-bundle';
 import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
-import { CUSTOM_ELEMENTS_SCHEMA } from '@angular/core';
+import { Component, CUSTOM_ELEMENTS_SCHEMA, EventEmitter, Input, Output } from '@angular/core';
 import { By } from '@angular/platform-browser';
 import { CONTAINER_SOURCE, DotContainer } from '@models/container/dot-container.model';
 import { DotContainersService } from '@services/dot-containers/dot-containers.service';
@@ -163,6 +163,15 @@ class ActivatedRouteMock {
     }
 }
 
+@Component({
+    selector: 'dot-base-type-selector',
+    template: ''
+})
+class MockDotBaseTypeSelectorComponent {
+    @Input() value: SelectItem;
+    @Output() selected = new EventEmitter<string>();
+}
+
 describe('ContainerListComponent', () => {
     let fixture: ComponentFixture<ContainerListComponent>;
     let comp: ContainerListComponent;
@@ -174,12 +183,13 @@ describe('ContainerListComponent', () => {
     let unPublishContainer: DotActionMenuButtonComponent;
     let publishContainer: DotActionMenuButtonComponent;
     let archivedContainer: DotActionMenuButtonComponent;
+    let baseTypesSelector: MockDotBaseTypeSelectorComponent;
 
     const messageServiceMock = new MockDotMessageService(messages);
 
     beforeEach(async () => {
         await TestBed.configureTestingModule({
-            declarations: [ContainerListComponent],
+            declarations: [ContainerListComponent, MockDotBaseTypeSelectorComponent],
             providers: [
                 { provide: DotMessageService, useValue: messageServiceMock },
                 {
@@ -300,6 +310,19 @@ describe('ContainerListComponent', () => {
             ];
             expect(archivedContainer.actions).toEqual(actions);
         });
+    });
+
+    it('should emit changes in base types selector', () => {
+        fixture.detectChanges();
+        baseTypesSelector = fixture.debugElement.query(
+            By.css('dot-base-type-selector')
+        ).componentInstance;
+        spyOn(comp.listing.paginatorService, 'setExtraParams');
+        spyOn(comp.listing, 'loadFirstPage');
+        baseTypesSelector.selected.emit('test');
+
+        expect(comp.listing.paginatorService.setExtraParams).toHaveBeenCalledWith('type', 'test');
+        expect(comp.listing.loadFirstPage).toHaveBeenCalledWith();
     });
 
     function setBasicOptions() {
