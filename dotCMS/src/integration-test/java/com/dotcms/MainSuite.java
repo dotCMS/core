@@ -650,9 +650,8 @@ import org.junit.runners.Suite.SuiteClasses;
         VisitorsCurrentURLConditionletTest.class,
         VisitorsGeolocationConditionletTest.class,
         ManifestUtilTest.class,
-        ZipUtilTest.class
-
-       // ApiTokenAPITest.class,
+        ZipUtilTest.class,
+        ApiTokenAPITest.class,
        // JsonWebTokenUtilsIntegrationTest.class
 
 })
