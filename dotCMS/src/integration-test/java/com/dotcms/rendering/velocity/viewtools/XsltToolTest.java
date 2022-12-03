@@ -50,7 +50,7 @@ public class XsltToolTest extends IntegrationTestBase {
         final ContentType contentType = APILocator.getContentTypeAPI(APILocator.systemUser())
                 .find(Host.HOST_VELOCITY_VAR_NAME);
 
-        System.out.println(" CT :::  "+ contentType);
+        Assert.assertNotNull(contentType);
 
         final Host site = new SiteDataGen().nextPersisted();
 
