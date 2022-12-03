@@ -4,6 +4,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import com.dotcms.IntegrationTestBase;
+import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.datagen.ContentletDataGen;
 import com.dotcms.datagen.FileAssetDataGen;
 import com.dotcms.datagen.FolderDataGen;
@@ -31,14 +32,10 @@ public class XsltToolTest extends IntegrationTestBase {
 
     static final String ENABLE_SCRIPTING = "ENABLE_SCRIPTING";
 
-    static Host site;
-
     @BeforeClass
     public static void prepare() throws Exception{
         //Setting web app environment
         IntegrationTestInitService.getInstance().init();
-        APILocator.getHostAPI().findDefaultHost(APILocator.systemUser(), false);
-        site = new SiteDataGen().nextPersisted();
     }
 
 
@@ -49,6 +46,13 @@ public class XsltToolTest extends IntegrationTestBase {
      */
     @Test
     public void TestTransform() throws Exception {
+
+        final ContentType contentType = APILocator.getContentTypeAPI(APILocator.systemUser())
+                .find(Host.HOST_VELOCITY_VAR_NAME);
+
+        System.out.println(" CT :::  "+ contentType);
+
+        final Host site = new SiteDataGen().nextPersisted();
 
         final File binary = new File(Objects.requireNonNull(
                 Thread.currentThread().getContextClassLoader().getResource("xml/demo-stylesheet.xsl")).getFile());

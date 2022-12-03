@@ -238,6 +238,7 @@ import org.junit.runners.Suite.SuiteClasses;
         StaticPublisherIntegrationTest.class,
         com.dotcms.publishing.PublisherAPIImplTest.class,
         SiteSearchJobImplTest.class,
+        XsltToolTest.class,
         PushPublishBundleGeneratorTest.class,
         LegacyShortyIdApiTest.class,
         RuleBundlerTest.class,
@@ -649,10 +650,10 @@ import org.junit.runners.Suite.SuiteClasses;
         VisitorsCurrentURLConditionletTest.class,
         VisitorsGeolocationConditionletTest.class,
         ManifestUtilTest.class,
-        ZipUtilTest.class,
-        XsltToolTest.class,
-        ApiTokenAPITest.class,
-        JsonWebTokenUtilsIntegrationTest.class
+        ZipUtilTest.class
+
+       // ApiTokenAPITest.class,
+       // JsonWebTokenUtilsIntegrationTest.class
 
 })
 public class MainSuite {
