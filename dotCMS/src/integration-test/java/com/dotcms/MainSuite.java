@@ -652,7 +652,7 @@ import org.junit.runners.Suite.SuiteClasses;
         ZipUtilTest.class,
         XsltToolTest.class,
         ApiTokenAPITest.class,
-        JsonWebTokenUtilsIntegrationTest.class,
+        JsonWebTokenUtilsIntegrationTest.class
 
 })
 public class MainSuite {
