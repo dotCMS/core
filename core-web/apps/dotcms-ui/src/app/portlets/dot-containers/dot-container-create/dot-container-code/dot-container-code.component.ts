@@ -147,6 +147,7 @@ export class DotContentEditorComponent implements ControlValueAccessor, OnInit {
      */
     monacoInit(monacoEditor) {
         this.monacoEditors[monacoEditor.name] = monacoEditor.editor;
+        this.monacoEditors[monacoEditor.name].focus();
     }
 
     private init(): void {
@@ -171,6 +172,8 @@ export class DotContentEditorComponent implements ControlValueAccessor, OnInit {
                         this.containerContents.push(
                             new FormControl<DotContainerContent>(contentType)
                         );
+
+                        this.updateActiveTabIndex(this.containerContents.length);
                     }
                 }
             };
