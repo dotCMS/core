@@ -1,0 +1,48 @@
+apiVersion: v1
+kind: List
+items:
+- apiVersion: v1
+  kind: PersistentVolume
+  metadata:
+    name: dotcmsplugins
+  spec:
+    accessModes:
+    - ReadWriteMany
+    capacity:
+      storage: 500Mi
+    hostPath:
+      path: /shared/plugins
+- apiVersion: v1
+  kind: PersistentVolume
+  metadata:
+    name: dotcmsassets
+  spec:
+    accessModes:
+    - ReadWriteMany
+    capacity:
+      storage: 20Gi
+    hostPath:
+      path: /shared/dotassets
+- apiVersion: v1
+  kind: PersistentVolume
+  metadata:
+    name: dbdata
+  spec:
+    accessModes:
+    - ReadWriteOnce
+    capacity:
+      storage: 20Gi
+    hostPath:
+      path: /shared/database
+- apiVersion: v1
+  kind: PersistentVolume
+  metadata:
+    name: es-static
+  spec:
+    accessModes:
+    - ReadWriteOnce
+    capacity:
+      storage: 20Gi
+    hostPath:
+      path: /shared/es-static
+

@@ -1,0 +1,14 @@
+version '1.0-SNAPSHOT'
+
+apply plugin: 'java'
+
+sourceCompatibility = 1.8
+
+repositories {
+    maven { url "http://repo.dotcms.com/artifactory/libs-release" }
+    maven { url "http://repo.dotcms.com/artifactory/libs-snapshot-local" }
+}
+
+dependencies {
+    compile group: 'org.elasticsearch', name: 'elasticsearch', version: '6.1.3'
+}

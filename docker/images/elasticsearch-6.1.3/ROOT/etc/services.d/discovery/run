@@ -1,0 +1,7 @@
+#!/usr/bin/with-contenv /bin/sh
+
+set -e 
+
+echo "Starting background discovery..."
+
+exec /srv/container-utils/es-bg-discovery.sh

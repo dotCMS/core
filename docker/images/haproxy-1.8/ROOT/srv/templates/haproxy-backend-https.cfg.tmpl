@@ -1,0 +1,16 @@
+{{ $https_port := .Env.CMS_PORT_HTTPS }}
+{{ if isTrue .Env.HAPROXY_TLS_ENABLE }}
+backend dotcms_https
+    balance roundrobin
+    http-reuse aggressive
+    option http-server-close
+    option forceclose
+    cookie BACKENDID insert indirect nocache
+{{ with .Env.CMS_BACKEND_SERVERS }}{{ range $index, $server := split . "," }}    server dotcms_{{ $server }}_{{ $https_port }} {{ $server }}:{{ $https_port }} cookie {{ $server }} check
+{{ end }}{{ end }}
+
+    {{ if .Env.HAPROXY_MAINTENANCE_PAGE }}
+    errorfile 503 {{ .Env.HAPROXY_MAINTENANCE_PAGE }}  
+    {{ end }}
+
+{{ end }}

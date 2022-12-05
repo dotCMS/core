@@ -1,0 +1,40 @@
+# ======================== Elasticsearch Configuration ========================= - JBG
+#
+
+{{ $es_port := .Env.PROVIDER_ELASTICSEARCH_PORT_TRANSPORT }}
+
+cluster.name: {{ .Env.PROVIDER_ELASTICSEARCH_CLUSTER_NAME }}
+
+transport:
+    host: {{ .Env.PROVIDER_ELASTICSEARCH_ADDR_TRANSPORT }}
+    tcp.port: {{ .Env.PROVIDER_ELASTICSEARCH_PORT_TRANSPORT }}
+    tcp.connect_timeout: 2s
+
+discovery.zen:
+    hosts_provider: file
+    minimum_master_nodes: 1
+    ping_timeout: 3s
+    join_timeout: 6s
+    fd:
+        ping_timeout: 3s
+        ping_interval: 1s
+        ping_retries: 3
+
+node:
+    master: {{ .Env.PROVIDER_ELASTICSEARCH_NODE_MASTER }}
+    data: {{ .Env.PROVIDER_ELASTICSEARCH_NODE_DATA }}
+    name: {{ .Env.HOSTNAME }}
+
+http:
+    enabled: {{ .Env.PROVIDER_ELASTICSEARCH_ENABLE_HTTP }}
+    cors.enabled: false
+    port: {{ .Env.PROVIDER_ELASTICSEARCH_PORT_HTTP }}
+    host: {{ .Env.PROVIDER_ELASTICSEARCH_ADDR_HTTP }}
+
+path:
+    data: /data
+    logs: /logs
+
+
+search.default_search_timeout: 30s
+search.low_level_cancellation: true

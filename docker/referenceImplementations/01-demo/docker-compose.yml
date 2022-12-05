@@ -1,0 +1,39 @@
+version: '3.5'
+
+networks:
+  db_net:
+
+volumes:
+  cms-shared:
+  cms-local:
+  dbdata:
+services:
+
+  dotcms:
+    image: dotcms/dotcms:latest
+    ports:
+      - "8080:8080"
+    environment:
+      "CMS_HEAP_SIZE": '1g'
+      "CMS_JAVA_OPTS": '-XX:+PrintFlagsFinal'
+      "PROVIDER_DB_DNSNAME": 'db'
+    depends_on:
+      - db
+    volumes:
+      - cms-shared:/data/shared
+      - cms-local:/data/local
+      #- ./license.dat:/data/local/dotsecure/license/license.dat
+      #- [serverpath]/license.zip:/data/shared/assets/license.zip
+    networks:
+      - db_net
+
+  db:
+    image: bitnami/postgresql:11
+    environment:
+      "POSTGRESQL_USERNAME": 'dotcmsdbuser'
+      "POSTGRESQL_PASSWORD": 'password'
+      "POSTGRESQL_DATABASE": 'dotcms'
+    volumes:
+      - dbdata:/bitnami/postgresql
+    networks:
+      - db_net
