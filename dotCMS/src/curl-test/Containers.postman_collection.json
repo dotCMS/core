@@ -5685,7 +5685,7 @@
 					}
 				],
 				"url": {
-					"raw": "{{serverURL}}/api/v1/containers?filter=&page=0&per_page=50&ordeby=title&direction=ASC&host=&system=true&archive=true",
+					"raw": "{{serverURL}}/api/v1/containers?filter=&page=0&per_page=50&orderby=title&direction=ASC&host=&system=true&archive=true",
 					"host": [
 						"{{serverURL}}"
 					],
@@ -5708,7 +5708,7 @@
 							"value": "50"
 						},
 						{
-							"key": "ordeby",
+							"key": "orderby",
 							"value": "title"
 						},
 						{
