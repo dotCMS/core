@@ -29,7 +29,7 @@ import { DotListingDataTableModule } from '@components/dot-listing-data-table';
 import { CommonModule } from '@angular/common';
 import { DotMessagePipeModule } from '@pipes/dot-message/dot-message-pipe.module';
 import { CheckboxModule } from 'primeng/checkbox';
-import { MenuModule } from 'primeng/menu';
+import { Menu, MenuModule } from 'primeng/menu';
 import { ButtonModule } from 'primeng/button';
 import { DotActionButtonModule } from '@components/_common/dot-action-button/dot-action-button.module';
 import { DotActionMenuButtonModule } from '@components/_common/dot-action-menu-button/dot-action-menu-button.module';
@@ -41,6 +41,7 @@ import { By } from '@angular/platform-browser';
 import { CONTAINER_SOURCE, DotContainer } from '@models/container/dot-container.model';
 import { DotContainersService } from '@services/dot-containers/dot-containers.service';
 import { DotActionMenuButtonComponent } from '@components/_common/dot-action-menu-button/dot-action-menu-button.component';
+import { DotActionBulkResult } from '@dotcms/app/shared/models/dot-action-bulk-result/dot-action-bulk-result.model';
 
 const containersMock: DotContainer[] = [
     {
@@ -83,6 +84,23 @@ const containersMock: DotContainer[] = [
         deleted: true,
         friendlyName: '',
         identifier: '123Archived',
+        live: false,
+        name: 'test',
+        parentPermissionable: {
+            hostname: 'default'
+        },
+        path: null,
+        source: CONTAINER_SOURCE.DB,
+        title: 'test',
+        type: 'containers',
+        working: true
+    },
+    {
+        archived: true,
+        categoryId: 'a443d26e-0e92-4a9e-a2ab-90a44fd1eb8d',
+        deleted: true,
+        friendlyName: '',
+        identifier: 'SYSTEM_CONTAINER',
         live: false,
         name: 'test',
         parentPermissionable: {
@@ -157,6 +175,12 @@ const routeDataMock = {
     dotContainerListResolverData: [true, true]
 };
 
+const mockBulkResponseSuccess: DotActionBulkResult = {
+    skippedCount: 0,
+    successCount: 3,
+    fails: []
+};
+
 class ActivatedRouteMock {
     get data() {
         return of(routeDataMock);
@@ -184,6 +208,7 @@ describe('ContainerListComponent', () => {
     let publishContainer: DotActionMenuButtonComponent;
     let archivedContainer: DotActionMenuButtonComponent;
     let baseTypesSelector: MockDotBaseTypeSelectorComponent;
+    let dotContainersService: DotContainersService;
 
     const messageServiceMock = new MockDotMessageService(messages);
 
@@ -242,6 +267,7 @@ describe('ContainerListComponent', () => {
         dotPushPublishDialogService = TestBed.inject(DotPushPublishDialogService);
         coreWebService = TestBed.inject(CoreWebService);
         dotRouterService = TestBed.inject(DotRouterService);
+        dotContainersService = TestBed.inject(DotContainersService);
     });
 
     describe('with data', () => {
@@ -309,6 +335,20 @@ describe('ContainerListComponent', () => {
                 { menuItem: { label: 'Delete', command: jasmine.any(Function) } }
             ];
             expect(archivedContainer.actions).toEqual(actions);
+        });
+
+        it('should select all except system container', () => {
+            const menu: Menu = fixture.debugElement.query(
+                By.css('.container-listing__header-options p-menu')
+            ).componentInstance;
+            spyOn(dotContainersService, 'publish').and.returnValue(of(mockBulkResponseSuccess));
+            comp.updateSelectedContainers(containersMock);
+            menu.model[0].command();
+            expect(dotContainersService.publish).toHaveBeenCalledWith([
+                '123Published',
+                '123Unpublish',
+                '123Archived'
+            ]);
         });
     });
 
