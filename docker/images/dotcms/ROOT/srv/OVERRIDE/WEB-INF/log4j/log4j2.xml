@@ -14,7 +14,7 @@
        <Async name="generic">
             <AppenderRef ref="GENERIC-FILE"/>
         </Async>
-        
+
         <!--  Generic Logging File -->
         <RollingFile name="GENERIC-FILE"
                      fileName="${DOTCMS_LOG_FILE}"
@@ -26,7 +26,7 @@
             </Policies>
             <DefaultRolloverStrategy max="10"/>
         </RollingFile>
-        
+
     </Appenders>
     <Loggers>
         <Root level="info">
@@ -34,4 +34,4 @@
             <AppenderRef ref="generic"/>
         </Root>
     </Loggers>
-</Configuration>
+</Configuration> 
