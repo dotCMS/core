@@ -14,6 +14,27 @@ function shouldHitEndPoint() {
     }
 }
 
+window.addEventListener("experiment_data_loaded", function (event) {
+
+    let experimentData = event.detail;
+    console.log('experiment_data', experimentData);
+    for (let i = 0; i < experimentData.experiments.length; i++){
+        let pageUrl = experimentData.experiments[i].pageUrl;
+
+        let alternativePageUrl = experimentData.experiments[i].pageUrl.endsWith("/index") ?
+            experimentData.experiments[i].pageUrl.replace("/index", "") :
+            experimentData.experiments[i].pageUrl;
+
+        if (window.location.href.includes(pageUrl) || window.location.href.includes(alternativePageUrl)) {
+
+            let url = experimentData.experiments[i].variant.url
+            const param = (url.includes("?") ? "&" : "?") + "redirect=true";
+            window.location.href = url + param;
+            break;
+        }
+    }
+});
+
 if (shouldHitEndPoint()) {
     let experimentData = localStorage.getItem('experiment_data');
     let body = experimentData ?
@@ -52,25 +73,15 @@ if (shouldHitEndPoint()) {
             }
 
             localStorage.setItem('experiment_data', JSON.stringify(dataToStorage));
+
+            const event = new CustomEvent('experiment_data_loaded', { detail: dataToStorage });
+            window.dispatchEvent(event);
         }
     });
 } else if (!window.location.href.includes("redirect=true")) {
     let experimentData = JSON.parse(localStorage.getItem('experiment_data'));
 
-    for (let i = 0; i < experimentData.experiments.length; i++){
-        let pageUrl = experimentData.experiments[i].pageUrl;
-
-        let alternativePageUrl = experimentData.experiments[i].pageUrl.endsWith("/index") ?
-            experimentData.experiments[i].pageUrl.replace("/index", "") :
-            experimentData.experiments[i].pageUrl;
-
-        if (window.location.href.includes(pageUrl) || window.location.href.includes(alternativePageUrl)) {
-
-            let url = experimentData.experiments[i].variant.url
-            const param = (url.includes("?") ? "&" : "?") + "redirect=true";
-            window.location.href = url + param;
-            break;
-        }
-    }
+    const event = new CustomEvent('experiment_data_loaded', { detail: experimentData });
+    window.dispatchEvent(event);
 }
 
