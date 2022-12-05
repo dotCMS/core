@@ -2,8 +2,9 @@ import { pluck } from 'rxjs/operators';
 import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 import { CoreWebService, DotRequestOptionsArgs } from '@dotcms/dotcms-js';
-import { DotSessionStorageService } from '@shared/services/dot-session-storage.service';
+
 import { DotPageContainer, DotWhatChanged } from '@dotcms/dotcms-models';
+import { DotSessionStorageService } from '../dot-session-storage/dot-session-storage.service';
 
 @Injectable()
 export class DotEditPageService {

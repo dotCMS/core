@@ -1,4 +1,4 @@
-import { DotExperiment } from '../../shared/models/dot-experiments.model';
+import { DotExperiment } from '@dotcms/dotcms-models';
 import { of } from 'rxjs';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 import {

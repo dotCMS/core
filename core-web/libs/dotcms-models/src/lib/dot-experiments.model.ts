@@ -1,9 +1,9 @@
 import {
     DotExperimentStatusList,
+    DotPage,
+    Status,
     TrafficProportionTypes
-} from '@portlets/dot-experiments/shared/models/dot-experiments-constants';
-import { DotPage } from '@dotcms/dotcms-models';
-import { Status } from '@portlets/shared/models/shared-models';
+} from '@dotcms/dotcms-models';
 
 export interface DotExperiment {
     id: string;

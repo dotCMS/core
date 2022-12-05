@@ -11,8 +11,7 @@ import {
     DotContainerPropertiesState
 } from '@portlets/dot-containers/dot-container-create/dot-container-properties/store/dot-container-properties.store';
 import { MonacoEditor } from '@models/monaco-editor';
-import { DotAlertConfirmService } from '@dotcms/app/api/services/dot-alert-confirm';
-import { DotMessageService } from '@dotcms/app/api/services/dot-message/dot-messages.service';
+import { DotAlertConfirmService, DotMessageService } from '@dotcms/data-access';
 import { DotRouterService } from '@services/dot-router/dot-router.service';
 import { take, takeUntil } from 'rxjs/operators';
 import { MenuItem } from 'primeng/api';

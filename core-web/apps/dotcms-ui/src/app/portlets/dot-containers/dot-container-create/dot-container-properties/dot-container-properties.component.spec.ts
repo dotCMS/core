@@ -4,14 +4,19 @@ import { of } from 'rxjs';
 import { DotContainerPropertiesComponent } from './dot-container-properties.component';
 import { DotRouterService } from '@services/dot-router/dot-router.service';
 import { LoggerService } from '@dotcms/dotcms-js';
-import { DotSiteBrowserService } from '@services/dot-site-browser/dot-site-browser.service';
-import { DotAlertConfirmService } from '@services/dot-alert-confirm';
+
 import { CoreWebService } from '@dotcms/dotcms-js';
-import { MockDotMessageService } from '@tests/dot-message-service.mock';
+import { DotFormatDateServiceMock, MockDotMessageService } from '@dotcms/utils-testing';
 import { DotMessageDisplayService } from '@components/dot-message-display/services';
-import { DotMessageService } from '@services/dot-message/dot-messages.service';
+import {
+    DotAlertConfirmService,
+    DotContentTypeService,
+    DotEventsService,
+    DotMessageService,
+    DotSiteBrowserService
+} from '@dotcms/data-access';
 import { ActivatedRoute } from '@angular/router';
-import { CoreWebServiceMock } from '@tests/core-web.service.mock';
+import { CoreWebServiceMock } from '@dotcms/utils-testing';
 import { DotEventsSocketURL } from '@dotcms/dotcms-js';
 import { dotEventSocketURLFactory } from '@tests/dot-test-bed';
 import { StringUtils } from '@dotcms/dotcms-js';
@@ -22,7 +27,6 @@ import { DotcmsEventsService } from '@dotcms/dotcms-js';
 import { DotEventsSocket } from '@dotcms/dotcms-js';
 import { DotcmsConfigService } from '@dotcms/dotcms-js';
 import { DotFormatDateService } from '@services/dot-format-date-service';
-import { DotFormatDateServiceMock } from '@tests/format-date-service.mock';
 import { CommonModule } from '@angular/common';
 import { DotMessagePipeModule } from '@pipes/dot-message/dot-message-pipe.module';
 import { CheckboxModule } from 'primeng/checkbox';
@@ -36,8 +40,6 @@ import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { Component, CUSTOM_ELEMENTS_SCHEMA, DebugElement } from '@angular/core';
 import { DotContainersService } from '@services/dot-containers/dot-containers.service';
 import { DotGlobalMessageService } from '@components/_common/dot-global-message/dot-global-message.service';
-import { DotEventsService } from '@dotcms/app/api/services/dot-events/dot-events.service';
-import { DotContentTypeService } from '@dotcms/app/api/services/dot-content-type';
 import { InplaceModule } from 'primeng/inplace';
 import { ReactiveFormsModule } from '@angular/forms';
 import { DotTextareaContentModule } from '@components/_common/dot-textarea-content/dot-textarea-content.module';

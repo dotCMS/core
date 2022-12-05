@@ -12,8 +12,14 @@ import { DynamicDialogRef, DynamicDialogConfig, DialogService } from 'primeng/dy
 import { ButtonModule } from 'primeng/button';
 import { DataViewModule } from 'primeng/dataview';
 import { DotAddVariableComponent } from './dot-add-variable.component';
-import { DotMessageService } from '@services/dot-message/dot-messages.service';
-import { MockDotMessageService } from '@tests/dot-message-service.mock';
+import {
+    DotAlertConfirmService,
+    DotContentTypeService,
+    DotEventsService,
+    DotMessageService,
+    DotSiteBrowserService
+} from '@dotcms/data-access';
+import { MockDotMessageService } from '@dotcms/utils-testing';
 import { By } from '@angular/platform-browser';
 import {
     CoreWebService,
@@ -25,21 +31,17 @@ import {
     LoginService,
     StringUtils
 } from '@dotcms/dotcms-js';
-import { CoreWebServiceMock } from '@tests/core-web.service.mock';
+import { CoreWebServiceMock } from '@dotcms/utils-testing';
 import { DotRouterService } from '@services/dot-router/dot-router.service';
 
 import { DotCMSContentType } from '@dotcms/dotcms-models';
 import { of } from 'rxjs';
 import { HttpClientTestingModule } from '@angular/common/http/testing';
 
-import { DotContentTypeService } from '@dotcms/app/api/services/dot-content-type';
 import { ConfirmationService, SharedModule } from 'primeng/api';
 import { DotHttpErrorManagerService } from '@dotcms/app/api/services/dot-http-error-manager/dot-http-error-manager.service';
-import { DotAlertConfirmService } from '@dotcms/app/api/services/dot-alert-confirm';
 import { DotMessageDisplayService } from '@components/dot-message-display/services';
-import { DotSiteBrowserService } from '@dotcms/app/api/services/dot-site-browser/dot-site-browser.service';
 import { DotMessagePipeModule } from '@pipes/dot-message/dot-message-pipe.module';
-import { DotEventsService } from '@dotcms/app/api/services/dot-events/dot-events.service';
 import { DotGlobalMessageService } from '@components/_common/dot-global-message/dot-global-message.service';
 import { dotEventSocketURLFactory } from '@dotcms/app/test/dot-test-bed';
 import { ActivatedRoute } from '@angular/router';

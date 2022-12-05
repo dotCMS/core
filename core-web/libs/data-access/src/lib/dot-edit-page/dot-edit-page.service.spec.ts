@@ -4,7 +4,7 @@ import { HttpTestingController, HttpClientTestingModule } from '@angular/common/
 import { CoreWebService } from '@dotcms/dotcms-js';
 import { CoreWebServiceMock } from '@dotcms/utils-testing';
 import { DotPageContainer } from '@dotcms/dotcms-models';
-import { DotSessionStorageService } from '@shared/services/dot-session-storage.service';
+import { DotSessionStorageService } from '../dot-session-storage/dot-session-storage.service';
 
 describe('DotEditPageService', () => {
     let injector: TestBed;

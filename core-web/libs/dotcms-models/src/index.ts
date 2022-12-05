@@ -49,3 +49,7 @@ export * from './lib/dot-page-render.model';
 export * from './lib/dot-rendered-page-state.model';
 export * from './lib/dot-personalize.model';
 export * from './lib/dot-field-variable.model';
+export * from './lib/dot-field-variable.model';
+export * from './lib/dot-experiments-constants';
+export * from './lib/dot-experiments.model';
+export * from './lib/shared-models';

@@ -12,7 +12,7 @@ import { DotESContentService } from '@dotcms/data-access';
 import { PaginatorService } from '@dotcms/data-access';
 import { DotPaletteStore } from './store/dot-palette.store';
 import { contentletProductDataMock } from './dot-palette-contentlets/dot-palette-contentlets.component.spec';
-import { LoadingState } from '@portlets/shared/models/shared-models';
+import { LoadingState } from '@dotcms/dotcms-models';
 import { dotcmsContentTypeBasicMock } from '@dotcms/utils-testing';
 
 @Component({

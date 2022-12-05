@@ -9,11 +9,10 @@ import {
 } from '@angular/core';
 import { Observable, Subject } from 'rxjs';
 import { DotLicenseService } from '@dotcms/data-access';
-import { DotPageMode, DotPageRenderState } from '@dotcms/dotcms-models';
+import { DotPageMode, DotPageRenderState, FeaturedFlags } from '@dotcms/dotcms-models';
 import { DotCMSContentlet } from '@dotcms/dotcms-models';
 import { DotPropertiesService } from '@dotcms/data-access';
 import { take } from 'rxjs/operators';
-import { FeaturedFlags } from '@dotcms/app/portlets/shared/models/shared-models';
 @Component({
     selector: 'dot-edit-page-toolbar',
     templateUrl: './dot-edit-page-toolbar.component.html',

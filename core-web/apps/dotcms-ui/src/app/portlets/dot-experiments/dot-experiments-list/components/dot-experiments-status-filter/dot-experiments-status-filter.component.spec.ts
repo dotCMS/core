@@ -4,10 +4,7 @@ import { createComponentFactory, Spectator } from '@ngneat/spectator';
 import { MultiSelect, MultiSelectModule } from 'primeng/multiselect';
 import { DotMessageService } from '@dotcms/data-access';
 import { FormsModule } from '@angular/forms';
-import {
-    DotExperimentStatusList,
-    ExperimentsStatusList
-} from '@portlets/dot-experiments/shared/models/dot-experiments-constants';
+import { ExperimentsStatusList, DotExperimentStatusList } from '@dotcms/dotcms-models';
 import { DotMessagePipeModule } from '@pipes/dot-message/dot-message-pipe.module';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 

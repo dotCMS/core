@@ -4,7 +4,7 @@ import { DotExperimentsService } from '@portlets/dot-experiments/shared/services
 import { MessageService } from 'primeng/api';
 import { DotMessageService } from '@dotcms/data-access';
 import { Observable, throwError } from 'rxjs';
-import { DotExperiment } from '@portlets/dot-experiments/shared/models/dot-experiments.model';
+import { DotExperiment } from '@dotcms/dotcms-models';
 import { switchMap, tap } from 'rxjs/operators';
 import { HttpErrorResponse } from '@angular/common/http';
 import { Router } from '@angular/router';

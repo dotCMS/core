@@ -5,19 +5,13 @@ import { DotMessageService } from '@dotcms/data-access';
 import { ConfirmationService, MessageService } from 'primeng/api';
 import { ConfirmPopup, ConfirmPopupModule } from 'primeng/confirmpopup';
 import { DotExperimentsEmptyExperimentsComponent } from '../dot-experiments-empty-experiments/dot-experiments-empty-experiments.component';
-import {
-    DotExperiment,
-    GroupedExperimentByStatus
-} from '@portlets/dot-experiments/shared/models/dot-experiments.model';
+import { DotExperiment, GroupedExperimentByStatus } from '@dotcms/dotcms-models';
 import { Table, TableModule } from 'primeng/table';
 import { DotIconModule } from '@dotcms/ui';
 import { UiDotIconButtonTooltipModule } from '@components/_common/dot-icon-button-tooltip/dot-icon-button-tooltip.module';
 import { UiDotIconButtonTooltipComponent } from '@components/_common/dot-icon-button-tooltip/dot-icon-button-tooltip.component';
 import { ToastModule } from 'primeng/toast';
-import {
-    DotExperimentStatusList,
-    TrafficProportionTypes
-} from '@portlets/dot-experiments/shared/models/dot-experiments-constants';
+import { DotExperimentStatusList, TrafficProportionTypes } from '@dotcms/dotcms-models';
 import { DotMessagePipeModule } from '@pipes/dot-message/dot-message-pipe.module';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 

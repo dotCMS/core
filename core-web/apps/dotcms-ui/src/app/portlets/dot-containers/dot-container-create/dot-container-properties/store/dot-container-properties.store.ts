@@ -3,20 +3,20 @@ import { ComponentStore } from '@ngrx/component-store';
 import { Observable, of, pipe } from 'rxjs';
 import { catchError, filter, pluck, switchMap, take, tap } from 'rxjs/operators';
 import { HttpErrorResponse } from '@angular/common/http';
-import {
-    DotContainer,
-    DotContainerEntity,
-    DotContainerPayload,
-    DotContainerStructure
-} from '@dotcms/app/shared/models/container/dot-container.model';
-import { DotMessageService } from '@services/dot-message/dot-messages.service';
+
+import { DotContentTypeService, DotMessageService } from '@dotcms/data-access';
 import { DotGlobalMessageService } from '@components/_common/dot-global-message/dot-global-message.service';
 import { DotContainersService } from '@services/dot-containers/dot-containers.service';
 import { DotHttpErrorManagerService } from '@dotcms/app/api/services/dot-http-error-manager/dot-http-error-manager.service';
 import { DotRouterService } from '@services/dot-router/dot-router.service';
 import { ActivatedRoute } from '@angular/router';
-import { DotCMSContentType } from '@dotcms/dotcms-models';
-import { DotContentTypeService } from '@dotcms/app/api/services/dot-content-type';
+import {
+    DotCMSContentType,
+    DotContainer,
+    DotContainerEntity,
+    DotContainerPayload,
+    DotContainerStructure
+} from '@dotcms/dotcms-models';
 
 export interface DotContainerPropertiesState {
     showPrePostLoopInput: boolean;

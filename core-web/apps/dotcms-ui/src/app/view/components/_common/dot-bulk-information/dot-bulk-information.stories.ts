@@ -2,7 +2,7 @@ import { DotMessagePipeModule } from '@pipes/dot-message/dot-message-pipe.module
 import { DotMessageService } from '@dotcms/data-access';
 import { DotFormatDateService } from '@dotcms/app/api/services/dot-format-date-service';
 import { Meta, Story, moduleMetadata } from '@storybook/angular';
-import { MockDotMessageService } from '@tests/dot-message-service.mock';
+import { MockDotMessageService } from '@dotcms/utils-testing';
 import { DialogService, DynamicDialogConfig, DynamicDialogRef } from 'primeng/dynamicdialog';
 import { DotBulkInformationComponent } from './dot-bulk-information.component';
 

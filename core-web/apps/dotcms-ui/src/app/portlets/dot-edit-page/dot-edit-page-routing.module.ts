@@ -6,7 +6,7 @@ import { DotEditPageResolver } from './shared/services/dot-edit-page-resolver/do
 import { LayoutEditorCanDeactivateGuardService } from '@dotcms/app/api/services/guards/layout-editor-can-deactivate-guard.service';
 
 import { DotFeatureFlagResolver } from '@portlets/shared/resolvers/dot-feature-flag-resolver.service';
-import { FeaturedFlags } from '@portlets/shared/models/shared-models';
+import { FeaturedFlags } from '@dotcms/dotcms-models';
 
 const dotEditPage: Routes = [
     {

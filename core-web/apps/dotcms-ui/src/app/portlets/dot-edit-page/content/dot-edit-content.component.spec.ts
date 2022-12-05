@@ -83,7 +83,7 @@ import { DotESContentService } from '@dotcms/data-access';
 import { DotWorkflowActionsFireService } from '@dotcms/data-access';
 import { DialogService } from 'primeng/dynamicdialog';
 import { DotLoadingIndicatorService } from '@dotcms/utils';
-import { DotSessionStorageService } from '@shared/services/dot-session-storage.service';
+import { DotSessionStorageService } from '@dotcms/data-access';
 
 @Component({
     selector: 'dot-global-message',

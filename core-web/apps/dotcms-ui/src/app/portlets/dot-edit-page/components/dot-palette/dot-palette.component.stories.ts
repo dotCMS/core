@@ -7,7 +7,7 @@ import { DotContentletEditorService } from '@components/dot-contentlet-editor/se
 import { Injectable } from '@angular/core';
 import { DotMessagePipe } from '@dotcms/app/view/pipes';
 import { DotMessageService } from '@dotcms/data-access';
-import { MockDotMessageService } from '@tests/dot-message-service.mock';
+import { MockDotMessageService } from '@dotcms/utils-testing';
 import { DotFilterPipeModule } from '@pipes/dot-filter/dot-filter-pipe.module';
 
 const data = [
