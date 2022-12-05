@@ -7,7 +7,7 @@ import { DotContentTypeFieldsVariablesComponent } from './dot-content-type-field
 import { LoginService } from '@dotcms/dotcms-js';
 import { DotFieldVariablesService } from './services/dot-field-variables.service';
 import { DOTTestBed } from '@dotcms/app/test/dot-test-bed';
-import { LoginServiceMock } from '@dotcms/utils-testing';
+import { EMPTY_FIELD, LoginServiceMock } from '@dotcms/utils-testing';
 import { DotFieldVariablesServiceMock, mockFieldVariables } from '@dotcms/utils-testing';
 import { of } from 'rxjs';
 import { dotcmsContentTypeFieldBasicMock } from '@dotcms/utils-testing';
@@ -92,5 +92,46 @@ describe('DotContentTypeFieldsVariablesComponent', () => {
 
         expect(dotFieldVariableService.delete).toHaveBeenCalledWith(comp.field, variableToDelete);
         expect(comp.fieldVariables).toEqual(deletedCollection);
+    });
+
+    describe('Block Editor Field', () => {
+        const BLOCK_EDITOR_FIELD = {
+            ...EMPTY_FIELD,
+            clazz: 'com.dotcms.contenttype.model.field.ImmutableStoryBlockField'
+        };
+
+        beforeEach(() => {
+            fixtureHost.componentInstance.value = BLOCK_EDITOR_FIELD;
+        });
+
+        it('should set variable correctly', () => {
+            spyOn<DotFieldVariablesService>(dotFieldVariableService, 'load').and.returnValue(
+                of(mockFieldVariables)
+            );
+            fixtureHost.detectChanges();
+
+            const dotKeyValue = de.query(By.css('dot-key-value-ng')).componentInstance;
+            expect(comp.fieldVariables.length).toBe(mockFieldVariables.length);
+            expect(dotKeyValue.variables.length).toBe(mockFieldVariables.length);
+        });
+
+        it('should not set allowedBlocks variable', () => {
+            spyOn<DotFieldVariablesService>(dotFieldVariableService, 'load').and.returnValue(
+                of([
+                    {
+                        clazz: 'com.dotcms.contenttype.model.field.ImmutableFieldVariable',
+                        fieldId: 'f965a51b-130a-435f-b646-41e07d685363',
+                        id: '9671d2c3-793b-41af-a485-e2c5fcba5fb',
+                        key: 'allowedBlocks',
+                        value: 'dotImage'
+                    }
+                ])
+            );
+            fixtureHost.detectChanges();
+
+            const dotKeyValue = de.query(By.css('dot-key-value-ng')).componentInstance;
+            expect(comp.fieldVariables.length).toBe(0);
+            expect(dotKeyValue.variables.length).toBe(0);
+        });
     });
 });

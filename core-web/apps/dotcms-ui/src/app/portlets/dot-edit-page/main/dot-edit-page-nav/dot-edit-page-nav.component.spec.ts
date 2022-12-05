@@ -43,7 +43,7 @@ class MockDotLicenseService {
 }
 
 @Injectable()
-class MockDotPropertiesService {
+export class MockDotPropertiesService {
     getKey(): Observable<true> {
         return observableOf(true);
     }

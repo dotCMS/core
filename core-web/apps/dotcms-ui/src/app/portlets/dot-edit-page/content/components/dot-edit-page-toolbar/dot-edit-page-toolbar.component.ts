@@ -13,6 +13,7 @@ import { DotPageMode, DotPageRenderState } from '@dotcms/dotcms-models';
 import { DotCMSContentlet } from '@dotcms/dotcms-models';
 import { DotPropertiesService } from '@dotcms/data-access';
 import { take } from 'rxjs/operators';
+import { FeaturedFlags } from '@dotcms/app/portlets/shared/models/shared-models';
 @Component({
     selector: 'dot-edit-page-toolbar',
     templateUrl: './dot-edit-page-toolbar.component.html',
@@ -43,7 +44,7 @@ export class DotEditPageToolbarComponent implements OnInit, OnChanges, OnDestroy
     ngOnInit() {
         // TODO: Remove next line when total functionality of Favorite page is done for release
         this.dotConfigurationService
-            .getKey('DOTFAVORITEPAGE_FEATURE_ENABLE')
+            .getKey(FeaturedFlags.DOTFAVORITEPAGE_FEATURE_ENABLE)
             .pipe(take(1))
             .subscribe((enabled: string) => {
                 this.showFavoritePageStar = enabled === 'true';

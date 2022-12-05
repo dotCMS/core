@@ -23,7 +23,6 @@ import { DotGlobalMessageService } from '@components/_common/dot-global-message/
 import { ConfirmationService } from 'primeng/api';
 import { DotAccountService } from './api/services/dot-account-service';
 import { AuthGuardService } from './api/services/guards/auth-guard.service';
-import { LayoutEditorCanDeactivateGuardService } from './api/services/guards/layout-editor-can-deactivate-guard.service';
 import { DotWorkflowEventHandlerService } from './api/services/dot-workflow-event-handler/dot-workflow-event-handler.service';
 import { DotUiColorsService } from './api/services/dot-ui-colors/dot-ui-colors.service';
 import { DotFormatDateService } from './api/services/dot-format-date-service';
@@ -32,6 +31,8 @@ import { DefaultGuardService } from './api/services/guards/default-guard.service
 import { MenuGuardService } from './api/services/guards/menu-guard.service';
 import { PublicAuthGuardService } from './api/services/guards/public-auth-guard.service';
 import { NotificationsService } from './api/services/notifications-service';
+import { LayoutEditorCanDeactivateGuardService } from '@services/guards/layout-editor-can-deactivate-guard.service';
+import { PagesGuardService } from './api/services/guards/pages-guard.service';
 
 export const LOCATION_TOKEN = new InjectionToken<Location>('Window location object');
 
@@ -60,6 +61,7 @@ const PROVIDERS: Provider[] = [
     MenuGuardService,
     NotificationsService,
     PaginatorService,
+    PagesGuardService,
     PublicAuthGuardService,
     StringFormat,
     StringPixels,

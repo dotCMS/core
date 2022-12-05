@@ -1,12 +1,15 @@
 ************************************************************************
-All code and components under the "enterprise/" directory of this 
-repository are licensed under the "dotCMS Enterprise License" as defined 
-in "enterprise/LICENSE". All third party components incorporated into 
-the Software are licensed under the original license provided by the 
-owner of the applicable component. Unless otherwise granted by dotCMS, 
-code and components in this repository, outside of the above mentioned 
-directories or restrictions, are available under the "GPL3" license as 
-defined below.
+Excluded Components: All code and components under the /enterprise 
+directory of this dotCMS core repository are licensed under the "dotCMS 
+Enterprise License" available at https://www.dotcms.com/terms.
+
+Third-Party Components: All third-party components incorporated in 
+this repository are licensed under the original license provided by the 
+owner of the applicable component.
+
+Except as otherwise set forth above, the code and components of this 
+dotCMS core repository are licensed under the GNU General Public License 
+Version 3/GPL 3 license, the text of which is provided below.
 ************************************************************************
 
 

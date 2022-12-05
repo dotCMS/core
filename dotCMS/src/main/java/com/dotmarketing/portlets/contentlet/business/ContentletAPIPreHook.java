@@ -1,8 +1,5 @@
 package com.dotmarketing.portlets.contentlet.business;
 
-import java.util.Date;
-import java.util.List;
-import java.util.Map;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
@@ -23,6 +20,10 @@ import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.liferay.portal.model.User;
+
+import java.util.Date;
+import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -331,6 +332,24 @@ public interface ContentletAPIPreHook {
 	public default boolean getContentletReferences(Contentlet contentlet, User user, boolean respectFrontendRoles){
       return true;
     }
+
+	/**
+	 * This is a simplified version of the more complex {@link #getContentletReferences(Contentlet, User, boolean)}
+	 * method. This one will only be focused on querying the database to return the number of Containers that include
+	 * the specified Contentlet ID.
+	 * <p>The result provided by this method can be used to customize or determine specific behaviors. For example,
+	 * this
+	 * piece of information is used by the dotCMS UI to ask the User whether they want to edit a Contentlet referenced
+	 * everywhere, or if dotCMS should create a copy of such a Contentlet so they can edit that one version.</p>
+	 *
+	 * @param contentletId The Contentlet ID whose references will be retrieved.
+	 *
+	 * @return The execution status of the Pre-Hook. If such a status is {@code false}, a Runtime Exception will be
+	 * thrown.
+	 */
+	default boolean getAllContentletReferencesCount(final String contentletId) {
+		return true;
+	}
 	
 	/**
 	 * Gets the value of a field with a given contentlet 
@@ -1143,8 +1162,17 @@ public interface ContentletAPIPreHook {
 	 */
 	public default boolean validateContentlet(Contentlet contentlet, ContentletRelationships contentRelationships, List<Category> cats){
       return true;
-    } 
-	
+    }
+
+	/**
+	 * Use to validate your contentlet.
+	 * @param contentlet
+	 * @param cats - categories
+	 */
+	default boolean validateContentletNoRels(Contentlet contentlet, List<Category> cats){
+		return true;
+	}
+
 	/**
 	 * Use to determine if if the field value is a String value withing the contentlet object
 	 * @param field
@@ -1888,4 +1916,7 @@ public interface ContentletAPIPreHook {
 
 	default boolean move(final Contentlet contentlet, User user, Host host, Folder folder, boolean respectFrontendRoles) { return true; }
 
+	default boolean getAllContentByVariants(User user, boolean respectFrontendRoles, String[] variantNames) {
+    	return true;
+	}
 }

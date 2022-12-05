@@ -33,6 +33,7 @@ import { DotLicenseService } from '@dotcms/data-access';
 import { DotPaletteModule } from '@dotcms/app/portlets/dot-edit-page/components/dot-palette/dot-palette.module';
 import { DotIconModule } from '@dotcms/ui';
 import { DotESContentService } from '@dotcms/data-access';
+import { DotSessionStorageService } from '@shared/services/dot-session-storage.service';
 
 const routes: Routes = [
     {
@@ -71,6 +72,7 @@ const routes: Routes = [
         DotDragDropAPIHtmlService,
         DotEditContentHtmlService,
         DotEditContentToolbarHtmlService,
+        DotSessionStorageService,
         DotEditPageService,
         DotESContentService,
         DotPageRenderService,

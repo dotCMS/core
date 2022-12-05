@@ -4,7 +4,7 @@ import { MockDotMessageService } from '@dotcms/utils-testing';
 import {
     DotExperimentCreateStore,
     DotExperimentsCreateStore
-} from '@portlets/dot-experiments/dot-experiments-create/store/dot-experiments-create-store.service';
+} from '@portlets/dot-experiments/dot-experiments-create/store/dot-experiments-create-store';
 import { createServiceFactory, SpectatorService } from '@ngneat/spectator';
 import { DotMessageService } from '@dotcms/data-access';
 import { DotExperimentsService } from '@portlets/dot-experiments/shared/services/dot-experiments.service';

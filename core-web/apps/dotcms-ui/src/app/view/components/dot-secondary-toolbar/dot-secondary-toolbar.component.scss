@@ -9,12 +9,12 @@
     background-color: $white;
     border-bottom: solid 1px $gray-lighter;
     display: flex;
-    padding: $spacing-3;
+    padding: $spacing-3 $spacing-4;
 }
 
 .dot-secondary-toolbar__lower {
     display: flex;
-    padding: 0 $spacing-3;
+    padding: 0 $spacing-4;
     flex-wrap: wrap;
     background-color: $white;
     border-bottom: solid 1px $gray-lighter;

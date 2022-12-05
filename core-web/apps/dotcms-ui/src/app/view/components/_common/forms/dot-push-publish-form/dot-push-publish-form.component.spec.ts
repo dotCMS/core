@@ -93,7 +93,7 @@ const mockPushActions: SelectItem[] = [
 
 const mockDate = new Date('2020, 8, 14');
 
-describe('DotPushPublishFormComponent', () => {
+xdescribe('DotPushPublishFormComponent', () => {
     let hostComponent: TestHostComponent;
     let pushPublishForm: DotPushPublishFormComponent;
     let fixture: ComponentFixture<TestHostComponent>;

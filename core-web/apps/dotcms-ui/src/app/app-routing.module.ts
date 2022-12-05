@@ -16,6 +16,7 @@ import { DefaultGuardService } from './api/services/guards/default-guard.service
 import { MenuGuardService } from './api/services/guards/menu-guard.service';
 import { PublicAuthGuardService } from './api/services/guards/public-auth-guard.service';
 import { DotTemplatePageTitleStrategy } from '@shared/services/dot-title-strategy.service';
+import { PagesGuardService } from './api/services/guards/pages-guard.service';
 
 const PORTLETS_ANGULAR = [
     {
@@ -136,6 +137,12 @@ const PORTLETS_IFRAME = [
                 children: []
             }
         ]
+    },
+    {
+        canActivate: [PagesGuardService],
+        path: 'pages',
+        loadChildren: () =>
+            import('@portlets/dot-pages/dot-pages.module').then((m) => m.DotPagesModule)
     },
     {
         canActivateChild: [ContentletGuardService],

@@ -8,15 +8,16 @@ import { DotRolesService } from '@dotcms/data-access';
 import { DotTempFileUploadService } from '@dotcms/app/api/services/dot-temp-file-upload/dot-temp-file-upload.service';
 import { DotWorkflowActionsFireService } from '@dotcms/data-access';
 import { CurrentUserDataMock } from '@dotcms/app/portlets/dot-starter/dot-starter-resolver.service.spec';
+import { Observable, of } from 'rxjs';
+import { DotFavoritePageActionState, DotFavoritePageStore } from './dot-favorite-page.store';
+import { DotRole, DotCurrentUser, DotPageRenderState, DotPageRender } from '@dotcms/dotcms-models';
 import {
     MockDotMessageService,
     mockDotRenderedPage,
     mockProcessedRoles,
     mockUser
 } from '@dotcms/utils-testing';
-import { Observable, of } from 'rxjs';
-import { DotFavoritePageActionState, DotFavoritePageStore } from './dot-favorite-page.store';
-import { DotRole, DotCurrentUser, DotPageRenderState, DotPageRender } from '@dotcms/dotcms-models';
+import { MockDotHttpErrorManagerService } from '@dotcms/app/test/dot-http-error-manager.service.mock';
 
 @Injectable()
 class MockDotRolesService {
@@ -29,13 +30,6 @@ class MockDotRolesService {
 class MockDotCurrentUserService {
     public getCurrentUser(): Observable<DotCurrentUser> {
         return of(CurrentUserDataMock);
-    }
-}
-
-@Injectable()
-class MockDotHttpErrorManagerService {
-    public handle(): Observable<unknown> {
-        return null;
     }
 }
 

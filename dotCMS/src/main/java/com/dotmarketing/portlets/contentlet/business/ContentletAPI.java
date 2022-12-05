@@ -24,9 +24,10 @@ import com.dotmarketing.portlets.structure.model.ContentletRelationships.Content
 import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.portlets.structure.model.Structure;
-import com.dotmarketing.util.contentet.pagination.PaginatedContentlets;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.contentet.pagination.PaginatedContentlets;
 import com.liferay.portal.model.User;
+
 import java.io.Serializable;
 import java.util.Date;
 import java.util.List;
@@ -447,6 +448,13 @@ public interface ContentletAPI {
 	public List<Contentlet> search(String luceneQuery, int limit, int offset, String sortBy, User user, boolean respectFrontendRoles, int requiredPermission) throws DotDataException, DotSecurityException;
 
 	/**
+	 * Returns all the contentlets with versions on the provided {@link com.dotcms.variant.model.Variant}s
+	 */
+	List<Contentlet> getAllContentByVariants(final User user,
+			final boolean respectFrontendRoles, final String...variantName) throws DotDataException, DotStateException,
+			DotSecurityException;
+
+	/**
 	 * Adds the permissions query fragment to the given query based on the given user and roles
 	 *
 	 * @param buffy
@@ -527,7 +535,24 @@ public interface ContentletAPI {
 	 * @throws DotSecurityException
 	 * @throws DotContentletStateException - if the contentlet is null or has an invalid inode
 	 */
-	public List<Map<String, Object>> getContentletReferences(Contentlet contentlet, User user, boolean respectFrontendRoles) throws DotSecurityException, DotDataException, DotContentletStateException;
+	List<Map<String, Object>> getContentletReferences(Contentlet contentlet, User user, boolean respectFrontendRoles) throws DotSecurityException, DotDataException, DotContentletStateException;
+
+	/**
+	 * This is a simplified version of the more complex {@link #getContentletReferences(Contentlet, User, boolean)}
+	 * method. This one will only be focused on querying the database to return the number of Containers that include
+	 * the specified Contentlet ID.
+	 * <p>The result provided by this method can be used to customize or determine specific behaviors. For example,
+	 * this
+	 * piece of information is used by the dotCMS UI to ask the User whether they want to edit a Contentlet referenced
+	 * everywhere, or if dotCMS should create a copy of such a Contentlet so they can edit that one version.</p>
+	 *
+	 * @param contentletId The Contentlet ID whose references will be retrieved.
+	 *
+	 * @return The number of times the specified Contentlet is added to a Container in any HTML Page.
+	 *
+	 * @throws DotDataException An error occurred when interacting with the data source.
+	 */
+	Optional<Integer> getAllContentletReferencesCount(final String contentletId) throws DotDataException;
 
     /**
      * Gets the value of a field with a given contentlet
@@ -1727,7 +1752,11 @@ public interface ContentletAPI {
 	 * Use the notValidFields property of the exception to get which fields where not valid
 	 */
 	public void validateContentlet(Contentlet contentlet,Map<Relationship, List<Contentlet>> contentRelationships,List<Category> cats) throws DotContentletValidationException;
-	
+
+	@CloseDBIfOpened
+	void validateContentletNoRels(Contentlet contentlet,
+			List<Category> cats) throws DotContentletValidationException;
+
 	/**
 	 * Use to validate your contentlet.
 	 * @param contentlet

@@ -1,8 +1,9 @@
-import { DotPage } from '@dotcms/dotcms-models';
 import {
     DotExperimentStatusList,
     TrafficProportionTypes
 } from '@portlets/dot-experiments/shared/models/dot-experiments-constants';
+import { DotPage } from '@dotcms/dotcms-models';
+import { Status } from '@portlets/shared/models/shared-models';
 
 export interface DotExperiment {
     id: string;
@@ -32,11 +33,32 @@ export interface TrafficProportion {
 export interface Variant {
     id: string;
     name: string;
-    weight: number;
+    weight: string;
     url?: string;
 }
 
 interface RangeOfDateAndTime {
     startDate: Date;
     endDate: Date;
+}
+
+export interface StepStatus {
+    status: Status;
+    isOpen: boolean;
+    experimentStep: ExperimentSteps | null;
+}
+
+export interface DotStoreWithSidebar {
+    isOpenSidebar: boolean;
+    isSaving: boolean;
+}
+
+export type EditPageTabs = 'edit' | 'preview';
+
+export enum ExperimentSteps {
+    VARIANTS = 'variants',
+    GOAL = 'goal',
+    TARGETING = 'targeting',
+    TRAFFIC = 'traffic',
+    SCHEDULING = 'scheduling'
 }

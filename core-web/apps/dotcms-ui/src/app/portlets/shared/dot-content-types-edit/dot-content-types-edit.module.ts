@@ -75,6 +75,7 @@ import { DotMdIconSelectorModule } from '@dotcms/app/view/components/_common/dot
 import { DotInlineEditModule } from '@components/_common/dot-inline-edit/dot-inline-edit.module';
 import { DotConvertToBlockInfoComponent } from './components/dot-convert-to-block-info/dot-convert-to-block-info.component';
 import { DotConvertWysiwygToBlockComponent } from './components/dot-convert-wysiwyg-to-block/dot-convert-wysiwyg-to-block.component';
+import { DotBlockEditorSettingsComponent } from './components/dot-block-editor-settings/dot-block-editor-settings.component';
 
 @NgModule({
     declarations: [
@@ -97,7 +98,8 @@ import { DotConvertWysiwygToBlockComponent } from './components/dot-convert-wysi
         HintPropertyComponent,
         NamePropertyComponent,
         RegexCheckPropertyComponent,
-        ValuesPropertyComponent
+        ValuesPropertyComponent,
+        DotBlockEditorSettingsComponent
     ],
     exports: [DotContentTypesEditComponent],
     imports: [
