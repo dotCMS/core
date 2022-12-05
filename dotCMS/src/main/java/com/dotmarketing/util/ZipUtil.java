@@ -183,10 +183,15 @@ public class ZipUtil {
 	static boolean checkSecurity(final File parentDir, final File newFile) throws IOException {
 		if (!isNewFileDestinationSafe(parentDir, newFile)) {
 			//Log detailed info into the security logger
-			parentDir.delete();
-			SecurityLogger.logInfo(ZipUtil.class, String.format(
-					"An attempt to unzip entry '%s' under an illegal destination has been made.",
-					newFile.getCanonicalPath()));
+			if(!parentDir.delete()){
+				SecurityLogger.logInfo(ZipUtil.class, String.format(
+						"An attempt to unzip entry '%s' under an illegal destination has been made. The injected directory  [%s]  couldn't get removed.",
+						 parentDir.getCanonicalPath(),newFile.getCanonicalPath()));
+			} else {
+				SecurityLogger.logInfo(ZipUtil.class, String.format(
+						"An attempt to unzip entry '%s' under an illegal destination has been made. The injected directory  [%s]  Was successfully removed.",
+						parentDir.getCanonicalPath(),newFile.getCanonicalPath()));
+			}
 			// and expose the minimum to the user
 			throw new SecurityException("Illegal unzip attempt");
 		}
