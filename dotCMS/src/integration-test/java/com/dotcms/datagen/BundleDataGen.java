@@ -9,7 +9,6 @@ import com.dotcms.publisher.business.PublisherAPIImpl;
 import com.dotcms.publisher.pusher.PushPublisherConfig;
 import com.dotcms.publisher.util.PusheableAsset;
 import com.dotcms.publishing.FilterDescriptor;
-import com.dotcms.publishing.PublisherConfig;
 import com.dotcms.publishing.PublisherConfig.Operation;
 import com.dotcms.util.FunctionUtils;
 import com.dotmarketing.beans.Host;
@@ -25,17 +24,20 @@ import com.dotmarketing.portlets.links.model.Link;
 import com.dotmarketing.portlets.rules.model.Rule;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.portlets.workflows.model.WorkflowScheme;
-import com.google.common.collect.Lists;
-
 import com.liferay.portal.model.User;
-import java.util.*;
+
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Date;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-import static org.jgroups.util.Util.assertTrue;
-
 public class BundleDataGen extends AbstractDataGen<Bundle> {
-    public static AssignableFromMap<BundleDataGen.MetaData> howAddInBundle;
+    public static AssignableFromMap<MetaData> howAddInBundle;
 
     private String name;
     private PushPublisherConfig config;
@@ -186,7 +188,7 @@ public class BundleDataGen extends AbstractDataGen<Bundle> {
         for (final AssetsItem assetItem : assets) {
             final PublishQueueElement publishQueueElement = new PublishQueueElement();
             publishQueueElement.setId(1);
-            publishQueueElement.setOperation(PublisherConfig.Operation.PUBLISH.ordinal());
+            publishQueueElement.setOperation(Operation.PUBLISH.ordinal());
             publishQueueElement.setAsset(assetItem.inode);
             publishQueueElement.setEnteredDate(new Date());
             publishQueueElement.setPublishDate(new Date());

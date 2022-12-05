@@ -71,6 +71,11 @@ public class ContainerFactoryImpl implements ContainerFactory {
 	@Override
 	public void save(final Container container) throws DotDataException {
 		HibernateUtil.save(container);
+		new DotConnect().setSQL("insert into container () values (?, ? ...)")
+						.addParam(container.getIdentifier())
+								.addParam(container.getPreLoop())
+				.addParam(container.getPostLoop())
+						.loadObjectResults();
 		containerCache.remove(container);
 	}
 

@@ -2,7 +2,6 @@ package com.dotcms.publisher.business;
 
 import static com.dotcms.util.CollectionsUtils.list;
 import com.dotcms.contenttype.model.type.ContentType;
-import com.dotcms.datagen.BundleDataGen;
 import com.dotcms.datagen.ContentTypeDataGen;
 import com.dotcms.datagen.ContentletDataGen;
 import com.dotcms.datagen.SiteDataGen;

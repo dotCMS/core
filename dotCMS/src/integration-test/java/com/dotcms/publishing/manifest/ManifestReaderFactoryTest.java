@@ -6,7 +6,6 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 import com.dotcms.contenttype.model.type.ContentType;
-import com.dotcms.datagen.BundleDataGen;
 import com.dotcms.datagen.ContentTypeDataGen;
 import com.dotcms.datagen.FilterDescriptorDataGen;
 import com.dotcms.publisher.bundle.bean.Bundle;
@@ -15,13 +14,11 @@ import com.dotcms.publishing.DotPublishingException;
 import com.dotcms.publishing.FilterDescriptor;
 import com.dotcms.publishing.GenerateBundlePublisher;
 import com.dotcms.publishing.PublishStatus;
-import com.dotcms.publishing.Publisher;
 import com.dotcms.publishing.PublisherConfig;
 import com.dotcms.publishing.manifest.ManifestItem.ManifestInfo;
 import com.dotcms.util.IntegrationTestInitService;
-import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
-import java.io.File;
+
 import java.util.Collection;
 import org.junit.BeforeClass;
 import org.junit.Test;

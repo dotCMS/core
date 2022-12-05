@@ -6,10 +6,11 @@ import com.dotcms.util.ReflectionUtils;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
+import com.google.common.reflect.ClassPath;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
 import io.vavr.Lazy;
-import com.google.common.reflect.ClassPath;
+
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.GET;
@@ -18,19 +19,19 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
-import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.stream.Stream;
 
-@Path("/api/datacreator")
+@Path("/datacreator")
 public class DataCreatorCommandResource {
 
+    public static final String COM_DOTCMS_DATACREATOR_CREATORS = "com.dotcms.datacreator.creators.";
     private static final Lazy<Boolean> isTestMode = Lazy.of(()-> Config.getBooleanProperty("IS_TEST_MODE", false));
     private final WebResource webResource = new WebResource();
-    private final Map<String, DataCreatorCommand> creatorsMap = this.initCreatorsMap ();
+    private final static Map<String, DataCreatorCommand> creatorsMap = initCreatorsMap ();
 
-    private Map<String, DataCreatorCommand> initCreatorsMap() {
+    private static Map<String, DataCreatorCommand> initCreatorsMap() {
 
         final Map<String, DataCreatorCommand> map = new HashMap<>();
 
@@ -38,7 +39,7 @@ public class DataCreatorCommandResource {
 
         try {
             for (final ClassPath.ClassInfo info : ClassPath.from(loader).getTopLevelClasses()) {
-                if (info.getName().startsWith("com.dotcms.datacreator.creators.")) {
+                if (info.getName().startsWith(COM_DOTCMS_DATACREATOR_CREATORS)) {
                     final Class<?> clazz = info.load();
                     clazz.isAssignableFrom(DataCreatorCommand.class);
                     final DataCreatorCommand dataCreatorCommand = (DataCreatorCommand)ReflectionUtils.newInstance(clazz);
@@ -46,7 +47,7 @@ public class DataCreatorCommandResource {
                 }
             }
         } catch (Exception e) {
-            Logger.error(this, e.getMessage(), e);
+            Logger.error(DataCreatorCommandResource.class, e.getMessage(), e);
         }
 
         return map;
@@ -67,7 +68,7 @@ public class DataCreatorCommandResource {
             throw new IllegalArgumentException("Creators can be fired only on test mode");
         }
 
-        if (UtilMethods.isSet(creators)) {
+        if (!UtilMethods.isSet(creators)) {
 
             throw new BadRequestException("The query string parameter 'creators' should be pass");
         }
