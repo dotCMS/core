@@ -1,0 +1,230 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  ~ Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+  ~
+  ~ Licensed under the Apache License, Version 2.0 (the "License");
+  ~ you may not use this file except in compliance with the License.
+  ~ You may obtain a copy of the License at
+  ~
+  ~ http://www.apache.org/licenses/LICENSE-2.0
+  ~
+  ~ Unless required by applicable law or agreed to in writing, software
+  ~ distributed under the License is distributed on an "AS IS" BASIS,
+  ~ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  ~ See the License for the specific language governing permissions and
+  ~ limitations under the License.
+  -->
+<hazelcast xsi:schemaLocation="http://www.hazelcast.com/schema/config hazelcast-config-3.9.xsd"
+           xmlns="http://www.hazelcast.com/schema/config"
+           xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+    <properties> 
+        <property name="hazelcast.client.statistics.enabled">true</property>
+        <property name="hazelcast.discovery.enabled">true</property>
+        <property name="hazelcast.rest.enabled">true</property>
+        <property name="hazelcast.tcp.join.port.try.count">1</property>
+        <property name="hazelcast.heartbeat.interval.seconds">1</property>
+        <property name="hazelcast.max.no.heartbeat.seconds">5</property>
+        <property name="hazelcast.operation.call.timeout.millis">5000</property> 
+        <property name="hazelcast.socket.bind.any">false</property>
+    </properties> 
+    <group>
+        <name>{{ .Env.PROVIDER_HAZELCAST_GROUPNAME }}</name>
+        <!-- <password>dev-pass</password>-->
+    </group>
+    <management-center enabled="{{ .Env.PROVIDER_HAZELCAST_MANCENTER_ENABLED }}">{{ with .Env.PROVIDER_HAZELCAST_MANCENTER_URL }}{{ . }}{{ end }}</management-center>
+    <network>
+        <public-address>{{ .Env.PROVIDER_HAZELCAST_BIND_ADDR }}</public-address>
+        <port auto-increment="false">{{ .Env.PROVIDER_HAZELCAST_PORT }}</port>
+        <outbound-ports>
+            <ports>0</ports>
+        </outbound-ports>
+        <join>
+            <multicast enabled="false" />
+            <aws enabled="false" />
+            <tcp-ip enabled="true">{{ range split .Env.PROVIDER_HAZELCAST_DISCOVERY_MEMBERS "," }}
+                <member>{{ . }}</member>{{ end }}
+            </tcp-ip>
+        </join>
+
+
+        <interfaces enabled="true">
+            <interface>{{ .Env.PROVIDER_HAZELCAST_BIND_ADDR }}</interface>
+        </interfaces>
+        
+        <ssl enabled="false"/>
+        <socket-interceptor enabled="false"/>
+        <symmetric-encryption enabled="false">
+            <algorithm>PBEWithMD5AndDES</algorithm>
+            <salt>thesalt</salt>
+            <password>thepass</password>
+            <iteration-count>19</iteration-count>
+        </symmetric-encryption>
+    </network>
+    <partition-group enabled="true" group-type="HOST_AWARE" />
+    <executor-service name="default">
+        <pool-size>5</pool-size>
+        <!--Queue capacity. 0 means Integer.MAX_VALUE.-->
+        <queue-capacity>10</queue-capacity>
+    </executor-service>
+
+    <topic name="dotCMSClusterCacheInvalidation">
+        <global-ordering-enabled>false</global-ordering-enabled>
+        <statistics-enabled>true</statistics-enabled>
+    </topic>
+
+    <queue name="default">
+        <max-size>0</max-size>
+        <backup-count>0</backup-count>
+        <async-backup-count>0</async-backup-count>
+        <empty-queue-ttl>-1</empty-queue-ttl>
+    </queue>
+
+    <map name="default">
+        <!--
+           Data type that will be used for storing recordMap.
+           Possible values:
+           BINARY (default): keys and values will be stored as binary data
+           OBJECT : values will be stored in their object forms
+           NATIVE : values will be stored in non-heap region of JVM
+        -->
+        <in-memory-format>BINARY</in-memory-format>
+
+        <!--
+            Number of backups. If 1 is set as the backup-count for example,
+            then all entries of the map will be copied to another JVM for
+            fail-safety. 0 means no backup.
+        -->
+        <backup-count>0</backup-count>
+        <!--
+            Number of async backups. 0 means no backup.
+        -->
+        <async-backup-count>1</async-backup-count>
+        <!--
+			Maximum number of seconds for each entry to stay in the map. Entries that are
+			older than <time-to-live-seconds> and not updated for <time-to-live-seconds>
+			will get automatically evicted from the map.
+			Any integer between 0 and Integer.MAX_VALUE. 0 means infinite. Default is 0.
+		-->
+        <time-to-live-seconds>0</time-to-live-seconds>
+        <!--
+			Maximum number of seconds for each entry to stay idle in the map. Entries that are
+			idle(not touched) for more than <max-idle-seconds> will get
+			automatically evicted from the map. Entry is touched if get, put or containsKey is called.
+			Any integer between 0 and Integer.MAX_VALUE. 0 means infinite. Default is 0.
+		-->
+        <max-idle-seconds>259200</max-idle-seconds>
+        <!--
+            Valid values are:
+            NONE (no eviction),
+            LRU (Least Recently Used),
+            LFU (Least Frequently Used).
+            NONE is the default.
+        -->
+        <eviction-policy>LFU</eviction-policy>
+        <!--
+            Maximum size of the map. When max size is reached,
+            map is evicted based on the policy defined.
+            Any integer between 0 and Integer.MAX_VALUE. 0 means
+            Integer.MAX_VALUE. Default is 0.
+        -->
+        <max-size policy="FREE_HEAP_PERCENTAGE">20</max-size>
+
+        <!--
+            While recovering from split-brain (network partitioning),
+            map entries in the small cluster will merge into the bigger cluster
+            based on the policy set here. When an entry merge into the
+            cluster, there might an existing entry with the same key already.
+            Values of these entries might be different for that same key.
+            Which value should be set for the key? Conflict is resolved by
+            the policy set here. Default policy is PutIfAbsentMapMergePolicy
+            There are built-in merge policies such as
+            com.hazelcast.map.merge.PassThroughMergePolicy; entry will be overwritten if merging entry exists for the key.
+            com.hazelcast.map.merge.PutIfAbsentMapMergePolicy ; entry will be added if the merging entry doesn't exist in the cluster.
+            com.hazelcast.map.merge.HigherHitsMapMergePolicy ; entry with the higher hits wins.
+            com.hazelcast.map.merge.LatestUpdateMapMergePolicy ; entry with the latest update wins.
+        -->
+        <merge-policy>com.hazelcast.map.merge.PutIfAbsentMapMergePolicy</merge-policy>
+
+        <!--
+           Control caching of de-serialized values. Caching makes query evaluation faster, but it cost memory.
+           Possible Values:
+                        NEVER: Never cache deserialized object
+                        INDEX-ONLY: Caches values only when they are inserted into an index.
+                        ALWAYS: Always cache deserialized values.
+        -->
+        <cache-deserialized-values>INDEX-ONLY</cache-deserialized-values>
+
+        <!--
+            By default, Hazelcast has one sync backup copy. If backup-count is set
+            to more than 1, then each member will carry both owned entries and backup
+            copies of other members. So for the map.get(key) call, it is possible
+            that the calling member has a backup copy of that key. By default,
+            map.get(key) will always read the value from the actual owner of the key
+            for consistency.
+            To enable backup reads (read local backup entries), set the value of the
+            read-backup-data property to true. Its default value is false for strong
+            consistency. Enabling backup reads can improve performance.
+        -->
+        <read-backup-data>true</read-backup-data>
+
+
+    </map>
+    <map name="tomcatSessionManager">
+        <max-idle-seconds>36000</max-idle-seconds>
+    </map>
+
+
+    <multimap name="default">
+        <backup-count>0</backup-count>
+        <async-backup-count>0</async-backup-count>
+        <value-collection-type>SET</value-collection-type>
+    </multimap>
+
+    <list name="default">
+        <backup-count>0</backup-count>
+        <async-backup-count>0</async-backup-count>
+    </list>
+
+    <set name="default">
+        <backup-count>0</backup-count>
+        <async-backup-count>0</async-backup-count>
+    </set>
+
+    <jobtracker name="default">
+        <max-thread-size>0</max-thread-size>
+        <!-- Queue size 0 means number of partitions * 2 -->
+        <queue-size>0</queue-size>
+        <retry-count>0</retry-count>
+        <chunk-size>1000</chunk-size>
+        <communicate-stats>true</communicate-stats>
+        <topology-changed-strategy>CANCEL_RUNNING_OPERATION</topology-changed-strategy>
+    </jobtracker>
+
+    <semaphore name="default">
+        <initial-permits>0</initial-permits>
+        <backup-count>0</backup-count>
+        <async-backup-count>0</async-backup-count>
+    </semaphore>
+
+    <reliable-topic name="default">
+        <read-batch-size>10</read-batch-size>
+        <topic-overload-policy>BLOCK</topic-overload-policy>
+        <statistics-enabled>true</statistics-enabled>
+    </reliable-topic>
+
+    <ringbuffer name="default">
+        <capacity>1</capacity>
+        <backup-count>0</backup-count>
+        <async-backup-count>0</async-backup-count>
+        <time-to-live-seconds>0</time-to-live-seconds>
+        <in-memory-format>BINARY</in-memory-format>
+    </ringbuffer>
+<!--
+    <serialization>
+        <portable-version>0</portable-version>
+    </serialization>
+-->
+    <services enable-defaults="true"/>
+    <lite-member enabled="false"/>
+
+</hazelcast>

@@ -1,0 +1,25 @@
+# config/log files   #
+######################
+bin/*.sh
+*.log
+.classpath
+.settings/*
+.project
+.idea/
+*.iml
+*.ipr
+*.iws
+
+_original
+# OS generated files #
+######################
+.DS_Store*
+ehthumbs.db
+Icon?
+Thumbs.db
+
+# Build #
+######################
+libs/test
+build/
+.gradle/

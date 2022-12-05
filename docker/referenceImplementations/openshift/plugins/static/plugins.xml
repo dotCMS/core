@@ -1,0 +1,15 @@
+<plugins>
+   <plugin>
+      <id>com.dotcms.hazelcastclient</id>
+   </plugin> 
+</plugins>
+<plugins>
+   <plugin>
+      <id>com.dotcms.hazelcastebedded</id>
+   </plugin> 
+</plugins>
+<plugins>
+   <plugin>
+      <id>com.dotcms.remoteipvalve</id>
+   </plugin> 
+</plugins>

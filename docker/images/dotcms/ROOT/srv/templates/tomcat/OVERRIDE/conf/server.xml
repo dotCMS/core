@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Licensed to the Apache Software Foundation (ASF) under one or more
+  contributor license agreements.  See the NOTICE file distributed with
+  this work for additional information regarding copyright ownership.
+  The ASF licenses this file to You under the Apache License, Version 2.0
+  (the "License"); you may not use this file except in compliance with
+  the License.  You may obtain a copy of the License at
+
+      http://www.apache.org/licenses/LICENSE-2.0
+
+  Unless required by applicable law or agreed to in writing, software
+  distributed under the License is distributed on an "AS IS" BASIS,
+  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  See the License for the specific language governing permissions and
+  limitations under the License.
+-->
+<!-- Note:  A "Server" is not itself a "Container", so you may not
+     define subcomponents such as "Valves" at this level.
+     Documentation at /docs/config/server.html
+ -->
+<Server port="8005" shutdown="SHUTDOWN">
+  <Listener className="org.apache.catalina.startup.VersionLoggerListener" />
+  <Listener className="org.apache.catalina.core.AprLifecycleListener" SSLEngine="on" />
+  <Listener className="org.apache.catalina.mbeans.GlobalResourcesLifecycleListener" />
+
+
+
+  <Service name="Catalina">
+
+    <Executor name="tomcatConnectorThreadPool" namePrefix="ConnectorThreadPool-"
+        maxThreads="{{ .Env.CMS_CONNECTOR_THREADS }}" minSpareThreads="25"/>
+
+    <!-- HTTP Connector from direct connect -->
+    <Connector executor="tomcatConnectorThreadPool" port="8080" protocol="org.apache.coyote.http11.Http11Nio2Protocol"
+               connectionTimeout="3000" enableLookups="false" redirectPort="443" URIEncoding="UTF-8" bindOnInit="false"
+               scheme="http" />
+
+    <!-- HTTP Connector from upstream proxy -->
+    <Connector executor="tomcatConnectorThreadPool" port="8081" protocol="org.apache.coyote.http11.Http11Nio2Protocol"
+                connectionTimeout="3000" enableLookups="false" redirectPort="443" URIEncoding="UTF-8" bindOnInit="false"
+                scheme="http" proxyPort="80" />
+
+    <!-- HTTPS (SSL) Connector from upstream proxy -->
+    <Connector executor="tomcatConnectorThreadPool" port="8082" protocol="org.apache.coyote.http11.Http11Nio2Protocol"
+                connectionTimeout="3000" enableLookups="false" redirectPort="443" URIEncoding="UTF-8" bindOnInit="false"
+                scheme="https" proxyPort="443" secure="true" />
+    
+    <!-- An Engine represents the entry point (within Catalina) that processes
+         every request.  The Engine implementation for Tomcat stand alone
+         analyzes the HTTP headers included with the request, and passes them
+         on to the appropriate Host (virtual host).
+         Documentation at /docs/config/engine.html -->
+
+    <Engine name="Catalina" defaultHost="localhost">
+
+
+      <Host name="localhost"  appBase="webapps"
+            unpackWARs="true" autoDeploy="true">
+            
+       <Valve className="org.apache.catalina.valves.RemoteIpValve"   />
+        
+        <!-- Access log processes all example.
+             Documentation at: /docs/config/valve.html
+             Note: The pattern used is equivalent to using pattern="common" -->
+
+        <Valve className="org.apache.catalina.valves.AccessLogValve" directory="logs"
+               prefix="dotcms_access" suffix=".log"
+               pattern="%{org.apache.catalina.AccessLog.RemoteAddr}r {{ .Env.CMS_VALVE_IP }} %l %u %t %r %H %v%U%q %s %b %{Referer}i %{User-Agent}i" />
+ 
+      </Host>
+    </Engine>
+  </Service>
+</Server>
