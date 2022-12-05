@@ -257,7 +257,7 @@ describe('DotFavoritePageComponent', () => {
                     currentUserRoleId: '1',
                     thumbnail: null,
                     title: 'A title',
-                    url: '/an/url/test?&language_id=1',
+                    url: '/an/url/test?&language_id=1&device_inode=',
                     order: 1,
                     permissions: null
                 });
@@ -285,7 +285,7 @@ describe('DotFavoritePageComponent', () => {
                     currentUserRoleId: '1',
                     thumbnail: 'test',
                     title: 'A title',
-                    url: '/an/url/test?&language_id=1',
+                    url: '/an/url/test?&language_id=1&device_inode=',
                     order: 1,
                     permissions: null
                 });
@@ -299,7 +299,7 @@ describe('DotFavoritePageComponent', () => {
                     currentUserRoleId: '1',
                     thumbnail: 'test',
                     title: 'A title',
-                    url: '/an/url/test?&language_id=1',
+                    url: '/an/url/test?&language_id=1&device_inode=',
                     order: 1,
                     permissions: null
                 });

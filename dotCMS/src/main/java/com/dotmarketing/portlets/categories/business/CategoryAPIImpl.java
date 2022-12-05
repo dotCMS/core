@@ -335,7 +335,10 @@ public class CategoryAPIImpl implements CategoryAPI {
 			throws DotDataException, DotSecurityException {
 
 		List<Category> categories = categoryFactory.getChildren(parent);
-
+		if(categories.isEmpty()) {
+		    return categories;
+		}
+		
 		if(onlyActive) {
 			List<Category> resultList = new ArrayList<>();
 			for (Category cat : categories) {
@@ -546,22 +549,15 @@ public class CategoryAPIImpl implements CategoryAPI {
 		categoryFactory.setParents(child, parents);
 	}
 
-	@CloseDBIfOpened
-	public List<Category> getAllChildren(final Category category, final User user,
-										 final boolean respectFrontendRoles)
-			throws DotDataException, DotSecurityException {
+    @CloseDBIfOpened
+    public List<Category> getAllChildren(final Category category, final User user, final boolean respectFrontendRoles)
+                    throws DotDataException, DotSecurityException {
 
-		List<Category> categoryTree = new ArrayList<Category>();
-		LinkedList<Category> children = new LinkedList<Category>(getChildren(category, user, respectFrontendRoles));
-		if (children != null) {
-			while(children.size() > 0) {
-				Category child = children.poll();
-				children.addAll(getChildren(child, user, respectFrontendRoles));
-				categoryTree.add(child);
-			}
-		}
-		return categoryTree;
-	}
+        return permissionAPI.filterCollection(categoryFactory.getAllChildren(category), PermissionAPI.PERMISSION_READ,
+                        respectFrontendRoles, user);
+
+    }
+
 	@WrapInTransaction
 	public HashMap<String, Category> deleteCategoryAndChildren(final List<String> categoriesToDelete, final User user,
 			final boolean respectFrontendRoles)

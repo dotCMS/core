@@ -8,6 +8,8 @@
 
 set -e
 
+export LANG=${LANG:-"C.UTF-8"}
+
 ## Tomcat config
 
 export TOMCAT_HOME=/srv/dotserver/tomcat

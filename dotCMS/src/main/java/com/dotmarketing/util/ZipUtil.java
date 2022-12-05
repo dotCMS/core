@@ -3,7 +3,6 @@
  */
 package com.dotmarketing.util;
 
-import org.apache.commons.io.IOUtils;
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.File;
@@ -14,7 +13,10 @@ import java.nio.file.Files;
 import java.util.Enumeration;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
+import java.util.zip.ZipInputStream;
 import java.util.zip.ZipOutputStream;
+import org.apache.commons.io.IOUtils;
+import com.dotcms.integritycheckers.IntegrityUtil;
 
 /**
  * @author Jason Tesser
@@ -152,17 +154,45 @@ public class ZipUtil {
 	 * @return
 	 * @throws IOException
 	 */
-	static boolean checkSecurity(final File parentDir, final File newFile) throws IOException {
+	public static boolean checkSecurity(final File parentDir, final File newFile) throws IOException {
 		if (!isNewFileDestinationSafe(parentDir, newFile)) {
 			//Log detailed info into the security logger
-			parentDir.delete();
 			SecurityLogger.logInfo(ZipUtil.class, String.format(
 					"An attempt to unzip entry '%s' under an illegal destination has been made.",
 					newFile.getCanonicalPath()));
+			parentDir.delete();
 			// and expose the minimum to the user
-			throw new SecurityException("Illegal unzip attempt");
+			throw new SecurityException("Illegal unzip attempt:" + newFile.getCanonicalPath());
 		}
 		return true;
 	}
+	
+    public static void extract(final InputStream zipFile, final String outputDirStr) throws IOException {
+        final File outputDir = new File(outputDirStr);
+
+        outputDir.mkdirs();
+
+        ZipEntry ze = null;
+        try (ZipInputStream zin = new ZipInputStream(zipFile)) {
+            while ((ze = zin.getNextEntry()) != null) {
+                Logger.info(IntegrityUtil.class, "Unzipping " + ze.getName());
+                File newFile = new File(outputDir + File.separator + ze.getName());
+                checkSecurity(outputDir, newFile);
+                try (OutputStream os = Files.newOutputStream(newFile.toPath())) {
+                    IOUtils.copy(zin, os);
+                }
+            }
+        } catch (final IOException e) {
+            final String errorMsg = String.format("Error while unzipping Data in file '%s': %s", null != ze ? ze.getName() : "",
+                            e.getMessage());
+            Logger.error(ZipUtil.class, errorMsg, e);
+            throw e;
+        }
+    }
+	
+	
+	
+	
+	
 
 }

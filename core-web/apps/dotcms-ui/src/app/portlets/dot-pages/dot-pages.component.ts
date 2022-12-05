@@ -1,4 +1,5 @@
 import { Component } from '@angular/core';
+import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
 import { Observable } from 'rxjs/internal/Observable';
 import { DotPagesState, DotPageStore } from './dot-pages-store/dot-pages.store';
 
@@ -13,7 +14,7 @@ export class DotPagesComponent {
 
     private initialFavoritePagesLimit = 5;
 
-    constructor(private store: DotPageStore) {
+    constructor(private store: DotPageStore, private dotRouterService: DotRouterService) {
         this.store.setInitialStateData(this.initialFavoritePagesLimit);
     }
 
@@ -33,5 +34,23 @@ export class DotPagesComponent {
         } else {
             this.store.getFavoritePages(favoritePagesToLoad);
         }
+    }
+
+    /**
+     * Event to redirect to Edit Page with selected Favorite Page
+     *
+     * @param {string} url
+     * @memberof DotPagesComponent
+     */
+    goToUrl(url: string) {
+        const splittedUrl = url.split('?');
+        const urlParams = { url: splittedUrl[0] };
+        const searchParams = new URLSearchParams(splittedUrl[1]);
+
+        for (const entry of searchParams) {
+            urlParams[entry[0]] = entry[1];
+        }
+
+        this.dotRouterService.goToEditPage(urlParams);
     }
 }

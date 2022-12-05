@@ -27,6 +27,6 @@ export function generateDotFavoritePageUrl(params: DotPageRenderParameters): str
         `${page?.pageURI}?` +
         (site?.identifier ? `host_id=${site?.identifier}` : '') +
         `&language_id=${viewAs.language.id}` +
-        (viewAs.device?.identifier ? `&device_id=${viewAs.device?.identifier}` : '')
+        (viewAs.device?.inode ? `&device_inode=${viewAs.device?.inode}` : '&device_inode=')
     );
 }

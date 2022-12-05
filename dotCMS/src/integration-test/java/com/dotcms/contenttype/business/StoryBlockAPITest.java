@@ -1,3 +1,4 @@
+
 package com.dotcms.contenttype.business;
 
 import com.dotcms.IntegrationTestBase;
@@ -11,6 +12,7 @@ import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.liferay.util.StringPool;
+import io.vavr.Tuple2;
 import io.vavr.control.Try;
 import org.junit.Assert;
 import org.junit.BeforeClass;
@@ -29,7 +31,7 @@ public class StoryBlockAPITest extends IntegrationTestBase {
 
     private static final String JSON =
 
-            "{\n" +
+                    "{\n" +
                     "            \"type\":\"doc\",\n" +
                     "            \"content\":[\n" +
                     "               {\n" +
@@ -114,7 +116,7 @@ public class StoryBlockAPITest extends IntegrationTestBase {
         Assert.assertNotNull(newStoryBlockMap);
         final List contentList = (List) newStoryBlockMap.get("content");
         final Optional<Object> firstContentletMap = contentList.stream()
-                                                            .filter(content -> "dotContent".equals(Map.class.cast(content).get("type"))).findFirst();
+                .filter(content -> "dotContent".equals(Map.class.cast(content).get("type"))).findFirst();
 
         Assert.assertTrue(firstContentletMap.isPresent());
         final Map contentletMap = (Map) Map.class.cast(Map.class.cast(firstContentletMap.get()).get(StoryBlockAPI.ATTRS_KEY)).get(StoryBlockAPI.DATA_KEY);
@@ -174,6 +176,7 @@ public class StoryBlockAPITest extends IntegrationTestBase {
                                                         .readValue(Try.of(() -> newStoryBlockJson3.toString())
                                                                            .getOrElse(StringPool.BLANK), LinkedHashMap.class);
 
+
         Assert.assertNotNull(newStoryBlockMap);
         final List<String> contentletIdList = APILocator.getStoryBlockAPI().getDependencies(newStoryBlockJson3);
         Assert.assertNotNull(contentletIdList);
@@ -182,5 +185,4 @@ public class StoryBlockAPITest extends IntegrationTestBase {
         Assert.assertTrue(contentletIdList.contains(richTextContentlet2.getIdentifier()));
         Assert.assertTrue(contentletIdList.contains(richTextContentlet3.getIdentifier()));
     }
-
 }
