@@ -201,7 +201,6 @@ configurations {
     profiler
     profilerDependencies
     byteBuddyAgent
-    mavenUi { transitive = false }
 }
 
 
@@ -282,8 +281,6 @@ dependencies {
 
         implementation group: 'com.dotcms.enterprise', name: 'ee', version: dotcmsReleaseVersion + eeType, changing: true
     }
-
-    mavenUi "com.dotcms:core-web:${mavenUiVersion}"
 }
 
 import groovy.json.JsonSlurper
@@ -563,12 +560,12 @@ task deleteDotCmsUi(type: Delete) {
 
 
 task compileUI(type: Exec) {
-        workingDir "${project.projectDir}/../core-web"
+    workingDir "${project.projectDir}/../core-web"
         commandLine '../mvnw', 'clean', 'install', '-DskipTests', "-Dnx.build.options=${nxBuildOptions}"
 }
 
-task unpackMavenUI(type: Copy, dependsOn:['compileUI']) {
-       from(zipTree(project.configurations.mavenUi.singleFile)) {
+task unpackMavenUI(type: Copy, dependsOn: compileUI) {
+       from(zipTree("${project.projectDir}/../core-web/target/core-web-${mavenUiVersion}.war")) {
                 include "dotAdmin/**"
                 include "dotcms-webcomponents/**"
                 includeEmptyDirs = true
