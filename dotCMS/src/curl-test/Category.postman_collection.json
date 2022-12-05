@@ -1885,7 +1885,7 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "{{serverURL}}/api/v1/categories?filter=&page=0&per_page=5&ordeby=category_name&direction=ASC",
+							"raw": "{{serverURL}}/api/v1/categories?filter=&page=0&per_page=5&orderby=category_name&direction=ASC",
 							"host": [
 								"{{serverURL}}"
 							],
@@ -1908,7 +1908,7 @@
 									"value": "5"
 								},
 								{
-									"key": "ordeby",
+									"key": "orderby",
 									"value": "category_name"
 								},
 								{
@@ -2482,7 +2482,7 @@
 				"method": "GET",
 				"header": [],
 				"url": {
-					"raw": "{{serverURL}}/api/v1/categories/children?filter=&page=0&per_page=5&ordeby=category_name&direction=ASC&inode={{categoryINodeId}}",
+					"raw": "{{serverURL}}/api/v1/categories/children?filter=&page=0&per_page=5&orderby=category_name&direction=ASC&inode={{categoryINodeId}}",
 					"host": [
 						"{{serverURL}}"
 					],
@@ -2506,7 +2506,7 @@
 							"value": "5"
 						},
 						{
-							"key": "ordeby",
+							"key": "orderby",
 							"value": "category_name"
 						},
 						{
@@ -2571,7 +2571,7 @@
 				"method": "GET",
 				"header": [],
 				"url": {
-					"raw": "{{serverURL}}/api/v1/categories/children?filter=&page=0&per_page=5&ordeby=&direction=&inode=",
+					"raw": "{{serverURL}}/api/v1/categories/children?filter=&page=0&per_page=5&orderby=&direction=&inode=",
 					"host": [
 						"{{serverURL}}"
 					],
@@ -2595,7 +2595,7 @@
 							"value": "5"
 						},
 						{
-							"key": "ordeby",
+							"key": "orderby",
 							"value": ""
 						},
 						{
@@ -2874,7 +2874,7 @@
 				"method": "GET",
 				"header": [],
 				"url": {
-					"raw": "{{serverURL}}/api/v1/categories?filter=&page=0&per_page=5&ordeby=category_name&direction=ASC&showChildrenCount=true",
+					"raw": "{{serverURL}}/api/v1/categories?filter=&page=0&per_page=5&orderby=category_name&direction=ASC&showChildrenCount=true",
 					"host": [
 						"{{serverURL}}"
 					],
@@ -2897,7 +2897,7 @@
 							"value": "5"
 						},
 						{
-							"key": "ordeby",
+							"key": "orderby",
 							"value": "category_name"
 						},
 						{
@@ -2966,7 +2966,7 @@
 				"method": "GET",
 				"header": [],
 				"url": {
-					"raw": "{{serverURL}}/api/v1/categories?filter=&page=0&per_page=5&ordeby=category_name&direction=ASC&showChildrenCount=true",
+					"raw": "{{serverURL}}/api/v1/categories?filter=&page=0&per_page=5&orderby=category_name&direction=ASC&showChildrenCount=true",
 					"host": [
 						"{{serverURL}}"
 					],
@@ -2989,7 +2989,7 @@
 							"value": "5"
 						},
 						{
-							"key": "ordeby",
+							"key": "orderby",
 							"value": "category_name"
 						},
 						{
@@ -3058,7 +3058,7 @@
 				"method": "GET",
 				"header": [],
 				"url": {
-					"raw": "{{serverURL}}/api/v1/categories?filter=&page=0&per_page=5&ordeby=category_name&direction=ASC&showChildrenCount=false",
+					"raw": "{{serverURL}}/api/v1/categories?filter=&page=0&per_page=5&orderby=category_name&direction=ASC&showChildrenCount=false",
 					"host": [
 						"{{serverURL}}"
 					],
@@ -3081,7 +3081,7 @@
 							"value": "5"
 						},
 						{
-							"key": "ordeby",
+							"key": "orderby",
 							"value": "category_name"
 						},
 						{
