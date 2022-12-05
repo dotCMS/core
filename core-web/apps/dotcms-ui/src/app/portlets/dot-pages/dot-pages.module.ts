@@ -10,6 +10,7 @@ import { DotIconModule } from '@dotcms/ui';
 import { PanelModule } from 'primeng/panel';
 import { ButtonModule } from 'primeng/button';
 import { DotPagesCardEmptyModule } from './dot-pages-card-empty/dot-pages-card-empty.module';
+import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
 
 @NgModule({
     declarations: [DotPagesComponent],
@@ -24,6 +25,6 @@ import { DotPagesCardEmptyModule } from './dot-pages-card-empty/dot-pages-card-e
         ButtonModule,
         TabViewModule
     ],
-    providers: [DotESContentService]
+    providers: [DotESContentService, DotRouterService]
 })
 export class DotPagesModule {}
