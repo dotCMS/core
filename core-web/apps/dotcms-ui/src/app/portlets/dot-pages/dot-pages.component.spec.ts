@@ -2,7 +2,11 @@ import { Component, Input, Injectable, DebugElement } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { DotESContentService, DotMessageService } from '@dotcms/data-access';
 import { of } from 'rxjs/internal/observable/of';
-import { dotcmsContentletMock, MockDotMessageService } from '@dotcms/utils-testing';
+import {
+    dotcmsContentletMock,
+    MockDotMessageService,
+    MockDotRouterService
+} from '@dotcms/utils-testing';
 import { DotPageStore } from './dot-pages-store/dot-pages.store';
 import { CommonModule } from '@angular/common';
 import { DotPipesModule } from '@dotcms/app/view/pipes/dot-pipes.module';
@@ -17,7 +21,6 @@ import { By } from '@angular/platform-browser';
 import { PanelModule } from 'primeng/panel';
 import { DotPagesCardEmptyModule } from './dot-pages-card-empty/dot-pages-card-empty.module';
 import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
-import { MockDotRouterService } from '@dotcms/app/test/dot-router-service.mock';
 
 @Component({
     selector: 'dot-pages-card',
