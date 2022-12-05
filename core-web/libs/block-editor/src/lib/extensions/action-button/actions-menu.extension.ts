@@ -25,6 +25,7 @@ import {
 } from '@dotcms/block-editor';
 
 import { ActionButtonComponent } from './action-button.component';
+import { BUBBLE_IMAGE_FORM_PLUGIN_KEY } from '../image-form/image-form.extension';
 
 declare module '@tiptap/core' {
     interface Commands<ReturnType> {
@@ -115,6 +116,12 @@ function execCommand({
         },
         horizontalLine: () => {
             editor.chain().deleteRange(range).setHorizontalRule().focus().run();
+        },
+        image: () => {
+            const transaction = editor.state.tr.setMeta(BUBBLE_IMAGE_FORM_PLUGIN_KEY, {
+                open: true
+            });
+            editor.view.dispatch(transaction);
         }
     };
 

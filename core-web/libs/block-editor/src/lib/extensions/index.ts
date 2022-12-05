@@ -24,6 +24,9 @@ export * from './floating-button/floating-button.component';
 export * from './floating-button/floating-button.extension';
 export * from './floating-button/plugin/floating-button.plugin';
 
+// Image Form
+export * from './image-form/image-form.extension';
+
 // Dot Config
 export * from './dot-config/dot-config.extension';
 

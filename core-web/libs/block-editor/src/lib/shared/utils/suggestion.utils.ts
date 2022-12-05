@@ -69,7 +69,17 @@ function sanitizeUrl(url: string): SafeUrl {
     return domSanitizer.bypassSecurityTrustUrl(url);
 }
 
-export const suggestionOptions: DotMenuItem[] = [...headings, ...paragraph, ...list, ...block];
+export const suggestionOptions: DotMenuItem[] = [
+    {
+        label: 'Image',
+        icon: sanitizeUrl(lineIcon),
+        id: 'image'
+    },
+    ...headings,
+    ...paragraph,
+    ...list,
+    ...block
+];
 
 export const SuggestionPopperModifiers = [
     {

@@ -1,0 +1,35 @@
+<form class="search-box" [formGroup]="form">
+    <span class="p-input-icon-right">
+        <input
+            class="search"
+            #inputSearch
+            type="text"
+            pInputText
+            formControlName="search"
+            placeholder="Search"
+        />
+        <i class="pi pi-search"></i>
+    </span>
+</form>
+<div class="card-wrapper">
+    <p-card *ngFor="let contentlet of contentlets" (click)="selectedItem.emit(contentlet)">
+        <ng-template pTemplate="header">
+            <img [src]="'https://demo.dotcms.com' + contentlet.fileAsset" />
+            <!-- <dot-contentlet-thumbnail
+                [width]="94"
+                [height]="94"
+                [iconSize]="'72px'"
+                [contentlet]="contentlet"
+            >
+            </dot-contentlet-thumbnail> -->
+        </ng-template>
+        <h2 class="title" *pTemplate="'title'">{{ contentlet?.fileName || contentlet?.title }}</h2>
+        <ng-template pTemplate="footer">
+            <div class="state">
+                <span class="badge">{{ contentlet.language }}</span>
+                <dot-state-icon [state]="contentlet | contentletState" size="16px">
+                </dot-state-icon>
+            </div>
+        </ng-template>
+    </p-card>
+</div>

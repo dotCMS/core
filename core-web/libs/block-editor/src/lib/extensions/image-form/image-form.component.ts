@@ -1,40 +1,47 @@
 // import { ChangeDetectionStrategy, Component, OnInit } from '@angular/core';
-import { Component, OnInit } from '@angular/core';
+import { Component, EventEmitter, OnInit, Output } from '@angular/core';
+import { take } from 'rxjs/operators';
+
 import {
     SearchService,
     queryEsParams,
     ESOrderDirection
 } from '../../shared/services/search.service';
-import { FormGroup, FormBuilder } from '@angular/forms';
-import { debounceTime } from 'rxjs/operators';
+
+import { DotCMSContentlet } from '@dotcms/dotcms-models';
+import { DotLanguageService } from '../../shared';
+import { Languages } from '@dotcms/block-editor/services';
 
 @Component({
     selector: 'dot-image-form',
     templateUrl: './image-form.component.html',
     styleUrls: ['./image-form.component.scss']
-    // changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class ImageFormComponent implements OnInit {
-    public state = null;
-    public form: FormGroup;
-    public contentlets = [];
+    @Output() selectedContentlet: EventEmitter<DotCMSContentlet> = new EventEmitter();
+    public contentlets: DotCMSContentlet[] = [];
+    private dotLangs: Languages;
 
-    constructor(private searchService: SearchService, private fb: FormBuilder) {}
+    constructor(
+        private searchService: SearchService,
+        private dotLanguageService: DotLanguageService
+    ) {}
 
     ngOnInit(): void {
-        this.form = this.fb.group({
-            search: ['']
-        });
-        this.state = { live: true, working: true, deleted: false, hasLiveVersion: true };
-        this.form.valueChanges.pipe(debounceTime(500)).subscribe(({ search }) => {
-            this.searchContentlets(search);
-        });
-        this.searchContentlets();
+        this.dotLanguageService
+            .getLanguages()
+            .pipe(take(1))
+            .subscribe((dotLang) => (this.dotLangs = dotLang));
     }
 
-    private searchContentlets(search = '') {
+    searchContentlets(search = '') {
         this.searchService.get(this.getParams(search)).subscribe(({ contentlets }) => {
-            this.contentlets = contentlets;
+            this.contentlets = contentlets.map((contentlet) => {
+                return {
+                    ...contentlet,
+                    language: this.getContentletLanguage(contentlet.languageId)
+                };
+            });
         });
     }
 
@@ -45,5 +52,15 @@ export class ImageFormComponent implements OnInit {
             limit: 20,
             offset: '0'
         };
+    }
+
+    private getContentletLanguage(languageId: number): string {
+        const { languageCode, countryCode } = this.dotLangs[languageId];
+
+        if (!languageCode || !countryCode) {
+            return '';
+        }
+
+        return `${languageCode}-${countryCode}`;
     }
 }

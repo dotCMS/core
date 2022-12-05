@@ -1,0 +1,145 @@
+@use "variables" as *;
+
+.card-wrapper {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 10px;
+    padding: 10px 0;
+}
+
+.search-box {
+    width: 100%;
+
+    span {
+        width: 100%;
+    }
+
+    .search {
+        width: 100%;
+        border: 1px solid #b3b1b8;
+        height: 35px;
+        border-radius: 2px;
+        padding: 8px 7px 8px 16px;
+    }
+}
+
+:host ::ng-deep {
+    .p-card {
+        cursor: pointer;
+        display: flex;
+        flex-direction: row;
+        align-items: flex-start;
+        padding: 0px;
+
+        width: 329px;
+        height: 94px;
+        margin-bottom: 10px;
+
+        background: $white;
+        box-shadow: 0px 2px 2px rgba(30, 30, 30, 0.15);
+        border-radius: 2px;
+        gap: 14px;
+
+        border: none;
+
+        .p-card-header {
+            box-sizing: border-box;
+            padding: 0;
+            height: 5.875 * $dot-editor-size;
+            width: 5.875 * $dot-editor-size;
+
+            img {
+                height: 5.875 * $dot-editor-size;
+                width: 5.875 * $dot-editor-size;
+            }
+        }
+
+        .p-card-body {
+            overflow: hidden;
+            display: flex;
+            align-items: flex-start;
+            justify-content: flex-start;
+            flex-direction: column;
+            padding: 7px 0;
+            height: 100%;
+            width: auto;
+            padding: $spacing-3 0;
+            padding-right: $spacing-4;
+            flex: 1;
+
+            .p-card-content {
+                padding: 0;
+            }
+
+            .p-card-subtitle {
+                color: $gray;
+                font-size: $font-size-small;
+                font-weight: regular;
+                margin-bottom: $spacing-2;
+            }
+
+            .p-card-title {
+                overflow: hidden;
+                width: 100%;
+                margin: 0;
+
+                h2 {
+                    color: #1b3359;
+                    flex-grow: 1;
+                    font-size: 16px;
+                    font-weight: 400;
+                    line-height: 140%;
+                    margin-bottom: $spacing-1;
+                    margin: 0;
+                    overflow: hidden;
+                    padding: 0;
+                    text-overflow: ellipsis;
+                    white-space: nowrap;
+                }
+            }
+        }
+    }
+
+    .badge {
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+        padding: 4px 7px;
+        height: 25px;
+        background: #e9ebfc;
+        border-radius: 2px;
+        color: black;
+
+        font-family: "Roboto";
+        font-style: normal;
+        font-weight: 400;
+        font-size: 12px;
+        line-height: 140%;
+
+        color: #000000;
+        flex-grow: 0;
+    }
+}
+
+dot-contentlet-thumbnail {
+    align-items: center;
+    display: block;
+    position: relative;
+    width: 5.875 * $dot-editor-size;
+    height: 5.875 * $dot-editor-size;
+}
+
+.state {
+    align-items: center;
+    display: flex;
+
+    & > * {
+        margin-right: $spacing-1;
+
+        &:last-child {
+            margin-right: 0;
+        }
+    }
+}

@@ -45,6 +45,7 @@ import { DotBlockEditorComponent } from './components/dot-block-editor/dot-block
 import { DotEditorCountBarComponent } from './components/dot-editor-count-bar/dot-editor-count-bar.component';
 import { FloatingButtonComponent } from './extensions/floating-button/floating-button.component';
 import { ImageFormComponent } from './extensions/image-form/image-form.component';
+import { SearchTabComponent } from './extensions/image-form/components/search-tab/search-tab.component';
 
 @NgModule({
     imports: [
@@ -77,7 +78,8 @@ import { ImageFormComponent } from './extensions/image-form/image-form.component
         DotBlockEditorComponent,
         DotEditorCountBarComponent,
         FloatingButtonComponent,
-        ImageFormComponent
+        ImageFormComponent,
+        SearchTabComponent
     ],
     providers: [DotImageService, LoggerService, StringUtils],
     exports: [
