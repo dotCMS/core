@@ -35,6 +35,6 @@ describe('Dot Utils', () => {
 
         const url = dotUtils.generateDotFavoritePageUrl(mockRenderedPageState);
 
-        expect(url).toEqual('/an/url/test?&language_id=1&device_id=abc123');
+        expect(url).toEqual('/an/url/test?&language_id=1&device_inode=123zxc');
     });
 });

@@ -111,6 +111,7 @@ export class DotContentEditorComponent implements OnInit {
      */
     monacoInit(monacoEditor) {
         this.monacoEditors[monacoEditor.name] = monacoEditor.editor;
+        this.monacoEditors[monacoEditor.name].focus();
     }
 
     private init(): void {
@@ -138,6 +139,8 @@ export class DotContentEditorComponent implements OnInit {
                                 structureId: new FormControl(contentType.id, [Validators.required])
                             })
                         );
+
+                        this.updateActiveTabIndex(this.containerContents.length);
                     }
                 }
             };
