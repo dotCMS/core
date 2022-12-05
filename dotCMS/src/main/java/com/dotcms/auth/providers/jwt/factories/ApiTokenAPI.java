@@ -487,7 +487,7 @@ public class ApiTokenAPI {
      */
     public  boolean isWellFormedToken(final String token){
         try {
-            return JsonWebTokenUtils.getInstance().parseToken(token);
+            return JsonWebTokenUtils.getInstance().isWellFormed(token);
         } catch (MalformedJwtException e){
             return false;
         } catch(SignatureException | ExpiredJwtException | IllegalArgumentException e){

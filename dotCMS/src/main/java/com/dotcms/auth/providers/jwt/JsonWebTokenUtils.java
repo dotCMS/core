@@ -149,4 +149,8 @@ public class JsonWebTokenUtils {
          return jsonWebTokenService.parseToken(token) != null;
     }
 
+    public boolean isWellFormed(final String token){
+        return jsonWebTokenService.isWellFormed(token);
+    }
+
 } // E:O:F:JsonWebTokenUtils.

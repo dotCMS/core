@@ -19,6 +19,7 @@ import javax.net.ssl.TrustManager;
 import javax.net.ssl.TrustManagerFactory;
 import javax.net.ssl.X509KeyManager;
 import javax.net.ssl.X509TrustManager;
+import org.apache.http.conn.ssl.DefaultHostnameVerifier;
 
 public class TrustFactory {
 	private static final String truststore_path = Config.getStringProperty("TRUSTSTORE_PATH", null); //cacerts.jks";
@@ -46,7 +47,7 @@ public class TrustFactory {
 
         SSLContext ctx = null;
         try {
-            ctx = SSLContext.getInstance("SSL");
+            ctx = SSLContext.getInstance("TLSv1.2");
             ctx.init(mykm, mytm, null);
         } catch (java.security.GeneralSecurityException ex) {
             Logger.error(this.getClass(), ex.getMessage(), ex);
@@ -57,13 +58,7 @@ public class TrustFactory {
     }
 	
 	public HostnameVerifier getHostnameVerifier() {
-        return new HostnameVerifier() {
-
-            @Override
-            public boolean verify(String hostname, javax.net.ssl.SSLSession sslSession) {
-                return true;
-            }
-        };
+        return new DefaultHostnameVerifier();
     }
 	
 	static class MyX509TrustManager implements X509TrustManager {

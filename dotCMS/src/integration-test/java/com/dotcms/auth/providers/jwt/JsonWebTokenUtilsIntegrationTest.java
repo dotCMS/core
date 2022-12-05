@@ -160,6 +160,7 @@ public class JsonWebTokenUtilsIntegrationTest {
         final String jsonWebToken = jsonWebTokenService.generateUserToken(userToken);
 
         final JsonWebTokenUtils utils = JsonWebTokenUtils.getInstance();
+        assertTrue(utils.isWellFormed(jsonWebToken));
         assertTrue(utils.parseToken(jsonWebToken));
 
     }
