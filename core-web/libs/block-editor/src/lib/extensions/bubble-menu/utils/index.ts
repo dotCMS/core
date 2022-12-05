@@ -113,8 +113,7 @@ export const isListNode = (editor): boolean => {
     return editor.isActive('bulletList') || editor.isActive('orderedList');
 };
 
-/* Bubble Menu Items*/
-const bubbleMenuDefaultItems: Array<BubbleMenuItem> = [
+const textMarks: Array<BubbleMenuItem> = [
     {
         icon: 'format_bold',
         markAction: 'bold',
@@ -135,7 +134,10 @@ const bubbleMenuDefaultItems: Array<BubbleMenuItem> = [
         markAction: 'strike',
         active: false,
         divider: true
-    },
+    }
+];
+
+const alignmentMarks: Array<BubbleMenuItem> = [
     {
         icon: 'format_align_left',
         markAction: 'left',
@@ -151,7 +153,13 @@ const bubbleMenuDefaultItems: Array<BubbleMenuItem> = [
         markAction: 'right',
         active: false,
         divider: true
-    },
+    }
+];
+
+/* Bubble Menu Items*/
+const bubbleMenuDefaultItems: Array<BubbleMenuItem> = [
+    ...textMarks,
+    ...alignmentMarks,
     {
         icon: 'format_list_bulleted',
         markAction: 'bulletList',
@@ -193,22 +201,7 @@ const bubbleMenuDefaultItems: Array<BubbleMenuItem> = [
 ];
 
 const imageOptions: Array<BubbleMenuItem> = [
-    {
-        icon: 'format_align_left',
-        markAction: 'left',
-        active: false
-    },
-    {
-        icon: 'format_align_center',
-        markAction: 'center',
-        active: false
-    },
-    {
-        icon: 'format_align_right',
-        markAction: 'right',
-        active: false,
-        divider: true
-    },
+    ...alignmentMarks,
     {
         icon: 'link',
         markAction: 'link',
@@ -224,38 +217,8 @@ const imageOptions: Array<BubbleMenuItem> = [
 
 /* Table text node Items*/
 const tableOptions: Array<BubbleMenuItem> = [
-    {
-        icon: 'format_bold',
-        markAction: 'bold',
-        active: false
-    },
-    {
-        icon: 'format_italic',
-        markAction: 'italic',
-        active: false
-    },
-    {
-        icon: 'strikethrough_s',
-        markAction: 'strike',
-        active: false,
-        divider: true
-    },
-    {
-        icon: 'format_align_left',
-        markAction: 'left',
-        active: false
-    },
-    {
-        icon: 'format_align_center',
-        markAction: 'center',
-        active: false
-    },
-    {
-        icon: 'format_align_right',
-        markAction: 'right',
-        active: false,
-        divider: true
-    },
+    ...textMarks,
+    ...alignmentMarks,
     {
         icon: 'link',
         markAction: 'link',
