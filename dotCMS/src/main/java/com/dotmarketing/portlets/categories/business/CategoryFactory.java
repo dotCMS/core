@@ -12,7 +12,7 @@ import com.dotmarketing.portlets.categories.model.Category;
  *
  */
 public abstract class CategoryFactory {
-
+    final static String ALL_CHILDREN_SUFFIX=":all-children";
 	/**
 	 * Totally removes a category from the system
 	 * @param object
@@ -243,12 +243,6 @@ public abstract class CategoryFactory {
 	abstract protected List<Category> findTopLevelCategoriesByFilter(String filter, String sort) throws DotDataException;
 	
 	/**
-	 * Deletes all the Children of a given parent inode
-	 * @return
-	 */
-	abstract protected void deleteChildren(String inode);
-	
-	/**
 	 * Returns the children categories of the category with the supplied inode filtered by a string  
 	 * @return
 	 * @throws DotDataException
@@ -269,5 +263,15 @@ public abstract class CategoryFactory {
 	abstract protected String suggestVelocityVarName (String categoryVelVarName) throws DotDataException;
 
 	abstract protected  void clearCache();
+
+    /**
+     * This method recurses down the category tree returns all the children, grandchildren, great
+     * grandchildren, etc under this category
+     * 
+     * @param parent
+     * @return
+     * @throws DotDataException
+     */
+    abstract protected List<Category> getAllChildren(Categorizable parent) throws DotDataException;
 	
 }

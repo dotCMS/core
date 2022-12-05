@@ -1502,24 +1502,23 @@ public class ESContentletAPIImpl implements ContentletAPI {
                     return contentlet.getFolder();
                 }
             } else if (theField instanceof CategoryField) {
-                final Category category = this.categoryAPI.find(theField.values(), currentUser, respectFrontEndRoles);
+                final Category categoryField = this.categoryAPI.find(theField.values(), currentUser, respectFrontEndRoles);
                 // Get all the Contentlets Categories
                 final List<Category> selectedCategories = this.categoryAPI
                         .getParents(contentlet, currentUser, respectFrontEndRoles);
-                final Set<Category> categoryList = new HashSet<>();
-                final List<Category> categoryTree = this.categoryAPI
-                        .getAllChildren(category, currentUser, respectFrontEndRoles);
-                if (selectedCategories.size() > 0 && categoryTree != null) {
-                    for (int k = 0; k < categoryTree.size(); k++) {
-                        final Category cat = categoryTree.get(k);
-                        for (final Category categ : selectedCategories) {
-                            if (categ.getInode().equalsIgnoreCase(cat.getInode())) {
-                                categoryList.add(cat);
-                            }
-                        }
-                    }
+                if(selectedCategories.isEmpty()) {
+                    return List.of();
                 }
-                return categoryList;
+                final List<Category> availableCategories = this.categoryAPI
+                        .getAllChildren(categoryField, APILocator.systemUser(), false);
+                if(availableCategories.isEmpty()) {
+                    return List.of();
+                }
+                selectedCategories.retainAll(availableCategories);
+                
+                return selectedCategories;
+                
+
 
             } else if (theField instanceof RelationshipField) {
                 final ContentletRelationships contentletRelationships = new ContentletRelationships(

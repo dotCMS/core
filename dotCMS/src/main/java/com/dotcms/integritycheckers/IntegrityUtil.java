@@ -225,6 +225,7 @@ public class IntegrityUtil {
         ZipUtil.extract(zipFile, outputDir);
     }
 
+
     /**
      * Resolves the integrity data path based on provided endpoint id.
      *
@@ -530,7 +531,7 @@ public class IntegrityUtil {
         final String outputDir = ConfigUtils.getIntegrityPath() + File.separator + key;
 
         // lets first unzip the given file
-        unzipFile(dataToFix, outputDir);
+        ZipUtil.extract(dataToFix, outputDir);
 
         // lets generate the tables with the data to be fixed
         generateDataToFixTable(key, type);
