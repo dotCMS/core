@@ -50,8 +50,9 @@ public class ConfigTest {
 
         System.getenv().put("NUMBER_OF_PROCESSORS", "77");
         
-        String test = Config.getStringProperty(MY_TEST_STRING, MY_TEST_STRING_DEFAULT);
-        assertEquals(test, MY_TEST_STRING_DEFAULT);
+        String test = Config.getStringProperty("NUMBER_OF_PROCESSORS", "3");
+        
+        assertEquals(test, "77");
 
         
     }

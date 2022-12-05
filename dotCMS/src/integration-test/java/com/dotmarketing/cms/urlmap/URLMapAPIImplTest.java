@@ -112,10 +112,11 @@ public class URLMapAPIImplTest {
      * methodToTest {@link URLMapAPIImpl#isUrlPattern(UrlMapContext)}
      * Given Scenario: Request a URL with the api prefix
      * ExpectedResult: Should return false, even when the Content Type and the Content exists
+     * @throws DotSecurityException 
      */
     @Test
     public void shouldNotMatchUrlStaringWithAPI()
-            throws DotDataException {
+            throws DotDataException, DotSecurityException {
         final String newsPatternPrefix =
                 "/testpattern" + System.currentTimeMillis() + "/";
         final Contentlet newsTestContent = createURLMapperContentType(newsPatternPrefix);
@@ -187,9 +188,10 @@ public class URLMapAPIImplTest {
      * methodToTest {@link URLMapAPIImpl#isUrlPattern(UrlMapContext)}}
      * Given Scenario: Call  isUrlPattern with dotAdmin URL when not any URL Mapper exists
      * ExpectedResult: Should return false
+     * @throws DotSecurityException 
      */
     @Test
-    public void isUrlPatternWithoutUrlMap() throws DotDataException {
+    public void isUrlPatternWithoutUrlMap() throws DotDataException, DotSecurityException {
         deleteAllUrlMapperContentType();
         final UrlMapContext context = getUrlMapContext(systemUser, host, "/dotAdmin");
         assertFalse(urlMapAPI.isUrlPattern(context));

@@ -1,14 +1,13 @@
 package com.liferay.portal.ejb;
 
 import com.dotcms.business.WrapInTransaction;
-import com.dotcms.repackage.com.ibm.icu.util.GregorianCalendar;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
-
+import java.util.Calendar;
 import java.util.Date;
 
 /**
@@ -22,7 +21,7 @@ public class UserTestUtil {
      */
     public static User getUser(String userName, boolean toBeDeleted, boolean saveInDatabase)
         throws DotSecurityException, DotDataException {
-        return getUser(userName, toBeDeleted, saveInDatabase, GregorianCalendar.getInstance().getTime());
+        return getUser(userName, toBeDeleted, saveInDatabase, Calendar.getInstance().getTime());
     }
 
     /**

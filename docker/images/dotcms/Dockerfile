@@ -1,6 +1,8 @@
-# OpenJDK distributed under GPLv2+Oracle Classpath Exception license (http://openjdk.java.net/legal/gplv2+ce.html)
-# Alpine Linux packages distributed under various licenses including GPL-3.0+ (https://pkgs.alpinelinux.org/packages)
-FROM dotcms/dotcms-seed as build-cms 
+
+# ----------------------------------------------
+# Stage 1:  Build dotCMS from our builder image
+# ----------------------------------------------
+FROM dotcms/dotcms-seed:22.09 as build-cms
 
 LABEL com.dotcms.contact "support@dotcms.com"
 LABEL com.dotcms.vendor "dotCMS LLC"
@@ -10,84 +12,107 @@ LABEL com.dotcms.description "dotCMS Content Management System"
 ARG BUILD_FROM=COMMIT
 
 #  Value resolved in the context of $BUILD_FROM
-ARG BUILD_ID=HEAD      
+ARG BUILD_ID=HEAD
 
 WORKDIR /srv
 
+# Set gradle options
+ENV GRADLE_USER_HOME=/build/src/core/dotCMS/.gradle
+ENV GRADLE_OPTS="-Dfile.encoding=utf-8 -Xmx2g"
+
+
 # dotCMS core distributed under GPLv3 license (https://github.com/dotCMS/core/blob/master/license.txt)
 COPY build-src/ /build/
-RUN chmod 500 /build/build_dotcms.sh && /build/build_dotcms.sh ${BUILD_FROM} ${BUILD_ID} 
-
-# Add Elasticsearch File-Based Discovery Plugin (https://www.elastic.co/guide/en/elasticsearch/plugins/6.1/discovery-file.html)
-ENV ES_PLUGIN_discovery_file_VERSION 6.1.3
-RUN mkdir /tmp/discovery-file-${ES_PLUGIN_discovery_file_VERSION} \
-    && unzip /build/elasticsearch-plugins/discovery-file-${ES_PLUGIN_discovery_file_VERSION}.zip -d /tmp/discovery-file-${ES_PLUGIN_discovery_file_VERSION} \
-    && mkdir -p /srv/dotserver/tomcat-$(cat /srv/TOMCAT_VERSION)/webapps/ROOT/WEB-INF/elasticsearch/plugins/discovery-file-${ES_PLUGIN_discovery_file_VERSION} \
-    && cp /tmp/discovery-file-${ES_PLUGIN_discovery_file_VERSION}/elasticsearch/*.jar \
-      /tmp/discovery-file-${ES_PLUGIN_discovery_file_VERSION}/elasticsearch/plugin-descriptor.properties \
-      /srv/dotserver/tomcat-$(cat /srv/TOMCAT_VERSION)/webapps/ROOT/WEB-INF/elasticsearch/plugins/discovery-file-${ES_PLUGIN_discovery_file_VERSION} \
-    && mkdir -p /srv/dotserver/tomcat-$(cat /srv/TOMCAT_VERSION)/webapps/ROOT/WEB-INF/elasticsearch/config/discovery-file \
-    && touch /srv/dotserver/tomcat-$(cat /srv/TOMCAT_VERSION)/webapps/ROOT/WEB-INF/elasticsearch/config/discovery-file/unicast_hosts.txt
+RUN chmod 500 /build/build_dotcms.sh && /build/build_dotcms.sh ${BUILD_FROM} ${BUILD_ID}
 
 RUN mkdir -p /srv/utils /srv/templates /srv/config /srv/home
 RUN chmod -R 666 /srv && find /srv/ -type d -exec chmod a+x {} \;
 
-##
-## Begin target image build
-##
+# ensure only one tomcat directory exists
+RUN ["/bin/bash", "-c", "[ $(ls -d /srv/dotserver/tomcat-* | wc -l) == 1 ] || exit 1" ]
+# provide stable path to tomcat dir
+RUN ln -s $(ls -d /srv/dotserver/tomcat-*) /srv/dotserver/tomcat
 
-# OpenJDK distributed under GPLv2+Oracle Classpath Exception license (http://openjdk.java.net/legal/gplv2+ce.html)
-# Alpine Linux packages distributed under various licenses including GPL-3.0+ (https://pkgs.alpinelinux.org/packages)
-FROM openjdk:8-jdk-alpine
+# ----------------------------------------------
+# Stage 2:  Construct our container using the minimal-java image
+#           and copying the prebuilt dotcms
+# ----------------------------------------------
+FROM dotcms/java-base:8.0.352-amzn as container-base
 
 WORKDIR /srv
 
-RUN apk --no-cache upgrade \
-    && apk add --no-cache bash openssl ca-certificates gnupg grep sed tini nss s6-dns \
-    && update-ca-certificates
+ENV DEBIAN_FRONTEND=noninteractive
 
-RUN apk --no-cache add libc6-compat tomcat-native && apk add libsass --no-cache --repository http://dl-cdn.alpinelinux.org/alpine/edge/community/ 
+# Installing basic packages 
+RUN apt update && \
+    apt upgrade -y
 
-# This is a nasty hack for libjsass, Alpine 3.9 no longer has a deprecated symlink in /lib
-RUN [ ! -e /lib/ld-linux-x86-64.so.2 ] &&  ln -s $(readlink /lib64/ld-linux-x86-64.so.2) /lib/ld-linux-x86-64.so.2 || :
+# Cleanup
+RUN apt purge --allow-remove-essential -y  && \
+    apt autoremove -y && \
+    apt clean && \
+    rm -rf /var/lib/apt/lists/*
 
-# Dockerize distributed under MIT license (https://github.com/jwilder/dockerize)
-ENV DOCKERIZE_VERSION v0.6.0
-RUN wget --quiet https://github.com/jwilder/dockerize/releases/download/$DOCKERIZE_VERSION/dockerize-alpine-linux-amd64-$DOCKERIZE_VERSION.tar.gz \
-    && tar -xzf dockerize-alpine-linux-amd64-$DOCKERIZE_VERSION.tar.gz -C /usr/local/bin \
-    && rm dockerize-alpine-linux-amd64-$DOCKERIZE_VERSION.tar.gz
+# Defining default non-root user UID, GID, and name 
+ARG USER_UID="65001"
+ARG USER_GID="65001"
+ARG USER_GROUP="dotcms"
+ARG USER_NAME="dotcms"
 
-COPY --from=build-cms /srv/ /srv/
-COPY ROOT/ /
+RUN groupadd -f -g $USER_GID $USER_GROUP
+# Creating default non-user
+# the useradd
+RUN useradd -l -d /srv -g $USER_GID -u $USER_UID $USER_NAME
+
+# Copy our build
+COPY --from=build-cms --chown=$USER_NAME:$USER_GROUP /srv/ /srv/
+COPY --chown=$USER_NAME:$USER_GROUP ROOT/ /
 
 # Make scripts runable
-RUN find /srv/ -type f -name "*.sh" -exec chmod a+x {} \;
+ RUN find /srv/ -type f -name "*.sh" -exec chmod a+x {} \; && \
+    # Make plugin merging directories writable
+    find /srv/templates -type d -exec chmod 770 {} \;  && \
+    # Make dotcms user owner
+    mkdir -p /data/shared/assets && \
+    mkdir -p /data/shared/felix/load && \
+    mkdir -p /data/shared/felix/undeployed && \
+    mkdir -p /data/local/dotsecure/license && \
 
-# Make plugin merging directories writable
-RUN find /srv/templates -type d -exec chmod 770 {} \;
+    chown -R $USER_NAME:$USER_NAME /data
 
-RUN mkdir -p /data/shared/assets && mkdir -p /data/local/dotsecure/license && chmod -R 660 /data && find /data/ -type d -exec chmod 770 {} \;
+# ----------------------------------------------
+# Stage 4:  Flatten everything to 1 layer
+# ----------------------------------------------
+FROM scratch
 
-ENV SERVICE_DELAY_DEFAULT_MIN 1
-ENV SERVICE_DELAY_DEFAULT_STEP 3
-ENV SERVICE_DELAY_DEFAULT_MAX 30
+LABEL com.dotcms.contact "support@dotcms.com"
+LABEL com.dotcms.vendor "dotCMS LLC"
+LABEL com.dotcms.description "dotCMS Content Management System"
 
-#VOLUME /data/local
+ARG USER_UID="65001"
+ARG USER_GID="65001"
+
+COPY --from=composed-base / /
+
+# Switching to non-root user to install SDKMAN! 
+USER $USER_UID:$USER_GID
+ENV JAVA_HOME="/java"
+ENV PATH=$PATH:/java/bin
+
+
+ENTRYPOINT ["/usr/bin/tini", "--", "/srv/entrypoint.sh"]
+CMD ["dotcms"]
 
 ## Ports
+# Glowroot profiler - must be configured via CMS_JAVA_OPTS
+EXPOSE 4000
+# Java Debugging - must be configured via CMS_JAVA_OPTS
+EXPOSE 8000
 # Direct connect
 EXPOSE 8080
-# Connect from proxy, HTTP/80, non-secure 
+# Connect from proxy, HTTP/80, non-secure
 EXPOSE 8081
 # Connect from proxy, HTTPS/443, secure
 EXPOSE 8082
-# Java Debugging - must be configured via CMS_JAVA_OPTS
-EXPOSE 8000
-# Glowroot profiler - must be configured via CMS_JAVA_OPTS
-EXPOSE 4000
-
-USER 1000000000
-
-ENTRYPOINT ["/sbin/tini", "--", "/srv/entrypoint.sh"]
-CMD ["dotcms"]
-
+# Direct connect for HTTPS, secure
+EXPOSE 8443
