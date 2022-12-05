@@ -687,6 +687,14 @@ public class ContainerResource implements Serializable {
 
         Logger.debug(this, ()-> "The container: " + container.getIdentifier() + " has been saved");
 
+        if (null != container) {
+            Logger.debug(this, () -> "Publishing the container: " + container.getIdentifier());
+
+            this.containerAPI.publish(container, user, pageMode.respectAnonPerms);
+            ActivityLogger.logInfo(this.getClass(), "Publish Container", "User " +
+                    user.getPrimaryKey() + " Published container: " + container.getIdentifier());
+        }
+
         return Response.ok(new ResponseEntityView(new ContainerView(container))).build();
     }
 
