@@ -19,7 +19,7 @@ export const ExperimentMocks: Array<DotExperiment> = [
         scheduling: null,
         trafficProportion: {
             type: TrafficProportionTypes.SPLIT_EVENLY,
-            variants: [{ id: '111', name: 'DEFAULT', weight: 100.0 }]
+            variants: [{ id: '111', name: 'DEFAULT', weight: '100.0' }]
         },
         creationDate: new Date('2022-08-21 14:50:03'),
         modDate: new Date('2022-08-21 18:50:03')
@@ -37,7 +37,7 @@ export const ExperimentMocks: Array<DotExperiment> = [
         scheduling: null,
         trafficProportion: {
             type: TrafficProportionTypes.SPLIT_EVENLY,
-            variants: [{ id: '222', name: 'DEFAULT', weight: 100.0 }]
+            variants: [{ id: '222', name: 'DEFAULT', weight: '100.0' }]
         },
         creationDate: new Date('2022-08-21 14:50:03'),
         modDate: new Date('2022-08-21 18:50:03')
@@ -62,15 +62,29 @@ export const DotExperimentsListStoreMock = {
     })
 };
 
-export const DotExperimentsShellStoreMock = {
-    getPageId$: of('spy it')
+export const DotExperimentsConfigurationStoreMock = {
+    deleteVariant: () => of([]),
+    addVariant: () => of([]),
+    openSidebar: () => of([]),
+    closeSidebar: () => of([]),
+    loadExperiment: () => of([]),
+    getExperimentId$: of('1111111'),
+    vm$: of({
+        pageId: '',
+        experimentId: '',
+        experiment: null,
+        isLoading: true
+    })
 };
 
 export const DotExperimentsServiceMock = {
     add: () => of({}),
     get: () => of({}),
     delete: () => of({}),
-    archive: () => of({})
+    archive: () => of({}),
+    getById: () => of({}),
+    removeVariant: () => of({}),
+    addVariant: () => of({})
 };
 
 export class ActivatedRouteMock {

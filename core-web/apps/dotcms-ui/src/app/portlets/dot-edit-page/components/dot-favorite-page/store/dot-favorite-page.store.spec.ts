@@ -12,6 +12,7 @@ import { CurrentUserDataMock } from '@dotcms/app/portlets/dot-starter/dot-starte
 import { DotCurrentUser } from '@dotcms/app/shared/models/dot-current-user/dot-current-user';
 import { DotPageRender } from '@dotcms/app/shared/models/dot-page/dot-rendered-page.model';
 import { DotRole } from '@dotcms/app/shared/models/dot-role/dot-role.model';
+import { MockDotHttpErrorManagerService } from '@dotcms/app/test/dot-http-error-manager.service.mock';
 import { MockDotMessageService } from '@dotcms/app/test/dot-message-service.mock';
 import { mockDotRenderedPage } from '@dotcms/app/test/dot-page-render.mock';
 import { mockUser } from '@dotcms/app/test/login-service.mock';
@@ -30,13 +31,6 @@ class MockDotRolesService {
 class MockDotCurrentUserService {
     public getCurrentUser(): Observable<DotCurrentUser> {
         return of(CurrentUserDataMock);
-    }
-}
-
-@Injectable()
-class MockDotHttpErrorManagerService {
-    public handle(): Observable<unknown> {
-        return null;
     }
 }
 
