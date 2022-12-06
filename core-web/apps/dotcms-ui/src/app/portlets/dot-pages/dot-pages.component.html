@@ -38,6 +38,7 @@
                 [title]="item.title"
                 [url]="item.url"
                 [ownerPage]="item.owner === vm.loggedUserId"
+                (click)="goToUrl(item.url)"
             ></dot-pages-card>
         </ng-template>
 

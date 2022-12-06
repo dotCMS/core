@@ -73,6 +73,8 @@ export const BubbleFormExtension = (viewContainerRef: ViewContainerRef) => {
                 closeForm:
                     () =>
                     ({ chain }) => {
+                        formValue$.next(null);
+
                         return chain()
                             .command(({ tr }) => {
                                 tr.setMeta(BUBBLE_FORM_PLUGIN_KEY, { open: false });

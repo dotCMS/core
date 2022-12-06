@@ -6,6 +6,7 @@ import com.dotcms.content.business.json.ContentletJsonHelper;
 import com.dotcms.content.elasticsearch.ESQueryCache;
 import com.dotcms.content.elasticsearch.util.RestHighLevelClientProvider;
 import com.dotcms.contenttype.business.StoryBlockReferenceResult;
+import com.dotcms.contenttype.model.field.DataTypes;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.enterprise.license.LicenseManager;
 import com.dotcms.exception.ExceptionUtil;
@@ -73,6 +74,7 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;
 import com.google.common.primitives.Ints;
 import com.liferay.portal.model.User;
+import io.vavr.Tuple2;
 import io.vavr.control.Try;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.io.FileUtils;
@@ -890,6 +892,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
             if (storyBlockRefreshedResult.isRefreshed()) {
                 Logger.debug(this, () -> String.format("Refreshed Story Block dependencies for Contentlet '%s'",
                         cachedContentlet.getIdentifier()));
+
                 final Contentlet refreshedContentlet = (Contentlet) storyBlockRefreshedResult.getValue();
                 contentletCache.add(refreshedContentlet.getInode(), refreshedContentlet);
                 return refreshedContentlet;
