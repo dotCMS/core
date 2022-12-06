@@ -212,20 +212,6 @@ public class IntegrityUtil {
         }
     }
 
-    public static void unzipFile(final InputStream zipFile, final String outputDir) throws IOException {
-
-        final String integrityPath = ConfigUtils.getIntegrityPath();
-
-        if (!outputDir.startsWith(integrityPath)) {
-            throw new SecurityException(String.format(
-                    " Illegal attempt to unzip outside the integrity folder path [%s] in [%s]",
-                    integrityPath, outputDir));
-        }
-
-        ZipUtil.extract(zipFile, outputDir);
-    }
-
-
     /**
      * Resolves the integrity data path based on provided endpoint id.
      *
