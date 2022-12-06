@@ -54,6 +54,7 @@
             <input
                 class="dot-container-properties__description-input w-25rem"
                 id="description"
+                data-testId="description"
                 type="text"
                 formControlName="friendlyName"
                 pInputText
@@ -67,6 +68,7 @@
                 class="dot-container-properties__max-contents-input"
                 id="max-contents"
                 [required]="true"
+                data-testId="max-contents"
                 type="text"
                 formControlName="maxContentlets"
                 pInputText
@@ -84,6 +86,7 @@
                 [label]="'message.containers.create.content_type_code' | dm"
                 [disabled]="!vm.isContentTypeButtonEnabled"
                 (click)="showContentTypeAndCode()"
+                data-testId="showContentTypeAndCode"
                 pButton
                 type="button"
             ></button>
@@ -97,9 +100,9 @@
                 formControlName="preLoop"
             ></dot-loop-editor>
             <dot-container-code
+                *ngIf="vm.contentTypes.length > 0"
                 [contentTypes]="vm.contentTypes"
-                (valueChange)="updateContainerStructure($event)"
-                formControlName="containerStructures"
+                [fg]="form"
             ></dot-container-code>
             <dot-loop-editor
                 [isEditorVisible]="vm.showPrePostLoopInput"
@@ -113,6 +116,7 @@
             <dot-textarea-content
                 id="code"
                 [show]="['code']"
+                data-testId="code"
                 formControlName="code"
                 language="html"
             ></dot-textarea-content>
