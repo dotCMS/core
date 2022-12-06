@@ -1,48 +1,32 @@
-FROM openjdk:8-jdk-alpine as build-plugins
-
-RUN apk --no-cache upgrade
-RUN apk add --no-cache openssl gnupg bash curl grep git nss
-
-RUN mkdir -p /build/plugins/output
-WORKDIR /build
-
-COPY plugins/ /build/plugins/src
-
-RUN set -e && \
-	for plugin in $( find /build/plugins/src -mindepth 1 -maxdepth 1 -type d -exec basename {} \; ) ; do \
-	    cd "/build/plugins/src/${plugin}" && \
-		echo "Building plugin \"${plugin}\"..." && \
-		./gradlew jar && \
-		echo "Plugin classes:" && \
-		jar tf build/libs/*.jar && \
-		mkdir -p "/build/plugins/output/${plugin}" && \
-		cp build/libs/*.jar plugin-descriptor.properties "/build/plugins/output/${plugin}" && \
-		cd /build ; \
-	done
+FROM dotcms/java-base:8.0.352-amzn
 
 
-FROM openjdk:8-jre-alpine
-
-
-RUN apk --no-cache upgrade \
-	&& apk add --no-cache bash openssl ca-certificates gnupg grep nss tini s6-dns \
-	&& update-ca-certificates
-
-ENV DOCKERIZE_VERSION v0.6.0
-RUN wget --quiet https://github.com/jwilder/dockerize/releases/download/$DOCKERIZE_VERSION/dockerize-alpine-linux-amd64-$DOCKERIZE_VERSION.tar.gz \
-    && tar -C /usr/local/bin -xzvf dockerize-alpine-linux-amd64-$DOCKERIZE_VERSION.tar.gz \
-    && rm dockerize-alpine-linux-amd64-$DOCKERIZE_VERSION.tar.gz
+# Installing basic packages 
+RUN apt update && \
+    apt upgrade -y && \
+    apt install -y --no-install-recommends zip unzip wget libtcnative-1 tzdata tini ca-certificates openssl libapr1 libpq-dev
 
 # ensure elasticsearch user exists
-RUN addgroup -S -g 1000 elasticsearch && adduser -u 1000 -SH -G elasticsearch -h /srv elasticsearch
+# Defining default non-root user UID, GID, and name 
+ARG USER_UID="65005"
+ARG USER_GID="65005"
+ARG USER_GROUP="elasticsearch"
+ARG USER_NAME="elasticsearch"
+
+RUN groupadd -f -g $USER_GID $USER_GROUP
+# Creating default non-user
+# the useradd
+RUN useradd -l -d /srv -g $USER_GID -u $USER_UID $USER_NAME
 
 ENV ELASTICSEARCH_VERSION 6.1.3
 ENV ELASTICSEARCH_TARBALL="https://artifacts.elastic.co/downloads/elasticsearch/elasticsearch-${ELASTICSEARCH_VERSION}.tar.gz" 
 ENV	ELASTICSEARCH_TARBALL_SHA512="af10cc571ab55f52ab73a86373fa8359214a7866fbb6d2910669e6be897bae30c41c007c3be5803a7f07736041f32cf36425c182a18fab39499321ed9eb4b349"
 
+ENV JAVA_HOME="/java"
 ENV PATH /srv/bin:$PATH
-
+COPY ROOT/srv/ /srv/
 WORKDIR /srv
+
 
 RUN set -ex; \
 	\
@@ -54,36 +38,24 @@ RUN set -ex; \
 	\
 	tar -xf elasticsearch.tar.gz --strip-components=1; \
 	rm elasticsearch.tar.gz; \
-	rm /srv/config/jvm.options; \
-	rm /srv/config/elasticsearch.yml; \
-	\
 	# we shouldn't need much RAM to test --version (default is 2gb, which gets Jenkins in trouble sometimes)
-	export ES_JAVA_OPTS='-Xms32m -Xmx32m'; \
+	export ES_JAVA_OPTS='-Xms512m -Xmx2g'; \
 	elasticsearch --version;
 
-# Install File-Based Discovery Plugin
-RUN bin/elasticsearch-plugin install discovery-file
-
-# Install dotCMS Eleasticsearch plugin
-COPY --from=build-plugins /build/plugins/output/ plugins/
-
-COPY ROOT/ /
+RUN chown -R $USER_NAME:$USER_NAME /srv
+RUN mkdir -p /data
+RUN chown -R $USER_NAME:$USER_NAME /data
 RUN find /srv/ -type f -name "*.sh" -exec chmod 500 {} \; 
 
-RUN chmod -R g=u /srv
 
-ENV SERVICE_DELAY_DEFAULT_MIN 1
-ENV SERVICE_DELAY_DEFAULT_STEP 3
-ENV SERVICE_DELAY_DEFAULT_MAX 30
-
-RUN chmod -R g=u /data
-RUN chmod -R g=u /logs
+# RUN chmod -R g=u /data
+# RUN chmod -R g=u /logs
 VOLUME /data
 VOLUME /logs
 
 EXPOSE 9200 9300
 
-USER 10001
+USER $USER_UID
 
-ENTRYPOINT ["/sbin/tini", "--", "/srv/entrypoint.sh"]
+ENTRYPOINT ["tini", "--", "/srv/entrypoint.sh"]
 CMD ["elasticsearch"]
