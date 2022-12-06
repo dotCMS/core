@@ -14,7 +14,7 @@
 #
 # Use a descriptive name for your cluster:
 #
-#cluster.name: my-application
+cluster.name: ${DOTCMS_ES_CLUSTER:dotCMSElasticsearchCluster}
 #
 # ------------------------------------ Node ------------------------------------
 #
@@ -65,7 +65,7 @@
 # Pass an initial list of hosts to perform discovery when new node is started:
 # The default list of hosts is ["127.0.0.1", "[::1]"]
 #
-discovery.zen.ping.unicast.hosts: ["es.dotcms.site"]
+#discovery.zen.ping.unicast.hosts: ["host1", "host2"]
 #
 # Prevent the "split brain" by configuring the majority of nodes (total number of master-eligible nodes / 2 + 1):
 #
@@ -86,14 +86,3 @@ discovery.zen.ping.unicast.hosts: ["es.dotcms.site"]
 # Require explicit names when deleting indices:
 #
 #action.destructive_requires_name: true
-
-cluster.name: dotCMSContentIndex_5x
-path.data: esdata
-path.repo: essnapshot/snapshots
-path.logs: tomcat8/logs
-http.port: 9200
-http.host: localhost
-http.enabled: false
-http.cors.enabled: false
-node.master: false
-node.data: false
