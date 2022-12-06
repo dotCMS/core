@@ -18,9 +18,13 @@ import {
     ImageUpload,
     DotConfigExtension,
     BubbleFormExtension,
+    DotFloatingButton,
     ImageNode,
     SetDocAttrStep,
-    formatHTML
+    formatHTML,
+    DotTableCellExtension,
+    DotTableExtension,
+    DotTableHeaderExtension
 } from '@dotcms/block-editor';
 
 // Marks Extensions
@@ -29,6 +33,7 @@ import { Link } from '@tiptap/extension-link';
 import { TextAlign } from '@tiptap/extension-text-align';
 import { Underline } from '@tiptap/extension-underline';
 import CharacterCount, { CharacterCountStorage } from '@tiptap/extension-character-count';
+import { TableRow } from '@tiptap/extension-table-row';
 
 function toTitleCase(str) {
     return str.replace(/\p{L}+('\p{L}+)?/gu, function (txt) {
@@ -125,6 +130,7 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy {
             BubbleLinkFormExtension(this.viewContainerRef),
             DotBubbleMenuExtension(this.viewContainerRef),
             BubbleFormExtension(this.viewContainerRef),
+            DotFloatingButton(this.injector, this.viewContainerRef),
             // Marks Extensions
             Underline,
             CharacterCount,
@@ -139,7 +145,11 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy {
 
                     return 'Type "/" for commmands';
                 }
-            })
+            }),
+            DotTableCellExtension(this.viewContainerRef),
+            DotTableHeaderExtension(),
+            TableRow,
+            DotTableExtension()
         ];
         const customExtensions: Map<string, AnyExtension> = new Map([
             ['contentlets', ContentletBlock(this.injector)],

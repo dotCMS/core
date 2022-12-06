@@ -1,7 +1,9 @@
 <div class="dot-container-code__content-tab-container">
-    <label class="block p-label-input-required field">{{
-        'message.containers.create.content_type_code' | dm
-    }}</label>
+    <div class="field mb-0">
+        <label class="block p-label-input-required">{{
+            'message.containers.create.content_type_code' | dm
+        }}</label>
+    </div>
     <p-tabView
         [scrollable]="true"
         [activeIndex]="activeTabIndex"
@@ -35,7 +37,7 @@
                 [value]="containerContent.value.code"
                 [editorName]="containerContent.value.variable"
                 [show]="['code']"
-                [customStyles]="{ border: 'none', height: '500px' }"
+                [customStyles]="{ border: 'none', height: '390px' }"
                 (monacoInit)="monacoInit($event)"
                 (valueChange)="updateContentTypeText($event)"
                 language="html"

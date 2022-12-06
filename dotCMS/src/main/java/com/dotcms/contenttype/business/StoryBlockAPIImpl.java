@@ -5,26 +5,21 @@ import com.dotcms.content.business.json.ContentletJsonHelper;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.StoryBlockField;
 import com.dotcms.util.ConversionUtils;
-import com.dotmarketing.beans.VersionInfo;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
-import com.dotmarketing.portlets.contentlet.transform.ContentletTransformer;
 import com.dotmarketing.util.Logger;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.google.common.collect.ImmutableList;
 import com.liferay.util.StringPool;
-import io.vavr.Tuple;
-import io.vavr.Tuple2;
 import io.vavr.control.Try;
 import org.apache.commons.lang3.mutable.MutableBoolean;
 
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 
@@ -45,17 +40,17 @@ public class StoryBlockAPIImpl implements StoryBlockAPI {
             contentlet.getContentType().fields(StoryBlockField.class) // todo, this method filters but creates a new list in memory
                     .forEach(field -> {
 
-                final Object storyBlockValue = contentlet.get(field.variable());
-                if (null != storyBlockValue) {
+                        final Object storyBlockValue = contentlet.get(field.variable());
+                        if (null != storyBlockValue) {
 
-                    final StoryBlockReferenceResult result = this.refreshStoryBlockValueReferences(storyBlockValue);
-                    if (result.isRefreshed()) { // the story block value has been changed and has been overridden
+                            final StoryBlockReferenceResult result = this.refreshStoryBlockValueReferences(storyBlockValue);
+                            if (result.isRefreshed()) { // the story block value has been changed and has been overridden
 
-                        refreshed.setTrue();
-                        contentlet.setProperty(field.variable(), result.getValue());
-                    }
-                }
-            });
+                                refreshed.setTrue();
+                                contentlet.setProperty(field.variable(), result.getValue());
+                            }
+                        }
+                    });
         }
 
         return new StoryBlockReferenceResult(refreshed.booleanValue(), contentlet);
@@ -247,18 +242,19 @@ public class StoryBlockAPIImpl implements StoryBlockAPI {
         }
     }
 
-    private LinkedHashMap toMap(final Object blockEditorValue) throws JsonProcessingException {
-
+    @Override
+    public LinkedHashMap<String, Object> toMap(final Object blockEditorValue) throws JsonProcessingException {
         return ContentletJsonHelper.INSTANCE.get().objectMapper()
-                .readValue(Try.of(() -> blockEditorValue.toString())
+                .readValue(Try.of(blockEditorValue::toString)
                         .getOrElse(StringPool.BLANK), LinkedHashMap.class);
     }
 
-    private String toJson (final Object blockEditorMap) throws JsonProcessingException {
-
+    @Override
+    public String toJson (final Map<String, Object> blockEditorMap) throws JsonProcessingException {
         return ContentletJsonHelper.INSTANCE.get().objectMapper()
                 .writeValueAsString(blockEditorMap);
     }
+
 
     private void refreshBlockEditorDataMap(final Map dataMap, final String liveINode) throws DotDataException, DotSecurityException {
 

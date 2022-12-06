@@ -1125,7 +1125,7 @@ public class IntegrityResource {
                     String outputDir = ConfigUtils.getIntegrityPath() + File.separator + endpoint.getId();
 
                     try {
-                        IntegrityUtil.unzipFile(zipFile, outputDir);
+                        ZipUtil.extract(zipFile, outputDir);
                     } catch (Exception e) {
                         setStatus(session, endpoint.getId(), ProcessStatus.ERROR, null);
                         Logger.error(IntegrityResource.class, "Error while unzipping Integrity Data", e);

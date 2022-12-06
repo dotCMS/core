@@ -20,6 +20,7 @@ export class BubbleFormComponent {
     @Output() formValues = new EventEmitter();
     @Output() hide = new EventEmitter<boolean>();
 
+    options: { customClass: string } = null;
     dynamicControls: DynamicControl<unknown>[] = [];
     form: FormGroup;
 
@@ -42,5 +43,9 @@ export class BubbleFormComponent {
                 this.fb.control(control.value || null, control.required ? Validators.required : [])
             );
         });
+    }
+
+    cleanForm() {
+        this.form = null;
     }
 }

@@ -24,7 +24,7 @@ export interface SuggestionsCommandProps {
 }
 
 export interface DotMenuItem extends Omit<MenuItem, 'icon'> {
-    icon: string | SafeUrl;
+    icon?: string | SafeUrl;
     isActive?: () => boolean;
     attributes?: Record<string, unknown>;
     data?: Record<string, unknown>;

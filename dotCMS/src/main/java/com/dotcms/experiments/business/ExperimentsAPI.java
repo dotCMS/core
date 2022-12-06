@@ -1,10 +1,12 @@
 package com.dotcms.experiments.business;
 
+import com.dotcms.experiments.model.AbstractExperiment;
 import com.dotcms.experiments.model.AbstractExperiment.Status;
 import com.dotcms.experiments.model.Experiment;
 import com.dotcms.experiments.model.Scheduling;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.portlets.rules.model.Rule;
 import com.dotmarketing.util.Config;
 import com.liferay.portal.model.User;
 import io.vavr.Lazy;
@@ -114,4 +116,26 @@ public interface ExperimentsAPI {
 
     Experiment deleteTargetingCondition(String experimentId, String conditionId, User user)
             throws DotDataException, DotSecurityException;
+
+    /**
+     * Return a list of the current RUNNING Experiments.
+     *
+     * @return
+     */
+    List<Experiment> getRunningExperiments() throws DotDataException;
+
+    /**
+     * Return a {@link Experiment}'s {@link Rule}
+     *
+     * @param experiment
+     * @return
+     */
+    Optional<Rule> getRule(final Experiment experiment)
+            throws DotDataException, DotSecurityException;
+
+    /**
+     * Return true if any {@link Experiment} is running right now, otherwise return false.
+     * @return
+     */
+    boolean isAnyExperimentRunning() throws DotDataException;
 }
