@@ -10,7 +10,8 @@ import {
     olIcon,
     pIcon,
     quoteIcon,
-    ulIcon
+    ulIcon,
+    imageIcon
 } from '../components/suggestions/suggestion-icons';
 
 const domSanitizer = new ɵDomSanitizerImpl(document);
@@ -65,14 +66,14 @@ const block = [
     }
 ];
 
-function sanitizeUrl(url: string): SafeUrl {
+export function sanitizeUrl(url: string): SafeUrl {
     return domSanitizer.bypassSecurityTrustUrl(url);
 }
 
 export const suggestionOptions: DotMenuItem[] = [
     {
         label: 'Image',
-        icon: sanitizeUrl(lineIcon),
+        icon: sanitizeUrl(imageIcon),
         id: 'image'
     },
     ...headings,

@@ -11,7 +11,8 @@
         <i class="pi pi-search"></i>
     </span>
 </form>
-<div class="card-wrapper">
+
+<div class="card-wrapper" *ngIf="contentlets.length > 0; else notFound">
     <p-card *ngFor="let contentlet of contentlets" (click)="selectedItem.emit(contentlet)">
         <ng-template pTemplate="header">
             <img [src]="'https://demo.dotcms.com' + contentlet.fileAsset" />
@@ -33,3 +34,10 @@
         </ng-template>
     </p-card>
 </div>
+
+<ng-template #notFound>
+    <div class="wrapper">
+        <img [src]="icon" />
+        <p>No results found, try searching again</p>
+    </div>
+</ng-template>

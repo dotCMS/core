@@ -1,28 +1,30 @@
+@use "variables" as *;
+
 .container {
-    width: 740px;
-    background: white;
-    border: 1px solid #b3b1b8;
+    width: 46.25 * $dot-editor-size;
+    background: $white;
+    border: 1px solid $gray-light;
 }
 
 .wrapper {
     width: 100%;
-    padding: 21px;
-    height: 500px;
+    padding: 1.3125 * $dot-editor-size;
+    height: $form-width;
     overflow: auto;
 }
 
 :host::ng-deep {
     .p-tabview {
         .p-tabview-nav {
-            padding: 0 21px;
+            padding: 0 (1.3125 * $dot-editor-size);
 
             li {
                 .p-tabview-nav-link:focus {
-                    background: white;
+                    background: $white;
                 }
 
                 &:hover .p-tabview-nav-link {
-                    background: rgba(111, 95, 163, 0.12);
+                    background: rgba($brand-secondary_rgb, 0.12);
                 }
             }
         }

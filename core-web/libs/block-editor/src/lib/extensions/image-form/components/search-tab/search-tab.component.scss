@@ -1,145 +1,134 @@
 @use "variables" as *;
 
-.card-wrapper {
+:host {
     display: flex;
-    align-items: flex-start;
-    justify-content: space-between;
-    flex-wrap: wrap;
-    gap: 10px;
-    padding: 10px 0;
-}
-
-.search-box {
     width: 100%;
+    height: 100%;
+    flex-direction: column;
 
-    span {
-        width: 100%;
-    }
-
-    .search {
-        width: 100%;
-        border: 1px solid #b3b1b8;
-        height: 35px;
-        border-radius: 2px;
-        padding: 8px 7px 8px 16px;
-    }
-}
-
-:host ::ng-deep {
-    .p-card {
-        cursor: pointer;
+    .card-wrapper {
         display: flex;
-        flex-direction: row;
         align-items: flex-start;
-        padding: 0px;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 0.625 * $dot-editor-size;
+        padding: (0.625 * $dot-editor-size) 0;
+        flex-grow: 1;
+    }
 
-        width: 329px;
-        height: 94px;
-        margin-bottom: 10px;
+    .wrapper {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-direction: column;
+        gap: 0.625 * $dot-editor-size;
+        flex-grow: 1;
+    }
 
-        background: $white;
-        box-shadow: 0px 2px 2px rgba(30, 30, 30, 0.15);
-        border-radius: 2px;
-        gap: 14px;
-
-        border: none;
-
-        .p-card-header {
-            box-sizing: border-box;
-            padding: 0;
-            height: 5.875 * $dot-editor-size;
-            width: 5.875 * $dot-editor-size;
-
-            img {
-                height: 5.875 * $dot-editor-size;
-                width: 5.875 * $dot-editor-size;
-            }
+    .search-box {
+        &,
+        span {
+            width: 100%;
         }
 
-        .p-card-body {
-            overflow: hidden;
-            display: flex;
+        .search {
+            width: 100%;
+            border: 1px solid $gray-light;
+            border-radius: $border-radius;
+            padding: 0.5 * $dot-editor-size;
+            padding-left: $dot-editor-size;
+        }
+    }
+
+    &::ng-deep {
+        .p-card {
             align-items: flex-start;
-            justify-content: flex-start;
-            flex-direction: column;
-            padding: 7px 0;
-            height: 100%;
-            width: auto;
-            padding: $spacing-3 0;
-            padding-right: $spacing-4;
-            flex: 1;
+            background: $white;
+            border-radius: $border-radius;
+            border: none;
+            box-shadow: 0px 2px 2px rgba(30, 30, 30, 0.15);
+            cursor: pointer;
+            display: flex;
+            gap: 0.875 * $dot-editor-size;
+            height: 5.875 * $dot-editor-size;
+            margin-bottom: 0.625 * $dot-editor-size;
+            padding: 0;
+            width: 20 * $dot-editor-size;
 
-            .p-card-content {
+            .p-card-header {
                 padding: 0;
+                height: 5.875 * $dot-editor-size;
+                width: 5.875 * $dot-editor-size;
+
+                dot-contentlet-thumbnail,
+                img {
+                    width: 100%;
+                    height: 100%;
+                }
             }
 
-            .p-card-subtitle {
-                color: $gray;
-                font-size: $font-size-small;
-                font-weight: regular;
-                margin-bottom: $spacing-2;
-            }
-
-            .p-card-title {
+            .p-card-body {
+                align-items: flex-start;
+                display: flex;
+                flex-direction: column;
+                flex: 1;
                 overflow: hidden;
-                width: 100%;
-                margin: 0;
+                padding: $spacing-2 0;
+                padding-right: 0.875 * $dot-editor-size;
+                width: auto;
 
-                h2 {
-                    color: #1b3359;
-                    flex-grow: 1;
-                    font-size: 16px;
-                    font-weight: 400;
-                    line-height: 140%;
-                    margin-bottom: $spacing-1;
-                    margin: 0;
-                    overflow: hidden;
+                .p-card-content {
                     padding: 0;
-                    text-overflow: ellipsis;
-                    white-space: nowrap;
+                }
+
+                .p-card-subtitle {
+                    color: $gray;
+                    font-size: $font-size-small;
+                    margin-bottom: $spacing-2;
+                }
+
+                .p-card-title {
+                    overflow: hidden;
+                    width: 100%;
+                    margin: 0;
+
+                    h2 {
+                        color: #1b3359;
+                        font-size: $dot-editor-size;
+                        font-weight: 400;
+                        line-height: 140%;
+                        margin-bottom: $spacing-1;
+                        margin: 0;
+                        overflow: hidden;
+                        padding: 0;
+                        text-overflow: ellipsis;
+                        white-space: nowrap;
+                    }
                 }
             }
         }
-    }
 
-    .badge {
-        display: flex;
-        flex-direction: row;
-        align-items: center;
-        padding: 4px 7px;
-        height: 25px;
-        background: #e9ebfc;
-        border-radius: 2px;
-        color: black;
+        .state {
+            align-items: center;
+            display: flex;
 
-        font-family: "Roboto";
-        font-style: normal;
-        font-weight: 400;
-        font-size: 12px;
-        line-height: 140%;
+            & > * {
+                margin-right: $spacing-1;
 
-        color: #000000;
-        flex-grow: 0;
-    }
-}
+                &:last-child {
+                    margin-right: 0;
+                }
+            }
+        }
 
-dot-contentlet-thumbnail {
-    align-items: center;
-    display: block;
-    position: relative;
-    width: 5.875 * $dot-editor-size;
-    height: 5.875 * $dot-editor-size;
-}
-
-.state {
-    align-items: center;
-    display: flex;
-
-    & > * {
-        margin-right: $spacing-1;
-
-        &:last-child {
-            margin-right: 0;
+        .badge {
+            background: rgb(232, 234, 252);
+            border-radius: $border-radius;
+            color: black;
+            font-size: 0.75 * $dot-editor-size;
+            height: 1.625 * $dot-editor-size;
+            line-height: 140%;
+            padding: (0.25 * $dot-editor-size) (0.5 * $dot-editor-size);
         }
     }
 }

@@ -15,6 +15,9 @@ import { debounceTime } from 'rxjs/operators';
 
 import { DotCMSContentlet } from '@dotcms/dotcms-models';
 
+import { sanitizeUrl } from '@dotcms/block-editor';
+import { squarePlus } from '../../../../shared/components/suggestions/suggestion-icons';
+
 @Component({
     selector: 'dot-search-tab',
     templateUrl: './search-tab.component.html',
@@ -29,6 +32,7 @@ export class SearchTabComponent implements OnInit, OnChanges {
     @ViewChild('inputSearch') input: ElementRef;
 
     public form: FormGroup;
+    public icon = sanitizeUrl(squarePlus);
 
     constructor(private fb: FormBuilder) {}
 
