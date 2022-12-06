@@ -1,4 +1,4 @@
-FROM dotcms/java-base:8.0.352-amzn
+FROM dotcms/java-base:11.0.16-amzn
 
 
 # Installing basic packages 
