@@ -76,3 +76,5 @@ This maintenance release includes the following code fixes:
 62. https://github.com/dotCMS/core/issues/22582 : Import/Export Content Tool generating diff key/value field #22582
 63. https://github.com/dotCMS/core/issues/22549 : Relationship is not showing the right parent #22549
 64. https://github.com/dotCMS/core/issues/22512 : Allow follow redirects to be configured #22512
+65. https://github.com/dotCMS/core/issues/22522 : Remote URL access should be run in a threadpool #22522
+66. 
