@@ -242,7 +242,7 @@ dependencies {
     compile group: 'com.dotcms.lib', name: 'dot.hibernate-validator', version:'4.3.2.Final_3'
     compile group: 'com.dotcms.lib', name: 'dot.jboss-logging', version:'3.3.0.Final_2'
     compile group: 'com.dotcms.lib', name: 'dot.txtmark', version:'0.14-SNAPSHOT_1'
-    compile group: 'com.dotcms.lib', name: 'dot.HikariCP', version:'2.4.6_1'
+    compile group: 'com.dotcms.lib', name: 'dot.HikariCP', version:'4.0.3'
 
     // AWS Libraries
     compile group: 'com.dotcms.lib', name: 'dot.aws-java-sdk-core', version:'1.11.66_2'
