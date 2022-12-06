@@ -1,39 +1,32 @@
-import { Component, EventEmitter, forwardRef, Input, OnInit, Output } from '@angular/core';
+import { Component, Input, OnInit } from '@angular/core';
 import { DialogService } from 'primeng/dynamicdialog';
 import { DotAddVariableComponent } from './dot-add-variable/dot-add-variable.component';
 import { DotMessageService } from '@dotcms/app/api/services/dot-message/dot-messages.service';
 import { DotCMSContentType } from '@dotcms/dotcms-models';
-import { Subject } from 'rxjs';
-import { ControlValueAccessor, FormArray, FormControl, NG_VALUE_ACCESSOR } from '@angular/forms';
+import { FormArray, FormControl, FormGroup, Validators } from '@angular/forms';
 import { MenuItem } from 'primeng/api';
 
 interface DotContainerContent extends DotCMSContentType {
-    code?: string;
+    code: string;
+    structureId: string;
+    containerId?: string;
+    containerInode?: string;
+    contentTypeVar?: string;
 }
 
 @Component({
     selector: 'dot-container-code',
     templateUrl: './dot-container-code.component.html',
-    styleUrls: ['./dot-container-code.component.scss'],
-    providers: [
-        {
-            provide: NG_VALUE_ACCESSOR,
-            useExisting: forwardRef(() => DotContentEditorComponent),
-            multi: true
-        }
-    ]
+    styleUrls: ['./dot-container-code.component.scss']
 })
-export class DotContentEditorComponent implements ControlValueAccessor, OnInit {
-    @Input() contentTypes: DotContainerContent[];
-    @Output() valueChange = new EventEmitter<MenuItem[]>();
-
-    public readonly containerContents = new FormArray([] as FormControl<DotContainerContent>[]);
+export class DotContentEditorComponent implements OnInit {
+    @Input() fg: FormGroup;
+    @Input() contentTypes: DotCMSContentType[];
 
     menuItems: MenuItem[];
     activeTabIndex = 1;
     monacoEditors = {};
-
-    private destroy$: Subject<boolean> = new Subject<boolean>();
+    contentTypeNamesById = {};
 
     constructor(
         private dialogService: DialogService,
@@ -41,37 +34,21 @@ export class DotContentEditorComponent implements ControlValueAccessor, OnInit {
     ) {}
 
     ngOnInit() {
-        this.containerContents.valueChanges.subscribe((fieldVal) => {
-            this._onChange(fieldVal);
-            this.onTouched();
+        this.contentTypes.forEach(({ id, name }: DotCMSContentType) => {
+            this.contentTypeNamesById[id] = name;
         });
 
         this.init();
     }
 
-    public writeValue(value: DotContainerContent[] | null): void {
-        value = value ?? [];
-        this.containerContents.setValue(value);
-    }
-
-    public setDisabledState(isDisabled: boolean): void {
-        if (isDisabled) {
-            this.containerContents.disable();
-        } else {
-            this.containerContents.enable();
-        }
-    }
-
-    private _onChange = (_value: DotContainerContent[] | null) => undefined;
-
-    public registerOnChange(fn: (value: DotContainerContent[] | null) => void): void {
-        this._onChange = fn;
-    }
-
-    public onTouched = () => undefined;
-
-    public registerOnTouched(fn: () => void): void {
-        this.onTouched = fn;
+    /**
+     * Get ContainerStrcuture as FormArray
+     * @readonly
+     * @type {FormArray}
+     * @memberof DotContentEditorComponent
+     */
+    get getcontainerStructures(): FormArray {
+        return this.fg.get('containerStructures') as FormArray;
     }
 
     /**
@@ -93,26 +70,13 @@ export class DotContentEditorComponent implements ControlValueAccessor, OnInit {
     }
 
     /**
-     * It takes a string as an argument and sets the value of the active tab to that string
-     * @param {string} text - The text to be updated in the textarea
-     * @memberof DotContentEditorComponent
-     */
-    updateContentTypeText(text: string): void {
-        const control = this.containerContents.controls[this.activeTabIndex - 1].value;
-        this.containerContents.controls[this.activeTabIndex - 1].setValue({
-            ...control,
-            code: text
-        });
-    }
-
-    /**
      * It removes the form control at the index of the form array, and then closes the modal
      * @param {number} [index=null] - number = null
      * @param close - This is the function that closes the modal.
      * @memberof DotContentEditorComponent
      */
-    handleClose(index: number = null, close: () => void): void {
-        this.containerContents.removeAt(index - 1);
+    removeItem(index: number = null, close: () => void): void {
+        this.getcontainerStructures.removeAt(index - 1);
         close();
     }
 
@@ -129,10 +93,10 @@ export class DotContentEditorComponent implements ControlValueAccessor, OnInit {
             header: this.dotMessageService.get('containers.properties.add.variable.title'),
             width: '50rem',
             data: {
-                contentTypeVariable: contentType.variable,
+                contentTypeVariable: contentType.structureId,
                 onSave: (variable) => {
-                    const editor = this.monacoEditors[contentType.variable].getModel();
-                    this.monacoEditors[contentType.variable]
+                    const editor = this.monacoEditors[contentType.structureId].getModel();
+                    this.monacoEditors[contentType.structureId]
                         .getModel()
                         .setValue(editor.getValue() + `${variable}`);
                 }
@@ -151,7 +115,7 @@ export class DotContentEditorComponent implements ControlValueAccessor, OnInit {
     }
 
     private init(): void {
-        this.menuItems = this.mapMenuItems(this.contentTypes);
+        this.menuItems = this.getMenuItems(this.contentTypes);
     }
 
     /**
@@ -163,26 +127,29 @@ export class DotContentEditorComponent implements ControlValueAccessor, OnInit {
         this.activeTabIndex = index;
     }
 
-    private mapMenuItems(contentTypes: DotContainerContent[]): MenuItem[] {
+    private getMenuItems(contentTypes: DotCMSContentType[]): MenuItem[] {
         return contentTypes.map((contentType) => {
             return {
                 label: contentType.name,
                 command: () => {
                     if (!this.checkIfAlreadyExists(contentType)) {
-                        this.containerContents.push(
-                            new FormControl<DotContainerContent>(contentType)
+                        this.getcontainerStructures.push(
+                            new FormGroup({
+                                code: new FormControl('', [Validators.required]),
+                                structureId: new FormControl(contentType.id, [Validators.required])
+                            })
                         );
 
-                        this.updateActiveTabIndex(this.containerContents.length);
+                        this.updateActiveTabIndex(this.getcontainerStructures.length);
                     }
                 }
             };
         });
     }
 
-    private checkIfAlreadyExists(contentType: DotContainerContent): boolean {
-        return this.containerContents.controls.some(
-            (control) => control.value.variable === contentType.variable
+    private checkIfAlreadyExists(contentType: DotCMSContentType): boolean {
+        return this.getcontainerStructures.controls.some(
+            (control) => control.value.structureId === contentType.id
         );
     }
 }

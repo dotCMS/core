@@ -1,4 +1,4 @@
-import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { ComponentFixture, fakeAsync, TestBed, tick } from '@angular/core/testing';
 import { DialogService, DynamicDialogModule } from 'primeng/dynamicdialog';
 import { of } from 'rxjs';
 import { DotContainerPropertiesComponent } from './dot-container-properties.component';
@@ -33,14 +33,21 @@ import { DotActionMenuButtonModule } from '@components/_common/dot-action-menu-b
 import { DotAddToBundleModule } from '@components/_common/dot-add-to-bundle';
 import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
-import { Component, CUSTOM_ELEMENTS_SCHEMA, DebugElement } from '@angular/core';
+import {
+    Component,
+    CUSTOM_ELEMENTS_SCHEMA,
+    DebugElement,
+    EventEmitter,
+    forwardRef,
+    Input,
+    Output
+} from '@angular/core';
 import { DotContainersService } from '@services/dot-containers/dot-containers.service';
 import { DotGlobalMessageService } from '@components/_common/dot-global-message/dot-global-message.service';
 import { DotEventsService } from '@dotcms/app/api/services/dot-events/dot-events.service';
 import { DotContentTypeService } from '@dotcms/app/api/services/dot-content-type';
 import { InplaceModule } from 'primeng/inplace';
-import { ReactiveFormsModule } from '@angular/forms';
-import { DotTextareaContentModule } from '@components/_common/dot-textarea-content/dot-textarea-content.module';
+import { ControlValueAccessor, NG_VALUE_ACCESSOR, ReactiveFormsModule } from '@angular/forms';
 import { By } from '@angular/platform-browser';
 import { DotAutofocusModule } from '@directives/dot-autofocus/dot-autofocus.module';
 
@@ -55,6 +62,50 @@ export class DotContentEditorComponent {}
     template: '<div></div>'
 })
 export class DotLoopEditorComponent {}
+
+@Component({
+    selector: 'dot-textarea-content',
+    template: '',
+    providers: [
+        {
+            multi: true,
+            provide: NG_VALUE_ACCESSOR,
+            useExisting: forwardRef(() => DotTextareaContentMockComponent)
+        }
+    ]
+})
+export class DotTextareaContentMockComponent implements ControlValueAccessor {
+    @Input()
+    code;
+
+    @Input()
+    height;
+
+    @Input()
+    show;
+
+    @Input()
+    value;
+
+    @Input()
+    width;
+
+    @Output()
+    monacoInit = new EventEmitter();
+
+    @Input()
+    language;
+
+    writeValue() {
+        //
+    }
+    registerOnChange() {
+        //
+    }
+    registerOnTouched() {
+        //
+    }
+}
 
 const messages = {
     'message.containers.create.click_to_edit': 'Click to Edit',
@@ -76,7 +127,8 @@ describe('DotContainerPropertiesComponent', () => {
             declarations: [
                 DotContainerPropertiesComponent,
                 DotContentEditorComponent,
-                DotLoopEditorComponent
+                DotLoopEditorComponent,
+                DotTextareaContentMockComponent
             ],
             providers: [
                 { provide: DotMessageService, useValue: messageServiceMock },
@@ -119,7 +171,6 @@ describe('DotContainerPropertiesComponent', () => {
                 CommonModule,
                 DotMessagePipeModule,
                 SharedModule,
-                DotTextareaContentModule,
                 CheckboxModule,
                 InplaceModule,
                 ReactiveFormsModule,
@@ -158,5 +209,40 @@ describe('DotContainerPropertiesComponent', () => {
             expect(inplace.componentInstance.active).toBe(true);
             expect(title.attributes.dotAutofocus).toBeDefined();
         });
+
+        it('should setup title', () => {
+            const field = de.query(By.css('[data-testId="title"]'));
+            expect(field.attributes.pInputText).toBeDefined();
+        });
+
+        it('should setup description', () => {
+            const field = de.query(By.css('[data-testId="description"]'));
+            expect(field).toBeDefined();
+        });
+
+        it('should setup Max Contents', () => {
+            const field = de.query(By.css('[data-testId="max-contents"]'));
+            expect(field).toBeDefined();
+        });
+
+        it('should setup code', () => {
+            const field = de.query(By.css('[data-testId="code"]'));
+            expect(field).toBeDefined();
+        });
+
+        it('should button enable when max content greater then zero', fakeAsync(() => {
+            fixture.componentInstance.form.get('maxContentlets').setValue(2);
+            const contentTypeButton = de.query(By.css('[data-testId=showContentTypeAndCode]'));
+            spyOn(fixture.componentInstance, 'showContentTypeAndCode');
+            contentTypeButton.triggerEventHandler('click');
+            tick();
+            fixture.detectChanges();
+            const preLoopComponent = de.query(By.css('dot-loop-editor'));
+            const codeEditoromponent = de.query(By.css('dot-container-code'));
+            expect(contentTypeButton.attributes.disable).not.toBeDefined();
+            expect(preLoopComponent).toBeDefined();
+            expect(codeEditoromponent).toBeDefined();
+            expect(fixture.componentInstance.showContentTypeAndCode).toHaveBeenCalled();
+        }));
     });
 });
