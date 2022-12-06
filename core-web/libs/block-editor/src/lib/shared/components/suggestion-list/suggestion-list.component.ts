@@ -53,7 +53,12 @@ export class SuggestionListComponent implements AfterViewInit, OnDestroy {
         }
 
         const index = Number(element?.dataset.index);
-        this.updateActiveItem(index);
+
+        if (element.getAttribute('disabled')) {
+            this.keyManager.activeItem?.unfocus();
+        } else {
+            this.updateActiveItem(index);
+        }
     }
 
     /**

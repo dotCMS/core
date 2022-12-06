@@ -1,11 +1,11 @@
 <div class="content-type-fields-drop-zone">
     <div
-        [dragulaModel]="fieldRows"
         class="content-type-fields-drop-zone__container"
-        dragula="fields-row-bag"
+        [dragulaModel]="fieldRows"
         [attr.disabled]="loading"
+        dragula="fields-row-bag"
     >
-        <ng-template ngFor let-row let-i="index" [ngForOf]="fieldRows">
+        <ng-template [ngForOf]="fieldRows" ngFor let-row let-i="index">
             <dot-content-type-fields-row
                 *ngIf="row.columns && row.columns.length; else tab_container"
                 [fieldRow]="row"
@@ -32,12 +32,12 @@
 </div>
 
 <dot-dialog
-    width="45rem"
     [(visible)]="displayDialog"
     [actions]="dialogActions"
     [hideButtons]="hideButtons"
-    (hide)="removeFieldsWithoutId()"
     [header]="currentFieldType?.label"
+    (hide)="removeFieldsWithoutId()"
+    width="45rem"
 >
     <p-tabView [(activeIndex)]="activeTab" (onChange)="handleTabChange($event.index)">
         <p-tabPanel [header]="'contenttypes.dropzone.tab.overview' | dm">
@@ -47,29 +47,44 @@
                     'com.dotcms.contenttype.model.field.ImmutableWysiwygField'
                 "
                 [currentFieldType]="currentFieldType"
-                (action)="scrollTo($event)"
                 [currentField]="currentField"
+                (action)="scrollTo($event)"
             ></dot-convert-to-block-info>
             <div class="wrapper">
                 <dot-content-type-fields-properties-form
+                    #fieldPropertiesForm
                     [formFieldData]="currentField"
+                    [contentType]="contentType"
                     (saveField)="saveFieldsHandler($event)"
                     (valid)="setDialogOkButtonState($event)"
-                    [contentType]="contentType"
-                    #fieldPropertiesForm
                 >
                 </dot-content-type-fields-properties-form>
                 <dot-convert-wysiwyg-to-block
-                    (convert)="convertWysiwygToBlock($event)"
                     *ngIf="
                         !!currentField?.id &&
                         currentFieldType?.clazz ===
                             'com.dotcms.contenttype.model.field.ImmutableWysiwygField'
                     "
                     [currentFieldType]="currentFieldType"
+                    (convert)="convertWysiwygToBlock($event)"
                 ></dot-convert-wysiwyg-to-block>
             </div>
         </p-tabPanel>
+        <p-tabPanel
+            #panel
+            *ngIf="!!currentField?.id && isBlockEditorField"
+            [header]="'Settings'"
+            [disabled]="!currentField?.id"
+        >
+            <dot-block-editor-settings
+                [field]="currentField"
+                [isVisible]="panel._selected"
+                (changeControls)="changesDialogActions($event)"
+                (save)="toggleDialog()"
+                (valid)="setDialogOkButtonState($event)"
+            ></dot-block-editor-settings>
+        </p-tabPanel>
+
         <p-tabPanel
             [header]="'contenttypes.dropzone.tab.variables' | dm"
             [disabled]="!currentField?.id"

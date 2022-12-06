@@ -100,7 +100,10 @@ export class ContainerListComponent implements OnDestroy {
      * @memberof ContainerListComponent
      */
     updateSelectedContainers(containers: DotContainer[]): void {
-        this.store.updateSelectedContainers(containers);
+        const filterContainers = containers.filter(
+            (container: DotContainer) => container.identifier !== 'SYSTEM_CONTAINER'
+        );
+        this.store.updateSelectedContainers(filterContainers);
     }
 
     /**

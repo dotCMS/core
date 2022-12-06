@@ -1,9 +1,9 @@
 {
 	"info": {
-		"_postman_id": "3875c184-d685-419e-9898-2d955324fa1a",
+		"_postman_id": "d0681ce1-9d22-4d9e-a138-11c51bea2b71",
 		"name": "VanityURL",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
-		"_exporter_id": "4500400"
+		"_exporter_id": "5403727"
 	},
 	"item": [
 		{
@@ -222,7 +222,7 @@
 							"    pm.response.to.have.status(404);",
 							"    var body = pm.response.body;",
 							"",
-							"    pm.expect(pm.response.text(), \"Got wrong page\").to.include(\"Page Not Found\");",
+							"    pm.expect(pm.response.text(), \"Got wrong page\").to.include(\"Not Found\");",
 							"});"
 						],
 						"type": "text/javascript"

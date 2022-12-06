@@ -45,11 +45,13 @@ import * as autoScroll from 'dom-autoscroller';
 })
 export class ContentTypeFieldsDropZoneComponent implements OnInit, OnChanges, OnDestroy {
     readonly OVERVIEW_TAB_INDEX = 0;
+    readonly BLOCK_EDITOR_SETTINGS_TAB_INDEX = 1;
 
     displayDialog = false;
     currentField: DotCMSContentTypeField;
     currentFieldType: FieldType;
     dialogActions: DotDialogActions;
+    defaultDialogActions: DotDialogActions;
     fieldRows: DotCMSContentTypeLayoutRow[];
     hideButtons = false;
     activeTab = 0;
@@ -74,6 +76,13 @@ export class ContentTypeFieldsDropZoneComponent implements OnInit, OnChanges, On
 
     private _loading: boolean;
     private destroy$: Subject<boolean> = new Subject<boolean>();
+
+    get isBlockEditorField() {
+        return (
+            this.currentFieldType?.clazz ===
+            'com.dotcms.contenttype.model.field.ImmutableStoryBlockField'
+        );
+    }
 
     constructor(
         private dotMessageService: DotMessageService,
@@ -128,7 +137,7 @@ export class ContentTypeFieldsDropZoneComponent implements OnInit, OnChanges, On
     }
 
     ngOnInit(): void {
-        this.dialogActions = {
+        this.defaultDialogActions = {
             accept: {
                 action: () => {
                     this.propertiesForm.saveFieldProperties();
@@ -140,6 +149,8 @@ export class ContentTypeFieldsDropZoneComponent implements OnInit, OnChanges, On
                 label: this.dotMessageService.get('contenttypes.dropzone.action.cancel')
             }
         };
+
+        this.dialogActions = this.defaultDialogActions;
 
         this.fieldDragDropService.fieldDropFromSource$
             .pipe(takeUntil(this.destroy$))
@@ -380,7 +391,13 @@ export class ContentTypeFieldsDropZoneComponent implements OnInit, OnChanges, On
      * @param index
      */
     handleTabChange(index: number): void {
-        this.hideButtons = index !== this.OVERVIEW_TAB_INDEX;
+        if (index === this.OVERVIEW_TAB_INDEX) {
+            this.dialogActions = this.defaultDialogActions;
+        }
+
+        this.hideButtons =
+            index !== this.OVERVIEW_TAB_INDEX &&
+            !(index === this.BLOCK_EDITOR_SETTINGS_TAB_INDEX && this.isBlockEditorField);
     }
 
     /**
@@ -398,12 +415,24 @@ export class ContentTypeFieldsDropZoneComponent implements OnInit, OnChanges, On
         });
     }
 
+    /**
+     * Change dialogActions
+     *
+     * @param {DotDialogActions} controls
+     * @memberof ContentTypeFieldsDropZoneComponent
+     */
+    changesDialogActions(controls: DotDialogActions) {
+        this.dialogActions = controls;
+    }
+
     private setDroppedField(droppedField: DotCMSContentTypeField): void {
         this.currentField = droppedField;
         this.currentFieldType = this.fieldPropertyService.getFieldType(this.currentField.clazz);
     }
 
     private toggleDialog(): void {
+        this.dialogActions = this.defaultDialogActions;
+        this.activeTab = this.OVERVIEW_TAB_INDEX;
         this.displayDialog = !this.displayDialog;
     }
 

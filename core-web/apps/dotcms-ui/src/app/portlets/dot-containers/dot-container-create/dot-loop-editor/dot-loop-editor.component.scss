@@ -12,12 +12,4 @@
         padding: $spacing-6;
         background: #e9ebfc;
     }
-
-    dot-textarea-content {
-        height: 20vh !important;
-    }
-
-    ::ng-deep .textarea-content__code-field {
-        height: 20vh !important;
-    }
 }

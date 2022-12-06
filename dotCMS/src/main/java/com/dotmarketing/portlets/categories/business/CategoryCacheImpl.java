@@ -130,6 +130,16 @@ public class CategoryCacheImpl extends CategoryCache {
 		cache.remove(primaryGroup + object.getCategoryId(),primaryGroup);
 	}
 
+	
+	
+    @SuppressWarnings ("unchecked")
+    @Override
+    protected void removeChildren ( String parentId ) throws DotDataException, DotCacheException {
+        removeChildrenInternal(parentId);
+        removeChildrenInternal(parentId + CategoryFactory.ALL_CHILDREN_SUFFIX);
+	
+    }
+	
     /**
      * Removes the list of children categories based using the given parent id/inode
      *
@@ -139,8 +149,7 @@ public class CategoryCacheImpl extends CategoryCache {
      * @throws DotCacheException
      */
     @SuppressWarnings ("unchecked")
-    @Override
-    protected void removeChildren ( String parentId ) throws DotDataException, DotCacheException {
+    private void removeChildrenInternal ( String parentId ) throws DotDataException, DotCacheException {
         List<Category> childrenIds = null;
         try {
             childrenIds = (List<Category>) cache.get( categoryChildrenCacheGroup + parentId, categoryChildrenCacheGroup );
