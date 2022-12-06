@@ -1,7 +1,6 @@
 package com.dotcms.rest.api.v1;
 
 import com.dotmarketing.util.Config;
-import com.fasterxml.jackson.core.JacksonException;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.core.JsonParser;
