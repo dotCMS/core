@@ -68,4 +68,14 @@
             </div>
         </div>
     </form>
+
+    <button
+        class="p-button-secondary dot-favorite-dialog-footer__delete-button"
+        [disabled]="!vm.inodeStored"
+        [label]="'favoritePage.dialog.delete.button' | dm"
+        (click)="onDelete(vm.inodeStored)"
+        footerActions
+        data-testid="dotFavoriteDialogDeleteButton"
+        pButton
+    ></button>
 </dot-form-dialog>

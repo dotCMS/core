@@ -23,6 +23,7 @@ import { DotPageRenderParameters } from '@models/dot-page/dot-rendered-page.mode
 import { DotESContentService } from '@dotcms/app/api/services/dot-es-content/dot-es-content.service';
 import { ESContent } from '@dotcms/app/shared/models/dot-es-content/dot-es-content.model';
 import { generateDotFavoritePageUrl } from '@dotcms/app/shared/dot-utils';
+import { DotCMSContentlet } from '@dotcms/dotcms-models';
 
 @Injectable()
 export class DotPageStateService {
@@ -166,11 +167,11 @@ export class DotPageStateService {
     /**
      * Set the FavoritePageHighlight flag status
      *
-     * @param {boolean} highlight
+     * @param {DotCMSContentlet} favoritePage
      * @memberof DotPageStateService
      */
-    setFavoritePageHighlight(highlight: boolean): void {
-        this.currentState.favoritePage = highlight;
+    setFavoritePageHighlight(favoritePage: DotCMSContentlet): void {
+        this.currentState.favoritePage = favoritePage;
         this.state$.next(this.currentState);
     }
 
@@ -215,7 +216,7 @@ export class DotPageStateService {
                         .pipe(
                             take(1),
                             switchMap((response: ESContent) => {
-                                const favoritePage = response.resultsSize > 0;
+                                const favoritePage = response.jsonObjectView?.contentlets[0];
                                 const pageState = new DotPageRenderState(
                                     this.getCurrentUser(),
                                     page,

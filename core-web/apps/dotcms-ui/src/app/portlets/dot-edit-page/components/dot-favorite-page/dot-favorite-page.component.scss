@@ -6,4 +6,9 @@
         display: grid;
         grid-template-columns: 50% 49%;
     }
+
+    .dot-favorite-dialog-footer__delete-button {
+        left: 0;
+        position: absolute;
+    }
 }
