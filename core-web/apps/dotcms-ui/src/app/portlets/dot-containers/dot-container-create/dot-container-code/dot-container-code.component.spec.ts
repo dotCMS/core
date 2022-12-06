@@ -151,6 +151,7 @@ const messageServiceMock = new MockDotMessageService({
 describe('DotContentEditorComponent', () => {
     let hostFixture: ComponentFixture<HostTestComponent>;
     let hostComponent: HostTestComponent;
+    let comp: DotContentEditorComponent;
     let de: DebugElement;
     let coreWebService: CoreWebService;
     let menu: Menu;
@@ -201,19 +202,11 @@ describe('DotContentEditorComponent', () => {
             tick();
             de = hostFixture.debugElement;
             hostComponent = hostFixture.componentInstance;
+            comp = de.query(By.css('dot-container-code')).componentInstance;
             menu = de.query(By.css('p-menu')).componentInstance;
         }));
 
         it('should set labels', () => {
-            const actions = [
-                { label: 'Activity', command: jasmine.any(Function) },
-                { label: 'Activity 2', command: jasmine.any(Function) }
-            ];
-
-            expect(menu.model).toEqual(actions);
-        });
-
-        it('should check Dot', () => {
             const actions = [
                 { label: 'Activity', command: jasmine.any(Function) },
                 { label: 'Activity 2', command: jasmine.any(Function) }
@@ -227,13 +220,20 @@ describe('DotContentEditorComponent', () => {
             hostFixture.detectChanges();
             const contentTypes = de.queryAll(By.css('p-tabpanel'));
             const code = de.query(By.css(`[data-testid="${mockContentTypes[0].id}"]`));
-
+            code.triggerEventHandler('monacoInit', {
+                name: menu.model[0].label,
+                editor: {
+                    focus: jasmine.createSpy()
+                }
+            });
+            hostFixture.detectChanges();
             expect(code).not.toBeNull();
             expect(code.attributes.formControlName).toBe('code');
             expect(code.attributes.language).toBe('html');
             expect(code.attributes['ng-reflect-show']).toBe('code');
             expect(contentTypes.length).toEqual(3);
             expect((hostComponent.form.get('containerStructures') as FormArray).length).toEqual(2);
+            expect(comp.monacoEditors[mockContentTypes[0].name].focus).toHaveBeenCalled();
         });
 
         it('should have remove content type', () => {

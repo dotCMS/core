@@ -140,7 +140,7 @@ export class DotContentEditorComponent implements OnInit {
                             })
                         );
 
-                        this.updateActiveTabIndex(this.containerContents.length);
+                        this.updateActiveTabIndex(this.getcontainerStructures.length);
                     }
                 }
             };
