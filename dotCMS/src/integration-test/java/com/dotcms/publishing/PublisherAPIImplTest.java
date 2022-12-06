@@ -1159,6 +1159,9 @@ public class PublisherAPIImplTest {
         assertManifestFile(manifestFile, manifestItemsMapTest);
     }
 
+    /**
+     * Test delete file works after the security fixes
+     */
     @Test
     public void testDeleteFileDesc() {
 

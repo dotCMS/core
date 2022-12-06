@@ -140,12 +140,20 @@ public class JsonWebTokenUtilsIntegrationTest {
         assertNull(userInToken);
     }
 
+    /**
+     * Testing parse utils with invalid values
+     */
     @Test(expected = MalformedJwtException.class)
     public void testParseMalformedToken(){
         final JsonWebTokenUtils utils = JsonWebTokenUtils.getInstance();
         utils.parseToken("foo");
     }
 
+    /**
+     * Testing parse utils with coherent data
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
     @Test
     public void testWellFormedToken() throws DotDataException, DotSecurityException {
 

@@ -77,6 +77,12 @@ public class ManifestUtilTest {
         Assert.assertTrue(reader.isEmpty());
     }
 
+    /**
+     * Creates a test gzipFile
+     * @param src
+     * @param gzipFile
+     * @throws IOException
+     */
     private static void compressGzipFile(final File src, final File gzipFile) throws IOException {
           try(
             FileOutputStream fos = new FileOutputStream(gzipFile);

@@ -529,11 +529,17 @@ public class ApiTokenAPITest extends IntegrationTestBase {
 
     }
 
+    /**
+     * API level token validation test: With invalid input
+     */
     @Test
     public void testNonWellFormedToken(){
         assertFalse(apiTokenAPI.isWellFormedToken("any"));
     }
 
+    /**
+     * API level token validation test: With a valid input
+     */
     @Test
     public void testWellFormedToken() {
         ApiToken skinnyToken = ApiToken.from(getSkinnyToken()).withUserId(APILocator.systemUser().getUserId()).build();

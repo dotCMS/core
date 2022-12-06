@@ -58,7 +58,7 @@ public class ManifestUtil {
 
     /**
      * Return true if the manifest file exists into the bundle, otherwise return false
-     * Alfo return falso if any {@link IOException} is thrown
+     * Also returns false if any {@link IOException} is thrown
      *
      * @param bundleId
      * @return
