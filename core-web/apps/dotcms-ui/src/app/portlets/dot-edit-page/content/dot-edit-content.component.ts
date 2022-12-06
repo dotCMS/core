@@ -43,6 +43,8 @@ import { DotIframeEditEvent } from '@dotcms/dotcms-models';
 import { DotEventsService } from '@services/dot-events/dot-events.service';
 import { DialogService } from 'primeng/dynamicdialog';
 import { DotFavoritePageComponent } from '../components/dot-favorite-page/dot-favorite-page.component';
+import { DotESContentService } from '@dotcms/app/api/services/dot-es-content/dot-es-content.service';
+import { ESContent } from '@dotcms/app/shared/models/dot-es-content/dot-es-content.model';
 
 export const EDIT_BLOCK_EDITOR_CUSTOM_EVENT = 'edit-block-editor';
 
@@ -100,7 +102,8 @@ export class DotEditContentComponent implements OnInit, OnDestroy {
         private httpErrorManagerService: DotHttpErrorManagerService,
         private dotConfigurationService: DotPropertiesService,
         private dotLicenseService: DotLicenseService,
-        private dotEventsService: DotEventsService
+        private dotEventsService: DotEventsService,
+        private dotESContentService: DotESContentService
     ) {
         if (!this.customEventsHandler) {
             this.customEventsHandler = {
@@ -285,13 +288,30 @@ export class DotEditContentComponent implements OnInit, OnDestroy {
                             pageState: pageState,
                             pageRenderedHtml: pageState.params.page.rendered || null
                         },
-                        onSave: () => {
-                            this.dotPageStateService.setFavoritePageHighlight(true);
+                        onSave: (favoritePageUrl: string) => {
+                            this.updateFavoritePageIconStatus(favoritePageUrl);
+                        },
+                        onDelete: (favoritePageUrl: string) => {
+                            this.updateFavoritePageIconStatus(favoritePageUrl);
                         }
                     }
                 });
             }
         });
+    }
+
+    private updateFavoritePageIconStatus(pageUrl: string) {
+        this.dotESContentService
+            .get({
+                itemsPerPage: 10,
+                offset: '0',
+                query: `+contentType:DotFavoritePage +DotFavoritePage.url_dotraw:${pageUrl}`
+            })
+            .pipe(take(1))
+            .subscribe((response: ESContent) => {
+                const favoritePage = response.jsonObjectView?.contentlets[0];
+                this.dotPageStateService.setFavoritePageHighlight(favoritePage);
+            });
     }
 
     private setAllowedContent(pageState: DotPageRenderState): void {
