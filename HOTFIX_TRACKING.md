@@ -75,3 +75,4 @@ This maintenance release includes the following code fixes:
 61. https://github.com/dotCMS/core/issues/21966 : Unable to save/publish Page on auth #21966
 62. https://github.com/dotCMS/core/issues/22582 : Import/Export Content Tool generating diff key/value field #22582
 63. https://github.com/dotCMS/core/issues/22549 : Relationship is not showing the right parent #22549
+64. https://github.com/dotCMS/core/issues/22512 : Allow follow redirects to be configured #22512

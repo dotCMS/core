@@ -29,6 +29,8 @@ public class CircuitBreakerUrlBuilder {
     int tryAgainAfterDelay = CurcuitBreakerPool.TRY_AGAIN_DELAY_SEC;
     String rawData = null;
 
+    boolean allowRedirects=Config.getBooleanProperty("REMOTE_CALL_ALLOW_REDIRECTS", false);
+
     public CircuitBreakerUrlBuilder setUrl(String proxyUrl) {
         this.proxyUrl = proxyUrl;
         return this;
@@ -41,7 +43,10 @@ public class CircuitBreakerUrlBuilder {
         return this;
     }
 
-
+    public CircuitBreakerUrlBuilder setAllowRedirects(boolean allowRedirects) {
+        this.allowRedirects = allowRedirects;
+        return this;
+    }
 
 
     public CircuitBreakerUrlBuilder setTryAgainAfterDelaySeconds(int tryAgainAfter) {
@@ -121,7 +126,7 @@ public class CircuitBreakerUrlBuilder {
                 break;
         } 
 
-        return new CircuitBreakerUrl(this.proxyUrl, this.timeout, this.circuitBreaker, request, this.params, this.headers, this.verbose, this.rawData);
+        return new CircuitBreakerUrl(this.proxyUrl, this.timeout, this.circuitBreaker, request, this.params, this.headers, this.verbose, this.rawData, this.allowRedirects);
 
 
     }

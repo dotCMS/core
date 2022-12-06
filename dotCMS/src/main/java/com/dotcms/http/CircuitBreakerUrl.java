@@ -66,6 +66,7 @@ public class CircuitBreakerUrl {
     private final String rawData;
     private int response=-1;
     private Header[] responseHeaders;
+    private final boolean allowRedirects;
 
     /**
      * 
@@ -98,6 +99,14 @@ public class CircuitBreakerUrl {
     public CircuitBreakerUrl(String proxyUrl, long timeoutMs, CircuitBreaker circuitBreaker, boolean verbose) {
       this(proxyUrl, timeoutMs, circuitBreaker, new HttpGet(proxyUrl), ImmutableMap.of(),ImmutableMap.of(), verbose, null);
     }
+
+    @VisibleForTesting
+    public CircuitBreakerUrl(String proxyUrl, long timeoutMs, CircuitBreaker circuitBreaker, HttpRequestBase request,
+                             Map<String, String> params, Map<String, String> headers, boolean verbose, final String rawData) {
+        this(proxyUrl, timeoutMs, circuitBreaker, request,
+                params, headers,  verbose, rawData, false);
+
+    }
     /**
      * Full featured constructor
      * 
@@ -110,13 +119,14 @@ public class CircuitBreakerUrl {
      */
     @VisibleForTesting
     public CircuitBreakerUrl(String proxyUrl, long timeoutMs, CircuitBreaker circuitBreaker, HttpRequestBase request,
-            Map<String, String> params, Map<String, String> headers, boolean verbose, final String rawData) {
+            Map<String, String> params, Map<String, String> headers, boolean verbose, final String rawData, boolean allowRedirects) {
         this.proxyUrl = proxyUrl;
         this.timeoutMs = timeoutMs;
         this.circuitBreaker = circuitBreaker;
         this.verbose=verbose;
         this.request = request;
         this.rawData=rawData;
+        this.allowRedirects=allowRedirects;
         for (final String head : headers.keySet()) {
             request.addHeader(head, headers.get(head));
         }
@@ -191,6 +201,7 @@ public class CircuitBreakerUrl {
                     .run(ctx -> {
                         RequestConfig config = RequestConfig.custom()
                                 .setConnectTimeout(Math.toIntExact(this.timeoutMs))
+                                .setRedirectsEnabled(allowRedirects)
                                 .setConnectionRequestTimeout(Math.toIntExact(this.timeoutMs))
                                 .setSocketTimeout(Math.toIntExact(this.timeoutMs)).build();
                         try (CloseableHttpClient httpclient = HttpClientBuilder.create().setDefaultRequestConfig(config).build()) {
