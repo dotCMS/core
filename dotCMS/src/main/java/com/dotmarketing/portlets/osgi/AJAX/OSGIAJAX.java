@@ -9,6 +9,7 @@ import org.apache.commons.fileupload.disk.DiskFileItemFactory;
 import org.apache.commons.fileupload.servlet.ServletFileUpload;
 import org.apache.commons.io.IOUtils;
 import com.dotmarketing.util.Logger;
+import org.apache.commons.lang.BooleanUtils;
 import org.apache.felix.framework.OSGIUtil;
 import com.dotmarketing.util.SecurityLogger;
 import com.liferay.util.FileUtil;
@@ -35,6 +36,8 @@ public class OSGIAJAX extends OSGIBaseAJAX {
         String jarName = request.getParameter( "jar" );
         String bundleId = request.getParameter( "bundleId" );
 
+        jarName = com.dotmarketing.util.FileUtil.sanitizeFileName(jarName);
+
         //First uninstall the bundle
         Bundle bundle;
         try {
@@ -58,7 +61,8 @@ public class OSGIAJAX extends OSGIBaseAJAX {
         File to = new File(undeployedPath + File.separator + jarName);
 
         if(to.getCanonicalPath().startsWith(undeployedPath) && to.exists()) {
-            to.delete();
+            final boolean deleteOk = to.delete();
+            Logger.info(OSGIAJAX.class,String.format(" File [%s] successfully un-deployed [%s].",to.getCanonicalPath(), BooleanUtils.toStringYesNo(deleteOk)) );
         }
 
         boolean success = FileUtil.move( from, to );
