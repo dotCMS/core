@@ -1,6 +1,6 @@
 {
 	"info": {
-		"_postman_id": "62f5c276-2166-48f4-8d77-8cd2ce2b02b8",
+		"_postman_id": "58fe3bb5-ad72-47e3-9118-80306254e024",
 		"name": "Experiments Resource",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
 		"_exporter_id": "1549189"
@@ -326,8 +326,8 @@
 									"    pm.expect(jsonData.entity.name).equal(\"20220901\");",
 									"    pm.expect(jsonData.entity.pageId).equal(\"e424abd7e2e7a9031c5a0a3c18182f1b\");",
 									"    pm.expect(jsonData.entity.modDate).is.not.null;",
-									"    pm.expect(jsonData.entity.scheduling.startDate).to.include(\"2052-08-30T20:19:12Z\");",
-									"    pm.expect(jsonData.entity.scheduling.endDate).to.include(\"2052-09-30T20:19:12Z\");",
+									"    pm.expect(jsonData.entity.scheduling.startDate).to.equal(2608661952000);",
+									"    pm.expect(jsonData.entity.scheduling.endDate).to.equal(2611340352000);",
 									"    pm.expect(jsonData.entity.status).equal(\"DRAFT\");",
 									"    pm.expect(jsonData.entity.trafficAllocation).equal(100);",
 									"    pm.expect(jsonData.entity.trafficProportion.type).equal(\"SPLIT_EVENLY\");",
