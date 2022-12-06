@@ -1,16 +1,28 @@
-<form *ngIf="form" [formGroup]="form" (ngSubmit)="onSubmit()">
-    <div class="form-row" *ngFor="let control of dynamicControls">
-        <label [for]="control.key">{{ control.label | titlecase }}</label>
+<form *ngIf="form" [ngClass]="options?.customClass" [formGroup]="form" (ngSubmit)="onSubmit()">
+    <div class="field form-row" *ngFor="let control of dynamicControls" [ngClass]="control.type">
         <ng-container [ngSwitch]="control.type">
-            <input
-                #group
-                *ngSwitchDefault
-                [formControlName]="control.key"
-                [id]="control.key"
-                [style]="{ width: '100%', fontSize: '14px', height: '40px' }"
-                pInputText
-                type="control.type"
-            />
+            <ng-container *ngSwitchCase="'checkbox'">
+                <p-checkbox
+                    [formControlName]="control.key"
+                    [binary]="true"
+                    [id]="control.key"
+                ></p-checkbox>
+                <label [for]="control.key">{{ control.label | titlecase }}</label>
+            </ng-container>
+            <ng-container *ngSwitchDefault>
+                <label [for]="control.key">{{ control.label | titlecase }}</label>
+                <input
+                    #group
+                    *ngSwitchDefault
+                    [formControlName]="control.key"
+                    [id]="control.key"
+                    [type]="control.type"
+                    [min]="control.min"
+                    [style]="{ width: '100%', fontSize: '14px', height: '40px' }"
+                    pInputText
+                    type="control.type"
+                />
+            </ng-container>
         </ng-container>
         <span
             class="error-message"

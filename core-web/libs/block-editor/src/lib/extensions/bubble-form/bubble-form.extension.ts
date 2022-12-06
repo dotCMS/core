@@ -5,14 +5,21 @@ import { ViewContainerRef } from '@angular/core';
 import { bubbleFormPlugin } from './plugins/bubble-form.plugin';
 import { BubbleFormComponent } from './bubble-form.component';
 import { Props } from 'tippy.js';
+import { DynamicControl } from './model';
+import { Subject } from 'rxjs';
 
 export const BUBBLE_FORM_PLUGIN_KEY = new PluginKey('bubble-form');
 
 declare module '@tiptap/core' {
     interface Commands<ReturnType> {
         BubbleForm: {
-            openForm: () => ReturnType;
+            openForm: (
+                form?: DynamicControl<string | boolean>[],
+                options?: { customClass: string }
+                // eslint-disable-next-line
+            ) => any;
             closeForm: () => ReturnType;
+            updateValue: (value) => void;
         };
     }
 }
@@ -34,6 +41,8 @@ const tippyOptions: Partial<Props> = {
 };
 
 export const BubbleFormExtension = (viewContainerRef: ViewContainerRef) => {
+    const formValue$ = new Subject<{ [key: string]: string }>();
+
     return BubbleMenu.extend<unknown>({
         name: 'bubbleForm',
 
@@ -49,19 +58,23 @@ export const BubbleFormExtension = (viewContainerRef: ViewContainerRef) => {
         addCommands() {
             return {
                 openForm:
-                    () =>
+                    (form, options) =>
                     ({ chain }) => {
-                        return chain()
+                        chain()
                             .command(({ tr }) => {
-                                tr.setMeta(BUBBLE_FORM_PLUGIN_KEY, { open: true });
+                                tr.setMeta(BUBBLE_FORM_PLUGIN_KEY, { form, options, open: true });
 
                                 return true;
                             })
                             .run();
+
+                        return formValue$;
                     },
                 closeForm:
                     () =>
                     ({ chain }) => {
+                        formValue$.next(null);
+
                         return chain()
                             .command(({ tr }) => {
                                 tr.setMeta(BUBBLE_FORM_PLUGIN_KEY, { open: false });
@@ -69,6 +82,12 @@ export const BubbleFormExtension = (viewContainerRef: ViewContainerRef) => {
                                 return true;
                             })
                             .run();
+                    },
+                updateValue:
+                    (formValue) =>
+                    ({ editor }) => {
+                        formValue$.next(formValue);
+                        editor.commands.closeForm();
                     }
             };
         },
@@ -84,7 +103,8 @@ export const BubbleFormExtension = (viewContainerRef: ViewContainerRef) => {
                     editor: this.editor,
                     element: componentElement,
                     tippyOptions: tippyOptions,
-                    component: component
+                    component: component,
+                    form$: formValue$
                 })
             ];
         }

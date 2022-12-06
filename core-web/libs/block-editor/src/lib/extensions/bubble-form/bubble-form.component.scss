@@ -6,14 +6,22 @@
     box-shadow: 0px 4px 10px rgba(10, 7, 37, 0.1);
     display: flex;
     flex-direction: column;
-    width: $form-width;
     padding: $dot-editor-size;
 }
 
 form {
+    width: $form-width;
     display: flex;
     flex-direction: column;
     gap: $dot-editor-size;
+
+    &.dotTableForm {
+        width: 200px;
+
+        .p-button-outlined {
+            display: none;
+        }
+    }
 }
 
 .form-row {
@@ -23,6 +31,11 @@ form {
 
     label {
         font-size: 0.75 * $dot-editor-size;
+    }
+
+    &.checkbox {
+        flex-direction: row;
+        align-items: center;
     }
 }
 

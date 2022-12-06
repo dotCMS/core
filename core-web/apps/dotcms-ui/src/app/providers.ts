@@ -32,6 +32,7 @@ import { DotWorkflowActionsFireService } from '@services/dot-workflow-actions-fi
 import { DotGlobalMessageService } from '@components/_common/dot-global-message/dot-global-message.service';
 import { ConfirmationService } from 'primeng/api';
 import { LayoutEditorCanDeactivateGuardService } from '@services/guards/layout-editor-can-deactivate-guard.service';
+import { PagesGuardService } from './api/services/guards/pages-guard.service';
 
 export const LOCATION_TOKEN = new InjectionToken<Location>('Window location object');
 
@@ -60,6 +61,7 @@ const PROVIDERS: Provider[] = [
     MenuGuardService,
     NotificationsService,
     PaginatorService,
+    PagesGuardService,
     PublicAuthGuardService,
     StringFormat,
     StringPixels,
