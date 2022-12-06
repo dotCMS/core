@@ -2,7 +2,7 @@
 # ----------------------------------------------
 # Stage 1:  Build dotCMS from our builder image
 # ----------------------------------------------
-FROM dotcms/dotcms-seed:22.09 as build-cms
+FROM dotcms/dotcms-seed:5.2.8.5 as build-cms
 
 LABEL com.dotcms.contact "support@dotcms.com"
 LABEL com.dotcms.vendor "dotCMS LLC"
@@ -80,6 +80,7 @@ COPY --chown=$USER_NAME:$USER_GROUP ROOT/ /
 
     chown -R $USER_NAME:$USER_NAME /data
 
+
 # ----------------------------------------------
 # Stage 4:  Flatten everything to 1 layer
 # ----------------------------------------------
@@ -92,7 +93,7 @@ LABEL com.dotcms.description "dotCMS Content Management System"
 ARG USER_UID="65001"
 ARG USER_GID="65001"
 
-COPY --from=composed-base / /
+COPY --from=container-base / /
 
 # Switching to non-root user to install SDKMAN! 
 USER $USER_UID:$USER_GID
