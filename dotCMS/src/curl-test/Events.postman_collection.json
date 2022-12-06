@@ -220,12 +220,6 @@
 							"pm.test(\"Status code should be ok 200\", function () {",
 							"    pm.response.to.have.status(200);",
 							"});",
-							"",
-							"pm.test(\"Number of events greater than 0\", function () {",
-							"    pm.expect(jsonData.results[0].data[0][\"Events.count\"]*1).is.greaterThan(0)",
-							"});",
-							"",
-							"",
 							""
 						],
 						"type": "text/javascript"
