@@ -51,7 +51,9 @@ public class EventLogRunnable implements Runnable {
 
     @Override
     public void run() {
-        final String url = analyticsApp + "?token=" + analyticsApp.getAnalyticsProperties().analyticsKey();
+        final String url = analyticsApp.getAnalyticsProperties().analyticsWriteUrl()
+            + "?token="
+            + analyticsApp.getAnalyticsProperties().analyticsKey();
         final CircuitBreakerUrlBuilder builder;
         try {
             builder = CircuitBreakerUrl.builder()
