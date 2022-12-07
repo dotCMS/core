@@ -10,7 +10,7 @@
             ></button>
             <button
                 class="p-button-primary p-button-sm"
-                [disabled]="form.pristine || !form.valid"
+                [disabled]="vm.invalidForm"
                 [label]="'Save' | dm"
                 (click)="save()"
                 pButton
@@ -78,6 +78,7 @@
                 *ngIf="vm.isContentTypeVisible"
                 [label]="'message.containers.create.clear' | dm"
                 (click)="clearContent()"
+                data-testId="clearContent"
                 pButton
                 type="button"
             ></button>

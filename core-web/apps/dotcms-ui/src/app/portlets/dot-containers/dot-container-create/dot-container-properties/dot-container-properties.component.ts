@@ -10,7 +10,7 @@ import { DotMessageService } from '@dotcms/app/api/services/dot-message/dot-mess
 import { DotRouterService } from '@services/dot-router/dot-router.service';
 import { take, takeUntil } from 'rxjs/operators';
 import { MenuItem } from 'primeng/api';
-import { Subject } from 'rxjs';
+import { Observable, Subject } from 'rxjs';
 import { DotContainerStructure } from '@dotcms/app/shared/models/container/dot-container.model';
 
 @Component({
@@ -23,6 +23,7 @@ export class DotContainerPropertiesComponent implements OnInit {
     vm$ = this.store.vm$;
     editor: MonacoEditor;
     form: FormGroup;
+    formInvalid$: Observable<boolean>;
     private destroy$: Subject<boolean> = new Subject<boolean>();
 
     constructor(
@@ -61,8 +62,10 @@ export class DotContainerPropertiesComponent implements OnInit {
 
                 this.addContainerFormControl(containerStructures);
             });
+
         this.form.valueChanges.pipe(takeUntil(this.destroy$)).subscribe((values) => {
             this.store.updateIsContentTypeButtonEnabled(values.maxContentlets > 0);
+            this.store.updateFormStatus({ invalidForm: !this.form.valid, container: values });
         });
     }
 
@@ -109,9 +112,12 @@ export class DotContainerPropertiesComponent implements OnInit {
     showContentTypeAndCode(): void {
         const values = this.form.value;
         if (values.maxContentlets > 0) {
+            (this.form.get('containerStructures') as FormArray).setValidators([
+                Validators.required,
+                Validators.minLength(1)
+            ]);
             this.form.get('code').clearValidators();
             this.form.get('code').reset();
-            this.form.get('containerStructures').setValidators(Validators.minLength(1));
             this.store.loadContentTypesAndUpdateVisibility();
         } else {
             this.form.get('code').setValidators(Validators.required);
@@ -180,10 +186,6 @@ export class DotContainerPropertiesComponent implements OnInit {
     clearContent(): void {
         this.dotAlertConfirmService.confirm({
             accept: () => {
-                this.store.updateContentTypeAndPrePostLoopVisibility({
-                    isContentTypeVisible: false,
-                    showPrePostLoopInput: false
-                });
                 this.form.get('containerStructures').clearValidators();
                 this.form.get('containerStructures').reset();
                 this.form.get('preLoop').reset();
@@ -192,6 +194,11 @@ export class DotContainerPropertiesComponent implements OnInit {
                 (this.form.get('containerStructures') as FormArray).clear();
                 this.form.get('code').addValidators(Validators.required);
                 this.form.updateValueAndValidity();
+
+                this.store.updateContentTypeAndPrePostLoopVisibility({
+                    isContentTypeVisible: false,
+                    showPrePostLoopInput: false
+                });
             },
             reject: () => {
                 //

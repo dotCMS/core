@@ -17,6 +17,7 @@ import { DotRouterService } from '@services/dot-router/dot-router.service';
 import { ActivatedRoute } from '@angular/router';
 import { DotCMSContentType } from '@dotcms/dotcms-models';
 import { DotContentTypeService } from '@dotcms/app/api/services/dot-content-type';
+import * as _ from 'lodash';
 
 export interface DotContainerPropertiesState {
     showPrePostLoopInput: boolean;
@@ -26,6 +27,7 @@ export interface DotContainerPropertiesState {
     containerStructures: DotContainerStructure[];
     contentTypes: DotCMSContentType[];
     apiLink: string;
+    invalidForm: boolean;
 }
 
 @Injectable()
@@ -46,7 +48,8 @@ export class DotContainerPropertiesStore extends ComponentStore<DotContainerProp
             containerStructures: [],
             contentTypes: [],
             container: null,
-            apiLink: ''
+            apiLink: '',
+            invalidForm: true
         });
         this.activatedRoute.data
             .pipe(
@@ -135,6 +138,28 @@ export class DotContainerPropertiesStore extends ComponentStore<DotContainerProp
             };
         }
     );
+
+    /**
+     * Update form status
+     * @memberof DotContainerPropertiesStore
+     */
+    readonly updateFormStatus = this.updater<{
+        invalidForm: boolean;
+        container: {
+            container: DotContainer;
+            containerStructure: DotContainerStructure;
+        };
+    }>((state: DotContainerPropertiesState, { invalidForm, container }) => {
+        return {
+            ...state,
+            invalidForm:
+                _.isEqual(
+                    { ...state.container, containerStructure: state.containerStructures },
+                    container
+                ) || invalidForm
+        };
+    });
+
     /**
      * Update Content Type and PrePost loop visibility
      * @memberof DotContainerPropertiesStore

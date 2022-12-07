@@ -47,7 +47,14 @@ import { DotGlobalMessageService } from '@components/_common/dot-global-message/
 import { DotEventsService } from '@dotcms/app/api/services/dot-events/dot-events.service';
 import { DotContentTypeService } from '@dotcms/app/api/services/dot-content-type';
 import { InplaceModule } from 'primeng/inplace';
-import { ControlValueAccessor, NG_VALUE_ACCESSOR, ReactiveFormsModule } from '@angular/forms';
+import {
+    ControlValueAccessor,
+    FormArray,
+    FormControl,
+    FormGroup,
+    NG_VALUE_ACCESSOR,
+    ReactiveFormsModule
+} from '@angular/forms';
 import { By } from '@angular/platform-browser';
 import { DotAutofocusModule } from '@directives/dot-autofocus/dot-autofocus.module';
 
@@ -59,9 +66,26 @@ export class DotContentEditorComponent {}
 
 @Component({
     selector: 'dot-loop-editor',
-    template: '<div></div>'
+    template: '<div></div>',
+    providers: [
+        {
+            provide: NG_VALUE_ACCESSOR,
+            useExisting: forwardRef(() => DotLoopEditorComponent),
+            multi: true
+        }
+    ]
 })
-export class DotLoopEditorComponent {}
+export class DotLoopEditorComponent {
+    writeValue() {
+        //
+    }
+    registerOnChange() {
+        //
+    }
+    registerOnTouched() {
+        //
+    }
+}
 
 @Component({
     selector: 'dot-textarea-content',
@@ -117,9 +141,10 @@ const messages = {
 
 describe('DotContainerPropertiesComponent', () => {
     let fixture: ComponentFixture<DotContainerPropertiesComponent>;
+    let comp: DotContainerPropertiesComponent;
     let de: DebugElement;
     let coreWebService: CoreWebService;
-
+    let dotDialogService: DotAlertConfirmService;
     const messageServiceMock = new MockDotMessageService(messages);
 
     beforeEach(async () => {
@@ -187,8 +212,10 @@ describe('DotContainerPropertiesComponent', () => {
             schemas: [CUSTOM_ELEMENTS_SCHEMA]
         }).compileComponents();
         fixture = TestBed.createComponent(DotContainerPropertiesComponent);
+        comp = fixture.componentInstance;
         de = fixture.debugElement;
         coreWebService = TestBed.inject(CoreWebService);
+        dotDialogService = TestBed.inject(DotAlertConfirmService);
     });
 
     describe('with data', () => {
@@ -244,5 +271,42 @@ describe('DotContainerPropertiesComponent', () => {
             expect(codeEditoromponent).toBeDefined();
             expect(fixture.componentInstance.showContentTypeAndCode).toHaveBeenCalled();
         }));
+
+        it('should clear the field', () => {
+            comp.form.setValue({
+                title: 'Title 1',
+                friendlyName: 'friendlyName',
+                maxContentlets: 23,
+                code: 'code',
+                preLoop: 'preloop',
+                postLoop: 'postloop',
+                identifier: '',
+                containerStructures: []
+            });
+            (comp.form.get('containerStructures') as FormArray).push(
+                new FormGroup({
+                    code: new FormControl(''),
+                    structureId: new FormControl('structureId')
+                })
+            );
+            comp.showContentTypeAndCode();
+            fixture.detectChanges();
+            const clearBtn = de.query(By.css('[data-testId="clearContent"]'));
+            spyOn(dotDialogService, 'confirm').and.callFake((conf) => {
+                conf.accept();
+            });
+            clearBtn.triggerEventHandler('click');
+
+            expect(comp.form.value).toEqual({
+                title: 'Title 1',
+                friendlyName: 'friendlyName',
+                maxContentlets: 23,
+                code: null,
+                preLoop: null,
+                postLoop: null,
+                identifier: '',
+                containerStructures: []
+            });
+        });
     });
 });
