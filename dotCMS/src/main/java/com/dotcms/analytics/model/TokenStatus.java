@@ -1,7 +1,9 @@
 package com.dotcms.analytics.model;
 
 /**
+ * Token Status possible values.
  *
+ * @author vico
  */
 public enum TokenStatus {
 

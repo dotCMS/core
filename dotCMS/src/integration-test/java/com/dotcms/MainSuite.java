@@ -231,6 +231,8 @@ import org.junit.runners.Suite.SuiteClasses;
         RulesAPIImplIntegrationTest.class,
         ExperimentAPIImpIT.class,
         ExperimentWebAPIImplIT.class,
+        AnalyticsAPIImplTest.class,
+        AccessTokenRenewJobTest.class,
         Task220825CreateVariantFieldTest.class,
         Task221007AddVariantIntoPrimaryKeyTest.class,
         ContentletWebAPIImplIntegrationTest.class, // moved to top because of failures on GHA
@@ -651,9 +653,7 @@ import org.junit.runners.Suite.SuiteClasses;
         VisitorsCurrentURLConditionletTest.class,
         VisitorsGeolocationConditionletTest.class,
         ManifestUtilTest.class,
-        ZipUtilTest.class,
-        AnalyticsAPIImplTest.class,
-        AccessTokenRenewJobTest.class
+        ZipUtilTest.class
 })
 public class MainSuite {
 

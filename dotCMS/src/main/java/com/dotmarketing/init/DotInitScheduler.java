@@ -471,9 +471,7 @@ public class DotInitScheduler {
 
 			addDeleteOldESIndicesJob(sched);
 
-			AccessTokenRenewJob.AccessTokensRenewJobScheduler.schedule(
-				AccessTokenRenewJob.ANALYTICS_ACCESS_TOKEN_RENEW_TRIGGER,
-				AccessTokenRenewJob.ANALYTICS_ACCESS_TOKEN_RENEW_TRIGGER_GROUP);
+			AccessTokenRenewJob.AccessTokensRenewJobScheduler.schedule();
 
             //Starting the sequential and standard Schedulers
 	        QuartzUtils.startSchedulers();

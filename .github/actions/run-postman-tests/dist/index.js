@@ -227,7 +227,7 @@ const startDeps = () => __awaiter(void 0, void 0, void 0, function* () {
     =======================================`);
     if (includeAnalytics) {
         execCmdAsync(toCommand('docker-compose', ['-f', 'analytics-compose.yml', 'up'], dockerFolder));
-        yield waitFor(140, 'Analytics Infrastructure');
+        yield waitFor(160, 'Analytics Infrastructure');
         yield warmUpAnalytics();
     }
     execCmdAsync(toCommand('docker-compose', ['-f', 'open-distro-compose.yml', '-f', `${dbType}-compose.yml`, '-f', 'dotcms-compose.yml', 'up'], dockerFolder, DEPS_ENV));
@@ -508,30 +508,40 @@ const execCmdAsync = (cmd) => {
     printCmd(cmd);
     exec.exec(cmd.cmd, cmd.args || [], { cwd: cmd.workingDir, env: cmd.env });
 };
-const warmUpIdp = () => __awaiter(void 0, void 0, void 0, function* () {
+const fetchAccessToken = () => __awaiter(void 0, void 0, void 0, function* () {
     const idpUrl = 'http://localhost:61111/realms/dotcms/protocol/openid-connect/token';
     const authPayload = 'client_id=analytics-customer-customer1&client_secret=testsecret&grant_type=client_credentials';
     core.info(`Sending POST to ${idpUrl} the payload:\n${authPayload}`);
-    const response = yield (0, node_fetch_1.default)(idpUrl, {
+    return (0, node_fetch_1.default)(idpUrl, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/x-www-form-urlencoded'
         },
         body: authPayload
     });
+});
+const warmUpIdp = () => __awaiter(void 0, void 0, void 0, function* () {
+    yield fetchAccessToken();
+    waitFor(1000, 'IDP warmup');
+    const response = yield fetchAccessToken();
     const accessToken = (yield response.json());
     return accessToken;
 });
-const warmUpConfig = (accessToken) => __awaiter(void 0, void 0, void 0, function* () {
+const fetchAnalyticsKey = (accessToken) => __awaiter(void 0, void 0, void 0, function* () {
     const configUrl = 'http://localhost:8088/c/customer1/cluster1/keys';
     core.info(`Sending GET to ${configUrl}`);
-    const response = yield (0, node_fetch_1.default)(configUrl, {
+    return (0, node_fetch_1.default)(configUrl, {
         method: 'GET',
         headers: {
             Accept: 'application/json',
             Authorization: `Bearer ${accessToken}`
         }
     });
+});
+const warmUpConfig = (accessToken) => __awaiter(void 0, void 0, void 0, function* () {
+    yield fetchAnalyticsKey(accessToken);
+    waitFor(1000, 'Config warmup');
+    const response = yield fetchAnalyticsKey(accessToken);
     const analyticsKey = (yield response.json());
     return analyticsKey;
 });

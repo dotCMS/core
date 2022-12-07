@@ -10,8 +10,6 @@ import com.dotcms.analytics.model.TokenStatus;
 import com.dotcms.security.apps.AppSecrets;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
-import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.util.Config;
 
 import static com.dotcms.analytics.app.AnalyticsApp.ANALYTICS_APP_CONFIG_URL_KEY;
@@ -28,10 +26,10 @@ public class AnalyticsTestUtils {
     public static final String CLIENT_ID = "analytics-customer-customer1";
     public static final String CLIENT_SECRET = "testsecret";
 
-    public static AnalyticsApp prepareAnalyticsApp(final Host host) throws DotDataException, DotSecurityException {
+    public static AnalyticsApp prepareAnalyticsApp(final Host host, final String clientId) throws Exception {
         final AppSecrets appSecrets = new AppSecrets.Builder()
             .withKey(AnalyticsApp.ANALYTICS_APP_KEY)
-            .withSecret(AnalyticsAppProperty.CLIENT_ID.getPropertyName(), CLIENT_ID)
+            .withSecret(AnalyticsAppProperty.CLIENT_ID.getPropertyName(), clientId)
             .withHiddenSecret(AnalyticsAppProperty.CLIENT_SECRET.getPropertyName(), CLIENT_SECRET)
             .withSecret(
                 AnalyticsAppProperty.ANALYTICS_CONFIG_URL.getPropertyName(),
@@ -47,6 +45,10 @@ public class AnalyticsTestUtils {
             .build();
         APILocator.getAppsAPI().saveSecrets(appSecrets, host, APILocator.systemUser());
         return AnalyticsHelper.appFromHost(host);
+    }
+
+    public static AnalyticsApp prepareAnalyticsApp(final Host host) throws Exception {
+        return prepareAnalyticsApp(host, CLIENT_ID);
     }
 
     public static AccessToken createAccessToken(final String token,

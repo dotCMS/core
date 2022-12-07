@@ -153,7 +153,7 @@ const runTests = (cmds) => __awaiter(void 0, void 0, void 0, function* () {
         if (includeAnalytics) {
             // Starting analytics infrastructure
             execCmdAsync(START_ANALYTICS_INFRA_CMD);
-            yield waitFor(200, 'Analytics Infrastructure');
+            yield waitFor(160, 'Analytics Infrastructure');
             yield warmUpAnalytics();
         }
         execCmdAsync(START_DEPENDENCIES_CMD);
@@ -328,30 +328,40 @@ const execCmdAsync = (cmd) => {
     //shelljs.exec([cmd.cmd, ...cmd.args].join(' '), {async: true})
     exec.exec(cmd.cmd, cmd.args, { cwd: cmd.workingDir, env: cmd.env });
 };
-const warmUpIdp = () => __awaiter(void 0, void 0, void 0, function* () {
+const fetchAccessToken = () => __awaiter(void 0, void 0, void 0, function* () {
     const idpUrl = 'http://localhost:61111/realms/dotcms/protocol/openid-connect/token';
     const authPayload = 'client_id=analytics-customer-customer1&client_secret=testsecret&grant_type=client_credentials';
     core.info(`Sending POST to ${idpUrl} the payload:\n${authPayload}`);
-    const response = yield (0, node_fetch_1.default)(idpUrl, {
+    return (0, node_fetch_1.default)(idpUrl, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/x-www-form-urlencoded'
         },
         body: authPayload
     });
+});
+const warmUpIdp = () => __awaiter(void 0, void 0, void 0, function* () {
+    yield fetchAccessToken();
+    waitFor(1000, "IDP warmup");
+    const response = yield fetchAccessToken();
     const accessToken = (yield response.json());
     return accessToken;
 });
-const warmUpConfig = (accessToken) => __awaiter(void 0, void 0, void 0, function* () {
+const fetchAnalyticsKey = (accessToken) => __awaiter(void 0, void 0, void 0, function* () {
     const configUrl = 'http://localhost:8088/c/customer1/cluster1/keys';
     core.info(`Sending GET to ${configUrl}`);
-    const response = yield (0, node_fetch_1.default)(configUrl, {
+    return (0, node_fetch_1.default)(configUrl, {
         method: 'GET',
         headers: {
             Accept: 'application/json',
             Authorization: `Bearer ${accessToken}`
         }
     });
+});
+const warmUpConfig = (accessToken) => __awaiter(void 0, void 0, void 0, function* () {
+    yield fetchAnalyticsKey(accessToken);
+    waitFor(1000, "Config warmup");
+    const response = yield fetchAnalyticsKey(accessToken);
     const analyticsKey = (yield response.json());
     return analyticsKey;
 });
@@ -613,9 +623,7 @@ const getAppends = (propertyMap) => {
                     `felix.felix.fileinstall.dir=${felixFolder}/load`,
                     `felix.felix.undeployed.dir=${felixFolder}/undeploy`,
                     'dotcms.concurrent.locks.disable=false',
-                    `system.felix.base.dir=${systemFelixFolder}`,
-                    'analytics.idp.url=http://localhost:61111/realms/dotcms/protocol/openid-connect/token',
-                    'analytics.app.config.url=http://localhost:8088/c/customer1/cluster1/keys'
+                    `system.felix.base.dir=${systemFelixFolder}`
                 ]
             },
             {

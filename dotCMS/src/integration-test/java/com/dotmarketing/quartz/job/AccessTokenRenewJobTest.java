@@ -6,16 +6,16 @@ import com.dotcms.analytics.AnalyticsAPI;
 import com.dotcms.analytics.AnalyticsTestUtils;
 import com.dotcms.analytics.app.AnalyticsApp;
 import com.dotcms.analytics.cache.AnalyticsCache;
+import com.dotcms.analytics.helper.AnalyticsHelper;
 import com.dotcms.analytics.model.AccessToken;
+import com.dotcms.analytics.model.TokenStatus;
 import com.dotcms.datagen.SiteDataGen;
-import com.dotcms.exception.AnalyticsException;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.init.DotInitScheduler;
 import com.dotmarketing.quartz.QuartzUtils;
 import com.dotmarketing.util.Config;
@@ -27,14 +27,17 @@ import org.quartz.JobDetail;
 import org.quartz.JobExecutionContext;
 import org.quartz.SchedulerException;
 
-import java.util.Optional;
+import java.time.Instant;
 
+import static com.dotcms.analytics.AnalyticsAPI.ANALYTICS_ACCESS_TOKEN_TTL;
 import static com.dotmarketing.quartz.job.AccessTokenRenewJob.ANALYTICS_ACCESS_TOKEN_RENEW_JOB;
 import static com.dotmarketing.quartz.job.AccessTokenRenewJob.ANALYTICS_ACCESS_TOKEN_RENEW_JOB_CRON_KEY;
 import static com.dotmarketing.quartz.job.AccessTokenRenewJob.ANALYTICS_ACCESS_TOKEN_RENEW_TRIGGER;
 import static com.dotmarketing.quartz.job.AccessTokenRenewJob.ANALYTICS_ACCESS_TOKEN_RENEW_TRIGGER_GROUP;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertSame;
+import static org.junit.Assert.assertTrue;
 
 
 /**
@@ -46,8 +49,9 @@ public class AccessTokenRenewJobTest extends IntegrationTestBase {
 
     private static AnalyticsAPI analyticsAPI;
     private static AnalyticsCache analyticsCache;
-    private AnalyticsApp analyticsApp;
     private AccessTokenRenewJob accessTokenRenewJob;
+    private Host host;
+    private AnalyticsApp analyticsApp;
 
     @BeforeClass
     public static void beforeClass() throws Exception {
@@ -57,17 +61,17 @@ public class AccessTokenRenewJobTest extends IntegrationTestBase {
         analyticsAPI = APILocator.getAnalyticsAPI();
         analyticsCache = CacheLocator.getAnalyticsCache();
         Config.setProperty("ALLOW_ACCESS_TO_PRIVATE_SUBNETS", true);
-        Config.setProperty(ANALYTICS_ACCESS_TOKEN_RENEW_JOB_CRON_KEY, "0/15 0 0 * * ?");
+        Config.setProperty(ANALYTICS_ACCESS_TOKEN_RENEW_JOB_CRON_KEY, "0 0 0 * * ?");
 
         deleteJob();
         DotInitScheduler.start();
     }
 
     @Before
-    public void before() throws DotDataException, DotSecurityException {
-        accessTokenRenewJob = new AccessTokenRenewJob();
-        final Host host = new SiteDataGen().nextPersisted();
+    public void before() throws Exception {
+        host = new SiteDataGen().nextPersisted();
         analyticsApp = AnalyticsTestUtils.prepareAnalyticsApp(host);
+        accessTokenRenewJob = new AccessTokenRenewJob();
     }
 
     /**
@@ -76,9 +80,6 @@ public class AccessTokenRenewJobTest extends IntegrationTestBase {
      */
     @Test
     public void test_schedule() throws SchedulerException, DotDataException {
-        /*AccessTokenRenewJob.AccessTokensRenewJobScheduler.schedule(
-            ANALYTICS_ACCESS_TOKEN_RENEW_TRIGGER,
-            ANALYTICS_ACCESS_TOKEN_RENEW_TRIGGER_GROUP);*/
         assertNotNull(QuartzUtils.getScheduler().getJobDetail(
             ANALYTICS_ACCESS_TOKEN_RENEW_JOB,
             DotInitScheduler.DOTCMS_JOB_GROUP_NAME));
@@ -91,9 +92,127 @@ public class AccessTokenRenewJobTest extends IntegrationTestBase {
      * And verify it is created
      */
     @Test
-    public void test_accessTokenRenew_happyPath() throws SchedulerException, AnalyticsException {
+    public void test_accessTokenRenew_none() throws Exception {
+        analyticsAPI.resetAccessToken(analyticsApp);
+
+        accessTokenRenewJob.execute(getJobContext());
+        Thread.sleep(2000);
+
         AccessToken accessToken = analyticsAPI.getAccessToken(analyticsApp);
         assertNotNull(accessToken);
+    }
+
+    /**
+     * Given an {@link AnalyticsApp}
+     * Then try to renew the expired {@link AccessToken} associated with it
+     * And verify it is created
+     */
+    @Test
+    public void test_accessTokenRenew_expired() throws Exception {
+        analyticsAPI.resetAccessToken(analyticsApp);
+
+        final Instant issueDate = Instant.now().minusSeconds(ANALYTICS_ACCESS_TOKEN_TTL);
+        AccessToken accessToken = analyticsAPI.getAccessToken(analyticsApp, true).withIssueDate(issueDate);
+        analyticsCache.putAccessToken(accessToken);
+
+        accessTokenRenewJob.execute(getJobContext());
+        Thread.sleep(2000);
+
+        accessToken = analyticsAPI.getAccessToken(analyticsApp);
+        assertNotNull(accessToken);
+        assertTrue(accessToken.issueDate().isAfter(issueDate));
+    }
+
+    /**
+     * Given an {@link AnalyticsApp}
+     * Then try to renew the about to expire {@link AccessToken} associated with it
+     * And verify it is created
+     */
+    @Test
+    public void test_accessTokenRenew_inWindow() throws Exception {
+        analyticsAPI.resetAccessToken(analyticsApp);
+
+        final Instant issueDate = Instant.now().minusSeconds(ANALYTICS_ACCESS_TOKEN_TTL).plusSeconds(30);
+        AccessToken accessToken = analyticsAPI.getAccessToken(analyticsApp, true).withIssueDate(issueDate);
+        analyticsCache.putAccessToken(accessToken);
+
+        accessTokenRenewJob.execute(getJobContext());
+        Thread.sleep(2000);
+
+        accessToken = analyticsAPI.getAccessToken(analyticsApp);
+        assertNotNull(accessToken);
+        assertTrue(accessToken.issueDate().isAfter(issueDate));
+    }
+
+    /**
+     * Given an {@link AnalyticsApp} and an {@link AccessToken} with a {@link TokenStatus#NOOP}
+     * Then try to renew the {@link AccessToken} associated with it
+     * And verify it's still the same
+     */
+    @Test
+    public void test_accessTokenRenew_whenNoop() throws Exception {
+        final String reason = "some-reason";
+        final String clientId = analyticsApp.getAnalyticsProperties().clientId();
+        analyticsCache.putAccessToken(AnalyticsHelper.createNoopToken(analyticsApp, reason).withClientId(clientId));
+
+        accessTokenRenewJob.execute(getJobContext());
+        Thread.sleep(2000);
+
+        AccessToken accessToken = analyticsAPI.getAccessToken(analyticsApp);
+        assertSame(TokenStatus.NOOP, accessToken.status().tokenStatus());
+        assertEquals(reason, accessToken.status().reason());
+    }
+
+    /**
+     * Given an {@link AnalyticsApp} and an {@link AccessToken} with a {@link TokenStatus#BLOCKED}
+     * Then try to renew the {@link AccessToken} associated with it
+     * And verify it's still the same
+     */
+    @Test
+    public void test_accessTokenRenew_whenBlocked() throws Exception {
+        final String reason = "some-reason";
+        final String clientId = analyticsApp.getAnalyticsProperties().clientId();
+        analyticsCache.putAccessToken(AnalyticsHelper.createBlockedToken(analyticsApp, reason).withClientId(clientId));
+
+        accessTokenRenewJob.execute(getJobContext());
+        Thread.sleep(2000);
+
+        AccessToken accessToken = analyticsAPI.getAccessToken(analyticsApp);
+        assertSame(TokenStatus.BLOCKED, accessToken.status().tokenStatus());
+        assertEquals(reason, accessToken.status().reason());
+    }
+
+    /**
+     * Given an {@link AnalyticsApp} and an {@link AccessToken} with a {@link TokenStatus#OK}
+     * Then try to renew the {@link AccessToken} associated with it
+     * And verify it's still the same
+     */
+    @Test
+    public void test_accessTokenRenew_whenOk() throws Exception {
+        analyticsAPI.resetAccessToken(analyticsApp);
+        analyticsAPI.getAccessToken(analyticsApp, true);
+
+        accessTokenRenewJob.execute(getJobContext());
+        Thread.sleep(2000);
+
+        AccessToken accessToken = analyticsAPI.getAccessToken(analyticsApp);
+        assertSame(TokenStatus.OK, accessToken.status().tokenStatus());
+    }
+
+    /**
+     * Given an {@link AnalyticsApp} instance with wrong clientId
+     * When executing the job
+     * When verify token is {@link TokenStatus#NOOP}
+     */
+    @Test
+    public void test_accessTokenRenew_fail_wrongClientId() throws Exception {
+        analyticsApp = AnalyticsTestUtils.prepareAnalyticsApp(host, "some-client-id");
+
+        accessTokenRenewJob.execute(getJobContext());
+        Thread.sleep(2000);
+
+        AccessToken accessToken = analyticsAPI.getAccessToken(analyticsApp);
+        assertSame(TokenStatus.NOOP, accessToken.status().tokenStatus());
     }
 
     private static void unscheduleJob() throws SchedulerException {
@@ -114,7 +233,7 @@ public class AccessTokenRenewJobTest extends IntegrationTestBase {
         jobDetail.setRequestsRecovery(true);
 
         return new JobExecutionContext(
-           AccessTokenRenewJob.getJobScheduler(),
+            AccessTokenRenewJob.getJobScheduler(),
             new TestJobExecutor.TriggerFiredBundleTest(jobDetail),
             accessTokenRenewJob);
     }

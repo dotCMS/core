@@ -4,6 +4,7 @@ import com.dotcms.analytics.app.AnalyticsApp;
 import com.dotcms.analytics.cache.AnalyticsCache;
 import com.dotcms.analytics.helper.AnalyticsHelper;
 import com.dotcms.analytics.model.AccessToken;
+import com.dotcms.analytics.model.AnalyticsAppWithStatus;
 import com.dotcms.analytics.model.TokenStatus;
 import com.dotcms.exception.AnalyticsException;
 import com.dotcms.exception.UnrecoverableAnalyticsException;
@@ -12,10 +13,9 @@ import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.quartz.job.AccessTokenRenewJob;
 import com.dotmarketing.util.Logger;
 import com.liferay.util.StringPool;
-import io.vavr.Tuple2;
 
-import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
@@ -27,12 +27,12 @@ import java.util.stream.Collectors;
 public class AccessTokenRenewRunnable implements Runnable {
 
     private final AccessTokenRenewJob callerJob;
-    private final List<Tuple2<AnalyticsApp, TokenStatus>> appsWithStatus;
+    private final Set<AnalyticsAppWithStatus> appsWithStatus;
     private final AnalyticsAPI analyticsAPI;
     private final AnalyticsCache analyticsCache;
 
     public AccessTokenRenewRunnable(final AccessTokenRenewJob callerJob,
-                                    final List<Tuple2<AnalyticsApp, TokenStatus>> appsWithStatus) {
+                                    final Set<AnalyticsAppWithStatus> appsWithStatus) {
         this.callerJob = callerJob;
         this.appsWithStatus = appsWithStatus;
         analyticsAPI = APILocator.getAnalyticsAPI();
@@ -46,7 +46,7 @@ public class AccessTokenRenewRunnable implements Runnable {
     public void run() {
         final String clientIds = appsWithStatus
             .stream()
-            .map(app -> app._1.getAnalyticsProperties().clientId())
+            .map(app -> app.getAnalyticsApp().getAnalyticsProperties().clientId())
             .collect(Collectors.joining(StringPool.COMMA));
 
         synchronized (this) {
@@ -59,12 +59,14 @@ public class AccessTokenRenewRunnable implements Runnable {
                 return;
             }
 
-            callerJob.setRenewRunning(true);
+            try {
+                callerJob.setRenewRunning(true);
 
-            Logger.info(this, String.format("Starting access token renew thread for clientIds %s", clientIds));
-            appsWithStatus.forEach(this::renewToken);
-
-            callerJob.setRenewRunning(false);
+                Logger.info(this, String.format("Starting access token renew thread for clientIds %s", clientIds));
+                appsWithStatus.forEach(this::renewToken);
+            } finally {
+                callerJob.setRenewRunning(false);
+            }
         }
     }
 
@@ -74,10 +76,10 @@ public class AccessTokenRenewRunnable implements Runnable {
      *
      * @param appWithStatus provided analytics app - token status tuple
      */
-    private void renewToken(final Tuple2<AnalyticsApp, TokenStatus> appWithStatus) {
-        final AnalyticsApp analyticsApp = appWithStatus._1;
+    private void renewToken(final AnalyticsAppWithStatus appWithStatus) {
+        final AnalyticsApp analyticsApp = appWithStatus.getAnalyticsApp();
         final String clientId = analyticsApp.getAnalyticsProperties().clientId();
-        final TokenStatus tokenStatus = appWithStatus._2;
+        final TokenStatus tokenStatus = appWithStatus.getTokenStatus();
         Logger.info(
             this,
             String.format(

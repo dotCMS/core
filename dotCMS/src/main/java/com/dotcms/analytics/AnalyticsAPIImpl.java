@@ -133,7 +133,7 @@ public class AnalyticsAPIImpl implements AnalyticsAPI {
      * {@inheritDoc}
      */
     @Override
-    public void resetAccessToken(AnalyticsApp analyticsApp) {
+    public void resetAccessToken(final AnalyticsApp analyticsApp) {
         if (Objects.isNull(analyticsApp)) {
             Logger.warn(this, "Analytics app is missing");
             return;

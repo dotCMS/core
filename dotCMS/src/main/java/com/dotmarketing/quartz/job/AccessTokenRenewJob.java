@@ -5,6 +5,7 @@ import com.dotcms.analytics.AnalyticsAPI;
 import com.dotcms.analytics.app.AnalyticsApp;
 import com.dotcms.analytics.helper.AnalyticsHelper;
 import com.dotcms.analytics.model.AccessToken;
+import com.dotcms.analytics.model.AnalyticsAppWithStatus;
 import com.dotcms.analytics.model.TokenStatus;
 import com.dotcms.concurrent.DotConcurrentFactory;
 import com.dotcms.concurrent.DotSubmitter;
@@ -14,7 +15,6 @@ import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.quartz.QuartzUtils;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
-import io.vavr.Tuple2;
 import io.vavr.control.Try;
 import org.apache.commons.lang3.StringUtils;
 import org.quartz.CronTrigger;
@@ -29,8 +29,8 @@ import java.sql.Date;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.Collections;
-import java.util.List;
 import java.util.Objects;
+import java.util.Set;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.stream.Collectors;
 
@@ -90,31 +90,6 @@ public class AccessTokenRenewJob implements StatefulJob {
         renewRunning = false;
     }
 
-    /**
-     * Executes logic renew and maintain fresh tokens to be used when consuming analytics infrastructure.
-     *
-     * @param jobExecutionContext job execution context
-     * @throws JobExecutionException when execution fails
-     */
-    @Override
-    public void execute(final JobExecutionContext jobExecutionContext) throws JobExecutionException {
-        final List<Tuple2<AnalyticsApp, TokenStatus>> apps = Try.of(
-            () -> hostAPI.findAll(APILocator.systemUser(), 0, 0, null, false)
-                .stream()
-                .filter(Objects::nonNull)
-                .map(AnalyticsHelper::appFromHost)
-                .filter(AnalyticsApp::isConfigValid)
-                .map(this::withStatus)
-                .filter(this::needsRenew)
-                .collect(Collectors.toList()))
-            .getOrElseGet(e -> {
-                Logger.error(this, "Error renewing access tokens", e);
-                return Collections.emptyList();
-            });
-
-        renewTokens(apps);
-    }
-
     public boolean isRenewRunning() {
         return renewRunning;
     }
@@ -125,13 +100,39 @@ public class AccessTokenRenewJob implements StatefulJob {
     }
 
     /**
+     * Executes logic renew and maintain fresh tokens to be used when consuming analytics infrastructure.
+     *
+     * @param jobExecutionContext job execution context
+     * @throws JobExecutionException when execution fails
+     */
+    @Override
+    public void execute(final JobExecutionContext jobExecutionContext) throws JobExecutionException {
+        final Set<AnalyticsAppWithStatus> apps = Try.of(
+            () -> hostAPI.findAll(APILocator.systemUser(), 0, 0, null, false)
+                .stream()
+                .filter(Objects::nonNull)
+                .map(host -> Try.of(() -> AnalyticsHelper.appFromHost(host)).getOrElse((AnalyticsApp) null))
+                .filter(Objects::nonNull)
+                .filter(AnalyticsApp::isConfigValid)
+                .map(this::withStatus)
+                .filter(this::needsRenew)
+                .collect(Collectors.toSet()))
+            .getOrElseGet(e -> {
+                Logger.error(this, "Error renewing access tokens", e);
+                return Collections.emptySet();
+            });
+
+        renewTokens(apps);
+    }
+
+    /**
      * Add a resolved instance of {@link TokenStatus} to provided {@link AnalyticsApp} based on its status
      * nd issueDate to determine expiration.
      *
      * @param analyticsApp analytics app
      * @return tuple with two values
      */
-    private Tuple2<AnalyticsApp, TokenStatus> withStatus(final AnalyticsApp analyticsApp) {
+    private AnalyticsAppWithStatus withStatus(final AnalyticsApp analyticsApp) {
         final AccessToken accessToken = analyticsAPI.getAccessToken(analyticsApp);
         final TokenStatus tokenStatus = AnalyticsHelper.resolveTokenStatus(accessToken);
 
@@ -144,7 +145,7 @@ public class AccessTokenRenewJob implements StatefulJob {
                         analyticsApp.getAnalyticsProperties().clientId()));
                 break;
             case OK:
-                Logger.debug(
+                Logger.info(
                     this,
                     String.format(
                         "ACCESS_TOKEN for clientId %s DOES NOT need to be renewed",
@@ -176,7 +177,7 @@ public class AccessTokenRenewJob implements StatefulJob {
                 break;
         }
 
-        return new Tuple2<>(analyticsApp, tokenStatus);
+        return new AnalyticsAppWithStatus(analyticsApp, tokenStatus);
     }
 
     /**
@@ -186,8 +187,8 @@ public class AccessTokenRenewJob implements StatefulJob {
      * @param appWithStatus provided analytics app with status tuple
      * @return true when it's expired or in window
      */
-    private boolean needsRenew(final Tuple2<AnalyticsApp, TokenStatus> appWithStatus) {
-        final TokenStatus tokenStatus = appWithStatus._2;
+    private boolean needsRenew(final AnalyticsAppWithStatus appWithStatus) {
+        final TokenStatus tokenStatus = appWithStatus.getTokenStatus();
 
         if (tokenStatus == TokenStatus.OK || tokenStatus == TokenStatus.NOOP || tokenStatus == TokenStatus.BLOCKED) {
             return false;
@@ -204,7 +205,7 @@ public class AccessTokenRenewJob implements StatefulJob {
      *
      * @param analyticsApps analytics applications
      */
-    private void renewTokens(final List<Tuple2<AnalyticsApp, TokenStatus>> analyticsApps) {
+    private void renewTokens(final Set<AnalyticsAppWithStatus> analyticsApps) {
         submitter.execute(new AccessTokenRenewRunnable(this, analyticsApps));
     }
 
@@ -216,14 +217,14 @@ public class AccessTokenRenewJob implements StatefulJob {
      */
     public static class AccessTokensRenewJobScheduler {
 
+        private AccessTokensRenewJobScheduler() {}
+
         /**
          * Emulates what {@link DotInitScheduler} class does when scheduling jobs.
          *
-         * @param name job name passed from DotInitScheduler
-         * @param group group name passed from DotInitScheduler
          * @throws SchedulerException when scheduling goes wrong
          */
-        public static void schedule(final String name, final String group) throws SchedulerException {
+        public static void schedule() throws SchedulerException {
             final String tokenRenewCron = Config.getStringProperty(
                 ANALYTICS_ACCESS_TOKEN_RENEW_JOB_CRON_KEY,
                 ANALYTICS_ACCESS_TOKEN_RENEW_JOB_CRON_DEFAULT);
@@ -247,8 +248,8 @@ public class AccessTokenRenewJob implements StatefulJob {
                     }
 
                     final CronTrigger trigger = new CronTrigger(
-                        name,
-                        group,
+                        ANALYTICS_ACCESS_TOKEN_RENEW_TRIGGER,
+                        ANALYTICS_ACCESS_TOKEN_RENEW_TRIGGER_GROUP,
                         ANALYTICS_ACCESS_TOKEN_RENEW_JOB,
                         DotInitScheduler.DOTCMS_JOB_GROUP_NAME,
                         Date.from(LocalDateTime.now().atZone(ZoneId.systemDefault()).toInstant()),
@@ -260,7 +261,10 @@ public class AccessTokenRenewJob implements StatefulJob {
                     final LocalDateTime jobDateTime = (
                         isNew
                             ? scheduler.scheduleJob(trigger)
-                            : scheduler.rescheduleJob(name, group, trigger))
+                            : scheduler.rescheduleJob(
+                                ANALYTICS_ACCESS_TOKEN_RENEW_TRIGGER,
+                                ANALYTICS_ACCESS_TOKEN_RENEW_TRIGGER_GROUP,
+                                trigger))
                         .toInstant()
                         .atZone(ZoneId.systemDefault())
                         .toLocalDateTime();
@@ -269,8 +273,8 @@ public class AccessTokenRenewJob implements StatefulJob {
                         String.format(
                             "Stateful %s (%s:%s) job was schedule to run at %s",
                             ANALYTICS_ACCESS_TOKEN_RENEW_JOB,
-                            name,
-                            group,
+                            ANALYTICS_ACCESS_TOKEN_RENEW_TRIGGER,
+                            ANALYTICS_ACCESS_TOKEN_RENEW_TRIGGER_GROUP,
                             jobDateTime));
                 } catch (Exception e) {
                     Logger.error(DotInitScheduler.class, e.getMessage(), e);

@@ -11,7 +11,6 @@ import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
@@ -360,20 +359,6 @@ public class CircuitBreakerUrlTest {
         for (int i = 0; i < 10; i++) {
             try {
                 String x = new CircuitBreakerUrl(goodUrl, 2000).doString();
-                assert (x.contains("Java"));
-                assert (x.contains("/application/themes/dotcms/js/bootstrap.min.js"));
-
-            } catch (Exception e) {
-                assert (e instanceof CircuitBreakerOpenException);
-            }
-        }
-    }
-
-    @Test
-    public void testGetDoObject() {
-        for (int i = 0; i < 10; i++) {
-            try {
-                String x = new CircuitBreakerUrl(goodUrl, 2000).doObject(String.class);
                 assert (x.contains("Java"));
                 assert (x.contains("/application/themes/dotcms/js/bootstrap.min.js"));
 
