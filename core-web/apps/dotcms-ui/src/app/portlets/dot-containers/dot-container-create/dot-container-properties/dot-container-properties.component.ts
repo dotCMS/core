@@ -10,7 +10,8 @@ import { DotMessageService } from '@dotcms/app/api/services/dot-message/dot-mess
 import { DotRouterService } from '@services/dot-router/dot-router.service';
 import { take, takeUntil } from 'rxjs/operators';
 import { MenuItem } from 'primeng/api';
-import { Observable, Subject } from 'rxjs';
+import { Subject } from 'rxjs';
+
 import { DotContainerStructure } from '@dotcms/app/shared/models/container/dot-container.model';
 
 @Component({
@@ -23,7 +24,6 @@ export class DotContainerPropertiesComponent implements OnInit {
     vm$ = this.store.vm$;
     editor: MonacoEditor;
     form: FormGroup;
-    formInvalid$: Observable<boolean>;
     private destroy$: Subject<boolean> = new Subject<boolean>();
 
     constructor(

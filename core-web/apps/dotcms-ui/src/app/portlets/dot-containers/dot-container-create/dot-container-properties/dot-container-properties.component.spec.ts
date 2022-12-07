@@ -131,6 +131,50 @@ export class DotTextareaContentMockComponent implements ControlValueAccessor {
     }
 }
 
+@Component({
+    selector: 'dot-textarea-content',
+    template: '',
+    providers: [
+        {
+            multi: true,
+            provide: NG_VALUE_ACCESSOR,
+            useExisting: forwardRef(() => DotTextareaContentMockComponent)
+        }
+    ]
+})
+export class DotTextareaContentMockComponent implements ControlValueAccessor {
+    @Input()
+    code;
+
+    @Input()
+    height;
+
+    @Input()
+    show;
+
+    @Input()
+    value;
+
+    @Input()
+    width;
+
+    @Output()
+    monacoInit = new EventEmitter();
+
+    @Input()
+    language;
+
+    writeValue() {
+        //
+    }
+    registerOnChange() {
+        //
+    }
+    registerOnTouched() {
+        //
+    }
+}
+
 const messages = {
     'message.containers.create.click_to_edit': 'Click to Edit',
     'message.containers.create.description': 'description',
