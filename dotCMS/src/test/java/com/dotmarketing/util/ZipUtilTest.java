@@ -45,55 +45,6 @@ public class ZipUtilTest  {
      }
 
      /**
-      * Simply test that we cn only unzip under the properly configured out dir
-      * Here we expect success
-      * @throws IOException
-      */
-     @Test
-     public void testUnzipUtilSecurityCheckHappyScenario() throws IOException {
-          final long time = java.lang.System.nanoTime();
-          final File zipEntry = File.createTempFile("zip-entry-" + time, ".txt");
-          FileUtils.writeStringToFile(zipEntry, "" + System.currentTimeMillis(),
-                  Charset.defaultCharset());
-          final File zip = File.createTempFile("zip-test" + time, ".zip");
-          makeZip(zipEntry, zip.getCanonicalPath());
-          final String destinationDir = ConfigUtils.getIntegrityPath();
-          try (
-                  final FileInputStream inputStream = new FileInputStream(zip);
-          ) {
-               ZipUtil.extract(inputStream, destinationDir);
-          }
-     }
-
-     /**
-      * Good zip
-      * @param file
-      * @param zipFileName
-      * @throws IOException
-      */
-     private static void makeZip(final File file, final String zipFileName) throws IOException {
-
-          try (
-                  //create ZipOutputStream to write to the zip file
-                  FileOutputStream fos = new FileOutputStream(zipFileName);
-                  ZipOutputStream zos = new ZipOutputStream(fos);
-          ) {
-               //add a new Zip Entry to the ZipOutputStream
-               ZipEntry ze = new ZipEntry(file.getName());
-               zos.putNextEntry(ze);
-               //read the file and write to ZipOutputStream
-
-               try (FileInputStream fis = new FileInputStream(file);) {
-                    byte[] buffer = new byte[1024];
-                    int len;
-                    while ((len = fis.read(buffer)) > 0) {
-                         zos.write(buffer, 0, len);
-                    }
-               }
-          }
-     }
-
-     /**
       * Creates a zip file that includes a file that attempts a directory traversal
       * @return
       * @throws Exception
