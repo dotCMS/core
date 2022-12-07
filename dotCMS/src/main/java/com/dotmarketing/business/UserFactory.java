@@ -1,10 +1,9 @@
 package com.dotmarketing.business;
 
 import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.exception.DotSecurityException;
-import com.liferay.portal.model.Address;
 import com.liferay.portal.model.Company;
 import com.liferay.portal.model.User;
+
 import java.util.Date;
 import java.util.List;
 
@@ -39,6 +38,25 @@ public interface UserFactory {
      */
     List<User> getUsersByName(final String filter, final List<Role> roles, final int start,
             final int limit) throws DotDataException;
+
+    /**
+     * Returns a list of Users in dotCMS that match the specified search criteria. It's worth noting that this method
+     * WILL hit the database EVERY time.
+     *
+     * @param filter          Any character sequence that might be present in the combination of a User's first and last
+     *                        name. For example, for a {@code filter} value of {@code "hn Do"}, the User named {@code
+     *                        "John Doe"} will match this filter.
+     * @param roles           The list of {@link Role} objects that Users must match.
+     * @param start           The start page of the result set, for pagination purposes.
+     * @param limit           The end or limit page of the result set, for pagination purposes.
+     * @param filteringParams Additional filtering parameters for the query. Please refer to {@link UserAPI.FilteringParams}.
+     *
+     * @return The list of {@link User} objects matching the specified search criteria.
+     *
+     * @throws DotDataException An error occurred when accessing the data source.
+     */
+    List<User> getUsersByName(final String filter, final List<Role> roles, final int start,
+                              final int limit, final UserAPI.FilteringParams filteringParams) throws DotDataException;
 
     /**
      * Will create user if it doesn't exist
