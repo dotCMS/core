@@ -3,6 +3,7 @@ package com.dotcms.publisher.util;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
+import io.vavr.control.Try;
 import java.io.File;
 import java.net.Socket;
 import java.nio.file.Files;
@@ -15,6 +16,7 @@ import javax.net.ssl.HostnameVerifier;
 import javax.net.ssl.KeyManager;
 import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLSession;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.TrustManagerFactory;
 import javax.net.ssl.X509KeyManager;
@@ -26,8 +28,9 @@ public class TrustFactory {
     private static final String truststore_password = Config.getStringProperty("TRUSTSTORE_PWD", null);
     private static final String keystore_path = Config.getStringProperty("KEYSTORE_PATH", null); //keystore.jks";
     private static final String keystore_password = Config.getStringProperty("KEYSTORE_PWD", null);
-	
-	public SSLContext getSSLContext() {
+    private static final String HOST_NAME_VERIFIER_IMPL = "HOST_NAME_VERIFIER_IMPL";
+
+    public SSLContext getSSLContext() {
         TrustManager mytm[] = null;
         KeyManager mykm[] = null;
 
@@ -56,11 +59,23 @@ public class TrustFactory {
         }
         return ctx;
     }
-	
+
+    /**
+     * Custom instance of {@link HostnameVerifier} can be provided via property override
+     * However the two following classes provide the functionality we need here.
+     * Disconnects Certificate verification: org.apache.http.conn.ssl.NoopHostnameVerifier
+     * Certificate Host name verification: org.apache.http.conn.ssl.DefaultHostnameVerifier
+     * @return {@link HostnameVerifier}
+     */
 	public HostnameVerifier getHostnameVerifier() {
-        return new DefaultHostnameVerifier();
+        final String clazzName = Config.getStringProperty(HOST_NAME_VERIFIER_IMPL, DefaultHostnameVerifier.class.getCanonicalName());
+        final HostnameVerifier hostnameVerifier = (HostnameVerifier)Try.of(()->Class.forName(clazzName).getDeclaredConstructor().newInstance()).getOrNull();
+        if(null == hostnameVerifier){
+            Logger.error(TrustFactory.class,String.format("Failure to instantiate HostnameVerifier via provided class name [%s].",clazzName));
+        }
+        return hostnameVerifier;
     }
-	
+
 	static class MyX509TrustManager implements X509TrustManager {
 
         /*
