@@ -26,6 +26,7 @@ export interface DotContainerPropertiesState {
     container: DotContainer;
     containerStructures: DotContainerStructure[];
     contentTypes: DotCMSContentType[];
+    originalForm: DotContainerEntity;
     apiLink: string;
     invalidForm: boolean;
 }
@@ -48,6 +49,7 @@ export class DotContainerPropertiesStore extends ComponentStore<DotContainerProp
             containerStructures: [],
             contentTypes: [],
             container: null,
+            originalForm: null,
             apiLink: '',
             invalidForm: true
         });
@@ -145,20 +147,22 @@ export class DotContainerPropertiesStore extends ComponentStore<DotContainerProp
      */
     readonly updateFormStatus = this.updater<{
         invalidForm: boolean;
-        container: {
-            container: DotContainer;
-            containerStructure: DotContainerStructure;
-        };
+        container: DotContainerEntity;
     }>((state: DotContainerPropertiesState, { invalidForm, container }) => {
         return {
             ...state,
-            invalidForm:
-                _.isEqual(
-                    { ...state.container, containerStructure: state.containerStructures },
-                    container
-                ) || invalidForm
+            invalidForm: _.isEqual(state.originalForm, container) || invalidForm
         };
     });
+
+    readonly updateOriginalFormState = this.updater<DotContainerEntity>(
+        (state: DotContainerPropertiesState, originalForm: DotContainerEntity) => {
+            return {
+                ...state,
+                originalForm: originalForm
+            };
+        }
+    );
 
     /**
      * Update Content Type and PrePost loop visibility

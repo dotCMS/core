@@ -57,6 +57,7 @@ import {
 } from '@angular/forms';
 import { By } from '@angular/platform-browser';
 import { DotAutofocusModule } from '@directives/dot-autofocus/dot-autofocus.module';
+import { DotCMSContentType } from '@dotcms/dotcms-models';
 
 @Component({
     selector: 'dot-container-code',
@@ -131,50 +132,6 @@ export class DotTextareaContentMockComponent implements ControlValueAccessor {
     }
 }
 
-@Component({
-    selector: 'dot-textarea-content',
-    template: '',
-    providers: [
-        {
-            multi: true,
-            provide: NG_VALUE_ACCESSOR,
-            useExisting: forwardRef(() => DotTextareaContentMockComponent)
-        }
-    ]
-})
-export class DotTextareaContentMockComponent implements ControlValueAccessor {
-    @Input()
-    code;
-
-    @Input()
-    height;
-
-    @Input()
-    show;
-
-    @Input()
-    value;
-
-    @Input()
-    width;
-
-    @Output()
-    monacoInit = new EventEmitter();
-
-    @Input()
-    language;
-
-    writeValue() {
-        //
-    }
-    registerOnChange() {
-        //
-    }
-    registerOnTouched() {
-        //
-    }
-}
-
 const messages = {
     'message.containers.create.click_to_edit': 'Click to Edit',
     'message.containers.create.description': 'description',
@@ -183,6 +140,78 @@ const messages = {
     'message.containers.create.content_type_code': 'Code'
 };
 
+const containerMockData = {
+    container: {
+        identifier: 'eba434c6-e67a-4a64-9c88-1faffcafb40d',
+        title: 'FAQ',
+        friendlyName: 'ASD',
+        maxContentlets: 20,
+        code: null,
+        preLoop: '',
+        postLoop: '</div>'
+    },
+    contentTypes: [
+        {
+            code: 'ASD',
+            structureId: '778f3246-9b11-4a2a-a101-e7fdf111bdad',
+            containerId: 'eba434c6-e67a-4a64-9c88-1faffcafb40d',
+            containerInode: '4f1f7b96-fb45-4590-a81d-3455ba82675e',
+            contentTypeVar: 'SimpleWidget'
+        }
+    ]
+};
+
+const mockContentTypes: DotCMSContentType[] = [
+    {
+        baseType: 'CONTENT',
+        clazz: 'com.dotcms.contenttype.model.type.ImmutableSimpleContentType',
+        defaultType: false,
+        description: 'Activities available at desitnations',
+        detailPage: 'e5f131d2-1952-4596-bbbf-28fb28021b68',
+        fixed: false,
+        folder: 'SYSTEM_FOLDER',
+        host: '48190c8c-42c4-46af-8d1a-0cd5db894797',
+        iDate: 1567778770000,
+        icon: 'paragliding',
+        id: '778f3246-9b11-4a2a-a101-e7fdf111bdad',
+        modDate: 1663219138000,
+        multilingualable: false,
+        nEntries: 10,
+        name: 'SimpleWidget',
+        system: false,
+        urlMapPattern: '/activities/{urlTitle}',
+        variable: 'SimpleWidget',
+        versionable: true,
+        workflows: [],
+        fields: [],
+        layout: []
+    },
+    {
+        baseType: 'CONTENT',
+        clazz: 'com.dotcms.contenttype.model.type.ImmutableSimpleContentType',
+        defaultType: false,
+        description: 'Activities available at desitnations',
+        detailPage: 'e5f131d2-1952-4596-bbbf-28fb28021b68',
+        fixed: false,
+        folder: 'SYSTEM_FOLDER',
+        host: '48190c8c-42c4-46af-8d1a-0cd5db894797',
+        iDate: 1567778770000,
+        icon: 'paragliding',
+        id: '12345',
+        modDate: 1663219138000,
+        multilingualable: false,
+        nEntries: 10,
+        name: 'Activity 2',
+        system: false,
+        urlMapPattern: '/activities/{urlTitle}',
+        variable: 'Activity2',
+        versionable: true,
+        workflows: [],
+        fields: [],
+        layout: []
+    }
+];
+
 describe('DotContainerPropertiesComponent', () => {
     let fixture: ComponentFixture<DotContainerPropertiesComponent>;
     let comp: DotContainerPropertiesComponent;
@@ -190,6 +219,7 @@ describe('DotContainerPropertiesComponent', () => {
     let coreWebService: CoreWebService;
     let dotDialogService: DotAlertConfirmService;
     const messageServiceMock = new MockDotMessageService(messages);
+    let route: ActivatedRoute;
 
     beforeEach(async () => {
         await TestBed.configureTestingModule({
@@ -260,6 +290,7 @@ describe('DotContainerPropertiesComponent', () => {
         de = fixture.debugElement;
         coreWebService = TestBed.inject(CoreWebService);
         dotDialogService = TestBed.inject(DotAlertConfirmService);
+        route = TestBed.inject(ActivatedRoute);
     });
 
     describe('with data', () => {
@@ -351,6 +382,26 @@ describe('DotContainerPropertiesComponent', () => {
                 identifier: '',
                 containerStructures: []
             });
+        });
+    });
+
+    describe('With route data', () => {
+        beforeEach(() => {
+            spyOn<CoreWebService>(coreWebService, 'requestView').and.returnValue(
+                of({
+                    entity: mockContentTypes,
+                    header: (type) => (type === 'Link' ? 'test;test=test' : '10')
+                })
+            );
+            route.data = of({
+                container: containerMockData
+            });
+            fixture.detectChanges();
+        });
+
+        it('should save button disable', () => {
+            const saveBtn = de.query(By.css('[data-testId="saveBtn"]'));
+            expect(saveBtn.attributes.disabled).toBeDefined();
         });
     });
 });

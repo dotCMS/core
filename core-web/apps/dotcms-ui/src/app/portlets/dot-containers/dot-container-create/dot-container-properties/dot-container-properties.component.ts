@@ -11,7 +11,6 @@ import { DotRouterService } from '@services/dot-router/dot-router.service';
 import { take, takeUntil } from 'rxjs/operators';
 import { MenuItem } from 'primeng/api';
 import { Subject } from 'rxjs';
-
 import { DotContainerStructure } from '@dotcms/app/shared/models/container/dot-container.model';
 
 @Component({
@@ -61,6 +60,8 @@ export class DotContainerPropertiesComponent implements OnInit {
                 });
 
                 this.addContainerFormControl(containerStructures);
+                if (this.form.value?.identifier)
+                    this.store.updateOriginalFormState(this.form.value);
             });
 
         this.form.valueChanges.pipe(takeUntil(this.destroy$)).subscribe((values) => {
