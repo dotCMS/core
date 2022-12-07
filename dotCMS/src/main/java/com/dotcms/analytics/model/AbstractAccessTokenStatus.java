@@ -6,6 +6,7 @@ import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import org.immutables.value.Value;
 
 import javax.annotation.Nullable;
+import java.io.Serializable;
 
 /**
  * Access token wrapper class.
@@ -16,7 +17,7 @@ import javax.annotation.Nullable;
 @Value.Immutable
 @JsonDeserialize(as = AccessTokenStatus.class)
 @JsonIgnoreProperties(ignoreUnknown = true)
-public interface AbstractAccessTokenStatus {
+public interface AbstractAccessTokenStatus extends Serializable {
 
     @JsonProperty("tokenStatus")
     TokenStatus tokenStatus();

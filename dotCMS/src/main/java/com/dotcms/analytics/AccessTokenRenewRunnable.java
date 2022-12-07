@@ -11,6 +11,7 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.quartz.job.AccessTokenRenewJob;
 import com.dotmarketing.util.Logger;
+import com.liferay.util.StringPool;
 import io.vavr.Tuple2;
 
 import java.util.List;
@@ -46,7 +47,7 @@ public class AccessTokenRenewRunnable implements Runnable {
         final String clientIds = appsWithStatus
             .stream()
             .map(app -> app._1.getAnalyticsProperties().clientId())
-            .collect(Collectors.joining(","));
+            .collect(Collectors.joining(StringPool.COMMA));
 
         synchronized (this) {
             if (callerJob.isRenewRunning()) {

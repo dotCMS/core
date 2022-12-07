@@ -38,6 +38,7 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.io.Serializable;
 import java.net.URISyntaxException;
 import java.util.HashMap;
 import java.util.Map;
@@ -296,13 +297,13 @@ public class CircuitBreakerUrl {
             .getOrElse(HashMap::new);
     }
 
-    public <T> T doObject(final Class<T> clazz) {
+    public <T extends Serializable> T doObject(final Class<T> clazz) {
         return Try.of(() -> DotObjectMapperProvider.getInstance().getDefaultObjectMapper().readValue(doString(), clazz))
             .onFailure(e -> Logger.warnAndDebug(CircuitBreakerUrl.class, e))
             .getOrElse((T) null);
     }
 
-    public <T> Response<T> doResponse(final Class<T> clazz) {
+    public <T extends Serializable> Response<T> doResponse(final Class<T> clazz) {
         return Try.of(() -> new Response<>(this, clazz)).getOrElse((Response<T>) null);
     }
 
@@ -349,7 +350,7 @@ public class CircuitBreakerUrl {
         }
     }
 
-    public static class Response<T> {
+    public static class Response<T extends Serializable> {
 
         private final T response;
         private final int statusCode;

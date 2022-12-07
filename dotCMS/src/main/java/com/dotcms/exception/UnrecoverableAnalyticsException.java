@@ -1,5 +1,10 @@
 package com.dotcms.exception;
 
+/**
+ * Analytics exception thrown to represent an unrecoverable error.
+ *
+ * @author vico
+ */
 public class UnrecoverableAnalyticsException extends AnalyticsException {
 
     public UnrecoverableAnalyticsException(String message, int httpCode) {

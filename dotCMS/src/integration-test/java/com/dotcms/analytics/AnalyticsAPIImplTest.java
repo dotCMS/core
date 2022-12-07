@@ -46,7 +46,7 @@ public class AnalyticsAPIImplTest extends IntegrationTestBase {
 
     @Before
     public void before() throws DotDataException, DotSecurityException {
-        host = new SiteDataGen().nextPersisted(false);
+        host = new SiteDataGen().nextPersisted();
         analyticsApp = AnalyticsTestUtils.prepareAnalyticsApp(host);
     }
 

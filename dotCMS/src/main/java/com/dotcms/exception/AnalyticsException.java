@@ -1,5 +1,10 @@
 package com.dotcms.exception;
 
+/**
+ * Analytics most generic exception thrown when fetching access tokens and analytics key.
+ *
+ * @author vico
+ */
 public class AnalyticsException extends Exception {
 
     private final int httpCode;

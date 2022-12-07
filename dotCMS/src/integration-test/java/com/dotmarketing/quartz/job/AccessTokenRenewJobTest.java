@@ -66,7 +66,7 @@ public class AccessTokenRenewJobTest extends IntegrationTestBase {
     @Before
     public void before() throws DotDataException, DotSecurityException {
         accessTokenRenewJob = new AccessTokenRenewJob();
-        final Host host = new SiteDataGen().nextPersisted(false);
+        final Host host = new SiteDataGen().nextPersisted();
         analyticsApp = AnalyticsTestUtils.prepareAnalyticsApp(host);
     }
 

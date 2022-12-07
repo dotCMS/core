@@ -7,6 +7,7 @@ import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import org.immutables.value.Value;
 
 import javax.annotation.Nullable;
+import java.io.Serializable;
 import java.time.Instant;
 
 
@@ -19,7 +20,7 @@ import java.time.Instant;
 @Value.Immutable
 @JsonDeserialize(as = AccessToken.class)
 @JsonIgnoreProperties(ignoreUnknown = true)
-public interface AbstractAccessToken {
+public interface AbstractAccessToken extends Serializable {
 
     @JsonProperty(value = "access_token", access = JsonProperty.Access.WRITE_ONLY)
     String accessToken();
