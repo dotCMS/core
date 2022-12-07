@@ -47,6 +47,8 @@ export interface DotContainerPayload {
 export interface DotContainerStructure {
     structureId?: string;
     code?: string;
+    containerId?: string;
+    containerInode?: string;
 }
 
 export interface DotContainerStructure {

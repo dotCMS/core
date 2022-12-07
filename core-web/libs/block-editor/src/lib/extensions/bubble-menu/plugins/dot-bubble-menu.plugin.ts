@@ -20,7 +20,8 @@ import {
     getNodeCoords,
     deleteByRange,
     deleteByNode,
-    ImageNode
+    ImageNode,
+    findParentNode
 } from '@dotcms/block-editor';
 
 import { LINK_FORM_PLUGIN_KEY, BUBBLE_FORM_PLUGIN_KEY } from '@dotcms/block-editor';
@@ -211,8 +212,12 @@ export class DotBubbleMenuPluginView extends BubbleMenuView {
         const { items } = this.component.instance;
         const { activeItem } = this.getActiveNode();
         const activeMarks = this.getActiveMarks(['left', 'center', 'right']);
+        const parentNode = findParentNode(this.editor.state.selection.$from);
+
         // Update
-        this.component.instance.selected = activeItem?.label;
+
+        this.component.instance.selected =
+            parentNode.type.name === 'table' ? null : activeItem?.label;
         this.component.instance.items = this.updateActiveItems(items, activeMarks);
         this.component.changeDetectorRef.detectChanges();
     }
@@ -262,7 +267,9 @@ export class DotBubbleMenuPluginView extends BubbleMenuView {
 
     setMenuItems(doc, from) {
         const node = doc.nodeAt(from);
-        const type = node?.type.name;
+        const parentNode = findParentNode(this.editor.state.selection.$from);
+        const type = parentNode.type.name === 'table' ? 'table' : node?.type.name;
+
         this.selectionNode = node;
         this.component.instance.items = getBubbleMenuItem(type);
     }
