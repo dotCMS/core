@@ -1,6 +1,6 @@
 // import { ChangeDetectionStrategy, Component, OnInit } from '@angular/core';
-import { Component, EventEmitter, OnInit, Output } from '@angular/core';
-import { take } from 'rxjs/operators';
+import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
+import { debounceTime, take } from 'rxjs/operators';
 
 import {
     SearchService,
@@ -11,6 +11,7 @@ import {
 import { DotCMSContentlet } from '@dotcms/dotcms-models';
 import { DotLanguageService } from '../../shared';
 import { Languages } from '@dotcms/block-editor/services';
+import { FormGroup, FormBuilder } from '@angular/forms';
 
 @Component({
     selector: 'dot-image-form',
@@ -18,16 +19,28 @@ import { Languages } from '@dotcms/block-editor/services';
     styleUrls: ['./image-form.component.scss']
 })
 export class ImageFormComponent implements OnInit {
+    @Input() languageId = 1;
     @Output() selectedContentlet: EventEmitter<DotCMSContentlet> = new EventEmitter();
+
     public contentlets: DotCMSContentlet[] = [];
+    public form: FormGroup;
     private dotLangs: Languages;
 
     constructor(
         private searchService: SearchService,
-        private dotLanguageService: DotLanguageService
+        private dotLanguageService: DotLanguageService,
+        private fb: FormBuilder
     ) {}
 
     ngOnInit(): void {
+        this.form = this.fb.group({
+            search: ['']
+        });
+
+        this.form.valueChanges.pipe(debounceTime(500)).subscribe(({ search }) => {
+            this.searchContentlets(search);
+        });
+
         this.dotLanguageService
             .getLanguages()
             .pipe(take(1))
@@ -45,9 +58,13 @@ export class ImageFormComponent implements OnInit {
         });
     }
 
+    resetForm() {
+        this.form.reset();
+    }
+
     private getParams(search = ''): queryEsParams {
         return {
-            query: `title:${search}* +contentType:(image OR fileAsset) title:'${search}'^15 +languageId:1 +deleted:false +working:true`,
+            query: `title:${search}* +contentType:(image OR fileAsset) title:'${search}'^15 +languageId:${this.languageId} +deleted:false +working:true`,
             sortOrder: ESOrderDirection.ASC,
             limit: 20,
             offset: '0'

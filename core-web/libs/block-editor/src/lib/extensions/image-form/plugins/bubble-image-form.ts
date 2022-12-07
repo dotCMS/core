@@ -8,6 +8,7 @@ import tippy, { Instance, Props } from 'tippy.js';
 
 import { ImageFormComponent } from '../image-form.component';
 import { ImageNode } from '../../../nodes/image-node/image.node';
+import { DotCMSContentlet } from '@dotcms/dotcms-models';
 
 interface PluginState {
     open: boolean;
@@ -63,28 +64,14 @@ export class BubbleLinkFormView {
         this.element.style.visibility = 'visible';
         this.pluginKey = pluginKey;
         this.component = component;
+        this.component.instance.languageId = this.editor.storage.dotConfig.lang;
 
         this.component.instance.selectedContentlet.subscribe((contentlet) => {
-            const { selection } = this.editor.state;
-            const { title, fileAsset } = contentlet;
-            // const attr = this.node.attrs;
-            const node = {
-                attrs: {
-                    data: contentlet,
-                    src: `https://demo.dotcms.com` + fileAsset,
-                    title,
-                    alt: title
-                },
-                type: ImageNode.name
-            };
-            editor.chain().insertContentAt(selection.head, node).addNextLine().run();
+            this.insertImage(contentlet);
             this.hide();
         });
 
         this.editor.on('focus', () => this.hide());
-
-        // We need to also react to page scrolling.
-        // document.body.addEventListener('scroll', this.hanlderScroll.bind(this), true);
     }
 
     update(view: EditorView, prevState?: EditorState): void {
@@ -141,6 +128,28 @@ export class BubbleLinkFormView {
         });
     }
 
+    insertImage(contentlet: DotCMSContentlet) {
+        const { selection } = this.editor.state;
+        const { title, fileAsset } = contentlet;
+        const node = {
+            attrs: {
+                data: contentlet,
+                src: `https://demo.dotcms.com` + fileAsset,
+                title,
+                alt: title
+            },
+            type: ImageNode.name
+        };
+        this.editor.chain().insertContentAt(selection.head, node).addNextLine().run();
+    }
+
+    close() {
+        const transaction = this.editor.state.tr.setMeta(this.pluginKey, {
+            open: false
+        });
+        this.editor.view.dispatch(transaction);
+    }
+
     show() {
         this.tippy?.show();
     }
@@ -149,10 +158,8 @@ export class BubbleLinkFormView {
         this.tippy?.hide();
         // After show the component focus editor
         this.editor.view.focus();
-        const transaction = this.editor.state.tr.setMeta(this.pluginKey, {
-            open: false
-        });
-        this.editor.view.dispatch(transaction);
+        this.component.instance.resetForm();
+        this.close();
     }
 
     destroy() {

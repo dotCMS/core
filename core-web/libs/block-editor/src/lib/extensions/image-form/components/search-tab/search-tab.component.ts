@@ -10,8 +10,7 @@ import {
     ViewChild,
     ElementRef
 } from '@angular/core';
-import { FormGroup, FormBuilder } from '@angular/forms';
-import { debounceTime } from 'rxjs/operators';
+import { FormGroup, FormGroupDirective } from '@angular/forms';
 
 import { DotCMSContentlet } from '@dotcms/dotcms-models';
 
@@ -26,24 +25,17 @@ import { squarePlus } from '../../../../shared/components/suggestions/suggestion
 })
 export class SearchTabComponent implements OnInit, OnChanges {
     @Input() contentlets: DotCMSContentlet[] = [];
-    @Output() search: EventEmitter<string> = new EventEmitter();
+    @Input() formControl: [] = [];
     @Output() selectedItem: EventEmitter<DotCMSContentlet> = new EventEmitter();
-
     @ViewChild('inputSearch') input: ElementRef;
 
     public form: FormGroup;
     public icon = sanitizeUrl(squarePlus);
 
-    constructor(private fb: FormBuilder) {}
+    constructor(private parentForm: FormGroupDirective) {}
 
     ngOnInit(): void {
-        this.form = this.fb.group({
-            search: ['']
-        });
-
-        this.form.valueChanges.pipe(debounceTime(500)).subscribe(({ search }) => {
-            this.search.emit(search);
-        });
+        this.form = this.parentForm.control;
     }
 
     ngOnChanges(changes: SimpleChanges) {

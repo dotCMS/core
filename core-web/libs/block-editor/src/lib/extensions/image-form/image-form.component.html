@@ -1,15 +1,16 @@
 <div class="container">
-    <p-tabView>
-        <p-tabPanel header="dotCMS" leftIcon="pi pi-images">
-            <div class="wrapper">
-                <dot-search-tab
-                    [contentlets]="contentlets"
-                    (search)="searchContentlets($event)"
-                    (selectedItem)="selectedContentlet.emit($event)"
-                ></dot-search-tab>
-            </div>
-        </p-tabPanel>
-        <p-tabPanel header="Upload" leftIcon="pi pi-upload"> Content 2 </p-tabPanel>
-        <p-tabPanel header="Image URL" leftIcon="pi pi-link"> Content 3 </p-tabPanel>
-    </p-tabView>
+    <ng-container [formGroup]="form">
+        <p-tabView>
+            <p-tabPanel header="dotCMS" leftIcon="pi pi-images">
+                <div class="wrapper">
+                    <dot-search-tab
+                        [contentlets]="contentlets"
+                        (selectedItem)="selectedContentlet.emit($event)"
+                    ></dot-search-tab>
+                </div>
+            </p-tabPanel>
+            <!-- <p-tabPanel header="Upload" leftIcon="pi pi-upload"> Content 2 </p-tabPanel> -->
+            <!-- <p-tabPanel header="Image URL" leftIcon="pi pi-link"> Content 3 </p-tabPanel> -->
+        </p-tabView>
+    </ng-container>
 </div>
