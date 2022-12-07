@@ -3,9 +3,11 @@ package com.dotmarketing.portlets.containers.business;
 import static com.dotcms.util.FunctionUtils.ifOrElse;
 import static com.dotmarketing.util.StringUtils.builder;
 
+import com.dotcms.business.WrapInTransaction;
 import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.exception.NotFoundInDbException;
 import com.dotcms.contenttype.model.type.ContentType;
+import com.dotcms.rendering.velocity.services.ContainerLoader;
 import com.dotcms.util.CollectionsUtils;
 import com.dotcms.util.transform.TransformerLocator;
 import com.dotmarketing.beans.ContainerStructure;
@@ -38,6 +40,7 @@ import com.dotmarketing.portlets.fileassets.business.FileAsset;
 import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
+import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.util.*;
 import com.google.common.collect.ImmutableList;
 import com.liferay.portal.model.User;
@@ -67,17 +70,122 @@ public class ContainerFactoryImpl implements ContainerFactory {
     private final FileAssetAPI   fileAssetAPI   = APILocator.getFileAssetAPI();
     private final HostAPI        hostAPI        = APILocator.getHostAPI();
 	private final IdentifierAPI  identifierAPI  = APILocator.getIdentifierAPI();
+	private static ContainerSQL containerSQL = ContainerSQL.getInstance();
 
 	@Override
-	public void save(final Container container) throws DotDataException {
-		HibernateUtil.save(container);
-		containerCache.remove(container);
+	public Container find(final String inode) throws DotStateException, DotDataException {
+
+		Container container = containerCache.get(inode);
+
+		if(container==null){
+			final List<Map<String, Object>> containerResults = new DotConnect()
+					.setSQL(containerSQL.FIND_BY_INODE)
+					.addParam(inode)
+					.loadObjectResults();
+			if (containerResults.isEmpty()) {
+				Logger.debug(this, "Container with inode: " + inode + " not found");
+				return null;
+			}
+
+			container = (Container) TransformerLocator.createContainerTransformer(containerResults).findFirst();
+
+			if(container != null && container.getInode() != null) {
+				containerCache.add(inode, container);
+			}
+		}
+
+		return container;
 	}
 
-	@Override
-	public void save(final Container container, final String existingId) throws DotDataException {
-		HibernateUtil.saveWithPrimaryKey(container, existingId);
-		containerCache.remove(container);
+	public void save(final Container container) throws DotDataException {
+		save(container, UUIDGenerator.generateUuid());
+	}
+
+	@WrapInTransaction
+	public void save(final Container container, final String inode) throws DotDataException {
+		if(!UtilMethods.isSet(container.getIdentifier())){
+			throw new DotStateException("Cannot save a container without an Identifier");
+		}
+
+		if(!UtilMethods.isSet(container.getInode())) {
+			container.setInode(UUIDGenerator.generateUuid());
+		}
+
+		if(!UtilMethods.isSet(find(container.getInode()))) {
+			insertInodeInDB(container);
+			insertContainerInDB(container);
+		} else {
+			updateInodeInDB(container);
+			updateContainerInDB(container);
+		}
+
+		containerCache.add(container.getInode(), container);
+		new ContainerLoader().invalidate(container);
+
+	}
+
+	private void insertInodeInDB(final Container container) throws DotDataException{
+		DotConnect dc = new DotConnect();
+		dc.setSQL(containerSQL.INSERT_INODE);
+		dc.addParam(container.getInode());
+		dc.addParam(container.getiDate());
+		dc.addParam(container.getOwner());
+		dc.loadResult();
+	}
+
+	private void insertContainerInDB(final Container container) throws DotDataException {
+		DotConnect dc = new DotConnect();
+		dc.setSQL(containerSQL.INSERT_CONTAINER);
+		dc.addParam(container.getInode());
+		dc.addParam(container.getCode());
+		dc.addParam(container.getPreLoop());
+		dc.addParam(container.getPostLoop());
+		dc.addParam(container.isShowOnMenu());
+		dc.addParam(container.getTitle());
+		dc.addParam(container.getModDate());
+		dc.addParam(container.getModUser());
+		dc.addParam(container.getSortOrder());
+		dc.addParam(container.getFriendlyName());
+		dc.addParam(container.getMaxContentlets());
+		dc.addParam(container.isUseDiv());
+		dc.addParam(container.isStaticify());
+		dc.addParam(container.getSortContentletsBy());
+		dc.addParam(container.getLuceneQuery());
+		dc.addParam(container.getNotes());
+		dc.addParam(container.getIdentifier());
+		dc.loadResult();
+	}
+
+	private void updateInodeInDB(final Container container) throws DotDataException{
+		DotConnect dc = new DotConnect();
+		dc.setSQL(containerSQL.UPDATE_INODE);
+		dc.addParam(container.getiDate());
+		dc.addParam(container.getOwner());
+		dc.addParam(container.getInode());
+		dc.loadResult();
+	}
+
+	private void updateContainerInDB(final Container container) throws DotDataException {
+		DotConnect dc = new DotConnect();
+		dc.setSQL(containerSQL.UPDATE_CONTAINER);
+		dc.addParam(container.getCode());
+		dc.addParam(container.getPreLoop());
+		dc.addParam(container.getPostLoop());
+		dc.addParam(container.isShowOnMenu());
+		dc.addParam(container.getTitle());
+		dc.addParam(container.getModDate());
+		dc.addParam(container.getModUser());
+		dc.addParam(container.getSortOrder());
+		dc.addParam(container.getFriendlyName());
+		dc.addParam(container.getMaxContentlets());
+		dc.addParam(container.isUseDiv());
+		dc.addParam(container.isStaticify());
+		dc.addParam(container.getSortContentletsBy());
+		dc.addParam(container.getLuceneQuery());
+		dc.addParam(container.getNotes());
+		dc.addParam(container.getIdentifier());
+		dc.addParam(container.getInode());
+		dc.loadResult();
 	}
 
 	@Override
@@ -151,32 +259,6 @@ public class ContainerFactoryImpl implements ContainerFactory {
 		return TransformerLocator.createContainerTransformer
 				(new DotConnect().setSQL(sql.toString()).loadObjectResults()).asList();
 	}
-
-	@Override
-    public Container find(final String inode) throws DotDataException, DotSecurityException {
-      Container container = CacheLocator.getContainerCache().get(inode);
-      //If it is not in cache.
-      if(container == null){
-		  final String tableName 			 = Type.CONTAINERS.getTableName();
-		  final StringBuilder sql = new StringBuilder()
-				  .append("SELECT ")
-				  .append(tableName)
-				  .append(".*, inode.* from ")
-				  .append(tableName)
-				  .append(", inode inode where ")
-				  .append(tableName)
-				  .append(".inode = inode.inode and inode.type='containers'")
-				  .append(" and inode.inode = ?");
-
-		  container = TransformerLocator.createContainerTransformer
-				  (new DotConnect().setSQL(sql.toString()).addParam(inode).loadObjectResults())
-				  .findFirst();
-
-		  CacheLocator.getContainerCache().add(container);
-      }
-      
-      return container;
-    }
 
 	@Override
 	public void deleteContainerByInode(String containerInode) throws DotDataException {
@@ -305,7 +387,7 @@ public class ContainerFactoryImpl implements ContainerFactory {
 							showLive, includeHostOnPath);
 					if(container != null && InodeUtils.isSet(container.getInode())) {
 
-						containerCache.add(container);
+						containerCache.add(container.getInode(), container);
 					}
 				}
 			}
@@ -352,7 +434,7 @@ public class ContainerFactoryImpl implements ContainerFactory {
 							this.findContainerAssets(folder, user, showLive), showLive, includeHostOnPath);
                     if(container != null && InodeUtils.isSet(container.getInode())) {
 
-                        containerCache.add(container);
+                        containerCache.add(container.getInode(), container);
                     }
                 }
             }
