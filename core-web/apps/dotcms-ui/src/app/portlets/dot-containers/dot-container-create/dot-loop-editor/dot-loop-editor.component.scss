@@ -1,0 +1,15 @@
+@use "variables" as *;
+
+:host {
+    .dot-loop-editor__pre-post-loop {
+        margin: $spacing-4;
+    }
+
+    .dot-loop-editor__pre-post-loop-inplace {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: $spacing-6;
+        background: #e9ebfc;
+    }
+}

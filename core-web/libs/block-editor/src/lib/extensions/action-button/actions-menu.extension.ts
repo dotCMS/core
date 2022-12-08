@@ -1,6 +1,6 @@
 import { ComponentRef, ViewContainerRef } from '@angular/core';
 import { Subject } from 'rxjs';
-import { takeUntil } from 'rxjs/operators';
+import { filter, take, takeUntil } from 'rxjs/operators';
 
 import { PluginKey } from 'prosemirror-state';
 import { Editor, Extension, Range } from '@tiptap/core';
@@ -21,7 +21,9 @@ import {
     SuggestionsComponent,
     CONTENT_SUGGESTION_ID,
     suggestionOptions,
-    SuggestionPopperModifiers
+    SuggestionPopperModifiers,
+    findParentNode,
+    NodeTypes
 } from '@dotcms/block-editor';
 
 import { ActionButtonComponent } from './action-button.component';
@@ -101,6 +103,57 @@ function execCommand({
         heading: () => {
             editor.chain().addHeading({ range, type: props.type }).run();
         },
+        table: () => {
+            editor.commands
+                .openForm(
+                    [
+                        {
+                            key: 'rows',
+                            label: 'Rows',
+                            required: true,
+                            value: '3',
+                            controlType: 'number',
+                            type: 'number',
+                            min: 1
+                        },
+                        {
+                            key: 'columns',
+                            label: 'Columns',
+                            required: true,
+                            value: '3',
+                            controlType: 'number',
+                            type: 'number',
+                            min: 1
+                        },
+                        {
+                            key: 'header',
+                            label: 'Add Row Header',
+                            required: false,
+                            value: true,
+                            controlType: 'text',
+                            type: 'checkbox'
+                        }
+                    ],
+                    { customClass: 'dotTableForm' }
+                )
+                .pipe(
+                    take(1),
+                    filter((value) => !!value)
+                )
+                .subscribe((value) => {
+                    requestAnimationFrame(() => {
+                        editor
+                            .chain()
+                            .insertTable({
+                                rows: value.rows,
+                                cols: value.columns,
+                                withHeaderRow: !!value.header
+                            })
+                            .focus()
+                            .run();
+                    });
+                });
+        },
         orderedList: () => {
             editor.chain().deleteRange(range).toggleOrderedList().focus().run();
         },
@@ -128,6 +181,7 @@ export const ActionsMenu = (viewContainerRef: ViewContainerRef) => {
     let suggestionsComponent: ComponentRef<SuggestionsComponent>;
     const suggestionKey = new PluginKey('suggestionPlugin');
     const destroy$: Subject<boolean> = new Subject<boolean>();
+    let shouldShow = true;
 
     /**
      * Get's called on button click or suggestion char
@@ -135,18 +189,28 @@ export const ActionsMenu = (viewContainerRef: ViewContainerRef) => {
      * @param {(SuggestionProps | FloatingActionsProps)} { editor, range, clientRect }
      */
     function onStart({ editor, range, clientRect }: SuggestionProps | FloatingActionsProps): void {
-        setUpSuggestionComponent(editor, range);
-        myTippy = getTippyInstance({
-            element: editor.options.element.parentElement,
-            content: suggestionsComponent.location.nativeElement,
-            rect: clientRect,
-            onHide: () => {
-                const transaction = editor.state.tr.setMeta(FLOATING_ACTIONS_MENU_KEYBOARD, {
-                    open: false
-                });
-                editor.view.dispatch(transaction);
-            }
-        });
+        if (shouldShow) {
+            setUpSuggestionComponent(editor, range);
+            myTippy = getTippyInstance({
+                element: editor.options.element.parentElement,
+                content: suggestionsComponent.location.nativeElement,
+                rect: clientRect,
+                onHide: () => {
+                    const transaction = editor.state.tr.setMeta(FLOATING_ACTIONS_MENU_KEYBOARD, {
+                        open: false
+                    });
+                    editor.view.dispatch(transaction);
+                }
+            });
+        }
+    }
+
+    function onBeforeStart({ editor }): void {
+        const isTableCell =
+            findParentNode(editor.view.state.selection.$from, [NodeTypes.TABLE_CELL])?.type.name ===
+            NodeTypes.TABLE_CELL;
+
+        shouldShow = !isTableCell;
     }
 
     function setUpSuggestionComponent(editor: Editor, range: Range) {
@@ -214,7 +278,7 @@ export const ActionsMenu = (viewContainerRef: ViewContainerRef) => {
 
     function onExit() {
         myTippy?.destroy();
-        suggestionsComponent.destroy();
+        suggestionsComponent?.destroy();
         suggestionsComponent = null;
         destroy$.next(true);
         destroy$.complete();
@@ -234,6 +298,7 @@ export const ActionsMenu = (viewContainerRef: ViewContainerRef) => {
                     startOfLine: true,
                     render: () => {
                         return {
+                            onBeforeStart,
                             onStart,
                             onKeyDown,
                             onExit

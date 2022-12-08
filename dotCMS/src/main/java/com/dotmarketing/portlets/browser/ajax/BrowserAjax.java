@@ -495,8 +495,26 @@ public class BrowserAjax {
 	        final User user              = getUser(req);
 	        final long getAllLanguages   = 0;
 
-	        final Map<String, Object> results = browserAPI.getFolderContent(user, folderId, offset, maxResults, filter, mimeTypes, extensions,
-					true, showArchived, noFolders, onlyFiles, sortBy, sortByDesc, excludeLinks, getAllLanguages, dotAssets);
+		   final Map<String, Object> results = browserAPI.getFolderContent(
+				   BrowserQuery.builder()
+						   .withUser(user)
+						   .withHostOrFolderId(folderId)
+						   .offset(offset)
+						   .maxResults(maxResults)
+						   .withFilter(filter)
+						   .showMimeTypes(mimeTypes)
+						   .showExtensions(extensions)
+						   .showWorking(true)
+						   .showArchived(showArchived)
+						   .showFolders(!noFolders)
+						   .showFiles(onlyFiles)
+						   .sortBy(sortBy)
+						   .sortByDesc(sortByDesc)
+						   .showLinks(!excludeLinks)
+						   .withLanguageId(
+								   WebAPILocator.getLanguageWebAPI().getBackendLanguage().getId())
+						   .showDotAssets(dotAssets)
+						   .build());
 
 	        listCleanup((List<Map<String, Object>>) results.get("list"), getContentSelectedLanguageId(req));
 

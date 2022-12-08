@@ -5,6 +5,7 @@ import com.dotcms.filters.interceptor.AbstractWebInterceptorSupportFilter;
 import com.dotcms.filters.interceptor.WebInterceptorDelegate;
 import com.dotcms.filters.interceptor.meta.ResponseMetaDataWebInterceptor;
 import com.dotcms.graphql.GraphqlCacheWebInterceptor;
+import com.dotcms.jitsu.EventLogWebInterceptor;
 import com.dotcms.security.multipart.MultiPartRequestSecurityWebInterceptor;
 import com.dotcms.prerender.PreRenderSEOWebInterceptor;
 
@@ -35,6 +36,7 @@ public class InterceptorFilter extends AbstractWebInterceptorSupportFilter {
         delegate.add(new EMAWebInterceptor());
         delegate.add(new GraphqlCacheWebInterceptor());
         delegate.add(new ResponseMetaDataWebInterceptor());
+        delegate.add(new EventLogWebInterceptor());
     } // addInterceptors.
 
 } // E:O:F:InterceptorFilter.

@@ -4,12 +4,11 @@ import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { DotExperimentsShellComponent } from './dot-experiments-shell.component';
 import { DotLoadingIndicatorModule } from '@components/_common/iframe/dot-loading-indicator/dot-loading-indicator.module';
-import { DotExperimentsUiHeaderComponent } from '../shared/ui/experiments-header/dot-experiments-ui-header.component';
+import { DotExperimentsUiHeaderComponent } from '../shared/ui/dot-experiments-header/dot-experiments-ui-header.component';
 import { DotExperimentsShellRoutingModule } from '@portlets/dot-experiments/dot-experiments-shell/dot-experiments-shell-routing.module';
 import { DotExperimentsListModule } from '@portlets/dot-experiments/dot-experiments-list/dot-experiments-list.module';
 import { ToastModule } from 'primeng/toast';
-import { DotExperimentsShellStore } from './store/dot-experiments-shell-store.service';
-import { MessagesModule } from 'primeng/messages';
+import { MessageService } from 'primeng/api';
 
 @NgModule({
     declarations: [DotExperimentsShellComponent],
@@ -23,9 +22,8 @@ import { MessagesModule } from 'primeng/messages';
         DotExperimentsUiHeaderComponent,
 
         // PrimeNg
-        ToastModule,
-        MessagesModule
+        ToastModule
     ],
-    providers: [DotExperimentsShellStore]
+    providers: [MessageService]
 })
 export class DotExperimentsShellModule {}

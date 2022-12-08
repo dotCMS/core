@@ -1,0 +1,50 @@
+@use "variables" as *;
+
+h2 {
+    margin: 0;
+    font-size: $font-size-large;
+    font-weight: $font-weight-semi-bold;
+}
+
+.muted {
+    color: $gray;
+    font-size: $font-size-x-small;
+}
+
+.separator {
+    color: $gray-lighter;
+}
+
+:host ::ng-deep {
+    dot-icon {
+        color: $gray-light;
+
+        &.isDone {
+            color: $success;
+        }
+    }
+
+    p-card {
+        .p-card p-card {
+            .p-card {
+                border-radius: 0;
+                border-bottom: none;
+            }
+
+            &.first .p-card {
+                border-top-right-radius: $border-radius-md;
+                border-top-left-radius: $border-radius-md;
+            }
+
+            &.last .p-card {
+                border-bottom-right-radius: $border-radius-md;
+                border-bottom-left-radius: $border-radius-md;
+                border: 1px solid $gray-lighter;
+            }
+        }
+
+        .p-card-footer .p-button-link {
+            padding: $spacing-0;
+        }
+    }
+}

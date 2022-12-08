@@ -1096,19 +1096,21 @@ public class ESContentFactoryImpl extends ContentletFactory {
 
     @Override
     protected Contentlet findContentletByIdentifierAnyLanguage(final String identifier, final boolean includeDeleted) throws DotDataException, DotSecurityException {
-        // Looking content up this way can avoid any DB hits as these calls are all cached.
-        final List<Language> langs = this.languageAPI.getLanguages();
-        for(final Language language : langs) {
-            final Optional<ContentletVersionInfo> contentVersion = APILocator.getVersionableAPI().getContentletVersionInfo(identifier, language.getId());
-            if (contentVersion.isPresent() && UtilMethods.isSet(contentVersion.get().getIdentifier())
-                    && (includeDeleted || !contentVersion.get().isDeleted())) {
-                return find(contentVersion.get().getWorkingInode());
-            }
-            if (contentVersion.isPresent() && contentVersion.get().isDeleted() && !includeDeleted) {
-                Logger.warn(this, String.format("Contentlet with ID '%s' exists, but is marked as 'Archived'.",
-                        identifier));
-            }
+        final Optional<ContentletVersionInfo> contentVersionDeleted = FactoryLocator.getVersionableFactory()
+                .findAnyContentletVersionInfo(identifier, true);
+
+        final Optional<ContentletVersionInfo> contentVersionNotDeleted = FactoryLocator.getVersionableFactory()
+                .findAnyContentletVersionInfo(identifier, false);
+
+        if (contentVersionNotDeleted.isPresent()) {
+            return find(contentVersionNotDeleted.get().getWorkingInode());
+        } else if (contentVersionDeleted.isPresent() && includeDeleted) {
+            return find(contentVersionDeleted.get().getWorkingInode());
+        } else if (contentVersionDeleted.isPresent() && !includeDeleted) {
+            Logger.warn(this, String.format("Contentlet with ID '%s' exists, but is marked as 'Archived'.",
+                    identifier));
         }
+
         return null;
     }
 

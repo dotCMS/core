@@ -151,8 +151,11 @@ public abstract class VelocityModeHandler {
     }
 
     public final Template getTemplate(final IHTMLPage page, final PageMode mode) {
+        final String currentVariantId = WebAPILocator.getVariantWebAPI().currentVariantId();
 
-        return VelocityUtil.getEngine().getTemplate(VelocityResourceKey.getHTMLPageFilePath((HTMLPageAsset) page, mode, page.getLanguageId()));
+        return VelocityUtil.getEngine().getTemplate(
+                VelocityResourceKey.getHTMLPageFilePath(page.getIdentifier(), mode,
+                        page.getLanguageId(), currentVariantId));
     }
 
 }

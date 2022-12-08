@@ -255,7 +255,7 @@ describe('DotFavoritePageComponent', () => {
                     currentUserRoleId: '1',
                     thumbnail: null,
                     title: 'A title',
-                    url: '/an/url/test?&language_id=1',
+                    url: '/an/url/test?&language_id=1&device_inode=',
                     order: 1,
                     permissions: null
                 });
@@ -283,7 +283,7 @@ describe('DotFavoritePageComponent', () => {
                     currentUserRoleId: '1',
                     thumbnail: 'test',
                     title: 'A title',
-                    url: '/an/url/test?&language_id=1',
+                    url: '/an/url/test?&language_id=1&device_inode=',
                     order: 1,
                     permissions: null
                 });
@@ -297,7 +297,7 @@ describe('DotFavoritePageComponent', () => {
                     currentUserRoleId: '1',
                     thumbnail: 'test',
                     title: 'A title',
-                    url: '/an/url/test?&language_id=1',
+                    url: '/an/url/test?&language_id=1&device_inode=',
                     order: 1,
                     permissions: null
                 });
@@ -326,11 +326,13 @@ describe('DotFavoritePageComponent', () => {
             fixture.detectChanges();
             expect(dialogRef.close).toHaveBeenCalledWith(true);
         });
-        
+
         it('should call onSave ref event when actionState event is executed from store with Saved value', () => {
-            spyOnProperty(store, 'actionState$', 'get').and.returnValue(of(DotFavoritePageActionState.SAVED));
+            spyOnProperty(store, 'actionState$', 'get').and.returnValue(
+                of(DotFavoritePageActionState.SAVED)
+            );
             fixture.detectChanges();
             expect(dialogConfig.data.onSave).toHaveBeenCalledTimes(1);
         });
-    })
+    });
 });

@@ -2,7 +2,7 @@ import { DotExperimentsShellComponent } from './dot-experiments-shell.component'
 import { createComponentFactory, Spectator } from '@ngneat/spectator';
 import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
-import { DotExperimentsUiHeaderComponent } from '@portlets/dot-experiments/shared/ui/experiments-header/dot-experiments-ui-header.component';
+import { DotExperimentsUiHeaderComponent } from '@portlets/dot-experiments/shared/ui/dot-experiments-header/dot-experiments-ui-header.component';
 import { DotLoadingIndicatorModule } from '@components/_common/iframe/dot-loading-indicator/dot-loading-indicator.module';
 import { ComponentStore } from '@ngrx/component-store';
 import { Toast, ToastModule } from 'primeng/toast';
@@ -35,7 +35,6 @@ class RouterMock {
 
 describe('DotExperimentsShellComponent', () => {
     let spectator: Spectator<DotExperimentsShellComponent>;
-    let dotExperimentsUiHeaderComponent: DotExperimentsUiHeaderComponent;
     let toastComponent: Toast;
 
     const createComponent = createComponentFactory({
@@ -65,27 +64,9 @@ describe('DotExperimentsShellComponent', () => {
         spectator = createComponent();
     });
 
-    it('should has DotExperimentHeaderComponent', () => {
+    it('should has Toast component', () => {
         toastComponent = spectator.query(Toast);
 
         expect(toastComponent).toExist();
-    });
-    it('should has DotExperimentHeaderComponent', () => {
-        const page = new ActivatedRouteMock().parent.parent.snapshot.data.content.page;
-        dotExperimentsUiHeaderComponent = spectator.query(DotExperimentsUiHeaderComponent);
-
-        expect(dotExperimentsUiHeaderComponent).toExist();
-        expect(dotExperimentsUiHeaderComponent.title).toBe(page.title);
-    });
-
-    it('should call Navegate when click back', () => {
-        const router = spectator.inject(Router);
-        const navigateSpy = spyOn(router, 'navigate');
-
-        spectator.component.goBack();
-
-        expect(navigateSpy).toHaveBeenCalledWith(['edit-page/content'], {
-            queryParamsHandling: 'preserve'
-        });
     });
 });

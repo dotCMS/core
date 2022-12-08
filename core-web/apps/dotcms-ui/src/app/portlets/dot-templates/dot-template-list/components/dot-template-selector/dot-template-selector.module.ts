@@ -9,6 +9,13 @@ import { AutoFocusModule } from 'primeng/autofocus';
 
 @NgModule({
     declarations: [DotTemplateSelectorComponent],
-    imports: [CommonModule, AutoFocusModule, DotIconModule, FormsModule, ButtonModule, DotMessagePipeModule]
+    imports: [
+        CommonModule,
+        AutoFocusModule,
+        DotIconModule,
+        FormsModule,
+        ButtonModule,
+        DotMessagePipeModule
+    ]
 })
 export class DotTemplateSelectorModule {}

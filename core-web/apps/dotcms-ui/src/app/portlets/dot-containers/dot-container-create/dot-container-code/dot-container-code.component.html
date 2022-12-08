@@ -1,0 +1,51 @@
+<div class="dot-container-code__content-tab-container" [formGroup]="fg">
+    <div class="field mb-0">
+        <label class="block p-label-input-required">{{
+            'message.containers.create.content_type_code' | dm
+        }}</label>
+    </div>
+    <p-tabView
+        [scrollable]="true"
+        [activeIndex]="activeTabIndex"
+        [controlClose]="true"
+        (onChange)="handleTabClick($event, $event.index)"
+        (onClose)="removeItem($event.index, $event.close)"
+    >
+        <p-tabPanel headerStyleClass="tab-panel-btn">
+            <ng-template pTemplate="header">
+                <i
+                    class="pi pi-plus pr-3 pl-3"
+                    (click)="handleTabClick($event); actionsMenu.toggle($event)"
+                ></i>
+                <p-menu #actionsMenu [popup]="true" [model]="menuItems" appendTo="body"></p-menu>
+            </ng-template>
+        </p-tabPanel>
+        <p-tabPanel
+            *ngFor="let containerContent of getcontainerStructures.controls; let i = index"
+            [header]="contentTypeNamesById[containerContent.value.structureId]"
+            [selected]="activeTabIndex === i + 1"
+            formArrayName="containerStructures"
+            closable="true"
+        >
+            <div [formGroupName]="i">
+                <button
+                    class="p-button-secondary dot-container-code__variable-btn ml-3 mb-2 mt-2 p-button-sm"
+                    [label]="'add-variable' | dm"
+                    (click)="handleAddVariable(containerContent.value)"
+                    pButton
+                ></button>
+                <dot-textarea-content
+                    #body
+                    [attr.data-testid]="containerContent.value.structureId"
+                    [value]="containerContent.value.code"
+                    [editorName]="containerContent.value.structureId"
+                    [show]="['code']"
+                    [customStyles]="{ border: 'none', height: '500px' }"
+                    (monacoInit)="monacoInit($event)"
+                    formControlName="code"
+                    language="html"
+                ></dot-textarea-content>
+            </div>
+        </p-tabPanel>
+    </p-tabView>
+</div>
