@@ -155,6 +155,10 @@ export class DotContainerPropertiesStore extends ComponentStore<DotContainerProp
         };
     });
 
+    /**
+     * Update Original Form
+     * @memberof DotContainerPropertiesStore
+     */
     readonly updateOriginalFormState = this.updater<DotContainerEntity>(
         (state: DotContainerPropertiesState, originalForm: DotContainerEntity) => {
             return {
