@@ -1,0 +1,14 @@
+<p-card>
+    <ng-template pTemplate="title">
+        <h2 data-testId="goals-card-name">{{ 'experiments.configure.goals.name' | dm }}</h2>
+    </ng-template>
+
+    <ng-template pTemplate="footer">
+        <p-button
+            (onClick)="setupGoal()"
+            data-testId="goals-add-button"
+            label="{{ 'experiments.configure.goals.add' | dm }}"
+            styleClass="p-button-sm p-button-link"
+        ></p-button>
+    </ng-template>
+</p-card>

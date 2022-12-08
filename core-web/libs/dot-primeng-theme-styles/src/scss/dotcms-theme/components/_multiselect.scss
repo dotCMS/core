@@ -160,3 +160,28 @@
 .p-multiselect-item .p-ink {
     background-color: rgba(63, 81, 181, 0.16);
 }
+
+.p-multiselect.p-multiselect-chip {
+    color: $gray-dark;
+}
+
+.p-multiselect.p-multiselect-chip .p-multiselect-label {
+    gap: $spacing-1;
+    padding: $spacing-1;
+}
+
+.p-multiselect.p-multiselect-chip .p-multiselect-label.p-placeholder {
+    padding: $spacing-3;
+}
+
+.p-multiselect.p-multiselect-chip .p-multiselect-token {
+    align-items: center;
+    background: rgba($brand-primary_rgb, 0.1);
+    border-radius: $border-radius-md;
+    color: rgb($brand-primary_rgb);
+    display: flex;
+    gap: $spacing-1;
+    justify-content: center;
+    margin-right: $spacing-1;
+    padding: $spacing-1;
+}

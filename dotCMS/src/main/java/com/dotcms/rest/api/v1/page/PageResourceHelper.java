@@ -7,8 +7,10 @@ import com.dotcms.mock.request.HttpServletRequestParameterDecoratorWrapper;
 import com.dotcms.mock.request.LanguageIdParameterDecorator;
 import com.dotcms.mock.request.ParameterDecorator;
 import com.dotcms.rendering.velocity.directive.ParseContainer;
+import com.dotcms.rest.api.v1.page.PageContainerForm.ContainerEntry;
 import com.dotcms.rest.exception.BadRequestException;
 import com.dotcms.util.CollectionsUtils;
+import com.dotcms.variant.VariantAPI;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.MultiTree;
 import com.dotmarketing.business.APILocator;
@@ -17,6 +19,7 @@ import com.dotmarketing.business.PermissionLevel;
 import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.business.web.HostWebAPI;
 import com.dotmarketing.business.web.WebAPILocator;
+import com.dotmarketing.exception.DoesNotExistException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -33,25 +36,30 @@ import com.dotmarketing.portlets.htmlpageasset.business.HTMLPageAssetAPI;
 import com.dotmarketing.portlets.htmlpageasset.business.render.HTMLPageAssetNotFoundException;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
-import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.personas.model.Persona;
 import com.dotmarketing.portlets.templates.business.TemplateAPI;
 import com.dotmarketing.portlets.templates.design.bean.ContainerUUID;
 import com.dotmarketing.portlets.templates.model.Template;
+import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.UtilMethods;
 import com.google.common.collect.Table;
 import com.liferay.portal.PortalException;
 import com.liferay.portal.SystemException;
 import com.liferay.portal.model.User;
-import java.io.IOException;
-import java.io.Serializable;
-import java.util.*;
-import javax.servlet.http.HttpServletRequest;
-
 import com.liferay.util.StringPool;
 import org.jetbrains.annotations.NotNull;
+
+import javax.servlet.http.HttpServletRequest;
+import java.io.IOException;
+import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
 
 /**
  * Provides the utility methods that interact with HTML Pages in dotCMS. These methods are used by
@@ -71,7 +79,6 @@ public class PageResourceHelper implements Serializable {
     private final TemplateAPI templateAPI = APILocator.getTemplateAPI();
     private final ContentletAPI contentletAPI = APILocator.getContentletAPI();
     private final HostAPI hostAPI = APILocator.getHostAPI();
-    private final LanguageAPI langAPI = APILocator.getLanguageAPI();
     private final MultiTreeAPI multiTreeAPI = APILocator.getMultiTreeAPI();
     private final UserAPI userAPI = APILocator.getUserAPI();
     private final PermissionAPI permissionAPI = APILocator.getPermissionAPI();
@@ -81,6 +88,22 @@ public class PageResourceHelper implements Serializable {
      */
     private PageResourceHelper() {
 
+    }
+
+    /**
+     * Provides a singleton instance of the {@link PageResourceHelper}
+     */
+    private static class SingletonHolder {
+        private static final PageResourceHelper INSTANCE = new PageResourceHelper();
+    }
+
+    /**
+     * Returns a singleton instance of this class.
+     *
+     * @return A single instance of this class.
+     */
+    public static PageResourceHelper getInstance() {
+        return PageResourceHelper.SingletonHolder.INSTANCE;
     }
 
     private final static ParameterDecorator LANGUAGE_PARAMETER_DECORATOR = new LanguageIdParameterDecorator();
@@ -94,11 +117,20 @@ public class PageResourceHelper implements Serializable {
         return wrapRequest;
     }
 
-
+    /**
+     * Saves the list of Containers and their respective Contentlet IDs for a given HTML Page.
+     *
+     * @param pageId           The Identifier of the HTML Page whose contents are being updated.
+     * @param containerEntries The list of Containers and Contentlets in the form of
+     *                         {@link PageContainerForm.ContainerEntry} objects.
+     * @param language         The {@link Language} of the Contentlets for this page.
+     *
+     * @throws DotDataException An error occurred when interacting with the data source.
+     */
     @WrapInTransaction
     public void saveContent(final String pageId,
-                            final List<PageContainerForm.ContainerEntry> containerEntries,
-                            final Language language) throws DotDataException {
+            final List<ContainerEntry> containerEntries,
+            final Language language, String variantName) throws DotDataException {
 
         final Map<String, List<MultiTree>> multiTreesMap = new HashMap<>();
         for (final PageContainerForm.ContainerEntry containerEntry : containerEntries) {
@@ -114,7 +146,8 @@ public class PageResourceHelper implements Serializable {
                             .setContentlet(contentletId)
                             .setInstanceId(containerEntry.getContainerUUID())
                             .setTreeOrder(i++)
-                            .setHtmlPage(pageId);
+                            .setHtmlPage(pageId)
+                            .setVariantId(variantName);
 
                     CollectionsUtils.computeSubValueIfAbsent(
                             multiTreesMap, personalization, MultiTree.personalized(multiTree, personalization),
@@ -122,7 +155,6 @@ public class PageResourceHelper implements Serializable {
                             (String key, MultiTree multitree) -> CollectionsUtils.list(multitree));
                 }
             } else {
-
                 multiTreesMap.computeIfAbsent(personalization, key -> new ArrayList<>());
             }
         }
@@ -130,7 +162,8 @@ public class PageResourceHelper implements Serializable {
         for (final String personalization : multiTreesMap.keySet()) {
 
             multiTreeAPI.overridesMultitreesByPersonalization(pageId, personalization,
-                    multiTreesMap.get(personalization), Optional.ofNullable(language.getId()));
+                    multiTreesMap.get(personalization), Optional.ofNullable(language.getId()),
+                    variantName);
         }
     }
 
@@ -149,21 +182,47 @@ public class PageResourceHelper implements Serializable {
         multiTreeAPI.saveMultiTreeAndReorder(multiTree);
     }
 
-
     /**
-     * Provides a singleton instance of the {@link PageResourceHelper}
+     * Do a copy page including the multi tree
+     * @param page
+     * @param user
+     * @param pageMode
+     * @param language
+     * @return returns only the page contentlet
+     * @throws DotDataException
+     * @throws DotSecurityException
      */
-    private static class SingletonHolder {
-        private static final PageResourceHelper INSTANCE = new PageResourceHelper();
-    }
+    @WrapInTransaction
+    public Contentlet copyPage(final IHTMLPage page, final User user,
+                               final PageMode pageMode, final Language language) throws DotDataException, DotSecurityException {
 
-    /**
-     * Returns a singleton instance of this class.
-     *
-     * @return A single instance of this class.
-     */
-    public static PageResourceHelper getInstance() {
-        return PageResourceHelper.SingletonHolder.INSTANCE;
+        if (page instanceof HTMLPageAsset) {
+
+            final Contentlet newPage = this.contentletAPI.copyContentlet(
+                    HTMLPageAsset.class.cast(page), user, pageMode.respectAnonPerms);
+
+            Logger.debug(this, ()-> "New page from: " + page.getIdentifier() + " has been already created");
+
+            final List<MultiTree> multiTrees = this.multiTreeAPI.getMultiTrees(page.getIdentifier());
+            for (final MultiTree multiTree : multiTrees) {
+
+                Logger.debug(this, ()-> "Making a copy of: " + multiTree.getContentlet());
+                this.copyContentlet(new CopyContentletForm.Builder()
+                                .pageId(page.getIdentifier())
+                                .containerId(multiTree.getContainer())
+                                .relationType(multiTree.getRelationType())
+                                .contentId(multiTree.getContentlet())
+                                .personalization(multiTree.getPersonalization())
+                                .treeOrder(multiTree.getTreeOrder())
+                                .variantId(multiTree.getVariantId())
+                                .build()
+                        , user, pageMode, language);
+            }
+
+            return newPage;
+        }
+
+        throw new IllegalArgumentException("The page: " + page.getIdentifier() + " is not a valid page");
     }
 
     @WrapInTransaction
@@ -218,17 +277,18 @@ public class PageResourceHelper implements Serializable {
     public Template saveTemplate(final IHTMLPage page, final User user, final PageForm pageForm)
             throws BadRequestException, DotDataException, DotSecurityException {
 
-        
+        Template template = new Template();
         try {
             final Host host = getHost(pageForm.getHostId(), user);
             final User systemUser = userAPI.getSystemUser();
-            final Template template = checkoutTemplate(page, systemUser, pageForm);
+            template = checkoutTemplate(page, systemUser, pageForm);
             final boolean hasPermission = template.isAnonymous() ?
                     permissionAPI.doesUserHavePermission(page, PermissionLevel.EDIT.getType(), user) :
                     permissionAPI.doesUserHavePermission(template, PermissionLevel.EDIT.getType(), user);
 
             if (!hasPermission) {
-                throw new DotSecurityException("The user doesn't have permission to EDIT");
+                throw new DotSecurityException(String.format("User '%s' doesn't have permission to edit Template " +
+                                                                     "'%s'", user.getUserId(), page.getTemplateId()));
             }
 
             template.setDrawed(true);
@@ -237,8 +297,10 @@ public class PageResourceHelper implements Serializable {
 
             // permissions have been updated above
             return this.templateAPI.saveTemplate(template, host, APILocator.systemUser(), false);
-        } catch (BadRequestException | DotDataException | DotSecurityException e) {
-            throw new DotRuntimeException(e);
+        } catch (final BadRequestException | DotDataException | DotSecurityException e) {
+            final String errorMsg = String.format("An error occurred when saving Template '%s' [ %s ]: %s",
+                    template.getTitle(), template.getIdentifier(), e.getMessage());
+            throw new DotRuntimeException(errorMsg, e);
         }
     }
 
@@ -342,4 +404,62 @@ public class PageResourceHelper implements Serializable {
             throw new DotRuntimeException(e);
         }
     }
+
+
+    @WrapInTransaction
+    protected Contentlet copyContentlet(final CopyContentletForm copyContentletForm, final User user,
+                                      final PageMode pageMode, final Language language)
+            throws DotDataException, DotSecurityException {
+
+        final Contentlet copiedContentlet = this.copyContent(copyContentletForm, user, pageMode, language.getId());
+
+        final String htmlPage   = copyContentletForm.getPageId();
+        final String container  = copyContentletForm.getContainerId();
+        final String contentId  = copyContentletForm.getContentId();
+        final String instanceId = copyContentletForm.getRelationType();
+        final String variant    = copyContentletForm.getVariantId();
+        final int treeOrder     = copyContentletForm.getTreeOrder();
+        final String personalization = copyContentletForm.getPersonalization();
+
+
+        Logger.debug(this, ()-> "Deleting current contentlet multi tree: " + copyContentletForm);
+        final MultiTree currentMultitree = APILocator.getMultiTreeAPI().getMultiTree(htmlPage, container, contentId, instanceId,
+                null == personalization? MultiTree.DOT_PERSONALIZATION_DEFAULT: personalization, null == variant? VariantAPI.DEFAULT_VARIANT.name(): variant);
+
+        if (null == currentMultitree) {
+
+            throw new DoesNotExistException(
+                    "Can not copied the contentlet in the page, because the record is not part of the page, multitree: " + copyContentletForm);
+        }
+
+        APILocator.getMultiTreeAPI().deleteMultiTree(currentMultitree);
+
+        final MultiTree newMultitree = new MultiTree(htmlPage, container, copiedContentlet.getIdentifier(),
+                instanceId, treeOrder, null == personalization? MultiTree.DOT_PERSONALIZATION_DEFAULT: personalization,
+                null == variant? VariantAPI.DEFAULT_VARIANT.name(): variant);
+        Logger.debug(this, ()-> "Saving current contentlet multi tree: " + currentMultitree);
+        APILocator.getMultiTreeAPI().saveMultiTree(newMultitree);
+
+        return copiedContentlet;
+    }
+
+    private Contentlet copyContent(final CopyContentletForm copyContentletForm, final User user,
+                                   final PageMode pageMode, final long languageId) throws DotDataException, DotSecurityException {
+
+        Logger.debug(this, ()-> "Copying the contenlet: " + copyContentletForm.getContentId());
+        final Contentlet currentContentlet = this.contentletAPI.findContentletByIdentifier(
+                copyContentletForm.getContentId(), pageMode.showLive, languageId, user, pageMode.respectAnonPerms);
+
+        if (null == currentContentlet) {
+
+            throw new DoesNotExistException(
+                    "The Contentlet being copied does not exist. Content id: " + copyContentletForm.getContentId());
+        }
+
+        final Contentlet copiedContentlet  = this.contentletAPI.copyContentlet(currentContentlet, user, pageMode.respectAnonPerms);
+        Logger.debug(this, ()-> "Copied the contenlet: " + copiedContentlet.getIdentifier());
+
+        return copiedContentlet;
+    }
+
 }

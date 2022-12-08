@@ -1,4 +1,4 @@
-# Quarkus CLI Data Model example
+# dotCMS CLI 
 
 This project acts as a maven reactor pom build 
 You can build at the top level to build all projects
@@ -8,24 +8,17 @@ making sure that dependencies have been installed first
 
 ```shell script
 # from top level to build all
-./mvnw install
+./mvnw clean install
 ```
+
+To run cli. 
+
+First Start a dotCMS instance locally
 
 To run example API in dev mode
 ```shell script
 # from top level to build all
-cd rest-api
-# command is same as the following to run the quarkus build plugin
-# ../mvnw quarkus:dev 
-quarkus dev
-```
-
-To run cli
-
-To run example API in dev mode
-```shell script
-# from top level to build all
-cd rest-api
+cd cli
 # command is same as the following to run the quarkus build plugin
 # ../mvnw quarkus:dev 
 quarkus dev
@@ -58,20 +51,8 @@ this uses the --am (also make) option.  In this way with the cli module will bui
 
 
 ## Project outline
+
 ### api-data-model
-Should have minimal dependencies, this uses Immutables to generate model objects.   Immutables generates java code
-that gets built as regular classes into jar so Immutables does not need to be a dependency on any code that uses this
-This should declare any shared interfaces and data objects that are parameters and return objects of those interfaces.
-This does not need to be built with quarkus
-
-org.acme.model contains a copy of most of existing Contentlet model we have as and example
-
-org.acme.newmodel contains some objects created by looking at existing API classes and json to
-create an Immutable object that is compatible at a JSON level.   It also shows an example of using
-request and response immutable classes as well as using generics in the interface to share common functionality
-
-
-### rest-api
 This module implements the base API defined in api-data-model using JAX-RS to
 provide a Rest interface for calling the api.   We make the rest classes call a delegate implementation
 of the service interface,  we could make the resource class implement the service interface itself
@@ -92,19 +73,11 @@ https://picocli.info/
 
 The creation of individual subcommands becomes easy with picocli,  the current app demonstrates
 some examples of what we can do.
-
-####ContentletCommand
-This shows an example of use calling our service apis directly without rest.
-####CContentletRemoteCommand
-This shows an example of calling a rest service we created in rest-api.   
-We are using Microprofile Rest Client to make connection to the api easy and reflective of
-the annotations that are used on the server.  
-####CLoginCommand
+ 
+####LoginCommand
 Shows example of getting a token from demo.cms.com and storing it in users personal secure storage
 ####StatusCommand
 Checks the token status against the server and returns current user object.
-####org.acme.restclient
-Contains the Micropofile Rest Client classes.
 
 
 ## Docker

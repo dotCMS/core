@@ -3,6 +3,7 @@ import {
     TrafficProportionTypes
 } from '@portlets/dot-experiments/shared/models/dot-experiments-constants';
 import { DotPage } from '@models/dot-page/dot-page.model';
+import { Status } from '@portlets/shared/models/shared-models';
 
 export interface DotExperiment {
     id: string;
@@ -14,7 +15,7 @@ export interface DotExperiment {
     readyToStart: boolean;
     archived: boolean;
     trafficProportion: TrafficProportion;
-    trafficAllocation: number;
+    trafficAllocation: string;
     scheduling: RangeOfDateAndTime | null;
     creationDate: Date;
     modDate: Date;
@@ -24,14 +25,40 @@ export type RenderedPageExperiments = Pick<DotPage, 'title' | 'identifier'>;
 
 export type GroupedExperimentByStatus = Partial<Record<DotExperimentStatusList, DotExperiment[]>>;
 
-interface TrafficProportion {
-    percentages: {
-        [index: string]: number;
-    };
+export interface TrafficProportion {
     type: TrafficProportionTypes;
+    variants: Array<Variant>;
+}
+
+export interface Variant {
+    id: string;
+    name: string;
+    weight: string;
+    url?: string;
 }
 
 interface RangeOfDateAndTime {
     startDate: Date;
     endDate: Date;
+}
+
+export interface StepStatus {
+    status: Status;
+    isOpen: boolean;
+    experimentStep: ExperimentSteps | null;
+}
+
+export interface DotStoreWithSidebar {
+    isOpenSidebar: boolean;
+    isSaving: boolean;
+}
+
+export type EditPageTabs = 'edit' | 'preview';
+
+export enum ExperimentSteps {
+    VARIANTS = 'variants',
+    GOAL = 'goal',
+    TARGETING = 'targeting',
+    TRAFFIC = 'traffic',
+    SCHEDULING = 'scheduling'
 }

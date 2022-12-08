@@ -1,9 +1,5 @@
 package com.dotmarketing.portlets.contentlet.business;
 
-import java.io.Serializable;
-import java.util.Date;
-import java.util.List;
-import java.util.Map;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
@@ -27,6 +23,11 @@ import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.google.common.collect.ImmutableList;
 import com.liferay.portal.model.User;
+
+import java.io.Serializable;
+import java.util.Date;
+import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -284,7 +285,24 @@ public interface ContentletAPIPostHook {
 	 * @param returnValue - value returned by primary API Method 
 	 */
 	public default void getContentletReferences(Contentlet contentlet, User user, boolean respectFrontendRoles,List<Map<String, Object>> returnValue){}
-	
+
+	/**
+	 * This is a simplified version of the more complex {@link #getContentletReferences(Contentlet, User, boolean)}
+	 * method. This one will only be focused on querying the database to return the number of Containers that include
+	 * the specified Contentlet ID.
+	 * <p>The result provided by this method can be used to customize or determine specific behaviors. For example,
+	 * this
+	 * piece of information is used by the dotCMS UI to ask the User whether they want to edit a Contentlet referenced
+	 * everywhere, or if dotCMS should create a copy of such a Contentlet so they can edit that one version.</p>
+	 *
+	 * @param contentletId The Contentlet ID whose references will be retrieved.
+	 *
+	 * @return The number of times the specified Contentlet is added to a Container in any HTML Page.
+	 */
+	default void getContentletReferenceCount(final String contentletId) {
+
+	}
+
 	/**
 	 * Gets the value of a field with a given contentlet 
 	 * @param contentlet
@@ -978,8 +996,16 @@ public interface ContentletAPIPostHook {
 	 * @param contentRelationships
 	 * @param cats - categories
 	 */
-	public default void validateContentlet(Contentlet contentlet, ContentletRelationships contentRelationships, List<Category> cats){} 
-	
+	public default void validateContentlet(Contentlet contentlet, ContentletRelationships contentRelationships, List<Category> cats){}
+
+	/**
+	 * Use to validate your contentlet.
+	 * @param contentlet
+	 * @param cats - categories
+	 */
+	default void validateContentletNoRels(Contentlet contentlet, List<Category> cats){}
+
+
 	/**
 	 * Use to determine if if the field value is a String value withing the contentlet object
 	 * @param field
@@ -1627,4 +1653,7 @@ public interface ContentletAPIPostHook {
 	 */
 	default void move(final Contentlet contentlet, User user, Host host, Folder folder, boolean respectFrontendRoles) {}
 
+	default void getAllContentByVariants(User user, boolean respectFrontendRoles, String[] variantNames) {
+
+	}
 }

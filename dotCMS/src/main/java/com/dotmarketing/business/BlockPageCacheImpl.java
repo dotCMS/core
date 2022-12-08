@@ -1,6 +1,9 @@
 package com.dotmarketing.business;
 
+import java.io.Serializable;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
+
 import com.dotcms.concurrent.Debouncer;
 import com.dotcms.enterprise.LicenseUtil;
 import com.dotcms.enterprise.license.LicenseLevel;
@@ -57,8 +60,8 @@ public class BlockPageCacheImpl extends BlockPageCache {
 
 	@Override
 	public String[] getGroups() {
-		String[] groupNames = { primaryCacheGroup };
-		return groupNames;
+	    return new String[]{ primaryCacheGroup };
+
 	}
 
 	@Override
@@ -76,15 +79,16 @@ public class BlockPageCacheImpl extends BlockPageCache {
         }
         
         final String key = pageChacheParams.getKey();
-        final BlockDirectiveCacheObject cto = new BlockDirectiveCacheObject(pageContent, (int) page.getCacheTTL());
+        Map<String,Serializable> cacheMap = Map.of(BlockDirectiveCache.PAGE_CONTENT_KEY, pageContent);
+        final BlockDirectiveCacheObject cto = new BlockDirectiveCacheObject(cacheMap, (int) page.getCacheTTL());
 
 
-        debounceAdd.debounce(key.toString(), () -> {
+        debounceAdd.debounce(key, () -> 
 
-            this.cache.put(key, cto, primaryCacheGroup);
+            this.cache.put(key, cto, primaryCacheGroup)
 
 
-        }, 1, TimeUnit.SECONDS);
+        , 1, TimeUnit.SECONDS);
 
 
     }
@@ -99,14 +103,14 @@ public class BlockPageCacheImpl extends BlockPageCache {
 
         // Lookup the cached versions of the page based on inode and moddate
 
-        BlockDirectiveCacheObject bdco = (BlockDirectiveCacheObject) this.cache.getNoThrow(key.toString(), primaryCacheGroup);
+        BlockDirectiveCacheObject bdco = (BlockDirectiveCacheObject) this.cache.getNoThrow(key, primaryCacheGroup);
         if (bdco == null) {
             return null;
         }
         
         // if we are not expired, return
         if (bdco.getCreated() + ((int) page.getCacheTTL() * 1000) > System.currentTimeMillis()) {
-            return bdco.getValue();
+            return (String) bdco.getMap().getOrDefault(BlockDirectiveCache.PAGE_CONTENT_KEY,"");
         }
 
         remove(page);

@@ -24,6 +24,7 @@ export class DotSidebarDirective {
             primeSidebar.position = SIDEBAR_PLACEMENT.RIGHT;
             primeSidebar.styleClass = SIDEBAR_SIZES.MD;
             primeSidebar.showCloseIcon = false;
+            primeSidebar.dismissible = false;
         } else {
             console.warn('DotSidebarDirective is for use with PrimeNg Sidebar');
         }

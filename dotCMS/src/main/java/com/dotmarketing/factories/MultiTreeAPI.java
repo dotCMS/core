@@ -14,7 +14,18 @@ import java.util.Set;
 import java.util.function.Predicate;
 
 /**
- * API for {@link com.dotmarketing.beans.MultiTree}
+ * This API provides access to HTML Page Multi-Tree data in dotCMS.
+ * <p>In simple words, this is how HTML Pages in the system are put together:</p>
+ * <ul>
+ *     <li>The HTML Page.</li>
+ *     <li>One or more Containers.</li>
+ *     <li>One Container can have one or more Contentlets.</li>
+ * </ul>
+ * So, {@link MultiTree} objects contain important information on what Contentlets are added to Containers in a page.
+ * This API allows developers to access and modify this information as required. Every time Users edit an HTML Page --
+ * either adding or deleting Contentlets from it -- the Multi-Tree data is updated to reflect such an update.
+ *
+ * @author root
  */
 public interface MultiTreeAPI {
 
@@ -75,7 +86,7 @@ public interface MultiTreeAPI {
     void deleteMultiTreesRelatedToIdentifier(final String identifier) throws DotDataException;
 
     /**
-     * This method returns ALL MultiTree entries (in all languages) for a given page. It is up to what
+     * This method returns ALL MultiTree entries (in all languages) for a given page and DEFAULT variant. It is up to what
      * ever page renderer to properly choose which MultiTree children to show for example, show an
      * english content on a spanish page when language fallback=true
      *
@@ -88,6 +99,27 @@ public interface MultiTreeAPI {
      */
     Table<String, String, Set<PersonalizedContentlet>> getPageMultiTrees(final IHTMLPage page, final boolean liveMode)
             throws DotDataException, DotSecurityException;
+
+
+    /**
+     * This method returns ALL MultiTree entries (in all languages) for a given page and variant. It is up to what
+     * ever page renderer to properly choose which MultiTree children to show for example, show an
+     * english content on a spanish page when language fallback=true.
+     *
+     * If the page does not have any {@link MultiTree} to the specific variant then this method return the
+     * Page's {@link MultiTree} for the DEFAULT variant.
+     *
+     * @param page
+     * @param liveMode
+     * @param variantName
+     *
+     * @return
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    Table<String, String, Set<PersonalizedContentlet>> getPageMultiTrees(final IHTMLPage page, final String variantName, final boolean liveMode)
+            throws DotDataException, DotSecurityException;
+
 
     /**
      * Saves a list of MultiTrees
@@ -316,12 +348,22 @@ public interface MultiTreeAPI {
     List<MultiTree> getMultiTrees(String parentId) throws DotDataException;
 
     /**
+     * Gets a list of MultiTrees that has the parentId as a parent
+     *
+     * @param parentId
+     * @param variantName
+     * @return
+     * @throws DotDataException
+     */
+    List<MultiTree> getMultiTreesByVariant(final String parentId, final String variantName) throws DotDataException;
+
+    /**
      * Get an unique set of the personalization for a page
      * @param pageId String
      * @return unique Set of personalization values per the page
      */
     Set<String> getPersonalizationsForPage(final IHTMLPage page) throws DotDataException;
-    
+
     /**
      * Get an unique set of the personalization for a page
      * @param pageID
@@ -363,6 +405,16 @@ public interface MultiTreeAPI {
 
         return this.copyPersonalizationForPage(pageId, MultiTree.DOT_PERSONALIZATION_DEFAULT, newPersonalization);
     }
+
+    /**
+     * Copy all the {@link MultiTree} from a page;s variant to another page's variant
+     * @param pageId String page id
+     * @param baseVariant Name of the variant that will be using to get the {@link MultiTree} and them apply a new variant over a copy of the {@link MultiTree} on the page.
+     * @param newVariant Name of the variant that  is the new variant for the set of {@link MultiTree}
+     * @return List MultiTree
+     */
+    List<MultiTree> copyVariantForPage (String pageId, String baseVariant, String newVariant) throws DotDataException;
+
 
     /**
      * Deletes the personalization for the page
@@ -425,5 +477,17 @@ public interface MultiTreeAPI {
      */
     void updatePersonalization(String currentPersonalization, String newPersonalization) throws DotDataException;
 
+    /**
+     * Queries the database to return the number of Containers that include the specified Contentlet ID.
+     * <p>The result provided by this method can be used to customize or determine specific behaviors. For example,
+     * this piece of information is used by the dotCMS UI to ask the User whether they want to edit a Contentlet
+     * referenced everywhere, or if dotCMS should create a copy of such a Contentlet so they can edit that one
+     * version.</p>
+     *
+     * @param contentletId The Contentlet ID whose references will be retrieved.
+     *
+     * @return The number of times the specified Contentlet is added to a Container in any HTML Page.
+     */
+    int getAllContentletReferencesCount(final String contentletId) throws DotDataException;
 
 }

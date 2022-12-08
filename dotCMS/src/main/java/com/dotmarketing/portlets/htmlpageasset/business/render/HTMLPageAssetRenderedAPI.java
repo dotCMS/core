@@ -9,13 +9,18 @@ import com.dotmarketing.portlets.htmlpageasset.business.render.page.ViewAsPageSt
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.util.PageMode;
 import com.liferay.portal.model.User;
-import java.io.IOException;
+
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import javax.ws.rs.QueryParam;
+import java.io.IOException;
 
 /**
- * Provides utility methods to render a {@link com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset}
+ * This API provides access to the metadata required byt dotCMS to render an HTML Page. For example, many methods in
+ * this API return an instance of the {@link PageView} class, which represents all the different pieces of information
+ * that are required for an HTML Page to display correctly.
+ *
+ * @author Freddy Rodriguez
+ * @since Apr 12th, 2018
  */
 public interface HTMLPageAssetRenderedAPI {
 
@@ -38,7 +43,8 @@ public interface HTMLPageAssetRenderedAPI {
      *
      * @deprecated deprecated since 5.1, use {@link HTMLPageAssetRenderedAPI#getPageMetadata(PageContext, HttpServletRequest, HttpServletResponse)} instead
      */
-    public PageView getPageMetadata(
+    @Deprecated(since = "Feb 22nd, 2019")
+    PageView getPageMetadata(
             final HttpServletRequest request,
             final HttpServletResponse response,
             final User user,
@@ -47,18 +53,19 @@ public interface HTMLPageAssetRenderedAPI {
             throws DotSecurityException, DotDataException;
 
     /**
-     * Returns the rendered version of an HTML Page, i.e., the HTML code that will be rendered in
-     * the browser.
+     * Returns the Metadata object containing all the different pieces of information that make up an HTML Page. This
+     * way, it can potentially be rendered in the browser or handled by any headless service.
      *
-     * @param context {@link PageContext}
-     * @param request The {@link HttpServletRequest} object.
+     * @param context  The {@link PageContext} object providing the details on how the HTML Page must be exposed.
+     * @param request  The {@link HttpServletRequest} object.
      * @param response The {@link HttpServletResponse} object.
+     *
      * @return The {@link PageView} object containing the metadata of the different objects that
      * make up an HTML Page.
+     *
      * @throws DotSecurityException The user does not have the specified permissions to perform
      *                              this action.
      * @throws DotDataException     An error occurred when accessing the data source.
-     * @throws IOException
      */
     PageView getPageMetadata(
             final PageContext context,
@@ -194,4 +201,5 @@ public interface HTMLPageAssetRenderedAPI {
                                                                   final HttpServletRequest  request,
                                                                   final HttpServletResponse response)
             throws DotSecurityException, DotDataException;
+
 }

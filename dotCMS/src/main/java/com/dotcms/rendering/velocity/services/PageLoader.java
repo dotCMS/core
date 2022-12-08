@@ -1,6 +1,8 @@
 package com.dotcms.rendering.velocity.services;
 
 import com.dotcms.util.ConversionUtils;
+import com.dotcms.variant.VariantAPI;
+import com.dotmarketing.util.UtilMethods;
 import java.io.File;
 import java.io.InputStream;
 import java.util.ArrayList;
@@ -49,6 +51,10 @@ public class PageLoader implements DotLoader {
 
     @Override
     public void invalidate(final Object obj, final PageMode mode) {
+        invalidate(obj, null, mode);
+    }
+
+    public void invalidate(final Object obj, final String variantName, final PageMode mode) {
         HTMLPageAsset htmlPage =null;
         if(obj instanceof IHTMLPage) {
             htmlPage = (HTMLPageAsset) obj;
@@ -58,11 +64,11 @@ public class PageLoader implements DotLoader {
        if(htmlPage==null) {
            return;
        }
-        
-
 
         for(Language lang : APILocator.getLanguageAPI().getLanguages()) {
-            VelocityResourceKey key = new VelocityResourceKey(htmlPage, mode, lang.getId());
+            VelocityResourceKey key = UtilMethods.isSet(variantName) ?
+                    new VelocityResourceKey(htmlPage, mode, lang.getId(), variantName) :
+                    new VelocityResourceKey(htmlPage, mode, lang.getId());
             DotResourceCache vc = CacheLocator.getVeloctyResourceCache();
             vc.remove(key);
         }
@@ -200,15 +206,25 @@ public class PageLoader implements DotLoader {
     @Override
 
     public InputStream writeObject(final VelocityResourceKey key) throws DotDataException, DotSecurityException {
+        return buildStream(getPage(key), key.mode, key.path);
+    }
 
-        HTMLPageAsset page = APILocator.getHTMLPageAssetAPI()
-                .fromContentlet(APILocator.getContentletAPI()
-                .findContentletByIdentifier(key.id1, key.mode.showLive, ConversionUtils.toLong(key.language),
-                        key.variant, sysUser(), true));
+    private HTMLPageAsset getPage(VelocityResourceKey key)
+            throws DotDataException, DotSecurityException {
 
-        return buildStream(page, key.mode, key.path);
-
-
+        try {
+            return APILocator.getHTMLPageAssetAPI()
+                    .fromContentlet(APILocator.getContentletAPI()
+                            .findContentletByIdentifier(key.id1, key.mode.showLive,
+                                    ConversionUtils.toLong(key.language),
+                                    key.variant, sysUser(), true));
+        } catch (DotStateException e) {
+            return APILocator.getHTMLPageAssetAPI()
+                    .fromContentlet(APILocator.getContentletAPI()
+                            .findContentletByIdentifier(key.id1, key.mode.showLive,
+                                    ConversionUtils.toLong(key.language),
+                                    VariantAPI.DEFAULT_VARIANT.name(), sysUser(), true));
+        }
     }
 
 
