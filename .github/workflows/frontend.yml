@@ -18,7 +18,7 @@ env:
 jobs:
   lint-all:
     runs-on: ubuntu-latest # the image our job will run on
-    name: Lint core-web # the name that will appear on the Actions UI
+    name: core-web # the name that will appear on the Actions UI
     steps: # what steps it will perform
       - uses: actions/checkout@v3 # checkout whatever branch the PR is using
         with:
@@ -30,33 +30,5 @@ jobs:
         with:
           working-directory: core-web
       - run: cd core-web && npx nx affected --target=lint --base=origin/master --parallel --exclude=$EXCLUDED_PROJECTS
-  test-all:
-    needs: lint-all
-    runs-on: ubuntu-latest # the image our job will run on
-    name: Test core-web # the name that will appear on the Actions UI
-    steps: # what steps it will perform
-      - uses: actions/checkout@v3 # checkout whatever branch the PR is using
-        with:
-          fetch-depth: 0
-      - uses: actions/setup-node@v3
-        with:
-          node-version: 16.14.2
-      - uses: bahmutov/npm-install@v1 # trigger an `npm install`
-        with:
-          working-directory: core-web
       - run: cd core-web && npx nx affected --target=test --base=origin/master --parallel --exclude=$EXCLUDED_PROJECTS
-  build-dotcms-ui:
-    needs: test-all
-    runs-on: ubuntu-latest # the image our job will run on
-    name: Build dotcms-ui # the name that will appear on the Actions UI
-    steps: # what steps it will perform
-      - uses: actions/checkout@v3 # checkout whatever branch the PR is using
-        with:
-          fetch-depth: 0
-      - uses: actions/setup-node@v3
-        with:
-          node-version: 16.14.2
-      - uses: bahmutov/npm-install@v1 # trigger an `npm install`
-        with:
-          working-directory: core-web
       - run: cd core-web && npx nx build dotcms-ui
