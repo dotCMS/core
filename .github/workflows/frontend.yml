@@ -29,6 +29,9 @@ jobs:
       - uses: bahmutov/npm-install@v1 # trigger an `npm install`
         with:
           working-directory: core-web
-      - run: cd core-web && npx nx affected --target=lint --base=origin/master --parallel --exclude=$EXCLUDED_PROJECTS
-      - run: cd core-web && npx nx affected --target=test --base=origin/master --parallel --exclude=$EXCLUDED_PROJECTS
-      - run: cd core-web && npx nx build dotcms-ui
+      - name: Lint
+        run: cd core-web && npx nx affected --target=lint --base=origin/master --parallel --exclude=$EXCLUDED_PROJECTS
+      - name: Test
+        run: cd core-web && npx nx affected --target=test --base=origin/master --parallel --exclude=$EXCLUDED_PROJECTS
+      - name: Build
+        run: cd core-web && npx nx build dotcms-ui
