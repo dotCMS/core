@@ -10,7 +10,7 @@ import { DotRouterService } from '@services/dot-router/dot-router.service';
 import { take, takeUntil } from 'rxjs/operators';
 import { MenuItem } from 'primeng/api';
 import { Subject } from 'rxjs';
-import { DotContainerStructure } from '@dotcms/app/shared/models/container/dot-container.model';
+import { DotContainerStructure } from '@dotcms/dotcms-models';
 
 @Component({
     selector: 'dot-container-properties',
