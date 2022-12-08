@@ -6,5 +6,5 @@ import { DotPageRender } from '@models/dot-page/dot-rendered-page.model';
 export const mockDotRenderedPageState = new DotPageRenderState(
     mockUser(),
     new DotPageRender(mockDotRenderedPage()),
-    false
+    null
 );

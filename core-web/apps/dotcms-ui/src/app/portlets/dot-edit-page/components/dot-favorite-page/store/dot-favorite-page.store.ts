@@ -105,6 +105,10 @@ export class DotFavoritePageStore extends ComponentStore<DotFavoritePageState> {
                         (error: HttpErrorResponse) => {
                             this.dotHttpErrorManagerService.handle(error);
 
+                            this.patchState({
+                                loading: false
+                            });
+
                             return of(null);
                         }
                     )
@@ -133,6 +137,10 @@ export class DotFavoritePageStore extends ComponentStore<DotFavoritePageState> {
                 },
                 (error: HttpErrorResponse) => {
                     this.dotHttpErrorManagerService.handle(error);
+
+                    this.patchState({
+                        loading: false
+                    });
 
                     return of(null);
                 }

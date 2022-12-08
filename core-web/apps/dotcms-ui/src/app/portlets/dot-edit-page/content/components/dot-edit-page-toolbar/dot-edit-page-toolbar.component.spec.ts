@@ -60,6 +60,7 @@ import { ESContent } from '@dotcms/app/shared/models/dot-es-content/dot-es-conte
 import { DotPageRender } from '@dotcms/app/shared/models/dot-page/dot-rendered-page.model';
 import { mockDotRenderedPage } from '@dotcms/app/test/dot-page-render.mock';
 import { DotPropertiesService } from '@dotcms/app/api/services/dot-properties/dot-properties.service';
+import { dotcmsContentletMock } from '@dotcms/app/test/dotcms-contentlet.mock';
 
 @Component({
     selector: 'dot-test-host-component',
@@ -329,7 +330,7 @@ describe('DotEditPageToolbarComponent', () => {
             componentHost.pageState = new DotPageRenderState(
                 mockUser(),
                 new DotPageRender(mockDotRenderedPage()),
-                true
+                dotcmsContentletMock
             );
             component.showFavoritePageStar = true;
 
