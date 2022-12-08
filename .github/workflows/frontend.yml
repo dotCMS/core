@@ -17,6 +17,9 @@ env:
   EXCLUDED_PROJECTS: dot-rules,dot-layout-grid,dot-primeng-theme-styles,dot-rules,dotcms,dotcms-field-elements,dotcms-js,dotcms-models,dotcms-webcomponents,dotcdn-e2e,dotcms-block-editor,dotcms-block-editor-e2e,dotcms-ui-e2e,utils-testing,block-editor,utils
 jobs:
   check-all:
+    defaults:
+      run:
+        working-directory: core-web
     runs-on: ubuntu-latest # the image our job will run on
     name: core-web # the name that will appear on the Actions UI
     steps: # what steps it will perform
@@ -30,8 +33,8 @@ jobs:
         with:
           working-directory: core-web
       - name: Lint
-        run: cd core-web && npx nx affected --target=lint --base=origin/master --parallel --exclude=${{ env.EXCLUDED_PROJECTS }}
+        run: npx nx affected --target=lint --base=origin/master --parallel --exclude=${{ env.EXCLUDED_PROJECTS }}
       - name: Test
-        run: cd core-web && npx nx affected --target=test --base=origin/master --parallel --exclude=${{ env.EXCLUDED_PROJECTS }}
+        run: npx nx affected --target=test --base=origin/master --parallel --exclude=${{ env.EXCLUDED_PROJECTS }}
       - name: Build
-        run: cd core-web && npx nx build dotcms-ui
+        run: npx nx build dotcms-ui
