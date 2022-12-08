@@ -26,7 +26,7 @@ export interface DotContainerPropertiesState {
     container: DotContainer;
     containerStructures: DotContainerStructure[];
     contentTypes: DotCMSContentType[];
-    originalForm: DotContainerEntity;
+    originalForm: DotContainerPayload;
     apiLink: string;
     invalidForm: boolean;
 }
@@ -123,15 +123,6 @@ export class DotContainerPropertiesStore extends ComponentStore<DotContainerProp
         }
     );
 
-    readonly updateIsContentTypeButtonEnabled = this.updater<boolean>(
-        (state: DotContainerPropertiesState, isContentTypeButtonEnabled: boolean) => {
-            return {
-                ...state,
-                isContentTypeButtonEnabled
-            };
-        }
-    );
-
     readonly updateContentTypeVisibility = this.updater<boolean>(
         (state: DotContainerPropertiesState, isContentTypeVisible: boolean) => {
             return {
@@ -147,10 +138,11 @@ export class DotContainerPropertiesStore extends ComponentStore<DotContainerProp
      */
     readonly updateFormStatus = this.updater<{
         invalidForm: boolean;
-        container: DotContainerEntity;
+        container: DotContainerPayload;
     }>((state: DotContainerPropertiesState, { invalidForm, container }) => {
         return {
             ...state,
+            isContentTypeButtonEnabled: container.maxContentlets > 0,
             invalidForm: _.isEqual(state.originalForm, container) || invalidForm
         };
     });
@@ -159,8 +151,8 @@ export class DotContainerPropertiesStore extends ComponentStore<DotContainerProp
      * Update Original Form
      * @memberof DotContainerPropertiesStore
      */
-    readonly updateOriginalFormState = this.updater<DotContainerEntity>(
-        (state: DotContainerPropertiesState, originalForm: DotContainerEntity) => {
+    readonly updateOriginalFormState = this.updater<DotContainerPayload>(
+        (state: DotContainerPropertiesState, originalForm: DotContainerPayload) => {
             return {
                 ...state,
                 originalForm: originalForm
@@ -284,6 +276,8 @@ export class DotContainerPropertiesStore extends ComponentStore<DotContainerProp
      * @returns The API link for the container.
      */
     private getApiLink(identifier: string): string {
-        return identifier ? `/api/v1/containers/${identifier}/working` : '';
+        return identifier
+            ? `/api/v1/containers/working?containerId=${identifier}&includeContentType=true`
+            : '';
     }
 }

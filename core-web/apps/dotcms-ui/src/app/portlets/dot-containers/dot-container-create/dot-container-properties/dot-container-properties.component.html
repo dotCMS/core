@@ -71,7 +71,7 @@
                 id="max-contents"
                 [required]="true"
                 data-testId="max-contents"
-                type="text"
+                type="number"
                 formControlName="maxContentlets"
                 pInputText
             />
@@ -79,7 +79,7 @@
                 class="p-button-info dot-container-properties__button-clear"
                 *ngIf="vm.isContentTypeVisible"
                 [label]="'message.containers.create.clear' | dm"
-                (click)="clearContent()"
+                (click)="clearContentConfirmationModal()"
                 data-testId="clearContent"
                 pButton
                 type="button"

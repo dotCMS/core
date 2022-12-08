@@ -60,12 +60,10 @@ export class DotContainerPropertiesComponent implements OnInit {
                 });
 
                 this.addContainerFormControl(containerStructures);
-                if (this.form.value?.identifier)
-                    this.store.updateOriginalFormState(this.form.value);
+                if (this.form.value.identifier) this.store.updateOriginalFormState(this.form.value);
             });
 
         this.form.valueChanges.pipe(takeUntil(this.destroy$)).subscribe((values) => {
-            this.store.updateIsContentTypeButtonEnabled(values.maxContentlets > 0);
             this.store.updateFormStatus({ invalidForm: !this.form.valid, container: values });
         });
     }
@@ -180,26 +178,14 @@ export class DotContainerPropertiesComponent implements OnInit {
     }
 
     /**
-     * Opens modal on clear content button click.
+     * Opens modal for confirmation modal.
      * @return void
      * @memberof DotContainerPropertiesComponent
      */
-    clearContent(): void {
+    clearContentConfirmationModal(): void {
         this.dotAlertConfirmService.confirm({
             accept: () => {
-                this.form.get('containerStructures').clearValidators();
-                this.form.get('containerStructures').reset();
-                this.form.get('preLoop').reset();
-                this.form.get('postLoop').reset();
-                // clear containerStructures array
-                (this.form.get('containerStructures') as FormArray).clear();
-                this.form.get('code').addValidators(Validators.required);
-                this.form.updateValueAndValidity();
-
-                this.store.updateContentTypeAndPrePostLoopVisibility({
-                    isContentTypeVisible: false,
-                    showPrePostLoopInput: false
-                });
+                this.clearContentTypesAndCode();
             },
             reject: () => {
                 //
@@ -210,6 +196,27 @@ export class DotContainerPropertiesComponent implements OnInit {
             message: this.dotMessageService.get(
                 'message.container.properties.confirm.clear.content.message'
             )
+        });
+    }
+
+    /**
+     * Clear content types and code and update visibility
+     * @private
+     * @memberof DotContainerPropertiesComponent
+     */
+    private clearContentTypesAndCode(): void {
+        this.form.get('containerStructures').clearValidators();
+        this.form.get('containerStructures').reset();
+        this.form.get('preLoop').reset();
+        this.form.get('postLoop').reset();
+        // clear containerStructures array
+        (this.form.get('containerStructures') as FormArray).clear();
+        this.form.get('code').addValidators(Validators.required);
+        this.form.updateValueAndValidity();
+
+        this.store.updateContentTypeAndPrePostLoopVisibility({
+            isContentTypeVisible: false,
+            showPrePostLoopInput: false
         });
     }
 
