@@ -24,9 +24,10 @@ import { squarePlus } from '../../../../shared/components/suggestions/suggestion
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class SearchTabComponent implements OnInit, OnChanges {
-    @Input() contentlets: DotCMSContentlet[] = [];
+    @Input() contentlets: DotCMSContentlet[][] = [];
     @Input() formControl: [] = [];
     @Output() selectedItem: EventEmitter<DotCMSContentlet> = new EventEmitter();
+    @Output() loadItems: EventEmitter<number> = new EventEmitter();
     @ViewChild('inputSearch') input: ElementRef;
 
     public form: FormGroup;
@@ -38,12 +39,17 @@ export class SearchTabComponent implements OnInit, OnChanges {
         this.form = this.parentForm.control;
     }
 
-    ngOnChanges(changes: SimpleChanges) {
-        const { contentlets } = changes;
-        if (contentlets.currentValue) {
-            requestAnimationFrame(() => {
-                this.input?.nativeElement.focus();
-            });
+    ngOnChanges(_changes: SimpleChanges) {
+        requestAnimationFrame(() => {
+            this.input?.nativeElement.focus();
+        });
+    }
+
+    loadContentlets(event) {
+        if (event.first === 0) {
+            return;
         }
+
+        this.loadItems.emit(event.last * 2);
     }
 }

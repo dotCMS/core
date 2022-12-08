@@ -9,8 +9,8 @@
 .wrapper {
     width: 100%;
     padding: 1.3125 * $dot-editor-size;
-    height: $form-width;
-    overflow: auto;
+    // height: $form-width;
+    // overflow: auto;
 }
 
 :host::ng-deep {

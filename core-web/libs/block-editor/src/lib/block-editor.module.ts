@@ -12,6 +12,8 @@ import { OrderListModule } from 'primeng/orderlist';
 import { ListboxModule } from 'primeng/listbox';
 import { TabViewModule } from 'primeng/tabview';
 import { VirtualScrollerModule } from 'primeng/virtualscroller';
+import { TableModule } from 'primeng/table';
+import { SkeletonModule } from 'primeng/skeleton';
 
 // DotCMS JS
 import { LoggerService } from '@dotcms/dotcms-js';
@@ -46,6 +48,8 @@ import { DotEditorCountBarComponent } from './components/dot-editor-count-bar/do
 import { FloatingButtonComponent } from './extensions/floating-button/floating-button.component';
 import { ImageFormComponent } from './extensions/image-form/image-form.component';
 import { SearchTabComponent } from './extensions/image-form/components/search-tab/search-tab.component';
+import { ImageCardComponent } from './extensions/image-form/components/image-card/image-card.component';
+import { ImageCardSkeletonComponent } from './extensions/image-form/components/image-card-skeleton/image-card-skeleton.component';
 
 @NgModule({
     imports: [
@@ -61,7 +65,9 @@ import { SearchTabComponent } from './extensions/image-form/components/search-ta
         OrderListModule,
         ListboxModule,
         TabViewModule,
-        VirtualScrollerModule
+        VirtualScrollerModule,
+        TableModule,
+        SkeletonModule
     ],
     declarations: [
         EditorDirective,
@@ -79,7 +85,9 @@ import { SearchTabComponent } from './extensions/image-form/components/search-ta
         DotEditorCountBarComponent,
         FloatingButtonComponent,
         ImageFormComponent,
-        SearchTabComponent
+        SearchTabComponent,
+        ImageCardComponent,
+        ImageCardSkeletonComponent
     ],
     providers: [DotImageService, LoggerService, StringUtils],
     exports: [

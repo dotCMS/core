@@ -97,6 +97,7 @@ export class BubbleLinkFormView {
 
         this.show();
         this.component.instance.searchContentlets();
+        this.component.changeDetectorRef.detectChanges();
     }
 
     createTooltip() {
@@ -156,10 +157,11 @@ export class BubbleLinkFormView {
 
     hide() {
         this.tippy?.hide();
+        this.close();
         // After show the component focus editor
         this.editor.view.focus();
         this.component.instance.resetForm();
-        this.close();
+        this.component.changeDetectorRef.detectChanges();
     }
 
     destroy() {

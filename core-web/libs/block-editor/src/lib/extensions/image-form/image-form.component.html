@@ -2,12 +2,12 @@
     <ng-container [formGroup]="form">
         <p-tabView>
             <p-tabPanel header="dotCMS" leftIcon="pi pi-images">
-                <div class="wrapper">
-                    <dot-search-tab
-                        [contentlets]="contentlets"
-                        (selectedItem)="selectedContentlet.emit($event)"
-                    ></dot-search-tab>
-                </div>
+                <dot-search-tab
+                    *ngIf="contentlets$ | async as contentlets"
+                    [contentlets]="contentlets"
+                    (selectedItem)="selectedContentlet.emit($event)"
+                    (loadItems)="searchContentlets('', $event)"
+                ></dot-search-tab>
             </p-tabPanel>
             <!-- <p-tabPanel header="Upload" leftIcon="pi pi-upload"> Content 2 </p-tabPanel> -->
             <!-- <p-tabPanel header="Image URL" leftIcon="pi pi-link"> Content 3 </p-tabPanel> -->

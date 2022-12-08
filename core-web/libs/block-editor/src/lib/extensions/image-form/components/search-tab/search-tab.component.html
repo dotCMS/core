@@ -14,21 +14,39 @@
     </div>
 </ng-container>
 
-<div class="card-wrapper" *ngIf="contentlets.length > 0; else notFound">
-    <p-card *ngFor="let contentlet of contentlets" (click)="selectedItem.emit(contentlet)">
-        <ng-template pTemplate="header">
-            <img [src]="'https://demo.dotcms.com' + contentlet.fileAsset" />
-        </ng-template>
-        <h2 class="title" *pTemplate="'title'">{{ contentlet?.fileName || contentlet?.title }}</h2>
-        <ng-template pTemplate="footer">
-            <div class="state">
-                <span class="badge">{{ contentlet.language }}</span>
-                <dot-state-icon [state]="contentlet | contentletState" size="16px">
-                </dot-state-icon>
-            </div>
-        </ng-template>
-    </p-card>
-</div>
+<p-table
+    *ngIf="contentlets?.length; else notFound"
+    [lazy]="true"
+    [rows]="4"
+    [scrollable]="true"
+    [value]="contentlets"
+    [virtualScroll]="true"
+    [virtualScrollItemSize]="110"
+    (onLazyLoad)="loadContentlets($event)"
+    scrollHeight="250px"
+>
+    <ng-template pTemplate="body" let-contentlet>
+        <tr class="table-row">
+            <dot-image-card
+                *ngIf="contentlet[0]"
+                [contentlet]="contentlet[0]"
+                (click)="selectedItem.emit(contentlet[0])"
+            ></dot-image-card>
+            <dot-image-card
+                *ngIf="contentlet[1]"
+                [contentlet]="contentlet[1]"
+                (click)="selectedItem.emit(contentlet[1])"
+            ></dot-image-card>
+        </tr>
+    </ng-template>
+
+    <ng-template pTemplate="loadingbody">
+        <tr class="table-row">
+            <dot-image-card-skeleton></dot-image-card-skeleton>
+            <dot-image-card-skeleton></dot-image-card-skeleton>
+        </tr>
+    </ng-template>
+</p-table>
 
 <ng-template #notFound>
     <div class="wrapper">

@@ -1,6 +1,6 @@
 // import { ChangeDetectionStrategy, Component, OnInit } from '@angular/core';
 import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
-import { debounceTime, take } from 'rxjs/operators';
+import { debounceTime, map, take } from 'rxjs/operators';
 
 import {
     SearchService,
@@ -22,7 +22,8 @@ export class ImageFormComponent implements OnInit {
     @Input() languageId = 1;
     @Output() selectedContentlet: EventEmitter<DotCMSContentlet> = new EventEmitter();
 
-    public contentlets: DotCMSContentlet[] = [];
+    public contentlets$;
+    public items: DotCMSContentlet[][] = [];
     public form: FormGroup;
     private dotLangs: Languages;
 
@@ -37,8 +38,10 @@ export class ImageFormComponent implements OnInit {
             search: ['']
         });
 
-        this.form.valueChanges.pipe(debounceTime(500)).subscribe(({ search }) => {
-            this.searchContentlets(search);
+        this.form.valueChanges.pipe(debounceTime(500)).subscribe((_data) => {
+            this.items = [];
+            // console.log(data);
+            // this.searchContentlets(search);
         });
 
         this.dotLanguageService
@@ -47,27 +50,39 @@ export class ImageFormComponent implements OnInit {
             .subscribe((dotLang) => (this.dotLangs = dotLang));
     }
 
-    searchContentlets(search = '') {
-        this.searchService.get(this.getParams(search)).subscribe(({ contentlets }) => {
-            this.contentlets = contentlets.map((contentlet) => {
-                return {
-                    ...contentlet,
-                    language: this.getContentletLanguage(contentlet.languageId)
-                };
-            });
-        });
+    searchContentlets(search = '', offset = '0') {
+        this.contentlets$ = this.searchService.get(this.getParams(search, offset)).pipe(
+            map(({ contentlets }) => {
+                contentlets.forEach((data) => {
+                    const i = this.items.length - 1;
+                    const contentlet = {
+                        ...data,
+                        language: this.getContentletLanguage(data.languageId)
+                    };
+
+                    if (!this.items[i] || this.items[i]?.length === 2) {
+                        this.items.push([contentlet]);
+                    } else {
+                        this.items[i].push(contentlet);
+                    }
+                });
+
+                return this.items;
+            })
+        );
     }
 
     resetForm() {
-        this.form.reset();
+        this.items = [];
+        this.form.reset({ search: '' }, { emitEvent: false });
     }
 
-    private getParams(search = ''): queryEsParams {
+    private getParams(search = '', offset = '0'): queryEsParams {
         return {
             query: `title:${search}* +contentType:(image OR fileAsset) title:'${search}'^15 +languageId:${this.languageId} +deleted:false +working:true`,
             sortOrder: ESOrderDirection.ASC,
             limit: 20,
-            offset: '0'
+            offset
         };
     }
 
