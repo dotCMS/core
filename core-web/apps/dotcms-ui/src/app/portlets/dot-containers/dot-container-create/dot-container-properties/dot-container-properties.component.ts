@@ -60,7 +60,9 @@ export class DotContainerPropertiesComponent implements OnInit {
                 });
 
                 this.addContainerFormControl(containerStructures);
-                if (this.form.value.identifier) this.store.updateOriginalFormState(this.form.value);
+                if (this.form.value.identifier) {
+                    this.store.updateOriginalFormState(this.form.value);
+                }
             });
 
         this.form.valueChanges.pipe(takeUntil(this.destroy$)).subscribe((values) => {
