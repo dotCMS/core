@@ -552,15 +552,6 @@ public class CategoryAPIImpl implements CategoryAPI {
     @CloseDBIfOpened
     public List<Category> getAllChildren(final Category category, final User user, final boolean respectFrontendRoles)
                     throws DotDataException, DotSecurityException {
-<<<<<<< HEAD
-
-
-        return permissionAPI.filterCollection(categoryFactory.getAllChildren(category), PermissionAPI.PERMISSION_READ,
-                        respectFrontendRoles, user);
-
-
-    }
-=======
 
         return permissionAPI.filterCollection(categoryFactory.getAllChildren(category), PermissionAPI.PERMISSION_READ,
                         respectFrontendRoles, user);
@@ -623,7 +614,6 @@ public class CategoryAPIImpl implements CategoryAPI {
 
 		return parentCategoryUnableToDelete;
 	}
->>>>>>> master
 
 	@CloseDBIfOpened
 	public List<Category> removeAllChildren(final Category parentCategory, final User user,
