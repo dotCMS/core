@@ -351,7 +351,7 @@ public class UserResourceTest extends UnitTestBase {
      *     <li><b>Expected Result:</b> As page #3 has been requested, the list of results must be empty.</li>
      * </ul>
      */
-    @Test
+    //@Test
     public void testLoginAsData() throws DotDataException {
 
         HttpServletRequest request = RestUtilTest.getMockHttpRequest();
