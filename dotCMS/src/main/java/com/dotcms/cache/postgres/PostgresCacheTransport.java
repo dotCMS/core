@@ -54,10 +54,12 @@ public final class PostgresCacheTransport implements CacheTransport {
 
     @Override
     public void init(Server localServer) throws CacheTransportException {
+        
+        
         if (!LicenseManager.getInstance().isEnterprise()) {
             return;
         }
-
+        Logger.info(getClass(), "Starting PostgresCacheTransport");
         listener = new PGListener();
         listener.start();
 

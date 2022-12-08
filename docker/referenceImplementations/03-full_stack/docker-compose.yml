@@ -5,114 +5,68 @@ version: '3.5'
 # indexed on the dotcms node directly and will not be persisted between restarts.
 
 networks:
-  http_net:
-  db_net:
   es_net:
-  hz_net:
 
 volumes:
-  cms-shared:
-  #cms-local:
-  dbdata:
-  esdata:
+  esdata1:
+  esdata2:
+  esdata3:
 
 services:
-  http:
-    image: dotcms/haproxy:1.8-os
+  nginx-ssl-proxy:
+    image: danieldent/nginx-ssl-proxy
+    restart: always
     environment:
-      "HAPROXY_CERT_PATH": '/certs/'
-#      "HAPROXY_REDIRECT_HTTPS_ALL": 'true'
-#      "HAPROXY_MAINTENANCE_PAGE": '/srv/config/503.http'
-
+      UPSTREAM: elasticsearch:6.1.3-os:9200
+      SERVERNAME: demo.dotcms.com
+      EXTRANAMES: test.dotcms.com
+      NGINX_CLIENT_MAX_BODY_SIZE: 0
     ports:
-      - "80:8080"
-      - "443:8443"
-#    volumes:
-#      - /data/dotcms/haproxy/certs:/certs:ro
-#      - /data/dotcms/haproxy/503.http:/srv/config/503.http:ro
-
+      - "80:80"
+      - "443:443"
+    volumes:
+      - /data/demo.dotcms.com/etc:/etc/letsencrypt
     networks:
-      - http_net
+      - es_net
 
-  hazelcast:
-    image: dotcms/hazelcast:3.9.2-os
-    environment:
-      "PROVIDER_HAZELCAST_HEAP_MIN": '128m'
-      "PROVIDER_HAZELCAST_HEAP_MAX": '512m'
-      "PROVIDER_HAZELCAST_MANCENTER_ENABLED": 'true'
-      "PROVIDER_HAZELCAST_MANCENTER_URL": 'http://hazelcast-mancenter:8080/mancenter'
-    networks:
-      - hz_net
-
-  #hazelcast-mancenter is a totally optional service that provides insights into 
-  # the hazelcast cache.  It will function for a cluster of up to two hazelcast
-  # nodes.  If you wish to use it with clusters with more than two nodes, you 
-  # will need to purchase a license from Hazelcast.
-  # https://docs.hazelcast.org/docs/latest-development/manual/html/License_Questions.html
-  hazelcast-mancenter:
-    image: dotcms/hazelcast-mancenter:3.9.2-os
-    ports:
-      - "8080:8080"
-    networks:
-      - hz_net
-
-  elasticsearch-static:
+  elasticsearch1:
     image: dotcms/elasticsearch:6.1.3-os
     ports:
       - "9200:9200"
     environment:
       "PROVIDER_ELASTICSEARCH_HEAP_SIZE": '1500m'
-      "PROVIDER_ELASTICSEARCH_DNSNAMES": 'elasticsearch-static,elasticsearch'
+      "PROVIDER_ELASTICSEARCH_DNSNAMES": 'elasticsearch1,elasticsearch2,elasticsearch3'
       "PROVIDER_ELASTICSEARCH_SVC_DELAY_MIN": '1'
       "PROVIDER_ELASTICSEARCH_SVC_DELAY_STEP": '1'
       "PROVIDER_ELASTICSEARCH_SVC_DELAY_MAX": '2'
-    volumes:
-      - esdata:/data
+
     networks:
       - es_net
 
-  elasticsearch:
-    image: dotcms/elasticsearch:6.1.3-os
-    depends_on:
-      - elasticsearch-static
-    environment:
-      "PROVIDER_ELASTICSEARCH_HEAP_SIZE": '1024m'
-      "PROVIDER_ELASTICSEARCH_DNSNAMES": 'elasticsearch-static,elasticsearch'
-      "PROVIDER_ELASTICSEARCH_SVC_DELAY_MIN": '3'
-      "PROVIDER_ELASTICSEARCH_SVC_DELAY_MAX": '30'
-    networks:
-      - es_net
+  # elasticsearch2:
+  #   image: dotcms/elasticsearch:6.1.3-os
+  #   depends_on:
+  #     - elasticsearch1
+  #   environment:
+  #     "PROVIDER_ELASTICSEARCH_HEAP_SIZE": '1024m'
+  #     "PROVIDER_ELASTICSEARCH_DNSNAMES": 'elasticsearch1,elasticsearch2,elasticsearch3'
+  #     "PROVIDER_ELASTICSEARCH_SVC_DELAY_MIN": '3'
+  #     "PROVIDER_ELASTICSEARCH_SVC_DELAY_MAX": '30'
+  #   volumes:
+  #     - esdata2:/data
+  #   networks:
+  #     - es_net
 
-  dotcms:
-    image: dotcms/dotcms:latest
-    environment:
-      "CMS_HEAP_SIZE": '2g'
-      "CMS_JAVA_OPTS": '-XX:+PrintFlagsFinal'
-      "PROVIDER_DB_DNSNAME": 'db'
-      "PROVIDER_ELASTICSEARCH_DNSNAMES": 'elasticsearch-static, elasticsearch'
-    depends_on:
-      - elasticsearch-static
-      - hazelcast
-      - db
-      - http
-    volumes:
-      #- cms-shared:/data/shared
-      #- [serverpath]/license.dat:/data/local/dotsecure/license/license.dat
-      #- [serverpath]/license.zip:/data/shared/assets/license.zip
-      - ${PWD}/license.zip:/data/shared/assets/license.zip
-    networks:
-      - db_net
-      - http_net
-      - es_net
-      - hz_net
-
-  db:
-    image: bitnami/postgresql:11
-    environment:
-      "POSTGRESQL_USERNAME": 'dotcmsdbuser'
-      "POSTGRESQL_PASSWORD": 'password'
-      "POSTGRESQL_DATABASE": 'dotcms'
-    volumes:
-      - dbdata:/bitnami/postgresql
-    networks:
-      - db_net
+  # elasticsearch3:
+  #   image: dotcms/elasticsearch:6.1.3-os
+  #   depends_on:
+  #     - elasticsearch1
+  #   environment:
+  #     "PROVIDER_ELASTICSEARCH_HEAP_SIZE": '1024m'
+  #     "PROVIDER_ELASTICSEARCH_DNSNAMES": 'elasticsearch1,elasticsearch2,elasticsearch3'
+  #     "PROVIDER_ELASTICSEARCH_SVC_DELAY_MIN": '3'
+  #     "PROVIDER_ELASTICSEARCH_SVC_DELAY_MAX": '30'
+  #   volumes:
+  #     - esdata3:/data
+  #   networks:
+  #     - es_net

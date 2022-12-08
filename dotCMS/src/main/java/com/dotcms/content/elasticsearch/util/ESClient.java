@@ -143,13 +143,7 @@ public class ESClient {
             builder.put(
                     extSettings != null ? extSettings.build() : getExtSettingsBuilder().build());
 
-            //Remove any discovery property when using community license
-            if (isCommunityOrStandard()) {
-                List<String> keysToRemove = builder.keys().stream()
-                        .filter(key -> key.startsWith("discovery.") && !key
-                                .equals(ES_ZEN_UNICAST_HOSTS)).collect(Collectors.toList());
-                keysToRemove.forEach(elem -> builder.remove(elem));
-            }
+            
             return builder.build();
         }
     }
@@ -176,6 +170,13 @@ public class ESClient {
      */
     public void setReplicasSettings() {
         try {
+            
+            if(!Config.getBooleanProperty("ES_AUTO_CONFIG_CLUSTER_REPLICAS", false)) {
+                return;
+            }
+            
+            
+            
             //Build the replicas config settings for the indices client
             final Optional<UpdateSettingsRequest> settingsRequest = getReplicasSettings();
 
@@ -407,6 +408,11 @@ public class ESClient {
      * @param externalSettings
      */
     public void restartNode(final Builder externalSettings) {
+        if(!Config.getBooleanProperty("ES_AUTO_CONFIG_CLUSTER_REPLICAS", false)) {
+            return;
+        }
+        
+        
         shutDownNode();
         initNode(externalSettings);
     }
