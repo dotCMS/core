@@ -559,25 +559,16 @@ dependencies {
     implementation 'jakarta.xml.bind:jakarta.xml.bind-api:2.3.3'
     implementation 'com.sun.xml.ws:jaxws-ri:2.3.2'
 
-    //https://www.oracle.com/database/technologies/appdev/jdbc-downloads.html
-    compileOnly (group: 'com.oracle.jdbc', name: 'ojdbc8', version: '19.3') {
-        transitive = false
-    }
     //https://mvnrepository.com/artifact/org.postgresql/postgresql
-    compileOnly (group: 'org.postgresql', name: 'postgresql', version: '42.2.8') {
+    compileOnly (group: 'org.postgresql', name: 'postgresql', version: '42.5.1') {
         transitive = false
     }
 
     // allows for async notifications
-
     // https://mvnrepository.com/artifact/com.impossibl.pgjdbc-ng/pgjdbc-ng
     implementation group: 'com.impossibl.pgjdbc-ng', name: 'pgjdbc-ng', version: '0.8.7'
 
 
-    //https://mvnrepository.com/artifact/mysql/mysql-connector-java
-    compileOnly (group: 'mysql', name: 'mysql-connector-java', version: '8.0.19') {
-        transitive = false
-    }
     //https://mvnrepository.com/artifact/com.microsoft.sqlserver/mssql-jdbc
     compileOnly (group: 'com.microsoft.sqlserver', name: 'mssql-jdbc', version: '7.4.1.jre8') {
         transitive = false
