@@ -16,8 +16,8 @@ public class ContainerSQL {
         return _instance;
     }
 
-    public static final String FIND_BY_INODE = "select container.*, container_identifier.* from dot_containers container, identifier container_identifier "
-            + "where inode = ? and container_identifier.id = container.identifier";
+    public static final String FIND_BY_INODE = "select container.* from dot_containers container "
+            + "where inode = ?";
 
     public static final String INSERT_INODE = "INSERT INTO public.inode (inode, idate, owner, type) VALUES (?,?,?,'containers')";
     public static final String INSERT_CONTAINER = "INSERT INTO public.dot_containers(inode, code, pre_loop, post_loop, show_on_menu, " +

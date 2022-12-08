@@ -245,7 +245,9 @@ public class ContainerAPIImpl extends BaseWebAssetAPI implements ContainerAPI, D
 			Logger.debug(this, "System Container cannot be saved/updated.");
 			return;
 		}
-		containerFactory.save(container, existingId);
+
+		container.setInode(existingId);
+		containerFactory.save(container);
 	}
 
 	@WrapInTransaction

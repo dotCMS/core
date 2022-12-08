@@ -97,12 +97,8 @@ public class ContainerFactoryImpl implements ContainerFactory {
 		return container;
 	}
 
-	public void save(final Container container) throws DotDataException {
-		save(container, UUIDGenerator.generateUuid());
-	}
-
 	@WrapInTransaction
-	public void save(final Container container, final String inode) throws DotDataException {
+	public void save(final Container container) throws DotDataException {
 		if(!UtilMethods.isSet(container.getIdentifier())){
 			throw new DotStateException("Cannot save a container without an Identifier");
 		}
