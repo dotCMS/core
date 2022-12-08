@@ -70,8 +70,6 @@ public class UserPaginator implements PaginatorOrdered<Map<String, Object>> {
             final List<Role> roles = (List<Role>) extraParams.get(ROLES_PARAM);
             final List<Map<String, Object>> usersMap;
             if (UtilMethods.isSet(extraParams.get(ASSET_INODE_PARAM)) && UtilMethods.isSet(extraParams.get(PERMISSION_PARAM))) {
-                extraParams.put(START_PARAM, offset);
-                extraParams.put(LIMIT_PARAM, limit);
                 final List<User> userList = helper.getUsersByAssetAndPermissionType(filter, offset, limit,
                         extraParams.get(ASSET_INODE_PARAM).toString(), extraParams.get(PERMISSION_PARAM).toString());
                 usersMap = userList.stream().map(this::userToMap).collect(Collectors.toList());

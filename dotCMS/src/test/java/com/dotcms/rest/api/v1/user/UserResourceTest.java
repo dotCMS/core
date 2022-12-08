@@ -351,7 +351,7 @@ public class UserResourceTest extends UnitTestBase {
      *     <li><b>Expected Result:</b> As page #3 has been requested, the list of results must be empty.</li>
      * </ul>
      */
-    //@Test
+    @Test
     public void testLoginAsData() throws DotDataException {
 
         HttpServletRequest request = RestUtilTest.getMockHttpRequest();
@@ -425,8 +425,6 @@ public class UserResourceTest extends UnitTestBase {
         final LoginServiceAPI loginService= mock(LoginServiceAPI.class);
         final InitDataObject initDataObject = mock(InitDataObject.class);
 
-        final UserResourceHelper userHelper  = new UserResourceHelper(roleAPI, userAPI, layoutAPI, hostWebAPI,
-                userWebAPI, permissionAPI, userProxyAPI, loginService);
         final ErrorResponseHelper errorHelper  = mock(ErrorResponseHelper.class);
         final User user = new User();
         final Role loginAsRole = new Role();
@@ -434,7 +432,10 @@ public class UserResourceTest extends UnitTestBase {
         when(webResource.init(Mockito.any(InitBuilder.class))).thenReturn(initDataObject);
         when(roleAPI.loadRoleByKey(Role.LOGIN_AS)).thenReturn(loginAsRole);
         // does not have permissions
-        when(roleAPI.doesUserHaveRole(initDataObject.getUser(), loginAsRole)).thenReturn(false);
+        when(roleAPI.doesUserHaveRole(user, loginAsRole)).thenReturn(false);
+
+        final UserResourceHelper userHelper  = new UserResourceHelper(roleAPI, userAPI, layoutAPI, hostWebAPI,
+                userWebAPI, permissionAPI, userProxyAPI, loginService);
 
         String filter = "filter";
         int page = 3;
