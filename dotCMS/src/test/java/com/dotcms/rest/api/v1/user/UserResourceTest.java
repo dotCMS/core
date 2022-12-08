@@ -1,7 +1,6 @@
 package com.dotcms.rest.api.v1.user;
 
 import com.dotcms.UnitTestBase;
-import com.dotcms.api.system.user.UserService;
 import com.dotcms.cms.login.LoginServiceAPI;
 import com.dotcms.repackage.org.apache.struts.Globals;
 import com.dotcms.rest.ErrorResponseHelper;
@@ -14,7 +13,6 @@ import com.dotcms.rest.exception.ForbiddenException;
 import com.dotcms.util.PaginationUtil;
 import com.dotcms.util.UserUtilTest;
 import com.dotcms.util.pagination.UserPaginator;
-import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.LayoutAPI;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.Role;
@@ -40,6 +38,7 @@ import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 import javax.ws.rs.core.Response;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -353,101 +352,61 @@ public class UserResourceTest extends UnitTestBase {
      * </ul>
      */
     @Test
-    public void testLoginAsData_incorrectResultPage() throws DotDataException {
+    public void testLoginAsData() throws DotDataException {
 
-        final HttpServletRequest request = RestUtilTest.getMockHttpRequest();
+        HttpServletRequest request = RestUtilTest.getMockHttpRequest();
         final HttpServletResponse httpServletResponse = mock(HttpServletResponse.class);
-        final RoleAPI roleAPI = mock(RoleAPI.class);
-        final UserAPI userAPI = mock(UserAPI.class);
-        final LayoutAPI layoutAPI = mock(LayoutAPI.class);
-        final HostWebAPI hostWebAPI = mock(HostWebAPI.class);
+        final RoleAPI roleAPI  = mock( RoleAPI.class );
+        final UserAPI userAPI  = mock( UserAPI.class );
+        final LayoutAPI layoutAPI  = mock( LayoutAPI.class );
+        final HostWebAPI hostWebAPI  = mock( HostWebAPI.class );
         final WebResource webResource = mock(WebResource.class);
         final UserWebAPI userWebAPI = mock(UserWebAPI.class);
-        final PermissionAPI permissionAPI = mock(PermissionAPI.class);
-        final UserProxyAPI userProxyAPI = mock(UserProxyAPI.class);
+        final PermissionAPI permissionAPI= mock(PermissionAPI.class);
+        final UserProxyAPI userProxyAPI= mock(UserProxyAPI.class);
         final HostAPI siteAPI = mock(HostAPI.class);
-        final LoginServiceAPI loginService = mock(LoginServiceAPI.class);
+        final LoginServiceAPI loginService= mock(LoginServiceAPI.class);
         final InitDataObject initDataObject = mock(InitDataObject.class);
 
-        final UserResourceHelper userHelper = new UserResourceHelper(roleAPI, userAPI, layoutAPI, hostWebAPI,
+        final UserResourceHelper userHelper  = new UserResourceHelper(roleAPI, userAPI, layoutAPI, hostWebAPI,
                 userWebAPI, permissionAPI, userProxyAPI, loginService);
-        final ErrorResponseHelper errorHelper = mock(ErrorResponseHelper.class);
+        final ErrorResponseHelper errorHelper  = mock(ErrorResponseHelper.class);
         final User user = new User();
         final Role loginAsRole = new Role();
+        final Role backEndRole = new Role();
         when(initDataObject.getUser()).thenReturn(user);
         when(webResource.init(Mockito.any(InitBuilder.class))).thenReturn(initDataObject);
         when(roleAPI.loadRoleByKey(Role.LOGIN_AS)).thenReturn(loginAsRole);
-        when(roleAPI.loadBackEndUserRole()).thenReturn(APILocator.getRoleAPI().loadBackEndUserRole());
+        when(roleAPI.loadBackEndUserRole()).thenReturn(backEndRole);
         when(roleAPI.doesUserHaveRole(initDataObject.getUser(), loginAsRole)).thenReturn(true);
-        when(request.getRequestURI()).thenReturn("/api/v1/users/loginAsData");
 
+        PaginatedArrayList<?> users = new PaginatedArrayList<>();
+        Response responseExpected = Response.ok(new ResponseEntityView<>(users)).build();
+
+        final PaginationUtil paginationUtil = mock(PaginationUtil.class);
+        final List<Role> roles = Collections.singletonList(roleAPI.loadBackEndUserRole());
+        final Map<String, Object> extraParams = Map.of(
+                UserPaginator.ROLES_PARAM, roles,
+                UserAPI.FilteringParams.INCLUDE_ANONYMOUS_PARAM, false,
+                UserAPI.FilteringParams.INCLUDE_DEFAULT_PARAM, false,
+                UserPaginator.REMOVE_CURRENT_USER_PARAM, true,
+                UserPaginator.REQUEST_PASSWORD_PARAM, true);
         final String filter = "";
         // Setting pagination parameters to NOT RETURN any result
-        int page = 3;
-        int perPage = 4;
+        final int page = 3;
+        final int perPage = 4;
+        when(paginationUtil.getPage(request, user, filter, page, perPage, extraParams )).thenReturn(responseExpected);
 
-        UserResource resource = new UserResource(webResource, userAPI, siteAPI, userHelper, errorHelper,
-                new PaginationUtil(new UserPaginator()), roleAPI);
+        UserResource resource =
+                new UserResource(webResource, userAPI, siteAPI, userHelper, errorHelper, paginationUtil, roleAPI);
         Response response;
-        RestUtilTest.verifySuccessResponse(response = resource.loginAsData(request, httpServletResponse, filter, page
-                , perPage));
+        RestUtilTest.verifySuccessResponse(
+                response = resource.loginAsData(request, httpServletResponse, filter, page, perPage)
+        );
 
-        assertEquals("There must be NO Users in the result list", 0,
-                ((PaginatedArrayList<?>) ((ResponseEntityView<?>) response.getEntity()).getEntity()).size());
+        Assert.assertEquals(responseExpected.getEntity(), response.getEntity());
     }
 
-    /**
-     * <ul>
-     *     <li><b>Method to test:</b>
-     *     {@link UserResource#loginAsData(HttpServletRequest, HttpServletResponse, String, int, int)}</li>
-     *     <li><b>Given Scenario:</b> Having the System User the list of Users that can be used for impersonation. It's
-     *     important to use the System User instead of the Admin User as this one might be the only User in the list,
-     *     and also because the REST Endpoint removes form the list the User that is calling the endpoint.</li>
-     *     <li><b>Expected Result:</b> As System User is calling the method, we're expecting that at least one User,
-     *     i.e., the Admin User, is in the result list.</li>
-     * </ul>
-     */
-    @Test
-    public void testLoginAsData_correctResultPage() throws DotDataException {
-
-        final HttpServletRequest request = RestUtilTest.getMockHttpRequest();
-        final HttpServletResponse httpServletResponse = mock(HttpServletResponse.class);
-        final RoleAPI roleAPI = mock(RoleAPI.class);
-        final UserAPI userAPI = mock(UserAPI.class);
-        final LayoutAPI layoutAPI = mock(LayoutAPI.class);
-        final HostWebAPI hostWebAPI = mock(HostWebAPI.class);
-        final WebResource webResource = mock(WebResource.class);
-        final UserWebAPI userWebAPI = mock(UserWebAPI.class);
-        final PermissionAPI permissionAPI = mock(PermissionAPI.class);
-        final UserProxyAPI userProxyAPI = mock(UserProxyAPI.class);
-        final HostAPI siteAPI = mock(HostAPI.class);
-        final LoginServiceAPI loginService = mock(LoginServiceAPI.class);
-        final InitDataObject initDataObject = mock(InitDataObject.class);
-
-        final UserResourceHelper userHelper = new UserResourceHelper(roleAPI, userAPI, layoutAPI, hostWebAPI,
-                userWebAPI, permissionAPI, userProxyAPI, loginService);
-        final ErrorResponseHelper errorHelper = mock(ErrorResponseHelper.class);
-        final Role loginAsRole = new Role();
-        when(initDataObject.getUser()).thenReturn(APILocator.systemUser());
-        when(webResource.init(Mockito.any(InitBuilder.class))).thenReturn(initDataObject);
-        when(roleAPI.loadRoleByKey(Role.LOGIN_AS)).thenReturn(loginAsRole);
-        when(roleAPI.loadBackEndUserRole()).thenReturn(APILocator.getRoleAPI().loadBackEndUserRole());
-        when(roleAPI.doesUserHaveRole(initDataObject.getUser(), loginAsRole)).thenReturn(true);
-        when(request.getRequestURI()).thenReturn("/api/v1/users/loginAsData");
-
-        final String filter = "";
-        int page = 0;
-        int perPage = 5;
-
-        UserResource resource = new UserResource(webResource, userAPI, siteAPI, userHelper, errorHelper,
-                new PaginationUtil(new UserPaginator()), roleAPI);
-        Response response;
-        RestUtilTest.verifySuccessResponse(response = resource.loginAsData(request, httpServletResponse, filter, page
-                , perPage));
-
-        assertTrue("There must be at least one User in the result list",
-                ((PaginatedArrayList<?>) ((ResponseEntityView<?>) response.getEntity()).getEntity()).size() >= 1);
-    }
 
     @Test(expected=ForbiddenException.class)
     public void testLoginAsData_Without_LoginAs_Role() throws DotDataException {
