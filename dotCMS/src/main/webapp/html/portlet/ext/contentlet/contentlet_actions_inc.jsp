@@ -93,7 +93,8 @@ function editPage(url, languageId) {
 
 function jumpToContentType(){
     if(!_hasUserChanged || confirm("Content has changed, proceed?")){
-        parent.window.location="/dotAdmin/#/content-types-angular/edit/<%=contentlet.getContentType().variable()%>";
+        parent.window.location="/dotAdmin/#/content-types-angular/edit/<%=structure.getVelocityVarName()%>";
+        return true;
     }
     return false;
 }
@@ -231,7 +232,7 @@ function jumpToContentType(){
      <tr>
             <th style="vertical-align: top"><%= LanguageUtil.get(pageContext, "Content-Type") %>:</th>
             <td>
-                <%if(canEditContentType){%><a onclick="return jumpToContentType()" href="/dotAdmin/#/content-types-angular/edit/<%=contentlet.getContentType().variable()%>" target="_parent"><%}%>
+                <%if(!contentlet.isNew() && canEditContentType){%><a onclick="return jumpToContentType()" href="/dotAdmin/#/content-types-angular/edit/<%=contentlet.getContentType().variable()%>" target="_parent"><%}%>
                 <%=contentlet!=null && contentlet.getContentType()!=null ? contentlet.getContentType().name() : LanguageUtil.get(pageContext, "not-available") %>
                 <%if(canEditContentType){%></a><%}%>
             </td>
