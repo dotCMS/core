@@ -24,10 +24,10 @@ ENV	ELASTICSEARCH_TARBALL_SHA512="af10cc571ab55f52ab73a86373fa8359214a7866fbb6d2
 
 ENV JAVA_HOME="/java"
 ENV PATH /srv/bin:$PATH
-COPY ROOT/srv/ /srv/
+
 WORKDIR /srv
-
-
+RUN mkdir -p /data
+RUN mkdir -p /logs
 RUN set -ex; \
 	\
 	wget --quiet -O elasticsearch.tar.gz "$ELASTICSEARCH_TARBALL"; \
@@ -41,21 +41,27 @@ RUN set -ex; \
 	# we shouldn't need much RAM to test --version (default is 2gb, which gets Jenkins in trouble sometimes)
 	export ES_JAVA_OPTS='-Xms512m -Xmx2g'; \
 	elasticsearch --version;
-
+	
+COPY ROOT/srv/config/ /srv/config
 RUN chown -R $USER_NAME:$USER_NAME /srv
-RUN mkdir -p /data
 RUN chown -R $USER_NAME:$USER_NAME /data
+RUN chown -R $USER_NAME:$USER_NAME /logs
 RUN find /srv/ -type f -name "*.sh" -exec chmod 500 {} \; 
 
+## make sure the settings stick
+RUN sh -c "echo 'vm.max_map_count=262144' >> /etc/sysctl.conf"
+RUN sh -c "echo 'fs.file-max=100000' >> /etc/sysctl.conf"
+RUN sh -c "echo 'elasticsearch  -  nofile  65535' >> /etc/security/limits.conf"
 
-# RUN chmod -R g=u /data
-# RUN chmod -R g=u /logs
+
+
+
 VOLUME /data
 VOLUME /logs
 
-EXPOSE 9200 9300
+EXPOSE 9200
+EXPOSE 9300
 
 USER $USER_UID
 
-ENTRYPOINT ["tini", "--", "/srv/entrypoint.sh"]
-CMD ["elasticsearch"]
+ENTRYPOINT ["tini", "--", "/srv/bin/elasticsearch"]

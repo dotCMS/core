@@ -1,0 +1,63 @@
+version: '3.5'
+
+# For this configuration to work properly, you must have a license file mounted into the dotcms service.
+# Without a license file, the external ES service will NOT be recognized and utilized.  All documents will
+# indexed on the dotcms node directly and will not be persisted between restarts.
+
+networks:
+  es_net:
+
+volumes:
+  esdata1:
+  esdata2:
+  esdata3:
+
+services:
+  elasticsearch1:
+    image:  dotcms/elasticsearch:6.1.3-testing
+    ports:
+      - "9200:9200"
+      - "9300:9300"
+    environment:
+      "DOTCMS_ES_CLUSTER": 'dotcmsProdCluster'
+      "ES_UNICAST_HOST": "elasticsearch1"
+      "ES_MIN_MASTER_NODES": 2
+      "ES_NODE_MASTER": true
+      "ES_NODE_DATA": false
+      "ES_JAVA_OPTS": "-Xms2G -Xmx2G"
+    volumes:
+      - esdata1:/data
+    networks:
+      - es_net
+
+  elasticsearch2:
+    image:  dotcms/elasticsearch:6.1.3-testing
+    depends_on:
+      - elasticsearch1
+    environment:
+      "DOTCMS_ES_CLUSTER": 'dotcmsProdCluster'
+      "ES_UNICAST_HOST": "elasticsearch1"
+      "ES_MIN_MASTER_NODES": 2
+      "ES_NODE_MASTER": true
+      "ES_NODE_DATA": true
+      "ES_JAVA_OPTS": "-Xms1G -Xmx1G"
+    volumes:
+      - esdata2:/data
+    networks:
+      - es_net
+
+  elasticsearch3:
+    image:  dotcms/elasticsearch:6.1.3-testing
+    depends_on:
+      - elasticsearch1
+    environment:
+      "DOTCMS_ES_CLUSTER": 'dotcmsProdCluster'
+      "ES_UNICAST_HOST": "elasticsearch1"
+      "ES_MIN_MASTER_NODES": 2
+      "ES_NODE_MASTER": true
+      "ES_NODE_DATA": true
+      "ES_JAVA_OPTS": "-Xms1G -Xmx1G"
+    volumes:
+      - esdata3:/data
+    networks:
+      - es_net

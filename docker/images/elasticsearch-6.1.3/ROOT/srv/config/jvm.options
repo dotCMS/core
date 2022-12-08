@@ -33,14 +33,15 @@
 ################################################################
 
 ## GC configuration
--XX:+UseConcMarkSweepGC
--XX:CMSInitiatingOccupancyFraction=75
--XX:+UseCMSInitiatingOccupancyOnly
+-XX:+UseShenandoahGC 
+-XX:+UnlockExperimentalVMOptions 
+-XX:ShenandoahUncommitDelay=1000 
+-XX:ShenandoahGuaranteedGCInterval=10000
 
 ## optimizations
 
 # pre-touch memory pages used by the JVM during initialization
--XX:+AlwaysPreTouch
+#-XX:+AlwaysPreTouch
 
 ## basic
 
