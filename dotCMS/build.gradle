@@ -20,18 +20,34 @@ plugins {
     id 'org.ajoberstar.grgit' version '4.1.1'
     id "com.palantir.docker" version "0.32.0"  // reference:  https://github.com/palantir/gradle-docker
     id "org.sonarqube" version "3.4.0.2513"
-
+    id "jacoco"
 
 }
 
+
 sonarqube {
-  properties {
-    property "sonar.projectKey", "dotCMS_core_AYSbIemxK43eThAXTlt-"
-    property "sonar.projectName", "dotcms-core"
-    property "sonar.host.url", "https://sonarqube.dotcms.site"
-    property "sonar.sourceEncoding", "UTF-8"
-    property "sonar.exclusions", "src/main/webapp/dotcms-webcomponents/**,src/main/webapp/dotcms-webcomponents/**, src/main/plugins/**, src/main/java/org/**, src/main/java/com/liferay/**, src/main/java/net/**"
-  }
+    properties {
+        property "sonar.projectKey", "dotCMS_core_AYSbIemxK43eThAXTlt-"
+        property "sonar.projectName", "dotcms-core"
+        property "sonar.host.url", "https://sonarqube.dotcms.site"
+        //property "sonar.verbose","true"
+        property "sonar.sourceEncoding", "UTF-8"
+        property "sonar.exclusions", "src/main/webapp/dotcms-webcomponents/**, src/main/plugins/**"
+        property "sonar.tests", "src/test/java, src/integration-test/java"
+        property "sonar.junit.reportPaths" , "${project.buildDir}/test-results/test, ${project.buildDir}/test-results/integrationTest"
+        property "sonar.coverage.jacoco.xmlReportPaths" ,"${project.buildDir}/reports/jacoco/test/jacocoTestReport.xml"
+    }
+
+}
+
+tasks.named('sonarqube').configure {
+    dependsOn 'test','jacocoTestReport'
+}
+
+jacocoTestReport {
+    reports {
+        xml.enabled true
+    }
 }
 
 repositories {
