@@ -56,6 +56,7 @@ public class ESClient {
 	@VisibleForTesting static final String ES_NODE_DATA = "node.data";
 	@VisibleForTesting static final String ES_NODE_MASTER = "node.master";
 	@VisibleForTesting static final String ES_ZEN_UNICAST_HOSTS = "discovery.zen.ping.unicast.hosts";
+    private static final String ES_NETWORK_PUBLISH_HOST = "network.publish_host";
     private static final String ES_PATH_HOME_DEFAULT_VALUE = "WEB-INF/elasticsearch";
     private static final String ES_CONFIG_DIR = "config";
     private static final String ES_YML_FILE = "elasticsearch.yml";
@@ -145,6 +146,13 @@ public class ESClient {
             setAbsolutePath("path.repo", builder);
             setAbsolutePath("path.logs", builder);
 
+            String publishHost = System.getenv(ES_NETWORK_PUBLISH_HOST);
+            if(UtilMethods.isSet(publishHost)) {
+                builder.put(ES_NETWORK_PUBLISH_HOST, publishHost);
+            }
+            
+            
+            
             builder.put(
                     extSettings != null ? extSettings.build() : getExtSettingsBuilder().build());
 
