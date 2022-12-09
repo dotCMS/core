@@ -156,6 +156,13 @@ public class DbConnectionFactory {
 
 
                 defaultDataSource = new HikariDataSource(config);
+                
+                try {
+                    Context ctx = new InitialContext();
+                    ctx.bind(Constants.DATABASE_DEFAULT_DATASOURCE, defaultDataSource);
+                } catch (Exception e) {
+                    throw new DotRuntimeException(e);
+                }
 
             }
         }
@@ -175,7 +182,7 @@ public class DbConnectionFactory {
         } catch (Exception e) {
             Logger.error(DbConnectionFactory.class,
                 "---------- DBConnectionFactory: error getting dbconnection ---------------" + dataSource, e);
-            throw new DotRuntimeException(e.toString());
+            throw new DotRuntimeException(e);
         }
     }
 

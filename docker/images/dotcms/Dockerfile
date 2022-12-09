@@ -77,7 +77,6 @@ COPY --chown=$USER_NAME:$USER_GROUP ROOT/ /
     mkdir -p /data/shared/felix/load && \
     mkdir -p /data/shared/felix/undeployed && \
     mkdir -p /data/local/dotsecure/license && \
-
     chown -R $USER_NAME:$USER_NAME /data
 
 

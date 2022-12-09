@@ -7,19 +7,24 @@ volumes:
   esdata1:
   esdata2:
   esdata3:
+  cms-shared:
+  dbdata:
+
+networks:
+  db_net:
 
 services:
   elasticsearch1:
     image:  dotcms/elasticsearch:6.1.3_for_5.2.8
     ports:
       - "9201:9200"
-      - "9301:9301"
+      - "192.168.86.33:9301:9301"
     environment:
       "DOTCMS_ES_CLUSTER": 'dotcmsProdCluster'
       "ES_NETWORK_PUBLISH_HOST": 192.168.86.33
       "ES_UNICAST_HOST": "elasticsearch1"
       "ES_TRANSPORT_PORT": 9301
-      "ES_MIN_MASTER_NODES": 3
+      "ES_MIN_MASTER_NODES": 1
       "ES_NODE_MASTER": true
       "ES_NODE_DATA": true
       "ES_JAVA_OPTS": "-Xms2G -Xmx2G"
@@ -32,33 +37,74 @@ services:
     depends_on:
       - elasticsearch1
     ports:
-      - "9302:9302"
+      - "192.168.86.33:9302:9302"
     environment:
       "DOTCMS_ES_CLUSTER": 'dotcmsProdCluster'
       "ES_UNICAST_HOST": "192.168.86.33:9301"
       "ES_NETWORK_PUBLISH_HOST": 192.168.86.33
       "ES_TRANSPORT_PORT": 9302
-      "ES_MIN_MASTER_NODES": 3
+      "ES_MIN_MASTER_NODES": 1
       "ES_NODE_MASTER": true
       "ES_NODE_DATA": true
       "ES_JAVA_OPTS": "-Xms1G -Xmx1G"
     volumes:
       - esdata2:/data
 
-  elasticsearch3:
-    image:  dotcms/elasticsearch:6.1.3_for_5.2.8
+  # elasticsearch3:
+  #   image:  dotcms/elasticsearch:6.1.3_for_5.2.8
+  #   depends_on:
+  #     - elasticsearch1
+  #   ports:
+  #     - "9303:9303"
+  #   environment:
+  #     "DOTCMS_ES_CLUSTER": 'dotcmsProdCluster'
+  #     "ES_UNICAST_HOST": "192.168.86.33:9301"
+  #     "ES_NETWORK_PUBLISH_HOST": 192.168.86.33
+  #     "ES_TRANSPORT_PORT": 9303
+  #     "ES_MIN_MASTER_NODES": 3
+  #     "ES_NODE_MASTER": true
+  #     "ES_NODE_DATA": true
+  #     "ES_JAVA_OPTS": "-Xms1G -Xmx1G"
+  #   volumes:
+  #     - esdata3:/data
+
+  dotcms:
+    image: dotcms/dotcms:prerelease-5.2.8.5
+    #entrypoint: bash -c 'sleep infinity'
+    environment:
+        CMS_JAVA_OPTS: '-Xmx1g '
+        LANG: 'C.UTF-8'
+        TZ: 'UTC'
+        DB_BASE_URL: "jdbc:postgresql://db/dotcms"
+        DB_USERNAME: 'dotcmsdbuser'
+        DB_PASSWORD: 'password'
+        #ES_NODE_DATA: false
+        #ES_NODE_MASTER: false
+        ES_DATA_DIR: /data/local/esdata
+        #ES_DISCOVERY_NODE: 192.168.86.33:9301
+        DOT_SYSTEM_EXIT_ON_STARTUP_FAILURE: false
+        ES_NETWORK_PUBLISH_HOST: 192.168.86.33
+        xUFoN0UCBp: FEHXWPZdB9
     depends_on:
       - elasticsearch1
-    ports:
-      - "9303:9303"
-    environment:
-      "DOTCMS_ES_CLUSTER": 'dotcmsProdCluster'
-      "ES_UNICAST_HOST": "192.168.86.33:9301"
-      "ES_NETWORK_PUBLISH_HOST": 192.168.86.33
-      "ES_TRANSPORT_PORT": 9303
-      "ES_MIN_MASTER_NODES": 3
-      "ES_NODE_MASTER": true
-      "ES_NODE_DATA": true
-      "ES_JAVA_OPTS": "-Xms1G -Xmx1G"
+      - db
     volumes:
-      - esdata3:/data
+      - cms-shared:/data/shared
+      - /Users/will/git/cloud-platform-perpetual-licensepack.zip:/data/shared/assets/license.zip
+    networks:
+      - db_net
+    ports:
+      - "8082:8082"
+      - "192.168.86.33:9300:9300"
+
+  db:
+    image: postgres:15
+    command: postgres -c 'max_connections=400' -c 'shared_buffers=128MB'
+    environment:
+        "POSTGRES_USER": 'dotcmsdbuser'
+        "POSTGRES_PASSWORD": 'password'
+        "POSTGRES_DB": 'dotcms'
+    volumes:
+      - dbdata:/var/lib/postgresql/data
+    networks:
+      - db_net
