@@ -19,8 +19,6 @@ jobs:
       color: ${{ steps.lint.outputs.color || steps.test.outputs.color || steps.build.outputs.color }}
       message: ${{ steps.persist_results.outputs.message }}
     defaults:
-      run:
-        working-directory: core-web
     runs-on: ubuntu-latest # the image our job will run on
     name: Frontend Checks # the name that will appear on the Actions UI
     steps: # what steps it will perform
@@ -37,6 +35,7 @@ jobs:
           working-directory: core-web
       - name: Lint
         id: lint
+        working-directory: core-web
         run: |
           echo "name=Lint" >>$GITHUB_OUTPUT
           if ! (npx nx affected --target=lint --base=origin/master --parallel --exclude=${{ env.EXCLUDED_PROJECTS }}) then
@@ -46,6 +45,7 @@ jobs:
           fi
       - name: Test
         id: test
+        working-directory: core-web
         run: |
           echo "name=Test" >>$GITHUB_OUTPUT
           if ! (npx nx affected --target=test --base=origin/master --parallel --exclude=${{ env.EXCLUDED_PROJECTS }}) then
@@ -57,11 +57,12 @@ jobs:
         id: persist_results
         if: success() || failure()
         run: |
-          chmod +x ../cicd/github.sh && source ../cicd/github.sh
+          chmod +x ./cicd/github.sh && source ./cicd/github.sh
           persistResults
           echo "::set-output name=message::$(logResults)";
       - name: Build
         id: build
+        working-directory: core-web
         run:  |
           echo "name=Test" >>$GITHUB_OUTPUT
           if ! (npx nx build dotcms-ui) then
