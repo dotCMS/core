@@ -103,7 +103,6 @@ public interface Constants {
 
 	// Data source
 
-	public static final String DATA_SOURCE = "jdbc/dotCMSPool";
 
 	// JAAS
 

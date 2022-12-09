@@ -137,16 +137,7 @@ public class DbConnectionFactory {
 
 
         DataSource defaultDataSource = new HikariDataSource(config);
-        try {
-            Context ctx = (Context) new InitialContext().lookup("java:comp/env");
-            
-            
-            
-            ctx.bind(Constants.DATABASE_DEFAULT_DATASOURCE, defaultDataSource);
-        } catch (Exception e) {
-            throw new DotRuntimeException(e);
-        }
-        
+
         return defaultDataSource;
         
     });
