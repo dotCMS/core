@@ -172,6 +172,9 @@ public class DbConnectionFactory {
      * This is used to get data source to other database != than the default dotCMS one
      */
     public static DataSource getDataSource(String dataSource) {
+        if(Constants.DATABASE_DEFAULT_DATASOURCE.equals(dataSource)) {
+            return getDataSource();
+        }
         try {
             InitialContext ctx = new InitialContext();
             DataSource ds = (DataSource) JNDIUtil.lookup(ctx, dataSource);
