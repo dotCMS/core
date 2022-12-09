@@ -14,7 +14,6 @@ import com.dotcms.rest.exception.ForbiddenException;
 import com.dotcms.util.PaginationUtil;
 import com.dotcms.util.UserUtilTest;
 import com.dotcms.util.pagination.UserPaginator;
-import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.LayoutAPI;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.Role;
@@ -172,8 +171,16 @@ public class UserResourceTest extends UnitTestBase {
         when(session.getAttribute(Globals.LOCALE_KEY)).thenReturn(new Locale.Builder().setLanguage("en").setRegion("US").build());
         when(loginService.passwordMatch("password", user)).thenReturn(true);
 
-        final UserResourceHelper userHelper  = new UserResourceHelper(roleAPI, userAPI, layoutAPI, hostWebAPI,
-                userWebAPI, permissionAPI, userProxyAPI, loginService);
+        final DotRestInstanceProvider helperInstanceProvider = new DotRestInstanceProvider()
+                                                                       .setRoleAPI(roleAPI)
+                                                                       .setUserAPI(userAPI)
+                                                                       .setLayoutAPI(layoutAPI)
+                                                                       .setHostWebAPI(hostWebAPI)
+                                                                       .setUserWebAPI(userWebAPI)
+                                                                       .setPermissionAPI(permissionAPI)
+                                                                       .setUserProxyAPI(userProxyAPI)
+                                                                       .setLoginService(loginService);
+        final UserResourceHelper userHelper = new UserResourceHelper(helperInstanceProvider);
 
         String filter = "filter";
         int page = 3;
@@ -250,8 +257,16 @@ public class UserResourceTest extends UnitTestBase {
         when(session.getAttribute(Globals.LOCALE_KEY)).thenReturn(new Locale.Builder().setLanguage("en").setRegion("US").build());
         when(loginService.passwordMatch("password", user)).thenReturn(true);
 
-        final UserResourceHelper userHelper  = new UserResourceHelper(roleAPI, userAPI, layoutAPI, hostWebAPI,
-                userWebAPI, permissionAPI, userProxyAPI, loginService);
+        final DotRestInstanceProvider helperInstanceProvider = new DotRestInstanceProvider()
+                                                                       .setRoleAPI(roleAPI)
+                                                                       .setUserAPI(userAPI)
+                                                                       .setLayoutAPI(layoutAPI)
+                                                                       .setHostWebAPI(hostWebAPI)
+                                                                       .setUserWebAPI(userWebAPI)
+                                                                       .setPermissionAPI(permissionAPI)
+                                                                       .setUserProxyAPI(userProxyAPI)
+                                                                       .setLoginService(loginService);
+        final UserResourceHelper userHelper  = new UserResourceHelper(helperInstanceProvider);
         String filter = "filter";
         int page = 3;
         int perPage = 4;
@@ -332,8 +347,16 @@ public class UserResourceTest extends UnitTestBase {
                      .getErrorResponse(Response.Status.BAD_REQUEST, enUsLocale, "current.usermanager.password.incorrect"))
                 .thenReturn(Response.status(Response.Status.BAD_REQUEST).build());
 
-        final UserResourceHelper userHelper  = new UserResourceHelper(roleAPI, userAPI, layoutAPI, hostWebAPI,
-                userWebAPI, permissionAPI, userProxyAPI, loginService);
+        final DotRestInstanceProvider helperInstanceProvider = new DotRestInstanceProvider()
+                                                                       .setRoleAPI(roleAPI)
+                                                                       .setUserAPI(userAPI)
+                                                                       .setLayoutAPI(layoutAPI)
+                                                                       .setHostWebAPI(hostWebAPI)
+                                                                       .setUserWebAPI(userWebAPI)
+                                                                       .setPermissionAPI(permissionAPI)
+                                                                       .setUserProxyAPI(userProxyAPI)
+                                                                       .setLoginService(loginService);
+        final UserResourceHelper userHelper  = new UserResourceHelper(helperInstanceProvider);
 
         String filter = "filter";
         int page = 3;
@@ -389,8 +412,16 @@ public class UserResourceTest extends UnitTestBase {
         final LoginServiceAPI loginService= mock(LoginServiceAPI.class);
         final InitDataObject initDataObject = mock(InitDataObject.class);
 
-        final UserResourceHelper userHelper  = new UserResourceHelper(roleAPI, userAPI, layoutAPI, hostWebAPI,
-                userWebAPI, permissionAPI, userProxyAPI, loginService);
+        final DotRestInstanceProvider helperInstanceProvider = new DotRestInstanceProvider()
+                                                                       .setRoleAPI(roleAPI)
+                                                                       .setUserAPI(userAPI)
+                                                                       .setLayoutAPI(layoutAPI)
+                                                                       .setHostWebAPI(hostWebAPI)
+                                                                       .setUserWebAPI(userWebAPI)
+                                                                       .setPermissionAPI(permissionAPI)
+                                                                       .setUserProxyAPI(userProxyAPI)
+                                                                       .setLoginService(loginService);
+        final UserResourceHelper userHelper  = new UserResourceHelper(helperInstanceProvider);
         final ErrorResponseHelper errorHelper  = mock(ErrorResponseHelper.class);
         final User user = new User();
         final Role loginAsRole = new Role();
@@ -460,8 +491,16 @@ public class UserResourceTest extends UnitTestBase {
         // does not have permissions
         when(roleAPI.doesUserHaveRole(user, loginAsRole)).thenReturn(false);
 
-        final UserResourceHelper userHelper  = new UserResourceHelper(roleAPI, userAPI, layoutAPI, hostWebAPI,
-                userWebAPI, permissionAPI, userProxyAPI, loginService);
+        final DotRestInstanceProvider helperInstanceProvider = new DotRestInstanceProvider()
+                                                                       .setRoleAPI(roleAPI)
+                                                                       .setUserAPI(userAPI)
+                                                                       .setLayoutAPI(layoutAPI)
+                                                                       .setHostWebAPI(hostWebAPI)
+                                                                       .setUserWebAPI(userWebAPI)
+                                                                       .setPermissionAPI(permissionAPI)
+                                                                       .setUserProxyAPI(userProxyAPI)
+                                                                       .setLoginService(loginService);
+        final UserResourceHelper userHelper  = new UserResourceHelper(helperInstanceProvider);
 
         String filter = "filter";
         int page = 3;

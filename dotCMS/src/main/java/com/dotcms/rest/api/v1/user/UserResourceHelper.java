@@ -8,6 +8,7 @@ import com.dotcms.api.system.event.message.builder.SystemMessageBuilder;
 import com.dotcms.cms.login.LoginServiceAPI;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.rest.ResponseEntityView;
+import com.dotcms.rest.api.DotRestInstanceProvider;
 import com.dotcms.rest.api.v1.authentication.IncorrectPasswordException;
 import com.dotcms.util.SecurityUtils;
 import com.dotcms.util.SecurityUtils.DelayStrategy;
@@ -77,24 +78,15 @@ public class UserResourceHelper implements Serializable {
 	private final LoginServiceAPI loginService;
 
 	@VisibleForTesting
-	public UserResourceHelper (
-			final RoleAPI roleAPI,
-			final UserAPI userAPI,
-			final LayoutAPI layoutAPI,
-			final HostWebAPI hostWebAPI,
-			final UserWebAPI userWebAPI,
-			final PermissionAPI permissionAPI,
-			final UserProxyAPI userProxyAPI,
-			final LoginServiceAPI loginService) {
-
-		this.roleAPI = roleAPI;
-		this.userAPI = userAPI;
-		this.layoutAPI = layoutAPI;
-		this.hostWebAPI = hostWebAPI;
-		this.userWebAPI = userWebAPI;
-		this.permissionAPI = permissionAPI;
-		this.userProxyAPI = userProxyAPI;
-		this.loginService = loginService;
+	public UserResourceHelper (final DotRestInstanceProvider instanceProvider) {
+		this.roleAPI = instanceProvider.getRoleAPI();
+		this.userAPI = instanceProvider.getUserAPI();
+		this.layoutAPI = instanceProvider.getLayoutAPI();
+		this.hostWebAPI = instanceProvider.getHostWebAPI();
+		this.userWebAPI = instanceProvider.getUserWebAPI();
+		this.permissionAPI = instanceProvider.getPermissionAPI();
+		this.userProxyAPI = instanceProvider.getUserProxyAPI();
+		this.loginService = instanceProvider.getLoginService();
 	}
 
 	private static class SingletonHolder {

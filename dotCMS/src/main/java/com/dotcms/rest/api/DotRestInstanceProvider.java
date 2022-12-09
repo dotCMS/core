@@ -8,6 +8,7 @@ import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.RoleAPI;
 import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.business.UserProxyAPI;
+import com.dotmarketing.business.web.HostWebAPI;
 import com.dotmarketing.business.web.UserWebAPI;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
 
@@ -25,6 +26,7 @@ public class DotRestInstanceProvider {
     private ErrorResponseHelper errorHelper;
 
     private HostAPI siteAPI;
+    private HostWebAPI hostWebAPI;
 
     private LayoutAPI layoutAPI;
     private LoginServiceAPI loginService;
@@ -54,6 +56,15 @@ public class DotRestInstanceProvider {
 
     public DotRestInstanceProvider setHostAPI(final HostAPI siteAPI) {
         this.siteAPI = siteAPI;
+        return this;
+    }
+
+    public HostWebAPI getHostWebAPI() {
+        return hostWebAPI;
+    }
+
+    public DotRestInstanceProvider setHostWebAPI(HostWebAPI hostWebAPI) {
+        this.hostWebAPI = hostWebAPI;
         return this;
     }
 
