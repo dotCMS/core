@@ -20,7 +20,7 @@ public enum ManifestReaderFactory {
             final Optional<Reader> manifestInputStream = ManifestUtil
                     .getManifestInputStream(bundleTarGzipFile);
 
-            if (!manifestInputStream.isPresent()){
+            if (manifestInputStream.isEmpty()){
                 throw new IllegalArgumentException("Manifest not found for: " + bundleID);
             }
 

@@ -1,13 +1,5 @@
 package com.dotmarketing.common.db;
 
-import static com.dotcms.util.CollectionsUtils.map;
-
-import com.dotcms.rest.api.v1.DotObjectMapperProvider;
-import com.dotcms.util.CloseUtils;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.ImmutableMap.Builder;
-import io.vavr.control.Try;
 import java.math.BigDecimal;
 import java.sql.CallableStatement;
 import java.sql.Connection;
@@ -26,12 +18,13 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.TimeZone;
-
 import org.apache.commons.collections.map.LRUMap;
 import org.apache.commons.lang.StringUtils;
-
+import org.postgresql.util.PGobject;
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
+import com.dotcms.rest.api.v1.DotObjectMapperProvider;
+import com.dotcms.util.CloseUtils;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
@@ -40,7 +33,9 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.json.JSONException;
 import com.dotmarketing.util.json.JSONObject;
-import org.postgresql.util.PGobject;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.collect.ImmutableMap;
+import io.vavr.control.Try;
 
 /**
  * Description of the Class
@@ -716,8 +711,7 @@ public class DotConnect {
 
                                 if (rs.getObject(x) instanceof java.sql.Clob) {
                                     objvars.put(x, rs.getString(x));
-                                } else if (DbConnectionFactory.isOracle() && rs.getObject(x) instanceof oracle.sql.TIMESTAMP) {
-                                    objvars.put(x, new Date(((oracle.sql.TIMESTAMP) rs.getObject(x)).timeValue().getTime()));
+
                                 } else  if (DbConnectionFactory.isMsSql() && rs.getObject(x) instanceof microsoft.sql.DateTimeOffset){
                                     microsoft.sql.DateTimeOffset timeOffset = (microsoft.sql.DateTimeOffset)rs.getObject(x);
                                     objvars.put(x, timeOffset.getTimestamp());
@@ -730,8 +724,6 @@ public class DotConnect {
 
                                 if (rs.getObject(x) instanceof java.sql.Clob) {
                                     objvars.put(x, rs.getString(x));
-                                } else if (DbConnectionFactory.isOracle() && rs.getObject(x) instanceof oracle.sql.TIMESTAMP) {
-                                    objvars.put(x, new Date(((oracle.sql.TIMESTAMP) rs.getObject(x)).timestampValue().getTime()));
                                 } else  if (DbConnectionFactory.isMsSql() && rs.getObject(x) instanceof microsoft.sql.DateTimeOffset){
                                     microsoft.sql.DateTimeOffset timeOffset = (microsoft.sql.DateTimeOffset)rs.getObject(x);
                                     objvars.put(x, timeOffset.getTimestamp());

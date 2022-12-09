@@ -53,9 +53,9 @@ export const DotTableCellPlugin = (options) => {
 
     function isNodeRelatedToTable(node): boolean {
         return (
-            node.type.name === 'tableCell' ||
-            node.type.name === 'tableHeader' ||
-            node.type.name === 'tableRow'
+            node?.type.name === 'tableCell' ||
+            node?.type.name === 'tableHeader' ||
+            node?.type.name === 'tableRow'
         );
     }
 

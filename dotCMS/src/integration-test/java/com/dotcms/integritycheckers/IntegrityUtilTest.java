@@ -3,7 +3,6 @@ package com.dotcms.integritycheckers;
 import static com.dotcms.content.business.json.ContentletJsonAPI.SAVE_CONTENTLET_AS_JSON;
 import static org.junit.Assert.assertEquals;
 
-import com.dotcms.IntegrationTestBase;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.datagen.ContentTypeDataGen;
 import com.dotcms.datagen.ContentletDataGen;
@@ -14,8 +13,8 @@ import com.dotcms.datagen.LanguageDataGen;
 import com.dotcms.datagen.RoleDataGen;
 import com.dotcms.datagen.SiteDataGen;
 import com.dotcms.datagen.TemplateDataGen;
-import com.dotcms.repackage.com.csvreader.CsvReader;
 import com.dotcms.repackage.com.csvreader.CsvWriter;
+import com.dotcms.repackage.com.google.common.io.Files;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
@@ -34,16 +33,20 @@ import com.tngtech.java.junit.dataprovider.DataProvider;
 import com.tngtech.java.junit.dataprovider.DataProviderRunner;
 import com.tngtech.java.junit.dataprovider.UseDataProvider;
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.net.URL;
+import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipOutputStream;
 import org.apache.commons.io.FileUtils;
-import org.apache.commons.lang.StringUtils;
 import org.junit.Before;
-import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -496,4 +499,6 @@ public class IntegrityUtilTest  {
                 false
         };
     }
+
+
 }

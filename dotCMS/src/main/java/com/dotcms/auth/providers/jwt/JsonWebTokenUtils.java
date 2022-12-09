@@ -145,4 +145,24 @@ public class JsonWebTokenUtils {
         }
     }
 
+    /**
+     * Expose parse token validation
+     * This one is more elaborate since it explores the contents of the token body
+     * @param token
+     * @return
+     */
+    public boolean parseToken(final String token){
+         return jsonWebTokenService.parseToken(token) != null;
+    }
+
+    /**
+     * Expose the simple Token validation method
+     * This one only validates it is well-formed taking into account the sing key used
+     * @param token
+     * @return
+     */
+    public boolean isWellFormed(final String token){
+        return jsonWebTokenService.isWellFormed(token);
+    }
+
 } // E:O:F:JsonWebTokenUtils.
