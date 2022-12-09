@@ -339,10 +339,13 @@ public class Config {
 		return String.join(",", propsArr);
 		
 	}
+    public static String getStringProperty(final String name, final String defValue, boolean forceDefaultToString) {
+        
+        String retValue = getStringProperty(name, defValue);
+        return forceDefaultToString ? String.valueOf(retValue) : retValue;
 
 	
-	
-	
+    }
 	
 	
 

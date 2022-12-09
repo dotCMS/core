@@ -1,11 +1,7 @@
 version: '3.5'
 
-# For this configuration to work properly, you must have a license file mounted into the dotcms service.
-# Without a license file, the external ES service will NOT be recognized and utilized.  All documents will
-# indexed on the dotcms node directly and will not be persisted between restarts.
-
-networks:
-  es_net:
+# This works because each elasticsearch instance is publishing its address/port on the 
+# External IP - 192.168.86.33
 
 volumes:
   esdata1:
@@ -20,53 +16,49 @@ services:
       - "9301:9301"
     environment:
       "DOTCMS_ES_CLUSTER": 'dotcmsProdCluster'
+      "ES_NETWORK_PUBLISH_HOST": 192.168.86.33
       "ES_UNICAST_HOST": "elasticsearch1"
       "ES_TRANSPORT_PORT": 9301
-      "ES_MIN_MASTER_NODES": 2
+      "ES_MIN_MASTER_NODES": 3
       "ES_NODE_MASTER": true
-      "ES_NODE_DATA": false
+      "ES_NODE_DATA": true
       "ES_JAVA_OPTS": "-Xms2G -Xmx2G"
     volumes:
       - esdata1:/data
-    networks:
-      - es_net
+
 
   elasticsearch2:
     image:  dotcms/elasticsearch:6.1.3_for_5.2.8
     depends_on:
       - elasticsearch1
     ports:
-      - "9202:9200"
       - "9302:9302"
     environment:
       "DOTCMS_ES_CLUSTER": 'dotcmsProdCluster'
-      "ES_UNICAST_HOST": "elasticsearch1:9301"
+      "ES_UNICAST_HOST": "192.168.86.33:9301"
+      "ES_NETWORK_PUBLISH_HOST": 192.168.86.33
       "ES_TRANSPORT_PORT": 9302
-      "ES_MIN_MASTER_NODES": 2
+      "ES_MIN_MASTER_NODES": 3
       "ES_NODE_MASTER": true
       "ES_NODE_DATA": true
       "ES_JAVA_OPTS": "-Xms1G -Xmx1G"
     volumes:
       - esdata2:/data
-    networks:
-      - es_net
 
   elasticsearch3:
     image:  dotcms/elasticsearch:6.1.3_for_5.2.8
     depends_on:
       - elasticsearch1
     ports:
-      - "9203:9200"
       - "9303:9303"
     environment:
       "DOTCMS_ES_CLUSTER": 'dotcmsProdCluster'
-      "ES_UNICAST_HOST": "elasticsearch1:9301"
+      "ES_UNICAST_HOST": "192.168.86.33:9301"
+      "ES_NETWORK_PUBLISH_HOST": 192.168.86.33
       "ES_TRANSPORT_PORT": 9303
-      "ES_MIN_MASTER_NODES": 2
+      "ES_MIN_MASTER_NODES": 3
       "ES_NODE_MASTER": true
       "ES_NODE_DATA": true
       "ES_JAVA_OPTS": "-Xms1G -Xmx1G"
     volumes:
       - esdata3:/data
-    networks:
-      - es_net
