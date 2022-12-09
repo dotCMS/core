@@ -155,9 +155,18 @@ public class ESClient {
                     put("node.name", node_id).
                     put("path.home", esPathHome);
 
-            setAbsolutePath("path.data", builder);
-            setAbsolutePath("path.repo", builder);
-            setAbsolutePath("path.logs", builder);
+            if(UtilMethods.isSet(System.getenv("ES_DATA_DIR"))) {
+                builder.remove("path.data");
+                builder.remove("path.logs");
+                builder.put("path.data", System.getenv("ES_DATA_DIR"));
+                builder.put("path.logs", System.getenv("ES_DATA_DIR") + "/logs");
+                
+            }
+            
+            
+            
+            //setAbsolutePath("path.data", builder);
+            //setAbsolutePath("path.logs", builder);
 
             String publishHost = System.getenv(ES_NETWORK_PUBLISH_HOST);
             if(UtilMethods.isSet(publishHost)) {
@@ -166,8 +175,6 @@ public class ESClient {
             
             
             
-            builder.put(
-                    extSettings != null ? extSettings.build() : getExtSettingsBuilder().build());
 
             
             return builder.build();
