@@ -10,6 +10,8 @@ import io.vavr.Tuple;
 import io.vavr.Tuple2;
 import io.vavr.control.Try;
 import java.io.File;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 
 /**
  * Generic class to get return configuration parameters, and any logic required
@@ -74,11 +76,11 @@ public class ConfigUtils {
 	}
 
 	public static String getBundlePath() {
-		String path=APILocator.getFileAssetAPI().getRealAssetsRootPath() + File.separator + "bundles";
-		File pathDir=new File(path);
+		final Path path = Paths.get(String.format("%s%sbundles",APILocator.getFileAssetAPI().getRealAssetsRootPath(),File.separator)).normalize();
+		File pathDir = path.toFile();
 		if(!pathDir.exists())
 		    pathDir.mkdirs();
-		return path;
+		return path.toString();
 	}
 
 	public static String getIntegrityPath() {

@@ -8,12 +8,7 @@ import com.dotcms.api.system.event.message.builder.SystemMessage;
 import com.dotcms.api.system.event.message.builder.SystemMessageBuilder;
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.contenttype.business.ContentTypeAPI;
-import com.dotcms.contenttype.model.field.CategoryField;
-import com.dotcms.contenttype.model.field.DateField;
-import com.dotcms.contenttype.model.field.DateTimeField;
-import com.dotcms.contenttype.model.field.RelationshipField;
-import com.dotcms.contenttype.model.field.TagField;
-import com.dotcms.contenttype.model.field.TimeField;
+import com.dotcms.contenttype.model.field.*;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.PageContentType;
@@ -95,6 +90,7 @@ import com.dotmarketing.util.PortletURLUtil;
 import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableList;
 import com.liferay.portal.PortalException;
 import com.liferay.portal.SystemException;
@@ -127,17 +123,8 @@ import java.text.DateFormat;
 import java.text.DecimalFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Date;
-import java.util.GregorianCalendar;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
+import java.util.*;
 import java.util.Map.Entry;
-import java.util.Optional;
-import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -2023,6 +2010,8 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 							    }
 							} else if (field instanceof RelationshipField) {
 								text = loadRelationships(((ContentletRelationships)value).getRelationshipsRecords());
+							} else if (field instanceof KeyValueField) {
+								text = new ObjectMapper().writeValueAsString(value);
                             } else if (BaseContentType.HTMLPAGE.equals(contentType.baseType()) && PageContentType
                                     .PAGE_URL_FIELD_VAR.equalsIgnoreCase(field.variable())) {
                                 final Identifier id = APILocator.getIdentifierAPI().find(content.getIdentifier());
