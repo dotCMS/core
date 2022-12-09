@@ -104,7 +104,20 @@ public class ESClient {
 
 
                     try{
-                        _nodeInstance = new Node(loadNodeSettings(extSettings)).start();
+                        Settings settings = loadNodeSettings(extSettings);
+                        Logger.info(ESClient.class, "ES Config -------------------------");
+                        settings.keySet().forEach(k->{
+                            
+                            Logger.info(ESClient.class, k + "->" + String.valueOf(settings.get(k)));
+                            
+                        });
+                        Logger.info(ESClient.class, "/ES Config -------------------------");
+                        
+                        
+                        
+                        
+                        
+                        _nodeInstance = new Node(settings).start();
                     } catch (IOException | NodeValidationException e){
                         Logger.error(this, "Error validating ES node at start.", e);
                     }
