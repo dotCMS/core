@@ -75,9 +75,6 @@ discovery.zen.ping.unicast.hosts:
   - ${ES_UNICAST_HOST:"127.0.0.1"}
 
 
-# network.publish_host: ${ES_NETWORK_PUBLISH_HOST:"0.0.0.0"}
-
-
 #
 # Prevent the "split brain" by configuring the majority of nodes (total number of master-eligible nodes / 2 + 1):
 #

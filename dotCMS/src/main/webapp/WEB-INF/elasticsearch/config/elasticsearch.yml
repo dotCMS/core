@@ -65,7 +65,6 @@
 # Pass an initial list of hosts to perform discovery when new node is started:
 # The default list of hosts is ["127.0.0.1", "[::1]"]
 #
-discovery.zen.ping.unicast.hosts: ["es.dotcms.site"]
 #
 # Prevent the "split brain" by configuring the majority of nodes (total number of master-eligible nodes / 2 + 1):
 #
@@ -87,13 +86,24 @@ discovery.zen.ping.unicast.hosts: ["es.dotcms.site"]
 #
 #action.destructive_requires_name: true
 
-cluster.name: dotCMSContentIndex_5x
+cluster.name: ${DOTCMS_ES_CLUSTER:dotcmsProdCluster}
+discovery.zen.ping.unicast.hosts:
+  - localhost:9301
+#  - localhost:9302
+#  - localhost:9303 
+discovery.zen.minimum_master_nodes: ${ES_MIN_MASTER_NODES:1}
 path.data: esdata
 path.repo: essnapshot/snapshots
 path.logs: tomcat8/logs
-http.port: 9200
-http.host: localhost
-http.enabled: false
+http.port: ${ES_HTTP_PORT:9200}
+http.host: ${ES_HTTP_HOST:localhost}
+http.enabled: ${ES_HTTP_ENABLE:false}
 http.cors.enabled: false
-node.master: false
-node.data: false
+node.master: ${ES_NODE_MASTER:true}
+node.data: ${ES_NODE_DATA:true}
+network.host: ${ES_NODE_BOUND_ADDRESS:0.0.0.0}
+#network.publish_host: ${ES_NETWORK_PUBLISH_HOST:}'
+
+cluster.routing.allocation.disk.watermark.low: ${ES_LOW_WATERMARK:90%}
+cluster.routing.allocation.disk.watermark.high: ${ES_HIGH_WATERMARK:95%}
+cluster.routing.allocation.disk.watermark.flood_stage: ${ES_FLOOD_STAGE:97%}
