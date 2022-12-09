@@ -56,7 +56,7 @@ jobs:
         id: persist_results
         if: success() || failure()
         run: |
-          chmod +x ../.cicd/github.sh && source ../.cicd/github.sh
+          chmod +x .cicd/github.sh && source .cicd/github.sh
           persistResults
           echo "::set-output name=message::$(logResults)";
       - name: Build
