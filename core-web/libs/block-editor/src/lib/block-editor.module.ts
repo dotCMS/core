@@ -12,6 +12,7 @@ import { OrderListModule } from 'primeng/orderlist';
 import { ListboxModule } from 'primeng/listbox';
 import { TabViewModule } from 'primeng/tabview';
 import { SkeletonModule } from 'primeng/skeleton';
+import { VirtualScrollerModule } from 'primeng/virtualscroller';
 
 // DotCMS JS
 import { LoggerService } from '@dotcms/dotcms-js';
@@ -63,7 +64,8 @@ import { DotImageCardSkeletonComponent } from './extensions/image-tabview-form/c
         OrderListModule,
         ListboxModule,
         TabViewModule,
-        SkeletonModule
+        SkeletonModule,
+        VirtualScrollerModule
     ],
     declarations: [
         EditorDirective,

@@ -9,7 +9,7 @@ import tippy, { Instance, Props } from 'tippy.js';
 import { ImageNode } from '@dotcms/block-editor';
 import { DotCMSContentlet } from '@dotcms/dotcms-models';
 
-import { ImageTabviewFormComponent } from '../image-tabview-form.component';
+import { ImageTabviewFormComponent, TAB_STATE } from '../image-tabview-form.component';
 
 interface PluginState {
     open: boolean;
@@ -71,7 +71,6 @@ export class BubbleImageTabFormView {
             this.addImage(contentlet);
             this.hide();
         });
-
         this.editor.on('focus', () => this.hide());
     }
 
@@ -97,7 +96,7 @@ export class BubbleImageTabFormView {
         });
 
         this.show();
-        this.component.instance.searchContentlets();
+        this.component.instance.searchContentlets({});
         this.component.changeDetectorRef.detectChanges();
     }
 
@@ -132,11 +131,11 @@ export class BubbleImageTabFormView {
 
     addImage(contentlet: DotCMSContentlet) {
         const { selection } = this.editor.state;
-        const { title, fileAsset } = contentlet;
+        const { title, asset, fileAsset } = contentlet;
         const node = {
             attrs: {
                 data: contentlet,
-                src: fileAsset,
+                src: fileAsset || asset,
                 title,
                 alt: title
             },
@@ -150,10 +149,12 @@ export class BubbleImageTabFormView {
             open: false
         });
         this.editor.view.dispatch(transaction);
+        this.component.instance.taviewState = TAB_STATE.CLOSE;
     }
 
     show() {
         this.tippy?.show();
+        this.component.instance.taviewState = TAB_STATE.OPEN;
         requestAnimationFrame(() => this.component.instance.search.nativeElement.focus());
     }
 

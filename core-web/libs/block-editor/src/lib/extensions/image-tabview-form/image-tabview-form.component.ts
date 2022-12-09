@@ -8,7 +8,7 @@ import {
     ElementRef
 } from '@angular/core';
 import { FormBuilder, FormGroup } from '@angular/forms';
-import { Subject } from 'rxjs';
+import { BehaviorSubject } from 'rxjs';
 import { debounceTime, take, map } from 'rxjs/operators';
 
 import { DotCMSContentlet } from '@dotcms/dotcms-models';
@@ -20,6 +20,11 @@ import {
     SearchService
 } from '../../shared/services/search.service';
 
+export enum TAB_STATE {
+    OPEN = 'OPEN',
+    CLOSE = 'CLOSE'
+}
+
 @Component({
     selector: 'dot-image-tabview-form',
     templateUrl: './image-tabview-form.component.html',
@@ -30,10 +35,16 @@ export class ImageTabviewFormComponent implements OnInit {
     @Output() selectedContentlet: EventEmitter<DotCMSContentlet> = new EventEmitter();
     @ViewChild('inputSearch') search!: ElementRef;
 
-    public form: FormGroup;
-    public items: DotCMSContentlet[][] = [];
-    public contentlets$ = new Subject<DotCMSContentlet[][]>();
+    form: FormGroup;
+    items: DotCMSContentlet[][] = [];
+    resultsSize = 0;
+    contentlets$ = new BehaviorSubject<DotCMSContentlet[][]>([]);
+    taviewState: TAB_STATE = TAB_STATE.CLOSE;
     private dotLangs: Languages;
+
+    get currentSearch() {
+        return this.form.get('search').value;
+    }
 
     constructor(
         private searchService: SearchService,
@@ -48,22 +59,25 @@ export class ImageTabviewFormComponent implements OnInit {
 
         this.form.valueChanges.pipe(debounceTime(450)).subscribe(({ search }) => {
             this.items = [];
-            this.searchContentlets(search);
+            this.searchContentlets({ search });
         });
 
         this.dotLanguageService
             .getLanguages()
             .pipe(take(1))
-            .subscribe((dotLang) => (this.dotLangs = dotLang));
+            .subscribe((dotLang) => {
+                this.dotLangs = dotLang;
+                this.searchContentlets({});
+            });
     }
 
-    searchContentlets(search = '', offset = '0'): void {
+    searchContentlets({ search = '', offset = '0' }): void {
         this.searchService
-            .get(this.getParams(search, offset))
+            .get(this.getParams({ search, offset }))
             .pipe(
-                map(({ jsonObjectView }) => {
+                map(({ jsonObjectView, resultsSize }) => {
+                    this.resultsSize = resultsSize;
                     const { contentlets } = jsonObjectView;
-
                     contentlets.forEach((data) => {
                         const i = this.items.length - 1;
                         const contentlet = {
@@ -89,7 +103,7 @@ export class ImageTabviewFormComponent implements OnInit {
         this.form.reset({ search: '' }, { emitEvent: false });
     }
 
-    private getParams(search = '', offset = '0'): queryEsParams {
+    private getParams({ search = '', offset = '0' }): queryEsParams {
         return {
             query: ` catchall:${search}* +baseType:(4 OR 9) +metadata.contenttype:image/* title:'${search}'^15 +languageId:${this.languageId} +deleted:false +working:true`,
             sortOrder: ESOrderDirection.ASC,

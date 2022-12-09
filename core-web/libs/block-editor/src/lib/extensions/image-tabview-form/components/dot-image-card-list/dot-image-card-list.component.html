@@ -1,17 +1,32 @@
-<div class="card-wrapper" *ngIf="contentlets?.length; else notFound">
-    <div class="table-row" *ngFor="let contentlet of contentlets">
-        <dot-image-card
-            *ngIf="contentlet[0]"
-            [contentlet]="contentlet[0]"
-            (click)="selectedItem.emit(contentlet[0])"
-        ></dot-image-card>
-        <dot-image-card
-            *ngIf="contentlet[1]"
-            [contentlet]="contentlet[1]"
-            (click)="selectedItem.emit(contentlet[1])"
-        ></dot-image-card>
-    </div>
-</div>
+<p-virtualScroller
+    *ngIf="contentlets?.length; else notFound"
+    [itemSize]="110"
+    [lazy]="true"
+    [value]="contentlets"
+    (onLazyLoad)="loadContentlets($event)"
+    rows="8"
+    scrollHeight="250px"
+>
+    <ng-template pTemplate="item" let-contentlet>
+        <div class="table-row">
+            <dot-image-card
+                *ngIf="contentlet[0]"
+                [contentlet]="contentlet[0]"
+                (click)="selectedItem.emit(contentlet[0])"
+            ></dot-image-card>
+            <dot-image-card
+                *ngIf="contentlet[1]"
+                [contentlet]="contentlet[1]"
+                (click)="selectedItem.emit(contentlet[1])"
+            ></dot-image-card>
+        </div>
+    </ng-template>
+
+    <ng-template pTemplate="loadingItem">
+        <dot-image-card-skeleton></dot-image-card-skeleton>
+        <dot-image-card-skeleton></dot-image-card-skeleton>
+    </ng-template>
+</p-virtualScroller>
 
 <ng-template #notFound>
     <div class="wrapper">

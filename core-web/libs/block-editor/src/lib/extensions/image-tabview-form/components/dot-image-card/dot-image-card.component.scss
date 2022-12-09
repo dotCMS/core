@@ -8,14 +8,13 @@
         display: flex;
         gap: 0.875 * $dot-editor-size;
         height: 5.875 * $dot-editor-size;
-        width: 20.875 * $dot-editor-size;
+        width: 19.75 * $dot-editor-size;
 
         .p-card-header {
             padding: 0;
             height: 5.875 * $dot-editor-size;
             width: 5.875 * $dot-editor-size;
 
-            dot-contentlet-thumbnail,
             img {
                 border-radius: $border-radius-md 0 0 $border-radius-md;
                 width: 100%;

@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, EventEmitter, Input, Output } from '@angular/core';
+import { Component, EventEmitter, Input, Output } from '@angular/core';
 import { FormGroup } from '@angular/forms';
 
 import { DotCMSContentlet } from '@dotcms/dotcms-models';
@@ -8,11 +8,11 @@ import { squarePlus } from '../../../../shared/components/suggestions/suggestion
 @Component({
     selector: 'dot-dot-image-card-list',
     templateUrl: './dot-image-card-list.component.html',
-    styleUrls: ['./dot-image-card-list.component.scss'],
-    changeDetection: ChangeDetectionStrategy.OnPush
+    styleUrls: ['./dot-image-card-list.component.scss']
 })
 export class DotImageCardListComponent {
     @Input() contentlets: DotCMSContentlet[][] = [];
+    @Input() resultsSize: number;
     @Output() selectedItem: EventEmitter<DotCMSContentlet> = new EventEmitter();
     @Output() loadItems: EventEmitter<number> = new EventEmitter();
 
@@ -20,10 +20,11 @@ export class DotImageCardListComponent {
     public icon = sanitizeUrl(squarePlus);
 
     loadContentlets(event) {
-        if (event.first === 0) {
+        const offset = this.contentlets.length * 2;
+        if (event.first === 0 || offset >= this.resultsSize) {
             return;
         }
 
-        this.loadItems.emit(event.last * 2);
+        this.loadItems.emit(offset);
     }
 }

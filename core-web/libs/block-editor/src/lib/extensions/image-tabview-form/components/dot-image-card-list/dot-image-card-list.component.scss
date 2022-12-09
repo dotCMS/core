@@ -32,7 +32,7 @@
     }
 
     &::ng-deep {
-        table {
+        .p-scroller-content {
             padding: 0 (1 * $dot-editor-size);
         }
 
