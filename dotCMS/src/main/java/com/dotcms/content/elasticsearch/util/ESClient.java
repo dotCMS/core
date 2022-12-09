@@ -115,7 +115,9 @@ public class ESClient {
                         
                         
                         
+                        Node myNode = new Node(settings);
                         
+ 
                         
                         _nodeInstance = new Node(settings).start();
                     } catch (IOException | NodeValidationException e){
