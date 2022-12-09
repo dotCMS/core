@@ -14,6 +14,7 @@ import org.postgresql.PGConnection;
 import com.dotcms.cluster.bean.Server;
 import com.dotcms.enterprise.cluster.ClusterFactory;
 import com.dotcms.enterprise.license.LicenseManager;
+import com.dotcms.repackage.com.zaxxer.hikari.pool.HikariProxyConnection;
 import com.dotcms.util.CloseUtils;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
@@ -73,7 +74,7 @@ public final class PostgresCacheTransport implements CacheTransport {
         private final int KILL_ON_FAILURES = Config.getIntProperty("PGLISTENER_KILL_ON_FAILURES", 1000);
         private final int SLEEP_BETWEEN_RUNS = Config.getIntProperty("PGLISTENER_SLEEP_BETWEEN_RUNS", 500);
 
-        Connection conn = null;
+        HikariProxyConnection conn = null;
 
 
         private void connect() {
@@ -81,7 +82,11 @@ public final class PostgresCacheTransport implements CacheTransport {
             conn = null;
             Logger.info(getClass(), "Starting PGListener on " + topicName.get());
             try {
-                conn = data.get().getConnection();
+                conn = (HikariProxyConnection) data.get().getConnection();
+                
+                
+                
+                
                 Statement statment = conn.createStatement();
                 statment.execute("LISTEN " + topicName.get());
                 isInitialized.set(true);
@@ -101,10 +106,17 @@ public final class PostgresCacheTransport implements CacheTransport {
             connect();
             while (isInitialized.get()) {
                 try {
+                    if(conn.isClosed()) {
+                        connect();
+                    }
                     try (Statement stmt = conn.createStatement()) {
                         stmt.executeQuery("SELECT 1");
                     }
-                    org.postgresql.PGNotification[] notifications = ((PGConnection) conn).getNotifications();
+                    PGConnection pgConn = conn.unwrap(PGConnection.class) ;
+  
+                    
+                    
+                    org.postgresql.PGNotification[] notifications = pgConn.getNotifications();
                     if (notifications == null) {
                         continue;
                     }
