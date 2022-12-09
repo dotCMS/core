@@ -118,18 +118,7 @@ public class ESClient {
                         
                         Node myNode = new Node(settings);
                         
-                        
-                        Logger.info(ESClient.class, "ES Node -------------------------");
-                        
-                        myNode.settings().keySet().forEach(k->{
-                            
-                            Logger.info(ESClient.class, k + "->" + String.valueOf(settings.get(k)));
-                            
-                        });
-                        
-                        Logger.info(ESClient.class, "/ES Node -------------------------");
- 
-                        
+    
                         _nodeInstance = myNode.start();
                     } catch (Exception e){
                         Logger.error(this, "Error validating ES node at start.", e);
@@ -156,7 +145,7 @@ public class ESClient {
     @VisibleForTesting
     Settings loadNodeSettings(final Builder extSettings) throws IOException {
 
-        final String node_id = ConfigUtils.getServerId();
+        final String node_id =  APILocator.getShortyAPI().shortify(ConfigUtils.getServerId());
         final String esPathHome = getESPathHome();
 
         Logger.info(this, "***PATH HOME: " + esPathHome);
@@ -164,10 +153,10 @@ public class ESClient {
         final Path yamlPath = getDefaultYaml();
 
         try(InputStream inputStream = Files.newInputStream(yamlPath)) {
-            final Builder builder = Settings.builder().
-                    loadFromStream(yamlPath.toString(), inputStream, false).
-                    put("node.name", node_id).
-                    put("path.home", esPathHome);
+            final Builder builder = Settings.builder()
+                            .loadFromStream(yamlPath.toString(), inputStream, false)
+                            .put("node.name", "dotCMS-" + node_id)
+                            .put("path.home", esPathHome);
 
             if(UtilMethods.isSet(System.getenv("ES_DATA_DIR"))) {
                 builder.remove("path.data");
