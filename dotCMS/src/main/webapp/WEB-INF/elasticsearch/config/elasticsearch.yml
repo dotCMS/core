@@ -88,7 +88,7 @@
 
 cluster.name: ${DOTCMS_ES_CLUSTER:dotcmsProdCluster}
 discovery.zen.ping.unicast.hosts:
-  - localhost:9301
+  - ${ES_DISCOVERY_NODE:127.0.0.1:9300}
 #  - localhost:9302
 #  - localhost:9303 
 discovery.zen.minimum_master_nodes: ${ES_MIN_MASTER_NODES:1}
