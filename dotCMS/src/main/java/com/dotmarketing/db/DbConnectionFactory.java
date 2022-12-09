@@ -138,7 +138,10 @@ public class DbConnectionFactory {
 
         DataSource defaultDataSource = new HikariDataSource(config);
         try {
-            Context ctx = new InitialContext();
+            Context ctx = (Context) new InitialContext().lookup("java:comp/env");
+            
+            
+            
             ctx.bind(Constants.DATABASE_DEFAULT_DATASOURCE, defaultDataSource);
         } catch (Exception e) {
             throw new DotRuntimeException(e);
@@ -283,6 +286,8 @@ public class DbConnectionFactory {
      */
     @SuppressWarnings("unchecked")
     public static ArrayList<String> getAllDataSources() throws NamingException {
+        
+        getDataSource();
         ArrayList<String> results = new ArrayList<String>();
         Context ctx;
 
