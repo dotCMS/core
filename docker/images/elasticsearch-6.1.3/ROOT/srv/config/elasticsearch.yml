@@ -56,11 +56,13 @@ bootstrap.memory_lock: false
 #
 # Set the bind address to a specific IP (IPv4 or IPv6):
 #
-network.host: 0.0.0.0
+network.host: ${ES_NETWORK_HOST:0.0.0.0}
+transport.tcp.port: ${ES_TRANSPORT_PORT:9301}
+
 #
 # Set a custom port for HTTP:
 #
-http.port: 9200
+http.port: ${ES_HTTP_PORT:9200}
 #
 # For more information, consult the network module documentation.
 #
@@ -70,7 +72,12 @@ http.port: 9200
 # The default list of hosts is ["127.0.0.1", "[::1]"]
 #
 discovery.zen.ping.unicast.hosts:
-  - ${ES_UNICAST_HOST:"elasticsearch1"}
+  - ${ES_UNICAST_HOST:"127.0.0.1"}
+
+
+# network.publish_host: ${ES_NETWORK_PUBLISH_HOST:"0.0.0.0"}
+
+
 #
 # Prevent the "split brain" by configuring the majority of nodes (total number of master-eligible nodes / 2 + 1):
 #

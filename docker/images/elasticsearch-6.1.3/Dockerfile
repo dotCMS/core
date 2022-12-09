@@ -26,6 +26,7 @@ ENV JAVA_HOME="/java"
 ENV PATH /srv/bin:$PATH
 
 WORKDIR /srv
+
 RUN mkdir -p /data
 RUN mkdir -p /logs
 RUN set -ex; \
@@ -43,6 +44,7 @@ RUN set -ex; \
 	elasticsearch --version;
 	
 COPY ROOT/srv/config/ /srv/config
+COPY ROOT/srv/entrypoint.sh /srv/entrypoint.sh
 RUN chown -R $USER_NAME:$USER_NAME /srv
 RUN chown -R $USER_NAME:$USER_NAME /data
 RUN chown -R $USER_NAME:$USER_NAME /logs
@@ -64,4 +66,4 @@ EXPOSE 9300
 
 USER $USER_UID
 
-ENTRYPOINT ["tini", "--", "/srv/bin/elasticsearch"]
+ENTRYPOINT ["tini", "--", "/srv/entrypoint.sh"]
