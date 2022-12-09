@@ -22,9 +22,9 @@ services:
     environment:
       "DOTCMS_ES_CLUSTER": 'dotcmsProdCluster'
       "ES_NETWORK_PUBLISH_HOST": 192.168.86.33
-      "ES_UNICAST_HOST": "elasticsearch1"
+      "ES_DISCOVERY_NODE": "elasticsearch1"
       "ES_TRANSPORT_PORT": 9301
-      "ES_MIN_MASTER_NODES": 1
+      "ES_MIN_MASTER_NODES": 2
       "ES_NODE_MASTER": true
       "ES_NODE_DATA": true
       "ES_JAVA_OPTS": "-Xms2G -Xmx2G"
@@ -40,33 +40,33 @@ services:
       - "192.168.86.33:9302:9302"
     environment:
       "DOTCMS_ES_CLUSTER": 'dotcmsProdCluster'
-      "ES_UNICAST_HOST": "192.168.86.33:9301"
+      "ES_DISCOVERY_NODE": "192.168.86.33:9301"
       "ES_NETWORK_PUBLISH_HOST": 192.168.86.33
       "ES_TRANSPORT_PORT": 9302
-      "ES_MIN_MASTER_NODES": 1
+      "ES_MIN_MASTER_NODES": 2
       "ES_NODE_MASTER": true
       "ES_NODE_DATA": true
       "ES_JAVA_OPTS": "-Xms1G -Xmx1G"
     volumes:
       - esdata2:/data
 
-  # elasticsearch3:
-  #   image:  dotcms/elasticsearch:6.1.3_for_5.2.8
-  #   depends_on:
-  #     - elasticsearch1
-  #   ports:
-  #     - "9303:9303"
-  #   environment:
-  #     "DOTCMS_ES_CLUSTER": 'dotcmsProdCluster'
-  #     "ES_UNICAST_HOST": "192.168.86.33:9301"
-  #     "ES_NETWORK_PUBLISH_HOST": 192.168.86.33
-  #     "ES_TRANSPORT_PORT": 9303
-  #     "ES_MIN_MASTER_NODES": 3
-  #     "ES_NODE_MASTER": true
-  #     "ES_NODE_DATA": true
-  #     "ES_JAVA_OPTS": "-Xms1G -Xmx1G"
-  #   volumes:
-  #     - esdata3:/data
+  elasticsearch3:
+    image:  dotcms/elasticsearch:6.1.3_for_5.2.8
+    depends_on:
+      - elasticsearch1
+    ports:
+      - "9303:9303"
+    environment:
+      "DOTCMS_ES_CLUSTER": 'dotcmsProdCluster'
+      "ES_DISCOVERY_NODE": "192.168.86.33:9301"
+      "ES_NETWORK_PUBLISH_HOST": 192.168.86.33
+      "ES_TRANSPORT_PORT": 9303
+      "ES_MIN_MASTER_NODES": 2
+      "ES_NODE_MASTER": true
+      "ES_NODE_DATA": true
+      "ES_JAVA_OPTS": "-Xms1G -Xmx1G"
+    volumes:
+      - esdata3:/data
 
   dotcms:
     image: dotcms/dotcms:prerelease-5.2.8.5
