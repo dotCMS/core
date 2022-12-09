@@ -68,7 +68,7 @@ abstract class WfBaseAction extends AjaxAction {
 		if (ret == null) {
 			ret = error;
 		}
-
+        response.setContentType("text/plain");
 		response.getWriter().println("FAILURE: " + ret);
 	}
 	
@@ -91,7 +91,7 @@ abstract class WfBaseAction extends AjaxAction {
 		if (ret == null) {
 			ret = success;
 		}
-
+		response.setContentType("text/plain");
 		response.getWriter().println("SUCCESS:" + success );
 	}
 }
