@@ -81,8 +81,8 @@ services:
         #ES_NODE_DATA: false
         #ES_NODE_MASTER: false
         ES_DATA_DIR: /data/local/esdata
-        #ES_DISCOVERY_NODE: 192.168.86.33:9301
-        DOT_SYSTEM_EXIT_ON_STARTUP_FAILURE: false
+
+        ES_DISCOVERY_NODE: 192.168.86.33:9301
         ES_NETWORK_PUBLISH_HOST: 192.168.86.33
         xUFoN0UCBp: FEHXWPZdB9
     depends_on:
@@ -95,7 +95,7 @@ services:
       - db_net
     ports:
       - "8082:8082"
-      - "192.168.86.33:9300:9300"
+      - "192.168.86.33:9304:9304"
 
   db:
     image: postgres:15
@@ -108,3 +108,5 @@ services:
       - dbdata:/var/lib/postgresql/data
     networks:
       - db_net
+    ports:
+      - "5432:5432"

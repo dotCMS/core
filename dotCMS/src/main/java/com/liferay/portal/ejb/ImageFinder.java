@@ -27,7 +27,8 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.util.ArrayList;
 import java.util.List;
-
+import com.dotcms.util.CloseUtils;
+import com.dotmarketing.db.DbConnectionFactory;
 import com.liferay.portal.SystemException;
 import com.liferay.portal.util.Constants;
 import com.liferay.util.dao.DataAccess;
@@ -56,7 +57,7 @@ public class ImageFinder {
 		ResultSet rs = null;
 
 		try {
-			con = DataAccess.getConnection(Constants.DATA_SOURCE);
+			con = DbConnectionFactory.getConnection();
 
 			StringBuffer query = new StringBuffer();
 			query.append("SELECT imageId ");
@@ -77,7 +78,7 @@ public class ImageFinder {
 			throw new SystemException(e);
 		}
 		finally {
-			DataAccess.cleanUp(con, ps, rs);
+		    CloseUtils.closeQuietly(con,ps,rs);
 		}
 
 		return list;
