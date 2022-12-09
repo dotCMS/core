@@ -8,7 +8,8 @@ import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.util.*;
 import com.liferay.util.JNDIUtil;
 import com.microsoft.sqlserver.jdbc.ISQLServerConnection;
-
+import io.vavr.Lazy;
+import io.vavr.control.Try;
 import javax.naming.*;
 import javax.sql.DataSource;
 import java.sql.*;
@@ -27,7 +28,6 @@ public class DbConnectionFactory {
     protected static final String MSSQL = "Microsoft SQL Server";
     protected static final String H2 = "H2";
 
-    private static DataSource defaultDataSource = null;
 
     /**
      * Gets the autoCommit for the current connection
@@ -104,68 +104,69 @@ public class DbConnectionFactory {
     static final String CONNECTION_DB_LEAK_DETECTION_THRESHOLD = "DB_LEAK_DETECTION_THRESHOLD";
     static final String CONNECTION_DB_DEFAULT_TRANSACTION_ISOLATION = "DB_DEFAULT_TRANSACTION_ISOLATION";
     
+    private static Lazy<DataSource> lazyDataSource = Lazy.of(()->{
+        final HikariConfig config = new HikariConfig();
+
+        config.setPoolName(Constants.DATABASE_DEFAULT_DATASOURCE);
+
+        config.setDriverClassName(System.getenv(CONNECTION_DB_DRIVER) != null
+            ? System.getenv(CONNECTION_DB_DRIVER)
+            : "org.postgresql.Driver");
+
+        config.setJdbcUrl(System.getenv(CONNECTION_DB_BASE_URL) != null
+            ? System.getenv(CONNECTION_DB_BASE_URL)
+            : "jdbc:postgresql://db.dotcms.site/dotcms");
+
+        config.setUsername(System.getenv(CONNECTION_DB_USERNAME));
+
+        config.setPassword(System.getenv(CONNECTION_DB_PASSWORD));
+
+        config.setMaximumPoolSize(Integer.parseInt(
+                        System.getenv(CONNECTION_DB_MAX_TOTAL) != null ? System.getenv(CONNECTION_DB_MAX_TOTAL) : "60"));
+
+        config.setMinimumIdle(Integer.parseInt(
+                        System.getenv(CONNECTION_DB_MIN_IDLE) != null ? System.getenv(CONNECTION_DB_MIN_IDLE) : "10"));
+
+
+        config.setIdleTimeout(Integer.parseInt(
+                        System.getenv(CONNECTION_DB_MIN_IDLE) != null ? System.getenv(CONNECTION_DB_MIN_IDLE) : "10")
+                        * 1000);
+
+        config.setMaxLifetime(Integer.parseInt(
+                        System.getenv(CONNECTION_DB_MAX_WAIT) != null ? System.getenv(CONNECTION_DB_MAX_WAIT) : "60000"));
+
+        config.setConnectionTestQuery(System.getenv(CONNECTION_DB_VALIDATION_QUERY));
+
+        // This property controls the amount of time that a connection can be out of the pool before a
+        // message
+        // is logged indicating a possible connection leak. A value of 0 means leak detection is disabled.
+        // Lowest acceptable value for enabling leak detection is 2000 (2 seconds). Default: 0
+        config.setLeakDetectionThreshold(Integer.parseInt(System.getenv(CONNECTION_DB_LEAK_DETECTION_THRESHOLD) != null
+            ? System.getenv(CONNECTION_DB_LEAK_DETECTION_THRESHOLD)
+            : "300000"));
+
+        config.setTransactionIsolation(System.getenv(CONNECTION_DB_DEFAULT_TRANSACTION_ISOLATION));
+
+
+        DataSource defaultDataSource = new HikariDataSource(config);
+        try {
+            Context ctx = new InitialContext();
+            ctx.bind(Constants.DATABASE_DEFAULT_DATASOURCE, defaultDataSource);
+        } catch (Exception e) {
+            throw new DotRuntimeException(e);
+        }
+        
+        return defaultDataSource;
+        
+    });
+    
+    
+    
+    
     public static DataSource getDataSource() {
 
-        if (null == defaultDataSource) {
 
-            synchronized (DbConnectionFactory.class) {
-
-                final HikariConfig config = new HikariConfig();
-
-                config.setPoolName(Constants.DATABASE_DEFAULT_DATASOURCE);
-
-                config.setDriverClassName(System.getenv(CONNECTION_DB_DRIVER) != null
-                    ? System.getenv(CONNECTION_DB_DRIVER)
-                    : "org.postgresql.Driver");
-
-                config.setJdbcUrl(System.getenv(CONNECTION_DB_BASE_URL) != null
-                    ? System.getenv(CONNECTION_DB_BASE_URL)
-                    : "jdbc:postgresql://db.dotcms.site/dotcms");
-
-                config.setUsername(System.getenv(CONNECTION_DB_USERNAME));
-
-                config.setPassword(System.getenv(CONNECTION_DB_PASSWORD));
-
-                config.setMaximumPoolSize(Integer.parseInt(
-                                System.getenv(CONNECTION_DB_MAX_TOTAL) != null ? System.getenv(CONNECTION_DB_MAX_TOTAL) : "60"));
-
-                config.setMinimumIdle(Integer.parseInt(
-                                System.getenv(CONNECTION_DB_MIN_IDLE) != null ? System.getenv(CONNECTION_DB_MIN_IDLE) : "10"));
-
-
-                config.setIdleTimeout(Integer.parseInt(
-                                System.getenv(CONNECTION_DB_MIN_IDLE) != null ? System.getenv(CONNECTION_DB_MIN_IDLE) : "10")
-                                * 1000);
-
-                config.setMaxLifetime(Integer.parseInt(
-                                System.getenv(CONNECTION_DB_MAX_WAIT) != null ? System.getenv(CONNECTION_DB_MAX_WAIT) : "60000"));
-
-                config.setConnectionTestQuery(System.getenv(CONNECTION_DB_VALIDATION_QUERY));
-
-                // This property controls the amount of time that a connection can be out of the pool before a
-                // message
-                // is logged indicating a possible connection leak. A value of 0 means leak detection is disabled.
-                // Lowest acceptable value for enabling leak detection is 2000 (2 seconds). Default: 0
-                config.setLeakDetectionThreshold(Integer.parseInt(System.getenv(CONNECTION_DB_LEAK_DETECTION_THRESHOLD) != null
-                    ? System.getenv(CONNECTION_DB_LEAK_DETECTION_THRESHOLD)
-                    : "300000"));
-
-                config.setTransactionIsolation(System.getenv(CONNECTION_DB_DEFAULT_TRANSACTION_ISOLATION));
-
-
-                defaultDataSource = new HikariDataSource(config);
-                
-                try {
-                    Context ctx = new InitialContext();
-                    ctx.bind(Constants.DATABASE_DEFAULT_DATASOURCE, defaultDataSource);
-                } catch (Exception e) {
-                    throw new DotRuntimeException(e);
-                }
-
-            }
-        }
-
-        return defaultDataSource;
+        return lazyDataSource.get();
     }
 
     /**
@@ -173,7 +174,7 @@ public class DbConnectionFactory {
      */
     public static DataSource getDataSource(String dataSource) {
         if(Constants.DATABASE_DEFAULT_DATASOURCE.equals(dataSource)) {
-            return getDataSource();
+            return lazyDataSource.get();
         }
         try {
             InitialContext ctx = new InitialContext();
