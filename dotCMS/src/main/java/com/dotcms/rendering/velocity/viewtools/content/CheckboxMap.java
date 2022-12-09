@@ -52,8 +52,18 @@ public class CheckboxMap {
 
 	/**
 	 * @return the value
+	 * DEPRECATED: This is a years-old typo that was not reflected in the documentation.
+	 * getValues() has been added below as the corrected form; getValue() will remain
+	 * in place for now to retain backwards compatibility.
 	 */
 	public List<String> getValue() {
+		return values;
+	}
+	
+	/**
+	 * @return all checkbox values
+	 */
+	public List<String> getValues() {
 		return values;
 	}
 
