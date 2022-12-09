@@ -91,7 +91,8 @@ public final class PostgresCacheTransport implements CacheTransport {
                 statment.execute("LISTEN " + topicName.get());
                 isInitialized.set(true);
             } catch (Exception e) {
-                Logger.warnEveryAndDebug(PostgresCacheTransport.class, e.getMessage(), e, 5000);
+                
+                throw new DotRuntimeException(e);
             }
         }
 
@@ -103,10 +104,9 @@ public final class PostgresCacheTransport implements CacheTransport {
 
         @Override
         public void run() {
-            connect();
             while (isInitialized.get()) {
                 try {
-                    if(conn.isClosed()) {
+                    if(conn==null || conn.isClosed()) {
                         connect();
                     }
                     try (Statement stmt = conn.createStatement()) {
@@ -134,7 +134,7 @@ public final class PostgresCacheTransport implements CacheTransport {
 
 
                 } catch (Throwable e) {
-                    Logger.warnAndDebug(PGListener.class, e);
+                    Logger.warnEveryAndDebug(PostgresCacheTransport.class, e.getMessage(), e, 5000);
                     Try.run(() -> Thread.sleep(SLEEP_BETWEEN_RUNS));
                    
                     if (++failures > KILL_ON_FAILURES) {

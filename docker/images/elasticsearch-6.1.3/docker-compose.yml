@@ -78,10 +78,10 @@ services:
         DB_BASE_URL: "jdbc:postgresql://db/dotcms"
         DB_USERNAME: 'dotcmsdbuser'
         DB_PASSWORD: 'password'
-        #ES_NODE_DATA: false
-        #ES_NODE_MASTER: false
-        ES_DATA_DIR: /data/local/esdata
-
+        ES_NODE_DATA: false
+        ES_NODE_MASTER: false
+        ES_DATA_DIR: /data/local
+        ES_TRANSPORT_PORT: 9304
         ES_DISCOVERY_NODE: 192.168.86.33:9301
         ES_NETWORK_PUBLISH_HOST: 192.168.86.33
         xUFoN0UCBp: FEHXWPZdB9

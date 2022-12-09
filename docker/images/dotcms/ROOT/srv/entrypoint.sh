@@ -14,6 +14,23 @@ echo "Starting dotCMS ..."
 echo "-------------------"
 echo ""
 
+if [[ ! -z "${ES_NETWORK_PUBLISH_HOST}" ]]; then
+    if  grep -q "# Network Publish Host" "/srv/dotserver/tomcat/webapps/ROOT/WEB-INF/elasticsearch/config/elasticsearch.yml"; then
+        echo "ES_NETWORK_PUBLISH_HOST already found"
+    else
+        echo "Network Publish Host"
+        echo "" >> /srv/dotserver/tomcat/webapps/ROOT/WEB-INF/elasticsearch/config/elasticsearch.yml
+        echo "# Network Publish Host" >> /srv/dotserver/tomcat/webapps/ROOT/WEB-INF/elasticsearch/config/elasticsearch.yml
+        echo "" >> /srv/dotserver/tomcat/webapps/ROOT/WEB-INF/elasticsearch/config/elasticsearch.yml
+        echo "network.publish_host: $ES_NETWORK_PUBLISH_HOST" >> /srv/dotserver/tomcat/webapps/ROOT/WEB-INF/elasticsearch/config/elasticsearch.yml
+        echo "" >> /srv/dotserver/tomcat/webapps/ROOT/WEB-INF/elasticsearch/config/elasticsearch.yml
+        echo "" >> /srv/config/elasticsearch.yml
+    fi
+fi
+
+
+
+
 [[ -n "${WAIT_FOR_DEPS}" ]] && echo "Waiting ${WAIT_FOR_DEPS} seconds for DotCMS dependencies to load..." && sleep ${WAIT_FOR_DEPS}
 
 exec -- ${TOMCAT_HOME}/bin/catalina.sh run
