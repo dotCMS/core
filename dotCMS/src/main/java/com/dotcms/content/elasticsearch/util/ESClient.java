@@ -12,6 +12,7 @@ import com.dotcms.enterprise.cluster.ClusterFactory;
 import com.dotcms.enterprise.license.LicenseLevel;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.ConfigUtils;
 import com.dotmarketing.util.Logger;
@@ -117,11 +118,22 @@ public class ESClient {
                         
                         Node myNode = new Node(settings);
                         
+                        
+                        Logger.info(ESClient.class, "ES Node -------------------------");
+                        
+                        myNode.settings().keySet().forEach(k->{
+                            
+                            Logger.info(ESClient.class, k + "->" + String.valueOf(settings.get(k)));
+                            
+                        });
+                        
+                        Logger.info(ESClient.class, "/ES Node -------------------------");
  
                         
-                        _nodeInstance = new Node(settings).start();
-                    } catch (IOException | NodeValidationException e){
+                        _nodeInstance = myNode.start();
+                    } catch (Exception e){
                         Logger.error(this, "Error validating ES node at start.", e);
+                        throw new DotRuntimeException(e);
                     }
 
                     if (UtilMethods.isSet(extSettings)){
