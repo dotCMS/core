@@ -12,6 +12,7 @@ import { DotCMSContentlet } from '@dotcms/dotcms-models';
 import { DotLanguageService } from '../../shared';
 import { Languages } from '@dotcms/block-editor/services';
 import { FormGroup, FormBuilder } from '@angular/forms';
+import { Subject } from 'rxjs';
 
 @Component({
     selector: 'dot-image-form',
@@ -22,7 +23,7 @@ export class ImageFormComponent implements OnInit {
     @Input() languageId = 1;
     @Output() selectedContentlet: EventEmitter<DotCMSContentlet> = new EventEmitter();
 
-    public contentlets$;
+    public contentlets$ = new Subject<DotCMSContentlet[][]>();
     public items: DotCMSContentlet[][] = [];
     public form: FormGroup;
     private dotLangs: Languages;
@@ -38,10 +39,9 @@ export class ImageFormComponent implements OnInit {
             search: ['']
         });
 
-        this.form.valueChanges.pipe(debounceTime(500)).subscribe((_data) => {
+        this.form.valueChanges.pipe(debounceTime(500)).subscribe((search) => {
             this.items = [];
-            // console.log(data);
-            // this.searchContentlets(search);
+            this.searchContentlets(search);
         });
 
         this.dotLanguageService
@@ -51,25 +51,30 @@ export class ImageFormComponent implements OnInit {
     }
 
     searchContentlets(search = '', offset = '0') {
-        this.contentlets$ = this.searchService.get(this.getParams(search, offset)).pipe(
-            map(({ contentlets }) => {
-                contentlets.forEach((data) => {
-                    const i = this.items.length - 1;
-                    const contentlet = {
-                        ...data,
-                        language: this.getContentletLanguage(data.languageId)
-                    };
+        this.searchService
+            .get(this.getParams(search, offset))
+            .pipe(
+                map(({ jsonObjectView }) => {
+                    const { contentlets } = jsonObjectView;
 
-                    if (!this.items[i] || this.items[i]?.length === 2) {
-                        this.items.push([contentlet]);
-                    } else {
-                        this.items[i].push(contentlet);
-                    }
-                });
+                    contentlets.forEach((data) => {
+                        const i = this.items.length - 1;
+                        const contentlet = {
+                            ...data,
+                            language: this.getContentletLanguage(data.languageId)
+                        };
 
-                return this.items;
-            })
-        );
+                        if (!this.items[i] || this.items[i]?.length === 2) {
+                            this.items.push([contentlet]);
+                        } else {
+                            this.items[i].push(contentlet);
+                        }
+                    });
+
+                    return this.items;
+                })
+            )
+            .subscribe((items) => this.contentlets$.next(items));
     }
 
     resetForm() {
@@ -79,7 +84,7 @@ export class ImageFormComponent implements OnInit {
 
     private getParams(search = '', offset = '0'): queryEsParams {
         return {
-            query: `title:${search}* +contentType:(image OR fileAsset) title:'${search}'^15 +languageId:${this.languageId} +deleted:false +working:true`,
+            query: ` catchall:${search}* +baseType:(4 OR 9) +metadata.contenttype:image/* title:'${search}'^15 +languageId:${this.languageId} +deleted:false +working:true`,
             sortOrder: ESOrderDirection.ASC,
             limit: 20,
             offset

@@ -16,12 +16,13 @@
 
 <p-table
     *ngIf="contentlets?.length; else notFound"
-    [lazy]="true"
-    [rows]="4"
-    [scrollable]="true"
+    [columns]="cols"
     [value]="contentlets"
+    [scrollable]="true"
+    [rows]="9"
     [virtualScroll]="true"
     [virtualScrollItemSize]="110"
+    [lazy]="true"
     (onLazyLoad)="loadContentlets($event)"
     scrollHeight="250px"
 >

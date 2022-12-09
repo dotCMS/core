@@ -1655,9 +1655,11 @@ export const primary = () => ({
                         const query = params.query.match(new RegExp(/(?<=:)(.*?)(?=\*)/))[0];
 
                         return of({
-                            contentlets: IMAGE_CONTENTLETS.filter(({ fileName }) =>
-                                fileName.includes(query)
-                            )
+                            jsonObjectView: {
+                                contentlets: IMAGE_CONTENTLETS.filter(({ fileName }) =>
+                                    fileName.includes(query)
+                                )
+                            }
                         });
                     }
                 }

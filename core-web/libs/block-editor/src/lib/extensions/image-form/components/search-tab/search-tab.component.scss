@@ -46,15 +46,16 @@
 
     &::ng-deep {
         table {
-            padding: 0 (1.3125 * $dot-editor-size);
+            // .3125
+            padding: 0 (1 * $dot-editor-size);
         }
 
         .table-row {
             display: flex;
             justify-content: space-between;
-            gap: 10px;
+            // gap: 10px;
             min-height: 110px;
-            padding: 5px 0;
+            // padding: 5px 0;
         }
     }
 }

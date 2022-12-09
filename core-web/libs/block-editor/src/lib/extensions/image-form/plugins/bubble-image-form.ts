@@ -135,7 +135,7 @@ export class BubbleLinkFormView {
         const node = {
             attrs: {
                 data: contentlet,
-                src: `https://demo.dotcms.com` + fileAsset,
+                src: fileAsset,
                 title,
                 alt: title
             },

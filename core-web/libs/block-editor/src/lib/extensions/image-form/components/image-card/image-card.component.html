@@ -1,7 +1,7 @@
 <p-card>
     <ng-template pTemplate="header">
         <!-- 'https://demo.dotcms.com' +  -->
-        <img [src]="contentlet.fileAsset" />
+        <img [src]="'https://demo.dotcms.com' + contentlet.fileAsset" />
     </ng-template>
     <h2 class="title" *pTemplate="'title'">{{ contentlet?.fileName || contentlet?.title }}</h2>
     <ng-template pTemplate="footer">

@@ -19,9 +19,9 @@ export interface queryEsParams {
     sortOrder?: ESOrderDirection;
 }
 
-Injectable({
+@Injectable({
     providedIn: 'root'
-});
+})
 export class SearchService {
     constructor(private http: HttpClient) {}
 
@@ -33,25 +33,15 @@ export class SearchService {
      */
     /* eslint-disable @typescript-eslint/no-explicit-any */
     public get(params: queryEsParams): Observable<any> {
-        const body = this.getESQuery(params);
-
         return this.http
             .post('/api/content/_search', {
-                body
+                query: params.query,
+                sort: 'score,modDate desc',
+                limit: 20,
+                offset: params.offset
             })
             .pipe(pluck('entity'), take(1));
     }
 
-    private getESQuery(params: queryEsParams): {
-        [key: string]: string | number;
-    } {
-        const query = {
-            query: JSON.stringify(params).replace(/"|{|}|,/g, ' '),
-            sort: 'score,modDate desc',
-            limit: 20,
-            offset: 0
-        };
-
-        return query;
-    }
+    // catchall:* +baseType:(4 OR 9) +metadata.contenttype:image/* title:''^15 +languageId:1 +deleted:false +working:true
 }
