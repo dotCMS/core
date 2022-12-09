@@ -104,46 +104,34 @@ public class DbConnectionFactory {
     static final String CONNECTION_DB_LEAK_DETECTION_THRESHOLD = "DB_LEAK_DETECTION_THRESHOLD";
     static final String CONNECTION_DB_DEFAULT_TRANSACTION_ISOLATION = "DB_DEFAULT_TRANSACTION_ISOLATION";
     
+    private static String getOrDefault(String key, String defaultVal) {
+        return System.getenv(key) != null ? System.getenv(key) : defaultVal;
+    }
+    
     private static Lazy<DataSource> lazyDataSource = Lazy.of(()->{
         final HikariConfig config = new HikariConfig();
 
         config.setPoolName(Constants.DATABASE_DEFAULT_DATASOURCE);
 
-        config.setDriverClassName(System.getenv(CONNECTION_DB_DRIVER) != null
-            ? System.getenv(CONNECTION_DB_DRIVER)
-            : "org.postgresql.Driver");
+        config.setDriverClassName(getOrDefault(CONNECTION_DB_DRIVER, "org.postgresql.Driver"));
 
-        config.setJdbcUrl(System.getenv(CONNECTION_DB_BASE_URL) != null
-            ? System.getenv(CONNECTION_DB_BASE_URL)
-            : "jdbc:postgresql://db.dotcms.site/dotcms");
+        config.setJdbcUrl(getOrDefault(CONNECTION_DB_BASE_URL, "jdbc:postgresql://db.dotcms.site/dotcms"));
 
         config.setUsername(System.getenv(CONNECTION_DB_USERNAME));
 
         config.setPassword(System.getenv(CONNECTION_DB_PASSWORD));
 
-        config.setMaximumPoolSize(Integer.parseInt(
-                        System.getenv(CONNECTION_DB_MAX_TOTAL) != null ? System.getenv(CONNECTION_DB_MAX_TOTAL) : "60"));
+        config.setMaximumPoolSize(Integer.parseInt(getOrDefault(CONNECTION_DB_MAX_TOTAL, "60")));
 
-        config.setMinimumIdle(Integer.parseInt(
-                        System.getenv(CONNECTION_DB_MIN_IDLE) != null ? System.getenv(CONNECTION_DB_MIN_IDLE) : "10"));
+        config.setMinimumIdle(Integer.parseInt(getOrDefault(CONNECTION_DB_MIN_IDLE, "10")));
 
+        config.setIdleTimeout((Integer.parseInt(getOrDefault(CONNECTION_DB_MIN_IDLE, "10")) * 1000));
 
-        config.setIdleTimeout(Integer.parseInt(
-                        System.getenv(CONNECTION_DB_MIN_IDLE) != null ? System.getenv(CONNECTION_DB_MIN_IDLE) : "10")
-                        * 1000);
-
-        config.setMaxLifetime(Integer.parseInt(
-                        System.getenv(CONNECTION_DB_MAX_WAIT) != null ? System.getenv(CONNECTION_DB_MAX_WAIT) : "60000"));
+        config.setMaxLifetime(Integer.parseInt(getOrDefault(CONNECTION_DB_MAX_WAIT, "60000")));
 
         config.setConnectionTestQuery(System.getenv(CONNECTION_DB_VALIDATION_QUERY));
 
-        // This property controls the amount of time that a connection can be out of the pool before a
-        // message
-        // is logged indicating a possible connection leak. A value of 0 means leak detection is disabled.
-        // Lowest acceptable value for enabling leak detection is 2000 (2 seconds). Default: 0
-        config.setLeakDetectionThreshold(Integer.parseInt(System.getenv(CONNECTION_DB_LEAK_DETECTION_THRESHOLD) != null
-            ? System.getenv(CONNECTION_DB_LEAK_DETECTION_THRESHOLD)
-            : "300000"));
+        config.setLeakDetectionThreshold(Integer.parseInt(getOrDefault(CONNECTION_DB_LEAK_DETECTION_THRESHOLD, "300000")));
 
         config.setTransactionIsolation(System.getenv(CONNECTION_DB_DEFAULT_TRANSACTION_ISOLATION));
 
@@ -165,7 +153,6 @@ public class DbConnectionFactory {
     
     public static DataSource getDataSource() {
 
-
         return lazyDataSource.get();
     }
 
@@ -173,13 +160,13 @@ public class DbConnectionFactory {
      * This is used to get data source to other database != than the default dotCMS one
      */
     public static DataSource getDataSource(String dataSource) {
-        if(Constants.DATABASE_DEFAULT_DATASOURCE.equals(dataSource)) {
+        if(Constants.DATABASE_DEFAULT_DATASOURCE.equalsIgnoreCase(dataSource)) {
             return lazyDataSource.get();
         }
         try {
             InitialContext ctx = new InitialContext();
-            DataSource ds = (DataSource) JNDIUtil.lookup(ctx, dataSource);
-            return ds;
+            return (DataSource) JNDIUtil.lookup(ctx, dataSource);
+
 
         } catch (Exception e) {
             Logger.error(DbConnectionFactory.class,
@@ -237,7 +224,7 @@ public class DbConnectionFactory {
         } catch (Exception e) {
             Logger.error(DbConnectionFactory.class, "---------- DBConnectionFactory: error : " + e);
             Logger.debug(DbConnectionFactory.class, "---------- DBConnectionFactory: error ", e);
-            throw new DotRuntimeException(e.toString());
+            throw new DotRuntimeException(e);
         }
     }
 
