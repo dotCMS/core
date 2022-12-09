@@ -8,6 +8,7 @@ import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.NoCache;
+import com.dotcms.rest.api.DotRestInstanceProvider;
 import com.dotcms.rest.api.v1.authentication.IncorrectPasswordException;
 import com.dotcms.rest.exception.BadRequestException;
 import com.dotcms.rest.exception.ForbiddenException;
@@ -75,7 +76,6 @@ import static com.dotcms.util.CollectionsUtils.map;
  *
  */
 @Path("/v1/users")
-@SuppressWarnings("serial")
 public class UserResource implements Serializable {
 
 	private final WebResource webResource;
@@ -90,20 +90,24 @@ public class UserResource implements Serializable {
 	 * Default class constructor.
 	 */
 	public UserResource() {
-		this(new WebResource(new ApiProvider()), APILocator.getUserAPI(), APILocator.getHostAPI(), UserResourceHelper.getInstance(),
-				ErrorResponseHelper.INSTANCE, new PaginationUtil(new UserPaginator()), APILocator.getRoleAPI());
+		this(new WebResource(new ApiProvider()), UserResourceHelper.getInstance(),
+				new PaginationUtil(new UserPaginator()), new DotRestInstanceProvider()
+																 .setUserAPI(APILocator.getUserAPI())
+																 .setHostAPI(APILocator.getHostAPI())
+																 .setRoleAPI(APILocator.getRoleAPI())
+																 .setErrorHelper(ErrorResponseHelper.INSTANCE));
 	}
 
 	@VisibleForTesting
-	protected UserResource(final WebResource webResource,  final UserAPI userAPI, final HostAPI siteAPI, final UserResourceHelper userHelper,
-						   final ErrorResponseHelper errorHelper, PaginationUtil paginationUtil, final RoleAPI roleAPI) {
+	protected UserResource(final WebResource webResource, final UserResourceHelper userHelper,
+						   PaginationUtil paginationUtil, final DotRestInstanceProvider instanceProvider) {
 		this.webResource = webResource;
-		this.userAPI = userAPI;
-		this.siteAPI = siteAPI;
 		this.helper = userHelper;
-		this.errorHelper = errorHelper;
 		this.paginationUtil = paginationUtil;
-		this.roleAPI = roleAPI;
+		this.userAPI = instanceProvider.getUserAPI();
+		this.siteAPI = instanceProvider.getHostAPI();
+		this.errorHelper = instanceProvider.getErrorHelper();
+		this.roleAPI = instanceProvider.getRoleAPI();
 	}
 
 	/**
@@ -625,7 +629,8 @@ public class UserResource implements Serializable {
 	 */
 	private void checkUserLoginAsRole(final User user) throws DotDataException, DotSecurityException {
 		final Role loginAsRole = this.roleAPI.loadRoleByKey(Role.LOGIN_AS);
-		if (!Try.of(() -> this.roleAPI.doesUserHaveRole(user, loginAsRole)).getOrElse(false)) {
+		final boolean hasRole = Try.of(() -> this.roleAPI.doesUserHaveRole(user, loginAsRole)).getOrElse(Boolean.FALSE);
+		if (!hasRole) {
 			final String errorMsg = String.format("User '%s' must have the Login As role to execute this action",
 					user.getUserId());
 			Logger.debug(this, errorMsg);

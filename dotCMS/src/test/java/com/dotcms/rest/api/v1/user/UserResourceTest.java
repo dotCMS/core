@@ -9,10 +9,12 @@ import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.RestUtilTest;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.WebResource.InitBuilder;
+import com.dotcms.rest.api.DotRestInstanceProvider;
 import com.dotcms.rest.exception.ForbiddenException;
 import com.dotcms.util.PaginationUtil;
 import com.dotcms.util.UserUtilTest;
 import com.dotcms.util.pagination.UserPaginator;
+import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.LayoutAPI;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.Role;
@@ -91,8 +93,13 @@ public class UserResourceTest extends UnitTestBase {
         final PaginationUtil paginationUtil = mock(PaginationUtil.class);
         when(paginationUtil.getPage(request, user, filter, page, perPage )).thenReturn(responseExpected);
 
+        final DotRestInstanceProvider instanceProvider = new DotRestInstanceProvider()
+                                                                 .setUserAPI(userAPI)
+                                                                 .setHostAPI(siteAPI)
+                                                                 .setRoleAPI(roleAPI)
+                                                                 .setErrorHelper(errorHelper);
         UserResource userResource =
-                new UserResource(webResource, userAPI, siteAPI, userHelper, errorHelper, paginationUtil, roleAPI);
+                new UserResource(webResource, userHelper, paginationUtil, instanceProvider);
 
         try {
 
@@ -176,9 +183,13 @@ public class UserResourceTest extends UnitTestBase {
         final PaginationUtil paginationUtil = mock(PaginationUtil.class);
         when(paginationUtil.getPage(request, user, filter, page, perPage )).thenReturn(responseExpected);
 
-
+        final DotRestInstanceProvider instanceProvider = new DotRestInstanceProvider()
+                                                                 .setUserAPI(userAPI)
+                                                                 .setHostAPI(siteAPI)
+                                                                 .setRoleAPI(roleAPI)
+                                                                 .setErrorHelper(errorHelper);
         UserResource userResource =
-                new UserResource(webResource, userAPI, siteAPI, userHelper, errorHelper, paginationUtil, roleAPI);
+                new UserResource(webResource, userHelper, paginationUtil, instanceProvider);
 
         UpdateUserForm updateUserForm = new UpdateUserForm.Builder()
                 .userId("dotcms.org.1")
@@ -248,8 +259,13 @@ public class UserResourceTest extends UnitTestBase {
         Response responseExpected = Response.ok(new ResponseEntityView<>(users)).build();
         final PaginationUtil paginationUtil = mock(PaginationUtil.class);
         when(paginationUtil.getPage(request, user, filter, page, perPage )).thenReturn(responseExpected);
+        final DotRestInstanceProvider instanceProvider = new DotRestInstanceProvider()
+                                                                 .setUserAPI(userAPI)
+                                                                 .setHostAPI(siteAPI)
+                                                                 .setRoleAPI(roleAPI)
+                                                                 .setErrorHelper(errorHelper);
         UserResource userResource =
-                new UserResource(webResource, userAPI, siteAPI, userHelper, errorHelper, paginationUtil, roleAPI);
+                new UserResource(webResource, userHelper, paginationUtil, instanceProvider);
 
         UpdateUserForm updateUserForm = new UpdateUserForm.Builder()
                 .userId("dotcms.org.1")
@@ -327,8 +343,13 @@ public class UserResourceTest extends UnitTestBase {
         final PaginationUtil paginationUtil = mock(PaginationUtil.class);
         when(paginationUtil.getPage(request, user, filter, page, perPage )).thenReturn(responseExpected);
 
+        final DotRestInstanceProvider instanceProvider = new DotRestInstanceProvider()
+                                                                 .setUserAPI(userAPI)
+                                                                 .setHostAPI(siteAPI)
+                                                                 .setRoleAPI(roleAPI)
+                                                                 .setErrorHelper(errorHelper);
         UserResource userResource =
-                new UserResource(webResource, userAPI, siteAPI, userHelper, errorHelper, paginationUtil, roleAPI);
+                new UserResource(webResource, userHelper, paginationUtil, instanceProvider);
 
         UpdateUserForm updateUserForm = new UpdateUserForm.Builder()
                 .userId("dotcms.org.1")
@@ -397,8 +418,13 @@ public class UserResourceTest extends UnitTestBase {
         final int perPage = 4;
         when(paginationUtil.getPage(request, user, filter, page, perPage, extraParams )).thenReturn(responseExpected);
 
+        final DotRestInstanceProvider instanceProvider = new DotRestInstanceProvider()
+                                                                 .setUserAPI(userAPI)
+                                                                 .setHostAPI(siteAPI)
+                                                                 .setRoleAPI(roleAPI)
+                                                                 .setErrorHelper(errorHelper);
         UserResource resource =
-                new UserResource(webResource, userAPI, siteAPI, userHelper, errorHelper, paginationUtil, roleAPI);
+                new UserResource(webResource, userHelper, paginationUtil, instanceProvider);
         Response response;
         RestUtilTest.verifySuccessResponse(
                 response = resource.loginAsData(request, httpServletResponse, filter, page, perPage)
@@ -447,8 +473,13 @@ public class UserResourceTest extends UnitTestBase {
         final PaginationUtil paginationUtil = mock(PaginationUtil.class);
         when(paginationUtil.getPage(request, user, filter, page, perPage )).thenReturn(responseExpected);
 
+        final DotRestInstanceProvider instanceProvider = new DotRestInstanceProvider()
+                                                                 .setUserAPI(userAPI)
+                                                                 .setHostAPI(siteAPI)
+                                                                 .setRoleAPI(roleAPI)
+                                                                 .setErrorHelper(errorHelper);
         UserResource resource =
-                new UserResource(webResource, userAPI, siteAPI, userHelper, errorHelper, paginationUtil, roleAPI);
+                new UserResource(webResource, userHelper, paginationUtil, instanceProvider);
 
         Response response = resource.loginAsData(request, httpServletResponse, filter, page, perPage);
     }
