@@ -10,6 +10,8 @@ import { InputTextModule } from 'primeng/inputtext';
 import { CardModule } from 'primeng/card';
 import { OrderListModule } from 'primeng/orderlist';
 import { ListboxModule } from 'primeng/listbox';
+import { TabViewModule } from 'primeng/tabview';
+import { SkeletonModule } from 'primeng/skeleton';
 
 // DotCMS JS
 import { LoggerService } from '@dotcms/dotcms-js';
@@ -42,6 +44,10 @@ import { BubbleFormComponent } from './extensions/bubble-form/bubble-form.compon
 import { DotBlockEditorComponent } from './components/dot-block-editor/dot-block-editor.component';
 import { DotEditorCountBarComponent } from './components/dot-editor-count-bar/dot-editor-count-bar.component';
 import { FloatingButtonComponent } from './extensions/floating-button/floating-button.component';
+import { ImageTabviewFormComponent } from './extensions/image-tabview-form/image-tabview-form.component';
+import { DotImageCardListComponent } from './extensions/image-tabview-form/components/dot-image-card-list/dot-image-card-list.component';
+import { DotImageCardComponent } from './extensions/image-tabview-form/components/dot-image-card/dot-image-card.component';
+import { DotImageCardSkeletonComponent } from './extensions/image-tabview-form/components/dot-image-card-skeleton/dot-image-card-skeleton.component';
 
 @NgModule({
     imports: [
@@ -55,7 +61,9 @@ import { FloatingButtonComponent } from './extensions/floating-button/floating-b
         InputTextModule,
         SharedModule,
         OrderListModule,
-        ListboxModule
+        ListboxModule,
+        TabViewModule,
+        SkeletonModule
     ],
     declarations: [
         EditorDirective,
@@ -71,7 +79,11 @@ import { FloatingButtonComponent } from './extensions/floating-button/floating-b
         SuggestionPageComponent,
         DotBlockEditorComponent,
         DotEditorCountBarComponent,
-        FloatingButtonComponent
+        FloatingButtonComponent,
+        ImageTabviewFormComponent,
+        DotImageCardListComponent,
+        DotImageCardComponent,
+        DotImageCardSkeletonComponent
     ],
     providers: [DotImageService, LoggerService, StringUtils],
     exports: [

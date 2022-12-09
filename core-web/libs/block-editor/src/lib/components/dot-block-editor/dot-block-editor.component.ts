@@ -24,7 +24,8 @@ import {
     formatHTML,
     DotTableCellExtension,
     DotTableExtension,
-    DotTableHeaderExtension
+    DotTableHeaderExtension,
+    BubbleImageTabviewFormExtension
 } from '@dotcms/block-editor';
 
 // Marks Extensions
@@ -131,6 +132,7 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy {
             DotBubbleMenuExtension(this.viewContainerRef),
             BubbleFormExtension(this.viewContainerRef),
             DotFloatingButton(this.injector, this.viewContainerRef),
+            BubbleImageTabviewFormExtension(this.viewContainerRef),
             // Marks Extensions
             Underline,
             CharacterCount,

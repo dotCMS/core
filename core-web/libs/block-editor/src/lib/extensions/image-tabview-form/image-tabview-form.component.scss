@@ -1,0 +1,48 @@
+@use "variables" as *;
+
+.container {
+    width: 46.25 * $dot-editor-size;
+    background: $white;
+    border: 1px solid $gray-light;
+}
+
+.wrapper {
+    width: 100%;
+    padding: 1.3125 * $dot-editor-size;
+    height: 400px;
+}
+
+.search-box {
+    padding: 1.3125 * $dot-editor-size;
+
+    &,
+    span {
+        width: 100%;
+    }
+
+    .search {
+        width: 100%;
+        border: 1px solid $gray-light;
+        border-radius: $border-radius;
+        padding: 0.5 * $dot-editor-size;
+        padding-left: $dot-editor-size;
+    }
+}
+
+:host::ng-deep {
+    .p-tabview {
+        .p-tabview-nav {
+            padding: 0 (1.3125 * $dot-editor-size);
+
+            li {
+                .p-tabview-nav-link:focus {
+                    background: $white;
+                }
+
+                &:hover .p-tabview-nav-link {
+                    background: rgba($brand-secondary_rgb, 0.12);
+                }
+            }
+        }
+    }
+}
