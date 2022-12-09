@@ -1,3 +1,0 @@
-<project name="dotCMS Config Plugin" default="build">	
-	<import file="../common.xml"/>	
-</project>
