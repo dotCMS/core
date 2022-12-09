@@ -21,8 +21,8 @@ def scriptDescription = """\
     ********************************************************
     Script that will upload a given file as released or as a snapshot using the 'uploadArchives' task:
 
-    When the file is treated as a release will be uploaded to the libs-release-local repository (http://repo.dotcms.com/artifactory/libs-release-local)
-     otherwise it will be treated as a snapshot and uploaded to the libs-snapshot-local repository (http://repo.dotcms.com/artifactory/libs-snapshot-local)
+    When the file is treated as a release will be uploaded to the libs-release-local repository (https://repo.dotcms.com/artifactory/libs-release-local)
+     otherwise it will be treated as a snapshot and uploaded to the libs-snapshot-local repository (https://repo.dotcms.com/artifactory/libs-snapshot-local)
 
 
 'uploadArchives' task
