@@ -52,23 +52,23 @@ jobs:
             echo "::set-output name=color::#ff2400";
             exit 1;
           fi
-      - name: Push Tests to GitHub
-        id: persist_results
-        if: success() || failure()
-        run: |
-          chmod +x .cicd/github.sh && source .cicd/github.sh
-          persistResults
-          echo "::set-output name=message::$(logResults)";
-      - name: Build
-        id: build
-        working-directory: core-web
-        run:  |
-          echo "name=Test" >>$GITHUB_OUTPUT
-          if ! (npx nx build dotcms-ui) then
-            echo "::set-output name=status::failure";
-            echo "::set-output name=color::#ff2400";
-            exit 1;
-          fi
+      # - name: Push Tests to GitHub
+      #   id: persist_results
+      #   if: success() || failure()
+      #   run: |
+      #     chmod +x .cicd/github.sh && source .cicd/github.sh
+      #     persistResults
+      #     echo "::set-output name=message::$(logResults)";
+      # - name: Build
+      #   id: build
+      #   working-directory: core-web
+      #   run:  |
+      #     echo "name=Test" >>$GITHUB_OUTPUT
+      #     if ! (npx nx build dotcms-ui) then
+      #       echo "::set-output name=status::failure";
+      #       echo "::set-output name=color::#ff2400";
+      #       exit 1;
+      #     fi
   notify:
     runs-on: ubuntu-latest # the image our job will run on
     name: Notify Slack
