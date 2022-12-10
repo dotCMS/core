@@ -38,20 +38,20 @@ jobs:
         run: |
           echo "name=Lint" >>$GITHUB_OUTPUT
           if ! (npx nx affected --target=lint --base=origin/master --parallel --exclude=${{ env.EXCLUDED_PROJECTS }}) then
-            echo "::set-output name=status::failure";
-            echo "::set-output name=color::#ff2400";
+            echo "status=status" >>$GITHUB_OUTPUT
+            echo "color=#ff2400" >>$GITHUB_OUTPUT
             exit 1;
           fi
-      - name: Test
-        id: test
-        working-directory: core-web
-        run: |
-          echo "name=Test" >>$GITHUB_OUTPUT
-          if ! (npx nx affected --target=test --base=origin/master --parallel --exclude=${{ env.EXCLUDED_PROJECTS }}) then
-            echo "::set-output name=status::failure";
-            echo "::set-output name=color::#ff2400";
-            exit 1;
-          fi
+      # - name: Test
+      #   id: test
+      #   working-directory: core-web
+      #   run: |
+      #     echo "name=Test" >>$GITHUB_OUTPUT
+      #     if ! (npx nx affected --target=test --base=origin/master --parallel --exclude=${{ env.EXCLUDED_PROJECTS }}) then
+      #       echo "status=status" >>$GITHUB_OUTPUT
+      #       echo "color=#ff2400" >>$GITHUB_OUTPUT
+      #       exit 1;
+      #     fi
       # - name: Push Tests to GitHub
       #   id: persist_results
       #   if: success() || failure()
@@ -65,8 +65,8 @@ jobs:
       #   run:  |
       #     echo "name=Test" >>$GITHUB_OUTPUT
       #     if ! (npx nx build dotcms-ui) then
-      #       echo "::set-output name=status::failure";
-      #       echo "::set-output name=color::#ff2400";
+      #       echo "status=status" >>$GITHUB_OUTPUT
+      #       echo "color=#ff2400" >>$GITHUB_OUTPUT
       #       exit 1;
       #     fi
   notify:
