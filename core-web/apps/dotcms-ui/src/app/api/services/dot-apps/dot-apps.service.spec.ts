@@ -42,7 +42,7 @@ const mockDotApps = [
     }
 ];
 
-fdescribe('DotAppsService', () => {
+describe('DotAppsService', () => {
     let injector: TestBed;
     let dotAppsService: DotAppsService;
     let dotHttpErrorManagerService: DotHttpErrorManagerService;
@@ -198,7 +198,7 @@ fdescribe('DotAppsService', () => {
             body: JSON.stringify(conf)
         });
         expect(dotUtils.getDownloadLink).toHaveBeenCalledWith(blobMock, fileName);
-        expect(anchor.click).toHaveBeenCalledTimes(2);
+        expect(anchor.click).toHaveBeenCalledTimes(1);
     }));
 
     it('should throw error when export apps configuration', fakeAsync(() => {
