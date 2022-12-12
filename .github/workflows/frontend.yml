@@ -41,7 +41,7 @@ jobs:
         working-directory: core-web
         run: |
           if ! (npx nx affected --target=lint --base=origin/master --parallel --exclude=${{ env.EXCLUDED_PROJECTS }}) then
-            echo "name=Lint" >>$GITHUB_OUTPUT
+            echo "name=:x: Lint" >>$GITHUB_OUTPUT
             echo "status=failure" >>$GITHUB_OUTPUT
             echo "color=#ff2400" >>$GITHUB_OUTPUT
             exit 1;
@@ -51,7 +51,7 @@ jobs:
         working-directory: core-web
         run: |
           if ! (npx nx affected --target=test --base=origin/master --parallel --exclude=${{ env.EXCLUDED_PROJECTS }}) then
-            echo "name=Test" >>$GITHUB_OUTPUT
+            echo "name=:x: Test" >>$GITHUB_OUTPUT
             echo "status=failure" >>$GITHUB_OUTPUT
             echo "color=#ff2400" >>$GITHUB_OUTPUT
             exit 1;
@@ -68,7 +68,7 @@ jobs:
         working-directory: core-web
         run:  |
           if ! (npx nx build dotcms-ui) then
-            echo "name=Build" >>$GITHUB_OUTPUT
+            echo "name=:x: Build" >>$GITHUB_OUTPUT
             echo "status=failure" >>$GITHUB_OUTPUT
             echo "color=#ff2400" >>$GITHUB_OUTPUT
             exit 1;
@@ -86,6 +86,6 @@ jobs:
           SLACK_USERNAME: dotBot
           SLACK_ICON: https://avatars.slack-edge.com/2020-09-21/1362682893351_5b474f175640cf5f5912_72.png
           SLACK_COLOR: ${{ needs.check-all.outputs.color && needs.check-all.outputs.color || '#5E7D00' }}
-          SLACK_TITLE: "${{ needs.check-all.outputs.name && needs.check-all.outputs.name || 'Frontend Checks' }}: (${{ needs.check-all.outputs.status && needs.check-all.outputs.status || 'Success' }})"
+          SLACK_TITLE: "${{ needs.check-all.outputs.name && needs.check-all.outputs.name || ':white_check_mark: Frontend Checks' }}: (${{ needs.check-all.outputs.status && needs.check-all.outputs.status || 'Success' }})"
           SLACK_MESSAGE: ${{ needs.check-all.outputs.message && needs.check-all.outputs.message || 'Everything went well, ready to merge'}} 
           SLACK_FOOTER: ${{ env.PULL_REQUEST_URL }}
