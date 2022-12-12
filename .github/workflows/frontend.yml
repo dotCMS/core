@@ -36,16 +36,16 @@ jobs:
       - uses: bahmutov/npm-install@v1 # trigger an `npm install`
         with:
           working-directory: core-web
-      # - name: Lint
-      #   id: lint
-      #   working-directory: core-web
-      #   run: |
-      #     echo "name=Lint" >>$GITHUB_OUTPUT
-      #     if ! (npx nx affected --target=lint --base=origin/master --parallel --exclude=${{ env.EXCLUDED_PROJECTS }}) then
-      #       echo "status=failure" >>$GITHUB_OUTPUT
-      #       echo "color=#ff2400" >>$GITHUB_OUTPUT
-      #       exit 1;
-      #     fi
+      - name: Lint
+        id: lint
+        working-directory: core-web
+        run: |
+          echo "name=Lint" >>$GITHUB_OUTPUT
+          if ! (npx nx affected --target=lint --base=origin/master --parallel --exclude=${{ env.EXCLUDED_PROJECTS }}) then
+            echo "status=failure" >>$GITHUB_OUTPUT
+            echo "color=#ff2400" >>$GITHUB_OUTPUT
+            exit 1;
+          fi
       - name: Test
         id: test
         working-directory: core-web
@@ -63,16 +63,16 @@ jobs:
           chmod +x .cicd/github.sh && source .cicd/github.sh
           persistResults
           echo "::set-output name=message::$(logResults)";
-      # - name: Build
-      #   id: build
-      #   working-directory: core-web
-      #   run:  |
-      #     echo "name=Test" >>$GITHUB_OUTPUT
-      #     if ! (npx nx build dotcms-ui) then
-      #       echo "status=failure" >>$GITHUB_OUTPUT
-      #       echo "color=#ff2400" >>$GITHUB_OUTPUT
-      #       exit 1;
-      #     fi
+      - name: Build
+        id: build
+        working-directory: core-web
+        run:  |
+          echo "name=Test" >>$GITHUB_OUTPUT
+          if ! (npx nx build dotcms-ui) then
+            echo "status=failure" >>$GITHUB_OUTPUT
+            echo "color=#ff2400" >>$GITHUB_OUTPUT
+            exit 1;
+          fi
   notify:
     runs-on: ubuntu-latest # the image our job will run on
     name: Notify Slack
@@ -86,6 +86,6 @@ jobs:
           SLACK_USERNAME: dotBot
           SLACK_ICON: https://avatars.slack-edge.com/2020-09-21/1362682893351_5b474f175640cf5f5912_72.png
           SLACK_COLOR: ${{ needs.check-all.outputs.color && needs.check-all.outputs.color || '#5E7D00' }}
-          SLACK_TITLE: "${{ needs.check-all.outputs.name }}: (${{ needs.check-all.outputs.status && needs.check-all.outputs.status || 'Success' }})"
-          SLACK_MESSAGE: ${{ needs.check-all.outputs.message && needs.check-all.outputs.message || 'All good'}} 
+          SLACK_TITLE: "${{ needs.check-all.outputs.name && needs.check-all.outputs.name || 'Frontend Checks' }}: (${{ needs.check-all.outputs.status && needs.check-all.outputs.status || 'Success' }})"
+          SLACK_MESSAGE: ${{ needs.check-all.outputs.message && needs.check-all.outputs.message || 'Everything went well, ready to merge'}} 
           SLACK_FOOTER: ${{ env.PULL_REQUEST_URL }}

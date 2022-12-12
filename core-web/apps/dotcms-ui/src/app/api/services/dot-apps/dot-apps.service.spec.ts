@@ -198,7 +198,7 @@ describe('DotAppsService', () => {
             body: JSON.stringify(conf)
         });
         expect(dotUtils.getDownloadLink).toHaveBeenCalledWith(blobMock, fileName);
-        expect(anchor.click).toHaveBeenCalledTimes(1);
+        expect(anchor.click).toHaveBeenCalledTimes(2);
     }));
 
     it('should throw error when export apps configuration', fakeAsync(() => {
