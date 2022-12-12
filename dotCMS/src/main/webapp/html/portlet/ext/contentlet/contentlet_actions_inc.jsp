@@ -16,11 +16,16 @@
 if(user == null){
 	return;
 }
-boolean isUserCMSAdmin = APILocator.getRoleAPI().doesUserHaveRole(user, APILocator.getRoleAPI().loadCMSAdminRole());
+boolean isUserCMSAdmin = user.isAdmin();
 boolean isHost = ("Host".equals(structure.getVelocityVarName()));
 
 boolean isContLocked=(request.getParameter("sibbling") != null) ? false : contentlet.isLocked();
 WorkflowTask wfTask = APILocator.getWorkflowAPI().findTaskByContentlet(contentlet);
+
+
+boolean canEditContentType=contentlet.getContentType()!=null && APILocator.getPermissionAPI().doesUserHavePermission(contentlet.getContentType(),2, user);
+
+com.dotmarketing.beans.Host myHost =  WebAPILocator.getHostWebAPI().getCurrentHost(request); 
 
 List<WorkflowStep> wfSteps = null;
 WorkflowStep wfStep = null;
@@ -51,7 +56,7 @@ catch(Exception e){
 %>
 <%@page import="com.dotmarketing.business.web.WebAPILocator"%>
 <%@ page import="java.util.Optional" %>
-<% com.dotmarketing.beans.Host myHost =  WebAPILocator.getHostWebAPI().getCurrentHost(request); %>
+
 
 <script>
 
@@ -85,6 +90,18 @@ function editPage(url, languageId) {
     });
     document.dispatchEvent(customEvent);
 }
+
+function jumpToContentType(){
+    if(!_hasUserChanged || confirm("Content has changed, proceed?")){
+        parent.window.location="/dotAdmin/#/content-types-angular/edit/<%=structure.getVelocityVarName()%>";
+        return true;
+    }
+    return false;
+}
+
+
+
+
 
 </script>
 
@@ -214,7 +231,11 @@ function editPage(url, languageId) {
     <table>
      <tr>
             <th style="vertical-align: top"><%= LanguageUtil.get(pageContext, "Content-Type") %>:</th>
-            <td><%=contentlet!=null && contentlet.getContentType()!=null ? contentlet.getContentType().name() : LanguageUtil.get(pageContext, "not-available") %></td>
+            <td>
+                <%if(!contentlet.isNew() && canEditContentType){%><a onclick="return jumpToContentType()" href="/dotAdmin/#/content-types-angular/edit/<%=contentlet.getContentType().variable()%>" target="_parent"><%}%>
+                <%=contentlet!=null && contentlet.getContentType()!=null ? contentlet.getContentType().name() : LanguageUtil.get(pageContext, "not-available") %>
+                <%if(canEditContentType){%></a><%}%>
+            </td>
         </tr>
         <tr>
             <th style="vertical-align: top"><%= LanguageUtil.get(pageContext, "Workflow") %>:</th>

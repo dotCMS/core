@@ -26,6 +26,14 @@ const headings = [...Array(3).keys()].map((level) => {
     };
 });
 
+const table = [
+    {
+        label: 'Table',
+        icon: 'table_view',
+        id: 'table'
+    }
+];
+
 const paragraph = [
     {
         label: 'Paragraph',
@@ -69,7 +77,19 @@ function sanitizeUrl(url: string): SafeUrl {
     return domSanitizer.bypassSecurityTrustUrl(url);
 }
 
-export const suggestionOptions: DotMenuItem[] = [...headings, ...paragraph, ...list, ...block];
+export const suggestionOptions: DotMenuItem[] = [
+    ...headings,
+    ...table,
+    ...paragraph,
+    ...list,
+    ...block
+];
+
+export const changeToItems: DotMenuItem[] = [
+    ...suggestionOptions.filter((item) => !(item.id == 'horizontalLine' || item.id == 'table'))
+];
+
+export const tableChangeToItems: DotMenuItem[] = [...headings, ...paragraph, ...list];
 
 export const SuggestionPopperModifiers = [
     {

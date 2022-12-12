@@ -53,7 +53,10 @@ public class ConfigLoader {
 
         try {
             Logger.debug(ConfigLoader.class, "Loading config");
-            SAXParser parser = SAXParserFactory.newInstance().newSAXParser();
+            final SAXParserFactory factory = SAXParserFactory.newInstance();
+            // to be compliant, completely disable DOCTYPE declaration:
+            factory.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true);
+            SAXParser parser = factory.newSAXParser();
             parser.parse(is, new ConfigHandler());
             return config;
         }

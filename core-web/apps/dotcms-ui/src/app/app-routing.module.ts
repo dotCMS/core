@@ -15,6 +15,7 @@ import { DotLoginPageResolver } from '@components/login/dot-login-page-resolver.
 import { DotIframePortletLegacyResolver } from '@components/_common/iframe/service/dot-iframe-porlet-legacy-resolver.service';
 import { DotCustomReuseStrategyService } from '@shared/dot-custom-reuse-strategy/dot-custom-reuse-strategy.service';
 import { DotTemplatePageTitleStrategy } from '@shared/services/dot-title-strategy.service';
+import { PagesGuardService } from './api/services/guards/pages-guard.service';
 
 const PORTLETS_ANGULAR = [
     {
@@ -135,6 +136,12 @@ const PORTLETS_IFRAME = [
                 children: []
             }
         ]
+    },
+    {
+        canActivate: [PagesGuardService],
+        path: 'pages',
+        loadChildren: () =>
+            import('@portlets/dot-pages/dot-pages.module').then((m) => m.DotPagesModule)
     },
     {
         canActivateChild: [ContentletGuardService],

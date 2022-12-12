@@ -1,7 +1,7 @@
 @use "variables" as *;
 
 .dot-container-code__content-tab-container {
-    padding: $spacing-4;
+    padding: 0 $spacing-4 0 $spacing-4;
 }
 
 .dot-container-code__variable-btn {

@@ -164,7 +164,7 @@ describe('DotTemplateSelectorComponent', () => {
             fixture.detectChanges();
             button.triggerEventHandler('click', {});
 
-            expect(button.attributes['ng-reflect-autofocus']).toBe('true');
+            expect(button.nativeElement.attributes['ng-reflect-autofocus']).toBeTruthy();
             expect(dynamicDialogRef.close).toHaveBeenCalledTimes(2);
             expect(dynamicDialogRef.close).toHaveBeenCalledWith('designer');
             expect(dynamicDialogRef.close).toHaveBeenCalledWith('advanced');
