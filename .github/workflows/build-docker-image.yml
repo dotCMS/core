@@ -36,6 +36,6 @@ jobs:
           context: docker/images/dotcms
           tags: ${{ steps.meta.outputs.tags }}
           build-args: |
-            BUILD_ID=${{ GITHUB_SHA }}
+            BUILD_ID=$GITHUB_SHA
 
       
