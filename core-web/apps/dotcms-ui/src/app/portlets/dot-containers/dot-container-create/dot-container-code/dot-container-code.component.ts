@@ -24,7 +24,7 @@ export class DotContentEditorComponent implements OnInit {
     @Input() contentTypes: DotCMSContentType[];
 
     menuItems: MenuItem[];
-    activeTabIndex = 1;
+    activeTabIndex = 0;
     monacoEditors = {};
     contentTypeNamesById = {};
 
@@ -38,11 +38,12 @@ export class DotContentEditorComponent implements OnInit {
             this.contentTypeNamesById[id] = name;
         });
 
+        this.updateActiveTabIndex(this.getcontainerStructures.length);
         this.init();
     }
 
     /**
-     * Get ContainerStrcuture as FormArray
+     * Get ContainerStructure as FormArray
      * @readonly
      * @type {FormArray}
      * @memberof DotContentEditorComponent
@@ -64,6 +65,7 @@ export class DotContentEditorComponent implements OnInit {
             e.stopPropagation();
         } else {
             this.updateActiveTabIndex(index);
+            this.foucsCurrentEditor(index);
         }
 
         return false;
@@ -78,6 +80,47 @@ export class DotContentEditorComponent implements OnInit {
     removeItem(index: number = null, close: () => void): void {
         this.getcontainerStructures.removeAt(index - 1);
         close();
+        const currentTabIndex = this.findCurrentTabIndex(index);
+        this.updateActiveTabIndex(currentTabIndex);
+        this.foucsCurrentEditor(currentTabIndex);
+    }
+
+    /**
+     * Focus current editor
+     * @param {number} tabIdx
+     * @memberof DotContentEditorComponent
+     */
+    foucsCurrentEditor(tabIdx: number) {
+        if (tabIdx > 0) {
+            const contentTypeId =
+                this.getcontainerStructures.controls[tabIdx - 1].get('structureId').value;
+            // Tab Panel does not trigger any event after completely rendered.
+            // Tab Panel and Monaco-Editor take sometime to render it completely.
+            // setTimeout(() => {
+            this.monacoEditors[contentTypeId].focus();
+            // }, 0);
+        }
+    }
+
+    /**
+     * Find Current tab after deleting content type
+     * @param {*} index
+     * @return {*}  {number}
+     * @memberof DotContentEditorComponent
+     */
+    findCurrentTabIndex(index): number {
+        let currentIndex = index - 1;
+
+        if (currentIndex > 0) {
+            //
+        } else if (this.getcontainerStructures.length > 0) {
+            currentIndex = currentIndex + 1;
+        } else {
+            // empty tab index
+            currentIndex = 0;
+        }
+
+        return currentIndex;
     }
 
     /**

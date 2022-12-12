@@ -5,19 +5,35 @@
         }}</label>
     </div>
     <p-tabView
+        [(activeIndex)]="activeTabIndex"
         [scrollable]="true"
-        [activeIndex]="activeTabIndex"
         [controlClose]="true"
         (onChange)="handleTabClick($event, $event.index)"
         (onClose)="removeItem($event.index, $event.close)"
     >
-        <p-tabPanel headerStyleClass="tab-panel-btn">
+        <p-tabPanel [selected]="activeTabIndex === 0" headerStyleClass="tab-panel-btn">
             <ng-template pTemplate="header">
                 <i
                     class="pi pi-plus pr-3 pl-3"
                     (click)="handleTabClick($event); actionsMenu.toggle($event)"
                 ></i>
                 <p-menu #actionsMenu [popup]="true" [model]="menuItems" appendTo="body"></p-menu>
+            </ng-template>
+            <ng-template pTemplate="content">
+                <div
+                    class="dot-container-code__empty-content flex justify-content-center align-items-center flex-column"
+                >
+                    <dot-icon data-testId="code" name="code" size="100"></dot-icon>
+                    <div class="dot-container-code__empty-content-title">
+                        {{ 'message.containers.empty.content_type_message' | dm }}
+                    </div>
+                    <div class="dot-container-code__empty-content-subtitle mb-1">
+                        {{ 'message.containers.empty.content_type_need_help' | dm }}?
+                        <a href="https://www.dotcms.com/docs/latest/containers" target="_blank">{{
+                            'message.containers.empty.content_type_go_to_documentation' | dm
+                        }}</a>
+                    </div>
+                </div>
             </ng-template>
         </p-tabPanel>
         <p-tabPanel
