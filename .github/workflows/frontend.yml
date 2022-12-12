@@ -77,9 +77,9 @@ jobs:
     runs-on: ubuntu-latest # the image our job will run on
     name: Notify Slack
     needs: check-all
+    if: always()
     steps:
       - name: Slack Notification
-        if: success() || failure()
         uses: rtCamp/action-slack-notify@v2
         env:
           SLACK_WEBHOOK: ${{ secrets.UI_SLACK_WEBHOOK }}
