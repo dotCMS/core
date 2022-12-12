@@ -231,7 +231,7 @@ public class SQLUtil {
 		testParam = translateSortBy(testParam);
 
 		if(ORDERBY_WHITELIST.contains(testParam)){
-			return  parameter.contains(_DESC) ?  testParam + " " + _DESC : testParam;
+			return  parameter.contains("-") ? "-" + testParam : testParam;
 		}
 
 		Exception e = new DotStateException("Invalid or pernicious sql parameter passed in : " + parameter);
