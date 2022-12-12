@@ -9,10 +9,12 @@ on:
       - master
       - release-*
 env:
-  PULL_REQUEST_URL: ${{ github.event.pull_request._links.html.href }}
   EXCLUDED_PROJECTS: dot-rules,dot-layout-grid,dot-primeng-theme-styles,dot-rules,dotcms,dotcms-field-elements,dotcms-js,dotcms-models,dotcms-webcomponents,dotcdn-e2e,dotcms-block-editor,dotcms-block-editor-e2e,dotcms-ui-e2e,utils-testing,block-editor,utils
   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
   GH_TOKEN: ${{ secrets.CICD_GITHUB_TOKEN }}
+  PULL_REQUEST_URL: ${{ github.event.pull_request._links.html.href }}
+  IS_PULL_REQUEST: ${{ github.event_name == 'pull_request' }}
+  HEAD_REF: ${{ github.head_ref }}
 jobs:
   check-all:
     outputs:
@@ -34,33 +36,33 @@ jobs:
       - uses: bahmutov/npm-install@v1 # trigger an `npm install`
         with:
           working-directory: core-web
-      - name: Lint
-        id: lint
-        working-directory: core-web
-        run: |
-          echo "name=Lint" >>$GITHUB_OUTPUT
-          if ! (npx nx affected --target=lint --base=origin/master --parallel --exclude=${{ env.EXCLUDED_PROJECTS }}) then
-            echo "status=failure" >>$GITHUB_OUTPUT
-            echo "color=#ff2400" >>$GITHUB_OUTPUT
-            exit 1;
-          fi
-      # - name: Test
-      #   id: test
+      # - name: Lint
+      #   id: lint
       #   working-directory: core-web
       #   run: |
-      #     echo "name=Test" >>$GITHUB_OUTPUT
-      #     if ! (npx nx affected --target=test --base=origin/master --parallel --exclude=${{ env.EXCLUDED_PROJECTS }}) then
+      #     echo "name=Lint" >>$GITHUB_OUTPUT
+      #     if ! (npx nx affected --target=lint --base=origin/master --parallel --exclude=${{ env.EXCLUDED_PROJECTS }}) then
       #       echo "status=failure" >>$GITHUB_OUTPUT
       #       echo "color=#ff2400" >>$GITHUB_OUTPUT
       #       exit 1;
       #     fi
-      # - name: Push Tests to GitHub
-      #   id: persist_results
-      #   if: success() || failure()
-      #   run: |
-      #     chmod +x .cicd/github.sh && source .cicd/github.sh
-      #     persistResults
-      #     echo "::set-output name=message::$(logResults)";
+      - name: Test
+        id: test
+        working-directory: core-web
+        run: |
+          echo "name=Test" >>$GITHUB_OUTPUT
+          if ! (npx nx affected --target=test --base=origin/master --parallel --exclude=${{ env.EXCLUDED_PROJECTS }}) then
+            echo "status=failure" >>$GITHUB_OUTPUT
+            echo "color=#ff2400" >>$GITHUB_OUTPUT
+            exit 1;
+          fi
+      - name: Push Tests to GitHub
+        id: persist_results
+        if: success() || failure()
+        run: |
+          chmod +x .cicd/github.sh && source .cicd/github.sh
+          persistResults
+          echo "::set-output name=message::$(logResults)";
       # - name: Build
       #   id: build
       #   working-directory: core-web
