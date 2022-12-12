@@ -23,7 +23,6 @@ jobs:
         with:
           push: true
           context: docker/images/dotcms
-          push: true
           tags: user/app:5.2.8.5_${GITHUB_SHA::7}
           build-args: |
             BUILD_ID=${GITHUB_SHA::7}
