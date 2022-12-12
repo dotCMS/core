@@ -2,12 +2,14 @@ package com.dotcms.experiments.business;
 
 import static com.dotcms.experiments.model.AbstractExperiment.Status.DRAFT;
 import static com.dotcms.experiments.model.AbstractExperiment.Status.ENDED;
+import static com.dotcms.experiments.model.AbstractExperiment.Status.RUNNING;
 import static com.dotcms.experiments.model.AbstractExperimentVariant.EXPERIMENT_VARIANT_NAME_PREFIX;
 import static com.dotcms.experiments.model.AbstractExperimentVariant.EXPERIMENT_VARIANT_NAME_SUFFIX;
 
 import static com.dotcms.util.CollectionsUtils.set;
 
 import static com.dotcms.experiments.model.AbstractExperimentVariant.ORIGINAL_VARIANT;
+import static com.dotcms.variant.VariantAPI.DEFAULT_VARIANT;
 
 import com.dotcms.analytics.metrics.MetricsUtil;
 import com.dotcms.business.CloseDBIfOpened;
@@ -346,9 +348,27 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
             experimentToStart = experimentFromFactory.withScheduling(scheduling);
         }
 
-        final Experiment running = experimentToStart.withStatus(Status.RUNNING);
-        return save(running, user);
+        Experiment running = experimentToStart.withStatus(Status.RUNNING);
+        running = save(running, user);
 
+        publishContentOnExperimentVariants(user, running);
+
+        return running;
+
+    }
+
+    private void publishContentOnExperimentVariants(final User user,
+            final Experiment runningExperiment)
+            throws DotDataException, DotSecurityException {
+        DotPreconditions.isTrue(runningExperiment.status().equals(RUNNING),
+                "Experiment needs to be RUNNING");
+
+        final List<Contentlet> contentByVariants = contentletAPI.getAllContentByVariants(user, false,
+                runningExperiment.trafficProportion().variants().stream()
+                        .map(ExperimentVariant::id).filter((id) -> !id.equals(DEFAULT_VARIANT.name()))
+                        .toArray(String[]::new));
+
+        contentletAPI.publish(contentByVariants, user, false);
     }
 
     @Override
@@ -428,7 +448,7 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
                 .description(Optional.of(variantDescription)).build());
 
         APILocator.getMultiTreeAPI().copyVariantForPage(experiment.pageId(),
-                VariantAPI.DEFAULT_VARIANT.name(), variantName);
+                DEFAULT_VARIANT.name(), variantName);
 
         final Contentlet pageContentlet = contentletAPI
                 .findContentletByIdentifierAnyLanguage(experiment.pageId(), false);

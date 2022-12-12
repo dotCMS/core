@@ -4,11 +4,6 @@
     padding: $spacing-5;
 }
 
-.field:has(:required) label:after {
-    content: " *";
-    color: red;
-}
-
 textarea {
     resize: none;
 }

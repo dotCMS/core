@@ -39,3 +39,8 @@ h3 {
     -webkit-font-feature-settings: "liga";
     -webkit-font-smoothing: antialiased;
 }
+
+.divider {
+    border-top: $gray-light solid 1px;
+    margin: $spacing-1 0;
+}

@@ -25,7 +25,7 @@ public interface JsonWebTokenService extends Serializable {
 	 *            {@link UserToken}
 	 * @return String the actual encrypted token
 	 */
-    public String generateUserToken(UserToken JWToken);
+	String generateUserToken(UserToken JWToken);
 
 	/**
 	 * Generates the json token based
@@ -35,7 +35,7 @@ public interface JsonWebTokenService extends Serializable {
 	 * @param apiToken {@link ApiToken}
 	 * @return String the actual encrypted token
 	 */
-	public String generateApiToken(ApiToken apiToken);
+	String generateApiToken(ApiToken apiToken);
     
     
 	/**
@@ -45,7 +45,7 @@ public interface JsonWebTokenService extends Serializable {
 	 *            - {@link String}
 	 * @return JWToken
 	 */
-    public JWToken parseToken(String jsonWebToken);
+	JWToken parseToken(String jsonWebToken);
 
 	/**
 	 * Based on a json token returns the API JWToken
@@ -53,6 +53,13 @@ public interface JsonWebTokenService extends Serializable {
 	 * @param requestingIp String ip that is requesting the api token
 	 * @return JWToken
 	 */
-    public JWToken parseToken(String jsonWebToken, String requestingIp);
+	JWToken parseToken(String jsonWebToken, String requestingIp);
+
+	/**
+	 * Format validation util
+	 * @param jsonWebToken
+	 * @return
+	 */
+	boolean isWellFormed(String jsonWebToken);
 
 } // E:O:F:JsonWebTokenService.

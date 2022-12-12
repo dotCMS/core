@@ -2,10 +2,6 @@
 
 <!-- Auto Generated Below -->
 
-## Overview
-
-Represent a dotcms textarea control.
-
 ## Properties
 
 | Property            | Attribute            | Description                                                                             | Type      | Default                                                |

@@ -1,16 +1,27 @@
 <p-card>
     <ng-template pTemplate="title">
-        <div class="title">
-            <h2>{{ 'experiments.configure.variants.name' | dm }}</h2>
+        <div class="flex justify-content-between">
+            <h2 class="flex align-items-center gap-1 uppercase">
+                {{ 'experiments.configure.variants.name' | dm }}
+                <dot-icon
+                    [ngClass]="{ isDone: variants.length > 1 }"
+                    data-testId="variant-title-step-done"
+                    name="check_circle"
+                    size="16"
+                ></dot-icon>
+            </h2>
             <dot-experiments-configuration-items-count
-                [count]="trafficProportion.variants.length"
-                [maxLength]="maxLength"
+                [count]="variants.length"
+                [maxLength]="maxVariantsAllowed"
             >
             </dot-experiments-configuration-items-count>
         </div>
     </ng-template>
-    <ng-container *ngFor="let variant of trafficProportion.variants">
-        <p-card>
+
+    <ng-container
+        *ngFor="let variant of variants; let first = first; let last = last; let index = index"
+    >
+        <p-card [ngClass]="{ first: first, last: last }" data-testId="variant-row-card">
             <div class="flex flex-row align-items-center align-content-between gap-2">
                 <div class="title flex flex-grow-1 flex-column">
                     <span data-testId="variant-name">{{ variant.name }}</span>
@@ -22,29 +33,70 @@
                 <span class="separator">|</span>
 
                 <p-button
-                    (onClick)="changeTrafficProportionType()"
                     data-testId="variant-weight"
-                    label="{{ variant.weight }}% {{ 'experiments.configure.variants.weight' | dm }}"
+                    label="{{ variant.weight | number: '2.2-2' }}% {{
+                        'experiments.configure.variants.weight' | dm
+                    }}"
                     styleClass="p-button-sm p-button-link"
                 ></p-button>
 
-                <p-button
-                    (onClick)="viewVariant()"
-                    data-testId="variant-view-button"
-                    label="{{ 'experiments.configure.variants.view' | dm }}"
+                <ng-container *ngIf="variant.id === defaultVariantId; else editableButtonTpl">
+                    <button
+                        class="p-button-sm p-button-outlined no-padding"
+                        (click)="goToEditPage.emit({variant, mode:'preview'})"
+                        data-testId="variant-preview-button"
+                        label="{{ 'experiments.configure.variants.view' | dm }}"
+                        pButton
+                        pRipple
+                        type="button"
+                    ></button>
+                </ng-container>
+
+                <ng-template #editableButtonTpl>
+                    <button
+                        class="p-button-sm p-button-outlined no-padding p-button-warning"
+                        (click)="goToEditPage.emit({variant, mode:'edit'})"
+                        data-testId="variant-edit-button"
+                        label="{{ 'experiments.configure.variants.edit' | dm }}"
+                        pButton
+                        pRipple
+                        type="button"
+                    ></button>
+                </ng-template>
+
+                <button
+                    class="p-button-sm p-button-danger p-button-text"
+                    [disabled]="variant.id === defaultVariantId"
+                    (click)="delete.emit(variant)"
+                    data-testId="variant-delete-button"
+                    label="{{ 'experiments.configure.variants.delete' | dm }}"
+                    pButton
                     pRipple
-                    styleClass="p-button-sm p-button-outlined no-padding"
                     type="button"
-                ></p-button>
+                ></button>
             </div>
         </p-card>
     </ng-container>
 
     <ng-template pTemplate="footer">
-        <p-button
-            (onClick)="addNewVariant()"
+        <button
+            class="p-button-sm p-button-link"
+            [disabled]="variants.length >= maxVariantsAllowed"
+            (click)="sidebarStatusChanged.emit(sidebarStatusList.OPEN)"
+            data-testId="variant-add-button"
             label="{{ 'experiments.configure.variants.add' | dm }}"
-            styleClass="p-button-sm p-button-link"
-        ></p-button>
+            pButton
+            pRipple
+            type="button"
+        ></button>
     </ng-template>
 </p-card>
+
+<dot-experiments-configuration-variants-add
+    [isSaving]="
+        experimentStepName === stepStatus.experimentStep && stepStatus.status === statusList.SAVING
+    "
+    [isSidebarOpen]="experimentStepName === stepStatus.experimentStep && stepStatus.isOpen"
+    (closedSidebar)="sidebarStatusChanged.emit(sidebarStatusList.CLOSE)"
+    (formValues)="save.emit($event)"
+></dot-experiments-configuration-variants-add>

@@ -21,10 +21,15 @@ import com.liferay.portal.PortalException;
 import com.liferay.portal.SystemException;
 import com.liferay.portal.model.User;
 import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.IOException;
 import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.util.Date;
+import java.util.Optional;
 import javax.servlet.http.HttpServletRequest;
+import javax.xml.XMLConstants;
 import javax.xml.transform.Source;
 import javax.xml.transform.Transformer;
 import javax.xml.transform.TransformerConfigurationException;
@@ -88,10 +93,10 @@ public class XsltTool implements ViewTool {
 
 	
 	
-	public String transform(String XMLPath, String XSLPath, int ttl) throws Exception {
-		String x = XSLTTransform(XMLPath, XSLPath, ttl).getXmlTransformation();
-		return x;
-	
+	public String transform(String xmlPath, String xslPath, int ttl)
+			throws SystemException, TransformerConfigurationException, DotDataException, DotSecurityException, PortalException, IOException {
+		return xslTransform(xmlPath, xslPath, ttl).getXmlTransformation();
+
 	}
 	
 	
@@ -100,8 +105,8 @@ public class XsltTool implements ViewTool {
 	
 	/**
 	 * Transform the XML into the string according to the specification of the xsl file
-	 * @param XMLPath Location of the XML file
-	 * @param XSLPath Location of the XSL file
+	 * @param xmlPath Location of the XML file
+	 * @param xslPath Location of the XSL file
 	 * @param ttl Time to Live
 	 * @throws TransformerConfigurationException 
 	 * @throws DotSecurityException 
@@ -109,81 +114,118 @@ public class XsltTool implements ViewTool {
 	 * @throws SystemException 
 	 * @throws PortalException 
 	 */
-	public XSLTranformationDoc XSLTTransform(String XMLPath, String XSLPath, long ttl) throws Exception {
+	public XSLTranformationDoc xslTransform(String xmlPath, String xslPath, long ttl)
+			throws DotDataException, DotSecurityException, SystemException, PortalException, IOException, TransformerConfigurationException {
 
-			if(!canUserEvalute()){
+			if(!canUserEvaluate()){
 				Logger.error(XsltTool.class, "XSLTTool user does not have scripting access ");
 				return null;
 			}
-			String outputXML = null;
-			Source xmlSource = null;
-			XSLTranformationDoc doc = null;
-			Host host = hostWebAPI.getCurrentHost(request);
+
+			final Host site = hostWebAPI.getCurrentHost(request);
 
 			/*Validate if in cache exists a valid version*/
-			doc = XSLTransformationCache.getXSLTranformationDocByXMLPath(XMLPath,XSLPath);
+		    final XSLTranformationDoc doc =  XSLTransformationCache.getXSLTranformationDocByXMLPath(xmlPath,xslPath);
 
-			if(doc == null){
-				/*Get the XSL source*/
-				java.io.File binFile = null;
-				Identifier xslId = APILocator.getIdentifierAPI().find(host, XSLPath);
-				if(xslId!=null && InodeUtils.isSet(xslId.getId()) && xslId.getAssetType().equals("contentlet")){
-					Contentlet cont = APILocator.getContentletAPI().findContentletByIdentifier(xslId.getId(), true, APILocator.getLanguageAPI().getDefaultLanguage().getId(), userAPI.getSystemUser(),false);
-					if(cont!=null && InodeUtils.isSet(cont.getInode())){
-						binFile = cont.getBinary(FileAssetAPI.BINARY_FIELD);
-					}
-				}
-				
-				
-				/*Get the XML Source from file or from URL*/
-				if(!XMLPath.startsWith("http")){
-					Identifier xmlId = APILocator.getIdentifierAPI().find(host, XMLPath);
-					if(xmlId!=null && InodeUtils.isSet(xmlId.getId()) && xmlId.getAssetType().equals("contentlet")){
-						Contentlet cont = APILocator.getContentletAPI().findContentletByIdentifier(xmlId.getId(), true, APILocator.getLanguageAPI().getDefaultLanguage().getId(), userAPI.getSystemUser(),false);
-						if(cont!=null && InodeUtils.isSet(cont.getInode())){
-							xmlSource = new StreamSource(new InputStreamReader(Files.newInputStream(
-									cont.getBinary(FileAssetAPI.BINARY_FIELD).toPath()), "UTF8"));
-						}
-					}
-
-				}else{
-					xmlSource = new StreamSource(XMLPath);
-				}
-
-				final Source xsltSource = new StreamSource(
-						new InputStreamReader(Files.newInputStream(binFile.toPath()), "UTF8"));
-
-				// create an instance of TransformerFactory
-				TransformerFactory transFact = TransformerFactory.newInstance();
-				StreamResult result = new StreamResult(new ByteArrayOutputStream());
-				Transformer trans = transFact.newTransformer(xsltSource);
-
-				try{
-					trans.transform(xmlSource, result);
-				}catch(Exception e1){
-					Logger.error(XsltTool.class, "Error in transformation. "+e1.getMessage());
-					e1.printStackTrace();
-				}
-
-				outputXML = result.getOutputStream().toString();
-
-				doc = new XSLTranformationDoc();
-				doc.setIdentifier(xslId.getId());
-				doc.setInode(xslId.getInode());
-				doc.setXslPath(XSLPath);
-				doc.setXmlPath(XMLPath);
-				doc.setXmlTransformation(outputXML);
-				doc.setTtl(new Date().getTime()+ttl);
-
-				XSLTransformationCache.addXSLTranformationDoc(doc);
-
+			if(doc != null){
+			   return doc;
 			}
+				/*Get the XSL source*/
+		        final Identifier xslId = APILocator.getIdentifierAPI().find(site, xslPath);
+				final Optional<File> binFile = loadXSL(xslId);
 
-			return doc;
+				if(binFile.isEmpty()){
+					final String errorMessage = String.format("Fail retrieving xsl file from site [%s] using path [%s]", site.getName(), xslPath);
+					Logger.error(XsltTool.class, errorMessage);
+					throw new IllegalArgumentException(errorMessage);
+				}
+
+				final Optional<Source> xmlSource = loadXML(site, xmlPath);
+				if(xmlSource.isEmpty()){
+					final String errorMessage = String.format("Fail retrieving xml file from site [%s] using path [%s]", site.getName(), xmlPath);
+					Logger.error(XsltTool.class, errorMessage);
+					throw new IllegalArgumentException(errorMessage);
+				}
+
+		return getXslTransformationDoc(xmlPath, xslPath, ttl, xslId, binFile.get(), xmlSource.get());
+
 
 	}
-	
-	protected boolean canUserEvalute() throws DotDataException, DotSecurityException{
+
+	private XSLTranformationDoc getXslTransformationDoc(final String xmlPath, final String xslPath, final long ttl,
+			final Identifier xslId, final File binFile, final Source xmlSource)
+			throws IOException, TransformerConfigurationException {
+
+
+		final Source xsltSource = new StreamSource(new InputStreamReader(Files.newInputStream(binFile.toPath()), StandardCharsets.UTF_8));
+
+		// create an instance of TransformerFactory
+		TransformerFactory factory = TransformerFactory.newInstance();
+		//Disable access to external entities in XML parsing.
+		factory.setAttribute(XMLConstants.ACCESS_EXTERNAL_DTD, "");
+		factory.setAttribute(XMLConstants.ACCESS_EXTERNAL_STYLESHEET, "");
+
+		StreamResult result = new StreamResult(new ByteArrayOutputStream());
+		Transformer trans = factory.newTransformer(xsltSource);
+
+		try{
+			trans.transform(xmlSource, result);
+		}catch(Exception e1){
+			Logger.error(XsltTool.class, "Error in transformation. ", e1);
+		}
+
+		final String outputXML = result.getOutputStream().toString();
+
+		final XSLTranformationDoc doc = new XSLTranformationDoc();
+		doc.setIdentifier(xslId.getId());
+		doc.setInode(xslId.getInode());
+		doc.setXslPath(xslPath);
+		doc.setXmlPath(xmlPath);
+		doc.setXmlTransformation(outputXML);
+		doc.setTtl(new Date().getTime()+ ttl);
+
+		XSLTransformationCache.addXSLTranformationDoc(doc);
+		return doc;
+	}
+
+	private Optional<File> loadXSL(final Identifier xslId)
+			throws DotDataException, DotSecurityException, IOException {
+		if (xslId != null && InodeUtils.isSet(xslId.getId()) && xslId.getAssetType().equals("contentlet")) {
+			Contentlet cont = APILocator.getContentletAPI()
+					.findContentletByIdentifier(xslId.getId(), true,
+							APILocator.getLanguageAPI().getDefaultLanguage().getId(),
+							userAPI.getSystemUser(), false);
+			if (cont != null && InodeUtils.isSet(cont.getInode())) {
+				return Optional.of(cont.getBinary(FileAssetAPI.BINARY_FIELD));
+			}
+		}
+		return Optional.empty();
+	}
+
+	private Optional<Source> loadXML(final Host site, final String xmlPath)
+			throws IOException, DotDataException, DotSecurityException {
+		if (!xmlPath.startsWith("http")) {
+			Identifier xmlId = APILocator.getIdentifierAPI().find(site, xmlPath);
+			if (xmlId != null && InodeUtils.isSet(xmlId.getId()) && xmlId.getAssetType()
+					.equals("contentlet")) {
+				Contentlet cont = APILocator.getContentletAPI()
+						.findContentletByIdentifier(xmlId.getId(), true,
+								APILocator.getLanguageAPI().getDefaultLanguage().getId(),
+								userAPI.getSystemUser(), false);
+				if (cont != null && InodeUtils.isSet(cont.getInode())) {
+					return Optional.of(new StreamSource(new InputStreamReader(Files.newInputStream(
+							cont.getBinary(FileAssetAPI.BINARY_FIELD).toPath()),
+							StandardCharsets.UTF_8)));
+				}
+			}
+
+		} else {
+			return Optional.of(new StreamSource(xmlPath));
+		}
+		return Optional.empty();
+	}
+
+	protected boolean canUserEvaluate() {
 		if(!Config.getBooleanProperty("ENABLE_SCRIPTING", false)){
 			Logger.warn(this.getClass(), "Scripting called and ENABLE_SCRIPTING set to false");
 			return false;

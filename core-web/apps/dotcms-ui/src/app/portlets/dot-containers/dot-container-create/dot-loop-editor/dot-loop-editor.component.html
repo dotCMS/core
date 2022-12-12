@@ -4,17 +4,19 @@
             class="p-button-outlined p-button-secondary"
             [label]="'message.containers.create.add_pre_post' | dm"
             (click)="handleClick()"
+            data-testId="showEditorBtn"
             pButton
             type="button"
         ></button>
     </div>
-    <div *ngIf="isEditorVisible">
-        <label class="block field" data-testId="label">{{
+    <div class="field mb-0" *ngIf="isEditorVisible" [@enterAnimation]>
+        <label class="block" data-testId="label">{{
             'message.containers.create.' + label | dm
         }}</label>
         <dot-textarea-content
             [formControl]="loopControl"
             [show]="['code']"
+            [customStyles]="{ height: '140px' }"
             (blur)="onTouched()"
             (input)="onTouched()"
             language="html"

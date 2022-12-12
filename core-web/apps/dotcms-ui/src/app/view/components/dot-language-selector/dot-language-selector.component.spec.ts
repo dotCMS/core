@@ -4,7 +4,7 @@ import { DotLanguagesService } from '@services/dot-languages/dot-languages.servi
 import { DotLanguagesServiceMock } from '../../../test/dot-languages-service.mock';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { DOTTestBed } from '../../../test/dot-test-bed';
-import { DebugElement, Component } from '@angular/core';
+import { Component, DebugElement } from '@angular/core';
 import { By } from '@angular/platform-browser';
 import { mockDotLanguage } from '../../../test/dot-language.mock';
 import { MockDotMessageService } from '@tests/dot-message-service.mock';
@@ -61,13 +61,6 @@ describe('DotLanguageSelectorComponent', () => {
         fixtureHost.detectChanges();
         const icon = de.query(By.css('dot-icon'));
         expect(icon.attributes.name).toBe('language');
-        expect(icon.attributes.big).toBeDefined();
-    });
-
-    it('should have label', () => {
-        fixtureHost.detectChanges();
-        const label = de.query(By.css('label')).nativeElement;
-        expect(label.textContent).toBe('Language');
     });
 
     it('should load languages in the dropdown', () => {
