@@ -96,14 +96,14 @@ export class DotContentEditorComponent implements OnInit {
                 this.getcontainerStructures.controls[tabIdx - 1].get('structureId').value;
             // Tab Panel does not trigger any event after completely rendered.
             // Tab Panel and Monaco-Editor take sometime to render it completely.
-            // setTimeout(() => {
-            this.monacoEditors[contentTypeId].focus();
-            // }, 0);
+            setTimeout(() => {
+                this.monacoEditors[contentTypeId].focus();
+            }, 0);
         }
     }
 
     /**
-     * Find Current tab after deleting content type
+     * Find current tab after deleting content type
      * @param {*} index
      * @return {*}  {number}
      * @memberof DotContentEditorComponent
@@ -112,7 +112,7 @@ export class DotContentEditorComponent implements OnInit {
         let currentIndex = index - 1;
 
         if (currentIndex > 0) {
-            //
+            // do nothing
         } else if (this.getcontainerStructures.length > 0) {
             currentIndex = currentIndex + 1;
         } else {
