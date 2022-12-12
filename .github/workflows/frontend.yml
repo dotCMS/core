@@ -40,8 +40,8 @@ jobs:
         id: lint
         working-directory: core-web
         run: |
-          echo "name=Lint" >>$GITHUB_OUTPUT
           if ! (npx nx affected --target=lint --base=origin/master --parallel --exclude=${{ env.EXCLUDED_PROJECTS }}) then
+            echo "name=Lint" >>$GITHUB_OUTPUT
             echo "status=failure" >>$GITHUB_OUTPUT
             echo "color=#ff2400" >>$GITHUB_OUTPUT
             exit 1;
@@ -50,8 +50,8 @@ jobs:
         id: test
         working-directory: core-web
         run: |
-          echo "name=Test" >>$GITHUB_OUTPUT
           if ! (npx nx affected --target=test --base=origin/master --parallel --exclude=${{ env.EXCLUDED_PROJECTS }}) then
+            echo "name=Test" >>$GITHUB_OUTPUT
             echo "status=failure" >>$GITHUB_OUTPUT
             echo "color=#ff2400" >>$GITHUB_OUTPUT
             exit 1;
@@ -67,8 +67,8 @@ jobs:
         id: build
         working-directory: core-web
         run:  |
-          echo "name=Test" >>$GITHUB_OUTPUT
           if ! (npx nx build dotcms-ui) then
+            echo "name=Build" >>$GITHUB_OUTPUT
             echo "status=failure" >>$GITHUB_OUTPUT
             echo "color=#ff2400" >>$GITHUB_OUTPUT
             exit 1;

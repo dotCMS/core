@@ -42,7 +42,7 @@ const mockDotApps = [
     }
 ];
 
-describe('DotAppsService', () => {
+fdescribe('DotAppsService', () => {
     let injector: TestBed;
     let dotAppsService: DotAppsService;
     let dotHttpErrorManagerService: DotHttpErrorManagerService;
