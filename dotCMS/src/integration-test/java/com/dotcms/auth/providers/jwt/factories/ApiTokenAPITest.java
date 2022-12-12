@@ -1,5 +1,13 @@
 package com.dotcms.auth.providers.jwt.factories;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+
+import com.dotcms.IntegrationTestBase;
 import com.dotcms.auth.providers.jwt.beans.ApiToken;
 import com.dotcms.auth.providers.jwt.beans.JWToken;
 import com.dotcms.datagen.CompanyDataGen;
@@ -10,24 +18,23 @@ import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotStateException;
+import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.util.DateUtil;
 import com.dotmarketing.util.UUIDGenerator;
 import com.liferay.portal.ejb.CompanyUtil;
 import com.liferay.portal.model.Company;
 import com.liferay.portal.model.User;
-import org.junit.BeforeClass;
-import org.junit.Test;
-
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
 import java.util.NoSuchElementException;
+import org.junit.BeforeClass;
+import org.junit.Test;
 
-import static org.junit.Assert.*;
-
-public class ApiTokenAPITest {
+public class ApiTokenAPITest extends IntegrationTestBase {
 
     static ApiTokenAPI apiTokenAPI;
 
@@ -519,6 +526,27 @@ public class ApiTokenAPITest {
         // system user can see your tokens
         tokens = apiTokenAPI.findApiTokensByUserId(user1.getUserId(), false, APILocator.systemUser());
         assertTrue(tokens.size() == 2);
+
+    }
+
+    /**
+     * API level token validation test: With invalid input
+     */
+    @Test
+    public void testNonWellFormedToken(){
+        assertFalse(apiTokenAPI.isWellFormedToken("any"));
+    }
+
+    /**
+     * API level token validation test: With a valid input
+     */
+    @Test
+    public void testWellFormedToken() {
+        ApiToken skinnyToken = ApiToken.from(getSkinnyToken()).withUserId(APILocator.systemUser().getUserId()).build();
+        assert (!skinnyToken.isValid());
+        skinnyToken = apiTokenAPI.persistApiToken(skinnyToken, APILocator.systemUser());
+        String jwt = apiTokenAPI.getJWT(skinnyToken, APILocator.systemUser());
+        assertTrue(apiTokenAPI.isWellFormedToken(jwt));
 
     }
 

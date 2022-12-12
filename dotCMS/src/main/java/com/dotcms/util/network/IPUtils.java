@@ -10,6 +10,14 @@ import io.vavr.Lazy;
 import io.vavr.control.Try;
 
 public class IPUtils {
+    
+    
+    private IPUtils() {
+        throw new IllegalStateException("static Utility class");
+    }
+    
+    
+    
     /**
      * Determines whether an IP address is in a specific CIDR.  IPv4 & IPv6 supported
      *
@@ -43,10 +51,10 @@ public class IPUtils {
 
     }
     
-    final static private String[] REMOTE_CALL_SUBNET_BLACKLIST_DEFAULT = {"127.0.0.1/32","10.0.0.0/8","172.16.0.0/12", "192.168.0.0/16"};
+    private static final String[] REMOTE_CALL_SUBNET_BLACKLIST_DEFAULT = {"127.0.0.1/32","10.0.0.0/8","172.16.0.0/12", "192.168.0.0/16", "169.254.169.254/32"};
     
     
-    final static Lazy<String[]> disallowedSubnets = Lazy.of(() -> 
+    static final Lazy<String[]> disallowedSubnets = Lazy.of(() -> 
                     Try.of(() -> Config.getStringArrayProperty("REMOTE_CALL_SUBNET_BLACKLIST", REMOTE_CALL_SUBNET_BLACKLIST_DEFAULT))
                     .getOrElse(REMOTE_CALL_SUBNET_BLACKLIST_DEFAULT));
 

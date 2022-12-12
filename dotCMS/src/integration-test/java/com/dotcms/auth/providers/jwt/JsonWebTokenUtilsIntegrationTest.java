@@ -14,6 +14,7 @@ import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.util.DateUtil;
 import com.dotmarketing.util.UUIDGenerator;
 import com.liferay.portal.model.User;
+import io.jsonwebtoken.MalformedJwtException;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -137,6 +138,39 @@ public class JsonWebTokenUtilsIntegrationTest {
         JsonWebTokenUtils jsonWebTokenUtils = new JsonWebTokenUtils(jsonWebTokenService);
         User userInToken = jsonWebTokenUtils.getUser(jsonWebToken, "127.0.0.1");
         assertNull(userInToken);
+    }
+
+    /**
+     * Testing parse utils with invalid values
+     */
+    @Test(expected = MalformedJwtException.class)
+    public void testParseMalformedToken(){
+        final JsonWebTokenUtils utils = JsonWebTokenUtils.getInstance();
+        utils.parseToken("foo");
+    }
+
+    /**
+     * Testing parse utils with coherent data
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    @Test
+    public void testWellFormedToken() throws DotDataException, DotSecurityException {
+
+        final String jwtId = APILocator.getUserAPI().loadUserById(userId).getRememberMeToken();
+        //Generate a new token
+        final UserToken userToken = new UserToken.Builder().id(jwtId).subject(userId).modificationDate(date)
+                .expiresDate(DateUtil.daysToMillis(2))
+                .build();
+
+        final JsonWebTokenService jsonWebTokenService =
+                JsonWebTokenFactory.getInstance().getJsonWebTokenService();
+        final String jsonWebToken = jsonWebTokenService.generateUserToken(userToken);
+
+        final JsonWebTokenUtils utils = JsonWebTokenUtils.getInstance();
+        assertTrue(utils.isWellFormed(jsonWebToken));
+        assertTrue(utils.parseToken(jsonWebToken));
+
     }
 
 }

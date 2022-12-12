@@ -59,6 +59,7 @@ public class IntegrationTestInitService {
             }
         } catch(Exception e) {
             Logger.error(this, "Error initializing Integration Test Init Service", e);
+            throw e;
         }
     }
 
