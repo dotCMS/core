@@ -73,58 +73,33 @@ public class Config {
     private static FileWatcherAPI fileWatcherAPI = null;
 
 
+    
+    static {
+        classLoader = Thread.currentThread().getContextClassLoader();
+        _loadProperties();
+    }
+    
+    
 	/**
 	 * Config internal methods
 	 */
 	public static void initializeConfig () {
-	    classLoader = Thread.currentThread().getContextClassLoader();
-	    _loadProperties();
+
 	}
 
 	private static void registerWatcher(final File fileToRead) {
 
-		initWatcherAPI();
-		if (null != fileWatcherAPI) {
 
-			// if we are not already watching, so register the waticher
-			if (!isWatching.get()) {
-				try {
-
-					Logger.debug(APILocator.class, "Start watching: " + fileToRead);
-					fileWatcherAPI.watchFile(fileToRead, () -> _loadProperties());
-					isWatching.set(true);
-				} catch (IOException e) {
-					Logger.error(Config.class, e.getMessage(), e);
-				}
-			}
-		} else {
-			// if not fileWatcherAPI could not monitoring, so use the fallback
-			useWatcherMode.set(false); isWatching.set(false);
-		}
 	} // registerWatcher.
 
 	private static void initWatcherAPI() {
 
-		// checki if the watcher is already instantiated.
-		if (null == fileWatcherAPI) {
-			synchronized (Config.class) {
 
-				if (null == fileWatcherAPI) {
-
-					fileWatcherAPI = APILocator.getFileWatcherAPI();
-				}
-			}
-		}
 	}
 
 	private static void unregisterWatcher(final File fileToRead) {
 
-		initWatcherAPI();
-		if (null != fileWatcherAPI) {
 
-			Logger.debug(APILocator.class, "Stop watching: " + fileToRead);
-			fileWatcherAPI.stopWatchingFile(fileToRead);
-		}
 	}
 	/**
 	 * 
@@ -177,31 +152,6 @@ public class Config {
 							"dotmarketing-config.properties");
 					readProperties(clusterFile,
 							"dotcms-config-cluster.properties");
-				}
-			}
-		} else {
-			// Refresh the properties if changes detected in any of these
-			// properties files
-			if (lastDotmarketingModified.after(lastRefreshTime)
-					|| lastClusterModified.after(lastRefreshTime)) {
-				synchronized (Config.class) {
-					if (lastDotmarketingModified.after(lastRefreshTime)
-							|| lastClusterModified.after(lastRefreshTime)) {
-						try {
-							props = new PropertiesConfiguration();
-							// Cleanup and read the properties for both files
-							readProperties(dotmarketingFile,
-									"dotmarketing-config.properties");
-							readProperties(clusterFile,
-									"dotcms-config-cluster.properties");
-						} catch (Exception e) {
-							Logger.fatal(
-									Config.class,
-									"Exception loading property files [dotmarketing-config.properties, dotcms-config-cluster.properties]",
-									e);
-							props = null;
-						}
-					}
 				}
 			}
 		}
@@ -286,13 +236,7 @@ public class Config {
      */
 	private static void _refreshProperties () {
 
-		if ((props == null) || // if props is null go ahead.
-				(
-						(!useWatcherMode.get()) && // if we are using watcher mode, do not need to check this
-						(System.currentTimeMillis() > lastRefreshTime.getTime() + (refreshInterval * 60 * 1000))
-				)) {
-			_loadProperties();
-		}
+
 	}
 
 
@@ -301,8 +245,10 @@ public class Config {
     private static void readEnvironmentVariables() {
         
         
-        System.getenv().entrySet().stream().filter(e->e.getKey().startsWith(ENV_PREFIX)).forEach(e->
-            props.addProperty(e.getKey(), e.getValue())
+        System.getenv().entrySet().stream().filter(e->e.getKey().startsWith(ENV_PREFIX)).forEach(e->{
+            //System.out.println(e.getKey() + ":" + e.getValue());
+            props.addProperty(e.getKey(), e.getValue());
+        }
         );
         
 
