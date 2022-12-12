@@ -3,18 +3,22 @@
 @import "dotcms-theme/utils/extends";
 
 :host {
-    display: flex;
-    align-items: center;
+    padding: $spacing-1;
 
     &::ng-deep {
         .p-dropdown {
             border: 0;
             background: none;
-            width: 120px !important;
+            width: 100%;
+
+            .p-dropdown-label {
+                color: $dark;
+                font-size: $font-size-medium;
+            }
         }
 
         .p-dropdown-sm .p-dropdown .p-dropdown-label {
-            padding-left: 0;
+            padding: 0;
         }
 
         .p-dropdown:not(.p-disabled).p-focus {
@@ -24,40 +28,23 @@
 
     &.disabled {
         display: none;
+
         &::ng-deep dot-icon i,
         label {
             color: $field-disabled-color;
         }
     }
 
-    @media only screen and (max-width: $screen-device-container-max) {
+    @media only screen and (max-width: $screen-lg-max) {
+        .dot-device-selector.gap-3 {
+            gap: 0 !important;
+        }
         ::ng-deep {
             p-dropdown .p-dropdown {
-                width: 10px !important;
-
                 .p-dropdown-label {
                     display: none;
                 }
-
-                .p-dropdown-trigger {
-                    width: auto;
-                }
-            }
-            label {
-                display: none;
             }
         }
     }
-}
-
-dot-icon {
-    margin-right: $spacing-1;
-}
-
-label {
-    @extend #edit-page-selector-label;
-}
-
-.device-selector__field {
-    @extend #edit-page-selector-field;
 }

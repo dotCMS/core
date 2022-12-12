@@ -1,14 +1,23 @@
 package com.dotcms.rest.api.v1;
 
 import com.dotmarketing.util.Config;
+import com.fasterxml.jackson.core.JsonGenerator;
+import com.fasterxml.jackson.core.JsonParseException;
+import com.fasterxml.jackson.core.JsonParser;
+import com.fasterxml.jackson.databind.DeserializationContext;
 import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.JsonDeserializer;
+import com.fasterxml.jackson.databind.JsonSerializer;
 import com.fasterxml.jackson.databind.MapperFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.databind.SerializerProvider;
 import com.fasterxml.jackson.datatype.guava.GuavaModule;
 import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import java.io.IOException;
+import java.time.Instant;
 
 /**
  * Encapsulates the configuration for the Object Mapper on the Resources. 
@@ -46,11 +55,38 @@ public class DotObjectMapperProvider {
             result.configure(SerializationFeature.ORDER_MAP_ENTRIES_BY_KEYS, true);
         }
         result.registerModule(new Jdk8Module());
-        result.registerModule(new JavaTimeModule());
+        final JavaTimeModule javaTimeModule = createJavaTimeModule();
+
+        result.registerModule(javaTimeModule);
         result.registerModule(new GuavaModule());
-        //TODO: commented by now to fix bug with date format in Templates 'Last Edit Date' field
-        //result.configure(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, false);
+
         return result;
+    }
+
+    private static JavaTimeModule createJavaTimeModule() {
+        final JavaTimeModule javaTimeModule = new JavaTimeModule();
+        javaTimeModule.addSerializer(Instant.class, new JsonSerializer<Instant>() {
+            @Override
+            public void serialize(final Instant value, final JsonGenerator genarator,
+                    final SerializerProvider serializers)
+                    throws IOException {
+                genarator.writeNumber(String.valueOf(value.toEpochMilli()));
+            }
+        });
+
+        javaTimeModule.addDeserializer(Instant.class, new JsonDeserializer<Instant>() {
+            @Override
+            public Instant deserialize(final JsonParser parser, final DeserializationContext ctxt)
+                    throws IOException {
+                try {
+                    final long longValue = parser.getLongValue();
+                    return Instant.ofEpochMilli(longValue);
+                } catch (JsonParseException e) {
+                    return Instant.parse(parser.getValueAsString());
+                }
+            }
+        });
+        return javaTimeModule;
     }
 
     private static class SingletonHolder {

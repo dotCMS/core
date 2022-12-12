@@ -16,6 +16,10 @@
         .p-selectbutton {
             height: 100%;
             display: flex;
+
+            .p-button-label {
+                color: $dark;
+            }
         }
     }
 }

@@ -20,6 +20,7 @@ public class StoryBlockReferenceResult {
      * @param value     The Contentlet object with the updated properties. If it DID NOT have to be updated, then the
      *                  original Contentlet must be set.
      */
+
     public StoryBlockReferenceResult(final boolean refreshed, final Object value) {
         this.refreshed = refreshed;
         this.value = value;

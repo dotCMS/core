@@ -35,3 +35,9 @@ export * from './drag-handler/drag-handler.component';
 export * from './image-uploader/image-uploader.extension';
 export * from './image-uploader/components/loader/loader.component';
 export * from './image-uploader/services/dot-image/dot-image.service';
+
+// Table
+export * from './dot-table/dot-table.extension';
+export * from './dot-table/dot-table-cell.extension';
+export * from './dot-table/dot-table-cell.plugin';
+export * from './dot-table/dot-table-header.extension';

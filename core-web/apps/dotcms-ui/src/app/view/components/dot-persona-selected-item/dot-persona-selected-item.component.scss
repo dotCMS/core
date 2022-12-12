@@ -3,10 +3,8 @@
 @import "mixins";
 
 :host {
-    width: 200px;
-    display: flex;
+    padding: $spacing-1;
     cursor: pointer;
-    align-items: center;
 
     dot-icon {
         bottom: 0;
@@ -45,18 +43,6 @@
     }
 }
 
-.dot-persona-selector__container {
-    align-items: center;
-    cursor: pointer;
-    display: flex;
-    position: relative;
-    width: 206px;
-}
-
-dot-avatar {
-    margin-right: $spacing-1;
-}
-
 .dot-persona-selector__label-container {
     @include truncate-text;
 
@@ -77,30 +63,18 @@ dot-avatar {
 }
 
 .dot-persona-selector__name {
-    color: $black;
-    font-weight: $font-weight-semi-bold;
-    line-height: $spacing-3;
-    margin-right: $spacing-4;
+    color: $dark;
+    font-size: $font-size-medium;
+
     @include truncate-text;
 }
 
-dot-icon {
-    bottom: 0;
-    position: absolute;
-    right: 0;
-
-    i.material-icons {
-        color: $gray;
-        font-size: $md-icon-size-big;
-    }
-}
-
-@media only screen and (max-width: $screen-device-container-max) {
-    .dot-persona-selector__label-container {
+@media only screen and (max-width: $screen-lg-max) {
+    .dot-persona-selector__name {
         display: none;
     }
 
-    .dot-persona-selector__container {
-        width: 4rem;
+    .dot-persona-selector__container.gap-3 {
+        gap: 0.75rem !important;
     }
 }
