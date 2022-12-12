@@ -12,7 +12,7 @@ import {
     DotSimpleURL,
     CompleteEvent
 } from './models/dot-page-selector.models';
-import { DotMessageService } from '@services/dot-message/dot-messages.service';
+import { DotMessageService } from '@dotcms/data-access';
 import { AutoComplete } from 'primeng/autocomplete';
 import { of } from 'rxjs';
 import { Observable, Subject } from 'rxjs';

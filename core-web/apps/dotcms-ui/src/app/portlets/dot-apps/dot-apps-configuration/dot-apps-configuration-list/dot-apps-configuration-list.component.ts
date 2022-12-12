@@ -1,5 +1,5 @@
 import { Component, ViewChild, ElementRef, Input, Output, EventEmitter } from '@angular/core';
-import { DotAppsSites } from '@shared/models/dot-apps/dot-apps.model';
+import { DotAppsSites } from '@dotcms/dotcms-models';
 
 import { LazyLoadEvent } from 'primeng/api';
 

@@ -4,7 +4,7 @@ import { CardModule } from 'primeng/card';
 import { DotMessagePipeModule } from '@pipes/dot-message/dot-message-pipe.module';
 import { ButtonModule } from 'primeng/button';
 import { DotIconModule } from '@dotcms/ui';
-import { TrafficProportionTypes } from '@portlets/dot-experiments/shared/models/dot-experiments-constants';
+import { TrafficProportionTypes } from '@dotcms/dotcms-models';
 
 @Component({
     selector: 'dot-experiments-configuration-traffic',

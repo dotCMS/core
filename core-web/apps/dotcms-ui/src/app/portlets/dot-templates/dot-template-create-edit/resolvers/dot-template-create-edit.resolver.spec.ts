@@ -1,12 +1,12 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { TestBed } from '@angular/core/testing';
-import { DotTemplatesService } from '@services/dot-templates/dot-templates.service';
+import { DotTemplatesService } from '@dotcms/app/api/services/dot-templates/dot-templates.service';
 import { of } from 'rxjs';
 import { DotTemplateCreateEditResolver } from './dot-template-create-edit.resolver';
-import { DotTemplate } from '@models/dot-edit-layout-designer';
-import { DotRouterService } from '@services/dot-router/dot-router.service';
-import { MockDotRouterService } from '@tests/dot-router-service.mock';
+import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
+import { MockDotRouterService } from '@dotcms/utils-testing';
+import { DotTemplate } from '@dotcms/dotcms-models';
 
 const templateMock: DotTemplate = {
     anonymous: false,

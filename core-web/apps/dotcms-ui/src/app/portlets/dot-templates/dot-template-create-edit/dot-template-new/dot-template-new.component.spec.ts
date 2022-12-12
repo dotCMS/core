@@ -5,9 +5,9 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { DialogService } from 'primeng/dynamicdialog';
 import { Subject } from 'rxjs';
 
-import { DotMessageService } from '@services/dot-message/dot-messages.service';
-import { DotRouterService } from '@services/dot-router/dot-router.service';
-import { MockDotMessageService } from '@tests/dot-message-service.mock';
+import { DotMessageService } from '@dotcms/data-access';
+import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
+import { MockDotMessageService } from '@dotcms/utils-testing';
 import { DotTemplateNewComponent } from './dot-template-new.component';
 
 describe('DotTemplateNewComponent', () => {

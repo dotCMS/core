@@ -2,7 +2,6 @@ import { NgModule } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { DotTemplateListComponent } from './dot-template-list.component';
 import { DotTemplateListResolver } from '@portlets/dot-templates/dot-template-list/dot-template-list-resolver.service';
-import { DotTemplatesService } from '@services/dot-templates/dot-templates.service';
 import { DotListingDataTableModule } from '@components/dot-listing-data-table';
 import { SharedModule } from 'primeng/api';
 import { CheckboxModule } from 'primeng/checkbox';
@@ -16,7 +15,9 @@ import { DialogService, DynamicDialogModule } from 'primeng/dynamicdialog';
 import { DotMessagePipeModule } from '@pipes/dot-message/dot-message-pipe.module';
 import { DotTemplateSelectorModule } from './components/dot-template-selector/dot-template-selector.module';
 import { DotEmptyStateModule } from '@components/_common/dot-empty-state/dot-empty-state.module';
-import { DotSiteBrowserService } from '@services/dot-site-browser/dot-site-browser.service';
+
+import { DotSiteBrowserService } from '@dotcms/data-access';
+import { DotTemplatesService } from '@dotcms/app/api/services/dot-templates/dot-templates.service';
 import { AutoFocusModule } from 'primeng/autofocus';
 
 @NgModule({

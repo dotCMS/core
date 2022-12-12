@@ -1,9 +1,9 @@
 import { Component, forwardRef, Input, OnInit, ViewChild } from '@angular/core';
-import { DotTagsService } from '@services/dot-tags/dot-tags.service';
-import { DotTag } from '@models/dot-tag';
+import { DotTagsService } from '@dotcms/data-access';
 import { take } from 'rxjs/operators';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
 import { AutoComplete } from 'primeng/autocomplete';
+import { DotTag } from '@dotcms/dotcms-models';
 
 /**
  * The DotAutocompleteTagsComponent provide a dropdown to select tags,

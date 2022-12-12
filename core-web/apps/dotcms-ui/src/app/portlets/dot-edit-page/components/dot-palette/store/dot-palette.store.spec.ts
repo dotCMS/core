@@ -2,12 +2,11 @@ import { fakeAsync, TestBed, tick } from '@angular/core/testing';
 import { Observable, of } from 'rxjs';
 import { DotPaletteStore } from './dot-palette.store';
 import { Injectable } from '@angular/core';
-import { DotESContentService } from '@dotcms/app/api/services/dot-es-content/dot-es-content.service';
-import { PaginatorService } from '@dotcms/app/api/services/paginator';
+import { DotESContentService } from '@dotcms/data-access';
+import { PaginatorService } from '@dotcms/data-access';
 import { contentTypeDataMock } from '../dot-palette-content-type/dot-palette-content-type.component.spec';
-import { DotCMSContentlet, DotCMSContentType } from '@dotcms/dotcms-models';
-import { ESContent } from '../../../../../shared/models/dot-es-content/dot-es-content.model';
-import { DotContentTypeService } from '@services/dot-content-type/dot-content-type.service';
+import { DotCMSContentlet, DotCMSContentType, ESContent } from '@dotcms/dotcms-models';
+import { DotContentTypeService } from '@dotcms/data-access';
 
 import {
     contentletFormDataMock,
@@ -181,7 +180,9 @@ describe('DotPaletteStore', () => {
     it('should load inly widgets to store if allowedContent is empty', (done) => {
         const sortedDataMock = contentTypeDataMock.sort((a, b) => a.name.localeCompare(b.name));
         spyOn(dotContentTypeService, 'filterContentTypes').and.returnValues(of([]));
-        spyOn(dotContentTypeService, 'getContentTypes').and.returnValues(of(sortedDataMock as DotCMSContentType[]));
+        spyOn(dotContentTypeService, 'getContentTypes').and.returnValues(
+            of(sortedDataMock as DotCMSContentType[])
+        );
         dotPaletteStore.loadContentTypes([]);
         dotPaletteStore.vm$.subscribe((data) => {
             expect(data.contentTypes).toEqual(sortedDataMock as DotCMSContentType[]);

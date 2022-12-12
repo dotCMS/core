@@ -1,8 +1,8 @@
-import { DotContainer } from '@models/container/dot-container.model';
-import { PaginatorService } from '@services/paginator/paginator.service';
+import { PaginatorService } from '@dotcms/data-access';
 import { Component, OnInit, Output, EventEmitter, Input } from '@angular/core';
 import { DotContainerColumnBox } from '@shared/models/dot-edit-layout-designer/dot-container-column-box.model';
-import { DotTemplateContainersCacheService } from '@services/dot-template-containers-cache/dot-template-containers-cache.service';
+import { DotTemplateContainersCacheService } from '@dotcms/app/api/services/dot-template-containers-cache/dot-template-containers-cache.service';
+import { DotContainer } from '@dotcms/dotcms-models';
 
 @Component({
     selector: 'dot-container-selector-layout',

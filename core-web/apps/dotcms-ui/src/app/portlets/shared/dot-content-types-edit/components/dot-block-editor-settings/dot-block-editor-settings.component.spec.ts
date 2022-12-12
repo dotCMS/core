@@ -6,15 +6,14 @@ import {
     DotBlockEditorSettingsComponent,
     BLOCK_EDITOR_BLOCKS
 } from './dot-block-editor-settings.component';
-import { MockDotMessageService } from '@dotcms/app/test/dot-message-service.mock';
+import { MockDotMessageService, mockFieldVariables } from '@dotcms/utils-testing';
 import { DotHttpErrorManagerService } from '@dotcms/app/api/services/dot-http-error-manager/dot-http-error-manager.service';
-import { DotMessageService } from '@dotcms/app/api/services/dot-message/dot-messages.service';
+import { DotMessageService } from '@dotcms/data-access';
 import { FormBuilder, ReactiveFormsModule, FormsModule } from '@angular/forms';
 
 import { MultiSelect, MultiSelectModule } from 'primeng/multiselect';
 import { By } from '@angular/platform-browser';
 import { CommonModule } from '@angular/common';
-import { mockFieldVariables } from '@dotcms/app/test/field-variable-service.mock';
 
 describe('DotContentTypeFieldsVariablesComponent', () => {
     let fixture: ComponentFixture<DotBlockEditorSettingsComponent>;
