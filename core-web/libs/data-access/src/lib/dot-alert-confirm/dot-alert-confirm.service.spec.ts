@@ -13,7 +13,7 @@ const messageServiceMock = new MockDotMessageService({
     'dot.common.dialog.reject': 'No'
 });
 
-fdescribe('DotAlertConfirmService', () => {
+describe('DotAlertConfirmService', () => {
     let mockData: DotAlertConfirm;
     let service: DotAlertConfirmService;
     let confirmationService: ConfirmationService;

@@ -31,7 +31,7 @@ const mockCategory: DotCategory = {
     source: CATEGORY_SOURCE.DB
 };
 
-fdescribe('DotCategorysService', () => {
+describe('DotCategorysService', () => {
     let service: DotCategoriesService;
     let httpMock: HttpTestingController;
 
