@@ -69,7 +69,7 @@ services:
       - esdata3:/data
 
   dotcms:
-    image: dotcms/dotcms:prerelease-5.2.8.5
+    image: dotcms/dotcms:5.2.8.5_SNAPSHOT_latest
     #entrypoint: bash -c 'sleep infinity'
     environment:
         CMS_JAVA_OPTS: '-Xmx1g '
