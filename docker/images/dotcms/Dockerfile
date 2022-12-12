@@ -14,6 +14,8 @@ ARG BUILD_FROM=COMMIT
 #  Value resolved in the context of $BUILD_FROM
 ARG BUILD_ID=HEAD
 
+RUN echo "BUILD_FROM: $BUILD_FROM / BUILD_ID: $BUILD_ID"
+
 WORKDIR /srv
 
 # Set gradle options
