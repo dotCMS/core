@@ -38,7 +38,7 @@ jobs:
           pull: true
           no-cache: true
           build-args: |
-            BUILD_ID=${{env.GITHUB_SHA}}
+            BUILD_ID=${{ github.ref }}
             BUILD_FROM=COMMIT 
 
       
