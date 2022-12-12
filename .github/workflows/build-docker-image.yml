@@ -35,8 +35,10 @@ jobs:
           push: true
           context: docker/images/dotcms
           tags: ${{ steps.meta.outputs.tags }}
+          pull: true
+          no-cache: true
           build-args: |
-            BUILD_ID=${{ steps.meta.outputs.sha }}
+            BUILD_ID=${{ GITHUB_SHA }}
             BUILD_FROM=COMMIT 
 
       
