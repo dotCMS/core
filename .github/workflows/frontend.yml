@@ -22,7 +22,7 @@ jobs:
       status: ${{ steps.lint.outputs.status || steps.test.outputs.status || steps.build.outputs.status }}
       color: ${{ steps.lint.outputs.color || steps.test.outputs.color || steps.build.outputs.color }}
       message: ${{ steps.persist_results.outputs.message }}
-    runs-on: ubuntu-latest # the image our job will run on
+    runs-on: ubuntu-20.04 # the image our job will run on
     name: Frontend Checks # the name that will appear on the Actions UI
     steps: # what steps it will perform
       - uses: actions/checkout@v3 # checkout whatever branch the PR is using
@@ -62,7 +62,7 @@ jobs:
         run: |
           chmod +x .cicd/github.sh && source .cicd/github.sh
           persistResults
-          echo "::set-output name=message::$(logResults)";
+          echo "message=$(logResults)" >>$GITHUB_OUTPUT
       - name: Build
         id: build
         working-directory: core-web
@@ -74,7 +74,7 @@ jobs:
             exit 1;
           fi
   notify:
-    runs-on: ubuntu-latest # the image our job will run on
+    runs-on: ubuntu-20.04 # the image our job will run on
     name: Notify Slack
     needs: check-all
     if: always()
