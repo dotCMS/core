@@ -77,9 +77,8 @@ export class DotContentEditorComponent implements OnInit {
      * @param close - This is the function that closes the modal.
      * @memberof DotContentEditorComponent
      */
-    removeItem(index: number = null, close: () => void): void {
+    removeItem(index: number = null): void {
         this.getcontainerStructures.removeAt(index - 1);
-        close();
         const currentTabIndex = this.findCurrentTabIndex(index);
         this.updateActiveTabIndex(currentTabIndex);
         this.foucsCurrentEditor(currentTabIndex);
@@ -183,7 +182,10 @@ export class DotContentEditorComponent implements OnInit {
                             })
                         );
 
-                        this.updateActiveTabIndex(this.getcontainerStructures.length);
+                        // Waiting for primeng to add the tabPanel
+                        setTimeout(() => {
+                            this.updateActiveTabIndex(this.getcontainerStructures.length);
+                        }, 0);
                     }
                 }
             };

@@ -5,12 +5,13 @@
         }}</label>
     </div>
     <p-tabView
+        [(activeIndex)]="activeTabIndex"
         [scrollable]="true"
         [controlClose]="true"
         (onChange)="handleTabClick($event, $event.index)"
-        (onClose)="removeItem($event.index, $event.close)"
+        (onClose)="removeItem($event.index)"
     >
-        <p-tabPanel [selected]="activeTabIndex === 0" headerStyleClass="tab-panel-btn">
+        <p-tabPanel headerStyleClass="tab-panel-btn">
             <ng-template pTemplate="header">
                 <i
                     class="pi pi-plus pr-3 pl-3"
@@ -23,10 +24,16 @@
                     class="dot-container-code__empty-content flex justify-content-center align-items-center flex-column"
                 >
                     <dot-icon data-testId="code" name="code" size="100"></dot-icon>
-                    <div class="dot-container-code__empty-content-title">
+                    <div
+                        class="dot-container-code__empty-content-title"
+                        data-testId="empty-content-title"
+                    >
                         {{ 'message.containers.empty.content_type_message' | dm }}
                     </div>
-                    <div class="dot-container-code__empty-content-subtitle mb-1">
+                    <div
+                        class="dot-container-code__empty-content-subtitle mb-1"
+                        data-testId="empty-content-subtitle"
+                    >
                         {{ 'message.containers.empty.content_type_need_help' | dm }}?
                         <a href="https://www.dotcms.com/docs/latest/containers" target="_blank">{{
                             'message.containers.empty.content_type_go_to_documentation' | dm
@@ -38,7 +45,6 @@
         <p-tabPanel
             *ngFor="let containerContent of getcontainerStructures.controls; let i = index"
             [header]="contentTypeNamesById[containerContent.value.structureId]"
-            [selected]="activeTabIndex === i + 1"
             formArrayName="containerStructures"
             closable="true"
         >
