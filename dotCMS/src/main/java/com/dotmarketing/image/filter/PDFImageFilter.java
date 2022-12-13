@@ -1,83 +1,57 @@
 package com.dotmarketing.image.filter;
 
-import java.awt.Graphics2D;
 import java.awt.image.BufferedImage;
 import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.util.Iterator;
 import java.util.Map;
-
-import javax.imageio.IIOImage;
 import javax.imageio.ImageIO;
-import javax.imageio.ImageWriteParam;
-import javax.imageio.ImageWriter;
-import javax.imageio.stream.ImageOutputStream;
-
+import org.apache.pdfbox.io.MemoryUsageSetting;
 import org.apache.pdfbox.pdmodel.PDDocument;
-import org.apache.pdfbox.rendering.ImageType;
 import org.apache.pdfbox.rendering.PDFRenderer;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.util.Config;
-import com.dotmarketing.util.Logger;
+
 
 public class PDFImageFilter extends ImageFilter {
-  public String[] getAcceptedParameters() {
-    return new String[] {
 
 
-    };
-  }
-
-  public File runFilter(File file, Map<String, String[]> parameters) {
+    static final long PDF_RENDERER_MAX_MEMORY_BYTES = Config.getLongProperty("PDF_RENDERER_MAX_MEMORY_BYTES", 1024L * 1024 * 50);
 
 
-    File resultFile = getResultsFile(file, parameters);
+    public File runFilter(File file, Map<String, String[]> parameters) {
 
-    if (!overwrite(resultFile, parameters)) {
-      return resultFile;
+
+        File resultFile = getResultsFile(file, parameters);
+
+        if (!overwrite(resultFile, parameters)) {
+            return resultFile;
+        }
+        int page = parameters.get(getPrefix() + "page") != null ? Integer.parseInt(parameters.get(getPrefix() + "page")[0]) : 1;
+
+        float dpi = parameters.get(getPrefix() + "dpi") != null ? Float.parseFloat(parameters.get(getPrefix() + "dpi")[0]) : 72f;
+
+        float scale = dpi / 72f;
+        
+        final File tempResultFile = new File(resultFile.getAbsoluteFile() + "_" + System.currentTimeMillis() + ".tmp.png");
+
+        try (PDDocument document = PDDocument.load(file, MemoryUsageSetting.setupMixed(PDF_RENDERER_MAX_MEMORY_BYTES))) {
+            PDFRenderer pdfRenderer = new PDFRenderer(document);
+
+            pdfRenderer.setSubsamplingAllowed(true);
+            BufferedImage bim = pdfRenderer.renderImage(--page, scale);
+            ImageIO.write(bim, "PNG", tempResultFile);
+            if (!tempResultFile.renameTo(resultFile)) {
+                throw new DotRuntimeException("unable to create file:" + resultFile);
+            }
+            return resultFile;
+
+        } catch (Exception e) {
+            throw new DotRuntimeException("unable to convert file:" + file + " : " + e.getMessage(), e);
+        }
+
+
+
+        
     }
-    int page = parameters.get(getPrefix() + "page") != null ? Integer.parseInt(parameters.get(getPrefix() + "page")[0]) : 1;
-
-    int dpi = parameters.get(getPrefix() + "dpi") != null ? Integer.parseInt(parameters.get(getPrefix() + "dpi")[0]) : 72;
-
-        
-        
-        
-    resultFile.delete();
-    try {
-      
-      System.setProperty("sun.java2d.cmm", Config.getStringProperty("IMAGE_COLOR_MANAGEMENT_SYSTEM",  "sun.java2d.cmm.kcms.KcmsServiceProvider"));
-      PDDocument document = PDDocument.load(file);
-      PDFRenderer pdfRenderer = new PDFRenderer(document);
-
-      BufferedImage bim = pdfRenderer.renderImageWithDPI(--page, dpi, ImageType.RGB);
-      Iterator<ImageWriter> iter = ImageIO.getImageWritersByFormatName("png");
-      ImageWriter writer = iter.next();
-      ImageWriteParam iwp = writer.getDefaultWriteParam();
-      BufferedImage dst = new BufferedImage(bim.getWidth(), bim.getHeight(), BufferedImage.TYPE_4BYTE_ABGR);
-      Graphics2D graphics = dst.createGraphics();
-
-      // graphics.fillRect(0, 0, src.getWidth(), src.getHeight());
-      graphics.drawImage(bim, 0, 0, bim.getWidth(), bim.getHeight(), null);
-      ImageOutputStream ios = ImageIO.createImageOutputStream(resultFile);
-      writer.setOutput(ios);
-      writer.write(null, new IIOImage(dst, null, null), iwp);
-      ios.flush();
-      writer.dispose();
-      ios.close();
-
-      document.close();
-
-
-    } catch (Exception e) {
-        throw new DotRuntimeException("unable to convert file:" +file + " : " +  e.getMessage(),e);
-    }
-
-
-
-    return resultFile;
-  }
-
+  
 
 }

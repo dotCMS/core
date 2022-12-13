@@ -37,24 +37,22 @@ public class StoryBlockAPIImpl implements StoryBlockAPI {
     @Override
     public StoryBlockReferenceResult refreshReferences(final Contentlet contentlet) {
         final MutableBoolean refreshed = new MutableBoolean(false);
-        if (null != contentlet) {
-            if (contentlet.getContentType().hasStoryBlockFields()) {
-                //TODO: this method filters but creates a new list in memory
-                contentlet.getContentType().fields(StoryBlockField.class)
-                        .forEach(field -> {
+        if (null != contentlet && contentlet.getContentType().hasStoryBlockFields()) {
+            //TODO: this method filters but creates a new list in memory
+            contentlet.getContentType().fields(StoryBlockField.class)
+                    .forEach(field -> {
 
-                            final Object storyBlockValue = contentlet.get(field.variable());
-                            if (null != storyBlockValue && JsonUtil.isValidJSON(storyBlockValue.toString())) {
-                                final StoryBlockReferenceResult result =
-                                        this.refreshStoryBlockValueReferences(storyBlockValue);
-                                if (result.isRefreshed()) {
-                                    refreshed.setTrue();
-                                    contentlet.setProperty(field.variable(), result.getValue());
-                                }
+                        final Object storyBlockValue = contentlet.get(field.variable());
+                        if (null != storyBlockValue && JsonUtil.isValidJSON(storyBlockValue.toString())) {
+                            final StoryBlockReferenceResult result =
+                                    this.refreshStoryBlockValueReferences(storyBlockValue);
+                            if (result.isRefreshed()) {
+                                refreshed.setTrue();
+                                contentlet.setProperty(field.variable(), result.getValue());
                             }
+                        }
 
-                        });
-            }
+                    });
         }
         return new StoryBlockReferenceResult(refreshed.booleanValue(), contentlet);
     }

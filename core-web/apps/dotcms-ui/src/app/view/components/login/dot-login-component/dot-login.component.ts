@@ -4,14 +4,14 @@ import { SelectItem } from 'primeng/api';
 import { UntypedFormBuilder, UntypedFormGroup, Validators } from '@angular/forms';
 import { take, takeUntil, tap } from 'rxjs/operators';
 import { Observable, Subject } from 'rxjs';
-import { DotRouterService } from '@services/dot-router/dot-router.service';
 import { DotLoginPageStateService } from '@components/login/shared/services/dot-login-page-state.service';
-import { DotLoadingIndicatorService } from '@components/_common/iframe/dot-loading-indicator/dot-loading-indicator.service';
 import { ActivatedRoute, Params } from '@angular/router';
-import { DotMessageService } from '@services/dot-message/dot-messages.service';
-import { DotFormatDateService } from '@services/dot-format-date-service';
+import { DotMessageService } from '@dotcms/data-access';
 import { DotLoginInformation, DotLoginLanguage } from '@dotcms/dotcms-models';
 import { HttpErrorResponse } from '@angular/common/http';
+import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
+import { DotLoadingIndicatorService } from '@dotcms/utils';
+import { DotFormatDateService } from '@dotcms/app/api/services/dot-format-date-service';
 
 @Component({
     selector: 'dot-login-component',

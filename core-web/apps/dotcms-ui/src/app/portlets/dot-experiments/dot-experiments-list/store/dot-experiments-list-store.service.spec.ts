@@ -1,26 +1,23 @@
 import { TestBed } from '@angular/core/testing';
 
 import { DotExperimentsListStore, DotExperimentsState } from './dot-experiments-list-store.service';
-
-import { LoadingState } from '@portlets/shared/models/shared-models';
-import {
-    DotExperiment,
-    GroupedExperimentByStatus
-} from '../../shared/models/dot-experiments.model';
 import { DotExperimentsService } from '@portlets/dot-experiments/shared/services/dot-experiments.service';
 import { of } from 'rxjs';
 import { HttpClientTestingModule } from '@angular/common/http/testing';
-import {
-    DotExperimentStatusList,
-    TrafficProportionTypes
-} from '@portlets/dot-experiments/shared/models/dot-experiments-constants';
 import { DotMessagePipeModule } from '@pipes/dot-message/dot-message-pipe.module';
-import { MockDotMessageService } from '@tests/dot-message-service.mock';
-import { DotMessageService } from '@services/dot-message/dot-messages.service';
+import { MockDotMessageService } from '@dotcms/utils-testing';
+import { DotMessageService } from '@dotcms/data-access';
 import { MessageService } from 'primeng/api';
 import { ActivatedRoute } from '@angular/router';
 import { RouterTestingModule } from '@angular/router/testing';
 import { ExperimentMocks } from '@portlets/dot-experiments/test/mocks';
+import {
+    DotExperiment,
+    DotExperimentStatusList,
+    GroupedExperimentByStatus,
+    LoadingState,
+    TrafficProportionTypes
+} from '@dotcms/dotcms-models';
 
 const routerParamsPageId = '1111-1111-111';
 const ActivatedRouteMock = {
@@ -154,7 +151,7 @@ describe('DotExperimentsListStore', () => {
                 scheduling: null,
                 trafficProportion: {
                     type: TrafficProportionTypes.SPLIT_EVENLY,
-                    variants: [{ id: '111', name: 'DEFAULT', weight: 100.0 }]
+                    variants: [{ id: '111', name: 'DEFAULT', weight: '100.0' }]
                 },
                 creationDate: new Date('2022-08-21 14:50:03'),
                 modDate: new Date('2022-08-21 18:50:03')
@@ -174,7 +171,7 @@ describe('DotExperimentsListStore', () => {
                 scheduling: null,
                 trafficProportion: {
                     type: TrafficProportionTypes.SPLIT_EVENLY,
-                    variants: [{ id: '222', name: 'DEFAULT', weight: 100.0 }]
+                    variants: [{ id: '222', name: 'DEFAULT', weight: '100.0' }]
                 },
                 creationDate: new Date('2022-08-21 14:50:03'),
                 modDate: new Date('2022-08-21 18:50:03')

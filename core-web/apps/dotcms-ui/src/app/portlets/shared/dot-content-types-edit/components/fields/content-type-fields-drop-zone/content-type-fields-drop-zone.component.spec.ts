@@ -17,50 +17,50 @@ import { ContentTypeFieldsAddRowModule } from '..';
 import {
     DotCMSContentTypeField,
     DotCMSContentTypeLayoutRow,
-    DotCMSContentType
+    DotCMSContentType,
+    DotFieldVariable
 } from '@dotcms/dotcms-models';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { DotFieldValidationMessageModule } from '@components/_common/dot-field-validation-message/dot-file-validation-message.module';
 import { DotActionButtonModule } from '@components/_common/dot-action-button/dot-action-button.module';
-import { DotMessageService } from '@services/dot-message/dot-messages.service';
+import { DotEventsService, DotMessageService } from '@dotcms/data-access';
 import { LoginService, DotEventsSocket, CoreWebService } from '@dotcms/dotcms-js';
 import { Router } from '@angular/router';
 import { RouterTestingModule } from '@angular/router/testing';
 import { Observable, of, Subject } from 'rxjs';
-import { DotFormatDateService } from '@services/dot-format-date-service';
+import { DotFormatDateService } from '@dotcms/app/api/services/dot-format-date-service';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { FieldDragDropService } from '../service/index';
 import { FieldPropertyService } from '../service/field-properties.service';
 import { FieldService } from '../service/field.service';
 import { UiDotIconButtonModule } from '@components/_common/dot-icon-button/dot-icon-button.module';
 import { DotIconModule } from '@dotcms/ui';
-import { MockDotMessageService } from '@tests/dot-message-service.mock';
+import { FieldUtil, MockDotMessageService } from '@dotcms/utils-testing';
 import { DragulaModule, DragulaService } from 'ng2-dragula';
 import * as _ from 'lodash';
 import { DotDialogModule } from '@components/dot-dialog/dot-dialog.module';
 import { TableModule } from 'primeng/table';
 import { DotContentTypeFieldsVariablesModule } from '../dot-content-type-fields-variables/dot-content-type-fields-variables.module';
-import { DotLoadingIndicatorService } from '@components/_common/iframe/dot-loading-indicator/dot-loading-indicator.service';
-import { FieldUtil } from '../util/field-util';
-import { DotEventsService } from '@services/dot-events/dot-events.service';
-import { DotDialogComponent } from '@components/dot-dialog/dot-dialog.component';
+
 import {
     dotcmsContentTypeFieldBasicMock,
     fieldsWithBreakColumn,
     fieldsBrokenWithColumns,
     dotcmsContentTypeBasicMock
-} from '@tests/dot-content-types.mock';
+} from '@dotcms/utils-testing';
 
-import cleanUpDialog from '@tests/clean-up-dialog';
-import { CoreWebServiceMock } from '@tests/core-web.service.mock';
+import { cleanUpDialog } from '@dotcms/utils-testing';
+import { CoreWebServiceMock } from '@dotcms/utils-testing';
 import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { DotMessagePipeModule } from '@pipes/dot-message/dot-message-pipe.module';
 import { TabViewModule } from 'primeng/tabview';
-import { DotHttpErrorManagerService } from '@services/dot-http-error-manager/dot-http-error-manager.service';
+import { DotHttpErrorManagerService } from '@dotcms/app/api/services/dot-http-error-manager/dot-http-error-manager.service';
 import { DotMessageDisplayService } from '@components/dot-message-display/services';
 import { DotConvertToBlockInfoComponent } from '../../dot-convert-to-block-info/dot-convert-to-block-info.component';
 import { DotConvertWysiwygToBlockComponent } from '../../dot-convert-wysiwyg-to-block/dot-convert-wysiwyg-to-block.component';
 import { CheckboxModule } from 'primeng/checkbox';
+import { DotLoadingIndicatorService } from '@dotcms/utils';
+import { DotDialogActions, DotDialogComponent } from '@components/dot-dialog/dot-dialog.component';
 
 const COLUMN_BREAK_FIELD = FieldUtil.createColumnBreak();
 
@@ -414,6 +414,28 @@ class TestHostComponent {
 // Issue ref: dotCMS/core#16772 When you DnD a field (reorder) in the same column it shows up the edit field dialog
 // https://github.com/dotCMS/core-web/pull/1085
 
+const BLOCK_EDITOR_FIELD = {
+    ...dotcmsContentTypeFieldBasicMock,
+    clazz: 'com.dotcms.contenttype.model.field.ImmutableStoryBlockField',
+    id: '12',
+    name: 'field 12',
+    sortOrder: 12,
+    contentTypeId: '12b'
+};
+
+@Component({
+    selector: 'dot-block-editor-settings',
+    template: ''
+})
+class TestDotBlockEditorSettingsComponent {
+    @Output() changeControls = new EventEmitter<DotDialogActions>();
+    @Output() valid = new EventEmitter<boolean>();
+    @Output() save = new EventEmitter<DotFieldVariable[]>();
+
+    @Input() field: DotCMSContentTypeField;
+    @Input() isVisible = false;
+}
+
 describe('Load fields and drag and drop', () => {
     const dotLoadingIndicatorServiceMock: TestDotLoadingIndicatorService =
         new TestDotLoadingIndicatorService();
@@ -448,7 +470,8 @@ describe('Load fields and drag and drop', () => {
                 TestHostComponent,
                 TestDotLoadingIndicatorComponent,
                 DotConvertToBlockInfoComponent,
-                DotConvertWysiwygToBlockComponent
+                DotConvertWysiwygToBlockComponent,
+                TestDotBlockEditorSettingsComponent
             ],
             imports: [
                 RouterTestingModule.withRoutes([
@@ -497,6 +520,12 @@ describe('Load fields and drag and drop', () => {
                                         'searchable',
                                         'indexed'
                                     ]
+                                },
+                                {
+                                    clazz: 'com.dotcms.contenttype.model.field.ImmutableStoryBlockField',
+                                    id: 'block editor',
+                                    label: 'BLOCK EDITOR',
+                                    properties: ['name', 'body', 'required', 'indexed']
                                 }
                             ]);
                         }
@@ -625,6 +654,29 @@ describe('Load fields and drag and drop', () => {
                         ]
                     }
                 ]
+            },
+            {
+                divider: {
+                    ...dotcmsContentTypeFieldBasicMock,
+                    clazz: 'com.dotcms.contenttype.model.field.ImmutableRowField',
+                    id: '10',
+                    name: 'field 10',
+                    sortOrder: 10,
+                    contentTypeId: '10b'
+                },
+                columns: [
+                    {
+                        columnDivider: {
+                            ...dotcmsContentTypeFieldBasicMock,
+                            name: 'field 11',
+                            id: '11',
+                            clazz: 'com.dotcms.contenttype.model.field.ImmutableColumnField',
+                            sortOrder: 11,
+                            contentTypeId: '11b'
+                        },
+                        fields: [BLOCK_EDITOR_FIELD]
+                    }
+                ]
             }
         ];
 
@@ -706,7 +758,7 @@ describe('Load fields and drag and drop', () => {
         fixture.detectChanges();
         dotEventsService.notify('add-tab-divider', null);
 
-        expect(comp.fieldRows.length).toBe(4);
+        expect(comp.fieldRows.length).toBe(5);
         expect(comp.fieldRows[comp.fieldRows.length - 1].divider.clazz).toBe(
             'com.dotcms.contenttype.model.field.ImmutableTabDividerField'
         );
@@ -717,7 +769,9 @@ describe('Load fields and drag and drop', () => {
 
         const fieldsContainer = de.query(By.css('.content-type-fields-drop-zone__container'));
         const fieldRows = fieldsContainer.queryAll(By.css('dot-content-type-fields-row'));
-        expect(2).toEqual(fieldRows.length);
+
+        // - 1 because one Mock Fields has not columns
+        expect(fakeFields.length - 1).toEqual(fieldRows.length);
 
         expect(2).toEqual(fieldRows[0].componentInstance.fieldRow.columns.length);
         expect(1).toEqual(fieldRows[0].componentInstance.fieldRow.columns[0].fields.length);
@@ -861,6 +915,71 @@ describe('Load fields and drag and drop', () => {
         expect(tabLinks[1].nativeElement.classList.contains('p-disabled')).toBe(false);
     });
 
+    it('should change the dialogActions', () => {
+        const newDialogActions = {
+            accept: {
+                action: () => {
+                    /* */
+                },
+                label: 'Save',
+                disabled: true
+            },
+            cancel: {
+                label: 'Cancel'
+            }
+        };
+        comp.changesDialogActions(newDialogActions);
+        expect(comp.dialogActions).toEqual(newDialogActions);
+    });
+
+    it('should restore the default dialogActions on Overview Tab', async () => {
+        fixture.detectChanges();
+        const newDialogActions = {
+            accept: {
+                action: () => {
+                    /* */
+                },
+                label: 'Save',
+                disabled: true
+            },
+            cancel: {
+                label: 'Cancel'
+            }
+        };
+
+        // Changes Dialog Actions
+        comp.changesDialogActions(newDialogActions);
+        expect(comp.dialogActions).toEqual(newDialogActions);
+
+        // Change to Overview Tab
+        comp.handleTabChange(0);
+        expect(comp.dialogActions).toEqual(comp.defaultDialogActions);
+    });
+
+    it('should restore the default dialogActions on Overview Tab', async () => {
+        fixture.detectChanges();
+        const newDialogActions = {
+            accept: {
+                action: () => {
+                    /* */
+                },
+                label: 'Save',
+                disabled: true
+            },
+            cancel: {
+                label: 'Cancel'
+            }
+        };
+
+        // Changes Dialog Actions
+        comp.changesDialogActions(newDialogActions);
+        expect(comp.dialogActions).toEqual(newDialogActions);
+
+        // Change to Overview Tab
+        comp.handleTabChange(0);
+        expect(comp.dialogActions).toEqual(comp.defaultDialogActions);
+    });
+
     describe('Edit Field Dialog', () => {
         describe('WYSIWYG field', () => {
             let fieldBox;
@@ -909,6 +1028,74 @@ describe('Load fields and drag and drop', () => {
                     })
                 );
             });
+        });
+
+        describe('BLOCK EDITOR field', () => {
+            let fieldBoxComponent;
+            let BLOCK_EDITOR_SETTINGS: DebugElement;
+            let blockEditorComponent: TestDotBlockEditorSettingsComponent;
+
+            beforeEach(() => {
+                fixture.detectChanges();
+                fieldBoxComponent = de.query(By.css('dot-content-type-fields-row'))
+                    .componentInstance as TestContentTypeFieldsRowComponent;
+                fieldBoxComponent.editField.emit(BLOCK_EDITOR_FIELD);
+                fixture.detectChanges();
+
+                BLOCK_EDITOR_SETTINGS = de.query(By.css('dot-block-editor-settings'));
+                blockEditorComponent = BLOCK_EDITOR_SETTINGS.componentInstance;
+            });
+
+            it('should create dot-block-editor-settings', () => {
+                const panels = de.queryAll(By.css('p-tabPanel'));
+                expect(BLOCK_EDITOR_SETTINGS).toBeTruthy();
+                expect(blockEditorComponent.field).toEqual(BLOCK_EDITOR_FIELD);
+                expect(panels.length).toBe(3);
+            });
+
+            it('should emit changeControls and update dialogActions', () => {
+                const BLOCK_EDITOR_SETTINGS = de.query(By.css('dot-block-editor-settings'));
+                const blockEditorComponent =
+                    BLOCK_EDITOR_SETTINGS.componentInstance as TestDotBlockEditorSettingsComponent;
+                const newDialogActions = {
+                    accept: {
+                        action: () => {
+                            /* */
+                        },
+                        label: 'Save',
+                        disabled: true
+                    },
+                    cancel: {
+                        label: 'Cancel'
+                    }
+                };
+                blockEditorComponent.changeControls.emit(newDialogActions);
+                fixture.detectChanges();
+                expect(comp.dialogActions).toEqual(newDialogActions);
+            });
+
+            it('should close dialog on save', () => {
+                blockEditorComponent.save.emit([]);
+                fixture.detectChanges();
+                expect(comp.displayDialog).toBe(false);
+                expect(comp.dialogActions).toEqual(comp.defaultDialogActions);
+                expect(comp.activeTab).toBe(comp.OVERVIEW_TAB_INDEX);
+            });
+        });
+
+        it('should not create dot-block-editor-settings', () => {
+            fixture.detectChanges();
+            const fieldBoxComponent = de.query(By.css('dot-content-type-fields-row'))
+                .componentInstance as TestContentTypeFieldsRowComponent;
+            fieldBoxComponent.editField.emit({
+                clazz: 'com.dotcms.contenttype.model.field.ImmutableWysiwygField',
+                name: 'WYSIWYG',
+                id: '3'
+            } as DotCMSContentTypeField);
+            fixture.detectChanges();
+
+            const BLOCK_EDITOR_SETTINGS = de.query(By.css('dot-block-editor-settings'));
+            expect(BLOCK_EDITOR_SETTINGS).not.toBeTruthy();
         });
 
         it('should show block editor info message when create a WYSIWYG', () => {

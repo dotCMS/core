@@ -4,6 +4,7 @@ import com.dotcms.IntegrationTestBase;
 import com.dotcms.datagen.FileAssetDataGen;
 import com.dotcms.datagen.FolderDataGen;
 import com.dotcms.ema.proxy.MockHttpCaptureResponse;
+import com.dotcms.ema.proxy.MockPrintWriter;
 import com.dotcms.mock.request.DotCMSMockRequestWithSession;
 import com.dotcms.mock.response.MockHttpResponse;
 import com.dotcms.util.ConfigTestHelper;
@@ -18,6 +19,8 @@ import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.WebKeys;
 import com.liferay.util.StringPool;
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import org.apache.http.HttpStatus;
 import org.junit.AfterClass;
 import org.junit.Assert;
@@ -160,7 +163,12 @@ public class CSSPreProcessServletTest extends IntegrationTestBase {
         try {
             // Initialization
             final HttpServletRequest mockRequest = hydrateMockedRequest(inputScssFile);
-            final MockHttpCaptureResponse mockResponse = new MockHttpCaptureResponse(new MockHttpResponse());
+            final MockHttpCaptureResponse mockResponse = new MockHttpCaptureResponse(new MockHttpResponse()){
+                @Override
+                public PrintWriter getWriter() {
+                    return new MockPrintWriter(getOutputStream());
+                }
+            };
             final CSSPreProcessServlet servlet = new CSSPreProcessServlet();
 
             // Test data generation
@@ -172,7 +180,7 @@ public class CSSPreProcessServletTest extends IntegrationTestBase {
                                               "execution...", inputScssFile));
         }
         // Assertions
-        Assert.assertTrue("This is NOT the expected SCSS compiler output.", cssCode.startsWith(expectedOutput));
+        Assert.assertTrue(String.format("This is NOT the expected SCSS compiler output. cssCode [%s] expected [%s].", cssCode, expectedOutput), cssCode.startsWith(expectedOutput));
         Assert.assertNotEquals("The SCSS file could not be found.", HttpStatus.SC_NOT_FOUND, status);
         Assert.assertNotEquals("The SCSS file could not be read by the specified dotCMS user.",
                 HttpStatus.SC_FORBIDDEN, status);

@@ -5,7 +5,12 @@ import { DebugElement, Component, Injectable } from '@angular/core';
 
 import { DotPageSelectorComponent } from './dot-page-selector.component';
 import { DotPageAsset, DotPageSelectorService } from './service/dot-page-selector.service';
-import { UntypedFormGroup, UntypedFormBuilder, FormsModule, ReactiveFormsModule } from '@angular/forms';
+import {
+    UntypedFormGroup,
+    UntypedFormBuilder,
+    FormsModule,
+    ReactiveFormsModule
+} from '@angular/forms';
 import { AutoCompleteModule } from 'primeng/autocomplete';
 import { DotDirectivesModule } from '@shared/dot-directives.module';
 import {
@@ -13,10 +18,10 @@ import {
     DotPageSelectorItem
 } from '@components/_common/dot-page-selector/models/dot-page-selector.models';
 import { LoginService } from '@dotcms/dotcms-js';
-import { LoginServiceMock } from '../../../../test/login-service.mock';
+
 import { DotFieldHelperModule } from '@components/dot-field-helper/dot-field-helper.module';
-import { DotMessageService } from '@services/dot-message/dot-messages.service';
-import { MockDotMessageService } from '@tests/dot-message-service.mock';
+import { DotMessageService } from '@dotcms/data-access';
+import { LoginServiceMock, MockDotMessageService } from '@dotcms/utils-testing';
 import { DotPipesModule } from '@pipes/dot-pipes.module';
 import { CommonModule } from '@angular/common';
 import {
@@ -83,8 +88,8 @@ class MockDotPageSelectorService {
     template: `
         <form [formGroup]="form">
             <dot-page-selector
-                formControlName="page"
                 [style]="{ width: '100%' }"
+                formControlName="page"
                 label="Hello World"
             >
             </dot-page-selector>
@@ -145,27 +150,25 @@ describe('DotPageSelectorComponent', () => {
         query: '//demo/'
     };
 
-    beforeEach(
-        waitForAsync(() => {
-            TestBed.configureTestingModule({
-                declarations: [FakeFormComponent, DotPageSelectorComponent],
-                imports: [
-                    DotDirectivesModule,
-                    DotFieldHelperModule,
-                    DotPipesModule,
-                    AutoCompleteModule,
-                    FormsModule,
-                    CommonModule,
-                    ReactiveFormsModule
-                ],
-                providers: [
-                    { provide: DotPageSelectorService, useClass: MockDotPageSelectorService },
-                    { provide: LoginService, useClass: LoginServiceMock },
-                    { provide: DotMessageService, useValue: messageServiceMock }
-                ]
-            }).compileComponents();
-        })
-    );
+    beforeEach(waitForAsync(() => {
+        TestBed.configureTestingModule({
+            declarations: [FakeFormComponent, DotPageSelectorComponent],
+            imports: [
+                DotDirectivesModule,
+                DotFieldHelperModule,
+                DotPipesModule,
+                AutoCompleteModule,
+                FormsModule,
+                CommonModule,
+                ReactiveFormsModule
+            ],
+            providers: [
+                { provide: DotPageSelectorService, useClass: MockDotPageSelectorService },
+                { provide: LoginService, useClass: LoginServiceMock },
+                { provide: DotMessageService, useValue: messageServiceMock }
+            ]
+        }).compileComponents();
+    }));
 
     beforeEach(async () => {
         hostFixture = TestBed.createComponent(FakeFormComponent);

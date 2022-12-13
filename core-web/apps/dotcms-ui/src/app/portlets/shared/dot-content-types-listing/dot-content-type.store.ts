@@ -2,9 +2,9 @@ import { ComponentStore } from '@ngrx/component-store';
 import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 import { DotCMSAssetDialogFields, DotCopyContentTypeDialogFormFields } from '@dotcms/dotcms-models';
-import { DotContentTypeService } from '@services/dot-content-type';
+import { DotContentTypeService } from '@dotcms/data-access';
 import { catchError, switchMap, tap, withLatestFrom } from 'rxjs/operators';
-import { DotHttpErrorManagerService } from '@services/dot-http-error-manager/dot-http-error-manager.service';
+import { DotHttpErrorManagerService } from '@dotcms/app/api/services/dot-http-error-manager/dot-http-error-manager.service';
 import { Router } from '@angular/router';
 
 export type DotCMSAssetDialogCopyFields = DotCMSAssetDialogFields & {

@@ -3,7 +3,7 @@
 import { of } from 'rxjs';
 import { waitForAsync, TestBed } from '@angular/core/testing';
 import { ActivatedRouteSnapshot } from '@angular/router';
-import { DotAppsService } from '@services/dot-apps/dot-apps.service';
+import { DotAppsService } from '@dotcms/app/api/services/dot-apps/dot-apps.service';
 import { DotAppsConfigurationDetailResolver } from './dot-apps-configuration-detail-resolver.service';
 class AppsServicesMock {
     getConfiguration(_appKey: string, _id: string) {

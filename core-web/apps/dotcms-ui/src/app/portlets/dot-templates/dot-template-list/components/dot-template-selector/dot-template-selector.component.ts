@@ -1,5 +1,5 @@
 import { Component } from '@angular/core';
-import { DotMessageService } from '@services/dot-message/dot-messages.service';
+import { DotMessageService } from '@dotcms/data-access';
 import { DynamicDialogRef } from 'primeng/dynamicdialog';
 
 @Component({

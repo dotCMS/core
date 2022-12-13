@@ -9,8 +9,8 @@ import {
     OnChanges
 } from '@angular/core';
 import { take } from 'rxjs/operators';
-import { DotLanguagesService } from '@services/dot-languages/dot-languages.service';
-import { DotLanguage } from '@models/dot-language/dot-language.model';
+import { DotLanguagesService } from '@dotcms/data-access';
+import { DotLanguage } from '@dotcms/dotcms-models';
 
 @Component({
     selector: 'dot-language-selector',

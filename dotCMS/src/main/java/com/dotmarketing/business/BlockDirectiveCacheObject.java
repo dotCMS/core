@@ -1,54 +1,36 @@
 package com.dotmarketing.business;
 
 import java.io.Serializable;
+import java.util.Map;
 
 public class BlockDirectiveCacheObject implements Serializable {
 
 
-		private static final long serialVersionUID = 1L;
-		String value;
-		long created = 0;
-		int ttl=0;
-		public int getTtl() {
-			return ttl;
-		}
+    private static final long serialVersionUID = 1L;
+    private final long created;
+    private final long ttl;
+    private final Map<String, Serializable> map;
 
-		public BlockDirectiveCacheObject(String value, int ttl){
-			this.ttl = ttl;
-			this.value=value;
-			created = System.currentTimeMillis();
-		}
 
-		public void setTtl(int ttl) {
-			this.ttl = ttl;
-		}
+    public long getTtl() {
+        return this.ttl;
+    }
+
+    public BlockDirectiveCacheObject(Map<String, Serializable> map, int ttl) {
+        this.ttl = ttl;
+        this.created = System.currentTimeMillis();
+        this.map = map;
+    }
 
 
 
-		public BlockDirectiveCacheObject(){
-			created = System.currentTimeMillis();
-		}
-		
-		
-		
-		public long getCreated() {
-			return created;
-		}
+    public long getCreated() {
+        return this.created;
+    }
 
+    public Map<String, Serializable> getMap(){
+        return this.map;
+    }
 
-
-
-		public String getValue() {
-			return value;
-		}
-		public void setValue(String value) {
-			this.value = value;
-		}
-		
-		
-		
-		
-		
-		
 
 }

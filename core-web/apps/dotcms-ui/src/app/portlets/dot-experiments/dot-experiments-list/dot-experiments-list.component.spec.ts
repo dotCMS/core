@@ -21,7 +21,7 @@ import {
     ExperimentMocks
 } from '@portlets/dot-experiments/test/mocks';
 import { DotMessagePipe } from '@dotcms/app/view/pipes';
-import { DotMessageService } from '@services/dot-message/dot-messages.service';
+import { DotMessageService } from '@dotcms/data-access';
 import { DotExperimentsCreateComponent } from '@portlets/dot-experiments/dot-experiments-create/dot-experiments-create.component';
 import { ButtonModule } from 'primeng/button';
 import { CUSTOM_ELEMENTS_SCHEMA } from '@angular/core';
@@ -68,7 +68,7 @@ describe('ExperimentsListComponent', () => {
 
     beforeEach(() => {
         spectator = createComponent({
-            detectChanges: false // <-- no trigger ngOnInit
+            detectChanges: false
         });
     });
 

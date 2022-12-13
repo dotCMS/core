@@ -20,26 +20,24 @@ import * as _ from 'lodash';
 import { Observable } from 'rxjs';
 import { Subject } from 'rxjs';
 import { tap, take, takeUntil } from 'rxjs/operators';
-
-import { DotEventsService } from '@services/dot-events/dot-events.service';
-import { DotRouterService } from '@services/dot-router/dot-router.service';
-import { DotThemesService } from '@services/dot-themes/dot-themes.service';
-import { DotEditLayoutService } from '@services/dot-edit-layout/dot-edit-layout.service';
-import {
-    DotHttpErrorManagerService,
-    DotHttpErrorHandled
-} from '@services/dot-http-error-manager/dot-http-error-manager.service';
+import { DotEditLayoutService } from '@dotcms/app/api/services/dot-edit-layout/dot-edit-layout.service';
 
 import {
     DotLayout,
+    DotTemplate,
     DotTheme,
     DotLayoutBody,
     DotLayoutRow,
     DotLayoutColumn,
-    DotLayoutSideBar
-} from '@models/dot-edit-layout-designer';
-import { DotPageContainer } from '@models/dot-page-container/dot-page-container.model';
-import { DotTemplate } from '@models/dot-edit-layout-designer/dot-template.model';
+    DotLayoutSideBar,
+    DotPageContainer
+} from '@dotcms/dotcms-models';
+import { DotEventsService, DotThemesService } from '@dotcms/data-access';
+import {
+    DotHttpErrorHandled,
+    DotHttpErrorManagerService
+} from '@dotcms/app/api/services/dot-http-error-manager/dot-http-error-manager.service';
+import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
 
 @Component({
     selector: 'dot-edit-layout-designer',

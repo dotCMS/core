@@ -5,4 +5,5 @@ export interface DynamicControl<T> {
     required?: boolean;
     controlType?: string;
     type?: string;
+    min?: number;
 }

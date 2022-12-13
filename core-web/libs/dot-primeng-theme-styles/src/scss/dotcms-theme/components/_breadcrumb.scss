@@ -1,7 +1,7 @@
 @use "variables" as *;
 
 .p-breadcrumb ul > .p-breadcrumb-chevron.pi {
-    color: $gray;
+    color: $gray-light;
 
     &:not(:nth-child(2)) {
         font-size: $font-size-x-small;
@@ -32,6 +32,8 @@
 }
 
 .p-breadcrumb ul li .p-menuitem-link[href] .p-menuitem-text {
+    font-size: $font-size-large;
+
     &:hover {
         color: $brand-primary;
         text-decoration: underline;
