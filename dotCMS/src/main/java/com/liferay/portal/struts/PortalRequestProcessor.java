@@ -41,6 +41,7 @@ import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.factories.PreviewFactory;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.user.business.UserUtil;
+import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.UtilMethods;
@@ -72,12 +73,14 @@ import com.liferay.util.StringUtil;
 import com.liferay.util.servlet.SessionErrors;
 import com.liferay.util.servlet.UploadServletRequest;
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.Enumeration;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Stream;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -497,13 +500,13 @@ public class PortalRequestProcessor extends StxxTilesRequestProcessor {
 
 		if(req.getSession().getAttribute(WebKeys.LOGIN_TO_EDIT_MODE) != null){
 			try{
-				String sendMeTo =(String) req.getSession().getAttribute(WebKeys.LOGIN_TO_EDIT_MODE) ;
+				final String sendMeTo =(String) req.getSession().getAttribute(WebKeys.LOGIN_TO_EDIT_MODE) ;
 				req.getSession().removeAttribute(WebKeys.LOGIN_TO_EDIT_MODE);
 				Layout layout = null;
 				List<Layout> userLayouts;
 
 				userLayouts = APILocator.getLayoutAPI().loadLayoutsForUser(user);
-				if(userLayouts != null && userLayouts.size() > 0){
+				if(userLayouts != null && !userLayouts.isEmpty()){
 					layout = userLayouts.get(0);
 					req.setAttribute(WebKeys.LAYOUT, layout);
 				}
@@ -517,8 +520,12 @@ public class PortalRequestProcessor extends StxxTilesRequestProcessor {
 				PageMode.setPageMode(req, PageMode.PREVIEW_MODE);
 
 				if(host != null){
-					res.sendRedirect(SecurityUtils.stripReferer(req, sendMeTo + "?host_id=" +host.getIdentifier() +"&r="  +System.currentTimeMillis()));
-					return null;
+
+					final List<String> allowed = getAllowedRedirectedHosts();
+					if(allowed.contains(sendMeTo) || allowed.stream().anyMatch(sendMeTo::startsWith) || allowed.contains("/*") ){
+					  res.sendRedirect(SecurityUtils.stripReferer(req, sendMeTo + "?host_id=" +host.getIdentifier() +"&r="  +System.currentTimeMillis()));
+					  return null;
+					}
 				}
 
 			}
@@ -530,9 +537,13 @@ public class PortalRequestProcessor extends StxxTilesRequestProcessor {
 			return null;
 		}
 
-
-
 		return path;
+	}
+
+	List<String> getAllowedRedirectedHosts(){
+		return  Arrays.asList(
+				Config.getStringArrayProperty("LOGIN_TO_EDIT_MODE_ALLOWED_URLS", new String[]{"/","/*"})
+		);
 	}
 
 	protected boolean callParentProcessRoles(

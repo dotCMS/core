@@ -3,21 +3,22 @@ package com.dotcms.security.multipart;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.google.common.collect.ImmutableList;
-import org.apache.commons.io.IOUtils;
-
+import java.io.BufferedInputStream;
+import java.io.BufferedReader;
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.OutputStream;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.List;
 import javax.servlet.ReadListener;
 import javax.servlet.ServletInputStream;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletRequestWrapper;
-import java.io.BufferedInputStream;
-import java.io.BufferedReader;
-import java.io.ByteArrayInputStream;
-import java.io.File;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.nio.file.Files;
-import java.util.List;
+import org.apache.commons.io.IOUtils;
 
 /**
  * This request wrapper prevents DoS attacks on multipart requests
@@ -25,14 +26,16 @@ import java.util.List;
  */
 public class MultiPartSecurityRequestWrapper extends HttpServletRequestWrapper {
 
+    private static final Path tmpdir = Path.of(System.getProperty("java.io.tmpdir")).normalize();
+
     private final byte[] body;
-    private final File tmpFile;
+    private final Path tmpFile;
 
     private static final List<SecureFileValidator> secureFileValidatorList = new ImmutableList.Builder<SecureFileValidator>()
             .add(new IllegalTraversalFilePathValidator()).add(new IllegalFileExtensionsValidator()).build();
 
     // if greater than 50MB, cache to disk
-    private final static long CACHE_IF_LARGER = Config.getIntProperty("MULTI_PART_CACHE_IF_LARGER",1024*1000*50);
+    private static final long CACHE_IF_LARGER = Config.getIntProperty("MULTI_PART_CACHE_IF_LARGER",1024*1000*50);
 
     boolean shouldCacheToDisk(final HttpServletRequest request) {
 
@@ -49,9 +52,14 @@ public class MultiPartSecurityRequestWrapper extends HttpServletRequestWrapper {
 
             Logger.debug(this, ()-> "Should Cache To Disk...");
             this.body = null;
-            this.tmpFile = Files.createTempFile("multipartSec", ".tmp").toFile();
-            IOUtils.copy(request.getInputStream(), Files.newOutputStream(tmpFile.toPath()));
-            this.checkFile(tmpFile);
+            this.tmpFile = Files.createTempFile(tmpdir,"multipartSec", ".tmp");
+            // security demands we add this check here
+            if (tmpFile.normalize().toRealPath().startsWith(tmpdir.toRealPath())) {
+                try (final OutputStream outputStream = Files.newOutputStream(tmpFile)) {
+                    IOUtils.copy(request.getInputStream(), outputStream);
+                    this.checkFile(tmpFile);
+                }
+            }
             return;
         }
 
@@ -70,7 +78,7 @@ public class MultiPartSecurityRequestWrapper extends HttpServletRequestWrapper {
         }
 
         Logger.debug(this, ()-> "Streaming the body from file system");
-        return new ServletInputStreamImpl(new BufferedInputStream(Files.newInputStream(tmpFile.toPath())));
+        return new ServletInputStreamImpl(new BufferedInputStream(Files.newInputStream(tmpFile)));
     }
 
     @Override
@@ -85,7 +93,7 @@ public class MultiPartSecurityRequestWrapper extends HttpServletRequestWrapper {
         return new BufferedReader(new InputStreamReader(getInputStream(), enc));
     }
 
-    private class ServletInputStreamImpl extends ServletInputStream {
+    private static class ServletInputStreamImpl extends ServletInputStream {
 
         private final InputStream is;
         private boolean closed = false;
@@ -95,6 +103,7 @@ public class MultiPartSecurityRequestWrapper extends HttpServletRequestWrapper {
             this.is = is;
         }
 
+        @Override
         public void close() throws IOException {
 
             this.is.close();
@@ -106,16 +115,19 @@ public class MultiPartSecurityRequestWrapper extends HttpServletRequestWrapper {
             return is.read();
         }
 
+        @Override
         public boolean markSupported() {
 
             return this.is.markSupported();
         }
 
+        @Override
         public synchronized void mark(final int i) {
 
             this.is.mark(i);
         }
 
+        @Override
         public synchronized void reset() throws IOException {
 
             this.is.reset();
@@ -135,7 +147,7 @@ public class MultiPartSecurityRequestWrapper extends HttpServletRequestWrapper {
 
         @Override
         public void setReadListener(ReadListener readListener) {
-
+           //Override on purpose to disable listeners
         }
     }
 
@@ -147,17 +159,18 @@ public class MultiPartSecurityRequestWrapper extends HttpServletRequestWrapper {
         }
     }
 
-    private void checkFile(final File tmpFile) throws IOException {
-
-        try(InputStream in = new BufferedInputStream(Files.newInputStream(tmpFile.toPath()))) {
-
-            checkSecurityInputStream(in);
+    private void checkFile(final Path tmpFile) throws IOException {
+        //Even though this is might seem redundant. Security demands we check paths everytime we manipulate file paths
+        if (tmpFile.normalize().toRealPath().startsWith(tmpdir.toRealPath())) {
+            try (InputStream in = new BufferedInputStream(Files.newInputStream(tmpFile))) {
+                checkSecurityInputStream(in);
+            }
         }
     }
 
     private void checkSecurityInputStream(final InputStream tmpStream) throws IOException {
 
-        try(BoundedBufferedReader reader = new BoundedBufferedReader(new InputStreamReader(tmpStream, "UTF-8"))) {
+        try(BoundedBufferedReader reader = new BoundedBufferedReader(new InputStreamReader(tmpStream, StandardCharsets.UTF_8))) {
 
             String line;
             while ((line = reader.readLine()) != null) {
@@ -178,7 +191,7 @@ public class MultiPartSecurityRequestWrapper extends HttpServletRequestWrapper {
 
         final String fileName = ContentDispositionFileNameParser.parse(lineToTestLower);
 
-        for (final SecureFileValidator secureFileValidator : this.secureFileValidatorList) {
+        for (final SecureFileValidator secureFileValidator : secureFileValidatorList) {
 
             secureFileValidator.validate(fileName);
         }

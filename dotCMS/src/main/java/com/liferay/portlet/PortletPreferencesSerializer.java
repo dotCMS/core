@@ -42,6 +42,7 @@ import org.dom4j.Element;
 import org.dom4j.io.OutputFormat;
 import org.dom4j.io.SAXReader;
 import org.dom4j.io.XMLWriter;
+import org.xml.sax.SAXException;
 
 /**
  * <a href="PortletPreferencesSerializer.java.html"><b><i>View Source</i></b>
@@ -67,7 +68,12 @@ public class PortletPreferencesSerializer {
 		Map preferences = prefs.getPreferences();
 
 		try {
-			Document doc = new SAXReader().read(new StringReader(xml));
+
+
+			SAXReader xmlReader = new SAXReader();
+			xmlReader.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true);
+
+			Document doc = xmlReader.read(new StringReader(xml));
 
 			Element root = doc.getRootElement();
 
@@ -106,7 +112,7 @@ public class PortletPreferencesSerializer {
 
 			return prefs;
 		}
-		catch (DocumentException de) {
+		catch (SAXException | DocumentException de) {
 			throw new SystemException(de);
 		}
 	}

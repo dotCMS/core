@@ -26,6 +26,9 @@ import org.osgi.framework.BundleException;
 
 public class OSGIAJAX extends OSGIBaseAJAX {
 
+    private static final String BUNDLE_ID = "bundleId";
+    private static final String JAR = "jar";
+
     @Override
     public void action ( HttpServletRequest request, HttpServletResponse response ) throws ServletException, IOException {
     }
@@ -33,8 +36,8 @@ public class OSGIAJAX extends OSGIBaseAJAX {
     public void undeploy ( HttpServletRequest request, HttpServletResponse response ) throws ServletException, IOException, InterruptedException {
         validateUser() ;
         
-        String jarName = request.getParameter( "jar" );
-        String bundleId = request.getParameter( "bundleId" );
+        String jarName = request.getParameter(JAR);
+        String bundleId = request.getParameter(BUNDLE_ID);
 
         jarName = com.dotmarketing.util.FileUtil.sanitizeFileName(jarName);
 
@@ -42,7 +45,7 @@ public class OSGIAJAX extends OSGIBaseAJAX {
         Bundle bundle;
         try {
             try {
-                bundle = OSGIUtil.getInstance().getBundle(new Long(bundleId));
+                bundle = OSGIUtil.getInstance().getBundle(Long.parseLong(bundleId));
             } catch ( NumberFormatException e ) {
                 bundle = OSGIUtil.getInstance().getBundle(bundleId);
             }
@@ -67,9 +70,10 @@ public class OSGIAJAX extends OSGIBaseAJAX {
 
         boolean success = FileUtil.move( from, to );
         if ( success ) {
-        	Logger.info( OSGIAJAX.class, "OSGI Bundle "+jarName+ " Undeployed");
+            final String responseText = String.format("OSGI Bundle  %s Undeployed ", jarName);
+            Logger.info( OSGIAJAX.class, responseText);
             remove();// removes portlets and actionlets references
-            writeSuccess( response, "OSGI Bundle "+jarName+ " Undeployed" );
+            writeSuccess( response, responseText );
         } else {
             Logger.error( OSGIAJAX.class, "Error undeploying OSGI Bundle "+jarName );
             writeError( response, "Error undeploying OSGI Bundle "+jarName );
@@ -82,32 +86,33 @@ public class OSGIAJAX extends OSGIBaseAJAX {
         String loadPath = OSGIUtil.getInstance().getFelixDeployPath();
         String undeployedPath = OSGIUtil.getInstance().getFelixUndeployPath();
 
-        String jar = request.getParameter( "jar" );
-        File from = new File(undeployedPath + File.separator + jar);
-        File to = new File(loadPath + File.separator + jar);
+        String jarName = request.getParameter(JAR);
+        File from = new File(undeployedPath + File.separator + jarName);
+        File to = new File(loadPath + File.separator + jarName);
 
-        Boolean success = from.renameTo( to );
-        if ( success ) {
-        	Logger.info( OSGIAJAX.class, "OSGI Bundle "+jar+ " Loaded");
-            writeSuccess( response, "OSGI Bundle  "+jar+ " Loaded" );
-        } else {
-            Logger.error( OSGIAJAX.class, "Error Loading OSGI Bundle " + jar );
-            writeError( response, "Error Loading OSGI Bundle" + jar );
+        if (to.getCanonicalPath().startsWith(undeployedPath) && to.exists()) {
+
+            if (from.renameTo(to)) {
+                final String responseText = String.format("OSGI Bundle  %s Loaded", jarName);
+                Logger.info(OSGIAJAX.class, responseText);
+                writeSuccess(response, responseText);
+            } else {
+                final String responseText = String.format("Error Loading OSGI Bundle  %s ", jarName);
+                Logger.error(OSGIAJAX.class, responseText);
+                writeError(response, responseText);
+            }
         }
     }
 
     public void stop ( HttpServletRequest request, HttpServletResponse response ) throws ServletException, IOException {
         validateUser() ;
         
-        String bundleID = request.getParameter( "bundleId" );
-        String jar = request.getParameter( "jar" );
+        String bundleID = request.getParameter(BUNDLE_ID);
+        String jarName = request.getParameter(JAR);
         try {
-            try {
-                OSGIUtil.getInstance().getBundle(new Long(bundleID)).stop();
-            } catch ( NumberFormatException e ) {
-                OSGIUtil.getInstance().getBundle(bundleID).stop();
-            }
-            Logger.info( OSGIAJAX.class, "OSGI Bundle "+jar+ " Stopped");
+            stopBundle(bundleID);
+            final String responseText = String.format("OSGI Bundle %s Stopped", jarName);
+            Logger.info( OSGIAJAX.class, responseText);
             remove();// removes portlets and actionlets references
         } catch ( BundleException e ) {
             Logger.error( OSGIAJAX.class, e.getMessage(), e );
@@ -115,69 +120,83 @@ public class OSGIAJAX extends OSGIBaseAJAX {
         }
     }
 
-    public void start ( HttpServletRequest request, HttpServletResponse response ) throws ServletException, IOException {
+    private void stopBundle(String bundleID) throws BundleException {
+        try {
+            OSGIUtil.getInstance().getBundle(Long.parseLong(bundleID)).stop();
+        } catch ( NumberFormatException e ) {
+            OSGIUtil.getInstance().getBundle(bundleID).stop();
+        }
+    }
+
+    public void start ( HttpServletRequest request, HttpServletResponse response ) throws ServletException {
         validateUser() ;
         
-        String bundleID = request.getParameter( "bundleId" );
-        String jar = request.getParameter( "jar" );
+        String bundleID = request.getParameter(BUNDLE_ID);
+        String jarName = request.getParameter(JAR);
         try {
-            try {
-                OSGIUtil.getInstance().getBundle(new Long(bundleID)).start();
-            } catch ( NumberFormatException e ) {
-                OSGIUtil.getInstance().getBundle(bundleID).start();
-            }
-            Logger.info( OSGIAJAX.class, "OSGI Bundle "+jar+ " Started");
+            startBundle(bundleID);
+            final String responseText = String.format("OSGI Bundle %s Stopped", jarName);
+            Logger.info( OSGIAJAX.class, responseText);
         } catch ( BundleException e ) {
             Logger.error( OSGIAJAX.class, e.getMessage(), e );
             throw new ServletException( e.getMessage() + " Unable to start bundle", e );
         }
     }
 
-    public void add ( HttpServletRequest request, HttpServletResponse response ) throws ServletException, IOException {
-        validateUser() ;
-        
-        FileItemFactory factory = new DiskFileItemFactory();
-        ServletFileUpload upload = new ServletFileUpload( factory );
-        FileItemIterator iterator = null;
-        String jar = request.getParameter( "jar" );
+    private void startBundle(String bundleID) throws BundleException {
         try {
-            iterator = upload.getItemIterator( request );
-            while ( iterator.hasNext() ) {
+            OSGIUtil.getInstance().getBundle(Long.parseLong(bundleID)).start();
+        } catch ( NumberFormatException e ) {
+            OSGIUtil.getInstance().getBundle(bundleID).start();
+        }
+    }
+
+    public void add(HttpServletRequest request, HttpServletResponse response)
+            throws IOException {
+        validateUser();
+
+        FileItemFactory factory = new DiskFileItemFactory();
+        ServletFileUpload upload = new ServletFileUpload(factory);
+        FileItemIterator iterator = null;
+        String jar = request.getParameter(JAR);
+        try {
+            iterator = upload.getItemIterator(request);
+            while (iterator.hasNext()) {
                 FileItemStream item = iterator.next();
-                InputStream in = item.openStream();
-                if ( item.getFieldName().equals( "bundleUpload" ) ) {
-                    String fname = item.getName();
-                    if ( !fname.endsWith( ".jar" ) ) {
-                        Logger.warn( this, "Cannot deploy bundle as it is not a JAR" );
-                        writeError( response, "Cannot deploy bundle as it is not a JAR" );
-                        break;
+                try (InputStream in = item.openStream()) {
+                    if (item.getFieldName().equals("bundleUpload")) {
+                        String fileName = item.getName();
+                        if (!fileName.endsWith(".jar")) {
+                            Logger.warn(this, "Cannot deploy bundle as it is not a JAR");
+                            writeError(response, "Cannot deploy bundle as it is not a JAR");
+                            break;
+                        }
+
+                        String felixDeployFolder = OSGIUtil.getInstance().getFelixUploadPath();
+
+                        File felixFolder = new File(felixDeployFolder);
+                        File osgiJar = new File(felixDeployFolder + File.separator + fileName);
+
+                        if (!felixFolder.exists() || !osgiJar.getCanonicalPath().startsWith(felixFolder.getCanonicalPath())) {
+                            response.sendError(403);
+                            SecurityLogger.logInfo(this.getClass(),
+                                    "Invalid OSGI Upload request:" + osgiJar.getCanonicalPath()
+                                            + " from:" + request.getRemoteHost() + " ");
+                            return;
+                        }
+
+                        try (OutputStream out = Files.newOutputStream(osgiJar.toPath())) {
+                            IOUtils.copyLarge(in, out);
+                        }
                     }
-
-                    String felixDeployFolder = OSGIUtil.getInstance().getFelixUploadPath();
-
-                    File felixFolder = new File(felixDeployFolder);
-                    File osgiJar = new File(felixDeployFolder + File.separator + fname);
-
-                    if ( !felixFolder.exists() 
-                            ||   !osgiJar.getCanonicalPath().startsWith(felixFolder.getCanonicalPath())) {
-                        response.sendError(403);
-                        SecurityLogger.logInfo(this.getClass(),  "Invalid OSGI Upload request:" + osgiJar.getCanonicalPath() + " from:" +request.getRemoteHost() + " " );
-                        return;
-                    }
-
-                    final OutputStream out = Files.newOutputStream(osgiJar.toPath());
-                    IOUtils.copyLarge( in, out );
-                    IOUtils.closeQuietly( out );
-                    IOUtils.closeQuietly( in );
                 }
             }
             OSGIUtil.getInstance().checkUploadFolder();
-            
-            
-          Logger.info( OSGIAJAX.class, "OSGI Bundle "+jar+ " Uploaded");
-        } catch ( FileUploadException e ) {
-            Logger.error( OSGIBaseAJAX.class, e.getMessage(), e );
-            throw new IOException( e.getMessage(), e );
+
+            Logger.info(OSGIAJAX.class, "OSGI Bundle " + jar + " Uploaded");
+        } catch (FileUploadException e) {
+            Logger.error(OSGIBaseAJAX.class, e.getMessage(), e);
+            throw new IOException(e.getMessage(), e);
         }
     }
 
@@ -234,11 +253,11 @@ public class OSGIAJAX extends OSGIBaseAJAX {
         validateUser() ;
         
         //Remove Portlets in the list
-        OSGIUtil.getInstance().portletIDsStopped.stream().forEach(p -> {APILocator.getPortletAPI().deletePortlet(p);});
+        OSGIUtil.getInstance().portletIDsStopped.forEach(p -> APILocator.getPortletAPI().deletePortlet(p));
         Logger.info( this, "Portlets Removed: " + OSGIUtil.getInstance().portletIDsStopped.toString() );
 
         //Remove Actionlets in the list
-        OSGIUtil.getInstance().actionletsStopped.stream().forEach(p -> {OSGIUtil.getInstance().workflowOsgiService.removeActionlet(p);});
+        OSGIUtil.getInstance().actionletsStopped.forEach(p -> OSGIUtil.getInstance().workflowOsgiService.removeActionlet(p));
         Logger.info( this, "Actionlets Removed: " + OSGIUtil.getInstance().actionletsStopped.toString());
 
         //Cleanup lists

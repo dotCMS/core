@@ -88,8 +88,8 @@ public class WfActionClassAjax extends WfBaseAction {
 			workflowActionClass.setName(actionName);
 			workflowActionClass.setActionId(actionId);
 			this.workflowAPI.saveActionClass(workflowActionClass, user);
-
-			response.getWriter().println(workflowActionClass.getId() + ":" + workflowActionClass.getName());
+			response.setContentType("text/plain");
+			response.getWriter().println(String.format("%s:%s",workflowActionClass.getId(),workflowActionClass.getName()));
 		} catch (Exception e) {
 			Logger.error(this.getClass(), e.getMessage(), e);
 			writeError(response, e.getMessage());

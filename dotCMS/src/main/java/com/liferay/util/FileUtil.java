@@ -75,10 +75,10 @@ import org.apache.commons.compress.compressors.bzip2.BZip2CompressorOutputStream
  */
 public class FileUtil {
 	//http://jira.dotmarketing.net/browse/DOTCMS-2178
-	final static long KILO_BYTE = 1024;
-	final static long MEGA_BYTE = 1024*1024;
-	final static long GIGA_BYTE = 1024*1024*1024;
-	final static long TERA_BYTE = 1024*1024*1024*1024;
+	static final long KILO_BYTE = 1024L;
+	static final long MEGA_BYTE = 1024L *1024;
+	static final long GIGA_BYTE = 1024L *1024*1024;
+	static final long TERA_BYTE = 1024L *1024*1024*1024;
 
 	public static void copyDirectory(
 			String sourceDirName, String destinationDirName, boolean hardLinks) throws IOException {
@@ -525,7 +525,7 @@ public class FileUtil {
 			}
 		}
 	
-		return (File[])files.toArray(new File[0]);
+		return files.toArray(new File[0]);
 	}
 	
 	public static String[] listFiles(File dir, Boolean includeSubDirs) throws IOException {
@@ -550,7 +550,7 @@ public class FileUtil {
 			}
 		}
 
-		return (String[])files.toArray(new String[0]);
+		return files.toArray(new String[0]);
 	}
 
 	public static void mkdirs(String pathName) {
@@ -558,11 +558,9 @@ public class FileUtil {
 		file.mkdirs();
 	}
 
-	public static boolean move(
-		String sourceFileName, String destinationFileName) throws IOException {
-
-		return move(new File(sourceFileName), new File(destinationFileName));
-	}
+	//public static boolean move(String sourceFileName, String destinationFileName) throws IOException {
+	//	return move(new File(sourceFileName), new File(destinationFileName));
+	//}
 
 	public static boolean move(File source, File destination) throws IOException {
 		return move(source, destination, true);
