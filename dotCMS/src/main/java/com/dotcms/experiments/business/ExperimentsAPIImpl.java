@@ -33,12 +33,16 @@ import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.PermissionLevel;
+import com.dotmarketing.business.VersionableAPI;
 import com.dotmarketing.exception.DoesNotExistException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.exception.InvalidLicenseException;
+import com.dotmarketing.factories.MultiTreeAPI;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
+import com.dotmarketing.portlets.htmlpageasset.business.HTMLPageAssetAPI;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.rules.model.Condition;
 import com.dotmarketing.portlets.rules.model.ConditionGroup;
@@ -73,6 +77,9 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
     final VariantAPI variantAPI = APILocator.getVariantAPI();
     final ShortyIdAPI shortyIdAPI = APILocator.getShortyAPI();
     final RulesAPI rulesAPI = APILocator.getRulesAPI();
+    final MultiTreeAPI multiTreeAPI = APILocator.getMultiTreeAPI();
+    final VersionableAPI versionableAPI = APILocator.getVersionableAPI();
+    final HTMLPageAssetAPI pageAssetAPI = APILocator.getHTMLPageAssetAPI();
 
     private final LicenseValiditySupplier licenseValiditySupplierSupplier =
             new LicenseValiditySupplier() {};
@@ -417,7 +424,7 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
                 .orElseThrow(()->new DoesNotExistException("Experiment with provided id not found"));
 
         ExperimentVariant experimentVariant = createExperimentVariant(
-                persistedExperiment, variantDescription);
+                persistedExperiment, variantDescription, user);
 
         final TrafficProportion trafficProportion = persistedExperiment.trafficProportion();
 
@@ -438,7 +445,8 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
         return save(updatedExperiment, user);
     }
 
-    private ExperimentVariant createExperimentVariant(final Experiment experiment, final String variantDescription)
+    private ExperimentVariant createExperimentVariant(final Experiment experiment,
+            final String variantDescription, final User user)
             throws DotDataException {
 
         final String experimentId = experiment.getIdentifier();
@@ -447,19 +455,59 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
         variantAPI.save(Variant.builder().name(variantName)
                 .description(Optional.of(variantDescription)).build());
 
-        APILocator.getMultiTreeAPI().copyVariantForPage(experiment.pageId(),
+        multiTreeAPI.copyVariantForPage(experiment.pageId(),
                 DEFAULT_VARIANT.name(), variantName);
 
         final Contentlet pageContentlet = contentletAPI
                 .findContentletByIdentifierAnyLanguage(experiment.pageId(), false);
 
-        final HTMLPageAsset page = APILocator.getHTMLPageAssetAPI().fromContentlet(pageContentlet);
 
-        final ExperimentVariant experimentVariant = ExperimentVariant.builder().id(variantName)
+        // copy page for variant
+        if(variantDescription.equals(ORIGINAL_VARIANT)) {
+            saveContentOnVariant(pageContentlet,
+                    variantName, user);
+
+            multiTreeAPI.getMultiTrees(experiment.pageId()).forEach(
+                    (multiTree -> {
+                        final Contentlet contentlet = Try.of(()->contentletAPI.
+                                findContentletByIdentifierAnyLanguage(multiTree.getContentlet()))
+                                .getOrElseThrow(()->new DotStateException("Unable to find content. Id:"
+                                        + multiTree.getContentlet()));
+
+                        saveContentOnVariant(contentlet, variantName, user);
+                    })
+            );
+
+        }
+
+        final HTMLPageAsset page = pageAssetAPI.fromContentlet(pageContentlet);
+
+        return ExperimentVariant.builder().id(variantName)
                 .description(variantDescription).weight(0)
                 .url(page.getURI()+"?variantName="+variantName)
                 .build();
-        return experimentVariant;
+    }
+
+    private void saveContentOnVariant(final Contentlet contentlet, final String variantName,
+            final User user) {
+
+        final Optional<ContentletVersionInfo> versionInfo = Try.of(
+                        ()->versionableAPI.getContentletVersionInfo(contentlet.getIdentifier(),
+                                contentlet.getLanguageId()))
+                .getOrElseThrow(()->new DotStateException("Unable to get the live version of the page"));
+
+        final String liveInode = versionInfo.orElseThrow().getLiveInode();
+
+        final Contentlet checkedoutContentlet = Try.of(() -> contentletAPI
+                        .checkout(liveInode, user, false))
+                .getOrElseThrow(
+                        () -> new DotStateException("Unable to checkout Experiment's content. Inode:" + liveInode));
+
+        checkedoutContentlet.setVariantId(variantName);
+        Try.of(() -> contentletAPI.checkin(checkedoutContentlet, user, false))
+                .getOrElseThrow(
+                        () -> new DotStateException("Unable to checkin Experiment's content. Inode:" + liveInode));
+
     }
 
     private String getVariantName(final String experimentId) throws DotDataException {
