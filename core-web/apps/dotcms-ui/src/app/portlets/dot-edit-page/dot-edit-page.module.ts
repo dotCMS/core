@@ -2,7 +2,8 @@ import {
     DotContentletLockerService,
     DotPageLayoutService,
     DotPageRenderService,
-    DotESContentService
+    DotESContentService,
+    DotSessionStorageService
 } from '@dotcms/data-access';
 import { NgModule } from '@angular/core';
 import { CommonModule } from '@angular/common';
@@ -31,6 +32,7 @@ import { DotFeatureFlagResolver } from '@portlets/shared/resolvers/dot-feature-f
         DotESContentService,
         DotPageStateService,
         DotPageRenderService,
+        DotSessionStorageService,
         DotPageLayoutService,
         DotFeatureFlagResolver
     ]

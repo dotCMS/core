@@ -727,10 +727,38 @@ public class TemplateFactoryImpl implements TemplateFactory {
 		return template;
 	}
 
+	@Override
+	public List<HTMLPageVersion> getPages(final String templateId)
+			throws DotDataException, DotSecurityException {
+
+		final DotConnect dotConnect = new DotConnect();
+
+		if (DbConnectionFactory.isMsSql()) {
+			dotConnect.setSQL("SELECT identifier,inode,language_id, JSON_VALUE(contentlet_as_json, '$.variantId') as variant "
+					+ "FROM contentlet "
+					+ "WHERE JSON_VALUE(contentlet_as_json, '$.fields.template.value') = ?");
+		} else {
+			dotConnect.setSQL("SELECT identifier,inode,language_id,contentlet_as_json->variantId as variant "
+					+ "FROM contentlet "
+					+ "WHERE contentlet_as_json->'fields'->'template'->>'value' =  ?");
+		}
+
+		dotConnect.addParam(templateId);
+
+		return ((List<Map<String, String>>) dotConnect.loadResults()).stream()
+				.map(mapEntry -> new HTMLPageVersion.Builder().identifier(mapEntry.get("identifier"))
+						.inode(mapEntry.get("inode"))
+						.variantName(mapEntry.get("variant"))
+						.languageId(Long.parseLong(mapEntry.get("language_id")))
+						.build()
+				)
+				.collect(Collectors.toList());
+	}
+
 	/**
 	 * Determine if the folder lives under /application/templates
 	 * @param folder to check
-	 * @return true if the folder lives under /application/templates
+	 * @return true if the folder lives under /application/templatesu
 	 */
 	private boolean isValidTemplateFolderPath(final Folder folder) {
 		return null != folder && UtilMethods.isSet(folder.getPath()) && folder.getPath().contains(Constants.TEMPLATE_FOLDER_PATH);

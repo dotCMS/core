@@ -5865,7 +5865,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 }
                 final String existingTemplate = loadField(contentInAnyLang.getInode(), templateField.get()).toString();
                 if (!existingTemplate.equals(newTemplate)){
-                    final List<ContentletVersionInfo> contentletVersions = APILocator.getVersionableAPI().findContentletVersionInfos(identifier);
+                    final List<ContentletVersionInfo> contentletVersions = APILocator.getVersionableAPI().findContentletVersionInfos(identifier, contentlet.getVariantId());
 
                 for (final ContentletVersionInfo version : contentletVersions) {
                     final Contentlet contentVersion = find(version.getWorkingInode(), user, DONT_RESPECT_FRONTEND_ROLES);

@@ -319,10 +319,14 @@ public class PageResource {
     public Response saveLayout(@Context final HttpServletRequest request,
             @Context final HttpServletResponse response,
             @PathParam("pageId") final String pageId,
+            @QueryParam("variantName") final String variantNameParam,
             final PageForm form) throws DotSecurityException {
 
-        Logger.debug(this, String.format("Saving layout: pageId -> %s layout-> %s", pageId,
-                form != null ? form.getLayout() : null));
+        final String variantName = UtilMethods.isSet(variantNameParam) ? variantNameParam :
+                VariantAPI.DEFAULT_VARIANT.name();
+
+        Logger.debug(this, String.format("Saving layout: pageId -> %s layout-> %s variantName -> %s", pageId,
+                form != null ? form.getLayout() : null, variantName));
 
         if (form == null) {
             throw new BadRequestException("Layout is required");
@@ -335,12 +339,14 @@ public class PageResource {
 
         try {
             HTMLPageAsset page = (HTMLPageAsset) this.pageResourceHelper.getPage(user, pageId, request);
-            page = this.pageResourceHelper.saveTemplate(user, page, form);
+
+
+            page = this.pageResourceHelper.saveTemplate(user, (HTMLPageAsset) page, form);
 
             final PageView renderedPage = this.htmlPageAssetRenderedAPI.getPageRendered(
                     PageContextBuilder.builder()
                             .setUser(user)
-                            .setPage(page)
+                            .setPage((HTMLPageAsset) page)
                             .setPageMode(PageMode.PREVIEW_MODE)
                             .build(),
                     request,

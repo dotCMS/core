@@ -3,6 +3,7 @@ package com.dotmarketing.portlets.templates.business;
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.config.DotInitializer;
+import com.dotcms.content.elasticsearch.business.ESSearchResults;
 import com.dotcms.contenttype.exception.NotFoundInDbException;
 import com.dotcms.enterprise.license.LicenseManager;
 import com.dotcms.rendering.velocity.services.TemplateLoader;
@@ -12,6 +13,7 @@ import com.dotmarketing.beans.*;
 import com.dotmarketing.business.*;
 import com.dotmarketing.business.PermissionAPI.PermissionableType;
 import com.dotmarketing.business.web.WebAPILocator;
+import com.dotmarketing.common.model.ContentletSearch;
 import com.dotmarketing.exception.*;
 import com.dotmarketing.factories.InodeFactory;
 import com.dotmarketing.factories.PublishFactory;
@@ -26,6 +28,7 @@ import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.htmlpageasset.business.HTMLPageAssetAPI;
 import com.dotmarketing.portlets.htmlpageasset.business.HTMLPageAssetAPI.TemplateContainersReMap.ContainerRemapTuple;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
+import com.dotmarketing.portlets.templates.business.TemplateFactory.HTMLPageVersion;
 import com.dotmarketing.portlets.templates.design.bean.*;
 import com.dotmarketing.portlets.templates.model.FileAssetTemplate;
 import com.dotmarketing.portlets.templates.model.SystemTemplate;
@@ -1192,6 +1195,18 @@ public class TemplateAPIImpl extends BaseWebAssetAPI implements TemplateAPI, Dot
 							+ ", host: " + host.getHostname());
 
 		return templateFactory.getTemplateByFolder(host,folder,user,showLive);
+	}
+
+	/**
+	 * Implementation of {@link TemplateAPI#getPages(String)}
+	 *
+	 * @param templateId Template's ID that we are looking for
+	 * @return
+	 */
+	@Override
+	@WrapInTransaction
+	public List<HTMLPageVersion> getPages(final String templateId) throws DotDataException, DotSecurityException {
+		return FactoryLocator.getTemplateFactory().getPages(templateId);
 	}
 
 	private Template findTemplateByPath (final String path,final String hostId, final User user, final boolean respectFrontendRoles, final boolean showLive) throws DotDataException, DotSecurityException {

@@ -17,6 +17,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.dotcms.IntegrationTestBase;
+import com.dotcms.business.WrapInTransaction;
 import com.dotcms.content.elasticsearch.util.RestHighLevelClientProvider;
 import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.business.FieldAPI;
@@ -39,6 +40,7 @@ import com.dotcms.util.IntegrationTestInitService;
 import com.dotcms.vanityurl.filters.VanityURLFilter;
 import com.dotcms.vanityurl.model.DefaultVanityUrl;
 import com.dotcms.vanityurl.model.VanityUrl;
+import com.dotcms.variant.VariantAPI;
 import com.dotcms.variant.model.Variant;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Permission;
@@ -57,6 +59,7 @@ import com.dotmarketing.portlets.contentlet.model.IndexPolicy;
 import com.dotmarketing.portlets.contentlet.transform.ContentletTransformer;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
+import com.dotmarketing.portlets.htmlpageasset.business.HTMLPageAssetAPI;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
@@ -64,6 +67,8 @@ import com.dotmarketing.portlets.structure.model.ContentletRelationships;
 import com.dotmarketing.portlets.structure.model.ContentletRelationships.ContentletRelationshipRecords;
 import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.portlets.structure.model.Structure;
+import com.dotmarketing.portlets.templates.model.Template;
+import com.dotmarketing.util.Config;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys.Relationship.RELATIONSHIP_CARDINALITY;
 import com.google.common.io.Files;
@@ -1786,5 +1791,165 @@ public class ESContentletAPIImplTest extends IntegrationTestBase {
                 .findContentletByIdentifierAnyLanguage(identifier);
 
         assertNull(contentletByIdentifierAnyLanguage);
+    }
+
+    /**
+     * Method to test: {@link ESContentletAPIImpl#checkin(Contentlet, User, boolean)}
+     * When:
+     * - Create two {@link Language}: A and B
+     * - Create two {@link Template}: A and B
+     * - Create a {@link HTMLPageAsset} in the first language.
+     * - Create a new version of the same {@link HTMLPageAsset} but with different {@link Language}
+     * and {@link Template}
+     * Should: Create a new version in the first {@link Language} using the {@link Template} from the second language version.
+     *
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    @Test
+    public void shouldUpdateAllTheDifferentLangVersions()  {
+        final Language language_A = new LanguageDataGen().nextPersisted();
+        final Language language_B = new LanguageDataGen().nextPersisted();
+
+        final Host host = new SiteDataGen().nextPersisted();
+        final Template template_A = new TemplateDataGen().host(host).nextPersisted();
+        final Template template_B = new TemplateDataGen().host(host).nextPersisted();
+
+
+        final HTMLPageAsset htmlPageAsset_1 = createHtmlPageAsset(VariantAPI.DEFAULT_VARIANT, language_A, host, template_A);
+        final HTMLPageAsset htmlPageAsset_2 = createNewVersion(htmlPageAsset_1, VariantAPI.DEFAULT_VARIANT, language_B, template_B);
+
+        assertEquals(template_B.getIdentifier(), getLastWorkingVersion(htmlPageAsset_1).getTemplateId());
+        assertEquals(template_B.getIdentifier(), getLastWorkingVersion(htmlPageAsset_2).getTemplateId());
+    }
+
+
+    private HTMLPageAsset getLastWorkingVersion(final HTMLPageAsset htmlPageAsset_1) {
+        final ContentletVersionInfo contentletVersionInfo = APILocator.getVersionableAPI()
+                .getContentletVersionInfo(htmlPageAsset_1.getIdentifier(),
+                        htmlPageAsset_1.getLanguageId(),
+                        VariantAPI.DEFAULT_VARIANT.name())
+                .orElseThrow(() -> new AssertionError());
+        final HTMLPageAsset htmlPageAssetFromDataBase = getFromDataBase(
+                contentletVersionInfo.getWorkingInode());
+        return htmlPageAssetFromDataBase;
+    }
+
+    /**
+     * Method to test: {@link ESContentletAPIImpl#checkin(Contentlet, User, boolean)}
+     * When:
+     * - Create two {@link Variant}
+     * - Create a {@link HTMLPageAsset} in the first {@link Variant}.
+     * - Create a new version of the same {@link HTMLPageAsset} but with different {@link Variant}
+     * and {@link Template}.
+     * Should: Create a new version in the first {@link Variant} using the {@link Template} from the second {@link Variant} version.
+     *
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    @Test
+    public void shouldUpdateAllTheDifferentVariantsVersions()  {
+        final Host host = new SiteDataGen().nextPersisted();
+        final Template template_1 = new TemplateDataGen().host(host).nextPersisted();
+        final Template template_2 = new TemplateDataGen().host(host).nextPersisted();
+
+        final Variant variant_1 = new VariantDataGen().nextPersisted();
+        final Variant variant_2 = new VariantDataGen().nextPersisted();
+
+        final HTMLPageAsset htmlPageAsset_1 = (HTMLPageAsset) new HTMLPageDataGen(host, template_1)
+                .variant(variant_1)
+                .nextPersisted();
+
+        final Contentlet checkout = HTMLPageDataGen.checkout(htmlPageAsset_1);
+        checkout.setVariantId(variant_2.name());
+        checkout.setStringProperty(HTMLPageAssetAPI.TEMPLATE_FIELD, template_2.getIdentifier());
+        final HTMLPageAsset htmlPageAsset_2 = APILocator.getHTMLPageAssetAPI().fromContentlet(
+                HTMLPageDataGen.checkin(checkout));
+
+        assertEquals(template_1.getIdentifier(), getFromDataBase(htmlPageAsset_1.getInode()).getTemplateId());
+        assertEquals(template_2.getIdentifier(), getFromDataBase(htmlPageAsset_2.getInode()).getTemplateId());
+
+        final ContentletVersionInfo contentletVersionInfo = APILocator.getVersionableAPI()
+                .getContentletVersionInfo(htmlPageAsset_1.getIdentifier(),
+                        htmlPageAsset_1.getLanguageId(),
+                        VariantAPI.DEFAULT_VARIANT.name()).orElseThrow(() -> new AssertionError());
+
+        assertEquals(htmlPageAsset_1.getInode(), contentletVersionInfo.getWorkingInode());
+        assertEquals(template_1.getIdentifier(), getFromDataBase(contentletVersionInfo.getWorkingInode()).getTemplateId());
+    }
+
+    /**
+     * Method to test: {@link ESContentletAPIImpl#checkin(Contentlet, User, boolean)}
+     * When:
+     * - Create two {@link Variant}: A and B
+     * - Create two {@link Language}: A and B
+     * - Create 3 {@link Template}: A, B and C
+     * - Create a {@link HTMLPageAsset} in {@link Variant} 'A' and {@link Language} 'A' with {@link Template} 'A' (First Page's Version).
+     * - Create a new version of the same {@link HTMLPageAsset} and {@link Language} 'A' but using the  {@link Variant} 'B'  with {@link Template} 'B'(Second Page's version).
+     * Should: Both version have different {@link Template}, 'A' for the first page's version and 'B' for the second page's version.
+     *
+     * - Create a new version of the same {@link HTMLPageAsset} and {@link Variant} 'A' and {@link Language} B  with {@link Template} 'C' (Third Page's version).
+     * Should: Create a new version for {@link Variant} 'A' and {@link Language} 'A'  with the {@link Template} 'C' .
+     *
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    @Test
+    public void shouldUpdateAllTheDifferentVariantsVersions2()  {
+        final Variant variant_A = new VariantDataGen().nextPersisted();
+        final Variant variant_B = new VariantDataGen().nextPersisted();
+
+        final Language language_A = new LanguageDataGen().nextPersisted();
+        final Language language_B = new LanguageDataGen().nextPersisted();
+
+        final Host host = new SiteDataGen().nextPersisted();
+        final Template template_A = new TemplateDataGen().host(host).nextPersisted();
+        final Template template_B = new TemplateDataGen().host(host).nextPersisted();
+        final Template template_c = new TemplateDataGen().host(host).nextPersisted();
+
+        final HTMLPageAsset htmlPageAsset_1 = createHtmlPageAsset(variant_A, language_A, host, template_A);
+        final HTMLPageAsset htmlPageAsset_2 = createNewVersion(htmlPageAsset_1, variant_B, language_A, template_B);
+
+        assertEquals(template_A.getIdentifier(), getFromDataBase(htmlPageAsset_1.getInode()).getTemplateId());
+        assertEquals(template_B.getIdentifier(), getFromDataBase(htmlPageAsset_2.getInode()).getTemplateId());
+
+        final HTMLPageAsset htmlPageAsset_3 = createNewVersion(htmlPageAsset_1, variant_A, language_B, template_c);
+
+        final ContentletVersionInfo contentletVersionInfo = APILocator.getVersionableAPI()
+                .getContentletVersionInfo(htmlPageAsset_1.getIdentifier(),
+                        htmlPageAsset_1.getLanguageId(),
+                        htmlPageAsset_1.getVariantId()).orElseThrow(() -> new AssertionError());
+
+        assertEquals(template_c.getIdentifier(), getFromDataBase(contentletVersionInfo.getWorkingInode()).getTemplateId());
+        assertEquals(template_c.getIdentifier(), getFromDataBase(htmlPageAsset_3.getInode()).getTemplateId());
+    }
+
+    @WrapInTransaction
+    private HTMLPageAsset createNewVersion(final HTMLPageAsset htmlPageAsset,
+            final Variant variant, final Language language, final Template template) {
+
+        final Contentlet checkout = HTMLPageDataGen.checkout(htmlPageAsset);
+        checkout.setLanguageId(language.getId());
+        checkout.setVariantId(variant.name());
+        checkout.setStringProperty(HTMLPageAssetAPI.TEMPLATE_FIELD, template.getIdentifier());
+        return APILocator.getHTMLPageAssetAPI().fromContentlet(
+                HTMLPageDataGen.checkin(checkout));
+    }
+
+    @WrapInTransaction
+    private HTMLPageAsset createHtmlPageAsset(final Variant variant,
+            final Language language, final Host host, final Template template) {
+        return (HTMLPageAsset) new HTMLPageDataGen(host, template)
+                .variant(variant)
+                .languageId(language.getId())
+                .nextPersisted();
+    }
+
+    private HTMLPageAsset getFromDataBase(final String inode) {
+
+        final Contentlet contentlet = FactoryLocator.getContentletFactory()
+                .findInDb(inode).orElseThrow(() -> new AssertionError("Contentlet should exists:" + inode));
+
+        return APILocator.getHTMLPageAssetAPI().fromContentlet(contentlet);
     }
 }
