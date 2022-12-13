@@ -1,7 +1,6 @@
 package com.dotcms.cache.postgres;
 
 import java.sql.Connection;
-import java.sql.PreparedStatement;
 import java.sql.Statement;
 import java.util.Date;
 import java.util.HashMap;
@@ -11,6 +10,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 import javax.sql.DataSource;
 import org.postgresql.PGConnection;
+import org.postgresql.PGNotification;
 import com.dotcms.cluster.bean.Server;
 import com.dotcms.enterprise.cluster.ClusterFactory;
 import com.dotcms.enterprise.license.LicenseManager;
@@ -39,25 +39,25 @@ public final class PostgresCacheTransport implements CacheTransport {
     private final AtomicLong sentMessages = new AtomicLong(0);
     private final AtomicLong sentBytes = new AtomicLong(0);
     private final Lazy<String> topicName = Lazy.of(() -> "dotCMSCache_" + ClusterFactory.getClusterId());
-    private final Lazy<String> serverId = Lazy.of(() ->  APILocator.getShortyAPI().shortify(APILocator.getServerAPI().readServerId()));
-    
-    private final int KILL_ON_FAILURES = Config.getIntProperty("PGLISTENER_KILL_ON_FAILURES", 1000);
+    private final Lazy<String> serverIdPrefix = Lazy.of(() ->  APILocator.getShortyAPI().shortify(APILocator.getServerAPI().readServerId())+"::");
+    private final String PG_NOTIFY_SQL = "notify " + topicName.get() + ",'{1}'";
+
+    private final int KILL_ON_FAILURES = Config.getIntProperty("PGLISTENER_KILL_ON_FAILURES", 100);
     private final int SLEEP_BETWEEN_RUNS = Config.getIntProperty("PGLISTENER_SLEEP_BETWEEN_RUNS", 500);
     
     private final AtomicBoolean isInitialized = new AtomicBoolean(false);
-    private static final String PG_NOTIFY_SQL = "SELECT pg_notify(?,?)";
 
     private final Cache<Integer, Boolean> recentEvents = Caffeine.newBuilder()
                     .initialCapacity(10000)
                     .expireAfterWrite(Config.getIntProperty("PUBSUB_QUEUE_DEDUPE_TTL_MILLIS", 1500), TimeUnit.MILLISECONDS)
                     .maximumSize(50000).build();
+    
     private final Lazy<DataSource> data = Lazy.of(() -> new PGDatasource().datasource());
 
     private PGListener listener;
 
     @Override
     public void init(Server localServer) throws CacheTransportException {
-        
         
         if (!LicenseManager.getInstance().isEnterprise()) {
             Logger.info(getClass(), "No Enterprise License : No PostgresCacheTransport");
@@ -66,42 +66,41 @@ public final class PostgresCacheTransport implements CacheTransport {
         Logger.info(getClass(), "Starting PostgresCacheTransport");
         restartListener();
     }
-
-    
     
     private synchronized void restartListener() {
-        if (listener != null) {
+        if (listener != null && isInitialized.get()) {
             return;
         }
         listener = new PGListener();
         listener.start();
 
     }
-    
-    
+
 
     class PGListener extends Thread {
 
+        final HikariProxyConnection conn;
 
-        HikariProxyConnection conn = null;
-
-        private void connect() {
-            CloseUtils.closeQuietly(conn);
-            conn = null;
-            Logger.info(getClass(), "Starting PGListener on " + topicName.get());
+        
+        PGListener(){
+            conn = connect();
+        }
+        
+        
+        
+        private HikariProxyConnection connect() {
+            Logger.info(getClass(), "PGListener starting on " + topicName.get());
             try {
-                conn = (HikariProxyConnection) data.get().getConnection();
-                
-                
-                
-                
-                Statement statment = conn.createStatement();
-                statment.execute("LISTEN " + topicName.get());
+                HikariProxyConnection conn = (HikariProxyConnection) data.get().getConnection();
+                try (Statement stmt = conn.createStatement()) {
+                    stmt.execute("LISTEN " + topicName.get());
+                }
                 isInitialized.set(true);
+                return conn;
             } catch (Exception e) {
-                
                 throw new DotRuntimeException(e);
             }
+
         }
 
 
@@ -112,33 +111,20 @@ public final class PostgresCacheTransport implements CacheTransport {
 
         @Override
         public void run() {
-            connect() ;
+            Logger.info(getClass(), "PGListener running on " + topicName.get());
             while (isInitialized.get()) {
                 try {
                     if(conn==null || conn.isClosed()) {
-                        connect();
+                        isInitialized.set(false);
+                        Logger.warn(PostgresCacheTransport.class, "PGListener.conn is closed, restarting");
+                        break;
                     }
                     try (Statement stmt = conn.createStatement()) {
                         stmt.executeQuery("SELECT 1");
                     }
                     PGConnection pgConn = conn.unwrap(PGConnection.class) ;
-  
-                    
-                    
-                    org.postgresql.PGNotification[] notifications = pgConn.getNotifications();
-                    if (notifications == null || notifications.length==0) {
-                        Try.run(() -> Thread.sleep(SLEEP_BETWEEN_RUNS));
-                        continue;
-                    }
-                    for (int i = 0; i < notifications.length; i++) {
-                        String note = notifications[i].getName();
-                        if(null == note || note.startsWith(serverId.get() + ":") || note.indexOf(":")<0){
-                            continue;
-                        }
-                        receive(note.split(":",2)[1]);
-                        Logger.info(getClass(), "got:" + note);
-                        
-                    }
+                    PGNotification[] notifications = pgConn.getNotifications();
+                    processNotifications(notifications);
 
                     Try.run(() -> Thread.sleep(SLEEP_BETWEEN_RUNS));
 
@@ -146,20 +132,46 @@ public final class PostgresCacheTransport implements CacheTransport {
                 } catch (Throwable e) {
                     Logger.warnEveryAndDebug(PostgresCacheTransport.class, e.getMessage(), e, 5000);
                     Try.run(() -> Thread.sleep(SLEEP_BETWEEN_RUNS));
-                   
                     if (++failures > KILL_ON_FAILURES) {
                         CloseUtils.closeQuietly(conn);
-                        conn = null;
                         Logger.fatal(PostgresCacheTransport.class, "PGListener failled " + KILL_ON_FAILURES + " times.  Dieing", e);
                         throw new DotRuntimeException(e);
                     }
-                    connect();
+
                 }
+                
             }
+            isInitialized.set(false);
             CloseUtils.closeQuietly(conn);
+            
+            
+
         }
     }
 
+    private void processNotifications(PGNotification[] notifications) {
+
+        if (notifications == null || notifications.length==0) {
+            return;
+        }
+        for (int i = 0; i < notifications.length; i++) {
+            String note = notifications[i].getParameter();
+            if(null == note) {
+                continue;
+            }
+            if(note.startsWith(serverIdPrefix.get())){
+                Logger.info(getClass(), "throwing away: " + note.substring(serverIdPrefix.get().length()));
+                continue;
+            }
+            Logger.info(getClass(), "got:" + note.substring(serverIdPrefix.get().length()));
+            receive(note.substring(serverIdPrefix.get().length()));
+            
+            
+        }
+    }
+    
+    
+    
 
 
     @Override
@@ -246,33 +258,40 @@ public final class PostgresCacheTransport implements CacheTransport {
 
     @Override
     public void send(String message) throws CacheTransportException {
-        if(UtilMethods.isEmpty(message)) {
+        if (UtilMethods.isEmpty(message)) {
             return;
         }
         // if the same event has already been published in the last 1.5 seconds, skip it
-        if(recentEvents.getIfPresent(message.hashCode())!=null){
+        if (recentEvents.getIfPresent(message.hashCode()) != null) {
             Logger.debug(this.getClass(), "Skipping:" + message);
             return;
         }
         recentEvents.put(message.hashCode(), true);
-        try (final Connection conn = data.get().getConnection();
-                        final PreparedStatement statment = conn.prepareStatement(PG_NOTIFY_SQL)) {
-            statment.setString(1, topicName.get());
-            statment.setString(2, serverId.get() + ":" + message);
-            statment.execute();
-            sentMessages.addAndGet(1);
-            sentBytes.addAndGet(message.length());
+        try (final Connection conn = data.get().getConnection(); final Statement statment = conn.createStatement()) {
+
+            String sqlMessage = (serverIdPrefix.get()  + message).replace("'", "''");
+            String sql = PG_NOTIFY_SQL.replace("{1}", sqlMessage);
+            
+            if (statment.execute(sql)) {
+                sentMessages.addAndGet(1);
+                sentBytes.addAndGet(message.length());
+            }
+            PGConnection pgConn = conn.unwrap(PGConnection.class) ;
+            
+            
+            
+            org.postgresql.PGNotification[] notifications = pgConn.getNotifications();
+            processNotifications(notifications);
+            
+            
         } catch (Exception e) {
             Logger.error(PostgresCacheTransport.class, "Unable to send message: " + e.getMessage(), e);
             throw new CacheTransportException("Unable to send message", e);
         }
-        
 
-        restartListener();
-            
-            
-        
-        
+        if(System.currentTimeMillis() % 100 ==0) {
+            restartListener();
+        }
         
     }
 
