@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { Observable, of } from 'rxjs';
 import { ActivatedRouteSnapshot, Resolve } from '@angular/router';
-import { DotPropertiesService } from '@services/dot-properties/dot-properties.service';
+import { DotPropertiesService } from '@dotcms/data-access';
 import { map } from 'rxjs/operators';
 
 /**

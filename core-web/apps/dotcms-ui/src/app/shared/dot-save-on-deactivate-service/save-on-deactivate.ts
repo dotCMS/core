@@ -1,4 +1,4 @@
-import { DotAlertConfirm } from '../models/dot-alert-confirm/dot-alert-confirm.model';
+import { DotAlertConfirm } from '@dotcms/dotcms-models';
 import { Observable } from 'rxjs';
 
 export interface OnSaveDeactivate {

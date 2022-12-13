@@ -8,8 +8,8 @@ import {
     NG_VALUE_ACCESSOR,
     ReactiveFormsModule
 } from '@angular/forms';
-import { MockDotMessageService } from '@dotcms/app/test/dot-message-service.mock';
-import { DotMessageService } from '@dotcms/app/api/services/dot-message/dot-messages.service';
+import { MockDotMessageService } from '@dotcms/utils-testing';
+import { DotMessageService } from '@dotcms/data-access';
 import { ButtonModule } from 'primeng/button';
 import { By } from '@angular/platform-browser';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';

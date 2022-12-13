@@ -1,6 +1,11 @@
 /* eslint-disable @angular-eslint/component-selector */
 import { Component, OnInit, forwardRef, ViewChild, OnDestroy } from '@angular/core';
-import { ControlValueAccessor, NG_VALUE_ACCESSOR, UntypedFormGroup, UntypedFormBuilder } from '@angular/forms';
+import {
+    ControlValueAccessor,
+    NG_VALUE_ACCESSOR,
+    UntypedFormGroup,
+    UntypedFormBuilder
+} from '@angular/forms';
 
 import { Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
@@ -8,17 +13,10 @@ import { NgGrid, NgGridConfig } from '@dotcms/dot-layout-grid';
 
 import { DotDialogActions } from '@components/dot-dialog/dot-dialog.component';
 
-import { DotAlertConfirmService } from '@services/dot-alert-confirm/dot-alert-confirm.service';
-import { DotEventsService } from '@services/dot-events/dot-events.service';
-import { DotMessageService } from '@services/dot-message/dot-messages.service';
-
-import { DotEditLayoutService } from '@services/dot-edit-layout/dot-edit-layout.service';
-
-import {
-    DotLayoutBody,
-    DotLayoutGrid,
-    DOT_LAYOUT_GRID_MAX_COLUMNS
-} from '@models/dot-edit-layout-designer';
+import { DotLayoutGrid, DOT_LAYOUT_GRID_MAX_COLUMNS } from '@models/dot-edit-layout-designer';
+import { DotEditLayoutService } from '@dotcms/app/api/services/dot-edit-layout/dot-edit-layout.service';
+import { DotAlertConfirmService, DotMessageService, DotEventsService } from '@dotcms/data-access';
+import { DotLayoutBody } from '@dotcms/dotcms-models';
 
 interface DotAddClass {
     setter: (string) => void;

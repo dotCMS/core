@@ -8,14 +8,14 @@ import {
     DynamicDialogRef
 } from 'primeng/dynamicdialog';
 import { DotMessagePipeModule } from '@pipes/dot-message/dot-message-pipe.module';
-import { MockDotMessageService } from '@tests/dot-message-service.mock';
+import { MockDotMessageService } from '@dotcms/utils-testing';
 
-import { DotMessageService } from '@services/dot-message/dot-messages.service';
-import { DotActionBulkResult } from '@models/dot-action-bulk-result/dot-action-bulk-result.model';
+import { DotMessageService } from '@dotcms/data-access';
+import { DotActionBulkResult } from '@dotcms/dotcms-models';
 import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
-import { DotFormatDateService } from '@services/dot-format-date-service';
+import { DotFormatDateService } from '@dotcms/app/api/services/dot-format-date-service';
 
 const messageServiceMock = new MockDotMessageService({
     'message.template.archived': 'archived',

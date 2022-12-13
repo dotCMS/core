@@ -1,7 +1,6 @@
 import { ChangeDetectionStrategy, Component, ViewChild } from '@angular/core';
 import { Observable } from 'rxjs';
-import { DotExperiment } from '../shared/models/dot-experiments.model';
-import { ExperimentsStatusList } from '@portlets/dot-experiments/shared/models/dot-experiments-constants';
+
 import { DotMessagePipe } from '@dotcms/app/view/pipes';
 import {
     DotExperimentsListStore,
@@ -12,6 +11,7 @@ import { DotExperimentsCreateComponent } from '@portlets/dot-experiments/dot-exp
 import { take } from 'rxjs/operators';
 import { Router } from '@angular/router';
 import { provideComponentStore } from '@ngrx/component-store';
+import { DotExperiment, ExperimentsStatusList } from '@dotcms/dotcms-models';
 
 @Component({
     selector: 'dot-experiments-list',

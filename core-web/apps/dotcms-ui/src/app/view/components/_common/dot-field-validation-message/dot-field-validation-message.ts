@@ -12,7 +12,7 @@ import {
 import { AbstractControl, UntypedFormControl, ValidationErrors } from '@angular/forms';
 import { takeUntil } from 'rxjs/operators';
 import { Subject } from 'rxjs';
-import { DotMessageService } from '@services/dot-message/dot-messages.service';
+import { DotMessageService } from '@dotcms/data-access';
 
 type DefaultsNGValidatorsTypes = 'maxlength' | 'required';
 

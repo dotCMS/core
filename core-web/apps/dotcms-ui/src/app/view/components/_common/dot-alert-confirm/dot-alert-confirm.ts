@@ -1,4 +1,4 @@
-import { DotAlertConfirmService } from '@services/dot-alert-confirm/dot-alert-confirm.service';
+import { DotAlertConfirmService } from '@dotcms/data-access';
 import { Component, ViewChild, OnInit, ElementRef, OnDestroy } from '@angular/core';
 import { ConfirmDialog } from 'primeng/confirmdialog';
 import { takeUntil } from 'rxjs/operators';

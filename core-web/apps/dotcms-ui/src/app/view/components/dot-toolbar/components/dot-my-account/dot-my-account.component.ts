@@ -12,13 +12,14 @@ import { map, take, takeUntil } from 'rxjs/operators';
 import { BehaviorSubject, Subject } from 'rxjs';
 
 import { DotDialogActions } from '@components/dot-dialog/dot-dialog.component';
-import { DotMessageService } from '@services/dot-message/dot-messages.service';
+import { DotMessageService } from '@dotcms/data-access';
 import { Auth, DotcmsConfigService, LoginService, User } from '@dotcms/dotcms-js';
-import { DotRouterService } from '@services/dot-router/dot-router.service';
-import { DotMenuService } from '@services/dot-menu.service';
-import { DotAccountService, DotAccountUser } from '@services/dot-account-service';
-import { DotHttpErrorManagerService } from '@services/dot-http-error-manager/dot-http-error-manager.service';
-import { DotAlertConfirmService } from '@dotcms/app/api/services/dot-alert-confirm/dot-alert-confirm.service';
+
+import { DotAlertConfirmService } from '@dotcms/data-access';
+import { DotAccountService, DotAccountUser } from '@dotcms/app/api/services/dot-account-service';
+import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
+import { DotMenuService } from '@dotcms/app/api/services/dot-menu.service';
+import { DotHttpErrorManagerService } from '@dotcms/app/api/services/dot-http-error-manager/dot-http-error-manager.service';
 
 interface AccountUserForm extends DotAccountUser {
     confirmPassword?: string;

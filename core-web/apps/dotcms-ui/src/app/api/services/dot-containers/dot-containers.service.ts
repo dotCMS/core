@@ -6,12 +6,12 @@ import { Observable } from 'rxjs';
 import { CoreWebService, DotRequestOptionsArgs } from '@dotcms/dotcms-js';
 
 import { DotHttpErrorManagerService } from '@services/dot-http-error-manager/dot-http-error-manager.service';
-import { DotActionBulkResult } from '@models/dot-action-bulk-result/dot-action-bulk-result.model';
 import {
-    DotContainer,
     DotContainerEntity,
-    DotContainerPayload
-} from '@dotcms/app/shared/models/container/dot-container.model';
+    DotContainerPayload,
+    DotActionBulkResult,
+    DotContainer
+} from '@dotcms/dotcms-models';
 
 export const CONTAINER_API_URL = '/api/v1/containers/';
 
