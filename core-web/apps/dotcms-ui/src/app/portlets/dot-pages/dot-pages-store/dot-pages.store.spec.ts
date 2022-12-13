@@ -1,16 +1,13 @@
 import { TestBed } from '@angular/core/testing';
 import { Observable, of } from 'rxjs';
 import { Injectable } from '@angular/core';
-import { DotESContentService } from '@dotcms/app/api/services/dot-es-content/dot-es-content.service';
-import { DotCMSContentlet } from '@dotcms/dotcms-models';
-import { ESContent } from '@dotcms/app/shared/models/dot-es-content/dot-es-content.model';
+import { DotCMSContentlet, DotCurrentUser, ESContent } from '@dotcms/dotcms-models';
 import { DotPageStore } from './dot-pages.store';
-import { DotCurrentUserService } from '@dotcms/app/api/services/dot-current-user/dot-current-user.service';
-import { DotCurrentUser } from '@dotcms/app/shared/models/dot-current-user/dot-current-user';
 import { CurrentUserDataMock } from '../../dot-starter/dot-starter-resolver.service.spec';
 import { DotHttpErrorManagerService } from '@dotcms/app/api/services/dot-http-error-manager/dot-http-error-manager.service';
 import { pagesInitialTestData } from '../dot-pages.component.spec';
 import { MockDotHttpErrorManagerService } from '@dotcms/app/test/dot-http-error-manager.service.mock';
+import { DotESContentService, DotCurrentUserService } from '@dotcms/data-access';
 
 @Injectable()
 class MockDotCurrentUserService {

@@ -3,8 +3,8 @@ import { Resolve } from '@angular/router';
 import { forkJoin, Observable } from 'rxjs';
 import { map, take } from 'rxjs/operators';
 import { DotEnvironment } from '@models/dot-environment/dot-environment';
-import { DotLicenseService } from '@services/dot-license/dot-license.service';
-import { PushPublishService } from '@services/push-publish/push-publish.service';
+import { DotLicenseService } from '@dotcms/data-access';
+import { PushPublishService } from '@dotcms/app/api/services/push-publish/push-publish.service';
 
 @Injectable()
 export class DotTemplateListResolver implements Resolve<[boolean, boolean]> {

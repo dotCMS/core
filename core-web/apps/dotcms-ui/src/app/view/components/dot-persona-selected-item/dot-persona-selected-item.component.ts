@@ -1,5 +1,5 @@
 import { Component, Input, Output, EventEmitter, HostBinding } from '@angular/core';
-import { DotPersona } from '@models/dot-persona/dot-persona.model';
+import { DotPersona } from '@dotcms/dotcms-models';
 
 @Component({
     selector: 'dot-persona-selected-item',

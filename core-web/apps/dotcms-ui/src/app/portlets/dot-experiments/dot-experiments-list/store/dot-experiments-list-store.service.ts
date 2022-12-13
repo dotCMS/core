@@ -1,18 +1,18 @@
 import { Injectable } from '@angular/core';
 import { ComponentStore, OnStoreInit, tapResponse } from '@ngrx/component-store';
-import { LoadingState } from '@portlets/shared/models/shared-models';
 import { DotExperimentsService } from '@portlets/dot-experiments/shared/services/dot-experiments.service';
 import { catchError, switchMap, tap, withLatestFrom } from 'rxjs/operators';
 import { EMPTY, Observable, pipe, throwError } from 'rxjs';
 import { MessageService } from 'primeng/api';
-import { DotMessageService } from '@services/dot-message/dot-messages.service';
-import { DotExperimentStatusList } from '@portlets/dot-experiments/shared/models/dot-experiments-constants';
+import { DotMessageService } from '@dotcms/data-access';
 import { HttpErrorResponse } from '@angular/common/http';
+import { ActivatedRoute } from '@angular/router';
 import {
     DotExperiment,
+    LoadingState,
+    DotExperimentStatusList,
     GroupedExperimentByStatus
-} from '@portlets/dot-experiments/shared/models/dot-experiments.model';
-import { ActivatedRoute } from '@angular/router';
+} from '@dotcms/dotcms-models';
 
 export interface DotExperimentsState {
     page: {

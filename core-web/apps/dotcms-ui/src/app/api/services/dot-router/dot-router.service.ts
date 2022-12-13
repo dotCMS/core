@@ -3,10 +3,10 @@ import { Router, ActivatedRoute, Params, Event, NavigationEnd } from '@angular/r
 
 import { PortletNav } from '@models/navigation';
 import { Subject } from 'rxjs';
-import { DotAppsSites } from '@shared/models/dot-apps/dot-apps.model';
 import { NavigationExtras } from '@angular/router';
 import { LOGOUT_URL } from '@dotcms/dotcms-js';
 import { filter } from 'rxjs/operators';
+import { DotAppsSites } from '@dotcms/dotcms-models';
 
 @Injectable()
 export class DotRouterService {

@@ -1,8 +1,8 @@
 import { waitForAsync, ComponentFixture, TestBed } from '@angular/core/testing';
 import { DebugElement } from '@angular/core';
 import { DotUnlicensedPorletComponent } from '.';
-import { MockDotMessageService } from '@tests/dot-message-service.mock';
-import { DotMessageService } from '@services/dot-message/dot-messages.service';
+import { MockDotMessageService } from '@dotcms/utils-testing';
+import { DotMessageService } from '@dotcms/data-access';
 import { By } from '@angular/platform-browser';
 import { DotIconModule } from '@dotcms/ui';
 import { DotPipesModule } from '@pipes/dot-pipes.module';
@@ -12,24 +12,22 @@ describe('DotUnlicensedPorletComponent', () => {
     let fixture: ComponentFixture<DotUnlicensedPorletComponent>;
     let de: DebugElement;
 
-    beforeEach(
-        waitForAsync(() => {
-            const messageServiceMock = new MockDotMessageService({
-                'request.a.trial.license': 'Request'
-            });
+    beforeEach(waitForAsync(() => {
+        const messageServiceMock = new MockDotMessageService({
+            'request.a.trial.license': 'Request'
+        });
 
-            TestBed.configureTestingModule({
-                declarations: [DotUnlicensedPorletComponent],
-                providers: [
-                    {
-                        provide: DotMessageService,
-                        useValue: messageServiceMock
-                    }
-                ],
-                imports: [DotIconModule, DotPipesModule]
-            }).compileComponents();
-        })
-    );
+        TestBed.configureTestingModule({
+            declarations: [DotUnlicensedPorletComponent],
+            providers: [
+                {
+                    provide: DotMessageService,
+                    useValue: messageServiceMock
+                }
+            ],
+            imports: [DotIconModule, DotPipesModule]
+        }).compileComponents();
+    }));
 
     beforeEach(() => {
         fixture = TestBed.createComponent(DotUnlicensedPorletComponent);

@@ -2,11 +2,12 @@ import { ComponentFixture, waitForAsync } from '@angular/core/testing';
 import { Component, Input, DebugElement } from '@angular/core';
 import { By } from '@angular/platform-browser';
 import { DotGravatarComponent } from './dot-gravatar.component';
-import { DotGravatarService } from '@services/dot-gravatar-service';
+import { DotGravatarService } from '@dotcms/app/api/services/dot-gravatar-service';
+
 import { DotAvatarModule } from '../../../_common/dot-avatar/dot-avatar.module';
 import { CommonModule } from '@angular/common';
 import { Observable, of } from 'rxjs';
-import { DOTTestBed } from '@tests/dot-test-bed';
+import { DOTTestBed } from '@dotcms/app/test/dot-test-bed';
 import * as md5 from 'md5';
 
 @Component({
@@ -32,15 +33,13 @@ describe('DotGravatarComponent', () => {
     let avatarComponent: DebugElement;
     let dotGravatarService: DotGravatarService;
 
-    beforeEach(
-        waitForAsync(() => {
-            DOTTestBed.configureTestingModule({
-                declarations: [HostTestComponent, DotGravatarComponent],
-                imports: [DotAvatarModule, CommonModule],
-                providers: [{ provide: DotGravatarService, useClass: DotGravatarServiceMock }]
-            });
-        })
-    );
+    beforeEach(waitForAsync(() => {
+        DOTTestBed.configureTestingModule({
+            declarations: [HostTestComponent, DotGravatarComponent],
+            imports: [DotAvatarModule, CommonModule],
+            providers: [{ provide: DotGravatarService, useClass: DotGravatarServiceMock }]
+        });
+    }));
 
     beforeEach(() => {
         fixture = DOTTestBed.createComponent(HostTestComponent);

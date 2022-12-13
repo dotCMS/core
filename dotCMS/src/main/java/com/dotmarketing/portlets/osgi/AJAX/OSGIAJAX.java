@@ -9,6 +9,7 @@ import org.apache.commons.fileupload.disk.DiskFileItemFactory;
 import org.apache.commons.fileupload.servlet.ServletFileUpload;
 import org.apache.commons.io.IOUtils;
 import com.dotmarketing.util.Logger;
+import org.apache.commons.lang.BooleanUtils;
 import org.apache.felix.framework.OSGIUtil;
 import com.dotmarketing.util.SecurityLogger;
 import com.liferay.util.FileUtil;
@@ -32,8 +33,10 @@ public class OSGIAJAX extends OSGIBaseAJAX {
     public void undeploy ( HttpServletRequest request, HttpServletResponse response ) throws ServletException, IOException, InterruptedException {
         validateUser() ;
         
-        String jar = request.getParameter( "jar" );
+        String jarName = request.getParameter( "jar" );
         String bundleId = request.getParameter( "bundleId" );
+
+        jarName = com.dotmarketing.util.FileUtil.sanitizeFileName(jarName);
 
         //First uninstall the bundle
         Bundle bundle;
@@ -54,21 +57,22 @@ public class OSGIAJAX extends OSGIBaseAJAX {
         String loadPath = OSGIUtil.getInstance().getFelixDeployPath();
         String undeployedPath = OSGIUtil.getInstance().getFelixUndeployPath();
 
-        File from = new File(loadPath + File.separator + jar);
-        File to = new File(undeployedPath + File.separator + jar);
+        File from = new File(loadPath + File.separator + jarName);
+        File to = new File(undeployedPath + File.separator + jarName);
 
-        if(to.exists()) {
-            to.delete();
+        if(to.getCanonicalPath().startsWith(undeployedPath) && to.exists()) {
+            final boolean deleteOk = to.delete();
+            Logger.info(OSGIAJAX.class,String.format(" File [%s] successfully un-deployed [%s].",to.getCanonicalPath(), BooleanUtils.toStringYesNo(deleteOk)) );
         }
 
-        Boolean success = FileUtil.move( from, to );
+        boolean success = FileUtil.move( from, to );
         if ( success ) {
-        	Logger.info( OSGIAJAX.class, "OSGI Bundle "+jar+ " Undeployed");
+        	Logger.info( OSGIAJAX.class, "OSGI Bundle "+jarName+ " Undeployed");
             remove();// removes portlets and actionlets references
-            writeSuccess( response, "OSGI Bundle "+jar+ " Undeployed" );
+            writeSuccess( response, "OSGI Bundle "+jarName+ " Undeployed" );
         } else {
-            Logger.error( OSGIAJAX.class, "Error undeploying OSGI Bundle "+jar );
-            writeError( response, "Error undeploying OSGI Bundle "+jar );
+            Logger.error( OSGIAJAX.class, "Error undeploying OSGI Bundle "+jarName );
+            writeError( response, "Error undeploying OSGI Bundle "+jarName );
         }
     }
 

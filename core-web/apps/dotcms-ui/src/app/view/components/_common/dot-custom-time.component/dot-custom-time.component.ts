@@ -1,5 +1,5 @@
 import { Component, ViewEncapsulation, Input, OnInit, AfterViewChecked } from '@angular/core';
-import { DotFormatDateService } from '@services/dot-format-date-service';
+import { DotFormatDateService } from '@dotcms/app/api/services/dot-format-date-service';
 
 @Component({
     encapsulation: ViewEncapsulation.Emulated,

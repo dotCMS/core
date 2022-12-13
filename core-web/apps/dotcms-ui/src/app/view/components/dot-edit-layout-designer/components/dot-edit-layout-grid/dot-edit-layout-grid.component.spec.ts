@@ -12,20 +12,20 @@ import { NgGridModule } from '@dotcms/dot-layout-grid';
 import { DotEditLayoutGridComponent } from './dot-edit-layout-grid.component';
 import { DotAutofocusModule } from '@dotcms/dot-rules';
 
-import { DotLayoutBody } from '@models/dot-edit-layout-designer';
 import { DotContainerSelectorLayoutModule } from '@components/dot-container-selector-layout/dot-container-selector-layout.module';
-import { DotTemplateContainersCacheService } from '@services/dot-template-containers-cache/dot-template-containers-cache.service';
-import { DotEditLayoutService } from '@services/dot-edit-layout/dot-edit-layout.service';
+import { DotTemplateContainersCacheService } from '@dotcms/app/api/services/dot-template-containers-cache/dot-template-containers-cache.service';
 import { DotDialogActions } from '@components/dot-dialog/dot-dialog.component';
 import { UiDotIconButtonTooltipModule } from '@components/_common/dot-icon-button-tooltip/dot-icon-button-tooltip.module';
 
-import { DotAlertConfirmService } from '@services/dot-alert-confirm/dot-alert-confirm.service';
-import { DotEventsService } from '@services/dot-events/dot-events.service';
-import { DotMessageService } from '@services/dot-message/dot-messages.service';
-import { PaginatorService } from '@services/paginator/paginator.service';
+import { DotAlertConfirmService } from '@dotcms/data-access';
+import { DotEventsService } from '@dotcms/data-access';
+import { DotMessageService } from '@dotcms/data-access';
+import { PaginatorService } from '@dotcms/data-access';
 
-import { DOTTestBed } from '@tests/dot-test-bed';
-import { MockDotMessageService } from '@tests/dot-message-service.mock';
+import { DOTTestBed } from '@dotcms/app/test/dot-test-bed';
+import { MockDotMessageService } from '@dotcms/utils-testing';
+import { DotLayoutBody } from '@dotcms/dotcms-models';
+import { DotEditLayoutService } from '@dotcms/app/api/services/dot-edit-layout/dot-edit-layout.service';
 
 let fakeValue: DotLayoutBody;
 
@@ -226,9 +226,8 @@ describe('DotEditLayoutGridComponent', () => {
 
     it('should remove one Container from the Grid', () => {
         component.addBox();
-        const dotDialogService = hostComponentfixture.debugElement.injector.get(
-            DotAlertConfirmService
-        );
+        const dotDialogService =
+            hostComponentfixture.debugElement.injector.get(DotAlertConfirmService);
         spyOn(dotDialogService, 'confirm').and.callFake((conf) => {
             conf.accept();
         });
@@ -275,9 +274,8 @@ describe('DotEditLayoutGridComponent', () => {
 
     it('should Propagate Change after a grid box is deleted', () => {
         component.addBox();
-        const dotDialogService = hostComponentfixture.debugElement.injector.get(
-            DotAlertConfirmService
-        );
+        const dotDialogService =
+            hostComponentfixture.debugElement.injector.get(DotAlertConfirmService);
         spyOn(dotDialogService, 'confirm').and.callFake((conf) => {
             conf.accept();
         });
@@ -354,8 +352,9 @@ describe('DotEditLayoutGridComponent', () => {
             addRowClassButtons.triggerEventHandler('click', null);
             hostComponentfixture.detectChanges();
 
-            dotDialog = hostComponentfixture.debugElement.query(By.css('dot-dialog'))
-                .componentInstance;
+            dotDialog = hostComponentfixture.debugElement.query(
+                By.css('dot-dialog')
+            ).componentInstance;
             dotDialogForm = hostComponentfixture.debugElement.query(By.css('dot-dialog form'));
             dotText = hostComponentfixture.debugElement.query(By.css('.box__add-class-text'));
         }

@@ -1,4 +1,5 @@
 {
+    "name": "block-editor",
     "$schema": "../../node_modules/nx/schemas/project-schema.json",
     "projectType": "library",
     "sourceRoot": "libs/block-editor/src",

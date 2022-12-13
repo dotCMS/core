@@ -1,4 +1,5 @@
 {
+    "name": "dot-primeng-theme-styles",
     "$schema": "../../node_modules/nx/schemas/project-schema.json",
     "projectType": "library",
     "sourceRoot": "libs/dot-primeng-theme-styles/src",

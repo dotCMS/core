@@ -1,18 +1,16 @@
 import { Injectable } from '@angular/core';
-import { DotRolesService } from '@dotcms/app/api/services/dot-roles/dot-roles.service';
-import { DotRole } from '@dotcms/app/shared/models/dot-role/dot-role.model';
+import { DotRolesService } from '@dotcms/data-access';
 import { ComponentStore, tapResponse } from '@ngrx/component-store';
 import { forkJoin, Observable, of, throwError } from 'rxjs';
 import { switchMap, take } from 'rxjs/operators';
 import { DotFavoritePageFormData } from '../dot-favorite-page.component';
-import { DotMessageService } from '@dotcms/app/api/services/dot-message/dot-messages.service';
+import { DotMessageService } from '@dotcms/data-access';
 import { HttpErrorResponse } from '@angular/common/http';
 import { DotHttpErrorManagerService } from '@dotcms/app/api/services/dot-http-error-manager/dot-http-error-manager.service';
 import { DotTempFileUploadService } from '@dotcms/app/api/services/dot-temp-file-upload/dot-temp-file-upload.service';
-import { DotWorkflowActionsFireService } from '@dotcms/app/api/services/dot-workflow-actions-fire/dot-workflow-actions-fire.service';
-import { DotCMSContentlet, DotCMSTempFile } from '@dotcms/dotcms-models';
-import { DotCurrentUserService } from '@dotcms/app/api/services/dot-current-user/dot-current-user.service';
-import { DotCurrentUser } from '@dotcms/app/shared/models/dot-current-user/dot-current-user';
+import { DotWorkflowActionsFireService } from '@dotcms/data-access';
+import { DotCMSContentlet, DotCMSTempFile, DotCurrentUser, DotRole } from '@dotcms/dotcms-models';
+import { DotCurrentUserService } from '@dotcms/data-access';
 
 export const enum DotFavoritePageActionState {
     SAVED = 'SAVED',

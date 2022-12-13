@@ -1,0 +1,14 @@
+{
+    "projectType": "library",
+    "sourceRoot": "libs/utils-testing/src",
+    "prefix": "dotcms",
+    "targets": {
+        "lint": {
+            "executor": "@nrwl/linter:eslint",
+            "options": {
+                "lintFilePatterns": ["libs/utils-testing/**/*.ts", "libs/utils-testing/**/*.html"]
+            }
+        }
+    },
+    "tags": []
+}

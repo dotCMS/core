@@ -6,15 +6,16 @@ import { ComponentFixture, waitForAsync, TestBed } from '@angular/core/testing';
 import { DebugElement, Component, Input, Injectable } from '@angular/core';
 import { DotToolbarNotificationsComponent } from './dot-toolbar-notifications.component';
 import { INotification } from '@shared/models/notifications';
-import { DotMessageService } from '@services/dot-message/dot-messages.service';
+import { DotMessageService } from '@dotcms/data-access';
 import { IframeOverlayService } from '@components/_common/iframe/service/iframe-overlay.service';
 import { DotcmsEventsService, LoginService } from '@dotcms/dotcms-js';
-import { NotificationsService } from '@services/notifications-service';
+
 import { Observable, Subject } from 'rxjs';
 import { of as observableOf } from 'rxjs';
-import { MockDotMessageService } from '@dotcms/app/test/dot-message-service.mock';
+import { MockDotMessageService } from '@dotcms/utils-testing';
 import { DotPipesModule } from '@pipes/dot-pipes.module';
 import { ButtonModule } from 'primeng/button';
+import { NotificationsService } from '@dotcms/app/api/services/notifications-service';
 
 @Component({
     selector: 'dot-dropdown-component',
@@ -88,28 +89,26 @@ describe('DotToolbarNotificationsComponent', () => {
         notifications_load_more: 'More'
     });
 
-    beforeEach(
-        waitForAsync(() => {
-            TestBed.configureTestingModule({
-                declarations: [
-                    DotToolbarNotificationsComponent,
-                    MockDotDropDownComponent,
-                    MockDotNotificationsListComponent,
-                    MockDotIconButtonComponent
-                ],
-                imports: [DotPipesModule, ButtonModule],
-                providers: [
-                    { provide: DotMessageService, useValue: messageServiceMock },
-                    { provide: IframeOverlayService, useClass: MockIframeOverlayService },
-                    { provide: DotcmsEventsService, useClass: MockDotcmsEventsService },
-                    { provide: LoginService, useClass: MockLoginService },
-                    { provide: NotificationsService, useClass: MockNotificationsService }
-                ]
-            }).compileComponents();
+    beforeEach(waitForAsync(() => {
+        TestBed.configureTestingModule({
+            declarations: [
+                DotToolbarNotificationsComponent,
+                MockDotDropDownComponent,
+                MockDotNotificationsListComponent,
+                MockDotIconButtonComponent
+            ],
+            imports: [DotPipesModule, ButtonModule],
+            providers: [
+                { provide: DotMessageService, useValue: messageServiceMock },
+                { provide: IframeOverlayService, useClass: MockIframeOverlayService },
+                { provide: DotcmsEventsService, useClass: MockDotcmsEventsService },
+                { provide: LoginService, useClass: MockLoginService },
+                { provide: NotificationsService, useClass: MockNotificationsService }
+            ]
+        }).compileComponents();
 
-            fixture = TestBed.createComponent(DotToolbarNotificationsComponent);
-        })
-    );
+        fixture = TestBed.createComponent(DotToolbarNotificationsComponent);
+    }));
 
     it(`should has a badge`, () => {
         fixture.detectChanges();

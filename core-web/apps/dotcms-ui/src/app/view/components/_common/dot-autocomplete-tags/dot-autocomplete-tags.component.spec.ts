@@ -7,14 +7,15 @@ import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { ChipsModule } from 'primeng/chips';
 import { AutoComplete, AutoCompleteModule } from 'primeng/autocomplete';
 import { FormsModule } from '@angular/forms';
-import { DotTagsService } from '@services/dot-tags/dot-tags.service';
+import { DotTagsService } from '@dotcms/data-access';
 import { Observable, of } from 'rxjs';
-import { DotTag } from '@models/dot-tag';
+
 import { By } from '@angular/platform-browser';
 import { DotIconModule } from '@dotcms/ui';
-import { DotMessageService } from '@services/dot-message/dot-messages.service';
-import { MockDotMessageService } from '@tests/dot-message-service.mock';
+import { DotMessageService } from '@dotcms/data-access';
+import { MockDotMessageService } from '@dotcms/utils-testing';
 import { DotPipesModule } from '@pipes/dot-pipes.module';
+import { DotTag } from '@dotcms/dotcms-models';
 
 const mockResponse = [
     { label: 'test', siteId: '1', siteName: 'Site', persona: false },

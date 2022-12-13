@@ -5,15 +5,16 @@ import { of } from 'rxjs';
 import { ContainerListComponent } from './container-list.component';
 import { DotRouterService } from '@services/dot-router/dot-router.service';
 import { DotListingDataTableComponent } from '@components/dot-listing-data-table/dot-listing-data-table.component';
-import { DotPushPublishDialogService } from '@dotcms/dotcms-js';
-import { DotSiteBrowserService } from '@services/dot-site-browser/dot-site-browser.service';
-import { DotAlertConfirmService } from '@services/dot-alert-confirm';
+import { CoreWebServiceMock, DotPushPublishDialogService } from '@dotcms/dotcms-js';
+
 import { CoreWebService } from '@dotcms/dotcms-js';
-import { MockDotMessageService } from '@tests/dot-message-service.mock';
 import { DotMessageDisplayService } from '@components/dot-message-display/services';
-import { DotMessageService } from '@services/dot-message/dot-messages.service';
+import {
+    DotAlertConfirmService,
+    DotMessageService,
+    DotSiteBrowserService
+} from '@dotcms/data-access';
 import { ActivatedRoute } from '@angular/router';
-import { CoreWebServiceMock } from '@tests/core-web.service.mock';
 import { DotEventsSocketURL } from '@dotcms/dotcms-js';
 import { dotEventSocketURLFactory } from '@tests/dot-test-bed';
 import { StringUtils } from '@dotcms/dotcms-js';
@@ -24,7 +25,6 @@ import { DotcmsEventsService } from '@dotcms/dotcms-js';
 import { DotEventsSocket } from '@dotcms/dotcms-js';
 import { DotcmsConfigService } from '@dotcms/dotcms-js';
 import { DotFormatDateService } from '@services/dot-format-date-service';
-import { DotFormatDateServiceMock } from '@tests/format-date-service.mock';
 import { DotListingDataTableModule } from '@components/dot-listing-data-table';
 import { CommonModule } from '@angular/common';
 import { DotMessagePipeModule } from '@pipes/dot-message/dot-message-pipe.module';
@@ -38,10 +38,10 @@ import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { Component, CUSTOM_ELEMENTS_SCHEMA, EventEmitter, Input, Output } from '@angular/core';
 import { By } from '@angular/platform-browser';
-import { CONTAINER_SOURCE, DotContainer } from '@models/container/dot-container.model';
 import { DotContainersService } from '@services/dot-containers/dot-containers.service';
 import { DotActionMenuButtonComponent } from '@components/_common/dot-action-menu-button/dot-action-menu-button.component';
-import { DotActionBulkResult } from '@dotcms/app/shared/models/dot-action-bulk-result/dot-action-bulk-result.model';
+import { DotContainer, CONTAINER_SOURCE, DotActionBulkResult } from '@dotcms/dotcms-models';
+import { MockDotMessageService, DotFormatDateServiceMock } from '@dotcms/utils-testing';
 
 const containersMock: DotContainer[] = [
     {

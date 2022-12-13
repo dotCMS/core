@@ -5,14 +5,12 @@ import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
 import { throwError } from 'rxjs';
 import { finalize, switchMap, take } from 'rxjs/operators';
 
-import { DotCrudService } from '@services/dot-crud';
-import { DotMessageService } from '@services/dot-message/dot-messages.service';
-import {
-    DotCMSTempFile,
-    DotTempFileUploadService
-} from '@services/dot-temp-file-upload/dot-temp-file-upload.service';
-import { DotWorkflowActionsFireService } from '@services/dot-workflow-actions-fire/dot-workflow-actions-fire.service';
-import { DotCMSContentlet } from '@dotcms/dotcms-models';
+import { DotCrudService } from '@dotcms/data-access';
+import { DotMessageService } from '@dotcms/data-access';
+
+import { DotWorkflowActionsFireService } from '@dotcms/data-access';
+import { DotCMSContentlet, DotCMSTempFile } from '@dotcms/dotcms-models';
+import { DotTempFileUploadService } from '@dotcms/app/api/services/dot-temp-file-upload/dot-temp-file-upload.service';
 
 export interface DotCMSTemplateThumbnail extends DotCMSContentlet {
     assetVersion: string;

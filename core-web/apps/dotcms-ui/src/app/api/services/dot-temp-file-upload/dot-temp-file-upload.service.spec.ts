@@ -5,10 +5,9 @@ import { TestBed } from '@angular/core/testing';
 import { of } from 'rxjs';
 import { CoreWebService } from '@dotcms/dotcms-js';
 
-import { CoreWebServiceMock } from '@tests/core-web.service.mock';
-
-import { DotHttpErrorManagerService } from '@services/dot-http-error-manager/dot-http-error-manager.service';
 import { DotTempFileUploadService } from './dot-temp-file-upload.service';
+import { CoreWebServiceMock } from '@dotcms/utils-testing';
+import { DotHttpErrorManagerService } from '../dot-http-error-manager/dot-http-error-manager.service';
 
 describe('DotTempFileUploadService', () => {
     let service: DotTempFileUploadService;

@@ -1,4 +1,5 @@
 {
+    "name": "dotcdn",
     "$schema": "../../node_modules/nx/schemas/project-schema.json",
     "projectType": "application",
     "sourceRoot": "apps/dotcdn/src",
@@ -23,7 +24,7 @@
                 "stylePreprocessorOptions": {
                     "includePaths": ["libs/dot-primeng-theme-styles/src/scss"]
                 },
-                "scripts": ["node_modules/chart.js/dist/Chart.js"],
+                "scripts": ["node_modules/chart.js/dist/chart.js"],
                 "vendorChunk": true,
                 "extractLicenses": false,
                 "buildOptimizer": false,
