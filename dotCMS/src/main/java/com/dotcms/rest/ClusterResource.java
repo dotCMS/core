@@ -15,6 +15,7 @@ import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.util.Config;
+import com.dotmarketing.util.ConfigUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PortletID;
 import com.dotmarketing.util.UtilMethods;
@@ -171,8 +172,14 @@ public class ClusterResource {
 						&& jsonNodeStatusObject.getString("assetsStatus").equals("green")
 						&& jsonNodeStatusObject.has("assetsTestPath")){
 					
+				    
+				    String assetPath = jsonNodeStatusObject.getString("assetsTestPath");
+				    assetPath = assetPath!=null ? assetPath.toLowerCase() : "";
+				    assetPath = assetPath.indexOf("/assets/server")>-1? assetPath.substring(assetPath.indexOf("/assets/server")) : assetPath;
+				    
 					//Get the file Name from the response.
-					File testFile = new File(jsonNodeStatusObject.getString("assetsTestPath"));
+					File testFile = new File(ConfigUtils.getAbsoluteAssetsRootPath() + assetPath);
+					
 					//If exist we need to check if we can delete it.
 					if (testFile.exists()) {
 						//If we can't delete it, it is a problem.

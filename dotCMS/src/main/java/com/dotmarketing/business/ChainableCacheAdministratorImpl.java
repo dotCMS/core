@@ -205,11 +205,13 @@ public class ChainableCacheAdministratorImpl implements DotCacheAdministrator {
         Logger.info(this, "***\t Prefer IPv4: " + (preferIPv4.equals("true") ? "enabled" : "disabled"));
         System.setProperty("java.net.preferIPv4Stack", preferIPv4);
 
-        if (cacheTransport != null && (cacheTransport.shouldReinit() || !cacheTransport.isInitialized())) {
+        if (cacheTransport == null) {
+            throw new CacheTransportException("No Cache transport implementation is defined");
+           
+        }
+        if(cacheTransport.shouldReinit() || !cacheTransport.isInitialized()) {
             cacheTransport.init(localServer);
             useTransportChannel = true;
-        } else {
-            throw new CacheTransportException("No Cache transport implementation is defined");
         }
     }
 

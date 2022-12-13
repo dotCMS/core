@@ -47,6 +47,9 @@ public final class PostgresCacheTransport implements CacheTransport {
     
     private final AtomicBoolean isInitialized = new AtomicBoolean(false);
 
+    private final static boolean PGLISTENER_DEBUG = ("true".equals(System.getenv("PGLISTENER_DEBUG")));
+    
+    
     private final Cache<Integer, Boolean> recentEvents = Caffeine.newBuilder()
                     .initialCapacity(10000)
                     .expireAfterWrite(Config.getIntProperty("PUBSUB_QUEUE_DEDUPE_TTL_MILLIS", 1500), TimeUnit.MILLISECONDS)
@@ -160,10 +163,10 @@ public final class PostgresCacheTransport implements CacheTransport {
                 continue;
             }
             if(note.startsWith(serverIdPrefix.get())){
-                Logger.info(getClass(), "throwing away: " + note.substring(serverIdPrefix.get().length()));
+                debug( "throwing away: " + note.substring(serverIdPrefix.get().length()));
                 continue;
             }
-            Logger.info(getClass(), "got:" + note.substring(serverIdPrefix.get().length()));
+            debug("got:" + note.substring(serverIdPrefix.get().length()));
             receive(note.substring(serverIdPrefix.get().length()));
             
             
@@ -181,7 +184,7 @@ public final class PostgresCacheTransport implements CacheTransport {
 
     @Override
     public boolean shouldReinit() {
-        return false;
+        return !isInitialized.get();
     }
 
     public void receive(String msg) {
@@ -263,7 +266,7 @@ public final class PostgresCacheTransport implements CacheTransport {
         }
         // if the same event has already been published in the last 1.5 seconds, skip it
         if (recentEvents.getIfPresent(message.hashCode()) != null) {
-            Logger.debug(this.getClass(), "Skipping:" + message);
+            debug("Skipping:" + message);
             return;
         }
         recentEvents.put(message.hashCode(), true);
@@ -272,10 +275,10 @@ public final class PostgresCacheTransport implements CacheTransport {
             String sqlMessage = (serverIdPrefix.get()  + message).replace("'", "''");
             String sql = PG_NOTIFY_SQL.replace("{1}", sqlMessage);
             
-            if (statment.execute(sql)) {
-                sentMessages.addAndGet(1);
-                sentBytes.addAndGet(message.length());
-            }
+            statment.execute(sql);
+            sentMessages.addAndGet(1);
+            sentBytes.addAndGet(message.length());
+            
             PGConnection pgConn = conn.unwrap(PGConnection.class) ;
             
             
@@ -356,6 +359,19 @@ public final class PostgresCacheTransport implements CacheTransport {
     }
 
 
+    private void debug(String message) {
+        if(PGLISTENER_DEBUG) {
+            Logger.info(this, message);
+            
+        }
+        
+        
+    }
+    
+    
+    
+    
+    
 
     @Override
     public CacheTransportInfo getInfo() {
