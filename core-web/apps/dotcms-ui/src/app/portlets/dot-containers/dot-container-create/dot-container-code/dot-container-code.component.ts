@@ -65,23 +65,22 @@ export class DotContentEditorComponent implements OnInit {
             e.stopPropagation();
         } else {
             this.updateActiveTabIndex(index);
-            this.foucsCurrentEditor(index);
+            this.focusCurrentEditor(index);
         }
 
         return false;
     }
 
     /**
-     * It removes the form control at the index of the form array, and then closes the modal
+     * It removes the form control at the index of the form array
      * @param {number} [index=null] - number = null
-     * @param close - This is the function that closes the modal.
      * @memberof DotContentEditorComponent
      */
     removeItem(index: number = null): void {
         this.getcontainerStructures.removeAt(index - 1);
         const currentTabIndex = this.findCurrentTabIndex(index);
         this.updateActiveTabIndex(currentTabIndex);
-        this.foucsCurrentEditor(currentTabIndex);
+        this.focusCurrentEditor(currentTabIndex);
     }
 
     /**
@@ -89,7 +88,7 @@ export class DotContentEditorComponent implements OnInit {
      * @param {number} tabIdx
      * @memberof DotContentEditorComponent
      */
-    foucsCurrentEditor(tabIdx: number) {
+    focusCurrentEditor(tabIdx: number) {
         if (tabIdx > 0) {
             const contentTypeId =
                 this.getcontainerStructures.controls[tabIdx - 1].get('structureId').value;
