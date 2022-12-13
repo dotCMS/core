@@ -230,8 +230,14 @@ public class SQLUtil {
 		testParam = com.dotmarketing.util.StringUtils.convertCamelToSnake(testParam);
 		testParam = translateSortBy(testParam);
 
-		if(ORDERBY_WHITELIST.contains(testParam)){
-			return  parameter.contains("-") ? "-" + testParam : testParam;
+		if (ORDERBY_WHITELIST.contains(testParam)) {
+			if (parameter.contains("-")) {
+				return "-" + testParam;
+			} else if (parameter.contains(_DESC)) {
+				return testParam + " " + _DESC;
+			} else {
+				return testParam;
+			}
 		}
 
 		Exception e = new DotStateException("Invalid or pernicious sql parameter passed in : " + parameter);

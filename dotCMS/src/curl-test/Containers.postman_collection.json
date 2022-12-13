@@ -1,6 +1,6 @@
 {
 	"info": {
-		"_postman_id": "98343aa6-b3da-4fde-8ea5-454c58117b23",
+		"_postman_id": "75c82cf1-8575-4574-bd9e-906c3f7ffad1",
 		"name": "Containers",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
 	},
@@ -5740,22 +5740,37 @@
 					"listen": "test",
 					"script": {
 						"exec": [
-							"var _ = require('lodash')",
-							"",
 							"pm.test(\"Status code should be ok 200\", function () {",
 							"    pm.response.to.have.status(200);",
 							"});",
 							"",
-							"var jsonData = pm.response.json();",
+							"const jsonData = pm.response.json();",
 							"",
 							"pm.test(\"Fetch successfully without errors\", function () {",
 							"    pm.expect(jsonData.errors).to.have.lengthOf(0);",
 							"});",
 							"",
-							"pm.test('modDate are in sorted order', () => {",
-							"    var expectedSortedOrder = _.orderBy(jsonData.entity, ['modDate'],['asc']);",
-							"    pm.expect(jsonData.entity).to.eql(expectedSortedOrder);    ",
-							"});"
+							"let isAscending = true;",
+							"if(jsonData.entity.length > 0){",
+							"pm.test('modDate are in asc sorted order', () => {   ",
+							"let data = [];",
+							"",
+							"    for (let i = 0; i < jsonData.entity.length; i++)",
+							"    { ",
+							"        data.push(jsonData.entity[i]['modDate']);       ",
+							"    }",
+							"",
+							"    for (let i = 0; i < data.length; i++)",
+							"    { ",
+							"        if(i >= 1 && data[i-1] > data[i]){",
+							"            isAscending = false;",
+							"            break;",
+							"        }",
+							"    }",
+							"",
+							"pm.expect(isAscending).to.be.true;",
+							"});",
+							"}"
 						],
 						"type": "text/javascript"
 					}
@@ -5834,8 +5849,6 @@
 					"listen": "test",
 					"script": {
 						"exec": [
-							"var _ = require('lodash')",
-							"",
 							"pm.test(\"Status code should be ok 200\", function () {",
 							"    pm.response.to.have.status(200);",
 							"});",
@@ -5846,10 +5859,27 @@
 							"    pm.expect(jsonData.errors).to.have.lengthOf(0);",
 							"});",
 							"",
-							"pm.test('modDate are in sorted order', () => {",
-							"    var expectedSortedOrder = _.orderBy(jsonData.entity, ['modDate'],['desc']);",
-							"    pm.expect(jsonData.entity).to.eql(expectedSortedOrder);    ",
-							"});"
+							"let isDescending = true;",
+							"if(jsonData.entity.length > 0){",
+							"pm.test('modDate are in desc sorted order', () => {   ",
+							"let data = [];",
+							"",
+							"    for (let i = 0; i < jsonData.entity.length; i++)",
+							"    { ",
+							"        data.push(jsonData.entity[i]['modDate']);       ",
+							"    }",
+							"",
+							"    for (let i = 0; i < data.length; i++)",
+							"    { ",
+							"        if(i >= 1 && data[i-1] < data[i]){",
+							"            isDescending = false;",
+							"            break;",
+							"        }",
+							"    }",
+							"",
+							"pm.expect(isDescending).to.be.true;",
+							"});",
+							"}"
 						],
 						"type": "text/javascript"
 					}
