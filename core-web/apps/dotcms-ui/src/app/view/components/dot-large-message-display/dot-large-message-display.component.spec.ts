@@ -4,10 +4,10 @@ import { DebugElement, Component } from '@angular/core';
 import { DotDialogModule } from '@components/dot-dialog/dot-dialog.module';
 import { By } from '@angular/platform-browser';
 import { DotcmsEventsService } from '@dotcms/dotcms-js';
-import { DotcmsEventsServiceMock } from '@tests/dotcms-events-service.mock';
+import { DotcmsEventsServiceMock } from '@dotcms/utils-testing';
 
 import { DotLargeMessageDisplayComponent } from './dot-large-message-display.component';
-import { DotParseHtmlService } from '@services/dot-parse-html/dot-parse-html.service';
+import { DotParseHtmlService } from '@dotcms/app/api/services/dot-parse-html/dot-parse-html.service';
 
 @Component({
     selector: 'dot-test-host-component',
@@ -20,21 +20,18 @@ describe('DotLargeMessageDisplayComponent', () => {
     let dialog: DebugElement;
     let dotcmsEventsServiceMock;
 
-    beforeEach(
-        waitForAsync(() =>
-            TestBed.configureTestingModule({
-                imports: [DotDialogModule],
-                declarations: [DotLargeMessageDisplayComponent, TestHostComponent],
-                providers: [
-                    {
-                        provide: DotcmsEventsService,
-                        useClass: DotcmsEventsServiceMock
-                    },
-                    DotParseHtmlService
-                ]
-            }).compileComponents()
-        )
-    );
+    beforeEach(waitForAsync(() =>
+        TestBed.configureTestingModule({
+            imports: [DotDialogModule],
+            declarations: [DotLargeMessageDisplayComponent, TestHostComponent],
+            providers: [
+                {
+                    provide: DotcmsEventsService,
+                    useClass: DotcmsEventsServiceMock
+                },
+                DotParseHtmlService
+            ]
+        }).compileComponents()));
 
     beforeEach(() => {
         fixture = TestBed.createComponent(TestHostComponent);

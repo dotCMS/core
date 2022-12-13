@@ -1,14 +1,13 @@
 import { Component, Output, EventEmitter, OnInit, OnDestroy } from '@angular/core';
-import { PushPublishService } from '@services/push-publish/push-publish.service';
-import { DotMessageService } from '@services/dot-message/dot-messages.service';
+import { PushPublishService } from '@dotcms/app/api/services/push-publish/push-publish.service';
+import { DotMessageService } from '@dotcms/data-access';
 import { DotPushPublishDialogService } from '@dotcms/dotcms-js';
 import { DotDialogActions } from '@components/dot-dialog/dot-dialog.component';
 import { takeUntil } from 'rxjs/operators';
 
 import { Subject } from 'rxjs';
-import { DotPushPublishDialogData } from '@dotcms/dotcms-models';
+import { DotAjaxActionResponseView, DotPushPublishDialogData } from '@dotcms/dotcms-models';
 import { DotPushPublishData } from '@models/dot-push-publish-data/dot-push-publish-data';
-import { DotAjaxActionResponseView } from '@models/ajax-action-response/dot-ajax-action-response';
 
 @Component({
     selector: 'dot-push-publish-dialog',

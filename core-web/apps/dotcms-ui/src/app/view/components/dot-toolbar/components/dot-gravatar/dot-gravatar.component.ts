@@ -1,5 +1,5 @@
 import { Component, Input, OnChanges, SimpleChanges } from '@angular/core';
-import { DotGravatarService } from '@services/dot-gravatar-service';
+import { DotGravatarService } from '@dotcms/app/api/services/dot-gravatar-service';
 import * as md5 from 'md5';
 import { Observable } from 'rxjs';
 

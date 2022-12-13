@@ -13,7 +13,7 @@ import { LazyLoadEvent } from 'primeng/api';
 import { Table } from 'primeng/table';
 import { take } from 'rxjs/operators';
 import { DotDialogComponent } from '@components/dot-dialog/dot-dialog.component';
-import { PaginatorService } from '@services/paginator';
+import { PaginatorService } from '@dotcms/data-access';
 
 @Component({
     selector: 'dot-form-selector',

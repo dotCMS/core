@@ -8,7 +8,6 @@ import { HttpCode } from './util/http-code';
 import { pluck, tap, map } from 'rxjs/operators';
 import { DotcmsEventsService } from './dotcms-events.service';
 import { HttpResponse } from '@angular/common/http';
-import { ResponseView } from './util/response-view';
 import { DotLoginInformation } from '@dotcms/dotcms-models';
 
 export interface DotLoginParams {

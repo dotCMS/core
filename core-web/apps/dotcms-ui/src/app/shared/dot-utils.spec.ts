@@ -1,8 +1,6 @@
-import * as dotUtils from '@shared/dot-utils';
-import { DotPageRenderState } from '../portlets/dot-edit-page/shared/models';
-import { mockDotRenderedPage } from '../test/dot-page-render.mock';
-import { mockUser } from '../test/login-service.mock';
-import { DotPageRender } from './models/dot-page/dot-rendered-page.model';
+import * as dotUtils from '@dotcms/utils/lib/dot-utils';
+import { DotPageRenderState, DotPageRender } from '@dotcms/dotcms-models';
+import { mockUser, mockDotRenderedPage } from '@dotcms/utils-testing';
 
 describe('Dot Utils', () => {
     it('should return anchor with the correct values', () => {

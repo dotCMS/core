@@ -3,14 +3,14 @@ import { By } from '@angular/platform-browser';
 import { ComponentFixture, waitForAsync } from '@angular/core/testing';
 import { DebugElement } from '@angular/core';
 
-import { DOTTestBed } from '../../../../../test/dot-test-bed';
+import { DOTTestBed } from '@dotcms/app/test/dot-test-bed';
 import { DotContentletEditorService } from '../../services/dot-contentlet-editor.service';
 import { DotContentletWrapperComponent } from '../dot-contentlet-wrapper/dot-contentlet-wrapper.component';
 import { DotEditContentletComponent } from './dot-edit-contentlet.component';
 import { DotIframeDialogModule } from '../../../dot-iframe-dialog/dot-iframe-dialog.module';
-import { DotMenuService } from '@services/dot-menu.service';
+import { DotMenuService } from '@dotcms/app/api/services/dot-menu.service';
 import { LoginService } from '@dotcms/dotcms-js';
-import { LoginServiceMock } from '../../../../../test/login-service.mock';
+import { LoginServiceMock } from '@dotcms/utils-testing';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { RouterTestingModule } from '@angular/router/testing';
 
@@ -22,29 +22,27 @@ describe('DotEditContentletComponent', () => {
     let dotEditContentletWrapperComponent: DotContentletWrapperComponent;
     let dotContentletEditorService: DotContentletEditorService;
 
-    beforeEach(
-        waitForAsync(() => {
-            DOTTestBed.configureTestingModule({
-                declarations: [DotEditContentletComponent, DotContentletWrapperComponent],
-                providers: [
-                    DotContentletEditorService,
-                    {
-                        provide: DotMenuService,
-                        useValue: {
-                            getDotMenuId() {
-                                return observableOf('999');
-                            }
+    beforeEach(waitForAsync(() => {
+        DOTTestBed.configureTestingModule({
+            declarations: [DotEditContentletComponent, DotContentletWrapperComponent],
+            providers: [
+                DotContentletEditorService,
+                {
+                    provide: DotMenuService,
+                    useValue: {
+                        getDotMenuId() {
+                            return observableOf('999');
                         }
-                    },
-                    {
-                        provide: LoginService,
-                        useClass: LoginServiceMock
                     }
-                ],
-                imports: [DotIframeDialogModule, BrowserAnimationsModule, RouterTestingModule]
-            });
-        })
-    );
+                },
+                {
+                    provide: LoginService,
+                    useClass: LoginServiceMock
+                }
+            ],
+            imports: [DotIframeDialogModule, BrowserAnimationsModule, RouterTestingModule]
+        });
+    }));
 
     beforeEach(() => {
         fixture = DOTTestBed.createComponent(DotEditContentletComponent);

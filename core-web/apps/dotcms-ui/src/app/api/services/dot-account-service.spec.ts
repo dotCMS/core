@@ -2,17 +2,16 @@ import { TestBed, waitForAsync } from '@angular/core/testing';
 import { HttpClientTestingModule, HttpTestingController } from '@angular/common/http/testing';
 import { DotAccountUser, DotAccountService } from './dot-account-service';
 import { CoreWebService, LoginService } from '@dotcms/dotcms-js';
-import { CoreWebServiceMock } from '@tests/core-web.service.mock';
-import { LoginServiceMock } from '@tests/login-service.mock';
-import { mockResponseView } from '@dotcms/app/test/response-view.mock';
+import { CoreWebServiceMock, mockResponseView } from '@dotcms/utils-testing';
+import { LoginServiceMock } from '@dotcms/utils-testing';
+import { DotFormatDateServiceMock } from '@dotcms/utils-testing';
 import { throwError } from 'rxjs';
 import { DotHttpErrorManagerService } from './dot-http-error-manager/dot-http-error-manager.service';
-import { DotAlertConfirmService } from '@services/dot-alert-confirm';
-import { DotRouterService } from '@services/dot-router/dot-router.service';
-import { MockDotRouterService } from '@tests/dot-router-service.mock';
+import { DotAlertConfirmService } from '@dotcms/data-access';
+import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
+import { MockDotRouterService } from '@dotcms/utils-testing';
 import { ConfirmationService } from 'primeng/api';
-import { DotFormatDateService } from '@services/dot-format-date-service';
-import { DotFormatDateServiceMock } from '@dotcms/app/test/format-date-service.mock';
+import { DotFormatDateService } from '@dotcms/app/api/services/dot-format-date-service';
 
 describe('DotAccountService', () => {
     let service: DotAccountService;
@@ -20,31 +19,29 @@ describe('DotAccountService', () => {
     let httpTestingController: HttpTestingController;
     let dotHttpErrorManagerService: DotHttpErrorManagerService;
 
-    beforeEach(
-        waitForAsync(() => {
-            TestBed.configureTestingModule({
-                providers: [
-                    DotAccountService,
-                    DotHttpErrorManagerService,
-                    DotAlertConfirmService,
-                    ConfirmationService,
-                    { provide: DotFormatDateService, useClass: DotFormatDateServiceMock },
-                    { provide: CoreWebService, useClass: CoreWebServiceMock },
-                    { provide: DotRouterService, useClass: MockDotRouterService },
-                    {
-                        provide: LoginService,
-                        useClass: LoginServiceMock
-                    }
-                ],
-                imports: [HttpClientTestingModule]
-            });
+    beforeEach(waitForAsync(() => {
+        TestBed.configureTestingModule({
+            providers: [
+                DotAccountService,
+                DotHttpErrorManagerService,
+                DotAlertConfirmService,
+                ConfirmationService,
+                { provide: DotFormatDateService, useClass: DotFormatDateServiceMock },
+                { provide: CoreWebService, useClass: CoreWebServiceMock },
+                { provide: DotRouterService, useClass: MockDotRouterService },
+                {
+                    provide: LoginService,
+                    useClass: LoginServiceMock
+                }
+            ],
+            imports: [HttpClientTestingModule]
+        });
 
-            service = TestBed.inject(DotAccountService);
-            httpTestingController = TestBed.inject(HttpTestingController);
-            dotHttpErrorManagerService = TestBed.inject(DotHttpErrorManagerService);
-            coreWebService = TestBed.inject(CoreWebService);
-        })
-    );
+        service = TestBed.inject(DotAccountService);
+        httpTestingController = TestBed.inject(HttpTestingController);
+        dotHttpErrorManagerService = TestBed.inject(DotHttpErrorManagerService);
+        coreWebService = TestBed.inject(CoreWebService);
+    }));
 
     it('Should update user data', () => {
         const user: DotAccountUser = {

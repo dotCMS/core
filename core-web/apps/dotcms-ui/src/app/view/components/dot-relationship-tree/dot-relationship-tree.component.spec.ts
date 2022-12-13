@@ -4,9 +4,9 @@ import { By } from '@angular/platform-browser';
 import { DotCopyButtonModule } from '@components/dot-copy-button/dot-copy-button.module';
 import { DotIconModule } from '@dotcms/ui';
 import { DotPipesModule } from '@pipes/dot-pipes.module';
-import { DotMessageService } from '@services/dot-message/dot-messages.service';
-import { dotcmsContentTypeBasicMock } from '@tests/dot-content-types.mock';
-import { MockDotMessageService } from '@tests/dot-message-service.mock';
+import { DotMessageService } from '@dotcms/data-access';
+import { dotcmsContentTypeBasicMock } from '@dotcms/utils-testing';
+import { MockDotMessageService } from '@dotcms/utils-testing';
 import { DotCMSContentType } from '@dotcms/dotcms-models';
 
 import { DotRelationshipTreeComponent } from './dot-relationship-tree.component';
@@ -25,8 +25,11 @@ const fakeContentType: DotCMSContentType = {
 
 @Component({
     selector: 'dot-test-host-component',
-    template: ` <dot-relationship-tree [velocityVar]="velocityVar"
-    [contentType]="contentType" [isParentField]="isParentField"></dot-relationship-tree>`
+    template: ` <dot-relationship-tree
+        [velocityVar]="velocityVar"
+        [contentType]="contentType"
+        [isParentField]="isParentField"
+    ></dot-relationship-tree>`
 })
 class TestHostComponent {
     velocityVar = 'Parent.Children';
@@ -39,7 +42,7 @@ describe('DotRelationshipTreeComponent', () => {
         let fixture: ComponentFixture<TestHostComponent>;
         let deHost: DebugElement;
         let de: DebugElement;
-        
+
         beforeEach(async () => {
             await TestBed.configureTestingModule({
                 declarations: [TestHostComponent, DotRelationshipTreeComponent],
@@ -84,7 +87,7 @@ describe('DotRelationshipTreeComponent', () => {
         let fixture: ComponentFixture<TestHostComponent>;
         let deHost: DebugElement;
         let de: DebugElement;
-        
+
         beforeEach(async () => {
             await TestBed.configureTestingModule({
                 declarations: [TestHostComponent, DotRelationshipTreeComponent],

@@ -12,7 +12,6 @@ import {
     DotBubbleMenuPluginProps,
     DotBubbleMenuViewProps,
     // Suggestions
-    suggestionOptions,
     changeToItems,
     SuggestionsComponent,
     // Utils
@@ -21,7 +20,8 @@ import {
     deleteByRange,
     deleteByNode,
     ImageNode,
-    findParentNode
+    findParentNode,
+    tableChangeToItems
 } from '@dotcms/block-editor';
 
 import { LINK_FORM_PLUGIN_KEY, BUBBLE_FORM_PLUGIN_KEY } from '@dotcms/block-editor';
@@ -212,12 +212,9 @@ export class DotBubbleMenuPluginView extends BubbleMenuView {
         const { items } = this.component.instance;
         const { activeItem } = this.getActiveNode();
         const activeMarks = this.getActiveMarks(['left', 'center', 'right']);
-        const parentNode = findParentNode(this.editor.state.selection.$from);
 
         // Update
-
-        this.component.instance.selected =
-            parentNode.type.name === 'table' ? null : activeItem?.label;
+        this.component.instance.selected = activeItem?.label;
         this.component.instance.items = this.updateActiveItems(items, activeMarks);
         this.component.changeDetectorRef.detectChanges();
     }
@@ -409,11 +406,15 @@ export class DotBubbleMenuPluginView extends BubbleMenuView {
 
     changeToItems() {
         const allowedBlocks: string[] = this.editor.storage.dotConfig.allowedBlocks;
+        const parentNode = findParentNode(this.editor.state.selection.$from);
 
-        const changeToOptions =
-            allowedBlocks.length > 1
-                ? suggestionOptions.filter((item) => allowedBlocks.includes(item.id))
-                : changeToItems;
+        let changeToOptions = parentNode.type.name === 'table' ? tableChangeToItems : changeToItems;
+
+        // means the user restrict the allowed blocks with the prop "allowedBlocks"
+        if (allowedBlocks.length > 1) {
+            changeToOptions = changeToOptions.filter((item) => allowedBlocks.includes(item.id));
+        }
+
         const changeTopCommands = {
             heading1: () => {
                 this.editor.chain().focus().clearNodes().setHeading({ level: 1 }).run();

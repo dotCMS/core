@@ -13,14 +13,12 @@ import { Observable, of, from } from 'rxjs';
 
 import { SelectItem } from 'primeng/api';
 
-import { DotAlertConfirmService } from '@services/dot-alert-confirm';
+import { DotAlertConfirmService } from '@dotcms/data-access';
 import { DotEditPageLockInfoComponent } from './components/dot-edit-page-lock-info/dot-edit-page-lock-info.component';
-import { DotMessageService } from '@services/dot-message/dot-messages.service';
+import { DotMessageService } from '@dotcms/data-access';
 import { DotPageStateService } from '../../services/dot-page-state/dot-page-state.service';
-import { DotPageRenderState } from '@portlets/dot-edit-page/shared/models';
-import { DotPersonalizeService } from '@services/dot-personalize/dot-personalize.service';
-import { DotPageRenderOptions } from '@services/dot-page-render/dot-page-render.service';
-import { DotPageMode } from '@models/dot-page/dot-page-mode.enum';
+import { DotPersonalizeService } from '@dotcms/data-access';
+import { DotPageRenderState, DotPageMode, DotPageRenderOptions } from '@dotcms/dotcms-models';
 
 enum DotConfirmationType {
     LOCK,

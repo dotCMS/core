@@ -9,10 +9,13 @@ import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.db.HibernateUtil;
+import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
 import com.dotmarketing.portlets.fileassets.business.FileAsset;
+import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
@@ -63,24 +66,23 @@ public class CSSPreProcessServlet extends HttpServlet {
             actualUri =  fileUri.substring(0, fileUri.lastIndexOf('.')) + "." + compiler.getDefaultExtension();
             final Identifier ident = APILocator.getIdentifierAPI().find(host, actualUri);
             if(ident==null || !InodeUtils.isSet(ident.getId())) {
-                resp.sendError(HttpStatus.SC_NOT_FOUND);
+                sendError(resp, HttpStatus.SC_NOT_FOUND);
                 return;
             }
             
             // get the asset in order to build etag and check permissions
             final long defLang=APILocator.getLanguageAPI().getDefaultLanguage().getId();
-            FileAsset fileasset;
-            try {
-                fileasset = APILocator.getFileAssetAPI().fromContentlet(
-                    APILocator.getContentletAPI().findContentletByIdentifier(ident.getId(), live, defLang, user, true));
-            } catch (final DotSecurityException ex) {
-                resp.sendError(HttpStatus.SC_FORBIDDEN);
+            final Optional<FileAsset> fileAssetOptional = getFileAsset(live, user, ident, defLang);
+            if(fileAssetOptional.isEmpty()) {
+                sendError(resp, HttpStatus.SC_FORBIDDEN);
                 return;
             }
-            
+
+            final FileAsset fileAsset = fileAssetOptional.get();
+
             boolean userHasEditPerms = false;
             if(!live) {
-                userHasEditPerms = APILocator.getPermissionAPI().doesUserHavePermission(fileasset,PermissionAPI.PERMISSION_EDIT,user);
+                userHasEditPerms = APILocator.getPermissionAPI().doesUserHavePermission(fileAsset,PermissionAPI.PERMISSION_EDIT,user);
                 if(req.getParameter("recompile")!=null && userHasEditPerms) {
                     CacheLocator.getCSSCache().remove(host.getIdentifier(), actualUri, false);
                     CacheLocator.getCSSCache().remove(host.getIdentifier(), actualUri, true);
@@ -103,34 +105,36 @@ public class CSSPreProcessServlet extends HttpServlet {
                         try {
                             compiler.compile();
                         } catch (Throwable ex) {
-                          Logger.error(this, "Error compiling " + host.getHostname() + ":" + fileUri, ex);
+                            Throwable throwable = ex;
+                            Logger.error(this, "Error compiling " + host.getHostname() + ":" + fileUri,
+                                    throwable);
                           if (Config.getBooleanProperty("SHOW_SASS_ERRORS_ON_FRONTEND", true)) {
                             if(userHasEditPerms) {
-                              ex = (ex.getCause()!=null) ? ex.getCause() : ex;
+                              throwable = (throwable.getCause()!=null) ? throwable.getCause() : throwable;
                               resp.getWriter().print("<html><body><h2>Error compiling sass</h2><p>(this only shows if you are an editor in dotCMS)</p><pre>");
-                              ex.printStackTrace(resp.getWriter());
+                              throwable.printStackTrace(resp.getWriter());
                               resp.getWriter().print("</pre></body></html>");
                             }
                           }
-                          throw new Exception(ex);
-                      }
+                          throw new Exception(throwable);
+                        }
                         
                         // build cache object
-                        final Optional<ContentletVersionInfo> vinfo = APILocator.getVersionableAPI()
-                                .getContentletVersionInfo(ident.getId(), defLang);
+                        final Optional<ContentletVersionInfo> verInfo = APILocator.getVersionableAPI().getContentletVersionInfo(ident.getId(), defLang);
 
-                        if(!vinfo.isPresent()) {
-                            resp.sendError(HttpStatus.SC_NOT_FOUND);
+                        if(verInfo.isEmpty()) {
+                            Logger.error(CSSPreProcessServlet.class, String.format("No Version info was found for [%s] with lang [%d]",ident.getId(), defLang));
+                            sendError(resp, HttpStatus.SC_NOT_FOUND);
                             return;
                         }
 
-                        final CachedCSS newcache = new CachedCSS();
-                        newcache.data = compiler.getOutput();
-                        newcache.hostId = host.getIdentifier();
-                        newcache.uri = actualUri;
-                        newcache.live = live;
-                        newcache.modDate = vinfo.get().getVersionTs();
-                        newcache.imported = new ArrayList<>();
+                        final CachedCSS newCache = new CachedCSS();
+                        newCache.data = compiler.getOutput();
+                        newCache.hostId = host.getIdentifier();
+                        newCache.uri = actualUri;
+                        newCache.live = live;
+                        newCache.modDate = verInfo.get().getVersionTs();
+                        newCache.imported = new ArrayList<>();
                         for(String importUri : compiler.getAllImportedURI()) {
                             // newcache entry for the imported asset
                             final ImportedAsset asset = new ImportedAsset();
@@ -148,13 +152,13 @@ public class CSSPreProcessServlet extends HttpServlet {
                             final Optional<ContentletVersionInfo> impInfo = APILocator.getVersionableAPI()
                                     .getContentletVersionInfo(importUriIdentifier.getId(), defLang);
 
-                            if(!impInfo.isPresent()) {
-                                resp.sendError(HttpStatus.SC_NOT_FOUND);
+                            if(impInfo.isEmpty()) {
+                                sendError(resp, HttpStatus.SC_NOT_FOUND);
                                 return;
                             }
 
                             asset.modDate = impInfo.get().getVersionTs();
-                            newcache.imported.add(asset);
+                            newCache.imported.add(asset);
                             Logger.debug(this, host.getHostname()+":"+actualUri+" imports-> "+importUri);
                             
                             // actual cache entry for the imported asset. If needed
@@ -171,15 +175,15 @@ public class CSSPreProcessServlet extends HttpServlet {
                                 }
                             }
                         }
-                        CacheLocator.getCSSCache().add(newcache);
-                        cacheMaxDate = newcache.getMaxDate();
-                        cacheObject = newcache;
+                        CacheLocator.getCSSCache().add(newCache);
+                        cacheMaxDate = newCache.getMaxDate();
+                        cacheObject = newCache;
                         responseData = compiler.getOutput();
                     }
                 }
             }
             
-            if(responseData==null) {
+            if(responseData == null) {
                 if(cache!=null && cache.data!=null) {
                     // if css is cached an valid is used as response
                     responseData = cache.data;
@@ -187,7 +191,7 @@ public class CSSPreProcessServlet extends HttpServlet {
                     cacheObject = cache;
                     Logger.debug(this, "using cached css data for "+host.getHostname()+":"+fileUri);
                 } else {
-                    resp.sendError(HttpStatus.SC_INTERNAL_SERVER_ERROR, "no data!");
+                    sendError(resp, HttpStatus.SC_INTERNAL_SERVER_ERROR);
                     return;
                 }
             }
@@ -196,35 +200,23 @@ public class CSSPreProcessServlet extends HttpServlet {
             if(live) {
                 // we use etag dot:inode:cacheMaxDate:filesize and lastMod:cacheMaxDate
                 // so the browser downloads it if any of the imported files changes
-                doDownload = DownloadUtil.isModifiedEtag(req, resp, fileasset.getInode(), 
-                        cacheMaxDate.getTime(), fileasset.getFileSize());
+                doDownload = DownloadUtil.isModifiedEtag(req, resp, fileAsset.getInode(),
+                        cacheMaxDate.getTime(), fileAsset.getFileSize());
             }
             
             if(doDownload) {
                 // write the actual response to the user
                 resp.setContentType("text/css");
                 resp.setHeader("Content-Disposition", 
-                        "inline; filename=\"" + fileUri.substring(fileUri.lastIndexOf('/'), fileUri.length()) + "\"");
-                
-                if(!live && userHasEditPerms && req.getParameter("debug")!=null) {
-                    // debug information requested
-                    final PrintWriter out = resp.getWriter();
-                    out.println("/*");
-                    out.println("Cached CSS: "+host.getHostname()+":"+actualUri);
-                    out.println("Size: "+cacheObject.data.length+" bytes");
-                    out.println("Imported uris:");
-                    for (final ImportedAsset asset : cacheObject.imported) {
-                        out.println("  "+asset.uri);
-                    }
-                    out.println("*/");
-                    out.println(new String(responseData));
-                } else {
-                    resp.getOutputStream().write(responseData);
-                }
+                        "inline; filename=\"" + fileUri.substring(fileUri.lastIndexOf('/')) + "\"");
+
+                final boolean verbose = !live && userHasEditPerms && req.getParameter("debug") !=null;
+
+                writeResponseData(verbose, actualUri, host, cacheObject, responseData, resp);
             }
         } catch (final Exception ex) {
         	try {
-				final Class clazz = Class.forName("org.apache.catalina.connector.ClientAbortException");
+				final Class<?> clazz = Class.forName("org.apache.catalina.connector.ClientAbortException");
 				if(ex.getClass().equals(clazz)){
 					Logger.debug(this, "ClientAbortException while serving compiled css file:" + ex.getMessage(), ex);
 				} else {
@@ -244,5 +236,51 @@ public class CSSPreProcessServlet extends HttpServlet {
             }
         }
     }
+
+    private void writeResponseData(final boolean verbose, final String actualUri, final Host host,
+            final CachedCSS cacheObject, final byte[] responseData,
+            final HttpServletResponse resp) {
+        try {
+            final PrintWriter out = resp.getWriter();
+            if (verbose) {
+                // debug information requested
+                out.println("/*");
+                out.println("Cached CSS: " + host.getHostname() + ":" + actualUri);
+                out.println("Size: " + cacheObject.data.length + " bytes");
+                out.println("Imported uris:");
+                for (final ImportedAsset asset : cacheObject.imported) {
+                    out.println("  " + asset.uri);
+                }
+                out.println("*/");
+                out.println(new String(responseData));
+            } else {
+                out.write(new String(responseData));
+            }
+        } catch (IOException io) {
+             Logger.error(CSSPreProcessServlet.class, "Error trying to write response data ", io);
+        }
+    }
+
+    private Optional<FileAsset> getFileAsset(boolean live, User user, Identifier ident, long defLang) {
+        try {
+            final ContentletAPI contentletAPI = APILocator.getContentletAPI();
+            final FileAssetAPI fileAssetAPI = APILocator.getFileAssetAPI();
+            return Optional.of(fileAssetAPI.fromContentlet(
+             contentletAPI.findContentletByIdentifier(ident.getId(), live, defLang, user, true)));
+        } catch (DotDataException | DotSecurityException e) {
+            Logger.error(CSSPreProcessServlet.class,String.format(" file-asset [%s] is restricted to user [%s] for lang [%d]  . ", ident, user, defLang), e);
+        }
+        return Optional.empty();
+    }
+
+    private void sendError( final HttpServletResponse resp, final int code){
+        try {
+            resp.sendError(code);
+        } catch (IOException e) {
+            Logger.error(CSSPreProcessServlet.class, String.format("Error writing response code [%d]", code), e);
+        }
+    }
+
+
 
 }
