@@ -1,6 +1,6 @@
 {
   "name": "dotcms-ui",
-  "version": "23.2.0-next.14",
+  "version": "23.2.0-next.15",
   "license": "MIT",
   "engines": {
     "node": ">=16.13.2"
@@ -113,14 +113,14 @@
     "regenerator-runtime": "^0.13.9",
     "rxjs": "~6.6.3",
     "test": "^0.6.0",
-    "tslib": "^2.0.0",
+    "tslib": "^2.3.0",
     "zone.js": "0.11.4"
   },
   "devDependencies": {
     "@angular-devkit/build-angular": "14.2.1",
-    "@angular-eslint/eslint-plugin": "14.0.0",
-    "@angular-eslint/eslint-plugin-template": "14.0.0",
-    "@angular-eslint/template-parser": "14.0.0",
+    "@angular-eslint/eslint-plugin": "~14.0.4",
+    "@angular-eslint/eslint-plugin-template": "~14.0.4",
+    "@angular-eslint/template-parser": "~14.0.4",
     "@angular/cli": "~14.0.0",
     "@angular/compiler-cli": "14.2.0",
     "@angular/language-service": "14.2.0",
@@ -158,7 +158,7 @@
     "@types/jasmine": "4.0.3",
     "@types/jasminewd2": "~2.0.8",
     "@types/jest": "27.4.1",
-    "@types/node": "18.7.1",
+    "@types/node": "16.11.7",
     "@types/puppeteer": "^5.4.2",
     "@types/webpack": "4.41.21",
     "@typescript-eslint/eslint-plugin": "5.33.1",
@@ -179,6 +179,7 @@
     "jasmine-spec-reporter": "7.0.0",
     "jest": "27.5.1",
     "jest-cli": "^26.6.3",
+    "jest-environment-jsdom": "27.5.1",
     "jest-html-reporters": "^3.0.10",
     "jest-preset-angular": "11.1.2",
     "karma": "6.4.0",
@@ -189,7 +190,6 @@
     "karma-jasmine": "5.1.0",
     "karma-jasmine-html-reporter": "2.0.0",
     "mock-socket": "^9.0.3",
-    "mockdate": "^3.0.5",
     "monaco-editor": "^0.33.0",
     "npm": "^6.14.16",
     "postcss": "^8.4.18",

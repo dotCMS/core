@@ -6,27 +6,27 @@ import {
     of as observableOf,
     from as observableFrom
 } from 'rxjs';
-import { mockUser, LoginServiceMock } from '../../../../../test/login-service.mock';
+
 import { By } from '@angular/platform-browser';
 import { ComponentFixture, waitForAsync } from '@angular/core/testing';
 import { DebugElement, Component, Input, forwardRef, Output, EventEmitter } from '@angular/core';
 import { DotLoginAsComponent } from './dot-login-as.component';
-import { MockDotMessageService } from '../../../../../test/dot-message-service.mock';
-import { DOTTestBed } from '../../../../../test/dot-test-bed';
+import { LoginServiceMock, MockDotMessageService, mockUser } from '@dotcms/utils-testing';
+import { DOTTestBed } from '@dotcms/app/test/dot-test-bed';
 import { SEARCHABLE_NGFACES_MODULES } from '../../../_common/searchable-dropdown/searchable-dropdown.module';
-import { DotMessageService } from '@services/dot-message/dot-messages.service';
+import { DotMessageService } from '@dotcms/data-access';
 import { LoginService, User } from '@dotcms/dotcms-js';
-import { PaginatorService } from '@services/paginator';
+import { PaginatorService } from '@dotcms/data-access';
 import { ActivatedRoute } from '@angular/router';
 import { InputTextModule } from 'primeng/inputtext';
 import { ReactiveFormsModule, NG_VALUE_ACCESSOR } from '@angular/forms';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
-import { DotEventsService } from '@services/dot-events/dot-events.service';
+import { DotEventsService } from '@dotcms/data-access';
 import { DotDialogModule } from '@components/dot-dialog/dot-dialog.module';
 import { RouterTestingModule } from '@angular/router/testing';
 import { LOCATION_TOKEN } from '@dotcms/app/providers';
 import { DotNavigationService } from '@components/dot-navigation/services/dot-navigation.service';
-import { DotMenuService } from '@services/dot-menu.service';
+import { DotMenuService } from '@dotcms/app/api/services/dot-menu.service';
 
 @Component({
     selector: 'dot-searchable-dropdown',

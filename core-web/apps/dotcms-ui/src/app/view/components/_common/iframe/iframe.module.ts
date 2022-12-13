@@ -6,7 +6,7 @@ import { IframeComponent } from './iframe-component';
 import { DotLoadingIndicatorModule } from './dot-loading-indicator/dot-loading-indicator.module';
 import { IframePortletLegacyComponent } from './iframe-porlet-legacy';
 import { IframeOverlayService } from './service/iframe-overlay.service';
-import { DotCustomEventHandlerService } from '@services/dot-custom-event-handler/dot-custom-event-handler.service';
+import { DotCustomEventHandlerService } from '@dotcms/app/api/services/dot-custom-event-handler/dot-custom-event-handler.service';
 import { RouterModule } from '@angular/router';
 import { DotOverlayMaskModule } from '@components/_common/dot-overlay-mask/dot-overlay-mask.module';
 import { DotIframePortletLegacyResolver } from './service/dot-iframe-porlet-legacy-resolver.service';

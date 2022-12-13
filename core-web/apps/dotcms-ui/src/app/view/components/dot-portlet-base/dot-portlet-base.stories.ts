@@ -8,8 +8,8 @@ import { CheckboxModule } from 'primeng/checkbox';
 import { TabViewModule } from 'primeng/tabview';
 
 import { DotApiLinkModule } from '@components/dot-api-link/dot-api-link.module';
-import { DotMessageService } from '@services/dot-message/dot-messages.service';
-import { MockDotMessageService } from '@tests/dot-message-service.mock';
+import { DotMessageService } from '@dotcms/data-access';
+import { MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotPortletBaseComponent } from './dot-portlet-base.component';
 import { DotPortletBaseModule } from './dot-portlet-base.module';

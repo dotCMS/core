@@ -3,14 +3,14 @@ import { Component, OnInit, OnDestroy, AfterViewInit } from '@angular/core';
 import { FormGroup, Validators, UntypedFormBuilder } from '@angular/forms';
 import { DynamicDialogConfig, DynamicDialogRef } from 'primeng/dynamicdialog';
 import { map, startWith, takeUntil } from 'rxjs/operators';
-import { DotRole } from '@dotcms/app/shared/models/dot-role/dot-role.model';
-import { DotPageRenderState } from '../../shared/models';
+
 import {
     DotFavoritePageState,
     DotFavoritePageStore,
     DotFavoritePageActionState
 } from './store/dot-favorite-page.store';
-import { generateDotFavoritePageUrl } from '@dotcms/app/shared/dot-utils';
+import { DotPageRenderState, DotRole } from '@dotcms/dotcms-models';
+import { generateDotFavoritePageUrl } from '@dotcms/utils';
 
 export interface DotFavoritePageProps {
     pageRenderedHtml?: string;

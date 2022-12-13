@@ -2,15 +2,14 @@ import { TestBed } from '@angular/core/testing';
 
 import { DotEditLayoutService } from './dot-edit-layout.service';
 import { DotTemplateContainersCacheService } from '@services/dot-template-containers-cache/dot-template-containers-cache.service';
-import { mockDotContainers, processedContainers } from '@tests/dot-page-render.mock';
-import { CONTAINER_SOURCE } from '@models/container/dot-container.model';
+import { mockDotContainers, processedContainers } from '@dotcms/utils-testing';
 import {
-    DotLayoutBody,
     DotLayoutGrid,
     DotLayoutGridBox,
     DotContainerColumnBox
 } from '@models/dot-edit-layout-designer';
-import { dotContainerMapMock } from '@tests/dot-containers.mock';
+import { dotContainerMapMock } from '@dotcms/utils-testing';
+import { CONTAINER_SOURCE, DotLayoutBody } from '@dotcms/dotcms-models';
 
 describe('DotEditLayoutService', () => {
     const containers = dotContainerMapMock();
@@ -232,9 +231,8 @@ describe('DotEditLayoutService', () => {
                 uuid: 'INVALID'
             }
         ];
-        const containerColumnBox: DotContainerColumnBox[] = dotEditLayoutService.getDotLayoutSidebar(
-            rawContainers
-        );
+        const containerColumnBox: DotContainerColumnBox[] =
+            dotEditLayoutService.getDotLayoutSidebar(rawContainers);
         delete containerColumnBox[0].uuid;
         delete containerColumnBox[1].uuid;
 
@@ -252,18 +250,17 @@ describe('DotEditLayoutService', () => {
 
     it('Should set _canBeDesactivated to true', (done) => {
         dotEditLayoutService.changeDesactivateState(true);
-        dotEditLayoutService.canBeDesactivated$.subscribe((resp) =>{
+        dotEditLayoutService.canBeDesactivated$.subscribe((resp) => {
             expect(resp).toBeTruthy();
             done();
-        })
+        });
     });
 
     it('Should set _closeEditLayout to true', (done) => {
-        dotEditLayoutService.closeEditLayout$.subscribe((resp) =>{
+        dotEditLayoutService.closeEditLayout$.subscribe((resp) => {
             expect(resp).toBeTruthy();
             done();
-        })
+        });
         dotEditLayoutService.changeCloseEditLayoutState(true);
     });
-    
 });

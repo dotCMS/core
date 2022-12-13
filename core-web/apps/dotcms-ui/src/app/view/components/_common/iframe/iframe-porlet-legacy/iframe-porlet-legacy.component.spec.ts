@@ -5,7 +5,7 @@ import { ActivatedRoute } from '@angular/router';
 import { By } from '@angular/platform-browser';
 import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing';
 import { DebugElement } from '@angular/core';
-import { DotMenuService } from '@services/dot-menu.service';
+import { DotMenuService } from '@dotcms/app/api/services/dot-menu.service';
 import { IFrameModule } from '../index';
 import { IframePortletLegacyComponent } from './iframe-porlet-legacy.component';
 import { RouterTestingModule } from '@angular/router/testing';
@@ -23,32 +23,33 @@ import {
     DotEventsSocketURL,
     DotcmsConfigService
 } from '@dotcms/dotcms-js';
-import { DotCustomEventHandlerService } from '@services/dot-custom-event-handler/dot-custom-event-handler.service';
-import { DotContentTypeService } from '@services/dot-content-type/dot-content-type.service';
-import { LoginServiceMock } from '@tests/login-service.mock';
-import { CoreWebServiceMock } from '@tests/core-web.service.mock';
-import { DotRouterService } from '@services/dot-router/dot-router.service';
-import { MockDotRouterService } from '@tests/dot-router-service.mock';
+import { DotCustomEventHandlerService } from '@dotcms/app/api/services/dot-custom-event-handler/dot-custom-event-handler.service';
+import { DotContentTypeService } from '@dotcms/data-access';
+import { LoginServiceMock } from '@dotcms/utils-testing';
+import { CoreWebServiceMock } from '@dotcms/utils-testing';
+import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
+import { MockDotRouterService } from '@dotcms/utils-testing';
 import { DotContentletEditorService } from '@components/dot-contentlet-editor/services/dot-contentlet-editor.service';
-import { DotUiColorsService } from '@services/dot-ui-colors/dot-ui-colors.service';
-import { dotEventSocketURLFactory, MockDotUiColorsService } from '@tests/dot-test-bed';
+import { DotUiColorsService } from '@dotcms/app/api/services/dot-ui-colors/dot-ui-colors.service';
+
 import { DotIframeService } from '@components/_common/iframe/service/dot-iframe/dot-iframe.service';
 import { DotDownloadBundleDialogModule } from '@components/_common/dot-download-bundle-dialog/dot-download-bundle-dialog.module';
-import { DotWorkflowEventHandlerService } from '@services/dot-workflow-event-handler/dot-workflow-event-handler.service';
-import { PushPublishService } from '@services/push-publish/push-publish.service';
-import { DotCurrentUserService } from '@services/dot-current-user/dot-current-user.service';
+import { DotWorkflowEventHandlerService } from '@dotcms/app/api/services/dot-workflow-event-handler/dot-workflow-event-handler.service';
+import { PushPublishService } from '@dotcms/app/api/services/push-publish/push-publish.service';
+import { DotCurrentUserService } from '@dotcms/data-access';
 import { DotMessageDisplayService } from '@components/dot-message-display/services';
-import { DotFormatDateService } from '@services/dot-format-date-service';
-import { DotWizardService } from '@services/dot-wizard/dot-wizard.service';
-import { DotHttpErrorManagerService } from '@services/dot-http-error-manager/dot-http-error-manager.service';
-import { DotAlertConfirmService } from '@services/dot-alert-confirm';
+import { DotFormatDateService } from '@dotcms/app/api/services/dot-format-date-service';
+import { DotWizardService } from '@dotcms/app/api/services/dot-wizard/dot-wizard.service';
+import { DotHttpErrorManagerService } from '@dotcms/app/api/services/dot-http-error-manager/dot-http-error-manager.service';
+import { DotAlertConfirmService } from '@dotcms/data-access';
 import { ConfirmationService } from 'primeng/api';
-import { DotWorkflowActionsFireService } from '@services/dot-workflow-actions-fire/dot-workflow-actions-fire.service';
+import { DotWorkflowActionsFireService } from '@dotcms/data-access';
 import { DotGlobalMessageService } from '@components/_common/dot-global-message/dot-global-message.service';
-import { DotEventsService } from '@services/dot-events/dot-events.service';
-import { DotLicenseService } from '@services/dot-license/dot-license.service';
+import { DotEventsService } from '@dotcms/data-access';
+import { DotLicenseService } from '@dotcms/data-access';
 import { HttpClientTestingModule } from '@angular/common/http/testing';
-import { SiteServiceMock } from '@tests/site-service.mock';
+import { SiteServiceMock } from '@dotcms/utils-testing';
+import { dotEventSocketURLFactory, MockDotUiColorsService } from '@dotcms/app/test/dot-test-bed';
 
 const routeDatamock = {
     canAccessPortlet: true
@@ -80,67 +81,65 @@ xdescribe('IframePortletLegacyComponent', () => {
     let route: ActivatedRoute;
     const siteServiceMock = new SiteServiceMock();
 
-    beforeEach(
-        waitForAsync(() => {
-            TestBed.configureTestingModule({
-                declarations: [],
-                imports: [
-                    IFrameModule,
-                    RouterTestingModule,
-                    DotDownloadBundleDialogModule,
-                    HttpClientTestingModule
-                ],
-                providers: [
-                    DotContentTypeService,
-                    DotCustomEventHandlerService,
-                    DotPushPublishDialogService,
-                    DotMenuService,
-                    {
-                        provide: LoginService,
-                        useClass: LoginServiceMock
-                    },
-                    { provide: SiteService, useValue: siteServiceMock },
-                    {
-                        provide: ActivatedRoute,
-                        useClass: ActivatedRouteMock
-                    },
-                    { provide: CoreWebService, useClass: CoreWebServiceMock },
-                    { provide: DotRouterService, useClass: MockDotRouterService },
-                    { provide: DotUiColorsService, useClass: MockDotUiColorsService },
-                    DotContentletEditorService,
-                    DotIframeService,
-                    DotWorkflowEventHandlerService,
-                    PushPublishService,
-                    ApiRoot,
-                    UserModel,
-                    LoggerService,
-                    StringUtils,
-                    DotCurrentUserService,
-                    DotMessageDisplayService,
-                    DotcmsEventsService,
-                    DotEventsSocket,
-                    { provide: DotEventsSocketURL, useFactory: dotEventSocketURLFactory },
-                    DotcmsConfigService,
-                    DotFormatDateService,
-                    DotWizardService,
-                    DotHttpErrorManagerService,
-                    DotAlertConfirmService,
-                    ConfirmationService,
-                    DotWorkflowActionsFireService,
-                    DotGlobalMessageService,
-                    DotEventsService,
-                    DotLicenseService
-                ]
-            });
+    beforeEach(waitForAsync(() => {
+        TestBed.configureTestingModule({
+            declarations: [],
+            imports: [
+                IFrameModule,
+                RouterTestingModule,
+                DotDownloadBundleDialogModule,
+                HttpClientTestingModule
+            ],
+            providers: [
+                DotContentTypeService,
+                DotCustomEventHandlerService,
+                DotPushPublishDialogService,
+                DotMenuService,
+                {
+                    provide: LoginService,
+                    useClass: LoginServiceMock
+                },
+                { provide: SiteService, useValue: siteServiceMock },
+                {
+                    provide: ActivatedRoute,
+                    useClass: ActivatedRouteMock
+                },
+                { provide: CoreWebService, useClass: CoreWebServiceMock },
+                { provide: DotRouterService, useClass: MockDotRouterService },
+                { provide: DotUiColorsService, useClass: MockDotUiColorsService },
+                DotContentletEditorService,
+                DotIframeService,
+                DotWorkflowEventHandlerService,
+                PushPublishService,
+                ApiRoot,
+                UserModel,
+                LoggerService,
+                StringUtils,
+                DotCurrentUserService,
+                DotMessageDisplayService,
+                DotcmsEventsService,
+                DotEventsSocket,
+                { provide: DotEventsSocketURL, useFactory: dotEventSocketURLFactory },
+                DotcmsConfigService,
+                DotFormatDateService,
+                DotWizardService,
+                DotHttpErrorManagerService,
+                DotAlertConfirmService,
+                ConfirmationService,
+                DotWorkflowActionsFireService,
+                DotGlobalMessageService,
+                DotEventsService,
+                DotLicenseService
+            ]
+        });
 
-            fixture = TestBed.createComponent(IframePortletLegacyComponent);
-            comp = fixture.componentInstance;
-            de = fixture.debugElement;
-            dotMenuService = de.injector.get(DotMenuService);
-            dotCustomEventHandlerService = de.injector.get(DotCustomEventHandlerService);
-            route = de.injector.get(ActivatedRoute);
-        })
-    );
+        fixture = TestBed.createComponent(IframePortletLegacyComponent);
+        comp = fixture.componentInstance;
+        de = fixture.debugElement;
+        dotMenuService = de.injector.get(DotMenuService);
+        dotCustomEventHandlerService = de.injector.get(DotCustomEventHandlerService);
+        route = de.injector.get(ActivatedRoute);
+    }));
 
     it('should set query param url to the dot-iframe src', () => {
         route.queryParams = of({ url: 'hello/world' });
