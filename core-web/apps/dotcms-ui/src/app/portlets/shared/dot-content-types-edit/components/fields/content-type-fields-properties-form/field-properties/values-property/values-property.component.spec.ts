@@ -1,8 +1,8 @@
 import { ValuesPropertyComponent } from './index';
 import { ComponentFixture, waitForAsync, TestBed } from '@angular/core/testing';
 import { DebugElement, Component, Input, forwardRef } from '@angular/core';
-import { MockDotMessageService } from '@tests/dot-message-service.mock';
-import { DotMessageService } from '@services/dot-message/dot-messages.service';
+import { MockDotMessageService } from '@dotcms/utils-testing';
+import { DotMessageService } from '@dotcms/data-access';
 import {
     UntypedFormGroup,
     UntypedFormControl,
@@ -13,7 +13,7 @@ import {
 } from '@angular/forms';
 import { By } from '@angular/platform-browser';
 import { DotFieldHelperModule } from '@components/dot-field-helper/dot-field-helper.module';
-import { dotcmsContentTypeFieldBasicMock } from '@tests/dot-content-types.mock';
+import { dotcmsContentTypeFieldBasicMock } from '@dotcms/utils-testing';
 import { DotPipesModule } from '@pipes/dot-pipes.module';
 
 @Component({
@@ -62,35 +62,33 @@ describe('ValuesPropertyComponent', () => {
         'Validation-RegEx': 'Validation-RegEx'
     });
 
-    beforeEach(
-        waitForAsync(() => {
-            TestBed.configureTestingModule({
-                declarations: [
-                    TestFieldValidationMessageComponent,
-                    ValuesPropertyComponent,
-                    DotTextareaContentMockComponent
-                ],
-                imports: [DotFieldHelperModule, ReactiveFormsModule, DotPipesModule],
-                providers: [{ provide: DotMessageService, useValue: messageServiceMock }]
-            }).compileComponents();
+    beforeEach(waitForAsync(() => {
+        TestBed.configureTestingModule({
+            declarations: [
+                TestFieldValidationMessageComponent,
+                ValuesPropertyComponent,
+                DotTextareaContentMockComponent
+            ],
+            imports: [DotFieldHelperModule, ReactiveFormsModule, DotPipesModule],
+            providers: [{ provide: DotMessageService, useValue: messageServiceMock }]
+        }).compileComponents();
 
-            fixture = TestBed.createComponent(ValuesPropertyComponent);
-            comp = fixture.componentInstance;
-            de = fixture.debugElement;
+        fixture = TestBed.createComponent(ValuesPropertyComponent);
+        comp = fixture.componentInstance;
+        de = fixture.debugElement;
 
-            comp.group = new UntypedFormGroup({
-                values: new UntypedFormControl('')
-            });
-            comp.property = {
-                name: 'values',
-                value: 'value',
-                field: {
-                    ...dotcmsContentTypeFieldBasicMock
-                }
-            };
-            comp.helpText = 'Helper Text';
-        })
-    );
+        comp.group = new UntypedFormGroup({
+            values: new UntypedFormControl('')
+        });
+        comp.property = {
+            name: 'values',
+            value: 'value',
+            field: {
+                ...dotcmsContentTypeFieldBasicMock
+            }
+        };
+        comp.helpText = 'Helper Text';
+    }));
 
     it('should have a form', () => {
         const group = new UntypedFormGroup({});

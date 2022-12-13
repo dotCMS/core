@@ -2,7 +2,7 @@ import { NgModule } from '@angular/core';
 import { CommonModule } from '@angular/common';
 
 import { DotAppsConfigurationComponent } from './dot-apps-configuration.component';
-import { DotAppsService } from '@services/dot-apps/dot-apps.service';
+import { DotAppsService } from '@dotcms/app/api/services/dot-apps/dot-apps.service';
 import { DotAppsConfigurationResolver } from './dot-apps-configuration-resolver.service';
 import { DotAvatarModule } from '@components/_common/dot-avatar/dot-avatar.module';
 import { DotActionButtonModule } from '@components/_common/dot-action-button/dot-action-button.module';

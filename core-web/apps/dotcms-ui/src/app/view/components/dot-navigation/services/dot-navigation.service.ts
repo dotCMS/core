@@ -8,11 +8,11 @@ import { Auth } from '@dotcms/dotcms-js';
 import { DotcmsEventsService, LoginService } from '@dotcms/dotcms-js';
 
 import { DotMenu, DotMenuItem } from '@models/navigation';
-import { DotMenuService } from '@services/dot-menu.service';
-import { DotRouterService } from '@services/dot-router/dot-router.service';
+import { DotMenuService } from '@dotcms/app/api/services/dot-menu.service';
+import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
 import { DotIframeService } from '../../_common/iframe/service/dot-iframe/dot-iframe.service';
-import { DotEventsService } from '@services/dot-events/dot-events.service';
-import { DotLocalstorageService } from '@services/dot-localstorage/dot-localstorage.service';
+import { DotEventsService } from '@dotcms/data-access';
+import { DotLocalstorageService } from '@dotcms/data-access';
 import { Title } from '@angular/platform-browser';
 
 export const replaceSectionsMap = {

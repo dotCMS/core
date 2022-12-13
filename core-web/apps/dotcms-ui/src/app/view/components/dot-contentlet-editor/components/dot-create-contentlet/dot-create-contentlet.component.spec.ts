@@ -5,19 +5,19 @@ import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing';
 import { Component, DebugElement, Input } from '@angular/core';
 import { DotContentletEditorService } from '../../services/dot-contentlet-editor.service';
 import { DotCreateContentletComponent } from './dot-create-contentlet.component';
-import { DotRouterService } from '@services/dot-router/dot-router.service';
+import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
 import { CoreWebService, LoginService } from '@dotcms/dotcms-js';
-import { LoginServiceMock } from '../../../../../test/login-service.mock';
+import { LoginServiceMock } from '@dotcms/utils-testing';
 import { RouterTestingModule } from '@angular/router/testing';
-import { MockDotRouterService } from '@tests/dot-router-service.mock';
-import { CoreWebServiceMock } from '@tests/core-web.service.mock';
+import { MockDotRouterService } from '@dotcms/utils-testing';
+import { CoreWebServiceMock } from '@dotcms/utils-testing';
 import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { Observable, of } from 'rxjs';
-import { DotFormatDateService } from '@services/dot-format-date-service';
+import { DotFormatDateService } from '@dotcms/app/api/services/dot-format-date-service';
 import { DotIframeService } from '@components/_common/iframe/service/dot-iframe/dot-iframe.service';
 import { ActivatedRoute } from '@angular/router';
 import { DotContentletWrapperComponent } from '../dot-contentlet-wrapper/dot-contentlet-wrapper.component';
-import { DotAlertConfirmService } from '@services/dot-alert-confirm';
+import { DotAlertConfirmService } from '@dotcms/data-access';
 import { ConfirmationService } from 'primeng/api';
 
 class DotContentletEditorServiceMock {
@@ -47,45 +47,43 @@ describe('DotCreateContentletComponent', () => {
     const dotContentletEditorServiceMock: DotContentletEditorServiceMock =
         new DotContentletEditorServiceMock();
 
-    beforeEach(
-        waitForAsync(() => {
-            TestBed.configureTestingModule({
-                imports: [RouterTestingModule, HttpClientTestingModule],
-                declarations: [
-                    DotCreateContentletComponent,
-                    DotContentletWrapperComponent,
-                    DotIframeMockComponent
-                ],
-                providers: [
-                    DotIframeService,
-                    DotFormatDateService,
-                    DotAlertConfirmService,
-                    ConfirmationService,
-                    {
-                        provide: DotContentletEditorService,
-                        useValue: dotContentletEditorServiceMock
-                    },
-                    {
-                        provide: LoginService,
-                        useClass: LoginServiceMock
-                    },
-                    {
-                        provide: DotRouterService,
-                        useClass: MockDotRouterService
-                    },
-                    { provide: CoreWebService, useClass: CoreWebServiceMock },
-                    {
-                        provide: ActivatedRoute,
-                        useValue: {
-                            get data() {
-                                return of({ url: undefined });
-                            }
+    beforeEach(waitForAsync(() => {
+        TestBed.configureTestingModule({
+            imports: [RouterTestingModule, HttpClientTestingModule],
+            declarations: [
+                DotCreateContentletComponent,
+                DotContentletWrapperComponent,
+                DotIframeMockComponent
+            ],
+            providers: [
+                DotIframeService,
+                DotFormatDateService,
+                DotAlertConfirmService,
+                ConfirmationService,
+                {
+                    provide: DotContentletEditorService,
+                    useValue: dotContentletEditorServiceMock
+                },
+                {
+                    provide: LoginService,
+                    useClass: LoginServiceMock
+                },
+                {
+                    provide: DotRouterService,
+                    useClass: MockDotRouterService
+                },
+                { provide: CoreWebService, useClass: CoreWebServiceMock },
+                {
+                    provide: ActivatedRoute,
+                    useValue: {
+                        get data() {
+                            return of({ url: undefined });
                         }
                     }
-                ]
-            });
-        })
-    );
+                }
+            ]
+        });
+    }));
 
     beforeEach(() => {
         fixture = TestBed.createComponent(DotCreateContentletComponent);

@@ -1,11 +1,11 @@
 import { HintPropertyComponent } from './index';
 import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing';
 import { DebugElement } from '@angular/core';
-import { MockDotMessageService } from '@tests/dot-message-service.mock';
-import { DotMessageService } from '@services/dot-message/dot-messages.service';
+import { MockDotMessageService } from '@dotcms/utils-testing';
+import { DotMessageService } from '@dotcms/data-access';
 import { UntypedFormGroup, UntypedFormControl, ReactiveFormsModule } from '@angular/forms';
 import { By } from '@angular/platform-browser';
-import { dotcmsContentTypeFieldBasicMock } from '@tests/dot-content-types.mock';
+import { dotcmsContentTypeFieldBasicMock } from '@dotcms/utils-testing';
 import { DotPipesModule } from '@pipes/dot-pipes.module';
 
 describe('HintPropertyComponent', () => {
@@ -15,18 +15,16 @@ describe('HintPropertyComponent', () => {
         Hint: 'Hint'
     });
 
-    beforeEach(
-        waitForAsync(() => {
-            TestBed.configureTestingModule({
-                declarations: [HintPropertyComponent],
-                imports: [ReactiveFormsModule, DotPipesModule],
-                providers: [{ provide: DotMessageService, useValue: messageServiceMock }]
-            }).compileComponents();
+    beforeEach(waitForAsync(() => {
+        TestBed.configureTestingModule({
+            declarations: [HintPropertyComponent],
+            imports: [ReactiveFormsModule, DotPipesModule],
+            providers: [{ provide: DotMessageService, useValue: messageServiceMock }]
+        }).compileComponents();
 
-            fixture = TestBed.createComponent(HintPropertyComponent);
-            comp = fixture.componentInstance;
-        })
-    );
+        fixture = TestBed.createComponent(HintPropertyComponent);
+        comp = fixture.componentInstance;
+    }));
 
     it('should have a form', () => {
         const group = new UntypedFormGroup({});

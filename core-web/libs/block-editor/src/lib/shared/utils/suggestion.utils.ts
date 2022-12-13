@@ -89,6 +89,8 @@ export const changeToItems: DotMenuItem[] = [
     ...suggestionOptions.filter((item) => !(item.id == 'horizontalLine' || item.id == 'table'))
 ];
 
+export const tableChangeToItems: DotMenuItem[] = [...headings, ...paragraph, ...list];
+
 export const SuggestionPopperModifiers = [
     {
         name: 'flip',

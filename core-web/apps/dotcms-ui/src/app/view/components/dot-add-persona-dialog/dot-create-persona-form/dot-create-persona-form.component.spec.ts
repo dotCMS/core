@@ -1,10 +1,10 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { DotCreatePersonaFormComponent } from './dot-create-persona-form.component';
 import { DebugElement } from '@angular/core';
-import { MockDotMessageService } from '@tests/dot-message-service.mock';
-import { DOTTestBed } from '@tests/dot-test-bed';
-import { DotMessageService } from '@services/dot-message/dot-messages.service';
-import { mockSites, SiteServiceMock } from '@tests/site-service.mock';
+import { MockDotMessageService } from '@dotcms/utils-testing';
+import { DOTTestBed } from '@dotcms/app/test/dot-test-bed';
+import { DotMessageService } from '@dotcms/data-access';
+import { mockSites, SiteServiceMock } from '@dotcms/utils-testing';
 import { By } from '@angular/platform-browser';
 import { FileUploadModule } from 'primeng/fileupload';
 import { DotFieldValidationMessageModule } from '@components/_common/dot-field-validation-message/dot-file-validation-message.module';

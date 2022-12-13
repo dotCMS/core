@@ -8,8 +8,8 @@ import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.ejb.UserUtil;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
-import java.util.Calendar;
-import java.util.Date;
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import org.apache.commons.lang.RandomStringUtils;
 import org.junit.Assert;
 import org.junit.BeforeClass;
@@ -32,12 +32,13 @@ public class ResetPasswordTokenUtilTest {
      */
     @Test
     public void test_createToken_success(){
-        final String token = ResetPasswordTokenUtil.createToken();
-
-        Assert.assertTrue(UtilMethods.isSet(token));
-        Assert.assertTrue(token.matches("^[a-zA-Z0-9]+:[0-9]+$"));
-        final String randomPart = token.substring(0,token.indexOf(':'));
-        Assert.assertEquals(Config.getIntProperty( "RECOVER_PASSWORD_TOKEN_LENGTH", 30 ), randomPart.length());
+        for(int i=0;i<10;i++) {
+            final String token = ResetPasswordTokenUtil.createToken();
+            Assert.assertTrue(UtilMethods.isSet(token));
+            Assert.assertTrue("token:" + token + " matches " + ResetPasswordTokenUtil.VALIDATE_TOKEN_REGEX,token.matches(ResetPasswordTokenUtil.VALIDATE_TOKEN_REGEX));
+            final String randomPart = token.substring(0,token.indexOf(':'));
+            Assert.assertEquals(Config.getIntProperty( "RECOVER_PASSWORD_TOKEN_LENGTH", 30 ), randomPart.length());
+        }
     }
 
     /**
@@ -110,14 +111,62 @@ public class ResetPasswordTokenUtilTest {
     @Test(expected = DotInvalidTokenException.class)
     public void test_checkToken_tokenExpired_throwDotInvalidTokenException() throws Exception {
         final User newUser = new UserDataGen().roles(TestUserUtils.getFrontendRole(), TestUserUtils.getBackendRole()).nextPersisted();
-        final Calendar timeTwoHoursAgo = Calendar.getInstance();
-        timeTwoHoursAgo.setTime(new Date());
-        timeTwoHoursAgo.add(Calendar.HOUR,-2);
+        final Instant oneHourAgo = Instant.now().minus(1, ChronoUnit.HOURS);
+
         final String token = RandomStringUtils.randomAlphanumeric( Config.getIntProperty( "RECOVER_PASSWORD_TOKEN_LENGTH", 30 ) )
-                + StringPool.COLON + timeTwoHoursAgo.getTimeInMillis();
+                + StringPool.COLON + oneHourAgo.toEpochMilli();
         newUser.setIcqId(token);
         UserUtil.update(newUser);
 
         ResetPasswordTokenUtil.checkToken(newUser,token);
     }
+
+
+    /**
+     * Method to test: {@link ResetPasswordTokenUtil#checkToken(User, String)}
+     * Given Scenario: Create an user and a token, associate the token to the user (icqId field).
+     *                  But the token created was 2 hours ago.
+     * ExpectedResult: DotInvalidTokenException, since the token is expired (20 min is the default TTL of the token).
+     */
+    @Test(expected = DotInvalidTokenException.class)
+    public void test_checkToken_tokenExpired_21_minutes_throwDotInvalidTokenException() throws Exception {
+        long minutes = Config.getIntProperty("RECOVER_PASSWORD_TOKEN_TTL_MINS", 10);
+        final User newUser = new UserDataGen().roles(TestUserUtils.getFrontendRole(), TestUserUtils.getBackendRole()).nextPersisted();
+        final Instant twentyMinutesAgo = Instant.now().minus(minutes, ChronoUnit.MINUTES).minus(1,ChronoUnit.SECONDS);
+
+        final String token = RandomStringUtils.randomAlphanumeric( Config.getIntProperty( "RECOVER_PASSWORD_TOKEN_LENGTH", 30 ) )
+                + StringPool.COLON + twentyMinutesAgo.toEpochMilli();
+        newUser.setIcqId(token);
+        UserUtil.update(newUser);
+
+        ResetPasswordTokenUtil.checkToken(newUser,token);
+    }
+
+    /**
+     * Method to test: {@link ResetPasswordTokenUtil#checkToken(User, String)}
+     * Given Scenario: Create an user and a token, associate the token to the user (icqId field).
+     *                  But the token created was 2 hours ago.
+     * ExpectedResult: DotInvalidTokenException, since the token is expired (20 min is the default TTL of the token).
+     */
+    @Test
+    public void test_checkToken_tokenExpired_19_minutes_throwDotInvalidTokenException() throws Exception {
+        long minutes = Config.getIntProperty("RECOVER_PASSWORD_TOKEN_TTL_MINS", 10);
+        minutes = minutes-1;
+        final User newUser = new UserDataGen().roles(TestUserUtils.getFrontendRole(), TestUserUtils.getBackendRole()).nextPersisted();
+        final Instant twentyMinutesAgo = Instant.now().minus(minutes, ChronoUnit.MINUTES);
+
+        final String token = RandomStringUtils.randomAlphanumeric( Config.getIntProperty( "RECOVER_PASSWORD_TOKEN_LENGTH", 30 ) )
+                + StringPool.COLON + twentyMinutesAgo.toEpochMilli();
+        newUser.setIcqId(token);
+        UserUtil.update(newUser);
+        try {
+            ResetPasswordTokenUtil.checkToken(newUser,token);
+            Assert.assertTrue("token is valid 19 minutes", true);
+        }
+        catch(DotInvalidTokenException e) {
+            Assert.assertTrue("token should be valid for 19 minutes", false);
+        }
+    }
+
+
 }

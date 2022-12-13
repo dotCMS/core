@@ -1,17 +1,16 @@
 import { TestBed } from '@angular/core/testing';
-import { DotContentTypeService } from '@services/dot-content-type';
+import { DotContentTypeService } from '@dotcms/data-access';
 import { of, throwError } from 'rxjs';
 import { DotContentTypeStore } from '@portlets/shared/dot-content-types-listing/dot-content-type.store';
 import { HttpClientTestingModule } from '@angular/common/http/testing';
-import { DotHttpErrorManagerService } from '@services/dot-http-error-manager/dot-http-error-manager.service';
+import { DotHttpErrorManagerService } from '@dotcms/app/api/services/dot-http-error-manager/dot-http-error-manager.service';
 import { RouterTestingModule } from '@angular/router/testing';
 import { Router } from '@angular/router';
 import { DotCopyContentTypeDialogFormFields } from '@dotcms/dotcms-models';
 import { CoreWebService } from '@dotcms/dotcms-js';
-import { CoreWebServiceMock } from '@tests/core-web.service.mock';
+import { CoreWebServiceMock, dotcmsContentTypeBasicMock } from '@dotcms/utils-testing';
 import { HttpErrorResponse } from '@angular/common/http';
-import { mockResponseView } from '@tests/response-view.mock';
-import { dotcmsContentTypeBasicMock } from '@dotcms/app/test/dot-content-types.mock';
+import { mockResponseView } from '@dotcms/utils-testing';
 
 describe('DotContentTypeComponentStore', () => {
     let store: DotContentTypeStore;

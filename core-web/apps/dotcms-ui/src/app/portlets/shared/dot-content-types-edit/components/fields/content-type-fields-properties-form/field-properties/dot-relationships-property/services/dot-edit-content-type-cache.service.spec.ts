@@ -1,6 +1,6 @@
 import { DotEditContentTypeCacheService } from './dot-edit-content-type-cache.service';
 import { DotCMSContentType } from '@dotcms/dotcms-models';
-import { dotcmsContentTypeBasicMock } from '@tests/dot-content-types.mock';
+import { dotcmsContentTypeBasicMock } from '@dotcms/utils-testing';
 
 const contentTypeMock: DotCMSContentType = {
     ...dotcmsContentTypeBasicMock,

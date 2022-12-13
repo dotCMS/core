@@ -1,16 +1,16 @@
 import { CategoriesPropertyComponent } from './categories-property.component';
 import { ComponentFixture, waitForAsync } from '@angular/core/testing';
 import { DebugElement, Injectable, Input, Output, EventEmitter, Component } from '@angular/core';
-import { MockDotMessageService } from '@tests/dot-message-service.mock';
-import { DOTTestBed } from '@tests/dot-test-bed';
-import { PaginatorService } from '@services/paginator';
-import { DotMessageService } from '@services/dot-message/dot-messages.service';
+import { MockDotMessageService } from '@dotcms/utils-testing';
+import { DOTTestBed } from '@dotcms/app/test/dot-test-bed';
+import { PaginatorService } from '@dotcms/data-access';
+import { DotMessageService } from '@dotcms/data-access';
 import { PaginationEvent } from '@components/_common/searchable-dropdown/component';
 
 import { NgControl, UntypedFormGroup } from '@angular/forms';
 import { By } from '@angular/platform-browser';
 import { of } from 'rxjs';
-import { dotcmsContentTypeFieldBasicMock } from '@tests/dot-content-types.mock';
+import { dotcmsContentTypeFieldBasicMock } from '@dotcms/utils-testing';
 
 @Component({
     selector: 'dot-searchable-dropdown',
@@ -68,27 +68,25 @@ describe('CategoriesPropertyComponent', () => {
     });
     let paginatorService: PaginatorService;
 
-    beforeEach(
-        waitForAsync(() => {
-            DOTTestBed.configureTestingModule({
-                declarations: [
-                    CategoriesPropertyComponent,
-                    TestFieldValidationMessageComponent,
-                    TestSearchableDropdownComponent
-                ],
-                imports: [],
-                providers: [
-                    { provide: PaginatorService, useClass: TestPaginatorService },
-                    { provide: DotMessageService, useValue: messageServiceMock }
-                ]
-            });
+    beforeEach(waitForAsync(() => {
+        DOTTestBed.configureTestingModule({
+            declarations: [
+                CategoriesPropertyComponent,
+                TestFieldValidationMessageComponent,
+                TestSearchableDropdownComponent
+            ],
+            imports: [],
+            providers: [
+                { provide: PaginatorService, useClass: TestPaginatorService },
+                { provide: DotMessageService, useValue: messageServiceMock }
+            ]
+        });
 
-            fixture = DOTTestBed.createComponent(CategoriesPropertyComponent);
-            de = fixture.debugElement;
-            comp = fixture.componentInstance;
-            paginatorService = de.injector.get(PaginatorService);
-        })
-    );
+        fixture = DOTTestBed.createComponent(CategoriesPropertyComponent);
+        de = fixture.debugElement;
+        comp = fixture.componentInstance;
+        paginatorService = de.injector.get(PaginatorService);
+    }));
 
     it('should have a form', () => {
         const group = new UntypedFormGroup({});

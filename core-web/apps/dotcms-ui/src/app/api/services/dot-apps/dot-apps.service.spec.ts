@@ -1,26 +1,27 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-
-import { DotAppsService } from './dot-apps.service';
-import {
-    DotApps,
-    DotAppsImportConfiguration,
-    DotAppsSaveData
-} from '@shared/models/dot-apps/dot-apps.model';
-import { DotHttpErrorManagerService } from '@services/dot-http-error-manager/dot-http-error-manager.service';
-import { CoreWebService, LoginService } from '@dotcms/dotcms-js';
-import { LoginServiceMock } from '@tests/login-service.mock';
+import { throwError } from 'rxjs';
 import { TestBed, getTestBed, fakeAsync, tick } from '@angular/core/testing';
 import { HttpTestingController, HttpClientTestingModule } from '@angular/common/http/testing';
-import { CoreWebServiceMock } from '@tests/core-web.service.mock';
-import { DotAlertConfirmService } from '@services/dot-alert-confirm';
+
 import { ConfirmationService } from 'primeng/api';
-import { DotFormatDateService } from '@services/dot-format-date-service';
-import { MockDotRouterService } from '@tests/dot-router-service.mock';
-import { DotRouterService } from '@services/dot-router/dot-router.service';
-import { mockResponseView } from '@tests/response-view.mock';
-import { throwError } from 'rxjs';
-import * as dotUtils from '@shared/dot-utils';
-import { DotFormatDateServiceMock } from '@dotcms/app/test/format-date-service.mock';
+
+import { CoreWebService, LoginService } from '@dotcms/dotcms-js';
+
+import { DotAppsService } from './dot-apps.service';
+import { DotApps, DotAppsImportConfiguration, DotAppsSaveData } from '@dotcms/dotcms-models';
+
+import { DotFormatDateServiceMock, LoginServiceMock } from '@dotcms/utils-testing';
+import { CoreWebServiceMock } from '@dotcms/utils-testing';
+import { mockResponseView } from '@dotcms/utils-testing';
+import { MockDotRouterService } from '@dotcms/utils-testing';
+
+import { DotHttpErrorManagerService } from '../dot-http-error-manager/dot-http-error-manager.service';
+import { DotRouterService } from '../dot-router/dot-router.service';
+import { DotFormatDateService } from '../dot-format-date-service';
+import { DotAlertConfirmService } from '@dotcms/data-access';
+
+// INFO: needs to import this way so we can spy on.
+import * as dotUtils from '@dotcms/utils/lib/dot-utils';
 
 const mockDotApps = [
     {

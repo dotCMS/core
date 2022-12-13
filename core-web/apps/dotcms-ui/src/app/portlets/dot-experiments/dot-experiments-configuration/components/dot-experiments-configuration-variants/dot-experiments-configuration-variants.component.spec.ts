@@ -2,16 +2,12 @@ import { DotExperimentsConfigurationVariantsComponent } from './dot-experiments-
 import { byTestId, createComponentFactory, Spectator } from '@ngneat/spectator';
 import { ButtonModule } from 'primeng/button';
 import { Card, CardModule } from 'primeng/card';
-import { DotMessageService } from '@services/dot-message/dot-messages.service';
-import { MockDotMessageService } from '@tests/dot-message-service.mock';
+import { DotMessageService } from '@dotcms/data-access';
+import { MockDotMessageService } from '@dotcms/utils-testing';
 import { DecimalPipe } from '@angular/common';
-import {
-    DEFAULT_VARIANT_ID,
-    SidebarStatus
-} from '@portlets/dot-experiments/shared/models/dot-experiments-constants';
+
 import { DotExperimentsConfigurationVariantsAddComponent } from '@portlets/dot-experiments/dot-experiments-configuration/components/dot-experiments-configuration-variants-add/dot-experiments-configuration-variants-add.component';
-import { Status } from '@portlets/shared/models/shared-models';
-import { ExperimentSteps } from '@portlets/dot-experiments/shared/models/dot-experiments.model';
+import { DEFAULT_VARIANT_ID, ExperimentSteps, SidebarStatus, Status } from '@dotcms/dotcms-models';
 
 const messageServiceMock = new MockDotMessageService({
     'experiments.configure.variants.weight': 'weight',
