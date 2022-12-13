@@ -41,6 +41,8 @@ public final class PostgresCacheTransport implements CacheTransport {
     private final Lazy<String> topicName = Lazy.of(() -> "dotCMSCache_" + ClusterFactory.getClusterId());
     private final Lazy<String> serverId = Lazy.of(() ->  APILocator.getShortyAPI().shortify(APILocator.getServerAPI().readServerId()));
     
+    private final int KILL_ON_FAILURES = Config.getIntProperty("PGLISTENER_KILL_ON_FAILURES", 1000);
+    private final int SLEEP_BETWEEN_RUNS = Config.getIntProperty("PGLISTENER_SLEEP_BETWEEN_RUNS", 500);
     
     private final AtomicBoolean isInitialized = new AtomicBoolean(false);
     private static final String PG_NOTIFY_SQL = "SELECT pg_notify(?,?)";
@@ -58,24 +60,30 @@ public final class PostgresCacheTransport implements CacheTransport {
         
         
         if (!LicenseManager.getInstance().isEnterprise()) {
+            Logger.info(getClass(), "No Enterprise License : No PostgresCacheTransport");
             return;
         }
         Logger.info(getClass(), "Starting PostgresCacheTransport");
+        restartListener();
+    }
+
+    
+    
+    private synchronized void restartListener() {
+        if (listener != null) {
+            return;
+        }
         listener = new PGListener();
         listener.start();
 
     }
-
+    
+    
 
     class PGListener extends Thread {
 
 
-
-        private final int KILL_ON_FAILURES = Config.getIntProperty("PGLISTENER_KILL_ON_FAILURES", 1000);
-        private final int SLEEP_BETWEEN_RUNS = Config.getIntProperty("PGLISTENER_SLEEP_BETWEEN_RUNS", 500);
-
         HikariProxyConnection conn = null;
-
 
         private void connect() {
             CloseUtils.closeQuietly(conn);
@@ -104,6 +112,7 @@ public final class PostgresCacheTransport implements CacheTransport {
 
         @Override
         public void run() {
+            connect() ;
             while (isInitialized.get()) {
                 try {
                     if(conn==null || conn.isClosed()) {
@@ -117,7 +126,8 @@ public final class PostgresCacheTransport implements CacheTransport {
                     
                     
                     org.postgresql.PGNotification[] notifications = pgConn.getNotifications();
-                    if (notifications == null) {
+                    if (notifications == null || notifications.length==0) {
+                        Try.run(() -> Thread.sleep(SLEEP_BETWEEN_RUNS));
                         continue;
                     }
                     for (int i = 0; i < notifications.length; i++) {
@@ -256,6 +266,14 @@ public final class PostgresCacheTransport implements CacheTransport {
             Logger.error(PostgresCacheTransport.class, "Unable to send message: " + e.getMessage(), e);
             throw new CacheTransportException("Unable to send message", e);
         }
+        
+
+        restartListener();
+            
+            
+        
+        
+        
     }
 
     @Override
