@@ -125,7 +125,7 @@ public class ConfigUtils {
      * @return the root folder of where assets are stored
      */
     public static String getAbsoluteAssetsRootPath() {
-        String realPath = Config.getStringProperty("ASSET_REAL_PATH", null);
+        String realPath = Config.getStringProperty("ASSET_REAL_PATH");
         if (UtilMethods.isSet(realPath) && !realPath.endsWith(File.separator)) {
             realPath = realPath + File.separator;
         }
