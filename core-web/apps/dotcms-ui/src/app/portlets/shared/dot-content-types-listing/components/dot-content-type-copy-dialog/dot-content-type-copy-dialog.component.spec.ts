@@ -8,16 +8,16 @@ import { Component, DebugElement } from '@angular/core';
 import { DotMdIconSelectorModule } from '@components/_common/dot-md-icon-selector/dot-md-icon-selector.module';
 import { SiteSelectorFieldModule } from '@components/_common/dot-site-selector-field/dot-site-selector-field.module';
 import { CoreWebService, SiteService } from '@dotcms/dotcms-js';
-import { SiteServiceMock } from '@tests/site-service.mock';
+import { SiteServiceMock } from '@dotcms/utils-testing';
 import { DotFormSelectorModule } from '@portlets/dot-edit-page/content/components/dot-form-selector/dot-form-selector.module';
 import { DotDialogModule } from '@components/dot-dialog/dot-dialog.module';
 import { ReactiveFormsModule } from '@angular/forms';
-import { DotMessageService } from '@services/dot-message/dot-messages.service';
-import { MockDotMessageService } from '@tests/dot-message-service.mock';
+import { DotMessageService } from '@dotcms/data-access';
+import { MockDotMessageService } from '@dotcms/utils-testing';
 import { DotPipesModule } from '@pipes/dot-pipes.module';
-import { CoreWebServiceMock } from '@tests/core-web.service.mock';
+import { CoreWebServiceMock } from '@dotcms/utils-testing';
 import { HttpClientTestingModule } from '@angular/common/http/testing';
-import { DotEventsService } from '@services/dot-events/dot-events.service';
+import { DotEventsService } from '@dotcms/data-access';
 import { of } from 'rxjs';
 
 @Component({

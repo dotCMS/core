@@ -12,11 +12,11 @@ import {
     ReactiveFormsModule
 } from '@angular/forms';
 import { By } from '@angular/platform-browser';
-import { DotMessageService } from '@dotcms/app/api/services/dot-message/dot-messages.service';
-import { MockDotMessageService } from '@dotcms/app/test/dot-message-service.mock';
 import { DotPipesModule } from '@dotcms/app/view/pipes/dot-pipes.module';
+import { DotMessageService } from '@dotcms/data-access';
 import { CoreWebService, CoreWebServiceMock } from '@dotcms/dotcms-js';
 import { DotCMSContentType } from '@dotcms/dotcms-models';
+import { MockDotMessageService } from '@dotcms/utils-testing';
 import { ButtonModule } from 'primeng/button';
 import { DialogService, DynamicDialogModule } from 'primeng/dynamicdialog';
 import { Menu, MenuModule } from 'primeng/menu';

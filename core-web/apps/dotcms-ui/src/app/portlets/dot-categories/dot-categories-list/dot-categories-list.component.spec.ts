@@ -10,7 +10,7 @@ import { DotMenuModule } from '../../../view/components/_common/dot-menu/dot-men
 import { SharedModule } from 'primeng/api';
 import { MenuModule } from 'primeng/menu';
 import { CoreWebService } from '@dotcms/dotcms-js';
-import { CoreWebServiceMock } from '@tests/core-web.service.mock';
+import { CoreWebServiceMock } from '@dotcms/utils-testing';
 import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { DotPipesModule } from '@pipes/dot-pipes.module';
 import { BreadcrumbModule } from 'primeng/breadcrumb';
@@ -26,8 +26,8 @@ import { InputTextModule } from 'primeng/inputtext';
 import { InputNumberModule } from 'primeng/inputnumber';
 import { of } from 'rxjs';
 import { DotCategory } from '@dotcms/app/shared/models/dot-categories/dot-categories.model';
-import { MockDotMessageService } from '@dotcms/app/test/dot-message-service.mock';
-import { DotMessageService } from '@dotcms/app/api/services/dot-message/dot-messages.service';
+import { MockDotMessageService } from '@dotcms/utils-testing';
+import { DotMessageService } from '@dotcms/data-access';
 import { DotEmptyStateModule } from '@components/_common/dot-empty-state/dot-empty-state.module';
 
 @Component({

@@ -19,14 +19,14 @@ import {
     StringUtils,
     UserModel
 } from '@dotcms/dotcms-js';
-import { LoginServiceMock, mockAuth, mockUser } from '../../../../../test/login-service.mock';
+
 import { DotToolbarUserComponent } from './dot-toolbar-user.component';
 import { UiDotIconButtonModule } from '@components/_common/dot-icon-button/dot-icon-button.module';
 import { DotIconModule } from '@dotcms/ui';
 import { DotDialogModule } from '@components/dot-dialog/dot-dialog.module';
 import { RouterTestingModule } from '@angular/router/testing';
 import { LOCATION_TOKEN } from '@dotcms/app/providers';
-import { DotMenuService } from '@services/dot-menu.service';
+import { DotMenuService } from '@dotcms/app/api/services/dot-menu.service';
 import { DotNavigationService } from '@components/dot-navigation/services/dot-navigation.service';
 import { DotGravatarModule } from '../dot-gravatar/dot-gravatar.module';
 import { SearchableDropDownModule } from '@components/_common/searchable-dropdown';
@@ -35,15 +35,16 @@ import { DotPipesModule } from '@pipes/dot-pipes.module';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { PasswordModule } from 'primeng/password';
 import { CheckboxModule } from 'primeng/checkbox';
-import { DotEventsService } from '@services/dot-events/dot-events.service';
+import { DotEventsService } from '@dotcms/data-access';
 import { DotIframeService } from '@components/_common/iframe/service/dot-iframe/dot-iframe.service';
-import { DotRouterService } from '@services/dot-router/dot-router.service';
-import { CoreWebServiceMock } from '@tests/core-web.service.mock';
+import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
+import { CoreWebServiceMock, LoginServiceMock, mockAuth, mockUser } from '@dotcms/utils-testing';
 import { HttpClientTestingModule } from '@angular/common/http/testing';
-import { dotEventSocketURLFactory, MockDotUiColorsService } from '@tests/dot-test-bed';
-import { DotFormatDateService } from '@services/dot-format-date-service';
-import { DotUiColorsService } from '@services/dot-ui-colors/dot-ui-colors.service';
+
+import { DotFormatDateService } from '@dotcms/app/api/services/dot-format-date-service';
+import { DotUiColorsService } from '@dotcms/app/api/services/dot-ui-colors/dot-ui-colors.service';
 import { of } from 'rxjs';
+import { dotEventSocketURLFactory, MockDotUiColorsService } from '@dotcms/app/test/dot-test-bed';
 
 describe('DotToolbarUserComponent', () => {
     let comp: DotToolbarUserComponent;

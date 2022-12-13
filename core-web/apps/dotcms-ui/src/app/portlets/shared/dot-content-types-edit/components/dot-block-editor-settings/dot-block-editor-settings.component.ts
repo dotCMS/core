@@ -18,10 +18,9 @@ import { DotHttpErrorManagerService } from '@services/dot-http-error-manager/dot
 import { DotFieldVariablesService } from '../fields/dot-content-type-fields-variables/services/dot-field-variables.service';
 
 // Interfaces
-import { DotCMSContentTypeField } from '@dotcms/dotcms-models';
-import { DotFieldVariable } from '../fields/dot-content-type-fields-variables/models/dot-field-variable.interface';
+import { DotCMSContentTypeField, DotFieldVariable } from '@dotcms/dotcms-models';
 import { DotDialogActions } from '@components/dot-dialog/dot-dialog.component';
-import { DotMessageService } from '@dotcms/app/api/services/dot-message/dot-messages.service';
+import { DotMessageService } from '@dotcms/data-access';
 import { OnChanges, SimpleChanges } from '@angular/core';
 
 export const BLOCK_EDITOR_BLOCKS = [

@@ -1,4 +1,3 @@
-import { LoadingState, Status } from '@portlets/shared/models/shared-models';
 import { DotExperimentsService } from '@portlets/dot-experiments/shared/services/dot-experiments.service';
 import { ActivatedRoute } from '@angular/router';
 import { ExperimentMocks } from '@portlets/dot-experiments/test/mocks';
@@ -9,12 +8,14 @@ import {
 import { createServiceFactory, mockProvider, SpectatorService, SpyObject } from '@ngneat/spectator';
 import { Title } from '@angular/platform-browser';
 import { of } from 'rxjs';
+import { DotMessageService } from '@dotcms/data-access';
 import {
     DotExperiment,
     ExperimentSteps,
+    LoadingState,
+    Status,
     Variant
-} from '@portlets/dot-experiments/shared/models/dot-experiments.model';
-import { DotMessageService } from '@services/dot-message/dot-messages.service';
+} from '@dotcms/dotcms-models';
 import { MessageService } from 'primeng/api';
 
 const EXPERIMENT_ID = ExperimentMocks[0].id;

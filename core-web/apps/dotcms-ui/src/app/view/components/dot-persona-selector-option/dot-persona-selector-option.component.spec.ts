@@ -5,11 +5,11 @@ import { By } from '@angular/platform-browser';
 
 import { ButtonModule } from 'primeng/button';
 import { DotAvatarModule } from '@components/_common/dot-avatar/dot-avatar.module';
-import { DotMessageService } from '@services/dot-message/dot-messages.service';
+import { DotMessageService } from '@dotcms/data-access';
 import { DotPersonaSelectorOptionComponent } from './dot-persona-selector-option.component';
 import { DotPipesModule } from '@pipes/dot-pipes.module';
-import { MockDotMessageService } from '@tests/dot-message-service.mock';
-import { mockDotPersona } from '@tests/dot-persona.mock';
+import { MockDotMessageService } from '@dotcms/utils-testing';
+import { mockDotPersona } from '@dotcms/utils-testing';
 
 describe('DotPersonaSelectorOptionComponent', () => {
     let component: DotPersonaSelectorOptionComponent;

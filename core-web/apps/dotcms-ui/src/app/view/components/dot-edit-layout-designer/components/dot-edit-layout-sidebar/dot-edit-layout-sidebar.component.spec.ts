@@ -4,16 +4,16 @@ import { Component, DebugElement } from '@angular/core';
 import { ComponentFixture } from '@angular/core/testing';
 import { UntypedFormControl, UntypedFormGroup } from '@angular/forms';
 
-import { DOTTestBed } from '@tests/dot-test-bed';
+import { DOTTestBed } from '@dotcms/app/test/dot-test-bed';
 import { DotContainerSelectorLayoutModule } from '@components/dot-container-selector-layout/dot-container-selector-layout.module';
 import { DotEditLayoutSidebarComponent } from './dot-edit-layout-sidebar.component';
-import { DotMessageService } from '@services/dot-message/dot-messages.service';
-import { MockDotMessageService } from '@tests/dot-message-service.mock';
-import { DotTemplateContainersCacheService } from '@services/dot-template-containers-cache/dot-template-containers-cache.service';
+import { DotMessageService } from '@dotcms/data-access';
+import { MockDotMessageService } from '@dotcms/utils-testing';
+import { DotTemplateContainersCacheService } from '@dotcms/app/api/services/dot-template-containers-cache/dot-template-containers-cache.service';
 import { DotSidebarPropertiesModule } from '../dot-sidebar-properties/dot-sidebar-properties.module';
-import { mockDotContainers, processedContainers } from '@tests/dot-page-render.mock';
-import { DotEditLayoutService } from '@services/dot-edit-layout/dot-edit-layout.service';
-import { DotLayoutSideBar } from '@models/dot-edit-layout-designer';
+import { mockDotContainers, processedContainers } from '@dotcms/utils-testing';
+import { DotEditLayoutService } from '@dotcms/app/api/services/dot-edit-layout/dot-edit-layout.service';
+import { DotLayoutSideBar } from '@dotcms/dotcms-models';
 
 let fakeValue: DotLayoutSideBar;
 

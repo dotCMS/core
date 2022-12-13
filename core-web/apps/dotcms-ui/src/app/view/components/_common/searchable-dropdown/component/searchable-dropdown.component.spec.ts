@@ -10,8 +10,9 @@ import {
     flush
 } from '@angular/core/testing';
 import { DebugElement, Component, Input } from '@angular/core';
-import { DotMessageService } from '@services/dot-message/dot-messages.service';
-import { MockDotMessageService } from '../../../../../test/dot-message-service.mock';
+import { DotMessageService } from '@dotcms/data-access';
+import { MockDotMessageService } from '@dotcms/utils-testing';
+
 import { SEARCHABLE_NGFACES_MODULES } from '../searchable-dropdown.module';
 import { SearchableDropdownComponent } from './searchable-dropdown.component';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';

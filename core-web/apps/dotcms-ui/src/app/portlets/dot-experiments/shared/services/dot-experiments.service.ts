@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { DotExperiment, Variant } from '../models/dot-experiments.model';
+import { DotExperiment, Variant } from '@dotcms/dotcms-models';
 import { HttpClient } from '@angular/common/http';
 import { pluck } from 'rxjs/operators';
 import { DotCMSResponse } from '@dotcms/dotcms-js';

@@ -31,6 +31,7 @@
     padding: 0;
     height: 4rem;
     vertical-align: middle;
+    word-break: break-all;
 
     &:first-child {
         padding-left: $spacing-4;
