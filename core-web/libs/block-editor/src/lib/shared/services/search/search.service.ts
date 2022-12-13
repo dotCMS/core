@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { pluck, take } from 'rxjs/operators';
+import { pluck } from 'rxjs/operators';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 
@@ -12,7 +12,7 @@ export interface queryEsParams {
     itemsPerPage?: number;
     filter?: string;
     lang?: string;
-    offset?: string;
+    offset?: string | number;
     query: string;
     sortField?: string;
     limit?: number;
@@ -31,14 +31,14 @@ export class SearchService {
      * @returns Observable<ESContent>
      * @memberof DotESContentService
      */
-    public get({ query, offset }: queryEsParams): Observable<unknown> {
+    public get({ query, limit = 0, offset = 0 }: queryEsParams): Observable<unknown> {
         return this.http
             .post('/api/content/_search', {
                 query,
                 sort: 'score,modDate desc',
-                limit: 20,
+                limit,
                 offset
             })
-            .pipe(pluck('entity'), take(1));
+            .pipe(pluck('entity'));
     }
 }

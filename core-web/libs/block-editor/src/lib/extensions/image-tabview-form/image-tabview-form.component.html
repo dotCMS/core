@@ -2,7 +2,6 @@
     <ng-container [formGroup]="form">
         <p-tabView>
             <p-tabPanel header="dotCMS" leftIcon="pi pi-images">
-                <!-- Image Listing -->
                 <div class="search-box">
                     <span class="p-input-icon-right">
                         <input
@@ -16,15 +15,15 @@
                         <i class="pi pi-search"></i>
                     </span>
                 </div>
-                <div *ngIf="contentlets$ | async as contentlets">
-                    <dot-dot-image-card-list
-                        *ngIf="taviewState === 'OPEN'"
+                <ng-container *ngIf="contentlets$ | async as contentlets">
+                    <dot-image-card-list
                         [contentlets]="contentlets"
-                        [resultsSize]="resultsSize"
+                        [done]="done"
+                        [loading]="loading"
                         (selectedItem)="selectedContentlet.emit($event)"
-                        (loadItems)="searchContentlets({ search: currentSearch, offset: $event })"
-                    ></dot-dot-image-card-list>
-                </div>
+                        (nextBatch)="search$.next($event)"
+                    ></dot-image-card-list>
+                </ng-container>
             </p-tabPanel>
             <!-- <p-tabPanel header="Upload" leftIcon="pi pi-upload"> Content 2 </p-tabPanel> -->
             <!-- <p-tabPanel header="Image URL" leftIcon="pi pi-link"> Content 3 </p-tabPanel> -->

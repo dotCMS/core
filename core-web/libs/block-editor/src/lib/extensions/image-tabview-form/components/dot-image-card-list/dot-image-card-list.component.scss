@@ -6,22 +6,6 @@
     height: 100%;
     flex-direction: column;
 
-    .wrapper,
-    .card-wrapper {
-        display: flex;
-        gap: 0.625 * $dot-editor-size;
-        padding: 0 (1.3125 * $dot-editor-size);
-    }
-
-    .card-wrapper {
-        align-items: flex-start;
-        justify-content: space-between;
-        flex-wrap: wrap;
-        gap: 10px;
-        height: 250px;
-        overflow: auto;
-    }
-
     .wrapper {
         display: flex;
         align-items: center;
@@ -29,20 +13,31 @@
         flex-direction: column;
         flex-grow: 1;
         height: 250px;
+        gap: 0.625 * $dot-editor-size;
+        padding: 0 (1.3125 * $dot-editor-size);
+        overflow: hidden;
+    }
+
+    .justify-start {
+        justify-content: flex-start;
     }
 
     &::ng-deep {
         .p-scroller-content {
-            padding: 0 (1 * $dot-editor-size);
+            padding: 0 (1.3125 * $dot-editor-size);
         }
 
-        .table-row {
+        .virtual-item,
+        .virtual-item-skeleton {
             display: flex;
             justify-content: space-between;
-            // gap: 10px;
             width: 100%;
             min-height: 110px;
-            // padding: 5px 0;
+        }
+
+        .virtual-item-skeleton {
+            justify-content: flex-start;
+            gap: $dot-editor-size;
         }
     }
 }

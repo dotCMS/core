@@ -1,14 +1,13 @@
-<p-virtualScroller
-    *ngIf="contentlets?.length; else notFound"
+<p-scroller
+    *ngIf="contentlets?.length && !loading; else loading ? loadingBlock : emptyBlock"
     [itemSize]="110"
+    [items]="contentlets"
     [lazy]="true"
-    [value]="contentlets"
-    (onLazyLoad)="loadContentlets($event)"
-    rows="8"
+    (onScrollIndexChange)="onScrollIndexChange($event, contentlets.length)"
     scrollHeight="250px"
 >
     <ng-template pTemplate="item" let-contentlet>
-        <div class="table-row">
+        <div class="virtual-item">
             <dot-image-card
                 *ngIf="contentlet[0]"
                 [contentlet]="contentlet[0]"
@@ -21,14 +20,18 @@
             ></dot-image-card>
         </div>
     </ng-template>
+</p-scroller>
 
-    <ng-template pTemplate="loadingItem">
-        <dot-image-card-skeleton></dot-image-card-skeleton>
-        <dot-image-card-skeleton></dot-image-card-skeleton>
-    </ng-template>
-</p-virtualScroller>
+<ng-template #loadingBlock>
+    <div class="wrapper justify-start">
+        <div class="virtual-item-skeleton" *ngFor="let loadingItem of loadingItems">
+            <dot-image-card-skeleton></dot-image-card-skeleton>
+            <dot-image-card-skeleton></dot-image-card-skeleton>
+        </div>
+    </div>
+</ng-template>
 
-<ng-template #notFound>
+<ng-template #emptyBlock>
     <div class="wrapper">
         <img [src]="icon" />
         <p>No results found, try searching again</p>
