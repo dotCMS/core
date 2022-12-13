@@ -1083,6 +1083,12 @@ public class PermissionBitAPIImpl implements PermissionAPI {
 			perm = APILocator.getCategoryAPI().find(inode, APILocator.systemUser(), false);
 		} else if (Link.class.equals(clazz)) {
 			perm = APILocator.getMenuLinkAPI().find(inode, APILocator.systemUser(), false);
+		} else {
+			// In the case an inode isn't found, we should check if it is a folder and return it
+			final Folder folder = APILocator.getFolderAPI().find(inode, APILocator.systemUser(), false);
+			if (null != folder && null != folder.getInode()) {
+				perm = folder;
+			}
 		}
 		return null != perm && UtilMethods.isSet(perm.getPermissionId()) ? Optional.of(perm) : Optional.empty();
 	}
