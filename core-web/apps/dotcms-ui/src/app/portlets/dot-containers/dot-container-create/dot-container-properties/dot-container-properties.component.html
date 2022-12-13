@@ -10,9 +10,10 @@
             ></button>
             <button
                 class="p-button-primary p-button-sm"
-                [disabled]="form.pristine || !form.valid"
+                [disabled]="vm.invalidForm"
                 [label]="'Save' | dm"
                 (click)="save()"
+                data-testId="saveBtn"
                 pButton
                 type="submit"
             ></button>
@@ -37,6 +38,7 @@
                     <span
                         class="dot-container-properties__title-text"
                         *ngIf="!form?.value?.title"
+                        data-testId="editTitle"
                         >{{ 'message.containers.create.click_to_edit' | dm }}</span
                     >
                     <span class="dot-container-properties__title-text" *ngIf="form?.value?.title">{{
@@ -69,7 +71,7 @@
                 id="max-contents"
                 [required]="true"
                 data-testId="max-contents"
-                type="text"
+                type="number"
                 formControlName="maxContentlets"
                 pInputText
             />
@@ -77,7 +79,8 @@
                 class="p-button-info dot-container-properties__button-clear"
                 *ngIf="vm.isContentTypeVisible"
                 [label]="'message.containers.create.clear' | dm"
-                (click)="clearContent()"
+                (click)="clearContentConfirmationModal()"
+                data-testId="clearContent"
                 pButton
                 type="button"
             ></button>

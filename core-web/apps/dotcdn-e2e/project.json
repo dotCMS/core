@@ -1,4 +1,5 @@
 {
+    "name": "dotcdn-e2e",
     "$schema": "../../node_modules/nx/schemas/project-schema.json",
     "sourceRoot": "apps/dotcdn-e2e/src",
     "projectType": "application",

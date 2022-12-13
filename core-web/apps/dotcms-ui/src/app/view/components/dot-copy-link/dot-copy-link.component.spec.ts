@@ -3,8 +3,8 @@ import { DebugElement } from '@angular/core';
 import { waitForAsync, ComponentFixture, TestBed } from '@angular/core/testing';
 
 import { DotCopyLinkComponent } from './dot-copy-link.component';
-import { DotMessageService } from '@services/dot-message/dot-messages.service';
-import { MockDotMessageService } from '@dotcms/app/test/dot-message-service.mock';
+import { DotMessageService } from '@dotcms/data-access';
+import { MockDotMessageService } from '@dotcms/utils-testing';
 import { DotClipboardUtil } from '@dotcms/app/api/util/clipboard/ClipboardUtil';
 import { UiDotIconButtonModule } from '@components/_common/dot-icon-button/dot-icon-button.module';
 import { TooltipModule } from 'primeng/tooltip';
@@ -22,21 +22,19 @@ describe('DotCopyLinkComponent', () => {
     let dotClipboardUtil: DotClipboardUtil;
     let button: DebugElement;
 
-    beforeEach(
-        waitForAsync(() => {
-            TestBed.configureTestingModule({
-                declarations: [DotCopyLinkComponent],
-                providers: [
-                    {
-                        provide: DotMessageService,
-                        useValue: messageServiceMock
-                    },
-                    DotClipboardUtil
-                ],
-                imports: [UiDotIconButtonModule, TooltipModule, DotIconModule]
-            }).compileComponents();
-        })
-    );
+    beforeEach(waitForAsync(() => {
+        TestBed.configureTestingModule({
+            declarations: [DotCopyLinkComponent],
+            providers: [
+                {
+                    provide: DotMessageService,
+                    useValue: messageServiceMock
+                },
+                DotClipboardUtil
+            ],
+            imports: [UiDotIconButtonModule, TooltipModule, DotIconModule]
+        }).compileComponents();
+    }));
 
     beforeEach(() => {
         fixture = TestBed.createComponent(DotCopyLinkComponent);
@@ -67,7 +65,7 @@ describe('DotCopyLinkComponent', () => {
 
         it('should show copy icon', () => {
             const icon = de.query(By.css('[data-testId="icon"]'));
-            expect(icon).not.toBeNull()
+            expect(icon).not.toBeNull();
         });
 
         it('should have pTooltip attributes', () => {

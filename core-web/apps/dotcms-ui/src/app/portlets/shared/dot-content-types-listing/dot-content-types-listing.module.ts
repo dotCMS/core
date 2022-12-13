@@ -1,9 +1,9 @@
 import { NgModule } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { DotContentTypesInfoService } from '@services/dot-content-types-info';
+import { DotContentTypesInfoService } from '@dotcms/data-access';
 import { DotContentTypesPortletComponent } from './dot-content-types.component';
-import { DotCrudService } from '@services/dot-crud';
-import { DotContentTypeService } from '@services/dot-content-type';
+import { DotCrudService } from '@dotcms/data-access';
+import { DotContentTypeService } from '@dotcms/data-access';
 import { DotListingDataTableModule } from '@components/dot-listing-data-table';
 import { DotBaseTypeSelectorModule } from '@components/dot-base-type-selector';
 import { DotAddToBundleModule } from '@components/_common/dot-add-to-bundle';

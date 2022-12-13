@@ -1,14 +1,15 @@
 import { ChangeDetectionStrategy, Component, OnInit } from '@angular/core';
 import { DotExperimentsConfigurationStore } from '@portlets/dot-experiments/dot-experiments-configuration/store/dot-experiments-configuration-store.service';
 import { ActivatedRoute, Router } from '@angular/router';
+
+import { DotSessionStorageService } from '@dotcms/data-access';
 import {
     DotExperiment,
     EditPageTabs,
     ExperimentSteps,
+    SidebarStatus,
     Variant
-} from '@portlets/dot-experiments/shared/models/dot-experiments.model';
-import { DotSessionStorageService } from '@shared/services/dot-session-storage.service';
-import { SidebarStatus } from '@portlets/dot-experiments/shared/models/dot-experiments-constants';
+} from '@dotcms/dotcms-models';
 
 @Component({
     selector: 'dot-experiments-configuration',

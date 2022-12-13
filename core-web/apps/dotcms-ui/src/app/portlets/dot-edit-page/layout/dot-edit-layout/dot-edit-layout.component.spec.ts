@@ -7,19 +7,18 @@ import { of, throwError } from 'rxjs';
 import { HttpCode, ResponseView } from '@dotcms/dotcms-js';
 
 import { DotEditLayoutComponent } from './dot-edit-layout.component';
-import { mockDotRenderedPage, processedContainers } from '@tests/dot-page-render.mock';
-import { DotRouterService } from '@services/dot-router/dot-router.service';
+import { mockDotRenderedPage, processedContainers } from '@dotcms/utils-testing';
+import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
 import { DotGlobalMessageService } from '@components/_common/dot-global-message/dot-global-message.service';
-import { DotPageLayoutService } from '@services/dot-page-layout/dot-page-layout.service';
-import { MockDotMessageService } from '@tests/dot-message-service.mock';
-import { DotMessageService } from '@services/dot-message/dot-messages.service';
-import { DotTemplateContainersCacheService } from '@services/dot-template-containers-cache/dot-template-containers-cache.service';
-import { DotLayout } from '@models/dot-edit-layout-designer';
-import { DotPageRender } from '@models/dot-page/dot-rendered-page.model';
+import { DotPageLayoutService } from '@dotcms/data-access';
+import { MockDotMessageService } from '@dotcms/utils-testing';
+import { DotMessageService } from '@dotcms/data-access';
+import { DotTemplateContainersCacheService } from '@dotcms/app/api/services/dot-template-containers-cache/dot-template-containers-cache.service';
+import { DotLayout, DotPageRender } from '@dotcms/dotcms-models';
 import { HttpResponse } from '@angular/common/http';
-import { mockResponseView } from '@tests/response-view.mock';
-import { DotEditLayoutService } from '@services/dot-edit-layout/dot-edit-layout.service';
-import { DotHttpErrorManagerService } from '@services/dot-http-error-manager/dot-http-error-manager.service';
+import { mockResponseView } from '@dotcms/utils-testing';
+import { DotEditLayoutService } from '@dotcms/app/api/services/dot-edit-layout/dot-edit-layout.service';
+import { DotHttpErrorManagerService } from '@dotcms/app/api/services/dot-http-error-manager/dot-http-error-manager.service';
 
 @Component({
     selector: 'dot-edit-layout-designer',
@@ -60,66 +59,64 @@ describe('DotEditLayoutComponent', () => {
     let dotHttpErrorManagerService: DotHttpErrorManagerService;
     let dotEditLayoutService: DotEditLayoutService;
 
-    beforeEach(
-        waitForAsync(() => {
-            TestBed.configureTestingModule({
-                declarations: [MockDotEditLayoutDesignerComponent, DotEditLayoutComponent],
-                providers: [
-                    DotEditLayoutService,
-                    {
-                        provide: DotHttpErrorManagerService,
-                        useValue: {
-                            handle: jasmine.createSpy().and.returnValue(of({}))
+    beforeEach(waitForAsync(() => {
+        TestBed.configureTestingModule({
+            declarations: [MockDotEditLayoutDesignerComponent, DotEditLayoutComponent],
+            providers: [
+                DotEditLayoutService,
+                {
+                    provide: DotHttpErrorManagerService,
+                    useValue: {
+                        handle: jasmine.createSpy().and.returnValue(of({}))
+                    }
+                },
+                {
+                    provide: DotMessageService,
+                    useValue: messageServiceMock
+                },
+                {
+                    provide: DotGlobalMessageService,
+                    useValue: {
+                        loading: jasmine.createSpy(),
+                        success: jasmine.createSpy(),
+                        error: jasmine.createSpy()
+                    }
+                },
+                {
+                    provide: DotPageLayoutService,
+                    useValue: {
+                        save() {
+                            //
                         }
-                    },
-                    {
-                        provide: DotMessageService,
-                        useValue: messageServiceMock
-                    },
-                    {
-                        provide: DotGlobalMessageService,
-                        useValue: {
-                            loading: jasmine.createSpy(),
-                            success: jasmine.createSpy(),
-                            error: jasmine.createSpy()
-                        }
-                    },
-                    {
-                        provide: DotPageLayoutService,
-                        useValue: {
-                            save() {
-                                //
-                            }
-                        }
-                    },
-                    {
-                        provide: DotTemplateContainersCacheService,
-                        useValue: {
-                            set: jasmine.createSpy()
-                        }
-                    },
-                    {
-                        provide: DotRouterService,
-                        useValue: {
-                            goToEditPage: jasmine.createSpy()
-                        }
-                    },
-                    {
-                        provide: ActivatedRoute,
-                        useValue: {
+                    }
+                },
+                {
+                    provide: DotTemplateContainersCacheService,
+                    useValue: {
+                        set: jasmine.createSpy()
+                    }
+                },
+                {
+                    provide: DotRouterService,
+                    useValue: {
+                        goToEditPage: jasmine.createSpy()
+                    }
+                },
+                {
+                    provide: ActivatedRoute,
+                    useValue: {
+                        parent: {
                             parent: {
-                                parent: {
-                                    data: of({
-                                        content: new DotPageRender(mockDotRenderedPage())
-                                    })
-                                }
+                                data: of({
+                                    content: new DotPageRender(mockDotRenderedPage())
+                                })
                             }
                         }
                     }
-                ]
-            });
-        })
-    );
+                }
+            ]
+        });
+    }));
 
     beforeEach(() => {
         fixture = TestBed.createComponent(DotEditLayoutComponent);

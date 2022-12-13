@@ -3,8 +3,8 @@ import { FieldService } from '.';
 import { FieldType } from '@portlets/shared/dot-content-types-edit/components/fields';
 import { HttpTestingController, HttpClientTestingModule } from '@angular/common/http/testing';
 import { CoreWebService } from '@dotcms/dotcms-js';
-import { CoreWebServiceMock } from '@tests/core-web.service.mock';
-import { dotcmsContentTypeFieldBasicMock } from '@tests/dot-content-types.mock';
+import { CoreWebServiceMock } from '@dotcms/utils-testing';
+import { dotcmsContentTypeFieldBasicMock } from '@dotcms/utils-testing';
 import { DotCMSContentTypeField } from '@dotcms/dotcms-models';
 import { DotCMSContentTypeLayoutRow } from '@dotcms/dotcms-models';
 

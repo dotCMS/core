@@ -8,21 +8,18 @@ import {
     ViewChild,
     OnDestroy
 } from '@angular/core';
-import {
-    DotPushPublishFilter,
-    DotPushPublishFiltersService
-} from '@services/dot-push-publish-filters/dot-push-publish-filters.service';
+import { DotPushPublishFilter, DotPushPublishFiltersService } from '@dotcms/data-access';
 import { catchError, filter, map, take, takeUntil } from 'rxjs/operators';
 import { DotPushPublishDialogData } from '@dotcms/dotcms-models';
 import { Observable, of, Subject } from 'rxjs';
 import { UntypedFormBuilder, UntypedFormGroup, Validators } from '@angular/forms';
-import { DotParseHtmlService } from '@services/dot-parse-html/dot-parse-html.service';
-import { DotMessageService } from '@services/dot-message/dot-messages.service';
+import { DotMessageService } from '@dotcms/data-access';
 import { DotPushPublishData } from '@models/dot-push-publish-data/dot-push-publish-data';
 import { SelectItem } from 'primeng/api';
 import { DotFormModel } from '@models/dot-form/dot-form.model';
-import { DotHttpErrorManagerService } from '@services/dot-http-error-manager/dot-http-error-manager.service';
+import { DotHttpErrorManagerService } from '@dotcms/app/api/services/dot-http-error-manager/dot-http-error-manager.service';
 import { DotcmsConfigService, DotTimeZone } from '@dotcms/dotcms-js';
+import { DotParseHtmlService } from '@dotcms/app/api/services/dot-parse-html/dot-parse-html.service';
 
 @Component({
     selector: 'dot-push-publish-form',

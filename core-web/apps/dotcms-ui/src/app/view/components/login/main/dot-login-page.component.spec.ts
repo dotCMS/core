@@ -1,7 +1,7 @@
 import { DotLoginPageComponent } from '@components/login/main/dot-login-page.component';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
-import { mockLoginFormResponse } from '@tests/login-service.mock';
+import { mockLoginFormResponse } from '@dotcms/utils-testing';
 import { FormsModule } from '@angular/forms';
 import { ButtonModule } from 'primeng/button';
 import { InputTextModule } from 'primeng/inputtext';

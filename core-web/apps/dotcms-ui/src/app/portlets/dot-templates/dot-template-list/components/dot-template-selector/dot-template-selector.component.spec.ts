@@ -4,8 +4,8 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 
 import { DynamicDialogRef } from 'primeng/dynamicdialog';
 
-import { DotMessageService } from '@services/dot-message/dot-messages.service';
-import { MockDotMessageService } from '@tests/dot-message-service.mock';
+import { DotMessageService } from '@dotcms/data-access';
+import { MockDotMessageService } from '@dotcms/utils-testing';
 import { DotTemplateSelectorComponent } from './dot-template-selector.component';
 import { DotMessagePipeModule } from '@pipes/dot-message/dot-message-pipe.module';
 import { DebugElement } from '@angular/core';

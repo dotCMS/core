@@ -26,7 +26,7 @@ import { DotSecondaryToolbarModule } from '@components/dot-secondary-toolbar';
 import { DotPipesModule } from '@pipes/dot-pipes.module';
 
 // @services
-import { DotPageLayoutService } from '@services/dot-page-layout/dot-page-layout.service';
+import { DotPageLayoutService } from '@dotcms/data-access';
 
 // @portlets
 import { DotEditPageInfoModule } from '@portlets/dot-edit-page/components/dot-edit-page-info/dot-edit-page-info.module';

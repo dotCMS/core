@@ -1,12 +1,12 @@
-import { DotExperiment } from '../../shared/models/dot-experiments.model';
+import { DotExperiment } from '@dotcms/dotcms-models';
 import { of } from 'rxjs';
-import { MockDotMessageService } from '@tests/dot-message-service.mock';
+import { MockDotMessageService } from '@dotcms/utils-testing';
 import {
     DotExperimentCreateStore,
     DotExperimentsCreateStore
 } from '@portlets/dot-experiments/dot-experiments-create/store/dot-experiments-create-store';
 import { createServiceFactory, SpectatorService } from '@ngneat/spectator';
-import { DotMessageService } from '@services/dot-message/dot-messages.service';
+import { DotMessageService } from '@dotcms/data-access';
 import { DotExperimentsService } from '@portlets/dot-experiments/shared/services/dot-experiments.service';
 import { MessageService } from 'primeng/api';
 import { DotExperimentsServiceMock } from '@portlets/dot-experiments/test/mocks';

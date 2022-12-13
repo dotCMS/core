@@ -5,18 +5,13 @@ import { CoreWebService } from '@dotcms/dotcms-js';
 import { DotFormSelectorModule } from '@portlets/dot-edit-page/content/components/dot-form-selector/dot-form-selector.module';
 import { DotDialogModule } from '@components/dot-dialog/dot-dialog.module';
 import { ReactiveFormsModule } from '@angular/forms';
-import { DotMessageService } from '@services/dot-message/dot-messages.service';
-import { MockDotMessageService } from '@tests/dot-message-service.mock';
+import { DotMessageService } from '@dotcms/data-access';
+import { dotcmsContentTypeBasicMock, MockDotMessageService } from '@dotcms/utils-testing';
 import { DotPipesModule } from '@pipes/dot-pipes.module';
-import { CoreWebServiceMock } from '@tests/core-web.service.mock';
+import { CoreWebServiceMock } from '@dotcms/utils-testing';
 import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { DotAddToMenuComponent } from './dot-add-to-menu.component';
 import { DotMenuService } from '@dotcms/app/api/services/dot-menu.service';
-import {
-    DotAddToMenuService,
-    DotCreateCustomTool
-} from '@dotcms/app/api/services/add-to-menu/add-to-menu.service';
-import { dotcmsContentTypeBasicMock } from '@dotcms/app/test/dot-content-types.mock';
 import { DotFieldValidationMessageModule } from '@components/_common/dot-field-validation-message/dot-file-validation-message.module';
 import { DropdownModule } from 'primeng/dropdown';
 import { InputTextModule } from 'primeng/inputtext';
@@ -25,6 +20,10 @@ import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { DotMenuServiceMock } from '@components/dot-navigation/services/dot-navigation.service.spec';
 import { ButtonModule } from 'primeng/button';
 import { of } from 'rxjs';
+import {
+    DotCreateCustomTool,
+    DotAddToMenuService
+} from '@dotcms/app/api/services/add-to-menu/add-to-menu.service';
 
 const contentTypeVar = {
     ...dotcmsContentTypeBasicMock,

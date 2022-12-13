@@ -3,11 +3,11 @@ import { CoreWebService, ApiRoot } from '@dotcms/dotcms-js';
 import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 import { DotEnvironment } from '@models/dot-environment/dot-environment';
-import { DotAjaxActionResponseView } from '@models/ajax-action-response/dot-ajax-action-response';
-import { DotCurrentUserService } from '../dot-current-user/dot-current-user.service';
-import { DotCurrentUser } from '@models/dot-current-user/dot-current-user';
+
 import { DotPushPublishData } from '@models/dot-push-publish-data/dot-push-publish-data';
-import { DotFormatDateService } from '@services/dot-format-date-service';
+import { DotFormatDateService } from '@dotcms/app/api/services/dot-format-date-service';
+import { DotCurrentUserService } from '@dotcms/data-access';
+import { DotCurrentUser, DotAjaxActionResponseView } from '@dotcms/dotcms-models';
 
 /**
  * Provide method to push publish to content types

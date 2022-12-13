@@ -2,22 +2,22 @@
 
 import { ComponentFixture, fakeAsync, tick } from '@angular/core/testing';
 import { DotDownloadBundleDialogComponent } from './dot-download-bundle-dialog.component';
-import { DOTTestBed } from '@tests/dot-test-bed';
-import { DotMessageService } from '@services/dot-message/dot-messages.service';
-import { DotDownloadBundleDialogService } from '@services/dot-download-bundle-dialog/dot-download-bundle-dialog.service';
-import {
-    DotPushPublishFilter,
-    DotPushPublishFiltersService
-} from '@services/dot-push-publish-filters/dot-push-publish-filters.service';
-import { MockDotMessageService } from '@tests/dot-message-service.mock';
+import { DOTTestBed } from '@dotcms/app/test/dot-test-bed';
+import { DotMessageService } from '@dotcms/data-access';
+import { DotDownloadBundleDialogService } from '@dotcms/app/api/services/dot-download-bundle-dialog/dot-download-bundle-dialog.service';
+import { DotPushPublishFilter, DotPushPublishFiltersService } from '@dotcms/data-access';
+import { MockDotMessageService } from '@dotcms/utils-testing';
 import { DotDialogModule } from '@components/dot-dialog/dot-dialog.module';
 import { DotDialogComponent } from '@components/dot-dialog/dot-dialog.component';
 import { By } from '@angular/platform-browser';
 import { of, throwError } from 'rxjs';
 import { DebugElement } from '@angular/core';
-import * as dotUtils from '@shared/dot-utils';
+
 import { SelectButton, SelectButtonModule } from 'primeng/selectbutton';
 import { Dropdown, DropdownModule } from 'primeng/dropdown';
+
+// INFO: needs to import this way so we can spy on.
+import * as dotUtils from '@dotcms/utils/lib/dot-utils';
 
 const mockFilters: DotPushPublishFilter[] = [
     {
@@ -165,10 +165,12 @@ describe('DotDownloadBundleDialogComponent', () => {
                 dropdown = fixture.debugElement.query(By.css('p-dropdown')).componentInstance;
                 buttons = fixture.debugElement.queryAll(By.css('.p-selectbutton .p-button'));
                 unPublishButton = buttons[1].nativeElement;
-                cancelButton = fixture.debugElement.query(By.css('.dialog__button-cancel'))
-                    .nativeElement;
-                downloadButton = fixture.debugElement.query(By.css('.dialog__button-accept'))
-                    .nativeElement;
+                cancelButton = fixture.debugElement.query(
+                    By.css('.dialog__button-cancel')
+                ).nativeElement;
+                downloadButton = fixture.debugElement.query(
+                    By.css('.dialog__button-accept')
+                ).nativeElement;
             });
             it('should disable filters dropdown when unpublish is selected', () => {
                 unPublishButton.click();
@@ -236,6 +238,7 @@ describe('DotDownloadBundleDialogComponent', () => {
                         },
                         body: '{"bundleId":"XXZC4","operation":"0","filterKey":"2"}'
                     });
+
                     expect(dotUtils.getDownloadLink).toHaveBeenCalledWith(blobMock, fileName);
                     expect(anchor.click).toHaveBeenCalledTimes(1);
                     expect(dotDialogComponent.visible).toEqual(false);

@@ -3,7 +3,7 @@ import { Injectable } from '@angular/core';
 import { CanActivateChild, ActivatedRouteSnapshot, RouterStateSnapshot } from '@angular/router';
 import { Observable } from 'rxjs';
 import { DotNavigationService } from '@components/dot-navigation/services/dot-navigation.service';
-import { DotContentTypeService } from '@services/dot-content-type/dot-content-type.service';
+import { DotContentTypeService } from '@dotcms/data-access';
 
 /**
  * Route Guard that checks if a User have access to the specified Content Type.

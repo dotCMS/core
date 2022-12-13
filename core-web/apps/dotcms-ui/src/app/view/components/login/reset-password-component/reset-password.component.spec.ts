@@ -3,7 +3,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { DebugElement } from '@angular/core';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { LoginService } from '@dotcms/dotcms-js';
-import { LoginServiceMock } from '@tests/login-service.mock';
+import { LoginServiceMock } from '@dotcms/utils-testing';
 import { By } from '@angular/platform-browser';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { ButtonModule } from 'primeng/button';
@@ -12,11 +12,11 @@ import { DotFieldValidationMessageModule } from '@components/_common/dot-field-v
 import { DotLoginPageStateService } from '@components/login/shared/services/dot-login-page-state.service';
 import { RouterTestingModule } from '@angular/router/testing';
 import { ActivatedRoute } from '@angular/router';
-import { DotRouterService } from '@services/dot-router/dot-router.service';
+import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
 import { MockDotLoginPageStateService } from '@components/login/dot-login-page-resolver.service.spec';
-import { MockDotRouterService } from '@tests/dot-router-service.mock';
-import { MockDotMessageService } from '@tests/dot-message-service.mock';
-import { DotMessageService } from '@services/dot-message/dot-messages.service';
+import { MockDotRouterService } from '@dotcms/utils-testing';
+import { MockDotMessageService } from '@dotcms/utils-testing';
+import { DotMessageService } from '@dotcms/data-access';
 import { throwError } from 'rxjs';
 
 const messageServiceMock = new MockDotMessageService({

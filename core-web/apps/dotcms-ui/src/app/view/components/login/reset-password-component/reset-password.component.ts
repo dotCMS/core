@@ -5,7 +5,7 @@ import { take, tap } from 'rxjs/operators';
 import { DotLoginPageStateService } from '@components/login/shared/services/dot-login-page-state.service';
 import { LoginService } from '@dotcms/dotcms-js';
 import { ActivatedRoute } from '@angular/router';
-import { DotRouterService } from '@services/dot-router/dot-router.service';
+import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
 import { DotLoginInformation } from '@dotcms/dotcms-models';
 
 @Component({

@@ -3,16 +3,18 @@ import { Injectable } from '@angular/core';
 import { Subject, Observable, BehaviorSubject } from 'rxjs';
 
 import {
-    DotLayoutBody,
     DotLayoutGrid,
     DotLayoutGridBox,
-    DotLayoutRow,
-    DotLayoutColumn,
     DotLayoutGridRow,
     DotContainerColumnBox
 } from '@shared/models/dot-edit-layout-designer';
 import { DotTemplateContainersCacheService } from '@services/dot-template-containers-cache/dot-template-containers-cache.service';
-import { DotPageContainer } from '@models/dot-page-container/dot-page-container.model';
+import {
+    DotLayoutBody,
+    DotLayoutRow,
+    DotLayoutColumn,
+    DotPageContainer
+} from '@dotcms/dotcms-models';
 
 /**
  * Provide methods to transform NgGrid model into PageView model and viceversa.
@@ -35,7 +37,7 @@ export class DotEditLayoutService {
      * @readonly
      * @memberof DotEditLayoutService
      */
-     get closeEditLayout$() {
+    get closeEditLayout$() {
         return this._closeEditLayout;
     }
 

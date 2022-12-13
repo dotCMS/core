@@ -3,7 +3,7 @@ import { Observable, Subject, merge } from 'rxjs';
 import { DotcmsEventsService } from '@dotcms/dotcms-js';
 import { DotMessage } from '../model/dot-message.model';
 import { takeUntil, filter } from 'rxjs/operators';
-import { DotRouterService } from '@services/dot-router/dot-router.service';
+import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
 import { DotMessageSeverity } from '../model';
 
 /**

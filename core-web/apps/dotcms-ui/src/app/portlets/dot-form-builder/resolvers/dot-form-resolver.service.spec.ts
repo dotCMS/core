@@ -1,9 +1,9 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { DOTTestBed } from '@tests/dot-test-bed';
-import { DotLicenseService } from '@services/dot-license/dot-license.service';
-import { DotMessageService } from '@services/dot-message/dot-messages.service';
-import { MockDotMessageService } from '@tests/dot-message-service.mock';
+import { DOTTestBed } from '@dotcms/app/test/dot-test-bed';
+import { DotLicenseService } from '@dotcms/data-access';
+import { DotMessageService } from '@dotcms/data-access';
+import { MockDotMessageService } from '@dotcms/utils-testing';
 import { waitForAsync } from '@angular/core/testing';
 import { of } from 'rxjs';
 import { DotFormResolver, DotUnlicensedPortlet } from './dot-form-resolver.service';
@@ -24,24 +24,22 @@ describe('DotFormResolver', () => {
     let dotLicenseService: DotLicenseService;
     let service: DotFormResolver;
 
-    beforeEach(
-        waitForAsync(() => {
-            const testbed = DOTTestBed.configureTestingModule({
-                providers: [
-                    DotFormResolver,
-                    DotLicenseService,
-                    {
-                        provide: DotMessageService,
-                        useValue: messageServiceMock
-                    }
-                ],
-                imports: []
-            });
+    beforeEach(waitForAsync(() => {
+        const testbed = DOTTestBed.configureTestingModule({
+            providers: [
+                DotFormResolver,
+                DotLicenseService,
+                {
+                    provide: DotMessageService,
+                    useValue: messageServiceMock
+                }
+            ],
+            imports: []
+        });
 
-            dotLicenseService = testbed.get(DotLicenseService);
-            service = testbed.get(DotFormResolver);
-        })
-    );
+        dotLicenseService = testbed.get(DotLicenseService);
+        service = testbed.get(DotFormResolver);
+    }));
 
     it('should return resolve null when license is enterprise', () => {
         spyOn(dotLicenseService, 'isEnterprise').and.returnValue(of(true));

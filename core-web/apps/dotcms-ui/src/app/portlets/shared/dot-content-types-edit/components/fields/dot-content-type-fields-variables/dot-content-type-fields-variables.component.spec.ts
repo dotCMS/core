@@ -6,19 +6,14 @@ import { ComponentFixture } from '@angular/core/testing';
 import { DotContentTypeFieldsVariablesComponent } from './dot-content-type-fields-variables.component';
 import { LoginService } from '@dotcms/dotcms-js';
 import { DotFieldVariablesService } from './services/dot-field-variables.service';
-import { DOTTestBed } from '@tests/dot-test-bed';
-import { LoginServiceMock } from '@tests/login-service.mock';
-import {
-    DotFieldVariablesServiceMock,
-    mockFieldVariables
-} from '@tests/field-variable-service.mock';
+import { DOTTestBed } from '@dotcms/app/test/dot-test-bed';
+import { EMPTY_FIELD, LoginServiceMock } from '@dotcms/utils-testing';
+import { DotFieldVariablesServiceMock, mockFieldVariables } from '@dotcms/utils-testing';
 import { of } from 'rxjs';
-import { dotcmsContentTypeFieldBasicMock } from '@tests/dot-content-types.mock';
+import { dotcmsContentTypeFieldBasicMock } from '@dotcms/utils-testing';
 import { DotMessageDisplayService } from '@components/dot-message-display/services';
-import { DotCMSContentTypeField } from '@dotcms/dotcms-models';
+import { DotCMSContentTypeField, DotFieldVariable } from '@dotcms/dotcms-models';
 import { DotKeyValueModule } from '@components/dot-key-value-ng/dot-key-value-ng.module';
-import { DotFieldVariable } from './models/dot-field-variable.interface';
-import { EMPTY_FIELD } from '../util/field-util';
 
 @Component({
     selector: 'dot-test-host-component',
