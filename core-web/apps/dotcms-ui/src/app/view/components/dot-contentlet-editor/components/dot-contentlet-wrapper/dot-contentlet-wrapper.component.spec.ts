@@ -21,20 +21,20 @@ import {
 import { DotContentletEditorService } from '../../services/dot-contentlet-editor.service';
 import { DotContentletWrapperComponent } from './dot-contentlet-wrapper.component';
 import { DotIframeDialogModule } from '../../../dot-iframe-dialog/dot-iframe-dialog.module';
-import { DotMenuService } from '@services/dot-menu.service';
-import { DotMessageService } from '@services/dot-message/dot-messages.service';
-import { LoginServiceMock } from '../../../../../test/login-service.mock';
-import { MockDotMessageService } from '../../../../../test/dot-message-service.mock';
-import { DotAlertConfirmService } from '@services/dot-alert-confirm';
-import { DotRouterService } from '@services/dot-router/dot-router.service';
+import { DotMenuService } from '@dotcms/app/api/services/dot-menu.service';
+import { DotMessageService } from '@dotcms/data-access';
+import { LoginServiceMock } from '@dotcms/utils-testing';
+import { MockDotMessageService } from '@dotcms/utils-testing';
+import { DotAlertConfirmService } from '@dotcms/data-access';
+import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
 import { DotIframeService } from '@components/_common/iframe/service/dot-iframe/dot-iframe.service';
-import { CoreWebServiceMock } from '@tests/core-web.service.mock';
+import { CoreWebServiceMock } from '@dotcms/utils-testing';
 import { HttpClientTestingModule } from '@angular/common/http/testing';
-import { DotHttpErrorManagerService } from '@services/dot-http-error-manager/dot-http-error-manager.service';
+import { DotHttpErrorManagerService } from '@dotcms/app/api/services/dot-http-error-manager/dot-http-error-manager.service';
 import { ConfirmationService } from 'primeng/api';
-import { MockDotRouterService } from '@tests/dot-router-service.mock';
-import { DotUiColorsService } from '@services/dot-ui-colors/dot-ui-colors.service';
-import { dotEventSocketURLFactory, MockDotUiColorsService } from '@tests/dot-test-bed';
+import { MockDotRouterService } from '@dotcms/utils-testing';
+import { DotUiColorsService } from '@dotcms/app/api/services/dot-ui-colors/dot-ui-colors.service';
+import { dotEventSocketURLFactory, MockDotUiColorsService } from '@dotcms/app/test/dot-test-bed';
 
 const messageServiceMock = new MockDotMessageService({
     'editcontentlet.lose.dialog.header': 'Header',
@@ -53,60 +53,58 @@ describe('DotContentletWrapperComponent', () => {
     let titleService: Title;
     let dotIframeService: DotIframeService;
 
-    beforeEach(
-        waitForAsync(() => {
-            TestBed.configureTestingModule({
-                declarations: [DotContentletWrapperComponent],
-                providers: [
-                    DotContentletEditorService,
-                    DotIframeService,
-                    DotAlertConfirmService,
-                    ConfirmationService,
-                    DotcmsEventsService,
-                    DotEventsSocket,
-                    DotcmsConfigService,
-                    LoggerService,
-                    StringUtils,
-                    Title,
-                    { provide: DotEventsSocketURL, useFactory: dotEventSocketURLFactory },
-                    {
-                        provide: DotHttpErrorManagerService,
-                        useValue: {
-                            handle: jasmine.createSpy().and.returnValue(of({}))
+    beforeEach(waitForAsync(() => {
+        TestBed.configureTestingModule({
+            declarations: [DotContentletWrapperComponent],
+            providers: [
+                DotContentletEditorService,
+                DotIframeService,
+                DotAlertConfirmService,
+                ConfirmationService,
+                DotcmsEventsService,
+                DotEventsSocket,
+                DotcmsConfigService,
+                LoggerService,
+                StringUtils,
+                Title,
+                { provide: DotEventsSocketURL, useFactory: dotEventSocketURLFactory },
+                {
+                    provide: DotHttpErrorManagerService,
+                    useValue: {
+                        handle: jasmine.createSpy().and.returnValue(of({}))
+                    }
+                },
+                {
+                    provide: LoginService,
+                    useClass: LoginServiceMock
+                },
+                {
+                    provide: DotMenuService,
+                    useValue: {
+                        getDotMenuId() {
+                            return of('999');
                         }
-                    },
-                    {
-                        provide: LoginService,
-                        useClass: LoginServiceMock
-                    },
-                    {
-                        provide: DotMenuService,
-                        useValue: {
-                            getDotMenuId() {
-                                return of('999');
-                            }
-                        }
-                    },
-                    {
-                        provide: DotMessageService,
-                        useValue: messageServiceMock
-                    },
-                    {
-                        provide: CoreWebService,
-                        useClass: CoreWebServiceMock
-                    },
-                    { provide: DotRouterService, useClass: MockDotRouterService },
-                    { provide: DotUiColorsService, useClass: MockDotUiColorsService }
-                ],
-                imports: [
-                    DotIframeDialogModule,
-                    RouterTestingModule,
-                    BrowserAnimationsModule,
-                    HttpClientTestingModule
-                ]
-            });
-        })
-    );
+                    }
+                },
+                {
+                    provide: DotMessageService,
+                    useValue: messageServiceMock
+                },
+                {
+                    provide: CoreWebService,
+                    useClass: CoreWebServiceMock
+                },
+                { provide: DotRouterService, useClass: MockDotRouterService },
+                { provide: DotUiColorsService, useClass: MockDotUiColorsService }
+            ],
+            imports: [
+                DotIframeDialogModule,
+                RouterTestingModule,
+                BrowserAnimationsModule,
+                HttpClientTestingModule
+            ]
+        });
+    }));
 
     beforeEach(() => {
         fixture = TestBed.createComponent(DotContentletWrapperComponent);

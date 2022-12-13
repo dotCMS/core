@@ -12,18 +12,18 @@ import {
     Injectable,
     forwardRef
 } from '@angular/core';
-import { PaginatorService } from '@services/paginator';
-import { MockDotMessageService } from '@dotcms/app/test/dot-message-service.mock';
+import { PaginatorService } from '@dotcms/data-access';
+import { MockDotMessageService } from '@dotcms/utils-testing';
 import { DOTTestBed } from '@dotcms/app/test/dot-test-bed';
 import { PaginationEvent } from '@components/_common/searchable-dropdown/component';
-import { DotMessageService } from '@services/dot-message/dot-messages.service';
+import { DotMessageService } from '@dotcms/data-access';
 import { DotRelationshipService } from '@portlets/shared/dot-content-types-edit/components/fields/content-type-fields-properties-form/field-properties/dot-relationships-property/services/dot-relationship.service';
-import { DotContentTypeService } from '@services/dot-content-type/dot-content-type.service';
+import { DotContentTypeService } from '@dotcms/data-access';
 import { By } from '@angular/platform-browser';
 import { Observable, of } from 'rxjs';
 import { DotRelationshipCardinality } from '@portlets/shared/dot-content-types-edit/components/fields/content-type-fields-properties-form/field-properties/dot-relationships-property/model/dot-relationship-cardinality.model';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
-import { dotcmsContentTypeBasicMock } from '@tests/dot-content-types.mock';
+import { dotcmsContentTypeBasicMock } from '@dotcms/utils-testing';
 
 const cardinalities = [
     {
@@ -90,13 +90,21 @@ class MockSearchableDropdownComponent implements ControlValueAccessor {
     @Output() filterChange: EventEmitter<string> = new EventEmitter();
     @Output() pageChange: EventEmitter<PaginationEvent> = new EventEmitter();
 
-    writeValue(): void {/* */}
+    writeValue(): void {
+        /* */
+    }
 
-    registerOnChange(): void {/* */}
+    registerOnChange(): void {
+        /* */
+    }
 
-    registerOnTouched(): void {/* */}
+    registerOnTouched(): void {
+        /* */
+    }
 
-    setDisabledState?(): void {/* */}
+    setDisabledState?(): void {
+        /* */
+    }
 }
 
 @Component({
@@ -153,32 +161,30 @@ describe('DotNewRelationshipsComponent', () => {
         'contenttypes.field.properties.relationships.label': 'Relationship'
     });
 
-    beforeEach(
-        waitForAsync(() => {
-            DOTTestBed.configureTestingModule({
-                declarations: [
-                    HostTestComponent,
-                    DotNewRelationshipsComponent,
-                    MockSearchableDropdownComponent,
-                    MockCardinalitySelectorComponent
-                ],
-                imports: [],
-                providers: [
-                    { provide: DotMessageService, useValue: messageServiceMock },
-                    { provide: PaginatorService, useClass: MockPaginatorService },
-                    { provide: DotRelationshipService, useClass: MockRelationshipService },
-                    { provide: DotContentTypeService, useClass: MockDotContentTypeService }
-                ]
-            });
+    beforeEach(waitForAsync(() => {
+        DOTTestBed.configureTestingModule({
+            declarations: [
+                HostTestComponent,
+                DotNewRelationshipsComponent,
+                MockSearchableDropdownComponent,
+                MockCardinalitySelectorComponent
+            ],
+            imports: [],
+            providers: [
+                { provide: DotMessageService, useValue: messageServiceMock },
+                { provide: PaginatorService, useClass: MockPaginatorService },
+                { provide: DotRelationshipService, useClass: MockRelationshipService },
+                { provide: DotContentTypeService, useClass: MockDotContentTypeService }
+            ]
+        });
 
-            fixtureHostComponent = DOTTestBed.createComponent(HostTestComponent);
-            de = fixtureHostComponent.debugElement.query(By.css('dot-new-relationships'));
-            comp = de.componentInstance;
+        fixtureHostComponent = DOTTestBed.createComponent(HostTestComponent);
+        de = fixtureHostComponent.debugElement.query(By.css('dot-new-relationships'));
+        comp = de.componentInstance;
 
-            paginatorService = de.injector.get(PaginatorService);
-            spyOn(paginatorService, 'getWithOffset').and.returnValue(of([contentTypeMock]));
-        })
-    );
+        paginatorService = de.injector.get(PaginatorService);
+        spyOn(paginatorService, 'getWithOffset').and.returnValue(of([contentTypeMock]));
+    }));
 
     describe('Content Types', () => {
         beforeEach(() => {

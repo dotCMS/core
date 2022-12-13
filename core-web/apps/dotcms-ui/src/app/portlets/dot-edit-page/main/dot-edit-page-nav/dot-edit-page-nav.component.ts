@@ -5,13 +5,11 @@ import { Observable, of as observableOf } from 'rxjs';
 import { map } from 'rxjs/operators';
 import * as _ from 'lodash';
 
-import { DotTemplate } from '@shared/models/dot-edit-layout-designer';
-import { DotMessageService } from '@services/dot-message/dot-messages.service';
-import { DotLicenseService } from '@services/dot-license/dot-license.service';
+import { DotMessageService } from '@dotcms/data-access';
+import { DotLicenseService } from '@dotcms/data-access';
 import { DotContentletEditorService } from '@components/dot-contentlet-editor/services/dot-contentlet-editor.service';
-import { DotPageRenderState } from '@portlets/dot-edit-page/shared/models';
-import { DotPageRender } from '@models/dot-page/dot-rendered-page.model';
-import { DotPropertiesService } from '@services/dot-properties/dot-properties.service';
+
+import { DotPageRenderState, DotPageRender, DotTemplate } from '@dotcms/dotcms-models';
 
 interface DotEditPageNavItem {
     action?: (inode: string) => void;
@@ -38,7 +36,6 @@ export class DotEditPageNavComponent implements OnChanges {
         private dotLicenseService: DotLicenseService,
         private dotContentletEditorService: DotContentletEditorService,
         private dotMessageService: DotMessageService,
-        private readonly dotPropertiesService: DotPropertiesService,
         private readonly route: ActivatedRoute
     ) {}
 

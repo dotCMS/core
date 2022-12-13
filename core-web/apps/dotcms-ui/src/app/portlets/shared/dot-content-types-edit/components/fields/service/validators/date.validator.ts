@@ -1,5 +1,5 @@
 import { UntypedFormControl } from '@angular/forms';
-import { _isValid } from '@services/dot-format-date-service';
+import { _isValid } from '@dotcms/app/api/services/dot-format-date-service';
 
 const format = {
     'com.dotcms.contenttype.model.field.ImmutableDateField': 'yyyy-MM-dd',

@@ -17,11 +17,11 @@ import { Site, SiteService } from '@dotcms/dotcms-js';
 import { DataView } from 'primeng/dataview';
 import { LazyLoadEvent } from 'primeng/api';
 
-import { DotMessageService } from '@services/dot-message/dot-messages.service';
-import { PaginatorService } from '@services/paginator';
+import { DotMessageService, PaginatorService } from '@dotcms/data-access';
 import { DotDialogActions } from '@components/dot-dialog/dot-dialog.component';
-import { DotTheme } from '@models/dot-edit-layout-designer';
+
 import { DotSiteSelectorComponent } from '@components/_common/dot-site-selector/dot-site-selector.component';
+import { DotTheme } from '@dotcms/dotcms-models';
 
 /**
  * The DotThemeSelectorComponent is modal that

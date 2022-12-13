@@ -8,10 +8,10 @@ import { ResponseView, HttpCode } from '@dotcms/dotcms-js';
 import { SelectItemGroup } from 'primeng/api';
 
 import { DotWorkflowsActionsSelectorFieldService } from './dot-workflows-actions-selector-field.service';
-import { DotWorkflowsActionsService } from '@services/dot-workflows-actions/dot-workflows-actions.service';
-import { mockWorkflowsActions } from '@tests/dot-workflows-actions.mock';
-import { mockWorkflows } from '@tests/dot-workflow-service.mock';
-import { DotHttpErrorManagerService } from '@services/dot-http-error-manager/dot-http-error-manager.service';
+import { DotWorkflowsActionsService } from '@dotcms/data-access';
+import { mockWorkflowsActions } from '@dotcms/utils-testing';
+import { mockWorkflows } from '@dotcms/utils-testing';
+import { DotHttpErrorManagerService } from '@dotcms/app/api/services/dot-http-error-manager/dot-http-error-manager.service';
 import { HttpResponse } from '@angular/common/http';
 
 describe('DotWorkflowsActionsSelectorFieldService', () => {

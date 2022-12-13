@@ -3,7 +3,8 @@ import { CommonModule } from '@angular/common';
 import { DotPagesComponent } from './dot-pages.component';
 import { DotPagesRoutingModule } from './dot-pages-routing.module';
 import { DotPagesCardModule } from './dot-pages-card/dot-pages-card.module';
-import { DotESContentService } from '@dotcms/app/api/services/dot-es-content/dot-es-content.service';
+import { DotESContentService } from '@dotcms/data-access';
+
 import { TabViewModule } from 'primeng/tabview';
 import { DotPipesModule } from '@dotcms/app/view/pipes/dot-pipes.module';
 import { DotIconModule } from '@dotcms/ui';

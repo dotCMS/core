@@ -7,13 +7,13 @@ import { waitForAsync, ComponentFixture } from '@angular/core/testing';
 
 import { LoginService } from '@dotcms/dotcms-js';
 
-import { DOTTestBed } from '../../../test/dot-test-bed';
+import { DOTTestBed } from '@dotcms/app/test/dot-test-bed';
 import { DotWorkflowTaskDetailService } from './services/dot-workflow-task-detail.service';
 import { DotWorkflowTaskDetailComponent } from './dot-workflow-task-detail.component';
 import { DotIframeDialogComponent } from '../dot-iframe-dialog/dot-iframe-dialog.component';
 import { DotIframeDialogModule } from '../dot-iframe-dialog/dot-iframe-dialog.module';
-import { DotMenuService } from '@services/dot-menu.service';
-import { LoginServiceMock } from '../../../test/login-service.mock';
+import { DotMenuService } from '@dotcms/app/api/services/dot-menu.service';
+import { LoginServiceMock } from '@dotcms/utils-testing';
 
 describe('DotWorkflowTaskDetailComponent', () => {
     let component: DotWorkflowTaskDetailComponent;
@@ -25,29 +25,27 @@ describe('DotWorkflowTaskDetailComponent', () => {
 
     let dotWorkflowTaskDetailService: DotWorkflowTaskDetailService;
 
-    beforeEach(
-        waitForAsync(() => {
-            DOTTestBed.configureTestingModule({
-                declarations: [DotWorkflowTaskDetailComponent],
-                providers: [
-                    DotWorkflowTaskDetailService,
-                    {
-                        provide: LoginService,
-                        useClass: LoginServiceMock
-                    },
-                    {
-                        provide: DotMenuService,
-                        useValue: {
-                            getDotMenuId() {
-                                return observableOf('999');
-                            }
+    beforeEach(waitForAsync(() => {
+        DOTTestBed.configureTestingModule({
+            declarations: [DotWorkflowTaskDetailComponent],
+            providers: [
+                DotWorkflowTaskDetailService,
+                {
+                    provide: LoginService,
+                    useClass: LoginServiceMock
+                },
+                {
+                    provide: DotMenuService,
+                    useValue: {
+                        getDotMenuId() {
+                            return observableOf('999');
                         }
                     }
-                ],
-                imports: [DotIframeDialogModule, RouterTestingModule, BrowserAnimationsModule]
-            });
-        })
-    );
+                }
+            ],
+            imports: [DotIframeDialogModule, RouterTestingModule, BrowserAnimationsModule]
+        });
+    }));
 
     beforeEach(() => {
         fixture = DOTTestBed.createComponent(DotWorkflowTaskDetailComponent);

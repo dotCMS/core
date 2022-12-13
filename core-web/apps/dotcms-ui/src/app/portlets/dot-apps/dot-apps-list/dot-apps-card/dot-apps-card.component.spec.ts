@@ -1,6 +1,6 @@
 import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing';
-import { MockDotMessageService } from '@tests/dot-message-service.mock';
-import { DotMessageService } from '@services/dot-message/dot-messages.service';
+import { MockDotMessageService } from '@dotcms/utils-testing';
+import { DotMessageService } from '@dotcms/data-access';
 import { By } from '@angular/platform-browser';
 import { DotAppsCardComponent } from './dot-apps-card.component';
 import { DotAvatarModule } from '@components/_common/dot-avatar/dot-avatar.module';
@@ -27,21 +27,13 @@ describe('DotAppsCardComponent', () => {
         'apps.invalid.configurations': 'Invalid Configurations'
     });
 
-    beforeEach(
-        waitForAsync(() => {
-            TestBed.configureTestingModule({
-                imports: [
-                    CardModule,
-                    DotAvatarModule,
-                    DotIconModule,
-                    TooltipModule,
-                    DotPipesModule
-                ],
-                declarations: [DotAppsCardComponent, MockMarkdownComponent],
-                providers: [{ provide: DotMessageService, useValue: messageServiceMock }]
-            }).compileComponents();
-        })
-    );
+    beforeEach(waitForAsync(() => {
+        TestBed.configureTestingModule({
+            imports: [CardModule, DotAvatarModule, DotIconModule, TooltipModule, DotPipesModule],
+            declarations: [DotAppsCardComponent, MockMarkdownComponent],
+            providers: [{ provide: DotMessageService, useValue: messageServiceMock }]
+        }).compileComponents();
+    }));
 
     beforeEach(() => {
         fixture = TestBed.createComponent(DotAppsCardComponent);

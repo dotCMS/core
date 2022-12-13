@@ -2,16 +2,14 @@ import { Component, OnInit, OnDestroy } from '@angular/core';
 import { UntypedFormBuilder, UntypedFormGroup, Validators } from '@angular/forms';
 
 import { SelectItem } from 'primeng/api';
-import { DotMessageService } from '@services/dot-message/dot-messages.service';
-import {
-    DotPushPublishFilter,
-    DotPushPublishFiltersService
-} from '@services/dot-push-publish-filters/dot-push-publish-filters.service';
+import { DotMessageService } from '@dotcms/data-access';
+import { DotPushPublishFilter, DotPushPublishFiltersService } from '@dotcms/data-access';
 import { Observable, of, Subject } from 'rxjs';
 import { catchError, map, take, takeUntil } from 'rxjs/operators';
-import { DotDownloadBundleDialogService } from '@services/dot-download-bundle-dialog/dot-download-bundle-dialog.service';
+
 import { DotDialogActions } from '@components/dot-dialog/dot-dialog.component';
-import { getDownloadLink } from '@shared/dot-utils';
+import { getDownloadLink } from '@dotcms/utils';
+import { DotDownloadBundleDialogService } from '@dotcms/app/api/services/dot-download-bundle-dialog/dot-download-bundle-dialog.service';
 
 enum DownloadType {
     UNPUBLISH = 'unpublish',

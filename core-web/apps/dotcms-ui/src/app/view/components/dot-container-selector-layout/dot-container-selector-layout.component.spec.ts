@@ -1,17 +1,18 @@
 import { of as observableOf } from 'rxjs';
-import { CONTAINER_SOURCE, DotContainer } from '@models/container/dot-container.model';
+
+import { CONTAINER_SOURCE, DotContainer } from '@dotcms/dotcms-models';
 import { By } from '@angular/platform-browser';
-import { PaginatorService } from '@services/paginator/paginator.service';
+import { PaginatorService } from '@dotcms/data-access';
 import { IframeOverlayService } from '../_common/iframe/service/iframe-overlay.service';
-import { MockDotMessageService } from '../../../test/dot-message-service.mock';
-import { DotMessageService } from '@services/dot-message/dot-messages.service';
+import { MockDotMessageService } from '@dotcms/utils-testing';
+import { DotMessageService } from '@dotcms/data-access';
 import { SearchableDropDownModule } from '../_common/searchable-dropdown/searchable-dropdown.module';
-import { DOTTestBed } from '../../../test/dot-test-bed';
+import { DOTTestBed } from '@dotcms/app/test/dot-test-bed';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { Component, DebugElement } from '@angular/core';
 import { DotContainerSelectorLayoutComponent } from './dot-container-selector-layout.component';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
-import { DotTemplateContainersCacheService } from '@services/dot-template-containers-cache/dot-template-containers-cache.service';
+
 import { CommonModule } from '@angular/common';
 import { ButtonModule } from 'primeng/button';
 import { DotPipesModule } from '@pipes/dot-pipes.module';
@@ -24,9 +25,10 @@ import {
     StringUtils,
     BrowserUtil
 } from '@dotcms/dotcms-js';
-import { CoreWebServiceMock } from '@tests/core-web.service.mock';
+import { CoreWebServiceMock } from '@dotcms/utils-testing';
 import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { DotContainerSelectorModule } from '@components/dot-container-selector/dot-container-selector.module';
+import { DotTemplateContainersCacheService } from '@dotcms/app/api/services/dot-template-containers-cache/dot-template-containers-cache.service';
 
 @Component({
     selector: 'dot-icon-button',

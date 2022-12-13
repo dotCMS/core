@@ -1,5 +1,6 @@
 package com.dotcms.auth.providers.jwt.factories;
 
+import com.dotcms.auth.providers.jwt.JsonWebTokenUtils;
 import com.dotcms.auth.providers.jwt.beans.ApiToken;
 import com.dotcms.auth.providers.jwt.beans.JWToken;
 import com.dotcms.business.CloseDBIfOpened;
@@ -486,13 +487,13 @@ public class ApiTokenAPI {
      */
     public  boolean isWellFormedToken(final String token){
         try {
-            Jwts.parser().parse(token);
-            return true;
+            return JsonWebTokenUtils.getInstance().isWellFormed(token);
         } catch (MalformedJwtException e){
             return false;
         } catch(SignatureException | ExpiredJwtException | IllegalArgumentException e){
             return true;
         }
+
     }
 
 }

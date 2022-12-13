@@ -16,17 +16,16 @@ import {
 } from 'rxjs/operators';
 import * as _ from 'lodash';
 
-import { DotTemplatesService } from '@services/dot-templates/dot-templates.service';
-import { DotRouterService } from '@services/dot-router/dot-router.service';
-import { DotTemplateContainersCacheService } from '@services/dot-template-containers-cache/dot-template-containers-cache.service';
-import { DotContainerMap } from '@models/container/dot-container.model';
-import { DotLayout, DotTemplate } from '@models/dot-edit-layout-designer';
+import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
 import { DotGlobalMessageService } from '@components/_common/dot-global-message/dot-global-message.service';
-import { DotMessageService } from '@services/dot-message/dot-messages.service';
+import { DotMessageService } from '@dotcms/data-access';
 
 import { HttpErrorResponse } from '@angular/common/http';
-import { DotHttpErrorManagerService } from '@services/dot-http-error-manager/dot-http-error-manager.service';
-import { DotEditLayoutService } from '@services/dot-edit-layout/dot-edit-layout.service';
+import { DotHttpErrorManagerService } from '@dotcms/app/api/services/dot-http-error-manager/dot-http-error-manager.service';
+import { DotEditLayoutService } from '@dotcms/app/api/services/dot-edit-layout/dot-edit-layout.service';
+import { DotTemplateContainersCacheService } from '@dotcms/app/api/services/dot-template-containers-cache/dot-template-containers-cache.service';
+import { DotTemplatesService } from '@dotcms/app/api/services/dot-templates/dot-templates.service';
+import { DotContainerMap, DotLayout, DotTemplate } from '@dotcms/dotcms-models';
 
 type DotTemplateType = 'design' | 'advanced';
 

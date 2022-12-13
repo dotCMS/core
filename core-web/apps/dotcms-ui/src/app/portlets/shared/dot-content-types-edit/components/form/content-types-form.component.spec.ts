@@ -13,11 +13,11 @@ import {
 } from '@angular/forms';
 import { RouterTestingModule } from '@angular/router/testing';
 
-import { DOTTestBed } from '@tests/dot-test-bed';
-import { LoginServiceMock } from '@tests/login-service.mock';
-import { MockDotMessageService } from '@tests/dot-message-service.mock';
-import { SiteServiceMock } from '@tests/site-service.mock';
-import { DotWorkflowServiceMock, mockWorkflows } from '@tests/dot-workflow-service.mock';
+import { DOTTestBed } from '@dotcms/app/test/dot-test-bed';
+import { LoginServiceMock } from '@dotcms/utils-testing';
+import { MockDotMessageService } from '@dotcms/utils-testing';
+import { SiteServiceMock } from '@dotcms/utils-testing';
+import { DotWorkflowServiceMock, mockWorkflows } from '@dotcms/utils-testing';
 
 import { DotcmsConfigService, LoginService } from '@dotcms/dotcms-js';
 import { SiteService } from '@dotcms/dotcms-js';
@@ -25,25 +25,22 @@ import { SiteService } from '@dotcms/dotcms-js';
 import { ContentTypesFormComponent } from './content-types-form.component';
 import { DotCMSSystemActionType, DotCMSContentTypeLayoutRow } from '@dotcms/dotcms-models';
 import { DotFieldValidationMessageModule } from '@components/_common/dot-field-validation-message/dot-file-validation-message.module';
-import { DotMessageService } from '@services/dot-message/dot-messages.service';
-import { DotContentTypesInfoService } from '@services/dot-content-types-info';
-import { DotWorkflowService } from '@services/dot-workflow/dot-workflow.service';
+import { DotMessageService } from '@dotcms/data-access';
+import { DotContentTypesInfoService } from '@dotcms/data-access';
+import { DotWorkflowService } from '@dotcms/data-access';
 // tslint:disable-next-line:max-line-length
 import { DotWorkflowsSelectorFieldModule } from '@components/_common/dot-workflows-selector-field/dot-workflows-selector-field.module';
 
-import { DotLicenseService } from '@services/dot-license/dot-license.service';
+import { DotLicenseService } from '@dotcms/data-access';
 import { DotPageSelectorModule } from '@components/_common/dot-page-selector/dot-page-selector.module';
 import { DotDirectivesModule } from '@shared/dot-directives.module';
 import { DotIconModule } from '@dotcms/ui';
 import { UiDotIconButtonModule } from '@components/_common/dot-icon-button/dot-icon-button.module';
 import { DotFieldHelperModule } from '@components/dot-field-helper/dot-field-helper.module';
-import {
-    dotcmsContentTypeFieldBasicMock,
-    dotcmsContentTypeBasicMock
-} from '@tests/dot-content-types.mock';
+import { dotcmsContentTypeFieldBasicMock, dotcmsContentTypeBasicMock } from '@dotcms/utils-testing';
 // eslint-disable-next-line max-len
 import { DotWorkflowsActionsSelectorFieldModule } from '@components/_common/dot-workflows-actions-selector-field/dot-workflows-actions-selector-field.module';
-import { mockWorkflowsActions } from '@tests/dot-workflows-actions.mock';
+import { mockWorkflowsActions } from '@dotcms/utils-testing';
 import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { ButtonModule } from 'primeng/button';
 import { DropdownModule } from 'primeng/dropdown';
@@ -120,83 +117,81 @@ describe('ContentTypesFormComponent', () => {
         }
     ];
 
-    beforeEach(
-        waitForAsync(() => {
-            const messageServiceMock = new MockDotMessageService({
-                'contenttypes.form.field.detail.page': 'Detail Page',
-                'contenttypes.form.field.expire.date.field': 'Expire Date Field',
-                'contenttypes.form.field.host_folder.label': 'Host or Folder',
-                'contenttypes.form.identifier': 'Identifier',
-                'contenttypes.form.label.publish.date.field': 'Publish Date Field',
-                'contenttypes.hint.URL.map.pattern.hint1': 'Hello World',
-                'contenttypes.form.label.URL.pattern': 'URL Pattern',
-                'contenttypes.content.variable': 'Variable',
-                'contenttypes.form.label.workflow': 'Workflow',
-                'contenttypes.action.cancel': 'Cancel',
-                'contenttypes.form.label.description': 'Description',
-                'contenttypes.form.name': 'Name',
-                'contenttypes.action.save': 'Save',
-                'contenttypes.action.update': 'Update',
-                'contenttypes.action.create': 'Create',
-                'contenttypes.action.edit': 'Edit',
-                'contenttypes.action.delete': 'Delete',
-                'contenttypes.form.name.error.required': 'Error is wrong',
-                'contenttypes.action.form.cancel': 'Cancel',
-                'contenttypes.content.contenttype': 'content type',
-                'contenttypes.content.fileasset': 'fileasset',
-                'contenttypes.content.content': 'Content',
-                'contenttypes.content.form': 'Form',
-                'contenttypes.content.persona': 'Persona',
-                'contenttypes.content.widget': 'Widget',
-                'contenttypes.content.htmlpage': 'Page',
-                'contenttypes.content.key_value': 'Key Value',
-                'contenttypes.content.vanity_url:': 'Vanity Url'
-            });
+    beforeEach(waitForAsync(() => {
+        const messageServiceMock = new MockDotMessageService({
+            'contenttypes.form.field.detail.page': 'Detail Page',
+            'contenttypes.form.field.expire.date.field': 'Expire Date Field',
+            'contenttypes.form.field.host_folder.label': 'Host or Folder',
+            'contenttypes.form.identifier': 'Identifier',
+            'contenttypes.form.label.publish.date.field': 'Publish Date Field',
+            'contenttypes.hint.URL.map.pattern.hint1': 'Hello World',
+            'contenttypes.form.label.URL.pattern': 'URL Pattern',
+            'contenttypes.content.variable': 'Variable',
+            'contenttypes.form.label.workflow': 'Workflow',
+            'contenttypes.action.cancel': 'Cancel',
+            'contenttypes.form.label.description': 'Description',
+            'contenttypes.form.name': 'Name',
+            'contenttypes.action.save': 'Save',
+            'contenttypes.action.update': 'Update',
+            'contenttypes.action.create': 'Create',
+            'contenttypes.action.edit': 'Edit',
+            'contenttypes.action.delete': 'Delete',
+            'contenttypes.form.name.error.required': 'Error is wrong',
+            'contenttypes.action.form.cancel': 'Cancel',
+            'contenttypes.content.contenttype': 'content type',
+            'contenttypes.content.fileasset': 'fileasset',
+            'contenttypes.content.content': 'Content',
+            'contenttypes.content.form': 'Form',
+            'contenttypes.content.persona': 'Persona',
+            'contenttypes.content.widget': 'Widget',
+            'contenttypes.content.htmlpage': 'Page',
+            'contenttypes.content.key_value': 'Key Value',
+            'contenttypes.content.vanity_url:': 'Vanity Url'
+        });
 
-            const siteServiceMock = new SiteServiceMock();
+        const siteServiceMock = new SiteServiceMock();
 
-            DOTTestBed.configureTestingModule({
-                declarations: [ContentTypesFormComponent, DotSiteSelectorComponent],
-                imports: [
-                    RouterTestingModule.withRoutes([
-                        { component: ContentTypesFormComponent, path: 'test' }
-                    ]),
-                    BrowserAnimationsModule,
-                    ButtonModule,
-                    DotDirectivesModule,
-                    DotFieldHelperModule,
-                    DotFieldValidationMessageModule,
-                    UiDotIconButtonModule,
-                    DotIconModule,
-                    DotPageSelectorModule,
-                    DotWorkflowsActionsSelectorFieldModule,
-                    DotWorkflowsSelectorFieldModule,
-                    DropdownModule,
-                    InputTextModule,
-                    OverlayPanelModule,
-                    ReactiveFormsModule,
-                    RouterTestingModule,
-                    TabViewModule,
-                    HttpClientTestingModule,
-                    DotMdIconSelectorModule
-                ],
-                providers: [
-                    { provide: LoginService, useClass: LoginServiceMock },
-                    { provide: DotMessageService, useValue: messageServiceMock },
-                    { provide: SiteService, useValue: siteServiceMock },
-                    { provide: DotWorkflowService, useClass: DotWorkflowServiceMock },
-                    { provide: DotLicenseService, useClass: MockDotLicenseService },
-                    DotcmsConfigService,
-                    DotContentTypesInfoService
-                ]
-            });
+        DOTTestBed.configureTestingModule({
+            declarations: [ContentTypesFormComponent, DotSiteSelectorComponent],
+            imports: [
+                RouterTestingModule.withRoutes([
+                    { component: ContentTypesFormComponent, path: 'test' }
+                ]),
+                BrowserAnimationsModule,
+                ButtonModule,
+                DotDirectivesModule,
+                DotFieldHelperModule,
+                DotFieldValidationMessageModule,
+                UiDotIconButtonModule,
+                DotIconModule,
+                DotPageSelectorModule,
+                DotWorkflowsActionsSelectorFieldModule,
+                DotWorkflowsSelectorFieldModule,
+                DropdownModule,
+                InputTextModule,
+                OverlayPanelModule,
+                ReactiveFormsModule,
+                RouterTestingModule,
+                TabViewModule,
+                HttpClientTestingModule,
+                DotMdIconSelectorModule
+            ],
+            providers: [
+                { provide: LoginService, useClass: LoginServiceMock },
+                { provide: DotMessageService, useValue: messageServiceMock },
+                { provide: SiteService, useValue: siteServiceMock },
+                { provide: DotWorkflowService, useClass: DotWorkflowServiceMock },
+                { provide: DotLicenseService, useClass: MockDotLicenseService },
+                DotcmsConfigService,
+                DotContentTypesInfoService
+            ]
+        });
 
-            fixture = DOTTestBed.createComponent(ContentTypesFormComponent);
-            comp = fixture.componentInstance;
-            de = fixture.debugElement;
-            dotLicenseService = de.injector.get(DotLicenseService);
-        })
-    );
+        fixture = DOTTestBed.createComponent(ContentTypesFormComponent);
+        comp = fixture.componentInstance;
+        de = fixture.debugElement;
+        dotLicenseService = de.injector.get(DotLicenseService);
+    }));
 
     it('should be invalid by default', () => {
         comp.data = {
