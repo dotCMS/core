@@ -449,7 +449,7 @@ public class StringUtils {
      */
     public static String convertCamelToSnake(final String parameter)
     {
-        if(parameter == null || parameter == StringPool.BLANK)
+        if(parameter == null || parameter.equals(StringPool.BLANK))
             return StringPool.BLANK;
 
         if(parameter.length() == 1)
