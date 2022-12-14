@@ -40,7 +40,6 @@ import com.dotmarketing.portlets.fileassets.business.FileAsset;
 import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
-import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.util.*;
 import com.google.common.collect.ImmutableList;
 import com.liferay.portal.model.User;
@@ -79,7 +78,7 @@ public class ContainerFactoryImpl implements ContainerFactory {
 
 		if(container==null){
 			final List<Map<String, Object>> containerResults = new DotConnect()
-					.setSQL(containerSQL.FIND_BY_INODE)
+					.setSQL(ContainerSQL.FIND_BY_INODE)
 					.addParam(inode)
 					.loadObjectResults();
 			if (containerResults.isEmpty()) {
@@ -87,7 +86,7 @@ public class ContainerFactoryImpl implements ContainerFactory {
 				return null;
 			}
 
-			container = (Container) TransformerLocator.createContainerTransformer(containerResults).findFirst();
+			container = TransformerLocator.createContainerTransformer(containerResults).findFirst();
 
 			if(container != null && container.getInode() != null) {
 				containerCache.add(inode, container);
@@ -122,7 +121,7 @@ public class ContainerFactoryImpl implements ContainerFactory {
 
 	private void insertInodeInDB(final Container container) throws DotDataException{
 		DotConnect dc = new DotConnect();
-		dc.setSQL(containerSQL.INSERT_INODE);
+		dc.setSQL(ContainerSQL.INSERT_INODE);
 		dc.addParam(container.getInode());
 		dc.addParam(container.getiDate());
 		dc.addParam(container.getOwner());
@@ -131,7 +130,7 @@ public class ContainerFactoryImpl implements ContainerFactory {
 
 	private void insertContainerInDB(final Container container) throws DotDataException {
 		DotConnect dc = new DotConnect();
-		dc.setSQL(containerSQL.INSERT_CONTAINER);
+		dc.setSQL(ContainerSQL.INSERT_CONTAINER);
 		dc.addParam(container.getInode());
 		dc.addParam(container.getCode());
 		dc.addParam(container.getPreLoop());
@@ -154,7 +153,7 @@ public class ContainerFactoryImpl implements ContainerFactory {
 
 	private void updateInodeInDB(final Container container) throws DotDataException{
 		DotConnect dc = new DotConnect();
-		dc.setSQL(containerSQL.UPDATE_INODE);
+		dc.setSQL(ContainerSQL.UPDATE_INODE);
 		dc.addParam(container.getiDate());
 		dc.addParam(container.getOwner());
 		dc.addParam(container.getInode());
@@ -163,7 +162,7 @@ public class ContainerFactoryImpl implements ContainerFactory {
 
 	private void updateContainerInDB(final Container container) throws DotDataException {
 		DotConnect dc = new DotConnect();
-		dc.setSQL(containerSQL.UPDATE_CONTAINER);
+		dc.setSQL(ContainerSQL.UPDATE_CONTAINER);
 		dc.addParam(container.getCode());
 		dc.addParam(container.getPreLoop());
 		dc.addParam(container.getPostLoop());

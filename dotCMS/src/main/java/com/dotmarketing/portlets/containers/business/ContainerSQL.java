@@ -1,19 +1,17 @@
 package com.dotmarketing.portlets.containers.business;
 
-import com.dotmarketing.beans.Inode.Type;
-
 public class ContainerSQL {
 
-    private static ContainerSQL _instance;
+    private static ContainerSQL instance;
 
     private ContainerSQL(){
     }
     public static ContainerSQL getInstance() {
-        if (_instance == null) {
-            _instance = new ContainerSQL();
+        if (instance == null) {
+            instance = new ContainerSQL();
         }
 
-        return _instance;
+        return instance;
     }
 
     public static final String FIND_BY_INODE = "select container.* from dot_containers container "
