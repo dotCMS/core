@@ -69,7 +69,7 @@ services:
       - esdata3:/data
 
   dotcms:
-    image: dotcms/dotcms:5.2.8.5_SNAPSHOT_latest
+    image: dotcms/dotcms:5.2.8.5_latest_SNAPSHOT
     #entrypoint: bash -c 'sleep infinity'
     environment:
         CMS_JAVA_OPTS: '-Xmx1g '
@@ -90,7 +90,7 @@ services:
       - db
     volumes:
       - cms-shared:/data/shared
-      - /Users/will/git/cloud-platform-perpetual-licensepack.zip:/data/shared/assets/license.zip
+      - ./license.zip:/data/shared/assets/license.zip
     networks:
       - db_net
     ports:

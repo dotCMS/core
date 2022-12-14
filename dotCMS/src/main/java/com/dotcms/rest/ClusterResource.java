@@ -93,7 +93,7 @@ public class ClusterResource {
 		
 		//Waits for 3 seconds in order server respond.
 		int maxWaitTime = 
-				timeoutSeconds.intValue() * 1000 + Config.getIntProperty("CLUSTER_SERVER_THREAD_SLEEP", 2000) ;
+				timeoutSeconds.intValue() * 1000 + Config.getIntProperty("CLUSTER_SERVER_THREAD_SLEEP", 3000) ;
 		int passedWaitTime = 0;
 		
 		//Trying to NOT wait whole time for returning the info.
