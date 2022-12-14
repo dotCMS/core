@@ -145,7 +145,7 @@ public class ESClient {
     @VisibleForTesting
     Settings loadNodeSettings(final Builder extSettings) throws IOException {
 
-        final String node_id =  APILocator.getShortyAPI().shortify(ConfigUtils.getServerId());
+        final String node_id =  ConfigUtils.getServerId();
         final String esPathHome = getESPathHome();
 
         Logger.info(this, "***PATH HOME: " + esPathHome);
@@ -155,7 +155,7 @@ public class ESClient {
         try(InputStream inputStream = Files.newInputStream(yamlPath)) {
             final Builder builder = Settings.builder()
                             .loadFromStream(yamlPath.toString(), inputStream, false)
-                            .put("node.name", "dotCMS-" + node_id)
+                            .put("node.name", node_id)
                             .put("path.home", esPathHome);
 
             if(UtilMethods.isSet(System.getenv("ES_DATA_DIR"))) {
