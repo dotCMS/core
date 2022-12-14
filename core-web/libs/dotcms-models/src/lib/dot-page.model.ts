@@ -1,5 +1,5 @@
 import { DotCMSContentType } from './dot-content-types.model';
-import { EditPageTabs } from '@portlets/dot-experiments/shared/models/dot-experiments.model';
+import { EditPageTabs } from './dot-experiments.model';
 
 // TODO: we need to see why the endpoints are returning different "Pages" objects.
 export interface DotPage {

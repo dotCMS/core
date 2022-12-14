@@ -2,17 +2,21 @@ import { Component, Input, OnInit } from '@angular/core';
 import { Observable } from 'rxjs';
 import { take } from 'rxjs/operators';
 
-import { DotPersona } from '@dotcms/dotcms-models';
-import { DotLanguage } from '@dotcms/dotcms-models';
-import { DotDevice } from '@dotcms/dotcms-models';
-import { DotMessageService } from '@dotcms/data-access';
-import { DotLicenseService } from '@dotcms/data-access';
-import { DotPersonalizeService } from '@dotcms/data-access';
-import { DotAlertConfirmService } from '@dotcms/data-access';
-import { DotPageRenderState } from '@dotcms/dotcms-models';
-import { DotPageMode } from '@dotcms/dotcms-models';
+import {
+    DotDevice,
+    DotLanguage,
+    DotPageMode,
+    DotPageRenderState,
+    DotPersona,
+    DotVariantData
+} from '@dotcms/dotcms-models';
+import {
+    DotAlertConfirmService,
+    DotLicenseService,
+    DotMessageService,
+    DotPersonalizeService
+} from '@dotcms/data-access';
 import { DotPageStateService } from '../../services/dot-page-state/dot-page-state.service';
-import { DotVariantData } from '@models/dot-page/dot-page.model';
 
 @Component({
     selector: 'dot-edit-page-view-as-controller',

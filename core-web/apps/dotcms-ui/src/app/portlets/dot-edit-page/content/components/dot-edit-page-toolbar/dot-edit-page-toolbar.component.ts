@@ -8,13 +8,15 @@ import {
     Output
 } from '@angular/core';
 import { Observable, Subject } from 'rxjs';
-import { DotLicenseService } from '@dotcms/data-access';
-import { DotPageMode, DotPageRenderState, FeaturedFlags } from '@dotcms/dotcms-models';
-import { DotCMSContentlet } from '@dotcms/dotcms-models';
-import { DotPropertiesService } from '@dotcms/data-access';
+import { DotLicenseService, DotPropertiesService } from '@dotcms/data-access';
+import {
+    DotCMSContentlet,
+    DotPageMode,
+    DotPageRenderState,
+    DotVariantData,
+    FeaturedFlags
+} from '@dotcms/dotcms-models';
 import { take } from 'rxjs/operators';
-import { FeaturedFlags } from '@dotcms/app/portlets/shared/models/shared-models';
-import { DotVariantData } from '@models/dot-page/dot-page.model';
 
 @Component({
     selector: 'dot-edit-page-toolbar',
