@@ -3,6 +3,7 @@ package com.dotcms.rest;
 import com.dotcms.cluster.bean.Server;
 import com.dotcms.cluster.bean.ServerPort;
 import com.dotcms.cluster.business.ServerAPI;
+import com.dotcms.cluster.common.ClusterUtil;
 import com.dotcms.enterprise.ClusterUtilProxy;
 import com.dotcms.enterprise.LicenseUtil;
 import com.dotcms.enterprise.cluster.ClusterFactory;
@@ -175,7 +176,7 @@ public class ClusterResource {
 				    
 				    String assetPath = jsonNodeStatusObject.getString("assetsTestPath");
 				    assetPath = assetPath!=null ? assetPath.toLowerCase() : "";
-				    assetPath = assetPath.indexOf("/assets/server")>-1? assetPath.substring(assetPath.indexOf("/assets/server")) : assetPath;
+				    assetPath = assetPath.indexOf("/server")>-1? assetPath.substring(assetPath.indexOf("/server")) : assetPath;
 				    
 					//Get the file Name from the response.
 					File testFile = new File(ConfigUtils.getAbsoluteAssetsRootPath() + assetPath);
@@ -276,7 +277,7 @@ public class ClusterResource {
 			//If the we have a failed job.
 			if(nodeStatusServerActionBean.isFailed()){
 				jsonNodeStatusObject = 
-						ClusterUtilProxy.createFailedJson(APILocator.getServerAPI().getServer(nodeStatusServerActionBean.getServerId()));
+						ClusterUtil.createFailedJson(APILocator.getServerAPI().getServer(nodeStatusServerActionBean.getServerId()));
 		    	
 			//If everything is OK.
 			} else {

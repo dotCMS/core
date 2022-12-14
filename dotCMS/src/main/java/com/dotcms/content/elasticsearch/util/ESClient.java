@@ -624,6 +624,6 @@ public class ESClient {
 
     @VisibleForTesting
     boolean isCommunityOrStandard() {
-        return LicenseUtil.getLevel()<= LicenseLevel.STANDARD.level;
+        return LicenseUtil.getLevel()>0;
     }
 }
