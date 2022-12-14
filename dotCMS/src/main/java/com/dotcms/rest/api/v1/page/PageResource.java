@@ -341,12 +341,12 @@ public class PageResource {
             HTMLPageAsset page = (HTMLPageAsset) this.pageResourceHelper.getPage(user, pageId, request);
 
 
-            page = this.pageResourceHelper.saveTemplate(user, (HTMLPageAsset) page, form);
+            page = this.pageResourceHelper.saveTemplate(user, page, form);
 
             final PageView renderedPage = this.htmlPageAssetRenderedAPI.getPageRendered(
                     PageContextBuilder.builder()
                             .setUser(user)
-                            .setPage((HTMLPageAsset) page)
+                            .setPage(page)
                             .setPageMode(PageMode.PREVIEW_MODE)
                             .build(),
                     request,
