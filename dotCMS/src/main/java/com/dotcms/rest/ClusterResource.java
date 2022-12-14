@@ -3,7 +3,6 @@ package com.dotcms.rest;
 import com.dotcms.cluster.bean.Server;
 import com.dotcms.cluster.bean.ServerPort;
 import com.dotcms.cluster.business.ServerAPI;
-import com.dotcms.cluster.common.ClusterUtil;
 import com.dotcms.enterprise.ClusterUtilProxy;
 import com.dotcms.enterprise.LicenseUtil;
 import com.dotcms.enterprise.cluster.ClusterFactory;
@@ -277,7 +276,7 @@ public class ClusterResource {
 			//If the we have a failed job.
 			if(nodeStatusServerActionBean.isFailed()){
 				jsonNodeStatusObject = 
-						ClusterUtil.createFailedJson(APILocator.getServerAPI().getServer(nodeStatusServerActionBean.getServerId()));
+						ClusterUtilProxy.createFailedJson(APILocator.getServerAPI().getServer(nodeStatusServerActionBean.getServerId()));
 		    	
 			//If everything is OK.
 			} else {
