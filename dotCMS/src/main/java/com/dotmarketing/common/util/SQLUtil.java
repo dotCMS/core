@@ -234,7 +234,7 @@ public class SQLUtil {
 			if (parameter.contains("-")) {
 				return "-" + testParam;
 			} else if (parameter.contains(_DESC)) {
-				return testParam + " " + _DESC;
+				return testParam + _DESC;
 			} else {
 				return testParam;
 			}

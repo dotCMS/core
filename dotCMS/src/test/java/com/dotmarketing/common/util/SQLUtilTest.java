@@ -604,18 +604,49 @@ public class SQLUtilTest  extends UnitTestBase {
 
     @Test
     public void Test_TranslateSortBy_UIFieldsListParameter_ShouldReturnConvertedList() {
-        List<String> input = List.of("moddate", "categoryname", "categoryvelocityvarname",
+       final List<String> input = List.of("moddate", "categoryname", "categoryvelocityvarname",
                 "categorykey", "pageurl", "velocityvarname", "sortorder", "hostname",
                 "relationtypevalue", "childrelationname", "parentrelationname");
 
-        List<String> expected = List.of("mod_date", "category_name", "category_velocity_var_name",
+       final List<String> expected = List.of("mod_date", "category_name", "category_velocity_var_name",
                 "category_key", "page_url", "velocity_var_name", "sort_order", "hostName",
                 "relation_type_value", "child_relation_name", "parent_relation_name");
 
         for (int i = 0; i < input.size(); i++) {
-            String result = SQLUtil.translateSortBy(input.get(i));
+           final String result = SQLUtil.translateSortBy(input.get(i));
             assertEquals(expected.get(i), result);
         }
     }
 
+    @Test
+    public void Test_SanitizeSortBy_BlankOrNullAsStringParameter_ShouldReturnBlankString() {
+        final String blankStringOutput = SQLUtil.sanitizeSortBy(StringPool.BLANK);
+        final String nullStringOutput = SQLUtil.sanitizeSortBy("null");
+
+        assertEquals(StringPool.BLANK, blankStringOutput);
+        assertEquals(StringPool.BLANK, nullStringOutput);
+    }
+
+    @Test
+    public void Test_SanitizeSortBy_ModDateWithHyphenOrDescAsStringParameter_ShouldReturnHyphenOrDescWithModDate() {
+        final String hyphenStringOutput = SQLUtil.sanitizeSortBy("-modDate");
+        final String descStringOutput = SQLUtil.sanitizeSortBy("modDate desc");
+
+        assertEquals("-mod_date", hyphenStringOutput);
+        assertEquals("mod_date desc", descStringOutput);
+    }
+
+    @Test
+    public void Test_SanitizeSortBy_ModDateAsStringParameter_ShouldReturnModDate() {
+        final String Output = SQLUtil.sanitizeSortBy("modDate");
+
+        assertEquals("mod_date", Output);
+    }
+
+    @Test
+    public void Test_SanitizeSortBy_InvalidSortByFieldAsStringParameter_ShouldReturnBlankString() {
+        final String Output = SQLUtil.sanitizeSortBy("invalidColumn");
+
+        assertEquals(StringPool.BLANK, Output);
+    }
 }
