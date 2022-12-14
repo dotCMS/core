@@ -107,6 +107,9 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
             throw new DotSecurityException("You don't have permission to save the Experiment.");
         }
 
+        DotPreconditions.isTrue(pageAsContent.isLive(),
+                ()-> "Cannot create an Experiment on a non-Live Page.", DotStateException.class);
+
         Experiment.Builder builder = Experiment.builder().from(experiment);
 
         if(experiment.id().isEmpty()) {
@@ -326,33 +329,32 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
                 ()-> new IllegalArgumentException("Experiment with provided id not found")
         );
 
-        final Experiment experimentFromFactory = persistedExperiment;
-        validatePermissions(user, experimentFromFactory,
+        validatePermissions(user, persistedExperiment,
                 "You don't have permission to start the Experiment. "
                         + "Experiment Id: " + persistedExperiment.id());
 
-        DotPreconditions.isTrue(experimentFromFactory.status()!=Status.RUNNING ||
-                        experimentFromFactory.status() == Status.SCHEDULED,()-> "Cannot start an already started Experiment.",
+        DotPreconditions.isTrue(persistedExperiment.status()!=Status.RUNNING ||
+                        persistedExperiment.status() == Status.SCHEDULED,()-> "Cannot start an already started Experiment.",
                 DotStateException.class);
 
-        DotPreconditions.isTrue(experimentFromFactory.status()== DRAFT
+        DotPreconditions.isTrue(persistedExperiment.status()== DRAFT
                 ,()-> "Only DRAFT experiments can be started",
                 DotStateException.class);
 
-        DotPreconditions.checkState(hasAtLeastOneVariant(experimentFromFactory), "The Experiment needs at "
+        DotPreconditions.checkState(hasAtLeastOneVariant(persistedExperiment), "The Experiment needs at "
                 + "least one Page Variant in order to be started.");
 
-        DotPreconditions.checkState(experimentFromFactory.goals().isPresent(), "The Experiment needs to "
+        DotPreconditions.checkState(persistedExperiment.goals().isPresent(), "The Experiment needs to "
                 + "have the Goal set.");
 
         final Experiment experimentToStart;
 
-        if(experimentFromFactory.scheduling().isEmpty()) {
-            final Scheduling scheduling = startNowScheduling(experimentFromFactory);
-            experimentToStart = experimentFromFactory.withScheduling(scheduling);
+        if(persistedExperiment.scheduling().isEmpty()) {
+            final Scheduling scheduling = startNowScheduling(persistedExperiment);
+            experimentToStart = persistedExperiment.withScheduling(scheduling);
         } else {
-            Scheduling scheduling = validateScheduling(experimentFromFactory.scheduling().get());
-            experimentToStart = experimentFromFactory.withScheduling(scheduling);
+            Scheduling scheduling = validateScheduling(persistedExperiment.scheduling().get());
+            experimentToStart = persistedExperiment.withScheduling(scheduling);
         }
 
         Experiment running = experimentToStart.withStatus(Status.RUNNING);
@@ -363,7 +365,6 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
         return running;
 
     }
-
     private void publishContentOnExperimentVariants(final User user,
             final Experiment runningExperiment)
             throws DotDataException, DotSecurityException {
@@ -461,7 +462,6 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
         final Contentlet pageContentlet = contentletAPI
                 .findContentletByIdentifierAnyLanguage(experiment.pageId(), false);
 
-
         // copy page for variant
         if(variantDescription.equals(ORIGINAL_VARIANT)) {
             saveContentOnVariant(pageContentlet,
@@ -494,19 +494,19 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
         final Optional<ContentletVersionInfo> versionInfo = Try.of(
                         ()->versionableAPI.getContentletVersionInfo(contentlet.getIdentifier(),
                                 contentlet.getLanguageId()))
-                .getOrElseThrow(()->new DotStateException("Unable to get the live version of the page"));
+                .getOrElseThrow((e->new DotStateException("Unable to get the live version of the page", e)));
 
         final String liveInode = versionInfo.orElseThrow().getLiveInode();
 
         final Contentlet checkedoutContentlet = Try.of(() -> contentletAPI
                         .checkout(liveInode, user, false))
                 .getOrElseThrow(
-                        () -> new DotStateException("Unable to checkout Experiment's content. Inode:" + liveInode));
+                        (e) -> new DotStateException("Unable to checkout Experiment's content. Inode:" + liveInode, e));
 
         checkedoutContentlet.setVariantId(variantName);
         Try.of(() -> contentletAPI.checkin(checkedoutContentlet, user, false))
                 .getOrElseThrow(
-                        () -> new DotStateException("Unable to checkin Experiment's content. Inode:" + liveInode));
+                        (e) -> new DotStateException("Unable to checkin Experiment's content. Inode:" + liveInode, e));
 
     }
 
