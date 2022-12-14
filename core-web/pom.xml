@@ -108,6 +108,17 @@
                     </execution>
 
                     <execution>
+                        <id>config npm registry</id>
+                        <goals>
+                            <goal>npm</goal>
+                        </goals>
+                        <configuration>
+                            <arguments>config set registry https://dotcms-npm.b-cdn.net</arguments>
+                        </configuration>
+                    </execution>
+
+
+                    <execution>
                         <id>install</id>
                         <goals>
                             <goal>npm</goal>
