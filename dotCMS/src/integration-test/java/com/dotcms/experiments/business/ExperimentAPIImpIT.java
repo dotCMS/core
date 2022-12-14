@@ -159,4 +159,72 @@ public class ExperimentAPIImpIT {
         }
 
     }
+
+    /**
+     * Method to test: {@link ExperimentsAPI#addVariant(String, String, User)} (String, User)}
+     * When: The {@link com.dotcms.experiments.model.AbstractExperimentVariant#ORIGINAL_VARIANT} variant is created
+     * Should: copy the page and the contentlet related to the page in the new variant
+     */
+    @Test
+    public void testAddOriginalVariant_shouldCopyPageAndContentletToVariant()
+            throws DotDataException, DotSecurityException {
+
+        final Experiment newExperiment = new ExperimentDataGen()
+                .addVariant("Test Gray Button")
+                .nextPersisted();
+
+        try {
+
+            final String pageId = newExperiment.pageId();
+            final Container container = new ContainerDataGen().nextPersisted();
+
+//            final List<Optional<Variant>> variants =
+//                    newExperiment.trafficProportion().variants().stream().map(
+//                                    variant ->
+//                                            Try.of(() -> APILocator.getVariantAPI().get(variant.id()))
+//                                                    .getOrNull())
+//                            .collect(Collectors.toList());
+//
+//            final Variant variant1 = variants.get(0).orElseThrow();
+//            final Variant variant2 = variants.get(1).orElseThrow();
+
+            final ContentType contentType = new ContentTypeDataGen().nextPersisted();
+            final Contentlet content1 = new ContentletDataGen(contentType)
+                    .nextPersisted();
+            final Contentlet content2 = new ContentletDataGen(contentType)
+                    .nextPersisted();
+            final Contentlet content3 = new ContentletDataGen(contentType)
+                    .nextPersisted();
+
+            final Contentlet pageAsContentlet = APILocator.getContentletAPI()
+                    .findContentletByIdentifierAnyLanguage(pageId);
+            final HTMLPageAsset page = APILocator.getHTMLPageAssetAPI()
+                    .fromContentlet(pageAsContentlet);
+
+            new MultiTreeDataGen().setPage(page).setContainer(container)
+                    .setContentlet(content1).nextPersisted();
+
+            new MultiTreeDataGen().setPage(page).setContainer(container)
+                    .setContentlet(content2).nextPersisted();
+
+            new MultiTreeDataGen().setPage(page).setContainer(container)
+                    .setContentlet(content3).nextPersisted();
+
+            final ExperimentVariant originalVariant = newExperiment.
+                    trafficProportion().variants().first();
+
+//            ExperimentDataGen.start(newExperiment);
+
+            List<Contentlet> experimentContentlets = APILocator.getContentletAPI()
+                    .getAllContentByVariants(APILocator.systemUser(),
+                            false, originalVariant.id());
+
+            assertEquals(3, experimentContentlets.size());
+
+        } finally {
+//            APILocator.getExperimentsAPI().end(newExperiment.id().orElseThrow()
+//                    , APILocator.systemUser());
+        }
+
+    }
 }

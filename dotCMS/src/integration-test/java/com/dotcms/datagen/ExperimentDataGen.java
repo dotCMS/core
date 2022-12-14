@@ -101,8 +101,8 @@ public class ExperimentDataGen  extends AbstractDataGen<Experiment> {
     private HTMLPageAsset createPage() {
         final Host host = new SiteDataGen().nextPersisted();
         final Template template = new TemplateDataGen().nextPersisted();
-
         final HTMLPageAsset page = new HTMLPageDataGen(host, template).nextPersisted();
+        HTMLPageDataGen.publish(page);
         return page;
     }
 
