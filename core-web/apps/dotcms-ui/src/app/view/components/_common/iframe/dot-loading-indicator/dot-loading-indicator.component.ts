@@ -1,6 +1,6 @@
 import { Component, Input, ViewEncapsulation } from '@angular/core';
-import { DotLoadingIndicatorService } from './dot-loading-indicator.service';
-import { LoadingState } from '@portlets/shared/models/shared-models';
+import { LoadingState } from '@dotcms/dotcms-models';
+import { DotLoadingIndicatorService } from '@dotcms/utils';
 
 @Component({
     encapsulation: ViewEncapsulation.Emulated,

@@ -10,7 +10,7 @@ import { Subject, Observable } from 'rxjs';
 import { takeUntil, filter } from 'rxjs/operators';
 import { DotDialogComponent } from '@components/dot-dialog/dot-dialog.component';
 import { DotcmsEventsService } from '@dotcms/dotcms-js';
-import { DotParseHtmlService } from '@services/dot-parse-html/dot-parse-html.service';
+import { DotParseHtmlService } from '@dotcms/app/api/services/dot-parse-html/dot-parse-html.service';
 
 interface DotLargeMessageDisplayParams {
     title: string;

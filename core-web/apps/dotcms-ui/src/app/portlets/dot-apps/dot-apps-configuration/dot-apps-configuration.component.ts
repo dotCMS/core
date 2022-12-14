@@ -1,16 +1,16 @@
 import { Component, OnInit, ViewChild, ElementRef, OnDestroy } from '@angular/core';
-import { dialogAction, DotApps, DotAppsSites } from '@shared/models/dot-apps/dot-apps.model';
 import { ActivatedRoute } from '@angular/router';
 import { pluck, take, debounceTime, takeUntil } from 'rxjs/operators';
-import { DotAlertConfirmService } from '@services/dot-alert-confirm';
-import { DotAppsService } from '@services/dot-apps/dot-apps.service';
+import { DotAlertConfirmService } from '@dotcms/data-access';
+import { DotAppsService } from '@dotcms/app/api/services/dot-apps/dot-apps.service';
 import { fromEvent as observableFromEvent, Subject } from 'rxjs';
-import { DotRouterService } from '@services/dot-router/dot-router.service';
+import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
 
 import { LazyLoadEvent } from 'primeng/api';
-import { PaginatorService } from '@services/paginator';
-import { DotMessageService } from '@services/dot-message/dot-messages.service';
+import { PaginatorService } from '@dotcms/data-access';
+import { DotMessageService } from '@dotcms/data-access';
 import { DotAppsImportExportDialogComponent } from '../dot-apps-import-export-dialog/dot-apps-import-export-dialog.component';
+import { DotApps, DotAppsSites, dialogAction } from '@dotcms/dotcms-models';
 
 @Component({
     selector: 'dot-apps-configuration',

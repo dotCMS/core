@@ -8,8 +8,8 @@ import {
     ViewChild,
     ElementRef
 } from '@angular/core';
-import { DotMessageService } from '@services/dot-message/dot-messages.service';
-import { DotEventsService } from '@services/dot-events/dot-events.service';
+import { DotMessageService } from '@dotcms/data-access';
+import { DotEventsService } from '@dotcms/data-access';
 import { takeUntil } from 'rxjs/operators';
 import { Subject } from 'rxjs';
 import { MenuItem } from 'primeng/api';

@@ -6,8 +6,8 @@ import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing';
 import { DotFieldValidationMessageComponent } from './dot-field-validation-message';
 import { By } from '@angular/platform-browser';
 import { UntypedFormControl, Validators } from '@angular/forms';
-import { MockDotMessageService } from '@tests/dot-message-service.mock';
-import { DotMessageService } from '@services/dot-message/dot-messages.service';
+import { MockDotMessageService } from '@dotcms/utils-testing';
+import { DotMessageService } from '@dotcms/data-access';
 
 @Pipe({
     name: 'dm'
@@ -29,19 +29,17 @@ describe('FieldValidationComponent', () => {
     let fixture: ComponentFixture<DotFieldValidationMessageComponent>;
     let component: DotFieldValidationMessageComponent;
 
-    beforeEach(
-        waitForAsync(() => {
-            TestBed.configureTestingModule({
-                declarations: [DotFieldValidationMessageComponent, DotMessageMockPipe],
-                providers: [
-                    {
-                        provide: DotMessageService,
-                        useValue: messageServiceMock
-                    }
-                ]
-            }).compileComponents();
-        })
-    );
+    beforeEach(waitForAsync(() => {
+        TestBed.configureTestingModule({
+            declarations: [DotFieldValidationMessageComponent, DotMessageMockPipe],
+            providers: [
+                {
+                    provide: DotMessageService,
+                    useValue: messageServiceMock
+                }
+            ]
+        }).compileComponents();
+    }));
 
     beforeEach(() => {
         fixture = TestBed.createComponent(DotFieldValidationMessageComponent);

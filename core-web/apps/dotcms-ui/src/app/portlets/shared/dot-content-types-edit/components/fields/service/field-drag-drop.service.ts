@@ -4,9 +4,10 @@ import { DragulaService } from 'ng2-dragula';
 import { filter, map, tap } from 'rxjs/operators';
 import { DotCMSContentTypeLayoutRow, DotCMSContentTypeField } from '@dotcms/dotcms-models';
 import * as _ from 'lodash';
-import { FieldUtil } from '../util/field-util';
-import { DotAlertConfirmService } from '@services/dot-alert-confirm';
-import { DotMessageService } from '@services/dot-message/dot-messages.service';
+
+import { DotAlertConfirmService } from '@dotcms/data-access';
+import { DotMessageService } from '@dotcms/data-access';
+import { FieldUtil } from '@dotcms/utils-testing';
 
 const MAX_COLS_PER_ROW = 4;
 

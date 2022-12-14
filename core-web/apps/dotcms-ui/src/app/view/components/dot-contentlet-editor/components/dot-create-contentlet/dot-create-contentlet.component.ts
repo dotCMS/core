@@ -2,9 +2,9 @@ import { Component, OnInit, Output, EventEmitter } from '@angular/core';
 import { merge, Observable } from 'rxjs';
 import { filter, pluck } from 'rxjs/operators';
 import { ActivatedRoute } from '@angular/router';
-import { DotRouterService } from '@services/dot-router/dot-router.service';
 import { DotContentletEditorService } from '../../services/dot-contentlet-editor.service';
 import { DotIframeService } from '@components/_common/iframe/service/dot-iframe/dot-iframe.service';
+import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
 
 /**
  * Allow user to add a contentlet to DotCMS instance

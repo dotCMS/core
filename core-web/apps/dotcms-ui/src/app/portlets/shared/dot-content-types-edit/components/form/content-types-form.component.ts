@@ -21,9 +21,9 @@ import { take, takeUntil, filter } from 'rxjs/operators';
 import * as _ from 'lodash';
 import { SelectItem } from 'primeng/api';
 
-import { DotMessageService } from '@services/dot-message/dot-messages.service';
-import { DotWorkflowService } from '@services/dot-workflow/dot-workflow.service';
-import { DotLicenseService } from '@services/dot-license/dot-license.service';
+import { DotMessageService } from '@dotcms/data-access';
+import { DotWorkflowService } from '@dotcms/data-access';
+import { DotLicenseService } from '@dotcms/data-access';
 import {
     DotCMSContentType,
     DotCMSContentTypeField,
@@ -33,7 +33,7 @@ import {
     DotCMSWorkflow,
     DotCMSSystemAction
 } from '@dotcms/dotcms-models';
-import { FieldUtil } from '../fields/util/field-util';
+import { FieldUtil } from '@dotcms/utils-testing';
 
 /**
  * Form component to create or edit content types

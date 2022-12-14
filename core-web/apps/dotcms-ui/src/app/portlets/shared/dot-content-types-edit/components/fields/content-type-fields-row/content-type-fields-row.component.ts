@@ -1,9 +1,9 @@
 import { Component, Input, Output, EventEmitter, OnInit } from '@angular/core';
 
 import { DotCMSContentTypeField, DotCMSContentTypeLayoutRow } from '@dotcms/dotcms-models';
-import { DotMessageService } from '@services/dot-message/dot-messages.service';
-import { DotAlertConfirmService } from '@services/dot-alert-confirm';
-import { FieldUtil } from '../util/field-util';
+import { DotMessageService } from '@dotcms/data-access';
+import { DotAlertConfirmService } from '@dotcms/data-access';
+import { FieldUtil } from '@dotcms/utils-testing';
 
 /**
  * Display all the Field Types

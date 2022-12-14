@@ -3,22 +3,24 @@ import { ComponentFixture, getTestBed, TestBed } from '@angular/core/testing';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { DynamicDialogRef, DynamicDialogConfig } from 'primeng/dynamicdialog';
 import { DotMessagePipe } from '@pipes/dot-message/dot-message.pipe';
-import { DotMessageService } from '@services/dot-message/dot-messages.service';
-import { MockDotMessageService } from '@tests/dot-message-service.mock';
+import { DotMessageService } from '@dotcms/data-access';
+import {
+    LoginServiceMock,
+    MockDotMessageService,
+    mockDotRenderedPage,
+    mockUser
+} from '@dotcms/utils-testing';
 import { DotFieldValidationMessageModule } from '@components/_common/dot-field-validation-message/dot-file-validation-message.module';
 import { By } from '@angular/platform-browser';
 import { DotFavoritePageComponent } from './dot-favorite-page.component';
-import { LoginServiceMock, mockUser } from '@dotcms/app/test/login-service.mock';
 import { CoreWebService, CoreWebServiceMock, LoginService } from '@dotcms/dotcms-js';
-import { DotRouterService } from '@services/dot-router/dot-router.service';
-import { MockDotRouterService } from '@tests/dot-router-service.mock';
+import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
+import { MockDotRouterService } from '@dotcms/utils-testing';
 import { HttpClientTestingModule } from '@angular/common/http/testing';
-import { DotPageRender } from '@dotcms/app/shared/models/dot-page/dot-rendered-page.model';
-import { mockDotRenderedPage } from '@dotcms/app/test/dot-page-render.mock';
-import { DotPageRenderState } from '../../shared/models';
 import { MultiSelectModule } from 'primeng/multiselect';
 import { DotFavoritePageActionState, DotFavoritePageStore } from './store/dot-favorite-page.store';
 import { of } from 'rxjs/internal/observable/of';
+import { DotPageRenderState, DotPageRender } from '@dotcms/dotcms-models';
 @Component({
     selector: 'dot-form-dialog',
     template: '<ng-content></ng-content>',

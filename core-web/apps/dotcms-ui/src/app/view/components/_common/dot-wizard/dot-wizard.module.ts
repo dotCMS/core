@@ -6,7 +6,7 @@ import { DotCommentAndAssignFormModule } from '@components/_common/forms/dot-com
 import { DotPushPublishFormModule } from '@components/_common/forms/dot-push-publish-form/dot-push-publish-form.module';
 import { DotDialogModule } from '@components/dot-dialog/dot-dialog.module';
 import { DotContainerReferenceModule } from '@directives/dot-container-reference/dot-container-reference.module';
-import { DotWizardService } from '@services/dot-wizard/dot-wizard.service';
+import { DotWizardService } from '@dotcms/app/api/services/dot-wizard/dot-wizard.service';
 
 @NgModule({
     imports: [

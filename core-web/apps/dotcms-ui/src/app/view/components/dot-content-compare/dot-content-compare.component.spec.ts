@@ -9,18 +9,18 @@ import { DotContentCompareStore } from '@components/dot-content-compare/store/do
 import { Component, DebugElement, EventEmitter, Input, Output } from '@angular/core';
 import { of } from 'rxjs';
 import { dotContentCompareTableDataMock } from '@components/dot-content-compare/components/dot-content-compare-table/dot-content-compare-table.component.spec';
-import { MockDotMessageService } from '@tests/dot-message-service.mock';
-import { DotMessageService } from '@services/dot-message/dot-messages.service';
+import { MockDotMessageService } from '@dotcms/utils-testing';
+import { DotMessageService } from '@dotcms/data-access';
 
 import { DotContentCompareModule } from '@components/dot-content-compare/dot-content-compare.module';
 import { DotContentCompareTableComponent } from '@components/dot-content-compare/components/dot-content-compare-table/dot-content-compare-table.component';
 import { By } from '@angular/platform-browser';
 import { DotCMSContentlet } from '@dotcms/dotcms-models';
-import { DotAlertConfirmService } from '@services/dot-alert-confirm';
+import { DotAlertConfirmService } from '@dotcms/data-access';
 import { ConfirmationService } from 'primeng/api';
 import { DotIframeService } from '@components/_common/iframe/service/dot-iframe/dot-iframe.service';
 import { DotcmsConfigService } from '@dotcms/dotcms-js';
-import { DotFormatDateService } from '@services/dot-format-date-service';
+import { DotFormatDateService } from '@dotcms/app/api/services/dot-format-date-service';
 
 const DotContentCompareEventMOCK = {
     inode: '1',

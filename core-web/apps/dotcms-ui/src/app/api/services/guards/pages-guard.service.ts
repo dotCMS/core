@@ -2,8 +2,8 @@ import { map, take } from 'rxjs/operators';
 import { Injectable } from '@angular/core';
 import { CanActivate } from '@angular/router';
 import { Observable } from 'rxjs';
-import { DotPropertiesService } from '../dot-properties/dot-properties.service';
-import { FeaturedFlags } from '@dotcms/app/portlets/shared/models/shared-models';
+import { DotPropertiesService } from '@dotcms/data-access';
+import { FeaturedFlags } from '@dotcms/dotcms-models';
 
 /**
  * Route Guard that based on DOTFAVORITEPAGE_FEATURE_ENABLE flag allows/denies access to Pages portlet.

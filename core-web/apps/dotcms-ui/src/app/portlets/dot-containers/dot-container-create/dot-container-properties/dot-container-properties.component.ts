@@ -5,13 +5,12 @@ import {
     DotContainerPropertiesState
 } from '@portlets/dot-containers/dot-container-create/dot-container-properties/store/dot-container-properties.store';
 import { MonacoEditor } from '@models/monaco-editor';
-import { DotAlertConfirmService } from '@dotcms/app/api/services/dot-alert-confirm';
-import { DotMessageService } from '@dotcms/app/api/services/dot-message/dot-messages.service';
+import { DotAlertConfirmService, DotMessageService } from '@dotcms/data-access';
 import { DotRouterService } from '@services/dot-router/dot-router.service';
 import { take, takeUntil } from 'rxjs/operators';
 import { MenuItem } from 'primeng/api';
 import { Subject } from 'rxjs';
-import { DotContainerStructure } from '@dotcms/app/shared/models/container/dot-container.model';
+import { DotContainerStructure } from '@dotcms/dotcms-models';
 
 @Component({
     selector: 'dot-container-properties',
@@ -60,9 +59,13 @@ export class DotContainerPropertiesComponent implements OnInit {
                 });
 
                 this.addContainerFormControl(containerStructures);
+                if (this.form.value.identifier) {
+                    this.store.updateOriginalFormState(this.form.value);
+                }
             });
+
         this.form.valueChanges.pipe(takeUntil(this.destroy$)).subscribe((values) => {
-            this.store.updateIsContentTypeButtonEnabled(values.maxContentlets > 0);
+            this.store.updateFormStatus({ invalidForm: !this.form.valid, container: values });
         });
     }
 
@@ -109,9 +112,12 @@ export class DotContainerPropertiesComponent implements OnInit {
     showContentTypeAndCode(): void {
         const values = this.form.value;
         if (values.maxContentlets > 0) {
+            (this.form.get('containerStructures') as FormArray).setValidators([
+                Validators.required,
+                Validators.minLength(1)
+            ]);
             this.form.get('code').clearValidators();
             this.form.get('code').reset();
-            this.form.get('containerStructures').setValidators(Validators.minLength(1));
             this.store.loadContentTypesAndUpdateVisibility();
         } else {
             this.form.get('code').setValidators(Validators.required);
@@ -173,21 +179,14 @@ export class DotContainerPropertiesComponent implements OnInit {
     }
 
     /**
-     * Opens modal on clear content button click.
+     * Opens modal for confirmation modal.
      * @return void
      * @memberof DotContainerPropertiesComponent
      */
-    clearContent(): void {
+    clearContentConfirmationModal(): void {
         this.dotAlertConfirmService.confirm({
             accept: () => {
-                this.store.updateContentTypeVisibility(false);
-                this.form.reset();
-                this.form.get('containerStructures').clearValidators();
-                this.form.get('containerStructures').reset();
-                // clear containerStructures array
-                (this.form.get('containerStructures') as FormArray).clear();
-                this.form.get('code').addValidators(Validators.required);
-                this.form.updateValueAndValidity();
+                this.clearContentTypesAndCode();
             },
             reject: () => {
                 //
@@ -198,6 +197,27 @@ export class DotContainerPropertiesComponent implements OnInit {
             message: this.dotMessageService.get(
                 'message.container.properties.confirm.clear.content.message'
             )
+        });
+    }
+
+    /**
+     * Clear content types and code and update visibility
+     * @private
+     * @memberof DotContainerPropertiesComponent
+     */
+    private clearContentTypesAndCode(): void {
+        this.form.get('containerStructures').clearValidators();
+        this.form.get('containerStructures').reset();
+        this.form.get('preLoop').reset();
+        this.form.get('postLoop').reset();
+        // clear containerStructures array
+        (this.form.get('containerStructures') as FormArray).clear();
+        this.form.get('code').addValidators(Validators.required);
+        this.form.updateValueAndValidity();
+
+        this.store.updateContentTypeAndPrePostLoopVisibility({
+            isContentTypeVisible: false,
+            showPrePostLoopInput: false
         });
     }
 
