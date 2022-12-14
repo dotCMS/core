@@ -4,7 +4,9 @@ import com.dotcms.UnitTestBase;
 import com.dotcms.repackage.com.google.common.collect.ImmutableSet;
 import com.dotcms.util.SecurityLoggerServiceAPI;
 import com.dotcms.util.SecurityLoggerServiceAPIFactory;
+import com.dotmarketing.util.StringUtils;
 import com.liferay.util.StringPool;
+import java.util.List;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -281,7 +283,7 @@ public class SQLUtilTest  extends UnitTestBase {
         }
     }
 
-    private static String exploit1 = "\\') rlike (select/**/(case/**/when/**/((substring((select/**/password_/**/from/**/dotcms37new.user_/**/limit/**/1,1),1,1)/**/like/**/binary/**/\"1\"))/**/then/**/1/**/else/**/0x28/**/end))#";
+    private static final String exploit1 = "\\') rlike (select/**/(case/**/when/**/((substring((select/**/password_/**/from/**/dotcms37new.user_/**/limit/**/1,1),1,1)/**/like/**/binary/**/\"1\"))/**/then/**/1/**/else/**/0x28/**/end))#";
 
     @Test()
     public void testValidExploit1SanitizeParameter() throws Exception {
@@ -598,6 +600,22 @@ public class SQLUtilTest  extends UnitTestBase {
 
         assertNotNull(s);
         assertEquals(querySingleQuote, s);
+    }
+
+    @Test
+    public void Test_TranslateSortBy_UIFieldsListParameter_ShouldReturnConvertedList() {
+        List<String> input = List.of("moddate", "categoryname", "categoryvelocityvarname",
+                "categorykey", "pageurl", "velocityvarname", "sortorder", "hostname",
+                "relationtypevalue", "childrelationname", "parentrelationname");
+
+        List<String> expected = List.of("mod_date", "category_name", "category_velocity_var_name",
+                "category_key", "page_url", "velocity_var_name", "sort_order", "hostName",
+                "relation_type_value", "child_relation_name", "parent_relation_name");
+
+        for (int i = 0; i < input.size(); i++) {
+            String result = SQLUtil.translateSortBy(input.get(i));
+            assertEquals(expected.get(i), result);
+        }
     }
 
 }
