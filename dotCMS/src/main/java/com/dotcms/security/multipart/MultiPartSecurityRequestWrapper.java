@@ -6,6 +6,7 @@ import com.google.common.collect.ImmutableList;
 import java.io.BufferedInputStream;
 import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -26,10 +27,10 @@ import org.apache.commons.io.IOUtils;
  */
 public class MultiPartSecurityRequestWrapper extends HttpServletRequestWrapper {
 
-    private static final Path tmpdir = Path.of(System.getProperty("java.io.tmpdir")).normalize();
+    private static final File tmpdir = Path.of(System.getProperty("java.io.tmpdir")).toFile();
 
     private final byte[] body;
-    private final Path tmpFile;
+    private final File tmpFile;
 
     private static final List<SecureFileValidator> secureFileValidatorList = new ImmutableList.Builder<SecureFileValidator>()
             .add(new IllegalTraversalFilePathValidator()).add(new IllegalFileExtensionsValidator()).build();
@@ -52,10 +53,11 @@ public class MultiPartSecurityRequestWrapper extends HttpServletRequestWrapper {
 
             Logger.debug(this, ()-> "Should Cache To Disk...");
             this.body = null;
-            this.tmpFile = Files.createTempFile(tmpdir,"multipartSec", ".tmp");
+            final Path tempFilePath = Files.createTempFile(tmpdir.toPath(),"multipartSec", ".tmp");
+            this.tmpFile = tempFilePath.toFile();
             // security demands we add this check here
-            if (tmpFile.normalize().toRealPath().startsWith(tmpdir.toRealPath())) {
-                try (final OutputStream outputStream = Files.newOutputStream(tmpFile)) {
+            if (tmpFile.getCanonicalPath().startsWith(tmpdir.getCanonicalPath())) {
+                try (final OutputStream outputStream = Files.newOutputStream(tempFilePath)) {
                     IOUtils.copy(request.getInputStream(), outputStream);
                     this.checkFile(tmpFile);
                 }
@@ -78,7 +80,7 @@ public class MultiPartSecurityRequestWrapper extends HttpServletRequestWrapper {
         }
 
         Logger.debug(this, ()-> "Streaming the body from file system");
-        return new ServletInputStreamImpl(new BufferedInputStream(Files.newInputStream(tmpFile)));
+        return new ServletInputStreamImpl(new BufferedInputStream(Files.newInputStream(tmpFile.toPath())));
     }
 
     @Override
@@ -159,10 +161,10 @@ public class MultiPartSecurityRequestWrapper extends HttpServletRequestWrapper {
         }
     }
 
-    private void checkFile(final Path tmpFile) throws IOException {
+    private void checkFile(final File tmpFile) throws IOException {
         //Even though this is might seem redundant. Security demands we check paths everytime we manipulate file paths
-        if (tmpFile.normalize().toRealPath().startsWith(tmpdir.toRealPath())) {
-            try (InputStream in = new BufferedInputStream(Files.newInputStream(tmpFile))) {
+        if (tmpFile.getCanonicalPath().startsWith(tmpdir.getCanonicalPath())) {
+            try (InputStream in = new BufferedInputStream(Files.newInputStream(tmpFile.toPath()))) {
                 checkSecurityInputStream(in);
             }
         }
