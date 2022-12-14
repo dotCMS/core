@@ -4,8 +4,8 @@ import {
     DotContentCompareStore
 } from '@components/dot-content-compare/store/dot-content-compare.store';
 import { Observable } from 'rxjs';
-import { DotAlertConfirmService } from '@services/dot-alert-confirm';
-import { DotMessageService } from '@services/dot-message/dot-messages.service';
+import { DotAlertConfirmService } from '@dotcms/data-access';
+import { DotMessageService } from '@dotcms/data-access';
 import { DotIframeService } from '@components/_common/iframe/service/dot-iframe/dot-iframe.service';
 
 export interface DotContentCompareEvent {

@@ -265,7 +265,6 @@ public class SiteResource implements Serializable {
             .requestAndResponse(httpServletRequest, httpServletResponse)
             .requiredBackendUser(true)
             .rejectWhenNoUser(true)
-            .requiredPortlet("sites")
             .init().getUser();
         boolean switchDone = false;
         Host hostFound = null;
@@ -319,7 +318,6 @@ public class SiteResource implements Serializable {
           .requestAndResponse(request, response)
           .requiredBackendUser(true)
           .rejectWhenNoUser(true)
-          .requiredPortlet("sites")
           .init().getUser();
 
         Logger.debug(this, "Switching to default host for user: " + user.getUserId());
@@ -360,7 +358,6 @@ public class SiteResource implements Serializable {
                 .requestAndResponse(httpServletRequest, httpServletResponse)
                 .requiredBackendUser(true)
                 .rejectWhenNoUser(true)
-                .requiredPortlet("sites")
                 .init().getUser();
 
         final ContentletAPI contentletAPI = APILocator.getContentletAPI();
@@ -729,7 +726,6 @@ public class SiteResource implements Serializable {
                 .requestAndResponse(httpServletRequest, httpServletResponse)
                 .requiredBackendUser(true)
                 .rejectWhenNoUser(true)
-                .requiredPortlet("sites")
                 .init().getUser();
 
         Logger.debug(this, ()-> "Finding the site: " + siteId);
@@ -770,7 +766,6 @@ public class SiteResource implements Serializable {
                 .requestAndResponse(httpServletRequest, httpServletResponse)
                 .requiredBackendUser(true)
                 .rejectWhenNoUser(true)
-                .requiredPortlet("sites")
                 .init().getUser();
 
         final String hostname = searchSiteByNameForm.getSiteName();
@@ -1047,7 +1042,6 @@ public class SiteResource implements Serializable {
                 .requestAndResponse(httpServletRequest, httpServletResponse)
                 .requiredBackendUser(true)
                 .rejectWhenNoUser(true)
-                .requiredPortlet("sites")
                 .init().getUser();
         final PageMode pageMode = PageMode.get(httpServletRequest);
         final boolean respectFrontendRoles = pageMode.respectAnonPerms;

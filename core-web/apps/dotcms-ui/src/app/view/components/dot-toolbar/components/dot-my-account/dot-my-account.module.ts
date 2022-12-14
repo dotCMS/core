@@ -8,7 +8,7 @@ import { DotPipesModule } from '@pipes/dot-pipes.module';
 import { PasswordModule } from 'primeng/password';
 import { InputTextModule } from 'primeng/inputtext';
 import { CheckboxModule } from 'primeng/checkbox';
-import { DotAlertConfirmService } from '@dotcms/app/api/services/dot-alert-confirm/dot-alert-confirm.service';
+import { DotAlertConfirmService } from '@dotcms/data-access';
 
 @NgModule({
     imports: [

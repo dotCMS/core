@@ -10,14 +10,13 @@ import {
     OnDestroy
 } from '@angular/core';
 import { UntypedFormGroup, UntypedFormBuilder, Validators } from '@angular/forms';
-import { DotMessageService } from '@services/dot-message/dot-messages.service';
+import { DotMessageService } from '@dotcms/data-access';
 import { LoggerService } from '@dotcms/dotcms-js';
-import { AddToBundleService } from '@services/add-to-bundle/add-to-bundle.service';
-import { DotBundle } from '@models/dot-bundle/dot-bundle';
+import { AddToBundleService } from '@dotcms/data-access';
 import { Dropdown } from 'primeng/dropdown';
 import { map, tap, take, takeUntil } from 'rxjs/operators';
 import { DotDialogActions } from '@components/dot-dialog/dot-dialog.component';
-import { DotAjaxActionResponseView } from '@models/ajax-action-response/dot-ajax-action-response';
+import { DotAjaxActionResponseView, DotBundle } from '@dotcms/dotcms-models';
 
 const LAST_BUNDLE_USED = 'lastSelectedBundle';
 

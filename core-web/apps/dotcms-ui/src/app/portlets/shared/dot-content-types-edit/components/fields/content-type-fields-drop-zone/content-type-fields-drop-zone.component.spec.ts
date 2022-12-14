@@ -17,51 +17,50 @@ import { ContentTypeFieldsAddRowModule } from '..';
 import {
     DotCMSContentTypeField,
     DotCMSContentTypeLayoutRow,
-    DotCMSContentType
+    DotCMSContentType,
+    DotFieldVariable
 } from '@dotcms/dotcms-models';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { DotFieldValidationMessageModule } from '@components/_common/dot-field-validation-message/dot-file-validation-message.module';
 import { DotActionButtonModule } from '@components/_common/dot-action-button/dot-action-button.module';
-import { DotMessageService } from '@services/dot-message/dot-messages.service';
+import { DotEventsService, DotMessageService } from '@dotcms/data-access';
 import { LoginService, DotEventsSocket, CoreWebService } from '@dotcms/dotcms-js';
 import { Router } from '@angular/router';
 import { RouterTestingModule } from '@angular/router/testing';
 import { Observable, of, Subject } from 'rxjs';
-import { DotFormatDateService } from '@services/dot-format-date-service';
+import { DotFormatDateService } from '@dotcms/app/api/services/dot-format-date-service';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { FieldDragDropService } from '../service/index';
 import { FieldPropertyService } from '../service/field-properties.service';
 import { FieldService } from '../service/field.service';
 import { UiDotIconButtonModule } from '@components/_common/dot-icon-button/dot-icon-button.module';
 import { DotIconModule } from '@dotcms/ui';
-import { MockDotMessageService } from '@tests/dot-message-service.mock';
+import { FieldUtil, MockDotMessageService } from '@dotcms/utils-testing';
 import { DragulaModule, DragulaService } from 'ng2-dragula';
 import * as _ from 'lodash';
 import { DotDialogModule } from '@components/dot-dialog/dot-dialog.module';
 import { TableModule } from 'primeng/table';
 import { DotContentTypeFieldsVariablesModule } from '../dot-content-type-fields-variables/dot-content-type-fields-variables.module';
-import { DotLoadingIndicatorService } from '@components/_common/iframe/dot-loading-indicator/dot-loading-indicator.service';
-import { FieldUtil } from '../util/field-util';
-import { DotEventsService } from '@services/dot-events/dot-events.service';
-import { DotDialogActions, DotDialogComponent } from '@components/dot-dialog/dot-dialog.component';
+
 import {
     dotcmsContentTypeFieldBasicMock,
     fieldsWithBreakColumn,
     fieldsBrokenWithColumns,
     dotcmsContentTypeBasicMock
-} from '@tests/dot-content-types.mock';
+} from '@dotcms/utils-testing';
 
-import cleanUpDialog from '@tests/clean-up-dialog';
-import { CoreWebServiceMock } from '@tests/core-web.service.mock';
+import { cleanUpDialog } from '@dotcms/utils-testing';
+import { CoreWebServiceMock } from '@dotcms/utils-testing';
 import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { DotMessagePipeModule } from '@pipes/dot-message/dot-message-pipe.module';
 import { TabViewModule } from 'primeng/tabview';
-import { DotHttpErrorManagerService } from '@services/dot-http-error-manager/dot-http-error-manager.service';
+import { DotHttpErrorManagerService } from '@dotcms/app/api/services/dot-http-error-manager/dot-http-error-manager.service';
 import { DotMessageDisplayService } from '@components/dot-message-display/services';
 import { DotConvertToBlockInfoComponent } from '../../dot-convert-to-block-info/dot-convert-to-block-info.component';
 import { DotConvertWysiwygToBlockComponent } from '../../dot-convert-wysiwyg-to-block/dot-convert-wysiwyg-to-block.component';
 import { CheckboxModule } from 'primeng/checkbox';
-import { DotFieldVariable } from '../dot-content-type-fields-variables/models/dot-field-variable.interface';
+import { DotLoadingIndicatorService } from '@dotcms/utils';
+import { DotDialogActions, DotDialogComponent } from '@components/dot-dialog/dot-dialog.component';
 
 const COLUMN_BREAK_FIELD = FieldUtil.createColumnBreak();
 

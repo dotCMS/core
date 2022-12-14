@@ -3,9 +3,10 @@ import { RouterModule, Routes } from '@angular/router';
 
 import { DotEditPageMainComponent } from './main/dot-edit-page-main/dot-edit-page-main.component';
 import { DotEditPageResolver } from './shared/services/dot-edit-page-resolver/dot-edit-page-resolver.service';
-import { LayoutEditorCanDeactivateGuardService } from '@services/guards/layout-editor-can-deactivate-guard.service';
+import { LayoutEditorCanDeactivateGuardService } from '@dotcms/app/api/services/guards/layout-editor-can-deactivate-guard.service';
+
 import { DotFeatureFlagResolver } from '@portlets/shared/resolvers/dot-feature-flag-resolver.service';
-import { FeaturedFlags } from '@portlets/shared/models/shared-models';
+import { FeaturedFlags } from '@dotcms/dotcms-models';
 
 const dotEditPage: Routes = [
     {

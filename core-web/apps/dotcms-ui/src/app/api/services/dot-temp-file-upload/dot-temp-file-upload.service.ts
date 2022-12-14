@@ -1,9 +1,10 @@
 import { HttpErrorResponse } from '@angular/common/http';
 import { Injectable } from '@angular/core';
-import { DotHttpErrorManagerService } from '@services/dot-http-error-manager/dot-http-error-manager.service';
+
 import { CoreWebService } from '@dotcms/dotcms-js';
 import { Observable } from 'rxjs';
 import { pluck, catchError, take, map } from 'rxjs/operators';
+import { DotHttpErrorManagerService } from '../dot-http-error-manager/dot-http-error-manager.service';
 
 export interface DotCMSTempFile {
     fileName: string;

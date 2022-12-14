@@ -5,13 +5,13 @@ import { Injectable, ElementRef, NgZone } from '@angular/core';
 
 import { DotContainerContentletService } from '../dot-container-contentlet.service';
 import { DotDOMHtmlUtilService } from '../html/dot-dom-html-util.service';
-import { DotAlertConfirmService } from '@services/dot-alert-confirm/dot-alert-confirm.service';
+import { DotAlertConfirmService } from '@dotcms/data-access';
 import { DotDragDropAPIHtmlService } from '../html/dot-drag-drop-api-html.service';
 import { DotEditContentToolbarHtmlService } from '../html/dot-edit-content-toolbar-html.service';
-import { DotMessageService } from '@services/dot-message/dot-messages.service';
-import { DotPageContent, DotPageRenderState } from '@portlets/dot-edit-page/shared/models';
+import { DotMessageService } from '@dotcms/data-access';
+import { DotPageContent } from '@portlets/dot-edit-page/shared/models';
 import { DotGlobalMessageService } from '@components/_common/dot-global-message/dot-global-message.service';
-import { DotWorkflowActionsFireService } from '@services/dot-workflow-actions-fire/dot-workflow-actions-fire.service';
+import { DotWorkflowActionsFireService } from '@dotcms/data-access';
 import { getEditPageCss } from '../html/libraries/iframe-edit-mode.css';
 import { MODEL_VAR_NAME } from '@dotcms/app/portlets/dot-edit-page/content/services/html/libraries/iframe-edit-mode.js';
 import { PageModelChangeEvent, PageModelChangeEventType } from './models';
@@ -25,14 +25,17 @@ import {
     DotInlineEditContent,
     DotRelocatePayload
 } from './models/dot-contentlets-events.model';
-import { DotPageContainer } from '@models/dot-page-container/dot-page-container.model';
-import { DotLicenseService } from '@services/dot-license/dot-license.service';
+import { DotLicenseService } from '@dotcms/data-access';
 import { INLINE_TINYMCE_SCRIPTS } from '@dotcms/app/portlets/dot-edit-page/content/services/html/libraries/inline-edit-mode.js';
 import { HttpErrorResponse } from '@angular/common/http';
-import { DotHttpErrorManagerService } from '@services/dot-http-error-manager/dot-http-error-manager.service';
-import { DotPage } from '@dotcms/app/shared/models/dot-page/dot-page.model';
+import { DotHttpErrorManagerService } from '@dotcms/app/api/services/dot-http-error-manager/dot-http-error-manager.service';
 import { DotAddContentTypePayload } from './models/dot-contentlets-events.model';
-import { DotIframeEditEvent } from '@dotcms/dotcms-models';
+import {
+    DotIframeEditEvent,
+    DotPage,
+    DotPageContainer,
+    DotPageRenderState
+} from '@dotcms/dotcms-models';
 export enum DotContentletAction {
     EDIT,
     ADD

@@ -1,7 +1,7 @@
 import { Component, Input, OnInit } from '@angular/core';
 import { DialogService } from 'primeng/dynamicdialog';
 import { DotAddVariableComponent } from './dot-add-variable/dot-add-variable.component';
-import { DotMessageService } from '@dotcms/app/api/services/dot-message/dot-messages.service';
+import { DotMessageService } from '@dotcms/data-access';
 import { DotCMSContentType } from '@dotcms/dotcms-models';
 import { FormArray, FormControl, FormGroup, Validators } from '@angular/forms';
 import { MenuItem } from 'primeng/api';
@@ -116,6 +116,16 @@ export class DotContentEditorComponent implements OnInit {
 
     private init(): void {
         this.menuItems = this.getMenuItems(this.contentTypes);
+
+        // default content type if content type does not exist
+        if (this.getcontainerStructures.length === 0) {
+            this.getcontainerStructures.push(
+                new FormGroup({
+                    code: new FormControl('', [Validators.required]),
+                    structureId: new FormControl(this.contentTypes[0].id, [Validators.required])
+                })
+            );
+        }
     }
 
     /**

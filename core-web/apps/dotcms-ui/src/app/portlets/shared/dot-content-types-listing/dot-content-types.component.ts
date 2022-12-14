@@ -2,31 +2,33 @@ import { forkJoin, Subject } from 'rxjs';
 import * as _ from 'lodash';
 
 import { map, pluck, take, takeUntil } from 'rxjs/operators';
-import { DotAlertConfirmService } from '@services/dot-alert-confirm/dot-alert-confirm.service';
-import { DotCrudService } from '@services/dot-crud';
+import { DotAlertConfirmService } from '@dotcms/data-access';
+import { DotCrudService } from '@dotcms/data-access';
 import { ActivatedRoute, Router } from '@angular/router';
 import { Component, OnDestroy, OnInit, ViewChild, ViewContainerRef } from '@angular/core';
 
 import { ActionHeaderOptions } from '@models/action-header';
-import { DotContentTypesInfoService } from '@services/dot-content-types-info';
+import { DotContentTypesInfoService } from '@dotcms/data-access';
 import { DataTableColumn } from '@models/data-table';
-import { DotMessageService } from '@services/dot-message/dot-messages.service';
-import { StructureTypeView } from '@models/contentlet/structure-type-view.model';
+import { DotMessageService } from '@dotcms/data-access';
 import { ButtonModel } from '@models/action-header/button.model';
 import { DotActionMenuItem } from '@shared/models/dot-action-menu/dot-action-menu-item.model';
-import { PushPublishService } from '@services/push-publish/push-publish.service';
+
 import { DotEnvironment } from '@models/dot-environment/dot-environment';
-import { DotLicenseService } from '@services/dot-license/dot-license.service';
-import { DotHttpErrorManagerService } from '@services/dot-http-error-manager/dot-http-error-manager.service';
-import { DotContentTypeService } from '@services/dot-content-type/dot-content-type.service';
+import { DotLicenseService } from '@dotcms/data-access';
+
+import { DotContentTypeService } from '@dotcms/data-access';
 import { DotPushPublishDialogService } from '@dotcms/dotcms-js';
 import {
     DotCMSBaseTypesContentTypes,
     DotCMSContentType,
-    DotCopyContentTypeDialogFormFields
+    DotCopyContentTypeDialogFormFields,
+    StructureTypeView
 } from '@dotcms/dotcms-models';
 import { DotContentTypeStore } from './dot-content-type.store';
 import { DotListingDataTableComponent } from '@components/dot-listing-data-table/dot-listing-data-table.component';
+import { PushPublishService } from '@dotcms/app/api/services/push-publish/push-publish.service';
+import { DotHttpErrorManagerService } from '@dotcms/app/api/services/dot-http-error-manager/dot-http-error-manager.service';
 
 type DotRowActions = {
     pushPublish: boolean;

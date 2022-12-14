@@ -7,31 +7,29 @@ import { DotCopyButtonModule } from '@components/dot-copy-button/dot-copy-button
 import { DotEditPageInfoComponent } from './dot-edit-page-info.component';
 
 import { DotMessagePipe } from '@pipes/dot-message/dot-message.pipe';
-import { DotMessageService } from '@services/dot-message/dot-messages.service';
+import { DotMessageService } from '@dotcms/data-access';
 
 describe('DotEditPageInfoComponent', () => {
     let component: DotEditPageInfoComponent;
     let fixture: ComponentFixture<DotEditPageInfoComponent>;
     let de: DebugElement;
 
-    beforeEach(
-        waitForAsync(() => {
-            TestBed.configureTestingModule({
-                declarations: [DotEditPageInfoComponent, DotMessagePipe],
-                imports: [DotApiLinkModule, DotCopyButtonModule],
-                providers: [
-                    {
-                        provide: DotMessageService,
-                        useValue: {
-                            get() {
-                                return 'Copy url page';
-                            }
+    beforeEach(waitForAsync(() => {
+        TestBed.configureTestingModule({
+            declarations: [DotEditPageInfoComponent, DotMessagePipe],
+            imports: [DotApiLinkModule, DotCopyButtonModule],
+            providers: [
+                {
+                    provide: DotMessageService,
+                    useValue: {
+                        get() {
+                            return 'Copy url page';
                         }
                     }
-                ]
-            }).compileComponents();
-        })
-    );
+                }
+            ]
+        }).compileComponents();
+    }));
 
     beforeEach(() => {
         fixture = TestBed.createComponent(DotEditPageInfoComponent);

@@ -1,4 +1,5 @@
-import { MockDotRouterService } from '@tests/dot-router-service.mock';
+import { HttpClientTestingModule } from '@angular/common/http/testing';
+
 import { DotHttpErrorManagerService } from './../api/services/dot-http-error-manager/dot-http-error-manager.service';
 import { DotIframeService } from './../view/components/_common/iframe/service/dot-iframe/dot-iframe.service';
 import { ComponentFixture, TestBed, TestModuleMetadata } from '@angular/core/testing';
@@ -7,6 +8,7 @@ import {
     ApiRoot,
     BrowserUtil,
     CoreWebService,
+    CoreWebServiceMock,
     DotcmsConfigService,
     DotcmsEventsService,
     DotEventsSocket,
@@ -18,22 +20,23 @@ import {
 } from '@dotcms/dotcms-js';
 import { ConfirmationService } from 'primeng/api';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
-import { NGFACES_MODULES } from '../modules';
 import { CommonModule } from '@angular/common';
-import { DotEventsService } from '../api/services/dot-events/dot-events.service';
-import { DotGlobalMessageService } from '@components/_common/dot-global-message/dot-global-message.service';
-import { DotMessageService } from '@services/dot-message/dot-messages.service';
-import { DotFormatDateService } from '../api/services/dot-format-date-service';
-import { DotAlertConfirmService } from '../api/services/dot-alert-confirm';
-import { DotRouterService } from '../api/services/dot-router/dot-router.service';
-import { DotLicenseService } from '../api/services/dot-license/dot-license.service';
 import { DotContentletEditorService } from '@components/dot-contentlet-editor/services/dot-contentlet-editor.service';
+import { DotGlobalMessageService } from '@components/_common/dot-global-message/dot-global-message.service';
+import {
+    DotAlertConfirmService,
+    DotEventsService,
+    DotMessageService,
+    DotLicenseService
+} from '@dotcms/data-access';
+import { DotCustomEventHandlerService } from '../api/services/dot-custom-event-handler/dot-custom-event-handler.service';
+import { DotDownloadBundleDialogService } from '../api/services/dot-download-bundle-dialog/dot-download-bundle-dialog.service';
+import { DotFormatDateService } from '../api/services/dot-format-date-service';
 import { DotUiColorsService } from '../api/services/dot-ui-colors/dot-ui-colors.service';
-import { CoreWebServiceMock } from '@tests/core-web.service.mock';
-import { DotCustomEventHandlerService } from '@services/dot-custom-event-handler/dot-custom-event-handler.service';
-import { DotPipesModule } from '@pipes/dot-pipes.module';
-import { DotDownloadBundleDialogService } from '@services/dot-download-bundle-dialog/dot-download-bundle-dialog.service';
-import { HttpClientTestingModule } from '@angular/common/http/testing';
+import { NGFACES_MODULES } from '../modules';
+import { DotPipesModule } from '../view/pipes/dot-pipes.module';
+import { MockDotRouterService } from '@dotcms/utils-testing';
+import { DotRouterService } from '../api/services/dot-router/dot-router.service';
 
 export class MockDotUiColorsService {
     setColors() {
@@ -66,7 +69,13 @@ export class DOTTestBed {
             { provide: DotUiColorsService, useClass: MockDotUiColorsService },
             { provide: LOCALE_ID, useValue: {} },
             { provide: CoreWebService, useClass: CoreWebServiceMock },
-            { provide: DotRouterService, useClass: MockDotRouterService },
+            {
+                /* A service that provides a way to navigate between pages. */
+                provide:
+                    /* A service that provides a way to navigate between pages. */
+                    DotRouterService,
+                useClass: MockDotRouterService
+            },
             ApiRoot,
             BrowserUtil,
             ConfirmationService,

@@ -2,24 +2,24 @@
 
 import { TestBed } from '@angular/core/testing';
 
-import { PushPublishService } from '@services/push-publish/push-publish.service';
+import { PushPublishService } from '@dotcms/app/api/services/push-publish/push-publish.service';
 import { DotMessageDisplayService } from '@components/dot-message-display/services';
-import { DotMessageService } from '@services/dot-message/dot-messages.service';
-import { DotWizardService } from '@services/dot-wizard/dot-wizard.service';
+import { DotMessageService } from '@dotcms/data-access';
+import { DotWizardService } from '@dotcms/app/api/services/dot-wizard/dot-wizard.service';
 import { DotIframeService } from '@components/_common/iframe/service/dot-iframe/dot-iframe.service';
-import { DotHttpErrorManagerService } from '@services/dot-http-error-manager/dot-http-error-manager.service';
-import { DotWorkflowActionsFireService } from '@services/dot-workflow-actions-fire/dot-workflow-actions-fire.service';
+import { DotHttpErrorManagerService } from '@dotcms/app/api/services/dot-http-error-manager/dot-http-error-manager.service';
+import { DotWorkflowActionsFireService } from '@dotcms/data-access';
 import { DotGlobalMessageService } from '@components/_common/dot-global-message/dot-global-message.service';
-import { mockWorkflowsActions } from '@tests/dot-workflows-actions.mock';
+import { mockWorkflowsActions } from '@dotcms/utils-testing';
 import { MockPushPublishService } from '@portlets/shared/dot-content-types-listing/dot-content-types.component.spec';
-import { MockDotMessageService } from '@tests/dot-message-service.mock';
+import { MockDotMessageService } from '@dotcms/utils-testing';
 import { DotWizardStep } from '@models/dot-wizard-step/dot-wizard-step.model';
 import { DotCommentAndAssignFormComponent } from '@components/_common/forms/dot-comment-and-assign-form/dot-comment-and-assign-form.component';
 import { DotPushPublishFormComponent } from '@components/_common/forms/dot-push-publish-form/dot-push-publish-form.component';
 import { DotWizardInput } from '@models/dot-wizard-input/dot-wizard-input.model';
 import { of } from 'rxjs';
 import { DotMessageSeverity, DotMessageType } from '@components/dot-message-display/model';
-import { DotWorkflowEventHandlerService } from '@services/dot-workflow-event-handler/dot-workflow-event-handler.service';
+import { DotWorkflowEventHandlerService } from '@dotcms/app/api/services/dot-workflow-event-handler/dot-workflow-event-handler.service';
 import {
     CoreWebService,
     DotcmsConfigService,
@@ -30,21 +30,24 @@ import {
     LoginService,
     StringUtils
 } from '@dotcms/dotcms-js';
-import { dotEventSocketURLFactory } from '@tests/dot-test-bed';
-import { CoreWebServiceMock } from '@tests/core-web.service.mock';
-import { DotRouterService } from '@services/dot-router/dot-router.service';
+import { CoreWebServiceMock } from '@dotcms/utils-testing';
+import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
 import { RouterTestingModule } from '@angular/router/testing';
-import { DotAlertConfirmService } from '@services/dot-alert-confirm';
+import { DotAlertConfirmService } from '@dotcms/data-access';
 import { ConfirmationService } from 'primeng/api';
-import { LoginServiceMock } from '@tests/login-service.mock';
-import { DotEventsService } from '@services/dot-events/dot-events.service';
-import { DotCMSWorkflowAction, DotCMSWorkflowActionEvent } from '@dotcms/dotcms-models';
-import { DotActionBulkResult } from '@models/dot-action-bulk-result/dot-action-bulk-result.model';
-import { DotActionBulkRequestOptions } from '@models/dot-action-bulk-request-options/dot-action-bulk-request-options.model';
+import { LoginServiceMock } from '@dotcms/utils-testing';
+import { DotEventsService } from '@dotcms/data-access';
+import {
+    DotActionBulkRequestOptions,
+    DotCMSWorkflowAction,
+    DotCMSWorkflowActionEvent
+} from '@dotcms/dotcms-models';
+import { DotActionBulkResult } from '@dotcms/dotcms-models';
 import { HttpClientTestingModule } from '@angular/common/http/testing';
-import { DotFormatDateService } from '@services/dot-format-date-service';
-import { DotFormatDateServiceMock } from '@dotcms/app/test/format-date-service.mock';
+import { DotFormatDateService } from '@dotcms/app/api/services/dot-format-date-service';
+import { DotFormatDateServiceMock } from '@dotcms/utils-testing';
 import { DotWorkflowPayload, DotProcessedWorkflowPayload } from '@dotcms/dotcms-models';
+import { dotEventSocketURLFactory } from '@dotcms/app/test/dot-test-bed';
 
 const mockWAEvent: DotCMSWorkflowActionEvent = {
     workflow: mockWorkflowsActions[0],

@@ -1,5 +1,5 @@
 import { waitForAsync, ComponentFixture } from '@angular/core/testing';
-import { DOTTestBed } from '@tests/dot-test-bed';
+import { DOTTestBed } from '@dotcms/app/test/dot-test-bed';
 import { DebugElement, Component, Input, Output, EventEmitter } from '@angular/core';
 import { ContentTypeFieldsRowComponent } from '.';
 import { By } from '@angular/platform-browser';
@@ -7,11 +7,11 @@ import { FieldDragDropService } from '../service';
 import { DotCMSContentTypeField, DotCMSContentTypeLayoutRow } from '@dotcms/dotcms-models';
 import { DragulaModule, DragulaService } from 'ng2-dragula';
 import { UiDotIconButtonTooltipModule } from '@components/_common/dot-icon-button-tooltip/dot-icon-button-tooltip.module';
-import { DotMessageService } from '@services/dot-message/dot-messages.service';
-import { MockDotMessageService } from '@tests/dot-message-service.mock';
-import { DotAlertConfirmService } from '@services/dot-alert-confirm';
-import { FieldUtil } from '../util/field-util';
-import { dotcmsContentTypeFieldBasicMock } from '@tests/dot-content-types.mock';
+import { DotMessageService } from '@dotcms/data-access';
+import { MockDotMessageService } from '@dotcms/utils-testing';
+import { DotAlertConfirmService } from '@dotcms/data-access';
+import { FieldUtil } from '@dotcms/utils-testing';
+import { dotcmsContentTypeFieldBasicMock } from '@dotcms/utils-testing';
 
 const mockFieldRow: DotCMSContentTypeLayoutRow = FieldUtil.createFieldRow(2);
 
@@ -80,34 +80,32 @@ describe('ContentTypeFieldsRowComponent', () => {
         'dot.common.dialog.reject': 'No'
     });
 
-    beforeEach(
-        waitForAsync(() => {
-            DOTTestBed.configureTestingModule({
-                declarations: [
-                    ContentTypeFieldsRowComponent,
-                    TestContentTypeFieldDraggableItemComponent,
-                    DotTestHostComponent
-                ],
-                imports: [DragulaModule, UiDotIconButtonTooltipModule],
-                providers: [
-                    FieldDragDropService,
-                    DotAlertConfirmService,
-                    DragulaService,
-                    {
-                        provide: DotMessageService,
-                        useValue: messageServiceMock
-                    }
-                ]
-            });
+    beforeEach(waitForAsync(() => {
+        DOTTestBed.configureTestingModule({
+            declarations: [
+                ContentTypeFieldsRowComponent,
+                TestContentTypeFieldDraggableItemComponent,
+                DotTestHostComponent
+            ],
+            imports: [DragulaModule, UiDotIconButtonTooltipModule],
+            providers: [
+                FieldDragDropService,
+                DotAlertConfirmService,
+                DragulaService,
+                {
+                    provide: DotMessageService,
+                    useValue: messageServiceMock
+                }
+            ]
+        });
 
-            hostFixture = DOTTestBed.createComponent(DotTestHostComponent);
-            hostComp = hostFixture.componentInstance;
-            hostDe = hostFixture.debugElement;
-            de = hostDe.query(By.css('dot-content-type-fields-row'));
-            comp = de.componentInstance;
-            dotDialogService = de.injector.get(DotAlertConfirmService);
-        })
-    );
+        hostFixture = DOTTestBed.createComponent(DotTestHostComponent);
+        hostComp = hostFixture.componentInstance;
+        hostDe = hostFixture.debugElement;
+        de = hostDe.query(By.css('dot-content-type-fields-row'));
+        comp = de.componentInstance;
+        dotDialogService = de.injector.get(DotAlertConfirmService);
+    }));
 
     describe('setting rows and columns', () => {
         beforeEach(() => {

@@ -4,7 +4,7 @@ import { TestBed } from '@angular/core/testing';
 import { of } from 'rxjs';
 import { DotContainerEditResolver } from './dot-container-edit.resolver';
 import { DotRouterService } from '@services/dot-router/dot-router.service';
-import { MockDotRouterService } from '@tests/dot-router-service.mock';
+import { MockDotRouterService } from '@dotcms/utils-testing';
 import { DotContainersService } from '@dotcms/app/api/services/dot-containers/dot-containers.service';
 
 describe('DotContainerService', () => {

@@ -16,15 +16,16 @@ import {
     Validators
 } from '@angular/forms';
 import { DotDialogActions } from '@components/dot-dialog/dot-dialog.component';
-import { DotAppsService } from '@services/dot-apps/dot-apps.service';
-import { DotMessageService } from '@services/dot-message/dot-messages.service';
+import { DotAppsService } from '@dotcms/app/api/services/dot-apps/dot-apps.service';
+import { DotMessageService } from '@dotcms/data-access';
 import {
-    dialogAction,
     DotApps,
+    DotAppsSites,
+    dialogAction,
     DotAppsExportConfiguration,
-    DotAppsImportConfiguration,
-    DotAppsSites
-} from '@shared/models/dot-apps/dot-apps.model';
+    DotAppsImportConfiguration
+} from '@dotcms/dotcms-models';
+
 import { Subject } from 'rxjs';
 import { take, takeUntil } from 'rxjs/operators';
 

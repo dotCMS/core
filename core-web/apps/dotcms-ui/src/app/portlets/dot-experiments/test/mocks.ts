@@ -1,9 +1,10 @@
 import { of } from 'rxjs';
+
 import {
+    DotExperiment,
     DotExperimentStatusList,
     TrafficProportionTypes
-} from '@portlets/dot-experiments/shared/models/dot-experiments-constants';
-import { DotExperiment } from '@portlets/dot-experiments/shared/models/dot-experiments.model';
+} from '@dotcms/dotcms-models';
 
 export const ExperimentMocks: Array<DotExperiment> = [
     {

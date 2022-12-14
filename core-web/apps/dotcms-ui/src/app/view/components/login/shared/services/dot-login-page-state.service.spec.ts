@@ -1,6 +1,6 @@
 import { DotLoginPageStateService, LOGIN_LABELS } from './dot-login-page-state.service';
 import { LoginService } from '@dotcms/dotcms-js';
-import { LoginServiceMock, mockLoginFormResponse } from '@tests/login-service.mock';
+import { LoginServiceMock, mockLoginFormResponse } from '@dotcms/utils-testing';
 import { of } from 'rxjs';
 import { TestBed } from '@angular/core/testing';
 import { DotLoginInformation } from '@dotcms/dotcms-models';

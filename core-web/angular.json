@@ -2,6 +2,7 @@
     "version": 2,
     "projects": {
         "block-editor": "libs/block-editor",
+        "data-access": "libs/data-access",
         "dot-layout-grid": "libs/dot-layout-grid",
         "dot-primeng-theme-styles": "libs/dot-primeng-theme-styles",
         "dot-rules": "libs/dot-rules",
@@ -17,6 +18,7 @@
         "dotcms-ui-e2e": "apps/dotcms-ui-e2e",
         "dotcms-webcomponents": "libs/dotcms-webcomponents",
         "ui": "libs/ui",
-        "utils": "libs/utils"
+        "utils": "libs/utils",
+        "utils-testing": "libs/utils-testing"
     }
 }

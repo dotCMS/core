@@ -8,13 +8,12 @@ import {
     StringUtils,
     UserModel
 } from '@dotcms/dotcms-js';
-import { CoreWebServiceMock } from '@tests/core-web.service.mock';
+import { CoreWebServiceMock } from '@dotcms/utils-testing';
 import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { of } from 'rxjs';
-import { DotLicenseService } from '@services/dot-license/dot-license.service';
+import { DotCurrentUserService, DotLicenseService } from '@dotcms/data-access';
 import { PushPublishService } from '@services/push-publish/push-publish.service';
 import { take } from 'rxjs/operators';
-import { DotCurrentUserService } from '@services/dot-current-user/dot-current-user.service';
 import { DotFormatDateService } from '@services/dot-format-date-service';
 
 describe('DotContainerListResolverService', () => {

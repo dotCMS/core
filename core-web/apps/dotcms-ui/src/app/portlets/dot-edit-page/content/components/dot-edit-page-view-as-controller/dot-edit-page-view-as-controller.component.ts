@@ -2,15 +2,15 @@ import { Component, Input, OnInit } from '@angular/core';
 import { Observable } from 'rxjs';
 import { take } from 'rxjs/operators';
 
-import { DotPersona } from '@models/dot-persona/dot-persona.model';
-import { DotLanguage } from '@models/dot-language/dot-language.model';
-import { DotDevice } from '@models/dot-device/dot-device.model';
-import { DotMessageService } from '@services/dot-message/dot-messages.service';
-import { DotLicenseService } from '@services/dot-license/dot-license.service';
-import { DotPersonalizeService } from '@services/dot-personalize/dot-personalize.service';
-import { DotAlertConfirmService } from '@services/dot-alert-confirm';
-import { DotPageRenderState } from '@portlets/dot-edit-page/shared/models';
-import { DotPageMode } from '@models/dot-page/dot-page-mode.enum';
+import { DotPersona } from '@dotcms/dotcms-models';
+import { DotLanguage } from '@dotcms/dotcms-models';
+import { DotDevice } from '@dotcms/dotcms-models';
+import { DotMessageService } from '@dotcms/data-access';
+import { DotLicenseService } from '@dotcms/data-access';
+import { DotPersonalizeService } from '@dotcms/data-access';
+import { DotAlertConfirmService } from '@dotcms/data-access';
+import { DotPageRenderState } from '@dotcms/dotcms-models';
+import { DotPageMode } from '@dotcms/dotcms-models';
 import { DotPageStateService } from '../../services/dot-page-state/dot-page-state.service';
 
 @Component({
