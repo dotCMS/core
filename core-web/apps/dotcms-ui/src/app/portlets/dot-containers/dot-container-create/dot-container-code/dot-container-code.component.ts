@@ -38,8 +38,8 @@ export class DotContentEditorComponent implements OnInit {
             this.contentTypeNamesById[id] = name;
         });
 
-        this.updateActiveTabIndex(this.getcontainerStructures.length);
         this.init();
+        this.updateActiveTabIndex(this.getcontainerStructures.length);
     }
 
     /**
@@ -94,9 +94,9 @@ export class DotContentEditorComponent implements OnInit {
                 this.getcontainerStructures.controls[tabIdx - 1].get('structureId').value;
             // Tab Panel does not trigger any event after completely rendered.
             // Tab Panel and Monaco-Editor take sometime to render it completely.
-            setTimeout(() => {
+            requestAnimationFrame(() => {
                 this.monacoEditors[contentTypeId].focus();
-            }, 0);
+            });
         }
     }
 
@@ -107,18 +107,8 @@ export class DotContentEditorComponent implements OnInit {
      * @memberof DotContentEditorComponent
      */
     findCurrentTabIndex(index): number {
-        let currentIndex = index - 1;
-
-        if (currentIndex > 0) {
-            // do nothing
-        } else if (this.getcontainerStructures.length > 0) {
-            currentIndex = currentIndex + 1;
-        } else {
-            // empty tab index
-            currentIndex = 0;
-        }
-
-        return currentIndex;
+        // -1 in condition because if it is first tab then no need to minus
+        return index - 1 > 0 ? index - 1 : this.getcontainerStructures.length > 0 ? index : 0;
     }
 
     /**
@@ -152,7 +142,7 @@ export class DotContentEditorComponent implements OnInit {
      */
     monacoInit(monacoEditor) {
         this.monacoEditors[monacoEditor.name] = monacoEditor.editor;
-        this.monacoEditors[monacoEditor.name].focus();
+        requestAnimationFrame(() => this.monacoEditors[monacoEditor.name].focus());
     }
 
     private init(): void {
@@ -192,9 +182,9 @@ export class DotContentEditorComponent implements OnInit {
                         );
 
                         // Waiting for primeng to add the tabPanel
-                        setTimeout(() => {
+                        requestAnimationFrame(() => {
                             this.updateActiveTabIndex(this.getcontainerStructures.length);
-                        }, 0);
+                        });
                     }
                 }
             };

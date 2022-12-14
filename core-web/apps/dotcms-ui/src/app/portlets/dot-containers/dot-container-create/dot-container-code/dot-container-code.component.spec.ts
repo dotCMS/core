@@ -211,6 +211,8 @@ describe('DotContentEditorComponent', () => {
         });
 
         it('shoud have empty content type message', () => {
+            comp.removeItem(1);
+            hostFixture.detectChanges();
             const icon = de.query(By.css('[data-testId="code"]'));
             const title = de.query(By.css('[data-testId="empty-content-title"]'));
             const subtitle = de.query(By.css('[data-testId="empty-content-subtitle"]'));
@@ -219,89 +221,103 @@ describe('DotContentEditorComponent', () => {
             expect(subtitle.nativeElement.textContent).toContain('Need help? Go to documentation');
         });
 
-        it('should have add content type', () => {
-            menu.model[0].command();
-            hostFixture.detectChanges();
-            const contentTypes = de.queryAll(By.css('p-tabpanel'));
-            const code = de.query(By.css(`[data-testid="${mockContentTypes[0].id}"]`));
-            code.triggerEventHandler('monacoInit', {
-                name: menu.model[0].label,
-                editor: {
-                    focus: jasmine.createSpy()
-                }
+        describe('without default content type', () => {
+            beforeEach(() => {
+                comp.removeItem(1);
+                hostFixture.detectChanges();
             });
-            hostFixture.detectChanges();
-            expect(code).not.toBeNull();
-            expect(code.attributes.formControlName).toBe('code');
-            expect(code.attributes.language).toBe('html');
-            expect(code.attributes['ng-reflect-show']).toBe('code');
-            expect(contentTypes.length).toEqual(2);
-            expect((hostComponent.form.get('containerStructures') as FormArray).length).toEqual(1);
-            expect(comp.monacoEditors[mockContentTypes[0].name].focus).toHaveBeenCalled();
-        });
 
-        it('should have remove content type and focus on another content type', () => {
-            menu.model[0].command();
-            menu.model[1].command();
-            hostFixture.detectChanges();
-            const code = de.query(By.css(`[data-testid="${mockContentTypes[0].id}"]`));
-            code.triggerEventHandler('monacoInit', {
-                name: mockContentTypes[0].id,
-                editor: {
-                    focus: jasmine.createSpy()
-                }
-            });
-            const code2 = de.query(By.css(`[data-testid="${mockContentTypes[1].id}"]`));
-            code2.triggerEventHandler('monacoInit', {
-                name: mockContentTypes[1].id,
-                editor: {
-                    focus: jasmine.createSpy()
-                }
-            });
-            hostFixture.detectChanges();
-            const tabCloseBtn = de.queryAll(By.css('.p-tabview-close'));
+            it('should have add content type', fakeAsync(() => {
+                menu.model[0].command();
+                hostFixture.detectChanges();
+                const contentTypes = de.queryAll(By.css('p-tabpanel'));
+                const code = de.query(By.css(`[data-testid="${mockContentTypes[0].id}"]`));
+                code.triggerEventHandler('monacoInit', {
+                    name: menu.model[0].label,
+                    editor: {
+                        focus: jasmine.createSpy()
+                    }
+                });
+                hostFixture.detectChanges();
+                tick(100);
+                expect(code).not.toBeNull();
+                expect(code.attributes.formControlName).toBe('code');
+                expect(code.attributes.language).toBe('html');
+                expect(code.attributes['ng-reflect-show']).toBe('code');
+                expect(contentTypes.length).toEqual(2);
+                expect((hostComponent.form.get('containerStructures') as FormArray).length).toEqual(
+                    1
+                );
+                expect(comp.monacoEditors[mockContentTypes[0].name].focus).toHaveBeenCalled();
+            }));
 
-            tabCloseBtn[1].triggerEventHandler('click');
-            hostFixture.detectChanges();
-            const contentTypes = de.queryAll(By.css('p-tabpanel'));
-            const codeExist = de.query(By.css(`[data-testid="${mockContentTypes[1].id}"]`));
-            expect(codeExist).toBeNull();
-            expect(contentTypes.length).toEqual(2);
-            expect((hostComponent.form.get('containerStructures') as FormArray).length).toEqual(1);
-            expect(comp.monacoEditors[mockContentTypes[0].id].focus).toHaveBeenCalled();
-        });
+            it('should have remove content type and focus on another content type', fakeAsync(() => {
+                menu.model[0].command();
+                menu.model[1].command();
+                hostFixture.detectChanges();
+                const code = de.query(By.css(`[data-testid="${mockContentTypes[0].id}"]`));
+                code.triggerEventHandler('monacoInit', {
+                    name: mockContentTypes[0].id,
+                    editor: {
+                        focus: jasmine.createSpy()
+                    }
+                });
+                const code2 = de.query(By.css(`[data-testid="${mockContentTypes[1].id}"]`));
+                code2.triggerEventHandler('monacoInit', {
+                    name: mockContentTypes[1].id,
+                    editor: {
+                        focus: jasmine.createSpy()
+                    }
+                });
+                hostFixture.detectChanges();
+                tick(100);
+                const tabCloseBtn = de.queryAll(By.css('.p-tabview-close'));
 
-        it('should have select content type and focus on field', () => {
-            menu.model[0].command();
-            menu.model[1].command();
-            hostFixture.detectChanges();
-            const code = de.query(By.css(`[data-testid="${mockContentTypes[0].id}"]`));
-            code.triggerEventHandler('monacoInit', {
-                name: mockContentTypes[0].id,
-                editor: {
-                    focus: jasmine.createSpy()
-                }
-            });
-            const code2 = de.query(By.css(`[data-testid="${mockContentTypes[1].id}"]`));
-            code2.triggerEventHandler('monacoInit', {
-                name: mockContentTypes[1].id,
-                editor: {
-                    focus: jasmine.createSpy()
-                }
-            });
-            hostFixture.detectChanges();
-            const tabLists = de.query(By.css('[role="tablist"]')).children;
-            tabLists[1].children[0].triggerEventHandler('click');
-            hostFixture.detectChanges();
-            const selectedContentType = de.query(By.css('.p-highlight'));
-            expect(code).not.toBeNull();
-            expect(code.attributes.formControlName).toBe('code');
-            expect(code.attributes.language).toBe('html');
-            expect(code.attributes['ng-reflect-show']).toBe('code');
-            expect(selectedContentType.nativeElement.innerText.toLowerCase()).toBe(
-                mockContentTypes[0].name.toLowerCase()
-            );
-            expect(comp.monacoEditors[mockContentTypes[0].id].focus).toHaveBeenCalled();
+                tabCloseBtn[1].triggerEventHandler('click');
+                hostFixture.detectChanges();
+                const contentTypes = de.queryAll(By.css('p-tabpanel'));
+                const codeExist = de.query(By.css(`[data-testid="${mockContentTypes[1].id}"]`));
+                expect(codeExist).toBeNull();
+                expect(contentTypes.length).toEqual(2);
+                expect((hostComponent.form.get('containerStructures') as FormArray).length).toEqual(
+                    1
+                );
+                expect(comp.monacoEditors[mockContentTypes[0].id].focus).toHaveBeenCalled();
+            }));
+
+            it('should have select content type and focus on field', fakeAsync(() => {
+                menu.model[0].command();
+                menu.model[1].command();
+                hostFixture.detectChanges();
+                const code = de.query(By.css(`[data-testid="${mockContentTypes[0].id}"]`));
+                code.triggerEventHandler('monacoInit', {
+                    name: mockContentTypes[0].id,
+                    editor: {
+                        focus: jasmine.createSpy()
+                    }
+                });
+                const code2 = de.query(By.css(`[data-testid="${mockContentTypes[1].id}"]`));
+                code2.triggerEventHandler('monacoInit', {
+                    name: mockContentTypes[1].id,
+                    editor: {
+                        focus: jasmine.createSpy()
+                    }
+                });
+                hostFixture.detectChanges();
+                tick(100);
+                const tabLists = de.query(By.css('[role="tablist"]')).children;
+                tabLists[1].children[0].triggerEventHandler('click');
+                hostFixture.detectChanges();
+                const selectedContentType = de.query(By.css('.p-highlight'));
+                expect(code).not.toBeNull();
+                expect(code.attributes.formControlName).toBe('code');
+                expect(code.attributes.language).toBe('html');
+                expect(code.attributes['ng-reflect-show']).toBe('code');
+                expect(selectedContentType.nativeElement.innerText.toLowerCase()).toBe(
+                    mockContentTypes[0].name.toLowerCase()
+                );
+                expect(comp.monacoEditors[mockContentTypes[0].id].focus).toHaveBeenCalled();
+            }));
         });
     });
 });
