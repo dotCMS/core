@@ -738,7 +738,7 @@ public class TemplateFactoryImpl implements TemplateFactory {
 					+ "FROM contentlet "
 					+ "WHERE JSON_VALUE(contentlet_as_json, '$.fields.template.value') = ?");
 		} else {
-			dotConnect.setSQL("SELECT identifier,inode,language_id,contentlet_as_json->variantId as variant "
+			dotConnect.setSQL("SELECT identifier,inode,language_id,contentlet_as_json->>'variantId' as variant "
 					+ "FROM contentlet "
 					+ "WHERE contentlet_as_json->'fields'->'template'->>'value' =  ?");
 		}

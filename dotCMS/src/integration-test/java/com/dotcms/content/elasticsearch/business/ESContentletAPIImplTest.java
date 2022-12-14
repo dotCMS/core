@@ -1838,11 +1838,12 @@ public class ESContentletAPIImplTest extends IntegrationTestBase {
     /**
      * Method to test: {@link ESContentletAPIImpl#checkin(Contentlet, User, boolean)}
      * When:
-     * - Create two {@link Variant}
-     * - Create a {@link HTMLPageAsset} in the first {@link Variant}.
-     * - Create a new version of the same {@link HTMLPageAsset} but with different {@link Variant}
-     * and {@link Template}.
-     * Should: Create a new version in the first {@link Variant} using the {@link Template} from the second {@link Variant} version.
+     * - Create two {@link Variant}: A and B
+     * - Create two {@link Template}: A and B.
+     * - Create a {@link HTMLPageAsset} using {@link Variant} A and the {@link Template} A.
+     * - Create a new version of the same {@link HTMLPageAsset} but with the {@link Variant} B
+     * and {@link Template} B.
+     * Should: Each Page's Version has its own {@link Template}
      *
      * @throws DotDataException
      * @throws DotSecurityException
@@ -1850,32 +1851,32 @@ public class ESContentletAPIImplTest extends IntegrationTestBase {
     @Test
     public void shouldUpdateAllTheDifferentVariantsVersions()  {
         final Host host = new SiteDataGen().nextPersisted();
-        final Template template_1 = new TemplateDataGen().host(host).nextPersisted();
-        final Template template_2 = new TemplateDataGen().host(host).nextPersisted();
+        final Template template_A = new TemplateDataGen().host(host).nextPersisted();
+        final Template template_B = new TemplateDataGen().host(host).nextPersisted();
 
-        final Variant variant_1 = new VariantDataGen().nextPersisted();
-        final Variant variant_2 = new VariantDataGen().nextPersisted();
+        final Variant variant_A = new VariantDataGen().nextPersisted();
+        final Variant variant_B = new VariantDataGen().nextPersisted();
 
-        final HTMLPageAsset htmlPageAsset_1 = (HTMLPageAsset) new HTMLPageDataGen(host, template_1)
-                .variant(variant_1)
+        final HTMLPageAsset htmlPageAsset_1 = (HTMLPageAsset) new HTMLPageDataGen(host, template_A)
+                .variant(variant_A)
                 .nextPersisted();
 
         final Contentlet checkout = HTMLPageDataGen.checkout(htmlPageAsset_1);
-        checkout.setVariantId(variant_2.name());
-        checkout.setStringProperty(HTMLPageAssetAPI.TEMPLATE_FIELD, template_2.getIdentifier());
+        checkout.setVariantId(variant_B.name());
+        checkout.setStringProperty(HTMLPageAssetAPI.TEMPLATE_FIELD, template_B.getIdentifier());
         final HTMLPageAsset htmlPageAsset_2 = APILocator.getHTMLPageAssetAPI().fromContentlet(
                 HTMLPageDataGen.checkin(checkout));
 
-        assertEquals(template_1.getIdentifier(), getFromDataBase(htmlPageAsset_1.getInode()).getTemplateId());
-        assertEquals(template_2.getIdentifier(), getFromDataBase(htmlPageAsset_2.getInode()).getTemplateId());
+        assertEquals(template_A.getIdentifier(), getFromDataBase(htmlPageAsset_1.getInode()).getTemplateId());
+        assertEquals(template_B.getIdentifier(), getFromDataBase(htmlPageAsset_2.getInode()).getTemplateId());
 
         final ContentletVersionInfo contentletVersionInfo = APILocator.getVersionableAPI()
                 .getContentletVersionInfo(htmlPageAsset_1.getIdentifier(),
                         htmlPageAsset_1.getLanguageId(),
-                        VariantAPI.DEFAULT_VARIANT.name()).orElseThrow(() -> new AssertionError());
+                        variant_A.name()).orElseThrow(() -> new AssertionError());
 
         assertEquals(htmlPageAsset_1.getInode(), contentletVersionInfo.getWorkingInode());
-        assertEquals(template_1.getIdentifier(), getFromDataBase(contentletVersionInfo.getWorkingInode()).getTemplateId());
+        assertEquals(template_A.getIdentifier(), getFromDataBase(contentletVersionInfo.getWorkingInode()).getTemplateId());
     }
 
     /**
@@ -1889,13 +1890,14 @@ public class ESContentletAPIImplTest extends IntegrationTestBase {
      * Should: Both version have different {@link Template}, 'A' for the first page's version and 'B' for the second page's version.
      *
      * - Create a new version of the same {@link HTMLPageAsset} and {@link Variant} 'A' and {@link Language} B  with {@link Template} 'C' (Third Page's version).
-     * Should: Create a new version for {@link Variant} 'A' and {@link Language} 'A'  with the {@link Template} 'C' .
+     * Should: Create a new version for {@link Variant} 'A' and {@link Language} 'A'  with the {@link Template} 'C'
+     * and keep the {@link Variant} 'B' and {@link Language} 'A' version with the {@link Template} B.
      *
      * @throws DotDataException
      * @throws DotSecurityException
      */
     @Test
-    public void shouldUpdateAllTheDifferentVariantsVersions2()  {
+    public void shouldUpdateAllTheDifferentVariantsVersionsInTheSameLang()  {
         final Variant variant_A = new VariantDataGen().nextPersisted();
         final Variant variant_B = new VariantDataGen().nextPersisted();
 
@@ -1915,13 +1917,20 @@ public class ESContentletAPIImplTest extends IntegrationTestBase {
 
         final HTMLPageAsset htmlPageAsset_3 = createNewVersion(htmlPageAsset_1, variant_A, language_B, template_c);
 
-        final ContentletVersionInfo contentletVersionInfo = APILocator.getVersionableAPI()
+        final ContentletVersionInfo contentletVersionInfo_1 = APILocator.getVersionableAPI()
                 .getContentletVersionInfo(htmlPageAsset_1.getIdentifier(),
-                        htmlPageAsset_1.getLanguageId(),
-                        htmlPageAsset_1.getVariantId()).orElseThrow(() -> new AssertionError());
+                        language_A.getId(),
+                        variant_A.name()).orElseThrow(() -> new AssertionError());
 
-        assertEquals(template_c.getIdentifier(), getFromDataBase(contentletVersionInfo.getWorkingInode()).getTemplateId());
+        assertEquals(template_c.getIdentifier(), getFromDataBase(contentletVersionInfo_1.getWorkingInode()).getTemplateId());
         assertEquals(template_c.getIdentifier(), getFromDataBase(htmlPageAsset_3.getInode()).getTemplateId());
+
+        final ContentletVersionInfo contentletVersionInfo_2 = APILocator.getVersionableAPI()
+                .getContentletVersionInfo(htmlPageAsset_1.getIdentifier(),
+                        language_A.getId(),
+                        variant_B.name()).orElseThrow(() -> new AssertionError());
+
+        assertEquals(template_B.getIdentifier(), getFromDataBase(contentletVersionInfo_2.getWorkingInode()).getTemplateId());
     }
 
     @WrapInTransaction
