@@ -2,10 +2,10 @@
     background-color: white;
     display: block;
     height: 100%;
+    overflow: hidden;
 }
 
 div {
     display: flex;
     height: 100%;
-    flex-direction: column;
 }

@@ -1,11 +1,19 @@
-import { Observable, Subject, fromEvent, merge, of } from 'rxjs';
+import { fromEvent, merge, Observable, of, Subject } from 'rxjs';
 
-import { filter, takeUntil, pluck, take, tap, skip, catchError } from 'rxjs/operators';
-import { ActivatedRoute } from '@angular/router';
-import { Component, OnInit, ViewChild, ElementRef, NgZone, OnDestroy } from '@angular/core';
+import { catchError, filter, map, pluck, skip, take, takeUntil, tap } from 'rxjs/operators';
+import { ActivatedRoute, Router } from '@angular/router';
+import { Component, ElementRef, NgZone, OnDestroy, OnInit, ViewChild } from '@angular/core';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 
 import { SiteService } from '@dotcms/dotcms-js';
+import { DotCMSContentlet, DotCMSContentType, DotIframeEditEvent } from '@dotcms/dotcms-models';
+
+import { DotAlertConfirmService } from '@services/dot-alert-confirm';
+import { DotEditContentHtmlService } from './services/dot-edit-content-html/dot-edit-content-html.service';
+import { DotEditPageService } from '@services/dot-edit-page/dot-edit-page.service';
+import { DotGlobalMessageService } from '@components/_common/dot-global-message/dot-global-message.service';
+import { DotLoadingIndicatorService } from '@components/_common/iframe/dot-loading-indicator/dot-loading-indicator.service';
+import { DotMessageService } from '@services/dot-message/dot-messages.service';
 import {
     DotCMSContentlet,
     DotCMSContentType,
@@ -38,14 +46,12 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { DotPropertiesService } from '@dotcms/data-access';
 import { DotLicenseService } from '@dotcms/data-access';
 import { DotContentletEventAddContentType } from './services/dot-edit-content-html/models/dot-contentlets-events.model';
-import { DotIframeEditEvent } from '@dotcms/dotcms-models';
 import { DotEventsService } from '@dotcms/data-access';
 import { DialogService } from 'primeng/dynamicdialog';
 import { DotFavoritePageComponent } from '../components/dot-favorite-page/dot-favorite-page.component';
-import { DotUiColorsService } from '@dotcms/app/api/services/dot-ui-colors/dot-ui-colors.service';
-import { DotLoadingIndicatorService } from '@dotcms/utils';
-import { DotPageContent } from '../shared/models';
-import { DotPageStateService } from './services/dot-page-state/dot-page-state.service';
+import { DotExperiment } from '@portlets/dot-experiments/shared/models/dot-experiments.model';
+import { DotVariantData } from '@models/dot-page/dot-page.model';
+import { DEFAULT_VARIANT_NAME } from '@portlets/dot-experiments/shared/models/dot-experiments-constants';
 
 export const EDIT_BLOCK_EDITOR_CUSTOM_EVENT = 'edit-block-editor';
 
@@ -78,6 +84,8 @@ export class DotEditContentComponent implements OnInit, OnDestroy {
     paletteCollapsed = false;
     isEnterpriseLicense = false;
 
+    variantData: DotVariantData | null = null;
+
     private readonly customEventsHandler;
     private destroy$: Subject<boolean> = new Subject<boolean>();
     private pageStateInternal: DotPageRenderState;
@@ -94,6 +102,7 @@ export class DotEditContentComponent implements OnInit, OnDestroy {
         private dotUiColorsService: DotUiColorsService,
         private ngZone: NgZone,
         private route: ActivatedRoute,
+        private router: Router,
         private siteService: SiteService,
         private dotCustomEventHandlerService: DotCustomEventHandlerService,
         public dotEditContentHtmlService: DotEditContentHtmlService,
@@ -113,9 +122,9 @@ export class DotEditContentComponent implements OnInit, OnDestroy {
                 },
                 'load-edit-mode-page': (pageRendered: DotPageRender) => {
                     /*
-                        This is the events that gets emitted from the backend when the user
-                        browse from the page internal links
-                    */
+This is the events that gets emitted from the backend when the user
+browse from the page internal links
+*/
 
                     const dotRenderedPageState = new DotPageRenderState(
                         this.pageStateInternal.user,
@@ -171,11 +180,29 @@ export class DotEditContentComponent implements OnInit, OnDestroy {
         this.subscribePageModelChange();
         this.subscribeOverlayService();
         this.subscribeDraggedContentType();
+        this.getExperimentResolverData();
     }
 
     ngOnDestroy(): void {
         this.destroy$.next(true);
         this.destroy$.complete();
+    }
+
+    /**
+     * Go to the experiment
+     * @memberof DotEditContentComponent
+     */
+    backToExperiment() {
+        const { experimentId, pageId } = this.variantData;
+
+        this.router.navigate(['/edit-page/experiments/configuration', pageId, experimentId], {
+            queryParams: {
+                editPageTab: null,
+                variationName: null,
+                experimentId: null
+            },
+            queryParamsHandling: 'merge'
+        });
     }
 
     /**
@@ -613,5 +640,35 @@ export class DotEditContentComponent implements OnInit, OnDestroy {
         blackList.forEach((content) => allowedContent.delete(content.toLocaleLowerCase()));
 
         return [...allowedContent] as string[];
+    }
+
+    private getExperimentResolverData(): void {
+        const { variationName, editPageTab } = this.route.snapshot.queryParams;
+        this.route.parent.parent.data
+            .pipe(
+                take(1),
+                pluck('experiment'),
+                filter((experiment) => !!experiment),
+                map((experiment: DotExperiment) => {
+                    const variant = experiment.trafficProportion.variants.find(
+                        (variant) => variant.id === variationName
+                    );
+
+                    return {
+                        variant: {
+                            id: variant.id,
+                            url: variant.url,
+                            title: variant.name,
+                            isOriginal: variant.name === DEFAULT_VARIANT_NAME
+                        },
+                        pageId: experiment.pageId,
+                        experimentId: experiment.id,
+
+                        experimentName: experiment.name,
+                        mode: editPageTab
+                    } as DotVariantData;
+                })
+            )
+            .subscribe((variant) => (this.variantData = variant));
     }
 }

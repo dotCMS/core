@@ -12,6 +12,7 @@ import { DotAlertConfirmService } from '@dotcms/data-access';
 import { DotPageRenderState } from '@dotcms/dotcms-models';
 import { DotPageMode } from '@dotcms/dotcms-models';
 import { DotPageStateService } from '../../services/dot-page-state/dot-page-state.service';
+import { DotVariantData } from '@models/dot-page/dot-page.model';
 
 @Component({
     selector: 'dot-edit-page-view-as-controller',
@@ -21,6 +22,7 @@ import { DotPageStateService } from '../../services/dot-page-state/dot-page-stat
 export class DotEditPageViewAsControllerComponent implements OnInit {
     isEnterpriseLicense$: Observable<boolean>;
     @Input() pageState: DotPageRenderState;
+    @Input() variant: DotVariantData | null = null;
 
     constructor(
         private dotAlertConfirmService: DotAlertConfirmService,

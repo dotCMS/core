@@ -1,9 +1,8 @@
-import { Component, Input, OnChanges, SimpleChanges } from '@angular/core';
-import { ActivatedRoute } from '@angular/router';
+import { Component, Input, OnChanges } from '@angular/core';
+import { ActivatedRoute, Params } from '@angular/router';
 
 import { Observable, of as observableOf } from 'rxjs';
 import { map } from 'rxjs/operators';
-import * as _ from 'lodash';
 
 import { DotMessageService } from '@dotcms/data-access';
 import { DotLicenseService } from '@dotcms/data-access';
@@ -32,6 +31,12 @@ export class DotEditPageNavComponent implements OnChanges {
     isEnterpriseLicense: boolean;
     model: Observable<DotEditPageNavItem[]>;
 
+    queryParams: Params;
+    variantMode: boolean;
+
+    @Input()
+    isVariantMode = false;
+
     constructor(
         private dotLicenseService: DotLicenseService,
         private dotContentletEditorService: DotContentletEditorService,
@@ -39,21 +44,10 @@ export class DotEditPageNavComponent implements OnChanges {
         private readonly route: ActivatedRoute
     ) {}
 
-    ngOnChanges(changes: SimpleChanges): void {
-        if (this.layoutChanged(changes)) {
-            this.model = !this.model
-                ? this.loadNavItems()
-                : observableOf(this.getNavItems(this.pageState, this.isEnterpriseLicense));
-        }
-    }
-
-    private layoutChanged(changes: SimpleChanges): boolean {
-        return changes.pageState.firstChange
-            ? true
-            : !_.isEqual(
-                  changes.pageState.currentValue.layout,
-                  changes.pageState.previousValue.layout
-              );
+    ngOnChanges(): void {
+        this.model = !this.model
+            ? this.loadNavItems()
+            : observableOf(this.getNavItems(this.pageState, this.isEnterpriseLicense));
     }
 
     private loadNavItems(): Observable<DotEditPageNavItem[]> {
@@ -134,7 +128,7 @@ export class DotEditPageNavComponent implements OnChanges {
         // https://github.com/dotCMS/core-web/pull/589
         return {
             needsEntepriseLicense: !enterpriselicense,
-            disabled: false,
+            disabled: this.isVariantMode ? true : false,
             icon: 'tune',
             label: this.dotMessageService.get('editpage.toolbar.nav.rules'),
             link: `rules/${dotRenderedPage.page.identifier}`
@@ -147,7 +141,7 @@ export class DotEditPageNavComponent implements OnChanges {
     ): DotEditPageNavItem {
         return {
             needsEntepriseLicense: !enterpriselicense,
-            disabled: !this.canGoToLayout(dotRenderedPage),
+            disabled: false,
             icon: 'science',
             label: this.dotMessageService.get('editpage.toolbar.nav.experiments'),
             link: `experiments/${dotRenderedPage.page.identifier}`

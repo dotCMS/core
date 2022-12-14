@@ -17,6 +17,8 @@ import { DialogService } from 'primeng/dynamicdialog';
 import { UiDotIconButtonModule } from '@components/_common/dot-icon-button/dot-icon-button.module';
 import { TooltipModule } from 'primeng/tooltip';
 import { DotPropertiesService } from '@dotcms/data-access';
+import { DotIconModule } from '@dotcms/ui';
+import { DotNavbarDirective } from '@portlets/shared/directives/dot-navbar.directive';
 
 @NgModule({
     imports: [
@@ -34,7 +36,9 @@ import { DotPropertiesService } from '@dotcms/data-access';
         DotPipesModule,
         DotGlobalMessageModule,
         DotFavoritePageModule,
-        UiDotIconButtonModule
+        UiDotIconButtonModule,
+        DotIconModule,
+        DotNavbarDirective
     ],
     exports: [DotEditPageToolbarComponent],
     declarations: [DotEditPageToolbarComponent],

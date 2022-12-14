@@ -16,3 +16,35 @@
 .dot-favorite-page-highlight ::ng-deep i {
     color: $brand-primary;
 }
+
+::ng-deep {
+    dot-secondary-toolbar.variant-mode {
+        .dot-secondary-toolbar__main {
+            background-color: $brand-primary;
+
+            dot-icon {
+                margin: 0 $spacing-3 0 0;
+            }
+
+            h2 {
+                color: $white;
+                font-size: $font-size-x-large;
+                font-weight: normal;
+            }
+
+            button {
+                color: $white;
+                border: 1px solid $white;
+
+                &:hover {
+                    color: $brand-primary;
+                    background-color: $white;
+                }
+            }
+
+            i {
+                color: $white;
+            }
+        }
+    }
+}

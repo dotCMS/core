@@ -6,6 +6,8 @@ import { DotEditPageNavModule } from '../dot-edit-page-nav/dot-edit-page-nav.mod
 import { DotContentletEditorModule } from '@components/dot-contentlet-editor/dot-contentlet-editor.module';
 import { DotRouterService } from '@dotcms/dotcms-js';
 import { DotBlockEditorSidebarModule } from '@portlets/dot-edit-page/components/dot-block-editor-sidebar/dot-block-editor-sidebar.module';
+import { DotNavbarDirective } from '@portlets/shared/directives/dot-navbar.directive';
+import { DotExperimentClassDirective } from '@portlets/shared/directives/dot-experiment-class.directive';
 import { DotCustomEventHandlerService } from '@dotcms/app/api/services/dot-custom-event-handler/dot-custom-event-handler.service';
 
 @NgModule({
@@ -14,7 +16,9 @@ import { DotCustomEventHandlerService } from '@dotcms/app/api/services/dot-custo
         RouterModule,
         DotEditPageNavModule,
         DotContentletEditorModule,
-        DotBlockEditorSidebarModule
+        DotBlockEditorSidebarModule,
+        DotNavbarDirective,
+        DotExperimentClassDirective
     ],
     providers: [DotRouterService, DotCustomEventHandlerService],
     declarations: [DotEditPageMainComponent]

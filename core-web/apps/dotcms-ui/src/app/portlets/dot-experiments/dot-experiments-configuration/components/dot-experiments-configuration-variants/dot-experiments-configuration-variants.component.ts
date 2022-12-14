@@ -3,7 +3,11 @@ import { CommonModule } from '@angular/common';
 import { CardModule } from 'primeng/card';
 import { DotMessagePipeModule } from '@pipes/dot-message/dot-message-pipe.module';
 import { ButtonModule } from 'primeng/button';
-
+import {
+    DEFAULT_VARIANT_NAME,
+    MAX_VARIANTS_ALLOWED,
+    SidebarStatus
+} from '@portlets/dot-experiments/shared/models/dot-experiments-constants';
 import { DotExperimentsConfigurationItemsCountComponent } from '@portlets/dot-experiments/dot-experiments-configuration/components/dot-experiments-configuration-items-count/dot-experiments-configuration-items-count.component';
 import { DotIconModule } from '@dotcms/ui';
 import { DotExperimentsConfigurationVariantsAddComponent } from '@portlets/dot-experiments/dot-experiments-configuration/components/dot-experiments-configuration-variants-add/dot-experiments-configuration-variants-add.component';
@@ -44,7 +48,7 @@ export class DotExperimentsConfigurationVariantsComponent {
     statusList = Status;
     sidebarStatusList = SidebarStatus;
     maxVariantsAllowed = MAX_VARIANTS_ALLOWED;
-    defaultVariantId = DEFAULT_VARIANT_ID;
+    defaultVariantName = DEFAULT_VARIANT_NAME;
     experimentStepName = ExperimentSteps.VARIANTS;
 
     @Input() stepStatus: StepStatus;
