@@ -56,7 +56,7 @@ public class PublisherAPIImpl implements PublisherAPI, DotInitializer {
     private List<FilterDescriptor> filterList = new CopyOnWriteArrayList<>();
     /** Path where the YAML files are stored */
     private final Lazy<String> PUBLISHING_FILTERS_FOLDER =
-            Lazy.of(() -> Paths.get(APILocator.getFileAssetAPI().getRealAssetsRootPath() + File.separator + "server" + File.separator + "publishing-filters" + File.separator).normalize().toString());
+            Lazy.of(() -> APILocator.getFileAssetAPI().getRealAssetsRootPath() + File.separator + "server" + File.separator + "publishing-filters" + File.separator);
 
     @Override
     final public PublishStatus publish ( PublisherConfig config) throws DotPublishingException {
