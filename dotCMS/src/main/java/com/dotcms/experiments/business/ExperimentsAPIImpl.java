@@ -493,7 +493,7 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
 
         final String variantDescription = toDelete.description()
                 .orElseThrow(()->new DotStateException("Variant without description. Variant name:"
-                                + toDelete.name();
+                                + toDelete.name()));
 
         DotPreconditions.isTrue(!variantDescription.equals(ORIGINAL_VARIANT),
                 ()->"Cannot delete Original Variant", IllegalArgumentException.class);
