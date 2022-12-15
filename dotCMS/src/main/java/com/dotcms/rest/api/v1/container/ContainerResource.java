@@ -181,7 +181,6 @@ public class ContainerResource implements Serializable {
         final Optional<String> checkedHostId = this.checkHost(httpRequest, hostId, user);
 
         try {
-
             final Map<String, Object> extraParams = Maps.newHashMap();
             if (checkedHostId.isPresent()) {
                 extraParams.put(ContainerPaginator.HOST_PARAMETER_ID, checkedHostId.get());
