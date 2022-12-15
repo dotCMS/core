@@ -67,6 +67,8 @@ public class SaveContentActionlet extends WorkFlowActionlet {
 			final Contentlet checkoutContentlet = this.checkout(contentlet, processor.getUser());
 
 			checkoutContentlet.setProperty(Contentlet.WORKFLOW_IN_PROGRESS, Boolean.TRUE);
+			checkoutContentlet.setProperty(Contentlet.SKIP_RELATIONSHIPS_VALIDATION,
+					contentlet.getBoolProperty(Contentlet.SKIP_RELATIONSHIPS_VALIDATION));
 
 			final ContentletDependencies contentletDependencies = processor.getContentletDependencies();
 			final boolean respectFrontendPermission = contentletDependencies != null ?

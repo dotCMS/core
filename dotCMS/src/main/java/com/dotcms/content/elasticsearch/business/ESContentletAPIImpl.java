@@ -6827,6 +6827,32 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
     @CloseDBIfOpened
     @Override
+    public void validateContentletNoRels(final Contentlet contentlet,
+                                         final List<Category> cats) throws DotContentletValidationException {
+        if (null != contentlet.getMap().get(Contentlet.DONT_VALIDATE_ME)) {
+            return;
+        }
+        final String contentTypeId = contentlet.getContentTypeId();
+        if (!InodeUtils.isSet(contentTypeId)) {
+            final String errorMsg = "Contentlet [" + contentlet.getIdentifier() + "] has an empty Content Type ID";
+            Logger.error(this, errorMsg);
+            throw new DotContentletValidationException(errorMsg);
+        }
+        try {
+            validateContentlet(contentlet, cats);
+            if (BaseContentType.PERSONA.getType() == contentlet.getContentType().baseType().getType()) {
+                APILocator.getPersonaAPI().validatePersona(contentlet);
+            }
+            if (contentlet.isVanityUrl()) {
+                APILocator.getVanityUrlAPI().validateVanityUrl(contentlet);
+            }
+        } catch (final DotContentletValidationException ve) {
+            throw ve;
+        }
+    }
+
+    @CloseDBIfOpened
+    @Override
     public void validateContentlet(final Contentlet contentlet, final ContentletRelationships contentRelationships,
                                    final List<Category> cats) throws DotContentletValidationException {
         if (null != contentlet.getMap().get(Contentlet.DONT_VALIDATE_ME)) {
@@ -6848,8 +6874,10 @@ public class ESContentletAPIImpl implements ContentletAPI {
             }
         } catch (final DotContentletValidationException ve) {
             throw ve;
-        } 
-        validateRelationships(contentlet, contentRelationships);
+        }
+        if (Try.of(() -> !contentlet.getBoolProperty(Contentlet.SKIP_RELATIONSHIPS_VALIDATION)).getOrElse(true)) {
+            validateRelationships(contentlet, contentRelationships);
+        }
     }
 
     /**

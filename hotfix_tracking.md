@@ -168,3 +168,5 @@ This maintenance release includes the following code fixes:
 96. https://github.com/dotCMS/core/issues/22852 : Update java version of java-base #22852
 
 **Release-21.06.12**
+
+97. https://github.com/dotCMS/core/issues/23015 : Bulk update while importing is extremely slow #23015

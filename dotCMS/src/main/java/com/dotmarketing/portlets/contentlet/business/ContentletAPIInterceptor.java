@@ -1963,6 +1963,21 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 	}
 
 	@Override
+	public void validateContentletNoRels(Contentlet contentlet, List<Category> cats) throws DotContentletValidationException {
+		for(ContentletAPIPreHook pre : preHooks){
+			boolean preResult = pre.validateContentletNoRels(contentlet, cats);
+			if(!preResult){
+				Logger.error(this, "The following prehook failed " + pre.getClass().getName());
+				throw new DotRuntimeException("The following prehook failed " + pre.getClass().getName());
+			}
+		}
+		conAPI.validateContentletNoRels(contentlet, cats);
+		for(ContentletAPIPostHook post : postHooks){
+			post.validateContentletNoRels(contentlet, cats);
+		}
+	}
+
+	@Override
 	public void addPreHook(String className) throws InstantiationException, IllegalAccessException, ClassNotFoundException {
 		Object o = Class.forName(className).newInstance();
         addPreHook( o );

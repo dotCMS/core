@@ -147,6 +147,7 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
   public static final String PATH_TO_MOVE = "_path_to_move";
   public static final String TEMP_BINARY_IMAGE_INODES_LIST = "tempBinaryImageInodesList";
   public static final String RELATIONSHIP_KEY = "__##relationships##__";
+  public static final String SKIP_RELATIONSHIPS_VALIDATION = "__skipRelationshipValidation__";
 
   private transient ContentType contentType;
   protected Map<String, Object> map = new ContentletHashMap();
