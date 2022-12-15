@@ -1162,7 +1162,12 @@ public class PublisherAPIImplTest {
     }
 
     /**
-     * Test delete file works after the security fixes
+     * Tests All filter related methods
+     *  First we mock real assets-path.
+     *  then we create a brand-new descriptor file then we..
+     *  Try different scenarios like removing the file then trying to locate it via finders using the key
+     *  Then we update the descriptor using the upsert method and verify the changes take place
+     *  Finally we test the descriptor can be removed and does not show up on the finders result
      */
     @Test
     public void testFilterDescriptors() throws IOException {
