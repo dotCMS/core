@@ -45,6 +45,9 @@ class MockDotWorkflowActionsFireService {
     public publishContentletAndWaitForIndex(): Observable<unknown> {
         return null;
     }
+    public deleteContentlet(): Observable<unknown> {
+        return null;
+    }
 }
 
 const messageServiceMock = new MockDotMessageService({
@@ -120,6 +123,14 @@ describe('DotFavoritePageStore', () => {
         });
         expect(dotRolesService.search).toHaveBeenCalledTimes(1);
         expect(dotCurrentUser.getCurrentUser).toHaveBeenCalledTimes(1);
+    });
+
+    // Updaters
+    it('should update Favorite Pages', () => {
+        dotFavoritePageStore.setInodeStored('test');
+        dotFavoritePageStore.state$.subscribe((data) => {
+            expect(data.inodeStored).toEqual('test');
+        });
     });
 
     // Selectors
@@ -210,6 +221,41 @@ describe('DotFavoritePageStore', () => {
         dotFavoritePageStore.state$.subscribe((state) => {
             expect(dotHttpErrorManagerService.handle).toHaveBeenCalledTimes(1);
             expect(state.closeDialog).toEqual(false);
+            done();
+        });
+    });
+
+    it('should delete Favorite Page', (done) => {
+        spyOn(dotWorkflowActionsFireService, 'deleteContentlet').and.returnValue(of(null));
+
+        dotFavoritePageStore.deleteFavoritePage('abc123');
+
+        expect(dotWorkflowActionsFireService.deleteContentlet).toHaveBeenCalledWith({
+            inode: 'abc123'
+        });
+
+        dotFavoritePageStore.state$.subscribe((state) => {
+            expect(state.closeDialog).toEqual(true);
+            expect(state.loading).toEqual(false);
+            expect(state.actionState).toEqual(DotFavoritePageActionState.DELETED);
+            done();
+        });
+    });
+
+    it('should handle error when delete Favorite Page', (done) => {
+        spyOn(dotWorkflowActionsFireService, 'deleteContentlet').and.throwError('error');
+        spyOn(dotHttpErrorManagerService, 'handle').and.callThrough();
+
+        dotFavoritePageStore.deleteFavoritePage('abc123');
+
+        expect(dotWorkflowActionsFireService.deleteContentlet).toHaveBeenCalledWith({
+            inode: 'abc123'
+        });
+
+        dotFavoritePageStore.state$.subscribe((state) => {
+            expect(dotHttpErrorManagerService.handle).toHaveBeenCalledTimes(1);
+            expect(state.closeDialog).toEqual(false);
+            expect(state.loading).toEqual(false);
             done();
         });
     });

@@ -20,6 +20,7 @@ import {
     DotPageRenderOptions,
     DotDevice,
     DotPersona,
+    DotCMSContentlet,
     DotPageRenderParameters,
     ESContent
 } from '@dotcms/dotcms-models';
@@ -167,11 +168,11 @@ export class DotPageStateService {
     /**
      * Set the FavoritePageHighlight flag status
      *
-     * @param {boolean} highlight
+     * @param {DotCMSContentlet} favoritePage
      * @memberof DotPageStateService
      */
-    setFavoritePageHighlight(highlight: boolean): void {
-        this.currentState.favoritePage = highlight;
+    setFavoritePageHighlight(favoritePage: DotCMSContentlet): void {
+        this.currentState.favoritePage = favoritePage;
         this.state$.next(this.currentState);
     }
 
@@ -216,7 +217,7 @@ export class DotPageStateService {
                         .pipe(
                             take(1),
                             switchMap((response: ESContent) => {
-                                const favoritePage = response.resultsSize > 0;
+                                const favoritePage = response.jsonObjectView?.contentlets[0];
                                 const pageState = new DotPageRenderState(
                                     this.getCurrentUser(),
                                     page,
