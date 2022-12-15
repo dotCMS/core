@@ -462,7 +462,19 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
         final Contentlet pageContentlet = contentletAPI
                 .findContentletByIdentifierAnyLanguage(experiment.pageId(), false);
 
-        // copy page for variant
+        copyPageAndItsContentForVariant(experiment, variantDescription, user, variantName, pageContentlet);
+
+        final HTMLPageAsset page = pageAssetAPI.fromContentlet(pageContentlet);
+
+        return ExperimentVariant.builder().id(variantName)
+                .description(variantDescription).weight(0)
+                .url(page.getURI()+"?variantName="+variantName)
+                .build();
+    }
+
+    private void copyPageAndItsContentForVariant(final Experiment experiment,
+            final String variantDescription, final User user,
+            final String variantName, final Contentlet pageContentlet) throws DotDataException {
         if(variantDescription.equals(ORIGINAL_VARIANT)) {
             saveContentOnVariant(pageContentlet,
                     variantName, user);
@@ -477,15 +489,7 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
                         saveContentOnVariant(contentlet, variantName, user);
                     })
             );
-
         }
-
-        final HTMLPageAsset page = pageAssetAPI.fromContentlet(pageContentlet);
-
-        return ExperimentVariant.builder().id(variantName)
-                .description(variantDescription).weight(0)
-                .url(page.getURI()+"?variantName="+variantName)
-                .build();
     }
 
     private void saveContentOnVariant(final Contentlet contentlet, final String variantName,
