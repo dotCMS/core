@@ -1849,7 +1849,7 @@ public class ESContentletAPIImplTest extends IntegrationTestBase {
      * @throws DotSecurityException
      */
     @Test
-    public void shouldUpdateAllTheDifferentVariantsVersions()  {
+    public void shouldUpdateAllTheDifferentVariantsVersions() throws DotDataException {
         final Host host = new SiteDataGen().nextPersisted();
         final Template template_A = new TemplateDataGen().host(host).nextPersisted();
         final Template template_B = new TemplateDataGen().host(host).nextPersisted();
@@ -1870,8 +1870,8 @@ public class ESContentletAPIImplTest extends IntegrationTestBase {
         assertEquals(template_A.getIdentifier(), getFromDataBase(htmlPageAsset_1.getInode()).getTemplateId());
         assertEquals(template_B.getIdentifier(), getFromDataBase(htmlPageAsset_2.getInode()).getTemplateId());
 
-        final ContentletVersionInfo contentletVersionInfo = APILocator.getVersionableAPI()
-                .getContentletVersionInfo(htmlPageAsset_1.getIdentifier(),
+        final ContentletVersionInfo contentletVersionInfo = ((VersionableFactoryImpl) FactoryLocator.getVersionableFactory())
+                .findContentletVersionInfoInDB(htmlPageAsset_1.getIdentifier(),
                         htmlPageAsset_1.getLanguageId(),
                         variant_A.name()).orElseThrow(() -> new AssertionError());
 
@@ -1897,7 +1897,7 @@ public class ESContentletAPIImplTest extends IntegrationTestBase {
      * @throws DotSecurityException
      */
     @Test
-    public void shouldUpdateAllTheDifferentVariantsVersionsInTheSameLang()  {
+    public void shouldUpdateAllTheDifferentVariantsVersionsInTheSameLang() throws DotDataException {
         final Variant variant_A = new VariantDataGen().nextPersisted();
         final Variant variant_B = new VariantDataGen().nextPersisted();
 
@@ -1925,8 +1925,8 @@ public class ESContentletAPIImplTest extends IntegrationTestBase {
         assertEquals(template_c.getIdentifier(), getFromDataBase(contentletVersionInfo_1.getWorkingInode()).getTemplateId());
         assertEquals(template_c.getIdentifier(), getFromDataBase(htmlPageAsset_3.getInode()).getTemplateId());
 
-        final ContentletVersionInfo contentletVersionInfo_2 = APILocator.getVersionableAPI()
-                .getContentletVersionInfo(htmlPageAsset_1.getIdentifier(),
+        final ContentletVersionInfo contentletVersionInfo_2 = ((VersionableFactoryImpl) FactoryLocator.getVersionableFactory())
+                .findContentletVersionInfoInDB(htmlPageAsset_1.getIdentifier(),
                         language_A.getId(),
                         variant_B.name()).orElseThrow(() -> new AssertionError());
 
