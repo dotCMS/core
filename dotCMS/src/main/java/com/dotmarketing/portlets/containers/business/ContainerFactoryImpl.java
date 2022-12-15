@@ -69,7 +69,6 @@ public class ContainerFactoryImpl implements ContainerFactory {
     private final FileAssetAPI   fileAssetAPI   = APILocator.getFileAssetAPI();
     private final HostAPI        hostAPI        = APILocator.getHostAPI();
 	private final IdentifierAPI  identifierAPI  = APILocator.getIdentifierAPI();
-	private static ContainerSQL containerSQL = ContainerSQL.getInstance();
 
 	@Override
 	public Container find(final String inode) throws DotStateException, DotDataException {
