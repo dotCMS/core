@@ -322,7 +322,6 @@ public class SiteResource implements Serializable {
                 .requestAndResponse(httpServletRequest, httpServletResponse)
                 .requiredBackendUser(true)
                 .rejectWhenNoUser(true)
-                .requiredPortlet("sites")
                 .init().getUser();
 
         final ContentletAPI contentletAPI = APILocator.getContentletAPI();
@@ -691,7 +690,6 @@ public class SiteResource implements Serializable {
                 .requiredBackendUser(true)
                 .rejectWhenNoUser(true)
                 .requireLicense(true)
-                .requiredPortlet("sites")
                 .init().getUser();
 
         Logger.debug(this, ()-> "Finding the site: " + siteId);
@@ -733,7 +731,6 @@ public class SiteResource implements Serializable {
                 .requiredBackendUser(true)
                 .rejectWhenNoUser(true)
                 .requireLicense(true)
-                .requiredPortlet("sites")
                 .init().getUser();
 
         final String hostname = searchSiteByNameForm.getSitename();
