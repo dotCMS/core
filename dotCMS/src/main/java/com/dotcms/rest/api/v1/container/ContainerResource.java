@@ -198,9 +198,7 @@ public class ContainerResource implements Serializable {
     private Optional<String> checkHost(final HttpServletRequest request, final String hostId, final User user) {
 
         String checkedHostId = null;
-
         try {
-
             if (UtilMethods.isSet(hostId) && null != APILocator.getHostAPI().find(hostId, user, false)) {
 
                 checkedHostId = hostId;
