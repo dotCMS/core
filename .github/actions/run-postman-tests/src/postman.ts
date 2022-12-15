@@ -13,6 +13,7 @@ const customStarterUrl = core.getInput('custom_starter_url')
 const tests = core.getInput('tests')
 const exportReport = core.getBooleanInput('export_report')
 const includeAnalytics = core.getBooleanInput('include_analytics')
+const parallelGroups: ParallelGroups = JSON.parse(core.getInput('parallel-groups'))
 const cicdFolder = path.join(projectRoot, 'cicd')
 const resourcesFolder = path.join(cicdFolder, 'resources', 'postman')
 const dockerFolder = path.join(cicdFolder, 'docker')
@@ -53,6 +54,25 @@ const DEPS_ENV: {[key: string]: string} = {
   JVM_ENDPOINT_TEST_PASS: 'obfuscate_me'
 }
 
+interface ParallelGroup {
+  name: string
+  collections: string[]
+}
+
+interface ParallelGroups {
+  groups: ParallelGroup[]
+}
+
+interface CollectionReturnCode {
+  collection: string
+  returnCode: number
+}
+
+interface CollectionsReturnCodes {
+  name: string
+  returnCodes: CollectionReturnCode[]
+}
+
 /*
  * Run postman tests and provides a summary of such.
  *
@@ -64,7 +84,7 @@ export const runTests = async (): Promise<PostmanTestsResult> => {
   printInfo()
 
   try {
-    return await runPostmanCollections()
+    return await runCollections()
   } catch (err) {
     core.setFailed(`Postman tests faiuled due to: ${err}`)
     return {
@@ -142,6 +162,8 @@ const startDeps = async () => {
       DEPS_ENV
     )
   )
+
+  await waitFor(150, `DotCMS instance`)
 }
 
 /**
@@ -180,9 +202,7 @@ const stopDeps = async () => {
  *
  * @returns an overall ivew of the tests results
  */
-const runPostmanCollections = async (): Promise<PostmanTestsResult> => {
-  await waitFor(150, `DotCMS instance`)
-
+const runCollections = async (): Promise<PostmanTestsResult> => {
   // Executes Postman tests
   core.info(`
     ===========================================
@@ -192,13 +212,9 @@ const runPostmanCollections = async (): Promise<PostmanTestsResult> => {
     .ls(postmanTestsPath)
     .filter(file => file.endsWith('.json') && file !== postmanEnvFile)
   core.info(`Postman collections:\n${foundCollections.join(',')}`)
-
   const resolvedTests = resolveSpecific()
-  const filtered =
-    resolvedTests.length === 0
-      ? foundCollections
-      : resolvedTests.filter(resolved => !!foundCollections.find(collection => collection === resolved))
-  core.info(`Detected Postman collections:\n${filtered.join(',')}`)
+  const rearrangedGroups = rearrangeCollections(resolvedTests, foundCollections)
+  core.info(`Detected Postman collections:\n${JSON.stringify(rearrangedGroups, null, 2)}`)
 
   const htmlResults: string[] = []
   const header = fs.readFileSync(path.join(resourcesFolder, 'postman-results-header.html'), {
@@ -211,35 +227,7 @@ const runPostmanCollections = async (): Promise<PostmanTestsResult> => {
   })
   const collectionRuns = new Map<string, number>()
 
-  for (const collection of filtered) {
-    const normalized = collection.replace(/ /g, '_').replace('.json', '')
-    let rc: number
-    const start = new Date().getTime()
-
-    try {
-      rc = await runPostmanCollection(collection, normalized)
-    } catch (err) {
-      core.info(`Postman collection run for ${collection} failed due to: ${err}`)
-      rc = 127
-    }
-
-    const end = new Date().getTime()
-    const duration = (end - start) / 1000
-    core.info(`Collection ${collection} took ${duration} seconds to run`)
-
-    collectionRuns.set(collection, rc)
-
-    if (exportReport) {
-      const passed = rc === 0
-      htmlResults.push(
-        `<tr><td><a href="./${normalized}.html">${collection}</a></td><td style="color: #ffffff; background-color: ${
-          passed ? '#28a745' : '#dc3545'
-        }; font-weight: bold;">${passed ? PASSED : FAILED}</td>
-        <td>${duration}</td>
-        </tr>`
-      )
-    }
-  }
+  runInParallel(rearrangedGroups, collectionRuns, htmlResults)
 
   if (exportReport) {
     const contents = [header, ...htmlResults, footer]
@@ -253,6 +241,100 @@ const runPostmanCollections = async (): Promise<PostmanTestsResult> => {
   return handleResults(collectionRuns)
 }
 
+const rearrangeCollections = (resolvedTests: string[], foundCollections: string[]): ParallelGroups => {
+  if (resolvedTests?.length > 0) {
+    return {
+      groups: [
+        {
+          name: 'specific',
+          collections: resolvedTests
+        }
+      ]
+    }
+  }
+
+  if (!foundCollections || foundCollections.length === 0) {
+    return {
+      groups: [
+        {
+          name: '*',
+          collections: []
+        }
+      ]
+    }
+  }
+
+  const parallelCollections = parallelGroups.groups.flatMap(group => group.collections)
+  parallelGroups.groups.push({
+    name: '*',
+    collections: foundCollections.filter(collection => !parallelCollections.includes(collection))
+  })
+
+  return parallelGroups
+}
+
+const runInParallel = (
+  rearrangedGroups: ParallelGroups,
+  collectionRuns: Map<string, number>,
+  htmlResults: string[]
+) => {
+  core.info(`Running Postman parallel collections: ${JSON.stringify(rearrangedGroups, null, 2)}`)
+  const returnCodesPromises: Array<Promise<CollectionsReturnCodes>> = []
+  for (const parallelCollection of rearrangedGroups.groups) {
+    returnCodesPromises.push(runPostmanCollections(parallelCollection, collectionRuns, htmlResults))
+  }
+
+  Promise.all(returnCodesPromises).then(codes => {
+    core.info(`Retturn codes: ${JSON.stringify(codes, null, 2)}`)
+  })
+}
+
+const runPostmanCollections = async (
+  parallelGroup: ParallelGroup,
+  collectionRuns: Map<string, number>,
+  htmlResults: string[]
+): Promise<CollectionsReturnCodes> => {
+  core.info(`Running postman collections: ${parallelGroup.collections}`)
+
+  const returnCodes: CollectionReturnCode[] = []
+  for (const collection of parallelGroup.collections) {
+    const normalized = collection.replace(/ /g, '_').replace('.json', '')
+    const start = new Date().getTime()
+
+    let rc: CollectionReturnCode = {
+      collection: collection,
+      returnCode: 127
+    }
+    try {
+      rc = await runPostmanCollection(collection, normalized)
+    } catch (err) {
+      core.info(`Postman collection run for ${collection} failed due to: ${err}`)
+    }
+
+    const end = new Date().getTime()
+    const duration = (end - start) / 1000
+    core.info(`Collection ${collection} took ${duration} seconds to run`)
+    returnCodes.push(rc)
+    collectionRuns.set(normalized, rc.returnCode)
+
+    if (exportReport) {
+      const passed = rc.returnCode === 0
+      htmlResults.push(
+        `<tr><td><a href="./${normalized}.html">${collection}</a></td><td style="color: #ffffff; background-color: ${
+          passed ? '#28a745' : '#dc3545'
+        }; font-weight: bold;">${passed ? PASSED : FAILED}</td>
+        <td>${duration}</td>
+        </tr>`
+      )
+    }
+  }
+
+  return {
+    name: parallelGroup.name,
+    returnCodes
+  }
+}
+
 /**
  * Run a postman collection.
  *
@@ -260,8 +342,8 @@ const runPostmanCollections = async (): Promise<PostmanTestsResult> => {
  * @param normalized normalized collection
  * @returns promise with process return code
  */
-const runPostmanCollection = async (collection: string, normalized: string): Promise<number> => {
-  core.info(`Running Postman collection: ${collection}`)
+const runPostmanCollection = async (collection: string, normalized: string): Promise<CollectionReturnCode> => {
+  core.info(`Running [ostman collection: ${collection}`)
   const resultFile = path.join(resultsFolder, `${normalized}.xml`)
   const page = `${normalized}.html`
   const reportFile = path.join(reportFolder, page)
@@ -284,7 +366,11 @@ const runPostmanCollection = async (collection: string, normalized: string): Pro
     args.push(reportFile)
   }
 
-  return await execCmd(toCommand('newman', args, postmanTestsPath))
+  const rc = await execCmd(toCommand('newman', args, postmanTestsPath))
+  return {
+    collection,
+    returnCode: rc
+  }
 }
 
 /*
@@ -456,7 +542,7 @@ const execCmd = async (cmd: Command): Promise<number> => {
  *
  * @param cmd Command object
  */
-const execCmdAsync = (cmd: Command) => {
+const execCmdAsync = (cmd: Command): Promise<number> => {
   printCmd(cmd)
-  exec.exec(cmd.cmd, cmd.args || [], {cwd: cmd.workingDir, env: cmd.env})
+  return exec.exec(cmd.cmd, cmd.args || [], {cwd: cmd.workingDir, env: cmd.env})
 }

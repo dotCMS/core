@@ -126,6 +126,7 @@ const customStarterUrl = core.getInput('custom_starter_url');
 const tests = core.getInput('tests');
 const exportReport = core.getBooleanInput('export_report');
 const includeAnalytics = core.getBooleanInput('include_analytics');
+const parallelGroups = JSON.parse(core.getInput('parallel-groups'));
 const cicdFolder = path.join(projectRoot, 'cicd');
 const resourcesFolder = path.join(cicdFolder, 'resources', 'postman');
 const dockerFolder = path.join(cicdFolder, 'docker');
@@ -161,7 +162,7 @@ const runTests = () => __awaiter(void 0, void 0, void 0, function* () {
     yield startDeps();
     printInfo();
     try {
-        return yield runPostmanCollections();
+        return yield runCollections();
     }
     catch (err) {
         core.setFailed(`Postman tests faiuled due to: ${err}`);
@@ -226,6 +227,7 @@ const startDeps = () => __awaiter(void 0, void 0, void 0, function* () {
         yield waitFor(140, 'Analytics Infrastructure');
     }
     execCmdAsync(toCommand('docker-compose', ['-f', 'open-distro-compose.yml', '-f', `${dbType}-compose.yml`, '-f', 'dotcms-compose.yml', 'up'], dockerFolder, DEPS_ENV));
+    yield waitFor(150, `DotCMS instance`);
 });
 /**
  * Stop postman depencies: db, ES and DotCMS isntance.
@@ -256,8 +258,7 @@ const stopDeps = () => __awaiter(void 0, void 0, void 0, function* () {
  *
  * @returns an overall ivew of the tests results
  */
-const runPostmanCollections = () => __awaiter(void 0, void 0, void 0, function* () {
-    yield waitFor(150, `DotCMS instance`);
+const runCollections = () => __awaiter(void 0, void 0, void 0, function* () {
     // Executes Postman tests
     core.info(`
     ===========================================
@@ -268,10 +269,8 @@ const runPostmanCollections = () => __awaiter(void 0, void 0, void 0, function* 
         .filter(file => file.endsWith('.json') && file !== postmanEnvFile);
     core.info(`Postman collections:\n${foundCollections.join(',')}`);
     const resolvedTests = resolveSpecific();
-    const filtered = resolvedTests.length === 0
-        ? foundCollections
-        : resolvedTests.filter(resolved => !!foundCollections.find(collection => collection === resolved));
-    core.info(`Detected Postman collections:\n${filtered.join(',')}`);
+    const rearrangedGroups = rearrangeCollections(resolvedTests, foundCollections);
+    core.info(`Detected Postman collections:\n${JSON.stringify(rearrangedGroups, null, 2)}`);
     const htmlResults = [];
     const header = fs.readFileSync(path.join(resourcesFolder, 'postman-results-header.html'), {
         encoding: 'utf8',
@@ -282,28 +281,7 @@ const runPostmanCollections = () => __awaiter(void 0, void 0, void 0, function* 
         flag: 'r'
     });
     const collectionRuns = new Map();
-    for (const collection of filtered) {
-        const normalized = collection.replace(/ /g, '_').replace('.json', '');
-        let rc;
-        const start = new Date().getTime();
-        try {
-            rc = yield runPostmanCollection(collection, normalized);
-        }
-        catch (err) {
-            core.info(`Postman collection run for ${collection} failed due to: ${err}`);
-            rc = 127;
-        }
-        const end = new Date().getTime();
-        const duration = (end - start) / 1000;
-        core.info(`Collection ${collection} took ${duration} seconds to run`);
-        collectionRuns.set(collection, rc);
-        if (exportReport) {
-            const passed = rc === 0;
-            htmlResults.push(`<tr><td><a href="./${normalized}.html">${collection}</a></td><td style="color: #ffffff; background-color: ${passed ? '#28a745' : '#dc3545'}; font-weight: bold;">${passed ? PASSED : FAILED}</td>
-        <td>${duration}</td>
-        </tr>`);
-        }
-    }
+    runInParallel(rearrangedGroups, collectionRuns, htmlResults);
     if (exportReport) {
         const contents = [header, ...htmlResults, footer];
         fs.writeFileSync(path.join(reportFolder, 'index.html'), `${contents.join('\n')}`, {
@@ -314,6 +292,77 @@ const runPostmanCollections = () => __awaiter(void 0, void 0, void 0, function* 
     }
     return handleResults(collectionRuns);
 });
+const rearrangeCollections = (resolvedTests, foundCollections) => {
+    if ((resolvedTests === null || resolvedTests === void 0 ? void 0 : resolvedTests.length) > 0) {
+        return {
+            groups: [
+                {
+                    name: 'specific',
+                    collections: resolvedTests
+                }
+            ]
+        };
+    }
+    if (!foundCollections || foundCollections.length === 0) {
+        return {
+            groups: [
+                {
+                    name: '*',
+                    collections: []
+                }
+            ]
+        };
+    }
+    const parallelCollections = parallelGroups.groups.flatMap(group => group.collections);
+    parallelGroups.groups.push({
+        name: '*',
+        collections: foundCollections.filter(collection => !parallelCollections.includes(collection))
+    });
+    return parallelGroups;
+};
+const runInParallel = (rearrangedGroups, collectionRuns, htmlResults) => {
+    core.info(`Running Postman parallel collections: ${JSON.stringify(rearrangedGroups, null, 2)}`);
+    const returnCodesPromises = [];
+    for (const parallelCollection of rearrangedGroups.groups) {
+        returnCodesPromises.push(runPostmanCollections(parallelCollection, collectionRuns, htmlResults));
+    }
+    Promise.all(returnCodesPromises).then(codes => {
+        core.info(`Retturn codes: ${JSON.stringify(codes, null, 2)}`);
+    });
+};
+const runPostmanCollections = (parallelGroup, collectionRuns, htmlResults) => __awaiter(void 0, void 0, void 0, function* () {
+    core.info(`Running postman collections: ${parallelGroup.collections}`);
+    const returnCodes = [];
+    for (const collection of parallelGroup.collections) {
+        const normalized = collection.replace(/ /g, '_').replace('.json', '');
+        const start = new Date().getTime();
+        let rc = {
+            collection: collection,
+            returnCode: 127
+        };
+        try {
+            rc = yield runPostmanCollection(collection, normalized);
+        }
+        catch (err) {
+            core.info(`Postman collection run for ${collection} failed due to: ${err}`);
+        }
+        const end = new Date().getTime();
+        const duration = (end - start) / 1000;
+        core.info(`Collection ${collection} took ${duration} seconds to run`);
+        returnCodes.push(rc);
+        collectionRuns.set(normalized, rc.returnCode);
+        if (exportReport) {
+            const passed = rc.returnCode === 0;
+            htmlResults.push(`<tr><td><a href="./${normalized}.html">${collection}</a></td><td style="color: #ffffff; background-color: ${passed ? '#28a745' : '#dc3545'}; font-weight: bold;">${passed ? PASSED : FAILED}</td>
+        <td>${duration}</td>
+        </tr>`);
+        }
+    }
+    return {
+        name: parallelGroup.name,
+        returnCodes
+    };
+});
 /**
  * Run a postman collection.
  *
@@ -322,7 +371,7 @@ const runPostmanCollections = () => __awaiter(void 0, void 0, void 0, function* 
  * @returns promise with process return code
  */
 const runPostmanCollection = (collection, normalized) => __awaiter(void 0, void 0, void 0, function* () {
-    core.info(`Running Postman collection: ${collection}`);
+    core.info(`Running [ostman collection: ${collection}`);
     const resultFile = path.join(resultsFolder, `${normalized}.xml`);
     const page = `${normalized}.html`;
     const reportFile = path.join(reportFolder, page);
@@ -344,7 +393,11 @@ const runPostmanCollection = (collection, normalized) => __awaiter(void 0, void 
         args.push('--reporter-htmlextra-export');
         args.push(reportFile);
     }
-    return yield execCmd(toCommand('newman', args, postmanTestsPath));
+    const rc = yield execCmd(toCommand('newman', args, postmanTestsPath));
+    return {
+        collection,
+        returnCode: rc
+    };
 });
 /*
  * Process results.
@@ -501,7 +554,7 @@ const execCmd = (cmd) => __awaiter(void 0, void 0, void 0, function* () {
  */
 const execCmdAsync = (cmd) => {
     printCmd(cmd);
-    exec.exec(cmd.cmd, cmd.args || [], { cwd: cmd.workingDir, env: cmd.env });
+    return exec.exec(cmd.cmd, cmd.args || [], { cwd: cmd.workingDir, env: cmd.env });
 };
 
 
