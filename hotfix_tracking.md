@@ -170,3 +170,4 @@ This maintenance release includes the following code fixes:
 **Release-21.06.12**
 
 97. https://github.com/dotCMS/core/issues/23015 : Bulk update while importing is extremely slow #23015
+98. https://github.com/dotCMS/core/issues/22582 : Import/Export Content Tool generating diff key/value field #22582
