@@ -90,7 +90,7 @@ public class OSGIAJAX extends OSGIBaseAJAX {
         File from = new File(undeployedPath + File.separator + jarName);
         File to = new File(loadPath + File.separator + jarName);
 
-        if (to.getCanonicalPath().startsWith(undeployedPath) && to.exists()) {
+        if (to.getCanonicalPath().startsWith(loadPath) && to.exists() && from.getCanonicalPath().startsWith(undeployedPath) && from.exists() ) {
 
             if (from.renameTo(to)) {
                 final String responseText = String.format("OSGI Bundle  %s Loaded", jarName);
