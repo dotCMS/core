@@ -492,7 +492,7 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
                 .orElseThrow(()->new DoesNotExistException("Provided Variant not found"));
 
         final String variantDescription = toDelete.description()
-                .orElseThrow(()->new DotStateException("Variant without description. Variant name:"
+                .orElseThrow(()->new DotStateException("Variant without description. Variant name: "
                                 + toDelete.name()));
 
         DotPreconditions.isTrue(!variantDescription.equals(ORIGINAL_VARIANT),
