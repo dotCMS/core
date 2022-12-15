@@ -3,7 +3,12 @@ import { LoginService, CoreWebService, HttpCode } from '@dotcms/dotcms-js';
 import { DotContentletLockerService } from '@dotcms/data-access';
 import { DotPageStateService } from './dot-page-state.service';
 import { DotPageRenderService } from '@dotcms/data-access';
-import { DotDevice, DotPageMode, DotPageRenderState } from '@dotcms/dotcms-models';
+import {
+    DotCMSContentlet,
+    DotDevice,
+    DotPageMode,
+    DotPageRenderState
+} from '@dotcms/dotcms-models';
 import { LoginServiceMock } from '@dotcms/utils-testing';
 import { mockDotRenderedPage } from '@dotcms/utils-testing';
 import { dotcmsContentletMock } from '@dotcms/utils-testing';
@@ -24,7 +29,7 @@ import { mockDotPersona } from '@dotcms/utils-testing';
 import { mockUserAuth } from '@dotcms/utils-testing';
 import { DotESContentService } from '@dotcms/data-access';
 
-const getDotPageRenderStateMock = (favoritePage: boolean) => {
+const getDotPageRenderStateMock = (favoritePage?: DotCMSContentlet) => {
     return new DotPageRenderState(mockUser(), mockDotRenderedPage(), favoritePage);
 };
 
@@ -125,7 +130,7 @@ describe('DotPageStateService', () => {
 
     describe('$state', () => {
         it('should get state', () => {
-            const mock = getDotPageRenderStateMock(true);
+            const mock = getDotPageRenderStateMock();
             service.state$.subscribe((state: DotPageRenderState) => {
                 expect(state).toEqual(mock);
             });
@@ -244,11 +249,18 @@ describe('DotPageStateService', () => {
         });
 
         describe('setFavoritePageHighlight', () => {
+            it('should set FavoritePageHighlight', () => {
+                service.state$.subscribe(({ state }: DotPageRenderState) => {
+                    expect(state.favoritePage).toBe(dotcmsContentletMock);
+                });
+                service.setFavoritePageHighlight(dotcmsContentletMock);
+            });
+
             it('should set FavoritePageHighlight false', () => {
                 service.state$.subscribe(({ state }: DotPageRenderState) => {
-                    expect(state.favoritePage).toBe(false);
+                    expect(state.favoritePage).toBe(null);
                 });
-                service.setFavoritePageHighlight(false);
+                service.setFavoritePageHighlight(null);
             });
         });
 
@@ -340,7 +352,7 @@ describe('DotPageStateService', () => {
 
     describe('internal navigation state', () => {
         it('should return content from setted internal state', () => {
-            const renderedPage = getDotPageRenderStateMock(true);
+            const renderedPage = getDotPageRenderStateMock(dotcmsContentletMock);
             service.setInternalNavigationState(renderedPage);
 
             expect(service.getInternalNavigationState()).toEqual(renderedPage);
@@ -355,7 +367,7 @@ describe('DotPageStateService', () => {
 
     describe('setting local state', () => {
         it('should set local state and emit', () => {
-            const renderedPage = getDotPageRenderStateMock(true);
+            const renderedPage = getDotPageRenderStateMock(dotcmsContentletMock);
 
             service.state$.subscribe((state: DotPageRenderState) => {
                 expect(state).toEqual(renderedPage);
@@ -385,7 +397,7 @@ describe('DotPageStateService', () => {
     describe('content added/removed', () => {
         describe('selected persona is not default', () => {
             it('should trigger haceContent as true', () => {
-                const renderedPage = getDotPageRenderStateMock(true);
+                const renderedPage = getDotPageRenderStateMock(dotcmsContentletMock);
                 service.setLocalState(renderedPage);
 
                 const subscribeCallback = jasmine.createSpy('spy');

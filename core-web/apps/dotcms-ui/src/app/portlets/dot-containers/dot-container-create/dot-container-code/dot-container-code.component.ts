@@ -24,7 +24,7 @@ export class DotContentEditorComponent implements OnInit {
     @Input() contentTypes: DotCMSContentType[];
 
     menuItems: MenuItem[];
-    activeTabIndex = 1;
+    activeTabIndex = 0;
     monacoEditors = {};
     contentTypeNamesById = {};
 
@@ -39,10 +39,11 @@ export class DotContentEditorComponent implements OnInit {
         });
 
         this.init();
+        this.updateActiveTabIndex(this.getcontainerStructures.length);
     }
 
     /**
-     * Get ContainerStrcuture as FormArray
+     * Get ContainerStructure as FormArray
      * @readonly
      * @type {FormArray}
      * @memberof DotContentEditorComponent
@@ -64,20 +65,50 @@ export class DotContentEditorComponent implements OnInit {
             e.stopPropagation();
         } else {
             this.updateActiveTabIndex(index);
+            this.focusCurrentEditor(index);
         }
 
         return false;
     }
 
     /**
-     * It removes the form control at the index of the form array, and then closes the modal
+     * It removes the form control at the index of the form array
      * @param {number} [index=null] - number = null
-     * @param close - This is the function that closes the modal.
      * @memberof DotContentEditorComponent
      */
-    removeItem(index: number = null, close: () => void): void {
+    removeItem(index: number = null): void {
         this.getcontainerStructures.removeAt(index - 1);
-        close();
+        const currentTabIndex = this.findCurrentTabIndex(index);
+        this.updateActiveTabIndex(currentTabIndex);
+        this.focusCurrentEditor(currentTabIndex);
+    }
+
+    /**
+     * Focus current editor
+     * @param {number} tabIdx
+     * @memberof DotContentEditorComponent
+     */
+    focusCurrentEditor(tabIdx: number) {
+        if (tabIdx > 0) {
+            const contentTypeId =
+                this.getcontainerStructures.controls[tabIdx - 1].get('structureId').value;
+            // Tab Panel does not trigger any event after completely rendered.
+            // Tab Panel and Monaco-Editor take sometime to render it completely.
+            requestAnimationFrame(() => {
+                this.monacoEditors[contentTypeId].focus();
+            });
+        }
+    }
+
+    /**
+     * Find current tab after deleting content type
+     * @param {*} index
+     * @return {*}  {number}
+     * @memberof DotContentEditorComponent
+     */
+    findCurrentTabIndex(index): number {
+        // -1 in condition because if it is first tab then no need to minus
+        return index - 1 > 0 ? index - 1 : this.getcontainerStructures.length > 0 ? index : 0;
     }
 
     /**
@@ -111,7 +142,7 @@ export class DotContentEditorComponent implements OnInit {
      */
     monacoInit(monacoEditor) {
         this.monacoEditors[monacoEditor.name] = monacoEditor.editor;
-        this.monacoEditors[monacoEditor.name].focus();
+        requestAnimationFrame(() => this.monacoEditors[monacoEditor.name].focus());
     }
 
     private init(): void {
@@ -150,7 +181,10 @@ export class DotContentEditorComponent implements OnInit {
                             })
                         );
 
-                        this.updateActiveTabIndex(this.getcontainerStructures.length);
+                        // Waiting for primeng to add the tabPanel
+                        requestAnimationFrame(() => {
+                            this.updateActiveTabIndex(this.getcontainerStructures.length);
+                        });
                     }
                 }
             };
