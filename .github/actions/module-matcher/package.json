@@ -2,7 +2,7 @@
   "name": "module-matcher",
   "version": "1.0.0",
   "description": "Validates if current module matches with commits (from PR or push) changes",
-  "main":  "lib/main.js",
+  "main": "lib/main.js",
   "scripts": {
     "build": "tsc",
     "format": "prettier --write **/*.ts",

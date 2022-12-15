@@ -17,9 +17,16 @@ const GRADLE_FOLDER = path.join(HOME_FOLDER, '.gradle')
 const M2_FOLDER = path.join(HOME_FOLDER, '.m2')
 const PROJECT_ROOT = core.getInput('project_root')
 const DOTCMS_ROOT = path.join(PROJECT_ROOT, 'dotCMS')
+const CORE_WEB_ROOT = path.join(PROJECT_ROOT, 'core-web')
+
 const CACHE_CONFIGURATION: CacheConfiguration = {
   gradle: {
-    dependencies: [path.join(GRADLE_FOLDER, 'caches'), path.join(GRADLE_FOLDER, 'wrapper')],
+    dependencies: [
+      path.join(GRADLE_FOLDER, 'caches'),
+      path.join(GRADLE_FOLDER, 'wrapper'),
+      path.join(CORE_WEB_ROOT, 'installs'),
+      path.join(CORE_WEB_ROOT, 'node_modules')
+    ],
     buildOutput: [
       path.join(DOTCMS_ROOT, '.gradle'),
       path.join(DOTCMS_ROOT, 'build', 'classes'),
@@ -27,7 +34,11 @@ const CACHE_CONFIGURATION: CacheConfiguration = {
     ]
   },
   maven: {
-    dependencies: [path.join(M2_FOLDER, 'repository')],
+    dependencies: [
+      path.join(M2_FOLDER, 'repository'),
+      path.join(CORE_WEB_ROOT, 'installs'),
+      path.join(CORE_WEB_ROOT, 'node_modules')
+    ],
     buildOutput: [path.join(DOTCMS_ROOT, 'target')]
   }
 }
