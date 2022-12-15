@@ -458,7 +458,7 @@ export class DotContainerListStore extends ComponentStore<DotContainerListState>
                     .subscribe((payload: DotActionBulkResult) => {
                         this.updateNotifyMessages({
                             payload,
-                            message: this.dotMessageService.get('message.container.full_delete')
+                            message: this.dotMessageService.get('message.containers.full_delete')
                         });
                     });
             },
@@ -466,7 +466,7 @@ export class DotContainerListStore extends ComponentStore<DotContainerListState>
                 //
             },
             header: this.dotMessageService.get('Delete-Container'),
-            message: this.dotMessageService.get('message.container.confirm.delete.container')
+            message: this.dotMessageService.get('message.containers.confirm.delete.container')
         });
     }
 
@@ -501,7 +501,7 @@ export class DotContainerListStore extends ComponentStore<DotContainerListState>
             .subscribe((payload: DotActionBulkResult) => {
                 this.updateNotifyMessages({
                     payload,
-                    message: this.dotMessageService.get('message.container.unpublished')
+                    message: this.dotMessageService.get('message.containers.unpublished')
                 });
             });
     }
@@ -513,7 +513,7 @@ export class DotContainerListStore extends ComponentStore<DotContainerListState>
             .subscribe((payload: DotActionBulkResult) => {
                 this.updateNotifyMessages({
                     payload,
-                    message: this.dotMessageService.get('message.container.undelete')
+                    message: this.dotMessageService.get('message.containers.undelete')
                 });
             });
     }
@@ -525,7 +525,7 @@ export class DotContainerListStore extends ComponentStore<DotContainerListState>
             .subscribe((payload: DotActionBulkResult) => {
                 this.updateNotifyMessages({
                     payload,
-                    message: this.dotMessageService.get('message.container.delete')
+                    message: this.dotMessageService.get('message.containers.delete')
                 });
             });
     }
