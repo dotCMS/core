@@ -1,5 +1,6 @@
 import { User } from '@dotcms/dotcms-js';
 import { DotPageContainerStructure } from './dot-container.model';
+import { DotCMSContentlet } from './dot-contentlet.model';
 import { DotEditPageViewAs } from './dot-edit-page-view-as.model';
 import { DotLayout } from './dot-layout.model';
 import { DotPageMode } from './dot-page-mode.enum';
@@ -7,8 +8,8 @@ import { DotPage } from './dot-page.model';
 import { DotPageRender, DotPageRenderParameters } from './dot-rendered-page.model';
 import { DotTemplate } from './dot-template.model';
 
-interface DotPageState {
-    favoritePage?: boolean;
+export interface DotPageState {
+    favoritePage?: DotCMSContentlet;
     locked?: boolean;
     lockedByAnotherUser?: boolean;
     mode: DotPageMode;
@@ -20,14 +21,14 @@ export class DotPageRenderState extends DotPageRender {
     constructor(
         private _user: User,
         private dotRenderedPage: DotPageRenderParameters,
-        _favoritePage?: boolean
+        _favoritePage?: DotCMSContentlet
     ) {
         super(dotRenderedPage);
         const locked = !!dotRenderedPage.page.lockedBy;
         const lockedByAnotherUser = locked ? dotRenderedPage.page.lockedBy !== _user.userId : false;
 
         this._state = {
-            favoritePage: _favoritePage || false,
+            favoritePage: _favoritePage,
             locked: locked,
             lockedByAnotherUser: lockedByAnotherUser,
             mode: dotRenderedPage.viewAs.mode
@@ -70,12 +71,12 @@ export class DotPageRenderState extends DotPageRender {
         return this._user;
     }
 
-    get favoritePage(): boolean {
+    get favoritePage(): DotCMSContentlet {
         return this._state.favoritePage;
     }
 
-    set favoritePage(status: boolean) {
-        this._state.favoritePage = status;
+    set favoritePage(favoritePage: DotCMSContentlet) {
+        this._state.favoritePage = favoritePage;
     }
 
     set dotRenderedPageState(dotRenderedPageState: DotPageRender) {

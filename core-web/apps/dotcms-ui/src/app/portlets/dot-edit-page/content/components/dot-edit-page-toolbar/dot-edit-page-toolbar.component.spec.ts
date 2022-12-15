@@ -1,7 +1,11 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { DebugElement, Component, Input, Injectable } from '@angular/core';
 import { By } from '@angular/platform-browser';
-import { MockDotMessageService, mockDotRenderedPage } from '@dotcms/utils-testing';
+import {
+    dotcmsContentletMock,
+    MockDotMessageService,
+    mockDotRenderedPage
+} from '@dotcms/utils-testing';
 import { mockDotRenderedPageState } from '@dotcms/utils-testing';
 import { DotPageStateService } from '../../services/dot-page-state/dot-page-state.service';
 import { DotEditPageToolbarComponent } from './dot-edit-page-toolbar.component';
@@ -325,7 +329,7 @@ describe('DotEditPageToolbarComponent', () => {
             componentHost.pageState = new DotPageRenderState(
                 mockUser(),
                 new DotPageRender(mockDotRenderedPage()),
-                true
+                dotcmsContentletMock
             );
             component.showFavoritePageStar = true;
 

@@ -322,7 +322,7 @@ describe('DotContainerPropertiesComponent', () => {
             expect(comp.form.value).toEqual({
                 title: 'Title 1',
                 friendlyName: 'friendlyName',
-                maxContentlets: 23,
+                maxContentlets: 0,
                 code: null,
                 preLoop: null,
                 postLoop: null,

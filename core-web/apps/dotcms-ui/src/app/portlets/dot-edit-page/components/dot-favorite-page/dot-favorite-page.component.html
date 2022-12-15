@@ -7,6 +7,18 @@
 >
     <form class="p-fluid" *ngIf="form" [formGroup]="form" data-testId="form">
         <div class="fields-col">
+            <div class="field" data-testId="thumbnailField">
+                <label class="p-label-input-required" for="previewThumbnail">{{
+                    'preview' | dm
+                }}</label>
+                <dot-html-to-image
+                    [value]="vm.pageRenderedHtml"
+                    [width]="vm.imgWidth"
+                    [height]="vm.imgHeight"
+                ></dot-html-to-image>
+            </div>
+        </div>
+        <div class="fields-col">
             <div class="field" data-testId="titleField">
                 <label class="p-label-input-required" for="title">{{ 'title' | dm }}</label>
                 <input
@@ -55,17 +67,15 @@
                 ></p-multiSelect>
             </div>
         </div>
-        <div class="fields-col">
-            <div class="field" data-testId="thumbnailField">
-                <label class="p-label-input-required" for="previewThumbnail">{{
-                    'preview' | dm
-                }}</label>
-                <dot-html-to-image
-                    [value]="vm.pageRenderedHtml"
-                    [width]="vm.imgWidth"
-                    [height]="vm.imgHeight"
-                ></dot-html-to-image>
-            </div>
-        </div>
     </form>
+
+    <button
+        class="p-button-secondary dot-favorite-dialog-footer__delete-button"
+        [disabled]="!vm.inodeStored"
+        [label]="'favoritePage.dialog.delete.button' | dm"
+        (click)="onDelete(vm.inodeStored)"
+        footerActions
+        data-testid="dotFavoriteDialogDeleteButton"
+        pButton
+    ></button>
 </dot-form-dialog>
