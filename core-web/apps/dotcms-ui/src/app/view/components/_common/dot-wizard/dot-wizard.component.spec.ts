@@ -2,9 +2,9 @@
 
 import { ComponentFixture, fakeAsync, TestBed, tick, waitForAsync } from '@angular/core/testing';
 import { DotWizardComponent } from './dot-wizard.component';
-import { DotMessageService } from '@services/dot-message/dot-messages.service';
-import { MockDotMessageService } from '@tests/dot-message-service.mock';
-import { DotWizardService } from '@services/dot-wizard/dot-wizard.service';
+import { DotMessageService } from '@dotcms/data-access';
+import { MockDotMessageService } from '@dotcms/utils-testing';
+import { DotWizardService } from '@dotcms/app/api/services/dot-wizard/dot-wizard.service';
 import { Component, DebugElement, EventEmitter, Input, Output } from '@angular/core';
 import { DotDialogModule } from '@components/dot-dialog/dot-dialog.module';
 import { DotPushPublishDialogData } from '@dotcms/dotcms-models';
@@ -73,25 +73,23 @@ describe('DotWizardComponent', () => {
     let form2: FormTwoComponent;
     let formsContainer: DebugElement;
 
-    beforeEach(
-        waitForAsync(() => {
-            TestBed.configureTestingModule({
-                declarations: [DotWizardComponent, FormOneComponent, FormTwoComponent],
-                imports: [DotDialogModule, CommonModule, DotContainerReferenceModule],
-                providers: [
-                    { provide: DotMessageService, useValue: messageServiceMock },
-                    DotWizardService
-                ]
-            }).compileComponents();
+    beforeEach(waitForAsync(() => {
+        TestBed.configureTestingModule({
+            declarations: [DotWizardComponent, FormOneComponent, FormTwoComponent],
+            imports: [DotDialogModule, CommonModule, DotContainerReferenceModule],
+            providers: [
+                { provide: DotMessageService, useValue: messageServiceMock },
+                DotWizardService
+            ]
+        }).compileComponents();
 
-            TestBed.overrideModule(BrowserDynamicTestingModule, {
-                set: {
-                    entryComponents: [FormOneComponent, FormTwoComponent]
-                }
-            });
-            TestBed.compileComponents();
-        })
-    );
+        TestBed.overrideModule(BrowserDynamicTestingModule, {
+            set: {
+                entryComponents: [FormOneComponent, FormTwoComponent]
+            }
+        });
+        TestBed.compileComponents();
+    }));
 
     describe('multiple steps', () => {
         beforeEach(fakeAsync(() => {
@@ -112,8 +110,9 @@ describe('DotWizardComponent', () => {
         }));
 
         it('should set dialog params', () => {
-            const dotDialog: DotDialogComponent = fixture.debugElement.query(By.css('dot-dialog'))
-                .componentInstance;
+            const dotDialog: DotDialogComponent = fixture.debugElement.query(
+                By.css('dot-dialog')
+            ).componentInstance;
 
             expect(dotDialog.bindEvents).toEqual(false);
             expect(dotDialog.header).toEqual(wizardInput.title);
@@ -241,8 +240,9 @@ describe('DotWizardComponent', () => {
         }));
 
         it('should set cancel button correctly', () => {
-            const dotDialog: DotDialogComponent = fixture.debugElement.query(By.css('dot-dialog'))
-                .componentInstance;
+            const dotDialog: DotDialogComponent = fixture.debugElement.query(
+                By.css('dot-dialog')
+            ).componentInstance;
             spyOn(component, 'close');
             dotDialog.actions.cancel.action();
             expect(component.dialogActions.cancel.label).toEqual('cancel');

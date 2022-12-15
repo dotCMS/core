@@ -1,17 +1,18 @@
 import { Observable, of } from 'rxjs';
+
+import { Injectable } from '@angular/core';
+import { Resolve, ActivatedRouteSnapshot } from '@angular/router';
+import { DotCrudService } from '@dotcms/data-access';
+import { DotContentTypesInfoService } from '@dotcms/data-access';
+import { DotCMSContentType } from '@dotcms/dotcms-models';
+import { LoginService } from '@dotcms/dotcms-js';
+import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
+import { take, map, catchError } from 'rxjs/operators';
+import { HttpErrorResponse } from '@angular/common/http';
 import {
     DotHttpErrorManagerService,
     DotHttpErrorHandled
-} from '@services/dot-http-error-manager/dot-http-error-manager.service';
-import { Injectable } from '@angular/core';
-import { Resolve, ActivatedRouteSnapshot } from '@angular/router';
-import { DotCrudService } from '@services/dot-crud';
-import { DotContentTypesInfoService } from '@services/dot-content-types-info';
-import { DotCMSContentType } from '@dotcms/dotcms-models';
-import { LoginService } from '@dotcms/dotcms-js';
-import { DotRouterService } from '@services/dot-router/dot-router.service';
-import { take, map, catchError } from 'rxjs/operators';
-import { HttpErrorResponse } from '@angular/common/http';
+} from '@dotcms/app/api/services/dot-http-error-manager/dot-http-error-manager.service';
 
 /**
  * With the url return a content type by id or a default content type

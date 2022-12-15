@@ -2,10 +2,10 @@ import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 import { ActivatedRouteSnapshot, Resolve, RouterStateSnapshot } from '@angular/router';
 
-import { DotTemplate } from '@models/dot-edit-layout-designer';
-import { DotTemplatesService } from '@services/dot-templates/dot-templates.service';
 import { map } from 'rxjs/operators';
-import { DotRouterService } from '@services/dot-router/dot-router.service';
+import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
+import { DotTemplatesService } from '@dotcms/app/api/services/dot-templates/dot-templates.service';
+import { DotTemplate } from '@dotcms/dotcms-models';
 
 @Injectable()
 export class DotTemplateCreateEditResolver implements Resolve<DotTemplate> {

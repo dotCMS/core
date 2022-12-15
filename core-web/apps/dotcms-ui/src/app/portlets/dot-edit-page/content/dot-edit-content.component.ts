@@ -6,43 +6,46 @@ import { Component, OnInit, ViewChild, ElementRef, NgZone, OnDestroy } from '@an
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 
 import { SiteService } from '@dotcms/dotcms-js';
-import { DotCMSContentlet, DotCMSContentType } from '@dotcms/dotcms-models';
-
-import { DotAlertConfirmService } from '@services/dot-alert-confirm';
-import { DotEditContentHtmlService } from './services/dot-edit-content-html/dot-edit-content-html.service';
-import { DotEditPageService } from '@services/dot-edit-page/dot-edit-page.service';
-import { DotGlobalMessageService } from '@components/_common/dot-global-message/dot-global-message.service';
-import { DotLoadingIndicatorService } from '@components/_common/iframe/dot-loading-indicator/dot-loading-indicator.service';
-import { DotMessageService } from '@services/dot-message/dot-messages.service';
 import {
+    DotCMSContentlet,
+    DotCMSContentType,
+    DotContainerStructure,
     DotPageContainer,
-    DotPageContainerPersonalized
-} from '@models/dot-page-container/dot-page-container.model';
-import { DotPageContent } from '../shared/models/dot-page-content.model';
-import { DotPageRenderState } from '../shared/models/dot-rendered-page-state.model';
-import { DotPageStateService } from './services/dot-page-state/dot-page-state.service';
-import { DotRouterService } from '@services/dot-router/dot-router.service';
+    DotPageContainerPersonalized,
+    DotPageMode,
+    DotPageRender,
+    DotPageRenderState,
+    ESContent
+} from '@dotcms/dotcms-models';
 
-import { DotPageMode } from '@models/dot-page/dot-page-mode.enum';
-import { DotPageRender } from '@models/dot-page/dot-rendered-page.model';
+import { DotAlertConfirmService, DotESContentService } from '@dotcms/data-access';
+import { DotEditContentHtmlService } from './services/dot-edit-content-html/dot-edit-content-html.service';
+import { DotEditPageService } from '@dotcms/data-access';
+import { DotGlobalMessageService } from '@components/_common/dot-global-message/dot-global-message.service';
+import { DotMessageService } from '@dotcms/data-access';
+
+import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
+
 import { DotContentletEditorService } from '@components/dot-contentlet-editor/services/dot-contentlet-editor.service';
-import { DotUiColorsService } from '@services/dot-ui-colors/dot-ui-colors.service';
 import {
     PageModelChangeEvent,
     PageModelChangeEventType
 } from './services/dot-edit-content-html/models';
 import { IframeOverlayService } from '@components/_common/iframe/service/iframe-overlay.service';
-import { DotCustomEventHandlerService } from '@services/dot-custom-event-handler/dot-custom-event-handler.service';
-import { DotContainerStructure } from '@models/container/dot-container.model';
-import { DotHttpErrorManagerService } from '@services/dot-http-error-manager/dot-http-error-manager.service';
+import { DotCustomEventHandlerService } from '@dotcms/app/api/services/dot-custom-event-handler/dot-custom-event-handler.service';
+import { DotHttpErrorManagerService } from '@dotcms/app/api/services/dot-http-error-manager/dot-http-error-manager.service';
 import { HttpErrorResponse } from '@angular/common/http';
-import { DotPropertiesService } from '@services/dot-properties/dot-properties.service';
-import { DotLicenseService } from '@services/dot-license/dot-license.service';
+import { DotPropertiesService } from '@dotcms/data-access';
+import { DotLicenseService } from '@dotcms/data-access';
 import { DotContentletEventAddContentType } from './services/dot-edit-content-html/models/dot-contentlets-events.model';
 import { DotIframeEditEvent } from '@dotcms/dotcms-models';
-import { DotEventsService } from '@services/dot-events/dot-events.service';
+import { DotEventsService } from '@dotcms/data-access';
 import { DialogService } from 'primeng/dynamicdialog';
 import { DotFavoritePageComponent } from '../components/dot-favorite-page/dot-favorite-page.component';
+import { DotUiColorsService } from '@dotcms/app/api/services/dot-ui-colors/dot-ui-colors.service';
+import { DotLoadingIndicatorService } from '@dotcms/utils';
+import { DotPageContent } from '../shared/models';
+import { DotPageStateService } from './services/dot-page-state/dot-page-state.service';
 
 export const EDIT_BLOCK_EDITOR_CUSTOM_EVENT = 'edit-block-editor';
 
@@ -100,7 +103,8 @@ export class DotEditContentComponent implements OnInit, OnDestroy {
         private httpErrorManagerService: DotHttpErrorManagerService,
         private dotConfigurationService: DotPropertiesService,
         private dotLicenseService: DotLicenseService,
-        private dotEventsService: DotEventsService
+        private dotEventsService: DotEventsService,
+        private dotESContentService: DotESContentService
     ) {
         if (!this.customEventsHandler) {
             this.customEventsHandler = {
@@ -285,13 +289,30 @@ export class DotEditContentComponent implements OnInit, OnDestroy {
                             pageState: pageState,
                             pageRenderedHtml: pageState.params.page.rendered || null
                         },
-                        onSave: () => {
-                            this.dotPageStateService.setFavoritePageHighlight(true);
+                        onSave: (favoritePageUrl: string) => {
+                            this.updateFavoritePageIconStatus(favoritePageUrl);
+                        },
+                        onDelete: (favoritePageUrl: string) => {
+                            this.updateFavoritePageIconStatus(favoritePageUrl);
                         }
                     }
                 });
             }
         });
+    }
+
+    private updateFavoritePageIconStatus(pageUrl: string) {
+        this.dotESContentService
+            .get({
+                itemsPerPage: 10,
+                offset: '0',
+                query: `+contentType:DotFavoritePage +DotFavoritePage.url_dotraw:${pageUrl}`
+            })
+            .pipe(take(1))
+            .subscribe((response: ESContent) => {
+                const favoritePage = response.jsonObjectView?.contentlets[0];
+                this.dotPageStateService.setFavoritePageHighlight(favoritePage);
+            });
     }
 
     private setAllowedContent(pageState: DotPageRenderState): void {

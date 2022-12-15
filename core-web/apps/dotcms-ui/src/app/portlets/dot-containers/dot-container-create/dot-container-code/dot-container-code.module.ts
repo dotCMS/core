@@ -9,6 +9,7 @@ import { ReactiveFormsModule } from '@angular/forms';
 import { ButtonModule } from 'primeng/button';
 import { DialogService, DynamicDialogModule } from 'primeng/dynamicdialog';
 import { DotAddVariableModule } from './dot-add-variable/dot-add-variable.module';
+import { DotIconModule } from '@dotcms/ui';
 
 @NgModule({
     declarations: [DotContentEditorComponent],
@@ -21,7 +22,8 @@ import { DotAddVariableModule } from './dot-add-variable/dot-add-variable.module
         ReactiveFormsModule,
         ButtonModule,
         DynamicDialogModule,
-        DotAddVariableModule
+        DotAddVariableModule,
+        DotIconModule
     ],
     exports: [DotContentEditorComponent],
     providers: [DialogService]

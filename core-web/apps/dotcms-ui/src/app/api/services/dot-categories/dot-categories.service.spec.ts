@@ -9,7 +9,7 @@ import {
     CATEGORY_API_URL,
     CATEGORY_CHILDREN_API_URL
 } from './dot-categories.service';
-import { CoreWebServiceMock } from '@tests/core-web.service.mock';
+import { CoreWebServiceMock } from '@dotcms/utils-testing';
 import { of } from 'rxjs';
 import {
     CATEGORY_SOURCE,

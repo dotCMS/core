@@ -1,9 +1,9 @@
 import { By } from '@angular/platform-browser';
 import { ComponentFixture } from '@angular/core/testing';
 import { DebugElement, Component, Input } from '@angular/core';
-import { MockDotMessageService } from '@tests/dot-message-service.mock';
-import { DOTTestBed } from '@tests/dot-test-bed';
-import { DotMessageService } from '@services/dot-message/dot-messages.service';
+import { MockDotMessageService } from '@dotcms/utils-testing';
+import { DOTTestBed } from '@dotcms/app/test/dot-test-bed';
+import { DotMessageService } from '@dotcms/data-access';
 import { InputSwitchModule } from 'primeng/inputswitch';
 import { DotMessageDisplayService } from '@components/dot-message-display/services';
 import { DotKeyValue } from '@shared/models/dot-key-value-ng/dot-key-value-ng.model';

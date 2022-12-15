@@ -1,10 +1,10 @@
 import { of as observableOf, Observable } from 'rxjs';
 import { TestBed } from '@angular/core/testing';
 import { DotEditContentToolbarHtmlService } from './dot-edit-content-toolbar-html.service';
-import { DotMessageService } from '@services/dot-message/dot-messages.service';
-import { MockDotMessageService } from '../../../../../test/dot-message-service.mock';
+import { DotMessageService } from '@dotcms/data-access';
+import { MockDotMessageService } from '@dotcms/utils-testing';
 import { DotDOMHtmlUtilService } from './dot-dom-html-util.service';
-import { DotLicenseService } from '@services/dot-license/dot-license.service';
+import { DotLicenseService } from '@dotcms/data-access';
 import { Injectable } from '@angular/core';
 
 const mouseoverEvent = new MouseEvent('mouseover', {
@@ -152,9 +152,8 @@ describe('DotEditContentToolbarHtmlService', () => {
                     it('should have content, widget and form', () => {
                         dummyContainer.innerHTML =
                             '<div data-dot-object="container" data-dot-can-add="CONTENT,WIDGET,FORM"></div>';
-                        const htmlElement: HTMLHtmlElement = testDoc.getElementsByTagName(
-                            'html'
-                        )[0];
+                        const htmlElement: HTMLHtmlElement =
+                            testDoc.getElementsByTagName('html')[0];
                         htmlElement.appendChild(dummyContainer);
                         service.addContainerToolbar(testDoc);
                         menuItems = testDoc.querySelectorAll('.dotedit-menu__item ');
@@ -182,9 +181,8 @@ describe('DotEditContentToolbarHtmlService', () => {
                                 </div>
                             </div>
                         `;
-                        const htmlElement: HTMLHtmlElement = testDoc.getElementsByTagName(
-                            'html'
-                        )[0];
+                        const htmlElement: HTMLHtmlElement =
+                            testDoc.getElementsByTagName('html')[0];
                         htmlElement.appendChild(dummyContainer);
                         service.addContainerToolbar(testDoc);
                     });

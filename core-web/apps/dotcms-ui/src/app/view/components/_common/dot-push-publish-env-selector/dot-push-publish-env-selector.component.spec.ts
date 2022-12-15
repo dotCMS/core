@@ -3,14 +3,14 @@
 import { of as observableOf, Observable } from 'rxjs';
 import { ComponentFixture } from '@angular/core/testing';
 import { DebugElement, Component } from '@angular/core';
-import { MockDotMessageService } from '../../../../test/dot-message-service.mock';
-import { DOTTestBed } from '../../../../test/dot-test-bed';
+import { MockDotMessageService } from '@dotcms/utils-testing';
+import { DOTTestBed } from '@dotcms/app/test/dot-test-bed';
 import { PushPublishEnvSelectorComponent } from './dot-push-publish-env-selector.component';
-import { PushPublishService } from '@services/push-publish/push-publish.service';
+import { PushPublishService } from '@dotcms/app/api/services/push-publish/push-publish.service';
 import { UntypedFormGroup, UntypedFormControl } from '@angular/forms';
 import { By } from '@angular/platform-browser';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
-import { DotMessageService } from '@services/dot-message/dot-messages.service';
+import { DotMessageService } from '@dotcms/data-access';
 
 export class PushPublishServiceMock {
     _lastEnvironmentPushed: string[];

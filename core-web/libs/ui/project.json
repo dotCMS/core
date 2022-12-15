@@ -1,4 +1,5 @@
 {
+    "name": "ui",
     "$schema": "../../node_modules/nx/schemas/project-schema.json",
     "projectType": "library",
     "sourceRoot": "libs/ui/src",
@@ -16,7 +17,11 @@
             "options": {
                 "main": "libs/ui/src/test.ts",
                 "tsConfig": "libs/ui/tsconfig.spec.json",
-                "karmaConfig": "libs/ui/karma.conf.js"
+                "karmaConfig": "libs/ui/karma.conf.js",
+                "styles": ["libs/dot-primeng-theme-styles/src/scss/styles.scss"],
+                "stylePreprocessorOptions": {
+                    "includePaths": ["libs/dot-primeng-theme-styles/src/scss"]
+                }
             }
         }
     },

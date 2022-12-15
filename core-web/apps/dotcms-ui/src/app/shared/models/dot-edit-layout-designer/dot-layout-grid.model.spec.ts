@@ -1,8 +1,8 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { DotLayoutGrid } from './dot-layout-grid.model';
-import { CONTAINER_SOURCE } from '@shared/models/container/dot-container.model';
 import { DotLayoutGridBox } from './dot-layout-grid-box.model';
+import { CONTAINER_SOURCE } from '@dotcms/dotcms-models';
 
 describe('DotLayoutGridRow', () => {
     let dotLayoutGrid: DotLayoutGrid;
