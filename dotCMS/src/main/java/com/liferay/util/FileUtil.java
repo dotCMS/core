@@ -111,27 +111,31 @@ public class FileUtil {
 	public static void copyDirectory(File source, File destination, boolean hardLinks, FileFilter filter) throws IOException {
 		if (source.exists() && source.isDirectory()) {
 			if (!destination.exists()) {
-				destination.mkdirs();
+				final boolean mkdirs = destination.mkdirs();
+				if(!mkdirs){
+					Logger.error(FileUtil.class,String.format(" Failed to make destination Dir [%s]", destination));
+				}
 			}
 
 			File[] fileArray = filter!=null ? source.listFiles(filter) : source.listFiles();
+            if(null != fileArray){
+				for (File file : fileArray) {
+					if (file.getName().endsWith("xml")) {
+						String name = file.getName();
+						Logger.info(FileUtil.class, "copy " + name);
+					}
 
-			for (File file : fileArray) {
-				if (file.getName().endsWith("xml")) {
-					String name = file.getName();
-					Logger.info(FileUtil.class, "copy " + name);
-				}
-
-				if (file.isDirectory()) {
-					copyDirectory(
-							file,
-							new File(destination.getPath() + File.separator
-									+ file.getName()), hardLinks, filter);
-				} else {
-					copyFile(
-							file,
-							new File(destination.getPath() + File.separator
-									+ file.getName()), hardLinks);
+					if (file.isDirectory()) {
+						copyDirectory(
+								file,
+								new File(destination.getPath() + File.separator
+										+ file.getName()), hardLinks, filter);
+					} else {
+						copyFile(
+								file,
+								new File(destination.getPath() + File.separator
+										+ file.getName()), hardLinks);
+					}
 				}
 			}
 		}
@@ -191,8 +195,11 @@ public class FileUtil {
         if ((destination.getParentFile() != null) &&
             (!destination.getParentFile().exists())) {
 
-            destination.getParentFile().mkdirs();
-        }
+			final boolean mkdirs = destination.getParentFile().mkdirs();
+			if(!mkdirs){
+				Logger.error(FileUtil.class,String.format(" Failed to make destination parent Dir [%s]", destination));
+			}
+		}
 
         if (hardLinks) {
 
@@ -301,8 +308,12 @@ public class FileUtil {
 	      return;
 	    }
 	    if(!directory.isDirectory()) {
-	      directory.delete();
-	      return;
+			try {
+				Files.delete(directory.toPath());
+			} catch (IOException e) {
+				Logger.error(FileUtil.class, String.format("Fail to delete dir [%s].", directory), e);
+			}
+			return;
 	    }
 
 	    final List<File> allOldFiles = com.liferay.util.FileUtil.listFilesRecursively(directory,
