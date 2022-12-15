@@ -173,7 +173,7 @@ public class ExperimentAPIImpIT {
             throws DotDataException, DotSecurityException {
         final HTMLPageAsset page = APILocator.getHTMLPageAssetAPI().fromContentlet(
                 TestDataUtils.getPageContent(true, 1));
-        HTMLPageDataGen.publish(page);
+        ContentletDataGen.publish(page);
 
         final Container container = new ContainerDataGen().nextPersisted();
 
