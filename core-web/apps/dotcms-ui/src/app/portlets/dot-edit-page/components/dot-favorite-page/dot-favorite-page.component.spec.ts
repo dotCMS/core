@@ -20,10 +20,11 @@ import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { MultiSelectModule } from 'primeng/multiselect';
 import { DotFavoritePageActionState, DotFavoritePageStore } from './store/dot-favorite-page.store';
 import { of } from 'rxjs/internal/observable/of';
+import { ButtonModule } from 'primeng/button';
 import { DotPageRenderState, DotPageRender } from '@dotcms/dotcms-models';
 @Component({
     selector: 'dot-form-dialog',
-    template: '<ng-content></ng-content>',
+    template: '<ng-content></ng-content><ng-content select="[footerActions]"></ng-content>',
     styleUrls: []
 })
 export class DotFormDialogMockComponent {
@@ -47,7 +48,8 @@ const messageServiceMock = new MockDotMessageService({
     title: 'Title',
     url: 'Url',
     order: 'Order',
-    'favoritePage.dialog.field.shareWith': 'Share With'
+    'favoritePage.dialog.field.shareWith': 'Share With',
+    'favoritePage.dialog.delete.button': 'Remove Favorite'
 });
 
 const mockRenderedPageState = new DotPageRenderState(
@@ -100,6 +102,7 @@ describe('DotFavoritePageComponent', () => {
                 DotHtmlToImageMockComponent
             ],
             imports: [
+                ButtonModule,
                 FormsModule,
                 MultiSelectModule,
                 ReactiveFormsModule,
@@ -132,32 +135,34 @@ describe('DotFavoritePageComponent', () => {
                                 pageState: mockRenderedPageState,
                                 pageRenderedHtml: '<p>test</p>'
                             },
-                            onSave: jasmine.createSpy()
+                            onSave: jasmine.createSpy(),
+                            onDelete: jasmine.createSpy()
                         }
                     }
                 }
             ]
         }).compileComponents();
-        TestBed.overrideProvider(DotFavoritePageStore, { useValue: storeMock });
-        store = TestBed.inject(DotFavoritePageStore);
     });
 
-    beforeEach(() => {
-        fixture = TestBed.createComponent(DotFavoritePageComponent);
-        de = fixture.debugElement;
-        component = fixture.componentInstance;
-        injector = getTestBed();
-
-        dialogRef = injector.inject(DynamicDialogRef);
-        dialogConfig = TestBed.inject(DynamicDialogConfig);
-    });
-
-    describe('Default configuration', () => {
+    describe('New Favorite Page', () => {
         beforeEach(() => {
-            fixture.detectChanges();
+            TestBed.overrideProvider(DotFavoritePageStore, { useValue: storeMock });
+            store = TestBed.inject(DotFavoritePageStore);
+
+            fixture = TestBed.createComponent(DotFavoritePageComponent);
+            de = fixture.debugElement;
+            component = fixture.componentInstance;
+            injector = getTestBed();
+
+            dialogRef = injector.inject(DynamicDialogRef);
+            dialogConfig = TestBed.inject(DynamicDialogConfig);
         });
 
         describe('HTML', () => {
+            beforeEach(() => {
+                fixture.detectChanges();
+            });
+
             it('should setup <form> class', () => {
                 const form = de.query(By.css('[data-testId="form"]'));
                 expect(form.classes['p-fluid']).toBe(true);
@@ -252,10 +257,14 @@ describe('DotFavoritePageComponent', () => {
         });
 
         describe('form', () => {
+            beforeEach(() => {
+                fixture.detectChanges();
+            });
+
             it('should get value from config and set initial data on store', () => {
                 expect(component.form.value).toEqual({
                     currentUserRoleId: '1',
-                    thumbnail: null,
+                    thumbnail: '',
                     title: 'A title',
                     url: '/an/url/test?&language_id=1&device_inode=',
                     order: 1,
@@ -307,6 +316,16 @@ describe('DotFavoritePageComponent', () => {
         });
 
         describe('dot-form-dialog', () => {
+            beforeEach(() => {
+                fixture.detectChanges();
+            });
+
+            it('should exits a Remove Favorite with attributes', () => {
+                const element = de.query(By.css('[data-testId="dotFavoriteDialogDeleteButton"]'));
+                expect(element.nativeElement.textContent).toBe('Remove Favorite');
+                expect(element.nativeElement.disabled).toBe(true);
+            });
+
             it('should call save functionality in store', () => {
                 const dialog = de.query(By.css('[data-testId="dialogForm"]'));
                 dialog.triggerEventHandler('save', {});
@@ -320,21 +339,85 @@ describe('DotFavoritePageComponent', () => {
                 expect(dialogRef.close).toHaveBeenCalledWith(true);
             });
         });
+
+        describe('Store state changes', () => {
+            it('should call close ref event when closeDialog event is executed from store', () => {
+                spyOnProperty(store, 'closeDialog$', 'get').and.returnValue(of(true));
+                fixture.detectChanges();
+                expect(dialogRef.close).toHaveBeenCalledWith(true);
+            });
+
+            it('should call onSave ref event when actionState event is executed from store with Saved value', () => {
+                spyOnProperty(store, 'actionState$', 'get').and.returnValue(
+                    of(DotFavoritePageActionState.SAVED)
+                );
+                fixture.detectChanges();
+                expect(dialogConfig.data.onSave).toHaveBeenCalledTimes(1);
+            });
+
+            it('should call onDelete ref event when actionState event is executed from store with Deleted value', () => {
+                spyOnProperty(store, 'actionState$', 'get').and.returnValue(
+                    of(DotFavoritePageActionState.DELETED)
+                );
+                fixture.detectChanges();
+                expect(dialogConfig.data.onDelete).toHaveBeenCalledTimes(1);
+            });
+        });
     });
 
-    describe('Store state changes', () => {
-        it('should call close ref event when closeDialog event is executed from store', () => {
-            spyOnProperty(store, 'closeDialog$', 'get').and.returnValue(of(true));
+    describe('Existing Favorite Page', () => {
+        beforeEach(() => {
+            const storeMock = {
+                get currentUserRoleId$() {
+                    return of('1');
+                },
+                saveFavoritePage: jasmine.createSpy(),
+                deleteFavoritePage: jasmine.createSpy(),
+                get closeDialog$() {
+                    return of(false);
+                },
+                get actionState$() {
+                    return of(null);
+                },
+                setLoading: jasmine.createSpy(),
+                setLoaded: jasmine.createSpy(),
+                setInitialStateData: jasmine.createSpy(),
+                vm$: of({
+                    pageRenderedHtml: '',
+                    roleOptions: [],
+                    currentUserRoleId: '',
+                    inodeStored: 'abc123',
+                    isAdmin: true,
+                    imgWidth: 1024,
+                    imgHeight: 768.192048012003,
+                    loading: false,
+                    closeDialog: false,
+                    actionState: null
+                })
+            };
+
+            TestBed.overrideProvider(DotFavoritePageStore, { useValue: storeMock });
+            store = TestBed.inject(DotFavoritePageStore);
+
+            fixture = TestBed.createComponent(DotFavoritePageComponent);
+            de = fixture.debugElement;
+            component = fixture.componentInstance;
+            injector = getTestBed();
+
+            dialogRef = injector.inject(DynamicDialogRef);
+            dialogConfig = TestBed.inject(DynamicDialogConfig);
             fixture.detectChanges();
-            expect(dialogRef.close).toHaveBeenCalledWith(true);
         });
 
-        it('should call onSave ref event when actionState event is executed from store with Saved value', () => {
-            spyOnProperty(store, 'actionState$', 'get').and.returnValue(
-                of(DotFavoritePageActionState.SAVED)
-            );
-            fixture.detectChanges();
-            expect(dialogConfig.data.onSave).toHaveBeenCalledTimes(1);
+        it('should button Remove Favorite be enabled', () => {
+            const element = de.query(By.css('[data-testId="dotFavoriteDialogDeleteButton"]'));
+            expect(element.nativeElement.disabled).toBe(false);
+        });
+
+        it('should call delete method on clicking Remove button', () => {
+            const element = de.query(By.css('[data-testId="dotFavoriteDialogDeleteButton"]'));
+            element.triggerEventHandler('click', {});
+            expect(store.deleteFavoritePage).toHaveBeenCalledWith('abc123');
         });
     });
 });

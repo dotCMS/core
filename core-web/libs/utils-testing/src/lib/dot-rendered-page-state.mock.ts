@@ -5,5 +5,5 @@ import { DotPageRender, DotPageRenderState } from '@dotcms/dotcms-models';
 export const mockDotRenderedPageState = new DotPageRenderState(
     mockUser(),
     new DotPageRender(mockDotRenderedPage()),
-    false
+    null
 );
