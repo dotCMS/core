@@ -24,6 +24,7 @@ import com.dotcms.http.CircuitBreakerUrl.Method;
 import com.dotcms.util.CloseUtils;
 import com.dotcms.util.ConversionUtils;
 import com.dotcms.util.SecurityUtils;
+import com.dotcms.util.network.IPUtils;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.UserAPI;
@@ -60,6 +61,7 @@ public class TempFileAPI {
   public static final String TEMP_RESOURCE_PREFIX = "temp_";
 
   private static final String WHO_CAN_USE_TEMP_FILE = "whoCanUse.tmp";
+  private static final String TEMP_RESOURCE_BY_URL_ADMIN_ONLY="TEMP_RESOURCE_BY_URL_ADMIN_ONLY";
 
   /**
    * Returns an empty TempFile of a unique id and file handle that can be used to write and access a
@@ -200,16 +202,46 @@ public class TempFileAPI {
       final DotTempFile dotTempFile = createEmptyTempFile(fileName, request);
       final File tempFile = dotTempFile.file;
 
-      final OutputStream out = new BoundedOutputStream(maxFileSize(request),
-                      Files.newOutputStream(tempFile.toPath()));
+    final boolean tempFilesByUrlAdminOnly = Config
+            .getBooleanProperty(TEMP_RESOURCE_BY_URL_ADMIN_ONLY, false);
+
+
+    /**
+     * If url requested is on a private subnet, block by default
+     */
+    if(IPUtils.isIpPrivateSubnet(url.getHost())) {
+      throw new DotRuntimeException("Unable to load file by url:" + url);
+    }
+
+
+    /**
+     * by adding the source IP give visibility to the
+     * remote server of who initiatied the reuqest
+     */
+    final String sourceIpAddress = request.getRemoteAddr();
+    final String finalUrl = url.toString().contains("?") ? url.toString() + "&sourceIp=" + sourceIpAddress :  url.toString() + "?sourceIp=" + sourceIpAddress ;
+
+
+
+    /**
+     * Only allow admins to use the URL functionality
+     */
+    User user = PortalUtil.getUser(request);
+    if(user == null || tempFilesByUrlAdminOnly && !user.isAdmin()) {
+      throw new DotRuntimeException("Only Admins can import a file by URL");
+    }
+
+    try(final OutputStream out = new BoundedOutputStream(maxFileSize(request),
+            Files.newOutputStream(tempFile.toPath()))){
 
       final CircuitBreakerUrl urlGetter =
-              CircuitBreakerUrl.builder().setMethod(Method.GET).setUrl(url.toString())
+              CircuitBreakerUrl.builder().setMethod(Method.GET).setUrl(finalUrl)
                       .setTimeout(timeoutSeconds * 1000).build();
 
       urlGetter.doOut(out);
+    }
 
-      return dotTempFile;
+    return dotTempFile;
 
   }
 
