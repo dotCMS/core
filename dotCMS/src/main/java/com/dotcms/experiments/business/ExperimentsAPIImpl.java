@@ -444,6 +444,10 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
         final String experimentId = experiment.getIdentifier();
         final String variantName = getVariantName(experimentId);
 
+        DotPreconditions.isTrue(!variantDescription.equals(ORIGINAL_VARIANT) &&
+                        experiment.trafficProportion().variants().stream().noneMatch((variant)->
+                variant.description().equals(ORIGINAL_VARIANT)), "Original Variant already created");
+
         variantAPI.save(Variant.builder().name(variantName)
                 .description(Optional.of(variantDescription)).build());
 
@@ -486,6 +490,13 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
 
         final Variant toDelete = variantAPI.get(variantName)
                 .orElseThrow(()->new DoesNotExistException("Provided Variant not found"));
+
+        final String variantDescription = toDelete.description()
+                .orElseThrow(()->new DotStateException("Variant without description. Variant name:"
+                                + toDelete.name();
+
+        DotPreconditions.isTrue(!variantDescription.equals(ORIGINAL_VARIANT),
+                ()->"Cannot delete Original Variant", IllegalArgumentException.class);
 
         final TreeSet<ExperimentVariant> updatedVariants =
                 new TreeSet<>(persistedExperiment.trafficProportion()
