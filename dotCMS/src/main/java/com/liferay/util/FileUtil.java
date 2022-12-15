@@ -264,6 +264,7 @@ public class FileUtil {
 			newContent = FileUtil.read(destination);
 		}
 		catch (FileNotFoundException ignored) {
+			//Ignored
 		}
 
 		if (oldContent == null || !oldContent.equals(newContent)) {
@@ -308,11 +309,23 @@ public class FileUtil {
 				pathname -> pathname.lastModified() < deleteOlderTime);
 
 	    // delete old files
-      allOldFiles.stream().filter(File::isFile).forEach(File::delete);
+      allOldFiles.stream().filter(File::isFile).forEach(f-> {
+		  try {
+			  Files.delete(f.toPath());
+		  } catch (IOException e) {
+			  Logger.error(FileUtil.class, String.format("Fail to delete file [%s]", f), e);
+		  }
+	  });
       
       //delete old directories (only empty directories will be deleted)
 	    allOldFiles.stream().filter(f -> f.exists() && f.isDirectory()).sorted(
-				(a, b) -> a.getAbsolutePath().length() - b.getAbsolutePath().length()).forEach(f->f.delete());
+				(a, b) -> a.getAbsolutePath().length() - b.getAbsolutePath().length()).forEach(f->{
+			try {
+				Files.delete(f.toPath());
+			} catch (IOException e) {
+				Logger.error(FileUtil.class, String.format("Fail to delete file [%s]", f), e);
+			}
+		});
 
 
 	  }
@@ -325,18 +338,34 @@ public class FileUtil {
 		if (directory.exists() && directory.isDirectory()) {
 			File[] fileArray = directory.listFiles();
 
-			for (File file : fileArray) {
-				if (file.isDirectory()) {
-					deltree(file);
-				} else {
-					file.delete();
+			if (null != fileArray) {
+				for (File file : fileArray) {
+					if (file.isDirectory()) {
+						deltree(file);
+					} else {
+						try {
+							Files.delete(file.toPath());
+						} catch (IOException e) {
+							Logger.error(FileUtil.class,
+									String.format("Fail to delete file [%s]", file), e);
+						}
+					}
 				}
 			}
-			if(deleteTopDir)
-				directory.delete();
+			if (deleteTopDir) {
+				try {
+					Files.delete(directory.toPath());
+				} catch (IOException e) {
+					Logger.error(FileUtil.class, String.format("Fail to delete dir [%s]", directory), e);
+				}
+			}
 		}else{
 			if(directory.exists()){
-				directory.delete();
+				try {
+					Files.delete(directory.toPath());
+				} catch (IOException e) {
+					Logger.error(FileUtil.class, String.format("Fail to delete dir [%s]", directory), e);
+				}
 			}
 		}
 	}
@@ -448,10 +477,11 @@ public class FileUtil {
 		List<String> dirs = new ArrayList<>();
 
 		File[] fileArray = file.listFiles();
-
-		for (File value : fileArray) {
-			if (value.isDirectory()) {
-				dirs.add(value.getName());
+		if (null != fileArray) {
+			for (File value : fileArray) {
+				if (value.isDirectory()) {
+					dirs.add(value.getName());
+				}
 			}
 		}
 
@@ -502,7 +532,7 @@ public class FileUtil {
 	
 		for (File file : fileArray) {
 			if(file.isFile()) {
-				if(includeSubDirs && containsParentFolder(file, subFolders)) {
+				if(includeSubDirs && null != subFolders && containsParentFolder(file, subFolders)) {
 					files.add(file);
 				} else {
 					files.add(file);
@@ -523,7 +553,7 @@ public class FileUtil {
 
 		for (File file : fileArray) {
 			if(file.isFile()) {
-				if(includeSubDirs && containsParentFolder(file, subFolders)) {
+				if(includeSubDirs && null != subFolders && containsParentFolder(file, subFolders)) {
 					files.add(file.getParentFile().getName() + File.separator + file.getName());
 				} else {
 					files.add(file.getName());
@@ -536,7 +566,10 @@ public class FileUtil {
 
 	public static void mkdirs(String pathName) {
 		File file = new File(pathName);
-		file.mkdirs();
+		final boolean mkdirsOk = file.mkdirs();
+		if(!mkdirsOk){
+			Logger.error(FileUtil.class,String.format("Fail to makeDir [%s]",file));
+		}
 	}
 
 	public static boolean move(File source, File destination) throws IOException {
@@ -583,7 +616,10 @@ public class FileUtil {
             }
         }
 
-		destination.delete();
+		final boolean delete = destination.delete();
+		if(!delete){
+			Logger.warn(FileUtil.class,String.format(" Fail to remove destination dir [%s]",destination));
+		}
 
 		boolean success = source.renameTo(destination);
 		
@@ -653,6 +689,7 @@ public class FileUtil {
 			br.close();
 		}
 		catch (IOException ignored) {
+			//Ignored
 		}
 
 		return list;
@@ -674,6 +711,7 @@ public class FileUtil {
 			props.load(is);
 		}
 		catch (IOException ignored) {
+			//Ignored
 		}
 
 		return props;
