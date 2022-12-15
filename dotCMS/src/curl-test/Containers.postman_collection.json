@@ -1,6 +1,6 @@
 {
 	"info": {
-		"_postman_id": "75c82cf1-8575-4574-bd9e-906c3f7ffad1",
+		"_postman_id": "4cb85b35-a1be-4138-8e5f-7c8c91ba1acc",
 		"name": "Containers",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
 	},
@@ -5768,7 +5768,7 @@
 							"        }",
 							"    }",
 							"",
-							"pm.expect(isAscending).to.be.true;",
+							"pm.expect(true).to.eql(isAscending);",
 							"});",
 							"}"
 						],
@@ -5877,7 +5877,7 @@
 							"        }",
 							"    }",
 							"",
-							"pm.expect(isDescending).to.be.true;",
+							"pm.expect(true).to.eql(isDescending);",
 							"});",
 							"}"
 						],
