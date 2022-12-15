@@ -59,14 +59,14 @@ public class PublisherAPIImpl implements PublisherAPI, DotInitializer {
     private final Lazy<Path> PUBLISHING_FILTERS_FOLDER = Lazy.of(() -> Path.of(APILocator.getFileAssetAPI().getRealAssetsRootPath(), "server" , "publishing-filters" ));
 
     @Override
-    final public PublishStatus publish ( PublisherConfig config) throws DotPublishingException {
+    public final PublishStatus publish ( PublisherConfig config) throws DotPublishingException {
 
         return publish( config, new PublishStatus() );
     }
 
     @CloseDBIfOpened
     @Override
-    final public PublishStatus publish ( PublisherConfig config, PublishStatus status) throws DotPublishingException {
+    public final PublishStatus publish ( PublisherConfig config, PublishStatus status) throws DotPublishingException {
 
         PushPublishLogger.log( this.getClass(), "Started Publishing Task", config.getId() );
 
@@ -367,7 +367,6 @@ public class PublisherAPIImpl implements PublisherAPI, DotInitializer {
     @Override
     public void upsertFilterDescriptor(FilterDescriptor filterDescriptor) {
         final File filterPathFile = Path.of(PUBLISHING_FILTERS_FOLDER.get().toString(), filterDescriptor.getKey()).toFile();
-                //new File(new File(PUBLISHING_FILTERS_FOLDER.get()), filterDescriptor.getKey());
         YamlUtil.write(filterPathFile, filterDescriptor);
         this.init();
     }
@@ -376,7 +375,6 @@ public class PublisherAPIImpl implements PublisherAPI, DotInitializer {
     public void saveFilterDescriptors(final List<File> filterFiles) {
         for (final File file : filterFiles) {
             final File filterPathFile =  Path.of(PUBLISHING_FILTERS_FOLDER.get().toString(), file.getName()).toFile();
-                    //new File(new File(PUBLISHING_FILTERS_FOLDER.get()), file.getName());
             try {
                 FileUtils.copyFile(file, filterPathFile);
             } catch (final IOException e) {
