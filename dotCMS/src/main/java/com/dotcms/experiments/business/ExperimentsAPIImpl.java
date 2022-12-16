@@ -444,9 +444,12 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
         final String experimentId = experiment.getIdentifier();
         final String variantName = getVariantName(experimentId);
 
-        DotPreconditions.isTrue(!variantDescription.equals(ORIGINAL_VARIANT) &&
-                        experiment.trafficProportion().variants().stream().noneMatch((variant)->
-                variant.description().equals(ORIGINAL_VARIANT)), "Original Variant already created");
+        if(variantDescription.equals(ORIGINAL_VARIANT)) {
+            DotPreconditions.isTrue(
+                    experiment.trafficProportion().variants().stream().noneMatch((variant) ->
+                            variant.description().equals(ORIGINAL_VARIANT)),
+                    "Original Variant already created");
+        }
 
         variantAPI.save(Variant.builder().name(variantName)
                 .description(Optional.of(variantDescription)).build());

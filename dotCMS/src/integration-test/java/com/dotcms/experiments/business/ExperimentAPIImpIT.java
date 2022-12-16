@@ -174,12 +174,7 @@ public class ExperimentAPIImpIT {
                 .addVariant("Test Green Button")
                 .nextPersisted();
 
-        final ExperimentVariant originalVariant = newExperiment.trafficProportion()
-                .variants().stream().filter((experimentVariant ->
-                        experimentVariant.description().equals(ORIGINAL_VARIANT))).findFirst()
-                .orElseThrow(()->new DotStateException("Unable to find Original Variant"));
-
-        APILocator.getExperimentsAPI().addVariant(newExperiment.id().orElse(""), originalVariant.id(),
+        APILocator.getExperimentsAPI().addVariant(newExperiment.id().orElse(""), ORIGINAL_VARIANT,
                 APILocator.systemUser());
     }
 
