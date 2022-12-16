@@ -88,7 +88,7 @@ function persistResults {
   # Clean test results folders by removing contents and committing them
   cleanTestFolders
 
-  addResults ./
+  addResults .
 
   # Check for something new to commit
   [[ "${DEBUG}" == 'true' ]] \
