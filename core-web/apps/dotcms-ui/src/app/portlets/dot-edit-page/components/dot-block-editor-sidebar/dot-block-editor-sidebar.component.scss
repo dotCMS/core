@@ -1,8 +1,16 @@
 @use "libs/dot-primeng-theme-styles/src/scss/variables" as *;
 
 :host {
+    .container {
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+    }
+
     dot-block-editor {
-        height: calc(100% - 5rem);
+        display: flex;
+        flex-direction: column;
+        height: calc(100% - 4rem);
     }
 }
 
@@ -30,7 +38,6 @@
 footer {
     display: flex;
     justify-content: flex-end;
-    margin-top: $spacing-5;
 
     .p-button-secondary {
         margin-right: $spacing-3;
