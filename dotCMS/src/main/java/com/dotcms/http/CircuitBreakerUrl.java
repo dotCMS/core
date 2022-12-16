@@ -1,14 +1,18 @@
 package com.dotcms.http;
 
+import com.dotcms.rest.EmptyHttpResponse;
 import com.dotcms.rest.api.v1.DotObjectMapperProvider;
 import com.dotcms.rest.exception.BadRequestException;
+import com.dotcms.util.network.IPUtils;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.UtilMethods;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableMap;
+import io.vavr.Lazy;
 import io.vavr.control.Try;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -16,13 +20,20 @@ import java.io.OutputStream;
 import java.net.URISyntaxException;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.RejectedExecutionException;
+import javax.servlet.ServletOutputStream;
+import javax.servlet.WriteListener;
 import javax.servlet.http.HttpServletResponse;
 import net.jodah.failsafe.CircuitBreaker;
 import net.jodah.failsafe.Failsafe;
 import net.jodah.failsafe.FailsafeException;
 import org.apache.commons.io.IOUtils;
+import org.apache.http.Header;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.config.RequestConfig;
+import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpEntityEnclosingRequestBase;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpRequestBase;
@@ -59,8 +70,13 @@ public class CircuitBreakerUrl {
     private final boolean verbose;
     private final String rawData;
     private int response=-1;
-
+    private Header[] responseHeaders;
     private final boolean allowRedirects;
+
+    private static final Lazy<Integer> circuitBreakerMaxConnTotal = Lazy.of(()->Config.getIntProperty("CIRCUIT_BREAKER_MAX_CONN_TOTAL",100));
+    private static final Lazy<Boolean> allowAccessToPrivateSubnets = Lazy.of(()->Config.getBooleanProperty("ALLOW_ACCESS_TO_PRIVATE_SUBNETS", false));
+    private static final CircuitBreakerConnectionControl circuitBreakerConnectionControl = new CircuitBreakerConnectionControl(circuitBreakerMaxConnTotal.get());
+
     /**
      * 
      * @param proxyUrl
@@ -102,7 +118,7 @@ public class CircuitBreakerUrl {
     }
     /**
      * Full featured constructor
-     * 
+     *
      * @param proxyUrl
      * @param timeoutMs
      * @param circuitBreaker
@@ -128,7 +144,7 @@ public class CircuitBreakerUrl {
             if(this.rawData!=null) {
               try {
                 final String contentType = this.rawData.trim().charAt(0)=='{' ? "application/json" : this.rawData.trim().startsWith("<") ? "application/xml" : "application/x-www-form-urlencoded";
-                
+
                 final StringEntity postingString = new StringEntity(rawData, ContentType.create(contentType, "UTF-8"));
                 if(request instanceof HttpEntityEnclosingRequestBase) {
                   ((HttpEntityEnclosingRequestBase)request).setEntity(postingString);
@@ -149,12 +165,6 @@ public class CircuitBreakerUrl {
 
     }
 
-    public void doOut(HttpServletResponse response) throws IOException {
-        try (OutputStream out = response.getOutputStream()) {
-            doOut(out);
-        }
-    }
-
     public String doString() throws IOException {
         try (ByteArrayOutputStream out = new ByteArrayOutputStream()) {
             doOut(out);
@@ -162,13 +172,40 @@ public class CircuitBreakerUrl {
         }
     }
 
-    public void doOut(OutputStream outer) throws IOException {
-        try (OutputStream out = outer) {
+    public void doOut(final OutputStream out ) throws IOException {
+        doOut(new EmptyHttpResponse() {
+            @Override
+            public ServletOutputStream getOutputStream() throws IOException {
+                return new ServletOutputStream(){
+
+                    @Override
+                    public void write(int b) throws IOException {
+                        out.write(b);
+                    }
+
+                    @Override
+                    public boolean isReady() {
+                        return false;
+                    }
+
+                    @Override
+                    public void setWriteListener(WriteListener writeListener) {
+
+                    }
+                };
+            }
+        });
+    }
+
+    public void doOut(final HttpServletResponse response) throws IOException {
+        circuitBreakerConnectionControl.check(this.proxyUrl);
+        try (final OutputStream out = response.getOutputStream()) {
+            circuitBreakerConnectionControl.start(Thread.currentThread().getId());
             if(verbose) {
                 Logger.info(this.getClass(), "Circuitbreaker to " + request + " is " + circuitBreaker.getState());
             }
             Failsafe.with(circuitBreaker)
-                    .onSuccess(connection -> { 
+                    .onSuccess(connection -> {
                         if(verbose) Logger.info(this, "success to " + this.proxyUrl);
                     })
                     .onFailure(failure -> Logger.warn(this, "Connection attempts failed " + failure.getMessage()))
@@ -178,12 +215,24 @@ public class CircuitBreakerUrl {
                                 .setRedirectsEnabled(allowRedirects)
                                 .setConnectionRequestTimeout(Math.toIntExact(this.timeoutMs))
                                 .setSocketTimeout(Math.toIntExact(this.timeoutMs)).build();
-                        try (CloseableHttpClient httpclient = HttpClientBuilder.create().setDefaultRequestConfig(config).build()) {
-                            HttpResponse response = httpclient.execute(this.request);
-                            this.response = response.getStatusLine().getStatusCode();
-                            
-                            IOUtils.copy(response.getEntity().getContent(), out);
-                            
+                        try (CloseableHttpClient httpclient = HttpClientBuilder.create()
+                                .setMaxConnTotal(circuitBreakerMaxConnTotal.get())
+                                .setDefaultRequestConfig(config).build()) {
+                            if(IPUtils.isIpPrivateSubnet(this.request.getURI().getHost()) && !allowAccessToPrivateSubnets.get()){
+                                throw new DotRuntimeException("Remote HttpRequests cannot access private subnets.  Set ALLOW_ACCESS_TO_PRIVATE_SUBNETS=true to allow");
+                            }
+
+                            try (CloseableHttpResponse innerResponse = httpclient.execute(this.request)) {
+
+                                this.responseHeaders = innerResponse.getAllHeaders();
+
+                                copyHeaders(innerResponse, response);
+
+                                this.response = innerResponse.getStatusLine().getStatusCode();
+
+                                IOUtils.copy(innerResponse.getEntity().getContent(), out);
+                            }
+
                             // throw an error if the request is bad
                             if(this.response<200 || this.response>299){
                                 throw new BadRequestException("got invalid response for url: " + this.proxyUrl + " response: " + this.response);
@@ -192,6 +241,22 @@ public class CircuitBreakerUrl {
                     });
         } catch (FailsafeException ee) {
             Logger.debug(this.getClass(), ee.getMessage() + " " + toString());
+        } finally {
+            circuitBreakerConnectionControl.end(Thread.currentThread().getId());
+        }
+    }
+
+    private void copyHeaders(final HttpResponse innerResponse, final HttpServletResponse response) {
+        final Header contentTypeHeader = innerResponse.getFirstHeader("Content-Type");
+
+        if (UtilMethods.isSet(contentTypeHeader)) {
+            response.setHeader(contentTypeHeader.getName(), contentTypeHeader.getValue());
+        }
+
+        final Header contentLengthHeader = innerResponse.getFirstHeader("Content-Length");
+
+        if (UtilMethods.isSet(contentLengthHeader)) {
+            response.setHeader(contentLengthHeader.getName(), contentLengthHeader.getValue());
         }
     }
 
@@ -215,10 +280,43 @@ public class CircuitBreakerUrl {
     public Map<String,Object> doMap() {
         return (Map<String,Object>) Try.of(()-> DotObjectMapperProvider.getInstance().getDefaultObjectMapper().readValue(doString(), typeRef)).onFailure(e->Logger.warnAndDebug(CircuitBreakerUrl.class,  e)).getOrElse(HashMap::new);
     }
-    
+    public Header[] getResponseHeaders() {
+        return responseHeaders;
+    }
+
     public enum Method {
         GET, POST, PUT, DELETE, PATCH;
 
+    }
+
+    public static class CircuitBreakerConnectionControl {
+
+        private final int maxConnTotal;
+        private final Set<Long> threadIdConnectionCountSet = ConcurrentHashMap.newKeySet();
+
+        public CircuitBreakerConnectionControl(final int maxConnTotal) {
+            this.maxConnTotal = maxConnTotal;
+        }
+
+        public void check(final String proxyUrl) {
+
+            if (threadIdConnectionCountSet.size() >= maxConnTotal) {
+
+                Logger.info(this, "The maximum number of connections has been reached, size: " +
+                        threadIdConnectionCountSet.size() + ", url: " + proxyUrl);
+                throw new RejectedExecutionException("The maximum number of connections has been reached.");
+            }
+        }
+
+        public void start(final long id) {
+
+            threadIdConnectionCountSet.add(id);
+        }
+
+        public void end(final long id) {
+
+            threadIdConnectionCountSet.remove(id);
+        }
     }
 
 
