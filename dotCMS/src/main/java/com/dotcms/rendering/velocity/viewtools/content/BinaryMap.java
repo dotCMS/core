@@ -95,10 +95,9 @@ public class BinaryMap {
      * @return the name
      */
     public Object get(String key) {
-        if(meta.get() != null) {
-            return meta.get().getMap().get(key);
-        }
-        return null;
+
+        return getMeta().get(key);
+
     }
     
     /**
@@ -116,15 +115,16 @@ public class BinaryMap {
 	 * The rawURI is link to the actual full image
 	 * @return the rawUri
 	 */
-	public String getRawUri() {
-		return getName().length()>0? UtilMethods.espaceForVelocity("/contentAsset/raw-data/"+content.getIdentifier()+"/"+ field.variable()):"";
-	}
+    public String getRawUri() {
+        return getName().length() > 0
+            ? UtilMethods.espaceForVelocity("/dA/" + content.getIdentifier() + "/" + field.variable() + "/" + getName()+ "?language_id=" + content.getLanguageId())
+            : null;
+    }
 
     public String getShortyUrl() {
 
         if(meta.get() != null) {
-            String shorty = APILocator.getShortyAPI().shortify(content.getIdentifier());
-            return "/dA/"+shorty+"/"+field.variable()+"/" + getName();
+            return "/dA/"+getShorty()+"/"+field.variable()+"/" + getName()+ "?language_id=" + content.getLanguageId();
         } else {
 	        return null;
         }
@@ -154,7 +154,7 @@ public class BinaryMap {
 	 * @return the resizeUri
 	 */
 	public String getResizeUri() {
-	    if(getName().length()==0) return "";
+	    if(getName().length()==0) return null;
 	    final String imageId =  UtilMethods.isSet(content.getIdentifier()) ? content.getIdentifier() : content.getInode();
 		return "/dA/"+imageId+"/"+field.variable()+"/"; 
 
@@ -207,7 +207,9 @@ public class BinaryMap {
 	 * @return
 	 */
 	public String getThumbnailUri(Integer width, Integer height, String background){
-	    if(getName().length()==0) return "";
+	    if(getName().length()==0) {
+	        return "";
+	    }
         StringBuilder uri=new StringBuilder();
         uri.append(getThumbnailUri());
         if(width!=null && width>0)
@@ -265,6 +267,8 @@ public class BinaryMap {
     public String getFocalPoint() {
         return getFpx() + "," + getFpy();
     }
+    
+    @SuppressWarnings("java:S1845")
     public String getFocalpoint() {
         return getFocalPoint();
     }

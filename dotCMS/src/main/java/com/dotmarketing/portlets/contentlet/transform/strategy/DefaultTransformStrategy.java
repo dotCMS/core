@@ -199,9 +199,9 @@ public class DefaultTransformStrategy extends AbstractTransformStrategy<Contentl
 
         //If we dont want any binaries making it into the final map
         if (options.contains(FILTER_BINARIES)) {
-            binaries.forEach(field -> {
-                map.remove(field.variable());
-            });
+            binaries.forEach(field -> 
+                map.remove(field.variable())
+            );
             Logger.info(DefaultTransformStrategy.class,
                     () -> "Transformer was instructed to exclude binaries.");
             return;
@@ -211,6 +211,7 @@ public class DefaultTransformStrategy extends AbstractTransformStrategy<Contentl
         if (!options.contains(BINARIES)) {
             return;
         }
+        
         // if we want to include binaries as they are (java.io.File) this is the flag you should turn on.
         for (final Field field : binaries) {
 
@@ -219,12 +220,11 @@ public class DefaultTransformStrategy extends AbstractTransformStrategy<Contentl
                 if (contentlet.isFileAsset() && FILE_ASSET.equals(velocityVarName)) {
                     final Optional<Identifier> identifier =
                                     Optional.of(Try.of(() -> toolBox.identifierAPI.find(contentlet.getIdentifier())).getOrNull());
-                    if (identifier.isPresent()) {
-                        putBinaryLinks(FILE_ASSET, identifier.get().getAssetName(), contentlet, map);
-                    } else {
-                        final Metadata metadata = contentlet.getBinaryMetadata(FILE_ASSET);
-                        putBinaryLinks(FILE_ASSET, metadata.getName(), contentlet, map);
-                    }
+                    String name = identifier.isPresent()
+                        ? identifier.get().getAssetName()
+                        : contentlet.getBinaryMetadata(FILE_ASSET).getName();
+
+                    putBinaryLinks(FILE_ASSET, name, contentlet, map);
                     continue;
                 }
 
@@ -239,12 +239,7 @@ public class DefaultTransformStrategy extends AbstractTransformStrategy<Contentl
                     metaMap.remove("path");
                     map.put(velocityVarName + "MetaData", metaMap);
                     putBinaryLinks(velocityVarName, metadata.getName(), contentlet, map);
-                } else {
-                    Logger.debug(FileAssetViewStrategy.class,
-                                    String.format("Binary file from field '%s' " + "in Contentlet with ID '%s' is not present",
-                                                    velocityVarName, contentlet.getIdentifier()));
-
-                }
+                } 
             } catch (final Exception e) {
                 Logger.warn(this,
                                 String.format("An error occurred when retrieving the Binary file from field"
