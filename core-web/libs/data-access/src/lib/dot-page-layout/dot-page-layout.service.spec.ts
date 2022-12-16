@@ -7,7 +7,7 @@ import { CoreWebService } from '@dotcms/dotcms-js';
 import { CoreWebServiceMock, mockDotLayout } from '@dotcms/utils-testing';
 import { DotSessionStorageService } from '@dotcms/data-access';
 
-fdescribe('DotPageLayoutService', () => {
+describe('DotPageLayoutService', () => {
     let injector: TestBed;
     let dotPageLayoutService: DotPageLayoutService;
     let httpMock: HttpTestingController;

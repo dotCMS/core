@@ -1873,7 +1873,20 @@ public class ESContentletAPIImplTest extends IntegrationTestBase {
         final ContentletVersionInfo contentletVersionInfo = ((VersionableFactoryImpl) FactoryLocator.getVersionableFactory())
                 .findContentletVersionInfoInDB(htmlPageAsset_1.getIdentifier(),
                         htmlPageAsset_1.getLanguageId(),
-                        variant_A.name()).orElseThrow(() -> new AssertionError());
+                        variant_A.name()).orElseThrow(() -> {
+                    try {
+                        return new AssertionError(
+                                APILocator.getVersionableAPI().findContentletVersionInfos(htmlPageAsset_1.getIdentifier())
+                                        .stream()
+                                        .map(contentletVersionInfo1 -> contentletVersionInfo1.toString())
+                                        .collect(Collectors.joining("|"))
+                        );
+                    } catch (DotDataException e) {
+                        e.printStackTrace();
+                    } catch (DotSecurityException e) {
+                        e.printStackTrace();
+                    }
+                });
 
         assertEquals(htmlPageAsset_1.getInode(), contentletVersionInfo.getWorkingInode());
         assertEquals(template_A.getIdentifier(), getFromDataBase(contentletVersionInfo.getWorkingInode()).getTemplateId());
