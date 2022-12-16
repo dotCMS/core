@@ -173,3 +173,4 @@ This maintenance release includes the following code fixes:
 98. https://github.com/dotCMS/core/issues/22582 : Import/Export Content Tool generating diff key/value field #22582
 99. https://github.com/dotCMS/core/issues/23474 : Switch Site endpoint is nor working if user doesn't have access to Sites Portlet #23474
 100. https://github.com/dotCMS/core/issues/21400 : TempFileApi should only import by URL if user is admin #21400
+101. https://github.com/dotCMS/core/issues/22512 : Allow follow redirects to be configured #22512
