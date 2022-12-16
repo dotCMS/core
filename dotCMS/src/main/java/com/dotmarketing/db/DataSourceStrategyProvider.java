@@ -7,6 +7,7 @@ import com.google.common.annotations.VisibleForTesting;
 import com.liferay.util.SystemEnvironmentProperties;
 
 import javax.sql.DataSource;
+import java.lang.reflect.InvocationTargetException;
 import java.util.TimeZone;
 
 /**
@@ -25,7 +26,7 @@ public class DataSourceStrategyProvider {
     static final String CONNECTION_DB_VALIDATION_QUERY = "DB_VALIDATION_QUERY";
     static final String CONNECTION_DB_LEAK_DETECTION_THRESHOLD = "DB_LEAK_DETECTION_THRESHOLD";
     static final String CONNECTION_DB_DEFAULT_TRANSACTION_ISOLATION = "DB_DEFAULT_TRANSACTION_ISOLATION";
-    private static SystemEnvironmentProperties systemEnvironmentProperties;
+    private SystemEnvironmentProperties systemEnvironmentProperties;
 
     @VisibleForTesting
     DataSourceStrategyProvider(){
@@ -62,53 +63,44 @@ public class DataSourceStrategyProvider {
      * @throws InstantiationException
      */
     public DataSource get()
-            throws ClassNotFoundException, IllegalAccessException, InstantiationException {
+            throws ClassNotFoundException, NoSuchMethodException, InvocationTargetException, InstantiationException, IllegalAccessException {
 
         DataSource defaultDataSource = null;
 
-        final SystemEnvironmentProperties systemEnvironmentProperties = getSystemEnvironmentProperties();
-
         final String providerClassName = getCustomDataSourceProvider();
-        try {
-            if (!UtilMethods.isSet(providerClassName)) {
-                if (getDBPropertiesInstance()
-                        .existsDBPropertiesFile()) {
-                    defaultDataSource = getDBPropertiesInstance()
-                            .apply();
-                    Logger.info(DataSourceStrategyProvider.class,
-                            "Datasource loaded from db.properties file");
-                } else if (systemEnvironmentProperties.getVariable(CONNECTION_DB_BASE_URL)
-                        != null) {
-                    defaultDataSource = getSystemEnvDataSourceInstance()
-                            .apply();
-                    Logger.info(DataSourceStrategyProvider.class,
-                            "Datasource loaded from system environment");
-                } else if (getDockerSecretDataSourceInstance().dockerSecretPathExists()) {
-                    defaultDataSource = getDockerSecretDataSourceInstance()
-                            .apply();
-                    Logger.info(DataSourceStrategyProvider.class,
-                            "Datasource loaded from Docker Secret");
-                }
-            } else {
-                DotDataSourceStrategy customStrategy = ((Class<DotDataSourceStrategy>) Class
-                        .forName(providerClassName)).newInstance();
-                defaultDataSource = customStrategy.apply();
 
+        if (!UtilMethods.isSet(providerClassName)) {
+            if (getDBPropertiesInstance()
+                    .existsDBPropertiesFile()) {
+                defaultDataSource = getDBPropertiesInstance()
+                        .apply();
                 Logger.info(DataSourceStrategyProvider.class,
-                        "Datasource loaded using custom class " + providerClassName);
-            }
-
-        } catch(Exception e) {
-            Logger.warnAndDebug(DataSourceStrategyProvider.class,
-                    "Error initializing datasource. Reason: " + e.getMessage()
-                            + "Trying to load datasource from context.xml ...", e);
-        } finally {
-            if (null == defaultDataSource) {
+                        "Datasource loaded from db.properties file");
+            } else if (systemEnvironmentProperties.getVariable(CONNECTION_DB_BASE_URL)
+                    != null) {
+                defaultDataSource = getSystemEnvDataSourceInstance()
+                        .apply();
+                Logger.info(DataSourceStrategyProvider.class,
+                        "Datasource loaded from system environment");
+            } else if (getDockerSecretDataSourceInstance().dockerSecretPathExists()) {
+                defaultDataSource = getDockerSecretDataSourceInstance()
+                        .apply();
+                Logger.info(DataSourceStrategyProvider.class,
+                        "Datasource loaded from Docker Secret");
+            } else {
                 defaultDataSource = getTomcatDataSourceInstance()
                         .apply();
                 Logger.info(DataSourceStrategyProvider.class,
                         "Datasource loaded from context.xml");
             }
+        } else {
+            DotDataSourceStrategy customStrategy = (DotDataSourceStrategy) Class
+                    .forName(providerClassName).getDeclaredConstructor().newInstance();
+
+            defaultDataSource = customStrategy.apply();
+
+            Logger.info(DataSourceStrategyProvider.class,
+                    "Datasource loaded using custom class " + providerClassName);
         }
 
         return defaultDataSource;

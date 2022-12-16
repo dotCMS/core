@@ -10,6 +10,8 @@ import com.dotmarketing.util.Constants;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.StringUtils;
 import com.dotmarketing.util.UtilMethods;
+
+import com.google.common.base.Suppliers;
 import com.liferay.util.JNDIUtil;
 import com.microsoft.sqlserver.jdbc.ISQLServerConnection;
 import io.vavr.control.Try;
@@ -19,27 +21,29 @@ import java.sql.SQLException;
 import java.sql.SQLIntegrityConstraintViolationException;
 import java.sql.Timestamp;
 import java.sql.Types;
-import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
-import javax.naming.Binding;
+import java.util.function.Supplier;
 import javax.naming.Context;
 import javax.naming.InitialContext;
-import javax.naming.NamingEnumeration;
 import javax.naming.NamingException;
 import javax.sql.DataSource;
 
 public class DbConnectionFactory {
 
 
+
     public static final String MYSQL = "MySQL";
     public static final String POSTGRESQL = "PostgreSQL";
     public static final String ORACLE = "Oracle";
     public static final String MSSQL = "Microsoft SQL Server";
+    private static final Supplier<DataSource> defaultDataSourceSupplier= Suppliers.memoize(DbConnectionFactory::initializeDataSource)::get;
 
-    private static DataSource defaultDataSource = null;
+    private DbConnectionFactory() {
+
+    }
 
     /**
      * Gets the autoCommit for the current connection
@@ -94,55 +98,40 @@ public class DbConnectionFactory {
         return Types.VARCHAR;
     }
 
-    
-    public enum DataBaseType {
-        POSTGRES, MySQL, MSSQL, ORACLE;
-    }
-
-    private static String _dbType = null;
+    private static String dbType = null;
 
     private static final ThreadLocal<HashMap<String, Connection>>
         connectionsHolder =
-        new ThreadLocal<HashMap<String, Connection>>();
+        new ThreadLocal<>();
 
     public static DataSource getDataSource() {
+        return defaultDataSourceSupplier.get();
+    }
 
-        if (null == defaultDataSource) {
-
-            synchronized (DbConnectionFactory.class) {
-
-                if (null == defaultDataSource) {
-                    try {
-                        defaultDataSource = DataSourceStrategyProvider.getInstance().get();
-                        addDatasourceToJNDIIfNeeded();
-                    } catch (Throwable e) {
-                        Logger.error(DbConnectionFactory.class,
-                                "---------- DBConnectionFactory: error getting dbconnection " + Constants.DATABASE_DEFAULT_DATASOURCE,
-                                e);
-                        if(Config.getBooleanProperty("SYSTEM_EXIT_ON_STARTUP_FAILURE", true)){
-                            e.printStackTrace();
-                            System.exit(1);
-                        }
-
-                        throw new DotRuntimeException(e.toString());
-                    }
-                }
-            }
+    private static DataSource initializeDataSource() {
+        DataSource ds;
+        try {
+            ds = DataSourceStrategyProvider.getInstance().get();
+            addDatasourceToJNDIIfNeeded(ds);
+            return ds;
+        } catch (Throwable e) {
+            Logger.error(DbConnectionFactory.class,
+                    "---------- DBConnectionFactory: error getting dbconnection " + Constants.DATABASE_DEFAULT_DATASOURCE,
+                    e);
+            throw new DotRuntimeException(e.toString(),e);
         }
-
-        return defaultDataSource;
     }
 
     /**
      * Saves a datasource in JNDI in case <b>ADD_DATASOURCE_TO_JNDI</b> is set to true.
      * By default, <b>ADD_DATASOURCE_TO_JNDI</b> is set to false
      */
-    private static void addDatasourceToJNDIIfNeeded() {
+    private static void addDatasourceToJNDIIfNeeded(DataSource ds) {
         try {
             if (Config.getBooleanProperty("ADD_DATASOURCE_TO_JNDI", false)) {
                 final Context context = new InitialContext();
                 context.createSubcontext("jdbc");
-                context.bind(DATABASE_DEFAULT_DATASOURCE, defaultDataSource);
+                context.bind(DATABASE_DEFAULT_DATASOURCE, ds);
                 Logger.info(DbConnectionFactory.class,
                         "---------- DBConnectionFactory:Datasource added to JNDI context ---------------");
             }
@@ -160,8 +149,7 @@ public class DbConnectionFactory {
     public static DataSource getDataSource(String dataSource) {
         try {
             InitialContext ctx = new InitialContext();
-            DataSource ds = (DataSource) JNDIUtil.lookup(ctx, dataSource);
-            return ds;
+            return (DataSource) JNDIUtil.lookup(ctx, dataSource);
 
         } catch (Exception e) {
             Logger.error(DbConnectionFactory.class,
@@ -201,7 +189,6 @@ public class DbConnectionFactory {
                 connectionsList.put(DATABASE_DEFAULT_DATASOURCE, connection);
             }
         } catch (Exception e) {
-            Logger.error(DbConnectionFactory.class, "---------- DBConnectionFactory: error : " + e);
             Logger.debug(DbConnectionFactory.class, "---------- DBConnectionFactory: error ", e);
             throw new DotRuntimeException(e.getMessage(), e);
         }
@@ -213,11 +200,11 @@ public class DbConnectionFactory {
     public static Connection getConnection() {
 
         try {
-            HashMap<String, Connection> connectionsList = (HashMap<String, Connection>) connectionsHolder.get();
+            HashMap<String, Connection> connectionsList = connectionsHolder.get();
             Connection connection = null;
             connectionsCalledFor++;
             if (connectionsList == null) {
-                connectionsList = new HashMap<String, Connection>();
+                connectionsList = new HashMap<>();
                 connectionsHolder.set(connectionsList);
             }
 
@@ -233,13 +220,12 @@ public class DbConnectionFactory {
             }
 
             // _dbType would only be null until the getDbType was called, then it is static
-            if (_dbType != null && MSSQL.equals(getDBType())) {
+            if (dbType != null && MSSQL.equals(getDBType())) {
                 connection.setTransactionIsolation(ISQLServerConnection.TRANSACTION_SNAPSHOT);
             }
 
             return connection;
         } catch (Exception e) {
-            Logger.error(DbConnectionFactory.class, "---------- DBConnectionFactory: error : " + e);
             Logger.debug(DbConnectionFactory.class, "---------- DBConnectionFactory: error ", e);
             throw new DotRuntimeException(e.getMessage(), e);
         }
@@ -254,7 +240,7 @@ public class DbConnectionFactory {
 
         boolean isCreated = false;
         final Map<String, Connection> connectionsMap =
-                (HashMap<String, Connection>) connectionsHolder.get();
+                connectionsHolder.get();
 
         if (connectionsMap != null && connectionsMap.size() > 0) {
             final Connection connection =
@@ -275,7 +261,7 @@ public class DbConnectionFactory {
      */
     public static boolean inTransaction() {
 
-        HashMap<String, Connection> connectionsList = (HashMap<String, Connection>) connectionsHolder.get();
+        HashMap<String, Connection> connectionsList = connectionsHolder.get();
         if (connectionsList == null || connectionsList.size() == 0) {
             return false;
         }
@@ -292,45 +278,6 @@ public class DbConnectionFactory {
 
         }
 
-    }
-
-
-    /**
-     * Retrieves the list of all valid dataSources setup in the dotCMS
-     */
-    @SuppressWarnings("unchecked")
-    public static ArrayList<String> getAllDataSources() throws NamingException {
-        ArrayList<String> results = new ArrayList<String>();
-        Context ctx;
-
-        ctx = (Context) new InitialContext().lookup("java:comp/env");
-        NamingEnumeration ne = null;
-        try {
-            ne = ctx.listBindings("jdbc");
-        } catch (NamingException e) {
-            ctx = new InitialContext();
-            ne = ctx.listBindings("jdbc");
-        }
-        while (ne.hasMore()) {
-            Binding binding = (Binding) ne.next();
-            Connection cn = null;
-            try {
-                DataSource db = (DataSource) ctx.lookup("jdbc/" + binding.getName());
-                cn = db.getConnection();
-                results.add("jdbc/" + binding.getName());
-            } catch (Exception e) {
-                Logger.info(DbConnectionFactory.class,
-                    "Unable to add " + binding.getName() + " to list of datasources: " + e.getMessage());
-            } finally {
-                if (cn != null) {
-                    try {
-                        cn.close();
-                    } catch (SQLException e) {
-                    }
-                }
-            }
-        }
-        return results;
     }
     
     /**
@@ -350,11 +297,11 @@ public class DbConnectionFactory {
     public static Connection getConnection(String dataSource) {
 
         try {
-            HashMap<String, Connection> connectionsList = (HashMap<String, Connection>) connectionsHolder.get();
+            HashMap<String, Connection> connectionsList = connectionsHolder.get();
             Connection connection = null;
 
             if (connectionsList == null) {
-                connectionsList = new HashMap<String, Connection>();
+                connectionsList = new HashMap<>();
                 connectionsHolder.set(connectionsList);
             }
 
@@ -388,10 +335,10 @@ public class DbConnectionFactory {
     @Deprecated
     public static void closeConnection() {
         try {
-            HashMap<String, Connection> connectionsList = (HashMap<String, Connection>) connectionsHolder.get();
+            HashMap<String, Connection> connectionsList = connectionsHolder.get();
 
             if (connectionsList == null) {
-                connectionsList = new HashMap<String, Connection>();
+                connectionsList = new HashMap<>();
                 connectionsHolder.set(connectionsList);
             }
 
@@ -402,13 +349,7 @@ public class DbConnectionFactory {
                 String ds = entry.getKey();
                 Connection cn = entry.getValue();
                 if (cn != null) {
-                    try {
-                        cn.close();
-                    } catch (Exception e) {
-                        Logger.warn(DbConnectionFactory.class,
-                            "---------- DBConnectionFactory: error closing the db dbconnection: " + ds
-                                + " ---------------", e);
-                    }
+                    closeAndDoNotThrow(ds, cn);
                 }
             }
 
@@ -423,6 +364,16 @@ public class DbConnectionFactory {
 
     }
 
+    private static void closeAndDoNotThrow(String ds, Connection cn) {
+        try {
+            cn.close();
+        } catch (Exception e) {
+            Logger.warn(DbConnectionFactory.class,
+                "---------- DBConnectionFactory: error closing the db dbconnection: " + ds
+                    + " ---------------", e);
+        }
+    }
+
     /**
      * @deprecated in favor of {@link com.dotcms.business.CloseDBIfOpened}
      * This method closes a connection to the given datasource
@@ -430,10 +381,10 @@ public class DbConnectionFactory {
     @Deprecated
     public static void closeConnection(String ds) {
         try {
-            HashMap<String, Connection> connectionsList = (HashMap<String, Connection>) connectionsHolder.get();
+            HashMap<String, Connection> connectionsList = connectionsHolder.get();
 
             if (connectionsList == null) {
-                connectionsList = new HashMap<String, Connection>();
+                connectionsList = new HashMap<>();
                 connectionsHolder.set(connectionsList);
             }
 
@@ -464,17 +415,17 @@ public class DbConnectionFactory {
 		 * Oracle
 		 */
 
-        if (_dbType != null) {
-            return _dbType;
+        if (dbType != null) {
+            return dbType;
         }
 
         try (Connection conn = getDataSource().getConnection()){
-            _dbType = conn.getMetaData().getDatabaseProductName();
+            dbType = conn.getMetaData().getDatabaseProductName();
         } catch (Exception e) {
             Logger.warn(DbConnectionFactory.class, "unable to determine dbType:" + e.getMessage());
         } 
 
-        return _dbType;
+        return dbType;
     }
 
     public static String getDBDateTimeFunction() {
@@ -523,7 +474,7 @@ public class DbConnectionFactory {
         } else if (ORACLE.equals(x)) {
             return "0";
         }
-        return "false";
+        return Boolean.FALSE.toString();
 
     }
 
@@ -661,13 +612,12 @@ public class DbConnectionFactory {
         try {
             HibernateUtil.closeSession();
         } catch (Exception e) {
-
+            // silent
         } finally {
             try {
-
                 DbConnectionFactory.closeConnection();
             } catch (Exception e) {
-
+                // silent
             }
         }
     }
@@ -751,7 +701,7 @@ public class DbConnectionFactory {
 
         boolean isConstraintViolationException = false;
 
-        if (null != throwable && throwable instanceof SQLException) {
+        if (throwable instanceof SQLException) {
 
             isConstraintViolationException =
                     (throwable instanceof SQLIntegrityConstraintViolationException ||
