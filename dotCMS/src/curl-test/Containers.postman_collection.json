@@ -5757,7 +5757,7 @@
 							"",
 							"    for (let i = 0; i < jsonData.entity.length; i++)",
 							"    { ",
-							"        data.push(jsonData.entity[i]['modDate']);       ",
+							"        data.push(parseInt(jsonData.entity[i]['modDate']));       ",
 							"    }",
 							"",
 							"    for (let i = 0; i < data.length; i++)",
@@ -5782,7 +5782,7 @@
 					"basic": [
 						{
 							"key": "password",
-							"value": "admin",
+							"value": "admin123",
 							"type": "string"
 						},
 						{
@@ -5866,7 +5866,7 @@
 							"",
 							"    for (let i = 0; i < jsonData.entity.length; i++)",
 							"    { ",
-							"        data.push(jsonData.entity[i]['modDate']);       ",
+							"        data.push(parseInt(jsonData.entity[i]['modDate']));       ",
 							"    }",
 							"",
 							"    for (let i = 0; i < data.length; i++)",
