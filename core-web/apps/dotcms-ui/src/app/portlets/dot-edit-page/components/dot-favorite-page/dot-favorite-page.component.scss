@@ -12,4 +12,35 @@
         left: 0;
         position: absolute;
     }
+
+    .dot-favorite-dialog__thumbnailField {
+        position: relative;
+    }
+
+    .dot-favorite-dialog__image-reload {
+        background-color: $white;
+        position: absolute;
+        bottom: $spacing-3;
+        right: $spacing-3;
+    }
+
+    .dot-favorite-dialog__image-container {
+        background-position: center;
+        background-repeat: no-repeat;
+        background-size: contain;
+        padding-bottom: 75.25%;
+        display: block;
+
+        img {
+            height: 0;
+            position: absolute;
+            width: 0;
+        }
+    }
+
+    ::ng-deep dot-html-to-image img {
+        width: 100%;
+        object-fit: contain;
+        height: 384px;
+    }
 }

@@ -1,16 +1,25 @@
-import { Injectable } from '@angular/core';
-import { DotRolesService } from '@dotcms/data-access';
-import { ComponentStore, tapResponse } from '@ngrx/component-store';
-import { forkJoin, Observable, of, throwError } from 'rxjs';
-import { switchMap, take } from 'rxjs/operators';
-import { DotFavoritePageFormData } from '../dot-favorite-page.component';
-import { DotMessageService } from '@dotcms/data-access';
 import { HttpErrorResponse } from '@angular/common/http';
+import { Injectable } from '@angular/core';
 import { DotHttpErrorManagerService } from '@dotcms/app/api/services/dot-http-error-manager/dot-http-error-manager.service';
 import { DotTempFileUploadService } from '@dotcms/app/api/services/dot-temp-file-upload/dot-temp-file-upload.service';
-import { DotWorkflowActionsFireService } from '@dotcms/data-access';
-import { DotCMSContentlet, DotCMSTempFile, DotCurrentUser, DotRole } from '@dotcms/dotcms-models';
-import { DotCurrentUserService } from '@dotcms/data-access';
+import {
+    DotCurrentUserService,
+    DotPageRenderService,
+    DotRolesService,
+    DotMessageService,
+    DotWorkflowActionsFireService
+} from '@dotcms/data-access';
+import {
+    DotRole,
+    DotCMSContentlet,
+    DotCMSTempFile,
+    DotCurrentUser,
+    DotPageRenderParameters
+} from '@dotcms/dotcms-models';
+import { ComponentStore, tapResponse } from '@ngrx/component-store';
+import { Observable, throwError, of, forkJoin } from 'rxjs';
+import { switchMap, take } from 'rxjs/operators';
+import { DotFavoritePageFormData } from '../dot-favorite-page.component';
 
 export const enum DotFavoritePageActionState {
     SAVED = 'SAVED',
@@ -19,21 +28,24 @@ export const enum DotFavoritePageActionState {
 
 export interface DotFavoritePageState {
     roleOptions: DotRole[];
-    currentUserRoleId: string;
     pageRenderedHtml?: string;
+    formState: DotFavoritePageFormData;
     isAdmin: boolean;
     imgWidth: number;
     imgHeight: number;
-    inodeStored?: string;
+    renderThumbnail: boolean;
     loading: boolean;
     closeDialog: boolean;
     actionState: DotFavoritePageActionState;
 }
 
 interface DotFavoritePageInitialProps {
+    favoritePageUrl: string;
     isAdmin: boolean;
-    imgWidth: string;
-    imgHeight: string;
+    favoritePage?: DotCMSContentlet;
+
+    imgWidth?: string;
+    imgHeight?: string;
     pageRenderedHtml?: string;
 }
 
@@ -48,11 +60,16 @@ export class DotFavoritePageStore extends ComponentStore<DotFavoritePageState> {
     // SELECTORS
     public readonly actionState$ = this.select(({ actionState }) => actionState);
     public readonly closeDialog$ = this.select(({ closeDialog }) => closeDialog);
-    public readonly currentUserRoleId$ = this.select(({ currentUserRoleId }) => currentUserRoleId);
+    public readonly renderThumbnail$ = this.select(({ renderThumbnail }) => renderThumbnail);
+    public readonly formState$ = this.select(({ formState }) => formState);
 
     // UPDATERS
     readonly setInodeStored = this.updater((state: DotFavoritePageState, data: string) => {
         return { ...state, inodeStored: data };
+    });
+
+    readonly setRenderThumbnail = this.updater((state: DotFavoritePageState, data: boolean) => {
+        return { ...state, renderThumbnail: data };
     });
 
     // EFFECTS
@@ -61,36 +78,14 @@ export class DotFavoritePageStore extends ComponentStore<DotFavoritePageState> {
             switchMap((formData: DotFavoritePageFormData) => {
                 this.patchState({ loading: true });
 
-                const file = new File([formData.thumbnail], 'image.png');
-                const individualPermissions = {
-                    READ: []
-                };
-                individualPermissions.READ = formData.permissions
-                    ? formData.permissions.map((role: DotRole) => role.id)
-                    : [];
-                individualPermissions.READ.push(formData.currentUserRoleId, CMS_OWNER_ROLE_ID);
+                let observableResponse: Observable<DotCMSContentlet>;
+                if (formData.inode && !((formData.thumbnail as unknown) instanceof File)) {
+                    observableResponse = this.publishContentletAndWaitForIndex(formData);
+                } else {
+                    observableResponse = this.createAndPublishFavoritePage(formData);
+                }
 
-                return this.dotTempFileUploadService.upload(file).pipe(
-                    switchMap(([{ id, image }]: DotCMSTempFile[]) => {
-                        if (!image) {
-                            return throwError(
-                                this.dotMessageService.get(
-                                    'favoritePage.dialog.error.tmpFile.upload'
-                                )
-                            );
-                        }
-
-                        return this.dotWorkflowActionsFireService.publishContentletAndWaitForIndex<DotCMSContentlet>(
-                            'dotFavoritePage',
-                            {
-                                screenshot: id,
-                                title: formData.title,
-                                url: formData.url,
-                                order: formData.order
-                            },
-                            individualPermissions
-                        );
-                    }),
+                return observableResponse.pipe(
                     take(1),
                     tapResponse(
                         () => {
@@ -146,8 +141,52 @@ export class DotFavoritePageStore extends ComponentStore<DotFavoritePageState> {
         );
     });
 
+    private createAndPublishFavoritePage = (formData: DotFavoritePageFormData) => {
+        const file = new File([formData.thumbnail], 'image.png');
+
+        return this.dotTempFileUploadService.upload(file).pipe(
+            switchMap(([{ id, image }]: DotCMSTempFile[]) => {
+                if (!image) {
+                    return throwError(
+                        this.dotMessageService.get('favoritePage.dialog.error.tmpFile.upload')
+                    );
+                }
+
+                formData.thumbnail = id;
+
+                return this.publishContentletAndWaitForIndex(formData);
+            })
+        );
+    };
+
+    private publishContentletAndWaitForIndex = (formData: DotFavoritePageFormData) => {
+        const individualPermissions = {
+            READ: []
+        };
+        individualPermissions.READ = formData.permissions || [];
+        individualPermissions.READ.push(formData.currentUserRoleId, CMS_OWNER_ROLE_ID);
+
+        return this.dotWorkflowActionsFireService.publishContentletAndWaitForIndex<DotCMSContentlet>(
+            'dotFavoritePage',
+            {
+                screenshot: formData.thumbnail,
+                title: formData.title,
+                url: formData.url,
+                order: formData.order,
+                inode: formData.inode || null
+            },
+            individualPermissions
+        );
+    };
+
+    private tmpPermissionsService = () => {
+        return of(null);
+        // return of(['4ddc54dc-b02e-4a35-a9b9-0ae11a073256']);
+    };
+
     constructor(
         private dotCurrentUser: DotCurrentUserService,
+        private dotPageRenderService: DotPageRenderService,
         private dotRolesService: DotRolesService,
         private dotMessageService: DotMessageService,
         private dotHttpErrorManagerService: DotHttpErrorManagerService,
@@ -163,35 +202,66 @@ export class DotFavoritePageStore extends ComponentStore<DotFavoritePageState> {
      * @param {DotFavoritePageInitialProps} props
      * @memberof DotFavoritePageStore
      */
-    setInitialStateData(props: DotFavoritePageInitialProps): void {
-        const propsData = {
-            isAdmin: props.isAdmin,
-            imgWidth: parseInt(props.imgWidth, 10) || 1024,
-            imgHeight:
-                parseInt(props.imgHeight, 10) ||
-                (parseInt(props.imgWidth, 10) || 1024) / IMG_RATIO_43
-        };
-
+    setInitialStateData({
+        favoritePageUrl,
+        favoritePage,
+        isAdmin
+    }: DotFavoritePageInitialProps): void {
         this.setState({
             roleOptions: [],
-            currentUserRoleId: '',
-            isAdmin: propsData.isAdmin,
-            imgWidth: propsData.imgWidth,
-            imgHeight: propsData.imgHeight,
+            formState: null,
+            isAdmin: isAdmin,
+            imgWidth: null,
+            imgHeight: null,
+            renderThumbnail: null,
             loading: true,
             closeDialog: false,
-            pageRenderedHtml: props.pageRenderedHtml,
+            pageRenderedHtml: '',
             actionState: null
         });
 
-        forkJoin([this.dotRolesService.search(), this.dotCurrentUser.getCurrentUser()])
+        const formInitialState: DotFavoritePageFormData = {
+            currentUserRoleId: '',
+            inode: favoritePage?.inode || '',
+            order: favoritePage ? favoritePage['order'] : 1,
+            permissions: [],
+            thumbnail: favoritePage ? favoritePage['screenshot'] : '',
+            title: favoritePage?.title || '',
+            url: favoritePageUrl
+        };
+
+        forkJoin([
+            this.dotRolesService.search(),
+            this.dotCurrentUser.getCurrentUser(),
+            this.dotPageRenderService.get({ url: favoritePageUrl }),
+            this.tmpPermissionsService() // TODO: replace with new Permissions endpoint
+        ])
             .pipe(take(1))
-            .subscribe(([roles, currentUser]: [DotRole[], DotCurrentUser]): void => {
-                this.patchState({
-                    loading: false,
-                    currentUserRoleId: currentUser.roleId,
-                    roleOptions: roles
-                });
-            });
+            .subscribe(
+                ([roles, currentUser, pageRender, permissionsStored]: [
+                    DotRole[],
+                    DotCurrentUser,
+                    DotPageRenderParameters,
+                    string[]
+                ]): void => {
+                    this.patchState({
+                        loading: false,
+                        formState: {
+                            ...formInitialState,
+                            currentUserRoleId: currentUser.roleId,
+                            permissions: permissionsStored || [],
+                            title: favoritePage?.title || pageRender.page.title
+                        },
+                        imgHeight:
+                            parseInt(pageRender.viewAs.device?.cssHeight, 10) ||
+                            (parseInt(pageRender.viewAs.device?.cssWidth, 10) || 1024) /
+                                IMG_RATIO_43,
+                        imgWidth: parseInt(pageRender.viewAs.device?.cssWidth, 10) || 1024,
+                        pageRenderedHtml: pageRender.page.rendered,
+                        renderThumbnail: !(favoritePage && !!favoritePage['screenshot']),
+                        roleOptions: roles
+                    });
+                }
+            );
     }
 }
