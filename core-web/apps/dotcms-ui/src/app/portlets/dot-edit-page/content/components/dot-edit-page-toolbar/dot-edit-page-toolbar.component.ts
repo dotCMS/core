@@ -1,18 +1,23 @@
 import {
     Component,
-    OnInit,
-    Input,
     EventEmitter,
-    Output,
+    Input,
     OnChanges,
-    OnDestroy
+    OnDestroy,
+    OnInit,
+    Output
 } from '@angular/core';
 import { Observable, Subject } from 'rxjs';
-import { DotLicenseService } from '@dotcms/data-access';
-import { DotPageMode, DotPageRenderState, FeaturedFlags } from '@dotcms/dotcms-models';
-import { DotCMSContentlet } from '@dotcms/dotcms-models';
-import { DotPropertiesService } from '@dotcms/data-access';
+import { DotLicenseService, DotPropertiesService } from '@dotcms/data-access';
+import {
+    DotCMSContentlet,
+    DotPageMode,
+    DotPageRenderState,
+    DotVariantData,
+    FeaturedFlags
+} from '@dotcms/dotcms-models';
 import { take } from 'rxjs/operators';
+
 @Component({
     selector: 'dot-edit-page-toolbar',
     templateUrl: './dot-edit-page-toolbar.component.html',
@@ -20,16 +25,16 @@ import { take } from 'rxjs/operators';
 })
 export class DotEditPageToolbarComponent implements OnInit, OnChanges, OnDestroy {
     @Input() pageState: DotPageRenderState;
+    @Input() variant: DotVariantData | null = null;
     @Output() cancel = new EventEmitter<boolean>();
     @Output() actionFired = new EventEmitter<DotCMSContentlet>();
     @Output() favoritePage = new EventEmitter<boolean>();
     @Output() whatschange = new EventEmitter<boolean>();
-
+    @Output() backToExperiment = new EventEmitter<boolean>();
     isEnterpriseLicense$: Observable<boolean>;
     showWhatsChanged: boolean;
     apiLink: string;
     pageRenderedHtml: string;
-
     // TODO: Remove next line when total functionality of Favorite page is done for release
     showFavoritePageStar = false;
 
@@ -58,7 +63,8 @@ export class DotEditPageToolbarComponent implements OnInit, OnChanges, OnDestroy
 
         this.showWhatsChanged =
             this.pageState.state.mode === DotPageMode.PREVIEW &&
-            !('persona' in this.pageState.viewAs);
+            !('persona' in this.pageState.viewAs) &&
+            !this.variant;
     }
 
     ngOnDestroy(): void {

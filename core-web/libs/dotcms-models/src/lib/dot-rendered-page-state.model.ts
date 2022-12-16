@@ -16,8 +16,6 @@ export interface DotPageState {
 }
 
 export class DotPageRenderState extends DotPageRender {
-    private _state: DotPageState;
-
     constructor(
         private _user: User,
         private dotRenderedPage: DotPageRenderParameters,
@@ -33,6 +31,12 @@ export class DotPageRenderState extends DotPageRender {
             lockedByAnotherUser: lockedByAnotherUser,
             mode: dotRenderedPage.viewAs.mode
         };
+    }
+
+    private _state: DotPageState;
+
+    get state(): DotPageState {
+        return this._state;
     }
 
     get canCreateTemplate(): boolean {
@@ -53,10 +57,6 @@ export class DotPageRenderState extends DotPageRender {
 
     get page(): DotPage {
         return this.dotRenderedPage.page;
-    }
-
-    get state(): DotPageState {
-        return this._state;
     }
 
     get template(): DotTemplate {

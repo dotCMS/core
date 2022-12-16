@@ -1,6 +1,6 @@
 import { CommonModule } from '@angular/common';
 import { NgModule } from '@angular/core';
-import { Routes, RouterModule } from '@angular/router';
+import { RouterModule, Routes } from '@angular/router';
 
 import { DotContainerContentletService } from './services/dot-container-contentlet.service';
 import { DotDOMHtmlUtilService } from './services/html/dot-dom-html-util.service';
