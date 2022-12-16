@@ -48,24 +48,26 @@ inputs:
     description: 'Run postman tests distribution to run in parallel'
     required: false
     default: |
-            [
-              {
-                "name": "graphql",
-                "collections": ['GraphQLTests']
-              },
-              {
-                "name": "workflow",
-                "collections": ['Workflow Resource Tests']
-              },
-              {
-                "name": "template",
-                "collections": ['Template Resource.postman_collection']
-              },
-              {
-                "name": "page-resources",
-                "collections": ['PagesResourceTests']
-              }
-            ]
+            {
+              dist: [
+                {
+                  "name": "graphql",
+                  "collections": ['GraphQLTests']
+                },
+                {
+                  "name": "workflow",
+                  "collections": ['Workflow Resource Tests']
+                },
+                {
+                  "name": "template",
+                  "collections": ['Template Resource.postman_collection']
+                },
+                {
+                  "name": "page-resources",
+                  "collections": ['PagesResourceTests']
+                }
+              ]
+            }
 outputs:
   tests_results_status:
     description: 'Tests results status'
