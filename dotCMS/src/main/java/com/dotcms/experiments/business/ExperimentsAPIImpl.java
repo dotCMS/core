@@ -95,7 +95,7 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
                 invalidLicenseMessageSupplier);
 
         final Contentlet pageAsContent = contentletAPI
-                .findContentletByIdentifierAnyLanguage(experiment.pageId(), false);
+                .findContentletByIdentifierAnyLanguage(experiment.pageId(), DEFAULT_VARIANT.name());
 
         DotPreconditions.isTrue(pageAsContent!=null
                 && UtilMethods.isSet(pageAsContent.getIdentifier()),
