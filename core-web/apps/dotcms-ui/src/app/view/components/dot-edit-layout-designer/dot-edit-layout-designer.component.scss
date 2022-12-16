@@ -4,19 +4,11 @@
 :host {
     min-width: 750px;
 
-    dot-icon-button {
-        margin-left: $spacing-2;
-    }
-
     ::ng-deep {
         .p-button-vertical {
             .p-button-label {
                 text-transform: capitalize !important;
             }
-        }
-
-        dot-secondary-toolbar .dot-secondary-toolbar__main {
-            padding: 0 $spacing-3;
         }
     }
 }
@@ -25,6 +17,7 @@ form {
     display: flex;
     flex-direction: column;
     height: 100%;
+    margin-right: 80px;
 }
 
 .dot-edit-layout__actions {

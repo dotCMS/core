@@ -27,6 +27,8 @@ $white_rgb: var(--color-white_rgb);
 $brand-primary: var(--color-main);
 $brand-primary_mod: var(--color-main_mod);
 $brand-primary_rgb: var(--color-main_rgb);
+$brand-primary-100: #e9ebfc;
+$brand-primary-100-hover: #d2d6f9;
 $brand-secondary: var(--color-sec);
 $brand-secondary_rgb: var(--color-sec_rgb);
 $brand-background: var(--color-background);
@@ -119,7 +121,7 @@ $content-palette-width: 16rem;
 
 //Dot Secondary Toolbar
 $dot-secondary-toolbar-height: 52px;
-$dot-secondary-toolbar-main-height: 70px;
+$dot-secondary-toolbar-main-height: 68px;
 
 // GRIDS
 $gutter-width: $spacing-9;
