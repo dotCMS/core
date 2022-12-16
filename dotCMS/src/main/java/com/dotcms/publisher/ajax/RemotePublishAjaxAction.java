@@ -889,7 +889,11 @@ public class RemotePublishAjaxAction extends AjaxAction {
             final String iWantTo = request.getParameter( "iWantTo" );
             final String whoToSendTmp = request.getParameter( "whoToSend" );
             final String filterKey = request.getParameter("filterKey");
-            final boolean forcePush = (boolean) APILocator.getPublisherAPI().getFilterDescriptorByKey(filterKey).getFilters().getOrDefault(FilterDescriptor.FORCE_PUSH_KEY,false);
+            final boolean forcePush = Optional.ofNullable(
+                APILocator.getPublisherAPI().getFilterDescriptorByKey(filterKey))
+                .map(FilterDescriptor::getFilters)
+                .map(filters -> (boolean) filters.getOrDefault(FilterDescriptor.FORCE_PUSH_KEY, false))
+                .orElse(false);
             
             List<String> whereToSend = Arrays.asList(whoToSendTmp.split(","));
             List<Environment> envsToSendTo = new ArrayList<Environment>();

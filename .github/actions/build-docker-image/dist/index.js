@@ -39,37 +39,76 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.build = void 0;
+exports.execute = void 0;
 const core = __importStar(__nccwpck_require__(186));
 const exec = __importStar(__nccwpck_require__(514));
-const pullOverBuild = core.getBooleanInput('pull_over_build');
 const buildId = core.getInput('build_id');
-const skipPull = core.getBooleanInput('skip_pull');
 const imageName = core.getInput('image_name');
 const dockerPath = core.getInput('docker_path');
+const push = core.getBooleanInput('push');
 /**
  * Based on build_id parameter, builds a DotCMS Docker image
  *
  * @returns a number representing the command exit code
  */
-const build = () => __awaiter(void 0, void 0, void 0, function* () {
-    const cmd = 'docker';
-    const args = [];
-    if (pullOverBuild) {
-        args.push('pull', imageName);
-    }
-    else {
-        args.push('build');
-        if (!skipPull) {
-            args.push('--pull');
-        }
-        args.push('--no-cache', '-t', imageName, '--build-arg', 'BUILD_FROM=COMMIT', '--build-arg', `BUILD_ID=${buildId}`, '.');
+const execute = () => __awaiter(void 0, void 0, void 0, function* () {
+    let cmd = dockerBuildCmd();
+    let rc = yield execCmd(cmd);
+    if (rc !== 0) {
+        core.error(`Error executing ${JSON.stringify(cmd, null, 2)}`);
+        return rc;
     }
     core.setOutput('built_image_name', imageName);
-    core.info(`Executing command: ${cmd} ${args.join(' ')}`);
-    return yield exec.exec(cmd, args, { cwd: dockerPath });
+    if (push) {
+        cmd = dockerPushCmd();
+        rc = yield execCmd(cmd);
+        if (rc !== 0) {
+            core.error(`Error executing ${JSON.stringify(cmd, null, 2)}`);
+        }
+    }
+    return rc;
 });
-exports.build = build;
+exports.execute = execute;
+const dockerBuildCmd = () => {
+    const args = ['build', '-t', imageName, '--build-arg', 'BUILD_FROM=COMMIT', '--build-arg', `BUILD_ID=${buildId}`, '.'];
+    return {
+        cmd: 'docker',
+        args,
+        workingDir: dockerPath
+    };
+};
+const dockerPushCmd = () => {
+    return {
+        cmd: 'docker',
+        args: ['push', imageName]
+    };
+};
+/**
+ * Prints string Command representation.
+ *
+ * @param cmd Command object
+ */
+const printCmd = (cmd) => {
+    var _a;
+    let message = `Executing cmd: ${cmd.cmd} ${((_a = cmd.args) === null || _a === void 0 ? void 0 : _a.join(' ')) || ''}`;
+    if (cmd.workingDir) {
+        message += `\ncwd: ${cmd.workingDir}`;
+    }
+    if (cmd.env) {
+        message += `\nenv: ${JSON.stringify(cmd.env, null, 2)}`;
+    }
+    core.info(message);
+};
+/**
+ * Executes command contained in Command object.
+ *
+ * @param cmd Command object
+ * @returns Promise with process number
+ */
+const execCmd = (cmd) => __awaiter(void 0, void 0, void 0, function* () {
+    printCmd(cmd);
+    return yield exec.exec(cmd.cmd, cmd.args || [], { cwd: cmd.workingDir, env: cmd.env });
+});
 
 
 /***/ }),
@@ -110,7 +149,7 @@ const builder = __importStar(__nccwpck_require__(395));
  */
 const run = () => {
     builder
-        .build()
+        .execute()
         .then(returnCode => {
         if (returnCode !== 0) {
             core.setFailed(`Process executed returned code ${returnCode}`);
