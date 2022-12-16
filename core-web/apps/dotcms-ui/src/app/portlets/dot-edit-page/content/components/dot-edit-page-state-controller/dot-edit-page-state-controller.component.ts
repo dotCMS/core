@@ -1,24 +1,30 @@
 import {
     Component,
+    EventEmitter,
     Input,
-    ViewChild,
     OnChanges,
-    SimpleChanges,
     Output,
-    EventEmitter
+    SimpleChanges,
+    ViewChild
 } from '@angular/core';
 
-import { take, switchMap } from 'rxjs/operators';
-import { Observable, of, from } from 'rxjs';
+import { switchMap, take } from 'rxjs/operators';
+import { from, Observable, of } from 'rxjs';
 
 import { SelectItem } from 'primeng/api';
-
-import { DotAlertConfirmService } from '@dotcms/data-access';
-import { DotEditPageLockInfoComponent } from './components/dot-edit-page-lock-info/dot-edit-page-lock-info.component';
-import { DotMessageService } from '@dotcms/data-access';
-import { DotPageStateService } from '../../services/dot-page-state/dot-page-state.service';
-import { DotPersonalizeService } from '@dotcms/data-access';
-import { DotPageRenderState, DotPageMode, DotPageRenderOptions } from '@dotcms/dotcms-models';
+import {
+    DotPageMode,
+    DotPageRenderOptions,
+    DotPageRenderState,
+    DotVariantData
+} from '@dotcms/dotcms-models';
+import { DotEditPageLockInfoComponent } from '@portlets/dot-edit-page/content/components/dot-edit-page-state-controller/components/dot-edit-page-lock-info/dot-edit-page-lock-info.component';
+import { DotPageStateService } from '@portlets/dot-edit-page/content/services/dot-page-state/dot-page-state.service';
+import {
+    DotAlertConfirmService,
+    DotMessageService,
+    DotPersonalizeService
+} from '@dotcms/data-access';
 
 enum DotConfirmationType {
     LOCK,
@@ -35,11 +41,13 @@ export class DotEditPageStateControllerComponent implements OnChanges {
 
     @Input() pageState: DotPageRenderState;
     @Output() modeChange = new EventEmitter<DotPageMode>();
+    @Input() variant: DotVariantData | null = null;
 
     lock: boolean;
     lockWarn = false;
     mode: DotPageMode;
     options: SelectItem[] = [];
+
     constructor(
         private dotAlertConfirmService: DotAlertConfirmService,
         private dotMessageService: DotMessageService,
@@ -51,9 +59,9 @@ export class DotEditPageStateControllerComponent implements OnChanges {
         const pageState = changes.pageState.currentValue;
         this.options = this.getStateModeOptions(pageState);
         /*
-            When the page is lock but the page is being load from an user that can lock the page
-            we want to show the lock off so the new user can steal the lock
-        */
+When the page is lock but the page is being load from an user that can lock the page
+we want to show the lock off so the new user can steal the lock
+*/
         this.lock = this.isLocked(pageState);
         this.lockWarn = this.shouldWarnLock(pageState);
         this.mode = pageState.state.mode;
@@ -155,9 +163,11 @@ export class DotEditPageStateControllerComponent implements OnChanges {
     }
 
     private getStateModeOptions(pageState: DotPageRenderState): SelectItem[] {
-        return ['edit', 'preview', 'live'].map((mode: string) =>
-            this.getModeOption(mode, pageState)
-        );
+        const items = this.variant
+            ? [...(!this.variant.variant.isOriginal ? ['edit'] : []), 'preview']
+            : ['edit', 'preview', 'live'];
+
+        return items.map((mode: string) => this.getModeOption(mode, pageState));
     }
 
     private isLocked(pageState: DotPageRenderState): boolean {

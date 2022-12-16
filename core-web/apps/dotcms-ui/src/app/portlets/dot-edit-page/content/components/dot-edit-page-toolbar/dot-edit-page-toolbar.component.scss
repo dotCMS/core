@@ -13,6 +13,8 @@
     display: flex;
 }
 
-.dot-favorite-page-highlight ::ng-deep i {
-    color: $brand-primary;
+::ng-deep {
+    .dot-favorite-page-highlight i {
+        color: $brand-primary;
+    }
 }

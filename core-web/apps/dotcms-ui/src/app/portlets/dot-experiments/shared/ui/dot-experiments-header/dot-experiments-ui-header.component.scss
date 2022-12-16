@@ -20,5 +20,10 @@
         cursor: pointer;
         border-right: 1px solid $gray-bg;
         text-decoration: none;
+        transition: background-color ease $basic-speed;
+
+        &:hover {
+            background-color: $gray-hover;
+        }
     }
 }

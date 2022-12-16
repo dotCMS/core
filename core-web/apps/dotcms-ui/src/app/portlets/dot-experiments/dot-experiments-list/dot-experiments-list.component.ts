@@ -88,6 +88,13 @@ export class DotExperimentsListComponent {
      * @memberof DotExperimentsShellComponent
      */
     goToBrowserBack() {
-        this.router.navigate(['edit-page/content'], { queryParamsHandling: 'preserve' });
+        this.router.navigate(['edit-page/content'], {
+            queryParams: {
+                editPageTab: null,
+                variationName: null,
+                experimentId: null
+            },
+            queryParamsHandling: 'merge'
+        });
     }
 }
