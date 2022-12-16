@@ -1,29 +1,32 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { ActivatedRouteSnapshot } from '@angular/router';
-import { DotContentletLockerService } from '@services/dot-contentlet-locker/dot-contentlet-locker.service';
-import { DotHttpErrorManagerService } from '@services/dot-http-error-manager/dot-http-error-manager.service';
-import { DotPageRenderService } from '@services/dot-page-render/dot-page-render.service';
-
-import { DotRouterService } from '@services/dot-router/dot-router.service';
-import { CoreWebService, HttpCode, LoginService } from '@dotcms/dotcms-js';
-import { LoginServiceMock, mockUser } from '@tests/login-service.mock';
 import { getTestBed, TestBed } from '@angular/core/testing';
-import { mockDotRenderedPage } from '@tests/dot-page-render.mock';
-import { of, throwError } from 'rxjs';
+import {
+    DotAlertConfirmService,
+    DotContentletLockerService,
+    DotESContentService,
+    DotPageRenderService
+} from '@dotcms/data-access';
 import { HttpClientTestingModule } from '@angular/common/http/testing';
-import { CoreWebServiceMock } from '@tests/core-web.service.mock';
-import { DotAlertConfirmService } from '@services/dot-alert-confirm';
-import { ConfirmationService } from 'primeng/api';
-import { DotFormatDateService } from '@services/dot-format-date-service';
-import { MockDotRouterService } from '@tests/dot-router-service.mock';
-import { mockResponseView } from '@tests/response-view.mock';
-import { HttpErrorResponse, HttpResponse } from '@angular/common/http';
-import { DotPageRender } from '@models/dot-page/dot-rendered-page.model';
-import { DotESContentService } from '@services/dot-es-content/dot-es-content.service';
+import { of, throwError } from 'rxjs';
+import { DotPageRender, DotPageRenderState } from '@dotcms/dotcms-models';
+import {
+    CoreWebServiceMock,
+    LoginServiceMock,
+    mockDotRenderedPage,
+    MockDotRouterService,
+    mockResponseView,
+    mockUser
+} from '@dotcms/utils-testing';
+import { CoreWebService, HttpCode, LoginService } from '@dotcms/dotcms-js';
 import { DotPageStateService } from '@portlets/dot-edit-page/content/services/dot-page-state/dot-page-state.service';
+import { ConfirmationService } from 'primeng/api';
+import { HttpErrorResponse, HttpResponse } from '@angular/common/http';
+import { DotFormatDateService } from '@services/dot-format-date-service';
+import { ActivatedRouteSnapshot } from '@angular/router';
+import { DotHttpErrorManagerService } from '@services/dot-http-error-manager/dot-http-error-manager.service';
 import { DotEditPageResolver } from '@portlets/dot-edit-page/shared/services/dot-edit-page-resolver/dot-edit-page-resolver.service';
-import { DotPageRenderState } from '@portlets/dot-edit-page/shared/models';
+import { DotRouterService } from '@services/dot-router/dot-router.service';
 
 const route: any = jasmine.createSpyObj<ActivatedRouteSnapshot>('ActivatedRouteSnapshot', [
     'toString'

@@ -18,7 +18,7 @@ import { UiDotIconButtonModule } from '@components/_common/dot-icon-button/dot-i
 import { TooltipModule } from 'primeng/tooltip';
 import { DotPropertiesService } from '@dotcms/data-access';
 import { DotIconModule } from '@dotcms/ui';
-import { DotNavbarDirective } from '@portlets/shared/directives/dot-navbar.directive';
+import { DotEditPageNavDirective } from '@portlets/dot-edit-page/main/dot-edit-page-nav/directives/dot-edit-page-nav.directive';
 
 @NgModule({
     imports: [
@@ -38,7 +38,7 @@ import { DotNavbarDirective } from '@portlets/shared/directives/dot-navbar.direc
         DotFavoritePageModule,
         UiDotIconButtonModule,
         DotIconModule,
-        DotNavbarDirective
+        DotEditPageNavDirective
     ],
     exports: [DotEditPageToolbarComponent],
     declarations: [DotEditPageToolbarComponent],

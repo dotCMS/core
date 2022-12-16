@@ -4,11 +4,10 @@ import { ActivatedRoute, Params } from '@angular/router';
 import { Observable, of as observableOf } from 'rxjs';
 import { map } from 'rxjs/operators';
 
-import { DotMessageService } from '@dotcms/data-access';
-import { DotLicenseService } from '@dotcms/data-access';
+import { DotLicenseService, DotMessageService } from '@dotcms/data-access';
 import { DotContentletEditorService } from '@components/dot-contentlet-editor/services/dot-contentlet-editor.service';
 
-import { DotPageRenderState, DotPageRender, DotTemplate } from '@dotcms/dotcms-models';
+import { DotPageRender, DotPageRenderState, DotTemplate } from '@dotcms/dotcms-models';
 
 interface DotEditPageNavItem {
     action?: (inode: string) => void;
@@ -32,9 +31,7 @@ export class DotEditPageNavComponent implements OnChanges {
     model: Observable<DotEditPageNavItem[]>;
 
     queryParams: Params;
-    variantMode: boolean;
 
-    @Input()
     isVariantMode = false;
 
     constructor(

@@ -81,7 +81,7 @@ export class DotEditContentComponent implements OnInit, OnDestroy {
     paletteCollapsed = false;
     isEnterpriseLicense = false;
 
-    variantData: DotVariantData | null = null;
+    variantData: Observable<DotVariantData>;
 
     private readonly customEventsHandler;
     private destroy$: Subject<boolean> = new Subject<boolean>();
@@ -190,16 +190,23 @@ browse from the page internal links
      * @memberof DotEditContentComponent
      */
     backToExperiment() {
-        const { experimentId, pageId } = this.variantData;
+        const { experimentId } = this.route.snapshot.queryParams;
 
-        this.router.navigate(['/edit-page/experiments/configuration', pageId, experimentId], {
-            queryParams: {
-                editPageTab: null,
-                variationName: null,
-                experimentId: null
-            },
-            queryParamsHandling: 'merge'
-        });
+        this.router.navigate(
+            [
+                '/edit-page/experiments/configuration',
+                this.pageStateInternal.page.identifier,
+                experimentId
+            ],
+            {
+                queryParams: {
+                    editPageTab: null,
+                    variationName: null,
+                    experimentId: null
+                },
+                queryParamsHandling: 'merge'
+            }
+        );
     }
 
     /**
@@ -641,31 +648,29 @@ browse from the page internal links
 
     private getExperimentResolverData(): void {
         const { variationName, editPageTab } = this.route.snapshot.queryParams;
-        this.route.parent.parent.data
-            .pipe(
-                take(1),
-                pluck('experiment'),
-                filter((experiment) => !!experiment),
-                map((experiment: DotExperiment) => {
-                    const variant = experiment.trafficProportion.variants.find(
-                        (variant) => variant.id === variationName
-                    );
+        this.variantData = this.route.parent.parent.data.pipe(
+            take(1),
+            pluck('experiment'),
+            filter((experiment) => !!experiment),
+            map((experiment: DotExperiment) => {
+                const variant = experiment.trafficProportion.variants.find(
+                    (variant) => variant.id === variationName
+                );
 
-                    return {
-                        variant: {
-                            id: variant.id,
-                            url: variant.url,
-                            title: variant.name,
-                            isOriginal: variant.name === DEFAULT_VARIANT_NAME
-                        },
-                        pageId: experiment.pageId,
-                        experimentId: experiment.id,
+                return {
+                    variant: {
+                        id: variant.id,
+                        url: variant.url,
+                        title: variant.name,
+                        isOriginal: variant.name === DEFAULT_VARIANT_NAME
+                    },
+                    pageId: experiment.pageId,
+                    experimentId: experiment.id,
 
-                        experimentName: experiment.name,
-                        mode: editPageTab
-                    } as DotVariantData;
-                })
-            )
-            .subscribe((variant) => (this.variantData = variant));
+                    experimentName: experiment.name,
+                    mode: editPageTab
+                } as DotVariantData;
+            })
+        );
     }
 }

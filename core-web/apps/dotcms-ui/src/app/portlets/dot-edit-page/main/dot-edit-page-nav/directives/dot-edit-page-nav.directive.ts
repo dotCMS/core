@@ -12,13 +12,13 @@ const urlPortletRules = {
 };
 
 /**
- * Directive to add a class depending of the current route
+ * Directive to add a class depending on the current route
  */
 @Directive({
     standalone: true,
     selector: '[dotNavbar]'
 })
-export class DotNavbarDirective implements OnDestroy {
+export class DotEditPageNavDirective implements OnDestroy {
     private destroy$: Subject<boolean> = new Subject<boolean>();
 
     constructor(
