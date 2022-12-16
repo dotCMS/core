@@ -105,6 +105,27 @@ describe('DotWorkflowActionsFireService', () => {
         });
     });
 
+    it('should DESTROY and return the deleted contentlet', () => {
+        dotWorkflowActionsFireService.deleteContentlet({ inode: '123' }).subscribe((res) => {
+            expect(res).toEqual([
+                {
+                    inode: '123'
+                }
+            ]);
+        });
+
+        const req = httpMock.expectOne('v1/workflow/actions/default/fire/DESTROY?inode=123');
+        expect(req.request.method).toBe('PUT');
+
+        req.flush({
+            entity: [
+                {
+                    inode: '123'
+                }
+            ]
+        });
+    });
+
     it('should PUBLISH and return a new contentlet', () => {
         dotWorkflowActionsFireService
             .publishContentlet('persona', { name: 'test' })

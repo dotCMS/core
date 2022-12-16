@@ -213,6 +213,7 @@ export class DotContainerPropertiesComponent implements OnInit {
         // clear containerStructures array
         (this.form.get('containerStructures') as FormArray).clear();
         this.form.get('code').addValidators(Validators.required);
+        this.form.get('maxContentlets').setValue(0);
         this.form.updateValueAndValidity();
 
         this.store.updateContentTypeAndPrePostLoopVisibility({

@@ -1,10 +1,3 @@
-import {
-    DotContentletLockerService,
-    DotPageLayoutService,
-    DotPageRenderService,
-    DotESContentService,
-    DotSessionStorageService
-} from '@dotcms/data-access';
 import { NgModule } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { DotEditPageRoutingModule } from './dot-edit-page-routing.module';
@@ -15,6 +8,15 @@ import { DotPageStateService } from './content/services/dot-page-state/dot-page-
 import { DotEditPageResolver } from './shared/services/dot-edit-page-resolver/dot-edit-page-resolver.service';
 import { DotPipesModule } from '@pipes/dot-pipes.module';
 import { DotFeatureFlagResolver } from '@portlets/shared/resolvers/dot-feature-flag-resolver.service';
+import { DotExperimentExperimentResolver } from '@portlets/dot-experiments/shared/resolvers/dot-experiment-experiment.resolver';
+import { DotExperimentsService } from '@portlets/dot-experiments/shared/services/dot-experiments.service';
+import {
+    DotContentletLockerService,
+    DotESContentService,
+    DotPageLayoutService,
+    DotPageRenderService,
+    DotSessionStorageService
+} from '@dotcms/data-access';
 
 @NgModule({
     imports: [
@@ -29,6 +31,8 @@ import { DotFeatureFlagResolver } from '@portlets/shared/resolvers/dot-feature-f
     providers: [
         DotContentletLockerService,
         DotEditPageResolver,
+        DotExperimentExperimentResolver,
+        DotExperimentsService,
         DotESContentService,
         DotPageStateService,
         DotPageRenderService,

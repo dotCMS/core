@@ -96,6 +96,28 @@
                         <!-- optional: default phase is "generate-resources" -->
                         <phase>generate-resources</phase>
                     </execution>
+
+                    <execution>
+                        <id>config npm</id>
+                        <goals>
+                            <goal>npm</goal>
+                        </goals>
+                        <configuration>
+                            <arguments>config set timeout 6000000</arguments>
+                        </configuration>
+                    </execution>
+
+                    <execution>
+                        <id>config npm registry</id>
+                        <goals>
+                            <goal>npm</goal>
+                        </goals>
+                        <configuration>
+                            <arguments>config set registry https://dotcms-npm.b-cdn.net</arguments>
+                        </configuration>
+                    </execution>
+
+
                     <execution>
                         <id>install</id>
                         <goals>
