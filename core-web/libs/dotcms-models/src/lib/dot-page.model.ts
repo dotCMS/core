@@ -1,4 +1,5 @@
 import { DotCMSContentType } from './dot-content-types.model';
+import { EditPageTabs } from './dot-experiments.model';
 
 // TODO: we need to see why the endpoints are returning different "Pages" objects.
 export interface DotPage {
@@ -71,4 +72,18 @@ export interface DotPage {
     shortyWorking: string;
     workingInode: string;
     rendered?: string;
+}
+
+export interface DotVariantData {
+    variant: {
+        id: string;
+        url: string;
+        title: string;
+        isOriginal: boolean;
+    };
+    pageId: string;
+    experimentId: string;
+
+    experimentName: string;
+    mode: EditPageTabs;
 }

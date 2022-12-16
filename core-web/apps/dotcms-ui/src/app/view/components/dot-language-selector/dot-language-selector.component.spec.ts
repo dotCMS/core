@@ -76,6 +76,7 @@ describe('DotLanguageSelectorComponent', () => {
     });
 
     it('should have right attributes on dropdown', () => {
+        fixtureHost.detectChanges();
         const pDropDown: DebugElement = de.query(By.css('p-dropdown'));
         expect(pDropDown.attributes.dataKey).toBe('id');
         expect(pDropDown.attributes.optionLabel).toBe('language');
@@ -83,6 +84,7 @@ describe('DotLanguageSelectorComponent', () => {
     });
 
     it('should emit the selected language', () => {
+        fixtureHost.detectChanges();
         const pDropDown: DebugElement = de.query(By.css('p-dropdown'));
 
         spyOn(component.selected, 'emit');
