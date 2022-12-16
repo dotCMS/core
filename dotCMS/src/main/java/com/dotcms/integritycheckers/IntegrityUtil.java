@@ -12,10 +12,8 @@ import com.dotmarketing.db.FlushCacheRunnable;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.util.ConfigUtils;
-import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.MaintenanceUtil;
-import com.dotmarketing.util.UtilMethods;
+import com.dotmarketing.util.*;
+
 import java.nio.charset.StandardCharsets;
 import org.apache.commons.lang3.StringUtils;
 
@@ -201,63 +199,6 @@ public class IntegrityUtil {
         } catch (NullPointerException npe) {
             Logger.error(IntegrityUtil.class, "File name cannot be NULL", npe);
             throw new Exception("File name cannot be NULL", npe);
-        }
-    }
-
-    public static void unzipFile(final InputStream zipFile, final String outputDir) throws Exception {
-        final File dir = new File(outputDir);
-
-        // if file doesn't exists, then create it
-        if (!dir.exists()) {
-            dir.mkdir();
-        }
-        
-        ZipInputStream zin = null;
-        OutputStream os = null;
-        ZipEntry ze = null;
-        try {
-
-            zin = new ZipInputStream(zipFile);
-            while ((ze = zin.getNextEntry()) != null) {
-                
-             // for each entry to be extracted
-                int bytesRead;
-                final byte[] buf = new byte[1024];
-                
-                Logger.info(IntegrityUtil.class, "Unzipping " + ze.getName());
-
-                os = Files.newOutputStream(Paths.get(outputDir + File.separator + ze.getName()));
-
-                while ( (bytesRead = zin.read( buf, 0, 1024 )) > -1 )
-                    os.write( buf, 0, bytesRead );
-                try {
-                    if ( null != os ) {
-                        os.close();
-                    }
-                } catch ( Exception e ) {
-                    Logger.warn( IntegrityUtil.class, "Error Closing Stream.", e );
-                }
-            }
-        } catch (final IOException e) {
-            final String errorMsg = String.format("Error while unzipping Integrity Data in file '%s': %s", null != ze
-                    ? ze.getName() : "", e.getMessage());
-            Logger.error(IntegrityUtil.class, errorMsg, e);
-            throw new Exception(errorMsg, e);
-        } finally { // close your streams
-            if ( zin != null ) {
-                try {
-                    zin.close();
-                } catch ( IOException e ) {
-                    Logger.warn( IntegrityUtil.class, "Error Closing Stream.", e );
-                }
-            }
-            if ( os != null ) {
-                try {
-                    os.close();
-                } catch ( IOException e ) {
-                    Logger.warn( IntegrityUtil.class, "Error Closing Stream.", e );
-                }
-            }
         }
     }
 
@@ -566,7 +507,7 @@ public class IntegrityUtil {
         final String outputDir = ConfigUtils.getIntegrityPath() + File.separator + key;
 
         // lets first unzip the given file
-        unzipFile(dataToFix, outputDir);
+        ZipUtil.extract(dataToFix, outputDir);
 
         // lets generate the tables with the data to be fixed
         generateDataToFixTable(key, type);
