@@ -54,6 +54,73 @@ function addResults {
   executeCmd "cp -R ${OUTPUT_FOLDER}/* ${target_folder}"
 }
 
+# Creates initial branch to add tests results to in case it does not exist
+function initResults {
+  cd ${INPUT_PROJECT_ROOT}
+
+  # Resolve test results fully
+  local test_results_repo_url=$(resolveRepoUrl ${TEST_RESULTS_GITHUB_REPO} ${INPUT_CICD_GITHUB_TOKEN} ${GITHUB_USER})
+  local test_results_path=${INPUT_PROJECT_ROOT}/${TEST_RESULTS_GITHUB_REPO}
+
+  gitRemoteLs ${test_results_repo_url} ${BUILD_ID}
+  local remote_branch=$?
+  echo "Branch ${BUILD_ID} exists: ${remote_branch}"
+  # If it does not exist use master
+  if [[ ${remote_branch} == 1 ]]; then
+    clone_branch=${BUILD_ID}
+  else
+    clone_branch=scratch
+  fi
+
+  # Clone test-results repo at resolved branch
+  gitClone ${test_results_repo_url} ${clone_branch} ${test_results_path}
+  cd ${test_results_path}
+
+  # Prepare who is pushing the changes
+  gitConfig ${GITHUB_USER}
+
+  # If no remote branch detected create one
+  [[ ${remote_branch} != 1 ]] \
+    && executeCmd "git checkout -b ${BUILD_ID}" \
+    && executeCmd "git push ${test_results_repo_url}"
+}
+
+# Executes logic for matrix partitioned tests such as postman tests
+function closeResults {
+  if [[ "${INPUT_TEST_TYPE}" == 'postman' ]]; then
+    local test_results_repo_url=$(resolveRepoUrl ${TEST_RESULTS_GITHUB_REPO} ${INPUT_CICD_GITHUB_TOKEN} ${GITHUB_USER})
+    local test_results_path=${INPUT_PROJECT_ROOT}/${TEST_RESULTS_GITHUB_REPO}
+
+    gitRemoteLs ${test_results_repo_url} ${BUILD_ID}
+    local remote_branch=$?
+    echo "Branch ${BUILD_ID} exists: ${remote_branch}"
+    [[ ${remote_branch} != 1 ]] \
+      && echo "Tests results branch ${BUILD_ID} does not exist, cannot close results" \
+      && exit 1
+
+    gitClone ${test_results_repo_url} ${BUILD_ID} ${test_results_path}
+    cd ${test_results_path}/projects/core/postman/reports/html
+
+    cat ./postman-results-header.html > ./index.hml
+    cat ./*.inc >> ./index.hml
+    cat ./postman-results-footer.html >> ./index.hml
+    rm ./*.inc
+    rm ./postman-results-header.html
+    rm ./postman-results-footer.html
+
+    gitConfig ${GITHUB_USER}
+
+    executeCmd "git status"
+    executeCmd "git add ."
+    executeCmd "git commit -m \"Closing results for branch ${BUILD_ID}\""
+    executeCmd "git push ${test_results_repo_url}"
+    if [[ ${cmd_result} != 0 ]]; then
+      echo "Error pushing to git for ${INPUT_BUILD_HASH} at ${INPUT_BUILD_ID}, error code: ${cmd_result}"
+      exit 1
+    fi
+  fi
+}
+
 # Persists results in 'test-results' repo in the provided INPUT_BUILD_ID branch.
 function persistResults {
   cd ${INPUT_PROJECT_ROOT}
@@ -65,6 +132,7 @@ function persistResults {
   # Query for remote branch
   gitRemoteLs ${test_results_repo_url} ${BUILD_ID}
   local remote_branch=$?
+  echo "Branch ${BUILD_ID} exists: ${remote_branch}"
   # If it does not exist use master
   if [[ ${remote_branch} == 1 ]]; then
     clone_branch=${BUILD_ID}
@@ -88,7 +156,7 @@ function persistResults {
   # Clean test results folders by removing contents and committing them
   cleanTestFolders
 
-  addResults ./
+  addResults .
 
   # Check for something new to commit
   [[ "${DEBUG}" == 'true' ]] \
@@ -129,8 +197,6 @@ function persistResults {
       echo "Error pushing to git for ${INPUT_BUILD_HASH} at ${INPUT_BUILD_ID}, error code: ${cmd_result}"
       exit 1
     fi
-
-    executeCmd "git status"
   else
     echo 'No changes detected, not committing nor pushing'
   fi

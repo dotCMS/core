@@ -10,6 +10,8 @@ const waitForDeps = core.getInput('wait_for_deps')
 const dbType = core.getInput('db_type')
 const licenseKey = core.getInput('license_key')
 const customStarterUrl = core.getInput('custom_starter_url')
+const parallelCollections: ParallelCollections[] = JSON.parse(core.getInput('parallel_collections'))
+const parallelCollection = core.getInput('parallel_collection')
 const tests = core.getInput('tests')
 const exportReport = core.getBooleanInput('export_report')
 const includeAnalytics = core.getBooleanInput('include_analytics')
@@ -41,6 +43,11 @@ export interface Command {
   env?: {[key: string]: string}
 }
 
+interface ParallelCollections {
+  name: string
+  collections: string[]
+}
+
 const DEPS_ENV: {[key: string]: string} = {
   DOTCMS_IMAGE: builtImageName,
   TEST_TYPE: 'postman',
@@ -61,7 +68,6 @@ const DEPS_ENV: {[key: string]: string} = {
 export const runTests = async (): Promise<PostmanTestsResult> => {
   await setup()
   await startDeps()
-  printInfo()
 
   try {
     return await runPostmanCollections()
@@ -82,11 +88,15 @@ export const runTests = async (): Promise<PostmanTestsResult> => {
  * Copies logs from docker volume to standard DotCMS location.
  */
 const copyOutputs = async () => {
-  printInfo()
   await execCmd(
     toCommand('docker', ['cp', 'docker_dotcms-app_1:/srv/dotserver/tomcat-9.0.60/logs/dotcms.log', logFile])
   )
-  await execCmd(toCommand('ls', ['-las', dotCmsRoot]))
+  //await execCmd(toCommand('ls', ['-las', dotCmsRoot]))
+}
+
+const copyHeaderAndFooter = async () => {
+  await execCmd(toCommand('cp', [path.join(resourcesFolder, 'postman-results-header.html'), reportFolder]))
+  await execCmd(toCommand('cp', [path.join(resourcesFolder, 'postman-results-footer.html'), reportFolder]))
 }
 
 /**
@@ -96,15 +106,6 @@ const setup = async () => {
   await installDeps()
   createFolders()
   await prepareLicense()
-  await printInfo()
-}
-
-/**
- * Prints docker command info
- */
-const printInfo = async () => {
-  await execCmd(toCommand('docker', ['images']))
-  await execCmd(toCommand('docker', ['ps']))
 }
 
 /**
@@ -188,30 +189,15 @@ const runPostmanCollections = async (): Promise<PostmanTestsResult> => {
     ===========================================
     Running postman tests against ${dbType}
     ===========================================`)
+  const collectionRuns = new Map<string, number>()
   const foundCollections = shelljs
     .ls(postmanTestsPath)
     .filter(file => file.endsWith('.json') && file !== postmanEnvFile)
-  core.info(`Postman collections:\n${foundCollections.join(',')}`)
+  core.info(`Current parallel collection: ${parallelCollection}`)
+  const resolved = resolveCollections(foundCollections)
+  core.info(`Resolved collections ${resolved.join(', ')}`)
 
-  const resolvedTests = resolveSpecific()
-  const filtered =
-    resolvedTests.length === 0
-      ? foundCollections
-      : resolvedTests.filter(resolved => !!foundCollections.find(collection => collection === resolved))
-  core.info(`Detected Postman collections:\n${filtered.join(',')}`)
-
-  const htmlResults: string[] = []
-  const header = fs.readFileSync(path.join(resourcesFolder, 'postman-results-header.html'), {
-    encoding: 'utf8',
-    flag: 'r'
-  })
-  const footer = fs.readFileSync(path.join(resourcesFolder, 'postman-results-footer.html'), {
-    encoding: 'utf8',
-    flag: 'r'
-  })
-  const collectionRuns = new Map<string, number>()
-
-  for (const collection of filtered) {
+  for (const collection of resolved) {
     const normalized = collection.replace(/ /g, '_').replace('.json', '')
     let rc: number
     const start = new Date().getTime()
@@ -231,26 +217,42 @@ const runPostmanCollections = async (): Promise<PostmanTestsResult> => {
 
     if (exportReport) {
       const passed = rc === 0
-      htmlResults.push(
-        `<tr><td><a href="./${normalized}.html">${collection}</a></td><td style="color: #ffffff; background-color: ${
-          passed ? '#28a745' : '#dc3545'
-        }; font-weight: bold;">${passed ? PASSED : FAILED}</td>
-        <td>${duration}</td>
-        </tr>`
-      )
+
+      const content = `<tr><td><a href="./${normalized}.html">${collection}</a></td><td style="color: #ffffff; background-color: ${
+        passed ? '#28a745' : '#dc3545'
+      }; font-weight: bold;">${passed ? PASSED : FAILED}</td>
+      <td>${duration}</td></tr>`
+
+      fs.writeFileSync(path.join(reportFolder, `${normalized}.inc`), content, {
+        encoding: 'utf8',
+        flag: 'a+',
+        mode: 0o666
+      })
     }
   }
 
-  if (exportReport) {
-    const contents = [header, ...htmlResults, footer]
-    fs.writeFileSync(path.join(reportFolder, 'index.html'), `${contents.join('\n')}`, {
-      encoding: 'utf8',
-      flag: 'a+',
-      mode: 0o666
-    })
-  }
+  await copyHeaderAndFooter()
 
   return handleResults(collectionRuns)
+}
+
+const resolveCollections = (foundCollections: string[]): string[] => {
+  const parallel = parallelCollection?.trim() || '*'
+  const all = parallel === '*'
+  const resolved = (
+    all ? resolveSpecific() : parallelCollections.find(pc => pc.name === parallel)?.collections || []
+  ).map(collection => trimAndExt(collection))
+
+  if (resolved.length > 0) {
+    return resolved.filter(collection => foundCollections.includes(collection))
+  }
+
+  if (all) {
+    const allParallel = parallelCollections.flatMap(pc => pc.collections).map(collection => trimAndExt(collection))
+    return foundCollections.filter(collection => !allParallel.includes(collection))
+  }
+
+  return all ? foundCollections : []
 }
 
 /**
@@ -261,7 +263,7 @@ const runPostmanCollections = async (): Promise<PostmanTestsResult> => {
  * @returns promise with process return code
  */
 const runPostmanCollection = async (collection: string, normalized: string): Promise<number> => {
-  core.info(`Running Postman collection: ${collection}`)
+  core.info(`Running Postman collection: "${collection}"`)
   const resultFile = path.join(resultsFolder, `${normalized}.xml`)
   const page = `${normalized}.html`
   const reportFile = path.join(reportFolder, page)
@@ -353,7 +355,7 @@ const prepareLicense = async () => {
   const licenseFile = path.join(licenseFolder, 'license.dat')
   core.info(`Adding license to ${licenseFile}`)
   fs.writeFileSync(licenseFile, licenseKey, {encoding: 'utf8', flag: 'a+', mode: 0o777})
-  await execCmd(toCommand('ls', ['-las', licenseFile]))
+  //await execCmd(toCommand('ls', ['-las', licenseFile]))
 }
 
 /**
@@ -363,9 +365,10 @@ const prepareLicense = async () => {
  */
 const resolveSpecific = (): string[] => {
   const extracted = extractFromMessg(tests)
+  core.info(`Extracted from message: [${extracted.join(', ')}]`)
 
   if (extracted.length === 0) {
-    core.info('No specific postman tests found')
+    core.info('No specific postman tests found, returning empty')
     return []
   }
 
@@ -373,14 +376,16 @@ const resolveSpecific = (): string[] => {
   for (const line of extracted) {
     const testLine = line.slice(runtTestsPrefix.length).trim()
     for (const collection of testLine.trim().split(',')) {
-      const trimmed = collection.trim()
-      const normalized = trimmed.endsWith('.json') ? trimmed : `${trimmed}.json`
-      resolved.push(normalized)
+      resolved.push(trimAndExt(collection))
     }
   }
 
-  core.info(`Resolved specific collections:\n${resolved.join(',')}`)
   return resolved
+}
+
+const trimAndExt = (collection: string) => {
+  const trimmed = collection.trim()
+  return trimmed.endsWith('.json') ? trimmed : `${trimmed}.json`
 }
 
 /**
@@ -397,7 +402,7 @@ const extractFromMessg = (message: string): string[] => {
   const extracted: string[] = []
   for (const l of tests.split('\n')) {
     const trimmed = l.trim()
-    const line = trimmed.toLocaleLowerCase()
+    const line = trimmed.toLowerCase()
     if (line.startsWith(runtTestsPrefix)) {
       extracted.push(trimmed)
     }
