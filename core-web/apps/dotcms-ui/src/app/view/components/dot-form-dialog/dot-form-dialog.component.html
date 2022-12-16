@@ -3,18 +3,19 @@
 </div>
 
 <div class="dot-form-dialog__actions">
+    <ng-content select="[footerActions]"></ng-content>
     <button
+        class="p-button-secondary"
+        [label]="'cancel' | dm"
+        (click)="onSecondaryClick($event)"
         data-testid="dotFormDialogCancel"
         pButton
-        [label]="'cancel' | dm"
-        class="p-button-secondary"
-        (click)="onSecondaryClick($event)"
     ></button>
     <button
-        data-testid="dotFormDialogSave"
-        pButton
         [label]="'save' | dm"
         [disabled]="saveButtonDisabled"
         (click)="onPrimaryClick($event)"
+        data-testid="dotFormDialogSave"
+        pButton
     ></button>
 </div>
