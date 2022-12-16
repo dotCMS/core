@@ -54,7 +54,6 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.Date;
 import java.util.List;
 import java.util.Properties;
@@ -107,36 +106,51 @@ public class FileUtil {
 	public static void copyDirectory(File source, File destination, boolean hardLinks) throws IOException {
 	    copyDirectory(source,destination,hardLinks,null);
 	}
-	
-	public static void copyDirectory(File source, File destination, boolean hardLinks, FileFilter filter) throws IOException {
+
+	public static void copyDirectory(File source, File destination, boolean hardLinks,
+			FileFilter filter) throws IOException {
 		if (source.exists() && source.isDirectory()) {
 			if (!destination.exists()) {
 				final boolean mkdirs = destination.mkdirs();
-				if(!mkdirs){
-					Logger.error(FileUtil.class,String.format(" Failed to make destination Dir [%s]", destination));
+				if (!mkdirs) {
+					Logger.error(FileUtil.class,
+							String.format(" Failed to make destination Dir [%s]", destination));
 				}
 			}
 
-			File[] fileArray = filter!=null ? source.listFiles(filter) : source.listFiles();
-            if(null != fileArray){
-				for (File file : fileArray) {
-					if (file.getName().endsWith("xml")) {
-						String name = file.getName();
-						Logger.info(FileUtil.class, "copy " + name);
-					}
+			File[] fileArray = filter != null ? source.listFiles(filter) : source.listFiles();
+			if (null == fileArray) {
+			    Logger.warn(FileUtil.class,String.format(" No files were returned from [%s] applying filter [%s]. ",source, filter));
+				return;
+			}
+			internalCopy(destination, hardLinks, filter, fileArray);
+		}
+	}
 
-					if (file.isDirectory()) {
-						copyDirectory(
-								file,
-								new File(destination.getPath() + File.separator
-										+ file.getName()), hardLinks, filter);
-					} else {
-						copyFile(
-								file,
-								new File(destination.getPath() + File.separator
-										+ file.getName()), hardLinks);
-					}
-				}
+	/**
+	 * List of files copy
+	 * @param destination
+	 * @param hardLinks
+	 * @param filter
+	 * @param fileArray
+	 * @throws IOException
+	 */
+	private static void internalCopy(File destination, boolean hardLinks, FileFilter filter,
+			File[] fileArray) throws IOException {
+		for (File file : fileArray) {
+			if (file.getName().endsWith("xml")) {
+				Logger.info(FileUtil.class, "copy " + file.getName());
+			}
+			if (file.isDirectory()) {
+				copyDirectory(
+						file,
+						new File(destination.getPath() + File.separator
+								+ file.getName()), hardLinks, filter);
+			} else {
+				copyFile(
+						file,
+						new File(destination.getPath() + File.separator
+								+ file.getName()), hardLinks);
 			}
 		}
 	}
@@ -202,48 +216,52 @@ public class FileUtil {
 		}
 
         if (hardLinks) {
-
-            // I think we need to be sure to unlink first
-            if (destination.exists()) {
-                Path destinationPath = Paths.get(destination.getAbsolutePath());
-                //"If the file is a symbolic link then the symbolic link itself, not the final target of the link, is deleted."
-                Files.delete(destinationPath);
-            }
-
-            Path newLink = Paths.get(destination.getAbsolutePath());
-            Path existingFile = Paths.get(source.getAbsolutePath());
-
-            try {
-
-                Files.createLink(newLink, existingFile);
-                // setting this means we will try again if we cannot hard link
-                if (!destination.exists() ||
-                        (validateEmptyFile && destination.length() == 0)) {
-                    hardLinks = false;
-					String sb = "Can't create hardLink. source: " + source.getAbsolutePath()
-							+ ", destination: " + destination.getAbsolutePath();
-                    Logger.warn(FileUtil.class, sb);
-                }
-            }  catch (FileAlreadyExistsException e1) {
-				String sb = "Source File: " + source.getAbsolutePath()
-						+ "already exists on the destination: "
-						+ destination.getAbsolutePath();
-                Logger.debug(FileUtil.class, sb);
-            } catch (IOException e2 ){
-                hardLinks = false; // setting to false will execute the fallback
-				String sb = "Could not created the hard link, will try copy for source: "
-						+ source
-						+ ", destination: " + destination + ". Error message: "
-						+ e2.getMessage();
-                Logger.debug(FileUtil.class, sb);
-            } 
-        }
+			hardLinks = handleHardLinks(source, destination, validateEmptyFile);
+		}
 
         if (!hardLinks) {
 			copyFile(source, Files.newOutputStream(destination.toPath()));
 		}
 
     }
+
+	/**
+	 * Creates Hardlinks when possible
+	 * @param source
+	 * @param destination
+	 * @param validateEmptyFile
+	 * @return
+	 * @throws IOException
+	 */
+	private static boolean handleHardLinks(File source, File destination, boolean validateEmptyFile) throws IOException {
+		boolean hardLinks = true;
+		// I think we need to be sure to unlink first
+		if (destination.exists()) {
+			Path destinationPath = Paths.get(destination.getAbsolutePath());
+			//"If the file is a symbolic link then the symbolic link itself, not the final target of the link, is deleted."
+			Files.delete(destinationPath);
+		}
+
+		Path newLink = Paths.get(destination.getAbsolutePath());
+		Path existingFile = Paths.get(source.getAbsolutePath());
+
+		try {
+			Files.createLink(newLink, existingFile);
+			// setting this means we will try again if we cannot hard link
+			if (!destination.exists() || (validateEmptyFile && destination.length() == 0)) {
+				hardLinks = false;
+				Logger.warn(FileUtil.class, String.format("Can't create hardLink. source: [%s] , destination: [%s].", source.getAbsolutePath(), destination.getAbsolutePath() ));
+			}
+		}  catch (FileAlreadyExistsException e1) {
+			Logger.debug(FileUtil.class, String.format("Source File: [%s] already exists on the destination: [%s]",
+					source.getAbsolutePath(), destination.getAbsolutePath()));
+		} catch (IOException e2 ){
+			hardLinks = false; // setting to false will execute the fallback
+			Logger.debug(FileUtil.class, String.format("Could not created the hard link, will try copy for source: [%s], destination:[%s]. Error message: [%s]",
+					source.getAbsolutePath(), destination.getAbsolutePath(),e2.getMessage()));
+		}
+		return hardLinks;
+	}
 
 	public static void copyFile(final File source, final OutputStream destination) throws IOException {
 		try (final ReadableByteChannel inputChannel = Channels.newChannel(Files.newInputStream(source.toPath()));
@@ -308,11 +326,7 @@ public class FileUtil {
 	      return;
 	    }
 	    if(!directory.isDirectory()) {
-			try {
-				Files.delete(directory.toPath());
-			} catch (IOException e) {
-				Logger.error(FileUtil.class, String.format("Fail to delete dir [%s].", directory), e);
-			}
+			internalDelete(directory);
 			return;
 	    }
 
@@ -320,31 +334,32 @@ public class FileUtil {
 				pathname -> pathname.lastModified() < deleteOlderTime);
 
 	    // delete old files
-      allOldFiles.stream().filter(File::isFile).forEach(f-> {
-		  try {
-			  Files.delete(f.toPath());
-		  } catch (IOException e) {
-			  Logger.error(FileUtil.class, String.format("Fail to delete file [%s]", f), e);
-		  }
-	  });
+      allOldFiles.stream().filter(File::isFile).forEach(FileUtil::internalDelete);
       
       //delete old directories (only empty directories will be deleted)
 	    allOldFiles.stream().filter(f -> f.exists() && f.isDirectory()).sorted(
-				(a, b) -> a.getAbsolutePath().length() - b.getAbsolutePath().length()).forEach(f->{
-			try {
-				Files.delete(f.toPath());
-			} catch (IOException e) {
-				Logger.error(FileUtil.class, String.format("Fail to delete file [%s]", f), e);
-			}
-		});
+				(a, b) -> a.getAbsolutePath().length() - b.getAbsolutePath().length()).forEach(
+				FileUtil::internalDelete);
 
 
 	  }
-	
-	
 
-	
-	
+	/**
+	 * NIO File Delete with proper logging
+ 	 * @param f
+	 * @return
+	 */
+	private static boolean internalDelete(File f) {
+		try {
+			Files.delete(f.toPath());
+			return true;
+		} catch (IOException e) {
+			Logger.error(FileUtil.class, String.format("Fail to delete file/dir [%s]", f), e);
+		}
+		return false;
+	}
+
+
 	public static void deltree(File directory, boolean deleteTopDir) {
 		if (directory.exists() && directory.isDirectory()) {
 			File[] fileArray = directory.listFiles();
@@ -354,12 +369,7 @@ public class FileUtil {
 					if (file.isDirectory()) {
 						deltree(file);
 					} else {
-						try {
-							Files.delete(file.toPath());
-						} catch (IOException e) {
-							Logger.error(FileUtil.class,
-									String.format("Fail to delete file [%s]", file), e);
-						}
+						internalDelete(file);
 					}
 				}
 			}
@@ -372,11 +382,7 @@ public class FileUtil {
 			}
 		}else{
 			if(directory.exists()){
-				try {
-					Files.delete(directory.toPath());
-				} catch (IOException e) {
-					Logger.error(FileUtil.class, String.format("Fail to delete dir [%s]", directory), e);
-				}
+				internalDelete(directory);
 			}
 		}
 	}
@@ -503,7 +509,7 @@ public class FileUtil {
 		return listFiles(new File(fileName));
 	}
 
-	public static String[] listFiles(String fileName, Boolean includeSubDirs) {
+	public static String[] listFiles(String fileName, boolean includeSubDirs) {
 		return listFiles(new File(fileName), includeSubDirs);
 	}
 
@@ -537,14 +543,15 @@ public class FileUtil {
 
 		File[] subFolders = dir.listFiles(fileFilter);
 	
-		List<File> files = new ArrayList<File>();
+		List<File> files = new ArrayList<>();
 	
-		List<File> fileArray = new ArrayList<File>(FileUtils.listFiles(dir, TrueFileFilter.INSTANCE, includeSubDirs ? TrueFileFilter.INSTANCE : null));
+		List<File> fileArray = new ArrayList<>(FileUtils.listFiles(dir, TrueFileFilter.INSTANCE,
+				includeSubDirs ? TrueFileFilter.INSTANCE : null));
 	
 		for (File file : fileArray) {
 			if(file.isFile()) {
 				if(includeSubDirs && null != subFolders && containsParentFolder(file, subFolders)) {
-					files.add(file);
+					files.add(file.getParentFile());
 				} else {
 					files.add(file);
 				}
@@ -619,7 +626,7 @@ public class FileUtil {
                         return true;
                     }
 
-                    return source.delete();
+                    return internalDelete(source);
                 }
             } catch (Exception e) {
                 //In case of error, no worries. Continued with the same logic of move.
@@ -627,7 +634,7 @@ public class FileUtil {
             }
         }
 
-		final boolean delete = destination.delete();
+		final boolean delete = internalDelete(destination);
 		if(!delete){
 			Logger.warn(FileUtil.class,String.format(" Fail to remove destination dir [%s]",destination));
 		}
@@ -638,7 +645,7 @@ public class FileUtil {
 
 		if (!success) {
 			copyFile(source, destination);
-			success = source.delete();
+			success = internalDelete(source);
 		}
 		return success;
 	}
@@ -852,7 +859,7 @@ public class FileUtil {
 
 	  // PRIVATE //
 	  private static List<File> getFileListingNoSort(File aStartingDir, FileFilter filter) {
-	    List<File> result = new ArrayList<File>();
+	    List<File> result = new ArrayList<>();
 
 	    File[] filesAndDirs = null;
 	    if(filter !=null){
@@ -861,16 +868,17 @@ public class FileUtil {
 	    else{
 	    	filesAndDirs = aStartingDir.listFiles();
 	    }
-	    List<File> filesDirs = Arrays.asList(filesAndDirs);
-	    for(File file : filesDirs) {
-	      result.add(file); //always add, even if directory
-	      if ( ! file.isFile() ) {
-	        //must be a directory
-	        //recursive call!
-	        List<File> deeperList = getFileListingNoSort(file, filter);
-	        result.addAll(deeperList);
-	      }
-	    }
+		  if (null != filesAndDirs) {
+			  for (File file : filesAndDirs) {
+				  result.add(file); //always add, even if directory
+				  if (!file.isFile()) {
+					  //must be a directory
+					  //recursive call!
+					  List<File> deeperList = getFileListingNoSort(file, filter);
+					  result.addAll(deeperList);
+				  }
+			  }
+		  }
 	    return result;
 	  }
 
