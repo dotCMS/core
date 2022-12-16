@@ -1883,9 +1883,7 @@ public class ESContentletAPIImplTest extends IntegrationTestBase {
                         );
                     } catch (DotDataException e) {
                         e.printStackTrace();
-                    } catch (DotSecurityException e) {
-                        e.printStackTrace();
-                    }
+                    } 
                 });
 
         assertEquals(htmlPageAsset_1.getInode(), contentletVersionInfo.getWorkingInode());
