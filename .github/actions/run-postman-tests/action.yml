@@ -49,7 +49,7 @@ inputs:
     required: false
     default: |
             {
-              dist: [
+              groups: [
                 {
                   "name": "graphql",
                   "collections": ['GraphQLTests']
