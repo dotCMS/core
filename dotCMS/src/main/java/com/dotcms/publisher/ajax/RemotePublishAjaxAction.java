@@ -106,6 +106,7 @@ public class RemotePublishAjaxAction extends AjaxAction {
 	public static final String DIALOG_ACTION_PUBLISH="publish";
 	public static final String DIALOG_ACTION_PUBLISH_AND_EXPIRE="publishexpire";
     public static final String ADD_ALL_CATEGORIES_TO_BUNDLE_KEY = "CAT";
+    public static final String STANDARD_DATE_FORMAT = "yyyy-MM-dd-H-m";
 
     @Override
 	public void action(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
@@ -232,7 +233,7 @@ public class RemotePublishAjaxAction extends AjaxAction {
 
             final Date publishDate = DateUtil
                     .convertDate(_contentPushPublishDate + "-" + _contentPushPublishTime,
-                            currentTimeZone, "yyyy-MM-dd-H-m");
+                            currentTimeZone, STANDARD_DATE_FORMAT);
 
             List<String> ids;
             if ( _assetId.startsWith( "query_" ) ) { //Support for lucene queries
@@ -247,7 +248,7 @@ public class RemotePublishAjaxAction extends AjaxAction {
                 String[] _assetsIds = _assetId.split( "," );//Support for multiple ids in the assetIdentifier parameter
                 List<String> assetsIds = Arrays.asList( _assetsIds );
 
-                ids = getIdsToPush( assetsIds, null, _contentFilterDate, new SimpleDateFormat( "yyyy-MM-dd-H-m" ) );
+                ids = getIdsToPush( assetsIds, null, _contentFilterDate, new SimpleDateFormat(STANDARD_DATE_FORMAT) );
             }
 
             //Response map with the status of the addContents operation (error messages and counts )
@@ -263,7 +264,7 @@ public class RemotePublishAjaxAction extends AjaxAction {
                 if ((UtilMethods.isSet( _contentPushExpireDate) && UtilMethods.isSet( _contentPushExpireTime.trim()))) {
                     final Date expireDate = DateUtil
                             .convertDate(_contentPushExpireDate + "-" + _contentPushExpireTime,
-                                    currentTimeZone, "yyyy-MM-dd-H-m");
+                                    currentTimeZone, STANDARD_DATE_FORMAT);
 
                     Bundle bundle = new Bundle(null, publishDate, expireDate, getUser().getUserId(), forcePush,filterKey);
                 	APILocator.getBundleAPI().saveBundle(bundle, envsToSendTo);
@@ -819,7 +820,7 @@ public class RemotePublishAjaxAction extends AjaxAction {
                 String[] assetsIds = assetIdentifier.split( "," );//Support for multiple ids in the assetIdentifier parameter
                 List<String> assetsIdsList = Arrays.asList( assetsIds );
 
-                ids = getIdsToPush( assetsIdsList,bundle.getId(), contentFilterDate, new SimpleDateFormat( "yyyy-MM-dd-H-m" ) );
+                ids = getIdsToPush( assetsIdsList,bundle.getId(), contentFilterDate, new SimpleDateFormat(STANDARD_DATE_FORMAT) );
             }
 
             Map<String, Object> responseMap = publisherAPI.saveBundleAssets( ids, bundle.getId(), getUser() );
@@ -914,7 +915,7 @@ public class RemotePublishAjaxAction extends AjaxAction {
             //Clean up the selected bundle
             request.getSession().removeAttribute( WebKeys.SELECTED_BUNDLE + getUser().getUserId() );
 
-            final SimpleDateFormat dateFormat = new SimpleDateFormat( "yyyy-MM-dd-H-m" );
+            final SimpleDateFormat dateFormat = new SimpleDateFormat(STANDARD_DATE_FORMAT);
             final Date publishDate = dateFormat.parse( contentPushPublishDate + "-" + contentPushPublishTime );
             final Bundle bundle = bundleAPI.getBundleById(bundleId);
             bundle.setForcePush(forcePush);
