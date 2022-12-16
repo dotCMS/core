@@ -1,10 +1,10 @@
-import { HttpResponse, HttpHeaders, HttpErrorResponse } from '@angular/common/http';
-import { throwError, Observable, of } from 'rxjs';
+import { HttpErrorResponse, HttpHeaders, HttpResponse } from '@angular/common/http';
+import { Observable, of, throwError } from 'rxjs';
 import { Injectable } from '@angular/core';
-import { Resolve, ActivatedRouteSnapshot } from '@angular/router';
+import { ActivatedRouteSnapshot, Resolve } from '@angular/router';
 
-import { HttpCode, DotCMSResponse } from '@dotcms/dotcms-js';
-import { tap, switchMap, filter, catchError, map } from 'rxjs/operators';
+import { DotCMSResponse, HttpCode } from '@dotcms/dotcms-js';
+import { catchError, filter, map, switchMap, tap } from 'rxjs/operators';
 
 import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
 import { DotHttpErrorManagerService } from '@dotcms/app/api/services/dot-http-error-manager/dot-http-error-manager.service';
