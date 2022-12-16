@@ -80,8 +80,19 @@ public class DotCacheTool implements ViewTool {
         }
         final Serializable correctedValue = value instanceof Serializable ? (Serializable) value : value.toString();
         final Map<String, Serializable> map = Map.of(key, correctedValue);
-        debounceAdd.debounce(key, () -> cache.get().add(key, map, ttl), 1, TimeUnit.SECONDS);
+        cache.get().add(key, map, ttl);
     }
+    
+    /**
+     * This puts into the cache once a second
+     * @param key
+     * @param value
+     * @param ttl
+     */
+    public void putDebounce(final String key, final Object value, final int ttl) {
+        debounceAdd.debounce(key, () -> put(key, value, ttl), 1, TimeUnit.SECONDS);
+    }
+    
 
     /**
      * Removes an object from the cache memory based on its key.
