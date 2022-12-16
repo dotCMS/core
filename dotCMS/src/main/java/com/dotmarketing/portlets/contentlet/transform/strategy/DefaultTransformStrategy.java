@@ -216,7 +216,7 @@ public class DefaultTransformStrategy extends AbstractTransformStrategy<Contentl
 
             try {
                 final String velocityVarName = field.variable();
-                if (contentlet.isFileAsset() && FILE_ASSET.equals(field.variable())) {
+                if (contentlet.isFileAsset() && FILE_ASSET.equals(velocityVarName)) {
                     final Optional<Identifier> identifier =
                                     Optional.of(Try.of(() -> toolBox.identifierAPI.find(contentlet.getIdentifier())).getOrNull());
                     if (identifier.isPresent()) {
