@@ -240,7 +240,7 @@ public class DefaultTransformStrategy extends AbstractTransformStrategy<Contentl
                     map.put(velocityVarName + "MetaData", metaMap);
                     putBinaryLinks(velocityVarName, metadata.getName(), contentlet, map);
                 } else {
-                    Logger.warn(FileAssetViewStrategy.class,
+                    Logger.debug(FileAssetViewStrategy.class,
                                     String.format("Binary file from field '%s' " + "in Contentlet with ID '%s' is not present",
                                                     velocityVarName, contentlet.getIdentifier()));
 
