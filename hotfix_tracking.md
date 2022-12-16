@@ -175,3 +175,4 @@ This maintenance release includes the following code fixes:
 100. https://github.com/dotCMS/core/issues/21400 : TempFileApi should only import by URL if user is admin #21400
 101. https://github.com/dotCMS/core/issues/22512 : Allow follow redirects to be configured #22512
 102. https://github.com/dotCMS/core/issues/22522 : Remote URL access should be run in a threadpool #22522
+103. https://github.com/dotCMS/core/issues/23365 : Placeholder Issue #23365
