@@ -11,8 +11,14 @@ import { take, takeUntil } from 'rxjs/operators';
 import { MenuItem } from 'primeng/api';
 import { Subject } from 'rxjs';
 import { DotContainerStructure } from '@dotcms/dotcms-models';
+import { animate, style, transition, trigger } from '@angular/animations';
 
 @Component({
+    animations: [
+        trigger('contentTypeAnimation', [
+            transition(':enter', [style({ opacity: 0 }), animate(500, style({ opacity: 1 }))])
+        ])
+    ],
     selector: 'dot-container-properties',
     templateUrl: './dot-container-properties.component.html',
     styleUrls: ['./dot-container-properties.component.scss'],
@@ -118,7 +124,7 @@ export class DotContainerPropertiesComponent implements OnInit {
             ]);
             this.form.get('code').clearValidators();
             this.form.get('code').reset();
-            this.store.loadContentTypesAndUpdateVisibility();
+            this.store.updateContentTypeVisibility(true);
         } else {
             this.form.get('code').setValidators(Validators.required);
             this.form.get('containerStructures').clearValidators();

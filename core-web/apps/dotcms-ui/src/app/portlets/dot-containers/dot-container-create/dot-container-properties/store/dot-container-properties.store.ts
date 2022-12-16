@@ -53,6 +53,7 @@ export class DotContainerPropertiesStore extends ComponentStore<DotContainerProp
             apiLink: '',
             invalidForm: true
         });
+        this.loadContentTypes();
         this.activatedRoute.data
             .pipe(
                 pluck('container'),
@@ -208,14 +209,13 @@ export class DotContainerPropertiesStore extends ComponentStore<DotContainerProp
         }
     );
 
-    readonly loadContentTypesAndUpdateVisibility = this.effect<void>(
+    readonly loadContentTypes = this.effect<void>(
         pipe(
             switchMap(() => {
                 return this.dotContentTypeService.getContentTypes({ page: 999 });
             }),
             tap((contentTypes: DotCMSContentType[]) => {
                 this.updateContentTypes(contentTypes);
-                this.updateContentTypeVisibility(true);
             }),
             catchError((err: HttpErrorResponse) => {
                 this.dotHttpErrorManagerService.handle(err);
