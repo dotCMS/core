@@ -122,3 +122,7 @@ karma_html/
 /core-web/out*/
 dist-docs/
 **/test-reports/
+
+# Maven
+installs/
+target/

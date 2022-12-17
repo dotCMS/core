@@ -67,11 +67,9 @@ $spacing-4: 1.5rem;
 $finder-s-input: ".ui.input input";
 
 .rules__engine-container {
-    background-color: $gray-bg;
     display: flex;
     flex-grow: 1;
     min-height: 100%;
-    padding: $spacing-4;
 
     cw-rule-engine {
         box-shadow: $md-shadow-4;
