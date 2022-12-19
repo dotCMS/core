@@ -323,7 +323,7 @@ describe('DotContainerPropertiesComponent', () => {
                 title: 'Title 1',
                 friendlyName: 'friendlyName',
                 maxContentlets: 0,
-                code: null,
+                code: '',
                 preLoop: null,
                 postLoop: null,
                 identifier: '',
