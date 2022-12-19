@@ -1,20 +1,23 @@
 import { Observable, Subject, fromEvent, merge, of } from 'rxjs';
 
-import { filter, takeUntil, pluck, take, tap, skip, catchError } from 'rxjs/operators';
-import { ActivatedRoute } from '@angular/router';
+import { filter, takeUntil, pluck, take, tap, skip, catchError, map } from 'rxjs/operators';
+import { ActivatedRoute, Router } from '@angular/router';
 import { Component, OnInit, ViewChild, ElementRef, NgZone, OnDestroy } from '@angular/core';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 
 import { SiteService } from '@dotcms/dotcms-js';
 import {
+    DEFAULT_VARIANT_NAME,
     DotCMSContentlet,
     DotCMSContentType,
     DotContainerStructure,
+    DotExperiment,
     DotPageContainer,
     DotPageContainerPersonalized,
     DotPageMode,
     DotPageRender,
     DotPageRenderState,
+    DotVariantData,
     ESContent
 } from '@dotcms/dotcms-models';
 
@@ -77,6 +80,7 @@ export class DotEditContentComponent implements OnInit, OnDestroy {
     isEditMode = false;
     paletteCollapsed = false;
     isEnterpriseLicense = false;
+    variantData: Observable<DotVariantData>;
 
     private readonly customEventsHandler;
     private destroy$: Subject<boolean> = new Subject<boolean>();
@@ -94,6 +98,7 @@ export class DotEditContentComponent implements OnInit, OnDestroy {
         private dotUiColorsService: DotUiColorsService,
         private ngZone: NgZone,
         private route: ActivatedRoute,
+        private router: Router,
         private siteService: SiteService,
         private dotCustomEventHandlerService: DotCustomEventHandlerService,
         public dotEditContentHtmlService: DotEditContentHtmlService,
@@ -171,11 +176,36 @@ export class DotEditContentComponent implements OnInit, OnDestroy {
         this.subscribePageModelChange();
         this.subscribeOverlayService();
         this.subscribeDraggedContentType();
+        this.getExperimentResolverData();
     }
 
     ngOnDestroy(): void {
         this.destroy$.next(true);
         this.destroy$.complete();
+    }
+
+    /**
+     * Go to the experiment
+     * @memberof DotEditContentComponent
+     */
+    backToExperiment() {
+        const { experimentId } = this.route.snapshot.queryParams;
+
+        this.router.navigate(
+            [
+                '/edit-page/experiments/configuration',
+                this.pageStateInternal.page.identifier,
+                experimentId
+            ],
+            {
+                queryParams: {
+                    editPageTab: null,
+                    variationName: null,
+                    experimentId: null
+                },
+                queryParamsHandling: 'merge'
+            }
+        );
     }
 
     /**
@@ -279,10 +309,8 @@ export class DotEditContentComponent implements OnInit, OnDestroy {
      * @memberof DotEditContentComponent
      */
     showFavoritePageDialog(openDialog: boolean): void {
-        // this.pageState$.pipe(take(1)).subscribe((pageState: DotPageRenderState) => {
         if (openDialog) {
             const favoritePageUrl = generateDotFavoritePageUrl(this.pageStateInternal);
-            // console.log('***user', this.pageStateInternal.user);
 
             this.dialogService.open(DotFavoritePageComponent, {
                 header: this.dotMessageService.get('favoritePage.dialog.header.add.page'),
@@ -304,7 +332,6 @@ export class DotEditContentComponent implements OnInit, OnDestroy {
                 }
             });
         }
-        // });
     }
 
     private updateFavoritePageIconStatus(pageUrl: string) {
@@ -619,5 +646,33 @@ export class DotEditContentComponent implements OnInit, OnDestroy {
         blackList.forEach((content) => allowedContent.delete(content.toLocaleLowerCase()));
 
         return [...allowedContent] as string[];
+    }
+
+    private getExperimentResolverData(): void {
+        const { variationName, editPageTab } = this.route.snapshot.queryParams;
+        this.variantData = this.route.parent.parent.data.pipe(
+            take(1),
+            pluck('experiment'),
+            filter((experiment) => !!experiment),
+            map((experiment: DotExperiment) => {
+                const variant = experiment.trafficProportion.variants.find(
+                    (variant) => variant.id === variationName
+                );
+
+                return {
+                    variant: {
+                        id: variant.id,
+                        url: variant.url,
+                        title: variant.name,
+                        isOriginal: variant.name === DEFAULT_VARIANT_NAME
+                    },
+                    pageId: experiment.pageId,
+                    experimentId: experiment.id,
+
+                    experimentName: experiment.name,
+                    mode: editPageTab
+                } as DotVariantData;
+            })
+        );
     }
 }
