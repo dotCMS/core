@@ -32,7 +32,7 @@ export class ImageTabviewFormComponent implements OnInit {
     @ViewChild('inputSearch') inputSearch!: ElementRef;
 
     loading = true;
-    done = false;
+    preventScroll = false;
     search$ = new BehaviorSubject<number>(null);
     contentlets$: Observable<DotCMSContentlet[][]>;
     virtualItems: DotCMSContentlet[][] = [];
@@ -86,7 +86,7 @@ export class ImageTabviewFormComponent implements OnInit {
                 const items = this.setContentletLanguage(contentlets);
                 this.fillVirtualItems(items);
                 this.loading = false;
-                this.done = !contentlets?.length;
+                this.preventScroll = !contentlets?.length;
 
                 return this.virtualItems;
             })

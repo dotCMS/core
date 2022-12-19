@@ -7,7 +7,7 @@
     scrollHeight="250px"
 >
     <ng-template pTemplate="item" let-contentlet>
-        <div class="virtual-item">
+        <div class="card-list-row">
             <dot-image-card
                 *ngIf="contentlet[0]"
                 [contentlet]="contentlet[0]"
@@ -24,7 +24,7 @@
 
 <ng-template #loadingBlock>
     <div class="wrapper justify-start">
-        <div class="virtual-item-skeleton" *ngFor="let loadingItem of loadingItems">
+        <div class="card-list-row" *ngFor="let loadingItem of loadingItems">
             <dot-image-card-skeleton></dot-image-card-skeleton>
             <dot-image-card-skeleton></dot-image-card-skeleton>
         </div>
@@ -33,7 +33,7 @@
 
 <ng-template #emptyBlock>
     <div class="wrapper">
-        <img [src]="icon" />
+        <img [src]="icon" width="42px" />
         <p>No results found, try searching again</p>
     </div>
 </ng-template>

@@ -279,144 +279,144 @@ const IMAGE_CONTENTLETS = [
         name: 'services-2.jpg',
         description: 'Backcountry Skiing Services',
         title: 'services-2.jpg'
+    },
+    {
+        ...EMPTY_IMAGE_CONTENTLET,
+        fileName: 'template-breadcrumbs.png',
+        name: 'template-breadcrumbs.png',
+        description: 'Thumbnail image for template with breadcrumbs',
+        title: 'template-breadcrumbs.png'
+    },
+    {
+        ...EMPTY_IMAGE_CONTENTLET,
+        fileName: 'downloading.jpg',
+        name: 'downloading.jpg',
+        description:
+            'With the opening our our new Peak Bar  this year our Top Expressive lift has improve access for downloading',
+        title: 'Going Up / Going Down'
+    },
+    {
+        ...EMPTY_IMAGE_CONTENTLET,
+        fileName: 'resort-cottage.jpg',
+        name: 'resort-cottage.jpg',
+        description: 'resort-cottage',
+        title: 'Resort-cottage.jpg'
+    },
+    {
+        ...EMPTY_IMAGE_CONTENTLET,
+        fileName: 'first-chair.jpg',
+        name: 'first-chair.jpg',
+        description: 'Stay at one of our resorts and get early hours with our first chair program.',
+        title: 'First to the Top'
+    },
+    {
+        ...EMPTY_IMAGE_CONTENTLET,
+        fileName: 'adult-antioxidant.jpg',
+        name: 'adult-antioxidant.jpg',
+        description: 'adult-antioxidant',
+        title: 'Adult-antioxidant.jpg'
+    },
+    {
+        ...EMPTY_IMAGE_CONTENTLET,
+        fileName: 'downloading.jpg',
+        name: 'downloading.jpg',
+        description:
+            'With the opening our our new Peak Bar  this year our Top Expressive lift has improve access for downloading',
+        title: 'Going Up / Going Down'
+    },
+    {
+        ...EMPTY_IMAGE_CONTENTLET,
+        fileName: 'rain-forest-view.jpg',
+        name: 'rain-forest-view.jpg',
+        description: 'rain-forest-view',
+        title: 'Rain-forest-view.jpg'
+    },
+    {
+        ...EMPTY_IMAGE_CONTENTLET,
+        fileName: 'rain-forest-view.jpg',
+        name: 'rain-forest-view.jpg',
+        description: 'rain-forest-view',
+        title: 'Rain-forest-view.jpg'
+    },
+    {
+        ...EMPTY_IMAGE_CONTENTLET,
+        fileName: 'Foto8.jpg',
+        name: 'Foto8.jpg',
+        description: 'Foto8',
+        title: 'Foto8.jpg'
+    },
+    {
+        ...EMPTY_IMAGE_CONTENTLET,
+        fileName: 'first-chair.jpg',
+        name: 'first-chair.jpg',
+        description: 'Stay at one of our resorts and get early hours with our first chair program.',
+        title: 'First to the Top'
+    },
+    {
+        ...EMPTY_IMAGE_CONTENTLET,
+        fileName: 'adult-antioxidant.jpg',
+        name: 'adult-antioxidant.jpg',
+        description: 'adult-antioxidant',
+        title: 'Adult-antioxidant.jpg'
+    },
+    {
+        ...EMPTY_IMAGE_CONTENTLET,
+        fileName: 'services-2.jpg',
+        name: 'services-2.jpg',
+        description: 'Backcountry Skiing Services',
+        title: 'services-2.jpg'
+    },
+    {
+        ...EMPTY_IMAGE_CONTENTLET,
+        fileName: 'template-breadcrumbs.png',
+        name: 'template-breadcrumbs.png',
+        description: 'Thumbnail image for template with breadcrumbs',
+        title: 'template-breadcrumbs.png'
+    },
+    {
+        ...EMPTY_IMAGE_CONTENTLET,
+        fileName: 'downloading.jpg',
+        name: 'downloading.jpg',
+        description:
+            'With the opening our our new Peak Bar  this year our Top Expressive lift has improve access for downloading',
+        title: 'Going Up / Going Down'
+    },
+    {
+        ...EMPTY_IMAGE_CONTENTLET,
+        fileName: 'resort-cottage.jpg',
+        name: 'resort-cottage.jpg',
+        description: 'resort-cottage',
+        title: 'Resort-cottage.jpg'
+    },
+    {
+        ...EMPTY_IMAGE_CONTENTLET,
+        fileName: 'first-chair.jpg',
+        name: 'first-chair.jpg',
+        description: 'Stay at one of our resorts and get early hours with our first chair program.',
+        title: 'First to the Top'
+    },
+    {
+        ...EMPTY_IMAGE_CONTENTLET,
+        fileName: 'adult-antioxidant.jpg',
+        name: 'adult-antioxidant.jpg',
+        description: 'adult-antioxidant',
+        title: 'Adult-antioxidant.jpg'
+    },
+    {
+        ...EMPTY_IMAGE_CONTENTLET,
+        fileName: 'downloading.jpg',
+        name: 'downloading.jpg',
+        description:
+            'With the opening our our new Peak Bar  this year our Top Expressive lift has improve access for downloading',
+        title: 'Going Up / Going Down'
+    },
+    {
+        ...EMPTY_IMAGE_CONTENTLET,
+        fileName: 'rain-forest-view.jpg',
+        name: 'rain-forest-view.jpg',
+        description: 'rain-forest-view',
+        title: 'Rain-forest-view.jpg'
     }
-    // {
-    //     ...EMPTY_IMAGE_CONTENTLET,
-    //     fileName: 'template-breadcrumbs.png',
-    //     name: 'template-breadcrumbs.png',
-    //     description: 'Thumbnail image for template with breadcrumbs',
-    //     title: 'template-breadcrumbs.png'
-    // },
-    // {
-    //     ...EMPTY_IMAGE_CONTENTLET,
-    //     fileName: 'downloading.jpg',
-    //     name: 'downloading.jpg',
-    //     description:
-    //         'With the opening our our new Peak Bar  this year our Top Expressive lift has improve access for downloading',
-    //     title: 'Going Up / Going Down'
-    // },
-    // {
-    //     ...EMPTY_IMAGE_CONTENTLET,
-    //     fileName: 'resort-cottage.jpg',
-    //     name: 'resort-cottage.jpg',
-    //     description: 'resort-cottage',
-    //     title: 'Resort-cottage.jpg'
-    // },
-    // {
-    //     ...EMPTY_IMAGE_CONTENTLET,
-    //     fileName: 'first-chair.jpg',
-    //     name: 'first-chair.jpg',
-    //     description: 'Stay at one of our resorts and get early hours with our first chair program.',
-    //     title: 'First to the Top'
-    // },
-    // {
-    //     ...EMPTY_IMAGE_CONTENTLET,
-    //     fileName: 'adult-antioxidant.jpg',
-    //     name: 'adult-antioxidant.jpg',
-    //     description: 'adult-antioxidant',
-    //     title: 'Adult-antioxidant.jpg'
-    // },
-    // {
-    //     ...EMPTY_IMAGE_CONTENTLET,
-    //     fileName: 'downloading.jpg',
-    //     name: 'downloading.jpg',
-    //     description:
-    //         'With the opening our our new Peak Bar  this year our Top Expressive lift has improve access for downloading',
-    //     title: 'Going Up / Going Down'
-    // },
-    // {
-    //     ...EMPTY_IMAGE_CONTENTLET,
-    //     fileName: 'rain-forest-view.jpg',
-    //     name: 'rain-forest-view.jpg',
-    //     description: 'rain-forest-view',
-    //     title: 'Rain-forest-view.jpg'
-    // },
-    // {
-    //     ...EMPTY_IMAGE_CONTENTLET,
-    //     fileName: 'rain-forest-view.jpg',
-    //     name: 'rain-forest-view.jpg',
-    //     description: 'rain-forest-view',
-    //     title: 'Rain-forest-view.jpg'
-    // },
-    // {
-    //     ...EMPTY_IMAGE_CONTENTLET,
-    //     fileName: 'Foto8.jpg',
-    //     name: 'Foto8.jpg',
-    //     description: 'Foto8',
-    //     title: 'Foto8.jpg'
-    // },
-    // {
-    //     ...EMPTY_IMAGE_CONTENTLET,
-    //     fileName: 'first-chair.jpg',
-    //     name: 'first-chair.jpg',
-    //     description: 'Stay at one of our resorts and get early hours with our first chair program.',
-    //     title: 'First to the Top'
-    // },
-    // {
-    //     ...EMPTY_IMAGE_CONTENTLET,
-    //     fileName: 'adult-antioxidant.jpg',
-    //     name: 'adult-antioxidant.jpg',
-    //     description: 'adult-antioxidant',
-    //     title: 'Adult-antioxidant.jpg'
-    // },
-    // {
-    //     ...EMPTY_IMAGE_CONTENTLET,
-    //     fileName: 'services-2.jpg',
-    //     name: 'services-2.jpg',
-    //     description: 'Backcountry Skiing Services',
-    //     title: 'services-2.jpg'
-    // },
-    // {
-    //     ...EMPTY_IMAGE_CONTENTLET,
-    //     fileName: 'template-breadcrumbs.png',
-    //     name: 'template-breadcrumbs.png',
-    //     description: 'Thumbnail image for template with breadcrumbs',
-    //     title: 'template-breadcrumbs.png'
-    // },
-    // {
-    //     ...EMPTY_IMAGE_CONTENTLET,
-    //     fileName: 'downloading.jpg',
-    //     name: 'downloading.jpg',
-    //     description:
-    //         'With the opening our our new Peak Bar  this year our Top Expressive lift has improve access for downloading',
-    //     title: 'Going Up / Going Down'
-    // },
-    // {
-    //     ...EMPTY_IMAGE_CONTENTLET,
-    //     fileName: 'resort-cottage.jpg',
-    //     name: 'resort-cottage.jpg',
-    //     description: 'resort-cottage',
-    //     title: 'Resort-cottage.jpg'
-    // },
-    // {
-    //     ...EMPTY_IMAGE_CONTENTLET,
-    //     fileName: 'first-chair.jpg',
-    //     name: 'first-chair.jpg',
-    //     description: 'Stay at one of our resorts and get early hours with our first chair program.',
-    //     title: 'First to the Top'
-    // },
-    // {
-    //     ...EMPTY_IMAGE_CONTENTLET,
-    //     fileName: 'adult-antioxidant.jpg',
-    //     name: 'adult-antioxidant.jpg',
-    //     description: 'adult-antioxidant',
-    //     title: 'Adult-antioxidant.jpg'
-    // },
-    // {
-    //     ...EMPTY_IMAGE_CONTENTLET,
-    //     fileName: 'downloading.jpg',
-    //     name: 'downloading.jpg',
-    //     description:
-    //         'With the opening our our new Peak Bar  this year our Top Expressive lift has improve access for downloading',
-    //     title: 'Going Up / Going Down'
-    // },
-    // {
-    //     ...EMPTY_IMAGE_CONTENTLET,
-    //     fileName: 'rain-forest-view.jpg',
-    //     name: 'rain-forest-view.jpg',
-    //     description: 'rain-forest-view',
-    //     title: 'Rain-forest-view.jpg'
-    // }
 ];
 
 export const primary = () => ({

@@ -18,7 +18,7 @@
                 <ng-container *ngIf="contentlets$ | async as contentlets">
                     <dot-image-card-list
                         [contentlets]="contentlets"
-                        [done]="done"
+                        [done]="preventScroll"
                         [loading]="loading"
                         (selectedItem)="selectedContentlet.emit($event)"
                         (nextBatch)="search$.next($event)"

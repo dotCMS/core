@@ -7,8 +7,8 @@
         cursor: pointer;
         display: flex;
         gap: $dot-editor-size;
-        height: 5.875 * $dot-editor-size;
-        width: 20.625 * $dot-editor-size;
+        height: 94px;
+        width: 330px;
 
         .p-card-header {
             padding: 0;
@@ -18,7 +18,7 @@
             flex: 1;
             overflow: hidden;
             padding: $spacing-2 0;
-            padding-right: 0.875 * $dot-editor-size;
+            padding-right: $dot-editor-size;
             display: flex;
             flex-direction: column;
 

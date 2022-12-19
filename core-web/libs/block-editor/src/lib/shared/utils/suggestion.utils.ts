@@ -27,6 +27,14 @@ const headings = [...Array(3).keys()].map((level) => {
     };
 });
 
+const image = [
+    {
+        label: 'Image',
+        icon: sanitizeUrl(imageIcon),
+        id: 'image'
+    }
+];
+
 const table = [
     {
         label: 'Table',
@@ -79,11 +87,7 @@ export function sanitizeUrl(url: string): SafeUrl {
 }
 
 export const suggestionOptions: DotMenuItem[] = [
-    {
-        label: 'Image',
-        icon: sanitizeUrl(imageIcon),
-        id: 'image'
-    },
+    ...image,
     ...headings,
     ...table,
     ...paragraph,

@@ -1,3 +1,6 @@
+// Modules
+export * from './primeng.module';
+
 // Plugins
 export * from './plugins/floating.plugin';
 

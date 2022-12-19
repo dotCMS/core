@@ -3,7 +3,7 @@
 :host {
     display: flex;
     width: 100%;
-    height: 100%;
+    height: 250px;
     flex-direction: column;
 
     .wrapper {
@@ -13,7 +13,7 @@
         flex-direction: column;
         flex-grow: 1;
         height: 250px;
-        gap: 0.625 * $dot-editor-size;
+        gap: 0 $dot-editor-size;
         padding: 0 (1.3125 * $dot-editor-size);
         overflow: hidden;
     }
@@ -27,17 +27,12 @@
             padding: 0 (1.3125 * $dot-editor-size);
         }
 
-        .virtual-item,
-        .virtual-item-skeleton {
+        .card-list-row {
             display: flex;
-            justify-content: space-between;
-            width: 100%;
-            min-height: 110px;
-        }
-
-        .virtual-item-skeleton {
             justify-content: flex-start;
             gap: $dot-editor-size;
+            width: 100%;
+            min-height: 110px;
         }
     }
 }
