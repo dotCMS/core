@@ -150,6 +150,11 @@ public class DbContentTypeTransformer implements ContentTypeTransformer{
 				if(d!=null) javaDate.setTime(d.getTime());
 				return javaDate;
 			}
+
+			@Override
+			public Source getSource() {
+				return Source.DB;
+			}
 		};
 
 		return new ImplClassContentTypeTransformer(type).from();

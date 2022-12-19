@@ -173,6 +173,18 @@ public abstract class ContentType implements Serializable, Permissionable, Conte
     return null;
   }
 
+  /**
+   * The sole purpose of this getter is helping to identify whether the CT was loaded from the db or not
+   *
+   * @return
+   */
+  @Value.Default
+  public Source getSource(){
+    return Source.OTHER;
+  }
+
+  public enum Source {DB,OTHER}
+
   @Value.Default
   public Date modDate() {
     return DateUtils.round(new Date(), Calendar.SECOND);
@@ -327,6 +339,7 @@ public abstract class ContentType implements Serializable, Permissionable, Conte
   @JsonIgnore
   @Auxiliary
   public SiteAndFolderParams siteAndFolderParams() {
+
     return ImmutableSiteAndFolderParams.builder()
             .folder(folder()).host(host())
             .folderPath(canonicalFolderPath != null ? null : folderPath())
