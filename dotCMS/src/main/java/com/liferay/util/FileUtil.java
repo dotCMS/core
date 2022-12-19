@@ -592,7 +592,7 @@ public class FileUtil {
 
 	/**
 	 * This method was created as way to avoid the error when you upload a file via Finder GIT-#9334
-	 *
+	 * Both params are expected to be files
 	 * @param source Source file
 	 * @param destination Empty destination file (Not a directory)
 	 * @return bool result that indicates whether the operation succeeded or failed
