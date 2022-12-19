@@ -1,7 +1,7 @@
-import { Observable, Subject, merge } from 'rxjs';
+import { merge, Observable, Subject } from 'rxjs';
 
 import { pluck, takeUntil, tap } from 'rxjs/operators';
-import { Component, OnInit, OnDestroy } from '@angular/core';
+import { Component, OnDestroy, OnInit } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 import { DotPageStateService } from '../../content/services/dot-page-state/dot-page-state.service';
 import { DotContentletEditorService } from '@components/dot-contentlet-editor/services/dot-contentlet-editor.service';

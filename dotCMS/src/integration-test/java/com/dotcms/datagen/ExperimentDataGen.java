@@ -102,8 +102,7 @@ public class ExperimentDataGen  extends AbstractDataGen<Experiment> {
         final Host host = new SiteDataGen().nextPersisted();
         final Template template = new TemplateDataGen().nextPersisted();
         final HTMLPageAsset page = new HTMLPageDataGen(host, template).nextPersisted();
-        HTMLPageDataGen.publish(page);
-        return page;
+        return APILocator.getHTMLPageAssetAPI().fromContentlet(HTMLPageDataGen.publish(page));
     }
 
     private String getRandomName() {

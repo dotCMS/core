@@ -18,11 +18,13 @@
     >
         <ng-template let-persona="item" pTemplate="select">
             <dot-persona-selected-item
+                [class.readonly]="readonly"
                 [disabled]="disabled"
                 [isEditMode]="isEditMode"
                 [pTooltip]="!disabled ? persona?.name || ('modes.persona.no.persona' | dm) : ''"
                 [persona]="persona"
-                (click)="!disabled && searchableDropdown.toggleOverlayPanel($event)"
+                [readonly]="readonly"
+                (click)="!disabled && !readonly && searchableDropdown.toggleOverlayPanel($event)"
                 appendTo="target"
                 tooltipPosition="bottom"
             ></dot-persona-selected-item>

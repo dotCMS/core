@@ -1,8 +1,8 @@
-import { Component, ViewChild, Output, EventEmitter, Input, OnInit } from '@angular/core';
+import { Component, EventEmitter, Input, OnInit, Output, ViewChild } from '@angular/core';
 import { PaginatorService } from '@dotcms/data-access';
 import {
-    SearchableDropdownComponent,
-    PaginationEvent
+    PaginationEvent,
+    SearchableDropdownComponent
 } from '@components/_common/searchable-dropdown/component';
 import { DotPersona, DotPageRenderState, DotPageMode } from '@dotcms/dotcms-models';
 import { delay, take } from 'rxjs/operators';
@@ -23,6 +23,7 @@ import { IframeOverlayService } from '@components/_common/iframe/service/iframe-
 })
 export class DotPersonaSelectorComponent implements OnInit {
     @Input() disabled: boolean;
+    @Input() readonly: boolean;
 
     @Output() selected: EventEmitter<DotPersona> = new EventEmitter();
 
@@ -39,22 +40,17 @@ export class DotPersonaSelectorComponent implements OnInit {
     personas: DotPersona[] = [];
     totalRecords: number;
     value: DotPersona;
-
-    private _pageState: DotPageRenderState;
     private personaSeachQuery: string;
+
     constructor(
         public paginationService: PaginatorService,
         public iframeOverlayService: IframeOverlayService
     ) {}
 
-    ngOnInit(): void {
-        this.addAction = () => {
-            this.searchableDropdown.toggleOverlayPanel();
-            this.personaDialog.visible = true;
-            this.personaDialog.personaName = this.personas.length ? '' : this.personaSeachQuery;
-        };
+    private _pageState: DotPageRenderState;
 
-        this.paginationService.paginationPerPage = this.paginationPerPage;
+    get pageState(): DotPageRenderState {
+        return this._pageState;
     }
 
     @Input()
@@ -69,8 +65,14 @@ export class DotPersonaSelectorComponent implements OnInit {
         this.reloadPersonasListCurrentPage();
     }
 
-    get pageState(): DotPageRenderState {
-        return this._pageState;
+    ngOnInit(): void {
+        this.addAction = () => {
+            this.searchableDropdown.toggleOverlayPanel();
+            this.personaDialog.visible = true;
+            this.personaDialog.personaName = this.personas.length ? '' : this.personaSeachQuery;
+        };
+
+        this.paginationService.paginationPerPage = this.paginationPerPage;
     }
 
     /**

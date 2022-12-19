@@ -15,6 +15,10 @@ h2 {
     color: $gray-lighter;
 }
 
+button {
+    min-width: 55px;
+}
+
 :host ::ng-deep {
     dot-icon {
         color: $gray-light;
