@@ -117,7 +117,7 @@ export class DotContainerPropertiesComponent implements OnInit {
                 Validators.minLength(1)
             ]);
             this.form.get('code').clearValidators();
-            this.form.get('code').reset();
+            this.form.get('code').reset('');
             this.store.loadContentTypesAndUpdateVisibility();
         } else {
             this.form.get('code').setValidators(Validators.required);
@@ -136,6 +136,8 @@ export class DotContainerPropertiesComponent implements OnInit {
         const formValues = this.form.value;
         if (formValues.identifier) {
             this.store.editContainer(formValues);
+            this.store.updateOriginalFormState(formValues);
+            this.form.updateValueAndValidity();
         } else {
             delete formValues.identifier;
             this.store.saveContainer(formValues);
