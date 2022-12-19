@@ -191,7 +191,7 @@ public class FileUtil {
 		
         
         if (!source.exists()) {
-            throw new IOException("Source file does not exist" + source);
+            throw new IOException("Source file does not exist " + source);
         }
 
         if(source.getAbsolutePath().equalsIgnoreCase(destination.getAbsolutePath())) {
@@ -590,23 +590,30 @@ public class FileUtil {
 		}
 	}
 
+	/**
+	 * This method was created as way to avoid the error when you upload a file via Finder GIT-#9334
+	 *
+	 * @param source Source file
+	 * @param destination Empty destination file (Not a directory)
+	 * @return bool result that indicates whether the operation succeeded or failed
+	 */
 	public static boolean move(File source, File destination) throws IOException {
 		return move(source, destination, true);
 	}
 	/**
 	 * This method was created as way to avoid the error when you upload a file via Finder GIT-#9334
 	 * 
-	 * @param source
-	 * @param destination
+	 * @param source Source file
+	 * @param destination Empty destination file (Not a directory)
 	 * @param validateEmptyFile if is false it won't check if the file is empty
-	 * @return
+	 * @return bool result that indicates whether the operation succeeded or failed
 	 * @throws IOException
 	 */
 	public static boolean move(File source, File destination, boolean validateEmptyFile) throws IOException {
 		if (!source.exists()) {
 			return false;
 		}
-		
+
 		if(validateEmptyFile){
 			validateEmptyFile(source);
 		}
@@ -641,7 +648,7 @@ public class FileUtil {
 
 		boolean success = source.renameTo(destination);
 		
-		// if the rename fails, copy
+		// if to rename fails, copy
 
 		if (!success) {
 			copyFile(source, destination);
