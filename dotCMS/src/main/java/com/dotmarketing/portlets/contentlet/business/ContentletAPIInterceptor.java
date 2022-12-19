@@ -36,7 +36,13 @@ import org.elasticsearch.action.search.SearchResponse;
 
 import java.io.File;
 import java.io.Serializable;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
 
 /**
  * This interceptor class allows developers to execute Java <b>code</b> before
@@ -53,9 +59,9 @@ import java.util.*;
  */
 public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 
-	private List<ContentletAPIPreHook> preHooks = new ArrayList<ContentletAPIPreHook>();
-	private List<ContentletAPIPostHook> postHooks = new ArrayList<ContentletAPIPostHook>();
-	private ContentletAPI conAPI;
+	private List<ContentletAPIPreHook> preHooks = new ArrayList<>();
+	private List<ContentletAPIPostHook> postHooks = new ArrayList<>();
+	private final ContentletAPI conAPI;
 
 	/**
 	 * Default class constructor.
@@ -1151,6 +1157,22 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 		return c;
 	}
 
+	@Override
+	public Optional<Integer> getAllContentletReferencesCount(final String contentletId) throws DotDataException {
+		for (final ContentletAPIPreHook pre : this.preHooks) {
+			final boolean preResult = pre.getAllContentletReferencesCount(contentletId);
+			if (!preResult) {
+				Logger.error(this, "The following prehook failed: " + pre.getClass().getName());
+				throw new DotRuntimeException("The following prehook failed: " + pre.getClass().getName());
+			}
+		}
+		final Optional<Integer> count = this.conAPI.getAllContentletReferencesCount(contentletId);
+		for (final ContentletAPIPostHook post : this.postHooks) {
+			post.getContentletReferenceCount(contentletId);
+		}
+		return count;
+	}
+
 	/**
 	 * @deprecated use {@link ContentletAPIInterceptor#getFieldValue(Contentlet, com.dotcms.contenttype.model.field.Field)} instead
 	 * @param contentlet
@@ -1800,6 +1822,27 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 		List<Contentlet> c = conAPI.search(luceneQuery, limit, offset, sortBy, user, respectFrontendRoles,requiredPermission);
 		for(ContentletAPIPostHook post : postHooks){
 			post.search(luceneQuery, limit, offset, sortBy, user, respectFrontendRoles,requiredPermission,c);
+		}
+		return c;
+	}
+
+	@Override
+	public List<Contentlet> getAllContentByVariants(User user,
+			boolean respectFrontendRoles, String... variantNames)
+			throws DotDataException, DotStateException, DotSecurityException {
+		for (ContentletAPIPreHook pre : preHooks) {
+			boolean preResult = pre.getAllContentByVariants(user, respectFrontendRoles, variantNames);
+			if (!preResult) {
+				Logger.error(this, "The following prehook failed " + pre.getClass().getName());
+				throw new DotRuntimeException("The following prehook failed "
+						+ pre.getClass().getName());
+			}
+		}
+
+		List<Contentlet> c = conAPI.getAllContentByVariants(user, respectFrontendRoles, variantNames);
+
+		for (ContentletAPIPostHook post : postHooks) {
+			post.getAllContentByVariants(user, respectFrontendRoles, variantNames);
 		}
 		return c;
 	}

@@ -3,6 +3,7 @@ package com.dotcms.contenttype.model.type;
 import com.dotcms.contenttype.model.component.ImmutableSiteAndFolderParams;
 import com.dotcms.contenttype.model.component.SiteAndFolderParams;
 import com.dotcms.contenttype.model.field.Field;
+import com.dotcms.contenttype.model.field.StoryBlockField;
 import com.dotcms.publisher.util.PusheableAsset;
 import com.dotcms.publishing.manifest.ManifestItem;
 import com.dotcms.repackage.com.google.common.base.Preconditions;
@@ -48,6 +49,15 @@ import org.immutables.value.Value;
 import org.immutables.value.Value.Auxiliary;
 import org.immutables.value.Value.Default;
 
+import javax.annotation.Nullable;
+import java.io.Serializable;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
+
 @JsonTypeInfo(
         use = Id.CLASS,
         include = JsonTypeInfo.As.PROPERTY,
@@ -82,6 +92,8 @@ public abstract class ContentType implements Serializable, Permissionable, Conte
   }
 
   static final long serialVersionUID = 1L;
+
+  Boolean hasStoryBlockFields = null;
 
   public abstract String name();
 
@@ -221,6 +233,7 @@ public abstract class ContentType implements Serializable, Permissionable, Conte
   @Value.Lazy
   public List<Field> fields() {
     if (innerFields == null) {
+      this.hasStoryBlockFields = null;
       try {
         innerFields = APILocator.getContentTypeFieldAPI().byContentTypeId(this.id());
       } catch (final DotDataException e) {
@@ -442,6 +455,19 @@ public abstract class ContentType implements Serializable, Permissionable, Conte
         .siteId(this.host())
         .folderId(this.folder())
         .build();
+  }
+
+  /**
+   * Checks whether this Content Type has any {@link StoryBlockField} fields or not.
+   *
+   * @return If there is at least one field of type Story Block, returns {@code true}.
+   */
+  @JsonIgnore
+  public boolean hasStoryBlockFields() {
+    if (null == this.hasStoryBlockFields) {
+      this.hasStoryBlockFields = !this.fields(StoryBlockField.class).isEmpty();
+    }
+    return this.hasStoryBlockFields;
   }
 
 }

@@ -54,8 +54,8 @@ import { UiDotIconButtonModule } from '@components/_common/dot-icon-button/dot-i
 import { DotRelationshipsModule } from '@portlets/shared/dot-content-types-edit/components/fields/content-type-fields-properties-form/field-properties/dot-relationships-property/dot-relationships.module';
 import { DotMaxlengthModule } from '@directives/dot-maxlength/dot-maxlength.module';
 import { DotAutofocusModule } from '@directives/dot-autofocus/dot-autofocus.module';
-import { DotContentTypesInfoService } from '@services/dot-content-types-info';
-import { DotWorkflowService } from '@services/dot-workflow/dot-workflow.service';
+import { DotContentTypesInfoService } from '@dotcms/data-access';
+import { DotWorkflowService } from '@dotcms/data-access';
 import { DotSecondaryToolbarModule } from '@components/dot-secondary-toolbar';
 import { DotPipesModule } from '@pipes/dot-pipes.module';
 import { ButtonModule } from 'primeng/button';
@@ -75,6 +75,7 @@ import { DotMdIconSelectorModule } from '@dotcms/app/view/components/_common/dot
 import { DotInlineEditModule } from '@components/_common/dot-inline-edit/dot-inline-edit.module';
 import { DotConvertToBlockInfoComponent } from './components/dot-convert-to-block-info/dot-convert-to-block-info.component';
 import { DotConvertWysiwygToBlockComponent } from './components/dot-convert-wysiwyg-to-block/dot-convert-wysiwyg-to-block.component';
+import { DotBlockEditorSettingsComponent } from './components/dot-block-editor-settings/dot-block-editor-settings.component';
 
 @NgModule({
     declarations: [
@@ -97,7 +98,8 @@ import { DotConvertWysiwygToBlockComponent } from './components/dot-convert-wysi
         HintPropertyComponent,
         NamePropertyComponent,
         RegexCheckPropertyComponent,
-        ValuesPropertyComponent
+        ValuesPropertyComponent,
+        DotBlockEditorSettingsComponent
     ],
     exports: [DotContentTypesEditComponent],
     imports: [

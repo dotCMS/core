@@ -669,7 +669,7 @@ public class ContainerAPIImpl extends BaseWebAssetAPI implements ContainerAPI, D
 				} catch (DotSecurityException e) {
 					Logger.debug(this, () -> String.format(
 							"An error occurred when User '%s' tried to check information from Content Type '%s': %s",
-							containerStructure.getStructureId(), container.getIdentifier()));
+							user.getUserId(), containerStructure.getStructureId(), container.getIdentifier()));
 					continue;
 				}
 			}

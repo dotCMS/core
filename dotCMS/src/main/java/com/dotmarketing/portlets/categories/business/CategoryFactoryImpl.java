@@ -8,6 +8,9 @@ import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DeterministicIdentifierAPI;
 import com.dotmarketing.business.DotCacheException;
 import com.dotmarketing.business.PermissionAPI;
+import com.dotmarketing.business.PermissionSummary;
+import com.dotmarketing.business.Permissionable;
+import com.dotmarketing.business.RelatedPermissionableGroup;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.common.util.SQLUtil;
 import com.dotmarketing.db.DbConnectionFactory;
@@ -18,6 +21,7 @@ import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.VelocityUtil;
+import java.io.Serializable;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -25,6 +29,7 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
@@ -38,7 +43,9 @@ public class CategoryFactoryImpl extends CategoryFactory {
 
 	CategoryCache catCache;
 	final CategorySQL categorySQL;
-
+	
+	
+	
 	public CategoryFactoryImpl () {
 		catCache = CacheLocator.getCategoryCache();
 		this.categorySQL = CategorySQL.getInstance();
@@ -130,7 +137,7 @@ public class CategoryFactoryImpl extends CategoryFactory {
 
 		final List<Map<String, Object>> result = new DotConnect()
 				.setSQL(" SELECT * FROM category WHERE lower(category_velocity_var_name) = ?")
-				.addParam(variable)
+				.addParam(variable.toLowerCase())
 				.loadObjectResults();
 
 		return result.isEmpty() ? null : convertForCategory(result.get(0));
@@ -138,10 +145,12 @@ public class CategoryFactoryImpl extends CategoryFactory {
 
 	@Override
 	protected Category findByName(final String name) throws DotDataException {
-
+	    if(null==name) {
+	        return null;
+	    }
 		final List<Map<String, Object>> result = new DotConnect()
-				.setSQL(" SELECT * FROM category WHERE category_name = ?")
-				.addParam(name)
+				.setSQL(" SELECT * FROM category WHERE category_name = lower(?)")
+				.addParam(name.toLowerCase())
 				.loadObjectResults();
 
 		return result.isEmpty() ? null : convertForCategory(result.get(0));
@@ -325,6 +334,44 @@ public class CategoryFactoryImpl extends CategoryFactory {
 
 		return children;
 	}
+	
+	
+    @SuppressWarnings("unchecked")
+    @Override
+    protected List<Category> getAllChildren(final Categorizable parentCategory) throws DotDataException {
+
+        final Category allChildrenKey = new Category();
+        allChildrenKey.setInode(parentCategory.getCategoryId() + ALL_CHILDREN_SUFFIX);
+
+        List<Category> cachedChildren = catCache.getChildren(allChildrenKey);
+        if (cachedChildren != null) {
+            return cachedChildren;
+        }
+
+        synchronized (allChildrenKey.getCategoryId().intern()) {
+            cachedChildren = catCache.getChildren(allChildrenKey);
+            if (cachedChildren != null) {
+                return cachedChildren;
+            }
+
+            final List<Category> categoryTree = new ArrayList<Category>();
+            final LinkedList<Category> children = new LinkedList<Category>(getChildren(parentCategory));
+            while (children.size() > 0) {
+                Category child = children.poll();
+                children.addAll(getChildren(child));
+                categoryTree.add(child);
+            }
+
+            try {
+                catCache.putChildren(allChildrenKey, categoryTree);
+            } catch (DotCacheException e) {
+                throw new DotDataException(e.getMessage(), e);
+            }
+
+            return categoryTree;
+        }
+    }
+
 
 	@SuppressWarnings("unchecked")
 	@Override
@@ -333,9 +380,8 @@ public class CategoryFactoryImpl extends CategoryFactory {
 		orderBy = SQLUtil.sanitizeSortBy(orderBy);
 
 		final List<Map<String, Object>> result = new DotConnect()
-				.setSQL("select category.* from inode category_1_, category, tree where " +
-						"category.inode = tree.child and tree.parent = ? and category_1_.inode = category.inode " +
-						"and category_1_.type = 'category' order by " + orderBy)
+				.setSQL("select category.* from category, tree where " +
+						"category.inode = tree.child and tree.parent = ? order by " + orderBy)
 				.addParam(parent.getCategoryId())
 				.loadObjectResults();
 
@@ -352,9 +398,8 @@ public class CategoryFactoryImpl extends CategoryFactory {
 			orderBy = "tree_order";
 
 		final List<Map<String, Object>> result = new DotConnect()
-				.setSQL("select category.* from inode category_1_, category, tree where " +
-						"tree.relation_type = ? and category.inode = tree.child and tree.parent = ? and category_1_.inode = category.inode " +
-						"and category_1_.type = 'category' order by " + orderBy)
+				.setSQL("select category.* from category, tree where " +
+						"tree.relation_type = ? and category.inode = tree.child and tree.parent = ? order by " + orderBy)
 				.addParam(relationType)
 				.addParam(parent.getCategoryId())
 				.loadObjectResults();
@@ -367,9 +412,8 @@ public class CategoryFactoryImpl extends CategoryFactory {
 	protected List<Category> getParents(final Categorizable child, final String relationType) throws DotDataException {
 
 		final List<Map<String, Object>> result = new DotConnect()
-				.setSQL("select category.* from inode category_1_, category, tree " +
-						"where tree.relation_type = ? and tree.child = ? and tree.parent = category.inode and category_1_.inode = category.inode " +
-						"and category_1_.type = 'category' order by sort_order asc, category_name asc")
+				.setSQL("select category.* from category, tree " +
+						"where tree.relation_type = ? and tree.child = ? and tree.parent = category.inode order by sort_order asc, category_name asc")
 				.addParam(relationType)
 				.addParam(child.getCategoryId())
 				.loadObjectResults();
@@ -386,9 +430,8 @@ public class CategoryFactoryImpl extends CategoryFactory {
         if ( parentIds == null ) {
 
 			final List<Map<String, Object>> result = new DotConnect()
-					.setSQL("select category.* from inode category_1_, category, tree " +
-							"where tree.child = ? and tree.parent = category.inode and category_1_.inode = category.inode " +
-							"and category_1_.type = 'category' order by sort_order asc, category_name asc")
+					.setSQL("select category.* from category, tree " +
+							"where tree.child = ? and tree.parent = category.inode order by sort_order asc, category_name asc")
 					.addParam(child.getCategoryId())
 					.loadObjectResults();
 
@@ -616,36 +659,7 @@ public class CategoryFactoryImpl extends CategoryFactory {
 		return category;
 	}
 
-	@Override
-	@Deprecated
-	//  Have to delete from cache
-	protected void deleteChildren(String inode) {
-		inode = SQLUtil.sanitizeParameter(inode);
-		Statement s = null;
-		Connection conn = null;
-		try {
-			conn = DbConnectionFactory.getDataSource().getConnection();
-			conn.setAutoCommit(false);
-			s = conn.createStatement();
-			StringBuilder sql = new StringBuilder();
-			sql.append("delete  from  category c where exists ( select 1 from category cat inner join inode category_1_ on (category_1_.inode = cat.inode) ");
-			sql.append(" inner join tree on (cat.inode = tree.child) where ");
-			sql.append(" tree.parent = '").append(inode).append("' and category_1_.type = 'category' and cat.inode = c.inode ) ");
-			s.executeUpdate(sql.toString());
-			conn.commit();
-		} catch (SQLException e) {
-			if (conn != null) {
-				try {
-					conn.rollback();
-				} catch (SQLException e1) {
-					//Quiet
-				}
-			}
-			Logger.error(CategoryFactoryImpl.class, e);
-		} finally {
-			CloseUtils.closeQuietly(s, conn);
-		}
-	}
+
 	@SuppressWarnings("unchecked")
 	@Override
 	protected List<Category> findChildrenByFilter(String inode, String filter, String sort) throws DotDataException {
@@ -658,8 +672,7 @@ public class CategoryFactoryImpl extends CategoryFactory {
 
 			final DotConnect dc = new DotConnect();
 
-			String selectQuery = "SELECT * FROM inode, category, tree WHERE category.inode = tree.child AND tree.parent = ? "
-					+ "AND inode.inode = category.inode AND inode.type = 'category'";
+			String selectQuery = "SELECT * FROM category, tree WHERE category.inode = tree.child AND tree.parent = ? ";
 
 			if ( UtilMethods.isSet(filter) ) {
 				filter = filter.toLowerCase();
@@ -708,11 +721,11 @@ public class CategoryFactoryImpl extends CategoryFactory {
 	public boolean  hasDependencies(final Category cat) throws DotDataException {
 
 		final DotConnect dotConnect = new DotConnect();
-		dotConnect.setSQL("select count(*) as count from Tree  Tree, Inode inode_ where Tree.parent = '"+cat.getInode()+"' and  inode_.type = 'category' and  Tree.child = inode_.inode" );
+		dotConnect.setSQL("select count(*) as count from Tree  Tree where Tree.parent = ? ").addParam(cat.getInode());
 		int count1 = dotConnect.getInt("count");
-		dotConnect.setSQL("select count(*) as count  from Tree  Tree, Inode inode_ where Tree.child = '"+cat.getInode()+"' and Tree.parent = inode_.inode and inode_.type <> 'category'");
+		dotConnect.setSQL("select count(*) as count  from Tree  Tree where Tree.child = ? ").addParam(cat.getInode());
 		int count2 = dotConnect.getInt("count");
-		dotConnect.setSQL("select count(*) as count from Field field where field_values like '"+cat.getInode()+"'");
+		dotConnect.setSQL("select count(*) as count from Field field where field_values like ?").addParam(cat.getInode());
 		int count3 = dotConnect.getInt("count");
 
 		return (count1 != 0) || (count2 != 0) || (count3 != 0);
@@ -766,12 +779,6 @@ public class CategoryFactoryImpl extends CategoryFactory {
 			statement = conn.createStatement();
 			String sql;
 
-            if ( DbConnectionFactory.isOracle() ){
-                //For Oracle we need to avoid ORA-01027 by creating the table before.
-                sql = catSQL.createCategoryReorderTable();
-                statement.execute( sql );
-            }
-
 			PreparedStatement createSortPreparedStatement = conn.prepareStatement( catSQL.getCreateSortChildren() );
             createSortPreparedStatement.setString( 1, inode );
             createSortPreparedStatement.executeUpdate();
@@ -819,19 +826,7 @@ public class CategoryFactoryImpl extends CategoryFactory {
      * @throws DotCacheException
      */
     private void cleanParentChildrenCaches ( final Category category ) throws DotDataException, DotCacheException {
-
-		final List<String> parentIds = catCache.getParents( category );
-        if ( parentIds != null ) {
-            for ( String parentId : parentIds ) {
-                catCache.removeChildren( parentId );
-            }
-        }
-		final List<Category> children = catCache.getChildren( category );
-		if ( children != null ) {
-			for ( final Category child : children ) {
-				catCache.removeParents( child.getCategoryId() );
-			}
-		}
+        catCache.clearCache();
     }
 
     protected String suggestVelocityVarName(final String categoryVelVarName) throws DotDataException {

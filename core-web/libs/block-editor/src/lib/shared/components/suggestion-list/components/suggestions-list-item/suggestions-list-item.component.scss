@@ -12,6 +12,11 @@
     * {
         pointer-events: none;
     }
+
+    &[disabled="true"] {
+        color: $gray-light;
+        cursor: not-allowed;
+    }
 }
 
 .icon-wrapper {

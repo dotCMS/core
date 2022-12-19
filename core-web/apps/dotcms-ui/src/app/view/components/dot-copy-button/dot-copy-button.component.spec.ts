@@ -3,8 +3,9 @@ import { DebugElement } from '@angular/core';
 import { waitForAsync, ComponentFixture, TestBed } from '@angular/core/testing';
 
 import { DotCopyButtonComponent } from './dot-copy-button.component';
-import { DotMessageService } from '@services/dot-message/dot-messages.service';
-import { MockDotMessageService } from '@dotcms/app/test/dot-message-service.mock';
+import { DotMessageService } from '@dotcms/data-access';
+import { MockDotMessageService } from '@dotcms/utils-testing';
+
 import { DotClipboardUtil } from '@dotcms/app/api/util/clipboard/ClipboardUtil';
 import { UiDotIconButtonModule } from '@components/_common/dot-icon-button/dot-icon-button.module';
 import { TooltipModule } from 'primeng/tooltip';
@@ -21,21 +22,19 @@ describe('DotCopyButtonComponent', () => {
     let dotClipboardUtil: DotClipboardUtil;
     let label: DebugElement;
 
-    beforeEach(
-        waitForAsync(() => {
-            TestBed.configureTestingModule({
-                declarations: [DotCopyButtonComponent],
-                providers: [
-                    {
-                        provide: DotMessageService,
-                        useValue: messageServiceMock
-                    },
-                    DotClipboardUtil
-                ],
-                imports: [UiDotIconButtonModule, TooltipModule]
-            }).compileComponents();
-        })
-    );
+    beforeEach(waitForAsync(() => {
+        TestBed.configureTestingModule({
+            declarations: [DotCopyButtonComponent],
+            providers: [
+                {
+                    provide: DotMessageService,
+                    useValue: messageServiceMock
+                },
+                DotClipboardUtil
+            ],
+            imports: [UiDotIconButtonModule, TooltipModule]
+        }).compileComponents();
+    }));
 
     beforeEach(() => {
         fixture = TestBed.createComponent(DotCopyButtonComponent);

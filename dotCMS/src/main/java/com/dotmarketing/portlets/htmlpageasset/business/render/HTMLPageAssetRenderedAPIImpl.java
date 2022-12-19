@@ -1,13 +1,17 @@
 package com.dotmarketing.portlets.htmlpageasset.business.render;
 
+import static com.dotmarketing.util.FileUtil.getFileContentFromResourceContext;
+
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.rendering.velocity.services.PageLoader;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
-import com.dotcms.util.ConversionUtils;
 import com.dotcms.visitor.domain.Visitor;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
-import com.dotmarketing.business.*;
+import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.PermissionAPI;
+import com.dotmarketing.business.PermissionLevel;
+import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.business.web.HostWebAPI;
 import com.dotmarketing.business.web.LanguageWebAPI;
 import com.dotmarketing.business.web.WebAPILocator;
@@ -37,21 +41,39 @@ import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.UUIDUtil;
 import com.dotmarketing.util.WebKeys;
 import com.liferay.portal.model.User;
-
 import com.liferay.util.StringPool;
+import io.vavr.Lazy;
 import io.vavr.control.Try;
+
+import java.io.IOException;
 
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.core.Context;
+import org.apache.commons.lang3.StringUtils;
 
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
+import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import org.apache.commons.lang3.StringUtils;
 
 /**
- * {@link HTMLPageAssetRenderedAPI} implementation
+ * Implementation class for the {@link HTMLPageAssetRenderedAPI}.
+ *
+ * @author Freddy Rodriguez
+ * @since Apr 12th, 2018
  */
 public class HTMLPageAssetRenderedAPIImpl implements HTMLPageAssetRenderedAPI {
+
+    private Lazy<String> EXPERIMENT_SCRIPT = Lazy.of(() -> getExperimentJSCode());
 
     private final HostWebAPI hostWebAPI;
     private final HTMLPageAssetAPI htmlPageAssetAPI;
@@ -113,13 +135,6 @@ public class HTMLPageAssetRenderedAPIImpl implements HTMLPageAssetRenderedAPI {
         );
     }
 
-    /**
-     * @param context    The {@link PageContext} object.
-     * @return The rendered page, i.e., the HTML source code that will be rendered by the browser.
-     * @throws DotSecurityException The user does not have the specified permissions to perform
-     *                              this action.
-     * @throws DotDataException     An error occurred when accessing the data source.
-     */
     @Override
     public PageView getPageMetadata(
             final PageContext context,
@@ -273,7 +288,7 @@ public class HTMLPageAssetRenderedAPIImpl implements HTMLPageAssetRenderedAPI {
         final HTMLPageUrl htmlPageUrl = getHtmlPageAsset(context, host, request);
         final HTMLPageAsset page = htmlPageUrl.getHTMLPage();
 
-        return new HTMLPageAssetRenderedBuilder()
+        final String pageHTML = new HTMLPageAssetRenderedBuilder()
                 .setHtmlPageAsset(page)
                 .setUser(context.getUser())
                 .setRequest(request)
@@ -282,8 +297,35 @@ public class HTMLPageAssetRenderedAPIImpl implements HTMLPageAssetRenderedAPI {
                 .setURLMapper(htmlPageUrl.getPageUrlMapper())
                 .setLive(htmlPageUrl.hasLive())
                 .getPageHTML(context.getPageMode());
+
+        return APILocator.getExperimentsAPI().isAnyExperimentRunning() ?
+                injectExperimentJSCode(pageHTML) : pageHTML;
     }
 
+    private String injectExperimentJSCode(final String pageHTML) {
+
+        if (StringUtils.containsIgnoreCase(pageHTML, "<head>")) {
+            return StringUtils.replaceIgnoreCase(pageHTML, "<head>",
+                    "<head>" + getExperimentJSCode());
+        } else {
+            return EXPERIMENT_SCRIPT.get() + "\n" + pageHTML;
+        }
+    }
+
+    /**
+     * Returns the information of the HTML Page set in the Page Context object.
+     *
+     * @param context The {@link PageContext} indicating the HTML Page that is being requested.
+     * @param host    The Site that the page lives in.
+     * @param request The current {@link HttpServletRequest} instance.
+     *
+     * @return The {@link HTMLPageUrl} containing the HTML Page as a {@link HTMLPageAsset} object.
+     *
+     * @throws DotDataException               An error occurred when interacting with the data source.
+     * @throws DotSecurityException           The User accessing the APIs does not have the required permissions to
+     *                                        perform this action.
+     * @throws HTMLPageAssetNotFoundException The HTML Page specified in the Page Context object was not found.
+     */
     private HTMLPageUrl getHtmlPageAsset(final PageContext context, final Host host, final HttpServletRequest request)
             throws DotDataException, DotSecurityException {
 
@@ -303,6 +345,16 @@ public class HTMLPageAssetRenderedAPIImpl implements HTMLPageAssetRenderedAPI {
         return htmlPageUrl;
     }
 
+    /**
+     * Verifies whether the {@link User} accessing the HTML Page has permissions to read it or not.
+     *
+     * @param context       The {@link PageContext} indicating the HTML Page that is being requested.
+     * @param htmlPageAsset The {@link IHTMLPage} object.
+     *
+     * @throws DotDataException     An error occurred when interacting with the data source.
+     * @throws DotSecurityException The User accessing the APIs does not have the required permissions to
+     *                              perform this action.
+     */
     private void checkPagePermission(final PageContext context, final IHTMLPage htmlPageAsset)
             throws DotDataException, DotSecurityException {
 
@@ -320,6 +372,18 @@ public class HTMLPageAssetRenderedAPIImpl implements HTMLPageAssetRenderedAPI {
         }
     }
 
+    /**
+     * Finds the HTML Page specified in the Page Context object.
+     *
+     * @param host    The Site that the HTML Page lives in.
+     * @param context The {@link PageContext} indicating the HTML Page that is being requested.
+     *
+     * @return An Optional with the {@link HTMLPageUrl} containing the HTML Page as a {@link HTMLPageAsset} object.
+     *
+     * @throws DotDataException     An error occurred when interacting with the data source.
+     * @throws DotSecurityException The User accessing the APIs does not have the required permissions to perform
+     *                              this action.
+     */
     private Optional<HTMLPageUrl> findPageByContext(final Host host, final PageContext context)
             throws DotDataException, DotSecurityException {
 
@@ -334,6 +398,19 @@ public class HTMLPageAssetRenderedAPIImpl implements HTMLPageAssetRenderedAPI {
         return Optional.ofNullable(htmlPageAsset == null ? null : new HTMLPageUrl(htmlPageAsset));
     }
 
+    /**
+     * Finds the HTML Page specified in the Page Context object when it's being requested via URL Map.
+     *
+     * @param context The {@link PageContext} indicating the HTML Page that is being requested.
+     * @param host    The Site that the page lives in.
+     * @param request The current {@link HttpServletRequest} instance.
+     *
+     * @return An Optional with the {@link HTMLPageUrl} containing the HTML Page as a {@link HTMLPageAsset} object.
+     *
+     * @throws DotDataException     An error occurred when interacting with the data source.
+     * @throws DotSecurityException The User accessing the APIs does not have the required permissions to perform
+     * this action.
+     */
     private Optional<HTMLPageUrl> findByURLMap(
             final PageContext context,
             final Host host,
@@ -405,9 +482,12 @@ public class HTMLPageAssetRenderedAPIImpl implements HTMLPageAssetRenderedAPI {
         return request != null ? this.languageWebAPI.getLanguage(request) : this.languageAPI.getDefaultLanguage();
     }
 
+    /**
+     * Contains information of a given HTML Page and its related URL Map data, if required.
+     */
     public static class HTMLPageUrl {
-        private URLMapInfo urlMapInfo;
-        private HTMLPageAsset htmlPage;
+        private final URLMapInfo urlMapInfo;
+        private final HTMLPageAsset htmlPage;
 
         private HTMLPageUrl(final HTMLPageAsset htmlPage, final URLMapInfo urlMapInfo) {
             this.htmlPage = htmlPage;
@@ -444,6 +524,14 @@ public class HTMLPageAssetRenderedAPIImpl implements HTMLPageAssetRenderedAPI {
 
     }
 
+    /**
+     * Checks for the existence of e request parameter called {@code fireRules}. If it exists and is {@code true}, the
+     * Rules Engine will analyze the incoming HTML Page and will fire its associated Rules as expected.
+     *
+     * @param page     The {@link IHTMLPage} object.
+     * @param request  The current {@link HttpServletRequest} instance.
+     * @param response The current {@link HttpServletResponse} instance.
+     */
     private void fireRulesOnPage(IHTMLPage page,  HttpServletRequest request, HttpServletResponse response) {
         final boolean fireRules =Try.of(()->Boolean.valueOf(request.getParameter("fireRules"))).getOrElse(false);
 
@@ -482,7 +570,7 @@ public class HTMLPageAssetRenderedAPIImpl implements HTMLPageAssetRenderedAPI {
         if (!this.permissionAPI.doesUserHavePermission(page, PermissionAPI.PERMISSION_EDIT, user)) {
 
             throw new DotSecurityException("User " + user.getFullName() + " id " + user.getUserId()
-                    + " does not have read perms on page :" + page.getIdentifier());
+                    + " does not have EDIT perms on page :" + page.getIdentifier());
         }
 
         Logger.debug(this, ()-> "Getting the html for the live and preview version of the page: " + pageId);
@@ -505,5 +593,23 @@ public class HTMLPageAssetRenderedAPIImpl implements HTMLPageAssetRenderedAPI {
                 .setLive(false).build(true, PageMode.PREVIEW_MODE)).getHtml();
 
         return new PageLivePreviewVersionBean(renderLive, renderWorking);
+    }
+
+    private String getExperimentJSCode() {
+        try {
+            final String jsJitsuCode =  getFileContentFromResourceContext("experiment/html/experiment_head.html")
+                    .replaceAll("\\$\\{jitsu_key}", "");
+
+            final String runningExperimentsId = APILocator.getExperimentsAPI().getRunningExperiments().stream()
+                    .map(experiment -> "'" + experiment.id().get() + "'")
+                    .collect(Collectors.joining(","));
+
+            final String shouldBeInExperimentCalled =  getFileContentFromResourceContext("experiment/js/init_script.js")
+                    .replaceAll("\\$\\{running_experiments_list}", runningExperimentsId);
+
+            return jsJitsuCode + "\n<SCRIPT>" + shouldBeInExperimentCalled + "</SCRIPT>";
+        } catch (IOException | DotDataException e) {
+            throw new RuntimeException(e);
+        }
     }
 }

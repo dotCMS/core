@@ -3,10 +3,7 @@
     "compilerOptions": {
         "outDir": "../../dist/out-tsc",
         "declaration": true,
-        "types": [],
-        "paths": {
-            "dotcms-models": ["libs/dotcms-models/src/index.ts"]
-        }
+        "types": []
     },
     "include": ["**/*.ts"],
     "exclude": ["jest.config.ts", "**/*.spec.ts", "**/*.test.ts"]

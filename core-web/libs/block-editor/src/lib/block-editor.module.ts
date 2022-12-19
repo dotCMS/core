@@ -41,6 +41,7 @@ import { BubbleFormComponent } from './extensions/bubble-form/bubble-form.compon
 //Editor
 import { DotBlockEditorComponent } from './components/dot-block-editor/dot-block-editor.component';
 import { DotEditorCountBarComponent } from './components/dot-editor-count-bar/dot-editor-count-bar.component';
+import { FloatingButtonComponent } from './extensions/floating-button/floating-button.component';
 
 @NgModule({
     imports: [
@@ -69,7 +70,8 @@ import { DotEditorCountBarComponent } from './components/dot-editor-count-bar/do
         BubbleFormComponent,
         SuggestionPageComponent,
         DotBlockEditorComponent,
-        DotEditorCountBarComponent
+        DotEditorCountBarComponent,
+        FloatingButtonComponent
     ],
     providers: [DotImageService, LoggerService, StringUtils],
     exports: [

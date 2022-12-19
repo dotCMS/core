@@ -1,13 +1,13 @@
 import { waitForAsync, ComponentFixture, TestBed } from '@angular/core/testing';
-import { MockDotMessageService } from '@tests/dot-message-service.mock';
-import { DotMessageService } from '@services/dot-message/dot-messages.service';
+import { MockDotMessageService } from '@dotcms/utils-testing';
+import { DotMessageService } from '@dotcms/data-access';
 import { CommonModule } from '@angular/common';
 import { By } from '@angular/platform-browser';
 import { DotAppsConfigurationHeaderComponent } from './dot-apps-configuration-header.component';
 import { DotAvatarModule } from '@components/_common/dot-avatar/dot-avatar.module';
 import { DotCopyLinkModule } from '@components/dot-copy-link/dot-copy-link.module';
-import { MockDotRouterService } from '@tests/dot-router-service.mock';
-import { DotRouterService } from '@services/dot-router/dot-router.service';
+import { MockDotRouterService } from '@dotcms/utils-testing';
+import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
 import { DebugElement } from '@angular/core';
 import { DotPipesModule } from '@pipes/dot-pipes.module';
 import { MarkdownService } from 'ngx-markdown';

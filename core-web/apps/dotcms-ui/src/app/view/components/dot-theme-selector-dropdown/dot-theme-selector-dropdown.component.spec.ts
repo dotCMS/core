@@ -14,13 +14,13 @@ import { of } from 'rxjs';
 import { SiteService } from '@dotcms/dotcms-js';
 
 import { DotThemeSelectorDropdownComponent } from './dot-theme-selector-dropdown.component';
-import { DotThemesService } from '@services/dot-themes/dot-themes.service';
-import { PaginatorService } from '@services/paginator';
+import { DotThemesService } from '@dotcms/data-access';
+import { PaginatorService } from '@dotcms/data-access';
 import { By } from '@angular/platform-browser';
-import { mockDotThemes } from '@tests/dot-themes.mock';
+import { mockDotThemes } from '@dotcms/utils-testing';
 import { DotMessagePipeModule } from '@pipes/dot-message/dot-message-pipe.module';
-import { MockDotMessageService } from '@tests/dot-message-service.mock';
-import { DotMessageService } from '@services/dot-message/dot-messages.service';
+import { MockDotMessageService } from '@dotcms/utils-testing';
+import { DotMessageService } from '@dotcms/data-access';
 import {
     PaginationEvent,
     SearchableDropdownComponent

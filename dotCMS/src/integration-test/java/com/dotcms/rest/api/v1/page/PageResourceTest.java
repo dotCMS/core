@@ -1,19 +1,33 @@
 package com.dotcms.rest.api.v1.page;
 
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
-import com.dotcms.variant.VariantAPI;
-import com.dotmarketing.portlets.containers.business.FileAssetContainerUtil;
-import com.dotmarketing.portlets.containers.model.FileAssetContainer;
-import com.dotmarketing.portlets.htmlpageasset.business.render.*;
 import com.dotcms.content.elasticsearch.business.ESSearchResults;
 import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.model.field.TextField;
 import com.dotcms.contenttype.model.type.ContentType;
-import com.dotcms.datagen.*;
+import com.dotcms.datagen.ContainerAsFileDataGen;
+import com.dotcms.datagen.ContainerDataGen;
+import com.dotcms.datagen.ContentTypeDataGen;
+import com.dotcms.datagen.ContentletDataGen;
+import com.dotcms.datagen.FieldDataGen;
+import com.dotcms.datagen.FolderDataGen;
+import com.dotcms.datagen.HTMLPageDataGen;
+import com.dotcms.datagen.PersonaDataGen;
+import com.dotcms.datagen.SiteDataGen;
+import com.dotcms.datagen.StructureDataGen;
+import com.dotcms.datagen.TemplateDataGen;
+import com.dotcms.datagen.TemplateLayoutDataGen;
+import com.dotcms.datagen.TestDataUtils;
+import com.dotcms.datagen.UserDataGen;
 import com.dotcms.repackage.org.apache.struts.config.ModuleConfig;
-import com.dotcms.rest.*;
+import com.dotcms.rest.EmptyHttpResponse;
+import com.dotcms.rest.InitDataObject;
+import com.dotcms.rest.ResponseEntityView;
+import com.dotcms.rest.RestUtilTest;
+import com.dotcms.rest.WebResource;
 import com.dotcms.rest.api.v1.personalization.PersonalizationPersonaPageView;
 import com.dotcms.util.IntegrationTestInitService;
+import com.dotcms.variant.VariantAPI;
 import com.dotmarketing.beans.Clickstream;
 import com.dotmarketing.beans.ContainerStructure;
 import com.dotmarketing.beans.Host;
@@ -22,12 +36,19 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.factories.MultiTreeAPI;
+import com.dotmarketing.portlets.containers.business.FileAssetContainerUtil;
 import com.dotmarketing.portlets.containers.model.Container;
+import com.dotmarketing.portlets.containers.model.FileAssetContainer;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.IndexPolicy;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.htmlpageasset.business.HTMLPageAssetAPI;
+import com.dotmarketing.portlets.htmlpageasset.business.render.ContainerRaw;
+import com.dotmarketing.portlets.htmlpageasset.business.render.ContainerRendered;
+import com.dotmarketing.portlets.htmlpageasset.business.render.HTMLPageAssetNotFoundException;
+import com.dotmarketing.portlets.htmlpageasset.business.render.HTMLPageAssetRenderedAPI;
+import com.dotmarketing.portlets.htmlpageasset.business.render.HTMLPageAssetRenderedAPIImpl;
 import com.dotmarketing.portlets.htmlpageasset.business.render.page.HTMLPageAssetRendered;
 import com.dotmarketing.portlets.htmlpageasset.business.render.page.PageView;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
@@ -37,7 +58,12 @@ import com.dotmarketing.portlets.personas.model.Persona;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.templates.design.bean.TemplateLayout;
 import com.dotmarketing.portlets.templates.model.Template;
-import com.dotmarketing.util.*;
+import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.PageMode;
+import com.dotmarketing.util.PaginatedArrayList;
+import com.dotmarketing.util.UUIDGenerator;
+import com.dotmarketing.util.UtilMethods;
+import com.dotmarketing.util.WebKeys;
 import com.dotmarketing.util.json.JSONException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.liferay.portal.PortalException;
@@ -55,19 +81,26 @@ import org.mockito.invocation.InvocationOnMock;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
-import javax.ws.rs.BadRequestException;
 import javax.ws.rs.core.Response;
 import java.io.IOException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
 import static com.dotcms.util.CollectionsUtils.list;
-import static org.junit.Assert.*;
-import static org.mockito.Matchers.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.nullable;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
-import static org.mockito.Mockito.verify;
 
 /**
  * {@link PageResource} test
@@ -75,6 +108,7 @@ import static org.mockito.Mockito.verify;
 public class PageResourceTest {
     private ContentletAPI esapi;
     private PageResource pageResource;
+    private PageResource pageResourceWithHelper;
     private User user;
     private HttpServletRequest request;
     private HttpServletResponse response;
@@ -121,6 +155,7 @@ public class PageResourceTest {
         when(webResource.init(false, request, true)).thenReturn(initDataObject);
         when(initDataObject.getUser()).thenReturn(user);
         pageResource = new PageResource(pageResourceHelper, webResource, htmlPageAssetRenderedAPI, esapi);
+        this.pageResourceWithHelper = new PageResource(PageResourceHelper.getInstance(), webResource, htmlPageAssetRenderedAPI, this.esapi);
 
         when(request.getRequestURI()).thenReturn("/test");
         when(request.getSession()).thenReturn(session);
@@ -763,7 +798,7 @@ public class PageResourceTest {
                 .nextPersisted();
 
         final Container container = pageRenderTest.getFirstContainer();
-        pageRenderTest.createContent(container);
+        pageRenderTest.addContent(container);
 
         APILocator.getMultiTreeAPI().copyPersonalizationForPage(
                 page.getIdentifier(),
@@ -808,7 +843,7 @@ public class PageResourceTest {
 
         for (final String id : containersId) {
             final Container container = pageRenderTest.getContainer(id);
-            pageRenderTest.createContent(container);
+            pageRenderTest.addContent(container);
         }
 
         when(request.getAttribute(WebKeys.HTMLPAGE_LANGUAGE)).thenReturn(String.valueOf(languageId));
@@ -1060,4 +1095,155 @@ public class PageResourceTest {
                 containerRaw.getContainerView().getPath()
         );
     }
+
+    /**
+     * <ul>
+     *     <li><b>Method to Test:</b>
+     *     {@link PageResource#addContent(HttpServletRequest, HttpServletResponse, String, String, PageContainerForm)}</li>
+     *     <li><b>Given Scenario:</b> In Edit Mode, creates an HTML Page with a Contentlet in it using the
+     *     {@code addContent} endpoint. Then, the very same Contentlet is added to another page.</li>
+     *     <li><b>Expected Result:</b> The {@link Contentlet#ON_NUMBER_OF_PAGES} property of the Contentlet added to
+     *     the page must be 2 at the end of the test because it's present on two pages.</li>
+     * </ul>
+     */
+    @Test
+    public void testOnNumberOfPagesCounter_addContent() throws DotDataException, DotSecurityException,
+                                                                           SystemException, PortalException {
+        // Initialization
+        final String modeParam = "EDIT_MODE";
+        final Language defaultLang = APILocator.getLanguageAPI().getDefaultLanguage();
+        final long languageId = defaultLang.getId();
+
+        // Test data generation
+        final Contentlet testContentlet = TestDataUtils.getGenericContentContent(true, languageId, this.host);
+        PageRenderTestUtil.PageRenderTest testData = PageRenderTestUtil.createPage(1, this.host);
+        HTMLPageAsset testPage = testData.getPage();
+        Container container = testData.getFirstContainer();
+        PageContainerForm pageContainerForm = this.createPageContainerForm(container.getIdentifier(),
+                List.of(testContentlet.getIdentifier()), "uuid-1");
+        Response saveResponse = this.pageResourceWithHelper.addContent(this.request, this.response,
+                testPage.getIdentifier(), VariantAPI.DEFAULT_VARIANT.name(), pageContainerForm);
+
+        // Assertion
+        assertEquals("Test Contentlet could not be saved.", HttpServletResponse.SC_OK, saveResponse.getStatus());
+
+        Response response = this.pageResource.render(this.request, this.response, testPage.getURI(), modeParam, null,
+                String.valueOf(languageId), null);
+        int contentletReferences = this.getContentletReferences(response);
+
+        // Assertions
+        assertEquals("There must be only ONE reference to the Contentlet at this point", 1, contentletReferences);
+
+        // Test data generation
+        testData = PageRenderTestUtil.createPage(1, this.host);
+        testPage = testData.getPage();
+        container = testData.getFirstContainer();
+        pageContainerForm = this.createPageContainerForm(container.getIdentifier(),
+                List.of(testContentlet.getIdentifier()), "uuid-1");
+        saveResponse = this.pageResourceWithHelper.addContent(this.request, this.response, testPage.getIdentifier(),
+                VariantAPI.DEFAULT_VARIANT.name(), pageContainerForm);
+
+        // Assertion
+        assertEquals("Test Contentlet could not be saved.", HttpServletResponse.SC_OK, saveResponse.getStatus());
+
+        response = this.pageResource.render(this.request, this.response, testPage.getURI(), modeParam, null,
+                String.valueOf(languageId), null);
+        contentletReferences = this.getContentletReferences(response);
+
+        // Assertions
+        assertEquals("Now, there must be TWO references to the Contentlet at this point", 2, contentletReferences);
+    }
+
+    /**
+     * Utility method used to create an instance of the {@link PageContainerForm} object with the provided data.
+     *
+     * @param containerId   The Container ID.
+     * @param contentletIds The Contentlets being added to the Container.
+     * @param containerUUID The unique Container UUID.
+     *
+     * @return The {@link PageContainerForm} object.
+     */
+    private PageContainerForm createPageContainerForm(final String containerId, final List<String> contentletIds,
+                                                      final String containerUUID) {
+        final List<PageContainerForm.ContainerEntry> entries = new ArrayList<>();
+        final PageContainerForm.ContainerEntry containerEntry = new PageContainerForm.ContainerEntry(null,
+                containerId, containerUUID);
+        contentletIds.forEach(containerEntry::addContentId);
+        entries.add(containerEntry);
+        return new PageContainerForm(entries, null);
+    }
+
+    /**
+     * <ul>
+     *     <li><b>Method to Test:</b> {@link PageResource#render(HttpServletRequest, HttpServletResponse, String, String, String, String, String)}</li>
+     *     <li><b>Given Scenario:</b> In Edit Mode, creates an HTML Page with a Contentlet in it using the dotCMS APIs.
+     *     Then, the very same Contentlet is added to another page. In both cases, the data returned by dotCMS is read
+     *     by calling the {@code render} endpoint.</li>
+     *     <li><b>Expected Result:</b> The {@link Contentlet#ON_NUMBER_OF_PAGES} property of the Contentlet added to the
+     *     page must be 2 at the end of the test because it's present on two pages.</li>
+     * </ul>
+     */
+    @Test
+    public void testOnNumberOfPagesCounter_render() throws DotDataException, SystemException, DotSecurityException,
+                                                                PortalException {
+        // Initialization
+        final String modeParam = "EDIT_MODE";
+        final Language defaultLang = APILocator.getLanguageAPI().getDefaultLanguage();
+        final long languageId = defaultLang.getId();
+
+        // Test data generation
+        final PageRenderTestUtil.PageRenderTest pageRenderTestOne = PageRenderTestUtil.createPage(1, this.host);
+        final HTMLPageAsset pageOne = pageRenderTestOne.getPage();
+        final Container container = pageRenderTestOne.getFirstContainer();
+        final Contentlet testContent = pageRenderTestOne.addContent(container);
+        Response pageResponse = this.pageResource.render(this.request, this.response, pageOne.getURI(), modeParam, null,
+                String.valueOf(languageId), null);
+        int contentletReferences = this.getContentletReferences(pageResponse);
+
+        // Assertions
+        assertEquals("There must be only ONE reference to the Contentlet at this point", 1, contentletReferences);
+
+        // Test data generation
+        final PageRenderTestUtil.PageRenderTest pageRenderTestTwo = PageRenderTestUtil.createPage(1, this.host);
+        final HTMLPageAsset pageTwo = pageRenderTestTwo.getPage();
+        final Container containerTwo = pageRenderTestTwo.getFirstContainer();
+        pageRenderTestTwo.addContent(containerTwo, testContent);
+        pageResponse = this.pageResource.render(this.request, this.response, pageTwo.getURI(), modeParam, null,
+                String.valueOf(languageId), null);
+        contentletReferences = this.getContentletReferences(pageResponse);
+
+        // Assertions
+        assertEquals("Now, there must be TWO references to the Contentlet at this point", 2, contentletReferences);
+    }
+
+    /**
+     * Utility method to return the number of HTML Pages that are referencing a specific Contentlet.
+     *
+     * @param pageResponse The {@link Response} object
+     * @return The number of references.
+     */
+    private int getContentletReferences(final Response pageResponse) {
+        final HTMLPageAssetRendered htmlPageAssetRendered =
+                (HTMLPageAssetRendered) ((ResponseEntityView<?>) pageResponse.getEntity()).getEntity();
+
+        // Assertions
+        assertEquals("There must be only one Container in the page", 1, htmlPageAssetRendered.getContainers().size());
+
+        int referenceCounter;
+        final ContainerRaw containerRaw = htmlPageAssetRendered.getContainers().stream().findFirst().orElse(null);
+
+        // Assertions
+        assert containerRaw != null;
+
+        final String containerKey = containerRaw.getContentlets().keySet().stream().findFirst().orElse(null);
+
+        // Assertions
+        assertEquals("There must be only one Contentlet in the Container", 1,
+                containerRaw.getContentlets().get(containerKey).size());
+
+        final Contentlet contentlet = containerRaw.getContentlets().get(containerKey).get(0);
+        referenceCounter = (int) contentlet.get(Contentlet.ON_NUMBER_OF_PAGES);
+        return referenceCounter;
+    }
+
 }

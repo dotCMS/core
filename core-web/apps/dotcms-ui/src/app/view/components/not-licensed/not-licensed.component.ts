@@ -1,8 +1,5 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
-import {
-    DotUnlicensedPortletData,
-    DotLicenseService
-} from '@services/dot-license/dot-license.service';
+import { DotUnlicensedPortletData, DotLicenseService } from '@dotcms/data-access';
 import { takeUntil } from 'rxjs/operators';
 import { Subject } from 'rxjs';
 

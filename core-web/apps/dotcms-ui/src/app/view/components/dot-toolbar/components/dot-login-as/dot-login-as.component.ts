@@ -12,12 +12,16 @@ import {
 
 import { LoginService, User } from '@dotcms/dotcms-js';
 
-import { UntypedFormGroup, UntypedFormBuilder, UntypedFormControl, Validators } from '@angular/forms';
+import {
+    UntypedFormGroup,
+    UntypedFormBuilder,
+    UntypedFormControl,
+    Validators
+} from '@angular/forms';
 import { Subject } from 'rxjs';
 import { take, takeUntil } from 'rxjs/operators';
 
-import { DotMessageService } from '@services/dot-message/dot-messages.service';
-import { PaginatorService } from '@services/paginator';
+import { DotMessageService, PaginatorService } from '@dotcms/data-access';
 import { DotDialogActions } from '@components/dot-dialog/dot-dialog.component';
 import { LOCATION_TOKEN } from '@dotcms/app/providers';
 import { DotNavigationService } from '@components/dot-navigation/services/dot-navigation.service';

@@ -28,7 +28,8 @@ export enum NodeTypes {
     HARD_BREAK = 'hardBreak',
     HEADING = 'heading',
     HORIZONTAL_RULE = 'horizontalRule',
-    TEXT = 'text'
+    TEXT = 'text',
+    TABLE_CELL = 'tableCell'
 }
 
 export const CustomNodeTypes: Array<NodeTypes> = [NodeTypes.DOT_IMAGE, NodeTypes.DOT_CONTENT];

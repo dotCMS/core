@@ -26,6 +26,8 @@ import com.dotmarketing.util.UtilMethods;
 import com.google.common.annotations.VisibleForTesting;
 import com.liferay.util.StringPool;
 import io.vavr.Lazy;
+import org.jetbrains.annotations.NotNull;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
@@ -34,10 +36,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.StringTokenizer;
 
-import org.jetbrains.annotations.NotNull;
 
 /**
  * DBTransformer that converts DB objects into Contentlet instances
+ *
+ * @author Nollymar Longa
+ * @since Jan 11th, 2018
  */
 public class ContentletTransformer implements DBTransformer {
 
@@ -111,7 +115,6 @@ public class ContentletTransformer implements DBTransformer {
            if(!hasJsonFields) {
                populateFields(contentlet, map);
            }
-
             refreshStoryBlockReferences(contentlet);
             populateWysiwyg(map, contentlet);
             populateFolderAndHost(contentlet, contentletId, contentTypeId);
@@ -127,15 +130,29 @@ public class ContentletTransformer implements DBTransformer {
         return contentlet;
     }
 
+    /**
+     * Updates the values of the Contentlets that are being referenced in the Story Block field of the specified
+     * Contentlet. This allows them to reflect the latest changes when they or other Users update such Contentlets from
+     * the Content Search, so they show up as expected. In summary:
+     * <ol>
+     *     <li>Checks if the Contentlet has one or more Story Block Fields. If it doesn't no work is done.</li>
+     *     <li>Compares the Inode of the Contentlet in the Story Block field with the original live Inode of the
+     *     referenced Contentlet.</li>
+     *     <li>If they're different, the properties -- i.e., field values -- in the referenced Contentlet will be
+     *     updated with the properties from the latest version such a Contentlet.</li>
+     * </ol>
+     * Notice that the actual Inode being referenced in the Story Block field <b>WILL NOT BE UPDATED</b> to the latest
+     * Inode until the "parent" Contentlet -- i.e., the one containing the Story Block field --  is published again.
+     *
+     * @param contentlet The {@link Contentlet} whose Story Block fields will be inspected.
+     */
     private static void refreshStoryBlockReferences(final Contentlet contentlet) {
-
         final StoryBlockReferenceResult result = APILocator.getStoryBlockAPI().refreshReferences(contentlet);
         if (result.isRefreshed()) {
             Logger.debug(ContentletTransformer.class,
                     ()-> "Refreshed story block dependencies for the contentlet: " + contentlet.getIdentifier());
         }
     }
-
 
     private static void populateFolderAndHost(final Contentlet contentlet, final String contentletId,
             final String contentTypeId) throws DotDataException, DotSecurityException {
@@ -335,5 +352,5 @@ public class ContentletTransformer implements DBTransformer {
 
         return value;
     }
-}
 
+}

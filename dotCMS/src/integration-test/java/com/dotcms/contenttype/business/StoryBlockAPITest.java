@@ -1,3 +1,4 @@
+
 package com.dotcms.contenttype.business;
 
 import com.dotcms.IntegrationTestBase;
@@ -109,8 +110,8 @@ public class StoryBlockAPITest extends IntegrationTestBase {
 
         // 3) convert the json to map, to start the test
         final Map    newStoryBlockMap         = ContentletJsonHelper.INSTANCE.get().objectMapper()
-                                                    .readValue(Try.of(() -> newStoryBlockJson.toString())
-                                                    .getOrElse(StringPool.BLANK), LinkedHashMap.class);
+                                                        .readValue(Try.of(() -> newStoryBlockJson.toString())
+                                                                           .getOrElse(StringPool.BLANK), LinkedHashMap.class);
 
         Assert.assertNotNull(newStoryBlockMap);
         final List contentList = (List) newStoryBlockMap.get("content");
@@ -137,11 +138,11 @@ public class StoryBlockAPITest extends IntegrationTestBase {
         Assert.assertTrue(refreshResult.isRefreshed());
         Assert.assertNotNull(refreshResult.getValue());
         final Map    refreshedStoryBlockMap         = ContentletJsonHelper.INSTANCE.get().objectMapper()
-                .readValue(Try.of(() -> refreshResult.getValue().toString())
-                        .getOrElse(StringPool.BLANK), LinkedHashMap.class);
+                                                              .readValue(Try.of(() -> refreshResult.getValue().toString())
+                                                                                 .getOrElse(StringPool.BLANK), LinkedHashMap.class);
         final List refreshedContentList = (List) refreshedStoryBlockMap.get("content");
         final Optional<Object> refreshedfirstContentletMap = refreshedContentList.stream()
-                .filter(content -> "dotContent".equals(Map.class.cast(content).get("type"))).findFirst();
+                                                                     .filter(content -> "dotContent".equals(Map.class.cast(content).get("type"))).findFirst();
 
         Assert.assertTrue(refreshedfirstContentletMap.isPresent());
         final Map refreshedContentletMap = (Map) Map.class.cast(Map.class.cast(refreshedfirstContentletMap.get()).get(StoryBlockAPI.ATTRS_KEY)).get(StoryBlockAPI.DATA_KEY);
@@ -172,8 +173,9 @@ public class StoryBlockAPITest extends IntegrationTestBase {
 
         // 3) convert the json to map, to start the test
         final Map    newStoryBlockMap         = ContentletJsonHelper.INSTANCE.get().objectMapper()
-                .readValue(Try.of(() -> newStoryBlockJson3.toString())
-                        .getOrElse(StringPool.BLANK), LinkedHashMap.class);
+                                                        .readValue(Try.of(() -> newStoryBlockJson3.toString())
+                                                                           .getOrElse(StringPool.BLANK), LinkedHashMap.class);
+
 
         Assert.assertNotNull(newStoryBlockMap);
         final List<String> contentletIdList = APILocator.getStoryBlockAPI().getDependencies(newStoryBlockJson3);
