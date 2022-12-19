@@ -75,15 +75,7 @@
 									"script": {
 										"exec": [
 											"environmentName = 'environment-' + new Date().getTime();",
-											"pm.collectionVariables.set(\"environmentName\", environmentName);",
-											"",
-											"pm.test(\"Waiting for the JWT Token Enabled property to be set\", function () {",
-											"    var start = new Date().getTime();",
-											"    var end = start;",
-											"    while(end < start + 1000) {",
-											"        end = new Date().getTime();",
-											"    }",
-											"});"
+											"pm.collectionVariables.set(\"environmentName\", environmentName);"
 										],
 										"type": "text/javascript"
 									}
@@ -427,6 +419,53 @@
 							"response": []
 						},
 						{
+							"name": "Deleting Bundle History",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Deleting Bundle History\", function () {",
+											"    pm.response.to.have.status(200);",
+											"});"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"auth": {
+									"type": "basic",
+									"basic": [
+										{
+											"key": "username",
+											"value": "admin@dotcms.com",
+											"type": "string"
+										},
+										{
+											"key": "password",
+											"value": "admin",
+											"type": "string"
+										}
+									]
+								},
+								"method": "DELETE",
+								"header": [],
+								"url": {
+									"raw": "{{serverURL}}/api/bundle/all",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"bundle",
+										"all"
+									]
+								}
+							},
+							"response": []
+						},
+						{
 							"name": "Add bundle",
 							"event": [
 								{
@@ -439,7 +478,7 @@
 											"pm.test(\"Wait for previous bundle to publish sucessfully\", function () {",
 											"    var start = new Date().getTime();",
 											"    var end = start;",
-											"    while(end < start + 3000) {",
+											"    while(end < start + 6000) {",
 											"        end = new Date().getTime();",
 											"    }",
 											"});"
@@ -605,7 +644,7 @@
 							"response": []
 						},
 						{
-							"name": "check success status",
+							"name": "PPOW - HP - check success status",
 							"event": [
 								{
 									"listen": "prerequest",
@@ -614,7 +653,7 @@
 											"pm.test(\"Waiting for added bundle to finish publishing\", function () {",
 											"    var start = new Date().getTime();",
 											"    var end = start;",
-											"    while(end < start + 5000) {",
+											"    while(end < start + 10000) {",
 											"        end = new Date().getTime();",
 											"    }",
 											"});"
@@ -632,7 +671,7 @@
 											"",
 											"    pm.response.to.have.status(200);",
 											"",
-											"    checkBundleStatus(pm.response.text(), [\"bundleSuccess\", \"endpointSuccess\"], \"check success status\");",
+											"    checkBundleStatus(pm.response.text(), [\"bundleSuccess\", \"endpointSuccess\"], \"PPOW - HP - check success status\");",
 											"});"
 										],
 										"type": "text/javascript"
@@ -685,6 +724,53 @@
 											"key": "bundle",
 											"value": "{{bundleId}}"
 										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Deleting Bundle History",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Deleting Bundle History\", function () {",
+											"    pm.response.to.have.status(200);",
+											"});"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"auth": {
+									"type": "basic",
+									"basic": [
+										{
+											"key": "username",
+											"value": "admin@dotcms.com",
+											"type": "string"
+										},
+										{
+											"key": "password",
+											"value": "admin",
+											"type": "string"
+										}
+									]
+								},
+								"method": "DELETE",
+								"header": [],
+								"url": {
+									"raw": "{{serverURL}}/api/bundle/all",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"bundle",
+										"all"
 									]
 								}
 							},
@@ -949,6 +1035,53 @@
 							"response": []
 						},
 						{
+							"name": "Deleting Bundle History",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Deleting Bundle History\", function () {",
+											"    pm.response.to.have.status(200);",
+											"});"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"auth": {
+									"type": "basic",
+									"basic": [
+										{
+											"key": "username",
+											"value": "admin@dotcms.com",
+											"type": "string"
+										},
+										{
+											"key": "password",
+											"value": "admin",
+											"type": "string"
+										}
+									]
+								},
+								"method": "DELETE",
+								"header": [],
+								"url": {
+									"raw": "{{serverURL}}/api/bundle/all",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"bundle",
+										"all"
+									]
+								}
+							},
+							"response": []
+						},
+						{
 							"name": "Add bundle",
 							"event": [
 								{
@@ -961,7 +1094,7 @@
 											"pm.test(\"Wait for previous bundle to publish sucessfully\", function () {",
 											"    var start = new Date().getTime();",
 											"    var end = start;",
-											"    while(end < start + 3000) {",
+											"    while(end < start + 6000) {",
 											"        end = new Date().getTime();",
 											"    }",
 											"});"
@@ -1127,7 +1260,7 @@
 							"response": []
 						},
 						{
-							"name": "check failed status",
+							"name": "PPOW - IT - check failed status",
 							"event": [
 								{
 									"listen": "prerequest",
@@ -1136,7 +1269,7 @@
 											"pm.test(\"Waiting for added bundle to fail as expected\", function () {",
 											"    var start = new Date().getTime();",
 											"    var end = start;",
-											"    while(end < start + 5000) {",
+											"    while(end < start + 10000) {",
 											"        end = new Date().getTime();",
 											"    }",
 											"});"
@@ -1154,7 +1287,7 @@
 											"",
 											"    pm.response.to.have.status(200);",
 											"",
-											"    checkBundleStatus(pm.response.text(), [\"bundleFailed\", \"endpointInvalidtoken\"], \"check failed status\");",
+											"    checkBundleStatus(pm.response.text(), [\"endpointInvalidtoken\"], \"PPOW - IT - check failed status\");",
 											"});",
 											""
 										],
@@ -1208,6 +1341,53 @@
 											"key": "bundle",
 											"value": "{{bundleId}}"
 										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Deleting Bundle History",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Deleting Bundle History\", function () {",
+											"    pm.response.to.have.status(200);",
+											"});"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"auth": {
+									"type": "basic",
+									"basic": [
+										{
+											"key": "username",
+											"value": "admin@dotcms.com",
+											"type": "string"
+										},
+										{
+											"key": "password",
+											"value": "admin",
+											"type": "string"
+										}
+									]
+								},
+								"method": "DELETE",
+								"header": [],
+								"url": {
+									"raw": "{{serverURL}}/api/bundle/all",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"bundle",
+										"all"
 									]
 								}
 							},
@@ -1614,6 +1794,53 @@
 							"response": []
 						},
 						{
+							"name": "Deleting Bundle History",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Deleting Bundle History\", function () {",
+											"    pm.response.to.have.status(200);",
+											"});"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"auth": {
+									"type": "basic",
+									"basic": [
+										{
+											"key": "username",
+											"value": "admin@dotcms.com",
+											"type": "string"
+										},
+										{
+											"key": "password",
+											"value": "admin",
+											"type": "string"
+										}
+									]
+								},
+								"method": "DELETE",
+								"header": [],
+								"url": {
+									"raw": "{{serverURL}}/api/bundle/all",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"bundle",
+										"all"
+									]
+								}
+							},
+							"response": []
+						},
+						{
 							"name": "Add bundle",
 							"event": [
 								{
@@ -1626,7 +1853,7 @@
 											"pm.test(\"Wait for previous bundle to publish sucessfully\", function () {",
 											"    var start = new Date().getTime();",
 											"    var end = start;",
-											"    while(end < start + 3000) {",
+											"    while(end < start + 6000) {",
 											"        end = new Date().getTime();",
 											"    }",
 											"});"
@@ -1781,7 +2008,7 @@
 							"response": []
 						},
 						{
-							"name": "check success status",
+							"name": "PPJWT - HP - check success status",
 							"event": [
 								{
 									"listen": "prerequest",
@@ -1790,7 +2017,7 @@
 											"pm.test(\"Waiting for added bundle to finish publishing\", function () {",
 											"    var start = new Date().getTime();",
 											"    var end = start;",
-											"    while(end < start + 5000) {",
+											"    while(end < start + 10000) {",
 											"        end = new Date().getTime();",
 											"    }",
 											"});"
@@ -1809,7 +2036,7 @@
 											"",
 											"    pm.response.to.have.status(200);",
 											"",
-											"    checkBundleStatus(pm.response.text(), [\"bundleSuccess\", \"endpointSuccess\"], \"check success status\");",
+											"    checkBundleStatus(pm.response.text(), [\"bundleSuccess\", \"endpointSuccess\"], \"PPJWT - HP - check success status\");",
 											"});"
 										],
 										"type": "text/javascript"
@@ -1862,6 +2089,53 @@
 											"key": "bundle",
 											"value": "{{bundleId}}"
 										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Deleting Bundle History",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Deleting Bundle History\", function () {",
+											"    pm.response.to.have.status(200);",
+											"});"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"auth": {
+									"type": "basic",
+									"basic": [
+										{
+											"key": "username",
+											"value": "admin@dotcms.com",
+											"type": "string"
+										},
+										{
+											"key": "password",
+											"value": "admin",
+											"type": "string"
+										}
+									]
+								},
+								"method": "DELETE",
+								"header": [],
+								"url": {
+									"raw": "{{serverURL}}/api/bundle/all",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"bundle",
+										"all"
 									]
 								}
 							},
@@ -2202,6 +2476,53 @@
 							"response": []
 						},
 						{
+							"name": "Deleting Bundle History",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Deleting Bundle History\", function () {",
+											"    pm.response.to.have.status(200);",
+											"});"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"auth": {
+									"type": "basic",
+									"basic": [
+										{
+											"key": "username",
+											"value": "admin@dotcms.com",
+											"type": "string"
+										},
+										{
+											"key": "password",
+											"value": "admin",
+											"type": "string"
+										}
+									]
+								},
+								"method": "DELETE",
+								"header": [],
+								"url": {
+									"raw": "{{serverURL}}/api/bundle/all",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"bundle",
+										"all"
+									]
+								}
+							},
+							"response": []
+						},
+						{
 							"name": "Add bundle",
 							"event": [
 								{
@@ -2214,7 +2535,7 @@
 											"pm.test(\"Wait for previous bundle to publish sucessfully\", function () {",
 											"    var start = new Date().getTime();",
 											"    var end = start;",
-											"    while(end < start + 3000) {",
+											"    while(end < start + 6000) {",
 											"        end = new Date().getTime();",
 											"    }",
 											"});"
@@ -2369,7 +2690,7 @@
 							"response": []
 						},
 						{
-							"name": "check failed status",
+							"name": "PPJWT - ET - check failed status",
 							"event": [
 								{
 									"listen": "prerequest",
@@ -2378,7 +2699,7 @@
 											"pm.test(\"Waiting for added bundle to fail as expected\", function () {",
 											"    var start = new Date().getTime();",
 											"    var end = start;",
-											"    while(end < start + 5000) {",
+											"    while(end < start + 10000) {",
 											"        end = new Date().getTime();",
 											"    }",
 											"});"
@@ -2396,7 +2717,7 @@
 											"",
 											"    pm.response.to.have.status(200);",
 											"",
-											"    checkBundleStatus(pm.response.text(), [\"bundleFailed\", \"endpointInvalidtoken\"], \"check failed status\");",
+											"    checkBundleStatus(pm.response.text(), [\"endpointInvalidtoken\"], \"PPJWT - ET - check failed status\");",
 											"});",
 											""
 										],
@@ -2450,6 +2771,53 @@
 											"key": "bundle",
 											"value": "{{bundleId}}"
 										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Deleting Bundle History",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Deleting Bundle History\", function () {",
+											"    pm.response.to.have.status(200);",
+											"});"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"auth": {
+									"type": "basic",
+									"basic": [
+										{
+											"key": "username",
+											"value": "admin@dotcms.com",
+											"type": "string"
+										},
+										{
+											"key": "password",
+											"value": "admin",
+											"type": "string"
+										}
+									]
+								},
+								"method": "DELETE",
+								"header": [],
+								"url": {
+									"raw": "{{serverURL}}/api/bundle/all",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"bundle",
+										"all"
 									]
 								}
 							},
@@ -2726,6 +3094,53 @@
 							"response": []
 						},
 						{
+							"name": "Deleting Bundle History",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Deleting Bundle History\", function () {",
+											"    pm.response.to.have.status(200);",
+											"});"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"auth": {
+									"type": "basic",
+									"basic": [
+										{
+											"key": "username",
+											"value": "admin@dotcms.com",
+											"type": "string"
+										},
+										{
+											"key": "password",
+											"value": "admin",
+											"type": "string"
+										}
+									]
+								},
+								"method": "DELETE",
+								"header": [],
+								"url": {
+									"raw": "{{serverURL}}/api/bundle/all",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"bundle",
+										"all"
+									]
+								}
+							},
+							"response": []
+						},
+						{
 							"name": "Add bundle",
 							"event": [
 								{
@@ -2738,7 +3153,7 @@
 											"pm.test(\"Wait for previous bundle to publish sucessfully\", function () {",
 											"    var start = new Date().getTime();",
 											"    var end = start;",
-											"    while(end < start + 3000) {",
+											"    while(end < start + 6000) {",
 											"        end = new Date().getTime();",
 											"    }",
 											"});"
@@ -2893,7 +3308,7 @@
 							"response": []
 						},
 						{
-							"name": "check failed status",
+							"name": "PPJWT - IT - check failed status",
 							"event": [
 								{
 									"listen": "prerequest",
@@ -2902,7 +3317,7 @@
 											"pm.test(\"Waiting for added bundle to fail as expected\", function () {",
 											"    var start = new Date().getTime();",
 											"    var end = start;",
-											"    while(end < start + 5000) {",
+											"    while(end < start + 10000) {",
 											"        end = new Date().getTime();",
 											"    }",
 											"});"
@@ -2920,7 +3335,7 @@
 											"",
 											"    pm.response.to.have.status(200);",
 											"",
-											"    checkBundleStatus(pm.response.text(), [\"bundleFailed\", \"endpointInvalidtoken\"], \"check failed status\");",
+											"    checkBundleStatus(pm.response.text(), [\"endpointInvalidtoken\"], \"PPJWT - IT - check failed status\");",
 											"});",
 											""
 										],
@@ -2974,6 +3389,53 @@
 											"key": "bundle",
 											"value": "{{bundleId}}"
 										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Deleting Bundle History",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Deleting Bundle History\", function () {",
+											"    pm.response.to.have.status(200);",
+											"});"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"auth": {
+									"type": "basic",
+									"basic": [
+										{
+											"key": "username",
+											"value": "admin@dotcms.com",
+											"type": "string"
+										},
+										{
+											"key": "password",
+											"value": "admin",
+											"type": "string"
+										}
+									]
+								},
+								"method": "DELETE",
+								"header": [],
+								"url": {
+									"raw": "{{serverURL}}/api/bundle/all",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"bundle",
+										"all"
 									]
 								}
 							},
@@ -3421,6 +3883,53 @@
 							"response": []
 						},
 						{
+							"name": "Deleting Bundle History",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Deleting Bundle History\", function () {",
+											"    pm.response.to.have.status(200);",
+											"});"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"auth": {
+									"type": "basic",
+									"basic": [
+										{
+											"key": "username",
+											"value": "admin@dotcms.com",
+											"type": "string"
+										},
+										{
+											"key": "password",
+											"value": "admin",
+											"type": "string"
+										}
+									]
+								},
+								"method": "DELETE",
+								"header": [],
+								"url": {
+									"raw": "{{serverURL}}/api/bundle/all",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"bundle",
+										"all"
+									]
+								}
+							},
+							"response": []
+						},
+						{
 							"name": "Add bundle",
 							"event": [
 								{
@@ -3433,7 +3942,7 @@
 											"pm.test(\"Wait for previous bundle to publish sucessfully\", function () {",
 											"    var start = new Date().getTime();",
 											"    var end = start;",
-											"    while(end < start + 3000) {",
+											"    while(end < start + 6000) {",
 											"        end = new Date().getTime();",
 											"    }",
 											"});"
@@ -3599,7 +4108,7 @@
 							"response": []
 						},
 						{
-							"name": "check success status",
+							"name": "PPJWT - UOW - check success status",
 							"event": [
 								{
 									"listen": "prerequest",
@@ -3608,7 +4117,7 @@
 											"pm.test(\"Waiting for added bundle to finish publishing\", function () {",
 											"    var start = new Date().getTime();",
 											"    var end = start;",
-											"    while(end < start + 5000) {",
+											"    while(end < start + 10000) {",
 											"        end = new Date().getTime();",
 											"    }",
 											"});"
@@ -3626,7 +4135,7 @@
 											"",
 											"    pm.response.to.have.status(200);",
 											"",
-											"    checkBundleStatus(pm.response.text(), [\"endpointSuccess\"], \"check success status\");",
+											"    checkBundleStatus(pm.response.text(), [\"endpointSuccess\"], \"PPJWT - UOW - check success status\");",
 											"});"
 										],
 										"type": "text/javascript"
@@ -3683,6 +4192,53 @@
 								}
 							},
 							"response": []
+						},
+						{
+							"name": "Deleting Bundle History",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Deleting Bundle History\", function () {",
+											"    pm.response.to.have.status(200);",
+											"});"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"auth": {
+									"type": "basic",
+									"basic": [
+										{
+											"key": "username",
+											"value": "admin@dotcms.com",
+											"type": "string"
+										},
+										{
+											"key": "password",
+											"value": "admin",
+											"type": "string"
+										}
+									]
+								},
+								"method": "DELETE",
+								"header": [],
+								"url": {
+									"raw": "{{serverURL}}/api/bundle/all",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"bundle",
+										"all"
+									]
+								}
+							},
+							"response": []
 						}
 					]
 				}
@@ -3721,10 +4277,18 @@
 					"",
 					"        htmlWithoutSpace = $.html().replace(/(\\r\\n|\\n|\\r)/gm, \"\");",
 					"",
-					"        if (htmlWithoutSpace.includes(bundleWaitingPublish) || htmlWithoutSpace.includes(pendingStatus) || htmlWithoutSpace.includes(bundlingStatus) || htmlWithoutSpace.includes(noResultFound) || htmlWithoutSpace.includes(publishingBundle) || htmlWithoutSpace.includes(bundleReceived) || htmlWithoutSpace.includes('No bundle found with the given ID.')) {",
+					"        //console.log('OUTPUT = ' + htmlWithoutSpace);",
+					"        //console.log('TEST CASES = ' + casesToTest);",
+					"        var testcase = '';",
+					"        casesToTest.forEach((caseToTest) => {",
+					"                testcase = caseToTest;",
+					"            });",
+					"        //console.log('CHECK VALIDATION = ' + ('endpointInvalidtoken' !== testcase));",
+					"",
+					"        if ('endpointInvalidtoken' !== testcase && (htmlWithoutSpace.includes(bundleWaitingPublish) || htmlWithoutSpace.includes(pendingStatus) || htmlWithoutSpace.includes(bundlingStatus) || htmlWithoutSpace.includes(noResultFound) || htmlWithoutSpace.includes(publishingBundle) || htmlWithoutSpace.includes(bundleReceived) || htmlWithoutSpace.includes('No bundle found with the given ID.'))) {",
 					"            console.log('No bundle found with the given ID.');",
 					"            if (bundleRetry <= 2){",
-					"                postman.setNextRequest(\"check success status\");",
+					"                postman.setNextRequest(requestToRepeat);",
 					"            }",
 					"            pm.collectionVariables.set(\"bundleRetry\", bundleRetry + 1);",
 					"        } else {",
