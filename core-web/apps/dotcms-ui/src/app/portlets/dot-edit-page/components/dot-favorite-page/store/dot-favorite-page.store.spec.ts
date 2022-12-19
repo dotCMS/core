@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { mockDotCMSTempFile } from '@components/dot-add-persona-dialog/dot-create-persona-form/dot-create-persona-form.component.spec';
-import { DotCurrentUserService } from '@dotcms/data-access';
+import { DotCurrentUserService, DotPageRenderService } from '@dotcms/data-access';
 import { DotHttpErrorManagerService } from '@dotcms/app/api/services/dot-http-error-manager/dot-http-error-manager.service';
 import { DotMessageService } from '@dotcms/data-access';
 import { DotRolesService } from '@dotcms/data-access';
@@ -12,12 +12,15 @@ import { Observable, of } from 'rxjs';
 import { DotFavoritePageActionState, DotFavoritePageStore } from './dot-favorite-page.store';
 import { DotRole, DotCurrentUser, DotPageRenderState, DotPageRender } from '@dotcms/dotcms-models';
 import {
+    CoreWebServiceMock,
     MockDotMessageService,
     mockDotRenderedPage,
     mockProcessedRoles,
     mockUser
 } from '@dotcms/utils-testing';
 import { MockDotHttpErrorManagerService } from '@dotcms/app/test/dot-http-error-manager.service.mock';
+import { CoreWebService } from '@dotcms/dotcms-js';
+import { HttpClientTestingModule } from '@angular/common/http/testing';
 
 @Injectable()
 class MockDotRolesService {
@@ -63,14 +66,18 @@ describe('DotFavoritePageStore', () => {
     let dotFavoritePageStore: DotFavoritePageStore;
     let dotRolesService: DotRolesService;
     let dotCurrentUser: DotCurrentUserService;
+    let dotPageRenderService: DotPageRenderService;
     let dotTempFileUploadService: DotTempFileUploadService;
     let dotWorkflowActionsFireService: DotWorkflowActionsFireService;
     let dotHttpErrorManagerService: DotHttpErrorManagerService;
 
     beforeEach(() => {
         TestBed.configureTestingModule({
+            imports: [HttpClientTestingModule],
             providers: [
                 DotFavoritePageStore,
+                DotPageRenderService,
+                { provide: CoreWebService, useClass: CoreWebServiceMock },
                 { provide: DotCurrentUserService, useClass: MockDotCurrentUserService },
                 { provide: DotRolesService, useClass: MockDotRolesService },
 
@@ -89,30 +96,39 @@ describe('DotFavoritePageStore', () => {
         dotFavoritePageStore = TestBed.inject(DotFavoritePageStore);
         dotRolesService = TestBed.inject(DotRolesService);
         dotCurrentUser = TestBed.inject(DotCurrentUserService);
+        dotPageRenderService = TestBed.inject(DotPageRenderService);
         dotTempFileUploadService = TestBed.inject(DotTempFileUploadService);
         dotWorkflowActionsFireService = TestBed.inject(DotWorkflowActionsFireService);
         dotHttpErrorManagerService = TestBed.inject(DotHttpErrorManagerService);
 
         spyOn(dotRolesService, 'search').and.callThrough();
         spyOn(dotCurrentUser, 'getCurrentUser').and.callThrough();
+        spyOn(dotPageRenderService, 'get').and.returnValue(of(mockDotRenderedPage()));
 
         dotFavoritePageStore.setInitialStateData({
             isAdmin: mockRenderedPageState.user.admin,
-            imgWidth: mockRenderedPageState.viewAs.device?.cssWidth,
-            imgHeight: mockRenderedPageState.viewAs.device?.cssHeight,
-            pageRenderedHtml: '<p>test</p>'
+            favoritePageUrl: ''
         });
     });
 
     it('should set initial data', (done) => {
         const expectedInitialState = {
             roleOptions: mockProcessedRoles,
-            currentUserRoleId: CurrentUserDataMock.roleId,
+            formState: {
+                currentUserRoleId: 'e7d23sde-5127-45fc-8123-d424fd510e3',
+                inode: '',
+                order: 1,
+                permissions: [],
+                thumbnail: '',
+                title: 'A title',
+                url: ''
+            },
             isAdmin: true,
             imgWidth: 1024,
             imgHeight: 768.192048012003,
+            renderThumbnail: true,
             loading: false,
-            pageRenderedHtml: '<p>test</p>',
+            pageRenderedHtml: '<html><head></header><body><p>Hello World</p></body></html>',
             closeDialog: false,
             actionState: null
         };
@@ -123,31 +139,53 @@ describe('DotFavoritePageStore', () => {
         });
         expect(dotRolesService.search).toHaveBeenCalledTimes(1);
         expect(dotCurrentUser.getCurrentUser).toHaveBeenCalledTimes(1);
+        expect(dotPageRenderService.get).toHaveBeenCalledTimes(1);
+        // TODO: add tests for new Permissions endpoint
     });
 
     // Updaters
-    it('should update Favorite Pages', () => {
-        dotFavoritePageStore.setInodeStored('test');
+    it('should update setRenderThumbnail flag', () => {
+        dotFavoritePageStore.setRenderThumbnail(true);
         dotFavoritePageStore.state$.subscribe((data) => {
-            expect(data.inodeStored).toEqual('test');
+            expect(data.renderThumbnail).toEqual(true);
         });
     });
 
     // Selectors
+    it('should have actionState$ Selector', () => {
+        dotFavoritePageStore.actionState$.subscribe((data) => {
+            expect(data).toEqual(null);
+        });
+    });
+
+    it('should have renderThumbnail$ Selector', () => {
+        dotFavoritePageStore.renderThumbnail$.subscribe((data) => {
+            expect(data).toEqual(true);
+        });
+    });
+
     it('should have closeDialog$ Selector', () => {
         dotFavoritePageStore.closeDialog$.subscribe((data) => {
             expect(data).toEqual(false);
         });
     });
 
-    it('should have currentUserRoleId$ Selector', () => {
-        dotFavoritePageStore.currentUserRoleId$.subscribe((data) => {
-            expect(data).toEqual(CurrentUserDataMock.roleId);
+    it('should have form data Selector', () => {
+        dotFavoritePageStore.formState$.subscribe((data) => {
+            expect(data).toEqual({
+                currentUserRoleId: 'e7d23sde-5127-45fc-8123-d424fd510e3',
+                inode: '',
+                order: 1,
+                permissions: [],
+                thumbnail: '',
+                title: 'A title',
+                url: ''
+            });
         });
     });
 
     // Effects
-    it('should save Favorite Page', (done) => {
+    it('should create a Favorite Page', (done) => {
         spyOn(dotTempFileUploadService, 'upload').and.returnValue(of([mockDotCMSTempFile]));
         spyOn(dotWorkflowActionsFireService, 'publishContentletAndWaitForIndex').and.returnValue(
             of(null)
@@ -176,6 +214,7 @@ describe('DotFavoritePageStore', () => {
             'dotFavoritePage',
             {
                 screenshot: 'temp-file_123',
+                inode: null,
                 title: 'A title',
                 url: '/an/url/test?language_id=1',
                 order: 1
@@ -185,12 +224,50 @@ describe('DotFavoritePageStore', () => {
 
         dotFavoritePageStore.state$.subscribe((state) => {
             expect(state.closeDialog).toEqual(true);
+            expect(state.loading).toEqual(false);
             expect(state.actionState).toEqual(DotFavoritePageActionState.SAVED);
             done();
         });
     });
 
-    it('should handle error when save Favorite Page', (done) => {
+    it('should Edit a Favorite Page', (done) => {
+        spyOn(dotWorkflowActionsFireService, 'publishContentletAndWaitForIndex').and.returnValue(
+            of(null)
+        );
+
+        dotFavoritePageStore.saveFavoritePage({
+            currentUserRoleId: CurrentUserDataMock.roleId,
+            inode: 'abc123',
+            thumbnail:
+                'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADAAAAAwCAYAAABXAvmHAAAAAXNSR0IArs4c6QAAAXlJREFUaEPVktuNwjAQRWNaWApBFAGUBBVASUARaAvZbQGQI4EScJx53JvY/vHfeM45Dg3xHH//N3H8YfVzZT0TWIPj3NPt7xzv/Xq5Y71DA2jt3++XdvHFYsuqQAOI9h/NYxv3D024sCpQAHr2X3+HVIEC0LX/2p9VAQ6QtE+sAAdI2WdWgAJk7ZMqQAFy9lkVYAAi+4QKMACJfUYFCIDKPrgCBEBjH13BDWCyD6zgBrDYR1ZwAbjsgyq4ADz2URXMABD7gApmAIR9RAUTANS+s4IJAGnfW0ENQLHvqKAGYNj3VFABUO0bK6gAmPatFcQAk9g3VBADTGHfUkEEMKl9ZQURwJT2tRVGAWaxr6gwCjCHfU2FLMCs9oUVsgBz2pdWGAQowr6gwiBACfYlFZIARdkfqZAEKMn+WIUvgCLtZyp8AZRoP1ehB1C0/YEKPYCS7Q9VeANUYT9R4Q1Qg/1UhRagKvsfFVqAmux/VghV2u9UCDXa71Z4AkPtR8QJFVfWAAAAAElFTkSuQmCC',
+            title: 'A title',
+            url: '/an/url/test?language_id=1',
+            order: 1,
+            permissions: []
+        });
+
+        expect(dotWorkflowActionsFireService.publishContentletAndWaitForIndex).toHaveBeenCalledWith(
+            'dotFavoritePage',
+            {
+                screenshot:
+                    'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADAAAAAwCAYAAABXAvmHAAAAAXNSR0IArs4c6QAAAXlJREFUaEPVktuNwjAQRWNaWApBFAGUBBVASUARaAvZbQGQI4EScJx53JvY/vHfeM45Dg3xHH//N3H8YfVzZT0TWIPj3NPt7xzv/Xq5Y71DA2jt3++XdvHFYsuqQAOI9h/NYxv3D024sCpQAHr2X3+HVIEC0LX/2p9VAQ6QtE+sAAdI2WdWgAJk7ZMqQAFy9lkVYAAi+4QKMACJfUYFCIDKPrgCBEBjH13BDWCyD6zgBrDYR1ZwAbjsgyq4ADz2URXMABD7gApmAIR9RAUTANS+s4IJAGnfW0ENQLHvqKAGYNj3VFABUO0bK6gAmPatFcQAk9g3VBADTGHfUkEEMKl9ZQURwJT2tRVGAWaxr6gwCjCHfU2FLMCs9oUVsgBz2pdWGAQowr6gwiBACfYlFZIARdkfqZAEKMn+WIUvgCLtZyp8AZRoP1ehB1C0/YEKPYCS7Q9VeANUYT9R4Q1Qg/1UhRagKvsfFVqAmux/VghV2u9UCDXa71Z4AkPtR8QJFVfWAAAAAElFTkSuQmCC',
+                inode: 'abc123',
+                title: 'A title',
+                url: '/an/url/test?language_id=1',
+                order: 1
+            },
+            { READ: [CurrentUserDataMock.roleId, '6b1fa42f-8729-4625-80d1-17e4ef691ce7'] }
+        );
+
+        dotFavoritePageStore.state$.subscribe((state) => {
+            expect(state.closeDialog).toEqual(true);
+            expect(state.loading).toEqual(false);
+            expect(state.actionState).toEqual(DotFavoritePageActionState.SAVED);
+            done();
+        });
+    });
+
+    it('should handle error when create/save Favorite Page', (done) => {
         spyOn(dotTempFileUploadService, 'upload').and.returnValue(of([mockDotCMSTempFile]));
         spyOn(dotWorkflowActionsFireService, 'publishContentletAndWaitForIndex').and.throwError(
             'error'
@@ -211,6 +288,7 @@ describe('DotFavoritePageStore', () => {
             'dotFavoritePage',
             {
                 screenshot: 'temp-file_123',
+                inode: null,
                 title: 'A title',
                 url: '/an/url/test?language_id=1',
                 order: 1

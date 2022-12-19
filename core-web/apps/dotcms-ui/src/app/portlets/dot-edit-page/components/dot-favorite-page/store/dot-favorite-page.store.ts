@@ -64,10 +64,6 @@ export class DotFavoritePageStore extends ComponentStore<DotFavoritePageState> {
     public readonly formState$ = this.select(({ formState }) => formState);
 
     // UPDATERS
-    readonly setInodeStored = this.updater((state: DotFavoritePageState, data: string) => {
-        return { ...state, inodeStored: data };
-    });
-
     readonly setRenderThumbnail = this.updater((state: DotFavoritePageState, data: boolean) => {
         return { ...state, renderThumbnail: data };
     });
@@ -229,7 +225,6 @@ export class DotFavoritePageStore extends ComponentStore<DotFavoritePageState> {
             title: favoritePage?.title || '',
             url: favoritePageUrl
         };
-
         forkJoin([
             this.dotRolesService.search(),
             this.dotCurrentUser.getCurrentUser(),

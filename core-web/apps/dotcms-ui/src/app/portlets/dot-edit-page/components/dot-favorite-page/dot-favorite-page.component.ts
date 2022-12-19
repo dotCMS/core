@@ -74,7 +74,6 @@ export class DotFavoritePageComponent implements OnInit, OnDestroy {
                         order: [formStateData?.order, Validators.required],
                         permissions: [formStateData?.permissions]
                     });
-
                     this.isFormValid$ = this.form.valueChanges.pipe(
                         takeUntil(this.destroy$),
                         map(() => {
