@@ -56,6 +56,8 @@ public class VariantAPIImpl implements VariantAPI {
                 "Variant name should not be null");
         Preconditions.checkNotNull(variant.name(), IllegalArgumentException.class ,
                 "Variant ID should not be null");
+        DotPreconditions.isTrue(!variant.name().equals(DEFAULT_VARIANT.name()),
+                "DEFAULT variant can not be updated");
 
         get(variant.name())
                 .orElseThrow(() -> new DoesNotExistException("The variant does not exists"));
@@ -72,6 +74,9 @@ public class VariantAPIImpl implements VariantAPI {
     @WrapInTransaction
     public void delete(String id) throws DotDataException {
         final Variant variant = get(id).orElseThrow(() -> new DoesNotExistException("The variant must exists"));
+
+        DotPreconditions.isTrue(!variant.name().equals(DEFAULT_VARIANT.name()),
+                "DEFAULT variant can not be deleted");
 
         DotPreconditions.checkArgument(variant.archived(),
                 DotStateException.class,

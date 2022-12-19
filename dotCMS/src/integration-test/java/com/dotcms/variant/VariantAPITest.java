@@ -6,6 +6,8 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 import com.dotcms.datagen.VariantDataGen;
+import com.dotcms.experiments.business.ExperimentsAPI;
+import com.dotcms.experiments.model.Experiment;
 import com.dotcms.util.ConversionUtils;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotcms.variant.model.Variant;
@@ -14,6 +16,7 @@ import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.exception.DoesNotExistException;
 import com.dotmarketing.exception.DotDataException;
+import com.liferay.portal.model.User;
 import java.util.ArrayList;
 import java.util.Map;
 import java.util.Optional;
@@ -336,5 +339,29 @@ public class VariantAPITest {
                 .name(resultMap.get("name").toString())
                 .archived(ConversionUtils.toBooleanFromDb(resultMap.get("archived")))
                 .build();
+    }
+
+    /**
+     * Method to test: {@link ExperimentsAPI#start(String, User)}
+     * When: an {@link Experiment} is started
+     * Should: publish all the contents in the variants created for the experiment.
+     */
+    @Test(expected = IllegalArgumentException.class)
+    public void testUpdateDefaultVariant_shouldFail() throws DotDataException {
+        final Variant defaultVariant = APILocator.getVariantAPI()
+                .get(VariantAPI.DEFAULT_VARIANT.name()).orElseThrow(()->new DotStateException("Unable to find DEFAULT Variant"));
+        final Variant alteredDefaultVariant = defaultVariant.withArchived(true)
+                .withDescription(Optional.of("Let's alter the Default Variant description"));
+        APILocator.getVariantAPI().update(alteredDefaultVariant);
+    }
+
+    /**
+     * Method to test: {@link ExperimentsAPI#start(String, User)}
+     * When: an {@link Experiment} is started
+     * Should: publish all the contents in the variants created for the experiment.
+     */
+    @Test(expected = IllegalArgumentException.class)
+    public void testDeleteDefaultVariant_shouldFail() throws DotDataException {
+        APILocator.getVariantAPI().delete(VariantAPI.DEFAULT_VARIANT.name());
     }
 }
