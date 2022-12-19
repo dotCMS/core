@@ -3,10 +3,10 @@
 :host ::ng-deep {
     .p-card {
         border: none;
-        box-shadow: 0px 2px 2px rgba(30, 30, 30, 0.15);
+        box-shadow: $md-shadow-1;
         cursor: pointer;
         display: flex;
-        gap: 0.875 * $dot-editor-size;
+        gap: $dot-editor-size;
         height: 5.875 * $dot-editor-size;
         width: 20.625 * $dot-editor-size;
 
@@ -14,9 +14,21 @@
             padding: 0;
             height: 5.875 * $dot-editor-size;
             width: 5.875 * $dot-editor-size;
+            overflow: hidden;
+            position: relative;
+
+            .image-thumbnail-container {
+                padding: 10px;
+                width: 100%;
+                height: 100%;
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                background: $gray-bg;
+            }
 
             img {
-                border-radius: $border-radius-md 0 0 $border-radius-md;
+                object-fit: contain;
                 width: 100%;
                 height: 100%;
             }
@@ -49,6 +61,16 @@
                 }
             }
         }
+    }
+
+    .image-container {
+        filter: blur(10px);
+        -webkit-filter: blur(10px);
+        position: absolute;
+        background-size: cover;
+        opacity: 0.4;
+        width: 100%;
+        height: 100%;
     }
 
     .state {

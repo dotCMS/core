@@ -1,6 +1,8 @@
 <p-card>
     <ng-template pTemplate="header">
-        <img [src]="contentlet.fileAsset || contentlet.asset" />
+        <div class="image-thumbnail-container">
+            <img [src]="contentlet.fileAsset || contentlet.asset" />
+        </div>
     </ng-template>
     <h2 class="title" *pTemplate="'title'">{{ contentlet?.fileName || contentlet?.title }}</h2>
     <ng-template pTemplate="footer">

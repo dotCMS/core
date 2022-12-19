@@ -31,7 +31,7 @@ export class SearchService {
      * @returns Observable<ESContent>
      * @memberof DotESContentService
      */
-    public get({ query, limit = 0, offset = 0 }: queryEsParams): Observable<unknown> {
+    public get<T>({ query, limit = 0, offset = 0 }: queryEsParams): Observable<T> {
         return this.http
             .post('/api/content/_search', {
                 query,
