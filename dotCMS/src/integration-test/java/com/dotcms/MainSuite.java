@@ -227,6 +227,7 @@ import org.junit.runners.Suite.SuiteClasses;
 
 @RunWith(MainBaseSuite.class)
 @SuiteClasses({
+        ESContentletAPIImplTest.class,
         RulesAPIImplIntegrationTest.class,
         ExperimentAPIImpIT.class,
         ExperimentWebAPIImplIT.class,
@@ -451,7 +452,6 @@ import org.junit.runners.Suite.SuiteClasses;
         Task05195CreatesDestroyActionAndAssignDestroyDefaultActionsToTheSystemWorkflowTest.class,
         Task05210CreateDefaultDotAssetTest.class,
         CleanUpFieldReferencesJobTest.class,
-        ESContentletAPIImplTest.class,
         CachedParameterDecoratorTest.class,
         ContainerFactoryImplTest.class,
         TemplateFactoryImplTest.class,

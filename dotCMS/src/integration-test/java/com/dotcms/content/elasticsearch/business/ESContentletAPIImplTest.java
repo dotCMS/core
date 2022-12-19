@@ -45,6 +45,7 @@ import com.dotcms.variant.model.Variant;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.*;
+import com.dotmarketing.common.db.DotDatabaseMetaData;
 import com.dotmarketing.exception.DoesNotExistException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
@@ -1873,18 +1874,7 @@ public class ESContentletAPIImplTest extends IntegrationTestBase {
         final ContentletVersionInfo contentletVersionInfo = ((VersionableFactoryImpl) FactoryLocator.getVersionableFactory())
                 .findContentletVersionInfoInDB(htmlPageAsset_1.getIdentifier(),
                         htmlPageAsset_1.getLanguageId(),
-                        variant_A.name()).orElseThrow(() -> {
-                    try {
-                        return new AssertionError(
-                                APILocator.getVersionableAPI().findContentletVersionInfos(htmlPageAsset_1.getIdentifier())
-                                        .stream()
-                                        .map(contentletVersionInfo1 -> contentletVersionInfo1.toString())
-                                        .collect(Collectors.joining("|"))
-                        );
-                    } catch (DotDataException e) {
-                        throw new DotRuntimeException(e);
-                    }
-                });
+                        variant_A.name()).orElseThrow(() -> new AssertionError());
 
         assertEquals(htmlPageAsset_1.getInode(), contentletVersionInfo.getWorkingInode());
         assertEquals(template_A.getIdentifier(), getFromDataBase(contentletVersionInfo.getWorkingInode()).getTemplateId());
