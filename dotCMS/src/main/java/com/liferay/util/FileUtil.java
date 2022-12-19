@@ -374,11 +374,7 @@ public class FileUtil {
 				}
 			}
 			if (deleteTopDir) {
-				try {
-					Files.delete(directory.toPath());
-				} catch (IOException e) {
-					Logger.error(FileUtil.class, String.format("Fail to delete dir [%s]", directory), e);
-				}
+				internalDelete(directory);
 			}
 		}else{
 			if(directory.exists()){
