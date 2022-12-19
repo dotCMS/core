@@ -751,11 +751,11 @@ public class FileUtil {
 		}
 	}
 
+	@SuppressWarnings("java:S6300")
 	public static void write(File file, String s) throws IOException {
 		if (file.getParent() != null) {
 			mkdirs(file.getParent());
 		}
-
 		try(BufferedWriter bw = new BufferedWriter(new FileWriter(file))) {
 
 			bw.flush();

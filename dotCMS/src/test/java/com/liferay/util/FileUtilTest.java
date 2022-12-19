@@ -282,6 +282,8 @@ public class FileUtilTest {
 
     /**
      * Method to test: {@link FileUtil#copyDirectory(File, File)}
+     * Scenario: We create a parent dir/file structure including subdirectories
+     * Expected: after calling copyDirectory we verify that whole dir/files structure was moved according
      * @throws Exception
      */
     @Test
@@ -333,6 +335,5 @@ public class FileUtilTest {
             }
         }
     }
-
 
   }
