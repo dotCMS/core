@@ -341,6 +341,37 @@ public class ExperimentsResource {
     }
 
     /**
+     * Updates an existing experiment accepting partial updates (PATCH). This means it is not needed to send
+     * the entire Experiment information but only what it is desired to update only. The rest
+     * of the information will remain as previously persisted.
+     *
+     * Returns the updated version of the Experiment.
+     */
+    @PATCH
+    @Path("/{experimentId}/variants/{name}")
+    @JSONP
+    @NoCache
+    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    public ResponseEntitySingleExperimentView updateVariant(@Context final HttpServletRequest request,
+            @Context final HttpServletResponse response,
+            @PathParam("experimentId") final String experimentId,
+            @PathParam("name") final String variantName,
+            final String variantDescription) throws DotDataException, DotSecurityException {
+        final InitDataObject initData = getInitData(request, response);
+        final User user = initData.getUser();
+
+        final Optional<Experiment> experimentToUpdate =  experimentsAPI.find(experimentId, user);
+
+        if(experimentToUpdate.isEmpty()) {
+            throw new NotFoundException("Experiment with id: " + experimentId + " not found.");
+        }
+
+        final Experiment persistedExperiment = experimentsAPI
+                .editVariantDescription(experimentId, variantName, variantDescription, user);
+        return new ResponseEntitySingleExperimentView(persistedExperiment);
+    }
+
+    /**
      * Deletes the {@link TargetingCondition} with the given id from the {@link Experiment} with the given experimentId
      *
      */
