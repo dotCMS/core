@@ -1,5 +1,6 @@
 package com.dotcms;
 
+import com.dotcms.analytics.AnalyticsAPIImplTest;
 import com.dotcms.analytics.bayesian.BayesianAPIImplTest;
 import com.dotcms.auth.providers.saml.v1.DotSamlResourceTest;
 import com.dotcms.auth.providers.saml.v1.SAMLHelperTest;
@@ -156,6 +157,7 @@ import com.dotmarketing.portlets.workflows.actionlet.VelocityScriptActionletAbor
 import com.dotmarketing.portlets.workflows.model.TestWorkflowAction;
 import com.dotmarketing.portlets.workflows.util.WorkflowEmailUtilTest;
 import com.dotmarketing.quartz.DotStatefulJobTest;
+import com.dotmarketing.quartz.job.AccessTokenRenewJobTest;
 import com.dotmarketing.quartz.job.CleanUpFieldReferencesJobTest;
 import com.dotmarketing.quartz.job.IntegrityDataGenerationJobTest;
 import com.dotmarketing.startup.StartupTasksExecutorTest;
@@ -228,6 +230,8 @@ import org.junit.runners.Suite.SuiteClasses;
         RulesAPIImplIntegrationTest.class,
         ExperimentAPIImpIT.class,
         ExperimentWebAPIImplIT.class,
+        AnalyticsAPIImplTest.class,
+        AccessTokenRenewJobTest.class,
         Task220825CreateVariantFieldTest.class,
         Task221007AddVariantIntoPrimaryKeyTest.class,
         ContentletWebAPIImplIntegrationTest.class, // moved to top because of failures on GHA
@@ -650,7 +654,6 @@ import org.junit.runners.Suite.SuiteClasses;
         SiteAndFolderResolverImplTest.class,
         ManifestUtilTest.class,
         ZipUtilTest.class
-
 })
 public class MainSuite {
 
