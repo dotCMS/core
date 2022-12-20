@@ -1,7 +1,7 @@
 package com.dotcms.contenttype.model.type;
 
-import com.dotcms.contenttype.model.component.ImmutableSiteAndFolderParams;
-import com.dotcms.contenttype.model.component.SiteAndFolderParams;
+import com.dotcms.contenttype.model.component.ImmutableSiteAndFolder;
+import com.dotcms.contenttype.model.component.SiteAndFolder;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.StoryBlockField;
 import com.dotcms.publisher.util.PusheableAsset;
@@ -179,11 +179,9 @@ public abstract class ContentType implements Serializable, Permissionable, Conte
    * @return
    */
   @Value.Default
-  public Source getSource(){
-    return Source.OTHER;
+  public boolean isSourceDB(){
+    return false;
   }
-
-  public enum Source {DB,OTHER}
 
   @Value.Default
   public Date modDate() {
@@ -338,9 +336,8 @@ public abstract class ContentType implements Serializable, Permissionable, Conte
 
   @JsonIgnore
   @Auxiliary
-  public SiteAndFolderParams siteAndFolderParams() {
-
-    return ImmutableSiteAndFolderParams.builder()
+  public SiteAndFolder siteAndFolder() {
+    return ImmutableSiteAndFolder.builder()
             .folder(folder()).host(host())
             .folderPath(canonicalFolderPath != null ? null : folderPath())
             .siteName(canonicalSiteName != null ? null : siteName()).build();

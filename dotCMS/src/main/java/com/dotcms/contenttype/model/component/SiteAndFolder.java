@@ -5,10 +5,10 @@ import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import javax.annotation.Nullable;
 import org.immutables.value.Value;
 
-@JsonSerialize(as = ImmutableSiteAndFolderParams.class)
-@JsonDeserialize(as = ImmutableSiteAndFolderParams.class)
+@JsonSerialize(as = ImmutableSiteAndFolder.class)
+@JsonDeserialize(as = ImmutableSiteAndFolder.class)
 @Value.Immutable
-public interface SiteAndFolderParams {
+public interface SiteAndFolder {
 
     @Nullable
     String host();

@@ -151,9 +151,9 @@ public class DbContentTypeTransformer implements ContentTypeTransformer{
 				return javaDate;
 			}
 
-			@Override
-			public Source getSource() {
-				return Source.DB;
+            @Override
+			public boolean isSourceDB(){
+				return true;
 			}
 		};
 

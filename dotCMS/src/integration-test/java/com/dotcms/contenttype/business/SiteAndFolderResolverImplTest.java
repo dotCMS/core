@@ -1,7 +1,7 @@
 package com.dotcms.contenttype.business;
 
 import com.dotcms.IntegrationTestBase;
-import com.dotcms.contenttype.model.component.SiteAndFolderParams;
+import com.dotcms.contenttype.model.component.SiteAndFolder;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.ContentTypeBuilder;
 import com.dotcms.contenttype.model.type.FileAssetContentType;
@@ -54,7 +54,7 @@ public class SiteAndFolderResolverImplTest extends IntegrationTestBase {
         Assert.assertNotNull(contentType.folderPath());
         Assert.assertNotNull(contentType.siteName());
 
-        final SiteAndFolderParams siteAndFolder1 = contentType.siteAndFolderParams();
+        final SiteAndFolder siteAndFolder1 = contentType.siteAndFolder();
         Assert.assertNotNull(siteAndFolder1.folder());
         Assert.assertNotNull(siteAndFolder1.host());
         //However, these two should return null because no value has been used to set them in reality
@@ -63,7 +63,7 @@ public class SiteAndFolderResolverImplTest extends IntegrationTestBase {
 
         final ImmutableFileAssetContentType copy = ImmutableFileAssetContentType.copyOf(
                 (FileAssetContentType) contentType);
-        final SiteAndFolderParams siteAndFolder = copy.siteAndFolderParams();
+        final SiteAndFolder siteAndFolder = copy.siteAndFolder();
         Assert.assertNotNull(siteAndFolder.folder());
         Assert.assertNotNull(siteAndFolder.host());
         Assert.assertNull(siteAndFolder.folderPath());
@@ -74,7 +74,7 @@ public class SiteAndFolderResolverImplTest extends IntegrationTestBase {
 
         final ContentType copyContentType = ContentTypeBuilder.builder(contentType).build();
 
-        final SiteAndFolderParams siteAndFolder2 = copyContentType.siteAndFolderParams();
+        final SiteAndFolder siteAndFolder2 = copyContentType.siteAndFolder();
         Assert.assertNotNull(siteAndFolder2.folder());
         Assert.assertNotNull(siteAndFolder2.host());
         //However, these two should return null because no value has been used to set them in reality

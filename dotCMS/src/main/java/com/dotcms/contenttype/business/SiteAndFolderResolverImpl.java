@@ -1,9 +1,8 @@
 package com.dotcms.contenttype.business;
 
 import com.dotcms.contenttype.model.component.ImmutableResolvedSiteAndFolder;
-import com.dotcms.contenttype.model.component.ImmutableSiteAndFolderParams;
 import com.dotcms.contenttype.model.component.ResolvedSiteAndFolder;
-import com.dotcms.contenttype.model.component.SiteAndFolderParams;
+import com.dotcms.contenttype.model.component.SiteAndFolder;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.ContentTypeBuilder;
@@ -14,7 +13,6 @@ import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
-import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UUIDUtil;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
@@ -71,7 +69,7 @@ public class SiteAndFolderResolverImpl implements SiteAndFolderResolver {
         //when lazy calculations are blocked we can get null values when nothing has been set on those fields instead of the lazy calculation
         //Immutables work in such a way that if a getter
 
-        final SiteAndFolderParams params = contentType.siteAndFolderParams();
+        final SiteAndFolder params = contentType.siteAndFolder();
         final String resolvedSite = resolveSite(params);
         final ResolvedSiteAndFolder resolvedSiteAndFolder = resolveFolder(params, resolvedSite);
 
@@ -95,7 +93,7 @@ public class SiteAndFolderResolverImpl implements SiteAndFolderResolver {
      * @throws DotSecurityException
      */
     @NotNull
-    String resolveSite(final SiteAndFolderParams params)
+    String resolveSite(final SiteAndFolder params)
             throws DotDataException, DotSecurityException {
 
         //Typically, this should be set only when loading starter.
@@ -133,7 +131,7 @@ public class SiteAndFolderResolverImpl implements SiteAndFolderResolver {
      * @throws DotDataException
      * @throws DotSecurityException
      */
-    ResolvedSiteAndFolder resolveFolder(final SiteAndFolderParams params, final String resolvedSiteId)
+    ResolvedSiteAndFolder resolveFolder(final SiteAndFolder params, final String resolvedSiteId)
             throws DotDataException, DotSecurityException {
 
         //Typically, this should be set only when loading starter.
