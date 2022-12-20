@@ -2,7 +2,6 @@
 let experimentAlreadyCheck = sessionStorage.getItem("experimentAlreadyCheck");
 
 if (!experimentAlreadyCheck) {
-    console.log("Checking Exeriment");
     let currentRunningExperimentsId = [${running_experiments_list}]
 
     function shouldHitEndPoint() {
@@ -64,7 +63,6 @@ if (!experimentAlreadyCheck) {
     });
 
     if (shouldHitEndPoint()) {
-        console.log("Hittinh end point");
         let experimentData = localStorage.getItem('experiment_data');
         let body = experimentData ?
             {
