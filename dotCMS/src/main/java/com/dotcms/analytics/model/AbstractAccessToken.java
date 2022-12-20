@@ -7,6 +7,7 @@ import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import org.immutables.value.Value;
 
 import javax.annotation.Nullable;
+import java.io.Serializable;
 import java.time.Instant;
 
 
@@ -19,9 +20,9 @@ import java.time.Instant;
 @Value.Immutable
 @JsonDeserialize(as = AccessToken.class)
 @JsonIgnoreProperties(ignoreUnknown = true)
-public interface AbstractAccessToken {
+public interface AbstractAccessToken extends Serializable {
 
-    @JsonProperty("access_token")
+    @JsonProperty(value = "access_token", access = JsonProperty.Access.WRITE_ONLY)
     String accessToken();
 
     @JsonProperty("token_type")
@@ -40,18 +41,22 @@ public interface AbstractAccessToken {
     Integer refreshExpiresIn();
 
     @Nullable
-    @JsonProperty("refresh_token")
+    @JsonProperty(value = "refresh_token", access = JsonProperty.Access.WRITE_ONLY)
     String refreshToken();
 
     @JsonProperty("scope")
     String scope();
 
     @Nullable
-    @JsonProperty("clientId")
+    @JsonProperty("client_id")
     String clientId();
 
     @Nullable
     @JsonProperty("aud")
     String aud();
+
+    @Nullable
+    @JsonProperty("status")
+    AccessTokenStatus status();
 
 }
