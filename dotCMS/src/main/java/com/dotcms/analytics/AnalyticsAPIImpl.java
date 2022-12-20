@@ -41,8 +41,6 @@ import java.util.Objects;
  */
 public class AnalyticsAPIImpl implements AnalyticsAPI {
 
-    private static final String GRANT_TYPE_PARAM = "grant_type=client_credentials";
-
     private final String analyticsIdpUrl;
     private final AnalyticsCache analyticsCache;
 
@@ -164,7 +162,7 @@ public class AnalyticsAPIImpl implements AnalyticsAPI {
             return analyticsKey;
         }
 
-        _resetAnalyticsKey(analyticsApp);
+        _resetAnalyticsKey(analyticsApp, false);
 
         return AnalyticsHelper.appFromHost(host).getAnalyticsProperties().analyticsKey();
     }
@@ -173,23 +171,32 @@ public class AnalyticsAPIImpl implements AnalyticsAPI {
      * {@inheritDoc}
      */
     @Override
-    public void resetAnalyticsKey(final AnalyticsApp analyticsApp) throws AnalyticsException {
+    public void resetAnalyticsKey(final AnalyticsApp analyticsApp, final boolean force) throws AnalyticsException {
         // validates app
         validateAnalyticsApp(analyticsApp);
 
-        _resetAnalyticsKey(analyticsApp);
+        _resetAnalyticsKey(analyticsApp, force);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void resetAnalyticsKey(final AnalyticsApp analyticsApp) throws AnalyticsException {
+        resetAnalyticsKey(analyticsApp, false);
     }
 
     /**
      * Reset analytics key to the app storage by requesting it again to the configuration server.
      *
      * @param analyticsApp resolved analytics app
+     * @param force force flag
      * @throws AnalyticsException if analytics key cannot be extracted from response or when saving to app storage
      */
-    private void _resetAnalyticsKey(final AnalyticsApp analyticsApp) throws AnalyticsException {
+    private void _resetAnalyticsKey(final AnalyticsApp analyticsApp, final boolean force) throws AnalyticsException {
         // fetches access token and if not found than throw exception
         try {
-            final CircuitBreakerUrl.Response<AnalyticsKey> response = requestAnalyticsKey(analyticsApp);
+            final CircuitBreakerUrl.Response<AnalyticsKey> response = requestAnalyticsKey(analyticsApp, force);
             Logger.info(
                 this,
                 String.format(
@@ -259,7 +266,7 @@ public class AnalyticsAPIImpl implements AnalyticsAPI {
      */
     private Map<String, String> accessTokenHeaders(final AnalyticsApp analyticsApp) {
         return ImmutableMap.<String, String>builder()
-            .put(HttpHeaders.AUTHORIZATION, String.format("Basic %s", analyticsApp.clientIdAndSecret()))
+            //.put(HttpHeaders.AUTHORIZATION, String.format("Basic %s", analyticsApp.clientIdAndSecret()))
             .put(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_FORM_URLENCODED)
             .build();
     }
@@ -283,15 +290,23 @@ public class AnalyticsAPIImpl implements AnalyticsAPI {
             .setTimeout(ANALYTICS_ACCESS_TOKEN_RENEW_TIMEOUT)
             .setTryAgainAttempts(ANALYTICS_ACCESS_TOKEN_RENEW_ATTEMPTS)
             .setHeaders(accessTokenHeaders(analyticsApp))
-            .setRawData(GRANT_TYPE_PARAM)
+            .setRawData(prepareRequestData(analyticsApp))
             .build()
             .doResponse(AccessToken.class);
         logTokenResponse(response);
         return response;
     }
 
+    private String prepareRequestData(final AnalyticsApp analyticsApp) {
+        return String.format(
+            "client_id=%s&client_secret=%s&%s",
+            analyticsApp.getAnalyticsProperties().clientId(),
+            analyticsApp.getAnalyticsProperties().clientSecret(),
+            "grant_type=client_credentials");
+    }
+
     /**
-     * Given an {@link AnalyticsApp} instance iw will try to fetch an {@link AccessToken} from the analytics
+     * Given an {@link AnalyticsApp} instance it will try to fetch an {@link AccessToken} from the analytics
      * infrastructure and if found it will save it in the cache.
      *
      * @param analyticsApp analytics app
@@ -346,17 +361,19 @@ public class AnalyticsAPIImpl implements AnalyticsAPI {
      * Request an access token by sending an HTTP post with app's data to defined IDP.
      *
      * @param analyticsApp provided analytics app
+     * @param force force flag
      * @return a http response representation
      * @throws AnalyticsException if access token cannot be fetched
      */
-    private CircuitBreakerUrl.Response<AnalyticsKey> requestAnalyticsKey(final AnalyticsApp analyticsApp)
+    private CircuitBreakerUrl.Response<AnalyticsKey> requestAnalyticsKey(final AnalyticsApp analyticsApp,
+                                                                         final boolean force)
         throws AnalyticsException {
-        final AccessToken accessToken = getAccessToken(analyticsApp);
+        final AccessToken accessToken = getAccessToken(analyticsApp, force);
         if (Objects.isNull(accessToken)) {
             throw new AnalyticsException(String.format(
                 "ACCESS_TOKEN could not be fetched for clientId %s from %s",
                 analyticsApp.getAnalyticsProperties().clientId(),
-                analyticsApp.getAnalyticsProperties().analyticsConfigUrl()));
+                analyticsIdpUrl));
         }
 
         Logger.info(
