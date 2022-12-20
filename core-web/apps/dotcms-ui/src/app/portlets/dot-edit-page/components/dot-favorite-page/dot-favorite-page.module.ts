@@ -12,12 +12,14 @@ import { DotTempFileUploadService } from '@dotcms/app/api/services/dot-temp-file
 import { DotWorkflowActionsFireService } from '@dotcms/data-access';
 import { DotRolesService } from '@dotcms/data-access';
 import { MultiSelectModule } from 'primeng/multiselect';
+import { ButtonModule } from 'primeng/button';
 
 @NgModule({
     declarations: [DotFavoritePageComponent],
     exports: [DotFavoritePageComponent],
     imports: [
         CommonModule,
+        ButtonModule,
         DotAutofocusModule,
         DotFormDialogModule,
         DotFieldValidationMessageModule,
