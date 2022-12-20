@@ -12,6 +12,7 @@ import com.dotmarketing.util.UtilMethods;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableMap;
+import com.liferay.util.StringPool;
 import io.vavr.Lazy;
 import io.vavr.control.Try;
 import net.jodah.failsafe.CircuitBreaker;
@@ -37,6 +38,7 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.io.Serializable;
 import java.net.URISyntaxException;
 import java.util.HashMap;
 import java.util.Map;
@@ -170,14 +172,14 @@ public class CircuitBreakerUrl {
     public String doString() throws IOException {
         try (ByteArrayOutputStream out = new ByteArrayOutputStream()) {
             doOut(out);
-            return new String(out.toByteArray());
+            return out.toString();
         }
     }
 
-    public void doOut(final OutputStream out ) throws IOException {
+    public void doOut(final OutputStream out) throws IOException {
         doOut(new EmptyHttpResponse() {
             @Override
-            public ServletOutputStream getOutputStream() throws IOException {
+            public ServletOutputStream getOutputStream() {
                 return new ServletOutputStream(){
 
                     @Override
@@ -250,7 +252,7 @@ public class CircuitBreakerUrl {
                     });
         } catch (FailsafeException ee) {
 
-            Logger.debug(this.getClass(), ee.getMessage() + " " + toString());
+            Logger.debug(this.getClass(), ee.getMessage() + " " + this);
         } finally {
 
             circuitBreakerConnectionControl.end(Thread.currentThread().getId());
@@ -287,9 +289,26 @@ public class CircuitBreakerUrl {
 
     final static TypeReference<HashMap<String,Object>> typeRef = new TypeReference<HashMap<String,Object>>() {};
 
-
     public Map<String,Object> doMap() {
-        return (Map<String,Object>) Try.of(()-> DotObjectMapperProvider.getInstance().getDefaultObjectMapper().readValue(doString(), typeRef)).onFailure(e->Logger.warnAndDebug(CircuitBreakerUrl.class,  e)).getOrElse(HashMap::new);
+        return Try.of(() -> DotObjectMapperProvider.getInstance()
+                .getDefaultObjectMapper()
+                .readValue(doString(), typeRef))
+            .onFailure(e->Logger.warnAndDebug(CircuitBreakerUrl.class, e))
+            .getOrElse(HashMap::new);
+    }
+
+    public <T extends Serializable> T doObject(final Class<T> clazz) {
+        return Try.of(() -> DotObjectMapperProvider.getInstance().getDefaultObjectMapper().readValue(doString(), clazz))
+            .onFailure(e -> Logger.warnAndDebug(CircuitBreakerUrl.class, e))
+            .getOrElse((T) null);
+    }
+
+    public <T extends Serializable> Response<T> doResponse(final Class<T> clazz) {
+        return Try.of(() -> new Response<>(this, clazz)).getOrElse((Response<T>) null);
+    }
+
+    public Response<String> doResponse() {
+        return Try.of(() -> new Response<String>(this)).getOrElse((Response<String>) null);
     }
 
     public Header[] getResponseHeaders() {
@@ -330,4 +349,40 @@ public class CircuitBreakerUrl {
             threadIdConnectionCountSet.remove(id);
         }
     }
+
+    public static class Response<T extends Serializable> {
+
+        private final T response;
+        private final int statusCode;
+
+        private Response(final T response, final int statusCode) {
+            this.response = response;
+            this.statusCode = statusCode;
+        }
+
+        Response(final CircuitBreakerUrl circuitBreakerUrl, final Class<T> clazz) throws IOException {
+            this(
+                clazz.equals(String.class)
+                    ? clazz.cast(circuitBreakerUrl.doString())
+                    : circuitBreakerUrl.doObject(clazz),
+                circuitBreakerUrl.response()
+            );
+        }
+
+        Response(final CircuitBreakerUrl circuitBreakerUrl) throws IOException {
+            this(circuitBreakerUrl, (Class<T>) String.class);
+        }
+
+        public T getResponse() {
+            return response;
+        }
+
+        public int getStatusCode() {
+            return statusCode;
+        }
+
+    }
+
+    public static Response<String> EMPTY_RESPONSE = new Response<>(StringPool.BLANK, 0);
+
 }
