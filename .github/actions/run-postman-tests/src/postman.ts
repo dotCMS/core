@@ -3,6 +3,7 @@ import * as exec from '@actions/exec'
 import * as fs from 'fs'
 import * as path from 'path'
 import * as shelljs from 'shelljs'
+import fetch, {Response} from 'node-fetch'
 
 const projectRoot = core.getInput('project_root')
 const builtImageName = core.getInput('built_image_name')
@@ -39,6 +40,23 @@ export interface Command {
   args?: string[]
   workingDir?: string
   env?: {[key: string]: string}
+}
+
+interface AccessToken {
+  access_token: string
+  token_type: string
+  issueDate: string
+  expires_in: number
+  refresh_expires_in: number
+  refresh_token: string
+  scope: string
+  clientId: string
+  aud: string
+}
+
+interface AnalyticsKey {
+  jsKey: string
+  m2mKey: string
 }
 
 const DEPS_ENV: {[key: string]: string} = {
@@ -131,7 +149,8 @@ const startDeps = async () => {
 
   if (includeAnalytics) {
     execCmdAsync(toCommand('docker-compose', ['-f', 'analytics-compose.yml', 'up'], dockerFolder))
-    await waitFor(140, 'Analytics Infrastructure')
+    await waitFor(160, 'Analytics Infrastructure')
+    await warmUpAnalytics()
   }
 
   execCmdAsync(
@@ -459,4 +478,56 @@ const execCmd = async (cmd: Command): Promise<number> => {
 const execCmdAsync = (cmd: Command) => {
   printCmd(cmd)
   exec.exec(cmd.cmd, cmd.args || [], {cwd: cmd.workingDir, env: cmd.env})
+}
+
+const fetchAccessToken = async (): Promise<Response> => {
+  const idpUrl = 'http://localhost:61111/realms/dotcms/protocol/openid-connect/token'
+  const authPayload = 'client_id=analytics-customer-customer1&client_secret=testsecret&grant_type=client_credentials'
+  core.info(`Sending POST to ${idpUrl} the payload:\n${authPayload}`)
+
+  return fetch(idpUrl, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/x-www-form-urlencoded'
+    },
+    body: authPayload
+  })
+}
+
+const warmUpIdp = async (): Promise<AccessToken> => {
+  await fetchAccessToken()
+  waitFor(1000, 'IDP warmup')
+  const response = await fetchAccessToken()
+  const accessToken = (await response.json()) as AccessToken
+  return accessToken
+}
+
+const fetchAnalyticsKey = async (accessToken: string): Promise<Response> => {
+  const configUrl = 'http://localhost:8088/c/customer1/cluster1/keys'
+  core.info(`Sending GET to ${configUrl}`)
+  return fetch(configUrl, {
+    method: 'GET',
+    headers: {
+      Accept: 'application/json',
+      Authorization: `Bearer ${accessToken}`
+    }
+  })
+}
+
+const warmUpConfig = async (accessToken: string): Promise<AnalyticsKey> => {
+  await fetchAnalyticsKey(accessToken)
+  waitFor(1000, 'Config warmup')
+  const response = await fetchAnalyticsKey(accessToken)
+  const analyticsKey = (await response.json()) as AnalyticsKey
+  return analyticsKey
+}
+
+const warmUpAnalytics = async () => {
+  const accessToken = await warmUpIdp()
+  const token = accessToken.access_token
+  accessToken.access_token = ''
+  core.info(`Got response:\n${JSON.stringify(accessToken, null, 2)}`)
+
+  const analyticsKey = await warmUpConfig(token)
+  core.info(`Got response:\n${JSON.stringify(analyticsKey, null, 2)}`)
 }

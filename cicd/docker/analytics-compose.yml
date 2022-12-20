@@ -63,7 +63,6 @@ services:
     environment:
       - CLUSTER_ADMIN_TOKEN=myadmin
       - REDIS_URL=redis://jitsu_redis:6379
-      # - JITSU_CONFIGURATOR_URL=http://jitsu-configurator:7000
       - JITSU_CONFIGURATOR_URL=${JITSU_CONFIGURATOR_URL:-http://dotcms-analytics:8080}
       - SERVER_PORT=8001
       - TERM=xterm-256color
