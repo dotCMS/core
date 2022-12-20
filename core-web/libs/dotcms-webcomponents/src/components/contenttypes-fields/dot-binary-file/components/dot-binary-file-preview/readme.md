@@ -2,10 +2,6 @@
 
 <!-- Auto Generated Below -->
 
-## Overview
-
-Represent a dotcms text field for the binary file preview.
-
 ## Properties
 
 | Property      | Attribute      | Description                         | Type     | Default    |
