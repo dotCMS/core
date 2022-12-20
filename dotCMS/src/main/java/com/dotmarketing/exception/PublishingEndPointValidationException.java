@@ -39,6 +39,10 @@ public class PublishingEndPointValidationException extends Exception {
         return String.join(",", errorMessages);
     }
 
+    public List<Message> getI18nmessages() {
+        return i18nmessages;
+    }
+
     public static class Builder {
         final List<Message> messages = new ArrayList<>();
 
