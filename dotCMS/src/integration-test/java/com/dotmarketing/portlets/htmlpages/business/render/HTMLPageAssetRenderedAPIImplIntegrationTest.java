@@ -632,7 +632,7 @@ public class HTMLPageAssetRenderedAPIImplIntegrationTest extends IntegrationTest
                         .setPageMode(PageMode.LIVE)
                         .build(),
                 mockRequest, mockResponse);
-        Assert.assertEquals("<div>" + VariantAPI.DEFAULT_VARIANT.name() + " content-default-" + language.getId() + "</div>", html);
+        Assert.assertEquals(getNotExperimentJsCode() + "<div>" + VariantAPI.DEFAULT_VARIANT.name() + " content-default-" + language.getId() + "</div>", html);
     }
 
     /**
@@ -681,7 +681,7 @@ public class HTMLPageAssetRenderedAPIImplIntegrationTest extends IntegrationTest
                         .setPageMode(PageMode.LIVE)
                         .build(),
                 mockRequest, mockResponse);
-        Assert.assertEquals("<div></div>", html);
+        Assert.assertEquals(getNotExperimentJsCode() + "<div></div>", html);
     }
 
     /**
@@ -726,7 +726,7 @@ public class HTMLPageAssetRenderedAPIImplIntegrationTest extends IntegrationTest
                         .setPageMode(PageMode.LIVE)
                         .build(),
                 mockRequest, mockResponse);
-        Assert.assertEquals("<div>" + variant.name() + " content-default-" + language.getId() + "</div>", html);
+        Assert.assertEquals(getNotExperimentJsCode() + "<div>" + variant.name() + " content-default-" + language.getId() + "</div>", html);
     }
 
     /**
@@ -771,7 +771,7 @@ public class HTMLPageAssetRenderedAPIImplIntegrationTest extends IntegrationTest
                         .setPageMode(PageMode.LIVE)
                         .build(),
                 mockRequest, mockResponse);
-        Assert.assertEquals("<div>DEFAULT content-default-" + language.getId() + "</div>", html);
+        Assert.assertEquals(getNotExperimentJsCode() + "<div>DEFAULT content-default-" + language.getId() + "</div>", html);
     }
 
     /**
@@ -824,6 +824,7 @@ public class HTMLPageAssetRenderedAPIImplIntegrationTest extends IntegrationTest
                             .build(),
                     mockRequest, mockResponse);
             Assert.assertEquals(
+                    getNotExperimentJsCode() +
                     "<div>" + variant.name() + " content-default-" + defaultLanguage.getId()
                             + "</div>", html);
         }finally {
@@ -880,7 +881,7 @@ public class HTMLPageAssetRenderedAPIImplIntegrationTest extends IntegrationTest
                             .setPageMode(PageMode.LIVE)
                             .build(),
                     mockRequest, mockResponse);
-            Assert.assertEquals("<div></div>", html);
+            Assert.assertEquals(getNotExperimentJsCode() + "<div></div>", html);
         }finally {
             Config.setProperty("DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE", defaultContentToDefaultLanguage);
         }
@@ -933,6 +934,7 @@ public class HTMLPageAssetRenderedAPIImplIntegrationTest extends IntegrationTest
                             .build(),
                     mockRequest, mockResponse);
             Assert.assertEquals(
+                    getNotExperimentJsCode() +
                     "<div>DEFAULT content-default-" + defaultLanguage.getId()
                             + "</div>", html);
         }finally {
@@ -981,6 +983,7 @@ public class HTMLPageAssetRenderedAPIImplIntegrationTest extends IntegrationTest
                         .build(),
                 mockRequest, mockResponse);
         Assert.assertEquals(
+                getNotExperimentJsCode() +
                 "<div>" + variant.name() + " content-default-" + language.getId()
                         + "</div>", html);
     }
@@ -1042,6 +1045,7 @@ public class HTMLPageAssetRenderedAPIImplIntegrationTest extends IntegrationTest
                         .build(),
                 mockRequest, mockResponse);
         Assert.assertEquals(
+                getNotExperimentJsCode() +
                 "<div>" + variant.name() + " second-content-default-" + language.getId()
                         + "</div>", html);
     }
@@ -1110,6 +1114,7 @@ public class HTMLPageAssetRenderedAPIImplIntegrationTest extends IntegrationTest
                         .build(),
                 mockRequest, mockResponse);
         Assert.assertEquals(
+                        getNotExperimentJsCode() +
                 "<div>" + variant.name() + " second-content-default-" + language.getId()
                         + "</div>", html);
 
@@ -1129,6 +1134,7 @@ public class HTMLPageAssetRenderedAPIImplIntegrationTest extends IntegrationTest
                         .build(),
                 mockRequest, mockResponse);
         Assert.assertEquals(
+                    getNotExperimentJsCode() +
                 "<div>DEFAULT content-default-" + language.getId() + "</div>", html);
     }
 
@@ -1199,6 +1205,7 @@ public class HTMLPageAssetRenderedAPIImplIntegrationTest extends IntegrationTest
                         .build(),
                 mockRequest, mockResponse);
         Assert.assertEquals(
+                getNotExperimentJsCode() +
                 "<div>" + variant.name() + " second-content-default-" + language.getId()
                         + "</div>", html);
 
@@ -1220,6 +1227,7 @@ public class HTMLPageAssetRenderedAPIImplIntegrationTest extends IntegrationTest
                         .build(),
                 mockRequest, mockResponse);
         Assert.assertEquals(
+                getNotExperimentJsCode() +
                 "<div>DEFAULT content-default-" + language.getId() + "</div>", html);
     }
 
@@ -1268,7 +1276,7 @@ public class HTMLPageAssetRenderedAPIImplIntegrationTest extends IntegrationTest
                         .setPageMode(PageMode.LIVE)
                         .build(),
                 mockRequest, mockResponse);
-        Assert.assertEquals("<div>" + variant.name() + " content-default-" + language.getId() + "</div>", html);
+        Assert.assertEquals(getNotExperimentJsCode() + "<div>" + variant.name() + " content-default-" + language.getId() + "</div>", html);
     }
 
     /**
@@ -1313,7 +1321,7 @@ public class HTMLPageAssetRenderedAPIImplIntegrationTest extends IntegrationTest
                         .setPageMode(PageMode.LIVE)
                         .build(),
                 mockRequest, mockResponse);
-        Assert.assertEquals("<div>DEFAULT content-default-" + language.getId() + "</div>", html);
+        Assert.assertEquals(getNotExperimentJsCode() + "<div>DEFAULT content-default-" + language.getId() + "</div>", html);
     }
 
     private HttpServletRequest createHttpServletRequest(Language language, Host host, Variant variant,
@@ -1567,12 +1575,10 @@ public class HTMLPageAssetRenderedAPIImplIntegrationTest extends IntegrationTest
                     + "\n"
                     + "<script>window.jitsu = window.jitsu || (function(){(window.jitsuQ = window.jitsuQ || []).push(arguments);})</script>\n"
                     + "<SCRIPT>\n"
-                    + "\n"
-                    + "let currentRunningExperimentsId = ['" + experiment.id().get() + "']\n"
+                    + "let experimentAlreadyCheck = sessionStorage.getItem(\"experimentAlreadyCheck\");\n"
                     + "\n"
                     + "if (!experimentAlreadyCheck) {\n"
-                    + "    console.log(\"Checking Exeriment\");\n"
-                    + "    let currentRunningExperimentsId = [${running_experiments_list}]\n"
+                    + "    let currentRunningExperimentsId = ['" + experiment.id().get() + "']\n"
                     + "\n"
                     + "    function shouldHitEndPoint() {\n"
                     + "        let experimentData = localStorage.getItem('experiment_data');\n"
@@ -1633,7 +1639,6 @@ public class HTMLPageAssetRenderedAPIImplIntegrationTest extends IntegrationTest
                     + "    });\n"
                     + "\n"
                     + "    if (shouldHitEndPoint()) {\n"
-                    + "        console.log(\"Hittinh end point\");\n"
                     + "        let experimentData = localStorage.getItem('experiment_data');\n"
                     + "        let body = experimentData ?\n"
                     + "            {\n"
@@ -1755,12 +1760,10 @@ public class HTMLPageAssetRenderedAPIImplIntegrationTest extends IntegrationTest
                     + "\n"
                     + "<script>window.jitsu = window.jitsu || (function(){(window.jitsuQ = window.jitsuQ || []).push(arguments);})</script>\n"
                     + "<SCRIPT>\n"
-                    + "\n"
                     + "let experimentAlreadyCheck = sessionStorage.getItem(\"experimentAlreadyCheck\");\n"
                     + "\n"
                     + "if (!experimentAlreadyCheck) {\n"
-                    + "    console.log(\"Checking Exeriment\");\n"
-                    + "let currentRunningExperimentsId = ['" + experiment.id().get() + "']\n"
+                    + "    let currentRunningExperimentsId = ['" + experiment.id().get() + "']\n"
                     + "\n"
                     + "    function shouldHitEndPoint() {\n"
                     + "        let experimentData = localStorage.getItem('experiment_data');\n"
@@ -1821,7 +1824,6 @@ public class HTMLPageAssetRenderedAPIImplIntegrationTest extends IntegrationTest
                     + "    });\n"
                     + "\n"
                     + "    if (shouldHitEndPoint()) {\n"
-                    + "        console.log(\"Hittinh end point\");\n"
                     + "        let experimentData = localStorage.getItem('experiment_data');\n"
                     + "        let body = experimentData ?\n"
                     + "            {\n"
@@ -1891,5 +1893,9 @@ public class HTMLPageAssetRenderedAPIImplIntegrationTest extends IntegrationTest
         }  finally {
             ExperimentDataGen.end(experiment);
         }
+    }
+
+    private String getNotExperimentJsCode(){
+        return "<SCRIPT>localStorage.removeItem('experiment_data');</SCRIPT>\n";
     }
 }
