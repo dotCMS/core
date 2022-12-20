@@ -135,7 +135,7 @@ public class PublishingEndpointAjaxAction extends AjaxAction {
             try {
                 endpoint.validatePublishingEndPoint();
             } catch (PublishingEndPointValidationException e){
-                throw new DotDataException(handlePublishingEndPointValidationException(e));
+                throw new DotDataException(e.getMessage(getUser()), e);
             }
         	//Save the endpoint.
         	PublishingEndPointAPI peAPI = APILocator.getPublisherEndPointAPI();
@@ -181,7 +181,7 @@ public class PublishingEndpointAjaxAction extends AjaxAction {
 			try {
                 endpoint.validatePublishingEndPoint();
             } catch (PublishingEndPointValidationException e){
-                throw new DotDataException(handlePublishingEndPointValidationException(e));
+                throw new DotDataException(e.getMessage(getUser()), e);
             }
 
 			//Update the endpoint.
@@ -193,28 +193,5 @@ public class PublishingEndpointAjaxAction extends AjaxAction {
 			response.getWriter().println("FAILURE: " + e.getMessage());
 		}
 	}
-
-    /**
-     * Iterates over all i18nMessages in the Exception and translate them using {@link
-     * LanguageUtil}.
-     *
-     * @return comma separated {@link String} with all the translations.
-     */
-    private String handlePublishingEndPointValidationException(
-            final PublishingEndPointValidationException e) {
-
-        final List<String> i18nMessages = e.getI18nmessages();
-        final List<String> errorMessages = Lists.newArrayList();
-
-        for (final String i18nMessage : i18nMessages) {
-            try {
-                errorMessages.add(LanguageUtil.get(getUser(), i18nMessage));
-            } catch (LanguageException le) {
-                //If we have a problem, at least display the message code.
-                errorMessages.add(i18nMessage);
-            }
-        }
-        return String.join(",", errorMessages);
-    }
 
 }

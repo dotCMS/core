@@ -18,7 +18,7 @@ import java.util.Optional;
 
 
 /**
- * Analytics cache layer.
+ * Analytics cache layer that puts and gets {@link AccessToken} instances into configured cache.
  *
  * @author vico
  */
@@ -46,7 +46,7 @@ public class AnalyticsCache implements Cachable {
      * @param key key access token is mapped to
      * @return a {@link Optional<AccessToken>} instance with token if found, otherwise empty
      */
-    public Optional<AccessToken> getAccessToken(final String key) {
+    private Optional<AccessToken> getAccessTokenByKey(final String key) {
         try {
             return Optional.ofNullable((AccessToken) cache.get(key, getPrimaryGroup()));
         } catch (DotCacheException e) {
@@ -63,7 +63,7 @@ public class AnalyticsCache implements Cachable {
      * @return a {@link Optional<AccessToken>} instance with token if found, otherwise empty
      */
     public Optional<AccessToken> getAccessToken(final String clientId, final String audience) {
-        return getAccessToken(resolveKey(clientId, audience));
+        return getAccessTokenByKey(resolveKey(clientId, audience));
     }
 
     /**
