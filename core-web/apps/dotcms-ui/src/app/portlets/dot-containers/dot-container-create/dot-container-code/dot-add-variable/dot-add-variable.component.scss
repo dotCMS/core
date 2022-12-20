@@ -1,3 +1,13 @@
+@use "variables" as *;
+
+.dot-add-variable-name {
+    font-size: $font-size-medium;
+}
+
+.dot-add-variable-description {
+    font-size: $font-size-small;
+}
+
 .dot-container-add-variable ::ng-deep {
     .p-dataview-content {
         padding: 0;
