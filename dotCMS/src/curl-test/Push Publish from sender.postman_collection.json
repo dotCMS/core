@@ -651,11 +651,7 @@
 									"script": {
 										"exec": [
 											"pm.test(\"Waiting for added bundle to finish publishing\", function () {",
-											"    var start = new Date().getTime();",
-											"    var end = start;",
-											"    while(end < start + 10000) {",
-											"        end = new Date().getTime();",
-											"    }",
+											"    setTimeout(function() { console.log('Waiting has ended') }, 10000);",
 											"});"
 										],
 										"type": "text/javascript"
@@ -1267,11 +1263,7 @@
 									"script": {
 										"exec": [
 											"pm.test(\"Waiting for added bundle to fail as expected\", function () {",
-											"    var start = new Date().getTime();",
-											"    var end = start;",
-											"    while(end < start + 10000) {",
-											"        end = new Date().getTime();",
-											"    }",
+											"    setTimeout(function() { console.log('Waiting has ended') }, 10000);",
 											"});"
 										],
 										"type": "text/javascript"
@@ -2015,11 +2007,7 @@
 									"script": {
 										"exec": [
 											"pm.test(\"Waiting for added bundle to finish publishing\", function () {",
-											"    var start = new Date().getTime();",
-											"    var end = start;",
-											"    while(end < start + 10000) {",
-											"        end = new Date().getTime();",
-											"    }",
+											"    setTimeout(function() { console.log('Waiting has ended') }, 10000);",
 											"});"
 										],
 										"type": "text/javascript"
@@ -2697,11 +2685,7 @@
 									"script": {
 										"exec": [
 											"pm.test(\"Waiting for added bundle to fail as expected\", function () {",
-											"    var start = new Date().getTime();",
-											"    var end = start;",
-											"    while(end < start + 10000) {",
-											"        end = new Date().getTime();",
-											"    }",
+											"    setTimeout(function() { console.log('Waiting has ended') }, 10000);",
 											"});"
 										],
 										"type": "text/javascript"
@@ -3315,11 +3299,7 @@
 									"script": {
 										"exec": [
 											"pm.test(\"Waiting for added bundle to fail as expected\", function () {",
-											"    var start = new Date().getTime();",
-											"    var end = start;",
-											"    while(end < start + 10000) {",
-											"        end = new Date().getTime();",
-											"    }",
+											"    setTimeout(function() { console.log('Waiting has ended') }, 10000);",
 											"});"
 										],
 										"type": "text/javascript"
@@ -4115,11 +4095,7 @@
 									"script": {
 										"exec": [
 											"pm.test(\"Waiting for added bundle to finish publishing\", function () {",
-											"    var start = new Date().getTime();",
-											"    var end = start;",
-											"    while(end < start + 10000) {",
-											"        end = new Date().getTime();",
-											"    }",
+											"    setTimeout(function() { console.log('Waiting has ended') }, 10000);",
 											"});"
 										],
 										"type": "text/javascript"
