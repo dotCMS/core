@@ -651,15 +651,16 @@ public class ContainerResource implements Serializable {
                                   final ContainerForm containerForm) throws DotDataException, DotSecurityException {
 
         final InitDataObject initData = new WebResource.InitBuilder(webResource)
-                .requestAndResponse(request, response).requiredBackendUser(true).rejectWhenNoUser(true).init();
-        final User user         = initData.getUser();
-        final Host host         = WebAPILocator.getHostWebAPI().getCurrentHostNoThrow(request);
+                .requestAndResponse(request, response).requiredBackendUser(true)
+                .rejectWhenNoUser(true).init();
+        final User user = initData.getUser();
+        final Host host = WebAPILocator.getHostWebAPI().getCurrentHostNoThrow(request);
         final PageMode pageMode = PageMode.get(request);
-        Container container     = new Container();
-
+        Container container = new Container();
 
         Logger.debug(this,
-                () -> "Adding container. Request payload is : " + JsonUtil.getJsonStringFromObject(containerForm));
+                () -> "Adding container. Request payload is : " + JsonUtil.getJsonStringFromObject(
+                        containerForm));
 
         container.setCode(containerForm.getCode());
         container.setMaxContentlets(containerForm.getMaxContentlets());
@@ -676,24 +677,24 @@ public class ContainerResource implements Serializable {
         container.setShowOnMenu(containerForm.isShowOnMenu());
         container.setTitle(containerForm.getTitle());
 
-        if(containerForm.getMaxContentlets() == 0){
+        if (containerForm.getMaxContentlets() == 0) {
             container.setCode(containerForm.getCode());
         }
 
-        this.containerAPI.save(container, containerForm.getContainerStructures(), host, user, pageMode.respectAnonPerms);
+        this.containerAPI.save(container, containerForm.getContainerStructures(), host, user,
+                pageMode.respectAnonPerms);
 
         ActivityLogger.logInfo(this.getClass(), "Save Container",
-                "User " + user.getPrimaryKey() + " saved " + container.getTitle(), host.getHostname());
+                "User " + user.getPrimaryKey() + " saved " + container.getTitle(),
+                host.getHostname());
 
-        Logger.debug(this, ()-> "The container: " + container.getIdentifier() + " has been saved");
+        Logger.debug(this, () -> "The container: " + container.getIdentifier() + " has been saved");
 
-        if (container != null) {
-            Logger.debug(this, () -> "Publishing the container: " + container.getIdentifier());
+        Logger.debug(this, () -> "Publishing the container: " + container.getIdentifier());
 
-            this.containerAPI.publish(container, user, pageMode.respectAnonPerms);
-            ActivityLogger.logInfo(this.getClass(), "Publish Container", "User " +
-                    user.getPrimaryKey() + " Published container: " + container.getIdentifier());
-        }
+        this.containerAPI.publish(container, user, pageMode.respectAnonPerms);
+        ActivityLogger.logInfo(this.getClass(), "Publish Container", "User " +
+                user.getPrimaryKey() + " Published container: " + container.getIdentifier());
 
         return Response.ok(new ResponseEntityView(new ContainerView(container))).build();
     }
