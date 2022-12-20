@@ -9,12 +9,13 @@ import {
 } from '@angular/core';
 import { FormBuilder, FormGroup } from '@angular/forms';
 import { BehaviorSubject } from 'rxjs';
-import { debounceTime, take, map, throttleTime, switchMap, filter } from 'rxjs/operators';
+import { debounceTime, take, map, throttleTime, mergeMap } from 'rxjs/operators';
 import { Observable } from 'rxjs/internal/Observable';
 
 import { DotCMSContentlet } from '@dotcms/dotcms-models';
 
 import { DotLanguageService, Languages } from '../../shared';
+
 import {
     ESOrderDirection,
     queryEsParams,
@@ -33,7 +34,7 @@ export class ImageTabviewFormComponent implements OnInit {
 
     loading = true;
     preventScroll = false;
-    search$ = new BehaviorSubject<number>(null);
+    search$ = new BehaviorSubject<number>(0);
     contentlets$: Observable<DotCMSContentlet[][]>;
     virtualItems: DotCMSContentlet[][] = [];
     form: FormGroup;
@@ -56,10 +57,8 @@ export class ImageTabviewFormComponent implements OnInit {
         });
 
         this.contentlets$ = this.search$.pipe(
-            filter((x) => x != null),
-            throttleTime(500),
-            // offset * 2 -> Because of the virtual scroll ([[DotCMSContentlet, DotCMSContentlet], ...])
-            switchMap((offset) => this.searchContentlets(Math.ceil(offset * 2)))
+            throttleTime(250),
+            mergeMap((offset) => this.searchContentlets(offset * 2))
         );
 
         this.form.valueChanges.pipe(debounceTime(450)).subscribe(() => {
@@ -88,7 +87,7 @@ export class ImageTabviewFormComponent implements OnInit {
                 this.loading = false;
                 this.preventScroll = !contentlets?.length;
 
-                return this.virtualItems;
+                return [...this.virtualItems];
             })
         );
     }
@@ -151,10 +150,11 @@ export class ImageTabviewFormComponent implements OnInit {
     private fillVirtualItems(contentlets: DotCMSContentlet[]) {
         contentlets.forEach((contentlet) => {
             const i = this.virtualItems.length - 1;
-            if (!this.virtualItems[i] || this.virtualItems[i]?.length === 2) {
-                this.virtualItems.push([contentlet]);
-            } else {
+
+            if (this.virtualItems[i]?.length < 2) {
                 this.virtualItems[i].push(contentlet);
+            } else {
+                this.virtualItems.push([contentlet]);
             }
         });
     }

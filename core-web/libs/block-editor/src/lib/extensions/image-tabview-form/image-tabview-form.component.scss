@@ -45,4 +45,16 @@
             }
         }
     }
+
+    .p-scroller-content {
+        padding: 0 (1.3125 * $dot-editor-size);
+    }
+
+    .card-list-row {
+        display: flex;
+        justify-content: flex-start;
+        gap: $dot-editor-size;
+        width: 100%;
+        min-height: 110px;
+    }
 }

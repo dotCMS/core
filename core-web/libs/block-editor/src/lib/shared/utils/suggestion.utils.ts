@@ -95,10 +95,6 @@ export const suggestionOptions: DotMenuItem[] = [
     ...block
 ];
 
-export const changeToItems: DotMenuItem[] = [
-    ...suggestionOptions.filter((item) => !(item.id == 'horizontalLine' || item.id == 'table'))
-];
-
 export const tableChangeToItems: DotMenuItem[] = [...headings, ...paragraph, ...list];
 
 export const SuggestionPopperModifiers = [
@@ -118,3 +114,13 @@ export const SuggestionPopperModifiers = [
 ];
 
 export const CONTENT_SUGGESTION_ID = 'contentlets';
+
+const notAllowBlocksChangeTo = {
+    horizontalLine: true,
+    table: true,
+    image: true
+};
+
+export const changeToItems: DotMenuItem[] = [
+    ...suggestionOptions.filter((item) => !notAllowBlocksChangeTo[item.id])
+];
