@@ -8,23 +8,26 @@ import org.immutables.value.Value;
 import javax.annotation.Nullable;
 import java.io.Serializable;
 
-
 /**
- * Access token class to use with analytics stack.
+ * Access token wrapper class.
  *
  * @author vico
  */
 @Value.Style(typeImmutable="*", typeAbstract="Abstract*")
 @Value.Immutable
-@JsonDeserialize(as = AnalyticsKey.class)
+@JsonDeserialize(as = AccessTokenStatus.class)
 @JsonIgnoreProperties(ignoreUnknown = true)
-public interface AbstractAnalyticsKey extends Serializable {
+public interface AbstractAccessTokenStatus extends Serializable {
 
-    @JsonProperty("jsKey")
-    String jsKey();
+    @JsonProperty("tokenStatus")
+    TokenStatus tokenStatus();
 
     @Nullable
-    @JsonProperty("m2mKey")
-    String m2mKey();
+    @JsonProperty("errorType")
+    AccessTokenErrorType errorType();
+
+    @Nullable
+    @JsonProperty("reason")
+    String reason();
 
 }
