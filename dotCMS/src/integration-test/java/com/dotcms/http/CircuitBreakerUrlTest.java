@@ -11,7 +11,6 @@ import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
@@ -318,10 +317,6 @@ public class CircuitBreakerUrlTest {
 
 
         new CircuitBreakerUrl(redirectUrl, timeout, breaker).doString();
-
-  
-
-
     }
     
     
