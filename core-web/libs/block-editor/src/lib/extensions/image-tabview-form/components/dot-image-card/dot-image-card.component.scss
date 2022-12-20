@@ -8,7 +8,8 @@
         display: flex;
         gap: $dot-editor-size;
         height: 94px;
-        width: 330px;
+        width: 340px;
+
         .p-card-header {
             padding: 0;
             height: 94px;
@@ -79,8 +80,6 @@
     }
 
     .badge {
-        // rgb(232, 234, 252)
-        // #e8eafc
         background: $tr-hover-color;
         border-radius: $border-radius;
         color: black;

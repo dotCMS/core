@@ -65,12 +65,11 @@ export class BubbleImageTabFormView {
         this.element.style.visibility = 'visible';
         this.pluginKey = pluginKey;
         this.component = component;
-        this.component.instance.languageId = this.editor.storage.dotConfig.lang;
 
-        this.component.instance.selectedContentlet.subscribe((contentlet) => {
-            this.addImage(contentlet);
-            this.hide();
-        });
+        // Set Component Inputs
+        this.component.instance.languageId = this.editor.storage.dotConfig.lang;
+        this.component.instance.selectItemCallback = this.addImage.bind(this);
+
         this.editor.on('focus', () => {
             if (this.tippy?.state.isShown) {
                 this.hide();
@@ -145,6 +144,7 @@ export class BubbleImageTabFormView {
             type: ImageNode.name
         };
         this.editor.chain().insertContentAt(selection.head, node).addNextLine().run();
+        this.hide();
     }
 
     closeForm() {
@@ -158,7 +158,7 @@ export class BubbleImageTabFormView {
     show() {
         this.tippy?.show();
         this.component.instance.loading = true;
-        this.component.instance.search$.next(0);
+        this.component.instance.offset$.next(0);
         requestAnimationFrame(() => this.component.instance.inputSearch.nativeElement.focus());
     }
 

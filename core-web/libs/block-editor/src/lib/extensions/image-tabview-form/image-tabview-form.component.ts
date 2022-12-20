@@ -1,15 +1,7 @@
-import {
-    Component,
-    OnInit,
-    Input,
-    Output,
-    EventEmitter,
-    ViewChild,
-    ElementRef
-} from '@angular/core';
+import { Component, OnInit, Input, ViewChild, ElementRef } from '@angular/core';
 import { FormBuilder, FormGroup } from '@angular/forms';
-import { BehaviorSubject } from 'rxjs';
-import { debounceTime, take, map, throttleTime, mergeMap } from 'rxjs/operators';
+import { BehaviorSubject, merge } from 'rxjs';
+import { debounceTime, take, map, throttleTime, mergeMap, tap } from 'rxjs/operators';
 import { Observable } from 'rxjs/internal/Observable';
 
 import { DotCMSContentlet } from '@dotcms/dotcms-models';
@@ -28,20 +20,22 @@ import {
     styleUrls: ['./image-tabview-form.component.scss']
 })
 export class ImageTabviewFormComponent implements OnInit {
-    @Input() languageId = 1;
-    @Output() selectedContentlet: EventEmitter<DotCMSContentlet> = new EventEmitter();
     @ViewChild('inputSearch') inputSearch!: ElementRef;
+
+    @Input() languageId = 1;
+    @Input() selectItemCallback: (props: DotCMSContentlet) => void;
 
     loading = true;
     preventScroll = false;
-    search$ = new BehaviorSubject<number>(0);
-    contentlets$: Observable<DotCMSContentlet[][]>;
-    virtualItems: DotCMSContentlet[][] = [];
     form: FormGroup;
+
+    offset$ = new BehaviorSubject<number>(0);
+    contentlets$: Observable<DotCMSContentlet[][]>;
+    itemsLoaded: DotCMSContentlet[][] = [];
 
     private dotLangs: Languages;
 
-    get currentSearch() {
+    get searchValue() {
         return this.form.get('search').value;
     }
 
@@ -56,28 +50,29 @@ export class ImageTabviewFormComponent implements OnInit {
             search: ['']
         });
 
-        this.contentlets$ = this.search$.pipe(
-            throttleTime(250),
-            mergeMap((offset) => this.searchContentlets(offset * 2))
+        this.contentlets$ = merge(
+            // Needed when user filters images by search
+            this.form.valueChanges.pipe(
+                debounceTime(450),
+                tap(() => (this.loading = true)),
+                mergeMap(() => this.searchContentlets(0))
+            ),
+            // Needed when the user scrolls to load the next batch of images
+            this.offset$.pipe(
+                throttleTime(450),
+                mergeMap((offset) => this.searchContentlets(offset * 2))
+            )
         );
-
-        this.form.valueChanges.pipe(debounceTime(450)).subscribe(() => {
-            this.loading = true;
-            this.search$.next(0);
-        });
 
         this.dotLanguageService
             .getLanguages()
             .pipe(take(1))
-            .subscribe((dotLang) => {
-                this.dotLangs = dotLang;
-                this.search$.next(0);
-            });
+            .subscribe((dotLang) => (this.dotLangs = dotLang));
     }
 
     searchContentlets(offset: number = 0) {
-        if (offset == 0) {
-            this.virtualItems = [];
+        if (offset === 0) {
+            this.itemsLoaded = [];
         }
 
         return this.searchService.get(this.params(offset)).pipe(
@@ -87,7 +82,7 @@ export class ImageTabviewFormComponent implements OnInit {
                 this.loading = false;
                 this.preventScroll = !contentlets?.length;
 
-                return [...this.virtualItems];
+                return [...this.itemsLoaded];
             })
         );
     }
@@ -98,13 +93,12 @@ export class ImageTabviewFormComponent implements OnInit {
      * @memberof ImageTabviewFormComponent
      */
     resetForm(): void {
-        this.virtualItems = [];
-        this.form.reset({ search: '' }, { emitEvent: false });
+        this.form.reset({ search: '' });
     }
 
     private params(offset: number): queryEsParams {
         return {
-            query: ` +catchall:${this.currentSearch}* title:'${this.currentSearch}'^15 +languageId:${this.languageId} +baseType:(4 OR 9) +metadata.contenttype:image/* +deleted:false +working:true`,
+            query: ` +catchall:${this.searchValue}* title:'${this.searchValue}'^15 +languageId:${this.languageId} +baseType:(4 OR 9) +metadata.contenttype:image/* +deleted:false +working:true`,
             sortOrder: ESOrderDirection.ASC,
             limit: 20,
             offset
@@ -149,12 +143,11 @@ export class ImageTabviewFormComponent implements OnInit {
      */
     private fillVirtualItems(contentlets: DotCMSContentlet[]) {
         contentlets.forEach((contentlet) => {
-            const i = this.virtualItems.length - 1;
-
-            if (this.virtualItems[i]?.length < 2) {
-                this.virtualItems[i].push(contentlet);
+            const i = this.itemsLoaded.length - 1;
+            if (this.itemsLoaded[i]?.length < 2) {
+                this.itemsLoaded[i].push(contentlet);
             } else {
-                this.virtualItems.push([contentlet]);
+                this.itemsLoaded.push([contentlet]);
             }
         });
     }

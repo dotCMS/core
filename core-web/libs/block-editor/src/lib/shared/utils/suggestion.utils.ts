@@ -10,8 +10,7 @@ import {
     olIcon,
     pIcon,
     quoteIcon,
-    ulIcon,
-    imageIcon
+    ulIcon
 } from '../components/suggestions/suggestion-icons';
 
 const domSanitizer = new ɵDomSanitizerImpl(document);
@@ -30,7 +29,7 @@ const headings = [...Array(3).keys()].map((level) => {
 const image = [
     {
         label: 'Image',
-        icon: sanitizeUrl(imageIcon),
+        icon: 'image',
         id: 'image'
     }
 ];
@@ -115,12 +114,12 @@ export const SuggestionPopperModifiers = [
 
 export const CONTENT_SUGGESTION_ID = 'contentlets';
 
-const notAllowBlocksChangeTo = {
+const FORBIDDEN_CHANGE_TO_BLOCKS = {
     horizontalLine: true,
     table: true,
     image: true
 };
 
 export const changeToItems: DotMenuItem[] = [
-    ...suggestionOptions.filter((item) => !notAllowBlocksChangeTo[item.id])
+    ...suggestionOptions.filter((item) => !FORBIDDEN_CHANGE_TO_BLOCKS[item.id])
 ];

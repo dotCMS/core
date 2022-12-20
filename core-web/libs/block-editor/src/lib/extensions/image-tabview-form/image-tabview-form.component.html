@@ -20,8 +20,8 @@
                         [contentlets]="contentlets"
                         [done]="preventScroll"
                         [loading]="loading"
-                        (selectedItem)="selectedContentlet.emit($event)"
-                        (nextBatch)="search$.next($event)"
+                        (selectedItem)="selectItemCallback($event)"
+                        (nextBatch)="offset$.next($event)"
                     ></dot-image-card-list>
                 </ng-container>
             </p-tabPanel>

@@ -23,14 +23,17 @@
     }
 
     &::ng-deep {
+        .p-scroller {
+            scrollbar-gutter: stable both-edges;
+        }
+
         .p-scroller-content {
-            padding: 0 (1.3125 * $dot-editor-size);
+            padding: 0 7px;
         }
 
         .card-list-row {
             display: flex;
-            justify-content: flex-start;
-            gap: $dot-editor-size;
+            justify-content: space-between;
             width: 100%;
             min-height: 110px;
         }
