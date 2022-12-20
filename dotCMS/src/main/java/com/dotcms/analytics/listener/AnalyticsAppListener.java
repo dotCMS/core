@@ -4,11 +4,13 @@ package com.dotcms.analytics.listener;
 import com.dotcms.analytics.AnalyticsAPI;
 import com.dotcms.analytics.app.AnalyticsApp;
 import com.dotcms.analytics.helper.AnalyticsHelper;
+import com.dotcms.analytics.model.AccessToken;
 import com.dotcms.analytics.model.AnalyticsAppProperty;
 import com.dotcms.api.system.event.SystemEventType;
 import com.dotcms.api.system.event.message.MessageSeverity;
 import com.dotcms.api.system.event.message.SystemMessageEventUtil;
 import com.dotcms.api.system.event.message.builder.SystemMessageBuilder;
+import com.dotcms.exception.AnalyticsException;
 import com.dotcms.security.apps.AbstractProperty;
 import com.dotcms.security.apps.AppSecretSavedEvent;
 import com.dotcms.security.apps.Secret;
@@ -64,12 +66,12 @@ public final class AnalyticsAppListener implements EventSubscriber<AppSecretSave
     @Override
     public void notify(final AppSecretSavedEvent event) {
         if (Objects.isNull(event)) {
-            Logger.debug(this, "Missing event, aborting");
+            Logger.info(this, "Missing event, aborting");
             return;
         }
 
         if (StringUtils.isBlank(event.getHostIdentifier())) {
-            Logger.debug(this, "Missing event's host id, aborting");
+            Logger.info(this, "Missing event's host id, aborting");
             return;
         }
 
@@ -78,14 +80,26 @@ public final class AnalyticsAppListener implements EventSubscriber<AppSecretSave
             .map(AbstractProperty::getString)
             .filter(StringUtils::isWhitespace)
             .ifPresent(analyticsKey -> {
-                try {
-                    final Host host = hostAPI.find(event.getHostIdentifier(), APILocator.systemUser(), false);
-                    if (Objects.nonNull(host)) {
-                        analyticsAPI.resetAnalyticsKey(AnalyticsHelper.getHostApp(host));
-                    }
-                } catch (Exception e) {
-                    Logger.error(this, String.format("Cannot process event %s due to: %s", event, e.getMessage()), e);
-                }
+                final Host host = Try
+                    .of(() -> hostAPI.find(event.getHostIdentifier(), APILocator.systemUser(), false))
+                    .getOrElse((Host) null);
+                Optional.ofNullable(host)
+                    .map(AnalyticsHelper::appFromHost)
+                    .ifPresent(app -> {
+                        try {
+                            // reset analytics key
+                            analyticsAPI.resetAnalyticsKey(app);
+
+                            // reset access token when is NOOP, is this the right place?
+                            Optional.ofNullable(analyticsAPI.getAccessToken(app))
+                                .filter(AnalyticsHelper::isTokenNoop)
+                                .ifPresent(token -> analyticsAPI.resetAccessToken(app));
+                        } catch (AnalyticsException e) {
+                            Logger.error(
+                                this,
+                                String.format("Cannot process event %s due to: %s", event, e.getMessage()), e);
+                        }
+                    });
             });
 
         // detect is there are properties set through env vars
