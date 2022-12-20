@@ -28,6 +28,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
+import javax.ws.rs.FormParam;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.PUT;
@@ -347,16 +348,17 @@ public class ExperimentsResource {
      *
      * Returns the updated version of the Experiment.
      */
-    @PATCH
+    @PUT
     @Path("/{experimentId}/variants/{name}")
     @JSONP
     @NoCache
+    @Consumes({MediaType.APPLICATION_JSON, "application/javascript"})
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     public ResponseEntitySingleExperimentView updateVariant(@Context final HttpServletRequest request,
             @Context final HttpServletResponse response,
             @PathParam("experimentId") final String experimentId,
             @PathParam("name") final String variantName,
-            final String variantDescription) throws DotDataException, DotSecurityException {
+            ExperimentVariantForm experimentVariantForm) throws DotDataException, DotSecurityException {
         final InitDataObject initData = getInitData(request, response);
         final User user = initData.getUser();
 
@@ -366,8 +368,8 @@ public class ExperimentsResource {
             throw new NotFoundException("Experiment with id: " + experimentId + " not found.");
         }
 
-        final Experiment persistedExperiment = experimentsAPI
-                .editVariantDescription(experimentId, variantName, variantDescription, user);
+        final Experiment persistedExperiment = experimentsAPI.editVariantDescription(experimentId,
+                variantName, experimentVariantForm.getDescription(), user);
         return new ResponseEntitySingleExperimentView(persistedExperiment);
     }
 
