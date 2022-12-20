@@ -1,4 +1,4 @@
-package com.dotmarketing.portlets.contentlet.business;
+package com.dotmarketing.portlets.contentlet.business; 
 
 import com.dotcms.content.business.DotMappingException;
 import com.dotcms.content.elasticsearch.util.RestHighLevelClientProvider;
