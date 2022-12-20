@@ -687,7 +687,7 @@ public class ContainerResource implements Serializable {
 
         Logger.debug(this, ()-> "The container: " + container.getIdentifier() + " has been saved");
 
-        if (null != container) {
+        if (container != null) {
             Logger.debug(this, () -> "Publishing the container: " + container.getIdentifier());
 
             this.containerAPI.publish(container, user, pageMode.respectAnonPerms);
@@ -729,7 +729,7 @@ public class ContainerResource implements Serializable {
             new DoesNotExistException("The container: " + containerForm.getIdentifier() + " does not exists");
         }
 
-        ActivityLogger.logInfo(this.getClass(), "Upate Container: " + containerForm.getIdentifier(),
+        ActivityLogger.logInfo(this.getClass(), "Update Container: " + containerForm.getIdentifier(),
                 "User " + user.getPrimaryKey() + " saved " + container.getTitle(), host.getHostname());
 
         container.setCode(containerForm.getCode());
