@@ -685,6 +685,7 @@
 									"    pm.expect(jsonData.entity.trafficProportion.variants[1].name).equal(\"My first Variant\");",
 									"    pm.expect(jsonData.entity.trafficProportion.variants[1].weight).equal(50.0);",
 									"    ",
+									"    pm.collectionVariables.set(\"originalVariant\", jsonData.entity.trafficProportion.variants[0].id);",
 									"    pm.collectionVariables.set(\"variantToEdit\", jsonData.entity.trafficProportion.variants[1].id);",
 									"",
 									"});",
@@ -801,6 +802,72 @@
 								"{{variantExperiment}}",
 								"variants",
 								"{{variantToEdit}}"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "editVariantDescription_OriginalVairnant_shouldFail",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"",
+									"",
+									"pm.test(\"Cannot update Original Variant\", function () {",
+									"    pm.response.to.have.status(400);",
+									"    pm.expect(jsonData.message).equal(\"Cannot update Original Variant\");",
+									"});",
+									"",
+									"",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"description\": \"Updated variant description\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/experiments/{{variantExperiment}}/variants/{{originalVariant}}",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"experiments",
+								"{{variantExperiment}}",
+								"variants",
+								"{{originalVariant}}"
 							]
 						}
 					},
@@ -4146,6 +4213,10 @@
 		},
 		{
 			"key": "variantToEdit",
+			"value": ""
+		},
+		{
+			"key": "originalVariant",
 			"value": ""
 		}
 	]
