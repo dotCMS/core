@@ -259,14 +259,12 @@ public class AnalyticsAPIImpl implements AnalyticsAPI {
     }
 
     /**
-     * Prepares access token request headers in a {@link Map} with values found in a {@link AnalyticsApp} instance.
+     * Creates map with required http headers to request a token.
      *
-     * @param analyticsApp analytics app
      * @return map representation of http headers
      */
-    private Map<String, String> accessTokenHeaders(final AnalyticsApp analyticsApp) {
+    private Map<String, String> accessTokenHeaders() {
         return ImmutableMap.<String, String>builder()
-            //.put(HttpHeaders.AUTHORIZATION, String.format("Basic %s", analyticsApp.clientIdAndSecret()))
             .put(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_FORM_URLENCODED)
             .build();
     }
@@ -289,7 +287,7 @@ public class AnalyticsAPIImpl implements AnalyticsAPI {
             .setUrl(analyticsIdpUrl)
             .setTimeout(ANALYTICS_ACCESS_TOKEN_RENEW_TIMEOUT)
             .setTryAgainAttempts(ANALYTICS_ACCESS_TOKEN_RENEW_ATTEMPTS)
-            .setHeaders(accessTokenHeaders(analyticsApp))
+            .setHeaders(accessTokenHeaders())
             .setRawData(prepareRequestData(analyticsApp))
             .build()
             .doResponse(AccessToken.class);
