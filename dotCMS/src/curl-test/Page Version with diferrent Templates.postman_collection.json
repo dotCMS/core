@@ -1,6 +1,6 @@
 {
 	"info": {
-		"_postman_id": "714190d0-9e62-409e-b394-1905a9dbcdbb",
+		"_postman_id": "fdfcc648-783b-4378-b1cb-d25424266986",
 		"name": "Page Version with diferrent Templates",
 		"description": "Create two Templates with:\n\n- First\n    \n\nName: page_version_different_template_1\n\nBody: Template 1\n\n- Second\n    \n\nName: page_version_different_template_2\n\nBody: Template 2\n\nThese are going to be used later.",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
@@ -52,7 +52,7 @@
 						"header": [],
 						"body": {
 							"mode": "raw",
-							"raw": "{\t\t\n    \"layout\":{\n        \"body\":{\n            \"rows\":[\n                {\n                    \"styleClass\":\"\",\n                    \"columns\":[\n                        {\n                            \"styleClass\":\"\",\n                            \"leftOffset\":1,\n                            \"width\":12,\n                            \"containers\":[\n                                {\"identifier\":\"SYSTEM_CONTAINER\"}\n                            ]\n                        }\n                    ]\n                }\n            ]\n        }    \n    },\n    \"friendlyName\": \"\",\n    \"title\": \"page_version_different_lang_template_1\",\n    \"themeId\": \"SYSTEM_THEME\"\n}",
+							"raw": "{\t\t\n    \"layout\":{\n        \"body\":{\n            \"rows\":[\n                {\n                    \"styleClass\":\"\",\n                    \"columns\":[\n                        {\n                            \"styleClass\":\"\",\n                            \"leftOffset\":1,\n                            \"width\":12,\n                            \"containers\":[\n                                {\"identifier\":\"SYSTEM_CONTAINER\"}\n                            ]\n                        }\n                    ]\n                }\n            ]\n        }    \n    },\n    \"friendlyName\": \"\",\n    \"title\": \"page_version_different_lang_template_1\",\n    \"theme\": \"SYSTEM_THEME\"\n}",
 							"options": {
 								"raw": {
 									"language": "json"

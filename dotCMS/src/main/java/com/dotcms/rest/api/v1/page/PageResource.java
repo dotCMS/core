@@ -340,7 +340,6 @@ public class PageResource {
         try {
             HTMLPageAsset page = (HTMLPageAsset) this.pageResourceHelper.getPage(user, pageId, request);
 
-
             page = this.pageResourceHelper.saveTemplate(user, page, form);
 
             final PageView renderedPage = this.htmlPageAssetRenderedAPI.getPageRendered(

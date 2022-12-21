@@ -51,6 +51,7 @@ import com.liferay.portal.PortalException;
 import com.liferay.portal.SystemException;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
+import org.apache.velocity.exception.ResourceNotFoundException;
 import org.jetbrains.annotations.NotNull;
 
 import javax.servlet.http.HttpServletRequest;
@@ -286,7 +287,7 @@ public class PageResourceHelper implements Serializable {
             }
 
             return page;
-        }catch (DotContentletStateException e) {
+        }catch (DotContentletStateException | ResourceNotFoundException e) {
             throw new HTMLPageAssetNotFoundException(pageId, e);
         }
 
