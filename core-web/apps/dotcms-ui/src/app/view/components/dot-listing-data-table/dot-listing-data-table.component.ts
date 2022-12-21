@@ -124,12 +124,15 @@ export class DotListingDataTableComponent implements OnInit {
 
     /**
      * Emit selected row
-     * @param {any} rowData
+     * @param {Record<string, unknown>} rowData
+     * @param {MouseEvent} $event
      *
      * @memberof DotListingDataTableComponent
      */
-    handleRowClick(rowData: Record<string, unknown>, $event): void {
-        const isActionMenuClicked = !!$event?.target.closest('dot-action-menu-button');
+    handleRowClick(rowData: Record<string, unknown>, $event: MouseEvent): void {
+        const isActionMenuClicked = !!(<HTMLElement>$event?.target).closest(
+            'dot-action-menu-button'
+        );
         // If is the Action Menu, the system template or system container is clicked, do nothing.
         if (
             rowData?.identifier === 'SYSTEM_TEMPLATE' ||

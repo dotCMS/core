@@ -33,6 +33,8 @@ export class DotMenuComponent {
      * Toogle the visibility of the menu options & track
      * a document click when is open to eventually hide the menu
      *
+     * @param {MouseEvent} $event
+     *
      * @memberof DotMenuComponent
      */
     toggle($event: MouseEvent): void {
