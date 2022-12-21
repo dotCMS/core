@@ -323,7 +323,7 @@ describe('DotContainerPropertiesComponent', () => {
                 title: 'Title 1',
                 friendlyName: 'friendlyName',
                 maxContentlets: 0,
-                code: null,
+                code: '',
                 preLoop: null,
                 postLoop: null,
                 identifier: '',
@@ -346,5 +346,15 @@ describe('DotContainerPropertiesComponent', () => {
             fixture.detectChanges();
             expect(de.query(By.css('[data-testId="saveBtn"]')).attributes.disabled).toBeDefined();
         });
+
+        it('should save button disable after save', fakeAsync(() => {
+            comp.form.get('title').setValue('Hello');
+            fixture.detectChanges();
+            const saveBtn = de.query(By.css('[data-testId="saveBtn"]'));
+            saveBtn.triggerEventHandler('click');
+            tick(200);
+            fixture.detectChanges();
+            expect(de.query(By.css('[data-testId="saveBtn"]')).attributes.disabled).toBeDefined();
+        }));
     });
 });
