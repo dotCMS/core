@@ -15,7 +15,7 @@ import {
 
 const domSanitizer = new ɵDomSanitizerImpl(document);
 
-const headings = [...Array(3).keys()].map((level) => {
+const headings: DotMenuItem[] = [...Array(3).keys()].map((level) => {
     const size = level + 1;
 
     return {
@@ -26,7 +26,7 @@ const headings = [...Array(3).keys()].map((level) => {
     };
 });
 
-const image = [
+const image: DotMenuItem[] = [
     {
         label: 'Image',
         icon: 'image',
@@ -34,7 +34,7 @@ const image = [
     }
 ];
 
-const table = [
+const table: DotMenuItem[] = [
     {
         label: 'Table',
         icon: 'table_view',
@@ -42,7 +42,7 @@ const table = [
     }
 ];
 
-const paragraph = [
+const paragraph: DotMenuItem[] = [
     {
         label: 'Paragraph',
         icon: sanitizeUrl(pIcon),
@@ -50,7 +50,7 @@ const paragraph = [
     }
 ];
 
-const list = [
+const list: DotMenuItem[] = [
     {
         label: 'List Ordered',
         icon: sanitizeUrl(olIcon),
@@ -63,7 +63,7 @@ const list = [
     }
 ];
 
-const block = [
+const block: DotMenuItem[] = [
     {
         label: 'Blockquote',
         icon: sanitizeUrl(quoteIcon),

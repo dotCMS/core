@@ -1,12 +1,21 @@
-import { Component, OnInit, Input, ViewChild, ElementRef } from '@angular/core';
+import {
+    Component,
+    OnInit,
+    Input,
+    ViewChild,
+    ElementRef,
+    ChangeDetectionStrategy,
+    ChangeDetectorRef
+} from '@angular/core';
 import { FormBuilder, FormGroup } from '@angular/forms';
 import { BehaviorSubject, merge } from 'rxjs';
-import { debounceTime, take, map, throttleTime, mergeMap, tap } from 'rxjs/operators';
+import { debounceTime, map, throttleTime, mergeMap, tap } from 'rxjs/operators';
 import { Observable } from 'rxjs/internal/Observable';
 
 import { DotCMSContentlet } from '@dotcms/dotcms-models';
 
 import { DotLanguageService, Languages } from '../../shared';
+import { DEFAULT_LANG_ID } from '@dotcms/block-editor';
 
 import {
     ESOrderDirection,
@@ -17,15 +26,16 @@ import {
 @Component({
     selector: 'dot-image-tabview-form',
     templateUrl: './image-tabview-form.component.html',
-    styleUrls: ['./image-tabview-form.component.scss']
+    styleUrls: ['./image-tabview-form.component.scss'],
+    changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class ImageTabviewFormComponent implements OnInit {
     @ViewChild('inputSearch') inputSearch!: ElementRef;
 
-    @Input() languageId = 1;
+    @Input() languageId = DEFAULT_LANG_ID;
+    @Input() loading = true;
     @Input() selectItemCallback: (props: DotCMSContentlet) => void;
 
-    loading = true;
     preventScroll = false;
     form: FormGroup;
 
@@ -40,6 +50,7 @@ export class ImageTabviewFormComponent implements OnInit {
     }
 
     constructor(
+        private cd: ChangeDetectorRef,
         private searchService: SearchService,
         private dotLanguageService: DotLanguageService,
         private fb: FormBuilder
@@ -54,7 +65,7 @@ export class ImageTabviewFormComponent implements OnInit {
             // Needed when user filters images by search
             this.form.valueChanges.pipe(
                 debounceTime(450),
-                tap(() => (this.loading = true)),
+                tap(() => this.setLoading(true)),
                 mergeMap(() => this.searchContentlets(0))
             ),
             // Needed when the user scrolls to load the next batch of images
@@ -64,10 +75,12 @@ export class ImageTabviewFormComponent implements OnInit {
             )
         );
 
-        this.dotLanguageService
-            .getLanguages()
-            .pipe(take(1))
-            .subscribe((dotLang) => (this.dotLangs = dotLang));
+        this.dotLanguageService.getLanguages().subscribe((dotLang) => (this.dotLangs = dotLang));
+    }
+
+    setLoading(value: boolean) {
+        this.loading = value;
+        this.cd.markForCheck();
     }
 
     searchContentlets(offset: number = 0) {
@@ -79,7 +92,7 @@ export class ImageTabviewFormComponent implements OnInit {
             map(({ jsonObjectView: { contentlets } }) => {
                 const items = this.setContentletLanguage(contentlets);
                 this.fillVirtualItems(items);
-                this.loading = false;
+                this.setLoading(false);
                 this.preventScroll = !contentlets?.length;
 
                 return [...this.itemsLoaded];

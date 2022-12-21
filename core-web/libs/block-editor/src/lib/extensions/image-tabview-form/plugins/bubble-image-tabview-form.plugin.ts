@@ -36,8 +36,6 @@ export class BubbleImageTabFormView {
 
     public tippy: Instance | undefined;
 
-    public hola = false;
-
     public tippyOptions?: Partial<Props>;
 
     public pluginKey: PluginKey;
@@ -157,7 +155,7 @@ export class BubbleImageTabFormView {
 
     show() {
         this.tippy?.show();
-        this.component.instance.loading = true;
+        this.component.instance.setLoading(true);
         this.component.instance.offset$.next(0);
         requestAnimationFrame(() => this.component.instance.inputSearch.nativeElement.focus());
     }
