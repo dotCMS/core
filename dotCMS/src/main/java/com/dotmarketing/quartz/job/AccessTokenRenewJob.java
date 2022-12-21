@@ -63,11 +63,11 @@ import java.util.stream.Collectors;
  */
 public class AccessTokenRenewJob implements StatefulJob {
 
-    public static final String ANALYTICS_ACCESS_TOKEN_RENEW_JOB_CRON_KEY = "analytics.access-token.renew-job-cron";
-    public static final String ANALYTICS_ACCESS_TOKEN_RENEW_JOB_CRON_DEFAULT = "0 0 0 ? * *";
+    public static final String ANALYTICS_ACCESS_TOKEN_RENEW_JOB_CRON_KEY = "analytics.accesstoken.renewjob.cron";
+    public static final String ANALYTICS_ACCESS_TOKEN_RENEW_JOB_CRON_DEFAULT = "0 0/1 * * * ?";
     public static final String ANALYTICS_ACCESS_TOKEN_RENEW_JOB = "AnalyticsAccessTokenRenewJob";
-    public static final String ANALYTICS_ACCESS_TOKEN_RENEW_TRIGGER = "trigger30";
-    public static final String ANALYTICS_ACCESS_TOKEN_RENEW_TRIGGER_GROUP = "group30";
+    public static final String ANALYTICS_ACCESS_TOKEN_RENEW_TRIGGER = "trigger31";
+    public static final String ANALYTICS_ACCESS_TOKEN_RENEW_TRIGGER_GROUP = "group31";
 
     private final AnalyticsAPI analyticsAPI;
     private final HostAPI hostAPI;
@@ -121,6 +121,11 @@ public class AccessTokenRenewJob implements StatefulJob {
                 Logger.error(this, "Error renewing access tokens", e);
                 return Collections.emptySet();
             });
+
+        if (apps.isEmpty()) {
+            Logger.warn(this, "No apps were detected that required an ACCESS_TOKEN renewal");
+            return;
+        }
 
         renewTokens(apps);
     }
