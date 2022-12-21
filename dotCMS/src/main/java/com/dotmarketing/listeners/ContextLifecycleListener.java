@@ -21,79 +21,81 @@ import javax.websocket.server.ServerContainer;
 import java.io.File;
 
 /**
- *
  * @author Andres Olarte
- *
  */
 public class ContextLifecycleListener implements ServletContextListener {
 
-	public ContextLifecycleListener() {
-	    AsciiArt.doArt();
-	}
+    public ContextLifecycleListener() {
+        AsciiArt.doArt();
+    }
 
     public void contextDestroyed(ServletContextEvent arg0) {
         Logger.info(this, "Shutdown : Started, executing a clean shutdown.");
 
         Try.run(() -> QuartzUtils.stopSchedulers())
-                        .onFailure(e -> Logger.warn(ContextLifecycleListener.class, "Shutdown : " + e.getMessage()));
-        
+                .onFailure(e -> Logger.warn(ContextLifecycleListener.class,
+                        "Shutdown : " + e.getMessage()));
+
         Try.run(() -> LicenseUtil.freeLicenseOnRepo())
-                        .onFailure(e -> Logger.warn(ContextLifecycleListener.class, "Shutdown : " + e.getMessage()));
+                .onFailure(e -> Logger.warn(ContextLifecycleListener.class,
+                        "Shutdown : " + e.getMessage()));
 
-        
         Try.run(() -> CacheLocator.getCacheAdministrator().shutdown())
-                        .onFailure(e -> Logger.warn(ContextLifecycleListener.class, "Shutdown : " + e.getMessage()));
-        
-
+                .onFailure(e -> Logger.warn(ContextLifecycleListener.class,
+                        "Shutdown : " + e.getMessage()));
 
         Try.run(() -> DotConcurrentFactory.getInstance().shutdownAndDestroy())
-                        .onFailure(e -> Logger.warn(ContextLifecycleListener.class, "Shutdown : " + e.getMessage()));
+                .onFailure(e -> Logger.warn(ContextLifecycleListener.class,
+                        "Shutdown : " + e.getMessage()));
 
         Try.run(() -> ReindexThread.stopThread())
-                        .onFailure(e -> Logger.warn(ContextLifecycleListener.class, "Shutdown : " + e.getMessage()));
+                .onFailure(e -> Logger.warn(ContextLifecycleListener.class,
+                        "Shutdown : " + e.getMessage()));
 
         Logger.info(this, "Shutdown : Finished.");
 
     }
 
-	public void contextInitialized(ServletContextEvent arg0) {
+    public void contextInitialized(ServletContextEvent arg0) {
 
         ByteBuddyFactory.init();
 
-		Config.setMyApp(arg0.getServletContext());
-
+        Config.setMyApp(arg0.getServletContext());
 
         String path = null;
-		try {
+        try {
 
             String contextPath = Config.CONTEXT_PATH;
-            if ( !contextPath.endsWith( File.separator ) ) {
+            if (!contextPath.endsWith(File.separator)) {
                 contextPath += File.separator;
             }
-			File file = new File(contextPath + "WEB-INF" + File.separator + "log4j" + File.separator + "log4j2.xml");
-			path = file.toURI().toString();
+            File file = new File(contextPath + "WEB-INF" + File.separator + "log4j" + File.separator
+                    + "log4j2.xml");
+            path = file.toURI().toString();
 
         } catch (Exception e) {
-			Logger.error(this,e.getMessage(),e);
-		}
+            Logger.error(this, e.getMessage(), e);
+        }
 
-		// Do not reconfigure if using global configuration.  Remove this if we move
+        // Do not reconfigure if using global configuration.  Remove this if we move
         // a full global configuration
-        if (System.getProperty("Log4jContextSelector").equals(BasicAsyncLoggerContextSelector.class.getName()))
+        if (System.getProperty("Log4jContextSelector")
+                .equals(BasicAsyncLoggerContextSelector.class.getName())) {
             Log4jUtil.initializeFromPath(path);
-        else
-            Logger.debug(this, "Reinitializing configuration from "+path);
-
+        } else {
+            Logger.debug(this, "Reinitializing configuration from " + path);
+        }
 
         installWebSocket(arg0.getServletContext());
-	}
+    }
 
     private void installWebSocket(final ServletContext serverContext) {
 
         try {
 
             Logger.info(this, "Installing the web socket");
-            var container = (ServerContainer) serverContext.getAttribute("javax.websocket.server.ServerContainer");
+            var container = (ServerContainer) serverContext.getAttribute(
+                    "javax.websocket.server.ServerContainer");
             container.addEndpoint(SystemEventsWebSocketEndPoint.class);
         } catch (Throwable e) {
 
