@@ -53,6 +53,7 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.liferay.portal.model.User;
+import com.liferay.util.StringPool;
 import java.io.IOException;
 import java.io.Serializable;
 import java.io.StringWriter;
@@ -731,7 +732,7 @@ public class ContainerResource implements Serializable {
 
         ActivityLogger.logInfo(this.getClass(),
                 "Update Container: " + containerForm.getIdentifier(),
-                getInfoMessage(user, MessageConstants.SAVED + container.getTitle()),
+                getInfoMessage(user, MessageConstants.SAVED + container != null ? container.getTitle() : StringPool.BLANK),
                 host.getHostname());
 
         container.setCode(containerForm.getCode());
