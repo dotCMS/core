@@ -10,6 +10,7 @@ import { DotContainersService } from '@services/dot-containers/dot-containers.se
 import { DotHttpErrorManagerService } from '@dotcms/app/api/services/dot-http-error-manager/dot-http-error-manager.service';
 import { DotRouterService } from '@services/dot-router/dot-router.service';
 import { ActivatedRoute } from '@angular/router';
+import * as _ from 'lodash';
 import {
     DotCMSContentType,
     DotContainer,
@@ -25,7 +26,9 @@ export interface DotContainerPropertiesState {
     container: DotContainer;
     containerStructures: DotContainerStructure[];
     contentTypes: DotCMSContentType[];
+    originalForm: DotContainerPayload;
     apiLink: string;
+    invalidForm: boolean;
 }
 
 @Injectable()
@@ -46,7 +49,9 @@ export class DotContainerPropertiesStore extends ComponentStore<DotContainerProp
             containerStructures: [],
             contentTypes: [],
             container: null,
-            apiLink: ''
+            originalForm: null,
+            apiLink: '',
+            invalidForm: true
         });
         this.activatedRoute.data
             .pipe(
@@ -118,20 +123,59 @@ export class DotContainerPropertiesStore extends ComponentStore<DotContainerProp
         }
     );
 
-    readonly updateIsContentTypeButtonEnabled = this.updater<boolean>(
-        (state: DotContainerPropertiesState, isContentTypeButtonEnabled: boolean) => {
-            return {
-                ...state,
-                isContentTypeButtonEnabled
-            };
-        }
-    );
-
     readonly updateContentTypeVisibility = this.updater<boolean>(
         (state: DotContainerPropertiesState, isContentTypeVisible: boolean) => {
             return {
                 ...state,
                 isContentTypeVisible
+            };
+        }
+    );
+
+    /**
+     * Update form status
+     * @memberof DotContainerPropertiesStore
+     */
+    readonly updateFormStatus = this.updater<{
+        invalidForm: boolean;
+        container: DotContainerPayload;
+    }>((state: DotContainerPropertiesState, { invalidForm, container }) => {
+        return {
+            ...state,
+            isContentTypeButtonEnabled: container.maxContentlets > 0,
+            invalidForm: _.isEqual(state.originalForm, container) || invalidForm
+        };
+    });
+
+    /**
+     * Update Original Form
+     * @memberof DotContainerPropertiesStore
+     */
+    readonly updateOriginalFormState = this.updater<DotContainerPayload>(
+        (state: DotContainerPropertiesState, originalForm: DotContainerPayload) => {
+            return {
+                ...state,
+                originalForm: originalForm
+            };
+        }
+    );
+
+    /**
+     * Update Content Type and PrePost loop visibility
+     * @memberof DotContainerPropertiesStore
+     */
+    readonly updateContentTypeAndPrePostLoopVisibility = this.updater<{
+        isContentTypeVisible: boolean;
+        showPrePostLoopInput: boolean;
+    }>(
+        (
+            state: DotContainerPropertiesState,
+            { isContentTypeVisible, showPrePostLoopInput }: DotContainerPropertiesState
+        ) => {
+            return {
+                ...state,
+                isContentTypeVisible,
+                showPrePostLoopInput
             };
         }
     );
@@ -232,6 +276,8 @@ export class DotContainerPropertiesStore extends ComponentStore<DotContainerProp
      * @returns The API link for the container.
      */
     private getApiLink(identifier: string): string {
-        return identifier ? `/api/v1/containers/${identifier}/working` : '';
+        return identifier
+            ? `/api/v1/containers/working?containerId=${identifier}&includeContentType=true`
+            : '';
     }
 }

@@ -2,6 +2,8 @@ export const MAX_VARIANTS_ALLOWED = 3;
 
 export const DEFAULT_VARIANT_ID = 'DEFAULT';
 
+export const DEFAULT_VARIANT_NAME = 'Original';
+
 export const SESSION_STORAGE_VARIATION_KEY = 'variantName';
 
 export enum TrafficProportionTypes {

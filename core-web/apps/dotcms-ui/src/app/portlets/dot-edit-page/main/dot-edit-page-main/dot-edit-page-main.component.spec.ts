@@ -1,17 +1,25 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { of as observableOf, Subject } from 'rxjs';
-import { waitForAsync, ComponentFixture, TestBed } from '@angular/core/testing';
+import { of, Subject } from 'rxjs';
+import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing';
 
 import { DotEditPageMainComponent } from './dot-edit-page-main.component';
 import { DotEditPageNavModule } from '../dot-edit-page-nav/dot-edit-page-nav.module';
 import { RouterTestingModule } from '@angular/router/testing';
 import { By, Title } from '@angular/platform-browser';
-import { DotMessageService } from '@dotcms/data-access';
+import {
+    DotAlertConfirmService,
+    DotCurrentUserService,
+    DotEventsService,
+    DotGenerateSecurePasswordService,
+    DotLicenseService,
+    DotMessageService,
+    DotWorkflowActionsFireService
+} from '@dotcms/data-access';
 import { ActivatedRoute } from '@angular/router';
 import { DotEditPageNavComponent } from '../dot-edit-page-nav/dot-edit-page-nav.component';
 import { DotContentletEditorService } from '@components/dot-contentlet-editor/services/dot-contentlet-editor.service';
-import { Injectable, Component, Output, EventEmitter } from '@angular/core';
+import { Component, EventEmitter, Injectable, Output } from '@angular/core';
 import { DotPageStateService } from '../../content/services/dot-page-state/dot-page-state.service';
 import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
 import { DotPageRender, DotPageRenderState } from '@dotcms/dotcms-models';
@@ -33,15 +41,11 @@ import {
 } from '@dotcms/dotcms-js';
 import { DotFormatDateService } from '@dotcms/app/api/services/dot-format-date-service';
 import { dotEventSocketURLFactory, MockDotUiColorsService } from '@dotcms/app/test/dot-test-bed';
-import { DotCurrentUserService } from '@dotcms/data-access';
 import { DotMessageDisplayService } from '@components/dot-message-display/services';
 import { DotWizardService } from '@dotcms/app/api/services/dot-wizard/dot-wizard.service';
 import { DotHttpErrorManagerService } from '@dotcms/app/api/services/dot-http-error-manager/dot-http-error-manager.service';
-import { DotAlertConfirmService } from '@dotcms/data-access';
 import { ConfirmationService } from 'primeng/api';
-import { DotWorkflowActionsFireService } from '@dotcms/data-access';
 import { DotGlobalMessageService } from '@components/_common/dot-global-message/dot-global-message.service';
-import { DotEventsService } from '@dotcms/data-access';
 import {
     MockDotMessageService,
     mockDotRenderedPage,
@@ -51,10 +55,10 @@ import {
 import { DotUiColorsService } from '@dotcms/app/api/services/dot-ui-colors/dot-ui-colors.service';
 import { DotIframeService } from '@components/_common/iframe/service/dot-iframe/dot-iframe.service';
 import { DotDownloadBundleDialogModule } from '@components/_common/dot-download-bundle-dialog/dot-download-bundle-dialog.module';
-import { DotLicenseService } from '@dotcms/data-access';
 import { HttpClientTestingModule } from '@angular/common/http/testing';
-import { DotGenerateSecurePasswordService } from '@dotcms/data-access';
 import { DotLoadingIndicatorService } from '@dotcms/utils';
+import { DotExperimentClassDirective } from '@portlets/shared/directives/dot-experiment-class.directive';
+import { DotEditPageNavDirective } from '@portlets/dot-edit-page/main/dot-edit-page-nav/directives/dot-edit-page-nav.directive';
 
 @Injectable()
 class MockDotContentletEditorService {
@@ -65,9 +69,11 @@ class MockDotContentletEditorService {
 class MockDotPageStateService {
     reload$ = new Subject();
     state$ = new Subject();
+
     get(): void {
         //
     }
+
     reload(): void {
         this.reload$.next(
             new DotPageRenderState(mockUser(), new DotPageRender(mockDotRenderedPage()))
@@ -115,7 +121,9 @@ describe('DotEditPageMainComponent', () => {
                 ]),
                 DotEditPageNavModule,
                 DotDownloadBundleDialogModule,
-                HttpClientTestingModule
+                HttpClientTestingModule,
+                DotExperimentClassDirective,
+                DotEditPageNavDirective
             ],
             declarations: [DotEditPageMainComponent, MockDotEditContentletComponent],
             providers: [
@@ -123,16 +131,18 @@ describe('DotEditPageMainComponent', () => {
                 {
                     provide: ActivatedRoute,
                     useValue: {
-                        data: observableOf({
+                        data: of({
                             content: new DotPageRender(mockDotRenderedPage())
                         }),
                         snapshot: {
                             queryParams: {
                                 url: '/about-us/index'
                             }
-                        }
+                        },
+                        queryParams: of({ editPageTab: 'a', variationName: 'b', experimentId: 'c' })
                     }
                 },
+
                 {
                     provide: DotContentletEditorService,
                     useClass: MockDotContentletEditorService
@@ -180,7 +190,8 @@ describe('DotEditPageMainComponent', () => {
     beforeEach(() => {
         fixture = TestBed.createComponent(DotEditPageMainComponent);
         route = fixture.debugElement.injector.get(ActivatedRoute);
-        route.data = observableOf({
+        route = TestBed.inject(ActivatedRoute);
+        route.data = of({
             content: mockDotRenderedPageState
         });
         dotContentletEditorService = fixture.debugElement.injector.get(DotContentletEditorService);
@@ -194,6 +205,8 @@ describe('DotEditPageMainComponent', () => {
         ).componentInstance;
         titleService = fixture.debugElement.injector.get(Title);
         fixture.detectChanges();
+
+        spyOn<any>(route, 'queryParams').and.returnValue(of({}));
     });
 
     it('should have router-outlet', () => {
@@ -309,6 +322,16 @@ describe('DotEditPageMainComponent', () => {
                     name: 'random'
                 }
             });
+        });
+    });
+
+    describe('Edit Page in Variant Mode', () => {
+        it('should add class edit-page-variant-mode to the page nav if exist editPageTab, variationName, experimentId as query params', () => {
+            const nav: DotEditPageNavComponent = fixture.debugElement.query(
+                By.css('dot-edit-page-nav')
+            ).nativeElement;
+
+            expect(nav).toHaveClass('edit-page-variant-mode');
         });
     });
 });

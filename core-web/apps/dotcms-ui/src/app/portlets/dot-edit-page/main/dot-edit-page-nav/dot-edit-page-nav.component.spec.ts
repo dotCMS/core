@@ -2,8 +2,7 @@ import { Observable, of as observableOf } from 'rxjs';
 import { Component, DebugElement, Injectable, Input } from '@angular/core';
 import { By } from '@angular/platform-browser';
 import { DotEditPageNavComponent } from './dot-edit-page-nav.component';
-import { DotMessageService } from '@dotcms/data-access';
-import { DotLicenseService } from '@dotcms/data-access';
+import { DotLicenseService, DotMessageService, DotPropertiesService } from '@dotcms/data-access';
 import { DotContentletEditorService } from '@components/dot-contentlet-editor/services/dot-contentlet-editor.service';
 import { RouterTestingModule } from '@angular/router/testing';
 import { TooltipModule } from 'primeng/tooltip';
@@ -12,8 +11,7 @@ import { ActivatedRoute } from '@angular/router';
 import { DotIconModule } from '@dotcms/ui';
 import { DotPageRender, DotPageRenderState } from '@dotcms/dotcms-models';
 import { DotPipesModule } from '@pipes/dot-pipes.module';
-import { DotPropertiesService } from '@dotcms/data-access';
-import { MockDotMessageService, mockUser, mockDotRenderedPage } from '@dotcms/utils-testing';
+import { MockDotMessageService, mockDotRenderedPage, mockUser } from '@dotcms/utils-testing';
 
 class ActivatedRouteMock {
     get snapshot() {
