@@ -1479,6 +1479,6 @@ public class ContainerResource implements Serializable {
     }
 
     private String getInfoMessage(User user, String message){
-        return String.format("User {0} {1}", user.getPrimaryKey(), message);
+        return String.format("User %s %s", user.getPrimaryKey(), message);
     }
 }
