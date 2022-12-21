@@ -520,6 +520,49 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
 
     @Override
     @WrapInTransaction
+    public Experiment editVariantDescription(String experimentId, String variantName,
+            String newDescription, final User user)
+            throws DotDataException, DotSecurityException {
+        final Experiment persistedExperiment = find(experimentId, user)
+                .orElseThrow(()->new DoesNotExistException("Experiment with provided id not found"));
+
+        DotPreconditions.isTrue(variantName!= null &&
+                        variantName.contains(shortyIdAPI.shortify(experimentId)), ()->"Invalid Variant provided",
+                IllegalArgumentException.class);
+
+        final Variant toEdit = variantAPI.get(variantName)
+                .orElseThrow(()->new DoesNotExistException("Provided Variant not found"));
+
+        final String currentDescription = toEdit.description()
+                .orElseThrow(()->new DotStateException("Variant without description. Variant name: "
+                        + toEdit.name()));
+
+        DotPreconditions.isTrue(!currentDescription.equals(ORIGINAL_VARIANT),
+                ()->"Cannot update Original Variant", IllegalArgumentException.class);
+
+        final TreeSet<ExperimentVariant> updatedVariants =
+                persistedExperiment.trafficProportion()
+                        .variants().stream().map((variant) -> {
+                            if (variant.id().equals(variantName)) {
+                                return variant.withDescription(newDescription);
+                            } else {
+                                return variant;
+                            }
+                        }).collect(Collectors.toCollection(TreeSet::new));
+
+        final TrafficProportion trafficProportion = persistedExperiment.trafficProportion()
+                .withVariants(updatedVariants);
+        final Experiment withUpdatedTraffic = persistedExperiment.withTrafficProportion(trafficProportion);
+        final Experiment fromDB = save(withUpdatedTraffic, user);
+
+        final Optional<Variant> variant = variantAPI.get(variantName);
+        variantAPI.update(variant.orElseThrow().withDescription(Optional.of(newDescription)));
+        return fromDB;
+
+    }
+
+    @Override
+    @WrapInTransaction
     public Experiment deleteTargetingCondition(String experimentId, String conditionId, User user)
             throws DotDataException, DotSecurityException {
         final Experiment persistedExperiment = find(experimentId, user)
