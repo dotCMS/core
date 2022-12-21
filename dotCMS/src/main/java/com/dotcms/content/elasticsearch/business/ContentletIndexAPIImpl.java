@@ -303,10 +303,14 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
                 createContentIndex(info.getReindexWorking(), 0);
                 createContentIndex(info.getReindexLive(), 0);
 
-                APILocator.getIndiciesAPI().point(info);
+
 
                 ESMappingUtilHelper.getInstance()
                         .addCustomMapping(info.getReindexWorking(), info.getReindexLive());
+                
+                
+                APILocator.getIndiciesAPI().point(info);
+                
 
                 return timeStamp;
             } catch (Exception e) {
