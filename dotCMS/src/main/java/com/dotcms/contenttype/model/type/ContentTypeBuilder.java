@@ -1,5 +1,6 @@
 package com.dotcms.contenttype.model.type;
 
+import com.dotcms.contenttype.model.type.ContentType.Source;
 import java.lang.reflect.Method;
 import java.util.Date;
 
@@ -60,6 +61,8 @@ public interface ContentTypeBuilder {
 	ContentTypeBuilder icon(String variable);
 
 	ContentTypeBuilder sortOrder(int variable);
+
+	ContentTypeBuilder source(Source source);
 	
 	public static ContentTypeBuilder builder(ContentType type) throws DotStateException {
 		return builder(type.getClass()).from(type);

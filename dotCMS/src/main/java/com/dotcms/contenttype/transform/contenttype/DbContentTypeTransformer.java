@@ -152,8 +152,8 @@ public class DbContentTypeTransformer implements ContentTypeTransformer{
 			}
 
             @Override
-			public boolean isSourceDB(){
-				return true;
+			public Source source(){
+				return Source.DB;
 			}
 		};
 

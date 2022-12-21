@@ -178,10 +178,14 @@ public abstract class ContentType implements Serializable, Permissionable, Conte
    *
    * @return
    */
+
+  @JsonIgnore
   @Value.Default
-  public boolean isSourceDB(){
-    return false;
+  public Source source(){
+    return Source.OTHER;
   }
+
+  public enum Source{DB,OTHER}
 
   @Value.Default
   public Date modDate() {
@@ -202,10 +206,13 @@ public abstract class ContentType implements Serializable, Permissionable, Conte
   @Nullable
   @Value.Default
   public String siteName() {
+    /*
     if(null == canonicalSiteName){
       canonicalSiteName = canonicalSiteName();
     }
     return canonicalSiteName;
+     */
+    return source() == Source.DB ? canonicalSiteName() : null;
   }
 
   private String canonicalSiteName = null;
@@ -306,10 +313,13 @@ public abstract class ContentType implements Serializable, Permissionable, Conte
   @Nullable
   @Value.Default
   public String folderPath() {
+    /*
     if(null == canonicalFolderPath){
       canonicalFolderPath = canonicalFolderPath();
     }
     return canonicalFolderPath;
+     */
+    return Source.DB == source() ? canonicalFolderPath() : null;
   }
 
   private String canonicalFolderPath;
@@ -339,8 +349,8 @@ public abstract class ContentType implements Serializable, Permissionable, Conte
   public SiteAndFolder siteAndFolder() {
     return ImmutableSiteAndFolder.builder()
             .folder(folder()).host(host())
-            .folderPath(canonicalFolderPath != null ? null : folderPath())
-            .siteName(canonicalSiteName != null ? null : siteName()).build();
+            .folderPath(folderPath())
+            .siteName(siteName()).build();
   }
 
   @JsonIgnore
