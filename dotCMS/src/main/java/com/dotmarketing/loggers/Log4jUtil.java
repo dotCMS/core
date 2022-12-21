@@ -51,7 +51,7 @@ public class Log4jUtil {
         Configuration configuration = loggerContext.getConfiguration();
 
         //Init log4j to see the messages in ant's output
-        if ( !appenderMap.isEmpty() ) {
+        if ( appenderMap.isEmpty() ) {
 
             //Create a simple layout for our appender
             Layout simpleLayout = PatternLayout.newBuilder()
@@ -61,6 +61,7 @@ public class Log4jUtil {
             //Create and add a console appender to the configuration
             ConsoleAppender consoleAppender = ConsoleAppender.createDefaultAppenderForLayout(simpleLayout);
             configuration.addAppender(consoleAppender);
+            LogManager.getLogger().debug("Added a new ConsoleAppender to the log4j configuration");
         }
     }
 

@@ -10,9 +10,9 @@ import com.dotmarketing.common.reindex.ReindexThread;
 import com.dotmarketing.loggers.Log4jUtil;
 import com.dotmarketing.quartz.QuartzUtils;
 import com.dotmarketing.util.Config;
-import com.dotmarketing.util.ConfigUtils;
 import com.dotmarketing.util.Logger;
 import io.vavr.control.Try;
+import org.apache.logging.log4j.core.async.BasicAsyncLoggerContextSelector;
 
 import javax.servlet.ServletContext;
 import javax.servlet.ServletContextEvent;
@@ -77,8 +77,12 @@ public class ContextLifecycleListener implements ServletContextListener {
 			Logger.error(this,e.getMessage(),e);
 		}
 
-		//Initialises/reconfigures log4j based on a given log4j configuration file
-		Log4jUtil.initializeFromPath(path);
+		// Do not reconfigure if using global configuration.  Remove this if we move
+        // a full global configuration
+        if (System.getProperty("Log4jContextSelector").equals(BasicAsyncLoggerContextSelector.class.getName()))
+            Log4jUtil.initializeFromPath(path);
+        else
+            Logger.debug(this, "Reinitializing configuration from "+path);
 
 
         installWebSocket(arg0.getServletContext());
