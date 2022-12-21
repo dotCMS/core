@@ -301,6 +301,7 @@ public class ESMappingUtilHelper {
     private void addMappingForContentTypeIfNeeded(final ContentType contentType,
             final Set<String> mappedFields, final String... indexes) {
         final Map<String, JSONObject> contentTypeMapping = new HashMap();
+
         try {
             contentType.fields().forEach(field-> {
                     try {
@@ -445,7 +446,9 @@ public class ESMappingUtilHelper {
     private void putContentTypeMapping(final ContentType contentType,
             final Map<String, JSONObject> mappingForFields, final String... indexes)
             throws JSONException, IOException {
-
+        
+        Logger.info(getClass(), "Adding Mappings for Content Type:" + contentType.variable() + " to indices :" + String.join(",", indexes) );
+        
         final JSONObject jsonObject = new JSONObject();
         final JSONObject properties = new JSONObject();
 
