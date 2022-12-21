@@ -354,7 +354,7 @@ public class FileUtil {
 			Files.delete(f.toPath());
 			return true;
 		} catch (IOException e) {
-			Logger.error(FileUtil.class, String.format("Fail to delete file/dir [%s]", f), e);
+			Logger.debug(FileUtil.class, String.format("Fail to delete file/dir [%s]", f), e);
 		}
 		return false;
 	}
