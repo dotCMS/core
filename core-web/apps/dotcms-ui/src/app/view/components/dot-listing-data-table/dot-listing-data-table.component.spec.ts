@@ -488,6 +488,19 @@ describe('DotListingDataTableComponent', () => {
         expect(comp.rowWasClicked.emit).toHaveBeenCalledTimes(2);
     }));
 
+    it('should ignore rowClick if comes from the menu ', fakeAsync(() => {
+        setRequestSpy(items);
+        spyOn(comp.rowWasClicked, 'emit');
+        comp.loadFirstPage();
+        hostFixture.detectChanges();
+        tick(1);
+        hostFixture.detectChanges();
+        const firstRow: DebugElement = de.queryAll(By.css('tr'))[1];
+        firstRow.triggerEventHandler('click', { target: { closest: (_element) => true } });
+
+        expect(comp.rowWasClicked.emit).toHaveBeenCalledTimes(0);
+    }));
+
     it('should never emit when a SYSTEM TEMPLATE row is clicked or enter', fakeAsync(() => {
         setRequestSpy(items);
         spyOn(comp.rowWasClicked, 'emit');

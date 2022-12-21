@@ -55,8 +55,8 @@
             [attr.data-testRowId]="rowData.identifier"
             [pContextMenuRow]="rowData"
             [pSelectableRow]="rowData"
-            (click)="handleRowClick(rowData)"
-            (keyup.enter)="handleRowClick(rowData)"
+            (click)="handleRowClick(rowData, $event)"
+            (keyup.enter)="handleRowClick(rowData, $event)"
             data-testClass="testTableRow"
         >
             <td *ngIf="checkbox">
