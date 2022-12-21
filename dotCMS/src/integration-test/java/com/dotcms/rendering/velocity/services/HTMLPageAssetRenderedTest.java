@@ -1237,7 +1237,7 @@ public class HTMLPageAssetRenderedTest {
                                     .setPageMode(PageMode.LIVE)
                                     .build(),
                             mockRequest, mockResponse);
-            assertTrue(html, html.replace("<SCRIPT>localStorage.removeItem('experiment_data');</SCRIPT>", "").isEmpty());
+            assertTrue(html, html.replace(getNotExperimentJsCode(), "").isEmpty());
 
             WebAssetFactory.unArchiveAsset(container);
             WebAssetFactory.publishAsset(container, systemUser);
