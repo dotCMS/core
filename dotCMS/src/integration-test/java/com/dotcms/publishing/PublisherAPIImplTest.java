@@ -94,6 +94,8 @@ import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.InetSocketAddress;
 import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -111,6 +113,7 @@ import org.apache.commons.io.FileUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.AfterClass;
+import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -1154,5 +1157,30 @@ public class PublisherAPIImplTest {
         manifestItemsMapTest.add(manifestItem, ManifestReason.INCLUDE_BY_USER.getMessage());
 
         assertManifestFile(manifestFile, manifestItemsMapTest);
+    }
+
+    /**
+     * Test delete file works after the security fixes
+     */
+    @Test
+    public void testDeleteFileDesc() {
+
+        final String filterKey = "foo";
+
+        final FilterDescriptor filterDescriptor = new FilterDescriptorDataGen().key(filterKey).nextPersisted();
+
+        final PublisherAPIImpl publisherAPI = new PublisherAPIImpl();
+        publisherAPI.addFilterDescriptor(filterDescriptor);
+        Assert.assertFalse(publisherAPI.deleteFilterDescriptor(filterKey));
+
+        final Path path = Paths.get(
+                APILocator.getFileAssetAPI().getRealAssetsRootPath() + File.separator + "server"
+                        + File.separator + "publishing-filters" + File.separator  +  filterKey ).normalize();
+
+        final File dir = path.toFile();
+        dir.mkdirs();
+
+        Assert.assertTrue(publisherAPI.deleteFilterDescriptor(filterKey));
+
     }
 }

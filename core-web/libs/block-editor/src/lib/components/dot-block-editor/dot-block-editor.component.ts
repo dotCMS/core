@@ -53,6 +53,7 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy {
     @Input() customStyles: string;
     @Input() displayCountBar: boolean | string = true;
     @Input() charLimit: number;
+    @Input() content: Content;
 
     @Input() set allowedBlocks(blocks: string) {
         this._allowedBlocks = [
@@ -61,11 +62,8 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy {
         ];
     }
 
-    @Input() set setValue(content: Content) {
-        // https://www.tiptap.dev/api/editor#content
-        this.editor.commands.setContent(
-            typeof content === 'string' ? formatHTML(content) : content
-        );
+    @Input() set value(content: Content) {
+        this.content = typeof content === 'string' ? formatHTML(content) : content;
     }
 
     editor: Editor;

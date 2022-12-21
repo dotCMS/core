@@ -65,7 +65,7 @@ export class DotBlockEditorSettingsComponent implements OnInit, OnDestroy, OnCha
     public form: FormGroup;
     public settingsMap = {
         allowedBlocks: {
-            label: 'Allowed Content',
+            label: 'Allowed Blocks',
             placeholder: 'Select Blocks',
             options: BLOCK_EDITOR_BLOCKS,
             key: 'allowedBlocks',

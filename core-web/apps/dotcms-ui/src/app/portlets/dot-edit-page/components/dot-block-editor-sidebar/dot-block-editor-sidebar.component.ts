@@ -94,7 +94,7 @@ export class DotBlockEditorSidebarComponent implements OnInit, OnDestroy {
     }
 
     /**
-     *  Clear the date to close the sideber.
+     *  Clear the date to close the sidebar.
      *
      * @memberof DotBlockEditorSidebarComponent
      */
