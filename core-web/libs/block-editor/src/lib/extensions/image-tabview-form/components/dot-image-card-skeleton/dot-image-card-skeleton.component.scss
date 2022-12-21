@@ -1,0 +1,36 @@
+@use "variables" as *;
+
+:host ::ng-deep {
+    .p-card {
+        border: none;
+        box-shadow: $md-shadow-1;
+        cursor: pointer;
+        display: flex;
+        gap: $dot-editor-size;
+        height: 94px;
+        width: 340px;
+
+        .p-card-header {
+            padding: 0;
+        }
+
+        .p-card-body {
+            flex: 1;
+            overflow: hidden;
+            padding: $spacing-2 0;
+            padding-right: $dot-editor-size;
+            display: flex;
+            flex-direction: column;
+
+            .p-card-content {
+                flex-grow: 1;
+            }
+        }
+    }
+
+    .state {
+        align-items: center;
+        display: flex;
+        gap: $spacing-1;
+    }
+}

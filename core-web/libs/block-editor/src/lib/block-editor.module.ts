@@ -2,15 +2,6 @@ import { NgModule } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 
-// PrimeNg
-import { MenuModule } from 'primeng/menu';
-import { CheckboxModule } from 'primeng/checkbox';
-import { ButtonModule } from 'primeng/button';
-import { InputTextModule } from 'primeng/inputtext';
-import { CardModule } from 'primeng/card';
-import { OrderListModule } from 'primeng/orderlist';
-import { ListboxModule } from 'primeng/listbox';
-
 // DotCMS JS
 import { LoggerService } from '@dotcms/dotcms-js';
 import { StringUtils } from '@dotcms/dotcms-js';
@@ -36,26 +27,23 @@ import {
 
 // Shared
 import { SharedModule } from './shared/shared.module';
+import { PrimengModule } from './shared/primeng.module';
 import { BubbleFormComponent } from './extensions/bubble-form/bubble-form.component';
 
 //Editor
 import { DotBlockEditorComponent } from './components/dot-block-editor/dot-block-editor.component';
 import { DotEditorCountBarComponent } from './components/dot-editor-count-bar/dot-editor-count-bar.component';
 import { FloatingButtonComponent } from './extensions/floating-button/floating-button.component';
+import { ImageTabviewFormModule } from './extensions/image-tabview-form/image-tabview-form.module';
 
 @NgModule({
     imports: [
         CommonModule,
         FormsModule,
         ReactiveFormsModule,
-        CardModule,
-        MenuModule,
-        CheckboxModule,
-        ButtonModule,
-        InputTextModule,
         SharedModule,
-        OrderListModule,
-        ListboxModule
+        PrimengModule,
+        ImageTabviewFormModule
     ],
     declarations: [
         EditorDirective,
@@ -80,9 +68,6 @@ import { FloatingButtonComponent } from './extensions/floating-button/floating-b
         BubbleMenuComponent,
         BubbleLinkFormComponent,
         ReactiveFormsModule,
-        CheckboxModule,
-        ButtonModule,
-        InputTextModule,
         SharedModule,
         BubbleFormComponent,
         DotBlockEditorComponent
