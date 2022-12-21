@@ -446,6 +446,8 @@ public class ESMappingUtilHelper {
             final Map<String, JSONObject> mappingForFields, final String... indexes)
             throws JSONException, IOException {
 
+        Logger.info(getClass(), "Adding ES Mappings for Content Type:" + contentType.variable() + " to indices :" + String.join(",", indexes) );
+
         final JSONObject jsonObject = new JSONObject();
         final JSONObject properties = new JSONObject();
 
