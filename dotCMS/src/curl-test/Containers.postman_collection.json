@@ -1,6 +1,6 @@
 {
 	"info": {
-		"_postman_id": "574aa2de-1659-41ea-9495-bd0e0441f54f",
+		"_postman_id": "0e647678-bbb4-43bd-a9c5-485a7ebc6bbf",
 		"name": "Containers",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
 	},
@@ -4533,19 +4533,7 @@
 							"    ",
 							"    var jsonData = pm.response.json();",
 							"    pm.expect(jsonData.errors.length).to.eql(0);",
-							"});",
-							"",
-							"pm.test(\"Information Saved Correctly\", function () {",
-							"    ",
-							"    var jsonData = pm.response.json();",
-							"    pm.expect(jsonData.entity.title).to.eql(\"TestContainer\");",
-							"    pm.expect(jsonData.entity.notes).to.eql(\"Notes 1\");",
-							"    ",
-							"    ",
-							"});",
-							"",
-							"",
-							""
+							"});"
 						],
 						"type": "text/javascript"
 					}
@@ -4556,13 +4544,13 @@
 					"type": "basic",
 					"basic": [
 						{
-							"key": "username",
-							"value": "admin@dotcms.com",
+							"key": "password",
+							"value": "admin",
 							"type": "string"
 						},
 						{
-							"key": "password",
-							"value": "admin",
+							"key": "username",
+							"value": "admin@dotcms.com",
 							"type": "string"
 						}
 					]
@@ -4577,20 +4565,47 @@
 					}
 				],
 				"url": {
-					"raw": "{{serverURL}}/api/v1/containers/working?containerId={{identifier}}",
+					"raw": "{{serverURL}}/api/v1/containers?filter=&page=0&per_page=50&orderby=modDate&direction=ASC&host=&system=true&archive=true",
 					"host": [
 						"{{serverURL}}"
 					],
 					"path": [
 						"api",
 						"v1",
-						"containers",
-						"working"
+						"containers"
 					],
 					"query": [
 						{
-							"key": "containerId",
-							"value": "{{identifier}}"
+							"key": "filter",
+							"value": ""
+						},
+						{
+							"key": "page",
+							"value": "0"
+						},
+						{
+							"key": "per_page",
+							"value": "50"
+						},
+						{
+							"key": "orderby",
+							"value": "modDate"
+						},
+						{
+							"key": "direction",
+							"value": "ASC"
+						},
+						{
+							"key": "host",
+							"value": ""
+						},
+						{
+							"key": "system",
+							"value": "true"
+						},
+						{
+							"key": "archive",
+							"value": "true"
 						}
 					]
 				},
@@ -5746,7 +5761,7 @@
 					}
 				],
 				"url": {
-					"raw": "{{serverURL}}/api/v1/containers?filter=&page=0&per_page=50&ordeby=title&direction=ASC&host=&system=true&archive=true",
+					"raw": "{{serverURL}}/api/v1/containers?filter=&page=0&per_page=50&orderby=title&direction=ASC&host=&system=true&archive=true",
 					"host": [
 						"{{serverURL}}"
 					],
@@ -5769,7 +5784,7 @@
 							"value": "50"
 						},
 						{
-							"key": "ordeby",
+							"key": "orderby",
 							"value": "title"
 						},
 						{
