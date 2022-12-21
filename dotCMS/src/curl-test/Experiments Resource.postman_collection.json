@@ -1,6 +1,6 @@
 {
 	"info": {
-		"_postman_id": "427b2c8d-4bc3-47b4-92ab-554cbece9aa9",
+		"_postman_id": "324b2215-c877-43a5-b7d6-84a39f6a7e9f",
 		"name": "Experiments Resource",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
 		"_exporter_id": "4500400"
@@ -1985,7 +1985,6 @@
 							"});",
 							"",
 							"pm.test(\"All returned experiments should have the pageId in the filter\", function () {",
-							"    pm.expect(jsonData.entity.length).to.be.eq(2);",
 							"    for(let i in jsonData.entity) {",
 							"        let experiment = jsonData.entity[i]",
 							"        pm.expect(experiment.pageId).to.be.eq('e424abd7e2e7a9031c5a0a3c18182f1b');",
@@ -4475,9 +4474,9 @@
 		},
 		{
 			"key": "fireActionLanguageKey",
-      "value": ""
-		}, 
-    {
+			"value": ""
+		},
+		{
 			"key": "variantExperiment",
 			"value": ""
 		},
