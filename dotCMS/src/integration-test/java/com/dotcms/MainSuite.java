@@ -229,11 +229,9 @@ import org.junit.runners.Suite.SuiteClasses;
 @RunWith(MainBaseSuite.class)
 @SuiteClasses({
         RulesAPIImplIntegrationTest.class,
-        ExperimentAPIImpIT.class,
-        ExperimentWebAPIImplIT.class,
+        Task220825CreateVariantFieldTest.class,
         AnalyticsAPIImplTest.class,
         AccessTokenRenewJobTest.class,
-        Task220825CreateVariantFieldTest.class,
         Task221007AddVariantIntoPrimaryKeyTest.class,
         ContentletWebAPIImplIntegrationTest.class, // moved to top because of failures on GHA
         DependencyBundlerTest.class, // moved to top because of failures on GHA
@@ -653,7 +651,9 @@ import org.junit.runners.Suite.SuiteClasses;
         VisitorsCurrentURLConditionletTest.class,
         VisitorsGeolocationConditionletTest.class,
         ManifestUtilTest.class,
-        ZipUtilTest.class
+        ZipUtilTest.class,
+        ExperimentAPIImpIT.class,
+        ExperimentWebAPIImplIT.class
 })
 public class MainSuite {
 
