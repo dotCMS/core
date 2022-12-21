@@ -2,6 +2,7 @@ import * as core from '@actions/core'
 import * as exec from '@actions/exec'
 import * as path from 'path'
 import * as setup from './it-setup'
+import fetch, {Response} from 'node-fetch'
 
 /**
  * Based on dbType resolves the ci index
@@ -28,6 +29,7 @@ const dockerFolder = `${projectRoot}/cicd/docker`
 const outputDir = `${dotCmsRoot}/build/test-results/integrationTest`
 const reportDir = `${dotCmsRoot}/build/reports/tests/integrationTest`
 const ciIndex = resolveCiIndex()
+const includeAnalytics = core.getBooleanInput('include_analytics')
 
 interface CommandResult {
   exitCode: number
@@ -46,6 +48,23 @@ export interface Command {
 interface DatabaseEnvs {
   postgres?: {[key: string]: string}
   mssql?: {[key: string]: string}
+}
+
+interface AccessToken {
+  access_token: string
+  token_type: string
+  issueDate: string
+  expires_in: number
+  refresh_expires_in: number
+  refresh_token: string
+  scope: string
+  clientId: string
+  aud: string
+}
+
+interface AnalyticsKey {
+  jsKey: string
+  m2mKey: string
 }
 
 const DEPS_ENV: DatabaseEnvs = {
@@ -82,6 +101,18 @@ export const COMMANDS: Commands = {
       workingDir: dotCmsRoot
     }
   ]
+}
+
+const START_ANALYTICS_INFRA_CMD: Command = {
+  cmd: 'docker-compose',
+  args: ['-f', 'analytics-compose.yml', 'up'],
+  workingDir: dockerFolder
+}
+
+const STOP_ANALYTICS_INFRA_CMD: Command = {
+  cmd: 'docker-compose',
+  args: ['-f', 'analytics-compose.yml', 'down', '-v'],
+  workingDir: dockerFolder
 }
 
 const START_DEPENDENCIES_CMD: Command = {
@@ -125,6 +156,14 @@ export const runTests = async (cmds: Command[]): Promise<CommandResult> => {
     =======================================
     Starting integration tests dependencies
     =======================================`)
+
+    if (includeAnalytics) {
+      // Starting analytics infrastructure
+      execCmdAsync(START_ANALYTICS_INFRA_CMD)
+      await waitFor(160, 'Analytics Infrastructure')
+      await warmUpAnalytics()
+    }
+
     execCmdAsync(START_DEPENDENCIES_CMD)
 
     await waitFor(60, `ES and ${dbType}`)
@@ -170,6 +209,15 @@ const stopDeps = async () => {
     =======================================
     Stopping integration tests dependencies
     =======================================`)
+
+  if (includeAnalytics) {
+    try {
+      await execCmd(STOP_ANALYTICS_INFRA_CMD)
+    } catch (err) {
+      console.error(`Error stopping dependencies: ${err}`)
+    }
+  }
+
   try {
     await execCmd(STOP_DEPENDENCIES_CMD)
   } catch (err) {
@@ -299,4 +347,56 @@ const execCmdAsync = (cmd: Command) => {
   printCmd(cmd)
   //shelljs.exec([cmd.cmd, ...cmd.args].join(' '), {async: true})
   exec.exec(cmd.cmd, cmd.args, {cwd: cmd.workingDir, env: cmd.env})
+}
+
+const fetchAccessToken = async (): Promise<Response> => {
+  const idpUrl = 'http://localhost:61111/realms/dotcms/protocol/openid-connect/token'
+  const authPayload = 'client_id=analytics-customer-customer1&client_secret=testsecret&grant_type=client_credentials'
+  core.info(`Sending POST to ${idpUrl} the payload:\n${authPayload}`)
+
+  return fetch(idpUrl, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/x-www-form-urlencoded'
+    },
+    body: authPayload
+  })
+}
+
+const warmUpIdp = async (): Promise<AccessToken> => {
+  await fetchAccessToken()
+  waitFor(1000, 'IDP warmup')
+  const response = await fetchAccessToken()
+  const accessToken = (await response.json()) as AccessToken
+  return accessToken
+}
+
+const fetchAnalyticsKey = async (accessToken: string): Promise<Response> => {
+  const configUrl = 'http://localhost:8088/c/customer1/cluster1/keys'
+  core.info(`Sending GET to ${configUrl}`)
+  return fetch(configUrl, {
+    method: 'GET',
+    headers: {
+      Accept: 'application/json',
+      Authorization: `Bearer ${accessToken}`
+    }
+  })
+}
+
+const warmUpConfig = async (accessToken: string): Promise<AnalyticsKey> => {
+  await fetchAnalyticsKey(accessToken)
+  waitFor(1000, 'Config warmup')
+  const response = await fetchAnalyticsKey(accessToken)
+  const analyticsKey = (await response.json()) as AnalyticsKey
+  return analyticsKey
+}
+
+const warmUpAnalytics = async () => {
+  const accessToken = await warmUpIdp()
+  const token = accessToken.access_token
+  accessToken.access_token = ''
+  core.info(`Got response:\n${JSON.stringify(accessToken, null, 2)}`)
+
+  const analyticsKey = await warmUpConfig(token)
+  core.info(`Got response:\n${JSON.stringify(analyticsKey, null, 2)}`)
 }

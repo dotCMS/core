@@ -107,8 +107,9 @@ public class IntegrityDataGenerationJob extends DotStatefulJob {
 
     /**
      * Encapsulates Scheduler to use.
+     *
      * @return a scheduler
-     * @throws SchedulerException
+     *  @throws SchedulerException when getting scheduler
      */
     public static Scheduler getJobScheduler() throws SchedulerException {
         return QuartzUtils.getScheduler();
