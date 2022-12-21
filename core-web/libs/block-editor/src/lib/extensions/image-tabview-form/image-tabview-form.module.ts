@@ -13,7 +13,6 @@ import { DotImageCardSkeletonComponent } from './components/dot-image-card-skele
 import { DotImageCardComponent } from './components/dot-image-card/dot-image-card.component';
 import { DotImageCardListComponent } from './components/dot-image-card-list/dot-image-card-list.component';
 import { ImageTabviewFormComponent } from './image-tabview-form.component';
-// import { PrimengModule } from '@dotcms/block-editor';
 
 @NgModule({
     imports: [CommonModule, FormsModule, ReactiveFormsModule, PrimengModule],
