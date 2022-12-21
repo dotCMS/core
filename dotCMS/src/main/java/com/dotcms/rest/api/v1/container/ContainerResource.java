@@ -683,7 +683,7 @@ public class ContainerResource implements Serializable {
 
         ActivityLogger.logInfo(this.getClass(),
                 "Save Container",
-                getInfoMessage(user, " saved " + container.getTitle()),
+                getInfoMessage(user, MessageConstants.SAVED + container.getTitle()),
                 host.getHostname());
 
         Logger.debug(this, () -> "The container: " + container.getIdentifier() + " has been saved");
@@ -693,7 +693,7 @@ public class ContainerResource implements Serializable {
         this.containerAPI.publish(container, user, pageMode.respectAnonPerms);
         ActivityLogger.logInfo(this.getClass(),
                 "Publish Container",
-                getInfoMessage(user, " published container: " + container.getIdentifier()));
+                getInfoMessage(user, MessageConstants.PUBLISHED + container.getIdentifier()));
 
         return Response.ok(new ResponseEntityView(new ContainerView(container))).build();
     }
@@ -731,7 +731,7 @@ public class ContainerResource implements Serializable {
 
         ActivityLogger.logInfo(this.getClass(),
                 "Update Container: " + containerForm.getIdentifier(),
-                getInfoMessage(user, " saved " + container.getTitle()),
+                getInfoMessage(user, MessageConstants.SAVED + container.getTitle()),
                 host.getHostname());
 
         container.setCode(containerForm.getCode());
@@ -889,7 +889,7 @@ public class ContainerResource implements Serializable {
             this.containerAPI.publish(container, user, pageMode.respectAnonPerms);
             ActivityLogger.logInfo(this.getClass(),
                     "Publish Container",
-                    getInfoMessage(user, " published container: " + container.getIdentifier()));
+                    getInfoMessage(user, MessageConstants.PUBLISHED + container.getIdentifier()));
         } else {
 
             Logger.error(this, "The Container with Id: " + containerId + " does not exist");
@@ -943,7 +943,7 @@ public class ContainerResource implements Serializable {
             this.containerAPI.unpublish(container, user, pageMode.respectAnonPerms);
             ActivityLogger.logInfo(this.getClass(),
                     "Unpublish Container",
-                    getInfoMessage(user, " unpublished container: " + container.getIdentifier()));
+                    getInfoMessage(user, MessageConstants.UNPUBLISHED + container.getIdentifier()));
         } else {
 
             Logger.error(this, "The Container with Id: " + containerId + " does not exist");
@@ -996,7 +996,7 @@ public class ContainerResource implements Serializable {
             this.containerAPI.archive(container, user, pageMode.respectAnonPerms);
             ActivityLogger.logInfo(this.getClass(),
                     "Doing Archive Container Action",
-                    getInfoMessage(user, " archived container: " + container.getIdentifier()));
+                    getInfoMessage(user, MessageConstants.ARCHIVED + container.getIdentifier()));
         } else {
 
             Logger.error(this, "Container with Id: " + containerId + " does not exist");
@@ -1049,7 +1049,7 @@ public class ContainerResource implements Serializable {
             this.containerAPI.unarchive(container, user, pageMode.respectAnonPerms);
             ActivityLogger.logInfo(this.getClass(),
                     "Doing Archive Container Action",
-                    getInfoMessage(user, " archived container: " + container.getIdentifier()));
+                    getInfoMessage(user, MessageConstants.ARCHIVED + container.getIdentifier()));
         } else {
 
             Logger.error(this, "Container with Id: " + containerId + " does not exist");
@@ -1102,13 +1102,13 @@ public class ContainerResource implements Serializable {
 
                 ActivityLogger.logInfo(this.getClass(),
                         "Done Delete Container",
-                        getInfoMessage(user, " deleted container: " + container.getIdentifier()));
+                        getInfoMessage(user, MessageConstants.DELETED + container.getIdentifier()));
                 return Response.ok(new ResponseEntityView(true)).build();
             }
 
             ActivityLogger.logInfo(this.getClass(),
                     "Can not Delete Container",
-                    getInfoMessage(user, " container: " + container.getIdentifier()));
+                    getInfoMessage(user, MessageConstants.CANNOT_DELETE + container.getIdentifier()));
             return Response.ok(new ResponseEntityView(false)).build();
         } else {
 
@@ -1153,7 +1153,7 @@ public class ContainerResource implements Serializable {
 
             ActivityLogger.logInfo(this.getClass(),
                     "Copy Container",
-                    getInfoMessage(user, " container: " + sourceContainer.getIdentifier()),
+                    getInfoMessage(user, MessageConstants.COPY + sourceContainer.getIdentifier()),
                     host.getHostname());
 
             Container copiedContainer = this.containerAPI.copy(sourceContainer, host, user,
@@ -1214,7 +1214,7 @@ public class ContainerResource implements Serializable {
                     this.containerAPI.delete(container, user, pageMode.respectAnonPerms);
                     ActivityLogger.logInfo(this.getClass(),
                             "Delete Container Action",
-                            getInfoMessage(user, " deleted template: " + container.getIdentifier()));
+                            getInfoMessage(user,MessageConstants.DELETED_TEMPLATE + container.getIdentifier()));
                     deletedContainersCount++;
                 } else {
                     Logger.error(this, "Container with Id: " + containerId + " does not exist");
@@ -1276,7 +1276,7 @@ public class ContainerResource implements Serializable {
                     this.containerAPI.publish(container, user, pageMode.respectAnonPerms);
                     ActivityLogger.logInfo(this.getClass(),
                             "Publish Container Action",
-                            getInfoMessage(user, " published container: " + container.getIdentifier()));
+                            getInfoMessage(user, MessageConstants.PUBLISHED + container.getIdentifier()));
                     publishedContainersCount++;
                 } else {
                     Logger.error(this, "Container with Id: " + containerId + " does not exist");
@@ -1337,7 +1337,7 @@ public class ContainerResource implements Serializable {
                     this.containerAPI.unpublish(container, user, pageMode.respectAnonPerms);
                     ActivityLogger.logInfo(this.getClass(),
                             "Unpublish Container Action",
-                            getInfoMessage(user, " unpublished container: " + container.getIdentifier()));
+                            getInfoMessage(user, MessageConstants.UNPUBLISHED + container.getIdentifier()));
                     unpublishedContainersCount++;
                 } else {
                     Logger.error(this, "Container with Id: " + containerId + " does not exist");
@@ -1399,7 +1399,7 @@ public class ContainerResource implements Serializable {
                     this.containerAPI.archive(container, user, pageMode.respectAnonPerms);
                     ActivityLogger.logInfo(this.getClass(),
                             "Archive Container Action",
-                            getInfoMessage(user, " archived container: " + container.getIdentifier()));
+                            getInfoMessage(user, MessageConstants.ARCHIVED + container.getIdentifier()));
                     archivedContainersCount++;
                 } else {
                     Logger.error(this, "Container with Id: " + containerId + " does not exist");
@@ -1461,7 +1461,7 @@ public class ContainerResource implements Serializable {
                     this.containerAPI.unarchive(container, user, pageMode.respectAnonPerms);
                     ActivityLogger.logInfo(this.getClass(),
                             "Unarchive Container Action",
-                            getInfoMessage(user, " unarchived container: " + container.getIdentifier()));
+                            getInfoMessage(user, MessageConstants.UNARCHIVED + container.getIdentifier()));
                     unarchivedContainersCount++;
                 } else {
                     Logger.error(this, "Container with Id: " + containerId + " does not exist");
@@ -1479,6 +1479,6 @@ public class ContainerResource implements Serializable {
     }
 
     private String getInfoMessage(User user, String message){
-        return String.format("User " + user.getPrimaryKey() + " " + message);
+        return String.format("User {0} {1}", user.getPrimaryKey(), message);
     }
 }
