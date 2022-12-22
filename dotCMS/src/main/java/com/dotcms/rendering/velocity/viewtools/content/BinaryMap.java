@@ -1,6 +1,9 @@
 package com.dotcms.rendering.velocity.viewtools.content;
 
 import java.io.File;
+import java.io.Serializable;
+import java.util.Map;
+import java.util.Optional;
 import org.apache.commons.lang.builder.ToStringBuilder;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.transform.field.LegacyFieldTransformer;
@@ -8,6 +11,8 @@ import com.dotcms.storage.model.Metadata;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.image.filter.ImageFilterAPI;
+import com.dotmarketing.image.focalpoint.FocalPoint;
+import com.dotmarketing.image.focalpoint.FocalPointAPIImpl;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
@@ -85,20 +90,41 @@ public class BinaryMap {
 		}
 		return "";
 	}
+    /**
+     * The name of the file
+     * @return the name
+     */
+    public Object get(String key) {
 
+        return getMeta().get(key);
+
+    }
+    
+    /**
+     * The name of the file
+     * @return the name
+     */
+    public Map<String,Serializable> getMeta() {
+        if(meta.get() != null) {
+            return meta.get().getMap();
+        }
+        return Map.of();
+    }
+    
 	/**
 	 * The rawURI is link to the actual full image
 	 * @return the rawUri
 	 */
-	public String getRawUri() {
-		return getName().length()>0? UtilMethods.espaceForVelocity("/contentAsset/raw-data/"+content.getIdentifier()+"/"+ field.variable()):"";
-	}
+    public String getRawUri() {
+        return getName().length() > 0
+            ? UtilMethods.espaceForVelocity("/dA/" + content.getIdentifier() + "/" + field.variable() + "/" + getName()+ "?language_id=" + content.getLanguageId())
+            : null;
+    }
 
     public String getShortyUrl() {
 
         if(meta.get() != null) {
-            String shorty = APILocator.getShortyAPI().shortify(content.getIdentifier());
-            return "/dA/"+shorty+"/"+field.variable()+"/" + getName();
+            return "/dA/"+getShorty()+"/"+field.variable()+"/" + getName()+ "?language_id=" + content.getLanguageId();
         } else {
 	        return null;
         }
@@ -128,9 +154,9 @@ public class BinaryMap {
 	 * @return the resizeUri
 	 */
 	public String getResizeUri() {
-	    if(getName().length()==0) return "";
+	    if(getName().length()==0) return null;
 	    final String imageId =  UtilMethods.isSet(content.getIdentifier()) ? content.getIdentifier() : content.getInode();
-		return "/contentAsset/image/"+imageId+"/"+field.variable()+"/filter/Resize"; 
+		return "/dA/"+imageId+"/"+field.variable()+"/"; 
 
 	}
 	
@@ -146,9 +172,9 @@ public class BinaryMap {
 	    StringBuilder uri=new StringBuilder();
 	    uri.append(getResizeUri());
 	    if(width!=null && width>0)
-	        uri.append("/resize_w/").append(width);
+	        uri.append("/").append(width).append("w");
 	    if(height!=null && height>0)
-	        uri.append("/resize_h/").append(height);
+	        uri.append("/").append(height).append("h");
 	    return uri.toString();
 	}
 	
@@ -181,7 +207,9 @@ public class BinaryMap {
 	 * @return
 	 */
 	public String getThumbnailUri(Integer width, Integer height, String background){
-	    if(getName().length()==0) return "";
+	    if(getName().length()==0) {
+	        return "";
+	    }
         StringBuilder uri=new StringBuilder();
         uri.append(getThumbnailUri());
         if(width!=null && width>0)
@@ -210,10 +238,42 @@ public class BinaryMap {
         }
 
         return ImageFilterAPI.apiInstance.apply().getWidthHeight(getFile()).height;
-        
-
     }
-
+    
+    public float getFpx() {
+        if(meta.get() ==null || !meta.get().isImage()) {
+            return 0;
+        }
+        Optional<FocalPoint> optPoint = new FocalPointAPIImpl().readFocalPoint(content.getInode(), field.variable());
+        
+        if(optPoint.isEmpty()) {
+            return 0;
+        }
+        return optPoint.get().x;
+    }
+    
+    public float getFpy() {
+        if(meta.get() ==null || !meta.get().isImage()) {
+            return 0;
+        }
+        Optional<FocalPoint> optPoint = new FocalPointAPIImpl().readFocalPoint(content.getInode(), field.variable());
+        
+        if(optPoint.isEmpty()) {
+            return 0;
+        }
+        return optPoint.get().y;
+    }
+    
+    public String getFocalPoint() {
+        return getFpx() + "," + getFpy();
+    }
+    
+    @SuppressWarnings("java:S1845")
+    public String getFocalpoint() {
+        return getFocalPoint();
+    }
+    
+    
     public int getWidth() {
         if(meta.get() ==null || !meta.get().isImage()) {
             return 0;
