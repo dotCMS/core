@@ -8,14 +8,12 @@ import {
     DotFavoritePageStore,
     DotFavoritePageActionState
 } from './store/dot-favorite-page.store';
-import { DotCMSContentlet, DotPageRenderState } from '@dotcms/dotcms-models';
+import { DotCMSContentlet } from '@dotcms/dotcms-models';
 
 export interface DotFavoritePageProps {
     favoritePageUrl?: string;
     isAdmin: boolean;
     favoritePage?: DotCMSContentlet;
-    pageRenderedHtml?: string;
-    pageState?: DotPageRenderState;
 }
 
 export interface DotFavoritePageFormData {
@@ -57,8 +55,7 @@ export class DotFavoritePageComponent implements OnInit, OnDestroy {
     }
 
     ngOnInit(): void {
-        // This is needed to avoid browser to cache preview thumbnail img when reloaded,
-        // since it's fetched from the same URL
+        // Needed to avoid browser to cache thumbnail img when reloaded, since it's fetched from the same URL
         this.timeStamp = new Date().getTime().toString();
 
         this.store.formState$
