@@ -13,6 +13,22 @@ describe('DotMenuComponent', () => {
     let fixture: ComponentFixture<DotMenuComponent>;
     let button: DebugElement;
 
+    const menuItems = [
+        {
+            command: () => {
+                //
+            },
+            label: 'Add'
+        },
+        {
+            command: () => {
+                //
+            },
+            label: 'Remove',
+            disabled: true
+        }
+    ];
+
     beforeEach(() => {
         TestBed.configureTestingModule({
             declarations: [DotMenuComponent],
@@ -24,21 +40,7 @@ describe('DotMenuComponent', () => {
         fixture = TestBed.createComponent(DotMenuComponent);
         component = fixture.componentInstance;
         component.float = true;
-        component.model = [
-            {
-                command: () => {
-                    //
-                },
-                label: 'Add'
-            },
-            {
-                command: () => {
-                    //
-                },
-                label: 'Remove',
-                disabled: true
-            }
-        ];
+        component.model = menuItems;
         fixture.detectChanges();
         button = fixture.debugElement.query(By.css('.dot-menu__button'));
     });
@@ -51,6 +53,11 @@ describe('DotMenuComponent', () => {
         button = fixture.debugElement.query(By.css('.dot-menu__button'));
 
         expect(button.attributes.float).not.toBeDefined();
+    });
+
+    it('should pass menu items to the Menu', () => {
+        const menu: Menu = fixture.debugElement.query(By.css('p-menu')).componentInstance;
+        expect(menu.model).toEqual(menuItems);
     });
 
     it('should show the menu list on click', () => {
