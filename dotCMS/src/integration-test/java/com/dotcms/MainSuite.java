@@ -2,8 +2,6 @@ package com.dotcms;
 
 import com.dotcms.analytics.AnalyticsAPIImplTest;
 import com.dotcms.analytics.bayesian.BayesianAPIImplTest;
-import com.dotcms.auth.providers.jwt.JsonWebTokenUtilsIntegrationTest;
-import com.dotcms.auth.providers.jwt.factories.ApiTokenAPITest;
 import com.dotcms.auth.providers.saml.v1.DotSamlResourceTest;
 import com.dotcms.auth.providers.saml.v1.SAMLHelperTest;
 import com.dotcms.cache.lettuce.DotObjectCodecTest;
@@ -234,6 +232,7 @@ import org.junit.runners.Suite.SuiteClasses;
         ExperimentAPIImpIT.class,
         ExperimentWebAPIImplIT.class,
         AccessTokenRenewJobTest.class,
+        Task220825CreateVariantFieldTest.class,
         Task221007AddVariantIntoPrimaryKeyTest.class,
         ContentletWebAPIImplIntegrationTest.class, // moved to top because of failures on GHA
         DependencyBundlerTest.class, // moved to top because of failures on GHA

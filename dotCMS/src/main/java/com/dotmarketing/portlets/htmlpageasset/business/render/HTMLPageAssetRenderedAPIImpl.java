@@ -299,16 +299,25 @@ public class HTMLPageAssetRenderedAPIImpl implements HTMLPageAssetRenderedAPI {
                 .getPageHTML(context.getPageMode());
 
         return APILocator.getExperimentsAPI().isAnyExperimentRunning() ?
-                injectExperimentJSCode(pageHTML) : pageHTML;
+                injectExperimentJSCode(pageHTML) : injectNoExperimentCode(pageHTML);
     }
 
     private String injectExperimentJSCode(final String pageHTML) {
+        return injectJSCode(pageHTML, getExperimentJSCode());
+    }
+
+    private String injectNoExperimentCode(final String pageHTML) {
+        return injectJSCode(pageHTML, getNotExperimentJSCode());
+    }
+
+
+    private String injectJSCode(final String pageHTML, final String JsCode) {
 
         if (StringUtils.containsIgnoreCase(pageHTML, "<head>")) {
             return StringUtils.replaceIgnoreCase(pageHTML, "<head>",
-                    "<head>" + getExperimentJSCode());
+                    "<head>" + JsCode);
         } else {
-            return EXPERIMENT_SCRIPT.get() + "\n" + pageHTML;
+            return JsCode + "\n" + pageHTML;
         }
     }
 
@@ -593,6 +602,10 @@ public class HTMLPageAssetRenderedAPIImpl implements HTMLPageAssetRenderedAPI {
                 .setLive(false).build(true, PageMode.PREVIEW_MODE)).getHtml();
 
         return new PageLivePreviewVersionBean(renderLive, renderWorking);
+    }
+
+    private String getNotExperimentJSCode() {
+        return "<SCRIPT>localStorage.removeItem('experiment_data');</SCRIPT>";
     }
 
     private String getExperimentJSCode() {
