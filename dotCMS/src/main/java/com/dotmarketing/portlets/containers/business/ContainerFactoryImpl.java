@@ -48,6 +48,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -118,68 +119,85 @@ public class ContainerFactoryImpl implements ContainerFactory {
 
 	}
 
-	private void insertInodeInDB(final Container container) throws DotDataException{
+	private void executeQueryWithData(final String SQL, final String inode, final String code, final String preLoop,
+			final String postLoop, final boolean isShowOnMenu, final String title,
+			final Date modDate, final String modUser, final int sortOrder, final String friendlyName, final int maxContentlets,
+			final boolean isUseDiv, final boolean isStaticify,
+			final String sortContentletsBy, final String luceneQuery, final String notes, final String identifier, boolean createNew)
+			throws DotDataException {
 		DotConnect dc = new DotConnect();
-		dc.setSQL(ContainerSQL.INSERT_INODE);
-		dc.addParam(container.getInode());
-		dc.addParam(container.getiDate());
-		dc.addParam(container.getOwner());
+		dc.setSQL(SQL);
+
+		if(createNew) {
+			dc.addParam(inode);
+		}
+
+		dc.addParam(code);
+		dc.addParam(preLoop);
+		dc.addParam(postLoop);
+		dc.addParam(isShowOnMenu);
+		dc.addParam(title);
+		dc.addParam(modDate);
+		dc.addParam(modUser);
+		dc.addParam(sortOrder);
+		dc.addParam(friendlyName);
+		dc.addParam(maxContentlets);
+		dc.addParam(isUseDiv);
+		dc.addParam(isStaticify);
+		dc.addParam(sortContentletsBy);
+		dc.addParam(luceneQuery);
+		dc.addParam(notes);
+		dc.addParam(identifier);
+
+		if(!createNew) {
+			dc.addParam(inode);
+		}
+
 		dc.loadResult();
 	}
 
 	private void insertContainerInDB(final Container container) throws DotDataException {
-		DotConnect dc = new DotConnect();
-		dc.setSQL(ContainerSQL.INSERT_CONTAINER);
-		dc.addParam(container.getInode());
-		dc.addParam(container.getCode());
-		dc.addParam(container.getPreLoop());
-		dc.addParam(container.getPostLoop());
-		dc.addParam(container.isShowOnMenu());
-		dc.addParam(container.getTitle());
-		dc.addParam(container.getModDate());
-		dc.addParam(container.getModUser());
-		dc.addParam(container.getSortOrder());
-		dc.addParam(container.getFriendlyName());
-		dc.addParam(container.getMaxContentlets());
-		dc.addParam(container.isUseDiv());
-		dc.addParam(container.isStaticify());
-		dc.addParam(container.getSortContentletsBy());
-		dc.addParam(container.getLuceneQuery());
-		dc.addParam(container.getNotes());
-		dc.addParam(container.getIdentifier());
-		dc.loadResult();
+		executeQueryWithData(ContainerSQL.INSERT_CONTAINER, container.getInode(),
+				container.getCode(), container.getPreLoop(), container.getPostLoop(),
+				container.isShowOnMenu(), container.getTitle(), container.getModDate(),
+				container.getModUser(), container.getSortOrder(),
+				container.getFriendlyName(), container.getMaxContentlets(), container.isUseDiv(),
+				container.isStaticify(), container.getSortContentletsBy(),
+				container.getLuceneQuery(), container.getNotes(), container.getIdentifier(), true);
 	}
-
-	private void updateInodeInDB(final Container container) throws DotDataException{
-		DotConnect dc = new DotConnect();
-		dc.setSQL(ContainerSQL.UPDATE_INODE);
-		dc.addParam(container.getiDate());
-		dc.addParam(container.getOwner());
-		dc.addParam(container.getInode());
-		dc.loadResult();
-	}
-
 	private void updateContainerInDB(final Container container) throws DotDataException {
+		executeQueryWithData(ContainerSQL.UPDATE_CONTAINER, container.getInode(),
+				container.getCode(), container.getPreLoop(), container.getPostLoop(),
+				container.isShowOnMenu(), container.getTitle(), container.getModDate(),
+				container.getModUser(), container.getSortOrder(),
+				container.getFriendlyName(), container.getMaxContentlets(), container.isUseDiv(),
+				container.isStaticify(), container.getSortContentletsBy(),
+				container.getLuceneQuery(), container.getNotes(), container.getIdentifier(), false);
+	}
+
+	private void executeQueryWithData(final String SQL, final String inode, final Date iDate, final String owner, boolean createNew)
+			throws DotDataException {
 		DotConnect dc = new DotConnect();
-		dc.setSQL(ContainerSQL.UPDATE_CONTAINER);
-		dc.addParam(container.getCode());
-		dc.addParam(container.getPreLoop());
-		dc.addParam(container.getPostLoop());
-		dc.addParam(container.isShowOnMenu());
-		dc.addParam(container.getTitle());
-		dc.addParam(container.getModDate());
-		dc.addParam(container.getModUser());
-		dc.addParam(container.getSortOrder());
-		dc.addParam(container.getFriendlyName());
-		dc.addParam(container.getMaxContentlets());
-		dc.addParam(container.isUseDiv());
-		dc.addParam(container.isStaticify());
-		dc.addParam(container.getSortContentletsBy());
-		dc.addParam(container.getLuceneQuery());
-		dc.addParam(container.getNotes());
-		dc.addParam(container.getIdentifier());
-		dc.addParam(container.getInode());
+		dc.setSQL(SQL);
+
+		if(createNew) {
+			dc.addParam(inode);
+		}
+
+		dc.addParam(iDate);
+		dc.addParam(owner);
+
+		if(!createNew) {
+			dc.addParam(inode);
+		}
+
 		dc.loadResult();
+	}
+	private void insertInodeInDB(final Container container) throws DotDataException{
+		executeQueryWithData(ContainerSQL.INSERT_INODE, container.getInode(), container.getiDate(), container.getOwner(), true);
+	}
+	private void updateInodeInDB(final Container container) throws DotDataException{
+		executeQueryWithData(ContainerSQL.UPDATE_INODE, container.getInode(), container.getiDate(), container.getOwner(), false);
 	}
 
 	@Override
