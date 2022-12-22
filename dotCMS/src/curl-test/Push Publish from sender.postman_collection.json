@@ -659,12 +659,9 @@
 									"listen": "test",
 									"script": {
 										"exec": [
-											"pm.test(\"Bundle uploaded sucessfully\", function () {",
-											"",
-											"    checkBundleStatus = eval(pm.collectionVariables.get(\"checkBundleStatus\", checkBundleStatus.toString()));",
-											"",
+											"pm.test(\"Checking that PPOW - HP - status is successfull\", function () {",
 											"    pm.response.to.have.status(200);",
-											"",
+											"    checkBundleStatus = eval(pm.collectionVariables.get(\"checkBundleStatus\", checkBundleStatus.toString()));",
 											"    checkBundleStatus(pm.response.text(), [\"bundleSuccess\", \"endpointSuccess\"], \"PPOW - HP - check success status\");",
 											"});"
 										],
@@ -1269,12 +1266,9 @@
 									"listen": "test",
 									"script": {
 										"exec": [
-											"pm.test(\"Bundle uploaded sucessfully\", function () {",
-											"",
-											"    checkBundleStatus = eval(pm.collectionVariables.get(\"checkBundleStatus\", checkBundleStatus.toString()));",
-											"",
+											"pm.test(\"Checking that PPOW - IT - status fails as expected\", function () {",
 											"    pm.response.to.have.status(200);",
-											"",
+											"    checkBundleStatus = eval(pm.collectionVariables.get(\"checkBundleStatus\", checkBundleStatus.toString()));",
 											"    checkBundleStatus(pm.response.text(), [\"endpointInvalidtoken\"], \"PPOW - IT - check failed status\");",
 											"});",
 											""
@@ -2111,12 +2105,9 @@
 									"listen": "test",
 									"script": {
 										"exec": [
-											"pm.test(\"Bundle uploaded sucessfully\", function () {",
-											"",
-											"    checkBundleStatus = eval(pm.collectionVariables.get(\"checkBundleStatus\", checkBundleStatus.toString()));",
-											"",
+											"pm.test(\"Checking that PPJWT - UOW - status is successfull\", function () {",
 											"    pm.response.to.have.status(200);",
-											"",
+											"    checkBundleStatus = eval(pm.collectionVariables.get(\"checkBundleStatus\", checkBundleStatus.toString()));",
 											"    checkBundleStatus(pm.response.text(), [\"endpointSuccess\"], \"PPJWT - UOW - check success status\");",
 											"});"
 										],
@@ -2237,13 +2228,7 @@
 					"    console.log(responseBody.trim().length, responseBody.trim().length === 0);",
 					"    if (responseBody.trim().length === 0){",
 					"        console.log('AGAIN 1');",
-					"",
-					"        var start = new Date().getTime();",
-					"        var end = start;",
-					"        while(end < start + 1000) {",
-					"            end = new Date().getTime();",
-					"        }",
-					"",
+					"        setTimeout(function() { console.log('Waiting has ended') }, 15000);",
 					"        postman.setNextRequest(requestToRepeat);",
 					"    } else {",
 					"",
@@ -2264,7 +2249,10 @@
 					"                testcase = caseToTest;",
 					"            });",
 					"",
-					"        if ('endpointInvalidtoken' !== testcase && (htmlWithoutSpace.includes(bundleWaitingPublish) || htmlWithoutSpace.includes(pendingStatus) || htmlWithoutSpace.includes(bundlingStatus) || htmlWithoutSpace.includes(noResultFound) || htmlWithoutSpace.includes(publishingBundle) || htmlWithoutSpace.includes(bundleReceived) || htmlWithoutSpace.includes('No bundle found with the given ID.'))) {",
+					"        if (htmlWithoutSpace.includes(pendingStatus) || htmlWithoutSpace.includes(bundleWaitingPublish)) {",
+					"            setTimeout(function() { console.log('Waiting for pending/waiting for publishing bundle status to finish...') }, 15000);",
+					"            postman.setNextRequest(requestToRepeat);",
+					"        } else if ('endpointInvalidtoken' !== testcase && (htmlWithoutSpace.includes(bundlingStatus) || htmlWithoutSpace.includes(noResultFound) || htmlWithoutSpace.includes(publishingBundle) || htmlWithoutSpace.includes(bundleReceived) || htmlWithoutSpace.includes('No bundle found with the given ID.'))) {",
 					"            var failingBundleId = pm.collectionVariables.get(\"bundleId\");",
 					"            console.log('No bundle found with the given ID: ' + failingBundleId);",
 					"            console.log(htmlWithoutSpace);",
