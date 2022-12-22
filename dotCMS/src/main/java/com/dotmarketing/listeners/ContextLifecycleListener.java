@@ -12,6 +12,7 @@ import com.dotmarketing.quartz.QuartzUtils;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import io.vavr.control.Try;
+import java.util.Optional;
 import org.apache.logging.log4j.core.async.BasicAsyncLoggerContextSelector;
 
 import javax.servlet.ServletContext;
@@ -19,6 +20,7 @@ import javax.servlet.ServletContextEvent;
 import javax.servlet.ServletContextListener;
 import javax.websocket.server.ServerContainer;
 import java.io.File;
+import org.apache.logging.log4j.core.selector.BasicContextSelector;
 
 /**
  * @author Andres Olarte
@@ -79,11 +81,13 @@ public class ContextLifecycleListener implements ServletContextListener {
 
         // Do not reconfigure if using global configuration.  Remove this if we move
         // a full global configuration
-        if (System.getProperty("Log4jContextSelector")
-                .equals(BasicAsyncLoggerContextSelector.class.getName())) {
-            Log4jUtil.initializeFromPath(path);
-        } else {
+        // This is called infrequently on context startup so do not need to cache
+        // getting system property
+        String log4jContextSelector = System.getProperty("Log4jContextSelector");
+        if (log4jContextSelector != null && log4jContextSelector.equals(BasicAsyncLoggerContextSelector.class.getName())
+        || log4jContextSelector.equals(BasicContextSelector.class.getName())) {
             Logger.debug(this, "Reinitializing configuration from " + path);
+            Log4jUtil.initializeFromPath(path);
         }
 
         installWebSocket(arg0.getServletContext());
