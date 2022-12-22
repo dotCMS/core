@@ -18,21 +18,21 @@ public interface AnalyticsAPI {
 
     String ANALYTICS_IDP_URL_KEY = "analytics.idp.url";
 
-    String ANALYTICS_ACCESS_TOKEN_TTL_KEY = "analytics.access-token.ttl";
+    String ANALYTICS_ACCESS_TOKEN_TTL_KEY = "analytics.accesstoken.ttl";
     int ANALYTICS_ACCESS_TOKEN_TTL = Config.getIntProperty(
         ANALYTICS_ACCESS_TOKEN_TTL_KEY,
         (int) TimeUnit.HOURS.toSeconds(1));
 
-    String ANALYTICS_ACCESS_TOKEN_TTL_WINDOW_KEY = "analytics.access-token.ttl.window";
+    String ANALYTICS_ACCESS_TOKEN_TTL_WINDOW_KEY = "analytics.accesstoken.ttlwindow";
     int ANALYTICS_ACCESS_TOKEN_TTL_WINDOW = Config.getIntProperty(
         ANALYTICS_ACCESS_TOKEN_TTL_WINDOW_KEY,
         (int) TimeUnit.MINUTES.toSeconds(1));
 
-    String ANALYTICS_ACCESS_TOKEN_RENEW_ATTEMPTS_KEY = "analytics.access-token.renew-attempts";
+    String ANALYTICS_ACCESS_TOKEN_RENEW_ATTEMPTS_KEY = "analytics.accesstoken.renewattempts";
     int ANALYTICS_ACCESS_TOKEN_RENEW_ATTEMPTS = Config.getIntProperty(ANALYTICS_ACCESS_TOKEN_RENEW_ATTEMPTS_KEY, 3);
     int ANALYTICS_ACCESS_TOKEN_RENEW_TIMEOUT = 1000;
 
-    String ANALYTICS_KEY_RENEW_ATTEMPTS_KEY = "analytics.key.renew-attempts";
+    String ANALYTICS_KEY_RENEW_ATTEMPTS_KEY = "analytics.key.renewattempts";
     int ANALYTICS_KEY_RENEW_ATTEMPTS = Config.getIntProperty(ANALYTICS_KEY_RENEW_ATTEMPTS_KEY, 3);
     int ANALYTICS_KEY_RENEW_TIMEOUT = 1000;
 
@@ -83,6 +83,15 @@ public interface AnalyticsAPI {
      * @throws AnalyticsException if analytics key cannot be fetched
      */
     String getAnalyticsKey(Host host) throws AnalyticsException;
+
+    /**
+     * Reset analytics key to the app storage by requesting it again to the configuration server.
+     *
+     * @param analyticsApp resolved analytics app
+     * @param force force flag
+     * @throws AnalyticsException if analytics key cannot be extracted from response or when saving to app storage
+     */
+    void resetAnalyticsKey(AnalyticsApp analyticsApp, boolean force) throws AnalyticsException;
 
     /**
      * Reset analytics key to the app storage by requesting it again to the configuration server.

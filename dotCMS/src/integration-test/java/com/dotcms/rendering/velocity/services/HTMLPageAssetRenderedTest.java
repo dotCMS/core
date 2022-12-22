@@ -84,8 +84,8 @@ public class HTMLPageAssetRenderedTest {
     private static User systemUser;
     private static final String contentFallbackProperty = "DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE";
     private static final String pageFallbackProperty = "DEFAULT_PAGE_TO_DEFAULT_LANGUAGE";
-    private static final boolean contentFallbackDefaultValue = Config.getBooleanProperty(contentFallbackProperty,false);
-    private static final boolean pageFallbackDefaultValue =Config.getBooleanProperty(pageFallbackProperty,true);
+    private static  boolean contentFallbackDefaultValue ;
+    private static  boolean pageFallbackDefaultValue;
     private static Folder folder;
     private static final List<String> contentletsIds = new ArrayList<>();
     private static ContentletAPI contentletAPI;
@@ -95,6 +95,12 @@ public class HTMLPageAssetRenderedTest {
     private static Host site;
     private static Persona persona;
     private static Visitor visitor;
+
+    @BeforeClass
+    public static void setConfigVariable (){
+        contentFallbackDefaultValue = Config.getBooleanProperty(contentFallbackProperty,false);
+        pageFallbackDefaultValue =Config.getBooleanProperty(pageFallbackProperty,true);
+    }
 
     @DataProvider
     public static Object[][] cases() throws Exception {
@@ -1231,7 +1237,7 @@ public class HTMLPageAssetRenderedTest {
                                     .setPageMode(PageMode.LIVE)
                                     .build(),
                             mockRequest, mockResponse);
-            assertTrue(html, html.isEmpty());
+            assertTrue(html, html.replace(getNotExperimentJsCode(), "").isEmpty());
 
             WebAssetFactory.unArchiveAsset(container);
             WebAssetFactory.publishAsset(container, systemUser);
@@ -1371,7 +1377,7 @@ public class HTMLPageAssetRenderedTest {
                         .setPageMode(PageMode.LIVE)
                         .build(),
                 mockRequest, mockResponse);
-        Assert.assertEquals("content2content1", html);
+        Assert.assertEquals(getNotExperimentJsCode() + "content2content1", html);
     }
 
     /**
@@ -1424,7 +1430,7 @@ public class HTMLPageAssetRenderedTest {
                         .setPageMode(PageMode.LIVE)
                         .build(),
                 mockRequest, mockResponse);
-        Assert.assertEquals("content2content1", html);
+        Assert.assertEquals(getNotExperimentJsCode() + "content2content1", html);
     }
 
     /**
@@ -1469,7 +1475,7 @@ public class HTMLPageAssetRenderedTest {
                     "<div data-dot-object=\"contentlet\" .*>.*</div>" +
                 "</div>";
 
-        assertTrue(html.matches(regexExpected));
+        assertTrue(html.replace(getNotExperimentJsCode(), "").matches(regexExpected));
     }
 
 
@@ -1744,7 +1750,7 @@ public class HTMLPageAssetRenderedTest {
                         .setPageMode(PageMode.LIVE)
                         .build(),
                 mockRequest, mockResponse);
-        Assert.assertEquals(html , "content1content2content1content2");
+        Assert.assertEquals( html , getNotExperimentJsCode() + "content1content2content1content2");
     }
 
     /**
@@ -2023,5 +2029,9 @@ public class HTMLPageAssetRenderedTest {
             this.container = container;
             this.UUID = UUID;
         }
+    }
+
+    private String getNotExperimentJsCode(){
+        return "<SCRIPT>localStorage.removeItem('experiment_data');</SCRIPT>\n";
     }
 }
