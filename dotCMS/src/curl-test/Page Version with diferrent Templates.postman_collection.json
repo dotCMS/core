@@ -498,26 +498,14 @@
 							}
 						}
 					],
-					"protocolProfileBehavior": {
-						"disableBodyPruning": true
-					},
 					"request": {
 						"auth": {
 							"type": "noauth"
 						},
 						"method": "GET",
 						"header": [],
-						"body": {
-							"mode": "raw",
-							"raw": "{ \n    \"contentlet\" : {\n        \"title\" : \"page_version_different_template_1\",\n        \"languageId\" : 1,\n        \"stInode\": \"c541abb1-69b3-4bc5-8430-5e09e5239cc8\",\n        \"url\": \"page_version_different_template_1\",\n        \"hostFolder\": \"8a7d5e23-da1e-420a-b4f0-471e7da8ea2d\",\n        \"template\": \"{{template_1_id}}\",\n        \"cachettl\": 0,\n        \"friendlyName\": \"friendlyName\"\n    }\n}",
-							"options": {
-								"raw": {
-									"language": "json"
-								}
-							}
-						},
 						"url": {
-							"raw": "{{serverURL}}/api/v1/page/render/page_version_different_template_1?language_id=1",
+							"raw": "{{serverURL}}/api/v1/page/render/page_version_different_template_1?language_id=1&mode=PREVIEW_MODE",
 							"host": [
 								"{{serverURL}}"
 							],
@@ -532,6 +520,10 @@
 								{
 									"key": "language_id",
 									"value": "1"
+								},
+								{
+									"key": "mode",
+									"value": "PREVIEW_MODE"
 								}
 							]
 						}
@@ -570,26 +562,14 @@
 							}
 						}
 					],
-					"protocolProfileBehavior": {
-						"disableBodyPruning": true
-					},
 					"request": {
 						"auth": {
 							"type": "noauth"
 						},
 						"method": "GET",
 						"header": [],
-						"body": {
-							"mode": "raw",
-							"raw": "{ \n    \"contentlet\" : {\n        \"title\" : \"page_version_different_template_1\",\n        \"languageId\" : 1,\n        \"stInode\": \"c541abb1-69b3-4bc5-8430-5e09e5239cc8\",\n        \"url\": \"page_version_different_template_1\",\n        \"hostFolder\": \"8a7d5e23-da1e-420a-b4f0-471e7da8ea2d\",\n        \"template\": \"{{template_1_id}}\",\n        \"cachettl\": 0,\n        \"friendlyName\": \"friendlyName\"\n    }\n}",
-							"options": {
-								"raw": {
-									"language": "json"
-								}
-							}
-						},
 						"url": {
-							"raw": "{{serverURL}}/api/v1/page/render/page_version_different_template_1?language_id=1&variantName={{differentPageVersion_variantId}}",
+							"raw": "{{serverURL}}/api/v1/page/render/page_version_different_template_1?language_id=1&variantName={{differentPageVersion_variantId}}&mode=PREVIEW_MODE",
 							"host": [
 								"{{serverURL}}"
 							],
@@ -608,6 +588,10 @@
 								{
 									"key": "variantName",
 									"value": "{{differentPageVersion_variantId}}"
+								},
+								{
+									"key": "mode",
+									"value": "PREVIEW_MODE"
 								}
 							]
 						}
