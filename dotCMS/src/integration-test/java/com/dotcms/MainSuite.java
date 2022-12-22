@@ -231,6 +231,8 @@ import org.junit.runners.Suite.SuiteClasses;
         RulesAPIImplIntegrationTest.class,
         Task220825CreateVariantFieldTest.class,
         AnalyticsAPIImplTest.class,
+        ExperimentAPIImpIT.class,
+        ExperimentWebAPIImplIT.class,
         AccessTokenRenewJobTest.class,
         Task221007AddVariantIntoPrimaryKeyTest.class,
         ContentletWebAPIImplIntegrationTest.class, // moved to top because of failures on GHA
@@ -290,6 +292,13 @@ import org.junit.runners.Suite.SuiteClasses;
         com.dotcms.visitor.filter.logger.VisitorLoggerTest.class,
         com.dotcms.visitor.filter.characteristics.VisitorCharacterTest.class,
         com.dotcms.graphql.business.GraphqlAPITest.class,
+        com.dotcms.contenttype.test.ContentTypeTest.class,
+        com.dotcms.contenttype.test.DeleteFieldJobTest.class,
+        com.dotcms.contenttype.test.ContentTypeAPIImplTest.class,
+        com.dotcms.contenttype.test.ContentTypeBuilderTest.class,
+        com.dotcms.contenttype.test.ContentTypeFactoryImplTest.class,
+        com.dotcms.contenttype.test.ContentTypeImportExportTest.class,
+        com.dotcms.contenttype.test.FieldFactoryImplTest.class,
         com.dotcms.contenttype.test.JsonContentTypeTransformerTest.class,
         com.dotcms.contenttype.test.ContentResourceTest.class,
         com.dotcms.contenttype.test.FieldBuilderTest.class,
@@ -644,17 +653,7 @@ import org.junit.runners.Suite.SuiteClasses;
         VisitorsCurrentURLConditionletTest.class,
         VisitorsGeolocationConditionletTest.class,
         ManifestUtilTest.class,
-        ZipUtilTest.class,
-        ExperimentAPIImpIT.class,
-        ExperimentWebAPIImplIT.class,
-        // leave these last
-        com.dotcms.contenttype.test.ContentTypeTest.class,
-        com.dotcms.contenttype.test.DeleteFieldJobTest.class,
-        com.dotcms.contenttype.test.ContentTypeAPIImplTest.class,
-        com.dotcms.contenttype.test.ContentTypeBuilderTest.class,
-        com.dotcms.contenttype.test.ContentTypeFactoryImplTest.class,
-        com.dotcms.contenttype.test.ContentTypeImportExportTest.class,
-        com.dotcms.contenttype.test.FieldFactoryImplTest.class,
+        ZipUtilTest.class
 })
 public class MainSuite {
 
