@@ -215,7 +215,6 @@ jobs:
           db_type: ${{ matrix.db_type }}
           license_key: ${{ secrets.DOTCMS_LICENSE }}
           tests: ${{ needs.repo-metadata-job.outputs.commit_message }}
-          include_analytics: true
         if: success()
       - id: integration-tests-comment
         name: Integration Test Comment
