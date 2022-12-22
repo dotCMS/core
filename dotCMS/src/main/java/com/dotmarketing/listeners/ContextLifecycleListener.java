@@ -19,6 +19,7 @@ import javax.servlet.ServletContextEvent;
 import javax.servlet.ServletContextListener;
 import javax.websocket.server.ServerContainer;
 import java.io.File;
+import org.apache.logging.log4j.core.selector.BasicContextSelector;
 
 /**
  *
@@ -36,14 +37,14 @@ public class ContextLifecycleListener implements ServletContextListener {
 
         Try.run(() -> QuartzUtils.stopSchedulers())
                         .onFailure(e -> Logger.warn(ContextLifecycleListener.class, "Shutdown : " + e.getMessage()));
-        
+
         Try.run(() -> LicenseUtil.freeLicenseOnRepo())
                         .onFailure(e -> Logger.warn(ContextLifecycleListener.class, "Shutdown : " + e.getMessage()));
 
-        
+
         Try.run(() -> CacheLocator.getCacheAdministrator().shutdown())
                         .onFailure(e -> Logger.warn(ContextLifecycleListener.class, "Shutdown : " + e.getMessage()));
-        
+
 
 
         Try.run(() -> DotConcurrentFactory.getInstance().shutdownAndDestroy())
@@ -77,13 +78,16 @@ public class ContextLifecycleListener implements ServletContextListener {
 			Logger.error(this,e.getMessage(),e);
 		}
 
-		// Do not reconfigure if using global configuration.  Remove this if we move
+        // Do not reconfigure if using global configuration.  Remove this if we move
         // a full global configuration
-        if (System.getProperty("Log4jContextSelector").equals(BasicAsyncLoggerContextSelector.class.getName()))
+        // This is called infrequently on context startup so do not need to cache
+        // getting system property
+        String log4jContextSelector = System.getProperty("Log4jContextSelector");
+        if (log4jContextSelector != null && log4jContextSelector.equals(BasicAsyncLoggerContextSelector.class.getName())
+        || log4jContextSelector.equals(BasicContextSelector.class.getName())) {
+            Logger.debug(this, "Reinitializing configuration from " + path);
             Log4jUtil.initializeFromPath(path);
-        else
-            Logger.debug(this, "Reinitializing configuration from "+path);
-
+        }
 
         installWebSocket(arg0.getServletContext());
 	}
