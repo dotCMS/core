@@ -1,5 +1,5 @@
 import { Component, OnInit, Input, ViewEncapsulation, forwardRef } from '@angular/core';
-import { PushPublishService } from '@services/push-publish/push-publish.service';
+import { PushPublishService } from '@dotcms/app/api/services/push-publish/push-publish.service';
 import { NG_VALUE_ACCESSOR, ControlValueAccessor } from '@angular/forms';
 import { DotEnvironment } from '@models/dot-environment/dot-environment';
 import { take } from 'rxjs/operators';

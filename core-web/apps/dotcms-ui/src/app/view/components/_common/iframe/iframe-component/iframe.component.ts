@@ -15,12 +15,13 @@ import { Subject } from 'rxjs';
 
 import { DotcmsEventsService, DotEventTypeWrapper, LoggerService } from '@dotcms/dotcms-js';
 
-import { DotLoadingIndicatorService } from '../dot-loading-indicator/dot-loading-indicator.service';
 import { IframeOverlayService } from '../service/iframe-overlay.service';
 import { DotIframeService } from '../service/dot-iframe/dot-iframe.service';
-import { DotUiColorsService } from '@services/dot-ui-colors/dot-ui-colors.service';
-import { DotRouterService } from '@services/dot-router/dot-router.service';
+
 import { DotFunctionInfo } from '@models/dot-function-info/dot-function-info.model';
+import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
+import { DotUiColorsService } from '@dotcms/app/api/services/dot-ui-colors/dot-ui-colors.service';
+import { DotLoadingIndicatorService } from '@dotcms/utils';
 
 @Component({
     selector: 'dot-iframe',

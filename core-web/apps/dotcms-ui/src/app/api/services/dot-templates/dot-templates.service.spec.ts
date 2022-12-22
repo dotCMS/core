@@ -7,10 +7,9 @@ import { CoreWebService } from '@dotcms/dotcms-js';
 
 import { DotHttpErrorManagerService } from '@services/dot-http-error-manager/dot-http-error-manager.service';
 import { DotTemplatesService, TEMPLATE_API_URL } from './dot-templates.service';
-import { CoreWebServiceMock } from '@tests/core-web.service.mock';
-import { DotTemplate } from '@models/dot-edit-layout-designer';
-import { DotActionBulkResult } from '@models/dot-action-bulk-result/dot-action-bulk-result.model';
+import { CoreWebServiceMock } from '@dotcms/utils-testing';
 import { of } from 'rxjs';
+import { DotActionBulkResult, DotTemplate } from '@dotcms/dotcms-models';
 
 const mockBulkResponseSuccess: DotActionBulkResult = {
     skippedCount: 0,

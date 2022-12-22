@@ -10,10 +10,11 @@ import { FocusableOption } from '@angular/cdk/a11y';
 export class SuggestionsListItemComponent implements FocusableOption, OnInit {
     @HostBinding('attr.role') role = 'list-item';
     @HostBinding('attr.tabindex') tabindex = '-1';
+    @HostBinding('attr.disabled') @Input() disabled = false;
 
     @HostBinding('attr.data-index')
     @Input()
-    index: number;
+    index: string;
 
     @Input() command: () => void;
     @Input() label = '';
@@ -28,7 +29,9 @@ export class SuggestionsListItemComponent implements FocusableOption, OnInit {
     @HostListener('mousedown', ['$event'])
     onMouseDown(e: MouseEvent) {
         e.preventDefault();
-        this.command();
+        if (!this.disabled) {
+            this.command();
+        }
     }
 
     ngOnInit() {

@@ -1,7 +1,13 @@
+import { animate, style, transition, trigger } from '@angular/animations';
 import { Component, EventEmitter, forwardRef, Input, OnInit, Output } from '@angular/core';
 import { ControlValueAccessor, FormControl, NG_VALUE_ACCESSOR } from '@angular/forms';
 
 @Component({
+    animations: [
+        trigger('enterAnimation', [
+            transition(':enter', [style({ opacity: 0 }), animate(500, style({ opacity: 1 }))])
+        ])
+    ],
     selector: 'dot-loop-editor',
     templateUrl: './dot-loop-editor.component.html',
     styleUrls: ['./dot-loop-editor.component.scss'],

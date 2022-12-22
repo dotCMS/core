@@ -12,18 +12,22 @@ import {
     DotBubbleMenuPluginProps,
     DotBubbleMenuViewProps,
     // Suggestions
-    suggestionOptions,
+    changeToItems,
     SuggestionsComponent,
     // Utils
     setBubbleMenuCoords,
     getNodeCoords,
     deleteByRange,
-    deleteByNode
+    deleteByNode,
+    ImageNode,
+    findParentNode,
+    tableChangeToItems
 } from '@dotcms/block-editor';
 
 import { LINK_FORM_PLUGIN_KEY, BUBBLE_FORM_PLUGIN_KEY } from '@dotcms/block-editor';
 
 import { getBubbleMenuItem, isListNode, popperModifiers } from '../utils';
+import { filter, take } from 'rxjs/operators';
 
 export const DotBubbleMenuPlugin = (options: DotBubbleMenuPluginProps) => {
     const component = options.component.instance;
@@ -208,6 +212,7 @@ export class DotBubbleMenuPluginView extends BubbleMenuView {
         const { items } = this.component.instance;
         const { activeItem } = this.getActiveNode();
         const activeMarks = this.getActiveMarks(['left', 'center', 'right']);
+
         // Update
         this.component.instance.selected = activeItem?.label;
         this.component.instance.items = this.updateActiveItems(items, activeMarks);
@@ -259,9 +264,55 @@ export class DotBubbleMenuPluginView extends BubbleMenuView {
 
     setMenuItems(doc, from) {
         const node = doc.nodeAt(from);
-        const type = node?.type.name;
+        const parentNode = findParentNode(this.editor.state.selection.$from);
+        const type = parentNode.type.name === 'table' ? 'table' : node?.type.name;
+
         this.selectionNode = node;
         this.component.instance.items = getBubbleMenuItem(type);
+    }
+
+    openImageProperties() {
+        const { open } = BUBBLE_FORM_PLUGIN_KEY.getState(this.editor.state);
+        const { alt, src, title, data } = this.editor.getAttributes(ImageNode.name);
+        const { title: dotTitle = '', asset } = data || {};
+
+        open
+            ? this.editor.commands.closeForm()
+            : this.editor.commands
+                  .openForm([
+                      {
+                          value: src || asset,
+                          key: 'src',
+                          label: 'path',
+                          required: true,
+                          controlType: 'text',
+                          type: 'text'
+                      },
+                      {
+                          value: alt || dotTitle,
+                          key: 'alt',
+                          label: 'alt',
+                          controlType: 'text',
+                          type: 'text'
+                      },
+                      {
+                          value: title || dotTitle,
+                          key: 'title',
+                          label: 'caption',
+                          controlType: 'text',
+                          type: 'text'
+                      }
+                  ])
+                  .pipe(
+                      take(1),
+                      filter((data) => data != null)
+                  )
+                  .subscribe((data) => {
+                      requestAnimationFrame(() => {
+                          this.editor.commands.setImage({ ...data });
+                          this.editor.commands.closeForm();
+                      });
+                  });
     }
 
     /* Run commands */
@@ -327,9 +378,7 @@ export class DotBubbleMenuPluginView extends BubbleMenuView {
                 break;
 
             case 'properties':
-                // eslint-disable-next-line
-                const { open } = BUBBLE_FORM_PLUGIN_KEY.getState(this.editor.state);
-                open ? this.editor.commands.closeForm() : this.editor.commands.openForm();
+                this.openImageProperties();
                 break;
 
             case 'deleteNode':
@@ -357,11 +406,15 @@ export class DotBubbleMenuPluginView extends BubbleMenuView {
 
     changeToItems() {
         const allowedBlocks: string[] = this.editor.storage.dotConfig.allowedBlocks;
+        const parentNode = findParentNode(this.editor.state.selection.$from);
 
-        const changeToOptions =
-            allowedBlocks.length > 1
-                ? suggestionOptions.filter((item) => allowedBlocks.includes(item.id))
-                : suggestionOptions.filter((item) => item.id != 'horizontalLine');
+        let changeToOptions = parentNode.type.name === 'table' ? tableChangeToItems : changeToItems;
+
+        // means the user restrict the allowed blocks with the prop "allowedBlocks"
+        if (allowedBlocks.length > 1) {
+            changeToOptions = changeToOptions.filter((item) => allowedBlocks.includes(item.id));
+        }
+
         const changeTopCommands = {
             heading1: () => {
                 this.editor.chain().focus().clearNodes().setHeading({ level: 1 }).run();

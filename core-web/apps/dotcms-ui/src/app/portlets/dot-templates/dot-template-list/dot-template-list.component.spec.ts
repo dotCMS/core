@@ -4,8 +4,8 @@ import { ComponentFixture, fakeAsync, TestBed, tick } from '@angular/core/testin
 import { DotTemplateListComponent } from './dot-template-list.component';
 import { of, Subject } from 'rxjs';
 import { ActivatedRoute } from '@angular/router';
-import { DotMessageService } from '@services/dot-message/dot-messages.service';
-import { MockDotMessageService } from '@tests/dot-message-service.mock';
+import { DotMessageService } from '@dotcms/data-access';
+import { MockDotMessageService } from '@dotcms/utils-testing';
 import { By } from '@angular/platform-browser';
 import {
     CoreWebService,
@@ -18,12 +18,11 @@ import {
     SiteService,
     StringUtils
 } from '@dotcms/dotcms-js';
-import { DotTemplatesService } from '@services/dot-templates/dot-templates.service';
-import { DotHttpErrorManagerService } from '@services/dot-http-error-manager/dot-http-error-manager.service';
-import { DotAlertConfirmService } from '@services/dot-alert-confirm';
+import { DotTemplatesService } from '@dotcms/app/api/services/dot-templates/dot-templates.service';
+import { DotHttpErrorManagerService } from '@dotcms/app/api/services/dot-http-error-manager/dot-http-error-manager.service';
+import { DotAlertConfirmService } from '@dotcms/data-access';
 import { ConfirmationService, SharedModule } from 'primeng/api';
-import { dotEventSocketURLFactory } from '@tests/dot-test-bed';
-import { DotRouterService } from '@services/dot-router/dot-router.service';
+import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
 import { DotMessageDisplayService } from '@components/dot-message-display/services';
 import { DotListingDataTableModule } from '@components/dot-listing-data-table';
 import { CommonModule } from '@angular/common';
@@ -40,18 +39,18 @@ import { DotActionMenuButtonComponent } from '@components/_common/dot-action-men
 import { DotMessageSeverity, DotMessageType } from '@components/dot-message-display/model';
 import { DotAddToBundleComponent } from '@components/_common/dot-add-to-bundle/dot-add-to-bundle.component';
 import { ButtonModel } from '@models/action-header';
-import { DotTemplate } from '@models/dot-edit-layout-designer';
-import { DotActionBulkResult } from '@models/dot-action-bulk-result/dot-action-bulk-result.model';
+import { DotActionBulkResult, DotTemplate } from '@dotcms/dotcms-models';
 import { DialogService, DynamicDialogModule } from 'primeng/dynamicdialog';
 import { DotBulkInformationComponent } from '@components/_common/dot-bulk-information/dot-bulk-information.component';
 import { DotMessagePipeModule } from '@pipes/dot-message/dot-message-pipe.module';
 import { DotContentState } from '@dotcms/dotcms-models';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
-import { CoreWebServiceMock } from '@tests/core-web.service.mock';
-import { mockSites } from '@tests/site-service.mock';
-import { DotSiteBrowserService } from '@services/dot-site-browser/dot-site-browser.service';
-import { DotFormatDateService } from '@services/dot-format-date-service';
-import { DotFormatDateServiceMock } from '@dotcms/app/test/format-date-service.mock';
+import { CoreWebServiceMock } from '@dotcms/utils-testing';
+import { mockSites } from '@dotcms/utils-testing';
+import { DotSiteBrowserService } from '@dotcms/data-access';
+import { DotFormatDateService } from '@dotcms/app/api/services/dot-format-date-service';
+import { DotFormatDateServiceMock } from '@dotcms/utils-testing';
+import { dotEventSocketURLFactory } from '@dotcms/app/test/dot-test-bed';
 
 const templatesMock: DotTemplate[] = [
     {

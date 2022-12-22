@@ -153,7 +153,9 @@ const resolveCommits = async (): Promise<string[]> => {
       return []
     }
 
-    const commits = ((await response.json()) as Commit[]).map(c => c.sha)
+    const commits = (JSON.parse(await response.text()) as Commit[]).map(
+      c => c.sha
+    )
     core.info(
       `Found pull request ${pullRequest} commits:\n${commits.join(', ')}`
     )

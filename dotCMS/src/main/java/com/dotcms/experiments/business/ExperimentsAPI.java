@@ -1,5 +1,6 @@
 package com.dotcms.experiments.business;
 
+import com.dotcms.business.WrapInTransaction;
 import com.dotcms.experiments.model.AbstractExperiment;
 import com.dotcms.experiments.model.AbstractExperiment.Status;
 import com.dotcms.experiments.model.Experiment;
@@ -107,6 +108,16 @@ public interface ExperimentsAPI {
      * @return the updated Experiment
      */
     Experiment deleteVariant(String experimentId, String variantName, User user)
+            throws DotDataException, DotSecurityException;
+
+    /**
+     * Edits the description of the {@link com.dotcms.variant.model.Variant} with the given name
+     * from the {@link Experiment} with the given Id
+     * @return the updated Experiment
+     */
+    @WrapInTransaction
+    Experiment editVariantDescription(String experimentId, String variantName,
+            String newDescription, User user)
             throws DotDataException, DotSecurityException;
 
     /**

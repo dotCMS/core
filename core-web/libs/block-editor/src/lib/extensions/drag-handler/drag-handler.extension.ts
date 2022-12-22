@@ -131,10 +131,21 @@ export const DragHandler = (viewContainerRef: ViewContainerRef) => {
                     },
                     props: {
                         handleDOMEvents: {
-                            drop(view: EditorView) {
+                            drop(view: EditorView, dragEvent: DragEvent) {
+                                const directChildNode = getDirectChild(dragEvent.target);
+                                // Disable the drop in the table node;
+                                if (directChildNode.nodeName === 'TABLE') {
+                                    return true;
+                                }
+
                                 requestAnimationFrame(() => {
                                     hideDragHandler();
                                     deselectCurrentNode(view);
+                                    // remove table node because prosmirror duplicate the node on D&D
+                                    // https://github.com/ueberdosis/tiptap/issues/2250
+                                    if (nodeToBeDragged.nodeName === 'TABLE') {
+                                        removeNode(nodeToBeDragged);
+                                    }
                                 });
 
                                 return false;

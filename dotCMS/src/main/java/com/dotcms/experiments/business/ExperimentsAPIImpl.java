@@ -2,12 +2,14 @@ package com.dotcms.experiments.business;
 
 import static com.dotcms.experiments.model.AbstractExperiment.Status.DRAFT;
 import static com.dotcms.experiments.model.AbstractExperiment.Status.ENDED;
+import static com.dotcms.experiments.model.AbstractExperiment.Status.RUNNING;
 import static com.dotcms.experiments.model.AbstractExperimentVariant.EXPERIMENT_VARIANT_NAME_PREFIX;
 import static com.dotcms.experiments.model.AbstractExperimentVariant.EXPERIMENT_VARIANT_NAME_SUFFIX;
 
 import static com.dotcms.util.CollectionsUtils.set;
 
 import static com.dotcms.experiments.model.AbstractExperimentVariant.ORIGINAL_VARIANT;
+import static com.dotcms.variant.VariantAPI.DEFAULT_VARIANT;
 
 import com.dotcms.analytics.metrics.MetricsUtil;
 import com.dotcms.business.CloseDBIfOpened;
@@ -346,9 +348,27 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
             experimentToStart = experimentFromFactory.withScheduling(scheduling);
         }
 
-        final Experiment running = experimentToStart.withStatus(Status.RUNNING);
-        return save(running, user);
+        Experiment running = experimentToStart.withStatus(Status.RUNNING);
+        running = save(running, user);
 
+        publishContentOnExperimentVariants(user, running);
+
+        return running;
+
+    }
+
+    private void publishContentOnExperimentVariants(final User user,
+            final Experiment runningExperiment)
+            throws DotDataException, DotSecurityException {
+        DotPreconditions.isTrue(runningExperiment.status().equals(RUNNING),
+                "Experiment needs to be RUNNING");
+
+        final List<Contentlet> contentByVariants = contentletAPI.getAllContentByVariants(user, false,
+                runningExperiment.trafficProportion().variants().stream()
+                        .map(ExperimentVariant::id).filter((id) -> !id.equals(DEFAULT_VARIANT.name()))
+                        .toArray(String[]::new));
+
+        contentletAPI.publish(contentByVariants, user, false);
     }
 
     @Override
@@ -424,11 +444,18 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
         final String experimentId = experiment.getIdentifier();
         final String variantName = getVariantName(experimentId);
 
+        if(variantDescription.equals(ORIGINAL_VARIANT)) {
+            DotPreconditions.isTrue(
+                    experiment.trafficProportion().variants().stream().noneMatch((variant) ->
+                            variant.description().equals(ORIGINAL_VARIANT)),
+                    "Original Variant already created");
+        }
+
         variantAPI.save(Variant.builder().name(variantName)
                 .description(Optional.of(variantDescription)).build());
 
         APILocator.getMultiTreeAPI().copyVariantForPage(experiment.pageId(),
-                VariantAPI.DEFAULT_VARIANT.name(), variantName);
+                DEFAULT_VARIANT.name(), variantName);
 
         final Contentlet pageContentlet = contentletAPI
                 .findContentletByIdentifierAnyLanguage(experiment.pageId(), false);
@@ -437,7 +464,7 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
 
         final ExperimentVariant experimentVariant = ExperimentVariant.builder().id(variantName)
                 .description(variantDescription).weight(0)
-                .url(page.getPageUrl()+"?variantName="+variantName)
+                .url(page.getURI()+"?variantName="+variantName)
                 .build();
         return experimentVariant;
     }
@@ -467,6 +494,13 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
         final Variant toDelete = variantAPI.get(variantName)
                 .orElseThrow(()->new DoesNotExistException("Provided Variant not found"));
 
+        final String variantDescription = toDelete.description()
+                .orElseThrow(()->new DotStateException("Variant without description. Variant name: "
+                                + toDelete.name()));
+
+        DotPreconditions.isTrue(!variantDescription.equals(ORIGINAL_VARIANT),
+                ()->"Cannot delete Original Variant", IllegalArgumentException.class);
+
         final TreeSet<ExperimentVariant> updatedVariants =
                 new TreeSet<>(persistedExperiment.trafficProportion()
                 .variants().stream().filter((variant)->
@@ -480,6 +514,49 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
         final Experiment fromDB = save(withUpdatedTraffic, user);
         variantAPI.archive(toDelete.name());
         variantAPI.delete(toDelete.name());
+        return fromDB;
+
+    }
+
+    @Override
+    @WrapInTransaction
+    public Experiment editVariantDescription(String experimentId, String variantName,
+            String newDescription, final User user)
+            throws DotDataException, DotSecurityException {
+        final Experiment persistedExperiment = find(experimentId, user)
+                .orElseThrow(()->new DoesNotExistException("Experiment with provided id not found"));
+
+        DotPreconditions.isTrue(variantName!= null &&
+                        variantName.contains(shortyIdAPI.shortify(experimentId)), ()->"Invalid Variant provided",
+                IllegalArgumentException.class);
+
+        final Variant toEdit = variantAPI.get(variantName)
+                .orElseThrow(()->new DoesNotExistException("Provided Variant not found"));
+
+        final String currentDescription = toEdit.description()
+                .orElseThrow(()->new DotStateException("Variant without description. Variant name: "
+                        + toEdit.name()));
+
+        DotPreconditions.isTrue(!currentDescription.equals(ORIGINAL_VARIANT),
+                ()->"Cannot update Original Variant", IllegalArgumentException.class);
+
+        final TreeSet<ExperimentVariant> updatedVariants =
+                persistedExperiment.trafficProportion()
+                        .variants().stream().map((variant) -> {
+                            if (variant.id().equals(variantName)) {
+                                return variant.withDescription(newDescription);
+                            } else {
+                                return variant;
+                            }
+                        }).collect(Collectors.toCollection(TreeSet::new));
+
+        final TrafficProportion trafficProportion = persistedExperiment.trafficProportion()
+                .withVariants(updatedVariants);
+        final Experiment withUpdatedTraffic = persistedExperiment.withTrafficProportion(trafficProportion);
+        final Experiment fromDB = save(withUpdatedTraffic, user);
+
+        final Optional<Variant> variant = variantAPI.get(variantName);
+        variantAPI.update(variant.orElseThrow().withDescription(Optional.of(newDescription)));
         return fromDB;
 
     }

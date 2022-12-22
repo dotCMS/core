@@ -1,6 +1,9 @@
 @use "variables" as *;
 
 :host {
-    display: flex;
-    align-items: center;
+    padding: $spacing-1;
+
+    .readonly {
+        cursor: text;
+    }
 }

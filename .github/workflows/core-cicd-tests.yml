@@ -215,6 +215,7 @@ jobs:
           db_type: ${{ matrix.db_type }}
           license_key: ${{ secrets.DOTCMS_LICENSE }}
           tests: ${{ needs.repo-metadata-job.outputs.commit_message }}
+          include_analytics: true
         if: success()
       - id: integration-tests-comment
         name: Integration Test Comment
@@ -319,13 +320,13 @@ jobs:
           image_name: dotcms:${{ env.BUILD_HASH }}
       - id: run-postman-tests
         name: Run Postman Tests
+        timeout-minutes: 240
         uses: ./.github/actions/run-postman-tests
         with:
           built_image_name: ${{ steps.build-dotcms-image.outputs.built_image_name }}
           license_key: ${{ secrets.DOTCMS_LICENSE }}
           tests: ${{ needs.repo-metadata-job.outputs.commit_message }}
           export_report: ${{ env.PUBLISH_MODE == 'ALL' || env.PUBLISH_MODE == 'RESULTS' }}
-          include_analytics: true
       - id: postman-tests-comment
         name: Postman Test Comment
         uses: EnricoMi/publish-unit-test-result-action@v1

@@ -3,26 +3,28 @@ import { of, Observable, Subject, BehaviorSubject } from 'rxjs';
 
 import { pluck, take, map, catchError, tap, switchMap } from 'rxjs/operators';
 import { LoginService, User, HttpCode } from '@dotcms/dotcms-js';
-import { DotPageRenderState } from '../../../shared/models/dot-rendered-page-state.model';
-import {
-    DotPageRenderService,
-    DotPageRenderOptions
-} from '@services/dot-page-render/dot-page-render.service';
+import { DotPageRenderService } from '@dotcms/data-access';
 import { Injectable } from '@angular/core';
-import { DotContentletLockerService } from '@services/dot-contentlet-locker/dot-contentlet-locker.service';
-import { DotPersona } from '@shared/models/dot-persona/dot-persona.model';
-import { DotDevice } from '@shared/models/dot-device/dot-device.model';
+import { DotContentletLockerService } from '@dotcms/data-access';
+
+import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
+import { PageModelChangeEvent, PageModelChangeEventType } from '../dot-edit-content-html/models';
+import { HttpErrorResponse } from '@angular/common/http';
+import { DotESContentService } from '@dotcms/data-access';
 import {
     DotHttpErrorManagerService,
     DotHttpErrorHandled
-} from '@services/dot-http-error-manager/dot-http-error-manager.service';
-import { DotRouterService } from '@services/dot-router/dot-router.service';
-import { PageModelChangeEvent, PageModelChangeEventType } from '../dot-edit-content-html/models';
-import { HttpErrorResponse } from '@angular/common/http';
-import { DotPageRenderParameters } from '@models/dot-page/dot-rendered-page.model';
-import { DotESContentService } from '@dotcms/app/api/services/dot-es-content/dot-es-content.service';
-import { ESContent } from '@dotcms/app/shared/models/dot-es-content/dot-es-content.model';
-import { generateDotFavoritePageUrl } from '@dotcms/app/shared/dot-utils';
+} from '@dotcms/app/api/services/dot-http-error-manager/dot-http-error-manager.service';
+import {
+    DotPageRenderState,
+    DotPageRenderOptions,
+    DotDevice,
+    DotPersona,
+    DotCMSContentlet,
+    DotPageRenderParameters,
+    ESContent
+} from '@dotcms/dotcms-models';
+import { generateDotFavoritePageUrl } from '@dotcms/utils';
 
 @Injectable()
 export class DotPageStateService {
@@ -166,11 +168,11 @@ export class DotPageStateService {
     /**
      * Set the FavoritePageHighlight flag status
      *
-     * @param {boolean} highlight
+     * @param {DotCMSContentlet} favoritePage
      * @memberof DotPageStateService
      */
-    setFavoritePageHighlight(highlight: boolean): void {
-        this.currentState.favoritePage = highlight;
+    setFavoritePageHighlight(favoritePage: DotCMSContentlet): void {
+        this.currentState.favoritePage = favoritePage;
         this.state$.next(this.currentState);
     }
 
@@ -215,7 +217,7 @@ export class DotPageStateService {
                         .pipe(
                             take(1),
                             switchMap((response: ESContent) => {
-                                const favoritePage = response.resultsSize > 0;
+                                const favoritePage = response.jsonObjectView?.contentlets[0];
                                 const pageState = new DotPageRenderState(
                                     this.getCurrentUser(),
                                     page,

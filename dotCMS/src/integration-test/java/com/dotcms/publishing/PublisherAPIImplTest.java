@@ -62,6 +62,7 @@ import com.dotmarketing.portlets.categories.model.Category;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
+import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
@@ -75,6 +76,7 @@ import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.portlets.workflows.model.WorkflowAction;
 import com.dotmarketing.portlets.workflows.model.WorkflowScheme;
 import com.dotmarketing.portlets.workflows.model.WorkflowStep;
+import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.liferay.portal.model.User;
 import com.liferay.util.FileUtil;
@@ -94,6 +96,8 @@ import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.InetSocketAddress;
 import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -111,6 +115,7 @@ import org.apache.commons.io.FileUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.AfterClass;
+import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -1154,5 +1159,80 @@ public class PublisherAPIImplTest {
         manifestItemsMapTest.add(manifestItem, ManifestReason.INCLUDE_BY_USER.getMessage());
 
         assertManifestFile(manifestFile, manifestItemsMapTest);
+    }
+
+    /**
+     * Tests All filter related methods
+     *  First we mock real assets-path.
+     *  then we create a brand-new descriptor file then we..
+     *  Try different scenarios like removing the file then trying to locate it via finders using the key
+     *  Then we update the descriptor using the upsert method and verify the changes take place
+     *  Finally we test the descriptor can be removed and does not show up on the finders result
+     */
+    @Test
+    public void testFilterDescriptors() throws IOException {
+
+        final String realAssetsRootPath = Config.getStringProperty("ASSET_REAL_PATH", null);
+
+        try {
+            final Path base = Files.createTempDirectory("tmp_real_assets");
+            final String canonicalPath = base.toFile().getCanonicalPath();
+            Config.setProperty("ASSET_REAL_PATH", canonicalPath);
+
+            final Path path = Paths.get(canonicalPath, "server", "publishing-filters");
+
+            final File dir = path.toFile();
+            if (dir.exists()) {
+                Assert.assertTrue(dir.delete());
+            }
+
+            final PublisherAPIImpl publisherAPI = new PublisherAPIImpl();
+            publisherAPI.init();
+
+            Assert.assertTrue(path.toFile().exists());
+
+            final String filterKey = "foo";
+
+            final String title = "any";
+
+            Assert.assertFalse(publisherAPI.existsFilterDescriptor(filterKey));
+
+            final FilterDescriptor filterDescriptor = new FilterDescriptorDataGen().key(filterKey)
+                    .title(title).nextPersisted();
+
+            publisherAPI.upsertFilterDescriptor(filterDescriptor);
+
+            Assert.assertTrue(publisherAPI.existsFilterDescriptor(filterKey));
+
+            final FilterDescriptor descriptorByKey = publisherAPI.getFilterDescriptorByKey(
+                    filterKey);
+
+            Assert.assertEquals(filterDescriptor, descriptorByKey);
+
+            Assert.assertTrue(publisherAPI.deleteFilterDescriptor(filterKey));
+
+            Assert.assertFalse(publisherAPI.existsFilterDescriptor(filterKey));
+
+            publisherAPI.upsertFilterDescriptor(filterDescriptor);
+
+            Assert.assertTrue(publisherAPI.existsFilterDescriptor(filterKey));
+
+            final FilterDescriptor modified = new FilterDescriptorDataGen().key(filterKey)
+                    .title("modified").sort("1").forcePush(true).next();
+
+            publisherAPI.upsertFilterDescriptor(modified);
+
+            final FilterDescriptor afterUpsert = publisherAPI.getFilterDescriptorByKey(filterKey);
+
+            Assert.assertNotNull(afterUpsert);
+
+            Assert.assertEquals(afterUpsert.getTitle(), "modified");
+            Assert.assertEquals(afterUpsert.getSort(), "1");
+
+            Assert.assertTrue(publisherAPI.deleteFilterDescriptor(filterKey));
+        }finally {
+            Config.setProperty("ASSET_REAL_PATH", realAssetsRootPath);
+        }
+
     }
 }

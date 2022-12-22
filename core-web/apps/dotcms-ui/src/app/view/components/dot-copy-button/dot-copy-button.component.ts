@@ -1,6 +1,6 @@
-import { Component, OnInit, Input } from '@angular/core';
+import { ChangeDetectionStrategy, Component, Input, OnInit } from '@angular/core';
 import { DotClipboardUtil } from '@dotcms/app/api/util/clipboard/ClipboardUtil';
-import { DotMessageService } from '@services/dot-message/dot-messages.service';
+import { DotMessageService } from '@dotcms/data-access';
 
 /**
  * Icon button to copy to clipboard the string you pass to it,
@@ -13,7 +13,8 @@ import { DotMessageService } from '@services/dot-message/dot-messages.service';
 @Component({
     selector: 'dot-copy-button',
     templateUrl: './dot-copy-button.component.html',
-    styleUrls: ['./dot-copy-button.component.scss']
+    styleUrls: ['./dot-copy-button.component.scss'],
+    changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotCopyButtonComponent implements OnInit {
     @Input() copy = '';
@@ -25,10 +26,9 @@ export class DotCopyButtonComponent implements OnInit {
         private dotMessageService: DotMessageService
     ) {}
 
-
     ngOnInit() {
         this.tooltipText = this.tooltipText || this.dotMessageService.get('Copy');
-        this.label = this.label || this.dotMessageService.get('Copy');
+        this.label = this.label || this.dotMessageService.get('editpage.header.copy');
     }
 
     /**

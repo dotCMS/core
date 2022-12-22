@@ -28,6 +28,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
+import javax.ws.rs.FormParam;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.PUT;
@@ -338,6 +339,38 @@ public class ExperimentsResource {
         final User user = initData.getUser();
         final Experiment updatedExperiment =  experimentsAPI.deleteVariant(experimentId, variantName, user);
         return new ResponseEntitySingleExperimentView(updatedExperiment);
+    }
+
+    /**
+     * Updates an existing experiment accepting partial updates (PATCH). This means it is not needed to send
+     * the entire Experiment information but only what it is desired to update only. The rest
+     * of the information will remain as previously persisted.
+     *
+     * Returns the updated version of the Experiment.
+     */
+    @PUT
+    @Path("/{experimentId}/variants/{name}")
+    @JSONP
+    @NoCache
+    @Consumes({MediaType.APPLICATION_JSON, "application/javascript"})
+    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    public ResponseEntitySingleExperimentView updateVariant(@Context final HttpServletRequest request,
+            @Context final HttpServletResponse response,
+            @PathParam("experimentId") final String experimentId,
+            @PathParam("name") final String variantName,
+            ExperimentVariantForm experimentVariantForm) throws DotDataException, DotSecurityException {
+        final InitDataObject initData = getInitData(request, response);
+        final User user = initData.getUser();
+
+        final Optional<Experiment> experimentToUpdate =  experimentsAPI.find(experimentId, user);
+
+        if(experimentToUpdate.isEmpty()) {
+            throw new NotFoundException("Experiment with id: " + experimentId + " not found.");
+        }
+
+        final Experiment persistedExperiment = experimentsAPI.editVariantDescription(experimentId,
+                variantName, experimentVariantForm.getDescription(), user);
+        return new ResponseEntitySingleExperimentView(persistedExperiment);
     }
 
     /**

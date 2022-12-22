@@ -1,12 +1,12 @@
 import { DataTypePropertyComponent } from '.';
 import { ComponentFixture, waitForAsync } from '@angular/core/testing';
 import { DebugElement } from '@angular/core';
-import { MockDotMessageService } from '@tests/dot-message-service.mock';
-import { DOTTestBed } from '@tests/dot-test-bed';
-import { DotMessageService } from '@services/dot-message/dot-messages.service';
+import { MockDotMessageService } from '@dotcms/utils-testing';
+import { DOTTestBed } from '@dotcms/app/test/dot-test-bed';
+import { DotMessageService } from '@dotcms/data-access';
 import { UntypedFormGroup, UntypedFormControl } from '@angular/forms';
 import { By } from '@angular/platform-browser';
-import { dotcmsContentTypeFieldBasicMock } from '@tests/dot-content-types.mock';
+import { dotcmsContentTypeFieldBasicMock } from '@dotcms/utils-testing';
 
 describe('DataTypePropertyComponent', () => {
     let comp: DataTypePropertyComponent;
@@ -25,32 +25,30 @@ describe('DataTypePropertyComponent', () => {
 
     let group;
 
-    beforeEach(
-        waitForAsync(() => {
-            DOTTestBed.configureTestingModule({
-                declarations: [DataTypePropertyComponent],
-                imports: [],
-                providers: [{ provide: DotMessageService, useValue: messageServiceMock }]
-            });
+    beforeEach(waitForAsync(() => {
+        DOTTestBed.configureTestingModule({
+            declarations: [DataTypePropertyComponent],
+            imports: [],
+            providers: [{ provide: DotMessageService, useValue: messageServiceMock }]
+        });
 
-            fixture = DOTTestBed.createComponent(DataTypePropertyComponent);
-            comp = fixture.componentInstance;
+        fixture = DOTTestBed.createComponent(DataTypePropertyComponent);
+        comp = fixture.componentInstance;
 
-            group = new UntypedFormGroup({
-                name: new UntypedFormControl('')
-            });
+        group = new UntypedFormGroup({
+            name: new UntypedFormControl('')
+        });
 
-            comp.group = group;
-            comp.property = {
-                field: {
-                    ...dotcmsContentTypeFieldBasicMock,
-                    clazz: 'com.dotcms.contenttype.model.field.ImmutableRadioField'
-                },
-                name: 'name',
-                value: 'value'
-            };
-        })
-    );
+        comp.group = group;
+        comp.property = {
+            field: {
+                ...dotcmsContentTypeFieldBasicMock,
+                clazz: 'com.dotcms.contenttype.model.field.ImmutableRadioField'
+            },
+            name: 'name',
+            value: 'value'
+        };
+    }));
 
     it('should have a form', () => {
         fixture.detectChanges();

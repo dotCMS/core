@@ -4,7 +4,7 @@ import { DropdownModule } from 'primeng/dropdown';
 import { FormsModule } from '@angular/forms';
 import { DotDeviceSelectorComponent } from './dot-device-selector.component';
 import { DotIconModule } from '@dotcms/ui';
-import { DotDevicesService } from '@services/dot-devices/dot-devices.service';
+import { DotDevicesService } from '@dotcms/data-access';
 import { DotPipesModule } from '@pipes/dot-pipes.module';
 
 @NgModule({
