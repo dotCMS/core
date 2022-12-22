@@ -74,14 +74,22 @@ describe('DotMenuComponent', () => {
     });
 
     it('should close menus when click the button', () => {
-        button.triggerEventHandler('click', {});
+        button.triggerEventHandler('click', {
+            stopPropagation: () => {
+                //
+            }
+        });
         fixture.detectChanges();
 
         const menuList: Menu = fixture.debugElement.query(By.css('p-menu')).componentInstance;
 
         expect(menuList.visible).toEqual(true);
 
-        button.triggerEventHandler('click', `{}`);
+        button.triggerEventHandler('click', {
+            stopPropagation: () => {
+                //
+            }
+        });
 
         fixture.detectChanges();
         expect(menuList.visible).toEqual(false);

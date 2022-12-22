@@ -38,11 +38,11 @@ export class DotMenuComponent {
      * @memberof DotMenuComponent
      */
     toggle($event: MouseEvent): void {
+        $event.stopPropagation();
         this.menu.toggle($event);
 
         if (this.menu.visible) {
             // Skip 1 because the event bubbling capture the document.click
-            // keep just one menu open at the time.
             observableFromEvent(document, 'click')
                 .pipe(skip(1), take(1))
                 .subscribe(() => {
