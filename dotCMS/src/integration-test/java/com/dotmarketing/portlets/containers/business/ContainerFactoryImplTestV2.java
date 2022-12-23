@@ -64,13 +64,13 @@ public class ContainerFactoryImplTestV2 extends IntegrationTestBase {
 
         Container containerFromDB = APILocator.getContainerAPI().find(newContainer.getInode(), APILocator.systemUser(), false);
 
-        final Container container = FactoryLocator.getContainerFactory().find(newContainer.getInode());
+        final Container container = containerFactory.find(newContainer.getInode());
 
         assertNotNull(container);
         assertNotNull(container.getInode());
 
         APILocator.getContainerAPI().delete(container, APILocator.systemUser(), false);
-        assertNull(FactoryLocator.getContainerFactory().find(newContainer.getInode()));
+        assertNull(containerFactory.find(newContainer.getInode()));
     }
 
     @Test
@@ -91,7 +91,7 @@ public class ContainerFactoryImplTestV2 extends IntegrationTestBase {
 
         assertThrows(DotStateException.class,
                 ()->{
-                    FactoryLocator.getContainerFactory().save(container);
+                    containerFactory.save(container);
                 });
     }
 
@@ -115,16 +115,16 @@ public class ContainerFactoryImplTestV2 extends IntegrationTestBase {
         container.setInode(newContainerInode);
         container.setIdentifier(newContainerIdentifier);
 
-        final Container nonExistingContainer = FactoryLocator.getContainerFactory().find(newContainerInode);
+        final Container nonExistingContainer = containerFactory.find(newContainerInode);
         assertNull(nonExistingContainer);
 
-        FactoryLocator.getContainerFactory().save(container);
+        containerFactory.save(container);
 
-        final Container existingContainer = FactoryLocator.getContainerFactory().find(newContainerInode);
+        final Container existingContainer = containerFactory.find(newContainerInode);
         assertNotNull(existingContainer);
 
         APILocator.getContainerAPI().delete(existingContainer, APILocator.systemUser(), false);
-        assertNull(FactoryLocator.getContainerFactory().find(existingContainer.getInode()));
+        assertNull(containerFactory.find(existingContainer.getInode()));
     }
 
     @Test
@@ -147,25 +147,25 @@ public class ContainerFactoryImplTestV2 extends IntegrationTestBase {
         container.setInode(newContainerInode);
         container.setIdentifier(newContainerIdentifier);
 
-        final Container nonExistingContainer = FactoryLocator.getContainerFactory().find(newContainerInode);
+        final Container nonExistingContainer = containerFactory.find(newContainerInode);
         assertNull(nonExistingContainer);
 
-        FactoryLocator.getContainerFactory().save(container);
+        containerFactory.save(container);
 
-        Container existingContainer = FactoryLocator.getContainerFactory().find(newContainerInode);
+        Container existingContainer = containerFactory.find(newContainerInode);
         assertNotNull(existingContainer);
 
         existingContainer.setTitle("Updated title");
         existingContainer.setFriendlyName("Updated friendly name");
 
-        FactoryLocator.getContainerFactory().save(existingContainer);
+        containerFactory.save(existingContainer);
 
-        existingContainer = FactoryLocator.getContainerFactory().find(newContainerInode);
+        existingContainer = containerFactory.find(newContainerInode);
 
         assertEquals("Updated title",existingContainer.getTitle());
         assertEquals("Updated friendly name",existingContainer.getFriendlyName());
 
         APILocator.getContainerAPI().delete(existingContainer, APILocator.systemUser(), false);
-        assertNull(FactoryLocator.getContainerFactory().find(existingContainer.getInode()));
+        assertNull(containerFactory.find(existingContainer.getInode()));
     }
 }
