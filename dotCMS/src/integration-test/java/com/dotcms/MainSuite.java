@@ -232,7 +232,6 @@ import org.junit.runners.Suite.SuiteClasses;
         ExperimentAPIImpIT.class,
         ExperimentWebAPIImplIT.class,
         AccessTokenRenewJobTest.class,
-        Task220825CreateVariantFieldTest.class,
         Task221007AddVariantIntoPrimaryKeyTest.class,
         ContentletWebAPIImplIntegrationTest.class, // moved to top because of failures on GHA
         DependencyBundlerTest.class, // moved to top because of failures on GHA
