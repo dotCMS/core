@@ -65,7 +65,6 @@ export class DotContainerPropertiesComponent implements OnInit {
                 }
             });
 
-        //
         this.form.valueChanges
             .pipe(takeUntil(this.destroy$), startWith(this.form.value), pairwise())
             .subscribe(([prevValue, currValue]) => {
@@ -73,18 +72,38 @@ export class DotContainerPropertiesComponent implements OnInit {
                     invalidForm: !this.form.valid,
                     container: currValue
                 });
-                if (
-                    (prevValue.maxContentlets === 0 || prevValue.maxContentlets === null) &&
-                    currValue.maxContentlets > 0
-                ) {
+                if (this.IsShowContentTypes(prevValue, currValue)) {
                     this.showContentTypeAndCode();
-                } else if (
-                    (prevValue.maxContentlets > 0 || prevValue.maxContentlets === null) &&
-                    currValue.maxContentlets === 0
-                ) {
+                } else if (this.IsShowClearConfirmationModal(prevValue, currValue)) {
                     this.clearContentConfirmationModal(prevValue.maxContentlets || 1);
                 }
             });
+    }
+
+    /**
+     * check prev value and current value for showing the content type
+     * @param {*} prevValue
+     * @param {*} currValue
+     * @memberof DotContainerPropertiesComponent
+     */
+    IsShowContentTypes(prevValue, currValue) {
+        return (
+            (prevValue.maxContentlets === 0 || prevValue.maxContentlets === null) &&
+            currValue.maxContentlets > 0
+        );
+    }
+
+    /**
+     * check prev value and current value for showing confirmation modal
+     * @param {*} prevValue
+     * @param {*} currValue
+     * @memberof DotContainerPropertiesComponent
+     */
+    IsShowClearConfirmationModal(prevValue, currValue) {
+        return (
+            (prevValue.maxContentlets > 0 || prevValue.maxContentlets === null) &&
+            currValue.maxContentlets === 0
+        );
     }
 
     /**
@@ -209,7 +228,7 @@ export class DotContainerPropertiesComponent implements OnInit {
                 this.clearContentTypesAndCode();
             },
             reject: () => {
-                if (this.form.value.maxContentlets <= 0 || !this.form.value.maxContentlets) {
+                if (this.form.value.maxContentlets === 0 || !this.form.value.maxContentlets) {
                     this.form.get('maxContentlets').setValue(lastValue);
                 }
             },
