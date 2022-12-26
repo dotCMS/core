@@ -5,11 +5,33 @@ $nav-size: 80px;
 
 :host {
     background-color: $gray-bg;
-    border-left: solid 1px  $gray-lighter;
+    border-left: solid 1px $gray-lighter;
     display: flex;
     flex-shrink: 0;
     order: 2;
     width: $nav-size;
+    transition: background-color $basic-speed ease-in;
+
+    &.portlet-content {
+        top: $toolbar-height + $dot-secondary-toolbar-main-height - 1;
+    }
+
+    &.portlet-layout {
+        top: $toolbar-height + $dot-secondary-toolbar-main-height;
+    }
+
+    &.portlet-rules,
+    &.portlet-experiments {
+        top: $toolbar-height;
+    }
+
+    &.edit-page-variant-mode {
+        background-color: $brand-primary-100;
+
+        a:hover {
+            background-color: $brand-primary-100-hover;
+        }
+    }
 }
 
 .edit-page-nav {

@@ -34,13 +34,13 @@
 
                 <p-button
                     data-testId="variant-weight"
-                    label="{{ variant.weight | number: '2.2-2' }}% {{
+                    label="{{ variant.weight | number : '2.2-2' }}% {{
                         'experiments.configure.variants.weight' | dm
                     }}"
                     styleClass="p-button-sm p-button-link"
                 ></p-button>
 
-                <ng-container *ngIf="variant.id === defaultVariantId; else editableButtonTpl">
+                <ng-container *ngIf="variant.name === defaultVariantName; else editableButtonTpl">
                     <button
                         class="p-button-sm p-button-outlined no-padding"
                         (click)="goToEditPage.emit({variant, mode:'preview'})"
@@ -66,7 +66,7 @@
 
                 <button
                     class="p-button-sm p-button-danger p-button-text"
-                    [disabled]="variant.id === defaultVariantId"
+                    [disabled]="variant.name === defaultVariantName"
                     (click)="delete.emit(variant)"
                     data-testId="variant-delete-button"
                     label="{{ 'experiments.configure.variants.delete' | dm }}"

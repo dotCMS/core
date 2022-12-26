@@ -632,7 +632,7 @@ public class HTMLPageAssetRenderedAPIImplIntegrationTest extends IntegrationTest
                         .setPageMode(PageMode.LIVE)
                         .build(),
                 mockRequest, mockResponse);
-        Assert.assertEquals("<div>" + VariantAPI.DEFAULT_VARIANT.name() + " content-default-" + language.getId() + "</div>", html);
+        Assert.assertEquals(getNotExperimentJsCode() + "<div>" + VariantAPI.DEFAULT_VARIANT.name() + " content-default-" + language.getId() + "</div>", html);
     }
 
     /**
@@ -681,7 +681,7 @@ public class HTMLPageAssetRenderedAPIImplIntegrationTest extends IntegrationTest
                         .setPageMode(PageMode.LIVE)
                         .build(),
                 mockRequest, mockResponse);
-        Assert.assertEquals("<div></div>", html);
+        Assert.assertEquals(getNotExperimentJsCode() + "<div></div>", html);
     }
 
     /**
@@ -726,7 +726,7 @@ public class HTMLPageAssetRenderedAPIImplIntegrationTest extends IntegrationTest
                         .setPageMode(PageMode.LIVE)
                         .build(),
                 mockRequest, mockResponse);
-        Assert.assertEquals("<div>" + variant.name() + " content-default-" + language.getId() + "</div>", html);
+        Assert.assertEquals(getNotExperimentJsCode() + "<div>" + variant.name() + " content-default-" + language.getId() + "</div>", html);
     }
 
     /**
@@ -771,7 +771,7 @@ public class HTMLPageAssetRenderedAPIImplIntegrationTest extends IntegrationTest
                         .setPageMode(PageMode.LIVE)
                         .build(),
                 mockRequest, mockResponse);
-        Assert.assertEquals("<div>DEFAULT content-default-" + language.getId() + "</div>", html);
+        Assert.assertEquals(getNotExperimentJsCode() + "<div>DEFAULT content-default-" + language.getId() + "</div>", html);
     }
 
     /**
@@ -824,6 +824,7 @@ public class HTMLPageAssetRenderedAPIImplIntegrationTest extends IntegrationTest
                             .build(),
                     mockRequest, mockResponse);
             Assert.assertEquals(
+                    getNotExperimentJsCode() +
                     "<div>" + variant.name() + " content-default-" + defaultLanguage.getId()
                             + "</div>", html);
         }finally {
@@ -880,7 +881,7 @@ public class HTMLPageAssetRenderedAPIImplIntegrationTest extends IntegrationTest
                             .setPageMode(PageMode.LIVE)
                             .build(),
                     mockRequest, mockResponse);
-            Assert.assertEquals("<div></div>", html);
+            Assert.assertEquals(getNotExperimentJsCode() + "<div></div>", html);
         }finally {
             Config.setProperty("DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE", defaultContentToDefaultLanguage);
         }
@@ -933,6 +934,7 @@ public class HTMLPageAssetRenderedAPIImplIntegrationTest extends IntegrationTest
                             .build(),
                     mockRequest, mockResponse);
             Assert.assertEquals(
+                    getNotExperimentJsCode() +
                     "<div>DEFAULT content-default-" + defaultLanguage.getId()
                             + "</div>", html);
         }finally {
@@ -981,6 +983,7 @@ public class HTMLPageAssetRenderedAPIImplIntegrationTest extends IntegrationTest
                         .build(),
                 mockRequest, mockResponse);
         Assert.assertEquals(
+                getNotExperimentJsCode() +
                 "<div>" + variant.name() + " content-default-" + language.getId()
                         + "</div>", html);
     }
@@ -1042,6 +1045,7 @@ public class HTMLPageAssetRenderedAPIImplIntegrationTest extends IntegrationTest
                         .build(),
                 mockRequest, mockResponse);
         Assert.assertEquals(
+                getNotExperimentJsCode() +
                 "<div>" + variant.name() + " second-content-default-" + language.getId()
                         + "</div>", html);
     }
@@ -1110,6 +1114,7 @@ public class HTMLPageAssetRenderedAPIImplIntegrationTest extends IntegrationTest
                         .build(),
                 mockRequest, mockResponse);
         Assert.assertEquals(
+                        getNotExperimentJsCode() +
                 "<div>" + variant.name() + " second-content-default-" + language.getId()
                         + "</div>", html);
 
@@ -1129,6 +1134,7 @@ public class HTMLPageAssetRenderedAPIImplIntegrationTest extends IntegrationTest
                         .build(),
                 mockRequest, mockResponse);
         Assert.assertEquals(
+                    getNotExperimentJsCode() +
                 "<div>DEFAULT content-default-" + language.getId() + "</div>", html);
     }
 
@@ -1199,6 +1205,7 @@ public class HTMLPageAssetRenderedAPIImplIntegrationTest extends IntegrationTest
                         .build(),
                 mockRequest, mockResponse);
         Assert.assertEquals(
+                getNotExperimentJsCode() +
                 "<div>" + variant.name() + " second-content-default-" + language.getId()
                         + "</div>", html);
 
@@ -1220,6 +1227,7 @@ public class HTMLPageAssetRenderedAPIImplIntegrationTest extends IntegrationTest
                         .build(),
                 mockRequest, mockResponse);
         Assert.assertEquals(
+                getNotExperimentJsCode() +
                 "<div>DEFAULT content-default-" + language.getId() + "</div>", html);
     }
 
@@ -1268,7 +1276,7 @@ public class HTMLPageAssetRenderedAPIImplIntegrationTest extends IntegrationTest
                         .setPageMode(PageMode.LIVE)
                         .build(),
                 mockRequest, mockResponse);
-        Assert.assertEquals("<div>" + variant.name() + " content-default-" + language.getId() + "</div>", html);
+        Assert.assertEquals(getNotExperimentJsCode() + "<div>" + variant.name() + " content-default-" + language.getId() + "</div>", html);
     }
 
     /**
@@ -1313,7 +1321,7 @@ public class HTMLPageAssetRenderedAPIImplIntegrationTest extends IntegrationTest
                         .setPageMode(PageMode.LIVE)
                         .build(),
                 mockRequest, mockResponse);
-        Assert.assertEquals("<div>DEFAULT content-default-" + language.getId() + "</div>", html);
+        Assert.assertEquals(getNotExperimentJsCode() + "<div>DEFAULT content-default-" + language.getId() + "</div>", html);
     }
 
     private HttpServletRequest createHttpServletRequest(Language language, Host host, Variant variant,
@@ -1567,89 +1575,132 @@ public class HTMLPageAssetRenderedAPIImplIntegrationTest extends IntegrationTest
                     + "\n"
                     + "<script>window.jitsu = window.jitsu || (function(){(window.jitsuQ = window.jitsuQ || []).push(arguments);})</script>\n"
                     + "<SCRIPT>\n"
-                    + "let currentRunningExperimentsId = ['" + experiment.id().get() + "']\n"
+                    + "let experimentAlreadyCheck = sessionStorage.getItem(\"experimentAlreadyCheck\");\n"
                     + "\n"
-                    + "function shouldHitEndPoint() {\n"
-                    + "    let experimentData = localStorage.getItem('experiment_data');\n"
+                    + "if (!experimentAlreadyCheck) {\n"
+                    + "    let currentRunningExperimentsId = ['" + experiment.id().get() + "']\n"
                     + "\n"
-                    + "    if (experimentData) {\n"
-                    + "        let includedExperimentIds = JSON.parse(\n"
-                    + "            experimentData).includedExperimentIds;\n"
+                    + "    function shouldHitEndPoint() {\n"
+                    + "        let experimentData = localStorage.getItem('experiment_data');\n"
                     + "\n"
-                    + "        return !currentRunningExperimentsId.every(element => includedExperimentIds.includes(element));\n"
-                    + "    } else {\n"
-                    + "        return true;\n"
-                    + "    }\n"
-                    + "}\n"
+                    + "        if (experimentData) {\n"
+                    + "            let includedExperimentIds = JSON.parse(\n"
+                    + "                experimentData).includedExperimentIds;\n"
                     + "\n"
-                    + "window.addEventListener(\"experiment_data_loaded\", function (event) {\n"
-                    + "\n"
-                    + "    let experimentData = event.detail;\n"
-                    + "    console.log('experiment_data', experimentData);\n"
-                    + "    for (let i = 0; i < experimentData.experiments.length; i++){\n"
-                    + "        let pageUrl = experimentData.experiments[i].pageUrl;\n"
-                    + "\n"
-                    + "        let alternativePageUrl = experimentData.experiments[i].pageUrl.endsWith(\"/index\") ?\n"
-                    + "            experimentData.experiments[i].pageUrl.replace(\"/index\", \"\") :\n"
-                    + "            experimentData.experiments[i].pageUrl;\n"
-                    + "\n"
-                    + "        if (window.location.href.includes(pageUrl) || window.location.href.includes(alternativePageUrl)) {\n"
-                    + "\n"
-                    + "            let url = experimentData.experiments[i].variant.url\n"
-                    + "            const param = (url.includes(\"?\") ? \"&\" : \"?\") + \"redirect=true\";\n"
-                    + "            window.location.href = url + param;\n"
-                    + "            break;\n"
+                    + "            return !currentRunningExperimentsId.every(\n"
+                    + "                element => includedExperimentIds.includes(element));\n"
+                    + "        } else {\n"
+                    + "            return true;\n"
                     + "        }\n"
                     + "    }\n"
-                    + "});\n\n"
-                    + "if (shouldHitEndPoint()) {\n"
-                    + "    let experimentData = localStorage.getItem('experiment_data');\n"
-                    + "    let body = experimentData ?\n"
-                    + "        {\n"
-                    + "            exclude: JSON.parse(experimentData).includedExperimentIds\n"
-                    + "        } : {\n"
-                    + "            exclude: []\n"
-                    + "        };\n"
                     + "\n"
-                    + "    fetch('/api/v1/experiments/isUserIncluded', {\n"
-                    + "        method: 'POST',\n"
-                    + "        body: JSON.stringify(body),\n"
-                    + "        headers: {\n"
-                    + "            'Accept': 'application/json',\n"
-                    + "            'Content-Type': 'application/json'\n"
-                    + "        }\n"
-                    + "    })\n"
-                    + "    .then(response => response.json())\n"
-                    + "    .then(data => {\n"
-                    + "        if (data.entity.experiments) {\n"
-                    + "            let dataToStorage = Object.assign({}, data.entity);\n"
-                    + "            let oldExperimentData = JSON.parse(localStorage.getItem('experiment_data'));\n"
+                    + "    function cleanExperimentDataUp() {\n"
+                    + "        let experimentDataAsString = localStorage.getItem('experiment_data');\n"
                     + "\n"
-                    + "            delete dataToStorage['excludedExperimentIds'];\n"
+                    + "        if (experimentDataAsString) {\n"
+                    + "            let experimentData = JSON.parse(experimentDataAsString);\n"
+                    + "            experimentData.experiments = experimentData.experiments\n"
+                    + "            .filter(experiment => currentRunningExperimentsId.includes(\n"
+                    + "                experiment.id));\n"
                     + "\n"
-                    + "            dataToStorage.includedExperimentIds = [\n"
-                    + "                ...dataToStorage.includedExperimentIds,\n"
-                    + "                ...data.entity.excludedExperimentIds\n"
-                    + "            ];\n"
+                    + "            experimentData.includedExperimentIds = experimentData.includedExperimentIds\n"
+                    + "            .filter(experimentId => currentRunningExperimentsId.includes(\n"
+                    + "                experimentId));\n"
                     + "\n"
-                    + "            if (oldExperimentData) {\n"
-                    + "                dataToStorage.experiments = [\n"
-                    + "                    ...oldExperimentData.experiments,\n"
-                    + "                    ...dataToStorage.experiments\n"
-                    + "                ];\n"
+                    + "            if (!experimentData.experiments.length) {\n"
+                    + "                localStorage.removeItem('experiment_data');\n"
+                    + "            } else {\n"
+                    + "                localStorage.setItem('experiment_data', JSON.stringify(experimentData));\n"
                     + "            }\n"
+                    + "        }\n"
+                    + "    }\n"
                     + "\n"
-                    + "            localStorage.setItem('experiment_data', JSON.stringify(dataToStorage));\n\n"
-                    + "            const event = new CustomEvent('experiment_data_loaded', { detail: dataToStorage });\n"
-                    + "            window.dispatchEvent(event);\n"
+                    + "    window.addEventListener(\"experiment_data_loaded\", function (event) {\n"
+                    + "\n"
+                    + "        let experimentData = event.detail;\n"
+                    + "\n"
+                    + "        for (let i = 0; i < experimentData.experiments.length; i++) {\n"
+                    + "            let pageUrl = experimentData.experiments[i].pageUrl;\n"
+                    + "\n"
+                    + "            let alternativePageUrl = experimentData.experiments[i].pageUrl.endsWith(\n"
+                    + "                \"/index\") ?\n"
+                    + "                experimentData.experiments[i].pageUrl.replace(\"/index\", \"\") :\n"
+                    + "                experimentData.experiments[i].pageUrl;\n"
+                    + "\n"
+                    + "            if (window.location.href.includes(pageUrl)\n"
+                    + "                || window.location.href.includes(alternativePageUrl)) {\n"
+                    + "\n"
+                    + "                let url = experimentData.experiments[i].variant.url\n"
+                    + "                const param = (url.includes(\"?\") ? \"&\" : \"?\") + \"redirect=true\";\n"
+                    + "                window.location.href = url + param;\n"
+                    + "                break;\n"
+                    + "            }\n"
                     + "        }\n"
                     + "    });\n"
-                    + "} else if (!window.location.href.includes(\"redirect=true\")) {\n"
-                    + "    let experimentData = JSON.parse(localStorage.getItem('experiment_data'));\n"
                     + "\n"
-                    + "    const event = new CustomEvent('experiment_data_loaded', { detail: experimentData });\n"
-                    + "    window.dispatchEvent(event);\n"
-                    + "}\n\n"
+                    + "    if (shouldHitEndPoint()) {\n"
+                    + "        let experimentData = localStorage.getItem('experiment_data');\n"
+                    + "        let body = experimentData ?\n"
+                    + "            {\n"
+                    + "                exclude: JSON.parse(experimentData).includedExperimentIds\n"
+                    + "            } : {\n"
+                    + "                exclude: []\n"
+                    + "            };\n"
+                    + "\n"
+                    + "        fetch('/api/v1/experiments/isUserIncluded', {\n"
+                    + "            method: 'POST',\n"
+                    + "            body: JSON.stringify(body),\n"
+                    + "            headers: {\n"
+                    + "                'Accept': 'application/json',\n"
+                    + "                'Content-Type': 'application/json'\n"
+                    + "            }\n"
+                    + "        })\n"
+                    + "        .then(response => response.json())\n"
+                    + "        .then(data => {\n"
+                    + "            if (data.entity.experiments) {\n"
+                    + "                let dataToStorage = Object.assign({}, data.entity);\n"
+                    + "                let oldExperimentData = JSON.parse(\n"
+                    + "                    localStorage.getItem('experiment_data'));\n"
+                    + "\n"
+                    + "                delete dataToStorage['excludedExperimentIds'];\n"
+                    + "\n"
+                    + "                dataToStorage.includedExperimentIds = [\n"
+                    + "                    ...dataToStorage.includedExperimentIds,\n"
+                    + "                    ...data.entity.excludedExperimentIds\n"
+                    + "                ];\n"
+                    + "\n"
+                    + "                if (oldExperimentData) {\n"
+                    + "                    dataToStorage.experiments = [\n"
+                    + "                        ...oldExperimentData.experiments,\n"
+                    + "                        ...dataToStorage.experiments\n"
+                    + "                    ];\n"
+                    + "                }\n"
+                    + "\n"
+                    + "                localStorage.setItem('experiment_data',\n"
+                    + "                    JSON.stringify(dataToStorage));\n"
+                    + "\n"
+                    + "                const event = new CustomEvent('experiment_data_loaded',\n"
+                    + "                    {detail: dataToStorage});\n"
+                    + "                window.dispatchEvent(event);\n"
+                    + "            }\n"
+                    + "        });\n"
+                    + "    }\n"
+                    + "\n"
+                    + "    cleanExperimentDataUp();\n"
+                    + "    let experimentDataAsString = localStorage.getItem('experiment_data');\n"
+                    + "\n"
+                    + "    if (experimentDataAsString && !window.location.href.includes(\n"
+                    + "        \"redirect=true\")) {\n"
+                    + "        let experimentData = JSON.parse(experimentDataAsString);\n"
+                    + "\n"
+                    + "        const event = new CustomEvent('experiment_data_loaded',\n"
+                    + "            {detail: experimentData});\n"
+                    + "        window.dispatchEvent(event);\n"
+                    + "    }\n"
+                    + "\n"
+                    + "    sessionStorage.setItem(\"experimentAlreadyCheck\", true);\n"
+                    + "}\n"
+                    + "\n"
                     + "</SCRIPT>"
                     + "<title>This is a testing</title>"
                     + "</head>";
@@ -1709,89 +1760,132 @@ public class HTMLPageAssetRenderedAPIImplIntegrationTest extends IntegrationTest
                     + "\n"
                     + "<script>window.jitsu = window.jitsu || (function(){(window.jitsuQ = window.jitsuQ || []).push(arguments);})</script>\n"
                     + "<SCRIPT>\n"
-                    + "let currentRunningExperimentsId = ['" + experiment.id().get() + "']\n"
+                    + "let experimentAlreadyCheck = sessionStorage.getItem(\"experimentAlreadyCheck\");\n"
                     + "\n"
-                    + "function shouldHitEndPoint() {\n"
-                    + "    let experimentData = localStorage.getItem('experiment_data');\n"
+                    + "if (!experimentAlreadyCheck) {\n"
+                    + "    let currentRunningExperimentsId = ['" + experiment.id().get() + "']\n"
                     + "\n"
-                    + "    if (experimentData) {\n"
-                    + "        let includedExperimentIds = JSON.parse(\n"
-                    + "            experimentData).includedExperimentIds;\n"
+                    + "    function shouldHitEndPoint() {\n"
+                    + "        let experimentData = localStorage.getItem('experiment_data');\n"
                     + "\n"
-                    + "        return !currentRunningExperimentsId.every(element => includedExperimentIds.includes(element));\n"
-                    + "    } else {\n"
-                    + "        return true;\n"
-                    + "    }\n"
-                    + "}\n"
+                    + "        if (experimentData) {\n"
+                    + "            let includedExperimentIds = JSON.parse(\n"
+                    + "                experimentData).includedExperimentIds;\n"
                     + "\n"
-                    + "window.addEventListener(\"experiment_data_loaded\", function (event) {\n"
-                    + "\n"
-                    + "    let experimentData = event.detail;\n"
-                    + "    console.log('experiment_data', experimentData);\n"
-                    + "    for (let i = 0; i < experimentData.experiments.length; i++){\n"
-                    + "        let pageUrl = experimentData.experiments[i].pageUrl;\n"
-                    + "\n"
-                    + "        let alternativePageUrl = experimentData.experiments[i].pageUrl.endsWith(\"/index\") ?\n"
-                    + "            experimentData.experiments[i].pageUrl.replace(\"/index\", \"\") :\n"
-                    + "            experimentData.experiments[i].pageUrl;\n"
-                    + "\n"
-                    + "        if (window.location.href.includes(pageUrl) || window.location.href.includes(alternativePageUrl)) {\n"
-                    + "\n"
-                    + "            let url = experimentData.experiments[i].variant.url\n"
-                    + "            const param = (url.includes(\"?\") ? \"&\" : \"?\") + \"redirect=true\";\n"
-                    + "            window.location.href = url + param;\n"
-                    + "            break;\n"
+                    + "            return !currentRunningExperimentsId.every(\n"
+                    + "                element => includedExperimentIds.includes(element));\n"
+                    + "        } else {\n"
+                    + "            return true;\n"
                     + "        }\n"
                     + "    }\n"
-                    + "});\n\n"
-                    + "if (shouldHitEndPoint()) {\n"
-                    + "    let experimentData = localStorage.getItem('experiment_data');\n"
-                    + "    let body = experimentData ?\n"
-                    + "        {\n"
-                    + "            exclude: JSON.parse(experimentData).includedExperimentIds\n"
-                    + "        } : {\n"
-                    + "            exclude: []\n"
-                    + "        };\n"
                     + "\n"
-                    + "    fetch('/api/v1/experiments/isUserIncluded', {\n"
-                    + "        method: 'POST',\n"
-                    + "        body: JSON.stringify(body),\n"
-                    + "        headers: {\n"
-                    + "            'Accept': 'application/json',\n"
-                    + "            'Content-Type': 'application/json'\n"
-                    + "        }\n"
-                    + "    })\n"
-                    + "    .then(response => response.json())\n"
-                    + "    .then(data => {\n"
-                    + "        if (data.entity.experiments) {\n"
-                    + "            let dataToStorage = Object.assign({}, data.entity);\n"
-                    + "            let oldExperimentData = JSON.parse(localStorage.getItem('experiment_data'));\n"
+                    + "    function cleanExperimentDataUp() {\n"
+                    + "        let experimentDataAsString = localStorage.getItem('experiment_data');\n"
                     + "\n"
-                    + "            delete dataToStorage['excludedExperimentIds'];\n"
+                    + "        if (experimentDataAsString) {\n"
+                    + "            let experimentData = JSON.parse(experimentDataAsString);\n"
+                    + "            experimentData.experiments = experimentData.experiments\n"
+                    + "            .filter(experiment => currentRunningExperimentsId.includes(\n"
+                    + "                experiment.id));\n"
                     + "\n"
-                    + "            dataToStorage.includedExperimentIds = [\n"
-                    + "                ...dataToStorage.includedExperimentIds,\n"
-                    + "                ...data.entity.excludedExperimentIds\n"
-                    + "            ];\n"
+                    + "            experimentData.includedExperimentIds = experimentData.includedExperimentIds\n"
+                    + "            .filter(experimentId => currentRunningExperimentsId.includes(\n"
+                    + "                experimentId));\n"
                     + "\n"
-                    + "            if (oldExperimentData) {\n"
-                    + "                dataToStorage.experiments = [\n"
-                    + "                    ...oldExperimentData.experiments,\n"
-                    + "                    ...dataToStorage.experiments\n"
-                    + "                ];\n"
+                    + "            if (!experimentData.experiments.length) {\n"
+                    + "                localStorage.removeItem('experiment_data');\n"
+                    + "            } else {\n"
+                    + "                localStorage.setItem('experiment_data', JSON.stringify(experimentData));\n"
                     + "            }\n"
+                    + "        }\n"
+                    + "    }\n"
                     + "\n"
-                    + "            localStorage.setItem('experiment_data', JSON.stringify(dataToStorage));\n\n"
-                    + "            const event = new CustomEvent('experiment_data_loaded', { detail: dataToStorage });\n"
-                    + "            window.dispatchEvent(event);\n"
+                    + "    window.addEventListener(\"experiment_data_loaded\", function (event) {\n"
+                    + "\n"
+                    + "        let experimentData = event.detail;\n"
+                    + "\n"
+                    + "        for (let i = 0; i < experimentData.experiments.length; i++) {\n"
+                    + "            let pageUrl = experimentData.experiments[i].pageUrl;\n"
+                    + "\n"
+                    + "            let alternativePageUrl = experimentData.experiments[i].pageUrl.endsWith(\n"
+                    + "                \"/index\") ?\n"
+                    + "                experimentData.experiments[i].pageUrl.replace(\"/index\", \"\") :\n"
+                    + "                experimentData.experiments[i].pageUrl;\n"
+                    + "\n"
+                    + "            if (window.location.href.includes(pageUrl)\n"
+                    + "                || window.location.href.includes(alternativePageUrl)) {\n"
+                    + "\n"
+                    + "                let url = experimentData.experiments[i].variant.url\n"
+                    + "                const param = (url.includes(\"?\") ? \"&\" : \"?\") + \"redirect=true\";\n"
+                    + "                window.location.href = url + param;\n"
+                    + "                break;\n"
+                    + "            }\n"
                     + "        }\n"
                     + "    });\n"
-                    + "} else if (!window.location.href.includes(\"redirect=true\")) {\n"
-                    + "    let experimentData = JSON.parse(localStorage.getItem('experiment_data'));\n"
                     + "\n"
-                    + "    const event = new CustomEvent('experiment_data_loaded', { detail: experimentData });\n"
-                    + "    window.dispatchEvent(event);\n"
-                    + "}\n\n"
+                    + "    if (shouldHitEndPoint()) {\n"
+                    + "        let experimentData = localStorage.getItem('experiment_data');\n"
+                    + "        let body = experimentData ?\n"
+                    + "            {\n"
+                    + "                exclude: JSON.parse(experimentData).includedExperimentIds\n"
+                    + "            } : {\n"
+                    + "                exclude: []\n"
+                    + "            };\n"
+                    + "\n"
+                    + "        fetch('/api/v1/experiments/isUserIncluded', {\n"
+                    + "            method: 'POST',\n"
+                    + "            body: JSON.stringify(body),\n"
+                    + "            headers: {\n"
+                    + "                'Accept': 'application/json',\n"
+                    + "                'Content-Type': 'application/json'\n"
+                    + "            }\n"
+                    + "        })\n"
+                    + "        .then(response => response.json())\n"
+                    + "        .then(data => {\n"
+                    + "            if (data.entity.experiments) {\n"
+                    + "                let dataToStorage = Object.assign({}, data.entity);\n"
+                    + "                let oldExperimentData = JSON.parse(\n"
+                    + "                    localStorage.getItem('experiment_data'));\n"
+                    + "\n"
+                    + "                delete dataToStorage['excludedExperimentIds'];\n"
+                    + "\n"
+                    + "                dataToStorage.includedExperimentIds = [\n"
+                    + "                    ...dataToStorage.includedExperimentIds,\n"
+                    + "                    ...data.entity.excludedExperimentIds\n"
+                    + "                ];\n"
+                    + "\n"
+                    + "                if (oldExperimentData) {\n"
+                    + "                    dataToStorage.experiments = [\n"
+                    + "                        ...oldExperimentData.experiments,\n"
+                    + "                        ...dataToStorage.experiments\n"
+                    + "                    ];\n"
+                    + "                }\n"
+                    + "\n"
+                    + "                localStorage.setItem('experiment_data',\n"
+                    + "                    JSON.stringify(dataToStorage));\n"
+                    + "\n"
+                    + "                const event = new CustomEvent('experiment_data_loaded',\n"
+                    + "                    {detail: dataToStorage});\n"
+                    + "                window.dispatchEvent(event);\n"
+                    + "            }\n"
+                    + "        });\n"
+                    + "    }\n"
+                    + "\n"
+                    + "    cleanExperimentDataUp();\n"
+                    + "    let experimentDataAsString = localStorage.getItem('experiment_data');\n"
+                    + "\n"
+                    + "    if (experimentDataAsString && !window.location.href.includes(\n"
+                    + "        \"redirect=true\")) {\n"
+                    + "        let experimentData = JSON.parse(experimentDataAsString);\n"
+                    + "\n"
+                    + "        const event = new CustomEvent('experiment_data_loaded',\n"
+                    + "            {detail: experimentData});\n"
+                    + "        window.dispatchEvent(event);\n"
+                    + "    }\n"
+                    + "\n"
+                    + "    sessionStorage.setItem(\"experimentAlreadyCheck\", true);\n"
+                    + "}\n"
+                    + "\n"
                     + "</SCRIPT>\n";
             final String expectedCode = expectedHead + expectedContentRender;
 
@@ -1799,5 +1893,9 @@ public class HTMLPageAssetRenderedAPIImplIntegrationTest extends IntegrationTest
         }  finally {
             ExperimentDataGen.end(experiment);
         }
+    }
+
+    private String getNotExperimentJsCode(){
+        return "<SCRIPT>localStorage.removeItem('experiment_data');</SCRIPT>\n";
     }
 }

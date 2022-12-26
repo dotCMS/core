@@ -8,6 +8,20 @@ const routes: Routes = [
             import('./dot-categories-list/dot-categories-list.module').then(
                 (m) => m.DotCategoriesListingModule
             )
+    },
+    {
+        path: 'create',
+        loadChildren: () =>
+            import('./dot-categories-create-edit/dot-categories-create-edit.module').then(
+                (m) => m.DotCategoriesCreateEditModule
+            )
+    },
+    {
+        path: 'edit/:id',
+        loadChildren: () =>
+            import('./dot-categories-create-edit/dot-categories-create-edit.module').then(
+                (m) => m.DotCategoriesCreateEditModule
+            )
     }
 ];
 

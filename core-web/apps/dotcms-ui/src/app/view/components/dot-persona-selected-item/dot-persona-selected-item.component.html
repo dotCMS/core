@@ -12,5 +12,8 @@
     <span class="dot-persona-selector__name">{{
         persona?.name || ('modes.persona.no.persona' | dm)
     }}</span>
-    <i class="pi pi-chevron-down"></i>
+
+    <ng-container *ngIf="!readonly">
+        <i class="pi pi-chevron-down"></i>
+    </ng-container>
 </div>
