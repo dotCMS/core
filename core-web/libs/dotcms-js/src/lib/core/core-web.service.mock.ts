@@ -12,12 +12,7 @@ import {
 } from '@angular/common/http';
 import { DotCMSResponse, DotRequestOptionsArgs } from './core-web.service';
 import { ResponseView } from './util/response-view';
-/**
- * Mock for the core-web.service
- * @deprecated Use the one in dotcms/app/test/core-web.service.mock
- * @export
- * @class CoreWebServiceMock
- */
+
 @Injectable()
 export class CoreWebServiceMock {
     constructor(private _http: HttpClient) {}
