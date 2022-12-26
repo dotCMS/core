@@ -23,11 +23,22 @@
     >
         <p-card [ngClass]="{ first: first, last: last }" data-testId="variant-row-card">
             <div class="flex flex-row align-items-center align-content-between gap-2">
-                <div class="title flex flex-grow-1 flex-column">
-                    <span data-testId="variant-name">{{ variant.name }}</span>
-                    <span class="muted" *ngIf="variant.url" data-testId="variant-url">{{
-                        variant.url
-                    }}</span>
+                <div class="title flex flex-grow-1 flex-column align-items-start gap-2">
+                    <ng-container
+                        *ngIf="variant.name === defaultVariantName; else editableVariantNameTpl"
+                    >
+                        <span
+                            class="flex flex-grow-1 align-items-center gap-2 variant-name"
+                            data-testId="variant-name"
+                        >
+                            {{ variant.name }}
+                        </span>
+                        <dot-copy-button
+                            *ngIf="variant.url"
+                            [copy]="variant.url"
+                            [tooltipText]="'dot.common.message.pageurl.copy.clipboard' | dm"
+                        ></dot-copy-button>
+                    </ng-container>
                 </div>
 
                 <span class="separator">|</span>
@@ -57,7 +68,7 @@
                         class="p-button-sm p-button-outlined no-padding p-button-warning"
                         (click)="goToEditPage.emit({variant, mode:'edit'})"
                         data-testId="variant-edit-button"
-                        label="{{ 'experiments.configure.variants.edit' | dm }}"
+                        label="{{ 'experiments.action.edit' | dm }}"
                         pButton
                         pRipple
                         type="button"
@@ -76,6 +87,38 @@
                 ></button>
             </div>
         </p-card>
+
+        <ng-template #editableVariantNameTpl>
+            <p-inplace closable="closable">
+                <ng-template pTemplate="display">
+                    <span
+                        class="flex flex-grow-1 align-items-center gap-2 variant-name"
+                        data-testId="variant-name"
+                    >
+                        {{ variant.name }} <i class="pi pi-pencil"></i>
+                    </span>
+                </ng-template>
+                <ng-template pTemplate="content">
+                    <input #variantEdited [value]="variant.name" pInputText type="text" />
+                    <button
+                        class="p-button-rounded p-button-text"
+                        #button
+                        [loading]="button.disabled"
+                        (click)="
+                            editVariantName(variantEdited.value, variant); button.disabled = true
+                        "
+                        icon="pi pi-save"
+                        pButton
+                        type="button"
+                    ></button>
+                </ng-template>
+            </p-inplace>
+            <dot-copy-button
+                *ngIf="variant.url"
+                [copy]="variant.url"
+                [tooltipText]="'dot.common.message.pageurl.copy.clipboard' | dm"
+            ></dot-copy-button>
+        </ng-template>
     </ng-container>
 
     <ng-template pTemplate="footer">

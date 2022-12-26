@@ -1,4 +1,12 @@
-import { ChangeDetectionStrategy, Component, EventEmitter, Input, Output } from '@angular/core';
+import {
+    ChangeDetectionStrategy,
+    Component,
+    EventEmitter,
+    Input,
+    Output,
+    QueryList,
+    ViewChildren
+} from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { CardModule } from 'primeng/card';
 import { DotMessagePipeModule } from '@pipes/dot-message/dot-message-pipe.module';
@@ -19,6 +27,10 @@ import {
     Variant
 } from '@dotcms/dotcms-models';
 import { DotExperimentsConfigurationVariantsAddComponent } from '@portlets/dot-experiments/dot-experiments-configuration/components/dot-experiments-configuration-variants-add/dot-experiments-configuration-variants-add.component';
+import { Inplace, InplaceModule } from 'primeng/inplace';
+import { InputTextModule } from 'primeng/inputtext';
+import { DotExperimentsConfigurationItemsCountComponent } from '@portlets/dot-experiments/dot-experiments-configuration/components/dot-experiments-configuration-items-count/dot-experiments-configuration-items-count.component';
+import { DotCopyButtonModule } from '@components/dot-copy-button/dot-copy-button.module';
 
 @Component({
     selector: 'dot-experiments-configuration-variants',
@@ -28,11 +40,15 @@ import { DotExperimentsConfigurationVariantsAddComponent } from '@portlets/dot-e
         DotMessagePipeModule,
         DotIconModule,
         UiDotIconButtonModule,
+        UiDotIconButtonTooltipModule,
+        DotExperimentsConfigurationVariantsAddComponent,
+        DotCopyButtonModule,
         //PrimeNg
         CardModule,
         ButtonModule,
-        UiDotIconButtonTooltipModule,
-        DotExperimentsConfigurationVariantsAddComponent
+        InplaceModule,
+        InputTextModule,
+        DotExperimentsConfigurationItemsCountComponent
     ],
     templateUrl: './dot-experiments-configuration-variants.component.html',
     styleUrls: ['./dot-experiments-configuration-variants.component.scss'],
@@ -47,9 +63,17 @@ export class DotExperimentsConfigurationVariantsComponent {
 
     @Input() stepStatus: StepStatus;
     @Input() variants: Variant[];
-
     @Output() sidebarStatusChanged = new EventEmitter<SidebarStatus>();
     @Output() delete = new EventEmitter<Variant>();
+    @Output() edit = new EventEmitter<Pick<DotExperiment, 'name' | 'id'>>();
     @Output() save = new EventEmitter<Pick<DotExperiment, 'name'>>();
     @Output() goToEditPage = new EventEmitter<{ variant: Variant; mode: EditPageTabs }>();
+    @ViewChildren(Inplace) private inplaceInputs: QueryList<Inplace>;
+
+    editVariantName(newValue: string, variant: Variant) {
+        this.edit.emit({
+            ...variant,
+            name: newValue
+        });
+    }
 }

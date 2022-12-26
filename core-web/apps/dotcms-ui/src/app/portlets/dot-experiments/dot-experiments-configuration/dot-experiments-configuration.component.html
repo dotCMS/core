@@ -17,6 +17,7 @@
                 [stepStatus]="vm.stepStatusSidebar"
                 [variants]="vm.experiment.trafficProportion.variants"
                 (delete)="deleteVariant($event)"
+                (edit)="editVariant($event)"
                 (goToEditPage)="goToEditPageVariant($event)"
                 (save)="saveVariant($event)"
                 (sidebarStatusChanged)="sidebarStatusChanged($event)"

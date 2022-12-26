@@ -6,9 +6,16 @@ h2 {
     font-weight: $font-weight-semi-bold;
 }
 
+.variant-name dot-icon {
+    display: inline;
+    color: $brand-primary;
+}
+
 .muted {
     color: $gray;
     font-size: $font-size-x-small;
+    -webkit-user-select: all;
+    user-select: all;
 }
 
 .separator {
@@ -49,6 +56,46 @@ button {
 
         .p-card-footer .p-button-link {
             padding: $spacing-0;
+        }
+    }
+
+    p-inplace {
+        max-height: 40px;
+
+        .p-inplace-display {
+            padding: 0;
+
+            i {
+                font-size: 0.85rem;
+            }
+        }
+
+        .p-inplace-content {
+            display: flex;
+            gap: 0.5rem;
+            align-items: center;
+
+            dot-icon {
+                color: $brand-primary;
+            }
+
+            button {
+                padding: 0;
+                background: white;
+                color: $brand-primary;
+                margin: 0;
+
+                &:hover {
+                    padding: 0;
+                    background: white;
+                    color: $brand-primary;
+                    margin: 0;
+                }
+            }
+        }
+
+        input {
+            padding: 0.25rem;
         }
     }
 }

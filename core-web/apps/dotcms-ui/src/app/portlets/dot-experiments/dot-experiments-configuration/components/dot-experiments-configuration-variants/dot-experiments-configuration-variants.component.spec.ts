@@ -13,11 +13,14 @@ import { DotExperimentsConfigurationVariantsAddComponent } from '@portlets/dot-e
 import { MockDotMessageService } from '@dotcms/utils-testing';
 import { DotMessageService } from '@dotcms/data-access';
 import { DecimalPipe } from '@angular/common';
+import { DotCopyButtonModule } from '@components/dot-copy-button/dot-copy-button.module';
+import { DotCopyButtonComponent } from '@components/dot-copy-button/dot-copy-button.component';
+import { Inplace, InplaceModule } from 'primeng/inplace';
 
 const messageServiceMock = new MockDotMessageService({
     'experiments.configure.variants.weight': 'weight',
     'experiments.configure.variants.view': 'view',
-    'experiments.configure.variants.edit': 'edit',
+    'experiments.action.edit': 'edit',
     'experiments.configure.variants.delete': 'delete',
     'experiments.configure.variants.add': 'Add new variant'
 });
@@ -30,8 +33,10 @@ describe('DotExperimentsConfigurationVariantsComponent', () => {
         imports: [
             ButtonModule,
             CardModule,
+            InplaceModule,
             DecimalPipe,
-            DotExperimentsConfigurationVariantsAddComponent
+            DotExperimentsConfigurationVariantsAddComponent,
+            DotCopyButtonModule
         ],
         component: DotExperimentsConfigurationVariantsComponent,
         providers: [
@@ -99,10 +104,10 @@ describe('DotExperimentsConfigurationVariantsComponent', () => {
             expect(variantsName[1]).toContainText(variantsVm.variants[1].name);
             expect(variantsName[2]).toContainText(variantsVm.variants[2].name);
 
-            const variantsUrl = spectator.queryAll(byTestId('variant-url'));
-            expect(variantsUrl[0]).toContainText(variantsVm.variants[0].url);
-            expect(variantsUrl[1]).toContainText(variantsVm.variants[1].url);
-            expect(variantsUrl[2]).toContainText(variantsVm.variants[2].url);
+            expect(spectator.queryAll(DotCopyButtonComponent).length).toBe(3);
+
+            spectator.queryAll(Inplace);
+            expect(spectator.queryAll(Inplace).length).toBe(2);
 
             const variantsWeight = spectator.queryAll(byTestId('variant-weight'));
             expect(variantsWeight[0]).toContainText(variantsVm.variants[0].weight);
