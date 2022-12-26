@@ -2,7 +2,7 @@ import { Component, Input, OnInit } from '@angular/core';
 import { filter, flatMap, toArray, take } from 'rxjs/operators';
 import { FieldType } from '..';
 import { FieldService } from '../service';
-import { FieldUtil } from '../util/field-util';
+import { FieldUtil } from '@dotcms/utils-testing';
 /**
  * Show all the Field Types
  *

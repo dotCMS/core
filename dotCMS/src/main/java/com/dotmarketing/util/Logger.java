@@ -89,15 +89,15 @@ public class Logger {
     }
 
     public static void info(Class clazz, final Supplier<String> message) {
-        if (isInfoEnabled(clazz)) {
+       
             info(clazz, message.get());
-        }
+        
     }
 
     public static void info(final Object ob, final Supplier<String> message) {
-        if (isInfoEnabled(ob.getClass())) {
+
             info(ob.getClass(), message.get());
-        }
+        
     }
 
     public static void info(Object ob, String message) {
@@ -117,21 +117,18 @@ public class Logger {
     }
 
     public static void debug(final Object ob, final Supplier<String> message) {
-        if (isDebugEnabled(ob.getClass())) {
-            debug(ob.getClass(), message.get());
-        }
+        debug(ob.getClass(), message.get());
+        
     }
 
     public static void debug(final String className, final Supplier<String> message) {
-        if (isDebugEnabled(className)) {
-            debug(className, message.get());
-        }
+        debug(className, message.get());
+        
     }
 
     public static void debug(final Object ob, final Throwable throwable, final Supplier<String> message) {
-        if (isDebugEnabled(ob.getClass())) {
-            debug(ob.getClass(), message.get(), throwable);
-        }
+        debug(ob.getClass(), message.get(), throwable);
+
     }
 
     public static void debug(Object ob, String message) {
@@ -364,21 +361,21 @@ public class Logger {
     }
 
     public static void warn(final Object ob, final Supplier<String> message) {
-        if (isWarnEnabled(ob.getClass())) {
+
             warn(ob.getClass(), message.get());
-        }
+        
     }
 
     public static void warn(final String className, final Supplier<String> message) {
-        if (isWarnEnabled(className)) {
+
             warn(className, message.get());
-        }
+        
     }
 
     public static void warn(Class clazz, final Supplier<String> message) {
-        if (isWarnEnabled(clazz)) {
+
             warn(clazz, message.get());
-        }
+        
     }
 
     public static void warn(Class clazz, final Supplier<String> message, Throwable ex) {

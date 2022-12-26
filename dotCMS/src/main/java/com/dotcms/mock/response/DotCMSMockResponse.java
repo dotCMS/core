@@ -4,12 +4,14 @@ import com.dotcms.repackage.org.directwebremoting.util.FakeHttpServletResponse;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.PrintWriter;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Optional;
 import javax.servlet.ServletOutputStream;
 import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletResponse;
@@ -18,10 +20,15 @@ public class DotCMSMockResponse implements HttpServletResponse {
 
 
     private ServletOutputStream outputStream;
+    private List<Cookie> cookies = new ArrayList<>();
 
     @Override
-    public void addCookie(Cookie cookie) {
+    public void addCookie(final Cookie cookie) {
+        cookies.add(cookie);
+    }
 
+    public Optional<Cookie> getCookie(final String name) {
+        return cookies.stream().filter(cookie -> cookie.getName().equals(name)).findFirst();
     }
 
     @Override

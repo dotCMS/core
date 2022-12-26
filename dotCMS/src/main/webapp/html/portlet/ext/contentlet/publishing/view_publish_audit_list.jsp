@@ -308,7 +308,7 @@
 
 			//Check bundle permissions
 			PermissionAPI permAPI = APILocator.getPermissionAPI();
-			Map<String, String> bundleAssets = c.getStatusPojo() == null ? new HashMap<String, String>() : c.getStatusPojo().getAssets();
+			Map<String, String> bundleAssets = c.getStatusPojo() == null || c.getStatusPojo().getAssets() == null ? new HashMap<String, String>() : c.getStatusPojo().getAssets();
 
 			PermissionableProxy pp = new PermissionableProxy();
 			for(String key : bundleAssets.keySet()) {
@@ -414,7 +414,7 @@
                     new PublishQueueElementTransformer();
 
             for(PublishAuditStatus publishAuditStatus : iresults) {
-                final Map<String,String> assets = publishAuditStatus.getStatusPojo().getAssets();
+                final Map<String,String> assets = publishAuditStatus.getStatusPojo().getAssets() == null ? new HashMap<String, String>() : publishAuditStatus.getStatusPojo().getAssets();
 
                 final List<Map<String,Object>> assetsTransformed = assets.entrySet().stream()
                     .map(entry -> publishQueueElementTransformer.getMap(entry.getKey(), entry.getValue()))

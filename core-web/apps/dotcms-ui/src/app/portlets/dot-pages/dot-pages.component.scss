@@ -1,0 +1,126 @@
+@use "variables" as *;
+
+:host {
+    background: $gray-bg;
+    box-shadow: $md-shadow-4;
+    display: flex;
+    height: 100%;
+    padding: $spacing-4;
+}
+
+.dot-pages__title {
+    color: $black;
+    display: flex;
+    font-size: $font-size-x-large;
+
+    dot-icon {
+        align-items: center;
+    }
+}
+
+.dot-pages__container {
+    background-color: $white;
+    box-shadow: $md-shadow-4;
+    overflow-y: auto;
+    padding: $spacing-4 $spacing-5 0;
+    width: 100%;
+}
+
+::ng-deep {
+    .p-panel-toggleable {
+        border: 1px solid $gray-lighter;
+
+        &.p-panel-expanded {
+            border-color: $white;
+        }
+    }
+
+    .p-panel-header {
+        font-size: $font-size-x-large;
+        margin: $spacing-1 0;
+        padding: $spacing-3 0;
+        position: relative;
+
+        .p-panel-icons span {
+            color: $brand-primary;
+            font-size: $font-size-x-large;
+            margin-left: $spacing-1;
+            margin-right: $spacing-2;
+        }
+    }
+
+    .dot-pages-panel-action__button {
+        display: none;
+        position: absolute;
+        right: $spacing-3;
+        top: $spacing-1;
+
+        span.p-button-label {
+            font-size: $font-size-medium;
+        }
+    }
+
+    .p-panel-expanded .dot-pages-panel-action__button {
+        display: block;
+        position: absolute;
+    }
+
+    .dot-pages-panel__hide-panel-actions .p-panel-expanded .dot-pages-panel-action__button {
+        display: none;
+    }
+
+    .p-toggleable-content .p-panel-content {
+        column-gap: $font-size-x-large;
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+        height: 248px;
+        overflow: hidden;
+        position: relative;
+    }
+
+    .dot-pages-panel__expanded .p-toggleable-content .p-panel-content {
+        overflow: unset;
+    }
+
+    .dot-pages-panel__empty-state .p-toggleable-content .p-panel-content {
+        max-width: 1280px;
+        overflow: hidden;
+    }
+
+    dot-pages-card,
+    dot-pages-card-empty {
+        min-height: 250px;
+        max-width: 245px;
+
+        p-card {
+            cursor: pointer;
+        }
+    }
+
+    .dot-pages-panel__expanded dot-pages-card {
+        min-height: unset;
+        margin-bottom: $spacing-4;
+    }
+}
+
+.dot-pages-empty__container {
+    align-items: center;
+    display: flex;
+    flex-direction: column;
+    left: 0;
+    margin-left: auto;
+    margin-right: auto;
+    position: absolute;
+    right: 0;
+    top: 45px;
+    width: max-content;
+
+    dot-icon {
+        color: $brand-primary;
+        margin-bottom: $spacing-3;
+    }
+}
+
+.dot-pages-empty__header {
+    font-size: large;
+}

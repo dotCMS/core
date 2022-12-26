@@ -3,10 +3,7 @@ import { createComponentFactory, mockProvider, Spectator, SpyObject } from '@ngn
 import { DotExperimentsService } from '@portlets/dot-experiments/shared/services/dot-experiments.service';
 import { ActivatedRoute, Router } from '@angular/router';
 import { Title } from '@angular/platform-browser';
-import {
-    DotExperimentsConfigurationStore,
-    VmConfigurationExperiments
-} from '@portlets/dot-experiments/dot-experiments-configuration/store/dot-experiments-configuration-store.service';
+import { DotExperimentsConfigurationStore } from '@portlets/dot-experiments/dot-experiments-configuration/store/dot-experiments-configuration-store.service';
 import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { ButtonModule } from 'primeng/button';
 import { of } from 'rxjs';
@@ -18,9 +15,15 @@ import { DotExperimentsConfigurationTrafficComponent } from '@portlets/dot-exper
 import { DotExperimentsConfigurationSchedulingComponent } from '@portlets/dot-experiments/dot-experiments-configuration/components/dot-experiments-configuration-scheduling/dot-experiments-configuration-scheduling.component';
 import { DotExperimentsConfigurationSkeletonComponent } from '@portlets/dot-experiments/dot-experiments-configuration/components/dot-experiments-configuration-skeleton/dot-experiments-configuration-skeleton.component';
 import { DotExperimentsConfigurationGoalsComponent } from '@portlets/dot-experiments/dot-experiments-configuration/components/dot-experiments-configuration-goals/dot-experiments-configuration-goals.component';
-import { ExperimentMocks } from '@portlets/dot-experiments/test/mocks';
-import { MockDotMessageService } from '@tests/dot-message-service.mock';
-import { DotMessageService } from '@services/dot-message/dot-messages.service';
+import {
+    DotExperimentsConfigurationStoreMock,
+    ExperimentMocks
+} from '@portlets/dot-experiments/test/mocks';
+import { MockDotMessageService } from '@dotcms/utils-testing';
+import { DotMessageService } from '@dotcms/data-access';
+import { MessageService } from 'primeng/api';
+import { DotSessionStorageService } from '@dotcms/data-access';
+import { Status } from '@dotcms/dotcms-models';
 
 const ActivatedRouteMock = {
     snapshot: {
@@ -35,6 +38,7 @@ const messageServiceMock = new MockDotMessageService({
     'experiments.configure.scheduling.name': 'Scheduling',
     'experiments.configure.scheduling.start': 'When the experiment start'
 });
+
 describe('DotExperimentsConfigurationComponent', () => {
     let spectator: Spectator<DotExperimentsConfigurationComponent>;
     let dotExperimentsService: SpyObject<DotExperimentsService>;
@@ -53,9 +57,10 @@ describe('DotExperimentsConfigurationComponent', () => {
             DotExperimentsConfigurationExperimentStatusBarComponent
         ],
         component: DotExperimentsConfigurationComponent,
-        componentProviders: [DotExperimentsConfigurationStore],
+        componentProviders: [
+            mockProvider(DotExperimentsConfigurationStore, DotExperimentsConfigurationStoreMock)
+        ],
         providers: [
-            mockProvider(DotExperimentsService),
             {
                 provide: ActivatedRoute,
                 useValue: ActivatedRouteMock
@@ -64,6 +69,9 @@ describe('DotExperimentsConfigurationComponent', () => {
                 provide: DotMessageService,
                 useValue: messageServiceMock
             },
+            mockProvider(DotExperimentsService),
+            mockProvider(DotSessionStorageService),
+            mockProvider(MessageService),
             mockProvider(Router),
             mockProvider(Title)
         ]
@@ -78,13 +86,6 @@ describe('DotExperimentsConfigurationComponent', () => {
     });
 
     it('should show the skeleton component when is loading', () => {
-        const vmMock$: VmConfigurationExperiments = {
-            pageId: '',
-            experimentId: '',
-            experiment: null,
-            isLoading: true
-        };
-        spectator.component.vm$ = of(vmMock$);
         spectator.detectChanges();
 
         expect(spectator.query(DotExperimentsUiHeaderComponent)).toExist();
@@ -92,10 +93,13 @@ describe('DotExperimentsConfigurationComponent', () => {
     });
 
     it('should load all the components', () => {
-        const vmMock$: VmConfigurationExperiments = {
-            pageId: ExperimentMocks[0].pageId,
-            experimentId: ExperimentMocks[0].id,
+        const vmMock$ = {
             experiment: ExperimentMocks[0],
+            stepStatusSidebar: {
+                status: Status.IDLE,
+                isOpen: false,
+                experimentStep: null
+            },
             isLoading: false
         };
         spectator.component.vm$ = of(vmMock$);

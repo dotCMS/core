@@ -5,41 +5,43 @@ import { of } from 'rxjs';
 import { ContainerListComponent } from './container-list.component';
 import { DotRouterService } from '@services/dot-router/dot-router.service';
 import { DotListingDataTableComponent } from '@components/dot-listing-data-table/dot-listing-data-table.component';
-import { DotPushPublishDialogService } from '@dotcms/dotcms-js';
-import { DotSiteBrowserService } from '@services/dot-site-browser/dot-site-browser.service';
-import { DotAlertConfirmService } from '@services/dot-alert-confirm';
+import { CoreWebServiceMock, DotPushPublishDialogService } from '@dotcms/dotcms-js';
+
 import { CoreWebService } from '@dotcms/dotcms-js';
-import { MockDotMessageService } from '@tests/dot-message-service.mock';
 import { DotMessageDisplayService } from '@components/dot-message-display/services';
-import { DotMessageService } from '@services/dot-message/dot-messages.service';
+import {
+    DotAlertConfirmService,
+    DotMessageService,
+    DotSiteBrowserService
+} from '@dotcms/data-access';
 import { ActivatedRoute } from '@angular/router';
-import { CoreWebServiceMock } from '@tests/core-web.service.mock';
 import { DotEventsSocketURL } from '@dotcms/dotcms-js';
 import { dotEventSocketURLFactory } from '@tests/dot-test-bed';
 import { StringUtils } from '@dotcms/dotcms-js';
 import { DotHttpErrorManagerService } from '@services/dot-http-error-manager/dot-http-error-manager.service';
-import { ConfirmationService, SharedModule } from 'primeng/api';
+import { ConfirmationService, SelectItem, SharedModule } from 'primeng/api';
 import { LoginService } from '@dotcms/dotcms-js';
 import { DotcmsEventsService } from '@dotcms/dotcms-js';
 import { DotEventsSocket } from '@dotcms/dotcms-js';
 import { DotcmsConfigService } from '@dotcms/dotcms-js';
 import { DotFormatDateService } from '@services/dot-format-date-service';
-import { DotFormatDateServiceMock } from '@tests/format-date-service.mock';
 import { DotListingDataTableModule } from '@components/dot-listing-data-table';
 import { CommonModule } from '@angular/common';
 import { DotMessagePipeModule } from '@pipes/dot-message/dot-message-pipe.module';
 import { CheckboxModule } from 'primeng/checkbox';
-import { MenuModule } from 'primeng/menu';
+import { Menu, MenuModule } from 'primeng/menu';
 import { ButtonModule } from 'primeng/button';
 import { DotActionButtonModule } from '@components/_common/dot-action-button/dot-action-button.module';
 import { DotActionMenuButtonModule } from '@components/_common/dot-action-menu-button/dot-action-menu-button.module';
 import { DotAddToBundleModule } from '@components/_common/dot-add-to-bundle';
 import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
-import { CUSTOM_ELEMENTS_SCHEMA } from '@angular/core';
+import { Component, CUSTOM_ELEMENTS_SCHEMA, EventEmitter, Input, Output } from '@angular/core';
 import { By } from '@angular/platform-browser';
-import { CONTAINER_SOURCE, DotContainer } from '@models/container/dot-container.model';
 import { DotContainersService } from '@services/dot-containers/dot-containers.service';
+import { DotActionMenuButtonComponent } from '@components/_common/dot-action-menu-button/dot-action-menu-button.component';
+import { DotContainer, CONTAINER_SOURCE, DotActionBulkResult } from '@dotcms/dotcms-models';
+import { MockDotMessageService, DotFormatDateServiceMock } from '@dotcms/utils-testing';
 
 const containersMock: DotContainer[] = [
     {
@@ -47,7 +49,7 @@ const containersMock: DotContainer[] = [
         categoryId: '6e07301c-e6d2-4c1f-9e8e-fcc4a31947d3',
         deleted: false,
         friendlyName: '',
-        identifier: 'f17f87c0e571060732923ec92d071b73',
+        identifier: '123Published',
         live: true,
         name: 'movie',
         parentPermissionable: {
@@ -64,8 +66,42 @@ const containersMock: DotContainer[] = [
         categoryId: 'a443d26e-0e92-4a9e-a2ab-90a44fd1eb8d',
         deleted: false,
         friendlyName: '',
-        identifier: '282685c94eb370a7820766d6aa1d0136',
-        live: true,
+        identifier: '123Unpublish',
+        live: false,
+        name: 'test',
+        parentPermissionable: {
+            hostname: 'default'
+        },
+        path: null,
+        source: CONTAINER_SOURCE.DB,
+        title: 'test',
+        type: 'containers',
+        working: true
+    },
+    {
+        archived: true,
+        categoryId: 'a443d26e-0e92-4a9e-a2ab-90a44fd1eb8d',
+        deleted: true,
+        friendlyName: '',
+        identifier: '123Archived',
+        live: false,
+        name: 'test',
+        parentPermissionable: {
+            hostname: 'default'
+        },
+        path: null,
+        source: CONTAINER_SOURCE.DB,
+        title: 'test',
+        type: 'containers',
+        working: true
+    },
+    {
+        archived: true,
+        categoryId: 'a443d26e-0e92-4a9e-a2ab-90a44fd1eb8d',
+        deleted: true,
+        friendlyName: '',
+        identifier: 'SYSTEM_CONTAINER',
+        live: false,
         name: 'test',
         parentPermissionable: {
             hostname: 'default'
@@ -139,10 +175,25 @@ const routeDataMock = {
     dotContainerListResolverData: [true, true]
 };
 
+const mockBulkResponseSuccess: DotActionBulkResult = {
+    skippedCount: 0,
+    successCount: 3,
+    fails: []
+};
+
 class ActivatedRouteMock {
     get data() {
         return of(routeDataMock);
     }
+}
+
+@Component({
+    selector: 'dot-base-type-selector',
+    template: ''
+})
+class MockDotBaseTypeSelectorComponent {
+    @Input() value: SelectItem;
+    @Output() selected = new EventEmitter<string>();
 }
 
 describe('ContainerListComponent', () => {
@@ -153,11 +204,17 @@ describe('ContainerListComponent', () => {
     let coreWebService: CoreWebService;
     let dotRouterService: DotRouterService;
 
+    let unPublishContainer: DotActionMenuButtonComponent;
+    let publishContainer: DotActionMenuButtonComponent;
+    let archivedContainer: DotActionMenuButtonComponent;
+    let baseTypesSelector: MockDotBaseTypeSelectorComponent;
+    let dotContainersService: DotContainersService;
+
     const messageServiceMock = new MockDotMessageService(messages);
 
     beforeEach(async () => {
         await TestBed.configureTestingModule({
-            declarations: [ContainerListComponent],
+            declarations: [ContainerListComponent, MockDotBaseTypeSelectorComponent],
             providers: [
                 { provide: DotMessageService, useValue: messageServiceMock },
                 {
@@ -210,6 +267,7 @@ describe('ContainerListComponent', () => {
         dotPushPublishDialogService = TestBed.inject(DotPushPublishDialogService);
         coreWebService = TestBed.inject(CoreWebService);
         dotRouterService = TestBed.inject(DotRouterService);
+        dotContainersService = TestBed.inject(DotContainersService);
     });
 
     describe('with data', () => {
@@ -244,5 +302,75 @@ describe('ContainerListComponent', () => {
                 containersMock[0].identifier
             );
         });
+
+        it('should set actions to publish template', () => {
+            publishContainer = fixture.debugElement.query(
+                By.css('[data-testid="123Published"]')
+            ).componentInstance;
+            const actions = setBasicOptions();
+            actions.push({ menuItem: { label: 'Unpublish', command: jasmine.any(Function) } });
+            actions.push({ menuItem: { label: 'Duplicate', command: jasmine.any(Function) } });
+
+            expect(publishContainer.actions).toEqual(actions);
+        });
+
+        it('should set actions to unPublish template', () => {
+            unPublishContainer = fixture.debugElement.query(
+                By.css('[data-testid="123Unpublish"]')
+            ).componentInstance;
+            const actions = setBasicOptions();
+            actions.push({ menuItem: { label: 'Archive', command: jasmine.any(Function) } });
+            actions.push({ menuItem: { label: 'Duplicate', command: jasmine.any(Function) } });
+
+            expect(unPublishContainer.actions).toEqual(actions);
+        });
+
+        it('should set actions to archived template', () => {
+            archivedContainer = fixture.debugElement.query(
+                By.css('[data-testid="123Archived"]')
+            ).componentInstance;
+
+            const actions = [
+                { menuItem: { label: 'Unarchive', command: jasmine.any(Function) } },
+                { menuItem: { label: 'Delete', command: jasmine.any(Function) } }
+            ];
+            expect(archivedContainer.actions).toEqual(actions);
+        });
+
+        it('should select all except system container', () => {
+            const menu: Menu = fixture.debugElement.query(
+                By.css('.container-listing__header-options p-menu')
+            ).componentInstance;
+            spyOn(dotContainersService, 'publish').and.returnValue(of(mockBulkResponseSuccess));
+            comp.updateSelectedContainers(containersMock);
+            menu.model[0].command();
+            expect(dotContainersService.publish).toHaveBeenCalledWith([
+                '123Published',
+                '123Unpublish',
+                '123Archived'
+            ]);
+        });
     });
+
+    it('should emit changes in base types selector', () => {
+        fixture.detectChanges();
+        baseTypesSelector = fixture.debugElement.query(
+            By.css('dot-base-type-selector')
+        ).componentInstance;
+        spyOn(comp.listing.paginatorService, 'setExtraParams');
+        spyOn(comp.listing, 'loadFirstPage');
+        baseTypesSelector.selected.emit('test');
+
+        expect(comp.listing.paginatorService.setExtraParams).toHaveBeenCalledWith('type', 'test');
+        expect(comp.listing.loadFirstPage).toHaveBeenCalledWith();
+    });
+
+    function setBasicOptions() {
+        return [
+            { menuItem: { label: 'Edit', command: jasmine.any(Function) } },
+            { menuItem: { label: 'Publish', command: jasmine.any(Function) } },
+            { menuItem: { label: 'Push Publish', command: jasmine.any(Function) } },
+            { menuItem: { label: 'Add To Bundle', command: jasmine.any(Function) } }
+        ];
+    }
 });

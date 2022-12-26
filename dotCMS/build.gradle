@@ -1,6 +1,7 @@
 buildscript {
     repositories {
         maven  {
+            mavenLocal()
             url "https://repo.dotcms.com/artifactory/libs-release"
             mavenCentral()
         }
@@ -20,17 +21,38 @@ plugins {
     id 'org.ajoberstar.grgit' version '4.1.1'
     id "com.palantir.docker" version "0.32.0"  // reference:  https://github.com/palantir/gradle-docker
     id "org.sonarqube" version "3.4.0.2513"
-
+    id "jacoco"
 
 }
 
+
 sonarqube {
-  properties {
-    property "sonar.projectKey", "dotCMS_core_AYQvQCMIJs0IgspqN39B"
-  }
+    properties {
+        property "sonar.projectKey", "dotCMS_core_AYSbIemxK43eThAXTlt-"
+        property "sonar.projectName", "dotcms-core"
+        property "sonar.host.url", "https://sonarqube.dotcms.site"
+        //property "sonar.verbose","true"
+        property "sonar.sourceEncoding", "UTF-8"
+        property "sonar.exclusions", "src/main/webapp/dotcms-webcomponents/**, src/main/plugins/**"
+        property "sonar.tests", "src/test/java, src/integration-test/java"
+        property "sonar.junit.reportPaths" , "${project.buildDir}/test-results/test, ${project.buildDir}/test-results/integrationTest"
+        property "sonar.coverage.jacoco.xmlReportPaths" ,"${project.buildDir}/reports/jacoco/test/jacocoTestReport.xml"
+    }
+
+}
+
+tasks.named('sonarqube').configure {
+    dependsOn 'test','jacocoTestReport'
+}
+
+jacocoTestReport {
+    reports {
+        xml.enabled true
+    }
 }
 
 repositories {
+    mavenLocal()
     maven { url "https://repo.dotcms.com/artifactory/libs-release" }
     maven { url "https://repo.dotcms.com/artifactory/libs-snapshot-local" }
     maven { url 'https://jitpack.io' }
@@ -51,6 +73,8 @@ project.ext {
     serverFolder = "$tomcatDistInstallLocation-$tomcatInstallVersion"
     homeFolder = serverFolder + webAppRootFolder
     dotcmsHome = serverFolder + webAppRootFolder
+
+
 
 
     if (project.gradle.startParameter.taskNames.contains('deployWarTomcat') || project.gradle.startParameter.taskNames.contains('createDist')|| project.gradle.startParameter.taskNames.contains('docker')){
@@ -210,6 +234,7 @@ else {
 
 
 def eeType = dotcmsReleaseVersion == "master" ? '-SNAPSHOT' : ''
+def mavenUiVersion = "1.0.0-SNAPSHOT"
 
 dependencies {
 
@@ -546,17 +571,27 @@ class ClonePullTomcatTask extends DefaultTask{
 // WAR
 
 task deleteDotCmsUi(type: Delete) {
-    delete "./build/$angularFolder/package"
+    delete "./build/extracted-ui"
+}
+
+
+task compileUI(type: Exec) {
+    workingDir "${project.projectDir}/../core-web"
+        commandLine '../mvnw', 'clean', 'install', '-DskipTests', "-Dnx.build.options=${nxBuildOptions}"
+}
+
+task unpackMavenUI(type: Copy, dependsOn: compileUI) {
+       from(zipTree("${project.projectDir}/../core-web/target/core-web-${mavenUiVersion}.war")) {
+                include "dotAdmin/**"
+                include "dotcms-webcomponents/**"
+                includeEmptyDirs = true
+            }
+        into layout.buildDirectory.dir("extracted-ui")
+
 }
 
 
 
-
-task extractDotCmsUi(type: NpmArtifactExtractTask) {
-    artifact = 'dotcms-ui'
-    version = coreWebReleaseVersion
-    outputDir = file("$buildDir/packages")
-}
 
 task cleanDotCmsUi {
     outputs.upToDateWhen { false }
@@ -564,8 +599,8 @@ task cleanDotCmsUi {
     delete "./src/main/webapp/$angularFolder"
 }
 
-task copyDotCmsUi(type: Copy) {
-    from (extractDotCmsUi.outputDir.dir('package'))
+task copyDotCmsUi(type: Copy, dependsOn:['unpackMavenUI']) {
+    from (layout.buildDirectory.dir("extracted-ui/dotAdmin"))
     into "./src/main/webapp/$angularFolder"
     dependsOn cleanDotCmsUi
 }
@@ -581,17 +616,9 @@ task cleanDotCmsWebComponents {
 }
 
 
-task extractDotCmsWebComponents(type: NpmArtifactExtractTask) {
-    group = 'extract dotcms-webcomponents'
-    description = 'Extracts package from dotcms-webcomponents to dotcms-webcomponents'
-    artifact = 'dotcms-webcomponents'
-    version = webComponentsReleaseVersion
-    outputDir = file("$buildDir/dotcms-webcomponents")
-    dependsOn 'cleanDotCmsWebComponents'
-}
 
-task copyDotCmsWebComponents(type: Copy) {
-    from (extractDotCmsWebComponents.outputDir.dir('package/dist'))
+task copyDotCmsWebComponents(type: Copy, dependsOn:['unpackMavenUI']) {
+    from (layout.buildDirectory.dir("extracted-ui/dotcms-webcomponents/dist"))
     into "./src/main/webapp"
     include 'dotcms-webcomponents/*'
     dependsOn cleanDotCmsWebComponents

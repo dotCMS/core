@@ -6,7 +6,7 @@ import { RouterTestingModule } from '@angular/router/testing';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 
 import { AppComponent } from './app.component';
-import { DotUiColorsService } from '@services/dot-ui-colors/dot-ui-colors.service';
+import { DotUiColorsService } from '@dotcms/app/api/services/dot-ui-colors/dot-ui-colors.service';
 import {
     CoreWebService,
     CoreWebServiceMock,
@@ -15,9 +15,9 @@ import {
     StringUtils
 } from '@dotcms/dotcms-js';
 import { of } from 'rxjs';
-import { DotMessageService } from '@services/dot-message/dot-messages.service';
-import { DotNavLogoService } from '@services/dot-nav-logo/dot-nav-logo.service';
+import { DotMessageService } from '@dotcms/data-access';
 import { HttpClientTestingModule } from '@angular/common/http/testing';
+import { DotNavLogoService } from './api/services/dot-nav-logo/dot-nav-logo.service';
 
 describe('AppComponent', () => {
     let fixture: ComponentFixture<AppComponent>;

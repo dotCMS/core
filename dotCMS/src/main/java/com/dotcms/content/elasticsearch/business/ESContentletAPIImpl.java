@@ -1,11 +1,5 @@
 package com.dotcms.content.elasticsearch.business;
 
-import static com.dotcms.exception.ExceptionUtil.bubbleUpException;
-import static com.dotcms.exception.ExceptionUtil.getLocalizedMessageOrDefault;
-import static com.dotmarketing.business.PermissionAPI.PERMISSION_CAN_ADD_CHILDREN;
-import static com.dotmarketing.portlets.contentlet.model.Contentlet.URL_MAP_FOR_CONTENT_KEY;
-import static com.dotmarketing.portlets.personas.business.PersonaAPI.DEFAULT_PERSONA_NAME_KEY;
-
 import com.dotcms.api.system.event.ContentletSystemEventUtil;
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.business.CloseDBIfOpened;
@@ -91,6 +85,7 @@ import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.exception.InvalidLicenseException;
 import com.dotmarketing.factories.InodeFactory;
+import com.dotmarketing.factories.MultiTreeAPI;
 import com.dotmarketing.factories.PublishFactory;
 import com.dotmarketing.factories.TreeFactory;
 import com.dotmarketing.menubuilders.RefreshMenus;
@@ -175,8 +170,21 @@ import com.liferay.util.StringUtil;
 import com.rainerhahnekamp.sneakythrow.Sneaky;
 import com.thoughtworks.xstream.XStream;
 import com.thoughtworks.xstream.io.xml.DomDriver;
+import io.vavr.Lazy;
 import io.vavr.Tuple2;
 import io.vavr.control.Try;
+import org.apache.commons.beanutils.BeanUtils;
+import org.apache.commons.io.FileUtils;
+import org.apache.commons.lang.StringUtils;
+import org.elasticsearch.action.search.SearchPhaseExecutionException;
+import org.elasticsearch.action.search.SearchResponse;
+import org.elasticsearch.search.SearchHit;
+import org.elasticsearch.search.SearchHits;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+
+import javax.activation.MimeType;
+import javax.servlet.http.HttpServletRequest;
 import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.IOException;
@@ -205,17 +213,12 @@ import java.util.function.Supplier;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import javax.activation.MimeType;
-import javax.servlet.http.HttpServletRequest;
-import org.apache.commons.beanutils.BeanUtils;
-import org.apache.commons.io.FileUtils;
-import org.apache.commons.lang.StringUtils;
-import org.elasticsearch.action.search.SearchPhaseExecutionException;
-import org.elasticsearch.action.search.SearchResponse;
-import org.elasticsearch.search.SearchHit;
-import org.elasticsearch.search.SearchHits;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
+
+import static com.dotcms.exception.ExceptionUtil.bubbleUpException;
+import static com.dotcms.exception.ExceptionUtil.getLocalizedMessageOrDefault;
+import static com.dotmarketing.business.PermissionAPI.PERMISSION_CAN_ADD_CHILDREN;
+import static com.dotmarketing.portlets.contentlet.model.Contentlet.URL_MAP_FOR_CONTENT_KEY;
+import static com.dotmarketing.portlets.personas.business.PersonaAPI.DEFAULT_PERSONA_NAME_KEY;
 
 /**
  * Implementation class for the {@link ContentletAPI} interface.
@@ -245,6 +248,8 @@ public class ESContentletAPIImpl implements ContentletAPI {
     private final IdentifierStripedLock lockManager;
     private final TempFileAPI tempApi;
     private final FileMetadataAPI fileMetadataAPI;
+    private final Lazy<MultiTreeAPI> multiTreeAPI = Lazy.of(APILocator::getMultiTreeAPI);
+
     public static final int MAX_LIMIT = 10000;
     private static final boolean INCLUDE_DEPENDENCIES = true;
 
@@ -1172,6 +1177,20 @@ public class ESContentletAPIImpl implements ContentletAPI {
     }
 
     @Override
+    public List<Contentlet> getAllContentByVariants(final User user,
+            final boolean respectFrontendRoles, final String...variantNames) throws DotDataException, DotStateException,
+            DotSecurityException {
+
+        final String queryWithoutParenthesis = Arrays.stream(variantNames).map((variant)->"variant:"+variant)
+                .collect(Collectors.joining(" OR "));
+
+        final String query = "+(" + queryWithoutParenthesis + ")";
+
+        return search(query, -1, 0, null,
+                user, respectFrontendRoles);
+    }
+
+    @Override
     public void addPermissionsToQuery(StringBuffer buffy, User user, List<Role> roles, boolean respectFrontendRoles) throws DotSecurityException, DotDataException  {
         if(user != null)
             buffy.append(" +((+owner:" + user.getUserId() + " +ownerCanRead:true) ");
@@ -1437,6 +1456,11 @@ public class ESContentletAPIImpl implements ContentletAPI {
         return results;
     }
 
+    @Override
+    public Optional<Integer> getAllContentletReferencesCount(final String contentletId) throws DotDataException {
+        return Optional.of(this.multiTreeAPI.get().getAllContentletReferencesCount(contentletId));
+    }
+
     private String getPersonaNameByMultitree(final MultiTree tree) throws DotSecurityException, DotDataException {
         final Supplier<String> defaultPersonaSupplier = () -> Try.of(()->
                 LanguageUtil.get(DEFAULT_PERSONA_NAME_KEY)).getOrElse("Default Visitor");
@@ -1478,24 +1502,23 @@ public class ESContentletAPIImpl implements ContentletAPI {
                     return contentlet.getFolder();
                 }
             } else if (theField instanceof CategoryField) {
-                final Category category = this.categoryAPI.find(theField.values(), currentUser, respectFrontEndRoles);
+                final Category categoryField = this.categoryAPI.find(theField.values(), currentUser, respectFrontEndRoles);
                 // Get all the Contentlets Categories
                 final List<Category> selectedCategories = this.categoryAPI
                         .getParents(contentlet, currentUser, respectFrontEndRoles);
-                final Set<Category> categoryList = new HashSet<>();
-                final List<Category> categoryTree = this.categoryAPI
-                        .getAllChildren(category, currentUser, respectFrontEndRoles);
-                if (selectedCategories.size() > 0 && categoryTree != null) {
-                    for (int k = 0; k < categoryTree.size(); k++) {
-                        final Category cat = categoryTree.get(k);
-                        for (final Category categ : selectedCategories) {
-                            if (categ.getInode().equalsIgnoreCase(cat.getInode())) {
-                                categoryList.add(cat);
-                            }
-                        }
-                    }
+                if(selectedCategories.isEmpty()) {
+                    return List.of();
                 }
-                return categoryList;
+                final List<Category> availableCategories = this.categoryAPI
+                        .getAllChildren(categoryField, APILocator.systemUser(), false);
+                if(availableCategories.isEmpty()) {
+                    return List.of();
+                }
+                selectedCategories.retainAll(availableCategories);
+                
+                return selectedCategories;
+                
+
 
             } else if (theField instanceof RelationshipField) {
                 final ContentletRelationships contentletRelationships = new ContentletRelationships(
@@ -7230,6 +7253,32 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
     @CloseDBIfOpened
     @Override
+    public void validateContentletNoRels(final Contentlet contentlet,
+            final List<Category> cats) throws DotContentletValidationException {
+        if (null != contentlet.getMap().get(Contentlet.DONT_VALIDATE_ME)) {
+            return;
+        }
+        final String contentTypeId = contentlet.getContentTypeId();
+        if (!InodeUtils.isSet(contentTypeId)) {
+            final String errorMsg = "Contentlet [" + contentlet.getIdentifier() + "] has an empty Content Type ID";
+            Logger.error(this, errorMsg);
+            throw new DotContentletValidationException(errorMsg);
+        }
+        try {
+            validateContentlet(contentlet, cats);
+            if (BaseContentType.PERSONA.getType() == contentlet.getContentType().baseType().getType()) {
+                APILocator.getPersonaAPI().validatePersona(contentlet);
+            }
+            if (contentlet.isVanityUrl()) {
+                APILocator.getVanityUrlAPI().validateVanityUrl(contentlet);
+            }
+        } catch (final DotContentletValidationException ve) {
+            throw ve;
+        }
+    }
+
+    @CloseDBIfOpened
+    @Override
     public void validateContentlet(final Contentlet contentlet, final ContentletRelationships contentRelationships,
             final List<Category> cats) throws DotContentletValidationException {
         if (null != contentlet.getMap().get(Contentlet.DONT_VALIDATE_ME)) {
@@ -7252,7 +7301,10 @@ public class ESContentletAPIImpl implements ContentletAPI {
         } catch (final DotContentletValidationException ve) {
             throw ve;
         }
-        validateRelationships(contentlet, contentRelationships);
+
+        if(Try.of(()->!contentlet.getBoolProperty(Contentlet.SKIP_RELATIONSHIPS_VALIDATION)).getOrElse(true)) {
+            validateRelationships(contentlet, contentRelationships);
+        }
     }
 
     /**

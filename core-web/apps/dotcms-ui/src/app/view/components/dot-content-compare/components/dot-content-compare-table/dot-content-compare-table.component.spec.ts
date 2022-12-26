@@ -2,8 +2,8 @@
 
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { DotContentCompareTableComponent } from './dot-content-compare-table.component';
-import { MockDotMessageService } from '@tests/dot-message-service.mock';
-import { DotMessageService } from '@services/dot-message/dot-messages.service';
+import { MockDotMessageService } from '@dotcms/utils-testing';
+import { DotMessageService } from '@dotcms/data-access';
 import { Component, DebugElement, EventEmitter, Input, Output } from '@angular/core';
 import { DotContentCompareTableData } from '@components/dot-content-compare/store/dot-content-compare.store';
 import { TableModule } from 'primeng/table';
@@ -15,7 +15,7 @@ import { DotContentComparePreviewFieldComponent } from '@components/dot-content-
 import { By } from '@angular/platform-browser';
 import { DotMessagePipeModule } from '@pipes/dot-message/dot-message-pipe.module';
 import { DotcmsConfigService } from '@dotcms/dotcms-js';
-import { DotFormatDateService } from '@services/dot-format-date-service';
+import { DotFormatDateService } from '@dotcms/app/api/services/dot-format-date-service';
 import { of } from 'rxjs';
 import { DotTransformVersionLabelPipe } from '../../pipes/dot-transform-version-label.pipe';
 

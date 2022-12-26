@@ -1,10 +1,10 @@
 import { of } from 'rxjs';
 import { waitForAsync, ComponentFixture, TestBed } from '@angular/core/testing';
-import { MockDotMessageService } from '@tests/dot-message-service.mock';
-import { DotMessageService } from '@services/dot-message/dot-messages.service';
+import { MockDotMessageService } from '@dotcms/utils-testing';
+import { DotMessageService } from '@dotcms/data-access';
 import { ActivatedRoute } from '@angular/router';
 import { CoreWebService } from '@dotcms/dotcms-js';
-import { CoreWebServiceMock } from '@tests/core-web.service.mock';
+import { CoreWebServiceMock } from '@dotcms/utils-testing';
 import { DotStarterComponent } from './dot-starter.component';
 import { DotStarterResolver } from './dot-starter-resolver.service';
 import { By } from '@angular/platform-browser';
@@ -12,9 +12,9 @@ import { DebugElement } from '@angular/core';
 import { DotMessagePipeModule } from '@pipes/dot-message/dot-message-pipe.module';
 import { Checkbox, CheckboxModule } from 'primeng/checkbox';
 import { HttpClientTestingModule } from '@angular/common/http/testing';
-import { MockDotRouterService } from '@tests/dot-router-service.mock';
-import { DotRouterService } from '@services/dot-router/dot-router.service';
-import { DotAccountService } from '@services/dot-account-service';
+import { MockDotRouterService } from '@dotcms/utils-testing';
+import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
+import { DotAccountService } from '@dotcms/app/api/services/dot-account-service';
 
 const messages = {
     'starter.title': 'Welcome!',

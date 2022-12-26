@@ -63,7 +63,6 @@ services:
     environment:
       - CLUSTER_ADMIN_TOKEN=myadmin
       - REDIS_URL=redis://jitsu_redis:6379
-      # - JITSU_CONFIGURATOR_URL=http://jitsu-configurator:7000
       - JITSU_CONFIGURATOR_URL=${JITSU_CONFIGURATOR_URL:-http://dotcms-analytics:8080}
       - SERVER_PORT=8001
       - TERM=xterm-256color
@@ -132,7 +131,7 @@ services:
 
   ch_server:
     container_name: ch_server
-    image: clickhouse/clickhouse-server:latest
+    image: dotcms/clickhouse-server:latest
     ports:
       - "${CH_HOST_PORT:-8124}:8123"
     ulimits:

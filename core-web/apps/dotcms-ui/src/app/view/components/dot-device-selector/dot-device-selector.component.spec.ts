@@ -6,14 +6,16 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 
 import { DotDeviceSelectorComponent } from './dot-device-selector.component';
 import { Component, CUSTOM_ELEMENTS_SCHEMA, DebugElement } from '@angular/core';
-import { DotDevicesService } from '@services/dot-devices/dot-devices.service';
-import { DotDevicesServiceMock } from '../../../test/dot-device-service.mock';
+import { DotDevicesService } from '@dotcms/data-access';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
-import { DotMessageService } from '@services/dot-message/dot-messages.service';
-import { MockDotMessageService } from '../../../test/dot-message-service.mock';
+import { DotMessageService } from '@dotcms/data-access';
+import {
+    DotDevicesServiceMock,
+    mockDotDevices,
+    MockDotMessageService
+} from '@dotcms/utils-testing';
 import { By } from '@angular/platform-browser';
-import { mockDotDevices } from '../../../test/dot-device.mock';
-import { DotDevice } from '@models/dot-device/dot-device.model';
+import { DotDevice } from '@dotcms/dotcms-models';
 import { DotIconModule } from '@dotcms/ui';
 import { DotMessagePipe } from '@dotcms/app/view/pipes';
 import { of } from 'rxjs';
@@ -77,12 +79,6 @@ describe('DotDeviceSelectorComponent', () => {
         const icon = de.query(By.css('dot-icon'));
         expect(icon.attributes.name).toBe('devices');
         expect(icon.attributes.big).toBeDefined();
-    });
-
-    it('should have label', () => {
-        fixtureHost.detectChanges();
-        const label = de.query(By.css('label')).nativeElement;
-        expect(label.textContent).toBe('Device');
     });
 
     it('should emmit the selected Device', () => {

@@ -2,14 +2,18 @@ package com.dotmarketing.portlets.contentlet.business.exporter;
 
 import java.io.File;
 import java.util.Map;
-import java.util.Map.Entry;
+import java.util.concurrent.Semaphore;
+import com.dotcms.api.web.HttpServletResponseThreadLocal;
 import com.dotmarketing.image.filter.ImageFilter;
 import com.dotmarketing.image.filter.ImageFilterApiImpl;
 import com.dotmarketing.image.filter.PDFImageFilter;
 import com.dotmarketing.portlets.contentlet.business.BinaryContentExporter;
 import com.dotmarketing.portlets.contentlet.business.BinaryContentExporterException;
+import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
+import io.vavr.control.Try;
+
 
 
 /**
@@ -23,6 +27,11 @@ import com.dotmarketing.util.UtilMethods;
  */
 
 public class ImageFilterExporter implements BinaryContentExporter {
+    
+    private final int allowedRequests = Config.getIntProperty("IMAGE_GENERATION_SIMULTANEOUS_REQUESTS", 10);
+    
+    private final Semaphore semaphore  = new Semaphore(allowedRequests); 
+    
 
     /*
      * (non-Javadoc)
@@ -34,11 +43,10 @@ public class ImageFilterExporter implements BinaryContentExporter {
     public BinaryContentExporterData exportContent(File file, final Map<String, String[]> parameters)
                     throws BinaryContentExporterException {
 
-        BinaryContentExporterData data;
-
+        Class<ImageFilter> errorClass = ImageFilter.class;
         try {
 
-            final Map<String,Class> filters = new ImageFilterApiImpl().resolveFilters(parameters);
+            final Map<String,Class<ImageFilter>> filters = new ImageFilterApiImpl().resolveFilters(parameters);
             parameters.put("filter", filters.keySet().toArray(new String[filters.size()]));
             parameters.put("filters", filters.keySet().toArray(new String[filters.size()]));
             
@@ -47,26 +55,51 @@ public class ImageFilterExporter implements BinaryContentExporter {
                 file = new PDFImageFilter().runFilter(file, parameters);
             }
             
-            for (final Entry<String, Class> filter : filters.entrySet()) {
-                try {
-
-                    final ImageFilter imageFilter = (ImageFilter) filter.getValue().newInstance();
-                    file = imageFilter.runFilter(file, parameters);
-                } catch (Exception e) {
-                    Logger.warnAndDebug(ImageFilterExporter.class,
-                                    "Exception in " + filter + " :" + e.getMessage() + e.getStackTrace()[0], e);
-                }
+            for (final Class<ImageFilter> filter : filters.values()) {
+                errorClass=filter;
+                file = runFilter(filter, file, parameters);
             }
 
-            data = new BinaryContentExporterData(file);
+            return new BinaryContentExporterData(file);
         } catch (Exception e) {
 
-            Logger.warnAndDebug(ImageFilterExporter.class,  e);
+            Logger.warnAndDebug(errorClass,  e);
             throw new BinaryContentExporterException(e.getMessage(), e);
         }
 
-        return data;
     }
+    
+    
+    private File runFilter(Class<ImageFilter> clazz, final File fileIn,final Map<String, String[]> parameters) throws Exception {
+        
+        boolean canRun=false;
+        try {
+            
+            canRun = semaphore.tryAcquire();
+            Logger.warn(getClass(), "Image permits/requests : " + allowedRequests + "/" + (allowedRequests-semaphore.availablePermits()));
+            
+            if(!canRun) {
+                Logger.warn(getClass(), "Image permits exhausted : " + allowedRequests + "/" + (allowedRequests-semaphore.availablePermits()));
+                
+                Try.run(()->{HttpServletResponseThreadLocal.INSTANCE.getResponse().setHeader("cache-control", "max-age=0");});
+                
+                return fileIn;
+                
+            }
+            final ImageFilter imageFilter =  clazz.getDeclaredConstructor().newInstance();
+            return imageFilter.runFilter(fileIn, parameters);
+        } 
+        finally {
+            if(canRun) {
+                semaphore.release();
+            }
+        }
+    }
+
+    
+    
+    
+    
 
     public String getName() {
         return "Image Filter Exporter";

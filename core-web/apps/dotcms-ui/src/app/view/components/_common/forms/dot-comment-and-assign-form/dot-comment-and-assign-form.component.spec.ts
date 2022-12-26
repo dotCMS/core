@@ -3,18 +3,17 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 
 import { DotCommentAndAssignFormComponent } from './dot-comment-and-assign-form.component';
-import { DotRolesService } from '@services/dot-roles/dot-roles.service';
+import { DotRolesService } from '@dotcms/data-access';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { InputTextareaModule } from 'primeng/inputtextarea';
 import { Dropdown, DropdownModule } from 'primeng/dropdown';
 import { DotPipesModule } from '@pipes/dot-pipes.module';
 import { CoreWebService } from '@dotcms/dotcms-js';
-import { CoreWebServiceMock } from '@tests/core-web.service.mock';
-import { DotFormatDateService } from '@services/dot-format-date-service';
+import { CoreWebServiceMock, mockProcessedRoles } from '@dotcms/utils-testing';
+import { DotFormatDateService } from '@dotcms/app/api/services/dot-format-date-service';
 import { Component, DebugElement, Input } from '@angular/core';
 import { By } from '@angular/platform-browser';
 import { of } from 'rxjs';
-import { mockProcessedRoles } from '@services/dot-roles/dot-roles.service.spec';
 import { HttpClientTestingModule } from '@angular/common/http/testing';
 
 @Component({

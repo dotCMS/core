@@ -3,29 +3,11 @@
     "sourceRoot": "libs/dotcms-models/src",
     "projectType": "library",
     "targets": {
-        "build": {
-            "executor": "@nrwl/js:tsc",
-            "outputs": ["{options.outputPath}"],
-            "options": {
-                "outputPath": "dist/libs/dotcms-models",
-                "main": "libs/dotcms-models/src/index.ts",
-                "tsConfig": "libs/dotcms-models/tsconfig.lib.json",
-                "assets": ["libs/dotcms-models/*.md"]
-            }
-        },
         "lint": {
             "executor": "@nrwl/linter:eslint",
             "outputs": ["{options.outputFile}"],
             "options": {
                 "lintFilePatterns": ["libs/dotcms-models/**/*.ts"]
-            }
-        },
-        "test": {
-            "executor": "@nrwl/jest:jest",
-            "outputs": ["coverage/libs/dotcms-models"],
-            "options": {
-                "jestConfig": "libs/dotcms-models/jest.config.ts",
-                "passWithNoTests": true
             }
         }
     },

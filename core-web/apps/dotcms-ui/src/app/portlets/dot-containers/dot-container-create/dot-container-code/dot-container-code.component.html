@@ -1,13 +1,15 @@
-<div class="dot-container-code__content-tab-container">
-    <label class="block p-label-input-required field">{{
-        'message.containers.create.content_type_code' | dm
-    }}</label>
+<div class="dot-container-code__content-tab-container" [formGroup]="fg">
+    <div class="field mb-0">
+        <label class="block p-label-input-required">{{
+            'message.containers.create.content_type_code' | dm
+        }}</label>
+    </div>
     <p-tabView
+        [(activeIndex)]="activeTabIndex"
         [scrollable]="true"
-        [activeIndex]="activeTabIndex"
         [controlClose]="true"
         (onChange)="handleTabClick($event, $event.index)"
-        (onClose)="handleClose($event.index, $event.close)"
+        (onClose)="removeItem($event.index)"
     >
         <p-tabPanel headerStyleClass="tab-panel-btn">
             <ng-template pTemplate="header">
@@ -17,29 +19,54 @@
                 ></i>
                 <p-menu #actionsMenu [popup]="true" [model]="menuItems" appendTo="body"></p-menu>
             </ng-template>
+            <ng-template pTemplate="content">
+                <div
+                    class="dot-container-code__empty-content flex justify-content-center align-items-center flex-column"
+                >
+                    <dot-icon data-testId="code" name="code" size="100"></dot-icon>
+                    <div
+                        class="dot-container-code__empty-content-title"
+                        data-testId="empty-content-title"
+                    >
+                        {{ 'message.containers.empty.content_type_message' | dm }}
+                    </div>
+                    <div
+                        class="dot-container-code__empty-content-subtitle mb-1"
+                        data-testId="empty-content-subtitle"
+                    >
+                        {{ 'message.containers.empty.content_type_need_help' | dm }}?
+                        <a href="https://www.dotcms.com/docs/latest/containers" target="_blank">{{
+                            'message.containers.empty.content_type_go_to_documentation' | dm
+                        }}</a>
+                    </div>
+                </div>
+            </ng-template>
         </p-tabPanel>
         <p-tabPanel
-            *ngFor="let containerContent of containerContents.controls; let i = index"
-            [header]="containerContent.value.name"
-            [selected]="activeTabIndex === i + 1"
+            *ngFor="let containerContent of getcontainerStructures.controls; let i = index"
+            [header]="contentTypeNamesById[containerContent.value.structureId]"
+            formArrayName="containerStructures"
             closable="true"
         >
-            <button
-                class="p-button-secondary dot-container-code__variable-btn ml-3 mb-2 mt-2 p-button-sm"
-                [label]="'add-variable' | dm"
-                (click)="handleAddVariable(containerContent.value)"
-                pButton
-            ></button>
-            <dot-textarea-content
-                #body
-                [value]="containerContent.value.code"
-                [editorName]="containerContent.value.variable"
-                [show]="['code']"
-                [customStyles]="{ border: 'none', height: '500px' }"
-                (monacoInit)="monacoInit($event)"
-                (valueChange)="updateContentTypeText($event)"
-                language="html"
-            ></dot-textarea-content>
+            <div [formGroupName]="i">
+                <button
+                    class="p-button-secondary dot-container-code__variable-btn ml-3 mb-2 mt-2 p-button-sm"
+                    [label]="'add-variable' | dm"
+                    (click)="handleAddVariable(containerContent.value)"
+                    pButton
+                ></button>
+                <dot-textarea-content
+                    #body
+                    [attr.data-testid]="containerContent.value.structureId"
+                    [value]="containerContent.value.code"
+                    [editorName]="containerContent.value.structureId"
+                    [show]="['code']"
+                    [customStyles]="{ border: 'none', height: '500px' }"
+                    (monacoInit)="monacoInit($event)"
+                    formControlName="code"
+                    language="html"
+                ></dot-textarea-content>
+            </div>
         </p-tabPanel>
     </p-tabView>
 </div>

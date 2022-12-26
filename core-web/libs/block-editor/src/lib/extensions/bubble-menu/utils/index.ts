@@ -3,10 +3,14 @@ import {
     BubbleMenuItem,
     ShouldShowProps,
     LINK_FORM_PLUGIN_KEY,
-    ImageNode
+    ImageNode,
+    findParentNode
 } from '@dotcms/block-editor';
 
-const hideBubbleMenuOn = {};
+const hideBubbleMenuOn = {
+    tableCell: true,
+    table: true
+};
 
 /**
  * Determine when the bubble menu can or cannot be displayed.
@@ -21,18 +25,27 @@ export const shouldShowBubbleMenu = ({ editor, state, from, to }: ShouldShowProp
 
     const { isOpen, openOnClick } = LINK_FORM_PLUGIN_KEY.getState(state);
 
-    // Current selected node
+    // Current selected node and parent.
     const node = editor.state.doc.nodeAt(editor.state.selection.from);
+    const parentNode = findParentNode(editor.state.selection.$from);
 
     // Sometime check for `empty` is not enough.
     // Doubleclick an empty paragraph returns a node size of 2.
     // So we check also for an empty text size.
     const isEmptyTextBlock = !doc.textBetween(from, to).length && isTextSelection(state.selection);
+    const isTextInsideTable = node?.type.name === 'text' && parentNode?.type.name === 'table';
 
-    // If it's empty or the current node is type dotContent, it will not open.
+    // Is a text node inside the table
+    if (isTextInsideTable && !isEmptyTextBlock) {
+        return true;
+    }
+
+    // If it's empty or the parent and node itself is part of the hideBubbleMenuOn , it will not open.
     if (
         !isOpen &&
-        (!view.hasFocus() || empty || isEmptyTextBlock || hideBubbleMenuOn[node?.type.name])
+        (!view.hasFocus() || empty || isEmptyTextBlock || hideBubbleMenuOn[parentNode?.type.name]
+            ? true
+            : hideBubbleMenuOn[node?.type.name])
     ) {
         return false;
     }
@@ -100,8 +113,7 @@ export const isListNode = (editor): boolean => {
     return editor.isActive('bulletList') || editor.isActive('orderedList');
 };
 
-/* Bubble Menu Items*/
-const bubbleMenuDefaultItems: Array<BubbleMenuItem> = [
+const textMarks: Array<BubbleMenuItem> = [
     {
         icon: 'format_bold',
         markAction: 'bold',
@@ -122,7 +134,10 @@ const bubbleMenuDefaultItems: Array<BubbleMenuItem> = [
         markAction: 'strike',
         active: false,
         divider: true
-    },
+    }
+];
+
+const alignmentMarks: Array<BubbleMenuItem> = [
     {
         icon: 'format_align_left',
         markAction: 'left',
@@ -138,7 +153,13 @@ const bubbleMenuDefaultItems: Array<BubbleMenuItem> = [
         markAction: 'right',
         active: false,
         divider: true
-    },
+    }
+];
+
+/* Bubble Menu Items*/
+const bubbleMenuDefaultItems: Array<BubbleMenuItem> = [
+    ...textMarks,
+    ...alignmentMarks,
     {
         icon: 'format_list_bulleted',
         markAction: 'bulletList',
@@ -180,22 +201,7 @@ const bubbleMenuDefaultItems: Array<BubbleMenuItem> = [
 ];
 
 const imageOptions: Array<BubbleMenuItem> = [
-    {
-        icon: 'format_align_left',
-        markAction: 'left',
-        active: false
-    },
-    {
-        icon: 'format_align_center',
-        markAction: 'center',
-        active: false
-    },
-    {
-        icon: 'format_align_right',
-        markAction: 'right',
-        active: false,
-        divider: true
-    },
+    ...alignmentMarks,
     {
         icon: 'link',
         markAction: 'link',
@@ -205,6 +211,29 @@ const imageOptions: Array<BubbleMenuItem> = [
     {
         text: 'Properties',
         markAction: 'properties',
+        active: false
+    }
+];
+
+/* Table text node Items*/
+const tableOptions: Array<BubbleMenuItem> = [
+    ...textMarks,
+    ...alignmentMarks,
+    {
+        icon: 'link',
+        markAction: 'link',
+        active: false,
+        divider: true
+    },
+    {
+        icon: 'format_clear',
+        markAction: 'clearAll',
+        active: false,
+        divider: true
+    },
+    {
+        icon: 'delete',
+        markAction: 'deleteNode',
         active: false
     }
 ];
@@ -224,6 +253,9 @@ export const getBubbleMenuItem = (nodeType: string = ''): Array<BubbleMenuItem> 
 
         case 'dotContent':
             return dotContentOptions;
+
+        case 'table':
+            return tableOptions;
 
         default:
             return bubbleMenuDefaultItems;

@@ -7,7 +7,7 @@ import {
     ViewChild,
     ElementRef
 } from '@angular/core';
-import { DotMessageService } from '@services/dot-message/dot-messages.service';
+import { DotMessageService } from '@dotcms/data-access';
 import { DotMessageDisplayService } from '@components/dot-message-display/services';
 import { DotMessageSeverity, DotMessageType } from '@components/dot-message-display/model';
 import { DotKeyValue } from '@shared/models/dot-key-value-ng/dot-key-value-ng.model';

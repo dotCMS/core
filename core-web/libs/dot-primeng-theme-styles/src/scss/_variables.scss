@@ -6,6 +6,7 @@
 */
 
 // COLORS
+$dark: #1b3359;
 $black: #0a0725;
 $orange: #f3762a;
 $white: #ffffff;
@@ -20,11 +21,14 @@ $gray-hover: #eee;
 $deleted-content-color: #fdb8c0;
 $new-content-color: #ddffdd;
 $tr-hover-color: #e0e9f6;
+$blue-link: #1d4ed8;
 
 $white_rgb: var(--color-white_rgb);
 $brand-primary: var(--color-main);
 $brand-primary_mod: var(--color-main_mod);
 $brand-primary_rgb: var(--color-main_rgb);
+$brand-primary-100: #e9ebfc;
+$brand-primary-100-hover: #d2d6f9;
 $brand-secondary: var(--color-sec);
 $brand-secondary_rgb: var(--color-sec_rgb);
 $brand-background: var(--color-background);
@@ -90,6 +94,7 @@ $font-size-large: 1.25rem;
 $font-size-medium: 1rem;
 $font-size-small: 0.85rem;
 $font-size-x-small: 0.75rem;
+$font-weight-regular-bold: 400;
 $font-weight-semi-bold: 500;
 
 $code-text: "Menlo", "Monaco", "Consolas";
@@ -116,7 +121,7 @@ $content-palette-width: 16rem;
 
 //Dot Secondary Toolbar
 $dot-secondary-toolbar-height: 52px;
-$dot-secondary-toolbar-main-height: 70px;
+$dot-secondary-toolbar-main-height: 68px;
 
 // GRIDS
 $gutter-width: $spacing-9;

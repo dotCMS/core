@@ -2,8 +2,9 @@ import { pluck, catchError, take, map } from 'rxjs/operators';
 import { Injectable } from '@angular/core';
 import { Observable, of } from 'rxjs';
 import { CoreWebService } from '@dotcms/dotcms-js';
-import { DotHttpErrorManagerService } from '@services/dot-http-error-manager/dot-http-error-manager.service';
+
 import { HttpErrorResponse } from '@angular/common/http';
+import { DotHttpErrorManagerService } from '../dot-http-error-manager/dot-http-error-manager.service';
 
 const addToMenuUrl = `v1/portlet`;
 

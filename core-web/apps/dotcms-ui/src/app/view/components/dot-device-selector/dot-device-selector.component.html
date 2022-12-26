@@ -1,17 +1,18 @@
-<dot-icon name="devices" big></dot-icon>
+<div class="dot-device-selector wrapper h-full flex-auto flex align-items-center gap-3 min-w-full">
+    <dot-icon big name="devices"></dot-icon>
 
-<div class="device-selector__field">
-    <label for="device-selector">{{ 'editpage.viewas.label.device' | dm }}</label>
-    <p-dropdown
-        (onChange)="change($event.value)"
-        [(ngModel)]="value"
-        [disabled]="disabled"
-        [options]="options"
-        dataKey="inode"
-        id="device-selector"
-        optionLabel="name"
-        class="p-dropdown-sm"
-        [placeholder]="placeholder"
-    >
-    </p-dropdown>
+    <div class="device-selector__field flex-grow-1">
+        <p-dropdown
+            class="p-dropdown-sm"
+            id="device-selector"
+            [(ngModel)]="value"
+            [disabled]="disabled"
+            [options]="options"
+            [placeholder]="placeholder"
+            (onChange)="change($event.value)"
+            dataKey="inode"
+            optionLabel="name"
+        >
+        </p-dropdown>
+    </div>
 </div>

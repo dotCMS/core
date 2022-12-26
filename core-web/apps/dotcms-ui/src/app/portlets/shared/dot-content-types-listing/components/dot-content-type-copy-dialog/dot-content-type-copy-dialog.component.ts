@@ -16,7 +16,7 @@ import {
     UntypedFormGroup,
     Validators
 } from '@angular/forms';
-import { DotMessageService } from '@services/dot-message/dot-messages.service';
+import { DotMessageService } from '@dotcms/data-access';
 import { DotCopyContentTypeDialogFormFields } from '@dotcms/dotcms-models';
 import { combineLatest, Observable, of } from 'rxjs';
 import { DotCMSAssetDialogCopyFields } from '@portlets/shared/dot-content-types-listing/dot-content-type.store';

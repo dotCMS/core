@@ -1,11 +1,8 @@
 import { Component, OnInit } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
-import {
-    DotCurrentUser,
-    DotPermissionsType,
-    PermissionsType
-} from '@models/dot-current-user/dot-current-user';
-import { DotAccountService } from '@services/dot-account-service';
+import { DotAccountService } from '@dotcms/app/api/services/dot-account-service';
+import { DotCurrentUser, DotPermissionsType, PermissionsType } from '@dotcms/dotcms-models';
+
 import { Observable } from 'rxjs';
 import { pluck, take, map } from 'rxjs/operators';
 

@@ -9,6 +9,7 @@
             [columns]="vm.tableColumns"
             [actions]="[]"
             [checkbox]="true"
+            [mapItems]="getContainersWithDisabledEntities"
             (selectedItems)="updateSelectedContainers($event)"
             (rowWasClicked)="handleRowClick($event)"
             url="v1/containers?system=true"
@@ -52,7 +53,9 @@
             </div>
 
             <ng-template #beforeSearchTemplate>
-                <dot-base-type-selector></dot-base-type-selector>
+                <dot-base-type-selector
+                    (selected)="changeBaseTypeSelector($event)"
+                ></dot-base-type-selector>
             </ng-template>
 
             <ng-template #rowTemplate *ngIf="vm.tableColumns as tableColumns" let-rowData="rowData">

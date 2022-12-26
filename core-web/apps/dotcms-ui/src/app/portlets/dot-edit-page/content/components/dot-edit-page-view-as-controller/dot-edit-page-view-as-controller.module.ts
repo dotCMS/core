@@ -8,6 +8,7 @@ import { DotPersonaSelectorModule } from '@components/dot-persona-selector/dot-p
 import { DotPipesModule } from '@pipes/dot-pipes.module';
 import { DropdownModule } from 'primeng/dropdown';
 import { TooltipModule } from 'primeng/tooltip';
+import { DotIconModule } from '@dotcms/ui';
 
 @NgModule({
     imports: [
@@ -18,7 +19,8 @@ import { TooltipModule } from 'primeng/tooltip';
         DotPersonaSelectorModule,
         DotLanguageSelectorModule,
         DotDeviceSelectorModule,
-        DotPipesModule
+        DotPipesModule,
+        DotIconModule
     ],
     declarations: [DotEditPageViewAsControllerComponent],
     exports: [DotEditPageViewAsControllerComponent]

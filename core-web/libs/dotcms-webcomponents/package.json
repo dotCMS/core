@@ -1,6 +1,6 @@
 {
     "name": "dotcms-webcomponents",
-    "version": "22.12.0-next.6",
+    "version": "23.1.0",
     "main": "./dist/index.cjs.js",
     "module": "./dist/index.js",
     "es2015": "./dist/esm/index.mjs",
