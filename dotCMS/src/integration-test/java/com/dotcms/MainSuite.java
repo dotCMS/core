@@ -510,7 +510,7 @@ import org.junit.runners.Suite.SuiteClasses;
         FileMetadataAPITest.class,
         StartupTasksExecutorTest.class,
         Task201013AddNewColumnsToIdentifierTableTest.class,
-        Task201014UpdateColumnsValuesInIdentifierTableTest.class,
+        //Task201014UpdateColumnsValuesInIdentifierTableTest.class, //TODO: comment because the only one test there was commented by now
         AppsInterpolationTest.class,
         com.dotcms.rest.api.v1.template.TemplateResourceTest.class,
         Task201102UpdateColumnSitelicTableTest.class,
@@ -539,10 +539,10 @@ import org.junit.runners.Suite.SuiteClasses;
         Task210506UpdateStorageTableTest.class,
         Task210520UpdateAnonymousEmailTest.class,
         Task210510UpdateStorageTableDropMetadataColumnTest.class,
-        //StaticPushPublishBundleGeneratorTest.class, //comment because the only one test there was commented by now
+        //StaticPushPublishBundleGeneratorTest.class, //TODO: comment because the only one test there was commented by now
         CookieToolTest.class,
         CSVManifestBuilderTest.class,
-        //MoveContentActionletTest.class, //comment because the only one test there was commented by now
+        //MoveContentActionletTest.class, //TODO: comment because the only one test there was commented by now
         ImageFilterAPIImplTest.class,
         DeterministicIdentifierAPITest.class,
         Task210527DropReviewFieldsFromContentletTableTest.class,
@@ -628,7 +628,7 @@ import org.junit.runners.Suite.SuiteClasses;
         UtilMethodsITest.class,
         StoryBlockAPITest.class,
         UtilMethodsITest.class,
-        //Task220912UpdateCorrectShowOnMenuPropertyTest.class, //comment because the only one test there was commented by now
+        //Task220912UpdateCorrectShowOnMenuPropertyTest.class, //TODO: comment because the only one test there was commented by now
         PersonaActionletTest.class,
         SendRedirectActionletTest.class,
         SetRequestAttributeActionletTest.class,
