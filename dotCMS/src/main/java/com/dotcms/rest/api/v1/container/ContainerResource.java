@@ -727,36 +727,38 @@ public class ContainerResource implements Serializable {
         if (null == container || !InodeUtils.isSet(container.getInode())) {
 
             Logger.error(this, "The container: " + containerForm.getIdentifier() + ", does not exists");
-            new DoesNotExistException("The container: " + containerForm.getIdentifier() + " does not exists");
+            throw new DoesNotExistException("The container: " + containerForm.getIdentifier() + " does not exists");
         }
 
-        ActivityLogger.logInfo(this.getClass(),
-                "Update Container: " + containerForm.getIdentifier(),
-                getInfoMessage(user, MessageConstants.SAVED + container != null ? container.getTitle() : StringPool.BLANK),
-                host.getHostname());
+            ActivityLogger.logInfo(this.getClass(),
+                    "Update Container: " + containerForm.getIdentifier(),
+                    getInfoMessage(user,
+                            MessageConstants.SAVED + container.getTitle()),
+                    host.getHostname());
 
-        container.setCode(containerForm.getCode());
-        container.setMaxContentlets(containerForm.getMaxContentlets());
-        container.setNotes(containerForm.getNotes());
-        container.setPreLoop(containerForm.getPreLoop());
-        container.setPostLoop(containerForm.getPostLoop());
-        container.setSortContentletsBy(containerForm.getSortContentletsBy());
-        container.setStaticify(containerForm.isStaticify());
-        container.setUseDiv(containerForm.isUseDiv());
-        container.setFriendlyName(containerForm.getFriendlyName());
-        container.setModDate(new Date());
-        container.setModUser(user.getUserId());
-        container.setOwner(user.getUserId());
-        container.setShowOnMenu(containerForm.isShowOnMenu());
-        container.setTitle(containerForm.getTitle());
-
-        if(containerForm.getMaxContentlets() == 0){
             container.setCode(containerForm.getCode());
-        }
+            container.setMaxContentlets(containerForm.getMaxContentlets());
+            container.setNotes(containerForm.getNotes());
+            container.setPreLoop(containerForm.getPreLoop());
+            container.setPostLoop(containerForm.getPostLoop());
+            container.setSortContentletsBy(containerForm.getSortContentletsBy());
+            container.setStaticify(containerForm.isStaticify());
+            container.setUseDiv(containerForm.isUseDiv());
+            container.setFriendlyName(containerForm.getFriendlyName());
+            container.setModDate(new Date());
+            container.setModUser(user.getUserId());
+            container.setOwner(user.getUserId());
+            container.setShowOnMenu(containerForm.isShowOnMenu());
+            container.setTitle(containerForm.getTitle());
 
-        this.containerAPI.save(container, containerForm.getContainerStructures(), host, user, pageMode.respectAnonPerms);
+            if (containerForm.getMaxContentlets() == 0) {
+                container.setCode(containerForm.getCode());
+            }
 
-        Logger.error(this, "The container: " + container.getIdentifier() + " has been updated");
+            this.containerAPI.save(container, containerForm.getContainerStructures(), host, user,
+                    pageMode.respectAnonPerms);
+
+            Logger.error(this, "The container: " + container.getIdentifier() + " has been updated");
 
         return Response.ok(new ResponseEntityView(new ContainerView(container))).build();
     }
