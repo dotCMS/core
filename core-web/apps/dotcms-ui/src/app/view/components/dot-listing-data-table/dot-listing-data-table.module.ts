@@ -1,6 +1,6 @@
 import { ActionHeaderModule } from './action-header/action-header.module';
 import { CommonModule } from '@angular/common';
-import { DotCrudService } from '@services/dot-crud/dot-crud.service';
+import { DotCrudService } from '@dotcms/data-access';
 import { DotcmsConfigService, LoggerService } from '@dotcms/dotcms-js';
 import { FormsModule } from '@angular/forms';
 import { DotListingDataTableComponent } from './dot-listing-data-table.component';

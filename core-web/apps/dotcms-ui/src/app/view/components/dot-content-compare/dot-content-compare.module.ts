@@ -7,13 +7,13 @@ import { DotContentCompareDialogComponent } from './components/dot-content-compa
 import { TableModule } from 'primeng/table';
 import { DropdownModule } from 'primeng/dropdown';
 import { SelectButtonModule } from 'primeng/selectbutton';
-import { DotContentletService } from '@services/dot-contentlet/dot-contentlet.service';
+import { DotContentletService } from '@dotcms/data-access';
 import { DotDiffPipeModule } from '@pipes/dot-diff/dot-diff.pipe.module';
 import { FormsModule } from '@angular/forms';
 import { DotMessagePipeModule } from '@pipes/dot-message/dot-message-pipe.module';
 import { DotContentComparePreviewFieldComponent } from '@components/dot-content-compare/components/fields/dot-content-compare-preview-field/dot-content-compare-preview-field.component';
 import { ButtonModule } from 'primeng/button';
-import { DotVersionableService } from '@services/dot-verionable/dot-versionable.service';
+import { DotVersionableService } from '@dotcms/data-access';
 import { DotTransformVersionLabelPipe } from './pipes/dot-transform-version-label.pipe';
 
 @NgModule({

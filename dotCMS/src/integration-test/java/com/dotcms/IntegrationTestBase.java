@@ -22,6 +22,7 @@ import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.util.BaseMessageResources;
+import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
@@ -59,6 +60,7 @@ public abstract class IntegrationTestBase extends BaseMessageResources {
     public static void beforeInit() throws Exception {
         ByteBuddyFactory.init();
         HibernateUtil.setAsyncCommitListenersFinalization(true);
+        Config.setProperty("SYSTEM_EXIT_ON_STARTUP_FAILURE", false);
     }
 
     protected static void setDebugMode (final boolean mode) throws UnsupportedEncodingException {

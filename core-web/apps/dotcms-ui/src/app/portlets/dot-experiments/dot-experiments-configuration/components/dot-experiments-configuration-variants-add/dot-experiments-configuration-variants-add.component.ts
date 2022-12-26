@@ -7,7 +7,7 @@ import {
     Output
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { DotExperiment } from '@portlets/dot-experiments/shared/models/dot-experiments.model';
+import { DotExperiment } from '@dotcms/dotcms-models';
 import { DotSidebarHeaderComponent } from '@shared/dot-sidebar-header/dot-sidebar-header.component';
 import { SidebarModule } from 'primeng/sidebar';
 import { DotMessagePipeModule } from '@pipes/dot-message/dot-message-pipe.module';

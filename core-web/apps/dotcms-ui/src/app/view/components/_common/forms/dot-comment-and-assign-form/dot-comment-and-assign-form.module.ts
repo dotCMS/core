@@ -4,7 +4,7 @@ import { DotCommentAndAssignFormComponent } from '@components/_common/forms/dot-
 import { DotPipesModule } from '@pipes/dot-pipes.module';
 import { DropdownModule } from 'primeng/dropdown';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
-import { DotRolesService } from '@services/dot-roles/dot-roles.service';
+import { DotRolesService } from '@dotcms/data-access';
 import { InputTextareaModule } from 'primeng/inputtextarea';
 import { DotPageSelectorModule } from '@components/_common/dot-page-selector/dot-page-selector.module';
 

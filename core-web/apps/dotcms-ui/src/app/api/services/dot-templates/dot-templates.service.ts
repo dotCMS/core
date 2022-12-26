@@ -5,9 +5,9 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { CoreWebService, DotRequestOptionsArgs } from '@dotcms/dotcms-js';
 
-import { DotHttpErrorManagerService } from '@services/dot-http-error-manager/dot-http-error-manager.service';
-import { DotTemplate } from '@shared/models/dot-edit-layout-designer';
-import { DotActionBulkResult } from '@models/dot-action-bulk-result/dot-action-bulk-result.model';
+import { DotHttpErrorManagerService } from '../dot-http-error-manager/dot-http-error-manager.service';
+
+import { DotActionBulkResult, DotTemplate } from '@dotcms/dotcms-models';
 
 export const TEMPLATE_API_URL = '/api/v1/templates/';
 

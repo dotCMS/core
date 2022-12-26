@@ -5,14 +5,14 @@ import { CoreWebService } from '@dotcms/dotcms-js';
 
 import { DotHttpErrorManagerService } from '@services/dot-http-error-manager/dot-http-error-manager.service';
 import { DotContainersService, CONTAINER_API_URL } from './dot-containers.service';
-import { CoreWebServiceMock } from '@tests/core-web.service.mock';
-import { DotActionBulkResult } from '@models/dot-action-bulk-result/dot-action-bulk-result.model';
+import { CoreWebServiceMock } from '@dotcms/utils-testing';
 import { of } from 'rxjs';
 import {
-    CONTAINER_SOURCE,
+    DotActionBulkResult,
     DotContainerEntity,
+    CONTAINER_SOURCE,
     DotContainerPayload
-} from '@models/container/dot-container.model';
+} from '@dotcms/dotcms-models';
 
 const mockBulkResponseSuccess: DotActionBulkResult = {
     skippedCount: 0,

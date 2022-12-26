@@ -10,12 +10,13 @@ import {
     ElementRef
 } from '@angular/core';
 import { UntypedFormGroup, UntypedFormBuilder, Validators } from '@angular/forms';
-import { DotMessageService } from '@services/dot-message/dot-messages.service';
+import { DotMessageService } from '@dotcms/data-access';
 import { DotDialogActions } from '@components/dot-dialog/dot-dialog.component';
-import { DotMenuService } from '@dotcms/app/api/services/dot-menu.service';
 import { switchMap, take, takeUntil, tap } from 'rxjs/operators';
 import { DotMenu } from '@dotcms/app/shared/models/navigation';
 import { DotCMSContentType } from '@dotcms/dotcms-models';
+
+import { DotMenuService } from '@dotcms/app/api/services/dot-menu.service';
 import {
     DotAddToMenuService,
     DotCreateCustomTool

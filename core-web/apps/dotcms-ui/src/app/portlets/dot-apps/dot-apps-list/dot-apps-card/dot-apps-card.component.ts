@@ -1,6 +1,6 @@
 import { Component, Input, Output, EventEmitter } from '@angular/core';
 
-import { DotApps } from '@shared/models/dot-apps/dot-apps.model';
+import { DotApps } from '@dotcms/dotcms-models';
 
 @Component({
     selector: 'dot-apps-card',
