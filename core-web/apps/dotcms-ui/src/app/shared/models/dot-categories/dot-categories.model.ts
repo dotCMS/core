@@ -11,7 +11,6 @@ export interface DotCategory {
     deleted?: boolean;
     categoryVelocityVarName: string;
     friendlyName?: string;
-    keyWords?: string;
     path?: string;
     identifier: string;
     inode: string;
@@ -23,12 +22,4 @@ export interface DotCategory {
     parentPermissionable?: {
         hostname: string;
     };
-}
-
-export interface DotCategoryPayload {
-    identifier: string;
-    categoryName: string;
-    key: string;
-    keyWords: string;
-    categoryVelocityVarName: string;
 }
