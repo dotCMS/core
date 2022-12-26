@@ -505,7 +505,7 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "{{serverURL}}/api/v1/page/render/page_version_different_template_1?language_id=1&mode=PREVIEW_MODE",
+							"raw": "{{serverURL}}/api/v1/page/render/page_version_different_template_1?host_id=8a7d5e23-da1e-420a-b4f0-471e7da8ea2d&language_id=1&mode=PREVIEW_MODE",
 							"host": [
 								"{{serverURL}}"
 							],
@@ -517,6 +517,10 @@
 								"page_version_different_template_1"
 							],
 							"query": [
+								{
+									"key": "host_id",
+									"value": "8a7d5e23-da1e-420a-b4f0-471e7da8ea2d"
+								},
 								{
 									"key": "language_id",
 									"value": "1"
@@ -569,7 +573,7 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "{{serverURL}}/api/v1/page/render/page_version_different_template_1?language_id=1&variantName={{differentPageVersion_variantId}}&mode=PREVIEW_MODE",
+							"raw": "{{serverURL}}/api/v1/page/render/page_version_different_template_1?host_id=8a7d5e23-da1e-420a-b4f0-471e7da8ea2d&language_id=1&variantName={{differentPageVersion_variantId}}&mode=PREVIEW_MODE",
 							"host": [
 								"{{serverURL}}"
 							],
@@ -581,6 +585,10 @@
 								"page_version_different_template_1"
 							],
 							"query": [
+								{
+									"key": "host_id",
+									"value": "8a7d5e23-da1e-420a-b4f0-471e7da8ea2d"
+								},
 								{
 									"key": "language_id",
 									"value": "1"
