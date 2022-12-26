@@ -1,7 +1,7 @@
 import { NgModule } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { DotThemeSelectorComponent } from './dot-theme-selector.component';
-import { DotThemesService } from '@services/dot-themes/dot-themes.service';
+import { DotThemesService } from '@dotcms/data-access';
 
 import { FormsModule } from '@angular/forms';
 import { DotSiteSelectorModule } from '@components/_common/dot-site-selector/dot-site-selector.module';

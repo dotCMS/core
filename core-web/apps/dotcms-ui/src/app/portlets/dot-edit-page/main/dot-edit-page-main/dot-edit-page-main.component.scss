@@ -3,7 +3,6 @@
 
 :host {
     display: flex;
-    padding-right: 80px;
     min-height: 100%;
     height: 100%;
 
@@ -11,6 +10,6 @@
         position: fixed;
         height: 100%;
         right: 0;
-        top: $toolbar-height;
+        z-index: 1;
     }
 }

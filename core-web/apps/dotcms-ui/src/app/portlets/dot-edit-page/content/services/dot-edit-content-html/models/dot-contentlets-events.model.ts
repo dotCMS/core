@@ -1,6 +1,5 @@
 import { DotPageContent } from '@portlets/dot-edit-page/shared/models/dot-page-content.model';
-import { DotPageContainer } from '@models/dot-page-container/dot-page-container.model';
-import { DotCMSContentType } from '@dotcms/dotcms-models';
+import { DotCMSContentType, DotPageContainer } from '@dotcms/dotcms-models';
 
 export interface DotContentletEvent<T = Record<string, unknown>> {
     name: string;

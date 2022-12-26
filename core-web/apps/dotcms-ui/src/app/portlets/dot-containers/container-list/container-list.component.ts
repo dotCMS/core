@@ -1,16 +1,17 @@
 import { Component, OnDestroy, ViewChild } from '@angular/core';
 import { DotListingDataTableComponent } from '@components/dot-listing-data-table/dot-listing-data-table.component';
-import { DotContainer } from '@models/container/dot-container.model';
-import { DotContentState } from '@dotcms/dotcms-models';
-import { DotContainerListStore } from '@portlets/dot-containers/container-list/store/dot-container-list.store';
-import { DotActionMenuItem } from '@models/dot-action-menu/dot-action-menu-item.model';
 import {
     DotActionBulkResult,
-    DotBulkFailItem
-} from '@models/dot-action-bulk-result/dot-action-bulk-result.model';
+    DotBulkFailItem,
+    DotContentState,
+    DotContainer
+} from '@dotcms/dotcms-models';
+import { DotContainerListStore } from '@portlets/dot-containers/container-list/store/dot-container-list.store';
+import { DotActionMenuItem } from '@models/dot-action-menu/dot-action-menu-item.model';
+
 import { DotMessageSeverity, DotMessageType } from '@components/dot-message-display/model';
 import { DotBulkInformationComponent } from '@components/_common/dot-bulk-information/dot-bulk-information.component';
-import { DotMessageService } from '@services/dot-message/dot-messages.service';
+import { DotMessageService } from '@dotcms/data-access';
 import { DotMessageDisplayService } from '@components/dot-message-display/services';
 import { DialogService } from 'primeng/dynamicdialog';
 import { takeUntil } from 'rxjs/operators';

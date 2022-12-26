@@ -1,32 +1,35 @@
 import { of, throwError } from 'rxjs';
 import { LoginService, CoreWebService, HttpCode } from '@dotcms/dotcms-js';
-import { DotContentletLockerService } from '@services/dot-contentlet-locker/dot-contentlet-locker.service';
+import { DotContentletLockerService } from '@dotcms/data-access';
 import { DotPageStateService } from './dot-page-state.service';
-import { DotPageRenderService } from '@services/dot-page-render/dot-page-render.service';
-import { DotPageMode } from '@models/dot-page/dot-page-mode.enum';
-import { DotPageRenderState } from '@portlets/dot-edit-page/shared/models/dot-rendered-page-state.model';
-import { LoginServiceMock } from '@tests/login-service.mock';
-import { mockDotRenderedPage } from '@tests/dot-page-render.mock';
-import { dotcmsContentletMock } from '@tests/dotcms-contentlet.mock';
-import { mockUser } from '@tests/login-service.mock';
-import { DotPersona } from '@shared/models/dot-persona/dot-persona.model';
-import { DotHttpErrorManagerService } from '@services/dot-http-error-manager/dot-http-error-manager.service';
+import { DotPageRenderService } from '@dotcms/data-access';
+import {
+    DotCMSContentlet,
+    DotDevice,
+    DotPageMode,
+    DotPageRenderState
+} from '@dotcms/dotcms-models';
+import { LoginServiceMock } from '@dotcms/utils-testing';
+import { mockDotRenderedPage } from '@dotcms/utils-testing';
+import { dotcmsContentletMock } from '@dotcms/utils-testing';
+import { mockUser } from '@dotcms/utils-testing';
+import { DotPersona } from '@dotcms/dotcms-models';
+import { DotHttpErrorManagerService } from '@dotcms/app/api/services/dot-http-error-manager/dot-http-error-manager.service';
 import { getTestBed, TestBed } from '@angular/core/testing';
-import { DotRouterService } from '@services/dot-router/dot-router.service';
+import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
 import { HttpClientTestingModule } from '@angular/common/http/testing';
-import { CoreWebServiceMock } from '@tests/core-web.service.mock';
-import { DotAlertConfirmService } from '@services/dot-alert-confirm';
+import { CoreWebServiceMock } from '@dotcms/utils-testing';
+import { DotAlertConfirmService } from '@dotcms/data-access';
 import { ConfirmationService } from 'primeng/api';
-import { DotFormatDateService } from '@services/dot-format-date-service';
-import { MockDotRouterService } from '@tests/dot-router-service.mock';
-import { DotDevice } from '@shared/models/dot-device/dot-device.model';
-import { mockResponseView } from '@tests/response-view.mock';
+import { DotFormatDateService } from '@dotcms/app/api/services/dot-format-date-service';
+import { MockDotRouterService } from '@dotcms/utils-testing';
+import { mockResponseView } from '@dotcms/utils-testing';
 import { PageModelChangeEventType } from '../dot-edit-content-html/models';
-import { mockDotPersona } from '@tests/dot-persona.mock';
-import { mockUserAuth } from '@tests/dot-auth-user.mock';
-import { DotESContentService } from '@dotcms/app/api/services/dot-es-content/dot-es-content.service';
+import { mockDotPersona } from '@dotcms/utils-testing';
+import { mockUserAuth } from '@dotcms/utils-testing';
+import { DotESContentService } from '@dotcms/data-access';
 
-const getDotPageRenderStateMock = (favoritePage: boolean) => {
+const getDotPageRenderStateMock = (favoritePage?: DotCMSContentlet) => {
     return new DotPageRenderState(mockUser(), mockDotRenderedPage(), favoritePage);
 };
 
@@ -127,7 +130,7 @@ describe('DotPageStateService', () => {
 
     describe('$state', () => {
         it('should get state', () => {
-            const mock = getDotPageRenderStateMock(true);
+            const mock = getDotPageRenderStateMock();
             service.state$.subscribe((state: DotPageRenderState) => {
                 expect(state).toEqual(mock);
             });
@@ -246,11 +249,18 @@ describe('DotPageStateService', () => {
         });
 
         describe('setFavoritePageHighlight', () => {
+            it('should set FavoritePageHighlight', () => {
+                service.state$.subscribe(({ state }: DotPageRenderState) => {
+                    expect(state.favoritePage).toBe(dotcmsContentletMock);
+                });
+                service.setFavoritePageHighlight(dotcmsContentletMock);
+            });
+
             it('should set FavoritePageHighlight false', () => {
                 service.state$.subscribe(({ state }: DotPageRenderState) => {
-                    expect(state.favoritePage).toBe(false);
+                    expect(state.favoritePage).toBe(null);
                 });
-                service.setFavoritePageHighlight(false);
+                service.setFavoritePageHighlight(null);
             });
         });
 
@@ -342,7 +352,7 @@ describe('DotPageStateService', () => {
 
     describe('internal navigation state', () => {
         it('should return content from setted internal state', () => {
-            const renderedPage = getDotPageRenderStateMock(true);
+            const renderedPage = getDotPageRenderStateMock(dotcmsContentletMock);
             service.setInternalNavigationState(renderedPage);
 
             expect(service.getInternalNavigationState()).toEqual(renderedPage);
@@ -357,7 +367,7 @@ describe('DotPageStateService', () => {
 
     describe('setting local state', () => {
         it('should set local state and emit', () => {
-            const renderedPage = getDotPageRenderStateMock(true);
+            const renderedPage = getDotPageRenderStateMock(dotcmsContentletMock);
 
             service.state$.subscribe((state: DotPageRenderState) => {
                 expect(state).toEqual(renderedPage);
@@ -387,7 +397,7 @@ describe('DotPageStateService', () => {
     describe('content added/removed', () => {
         describe('selected persona is not default', () => {
             it('should trigger haceContent as true', () => {
-                const renderedPage = getDotPageRenderStateMock(true);
+                const renderedPage = getDotPageRenderStateMock(dotcmsContentletMock);
                 service.setLocalState(renderedPage);
 
                 const subscribeCallback = jasmine.createSpy('spy');

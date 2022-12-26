@@ -1,19 +1,21 @@
 import { DotHttpErrorManagerService } from '@services/dot-http-error-manager/dot-http-error-manager.service';
 import { CoreWebService, LoginService } from '@dotcms/dotcms-js';
-import { LoginServiceMock } from '@tests/login-service.mock';
+import {
+    DotFormatDateServiceMock,
+    LoginServiceMock,
+    mockResponseView
+} from '@dotcms/utils-testing';
 import { TestBed, getTestBed } from '@angular/core/testing';
 import { HttpTestingController, HttpClientTestingModule } from '@angular/common/http/testing';
-import { CoreWebServiceMock } from '@tests/core-web.service.mock';
-import { DotAlertConfirmService } from '@services/dot-alert-confirm';
+import { CoreWebServiceMock } from '@dotcms/utils-testing';
 import { ConfirmationService } from 'primeng/api';
 import { DotFormatDateService } from '@services/dot-format-date-service';
-import { MockDotRouterService } from '@tests/dot-router-service.mock';
+import { MockDotRouterService } from '@dotcms/utils-testing';
 import { DotRouterService } from '@services/dot-router/dot-router.service';
 
-import { DotFormatDateServiceMock } from '@dotcms/app/test/format-date-service.mock';
 import { DotAddToMenuService, DotCreateCustomTool } from './add-to-menu.service';
-import { mockResponseView } from '@dotcms/app/test/response-view.mock';
 import { throwError } from 'rxjs';
+import { DotAlertConfirmService } from '@dotcms/data-access';
 
 const customToolData: DotCreateCustomTool = {
     contentTypes: 'Blog',

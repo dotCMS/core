@@ -444,6 +444,13 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
         final String experimentId = experiment.getIdentifier();
         final String variantName = getVariantName(experimentId);
 
+        if(variantDescription.equals(ORIGINAL_VARIANT)) {
+            DotPreconditions.isTrue(
+                    experiment.trafficProportion().variants().stream().noneMatch((variant) ->
+                            variant.description().equals(ORIGINAL_VARIANT)),
+                    "Original Variant already created");
+        }
+
         variantAPI.save(Variant.builder().name(variantName)
                 .description(Optional.of(variantDescription)).build());
 
@@ -487,6 +494,13 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
         final Variant toDelete = variantAPI.get(variantName)
                 .orElseThrow(()->new DoesNotExistException("Provided Variant not found"));
 
+        final String variantDescription = toDelete.description()
+                .orElseThrow(()->new DotStateException("Variant without description. Variant name: "
+                                + toDelete.name()));
+
+        DotPreconditions.isTrue(!variantDescription.equals(ORIGINAL_VARIANT),
+                ()->"Cannot delete Original Variant", IllegalArgumentException.class);
+
         final TreeSet<ExperimentVariant> updatedVariants =
                 new TreeSet<>(persistedExperiment.trafficProportion()
                 .variants().stream().filter((variant)->
@@ -500,6 +514,49 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
         final Experiment fromDB = save(withUpdatedTraffic, user);
         variantAPI.archive(toDelete.name());
         variantAPI.delete(toDelete.name());
+        return fromDB;
+
+    }
+
+    @Override
+    @WrapInTransaction
+    public Experiment editVariantDescription(String experimentId, String variantName,
+            String newDescription, final User user)
+            throws DotDataException, DotSecurityException {
+        final Experiment persistedExperiment = find(experimentId, user)
+                .orElseThrow(()->new DoesNotExistException("Experiment with provided id not found"));
+
+        DotPreconditions.isTrue(variantName!= null &&
+                        variantName.contains(shortyIdAPI.shortify(experimentId)), ()->"Invalid Variant provided",
+                IllegalArgumentException.class);
+
+        final Variant toEdit = variantAPI.get(variantName)
+                .orElseThrow(()->new DoesNotExistException("Provided Variant not found"));
+
+        final String currentDescription = toEdit.description()
+                .orElseThrow(()->new DotStateException("Variant without description. Variant name: "
+                        + toEdit.name()));
+
+        DotPreconditions.isTrue(!currentDescription.equals(ORIGINAL_VARIANT),
+                ()->"Cannot update Original Variant", IllegalArgumentException.class);
+
+        final TreeSet<ExperimentVariant> updatedVariants =
+                persistedExperiment.trafficProportion()
+                        .variants().stream().map((variant) -> {
+                            if (variant.id().equals(variantName)) {
+                                return variant.withDescription(newDescription);
+                            } else {
+                                return variant;
+                            }
+                        }).collect(Collectors.toCollection(TreeSet::new));
+
+        final TrafficProportion trafficProportion = persistedExperiment.trafficProportion()
+                .withVariants(updatedVariants);
+        final Experiment withUpdatedTraffic = persistedExperiment.withTrafficProportion(trafficProportion);
+        final Experiment fromDB = save(withUpdatedTraffic, user);
+
+        final Optional<Variant> variant = variantAPI.get(variantName);
+        variantAPI.update(variant.orElseThrow().withDescription(Optional.of(newDescription)));
         return fromDB;
 
     }

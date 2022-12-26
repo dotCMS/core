@@ -1,14 +1,17 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { DebugElement, Component, Input, Injectable } from '@angular/core';
+import { Component, DebugElement, Injectable, Input } from '@angular/core';
 import { By } from '@angular/platform-browser';
-import { MockDotMessageService } from '@tests/dot-message-service.mock';
-import { mockDotRenderedPageState } from '@tests/dot-rendered-page-state.mock';
+import {
+    dotcmsContentletMock,
+    MockDotMessageService,
+    mockDotRenderedPage
+} from '@dotcms/utils-testing';
+import { mockDotRenderedPageState } from '@dotcms/utils-testing';
 import { DotPageStateService } from '../../services/dot-page-state/dot-page-state.service';
 import { DotEditPageToolbarComponent } from './dot-edit-page-toolbar.component';
-import { DotLicenseService } from '@services/dot-license/dot-license.service';
-import { DotMessageService } from '@services/dot-message/dot-messages.service';
+import { DotLicenseService } from '@dotcms/data-access';
+import { DotMessageService } from '@dotcms/data-access';
 
-import { DotPageRenderState } from '@portlets/dot-edit-page/shared/models/dot-rendered-page-state.model';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Observable, of } from 'rxjs';
@@ -16,32 +19,31 @@ import { DotEditPageViewAsControllerModule } from '../dot-edit-page-view-as-cont
 import { DotEditPageStateControllerModule } from '../dot-edit-page-state-controller/dot-edit-page-state-controller.module';
 import { DotEditPageInfoModule } from '@portlets/dot-edit-page/components/dot-edit-page-info/dot-edit-page-info.module';
 import {
-    SiteService,
-    LoginService,
+    ApiRoot,
+    CoreWebService,
+    DotcmsConfigService,
+    DotcmsEventsService,
     DotEventsSocket,
     DotEventsSocketURL,
-    DotcmsEventsService,
-    DotcmsConfigService,
-    CoreWebService,
     LoggerService,
+    LoginService,
+    SiteService,
     StringUtils,
-    ApiRoot,
     UserModel
 } from '@dotcms/dotcms-js';
-import { SiteServiceMock } from '@tests/site-service.mock';
+import { SiteServiceMock } from '@dotcms/utils-testing';
 import { DotEditPageWorkflowsActionsModule } from '../dot-edit-page-workflows-actions/dot-edit-page-workflows-actions.module';
-import { LoginServiceMock, mockUser } from '@tests/login-service.mock';
+import { LoginServiceMock, mockUser } from '@dotcms/utils-testing';
 import { DotSecondaryToolbarModule } from '@components/dot-secondary-toolbar';
-import { mockDotPersona } from '@tests/dot-persona.mock';
+import { mockDotPersona } from '@dotcms/utils-testing';
 import { DotMessageDisplayService } from '@components/dot-message-display/services';
-import { DotEventsService } from '@services/dot-events/dot-events.service';
+import { DotEventsService } from '@dotcms/data-access';
 import { DotPipesModule } from '@pipes/dot-pipes.module';
-import { dotEventSocketURLFactory } from '@tests/dot-test-bed';
-import { CoreWebServiceMock } from '@tests/core-web.service.mock';
-import { DotRouterService } from '@services/dot-router/dot-router.service';
-import { MockDotRouterService } from '@tests/dot-router-service.mock';
-import { DotHttpErrorManagerService } from '@services/dot-http-error-manager/dot-http-error-manager.service';
-import { DotAlertConfirmService } from '@services/dot-alert-confirm';
+import { CoreWebServiceMock } from '@dotcms/utils-testing';
+import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
+import { MockDotRouterService } from '@dotcms/utils-testing';
+import { DotHttpErrorManagerService } from '@dotcms/app/api/services/dot-http-error-manager/dot-http-error-manager.service';
+import { DotAlertConfirmService } from '@dotcms/data-access';
 import { DotGlobalMessageService } from '@components/_common/dot-global-message/dot-global-message.service';
 import { DotWizardModule } from '@components/_common/dot-wizard/dot-wizard.module';
 import { HttpClientTestingModule } from '@angular/common/http/testing';
@@ -50,16 +52,16 @@ import { ButtonModule } from 'primeng/button';
 import { CheckboxModule } from 'primeng/checkbox';
 import { ToolbarModule } from 'primeng/toolbar';
 import { ConfirmationService } from 'primeng/api';
-import { DotPageMode } from '@models/dot-page/dot-page-mode.enum';
-import { DotFormatDateService } from '@services/dot-format-date-service';
-import { DotFormatDateServiceMock } from '@dotcms/app/test/format-date-service.mock';
+import { DotPageMode, DotPageRender, DotPageRenderState, ESContent } from '@dotcms/dotcms-models';
+import { DotFormatDateService } from '@dotcms/app/api/services/dot-format-date-service';
+import { DotFormatDateServiceMock } from '@dotcms/utils-testing';
 import { DialogService } from 'primeng/dynamicdialog';
-import { DotESContentService } from '@dotcms/app/api/services/dot-es-content/dot-es-content.service';
+import { DotESContentService } from '@dotcms/data-access';
 import { TooltipModule } from 'primeng/tooltip';
-import { ESContent } from '@dotcms/app/shared/models/dot-es-content/dot-es-content.model';
-import { DotPageRender } from '@dotcms/app/shared/models/dot-page/dot-rendered-page.model';
-import { mockDotRenderedPage } from '@dotcms/app/test/dot-page-render.mock';
-import { DotPropertiesService } from '@dotcms/app/api/services/dot-properties/dot-properties.service';
+import { DotPropertiesService } from '@dotcms/data-access';
+import { dotEventSocketURLFactory } from '@dotcms/app/test/dot-test-bed';
+import { ActivatedRoute } from '@angular/router';
+import { DotExperimentClassDirective } from '@portlets/shared/directives/dot-experiment-class.directive';
 
 @Component({
     selector: 'dot-test-host-component',
@@ -97,6 +99,16 @@ class MockDotPageStateService {
     }
 }
 
+export class ActivatedRouteListStoreMock {
+    get queryParams() {
+        return of({
+            editPageTab: 'edit',
+            variationName: 'Original',
+            experimentId: '1232121212'
+        });
+    }
+}
+
 describe('DotEditPageToolbarComponent', () => {
     let fixtureHost: ComponentFixture<TestHostComponent>;
     let componentHost: TestHostComponent;
@@ -129,7 +141,8 @@ describe('DotEditPageToolbarComponent', () => {
                 DotEditPageWorkflowsActionsModule,
                 DotPipesModule,
                 DotWizardModule,
-                TooltipModule
+                TooltipModule,
+                DotExperimentClassDirective
             ],
             providers: [
                 { provide: DotLicenseService, useClass: MockDotLicenseService },
@@ -173,7 +186,8 @@ describe('DotEditPageToolbarComponent', () => {
                 DotIframeService,
                 DialogService,
                 DotESContentService,
-                DotPropertiesService
+                DotPropertiesService,
+                { provide: ActivatedRoute, useClass: ActivatedRouteListStoreMock }
             ]
         });
     });
@@ -329,7 +343,7 @@ describe('DotEditPageToolbarComponent', () => {
             componentHost.pageState = new DotPageRenderState(
                 mockUser(),
                 new DotPageRender(mockDotRenderedPage()),
-                true
+                dotcmsContentletMock
             );
             component.showFavoritePageStar = true;
 

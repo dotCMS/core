@@ -16,37 +16,37 @@ import {
     LoginService,
     StringUtils
 } from '@dotcms/dotcms-js';
-import { DotWorkflowServiceMock } from '@tests/dot-workflow-service.mock';
-import { LoginServiceMock } from '@tests/login-service.mock';
-import { MockDotMessageService } from '@tests/dot-message-service.mock';
-import { mockDotPage } from '@tests/dot-page-render.mock';
-import { mockWorkflowsActions } from '@tests/dot-workflows-actions.mock';
+import { DotWorkflowServiceMock } from '@dotcms/utils-testing';
+import { LoginServiceMock } from '@dotcms/utils-testing';
+import { MockDotMessageService } from '@dotcms/utils-testing';
+import { mockDotPage } from '@dotcms/utils-testing';
+import { mockWorkflowsActions } from '@dotcms/utils-testing';
 import { DotEditPageWorkflowsActionsComponent } from './dot-edit-page-workflows-actions.component';
 import { DotGlobalMessageService } from '@components/_common/dot-global-message/dot-global-message.service';
-import { DotHttpErrorManagerService } from '@services/dot-http-error-manager/dot-http-error-manager.service';
-import { DotMessageService } from '@services/dot-message/dot-messages.service';
-import { DotPage } from '@shared/models/dot-page/dot-page.model';
-import { DotRouterService } from '@services/dot-router/dot-router.service';
-import { DotWorkflowService } from '@services/dot-workflow/dot-workflow.service';
-import { DotWorkflowsActionsService } from '@services/dot-workflows-actions/dot-workflows-actions.service';
-import { DotWorkflowActionsFireService } from '@services/dot-workflow-actions-fire/dot-workflow-actions-fire.service';
-import { dotcmsContentletMock } from '@tests/dotcms-contentlet.mock';
-import { DotWizardService } from '@services/dot-wizard/dot-wizard.service';
-import { PushPublishService } from '@services/push-publish/push-publish.service';
+import { DotHttpErrorManagerService } from '@dotcms/app/api/services/dot-http-error-manager/dot-http-error-manager.service';
+import { DotMessageService } from '@dotcms/data-access';
+import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
+import { DotWorkflowService } from '@dotcms/data-access';
+import { DotWorkflowsActionsService } from '@dotcms/data-access';
+import { DotWorkflowActionsFireService } from '@dotcms/data-access';
+import { dotcmsContentletMock } from '@dotcms/utils-testing';
+import { DotWizardService } from '@dotcms/app/api/services/dot-wizard/dot-wizard.service';
+import { PushPublishService } from '@dotcms/app/api/services/push-publish/push-publish.service';
 import { MockPushPublishService } from '@portlets/shared/dot-content-types-listing/dot-content-types.component.spec';
 import { DotMessageDisplayService } from '@components/dot-message-display/services';
 import { DotMessageSeverity, DotMessageType } from '@components/dot-message-display/model';
-import { CoreWebServiceMock } from '@tests/core-web.service.mock';
-import { DotAlertConfirmService } from '@services/dot-alert-confirm';
-import { DotEventsService } from '@services/dot-events/dot-events.service';
-import { dotEventSocketURLFactory } from '@tests/dot-test-bed';
+import { CoreWebServiceMock } from '@dotcms/utils-testing';
+import { DotAlertConfirmService } from '@dotcms/data-access';
+import { DotEventsService } from '@dotcms/data-access';
 import { HttpClientTestingModule } from '@angular/common/http/testing';
-import { DotWorkflowEventHandlerService } from '@services/dot-workflow-event-handler/dot-workflow-event-handler.service';
+import { DotWorkflowEventHandlerService } from '@dotcms/app/api/services/dot-workflow-event-handler/dot-workflow-event-handler.service';
 import { DotIframeService } from '@components/_common/iframe/service/dot-iframe/dot-iframe.service';
 import { Menu, MenuModule } from 'primeng/menu';
 import { ConfirmationService } from 'primeng/api';
 import { UiDotIconButtonModule } from '@components/_common/dot-icon-button/dot-icon-button.module';
-import { DotFormatDateService } from '@services/dot-format-date-service';
+import { DotFormatDateService } from '@dotcms/app/api/services/dot-format-date-service';
+import { DotPage } from '@dotcms/dotcms-models';
+import { dotEventSocketURLFactory } from '@dotcms/app/test/dot-test-bed';
 
 @Component({
     selector: 'dot-test-host-component',

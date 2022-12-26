@@ -1,9 +1,12 @@
 import { Component, Input, Injectable, DebugElement } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { DotMessageService } from '@services/dot-message/dot-messages.service';
-import { MockDotMessageService } from '@tests/dot-message-service.mock';
+import { DotESContentService, DotMessageService } from '@dotcms/data-access';
 import { of } from 'rxjs/internal/observable/of';
-import { dotcmsContentletMock } from '@dotcms/app/test/dotcms-contentlet.mock';
+import {
+    dotcmsContentletMock,
+    MockDotMessageService,
+    MockDotRouterService
+} from '@dotcms/utils-testing';
 import { DotPageStore } from './dot-pages-store/dot-pages.store';
 import { CommonModule } from '@angular/common';
 import { DotPipesModule } from '@dotcms/app/view/pipes/dot-pipes.module';
@@ -12,14 +15,12 @@ import { ButtonModule } from 'primeng/button';
 import { TabViewModule } from 'primeng/tabview';
 import { DotPagesCardModule } from './dot-pages-card/dot-pages-card.module';
 import { DotPagesComponent } from './dot-pages.component';
-import { DotESContentService } from '@dotcms/app/api/services/dot-es-content/dot-es-content.service';
 import { Observable } from 'rxjs';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { By } from '@angular/platform-browser';
 import { PanelModule } from 'primeng/panel';
 import { DotPagesCardEmptyModule } from './dot-pages-card-empty/dot-pages-card-empty.module';
 import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
-import { MockDotRouterService } from '@dotcms/app/test/dot-router-service.mock';
 
 @Component({
     selector: 'dot-pages-card',

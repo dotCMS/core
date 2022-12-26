@@ -1,7 +1,7 @@
 import { Component, EventEmitter, Input, Output } from '@angular/core';
 import { DotCMSContentlet } from '@dotcms/dotcms-models';
 import { DotContentCompareTableData } from '@components/dot-content-compare/store/dot-content-compare.store';
-import { DotMessageService } from '@services/dot-message/dot-messages.service';
+import { DotMessageService } from '@dotcms/data-access';
 
 @Component({
     selector: 'dot-content-compare-table',

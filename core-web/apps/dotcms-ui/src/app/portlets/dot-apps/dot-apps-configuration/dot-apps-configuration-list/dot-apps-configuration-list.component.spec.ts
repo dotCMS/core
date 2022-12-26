@@ -1,6 +1,6 @@
 import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing';
-import { MockDotMessageService } from '@tests/dot-message-service.mock';
-import { DotMessageService } from '@services/dot-message/dot-messages.service';
+import { MockDotMessageService } from '@dotcms/utils-testing';
+import { DotMessageService } from '@dotcms/data-access';
 import { CommonModule } from '@angular/common';
 import { By } from '@angular/platform-browser';
 import { ButtonModule } from 'primeng/button';
@@ -8,7 +8,7 @@ import { DotAppsConfigurationItemModule } from './dot-apps-configuration-item/do
 import { DotAppsConfigurationListComponent } from './dot-apps-configuration-list.component';
 import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { DotPipesModule } from '@pipes/dot-pipes.module';
-import { DotAlertConfirmService } from '@services/dot-alert-confirm';
+import { DotAlertConfirmService } from '@dotcms/data-access';
 import { ConfirmationService } from 'primeng/api';
 
 const messages = {
@@ -34,30 +34,28 @@ describe('DotAppsConfigurationListComponent', () => {
 
     const messageServiceMock = new MockDotMessageService(messages);
 
-    beforeEach(
-        waitForAsync(() => {
-            TestBed.configureTestingModule({
-                imports: [
-                    CommonModule,
-                    ButtonModule,
-                    DotAppsConfigurationItemModule,
-                    HttpClientTestingModule,
-                    DotPipesModule
-                ],
-                declarations: [DotAppsConfigurationListComponent],
-                providers: [
-                    { provide: DotMessageService, useValue: messageServiceMock },
-                    DotAlertConfirmService,
-                    ConfirmationService
-                ]
-            });
+    beforeEach(waitForAsync(() => {
+        TestBed.configureTestingModule({
+            imports: [
+                CommonModule,
+                ButtonModule,
+                DotAppsConfigurationItemModule,
+                HttpClientTestingModule,
+                DotPipesModule
+            ],
+            declarations: [DotAppsConfigurationListComponent],
+            providers: [
+                { provide: DotMessageService, useValue: messageServiceMock },
+                DotAlertConfirmService,
+                ConfirmationService
+            ]
+        });
 
-            fixture = TestBed.createComponent(DotAppsConfigurationListComponent);
-            component = fixture.debugElement.componentInstance;
-            component.itemsPerPage = 40;
-            component.siteConfigurations = sites;
-        })
-    );
+        fixture = TestBed.createComponent(DotAppsConfigurationListComponent);
+        component = fixture.debugElement.componentInstance;
+        component.itemsPerPage = 40;
+        component.siteConfigurations = sites;
+    }));
 
     describe('With more data to load', () => {
         beforeEach(() => {

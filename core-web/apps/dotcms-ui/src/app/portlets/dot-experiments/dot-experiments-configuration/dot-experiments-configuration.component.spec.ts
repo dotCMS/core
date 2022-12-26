@@ -19,11 +19,11 @@ import {
     DotExperimentsConfigurationStoreMock,
     ExperimentMocks
 } from '@portlets/dot-experiments/test/mocks';
-import { MockDotMessageService } from '@tests/dot-message-service.mock';
-import { DotMessageService } from '@services/dot-message/dot-messages.service';
+import { MockDotMessageService } from '@dotcms/utils-testing';
+import { DotMessageService } from '@dotcms/data-access';
 import { MessageService } from 'primeng/api';
-import { DotSessionStorageService } from '@shared/services/dot-session-storage.service';
-import { Status } from '@portlets/shared/models/shared-models';
+import { DotSessionStorageService } from '@dotcms/data-access';
+import { Status } from '@dotcms/dotcms-models';
 
 const ActivatedRouteMock = {
     snapshot: {

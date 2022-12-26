@@ -1,6 +1,10 @@
 {
     "extends": "./tsconfig.json",
-    "include": ["**/*.ts"],
+    "include": [
+        "**/*.ts",
+        "../../libs/dotcms-models/src/lib/dot-es-content.model.ts",
+        "../../libs/dotcms-models/src/lib/dot-what-changed.model.ts"
+    ],
     "compilerOptions": {
         "types": ["jest", "node"]
     }
