@@ -2,6 +2,10 @@
 
 <!-- Auto Generated Below -->
 
+## Overview
+
+Represent a mapping of legacy icons if DotCMS
+
 ## Properties
 
 | Property | Attribute | Description | Type     | Default |
