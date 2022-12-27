@@ -162,6 +162,7 @@ describe('DotContainerPropertiesComponent', () => {
     let de: DebugElement;
     let coreWebService: CoreWebService;
     let dotDialogService: DotAlertConfirmService;
+    let dotRouterService: DotRouterService;
     const messageServiceMock = new MockDotMessageService(messages);
 
     beforeEach(async () => {
@@ -187,7 +188,8 @@ describe('DotContainerPropertiesComponent', () => {
                     useValue: {
                         gotoPortlet: jasmine.createSpy(),
                         goToEditContainer: jasmine.createSpy(),
-                        goToSiteBrowser: jasmine.createSpy()
+                        goToSiteBrowser: jasmine.createSpy(),
+                        goToURL: jasmine.createSpy()
                     }
                 },
                 StringUtils,
@@ -233,6 +235,7 @@ describe('DotContainerPropertiesComponent', () => {
         de = fixture.debugElement;
         coreWebService = TestBed.inject(CoreWebService);
         dotDialogService = TestBed.inject(DotAlertConfirmService);
+        dotRouterService = TestBed.inject(DotRouterService);
     });
 
     describe('with data', () => {
@@ -356,5 +359,14 @@ describe('DotContainerPropertiesComponent', () => {
             fixture.detectChanges();
             expect(de.query(By.css('[data-testId="saveBtn"]')).attributes.disabled).toBeDefined();
         }));
+
+        it('should redirect to containers list after save', () => {
+            comp.form.get('title').setValue('Hello');
+            fixture.detectChanges();
+            const saveBtn = de.query(By.css('[data-testId="saveBtn"]'));
+            saveBtn.triggerEventHandler('click');
+            fixture.detectChanges();
+            expect(dotRouterService.goToURL).toHaveBeenCalledWith('/containers');
+        });
     });
 });
