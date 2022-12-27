@@ -54,7 +54,7 @@ public class AccessTokenRenewRunnable implements Runnable {
                 Logger.info(
                     this,
                     String.format(
-                        "Renewing thread for clientIds %s is already running, skipping this execution",
+                        "Renewing thread for clientIds [%s] is already running, skipping this execution",
                         clientIds));
                 return;
             }
@@ -62,7 +62,7 @@ public class AccessTokenRenewRunnable implements Runnable {
             try {
                 callerJob.setRenewRunning(true);
 
-                Logger.info(this, String.format("Starting access token renew thread for clientIds %s", clientIds));
+                Logger.info(this, String.format("Starting access token renew thread for clientIds [%s]", clientIds));
                 appsWithStatus.forEach(this::renewToken);
             } finally {
                 callerJob.setRenewRunning(false);
