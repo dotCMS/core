@@ -53,7 +53,6 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.liferay.portal.model.User;
-import com.liferay.util.StringPool;
 import java.io.IOException;
 import java.io.Serializable;
 import java.io.StringWriter;
