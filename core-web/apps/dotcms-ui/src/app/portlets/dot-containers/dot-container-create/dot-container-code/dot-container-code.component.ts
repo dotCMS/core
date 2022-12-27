@@ -121,8 +121,10 @@ export class DotContentEditorComponent implements OnInit {
      */
     handleAddVariable(contentType: DotContainerContent) {
         this.dialogService.open(DotAddVariableComponent, {
-            header: this.dotMessageService.get('containers.properties.add.variable.title'),
-            width: '50rem',
+            width: '25rem',
+            contentStyle: { padding: '0' },
+            closable: false,
+            showHeader: false,
             data: {
                 contentTypeVariable: contentType.structureId,
                 onSave: (variable) => {
