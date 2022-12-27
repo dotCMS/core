@@ -6,7 +6,6 @@ import com.dotcms.content.business.json.ContentletJsonHelper;
 import com.dotcms.content.elasticsearch.ESQueryCache;
 import com.dotcms.content.elasticsearch.util.RestHighLevelClientProvider;
 import com.dotcms.contenttype.business.StoryBlockReferenceResult;
-import com.dotcms.contenttype.model.field.DataTypes;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.enterprise.license.LicenseManager;
 import com.dotcms.exception.ExceptionUtil;
@@ -19,7 +18,6 @@ import com.dotcms.system.SimpleMapAppContext;
 import com.dotcms.util.CollectionsUtils;
 import com.dotcms.util.I18NMessage;
 import com.dotcms.util.transform.TransformerLocator;
-import com.dotcms.variant.VariantAPI;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
@@ -53,7 +51,6 @@ import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
-import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.links.model.Link;
 import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Structure;
@@ -74,7 +71,6 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;
 import com.google.common.primitives.Ints;
 import com.liferay.portal.model.User;
-import io.vavr.Tuple2;
 import io.vavr.control.Try;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.io.FileUtils;
@@ -127,6 +123,7 @@ import java.util.stream.Collectors;
 
 import static com.dotcms.content.elasticsearch.business.ESContentletAPIImpl.MAX_LIMIT;
 import static com.dotcms.content.elasticsearch.business.ESIndexAPI.INDEX_OPERATIONS_TIMEOUT_IN_MS;
+import static com.dotcms.variant.VariantAPI.DEFAULT_VARIANT;
 import static com.dotmarketing.portlets.contentlet.model.Contentlet.AUTO_ASSIGN_WORKFLOW;
 import static com.dotmarketing.portlets.contentlet.model.Contentlet.TITLE_IMAGE_KEY;
 import static com.dotmarketing.portlets.contentlet.model.Contentlet.WORKFLOW_ACTION_KEY;
@@ -848,9 +845,8 @@ public class ESContentFactoryImpl extends ContentletFactory {
         return Optional.empty();
 
     }
-	
-	
-	
+
+
     @Override
     protected Contentlet find(final String inode) throws ElasticsearchException, DotStateException, DotDataException, DotSecurityException {
         Contentlet contentlet = contentletCache.get(inode);
@@ -862,6 +858,27 @@ public class ESContentFactoryImpl extends ContentletFactory {
         }
 
         final Optional<Contentlet> dbContentlet = this.findInDb(inode);
+        if (dbContentlet.isPresent()) {
+            contentlet = dbContentlet.get();
+            contentletCache.add(contentlet.getInode(), contentlet);
+            return contentlet;
+        } else {
+            contentletCache.add(inode, cache404Content);
+            return null;
+        }
+
+    }
+    @Override
+    protected Contentlet find(final String inode, String variant) throws ElasticsearchException, DotStateException, DotDataException, DotSecurityException {
+        Contentlet contentlet = contentletCache.get(inode);
+        if (contentlet != null && InodeUtils.isSet(contentlet.getInode())) {
+            if (CACHE_404_CONTENTLET.equals(contentlet.getInode())) {
+                return null;
+            }
+            return processCachedContentlet(contentlet);
+        }
+
+        final Optional<Contentlet> dbContentlet = this.findInDb(inode, variant);
         if (dbContentlet.isPresent()) {
             contentlet = dbContentlet.get();
             contentletCache.add(contentlet.getInode(), contentlet);
@@ -1068,7 +1085,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
 
 	@Override
 	protected Contentlet findContentletByIdentifier(String identifier, Boolean live, Long languageId) throws DotDataException {
-        return findContentletByIdentifier(identifier, live, languageId, VariantAPI.DEFAULT_VARIANT.name());
+        return findContentletByIdentifier(identifier, live, languageId, DEFAULT_VARIANT.name());
     }
 
     @Override
@@ -1095,6 +1112,15 @@ public class ESContentFactoryImpl extends ContentletFactory {
     }
 
     @Override
+    protected Contentlet findContentletByIdentifierAnyLanguage(final String identifier,
+            final String variant) throws DotDataException, DotSecurityException {
+
+        // Looking content up this way can avoid any DB hits as these calls are all cached.
+        return findContentletByIdentifierAnyLanguage(identifier, variant, false);
+
+    }
+
+    @Override
     protected Contentlet findContentletByIdentifierAnyLanguage(final String identifier, final boolean includeDeleted) throws DotDataException, DotSecurityException {
         final Optional<ContentletVersionInfo> contentVersionDeleted = FactoryLocator.getVersionableFactory()
                 .findAnyContentletVersionInfo(identifier, true);
@@ -1103,9 +1129,29 @@ public class ESContentFactoryImpl extends ContentletFactory {
                 .findAnyContentletVersionInfo(identifier, false);
 
         if (contentVersionNotDeleted.isPresent()) {
-            return find(contentVersionNotDeleted.get().getWorkingInode());
+            return find(contentVersionNotDeleted.get().getWorkingInode(), contentVersionNotDeleted.get().getVariant());
         } else if (contentVersionDeleted.isPresent() && includeDeleted) {
             return find(contentVersionDeleted.get().getWorkingInode());
+        } else if (contentVersionDeleted.isPresent() && !includeDeleted) {
+            Logger.warn(this, String.format("Contentlet with ID '%s' exists, but is marked as 'Archived'.",
+                    identifier));
+        }
+
+        return null;
+    }
+
+    @Override
+    protected Contentlet findContentletByIdentifierAnyLanguage(final String identifier, String variant, final boolean includeDeleted) throws DotDataException, DotSecurityException {
+        final Optional<ContentletVersionInfo> contentVersionDeleted = FactoryLocator.getVersionableFactory()
+                .findAnyContentletVersionInfo(identifier, variant, true);
+
+        final Optional<ContentletVersionInfo> contentVersionNotDeleted = FactoryLocator.getVersionableFactory()
+                .findAnyContentletVersionInfo(identifier, variant, false);
+
+        if (contentVersionNotDeleted.isPresent()) {
+            return find(contentVersionNotDeleted.get().getWorkingInode(), variant);
+        } else if (contentVersionDeleted.isPresent() && includeDeleted) {
+            return find(contentVersionDeleted.get().getWorkingInode(), variant);
         } else if (contentVersionDeleted.isPresent() && !includeDeleted) {
             Logger.warn(this, String.format("Contentlet with ID '%s' exists, but is marked as 'Archived'.",
                     identifier));

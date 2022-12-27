@@ -1,16 +1,21 @@
 import { Component, OnInit } from '@angular/core';
-import { DynamicDialogConfig } from 'primeng/dynamicdialog';
+import { DynamicDialogConfig, DynamicDialogRef } from 'primeng/dynamicdialog';
 import { DotAddVariableStore } from '@dotcms/app/portlets/dot-containers/dot-container-create/dot-container-code/dot-add-variable/store/dot-add-variable.store';
 
 @Component({
     selector: 'dot-add-variable',
     templateUrl: './dot-add-variable.component.html',
+    styleUrls: ['./dot-add-variable.component.scss'],
     providers: [DotAddVariableStore]
 })
 export class DotAddVariableComponent implements OnInit {
     vm$ = this.store.vm$;
 
-    constructor(private store: DotAddVariableStore, private config: DynamicDialogConfig) {}
+    constructor(
+        private store: DotAddVariableStore,
+        private config: DynamicDialogConfig,
+        private ref: DynamicDialogRef
+    ) {}
 
     ngOnInit() {
         this.store.getVariables(this.config.data?.contentTypeVariable);
@@ -24,6 +29,7 @@ export class DotAddVariableComponent implements OnInit {
      */
     onSave(variable: string): void {
         this.config.data?.onSave?.(this.applyMask(variable));
+        this.ref.close();
     }
 
     /**

@@ -1,5 +1,7 @@
 package com.dotcms.experiments.model;
 
+import static com.dotcms.variant.VariantAPI.DEFAULT_VARIANT;
+
 import com.dotcms.publisher.util.PusheableAsset;
 import com.dotcms.publishing.manifest.ManifestItem;
 import com.dotmarketing.business.APILocator;
@@ -127,7 +129,8 @@ public interface AbstractExperiment extends Serializable, ManifestItem, Ruleable
     @Value.Derived
     @JsonIgnore
     default Permissionable getParentPermissionable() {
-        return Try.of(()->APILocator.getContentletAPI().findContentletByIdentifierAnyLanguage(pageId()))
+        return Try.of(()->APILocator.getContentletAPI().findContentletByIdentifierAnyLanguage(pageId(),
+                        DEFAULT_VARIANT.name()))
                 .getOrNull();
     }
 
