@@ -5,7 +5,7 @@ $nav-size: 80px;
 
 :host {
     background-color: $gray-bg;
-    border-left: solid 1px  $gray-lighter;
+    border-left: solid 1px $gray-lighter;
     display: flex;
     flex-shrink: 0;
     order: 2;
@@ -55,5 +55,9 @@ $nav-size: 80px;
     color: $black;
     pointer-events: none;
     border-bottom: 1px solid $gray-lighter;
-    border-top: 1px solid $gray-lighter;
+    border-top: 1px solid transparent;
+}
+
+.edit-page-nav li:not(:first-child) .edit-page-nav__item--active {
+    border-color: $gray-lighter;
 }
