@@ -37,7 +37,7 @@
                 #renderContentBlock($element.content)
             </blockquote>
         #elseif( $element.type == "table" )
-            <table>#renderContentBlock($element.content)</table>
+            <table class="table-block" >#renderContentBlock($element.content)</table>
         #elseif( $element.type == "tableRow" )
             <tr>#renderContentBlock($element.content)</tr>
         #elseif( $element.type == "tableHeader" )
