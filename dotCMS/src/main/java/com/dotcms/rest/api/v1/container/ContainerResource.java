@@ -127,7 +127,6 @@ public class ContainerResource implements Serializable {
         this.paginationUtil = paginationUtil;
         this.formAPI        = formAPI;
         this.containerAPI   = containerAPI;
-        this.versionableAPI = versionableAPI;
         this.velocityUtil   = velocityUtil;
         this.shortyAPI      = shortyAPI;
         this.contentletAPI  = contentletAPI;
