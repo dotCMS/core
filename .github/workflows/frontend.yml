@@ -40,6 +40,7 @@ jobs:
     runs-on: ubuntu-20.04
     name: Notify Slack
     needs: sonar
+    if: always()
     steps:
       - name: Success
         uses: rtCamp/action-slack-notify@v2
