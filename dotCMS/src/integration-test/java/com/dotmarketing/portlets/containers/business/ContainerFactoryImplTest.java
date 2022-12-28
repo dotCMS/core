@@ -140,7 +140,7 @@ public class ContainerFactoryImplTest {
         final Container nonExistingContainer = FactoryLocator.getContainerFactory().find(newContainerInode);
         assertNull(nonExistingContainer);
 
-        FactoryLocator.getContainerFactory().save(container);
+        APILocator.getIdentifierAPI().createNew(container, host, container.getIdentifier());
 
         final Container existingContainer = FactoryLocator.getContainerFactory().find(newContainerInode);
         assertNotNull(existingContainer);
@@ -171,7 +171,7 @@ public class ContainerFactoryImplTest {
         final Container nonExistingContainer = FactoryLocator.getContainerFactory().find(newContainerInode);
         assertNull(nonExistingContainer);
 
-        FactoryLocator.getContainerFactory().save(container);
+        APILocator.getIdentifierAPI().createNew(container, host, container.getIdentifier());
 
         Container existingContainer = FactoryLocator.getContainerFactory().find(newContainerInode);
         assertNotNull(existingContainer);
