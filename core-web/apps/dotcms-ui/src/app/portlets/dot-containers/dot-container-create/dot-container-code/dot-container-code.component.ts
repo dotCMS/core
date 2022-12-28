@@ -123,8 +123,8 @@ export class DotContentEditorComponent implements OnInit {
         this.dialogService.open(DotAddVariableComponent, {
             width: '25rem',
             contentStyle: { padding: '0' },
-            closable: false,
-            showHeader: false,
+            closable: true,
+            header: this.dotMessageService.get('Add-Variables'),
             data: {
                 contentTypeVariable: contentType.structureId,
                 onSave: (variable) => {

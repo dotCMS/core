@@ -1,7 +1,5 @@
 <div class="container-listing">
     <dot-portlet-base *ngIf="vm$ | async as vm">
-        <dot-portlet-toolbar title="Containers"></dot-portlet-toolbar>
-
         <dot-listing-data-table
             #listing
             *ngIf="vm.tableColumns && vm.actionHeaderOptions"

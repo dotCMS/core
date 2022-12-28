@@ -1095,7 +1095,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
         final Optional<ContentletVersionInfo> cvi = APILocator.getVersionableAPI()
                 .getContentletVersionInfo(identifier, languageId, variantId);
 
-        if(!cvi.isPresent() || UtilMethods.isEmpty(cvi.get().getIdentifier())
+        if(cvi.isEmpty() || UtilMethods.isEmpty(cvi.get().getIdentifier())
                 || (live && UtilMethods.isEmpty(cvi.get().getLiveInode()))) {
             return null;
         }

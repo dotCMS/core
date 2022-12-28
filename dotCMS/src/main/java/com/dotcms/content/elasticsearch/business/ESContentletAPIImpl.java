@@ -715,12 +715,10 @@ public class ESContentletAPIImpl implements ContentletAPI {
     public Contentlet findContentletByIdentifierAnyLanguage(final String identifier, final String variant) throws DotDataException {
         try {
             return contentFactory.findContentletByIdentifierAnyLanguage(identifier, variant);
-
         } catch (Exception e) {
             throw new DotContentletStateException("Can't find contentlet: " + identifier, e);
         }
     }
-
 
     @CloseDBIfOpened
     @Override
