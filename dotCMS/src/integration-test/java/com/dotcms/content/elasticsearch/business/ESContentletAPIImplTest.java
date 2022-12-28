@@ -1736,7 +1736,7 @@ public class ESContentletAPIImplTest extends IntegrationTestBase {
     /**
      * Method to test: {@link ESContentletAPIImpl#findContentletByIdentifierAnyLanguage(String)}
      * When: The contentlet had just one version not in the DEFAULT variant
-     * Should: return that version anyway
+     * Should: return {@link Optional#empty()}
      *
      * @throws WebAssetException
      * @throws DotDataException
@@ -1758,8 +1758,7 @@ public class ESContentletAPIImplTest extends IntegrationTestBase {
         final Contentlet contentletByIdentifierAnyLanguage = APILocator.getContentletAPI()
                .findContentletByIdentifierAnyLanguage(contentlet.getIdentifier());
 
-        assertNotNull(contentletByIdentifierAnyLanguage);
-        assertEquals(contentlet.getIdentifier(), contentletByIdentifierAnyLanguage.getIdentifier());
+        assertNull(contentletByIdentifierAnyLanguage);
     }
 
     /**

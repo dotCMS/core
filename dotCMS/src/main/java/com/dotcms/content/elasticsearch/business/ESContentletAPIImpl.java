@@ -5868,11 +5868,12 @@ public class ESContentletAPIImpl implements ContentletAPI {
             if(templateField.isPresent()){
                 final String identifier = contentlet.getIdentifier();
                 final String newTemplate = contentlet.get(HTMLPageAssetAPI.TEMPLATE_FIELD).toString();
-                final Contentlet contentInAnyLang = findContentletByIdentifierAnyLanguage(contentlet.getIdentifier());
+                final Contentlet contentInAnyLang = findContentletByIdentifierAnyLanguage(contentlet.getIdentifier(), contentlet.getVariantId());
+
                 if (null == contentInAnyLang || !UtilMethods.isSet(contentInAnyLang.getIdentifier())) {
-                    throw new DotDataException(String.format("Contentlet with ID '%s' has not been found, or is currently" +
-                            " marked as 'Archived'.", contentlet.getIdentifier()));
+                    return;
                 }
+
                 final String existingTemplate = loadField(contentInAnyLang.getInode(), templateField.get()).toString();
                 if (!existingTemplate.equals(newTemplate)){
                     final List<ContentletVersionInfo> contentletVersions = APILocator.getVersionableAPI().findContentletVersionInfos(identifier, contentlet.getVariantId());
