@@ -5,12 +5,11 @@ import { ActivatedRoute, UrlSegment } from '@angular/router';
 import { BehaviorSubject, Subject } from 'rxjs';
 
 import { SiteService, LoggerService } from '@dotcms/dotcms-js';
-
-import { DotLoadingIndicatorService } from '../dot-loading-indicator/dot-loading-indicator.service';
-import { DotMenuService } from '@services/dot-menu.service';
-import { DotRouterService } from '@services/dot-router/dot-router.service';
-import { DotContentTypeService } from '@services/dot-content-type/dot-content-type.service';
-import { DotCustomEventHandlerService } from '@services/dot-custom-event-handler/dot-custom-event-handler.service';
+import { DotMenuService } from '@dotcms/app/api/services/dot-menu.service';
+import { DotContentTypeService } from '@dotcms/data-access';
+import { DotLoadingIndicatorService } from '@dotcms/utils';
+import { DotCustomEventHandlerService } from '@dotcms/app/api/services/dot-custom-event-handler/dot-custom-event-handler.service';
+import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
 
 @Component({
     selector: 'dot-iframe-porlet',

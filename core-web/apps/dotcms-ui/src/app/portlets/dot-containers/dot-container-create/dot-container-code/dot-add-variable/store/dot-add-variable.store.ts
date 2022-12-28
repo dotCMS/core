@@ -2,7 +2,7 @@ import { Injectable } from '@angular/core';
 import { ComponentStore } from '@ngrx/component-store';
 import { DotCMSContentType, DotCMSContentTypeField } from '@dotcms/dotcms-models';
 import { catchError, switchMap, tap } from 'rxjs/operators';
-import { DotContentTypeService } from '@dotcms/app/api/services/dot-content-type';
+import { DotContentTypeService } from '@dotcms/data-access';
 import { Observable, of } from 'rxjs';
 import { HttpErrorResponse } from '@angular/common/http';
 import { DotGlobalMessageService } from '@components/_common/dot-global-message/dot-global-message.service';

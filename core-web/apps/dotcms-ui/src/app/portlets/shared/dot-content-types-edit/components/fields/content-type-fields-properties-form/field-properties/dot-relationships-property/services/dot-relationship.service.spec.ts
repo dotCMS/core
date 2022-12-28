@@ -3,7 +3,7 @@
 import { DotRelationshipService } from './dot-relationship.service';
 import { HttpTestingController, HttpClientTestingModule } from '@angular/common/http/testing';
 import { CoreWebService } from '@dotcms/dotcms-js';
-import { CoreWebServiceMock } from '@tests/core-web.service.mock';
+import { CoreWebServiceMock } from '@dotcms/utils-testing';
 import { TestBed, getTestBed } from '@angular/core/testing';
 
 const cardinalities = [

@@ -24,6 +24,7 @@ import com.dotcms.contenttype.model.field.ConstantField;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.FieldBuilder;
 import com.dotcms.contenttype.model.field.ImageField;
+import com.dotcms.contenttype.model.field.StoryBlockField;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.FileAssetContentType;
@@ -85,6 +86,7 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.EnumSet;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -92,6 +94,8 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
+
+import io.vavr.control.Try;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Ignore;
@@ -481,6 +485,8 @@ public class ContentletTransformerTest extends BaseWorkflowIntegrationTest {
         for (int i = 0; i < list.size(); i++) {
 
             final Contentlet original = list.get(i);
+            final ContentType type = original.getContentType();
+            final List<Field> storyBlockFields = type.fields(StoryBlockField.class);
             //We compare the transformation results are the same using the default options on the new Transformer
             final Map<String, Object> sourceMap = transformedList1.get(i);
             final Map<String, Object> copyMap = transformedList2.get(i);
@@ -509,13 +515,17 @@ public class ContentletTransformerTest extends BaseWorkflowIntegrationTest {
                     continue;
                 }
 
-                    assertNotNull(String.format("Object with key `%s` is null why??",object2));
-                    assertEquals(String.format(assertMessage,
-                            baseTypeName, original.getIdentifier(), propertyName), object1,
-                            object2);
-
+                assertNotNull(String.format("Object with key `%s` is null why??",object2), object2);
+                final boolean isStoryBlockField =
+                        storyBlockFields.stream().anyMatch(field -> propertyName.equals(field.variable()));
+                if (isStoryBlockField) {
+                    final LinkedHashMap<String, Object> jsonMap =
+                            Try.of(() -> APILocator.getStoryBlockAPI().toMap(object1)).getOrElse(new LinkedHashMap<>());
+                    assertEquals(String.format(assertMessage, baseTypeName, original.getIdentifier(), propertyName), jsonMap, object2);
+                } else {
+                    assertEquals(String.format(assertMessage, baseTypeName, original.getIdentifier(), propertyName), object1, object2);
+                }
             }
-
         }
         Logger.warn(ContentletTransformerTest.class, String.format("Test using samples of type `%s` successfully completed. ",baseTypeName));
 
@@ -528,6 +538,8 @@ public class ContentletTransformerTest extends BaseWorkflowIntegrationTest {
             final Contentlet contentlet1 = hydrated1.get(i);
             final Contentlet contentlet2 = hydrated2.get(i);
             assertEquals(contentlet1.getIdentifier(),contentlet2.getIdentifier());
+            final ContentType type = contentlet1.getContentType();
+            final List<Field> storyBlockFields = type.fields(StoryBlockField.class);
 
             for (final String propertyName : contentlet1.getMap().keySet()) {
                 final Object object1 = contentlet1.getMap().get(propertyName);
@@ -546,10 +558,16 @@ public class ContentletTransformerTest extends BaseWorkflowIntegrationTest {
                     continue;
                 }
 
-                assertNotNull(object2);
-                assertEquals(String.format(" contentType:`%s` , id: `%s` ,  key: `%s` ",
-                        baseTypeName, contentlet1.getIdentifier(), propertyName), object1,
-                        object2);
+                assertNotNull(String.format("Object with key `%s` is null why??", object2), object2);
+                final boolean isStoryBlockField =
+                        storyBlockFields.stream().anyMatch(field -> propertyName.equals(field.variable()));
+                if (isStoryBlockField) {
+                    final LinkedHashMap<String, Object> jsonMap =
+                            Try.of(() -> APILocator.getStoryBlockAPI().toMap(object1)).getOrElse(new LinkedHashMap<>());
+                    assertEquals(String.format(" contentType:`%s` , id: `%s` ,  key: `%s` ", baseTypeName, contentlet1.getIdentifier(), propertyName), jsonMap, object2);
+                } else {
+                    assertEquals(String.format(" contentType:`%s` , id: `%s` ,  key: `%s` ", baseTypeName, contentlet1.getIdentifier(), propertyName), object1, object2);
+                }
             }
         }
     }

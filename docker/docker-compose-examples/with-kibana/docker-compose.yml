@@ -38,7 +38,6 @@ services:
   dotcms:
     image: dotcms/dotcms:latest
     environment:
-        "LANG": 'C.UTF-8'
         "DB_BASE_URL": "jdbc:postgresql://db/dotcms"
         "DB_USERNAME": 'dotcmsdbuser'
         "DB_PASSWORD": 'password'

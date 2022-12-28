@@ -69,6 +69,6 @@ public class ManifestReaderFactoryTest {
                 .getAssets(ManifestReason.INCLUDE_BY_USER);
 
         assertEquals(1, assets.size());
-        assertEquals(contentType.id(), assets.iterator().next().id());;
+        assertEquals(contentType.id(), assets.iterator().next().id());
     }
 }

@@ -2,8 +2,8 @@ import { DotExperimentsConfigurationGoalsComponent } from './dot-experiments-con
 import { byTestId, createComponentFactory, Spectator } from '@ngneat/spectator';
 import { ButtonModule } from 'primeng/button';
 import { Card, CardModule } from 'primeng/card';
-import { MockDotMessageService } from '@tests/dot-message-service.mock';
-import { DotMessageService } from '@services/dot-message/dot-messages.service';
+import { MockDotMessageService } from '@dotcms/utils-testing';
+import { DotMessageService } from '@dotcms/data-access';
 
 const messageServiceMock = new MockDotMessageService({
     'experiments.configure.goals.name': 'Goals'

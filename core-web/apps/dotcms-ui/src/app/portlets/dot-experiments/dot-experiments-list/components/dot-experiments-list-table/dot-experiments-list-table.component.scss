@@ -68,7 +68,6 @@
                 tr {
                     height: 40px;
                     border: 1px solid $gray-lighter;
-                    border-width: 0 0 1px 0;
                     transition: background-color $basic-speed ease;
                     background: transparent;
 
@@ -83,7 +82,6 @@
                     td {
                         height: 40px;
                         padding: 0;
-                        border: none;
 
                         &:first-child {
                             padding-left: $spacing-3;

@@ -1,6 +1,6 @@
 import { Component, OnInit, Input } from '@angular/core';
 import { DotClipboardUtil } from '@dotcms/app/api/util/clipboard/ClipboardUtil';
-import { DotMessageService } from '@services/dot-message/dot-messages.service';
+import { DotMessageService } from '@dotcms/data-access';
 
 /**
  * Icon button to copy to clipboard the string you pass to it,
@@ -24,7 +24,6 @@ export class DotCopyLinkComponent implements OnInit {
         private dotClipboardUtil: DotClipboardUtil,
         private dotMessageService: DotMessageService
     ) {}
-
 
     ngOnInit() {
         this.tooltipText = this.tooltipText || this.dotMessageService.get('Copy');

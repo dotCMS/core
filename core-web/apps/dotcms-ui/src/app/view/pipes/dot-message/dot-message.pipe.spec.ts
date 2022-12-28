@@ -1,6 +1,6 @@
 import { DotMessagePipe } from './dot-message.pipe';
-import { MockDotMessageService } from '@tests/dot-message-service.mock';
-import { DotMessageService } from '@services/dot-message/dot-messages.service';
+import { MockDotMessageService } from '@dotcms/utils-testing';
+import { DotMessageService } from '@dotcms/data-access';
 
 describe('DotMessagePipe', () => {
     let messageServiceMock: MockDotMessageService;
@@ -10,7 +10,7 @@ describe('DotMessagePipe', () => {
             'apps.search.placeholder': 'Search',
             'apps.best': 'Test {0} {1}'
         });
-        pipe = new DotMessagePipe((messageServiceMock as unknown) as DotMessageService);
+        pipe = new DotMessagePipe(messageServiceMock as unknown as DotMessageService);
     });
 
     it('should return empty string param is undefined', () => {

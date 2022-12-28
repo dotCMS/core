@@ -5,14 +5,12 @@ import { Subject } from 'rxjs';
 import { filter, takeUntil } from 'rxjs/operators';
 import { DialogService } from 'primeng/dynamicdialog';
 
-import { DotTemplate } from '@shared/models/dot-edit-layout-designer/dot-template.model';
-
 import { DotTemplatePropsComponent } from './dot-template-props/dot-template-props.component';
 import { DotTemplateItem, DotTemplateState, DotTemplateStore } from './store/dot-template.store';
-import { DotMessageService } from '@services/dot-message/dot-messages.service';
+import { DotMessageService } from '@dotcms/data-access';
 import { DynamicDialogRef } from 'primeng/dynamicdialog/dynamicdialog-ref';
 import { Site, SiteService } from '@dotcms/dotcms-js';
-import { DotLayout } from '@models/dot-edit-layout-designer/dot-layout.model';
+import { DotTemplate, DotLayout } from '@dotcms/dotcms-models';
 
 @Component({
     selector: 'dot-template-create-edit',

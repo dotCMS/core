@@ -11,18 +11,18 @@ import {
 import { tap, map, catchError, take } from 'rxjs/operators';
 import { MenuItem } from 'primeng/api';
 
-import { DotCMSContentlet, DotCMSWorkflowAction } from '@dotcms/dotcms-models';
+import { DotCMSContentlet, DotCMSWorkflowAction, DotPage } from '@dotcms/dotcms-models';
 
-import { DotWorkflowActionsFireService } from '@services/dot-workflow-actions-fire/dot-workflow-actions-fire.service';
-import { DotHttpErrorManagerService } from '@services/dot-http-error-manager/dot-http-error-manager.service';
+import { DotWorkflowActionsFireService } from '@dotcms/data-access';
+import { DotHttpErrorManagerService } from '@dotcms/app/api/services/dot-http-error-manager/dot-http-error-manager.service';
 import { DotGlobalMessageService } from '@components/_common/dot-global-message/dot-global-message.service';
-import { DotMessageService } from '@services/dot-message/dot-messages.service';
+import { DotMessageService } from '@dotcms/data-access';
 
-import { DotWorkflowsActionsService } from '@services/dot-workflows-actions/dot-workflows-actions.service';
-import { DotWizardService } from '@services/dot-wizard/dot-wizard.service';
-import { DotWorkflowEventHandlerService } from '@services/dot-workflow-event-handler/dot-workflow-event-handler.service';
-import { DotPage } from '@models/dot-page/dot-page.model';
+import { DotWorkflowsActionsService } from '@dotcms/data-access';
+
 import { DotWorkflowPayload } from '@dotcms/dotcms-models';
+import { DotWizardService } from '@dotcms/app/api/services/dot-wizard/dot-wizard.service';
+import { DotWorkflowEventHandlerService } from '@dotcms/app/api/services/dot-workflow-event-handler/dot-workflow-event-handler.service';
 
 @Component({
     selector: 'dot-edit-page-workflows-actions',

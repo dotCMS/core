@@ -1,23 +1,23 @@
 import { Injectable } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { mockDotCMSTempFile } from '@components/dot-add-persona-dialog/dot-create-persona-form/dot-create-persona-form.component.spec';
-import { DotCurrentUserService } from '@dotcms/app/api/services/dot-current-user/dot-current-user.service';
+import { DotCurrentUserService } from '@dotcms/data-access';
 import { DotHttpErrorManagerService } from '@dotcms/app/api/services/dot-http-error-manager/dot-http-error-manager.service';
-import { DotMessageService } from '@dotcms/app/api/services/dot-message/dot-messages.service';
-import { DotRolesService } from '@dotcms/app/api/services/dot-roles/dot-roles.service';
-import { mockProcessedRoles } from '@dotcms/app/api/services/dot-roles/dot-roles.service.spec';
+import { DotMessageService } from '@dotcms/data-access';
+import { DotRolesService } from '@dotcms/data-access';
 import { DotTempFileUploadService } from '@dotcms/app/api/services/dot-temp-file-upload/dot-temp-file-upload.service';
-import { DotWorkflowActionsFireService } from '@dotcms/app/api/services/dot-workflow-actions-fire/dot-workflow-actions-fire.service';
+import { DotWorkflowActionsFireService } from '@dotcms/data-access';
 import { CurrentUserDataMock } from '@dotcms/app/portlets/dot-starter/dot-starter-resolver.service.spec';
-import { DotCurrentUser } from '@dotcms/app/shared/models/dot-current-user/dot-current-user';
-import { DotPageRender } from '@dotcms/app/shared/models/dot-page/dot-rendered-page.model';
-import { DotRole } from '@dotcms/app/shared/models/dot-role/dot-role.model';
-import { MockDotMessageService } from '@dotcms/app/test/dot-message-service.mock';
-import { mockDotRenderedPage } from '@dotcms/app/test/dot-page-render.mock';
-import { mockUser } from '@dotcms/app/test/login-service.mock';
 import { Observable, of } from 'rxjs';
-import { DotPageRenderState } from '../../../shared/models';
 import { DotFavoritePageActionState, DotFavoritePageStore } from './dot-favorite-page.store';
+import { DotRole, DotCurrentUser, DotPageRenderState, DotPageRender } from '@dotcms/dotcms-models';
+import {
+    MockDotMessageService,
+    mockDotRenderedPage,
+    mockProcessedRoles,
+    mockUser
+} from '@dotcms/utils-testing';
+import { MockDotHttpErrorManagerService } from '@dotcms/app/test/dot-http-error-manager.service.mock';
 
 @Injectable()
 class MockDotRolesService {
@@ -34,13 +34,6 @@ class MockDotCurrentUserService {
 }
 
 @Injectable()
-class MockDotHttpErrorManagerService {
-    public handle(): Observable<unknown> {
-        return null;
-    }
-}
-
-@Injectable()
 class MockDotTempFileUploadService {
     public upload(): Observable<unknown> {
         return null;
@@ -50,6 +43,9 @@ class MockDotTempFileUploadService {
 @Injectable()
 class MockDotWorkflowActionsFireService {
     public publishContentletAndWaitForIndex(): Observable<unknown> {
+        return null;
+    }
+    public deleteContentlet(): Observable<unknown> {
         return null;
     }
 }
@@ -127,6 +123,14 @@ describe('DotFavoritePageStore', () => {
         });
         expect(dotRolesService.search).toHaveBeenCalledTimes(1);
         expect(dotCurrentUser.getCurrentUser).toHaveBeenCalledTimes(1);
+    });
+
+    // Updaters
+    it('should update Favorite Pages', () => {
+        dotFavoritePageStore.setInodeStored('test');
+        dotFavoritePageStore.state$.subscribe((data) => {
+            expect(data.inodeStored).toEqual('test');
+        });
     });
 
     // Selectors
@@ -217,6 +221,41 @@ describe('DotFavoritePageStore', () => {
         dotFavoritePageStore.state$.subscribe((state) => {
             expect(dotHttpErrorManagerService.handle).toHaveBeenCalledTimes(1);
             expect(state.closeDialog).toEqual(false);
+            done();
+        });
+    });
+
+    it('should delete Favorite Page', (done) => {
+        spyOn(dotWorkflowActionsFireService, 'deleteContentlet').and.returnValue(of(null));
+
+        dotFavoritePageStore.deleteFavoritePage('abc123');
+
+        expect(dotWorkflowActionsFireService.deleteContentlet).toHaveBeenCalledWith({
+            inode: 'abc123'
+        });
+
+        dotFavoritePageStore.state$.subscribe((state) => {
+            expect(state.closeDialog).toEqual(true);
+            expect(state.loading).toEqual(false);
+            expect(state.actionState).toEqual(DotFavoritePageActionState.DELETED);
+            done();
+        });
+    });
+
+    it('should handle error when delete Favorite Page', (done) => {
+        spyOn(dotWorkflowActionsFireService, 'deleteContentlet').and.throwError('error');
+        spyOn(dotHttpErrorManagerService, 'handle').and.callThrough();
+
+        dotFavoritePageStore.deleteFavoritePage('abc123');
+
+        expect(dotWorkflowActionsFireService.deleteContentlet).toHaveBeenCalledWith({
+            inode: 'abc123'
+        });
+
+        dotFavoritePageStore.state$.subscribe((state) => {
+            expect(dotHttpErrorManagerService.handle).toHaveBeenCalledTimes(1);
+            expect(state.closeDialog).toEqual(false);
+            expect(state.loading).toEqual(false);
             done();
         });
     });

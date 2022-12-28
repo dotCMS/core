@@ -19,20 +19,20 @@ import {
 import { DotTemplateCreateEditComponent } from './dot-template-create-edit.component';
 import { DotFormDialogModule } from '@components/dot-form-dialog/dot-form-dialog.module';
 import { DotTemplatePropsModule } from './dot-template-props/dot-template-props.module';
-import { DotMessageService } from '@services/dot-message/dot-messages.service';
-import { MockDotMessageService } from '@tests/dot-message-service.mock';
+import { DotMessageService } from '@dotcms/data-access';
+import { MockDotMessageService } from '@dotcms/utils-testing';
 import { DotMessagePipe } from '@pipes/dot-message/dot-message.pipe';
-import { DotCrudService } from '@services/dot-crud';
-import { DotTempFileUploadService } from '@services/dot-temp-file-upload/dot-temp-file-upload.service';
-import { DotWorkflowActionsFireService } from '@services/dot-workflow-actions-fire/dot-workflow-actions-fire.service';
-import { PaginatorService } from '@services/paginator';
-import { mockDotThemes } from '@tests/dot-themes.mock';
+import { DotCrudService } from '@dotcms/data-access';
+import { DotTempFileUploadService } from '@dotcms/app/api/services/dot-temp-file-upload/dot-temp-file-upload.service';
+import { DotWorkflowActionsFireService } from '@dotcms/data-access';
+import { PaginatorService } from '@dotcms/data-access';
+import { mockDotThemes } from '@dotcms/utils-testing';
 import { CoreWebService, SiteService } from '@dotcms/dotcms-js';
-import { DotThemesService } from '@services/dot-themes/dot-themes.service';
-import { CoreWebServiceMock } from '@tests/core-web.service.mock';
+import { DotThemesService } from '@dotcms/data-access';
+import { CoreWebServiceMock } from '@dotcms/utils-testing';
 import { HttpClientTestingModule } from '@angular/common/http/testing';
-import { DotEventsService } from '@services/dot-events/dot-events.service';
-import { mockSites } from '@tests/site-service.mock';
+import { DotEventsService } from '@dotcms/data-access';
+import { mockSites } from '@dotcms/utils-testing';
 import { DotTemplateItem } from './store/dot-template.store';
 
 @Component({

@@ -365,6 +365,10 @@
     opacity: 1;
 }
 
+.p-button:disabled.p-button-link {
+    background-color: transparent !important;
+}
+
 .p-button:disabled.p-button-text {
     background-color: transparent !important;
     color: $button-text-color-disabled !important;

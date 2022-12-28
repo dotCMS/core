@@ -1,9 +1,9 @@
 import { CUSTOM_ELEMENTS_SCHEMA, NgModule } from '@angular/core';
 import { CommonModule } from '@angular/common';
 
-import { DotTempFileUploadService } from '@services/dot-temp-file-upload/dot-temp-file-upload.service';
-import { DotWorkflowActionsFireService } from '@services/dot-workflow-actions-fire/dot-workflow-actions-fire.service';
+import { DotWorkflowActionsFireService } from '@dotcms/data-access';
 import { DotTemplateThumbnailFieldComponent } from './dot-template-thumbnail-field.component';
+import { DotTempFileUploadService } from '@dotcms/app/api/services/dot-temp-file-upload/dot-temp-file-upload.service';
 
 @NgModule({
     imports: [CommonModule],

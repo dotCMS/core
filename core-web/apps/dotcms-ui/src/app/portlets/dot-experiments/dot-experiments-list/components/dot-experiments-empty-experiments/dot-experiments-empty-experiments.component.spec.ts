@@ -3,9 +3,9 @@ import { byTestId, createComponentFactory, mockProvider, Spectator } from '@ngne
 import { Button, ButtonModule } from 'primeng/button';
 import { DotIconComponent, DotIconModule } from '@dotcms/ui';
 import { DotMessagePipeModule } from '@pipes/dot-message/dot-message-pipe.module';
-import { MockDotMessageService } from '@tests/dot-message-service.mock';
+import { MockDotMessageService } from '@dotcms/utils-testing';
 import { CoreWebService } from '@dotcms/dotcms-js';
-import { DotMessageService } from '@services/dot-message/dot-messages.service';
+import { DotMessageService } from '@dotcms/data-access';
 
 const messageServiceMock = new MockDotMessageService({
     'experimentspage.add.new.experiment': 'Add a new experiment'
