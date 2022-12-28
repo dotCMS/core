@@ -95,11 +95,11 @@ export class DotContainerPropertiesComponent implements OnInit {
 
     /**
      * check prev value and current value for showing confirmation modal
-     * @param {*} prevValue
-     * @param {*} currValue
+     * @param {DotContainerPayload} prevValue
+     * @param {DotContainerPayload} currValue
      * @memberof DotContainerPropertiesComponent
      */
-    IsShowClearConfirmationModal(prevValue, currValue) {
+    IsShowClearConfirmationModal(prevValue: DotContainerPayload, currValue: DotContainerPayload) {
         return (
             (prevValue.maxContentlets > 0 || prevValue.maxContentlets === null) &&
             currValue.maxContentlets === 0
