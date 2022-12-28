@@ -326,7 +326,7 @@ public class ContentTypeAPITest {
      * Then create another this time using a folder path then verify the returned instance
      */
     @Test
-    public void Test_Send_Invalid_Host_And_Folder_Should_Default_to_System() {
+    public void Test_Send_Invalid_Host_And_Folder_Verify_Default() {
 
         final SiteAPI siteAPI = apiClientFactory.getClient(SiteAPI.class);
         final ResponseEntityView<SiteView> siteResponse = siteAPI.findHostByName(
@@ -379,7 +379,8 @@ public class ContentTypeAPITest {
                 .name("name")
                 .variable(varName2)
                 .host("default")
-                .folder("/f1"+timeStamp+"/f2"+timeStamp)
+                .folderPath("/f1"+timeStamp+"/f2"+timeStamp)
+                //.folder()
                 .addFields(
                         ImmutableBinaryField.builder()
                                 .variable("binVar2"+timeStamp)
@@ -399,5 +400,38 @@ public class ContentTypeAPITest {
 
     }
 
+    @Test
+    void Test_Send_Send_Folder_Path_Only_Invalid_Folder_Expect_System_Folder_Fallback() {
+
+        final FolderAPI folderAPI = apiClientFactory.getClient(FolderAPI.class);
+
+        final ResponseEntityView<List<Map<String, Object>>> makeFoldersResponse = folderAPI.makeFolders(ImmutableList.of("/foo"), "default");
+        final List<Map<String, Object>> entity = makeFoldersResponse.entity();
+        Assertions.assertNotNull(entity);
+        final String inode = (String)entity.get(0).get("inode");
+
+        final long timeStamp = System.currentTimeMillis();
+        final ContentTypeAPI client = apiClientFactory.getClient(ContentTypeAPI.class);
+
+        //First Scenario here to test is we send a CT with a Folder that we know does not exist
+        final String varName1 = "fooCT"+timeStamp;
+        final ImmutableSimpleContentType contentType1 = ImmutableSimpleContentType.builder()
+                .description("ct for testing folders.")
+                .name("fooCT")
+                .variable(varName1)
+                .folderPath("default:/foo/")
+                .addFields(
+                        ImmutableBinaryField.builder()
+                                .variable("binVar"+timeStamp)
+                                .build()
+                ).build();
+
+        final ResponseEntityView<List<ContentType>> contentTypeResponse2 = client.createContentTypes(ImmutableList.of(contentType1));
+        Assertions.assertNotNull(contentTypeResponse2);
+        final ContentType contentTypes = contentTypeResponse2.entity().get(0);
+        Assertions.assertEquals(inode, contentTypes.folder());
+        //Here we get System host as the fallback site because we failed locating
+        Assertions.assertEquals("default", contentTypes.siteName());
+    }
 
 }

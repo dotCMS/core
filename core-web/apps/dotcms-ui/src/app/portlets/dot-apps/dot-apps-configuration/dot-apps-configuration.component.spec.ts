@@ -3,23 +3,23 @@
 import { of, Observable } from 'rxjs';
 import { waitForAsync, ComponentFixture, fakeAsync, tick, TestBed } from '@angular/core/testing';
 import { RouterTestingModule } from '@angular/router/testing';
-import { MockDotMessageService } from '@tests/dot-message-service.mock';
-import { DotMessageService } from '@services/dot-message/dot-messages.service';
+import { MockDotMessageService } from '@dotcms/utils-testing';
+import { DotMessageService } from '@dotcms/data-access';
 import { ActivatedRoute } from '@angular/router';
 import { DotAppsConfigurationComponent } from './dot-apps-configuration.component';
 import { DotActionButtonModule } from '@components/_common/dot-action-button/dot-action-button.module';
 import { InputTextModule } from 'primeng/inputtext';
 import { ButtonModule } from 'primeng/button';
-import { DotAppsService } from '@services/dot-apps/dot-apps.service';
+import { DotAppsService } from '@dotcms/app/api/services/dot-apps/dot-apps.service';
 import { DotAppsConfigurationResolver } from './dot-apps-configuration-resolver.service';
 import { By } from '@angular/platform-browser';
 import { Injectable } from '@angular/core';
-import { DotAlertConfirmService } from '@services/dot-alert-confirm/dot-alert-confirm.service';
-import { DotRouterService } from '@services/dot-router/dot-router.service';
-import { MockDotRouterService } from '@tests/dot-router-service.mock';
+import { DotAlertConfirmService } from '@dotcms/data-access';
+import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
+import { MockDotRouterService } from '@dotcms/utils-testing';
 import { CommonModule } from '@angular/common';
 import { DotAppsConfigurationListModule } from './dot-apps-configuration-list/dot-apps-configuration-list.module';
-import { PaginatorService } from '@services/paginator';
+import { PaginatorService } from '@dotcms/data-access';
 import { DotAppsConfigurationHeaderModule } from '../dot-apps-configuration-header/dot-apps-configuration-header.module';
 import { MarkdownModule } from 'ngx-markdown';
 import { DotAppsImportExportDialogModule } from '../dot-apps-import-export-dialog/dot-apps-import-export-dialog.module';
@@ -27,7 +27,7 @@ import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { DotPipesModule } from '@pipes/dot-pipes.module';
 import { ConfirmationService } from 'primeng/api';
 import { CoreWebService } from '@dotcms/dotcms-js';
-import { CoreWebServiceMock } from '@tests/core-web.service.mock';
+import { CoreWebServiceMock } from '@dotcms/utils-testing';
 
 const messages = {
     'apps.key': 'Key',

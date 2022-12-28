@@ -16,7 +16,9 @@ import { DotFavoritePageModule } from '../../../components/dot-favorite-page/dot
 import { DialogService } from 'primeng/dynamicdialog';
 import { UiDotIconButtonModule } from '@components/_common/dot-icon-button/dot-icon-button.module';
 import { TooltipModule } from 'primeng/tooltip';
-import { DotPropertiesService } from '@dotcms/app/api/services/dot-properties/dot-properties.service';
+import { DotPropertiesService } from '@dotcms/data-access';
+import { DotIconModule } from '@dotcms/ui';
+import { DotEditPageNavDirective } from '@portlets/dot-edit-page/main/dot-edit-page-nav/directives/dot-edit-page-nav.directive';
 
 @NgModule({
     imports: [
@@ -34,7 +36,9 @@ import { DotPropertiesService } from '@dotcms/app/api/services/dot-properties/do
         DotPipesModule,
         DotGlobalMessageModule,
         DotFavoritePageModule,
-        UiDotIconButtonModule
+        UiDotIconButtonModule,
+        DotIconModule,
+        DotEditPageNavDirective
     ],
     exports: [DotEditPageToolbarComponent],
     declarations: [DotEditPageToolbarComponent],

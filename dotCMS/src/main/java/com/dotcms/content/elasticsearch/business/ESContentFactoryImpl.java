@@ -1,21 +1,12 @@
 package com.dotcms.content.elasticsearch.business;
 
-import static com.dotcms.content.elasticsearch.business.ESContentletAPIImpl.MAX_LIMIT;
-import static com.dotcms.content.elasticsearch.business.ESIndexAPI.INDEX_OPERATIONS_TIMEOUT_IN_MS;
-import static com.dotmarketing.portlets.contentlet.model.Contentlet.AUTO_ASSIGN_WORKFLOW;
-import static com.dotmarketing.portlets.contentlet.model.Contentlet.TITLE_IMAGE_KEY;
-import static com.dotmarketing.portlets.contentlet.model.Contentlet.WORKFLOW_ACTION_KEY;
-import static com.dotmarketing.portlets.contentlet.model.Contentlet.WORKFLOW_ASSIGN_KEY;
-import static com.dotmarketing.portlets.contentlet.model.Contentlet.WORKFLOW_BULK_KEY;
-import static com.dotmarketing.portlets.contentlet.model.Contentlet.WORKFLOW_COMMENTS_KEY;
-import static com.dotmarketing.portlets.contentlet.model.Contentlet.WORKFLOW_IN_PROGRESS;
-import static com.dotmarketing.util.StringUtils.lowercaseStringExceptMatchingTokens;
-
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.content.business.json.ContentletJsonAPI;
 import com.dotcms.content.business.json.ContentletJsonHelper;
 import com.dotcms.content.elasticsearch.ESQueryCache;
 import com.dotcms.content.elasticsearch.util.RestHighLevelClientProvider;
+import com.dotcms.contenttype.business.StoryBlockReferenceResult;
+import com.dotcms.contenttype.model.field.DataTypes;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.enterprise.license.LicenseManager;
 import com.dotcms.exception.ExceptionUtil;
@@ -23,7 +14,6 @@ import com.dotcms.notifications.bean.NotificationLevel;
 import com.dotcms.notifications.bean.NotificationType;
 import com.dotcms.notifications.business.NotificationAPI;
 import com.dotcms.repackage.net.sf.hibernate.ObjectNotFoundException;
-import org.apache.commons.io.FileUtils;
 import com.dotcms.rest.api.v1.DotObjectMapperProvider;
 import com.dotcms.system.SimpleMapAppContext;
 import com.dotcms.util.CollectionsUtils;
@@ -84,27 +74,10 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;
 import com.google.common.primitives.Ints;
 import com.liferay.portal.model.User;
+import io.vavr.Tuple2;
 import io.vavr.control.Try;
-import java.io.Serializable;
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.sql.Timestamp;
-import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Calendar;
-import java.util.Collections;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.Set;
-import java.util.stream.Collectors;
 import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.lucene.search.TotalHits;
 import org.apache.lucene.search.TotalHits.Relation;
@@ -132,6 +105,37 @@ import org.elasticsearch.search.sort.SortBuilders;
 import org.elasticsearch.search.sort.SortOrder;
 import org.jetbrains.annotations.NotNull;
 
+import java.io.Serializable;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Timestamp;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Collections;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
+
+import static com.dotcms.content.elasticsearch.business.ESContentletAPIImpl.MAX_LIMIT;
+import static com.dotcms.content.elasticsearch.business.ESIndexAPI.INDEX_OPERATIONS_TIMEOUT_IN_MS;
+import static com.dotmarketing.portlets.contentlet.model.Contentlet.AUTO_ASSIGN_WORKFLOW;
+import static com.dotmarketing.portlets.contentlet.model.Contentlet.TITLE_IMAGE_KEY;
+import static com.dotmarketing.portlets.contentlet.model.Contentlet.WORKFLOW_ACTION_KEY;
+import static com.dotmarketing.portlets.contentlet.model.Contentlet.WORKFLOW_ASSIGN_KEY;
+import static com.dotmarketing.portlets.contentlet.model.Contentlet.WORKFLOW_BULK_KEY;
+import static com.dotmarketing.portlets.contentlet.model.Contentlet.WORKFLOW_COMMENTS_KEY;
+import static com.dotmarketing.portlets.contentlet.model.Contentlet.WORKFLOW_IN_PROGRESS;
+import static com.dotmarketing.util.StringUtils.lowercaseStringExceptMatchingTokens;
+
 /**
  * Implementation class for the {@link ContentletFactory} interface. This class
  * represents the data layer used to query contentlet data from the database.
@@ -143,6 +147,7 @@ import org.jetbrains.annotations.NotNull;
  */
 public class ESContentFactoryImpl extends ContentletFactory {
 
+    private static final boolean REFRESH_BLOCK_EDITOR_REFERENCES = Config.getBooleanProperty("REFRESH_BLOCK_EDITOR_REFERENCES", true);
     private static final String[] ES_FIELDS = {"inode", "identifier"};
     public static final int ES_TRACK_TOTAL_HITS_DEFAULT = 10000000;
     public static final String ES_TRACK_TOTAL_HITS = "ES_TRACK_TOTAL_HITS";
@@ -853,7 +858,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
             if (CACHE_404_CONTENTLET.equals(contentlet.getInode())) {
                 return null;
             }
-            return contentlet;
+            return processCachedContentlet(contentlet);
         }
 
         final Optional<Contentlet> dbContentlet = this.findInDb(inode);
@@ -866,6 +871,34 @@ public class ESContentFactoryImpl extends ContentletFactory {
             return null;
         }
 
+    }
+
+    /**
+     * Cached Contentlets containing a Story Block field may be referencing other Contentlets in it that don't really
+     * represent their latest version. This can cause problems in the front-end because the Story Block has outdated
+     * versions of them and will display the incorrect information.
+     * <p>This method makes sure that, if required, the referenced Contentlets in the Story Block field reflect their
+     * expected version so that they match the official live version.</p>
+     *
+     * @param cachedContentlet The {@link Contentlet} object coming from the dotCMS Cache.
+     *
+     * @return The {@link Contentlet} object with the Story Block field(s) and the updated version of their referenced
+     * Contentlets, if applicable.
+     */
+    private Contentlet processCachedContentlet(final Contentlet cachedContentlet) {
+        if (REFRESH_BLOCK_EDITOR_REFERENCES) {
+            final StoryBlockReferenceResult storyBlockRefreshedResult =
+                    APILocator.getStoryBlockAPI().refreshReferences(cachedContentlet);
+            if (storyBlockRefreshedResult.isRefreshed()) {
+                Logger.debug(this, () -> String.format("Refreshed Story Block dependencies for Contentlet '%s'",
+                        cachedContentlet.getIdentifier()));
+
+                final Contentlet refreshedContentlet = (Contentlet) storyBlockRefreshedResult.getValue();
+                contentletCache.add(refreshedContentlet.getInode(), refreshedContentlet);
+                return refreshedContentlet;
+            }
+        }
+        return cachedContentlet;
     }
 
 	@Override
@@ -1063,19 +1096,21 @@ public class ESContentFactoryImpl extends ContentletFactory {
 
     @Override
     protected Contentlet findContentletByIdentifierAnyLanguage(final String identifier, final boolean includeDeleted) throws DotDataException, DotSecurityException {
-        // Looking content up this way can avoid any DB hits as these calls are all cached.
-        final List<Language> langs = this.languageAPI.getLanguages();
-        for(final Language language : langs) {
-            final Optional<ContentletVersionInfo> contentVersion = APILocator.getVersionableAPI().getContentletVersionInfo(identifier, language.getId());
-            if (contentVersion.isPresent() && UtilMethods.isSet(contentVersion.get().getIdentifier())
-                    && (includeDeleted || !contentVersion.get().isDeleted())) {
-                return find(contentVersion.get().getWorkingInode());
-            }
-            if (contentVersion.isPresent() && contentVersion.get().isDeleted() && !includeDeleted) {
-                Logger.warn(this, String.format("Contentlet with ID '%s' exists, but is marked as 'Archived'.",
-                        identifier));
-            }
+        final Optional<ContentletVersionInfo> contentVersionDeleted = FactoryLocator.getVersionableFactory()
+                .findAnyContentletVersionInfo(identifier, true);
+
+        final Optional<ContentletVersionInfo> contentVersionNotDeleted = FactoryLocator.getVersionableFactory()
+                .findAnyContentletVersionInfo(identifier, false);
+
+        if (contentVersionNotDeleted.isPresent()) {
+            return find(contentVersionNotDeleted.get().getWorkingInode());
+        } else if (contentVersionDeleted.isPresent() && includeDeleted) {
+            return find(contentVersionDeleted.get().getWorkingInode());
+        } else if (contentVersionDeleted.isPresent() && !includeDeleted) {
+            Logger.warn(this, String.format("Contentlet with ID '%s' exists, but is marked as 'Archived'.",
+                    identifier));
         }
+
         return null;
     }
 
@@ -1091,7 +1126,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
     for (String i : inodes) {
       final Contentlet contentlet = contentletCache.get(i);
       if (contentlet != null && InodeUtils.isSet(contentlet.getInode())) {
-        conMap.put(contentlet.getInode(), contentlet);
+        conMap.put(contentlet.getInode(), processCachedContentlet(contentlet));
       }
     }
     

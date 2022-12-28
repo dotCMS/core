@@ -1,21 +1,24 @@
 import { pluck, filter, take, debounceTime, switchMap, takeUntil } from 'rxjs/operators';
 import { Component, HostBinding, OnInit, OnDestroy } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
-import { DotPageRenderState } from '../../shared/models/dot-rendered-page-state.model';
-import { DotRouterService } from '@services/dot-router/dot-router.service';
+import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
 import { DotGlobalMessageService } from '@components/_common/dot-global-message/dot-global-message.service';
-import { DotPageRender } from '@models/dot-page/dot-rendered-page.model';
-import { DotPageLayoutService } from '@services/dot-page-layout/dot-page-layout.service';
-import { DotMessageService } from '@services/dot-message/dot-messages.service';
+import { DotPageLayoutService } from '@dotcms/data-access';
+import { DotMessageService } from '@dotcms/data-access';
 import { ResponseView } from '@dotcms/dotcms-js';
-import { DotTemplateContainersCacheService } from '@services/dot-template-containers-cache/dot-template-containers-cache.service';
-import { DotContainerMap, DotContainer } from '@shared/models/container/dot-container.model';
-import { DotLayout } from '@models/dot-edit-layout-designer';
-import { DotHttpErrorManagerService } from '@services/dot-http-error-manager/dot-http-error-manager.service';
-import { DotEditLayoutService } from '@services/dot-edit-layout/dot-edit-layout.service';
+import { DotHttpErrorManagerService } from '@dotcms/app/api/services/dot-http-error-manager/dot-http-error-manager.service';
 import { HttpErrorResponse } from '@angular/common/http';
 import { Subject } from 'rxjs';
 import { finalize } from 'rxjs/operators';
+import { DotEditLayoutService } from '@dotcms/app/api/services/dot-edit-layout/dot-edit-layout.service';
+import { DotTemplateContainersCacheService } from '@dotcms/app/api/services/dot-template-containers-cache/dot-template-containers-cache.service';
+import {
+    DotPageRender,
+    DotPageRenderState,
+    DotLayout,
+    DotContainer,
+    DotContainerMap
+} from '@dotcms/dotcms-models';
 
 @Component({
     selector: 'dot-edit-layout',

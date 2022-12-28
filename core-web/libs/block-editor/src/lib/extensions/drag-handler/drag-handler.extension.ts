@@ -4,6 +4,7 @@ import { NodeSelection, Plugin, PluginKey } from 'prosemirror-state';
 import { Extension } from '@tiptap/core';
 
 import { DragHandlerComponent } from './drag-handler.component';
+import { deselectCurrentNode } from '@dotcms/block-editor';
 
 export const DragHandler = (viewContainerRef: ViewContainerRef) => {
     return Extension.create({
@@ -56,7 +57,7 @@ export const DragHandler = (viewContainerRef: ViewContainerRef) => {
                     );
                     const slice = view.state.selection.content();
                     e.dataTransfer.clearData();
-                    e.dataTransfer.setDragImage(nodeToBeDragged, 10, 10);
+                    e?.dataTransfer?.setDragImage(nodeToBeDragged, 10, 10);
                     view.dragging = { slice, move: true };
                 }
             }
@@ -106,6 +107,12 @@ export const DragHandler = (viewContainerRef: ViewContainerRef) => {
                 );
             }
 
+            function hideDragHandler(): void {
+                const node = document.querySelector('.ProseMirror-hideselection');
+                node?.classList.remove('ProseMirror-hideselection');
+                dragHandler.classList.remove('visible');
+            }
+
             return [
                 new Plugin({
                     key: new PluginKey('dragHandler'),
@@ -124,16 +131,21 @@ export const DragHandler = (viewContainerRef: ViewContainerRef) => {
                     },
                     props: {
                         handleDOMEvents: {
-                            drop() {
-                                setTimeout(() => {
-                                    const node = document.querySelector(
-                                        '.ProseMirror-hideselection'
-                                    );
-                                    if (node) {
-                                        node.classList.remove('ProseMirror-hideselection');
-                                    }
+                            drop(view: EditorView, dragEvent: DragEvent) {
+                                const directChildNode = getDirectChild(dragEvent.target);
+                                // Disable the drop in the table node;
+                                if (directChildNode.nodeName === 'TABLE') {
+                                    return true;
+                                }
 
-                                    dragHandler.classList.remove('visible');
+                                requestAnimationFrame(() => {
+                                    hideDragHandler();
+                                    deselectCurrentNode(view);
+                                    // remove table node because prosmirror duplicate the node on D&D
+                                    // https://github.com/ueberdosis/tiptap/issues/2250
+                                    if (nodeToBeDragged.nodeName === 'TABLE') {
+                                        removeNode(nodeToBeDragged);
+                                    }
                                 });
 
                                 return false;

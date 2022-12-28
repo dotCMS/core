@@ -3,11 +3,13 @@ import {
     BubbleMenuItem,
     ShouldShowProps,
     LINK_FORM_PLUGIN_KEY,
-    ImageNode
+    ImageNode,
+    findParentNode
 } from '@dotcms/block-editor';
 
 const hideBubbleMenuOn = {
-    dotContent: true
+    tableCell: true,
+    table: true
 };
 
 /**
@@ -23,18 +25,27 @@ export const shouldShowBubbleMenu = ({ editor, state, from, to }: ShouldShowProp
 
     const { isOpen, openOnClick } = LINK_FORM_PLUGIN_KEY.getState(state);
 
-    // Current selected node
+    // Current selected node and parent.
     const node = editor.state.doc.nodeAt(editor.state.selection.from);
+    const parentNode = findParentNode(editor.state.selection.$from);
 
     // Sometime check for `empty` is not enough.
     // Doubleclick an empty paragraph returns a node size of 2.
     // So we check also for an empty text size.
     const isEmptyTextBlock = !doc.textBetween(from, to).length && isTextSelection(state.selection);
+    const isTextInsideTable = node?.type.name === 'text' && parentNode?.type.name === 'table';
 
-    // If it's empty or the current node is type dotContent, it will not open.
+    // Is a text node inside the table
+    if (isTextInsideTable && !isEmptyTextBlock) {
+        return true;
+    }
+
+    // If it's empty or the parent and node itself is part of the hideBubbleMenuOn , it will not open.
     if (
         !isOpen &&
-        (!view.hasFocus() || empty || isEmptyTextBlock || hideBubbleMenuOn[node?.type.name])
+        (!view.hasFocus() || empty || isEmptyTextBlock || hideBubbleMenuOn[parentNode?.type.name]
+            ? true
+            : hideBubbleMenuOn[node?.type.name])
     ) {
         return false;
     }
@@ -77,12 +88,32 @@ export const getNodePosition = (node: HTMLElement, type: string): DOMRect => {
     return node.getBoundingClientRect();
 };
 
+export const getNodeCoords = (node: HTMLElement, type: string): DOMRect => {
+    if (type === ImageNode.name && node?.firstElementChild) {
+        return node.firstElementChild.getBoundingClientRect();
+    }
+
+    return node.getBoundingClientRect();
+};
+
+export const setBubbleMenuCoords = ({ viewCoords, nodeCoords, padding }): DOMRect => {
+    const { top: nodeTop, bottom: nodeBottom } = nodeCoords;
+    const { top: viewTop, bottom: viewBottom } = viewCoords;
+
+    const isTopOverflow = Math.ceil(nodeTop - viewTop) < padding;
+    const isBottomOverflow = Math.ceil(viewBottom - nodeBottom) < padding;
+
+    return {
+        ...nodeCoords.toJSON(),
+        top: isTopOverflow && isBottomOverflow ? viewTop + padding : nodeTop
+    };
+};
+
 export const isListNode = (editor): boolean => {
     return editor.isActive('bulletList') || editor.isActive('orderedList');
 };
 
-/* Bubble Menu Items*/
-export const bubbleMenuItems: Array<BubbleMenuItem> = [
+const textMarks: Array<BubbleMenuItem> = [
     {
         icon: 'format_bold',
         markAction: 'bold',
@@ -103,7 +134,10 @@ export const bubbleMenuItems: Array<BubbleMenuItem> = [
         markAction: 'strike',
         active: false,
         divider: true
-    },
+    }
+];
+
+const alignmentMarks: Array<BubbleMenuItem> = [
     {
         icon: 'format_align_left',
         markAction: 'left',
@@ -119,7 +153,13 @@ export const bubbleMenuItems: Array<BubbleMenuItem> = [
         markAction: 'right',
         active: false,
         divider: true
-    },
+    }
+];
+
+/* Bubble Menu Items*/
+const bubbleMenuDefaultItems: Array<BubbleMenuItem> = [
+    ...textMarks,
+    ...alignmentMarks,
     {
         icon: 'format_list_bulleted',
         markAction: 'bulletList',
@@ -160,23 +200,8 @@ export const bubbleMenuItems: Array<BubbleMenuItem> = [
     }
 ];
 
-export const bubbleMenuImageItems: Array<BubbleMenuItem> = [
-    {
-        icon: 'format_align_left',
-        markAction: 'left',
-        active: false
-    },
-    {
-        icon: 'format_align_center',
-        markAction: 'center',
-        active: false
-    },
-    {
-        icon: 'format_align_right',
-        markAction: 'right',
-        active: false,
-        divider: true
-    },
+const imageOptions: Array<BubbleMenuItem> = [
+    ...alignmentMarks,
     {
         icon: 'link',
         markAction: 'link',
@@ -189,6 +214,53 @@ export const bubbleMenuImageItems: Array<BubbleMenuItem> = [
         active: false
     }
 ];
+
+/* Table text node Items*/
+const tableOptions: Array<BubbleMenuItem> = [
+    ...textMarks,
+    ...alignmentMarks,
+    {
+        icon: 'link',
+        markAction: 'link',
+        active: false,
+        divider: true
+    },
+    {
+        icon: 'format_clear',
+        markAction: 'clearAll',
+        active: false,
+        divider: true
+    },
+    {
+        icon: 'delete',
+        markAction: 'deleteNode',
+        active: false
+    }
+];
+
+const dotContentOptions: Array<BubbleMenuItem> = [
+    {
+        icon: 'delete',
+        markAction: 'deleteNode',
+        active: false
+    }
+];
+
+export const getBubbleMenuItem = (nodeType: string = ''): Array<BubbleMenuItem> => {
+    switch (nodeType) {
+        case 'dotImage':
+            return imageOptions;
+
+        case 'dotContent':
+            return dotContentOptions;
+
+        case 'table':
+            return tableOptions;
+
+        default:
+            return bubbleMenuDefaultItems;
+    }
+};
 
 // Tippy Modifiers
 export const popperModifiers = [

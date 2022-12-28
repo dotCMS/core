@@ -33,10 +33,9 @@ public class PageCacheParameters {
      * @return The subkey which is specific for a page.
      */
     public String getKey() {
-        Logger.debug(this.getClass(), ()-> "page_cache_key:" + getKey());
-        return String.join("_", this.params);
-
-
+        final String key = String.join("_", this.params);
+        Logger.debug(this.getClass(), ()-> "page_cache_key:" + key);
+        return key;
     }
 
 }

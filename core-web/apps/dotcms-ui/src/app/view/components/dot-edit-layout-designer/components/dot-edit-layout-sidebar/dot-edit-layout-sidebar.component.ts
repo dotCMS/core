@@ -1,9 +1,9 @@
 import { Component, forwardRef } from '@angular/core';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
-
-import { DotContainerColumnBox, DotLayoutSideBar } from '@models/dot-edit-layout-designer';
-import { DotEditLayoutService } from '@services/dot-edit-layout/dot-edit-layout.service';
-import { DotTemplateContainersCacheService } from '@services/dot-template-containers-cache/dot-template-containers-cache.service';
+import { DotEditLayoutService } from '@dotcms/app/api/services/dot-edit-layout/dot-edit-layout.service';
+import { DotTemplateContainersCacheService } from '@dotcms/app/api/services/dot-template-containers-cache/dot-template-containers-cache.service';
+import { DotContainerColumnBox } from '@dotcms/app/shared/models/dot-edit-layout-designer';
+import { DotLayoutSideBar } from '@dotcms/dotcms-models';
 
 /**
  * Component in charge of update the model that will be used in the sidebar display containers

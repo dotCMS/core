@@ -3,10 +3,10 @@ import { Router, ActivatedRoute, Params, Event, NavigationEnd } from '@angular/r
 
 import { PortletNav } from '@models/navigation';
 import { Subject } from 'rxjs';
-import { DotAppsSites } from '@shared/models/dot-apps/dot-apps.model';
 import { NavigationExtras } from '@angular/router';
 import { LOGOUT_URL } from '@dotcms/dotcms-js';
 import { filter } from 'rxjs/operators';
+import { DotAppsSites } from '@dotcms/dotcms-models';
 
 @Injectable()
 export class DotRouterService {
@@ -194,6 +194,29 @@ export class DotRouterService {
     goToEditTemplate(id: string, inode?: string): void {
         this.router.navigate([
             inode ? `/templates/edit/${id}/inode/${inode}` : `/templates/edit/${id}`
+        ]);
+    }
+
+    /**
+     * Redirects to the create container page
+     * @returns {void}
+     * @memberof DotRouterService
+     */
+    goToCreateContainer(): void {
+        this.router.navigate(['/containers/create']);
+    }
+
+    /**
+     * Redirect to edit the container.
+     * If the inode is passed, load a specific version of the container
+     *
+     * @param {string} id
+     * @param {string} inode
+     * @memberof DotRouterService
+     */
+    goToEditContainer(id: string, inode?: string): void {
+        this.router.navigate([
+            inode ? `/containers/edit/${id}/inode/${inode}` : `/containers/edit/${id}`
         ]);
     }
 

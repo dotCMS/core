@@ -441,4 +441,44 @@ public class StringUtils {
       return pattern.matcher(in).find();
    }
 
+    /**
+     * Method to convert camel case convention into snake case
+     * @param parameter
+     * @return
+     * E.g: input = inputString, output = input_string
+     */
+    public static String convertCamelToSnake(final String parameter)
+    {
+        if(parameter == null || parameter.equals(StringPool.BLANK))
+            return StringPool.BLANK;
+
+        if(parameter.length() == 1)
+           return org.apache.commons.lang.StringUtils.lowerCase(parameter);
+
+        final StringBuilder result = new StringBuilder();
+
+        // Append first character(in lower case)
+        char firstLetter = parameter.charAt(0);
+
+        result.append(Character.toLowerCase(firstLetter));
+
+        // Traverse the string
+        for (int i = 1; i < parameter.length(); i++) {
+
+            char currentCharacter = parameter.charAt(i);
+
+            // Check if the character is upper case then append '_' and such character (in lower case) to the result string
+            if (Character.isUpperCase(currentCharacter)) {
+                result.append("_").append(Character.toLowerCase(currentCharacter));
+            }
+
+            // If the character is lower case then add such character into the result string
+            else {
+                result.append(currentCharacter);
+            }
+        }
+
+        // return the result string
+        return result.toString();
+    }
 }

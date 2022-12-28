@@ -1,39 +1,61 @@
 package com.dotcms.contenttype.model.type;
 
-
+import com.dotcms.contenttype.model.component.ImmutableSiteAndFolder;
+import com.dotcms.contenttype.model.component.SiteAndFolder;
 import com.dotcms.contenttype.model.field.Field;
+import com.dotcms.contenttype.model.field.StoryBlockField;
 import com.dotcms.publisher.util.PusheableAsset;
 import com.dotcms.publishing.manifest.ManifestItem;
 import com.dotcms.repackage.com.google.common.base.Preconditions;
-import com.dotmarketing.util.Logger;
-import com.google.common.collect.ImmutableList;
 import com.dotcms.util.CollectionsUtils;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.PermissionableProxy;
-import com.dotmarketing.business.*;
+import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.DotStateException;
+import com.dotmarketing.business.PermissionAPI;
+import com.dotmarketing.business.PermissionSummary;
+import com.dotmarketing.business.Permissionable;
+import com.dotmarketing.business.RelatedPermissionableGroup;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
+import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.util.Config;
+import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.UUIDUtil;
 import com.dotmarketing.util.UtilMethods;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonSubTypes.Type;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.annotation.JsonTypeInfo.Id;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
-
-
+import com.liferay.util.StringPool;
+import io.vavr.control.Try;
+import java.io.Serializable;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
+import javax.annotation.Nullable;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.time.DateUtils;
-import javax.annotation.Nullable;
 import org.immutables.value.Value;
+import org.immutables.value.Value.Auxiliary;
 import org.immutables.value.Value.Default;
 
+import javax.annotation.Nullable;
 import java.io.Serializable;
-import java.util.*;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @JsonTypeInfo(
@@ -70,6 +92,8 @@ public abstract class ContentType implements Serializable, Permissionable, Conte
   }
 
   static final long serialVersionUID = 1L;
+
+  Boolean hasStoryBlockFields = null;
 
   public abstract String name();
 
@@ -149,6 +173,16 @@ public abstract class ContentType implements Serializable, Permissionable, Conte
     return null;
   }
 
+  /**
+   * The sole purpose of this getter is helping to identify whether the CT was loaded from the db or not
+   *
+   * @return
+   */
+  @Value.Default
+  public boolean isSourceDB(){
+    return false;
+  }
+
   @Value.Default
   public Date modDate() {
     return DateUtils.round(new Date(), Calendar.SECOND);
@@ -160,6 +194,39 @@ public abstract class ContentType implements Serializable, Permissionable, Conte
   public String host() {
     return Host.SYSTEM_HOST;
   }
+
+  /**
+   * by default our site name is the same as SYSTEM_HOST
+   * @return
+   */
+  @Nullable
+  @Value.Default
+  public String siteName() {
+    if(null == canonicalSiteName){
+      canonicalSiteName = canonicalSiteName();
+    }
+    return canonicalSiteName;
+  }
+
+  private String canonicalSiteName = null;
+
+  private String canonicalSiteName(){
+
+    final String host = host();
+
+    if (UtilMethods.isNotSet(host) || Host.SYSTEM_HOST.equals(host)) {
+      return Host.SYSTEM_HOST_NAME;
+    }
+    if (UUIDUtil.isUUID(host)) {
+      return Try.of(() -> APILocator.getHostAPI().find(host, APILocator.systemUser(), false)
+              .getHostname()).getOrNull();
+    }
+    return Try.of(
+            () -> APILocator.getHostAPI().resolveHostName(host, APILocator.systemUser(), false)
+                    .getHostname()).getOrNull();
+
+  }
+
 
   @Nullable
   @Value.Default
@@ -176,6 +243,7 @@ public abstract class ContentType implements Serializable, Permissionable, Conte
   @Value.Lazy
   public List<Field> fields() {
     if (innerFields == null) {
+      this.hasStoryBlockFields = null;
       try {
         innerFields = APILocator.getContentTypeFieldAPI().byContentTypeId(this.id());
       } catch (final DotDataException e) {
@@ -229,6 +297,50 @@ public abstract class ContentType implements Serializable, Permissionable, Conte
   @Value.Default
   public String folder() {
     return Folder.SYSTEM_FOLDER;
+  }
+
+  /**
+   * By default, our system folder is "/"
+   * @return
+   */
+  @Nullable
+  @Value.Default
+  public String folderPath() {
+    if(null == canonicalFolderPath){
+      canonicalFolderPath = canonicalFolderPath();
+    }
+    return canonicalFolderPath;
+  }
+
+  private String canonicalFolderPath;
+
+  private String canonicalFolderPath(){
+    final String folder = folder();
+    if (Folder.SYSTEM_FOLDER.equals(folder)) {
+        return Folder.SYSTEM_FOLDER_PATH;
+    }
+
+    final String host = host();
+    final FolderAPI folderAPI = APILocator.getFolderAPI();
+    final HostAPI hostAPI = APILocator.getHostAPI();
+    return Try.of(() -> {
+              final String hostName =
+                      UUIDUtil.isUUID(host) ?
+                              hostAPI.find(host, APILocator.systemUser(), false).getHostname() :
+                              hostAPI.resolveHostName(host, APILocator.systemUser(), false).getHostname();
+              final String path = folderAPI.find(folder, APILocator.systemUser(), false).getPath();
+              return String.format("%s%s%s", hostName, StringPool.COLON, path);
+            }
+    ).getOrNull();
+  }
+
+  @JsonIgnore
+  @Auxiliary
+  public SiteAndFolder siteAndFolder() {
+    return ImmutableSiteAndFolder.builder()
+            .folder(folder()).host(host())
+            .folderPath(canonicalFolderPath != null ? null : folderPath())
+            .siteName(canonicalSiteName != null ? null : siteName()).build();
   }
 
   @JsonIgnore
@@ -353,6 +465,19 @@ public abstract class ContentType implements Serializable, Permissionable, Conte
         .siteId(this.host())
         .folderId(this.folder())
         .build();
+  }
+
+  /**
+   * Checks whether this Content Type has any {@link StoryBlockField} fields or not.
+   *
+   * @return If there is at least one field of type Story Block, returns {@code true}.
+   */
+  @JsonIgnore
+  public boolean hasStoryBlockFields() {
+    if (null == this.hasStoryBlockFields) {
+      this.hasStoryBlockFields = !this.fields(StoryBlockField.class).isEmpty();
+    }
+    return this.hasStoryBlockFields;
   }
 
 }

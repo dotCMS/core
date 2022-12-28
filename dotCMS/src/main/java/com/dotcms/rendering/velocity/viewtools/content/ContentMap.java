@@ -234,9 +234,9 @@ public class ContentMap {
 				}
 			}
 			if(f != null && f.getFieldType().equals(Field.FieldType.CATEGORY.toString())){
-				return perAPI.filterCollection(new ArrayList<Category>((Set<Category>)
+				return 
 						conAPI.getFieldValue(content, new LegacyFieldTransformer(f).from(),
-								this.user, respectFrontEndRoles)), PermissionAPI.PERMISSION_USE, true, user);
+								this.user, respectFrontEndRoles);
 			}else if(f != null && (f.getFieldType().equals(Field.FieldType.FILE.toString()) || f.getFieldType().equals(Field.FieldType.IMAGE.toString()))){
                 // Check if image or file is in fieldValueMap hashmap
                 Object fieldvalue = retriveFieldValue(f);

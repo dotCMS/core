@@ -197,7 +197,8 @@ public class ContentTypeDataGen extends AbstractDataGen<ContentType> {
                 .system(systemField)
                 .variable(velocityVarName)
                 .folder(folder.getInode())
-                .host(hostName != null ? hostName : host.getIdentifier())
+                .siteName(hostName)
+                .host(host.getIdentifier())
                 .iDate(iDateField)
                 .build();
     }

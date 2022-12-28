@@ -85,6 +85,7 @@ import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
 import com.liferay.portal.model.User;
+import com.liferay.util.StringPool;
 import com.tngtech.java.junit.dataprovider.DataProvider;
 import com.tngtech.java.junit.dataprovider.DataProviderRunner;
 import com.tngtech.java.junit.dataprovider.UseDataProvider;
@@ -2456,5 +2457,55 @@ public class ContentTypeAPIImplTest extends ContentTypeBaseTest {
 					'}';
 		}
 	}
+
+	@Test
+	public void testCreateContentTypeProvidingFolderOnly()
+			throws DotDataException, DotSecurityException {
+
+		final Host site = new SiteDataGen().nextPersisted();
+		final Folder folder = new FolderDataGen().site(site).nextPersisted();
+		final long timeMark1 = System.currentTimeMillis();
+
+		ContentType folderOnlyProvided = ImmutableSimpleContentType.builder()
+				.name("ContentTypeTesting" + timeMark1)
+				.variable("velocityVarNameTesting" + timeMark1)
+				.folder(folder.getInode())
+				.build();
+		folderOnlyProvided = contentTypeApi.save(folderOnlyProvided);
+		Assert.assertEquals(
+				"If we only set folder then we should expect the CT to come back with the parent folder site.",
+				site.getIdentifier(), folderOnlyProvided.host());
+
+		Assert.assertEquals(
+				"If set folder we should expect the CT to come back with the parent folder site ",
+				folder.getInode(), folderOnlyProvided.folder());
+
+		//Now test feeding the content-type with both a non-related site and a folder
+		//In this case must prevail the one from the folder
+
+		final long timeMark2 = System.currentTimeMillis();
+		final Host nonFolderParentSite = new SiteDataGen().nextPersisted();
+
+		ContentType folderAndInvalidSiteProvided = ImmutableSimpleContentType.builder()
+				.name("ContentTypeTesting" + timeMark2)
+				.variable("velocityVarNameTesting" + timeMark2)
+				.host(nonFolderParentSite.getIdentifier())
+				.folder(folder.getInode())
+				.build();
+
+		folderAndInvalidSiteProvided = contentTypeApi.save(folderAndInvalidSiteProvided);
+
+		Assert.assertEquals(
+				"If set folder we should expect the CT to come back with the parent folder site ",
+				folder.getInode(), folderAndInvalidSiteProvided.folder());
+
+		Assert.assertEquals("Doesn't mater if we used another site. "
+						+ "If we provide a folder the folder will be created under the folder's owner site ",
+				site.getIdentifier(),folderAndInvalidSiteProvided.host());
+
+	}
+
+
+
 
 }

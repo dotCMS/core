@@ -69,7 +69,6 @@ export class SiteService {
 
         const siteIdentifier = data.identifier;
         if (siteIdentifier === this.selectedSite.identifier) {
-
             name === 'ARCHIVE_SITE'
                 ? this.switchToDefaultSite()
                       .pipe(take(1))
@@ -77,7 +76,6 @@ export class SiteService {
                           this.switchSite(currentSite);
                       })
                 : this.loadCurrentSite();
-
         }
     }
 
@@ -189,10 +187,8 @@ export class SiteService {
     }
 
     private setCurrentSite(site: Site): void {
-        if (this.selectedSite?.identifier !== site.identifier) {
-            this.selectedSite = site;
-            this._switchSite$.next({ ...site });
-        }
+        this.selectedSite = site;
+        this._switchSite$.next({ ...site });
     }
 
     private loadCurrentSite(): void {

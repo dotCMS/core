@@ -5,7 +5,7 @@ import { By } from '@angular/platform-browser';
 import { DebugElement } from '@angular/core';
 import { DotActionMenuItem } from '@shared/models/dot-action-menu/dot-action-menu-item.model';
 import { DotMenuModule } from '../dot-menu/dot-menu.module';
-import { dotcmsContentTypeBasicMock } from '@tests/dot-content-types.mock';
+import { dotcmsContentTypeBasicMock } from '@dotcms/utils-testing';
 
 describe('ActionMenuButtonComponent', () => {
     let comp: DotActionMenuButtonComponent;

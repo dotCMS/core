@@ -1,5 +1,6 @@
 package com.dotcms;
 
+import com.dotcms.analytics.AnalyticsAPIImplTest;
 import com.dotcms.analytics.bayesian.BayesianAPIImplTest;
 import com.dotcms.auth.providers.saml.v1.DotSamlResourceTest;
 import com.dotcms.auth.providers.saml.v1.SAMLHelperTest;
@@ -15,6 +16,8 @@ import com.dotcms.content.elasticsearch.util.ESMappingUtilHelperTest;
 import com.dotcms.content.model.hydration.MetadataDelegateTest;
 import com.dotcms.contenttype.business.ContentTypeInitializerTest;
 import com.dotcms.contenttype.business.DotAssetBaseTypeToContentTypeStrategyImplTest;
+import com.dotcms.contenttype.business.SiteAndFolderResolverImplTest;
+import com.dotcms.contenttype.business.StoryBlockAPITest;
 import com.dotcms.contenttype.test.DotAssetAPITest;
 import com.dotcms.csspreproc.CSSCacheTest;
 import com.dotcms.csspreproc.CSSPreProcessServletTest;
@@ -42,6 +45,8 @@ import com.dotcms.enterprise.publishing.staticpublishing.AWSS3PublisherTest;
 import com.dotcms.enterprise.publishing.staticpublishing.LanguageFolderTest;
 import com.dotcms.enterprise.publishing.staticpublishing.StaticPublisherIntegrationTest;
 import com.dotcms.enterprise.rules.RulesAPIImplIntegrationTest;
+import com.dotcms.experiments.business.ExperimentAPIImpIT;
+import com.dotcms.experiments.business.web.ExperimentWebAPIImplIT;
 import com.dotcms.filters.interceptor.meta.MetaWebInterceptorTest;
 import com.dotcms.graphql.DotGraphQLHttpServletTest;
 import com.dotcms.integritycheckers.HostIntegrityCheckerTest;
@@ -63,6 +68,7 @@ import com.dotcms.publishing.job.SiteSearchJobImplTest;
 import com.dotcms.publishing.manifest.CSVManifestBuilderTest;
 import com.dotcms.publishing.manifest.CSVManifestReaderTest;
 import com.dotcms.publishing.manifest.ManifestReaderFactoryTest;
+import com.dotcms.publishing.manifest.ManifestUtilTest;
 import com.dotcms.rendering.velocity.directive.DotParseTest;
 import com.dotcms.rendering.velocity.servlet.VelocityServletIntegrationTest;
 import com.dotcms.rendering.velocity.viewtools.DotTemplateToolTest;
@@ -70,6 +76,7 @@ import com.dotcms.rendering.velocity.viewtools.FileToolTest;
 import com.dotcms.rendering.velocity.viewtools.JSONToolTest;
 import com.dotcms.rendering.velocity.viewtools.MessageToolTest;
 import com.dotcms.rendering.velocity.viewtools.XmlToolTest;
+import com.dotcms.rendering.velocity.viewtools.XsltToolTest;
 import com.dotcms.rendering.velocity.viewtools.content.StoryBlockMapTest;
 import com.dotcms.rendering.velocity.viewtools.content.StoryBlockTest;
 import com.dotcms.rest.BundlePublisherResourceIntegrationTest;
@@ -124,6 +131,24 @@ import com.dotmarketing.portlets.fileassets.business.FileAssetAPIImplIntegration
 import com.dotmarketing.portlets.fileassets.business.FileAssetFactoryIntegrationTest;
 import com.dotmarketing.portlets.folders.business.FolderFactoryImplTest;
 import com.dotmarketing.portlets.folders.model.FolderTest;
+import com.dotmarketing.portlets.rules.actionlet.PersonaActionletTest;
+import com.dotmarketing.portlets.rules.actionlet.SendRedirectActionletTest;
+import com.dotmarketing.portlets.rules.actionlet.SetRequestAttributeActionletTest;
+import com.dotmarketing.portlets.rules.actionlet.StopProcessingActionletTest;
+import com.dotmarketing.portlets.rules.conditionlet.DateTimeConditionletTest;
+import com.dotmarketing.portlets.rules.conditionlet.HttpMethodConditionletTest;
+import com.dotmarketing.portlets.rules.conditionlet.PagesViewedConditionletTest;
+import com.dotmarketing.portlets.rules.conditionlet.PersonaConditionletTest;
+import com.dotmarketing.portlets.rules.conditionlet.ReferrerURLConditionletTest;
+import com.dotmarketing.portlets.rules.conditionlet.RequestAttributeConditionletTest;
+import com.dotmarketing.portlets.rules.conditionlet.RequestHeaderConditionletTest;
+import com.dotmarketing.portlets.rules.conditionlet.RequestParameterConditionletTest;
+import com.dotmarketing.portlets.rules.conditionlet.SessionAttributeConditionletTest;
+import com.dotmarketing.portlets.rules.conditionlet.UsersBrowserConditionletTest;
+import com.dotmarketing.portlets.rules.conditionlet.UsersCountryConditionletTest;
+import com.dotmarketing.portlets.rules.conditionlet.UsersPlatformConditionletTest;
+import com.dotmarketing.portlets.rules.conditionlet.VisitorsCurrentURLConditionletTest;
+import com.dotmarketing.portlets.rules.conditionlet.VisitorsGeolocationConditionletTest;
 import com.dotmarketing.portlets.templates.business.FileAssetTemplateUtilTest;
 import com.dotmarketing.portlets.templates.business.TemplateFactoryImplTest;
 import com.dotmarketing.portlets.workflows.actionlet.MoveContentActionletTest;
@@ -132,6 +157,7 @@ import com.dotmarketing.portlets.workflows.actionlet.VelocityScriptActionletAbor
 import com.dotmarketing.portlets.workflows.model.TestWorkflowAction;
 import com.dotmarketing.portlets.workflows.util.WorkflowEmailUtilTest;
 import com.dotmarketing.quartz.DotStatefulJobTest;
+import com.dotmarketing.quartz.job.AccessTokenRenewJobTest;
 import com.dotmarketing.quartz.job.CleanUpFieldReferencesJobTest;
 import com.dotmarketing.quartz.job.IntegrityDataGenerationJobTest;
 import com.dotmarketing.startup.StartupTasksExecutorTest;
@@ -176,14 +202,10 @@ import com.dotmarketing.startup.runonce.Task220512UpdateNoHTMLRegexValueTest;
 import com.dotmarketing.startup.runonce.Task220606UpdatePushNowActionletNameTest;
 import com.dotmarketing.startup.runonce.Task220822CreateVariantTableTest;
 import com.dotmarketing.startup.runonce.Task220824CreateDefaultVariantTest;
-import com.dotmarketing.startup.runonce.Task220829CreateExperimentsTableTest;
-
 import com.dotmarketing.startup.runonce.Task220825CreateVariantFieldTest;
-
 import com.dotmarketing.startup.runonce.Task220825MakeSomeSystemFieldsRemovableTest;
-
 import com.dotmarketing.startup.runonce.Task220829CreateExperimentsTableTest;
-
+import com.dotmarketing.startup.runonce.Task220912UpdateCorrectShowOnMenuPropertyTest;
 import com.dotmarketing.startup.runonce.Task220928AddLookbackWindowColumnToExperimentTest;
 import com.dotmarketing.startup.runonce.Task221007AddVariantIntoPrimaryKeyTest;
 import com.dotmarketing.util.ConfigTest;
@@ -192,6 +214,7 @@ import com.dotmarketing.util.MaintenanceUtilTest;
 import com.dotmarketing.util.ResourceCollectorUtilTest;
 import com.dotmarketing.util.TestConfig;
 import com.dotmarketing.util.UtilMethodsITest;
+import com.dotmarketing.util.ZipUtilTest;
 import com.dotmarketing.util.contentlet.pagination.PaginatedContentletsIntegrationTest;
 import com.liferay.portal.language.LanguageUtilTest;
 import org.apache.velocity.tools.view.tools.CookieToolTest;
@@ -204,6 +227,11 @@ import org.junit.runners.Suite.SuiteClasses;
 
 @RunWith(MainBaseSuite.class)
 @SuiteClasses({
+        RulesAPIImplIntegrationTest.class,
+        ExperimentAPIImpIT.class,
+        ExperimentWebAPIImplIT.class,
+        AnalyticsAPIImplTest.class,
+        AccessTokenRenewJobTest.class,
         Task220825CreateVariantFieldTest.class,
         Task221007AddVariantIntoPrimaryKeyTest.class,
         ContentletWebAPIImplIntegrationTest.class, // moved to top because of failures on GHA
@@ -212,6 +240,7 @@ import org.junit.runners.Suite.SuiteClasses;
         StaticPublisherIntegrationTest.class,
         com.dotcms.publishing.PublisherAPIImplTest.class,
         SiteSearchJobImplTest.class,
+        XsltToolTest.class,
         PushPublishBundleGeneratorTest.class,
         LegacyShortyIdApiTest.class,
         RuleBundlerTest.class,
@@ -440,7 +469,6 @@ import org.junit.runners.Suite.SuiteClasses;
         VelocityServletIntegrationTest.class,
         DotAssetAPITest.class,
         DotAssetBaseTypeToContentTypeStrategyImplTest.class,
-        RulesAPIImplIntegrationTest.class,
         FileAssetAPIImplIntegrationTest.class,
         FileAssetFactoryIntegrationTest.class,
         UserResourceIntegrationTest.class,
@@ -600,8 +628,35 @@ import org.junit.runners.Suite.SuiteClasses;
         TailLogResourceTest.class,
         BayesianAPIImplTest.class,
         ContentletDependenciesTest.class,
-        UtilMethodsITest.class
+        UtilMethodsITest.class,
+        StoryBlockAPITest.class,
+        UtilMethodsITest.class,
+        Task220912UpdateCorrectShowOnMenuPropertyTest.class,
+        PersonaActionletTest.class,
+        SendRedirectActionletTest.class,
+        SetRequestAttributeActionletTest.class,
+        StopProcessingActionletTest.class,
+        DateTimeConditionletTest.class,
+        HttpMethodConditionletTest.class,
+        PagesViewedConditionletTest.class,
+        PersonaConditionletTest.class,
+        ReferrerURLConditionletTest.class,
+        RequestAttributeConditionletTest.class,
+        RequestParameterConditionletTest.class,
+        RequestHeaderConditionletTest.class,
+        RequestParameterConditionletTest.class,
+        SessionAttributeConditionletTest.class,
+        UsersBrowserConditionletTest.class,
+        UsersCountryConditionletTest.class,
+        UsersPlatformConditionletTest.class,
+        VisitorsCurrentURLConditionletTest.class,
+        VisitorsGeolocationConditionletTest.class,
+        SiteAndFolderResolverImplTest.class,
+        ManifestUtilTest.class,
+        ZipUtilTest.class
 })
 public class MainSuite {
 
 }
+
+

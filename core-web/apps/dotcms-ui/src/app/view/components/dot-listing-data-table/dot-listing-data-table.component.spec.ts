@@ -2,7 +2,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { of } from 'rxjs';
-import { DotAlertConfirmService } from '@services/dot-alert-confirm/dot-alert-confirm.service';
+import { DotAlertConfirmService } from '@dotcms/data-access';
 import { UiDotIconButtonTooltipModule } from '@components/_common/dot-icon-button-tooltip/dot-icon-button-tooltip.module';
 import { DotActionMenuButtonComponent } from '../_common/dot-action-menu-button/dot-action-menu-button.component';
 import { DotActionButtonComponent } from '../_common/dot-action-button/dot-action-button.component';
@@ -10,10 +10,10 @@ import { By } from '@angular/platform-browser';
 import { ComponentFixture, fakeAsync, TestBed, tick } from '@angular/core/testing';
 import { TableModule } from 'primeng/table';
 import { Component, DebugElement, Input } from '@angular/core';
-import { DotFormatDateService } from '@services/dot-format-date-service';
+import { DotFormatDateService } from '@dotcms/app/api/services/dot-format-date-service';
 import { DotListingDataTableComponent } from './dot-listing-data-table.component';
-import { DotMessageService } from '@services/dot-message/dot-messages.service';
-import { MockDotMessageService } from '../../../test/dot-message-service.mock';
+import { DotMessageService } from '@dotcms/data-access';
+import { MockDotMessageService } from '@dotcms/utils-testing';
 import { RouterTestingModule } from '@angular/router/testing';
 import { ActionHeaderComponent } from './action-header/action-header.component';
 import { DotActionMenuItem } from '@shared/models/dot-action-menu/dot-action-menu-item.model';
@@ -26,7 +26,7 @@ import { MenuModule } from 'primeng/menu';
 import { CoreWebService, DotcmsConfigService, LoggerService, StringUtils } from '@dotcms/dotcms-js';
 import { DataTableColumn } from '@models/data-table';
 import { ActionHeaderOptions, ButtonAction } from '@models/action-header';
-import { CoreWebServiceMock } from '@tests/core-web.service.mock';
+import { CoreWebServiceMock } from '@dotcms/utils-testing';
 import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { DotPipesModule } from '@pipes/dot-pipes.module';
 import { FormsModule } from '@angular/forms';

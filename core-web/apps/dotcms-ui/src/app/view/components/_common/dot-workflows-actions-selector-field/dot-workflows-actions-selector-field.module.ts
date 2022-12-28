@@ -5,7 +5,7 @@ import { FormsModule } from '@angular/forms';
 import { DropdownModule } from 'primeng/dropdown';
 
 import { DotWorkflowsActionsSelectorFieldComponent } from './dot-workflows-actions-selector-field.component';
-import { DotWorkflowsActionsService } from '@services/dot-workflows-actions/dot-workflows-actions.service';
+import { DotWorkflowsActionsService } from '@dotcms/data-access';
 import { DotWorkflowsActionsSelectorFieldService } from './services/dot-workflows-actions-selector-field.service';
 import { DotPipesModule } from '@pipes/dot-pipes.module';
 

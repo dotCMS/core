@@ -1,21 +1,38 @@
-import { Routes, RouterModule, RouteReuseStrategy } from '@angular/router';
+import { RouteReuseStrategy, RouterModule, Routes, TitleStrategy } from '@angular/router';
 import { NgModule } from '@angular/core';
 import { MainCoreLegacyComponent } from '@components/main-core-legacy/main-core-legacy-component';
 import { MainComponentLegacyComponent } from '@components/main-legacy/main-legacy.component';
 
 import { DotLogOutContainerComponent } from '@components/login/dot-logout-container-component/dot-log-out-container';
 import { IframePortletLegacyComponent } from '@components/_common/iframe/iframe-porlet-legacy/index';
-import { AuthGuardService } from '@services/guards/auth-guard.service';
-import { ContentletGuardService } from '@services/guards/contentlet-guard.service';
-import { DefaultGuardService } from '@services/guards/default-guard.service';
-import { MenuGuardService } from '@services/guards/menu-guard.service';
-import { PublicAuthGuardService } from '@services/guards/public-auth-guard.service';
+
 import { DotLoginPageComponent } from '@components/login/main/dot-login-page.component';
 import { DotLoginPageResolver } from '@components/login/dot-login-page-resolver.service';
 import { DotIframePortletLegacyResolver } from '@components/_common/iframe/service/dot-iframe-porlet-legacy-resolver.service';
 import { DotCustomReuseStrategyService } from '@shared/dot-custom-reuse-strategy/dot-custom-reuse-strategy.service';
+import { AuthGuardService } from './api/services/guards/auth-guard.service';
+import { ContentletGuardService } from './api/services/guards/contentlet-guard.service';
+import { DefaultGuardService } from './api/services/guards/default-guard.service';
+import { MenuGuardService } from './api/services/guards/menu-guard.service';
+import { PublicAuthGuardService } from './api/services/guards/public-auth-guard.service';
+import { DotTemplatePageTitleStrategy } from '@shared/services/dot-title-strategy.service';
+import { PagesGuardService } from './api/services/guards/pages-guard.service';
 
 const PORTLETS_ANGULAR = [
+    {
+        path: 'containers',
+        loadChildren: () =>
+            import('@dotcms/app/portlets/dot-containers/dot-containers.module').then(
+                (m) => m.DotContainersModule
+            )
+    },
+    {
+        path: 'categories',
+        loadChildren: () =>
+            import('@dotcms/app/portlets/dot-categories/dot-categories.module').then(
+                (m) => m.DotCategoriesModule
+            )
+    },
     {
         path: 'templates',
         canActivate: [MenuGuardService],
@@ -122,6 +139,12 @@ const PORTLETS_IFRAME = [
         ]
     },
     {
+        canActivate: [PagesGuardService],
+        path: 'pages',
+        loadChildren: () =>
+            import('@portlets/dot-pages/dot-pages.module').then((m) => m.DotPagesModule)
+    },
+    {
         canActivateChild: [ContentletGuardService],
         path: 'add',
         children: [
@@ -186,6 +209,12 @@ const appRoutes: Routes = [
             onSameUrlNavigation: 'reload'
         })
     ],
-    providers: [{ provide: RouteReuseStrategy, useClass: DotCustomReuseStrategyService }]
+    providers: [
+        { provide: RouteReuseStrategy, useClass: DotCustomReuseStrategyService },
+        {
+            provide: TitleStrategy,
+            useClass: DotTemplatePageTitleStrategy
+        }
+    ]
 })
 export class AppRoutingModule {}

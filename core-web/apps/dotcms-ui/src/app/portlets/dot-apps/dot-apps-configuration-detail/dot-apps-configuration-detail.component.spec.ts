@@ -2,24 +2,24 @@ import { of, Observable } from 'rxjs';
 import * as _ from 'lodash';
 import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing';
 import { RouterTestingModule } from '@angular/router/testing';
-import { MockDotMessageService } from '@tests/dot-message-service.mock';
-import { DotMessageService } from '@services/dot-message/dot-messages.service';
+import { MockDotMessageService } from '@dotcms/utils-testing';
+import { DotMessageService } from '@dotcms/data-access';
 import { ActivatedRoute } from '@angular/router';
 import { DotCopyButtonModule } from '@components/dot-copy-button/dot-copy-button.module';
-import { DotAppsService } from '@services/dot-apps/dot-apps.service';
+import { DotAppsService } from '@dotcms/app/api/services/dot-apps/dot-apps.service';
 import { Injectable, Component, Input, Output, EventEmitter } from '@angular/core';
-import { DotRouterService } from '@services/dot-router/dot-router.service';
-import { MockDotRouterService } from '@tests/dot-router-service.mock';
+import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
+import { MockDotRouterService } from '@dotcms/utils-testing';
 import { CommonModule } from '@angular/common';
 import { DotAppsConfigurationDetailResolver } from './dot-apps-configuration-detail-resolver.service';
 import { ButtonModule } from 'primeng/button';
 import { DotAppsConfigurationDetailComponent } from './dot-apps-configuration-detail.component';
 import { By } from '@angular/platform-browser';
-import { DotAppsSaveData, DotAppsSecrets } from '@shared/models/dot-apps/dot-apps.model';
 import { DotKeyValue } from '@shared/models/dot-key-value-ng/dot-key-value-ng.model';
 import { DotAppsConfigurationHeaderModule } from '../dot-apps-configuration-header/dot-apps-configuration-header.module';
 import { MarkdownModule } from 'ngx-markdown';
 import { DotPipesModule } from '@pipes/dot-pipes.module';
+import { DotAppsSaveData, DotAppsSecrets } from '@dotcms/dotcms-models';
 
 const messages = {
     'apps.key': 'Key',

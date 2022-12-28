@@ -11,9 +11,8 @@ import {
     ViewChild
 } from '@angular/core';
 import { Site, SiteService } from '@dotcms/dotcms-js';
-import { PaginatorService } from '@services/paginator';
 import { SearchableDropdownComponent } from '../searchable-dropdown/component';
-import { DotEventsService } from '@services/dot-events/dot-events.service';
+import { DotEventsService, PaginatorService } from '@dotcms/data-access';
 import { delay, retryWhen, take, takeUntil, tap } from 'rxjs/operators';
 
 /**

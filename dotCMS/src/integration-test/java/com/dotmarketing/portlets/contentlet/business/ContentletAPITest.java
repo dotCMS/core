@@ -7709,4 +7709,98 @@ public class ContentletAPITest extends ContentletBaseTest {
                 responseNewVariant.getHits().iterator().next().getId());
     }
 
+    @DataProvider
+    public static Object[] testCasesDateTime() {
+        return new Object[]{" +0000", "00:00 +0000"};
+    }
+
+    /**
+     * Given scenario: Contentlet with a {@link DateTimeField} where it was initially saved with
+     * correct value, and then it was tried to be cleared.
+     * Expected result: the field should be properly cleared
+     *
+     */
+    @Test
+    @UseDataProvider("testCasesDateTime")
+    public void clearDateTimeFieldValue(final String testCase) throws Exception {
+        // create content type with JSON field
+        ContentType typeWithDateTimeField = new ContentTypeDataGen().nextPersisted();
+        com.dotcms.contenttype.model.field.Field dateTimeField = new FieldDataGen()
+                .type(DateTimeField.class)
+                .contentTypeId(typeWithDateTimeField.id())
+                .defaultValue(null)
+                .nextPersisted();
+
+        Contentlet contentletWithDate = new ContentletDataGen(typeWithDateTimeField)
+                .next();
+
+        contentletAPI.setContentletProperty(contentletWithDate,
+                new LegacyFieldTransformer(dateTimeField).asOldField(), testCase);
+
+        // Save the content
+        contentletWithDate = contentletAPI.checkin(contentletWithDate, user, Boolean.TRUE);
+
+        assertEquals(null, contentletWithDate.getStringProperty(typeWithDateTimeField.variable()));
+    }
+
+    /**
+     * Method to test: {@link ESContentletAPIImpl#publish(Contentlet, User, boolean)}
+     * When: You have a Contentlet with two different version in different {@link Variant}
+     * Should: Publish each version by its own
+     * @throws DotDataException
+     */
+    @Test
+    public void publichWithToDifferentVarianst() throws DotDataException {
+        final Variant variant = new VariantDataGen().nextPersisted();
+        final ContentType contentType = new ContentTypeDataGen().nextPersisted();
+
+        final Contentlet contentlet = new ContentletDataGen(contentType).nextPersisted();
+        final Contentlet checkout = ContentletDataGen.checkout(contentlet);
+        checkout.setVariantId(variant.name());
+
+        final Contentlet contentletInVariant = ContentletDataGen.checkin(checkout);
+
+        ArrayList<Map<String, Object>> results = new DotConnect()
+                .setSQL("SELECT * FROM contentlet_version_info WHERE identifier = ?")
+                .addParam(contentlet.getIdentifier())
+                .loadResults();
+
+        assertEquals(2, results.size());
+        assertFalse(UtilMethods.isSet(results.get(0).get("live_inode").toString()));
+        assertFalse(UtilMethods.isSet(results.get(1).get("live_inode").toString()));
+
+        ContentletDataGen.publish(contentlet);
+
+        results = new DotConnect()
+                .setSQL("SELECT * FROM contentlet_version_info WHERE identifier = ?")
+                .addParam(contentlet.getIdentifier())
+                .loadResults();
+
+        assertEquals(2, results.size());
+
+        for (Map<String, Object> result : results) {
+            if (result.get("variant_id").toString().equals("DEFAULT")) {
+                assertEquals(contentlet.getInode(), result.get("live_inode"));
+            } else {
+                assertFalse(UtilMethods.isSet(result.get("live_inode").toString()));
+            }
+        }
+
+        ContentletDataGen.publish(checkout);
+
+        results = new DotConnect()
+                .setSQL("SELECT * FROM contentlet_version_info WHERE identifier = ?")
+                .addParam(contentlet.getIdentifier())
+                .loadResults();
+
+        assertEquals(2, results.size());
+
+        for (Map<String, Object> result : results) {
+            if (result.get("variant_id").toString().equals("DEFAULT")) {
+                assertEquals(contentlet.getInode(), result.get("live_inode"));
+            } else {
+                assertEquals(checkout.getInode(), result.get("live_inode"));
+            }
+        }
+    }
 }

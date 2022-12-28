@@ -1,6 +1,6 @@
 package com.ettrema.cache;
 
-import com.dotcms.repackage.com.ettrema.common.Service;
+import com.ettrema.common.Service;
 import java.util.Map;
 
 /**

@@ -13,8 +13,8 @@ import {
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 
 import { DotMessagePipeModule } from '@pipes/dot-message/dot-message-pipe.module';
-import { DotMessageService } from '@services/dot-message/dot-messages.service';
-import { MockDotMessageService } from '@tests/dot-message-service.mock';
+import { DotMessageService } from '@dotcms/data-access';
+import { MockDotMessageService } from '@dotcms/utils-testing';
 import { DotTemplateBuilderComponent } from './dot-template-builder.component';
 import { By } from '@angular/platform-browser';
 import {

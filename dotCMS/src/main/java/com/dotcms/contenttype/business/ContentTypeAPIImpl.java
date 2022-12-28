@@ -13,7 +13,11 @@ import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.FieldBuilder;
 import com.dotcms.contenttype.model.field.FieldVariable;
 import com.dotcms.contenttype.model.field.ImmutableFieldVariable;
-import com.dotcms.contenttype.model.type.*;
+import com.dotcms.contenttype.model.type.BaseContentType;
+import com.dotcms.contenttype.model.type.ContentType;
+import com.dotcms.contenttype.model.type.ContentTypeBuilder;
+import com.dotcms.contenttype.model.type.EnterpriseType;
+import com.dotcms.contenttype.model.type.UrlMapable;
 import com.dotcms.enterprise.LicenseUtil;
 import com.dotcms.enterprise.license.LicenseLevel;
 import com.dotcms.enterprise.license.LicenseManager;
@@ -22,26 +26,37 @@ import com.dotcms.system.event.local.business.LocalSystemEventsAPI;
 import com.dotcms.util.ContentTypeUtil;
 import com.dotcms.util.DotPreconditions;
 import com.dotcms.util.LowerKeyMap;
-import com.dotmarketing.beans.Host;
-import com.dotmarketing.business.*;
+import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.CacheLocator;
+import com.dotmarketing.business.DotStateException;
+import com.dotmarketing.business.FactoryLocator;
+import com.dotmarketing.business.PermissionAPI;
+import com.dotmarketing.business.PermissionLevel;
+import com.dotmarketing.business.Permissionable;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.exception.InvalidLicenseException;
-import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.structure.model.SimpleStructureURLMap;
 import com.dotmarketing.quartz.job.IdentifierDateJob;
-import com.dotmarketing.util.*;
+import com.dotmarketing.util.ActivityLogger;
+import com.dotmarketing.util.AdminLogger;
+import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.json.JSONArray;
 import com.dotmarketing.util.json.JSONObject;
 import com.google.common.collect.ImmutableList;
 import com.liferay.portal.model.User;
-import io.vavr.control.Try;
-import org.elasticsearch.action.search.SearchResponse;
-
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.UUID;
 import java.util.stream.Collectors;
+import org.elasticsearch.action.search.SearchResponse;
 
 /**
  * Implementation class for the {@link ContentTypeAPI}. Each content item in dotCMS is an instance of a Content Type. The
@@ -546,28 +561,8 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
               "Invalid content type variable: " + contentType.variable(),
               IllegalArgumentException.class);
     }
-    // Sets the host:
-    try {
-      if (UtilMethods.isNotSet(contentType.host()) || contentType.fixed()) {
-        final List<Field> existingFields = contentType.fields();
-        contentType = ContentTypeBuilder.builder(contentType).host(Host.SYSTEM_HOST).build();
-        contentType.constructWithFields(existingFields);
-      }
-      if (!UUIDUtil.isUUID(contentType.host()) && !Host.SYSTEM_HOST.equalsIgnoreCase(
-              contentType.host())) {
-        final HostAPI hapi = APILocator.getHostAPI();
-        final List<Field> existingFields = contentType.fields();
-        contentType = ContentTypeBuilder.builder(contentType)
-                //if host-name resolution fails it will fall back to default-host
-                .host(hapi.resolveHostName(contentType.host(), APILocator.systemUser(), true)
-                        .getIdentifier()).build();
-        contentType.constructWithFields(existingFields);
-      }
-    } catch (DotDataException e) {
-      throw new DotDataException("unable to resolve host:" + contentType.host(), e);
-    } catch (DotSecurityException es) {
-      throw new DotSecurityException("invalid permissions to:" + contentType.host(), es);
-    }
+
+    contentType = SiteAndFolderResolver.newInstance(user).resolveSiteAndFolder(contentType);
 
     // check perms
     Permissionable parent = contentType.getParentPermissionable();
@@ -595,61 +590,11 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
   @WrapInTransaction
   private ContentType transactionalSave(final List<Field> newFields,
                                         final List<FieldVariable> newFieldVariables,
-                                        final ContentType ctype) throws DotDataException, DotSecurityException {
+                                         ContentType contentTypeToSave) throws DotDataException, DotSecurityException {
 
-    ContentType contentTypeToSave = ctype;
 
     // set to system folder if on system host or the host id of the folder it is on
-    List<Field> oldFields = fieldAPI.byContentTypeId(contentTypeToSave.id());
-
-    final String folderPathOrId = contentTypeToSave.folder();
-    final String siteId = contentTypeToSave.host();
-
-    // Checks if the folder has been set, if so checks the host where that folder lives and set
-    // it.
-    if (UtilMethods.isSet(folderPathOrId) && !folderPathOrId.equals(Folder.SYSTEM_FOLDER)) {
-
-      final Host defaultHost = APILocator.getHostAPI().findDefaultHost(APILocator.systemUser(), false);
-
-      final Folder folder ;
-
-      //trying the incoming folder as a path but in order to do that we must have a valid host
-      if(UtilMethods.isSet(siteId) && !UUIDUtil.isUUID(folderPathOrId)){
-        Logger.info(ContentTypeAPIImpl.class,()-> String.format("Trying folder [%s] as a path on given host [%s]", folderPathOrId, siteId));
-        folder = APILocator.getFolderAPI()
-                .findFolderByPath(folderPathOrId, siteId,
-                        APILocator.systemUser(), false);
-      } else {
-         //trying folder as an id
-        Logger.info(ContentTypeAPIImpl.class,()->String.format("Trying folder [%s] as an id.",folderPathOrId));
-        folder = APILocator.getFolderAPI().find(folderPathOrId, user, false);
-      }
-
-      //in case we fail to establish our folder then fallback to default-host + default-folder
-      final String hostIdentifier;
-      final String folderIdentifier;
-        if(null == folder || UtilMethods.isNotSet(folder.getIdentifier())){
-           hostIdentifier = defaultHost.getIdentifier();
-           folderIdentifier = Folder.SYSTEM_FOLDER;
-           Logger.debug(ContentTypeAPIImpl.class,
-                   ()-> String.format("Unable to locate host from the given folder (path/id) [%s]. Default host will be used.",
-                           folderPathOrId));
-        } else{
-           hostIdentifier = folder.getHostId();
-           folderIdentifier = folder.getIdentifier();
-           Logger.info(ContentTypeAPIImpl.class,()->"Valid folder was found from the given id/path.");
-        }
-
-       contentTypeToSave = ContentTypeBuilder.builder(contentTypeToSave).folder(folderIdentifier).host(hostIdentifier).build();
-    } else if (UtilMethods.isSet(siteId)) {
-      // If there is no folder set, check if the host has been set, if so set the folder to System Folder
-      Logger.info(ContentTypeAPIImpl.class,()->String.format("For no folder info was provided defaulting to [%s].",Folder.SYSTEM_FOLDER));
-      contentTypeToSave = ContentTypeBuilder.builder(contentTypeToSave).folder(Folder.SYSTEM_FOLDER).build();
-    }
-
-    if (!ctype.fields().isEmpty()) {
-      contentTypeToSave.constructWithFields(ctype.fields());
-    }
+    final List<Field> oldFields = fieldAPI.byContentTypeId(contentTypeToSave.id());
 
     ContentType oldType = null;
     try {
@@ -664,17 +609,17 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
 
     if (oldType != null) {
 
-        final ContentType oldOldType = oldType;
-        if (fireUpdateIdentifiers(oldType.expireDateVar(), contentTypeToSave.expireDateVar())) {
-            IdentifierDateJob.triggerJobImmediately(oldOldType, user);
-        } else if (fireUpdateIdentifiers(oldType.publishDateVar(), contentTypeToSave.publishDateVar())) {
-            IdentifierDateJob.triggerJobImmediately(oldOldType, user);
-        }
-        perms.resetPermissionReferences(contentTypeToSave);
+      final ContentType oldOldType = oldType;
+      if (fireUpdateIdentifiers(oldType.expireDateVar(), contentTypeToSave.expireDateVar())
+              || fireUpdateIdentifiers(oldType.publishDateVar(),
+              contentTypeToSave.publishDateVar())) {
+        IdentifierDateJob.triggerJobImmediately(oldOldType, user);
+      }
+      perms.resetPermissionReferences(contentTypeToSave);
     }
     ActivityLogger.logInfo(getClass(), "Save ContentType Action",
         "User " + user.getUserId() + "/" + user.getFullName() + " added ContentType " + contentTypeToSave.name()
-            + " to host id:" + siteId);
+            + " to host id:" +  contentTypeToSave.host());
     AdminLogger.log(getClass(), "ContentType", "ContentType saved : " + contentTypeToSave.name(), user);
 
     // update the existing content type fields
@@ -740,6 +685,7 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
 
     return savedContentType;
   }
+
 
   private Field checkContentTypeFields(final ContentType contentType, final Field field) {
 

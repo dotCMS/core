@@ -3,15 +3,9 @@ import * as exec from '@actions/exec'
 import * as fs from 'fs'
 import * as path from 'path'
 import * as shelljs from 'shelljs'
-
-// const resolveTomcat = (): string => {
-//   const dotServerFolder = path.join(projectRoot, 'dist', 'dotserver')
-//   const tomcatFolder = shelljs.ls(dotServerFolder).find(folder => folder.startsWith('tomcat-'))
-//   return path.join(dotServerFolder, tomcatFolder || '')
-// }
+import fetch, {Response} from 'node-fetch'
 
 const projectRoot = core.getInput('project_root')
-// const buildEnv = core.getInput('build_env')
 const builtImageName = core.getInput('built_image_name')
 const waitForDeps = core.getInput('wait_for_deps')
 const dbType = core.getInput('db_type')
@@ -19,6 +13,7 @@ const licenseKey = core.getInput('license_key')
 const customStarterUrl = core.getInput('custom_starter_url')
 const tests = core.getInput('tests')
 const exportReport = core.getBooleanInput('export_report')
+const includeAnalytics = core.getBooleanInput('include_analytics')
 const cicdFolder = path.join(projectRoot, 'cicd')
 const resourcesFolder = path.join(cicdFolder, 'resources', 'postman')
 const dockerFolder = path.join(cicdFolder, 'docker')
@@ -33,7 +28,6 @@ const reportFolder = path.join(dotCmsRoot, 'build', 'reports', 'tests', 'postman
 const runtTestsPrefix = 'postman-tests:'
 const PASSED = 'PASSED'
 const FAILED = 'FAILED'
-//let tomcatRoot = resolveTomcat()
 
 export interface PostmanTestsResult {
   testsRunExitCode: number
@@ -46,6 +40,23 @@ export interface Command {
   args?: string[]
   workingDir?: string
   env?: {[key: string]: string}
+}
+
+interface AccessToken {
+  access_token: string
+  token_type: string
+  issueDate: string
+  expires_in: number
+  refresh_expires_in: number
+  refresh_token: string
+  scope: string
+  clientId: string
+  aud: string
+}
+
+interface AnalyticsKey {
+  jsKey: string
+  m2mKey: string
 }
 
 const DEPS_ENV: {[key: string]: string} = {
@@ -61,12 +72,13 @@ const DEPS_ENV: {[key: string]: string} = {
 }
 
 /*
+ * Run postman tests and provides a summary of such.
  *
- * @returns a number representing the command exit code
+ * @returns a object representing run status
  */
 export const runTests = async (): Promise<PostmanTestsResult> => {
   await setup()
-  startDeps()
+  await startDeps()
   printInfo()
 
   try {
@@ -105,6 +117,9 @@ const setup = async () => {
   await printInfo()
 }
 
+/**
+ * Prints docker command info
+ */
 const printInfo = async () => {
   await execCmd(toCommand('docker', ['images']))
   await execCmd(toCommand('docker', ['ps']))
@@ -120,27 +135,24 @@ const installDeps = async () => {
     npmArgs.push('newman-reporter-htmlextra')
   }
   await execCmd(toCommand('npm', npmArgs))
-
-  // if (!fs.existsSync(tomcatRoot) && buildEnv === 'gradle') {
-  //   core.info(`Tomcat root does not exist, creating it`)
-  //   await exec.exec('./gradlew', ['clonePullTomcatDist'])
-
-  //   tomcatRoot = resolveTomcat()
-  //   if (!tomcatRoot) {
-  //     throw new Error('Cannot find any Tomcat root folder')
-  //   }
-  // }
 }
 
 /**
  * Start postman depencies: db, ES and DotCMS isntance.
  */
-const startDeps = () => {
+const startDeps = async () => {
   // Starting dependencies
   core.info(`
     =======================================
     Starting postman tests dependencies
     =======================================`)
+
+  if (includeAnalytics) {
+    execCmdAsync(toCommand('docker-compose', ['-f', 'analytics-compose.yml', 'up'], dockerFolder))
+    await waitFor(160, 'Analytics Infrastructure')
+    await warmUpAnalytics()
+  }
+
   execCmdAsync(
     toCommand(
       'docker-compose',
@@ -149,25 +161,30 @@ const startDeps = () => {
       DEPS_ENV
     )
   )
-
-  //await startDotCMS()
 }
 
 /**
  * Stop postman depencies: db, ES and DotCMS isntance.
  */
 const stopDeps = async () => {
-  //await stopDotCMS()
   // Stopping dependencies
   core.info(`
     ===================================
     Stopping postman tests dependencies
     ===================================`)
+  if (includeAnalytics) {
+    try {
+      await execCmd(toCommand('docker-compose', ['-f', 'analytics-compose.yml', 'down', '-v'], dockerFolder))
+    } catch (err) {
+      console.error(`Error stopping dependencies: ${err}`)
+    }
+  }
+
   try {
     await execCmd(
       toCommand(
         'docker-compose',
-        ['-f', 'open-distro-compose.yml', '-f', `${dbType}-compose.yml`, '-f', 'dotcms-compose.yml', 'down'],
+        ['-f', 'open-distro-compose.yml', '-f', `${dbType}-compose.yml`, '-f', 'dotcms-compose.yml', 'down', '-v'],
         dockerFolder,
         DEPS_ENV
       )
@@ -176,22 +193,6 @@ const stopDeps = async () => {
     console.error(`Error stopping dependencies: ${err}`)
   }
 }
-
-// const startDotCMS = async () => {
-//   core.info(`
-//     =======================================
-//     Starting DotCMS instance
-//     =======================================`)
-//   exec.exec(path.join(tomcatRoot, 'bin', 'startup.sh'))
-// }
-
-// const stopDotCMS = async () => {
-//   core.info(`
-//     =======================================
-//     Stopping DotCMS instance
-//     =======================================`)
-//   await exec.exec(path.join(tomcatRoot, 'bin', 'shutdown.sh'))
-// }
 
 /**
  * Run postman tests.
@@ -401,6 +402,12 @@ const resolveSpecific = (): string[] => {
   return resolved
 }
 
+/**
+ * Extracts postman tests from commit message.
+ *
+ * @param message commit message
+ * @returns filtered tests
+ */
 const extractFromMessg = (message: string): string[] => {
   if (!message) {
     return []
@@ -418,6 +425,15 @@ const extractFromMessg = (message: string): string[] => {
   return extracted
 }
 
+/**
+ * Gather values and build a Command instance.
+ *
+ * @param cmd command
+ * @param args arguments
+ * @param workingDir working dir
+ * @param env environment variables
+ * @returns Command object
+ */
 const toCommand = (cmd: string, args?: string[], workingDir?: string, env?: {[key: string]: string}): Command => {
   return {
     cmd,
@@ -427,6 +443,11 @@ const toCommand = (cmd: string, args?: string[], workingDir?: string, env?: {[ke
   }
 }
 
+/**
+ * Prints string Command representation.
+ *
+ * @param cmd Command object
+ */
 const printCmd = (cmd: Command) => {
   let message = `Executing cmd: ${cmd.cmd} ${cmd.args?.join(' ') || ''}`
   if (cmd.workingDir) {
@@ -438,12 +459,75 @@ const printCmd = (cmd: Command) => {
   core.info(message)
 }
 
+/**
+ * Executes command contained in Command object.
+ *
+ * @param cmd Command object
+ * @returns Promise with process number
+ */
 const execCmd = async (cmd: Command): Promise<number> => {
   printCmd(cmd)
   return await exec.exec(cmd.cmd, cmd.args || [], {cwd: cmd.workingDir, env: cmd.env})
 }
 
+/**
+ * Async executes command contained in Command object.
+ *
+ * @param cmd Command object
+ */
 const execCmdAsync = (cmd: Command) => {
   printCmd(cmd)
   exec.exec(cmd.cmd, cmd.args || [], {cwd: cmd.workingDir, env: cmd.env})
+}
+
+const fetchAccessToken = async (): Promise<Response> => {
+  const idpUrl = 'http://localhost:61111/realms/dotcms/protocol/openid-connect/token'
+  const authPayload = 'client_id=analytics-customer-customer1&client_secret=testsecret&grant_type=client_credentials'
+  core.info(`Sending POST to ${idpUrl} the payload:\n${authPayload}`)
+
+  return fetch(idpUrl, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/x-www-form-urlencoded'
+    },
+    body: authPayload
+  })
+}
+
+const warmUpIdp = async (): Promise<AccessToken> => {
+  await fetchAccessToken()
+  waitFor(1000, 'IDP warmup')
+  const response = await fetchAccessToken()
+  const accessToken = (await response.json()) as AccessToken
+  return accessToken
+}
+
+const fetchAnalyticsKey = async (accessToken: string): Promise<Response> => {
+  const configUrl = 'http://localhost:8088/c/customer1/cluster1/keys'
+  core.info(`Sending GET to ${configUrl}`)
+  return fetch(configUrl, {
+    method: 'GET',
+    headers: {
+      Accept: 'application/json',
+      Authorization: `Bearer ${accessToken}`
+    }
+  })
+}
+
+const warmUpConfig = async (accessToken: string): Promise<AnalyticsKey> => {
+  await fetchAnalyticsKey(accessToken)
+  waitFor(1000, 'Config warmup')
+  const response = await fetchAnalyticsKey(accessToken)
+  const analyticsKey = (await response.json()) as AnalyticsKey
+  return analyticsKey
+}
+
+const warmUpAnalytics = async () => {
+  const accessToken = await warmUpIdp()
+  const token = accessToken.access_token
+  accessToken.access_token = ''
+  core.info(`Got response:\n${JSON.stringify(accessToken, null, 2)}`)
+
+  const analyticsKey = await warmUpConfig(token)
+  core.info(`Got response:\n${JSON.stringify(analyticsKey, null, 2)}`)
 }

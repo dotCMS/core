@@ -1,31 +1,28 @@
-import { ChangeDetectionStrategy, Component } from '@angular/core';
+import { ChangeDetectionStrategy, Component, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
-import { Observable } from 'rxjs';
-import {
-    DotExperimentsShellState,
-    DotExperimentsShellStore
-} from '@portlets/dot-experiments/dot-experiments-shell/store/dot-experiments-shell-store.service';
-import { provideComponentStore } from '@ngrx/component-store';
-import { MessageService } from 'primeng/api';
 
 @Component({
     selector: 'dot-experiments-shell',
     templateUrl: 'dot-experiments-shell.component.html',
     styleUrls: ['./dot-experiments-shell.component.scss'],
-    providers: [provideComponentStore(DotExperimentsShellStore), MessageService],
     changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class DotExperimentsShellComponent {
-    readonly vm$: Observable<DotExperimentsShellState> = this.cs.state$;
+export class DotExperimentsShellComponent implements OnInit {
+    constructor(private readonly router: Router) {}
 
-    constructor(private readonly cs: DotExperimentsShellStore, private readonly router: Router) {}
+    ngOnInit() {
+        this.removeVariantQueryParams();
+    }
 
-    /**
-     * Back to Edit Page / Content
-     * @returns void
-     * @memberof DotExperimentsShellComponent
-     */
-    goBack() {
-        this.router.navigate(['edit-page/content'], { queryParamsHandling: 'preserve' });
+    private removeVariantQueryParams() {
+        this.router.navigate([], {
+            queryParams: {
+                editPageTab: null,
+                variationName: null,
+                experimentId: null
+            },
+            queryParamsHandling: 'merge',
+            replaceUrl: true
+        });
     }
 }

@@ -5,5 +5,11 @@
         column-gap: $spacing-4;
         display: grid;
         grid-template-columns: 50% 49%;
+        min-height: 440px;
+    }
+
+    .dot-favorite-dialog-footer__delete-button {
+        left: 0;
+        position: absolute;
     }
 }

@@ -4,7 +4,7 @@ import { DotPageAsset, DotPageSelectorService } from './dot-page-selector.servic
 import { HttpTestingController, HttpClientTestingModule } from '@angular/common/http/testing';
 import { TestBed, getTestBed } from '@angular/core/testing';
 import { CoreWebService, Site } from '@dotcms/dotcms-js';
-import { CoreWebServiceMock } from '@tests/core-web.service.mock';
+import { CoreWebServiceMock } from '@dotcms/utils-testing';
 import {
     DotFolder,
     DotPageSelectorItem

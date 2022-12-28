@@ -1,4 +1,4 @@
-<ng-template let-item="item" pTemplate="listItem" #defaultItemListTemplate>
+<ng-template #defaultItemListTemplate let-item="item" pTemplate="listItem">
     <span
         class="searchable-dropdown__data-list-item"
         [class.selected]="item[labelPropertyName] === valueString"
@@ -11,39 +11,39 @@
 <ng-template #defaultFilterTemplate>
     <dot-icon class="searchable-dropdown__search-icon" name="search"></dot-icon>
     <input
+        class="searchable-dropdown__search-inputfield"
         #searchInput
+        [placeholder]="'search' | dm"
+        (click)="$event.stopPropagation()"
         autofocus
         pInputText
-        [placeholder]="'search' | dm"
         type="text"
-        class="searchable-dropdown__search-inputfield"
         data-testid="searchInput"
-        (click)="$event.stopPropagation()"
     />
 </ng-template>
 
-<ng-template let-item="item" #defaultSelectTemplate>
+<ng-template #defaultSelectTemplate let-item="item">
     <button
         #button
-        pButton
         *ngIf="label"
-        (click)="searchPanel.toggle($event)"
         [label]="label"
+        [ngStyle]="{ width: width }"
+        [disabled]="disabled"
+        (click)="searchPanel.toggle($event)"
+        pButton
         icon="pi pi-chevron-down"
         iconPos="right"
         type="button"
-        [ngStyle]="{ width: width }"
-        [disabled]="disabled"
     ></button>
 </ng-template>
 
 <p-overlayPanel
     #searchPanel
-    (onHide)="hideOverlayHandler()"
-    (onShow)="showOverlayHandler()"
     [dismissable]="true"
     [styleClass]="cssClass"
     [style]="{ 'min-height': overlayPanelMinHeight + 'px', width: overlayWidth }"
+    (onHide)="hideOverlayHandler()"
+    (onShow)="showOverlayHandler()"
     appendTo="body"
 >
     <header class="searchable-dropdown__search">
@@ -52,29 +52,29 @@
                 [ngTemplateOutlet]="externalFilterTemplate || defaultFilterTemplate"
             ></ng-container>
         </div>
-        <div *ngIf="action" class="searchable-dropdown__search-action">
+        <div class="searchable-dropdown__search-action" *ngIf="action">
             <dot-icon-button
+                (click)="action()"
                 secondary
                 size="36"
                 square
                 icon="add"
                 big
-                (click)="action()"
             ></dot-icon-button>
         </div>
     </header>
 
     <p-dataView
+        class="searchable-dropdown__data-list"
         #dataView
-        (click)="$event.stopPropagation()"
-        (onLazyLoad)="paginate($event)"
         [lazy]="true"
         [pageLinks]="pageLinkSize"
         [paginator]="totalRecords > rows"
         [rows]="rows"
         [totalRecords]="totalRecords"
         [value]="options"
-        class="searchable-dropdown__data-list"
+        (click)="$event.stopPropagation()"
+        (onLazyLoad)="paginate($event)"
     >
         <ng-template let-item pTemplate="listItem">
             <ng-container

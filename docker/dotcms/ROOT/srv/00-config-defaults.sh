@@ -8,10 +8,11 @@
 
 set -e
 
+export LANG=${LANG:-"C.UTF-8"}
+
 ## Tomcat config
 
-# Auto-set Tomcat version from container build var, used for proper pathing
-export TOMCAT_HOME=$( find /srv/dotserver/ -type d -name "tomcat-*" )
+export TOMCAT_HOME=/srv/dotserver/tomcat
 # JAVA args to pass to the Tomcat JVM
 export JAVA_OPTS_BASE=${JAVA_OPTS_BASE:-"-Djava.awt.headless=true -Xverify:none -Dfile.encoding=UTF8 -server -Dpdfbox.fontcache=/data/local/dotsecure -Dlog4j2.formatMsgNoLookups=true -Djava.library.path=/usr/lib/$( uname -m )-linux-gnu/  -XX:+UseShenandoahGC -XX:+UnlockExperimentalVMOptions -XX:ShenandoahUncommitDelay=1000 -XX:ShenandoahGuaranteedGCInterval=10000 "}
 export JAVA_OPTS_MEMORY=${JAVA_OPTS_MEMORY:-"-Xmx1G"}
@@ -26,6 +27,10 @@ export CMS_CONNECTOR_THREADS=${CMS_CONNECTOR_THREADS:-"600"}
 # SMTP hostname for CMS
 export DOT_MAIL_SMTP_HOST=${DOT_MAIL_SMTP_HOST:-"smtp.dotcms.site"}
 export DOT_MAIL_SMTP_SSL_PROTOCOLS=${DOT_MAIL_SMTP_SSL_PROTOCOLS:-"TLSv1.2"}
+
+# Cookie Args
+export DOT_SAMESITE_COOKIES=${DOT_SAMESITE_COOKIES:-"lax"}
+
 
 # tomcat gzip compression
 export CMS_COMPRESSION=${CMS_COMPRESSION:-"on"}

@@ -36,7 +36,13 @@ import org.elasticsearch.action.search.SearchResponse;
 
 import java.io.File;
 import java.io.Serializable;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
 
 /**
  * This interceptor class allows developers to execute Java <b>code</b> before
@@ -53,9 +59,9 @@ import java.util.*;
  */
 public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 
-	private List<ContentletAPIPreHook> preHooks = new ArrayList<ContentletAPIPreHook>();
-	private List<ContentletAPIPostHook> postHooks = new ArrayList<ContentletAPIPostHook>();
-	private ContentletAPI conAPI;
+	private List<ContentletAPIPreHook> preHooks = new ArrayList<>();
+	private List<ContentletAPIPostHook> postHooks = new ArrayList<>();
+	private final ContentletAPI conAPI;
 
 	/**
 	 * Default class constructor.
@@ -1151,6 +1157,22 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 		return c;
 	}
 
+	@Override
+	public Optional<Integer> getAllContentletReferencesCount(final String contentletId) throws DotDataException {
+		for (final ContentletAPIPreHook pre : this.preHooks) {
+			final boolean preResult = pre.getAllContentletReferencesCount(contentletId);
+			if (!preResult) {
+				Logger.error(this, "The following prehook failed: " + pre.getClass().getName());
+				throw new DotRuntimeException("The following prehook failed: " + pre.getClass().getName());
+			}
+		}
+		final Optional<Integer> count = this.conAPI.getAllContentletReferencesCount(contentletId);
+		for (final ContentletAPIPostHook post : this.postHooks) {
+			post.getContentletReferenceCount(contentletId);
+		}
+		return count;
+	}
+
 	/**
 	 * @deprecated use {@link ContentletAPIInterceptor#getFieldValue(Contentlet, com.dotcms.contenttype.model.field.Field)} instead
 	 * @param contentlet
@@ -1805,6 +1827,27 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 	}
 
 	@Override
+	public List<Contentlet> getAllContentByVariants(User user,
+			boolean respectFrontendRoles, String... variantNames)
+			throws DotDataException, DotStateException, DotSecurityException {
+		for (ContentletAPIPreHook pre : preHooks) {
+			boolean preResult = pre.getAllContentByVariants(user, respectFrontendRoles, variantNames);
+			if (!preResult) {
+				Logger.error(this, "The following prehook failed " + pre.getClass().getName());
+				throw new DotRuntimeException("The following prehook failed "
+						+ pre.getClass().getName());
+			}
+		}
+
+		List<Contentlet> c = conAPI.getAllContentByVariants(user, respectFrontendRoles, variantNames);
+
+		for (ContentletAPIPostHook post : postHooks) {
+			post.getAllContentByVariants(user, respectFrontendRoles, variantNames);
+		}
+		return c;
+	}
+
+	@Override
 	public void addPermissionsToQuery ( StringBuffer buffy, User user, List<Role> roles, boolean respectFrontendRoles ) throws DotSecurityException, DotDataException {
 		for ( ContentletAPIPreHook pre : preHooks ) {
 			boolean preResult = pre.addPermissionsToQuery( buffy, user, roles, respectFrontendRoles );
@@ -1951,6 +1994,21 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 		conAPI.validateContentlet(contentlet, contentRelationships, cats);
 		for(ContentletAPIPostHook post : postHooks){
 			post.validateContentlet(contentlet, contentRelationships, cats);
+		}
+	}
+
+	@Override
+	public void validateContentletNoRels(Contentlet contentlet, List<Category> cats) throws DotContentletValidationException {
+		for(ContentletAPIPreHook pre : preHooks){
+			boolean preResult = pre.validateContentletNoRels(contentlet, cats);
+			if(!preResult){
+				Logger.error(this, "The following prehook failed " + pre.getClass().getName());
+				throw new DotRuntimeException("The following prehook failed " + pre.getClass().getName());
+			}
+		}
+		conAPI.validateContentletNoRels(contentlet, cats);
+		for(ContentletAPIPostHook post : postHooks){
+			post.validateContentletNoRels(contentlet, cats);
 		}
 	}
 

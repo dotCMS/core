@@ -15,7 +15,7 @@ const run = async () => {
   const results = await postman.runTests()
 
   setOutput('tests_results_location', resultsFolder)
-  setOutput('tests_results_report_location', reportFolder)
+  setOutput('tests_results_report_location', reportFolder, true)
   setOutput('tests_results_status', results.testsResultsStatus)
   setOutput('tests_results_skip_report', results.skipResultsReport)
 
@@ -24,9 +24,11 @@ const run = async () => {
   }
 }
 
-const setOutput = (name: string, value: string | boolean | number | undefined) => {
-  const val = value === undefined ? '' : value
-  core.notice(`Setting output '${name}' with value: '${val}'`)
+const setOutput = (name: string, value?: string | boolean | number, notify = false) => {
+  const val = value || ''
+  if (notify && !!val) {
+    core.notice(`Setting output '${name}' with value: '${val}'`)
+  }
   core.setOutput(name, value)
 }
 

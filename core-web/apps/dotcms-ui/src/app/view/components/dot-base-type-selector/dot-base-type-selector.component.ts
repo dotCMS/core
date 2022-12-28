@@ -1,10 +1,10 @@
 import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
-import { StructureTypeView } from '@models/contentlet/structure-type-view.model';
 import { Observable } from 'rxjs';
-import { DotMessageService } from '@services/dot-message/dot-messages.service';
+import { DotMessageService } from '@dotcms/data-access';
 import { SelectItem } from 'primeng/api';
 import { map, take } from 'rxjs/operators';
-import { DotContentTypeService } from '@services/dot-content-type/dot-content-type.service';
+import { DotContentTypeService } from '@dotcms/data-access';
+import { StructureTypeView } from '@dotcms/dotcms-models';
 
 @Component({
     selector: 'dot-base-type-selector',

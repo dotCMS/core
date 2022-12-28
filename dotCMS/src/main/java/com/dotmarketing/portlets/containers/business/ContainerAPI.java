@@ -1,6 +1,7 @@
 package com.dotmarketing.portlets.containers.business;
 
 import com.dotcms.contenttype.model.type.ContentType;
+import com.dotcms.rest.api.v1.container.ContainerForm;
 import com.dotmarketing.beans.ContainerStructure;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.DotStateException;
@@ -315,7 +316,7 @@ public interface ContainerAPI {
 	 * @throws DotDataException
 	 * @throws DotSecurityException
 	 */
-	Container save(Container container, List<ContainerStructure> containerStructureList, Host host, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
+	Container save(final Container container,final List<ContainerStructure> containerStructureList,final Host host,final User user,final boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
 
 	/**
 	 * Deletes the template version by inode

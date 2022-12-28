@@ -1,4 +1,4 @@
-import { DotWorkflowService } from '@services/dot-workflow/dot-workflow.service';
+import { DotWorkflowService } from '@dotcms/data-access';
 import { Observable } from 'rxjs';
 import { DotCMSWorkflow } from '@dotcms/dotcms-models';
 import { Component, OnInit, forwardRef } from '@angular/core';

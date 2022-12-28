@@ -1,0 +1,14 @@
+<p-card>
+    <ng-template pTemplate="title">
+        <h2 data-testId="targeting-card-name">{{ 'experiments.configure.targeting.name' | dm }}</h2>
+    </ng-template>
+
+    <ng-template pTemplate="footer">
+        <p-button
+            (onClick)="setupTargeting()"
+            data-testId="targeting-add-button"
+            label="{{ 'experiments.configure.targeting.add' | dm }}"
+            styleClass="p-button-sm p-button-link"
+        ></p-button>
+    </ng-template>
+</p-card>
