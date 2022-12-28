@@ -1,9 +1,13 @@
 @use "variables" as *;
 
+:host {
+    border: 1px solid $gray-light;
+    display: block;
+}
+
 .tabview-container {
     width: 46.25 * $dot-editor-size;
     background: $white;
-    border: 1px solid $gray-light;
 }
 
 .wrapper {

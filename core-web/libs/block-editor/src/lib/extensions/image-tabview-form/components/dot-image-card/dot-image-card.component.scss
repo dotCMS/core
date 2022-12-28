@@ -16,6 +16,7 @@
             width: 94px;
             overflow: hidden;
             position: relative;
+            border-radius: $border-radius-md 0 0 $border-radius-md;
 
             .image-thumbnail-container {
                 padding: 10px;
