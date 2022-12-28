@@ -10,7 +10,7 @@ import { DotRouterService } from '@services/dot-router/dot-router.service';
 import { pairwise, startWith, take, takeUntil } from 'rxjs/operators';
 import { MenuItem } from 'primeng/api';
 import { Subject } from 'rxjs';
-import { DotContainerStructure } from '@dotcms/dotcms-models';
+import { DotContainerPayload, DotContainerStructure } from '@dotcms/dotcms-models';
 
 @Component({
     selector: 'dot-container-properties',
@@ -82,11 +82,11 @@ export class DotContainerPropertiesComponent implements OnInit {
 
     /**
      * check prev value and current value for showing the content type
-     * @param {*} prevValue
-     * @param {*} currValue
+     * @param {DotContainerPayload} prevValue
+     * @param {DotContainerPayload} currValue
      * @memberof DotContainerPropertiesComponent
      */
-    IsShowContentTypes(prevValue, currValue) {
+    IsShowContentTypes(prevValue: DotContainerPayload, currValue: DotContainerPayload) {
         return (
             (prevValue.maxContentlets === 0 || prevValue.maxContentlets === null) &&
             currValue.maxContentlets > 0
