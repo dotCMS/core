@@ -17,6 +17,7 @@ env:
   PULL_REQUEST_URL: ${{ github.event.pull_request._links.html.href }}
   IS_PULL_REQUEST: ${{ github.event_name == 'pull_request' }}
   HEAD_REF: ${{ github.head_ref }}
+  
 jobs:
   sonar:
     runs-on: ubuntu-20.04
@@ -26,6 +27,8 @@ jobs:
         with:
           fetch-depth: 0
       - uses: sonarsource/sonarqube-scan-action@master
+        with:
+          projectBaseDir: core-web
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN_DOTCMS_UI }}
           SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
