@@ -44,5 +44,16 @@
                 }
             }
         }
+        .p-tabview-title {
+            font-size: 1.15 * $dot-editor-size;
+            color: $dark;
+            font-weight: normal;
+            text-transform: unset;
+        }
+
+        .p-tabview-left-icon {
+            font-size: 1.25 * $dot-editor-size;
+            color: $brand-secondary;
+        }
     }
 }
