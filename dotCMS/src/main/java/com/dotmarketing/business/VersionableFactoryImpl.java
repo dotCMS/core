@@ -390,8 +390,7 @@ public class VersionableFactoryImpl extends VersionableFactory {
 	public Optional<ContentletVersionInfo> findAnyContentletVersionInfo(final String identifier, final boolean deleted)
 			throws DotDataException {
 		final DotConnect dotConnect = new DotConnect()
-				.setSQL("SELECT * FROM contentlet_version_info WHERE identifier=  ? AND deleted = ? "
-						+ "AND variant_id = '"+DEFAULT_VARIANT.name()+"'")
+				.setSQL("SELECT * FROM contentlet_version_info WHERE identifier=  ? AND deleted = ?")
 				.addParam(identifier)
 				.addParam(deleted)
 				.setMaxRows(1);
