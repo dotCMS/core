@@ -22,13 +22,17 @@
         justify-content: flex-start;
     }
 
+    p {
+        margin: $dot-editor-size 0;
+    }
+
     &::ng-deep {
         .p-scroller {
             scrollbar-gutter: stable both-edges;
         }
 
         .p-scroller-content {
-            padding: 0 7px;
+            padding: 0 5px;
         }
 
         .card-list-row {
