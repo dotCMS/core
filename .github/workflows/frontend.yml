@@ -37,7 +37,7 @@ jobs:
     - name: Run SonarQube
       id: sonar
       working-directory: core-web
-      run: npx nx dotcms-ui:sonar --parallel 1
+      run: npx nx sonar dotcms-ui --parallel 1
   check-all:
     outputs:
       name: ${{ steps.lint.outputs.name || steps.test.outputs.name || steps.build.outputs.name }}
