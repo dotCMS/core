@@ -1,14 +1,17 @@
 @use "variables" as *;
 
+:host {
+    width: 100%;
+}
+
 :host ::ng-deep {
     .p-card {
         border: none;
         box-shadow: $md-shadow-1;
         cursor: pointer;
         display: flex;
-        gap: $dot-editor-size;
+        gap: $spacing-3;
         height: 94px;
-        width: 340px;
 
         .p-card-header {
             padding: 0;
@@ -39,7 +42,7 @@
             flex: 1;
             overflow: hidden;
             padding: $spacing-2 0;
-            padding-right: $dot-editor-size;
+            padding-right: $spacing-2;
 
             .p-card-subtitle {
                 color: $gray;
@@ -85,8 +88,8 @@
         border-radius: $border-radius;
         color: black;
         font-size: 0.75 * $dot-editor-size;
-        height: 1.625 * $dot-editor-size;
+        height: 26px;
         line-height: 140%;
-        padding: (0.25 * $dot-editor-size) (0.5 * $dot-editor-size);
+        padding: $spacing-1 $spacing-2;
     }
 }

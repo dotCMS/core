@@ -6,18 +6,18 @@
 }
 
 .tabview-container {
-    width: 46.25 * $dot-editor-size;
+    width: 720px;
     background: $white;
 }
 
 .wrapper {
     width: 100%;
-    padding: 1.3125 * $dot-editor-size;
+    padding: $spacing-4;
     height: 400px;
 }
 
 .search-box {
-    padding: 1.3125 * $dot-editor-size;
+    padding: $spacing-4 $spacing-5;
 
     &,
     span {
@@ -28,15 +28,15 @@
         width: 100%;
         border: 1px solid $gray-light;
         border-radius: $border-radius;
-        padding: 0.5 * $dot-editor-size;
-        padding-left: $dot-editor-size;
+        padding: $spacing-1;
+        padding-left: $spacing-3;
     }
 }
 
 :host::ng-deep {
     .p-tabview {
         .p-tabview-nav {
-            padding: 0 (1.3125 * $dot-editor-size);
+            padding: 0 $spacing-5;
 
             li {
                 .p-tabview-nav-link:focus {
