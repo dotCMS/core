@@ -155,6 +155,7 @@ describe('DotAddVariableComponent', () => {
     let fixture: ComponentFixture<DotAddVariableComponent>;
     let de: DebugElement;
     let dialogConfig: DynamicDialogConfig;
+    let dialogRef: DynamicDialogRef;
     let coreWebService: CoreWebService;
 
     beforeEach(async () => {
@@ -232,17 +233,19 @@ describe('DotAddVariableComponent', () => {
             tick();
             fixture.detectChanges();
             de = fixture.debugElement;
+            dialogRef = TestBed.inject(DynamicDialogRef);
         }));
 
         it('should call add from list and apply mask in variable', () => {
             const dialog = de.query(
                 By.css(`[data-testId="${mockContentTypes.fields[0].variable}"]`)
             );
-            dialog.nativeElement.click();
+            dialog.triggerEventHandler('click');
             expect(dialogConfig.data.onSave).toHaveBeenCalledTimes(1);
             expect(dialogConfig.data.onSave).toHaveBeenCalledWith(
                 `$!{dotContentMap.${mockContentTypes.fields[0].variable}}`
             );
+            expect(dialogRef.close).toHaveBeenCalled();
         });
     });
 });

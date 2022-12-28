@@ -41,7 +41,12 @@ export class DotExperimentsConfigurationComponent implements OnInit {
      */
     goToExperimentList(pageId: string) {
         this.router.navigate(['/edit-page/experiments/', pageId], {
-            queryParamsHandling: 'preserve'
+            queryParams: {
+                editPageTab: null,
+                variationName: null,
+                experimentId: null
+            },
+            queryParamsHandling: 'merge'
         });
     }
 
@@ -88,7 +93,11 @@ export class DotExperimentsConfigurationComponent implements OnInit {
     goToEditPageVariant(variant: { variant: Variant; mode: EditPageTabs }) {
         this.dotSessionStorageService.setVariationId(variant.variant.id);
         this.router.navigate(['edit-page/content'], {
-            queryParams: { editPageTab: variant.mode, variationName: variant.variant.id },
+            queryParams: {
+                editPageTab: variant.mode,
+                variationName: variant.variant.id,
+                experimentId: this.route.snapshot.params.experimentId
+            },
             queryParamsHandling: 'merge'
         });
     }

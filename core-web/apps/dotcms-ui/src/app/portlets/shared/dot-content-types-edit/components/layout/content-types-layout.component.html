@@ -1,5 +1,5 @@
 <dot-secondary-toolbar>
-    <div class="main-toolbar-left">
+    <div class="main-toolbar-left flex align-items-center">
         <div class="content-type__title">
             <header>
                 <dot-icon name="{{ contentType.icon }}"></dot-icon>
@@ -8,19 +8,19 @@
                 </ng-template>
                 <ng-template #inlineEditContentTemplate>
                     <input
-                        [style.width.px]="contentTypeNameInputSize"
                         #contentTypeNameInput
-                        type="text"
+                        [style.width.px]="contentTypeNameInputSize"
                         [value]="contentType.name"
                         (keyup)="inputValueHandler($event)"
-                        pInputText
                         dotAutofocus
+                        pInputText
+                        type="text"
                     />
                 </ng-template>
                 <dot-inline-edit
                     #dotEditInline
-                    [inlineEditDisplayTemplate]="inlineEditDisplayTemplate"
                     [inlineEditContentTemplate]="inlineEditContentTemplate"
+                    [inlineEditDisplayTemplate]="inlineEditDisplayTemplate"
                 >
                 </dot-inline-edit>
                 <dot-api-link href="api/v1/contenttype/id/{{ contentType.id }}"></dot-api-link>
@@ -30,28 +30,28 @@
         <div class="content-type__info">
             {{ 'contenttypes.content.variable' | dm }}:
             <dot-copy-link
-                data-testId="copyVariableName"
                 [copy]="contentType.variable"
                 [label]="contentType.variable"
+                data-testId="copyVariableName"
             ></dot-copy-link>
             <span class="content-type__dot-separator">•</span>
             {{ 'contenttypes.form.identifier' | dm }}:
             <dot-copy-link
-                data-testId="copyIdentifier"
                 [copy]="contentType.id"
                 [label]="contentType.id"
+                data-testId="copyIdentifier"
             ></dot-copy-link>
         </div>
     </div>
     <div class="main-toolbar-right">
         <button
-            type="button"
-            pButton
             class="p-button-secondary"
-            label="{{ 'contenttypes.action.edit' | dm }}"
+            id="form-edit-button"
             (click)="openEditDialog.next()"
             icon="fa fa-edit"
-            id="form-edit-button"
+            label="{{ 'contenttypes.action.edit' | dm }}"
+            pButton
+            type="button"
         ></button>
     </div>
 </dot-secondary-toolbar>
@@ -66,10 +66,10 @@
             </div>
             <div class="content-type__fields-sidebar">
                 <p-splitButton
+                    [model]="actions"
+                    (onClick)="fireAddRowEvent()"
                     icon="pi pi-plus"
                     label="{{ 'contenttypes.content.row' | dm }}"
-                    (onClick)="fireAddRowEvent()"
-                    [model]="actions"
                 >
                 </p-splitButton>
                 <dot-content-types-fields-list
@@ -80,9 +80,9 @@
     </p-tabPanel>
     <p-tabPanel
         class="content-type__relationships"
-        header="{{ 'contenttypes.tab.relationship.header' | dm }}"
         *ngIf="contentType"
         [cache]="false"
+        header="{{ 'contenttypes.tab.relationship.header' | dm }}"
     >
         <ng-template pTemplate="content">
             <dot-portlet-box>
@@ -92,9 +92,9 @@
     </p-tabPanel>
     <p-tabPanel
         class="content-type__permissions"
-        header="{{ 'contenttypes.tab.permissions.header' | dm }}"
         *ngIf="contentType && showPermissionsTab | async"
         [cache]="false"
+        header="{{ 'contenttypes.tab.permissions.header' | dm }}"
     >
         <ng-template pTemplate="content">
             <dot-portlet-box>
@@ -104,9 +104,9 @@
     </p-tabPanel>
     <p-tabPanel
         class="content-type__push_history"
-        header="{{ 'contenttypes.tab.publisher.push.history.header' | dm }}"
         *ngIf="contentType"
         [cache]="false"
+        header="{{ 'contenttypes.tab.publisher.push.history.header' | dm }}"
     >
         <ng-template pTemplate="content">
             <dot-portlet-box>
