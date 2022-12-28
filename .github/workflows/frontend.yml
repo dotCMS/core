@@ -14,20 +14,40 @@ env:
   EXCLUDED_PROJECTS: dot-rules,dot-layout-grid,dot-primeng-theme-styles,dot-rules,dotcms,dotcms-field-elements,dotcms-js,dotcms-models,dotcms-webcomponents,dotcdn-e2e,dotcms-block-editor,dotcms-block-editor-e2e,dotcms-ui-e2e,utils-testing,block-editor,utils
   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
   GH_TOKEN: ${{ secrets.CICD_GITHUB_TOKEN }}
+  SONAR_LOGIN: ${{ secrets.SONAR_TOKEN_DOTCMS_UI }}
   PULL_REQUEST_URL: ${{ github.event.pull_request._links.html.href }}
   IS_PULL_REQUEST: ${{ github.event_name == 'pull_request' }}
   HEAD_REF: ${{ github.head_ref }}
 jobs:
+  sonarqube:
+    runs-on: ubuntu-20.04
+    name: SonarQube
+    steps:
+    - uses: actions/checkout@v3
+      with:
+        fetch-depth: 0
+    - uses: actions/setup-node@v3
+      with:
+        node-version: 16.14.2
+        cache: npm
+        cache-dependency-path: core-web/package-lock.json
+    - uses: bahmutov/npm-install@v1
+      with:
+        working-directory: core-web
+    - name: Run SonarQube
+      id: sonar
+      working-directory: core-web
+      run: npx nx dotcms-ui:sonar --parallel 1
   check-all:
     outputs:
       name: ${{ steps.lint.outputs.name || steps.test.outputs.name || steps.build.outputs.name }}
       status: ${{ steps.lint.outputs.status || steps.test.outputs.status || steps.build.outputs.status }}
       color: ${{ steps.lint.outputs.color || steps.test.outputs.color || steps.build.outputs.color }}
       message: ${{ steps.persist_results.outputs.message }}
-    runs-on: ubuntu-20.04 # the image our job will run on
-    name: Frontend Checks # the name that will appear on the Actions UI
-    steps: # what steps it will perform
-      - uses: actions/checkout@v3 # checkout whatever branch the PR is using
+    runs-on: ubuntu-20.04
+    name: Frontend Checks
+    steps:
+      - uses: actions/checkout@v3
         with:
           fetch-depth: 0
       - uses: actions/setup-node@v3
@@ -35,7 +55,7 @@ jobs:
           node-version: 16.14.2
           cache: npm
           cache-dependency-path: core-web/package-lock.json
-      - uses: bahmutov/npm-install@v1 # trigger an `npm install`
+      - uses: bahmutov/npm-install@v1
         with:
           working-directory: core-web
       - name: Lint
@@ -76,7 +96,7 @@ jobs:
             exit 1;
           fi
   notify:
-    runs-on: ubuntu-20.04 # the image our job will run on
+    runs-on: ubuntu-20.04
     name: Notify Slack
     needs: check-all
     if: always()

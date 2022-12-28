@@ -162,11 +162,11 @@
         "sonar": {
             "executor": "@koliveira15/nx-sonarqube:scan",
             "options": {
-                "name": "core-web",
+                "name": "dotcms-ui",
                 "hostUrl": "https://sonarqube.dotcms.site",
                 "projectKey": "core-web",
                 "skipTargetDefaults": false,
-                "branches": false,
+                "branches": true,
                 "qualityGate": true,
                 "qualityGateTimeout": "300",
                 "skipImplicitDeps": false
