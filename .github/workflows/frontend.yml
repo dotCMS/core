@@ -32,6 +32,22 @@ jobs:
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN_DOTCMS_UI }}
           SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
+  notify:
+    runs-on: ubuntu-20.04
+    name: Notify Slack
+    needs: sonar
+    if: always()
+    steps:
+      - name: Slack Notification
+        uses: rtCamp/action-slack-notify@v2
+        env:
+          SLACK_WEBHOOK: ${{ secrets.UI_SLACK_WEBHOOK }}
+          SLACK_USERNAME: dotBot
+          SLACK_ICON: https://dotnet.libhunt.com/images/promo-ad-images/000/000/022/main.png?1640908816
+          SLACK_COLOR: ${{ success() && '#5E7D00' || '#ff2400' }}
+          SLACK_TITLE: "SonarQube: (${{ success() && 'Success' || 'Failed' }})"
+          SLACK_MESSAGE: ${{ success() && 'All good!' || 'Please check your pull request' }} 
+          SLACK_FOOTER: ${{ env.PULL_REQUEST_URL }}
   # check-all:
   #   outputs:
   #     name: ${{ steps.lint.outputs.name || steps.test.outputs.name || steps.build.outputs.name }}
