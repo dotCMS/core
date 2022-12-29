@@ -33,7 +33,7 @@ jobs:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN_DOTCMS_UI }}
           SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
       - name: "Find the report"
-        run: "cd core-web && ls -la"
+        run: "cd core-web/.scannerwork && ls -la"
       # - uses: sonarsource/sonarqube-quality-gate-action@master
       #   timeout-minutes: 5
       #   env:
