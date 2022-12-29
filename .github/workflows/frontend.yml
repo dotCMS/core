@@ -38,10 +38,11 @@ jobs:
       - uses: sonarsource/sonarqube-quality-gate-action@master
         timeout-minutes: 5
         with:
-          scanMetadataReportFile: github/workspace/core-web/.scannerwork/report-task.txt
+          scanMetadataReportFile: /home/runner/work/core/core/core-web/.scannerwork/report-task.txt
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN_DOTCMS_UI }}
       - uses: sonarsource/sonarqube-quality-gate-action@master
+        if: always()
         timeout-minutes: 5
         with:
           scanMetadataReportFile: core-web/.scannerwork/report-task.txt
