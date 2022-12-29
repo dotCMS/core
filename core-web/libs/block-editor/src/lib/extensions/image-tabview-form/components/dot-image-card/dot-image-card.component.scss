@@ -70,16 +70,6 @@
         }
     }
 
-    .image-container {
-        filter: blur(10px);
-        -webkit-filter: blur(10px);
-        position: absolute;
-        background-size: cover;
-        opacity: 0.4;
-        width: 100%;
-        height: 100%;
-    }
-
     .state {
         align-items: center;
         display: flex;
