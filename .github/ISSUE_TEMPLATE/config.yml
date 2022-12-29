@@ -1,0 +1,10 @@
+blank_issues_enabled: false
+contact_links:
+
+  - name: New to working on dotCMS?
+    url: https://docs.google.com/presentation/d/1C1oCESIL9Z84xXo1DPWQZh48c4BSGlVRAn1DYGEFMUw
+    about: Read up on How dotCMS uses GitHub.
+
+  - name: Looking for Customer Support?
+    url: https://www.dotcms.com/contact-us/
+    about: Feel free to use the Support Portal if you are an existing customer. 
