@@ -12,9 +12,11 @@ import javax.servlet.http.HttpServletResponse;
  */
 public interface ExperimentWebAPI {
 
-    SelectedExperiment NONE_EXPERIMENT = new SelectedExperiment("NONE", "NONE", null,
-            new SelectedVariant("NONE", null));
-
+    SelectedExperiment NONE_EXPERIMENT = new SelectedExperiment.Builder()
+            .id("NONE")
+            .name("NONE")
+            .variant(new SelectedVariant("NONE", null))
+            .build();
     /**
      * Return if the current user should be included into a set of RUNNING {@link Experiment}:
      *

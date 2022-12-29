@@ -95,7 +95,7 @@ services:
         condition: service_healthy
     restart: always
     ports:
-      - "${JITSU_CONFIGURATOR_PORT:-7000}:7000"
+      - "${JITSU_CONFIGURATOR_PORT:-7001}:7001"
 
   redis:
     container_name: jitsu_redis
