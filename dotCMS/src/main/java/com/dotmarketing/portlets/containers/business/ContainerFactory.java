@@ -24,7 +24,7 @@ public interface ContainerFactory {
 	 * @param container
 	 * @throws DotDataException
 	 */
-	void save(Container container) throws DotDataException;
+	void save(Container container, Host host) throws DotDataException;
 
     /**
      * Finds all containers attached to a host

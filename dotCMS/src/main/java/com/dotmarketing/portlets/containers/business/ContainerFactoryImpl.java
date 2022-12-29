@@ -97,7 +97,7 @@ public class ContainerFactoryImpl implements ContainerFactory {
 	}
 
 	@WrapInTransaction
-	public void save(final Container container) throws DotDataException {
+	public void save(final Container container, final Host host) throws DotDataException {
 		if(!UtilMethods.isSet(container.getIdentifier())){
 			throw new DotStateException("Cannot save a container without an Identifier");
 		}
@@ -107,6 +107,7 @@ public class ContainerFactoryImpl implements ContainerFactory {
 		}
 
 		if(!UtilMethods.isSet(find(container.getInode()))) {
+			insertIdentifierInDB(container, host);
 			insertInodeInDB(container);
 			insertContainerInDB(container);
 		} else {
@@ -156,6 +157,24 @@ public class ContainerFactoryImpl implements ContainerFactory {
 		dc.loadResult();
 	}
 
+	private void executeQueryWithData(final String SQL, final String inode, final Date iDate, final String owner, boolean createNew)
+			throws DotDataException {
+		DotConnect dc = new DotConnect();
+		dc.setSQL(SQL);
+
+		if(createNew) {
+			dc.addParam(inode);
+		}
+
+		dc.addParam(iDate);
+		dc.addParam(owner);
+
+		if(!createNew) {
+			dc.addParam(inode);
+		}
+
+		dc.loadResult();
+	}
 	private void insertContainerInDB(final Container container) throws DotDataException {
 		executeQueryWithData(ContainerSQL.INSERT_CONTAINER, container.getInode(),
 				container.getCode(), container.getPreLoop(), container.getPostLoop(),
@@ -175,31 +194,25 @@ public class ContainerFactoryImpl implements ContainerFactory {
 				container.getLuceneQuery(), container.getNotes(), container.getIdentifier(), false);
 	}
 
-	private void executeQueryWithData(final String SQL, final String inode, final Date iDate, final String owner, boolean createNew)
-			throws DotDataException {
-		DotConnect dc = new DotConnect();
-		dc.setSQL(SQL);
 
-		if(createNew) {
-			dc.addParam(inode);
-		}
-
-		dc.addParam(iDate);
-		dc.addParam(owner);
-
-		if(!createNew) {
-			dc.addParam(inode);
-		}
-
-		dc.loadResult();
-	}
 	private void insertInodeInDB(final Container container) throws DotDataException{
 		executeQueryWithData(ContainerSQL.INSERT_INODE, container.getInode(), container.getiDate(), container.getOwner(), true);
 	}
 	private void updateInodeInDB(final Container container) throws DotDataException{
 		executeQueryWithData(ContainerSQL.UPDATE_INODE, container.getInode(), container.getiDate(), container.getOwner(), false);
 	}
+	private void insertIdentifierInDB(final Container container, final Host host) throws DotDataException{
 
+		final Identifier identifier = new Identifier(container.getIdentifier());
+		identifier.setAssetName(container.getIdentifier()+".containers");
+		identifier.setParentPath("/");
+		identifier.setAssetType("containers");
+		identifier.setHostId(host.getIdentifier());
+		identifier.setOwner(container.getOwner());
+		identifier.setCreateDate(new Date());
+
+		identifierAPI.save(identifier);
+	}
 	@Override
 	public List<Container> findContainersUnder(final Host parentPermissionable) throws DotDataException {
 
