@@ -4947,8 +4947,12 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 //Clean-up the contentlet object, we don' want to persist this URL in the db
                 removeURLFromContentlet( contentlet );
 
-                //Verify if the template needs to be update for all versions of the content page
-                updateTemplateInAllLanguageVersions(contentlet, user);
+                try {
+                    //Verify if the template needs to be update for all versions of the content page
+                    updateTemplateInAllLanguageVersions(contentlet, user);
+                } catch (NotFoundInDbException e) {
+                    Logger.debug(ESContentletAPIImpl.class, e.getMessage(), e);
+                }
             }
 
             final boolean structureHasAHostField = hasAHostField(contentlet.getStructureInode());
@@ -5869,7 +5873,16 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 final Contentlet contentInAnyLang = findContentletByIdentifierAnyLanguage(contentlet.getIdentifier(), contentlet.getVariantId());
 
                 if (null == contentInAnyLang || !UtilMethods.isSet(contentInAnyLang.getIdentifier())) {
-                    return;
+                    final Contentlet contentletByIdentifierAnyLanguageArchived = findContentletByIdentifierAnyLanguage(
+                            contentlet.getIdentifier(), true);
+
+                    if (null == contentletByIdentifierAnyLanguageArchived || !UtilMethods.isSet(contentletByIdentifierAnyLanguageArchived.getIdentifier())) {
+                        throw new NotFoundInDbException(String.format(
+                                "Contentlet with ID '%s' has not been found: ", contentlet.getIdentifier()));
+                    } else {
+                        throw new DotDataException(String.format(
+                                "Contentlet is currently marked as 'Archived'.", contentlet.getIdentifier()));
+                    }
                 }
 
                 final String existingTemplate = loadField(contentInAnyLang.getInode(), templateField.get()).toString();
