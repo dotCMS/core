@@ -5879,9 +5879,11 @@ public class ESContentletAPIImpl implements ContentletAPI {
                     if (null == contentletByIdentifierAnyLanguageArchived || !UtilMethods.isSet(contentletByIdentifierAnyLanguageArchived.getIdentifier())) {
                         throw new NotFoundInDbException(String.format(
                                 "Contentlet with ID '%s' has not been found: ", contentlet.getIdentifier()));
-                    } else {
+                    } else if (contentletByIdentifierAnyLanguageArchived.isArchived()) {
                         throw new DotDataException(String.format(
                                 "Contentlet is currently marked as 'Archived'.", contentlet.getIdentifier()));
+                    } else {
+                        return;
                     }
                 }
 
