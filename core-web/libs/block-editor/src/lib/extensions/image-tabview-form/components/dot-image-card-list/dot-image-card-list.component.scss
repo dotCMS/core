@@ -7,6 +7,7 @@
     flex-direction: column;
 
     .wrapper {
+        padding: 0 $spacing-5;
         display: flex;
         align-items: center;
         justify-content: center;
@@ -14,7 +15,6 @@
         flex-grow: 1;
         height: 250px;
         gap: 0 $spacing-3;
-        padding: 0 $spacing-5;
         overflow: hidden;
     }
 
@@ -24,20 +24,18 @@
 
     p {
         margin: $spacing-3 0;
+        font-size: 1.125 * $dot-editor-size;
     }
 
     &::ng-deep {
         dot-image-card,
         dot-image-card-skeleton {
-            width: 50%;
-        }
-
-        .p-scroller {
-            scrollbar-gutter: stable both-edges;
+            width: calc(50% - $spacing-1);
         }
 
         .p-scroller-content {
-            padding: 0 $spacing-3;
+            padding: 0 $spacing-5;
+            max-width: 100%;
         }
 
         .card-list-row {
