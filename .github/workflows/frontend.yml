@@ -38,6 +38,8 @@ jobs:
         uses: sonarsource/sonarqube-quality-gate-action@master
         # Force to fail step after specific time.
         timeout-minutes: 5
+        with:
+          scanMetadataReportFile: /core-web/.scannerwork/report-task.txt
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN_DOTCMS_UI }}
 
