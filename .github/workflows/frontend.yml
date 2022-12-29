@@ -21,7 +21,7 @@ env:
 jobs:
   sonar:
     outputs:
-      name: ${{ steps.persist_results.outputs.name }}
+      message: ${{ steps.persist_results.outputs.message }}
       status: ${{ steps.persist_results.outputs.status }}
       color: ${{ steps.persist_results.outputs.color }}
     runs-on: ubuntu-20.04
