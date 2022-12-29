@@ -36,24 +36,16 @@ jobs:
         run: "cd core-web/.scannerwork && pwd && ls -la"
         # /home/runner/work/core/core/core-web/.scannerwork/report-task.txt
       - uses: sonarsource/sonarqube-quality-gate-action@master
-        with:
-          scanMetadataReportFile: /home/runner/work/core/core/core-web/.scannerwork/report-task.txt
-        timeout-minutes: 5
-        env:
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN_DOTCMS_UI }}
-      - uses: sonarsource/sonarqube-quality-gate-action@master
-        if: always()
+        id: sonarqube-quality-gate-check
         with:
           scanMetadataReportFile: core-web/.scannerwork/report-task.txt
         timeout-minutes: 5
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN_DOTCMS_UI }}
-
-
       # Optionally you can use the output from the Quality Gate in another step.
       # The possible outputs of the `quality-gate-status` variable are `PASSED`, `WARN` or `FAILED`.
-      # - name: "Example show SonarQube Quality Gate Status value"
-      #   run: echo "The Quality Gate status is ${{ steps.sonarqube-quality-gate-check.outputs.quality-gate-status }}"
+      - name: "Example show SonarQube Quality Gate Status value"
+        run: echo "The Quality Gate status is ${{ steps.sonarqube-quality-gate-check.outputs.quality-gate-status }}"
   # notify-sucess:
   #   runs-on: ubuntu-20.04
   #   name: Notify Slack
