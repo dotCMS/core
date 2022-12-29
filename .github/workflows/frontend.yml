@@ -32,14 +32,8 @@ jobs:
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN_DOTCMS_UI }}
           SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
-      # Check the Quality Gate status.
-      - name: SonarQube Quality Gate check
-        id: sonarqube-quality-gate-check
-        uses: sonarsource/sonarqube-quality-gate-action@master
-        # Force to fail step after specific time.
+      - uses: sonarsource/sonarqube-quality-gate-action@master
         timeout-minutes: 5
-        with:
-          scanMetadataReportFile: /core-web/.scannerwork/report-task.txt
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN_DOTCMS_UI }}
 
