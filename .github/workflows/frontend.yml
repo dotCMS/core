@@ -20,6 +20,10 @@ env:
   
 jobs:
   sonar:
+    outputs:
+      name: ${{ steps.persist_results.outputs.name }}
+      status: ${{ steps.persist_results.outputs.status }}
+      color: ${{ steps.persist_results.outputs.color }}
     runs-on: ubuntu-20.04
     name: SonarQube
     steps:
@@ -47,38 +51,48 @@ jobs:
       - name: "Example show SonarQube Quality Gate Status value"
         if: always()
         run: echo "The Quality Gate status is ${{ steps.sonarqube-quality-gate-check.outputs.quality-gate-status }}"
-  # notify-sucess:
-  #   runs-on: ubuntu-20.04
-  #   name: Notify Slack
-  #   needs: sonar
-  #   if: success()
-  #   steps:
-  #     - name: Success
-  #       uses: rtCamp/action-slack-notify@v2
-  #       env:
-  #         SLACK_WEBHOOK: ${{ secrets.UI_SLACK_WEBHOOK }}
-  #         SLACK_USERNAME: dotBot
-  #         SLACK_ICON: https://dotnet.libhunt.com/images/promo-ad-images/000/000/022/main.png?1640908816
-  #         SLACK_COLOR: "#5E7D00"
-  #         SLACK_TITLE: "SonarQube: Success"
-  #         SLACK_MESSAGE: All good!
-  #         SLACK_FOOTER: ${{ env.PULL_REQUEST_URL }}
-  # notify-failure:
-  #   runs-on: ubuntu-20.04
-  #   name: Notify Slack
-  #   needs: sonar
-  #   if: failure()
-  #   steps:
-  #     - name: Failed
-  #       uses: rtCamp/action-slack-notify@v2
-  #       env:
-  #         SLACK_WEBHOOK: ${{ secrets.UI_SLACK_WEBHOOK }}
-  #         SLACK_USERNAME: dotBot
-  #         SLACK_ICON: https://dotnet.libhunt.com/images/promo-ad-images/000/000/022/main.png?1640908816
-  #         SLACK_COLOR: "#ff2400"
-  #         SLACK_TITLE: "SonarQube: Failed"
-  #         SLACK_MESSAGE: Please check your pull request
-  #         SLACK_FOOTER: ${{ env.PULL_REQUEST_URL }}
+      - name: "Set results"
+        id: "persist_results"
+        if: always()
+        run: |
+          # Check the value of the quality-gate-status output
+          if [ "${{ steps.sonarqube-quality-gate-check.outputs.quality-gate-status }}" == "PASSED" ]; then
+            # Output success status, green color, and "All good!" message
+            echo "status=success" >>$GITHUB_OUTPUT
+            echo "color=#5E7D00" >>$GITHUB_OUTPUT
+            echo "message=All good!" >>$GITHUB_OUTPUT
+          elif [ "${{ steps.sonarqube-quality-gate-check.outputs.quality-gate-status }}" == "FAILED" ]; then
+            # Output failure status, red color, and "Please check your PR" message
+            echo "status=failure" >>$GITHUB_OUTPUT
+            echo "color=#ff2400" >>$GITHUB_OUTPUT
+            echo "message=Please check your PR" >>$GITHUB_OUTPUT
+          else
+            # Output warning status, orange color, and "Maybe you can fix this warning" message
+            echo "status=warning" >>$GITHUB_OUTPUT
+            echo "color=#FFC107" >>$GITHUB_OUTPUT
+            echo "message=Maybe you can fix this warning" >>$GITHUB_OUTPUT
+            
+          fi
+  notify:
+    runs-on: ubuntu-20.04
+    name: Notify Slack
+    needs: sonar
+    if: always()
+    steps:
+      - name: Send Notification
+        uses: rtCamp/action-slack-notify@v2
+        env:
+          SLACK_WEBHOOK: ${{ secrets.UI_SLACK_WEBHOOK }}
+          SLACK_USERNAME: dotBot
+          SLACK_ICON: https://dotnet.libhunt.com/images/promo-ad-images/000/000/022/main.png?1640908816
+          SLACK_COLOR: ${{ needs.sonar.outputs.color }}
+          SLACK_TITLE: "SonarQube: ${{ needs.sonar.outputs.status }}"
+          SLACK_MESSAGE: ${{ needs.sonar.outputs.message }}
+          SLACK_FOOTER: ${{ env.PULL_REQUEST_URL }}
+
+
+
+
   # check-all:
   #   outputs:
   #     name: ${{ steps.lint.outputs.name || steps.test.outputs.name || steps.build.outputs.name }}
