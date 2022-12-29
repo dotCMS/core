@@ -1,6 +1,7 @@
 package com.dotmarketing.business;
 
 import static com.dotcms.util.CollectionsUtils.set;
+import static com.dotcms.variant.VariantAPI.DEFAULT_VARIANT;
 
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.util.transform.TransformerLocator;
@@ -323,7 +324,7 @@ public class VersionableFactoryImpl extends VersionableFactory {
     @Override
     protected Optional<ContentletVersionInfo> getContentletVersionInfo(final String identifier,
 			final long lang) throws DotDataException, DotStateException {
-        return getContentletVersionInfo(identifier, lang, VariantAPI.DEFAULT_VARIANT.name());
+        return getContentletVersionInfo(identifier, lang, DEFAULT_VARIANT.name());
     }
 
 	@Override
@@ -375,7 +376,7 @@ public class VersionableFactoryImpl extends VersionableFactory {
 
     @Override
     protected Optional<ContentletVersionInfo> findContentletVersionInfoInDB(String identifier, long lang)throws DotDataException, DotStateException {
-		return findContentletVersionInfoInDB(identifier, lang, VariantAPI.DEFAULT_VARIANT.name());
+		return findContentletVersionInfoInDB(identifier, lang, DEFAULT_VARIANT.name());
     }
 
 	@Override
@@ -389,9 +390,30 @@ public class VersionableFactoryImpl extends VersionableFactory {
 	public Optional<ContentletVersionInfo> findAnyContentletVersionInfo(final String identifier, final boolean deleted)
 			throws DotDataException {
 		final DotConnect dotConnect = new DotConnect()
-				.setSQL("SELECT * FROM contentlet_version_info WHERE identifier=  ? AND deleted = ?")
+				.setSQL("SELECT * FROM contentlet_version_info WHERE identifier=  ? AND deleted = ? "
+						+ "AND variant_id = '"+DEFAULT_VARIANT.name()+"'")
 				.addParam(identifier)
 				.addParam(deleted)
+				.setMaxRows(1);
+
+		final List<ContentletVersionInfo> versionInfos = TransformerLocator
+				.createContentletVersionInfoTransformer(dotConnect.loadObjectResults()).asList();
+
+		return versionInfos == null || versionInfos.isEmpty()
+				? Optional.empty()
+				: Optional.of(versionInfos.get(0));
+	}
+
+	@Override
+	public Optional<ContentletVersionInfo> findAnyContentletVersionInfo(final String identifier,
+			final String variant, final boolean deleted)
+			throws DotDataException {
+		final DotConnect dotConnect = new DotConnect()
+				.setSQL("SELECT * FROM contentlet_version_info WHERE identifier=  ? AND deleted = ? "
+						+ "AND variant_id = ?")
+				.addParam(identifier)
+				.addParam(deleted)
+				.addParam(variant)
 				.setMaxRows(1);
 
 		final List<ContentletVersionInfo> versionInfos = TransformerLocator
@@ -499,7 +521,7 @@ public class VersionableFactoryImpl extends VersionableFactory {
 
     @Override
     protected ContentletVersionInfo createContentletVersionInfo(Identifier identifier, long lang, String workingInode) throws DotStateException, DotDataException {
-		return createContentletVersionInfo(identifier, lang, workingInode, VariantAPI.DEFAULT_VARIANT.name());
+		return createContentletVersionInfo(identifier, lang, workingInode, DEFAULT_VARIANT.name());
     }
 
 	@Override

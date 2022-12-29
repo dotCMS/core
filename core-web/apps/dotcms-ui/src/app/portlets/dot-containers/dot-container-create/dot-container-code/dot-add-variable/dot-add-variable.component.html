@@ -1,23 +1,22 @@
 <p-dataView *ngIf="vm$ | async as vm" [value]="vm.variables" layout="list">
     <ng-template let-variable pTemplate="listItem">
-        <div class="col-12">
-            <div class="dot-add-variable-list__item flex p-2">
-                <div class="dot-add-variable-list__detail flex-1">
-                    <div class="variable-name text-2xl">{{ variable?.name }}</div>
-                    <div class="variable-description text-black-alpha-50">
+        <div class="dot-add-variable-list__item">
+            <div>
+                <h3>{{ variable?.name }}</h3>
+                <p>
+                    <small>
                         {{ variable?.fieldTypeLabel }}
-                    </div>
-                </div>
-                <div class="dot-add-variable-list__action">
-                    <button
-                        class="p-button-outlined p-button-secondary"
-                        [attr.data-testId]="variable.variable"
-                        [label]="'Add' | dm"
-                        (click)="onSave(variable.variable)"
-                        pButton
-                    ></button>
-                </div>
+                    </small>
+                </p>
             </div>
+
+            <button
+                class="p-button-outlined p-button-secondary p-button-sm"
+                [attr.data-testId]="variable.variable"
+                [label]="'Add' | dm"
+                (click)="onSave(variable.variable)"
+                pButton
+            ></button>
         </div>
     </ng-template>
 </p-dataView>
