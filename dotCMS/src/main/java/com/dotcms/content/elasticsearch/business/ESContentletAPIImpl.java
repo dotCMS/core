@@ -5891,24 +5891,24 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 if (!existingTemplate.equals(newTemplate)){
                     final List<ContentletVersionInfo> contentletVersions = APILocator.getVersionableAPI().findContentletVersionInfos(identifier, contentlet.getVariantId());
 
-                for (final ContentletVersionInfo version : contentletVersions) {
-                    final Contentlet contentVersion = find(version.getWorkingInode(), user, DONT_RESPECT_FRONTEND_ROLES);
-                    if (contentlet.getInode().equals(contentVersion.getInode())) {
-                        continue;
-                    }
+                    for (final ContentletVersionInfo version : contentletVersions) {
+                        final Contentlet contentVersion = find(version.getWorkingInode(), user, DONT_RESPECT_FRONTEND_ROLES);
+                        if (contentlet.getInode().equals(contentVersion.getInode())) {
+                            continue;
+                        }
 
-                    //Create a new working version with the template when the page version is live and working
-                    final Contentlet newPageVersion = checkout(contentVersion.getInode(), user, DONT_RESPECT_FRONTEND_ROLES);
-                    newPageVersion.setBoolProperty(DO_NOT_UPDATE_TEMPLATES, true);
-                    newPageVersion.setStringProperty(HTMLPageAssetAPI.TEMPLATE_FIELD, newTemplate);
-                    newPageVersion.setBoolProperty(Contentlet.DONT_VALIDATE_ME, true);
+                        //Create a new working version with the template when the page version is live and working
+                        final Contentlet newPageVersion = checkout(contentVersion.getInode(), user, DONT_RESPECT_FRONTEND_ROLES);
+                        newPageVersion.setBoolProperty(DO_NOT_UPDATE_TEMPLATES, true);
+                        newPageVersion.setStringProperty(HTMLPageAssetAPI.TEMPLATE_FIELD, newTemplate);
+                        newPageVersion.setBoolProperty(Contentlet.DONT_VALIDATE_ME, true);
 
-                    if (contentlet.getMap().containsKey(Contentlet.DISABLE_WORKFLOW)) {
-                        newPageVersion.getMap().put(Contentlet.DISABLE_WORKFLOW, contentlet.getMap().get(Contentlet.DISABLE_WORKFLOW));
-                    }
-                    if (contentlet.getMap().containsKey(Contentlet.WORKFLOW_IN_PROGRESS)) {
-                        newPageVersion.getMap().put(Contentlet.WORKFLOW_IN_PROGRESS, contentlet.getMap().get(Contentlet.WORKFLOW_IN_PROGRESS));
-                    }
+                        if (contentlet.getMap().containsKey(Contentlet.DISABLE_WORKFLOW)) {
+                            newPageVersion.getMap().put(Contentlet.DISABLE_WORKFLOW, contentlet.getMap().get(Contentlet.DISABLE_WORKFLOW));
+                        }
+                        if (contentlet.getMap().containsKey(Contentlet.WORKFLOW_IN_PROGRESS)) {
+                            newPageVersion.getMap().put(Contentlet.WORKFLOW_IN_PROGRESS, contentlet.getMap().get(Contentlet.WORKFLOW_IN_PROGRESS));
+                        }
 
                         checkin(newPageVersion,  user, DONT_RESPECT_FRONTEND_ROLES);
                     }
