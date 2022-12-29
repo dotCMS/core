@@ -17,7 +17,6 @@ env:
   PULL_REQUEST_URL: ${{ github.event.pull_request._links.html.href }}
   IS_PULL_REQUEST: ${{ github.event_name == 'pull_request' }}
   HEAD_REF: ${{ github.head_ref }}
-  
 jobs:
   sonar:
     outputs:
@@ -36,9 +35,6 @@ jobs:
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN_DOTCMS_UI }}
           SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
-      - name: "Find the report"
-        run: "cd core-web/.scannerwork && pwd && ls -la"
-        # /home/runner/work/core/core/core-web/.scannerwork/report-task.txt
       - uses: sonarsource/sonarqube-quality-gate-action@master
         id: sonarqube-quality-gate-check
         with:
@@ -46,11 +42,6 @@ jobs:
         timeout-minutes: 5
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN_DOTCMS_UI }}
-      # Optionally you can use the output from the Quality Gate in another step.
-      # The possible outputs of the `quality-gate-status` variable are `PASSED`, `WARN` or `FAILED`.
-      - name: "Example show SonarQube Quality Gate Status value"
-        if: always()
-        run: echo "The Quality Gate status is ${{ steps.sonarqube-quality-gate-check.outputs.quality-gate-status }}"
       - name: "Set results"
         id: "persist_results"
         if: always()
@@ -73,7 +64,7 @@ jobs:
             echo "message=Maybe you can fix this warning" >>$GITHUB_OUTPUT
             
           fi
-  notify:
+  notify-snar:
     runs-on: ubuntu-20.04
     name: Notify Slack
     needs: sonar
@@ -89,80 +80,76 @@ jobs:
           SLACK_TITLE: "SonarQube: ${{ needs.sonar.outputs.status }}"
           SLACK_MESSAGE: ${{ needs.sonar.outputs.message }}
           SLACK_FOOTER: ${{ env.PULL_REQUEST_URL }}
-
-
-
-
-  # check-all:
-  #   outputs:
-  #     name: ${{ steps.lint.outputs.name || steps.test.outputs.name || steps.build.outputs.name }}
-  #     status: ${{ steps.lint.outputs.status || steps.test.outputs.status || steps.build.outputs.status }}
-  #     color: ${{ steps.lint.outputs.color || steps.test.outputs.color || steps.build.outputs.color }}
-  #     message: ${{ steps.persist_results.outputs.message }}
-  #   runs-on: ubuntu-20.04
-  #   name: Frontend Checks
-  #   steps: # what steps it will perform
-  #     - uses: actions/checkout@v3 # checkout whatever branch the PR is using
-  #       with:
-  #         fetch-depth: 0
-  #     - uses: actions/setup-node@v3
-  #       with:
-  #         node-version: 16.14.2
-  #         cache: npm
-  #         cache-dependency-path: core-web/package-lock.json
-  #     - uses: bahmutov/npm-install@v1 # trigger an `npm install`
-  #       with:
-  #         working-directory: core-web
-  #     - name: Lint
-  #       id: lint
-  #       working-directory: core-web
-  #       run: |
-  #         if ! (npx nx affected --target=lint --base=origin/master --parallel --exclude=${{ env.EXCLUDED_PROJECTS }}) then
-  #           echo "name=:x: Lint" >>$GITHUB_OUTPUT
-  #           echo "status=failure" >>$GITHUB_OUTPUT
-  #           echo "color=#ff2400" >>$GITHUB_OUTPUT
-  #           exit 1;
-  #         fi
-  #     - name: Test
-  #       id: test
-  #       working-directory: core-web
-  #       run: |
-  #         if ! (npx nx affected --target=test --base=origin/master --parallel --exclude=${{ env.EXCLUDED_PROJECTS }}) then
-  #           echo "name=:x: Test" >>$GITHUB_OUTPUT
-  #           echo "status=failure" >>$GITHUB_OUTPUT
-  #           echo "color=#ff2400" >>$GITHUB_OUTPUT
-  #           exit 1;
-  #         fi
-  #     - name: Push Tests to GitHub
-  #       id: persist_results
-  #       if: success() || failure()
-  #       run: |
-  #         chmod +x .cicd/github.sh && source .cicd/github.sh
-  #         persistResults
-  #         echo "message=$(logResults)" >>$GITHUB_OUTPUT
-  #     - name: Build
-  #       id: build
-  #       working-directory: core-web
-  #       run:  |
-  #         if ! (npx nx build dotcms-ui) then
-  #           echo "name=:x: Build" >>$GITHUB_OUTPUT
-  #           echo "status=failure" >>$GITHUB_OUTPUT
-  #           echo "color=#ff2400" >>$GITHUB_OUTPUT
-  #           exit 1;
-  #         fi
-  # notify:
-  #   runs-on: ubuntu-20.04
-  #   name: Notify Slack
-  #   needs: check-all
-  #   if: always()
-  #   steps:
-  #     - name: Slack Notification
-  #       uses: rtCamp/action-slack-notify@v2
-  #       env:
-  #         SLACK_WEBHOOK: ${{ secrets.UI_SLACK_WEBHOOK }}
-  #         SLACK_USERNAME: dotBot
-  #         SLACK_ICON: https://avatars.slack-edge.com/2020-09-21/1362682893351_5b474f175640cf5f5912_72.png
-  #         SLACK_COLOR: ${{ needs.check-all.outputs.color && needs.check-all.outputs.color || '#5E7D00' }}
-  #         SLACK_TITLE: "${{ needs.check-all.outputs.name && needs.check-all.outputs.name || ':white_check_mark: Frontend Checks' }}: (${{ needs.check-all.outputs.status && needs.check-all.outputs.status || 'Success' }})"
-  #         SLACK_MESSAGE: ${{ needs.check-all.outputs.message && needs.check-all.outputs.message || 'Everything went well, ready to merge'}} 
-  #         SLACK_FOOTER: ${{ env.PULL_REQUEST_URL }}
+  check-all:
+    outputs:
+      name: ${{ steps.lint.outputs.name || steps.test.outputs.name || steps.build.outputs.name }}
+      status: ${{ steps.lint.outputs.status || steps.test.outputs.status || steps.build.outputs.status }}
+      color: ${{ steps.lint.outputs.color || steps.test.outputs.color || steps.build.outputs.color }}
+      message: ${{ steps.persist_results.outputs.message }}
+    runs-on: ubuntu-20.04
+    name: Frontend Checks
+    steps: # what steps it will perform
+      - uses: actions/checkout@v3 # checkout whatever branch the PR is using
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v3
+        with:
+          node-version: 16.14.2
+          cache: npm
+          cache-dependency-path: core-web/package-lock.json
+      - uses: bahmutov/npm-install@v1 # trigger an `npm install`
+        with:
+          working-directory: core-web
+      - name: Lint
+        id: lint
+        working-directory: core-web
+        run: |
+          if ! (npx nx affected --target=lint --base=origin/master --parallel --exclude=${{ env.EXCLUDED_PROJECTS }}) then
+            echo "name=:x: Lint" >>$GITHUB_OUTPUT
+            echo "status=failure" >>$GITHUB_OUTPUT
+            echo "color=#ff2400" >>$GITHUB_OUTPUT
+            exit 1;
+          fi
+      - name: Test
+        id: test
+        working-directory: core-web
+        run: |
+          if ! (npx nx affected --target=test --base=origin/master --parallel --exclude=${{ env.EXCLUDED_PROJECTS }}) then
+            echo "name=:x: Test" >>$GITHUB_OUTPUT
+            echo "status=failure" >>$GITHUB_OUTPUT
+            echo "color=#ff2400" >>$GITHUB_OUTPUT
+            exit 1;
+          fi
+      - name: Push Tests to GitHub
+        id: persist_results
+        if: success() || failure()
+        run: |
+          chmod +x .cicd/github.sh && source .cicd/github.sh
+          persistResults
+          echo "message=$(logResults)" >>$GITHUB_OUTPUT
+      - name: Build
+        id: build
+        working-directory: core-web
+        run:  |
+          if ! (npx nx build dotcms-ui) then
+            echo "name=:x: Build" >>$GITHUB_OUTPUT
+            echo "status=failure" >>$GITHUB_OUTPUT
+            echo "color=#ff2400" >>$GITHUB_OUTPUT
+            exit 1;
+          fi
+  notify-check-all:
+    runs-on: ubuntu-20.04
+    name: Notify Slack
+    needs: check-all
+    if: always()
+    steps:
+      - name: Slack Notification
+        uses: rtCamp/action-slack-notify@v2
+        env:
+          SLACK_WEBHOOK: ${{ secrets.UI_SLACK_WEBHOOK }}
+          SLACK_USERNAME: dotBot
+          SLACK_ICON: https://avatars.slack-edge.com/2020-09-21/1362682893351_5b474f175640cf5f5912_72.png
+          SLACK_COLOR: ${{ needs.check-all.outputs.color && needs.check-all.outputs.color || '#5E7D00' }}
+          SLACK_TITLE: "${{ needs.check-all.outputs.name && needs.check-all.outputs.name || ':white_check_mark: Frontend Checks' }}: (${{ needs.check-all.outputs.status && needs.check-all.outputs.status || 'Success' }})"
+          SLACK_MESSAGE: ${{ needs.check-all.outputs.message && needs.check-all.outputs.message || 'Everything went well, ready to merge'}} 
+          SLACK_FOOTER: ${{ env.PULL_REQUEST_URL }}
