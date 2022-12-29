@@ -13,8 +13,8 @@
         flex-direction: column;
         flex-grow: 1;
         height: 250px;
-        gap: 0 $dot-editor-size;
-        padding: 0 (1.3125 * $dot-editor-size);
+        gap: 0 $spacing-3;
+        padding: 0 $spacing-5;
         overflow: hidden;
     }
 
@@ -22,13 +22,22 @@
         justify-content: flex-start;
     }
 
+    p {
+        margin: $spacing-3 0;
+    }
+
     &::ng-deep {
+        dot-image-card,
+        dot-image-card-skeleton {
+            width: 50%;
+        }
+
         .p-scroller {
             scrollbar-gutter: stable both-edges;
         }
 
         .p-scroller-content {
-            padding: 0 7px;
+            padding: 0 $spacing-3;
         }
 
         .card-list-row {
@@ -36,6 +45,7 @@
             justify-content: space-between;
             width: 100%;
             min-height: 110px;
+            gap: $spacing-3;
         }
     }
 }

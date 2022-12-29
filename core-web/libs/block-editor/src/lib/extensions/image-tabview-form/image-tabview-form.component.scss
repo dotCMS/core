@@ -1,19 +1,25 @@
 @use "variables" as *;
 
-.tabview-container {
-    width: 46.25 * $dot-editor-size;
-    background: $white;
+:host {
     border: 1px solid $gray-light;
+    display: block;
+}
+
+.tabview-container {
+    width: 720px;
+    background: $white;
 }
 
 .wrapper {
     width: 100%;
-    padding: 1.3125 * $dot-editor-size;
+    padding: $spacing-4;
     height: 400px;
 }
 
 .search-box {
-    padding: 1.3125 * $dot-editor-size;
+    padding: $spacing-4 $spacing-3;
+    scrollbar-gutter: stable both-edges;
+    overflow: auto;
 
     &,
     span {
@@ -24,25 +30,44 @@
         width: 100%;
         border: 1px solid $gray-light;
         border-radius: $border-radius;
-        padding: 0.5 * $dot-editor-size;
-        padding-left: $dot-editor-size;
+        padding: $spacing-1;
+        padding-left: $spacing-3;
     }
 }
 
 :host::ng-deep {
     .p-tabview {
+        .p-tabview-nav li.p-highlight .p-tabview-nav-link {
+            border-bottom: 4px solid $brand-primary;
+        }
+
         .p-tabview-nav {
-            padding: 0 (1.3125 * $dot-editor-size);
+            padding: 0 $spacing-5;
 
             li {
-                .p-tabview-nav-link:focus {
-                    background: $white;
+                .p-tabview-nav-link {
+                    padding: $spacing-4 $spacing-5;
+
+                    &:focus {
+                        background: $white;
+                    }
                 }
 
                 &:hover .p-tabview-nav-link {
                     background: rgba($brand-secondary_rgb, 0.12);
                 }
             }
+        }
+        .p-tabview-title {
+            font-size: $dot-editor-size;
+            color: $brand-secondary;
+            font-weight: normal;
+            text-transform: unset;
+        }
+
+        .p-tabview-left-icon {
+            font-size: 1.5 * $dot-editor-size;
+            color: $brand-primary;
         }
     }
 }

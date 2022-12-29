@@ -117,7 +117,7 @@ export class BubbleImageTabFormView {
             trigger: 'manual',
             placement: 'bottom-start',
             hideOnClick: 'toggle',
-            onClickOutside: (instance) => instance.hide(),
+            onClickOutside: () => this.hide(),
             popperOptions: {
                 modifiers: [
                     {
