@@ -33,11 +33,11 @@ jobs:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN_DOTCMS_UI }}
           SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
       - name: "Find the report"
-        run: "ls -la"
-      - uses: sonarsource/sonarqube-quality-gate-action@master
-        timeout-minutes: 5
-        env:
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN_DOTCMS_UI }}
+        run: "cd core-web && ls -la"
+      # - uses: sonarsource/sonarqube-quality-gate-action@master
+      #   timeout-minutes: 5
+      #   env:
+      #     SONAR_TOKEN: ${{ secrets.SONAR_TOKEN_DOTCMS_UI }}
 
       # Optionally you can use the output from the Quality Gate in another step.
       # The possible outputs of the `quality-gate-status` variable are `PASSED`, `WARN` or `FAILED`.
