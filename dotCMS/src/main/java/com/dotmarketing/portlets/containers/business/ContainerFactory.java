@@ -17,10 +17,17 @@ import java.util.Map;
  * Persistence component for Containers
  */
 public interface ContainerFactory {
-	
+
 	/**
 	 * Save container into a persistent repository
-	 * 
+	 *
+	 * @param container
+	 * @throws DotDataException
+	 */
+	void save(Container container) throws DotDataException;
+	/**
+	 * Save container into a persistent repository
+	 *
 	 * @param container
 	 * @throws DotDataException
 	 */

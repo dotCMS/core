@@ -96,6 +96,12 @@ public class ContainerFactoryImpl implements ContainerFactory {
 		return container;
 	}
 
+	@Override
+	public void save(final Container container) throws DotDataException {
+		HibernateUtil.save(container);
+		containerCache.remove(container);
+	}
+
 	@WrapInTransaction
 	public void save(final Container container, final Host host) throws DotDataException {
 		if(!UtilMethods.isSet(container.getIdentifier())){
