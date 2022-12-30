@@ -18,14 +18,76 @@ env:
   IS_PULL_REQUEST: ${{ github.event_name == 'pull_request' }}
   HEAD_REF: ${{ github.head_ref }}
 jobs:
+  sonar:
+    outputs:
+      message: ${{ steps.persist_results.outputs.message }}
+      status: ${{ steps.persist_results.outputs.status }}
+      color: ${{ steps.persist_results.outputs.color }}
+    runs-on: ubuntu-20.04
+    name: SonarQube
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+      - uses: sonarsource/sonarqube-scan-action@master
+        with:
+          projectBaseDir: core-web
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN_DOTCMS_UI }}
+          SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
+      - uses: sonarsource/sonarqube-quality-gate-action@master
+        id: sonarqube-quality-gate-check
+        with:
+          scanMetadataReportFile: core-web/.scannerwork/report-task.txt
+        timeout-minutes: 5
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN_DOTCMS_UI }}
+      - name: "Set results"
+        id: "persist_results"
+        if: always()
+        run: |
+          # Check the value of the quality-gate-status output
+          if [ "${{ steps.sonarqube-quality-gate-check.outputs.quality-gate-status }}" == "PASSED" ]; then
+            # Output success status, green color, and "All good!" message
+            echo "status=success" >>$GITHUB_OUTPUT
+            echo "color=#5E7D00" >>$GITHUB_OUTPUT
+            echo "message=All good!" >>$GITHUB_OUTPUT
+          elif [ "${{ steps.sonarqube-quality-gate-check.outputs.quality-gate-status }}" == "FAILED" ]; then
+            # Output failure status, red color, and "Please check your PR" message
+            echo "status=failure" >>$GITHUB_OUTPUT
+            echo "color=#ff2400" >>$GITHUB_OUTPUT
+            echo "message=Please check your PR" >>$GITHUB_OUTPUT
+          else
+            # Output warning status, orange color, and "Maybe you can fix this warning" message
+            echo "status=warning" >>$GITHUB_OUTPUT
+            echo "color=#FFC107" >>$GITHUB_OUTPUT
+            echo "message=Maybe you can fix this warning" >>$GITHUB_OUTPUT
+            
+          fi
+  notify-snar:
+    runs-on: ubuntu-20.04
+    name: Notify Slack
+    needs: sonar
+    if: always()
+    steps:
+      - name: Send Notification
+        uses: rtCamp/action-slack-notify@v2
+        env:
+          SLACK_WEBHOOK: ${{ secrets.UI_SLACK_WEBHOOK }}
+          SLACK_USERNAME: dotBot
+          SLACK_ICON: https://dotnet.libhunt.com/images/promo-ad-images/000/000/022/main.png?1640908816
+          SLACK_COLOR: ${{ needs.sonar.outputs.color }}
+          SLACK_TITLE: "SonarQube: ${{ needs.sonar.outputs.status }}"
+          SLACK_MESSAGE: ${{ needs.sonar.outputs.message }}
+          SLACK_FOOTER: ${{ env.PULL_REQUEST_URL }}
   check-all:
     outputs:
       name: ${{ steps.lint.outputs.name || steps.test.outputs.name || steps.build.outputs.name }}
       status: ${{ steps.lint.outputs.status || steps.test.outputs.status || steps.build.outputs.status }}
       color: ${{ steps.lint.outputs.color || steps.test.outputs.color || steps.build.outputs.color }}
       message: ${{ steps.persist_results.outputs.message }}
-    runs-on: ubuntu-20.04 # the image our job will run on
-    name: Frontend Checks # the name that will appear on the Actions UI
+    runs-on: ubuntu-20.04
+    name: Frontend Checks
     steps: # what steps it will perform
       - uses: actions/checkout@v3 # checkout whatever branch the PR is using
         with:
@@ -75,8 +137,8 @@ jobs:
             echo "color=#ff2400" >>$GITHUB_OUTPUT
             exit 1;
           fi
-  notify:
-    runs-on: ubuntu-20.04 # the image our job will run on
+  notify-check-all:
+    runs-on: ubuntu-20.04
     name: Notify Slack
     needs: check-all
     if: always()
