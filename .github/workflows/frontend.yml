@@ -88,7 +88,7 @@ jobs:
           SLACK_COLOR: ${{ needs.sonar.outputs.color }}
           SLACK_TITLE: "SonarQube: ${{ needs.sonar.outputs.status }}"
           SLACK_MESSAGE: ${{ needs.sonar.outputs.message }}
-          SLACK_FOOTER: ${{ env.PULL_REQUEST_URL }} / ${{ needs.sonar.outputs.sonar_url }}
+          SLACK_FOOTER: ${{ needs.sonar.outputs.sonar_url }}
   check-all:
     outputs:
       name: ${{ steps.lint.outputs.name || steps.test.outputs.name || steps.build.outputs.name }}
