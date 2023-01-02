@@ -227,6 +227,16 @@ public interface ContentletAPI {
 	public Contentlet findContentletByIdentifierAnyLanguage(String identifier) throws DotDataException;
 
 	/**
+	 * Retrieves a contentlet from the database by its identifier, working version and variant. Ignores archived content
+	 * @param identifier
+	 * @param variant
+	 * @return Contentlet object
+	 * @throws DotSecurityException
+	 * @throws DotDataException
+	 */
+	Contentlet findContentletByIdentifierAnyLanguage(String identifier, String variant) throws DotDataException;
+
+	/**
 	 * Retrieves a contentlet list from the database based on a identifiers array
 	 * @param identifiers	Array of identifiers
 	 * @param live	Retrieves the live version if false retrieves the working version
