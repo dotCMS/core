@@ -49,7 +49,7 @@ jobs:
         if: always()
         run: |
           pull_number=$(jq --raw-output .pull_request.number "$GITHUB_EVENT_PATH")
-          final_sonar_url="https://sonarqube.dotcms.site/dashboard?id=core-web&pullRequest=$pull_number"
+          final_sonar_url="dashboard?id=core-web&pullRequest=$pull_number"
 
           echo "The pull number is ${pull_number}"
           echo "The final sonar url is ${final_sonar_url}"
@@ -88,7 +88,7 @@ jobs:
           SLACK_COLOR: ${{ needs.sonar.outputs.color }}
           SLACK_TITLE: "SonarQube: ${{ needs.sonar.outputs.status }}"
           SLACK_MESSAGE: ${{ needs.sonar.outputs.message }}
-          SLACK_FOOTER: ${{ needs.sonar.outputs.sonar_url }}
+          SLACK_FOOTER: ${{ env.PULL_REQUEST_URL }} / ${{ needs.sonar.outputs.sonar_url }}
   check-all:
     outputs:
       name: ${{ steps.lint.outputs.name || steps.test.outputs.name || steps.build.outputs.name }}
