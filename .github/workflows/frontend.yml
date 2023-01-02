@@ -49,10 +49,11 @@ jobs:
         if: always()
         run: |
           pull_number=$(jq --raw-output .pull_request.number "$GITHUB_EVENT_PATH")
-          sonar_url= ${{ secrets.SONAR_TOKEN_DOTCMS_UI }}/dashboard?id=core-web&pullRequest=$pull_number
+          sonar_url="${{ secrets.SONAR_TOKEN_DOTCMS_UI }}/dashboard?id=core-web&pullRequest=$pull_number"
 
-          echo $pull_number
-          echo $sonar_url
+          echo "The pull number is ${pull_number}"
+          echo "The sonar url is ${sonar_url}"
+
           echo "sonar_url=$sonar_url" >>$GITHUB_OUTPUT
 
           # Check the value of the quality-gate-status output
