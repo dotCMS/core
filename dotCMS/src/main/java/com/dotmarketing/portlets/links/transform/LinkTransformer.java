@@ -38,7 +38,7 @@ public class LinkTransformer implements DBTransformer {
         final Link link = new Link();
         link.setInode((String) map.get("inode"));
         link.setOwner((String) map.get("owner"));
-        link.setIDate((Date) map.get("idate"));
+        link.setiDate((Date) map.get("idate"));
         link.setShowOnMenu(ConversionUtils.toBooleanFromDb(map.getOrDefault("show_on_menu",false)));
         link.setTitle((String) map.get("title"));
         link.setModDate((Date) map.get("mod_date"));

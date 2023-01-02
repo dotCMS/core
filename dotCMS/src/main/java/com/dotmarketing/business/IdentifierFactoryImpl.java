@@ -374,7 +374,7 @@ public class IdentifierFactoryImpl extends IdentifierFactory {
         try {
             if (versionable.getInode() != null) {
                 inode = InodeUtils.getInode(versionable.getInode());
-                identifier.setCreateDate(inode.getIDate());
+                identifier.setCreateDate(inode.getiDate());
             } else {
                 identifier.setCreateDate(new Date());
             }
@@ -457,7 +457,7 @@ public class IdentifierFactoryImpl extends IdentifierFactory {
         try {
             if (versionable.getInode() != null) {
                 inode = InodeUtils.getInode(versionable.getInode());
-                identifier.setCreateDate(inode!=null?inode.getIDate():new Date());
+                identifier.setCreateDate(inode!=null?inode.getiDate():new Date());
             } else {
                 identifier.setCreateDate(new Date());
             }

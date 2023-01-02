@@ -101,39 +101,6 @@ public class Inode implements Serializable, Comparable, Permissionable,Versionab
 	}
 
 	/**
-	 * Sets the iDate.
-	 * 
-	 * @param iDate
-	 *            The iDate to set
-	 */
-	public void setIDate(java.util.Date iDate) {
-		this.iDate = iDate;
-	}
-
-	// sets the idate from the db
-	public void setIDate(String x) {
-
-		if (UtilMethods.isSet(x)) {
-			java.text.SimpleDateFormat formatter = new java.text.SimpleDateFormat(
-					"yyyy-MM-dd H:mm:ss");
-			java.text.ParsePosition pos = new java.text.ParsePosition(0);
-			iDate = formatter.parse(x, pos);
-		}
-		if (iDate == null) {
-			iDate = new java.util.Date();
-		}
-	}
-
-	/**
-	 * Returns the iDate.
-	 * 
-	 * @return java.util.Date
-	 */
-	public java.util.Date getIDate() {
-		return iDate;
-	}
-
-	/**
 	 * Sets the inode.
 	 * 
 	 * @param inode
@@ -539,11 +506,35 @@ public class Inode implements Serializable, Comparable, Permissionable,Versionab
 		}
 		return inode.hashCode();
 	}
-
+	/**
+	 * Returns the iDate.
+	 *
+	 * @return java.util.Date
+	 */
 	public java.util.Date getiDate() {
 		return iDate;
 	}
 
+	// sets the idate from the db
+	public void setiDate(String x) {
+
+		if (UtilMethods.isSet(x)) {
+			java.text.SimpleDateFormat formatter = new java.text.SimpleDateFormat(
+					"yyyy-MM-dd H:mm:ss");
+			java.text.ParsePosition pos = new java.text.ParsePosition(0);
+			iDate = formatter.parse(x, pos);
+		}
+		if (iDate == null) {
+			iDate = new java.util.Date();
+		}
+	}
+
+	/**
+	 * Sets the iDate.
+	 *
+	 * @param iDate
+	 *            The iDate to set
+	 */
 	public void setiDate(java.util.Date iDate) {
 		this.iDate = iDate;
 	}

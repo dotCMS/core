@@ -505,7 +505,7 @@ public class TemplateAPITest extends IntegrationTestBase {
         assertNotNull(live);//template has been published
         assertEquals(template.getInode(),live.getInode());//inode live is the template inode
         assertFalse(live.getOwner().isEmpty());//check owner was pulled
-        assertFalse(live.getIDate().toString().isEmpty());//check idate was pulled
+        assertFalse(live.getiDate().toString().isEmpty());//check idate was pulled
 
         templateAPI.delete(template, user, false);
     }
@@ -528,7 +528,7 @@ public class TemplateAPITest extends IntegrationTestBase {
         assertFalse(result.isEmpty());
         assertTrue(result.contains(template));
         assertFalse(result.get(0).getOwner().isEmpty());//check owner was pulled
-        assertFalse(result.get(0).getIDate().toString().isEmpty());//check idate was pulled
+        assertFalse(result.get(0).getiDate().toString().isEmpty());//check idate was pulled
 
     }
 
@@ -550,7 +550,7 @@ public class TemplateAPITest extends IntegrationTestBase {
         assertNotNull(result);
         assertEquals(template_version2.getInode(), result.getInode());
         assertFalse(result.getOwner().isEmpty());//check owner was pulled
-        assertFalse(result.getIDate().toString().isEmpty());//check idate was pulled
+        assertFalse(result.getiDate().toString().isEmpty());//check idate was pulled
     }
 
 
@@ -611,7 +611,7 @@ public class TemplateAPITest extends IntegrationTestBase {
         assertFalse(result.isEmpty());
         assertTrue(result.contains(template));
         assertFalse(result.get(0).getOwner().isEmpty());//check owner was pulled
-        assertFalse(result.get(0).getIDate().toString().isEmpty());//check idate was pulled
+        assertFalse(result.get(0).getiDate().toString().isEmpty());//check idate was pulled
     }
 
     /**
@@ -741,7 +741,7 @@ public class TemplateAPITest extends IntegrationTestBase {
             assertEquals(1, filteredTemplatesWithoutSystemTemplate.size());
             assertEquals(uniqueTitle, filteredTemplatesWithoutSystemTemplate.get(0).getTitle());
             assertFalse(filteredTemplatesWithoutSystemTemplate.get(0).getOwner().isEmpty());//check owner was pulled
-            assertFalse(filteredTemplatesWithoutSystemTemplate.get(0).getIDate().toString().isEmpty());//check idate was pulled
+            assertFalse(filteredTemplatesWithoutSystemTemplate.get(0).getiDate().toString().isEmpty());//check idate was pulled
 
         } finally {
             if (template != null) {
@@ -770,7 +770,7 @@ public class TemplateAPITest extends IntegrationTestBase {
 
         assertEquals(title,templateFound.getTitle());
         assertFalse(templateFound.getOwner().isEmpty());//check owner was pulled
-        assertFalse(templateFound.getIDate().toString().isEmpty());//check idate was pulled
+        assertFalse(templateFound.getiDate().toString().isEmpty());//check idate was pulled
     }
 
     /**
@@ -805,7 +805,7 @@ public class TemplateAPITest extends IntegrationTestBase {
         assertNotNull(templateAllVersions);
         assertEquals(3,templateAllVersions.size());
         assertFalse(templateAllVersions.get(0).getOwner().isEmpty());//check owner was pulled
-        assertFalse(templateAllVersions.get(0).getIDate().toString().isEmpty());//check idate was pulled
+        assertFalse(templateAllVersions.get(0).getiDate().toString().isEmpty());//check idate was pulled
     }
 
     /**

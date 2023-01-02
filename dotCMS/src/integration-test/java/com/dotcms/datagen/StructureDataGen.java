@@ -112,7 +112,7 @@ public class StructureDataGen extends AbstractDataGen<Structure> {
         s.setVelocityVarName(velocityVarName);
         s.setFolder(folder.getInode());
         s.setHost(host.getIdentifier());
-        s.setIDate(iDate);
+        s.setiDate(iDate);
         return s;
     }
 

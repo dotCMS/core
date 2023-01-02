@@ -51,7 +51,7 @@ public class CategoryListDTOPaginator implements PaginatorOrdered<CategoryListDT
                 for(var category : categories) {
                     CategoryListDTO categoryListDTO = new CategoryListDTO(category.getCategoryName(),category.getCategoryVelocityVarName(), category.getKey(),
                             category.getKeywords(), category.getSortOrder(), category.getDescription(),category.isActive(),category.getModDate(),
-                            category.getIDate(),category.getType(),category.getOwner(),category.getInode(),category.getIdentifier(),
+                            category.getiDate(),category.getType(),category.getOwner(),category.getInode(),category.getIdentifier(),
                             this.categoryAPI.findChildren(user, category.getInode(), false, offset, limit,filter, direction.toString()).getTotalCount());
 
                     result.add(categoryListDTO);

@@ -207,7 +207,7 @@ public class ContainerDataGen extends AbstractDataGen<Container> {
         Container container = new Container();
 
         container.setFriendlyName(friendlyName);
-        container.setIDate(new Date());
+        container.setiDate(new Date());
         container.setMaxContentlets(maxContentlets);
         container.setModDate(new Date());
         container.setModUser(modUser.getUserId());

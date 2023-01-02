@@ -107,7 +107,7 @@ public class TemplateAsFileDataGen extends AbstractDataGen<FileAssetTemplate> {
         template.setIdentifier(buildTemplateId(templateFolder));
         template.setInode(metaData.getInode());
         template.setOwner      (metaData.getOwner());
-        template.setIDate      (metaData.getIDate());
+        template.setiDate      (metaData.getIDate());
         template.setModDate    (metaData.getModDate());
         template.setModUser    (metaData.getModUser());
         template.setShowOnMenu (metaData.isShowOnMenu());

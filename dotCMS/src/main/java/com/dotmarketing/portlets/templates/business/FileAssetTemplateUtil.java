@@ -231,7 +231,7 @@ public class FileAssetTemplateUtil {
         template.setIdentifier (buildPath(host,templateFolder,true));
         template.setInode      (metaInfoFileAsset.getInode());//inode of the template is the inode of the properties.vtl
         template.setOwner      (metaInfoFileAsset.getOwner());
-        template.setIDate      (metaInfoFileAsset.getIDate());
+        template.setiDate      (metaInfoFileAsset.getIDate());
         template.setModDate    (metaInfoFileAsset.getModDate());
         template.setModUser    (metaInfoFileAsset.getModUser());
         template.setShowOnMenu (true);

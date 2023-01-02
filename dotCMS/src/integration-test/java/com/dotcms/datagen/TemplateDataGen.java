@@ -262,7 +262,7 @@ public class TemplateDataGen extends AbstractDataGen<Template> {
         template.setFooter(this.footer);
         template.setFriendlyName(this.friendlyName);
         template.setHeader(this.header);
-        template.setIDate(new Date());
+        template.setiDate(new Date());
         template.setImage(this.image);
         template.setModDate(new Date());
         template.setModUser(user.getUserId());

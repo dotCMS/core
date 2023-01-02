@@ -346,7 +346,7 @@ public class StructureFactoryTest extends ContentletBaseTest {
         testStructure1.setDefaultStructure( false );
         testStructure1.setDescription( "JUnit Test Structure Description." );
         testStructure1.setFixed( false );
-        testStructure1.setIDate( new Date() );
+        testStructure1.setiDate( new Date() );
         testStructure1.setName( "JUnit Test Structure_4_"+System.currentTimeMillis() );
         testStructure1.setOwner( user.getUserId() );
         testStructure1.setDetailPage( "" );
@@ -360,7 +360,7 @@ public class StructureFactoryTest extends ContentletBaseTest {
         testStructure2.setDefaultStructure( false );
         testStructure2.setDescription( "JUnit Test Structure Description." );
         testStructure2.setFixed( false );
-        testStructure2.setIDate( new Date() );
+        testStructure2.setiDate( new Date() );
         testStructure2.setName( "JUnit Test Structure_5_"+System.currentTimeMillis() );
         testStructure2.setOwner( user.getUserId() );
         testStructure2.setDetailPage( "" );

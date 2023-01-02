@@ -116,7 +116,7 @@ public class ConvertToPOJOUtil {
         final Link link = new Link();
         link.setInode((String) map.get(INODE));
         link.setOwner((String) map.get(OWNER));
-        link.setIDate((Date) map.get(IDATE));
+        link.setiDate((Date) map.get(IDATE));
         link.setShowOnMenu((Boolean) map.getOrDefault(SHOW_ON_MENU,false));
         link.setTitle((String) map.get(TITLE));
         link.setModDate((Date) map.get(MOD_DATE));
@@ -206,7 +206,7 @@ public class ConvertToPOJOUtil {
         container = new Container();
         container.setInode((String) map.get(INODE));
         container.setOwner((String) map.get(OWNER));
-        container.setIDate((Date) map.get(IDATE));
+        container.setiDate((Date) map.get(IDATE));
         container.setCode((String) map.get("code"));
         container.setPreLoop((String) map.get("pre_loop"));
         container.setPostLoop((String) map.get("post_loop"));
@@ -244,7 +244,7 @@ public class ConvertToPOJOUtil {
         template = new Template();
         template.setInode(String.valueOf(map.get(INODE)));
         template.setOwner(String.valueOf(map.get(OWNER)));
-        template.setIDate((Date) map.get(IDATE));
+        template.setiDate((Date) map.get(IDATE));
         template.setShowOnMenu((Boolean) map.getOrDefault(SHOW_ON_MENU,false));
         template.setTitle(String.valueOf(map.get(TITLE)));
         template.setModDate((Date) map.get(MOD_DATE));

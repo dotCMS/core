@@ -4074,7 +4074,7 @@ public class ContentletAPITest extends ContentletBaseTest {
         testStructure.setDefaultStructure( false );
         testStructure.setDescription(contentTypeName);
         testStructure.setFixed( false );
-        testStructure.setIDate( new Date() );
+        testStructure.setiDate( new Date() );
         testStructure.setName(contentTypeName);
         testStructure.setOwner( user.getUserId() );
         testStructure.setDetailPage( "" );

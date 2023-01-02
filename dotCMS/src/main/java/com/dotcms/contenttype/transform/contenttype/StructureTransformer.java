@@ -186,7 +186,7 @@ public class StructureTransformer implements ContentTypeTransformer  {
 
 			@Override
 			public Date iDate() {
-				return struct.getIDate();
+				return struct.getiDate();
 			}
 
 			@Override

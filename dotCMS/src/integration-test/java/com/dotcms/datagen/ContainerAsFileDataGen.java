@@ -149,7 +149,7 @@ public class ContainerAsFileDataGen extends AbstractDataGen<FileAssetContainer> 
         container.setIdentifier(metaInfoFileAsset.getIdentifier());
         container.setInode(metaInfoFileAsset.getInode());
         container.setOwner(metaInfoFileAsset.getOwner());
-        container.setIDate(metaInfoFileAsset.getIDate());
+        container.setiDate(metaInfoFileAsset.getIDate());
         container.setModDate(metaInfoFileAsset.getModDate());
         container.setModUser(metaInfoFileAsset.getModUser());
         container.setShowOnMenu(metaInfoFileAsset.isShowOnMenu());

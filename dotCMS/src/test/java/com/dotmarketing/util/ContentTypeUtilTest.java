@@ -57,7 +57,7 @@ public class ContentTypeUtilTest extends UnitTestBase {
         final String contentTypeInode = "38a3f133-85e1-4b07-b55e-179f38303b90";
         when(structure.getInode()).thenReturn(contentTypeInode);
         when(structure.getModDate()).thenReturn(new Date());
-        when(structure.getIDate()).thenReturn(new Date());
+        when(structure.getiDate()).thenReturn(new Date());
         when(structure.getName()).thenReturn("testSt");
         when(structure.getVelocityVarName()).thenReturn("testSt");
         when(layoutAPI.loadLayoutsForUser(user)).thenReturn(layouts);

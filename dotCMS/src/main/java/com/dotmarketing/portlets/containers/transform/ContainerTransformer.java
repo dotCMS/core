@@ -39,7 +39,7 @@ public class ContainerTransformer implements DBTransformer<Container> {
         container = new Container();
         container.setInode((String) map.get("inode"));
         container.setOwner((String) map.get("owner"));
-        container.setIDate((Date) map.get("idate"));
+        container.setiDate((Date) map.get("idate"));
         container.setCode((String) map.get("code"));
         container.setPreLoop((String) map.get("pre_loop"));
         container.setPostLoop((String) map.get("post_loop"));

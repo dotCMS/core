@@ -276,7 +276,7 @@ public class ContentletBaseTest extends IntegrationTestBase {
         testStructure.setDefaultStructure( false );
         testStructure.setDescription( "JUnit Test Structure Description." );
         testStructure.setFixed( false );
-        testStructure.setIDate( new Date() );
+        testStructure.setiDate( new Date() );
         testStructure.setName( name );
         testStructure.setOwner( user.getUserId() );
         testStructure.setDetailPage( "" );
@@ -452,7 +452,7 @@ public class ContentletBaseTest extends IntegrationTestBase {
 
         container.setCode( "$!{body}" );
         container.setFriendlyName( "JUnit Test Container 1 Friendly Name" );
-        container.setIDate( new Date() );
+        container.setiDate( new Date() );
         container.setLuceneQuery( "" );
         container.setMaxContentlets( 1 );
         container.setModDate( new Date() );
@@ -497,7 +497,7 @@ public class ContentletBaseTest extends IntegrationTestBase {
         template.setFooter( "" );
         template.setFriendlyName( "JUnit Test Template Friendly Name" );
         template.setHeader( "" );
-        template.setIDate( new Date() );
+        template.setiDate( new Date() );
         template.setImage( "" );
         template.setModDate( new Date() );
         template.setModUser( user.getUserId() );
@@ -535,7 +535,7 @@ public class ContentletBaseTest extends IntegrationTestBase {
         menuLink.setType( "links" );
         menuLink.setUrl( "dotcms.com" );
         menuLink.setFriendlyName( "JUnit Test Menu Link" );
-        menuLink.setIDate( new Date() );
+        menuLink.setiDate( new Date() );
         menuLink.setInternalLinkIdentifier( "" );
         menuLink.setLinkCode( "" );
         menuLink.setLinkType( Link.LinkType.EXTERNAL.toString() );

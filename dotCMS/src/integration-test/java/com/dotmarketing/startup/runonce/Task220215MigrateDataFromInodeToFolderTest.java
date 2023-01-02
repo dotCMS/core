@@ -42,7 +42,7 @@ public class Task220215MigrateDataFromInodeToFolderTest {
 
         final Inode inodeObject = new Inode();
         inodeObject.setInode(inode);
-        inodeObject.setIDate(iDate);
+        inodeObject.setiDate(iDate);
         inodeObject.setOwner(owner);
 
         return inodeObject;
@@ -65,7 +65,7 @@ public class Task220215MigrateDataFromInodeToFolderTest {
 
     private boolean areValuesEqual(final Inode expectedResult, final Map<String, Object> result){
         final LocalDateTime expectedDate = new Timestamp(
-                expectedResult.getIDate().getTime()).toLocalDateTime().truncatedTo(
+                expectedResult.getiDate().getTime()).toLocalDateTime().truncatedTo(
                 ChronoUnit.SECONDS);
         final LocalDateTime resultDate = new Timestamp(
                 ((Date)result.get("idate")).getTime()).toLocalDateTime().truncatedTo(

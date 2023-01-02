@@ -424,7 +424,7 @@ public enum PageAPIGraphQLTypesProvider implements GraphQLTypesProvider {
                         (containerRaw)->containerRaw.getContainer().getiDate().toString())));
         containerFields.put("idate", new TypeFetcher(GraphQLString,
                 PropertyDataFetcher.fetching((Function<ContainerRaw, String>)
-                        (containerRaw)->containerRaw.getContainer().getIDate().toString())));
+                        (containerRaw)->containerRaw.getContainer().getiDate().toString())));
         containerFields.put("inode", new TypeFetcher(GraphQLString,
                 PropertyDataFetcher.fetching((Function<ContainerRaw, String>)
                         (containerRaw)->containerRaw.getContainer().getInode())));
