@@ -6,6 +6,7 @@ import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import org.immutables.value.Value;
 
 import javax.annotation.Nullable;
+import java.io.Serializable;
 
 
 /**
@@ -17,7 +18,7 @@ import javax.annotation.Nullable;
 @Value.Immutable
 @JsonDeserialize(as = AnalyticsKey.class)
 @JsonIgnoreProperties(ignoreUnknown = true)
-public interface AbstractAnalyticsKey {
+public interface AbstractAnalyticsKey extends Serializable {
 
     @JsonProperty("jsKey")
     String jsKey();

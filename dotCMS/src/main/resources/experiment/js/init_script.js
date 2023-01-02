@@ -1,87 +1,127 @@
 
-let currentRunningExperimentsId = [${running_experiments_list}]
+let experimentAlreadyCheck = sessionStorage.getItem("experimentAlreadyCheck");
 
-function shouldHitEndPoint() {
-    let experimentData = localStorage.getItem('experiment_data');
+if (!experimentAlreadyCheck) {
+    let currentRunningExperimentsId = [${running_experiments_list}]
 
-    if (experimentData) {
-        let includedExperimentIds = JSON.parse(
-            experimentData).includedExperimentIds;
+    function shouldHitEndPoint() {
+        let experimentData = localStorage.getItem('experiment_data');
 
-        return !currentRunningExperimentsId.every(element => includedExperimentIds.includes(element));
-    } else {
-        return true;
-    }
-}
+        if (experimentData) {
+            let includedExperimentIds = JSON.parse(
+                experimentData).includedExperimentIds;
 
-window.addEventListener("experiment_data_loaded", function (event) {
-
-    let experimentData = event.detail;
-    console.log('experiment_data', experimentData);
-    for (let i = 0; i < experimentData.experiments.length; i++){
-        let pageUrl = experimentData.experiments[i].pageUrl;
-
-        let alternativePageUrl = experimentData.experiments[i].pageUrl.endsWith("/index") ?
-            experimentData.experiments[i].pageUrl.replace("/index", "") :
-            experimentData.experiments[i].pageUrl;
-
-        if (window.location.href.includes(pageUrl) || window.location.href.includes(alternativePageUrl)) {
-
-            let url = experimentData.experiments[i].variant.url
-            const param = (url.includes("?") ? "&" : "?") + "redirect=true";
-            window.location.href = url + param;
-            break;
+            return !currentRunningExperimentsId.every(
+                element => includedExperimentIds.includes(element));
+        } else {
+            return true;
         }
     }
-});
 
-if (shouldHitEndPoint()) {
-    let experimentData = localStorage.getItem('experiment_data');
-    let body = experimentData ?
-        {
-            exclude: JSON.parse(experimentData).includedExperimentIds
-        } : {
-            exclude: []
-        };
+    function cleanExperimentDataUp() {
+        let experimentDataAsString = localStorage.getItem('experiment_data');
 
-    fetch('/api/v1/experiments/isUserIncluded', {
-        method: 'POST',
-        body: JSON.stringify(body),
-        headers: {
-            'Accept': 'application/json',
-            'Content-Type': 'application/json'
-        }
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.entity.experiments) {
-            let dataToStorage = Object.assign({}, data.entity);
-            let oldExperimentData = JSON.parse(localStorage.getItem('experiment_data'));
+        if (experimentDataAsString) {
+            let experimentData = JSON.parse(experimentDataAsString);
+            experimentData.experiments = experimentData.experiments
+            .filter(experiment => currentRunningExperimentsId.includes(
+                experiment.id));
 
-            delete dataToStorage['excludedExperimentIds'];
+            experimentData.includedExperimentIds = experimentData.includedExperimentIds
+            .filter(experimentId => currentRunningExperimentsId.includes(
+                experimentId));
 
-            dataToStorage.includedExperimentIds = [
-                ...dataToStorage.includedExperimentIds,
-                ...data.entity.excludedExperimentIds
-            ];
-
-            if (oldExperimentData) {
-                dataToStorage.experiments = [
-                    ...oldExperimentData.experiments,
-                    ...dataToStorage.experiments
-                ];
+            if (!experimentData.experiments.length) {
+                localStorage.removeItem('experiment_data');
+            } else {
+                localStorage.setItem('experiment_data', JSON.stringify(experimentData));
             }
+        }
+    }
 
-            localStorage.setItem('experiment_data', JSON.stringify(dataToStorage));
+    window.addEventListener("experiment_data_loaded", function (event) {
 
-            const event = new CustomEvent('experiment_data_loaded', { detail: dataToStorage });
-            window.dispatchEvent(event);
+        let experimentData = event.detail;
+
+        for (let i = 0; i < experimentData.experiments.length; i++) {
+            let pageUrl = experimentData.experiments[i].pageUrl;
+
+            let alternativePageUrl = experimentData.experiments[i].pageUrl.endsWith(
+                "/index") ?
+                experimentData.experiments[i].pageUrl.replace("/index", "") :
+                experimentData.experiments[i].pageUrl;
+
+            if (window.location.href.includes(pageUrl)
+                || window.location.href.includes(alternativePageUrl)) {
+
+                let url = experimentData.experiments[i].variant.url
+                const param = (url.includes("?") ? "&" : "?") + "redirect=true";
+                window.location.href = url + param;
+                break;
+            }
         }
     });
-} else if (!window.location.href.includes("redirect=true")) {
-    let experimentData = JSON.parse(localStorage.getItem('experiment_data'));
 
-    const event = new CustomEvent('experiment_data_loaded', { detail: experimentData });
-    window.dispatchEvent(event);
+    if (shouldHitEndPoint()) {
+        let experimentData = localStorage.getItem('experiment_data');
+        let body = experimentData ?
+            {
+                exclude: JSON.parse(experimentData).includedExperimentIds
+            } : {
+                exclude: []
+            };
+
+        fetch('/api/v1/experiments/isUserIncluded', {
+            method: 'POST',
+            body: JSON.stringify(body),
+            headers: {
+                'Accept': 'application/json',
+                'Content-Type': 'application/json'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.entity.experiments) {
+                let dataToStorage = Object.assign({}, data.entity);
+                let oldExperimentData = JSON.parse(
+                    localStorage.getItem('experiment_data'));
+
+                delete dataToStorage['excludedExperimentIds'];
+
+                dataToStorage.includedExperimentIds = [
+                    ...dataToStorage.includedExperimentIds,
+                    ...data.entity.excludedExperimentIds
+                ];
+
+                if (oldExperimentData) {
+                    dataToStorage.experiments = [
+                        ...oldExperimentData.experiments,
+                        ...dataToStorage.experiments
+                    ];
+                }
+
+                localStorage.setItem('experiment_data',
+                    JSON.stringify(dataToStorage));
+
+                const event = new CustomEvent('experiment_data_loaded',
+                    {detail: dataToStorage});
+                window.dispatchEvent(event);
+            }
+        });
+    }
+
+    cleanExperimentDataUp();
+    let experimentDataAsString = localStorage.getItem('experiment_data');
+
+    if (experimentDataAsString && !window.location.href.includes(
+        "redirect=true")) {
+        let experimentData = JSON.parse(experimentDataAsString);
+
+        const event = new CustomEvent('experiment_data_loaded',
+            {detail: experimentData});
+        window.dispatchEvent(event);
+    }
+
+    sessionStorage.setItem("experimentAlreadyCheck", true);
 }
 
