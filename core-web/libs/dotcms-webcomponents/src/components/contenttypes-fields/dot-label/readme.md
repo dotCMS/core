@@ -2,6 +2,10 @@
 
 <!-- Auto Generated Below -->
 
+## Overview
+
+Represent a dotcms label control.
+
 ## Properties
 
 | Property   | Attribute  | Description                             | Type      | Default |

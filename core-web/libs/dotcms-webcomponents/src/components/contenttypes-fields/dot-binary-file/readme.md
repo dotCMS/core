@@ -2,6 +2,10 @@
 
 <!-- Auto Generated Below -->
 
+## Overview
+
+Represent a dotcms binary file control.
+
 ## Properties
 
 | Property                    | Attribute                      | Description                                                                                            | Type      | Default                                                |
