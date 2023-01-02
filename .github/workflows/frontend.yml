@@ -78,7 +78,7 @@ jobs:
     name: Notify Slack
     needs: sonar
     env:
-      SONAR_BRANCH_REPORT: ${needs.sonar.output.sonar_url}
+      SONAR_BRANCH_REPORT: ${{ needs.sonar.outputs.sonar_url }}
     if: always()
     steps:
       - name: Send Notification
