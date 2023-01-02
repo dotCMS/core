@@ -23,6 +23,7 @@ jobs:
       message: ${{ steps.persist_results.outputs.message }}
       status: ${{ steps.persist_results.outputs.status }}
       color: ${{ steps.persist_results.outputs.color }}
+      sonar_url: ${{ steps.persist_results.outputs.sonar_url }}
     runs-on: ubuntu-20.04
     name: SonarQube
     steps:
@@ -42,10 +43,16 @@ jobs:
         timeout-minutes: 5
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN_DOTCMS_UI }}
+          SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
       - name: "Set results"
         id: "persist_results"
         if: always()
         run: |
+          pull_number=$(jq --raw-output .pull_request.number "$GITHUB_EVENT_PATH")
+          final_sonar_url="dashboard?id=core-web&pullRequest=$pull_number"
+
+          echo "sonar_url=${final_sonar_url}" >>$GITHUB_OUTPUT
+
           # Check the value of the quality-gate-status output
           if [ "${{ steps.sonarqube-quality-gate-check.outputs.quality-gate-status }}" == "PASSED" ]; then
             # Output success status, green color, and "All good!" message
@@ -62,12 +69,13 @@ jobs:
             echo "status=warning" >>$GITHUB_OUTPUT
             echo "color=#FFC107" >>$GITHUB_OUTPUT
             echo "message=Maybe you can fix this warning" >>$GITHUB_OUTPUT
-            
           fi
-  notify-snar:
+  notify-sonar:
     runs-on: ubuntu-20.04
     name: Notify Slack
     needs: sonar
+    env:
+      SONAR_BRANCH_REPORT: ${{ needs.sonar.outputs.sonar_url }}
     if: always()
     steps:
       - name: Send Notification
@@ -79,7 +87,7 @@ jobs:
           SLACK_COLOR: ${{ needs.sonar.outputs.color }}
           SLACK_TITLE: "SonarQube: ${{ needs.sonar.outputs.status }}"
           SLACK_MESSAGE: ${{ needs.sonar.outputs.message }}
-          SLACK_FOOTER: ${{ env.PULL_REQUEST_URL }}
+          SLACK_FOOTER: ${{ env.PULL_REQUEST_URL }} - ${{ secrets.SONAR_HOST_URL }}/${{ env.SONAR_BRANCH_REPORT }}
   check-all:
     outputs:
       name: ${{ steps.lint.outputs.name || steps.test.outputs.name || steps.build.outputs.name }}
