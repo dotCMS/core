@@ -49,7 +49,8 @@ const messageServiceMock = new MockDotMessageService({
     url: 'Url',
     order: 'Order',
     'favoritePage.dialog.field.shareWith': 'Share With',
-    'favoritePage.dialog.delete.button': 'Remove Favorite'
+    'favoritePage.dialog.delete.button': 'Remove Favorite',
+    'favoritePage.dialog.reload.image.button': 'Reload'
 });
 
 const mockRenderedPageState = new DotPageRenderState(
@@ -400,6 +401,7 @@ describe('DotFavoritePageComponent', () => {
                 get renderThumbnail$() {
                     return of(false);
                 },
+                setRenderThumbnail: jasmine.createSpy(),
                 saveFavoritePage: jasmine.createSpy(),
                 deleteFavoritePage: jasmine.createSpy(),
                 get closeDialog$() {
@@ -439,6 +441,17 @@ describe('DotFavoritePageComponent', () => {
             fixture.detectChanges();
         });
 
+        it('should load existing thumbnail and reload thumbnail button', () => {
+            const field = de.query(By.css('[data-testId="thumbnailField"]'));
+            const image = field.query(By.css('img'));
+            const reloadBtn = field.query(
+                By.css('[data-testId="dotFavoriteDialogReloadThumbnailButton"]')
+            );
+
+            expect(image.nativeElement['src'].includes('123')).toBe(true);
+            expect(reloadBtn.nativeElement.outerText).toBe('RELOAD');
+        });
+
         it('should button Remove Favorite be enabled', () => {
             const element = de.query(By.css('[data-testId="dotFavoriteDialogDeleteButton"]'));
             expect(element.nativeElement.disabled).toBe(false);
@@ -448,6 +461,15 @@ describe('DotFavoritePageComponent', () => {
             const element = de.query(By.css('[data-testId="dotFavoriteDialogDeleteButton"]'));
             element.triggerEventHandler('click', {});
             expect(store.deleteFavoritePage).toHaveBeenCalledWith('abc123');
+        });
+
+        it('should call render thumbnail method on clicking Reload button', () => {
+            const element = de.query(
+                By.css('[data-testId="dotFavoriteDialogReloadThumbnailButton"]')
+            );
+
+            element.triggerEventHandler('click', {});
+            expect(store.setRenderThumbnail).toHaveBeenCalledWith(true);
         });
     });
 });

@@ -44,11 +44,11 @@ export class DotPagesComponent {
     ): void {
         if (areAllFavoritePagesLoaded) {
             this.store.limitFavoritePages(this.initialFavoritePagesLimit);
-            this.currentLimitSize = this.initialFavoritePagesLimit;
         } else {
             this.store.getFavoritePages(favoritePagesToLoad);
-            this.currentLimitSize = this.initialFavoritePagesLimit;
         }
+
+        this.currentLimitSize = this.initialFavoritePagesLimit;
     }
 
     /**
@@ -82,7 +82,7 @@ export class DotPagesComponent {
             data: {
                 page: {
                     favoritePageUrl: favoritePage.url,
-                    isAdmin: true,
+                    isAdmin: true, // TODO: get if logged user is admin
                     favoritePage: favoritePage
                 },
                 onSave: () => {

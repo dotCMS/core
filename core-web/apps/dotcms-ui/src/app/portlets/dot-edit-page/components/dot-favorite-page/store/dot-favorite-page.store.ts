@@ -175,6 +175,7 @@ export class DotFavoritePageStore extends ComponentStore<DotFavoritePageState> {
         );
     };
 
+    // TODO: Remove this with new Permissions endpoint call
     private tmpPermissionsService = () => {
         return of(null);
         // return of(['4ddc54dc-b02e-4a35-a9b9-0ae11a073256']);

@@ -9,10 +9,12 @@ import { TooltipModule } from 'primeng/tooltip';
 import { DotPagesCardComponent } from './dot-pages-card.component';
 import { CommonModule } from '@angular/common';
 import { UiDotIconButtonModule } from '@components/_common/dot-icon-button/dot-icon-button.module';
+import { DebugElement } from '@angular/core';
 
 describe('DotPagesCardComponent', () => {
     let component: DotPagesCardComponent;
     let fixture: ComponentFixture<DotPagesCardComponent>;
+    let de: DebugElement;
 
     const messageServiceMock = new MockDotMessageService({
         'favoritePage.listing.star.icon.tooltip': 'Edit Favorite Page'
@@ -35,6 +37,7 @@ describe('DotPagesCardComponent', () => {
 
     beforeEach(() => {
         fixture = TestBed.createComponent(DotPagesCardComponent);
+        de = fixture.debugElement;
         component = fixture.debugElement.componentInstance;
     });
 
@@ -45,6 +48,9 @@ describe('DotPagesCardComponent', () => {
             component.title = 'test';
             component.url = '/index';
             component.ownerPage = true;
+
+            spyOn(component.goTo, 'emit').and.callThrough();
+            spyOn(component.edit, 'emit').and.callThrough();
 
             fixture.detectChanges();
         });
@@ -83,6 +89,30 @@ describe('DotPagesCardComponent', () => {
                 fixture.debugElement.query(By.css('.dot-pages-favorite-card-content__subtitle'))
                     .nativeElement.textContent
             ).toBe(component.url);
+        });
+
+        it('should emit goTo event when clicked on P-Card', () => {
+            const elem = de.query(By.css('[data-testid="pageCard"]'));
+            elem.triggerEventHandler('click', {
+                stopPropagation: () => {
+                    //
+                }
+            });
+
+            expect(component.goTo.emit).toHaveBeenCalledWith(true);
+            expect(component.edit.emit).not.toHaveBeenCalledWith(true);
+        });
+
+        it('should emit edit event when clicked on star icon', () => {
+            const elem = de.query(By.css('[data-testid="favoriteCardIconButton"]'));
+            elem.triggerEventHandler('click', {
+                stopPropagation: () => {
+                    //
+                }
+            });
+
+            expect(component.goTo.emit).not.toHaveBeenCalledWith(true);
+            expect(component.edit.emit).toHaveBeenCalledWith(true);
         });
     });
 

@@ -29,7 +29,10 @@
                         }"
                         data-testId="favoriteCardImageContainer"
                     >
-                        <img [alt]="vm.formState.title" [src]="vm.formState.thumbnail" />
+                        <img
+                            [alt]="vm.formState.title"
+                            [src]="vm.formState.thumbnail + '?' + timeStamp"
+                        />
                     </div>
                     <button
                         class="p-button-secondary dot-favorite-dialog__image-reload"
