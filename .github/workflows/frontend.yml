@@ -17,13 +17,14 @@ env:
   PULL_REQUEST_URL: ${{ github.event.pull_request._links.html.href }}
   IS_PULL_REQUEST: ${{ github.event_name == 'pull_request' }}
   HEAD_REF: ${{ github.head_ref }}
+  SONARQUBE_URL: ${{ secrets.SONAR_TOKEN_DOTCMS_UI }}
 jobs:
   sonar:
     outputs:
       message: ${{ steps.persist_results.outputs.message }}
       status: ${{ steps.persist_results.outputs.status }}
       color: ${{ steps.persist_results.outputs.color }}
-      sonar_url: ${{ steps.persist_results.outputs.sonaurl }}
+      sonar_url: ${{ steps.persist_results.outputs.sonar_url }}
     runs-on: ubuntu-20.04
     name: SonarQube
     steps:
@@ -49,7 +50,7 @@ jobs:
         if: always()
         run: |
           pull_number=$(jq --raw-output .pull_request.number "$GITHUB_EVENT_PATH")
-          sonar_url="${{ secrets.SONAR_TOKEN_DOTCMS_UI }}/dashboard?id=core-web&pullRequest=$pull_number"
+          sonar_url="${{ env.SONARQUBE_URL }}/dashboard?id=core-web&pullRequest=$pull_number"
 
           echo "The pull number is ${pull_number}"
           echo "The sonar url is ${sonar_url}"
