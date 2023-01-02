@@ -96,14 +96,8 @@ public class ContainerFactoryImpl implements ContainerFactory {
 		return container;
 	}
 
-	@Override
-	public void save(final Container container) throws DotDataException {
-		HibernateUtil.save(container);
-		containerCache.remove(container);
-	}
-
 	@WrapInTransaction
-	public void save(final Container container, final Host host) throws DotDataException {
+	public void save(final Container container) throws DotDataException {
 		if(!UtilMethods.isSet(container.getIdentifier())){
 			throw new DotStateException("Cannot save a container without an Identifier");
 		}
@@ -113,7 +107,6 @@ public class ContainerFactoryImpl implements ContainerFactory {
 		}
 
 		if(!UtilMethods.isSet(find(container.getInode()))) {
-			insertIdentifierInDB(container, host);
 			insertInodeInDB(container);
 			insertContainerInDB(container);
 		} else {
@@ -123,7 +116,6 @@ public class ContainerFactoryImpl implements ContainerFactory {
 
 		containerCache.add(container.getInode(), container);
 		new ContainerLoader().invalidate(container);
-
 	}
 
 	private void executeQueryWithData(final String SQL, final String inode, final String code, final String preLoop,
@@ -206,18 +198,6 @@ public class ContainerFactoryImpl implements ContainerFactory {
 	}
 	private void updateInodeInDB(final Container container) throws DotDataException{
 		executeQueryWithData(ContainerSQL.UPDATE_INODE, container.getInode(), container.getiDate(), container.getOwner(), false);
-	}
-	private void insertIdentifierInDB(final Container container, final Host host) throws DotDataException{
-
-		final Identifier identifier = new Identifier(container.getIdentifier());
-		identifier.setAssetName(container.getIdentifier()+".containers");
-		identifier.setParentPath("/");
-		identifier.setAssetType("containers");
-		identifier.setHostId(host.getIdentifier());
-		identifier.setOwner(container.getOwner());
-		identifier.setCreateDate(new Date());
-
-		identifierAPI.save(identifier);
 	}
 	@Override
 	public List<Container> findContainersUnder(final Host parentPermissionable) throws DotDataException {
