@@ -50,12 +50,12 @@ jobs:
         if: always()
         run: |
           pull_number=$(jq --raw-output .pull_request.number "$GITHUB_EVENT_PATH")
-          sonar_url=""
+          sonar_url="${{ env.SONARQUBE_URL }}/dashboard?id=core-web&pullRequest=$pull_number"
 
           echo "The pull number is ${pull_number}"
-          echo "The sonar url is ${{ env.SONARQUBE_URL }}/dashboard?id=core-web&pullRequest=$pull_number"
+          echo "The sonar url is ${sonar_url}"
 
-          echo "sonar_url=${{ env.SONARQUBE_URL }}/dashboard?id=core-web&pullRequest=$pull_number" >>$GITHUB_OUTPUT
+          echo "sonar_url=$sonar_url" >> $GITHUB_OUTPUT
 
           # Check the value of the quality-gate-status output
           if [ "${{ steps.sonarqube-quality-gate-check.outputs.quality-gate-status }}" == "PASSED" ]; then
