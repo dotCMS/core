@@ -51,9 +51,6 @@ jobs:
           pull_number=$(jq --raw-output .pull_request.number "$GITHUB_EVENT_PATH")
           final_sonar_url="dashboard?id=core-web&pullRequest=$pull_number"
 
-          echo "The pull number is ${pull_number}"
-          echo "The final sonar url is ${final_sonar_url}"
-
           echo "sonar_url=${final_sonar_url}" >>$GITHUB_OUTPUT
 
           # Check the value of the quality-gate-status output
@@ -90,7 +87,7 @@ jobs:
           SLACK_COLOR: ${{ needs.sonar.outputs.color }}
           SLACK_TITLE: "SonarQube: ${{ needs.sonar.outputs.status }}"
           SLACK_MESSAGE: ${{ needs.sonar.outputs.message }}
-          SLACK_FOOTER: ${{ env.PULL_REQUEST_URL }} / ${{ secrets.SONAR_HOST_URL }}/${{ env.SONAR_BRANCH_REPORT }}
+          SLACK_FOOTER: ${{ env.PULL_REQUEST_URL }} \n ${{ secrets.SONAR_HOST_URL }}/${{ env.SONAR_BRANCH_REPORT }}
   check-all:
     outputs:
       name: ${{ steps.lint.outputs.name || steps.test.outputs.name || steps.build.outputs.name }}
