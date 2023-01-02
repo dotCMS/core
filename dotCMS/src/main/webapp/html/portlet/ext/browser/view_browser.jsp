@@ -9,7 +9,7 @@
 request.getSession().removeAttribute(com.dotmarketing.util.WebKeys.CURRENT_DEVICE);
 APILocator.getVisitorAPI().removeVisitor(request);
 
-com.dotmarketing.beans.Host myHost =  WebAPILocator.getHostWebAPI().getCurrentHost(request); 
+com.dotmarketing.beans.Host myHost =  WebAPILocator.getHostWebAPI().getCurrentHost(request);
 Language defaultLang = APILocator.getLanguageAPI().getDefaultLanguage();
 String languageId = String.valueOf(defaultLang.getId());
 
@@ -87,26 +87,26 @@ List<Language> languages = (List<Language>)request.getAttribute (com.dotmarketin
 	var counter=0;
 
 	function doSearch() {
-		
+
 		var selectedFolder = document.getElementsByClassName("folderSelected")[0];
 		var lang = dijit.byId("language_id").get('value');
-		
+
 		if(selectedFolder) {
 			var folderId = selectedFolder.id;
 			folderId = folderId.split("-TreeREF")[0];
-			treeFolderSelected(folderId, lang);	
+			treeFolderSelected(folderId, lang);
 		} else if(counter>0) {
 			var hostId = '<%= (myHost != null) ? myHost.getIdentifier() : "" %>';
-			treeFolderSelected(hostId, lang);	
+			treeFolderSelected(hostId, lang);
 		}
-		
+
 		selectedLang = lang;
-		
+
 		counter++;
-		
+
 	}
 </script>
-	
+
 <!-- <div class="buttonBoxLeft">
 	<b><%= LanguageUtil.get(pageContext, "Sites-and-Folders") %></b>
 </div> -->
@@ -140,24 +140,24 @@ List<Language> languages = (List<Language>)request.getAttribute (com.dotmarketin
 					<div id="combo_zone2" >
 						<input id="language_id" />
 					</div>
+					<!-- Show / Hide Archive items -->
+                    <div class="portlet-toolbar__actions-archive" >
+                        <input type="checkbox" dojoType="dijit.form.CheckBox" name="showArchivedCheckbox" id="showArchivedCheckbox"
+                            onchange="toggleArchive(this.get('value'))">
+                        <label for="showArchivedCheckbox"><%= LanguageUtil.get(pageContext, "Show-Archived") %></label>
+                    </div>
+                    <!--  End Show / Hide Archive items  -->
 					<%@include file="../contentlet/languages_select_inc.jsp" %>
 				</div>
 				<div class="portlet-toolbar__info">
-					<!-- The trash can -->
-						<div  id="trash-DIV">
-							<a id="trash-TreeREF" href="javascript: ;">
-								<span class="trashIcon" id="Trash-TreeFolderIMG"></span>
-								<span id="trashLabel"><%= LanguageUtil.get(pageContext, "Show-Archived") %></span> &nbsp;&nbsp;
-							</a>
-						</div>
-					<!--  End of the trash can -->
+
 				</div>
 		    	<div class="portlet-toolbar__actions-secondary">
-		    		<div id="addNewDropDownButtonDiv"></div>   	
+		    		<div id="addNewDropDownButtonDiv"></div>
 		    	</div>
 		   </div>
 		   <!-- END Toolbar -->
-		
+
 			<table class="listingTable" id="assetListBodyTD">
 				<thead id="assetListHead">
 					<tr>
@@ -205,10 +205,6 @@ List<Language> languages = (List<Language>)request.getAttribute (com.dotmarketin
     debugMessagesEnabled = false;
 
     dojo.addOnLoad(function () {
-    	//Adding the events for the trash can
-    	Droppables.add('trash-TreeREF', { onDrop: function(draggableElem, droppableElem, e) { droppedOnTrash(draggableElem.id.split('-')[0], 'Trash', e) }});
-
-    	Event.observe('trash-TreeREF', 'mouseup', function (e){ trashRefMouseUp(e) });
 
     	//Content Area event
     	Event.observe('assetListBodyTD', 'mouseup', function (e){ contentAreaRefMouseUp(e) });
