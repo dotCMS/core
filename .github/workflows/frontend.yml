@@ -17,7 +17,7 @@ env:
   PULL_REQUEST_URL: ${{ github.event.pull_request._links.html.href }}
   IS_PULL_REQUEST: ${{ github.event_name == 'pull_request' }}
   HEAD_REF: ${{ github.head_ref }}
-  SONARQUBE_URL: ${{ secrets.SONAR_HOST_URL }}
+  SONARQUBE_URL: https://sonarqube.dotcms.site/
 jobs:
   sonar:
     outputs:
@@ -50,12 +50,12 @@ jobs:
         if: always()
         run: |
           pull_number=$(jq --raw-output .pull_request.number "$GITHUB_EVENT_PATH")
-          sonar_url="${{ env.SONARQUBE_URL }}/dashboard?id=core-web&pullRequest=$pull_number"
+          sonar_url=""
 
           echo "The pull number is ${pull_number}"
-          echo "The sonar url is ${sonar_url}"
+          echo "The sonar url is ${{ env.SONARQUBE_URL }}/dashboard?id=core-web&pullRequest=$pull_number"
 
-          echo "sonar_url=${sonar_url}" >>$GITHUB_OUTPUT
+          echo "sonar_url=${{ env.SONARQUBE_URL }}/dashboard?id=core-web&pullRequest=$pull_number" >>$GITHUB_OUTPUT
 
           # Check the value of the quality-gate-status output
           if [ "${{ steps.sonarqube-quality-gate-check.outputs.quality-gate-status }}" == "PASSED" ]; then
