@@ -17,21 +17,13 @@
 }
 
 .search-box {
-    padding: $spacing-4 $spacing-3;
-    scrollbar-gutter: stable both-edges;
+    padding: $spacing-4 $spacing-5;
     overflow: auto;
 
     &,
-    span {
-        width: 100%;
-    }
-
+    span,
     .search {
         width: 100%;
-        border: 1px solid $gray-light;
-        border-radius: $border-radius;
-        padding: $spacing-1;
-        padding-left: $spacing-3;
     }
 }
 
