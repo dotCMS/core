@@ -106,48 +106,50 @@ export class DotExperimentsConfigurationStore extends ComponentStore<DotExperime
     });
 
     // Variants
-    readonly addVariant = this.effect((variant$: Observable<Pick<DotExperiment, 'name'>>) => {
-        return variant$.pipe(
-            tap(() => this.setSidebarStatus(Status.SAVING)),
-            withLatestFrom(this.state$),
-            switchMap(([variant, { experiment }]) =>
-                this.dotExperimentsService.addVariant(experiment.id, variant).pipe(
-                    tapResponse(
-                        (experiment) => {
-                            this.messageService.add({
-                                severity: 'info',
-                                summary: this.dotMessageService.get(
-                                    'experiments.configure.variant.add.confirm-title'
-                                ),
-                                detail: this.dotMessageService.get(
-                                    'experiments.configure.variant.add.confirm-message',
-                                    experiment.name
-                                )
-                            });
-
-                            this.setTrafficProportion(experiment.trafficProportion);
-                            this.closeSidebar();
-                        },
-                        (error: HttpErrorResponse) => {
-                            this.setSidebarStatus(Status.IDLE);
-
-                            throwError(error);
-                        }
-                    )
-                )
-            )
-        );
-    });
-
-    readonly editVariant = this.effect(
-        (variant$: Observable<{ id: string; description: string }>) => {
+    readonly addVariant = this.effect(
+        (variant$: Observable<{ experimentId: string; data: Pick<DotExperiment, 'name'> }>) => {
             return variant$.pipe(
                 tap(() => this.setSidebarStatus(Status.SAVING)),
-                withLatestFrom(this.state$),
-                switchMap(([variant, { experiment }]) =>
+                switchMap((variant) =>
+                    this.dotExperimentsService.addVariant(variant.experimentId, variant.data).pipe(
+                        tapResponse(
+                            (experiment) => {
+                                this.messageService.add({
+                                    severity: 'info',
+                                    summary: this.dotMessageService.get(
+                                        'experiments.configure.variant.add.confirm-title'
+                                    ),
+                                    detail: this.dotMessageService.get(
+                                        'experiments.configure.variant.add.confirm-message',
+                                        experiment.name
+                                    )
+                                });
+
+                                this.setTrafficProportion(experiment.trafficProportion);
+                                this.closeSidebar();
+                            },
+                            (error: HttpErrorResponse) => {
+                                this.setSidebarStatus(Status.IDLE);
+
+                                throwError(error);
+                            }
+                        )
+                    )
+                )
+            );
+        }
+    );
+
+    readonly editVariant = this.effect(
+        (
+            variant$: Observable<{ experimentId: string; data: Pick<DotExperiment, 'name' | 'id'> }>
+        ) => {
+            return variant$.pipe(
+                tap(() => this.setSidebarStatus(Status.SAVING)),
+                switchMap((variant) =>
                     this.dotExperimentsService
-                        .editVariant(experiment.id, variant.id, {
-                            description: variant.description
+                        .editVariant(variant.experimentId, variant.data.id, {
+                            description: variant.data.name
                         })
                         .pipe(
                             tapResponse(

@@ -1,11 +1,10 @@
 import {
     ChangeDetectionStrategy,
+    ChangeDetectorRef,
     Component,
     EventEmitter,
     Input,
-    Output,
-    QueryList,
-    ViewChildren
+    Output
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { CardModule } from 'primeng/card';
@@ -27,10 +26,10 @@ import {
     Variant
 } from '@dotcms/dotcms-models';
 import { DotExperimentsConfigurationVariantsAddComponent } from '@portlets/dot-experiments/dot-experiments-configuration/components/dot-experiments-configuration-variants-add/dot-experiments-configuration-variants-add.component';
-import { Inplace, InplaceModule } from 'primeng/inplace';
 import { InputTextModule } from 'primeng/inputtext';
 import { DotExperimentsConfigurationItemsCountComponent } from '@portlets/dot-experiments/dot-experiments-configuration/components/dot-experiments-configuration-items-count/dot-experiments-configuration-items-count.component';
 import { DotCopyButtonModule } from '@components/dot-copy-button/dot-copy-button.module';
+import { InplaceModule } from 'primeng/inplace';
 
 @Component({
     selector: 'dot-experiments-configuration-variants',
@@ -43,12 +42,13 @@ import { DotCopyButtonModule } from '@components/dot-copy-button/dot-copy-button
         UiDotIconButtonTooltipModule,
         DotExperimentsConfigurationVariantsAddComponent,
         DotCopyButtonModule,
+        DotExperimentsConfigurationItemsCountComponent,
+
         //PrimeNg
         CardModule,
-        ButtonModule,
         InplaceModule,
-        InputTextModule,
-        DotExperimentsConfigurationItemsCountComponent
+        ButtonModule,
+        InputTextModule
     ],
     templateUrl: './dot-experiments-configuration-variants.component.html',
     styleUrls: ['./dot-experiments-configuration-variants.component.scss'],
@@ -60,7 +60,6 @@ export class DotExperimentsConfigurationVariantsComponent {
     maxVariantsAllowed = MAX_VARIANTS_ALLOWED;
     defaultVariantName = DEFAULT_VARIANT_NAME;
     experimentStepName = ExperimentSteps.VARIANTS;
-
     @Input() stepStatus: StepStatus;
     @Input() variants: Variant[];
     @Output() sidebarStatusChanged = new EventEmitter<SidebarStatus>();
@@ -68,12 +67,15 @@ export class DotExperimentsConfigurationVariantsComponent {
     @Output() edit = new EventEmitter<Pick<DotExperiment, 'name' | 'id'>>();
     @Output() save = new EventEmitter<Pick<DotExperiment, 'name'>>();
     @Output() goToEditPage = new EventEmitter<{ variant: Variant; mode: EditPageTabs }>();
-    @ViewChildren(Inplace) private inplaceInputs: QueryList<Inplace>;
 
-    editVariantName(newValue: string, variant: Variant) {
+    constructor(private readonly cdr: ChangeDetectorRef) {}
+
+    editVariantName(newVariantName: string, variant: Variant, button: HTMLButtonElement) {
         this.edit.emit({
             ...variant,
-            name: newValue
+            name: newVariantName
         });
+        button.disabled = true;
+        this.cdr.markForCheck();
     }
 }

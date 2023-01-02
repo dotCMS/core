@@ -11,13 +11,6 @@ h2 {
     color: $brand-primary;
 }
 
-.muted {
-    color: $gray;
-    font-size: $font-size-x-small;
-    -webkit-user-select: all;
-    user-select: all;
-}
-
 .separator {
     color: $gray-lighter;
 }
@@ -59,43 +52,24 @@ button {
         }
     }
 
-    p-inplace {
-        max-height: 40px;
-
+    p-inplace .p-inplace {
         .p-inplace-display {
             padding: 0;
 
             i {
+                margin-left: $spacing-1;
+                margin-right: $spacing-1;
                 font-size: 0.85rem;
+            }
+
+            &:hover {
+                background: transparent;
             }
         }
 
         .p-inplace-content {
             display: flex;
-            gap: 0.5rem;
-            align-items: center;
-
-            dot-icon {
-                color: $brand-primary;
-            }
-
-            button {
-                padding: 0;
-                background: white;
-                color: $brand-primary;
-                margin: 0;
-
-                &:hover {
-                    padding: 0;
-                    background: white;
-                    color: $brand-primary;
-                    margin: 0;
-                }
-            }
-        }
-
-        input {
-            padding: 0.25rem;
+            gap: $spacing-1;
         }
     }
 }

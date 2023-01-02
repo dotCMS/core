@@ -7,6 +7,7 @@ import { Title } from '@angular/platform-browser';
 import { of } from 'rxjs';
 import { DotMessageService } from '@dotcms/data-access';
 import {
+    DEFAULT_VARIANT_NAME,
     DotExperiment,
     ExperimentSteps,
     LoadingState,
@@ -134,17 +135,23 @@ describe('DotExperimentsConfigurationStore', () => {
 
         it('should add a variant to the store', (done) => {
             dotExperimentsService.getById.and.callThrough().and.returnValue(of(ExperimentMocks[1]));
-            const newVariant: Variant = {
-                id: '333',
-                name: '3333',
-                weight: '333'
+            const newVariant: { experimentId: string; data: Pick<DotExperiment, 'name'> } = {
+                data: { name: '333' },
+                experimentId: EXPERIMENT_ID
             };
 
             const expectedExperiment = {
                 ...ExperimentMocks[1],
                 trafficProportion: {
                     ...ExperimentMocks[1].trafficProportion,
-                    variants: [...ExperimentMocks[1].trafficProportion.variants, newVariant]
+                    variants: [
+                        ...ExperimentMocks[1].trafficProportion.variants,
+                        {
+                            ...newVariant.data,
+                            id: '222',
+                            weight: '100.0'
+                        }
+                    ]
                 }
             };
 
@@ -162,7 +169,51 @@ describe('DotExperimentsConfigurationStore', () => {
             });
         });
 
-        it('should delete a variant from a experiment', (done) => {
+        it('should edit a variant name of an experiment', (done) => {
+            const variants: Variant[] = [
+                { id: '111', name: DEFAULT_VARIANT_NAME, weight: '50.00', url: 'url' },
+                { id: '222', name: 'name to edit', weight: '50.00', url: 'url' }
+            ];
+            const variantEdited: Variant[] = [
+                { id: '111', name: DEFAULT_VARIANT_NAME, weight: '50.00', url: 'url' },
+                { id: '222', name: 'new name', weight: '50.00', url: 'url' }
+            ];
+
+            dotExperimentsService.getById.and.callThrough().and.returnValue(
+                of({
+                    ...ExperimentMocks[0],
+                    trafficProportion: {
+                        ...ExperimentMocks[0].trafficProportion,
+                        variants
+                    }
+                })
+            );
+            dotExperimentsService.editVariant.and.callThrough().and.returnValue(
+                of({
+                    ...ExperimentMocks[0],
+                    trafficProportion: {
+                        ...ExperimentMocks[0].trafficProportion,
+                        variants: variantEdited
+                    }
+                })
+            );
+
+            store.loadExperiment(EXPERIMENT_ID);
+
+            store.editVariant({
+                experimentId: EXPERIMENT_ID,
+                data: { id: variants[1].id, name: 'new name' }
+            });
+
+            store.state$.subscribe(({ experiment }) => {
+                expect(experiment.trafficProportion.variants[1].name).toEqual(
+                    variantEdited[1].name
+                );
+                done();
+            });
+        });
+
+        it('should delete a variant from an experiment', (done) => {
             const variants: Variant[] = [
                 { id: 'DEFAULT', name: 'DEFAULT', weight: 'xxx' },
                 {

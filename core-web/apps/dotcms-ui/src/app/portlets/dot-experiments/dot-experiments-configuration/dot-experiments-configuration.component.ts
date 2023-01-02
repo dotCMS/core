@@ -74,8 +74,24 @@ export class DotExperimentsConfigurationComponent implements OnInit {
      * @returns void
      * @memberof DotExperimentsConfigurationComponent
      */
-    saveVariant(variant: Pick<DotExperiment, 'name'>) {
-        this.dotExperimentsConfigurationStore.addVariant(variant);
+    saveVariant(data: Pick<DotExperiment, 'name'>, experimentId: string) {
+        this.dotExperimentsConfigurationStore.addVariant({
+            data,
+            experimentId
+        });
+    }
+
+    /**
+     * Edit a specific variant
+     * @param {Variant} variant
+     * @returns void
+     * @memberof DotExperimentsConfigurationComponent
+     */
+    editVariant(data: Pick<DotExperiment, 'name' | 'id'>, experimentId: string) {
+        this.dotExperimentsConfigurationStore.editVariant({
+            data,
+            experimentId
+        });
     }
 
     /**
@@ -86,19 +102,6 @@ export class DotExperimentsConfigurationComponent implements OnInit {
      */
     deleteVariant(variant: Variant) {
         this.dotExperimentsConfigurationStore.deleteVariant(variant);
-    }
-
-    /**
-     * Edit a specific variant
-     * @param {Variant} variant
-     * @returns void
-     * @memberof DotExperimentsConfigurationComponent
-     */
-    editVariant(variant: Variant) {
-        this.dotExperimentsConfigurationStore.editVariant({
-            id: variant.id,
-            description: variant.name
-        });
     }
 
     /**

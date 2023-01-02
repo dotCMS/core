@@ -7,7 +7,8 @@ import {
     DEFAULT_VARIANT_NAME,
     ExperimentSteps,
     SidebarStatus,
-    Status
+    Status,
+    Variant
 } from '@dotcms/dotcms-models';
 import { DotExperimentsConfigurationVariantsAddComponent } from '@portlets/dot-experiments/dot-experiments-configuration/components/dot-experiments-configuration-variants-add/dot-experiments-configuration-variants-add.component';
 import { MockDotMessageService } from '@dotcms/utils-testing';
@@ -67,9 +68,8 @@ describe('DotExperimentsConfigurationVariantsComponent', () => {
             spectator.setInput(variantsVm);
             spectator.detectChanges();
 
-            expect(spectator.query(byTestId('variant-name'))).toHaveText(
-                variantsVm.variants[0].name
-            );
+            expect(spectator.queryAll(byTestId('variant-name')).length).toBe(1);
+
             expect(spectator.query(byTestId('variant-weight'))).toHaveText(
                 variantsVm.variants[0].weight + '.00% weight'
             );
@@ -94,7 +94,7 @@ describe('DotExperimentsConfigurationVariantsComponent', () => {
 
             spectator.setInput(variantsVm);
 
-            spectator.detectChanges();
+            spectator.detectComponentChanges();
 
             expect(spectator.query(byTestId('variant-title-step-done'))).toHaveClass('isDone');
             expect(spectator.queryAll(Card).length).toBe(4);
@@ -106,7 +106,6 @@ describe('DotExperimentsConfigurationVariantsComponent', () => {
 
             expect(spectator.queryAll(DotCopyButtonComponent).length).toBe(3);
 
-            spectator.queryAll(Inplace);
             expect(spectator.queryAll(Inplace).length).toBe(2);
 
             const variantsWeight = spectator.queryAll(byTestId('variant-weight'));
@@ -195,6 +194,7 @@ describe('DotExperimentsConfigurationVariantsComponent', () => {
 
             expect(output).toEqual({ variant: variantsVm.variants[0], mode: 'preview' });
         });
+
         it('should goToEditPage emit a variant and mode(edit) when edit button is clicked', () => {
             let output;
             spectator.output('goToEditPage').subscribe((result) => (output = result));
@@ -208,6 +208,38 @@ describe('DotExperimentsConfigurationVariantsComponent', () => {
 
             expect(output).toEqual({ variant: variantsVm.variants[1], mode: 'edit' });
         });
+
+        it('should edit output emit the new name', () => {
+            const newVariantName = 'new name';
+            const variants: Variant[] = [
+                { id: '1', name: DEFAULT_VARIANT_NAME, weight: '50.00', url: 'url' },
+                { id: '2', name: 'to edit', weight: '50.00', url: 'url' }
+            ];
+
+            let output;
+            spectator.output('edit').subscribe((result) => (output = result));
+
+            spectator.setInput({
+                variants
+            });
+
+            spectator.query(Inplace).activate();
+
+            spectator.detectComponentChanges();
+
+            const viewButton = spectator.query(
+                byTestId('variant-save-name-btn')
+            ) as HTMLButtonElement;
+
+            const inplaceInput = spectator.query(byTestId('inplace-input')) as HTMLInputElement;
+            inplaceInput.value = newVariantName;
+
+            expect(viewButton.disabled).not.toBe(true);
+            spectator.click(viewButton);
+
+            expect(output).toEqual({ ...variants[1], name: newVariantName });
+        });
+
         it('should delete a variant', () => {
             let output;
             spectator.output('delete').subscribe((result) => (output = result));
