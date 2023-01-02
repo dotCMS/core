@@ -54,7 +54,7 @@ jobs:
           echo "The pull number is ${pull_number}"
           echo "The final sonar url is ${final_sonar_url}"
 
-          echo "sonar_url=${final_sonar_url}" >>$GITHUB_OUTPUT
+          echo "sonar_url=Hello World" >>$GITHUB_OUTPUT
 
           # Check the value of the quality-gate-status output
           if [ "${{ steps.sonarqube-quality-gate-check.outputs.quality-gate-status }}" == "PASSED" ]; then
