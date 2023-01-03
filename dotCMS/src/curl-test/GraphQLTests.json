@@ -1,9 +1,8 @@
 {
 	"info": {
-		"_postman_id": "0ae9fe3d-4dda-47cd-9245-78e4bf53ca55",
+		"_postman_id": "28ca1062-ba19-48ec-8963-8d6fb0439620",
 		"name": "GraphQL",
-		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
-		"_exporter_id": "5403727"
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
 	},
 	"item": [
 		{
@@ -1130,7 +1129,7 @@
 						"body": {
 							"mode": "graphql",
 							"graphql": {
-								"query": "{\n  page(url:\"/destinations/costa-rica\") {\n    template {\n      iDate\n      type\n      owner {\n        firstName\n      }\n      inode\n      identifier\n      source\n      title\n      friendlyName\n      modDate\n      modUser {\n        firstName\n        lastName\n        userId\n      }\n      sortOrder\n      showOnMenu\n      image\n      drawed\n      drawedBody\n      theme\n      anonymous\n      template\n      versionId\n      versionType\n      deleted\n      working\n      permissionId\n      name\n      live\n      archived\n      locked\n      permissionType\n      categoryId\n      new\n      idate\n      canEdit\n    }\n  }\n}",
+								"query": "{\n  page(url:\"/destinations/costa-rica\") {\n    template {\n      iDate\n      type\n      owner {\n        firstName\n      }\n      inode\n      identifier\n      source\n      title\n      friendlyName\n      modDate\n      modUser {\n        firstName\n        lastName\n        userId\n      }\n      sortOrder\n      showOnMenu\n      image\n      drawed\n      drawedBody\n      theme\n      anonymous\n      template\n      versionId\n      versionType\n      deleted\n      working\n      permissionId\n      name\n      live\n      archived\n      locked\n      permissionType\n      categoryId\n      new\n      canEdit\n    }\n  }\n}",
 								"variables": ""
 							}
 						},
