@@ -1,6 +1,5 @@
 package com.dotmarketing.business;
 
-
 import com.dotcms.rest.api.v1.DotObjectMapperProvider;
 import com.dotcms.util.transform.TransformerLocator;
 import com.dotmarketing.common.db.DotConnect;
@@ -18,6 +17,8 @@ import com.liferay.portal.model.Company;
 import com.liferay.portal.model.User;
 import com.liferay.portal.util.PropsUtil;
 import com.liferay.util.StringPool;
+import org.apache.logging.log4j.util.Strings;
+
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -26,9 +27,17 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
-import org.apache.logging.log4j.util.Strings;
 
+/**
+ * Implementation class for the {@link UserFactory} class.
+ *
+ * @author Nollymar Longa
+ * @since Mar 16th, 2021
+ */
 public class UserFactoryImpl implements UserFactory {
+
+    private static final String USERID_COLUMN = "userid";
+    private static final String AND_DELETE_IN_PROGRESS = " AND delete_in_progress = ";
 
     private final UserCache userCache;
 
@@ -121,7 +130,7 @@ public class UserFactoryImpl implements UserFactory {
         query.append(
                 "select * FROM user_ WHERE ");
         query.append("emailAddress = ?");
-        query.append(" AND delete_in_progress = ");
+        query.append(AND_DELETE_IN_PROGRESS);
         query.append(DbConnectionFactory.getDBFalse());
         query.append(" ORDER BY ");
         query.append("firstName ASC").append(", ");
@@ -140,7 +149,7 @@ public class UserFactoryImpl implements UserFactory {
     public List<User> findAllUsers(final int begin, final int end) throws DotDataException {
         final DotConnect dotConnect = new DotConnect();
         dotConnect.setSQL("select * from user_ where companyid <> '" + User.DEFAULT
-                + "' and delete_in_progress = " + DbConnectionFactory.getDBFalse()
+                + "' " + AND_DELETE_IN_PROGRESS + DbConnectionFactory.getDBFalse()
                 + " order by firstname, lastname");
         dotConnect.setStartRow(begin);
         dotConnect.setMaxRows(end -  begin);
@@ -173,7 +182,7 @@ public class UserFactoryImpl implements UserFactory {
             baseSql.append(") like ?");
         }
 
-        baseSql.append(" and delete_in_progress = ");
+        baseSql.append(AND_DELETE_IN_PROGRESS);
         baseSql.append(DbConnectionFactory.getDBFalse());
 
         final String sql = baseSql.toString();
@@ -192,61 +201,63 @@ public class UserFactoryImpl implements UserFactory {
     @Override
     public List<User> getUsersByName(final String filter, final List<Role> roles, final int start,
             final int limit) throws DotDataException {
-        String sanitizeFilter = SQLUtil.sanitizeParameter(filter);
-        DotConnect dotConnect = new DotConnect();
-        boolean isFilteredByName = UtilMethods.isSet(sanitizeFilter);
-        sanitizeFilter = (isFilteredByName ? sanitizeFilter : Strings.EMPTY);
-        final StringBuilder baseSql = new StringBuilder(
-                "select user_.userId from user_ where companyid <> ? and userid <> 'system' ");
+        return getUsersByName(filter, roles, start, limit, new UserAPI.FilteringParams.Builder().build());
+    }
+
+    @Override
+    public List<User> getUsersByName(final String filter, final List<Role> roles, final int start,
+                                     final int limit, final UserAPI.FilteringParams filteringParams) throws DotDataException {
+        final StringBuilder baseSql = new StringBuilder("select user_.userId from user_ where ");
+        baseSql.append(!filteringParams.includeDefaultUser() ? "companyid <> ? AND " : StringPool.BLANK);
+        baseSql.append(" userid <> 'system' ");
+        baseSql.append(!filteringParams.includeAnonymousUser() ? " AND userid <> 'anonymous' " : StringPool.BLANK);
+
         if (UtilMethods.isSet(roles)) {
-            final String joinedRoleKeys = roles.stream().map(Role::getRoleKey)
-                    .map(s -> String.format("'%s'", s)).collect(Collectors.joining(","));
-            final String backendRoleFilter = String
-                    .format(" and exists ( select ur.user_id from users_cms_roles ur join cms_role r on ur.role_id = r.id where r.role_key in (%s) and ur.user_id = user_.userId )",
-                            joinedRoleKeys);
+            final String joinedRoleKeys =
+                    roles.stream().map(Role::getRoleKey).map(s -> String.format("'%s'", s)).collect(Collectors.joining(StringPool.COMMA));
+            final String backendRoleFilter = String.format(" and exists ( select ur.user_id from users_cms_roles ur " +
+                                                                   "join cms_role r on ur.role_id = r.id where r" +
+                                                                   ".role_key in (%s) and ur.user_id = user_.userId )"
+                    , joinedRoleKeys);
             baseSql.append(backendRoleFilter);
         }
         final String userFullName = DotConnect.concat(new String[]{"firstname", "' '", "lastname"});
-
+        final String sanitizeFilter = SQLUtil.sanitizeParameter(filter);
+        boolean isFilteredByName = UtilMethods.isSet(sanitizeFilter);
         if (isFilteredByName) {
-            baseSql.append(" and lower(");
-            baseSql.append(userFullName);
-            baseSql.append(") like ?");
+            baseSql.append(" and lower(").append(userFullName).append(") like ?");
         }
-
-        baseSql.append(" and delete_in_progress = ");
-        baseSql.append(DbConnectionFactory.getDBFalse());
+        baseSql.append(AND_DELETE_IN_PROGRESS).append(DbConnectionFactory.getDBFalse());
 
         baseSql.append(" order by ");
-        baseSql.append(userFullName);
+        final String sanitizedOrderBy = SQLUtil.sanitizeSortBy(filteringParams.orderBy());
+        baseSql.append(UtilMethods.isSet(sanitizedOrderBy) ? sanitizedOrderBy : userFullName);
+        baseSql.append(UtilMethods.isSet(filteringParams.orderDirection()) ? filteringParams.orderDirection() : SQLUtil._ASC);
 
         final String sql = baseSql.toString();
+        final DotConnect dotConnect = new DotConnect();
         dotConnect.setSQL(sql);
         Logger.debug(UserFactoryImpl.class, "::getUsersByName -> query: " + dotConnect.getSQL());
-
-        dotConnect.addParam(User.DEFAULT);
+        if (!filteringParams.includeDefaultUser()) {
+            dotConnect.addParam(User.DEFAULT);
+        }
         if (isFilteredByName) {
             dotConnect.addParam("%" + sanitizeFilter.toLowerCase() + "%");
         }
-
         if (start > -1) {
             dotConnect.setStartRow(start);
         }
         if (limit > -1) {
             dotConnect.setMaxRows(limit);
         }
-        final List<Map<String, Object>> results = dotConnect.loadResults();
-
-        // Since limit is a small number, convert each row to appropriate entity
-        final List<User> users = new ArrayList<User>();
-
-        for (final Map<String, Object> hash : results) {
-            final String userId = (String) hash.get("userid");
-            final User user = loadUserById(userId);
+        final List<Map<String, Object>> results = dotConnect.loadObjectResults();
+        final List<User> users = new ArrayList<>();
+        for (final Map<String, Object> userData : results) {
+            final String userId = userData.get(USERID_COLUMN).toString();
+            final User user = this.loadUserById(userId);
             users.add(user);
-            userCache.add(user.getUserId(), user);
+            this.userCache.add(user.getUserId(), user);
         }
-
         return users;
     }
 
@@ -406,7 +417,7 @@ public class UserFactoryImpl implements UserFactory {
         sql.append(" like '%");
         sql.append(filter);
         sql.append("%')");
-        sql.append(" and delete_in_progress = ");
+        sql.append(AND_DELETE_IN_PROGRESS);
         sql.append(DbConnectionFactory.getDBFalse());
 
         final DotConnect dotConnect = new DotConnect();
@@ -440,7 +451,7 @@ public class UserFactoryImpl implements UserFactory {
         sql.append(" like '%");
         sql.append(filter);
         sql.append("%') AND userid <> 'system' ");
-        sql.append(" and delete_in_progress = ");
+        sql.append(AND_DELETE_IN_PROGRESS);
         sql.append(DbConnectionFactory.getDBFalse());
         sql.append(" order by firstName asc,lastname asc");
 
@@ -454,7 +465,7 @@ public class UserFactoryImpl implements UserFactory {
             if (i >= bottom) {
                 if (i < top) {
                     final Map hash = (HashMap) results.get(i);
-                    String userId = (String) hash.get("userid");
+                    String userId = (String) hash.get(USERID_COLUMN);
                     users.add(loadUserById(userId));
                 } else {
                     break;
@@ -503,7 +514,7 @@ public class UserFactoryImpl implements UserFactory {
         sql.append(" AND userid <> 'system' ");
         sql.append(((!includeAnonymous) ? "AND userid <> 'anonymous'" : " "));
         sql.append(((!includeDefault) ? "AND userid <> 'dotcms.org.default'" : " "));
-        sql.append(" AND delete_in_progress = ");
+        sql.append(AND_DELETE_IN_PROGRESS);
         sql.append(DbConnectionFactory.getDBFalse());
         if (roleId != null) {
             sql.append(" AND role_id = ? ");
@@ -574,7 +585,7 @@ public class UserFactoryImpl implements UserFactory {
         sql.append(" AND userid <> 'system' ");
         sql.append(((!includeAnonymous) ? " AND userid <> 'anonymous'" : " "));
         sql.append(((!includeDefault) ? " AND userid <> 'dotcms.org.default'" : " "));
-        sql.append(" AND delete_in_progress = ");
+        sql.append(AND_DELETE_IN_PROGRESS);
         sql.append(DbConnectionFactory.getDBFalse());
         if (roleId != null) {
             sql.append(" AND role_id = ? ");
@@ -601,7 +612,7 @@ public class UserFactoryImpl implements UserFactory {
             if (i >= bottom) {
                 if (i < top) {
                     final Map<String, Object> hash = (HashMap) results.get(i);
-                    final String userId = (String) hash.get("userid");
+                    final String userId = (String) hash.get(USERID_COLUMN);
                     users.add(loadUserById(userId));
                 } else {
                     break;
@@ -644,7 +655,7 @@ public class UserFactoryImpl implements UserFactory {
 
         for (int i = 0; i < results.size(); i++) {
             HashMap hash = (HashMap) results.get(i);
-            String userId = (String) hash.get("userid");
+            String userId = (String) hash.get(USERID_COLUMN);
             users.add(loadUserById(userId));
         }
         return users;
@@ -664,7 +675,7 @@ public class UserFactoryImpl implements UserFactory {
             query.append(" AND createdate >= ?");
         }
 
-        query.append(" AND delete_in_progress = ");
+        query.append(AND_DELETE_IN_PROGRESS);
         query.append(DbConnectionFactory.getDBFalse());
 
         query.append(" ORDER BY firstName ASC, lastname ASC");
@@ -690,7 +701,7 @@ public class UserFactoryImpl implements UserFactory {
 
         final List<String> ids = new ArrayList<>();
         for (final Map<String, Object> hash : results) {
-            final String userId = (String) hash.get("userid");
+            final String userId = (String) hash.get(USERID_COLUMN);
             ids.add(userId);
         }
         return ids;
@@ -717,7 +728,7 @@ public class UserFactoryImpl implements UserFactory {
         if(results.isEmpty()) {
             return null;
         }else {
-            return (String) results.get(0).get("userid");
+            return (String) results.get(0).get(USERID_COLUMN);
         }
     }
 
