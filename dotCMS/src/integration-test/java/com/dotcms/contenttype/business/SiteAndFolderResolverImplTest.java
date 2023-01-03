@@ -3,6 +3,7 @@ package com.dotcms.contenttype.business;
 import com.dotcms.IntegrationTestBase;
 import com.dotcms.contenttype.model.component.SiteAndFolder;
 import com.dotcms.contenttype.model.type.ContentType;
+import com.dotcms.contenttype.model.type.ContentType.Source;
 import com.dotcms.contenttype.model.type.ContentTypeBuilder;
 import com.dotcms.contenttype.model.type.FileAssetContentType;
 import com.dotcms.contenttype.model.type.ImmutableFileAssetContentType;
@@ -50,9 +51,10 @@ public class SiteAndFolderResolverImplTest extends IntegrationTestBase {
                 .id(UUIDUtil.uuid())
                 .owner(user.getUserId()).build();
 
+        Assert.assertEquals(Source.OTHER,contentType.source());
         //These two provide default value therefore the expected is they'll be not null
-        Assert.assertNotNull(contentType.folderPath());
-        Assert.assertNotNull(contentType.siteName());
+        Assert.assertNull(contentType.folderPath());
+        Assert.assertNull(contentType.siteName());
 
         final SiteAndFolder siteAndFolder1 = contentType.siteAndFolder();
         Assert.assertNotNull(siteAndFolder1.folder());
@@ -80,6 +82,25 @@ public class SiteAndFolderResolverImplTest extends IntegrationTestBase {
         //However, these two should return null because no value has been used to set them in reality
         Assert.assertNull(siteAndFolder2.folderPath());
         Assert.assertNull(siteAndFolder2.siteName());
+
+        ContentType contentTypeFromDB = ContentTypeBuilder.builder(FileAssetContentType.class)
+                .folder(foo.getInode())
+                .host(host.getIdentifier())
+                .name(variable)
+                .id(UUIDUtil.uuid())
+                .owner(user.getUserId())
+                .source(Source.DB)
+                .build();
+
+        Assert.assertNotNull(contentTypeFromDB.folderPath());
+        Assert.assertNotNull(contentTypeFromDB.siteName());
+
+        final SiteAndFolder siteAndFolder3 = contentTypeFromDB.siteAndFolder();
+        Assert.assertNotNull(siteAndFolder3.folder());
+        Assert.assertNotNull(siteAndFolder3.host());
+        //However, these two should return null because no value has been used to set them in reality
+        Assert.assertNotNull(siteAndFolder3.folderPath());
+        Assert.assertNotNull(siteAndFolder3.siteName());
 
     }
 
