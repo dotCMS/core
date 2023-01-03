@@ -36,8 +36,10 @@ import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -169,6 +171,60 @@ public class PermissionResource {
                 .filter(permission -> this.filter(permissionType, permission))
                 .map(PermissionResource::from)
                 .collect(Collectors.toList()))).build();
+    }
+
+    /**
+     * Return a map of roles group by permission type
+     * @param request     {@link HttpServletRequest}
+     * @param response    {@link HttpServletResponse}
+     * @param contentletId {@link String}
+     * @param type      {@link String}
+     * @return Response
+     * @throws DotDataException
+     */
+    @GET
+    @Path("/_bycontent/_groupbytype")
+    @JSONP
+    @NoCache
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    @Operation(summary = "Get permissions roles group by type for a Contentlet",
+            responses = {
+                    @ApiResponse(
+                            responseCode = "200",
+                            content = @Content(mediaType = "application/json",
+                                    schema = @Schema(implementation = ResponseEntityPermissionView.class))),
+                    @ApiResponse(responseCode = "403", description = "If not admin user"),})
+    public Response getByContentletGroupByType(final @Context HttpServletRequest request,
+                                    final @Context HttpServletResponse response,
+                                    final @QueryParam("contentletId")   String contentletId)
+            throws DotDataException, DotSecurityException {
+
+        final User userInvoker = new WebResource.InitBuilder(webResource)
+                .requiredBackendUser(true)
+                .requiredFrontendUser(false)
+                .requestAndResponse(request, response)
+                .rejectWhenNoUser(true).init().getUser();
+
+        Logger.debug(this, ()-> "getByContentletGroupByType, contentlet: " + contentletId);
+
+        if (!userInvoker.isAdmin()) {
+
+            throw new DotSecurityException("Only admin user can retrieve other users permissions");
+        }
+
+        final List<Permission> permissions = APILocator.getPermissionAPI().getPermissions(
+                APILocator.getContentletAPI().findContentletByIdentifierAnyLanguage(contentletId));
+
+        final Map<String, List<String>> permissionsRoleGroupByTypeMap = new HashMap<>();
+        for (final Permission permission : permissions) {
+
+            permissionsRoleGroupByTypeMap.computeIfAbsent(
+                    PermissionAPI.Type.findById(permission.getPermission()).name(),
+                    k -> new ArrayList<>()).add(permission.getRoleId());
+        }
+
+        return Response.ok(new ResponseEntityPermissionGroupByTypeView(permissionsRoleGroupByTypeMap)).build();
     }
 
     private boolean filter(final PermissionAPI.Type permissionType, final Permission permission) {
