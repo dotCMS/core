@@ -12,6 +12,7 @@ import { DotImageService } from '../image-uploader/services/dot-image/dot-image.
 import { DotImageCardSkeletonComponent } from './components/dot-image-card-skeleton/dot-image-card-skeleton.component';
 import { DotImageCardComponent } from './components/dot-image-card/dot-image-card.component';
 import { DotImageCardListComponent } from './components/dot-image-card-list/dot-image-card-list.component';
+import { DotInputTabComponent } from './components/dot-input-tab/dot-input-tab.component';
 import { ImageTabviewFormComponent } from './image-tabview-form.component';
 
 @NgModule({
@@ -20,7 +21,8 @@ import { ImageTabviewFormComponent } from './image-tabview-form.component';
         ImageTabviewFormComponent,
         DotImageCardListComponent,
         DotImageCardComponent,
-        DotImageCardSkeletonComponent
+        DotImageCardSkeletonComponent,
+        DotInputTabComponent
     ],
     providers: [DotImageService],
     exports: [ImageTabviewFormComponent]

@@ -25,7 +25,7 @@ export const ImageNode = Image.extend({
             src: {
                 default: null,
                 parseHTML: (element) => element.getAttribute('src'),
-                renderHTML: (attributes) => ({ src: attributes.src || attributes.data.asset })
+                renderHTML: (attributes) => ({ src: attributes.src || attributes.data?.asset })
             },
             alt: {
                 default: null,

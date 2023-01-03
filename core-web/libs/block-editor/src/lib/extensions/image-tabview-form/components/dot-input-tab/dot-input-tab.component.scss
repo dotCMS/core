@@ -1,0 +1,17 @@
+@use "variables" as *;
+
+.wrapper {
+    display: flex;
+    justify-content: center;
+    align-items: flex-end;
+    flex-direction: column;
+    padding: $spacing-5;
+    gap: $spacing-3;
+}
+
+.form-control {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: $spacing-1;
+}

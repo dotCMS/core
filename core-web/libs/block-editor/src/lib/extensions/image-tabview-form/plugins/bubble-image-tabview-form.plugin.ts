@@ -66,7 +66,7 @@ export class BubbleImageTabFormView {
 
         // Set Component Inputs
         this.component.instance.languageId = this.editor.storage.dotConfig.lang;
-        this.component.instance.selectItemCallback = this.addImage.bind(this);
+        this.component.instance.onSelectImage = this.addImage.bind(this);
 
         this.editor.on('focus', () => {
             if (this.tippy?.state.isShown) {
@@ -129,18 +129,27 @@ export class BubbleImageTabFormView {
         });
     }
 
-    addImage(contentlet: DotCMSContentlet) {
+    addImage(payload: DotCMSContentlet | string) {
         const { selection } = this.editor.state;
-        const { title, asset, fileAsset } = contentlet;
         const node = {
-            attrs: {
-                data: contentlet,
+            attrs: {},
+            type: ImageNode.name
+        };
+
+        if (typeof payload === 'string') {
+            node.attrs = {
+                src: payload
+            };
+        } else {
+            const { title, asset, fileAsset } = payload;
+            node.attrs = {
+                data: payload,
                 src: fileAsset || asset,
                 title,
                 alt: title
-            },
-            type: ImageNode.name
-        };
+            };
+        }
+
         this.editor.chain().insertContentAt(selection.head, node).addNextLine().run();
         this.hide();
     }

@@ -34,7 +34,7 @@ export class ImageTabviewFormComponent implements OnInit {
 
     @Input() languageId = DEFAULT_LANG_ID;
     @Input() loading = true;
-    @Input() selectItemCallback: (props: DotCMSContentlet) => void;
+    @Input() onSelectImage: (payload: DotCMSContentlet | string) => void;
 
     preventScroll = false;
     form: FormGroup;

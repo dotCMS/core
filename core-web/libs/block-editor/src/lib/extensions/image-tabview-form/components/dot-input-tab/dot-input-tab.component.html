@@ -1,0 +1,15 @@
+<form class="wrapper" (ngSubmit)="onSubmit()">
+    <div class="form-control">
+        <label for="url">Type URL</label>
+        <input
+            id="url"
+            [(ngModel)]="value"
+            [ngModelOptions]="{ standalone: true }"
+            autocomplete="off"
+            type="text"
+            pInputText
+            placeholder="Content"
+        />
+    </div>
+    <button type="submit" pButton>Insert</button>
+</form>

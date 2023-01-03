@@ -1,7 +1,7 @@
 <div class="tabview-container">
-    <ng-container [formGroup]="form">
-        <p-tabView>
-            <p-tabPanel header="dotCMS" leftIcon="pi pi-images">
+    <p-tabView>
+        <p-tabPanel header="dotCMS" leftIcon="pi pi-images">
+            <ng-container [formGroup]="form">
                 <div class="search-box">
                     <span class="p-input-icon-right">
                         <input
@@ -15,18 +15,20 @@
                         <i class="pi pi-search"></i>
                     </span>
                 </div>
-                <ng-container *ngIf="contentlets$ | async as contentlets">
-                    <dot-image-card-list
-                        [contentlets]="contentlets"
-                        [done]="preventScroll"
-                        [loading]="loading"
-                        (selectedItem)="selectItemCallback($event)"
-                        (nextBatch)="offset$.next($event)"
-                    ></dot-image-card-list>
-                </ng-container>
-            </p-tabPanel>
-            <!-- <p-tabPanel header="Upload" leftIcon="pi pi-upload"> Content 2 </p-tabPanel> -->
-            <!-- <p-tabPanel header="Image URL" leftIcon="pi pi-link"> Content 3 </p-tabPanel> -->
-        </p-tabView>
-    </ng-container>
+            </ng-container>
+            <ng-container *ngIf="contentlets$ | async as contentlets">
+                <dot-image-card-list
+                    [contentlets]="contentlets"
+                    [done]="preventScroll"
+                    [loading]="loading"
+                    (selectedItem)="onSelectImage($event)"
+                    (nextBatch)="offset$.next($event)"
+                ></dot-image-card-list>
+            </ng-container>
+        </p-tabPanel>
+        <!-- <p-tabPanel header="Upload" leftIcon="pi pi-upload"> Content 2 </p-tabPanel> -->
+        <p-tabPanel header="Image URL" leftIcon="pi pi-link">
+            <dot-input-tab (save)="onSelectImage($event)"></dot-input-tab>
+        </p-tabPanel>
+    </p-tabView>
 </div>
