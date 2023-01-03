@@ -23,11 +23,11 @@ public class ContainerCacheImpl extends ContainerCache {
   }
 
   @Override
-  public Container add(Container container) {
+  public Container add(String key, Container container) {
 
     try {
       if (UtilMethods.isSet(container)) {
-        String key = primaryGroup + container.getInode();
+        key = primaryGroup + container.getInode();
         cache.put(key, container, primaryGroup);
 
 
@@ -38,8 +38,6 @@ public class ContainerCacheImpl extends ContainerCache {
 
     return container;
   }
-
-
 
   public void clearCache() {
     // Clear the cache for all group.

@@ -25,14 +25,6 @@ public interface ContainerFactory {
 	 * @throws DotDataException
 	 */
 	void save(Container container) throws DotDataException;
-
-    /**
-     * Save an existing container
-     * @param container
-     * @param existingId
-     * @throws DotDataException
-     */
-	void save(Container container, String existingId) throws DotDataException;
 	
     /**
      * Finds all containers attached to a host

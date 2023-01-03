@@ -9,8 +9,6 @@ import com.dotcms.contenttype.exception.NotFoundInDbException;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
 import com.dotcms.rendering.velocity.services.ContainerLoader;
-import com.dotcms.rendering.velocity.services.TemplateLoader;
-import com.dotcms.rest.api.v1.container.ContainerForm;
 import com.dotcms.system.event.local.model.Subscriber;
 import com.dotcms.util.CollectionsUtils;
 import com.dotcms.util.transform.TransformerLocator;
@@ -23,7 +21,6 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.exception.WebAssetException;
-import com.dotmarketing.factories.InodeFactory;
 import com.dotmarketing.factories.PublishFactory;
 import com.dotmarketing.factories.TreeFactory;
 import com.dotmarketing.factories.WebAssetFactory;
@@ -52,7 +49,6 @@ import java.net.URL;
 import java.util.*;
 import java.util.function.Supplier;
 
-import static com.dotmarketing.business.PermissionAPI.PERMISSION_EDIT;
 import static com.dotmarketing.business.PermissionAPI.PERMISSION_PUBLISH;
 import static com.dotmarketing.business.PermissionAPI.PERMISSION_WRITE;
 
@@ -222,7 +218,7 @@ public class ContainerAPIImpl extends BaseWebAssetAPI implements ContainerAPI, D
 	}
 
 	/**
-	 * 
+	 *
 	 * @param container
 	 * @throws DotDataException
 	 */
@@ -235,7 +231,7 @@ public class ContainerAPIImpl extends BaseWebAssetAPI implements ContainerAPI, D
 	}
 
 	/**
-	 * 
+	 *
 	 * @param container
 	 * @param existingId
 	 * @throws DotDataException
@@ -245,7 +241,9 @@ public class ContainerAPIImpl extends BaseWebAssetAPI implements ContainerAPI, D
 			Logger.debug(this, "System Container cannot be saved/updated.");
 			return;
 		}
-		containerFactory.save(container, existingId);
+
+		container.setInode(existingId);
+		containerFactory.save(container);
 	}
 
 	@WrapInTransaction
@@ -707,6 +705,11 @@ public class ContainerAPIImpl extends BaseWebAssetAPI implements ContainerAPI, D
 			throw new IllegalArgumentException("System Container and its associated data cannot be saved.");
 		}
 
+		if(!permissionAPI.doesUserHavePermission(host, PermissionAPI.PERMISSION_WRITE, user, respectFrontendRoles)) {
+			throw new DotSecurityException(
+					String.format("User '%s' does not have WRITE permission on Site '%s'", user.getUserId(), host));
+		}
+
 		if(!APILocator.getPermissionAPI().doesUserHavePermission(host, PermissionAPI.PERMISSION_CAN_ADD_CHILDREN, user, respectFrontendRoles)
 				|| !APILocator.getPermissionAPI().doesUserHavePermissions(PermissionAPI.PermissionableType.CONTAINERS, PermissionAPI.PERMISSION_EDIT, user)) {
 
@@ -722,30 +725,22 @@ public class ContainerAPIImpl extends BaseWebAssetAPI implements ContainerAPI, D
 		boolean existingInode=false;
 
 		if(UtilMethods.isSet(container.getInode())) {
-            try {
-                Container existing=(Container) HibernateUtil.load(Container.class, container.getInode());
-                existingInode = existing==null || !UtilMethods.isSet(existing.getInode());
-            }
-            catch(Exception ex) {
-                existingInode=true;
-            }
-        }
-
-		if (UtilMethods.isSet(container.getIdentifier())) {
-		    identifier = APILocator.getIdentifierAPI().find(container.getIdentifier());
-		    if(identifier!=null && UtilMethods.isSet(identifier.getId())) {
-		        if(!existingInode) {
-        		    currentContainer = getWorkingContainerById(container.getIdentifier(), user, respectFrontendRoles);
-        			currentTemplates = APILocator.getTemplateAPI().findTemplatesByContainerInode(currentContainer.getInode());
-		        }
-		    }
-		    else {
-		        existingId=true;
-		        identifier=null;
-		    }
+			final Container existing = find(container.getInode(), user, respectFrontendRoles);
+			existingInode = !(existing==null || !UtilMethods.isSet(existing.getInode()));
 		}
 
-		if ((identifier != null && !existingInode)  && !permissionAPI.doesUserHavePermission(currentContainer, PermissionAPI.PERMISSION_WRITE, user, respectFrontendRoles)) {
+		if (UtilMethods.isSet(container.getIdentifier())) {
+			identifier = APILocator.getIdentifierAPI().find(container.getIdentifier());
+			if(identifier!=null && UtilMethods.isSet(identifier.getId())) {
+				if(existingInode) {
+					currentContainer = getWorkingContainerById(container.getIdentifier(), user, respectFrontendRoles);
+					currentTemplates = APILocator.getTemplateAPI().findTemplatesByContainerInode(currentContainer.getInode());
+				}
+				existingId=true;
+			}
+		}
+
+		if ((identifier != null && existingInode)  && !permissionAPI.doesUserHavePermission(currentContainer, PermissionAPI.PERMISSION_WRITE, user, respectFrontendRoles)) {
 			throw new DotSecurityException(
 					String.format("User '%s' does not have WRITE permission on Container '%s'", user.getUserId(),
 							container.getName()));
@@ -756,7 +751,7 @@ public class ContainerAPIImpl extends BaseWebAssetAPI implements ContainerAPI, D
 			for (ContainerStructure cs : containerStructureList) {
 				Structure st = CacheLocator.getContentTypeCache()
 						.getStructureByInode(cs.getStructureId());
-				if ((st != null && !existingInode) && !permissionAPI.doesUserHavePermission(st,
+				if ((st != null && existingInode) && !permissionAPI.doesUserHavePermission(st,
 						PermissionAPI.PERMISSION_READ, user, respectFrontendRoles)) {
 					throw new DotSecurityException(
 							String.format(
@@ -767,31 +762,25 @@ public class ContainerAPIImpl extends BaseWebAssetAPI implements ContainerAPI, D
 			}
 		}
 
-		if(!permissionAPI.doesUserHavePermission(host, PermissionAPI.PERMISSION_WRITE, user, respectFrontendRoles)) {
-			throw new DotSecurityException(
-					String.format("User '%s' does not have WRITE permission on Site '%s'", user.getUserId(), host));
-		}
-
-		String userId = user.getUserId();
 		container.setModUser(user.getUserId());
 		container.setModDate(new Date());
 
 		// it saves or updates the asset
-		if (identifier != null) {
+		if (existingId) {
 			container.setIdentifier(identifier.getId());
 		} else {
-		    Identifier ident= (existingId) ?
-		           APILocator.getIdentifierAPI().createNew(container, host, container.getIdentifier()) :
-			       APILocator.getIdentifierAPI().createNew(container, host);
+			final Identifier ident = UtilMethods.isSet(container.getIdentifier()) ?
+					APILocator.getIdentifierAPI().createNew(container, host, container.getIdentifier()) :
+					APILocator.getIdentifierAPI().createNew(container, host);
 			container.setIdentifier(ident.getId());
 		}
 
 		if(existingInode){
-            save(container, container.getInode());
+			save(container, container.getInode());
 		}
-        else{
-            save(container);
-        }
+		else{
+			save(container);
+		}
 
 		APILocator.getVersionableAPI().setWorking(container);
 
