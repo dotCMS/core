@@ -1,18 +1,14 @@
 package com.dotcms.rest.api.v1.user;
 
-import static com.dotcms.util.CollectionsUtils.list;
-import static com.dotcms.util.CollectionsUtils.map;
-
 import com.dotcms.api.system.event.message.MessageSeverity;
 import com.dotcms.api.system.event.message.MessageType;
 import com.dotcms.api.system.event.message.SystemMessageEventUtil;
 import com.dotcms.api.system.event.message.builder.SystemMessage;
 import com.dotcms.api.system.event.message.builder.SystemMessageBuilder;
-import com.dotcms.api.system.user.UserService;
-import com.dotcms.api.system.user.UserServiceFactory;
 import com.dotcms.cms.login.LoginServiceAPI;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.rest.ResponseEntityView;
+import com.dotcms.rest.api.DotRestInstanceProvider;
 import com.dotcms.rest.api.v1.authentication.IncorrectPasswordException;
 import com.dotcms.util.SecurityUtils;
 import com.dotcms.util.SecurityUtils.DelayStrategy;
@@ -45,6 +41,10 @@ import com.liferay.portal.model.User;
 import com.liferay.portal.model.UserModel;
 import com.liferay.portal.util.WebKeys;
 import com.liferay.util.StringPool;
+import org.apache.commons.lang.StringUtils;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpSession;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
@@ -52,9 +52,10 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpSession;
-import org.apache.commons.lang.StringUtils;
+
+import static com.dotcms.util.CollectionsUtils.list;
+import static com.dotcms.util.CollectionsUtils.map;
+import static com.dotcms.util.ConversionUtils.toInt;
 
 /**
  * Provides utility methods to interact with information of dotCMS users and
@@ -65,10 +66,8 @@ import org.apache.commons.lang.StringUtils;
  * @since Aug 10, 2016
  *
  */
-@SuppressWarnings("serial")
 public class UserResourceHelper implements Serializable {
 
-	private final UserService userService;
 	private final RoleAPI roleAPI;
 	private final UserAPI userAPI;
 	private final LayoutAPI layoutAPI;
@@ -79,25 +78,15 @@ public class UserResourceHelper implements Serializable {
 	private final LoginServiceAPI loginService;
 
 	@VisibleForTesting
-	public UserResourceHelper (	final UserService userService,
-			final RoleAPI roleAPI,
-			final UserAPI userAPI,
-			final LayoutAPI layoutAPI,
-			final HostWebAPI hostWebAPI,
-			final UserWebAPI userWebAPI,
-			final PermissionAPI permissionAPI,
-			final UserProxyAPI userProxyAPI,
-			final LoginServiceAPI loginService) {
-
-		this.userService = userService;
-		this.roleAPI = roleAPI;
-		this.userAPI = userAPI;
-		this.layoutAPI = layoutAPI;
-		this.hostWebAPI = hostWebAPI;
-		this.userWebAPI = userWebAPI;
-		this.permissionAPI = permissionAPI;
-		this.userProxyAPI = userProxyAPI;
-		this.loginService = loginService;
+	public UserResourceHelper (final DotRestInstanceProvider instanceProvider) {
+		this.roleAPI = instanceProvider.getRoleAPI();
+		this.userAPI = instanceProvider.getUserAPI();
+		this.layoutAPI = instanceProvider.getLayoutAPI();
+		this.hostWebAPI = instanceProvider.getHostWebAPI();
+		this.userWebAPI = instanceProvider.getUserWebAPI();
+		this.permissionAPI = instanceProvider.getPermissionAPI();
+		this.userProxyAPI = instanceProvider.getUserProxyAPI();
+		this.loginService = instanceProvider.getLoginService();
 	}
 
 	private static class SingletonHolder {
@@ -113,7 +102,6 @@ public class UserResourceHelper implements Serializable {
 	 * Private constructor that initializes all APIs and services.
 	 */
 	private UserResourceHelper() {
-		this.userService = UserServiceFactory.getInstance().getUserService();
 		this.roleAPI = APILocator.getRoleAPI();
 		this.userAPI = APILocator.getUserAPI();
 		this.layoutAPI = APILocator.getLayoutAPI();
@@ -135,48 +123,19 @@ public class UserResourceHelper implements Serializable {
 	}
 
 	/**
-	 * Returns a list of dotCMS users based on the specified search criteria.
-	 * Two types of result can be obtained by calling this method:
-	 * <ul>
-	 * <li>If both the {@code assetInode} and the {@code permission} values
-	 * <b>are set</b>, this method will return the list of users that have the
-	 * specified permission type on the specified Inode.</li>
-	 * <li>If the {@code assetInode} or the {@code permission} value <b>is NOT
-	 * set</b>, this method will return a list of users based on the criteria
-	 * specified in the {@code params} Map:
-	 * <ul>
-	 * <li>{@code query}: The String or characters that can match the first
-	 * name, last name, or e-mail of a user. This is the same value that would
-	 * be passed to the {@code LIKE} keyword in SQL. This value will be
-	 * automatically sanitized to strip off malicious code.</li>
-	 * <li>{@code start}: For pagination purposes. The bottom range of records
-	 * to include in the result.</li>
-	 * <li>{@code end}: For pagination purposes. The top range of records to
-	 * include in the result.</li>
-	 * <li>{@code includeAnonymous}: Set to {@code true} if anonymous users will
-	 * be included in the result list. Otherwise, set to {@code false}.</li>
-	 * <li>{@code includeDefault}: Set to {@code true} if the default user will
-	 * be included in the result list. Otherwise, set to {@code false}.</li>
-	 * </ul>
-	 * </li>
-	 * </ul>
-	 * 
-	 * @param assetInode
-	 *            - (Optional) The Inode of the asset that one or more users
-	 *            have permission on.
-	 * @param permission
-	 *            - (Optional) The type of permission assigned to the specified
-	 *            asset.
-	 * @param params
-	 *            - Additional parameters for more specific queries.
-	 * @return A {@code Map} containing the dotCMS users that match the filter
-	 *         criteria.
-	 * @throws Exception
-	 *             An error occurred when retrieving the user list.
+	 * Returns a list of Users that match a specific Permission Type for a given asset Inode.
+	 *
+	 * @param filter     Any characters in the name of a User that might match the specified search criteria.
+	 * @param offset     The start page of the result set, for pagination purposes.
+	 * @param limit      The end or limit page of the result set, for pagination purposes.
+	 * @param assetInode The Inode of the asset being queried.
+	 * @param permission The Permission Type  being checked on the previous asset.
+	 *
+	 * @return The list of {@link User} objects that match the specified search criteria.
 	 */
-	public Map<String, Object> getUserList(final String assetInode, final String permission, final Map<String, String> params)
-			throws Exception {
-		return this.userService.getUsersList(assetInode, permission, params);
+	public List<User> getUsersByAssetAndPermissionType(String filter, int offset, int limit, final String assetInode,
+													   final String permission) {
+		return APILocator.getPermissionAPI().getUsers(assetInode, toInt(permission, 0), filter, offset, limit);
 	}
 
 	/**
