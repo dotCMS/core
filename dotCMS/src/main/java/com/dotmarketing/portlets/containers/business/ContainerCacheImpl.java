@@ -4,6 +4,7 @@ import com.dotmarketing.beans.VersionInfo;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotCacheAdministrator;
 import com.dotmarketing.business.DotCacheException;
+import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
@@ -25,16 +26,14 @@ public class ContainerCacheImpl extends ContainerCache {
   @Override
   public Container add(String key, Container container) {
 
-    try {
-      if (UtilMethods.isSet(container)) {
-        key = primaryGroup + container.getInode();
-        cache.put(key, container, primaryGroup);
-
-
-      }
-    } catch (Exception e) {
-      Logger.debug(this, "Could not add entre to cache", e);
+    if(DbConnectionFactory.inTransaction()) {
+      return container;
     }
+
+    key = primaryGroup + key;
+
+    // Add the key to the cache
+    cache.put(key, container, primaryGroup);
 
     return container;
   }
