@@ -107,9 +107,6 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
             throw new DotSecurityException("You don't have permission to save the Experiment.");
         }
 
-        DotPreconditions.isTrue(pageAsContent.isLive(),
-                ()-> "Cannot create an Experiment on a non-Live Page.", DotStateException.class);
-
         Experiment.Builder builder = Experiment.builder().from(experiment);
 
         if(experiment.id().isEmpty()) {
@@ -507,17 +504,21 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
                                 contentlet.getLanguageId()))
                 .getOrElseThrow((e->new DotStateException("Unable to get the live version of the page", e)));
 
-        final String liveInode = versionInfo.orElseThrow().getLiveInode();
+        final ContentletVersionInfo contentletVersionInfo = versionInfo.orElseThrow();
+
+        final String inode = UtilMethods.isSet(contentletVersionInfo.getLiveInode())
+                ? contentletVersionInfo.getLiveInode()
+                : contentletVersionInfo.getWorkingInode();
 
         final Contentlet checkedoutContentlet = Try.of(() -> contentletAPI
-                        .checkout(liveInode, user, false))
+                        .checkout(inode, user, false))
                 .getOrElseThrow(
-                        (e) -> new DotStateException("Unable to checkout Experiment's content. Inode:" + liveInode, e));
+                        (e) -> new DotStateException("Unable to checkout Experiment's content. Inode:" + inode, e));
 
         checkedoutContentlet.setVariantId(variantName);
         Try.of(() -> contentletAPI.checkin(checkedoutContentlet, user, false))
                 .getOrElseThrow(
-                        (e) -> new DotStateException("Unable to checkin Experiment's content. Inode:" + liveInode, e));
+                        (e) -> new DotStateException("Unable to checkin Experiment's content. Inode:" + inode, e));
 
     }
 
