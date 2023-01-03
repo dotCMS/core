@@ -1,0 +1,24 @@
+<ng-container [formGroup]="form">
+    <div class="search-box">
+        <span class="p-input-icon-right">
+            <input
+                class="search"
+                #inputSearch
+                type="text"
+                pInputText
+                formControlName="search"
+                placeholder="Search"
+            />
+            <i class="pi pi-search"></i>
+        </span>
+    </div>
+</ng-container>
+<ng-container *ngIf="vm$ | async as vm">
+    <dot-image-card-list
+        [contentlets]="vm.contentlets"
+        [done]="vm.preventScroll"
+        [loading]="vm.loading"
+        (selectedItem)="seletedImage.emit($event)"
+        (nextBatch)="offset$.next($event)"
+    ></dot-image-card-list>
+</ng-container>

@@ -159,20 +159,22 @@ export class BubbleImageTabFormView {
             open: false
         });
         this.editor.view.dispatch(transaction);
-        this.component.instance.resetForm();
+        // this.component.instance.resetForm();
     }
 
     show() {
         this.tippy?.show();
-        this.component.instance.setLoading(true);
-        this.component.instance.offset$.next(0);
-        requestAnimationFrame(() => this.component.instance.inputSearch.nativeElement.focus());
+        this.component.instance.toggleIsVisible(true);
+        // this.component.instance.setLoading(true);
+        // this.component.instance.offset$.next(0);
+        // requestAnimationFrame(() => this.component.instance.inputSearch.nativeElement.focus());
     }
 
     hide() {
-        this.tippy?.hide();
+        this.tippy?.unmount();
         this.closeForm();
         this.editor.view.focus();
+        this.component.instance.toggleIsVisible(false);
         this.component.changeDetectorRef.detectChanges();
     }
 

@@ -10,22 +10,6 @@
     background: $white;
 }
 
-.wrapper {
-    width: 100%;
-    padding: $spacing-4;
-}
-
-.search-box {
-    padding: $spacing-4 $spacing-5;
-    overflow: auto;
-
-    &,
-    span,
-    .search {
-        width: 100%;
-    }
-}
-
 :host::ng-deep {
     .p-tabview {
         .p-tabview-nav li.p-highlight .p-tabview-nav-link {
@@ -45,10 +29,11 @@
                 }
 
                 &:hover .p-tabview-nav-link {
-                    background: rgba($brand-secondary_rgb, 0.12);
+                    background: rgba($brand-secondary_rgb, 0.1);
                 }
             }
         }
+
         .p-tabview-title {
             font-size: $dot-editor-size;
             color: $brand-secondary;

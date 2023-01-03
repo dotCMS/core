@@ -2,7 +2,7 @@ import { Component, EventEmitter, Input, Output, ChangeDetectionStrategy } from 
 
 import { DotCMSContentlet } from '@dotcms/dotcms-models';
 import { sanitizeUrl } from '@dotcms/block-editor';
-import { squarePlus } from '../../../../shared/components/suggestions/suggestion-icons';
+import { squarePlus } from '../../../../../../shared/components/suggestions/suggestion-icons';
 
 @Component({
     selector: 'dot-image-card-list',
@@ -20,14 +20,17 @@ export class DotImageCardListComponent {
     public loadingItems = [null, null, null];
     public icon = sanitizeUrl(squarePlus);
 
+    constructor() {
+        +1;
+    }
+
     onScrollIndexChange(e: { first: number; last: number }, offset: number) {
         if (this.done) {
             return;
         }
 
-        // -1 so as not to wait until the last element is reached.
-        const end = e.last - 1;
-        const total = this.contentlets.length - 1;
+        const end = e.last;
+        const total = this.contentlets.length;
 
         if (end === total) {
             this.nextBatch.emit(offset);

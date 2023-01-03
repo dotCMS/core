@@ -1,0 +1,10 @@
+@use "variables" as *;
+
+.search-box {
+    padding: $spacing-4 $spacing-5;
+
+    span,
+    .search {
+        width: 100%;
+    }
+}
