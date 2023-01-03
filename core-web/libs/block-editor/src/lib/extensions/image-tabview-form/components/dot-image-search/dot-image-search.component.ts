@@ -5,18 +5,17 @@ import {
     ViewChild,
     Input,
     ElementRef,
-    ChangeDetectionStrategy,
     Output,
     EventEmitter
 } from '@angular/core';
-import { FormBuilder, FormGroup } from '@angular/forms';
-import { BehaviorSubject, Subject } from 'rxjs';
+import { BehaviorSubject, Subject, fromEvent } from 'rxjs';
 import { debounceTime, throttleTime, skip, takeUntil } from 'rxjs/operators';
 
 import { DotCMSContentlet } from '@dotcms/dotcms-models';
 
 // services
 import { DotImageSearchStore } from './dot-image-search.store';
+import { AfterViewInit, ChangeDetectionStrategy } from '@angular/core';
 
 @Component({
     selector: 'dot-image-search',
@@ -25,37 +24,41 @@ import { DotImageSearchStore } from './dot-image-search.store';
     providers: [DotImageSearchStore],
     changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class DotImageSearchComponent implements OnInit, OnDestroy {
-    @ViewChild('inputSearch') inputSearch!: ElementRef;
-
+export class DotImageSearchComponent implements OnInit, OnDestroy, AfterViewInit {
+    @ViewChild('input') input!: ElementRef;
     @Output() seletedImage = new EventEmitter<DotCMSContentlet>();
+
+    @Input() set focusInput(value) {
+        if (value) {
+            requestAnimationFrame(() => this.input.nativeElement.focus());
+        }
+    }
+
     @Input() set languageId(id) {
         this.store.updateLanguages(id);
     }
 
     vm$ = this.store.vm$;
     offset$ = new BehaviorSubject<number>(0);
+
     private destroy$: Subject<boolean> = new Subject<boolean>();
 
-    form: FormGroup;
-
-    constructor(private store: DotImageSearchStore, private fb: FormBuilder) {}
+    constructor(private store: DotImageSearchStore) {}
 
     ngOnInit(): void {
-        this.form = this.fb.group({
-            search: ['']
-        });
-
-        this.form.valueChanges
-            .pipe(takeUntil(this.destroy$), debounceTime(450))
-            .subscribe(({ search }) => {
-                this.store.searchContentlet(search);
-            });
-
         this.offset$
             .pipe(takeUntil(this.destroy$), skip(1), throttleTime(450))
             .subscribe((offset) => {
                 this.store.nextBatch(offset * 2);
+            });
+    }
+
+    ngAfterViewInit() {
+        this.input.nativeElement.focus();
+        fromEvent(this.input.nativeElement, 'input')
+            .pipe(takeUntil(this.destroy$), debounceTime(450))
+            .subscribe(({ search }) => {
+                this.store.searchContentlet(search);
             });
     }
 

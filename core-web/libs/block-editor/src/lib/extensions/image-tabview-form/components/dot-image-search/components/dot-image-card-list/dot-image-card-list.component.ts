@@ -1,8 +1,7 @@
 import { Component, EventEmitter, Input, Output, ChangeDetectionStrategy } from '@angular/core';
 
 import { DotCMSContentlet } from '@dotcms/dotcms-models';
-import { sanitizeUrl } from '@dotcms/block-editor';
-import { squarePlus } from '../../../../../../shared/components/suggestions/suggestion-icons';
+import { sanitizeUrl, squarePlus } from '@dotcms/block-editor';
 
 @Component({
     selector: 'dot-image-card-list',
@@ -19,10 +18,6 @@ export class DotImageCardListComponent {
 
     public loadingItems = [null, null, null];
     public icon = sanitizeUrl(squarePlus);
-
-    constructor() {
-        +1;
-    }
 
     onScrollIndexChange(e: { first: number; last: number }, offset: number) {
         if (this.done) {

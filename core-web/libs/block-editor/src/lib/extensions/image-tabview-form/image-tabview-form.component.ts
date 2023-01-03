@@ -1,8 +1,8 @@
-import { Component, Input } from '@angular/core';
+import { Component, Input, ChangeDetectionStrategy } from '@angular/core';
 import { DotCMSContentlet } from '@dotcms/dotcms-models';
 
 import { DEFAULT_LANG_ID } from '@dotcms/block-editor';
-import { ChangeDetectorRef, ChangeDetectionStrategy } from '@angular/core';
+import { ChangeDetectorRef } from '@angular/core';
 
 @Component({
     selector: 'dot-image-tabview-form',
@@ -14,6 +14,8 @@ export class ImageTabviewFormComponent {
     @Input() languageId = DEFAULT_LANG_ID;
     @Input() isVisible = false;
     @Input() onSelectImage: (payload: DotCMSContentlet | string) => void;
+
+    activeTab = 0;
 
     constructor(private readonly cd: ChangeDetectorRef) {}
 

@@ -1,15 +1,15 @@
-<form class="wrapper" (ngSubmit)="onSubmit()">
+<form class="wrapper" [formGroup]="form" (ngSubmit)="onSubmit()">
     <div class="form-control">
         <label for="url">Type URL</label>
         <input
             id="url"
-            [(ngModel)]="value"
-            [ngModelOptions]="{ standalone: true }"
+            #input
+            formControlName="url"
             autocomplete="off"
             type="text"
             pInputText
             placeholder="Content"
         />
     </div>
-    <button type="submit" pButton>Insert</button>
+    <button [disabled]="form.invalid || form.pristine" type="submit" pButton>Insert</button>
 </form>
