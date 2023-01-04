@@ -167,7 +167,7 @@ public abstract class ContentType implements Serializable, Permissionable, Conte
   /**
    * This property is here to help identify when the CT was loaded from the db or instantiated by hand
    * The idea is that depending on the nature of the problem we intend to solve
-   * We can use certain properties to capture info provided by the use
+   * We can use certain properties to capture info provided by the user
    * Or use those same properties to display calculated values.
    * The name of the property is intended to reflect the status o the CT Loaded (from the db) or resolved by the SiteAndFolderResolver API
    * @return

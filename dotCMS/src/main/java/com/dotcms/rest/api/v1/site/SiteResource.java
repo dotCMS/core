@@ -1253,17 +1253,37 @@ public class SiteResource implements Serializable {
                             copySiteForm.isCopySiteVariables());
 
         HostAssetsJobProxy.fireJob(newSite.getIdentifier(), sourceHost.getIdentifier(), hostCopyOptions, user.getUserId());
-        return Response.ok(new ResponseEntityView(newSite)).build();
+        return Response.ok(new ResponseEntityView<>(newSite)).build();
     }
 
     private SiteView toView (final Host host) throws DotStateException, DotDataException, DotSecurityException {
 
-        return new SiteView(host.getIdentifier(), host.getInode(), host.getAliases(), host.getHostname(), host.getFolder(),host.getTagStorage(),
-                null != host.getHostThumbnail()? host.getHostThumbnail().getName(): StringPool.BLANK,
-                host.getBoolProperty("runDashboard"), host.getStringProperty("keywords"), host.getStringProperty("description"),
-                host.getStringProperty("googleMap"), host.getStringProperty("googleAnalytics"), host.getStringProperty("addThis"),
-                host.getStringProperty("proxyEditModeUrl"), host.getStringProperty("embeddedDashboard"), host.getLanguageId(),
-                host.isSystemHost(), host.isDefault(), host.isArchived(), host.isLive(), host.isLocked(), host.isWorking(), host.getModDate(), host.getModUser()
-        );
+        return SiteView.Builder.builder()
+                .withIdentifier(host.getIdentifier())
+                .withInode(host.getInode())
+                .withAliases(host.getAliases())
+                .withSiteName(host.getHostname())
+                .withFolder(host.getFolder())
+                .withTagStorage(host.getTagStorage())
+                .withSiteThumbnail(null != host.getHostThumbnail() ? host.getHostThumbnail().getName(): StringPool.BLANK)
+                .withRunDashboard(host.getBoolProperty("runDashboard"))
+                .withKeywords(host.getStringProperty("keywords"))
+                .withDescription(host.getStringProperty("description"))
+                .withGoogleMap(host.getStringProperty("googleMap"))
+                .withGoogleAnalytics(host.getStringProperty("googleAnalytics"))
+                .withAddThis(host.getStringProperty("addThis"))
+                .withProxyUrlForEditMode(host.getStringProperty("proxyEditModeUrl"))
+                .withEmbeddedDashboard(host.getStringProperty("embeddedDashboard"))
+                .withLanguageId(host.getLanguageId())
+                .withIsSystemHost(host.isSystemHost())
+                .withIsDefault(host.isDefault())
+                .withIsArchived(host.isArchived())
+                .withIsLive(host.isLive())
+                .withIsLocked(host.isLocked())
+                .withIsWorking(host.isWorking())
+                .withModDate(host.getModDate())
+                .withModUser(host.getModUser())
+                .build();
+
     }
 } // E:O:F:SiteBrowserResource.
