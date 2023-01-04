@@ -7,10 +7,10 @@ import {
 import { MonacoEditor } from '@models/monaco-editor';
 import { DotAlertConfirmService, DotMessageService } from '@dotcms/data-access';
 import { DotRouterService } from '@services/dot-router/dot-router.service';
-import { take, takeUntil } from 'rxjs/operators';
+import { pairwise, startWith, take, takeUntil } from 'rxjs/operators';
 import { MenuItem } from 'primeng/api';
 import { Subject } from 'rxjs';
-import { DotContainerStructure } from '@dotcms/dotcms-models';
+import { DotContainerPayload, DotContainerStructure } from '@dotcms/dotcms-models';
 
 @Component({
     selector: 'dot-container-properties',
@@ -43,9 +43,10 @@ export class DotContainerPropertiesComponent implements OnInit {
                     identifier: new FormControl(container?.identifier ?? ''),
                     title: new FormControl(container?.title ?? '', [Validators.required]),
                     friendlyName: new FormControl(container?.friendlyName ?? ''),
-                    maxContentlets: new FormControl(container?.maxContentlets ?? 0, [
-                        Validators.required
-                    ]),
+                    maxContentlets: new FormControl(container?.maxContentlets ?? 0, {
+                        validators: [Validators.required],
+                        updateOn: 'blur'
+                    }),
                     code: new FormControl(
                         container?.code ?? '',
                         containerStructures.length === 0 ? [Validators.required] : null
@@ -64,9 +65,45 @@ export class DotContainerPropertiesComponent implements OnInit {
                 }
             });
 
-        this.form.valueChanges.pipe(takeUntil(this.destroy$)).subscribe((values) => {
-            this.store.updateFormStatus({ invalidForm: !this.form.valid, container: values });
-        });
+        this.form.valueChanges
+            .pipe(takeUntil(this.destroy$), startWith(this.form.value), pairwise())
+            .subscribe(([prevValue, currValue]) => {
+                this.store.updateFormStatus({
+                    invalidForm: !this.form.valid,
+                    container: currValue
+                });
+                if (this.IsShowContentTypes(prevValue, currValue)) {
+                    this.showContentTypeAndCode();
+                } else if (this.IsShowClearConfirmationModal(prevValue, currValue)) {
+                    this.clearContentConfirmationModal(prevValue.maxContentlets || 1);
+                }
+            });
+    }
+
+    /**
+     * check prev value and current value for showing the content type
+     * @param {DotContainerPayload} prevValue
+     * @param {DotContainerPayload} currValue
+     * @memberof DotContainerPropertiesComponent
+     */
+    IsShowContentTypes(prevValue: DotContainerPayload, currValue: DotContainerPayload) {
+        return (
+            (prevValue.maxContentlets === 0 || prevValue.maxContentlets === null) &&
+            currValue.maxContentlets > 0
+        );
+    }
+
+    /**
+     * check prev value and current value for showing confirmation modal
+     * @param {DotContainerPayload} prevValue
+     * @param {DotContainerPayload} currValue
+     * @memberof DotContainerPropertiesComponent
+     */
+    IsShowClearConfirmationModal(prevValue: DotContainerPayload, currValue: DotContainerPayload) {
+        return (
+            (prevValue.maxContentlets > 0 || prevValue.maxContentlets === null) &&
+            currValue.maxContentlets === 0
+        );
     }
 
     /**
@@ -181,17 +218,19 @@ export class DotContainerPropertiesComponent implements OnInit {
     }
 
     /**
-     * Opens modal for confirmation modal.
-     * @return void
+     * Opens modal for confirmation.
+     * @param {number} lastValue
      * @memberof DotContainerPropertiesComponent
      */
-    clearContentConfirmationModal(): void {
+    clearContentConfirmationModal(lastValue: number): void {
         this.dotAlertConfirmService.confirm({
             accept: () => {
                 this.clearContentTypesAndCode();
             },
             reject: () => {
-                //
+                if (this.form.value.maxContentlets === 0 || !this.form.value.maxContentlets) {
+                    this.form.get('maxContentlets').setValue(lastValue);
+                }
             },
             header: this.dotMessageService.get(
                 'message.container.properties.confirm.clear.content.title'
