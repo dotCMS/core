@@ -5,9 +5,13 @@ import {
     Output,
     Input,
     ViewChild,
-    ElementRef
+    ElementRef,
+    ChangeDetectorRef
 } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
+
+const regexURL =
+    '^((http|https)://)[-a-zA-Z0-9@:%._\\+~#?&//=]{2,256}\\.[a-z]{2,6}\\b([-a-zA-Z0-9@:%._\\+~#?&//=]*)$';
 
 @Component({
     selector: 'dot-input-tab',
@@ -21,30 +25,32 @@ export class DotInputTabComponent {
     @Output() save = new EventEmitter();
     @Input() set reset(value) {
         if (value) {
-            requestAnimationFrame(() => this.resetForm());
+            requestAnimationFrame(() => {
+                this.resetForm();
+                this.setInpuFocus();
+            });
         }
     }
 
-    regex =
-        '^((http|https)://)[-a-zA-Z0-9@:%._\\+~#?&//=]{2,256}\\.[a-z]{2,6}\\b([-a-zA-Z0-9@:%._\\+~#?&//=]*)$';
     form: FormGroup;
 
-    constructor(private fb: FormBuilder) {
+    constructor(private fb: FormBuilder, private cd: ChangeDetectorRef) {
         this.form = this.fb.group({
-            url: ['', [Validators.required, Validators.pattern(this.regex)]]
+            url: ['', [Validators.required, Validators.pattern(regexURL)]]
         });
     }
 
-    onSubmit() {
-        if (this.form.invalid) {
-            return;
-        }
+    onSubmit({ url }) {
+        this.save.emit(url);
+    }
 
-        this.save.emit(this.form.get('url').value);
+    setInpuFocus() {
+        this.input.nativeElement.focus();
+        this.cd.markForCheck();
     }
 
     resetForm() {
         this.form.reset();
-        this.input.nativeElement.focus();
+        this.form.markAsPristine();
     }
 }
