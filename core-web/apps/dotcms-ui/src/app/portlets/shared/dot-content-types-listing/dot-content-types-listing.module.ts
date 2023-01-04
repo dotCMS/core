@@ -9,6 +9,7 @@ import { DotBaseTypeSelectorModule } from '@components/dot-base-type-selector';
 import { DotAddToBundleModule } from '@components/_common/dot-add-to-bundle';
 import { DotContentTypeCopyDialogModule } from '@portlets/shared/dot-content-types-listing/components/dot-content-type-copy-dialog/dot-content-type-copy-dialog.module';
 import { DotAddToMenuModule } from './components/dot-add-to-menu/dot-add-to-menu.module';
+import { DotPortletBaseModule } from '@components/dot-portlet-base/dot-portlet-base.module';
 
 @NgModule({
     imports: [
@@ -17,7 +18,8 @@ import { DotAddToMenuModule } from './components/dot-add-to-menu/dot-add-to-menu
         DotBaseTypeSelectorModule,
         DotAddToBundleModule,
         DotAddToMenuModule,
-        DotContentTypeCopyDialogModule
+        DotContentTypeCopyDialogModule,
+        DotPortletBaseModule
     ],
     declarations: [DotContentTypesPortletComponent],
     exports: [DotContentTypesPortletComponent],
