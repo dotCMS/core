@@ -1,6 +1,6 @@
 {
 	"info": {
-		"_postman_id": "db52a28c-12d7-4789-aad2-10b22bb36f29",
+		"_postman_id": "e55b9e5d-e896-4d77-97c4-c165f9914c5c",
 		"name": "Page API - [api/v1/page]",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
 		"_exporter_id": "5403727"
@@ -4030,6 +4030,119 @@
 			"name": "Number of Content References in Pages",
 			"item": [
 				{
+					"name": "Get Default Site",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"HTTP Status must be successfull\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Getting 'default' Site ID\", function() {",
+									"    var entity = pm.response.json().entity;",
+									"    pm.collectionVariables.set(\"defaultSiteId\", entity.identifier);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"siteName\": \"default\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/site/_byname",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"site",
+								"_byname"
+							]
+						},
+						"description": "Gets the Identifier of the \"default\" Site."
+					},
+					"response": []
+				},
+				{
+					"name": "Set Default Site",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"HTTP Status must be successfull\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/site/{{defaultSiteId}}/_makedefault",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"site",
+								"{{defaultSiteId}}",
+								"_makedefault"
+							]
+						},
+						"description": "Sets \"default\" as the default Site."
+					},
+					"response": []
+				},
+				{
 					"name": "Create First Test Page",
 					"event": [
 						{
@@ -4828,6 +4941,10 @@
 		},
 		{
 			"key": "secondPageIdentifier",
+			"value": ""
+		},
+		{
+			"key": "defaultSiteId",
 			"value": ""
 		}
 	]
