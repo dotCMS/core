@@ -1057,7 +1057,7 @@ public class ESContentFactoryImplTest extends IntegrationTestBase {
 
 
         final Contentlet contentletByIdentifierAnyLanguage = ((ESContentFactoryImpl) FactoryLocator.getContentletFactory())
-                .findContentletByIdentifierAnyLanguage(contentlet.getIdentifier(), false);
+                .findContentletByIdentifierAnyLanguage(contentlet.getIdentifier(), variant.name(),false);
 
         assertNotNull(contentletByIdentifierAnyLanguage);
         assertEquals(contentlet.getIdentifier(), contentletByIdentifierAnyLanguage.getIdentifier());
@@ -1090,14 +1090,14 @@ public class ESContentFactoryImplTest extends IntegrationTestBase {
         APILocator.getContentletAPI().archive(contentlet, APILocator.systemUser(), false);
 
         Contentlet contentletByIdentifierAnyLanguage = ((ESContentFactoryImpl) FactoryLocator.getContentletFactory())
-                .findContentletByIdentifierAnyLanguage(identifier, true);
+                .findContentletByIdentifierAnyLanguage(identifier, variant.name(),true);
 
         assertNotNull(contentletByIdentifierAnyLanguage);
         assertEquals(contentlet.getIdentifier(), contentletByIdentifierAnyLanguage.getIdentifier());
 
 
         contentletByIdentifierAnyLanguage = ((ESContentFactoryImpl) FactoryLocator.getContentletFactory())
-                .findContentletByIdentifierAnyLanguage(identifier, false);
+                .findContentletByIdentifierAnyLanguage(identifier, variant.name(), false);
 
         assertNull(contentletByIdentifierAnyLanguage);
     }

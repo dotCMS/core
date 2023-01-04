@@ -17,6 +17,7 @@ interface DotActionRequestOptions {
 
 enum ActionToFire {
     NEW = 'NEW',
+    DESTROY = 'DESTROY',
     PUBLISH = 'PUBLISH',
     EDIT = 'EDIT'
 }
@@ -99,6 +100,7 @@ export class DotWorkflowActionsFireService {
             individualPermissions
         });
     }
+
     /**
      * Fire an "EDIT" action over the content type received with the specified data
      *
@@ -112,6 +114,21 @@ export class DotWorkflowActionsFireService {
         return this.request<T>({
             data,
             action: ActionToFire.EDIT
+        });
+    }
+
+    /**
+     * Fire an "DELETE" action over the content type received with the specified data
+     *
+     * @template T
+     * @param {{ [key: string]: unknown}} data
+     * @return {*}  {Observable<T>}
+     * @memberof DotWorkflowActionsFireService
+     */
+    deleteContentlet<T>(data: { [key: string]: string }): Observable<T> {
+        return this.request<T>({
+            data,
+            action: ActionToFire.DESTROY
         });
     }
 

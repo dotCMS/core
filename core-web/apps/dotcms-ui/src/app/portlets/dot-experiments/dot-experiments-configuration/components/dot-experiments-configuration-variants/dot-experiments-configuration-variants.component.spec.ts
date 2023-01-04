@@ -2,12 +2,17 @@ import { DotExperimentsConfigurationVariantsComponent } from './dot-experiments-
 import { byTestId, createComponentFactory, Spectator } from '@ngneat/spectator';
 import { ButtonModule } from 'primeng/button';
 import { Card, CardModule } from 'primeng/card';
-import { DotMessageService } from '@dotcms/data-access';
-import { MockDotMessageService } from '@dotcms/utils-testing';
-import { DecimalPipe } from '@angular/common';
-
+import {
+    DEFAULT_VARIANT_ID,
+    DEFAULT_VARIANT_NAME,
+    ExperimentSteps,
+    SidebarStatus,
+    Status
+} from '@dotcms/dotcms-models';
 import { DotExperimentsConfigurationVariantsAddComponent } from '@portlets/dot-experiments/dot-experiments-configuration/components/dot-experiments-configuration-variants-add/dot-experiments-configuration-variants-add.component';
-import { DEFAULT_VARIANT_ID, ExperimentSteps, SidebarStatus, Status } from '@dotcms/dotcms-models';
+import { MockDotMessageService } from '@dotcms/utils-testing';
+import { DotMessageService } from '@dotcms/data-access';
+import { DecimalPipe } from '@angular/common';
 
 const messageServiceMock = new MockDotMessageService({
     'experiments.configure.variants.weight': 'weight',
@@ -51,7 +56,7 @@ describe('DotExperimentsConfigurationVariantsComponent', () => {
                     experimentStep: ExperimentSteps.VARIANTS,
                     isOpen: false
                 },
-                variants: [{ id: DEFAULT_VARIANT_ID, name: 'a', weight: '100' }]
+                variants: [{ id: DEFAULT_VARIANT_ID, name: DEFAULT_VARIANT_NAME, weight: '100' }]
             };
 
             spectator.setInput(variantsVm);
@@ -76,7 +81,7 @@ describe('DotExperimentsConfigurationVariantsComponent', () => {
                     isOpen: false
                 },
                 variants: [
-                    { id: DEFAULT_VARIANT_ID, name: 'a', weight: '33.33', url: 'link1' },
+                    { id: '0000000', name: DEFAULT_VARIANT_NAME, weight: '33.33', url: 'link1' },
                     { id: '1111111', name: 'b', weight: '33.33', url: 'link2' },
                     { id: '2222222', name: 'c', weight: '33.33', url: 'link3' }
                 ]
@@ -142,7 +147,12 @@ describe('DotExperimentsConfigurationVariantsComponent', () => {
                 isOpen: false
             },
             variants: [
-                { id: DEFAULT_VARIANT_ID, name: 'a', weight: '33.33', url: 'link1' },
+                {
+                    id: DEFAULT_VARIANT_ID,
+                    name: DEFAULT_VARIANT_NAME,
+                    weight: '33.33',
+                    url: 'link1'
+                },
                 { id: '1111111', name: 'b', weight: '33.33', url: 'link2' }
             ]
         };

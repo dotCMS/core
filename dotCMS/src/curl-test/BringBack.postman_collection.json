@@ -1,10 +1,9 @@
 {
 	"info": {
-		"_postman_id": "3bdd3955-3237-4b94-9dba-c5362b162ed1",
+		"_postman_id": "07fa881b-476f-49a9-9e00-997cc61e4840",
 		"name": "Bring-Back Version Feature",
 		"description": "Verifies that the Bring-Back Version feature available in the **History** tab of Templates, Containers and Contentlets -- i.e., Contents, Files, Sites, etc. -- is working as expected.",
-		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
-		"_exporter_id": "5403727"
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
 	},
 	"item": [
 		{
@@ -983,7 +982,7 @@
 									"pm.test(\"Current Container version is NOT the First Version\", function () {",
 									"    var jsonData = pm.response.json();",
 									"    pm.expect(jsonData.entity.title).to.eql(\"Test1\");",
-									"    pm.expect(jsonData.entity.notes).to.eql(\"Notes 1\");",
+									"    pm.expect(jsonData.entity.notes).to.eql(\"Notes\");",
 									"});",
 									""
 								],

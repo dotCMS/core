@@ -1,6 +1,6 @@
 <!-- Block Editor Settings -->
 <form class="wrapper" [formGroup]="form">
-    <div class="form-control" *ngFor="let setting of settings">
+    <div class="field" *ngFor="let setting of settings">
         <label [class.required]="setting.required">{{ setting.label }}</label>
         <p-multiSelect
             [placeholder]="setting.placeholder"

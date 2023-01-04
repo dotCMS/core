@@ -23,7 +23,7 @@ import io.vavr.Lazy;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
-import net.bytebuddy.utility.RandomString;
+import net.bytebuddy.utility.RandomString; 
 
 public class ExperimentDataGen  extends AbstractDataGen<Experiment> {
     final Lazy<RandomString> randomString = Lazy.of(() ->new RandomString());
@@ -101,9 +101,8 @@ public class ExperimentDataGen  extends AbstractDataGen<Experiment> {
     private HTMLPageAsset createPage() {
         final Host host = new SiteDataGen().nextPersisted();
         final Template template = new TemplateDataGen().nextPersisted();
-
         final HTMLPageAsset page = new HTMLPageDataGen(host, template).nextPersisted();
-        return page;
+        return APILocator.getHTMLPageAssetAPI().fromContentlet(HTMLPageDataGen.publish(page));
     }
 
     private String getRandomName() {
