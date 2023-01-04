@@ -103,9 +103,8 @@
                     </span>
                     <button
                         class="p-button-rounded p-button-text"
-                        #button
-                        [loading]="button.disabled"
-                        (click)="editVariantName(variantName.value, variant, button)"
+                        [loading]="loading"
+                        (click)="editVariantName(variantName.value, variant)"
                         data-testId="variant-save-name-btn"
                         icon="pi pi-save"
                         pButton

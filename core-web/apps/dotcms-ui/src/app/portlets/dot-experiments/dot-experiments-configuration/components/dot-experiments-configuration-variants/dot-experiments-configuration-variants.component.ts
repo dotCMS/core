@@ -1,11 +1,4 @@
-import {
-    ChangeDetectionStrategy,
-    ChangeDetectorRef,
-    Component,
-    EventEmitter,
-    Input,
-    Output
-} from '@angular/core';
+import { ChangeDetectionStrategy, Component, EventEmitter, Input, Output } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { CardModule } from 'primeng/card';
 import { DotMessagePipeModule } from '@pipes/dot-message/dot-message-pipe.module';
@@ -60,6 +53,8 @@ export class DotExperimentsConfigurationVariantsComponent {
     maxVariantsAllowed = MAX_VARIANTS_ALLOWED;
     defaultVariantName = DEFAULT_VARIANT_NAME;
     experimentStepName = ExperimentSteps.VARIANTS;
+    loading: boolean;
+
     @Input() stepStatus: StepStatus;
     @Input() variants: Variant[];
     @Output() sidebarStatusChanged = new EventEmitter<SidebarStatus>();
@@ -68,14 +63,11 @@ export class DotExperimentsConfigurationVariantsComponent {
     @Output() save = new EventEmitter<Pick<DotExperiment, 'name'>>();
     @Output() goToEditPage = new EventEmitter<{ variant: Variant; mode: EditPageTabs }>();
 
-    constructor(private readonly cdr: ChangeDetectorRef) {}
-
-    editVariantName(newVariantName: string, variant: Variant, button: HTMLButtonElement) {
+    editVariantName(newVariantName: string, variant: Variant) {
         this.edit.emit({
             ...variant,
             name: newVariantName
         });
-        button.disabled = true;
-        this.cdr.markForCheck();
+        this.loading = true;
     }
 }
