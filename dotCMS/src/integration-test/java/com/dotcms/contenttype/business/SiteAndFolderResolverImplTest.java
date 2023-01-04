@@ -80,9 +80,6 @@ public class SiteAndFolderResolverImplTest extends IntegrationTestBase {
         Assert.assertNull(siteAndFolder.folderPath());
         Assert.assertNull(siteAndFolder.siteName());
 
-        // TODO: Fix me This builder copy thing is not right!!!
-        //  It'll initialize the default methods
-
         final ContentType copyContentType = ContentTypeBuilder.builder(contentType).build();
 
         final SiteAndFolder siteAndFolder2 = copyContentType.siteAndFolder();
