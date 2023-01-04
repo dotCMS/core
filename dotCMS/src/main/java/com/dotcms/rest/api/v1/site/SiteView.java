@@ -52,37 +52,6 @@ public class SiteView {
 
     private final  String modUser;
 
-    public SiteView(String identifier, String inode, String aliases, String siteName, String folder, String tagStorage, String hostThumbnail,
-                    boolean runDashboard, String keywords, String description, String googleMap, String googleAnalytics, String addThis,
-                    String proxyUrlForEditMode, String embeddedDashboard, long languageId, boolean isSystemHost, boolean isDefault, boolean isArchived,
-                    boolean isLive, boolean isLocked, boolean isWorking, Date modDate, String modUser) {
-
-        this.identifier = identifier;
-        this.inode = inode;
-        this.aliases = aliases;
-        this.siteName = siteName;
-        this.folder = folder;
-        this.tagStorage = tagStorage;
-        this.siteThumbnail = hostThumbnail;
-        this.runDashboard = runDashboard;
-        this.keywords = keywords;
-        this.description = description;
-        this.googleMap = googleMap;
-        this.googleAnalytics = googleAnalytics;
-        this.addThis = addThis;
-        this.proxyUrlForEditMode = proxyUrlForEditMode;
-        this.embeddedDashboard = embeddedDashboard;
-        this.languageId = languageId;
-        this.isSystemHost = isSystemHost;
-        this.isDefault = isDefault;
-        this.isArchived = isArchived;
-        this.isLive = isLive;
-        this.isLocked = isLocked;
-        this.isWorking = isWorking;
-        this.modDate = modDate;
-        this.modUser = modUser;
-    }
-
     private SiteView(Builder builder) {
         identifier = builder.identifier;
         inode = builder.inode;
