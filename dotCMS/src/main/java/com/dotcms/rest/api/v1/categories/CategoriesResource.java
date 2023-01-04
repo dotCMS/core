@@ -92,10 +92,6 @@ public class CategoriesResource {
     private final PermissionAPI permissionAPI;
     private final CategoryHelper categoryHelper;
 
-    private static final String PAGINATION_PER_PAGE_HEADER_NAME = "X-Pagination-Per-Page";
-    private static final String PAGINATION_CURRENT_PAGE_HEADER_NAME = "X-Pagination-Current-Page";
-    private static final String PAGINATION_TOTAL_ENTRIES_HEADER_NAME = "X-Pagination-Total-Entries";
-
     public CategoriesResource() {
         this(new WebResource(), new PaginationUtil(new CategoriesPaginator()),
                 new PaginationUtil(new CategoryListDTOPaginator()),
@@ -291,9 +287,9 @@ public class CategoriesResource {
     private Response getPage(final Object data, final int perPage, final int page, final Integer totalCount){
         return Response.
                 ok(new ResponseEntityView(data))
-                .header(PAGINATION_PER_PAGE_HEADER_NAME, perPage)
-                .header(PAGINATION_CURRENT_PAGE_HEADER_NAME, page)
-                .header(PAGINATION_TOTAL_ENTRIES_HEADER_NAME, totalCount)
+                .header(PaginationUtil.PAGINATION_PER_PAGE_HEADER_NAME, perPage)
+                .header(PaginationUtil.PAGINATION_CURRENT_PAGE_HEADER_NAME, page)
+                .header(PaginationUtil.PAGINATION_TOTAL_ENTRIES_HEADER_NAME, totalCount)
                 .build();
     }
 
