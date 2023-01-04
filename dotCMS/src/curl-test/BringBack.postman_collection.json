@@ -982,7 +982,7 @@
 									"pm.test(\"Current Container version is NOT the First Version\", function () {",
 									"    var jsonData = pm.response.json();",
 									"    pm.expect(jsonData.entity.title).to.eql(\"Test1\");",
-									"    pm.expect(jsonData.entity.notes).to.eql(\"Notes 2\");",
+									"    pm.expect(jsonData.entity.notes).to.eql(\"Notes\");",
 									"});",
 									""
 								],
