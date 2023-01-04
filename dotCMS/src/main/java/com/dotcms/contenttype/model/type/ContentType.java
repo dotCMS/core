@@ -49,15 +49,6 @@ import org.immutables.value.Value;
 import org.immutables.value.Value.Auxiliary;
 import org.immutables.value.Value.Default;
 
-import javax.annotation.Nullable;
-import java.io.Serializable;
-import java.util.Calendar;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
-
 @JsonTypeInfo(
         use = Id.CLASS,
         include = JsonTypeInfo.As.PROPERTY,
@@ -174,18 +165,18 @@ public abstract class ContentType implements Serializable, Permissionable, Conte
   }
 
   /**
-   * The sole purpose of this getter is helping to identify whether the CT was loaded from the db or not
-   *
+   * This property is here to help identify when the CT was loaded from the db or instantiated by hand
+   * The idea is that depending on the nature of the problem we intend to solve
+   * We can use certain properties to capture info provided by the use
+   * Or use those same properties to display calculated values.
+   * The name of the property is intended to reflect the status o the CT Loaded (from the db) or resolved by the SiteAndFolderResolver API
    * @return
    */
-
   @JsonIgnore
   @Value.Default
-  public Source source(){
-    return Source.OTHER;
+  public boolean loadedOrResolved(){
+     return false;
   }
-
-  public enum Source{DB,OTHER}
 
   @Value.Default
   public Date modDate() {
@@ -206,16 +197,8 @@ public abstract class ContentType implements Serializable, Permissionable, Conte
   @Nullable
   @Value.Default
   public String siteName() {
-    /*
-    if(null == canonicalSiteName){
-      canonicalSiteName = canonicalSiteName();
-    }
-    return canonicalSiteName;
-     */
-    return source() == Source.DB ? canonicalSiteName() : null;
+    return loadedOrResolved() ? canonicalSiteName() : null;
   }
-
-  private String canonicalSiteName = null;
 
   private String canonicalSiteName(){
 
@@ -313,16 +296,8 @@ public abstract class ContentType implements Serializable, Permissionable, Conte
   @Nullable
   @Value.Default
   public String folderPath() {
-    /*
-    if(null == canonicalFolderPath){
-      canonicalFolderPath = canonicalFolderPath();
-    }
-    return canonicalFolderPath;
-     */
-    return Source.DB == source() ? canonicalFolderPath() : null;
+    return loadedOrResolved() ? canonicalFolderPath() : null;
   }
-
-  private String canonicalFolderPath;
 
   private String canonicalFolderPath(){
     final String folder = folder();

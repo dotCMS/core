@@ -152,8 +152,8 @@ public class DbContentTypeTransformer implements ContentTypeTransformer{
 			}
 
             @Override
-			public Source source(){
-				return Source.DB;
+			public boolean loadedOrResolved(){
+				return true;
 			}
 		};
 

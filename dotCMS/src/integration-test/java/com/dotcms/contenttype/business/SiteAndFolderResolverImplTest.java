@@ -3,7 +3,6 @@ package com.dotcms.contenttype.business;
 import com.dotcms.IntegrationTestBase;
 import com.dotcms.contenttype.model.component.SiteAndFolder;
 import com.dotcms.contenttype.model.type.ContentType;
-import com.dotcms.contenttype.model.type.ContentType.Source;
 import com.dotcms.contenttype.model.type.ContentTypeBuilder;
 import com.dotcms.contenttype.model.type.FileAssetContentType;
 import com.dotcms.contenttype.model.type.ImmutableFileAssetContentType;
@@ -17,10 +16,10 @@ import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.util.UUIDUtil;
 import com.liferay.portal.model.User;
-import java.util.Optional;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import java.util.Optional;
 
 
 public class SiteAndFolderResolverImplTest extends IntegrationTestBase {
@@ -35,6 +34,15 @@ public class SiteAndFolderResolverImplTest extends IntegrationTestBase {
         IntegrationTestInitService.getInstance().init();
     }
 
+    /**
+     * Here we're basically testing that
+     * When Building a CT that is marked as source DB
+     * The values on folderPath and siteName should show a calculated value
+     * When Source is different from DB It is considered that the CT is used to capture values
+     * e.g. When the class is used in the resource to capture a user input
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
     @Test
     public void Test_CT_SiteAndFolderParams() throws DotDataException, DotSecurityException {
 
@@ -51,8 +59,9 @@ public class SiteAndFolderResolverImplTest extends IntegrationTestBase {
                 .id(UUIDUtil.uuid())
                 .owner(user.getUserId()).build();
 
-        Assert.assertEquals(Source.OTHER,contentType.source());
-        //These two provide default value therefore the expected is they'll be not null
+        Assert.assertFalse(contentType.loadedOrResolved());
+        //If source isn't db These two provide default value therefore the expected is they'll be null
+        //These two should only provide a calculated value when the content-type is loaded from the db.
         Assert.assertNull(contentType.folderPath());
         Assert.assertNull(contentType.siteName());
 
@@ -89,21 +98,31 @@ public class SiteAndFolderResolverImplTest extends IntegrationTestBase {
                 .name(variable)
                 .id(UUIDUtil.uuid())
                 .owner(user.getUserId())
-                .source(Source.DB)
+                .loadedOrResolved(true)
                 .build();
 
+        Assert.assertTrue(contentTypeFromDB.loadedOrResolved());
+        //These two should only provide a calculated value when the content-type is loaded from the db.
+        //Therefore, not null is the expected here. All good.
         Assert.assertNotNull(contentTypeFromDB.folderPath());
         Assert.assertNotNull(contentTypeFromDB.siteName());
 
-        final SiteAndFolder siteAndFolder3 = contentTypeFromDB.siteAndFolder();
-        Assert.assertNotNull(siteAndFolder3.folder());
-        Assert.assertNotNull(siteAndFolder3.host());
-        //However, these two should return null because no value has been used to set them in reality
-        Assert.assertNotNull(siteAndFolder3.folderPath());
-        Assert.assertNotNull(siteAndFolder3.siteName());
+        final SiteAndFolder fromDB = contentTypeFromDB.siteAndFolder();
+        Assert.assertNotNull(fromDB.folder());
+        Assert.assertNotNull(fromDB.host());
+
+        //However, these should still be not null as this comes from the db
+        Assert.assertNotNull(fromDB.folderPath());
+        Assert.assertNotNull(fromDB.siteName());
 
     }
 
+    /**
+     * Purpose of this testis verify that when we build the Resolver using skipping resolve site set to true
+     * Whatever comes in is what we should expect to come back
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
     @Test
     public void Test_Skip_Validate_Whatever_Comes_In_Comes_Back_TheSame() throws DotDataException, DotSecurityException {
         final User user = APILocator.systemUser();
@@ -124,6 +143,11 @@ public class SiteAndFolderResolverImplTest extends IntegrationTestBase {
     }
 
 
+    /**
+     * Fixed content-type should only belong into system-host and therefore also belong into system-folder
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
     @Test
     public void Test_Resolve_Fixed_ContentType() throws DotDataException, DotSecurityException {
         final User user = APILocator.systemUser();
@@ -145,6 +169,13 @@ public class SiteAndFolderResolverImplTest extends IntegrationTestBase {
         Assert.assertEquals(Host.SYSTEM_HOST_NAME, resolved1.siteName());
     }
 
+    /**
+     * Once a content-type has been resolved it should be able to return siteName and folderPath
+     * Scenario: We create an instance that is instructed to fall back to default
+     * Expected: the resolved CT should return the "default" site
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
     @Test
     public void Test_Fallback_To_Default() throws DotDataException, DotSecurityException {
         final User user = APILocator.systemUser();
@@ -165,6 +196,13 @@ public class SiteAndFolderResolverImplTest extends IntegrationTestBase {
         Assert.assertEquals(Folder.SYSTEM_FOLDER_PATH, resolved1.folderPath());
     }
 
+    /**
+     * Once a content-type has been resolved it should be able to return siteName and folderPath
+     * Scenario: We create an instance that is instructed to fall back to system-host
+     * Expected: the resolved CT should return the "default" site
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
     @Test
     public void Test_Fallback_To_System_Host() throws DotDataException, DotSecurityException {
         final User user = APILocator.systemUser();
@@ -184,6 +222,11 @@ public class SiteAndFolderResolverImplTest extends IntegrationTestBase {
         Assert.assertEquals(Folder.SYSTEM_FOLDER_PATH, resolved1.folderPath());
     }
 
+    /**
+     * Test Once a valid folder is set the returned folderPath is valid
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
     @Test
     public void Test_Set_Existing_Folder_Expect_Valid_Resolution() throws DotDataException, DotSecurityException {
 
@@ -208,6 +251,11 @@ public class SiteAndFolderResolverImplTest extends IntegrationTestBase {
         Assert.assertEquals(String.format(FULL_PATH,host.getHostname(),foo.getName()), resolved1.folderPath());
     }
 
+    /**
+     * Feed a valid folder path. Expect resolved valid folder with matching ids
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
     @Test
     public void Test_Set_Folder_Path_Expect_Valid_Resolution() throws DotDataException, DotSecurityException {
 
@@ -233,6 +281,18 @@ public class SiteAndFolderResolverImplTest extends IntegrationTestBase {
         Assert.assertEquals(folderPath, resolved1.folderPath());
     }
 
+    /**
+     * Test internal method fromPath
+     * Path is of the form site:/folderName
+     * Scenario 1: Invalid path
+     * Expected: Empty resolution
+     * Scenario 2: Blank string
+     * Expected: Empty resolution
+     * Scenario 3: site:/
+     * Expected: site and system folder
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
     @Test
     public void Test_fromPath_Method() throws DotDataException, DotSecurityException {
 
@@ -259,6 +319,18 @@ public class SiteAndFolderResolverImplTest extends IntegrationTestBase {
 
     }
 
+    /**
+     * Test another version of the internal method fromPath (the one that takes site id)
+     * Path is of the form site:/folderName
+     * Scenario 1: Invalid path
+     * Expected: Empty resolution
+     * Scenario 2: Blank string
+     * Expected: Empty resolution
+     * Scenario 3: site:/
+     * Expected: site and system folder
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
     @Test
     public void Test_fromPath_And_Site_Method() throws DotDataException, DotSecurityException {
 

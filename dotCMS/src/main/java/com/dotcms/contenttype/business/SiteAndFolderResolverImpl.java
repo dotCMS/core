@@ -60,6 +60,7 @@ public class SiteAndFolderResolverImpl implements SiteAndFolderResolver {
                     .siteName(Host.SYSTEM_HOST_NAME)
                     .folder(Folder.SYSTEM_FOLDER)
                     .folderPath(Folder.SYSTEM_FOLDER_PATH)
+                    .loadedOrResolved(true)
                     .build();
             build.constructWithFields(fields);
             return build;
@@ -76,6 +77,7 @@ public class SiteAndFolderResolverImpl implements SiteAndFolderResolver {
         final ContentType build = ContentTypeBuilder.builder(contentType)
                 .host(resolvedSiteAndFolder.resolvedSite())
                 .folder(resolvedSiteAndFolder.resolvedFolder())
+                .loadedOrResolved(true)
                 .build();
         build.constructWithFields(fields);
         return build;
