@@ -4,20 +4,7 @@
 
 
 
-    <portlet>
-        <portlet-name>files-legacy</portlet-name>
-        <display-name>File Manager</display-name>
-        <portlet-class>com.liferay.portlet.StrutsPortlet</portlet-class>
-        <init-param>
-            <name>view-action</name>
-            <value>/ext/files/view_files</value>
-        </init-param>
 
-
-        <resource-bundle>com.liferay.portlet.StrutsResourceBundle</resource-bundle>
-
-
-    </portlet>
 
     <portlet>
         <portlet-name>categories</portlet-name>
@@ -34,20 +21,7 @@
 
     </portlet>
 
-    <portlet>
-        <portlet-name>folders</portlet-name>
-        <display-name>Folder Manager</display-name>
-        <portlet-class>com.liferay.portlet.StrutsPortlet</portlet-class>
-        <init-param>
-            <name>view-action</name>
-            <value>/ext/folders/view_folders</value>
-        </init-param>
 
-
-        <resource-bundle>com.liferay.portlet.StrutsResourceBundle</resource-bundle>
-
-
-    </portlet>
 
     <portlet>
         <portlet-name>site-browser</portlet-name>
@@ -128,20 +102,6 @@
 
     </portlet>
 
-    <portlet>
-        <portlet-name>director</portlet-name>
-        <display-name>Director</display-name>
-        <portlet-class>com.liferay.portlet.StrutsPortlet</portlet-class>
-        <init-param>
-            <name>view-action</name>
-            <value>/ext/director/view_director</value>
-        </init-param>
-
-
-        <resource-bundle>com.liferay.portlet.StrutsResourceBundle</resource-bundle>
-
-
-    </portlet>
 
 
     <portlet>
@@ -172,17 +132,6 @@
         <resource-bundle>com.liferay.portlet.StrutsResourceBundle</resource-bundle>
 
 
-    </portlet>
-
-    <portlet>
-        <portlet-name>legacy-page-views</portlet-name>
-        <display-name>HTML Pages Statistics</display-name>
-        <portlet-class>com.liferay.portlet.StrutsPortlet</portlet-class>
-        <init-param>
-            <name>view-action</name>
-            <value>/ext/htmlpageviews/view_htmlpage_views</value>
-        </init-param>
-        <resource-bundle>com.liferay.portlet.StrutsResourceBundle</resource-bundle>
     </portlet>
 
 
@@ -512,6 +461,8 @@
         <display-name>graphql</display-name>
         <portlet-class>com.dotcms.rest.JSPPortlet</portlet-class>
     </portlet>
+    
+    
 
     <portlet>
         <portlet-name>api_playground</portlet-name>
@@ -519,5 +470,10 @@
         <portlet-class>com.dotcms.rest.JSPPortlet</portlet-class>
     </portlet>
 
-
+    <portlet>
+        <portlet-name>velocity_playground</portlet-name>
+        <display-name>Velocity Playground</display-name>
+        <portlet-class>com.dotcms.rest.JSPPortlet</portlet-class>
+    </portlet>
+    
 </portlet-app>

@@ -384,6 +384,9 @@ function gitRemoteLs {
 function setOutput {
   local name=${1}
   local value=${2}
-  echo "::notice::Setting output '${name}' with value: '${value}'"
-  echo "::set-output name=${name}::${value}"
+  local do_notice=${3}
+  [[ -z "${do_notice}" ]] && do_notice=false
+  [[ "${do_notice}" == 'true' ]] \
+    && echo "::notice::Setting output '${name}' with value: '${value}'"
+  echo "${name}=${value}" >> $GITHUB_OUTPUT
 }

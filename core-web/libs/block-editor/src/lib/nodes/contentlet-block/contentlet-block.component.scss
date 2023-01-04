@@ -1,62 +1,61 @@
 @use "variables" as *;
 
-dot-contentlet-block {
+:host {
     display: block;
     height: 100%;
     width: 100%;
     box-sizing: border-box;
     margin-bottom: $spacing-3;
-}
 
-.p-card {
-    background: $white;
-    border: 1px solid $input-border-color;
-    color: $black;
-    display: flex;
+    &::ng-deep {
+        .p-card {
+            background: $white;
+            border: 1px solid $input-border-color;
+            color: $black;
+            display: flex;
 
-    .p-card-header {
-        box-sizing: border-box;
-        min-width: 6.875 * $dot-editor-size;
-        padding: $spacing-1;
-        width: 6.875 * $dot-editor-size;
-    }
+            .p-card-header {
+                box-sizing: border-box;
+                padding: $spacing-3;
+                padding-right: 0;
+            }
 
-    .p-card-body {
-        box-sizing: border-box;
-        min-width: 6.25 * $dot-editor-size;
-        padding: $spacing-3;
-        padding-right: $spacing-4;
-        flex: 1;
-    }
+            .p-card-body {
+                box-sizing: border-box;
+                min-width: 6.25 * $dot-editor-size;
+                padding: $spacing-3;
+                padding-right: $spacing-4;
+                flex: 1;
 
-    .p-card-body .p-card-content {
-        padding: 0;
-    }
+                .p-card-content {
+                    padding: 0;
+                }
 
-    .p-card-content {
-        padding: $spacing-3 0;
-    }
+                .p-card-subtitle {
+                    color: $gray;
+                    font-size: $font-size-small;
+                    font-weight: regular;
+                    margin-bottom: $spacing-2;
+                }
 
-    .p-card-title {
-        overflow: hidden;
-        width: 100%;
-    }
+                .p-card-title {
+                    overflow: hidden;
+                    width: 100%;
+                    margin: 0;
 
-    .p-card-title h3 {
-        font-size: $font-size-x-large;
-        overflow: hidden;
-        font-weight: 700;
-        margin: 0;
-        margin-bottom: $spacing-1;
-        text-overflow: ellipsis;
-        white-space: nowrap;
-    }
-
-    .p-card-subtitle {
-        color: $gray;
-        font-size: $font-size-small;
-        font-weight: regular;
-        margin-bottom: $spacing-3;
+                    h3 {
+                        font-weight: 700;
+                        margin-bottom: $spacing-1;
+                        margin: 0;
+                        overflow: hidden;
+                        padding: 0;
+                        text-overflow: ellipsis;
+                        white-space: nowrap;
+                        font-size: $font-size-x-large;
+                    }
+                }
+            }
+        }
     }
 
     dot-contentlet-thumbnail {
