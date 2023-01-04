@@ -42,10 +42,7 @@
                 ],
                 "scripts": [],
                 "stylePreprocessorOptions": {
-                    "includePaths": [
-                        "libs/dot-primeng-theme-styles/src/scss",
-                        "libs/dot-primeng-theme-styles/src/_prod"
-                    ]
+                    "includePaths": ["libs/dot-primeng-theme-styles/src/scss"]
                 },
                 "vendorChunk": true,
                 "extractLicenses": false,
@@ -83,18 +80,13 @@
                     ]
                 },
                 "development": {
+                    "deployUrl": "dotAdmin/",
                     "baseHref": "",
                     "optimization": false,
                     "sourceMap": true,
                     "namedChunks": true,
                     "vendorChunk": true,
-                    "buildOptimizer": false,
-                    "stylePreprocessorOptions": {
-                        "includePaths": [
-                            "libs/dot-primeng-theme-styles/src/scss",
-                            "libs/dot-primeng-theme-styles/src/_dev"
-                        ]
-                    }
+                    "buildOptimizer": false
                 }
             },
             "defaultConfiguration": "",

@@ -15,6 +15,10 @@
         "target": "https://demo.dotcms.com",
         "secure": false
     },
+    "/dA": {
+        "target": "https://demo.dotcms.com",
+        "secure": false
+    },
     "/dotcms-webcomponents": {
         "target": "https://demo.dotcms.com",
         "secure": false
