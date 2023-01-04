@@ -8,6 +8,7 @@
 
 ul {
     @include naked-list;
+    position: relative;
 }
 
 a {

@@ -1,58 +1,31 @@
 package com.dotcms.rendering.velocity.viewtools.content;
 
-import static com.dotcms.uuid.shorty.ShortyIdAPIImpl.MINIMUM_SHORTY_ID_LENGTH;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-import static org.mockito.Mockito.mock;
-
-import com.dotcms.IntegrationTestBase;
-import com.dotcms.contenttype.business.ContentTypeAPI;
-import com.dotcms.contenttype.business.FieldAPI;
 import com.dotcms.contenttype.model.field.Field;
-import com.dotcms.contenttype.model.field.FieldBuilder;
-import com.dotcms.contenttype.model.field.RelationshipField;
-import com.dotcms.contenttype.model.field.TextField;
-import com.dotcms.contenttype.model.type.ContentType;
-import com.dotcms.contenttype.model.type.ContentTypeBuilder;
-import com.dotcms.contenttype.model.type.SimpleContentType;
 import com.dotcms.contenttype.transform.field.LegacyFieldTransformer;
-import com.dotcms.datagen.CategoryDataGen;
-import com.dotcms.datagen.ContentletDataGen;
 import com.dotcms.datagen.LanguageDataGen;
 import com.dotcms.datagen.TestDataUtils;
-import com.dotcms.util.CollectionsUtils;
 import com.dotcms.util.IntegrationTestInitService;
-import com.dotmarketing.beans.Host;
-import com.dotmarketing.beans.Permission;
-import com.dotmarketing.beans.PermissionType;
 import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.PermissionAPI;
-import com.dotmarketing.business.RelationshipAPI;
-import com.dotmarketing.business.Role;
-import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.portlets.categories.model.Category;
-import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
-import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
-import com.dotmarketing.portlets.folders.business.FolderAPI;
-import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
-import com.dotmarketing.portlets.structure.model.ContentletRelationships;
-import com.dotmarketing.portlets.structure.model.Relationship;
-import com.dotmarketing.util.PageMode;
-import com.dotmarketing.util.WebKeys.Relationship.RELATIONSHIP_CARDINALITY;
-import com.liferay.portal.model.User;
-import java.util.Date;
-import java.util.List;
-import org.apache.velocity.context.Context;
-import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
+import static com.dotcms.uuid.shorty.ShortyIdAPIImpl.MINIMUM_SHORTY_ID_LENGTH;
+import static com.liferay.util.StringPool.FORWARD_SLASH;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+
+/**
+ * Verifies that the {@link BinaryMap} available in certain ViewTools is working as expected.
+ *
+ * @author Daniel Silva
+ * @since Feb 15th, 2022
+ */
 public class BinaryMapTest {
+
+    private static final String IMAGE_FIELD_VAR_NAME = "image";
 
     @BeforeClass
     public static void prepare() throws Exception {
@@ -192,39 +165,59 @@ public class BinaryMapTest {
     /**
      * Test getShortyUrl method return expected result
      */
+
+    /**
+     * <ul>
+     *     <li><b>Method to Test:</b> {@link BinaryMap#getShortyUrl()} ()}</li>
+     *     <li><b>Given Scenario:</b> Verify that the {@link BinaryMap#getShortyUrl()} ()} method returns the URI in the
+     *     expected format.</li>
+     *     <li><b>Expected Result:</b> The Shorty URL must include the file extension.</li>
+     * </ul>
+     */
     @Test
-    public void test_getShortyUrl() throws DotDataException {
+    public void testGetShortyUrl() throws DotDataException {
         final Language language = new LanguageDataGen().nextPersisted();
 
         final Contentlet banner =
                 TestDataUtils.getBannerLikeContent(true, language.getId(), null, null);
 
         final Field binaryField = APILocator.getContentTypeFieldAPI()
-                .byContentTypeIdAndVar(banner.getContentTypeId(), "image");
+                .byContentTypeIdAndVar(banner.getContentTypeId(), IMAGE_FIELD_VAR_NAME);
 
         final BinaryMap binaryMap = new BinaryMap(banner, new LegacyFieldTransformer(binaryField).asOldField());
+        final String rawUri = "/dA/" + binaryMap.getShorty() + FORWARD_SLASH + IMAGE_FIELD_VAR_NAME + FORWARD_SLASH;
 
-        assertTrue(binaryMap.getShortyUrl().startsWith("/dA/"));
-        assertTrue(binaryMap.getShortyUrl().endsWith(".jpg"));
+        assertTrue("The generated Raw URI does not match the expected format",
+                binaryMap.getShortyUrl().startsWith(rawUri));
+        assertTrue("The generated Shorty URL does not contain the file extension 'jpg'",
+                binaryMap.getShortyUrl().contains(".jpg"));
     }
 
     /**
-     * Test getRawUri method return expected result
+     * <ul>
+     *     <li><b>Method to Test:</b> {@link BinaryMap#getRawUri()}</li>
+     *     <li><b>Given Scenario:</b> Verify that the {@link BinaryMap#getRawUri()} method returns the URI in the
+     *     expected format.</li>
+     *     <li><b>Expected Result:</b> The Raw URI must comply with the specified format.</li>
+     * </ul>
      */
     @Test
-    public void test_getRawUri() throws DotDataException {
+    public void testGetRawUri() throws DotDataException {
         final Language language = new LanguageDataGen().nextPersisted();
 
         final Contentlet banner =
                 TestDataUtils.getBannerLikeContent(true, language.getId(), null, null);
 
         final Field binaryField = APILocator.getContentTypeFieldAPI()
-                .byContentTypeIdAndVar(banner.getContentTypeId(), "image");
+                .byContentTypeIdAndVar(banner.getContentTypeId(), IMAGE_FIELD_VAR_NAME);
 
         final BinaryMap binaryMap = new BinaryMap(banner, new LegacyFieldTransformer(binaryField).asOldField());
+        final String rawUri = "/dA/" + banner.getIdentifier() + FORWARD_SLASH + IMAGE_FIELD_VAR_NAME + FORWARD_SLASH;
+        final String[] uriArray = binaryMap.getRawUri().split(FORWARD_SLASH);
 
-        assertTrue(binaryMap.getRawUri().startsWith("/contentAsset/raw-data/"));
-        assertTrue(binaryMap.getRawUri().endsWith("/image"));
+        assertTrue("The generated Raw URI does not match the expected format",
+                binaryMap.getRawUri().startsWith(rawUri));
+        assertEquals("The Image field Var Name is not 'image'", IMAGE_FIELD_VAR_NAME, uriArray[3]);
     }
 
     /**
@@ -245,4 +238,5 @@ public class BinaryMapTest {
         assertTrue(binaryMap.getName().startsWith("image"));
         assertTrue(binaryMap.getName().endsWith(".jpg"));
     }
+
 }
