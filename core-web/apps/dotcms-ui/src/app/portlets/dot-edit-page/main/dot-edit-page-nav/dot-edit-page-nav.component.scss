@@ -77,5 +77,9 @@ $nav-size: 80px;
     color: $black;
     pointer-events: none;
     border-bottom: 1px solid $gray-lighter;
-    border-top: 1px solid $gray-lighter;
+    border-top: 1px solid transparent;
+}
+
+.edit-page-nav li:not(:first-child) .edit-page-nav__item--active {
+    border-color: $gray-lighter;
 }

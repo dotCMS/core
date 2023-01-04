@@ -23,7 +23,8 @@ import {
     suggestionOptions,
     SuggestionPopperModifiers,
     findParentNode,
-    NodeTypes
+    NodeTypes,
+    BUBBLE_IMAGE_TABVIEW_FORM_PLUGIN_KEY
 } from '@dotcms/block-editor';
 
 import { ActionButtonComponent } from './action-button.component';
@@ -168,6 +169,12 @@ function execCommand({
         },
         horizontalLine: () => {
             editor.chain().deleteRange(range).setHorizontalRule().focus().run();
+        },
+        image: () => {
+            const transaction = editor.state.tr.setMeta(BUBBLE_IMAGE_TABVIEW_FORM_PLUGIN_KEY, {
+                open: true
+            });
+            editor.view.dispatch(transaction);
         }
     };
 

@@ -9,6 +9,8 @@ import { MenuModule } from 'primeng/menu';
 
 import { debounceTime, delay, tap } from 'rxjs/operators';
 import { BubbleLinkFormComponent } from '@dotcms/block-editor';
+import { ImageTabviewFormComponent } from '../../extensions/image-tabview-form/image-tabview-form.component';
+import { SearchService } from '../../shared/services/search/search.service';
 
 import {
     ActionButtonComponent,
@@ -24,186 +26,12 @@ import {
     FileStatus
 } from '@dotcms/block-editor';
 
+// MOCKS
+import { CONTENTLETS_MOCK, IMAGE_CONTENTLETS_MOCK } from '@dotcms/block-editor';
+
 export default {
     title: 'Block Editor'
 };
-
-const contentletsMock = [
-    {
-        name: 'Empty Content',
-        variable: 'empty',
-        icon: 'hourglass_disabled',
-        url: '/empty/empty-content',
-        path: '/empty/empty-content',
-        title: 'Cras ornare tristique elit.',
-        inode: '1213',
-        image: 'https://images.unsplash.com/photo-1433883669848-fa8a7ce070b2?ixlib=rb-1.2.1&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=2988&q=80',
-        languageId: 2,
-        modDate: '2021-10-20 14:56:53.052',
-        baseType: 'CONTENT',
-        archived: false,
-        working: true,
-        locked: false,
-        live: true,
-        identifier: 'f1d378c9-b784-45d0-a43c-9790af678f13',
-        titleImage: 'image',
-        hasLiveVersion: true,
-        folder: 'SYSTEM_FOLDER',
-        hasTitleImage: true,
-        __icon__: 'contentIcon',
-        contentTypeIcon: 'file_copy',
-        contentType: 'empty'
-    },
-    {
-        name: 'Blog',
-        icon: 'article',
-        url: '/blog/Blog',
-        variable: 'blog',
-        title: 'Cras ornare tristique elit.',
-        inode: '1213',
-        image: 'https://images.unsplash.com/photo-1433883669848-fa8a7ce070b2?ixlib=rb-1.2.1&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=2988&q=80',
-        languageId: 2,
-        modDate: '2021-10-20 14:56:53.052',
-        baseType: 'CONTENT',
-        archived: false,
-        working: true,
-        locked: false,
-        live: true,
-        identifier: 'f1d378c9-b784-45d0-a43c-9790af678f13',
-        titleImage: 'image',
-        hasLiveVersion: true,
-        folder: 'SYSTEM_FOLDER',
-        hasTitleImage: true,
-        __icon__: 'contentIcon',
-        contentTypeIcon: 'file_copy',
-        contentType: 'Blog'
-    },
-    {
-        name: 'Persona',
-        icon: 'face',
-        url: '/persona/persona',
-        path: '/persona/persona',
-        variable: 'persona',
-        title: 'Cras ornare tristique elit.',
-        inode: '1213',
-        image: 'https://images.unsplash.com/photo-1433883669848-fa8a7ce070b2?ixlib=rb-1.2.1&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=2988&q=80',
-        languageId: 2,
-        modDate: '2021-10-20 14:56:53.052',
-        baseType: 'CONTENT',
-        archived: false,
-        working: true,
-        locked: false,
-        live: true,
-        identifier: 'f1d378c9-b784-45d0-a43c-9790af678f13',
-        titleImage: 'image',
-        hasLiveVersion: true,
-        folder: 'SYSTEM_FOLDER',
-        hasTitleImage: true,
-        __icon__: 'contentIcon',
-        contentTypeIcon: 'file_copy',
-        contentType: 'Blog'
-    },
-    {
-        name: 'News Item',
-        icon: 'mic',
-        url: '/news_item/news-item',
-        path: '/news_item/news-item',
-        variable: 'news_item',
-        title: 'Cras ornare tristique elit.',
-        inode: '1213',
-        image: 'https://images.unsplash.com/photo-1433883669848-fa8a7ce070b2?ixlib=rb-1.2.1&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=2988&q=80',
-        languageId: 2,
-        modDate: '2021-10-20 14:56:53.052',
-        baseType: 'CONTENT',
-        archived: false,
-        working: true,
-        locked: false,
-        live: true,
-        identifier: 'f1d378c9-b784-45d0-a43c-9790af678f13',
-        titleImage: 'image',
-        hasLiveVersion: true,
-        folder: 'SYSTEM_FOLDER',
-        hasTitleImage: true,
-        __icon__: 'contentIcon',
-        contentTypeIcon: 'file_copy',
-        contentType: 'Blog'
-    },
-    {
-        name: 'Banner',
-        icon: 'view_carousel',
-        url: '/banner/banner',
-        path: '/banner/banner',
-        variable: 'banner',
-        title: 'Cras ornare tristique elit.',
-        inode: '1213',
-        image: 'https://images.unsplash.com/photo-1433883669848-fa8a7ce070b2?ixlib=rb-1.2.1&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=2988&q=80',
-        languageId: 2,
-        modDate: '2021-10-20 14:56:53.052',
-        baseType: 'CONTENT',
-        archived: false,
-        working: true,
-        locked: false,
-        live: true,
-        identifier: 'f1d378c9-b784-45d0-a43c-9790af678f13',
-        titleImage: 'image',
-        hasLiveVersion: true,
-        folder: 'SYSTEM_FOLDER',
-        hasTitleImage: true,
-        __icon__: 'contentIcon',
-        contentTypeIcon: 'file_copy',
-        contentType: 'Blog'
-    },
-    {
-        name: 'Product in the store',
-        icon: 'inventory_2',
-        url: '/inventory/product-in-the-store',
-        path: '/inventory/product-in-the-store',
-        variable: 'inventory',
-        title: 'Cras ornare tristique elit.',
-        inode: '1213',
-        image: 'https://images.unsplash.com/photo-1433883669848-fa8a7ce070b2?ixlib=rb-1.2.1&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=2988&q=80',
-        languageId: 2,
-        modDate: '2021-10-20 14:56:53.052',
-        baseType: 'CONTENT',
-        archived: false,
-        working: true,
-        locked: false,
-        live: true,
-        identifier: 'f1d378c9-b784-45d0-a43c-9790af678f13',
-        titleImage: 'image',
-        hasLiveVersion: true,
-        folder: 'SYSTEM_FOLDER',
-        hasTitleImage: true,
-        __icon__: 'contentIcon',
-        contentTypeIcon: 'file_copy',
-        contentType: 'Blog'
-    },
-    {
-        name: 'Reatil information',
-        icon: 'storefront',
-        url: '/retail/reatil-information',
-        path: '/retail/reatil-information',
-        variable: 'retail',
-        title: 'Cras ornare tristique elit.',
-        inode: '1213',
-        image: 'https://images.unsplash.com/photo-1433883669848-fa8a7ce070b2?ixlib=rb-1.2.1&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=2988&q=80',
-        languageId: 2,
-        modDate: '2021-10-20 14:56:53.052',
-        baseType: 'CONTENT',
-        archived: false,
-        working: true,
-        locked: false,
-        live: true,
-        identifier: 'f1d378c9-b784-45d0-a43c-9790af678f13',
-        titleImage: 'image',
-        hasLiveVersion: true,
-        folder: 'SYSTEM_FOLDER',
-        hasTitleImage: true,
-        __icon__: 'contentIcon',
-        contentTypeIcon: 'file_copy',
-        contentType: 'Blog'
-    }
-];
 
 export const primary = () => ({
     moduleMetadata: {
@@ -271,10 +99,10 @@ export const primary = () => ({
                     getContentTypes(filter = '') {
                         return of(
                             filter
-                                ? contentletsMock.filter((item) =>
+                                ? CONTENTLETS_MOCK.filter((item) =>
                                       item.name.match(new RegExp(filter, 'i'))
                                   )
-                                : contentletsMock
+                                : CONTENTLETS_MOCK
                         );
                     },
                     getContentlets({ contentType, filter = '' }) {
@@ -284,15 +112,15 @@ export const primary = () => ({
 
                         return of(
                             filter
-                                ? contentletsMock.filter((item) =>
+                                ? CONTENTLETS_MOCK.filter((item) =>
                                       item.title.match(new RegExp(filter, 'i'))
                                   )
-                                : contentletsMock
+                                : CONTENTLETS_MOCK
                         );
                     },
                     getContentletsUrlMap({ filter }) {
                         return of(
-                            contentletsMock.filter((item) =>
+                            CONTENTLETS_MOCK.filter((item) =>
                                 item.url.match(new RegExp(filter, 'i'))
                             )
                         ).pipe(debounceTime(400));
@@ -323,6 +151,26 @@ export const primary = () => ({
                         });
                     }
                 }
+            },
+            {
+                provide: SearchService,
+                useValue: {
+                    get(params) {
+                        const query = params.query.match(new RegExp(/(?<=:)(.*?)(?=\*)/))[0];
+                        const contentlets = query
+                            ? IMAGE_CONTENTLETS_MOCK.filter(({ fileName }) =>
+                                  fileName.includes(query)
+                              )
+                            : IMAGE_CONTENTLETS_MOCK;
+
+                        return of({
+                            jsonObjectView: {
+                                contentlets: contentlets.slice(params.offset, params.offset + 20)
+                            },
+                            resultsSize: query ? contentlets?.length : IMAGE_CONTENTLETS_MOCK.length
+                        }).pipe(delay(1000));
+                    }
+                }
             }
         ],
         // We need these here because they are dynamically rendered
@@ -332,7 +180,8 @@ export const primary = () => ({
             ActionButtonComponent,
             DragHandlerComponent,
             LoaderComponent,
-            BubbleLinkFormComponent
+            BubbleLinkFormComponent,
+            ImageTabviewFormComponent
         ]
     },
     component: DotBlockEditorComponent
