@@ -42,8 +42,8 @@ public class WfActionClassAjax extends WfBaseAction {
 				this.workflowAPI.reorderActionClass(actionClass, order, user);
 			}
 		} catch (Exception e) {
-			
-			// dojo sends this Ajax method "reorder Actions" calls, which fail.  Not sure why 
+
+			// dojo sends this Ajax method "reorder Actions" calls, which fail.  Not sure why
 			//Logger.error(this.getClass(), e.getMessage(), e);
 			//writeError(response, e.getMessage());
 		}
@@ -65,7 +65,7 @@ public class WfActionClassAjax extends WfBaseAction {
 	}
 
 	public void add(final HttpServletRequest request,
-					final HttpServletResponse response) throws ServletException, IOException {
+			final HttpServletResponse response) throws ServletException, IOException {
 
 		final User   user     						  = this.userWebAPI.getUser(request);
 		final String actionId						  = request.getParameter("actionId");
@@ -74,12 +74,12 @@ public class WfActionClassAjax extends WfBaseAction {
 		final WorkflowActionClass workflowActionClass = new WorkflowActionClass();
 
 		try {
-			// We don't need to get "complete" action object from the database 
+			// We don't need to get "complete" action object from the database
 			// to retrieve all action classes from him. So, we can create simple action object
 			// with the "action id" contain in actionClass parameter.
 			final WorkflowAction action = new WorkflowAction();
 			action.setId(actionId);
-			
+
 			final List<WorkflowActionClass> classes = this.workflowAPI.findActionClasses(action);
 			if (classes != null) {
 				workflowActionClass.setOrder(classes.size());
@@ -88,8 +88,8 @@ public class WfActionClassAjax extends WfBaseAction {
 			workflowActionClass.setName(actionName);
 			workflowActionClass.setActionId(actionId);
 			this.workflowAPI.saveActionClass(workflowActionClass, user);
-
-			response.getWriter().println(workflowActionClass.getId() + ":" + workflowActionClass.getName());
+			response.setContentType("text/plain");
+			response.getWriter().println(String.format("%s:%s",workflowActionClass.getId(),workflowActionClass.getName()));
 		} catch (Exception e) {
 			Logger.error(this.getClass(), e.getMessage(), e);
 			writeError(response, e.getMessage());
@@ -125,7 +125,7 @@ public class WfActionClassAjax extends WfBaseAction {
 				if(errors != null){
 					writeError(response, errors);
 					return;
-				}		
+				}
 			}
 
 			this.workflowAPI.saveWorkflowActionClassParameters(newParams, user);
@@ -136,5 +136,4 @@ public class WfActionClassAjax extends WfBaseAction {
 		}
 	}
 }
-
 

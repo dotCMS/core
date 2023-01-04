@@ -36,6 +36,10 @@ export * from './image-uploader/image-uploader.extension';
 export * from './image-uploader/components/loader/loader.component';
 export * from './image-uploader/services/dot-image/dot-image.service';
 
+// Image Tabview Form
+export * from './image-tabview-form/image-tabview-form.extension';
+export * from './image-tabview-form/plugins/bubble-image-tabview-form.plugin';
+
 // Table
 export * from './dot-table/dot-table.extension';
 export * from './dot-table/dot-table-cell.extension';

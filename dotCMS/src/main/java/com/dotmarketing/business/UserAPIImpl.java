@@ -34,12 +34,13 @@ import com.liferay.portal.pwd.PwdToolkitUtil;
 import com.liferay.portal.util.PropsUtil;
 import com.liferay.util.GetterUtil;
 import io.vavr.control.Try;
+import org.apache.commons.lang.StringUtils;
+
 import java.text.MessageFormat;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
 import java.util.Optional;
-import org.apache.commons.lang.StringUtils;
 
 /**
  * UserAPIImpl is an API intended to be a helper class for class to get User
@@ -161,6 +162,11 @@ public class UserAPIImpl implements UserAPI {
     @Override
     public List<User> getUsersByName(String filter, List<Role> roles, int start,int limit) throws DotDataException {
         return userFactory.getUsersByName(filter, roles, start, limit);
+    }
+
+    @Override
+    public List<User> getUsersByName(final String filter, final List<Role> roles, final int start, final int limit, final FilteringParams filterParams) throws DotDataException {
+        return this.userFactory.getUsersByName(filter, roles, start, limit, filterParams);
     }
 
     @WrapInTransaction
