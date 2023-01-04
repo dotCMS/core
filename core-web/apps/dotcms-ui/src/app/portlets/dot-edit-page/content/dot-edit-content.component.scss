@@ -19,11 +19,9 @@ dot-whats-changed,
 }
 
 .dot-edit__page-wrapper {
-    background-color: $gray-bg;
     height: 100%;
     max-width: 100%;
     min-width: 100%;
-    padding: $spacing-5;
     width: 100%;
 
     &.dot-edit__page-wrapper--deviced {

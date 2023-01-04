@@ -97,6 +97,13 @@ public interface ContentletAPIPostHook {
 	public default void findContentletByIdentifierAnyLanguage (String identifier) { }
 
 	/**
+	 * Retrieves a contentlet from the database based on its identifier
+	 * @param identifier
+	 * @param variant
+	 */
+	default void findContentletByIdentifierAnyLanguage (String identifier, String variant) { }
+
+	/**
 	 * Retrieves a contentlet list from the database based on a identifiers array
 	 * @param identifiers	Array of identifiers
 	 * @param live	Retrieves the live version if false retrieves the working version

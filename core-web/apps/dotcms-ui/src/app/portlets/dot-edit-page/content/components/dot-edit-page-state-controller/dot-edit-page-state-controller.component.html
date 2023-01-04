@@ -1,22 +1,26 @@
 <p-selectButton
     class="p-button-tabbed"
     [(ngModel)]="mode"
-    (onChange)="stateSelectorHandler($event.value)"
     [options]="options"
+    (onChange)="stateSelectorHandler($event.value)"
 ></p-selectButton>
-<p-inputSwitch
-    #locker
-    [class.warn]="lockWarn"
-    [disabled]="!pageState.page.canLock"
-    [(ngModel)]="lock"
-    [pTooltip]="
-        pageState.state.lockedByAnotherUser && pageState.page.canEdit
-            ? ('editpage.toolbar.page.locked.by.user' | dm: [pageState.page.lockedByName])
-            : null
-    "
-    [tooltipPosition]="pageState.page.lockedByName ? 'top' : null"
-    appendTo="target"
-    (onChange)="lockPageHandler()"
-    (click)="onLockerClick()"
-></p-inputSwitch>
-<dot-edit-page-lock-info [pageState]="pageState" #pageLockInfo></dot-edit-page-lock-info>
+
+<ng-container *ngIf="!variant">
+    <p-inputSwitch
+        #locker
+        [(ngModel)]="lock"
+        [class.warn]="lockWarn"
+        [disabled]="!pageState.page.canLock"
+        [pTooltip]="
+            pageState.state.lockedByAnotherUser && pageState.page.canEdit
+                ? ('editpage.toolbar.page.locked.by.user' | dm : [pageState.page.lockedByName])
+                : null
+        "
+        [tooltipPosition]="pageState.page.lockedByName ? 'top' : null"
+        (click)="onLockerClick()"
+        (onChange)="lockPageHandler()"
+        appendTo="target"
+    ></p-inputSwitch>
+</ng-container>
+
+<dot-edit-page-lock-info #pageLockInfo [pageState]="pageState"></dot-edit-page-lock-info>

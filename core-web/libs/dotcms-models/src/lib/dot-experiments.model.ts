@@ -55,6 +55,8 @@ export interface DotStoreWithSidebar {
 
 export type EditPageTabs = 'edit' | 'preview';
 
+export type EditPageQueryParams = 'editPageTab' | 'variationName';
+
 export enum ExperimentSteps {
     VARIANTS = 'variants',
     GOAL = 'goal',

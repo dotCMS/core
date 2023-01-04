@@ -1,5 +1,5 @@
 <div class="editor-wrapper" [style]="customStyles">
-    <tiptap-editor [editor]="editor" (keyup)="subject.next()"></tiptap-editor>
+    <tiptap-editor [(ngModel)]="content" [editor]="editor" (keyup)="subject.next()"></tiptap-editor>
 </div>
 
 <dot-editor-count-bar

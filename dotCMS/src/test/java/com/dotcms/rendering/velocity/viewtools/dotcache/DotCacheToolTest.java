@@ -39,11 +39,9 @@ public class DotCacheToolTest {
         final String now = "now:" + System.currentTimeMillis();
 
         dotCacheTool.put(cacheKey, now, 5);
-        Thread.sleep(1200);
         Assert.assertEquals(dotCacheTool.get(cacheKey), now);
 
         dotCacheTool.put(cacheKey, now, 0);
-        Thread.sleep(1200);
         Assert.assertNull(dotCacheTool.get(cacheKey));
     }
 
@@ -66,13 +64,33 @@ public class DotCacheToolTest {
         final String now = "now:" + System.currentTimeMillis();
 
         dotCacheTool.put(cacheKey, now, 2);
-        Thread.sleep(1200);
         Assert.assertEquals(dotCacheTool.get(cacheKey), now);
-
         Thread.sleep(2500);
         Assert.assertNull(dotCacheTool.get(cacheKey));
     }
 
+    
+    @Test
+    public void test_putDebounce() throws InterruptedException {
+        dotCacheTool.clear();
+        final String cacheKey = "cacheKey";
+        final String now = "now:" + System.currentTimeMillis();
+
+        dotCacheTool.putDebounce(cacheKey, now, 2);
+        
+        // not in cache yet, debouncing for 1 sec
+        Assert.assertNull(dotCacheTool.get(cacheKey));
+        
+        // added after 1 second
+        Thread.sleep(1200);
+        Assert.assertEquals(dotCacheTool.get(cacheKey), now);
+
+
+    }
+    
+    
+    
+    
     /**
      * <ul>
      *     <li><b>Method to Test:</b> {@link DotCacheTool#clear()}</li>
@@ -91,7 +109,7 @@ public class DotCacheToolTest {
         final String now = "now:" + System.currentTimeMillis();
 
         dotCacheTool.put(cacheKey, now);
-        Thread.sleep(1200);
+
         Assert.assertEquals(dotCacheTool.get(cacheKey), now);
 
         dotCacheTool.clear();

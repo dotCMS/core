@@ -1,15 +1,14 @@
 package com.dotcms.analytics.cache;
 
-
 import com.dotcms.analytics.AnalyticsTestUtils;
 import com.dotcms.analytics.model.AccessToken;
+import com.dotcms.analytics.model.TokenStatus;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotStateException;
 import org.junit.Before;
 import org.junit.Test;
 
 import static org.junit.Assert.assertTrue;
-
 
 /**
  * Analytics Cache Test
@@ -43,7 +42,8 @@ public class AnalyticsCacheTest {
             null,
             null,
             "some-scope",
-            "some-token-type");
+            "some-token-type",
+            TokenStatus.OK);
         analyticsCache.putAccessToken(accessToken);
 
         final String clientId = "some-client-id";

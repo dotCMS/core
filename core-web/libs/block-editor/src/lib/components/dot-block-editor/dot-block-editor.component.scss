@@ -156,6 +156,10 @@
                     position: relative;
                     vertical-align: top;
                 }
+                /* fix borders in FF: https://stackoverflow.com/a/16337203/3847132*/
+                th {
+                    background-clip: padding-box;
+                }
 
                 td > *,
                 th > * {
@@ -231,6 +235,10 @@
                     }
                 }
             }
+        }
+
+        .node-container {
+            margin-bottom: $spacing-3;
         }
     }
 }
