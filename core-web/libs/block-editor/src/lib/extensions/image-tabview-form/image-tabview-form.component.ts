@@ -1,8 +1,7 @@
-import { Component, Input, ChangeDetectionStrategy } from '@angular/core';
-import { DotCMSContentlet } from '@dotcms/dotcms-models';
+import { Component, Input, ChangeDetectionStrategy, ChangeDetectorRef } from '@angular/core';
 
+import { DotCMSContentlet } from '@dotcms/dotcms-models';
 import { DEFAULT_LANG_ID } from '@dotcms/block-editor';
-import { ChangeDetectorRef } from '@angular/core';
 
 @Component({
     selector: 'dot-image-tabview-form',

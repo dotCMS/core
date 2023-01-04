@@ -1,5 +1,9 @@
 @use "variables" as *;
 
+:host {
+    width: 100%;
+}
+
 .wrapper {
     display: flex;
     justify-content: center;

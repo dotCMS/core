@@ -20,9 +20,12 @@ export class DotInputTabComponent {
     @ViewChild('input') input!: ElementRef;
 
     @Output() save = new EventEmitter();
-    @Input() set focusInput(value) {
+    @Input() set reset(value) {
         if (value) {
-            requestAnimationFrame(() => this.input.nativeElement.focus());
+            requestAnimationFrame(() => {
+                this.input.nativeElement.value = '';
+                this.input.nativeElement.focus();
+            });
         }
     }
 

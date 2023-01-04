@@ -1,19 +1,21 @@
 <div class="tabview-container" *ngIf="isVisible">
-    <p-tabView [(activeIndex)]="activeTab" (onChange)="handleChange()">
+    <p-tabView [(activeIndex)]="activeTab">
         <p-tabPanel header="dotCMS" leftIcon="pi pi-images">
-            <dot-image-search
-                *ngIf="activeTab === 0"
-                [focusInput]="activeTab === 0"
-                [languageId]="languageId"
-                (seletedImage)="onSelectImage($event)"
-            ></dot-image-search>
+            <div class="wrapper">
+                <dot-image-search
+                    [reset]="activeTab === 0"
+                    [languageId]="languageId"
+                    (seletedImage)="onSelectImage($event)"
+                ></dot-image-search>
+            </div>
         </p-tabPanel>
-        <!-- <p-tabPanel header="Upload" leftIcon="pi pi-upload"> Content 2 </p-tabPanel> -->
         <p-tabPanel header="Image URL" leftIcon="pi pi-link">
-            <dot-input-tab
-                [focusInput]="activeTab === 1"
-                (save)="onSelectImage($event)"
-            ></dot-input-tab>
+            <div class="wrapper">
+                <dot-input-tab
+                    [reset]="activeTab === 1"
+                    (save)="onSelectImage($event)"
+                ></dot-input-tab>
+            </div>
         </p-tabPanel>
     </p-tabView>
 </div>

@@ -10,6 +10,14 @@
     background: $white;
 }
 
+.wrapper {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 25rem;
+    width: 100%;
+}
+
 :host::ng-deep {
     .p-tabview {
         .p-tabview-nav li.p-highlight .p-tabview-nav-link {

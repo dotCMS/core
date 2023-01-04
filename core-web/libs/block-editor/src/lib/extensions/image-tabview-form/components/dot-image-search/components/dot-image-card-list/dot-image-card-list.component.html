@@ -4,7 +4,7 @@
     [items]="contentlets"
     [lazy]="true"
     (onScrollIndexChange)="onScrollIndexChange($event, contentlets.length)"
-    scrollHeight="250px"
+    scrollHeight="20rem"
 >
     <ng-template pTemplate="item" let-contentlet>
         <div class="card-list-row">
@@ -33,7 +33,7 @@
 
 <ng-template #emptyBlock>
     <div class="wrapper">
-        <img [src]="icon" width="42px" />
+        <img [src]="icon" width="42px" alt="No results found" />
         <p>No results found, try searching again</p>
     </div>
 </ng-template>
