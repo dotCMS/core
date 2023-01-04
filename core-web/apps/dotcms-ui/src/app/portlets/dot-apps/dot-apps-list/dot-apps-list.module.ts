@@ -11,6 +11,7 @@ import { NotLicensedModule } from '@components/not-licensed/not-licensed.module'
 import { ButtonModule } from 'primeng/button';
 import { DotAppsImportExportDialogModule } from '../dot-apps-import-export-dialog/dot-apps-import-export-dialog.module';
 import { DotIconModule } from '@dotcms/ui';
+import { DotPortletBaseModule } from '@components/dot-portlet-base/dot-portlet-base.module';
 
 @NgModule({
     imports: [
@@ -21,7 +22,8 @@ import { DotIconModule } from '@dotcms/ui';
         DotPipesModule,
         DotAppsImportExportDialogModule,
         NotLicensedModule,
-        DotIconModule
+        DotIconModule,
+        DotPortletBaseModule
     ],
     declarations: [DotAppsListComponent],
     exports: [DotAppsListComponent],
