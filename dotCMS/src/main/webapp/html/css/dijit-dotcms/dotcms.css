@@ -10362,6 +10362,10 @@ dd .buttonCaption {
   align-self: center;
 }
 
+.portlet-toolbar > .portlet-toolbar__actions-search {
+  width: 270px;
+}
+
 .portlet-toolbar a {
   text-decoration: none;
 }

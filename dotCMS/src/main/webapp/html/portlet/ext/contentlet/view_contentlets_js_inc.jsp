@@ -174,7 +174,7 @@ final String calendarEventInode = null!=calendarEventSt ? calendarEventSt.inode(
 		**/
 		require([ "dijit/focus", "dojo/dom", "dojo/domReady!" ], function(focusUtil, dom){
 			dojo.require('dojox.timing');
-			t = new dojox.timing.Timer(500);
+			t = new dojox.timing.Timer(900);
 			t.onTick = function(){
 			  focusUtil.focus(dom.byId("allFieldTB"));
 			  t.stop();
