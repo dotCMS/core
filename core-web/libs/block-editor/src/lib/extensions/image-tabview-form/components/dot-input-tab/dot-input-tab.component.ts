@@ -5,10 +5,9 @@ import {
     Output,
     Input,
     ViewChild,
-    ElementRef,
-    ChangeDetectorRef
+    ElementRef
 } from '@angular/core';
-import { FormBuilder, FormGroup } from '@angular/forms';
+import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 
 @Component({
     selector: 'dot-input-tab',
@@ -22,22 +21,30 @@ export class DotInputTabComponent {
     @Output() save = new EventEmitter();
     @Input() set reset(value) {
         if (value) {
-            requestAnimationFrame(() => {
-                this.input.nativeElement.value = '';
-                this.input.nativeElement.focus();
-            });
+            requestAnimationFrame(() => this.resetForm());
         }
     }
 
+    regex =
+        '^((http|https)://)[-a-zA-Z0-9@:%._\\+~#?&//=]{2,256}\\.[a-z]{2,6}\\b([-a-zA-Z0-9@:%._\\+~#?&//=]*)$';
     form: FormGroup;
 
-    constructor(private fb: FormBuilder, private readonly cd: ChangeDetectorRef) {
+    constructor(private fb: FormBuilder) {
         this.form = this.fb.group({
-            url: ['']
+            url: ['', [Validators.required, Validators.pattern(this.regex)]]
         });
     }
 
     onSubmit() {
+        if (this.form.invalid) {
+            return;
+        }
+
         this.save.emit(this.form.get('url').value);
+    }
+
+    resetForm() {
+        this.form.reset();
+        this.input.nativeElement.focus();
     }
 }

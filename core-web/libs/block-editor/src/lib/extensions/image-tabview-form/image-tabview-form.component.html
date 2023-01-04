@@ -1,9 +1,9 @@
-<div class="tabview-container" *ngIf="isVisible">
+<div class="tabview-container">
     <p-tabView [(activeIndex)]="activeTab">
         <p-tabPanel header="dotCMS" leftIcon="pi pi-images">
             <div class="wrapper">
                 <dot-image-search
-                    [reset]="activeTab === 0"
+                    *ngIf="activeTab === 0 && showSearch"
                     [languageId]="languageId"
                     (seletedImage)="onSelectImage($event)"
                 ></dot-image-search>

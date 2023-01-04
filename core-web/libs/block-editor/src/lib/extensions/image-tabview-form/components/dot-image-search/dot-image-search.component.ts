@@ -28,17 +28,6 @@ export class DotImageSearchComponent implements OnInit, OnDestroy, AfterViewInit
     @ViewChild('input') input!: ElementRef;
     @Output() seletedImage = new EventEmitter<DotCMSContentlet>();
 
-    @Input() set reset(value) {
-        if (value) {
-            this.store.searchContentlet('');
-
-            requestAnimationFrame(() => {
-                this.input.nativeElement.value = '';
-                this.input.nativeElement.focus();
-            });
-        }
-    }
-
     @Input() set languageId(id) {
         this.store.updateLanguages(id);
     }
@@ -59,6 +48,7 @@ export class DotImageSearchComponent implements OnInit, OnDestroy, AfterViewInit
     }
 
     ngAfterViewInit() {
+        this.input.nativeElement.focus();
         fromEvent(this.input.nativeElement, 'input')
             .pipe(takeUntil(this.destroy$), debounceTime(450))
             .subscribe(({ target }) => {

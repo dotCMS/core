@@ -8,8 +8,15 @@
             autocomplete="off"
             type="text"
             pInputText
-            placeholder="Content"
+            placeholder="https://example.com/image.jpg"
         />
     </div>
-    <button [disabled]="form.invalid || form.pristine" type="submit" pButton>Insert</button>
+    <div class="footer">
+        <span
+            class="error-message"
+            [class.hide]="!(form.controls['url'].invalid && form.controls['url'].dirty)"
+            >Enter a valid url</span
+        >
+        <button [disabled]="form.invalid" type="submit" pButton>Insert</button>
+    </div>
 </form>

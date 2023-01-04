@@ -11,15 +11,19 @@ import { DEFAULT_LANG_ID } from '@dotcms/block-editor';
 })
 export class ImageTabviewFormComponent {
     @Input() languageId = DEFAULT_LANG_ID;
-    @Input() isVisible = false;
+    @Input() showSearch = true;
     @Input() onSelectImage: (payload: DotCMSContentlet | string) => void;
-
     activeTab = 0;
 
     constructor(private readonly cd: ChangeDetectorRef) {}
 
-    toggleIsVisible(value) {
-        this.isVisible = value;
+    changeActiveTab(value) {
+        this.activeTab = value;
+        this.cd.markForCheck();
+    }
+
+    toggelShowSearch(value) {
+        this.showSearch = value;
         this.cd.markForCheck();
     }
 }

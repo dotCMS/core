@@ -67,6 +67,7 @@ export class BubbleImageTabFormView {
         // Set Component Inputs
         this.component.instance.languageId = this.editor.storage.dotConfig.lang;
         this.component.instance.onSelectImage = this.addImage.bind(this);
+        this.component.instance.toggelShowSearch(false);
 
         this.editor.on('focus', () => {
             if (this.tippy?.state.isShown) {
@@ -163,14 +164,16 @@ export class BubbleImageTabFormView {
 
     show() {
         this.tippy?.show();
-        this.component.instance.toggleIsVisible(true);
+        this.component.instance.changeActiveTab(0);
+        this.component.instance.toggelShowSearch(true);
+        this.component.changeDetectorRef.detectChanges();
     }
 
     hide() {
         this.tippy?.hide();
         this.closeForm();
         this.editor.view.focus();
-        this.component.instance.toggleIsVisible(false);
+        this.component.instance.toggelShowSearch(false);
         this.component.changeDetectorRef.detectChanges();
     }
 

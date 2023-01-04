@@ -17,5 +17,20 @@
     width: 100%;
     display: flex;
     flex-direction: column;
-    gap: $spacing-1;
+    gap: $spacing-2;
+}
+
+.footer {
+    width: 100%;
+    display: flex;
+    justify-content: space-between;
+}
+.error-message {
+    color: $red;
+    font-size: $font-size-x-small;
+    text-align: left;
+}
+
+.hide {
+    visibility: hidden;
 }

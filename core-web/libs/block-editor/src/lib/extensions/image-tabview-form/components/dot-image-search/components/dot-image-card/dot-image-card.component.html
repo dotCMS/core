@@ -1,7 +1,10 @@
 <p-card>
     <ng-template pTemplate="header">
         <div class="image-thumbnail-container">
-            <img [src]="contentlet.fileAsset || contentlet.asset" />
+            <img
+                [src]="getImage(contentlet.inode)"
+                [alt]="contentlet?.fileName || contentlet?.title"
+            />
         </div>
     </ng-template>
     <h2 class="title" *pTemplate="'title'">{{ contentlet?.fileName || contentlet?.title }}</h2>
