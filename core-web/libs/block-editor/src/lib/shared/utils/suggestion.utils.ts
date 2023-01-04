@@ -15,7 +15,7 @@ import {
 
 const domSanitizer = new ɵDomSanitizerImpl(document);
 
-const headings = [...Array(3).keys()].map((level) => {
+const headings: DotMenuItem[] = [...Array(3).keys()].map((level) => {
     const size = level + 1;
 
     return {
@@ -26,7 +26,15 @@ const headings = [...Array(3).keys()].map((level) => {
     };
 });
 
-const table = [
+const image: DotMenuItem[] = [
+    {
+        label: 'Image',
+        icon: 'image',
+        id: 'image'
+    }
+];
+
+const table: DotMenuItem[] = [
     {
         label: 'Table',
         icon: 'table_view',
@@ -34,7 +42,7 @@ const table = [
     }
 ];
 
-const paragraph = [
+const paragraph: DotMenuItem[] = [
     {
         label: 'Paragraph',
         icon: sanitizeUrl(pIcon),
@@ -42,7 +50,7 @@ const paragraph = [
     }
 ];
 
-const list = [
+const list: DotMenuItem[] = [
     {
         label: 'List Ordered',
         icon: sanitizeUrl(olIcon),
@@ -55,7 +63,7 @@ const list = [
     }
 ];
 
-const block = [
+const block: DotMenuItem[] = [
     {
         label: 'Blockquote',
         icon: sanitizeUrl(quoteIcon),
@@ -73,20 +81,17 @@ const block = [
     }
 ];
 
-function sanitizeUrl(url: string): SafeUrl {
+export function sanitizeUrl(url: string): SafeUrl {
     return domSanitizer.bypassSecurityTrustUrl(url);
 }
 
 export const suggestionOptions: DotMenuItem[] = [
+    ...image,
     ...headings,
     ...table,
     ...paragraph,
     ...list,
     ...block
-];
-
-export const changeToItems: DotMenuItem[] = [
-    ...suggestionOptions.filter((item) => !(item.id == 'horizontalLine' || item.id == 'table'))
 ];
 
 export const tableChangeToItems: DotMenuItem[] = [...headings, ...paragraph, ...list];
@@ -108,3 +113,13 @@ export const SuggestionPopperModifiers = [
 ];
 
 export const CONTENT_SUGGESTION_ID = 'contentlets';
+
+const FORBIDDEN_CHANGE_TO_BLOCKS = {
+    horizontalLine: true,
+    table: true,
+    image: true
+};
+
+export const changeToItems: DotMenuItem[] = [
+    ...suggestionOptions.filter((item) => !FORBIDDEN_CHANGE_TO_BLOCKS[item.id])
+];
