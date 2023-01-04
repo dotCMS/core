@@ -24,8 +24,8 @@ WorkflowTask wfTask = APILocator.getWorkflowAPI().findTaskByContentlet(contentle
 
 
 boolean canEditContentType=contentlet.getContentType()!=null && APILocator.getPermissionAPI().doesUserHavePermission(contentlet.getContentType(),2, user);
-
-com.dotmarketing.beans.Host myHost =  WebAPILocator.getHostWebAPI().getCurrentHost(request); 
+boolean isEditing = java.util.Objects.equals(request.getParameter("cmd"), "edit");
+com.dotmarketing.beans.Host myHost =  WebAPILocator.getHostWebAPI().getCurrentHost(request);
 
 List<WorkflowStep> wfSteps = null;
 WorkflowStep wfStep = null;
@@ -92,16 +92,10 @@ function editPage(url, languageId) {
 }
 
 function jumpToContentType(){
-    if(!_hasUserChanged || confirm("Content has changed, proceed?")){
+    if(!_hasUserChanged || confirm('<%=LanguageUtil.get(pageContext, "content.has.change")%>')){
         parent.window.location="/dotAdmin/#/content-types-angular/edit/<%=structure.getVelocityVarName()%>";
-        return true;
     }
-    return false;
 }
-
-
-
-
 
 </script>
 
@@ -232,9 +226,9 @@ function jumpToContentType(){
      <tr>
             <th style="vertical-align: top"><%= LanguageUtil.get(pageContext, "Content-Type") %>:</th>
             <td>
-                <%if(!contentlet.isNew() && canEditContentType){%><a onclick="return jumpToContentType()" href="/dotAdmin/#/content-types-angular/edit/<%=contentlet.getContentType().variable()%>" target="_parent"><%}%>
+                <%if(isEditing && canEditContentType){%><a onclick="jumpToContentType()" href="#"><%}%>
                 <%=contentlet!=null && contentlet.getContentType()!=null ? contentlet.getContentType().name() : LanguageUtil.get(pageContext, "not-available") %>
-                <%if(canEditContentType){%></a><%}%>
+                <%if(isEditing && canEditContentType){%></a><%}%>
             </td>
         </tr>
         <tr>
