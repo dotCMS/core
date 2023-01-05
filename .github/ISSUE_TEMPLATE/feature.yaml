@@ -4,7 +4,7 @@ description: I need to change the way something works, or create new functionali
 
 title: "[Feature]: "
 
-labels: ['Type - Feature']
+labels: ['Type - Feature', Triage]
 
 assignees:
   - damen-dotcms
