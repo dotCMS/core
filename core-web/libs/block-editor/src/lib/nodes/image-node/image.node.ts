@@ -1,6 +1,8 @@
 import { Image } from '@tiptap/extension-image';
 
-import { imageLinkElement, imageElement } from './helpers';
+import { imageLinkElement, imageElement, getImageAttr } from './helpers';
+
+import { DotCMSContentlet } from '@dotcms/dotcms-models';
 
 declare module '@tiptap/core' {
     interface Commands<ReturnType> {
@@ -13,6 +15,7 @@ declare module '@tiptap/core' {
              * Unset Image Link mark
              */
             unsetImageLink: () => ReturnType;
+            addDotImage: (attrs: DotCMSContentlet | string) => ReturnType;
         };
     }
 }
@@ -77,6 +80,17 @@ export const ImageNode = Image.extend({
                 () =>
                 ({ commands }) => {
                     return commands.updateAttributes(this.name, { href: '' });
+                },
+            addDotImage:
+                (attrs) =>
+                ({ chain, state }) => {
+                    const { selection } = state;
+                    const node = {
+                        attrs: getImageAttr(attrs),
+                        type: ImageNode.name
+                    };
+
+                    return chain().insertContentAt(selection.head, node).run();
                 }
         };
     },

@@ -3,10 +3,8 @@ import {
     Component,
     EventEmitter,
     Output,
-    Input,
     ViewChild,
-    ElementRef,
-    ChangeDetectorRef
+    ElementRef
 } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 
@@ -21,36 +19,19 @@ const regexURL =
 })
 export class DotInputTabComponent {
     @ViewChild('input') input!: ElementRef;
-
     @Output() save = new EventEmitter();
-    @Input() set reset(value) {
-        if (value) {
-            requestAnimationFrame(() => {
-                this.resetForm();
-                this.setInpuFocus();
-            });
-        }
-    }
 
     form: FormGroup;
 
-    constructor(private fb: FormBuilder, private cd: ChangeDetectorRef) {
+    constructor(private fb: FormBuilder) {
         this.form = this.fb.group({
             url: ['', [Validators.required, Validators.pattern(regexURL)]]
         });
+
+        requestAnimationFrame(() => this.input.nativeElement.focus());
     }
 
     onSubmit({ url }) {
         this.save.emit(url);
-    }
-
-    setInpuFocus() {
-        this.input.nativeElement.focus();
-        this.cd.markForCheck();
-    }
-
-    resetForm() {
-        this.form.reset();
-        this.form.markAsPristine();
     }
 }

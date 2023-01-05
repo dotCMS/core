@@ -1,21 +1,21 @@
 <div class="tabview-container">
-    <p-tabView [(activeIndex)]="activeTab">
-        <p-tabPanel header="dotCMS" leftIcon="pi pi-images">
-            <div class="wrapper">
-                <dot-image-search
-                    *ngIf="activeTab === 0 && showSearch"
-                    [languageId]="languageId"
-                    (seletedImage)="onSelectImage($event)"
-                ></dot-image-search>
-            </div>
+    <p-tabView>
+        <p-tabPanel [cache]="false" header="dotCMS" leftIcon="pi pi-images">
+            <ng-template pTemplate="content">
+                <div class="wrapper">
+                    <dot-image-search
+                        [languageId]="languageId"
+                        (seletedImage)="onSelectImage($event)"
+                    ></dot-image-search>
+                </div>
+            </ng-template>
         </p-tabPanel>
-        <p-tabPanel header="Image URL" leftIcon="pi pi-link">
-            <div class="wrapper">
-                <dot-input-tab
-                    [reset]="activeTab === 1"
-                    (save)="onSelectImage($event)"
-                ></dot-input-tab>
-            </div>
+        <p-tabPanel [cache]="false" header="Image URL" leftIcon="pi pi-link">
+            <ng-template pTemplate="content">
+                <div class="wrapper">
+                    <dot-input-tab (save)="onSelectImage($event)"></dot-input-tab>
+                </div>
+            </ng-template>
         </p-tabPanel>
     </p-tabView>
 </div>

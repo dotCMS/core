@@ -1,4 +1,4 @@
-import { Component, Input, ChangeDetectionStrategy, ChangeDetectorRef } from '@angular/core';
+import { Component, Input, ChangeDetectionStrategy } from '@angular/core';
 
 import { DotCMSContentlet } from '@dotcms/dotcms-models';
 import { DEFAULT_LANG_ID } from '@dotcms/block-editor';
@@ -11,19 +11,5 @@ import { DEFAULT_LANG_ID } from '@dotcms/block-editor';
 })
 export class ImageTabviewFormComponent {
     @Input() languageId = DEFAULT_LANG_ID;
-    @Input() showSearch = true;
     @Input() onSelectImage: (payload: DotCMSContentlet | string) => void;
-    activeTab = 0;
-
-    constructor(private readonly cd: ChangeDetectorRef) {}
-
-    changeActiveTab(value) {
-        this.activeTab = value;
-        this.cd.markForCheck();
-    }
-
-    toggelShowSearch(value) {
-        this.showSearch = value;
-        this.cd.markForCheck();
-    }
 }

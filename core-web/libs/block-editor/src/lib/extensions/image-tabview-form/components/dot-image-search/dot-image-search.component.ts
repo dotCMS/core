@@ -45,10 +45,11 @@ export class DotImageSearchComponent implements OnInit, OnDestroy, AfterViewInit
             .subscribe((offset) => {
                 this.store.nextBatch(offset * 2);
             });
+
+        requestAnimationFrame(() => this.input.nativeElement.focus());
     }
 
     ngAfterViewInit() {
-        this.input.nativeElement.focus();
         fromEvent(this.input.nativeElement, 'input')
             .pipe(takeUntil(this.destroy$), debounceTime(450))
             .subscribe(({ target }) => {
