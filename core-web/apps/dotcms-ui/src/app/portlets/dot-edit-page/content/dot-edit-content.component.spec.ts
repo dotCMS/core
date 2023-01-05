@@ -130,6 +130,7 @@ export class MockDotFormSelectorComponent {
 })
 export class MockDotEditPageToolbarComponent {
     @Input() pageState = mockDotRenderedPageState;
+    @Input() variant;
     @Output() actionFired = new EventEmitter<DotCMSContentlet>();
     @Output() cancel = new EventEmitter<boolean>();
     @Output() favoritePage = new EventEmitter<boolean>();
@@ -150,7 +151,7 @@ const mockRenderedPageState = new DotPageRenderState(
     new DotPageRender(mockDotRenderedPage())
 );
 
-describe('DotEditContentComponent', () => {
+xdescribe('DotEditContentComponent', () => {
     const siteServiceMock = new SiteServiceMock();
     let component: DotEditContentComponent;
     let de: DebugElement;

@@ -318,7 +318,6 @@ export class DotEditContentComponent implements OnInit, OnDestroy {
                 data: {
                     page: {
                         favoritePageUrl: favoritePageUrl,
-                        isAdmin: this.pageStateInternal.user.admin,
                         favoritePage: this.pageStateInternal.state.favoritePage
                     },
                     onSave: (favoritePageUrl: string) => {

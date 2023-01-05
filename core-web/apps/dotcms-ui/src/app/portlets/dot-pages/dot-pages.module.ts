@@ -3,10 +3,9 @@ import { CommonModule } from '@angular/common';
 import { DotPagesComponent } from './dot-pages.component';
 import { DotPagesRoutingModule } from './dot-pages-routing.module';
 import { DotPagesCardModule } from './dot-pages-card/dot-pages-card.module';
-import { DotESContentService, DotMessageService, DotPageRenderService } from '@dotcms/data-access';
+import { DotESContentService, DotPageRenderService } from '@dotcms/data-access';
 
 import { TabViewModule } from 'primeng/tabview';
-import { DotPipesModule } from '@dotcms/app/view/pipes/dot-pipes.module';
 import { DotIconModule } from '@dotcms/ui';
 import { PanelModule } from 'primeng/panel';
 import { ButtonModule } from 'primeng/button';
@@ -14,6 +13,7 @@ import { DotPagesCardEmptyModule } from './dot-pages-card-empty/dot-pages-card-e
 import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
 import { DialogService } from 'primeng/dynamicdialog';
 import { DotTempFileUploadService } from '@dotcms/app/api/services/dot-temp-file-upload/dot-temp-file-upload.service';
+import { DotMessagePipeModule } from '@dotcms/app/view/pipes/dot-message/dot-message-pipe.module';
 
 @NgModule({
     declarations: [DotPagesComponent],
@@ -22,7 +22,7 @@ import { DotTempFileUploadService } from '@dotcms/app/api/services/dot-temp-file
         DotPagesRoutingModule,
         DotPagesCardModule,
         DotPagesCardEmptyModule,
-        DotPipesModule,
+        DotMessagePipeModule,
         DotIconModule,
         PanelModule,
         ButtonModule,
@@ -32,7 +32,6 @@ import { DotTempFileUploadService } from '@dotcms/app/api/services/dot-temp-file
         DotESContentService,
         DotRouterService,
         DialogService,
-        DotMessageService,
         DotPageRenderService,
         DotTempFileUploadService
     ]

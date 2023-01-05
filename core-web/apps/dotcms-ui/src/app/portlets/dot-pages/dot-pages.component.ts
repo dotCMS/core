@@ -82,7 +82,6 @@ export class DotPagesComponent {
             data: {
                 page: {
                     favoritePageUrl: favoritePage.url,
-                    isAdmin: true, // TODO: get if logged user is admin
                     favoritePage: favoritePage
                 },
                 onSave: () => {

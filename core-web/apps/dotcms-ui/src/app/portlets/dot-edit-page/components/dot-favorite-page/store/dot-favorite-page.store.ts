@@ -7,7 +7,8 @@ import {
     DotPageRenderService,
     DotRolesService,
     DotMessageService,
-    DotWorkflowActionsFireService
+    DotWorkflowActionsFireService,
+    DotContentletService
 } from '@dotcms/data-access';
 import {
     DotRole,
@@ -41,7 +42,6 @@ export interface DotFavoritePageState {
 
 interface DotFavoritePageInitialProps {
     favoritePageUrl: string;
-    isAdmin: boolean;
     favoritePage?: DotCMSContentlet;
 
     imgWidth?: string;
@@ -175,15 +175,16 @@ export class DotFavoritePageStore extends ComponentStore<DotFavoritePageState> {
         );
     };
 
-    // TODO: Remove this with new Permissions endpoint call
-    private tmpPermissionsService = () => {
-        return of(null);
-        // return of(['4ddc54dc-b02e-4a35-a9b9-0ae11a073256']);
+    private getContentletPermissionsObservable = (identifier: string) => {
+        return identifier
+            ? this.dotContentletService.getContentletPermissions(identifier)
+            : of({ READ: [] });
     };
 
     constructor(
         private dotCurrentUser: DotCurrentUserService,
         private dotPageRenderService: DotPageRenderService,
+        private dotContentletService: DotContentletService,
         private dotRolesService: DotRolesService,
         private dotMessageService: DotMessageService,
         private dotHttpErrorManagerService: DotHttpErrorManagerService,
@@ -199,15 +200,11 @@ export class DotFavoritePageStore extends ComponentStore<DotFavoritePageState> {
      * @param {DotFavoritePageInitialProps} props
      * @memberof DotFavoritePageStore
      */
-    setInitialStateData({
-        favoritePageUrl,
-        favoritePage,
-        isAdmin
-    }: DotFavoritePageInitialProps): void {
+    setInitialStateData({ favoritePageUrl, favoritePage }: DotFavoritePageInitialProps): void {
         this.setState({
             roleOptions: [],
             formState: null,
-            isAdmin: isAdmin,
+            isAdmin: null,
             imgWidth: null,
             imgHeight: null,
             renderThumbnail: null,
@@ -230,7 +227,7 @@ export class DotFavoritePageStore extends ComponentStore<DotFavoritePageState> {
             this.dotRolesService.search(),
             this.dotCurrentUser.getCurrentUser(),
             this.dotPageRenderService.get({ url: favoritePageUrl }),
-            this.tmpPermissionsService() // TODO: replace with new Permissions endpoint
+            this.getContentletPermissionsObservable(favoritePage?.identifier) // TODO: replace with new Permissions endpoint
         ])
             .pipe(take(1))
             .subscribe(
@@ -238,14 +235,15 @@ export class DotFavoritePageStore extends ComponentStore<DotFavoritePageState> {
                     DotRole[],
                     DotCurrentUser,
                     DotPageRenderParameters,
-                    string[]
+                    { [READ: string]: string[] }
                 ]): void => {
                     this.patchState({
                         loading: false,
+                        isAdmin: currentUser.admin,
                         formState: {
                             ...formInitialState,
                             currentUserRoleId: currentUser.roleId,
-                            permissions: permissionsStored || [],
+                            permissions: permissionsStored.READ,
                             title: favoritePage?.title || pageRender.page.title
                         },
                         imgHeight:

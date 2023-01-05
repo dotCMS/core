@@ -5,7 +5,7 @@
         column-gap: $spacing-4;
         display: grid;
         grid-template-columns: 50% 49%;
-        min-height: 440px;
+        min-height: 375px;
     }
 
     .dot-favorite-dialog-footer__delete-button {
@@ -14,6 +14,7 @@
     }
 
     .dot-favorite-dialog__thumbnailField {
+        margin-bottom: 0;
         position: relative;
     }
 
@@ -28,6 +29,7 @@
         background-position: center;
         background-repeat: no-repeat;
         background-size: contain;
+        border: 1px solid $gray-lighter;
         padding-bottom: 75.25%;
         display: block;
 
@@ -39,8 +41,9 @@
     }
 
     ::ng-deep dot-html-to-image img {
-        width: 100%;
-        object-fit: contain;
+        border: 1px solid $gray-lighter;
         height: 384px;
+        object-fit: contain;
+        width: 100%;
     }
 }

@@ -8,9 +8,6 @@
     <form class="p-fluid" *ngIf="form" [formGroup]="form" data-testId="form">
         <div class="fields-col">
             <div class="field dot-favorite-dialog__thumbnailField" data-testId="thumbnailField">
-                <label class="p-label-input-required" for="previewThumbnail">{{
-                    'preview' | dm
-                }}</label>
                 <ng-template [ngIf]="vm.renderThumbnail" [ngIfElse]="existingFavoritePage">
                     <dot-html-to-image
                         *ngIf="vm.renderThumbnail"
@@ -65,6 +62,7 @@
                     pInputText
                     formControlName="url"
                     data-testId="favoritePageUrlField"
+                    disabled
                 />
                 <dot-field-validation-message
                     [field]="form.get('url')"

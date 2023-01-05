@@ -23,4 +23,18 @@ export class DotContentletService {
             })
             .pipe(take(1), pluck('entity', 'versions', language));
     }
+
+    /**
+     * Get Contentlet permissions data
+     * @param string identifier
+     * @returns Observable<{ [key: string]: string[] }
+     * @memberof DotContentletService
+     */
+    getContentletPermissions(identifier: string): Observable<{ [key: string]: string[] }> {
+        return this.coreWebService
+            .requestView({
+                url: `v1/permissions/_bycontent/_groupbytype?contentletId=${identifier}`
+            })
+            .pipe(take(1), pluck('entity'));
+    }
 }

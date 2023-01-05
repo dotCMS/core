@@ -49,7 +49,6 @@ export class DotFavoritePageComponent implements OnInit, OnDestroy {
     ) {
         this.store.setInitialStateData({
             favoritePageUrl: this.config.data.page.favoritePageUrl,
-            isAdmin: this.config.data.page.isAdmin,
             favoritePage: this.config.data.page.favoritePage
         });
     }
