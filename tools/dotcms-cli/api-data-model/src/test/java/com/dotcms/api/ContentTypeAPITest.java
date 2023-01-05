@@ -31,7 +31,7 @@ import org.junit.jupiter.api.Test;
 import org.wildfly.common.Assert;
 
 @QuarkusTest
-public class ContentTypeAPITest {
+class ContentTypeAPITest {
 
     private static final Set<String> CONTENT_TYPE_VARS = ImmutableSet.of(
             "HtmlPageAsset", "FileAsset", "Host",
@@ -63,7 +63,7 @@ public class ContentTypeAPITest {
      * @throws JsonProcessingException
      */
     @Test
-    public void Test_Content_Type_Model_Serialization() throws JsonProcessingException {
+    void Test_Content_Type_Model_Serialization() throws JsonProcessingException {
 
         final ObjectMapper objectMapper = new ClientObjectMapper().getContext(null);
 
@@ -113,7 +113,7 @@ public class ContentTypeAPITest {
      * Test that we can hit
      */
     @Test
-    public void Test_Get_All_ContentTypes() {
+    void Test_Get_All_ContentTypes() {
 
         final ContentTypeAPI client = apiClientFactory.getClient(ContentTypeAPI.class);
 
@@ -135,7 +135,7 @@ public class ContentTypeAPITest {
     }
 
     @Test
-    public void Test_Post_Filtered_Paginated_ContentTypes() {
+    void Test_Post_Filtered_Paginated_ContentTypes() {
         final ContentTypeAPI client = apiClientFactory.getClient(ContentTypeAPI.class);
         final ResponseEntityView<List<ContentType>> response = client.filterContentTypes(FilterContentTypesRequest.builder()
                 .filter(ImmutableMap.of("types",
@@ -148,7 +148,7 @@ public class ContentTypeAPITest {
     }
 
     @Test
-    public void Test_Get_Single_Content_Type() {
+    void Test_Get_Single_Content_Type() {
 
         final ContentTypeAPI client = apiClientFactory.getClient(ContentTypeAPI.class);
 
@@ -163,7 +163,7 @@ public class ContentTypeAPITest {
      * Test we get 404 when requesting a non-existing CT
      */
     @Test
-    public void Test_404_None_Existing_Content_Type() {
+    void Test_404_None_Existing_Content_Type() {
         final ContentTypeAPI client = apiClientFactory.getClient(ContentTypeAPI.class);
         try {
             client.getContentType("non-existing-content-type-"+System.currentTimeMillis(), null, null);
@@ -173,8 +173,12 @@ public class ContentTypeAPITest {
         Assertions.fail("If we got here then test has failed");
     }
 
+    /**
+     * Simple CRUD Test
+     * Create, Update, Delete
+     */
     @Test
-    public void Test_Create_Then_Update_Then_Delete_Content_Type() {
+    void Test_Create_Then_Update_Then_Delete_Content_Type() {
 
         final long identifier =  System.currentTimeMillis();
         final ImmutableSimpleContentType contentType = ImmutableSimpleContentType.builder()
@@ -218,7 +222,7 @@ public class ContentTypeAPITest {
      * @throws JsonProcessingException
      */
     @Test
-    public void Test_Deserialize_Class_Alias_Content_Type() throws JsonProcessingException {
+    void Test_Deserialize_Class_Alias_Content_Type() throws JsonProcessingException {
         String json = "{\n"
                 + "\t\"clazz\": \"SimpleContentType\",\n"
                 + "\t\"variable\": \"simple\",\n"
@@ -323,10 +327,10 @@ public class ContentTypeAPITest {
 
     /**
      * Send invalid folder then verify CT is created under System-Folder
-     * Then create another this time using a folder path then verify the returned instance
+     * Then create another one this time using a folder path then verify the returned instance
      */
     @Test
-    public void Test_Send_Invalid_Host_And_Folder_Verify_Default() {
+    void Test_Send_Invalid_Host_And_Folder_Verify_Defaults() {
 
         final SiteAPI siteAPI = apiClientFactory.getClient(SiteAPI.class);
         final ResponseEntityView<SiteView> siteResponse = siteAPI.findHostByName(
@@ -365,7 +369,64 @@ public class ContentTypeAPITest {
         //The CT should is created under System-Folder
         Assertions.assertEquals(ContentType.SYSTEM_FOLDER,newContentType1.folder());
 
-        //Now use Folder API And Create a folder under out default host and send it using the path name
+
+    }
+
+    /**
+     * Test: Sending a CT only using the folderPath including fully qualified name that includes the site followed by the folder path
+     * Expected: The folder and site in the response must match the ids of the folder we created and the site we used.
+     */
+    @Test
+    void Test_Send_Folder_Path_Only_Valid_Folder_Expect_Matching_Folder_Id() {
+
+        final FolderAPI folderAPI = apiClientFactory.getClient(FolderAPI.class);
+
+        final ResponseEntityView<List<Map<String, Object>>> makeFoldersResponse = folderAPI.makeFolders(ImmutableList.of("/foo"), "default");
+        final List<Map<String, Object>> entity = makeFoldersResponse.entity();
+        Assertions.assertNotNull(entity);
+        final String inode = (String)entity.get(0).get("inode");
+
+        final long timeStamp = System.currentTimeMillis();
+        final ContentTypeAPI client = apiClientFactory.getClient(ContentTypeAPI.class);
+
+        //First Scenario here to test if we send a CT with a Folder that we know does not exist
+        final String varName1 = "fromFolderPathCT"+timeStamp;
+        final ImmutableSimpleContentType contentType1 = ImmutableSimpleContentType.builder()
+                .description("ct for testing folders.")
+                .name("fooCT")
+                .variable(varName1)
+                .folderPath("default:/foo/")
+                .addFields(
+                        ImmutableBinaryField.builder()
+                                .variable("binVar"+timeStamp)
+                                .build()
+                ).build();
+
+        final ResponseEntityView<List<ContentType>> contentTypeResponse2 = client.createContentTypes(ImmutableList.of(contentType1));
+        Assertions.assertNotNull(contentTypeResponse2);
+        final ContentType contentTypes = contentTypeResponse2.entity().get(0);
+        Assertions.assertEquals(inode, contentTypes.folder());
+        //Here we get default host as the fallback site because we failed locating
+        Assertions.assertEquals("default", contentTypes.siteName());
+    }
+
+    /**
+     * Test: Send a hierarchy of folders and also send the host in a separate property
+     * Expect: Everything must be created under the proper folder
+     */
+    @Test
+    void Test_Create_Content_Type_Out_Of_Folder_Path() {
+
+        final SiteAPI siteAPI = apiClientFactory.getClient(SiteAPI.class);
+        final ResponseEntityView<SiteView> siteResponse = siteAPI.findHostByName(
+                GetSiteByNameRequest.builder().siteName("default").build()
+        );
+
+        final SiteView defaultSite = siteResponse.entity();
+
+        final ContentTypeAPI client = apiClientFactory.getClient(ContentTypeAPI.class);
+        final long timeStamp = System.currentTimeMillis();
+        //Now use Folder API And Create a folder under our default host and send it using the path name
         final FolderAPI folderAPI = apiClientFactory.getClient(FolderAPI.class);
         final ResponseEntityView<List<Map<String, Object>>> makeFoldersResponse = folderAPI.makeFolders(
                 ImmutableList.of("/f1" + timeStamp, "/f1" + timeStamp + "/f2" + timeStamp),
@@ -380,7 +441,6 @@ public class ContentTypeAPITest {
                 .variable(varName2)
                 .host("default")
                 .folderPath("/f1"+timeStamp+"/f2"+timeStamp)
-                //.folder()
                 .addFields(
                         ImmutableBinaryField.builder()
                                 .variable("binVar2"+timeStamp)
@@ -398,40 +458,6 @@ public class ContentTypeAPITest {
         //Now the folder should have been created under the folder path we sent
         Assertions.assertEquals(makeFolders.get(1).get("identifier"),newContentType2.folder());
 
-    }
-
-    @Test
-    void Test_Send_Send_Folder_Path_Only_Invalid_Folder_Expect_System_Folder_Fallback() {
-
-        final FolderAPI folderAPI = apiClientFactory.getClient(FolderAPI.class);
-
-        final ResponseEntityView<List<Map<String, Object>>> makeFoldersResponse = folderAPI.makeFolders(ImmutableList.of("/foo"), "default");
-        final List<Map<String, Object>> entity = makeFoldersResponse.entity();
-        Assertions.assertNotNull(entity);
-        final String inode = (String)entity.get(0).get("inode");
-
-        final long timeStamp = System.currentTimeMillis();
-        final ContentTypeAPI client = apiClientFactory.getClient(ContentTypeAPI.class);
-
-        //First Scenario here to test is we send a CT with a Folder that we know does not exist
-        final String varName1 = "fooCT"+timeStamp;
-        final ImmutableSimpleContentType contentType1 = ImmutableSimpleContentType.builder()
-                .description("ct for testing folders.")
-                .name("fooCT")
-                .variable(varName1)
-                .folderPath("default:/foo/")
-                .addFields(
-                        ImmutableBinaryField.builder()
-                                .variable("binVar"+timeStamp)
-                                .build()
-                ).build();
-
-        final ResponseEntityView<List<ContentType>> contentTypeResponse2 = client.createContentTypes(ImmutableList.of(contentType1));
-        Assertions.assertNotNull(contentTypeResponse2);
-        final ContentType contentTypes = contentTypeResponse2.entity().get(0);
-        Assertions.assertEquals(inode, contentTypes.folder());
-        //Here we get System host as the fallback site because we failed locating
-        Assertions.assertEquals("default", contentTypes.siteName());
     }
 
 }
