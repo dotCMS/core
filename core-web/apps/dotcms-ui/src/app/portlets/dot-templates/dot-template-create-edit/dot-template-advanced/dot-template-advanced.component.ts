@@ -24,6 +24,11 @@ interface MonacoEditorOperation {
     forceMoveMarkers: boolean;
 }
 
+interface MonacoEditorInfo {
+    name: string;
+    editor: MonacoEditor;
+}
+
 interface MonacoEditor {
     getSelection: () => number;
     executeEdits: (action: string, data: MonacoEditorOperation[]) => void;
@@ -74,11 +79,11 @@ export class DotTemplateAdvancedComponent implements OnInit, OnDestroy, OnChange
     /**
      * This method initializes the monaco editor
      *
-     * @param {*} editor
+     * @param {*} editorInfo
      * @memberof DotTemplateComponent
      */
-    initEditor(editor: MonacoEditor): void {
-        this.editor = editor;
+    initEditor(editorInfo: MonacoEditorInfo): void {
+        this.editor = editorInfo.editor;
     }
 
     /**

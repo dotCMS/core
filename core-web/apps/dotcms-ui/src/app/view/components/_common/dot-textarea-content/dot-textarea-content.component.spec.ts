@@ -41,18 +41,16 @@ describe('DotTextareaContentComponent', () => {
     let fixture: ComponentFixture<DotTextareaContentComponent>;
     let de: DebugElement;
 
-    beforeEach(
-        waitForAsync(() => {
-            TestBed.configureTestingModule({
-                declarations: [DotTextareaContentComponent, MonacoEditorMockComponent],
-                imports: [SelectButtonModule, InputTextareaModule, FormsModule]
-            }).compileComponents();
+    beforeEach(waitForAsync(() => {
+        TestBed.configureTestingModule({
+            declarations: [DotTextareaContentComponent, MonacoEditorMockComponent],
+            imports: [SelectButtonModule, InputTextareaModule, FormsModule]
+        }).compileComponents();
 
-            fixture = TestBed.createComponent(DotTextareaContentComponent);
-            component = fixture.componentInstance;
-            de = fixture.debugElement;
-        })
-    );
+        fixture = TestBed.createComponent(DotTextareaContentComponent);
+        component = fixture.componentInstance;
+        de = fixture.debugElement;
+    }));
 
     it('should show a select mode buttons by default', () => {
         fixture.detectChanges();
@@ -189,6 +187,18 @@ describe('DotTextareaContentComponent', () => {
         });
 
         expect(spy).toHaveBeenCalledTimes(2);
+    });
+
+    it('should init editor with the correct value', async () => {
+        const mockEditor = { test: 'editor' };
+        component.editorName = 'testName';
+        spyOn(component.monacoInit, 'emit');
+        fixture.detectChanges();
+        component.onInit(mockEditor);
+        expect(component.monacoInit.emit).toHaveBeenCalledWith({
+            name: 'testName',
+            editor: mockEditor
+        });
     });
 
     describe('code', () => {
