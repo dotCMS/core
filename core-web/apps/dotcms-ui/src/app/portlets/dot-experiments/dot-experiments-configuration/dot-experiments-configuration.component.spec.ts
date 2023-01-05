@@ -3,7 +3,6 @@ import { createComponentFactory, mockProvider, Spectator, SpyObject } from '@ngn
 import { DotExperimentsService } from '@portlets/dot-experiments/shared/services/dot-experiments.service';
 import { ActivatedRoute, Router } from '@angular/router';
 import { Title } from '@angular/platform-browser';
-import { DotExperimentsConfigurationStore } from '@portlets/dot-experiments/dot-experiments-configuration/store/dot-experiments-configuration-store.service';
 import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { ButtonModule } from 'primeng/button';
 import { of } from 'rxjs';
@@ -20,10 +19,10 @@ import {
     ExperimentMocks
 } from '@portlets/dot-experiments/test/mocks';
 import { MockDotMessageService } from '@dotcms/utils-testing';
-import { DotMessageService } from '@dotcms/data-access';
+import { DotMessageService, DotSessionStorageService } from '@dotcms/data-access';
 import { MessageService } from 'primeng/api';
-import { DotSessionStorageService } from '@dotcms/data-access';
 import { Status } from '@dotcms/dotcms-models';
+import { DotExperimentsConfigurationStore } from '@portlets/dot-experiments/dot-experiments-configuration/store/dot-experiments-configuration-store';
 
 const ActivatedRouteMock = {
     snapshot: {
