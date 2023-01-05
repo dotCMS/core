@@ -1,10 +1,10 @@
 package com.dotcms.contenttype.model.type;
 
-import java.lang.reflect.Method;
-import java.util.Date;
-
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.util.Logger;
+
+import java.lang.reflect.Method;
+import java.util.Date;
 
 public interface ContentTypeBuilder {
 
@@ -51,11 +51,17 @@ public interface ContentTypeBuilder {
 
 	ContentTypeBuilder host(String hostIdentifier);
 
+	ContentTypeBuilder siteName(String siteName);
+
 	ContentTypeBuilder folder(String variable);
+
+	ContentTypeBuilder folderPath(String path);
 
 	ContentTypeBuilder icon(String variable);
 
 	ContentTypeBuilder sortOrder(int variable);
+
+	ContentTypeBuilder loadedOrResolved(boolean status);
 	
 	public static ContentTypeBuilder builder(ContentType type) throws DotStateException {
 		return builder(type.getClass()).from(type);

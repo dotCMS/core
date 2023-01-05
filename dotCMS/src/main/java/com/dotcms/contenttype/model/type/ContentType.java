@@ -1,6 +1,7 @@
 package com.dotcms.contenttype.model.type;
 
-
+import com.dotcms.contenttype.model.component.ImmutableSiteAndFolder;
+import com.dotcms.contenttype.model.component.SiteAndFolder;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.StoryBlockField;
 import com.dotcms.publisher.util.PusheableAsset;
@@ -17,11 +18,13 @@ import com.dotmarketing.business.Permissionable;
 import com.dotmarketing.business.RelatedPermissionableGroup;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
+import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.UUIDUtil;
 import com.dotmarketing.util.UtilMethods;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
@@ -30,12 +33,8 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.annotation.JsonTypeInfo.Id;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
-import org.apache.commons.lang.StringUtils;
-import org.apache.commons.lang.time.DateUtils;
-import org.immutables.value.Value;
-import org.immutables.value.Value.Default;
-
-import javax.annotation.Nullable;
+import com.liferay.util.StringPool;
+import io.vavr.control.Try;
 import java.io.Serializable;
 import java.util.Calendar;
 import java.util.Date;
@@ -43,6 +42,12 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+import javax.annotation.Nullable;
+import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang.time.DateUtils;
+import org.immutables.value.Value;
+import org.immutables.value.Value.Auxiliary;
+import org.immutables.value.Value.Default;
 
 @JsonTypeInfo(
         use = Id.CLASS,
@@ -159,6 +164,20 @@ public abstract class ContentType implements Serializable, Permissionable, Conte
     return null;
   }
 
+  /**
+   * This property is here to help identify when the CT was loaded from the db or instantiated by hand
+   * The idea is that depending on the nature of the problem we intend to solve
+   * We can use certain properties to capture info provided by the user
+   * Or use those same properties to display calculated values.
+   * The name of the property is intended to reflect the status o the CT Loaded (from the db) or resolved by the SiteAndFolderResolver API
+   * @return
+   */
+  @JsonIgnore
+  @Value.Default
+  public boolean loadedOrResolved(){
+     return false;
+  }
+
   @Value.Default
   public Date modDate() {
     return DateUtils.round(new Date(), Calendar.SECOND);
@@ -170,6 +189,34 @@ public abstract class ContentType implements Serializable, Permissionable, Conte
   public String host() {
     return Host.SYSTEM_HOST;
   }
+
+  /**
+   * by default our site name is the same as SYSTEM_HOST
+   * @return
+   */
+  @Nullable
+  @Value.Default
+  public String siteName() {
+    return loadedOrResolved() ? canonicalSiteName() : null;
+  }
+
+  private String canonicalSiteName(){
+
+    final String host = host();
+
+    if (UtilMethods.isNotSet(host) || Host.SYSTEM_HOST.equals(host)) {
+      return Host.SYSTEM_HOST_NAME;
+    }
+    if (UUIDUtil.isUUID(host)) {
+      return Try.of(() -> APILocator.getHostAPI().find(host, APILocator.systemUser(), false)
+              .getHostname()).getOrNull();
+    }
+    return Try.of(
+            () -> APILocator.getHostAPI().resolveHostName(host, APILocator.systemUser(), false)
+                    .getHostname()).getOrNull();
+
+  }
+
 
   @Nullable
   @Value.Default
@@ -240,6 +287,45 @@ public abstract class ContentType implements Serializable, Permissionable, Conte
   @Value.Default
   public String folder() {
     return Folder.SYSTEM_FOLDER;
+  }
+
+  /**
+   * By default, our system folder is "/"
+   * @return
+   */
+  @Nullable
+  @Value.Default
+  public String folderPath() {
+    return loadedOrResolved() ? canonicalFolderPath() : null;
+  }
+
+  private String canonicalFolderPath(){
+    final String folder = folder();
+    if (Folder.SYSTEM_FOLDER.equals(folder)) {
+        return Folder.SYSTEM_FOLDER_PATH;
+    }
+
+    final String host = host();
+    final FolderAPI folderAPI = APILocator.getFolderAPI();
+    final HostAPI hostAPI = APILocator.getHostAPI();
+    return Try.of(() -> {
+              final String hostName =
+                      UUIDUtil.isUUID(host) ?
+                              hostAPI.find(host, APILocator.systemUser(), false).getHostname() :
+                              hostAPI.resolveHostName(host, APILocator.systemUser(), false).getHostname();
+              final String path = folderAPI.find(folder, APILocator.systemUser(), false).getPath();
+              return String.format("%s%s%s", hostName, StringPool.COLON, path);
+            }
+    ).getOrNull();
+  }
+
+  @JsonIgnore
+  @Auxiliary
+  public SiteAndFolder siteAndFolder() {
+    return ImmutableSiteAndFolder.builder()
+            .folder(folder()).host(host())
+            .folderPath(folderPath())
+            .siteName(siteName()).build();
   }
 
   @JsonIgnore
