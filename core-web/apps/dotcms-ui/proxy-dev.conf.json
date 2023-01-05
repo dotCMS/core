@@ -1,18 +1,18 @@
 {
     "/api": {
-        "target": "http://localhost:8080",
+        "target": "https://demo.dotcms.com",
         "secure": false
     },
     "/c/portal": {
-        "target": "http://localhost:8080",
+        "target": "https://demo.dotcms.com",
         "secure": false
     },
     "/html": {
-        "target": "http://localhost:8080",
+        "target": "https://demo.dotcms.com",
         "secure": false
     },
     "/dwr": {
-        "target": "http://localhost:8080",
+        "target": "https://demo.dotcms.com",
         "secure": false
     },
     "/dA": {
@@ -20,15 +20,15 @@
         "secure": false
     },
     "/dotcms-webcomponents": {
-        "target": "http://localhost:8080",
+        "target": "https://demo.dotcms.com",
         "secure": false
     },
     "/DotAjaxDirector": {
-        "target": "http://localhost:8080",
+        "target": "https://demo.dotcms.com",
         "secure": false
     },
     "/contentAsset": {
-        "target": "http://localhost:8080",
+        "target": "https://demo.dotcms.com",
         "secure": false
     }
 }
