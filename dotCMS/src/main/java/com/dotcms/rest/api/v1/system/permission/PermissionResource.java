@@ -1,5 +1,6 @@
 package com.dotcms.rest.api.v1.system.permission;
 
+import com.dotcms.contenttype.exception.NotFoundInDbException;
 import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.WebResource;
@@ -13,7 +14,9 @@ import com.dotmarketing.business.Role;
 import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.UtilMethods;
 import com.google.common.annotations.VisibleForTesting;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
@@ -200,6 +203,12 @@ public class PermissionResource {
                                     final @QueryParam("contentletId")   String contentletId)
             throws DotDataException, DotSecurityException {
 
+        if (!UtilMethods.isSet(contentletId)) {
+
+            Logger.error(this, "The parameter contentletId is required");
+            throw new IllegalArgumentException("The parameter contentletId is required");
+        }
+
         final User userInvoker = new WebResource.InitBuilder(webResource)
                 .requiredBackendUser(true)
                 .requiredFrontendUser(false)
@@ -208,13 +217,20 @@ public class PermissionResource {
 
         Logger.debug(this, ()-> "getByContentletGroupByType, contentlet: " + contentletId);
 
-        if (!userInvoker.isAdmin()) {
+        final Contentlet contentlet = APILocator.getContentletAPI().findContentletByIdentifierAnyLanguage(contentletId);
+        if (null == contentlet) {
 
+            Logger.error(this, "The contentletId:" + contentletId + ", does not exist");
+            throw new NotFoundInDbException("The contentletId:" + contentletId + ", does not exist");
+        }
+
+        if (!userInvoker.isAdmin() || !contentlet.getOwner().equals(userInvoker.getUserId())) {
+
+            Logger.error(this, "Only admin user can retrieve other users permissions");
             throw new DotSecurityException("Only admin user can retrieve other users permissions");
         }
 
-        final List<Permission> permissions = APILocator.getPermissionAPI().getPermissions(
-                APILocator.getContentletAPI().findContentletByIdentifierAnyLanguage(contentletId));
+        final List<Permission> permissions = APILocator.getPermissionAPI().getPermissions(contentlet);
 
         final Map<String, List<String>> permissionsRoleGroupByTypeMap = new HashMap<>();
         for (final Permission permission : permissions) {

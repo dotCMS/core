@@ -58,28 +58,38 @@ public class ContentTypeInitializer implements DotInitializer {
             builder.variable(FAVORITE_PAGE_VAR_NAME);
             final SimpleContentType simpleContentType = builder.build();
 
-            try {
+            saveFavoritePageFields(contentTypeAPI, simpleContentType);
+        } else {
 
-                final List<Field> newFields = new ArrayList<>();
-                final ImmutableBinaryField screenshotField = ImmutableBinaryField.builder().name("Screenshot").variable("screenshot").build();
-                final ImmutableTextField   titleField      = ImmutableTextField.builder().name("title").variable("title").build();
-                final ImmutableTextField   urlField        = ImmutableTextField.builder().name("url").variable("url").unique(true).required(true).indexed(true).build();
-                final ImmutableTextField   orderField      = ImmutableTextField.builder().name("order").dataType(DataTypes.INTEGER).variable("order").build();
-
-                newFields.add(screenshotField);
-                newFields.add(titleField);
-                newFields.add(urlField);
-                newFields.add(orderField);
-                final ContentType savedContentType = contentTypeAPI.save(simpleContentType, newFields, null);
-
-                final Set<String> workflowIds = new HashSet<>();
-                workflowIds.add(WorkflowAPI.SYSTEM_WORKFLOW_ID);
-
-                APILocator.getWorkflowAPI().saveSchemeIdsForContentType(savedContentType, workflowIds);
-            } catch (DotDataException | DotSecurityException e) {
-
-                Logger.warnAndDebug(this.getClass(), e);
+            // if the content type exists, we need to see if latest changes are there, otherwise we need to redefine the content type.
+            if (contentType.fieldMap().get("url").unique() || !contentType.fieldMap().get("order").indexed()) {
+                this.saveFavoritePageFields(contentTypeAPI, contentType);
             }
+        }
+    }
+
+    private void saveFavoritePageFields(final ContentTypeAPI contentTypeAPI, final ContentType simpleContentType) {
+        try {
+
+            final List<Field> newFields = new ArrayList<>();
+            final ImmutableBinaryField screenshotField = ImmutableBinaryField.builder().name("Screenshot").variable("screenshot").build();
+            final ImmutableTextField   titleField      = ImmutableTextField.builder().name("title").variable("title").build();
+            final ImmutableTextField   urlField        = ImmutableTextField.builder().name("url").variable("url").required(true).indexed(true).build();
+            final ImmutableTextField   orderField      = ImmutableTextField.builder().name("order").dataType(DataTypes.INTEGER).variable("order").indexed(true).build();
+
+            newFields.add(screenshotField);
+            newFields.add(titleField);
+            newFields.add(urlField);
+            newFields.add(orderField);
+            final ContentType savedContentType = contentTypeAPI.save(simpleContentType, newFields, null);
+
+            final Set<String> workflowIds = new HashSet<>();
+            workflowIds.add(WorkflowAPI.SYSTEM_WORKFLOW_ID);
+
+            APILocator.getWorkflowAPI().saveSchemeIdsForContentType(savedContentType, workflowIds);
+        } catch (DotDataException | DotSecurityException e) {
+
+            Logger.warnAndDebug(this.getClass(), e);
         }
     }
 }
