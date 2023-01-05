@@ -79,7 +79,7 @@ export class DotTemplateAdvancedComponent implements OnInit, OnDestroy, OnChange
     /**
      * This method initializes the monaco editor
      *
-     * @param {*} editorInfo
+     * @param {MonacoEditorInfo} editorInfo
      * @memberof DotTemplateComponent
      */
     initEditor(editorInfo: MonacoEditorInfo): void {

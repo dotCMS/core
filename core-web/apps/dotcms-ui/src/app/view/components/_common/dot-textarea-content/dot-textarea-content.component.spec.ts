@@ -189,7 +189,7 @@ describe('DotTextareaContentComponent', () => {
         expect(spy).toHaveBeenCalledTimes(2);
     });
 
-    fit('should init editor with the correct value', () => {
+    it('should init editor with the correct value', () => {
         const mockEditor = { test: 'editor' };
         component.editorName = 'testName';
         spyOn(component.monacoInit, 'emit');
