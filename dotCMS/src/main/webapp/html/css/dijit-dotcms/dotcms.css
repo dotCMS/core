@@ -4923,13 +4923,13 @@ html, body {
 }
 
 .dijitCalendarDayLabelTemplate {
-  background-color: var(--color-main);
-  color: #fff;
+  background-color: #fff;
+  color: #161616;
   font-weight: bold;
 }
 
 .dijitCalendarHoveredDate {
-  background-color: #C5C5C5;
+  background-color: #ECEDEE;
   color: #161616;
 }
 
@@ -5036,7 +5036,7 @@ html, body {
 
 .dijitCalendarSelectedDate .dijitCalendarDateLabel {
   border-radius: 2px;
-  background-color: #F3762A;
+  background-color: var(--color-main);
   color: #fff;
   display: block;
   height: 36px;
@@ -5047,6 +5047,11 @@ html, body {
 .dijitCalendarSelectedYear {
   color: #fff;
   font-weight: bold;
+}
+
+.dijitCalendarCurrentDate {
+  background-color: #C5C5C5;
+  color: #fff;
 }
 
 .dijitCalendarYearLabel {
@@ -10321,6 +10326,18 @@ dd .buttonCaption {
 .portlet-pagination, .portlet-toolbar, .portlet-toolbar__actions, .portlet-toolbar__info {
   display: flex;
   justify-content: space-between;
+}
+
+.portlet-toolbar__actions-primary {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.portlet-toolbar__actions-archive {
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
 .portlet-pagination {

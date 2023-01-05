@@ -260,6 +260,7 @@ export class DotContainerPropertiesStore extends ComponentStore<DotContainerProp
                     this.dotMessageService.get('message.container.updated')
                 );
                 this.updateContainerState(container);
+                this.dotRouterService.goToURL('/containers');
             }),
             catchError((err: HttpErrorResponse) => {
                 this.dotGlobalMessageService.error(err.statusText);

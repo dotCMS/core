@@ -42,6 +42,7 @@ import org.dom4j.Element;
 import org.dom4j.io.OutputFormat;
 import org.dom4j.io.SAXReader;
 import org.dom4j.io.XMLWriter;
+import org.xml.sax.SAXException;
 
 /**
  * <a href="PortletPreferencesSerializer.java.html"><b><i>View Source</i></b>
@@ -56,7 +57,7 @@ import org.dom4j.io.XMLWriter;
 public class PortletPreferencesSerializer {
 
 	public static PortletPreferences fromDefaultXML(String xml)
-		throws PortalException, SystemException {
+			throws PortalException, SystemException {
 
 		PortletPreferencesImpl prefs = new PortletPreferencesImpl();
 
@@ -67,7 +68,12 @@ public class PortletPreferencesSerializer {
 		Map preferences = prefs.getPreferences();
 
 		try {
-			Document doc = new SAXReader().read(new StringReader(xml));
+
+
+			SAXReader xmlReader = new SAXReader();
+			xmlReader.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true);
+
+			Document doc = xmlReader.read(new StringReader(xml));
 
 			Element root = doc.getRootElement();
 
@@ -96,31 +102,31 @@ public class PortletPreferencesSerializer {
 				}
 
 				boolean readOnly =
-					GetterUtil.get(prefEl.elementText("read-only"), false);
+						GetterUtil.get(prefEl.elementText("read-only"), false);
 
 				Preference preference = new Preference(
-					name, (String[])values.toArray(new String[0]), readOnly);
+						name, (String[])values.toArray(new String[0]), readOnly);
 
 				preferences.put(name, preference);
 			}
 
 			return prefs;
 		}
-		catch (DocumentException de) {
+		catch (SAXException | DocumentException de) {
 			throw new SystemException(de);
 		}
 	}
 
 	public static PortletPreferencesImpl fromXML(
 			String companyId, PortletPreferencesPK pk, String xml)
-		throws PortalException, SystemException {
+			throws PortalException, SystemException {
 
 		try {
 			PortletPreferencesImpl prefs =
-				(PortletPreferencesImpl)fromDefaultXML(xml);
+					(PortletPreferencesImpl)fromDefaultXML(xml);
 
 			prefs = new PortletPreferencesImpl(
-				companyId, pk, prefs.getPreferences());
+					companyId, pk, prefs.getPreferences());
 
 			return prefs;
 		}
@@ -133,7 +139,7 @@ public class PortletPreferencesSerializer {
 	}
 
 	public static String toXML(PortletPreferencesImpl prefs)
-		throws SystemException {
+			throws SystemException {
 
 		try {
 			Map preferences = prefs.getPreferences();
@@ -141,7 +147,7 @@ public class PortletPreferencesSerializer {
 			DocumentFactory docFactory = DocumentFactory.getInstance();
 
 			Element portletPreferences =
-				docFactory.createElement("portlet-preferences");
+					docFactory.createElement("portlet-preferences");
 
 			Iterator itr = preferences.entrySet().iterator();
 
@@ -177,7 +183,7 @@ public class PortletPreferencesSerializer {
 			ByteArrayOutputStream baos = new ByteArrayOutputStream();
 
 			XMLWriter writer = new XMLWriter(
-				baos, OutputFormat.createCompactFormat());
+					baos, OutputFormat.createCompactFormat());
 
 			writer.write(portletPreferences);
 

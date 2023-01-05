@@ -1,9 +1,9 @@
 <dot-icon-button
     class="dot-menu__button"
-    float
-    [icon]="icon || ''"
-    (click)="toggle($event)"
     *ngIf="float; else noFloat"
+    [icon]="icon || ''"
+    (click)="menu.toggle($event)"
+    float
 ></dot-icon-button>
 
 <ng-template #noFloat>
@@ -14,10 +14,4 @@
     ></dot-icon-button>
 </ng-template>
 
-<ul class="dot-menu__list" *ngIf="visible">
-    <li class="dot-menu-item" *ngFor="let item of model">
-        <a (click)="itemClick($event, item)" class="dot-menu-item__link"
-            ><span>{{ item.label }}</span></a
-        >
-    </li>
-</ul>
+<p-menu #menu [popup]="true" [model]="model" appendTo="body"></p-menu>

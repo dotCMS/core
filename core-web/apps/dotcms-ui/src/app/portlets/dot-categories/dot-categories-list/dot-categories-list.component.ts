@@ -3,9 +3,7 @@ import { DotCategory } from '@dotcms/app/shared/models/dot-categories/dot-catego
 import { LazyLoadEvent } from 'primeng/api';
 import { Table } from 'primeng/table';
 import { Observable } from 'rxjs';
-
 import { DotCategoriesListStore, DotCategoriesListState } from './store/dot-categories-list-store';
-import { DotRouterService } from '@services/dot-router/dot-router.service';
 
 @Component({
     selector: 'dot-categories-list',
@@ -22,10 +20,7 @@ export class DotCategoriesListComponent {
     dataTable: Table;
     @ViewChild('gf')
     globalSearch: ElementRef;
-    constructor(
-        private store: DotCategoriesListStore,
-        private dotRouterService: DotRouterService
-    ) {}
+    constructor(private store: DotCategoriesListStore) {}
 
     /**
      * Add category in breadcrumb
@@ -86,9 +81,5 @@ export class DotCategoriesListComponent {
         if (!event.globalFilter && this.globalSearch) {
             this.globalSearch.nativeElement.value = '';
         }
-    }
-
-    handleClick(): void {
-        this.dotRouterService.gotoPortlet(`/categories/create`);
     }
 }

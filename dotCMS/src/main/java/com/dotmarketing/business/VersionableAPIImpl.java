@@ -722,7 +722,8 @@ public class VersionableAPIImpl implements VersionableAPI {
 	public void saveContentletVersionInfo(final ContentletVersionInfo contentletVersionInfo) throws DotDataException, DotStateException {
 
 		final Optional<ContentletVersionInfo> contentletVersionInfoInDB = versionableFactory
-                .findContentletVersionInfoInDB(contentletVersionInfo.getIdentifier(), contentletVersionInfo.getLang());
+                .findContentletVersionInfoInDB(contentletVersionInfo.getIdentifier(),
+                        contentletVersionInfo.getLang(), contentletVersionInfo.getVariant());
 
 		if(!contentletVersionInfoInDB.isPresent()) {
 			versionableFactory.saveContentletVersionInfo(contentletVersionInfo, true);

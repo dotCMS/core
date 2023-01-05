@@ -5,6 +5,7 @@
     box-shadow: $md-shadow-2;
     display: block;
     transition: box-shadow $basic-speed ease-in;
+    border-radius: $border-radius-md;
 
     &:hover {
         box-shadow: $md-shadow-3;
@@ -21,6 +22,10 @@
         background-color: $white;
 
         ::ng-deep {
+            .p-card {
+                background: $white;
+            }
+
             .p-widget-content {
                 background-color: $white;
             }
@@ -34,6 +39,9 @@
     }
 
     ::ng-deep {
+        .p-card {
+            background: $gray-bg;
+        }
         .avatar__img {
             filter: grayscale(1);
         }
@@ -90,14 +98,24 @@ dot-avatar {
     margin-right: $spacing-4;
 }
 
-::ng-deep .p-card-body {
-    color: $gray;
-    padding: 0;
+::ng-deep {
+    p-card {
+        border-radius: $border-radius-md;
+    }
 
-    .p-card-content > p {
-        line-height: 1.5rem;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        margin: 0 $spacing-3;
+    .p-card {
+        background: $white;
+        height: 100%;
+
+        .p-card-body {
+            color: $gray;
+
+            .p-card-content > p {
+                line-height: 1.5rem;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                margin: 0 $spacing-3;
+            }
+        }
     }
 }
