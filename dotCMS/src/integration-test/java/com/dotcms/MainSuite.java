@@ -236,6 +236,7 @@ import org.junit.runners.Suite.SuiteClasses;
 //        AccessTokenRenewJobTest.class,
         ContentletWebAPIImplIntegrationTest.class, // moved to top because of failures on GHA
         DependencyBundlerTest.class, // moved to top because of failures on GHA
+        SiteAndFolderResolverImplTest.class, //Moved up to avoid conflicts with CT deletion
         FolderCacheImplIntegrationTest.class,
         StaticPublisherIntegrationTest.class,
         com.dotcms.publishing.PublisherAPIImplTest.class,
@@ -651,7 +652,6 @@ import org.junit.runners.Suite.SuiteClasses;
         UsersPlatformConditionletTest.class,
         VisitorsCurrentURLConditionletTest.class,
         VisitorsGeolocationConditionletTest.class,
-        SiteAndFolderResolverImplTest.class,
         ManifestUtilTest.class,
         ZipUtilTest.class
 })
