@@ -1,10 +1,10 @@
-import { animate, state, style, transition, trigger, AnimationEvent } from '@angular/animations';
+import { animate, AnimationEvent, state, style, transition, trigger } from '@angular/animations';
 import { Component, Input, OnInit, ViewChild } from '@angular/core';
 import { LazyLoadEvent } from 'primeng/api';
 import { Observable } from 'rxjs';
 import { DotPaletteContentTypeComponent } from './dot-palette-content-type/dot-palette-content-type.component';
 import { DotPaletteContentletsComponent } from './dot-palette-contentlets/dot-palette-contentlets.component';
-import { DotPaletteStore, DotPaletteState } from './store/dot-palette.store';
+import { DotPaletteState, DotPaletteStore } from './store/dot-palette.store';
 
 @Component({
     selector: 'dot-palette',

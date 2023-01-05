@@ -1,12 +1,12 @@
 import { Component, OnInit, ViewChild } from '@angular/core';
-import { DotCDNState, ChartPeriod, CdnChartOptions } from './app.models';
-import { UntypedFormGroup, UntypedFormBuilder } from '@angular/forms';
-import { DotCDNStore } from './dotcdn.component.store';
-import { Observable } from 'rxjs';
-import { SelectItem } from 'primeng/api';
-import { take } from 'rxjs/operators';
-import { UIChart } from 'primeng/chart';
+import { UntypedFormBuilder, UntypedFormGroup } from '@angular/forms';
 import { ChartOptions } from 'chart.js';
+import { SelectItem } from 'primeng/api';
+import { UIChart } from 'primeng/chart';
+import { Observable } from 'rxjs';
+import { take } from 'rxjs/operators';
+import { CdnChartOptions, ChartPeriod, DotCDNState } from './app.models';
+import { DotCDNStore } from './dotcdn.component.store';
 
 @Component({
     selector: 'dotcms-root',

@@ -1,7 +1,7 @@
-import { NgModule } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { DotSiteSelectorFieldComponent } from './dot-site-selector-field.component';
+import { NgModule } from '@angular/core';
 import { DotSiteSelectorModule } from '../dot-site-selector/dot-site-selector.module';
+import { DotSiteSelectorFieldComponent } from './dot-site-selector-field.component';
 
 @NgModule({
     declarations: [DotSiteSelectorFieldComponent],

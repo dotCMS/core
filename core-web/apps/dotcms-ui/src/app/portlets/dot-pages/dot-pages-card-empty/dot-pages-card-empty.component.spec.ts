@@ -1,10 +1,10 @@
+import { CommonModule } from '@angular/common';
 import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import { DotIconModule } from '@dotcms/ui';
 import { DotPipesModule } from '@pipes/dot-pipes.module';
-import { DotPagesCardEmptyComponent } from './dot-pages-card-empty.component';
-import { CommonModule } from '@angular/common';
 import { SkeletonModule } from 'primeng/skeleton';
+import { DotPagesCardEmptyComponent } from './dot-pages-card-empty.component';
 
 describe('DotPagesCardEmptyComponent', () => {
     let fixture: ComponentFixture<DotPagesCardEmptyComponent>;

@@ -1,12 +1,12 @@
 import {
+    ChangeDetectionStrategy,
     Component,
+    EventEmitter,
+    forwardRef,
+    HostBinding,
     Input,
     OnInit,
-    forwardRef,
-    ChangeDetectionStrategy,
-    Output,
-    EventEmitter,
-    HostBinding
+    Output
 } from '@angular/core';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
 import { DomSanitizer, SafeStyle } from '@angular/platform-browser';

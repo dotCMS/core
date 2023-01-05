@@ -1,6 +1,6 @@
 import { ViewContainerRef } from '@angular/core';
-import { PluginKey } from 'prosemirror-state';
 import BubbleMenu, { BubbleMenuOptions } from '@tiptap/extension-bubble-menu';
+import { PluginKey } from 'prosemirror-state';
 import { Props } from 'tippy.js';
 
 import { DotBubbleMenuPlugin } from './plugins/dot-bubble-menu.plugin';

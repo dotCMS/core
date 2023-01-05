@@ -1,11 +1,11 @@
-import { NgModule } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { DropdownModule } from 'primeng/dropdown';
+import { NgModule } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { DotLanguageSelectorComponent } from './dot-language-selector.component';
-import { DotIconModule } from '@dotcms/ui';
 import { DotLanguagesService } from '@dotcms/data-access';
+import { DotIconModule } from '@dotcms/ui';
 import { DotPipesModule } from '@pipes/dot-pipes.module';
+import { DropdownModule } from 'primeng/dropdown';
+import { DotLanguageSelectorComponent } from './dot-language-selector.component';
 
 @NgModule({
     imports: [CommonModule, DropdownModule, FormsModule, DotIconModule, DotPipesModule],

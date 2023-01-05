@@ -1,9 +1,9 @@
-import { DotLoginPageStateService, LOGIN_LABELS } from './dot-login-page-state.service';
+import { TestBed } from '@angular/core/testing';
 import { LoginService } from '@dotcms/dotcms-js';
+import { DotLoginInformation } from '@dotcms/dotcms-models';
 import { LoginServiceMock, mockLoginFormResponse } from '@dotcms/utils-testing';
 import { of } from 'rxjs';
-import { TestBed } from '@angular/core/testing';
-import { DotLoginInformation } from '@dotcms/dotcms-models';
+import { DotLoginPageStateService, LOGIN_LABELS } from './dot-login-page-state.service';
 
 describe('DotLoginPageStateServiceService', () => {
     let dotloginPageStateService: DotLoginPageStateService;

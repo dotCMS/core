@@ -1,10 +1,10 @@
-import { NgModule } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { NgModule } from '@angular/core';
+import { UiDotIconButtonModule } from '@components/_common/dot-icon-button/dot-icon-button.module';
 import { DotPipesModule } from '@pipes/dot-pipes.module';
 import { CardModule } from 'primeng/card';
-import { DotPagesCardComponent } from './dot-pages-card.component';
-import { UiDotIconButtonModule } from '@components/_common/dot-icon-button/dot-icon-button.module';
 import { TooltipModule } from 'primeng/tooltip';
+import { DotPagesCardComponent } from './dot-pages-card.component';
 
 @NgModule({
     imports: [CommonModule, CardModule, UiDotIconButtonModule, TooltipModule, DotPipesModule],

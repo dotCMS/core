@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, EventEmitter, Input, Output } from '@angular/core';
+import { DotMessageService } from '@dotcms/data-access';
 import { DotExperiment, DotExperimentStatusList } from '@dotcms/dotcms-models';
 import { DotActionMenuItem } from '@models/dot-action-menu/dot-action-menu-item.model';
-import { DotMessageService } from '@dotcms/data-access';
 import { ConfirmationService, MessageService } from 'primeng/api';
 
 @Component({

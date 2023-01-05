@@ -1,7 +1,7 @@
 import { Component, OnInit } from '@angular/core';
+import { UntypedFormGroup } from '@angular/forms';
 import { DotMessageService } from '@dotcms/data-access';
 import { FieldProperty } from '../field-properties.model';
-import { UntypedFormGroup } from '@angular/forms';
 
 export interface RegexTemplate {
     label: string;

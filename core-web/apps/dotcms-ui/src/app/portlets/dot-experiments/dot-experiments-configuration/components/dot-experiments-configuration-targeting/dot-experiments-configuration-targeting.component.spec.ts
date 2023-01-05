@@ -1,9 +1,9 @@
-import { DotExperimentsConfigurationTargetingComponent } from './dot-experiments-configuration-targeting.component';
+import { DotMessageService } from '@dotcms/data-access';
+import { MockDotMessageService } from '@dotcms/utils-testing';
 import { byTestId, createComponentFactory, Spectator } from '@ngneat/spectator';
 import { ButtonModule } from 'primeng/button';
 import { Card, CardModule } from 'primeng/card';
-import { DotMessageService } from '@dotcms/data-access';
-import { MockDotMessageService } from '@dotcms/utils-testing';
+import { DotExperimentsConfigurationTargetingComponent } from './dot-experiments-configuration-targeting.component';
 
 const messageServiceMock = new MockDotMessageService({
     'experiments.configure.targeting.name': 'Targeting'

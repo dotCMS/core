@@ -1,17 +1,17 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
+import { HttpErrorResponse, HttpHeaders } from '@angular/common/http';
+import { getTestBed, TestBed } from '@angular/core/testing';
+import { DotAlertConfirmService, DotMessageService } from '@dotcms/data-access';
 import { LoginService } from '@dotcms/dotcms-js';
-import { DotRouterService } from '../dot-router/dot-router.service';
-import { DotHttpErrorManagerService } from './dot-http-error-manager.service';
-import { TestBed, getTestBed } from '@angular/core/testing';
-import { ConfirmationService } from 'primeng/api';
 import {
     MockDotMessageService,
     MockDotRouterService,
     mockResponseView
 } from '@dotcms/utils-testing';
-import { HttpErrorResponse, HttpHeaders } from '@angular/common/http';
-import { DotAlertConfirmService, DotMessageService } from '@dotcms/data-access';
+import { ConfirmationService } from 'primeng/api';
+import { DotRouterService } from '../dot-router/dot-router.service';
+import { DotHttpErrorManagerService } from './dot-http-error-manager.service';
 
 describe('DotHttpErrorManagerService', () => {
     let service: DotHttpErrorManagerService;

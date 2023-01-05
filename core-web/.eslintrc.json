@@ -65,7 +65,8 @@
                     {
                         "allow": ["warn", "error"]
                     }
-                ]
+                ],
+                "no-duplicate-imports": "error"
             }
         },
         {

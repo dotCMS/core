@@ -4,8 +4,8 @@ import { By } from '@angular/platform-browser';
 import { Editor } from '@tiptap/core';
 import StarterKit from '@tiptap/starter-kit';
 
-import { BubbleMenuDirective } from './bubble-menu.directive';
 import { EditorDirective } from '@dotcms/block-editor';
+import { BubbleMenuDirective } from './bubble-menu.directive';
 
 @Component({
     template: `

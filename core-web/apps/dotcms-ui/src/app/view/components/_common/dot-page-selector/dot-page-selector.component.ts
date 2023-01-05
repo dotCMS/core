@@ -1,21 +1,20 @@
-import { Component, Output, EventEmitter, forwardRef, Input, ViewChild } from '@angular/core';
+import { Component, EventEmitter, forwardRef, Input, Output, ViewChild } from '@angular/core';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
 
 import { switchMap, take } from 'rxjs/operators';
 
 import { Site } from '@dotcms/dotcms-js';
 
-import { DotPageSelectorService, DotPageAsset } from './service/dot-page-selector.service';
-import {
-    DotPageSelectorItem,
-    DotFolder,
-    DotSimpleURL,
-    CompleteEvent
-} from './models/dot-page-selector.models';
 import { DotMessageService } from '@dotcms/data-access';
 import { AutoComplete } from 'primeng/autocomplete';
-import { of } from 'rxjs';
-import { Observable, Subject } from 'rxjs';
+import { Observable, of, Subject } from 'rxjs';
+import {
+    CompleteEvent,
+    DotFolder,
+    DotPageSelectorItem,
+    DotSimpleURL
+} from './models/dot-page-selector.models';
+import { DotPageAsset, DotPageSelectorService } from './service/dot-page-selector.service';
 
 const NO_SPECIAL_CHAR = /^[a-zA-Z0-9._/-]*$/g;
 const REPLACE_SPECIAL_CHAR = /[^a-zA-Z0-9._/-]/g;

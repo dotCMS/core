@@ -5,37 +5,36 @@ import { Injectable } from '@angular/core';
 import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { TestBed, waitForAsync } from '@angular/core/testing';
 
-import { of, Observable, throwError } from 'rxjs';
 import { ConfirmationService } from 'primeng/api';
+import { Observable, of, throwError } from 'rxjs';
 
+import { DotAlertConfirmService, DotLicenseService, DotMessageService } from '@dotcms/data-access';
+import { CoreWebService, HttpCode, LoggerService, StringUtils } from '@dotcms/dotcms-js';
+import { DotCMSContentType, DotPageRenderState } from '@dotcms/dotcms-models';
+import {
+    mockDotLayout,
+    MockDotMessageService,
+    mockDotPage,
+    mockDotRenderedPage,
+    mockResponseView
+} from '@dotcms/utils-testing';
+import { DotContainerContentletService } from '../dot-container-contentlet.service';
+import { DotDOMHtmlUtilService } from '../html/dot-dom-html-util.service';
+import { DotDragDropAPIHtmlService } from '../html/dot-drag-drop-api-html.service';
+import { DotEditContentToolbarHtmlService } from '../html/dot-edit-content-toolbar-html.service';
 import {
     CONTENTLET_PLACEHOLDER_SELECTOR,
     DotEditContentHtmlService
 } from './dot-edit-content-html.service';
-import { DotEditContentToolbarHtmlService } from '../html/dot-edit-content-toolbar-html.service';
-import { DotContainerContentletService } from '../dot-container-contentlet.service';
-import { DotDragDropAPIHtmlService } from '../html/dot-drag-drop-api-html.service';
-import { DotDOMHtmlUtilService } from '../html/dot-dom-html-util.service';
-import { DotMessageService } from '@dotcms/data-access';
-import { MockDotMessageService, mockResponseView } from '@dotcms/utils-testing';
-import { LoggerService, StringUtils, CoreWebService, HttpCode } from '@dotcms/dotcms-js';
-import { DotAlertConfirmService } from '@dotcms/data-access';
-import { mockDotLayout, mockDotRenderedPage, mockDotPage } from '@dotcms/utils-testing';
-import { DotCMSContentType, DotPageRenderState } from '@dotcms/dotcms-models';
-import { DotLicenseService } from '@dotcms/data-access';
 
-import { mockUser } from '@dotcms/utils-testing';
-import { PageModelChangeEventType } from './models';
-import { dotcmsContentTypeBasicMock } from '@dotcms/utils-testing';
-import { DotPageContent } from '@portlets/dot-edit-page/shared/models';
-import { CoreWebServiceMock } from '@dotcms/utils-testing';
-import { DotPageContainer } from '@dotcms/dotcms-models';
-import { DotPageRender } from '@dotcms/dotcms-models';
-import { DotGlobalMessageService } from '@dotcms/app/view/components/_common/dot-global-message/dot-global-message.service';
-import { DotEventsService } from '@dotcms/data-access';
-import { DotWorkflowActionsFireService } from '@dotcms/data-access';
 import { HttpErrorResponse, HttpResponse } from '@angular/common/http';
 import { DotHttpErrorManagerService } from '@dotcms/app/api/services/dot-http-error-manager/dot-http-error-manager.service';
+import { DotGlobalMessageService } from '@dotcms/app/view/components/_common/dot-global-message/dot-global-message.service';
+import { DotEventsService, DotWorkflowActionsFireService } from '@dotcms/data-access';
+import { DotPageContainer, DotPageRender } from '@dotcms/dotcms-models';
+import { CoreWebServiceMock, dotcmsContentTypeBasicMock, mockUser } from '@dotcms/utils-testing';
+import { DotPageContent } from '@portlets/dot-edit-page/shared/models';
+import { PageModelChangeEventType } from './models';
 
 @Injectable()
 class MockDotLicenseService {

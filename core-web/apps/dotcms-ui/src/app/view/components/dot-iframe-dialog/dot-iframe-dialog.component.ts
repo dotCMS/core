@@ -1,12 +1,12 @@
 import {
     Component,
-    Input,
-    SimpleChanges,
-    OnChanges,
     EventEmitter,
+    Input,
+    OnChanges,
+    OnInit,
     Output,
-    ViewChild,
-    OnInit
+    SimpleChanges,
+    ViewChild
 } from '@angular/core';
 import { DotDialogComponent } from '@components/dot-dialog/dot-dialog.component';
 import { filter } from 'rxjs/operators';

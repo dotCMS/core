@@ -2,27 +2,27 @@ import { Injectable } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 
 import { ComponentStore } from '@ngrx/component-store';
-import { Observable, zip, of } from 'rxjs';
+import * as _ from 'lodash';
+import { Observable, of, zip } from 'rxjs';
 import {
+    catchError,
+    debounceTime,
+    filter,
+    map,
     pluck,
     switchMap,
     take,
     tap,
-    catchError,
-    debounceTime,
-    withLatestFrom,
-    filter,
-    map
+    withLatestFrom
 } from 'rxjs/operators';
-import * as _ from 'lodash';
 
-import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
 import { DotGlobalMessageService } from '@components/_common/dot-global-message/dot-global-message.service';
+import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
 import { DotMessageService } from '@dotcms/data-access';
 
 import { HttpErrorResponse } from '@angular/common/http';
-import { DotHttpErrorManagerService } from '@dotcms/app/api/services/dot-http-error-manager/dot-http-error-manager.service';
 import { DotEditLayoutService } from '@dotcms/app/api/services/dot-edit-layout/dot-edit-layout.service';
+import { DotHttpErrorManagerService } from '@dotcms/app/api/services/dot-http-error-manager/dot-http-error-manager.service';
 import { DotTemplateContainersCacheService } from '@dotcms/app/api/services/dot-template-containers-cache/dot-template-containers-cache.service';
 import { DotTemplatesService } from '@dotcms/app/api/services/dot-templates/dot-templates.service';
 import { DotContainerMap, DotLayout, DotTemplate } from '@dotcms/dotcms-models';

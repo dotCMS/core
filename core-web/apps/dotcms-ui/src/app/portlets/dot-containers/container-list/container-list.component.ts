@@ -3,20 +3,20 @@ import { DotListingDataTableComponent } from '@components/dot-listing-data-table
 import {
     DotActionBulkResult,
     DotBulkFailItem,
-    DotContentState,
-    DotContainer
+    DotContainer,
+    DotContentState
 } from '@dotcms/dotcms-models';
-import { DotContainerListStore } from '@portlets/dot-containers/container-list/store/dot-container-list.store';
 import { DotActionMenuItem } from '@models/dot-action-menu/dot-action-menu-item.model';
+import { DotContainerListStore } from '@portlets/dot-containers/container-list/store/dot-container-list.store';
 
 import { DotMessageSeverity, DotMessageType } from '@components/dot-message-display/model';
+import { DotMessageDisplayService } from '@components/dot-message-display/services';
 import { DotBulkInformationComponent } from '@components/_common/dot-bulk-information/dot-bulk-information.component';
 import { DotMessageService } from '@dotcms/data-access';
-import { DotMessageDisplayService } from '@components/dot-message-display/services';
-import { DialogService } from 'primeng/dynamicdialog';
-import { takeUntil } from 'rxjs/operators';
-import { Subject } from 'rxjs';
 import { DotRouterService } from '@services/dot-router/dot-router.service';
+import { DialogService } from 'primeng/dynamicdialog';
+import { Subject } from 'rxjs';
+import { takeUntil } from 'rxjs/operators';
 
 @Component({
     selector: 'dot-container-list',

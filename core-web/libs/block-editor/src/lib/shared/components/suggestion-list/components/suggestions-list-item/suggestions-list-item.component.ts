@@ -1,4 +1,4 @@
-import { Component, ElementRef, HostBinding, Input, OnInit, HostListener } from '@angular/core';
+import { Component, ElementRef, HostBinding, HostListener, Input, OnInit } from '@angular/core';
 
 import { FocusableOption } from '@angular/cdk/a11y';
 

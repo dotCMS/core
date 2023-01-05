@@ -1,4 +1,4 @@
-import { Component, ViewChild, ElementRef, Input, Output, EventEmitter } from '@angular/core';
+import { Component, ElementRef, EventEmitter, Input, Output, ViewChild } from '@angular/core';
 import { DotAppsSites } from '@dotcms/dotcms-models';
 
 import { LazyLoadEvent } from 'primeng/api';

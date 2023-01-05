@@ -1,6 +1,5 @@
 import { Injectable } from '@angular/core';
-import { DotESContentService } from '@dotcms/data-access';
-import { PaginatorService } from '@dotcms/data-access';
+import { DotContentTypeService, DotESContentService, PaginatorService } from '@dotcms/data-access';
 import {
     DotCMSContentlet,
     DotCMSContentType,
@@ -10,8 +9,7 @@ import {
 import { ComponentStore } from '@ngrx/component-store';
 import { LazyLoadEvent } from 'primeng/api';
 import { forkJoin, Observable } from 'rxjs';
-import { map, take, debounceTime } from 'rxjs/operators';
-import { DotContentTypeService } from '@dotcms/data-access';
+import { debounceTime, map, take } from 'rxjs/operators';
 
 export interface DotPaletteState {
     contentlets: DotCMSContentlet[] | DotCMSContentType[];

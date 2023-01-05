@@ -1,21 +1,23 @@
-import { ActivatedRoute } from '@angular/router';
-import { By } from '@angular/platform-browser';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { By } from '@angular/platform-browser';
+import { ActivatedRoute } from '@angular/router';
 import { CoreWebService } from '@dotcms/dotcms-js';
 import { of } from 'rxjs';
 
-import { CoreWebServiceMock } from '@dotcms/utils-testing';
-import { DotAppsListComponent } from './dot-apps-list.component';
 import { DotAppsService } from '@dotcms/app/api/services/dot-apps/dot-apps.service';
-import { DotMessagePipe } from '@pipes/dot-message/dot-message.pipe';
-import { DotMessageService } from '@dotcms/data-access';
 import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
+import { DotMessageService } from '@dotcms/data-access';
+import { CoreWebServiceMock } from '@dotcms/utils-testing';
+import { DotMessagePipe } from '@pipes/dot-message/dot-message.pipe';
+import { DotAppsListComponent } from './dot-apps-list.component';
 
-import { MockDotMessageService } from '@dotcms/utils-testing';
-import { MockDotRouterService } from '@dotcms/utils-testing';
-import { MockDotNotLicensedComponent } from '@dotcms/utils-testing';
 import { Component, EventEmitter, Input, Output } from '@angular/core';
 import { DotApps } from '@dotcms/dotcms-models';
+import {
+    MockDotMessageService,
+    MockDotNotLicensedComponent,
+    MockDotRouterService
+} from '@dotcms/utils-testing';
 import { ButtonModule } from 'primeng/button';
 
 export class AppsServicesMock {

@@ -1,6 +1,6 @@
+import { HttpClientTestingModule, HttpTestingController } from '@angular/common/http/testing';
 import { TestBed, waitForAsync } from '@angular/core/testing';
 import { DotGravatarService } from './dot-gravatar-service';
-import { HttpClientTestingModule, HttpTestingController } from '@angular/common/http/testing';
 
 const mockProfile = {
     displayName: 'admindotcms',
@@ -25,18 +25,16 @@ describe('DotGravatarService', () => {
     // let httpClient: HttpClient;
     let httpTestingController: HttpTestingController;
 
-    beforeEach(
-        waitForAsync(() => {
-            TestBed.configureTestingModule({
-                providers: [DotGravatarService],
-                imports: [HttpClientTestingModule]
-            });
+    beforeEach(waitForAsync(() => {
+        TestBed.configureTestingModule({
+            providers: [DotGravatarService],
+            imports: [HttpClientTestingModule]
+        });
 
-            service = TestBed.inject(DotGravatarService);
-            // httpClient = TestBed.inject(HttpClient);
-            httpTestingController = TestBed.inject(HttpTestingController);
-        })
-    );
+        service = TestBed.inject(DotGravatarService);
+        // httpClient = TestBed.inject(HttpClient);
+        httpTestingController = TestBed.inject(HttpTestingController);
+    }));
 
     it('Should return the photos url', (done) => {
         service.getPhoto('1').subscribe((avatarUrl: string) => {

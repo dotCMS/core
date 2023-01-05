@@ -1,14 +1,12 @@
 /* eslint-disable no-console */
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { SearchableDropDownModule } from '@components/_common/searchable-dropdown';
-import { DotMessagePipeModule } from '@pipes/dot-message/dot-message-pipe.module';
-import { DotMessageService } from '@dotcms/data-access';
-import { DotThemesService } from '@dotcms/data-access';
 import { DotFormatDateService } from '@dotcms/app/api/services/dot-format-date-service';
-import { PaginatorService } from '@dotcms/data-access';
-import { Meta, moduleMetadata } from '@storybook/angular';
-import { MockDotMessageService } from '@dotcms/utils-testing';
+import { DotMessageService, DotThemesService, PaginatorService } from '@dotcms/data-access';
 import { SiteService } from '@dotcms/dotcms-js';
+import { MockDotMessageService } from '@dotcms/utils-testing';
+import { DotMessagePipeModule } from '@pipes/dot-message/dot-message-pipe.module';
+import { Meta, moduleMetadata } from '@storybook/angular';
 import { of } from 'rxjs';
 import { DotThemeSelectorDropdownComponent } from './dot-theme-selector-dropdown.component';
 

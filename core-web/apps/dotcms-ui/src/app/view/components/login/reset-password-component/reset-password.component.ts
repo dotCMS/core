@@ -1,12 +1,12 @@
 import { AfterViewChecked, ChangeDetectorRef, Component, OnInit } from '@angular/core';
 import { UntypedFormBuilder, UntypedFormGroup, Validators } from '@angular/forms';
+import { ActivatedRoute } from '@angular/router';
+import { DotLoginPageStateService } from '@components/login/shared/services/dot-login-page-state.service';
+import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
+import { LoginService } from '@dotcms/dotcms-js';
+import { DotLoginInformation } from '@dotcms/dotcms-models';
 import { Observable } from 'rxjs';
 import { take, tap } from 'rxjs/operators';
-import { DotLoginPageStateService } from '@components/login/shared/services/dot-login-page-state.service';
-import { LoginService } from '@dotcms/dotcms-js';
-import { ActivatedRoute } from '@angular/router';
-import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
-import { DotLoginInformation } from '@dotcms/dotcms-models';
 
 @Component({
     providers: [],

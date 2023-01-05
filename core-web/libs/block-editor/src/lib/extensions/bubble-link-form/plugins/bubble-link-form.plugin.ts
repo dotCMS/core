@@ -14,7 +14,7 @@ import { BubbleLinkFormComponent, NodeProps } from '../bubble-link-form.componen
 import { LINK_FORM_PLUGIN_KEY } from '../bubble-link-form.extension';
 
 // Utils
-import { getPosAtDocCoords, isValidURL, ImageNode } from '@dotcms/block-editor';
+import { getPosAtDocCoords, ImageNode, isValidURL } from '@dotcms/block-editor';
 import { openFormLinkOnclik } from '../utils';
 
 interface PluginState {

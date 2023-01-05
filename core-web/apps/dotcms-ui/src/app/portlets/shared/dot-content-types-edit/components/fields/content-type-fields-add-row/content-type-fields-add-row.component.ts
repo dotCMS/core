@@ -1,18 +1,17 @@
 import {
     Component,
-    OnDestroy,
-    Input,
-    Output,
+    ElementRef,
     EventEmitter,
+    Input,
+    OnDestroy,
     OnInit,
-    ViewChild,
-    ElementRef
+    Output,
+    ViewChild
 } from '@angular/core';
-import { DotMessageService } from '@dotcms/data-access';
-import { DotEventsService } from '@dotcms/data-access';
-import { takeUntil } from 'rxjs/operators';
-import { Subject } from 'rxjs';
+import { DotEventsService, DotMessageService } from '@dotcms/data-access';
 import { MenuItem } from 'primeng/api';
+import { Subject } from 'rxjs';
+import { takeUntil } from 'rxjs/operators';
 
 /**
  * Display select columns row

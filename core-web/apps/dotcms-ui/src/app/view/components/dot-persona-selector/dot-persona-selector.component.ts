@@ -1,13 +1,13 @@
 import { Component, EventEmitter, Input, OnInit, Output, ViewChild } from '@angular/core';
-import { PaginatorService } from '@dotcms/data-access';
+import { DotAddPersonaDialogComponent } from '@components/dot-add-persona-dialog/dot-add-persona-dialog.component';
+import { IframeOverlayService } from '@components/_common/iframe/service/iframe-overlay.service';
 import {
     PaginationEvent,
     SearchableDropdownComponent
 } from '@components/_common/searchable-dropdown/component';
-import { DotPersona, DotPageRenderState, DotPageMode } from '@dotcms/dotcms-models';
+import { PaginatorService } from '@dotcms/data-access';
+import { DotPageMode, DotPageRenderState, DotPersona } from '@dotcms/dotcms-models';
 import { delay, take } from 'rxjs/operators';
-import { DotAddPersonaDialogComponent } from '@components/dot-add-persona-dialog/dot-add-persona-dialog.component';
-import { IframeOverlayService } from '@components/_common/iframe/service/iframe-overlay.service';
 
 /**
  * It is dropdown of personas, it handle pagination and global search

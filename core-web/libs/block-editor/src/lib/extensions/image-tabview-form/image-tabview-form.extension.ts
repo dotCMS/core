@@ -1,6 +1,6 @@
+import { ViewContainerRef } from '@angular/core';
 import BubbleMenu from '@tiptap/extension-bubble-menu';
 import { PluginKey } from 'prosemirror-state';
-import { ViewContainerRef } from '@angular/core';
 
 import { Props } from 'tippy.js';
 import { ImageTabviewFormComponent } from './image-tabview-form.component';

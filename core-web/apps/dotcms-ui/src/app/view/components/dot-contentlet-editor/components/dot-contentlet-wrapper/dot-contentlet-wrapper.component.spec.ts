@@ -1,11 +1,11 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { of } from 'rxjs';
-import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
-import { By, Title } from '@angular/platform-browser';
 import { DebugElement } from '@angular/core';
+import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing';
+import { By, Title } from '@angular/platform-browser';
+import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { RouterTestingModule } from '@angular/router/testing';
-import { waitForAsync, ComponentFixture, TestBed } from '@angular/core/testing';
+import { of } from 'rxjs';
 
 import {
     CoreWebService,
@@ -18,23 +18,24 @@ import {
     StringUtils
 } from '@dotcms/dotcms-js';
 
-import { DotContentletEditorService } from '../../services/dot-contentlet-editor.service';
-import { DotContentletWrapperComponent } from './dot-contentlet-wrapper.component';
-import { DotIframeDialogModule } from '../../../dot-iframe-dialog/dot-iframe-dialog.module';
-import { DotMenuService } from '@dotcms/app/api/services/dot-menu.service';
-import { DotMessageService } from '@dotcms/data-access';
-import { LoginServiceMock } from '@dotcms/utils-testing';
-import { MockDotMessageService } from '@dotcms/utils-testing';
-import { DotAlertConfirmService } from '@dotcms/data-access';
-import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
-import { DotIframeService } from '@components/_common/iframe/service/dot-iframe/dot-iframe.service';
-import { CoreWebServiceMock } from '@dotcms/utils-testing';
 import { HttpClientTestingModule } from '@angular/common/http/testing';
+import { DotIframeService } from '@components/_common/iframe/service/dot-iframe/dot-iframe.service';
 import { DotHttpErrorManagerService } from '@dotcms/app/api/services/dot-http-error-manager/dot-http-error-manager.service';
-import { ConfirmationService } from 'primeng/api';
-import { MockDotRouterService } from '@dotcms/utils-testing';
+import { DotMenuService } from '@dotcms/app/api/services/dot-menu.service';
+import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
 import { DotUiColorsService } from '@dotcms/app/api/services/dot-ui-colors/dot-ui-colors.service';
 import { dotEventSocketURLFactory, MockDotUiColorsService } from '@dotcms/app/test/dot-test-bed';
+import { DotAlertConfirmService, DotMessageService } from '@dotcms/data-access';
+import {
+    CoreWebServiceMock,
+    LoginServiceMock,
+    MockDotMessageService,
+    MockDotRouterService
+} from '@dotcms/utils-testing';
+import { ConfirmationService } from 'primeng/api';
+import { DotIframeDialogModule } from '../../../dot-iframe-dialog/dot-iframe-dialog.module';
+import { DotContentletEditorService } from '../../services/dot-contentlet-editor.service';
+import { DotContentletWrapperComponent } from './dot-contentlet-wrapper.component';
 
 const messageServiceMock = new MockDotMessageService({
     'editcontentlet.lose.dialog.header': 'Header',

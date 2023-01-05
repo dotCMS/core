@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
-import { Observable, Subject } from 'rxjs';
 import { DotWizardInput } from '@models/dot-wizard-input/dot-wizard-input.model';
+import { Observable, Subject } from 'rxjs';
 
 @Injectable()
 export class DotWizardService {

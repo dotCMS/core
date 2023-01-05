@@ -1,21 +1,20 @@
 /* eslint-disable @typescript-eslint/no-empty-function */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
+import { Component, DebugElement, Injectable, Input } from '@angular/core';
+import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
-import { ComponentFixture, waitForAsync, TestBed } from '@angular/core/testing';
-import { DebugElement, Component, Input, Injectable } from '@angular/core';
-import { DotToolbarNotificationsComponent } from './dot-toolbar-notifications.component';
-import { INotification } from '@shared/models/notifications';
-import { DotMessageService } from '@dotcms/data-access';
 import { IframeOverlayService } from '@components/_common/iframe/service/iframe-overlay.service';
+import { DotMessageService } from '@dotcms/data-access';
 import { DotcmsEventsService, LoginService } from '@dotcms/dotcms-js';
+import { INotification } from '@shared/models/notifications';
+import { DotToolbarNotificationsComponent } from './dot-toolbar-notifications.component';
 
-import { Observable, Subject } from 'rxjs';
-import { of as observableOf } from 'rxjs';
+import { NotificationsService } from '@dotcms/app/api/services/notifications-service';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 import { DotPipesModule } from '@pipes/dot-pipes.module';
 import { ButtonModule } from 'primeng/button';
-import { NotificationsService } from '@dotcms/app/api/services/notifications-service';
+import { Observable, of as observableOf, Subject } from 'rxjs';
 
 @Component({
     selector: 'dot-dropdown-component',

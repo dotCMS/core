@@ -1,9 +1,9 @@
-import { NgModule } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { NgModule } from '@angular/core';
+import { DotPipesModule } from '@pipes/dot-pipes.module';
+import { SplitButtonModule } from 'primeng/splitbutton';
 import { DotActionButtonModule } from '../../_common/dot-action-button/dot-action-button.module';
 import { ActionHeaderComponent } from './action-header.component';
-import { SplitButtonModule } from 'primeng/splitbutton';
-import { DotPipesModule } from '@pipes/dot-pipes.module';
 
 @NgModule({
     bootstrap: [],

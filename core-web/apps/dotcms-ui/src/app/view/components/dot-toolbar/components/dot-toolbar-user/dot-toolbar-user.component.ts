@@ -1,12 +1,12 @@
-import { Component, ViewChild, OnInit, Inject } from '@angular/core';
-import { DotDropdownComponent } from '@components/_common/dot-dropdown-component/dot-dropdown.component';
-import { IframeOverlayService } from '../../../_common/iframe/service/iframe-overlay.service';
-import { LoginService, Auth, LoggerService, LOGOUT_URL, CurrentUser } from '@dotcms/dotcms-js';
-import { LOCATION_TOKEN } from '@dotcms/app/providers';
+import { Component, Inject, OnInit, ViewChild } from '@angular/core';
 import { DotNavigationService } from '@components/dot-navigation/services/dot-navigation.service';
-import { map } from 'rxjs/operators';
-import { Observable } from 'rxjs';
+import { DotDropdownComponent } from '@components/_common/dot-dropdown-component/dot-dropdown.component';
 import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
+import { LOCATION_TOKEN } from '@dotcms/app/providers';
+import { Auth, CurrentUser, LoggerService, LoginService, LOGOUT_URL } from '@dotcms/dotcms-js';
+import { Observable } from 'rxjs';
+import { map } from 'rxjs/operators';
+import { IframeOverlayService } from '../../../_common/iframe/service/iframe-overlay.service';
 
 @Component({
     selector: 'dot-toolbar-user',

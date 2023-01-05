@@ -1,24 +1,23 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { Observable, of as observableOf } from 'rxjs';
-import { ComponentFixture, waitForAsync, fakeAsync, tick, TestBed } from '@angular/core/testing';
 import { Component, DebugElement, Input } from '@angular/core';
-import { DotSiteSelectorComponent } from './dot-site-selector.component';
+import { ComponentFixture, fakeAsync, TestBed, tick, waitForAsync } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
-import { SearchableDropDownModule } from '../searchable-dropdown/searchable-dropdown.module';
 import { DotMessageService } from '@dotcms/data-access';
 import { MockDotMessageService, mockSites, SiteServiceMock } from '@dotcms/utils-testing';
+import { Observable, of as observableOf } from 'rxjs';
+import { SearchableDropDownModule } from '../searchable-dropdown/searchable-dropdown.module';
+import { DotSiteSelectorComponent } from './dot-site-selector.component';
 
-import { CoreWebService, Site, SiteService } from '@dotcms/dotcms-js';
-import { SearchableDropdownComponent } from '../searchable-dropdown/component/searchable-dropdown.component';
-import { PaginatorService } from '@dotcms/data-access';
-import { IframeOverlayService } from '../iframe/service/iframe-overlay.service';
-import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
-import { DotEventsService } from '@dotcms/data-access';
-import { CoreWebServiceMock } from '@dotcms/utils-testing';
-import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { CommonModule } from '@angular/common';
+import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { FormsModule } from '@angular/forms';
+import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
+import { DotEventsService, PaginatorService } from '@dotcms/data-access';
+import { CoreWebService, Site, SiteService } from '@dotcms/dotcms-js';
+import { CoreWebServiceMock } from '@dotcms/utils-testing';
+import { IframeOverlayService } from '../iframe/service/iframe-overlay.service';
+import { SearchableDropdownComponent } from '../searchable-dropdown/component/searchable-dropdown.component';
 
 const sites: Site[] = [
     {

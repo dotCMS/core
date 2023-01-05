@@ -1,8 +1,8 @@
 // also exported from '@storybook/angular' if you can deal with breaking changes in 6.1
-import { Meta, Story } from '@storybook/angular/types-6-0';
-import { moduleMetadata } from '@storybook/angular';
-import { SplitButtonModule } from 'primeng/splitbutton';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
+import { moduleMetadata } from '@storybook/angular';
+import { Meta, Story } from '@storybook/angular/types-6-0';
+import { SplitButtonModule } from 'primeng/splitbutton';
 
 export default {
     title: 'PrimeNG/Button/SplitButton',

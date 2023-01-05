@@ -1,9 +1,9 @@
+import { CommonModule } from '@angular/common';
 import { NgModule } from '@angular/core';
 import { DotPaletteContentletsComponent } from '@dotcms/app/portlets/dot-edit-page/components/dot-palette/dot-palette-contentlets/dot-palette-contentlets.component';
-import { CommonModule } from '@angular/common';
+import { DotSpinnerModule } from '@dotcms/ui';
 import { DotPipesModule } from '@pipes/dot-pipes.module';
 import { PaginatorModule } from 'primeng/paginator';
-import { DotSpinnerModule } from '@dotcms/ui';
 import { DotPaletteInputFilterModule } from '../dot-palette-input-filter/dot-palette-input-filter.module';
 
 @NgModule({

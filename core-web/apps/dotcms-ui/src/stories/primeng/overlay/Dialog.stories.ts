@@ -1,8 +1,8 @@
-import { Story, Meta } from '@storybook/angular/types-6-0';
-import { DialogModule } from 'primeng/dialog';
-import { moduleMetadata } from '@storybook/angular';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
+import { moduleMetadata } from '@storybook/angular';
+import { Meta, Story } from '@storybook/angular/types-6-0';
 import { ButtonModule } from 'primeng/button';
+import { DialogModule } from 'primeng/dialog';
 
 export default {
     title: 'PrimeNG/Overlay/Dialog',

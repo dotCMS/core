@@ -1,8 +1,8 @@
-import { Story, Meta } from '@storybook/angular/types-6-0';
-import { moduleMetadata } from '@storybook/angular';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
-import { MessagesModule } from 'primeng/messages';
+import { moduleMetadata } from '@storybook/angular';
+import { Meta, Story } from '@storybook/angular/types-6-0';
 import { MessageModule } from 'primeng/message';
+import { MessagesModule } from 'primeng/messages';
 
 export default {
     title: 'PrimeNG/Messages/Message',

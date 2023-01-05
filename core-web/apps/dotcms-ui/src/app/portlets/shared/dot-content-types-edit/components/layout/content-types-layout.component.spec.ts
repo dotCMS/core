@@ -1,33 +1,33 @@
 /* eslint-disable @typescript-eslint/no-empty-function */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { of, Observable } from 'rxjs';
-import { ContentTypesLayoutComponent } from './content-types-layout.component';
+import { HttpClientTestingModule } from '@angular/common/http/testing';
+import { Component, DebugElement, EventEmitter, Injectable, Input, Output } from '@angular/core';
 import { ComponentFixture, fakeAsync, TestBed } from '@angular/core/testing';
-import { DebugElement, Component, Input, Injectable, Output, EventEmitter } from '@angular/core';
-import { MockDotMessageService } from '@dotcms/utils-testing';
-import { DotMessageService } from '@dotcms/data-access';
 import { By } from '@angular/platform-browser';
-import { DotMenuService } from '@dotcms/app/api/services/dot-menu.service';
-import { FieldDragDropService } from '../fields/service';
-import { DotIconModule } from '@dotcms/ui';
 import { RouterTestingModule } from '@angular/router/testing';
-import { DotCMSContentType } from '@dotcms/dotcms-models';
-import { dotcmsContentTypeBasicMock } from '@dotcms/utils-testing';
 import { DotApiLinkModule } from '@components/dot-api-link/dot-api-link.module';
 import { DotCopyLinkModule } from '@components/dot-copy-link/dot-copy-link.module';
-import { DotEventsService } from '@dotcms/data-access';
-import { DotSecondaryToolbarModule } from '@components/dot-secondary-toolbar';
-import { DotCurrentUserService } from '@dotcms/data-access';
-import { DotPipesModule } from '@pipes/dot-pipes.module';
-import { CoreWebService } from '@dotcms/dotcms-js';
-import { CoreWebServiceMock } from '@dotcms/utils-testing';
-import { HttpClientTestingModule } from '@angular/common/http/testing';
-import { TabViewModule } from 'primeng/tabview';
-import { SplitButtonModule } from 'primeng/splitbutton';
-import { MenuItem } from 'primeng/api';
 import { DotPortletBoxModule } from '@components/dot-portlet-base/components/dot-portlet-box/dot-portlet-box.module';
+import { DotSecondaryToolbarModule } from '@components/dot-secondary-toolbar';
 import { DotInlineEditModule } from '@components/_common/dot-inline-edit/dot-inline-edit.module';
+import { DotMenuService } from '@dotcms/app/api/services/dot-menu.service';
+import { DotCurrentUserService, DotEventsService, DotMessageService } from '@dotcms/data-access';
+import { CoreWebService } from '@dotcms/dotcms-js';
+import { DotCMSContentType } from '@dotcms/dotcms-models';
+import { DotIconModule } from '@dotcms/ui';
+import {
+    CoreWebServiceMock,
+    dotcmsContentTypeBasicMock,
+    MockDotMessageService
+} from '@dotcms/utils-testing';
+import { DotPipesModule } from '@pipes/dot-pipes.module';
+import { MenuItem } from 'primeng/api';
+import { SplitButtonModule } from 'primeng/splitbutton';
+import { TabViewModule } from 'primeng/tabview';
+import { Observable, of } from 'rxjs';
+import { FieldDragDropService } from '../fields/service';
+import { ContentTypesLayoutComponent } from './content-types-layout.component';
 
 @Component({
     selector: 'dot-content-types-fields-list',

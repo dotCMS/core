@@ -1,20 +1,20 @@
-import { TestBed } from '@angular/core/testing';
 import { HttpClientTestingModule, HttpTestingController } from '@angular/common/http/testing';
+import { TestBed } from '@angular/core/testing';
 
 import { CoreWebService } from '@dotcms/dotcms-js';
 
-import { DotHttpErrorManagerService } from '@services/dot-http-error-manager/dot-http-error-manager.service';
-import {
-    DotCategoriesService,
-    CATEGORY_API_URL,
-    CATEGORY_CHILDREN_API_URL
-} from './dot-categories.service';
-import { CoreWebServiceMock } from '@dotcms/utils-testing';
-import { of } from 'rxjs';
 import {
     CATEGORY_SOURCE,
     DotCategory
 } from '@dotcms/app/shared/models/dot-categories/dot-categories.model';
+import { CoreWebServiceMock } from '@dotcms/utils-testing';
+import { DotHttpErrorManagerService } from '@services/dot-http-error-manager/dot-http-error-manager.service';
+import { of } from 'rxjs';
+import {
+    CATEGORY_API_URL,
+    CATEGORY_CHILDREN_API_URL,
+    DotCategoriesService
+} from './dot-categories.service';
 
 const mockCategory: DotCategory = {
     categoryId: '1222',

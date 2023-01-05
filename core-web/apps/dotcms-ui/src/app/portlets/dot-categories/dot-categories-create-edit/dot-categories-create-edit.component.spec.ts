@@ -3,8 +3,8 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { DotCategoriesCreateEditComponent } from './dot-categories-create-edit.component';
 
 import { DotPortletBaseModule } from '@components/dot-portlet-base/dot-portlet-base.module';
-import { DotCategoriesListingModule } from '../dot-categories-list/dot-categories-list.module';
 import { TabViewModule } from 'primeng/tabview';
+import { DotCategoriesListingModule } from '../dot-categories-list/dot-categories-list.module';
 
 @Pipe({ name: 'dm' })
 class MockPipe implements PipeTransform {

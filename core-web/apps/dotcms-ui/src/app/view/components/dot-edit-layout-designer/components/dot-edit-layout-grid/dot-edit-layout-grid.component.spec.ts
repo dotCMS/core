@@ -1,31 +1,33 @@
 /* eslint-disable @typescript-eslint/no-empty-function */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
-import { By } from '@angular/platform-browser';
-import { Component, DebugElement, Input, HostBinding, Output, EventEmitter } from '@angular/core';
+import { Component, DebugElement, EventEmitter, HostBinding, Input, Output } from '@angular/core';
 import { ComponentFixture, fakeAsync, tick } from '@angular/core/testing';
 import { UntypedFormControl, UntypedFormGroup } from '@angular/forms';
+import { By } from '@angular/platform-browser';
+import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 
 import { NgGridModule } from '@dotcms/dot-layout-grid';
 
-import { DotEditLayoutGridComponent } from './dot-edit-layout-grid.component';
 import { DotAutofocusModule } from '@dotcms/dot-rules';
+import { DotEditLayoutGridComponent } from './dot-edit-layout-grid.component';
 
 import { DotContainerSelectorLayoutModule } from '@components/dot-container-selector-layout/dot-container-selector-layout.module';
-import { DotTemplateContainersCacheService } from '@dotcms/app/api/services/dot-template-containers-cache/dot-template-containers-cache.service';
 import { DotDialogActions } from '@components/dot-dialog/dot-dialog.component';
 import { UiDotIconButtonTooltipModule } from '@components/_common/dot-icon-button-tooltip/dot-icon-button-tooltip.module';
+import { DotTemplateContainersCacheService } from '@dotcms/app/api/services/dot-template-containers-cache/dot-template-containers-cache.service';
 
-import { DotAlertConfirmService } from '@dotcms/data-access';
-import { DotEventsService } from '@dotcms/data-access';
-import { DotMessageService } from '@dotcms/data-access';
-import { PaginatorService } from '@dotcms/data-access';
+import {
+    DotAlertConfirmService,
+    DotEventsService,
+    DotMessageService,
+    PaginatorService
+} from '@dotcms/data-access';
 
-import { DOTTestBed } from '@dotcms/app/test/dot-test-bed';
-import { MockDotMessageService } from '@dotcms/utils-testing';
-import { DotLayoutBody } from '@dotcms/dotcms-models';
 import { DotEditLayoutService } from '@dotcms/app/api/services/dot-edit-layout/dot-edit-layout.service';
+import { DOTTestBed } from '@dotcms/app/test/dot-test-bed';
+import { DotLayoutBody } from '@dotcms/dotcms-models';
+import { MockDotMessageService } from '@dotcms/utils-testing';
 
 let fakeValue: DotLayoutBody;
 

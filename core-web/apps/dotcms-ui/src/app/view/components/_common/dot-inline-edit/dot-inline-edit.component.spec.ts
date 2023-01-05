@@ -1,7 +1,7 @@
-import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing';
 import { CommonModule } from '@angular/common';
-import { Component, DebugElement, Input, TemplateRef } from '@angular/core';
 import { HttpClientTestingModule } from '@angular/common/http/testing';
+import { Component, DebugElement, Input, TemplateRef } from '@angular/core';
+import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import { SharedModule } from 'primeng/api';
 import { InplaceModule } from 'primeng/inplace';
@@ -33,20 +33,18 @@ describe('DotInlineEditComponent', () => {
     let comp: DotInlineEditComponent;
     let de: DebugElement;
 
-    beforeEach(
-        waitForAsync(() => {
-            TestBed.configureTestingModule({
-                declarations: [DotInlineEditComponent, HostTestComponent],
-                imports: [CommonModule, InplaceModule, SharedModule, HttpClientTestingModule],
-                providers: []
-            }).compileComponents();
+    beforeEach(waitForAsync(() => {
+        TestBed.configureTestingModule({
+            declarations: [DotInlineEditComponent, HostTestComponent],
+            imports: [CommonModule, InplaceModule, SharedModule, HttpClientTestingModule],
+            providers: []
+        }).compileComponents();
 
-            hostFixture = TestBed.createComponent(HostTestComponent);
-            de = hostFixture.debugElement;
-            comp = hostFixture.debugElement.query(By.css('dot-inline-edit')).componentInstance;
-            hostFixture.detectChanges();
-        })
-    );
+        hostFixture = TestBed.createComponent(HostTestComponent);
+        de = hostFixture.debugElement;
+        comp = hostFixture.debugElement.query(By.css('dot-inline-edit')).componentInstance;
+        hostFixture.detectChanges();
+    }));
 
     it(`should have display section and component variables defined`, () => {
         expect(comp.inlineEditDisplayTemplate).toBeDefined();

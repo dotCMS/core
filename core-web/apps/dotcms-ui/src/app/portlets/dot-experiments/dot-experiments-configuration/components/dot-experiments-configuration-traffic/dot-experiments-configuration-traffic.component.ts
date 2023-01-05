@@ -1,10 +1,10 @@
-import { ChangeDetectionStrategy, Component, Input } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { CardModule } from 'primeng/card';
+import { ChangeDetectionStrategy, Component, Input } from '@angular/core';
+import { TrafficProportionTypes } from '@dotcms/dotcms-models';
+import { DotIconModule } from '@dotcms/ui';
 import { DotMessagePipeModule } from '@pipes/dot-message/dot-message-pipe.module';
 import { ButtonModule } from 'primeng/button';
-import { DotIconModule } from '@dotcms/ui';
-import { TrafficProportionTypes } from '@dotcms/dotcms-models';
+import { CardModule } from 'primeng/card';
 
 @Component({
     selector: 'dot-experiments-configuration-traffic',

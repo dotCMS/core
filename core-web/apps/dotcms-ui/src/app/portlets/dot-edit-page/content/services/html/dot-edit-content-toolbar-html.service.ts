@@ -1,8 +1,7 @@
 import { Injectable } from '@angular/core';
-import { DotMessageService } from '@dotcms/data-access';
-import { DotDOMHtmlUtilService } from './dot-dom-html-util.service';
-import { DotLicenseService } from '@dotcms/data-access';
+import { DotLicenseService, DotMessageService } from '@dotcms/data-access';
 import { take } from 'rxjs/operators';
+import { DotDOMHtmlUtilService } from './dot-dom-html-util.service';
 
 interface DotEditPopupMenuItem {
     label: string;

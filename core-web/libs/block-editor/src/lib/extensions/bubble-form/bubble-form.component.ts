@@ -1,10 +1,10 @@
 import {
     Component,
+    ElementRef,
     EventEmitter,
     Output,
-    ElementRef,
-    ViewChildren,
-    QueryList
+    QueryList,
+    ViewChildren
 } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { DynamicControl } from './model';

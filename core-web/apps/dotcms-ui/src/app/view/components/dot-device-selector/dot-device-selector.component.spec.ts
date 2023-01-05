@@ -4,21 +4,20 @@
 
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 
-import { DotDeviceSelectorComponent } from './dot-device-selector.component';
 import { Component, CUSTOM_ELEMENTS_SCHEMA, DebugElement } from '@angular/core';
-import { DotDevicesService } from '@dotcms/data-access';
+import { By } from '@angular/platform-browser';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
-import { DotMessageService } from '@dotcms/data-access';
+import { DotMessagePipe } from '@dotcms/app/view/pipes';
+import { DotDevicesService, DotMessageService } from '@dotcms/data-access';
+import { DotDevice } from '@dotcms/dotcms-models';
+import { DotIconModule } from '@dotcms/ui';
 import {
     DotDevicesServiceMock,
     mockDotDevices,
     MockDotMessageService
 } from '@dotcms/utils-testing';
-import { By } from '@angular/platform-browser';
-import { DotDevice } from '@dotcms/dotcms-models';
-import { DotIconModule } from '@dotcms/ui';
-import { DotMessagePipe } from '@dotcms/app/view/pipes';
 import { of } from 'rxjs';
+import { DotDeviceSelectorComponent } from './dot-device-selector.component';
 
 @Component({
     selector: 'dot-test-host-component',

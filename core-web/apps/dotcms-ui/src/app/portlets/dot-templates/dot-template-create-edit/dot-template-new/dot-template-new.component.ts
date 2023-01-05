@@ -3,9 +3,9 @@ import { take } from 'rxjs/operators';
 
 import { DialogService } from 'primeng/dynamicdialog';
 
-import { DotTemplateSelectorComponent } from '@portlets/dot-templates/dot-template-list/components/dot-template-selector/dot-template-selector.component';
-import { DotMessageService } from '@dotcms/data-access';
 import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
+import { DotMessageService } from '@dotcms/data-access';
+import { DotTemplateSelectorComponent } from '@portlets/dot-templates/dot-template-list/components/dot-template-selector/dot-template-selector.component';
 
 @Component({
     selector: 'dot-dot-template-new',

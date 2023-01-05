@@ -1,12 +1,12 @@
-import { Component, OnInit, EventEmitter, Output } from '@angular/core';
+import { Component, EventEmitter, OnInit, Output } from '@angular/core';
 import { PaginatorService } from '@dotcms/data-access';
-import { of as observableOf, Observable } from 'rxjs';
-import { map, flatMap, toArray, switchMap } from 'rxjs/operators';
-import { DotRelationshipsPropertyValue } from '../model/dot-relationships-property-value.model';
+import { Observable, of as observableOf } from 'rxjs';
+import { flatMap, map, switchMap, toArray } from 'rxjs/operators';
+import { DotRelationshipCardinality } from '../model/dot-relationship-cardinality.model';
 import { DotRelationship } from '../model/dot-relationship.model';
+import { DotRelationshipsPropertyValue } from '../model/dot-relationships-property-value.model';
 import { DotEditContentTypeCacheService } from '../services/dot-edit-content-type-cache.service';
 import { DotRelationshipService } from '../services/dot-relationship.service';
-import { DotRelationshipCardinality } from '../model/dot-relationship-cardinality.model';
 
 /**
  *Cardinalities sorted by id

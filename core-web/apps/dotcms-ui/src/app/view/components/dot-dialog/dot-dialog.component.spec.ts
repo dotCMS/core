@@ -1,11 +1,11 @@
 import { Component, DebugElement } from '@angular/core';
 import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
-import { DotDialogActions, DotDialogComponent } from './dot-dialog.component';
-import { UiDotIconButtonModule } from '../_common/dot-icon-button/dot-icon-button.module';
+import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { UiDotIconButtonComponent } from '@components/_common/dot-icon-button/dot-icon-button.component';
 import { ButtonModule } from 'primeng/button';
-import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
+import { UiDotIconButtonModule } from '../_common/dot-icon-button/dot-icon-button.module';
+import { DotDialogActions, DotDialogComponent } from './dot-dialog.component';
 
 const dispatchKeydownEvent = (key: string, meta = false, alt = false) => {
     const event = new KeyboardEvent('keydown', {

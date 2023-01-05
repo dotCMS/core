@@ -1,10 +1,10 @@
 import { HttpErrorResponse } from '@angular/common/http';
-import { CoreWebService } from '@dotcms/dotcms-js';
 import { Injectable } from '@angular/core';
-import { Subject, Observable, of } from 'rxjs';
-import { mergeMap, map, filter, catchError, pluck, take } from 'rxjs/operators';
-import { DotCMSContentlet, DotCMSContentType } from '@dotcms/dotcms-models';
 import { DotHttpErrorManagerService } from '@dotcms/app/api/services/dot-http-error-manager/dot-http-error-manager.service';
+import { CoreWebService } from '@dotcms/dotcms-js';
+import { DotCMSContentlet, DotCMSContentType } from '@dotcms/dotcms-models';
+import { Observable, of, Subject } from 'rxjs';
+import { catchError, filter, map, mergeMap, pluck, take } from 'rxjs/operators';
 
 interface DotAddEditEvents {
     load?: ($event: Event) => void;

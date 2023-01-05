@@ -1,15 +1,15 @@
-import { Observable } from 'rxjs';
 import { Injectable } from '@angular/core';
 import { Resolve } from '@angular/router';
 import { DotCurrentUserService } from '@dotcms/data-access';
+import { Observable } from 'rxjs';
 
-import { map, mergeMap } from 'rxjs/operators';
 import {
     DotCurrentUser,
     DotPermissionsType,
-    UserPermissions,
-    PermissionsType
+    PermissionsType,
+    UserPermissions
 } from '@dotcms/dotcms-models';
+import { map, mergeMap } from 'rxjs/operators';
 
 /**
  * Returns user's data and permissions

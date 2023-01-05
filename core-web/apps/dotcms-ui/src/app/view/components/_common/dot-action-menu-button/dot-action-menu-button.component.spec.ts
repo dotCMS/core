@@ -1,12 +1,12 @@
-import { UiDotIconButtonTooltipModule } from '../dot-icon-button-tooltip/dot-icon-button-tooltip.module';
-import { DotActionMenuButtonComponent } from './dot-action-menu-button.component';
+import { DebugElement } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
-import { DebugElement } from '@angular/core';
-import { DotActionMenuItem } from '@shared/models/dot-action-menu/dot-action-menu-item.model';
-import { DotMenuModule } from '../dot-menu/dot-menu.module';
-import { dotcmsContentTypeBasicMock } from '@dotcms/utils-testing';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
+import { dotcmsContentTypeBasicMock } from '@dotcms/utils-testing';
+import { DotActionMenuItem } from '@shared/models/dot-action-menu/dot-action-menu-item.model';
+import { UiDotIconButtonTooltipModule } from '../dot-icon-button-tooltip/dot-icon-button-tooltip.module';
+import { DotMenuModule } from '../dot-menu/dot-menu.module';
+import { DotActionMenuButtonComponent } from './dot-action-menu-button.component';
 
 describe('ActionMenuButtonComponent', () => {
     let comp: DotActionMenuButtonComponent;

@@ -4,7 +4,7 @@ import { DotAccountService } from '@dotcms/app/api/services/dot-account-service'
 import { DotCurrentUser, DotPermissionsType, PermissionsType } from '@dotcms/dotcms-models';
 
 import { Observable } from 'rxjs';
-import { pluck, take, map } from 'rxjs/operators';
+import { map, pluck, take } from 'rxjs/operators';
 
 @Component({
     selector: 'dot-starter',

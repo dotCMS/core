@@ -1,10 +1,9 @@
-import { NgModule } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { NgModule } from '@angular/core';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 
 // DotCMS JS
-import { LoggerService } from '@dotcms/dotcms-js';
-import { StringUtils } from '@dotcms/dotcms-js';
+import { LoggerService, StringUtils } from '@dotcms/dotcms-js';
 
 // Directives
 import { EditorDirective } from './shared/directives';
@@ -18,17 +17,17 @@ import {
     BubbleLinkFormComponent,
     BubbleMenuButtonComponent,
     BubbleMenuComponent,
+    DotImageService,
     DragHandlerComponent,
     FormActionsComponent,
     LoaderComponent,
-    DotImageService,
     SuggestionPageComponent
 } from './extensions';
 
 // Shared
-import { SharedModule } from './shared/shared.module';
-import { PrimengModule } from './shared/primeng.module';
 import { BubbleFormComponent } from './extensions/bubble-form/bubble-form.component';
+import { PrimengModule } from './shared/primeng.module';
+import { SharedModule } from './shared/shared.module';
 
 //Editor
 import { DotBlockEditorComponent } from './components/dot-block-editor/dot-block-editor.component';

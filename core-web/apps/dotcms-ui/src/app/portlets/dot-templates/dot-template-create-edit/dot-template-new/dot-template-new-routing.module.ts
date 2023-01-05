@@ -1,5 +1,5 @@
 import { NgModule } from '@angular/core';
-import { Routes, RouterModule } from '@angular/router';
+import { RouterModule, Routes } from '@angular/router';
 import { DotTemplateGuard } from '@portlets/dot-templates/dot-template-create-edit/dot-template-new/guards/dot-template.guard';
 import { DotTemplateNewComponent } from './dot-template-new.component';
 

@@ -3,7 +3,7 @@ import { DotCategory } from '@dotcms/app/shared/models/dot-categories/dot-catego
 import { LazyLoadEvent } from 'primeng/api';
 import { Table } from 'primeng/table';
 import { Observable } from 'rxjs';
-import { DotCategoriesListStore, DotCategoriesListState } from './store/dot-categories-list-store';
+import { DotCategoriesListState, DotCategoriesListStore } from './store/dot-categories-list-store';
 
 @Component({
     selector: 'dot-categories-list',

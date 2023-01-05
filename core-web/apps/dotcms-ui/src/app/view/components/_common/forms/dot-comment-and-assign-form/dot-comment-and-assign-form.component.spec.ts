@@ -2,19 +2,19 @@
 
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 
-import { DotCommentAndAssignFormComponent } from './dot-comment-and-assign-form.component';
-import { DotRolesService } from '@dotcms/data-access';
+import { HttpClientTestingModule } from '@angular/common/http/testing';
+import { Component, DebugElement, Input } from '@angular/core';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
-import { InputTextareaModule } from 'primeng/inputtextarea';
-import { Dropdown, DropdownModule } from 'primeng/dropdown';
-import { DotPipesModule } from '@pipes/dot-pipes.module';
+import { By } from '@angular/platform-browser';
+import { DotFormatDateService } from '@dotcms/app/api/services/dot-format-date-service';
+import { DotRolesService } from '@dotcms/data-access';
 import { CoreWebService } from '@dotcms/dotcms-js';
 import { CoreWebServiceMock, mockProcessedRoles } from '@dotcms/utils-testing';
-import { DotFormatDateService } from '@dotcms/app/api/services/dot-format-date-service';
-import { Component, DebugElement, Input } from '@angular/core';
-import { By } from '@angular/platform-browser';
+import { DotPipesModule } from '@pipes/dot-pipes.module';
+import { Dropdown, DropdownModule } from 'primeng/dropdown';
+import { InputTextareaModule } from 'primeng/inputtextarea';
 import { of } from 'rxjs';
-import { HttpClientTestingModule } from '@angular/common/http/testing';
+import { DotCommentAndAssignFormComponent } from './dot-comment-and-assign-form.component';
 
 @Component({
     selector: 'dot-test-host-component',

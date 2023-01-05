@@ -4,11 +4,11 @@ import {
     NodeView,
     NodeViewProps,
     NodeViewRenderer,
-    NodeViewRendererProps,
-    NodeViewRendererOptions
+    NodeViewRendererOptions,
+    NodeViewRendererProps
 } from '@tiptap/core';
-import type { Decoration } from 'prosemirror-view';
 import type { Node as ProseMirrorNode } from 'prosemirror-model';
+import type { Decoration } from 'prosemirror-view';
 
 import { AngularRenderer } from './AngularRenderer';
 

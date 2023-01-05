@@ -1,4 +1,4 @@
-import { Component, OnInit, ViewChild, forwardRef, Output, EventEmitter } from '@angular/core';
+import { Component, EventEmitter, forwardRef, OnInit, Output, ViewChild } from '@angular/core';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
 
 import { DotEventsService } from '@dotcms/data-access';

@@ -1,17 +1,17 @@
-import { catchError, map, pluck, take } from 'rxjs/operators';
-import { Injectable } from '@angular/core';
 import { HttpErrorResponse } from '@angular/common/http';
+import { Injectable } from '@angular/core';
+import { catchError, map, pluck, take } from 'rxjs/operators';
 
-import { Observable } from 'rxjs';
 import { CoreWebService, DotRequestOptionsArgs } from '@dotcms/dotcms-js';
+import { Observable } from 'rxjs';
 
-import { DotHttpErrorManagerService } from '@services/dot-http-error-manager/dot-http-error-manager.service';
 import {
-    DotContainerEntity,
-    DotContainerPayload,
     DotActionBulkResult,
-    DotContainer
+    DotContainer,
+    DotContainerEntity,
+    DotContainerPayload
 } from '@dotcms/dotcms-models';
+import { DotHttpErrorManagerService } from '@services/dot-http-error-manager/dot-http-error-manager.service';
 
 export const CONTAINER_API_URL = '/api/v1/containers/';
 

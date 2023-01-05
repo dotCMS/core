@@ -1,9 +1,8 @@
-import { Observable, of } from 'rxjs';
 import { Injectable } from '@angular/core';
-import { Resolve, ActivatedRouteSnapshot } from '@angular/router';
-import { take, switchMap } from 'rxjs/operators';
-import { DotLicenseService } from '@dotcms/data-access';
-import { DotMessageService } from '@dotcms/data-access';
+import { ActivatedRouteSnapshot, Resolve } from '@angular/router';
+import { DotLicenseService, DotMessageService } from '@dotcms/data-access';
+import { Observable, of } from 'rxjs';
+import { switchMap, take } from 'rxjs/operators';
 
 export interface DotUnlicensedPortlet {
     title: string;

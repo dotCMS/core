@@ -1,10 +1,10 @@
 import { Injectable } from '@angular/core';
 import { Resolve } from '@angular/router';
+import { PushPublishService } from '@dotcms/app/api/services/push-publish/push-publish.service';
+import { DotLicenseService } from '@dotcms/data-access';
+import { DotEnvironment } from '@models/dot-environment/dot-environment';
 import { forkJoin, Observable } from 'rxjs';
 import { map, take } from 'rxjs/operators';
-import { DotEnvironment } from '@models/dot-environment/dot-environment';
-import { DotLicenseService } from '@dotcms/data-access';
-import { PushPublishService } from '@dotcms/app/api/services/push-publish/push-publish.service';
 
 @Injectable()
 export class DotTemplateListResolver implements Resolve<[boolean, boolean]> {

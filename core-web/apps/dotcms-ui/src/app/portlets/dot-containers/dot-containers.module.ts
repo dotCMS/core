@@ -1,8 +1,8 @@
-import { NgModule } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { NgModule } from '@angular/core';
 
-import { DotContainersRoutingModule } from './dot-containers-routing.module';
 import { DotContainersService } from '@dotcms/app/api/services/dot-containers/dot-containers.service';
+import { DotContainersRoutingModule } from './dot-containers-routing.module';
 
 @NgModule({
     imports: [CommonModule, DotContainersRoutingModule],

@@ -3,10 +3,9 @@ import {
     DotContentCompareState,
     DotContentCompareStore
 } from '@components/dot-content-compare/store/dot-content-compare.store';
-import { Observable } from 'rxjs';
-import { DotAlertConfirmService } from '@dotcms/data-access';
-import { DotMessageService } from '@dotcms/data-access';
 import { DotIframeService } from '@components/_common/iframe/service/dot-iframe/dot-iframe.service';
+import { DotAlertConfirmService, DotMessageService } from '@dotcms/data-access';
+import { Observable } from 'rxjs';
 
 export interface DotContentCompareEvent {
     inode: string;

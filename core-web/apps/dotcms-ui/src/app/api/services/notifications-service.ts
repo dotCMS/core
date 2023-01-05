@@ -1,9 +1,8 @@
 import { Injectable } from '@angular/core';
-import { CoreWebService } from '@dotcms/dotcms-js';
+import { CoreWebService, DotCMSResponse } from '@dotcms/dotcms-js';
+import { DotNotificationResponse } from '@models/notifications';
 import { Observable } from 'rxjs';
 import { pluck } from 'rxjs/operators';
-import { DotCMSResponse } from '@dotcms/dotcms-js';
-import { DotNotificationResponse } from '@models/notifications';
 
 interface DotNotificationServiceUrls {
     dismissNotificationsUrl: string;

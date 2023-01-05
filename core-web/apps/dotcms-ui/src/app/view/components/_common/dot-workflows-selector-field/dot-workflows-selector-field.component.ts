@@ -1,8 +1,8 @@
+import { Component, forwardRef, OnInit } from '@angular/core';
+import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
 import { DotWorkflowService } from '@dotcms/data-access';
-import { Observable } from 'rxjs';
 import { DotCMSWorkflow } from '@dotcms/dotcms-models';
-import { Component, OnInit, forwardRef } from '@angular/core';
-import { NG_VALUE_ACCESSOR, ControlValueAccessor } from '@angular/forms';
+import { Observable } from 'rxjs';
 
 @Component({
     selector: 'dot-workflows-selector-field',

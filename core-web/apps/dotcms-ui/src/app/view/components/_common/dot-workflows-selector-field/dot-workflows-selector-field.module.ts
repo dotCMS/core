@@ -1,9 +1,9 @@
-import { MultiSelectModule } from 'primeng/multiselect';
-import { NgModule } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { DotWorkflowsSelectorFieldComponent } from './dot-workflows-selector-field.component';
+import { NgModule } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { DotPipesModule } from '@pipes/dot-pipes.module';
+import { MultiSelectModule } from 'primeng/multiselect';
+import { DotWorkflowsSelectorFieldComponent } from './dot-workflows-selector-field.component';
 
 @NgModule({
     imports: [CommonModule, MultiSelectModule, FormsModule, DotPipesModule],

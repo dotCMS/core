@@ -1,11 +1,11 @@
 import { Injectable } from '@angular/core';
+import { DotCMSContentlet, DotCurrentUser, ESContent } from '@dotcms/dotcms-models';
 import { ComponentStore, tapResponse } from '@ngrx/component-store';
 import { forkJoin, Observable } from 'rxjs';
 import { switchMap, take } from 'rxjs/operators';
-import { DotCMSContentlet, DotCurrentUser, ESContent } from '@dotcms/dotcms-models';
 
-import { DotHttpErrorManagerService } from '@dotcms/app/api/services/dot-http-error-manager/dot-http-error-manager.service';
 import { HttpErrorResponse } from '@angular/common/http';
+import { DotHttpErrorManagerService } from '@dotcms/app/api/services/dot-http-error-manager/dot-http-error-manager.service';
 import { DotCurrentUserService, DotESContentService, ESOrderDirection } from '@dotcms/data-access';
 
 export interface DotPagesState {

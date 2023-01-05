@@ -1,8 +1,8 @@
+import { CommonModule } from '@angular/common';
 import { ChangeDetectionStrategy, Component, EventEmitter, Input, Output } from '@angular/core';
+import { RouterLinkWithHref } from '@angular/router';
 import { DotIconModule } from '@dotcms/ui';
 import { SkeletonModule } from 'primeng/skeleton';
-import { CommonModule } from '@angular/common';
-import { RouterLinkWithHref } from '@angular/router';
 
 @Component({
     standalone: true,

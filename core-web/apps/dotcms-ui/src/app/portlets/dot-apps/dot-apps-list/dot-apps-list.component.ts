@@ -1,12 +1,12 @@
-import { Component, OnInit, ViewChild, ElementRef, OnDestroy } from '@angular/core';
-import { debounceTime, pluck, take, takeUntil } from 'rxjs/operators';
-import { fromEvent as observableFromEvent, Subject } from 'rxjs';
-import * as _ from 'lodash';
-import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
+import { Component, ElementRef, OnDestroy, OnInit, ViewChild } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 import { DotAppsService } from '@dotcms/app/api/services/dot-apps/dot-apps.service';
-import { DotAppsImportExportDialogComponent } from '../dot-apps-import-export-dialog/dot-apps-import-export-dialog.component';
+import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
 import { DotApps, DotAppsListResolverData } from '@dotcms/dotcms-models';
+import * as _ from 'lodash';
+import { fromEvent as observableFromEvent, Subject } from 'rxjs';
+import { debounceTime, pluck, take, takeUntil } from 'rxjs/operators';
+import { DotAppsImportExportDialogComponent } from '../dot-apps-import-export-dialog/dot-apps-import-export-dialog.component';
 
 @Component({
     selector: 'dot-apps-list',

@@ -1,5 +1,5 @@
-import { NgModule } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { NgModule } from '@angular/core';
 import { DotMaxlengthDirective } from '@directives/dot-maxlength/dot-maxlength.directive';
 
 @NgModule({

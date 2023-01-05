@@ -1,9 +1,8 @@
-import { DebugElement } from '@angular/core';
-import { waitForAsync, ComponentFixture, TestBed } from '@angular/core/testing';
+import { CommonModule } from '@angular/common';
+import { Component, DebugElement, Input } from '@angular/core';
+import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import { DotAvatarComponent } from './dot-avatar.component';
-import { CommonModule } from '@angular/common';
-import { Input, Component } from '@angular/core';
 
 @Component({
     selector: 'dot-test-component',
@@ -30,18 +29,16 @@ describe('DotAvatarComponent', () => {
     let fixture: ComponentFixture<HostTestComponent>;
     let de: DebugElement;
 
-    beforeEach(
-        waitForAsync(() => {
-            TestBed.configureTestingModule({
-                declarations: [HostTestComponent, DotAvatarComponent],
-                imports: [CommonModule]
-            }).compileComponents();
+    beforeEach(waitForAsync(() => {
+        TestBed.configureTestingModule({
+            declarations: [HostTestComponent, DotAvatarComponent],
+            imports: [CommonModule]
+        }).compileComponents();
 
-            fixture = TestBed.createComponent(HostTestComponent);
-            de = fixture.debugElement;
-            component = fixture.debugElement.query(By.css('dot-avatar')).componentInstance;
-        })
-    );
+        fixture = TestBed.createComponent(HostTestComponent);
+        de = fixture.debugElement;
+        component = fixture.debugElement.query(By.css('dot-avatar')).componentInstance;
+    }));
 
     it('should not have a image nor dot when url is null', () => {
         fixture.detectChanges();

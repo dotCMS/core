@@ -1,11 +1,11 @@
-import { Meta } from '@storybook/angular/types-6-0';
-import { moduleMetadata } from '@storybook/angular';
-import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
-import { RippleComponent } from './Ripple.component';
 import { BrowserModule } from '@angular/platform-browser';
+import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
+import { moduleMetadata } from '@storybook/angular';
+import { Meta } from '@storybook/angular/types-6-0';
+import { RippleComponent } from './Ripple.component';
 
-import { RippleModule } from 'primeng/ripple';
 import { ButtonModule } from 'primeng/button';
+import { RippleModule } from 'primeng/ripple';
 export default {
     title: 'PrimeNG/Misc/Ripple',
     parameters: {

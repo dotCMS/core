@@ -1,29 +1,29 @@
 /* eslint-disable @typescript-eslint/no-empty-function */
 
-import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { DebugElement } from '@angular/core';
+import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
-import { RouterTestingModule } from '@angular/router/testing';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { NavigationEnd } from '@angular/router';
+import { RouterTestingModule } from '@angular/router/testing';
 
-import { DotNavigationComponent } from './dot-navigation.component';
-import { DotNavIconModule } from './components/dot-nav-icon/dot-nav-icon.module';
-import { DotNavigationService } from './services/dot-navigation.service';
 import { DotMenuService } from '@dotcms/app/api/services/dot-menu.service';
-import { DotSubNavComponent } from './components/dot-sub-nav/dot-sub-nav.component';
-import { DotNavItemComponent } from './components/dot-nav-item/dot-nav-item.component';
-import { DotIconModule } from '@dotcms/ui';
 import { LoginService } from '@dotcms/dotcms-js';
+import { DotIconModule } from '@dotcms/ui';
+import { DotNavIconModule } from './components/dot-nav-icon/dot-nav-icon.module';
+import { DotNavItemComponent } from './components/dot-nav-item/dot-nav-item.component';
+import { DotSubNavComponent } from './components/dot-sub-nav/dot-sub-nav.component';
+import { DotNavigationComponent } from './dot-navigation.component';
+import { DotNavigationService } from './services/dot-navigation.service';
 
+import { IframeOverlayService } from '@components/_common/iframe/service/iframe-overlay.service';
+import { LoginServiceMock } from '@dotcms/utils-testing';
 import { DotMenu } from '@models/navigation';
+import { DotRandomIconPipeModule } from '@pipes/dot-radom-icon/dot-random-icon.pipe.module';
+import { TooltipModule } from 'primeng/tooltip';
 import { BehaviorSubject, Observable } from 'rxjs';
 import { skip } from 'rxjs/operators';
 import { dotMenuMock, dotMenuMock1 } from './services/dot-navigation.service.spec';
-import { TooltipModule } from 'primeng/tooltip';
-import { IframeOverlayService } from '@components/_common/iframe/service/iframe-overlay.service';
-import { LoginServiceMock } from '@dotcms/utils-testing';
-import { DotRandomIconPipeModule } from '@pipes/dot-radom-icon/dot-random-icon.pipe.module';
 
 class FakeNavigationService {
     _routeEvents: BehaviorSubject<NavigationEnd> = new BehaviorSubject(

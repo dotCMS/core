@@ -8,10 +8,14 @@ import {
     ViewChild
 } from '@angular/core';
 
-import { switchMap, take } from 'rxjs/operators';
 import { from, Observable, of } from 'rxjs';
+import { switchMap, take } from 'rxjs/operators';
 
-import { SelectItem } from 'primeng/api';
+import {
+    DotAlertConfirmService,
+    DotMessageService,
+    DotPersonalizeService
+} from '@dotcms/data-access';
 import {
     DotPageMode,
     DotPageRenderOptions,
@@ -20,11 +24,7 @@ import {
 } from '@dotcms/dotcms-models';
 import { DotEditPageLockInfoComponent } from '@portlets/dot-edit-page/content/components/dot-edit-page-state-controller/components/dot-edit-page-lock-info/dot-edit-page-lock-info.component';
 import { DotPageStateService } from '@portlets/dot-edit-page/content/services/dot-page-state/dot-page-state.service';
-import {
-    DotAlertConfirmService,
-    DotMessageService,
-    DotPersonalizeService
-} from '@dotcms/data-access';
+import { SelectItem } from 'primeng/api';
 
 enum DotConfirmationType {
     LOCK,

@@ -1,20 +1,20 @@
 import {
     Component,
-    Output,
     EventEmitter,
     Input,
-    SimpleChanges,
-    ViewChild,
     OnChanges,
+    OnDestroy,
     OnInit,
-    OnDestroy
+    Output,
+    SimpleChanges,
+    ViewChild
 } from '@angular/core';
-import { UntypedFormGroup, UntypedFormBuilder, AbstractControl } from '@angular/forms';
-import { DotCMSContentTypeField, DotCMSContentType } from '@dotcms/dotcms-models';
-import { FieldPropertyService } from '../service';
-import { takeUntil } from 'rxjs/operators';
+import { AbstractControl, UntypedFormBuilder, UntypedFormGroup } from '@angular/forms';
+import { DotCMSContentType, DotCMSContentTypeField } from '@dotcms/dotcms-models';
 import * as _ from 'lodash';
 import { Subject } from 'rxjs';
+import { takeUntil } from 'rxjs/operators';
+import { FieldPropertyService } from '../service';
 
 @Component({
     selector: 'dot-content-type-fields-properties-form',

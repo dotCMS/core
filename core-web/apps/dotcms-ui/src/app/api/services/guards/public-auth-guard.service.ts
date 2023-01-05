@@ -1,8 +1,8 @@
-import { map } from 'rxjs/operators';
 import { Injectable } from '@angular/core';
-import { CanActivate, ActivatedRouteSnapshot, RouterStateSnapshot } from '@angular/router';
-import { Observable } from 'rxjs';
+import { ActivatedRouteSnapshot, CanActivate, RouterStateSnapshot } from '@angular/router';
 import { LoginService } from '@dotcms/dotcms-js';
+import { Observable } from 'rxjs';
+import { map } from 'rxjs/operators';
 import { DotRouterService } from '../dot-router/dot-router.service';
 
 /**

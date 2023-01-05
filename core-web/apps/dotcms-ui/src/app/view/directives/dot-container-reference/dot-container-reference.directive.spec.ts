@@ -2,11 +2,11 @@
 import { DotContainerReferenceDirective } from './dot-container-reference.directive';
 
 import {
+    ComponentRef,
     ElementRef,
+    EmbeddedViewRef,
     Injector,
     ViewContainerRef,
-    ComponentRef,
-    EmbeddedViewRef,
     ViewRef
 } from '@angular/core';
 

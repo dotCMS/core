@@ -3,7 +3,7 @@ import { Injectable } from '@angular/core';
 
 import { CoreWebService } from '@dotcms/dotcms-js';
 import { Observable } from 'rxjs';
-import { pluck, catchError, take, map } from 'rxjs/operators';
+import { catchError, map, pluck, take } from 'rxjs/operators';
 import { DotHttpErrorManagerService } from '../dot-http-error-manager/dot-http-error-manager.service';
 
 export interface DotCMSTempFile {

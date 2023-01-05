@@ -1,8 +1,8 @@
 import { NgGridItemConfig } from '@dotcms/dot-layout-grid';
-import { DotLayoutGridBox } from './dot-layout-grid-box.model';
 import * as _ from 'lodash';
-import { DotLayoutGridRow } from './dot-layout-grid-row.model';
 import { DotContainerColumnBox } from './dot-container-column-box.model';
+import { DotLayoutGridBox } from './dot-layout-grid-box.model';
+import { DotLayoutGridRow } from './dot-layout-grid-row.model';
 
 export const DOT_LAYOUT_GRID_MAX_COLUMNS = 12;
 

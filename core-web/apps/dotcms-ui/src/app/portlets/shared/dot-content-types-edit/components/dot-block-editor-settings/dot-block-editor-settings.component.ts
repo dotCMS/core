@@ -1,16 +1,16 @@
+import { HttpErrorResponse } from '@angular/common/http';
 import {
+    ChangeDetectionStrategy,
     Component,
     EventEmitter,
     Input,
     OnDestroy,
     OnInit,
-    Output,
-    ChangeDetectionStrategy
+    Output
 } from '@angular/core';
-import { FormGroup, FormBuilder } from '@angular/forms';
-import { HttpErrorResponse } from '@angular/common/http';
+import { FormBuilder, FormGroup } from '@angular/forms';
 
-import { forkJoin, Subject, of } from 'rxjs';
+import { forkJoin, of, Subject } from 'rxjs';
 import { catchError, take, takeUntil } from 'rxjs/operators';
 
 // Services
@@ -18,10 +18,10 @@ import { DotHttpErrorManagerService } from '@services/dot-http-error-manager/dot
 import { DotFieldVariablesService } from '../fields/dot-content-type-fields-variables/services/dot-field-variables.service';
 
 // Interfaces
-import { DotCMSContentTypeField, DotFieldVariable } from '@dotcms/dotcms-models';
+import { OnChanges, SimpleChanges } from '@angular/core';
 import { DotDialogActions } from '@components/dot-dialog/dot-dialog.component';
 import { DotMessageService } from '@dotcms/data-access';
-import { OnChanges, SimpleChanges } from '@angular/core';
+import { DotCMSContentTypeField, DotFieldVariable } from '@dotcms/dotcms-models';
 
 export const BLOCK_EDITOR_BLOCKS = [
     { label: 'Block Quote', code: 'blockquote' },

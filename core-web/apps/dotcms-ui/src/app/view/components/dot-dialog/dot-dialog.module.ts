@@ -1,9 +1,9 @@
-import { NgModule } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { DotDialogComponent } from './dot-dialog.component';
-import { UiDotIconButtonModule } from '../_common/dot-icon-button/dot-icon-button.module';
+import { NgModule } from '@angular/core';
 import { ButtonModule } from 'primeng/button';
 import { DialogModule } from 'primeng/dialog';
+import { UiDotIconButtonModule } from '../_common/dot-icon-button/dot-icon-button.module';
+import { DotDialogComponent } from './dot-dialog.component';
 
 @NgModule({
     imports: [CommonModule, ButtonModule, CommonModule, DialogModule, UiDotIconButtonModule],

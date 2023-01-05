@@ -1,11 +1,11 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { DotMessageDisplayService } from './dot-message-display.service';
-import { DotMessage, DotMessageSeverity, DotMessageType } from '../model';
-import { DotcmsEventsService } from '@dotcms/dotcms-js';
-import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
 import { TestBed } from '@angular/core/testing';
+import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
+import { DotcmsEventsService } from '@dotcms/dotcms-js';
 import { DotcmsEventsServiceMock } from '@dotcms/utils-testing';
+import { DotMessage, DotMessageSeverity, DotMessageType } from '../model';
+import { DotMessageDisplayService } from './dot-message-display.service';
 
 describe('DotMessageDisplayService', () => {
     const mockDotcmsEventsService: DotcmsEventsServiceMock = new DotcmsEventsServiceMock();

@@ -12,11 +12,11 @@ import {
 import { SafeUrl } from '@angular/platform-browser';
 import { DotCMSContentlet, DotCMSContentType } from '@dotcms/dotcms-models';
 
-import { map, take } from 'rxjs/operators';
 import { MenuItem } from 'primeng/api';
+import { map, take } from 'rxjs/operators';
 
-import { DotLanguageService, SuggestionsService, Languages } from '@dotcms/block-editor/services';
-import { DEFAULT_LANG_ID, suggestionOptions, SuggestionListComponent } from '@dotcms/block-editor';
+import { DEFAULT_LANG_ID, SuggestionListComponent, suggestionOptions } from '@dotcms/block-editor';
+import { DotLanguageService, Languages, SuggestionsService } from '@dotcms/block-editor/services';
 
 export interface SuggestionsCommandProps {
     payload?: DotCMSContentlet;

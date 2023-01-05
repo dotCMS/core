@@ -1,7 +1,7 @@
-import { NgModule } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { DotLoadingIndicatorComponent } from './dot-loading-indicator.component';
+import { NgModule } from '@angular/core';
 import { DotLoadingIndicatorService } from '@dotcms/utils';
+import { DotLoadingIndicatorComponent } from './dot-loading-indicator.component';
 
 import { DotSpinnerModule } from '@dotcms/ui';
 

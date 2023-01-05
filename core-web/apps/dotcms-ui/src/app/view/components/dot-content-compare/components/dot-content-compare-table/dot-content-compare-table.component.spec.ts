@@ -1,23 +1,23 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { DotContentCompareTableComponent } from './dot-content-compare-table.component';
-import { MockDotMessageService } from '@dotcms/utils-testing';
-import { DotMessageService } from '@dotcms/data-access';
 import { Component, DebugElement, EventEmitter, Input, Output } from '@angular/core';
+import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { FormsModule } from '@angular/forms';
+import { By } from '@angular/platform-browser';
+import { DotContentComparePreviewFieldComponent } from '@components/dot-content-compare/components/fields/dot-content-compare-preview-field/dot-content-compare-preview-field.component';
 import { DotContentCompareTableData } from '@components/dot-content-compare/store/dot-content-compare.store';
-import { TableModule } from 'primeng/table';
+import { DotFormatDateService } from '@dotcms/app/api/services/dot-format-date-service';
+import { DotMessageService } from '@dotcms/data-access';
+import { DotcmsConfigService } from '@dotcms/dotcms-js';
+import { MockDotMessageService } from '@dotcms/utils-testing';
+import { DotDiffPipeModule } from '@pipes/dot-diff/dot-diff.pipe.module';
+import { DotMessagePipeModule } from '@pipes/dot-message/dot-message-pipe.module';
 import { Dropdown, DropdownModule } from 'primeng/dropdown';
 import { SelectButton, SelectButtonModule } from 'primeng/selectbutton';
-import { DotDiffPipeModule } from '@pipes/dot-diff/dot-diff.pipe.module';
-import { FormsModule } from '@angular/forms';
-import { DotContentComparePreviewFieldComponent } from '@components/dot-content-compare/components/fields/dot-content-compare-preview-field/dot-content-compare-preview-field.component';
-import { By } from '@angular/platform-browser';
-import { DotMessagePipeModule } from '@pipes/dot-message/dot-message-pipe.module';
-import { DotcmsConfigService } from '@dotcms/dotcms-js';
-import { DotFormatDateService } from '@dotcms/app/api/services/dot-format-date-service';
+import { TableModule } from 'primeng/table';
 import { of } from 'rxjs';
 import { DotTransformVersionLabelPipe } from '../../pipes/dot-transform-version-label.pipe';
+import { DotContentCompareTableComponent } from './dot-content-compare-table.component';
 
 @Component({
     selector: 'dot-test-host-component',

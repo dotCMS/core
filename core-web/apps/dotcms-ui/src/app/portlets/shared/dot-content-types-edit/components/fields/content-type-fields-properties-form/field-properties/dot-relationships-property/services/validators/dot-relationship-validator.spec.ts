@@ -1,5 +1,5 @@
-import { validateRelationship } from './dot-relationship-validator';
 import { UntypedFormControl } from '@angular/forms';
+import { validateRelationship } from './dot-relationship-validator';
 
 describe('validateRelationship', () => {
     it('should return true if both cardinality and velocityVarare set', () => {

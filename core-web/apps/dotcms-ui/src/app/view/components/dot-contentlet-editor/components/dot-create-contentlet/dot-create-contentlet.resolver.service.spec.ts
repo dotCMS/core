@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-empty-function */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { waitForAsync, TestBed } from '@angular/core/testing';
+import { TestBed, waitForAsync } from '@angular/core/testing';
 import { ActivatedRouteSnapshot } from '@angular/router';
 import { DotContentletEditorService } from '@components/dot-contentlet-editor/services/dot-contentlet-editor.service';
 import { of } from 'rxjs';
@@ -21,21 +21,19 @@ describe('DotCreateContentletResolver', () => {
     let dotCreateContentletResolver: DotCreateContentletResolver;
     let dotContentletEditorService: DotContentletEditorService;
 
-    beforeEach(
-        waitForAsync(() => {
-            const testbed = TestBed.configureTestingModule({
-                providers: [
-                    DotCreateContentletResolver,
-                    {
-                        provide: DotContentletEditorService,
-                        useClass: DotContentletEditorServiceMock
-                    }
-                ]
-            });
-            dotCreateContentletResolver = testbed.inject(DotCreateContentletResolver);
-            dotContentletEditorService = testbed.inject(DotContentletEditorService);
-        })
-    );
+    beforeEach(waitForAsync(() => {
+        const testbed = TestBed.configureTestingModule({
+            providers: [
+                DotCreateContentletResolver,
+                {
+                    provide: DotContentletEditorService,
+                    useClass: DotContentletEditorServiceMock
+                }
+            ]
+        });
+        dotCreateContentletResolver = testbed.inject(DotCreateContentletResolver);
+        dotContentletEditorService = testbed.inject(DotContentletEditorService);
+    }));
 
     it('should get and return apps with configurations', () => {
         activatedRouteSnapshotMock.paramMap.get = () => '123';

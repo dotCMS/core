@@ -1,12 +1,12 @@
 import { Component, OnInit } from '@angular/core';
-import { DotApps, DotAppsSaveData, DotAppsSecrets } from '@dotcms/dotcms-models';
 import { ActivatedRoute } from '@angular/router';
-import { pluck, take } from 'rxjs/operators';
-import * as _ from 'lodash';
-import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
-import { DotAppsService } from '@dotcms/app/api/services/dot-apps/dot-apps.service';
-import { DotKeyValue } from '@shared/models/dot-key-value-ng/dot-key-value-ng.model';
 import { DotKeyValueUtil } from '@components/dot-key-value-ng/util/dot-key-value-util';
+import { DotAppsService } from '@dotcms/app/api/services/dot-apps/dot-apps.service';
+import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
+import { DotApps, DotAppsSaveData, DotAppsSecrets } from '@dotcms/dotcms-models';
+import { DotKeyValue } from '@shared/models/dot-key-value-ng/dot-key-value-ng.model';
+import * as _ from 'lodash';
+import { pluck, take } from 'rxjs/operators';
 
 @Component({
     selector: 'dot-apps-configuration-detail',

@@ -1,10 +1,10 @@
-import { Observable, of } from 'rxjs';
 import { Injectable } from '@angular/core';
-import { Resolve, RouterStateSnapshot, ActivatedRouteSnapshot } from '@angular/router';
-import { DotLicenseService } from '@dotcms/data-access';
-import { map, mergeMap, take } from 'rxjs/operators';
+import { ActivatedRouteSnapshot, Resolve, RouterStateSnapshot } from '@angular/router';
 import { DotAppsService } from '@dotcms/app/api/services/dot-apps/dot-apps.service';
-import { DotAppsListResolverData, DotApps } from '@dotcms/dotcms-models';
+import { DotLicenseService } from '@dotcms/data-access';
+import { DotApps, DotAppsListResolverData } from '@dotcms/dotcms-models';
+import { Observable, of } from 'rxjs';
+import { map, mergeMap, take } from 'rxjs/operators';
 
 /**
  * Returns apps list from the system

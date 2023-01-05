@@ -1,10 +1,10 @@
 import { Component, Input, OnInit } from '@angular/core';
-import { DialogService } from 'primeng/dynamicdialog';
-import { DotAddVariableComponent } from './dot-add-variable/dot-add-variable.component';
+import { FormArray, FormControl, FormGroup, Validators } from '@angular/forms';
 import { DotMessageService } from '@dotcms/data-access';
 import { DotCMSContentType } from '@dotcms/dotcms-models';
-import { FormArray, FormControl, FormGroup, Validators } from '@angular/forms';
 import { MenuItem } from 'primeng/api';
+import { DialogService } from 'primeng/dynamicdialog';
+import { DotAddVariableComponent } from './dot-add-variable/dot-add-variable.component';
 
 interface DotContainerContent extends DotCMSContentType {
     code: string;

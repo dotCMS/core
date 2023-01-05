@@ -9,18 +9,18 @@ import {
     Output,
     ViewChild
 } from '@angular/core';
-import { DotDialogActions } from '@components/dot-dialog/dot-dialog.component';
 import {
     UntypedFormBuilder,
     UntypedFormControl,
     UntypedFormGroup,
     Validators
 } from '@angular/forms';
+import { DotDialogActions } from '@components/dot-dialog/dot-dialog.component';
 import { DotMessageService } from '@dotcms/data-access';
 import { DotCopyContentTypeDialogFormFields } from '@dotcms/dotcms-models';
-import { combineLatest, Observable, of } from 'rxjs';
 import { DotCMSAssetDialogCopyFields } from '@portlets/shared/dot-content-types-listing/dot-content-type.store';
 import { DotValidators } from '@shared/validators/dotValidators';
+import { combineLatest, Observable, of } from 'rxjs';
 import { map } from 'rxjs/operators';
 
 @Component({

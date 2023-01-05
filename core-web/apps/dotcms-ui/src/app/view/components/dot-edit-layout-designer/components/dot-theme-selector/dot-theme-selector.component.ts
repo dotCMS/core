@@ -1,24 +1,24 @@
 import {
+    ChangeDetectorRef,
     Component,
-    OnInit,
-    Output,
+    ElementRef,
     EventEmitter,
     Input,
-    ViewChild,
-    ElementRef,
-    ChangeDetectorRef,
-    OnDestroy
+    OnDestroy,
+    OnInit,
+    Output,
+    ViewChild
 } from '@angular/core';
 
 import { fromEvent as observableFromEvent, Subject } from 'rxjs';
 import { debounceTime, take, takeUntil } from 'rxjs/operators';
 
 import { Site, SiteService } from '@dotcms/dotcms-js';
-import { DataView } from 'primeng/dataview';
 import { LazyLoadEvent } from 'primeng/api';
+import { DataView } from 'primeng/dataview';
 
-import { DotMessageService, PaginatorService } from '@dotcms/data-access';
 import { DotDialogActions } from '@components/dot-dialog/dot-dialog.component';
+import { DotMessageService, PaginatorService } from '@dotcms/data-access';
 
 import { DotSiteSelectorComponent } from '@components/_common/dot-site-selector/dot-site-selector.component';
 import { DotTheme } from '@dotcms/dotcms-models';

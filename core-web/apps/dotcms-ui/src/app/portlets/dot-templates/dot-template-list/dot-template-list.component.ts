@@ -1,29 +1,29 @@
 import { Component, OnDestroy, OnInit, ViewChild } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
-import { filter, pluck, take, takeUntil } from 'rxjs/operators';
 import { Subject } from 'rxjs';
+import { filter, pluck, take, takeUntil } from 'rxjs/operators';
 
-import { DataTableColumn } from '@models/data-table';
-import { DotMessageService } from '@dotcms/data-access';
 import { DotListingDataTableComponent } from '@components/dot-listing-data-table/dot-listing-data-table.component';
-import { MenuItem } from 'primeng/api';
-import { ActionHeaderOptions } from '@models/action-header';
-import { DotActionMenuItem } from '@models/dot-action-menu/dot-action-menu-item.model';
-import { DotMessageDisplayService } from '@components/dot-message-display/services';
 import { DotMessageSeverity, DotMessageType } from '@components/dot-message-display/model';
-import { DotPushPublishDialogService, Site, SiteService } from '@dotcms/dotcms-js';
-import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
-import { DialogService } from 'primeng/dynamicdialog';
+import { DotMessageDisplayService } from '@components/dot-message-display/services';
 import { DotBulkInformationComponent } from '@components/_common/dot-bulk-information/dot-bulk-information.component';
+import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
+import { DotMessageService } from '@dotcms/data-access';
+import { DotPushPublishDialogService, Site, SiteService } from '@dotcms/dotcms-js';
+import { ActionHeaderOptions } from '@models/action-header';
+import { DataTableColumn } from '@models/data-table';
+import { DotActionMenuItem } from '@models/dot-action-menu/dot-action-menu-item.model';
+import { MenuItem } from 'primeng/api';
+import { DialogService } from 'primeng/dynamicdialog';
 
+import { DotTemplatesService } from '@dotcms/app/api/services/dot-templates/dot-templates.service';
+import { DotAlertConfirmService, DotSiteBrowserService } from '@dotcms/data-access';
 import {
     DotActionBulkResult,
     DotBulkFailItem,
     DotContentState,
     DotTemplate
 } from '@dotcms/dotcms-models';
-import { DotAlertConfirmService, DotSiteBrowserService } from '@dotcms/data-access';
-import { DotTemplatesService } from '@dotcms/app/api/services/dot-templates/dot-templates.service';
 
 @Component({
     selector: 'dot-template-list',

@@ -1,14 +1,14 @@
+import { Component, DebugElement, Input } from '@angular/core';
 import { ComponentFixture, waitForAsync } from '@angular/core/testing';
-import { Component, Input, DebugElement } from '@angular/core';
 import { By } from '@angular/platform-browser';
-import { DotGravatarComponent } from './dot-gravatar.component';
 import { DotGravatarService } from '@dotcms/app/api/services/dot-gravatar-service';
+import { DotGravatarComponent } from './dot-gravatar.component';
 
-import { DotAvatarModule } from '../../../_common/dot-avatar/dot-avatar.module';
 import { CommonModule } from '@angular/common';
-import { Observable, of } from 'rxjs';
 import { DOTTestBed } from '@dotcms/app/test/dot-test-bed';
 import * as md5 from 'md5';
+import { Observable, of } from 'rxjs';
+import { DotAvatarModule } from '../../../_common/dot-avatar/dot-avatar.module';
 
 @Component({
     selector: 'dot-test-component',

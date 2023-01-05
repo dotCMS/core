@@ -4,8 +4,8 @@ import { ActivatedRoute, Params } from '@angular/router';
 import { Observable, of as observableOf } from 'rxjs';
 import { map } from 'rxjs/operators';
 
-import { DotLicenseService, DotMessageService } from '@dotcms/data-access';
 import { DotContentletEditorService } from '@components/dot-contentlet-editor/services/dot-contentlet-editor.service';
+import { DotLicenseService, DotMessageService } from '@dotcms/data-access';
 
 import { DotPageRender, DotPageRenderState, DotTemplate } from '@dotcms/dotcms-models';
 

@@ -10,10 +10,9 @@ import {
 import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
 import { DotSiteSelectorComponent } from '@components/_common/dot-site-selector/dot-site-selector.component';
 import { SearchableDropdownComponent } from '@components/_common/searchable-dropdown/component';
-import { DotTheme } from '@dotcms/dotcms-models';
-import { DotThemesService } from '@dotcms/data-access';
-import { PaginatorService } from '@dotcms/data-access';
+import { DotThemesService, PaginatorService } from '@dotcms/data-access';
 import { Site, SiteService } from '@dotcms/dotcms-js';
+import { DotTheme } from '@dotcms/dotcms-models';
 import { LazyLoadEvent } from 'primeng/api';
 import { fromEvent, Subject } from 'rxjs';
 import { debounceTime, filter, take, takeUntil, tap } from 'rxjs/operators';

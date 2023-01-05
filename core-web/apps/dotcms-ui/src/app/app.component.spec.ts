@@ -1,12 +1,13 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { By } from '@angular/platform-browser';
 import { DebugElement } from '@angular/core';
-import { RouterTestingModule } from '@angular/router/testing';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { By } from '@angular/platform-browser';
+import { RouterTestingModule } from '@angular/router/testing';
 
-import { AppComponent } from './app.component';
+import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { DotUiColorsService } from '@dotcms/app/api/services/dot-ui-colors/dot-ui-colors.service';
+import { DotMessageService } from '@dotcms/data-access';
 import {
     CoreWebService,
     CoreWebServiceMock,
@@ -15,9 +16,8 @@ import {
     StringUtils
 } from '@dotcms/dotcms-js';
 import { of } from 'rxjs';
-import { DotMessageService } from '@dotcms/data-access';
-import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { DotNavLogoService } from './api/services/dot-nav-logo/dot-nav-logo.service';
+import { AppComponent } from './app.component';
 
 describe('AppComponent', () => {
     let fixture: ComponentFixture<AppComponent>;

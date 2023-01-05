@@ -1,27 +1,27 @@
 import {
     Component,
     ElementRef,
-    OnInit,
-    Input,
-    ViewChild,
-    Output,
     EventEmitter,
+    Input,
     NgZone,
-    OnDestroy
+    OnDestroy,
+    OnInit,
+    Output,
+    ViewChild
 } from '@angular/core';
 
-import { takeUntil, filter, debounceTime } from 'rxjs/operators';
 import { Subject } from 'rxjs';
+import { debounceTime, filter, takeUntil } from 'rxjs/operators';
 
 import { DotcmsEventsService, DotEventTypeWrapper, LoggerService } from '@dotcms/dotcms-js';
 
-import { IframeOverlayService } from '../service/iframe-overlay.service';
 import { DotIframeService } from '../service/dot-iframe/dot-iframe.service';
+import { IframeOverlayService } from '../service/iframe-overlay.service';
 
-import { DotFunctionInfo } from '@models/dot-function-info/dot-function-info.model';
 import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
 import { DotUiColorsService } from '@dotcms/app/api/services/dot-ui-colors/dot-ui-colors.service';
 import { DotLoadingIndicatorService } from '@dotcms/utils';
+import { DotFunctionInfo } from '@models/dot-function-info/dot-function-info.model';
 
 @Component({
     selector: 'dot-iframe',

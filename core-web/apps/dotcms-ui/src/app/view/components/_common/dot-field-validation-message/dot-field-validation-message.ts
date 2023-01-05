@@ -10,9 +10,9 @@ import {
     OnDestroy
 } from '@angular/core';
 import { AbstractControl, UntypedFormControl, ValidationErrors } from '@angular/forms';
-import { takeUntil } from 'rxjs/operators';
-import { Subject } from 'rxjs';
 import { DotMessageService } from '@dotcms/data-access';
+import { Subject } from 'rxjs';
+import { takeUntil } from 'rxjs/operators';
 
 type DefaultsNGValidatorsTypes = 'maxlength' | 'required';
 

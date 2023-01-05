@@ -1,9 +1,9 @@
-import { NgModule } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { ButtonModule } from 'primeng/button';
-import { DotDropdownComponent } from './dot-dropdown.component';
-import { DotGravatarModule } from '../../dot-toolbar/components/dot-gravatar/dot-gravatar.module';
+import { NgModule } from '@angular/core';
 import { UiDotIconButtonModule } from '@components/_common/dot-icon-button/dot-icon-button.module';
+import { ButtonModule } from 'primeng/button';
+import { DotGravatarModule } from '../../dot-toolbar/components/dot-gravatar/dot-gravatar.module';
+import { DotDropdownComponent } from './dot-dropdown.component';
 
 @NgModule({
     imports: [CommonModule, ButtonModule, DotGravatarModule, UiDotIconButtonModule],

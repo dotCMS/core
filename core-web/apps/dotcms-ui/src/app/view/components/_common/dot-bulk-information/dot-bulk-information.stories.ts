@@ -1,8 +1,8 @@
-import { DotMessagePipeModule } from '@pipes/dot-message/dot-message-pipe.module';
-import { DotMessageService } from '@dotcms/data-access';
 import { DotFormatDateService } from '@dotcms/app/api/services/dot-format-date-service';
-import { Meta, Story, moduleMetadata } from '@storybook/angular';
+import { DotMessageService } from '@dotcms/data-access';
 import { MockDotMessageService } from '@dotcms/utils-testing';
+import { DotMessagePipeModule } from '@pipes/dot-message/dot-message-pipe.module';
+import { Meta, moduleMetadata, Story } from '@storybook/angular';
 import { DialogService, DynamicDialogConfig, DynamicDialogRef } from 'primeng/dynamicdialog';
 import { DotBulkInformationComponent } from './dot-bulk-information.component';
 

@@ -1,12 +1,12 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 
-import { DotFieldHelperComponent } from './dot-field-helper.component';
 import { DebugElement } from '@angular/core';
 import { By } from '@angular/platform-browser';
-import { OverlayPanel, OverlayPanelModule } from 'primeng/overlaypanel';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
-import { UiDotIconButtonModule } from '@components/_common/dot-icon-button/dot-icon-button.module';
 import { UiDotIconButtonComponent } from '@components/_common/dot-icon-button/dot-icon-button.component';
+import { UiDotIconButtonModule } from '@components/_common/dot-icon-button/dot-icon-button.module';
+import { OverlayPanel, OverlayPanelModule } from 'primeng/overlaypanel';
+import { DotFieldHelperComponent } from './dot-field-helper.component';
 
 describe('DotFieldHelperComponent', () => {
     let component: DotFieldHelperComponent;
@@ -46,8 +46,9 @@ describe('DotFieldHelperComponent', () => {
     });
 
     it('should have correct attributes  on button', () => {
-        const iconButton: UiDotIconButtonComponent = de.query(By.css('dot-icon-button'))
-            .componentInstance;
+        const iconButton: UiDotIconButtonComponent = de.query(
+            By.css('dot-icon-button')
+        ).componentInstance;
 
         expect(iconButton.icon).toEqual('help_outline');
     });

@@ -10,11 +10,11 @@ import {
     SidebarStatus,
     Variant
 } from '@dotcms/dotcms-models';
-import { Observable } from 'rxjs';
 import {
     ConfigurationViewModel,
     DotExperimentsConfigurationStore
 } from '@portlets/dot-experiments/dot-experiments-configuration/store/dot-experiments-configuration-store';
+import { Observable } from 'rxjs';
 
 @Component({
     selector: 'dot-experiments-configuration',

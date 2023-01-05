@@ -1,11 +1,11 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { TestBed } from '@angular/core/testing';
+import { DotContainersService } from '@dotcms/app/api/services/dot-containers/dot-containers.service';
+import { MockDotRouterService } from '@dotcms/utils-testing';
+import { DotRouterService } from '@services/dot-router/dot-router.service';
 import { of } from 'rxjs';
 import { DotContainerEditResolver } from './dot-container-edit.resolver';
-import { DotRouterService } from '@services/dot-router/dot-router.service';
-import { MockDotRouterService } from '@dotcms/utils-testing';
-import { DotContainersService } from '@dotcms/app/api/services/dot-containers/dot-containers.service';
 
 describe('DotContainerService', () => {
     let service: DotContainerEditResolver;

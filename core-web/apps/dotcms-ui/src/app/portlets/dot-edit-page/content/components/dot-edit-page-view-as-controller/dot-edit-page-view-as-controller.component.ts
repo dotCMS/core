@@ -3,6 +3,12 @@ import { Observable } from 'rxjs';
 import { take } from 'rxjs/operators';
 
 import {
+    DotAlertConfirmService,
+    DotLicenseService,
+    DotMessageService,
+    DotPersonalizeService
+} from '@dotcms/data-access';
+import {
     DotDevice,
     DotLanguage,
     DotPageMode,
@@ -10,12 +16,6 @@ import {
     DotPersona,
     DotVariantData
 } from '@dotcms/dotcms-models';
-import {
-    DotAlertConfirmService,
-    DotLicenseService,
-    DotMessageService,
-    DotPersonalizeService
-} from '@dotcms/data-access';
 import { DotPageStateService } from '../../services/dot-page-state/dot-page-state.service';
 
 @Component({

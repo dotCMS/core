@@ -1,4 +1,3 @@
-import { Subject } from 'rxjs';
 import {
     Component,
     EventEmitter,
@@ -10,10 +9,11 @@ import {
     SimpleChanges,
     ViewChild
 } from '@angular/core';
-import { Site, SiteService } from '@dotcms/dotcms-js';
-import { SearchableDropdownComponent } from '../searchable-dropdown/component';
 import { DotEventsService, PaginatorService } from '@dotcms/data-access';
+import { Site, SiteService } from '@dotcms/dotcms-js';
+import { Subject } from 'rxjs';
 import { delay, retryWhen, take, takeUntil, tap } from 'rxjs/operators';
+import { SearchableDropdownComponent } from '../searchable-dropdown/component';
 
 /**
  * It is dropdown of sites, it handle pagination and global search

@@ -3,19 +3,20 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import { of, throwError } from 'rxjs';
 
-import { DotCrudService } from '@dotcms/data-access';
-import { DotMessageService } from '@dotcms/data-access';
-import { DotTempFileUploadService } from '@dotcms/app/api/services/dot-temp-file-upload/dot-temp-file-upload.service';
-import { DotWorkflowActionsFireService } from '@dotcms/data-access';
-import { MockDotMessageService } from '@dotcms/utils-testing';
-import { dotcmsContentletMock } from '@dotcms/utils-testing';
-import { DotTemplateThumbnailFieldComponent } from './dot-template-thumbnail-field.component';
 import {
-    UntypedFormBuilder,
-    UntypedFormGroup,
     FormsModule,
-    ReactiveFormsModule
+    ReactiveFormsModule,
+    UntypedFormBuilder,
+    UntypedFormGroup
 } from '@angular/forms';
+import { DotTempFileUploadService } from '@dotcms/app/api/services/dot-temp-file-upload/dot-temp-file-upload.service';
+import {
+    DotCrudService,
+    DotMessageService,
+    DotWorkflowActionsFireService
+} from '@dotcms/data-access';
+import { dotcmsContentletMock, MockDotMessageService } from '@dotcms/utils-testing';
+import { DotTemplateThumbnailFieldComponent } from './dot-template-thumbnail-field.component';
 
 const messageServiceMock = new MockDotMessageService({
     'templates.properties.form.thumbnail.error.invalid.url': 'Invalid url',

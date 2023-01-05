@@ -1,9 +1,9 @@
-import { DotActionButtonComponent } from './dot-action-button.component';
 import { CommonModule } from '@angular/common';
 import { NgModule } from '@angular/core';
-import { UiDotIconButtonModule } from '../dot-icon-button/dot-icon-button.module';
 import { ButtonModule } from 'primeng/button';
 import { MenuModule } from 'primeng/menu';
+import { UiDotIconButtonModule } from '../dot-icon-button/dot-icon-button.module';
+import { DotActionButtonComponent } from './dot-action-button.component';
 
 @NgModule({
     declarations: [DotActionButtonComponent],

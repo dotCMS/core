@@ -1,25 +1,25 @@
-import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing';
-import { MockDotMessageService } from '@dotcms/utils-testing';
-import { DotDialogModule } from '@components/dot-dialog/dot-dialog.module';
-import { ReactiveFormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
-import { Component, DebugElement, Input } from '@angular/core';
-import { DotMessageService } from '@dotcms/data-access';
-import { InputTextModule } from 'primeng/inputtext';
-import { DotPipesModule } from '@pipes/dot-pipes.module';
 import { HttpClientTestingModule } from '@angular/common/http/testing';
-import { DotAppsImportExportDialogComponent } from './dot-apps-import-export-dialog.component';
+import { Component, DebugElement, Input } from '@angular/core';
+import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing';
+import { ReactiveFormsModule } from '@angular/forms';
+import { DotDialogModule } from '@components/dot-dialog/dot-dialog.module';
 import { DotAutofocusModule } from '@directives/dot-autofocus/dot-autofocus.module';
 import { DotAppsService } from '@dotcms/app/api/services/dot-apps/dot-apps.service';
+import { DotMessageService } from '@dotcms/data-access';
+import { MockDotMessageService } from '@dotcms/utils-testing';
+import { DotPipesModule } from '@pipes/dot-pipes.module';
+import { InputTextModule } from 'primeng/inputtext';
+import { DotAppsImportExportDialogComponent } from './dot-apps-import-export-dialog.component';
 
 import { By } from '@angular/platform-browser';
-import { Observable, of } from 'rxjs';
 import {
+    DotApps,
     DotAppsExportConfiguration,
     DotAppsImportConfiguration,
-    DotApps,
     DotAppsSites
 } from '@dotcms/dotcms-models';
+import { Observable, of } from 'rxjs';
 
 export class DotAppsServiceMock {
     exportConfiguration(_configuration: DotAppsExportConfiguration): Promise<string> {

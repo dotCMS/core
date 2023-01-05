@@ -8,16 +8,14 @@ import {
     Output,
     ViewChild
 } from '@angular/core';
-import { DotMessageService } from '@dotcms/data-access';
-import { FieldDragDropService } from '../fields/service';
-import { take } from 'rxjs/operators';
-import { MenuItem } from 'primeng/api';
-import { DotEventsService } from '@dotcms/data-access';
-import { DotCMSContentType } from '@dotcms/dotcms-models';
-import { DotCurrentUserService } from '@dotcms/data-access';
-import { Observable } from 'rxjs';
 import { DotInlineEditComponent } from '@components/_common/dot-inline-edit/dot-inline-edit.component';
 import { DotMenuService } from '@dotcms/app/api/services/dot-menu.service';
+import { DotCurrentUserService, DotEventsService, DotMessageService } from '@dotcms/data-access';
+import { DotCMSContentType } from '@dotcms/dotcms-models';
+import { MenuItem } from 'primeng/api';
+import { Observable } from 'rxjs';
+import { take } from 'rxjs/operators';
+import { FieldDragDropService } from '../fields/service';
 
 @Component({
     selector: 'dot-content-type-layout',

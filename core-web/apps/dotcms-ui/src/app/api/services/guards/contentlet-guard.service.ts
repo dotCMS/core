@@ -1,9 +1,9 @@
-import { map } from 'rxjs/operators';
 import { Injectable } from '@angular/core';
-import { CanActivateChild, ActivatedRouteSnapshot, RouterStateSnapshot } from '@angular/router';
-import { Observable } from 'rxjs';
+import { ActivatedRouteSnapshot, CanActivateChild, RouterStateSnapshot } from '@angular/router';
 import { DotNavigationService } from '@components/dot-navigation/services/dot-navigation.service';
 import { DotContentTypeService } from '@dotcms/data-access';
+import { Observable } from 'rxjs';
+import { map } from 'rxjs/operators';
 
 /**
  * Route Guard that checks if a User have access to the specified Content Type.

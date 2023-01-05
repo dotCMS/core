@@ -1,15 +1,15 @@
-import { Observable, Subject } from 'rxjs';
-import { Component, OnInit, OnDestroy, AfterViewInit } from '@angular/core';
-import { FormGroup, Validators, UntypedFormBuilder } from '@angular/forms';
+import { AfterViewInit, Component, OnDestroy, OnInit } from '@angular/core';
+import { FormGroup, UntypedFormBuilder, Validators } from '@angular/forms';
+import { DotPageRenderState, DotPageState, DotRole } from '@dotcms/dotcms-models';
+import { generateDotFavoritePageUrl } from '@dotcms/utils';
 import { DynamicDialogConfig, DynamicDialogRef } from 'primeng/dynamicdialog';
+import { Observable, Subject } from 'rxjs';
 import { map, startWith, takeUntil } from 'rxjs/operators';
 import {
+    DotFavoritePageActionState,
     DotFavoritePageState,
-    DotFavoritePageStore,
-    DotFavoritePageActionState
+    DotFavoritePageStore
 } from './store/dot-favorite-page.store';
-import { DotPageRenderState, DotRole, DotPageState } from '@dotcms/dotcms-models';
-import { generateDotFavoritePageUrl } from '@dotcms/utils';
 
 export interface DotFavoritePageProps {
     pageRenderedHtml?: string;

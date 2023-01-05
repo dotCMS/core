@@ -1,12 +1,12 @@
 import {
     Component,
-    OnInit,
-    ViewChild,
     ElementRef,
     EventEmitter,
-    Output,
+    HostListener,
     Input,
-    HostListener
+    OnInit,
+    Output,
+    ViewChild
 } from '@angular/core';
 import { FormBuilder, FormGroup } from '@angular/forms';
 import { debounceTime, take } from 'rxjs/operators';
@@ -15,9 +15,9 @@ import { debounceTime, take } from 'rxjs/operators';
 import { SuggestionsCommandProps } from '@dotcms/block-editor';
 
 // Models
-import { isValidURL } from '../bubble-menu/utils';
 import { DotCMSContentlet } from '@dotcms/dotcms-models';
-import { SuggestionsService, DotLanguageService, Languages } from '../../shared';
+import { DotLanguageService, Languages, SuggestionsService } from '../../shared';
+import { isValidURL } from '../bubble-menu/utils';
 import { SuggestionPageComponent } from './components/suggestion-page/suggestion-page.component';
 
 export interface NodeProps {

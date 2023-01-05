@@ -1,21 +1,21 @@
-import { DotHttpErrorManagerService } from '@services/dot-http-error-manager/dot-http-error-manager.service';
+import { HttpClientTestingModule, HttpTestingController } from '@angular/common/http/testing';
+import { getTestBed, TestBed } from '@angular/core/testing';
 import { CoreWebService, LoginService } from '@dotcms/dotcms-js';
 import {
+    CoreWebServiceMock,
     DotFormatDateServiceMock,
     LoginServiceMock,
+    MockDotRouterService,
     mockResponseView
 } from '@dotcms/utils-testing';
-import { TestBed, getTestBed } from '@angular/core/testing';
-import { HttpTestingController, HttpClientTestingModule } from '@angular/common/http/testing';
-import { CoreWebServiceMock } from '@dotcms/utils-testing';
-import { ConfirmationService } from 'primeng/api';
 import { DotFormatDateService } from '@services/dot-format-date-service';
-import { MockDotRouterService } from '@dotcms/utils-testing';
+import { DotHttpErrorManagerService } from '@services/dot-http-error-manager/dot-http-error-manager.service';
 import { DotRouterService } from '@services/dot-router/dot-router.service';
+import { ConfirmationService } from 'primeng/api';
 
-import { DotAddToMenuService, DotCreateCustomTool } from './add-to-menu.service';
-import { throwError } from 'rxjs';
 import { DotAlertConfirmService } from '@dotcms/data-access';
+import { throwError } from 'rxjs';
+import { DotAddToMenuService, DotCreateCustomTool } from './add-to-menu.service';
 
 const customToolData: DotCreateCustomTool = {
     contentTypes: 'Blog',

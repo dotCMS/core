@@ -1,11 +1,11 @@
 import { Injectable } from '@angular/core';
-import { Observable, BehaviorSubject } from 'rxjs';
-import { map, take, catchError } from 'rxjs/operators';
+import { BehaviorSubject, Observable } from 'rxjs';
+import { catchError, map, take } from 'rxjs/operators';
 
-import { DotWorkflowsActionsService } from '@dotcms/data-access';
-import { DotCMSWorkflowAction, DotCMSWorkflow } from '@dotcms/dotcms-models';
-import { DotHttpErrorManagerService } from '@dotcms/app/api/services/dot-http-error-manager/dot-http-error-manager.service';
 import { HttpErrorResponse } from '@angular/common/http';
+import { DotHttpErrorManagerService } from '@dotcms/app/api/services/dot-http-error-manager/dot-http-error-manager.service';
+import { DotWorkflowsActionsService } from '@dotcms/data-access';
+import { DotCMSWorkflow, DotCMSWorkflowAction } from '@dotcms/dotcms-models';
 import { SelectItem, SelectItemGroup } from 'primeng/api';
 
 @Injectable()

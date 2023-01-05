@@ -1,17 +1,17 @@
-import { pluck, catchError, take, map } from 'rxjs/operators';
 import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
+import { catchError, map, pluck, take } from 'rxjs/operators';
 
-import { CoreWebService } from '@dotcms/dotcms-js';
-import { DotHttpErrorManagerService } from '@dotcms/app/api/services/dot-http-error-manager/dot-http-error-manager.service';
 import { HttpErrorResponse } from '@angular/common/http';
-import { getDownloadLink } from '@dotcms/utils';
+import { DotHttpErrorManagerService } from '@dotcms/app/api/services/dot-http-error-manager/dot-http-error-manager.service';
+import { CoreWebService } from '@dotcms/dotcms-js';
 import {
     DotApps,
-    DotAppsSaveData,
     DotAppsExportConfiguration,
-    DotAppsImportConfiguration
+    DotAppsImportConfiguration,
+    DotAppsSaveData
 } from '@dotcms/dotcms-models';
+import { getDownloadLink } from '@dotcms/utils';
 
 const appsUrl = `v1/apps`;
 

@@ -7,7 +7,6 @@ import {
     OnInit,
     Output
 } from '@angular/core';
-import { Observable, Subject } from 'rxjs';
 import { DotLicenseService, DotPropertiesService } from '@dotcms/data-access';
 import {
     DotCMSContentlet,
@@ -16,6 +15,7 @@ import {
     DotVariantData,
     FeaturedFlags
 } from '@dotcms/dotcms-models';
+import { Observable, Subject } from 'rxjs';
 import { take } from 'rxjs/operators';
 
 @Component({
