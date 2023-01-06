@@ -59,6 +59,19 @@ catch(Exception e){
 
 
 <script>
+function setLinkToContentType(){
+
+   const URLLength = window.parent.location.hash.split('/').length;
+   const contentTypeLink = document.getElementById('contentTypeLink');
+
+  //URL has inode, example: #/c/content/87edb0d5-99aa-4d18-a50d-60eef7c74954
+   if (URLLength>3 && contentTypeLink) {
+        contentTypeLink.addEventListener('click', jumpToContentType);
+        contentTypeLink.setAttribute('href','#');
+   }
+}
+
+setTimeout(setLinkToContentType, 300);
 
 var myHostId = '<%= (myHost != null) ? myHost.getIdentifier() : "" %>';
 
@@ -226,9 +239,9 @@ function jumpToContentType(){
      <tr>
             <th style="vertical-align: top"><%= LanguageUtil.get(pageContext, "Content-Type") %>:</th>
             <td>
-                <%if(isEditing && canEditContentType){%><a onclick="jumpToContentType()" href="#"><%}%>
+                <%if(canEditContentType){%><a id="contentTypeLink" ><%}%>
                 <%=contentlet!=null && contentlet.getContentType()!=null ? contentlet.getContentType().name() : LanguageUtil.get(pageContext, "not-available") %>
-                <%if(isEditing && canEditContentType){%></a><%}%>
+                <%if(canEditContentType){%></a><%}%>
             </td>
         </tr>
         <tr>
