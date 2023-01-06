@@ -121,7 +121,7 @@ export class DotFavoritePageComponent implements OnInit, OnDestroy {
      * @memberof DotFavoritePageComponent
      */
     onSave(): void {
-        this.store.saveFavoritePage(this.form.value);
+        this.store.saveFavoritePage(this.form.getRawValue());
     }
 
     /**

@@ -275,7 +275,7 @@ describe('DotFavoritePageComponent', () => {
             });
 
             it('should get value from config and set initial data on store', () => {
-                expect(component.form.value).toEqual({
+                expect(component.form.getRawValue()).toEqual({
                     currentUserRoleId: '1',
                     inode: '',
                     thumbnail: '',
@@ -319,9 +319,8 @@ describe('DotFavoritePageComponent', () => {
 
             it('should be valid when required fields are set', () => {
                 component.form.get('thumbnail').setValue('test');
-
                 expect(component.form.valid).toBe(true);
-                expect(component.form.value).toEqual({
+                expect(component.form.getRawValue()).toEqual({
                     currentUserRoleId: '1',
                     thumbnail: 'test',
                     inode: '',
