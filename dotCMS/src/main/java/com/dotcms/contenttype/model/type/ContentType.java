@@ -172,10 +172,11 @@ public abstract class ContentType implements Serializable, Permissionable, Conte
    * The name of the property is intended to reflect the status o the CT Loaded (from the db) or resolved by the SiteAndFolderResolver API
    * @return
    */
+  @Auxiliary
   @JsonIgnore
   @Value.Default
   public boolean loadedOrResolved(){
-     return false;
+    return false;
   }
 
   @Value.Default

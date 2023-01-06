@@ -1,6 +1,7 @@
 package com.dotcms.contenttype.test;
 
 import static com.dotcms.contenttype.business.ContentTypeAPIImpl.TYPES_AND_FIELDS_VALID_VARIABLE_REGEX;
+import static com.dotcms.contenttype.business.SiteAndFolderResolver.CT_FALLBACK_DEFAULT_SITE;
 import static com.dotcms.datagen.TestDataUtils.FILE_ASSET_1;
 import static com.dotcms.datagen.TestDataUtils.FILE_ASSET_2;
 import static junit.framework.Assert.assertTrue;
@@ -79,11 +80,7 @@ import com.dotmarketing.portlets.contentlet.model.ContentletDependencies;
 import com.dotmarketing.portlets.contentlet.model.IndexPolicy;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
-import com.dotmarketing.util.FileUtil;
-import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.UUIDGenerator;
-import com.dotmarketing.util.UtilMethods;
-import com.dotmarketing.util.WebKeys;
+import com.dotmarketing.util.*;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
 import com.tngtech.java.junit.dataprovider.DataProvider;
@@ -2063,7 +2060,7 @@ public class ContentTypeAPIImplTest extends ContentTypeBaseTest {
 	 
 	 
 	 /**
-	  * This test is to insure that a content type is returing the corrent
+	  * This test is to ensure that a content type is returning the correct
 	  * parent permissionable based on where it lives in the hierarchy
 	  * If the content type lives on a folder, then that will be the parent
 	  * if it lives on a host, then that, else the system host
@@ -2071,39 +2068,51 @@ public class ContentTypeAPIImplTest extends ContentTypeBaseTest {
 	  */
    @Test
    public void test_content_type_parent_permissionable() throws Exception{
-     Host site = new SiteDataGen().nextPersisted();
-     Folder folder = new FolderDataGen().site(site).nextPersisted();
-     
-     
-     ContentType systemHostType = ImmutableSimpleContentType.builder()
-         .name("ContentTypeTesting"+System.currentTimeMillis())
-         .variable("velocityVarNameTesting"+System.currentTimeMillis())
-  
-         .host(APILocator.systemHost().getIdentifier())
-         .folder(APILocator.getFolderAPI().SYSTEM_FOLDER)
-         .build();
-     systemHostType = contentTypeApi.save(systemHostType);
-     
-     ContentType hostType = ImmutableSimpleContentType.builder()
-         .name("ContentTypeTesting"+System.currentTimeMillis())
-         .variable("velocityVarNameTesting"+System.currentTimeMillis())
-         .host(site.getIdentifier())
-         .folder(APILocator.getFolderAPI().SYSTEM_FOLDER)
-         .build();
-     hostType = contentTypeApi.save(hostType);
-	 
-     ContentType folderType = ImmutableSimpleContentType.builder()
-         .name("ContentTypeTesting"+System.currentTimeMillis())
-         .variable("velocityVarNameTesting"+System.currentTimeMillis())
-         .host(site.getIdentifier())
-         .folder(folder.getInode())
-         .build();
-     
-     folderType = contentTypeApi.save(folderType);
-     
-     assertEquals(systemHostType.getParentPermissionable(), APILocator.systemHost());
-     assertEquals(hostType.getParentPermissionable(), site);
-     assertEquals(folderType.getParentPermissionable(), folder);
+
+	   //Now By default we send new CTs under default site not SYSTEM_HOST
+	   //But this is still an adjustable behavior that can be configured by setting a prop
+	   final boolean fallbackToDefaultSite = Config.getBooleanProperty(CT_FALLBACK_DEFAULT_SITE, true);
+	   Config.setProperty(CT_FALLBACK_DEFAULT_SITE, false);
+
+	   try {
+
+		   Host site = new SiteDataGen().nextPersisted();
+		   Folder folder = new FolderDataGen().site(site).nextPersisted();
+
+		   ContentType systemHostType = ImmutableSimpleContentType.builder()
+				   .name("ContentTypeTesting" + System.currentTimeMillis())
+				   .variable("velocityVarNameTesting" + System.currentTimeMillis())
+
+				   .host(APILocator.systemHost().getIdentifier())
+				   .folder(APILocator.getFolderAPI().SYSTEM_FOLDER)
+				   .build();
+		   systemHostType = contentTypeApi.save(systemHostType);
+
+		   ContentType hostType = ImmutableSimpleContentType.builder()
+				   .name("ContentTypeTesting" + System.currentTimeMillis())
+				   .variable("velocityVarNameTesting" + System.currentTimeMillis())
+				   .host(site.getIdentifier())
+				   .folder(APILocator.getFolderAPI().SYSTEM_FOLDER)
+				   .build();
+		   hostType = contentTypeApi.save(hostType);
+
+		   ContentType folderType = ImmutableSimpleContentType.builder()
+				   .name("ContentTypeTesting" + System.currentTimeMillis())
+				   .variable("velocityVarNameTesting" + System.currentTimeMillis())
+				   .host(site.getIdentifier())
+				   .folder(folder.getInode())
+				   .build();
+
+		   folderType = contentTypeApi.save(folderType);
+
+		   assertEquals(systemHostType.getParentPermissionable(), APILocator.systemHost());
+		   assertEquals(hostType.getParentPermissionable(), site);
+		   assertEquals(folderType.getParentPermissionable(), folder);
+
+	   }finally {
+		   Config.setProperty(CT_FALLBACK_DEFAULT_SITE, fallbackToDefaultSite);
+	   }
+
    }
    
      
@@ -2331,6 +2340,9 @@ public class ContentTypeAPIImplTest extends ContentTypeBaseTest {
 	public void Fields_Should_Not_Get_Removed_When_Host_Is_Empty_Null(final SiteTestCase testCase)
 			throws DotSecurityException, DotDataException {
 
+		final boolean fallbackToDefaultSite = Config.getBooleanProperty(CT_FALLBACK_DEFAULT_SITE, true);
+		Config.setProperty(CT_FALLBACK_DEFAULT_SITE, testCase.instructAPItoUseDefaultHost);
+
 		ContentType contentType = null;
 		ContentType savedContentType = null;
 		try {
@@ -2407,6 +2419,9 @@ public class ContentTypeAPIImplTest extends ContentTypeBaseTest {
 			assertEquals(savedContentType.host(), expected);
 
 		} finally {
+
+			Config.setProperty(CT_FALLBACK_DEFAULT_SITE, fallbackToDefaultSite);
+
 			if(null != savedContentType) {
 				APILocator.getContentTypeAPI(APILocator.systemUser()).delete(savedContentType);
 			}
@@ -2419,9 +2434,6 @@ public class ContentTypeAPIImplTest extends ContentTypeBaseTest {
 		final Host emptyIdentifierHost = Mockito.mock(Host.class);
 		Mockito.when(emptyIdentifierHost.getIdentifier()).thenReturn("");
 
-		final Host nullIdentifierHost = Mockito.mock(Host.class);
-		Mockito.when(nullIdentifierHost.getIdentifier()).thenReturn("");
-
 		final Host systemHost = Mockito.mock(Host.class);
 		Mockito.when(systemHost.getIdentifier()).thenReturn(Host.SYSTEM_HOST);
 		Mockito.when(systemHost.getHostname()).thenReturn(Host.SYSTEM_HOST);
@@ -2431,10 +2443,9 @@ public class ContentTypeAPIImplTest extends ContentTypeBaseTest {
 		Mockito.when(namedHost.getHostname()).thenReturn("default");
 
 		return new Object[]{
-				new SiteTestCase(emptyIdentifierHost, Host.SYSTEM_HOST),
-				new SiteTestCase(nullIdentifierHost, Host.SYSTEM_HOST),
-				new SiteTestCase(systemHost, Host.SYSTEM_HOST),
-				new SiteTestCase(namedHost, "default")
+				new SiteTestCase(emptyIdentifierHost, Host.SYSTEM_HOST, false),
+				new SiteTestCase(systemHost, Host.SYSTEM_HOST, false),
+				new SiteTestCase(namedHost, "default", true)
 		};
 	}
 
@@ -2444,9 +2455,12 @@ public class ContentTypeAPIImplTest extends ContentTypeBaseTest {
 
     	final String expected;
 
-		public SiteTestCase(final Host site, final String expected) {
+		final boolean instructAPItoUseDefaultHost;
+
+		public SiteTestCase(final Host site, final String expected, final boolean instructAPItoUseDefaultHost) {
 			this.site = site;
 			this.expected = expected;
+			this.instructAPItoUseDefaultHost = instructAPItoUseDefaultHost;
 		}
 
 		@Override
