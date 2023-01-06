@@ -66,7 +66,7 @@ export class DotFavoritePageComponent implements OnInit, OnDestroy {
                         inode: [formStateData?.inode],
                         thumbnail: [formStateData?.thumbnail, Validators.required],
                         title: [formStateData?.title, Validators.required],
-                        url: [formStateData?.url, Validators.required],
+                        url: [{ value: formStateData?.url, disabled: true }, Validators.required],
                         order: [formStateData?.order, Validators.required],
                         permissions: [formStateData?.permissions]
                     });

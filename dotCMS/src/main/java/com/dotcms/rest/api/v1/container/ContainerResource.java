@@ -172,7 +172,8 @@ public class ContainerResource implements Serializable {
             @DefaultValue("ASC") @QueryParam(PaginationUtil.DIRECTION)  final String direction,
             @QueryParam(ContainerPaginator.HOST_PARAMETER_ID)           final String hostId,
             @QueryParam(ContainerPaginator.SYSTEM_PARAMETER_NAME)       final Boolean showSystemContainer,
-            @QueryParam(ContainerPaginator.ARCHIVE_PARAMETER_NAME)       final Boolean showArchiveContainer) {
+            @QueryParam(ContainerPaginator.ARCHIVE_PARAMETER_NAME)       final Boolean showArchiveContainer,
+            @QueryParam(ContainerPaginator.CONTENT_TYPE_ID_OR_VAR_PARAMETER_NAME)   final String contentTypeIdOrVar) {
 
         final InitDataObject initData = webResource.init(null, httpRequest, httpResponse, true, null);
         final User user = initData.getUser();
@@ -185,8 +186,11 @@ public class ContainerResource implements Serializable {
             }
             extraParams.put(ContainerPaginator.SYSTEM_PARAMETER_NAME, showSystemContainer);
             extraParams.put(ContainerPaginator.ARCHIVE_PARAMETER_NAME, showArchiveContainer);
+            extraParams.put(ContainerPaginator.CONTENT_TYPE_ID_OR_VAR_PARAMETER_NAME, contentTypeIdOrVar);
+
             return this.paginationUtil.getPage(httpRequest, user, filter, page, perPage, orderBy, OrderDirection.valueOf(direction),
                     extraParams);
+
         } catch (final Exception e) {
             Logger.error(this, e.getMessage(), e);
             return ExceptionMapperUtil.createResponse(e, Response.Status.INTERNAL_SERVER_ERROR);
