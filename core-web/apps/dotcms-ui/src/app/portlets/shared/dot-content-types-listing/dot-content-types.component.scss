@@ -1,5 +1,15 @@
 @use "variables" as *;
 
+:host {
+    display: flex;
+    height: 100%;
+    overflow: auto;
+
+    dot-portlet-base {
+        width: 100%;
+    }
+}
+
 ::ng-deep listing-data-table tr {
     cursor: pointer;
 }
