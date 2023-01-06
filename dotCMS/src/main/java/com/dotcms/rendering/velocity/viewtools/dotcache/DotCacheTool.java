@@ -24,6 +24,9 @@ public class DotCacheTool implements ViewTool {
 
     final Lazy<BlockDirectiveCache> cache;
 
+    final static String DOT_CACHE_PREFIX="DotCachePrefix";
+    
+    
     public DotCacheTool() {
         cache = Lazy.of(Function0.of(BlockDirectiveCacheImpl::new));
         cache.get();
@@ -50,7 +53,7 @@ public class DotCacheTool implements ViewTool {
      * @return The cached object.
      */
     public Serializable get(final String key) {
-        final Map<String, Serializable> entry = cache.get().get(key);
+        final Map<String, Serializable> entry = cache.get().get(DOT_CACHE_PREFIX + key);
         return entry.get(key);
     }
 
@@ -75,13 +78,24 @@ public class DotCacheTool implements ViewTool {
      */
     public void put(final String key, final Object value, final int ttl) {
         if (ttl <= 0) {
-            cache.get().remove(key);
+            cache.get().remove(DOT_CACHE_PREFIX + key);
             return;
         }
         final Serializable correctedValue = value instanceof Serializable ? (Serializable) value : value.toString();
         final Map<String, Serializable> map = Map.of(key, correctedValue);
-        debounceAdd.debounce(key, () -> cache.get().add(key, map, ttl), 1, TimeUnit.SECONDS);
+        cache.get().add(DOT_CACHE_PREFIX + key, map, ttl);
     }
+    
+    /**
+     * This puts into the cache once a second
+     * @param key
+     * @param value
+     * @param ttl
+     */
+    public void putDebounce(final String key, final Object value, final int ttl) {
+        debounceAdd.debounce(key, () -> put(key, value, ttl), 1, TimeUnit.SECONDS);
+    }
+    
 
     /**
      * Removes an object from the cache memory based on its key.
@@ -89,7 +103,7 @@ public class DotCacheTool implements ViewTool {
      * @param key The key matching a specific object.
      */
     public void remove(final String key) {
-        cache.get().remove(key);
+        cache.get().remove(DOT_CACHE_PREFIX +key);
     }
 
     /**

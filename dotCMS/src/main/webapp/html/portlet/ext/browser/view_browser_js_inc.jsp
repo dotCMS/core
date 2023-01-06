@@ -195,6 +195,17 @@ Structure defaultFileAssetStructure = CacheLocator.getContentTypeCache().getStru
         return false;
     }
 
+   function toggleArchive(showArchived){
+       if (selectedFolder != null && isInodeSet(selectedFolder)) {
+           //Emptying the assets rigth hand side listing
+           cleanContentSide();
+
+           //Showing the loading message
+           Element.show('loadingContentListing');
+           BrowserAjax.openFolderContent (selectedFolder, '', !!showArchived, selectedLang, selectFolderContentCallBack);
+       }
+   }
+
     function droppedOnTrash(draggableElem, droppableElem, e) {
         showDebugMessage('<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Dragged-to-trash")) %>: ' + droppableElem + ", <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "the-element")) %>: " + draggableElem + ", <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "ctrl-pressed")) %>: " + e.ctrlKey);
         var inode = inodes[draggableElem];
@@ -798,9 +809,9 @@ Structure defaultFileAssetStructure = CacheLocator.getContentTypeCache().getStru
                 if (publish) {
                     /*
                         reverteffect: Needs to return the element to its place.
-                        We can't use the default reverteffect function because the initial element doesn't have an initial 
+                        We can't use the default reverteffect function because the initial element doesn't have an initial
                         value of top_offset or left_offset.
-                        
+
                         More info: https://madrobby.github.io/scriptaculous/draggable/
                     */
                     var draggable = new Draggable(asset.inode + '-DIV', { ghosting:true, revert:true, zindex: 1000, reverteffect: function(element) { element.style.position = 'relative'; element.style.width = 'auto' } });
@@ -913,9 +924,9 @@ Structure defaultFileAssetStructure = CacheLocator.getContentTypeCache().getStru
                 if((!asset.live && write) || (asset.live && publish)) {
                     /*
                         reverteffect: Needs to return the element to its place.
-                        We can't use the default reverteffect function because the initial element doesn't have an initial 
+                        We can't use the default reverteffect function because the initial element doesn't have an initial
                         value of top_offset or left_offset.
-                        
+
                         More info: https://madrobby.github.io/scriptaculous/draggable/
                     */
                     var draggable = new Draggable(asset.inode + '-DIV', { ghosting:true, revert:true, zindex: 1000, reverteffect: function(element) { element.style.position = 'relative'; element.style.width = 'auto' } });

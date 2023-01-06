@@ -61,7 +61,7 @@ const messageServiceMock = new MockDotMessageService({
     'favoritePage.dialog.error.tmpFile.upload': 'Upload Error'
 });
 
-xdescribe('DotFavoritePageStore', () => {
+describe('DotFavoritePageStore', () => {
     let dotFavoritePageStore: DotFavoritePageStore;
     let dotRolesService: DotRolesService;
     let dotCurrentUser: DotCurrentUserService;

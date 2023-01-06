@@ -54,7 +54,6 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.Date;
 import java.util.List;
 import java.util.Properties;
@@ -73,21 +72,24 @@ import org.apache.commons.compress.compressors.bzip2.BZip2CompressorOutputStream
  * @version $Revision: 1.13 $
  *
  */
+@SuppressWarnings("javasecurity:S2083")
 public class FileUtil {
 	//http://jira.dotmarketing.net/browse/DOTCMS-2178
-	final static long KILO_BYTE = 1024;
-	final static long MEGA_BYTE = 1024*1024;
-	final static long GIGA_BYTE = 1024*1024*1024;
-	final static long TERA_BYTE = 1024*1024*1024*1024;
+	static final long KILO_BYTE = 1024L;
+	static final long MEGA_BYTE = 1024L *1024;
+	static final long GIGA_BYTE = 1024L *1024*1024;
+	static final long TERA_BYTE = 1024L *1024*1024*1024;
+	private static final String CONTENT_VERSION_HARD_LINK = "CONTENT_VERSION_HARD_LINK";
+	private static final String CONTENT_ALLOW_ZERO_LENGTH_FILES = "CONTENT_ALLOW_ZERO_LENGTH_FILES";
 
 	public static void copyDirectory(
 			String sourceDirName, String destinationDirName, boolean hardLinks) throws IOException {
 
-			copyDirectory(new File(sourceDirName), new File(destinationDirName), hardLinks);
-		}
+		copyDirectory(new File(sourceDirName), new File(destinationDirName), hardLinks);
+	}
 
 	public static void copyDirectory(
-		String sourceDirName, String destinationDirName) throws IOException {
+			String sourceDirName, String destinationDirName) throws IOException {
 
 		copyDirectory(new File(sourceDirName), new File(destinationDirName));
 	}
@@ -95,150 +97,175 @@ public class FileUtil {
 	public static void copyDirectory(
 			String sourceDirName, String destinationDirName, FileFilter filter) throws IOException {
 
-			copyDirectory(new File(sourceDirName), new File(destinationDirName), true, filter);
-		}
-	
-	
-	
-	
-	public static void copyDirectory(File source, File destination, boolean hardLinks) throws IOException {
-	    copyDirectory(source,destination,hardLinks,null);
+		copyDirectory(new File(sourceDirName), new File(destinationDirName), true, filter);
 	}
-	
-	public static void copyDirectory(File source, File destination, boolean hardLinks, FileFilter filter) throws IOException {
+
+
+
+
+	public static void copyDirectory(File source, File destination, boolean hardLinks) throws IOException {
+		copyDirectory(source,destination,hardLinks,null);
+	}
+
+	public static void copyDirectory(File source, File destination, boolean hardLinks,
+			FileFilter filter) throws IOException {
 		if (source.exists() && source.isDirectory()) {
 			if (!destination.exists()) {
-				destination.mkdirs();
+				final boolean mkdirs = destination.mkdirs();
+				if (!mkdirs) {
+					Logger.error(FileUtil.class,
+							String.format(" Failed to make destination Dir [%s]", destination));
+				}
 			}
 
-			File[] fileArray = filter!=null ? source.listFiles(filter) : source.listFiles();
+			File[] fileArray = filter != null ? source.listFiles(filter) : source.listFiles();
+			if (null == fileArray) {
+				Logger.warn(FileUtil.class,String.format(" No files were returned from [%s] applying filter [%s]. ",source, filter));
+				return;
+			}
+			internalCopy(destination, hardLinks, filter, fileArray);
+		}
+	}
 
-			for (int i = 0; i < fileArray.length; i++) {
-			    if(fileArray[i].getName().endsWith("xml")) {
-			        String name=fileArray[i].getName();
-			        Logger.info(FileUtil.class, "copy "+name);
-			    }
-			    
-				if (fileArray[i].isDirectory()) {
-					copyDirectory(
-						fileArray[i],
+	/**
+	 * List of files copy
+	 * @param destination
+	 * @param hardLinks
+	 * @param filter
+	 * @param fileArray
+	 * @throws IOException
+	 */
+	private static void internalCopy(File destination, boolean hardLinks, FileFilter filter,
+			File[] fileArray) throws IOException {
+		for (File file : fileArray) {
+			if (file.getName().endsWith("xml")) {
+				Logger.info(FileUtil.class, "copy " + file.getName());
+			}
+			if (file.isDirectory()) {
+				copyDirectory(
+						file,
 						new File(destination.getPath() + File.separator
-							+ fileArray[i].getName()), hardLinks, filter);
-				}
-				else {
-					copyFile(
-						fileArray[i],
+								+ file.getName()), hardLinks, filter);
+			} else {
+				copyFile(
+						file,
 						new File(destination.getPath() + File.separator
-							+ fileArray[i].getName()), hardLinks);
-				}
+								+ file.getName()), hardLinks);
 			}
 		}
 	}
 
 	public static void copyDirectory(File source, File destination) throws IOException {
-		copyDirectory(source, destination, Config.getBooleanProperty("CONTENT_VERSION_HARD_LINK", true));
+		copyDirectory(source, destination, Config.getBooleanProperty(CONTENT_VERSION_HARD_LINK, true));
 	}
-	
+
 
 	public static void copyFile(
-		String sourceFileName, String destinationFileName) throws IOException {
+			String sourceFileName, String destinationFileName) throws IOException {
 
 		copyFile(new File(sourceFileName), new File(destinationFileName));
 	}
 
 	public static void copyFile(File source, File destination) throws IOException {
-		copyFile(source, destination, Config.getBooleanProperty("CONTENT_VERSION_HARD_LINK", true));
+		copyFile(source, destination, Config.getBooleanProperty(CONTENT_VERSION_HARD_LINK, true));
 	}
-	
+
 	public static void validateEmptyFile(File source) throws IOException{
 		final String metaDataPath = "metaData" + File.separator + "content";
-        final String languagePropertyPath = "messages" + File.separator + "cms_language";
-        
-        if (source.length() == 0) {
-            Logger.warn(FileUtil.class, source.getAbsolutePath() + " is empty");
-            if (!Config.getBooleanProperty("CONTENT_ALLOW_ZERO_LENGTH_FILES", true) && !(source.getAbsolutePath()
-                .endsWith(metaDataPath) || source.getAbsolutePath().contains(languagePropertyPath))) {
-                throw new IOException("Source file is 0 length, failing " + source);
-            }
-        }
+		final String languagePropertyPath = "messages" + File.separator + "cms_language";
+
+		if (source.length() == 0) {
+			Logger.warn(FileUtil.class, source.getAbsolutePath() + " is empty");
+			if (!Config.getBooleanProperty(CONTENT_ALLOW_ZERO_LENGTH_FILES, true) && !(source.getAbsolutePath()
+					.endsWith(metaDataPath) || source.getAbsolutePath().contains(languagePropertyPath))) {
+				throw new IOException("Source file is 0 length, failing " + source);
+			}
+		}
 	}
 
-    public static void copyFile(File source, File destination, boolean hardLinks) throws IOException {
-        copyFile(source, destination, hardLinks, true);
-    }
+	public static void copyFile(File source, File destination, boolean hardLinks) throws IOException {
+		copyFile(source, destination, hardLinks, true);
+	}
 
 	public static void copyFile(File source, File destination, boolean hardLinks, boolean validateEmptyFile) throws IOException {
-		
-        
-        if (!source.exists()) {
-            throw new IOException("Source file does not exist" + source);
-        }
 
-        if(source.getAbsolutePath().equalsIgnoreCase(destination.getAbsolutePath())) {
-        	return;
+
+		if (!source.exists()) {
+			throw new IOException("Source file does not exist " + source);
 		}
-        
-        if (validateEmptyFile){
-            validateEmptyFile(source);
-        }
 
-        if (hardLinks && !Config.getBooleanProperty("CONTENT_VERSION_HARD_LINK", true)) {
-            hardLinks = false;
-        }
+		if(source.getAbsolutePath().equalsIgnoreCase(destination.getAbsolutePath())) {
+			return;
+		}
 
-        if ((destination.getParentFile() != null) &&
-            (!destination.getParentFile().exists())) {
+		if (validateEmptyFile){
+			validateEmptyFile(source);
+		}
 
-            destination.getParentFile().mkdirs();
-        }
+		if (hardLinks && !Config.getBooleanProperty(CONTENT_VERSION_HARD_LINK, true)) {
+			hardLinks = false;
+		}
 
-        if (hardLinks) {
+		if ((destination.getParentFile() != null) &&
+				(!destination.getParentFile().exists())) {
 
-            // I think we need to be sure to unlink first
-            if (destination.exists()) {
-                Path destinationPath = Paths.get(destination.getAbsolutePath());
-                //"If the file is a symbolic link then the symbolic link itself, not the final target of the link, is deleted."
-                Files.delete(destinationPath);
-            }
+			final boolean mkdirs = destination.getParentFile().mkdirs();
+			if(!mkdirs){
+				Logger.error(FileUtil.class,String.format(" Failed to make destination parent Dir [%s]", destination));
+			}
+		}
 
-            Path newLink = Paths.get(destination.getAbsolutePath());
-            Path existingFile = Paths.get(source.getAbsolutePath());
+		if (hardLinks) {
+			hardLinks = handleHardLinks(source, destination, validateEmptyFile);
+		}
 
-            try {
-
-                Files.createLink(newLink, existingFile);
-                // setting this means we will try again if we cannot hard link
-                if (!destination.exists() ||
-                        (validateEmptyFile && destination.length() == 0)) {
-                    hardLinks = false;
-                    StringBuilder sb = new StringBuilder();
-                    sb.append("Can't create hardLink. source: " + source.getAbsolutePath());
-                    sb.append(", destination: " + destination.getAbsolutePath());
-                    Logger.warn(FileUtil.class, sb.toString());
-                }
-            }  catch (FileAlreadyExistsException e1) {
-                StringBuilder sb = new StringBuilder();
-                sb.append("Source File: " + source.getAbsolutePath());
-                sb.append("already exists on the destination: " + destination.getAbsolutePath());
-                Logger.debug(FileUtil.class, sb.toString());
-            } catch (IOException e2 ){
-                hardLinks = false; // setting to false will execute the fallback
-                StringBuilder sb = new StringBuilder();
-                sb.append("Could not created the hard link, will try copy for source: " + source);
-                sb.append(", destination: " + destination + ". Error message: " + e2.getMessage());
-                Logger.debug(FileUtil.class, sb.toString());
-            } 
-        }
-
-        if (!hardLinks) {
+		if (!hardLinks) {
 			copyFile(source, Files.newOutputStream(destination.toPath()));
 		}
 
-    }
+	}
+
+	/**
+	 * Creates Hardlinks when possible
+	 * @param source
+	 * @param destination
+	 * @param validateEmptyFile
+	 * @return
+	 * @throws IOException
+	 */
+	private static boolean handleHardLinks(File source, File destination, boolean validateEmptyFile) throws IOException {
+		boolean hardLinks = true;
+		// I think we need to be sure to unlink first
+		if (destination.exists()) {
+			Path destinationPath = Paths.get(destination.getAbsolutePath());
+			//"If the file is a symbolic link then the symbolic link itself, not the final target of the link, is deleted."
+			Files.delete(destinationPath);
+		}
+
+		Path newLink = Paths.get(destination.getAbsolutePath());
+		Path existingFile = Paths.get(source.getAbsolutePath());
+
+		try {
+			Files.createLink(newLink, existingFile);
+			// setting this means we will try again if we cannot hard link
+			if (!destination.exists() || (validateEmptyFile && destination.length() == 0)) {
+				hardLinks = false;
+				Logger.warn(FileUtil.class, String.format("Can't create hardLink. source: [%s] , destination: [%s].", source.getAbsolutePath(), destination.getAbsolutePath() ));
+			}
+		}  catch (FileAlreadyExistsException e1) {
+			Logger.debug(FileUtil.class, String.format("Source File: [%s] already exists on the destination: [%s]",
+					source.getAbsolutePath(), destination.getAbsolutePath()));
+		} catch (IOException e2 ){
+			hardLinks = false; // setting to false will execute the fallback
+			Logger.debug(FileUtil.class, String.format("Could not created the hard link, will try copy for source: [%s], destination:[%s]. Error message: [%s]",
+					source.getAbsolutePath(), destination.getAbsolutePath(),e2.getMessage()));
+		}
+		return hardLinks;
+	}
 
 	public static void copyFile(final File source, final OutputStream destination) throws IOException {
 		try (final ReadableByteChannel inputChannel = Channels.newChannel(Files.newInputStream(source.toPath()));
-			 final WritableByteChannel outputChannel = Channels.newChannel(destination)){
+				final WritableByteChannel outputChannel = Channels.newChannel(destination)){
 			FileUtil.fastCopyUsingNio(inputChannel, outputChannel);
 		} catch(IOException e) {
 			Logger.error(FileUtil.class, e);
@@ -247,7 +274,7 @@ public class FileUtil {
 	}
 
 	public static void copyFileLazy(String source, String destination)
-		throws IOException {
+			throws IOException {
 
 		String oldContent = null;
 		try {
@@ -261,7 +288,8 @@ public class FileUtil {
 		try {
 			newContent = FileUtil.read(destination);
 		}
-		catch (FileNotFoundException fnfe) {
+		catch (FileNotFoundException ignored) {
+			//Ignored
 		}
 
 		if (oldContent == null || !oldContent.equals(newContent)) {
@@ -274,76 +302,83 @@ public class FileUtil {
 	}
 
 	/**
-   * This method takes a directory and will delete all files older than
-   * the passed in Date.  It will only delete directories older than the
-   * passed in Date if they are empty. It will not delete the directory passed in
+	 * This method takes a directory and will delete all files older than
+	 * the passed in Date.  It will only delete directories older than the
+	 * passed in Date if they are empty. It will not delete the directory passed in
 	 * @param directory
 	 * @param olderThan
 	 */
-  public static void cleanTree(File directory, Date olderThan) {
-    cleanTree(directory, olderThan.getTime()); 
-  }
-  
-  /**
-   * This method takes a directory and will delete all files older than
-   * the passed in time in millis.  It will only delete directories older than the
-   * passed in time if they are empty.  It will not delete the directory passed in
-   * @param directory
-   * @param deleteOlderTime
-   */
-	 public static void cleanTree(final File directory, final long deleteOlderTime) {
+	public static void cleanTree(File directory, Date olderThan) {
+		cleanTree(directory, olderThan.getTime());
+	}
 
-	    if (directory==null || !directory.exists() ) {
-	      Logger.info(FileUtil.class, "cleanTree Directory " + directory + " not found exiting");
-	      return;
-	    }
-	    if(!directory.isDirectory()) {
-	      directory.delete();
-	      return;
-	    }
+	/**
+	 * This method takes a directory and will delete all files older than
+	 * the passed in time in millis.  It will only delete directories older than the
+	 * passed in time if they are empty.  It will not delete the directory passed in
+	 * @param directory
+	 * @param deleteOlderTime
+	 */
+	public static void cleanTree(final File directory, final long deleteOlderTime) {
 
-	    final List<File> allOldFiles = com.liferay.util.FileUtil.listFilesRecursively(directory, new FileFilter() {
-	      @Override
-	      public boolean accept(File pathname) {
-	        return pathname.lastModified() < deleteOlderTime;
-	      }
-	    });
+		if (directory==null || !directory.exists() ) {
+			Logger.info(FileUtil.class, "cleanTree Directory " + directory + " not found exiting");
+			return;
+		}
+		if(!directory.isDirectory()) {
+			internalDelete(directory);
+			return;
+		}
 
-	    // delete old files
-      allOldFiles.stream().filter(f -> f.isFile()).forEach(f->f.delete());
-      
-      //delete old directories (only empy directories will be deleted)
-	    allOldFiles.stream().filter(f -> f.exists() && f.isDirectory()).sorted(new Comparator<File>() {
-        @Override
-        public int compare(final File a, final File b) {
-          return a.getAbsolutePath().length() - b.getAbsolutePath().length();
-        }
-	    }).forEach(f->f.delete());
+		final List<File> allOldFiles = com.liferay.util.FileUtil.listFilesRecursively(directory,
+				pathname -> pathname.lastModified() < deleteOlderTime);
+
+		// delete old files
+		allOldFiles.stream().filter(File::isFile).forEach(FileUtil::internalDelete);
+
+		//delete old directories (only empty directories will be deleted)
+		allOldFiles.stream().filter(f -> f.exists() && f.isDirectory()).sorted(
+				(a, b) -> a.getAbsolutePath().length() - b.getAbsolutePath().length()).forEach(
+				FileUtil::internalDelete);
 
 
-	  }
-	
-	
-	
-	
-	
+	}
+
+	/**
+	 * NIO File Delete with proper logging
+	 * @param f
+	 * @return
+	 */
+	private static boolean internalDelete(File f) {
+		try {
+			Files.delete(f.toPath());
+			return true;
+		} catch (IOException e) {
+			Logger.debug(FileUtil.class, String.format("Fail to delete file/dir [%s]", f), e);
+		}
+		return false;
+	}
+
+
 	public static void deltree(File directory, boolean deleteTopDir) {
 		if (directory.exists() && directory.isDirectory()) {
 			File[] fileArray = directory.listFiles();
 
-			for (int i = 0; i < fileArray.length; i++) {
-				if (fileArray[i].isDirectory()) {
-					deltree(fileArray[i]);
-				}
-				else {
-					fileArray[i].delete();
+			if (null != fileArray) {
+				for (File file : fileArray) {
+					if (file.isDirectory()) {
+						deltree(file);
+					} else {
+						internalDelete(file);
+					}
 				}
 			}
-			if(deleteTopDir)
-				directory.delete();
+			if (deleteTopDir) {
+				internalDelete(directory);
+			}
 		}else{
 			if(directory.exists()){
-				directory.delete();
+				internalDelete(directory);
 			}
 		}
 	}
@@ -357,28 +392,28 @@ public class FileUtil {
 			return null;
 		}
 
-		ByteArrayOutputStream out = new ByteArrayOutputStream();
-		final InputStream in = Files.newInputStream(file.toPath());
+		try(
+				final ByteArrayOutputStream out = new ByteArrayOutputStream();
+				final InputStream in = Files.newInputStream(file.toPath())
+		) {
 
-		byte buffer[] = new byte[2048];
+			byte[] buffer = new byte[2048];
 
-		int c;
+			int c;
 
-		while (( c = in.read(buffer) ) != -1) {
-			out.write(buffer, 0, c);
+			while ((c = in.read(buffer)) != -1) {
+				out.write(buffer, 0, c);
+			}
+
+			return out.toByteArray();
 		}
-
-		in.close();
-		out.close();
-
-		return out.toByteArray();
 	}
 
 	public static boolean isWindows(){
 		return File.separatorChar == '\\';
-		
+
 	}
-	
+
 	/*
 	 * This will return a path whether the file exists or not
 	 * (Websphere returns a null if the file does not exist, which throws a lot of NPEs)
@@ -396,26 +431,25 @@ public class FileUtil {
 			relativePath = replaceSeparator(relativePath);
 		}
 
-        //Relative path has to start with "/"
-        if(!relativePath.startsWith("/")){
-            relativePath = File.separatorChar + relativePath;
-        }
+		//Relative path has to start with "/"
+		if(!relativePath.startsWith("/")){
+			relativePath = File.separatorChar + relativePath;
+		}
 
-		String ret = Config.CONTEXT.getRealPath(relativePath);	
+		String ret = Config.CONTEXT.getRealPath(relativePath);
 		if(ret !=null) {
-            return ret;
-        }
+			return ret;
+		}
 
-		//String base = Config.CONTEXT.getRealPath("/");
 		String base = Config.CONTEXT_PATH;
 		base = (base.lastIndexOf(File.separatorChar) == base.length()-1) ? base.substring(0, base.lastIndexOf(File.separatorChar)) : base;
 		relativePath = relativePath.replace('/', File.separatorChar);
-		
+
 		return base + relativePath;
 	}
-	
-	
-	
+
+
+
 	public static String getPath(String fullFileName) {
 		int pos = fullFileName.lastIndexOf("/");
 
@@ -439,10 +473,7 @@ public class FileUtil {
 			pos = fullFileName.lastIndexOf("\\");
 		}
 
-		String shortFileName =
-			fullFileName.substring(pos + 1, fullFileName.length());
-
-		return shortFileName;
+		return fullFileName.substring(pos + 1);
 	}
 
 	public static boolean exists(String fileName) {
@@ -451,34 +482,35 @@ public class FileUtil {
 		return file.exists();
 	}
 
-	public static String[] listDirs(String fileName) throws IOException {
+	public static String[] listDirs(String fileName) {
 		return listDirs(new File(fileName));
 	}
 
-	public static String[] listDirs(File file) throws IOException {
-		List dirs = new ArrayList();
+	public static String[] listDirs(File file) {
+		List<String> dirs = new ArrayList<>();
 
 		File[] fileArray = file.listFiles();
-
-		for (int i = 0; i < fileArray.length; i++) {
-			if (fileArray[i].isDirectory()) {
-				dirs.add(fileArray[i].getName());
+		if (null != fileArray) {
+			for (File value : fileArray) {
+				if (value.isDirectory()) {
+					dirs.add(value.getName());
+				}
 			}
 		}
 
-		return (String[])dirs.toArray(new String[0]);
+		return dirs.toArray(new String[0]);
 	}
 
-	public static String[] listFiles(String fileName) throws IOException {
+	public static String[] listFiles(String fileName) {
 		return listFiles(new File(fileName));
 	}
 
-	public static String[] listFiles(String fileName, Boolean includeSubDirs) throws IOException {
+	public static String[] listFiles(String fileName, boolean includeSubDirs) {
 		return listFiles(new File(fileName), includeSubDirs);
 	}
 
 	public static boolean containsParentFolder(File file, File[] folders) {
-		for (File folder : Arrays.asList(folders)) {
+		for (File folder : folders) {
 
 			if(file.getParent().equalsIgnoreCase(folder.getPath())) {
 				return true;
@@ -488,61 +520,54 @@ public class FileUtil {
 		return false;
 	}
 
-	public static String[] listFiles(File dir) throws IOException {
+	public static String[] listFiles(File dir) {
 		return listFiles(dir, false);
 	}
 
-	public static File[] listFileHandles(String fileName, Boolean includeSubDirs) throws IOException {
+	public static File[] listFileHandles(String fileName, Boolean includeSubDirs) {
 		return listFileHandles(new File(fileName), includeSubDirs);
 	}
-	
-	public static File[] listFileHandles(File dir, Boolean includeSubDirs) throws IOException {
-		
-	    if(!dir.exists() || ! dir.isDirectory()){
-	    	return new File[0];
-	    }
-		
-		
-		FileFilter fileFilter = new FileFilter() {
-	        public boolean accept(File file) {
-	            return file.isDirectory();
-	        }
-	    };
+
+	public static File[] listFileHandles(File dir, boolean includeSubDirs) {
+
+		if(!dir.exists() || ! dir.isDirectory()){
+			return new File[0];
+		}
+
+
+		FileFilter fileFilter = File::isDirectory;
 
 		File[] subFolders = dir.listFiles(fileFilter);
-	
-		List<File> files = new ArrayList<File>();
-	
-		List<File> fileArray = new ArrayList<File>(FileUtils.listFiles(dir, TrueFileFilter.INSTANCE, includeSubDirs ? TrueFileFilter.INSTANCE : null));
-	
+
+		List<File> files = new ArrayList<>();
+
+		List<File> fileArray = new ArrayList<>(FileUtils.listFiles(dir, TrueFileFilter.INSTANCE,
+				includeSubDirs ? TrueFileFilter.INSTANCE : null));
+
 		for (File file : fileArray) {
 			if(file.isFile()) {
-				if(includeSubDirs && containsParentFolder(file, subFolders)) {
-					files.add(file);
+				if(includeSubDirs && null != subFolders && containsParentFolder(file, subFolders)) {
+					files.add(file.getParentFile());
 				} else {
 					files.add(file);
 				}
 			}
 		}
-	
-		return (File[])files.toArray(new File[0]);
+
+		return files.toArray(new File[0]);
 	}
-	
-	public static String[] listFiles(File dir, Boolean includeSubDirs) throws IOException {
-		 FileFilter fileFilter = new FileFilter() {
-		        public boolean accept(File file) {
-		            return file.isDirectory();
-		        }
-		    };
+
+	public static String[] listFiles(File dir, boolean includeSubDirs) {
+		FileFilter fileFilter = File::isDirectory;
 		File[] subFolders = dir.listFiles(fileFilter);
 
-		List<String> files = new ArrayList<String>();
+		List<String> files = new ArrayList<>();
 
-		List<File> fileArray = new ArrayList<File>(FileUtils.listFiles(dir, TrueFileFilter.INSTANCE, includeSubDirs ? TrueFileFilter.INSTANCE : null));
+		List<File> fileArray = new ArrayList<>(FileUtils.listFiles(dir, TrueFileFilter.INSTANCE, includeSubDirs ? TrueFileFilter.INSTANCE : null));
 
 		for (File file : fileArray) {
 			if(file.isFile()) {
-				if(includeSubDirs && containsParentFolder(file, subFolders)) {
+				if(includeSubDirs && null != subFolders && containsParentFolder(file, subFolders)) {
 					files.add(file.getParentFile().getName() + File.separator + file.getName());
 				} else {
 					files.add(file.getName());
@@ -550,73 +575,80 @@ public class FileUtil {
 			}
 		}
 
-		return (String[])files.toArray(new String[0]);
+		return files.toArray(new String[0]);
 	}
 
 	public static void mkdirs(String pathName) {
 		File file = new File(pathName);
-		file.mkdirs();
+		final boolean mkdirsOk = file.mkdirs();
+		if(!mkdirsOk){
+			Logger.error(FileUtil.class,String.format("Fail to makeDir [%s]",file));
+		}
 	}
 
-	public static boolean move(
-		String sourceFileName, String destinationFileName) throws IOException {
-
-		return move(new File(sourceFileName), new File(destinationFileName));
-	}
-
+	/**
+	 * This method was created as way to avoid the error when you upload a file via Finder GIT-#9334
+	 * Both params are expected to be files
+	 * @param source Source file
+	 * @param destination Empty destination file (Not a directory)
+	 * @return bool result that indicates whether the operation succeeded or failed
+	 */
 	public static boolean move(File source, File destination) throws IOException {
 		return move(source, destination, true);
 	}
 	/**
 	 * This method was created as way to avoid the error when you upload a file via Finder GIT-#9334
-	 * 
-	 * @param source
-	 * @param destination
+	 *
+	 * @param source Source file
+	 * @param destination Empty destination file (Not a directory)
 	 * @param validateEmptyFile if is false it won't check if the file is empty
-	 * @return
+	 * @return bool result that indicates whether the operation succeeded or failed
 	 * @throws IOException
 	 */
 	public static boolean move(File source, File destination, boolean validateEmptyFile) throws IOException {
 		if (!source.exists()) {
 			return false;
 		}
-		
+
 		if(validateEmptyFile){
 			validateEmptyFile(source);
 		}
 		//If both files exists and are equals no need to move it.
-        //Confirms that destination exists.
-        if(destination.exists()) {
-            try (//Creates InputStream for both files.
-                    InputStream inputSource = Files.newInputStream(source.toPath());
-                    InputStream inputDestination = Files.newInputStream(destination.toPath())){
+		//Confirms that destination exists.
+		if(destination.exists()) {
+			try (//Creates InputStream for both files.
+					InputStream inputSource = Files.newInputStream(source.toPath());
+					InputStream inputDestination = Files.newInputStream(destination.toPath())){
 
-                //Both files checked.
-                if(DigestUtils.md5Hex(inputSource).equals(DigestUtils.md5Hex(inputDestination))){
+				//Both files checked.
+				if(DigestUtils.md5Hex(inputSource).equals(DigestUtils.md5Hex(inputDestination))){
 
-                    //If both files are the same but the destination is a soft link do nothing...., we don't want to remove the original file
-                    if ( source.toPath().toRealPath().equals(destination.toPath().toRealPath())
-                            || Files.isSymbolicLink(destination.toPath()) ) {
-                        return true;
-                    }
+					//If both files are the same but the destination is a soft link do nothing...., we don't want to remove the original file
+					if ( source.toPath().toRealPath().equals(destination.toPath().toRealPath())
+							|| Files.isSymbolicLink(destination.toPath()) ) {
+						return true;
+					}
 
-                    return source.delete();
-                }
-            } catch (Exception e) {
-                //In case of error, no worries. Continued with the same logic of move.
-                Logger.debug(FileUtil.class, "MD5 Checksum failed, continue with standard move");
-            }
-        }
+					return internalDelete(source);
+				}
+			} catch (Exception e) {
+				//In case of error, no worries. Continued with the same logic of move.
+				Logger.debug(FileUtil.class, "MD5 Checksum failed, continue with standard move");
+			}
+		}
 
-		destination.delete();
+		final boolean delete = internalDelete(destination);
+		if(!delete){
+			Logger.warn(FileUtil.class,String.format(" Fail to remove destination dir [%s]",destination));
+		}
 
 		boolean success = source.renameTo(destination);
-		
-		// if the rename fails, copy
+
+		// if to rename fails, copy
 
 		if (!success) {
 			copyFile(source, destination);
-			success = source.delete();
+			success = internalDelete(source);
 		}
 		return success;
 	}
@@ -626,51 +658,49 @@ public class FileUtil {
 	}
 
 	public static String read(File file) throws IOException {
-		BufferedReader br = new BufferedReader(new FileReader(file));
+		try(BufferedReader br = new BufferedReader(new FileReader(file))) {
 
-		StringBuffer sb = new StringBuffer();
-		String line = null;
+			StringBuilder sb = new StringBuilder();
+			String line = null;
 
-		while ((line = br.readLine()) != null) {
-			sb.append(line).append('\n');
+			while ((line = br.readLine()) != null) {
+				sb.append(line).append('\n');
+			}
+
+			return sb.toString().trim();
 		}
 
-		br.close();
-
-		return sb.toString().trim();
 	}
 
 	public static File[] sortFiles(File[] files) {
 		Arrays.sort(files, new FileComparator());
 
-		List directoryList = new ArrayList();
-		List fileList = new ArrayList();
+		List<File> directoryList = new ArrayList<>();
+		List<File>fileList = new ArrayList<>();
 
-		for (int i = 0; i < files.length; i++) {
-			if (files[i].isDirectory()) {
-				directoryList.add(files[i]);
-			}
-			else {
-				fileList.add(files[i]);
+		for (File file : files) {
+			if (file.isDirectory()) {
+				directoryList.add(file);
+			} else {
+				fileList.add(file);
 			}
 		}
 
 		directoryList.addAll(fileList);
 
-		return (File[])directoryList.toArray(new File[0]);
+		return directoryList.toArray(new File[0]);
 	}
 
 	public static String replaceSeparator(String fileName) {
 		return StringUtil.replace(fileName, '\\', "/");
 	}
 
-	public static List toList(Reader reader) {
-		List list = new ArrayList();
+	public static List<String> toList(Reader reader) {
+		List<String> list = new ArrayList<>();
 
 		try {
 			BufferedReader br = new BufferedReader(reader);
 
-			StringBuffer sb = new StringBuffer();
 			String line = null;
 
 			while ((line = br.readLine()) != null) {
@@ -679,18 +709,19 @@ public class FileUtil {
 
 			br.close();
 		}
-		catch (IOException ioe) {
+		catch (IOException ignored) {
+			//Ignored
 		}
 
 		return list;
 	}
 
-	public static List toList(String fileName) {
+	public static List<String> toList(String fileName) {
 		try {
 			return toList(new FileReader(fileName));
 		}
 		catch (IOException ioe) {
-			return new ArrayList();
+			return new ArrayList<>();
 		}
 	}
 
@@ -700,7 +731,8 @@ public class FileUtil {
 		try {
 			props.load(is);
 		}
-		catch (IOException ioe) {
+		catch (IOException ignored) {
+			//Ignored
 		}
 
 		return props;
@@ -708,24 +740,24 @@ public class FileUtil {
 
 	public static Properties toProperties(String fileName) {
 		try (final InputStream is = Files.newInputStream(Paths.get(fileName))){
-            return toProperties(is);
+			return toProperties(is);
 		}
 		catch (IOException ioe) {
 			return new Properties();
 		}
 	}
 
+	@SuppressWarnings("java:S6300")
 	public static void write(File file, String s) throws IOException {
 		if (file.getParent() != null) {
 			mkdirs(file.getParent());
 		}
+		try(BufferedWriter bw = new BufferedWriter(new FileWriter(file))) {
 
-		BufferedWriter bw = new BufferedWriter(new FileWriter(file));
+			bw.flush();
+			bw.write(s);
 
-		bw.flush();
-		bw.write(s);
-
-		bw.close();
+		}
 	}
 
 	public static void write(String fileName, String s) throws IOException {
@@ -733,11 +765,11 @@ public class FileUtil {
 	}
 
 	public static void write(String pathName, String fileName, String s)
-		throws IOException {
+			throws IOException {
 
 		write(new File(pathName, fileName), s);
 	}
-     //	http://jira.dotmarketing.net/browse/DOTCMS-2178
+	//	http://jira.dotmarketing.net/browse/DOTCMS-2178
 	public static String getsize(File fileName){
 		String finalVal;
 		long filesize = fileName.length();
@@ -774,106 +806,107 @@ public class FileUtil {
 		}
 		return finalVal;
 	}
-	
-    /**
-     * Method to do a fast copy from a readable byte channel to a writable byte
-     * channel using java NIO.
-     * 
-     * @param src
-     *            Reading from
-     * @param dest
-     *            Writing to
-     * @throws IOException
-     */
-    public static void fastCopyUsingNio(final ReadableByteChannel src, final WritableByteChannel dest)
-            throws IOException {
-        final ByteBuffer buffer = ByteBuffer.allocateDirect(5 * 1024);
 
-        while (src.read(buffer) != -1) {
+	/**
+	 * Method to do a fast copy from a readable byte channel to a writable byte
+	 * channel using java NIO.
+	 *
+	 * @param src
+	 *            Reading from
+	 * @param dest
+	 *            Writing to
+	 * @throws IOException
+	 */
+	public static void fastCopyUsingNio(final ReadableByteChannel src, final WritableByteChannel dest)
+			throws IOException {
+		final ByteBuffer buffer = ByteBuffer.allocateDirect(5 * 1024);
+
+		while (src.read(buffer) != -1) {
 			((Buffer)buffer).flip();
-            dest.write(buffer);
-            buffer.compact();
-        }
+			dest.write(buffer);
+			buffer.compact();
+		}
 
 		((Buffer)buffer).flip();
 
-        while (buffer.hasRemaining()) {
-            dest.write(buffer);
-        }
-    }
+		while (buffer.hasRemaining()) {
+			dest.write(buffer);
+		}
+	}
 
 	/**
-	  * Recursively walk a directory tree and return a List of all
-	  * Files found; the List is sorted using File.compareTo().
-	  *
-	  * @param aStartingDir is a valid directory, which can be read.
-	  */
-	  static public List<File> listFilesRecursively(File aStartingDir)  {
-		    return listFilesRecursively(aStartingDir, null);
-	  }
+	 * Recursively walk a directory tree and return a List of all
+	 * Files found; the List is sorted using File.compareTo().
+	 *
+	 * @param aStartingDir is a valid directory, which can be read.
+	 */
+	public static List<File> listFilesRecursively(File aStartingDir)  {
+		return listFilesRecursively(aStartingDir, null);
+	}
 
 
 
 	/**
-	  * Recursively walk a directory tree and return a List of all
-	  * Files found; the List is sorted using File.compareTo().
-	  *
-	  * @param aStartingDir is a valid directory, which can be read.
-	  */
-	  static public List<File> listFilesRecursively(File aStartingDir, FileFilter filter)  {
-		    validateDirectory(aStartingDir);
-		    List<File> result = getFileListingNoSort(aStartingDir, filter);
-		    Collections.sort(result);
-		    return result;
-	  }
+	 * Recursively walk a directory tree and return a List of all
+	 * Files found; the List is sorted using File.compareTo().
+	 *
+	 * @param aStartingDir is a valid directory, which can be read.
+	 */
+	public static List<File> listFilesRecursively(File aStartingDir, FileFilter filter)  {
+		validateDirectory(aStartingDir);
+		List<File> result = getFileListingNoSort(aStartingDir, filter);
+		Collections.sort(result);
+		return result;
+	}
 
 
-	  // PRIVATE //
-	  static private List<File> getFileListingNoSort(File aStartingDir, FileFilter filter) {
-	    List<File> result = new ArrayList<File>();
+	// PRIVATE //
+	private static List<File> getFileListingNoSort(File aStartingDir, FileFilter filter) {
+		List<File> result = new ArrayList<>();
 
-	    File[] filesAndDirs = null;
-	    if(filter !=null){
-	    	filesAndDirs = aStartingDir.listFiles(filter);
-	    }
-	    else{
-	    	filesAndDirs = aStartingDir.listFiles();
-	    }
-	    List<File> filesDirs = Arrays.asList(filesAndDirs);
-	    for(File file : filesDirs) {
-	      result.add(file); //always add, even if directory
-	      if ( ! file.isFile() ) {
-	        //must be a directory
-	        //recursive call!
-	        List<File> deeperList = getFileListingNoSort(file, filter);
-	        result.addAll(deeperList);
-	      }
-	    }
-	    return result;
-	  }
+		File[] filesAndDirs = null;
+		if(filter !=null){
+			filesAndDirs = aStartingDir.listFiles(filter);
+		}
+		else{
+			filesAndDirs = aStartingDir.listFiles();
+		}
+		if (null != filesAndDirs) {
+			for (File file : filesAndDirs) {
+				result.add(file); //always add, even if directory
+				if (!file.isFile()) {
+					//must be a directory
+					//recursive call!
+					List<File> deeperList = getFileListingNoSort(file, filter);
+					result.addAll(deeperList);
+				}
+			}
+		}
+		return result;
+	}
 
-	  /**
-	   * Directory is valid if it exists, does not represent a file, and can be read.
-	   */
-	   static private void validateDirectory (File aDirectory)  {
-	     if (aDirectory == null) {
-	       throw new DotStateException("Directory should not be null.");
-	     }
-	     if (!aDirectory.exists()) {
-	       throw new DotStateException("Directory does not exist: " + aDirectory);
-	     }
-	     if (!aDirectory.isDirectory()) {
-	       throw new DotStateException("Is not a directory: " + aDirectory);
-	     }
-	     if (!aDirectory.canRead()) {
-	       throw new DotStateException("Directory cannot be read: " + aDirectory);
-	     }
-	   }
+	/**
+	 * Directory is valid if it exists, does not represent a file, and can be read.
+	 */
+	private static void validateDirectory (File aDirectory)  {
+		if (aDirectory == null) {
+			throw new DotStateException("Directory should not be null.");
+		}
+		if (!aDirectory.exists()) {
+			throw new DotStateException("Directory does not exist: " + aDirectory);
+		}
+		if (!aDirectory.isDirectory()) {
+			throw new DotStateException("Is not a directory: " + aDirectory);
+		}
+		if (!aDirectory.canRead()) {
+			throw new DotStateException("Directory cannot be read: " + aDirectory);
+		}
+	}
 
 	/**
 	 * @return File (directory) created in file system from the parameter path.
 	 */
-	static public File mkDirsIfNeeded(final String path) {
+	public static File mkDirsIfNeeded(final String path) {
 		File folder = new File(path);
 		if (!folder.exists()) {
 			folder.mkdirs();
@@ -1029,23 +1062,23 @@ public class FileUtil {
 		}
 	}
 
-	public static enum StreamCompressorType {
+	public enum StreamCompressorType {
 
 		GZIP, BZIP2, NONE;
 	}
-	
+
 	/**
 	 * Convienience Method to access .tar.gz functionality
 	 * @param directory
 	 * @return
 	 * @throws IOException
 	 */
-    public static File tarGzipDirectory(final File directory) throws IOException {
-	    return PushUtils.tarGzipDirectory(directory);
-	    
+	public static File tarGzipDirectory(final File directory) throws IOException {
+		return PushUtils.tarGzipDirectory(directory);
+
 	}
-	
-	
-	
+
+
+
 
 }

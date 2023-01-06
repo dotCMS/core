@@ -103,7 +103,7 @@ const storeMock = {
     })
 };
 
-xdescribe('DotFavoritePageComponent', () => {
+describe('DotFavoritePageComponent', () => {
     let fixture: ComponentFixture<DotFavoritePageComponent>;
     let de: DebugElement;
     let component: DotFavoritePageComponent;

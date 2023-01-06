@@ -36,7 +36,7 @@ class DotCurrentUserServiceMock {
     }
 }
 
-xdescribe('DotStarterResolver', () => {
+describe('DotStarterResolver', () => {
     let dotStarterResolver: DotStarterResolver;
 
     beforeEach(waitForAsync(() => {

@@ -1,4 +1,4 @@
-import { RouteReuseStrategy, RouterModule, Routes, TitleStrategy } from '@angular/router';
+import { RouteReuseStrategy, RouterModule, Routes } from '@angular/router';
 import { NgModule } from '@angular/core';
 import { MainCoreLegacyComponent } from '@components/main-core-legacy/main-core-legacy-component';
 import { MainComponentLegacyComponent } from '@components/main-legacy/main-legacy.component';
@@ -15,7 +15,6 @@ import { ContentletGuardService } from './api/services/guards/contentlet-guard.s
 import { DefaultGuardService } from './api/services/guards/default-guard.service';
 import { MenuGuardService } from './api/services/guards/menu-guard.service';
 import { PublicAuthGuardService } from './api/services/guards/public-auth-guard.service';
-import { DotTemplatePageTitleStrategy } from '@shared/services/dot-title-strategy.service';
 import { PagesGuardService } from './api/services/guards/pages-guard.service';
 
 const PORTLETS_ANGULAR = [
@@ -209,12 +208,6 @@ const appRoutes: Routes = [
             onSameUrlNavigation: 'reload'
         })
     ],
-    providers: [
-        { provide: RouteReuseStrategy, useClass: DotCustomReuseStrategyService },
-        {
-            provide: TitleStrategy,
-            useClass: DotTemplatePageTitleStrategy
-        }
-    ]
+    providers: [{ provide: RouteReuseStrategy, useClass: DotCustomReuseStrategyService }]
 })
 export class AppRoutingModule {}
