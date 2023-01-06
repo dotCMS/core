@@ -29,7 +29,7 @@ export class DotImageSearchComponent implements OnInit, OnDestroy, AfterViewInit
     @Output() seletedImage = new EventEmitter<DotCMSContentlet>();
 
     @Input() set languageId(id) {
-        this.store.updateLanguages(id);
+        this.store.updateLanguageId(id);
     }
 
     vm$ = this.store.vm$;

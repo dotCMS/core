@@ -46,10 +46,10 @@ export class DotImageSearchStore extends ComponentStore<DotImageSearchState> {
         };
     });
 
-    readonly updateLanguages = this.updater<Languages>((state, languages) => {
+    readonly updateLanguageId = this.updater<number>((state, languageId) => {
         return {
             ...state,
-            languages
+            languageId
         };
     });
 
