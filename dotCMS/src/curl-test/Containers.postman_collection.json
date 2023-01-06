@@ -1,6 +1,6 @@
 {
 	"info": {
-		"_postman_id": "7c33f22c-d8a5-4243-9506-949c530c121e",
+		"_postman_id": "45a4fa00-51d5-45cd-972c-5448f21eaa70",
 		"name": "Containers",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
 	},
@@ -6015,6 +6015,101 @@
 						{
 							"key": "archive",
 							"value": "true"
+						}
+					]
+				},
+				"description": "Get the working version of a container"
+			},
+			"response": []
+		},
+		{
+			"name": "Get containers by content type - success",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"No errors\", function () {",
+							"    ",
+							"    var jsonData = pm.response.json();",
+							"    pm.expect(jsonData.errors.length).to.eql(0);",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "basic",
+					"basic": [
+						{
+							"key": "password",
+							"value": "admin",
+							"type": "string"
+						},
+						{
+							"key": "username",
+							"value": "admin@dotcms.com",
+							"type": "string"
+						}
+					]
+				},
+				"method": "GET",
+				"header": [
+					{
+						"key": "Content-Type",
+						"name": "Content-Type",
+						"value": "application/json",
+						"type": "text"
+					}
+				],
+				"url": {
+					"raw": "{{serverURL}}/api/v1/containers?filter=&page=0&per_page=50&orderby=modDate&direction=ASC&host=&system=true&archive=true&content_type_id_or_var=DotAsset",
+					"host": [
+						"{{serverURL}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"containers"
+					],
+					"query": [
+						{
+							"key": "filter",
+							"value": ""
+						},
+						{
+							"key": "page",
+							"value": "0"
+						},
+						{
+							"key": "per_page",
+							"value": "50"
+						},
+						{
+							"key": "orderby",
+							"value": "modDate"
+						},
+						{
+							"key": "direction",
+							"value": "ASC"
+						},
+						{
+							"key": "host",
+							"value": ""
+						},
+						{
+							"key": "system",
+							"value": "true"
+						},
+						{
+							"key": "archive",
+							"value": "true"
+						},
+						{
+							"key": "content_type_id_or_var",
+							"value": "DotAsset"
 						}
 					]
 				},
