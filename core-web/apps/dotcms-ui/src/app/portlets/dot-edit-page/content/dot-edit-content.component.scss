@@ -4,7 +4,7 @@
 :host {
     background-color: $gray-bg;
     display: flex;
-    flex-direction: row;
+    flex-direction: column;
     width: 100%;
     padding-right: 0;
 }
@@ -19,9 +19,10 @@ dot-whats-changed,
 }
 
 .dot-edit__page-wrapper {
+    background-color: $gray-bg;
     height: 100%;
     max-width: 100%;
-    min-width: 100%;
+    padding: $spacing-5;
     width: 100%;
 
     &.dot-edit__page-wrapper--deviced {
@@ -39,9 +40,11 @@ dot-whats-changed,
     height: 100%;
     overflow: hidden;
     display: flex;
-    flex-direction: column;
+    flex-direction: row;
     flex-grow: 1;
     z-index: 1;
+
+    padding-right: 80px;
 }
 
 .dot-edit__page-wrapper:after {
