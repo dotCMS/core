@@ -17,8 +17,9 @@
                 [stepStatus]="vm.stepStatusSidebar"
                 [variants]="vm.experiment.trafficProportion.variants"
                 (delete)="deleteVariant($event)"
+                (edit)="editVariant($event, vm.experiment.id)"
                 (goToEditPage)="goToEditPageVariant($event)"
-                (save)="saveVariant($event)"
+                (save)="saveVariant($event, vm.experiment.id)"
                 (sidebarStatusChanged)="sidebarStatusChanged($event)"
             ></dot-experiments-configuration-variants>
 

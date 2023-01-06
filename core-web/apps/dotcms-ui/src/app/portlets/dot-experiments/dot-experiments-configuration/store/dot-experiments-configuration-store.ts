@@ -2,12 +2,12 @@ import { Injectable } from '@angular/core';
 import { ComponentStore, tapResponse } from '@ngrx/component-store';
 import {
     DotExperiment,
-    StepStatus,
     ExperimentSteps,
-    TrafficProportion,
-    Variant,
     LoadingState,
-    Status
+    Status,
+    StepStatus,
+    TrafficProportion,
+    Variant
 } from '@dotcms/dotcms-models';
 import { Observable, throwError } from 'rxjs';
 import { switchMap, tap, withLatestFrom } from 'rxjs/operators';
@@ -33,6 +33,12 @@ const initialState: DotExperimentsConfigurationState = {
     }
 };
 
+export interface ConfigurationViewModel {
+    experiment: DotExperiment;
+    stepStatusSidebar: StepStatus;
+    isLoading: boolean;
+}
+
 @Injectable()
 export class DotExperimentsConfigurationStore extends ComponentStore<DotExperimentsConfigurationState> {
     // Selectors
@@ -57,8 +63,10 @@ export class DotExperimentsConfigurationStore extends ComponentStore<DotExperime
         stepStatusSidebar: {
             status: Status.DONE,
             isOpen: false,
-            experimentStep: null
-        }
+            experimentStep: null,
+            error: ''
+        },
+        variantIdSelected: ''
     }));
 
     readonly openSidebar = this.updater((state, experimentStep: ExperimentSteps) => ({
@@ -66,7 +74,8 @@ export class DotExperimentsConfigurationStore extends ComponentStore<DotExperime
         stepStatusSidebar: {
             status: Status.IDLE,
             isOpen: true,
-            experimentStep
+            experimentStep,
+            error: ''
         }
     }));
 
@@ -97,37 +106,76 @@ export class DotExperimentsConfigurationStore extends ComponentStore<DotExperime
     });
 
     // Variants
-    readonly addVariant = this.effect((variant$: Observable<Pick<DotExperiment, 'name'>>) => {
-        return variant$.pipe(
-            tap(() => this.setSidebarStatus(Status.SAVING)),
-            withLatestFrom(this.state$),
-            switchMap(([variant, { experiment }]) =>
-                this.dotExperimentsService.addVariant(experiment.id, variant).pipe(
-                    tapResponse(
-                        (experiment) => {
-                            this.messageService.add({
-                                severity: 'info',
-                                summary: this.dotMessageService.get(
-                                    'experiments.configure.variant.add.confirm-title'
-                                ),
-                                detail: this.dotMessageService.get(
-                                    'experiments.configure.variant.add.confirm-message',
-                                    experiment.name
-                                )
-                            });
+    readonly addVariant = this.effect(
+        (variant$: Observable<{ experimentId: string; data: Pick<DotExperiment, 'name'> }>) => {
+            return variant$.pipe(
+                tap(() => this.setSidebarStatus(Status.SAVING)),
+                switchMap((variant) =>
+                    this.dotExperimentsService.addVariant(variant.experimentId, variant.data).pipe(
+                        tapResponse(
+                            (experiment) => {
+                                this.messageService.add({
+                                    severity: 'info',
+                                    summary: this.dotMessageService.get(
+                                        'experiments.configure.variant.add.confirm-title'
+                                    ),
+                                    detail: this.dotMessageService.get(
+                                        'experiments.configure.variant.add.confirm-message',
+                                        experiment.name
+                                    )
+                                });
 
-                            this.setTrafficProportion(experiment.trafficProportion);
-                            this.closeSidebar();
-                        },
-                        (error: HttpErrorResponse) => {
-                            this.setSidebarStatus(Status.IDLE);
-                            throwError(error);
-                        }
+                                this.setTrafficProportion(experiment.trafficProportion);
+                                this.closeSidebar();
+                            },
+                            (error: HttpErrorResponse) => {
+                                this.setSidebarStatus(Status.IDLE);
+
+                                throwError(error);
+                            }
+                        )
                     )
                 )
-            )
-        );
-    });
+            );
+        }
+    );
+
+    readonly editVariant = this.effect(
+        (
+            variant$: Observable<{ experimentId: string; data: Pick<DotExperiment, 'name' | 'id'> }>
+        ) => {
+            return variant$.pipe(
+                tap(() => this.setSidebarStatus(Status.SAVING)),
+                switchMap((variant) =>
+                    this.dotExperimentsService
+                        .editVariant(variant.experimentId, variant.data.id, {
+                            description: variant.data.name
+                        })
+                        .pipe(
+                            tapResponse(
+                                (experiment) => {
+                                    this.messageService.add({
+                                        severity: 'info',
+                                        summary: this.dotMessageService.get(
+                                            'experiments.configure.variant.edit.confirm-title'
+                                        ),
+                                        detail: this.dotMessageService.get(
+                                            'experiments.configure.variant.edit.confirm-message',
+                                            experiment.name
+                                        )
+                                    });
+
+                                    this.setTrafficProportion(experiment.trafficProportion);
+                                },
+                                (error: HttpErrorResponse) => {
+                                    throwError(error);
+                                }
+                            )
+                        )
+                )
+            );
+        }
+    );
 
     readonly deleteVariant = this.effect((variant$: Observable<Variant>) => {
         return variant$.pipe(
@@ -156,11 +204,7 @@ export class DotExperimentsConfigurationStore extends ComponentStore<DotExperime
         );
     });
 
-    readonly vm$: Observable<{
-        experiment: DotExperiment;
-        stepStatusSidebar: StepStatus;
-        isLoading: boolean;
-    }> = this.select(
+    readonly vm$: Observable<ConfigurationViewModel> = this.select(
         this.state$,
         this.isLoading$,
         ({ experiment, stepStatusSidebar }, isLoading) => ({
