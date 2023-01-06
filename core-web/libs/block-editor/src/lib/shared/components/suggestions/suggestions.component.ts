@@ -50,6 +50,7 @@ export class SuggestionsComponent implements OnInit {
     @Input() noResultsMessage = 'No Results';
     @Input() currentLanguage = DEFAULT_LANG_ID;
     @Input() allowedContentTypes = '';
+    @Input() allowedBlocks = [];
 
     @Output() clearFilter: EventEmitter<string> = new EventEmitter<string>();
 
@@ -80,7 +81,10 @@ export class SuggestionsComponent implements OnInit {
     ngOnInit(): void {
         if (this.items?.length === 0) {
             // assign the default suggestions options.
-            this.items = suggestionOptions;
+            this.items = this.allowedBlocks.length
+                ? suggestionOptions.filter((item) => this.allowedBlocks.includes(item.id))
+                : suggestionOptions;
+            // Extra this to an function
             this.items.forEach((item) => {
                 item.command = () => {
                     this.clearFilter.emit(ItemsType.BLOCK);

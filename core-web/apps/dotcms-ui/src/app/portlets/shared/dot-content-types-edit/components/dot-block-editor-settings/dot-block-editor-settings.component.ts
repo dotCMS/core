@@ -11,7 +11,7 @@ import { FormGroup, FormBuilder } from '@angular/forms';
 import { HttpErrorResponse } from '@angular/common/http';
 
 import { forkJoin, Subject, of } from 'rxjs';
-import { catchError, take, takeUntil } from 'rxjs/operators';
+import { catchError, take, takeUntil, tap } from 'rxjs/operators';
 
 // Services
 import { DotHttpErrorManagerService } from '@services/dot-http-error-manager/dot-http-error-manager.service';
@@ -34,8 +34,9 @@ export const BLOCK_EDITOR_BLOCKS = [
     { label: 'Heading 3', code: 'heading3' },
     { label: 'Horizontal Line', code: 'horizontalRule' },
     { label: 'Image', code: 'image' },
+    { label: '`Paragraph`', code: 'paragraph' },
     { label: 'Ordered List', code: 'orderedList' },
-    { label: 'Tables', code: 'tables' }
+    { label: 'Table', code: 'table' }
 ];
 
 /* Uncomment this when Content Assets variable is ready
@@ -149,9 +150,11 @@ export class DotBlockEditorSettingsComponent implements OnInit, OnDestroy, OnCha
                     return of({});
                 }
 
-                return value
-                    ? this.fieldVariablesService.save(this.field, fieldVariable)
-                    : this.fieldVariablesService.delete(this.field, fieldVariable);
+                return (
+                    value
+                        ? this.fieldVariablesService.save(this.field, fieldVariable)
+                        : this.fieldVariablesService.delete(this.field, fieldVariable)
+                ).pipe(tap((variable) => (this.settingsMap[key].variable = variable))); // Update Variable Reference
             })
         )
             .pipe(
@@ -160,7 +163,10 @@ export class DotBlockEditorSettingsComponent implements OnInit, OnDestroy, OnCha
                     this.dotHttpErrorManagerService.handle(err).pipe(take(1))
                 )
             )
-            .subscribe((value: DotFieldVariable[]) => this.save.emit(value));
+            .subscribe((value: DotFieldVariable[]) => {
+                this.save.emit(value);
+                this.form.markAsPristine();
+            });
     }
 
     private dialogActions() {
