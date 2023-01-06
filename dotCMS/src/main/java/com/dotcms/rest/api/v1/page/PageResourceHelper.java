@@ -480,7 +480,7 @@ public class PageResourceHelper implements Serializable {
                     "The Contentlet being copied does not exist. Content id: " + copyContentletForm.getContentId());
         }
         final Contentlet copiedContentlet  = this.contentletAPI.copyContentlet(currentContentlet, user, pageMode.respectAnonPerms);
-        Logger.debug(this, ()-> "Copied the contentlet: " + copiedContentlet.getIdentifier());
+        Logger.debug(this, ()-> "Contentlet: " + copiedContentlet.getIdentifier() + " has been copied");
 
         return copiedContentlet;
     }
