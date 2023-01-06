@@ -24,7 +24,6 @@ WorkflowTask wfTask = APILocator.getWorkflowAPI().findTaskByContentlet(contentle
 
 
 boolean canEditContentType=contentlet.getContentType()!=null && APILocator.getPermissionAPI().doesUserHavePermission(contentlet.getContentType(),2, user);
-boolean isEditing = java.util.Objects.equals(request.getParameter("cmd"), "edit");
 com.dotmarketing.beans.Host myHost =  WebAPILocator.getHostWebAPI().getCurrentHost(request);
 
 List<WorkflowStep> wfSteps = null;
