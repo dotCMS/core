@@ -116,7 +116,6 @@ describe('DotTemplateAdvancedComponent', () => {
     });
 
     beforeEach(() => {
-
         fixture = TestBed.createComponent(DotTemplateAdvancedComponent);
         component = fixture.componentInstance;
         de = fixture.debugElement;
@@ -125,8 +124,8 @@ describe('DotTemplateAdvancedComponent', () => {
 
         const code = de.query(By.css('dot-textarea-content'));
         code.triggerEventHandler('monacoInit', {
-            executeEdits: jasmine.createSpy(),
-            getSelection: () => 100
+            name: 'testEditor',
+            editor: { executeEdits: jasmine.createSpy(), getSelection: () => 100 }
         });
     });
 
@@ -170,7 +169,6 @@ describe('DotTemplateAdvancedComponent', () => {
     });
 
     describe('events', () => {
-
         it('should emit updateTemplate event when the form changes', () => {
             const updateTemplate = spyOn(component.updateTemplate, 'emit');
             component.form.get('body').setValue('<body></body>');
