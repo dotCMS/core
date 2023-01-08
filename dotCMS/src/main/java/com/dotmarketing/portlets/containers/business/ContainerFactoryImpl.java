@@ -102,9 +102,9 @@ public class ContainerFactoryImpl implements ContainerFactory {
 			throw new DotStateException("Cannot save a container without an Identifier");
 		}
 
-		if(!UtilMethods.isSet(container.getInode())) {
+		//if(!UtilMethods.isSet(container.getInode())) {
 			container.setInode(UUIDGenerator.generateUuid());
-		}
+		//}
 
 		if(!UtilMethods.isSet(find(container.getInode()))) {
 			insertInodeInDB(container);
