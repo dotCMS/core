@@ -54,6 +54,73 @@ function addResults {
   executeCmd "cp -R ${OUTPUT_FOLDER}/* ${target_folder}"
 }
 
+# Creates initial branch to add tests results to in case it does not exist
+function initResults {
+  cd ${INPUT_PROJECT_ROOT}
+
+  # Resolve test results fully
+  local test_results_repo_url=$(resolveRepoUrl ${TEST_RESULTS_GITHUB_REPO} ${INPUT_CICD_GITHUB_TOKEN} ${GITHUB_USER})
+  local test_results_path=${INPUT_PROJECT_ROOT}/${TEST_RESULTS_GITHUB_REPO}
+
+  gitRemoteLs ${test_results_repo_url} ${BUILD_ID}
+  local remote_branch=$?
+  echo "Branch ${BUILD_ID} exists: ${remote_branch}"
+  # If it does not exist use master
+  if [[ ${remote_branch} == 1 ]]; then
+    clone_branch=${BUILD_ID}
+  else
+    clone_branch=scratch
+  fi
+
+  # Clone test-results repo at resolved branch
+  gitClone ${test_results_repo_url} ${clone_branch} ${test_results_path}
+  cd ${test_results_path}
+
+  # Prepare who is pushing the changes
+  gitConfig ${GITHUB_USER}
+
+  # If no remote branch detected create one
+  [[ ${remote_branch} != 1 ]] \
+    && executeCmd "git checkout -b ${BUILD_ID}" \
+    && executeCmd "git push ${test_results_repo_url}"
+}
+
+# Executes logic for matrix partitioned tests such as postman tests
+function closeResults {
+  if [[ "${INPUT_TEST_TYPE}" == 'postman' ]]; then
+    local test_results_repo_url=$(resolveRepoUrl ${TEST_RESULTS_GITHUB_REPO} ${INPUT_CICD_GITHUB_TOKEN} ${GITHUB_USER})
+    local test_results_path=${INPUT_PROJECT_ROOT}/${TEST_RESULTS_GITHUB_REPO}
+
+    gitRemoteLs ${test_results_repo_url} ${BUILD_ID}
+    local remote_branch=$?
+    echo "Branch ${BUILD_ID} exists: ${remote_branch}"
+    [[ ${remote_branch} != 1 ]] \
+      && echo "Tests results branch ${BUILD_ID} does not exist, cannot close results" \
+      && exit 1
+
+    gitClone ${test_results_repo_url} ${BUILD_ID} ${test_results_path}
+    cd ${test_results_path}/projects/core/postman/reports/html
+
+    cat ./postman-results-header.html > ./index.html
+    cat ./*.inc >> ./index.html
+    cat ./postman-results-footer.html >> ./index.html
+    rm ./*.inc
+    rm ./postman-results-header.html
+    rm ./postman-results-footer.html
+
+    gitConfig ${GITHUB_USER}
+
+    executeCmd "git status"
+    executeCmd "git add ."
+    executeCmd "git commit -m \"Closing results for branch ${BUILD_ID}\""
+    executeCmd "git push ${test_results_repo_url}"
+    if [[ ${cmd_result} != 0 ]]; then
+      echo "Error pushing to git for ${INPUT_BUILD_HASH} at ${INPUT_BUILD_ID}, error code: ${cmd_result}"
+      exit 1
+    fi
+  fi
+}
+
 # Persists results in 'test-results' repo in the provided INPUT_BUILD_ID branch.
 function persistResults {
   cd ${INPUT_PROJECT_ROOT}
@@ -65,6 +132,7 @@ function persistResults {
   # Query for remote branch
   gitRemoteLs ${test_results_repo_url} ${BUILD_ID}
   local remote_branch=$?
+  echo "Branch ${BUILD_ID} exists: ${remote_branch}"
   # If it does not exist use master
   if [[ ${remote_branch} == 1 ]]; then
     clone_branch=${BUILD_ID}
@@ -88,7 +156,7 @@ function persistResults {
   # Clean test results folders by removing contents and committing them
   cleanTestFolders
 
-  addResults ./
+  addResults .
 
   # Check for something new to commit
   [[ "${DEBUG}" == 'true' ]] \
@@ -129,8 +197,6 @@ function persistResults {
       echo "Error pushing to git for ${INPUT_BUILD_HASH} at ${INPUT_BUILD_ID}, error code: ${cmd_result}"
       exit 1
     fi
-
-    executeCmd "git status"
   else
     echo 'No changes detected, not committing nor pushing'
   fi
@@ -169,20 +235,18 @@ function copyResults {
   if [[ "${INCLUDE_LOGS}" == 'true' ]]; then
     mkdir -p ${LOGS_FOLDER}
     echo "Copying ${INPUT_TEST_TYPE} tests logs to [${LOGS_FOLDER}]"
-    executeCmd "cp -R ${INPUT_PROJECT_ROOT}/dotCMS/dotcms.log ${LOGS_FOLDER}/"
+    executeCmd "cp -R ${INPUT_PROJECT_ROOT}/dotCMS/*.log ${LOGS_FOLDER}/"
   fi
 }
 
 # Set Github Action outputs to be used by other actions
 function setOutputs {
-  setOutput tests_report_url ${BRANCH_TEST_RESULT_URL}
+  setOutput tests_report_url ${BRANCH_TEST_RESULT_URL} true
   setOutput test_logs_url ${TEST_LOG_URL}
-  echo "::notice::Commit test results URL: '${BRANCH_TEST_RESULT_URL}'"
 
   if [[ "${INPUT_TEST_TYPE}" == 'integration' ]]; then
-    setOutput ${INPUT_DB_TYPE}_tests_report_url ${BRANCH_TEST_RESULT_URL}
+    setOutput ${INPUT_DB_TYPE}_tests_report_url ${BRANCH_TEST_RESULT_URL} true
     setOutput ${INPUT_DB_TYPE}_test_logs_url ${TEST_LOG_URL}
-    echo "::notice::[${INPUT_DB_TYPE}] branch test results URL: '${BRANCH_TEST_RESULT_URL}'"
   fi
 }
 
@@ -208,7 +272,17 @@ function printStatus {
   echo
 
   [[ "${INCLUDE_RESULTS}" == 'true' ]] && echo -e "\e[31m         ${BRANCH_TEST_RESULT_URL}\e[0m"
-  [[ "${INCLUDE_LOGS}" == 'true' ]] && echo -e "\e[31m         ${TEST_LOG_URL}\e[0m"
+  if [[ "${INCLUDE_LOGS}" == 'true' ]]; then
+    if [[ "${INPUT_TEST_TYPE}" == 'postman' ]]; then
+      cd ${INPUT_PROJECT_ROOT}/${TEST_RESULTS_GITHUB_REPO}/projects/core/postman/logs
+      for l in *.log
+      do
+        echo -e "\e[31m         ${GITHUB_PERSIST_BRANCH_URL}/logs/${l}\e[0m"
+      done
+    else
+      echo -e "\e[31m         ${TEST_LOG_URL}\e[0m"
+    fi
+  fi
 
   echo
   [[ -n "${INPUT_PULL_REQUEST}" && "${INPUT_PULL_REQUEST}" != 'false' ]] \
@@ -240,14 +314,21 @@ export BASE_STORAGE_URL="${githack_url}/$(urlEncode ${BUILD_ID})/projects/${INPU
 export STORAGE_JOB_BRANCH_FOLDER="$(resolveResultsPath '')"
 export GITHUB_PERSIST_BRANCH_URL="${BASE_STORAGE_URL}/${STORAGE_JOB_BRANCH_FOLDER}"
 export REPORT_PERSIST_BRANCH_URL="${GITHUB_PERSIST_BRANCH_URL}/${REPORTS_LOCATION}"
-export BRANCH_TEST_RESULT_URL=${REPORT_PERSIST_BRANCH_URL}/index.html
-export TEST_LOG_URL=${GITHUB_PERSIST_BRANCH_URL}/logs/dotcms.log
+BRANCH_TEST_RESULT_URL=${REPORT_PERSIST_BRANCH_URL}/index.html
+TEST_LOG_URL=${GITHUB_PERSIST_BRANCH_URL}/logs/dotcms.log
+if [[ -n "${INPUT_RUN_IDENTIFIER}" ]]; then
+  BRANCH_TEST_RESULT_URL=${REPORT_PERSIST_BRANCH_URL}/${INPUT_RUN_IDENTIFIER}.html
+  TEST_LOG_URL=${GITHUB_PERSIST_BRANCH_URL}/logs/${INPUT_RUN_IDENTIFIER}.log
+fi
+export BRANCH_TEST_RESULT_URL
+export TEST_LOG_URL
 [[ ${INPUT_MODE} =~ ALL|RESULTS ]] && export INCLUDE_RESULTS=true
 [[ ${INPUT_MODE} =~ ALL|LOGS ]] && export INCLUDE_LOGS=true
 
 echo "############
 Storage vars
 ############
+BUILD_ID: ${BUILD_ID}
 OUTPUT_FOLDER: ${OUTPUT_FOLDER}
 REPORTS_FOLDER: ${REPORTS_FOLDER}
 LOGS_FOLDER: ${LOGS_FOLDER}

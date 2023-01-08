@@ -1,5 +1,5 @@
 import { ChangeDetectionStrategy, Component, OnInit } from '@angular/core';
-import { DotExperimentsConfigurationStore } from '@portlets/dot-experiments/dot-experiments-configuration/store/dot-experiments-configuration-store.service';
+
 import { ActivatedRoute, Router } from '@angular/router';
 
 import { DotSessionStorageService } from '@dotcms/data-access';
@@ -10,6 +10,11 @@ import {
     SidebarStatus,
     Variant
 } from '@dotcms/dotcms-models';
+import { Observable } from 'rxjs';
+import {
+    ConfigurationViewModel,
+    DotExperimentsConfigurationStore
+} from '@portlets/dot-experiments/dot-experiments-configuration/store/dot-experiments-configuration-store';
 
 @Component({
     selector: 'dot-experiments-configuration',
@@ -19,7 +24,7 @@ import {
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotExperimentsConfigurationComponent implements OnInit {
-    vm$ = this.dotExperimentsConfigurationStore.vm$;
+    vm$: Observable<ConfigurationViewModel> = this.dotExperimentsConfigurationStore.vm$;
 
     constructor(
         private readonly dotExperimentsConfigurationStore: DotExperimentsConfigurationStore,
@@ -69,8 +74,24 @@ export class DotExperimentsConfigurationComponent implements OnInit {
      * @returns void
      * @memberof DotExperimentsConfigurationComponent
      */
-    saveVariant(variant: Pick<DotExperiment, 'name'>) {
-        this.dotExperimentsConfigurationStore.addVariant(variant);
+    saveVariant(data: Pick<DotExperiment, 'name'>, experimentId: string) {
+        this.dotExperimentsConfigurationStore.addVariant({
+            data,
+            experimentId
+        });
+    }
+
+    /**
+     * Edit a specific variant
+     * @param {Variant} variant
+     * @returns void
+     * @memberof DotExperimentsConfigurationComponent
+     */
+    editVariant(data: Pick<DotExperiment, 'name' | 'id'>, experimentId: string) {
+        this.dotExperimentsConfigurationStore.editVariant({
+            data,
+            experimentId
+        });
     }
 
     /**

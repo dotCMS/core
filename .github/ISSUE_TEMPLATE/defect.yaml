@@ -4,7 +4,7 @@ description: I need to report a bug or issue with dotCMS.
 
 title: "[Defect]: "
 
-labels: ['Type - Defect']
+labels: ['Type - Defect', Triage]
 
 assignees:
   - damen-dotcms

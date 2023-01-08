@@ -25,10 +25,10 @@ import org.quartz.Scheduler;
 import org.quartz.SchedulerException;
 import org.quartz.StatefulJob;
 
-import java.sql.Date;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.Collections;
+import java.util.Date;
 import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.ThreadPoolExecutor;
@@ -263,16 +263,12 @@ public class AccessTokenRenewJob implements StatefulJob {
                     trigger.setMisfireInstruction(CronTrigger.MISFIRE_INSTRUCTION_FIRE_ONCE_NOW);
                     scheduler.addJob(job, true);
 
-                    final LocalDateTime jobDateTime = (
-                        isNew
+                    final Date jobDate = isNew
                             ? scheduler.scheduleJob(trigger)
                             : scheduler.rescheduleJob(
                                 ANALYTICS_ACCESS_TOKEN_RENEW_TRIGGER,
                                 ANALYTICS_ACCESS_TOKEN_RENEW_TRIGGER_GROUP,
-                                trigger))
-                        .toInstant()
-                        .atZone(ZoneId.systemDefault())
-                        .toLocalDateTime();
+                                trigger);
                     Logger.info(
                         AccessTokensRenewJobScheduler.class,
                         String.format(
@@ -280,7 +276,7 @@ public class AccessTokenRenewJob implements StatefulJob {
                             ANALYTICS_ACCESS_TOKEN_RENEW_JOB,
                             ANALYTICS_ACCESS_TOKEN_RENEW_TRIGGER,
                             ANALYTICS_ACCESS_TOKEN_RENEW_TRIGGER_GROUP,
-                            jobDateTime));
+                            Objects.requireNonNullElse(jobDate, "unknown")));
                 } catch (Exception e) {
                     Logger.error(DotInitScheduler.class, e.getMessage(), e);
                 }

@@ -2,7 +2,7 @@ import { CommonModule } from '@angular/common';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { BrowserModule } from '@angular/platform-browser';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
-import { NgModule, CUSTOM_ELEMENTS_SCHEMA } from '@angular/core';
+import { CUSTOM_ELEMENTS_SCHEMA, NgModule } from '@angular/core';
 import { HttpClientModule } from '@angular/common/http';
 
 // App is our top level component
@@ -19,8 +19,6 @@ import { DotDirectivesModule } from './shared/dot-directives.module';
 import { DotPipesModule } from '@pipes/dot-pipes.module';
 import { MonacoEditorModule } from '@materia-ui/ngx-monaco-editor';
 import { MarkdownModule } from 'ngx-markdown';
-
-// `AppModule` is the main entry point into Angular2's bootstraping process
 
 @NgModule({
     bootstrap: [AppComponent],

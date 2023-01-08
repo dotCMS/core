@@ -6,7 +6,7 @@ import * as builder from './docker-image-builder'
  */
 const run = () => {
   builder
-    .build()
+    .execute()
     .then(returnCode => {
       if (returnCode !== 0) {
         core.setFailed(`Process executed returned code ${returnCode}`)

@@ -26,6 +26,8 @@
     margin: 0 $spacing-1;
     padding-bottom: 0;
     position: relative;
+    // we need to make the width: 0 to give every item the same start point to grow.
+    width: 0;
 
     &:after {
         border: dashed 1px $gray;
