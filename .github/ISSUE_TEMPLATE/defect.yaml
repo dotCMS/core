@@ -6,9 +6,6 @@ title: "[Defect]: "
 
 labels: ['Type - Defect', Triage]
 
-assignees:
-  - damen-dotcms
-
 body:
 
   - type: markdown
