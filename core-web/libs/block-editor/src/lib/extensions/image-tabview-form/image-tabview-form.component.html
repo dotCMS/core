@@ -5,7 +5,7 @@
                 <div class="wrapper">
                     <dot-image-search
                         [languageId]="languageId"
-                        (seletedImage)="onSelectImage($event)"
+                        (addImage)="onSelectImage($event)"
                     ></dot-image-search>
                 </div>
             </ng-template>
@@ -13,7 +13,9 @@
         <p-tabPanel [cache]="false" header="Image URL" leftIcon="pi pi-link">
             <ng-template pTemplate="content">
                 <div class="wrapper">
-                    <dot-input-tab (save)="onSelectImage($event)"></dot-input-tab>
+                    <dot-insert-external-image
+                        (addImage)="onSelectImage($event)"
+                    ></dot-insert-external-image>
                 </div>
             </ng-template>
         </p-tabPanel>

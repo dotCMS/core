@@ -12,7 +12,7 @@ import { DotImageService } from '../image-uploader/services/dot-image/dot-image.
 import { DotImageCardSkeletonComponent } from './components/dot-image-search/components/dot-image-card-skeleton/dot-image-card-skeleton.component';
 import { DotImageCardComponent } from './components/dot-image-search/components/dot-image-card/dot-image-card.component';
 import { DotImageCardListComponent } from './components/dot-image-search/components/dot-image-card-list/dot-image-card-list.component';
-import { DotInputTabComponent } from './components/dot-input-tab/dot-input-tab.component';
+import { DotInsertExternalImageComponent } from './components/dot-insert-external-image/dot-insert-external-image.component';
 import { ImageTabviewFormComponent } from './image-tabview-form.component';
 import { DotImageSearchComponent } from './components/dot-image-search/dot-image-search.component';
 
@@ -23,7 +23,7 @@ import { DotImageSearchComponent } from './components/dot-image-search/dot-image
         DotImageCardListComponent,
         DotImageCardComponent,
         DotImageCardSkeletonComponent,
-        DotInputTabComponent,
+        DotInsertExternalImageComponent,
         DotImageSearchComponent
     ],
     providers: [DotImageService],

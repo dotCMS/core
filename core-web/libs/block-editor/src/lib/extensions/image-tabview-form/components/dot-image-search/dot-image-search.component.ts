@@ -26,7 +26,7 @@ import { AfterViewInit, ChangeDetectionStrategy } from '@angular/core';
 })
 export class DotImageSearchComponent implements OnInit, OnDestroy, AfterViewInit {
     @ViewChild('input') input!: ElementRef;
-    @Output() seletedImage = new EventEmitter<DotCMSContentlet>();
+    @Output() addImage = new EventEmitter<DotCMSContentlet>();
 
     @Input() set languageId(id) {
         this.store.updatelanguageId(id);

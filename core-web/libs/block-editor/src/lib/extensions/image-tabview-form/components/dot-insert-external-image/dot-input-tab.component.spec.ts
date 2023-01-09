@@ -1,17 +1,17 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 
-import { DotInputTabComponent } from './dot-input-tab.component';
+import { DotInsertExternalImageComponent } from './dot-insert-external-image.component';
 
 describe('DotInputTabComponent', () => {
-    let component: DotInputTabComponent;
-    let fixture: ComponentFixture<DotInputTabComponent>;
+    let component: DotInsertExternalImageComponent;
+    let fixture: ComponentFixture<DotInsertExternalImageComponent>;
 
     beforeEach(async () => {
         await TestBed.configureTestingModule({
-            declarations: [DotInputTabComponent]
+            declarations: [DotInsertExternalImageComponent]
         }).compileComponents();
 
-        fixture = TestBed.createComponent(DotInputTabComponent);
+        fixture = TestBed.createComponent(DotInsertExternalImageComponent);
         component = fixture.componentInstance;
         fixture.detectChanges();
     });

@@ -12,14 +12,14 @@ const regexURL =
     '^((http|https)://)[-a-zA-Z0-9@:%._\\+~#?&//=]{2,256}\\.[a-z]{2,6}\\b([-a-zA-Z0-9@:%._\\+~#?&//=]*)$';
 
 @Component({
-    selector: 'dot-input-tab',
-    templateUrl: './dot-input-tab.component.html',
-    styleUrls: ['./dot-input-tab.component.scss'],
+    selector: 'dot-insert-external-image',
+    templateUrl: './dot-insert-external-image.component.html',
+    styleUrls: ['./dot-insert-external-image.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class DotInputTabComponent {
+export class DotInsertExternalImageComponent {
     @ViewChild('input') input!: ElementRef;
-    @Output() save = new EventEmitter();
+    @Output() addImage = new EventEmitter();
 
     form: FormGroup;
 
@@ -32,6 +32,6 @@ export class DotInputTabComponent {
     }
 
     onSubmit({ url }) {
-        this.save.emit(url);
+        this.addImage.emit(url);
     }
 }
