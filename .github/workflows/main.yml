@@ -62,8 +62,8 @@ jobs:
         run: |
           cd core-web
           if ! (npm run nx affected -- --target=lint --base=remotes/origin/master --head=HEAD --exclude=dot-rules,dot-layout-grid,dot-primeng-theme-styles,dot-rules,dotcms,dotcms-field-elements,dotcms-js,dotcms-models,dotcms-webcomponents,dotcdn-e2e,dotcms-block-editor,dotcms-block-editor-e2e,dotcms-ui-e2e) then
-            echo "::set-output name=status::failure";
-            echo "::set-output name=color::#ff2400";
+            echo "status=failure" >> $GITHUB_OUTPUT
+            echo "color=#ff2400" >> $GITHUB_OUTPUT
             exit 1;
           fi
       - name: Slack Notification
@@ -108,12 +108,12 @@ jobs:
         run: |
           cd core-web
           if ! (npx nx run dotcms-ui:test) then
-            echo "::set-output name=status::failure";
-            echo "::set-output name=color::#ff2400";
+            echo "status=failure" >> $GITHUB_OUTPUT
+            echo "color=#ff2400" >> $GITHUB_OUTPUT
             exit 1;
           else
-            echo "::set-output name=status::success";
-            echo "::set-output name=color::#5E7D00";
+            echo "status=success" >> $GITHUB_OUTPUT
+            echo "color=#5E7D00" >> $GITHUB_OUTPUT
           fi
       - name: Push Tests to GitHub
         id: persist_results
@@ -121,7 +121,7 @@ jobs:
         run: |
           chmod +x .cicd/github.sh && source .cicd/github.sh
           persistResults
-          echo "::set-output name=message::$(logResults)";
+          echo "message=$(logResults)" >> $GITHUB_OUTPUT
       - name: Slack Notification
         if: success() || failure()
         uses: rtCamp/action-slack-notify@v2
@@ -139,12 +139,12 @@ jobs:
         run: |
           cd core-web
           if ! (npx nx run dotcms-webcomponents:test) then
-            echo "::set-output name=status::failure";
-            echo "::set-output name=color::#ff2400";
+            echo "status=failure" >> $GITHUB_OUTPUT
+            echo "color=#ff2400" >> $GITHUB_OUTPUT
             exit 1;
           else
-            echo "::set-output name=status::success";
-            echo "::set-output name=color::#5E7D00";
+            echo "status=success" >> $GITHUB_OUTPUT
+            echo "color=#5E7D00" >> $GITHUB_OUTPUT
           fi
 
 #      - name: Push Tests to GitHub
@@ -153,7 +153,7 @@ jobs:
 #        run: |
 #          chmod +x .cicd/github.sh && source .cicd/github.sh
 #          persistWebComponentsTestResults
-#          echo "::set-output name=message::$(logResults)";
+#          echo "message=$(logResults)" >> $GITHUB_OUTPUT
 #
 #      - name: Slack Notification
 #        if: success() || failure()

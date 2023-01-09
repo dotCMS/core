@@ -15,8 +15,8 @@ const run = async () => {
   const results = await postman.runTests()
 
   setOutput('tests_results_location', resultsFolder)
-  setOutput('tests_results_report_location', reportFolder, true)
-  setOutput('tests_results_status', results.testsResultsStatus)
+  setOutput('tests_results_report_location', reportFolder)
+  setOutput('tests_results_status', results.testsResultsStatus, true)
   setOutput('tests_results_skip_report', results.skipResultsReport)
 
   if (results.testsRunExitCode !== 0) {
