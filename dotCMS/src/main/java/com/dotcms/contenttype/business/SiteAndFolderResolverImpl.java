@@ -123,7 +123,7 @@ public class SiteAndFolderResolverImpl implements SiteAndFolderResolver {
         }
 
         //In case System-Host has been explicitly set we must respect that
-        if(Host.SYSTEM_HOST.equals(params.host())){
+        if(Host.SYSTEM_HOST.equals(params.host()) || Host.SYSTEM_HOST_NAME.equals(params.siteName())){
             return Host.SYSTEM_HOST;
         }
 
