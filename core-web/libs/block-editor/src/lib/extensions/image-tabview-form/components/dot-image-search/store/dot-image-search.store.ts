@@ -5,16 +5,16 @@ import { ComponentStore } from '@ngrx/component-store';
 import { Languages, queryEsParams } from '@dotcms/block-editor';
 import { mergeMap, tap, map, withLatestFrom } from 'rxjs/operators';
 import { Observable } from 'rxjs/internal/Observable';
-import { SearchService } from '../../../../shared/services/search/search.service';
+import { SearchService } from '../../../../../shared/services/search/search.service';
 
-import { DEFAULT_LANG_ID } from '../../../bubble-menu/models/index';
+import { DEFAULT_LANG_ID } from '../../../../bubble-menu/models/index';
 import { ESOrderDirection } from '@dotcms/block-editor';
-import { DotLanguageService } from '../../../../shared/services/dot-language/dot-language.service';
+import { DotLanguageService } from '../../../../../shared/services/dot-language/dot-language.service';
 
 export interface DotImageSearchState {
     loading: boolean;
     preventScroll: boolean;
-    contentlets: DotCMSContentlet[][];
+    contentlets: DotCMSContentlet[];
     languageId: number;
     search: string;
 }
@@ -39,7 +39,7 @@ export class DotImageSearchStore extends ComponentStore<DotImageSearchState> {
     }));
 
     // Setters
-    readonly updateContentlets = this.updater<DotCMSContentlet[][]>((state, contentlets) => {
+    readonly updateContentlets = this.updater<DotCMSContentlet[]>((state, contentlets) => {
         return {
             ...state,
             contentlets
@@ -80,16 +80,10 @@ export class DotImageSearchStore extends ComponentStore<DotImageSearchState> {
             tap((search) => {
                 this.updateLoading(true);
                 this.updateSearch(search);
-                this.updateContentlets([]);
             }),
             withLatestFrom(this.state$),
             map(([search, state]) => ({ ...state, search })),
-            mergeMap((data) => {
-                const { contentlets } = data;
-                const params = this.params({ ...data });
-
-                return this.searchContentletsRequest(params, contentlets);
-            })
+            mergeMap((data) => this.searchContentletsRequest(this.params({ ...data }), []))
         );
     });
 
@@ -97,12 +91,9 @@ export class DotImageSearchStore extends ComponentStore<DotImageSearchState> {
         return origin$.pipe(
             withLatestFrom(this.state$),
             map(([offset, state]) => ({ ...state, offset })),
-            mergeMap((data) => {
-                const { contentlets } = data;
-                const params = this.params({ ...data });
-
-                return this.searchContentletsRequest(params, contentlets);
-            })
+            mergeMap(({ contentlets, ...data }) =>
+                this.searchContentletsRequest(this.params(data), contentlets)
+            )
         );
     });
 
@@ -118,17 +109,14 @@ export class DotImageSearchStore extends ComponentStore<DotImageSearchState> {
         });
     }
 
-    private searchContentletsRequest(params, prev) {
+    private searchContentletsRequest(params, prev: DotCMSContentlet[]) {
         return this.searchService.get(params).pipe(
             map(({ jsonObjectView: { contentlets } }) => {
-                const items = this.createRowItem(
-                    // Break the reference, force html to update
-                    [...prev],
-                    this.setContentletLanguage(contentlets)
-                );
+                const items = this.setContentletLanguage(contentlets);
                 this.updateLoading(false);
                 this.updatePreventScroll(!contentlets?.length);
-                this.updateContentlets(items);
+
+                return this.updateContentlets([...prev, ...items]);
             })
         );
     }
@@ -167,30 +155,5 @@ export class DotImageSearchStore extends ComponentStore<DotImageSearchState> {
         }
 
         return `${languageCode}-${countryCode}`;
-    }
-
-    /**
-     *
-     * Create an array of type: [[DotCMSContentlet, DotCMSContentlet], ...]
-     * Due PrimeNg virtual scroll allows only displaying one element at a time [https://primefaces.org/primeng/virtualscroller],
-     * and figma's layout requires displaying two columns of contentlets [https://github.com/dotCMS/core/issues/23235]
-     *
-     * @private
-     * @param {DotCMSContentlet[][]} prev
-     * @param {DotCMSContentlet[]} contentlets
-     * @return {*}
-     * @memberof DotImageSearchStore
-     */
-    private createRowItem(prev: DotCMSContentlet[][], contentlets: DotCMSContentlet[]) {
-        contentlets.forEach((contentlet) => {
-            const i = prev.length - 1;
-            if (prev[i]?.length < 2) {
-                prev[i].push(contentlet);
-            } else {
-                prev.push([contentlet]);
-            }
-        });
-
-        return prev;
     }
 }

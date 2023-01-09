@@ -1,3 +1,4 @@
+import { DotCMSContentlet } from '@dotcms/dotcms-models';
 export const CONTENTLETS_MOCK = [
     {
         name: 'Empty Content',
@@ -175,7 +176,7 @@ export const CONTENTLETS_MOCK = [
     }
 ];
 
-const EMPTY_IMAGE_CONTENTLET = {
+const EMPTY_IMAGE_CONTENTLET: DotCMSContentlet = {
     mimeType: 'image/jpeg',
     type: 'file_asset',
     fileAssetVersion: '/dA/14dd5ad9-55ae-42a8-a5a7-e259b6d0901a/fileAsset/rain-forest-view.jpg',
@@ -200,7 +201,15 @@ const EMPTY_IMAGE_CONTENTLET = {
     languageId: 1,
     titleImage: 'fileAsset',
     hasLiveVersion: true,
-    deleted: false
+    deleted: false,
+    folder: '',
+    host: '',
+    modDate: '',
+    modUser: '',
+    modUserName: '',
+    owner: '',
+    title: '',
+    url: ''
 };
 
 export const IMAGE_CONTENTLETS_MOCK = [

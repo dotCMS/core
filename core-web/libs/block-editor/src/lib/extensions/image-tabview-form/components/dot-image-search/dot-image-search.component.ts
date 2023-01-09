@@ -14,7 +14,7 @@ import { debounceTime, throttleTime, skip, takeUntil } from 'rxjs/operators';
 import { DotCMSContentlet } from '@dotcms/dotcms-models';
 
 // services
-import { DotImageSearchStore } from './dot-image-search.store';
+import { DotImageSearchStore } from './store/dot-image-search.store';
 import { AfterViewInit, ChangeDetectionStrategy } from '@angular/core';
 
 @Component({
@@ -42,9 +42,7 @@ export class DotImageSearchComponent implements OnInit, OnDestroy, AfterViewInit
     ngOnInit(): void {
         this.offset$
             .pipe(takeUntil(this.destroy$), skip(1), throttleTime(450))
-            .subscribe((offset) => {
-                this.store.nextBatch(offset * 2);
-            });
+            .subscribe(this.store.nextBatch);
 
         requestAnimationFrame(() => this.input.nativeElement.focus());
     }
