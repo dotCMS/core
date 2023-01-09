@@ -1,3 +1,6 @@
+// Modules
+export * from './primeng.module';
+
 // Plugins
 export * from './plugins/floating.plugin';
 
@@ -20,3 +23,6 @@ export * from './pipes/contentlet-state/contentlet-state.pipe';
 // Utils
 export * from './utils/prosemirror.utils';
 export * from './utils/suggestion.utils';
+
+// Mocs
+export * from './mocks';

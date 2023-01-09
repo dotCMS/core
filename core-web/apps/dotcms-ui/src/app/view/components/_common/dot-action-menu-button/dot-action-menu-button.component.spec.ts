@@ -6,6 +6,7 @@ import { DebugElement } from '@angular/core';
 import { DotActionMenuItem } from '@shared/models/dot-action-menu/dot-action-menu-item.model';
 import { DotMenuModule } from '../dot-menu/dot-menu.module';
 import { dotcmsContentTypeBasicMock } from '@dotcms/utils-testing';
+import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 
 describe('ActionMenuButtonComponent', () => {
     let comp: DotActionMenuButtonComponent;
@@ -15,7 +16,7 @@ describe('ActionMenuButtonComponent', () => {
     beforeEach(() => {
         TestBed.configureTestingModule({
             declarations: [DotActionMenuButtonComponent],
-            imports: [UiDotIconButtonTooltipModule, DotMenuModule]
+            imports: [UiDotIconButtonTooltipModule, DotMenuModule, BrowserAnimationsModule]
         }).compileComponents();
 
         fixture = TestBed.createComponent(DotActionMenuButtonComponent);
@@ -254,7 +255,7 @@ describe('ActionMenuButtonComponent', () => {
         });
         fixture.detectChanges();
 
-        const menuItemsLink = de.queryAll(By.css('.dot-menu-item__link'));
+        const menuItemsLink = de.queryAll(By.css('.p-menuitem-link'));
         menuItemsLink[1].nativeElement.click();
 
         expect(fakeCommand).toHaveBeenCalledTimes(1);

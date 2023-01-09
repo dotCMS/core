@@ -86,7 +86,7 @@ export const ImageNode = Image.extend({
 
         return [
             'div',
-            { style },
+            { style, class: 'node-container' },
             href
                 ? imageLinkElement(this.options.HTMLAttributes, HTMLAttributes)
                 : imageElement(this.options.HTMLAttributes, HTMLAttributes)

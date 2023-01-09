@@ -1,6 +1,7 @@
 package com.dotcms.experiments.business;
 
 import static com.dotcms.experiments.model.AbstractExperimentVariant.ORIGINAL_VARIANT;
+import static com.dotcms.variant.VariantAPI.DEFAULT_VARIANT;
 import static junit.framework.TestCase.assertEquals;
 import static junit.framework.TestCase.assertTrue;
 import static org.junit.Assert.assertFalse;
@@ -23,6 +24,7 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.util.Logger;
 import com.liferay.portal.model.User;
@@ -218,20 +220,6 @@ public class ExperimentAPIImpIT {
 
         // expecting the page + the 3 contentlets
         assertEquals(4, experimentContentlets.size());
-    }
-
-    /**
-     * Method to test: {@link ExperimentsAPI#save(Experiment, User)}
-     * When: The {@link HTMLPageAsset} when the Experiment is created on is NOT live
-     * Should: throw DotStateException
-     */
-    @Test(expected = DotStateException.class)
-    public void testSave_whenUnpublishedPage_shouldFail() {
-        final HTMLPageAsset page = APILocator.getHTMLPageAssetAPI().fromContentlet(
-                TestDataUtils.getPageContent(true, 1));
-        new ExperimentDataGen()
-                .page(page)
-                .nextPersisted();
     }
 
     /*

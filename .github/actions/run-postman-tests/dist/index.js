@@ -127,6 +127,8 @@ const waitForDeps = core.getInput('wait_for_deps');
 const dbType = core.getInput('db_type');
 const licenseKey = core.getInput('license_key');
 const customStarterUrl = core.getInput('custom_starter_url');
+const parallelCollections = JSON.parse(core.getInput('parallel_collections'));
+const parallelCollection = core.getInput('parallel_collection');
 const tests = core.getInput('tests');
 const exportReport = core.getBooleanInput('export_report');
 const includeAnalytics = core.getBooleanInput('include_analytics');
@@ -135,7 +137,6 @@ const resourcesFolder = path.join(cicdFolder, 'resources', 'postman');
 const dockerFolder = path.join(cicdFolder, 'docker');
 const licenseFolder = path.join(dockerFolder, 'license');
 const dotCmsRoot = path.join(projectRoot, 'dotCMS');
-const logFile = path.join(dotCmsRoot, 'dotcms.log');
 const volumes = [licenseFolder, path.join(dockerFolder, 'cms-shared'), path.join(dockerFolder, 'cms-local')];
 const postmanTestsPath = path.join(dotCmsRoot, 'src', 'curl-test');
 const postmanEnvFile = 'postman_environment.json';
@@ -163,7 +164,6 @@ const DEPS_ENV = {
 const runTests = () => __awaiter(void 0, void 0, void 0, function* () {
     yield setup();
     yield startDeps();
-    printInfo();
     try {
         return yield runPostmanCollections();
     }
@@ -185,9 +185,12 @@ exports.runTests = runTests;
  * Copies logs from docker volume to standard DotCMS location.
  */
 const copyOutputs = () => __awaiter(void 0, void 0, void 0, function* () {
-    printInfo();
+    const logFile = path.join(dotCmsRoot, `${normalize(parallelCollection)}.log`);
     yield execCmd(toCommand('docker', ['cp', 'docker_dotcms-app_1:/srv/dotserver/tomcat-9.0.60/logs/dotcms.log', logFile]));
-    yield execCmd(toCommand('ls', ['-las', dotCmsRoot]));
+});
+const copyHeaderAndFooter = () => __awaiter(void 0, void 0, void 0, function* () {
+    yield execCmd(toCommand('cp', [path.join(resourcesFolder, 'postman-results-header.html'), reportFolder]));
+    yield execCmd(toCommand('cp', [path.join(resourcesFolder, 'postman-results-footer.html'), reportFolder]));
 });
 /**
  * Sets up everuthing needed to run postman collections.
@@ -196,14 +199,6 @@ const setup = () => __awaiter(void 0, void 0, void 0, function* () {
     yield installDeps();
     createFolders();
     yield prepareLicense();
-    yield printInfo();
-});
-/**
- * Prints docker command info
- */
-const printInfo = () => __awaiter(void 0, void 0, void 0, function* () {
-    yield execCmd(toCommand('docker', ['images']));
-    yield execCmd(toCommand('docker', ['ps']));
 });
 /**
  * Install necessary dependencies to run the postman collections.
@@ -256,6 +251,9 @@ const stopDeps = () => __awaiter(void 0, void 0, void 0, function* () {
         console.error(`Error stopping dependencies: ${err}`);
     }
 });
+const normalize = (provided) => {
+    return !provided || provided === '*' ? 'postman' : provided.replace(/ /g, '_').replace('.json', '');
+};
 /**
  * Run postman tests.
  *
@@ -268,27 +266,17 @@ const runPostmanCollections = () => __awaiter(void 0, void 0, void 0, function* 
     ===========================================
     Running postman tests against ${dbType}
     ===========================================`);
+    const collectionRuns = new Map();
     const foundCollections = shelljs
         .ls(postmanTestsPath)
         .filter(file => file.endsWith('.json') && file !== postmanEnvFile);
-    core.info(`Postman collections:\n${foundCollections.join(',')}`);
-    const resolvedTests = resolveSpecific();
-    const filtered = resolvedTests.length === 0
-        ? foundCollections
-        : resolvedTests.filter(resolved => !!foundCollections.find(collection => collection === resolved));
-    core.info(`Detected Postman collections:\n${filtered.join(',')}`);
+    core.info(`Current parallel collection: ${parallelCollection}`);
+    const resolved = resolveCollections(foundCollections);
+    core.info(`Resolved collections ${resolved.join(', ')}`);
     const htmlResults = [];
-    const header = fs.readFileSync(path.join(resourcesFolder, 'postman-results-header.html'), {
-        encoding: 'utf8',
-        flag: 'r'
-    });
-    const footer = fs.readFileSync(path.join(resourcesFolder, 'postman-results-footer.html'), {
-        encoding: 'utf8',
-        flag: 'r'
-    });
-    const collectionRuns = new Map();
-    for (const collection of filtered) {
-        const normalized = collection.replace(/ /g, '_').replace('.json', '');
+    const normalizedParallel = normalize(parallelCollection);
+    for (const collection of resolved) {
+        const normalized = normalize(collection);
         let rc;
         const start = new Date().getTime();
         try {
@@ -304,21 +292,50 @@ const runPostmanCollections = () => __awaiter(void 0, void 0, void 0, function* 
         collectionRuns.set(collection, rc);
         if (exportReport) {
             const passed = rc === 0;
-            htmlResults.push(`<tr><td><a href="./${normalized}.html">${collection}</a></td><td style="color: #ffffff; background-color: ${passed ? '#28a745' : '#dc3545'}; font-weight: bold;">${passed ? PASSED : FAILED}</td>
-        <td>${duration}</td>
-        </tr>`);
+            const content = `<tr><td><a href="./${normalized}.html">${collection}</a></td><td style="color: #ffffff; background-color: ${passed ? '#28a745' : '#dc3545'}; font-weight: bold;">${passed ? PASSED : FAILED}</td>
+      <td>${duration}</td></tr>`;
+            htmlResults.push(content);
+            fs.writeFileSync(path.join(reportFolder, `${normalized}.inc`), content, {
+                encoding: 'utf8',
+                flag: 'a+',
+                mode: 0o666
+            });
+            core.setOutput('normalized_parallel_collection', normalizedParallel);
         }
     }
     if (exportReport) {
+        const header = fs.readFileSync(path.join(resourcesFolder, 'postman-results-header.html'), {
+            encoding: 'utf8',
+            flag: 'r'
+        });
+        const footer = fs.readFileSync(path.join(resourcesFolder, 'postman-results-footer.html'), {
+            encoding: 'utf8',
+            flag: 'r'
+        });
         const contents = [header, ...htmlResults, footer];
-        fs.writeFileSync(path.join(reportFolder, 'index.html'), `${contents.join('\n')}`, {
+        fs.writeFileSync(path.join(reportFolder, `${normalizedParallel}.html`), `${contents.join('\n')}`, {
             encoding: 'utf8',
             flag: 'a+',
             mode: 0o666
         });
     }
+    yield copyHeaderAndFooter();
     return handleResults(collectionRuns);
 });
+const resolveCollections = (foundCollections) => {
+    var _a;
+    const parallel = (parallelCollection === null || parallelCollection === void 0 ? void 0 : parallelCollection.trim()) || '*';
+    const all = parallel === '*';
+    const resolved = (all ? resolveSpecific() : ((_a = parallelCollections.find(pc => pc.name === parallel)) === null || _a === void 0 ? void 0 : _a.collections) || []).map(collection => trimAndExt(collection));
+    if (resolved.length > 0) {
+        return resolved.filter(collection => foundCollections.includes(collection));
+    }
+    if (all) {
+        const allParallel = parallelCollections.flatMap(pc => pc.collections).map(collection => trimAndExt(collection));
+        return foundCollections.filter(collection => !allParallel.includes(collection));
+    }
+    return all ? foundCollections : [];
+};
 /**
  * Run a postman collection.
  *
@@ -327,7 +344,7 @@ const runPostmanCollections = () => __awaiter(void 0, void 0, void 0, function* 
  * @returns promise with process return code
  */
 const runPostmanCollection = (collection, normalized) => __awaiter(void 0, void 0, void 0, function* () {
-    core.info(`Running Postman collection: ${collection}`);
+    core.info(`Running Postman collection: "${collection}"`);
     const resultFile = path.join(resultsFolder, `${normalized}.xml`);
     const page = `${normalized}.html`;
     const reportFile = path.join(reportFolder, page);
@@ -411,7 +428,7 @@ const prepareLicense = () => __awaiter(void 0, void 0, void 0, function* () {
     const licenseFile = path.join(licenseFolder, 'license.dat');
     core.info(`Adding license to ${licenseFile}`);
     fs.writeFileSync(licenseFile, licenseKey, { encoding: 'utf8', flag: 'a+', mode: 0o777 });
-    yield execCmd(toCommand('ls', ['-las', licenseFile]));
+    //await execCmd(toCommand('ls', ['-las', licenseFile]))
 });
 /**
  * Resolves tests when provided
@@ -420,21 +437,23 @@ const prepareLicense = () => __awaiter(void 0, void 0, void 0, function* () {
  */
 const resolveSpecific = () => {
     const extracted = extractFromMessg(tests);
+    core.info(`Extracted from message: [${extracted.join(', ')}]`);
     if (extracted.length === 0) {
-        core.info('No specific postman tests found');
+        core.info('No specific postman tests found, returning empty');
         return [];
     }
     const resolved = [];
     for (const line of extracted) {
         const testLine = line.slice(runtTestsPrefix.length).trim();
         for (const collection of testLine.trim().split(',')) {
-            const trimmed = collection.trim();
-            const normalized = trimmed.endsWith('.json') ? trimmed : `${trimmed}.json`;
-            resolved.push(normalized);
+            resolved.push(trimAndExt(collection));
         }
     }
-    core.info(`Resolved specific collections:\n${resolved.join(',')}`);
     return resolved;
+};
+const trimAndExt = (collection) => {
+    const trimmed = collection.trim();
+    return trimmed.endsWith('.json') ? trimmed : `${trimmed}.json`;
 };
 /**
  * Extracts postman tests from commit message.
@@ -449,7 +468,7 @@ const extractFromMessg = (message) => {
     const extracted = [];
     for (const l of tests.split('\n')) {
         const trimmed = l.trim();
-        const line = trimmed.toLocaleLowerCase();
+        const line = trimmed.toLowerCase();
         if (line.startsWith(runtTestsPrefix)) {
             extracted.push(trimmed);
         }

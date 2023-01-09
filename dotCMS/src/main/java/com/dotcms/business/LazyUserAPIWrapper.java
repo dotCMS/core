@@ -1,7 +1,13 @@
 package com.dotcms.business;
 
 import com.dotcms.rest.api.v1.authentication.DotInvalidTokenException;
-import com.dotmarketing.business.*;
+import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.DotInvalidPasswordException;
+import com.dotmarketing.business.DotStateException;
+import com.dotmarketing.business.DuplicateUserException;
+import com.dotmarketing.business.NoSuchUserException;
+import com.dotmarketing.business.Role;
+import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.liferay.portal.model.User;
@@ -70,6 +76,11 @@ public class LazyUserAPIWrapper implements UserAPI {
     public List<User> getUsersByName(String filter, List<Role> roles, int start, int limit)
             throws DotDataException {
         return getUserAPI().getUsersByName(filter, roles, start, limit);
+    }
+
+    @Override
+    public List<User> getUsersByName(final String filter, final List<Role> roles, final int start, final int limit, final UserAPI.FilteringParams filteringParams) throws DotDataException {
+        return getUserAPI().getUsersByName(filter, roles, start, limit, filteringParams);
     }
 
     @Override

@@ -1,12 +1,17 @@
 import { ColorUtil } from './api/util/ColorUtil';
-import { DotContentTypesInfoService, PaginatorService } from '@dotcms/data-access';
-import { DotCrudService } from '@dotcms/data-access';
-import { DotAlertConfirmService } from '@dotcms/data-access';
+import {
+    DotAlertConfirmService,
+    DotContentTypeService,
+    DotContentTypesInfoService,
+    DotCrudService,
+    DotLicenseService,
+    DotMessageService,
+    DotWorkflowActionsFireService,
+    PaginatorService
+} from '@dotcms/data-access';
 import { DotHttpErrorManagerService } from '@dotcms/app/api/services/dot-http-error-manager/dot-http-error-manager.service';
 import { DotIframeService } from './view/components/_common/iframe/service/dot-iframe/dot-iframe.service';
-import { DotLicenseService } from '@dotcms/data-access';
 import { DotMenuService } from '@dotcms/app/api/services/dot-menu.service';
-import { DotMessageService } from '@dotcms/data-access';
 import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
 import { DotSaveOnDeactivateService } from './shared/dot-save-on-deactivate-service/dot-save-on-deactivate.service';
 import { IframeOverlayService } from './view/components/_common/iframe/service/iframe-overlay.service';
@@ -14,11 +19,9 @@ import { IframeOverlayService } from './view/components/_common/iframe/service/i
 import { StringFormat } from './api/util/stringFormat';
 import { StringPixels } from './api/util/string-pixels-util';
 import { InjectionToken, Provider } from '@angular/core';
-import { DotContentTypeService } from '@dotcms/data-access';
 import { DotLoginPageResolver } from '@components/login/dot-login-page-resolver.service';
 import { DotLoginPageStateService } from '@components/login/shared/services/dot-login-page-state.service';
 import { DotPushPublishDialogService } from '@dotcms/dotcms-js';
-import { DotWorkflowActionsFireService } from '@dotcms/data-access';
 import { DotGlobalMessageService } from '@components/_common/dot-global-message/dot-global-message.service';
 import { ConfirmationService } from 'primeng/api';
 import { DotAccountService } from './api/services/dot-account-service';
@@ -33,6 +36,8 @@ import { PublicAuthGuardService } from './api/services/guards/public-auth-guard.
 import { NotificationsService } from './api/services/notifications-service';
 import { LayoutEditorCanDeactivateGuardService } from '@services/guards/layout-editor-can-deactivate-guard.service';
 import { PagesGuardService } from './api/services/guards/pages-guard.service';
+import { TitleStrategy } from '@angular/router';
+import { DotTemplatePageTitleStrategy } from '@shared/services/dot-title-strategy.service';
 
 export const LOCATION_TOKEN = new InjectionToken<Location>('Window location object');
 
@@ -71,7 +76,11 @@ const PROVIDERS: Provider[] = [
     DotWorkflowEventHandlerService,
     DotWorkflowActionsFireService,
     DotGlobalMessageService,
-    LayoutEditorCanDeactivateGuardService
+    LayoutEditorCanDeactivateGuardService,
+    {
+        provide: TitleStrategy,
+        useClass: DotTemplatePageTitleStrategy
+    }
 ];
 
 export const ENV_PROVIDERS = [...PROVIDERS];
