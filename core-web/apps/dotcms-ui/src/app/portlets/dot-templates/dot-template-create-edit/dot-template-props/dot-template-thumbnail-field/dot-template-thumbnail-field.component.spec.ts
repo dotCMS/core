@@ -16,11 +16,13 @@ import {
     FormsModule,
     ReactiveFormsModule
 } from '@angular/forms';
+import { DotMessagePipe } from '@dotcms/app/view/pipes/dot-message/dot-message.pipe';
 
 const messageServiceMock = new MockDotMessageService({
     'templates.properties.form.thumbnail.error.invalid.url': 'Invalid url',
     'templates.properties.form.thumbnail.error': 'Error',
-    'templates.properties.form.thumbnail.error.invalid.image': 'Invalid image'
+    'templates.properties.form.thumbnail.error.invalid.image': 'Invalid image',
+    'templates.properties.form.thumbnail.placeholder': 'Drop or paste image or image url'
 });
 
 @Component({
@@ -49,7 +51,7 @@ describe('DotTemplateThumbnailFieldComponent', () => {
 
     beforeEach(async () => {
         await TestBed.configureTestingModule({
-            declarations: [DotTemplateThumbnailFieldComponent, TestHostComponent],
+            declarations: [DotTemplateThumbnailFieldComponent, TestHostComponent, DotMessagePipe],
             providers: [
                 {
                     provide: DotTempFileUploadService,
@@ -102,6 +104,7 @@ describe('DotTemplateThumbnailFieldComponent', () => {
 
             expect(field.nativeNode.previewImageUrl).toBeNull();
             expect(field.nativeNode.previewImageName).toBeNull();
+            expect(field.nativeNode.placeholder).toBe('Drop or paste image or image url');
         });
 
         it('should have fillted attr', () => {
