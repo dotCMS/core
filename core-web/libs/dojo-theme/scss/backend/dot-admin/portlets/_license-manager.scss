@@ -1,0 +1,7 @@
+.license-manager__upload-button {
+    float: right;
+}
+
+.license-manager__listing-action {
+    @extend #cell-actions;
+}
