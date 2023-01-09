@@ -659,7 +659,7 @@
 									"listen": "test",
 									"script": {
 										"exec": [
-											"pm.test(\"Checking that PPOW - HP - status is successfull\", function () {",
+											"pm.test(\"Checking that PPOW - HP - status is successfully\", function () {",
 											"    pm.response.to.have.status(200);",
 											"    checkBundleStatus = eval(pm.collectionVariables.get(\"checkBundleStatus\", checkBundleStatus.toString()));",
 											"    checkBundleStatus(pm.response.text(), [\"bundleSuccess\", \"endpointSuccess\"], \"PPOW - HP - check success status\");",
@@ -685,7 +685,7 @@
 										}
 									]
 								},
-								"method": "POST",
+								"method": "GET",
 								"header": [
 									{
 										"key": "Origin",
@@ -1269,7 +1269,7 @@
 											"pm.test(\"Checking that PPOW - IT - status fails as expected\", function () {",
 											"    pm.response.to.have.status(200);",
 											"    checkBundleStatus = eval(pm.collectionVariables.get(\"checkBundleStatus\", checkBundleStatus.toString()));",
-											"    checkBundleStatus(pm.response.text(), [\"endpointInvalidtoken\"], \"PPOW - IT - check failed status\");",
+											"    checkBundleStatus(pm.response.text(), [\"endpointInvalidToken\"], \"PPOW - IT - check failed status\");",
 											"});",
 											""
 										],
@@ -1293,7 +1293,7 @@
 										}
 									]
 								},
-								"method": "POST",
+								"method": "GET",
 								"header": [
 									{
 										"key": "Origin",
@@ -2244,15 +2244,12 @@
 					"",
 					"        htmlWithoutSpace = $.html().replace(/(\\r\\n|\\n|\\r)/gm, \"\");",
 					"",
-					"        var testcase = '';",
-					"        casesToTest.forEach((caseToTest) => {",
-					"                testcase = caseToTest;",
-					"            });",
+					"        var testcase = casesToTest.slice(-1);",
 					"",
 					"        if (htmlWithoutSpace.includes(pendingStatus) || htmlWithoutSpace.includes(bundleWaitingPublish)) {",
 					"            setTimeout(function() { console.log('Waiting for pending/waiting for publishing bundle status to finish...') }, 15000);",
 					"            postman.setNextRequest(requestToRepeat);",
-					"        } else if ('endpointInvalidtoken' !== testcase && (htmlWithoutSpace.includes(bundlingStatus) || htmlWithoutSpace.includes(noResultFound) || htmlWithoutSpace.includes(publishingBundle) || htmlWithoutSpace.includes(bundleReceived) || htmlWithoutSpace.includes('No bundle found with the given ID.'))) {",
+					"        } else if ('endpointInvalidtoken' !== testcase && (htmlWithoutSpace.includes(bundlingStatus) || htmlWithoutSpace.includes(noResultFound) || htmlWithoutSpace.includes(publishingBundle) || htmlWithoutSpace.includes(bundleReceived) || htmlWithoutSpace.includes(sendingToAllEnvs) || htmlWithoutSpace.includes('No bundle found with the given ID.'))) {",
 					"            var failingBundleId = pm.collectionVariables.get(\"bundleId\");",
 					"            console.log('No bundle found with the given ID: ' + failingBundleId);",
 					"            console.log(htmlWithoutSpace);",
@@ -2262,6 +2259,7 @@
 					"            }",
 					"        } else {",
 					"            casesToTest.forEach((caseToTest) => {",
+					"                console",
 					"                expectedInclude = pm.collectionVariables.get(caseToTest);",
 					"                pm.expect(htmlWithoutSpace).to.contain(expectedInclude);",
 					"            });",
@@ -2298,8 +2296,8 @@
 					"bundleFailed = \" <th>Status:</th>        <td> Failed to send to all environments</td>\";",
 					"pm.collectionVariables.set(\"bundleFailed\", bundleFailed);",
 					"",
-					"endpointInvalidtoken = '<td valign=\"top\">Authentication error</td>\t\t\t\t        <td valign=\"top\">Invalid token</td>\t';",
-					"pm.collectionVariables.set(\"endpointInvalidtoken\", endpointInvalidtoken);",
+					"endpointInvalidToken = '<td valign=\"top\">Authentication error</td>\t\t\t\t        <td valign=\"top\">Invalid token</td>\t';",
+					"pm.collectionVariables.set(\"endpointInvalidToken\", endpointInvalidToken);",
 					"",
 					"bundleWaitingPublish = \"<th>Status:</th>        <td> Waiting for Publishing</td>    </tr>\";",
 					"pm.collectionVariables.set(\"bundleWaitingPublish\", bundleWaitingPublish);",
@@ -2307,6 +2305,8 @@
 					"pendingStatus = \"th>Status:</th>        <td> Pending</td\";",
 					"pm.collectionVariables.set(\"pendingStatus\", pendingStatus);",
 					"",
+					"sendingToAllEnvs = \"th>Status:</th>        <td> Sending to all environments</td\";",
+					"pm.collectionVariables.set(\"sendingToAllEnvs\", sendingToAllEnvs);",
 					"",
 					"bundlingStatus = \"th>Status:</th>        <td> Bundling</td\";",
 					"pm.collectionVariables.set(\"bundlingStatus\", bundlingStatus);",
@@ -2383,7 +2383,7 @@
 			"value": " <th>Status:</th>        <td> Failed to send to all environments</td>"
 		},
 		{
-			"key": "endpointInvalidtoken",
+			"key": "endpointInvalidToken",
 			"value": "<td valign=\"top\">Authentication error</td>\t\t\t\t        <td valign=\"top\">Invalid token</td>\t"
 		},
 		{

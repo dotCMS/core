@@ -442,17 +442,6 @@ jobs:
 #          tests_results_location: ${{ steps.run-postman-tests.outputs.tests_results_location }}/*.xml
 #          debug: true
 #        if: (success() || failure()) && ${{ env.TESTMO_ENABLED }} == 'true' && steps.run-postman-tests.outputs.tests_results_skip_report != 'true'
-      - id: github-status
-        name: Send Github Status
-        uses: ./.github/actions/github-status
-        with:
-          test_type: postman
-          test_results_status: ${{ steps.run-postman-tests.outputs.tests_results_status }}
-          pull_request: ${{ github.event.number }}
-          github_user: ${{ env.GITHUB_USER }}
-          cicd_github_token: ${{ secrets.CICD_GITHUB_TOKEN }}
-          tests_report_url: ${{ steps.github-publish-postman-tests.outputs.tests_report_url }}
-        if: (success() || failure()) && steps.github-publish-postman-tests.outputs.tests_report_url != ''
   postman-tests-complete-job:
     name: Postman tests publish complete setup
     runs-on: ubuntu-latest
@@ -475,6 +464,17 @@ jobs:
           partial: close
           pull_request: ${{ github.event.number }}
           cicd_github_token: ${{ secrets.CICD_GITHUB_TOKEN }}
+      - id: github-status
+        name: Send Github Status
+        uses: ./.github/actions/github-status
+        with:
+          test_type: postman
+          test_results_status: ${{ needs.run-postman-tests-job.outputs.tests_results_status }}
+          pull_request: ${{ github.event.number }}
+          github_user: ${{ env.GITHUB_USER }}
+          cicd_github_token: ${{ secrets.CICD_GITHUB_TOKEN }}
+          tests_report_url: ${{ steps.github-init-test-results.outputs.tests_report_url }}
+        if: (success() || failure()) && steps.github-init-test-results.outputs.tests_report_url != ''
 #      - id: complete
 #        name: Post submit complete
 #        if: ${{ env.TESTMO_ENABLED }} == 'true'
