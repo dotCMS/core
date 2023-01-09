@@ -130,7 +130,6 @@ export class DotExperimentsConfigurationStore extends ComponentStore<DotExperime
     readonly addVariant = this.effect(
         (variant$: Observable<{ experimentId: string; data: Pick<DotExperiment, 'name'> }>) => {
             return variant$.pipe(
-                // tap(() => this.setSidebarStatus(Status.SAVING)),
                 tap(() =>
                     this.setSidebarStatus({
                         status: Status.SAVING,
@@ -156,7 +155,6 @@ export class DotExperimentsConfigurationStore extends ComponentStore<DotExperime
                                 this.closeSidebar();
                             },
                             (error: HttpErrorResponse) => {
-                                // this.setSidebarStatus(Status.IDLE);
                                 this.setSidebarStatus({
                                     status: Status.IDLE
                                 });
@@ -250,7 +248,6 @@ export class DotExperimentsConfigurationStore extends ComponentStore<DotExperime
             withLatestFrom(this.state$),
             switchMap(([selected, { experiment }]) =>
                 this.dotExperimentsService.setGoal(experiment.id, selected.goals).pipe(
-                    delay(1500),
                     tapResponse(
                         (experiment) => {
                             this.messageService.add({
