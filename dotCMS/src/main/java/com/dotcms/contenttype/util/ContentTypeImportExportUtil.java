@@ -58,6 +58,8 @@ public class ContentTypeImportExportUtil {
     }
 
     public void importContentTypes(File fileOrDirectory) throws IOException, DotDataException {
+        //We're gonna turn off site CT host/site resolution
+        //As we import stuff from the starter as it is
         Config.setProperty(CT_SKIP_RESOLVE_SITE, true);
         try {
             if (!fileOrDirectory.isDirectory()) {
