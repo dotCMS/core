@@ -6,9 +6,6 @@ title: "[Task]: "
 
 labels: ['Type - Task', Triage]
 
-assignees:
-  - damen-dotcms
-
 body:
 
   - type: markdown
