@@ -114,14 +114,19 @@ public class SiteAndFolderResolverImpl implements SiteAndFolderResolver {
         // First thing's first.
         // Here we need to work on the siteName property which takes precede over host
         // SiteName takes the human-readable and more approachable site name while host is expected to have an id
-        if (UtilMethods.isSet(params.siteName()) && !Host.SYSTEM_HOST.equals(params.siteName())) {
+        if (UtilMethods.isSet(params.siteName()) && !Host.SYSTEM_HOST_NAME.equals(params.siteName())) {
             return resolveOrFallback(params.siteName());
         }
 
         if (UtilMethods.isSet(params.host()) && !Host.SYSTEM_HOST.equals(params.host())) {
             return resolveOrFallback(params.host());
         }
-        //
+
+        //In case System-Host has been explicitly set we must respect that
+        if(Host.SYSTEM_HOST.equals(params.host())){
+            return Host.SYSTEM_HOST;
+        }
+
         return fallbackHost();
     }
 

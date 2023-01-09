@@ -2,10 +2,7 @@ package com.dotcms.contenttype.business;
 
 import com.dotcms.IntegrationTestBase;
 import com.dotcms.contenttype.model.component.SiteAndFolder;
-import com.dotcms.contenttype.model.type.ContentType;
-import com.dotcms.contenttype.model.type.ContentTypeBuilder;
-import com.dotcms.contenttype.model.type.FileAssetContentType;
-import com.dotcms.contenttype.model.type.ImmutableFileAssetContentType;
+import com.dotcms.contenttype.model.type.*;
 import com.dotcms.datagen.SiteDataGen;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
@@ -18,6 +15,7 @@ import com.dotmarketing.util.UUIDUtil;
 import com.liferay.portal.model.User;
 import org.junit.Assert;
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.Test;
 import java.util.Optional;
 
@@ -346,6 +344,33 @@ public class SiteAndFolderResolverImplTest extends IntegrationTestBase {
 
     }
 
+    /**
+     * Test that if we explicitly set SYSTEM_HOST as the desired site hosting the CT we will get that back
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    @Test
+    public void Test_Explicitly_Set_System_Host_And_System_Folder_Expect_Same_Values() throws DotDataException, DotSecurityException{
+
+        final User user = APILocator.systemUser();
+        final SiteAndFolderResolver siteAndFolderResolver = SiteAndFolderResolver.newInstance(user);
+
+        final String variable = "testDotAsset" + System.currentTimeMillis();
+        ContentType contentType = ContentTypeBuilder.builder(DotAssetContentType.class)
+                .folder(FolderAPI.SYSTEM_FOLDER)
+                .host(Host.SYSTEM_HOST).name(variable)
+                .owner(user.getUserId()).build();
+
+        ContentType resolved = siteAndFolderResolver.resolveSiteAndFolder(contentType);
+        Assert.assertEquals("System-Host was Explicitly set", Host.SYSTEM_HOST, resolved.host());
+        Assert.assertEquals("System-Folder was Explicitly set", Folder.SYSTEM_FOLDER, resolved.folder());
+
+        //Test idempotency
+        resolved = siteAndFolderResolver.resolveSiteAndFolder(contentType);
+        Assert.assertEquals("System-Host should still be here. ", Host.SYSTEM_HOST, resolved.host());
+        Assert.assertEquals("System-Folder should still be here. ", Folder.SYSTEM_FOLDER, resolved.folder());
+
+    }
 
 
 }
