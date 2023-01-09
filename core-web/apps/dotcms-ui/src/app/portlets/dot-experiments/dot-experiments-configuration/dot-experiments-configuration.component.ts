@@ -25,6 +25,7 @@ import {
 })
 export class DotExperimentsConfigurationComponent implements OnInit {
     vm$: Observable<ConfigurationViewModel> = this.dotExperimentsConfigurationStore.vm$;
+    experimentSteps = ExperimentSteps;
 
     constructor(
         private readonly dotExperimentsConfigurationStore: DotExperimentsConfigurationStore,
@@ -56,13 +57,15 @@ export class DotExperimentsConfigurationComponent implements OnInit {
     }
 
     /**
-     * Open/Close sidebar
+     * Sidebar controller
+     * @param {SidebarStatus} action
+     * @param {ExperimentSteps} step
      * @returns void
      * @memberof DotExperimentsConfigurationComponent
      */
-    sidebarStatusChanged(action: SidebarStatus) {
+    sidebarStatusController(action: SidebarStatus, step?: ExperimentSteps) {
         if (action === SidebarStatus.OPEN) {
-            this.dotExperimentsConfigurationStore.openSidebar(ExperimentSteps.VARIANTS);
+            this.dotExperimentsConfigurationStore.openSidebar(step);
         } else {
             this.dotExperimentsConfigurationStore.closeSidebar();
         }
