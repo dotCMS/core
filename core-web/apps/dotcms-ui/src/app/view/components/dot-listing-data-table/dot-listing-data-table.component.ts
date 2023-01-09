@@ -125,12 +125,12 @@ export class DotListingDataTableComponent implements OnInit {
 
     /**
      * Emit selected row
-     * @param {any} rowData
+     * @param {Record<string, unknown>} rowData
      *
      * @memberof DotListingDataTableComponent
      */
     handleRowClick(rowData: Record<string, unknown>): void {
-        // If the system template or system contaier is clicked, do nothings.
+        // If the system template or system container is clicked, do nothing.
         if (
             rowData?.identifier === 'SYSTEM_TEMPLATE' ||
             rowData?.identifier === 'SYSTEM_CONTAINER'

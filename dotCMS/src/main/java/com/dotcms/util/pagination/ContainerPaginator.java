@@ -32,6 +32,7 @@ public class ContainerPaginator implements PaginatorOrdered<ContainerView> {
     public static final String HOST_PARAMETER_ID = "host";
     public static final String SYSTEM_PARAMETER_NAME = "system";
     public static final String ARCHIVE_PARAMETER_NAME = "archive";
+    public static final String CONTENT_TYPE_ID_OR_VAR_PARAMETER_NAME = "content_type_id_or_var";
 
     private final ContainerAPI containerAPI;
     private final HostWebAPI hostWebAPI;
@@ -54,10 +55,13 @@ public class ContainerPaginator implements PaginatorOrdered<ContainerView> {
         String siteId = null;
         boolean showSystemContainer = Boolean.FALSE;
         boolean showArchiveContainer = Boolean.FALSE;
+        String contentTypeIdOrVar = StringPool.BLANK;
+
         if (extraParams != null) {
             siteId = (String) extraParams.get(HOST_PARAMETER_ID);
             showSystemContainer = Boolean.valueOf(String.valueOf(extraParams.get(SYSTEM_PARAMETER_NAME)));
             showArchiveContainer = Boolean.valueOf(String.valueOf(extraParams.get(ARCHIVE_PARAMETER_NAME)));
+            contentTypeIdOrVar = String.valueOf(extraParams.get(CONTENT_TYPE_ID_OR_VAR_PARAMETER_NAME));
         }
 
         final Map<String, Object> params = map("title", filter);
@@ -73,6 +77,7 @@ public class ContainerPaginator implements PaginatorOrdered<ContainerView> {
             final ContainerAPI.SearchParams searchParams = ContainerAPI.SearchParams.newBuilder()
                     .includeArchived(showArchiveContainer)
                     .includeSystemContainer(showSystemContainer)
+                    .contentTypeIdOrVar(contentTypeIdOrVar)
                     .filteringCriterion(params)
                     .siteId(siteId)
                     // Include the System Container in the first result page only

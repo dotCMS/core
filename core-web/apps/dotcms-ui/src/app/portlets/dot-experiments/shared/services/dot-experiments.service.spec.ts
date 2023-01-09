@@ -6,6 +6,7 @@ import { DotExperiment, Variant } from '@dotcms/dotcms-models';
 const API_ENDPOINT = '/api/v1/experiments';
 const PAGE_Id = '123';
 const EXPERIMENT_ID = ExperimentMocks[0].id;
+const VARIANT_ID = ExperimentMocks[0].trafficProportion.variants[0].id;
 
 describe('DotExperimentsService', () => {
     let spectator: SpectatorHttp<DotExperimentsService>;
@@ -49,6 +50,16 @@ describe('DotExperimentsService', () => {
         };
         spectator.service.addVariant(EXPERIMENT_ID, variant).subscribe();
         spectator.expectOne(`${API_ENDPOINT}/${EXPERIMENT_ID}/variants`, HttpMethod.POST);
+    });
+
+    it('should edit a variant experimentId', () => {
+        spectator.service
+            .editVariant(EXPERIMENT_ID, VARIANT_ID, { description: 'new-name' })
+            .subscribe();
+        spectator.expectOne(
+            `${API_ENDPOINT}/${EXPERIMENT_ID}/variants/${VARIANT_ID}`,
+            HttpMethod.PUT
+        );
     });
 
     it('should delete a variant with experimentId', () => {

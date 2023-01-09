@@ -5,6 +5,9 @@ on:
     branches:
       - master
       - release-*
+env:
+  TESTMO_ENABLED: false
+
 jobs:
   repo-metadata-job:
     name: Get Github Metadata
@@ -32,6 +35,7 @@ jobs:
         uses: dotcms/get-commit-message@master
         with:
           accessToken: ${{ secrets.GITHUB_TOKEN }}
+
   build-core-job:
     name: Build Core
     runs-on: ubuntu-latest
@@ -49,6 +53,11 @@ jobs:
         name: Read CICD local library
         run: source ${GITHUB_WORKSPACE}/cicd/local-env.sh
         if: success()
+      - name: Set up JDK 11
+        uses: actions/setup-java@v3.9.0
+        with:
+          java-version: 11
+          distribution: corretto
       - id: build-core
         name: Build Core
         uses: ./.github/actions/build-core
@@ -69,6 +78,7 @@ jobs:
           build_env: ${{ env.BUILD_ENV }}
           cache_locations: ${{ steps.core-cache-locator.outputs.cache_locations }}
         if: success()
+
   run-unit-tests-job:
     name: Run Unit Tests
     runs-on: ubuntu-latest
@@ -121,19 +131,19 @@ jobs:
           tests_results_report_location: ${{ steps.run-unit-tests.outputs.tests_results_report_location }}
           cicd_github_token: ${{ secrets.CICD_GITHUB_TOKEN }}
         if: (success() || failure()) && steps.run-unit-tests.outputs.tests_results_skip_report != 'true'
-      - id: publish-unit-tests
-        name: Publish unit tests to Testmo
-        uses: ./.github/actions/testmo-wrapper
-        with:
-          operation: submit
-          github_sha: ${{ env.BUILD_HASH }}
-          build_id: ${{ env.BUILD_ID }}
-          testmo_token: ${{ secrets.TESTMO_TOKEN }}
-          testmo_project_id: 1
-          test_type: unit
-          tests_results_location: ${{ steps.run-unit-tests.outputs.tests_results_location }}/*.xml
-          debug: true
-        if: (success() || failure()) && steps.run-unit-tests.outputs.tests_results_skip_report != 'true'
+#      - id: publish-unit-tests
+#        name: Publish unit tests to Testmo
+#        uses: ./.github/actions/testmo-wrapper
+#        with:
+#          operation: submit
+#          github_sha: ${{ env.BUILD_HASH }}
+#          build_id: ${{ env.BUILD_ID }}
+#          testmo_token: ${{ secrets.TESTMO_TOKEN }}
+#          testmo_project_id: 1
+#          test_type: unit
+#          tests_results_location: ${{ steps.run-unit-tests.outputs.tests_results_location }}/*.xml
+#          debug: true
+#        if: (success() || failure()) && ${{ env.TESTMO_ENABLED }} == 'true' && steps.run-unit-tests.outputs.tests_results_skip_report != 'true'
       - id: github-status
         name: Send Github Status
         uses: ./.github/actions/github-status
@@ -145,8 +155,9 @@ jobs:
           cicd_github_token: ${{ secrets.CICD_GITHUB_TOKEN }}
           tests_report_url: ${{ steps.github-publish-unit-tests.outputs.test_logs_url }}
         if: (success() || failure()) && steps.github-publish-unit-tests.outputs.tests_report_url != ''
+
   integration-tests-thread-setup-job:
-    name: Integration tests thread (matrix) setup
+    name: Integration tests matrix setup
     runs-on: ubuntu-latest
     needs: build-core-job
     outputs:
@@ -159,18 +170,28 @@ jobs:
         name: Read CICD local library
         run: source ${GITHUB_WORKSPACE}/cicd/local-env.sh
         if: success()
-      - id: thread-setup
-        name: Initial thread (matrix) setup
-        uses: ./.github/actions/testmo-wrapper
+      - id: github-init-test-results
+        name: Github init tests results
+        uses: ./.github/actions/publish-test-results
         with:
-          operation: thread-resources
-          github_sha: ${{ env.BUILD_HASH }}
           build_id: ${{ env.BUILD_ID }}
-          testmo_token: ${{ secrets.TESTMO_TOKEN }}
-          testmo_project_id: 1
+          build_hash: ${{ env.BUILD_HASH }}
           test_type: integration
-          debug: true
-        if: success()
+          partial: init
+          pull_request: ${{ github.event.number }}
+          cicd_github_token: ${{ secrets.CICD_GITHUB_TOKEN }}
+#      - id: thread-setup
+#        name: Initial thread (matrix) setup
+#        uses: ./.github/actions/testmo-wrapper
+#        with:
+#          operation: thread-resources
+#          github_sha: ${{ env.BUILD_HASH }}
+#          build_id: ${{ env.BUILD_ID }}
+#          testmo_token: ${{ secrets.TESTMO_TOKEN }}
+#          testmo_project_id: 1
+#          test_type: integration
+#          debug: true
+#        if: success() && ${{ env.TESTMO_ENABLED }} == 'true'
   run-integration-tests-job:
     name: Run Integration Tests
     runs-on: ubuntu-latest
@@ -178,7 +199,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        db_type: [ postgres, mssql ]
+        db_type: [postgres, mssql]
     if: success()
     outputs:
       postgres_tests_results_status: ${{ steps.run-integration-tests.outputs.postgres_tests_results_status }}
@@ -210,6 +231,7 @@ jobs:
       - id: run-integration-tests
         name: Run Integration Tests
         uses: ./.github/actions/run-integration-tests
+        timeout-minutes: 180
         with:
           build_env: ${{ env.BUILD_ENV }}
           db_type: ${{ matrix.db_type }}
@@ -236,23 +258,23 @@ jobs:
           tests_results_report_location: ${{ steps.run-integration-tests.outputs.tests_results_report_location }}
           cicd_github_token: ${{ secrets.CICD_GITHUB_TOKEN }}
         if: (success() || failure()) && steps.run-integration-tests.outputs.tests_results_skip_report != 'true'
-      - id: publish-integration-tests
-        name: Publish integration tests to Testmo
-        uses: ./.github/actions/testmo-wrapper
-        with:
-          operation: submit-thread
-          github_sha: ${{ env.BUILD_HASH }}
-          build_id: ${{ env.BUILD_ID }}
-          testmo_token: ${{ secrets.TESTMO_TOKEN }}
-          testmo_project_id: 1
-          testmo_run_id: ${{ needs.integration-tests-thread-setup-job.outputs.testmo_run_id }}
-          test_type: integration
-          tests_results_location: ${{ steps.run-integration-tests.outputs.tests_results_location }}/*.xml
-          ci_index: ${{ steps.run-integration-tests.outputs.ci_index }}
-          ci_total: 2
-          ci_label: ${{ matrix.db_type }}
-          debug: true
-        if: (success() || failure()) && steps.run-integration-tests.outputs.tests_results_skip_report != 'true'
+#      - id: publish-integration-tests
+#        name: Publish integration tests to Testmo
+#        uses: ./.github/actions/testmo-wrapper
+#        with:
+#          operation: submit-thread
+#          github_sha: ${{ env.BUILD_HASH }}
+#          build_id: ${{ env.BUILD_ID }}
+#          testmo_token: ${{ secrets.TESTMO_TOKEN }}
+#          testmo_project_id: 1
+#          testmo_run_id: ${{ needs.integration-tests-thread-setup-job.outputs.testmo_run_id }}
+#          test_type: integration
+#          tests_results_location: ${{ steps.run-integration-tests.outputs.tests_results_location }}/*.xml
+#          ci_index: ${{ steps.run-integration-tests.outputs.ci_index }}
+#          ci_total: 2
+#          ci_label: ${{ matrix.db_type }}
+#          debug: true
+#        if: (success() || failure()) && ${{ env.TESTMO_ENABLED }} == 'true' && steps.run-integration-tests.outputs.tests_results_skip_report != 'true'
       - id: github-status
         name: Send Github Status
         uses: ./.github/actions/github-status
@@ -274,25 +296,79 @@ jobs:
       - id: fetch-core
         name: Fetch Core Repo
         uses: actions/checkout@v3
+        if: ${{ env.TESTMO_ENABLED }} == 'true'
+      - id: read-cicd-local-env
+        name: Read CICD local library
+        run: source ${GITHUB_WORKSPACE}/cicd/local-env.sh
+        if: success() && ${{ env.TESTMO_ENABLED }} == 'true'
+#      - id: complete
+#        name: Post submit complete
+#        if: ${{ env.TESTMO_ENABLED }} == 'true'
+#        uses: ./.github/actions/testmo-wrapper
+#        with:
+#          operation: complete
+#          github_sha: ${{ env.BUILD_HASH }}
+#          testmo_token: ${{ secrets.TESTMO_TOKEN }}
+#          testmo_project_id: 1
+#          testmo_run_id: ${{ needs.integration-tests-thread-setup-job.outputs.testmo_run_id }}
+#          test_type: integration
+#          debug: true
+
+  postman-tests-thread-setup-job:
+    name: Postman tests matrix setup
+    runs-on: ubuntu-latest
+    needs: repo-metadata-job
+    outputs:
+      testmo_run_id: ${{ steps.thread-setup.outputs.testmo_run_id }}
+      built_image_name: ${{ steps.build-dotcms-image.outputs.built_image_name }}
+    steps:
+      - id: fetch-core
+        name: Fetch Core Repo
+        uses: actions/checkout@v3
       - id: read-cicd-local-env
         name: Read CICD local library
         run: source ${GITHUB_WORKSPACE}/cicd/local-env.sh
         if: success()
-      - id: complete
-        name: Post submit complete
-        uses: ./.github/actions/testmo-wrapper
+      - id: docker-login
+        name: Login to GHCR
+        uses: docker/login-action@v2
         with:
-          operation: complete
-          github_sha: ${{ env.BUILD_HASH }}
-          testmo_token: ${{ secrets.TESTMO_TOKEN }}
-          testmo_project_id: 1
-          testmo_run_id: ${{ needs.integration-tests-thread-setup-job.outputs.testmo_run_id }}
-          test_type: integration
-          debug: true
+          registry: ghcr.io
+          username: ${{ env.GITHUB_USER }}
+          password: ${{ secrets.GHCR_TOKEN }}
+      - id: build-dotcms-image
+        name: Build DotCMS docker image
+        uses: ./.github/actions/build-docker-image
+        with:
+          build_id: ${{ env.BUILD_ID }}
+          image_name: ghcr.io/dotcms/dotcms:cicd-${{ env.BUILD_HASH }}
+          push: true
+      - id: github-init-test-results
+        name: Github init tests results
+        uses: ./.github/actions/publish-test-results
+        with:
+          build_id: ${{ env.BUILD_ID }}
+          build_hash: ${{ env.BUILD_HASH }}
+          test_type: postman
+          partial: init
+          pull_request: ${{ github.event.number }}
+          cicd_github_token: ${{ secrets.CICD_GITHUB_TOKEN }}
+#      - id: thread-setup
+#        name: Initial thread (matrix) setup
+#        uses: ./.github/actions/testmo-wrapper
+#        with:
+#          operation: thread-resources
+#          github_sha: ${{ env.BUILD_HASH }}
+#          build_id: ${{ env.BUILD_ID }}
+#          testmo_token: ${{ secrets.TESTMO_TOKEN }}
+#          testmo_project_id: 1
+#          test_type: postman
+#          debug: true
+#        if: success() && ${{ env.TESTMO_ENABLED }} == 'true'
   run-postman-tests-job:
     name: Run Postman Tests
     runs-on: ubuntu-latest
-    needs: repo-metadata-job
+    needs: postman-tests-thread-setup-job
     if: success() && needs.repo-metadata-job.outputs.module_found == 'true'
     outputs:
       tests_results_status: ${{ steps.run-postman-tests.outputs.tests_results_status }}
@@ -300,6 +376,10 @@ jobs:
       tests_results_report_url: ${{ steps.github-publish-postman-tests.outputs.tests_report_url }}
       tests_results_log_url: ${{ steps.github-publish-postman-tests.outputs.test_logs_url }}
       testmo_tests_results_report_url: ${{ steps.publish-postman-tests.outputs.tests_report_url }}
+    strategy:
+      fail-fast: false
+      matrix:
+        parallel_collection: ['graphql', 'workflow', 'template', 'page', 'container', 'pp', '*']
     env:
       PUBLISH_MODE: ALL
       DEBUG: true
@@ -311,20 +391,22 @@ jobs:
         name: Read CICD local library
         run: source ${GITHUB_WORKSPACE}/cicd/local-env.sh
         if: success()
-      - id: build-dotcms-image
-        name: Build DotCMS Docker image
-        uses: ./.github/actions/build-docker-image
+      - id: docker-login
+        name: Login to GHCR
+        uses: docker/login-action@v2
         with:
-          build_id  : ${{ env.BUILD_ID }}
-          image_name: dotcms:${{ env.BUILD_HASH }}
+          registry: ghcr.io
+          username: ${{ env.GITHUB_USER }}
+          password: ${{ secrets.GHCR_TOKEN }}
       - id: run-postman-tests
         name: Run Postman Tests
-        timeout-minutes: 240
+        timeout-minutes: 80
         uses: ./.github/actions/run-postman-tests
         with:
-          built_image_name: ${{ steps.build-dotcms-image.outputs.built_image_name }}
+          built_image_name: ${{ needs.postman-tests-thread-setup-job.outputs.built_image_name }}
           license_key: ${{ secrets.DOTCMS_LICENSE }}
           tests: ${{ needs.repo-metadata-job.outputs.commit_message }}
+          parallel_collection: ${{ matrix.parallel_collection }}
           export_report: ${{ env.PUBLISH_MODE == 'ALL' || env.PUBLISH_MODE == 'RESULTS' }}
       - id: postman-tests-comment
         name: Postman Test Comment
@@ -345,20 +427,21 @@ jobs:
           tests_results_report_location: ${{ steps.run-postman-tests.outputs.tests_results_report_location }}
           cicd_github_token: ${{ secrets.CICD_GITHUB_TOKEN }}
           mode: ${{ env.PUBLISH_MODE }}
+          run_identifier: ${{ steps.run-postman-tests.outputs.normalized_parallel_collection }}
         if: (success() || failure()) && steps.run-postman-tests.outputs.tests_results_skip_report != 'true'
-      - id: publish-postman-tests
-        name: Publish postman tests to Testmo
-        uses: ./.github/actions/testmo-wrapper
-        with:
-          operation: submit
-          github_sha: ${{ env.BUILD_HASH }}
-          build_id: ${{ env.BUILD_ID }}
-          testmo_token: ${{ secrets.TESTMO_TOKEN }}
-          testmo_project_id: 1
-          test_type: postman
-          tests_results_location: ${{ steps.run-postman-tests.outputs.tests_results_location }}/*.xml
-          debug: true
-        if: (success() || failure()) && steps.run-postman-tests.outputs.tests_results_skip_report != 'true'
+#      - id: publish-postman-tests
+#        name: Publish postman tests to Testmo
+#        uses: ./.github/actions/testmo-wrapper
+#        with:
+#          operation: submit
+#          github_sha: ${{ env.BUILD_HASH }}
+#          build_id: ${{ env.BUILD_ID }}
+#          testmo_token: ${{ secrets.TESTMO_TOKEN }}
+#          testmo_project_id: 1
+#          test_type: postman
+#          tests_results_location: ${{ steps.run-postman-tests.outputs.tests_results_location }}/*.xml
+#          debug: true
+#        if: (success() || failure()) && ${{ env.TESTMO_ENABLED }} == 'true' && steps.run-postman-tests.outputs.tests_results_skip_report != 'true'
       - id: github-status
         name: Send Github Status
         uses: ./.github/actions/github-status
@@ -370,6 +453,41 @@ jobs:
           cicd_github_token: ${{ secrets.CICD_GITHUB_TOKEN }}
           tests_report_url: ${{ steps.github-publish-postman-tests.outputs.tests_report_url }}
         if: (success() || failure()) && steps.github-publish-postman-tests.outputs.tests_report_url != ''
+  postman-tests-complete-job:
+    name: Postman tests publish complete setup
+    runs-on: ubuntu-latest
+    needs: run-postman-tests-job
+    if: (success() || failure()) && needs.run-postman-tests-job.outputs.tests_results_skip_report != 'true'
+    steps:
+      - id: fetch-core
+        name: Fetch Core Repo
+        uses: actions/checkout@v3
+      - id: read-cicd-local-env
+        name: Read CICD local library
+        run: source ${GITHUB_WORKSPACE}/cicd/local-env.sh
+      - id: github-init-test-results
+        name: Github close tests results
+        uses: ./.github/actions/publish-test-results
+        with:
+          build_id: ${{ env.BUILD_ID }}
+          build_hash: ${{ env.BUILD_HASH }}
+          test_type: postman
+          partial: close
+          pull_request: ${{ github.event.number }}
+          cicd_github_token: ${{ secrets.CICD_GITHUB_TOKEN }}
+#      - id: complete
+#        name: Post submit complete
+#        if: ${{ env.TESTMO_ENABLED }} == 'true'
+#        uses: ./.github/actions/testmo-wrapper
+#        with:
+#          operation: complete
+#          github_sha: ${{ env.BUILD_HASH }}
+#          testmo_token: ${{ secrets.TESTMO_TOKEN }}
+#          testmo_project_id: 1
+#          testmo_run_id: ${{ needs.postman-tests-thread-setup-job.outputs.testmo_run_id }}
+#          test_type: integration
+#          debug: true
+
   test-results-handler-job:
     name: Tests results handler
     runs-on: ubuntu-latest

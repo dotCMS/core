@@ -41,7 +41,7 @@ services:
       - JITSU_JITSU_CONFIGURATOR=http://jitsu-configurator:7000/
       - JITSU_CLUSTER_TOKEN=myadmin
       - JITSU_JITSU_SERVER=http://jitsu:8001/
-      - QUARKUS_OIDC_AUTH_SERVER_URL=${AUTH_SEVER_URL:-http://keycloak:8080/realms/dotcms}
+      - QUARKUS_OIDC_AUTH_SERVER_URL=${AUTH_SEVER_URL:-http://keycloak:61111/realms/dotcms}
       - QUARKUS_DATASOURCE_DB_KIND=postgresql
       - QUARKUS_DATASOURCE_REACTIVE_URL=postgresql://postgres:54321/${POSTGRESQL_DB:-keycloak}
       - QUARKUS_DATASOURCE_USERNAME=${POSTGRESQL_USER:-postgres}

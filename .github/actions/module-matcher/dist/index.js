@@ -217,7 +217,7 @@ const resolveCommits = () => __awaiter(void 0, void 0, void 0, function* () {
             core.warning(`Could not get Github pull request ${pullRequest}`);
             return [];
         }
-        const commits = JSON.parse((yield response.text())).map(c => c.sha);
+        const commits = JSON.parse(yield response.text()).map(c => c.sha);
         core.info(`Found pull request ${pullRequest} commits:\n${commits.join(', ')}`);
         return commits;
     }
@@ -14139,6 +14139,9 @@ class BlobDataItem {
     this.#start = options.start
     this.size = options.size
     this.lastModified = options.lastModified
+    this.originalSize = options.originalSize === undefined
+      ? options.size
+      : options.originalSize
   }
 
   /**
@@ -14149,16 +14152,19 @@ class BlobDataItem {
     return new BlobDataItem({
       path: this.#path,
       lastModified: this.lastModified,
+      originalSize: this.originalSize,
       size: end - start,
       start: this.#start + start
     })
   }
 
   async * stream () {
-    const { mtimeMs } = await stat(this.#path)
-    if (mtimeMs > this.lastModified) {
+    const { mtimeMs, size } = await stat(this.#path)
+
+    if (mtimeMs > this.lastModified || this.originalSize !== size) {
       throw new node_domexception('The requested file could not be read, typically due to permission problems that have occurred after a reference to a file was acquired.', 'NotReadableError')
     }
+
     yield * (0,external_node_fs_namespaceObject.createReadStream)(this.#path, {
       start: this.#start,
       end: this.#start + this.size - 1
@@ -14270,8 +14276,12 @@ const _Blob = class Blob {
         part = encoder.encode(`${element}`)
       }
 
-      this.#size += ArrayBuffer.isView(part) ? part.byteLength : part.size
-      this.#parts.push(part)
+      const size = ArrayBuffer.isView(part) ? part.byteLength : part.size
+      // Avoid pushing empty parts into the array to better GC them
+      if (size) {
+        this.#size += size
+        this.#parts.push(part)
+      }
     }
 
     this.#endings = `${options.endings === undefined ? 'transparent' : options.endings}`
@@ -15958,7 +15968,7 @@ class Request extends Body {
 			method = method.toUpperCase();
 		}
 
-		if (!isRequest(init) && 'data' in init) {
+		if ('data' in init) {
 			doBadDataWarn();
 		}
 
