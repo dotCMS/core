@@ -2071,6 +2071,7 @@
 									"    pm.expect(folder.path).eql(\"/foo1/foo2/\");",
 									"    pm.collectionVariables.set(\"folder\", folder);",
 									"    pm.collectionVariables.set(\"folder.identifier\", folder.identifier);",
+									"    pm.collectionVariables.set(\"folder.hostId\", folder.hostId);",
 									"});"
 								],
 								"type": "text/javascript"
@@ -2486,7 +2487,7 @@
 					"response": []
 				},
 				{
-					"name": "Create ContentType Fixed Content Type Expect System-Host and System-Folder",
+					"name": "Create ContentType Fixed Content Type Expect default-Host and System-Folder",
 					"event": [
 						{
 							"listen": "test",
@@ -2498,7 +2499,7 @@
 									"    pm.response.to.have.status(200);    ",
 									"    pm.expect(contentType.folderPath).to.eql(\"/\");",
 									"    pm.expect(contentType.folder).to.eql(\"SYSTEM_FOLDER\");",
-									"    pm.expect(contentType.host).to.eql(\"SYSTEM_HOST\");",
+									"    pm.expect(contentType.host).to.eql(\"{{folder.hostId}}\");",
 									"})",
 									""
 								],
