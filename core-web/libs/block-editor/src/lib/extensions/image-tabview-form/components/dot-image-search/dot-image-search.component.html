@@ -11,7 +11,7 @@
         [contentlets]="vm.contentlets"
         [done]="vm.preventScroll"
         [loading]="vm.loading"
-        (selectedItem)="seletedImage.emit($event)"
+        (selectedItem)="addImage.emit($event)"
         (nextBatch)="offset$.next($event)"
     ></dot-image-card-list>
 </ng-container>
