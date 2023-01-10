@@ -1,9 +1,5 @@
 package com.dotcms.rest;
 
-import static com.dotmarketing.portlets.contentlet.model.Contentlet.WORKFLOW_ASSIGN_KEY;
-import static com.dotmarketing.portlets.contentlet.model.Contentlet.WORKFLOW_COMMENTS_KEY;
-import static com.liferay.util.StringPool.*;
-
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.contenttype.model.field.CategoryField;
@@ -41,21 +37,19 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.liferay.portal.model.User;
-import com.liferay.util.StringPool;
 import io.vavr.control.Try;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.Set;
-import java.util.stream.Collectors;
-import javax.servlet.http.HttpServletRequest;
 import org.jetbrains.annotations.NotNull;
+
+import javax.servlet.http.HttpServletRequest;
+import java.util.*;
+import java.util.Map.Entry;
+import java.util.function.LongSupplier;
+import java.util.stream.Collectors;
+
+import static com.dotmarketing.portlets.contentlet.model.Contentlet.WORKFLOW_ASSIGN_KEY;
+import static com.dotmarketing.portlets.contentlet.model.Contentlet.WORKFLOW_COMMENTS_KEY;
+import static com.liferay.util.StringPool.BLANK;
+import static com.liferay.util.StringPool.COMMA;
 
 /**
  * Complete populator to populate a contentlet from a map (from a resources form) using all logic needed
@@ -133,7 +127,8 @@ public class MapToContentletPopulator  {
                 // basic data
                 contentlet.setContentTypeId(type.inode());
 
-                    final Long fallbackLang = Try.of(() -> {
+                   //Supplier because we still might have a param to use
+                    final LongSupplier fallbackLang = () -> Try.of(() -> {
                         if(contentlet.getLanguageId() > 0){
                             return contentlet.getLanguageId();
                         }
@@ -147,7 +142,7 @@ public class MapToContentletPopulator  {
 
                     contentlet.setLanguageId(map.containsKey(LANGUAGE_ID) ?
                             Long.parseLong(map.get(LANGUAGE_ID).toString()) :
-                            fallbackLang
+                            fallbackLang.getAsLong()
                     );
 
                 this.processIdentifier(contentlet, map);
