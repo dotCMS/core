@@ -1,4 +1,5 @@
 {
+    "name": "dot-layout-grid",
     "$schema": "../../node_modules/nx/schemas/project-schema.json",
     "projectType": "library",
     "sourceRoot": "libs/dot-layout-grid/src",

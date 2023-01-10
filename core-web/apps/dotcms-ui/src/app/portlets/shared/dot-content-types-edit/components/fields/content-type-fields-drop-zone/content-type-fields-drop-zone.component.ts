@@ -20,17 +20,17 @@ import {
     DotCMSContentType
 } from '@dotcms/dotcms-models';
 import { ContentTypeFieldsPropertiesFormComponent } from '../content-type-fields-properties-form';
-import { DotMessageService } from '@services/dot-message/dot-messages.service';
-import { FieldUtil } from '../util/field-util';
+import { DotMessageService } from '@dotcms/data-access';
 import { FieldPropertyService } from '../service/field-properties.service';
 import { DotDialogActions } from '@components/dot-dialog/dot-dialog.component';
-import { DotEventsService } from '@services/dot-events/dot-events.service';
+import { DotEventsService } from '@dotcms/data-access';
 import { takeUntil } from 'rxjs/operators';
 import { Subject } from 'rxjs';
-import { DotLoadingIndicatorService } from '@components/_common/iframe/dot-loading-indicator/dot-loading-indicator.service';
 import * as _ from 'lodash';
 import { DragulaService } from 'ng2-dragula';
 import * as autoScroll from 'dom-autoscroller';
+import { DotLoadingIndicatorService } from '@dotcms/utils';
+import { FieldUtil } from '@dotcms/utils-testing';
 
 /**
  * Display all the Field Types
@@ -45,11 +45,13 @@ import * as autoScroll from 'dom-autoscroller';
 })
 export class ContentTypeFieldsDropZoneComponent implements OnInit, OnChanges, OnDestroy {
     readonly OVERVIEW_TAB_INDEX = 0;
+    readonly BLOCK_EDITOR_SETTINGS_TAB_INDEX = 1;
 
     displayDialog = false;
     currentField: DotCMSContentTypeField;
     currentFieldType: FieldType;
     dialogActions: DotDialogActions;
+    defaultDialogActions: DotDialogActions;
     fieldRows: DotCMSContentTypeLayoutRow[];
     hideButtons = false;
     activeTab = 0;
@@ -74,6 +76,13 @@ export class ContentTypeFieldsDropZoneComponent implements OnInit, OnChanges, On
 
     private _loading: boolean;
     private destroy$: Subject<boolean> = new Subject<boolean>();
+
+    get isBlockEditorField() {
+        return (
+            this.currentFieldType?.clazz ===
+            'com.dotcms.contenttype.model.field.ImmutableStoryBlockField'
+        );
+    }
 
     constructor(
         private dotMessageService: DotMessageService,
@@ -128,7 +137,7 @@ export class ContentTypeFieldsDropZoneComponent implements OnInit, OnChanges, On
     }
 
     ngOnInit(): void {
-        this.dialogActions = {
+        this.defaultDialogActions = {
             accept: {
                 action: () => {
                     this.propertiesForm.saveFieldProperties();
@@ -140,6 +149,8 @@ export class ContentTypeFieldsDropZoneComponent implements OnInit, OnChanges, On
                 label: this.dotMessageService.get('contenttypes.dropzone.action.cancel')
             }
         };
+
+        this.dialogActions = this.defaultDialogActions;
 
         this.fieldDragDropService.fieldDropFromSource$
             .pipe(takeUntil(this.destroy$))
@@ -380,7 +391,13 @@ export class ContentTypeFieldsDropZoneComponent implements OnInit, OnChanges, On
      * @param index
      */
     handleTabChange(index: number): void {
-        this.hideButtons = index !== this.OVERVIEW_TAB_INDEX;
+        if (index === this.OVERVIEW_TAB_INDEX) {
+            this.dialogActions = this.defaultDialogActions;
+        }
+
+        this.hideButtons =
+            index !== this.OVERVIEW_TAB_INDEX &&
+            !(index === this.BLOCK_EDITOR_SETTINGS_TAB_INDEX && this.isBlockEditorField);
     }
 
     /**
@@ -398,12 +415,24 @@ export class ContentTypeFieldsDropZoneComponent implements OnInit, OnChanges, On
         });
     }
 
+    /**
+     * Change dialogActions
+     *
+     * @param {DotDialogActions} controls
+     * @memberof ContentTypeFieldsDropZoneComponent
+     */
+    changesDialogActions(controls: DotDialogActions) {
+        this.dialogActions = controls;
+    }
+
     private setDroppedField(droppedField: DotCMSContentTypeField): void {
         this.currentField = droppedField;
         this.currentFieldType = this.fieldPropertyService.getFieldType(this.currentField.clazz);
     }
 
     private toggleDialog(): void {
+        this.dialogActions = this.defaultDialogActions;
+        this.activeTab = this.OVERVIEW_TAB_INDEX;
         this.displayDialog = !this.displayDialog;
     }
 

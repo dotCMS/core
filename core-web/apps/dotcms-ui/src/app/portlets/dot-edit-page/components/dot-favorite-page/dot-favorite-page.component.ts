@@ -3,14 +3,13 @@ import { Component, OnInit, OnDestroy, AfterViewInit } from '@angular/core';
 import { FormGroup, Validators, UntypedFormBuilder } from '@angular/forms';
 import { DynamicDialogConfig, DynamicDialogRef } from 'primeng/dynamicdialog';
 import { map, startWith, takeUntil } from 'rxjs/operators';
-import { DotRole } from '@dotcms/app/shared/models/dot-role/dot-role.model';
-import { DotPageRenderState } from '../../shared/models';
 import {
     DotFavoritePageState,
     DotFavoritePageStore,
     DotFavoritePageActionState
 } from './store/dot-favorite-page.store';
-import { generateDotFavoritePageUrl } from '@dotcms/app/shared/dot-utils';
+import { DotPageRenderState, DotRole, DotPageState } from '@dotcms/dotcms-models';
+import { generateDotFavoritePageUrl } from '@dotcms/utils';
 
 export interface DotFavoritePageProps {
     pageRenderedHtml?: string;
@@ -57,7 +56,7 @@ export class DotFavoritePageComponent implements OnInit, AfterViewInit, OnDestro
     ngOnInit(): void {
         const { page }: { page: DotFavoritePageProps } = this.config.data;
 
-        this.form = this.fb.group(this.setupForm(page));
+        this.form = this.fb.group(this.setupForm(page.pageState));
         this.isFormValid$ = this.form.valueChanges.pipe(
             takeUntil(this.destroy$),
             map(() => {
@@ -82,7 +81,9 @@ export class DotFavoritePageComponent implements OnInit, AfterViewInit, OnDestro
             .pipe(takeUntil(this.destroy$))
             .subscribe((actionState: DotFavoritePageActionState) => {
                 if (actionState === DotFavoritePageActionState.SAVED) {
-                    this.config.data?.onSave?.();
+                    this.config.data?.onSave?.(this.form.get('url').value);
+                } else if (actionState === DotFavoritePageActionState.DELETED) {
+                    this.config.data?.onDelete?.(this.form.get('url').value);
                 }
             });
     }
@@ -112,20 +113,52 @@ export class DotFavoritePageComponent implements OnInit, AfterViewInit, OnDestro
         this.ref.close(true);
     }
 
+    /**
+     * Handle Delete button
+     *
+     * @param {string} inode
+     * @memberof DotFavoritePageComponent
+     */
+    onDelete(inode: string): void {
+        this.store.deleteFavoritePage(inode);
+    }
+
     ngOnDestroy(): void {
         this.destroy$.next(true);
         this.destroy$.complete();
     }
 
-    private setupForm(page: DotFavoritePageProps) {
-        const url = generateDotFavoritePageUrl(page.pageState);
+    private setupForm(pageState: DotPageRenderState) {
+        const params: DotFavoritePageFormData = {
+            currentUserRoleId: '',
+            thumbnail: '',
+            title: '',
+            url: '',
+            order: 1,
+            permissions: []
+        };
+
+        if (pageState.state?.favoritePage) {
+            const { state }: { state: DotPageState } = pageState;
+
+            params.title = state.favoritePage.title;
+            params.order = state.favoritePage['order'];
+            params.thumbnail = state.favoritePage['screenshot'];
+            params.url = state.favoritePage.url;
+
+            this.store.setInodeStored(state.favoritePage.inode);
+        } else {
+            params.title = pageState.params.page?.title;
+            params.url = generateDotFavoritePageUrl(pageState);
+            params.order = 1;
+        }
 
         return {
             currentUserRoleId: ['', Validators.required],
-            thumbnail: [null, Validators.required],
-            title: [page.pageState.params.page?.title, Validators.required],
-            url: [url, Validators.required],
-            order: [1, Validators.required],
+            thumbnail: [params.thumbnail, Validators.required],
+            title: [params.title, Validators.required],
+            url: [params.url, Validators.required],
+            order: [params.order, Validators.required],
             permissions: []
         };
     }

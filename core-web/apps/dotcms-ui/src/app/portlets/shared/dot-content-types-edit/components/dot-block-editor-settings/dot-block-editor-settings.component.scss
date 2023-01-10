@@ -1,0 +1,18 @@
+@use "variables" as *;
+
+:host {
+    color: $gray-dark;
+
+    .wrapper {
+        padding: $spacing-6;
+    }
+
+    label.required:after {
+        content: " \002A";
+        color: $error;
+    }
+
+    p-multiselect {
+        width: 100%;
+    }
+}

@@ -9,15 +9,17 @@ import { DropdownModule } from 'primeng/dropdown';
 import { InputTextModule } from 'primeng/inputtext';
 import { DotFavoritePageComponent } from './dot-favorite-page.component';
 import { DotTempFileUploadService } from '@dotcms/app/api/services/dot-temp-file-upload/dot-temp-file-upload.service';
-import { DotWorkflowActionsFireService } from '@dotcms/app/api/services/dot-workflow-actions-fire/dot-workflow-actions-fire.service';
-import { DotRolesService } from '@dotcms/app/api/services/dot-roles/dot-roles.service';
+import { DotWorkflowActionsFireService } from '@dotcms/data-access';
+import { DotRolesService } from '@dotcms/data-access';
 import { MultiSelectModule } from 'primeng/multiselect';
+import { ButtonModule } from 'primeng/button';
 
 @NgModule({
     declarations: [DotFavoritePageComponent],
     exports: [DotFavoritePageComponent],
     imports: [
         CommonModule,
+        ButtonModule,
         DotAutofocusModule,
         DotFormDialogModule,
         DotFieldValidationMessageModule,

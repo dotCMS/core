@@ -1,6 +1,6 @@
 import { byTestId, createComponentFactory, mockProvider, Spectator } from '@ngneat/spectator';
 import { DotExperimentsCreateComponent } from '@portlets/dot-experiments/dot-experiments-create/dot-experiments-create.component';
-import { MockDotMessageService } from '@tests/dot-message-service.mock';
+import { MockDotMessageService } from '@dotcms/utils-testing';
 import { Sidebar, SidebarModule } from 'primeng/sidebar';
 import { DotSidebarHeaderComponent } from '@shared/dot-sidebar-header/dot-sidebar-header.component';
 import {
@@ -15,13 +15,13 @@ import {
     dotExperimentsCreateStoreStub,
     DotExperimentsListStoreMock
 } from '@portlets/dot-experiments/test/mocks';
-import { DotExperimentsCreateStore } from '@portlets/dot-experiments/dot-experiments-create/store/dot-experiments-create-store.service';
-import { DotMessageService } from '@services/dot-message/dot-messages.service';
+import { DotMessageService } from '@dotcms/data-access';
 import { MessageService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
 import { DotFieldValidationMessageModule } from '@components/_common/dot-field-validation-message/dot-file-validation-message.module';
 import { InputTextModule } from 'primeng/inputtext';
 import { InputTextareaModule } from 'primeng/inputtextarea';
+import { DotExperimentsCreateStore } from './store/dot-experiments-create-store';
 
 const messageServiceMock = new MockDotMessageService({
     'experiments.create.form.sidebar.header': 'Add a new experiment',

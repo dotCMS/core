@@ -1,5 +1,5 @@
 import { Component, OnInit } from '@angular/core';
-import { DotMessageService } from '@services/dot-message/dot-messages.service';
+import { DotMessageService } from '@dotcms/data-access';
 import { UntypedFormGroup } from '@angular/forms';
 import * as _ from 'lodash';
 import { FieldProperty } from '../field-properties.model';

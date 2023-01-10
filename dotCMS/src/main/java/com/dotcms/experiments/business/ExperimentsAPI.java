@@ -1,10 +1,13 @@
 package com.dotcms.experiments.business;
 
+import com.dotcms.business.WrapInTransaction;
+import com.dotcms.experiments.model.AbstractExperiment;
 import com.dotcms.experiments.model.AbstractExperiment.Status;
 import com.dotcms.experiments.model.Experiment;
 import com.dotcms.experiments.model.Scheduling;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.portlets.rules.model.Rule;
 import com.dotmarketing.util.Config;
 import com.liferay.portal.model.User;
 import io.vavr.Lazy;
@@ -108,10 +111,42 @@ public interface ExperimentsAPI {
             throws DotDataException, DotSecurityException;
 
     /**
+     * Edits the description of the {@link com.dotcms.variant.model.Variant} with the given name
+     * from the {@link Experiment} with the given Id
+     * @return the updated Experiment
+     */
+    @WrapInTransaction
+    Experiment editVariantDescription(String experimentId, String variantName,
+            String newDescription, User user)
+            throws DotDataException, DotSecurityException;
+
+    /**
      * Deletes the {@link com.dotcms.experiments.model.TargetingCondition} with the given id from
      * the {@link Experiment} with the given id
      */
 
     Experiment deleteTargetingCondition(String experimentId, String conditionId, User user)
             throws DotDataException, DotSecurityException;
+
+    /**
+     * Return a list of the current RUNNING Experiments.
+     *
+     * @return
+     */
+    List<Experiment> getRunningExperiments() throws DotDataException;
+
+    /**
+     * Return a {@link Experiment}'s {@link Rule}
+     *
+     * @param experiment
+     * @return
+     */
+    Optional<Rule> getRule(final Experiment experiment)
+            throws DotDataException, DotSecurityException;
+
+    /**
+     * Return true if any {@link Experiment} is running right now, otherwise return false.
+     * @return
+     */
+    boolean isAnyExperimentRunning() throws DotDataException;
 }

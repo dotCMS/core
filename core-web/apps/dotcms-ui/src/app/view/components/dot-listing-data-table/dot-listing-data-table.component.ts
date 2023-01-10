@@ -16,10 +16,11 @@ import { Table } from 'primeng/table';
 import { ActionHeaderOptions, ButtonAction } from '@models/action-header';
 import { DataTableColumn } from '@models/data-table/data-table-column';
 import { LoggerService } from '@dotcms/dotcms-js';
-import { DotFormatDateService } from '@services/dot-format-date-service';
-import { PaginatorService, OrderDirection } from '@services/paginator';
+import { DotFormatDateService } from '@dotcms/app/api/services/dot-format-date-service';
+
 import { DotActionMenuItem } from '@shared/models/dot-action-menu/dot-action-menu-item.model';
 import { take } from 'rxjs/operators';
+import { OrderDirection, PaginatorService } from '@dotcms/data-access';
 
 function tableFactory(dotListingDataTableComponent: DotListingDataTableComponent) {
     return dotListingDataTableComponent.dataTable;
@@ -124,12 +125,12 @@ export class DotListingDataTableComponent implements OnInit {
 
     /**
      * Emit selected row
-     * @param {any} rowData
+     * @param {Record<string, unknown>} rowData
      *
      * @memberof DotListingDataTableComponent
      */
     handleRowClick(rowData: Record<string, unknown>): void {
-        // If the system template or system contaier is clicked, do nothings.
+        // If the system template or system container is clicked, do nothing.
         if (
             rowData?.identifier === 'SYSTEM_TEMPLATE' ||
             rowData?.identifier === 'SYSTEM_CONTAINER'

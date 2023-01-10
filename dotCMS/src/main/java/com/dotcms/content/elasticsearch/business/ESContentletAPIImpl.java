@@ -699,7 +699,6 @@ public class ESContentletAPIImpl implements ContentletAPI {
         }
     }
 
-
     @CloseDBIfOpened
     @Override
     public Contentlet findContentletByIdentifierAnyLanguage(final String identifier) throws DotDataException {
@@ -711,6 +710,15 @@ public class ESContentletAPIImpl implements ContentletAPI {
         }
     }
 
+    @CloseDBIfOpened
+    @Override
+    public Contentlet findContentletByIdentifierAnyLanguage(final String identifier, final String variant) throws DotDataException {
+        try {
+            return contentFactory.findContentletByIdentifierAnyLanguage(identifier, variant);
+        } catch (Exception e) {
+            throw new DotContentletStateException("Can't find contentlet: " + identifier, e);
+        }
+    }
 
     @CloseDBIfOpened
     @Override
@@ -1177,6 +1185,20 @@ public class ESContentletAPIImpl implements ContentletAPI {
     }
 
     @Override
+    public List<Contentlet> getAllContentByVariants(final User user,
+            final boolean respectFrontendRoles, final String...variantNames) throws DotDataException, DotStateException,
+            DotSecurityException {
+
+        final String queryWithoutParenthesis = Arrays.stream(variantNames).map((variant)->"variant:"+variant)
+                .collect(Collectors.joining(" OR "));
+
+        final String query = "+(" + queryWithoutParenthesis + ")";
+
+        return search(query, -1, 0, null,
+                user, respectFrontendRoles);
+    }
+
+    @Override
     public void addPermissionsToQuery(StringBuffer buffy, User user, List<Role> roles, boolean respectFrontendRoles) throws DotSecurityException, DotDataException  {
         if(user != null)
             buffy.append(" +((+owner:" + user.getUserId() + " +ownerCanRead:true) ");
@@ -1488,24 +1510,23 @@ public class ESContentletAPIImpl implements ContentletAPI {
                     return contentlet.getFolder();
                 }
             } else if (theField instanceof CategoryField) {
-                final Category category = this.categoryAPI.find(theField.values(), currentUser, respectFrontEndRoles);
+                final Category categoryField = this.categoryAPI.find(theField.values(), currentUser, respectFrontEndRoles);
                 // Get all the Contentlets Categories
                 final List<Category> selectedCategories = this.categoryAPI
                         .getParents(contentlet, currentUser, respectFrontEndRoles);
-                final Set<Category> categoryList = new HashSet<>();
-                final List<Category> categoryTree = this.categoryAPI
-                        .getAllChildren(category, currentUser, respectFrontEndRoles);
-                if (selectedCategories.size() > 0 && categoryTree != null) {
-                    for (int k = 0; k < categoryTree.size(); k++) {
-                        final Category cat = categoryTree.get(k);
-                        for (final Category categ : selectedCategories) {
-                            if (categ.getInode().equalsIgnoreCase(cat.getInode())) {
-                                categoryList.add(cat);
-                            }
-                        }
-                    }
+                if(selectedCategories.isEmpty()) {
+                    return List.of();
                 }
-                return categoryList;
+                final List<Category> availableCategories = this.categoryAPI
+                        .getAllChildren(categoryField, APILocator.systemUser(), false);
+                if(availableCategories.isEmpty()) {
+                    return List.of();
+                }
+                selectedCategories.retainAll(availableCategories);
+                
+                return selectedCategories;
+                
+
 
             } else if (theField instanceof RelationshipField) {
                 final ContentletRelationships contentletRelationships = new ContentletRelationships(

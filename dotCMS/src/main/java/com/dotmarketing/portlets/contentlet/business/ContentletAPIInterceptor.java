@@ -884,6 +884,22 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 	}
 
 	@Override
+	public Contentlet findContentletByIdentifierAnyLanguage(String identifier, String variant) throws DotDataException {
+		for(ContentletAPIPreHook pre : preHooks){
+			boolean preResult = pre.findContentletByIdentifierAnyLanguage(identifier, variant);
+			if(!preResult){
+				Logger.error(this, "The following prehook failed " + pre.getClass().getName());
+				throw new DotRuntimeException("The following prehook failed " + pre.getClass().getName());
+			}
+		}
+		Contentlet c = conAPI.findContentletByIdentifierAnyLanguage(identifier, variant);
+		for(ContentletAPIPostHook post : postHooks){
+			post.findContentletByIdentifierAnyLanguage(identifier, variant);
+		}
+		return c;
+	}
+
+	@Override
 	public Contentlet findContentletForLanguage(long languageId, Identifier contentletId) throws DotDataException, DotSecurityException {
 		for(ContentletAPIPreHook pre : preHooks){
 			boolean preResult = pre.findContentletForLanguage(languageId, contentletId);
@@ -1822,6 +1838,27 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 		List<Contentlet> c = conAPI.search(luceneQuery, limit, offset, sortBy, user, respectFrontendRoles,requiredPermission);
 		for(ContentletAPIPostHook post : postHooks){
 			post.search(luceneQuery, limit, offset, sortBy, user, respectFrontendRoles,requiredPermission,c);
+		}
+		return c;
+	}
+
+	@Override
+	public List<Contentlet> getAllContentByVariants(User user,
+			boolean respectFrontendRoles, String... variantNames)
+			throws DotDataException, DotStateException, DotSecurityException {
+		for (ContentletAPIPreHook pre : preHooks) {
+			boolean preResult = pre.getAllContentByVariants(user, respectFrontendRoles, variantNames);
+			if (!preResult) {
+				Logger.error(this, "The following prehook failed " + pre.getClass().getName());
+				throw new DotRuntimeException("The following prehook failed "
+						+ pre.getClass().getName());
+			}
+		}
+
+		List<Contentlet> c = conAPI.getAllContentByVariants(user, respectFrontendRoles, variantNames);
+
+		for (ContentletAPIPostHook post : postHooks) {
+			post.getAllContentByVariants(user, respectFrontendRoles, variantNames);
 		}
 		return c;
 	}

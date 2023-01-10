@@ -227,8 +227,17 @@ public class SQLUtil {
 				.replaceAll(_DESC, StringPool.BLANK)
 				.replaceAll("-", StringPool.BLANK).toLowerCase();
 
-		if(ORDERBY_WHITELIST.contains(testParam)){
-			return parameter;
+		testParam = com.dotmarketing.util.StringUtils.convertCamelToSnake(testParam);
+		testParam = translateSortBy(testParam);
+
+		if (ORDERBY_WHITELIST.contains(testParam)) {
+			if (parameter.contains("-")) {
+				return "-" + testParam;
+			} else if (parameter.contains(_DESC)) {
+				return testParam + _DESC;
+			} else {
+				return testParam;
+			}
 		}
 
 		Exception e = new DotStateException("Invalid or pernicious sql parameter passed in : " + parameter);
@@ -237,6 +246,30 @@ public class SQLUtil {
 		SecurityLogger.logDebug(SQLUtil.class, "Invalid or pernicious sql parameter passed in : " + parameter);
 		return StringPool.BLANK;
 	}
+
+	/**
+	 * Method to translate UI field into SQL columns naming
+	 * @param parameter
+	 * @return
+	 */
+	public  static String translateSortBy(String parameter){
+
+		String result = "";
+		result = parameter.replace("moddate","mod_date")
+				.replace("categoryname","category_name")
+				.replace("categoryvelocityvarname","category_velocity_var_name")
+				.replace("categorykey","category_key")
+				.replace("pageurl", "page_url")
+				.replace("velocityvarname","velocity_var_name")
+				.replace("sortorder","sort_order")
+				.replace("hostname","hostName")
+				.replace("relationtypevalue","relation_type_value")
+				.replace("childrelationname","child_relation_name")
+				.replace("parentrelationname","parent_relation_name");
+
+			return  result;
+	}
+
 	/**
 	 * Applies the sanitize to the parameter argument in order to avoid evil sql words for a PARAMETER.
 	 * @param parameter SQL to filter.

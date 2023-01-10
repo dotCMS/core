@@ -8,7 +8,7 @@ import {
     ElementRef
 } from '@angular/core';
 import { UntypedFormControl, UntypedFormGroup, Validators, NgForm } from '@angular/forms';
-import { DotAppsSecrets } from '@shared/models/dot-apps/dot-apps.model';
+import { DotAppsSecrets } from '@dotcms/dotcms-models';
 
 const getFieldValueFn = {
     BOOL: (field: DotAppsSecrets) => {

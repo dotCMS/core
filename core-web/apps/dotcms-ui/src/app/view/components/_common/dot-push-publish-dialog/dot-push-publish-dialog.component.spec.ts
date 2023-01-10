@@ -3,12 +3,12 @@
 import { of as observableOf, Observable, of } from 'rxjs';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { DebugElement, Component, Input, Output, EventEmitter } from '@angular/core';
-import { MockDotMessageService } from '../../../../test/dot-message-service.mock';
+import { MockDotMessageService } from '@dotcms/utils-testing';
 import { DotPushPublishDialogComponent } from './dot-push-publish-dialog.component';
 import { By } from '@angular/platform-browser';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
-import { DotMessageService } from '@services/dot-message/dot-messages.service';
-import { PushPublishService } from '@services/push-publish/push-publish.service';
+import { DotMessageService } from '@dotcms/data-access';
+import { PushPublishService } from '@dotcms/app/api/services/push-publish/push-publish.service';
 import { DotPushPublishDialogService } from '@dotcms/dotcms-js';
 import { DotDialogComponent } from '@components/dot-dialog/dot-dialog.component';
 import { DotPushPublishDialogData } from '@dotcms/dotcms-models';
@@ -127,8 +127,9 @@ describe('DotPushPublishDialogComponent', () => {
         beforeEach(() => {
             dotPushPublishDialogService.open(publishData);
             fixture.detectChanges();
-            pushPublishForm = fixture.debugElement.query(By.css('dot-push-publish-form'))
-                .componentInstance;
+            pushPublishForm = fixture.debugElement.query(
+                By.css('dot-push-publish-form')
+            ).componentInstance;
         });
 
         it('should set data', () => {
@@ -161,8 +162,9 @@ describe('DotPushPublishDialogComponent', () => {
         beforeEach(() => {
             dotPushPublishDialogService.open(publishData);
             fixture.detectChanges();
-            pushPublishForm = fixture.debugElement.query(By.css('dot-push-publish-form'))
-                .componentInstance;
+            pushPublishForm = fixture.debugElement.query(
+                By.css('dot-push-publish-form')
+            ).componentInstance;
             pushPublishForm.value.emit({ ...mockFormValue });
             acceptButton = fixture.debugElement.query(By.css('.dialog__button-accept'));
             closeButton = fixture.debugElement.query(By.css('.dialog__button-cancel'));

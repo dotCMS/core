@@ -3,15 +3,15 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 
 import { DotContentCompareDialogComponent } from './dot-content-compare-dialog.component';
-import { MockDotMessageService } from '@tests/dot-message-service.mock';
+import { cleanUpDialog, MockDotMessageService } from '@dotcms/utils-testing';
 import { DotDialogModule } from '@components/dot-dialog/dot-dialog.module';
-import { DotMessageService } from '@services/dot-message/dot-messages.service';
-import { DotEventsService } from '@services/dot-events/dot-events.service';
+import { DotMessageService } from '@dotcms/data-access';
+import { DotEventsService } from '@dotcms/data-access';
 import { DotMessagePipeModule } from '@pipes/dot-message/dot-message-pipe.module';
 import { Component, EventEmitter, Input, Output } from '@angular/core';
-import { COMPARE_CUSTOM_EVENT } from '@services/dot-custom-event-handler/dot-custom-event-handler.service';
+import { COMPARE_CUSTOM_EVENT } from '@dotcms/app/api/services/dot-custom-event-handler/dot-custom-event-handler.service';
 import { By } from '@angular/platform-browser';
-import cleanUpDialog from '@tests/clean-up-dialog';
+
 import { DotDialogComponent } from '@components/dot-dialog/dot-dialog.component';
 import { DotContentCompareEvent } from '@components/dot-content-compare/dot-content-compare.component';
 

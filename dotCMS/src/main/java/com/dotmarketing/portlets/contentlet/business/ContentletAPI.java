@@ -227,6 +227,16 @@ public interface ContentletAPI {
 	public Contentlet findContentletByIdentifierAnyLanguage(String identifier) throws DotDataException;
 
 	/**
+	 * Retrieves a contentlet from the database by its identifier, working version and variant. Ignores archived content
+	 * @param identifier
+	 * @param variant
+	 * @return Contentlet object
+	 * @throws DotSecurityException
+	 * @throws DotDataException
+	 */
+	Contentlet findContentletByIdentifierAnyLanguage(String identifier, String variant) throws DotDataException;
+
+	/**
 	 * Retrieves a contentlet list from the database based on a identifiers array
 	 * @param identifiers	Array of identifiers
 	 * @param live	Retrieves the live version if false retrieves the working version
@@ -446,6 +456,13 @@ public interface ContentletAPI {
 	 * @throws DotSecurityException
 	 */
 	public List<Contentlet> search(String luceneQuery, int limit, int offset, String sortBy, User user, boolean respectFrontendRoles, int requiredPermission) throws DotDataException, DotSecurityException;
+
+	/**
+	 * Returns all the contentlets with versions on the provided {@link com.dotcms.variant.model.Variant}s
+	 */
+	List<Contentlet> getAllContentByVariants(final User user,
+			final boolean respectFrontendRoles, final String...variantName) throws DotDataException, DotStateException,
+			DotSecurityException;
 
 	/**
 	 * Adds the permissions query fragment to the given query based on the given user and roles

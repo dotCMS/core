@@ -7,10 +7,10 @@ import {
     SimpleChanges,
     OnChanges
 } from '@angular/core';
-import { PaginatorService } from '@services/paginator';
+import { PaginatorService } from '@dotcms/data-access';
 import { DotCMSContentType } from '@dotcms/dotcms-models';
 import { Observable } from 'rxjs';
-import { DotContentTypeService } from '@services/dot-content-type/dot-content-type.service';
+import { DotContentTypeService } from '@dotcms/data-access';
 import { DotRelationshipsPropertyValue } from '../model/dot-relationships-property-value.model';
 
 @Component({

@@ -1,18 +1,16 @@
 import { Injectable } from '@angular/core';
-import { DotRolesService } from '@dotcms/app/api/services/dot-roles/dot-roles.service';
-import { DotRole } from '@dotcms/app/shared/models/dot-role/dot-role.model';
+import { DotRolesService } from '@dotcms/data-access';
 import { ComponentStore, tapResponse } from '@ngrx/component-store';
 import { forkJoin, Observable, of, throwError } from 'rxjs';
 import { switchMap, take } from 'rxjs/operators';
 import { DotFavoritePageFormData } from '../dot-favorite-page.component';
-import { DotMessageService } from '@dotcms/app/api/services/dot-message/dot-messages.service';
+import { DotMessageService } from '@dotcms/data-access';
 import { HttpErrorResponse } from '@angular/common/http';
 import { DotHttpErrorManagerService } from '@dotcms/app/api/services/dot-http-error-manager/dot-http-error-manager.service';
 import { DotTempFileUploadService } from '@dotcms/app/api/services/dot-temp-file-upload/dot-temp-file-upload.service';
-import { DotWorkflowActionsFireService } from '@dotcms/app/api/services/dot-workflow-actions-fire/dot-workflow-actions-fire.service';
-import { DotCMSContentlet, DotCMSTempFile } from '@dotcms/dotcms-models';
-import { DotCurrentUserService } from '@dotcms/app/api/services/dot-current-user/dot-current-user.service';
-import { DotCurrentUser } from '@dotcms/app/shared/models/dot-current-user/dot-current-user';
+import { DotWorkflowActionsFireService } from '@dotcms/data-access';
+import { DotCMSContentlet, DotCMSTempFile, DotCurrentUser, DotRole } from '@dotcms/dotcms-models';
+import { DotCurrentUserService } from '@dotcms/data-access';
 
 export const enum DotFavoritePageActionState {
     SAVED = 'SAVED',
@@ -26,6 +24,7 @@ export interface DotFavoritePageState {
     isAdmin: boolean;
     imgWidth: number;
     imgHeight: number;
+    inodeStored?: string;
     loading: boolean;
     closeDialog: boolean;
     actionState: DotFavoritePageActionState;
@@ -50,6 +49,11 @@ export class DotFavoritePageStore extends ComponentStore<DotFavoritePageState> {
     public readonly actionState$ = this.select(({ actionState }) => actionState);
     public readonly closeDialog$ = this.select(({ closeDialog }) => closeDialog);
     public readonly currentUserRoleId$ = this.select(({ currentUserRoleId }) => currentUserRoleId);
+
+    // UPDATERS
+    readonly setInodeStored = this.updater((state: DotFavoritePageState, data: string) => {
+        return { ...state, inodeStored: data };
+    });
 
     // EFFECTS
     readonly saveFavoritePage = this.effect((data$: Observable<DotFavoritePageFormData>) => {
@@ -99,11 +103,46 @@ export class DotFavoritePageStore extends ComponentStore<DotFavoritePageState> {
                         (error: HttpErrorResponse) => {
                             this.dotHttpErrorManagerService.handle(error);
 
+                            this.patchState({
+                                loading: false
+                            });
+
                             return of(null);
                         }
                     )
                 );
             })
+        );
+    });
+
+    readonly deleteFavoritePage = this.effect((data$: Observable<string>) => {
+        return data$.pipe(
+            switchMap((inode: string) => {
+                this.patchState({ loading: true });
+
+                return this.dotWorkflowActionsFireService.deleteContentlet<DotCMSContentlet>({
+                    inode: inode
+                });
+            }),
+            take(1),
+            tapResponse(
+                () => {
+                    this.patchState({
+                        closeDialog: true,
+                        loading: false,
+                        actionState: DotFavoritePageActionState.DELETED
+                    });
+                },
+                (error: HttpErrorResponse) => {
+                    this.dotHttpErrorManagerService.handle(error);
+
+                    this.patchState({
+                        loading: false
+                    });
+
+                    return of(null);
+                }
+            )
         );
     });
 

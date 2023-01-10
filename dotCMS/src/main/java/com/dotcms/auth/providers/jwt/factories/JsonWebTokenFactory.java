@@ -319,6 +319,18 @@ public class JsonWebTokenFactory implements Serializable {
                    : APILocator.getApiTokenAPI().findApiToken(body.getSubject()).orElseGet(()->null);
         }
 
+        /**
+         * Security Complaining format validation
+         * This is used to verify format on remote IP token received from a PP receiver environment
+         * @param jsonWebToken
+         * @return
+         */
+        public boolean isWellFormed(String jsonWebToken){
+            final Jws<Claims> jws = Jwts.parser().setSigningKey(this.getSigningKey()).parseClaimsJws(jsonWebToken);
+            return (jws.getBody() != null);
+        }
+
+
     } // JsonWebTokenServiceImpl.
 
 } // E:O:F:JsonWebTokenFactory.

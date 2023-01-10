@@ -19,6 +19,11 @@ export * from './bubble-menu/components/bubble-menu-button/bubble-menu-button.co
 export * from './bubble-menu/models';
 export * from './bubble-menu/utils';
 
+// Floating Button
+export * from './floating-button/floating-button.component';
+export * from './floating-button/floating-button.extension';
+export * from './floating-button/plugin/floating-button.plugin';
+
 // Dot Config
 export * from './dot-config/dot-config.extension';
 
@@ -30,3 +35,13 @@ export * from './drag-handler/drag-handler.component';
 export * from './image-uploader/image-uploader.extension';
 export * from './image-uploader/components/loader/loader.component';
 export * from './image-uploader/services/dot-image/dot-image.service';
+
+// Image Tabview Form
+export * from './image-tabview-form/image-tabview-form.extension';
+export * from './image-tabview-form/plugins/bubble-image-tabview-form.plugin';
+
+// Table
+export * from './dot-table/dot-table.extension';
+export * from './dot-table/dot-table-cell.extension';
+export * from './dot-table/dot-table-cell.plugin';
+export * from './dot-table/dot-table-header.extension';

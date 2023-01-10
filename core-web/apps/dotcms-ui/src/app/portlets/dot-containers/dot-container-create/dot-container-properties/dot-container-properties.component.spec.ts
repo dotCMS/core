@@ -1,17 +1,22 @@
-import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { ComponentFixture, fakeAsync, TestBed, tick } from '@angular/core/testing';
 import { DialogService, DynamicDialogModule } from 'primeng/dynamicdialog';
 import { of } from 'rxjs';
 import { DotContainerPropertiesComponent } from './dot-container-properties.component';
 import { DotRouterService } from '@services/dot-router/dot-router.service';
 import { LoggerService } from '@dotcms/dotcms-js';
-import { DotSiteBrowserService } from '@services/dot-site-browser/dot-site-browser.service';
-import { DotAlertConfirmService } from '@services/dot-alert-confirm';
+
 import { CoreWebService } from '@dotcms/dotcms-js';
-import { MockDotMessageService } from '@tests/dot-message-service.mock';
+import { DotFormatDateServiceMock, MockDotMessageService } from '@dotcms/utils-testing';
 import { DotMessageDisplayService } from '@components/dot-message-display/services';
-import { DotMessageService } from '@services/dot-message/dot-messages.service';
+import {
+    DotAlertConfirmService,
+    DotContentTypeService,
+    DotEventsService,
+    DotMessageService,
+    DotSiteBrowserService
+} from '@dotcms/data-access';
 import { ActivatedRoute } from '@angular/router';
-import { CoreWebServiceMock } from '@tests/core-web.service.mock';
+import { CoreWebServiceMock } from '@dotcms/utils-testing';
 import { DotEventsSocketURL } from '@dotcms/dotcms-js';
 import { dotEventSocketURLFactory } from '@tests/dot-test-bed';
 import { StringUtils } from '@dotcms/dotcms-js';
@@ -22,7 +27,6 @@ import { DotcmsEventsService } from '@dotcms/dotcms-js';
 import { DotEventsSocket } from '@dotcms/dotcms-js';
 import { DotcmsConfigService } from '@dotcms/dotcms-js';
 import { DotFormatDateService } from '@services/dot-format-date-service';
-import { DotFormatDateServiceMock } from '@tests/format-date-service.mock';
 import { CommonModule } from '@angular/common';
 import { DotMessagePipeModule } from '@pipes/dot-message/dot-message-pipe.module';
 import { CheckboxModule } from 'primeng/checkbox';
@@ -33,16 +37,22 @@ import { DotActionMenuButtonModule } from '@components/_common/dot-action-menu-b
 import { DotAddToBundleModule } from '@components/_common/dot-add-to-bundle';
 import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
-import { Component, CUSTOM_ELEMENTS_SCHEMA, DebugElement } from '@angular/core';
+import {
+    Component,
+    CUSTOM_ELEMENTS_SCHEMA,
+    DebugElement,
+    EventEmitter,
+    forwardRef,
+    Input,
+    Output
+} from '@angular/core';
 import { DotContainersService } from '@services/dot-containers/dot-containers.service';
 import { DotGlobalMessageService } from '@components/_common/dot-global-message/dot-global-message.service';
-import { DotEventsService } from '@dotcms/app/api/services/dot-events/dot-events.service';
-import { DotContentTypeService } from '@dotcms/app/api/services/dot-content-type';
 import { InplaceModule } from 'primeng/inplace';
-import { ReactiveFormsModule } from '@angular/forms';
-import { DotTextareaContentModule } from '@components/_common/dot-textarea-content/dot-textarea-content.module';
+import { ControlValueAccessor, NG_VALUE_ACCESSOR, ReactiveFormsModule } from '@angular/forms';
 import { By } from '@angular/platform-browser';
 import { DotAutofocusModule } from '@directives/dot-autofocus/dot-autofocus.module';
+import { DotCMSContentType } from '@dotcms/dotcms-models';
 
 @Component({
     selector: 'dot-container-code',
@@ -52,9 +62,70 @@ export class DotContentEditorComponent {}
 
 @Component({
     selector: 'dot-loop-editor',
-    template: '<div></div>'
+    template: '<div></div>',
+    providers: [
+        {
+            provide: NG_VALUE_ACCESSOR,
+            useExisting: forwardRef(() => DotLoopEditorComponent),
+            multi: true
+        }
+    ]
 })
-export class DotLoopEditorComponent {}
+export class DotLoopEditorComponent {
+    writeValue() {
+        //
+    }
+    registerOnChange() {
+        //
+    }
+    registerOnTouched() {
+        //
+    }
+}
+
+@Component({
+    selector: 'dot-textarea-content',
+    template: '',
+    providers: [
+        {
+            multi: true,
+            provide: NG_VALUE_ACCESSOR,
+            useExisting: forwardRef(() => DotTextareaContentMockComponent)
+        }
+    ]
+})
+export class DotTextareaContentMockComponent implements ControlValueAccessor {
+    @Input()
+    code;
+
+    @Input()
+    height;
+
+    @Input()
+    show;
+
+    @Input()
+    value;
+
+    @Input()
+    width;
+
+    @Output()
+    monacoInit = new EventEmitter();
+
+    @Input()
+    language;
+
+    writeValue() {
+        //
+    }
+    registerOnChange() {
+        //
+    }
+    registerOnTouched() {
+        //
+    }
+}
 
 const messages = {
     'message.containers.create.click_to_edit': 'Click to Edit',
@@ -64,11 +135,79 @@ const messages = {
     'message.containers.create.content_type_code': 'Code'
 };
 
+const containerMockData = {
+    container: {
+        container: {
+            identifier: 'eba434c6-e67a-4a64-9c88-1faffcafb40d',
+            title: 'FAQ',
+            friendlyName: 'ASD',
+            maxContentlets: 20,
+            code: 'hello',
+            preLoop: '',
+            postLoop: ''
+        },
+        contentTypes: []
+    }
+};
+
+const mockContentTypes: DotCMSContentType[] = [
+    {
+        baseType: 'CONTENT',
+        clazz: 'com.dotcms.contenttype.model.type.ImmutableSimpleContentType',
+        defaultType: false,
+        description: 'Activities available at desitnations',
+        detailPage: 'e5f131d2-1952-4596-bbbf-28fb28021b68',
+        fixed: false,
+        folder: 'SYSTEM_FOLDER',
+        host: '48190c8c-42c4-46af-8d1a-0cd5db894797',
+        iDate: 1567778770000,
+        icon: 'paragliding',
+        id: '778f3246-9b11-4a2a-a101-e7fdf111bdad',
+        modDate: 1663219138000,
+        multilingualable: false,
+        nEntries: 10,
+        name: 'Activity',
+        system: false,
+        urlMapPattern: '/activities/{urlTitle}',
+        variable: 'Activity',
+        versionable: true,
+        workflows: [],
+        fields: [],
+        layout: []
+    },
+    {
+        baseType: 'CONTENT',
+        clazz: 'com.dotcms.contenttype.model.type.ImmutableSimpleContentType',
+        defaultType: false,
+        description: 'Activities available at desitnations',
+        detailPage: 'e5f131d2-1952-4596-bbbf-28fb28021b68',
+        fixed: false,
+        folder: 'SYSTEM_FOLDER',
+        host: '48190c8c-42c4-46af-8d1a-0cd5db894797',
+        iDate: 1567778770000,
+        icon: 'paragliding',
+        id: '12345',
+        modDate: 1663219138000,
+        multilingualable: false,
+        nEntries: 10,
+        name: 'Activity 2',
+        system: false,
+        urlMapPattern: '/activities/{urlTitle}',
+        variable: 'Activity2',
+        versionable: true,
+        workflows: [],
+        fields: [],
+        layout: []
+    }
+];
+
 describe('DotContainerPropertiesComponent', () => {
     let fixture: ComponentFixture<DotContainerPropertiesComponent>;
+    let comp: DotContainerPropertiesComponent;
     let de: DebugElement;
     let coreWebService: CoreWebService;
-
+    let dotDialogService: DotAlertConfirmService;
+    let dotRouterService: DotRouterService;
     const messageServiceMock = new MockDotMessageService(messages);
 
     beforeEach(async () => {
@@ -76,7 +215,8 @@ describe('DotContainerPropertiesComponent', () => {
             declarations: [
                 DotContainerPropertiesComponent,
                 DotContentEditorComponent,
-                DotLoopEditorComponent
+                DotLoopEditorComponent,
+                DotTextareaContentMockComponent
             ],
             providers: [
                 { provide: DotMessageService, useValue: messageServiceMock },
@@ -85,7 +225,7 @@ describe('DotContainerPropertiesComponent', () => {
                 {
                     provide: ActivatedRoute,
                     useValue: {
-                        data: of({})
+                        data: of(containerMockData)
                     }
                 },
                 {
@@ -93,7 +233,8 @@ describe('DotContainerPropertiesComponent', () => {
                     useValue: {
                         gotoPortlet: jasmine.createSpy(),
                         goToEditContainer: jasmine.createSpy(),
-                        goToSiteBrowser: jasmine.createSpy()
+                        goToSiteBrowser: jasmine.createSpy(),
+                        goToURL: jasmine.createSpy()
                     }
                 },
                 StringUtils,
@@ -119,7 +260,6 @@ describe('DotContainerPropertiesComponent', () => {
                 CommonModule,
                 DotMessagePipeModule,
                 SharedModule,
-                DotTextareaContentModule,
                 CheckboxModule,
                 InplaceModule,
                 ReactiveFormsModule,
@@ -136,15 +276,18 @@ describe('DotContainerPropertiesComponent', () => {
             schemas: [CUSTOM_ELEMENTS_SCHEMA]
         }).compileComponents();
         fixture = TestBed.createComponent(DotContainerPropertiesComponent);
+        comp = fixture.componentInstance;
         de = fixture.debugElement;
         coreWebService = TestBed.inject(CoreWebService);
+        dotDialogService = TestBed.inject(DotAlertConfirmService);
+        dotRouterService = TestBed.inject(DotRouterService);
     });
 
     describe('with data', () => {
         beforeEach(() => {
             spyOn<CoreWebService>(coreWebService, 'requestView').and.returnValue(
                 of({
-                    entity: [],
+                    entity: mockContentTypes,
                     header: (type) => (type === 'Link' ? 'test;test=test' : '10')
                 })
             );
@@ -153,10 +296,128 @@ describe('DotContainerPropertiesComponent', () => {
 
         it('should focus on title field', async () => {
             const inplace = de.query(By.css('[data-testId="inplace"]'));
+            inplace.componentInstance.activate();
+            fixture.detectChanges();
             const title = de.query(By.css('[data-testId="title"]'));
 
             expect(inplace.componentInstance.active).toBe(true);
             expect(title.attributes.dotAutofocus).toBeDefined();
+        });
+
+        it('should setup title', () => {
+            const inplace = de.query(By.css('[data-testId="inplace"]'));
+            inplace.componentInstance.activate();
+            fixture.detectChanges();
+            const field = de.query(By.css('[data-testId="title"]'));
+            expect(field.attributes.pInputText).toBeDefined();
+        });
+
+        it('should setup description', () => {
+            const field = de.query(By.css('[data-testId="description"]'));
+            expect(field).toBeDefined();
+        });
+
+        it('should setup Max Contents', () => {
+            const field = de.query(By.css('[data-testId="max-contents"]'));
+            expect(field).toBeDefined();
+        });
+
+        it('should setup code', () => {
+            const field = de.query(By.css('[data-testId="code"]'));
+            expect(field).toBeDefined();
+        });
+
+        it('should render content types when max-content greater then zero', fakeAsync(() => {
+            spyOn(fixture.componentInstance, 'showContentTypeAndCode');
+            fixture.componentInstance.form.get('maxContentlets').setValue(0);
+            fixture.componentInstance.form.get('maxContentlets').setValue(5);
+            tick();
+            fixture.detectChanges();
+            const preLoopComponent = de.query(By.css('dot-loop-editor'));
+            const codeEditoromponent = de.query(By.css('dot-container-code'));
+            expect(preLoopComponent).toBeDefined();
+            expect(codeEditoromponent).toBeDefined();
+            expect(fixture.componentInstance.showContentTypeAndCode).toHaveBeenCalled();
+        }));
+
+        it('should clear the field', fakeAsync(() => {
+            spyOn(dotDialogService, 'confirm').and.callFake((conf) => {
+                conf.accept();
+            });
+            spyOn(comp, 'clearContentConfirmationModal').and.callThrough();
+            comp.form.get('maxContentlets').setValue(0);
+            tick();
+            fixture.detectChanges();
+            expect(comp.form.value).toEqual({
+                identifier: 'eba434c6-e67a-4a64-9c88-1faffcafb40d',
+                title: 'FAQ',
+                friendlyName: 'ASD',
+                maxContentlets: 0,
+                code: 'hello',
+                preLoop: null,
+                postLoop: null,
+                containerStructures: []
+            });
+
+            expect(comp.clearContentConfirmationModal).toHaveBeenCalled();
+        }));
+
+        it('should clear the field when user click on clear button', () => {
+            comp.form.get('maxContentlets').setValue(0);
+            comp.form.get('maxContentlets').setValue(5);
+            fixture.detectChanges();
+            spyOn(comp, 'clearContentConfirmationModal').and.callThrough();
+            spyOn(dotDialogService, 'confirm').and.callFake((conf) => {
+                conf.accept();
+            });
+            const clearBtn = de.query(By.css('[data-testId="clearContent"]'));
+            clearBtn.triggerEventHandler('click');
+            expect(comp.form.value).toEqual({
+                identifier: 'eba434c6-e67a-4a64-9c88-1faffcafb40d',
+                title: 'FAQ',
+                friendlyName: 'ASD',
+                maxContentlets: 0,
+                code: '',
+                preLoop: null,
+                postLoop: null,
+                containerStructures: []
+            });
+            expect(comp.clearContentConfirmationModal).toHaveBeenCalled();
+        });
+
+        it('should save button disable', () => {
+            const saveBtn = de.query(By.css('[data-testId="saveBtn"]'));
+            expect(saveBtn.attributes.disabled).toBeDefined();
+        });
+
+        it('should save button enable when data change', () => {
+            comp.form.get('title').setValue('Hello');
+            fixture.detectChanges();
+            const saveBtn = de.query(By.css('[data-testId="saveBtn"]'));
+            expect(saveBtn.attributes.disabled).not.toBeDefined();
+            comp.form.get('title').setValue('FAQ');
+
+            fixture.detectChanges();
+            expect(de.query(By.css('[data-testId="saveBtn"]')).attributes.disabled).toBeDefined();
+        });
+
+        it('should save button disable after save', fakeAsync(() => {
+            comp.form.get('title').setValue('Hello');
+            fixture.detectChanges();
+            const saveBtn = de.query(By.css('[data-testId="saveBtn"]'));
+            saveBtn.triggerEventHandler('click');
+            tick(200);
+            fixture.detectChanges();
+            expect(de.query(By.css('[data-testId="saveBtn"]')).attributes.disabled).toBeDefined();
+        }));
+
+        it('should redirect to containers list after save', () => {
+            comp.form.get('title').setValue('Hello');
+            fixture.detectChanges();
+            const saveBtn = de.query(By.css('[data-testId="saveBtn"]'));
+            saveBtn.triggerEventHandler('click');
+            fixture.detectChanges();
+            expect(dotRouterService.goToURL).toHaveBeenCalledWith('/containers');
         });
     });
 });

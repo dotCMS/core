@@ -1,7 +1,7 @@
 import { waitForAsync, ComponentFixture, TestBed } from '@angular/core/testing';
-import { MockDotMessageService } from '@tests/dot-message-service.mock';
-import { DotMessageService } from '@services/dot-message/dot-messages.service';
-import { DotAlertConfirmService } from '@services/dot-alert-confirm/dot-alert-confirm.service';
+import { MockDotMessageService } from '@dotcms/utils-testing';
+import { DotMessageService } from '@dotcms/data-access';
+import { DotAlertConfirmService } from '@dotcms/data-access';
 import { CommonModule } from '@angular/common';
 import { DotAppsConfigurationItemComponent } from './dot-apps-configuration-item.component';
 import { UiDotIconButtonModule } from '@components/_common/dot-icon-button/dot-icon-button.module';
@@ -48,31 +48,29 @@ describe('DotAppsConfigurationItemComponent', () => {
 
     const messageServiceMock = new MockDotMessageService(messages);
 
-    beforeEach(
-        waitForAsync(() => {
-            TestBed.configureTestingModule({
-                imports: [
-                    CommonModule,
-                    DotCopyLinkModule,
-                    UiDotIconButtonModule,
-                    DotIconModule,
-                    TooltipModule,
-                    HttpClientTestingModule,
-                    DotPipesModule
-                ],
-                declarations: [DotAppsConfigurationItemComponent],
-                providers: [
-                    { provide: DotMessageService, useValue: messageServiceMock },
-                    DotAlertConfirmService,
-                    ConfirmationService
-                ]
-            });
+    beforeEach(waitForAsync(() => {
+        TestBed.configureTestingModule({
+            imports: [
+                CommonModule,
+                DotCopyLinkModule,
+                UiDotIconButtonModule,
+                DotIconModule,
+                TooltipModule,
+                HttpClientTestingModule,
+                DotPipesModule
+            ],
+            declarations: [DotAppsConfigurationItemComponent],
+            providers: [
+                { provide: DotMessageService, useValue: messageServiceMock },
+                DotAlertConfirmService,
+                ConfirmationService
+            ]
+        });
 
-            fixture = TestBed.createComponent(DotAppsConfigurationItemComponent);
-            component = fixture.debugElement.componentInstance;
-            dialogService = TestBed.inject(DotAlertConfirmService);
-        })
-    );
+        fixture = TestBed.createComponent(DotAppsConfigurationItemComponent);
+        component = fixture.debugElement.componentInstance;
+        dialogService = TestBed.inject(DotAlertConfirmService);
+    }));
 
     describe('With configuration', () => {
         beforeEach(() => {

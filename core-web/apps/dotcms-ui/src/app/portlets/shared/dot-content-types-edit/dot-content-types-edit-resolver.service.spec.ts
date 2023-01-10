@@ -2,17 +2,17 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { throwError as observableThrowError, of as observableOf } from 'rxjs';
-import { DotHttpErrorManagerService } from '@services/dot-http-error-manager/dot-http-error-manager.service';
+import { DotHttpErrorManagerService } from '@dotcms/app/api/services/dot-http-error-manager/dot-http-error-manager.service';
 import { DotContentTypeEditResolver } from './dot-content-types-edit-resolver.service';
 import { waitForAsync } from '@angular/core/testing';
-import { DotContentTypesInfoService } from '@services/dot-content-types-info';
-import { DotCrudService } from '@services/dot-crud';
+import { DotContentTypesInfoService } from '@dotcms/data-access';
+import { DotCrudService } from '@dotcms/data-access';
 import { LoginService } from '@dotcms/dotcms-js';
 import { ActivatedRouteSnapshot } from '@angular/router';
-import { LoginServiceMock } from '../../../test/login-service.mock';
+import { LoginServiceMock } from '@dotcms/utils-testing';
 import { RouterTestingModule } from '@angular/router/testing';
-import { DotRouterService } from '@services/dot-router/dot-router.service';
-import { DOTTestBed } from '../../../test/dot-test-bed';
+import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
+import { DOTTestBed } from '@dotcms/app/test/dot-test-bed';
 import { DotCMSContentType } from '@dotcms/dotcms-models';
 
 class CrudServiceMock {
@@ -31,28 +31,26 @@ describe('DotContentTypeEditResolver', () => {
     let dotRouterService: DotRouterService;
     let dotHttpErrorManagerService: DotHttpErrorManagerService;
 
-    beforeEach(
-        waitForAsync(() => {
-            const testbed = DOTTestBed.configureTestingModule({
-                providers: [
-                    DotContentTypeEditResolver,
-                    DotContentTypesInfoService,
-                    DotHttpErrorManagerService,
-                    { provide: DotCrudService, useClass: CrudServiceMock },
-                    { provide: LoginService, useClass: LoginServiceMock },
-                    {
-                        provide: ActivatedRouteSnapshot,
-                        useValue: activatedRouteSnapshotMock
-                    }
-                ],
-                imports: [RouterTestingModule]
-            });
-            crudService = testbed.get(DotCrudService);
-            dotContentTypeEditResolver = testbed.get(DotContentTypeEditResolver);
-            dotRouterService = testbed.get(DotRouterService);
-            dotHttpErrorManagerService = testbed.get(DotHttpErrorManagerService);
-        })
-    );
+    beforeEach(waitForAsync(() => {
+        const testbed = DOTTestBed.configureTestingModule({
+            providers: [
+                DotContentTypeEditResolver,
+                DotContentTypesInfoService,
+                DotHttpErrorManagerService,
+                { provide: DotCrudService, useClass: CrudServiceMock },
+                { provide: LoginService, useClass: LoginServiceMock },
+                {
+                    provide: ActivatedRouteSnapshot,
+                    useValue: activatedRouteSnapshotMock
+                }
+            ],
+            imports: [RouterTestingModule]
+        });
+        crudService = testbed.get(DotCrudService);
+        dotContentTypeEditResolver = testbed.get(DotContentTypeEditResolver);
+        dotRouterService = testbed.get(DotRouterService);
+        dotHttpErrorManagerService = testbed.get(DotHttpErrorManagerService);
+    }));
 
     it('should get and return a content type', () => {
         activatedRouteSnapshotMock.paramMap.get = () => '123';

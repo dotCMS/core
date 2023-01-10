@@ -18,9 +18,9 @@ public class SecurityLogger {
     }
 
     public static void logInfo(Class cl, String msg) {
-        if (LogMapper.getInstance().isLogEnabled(filename)) {
-            Logger.info(SecurityLogger.class, cl.toString() + " : " + annointMessage(msg));
-        }
+
+        Logger.info(SecurityLogger.class, cl.toString() + " : " + annointMessage(msg));
+        
     }
 
     public static void logDebug(Class clazz, final Supplier<String> message) {
@@ -28,10 +28,7 @@ public class SecurityLogger {
     }
 
     public static void logDebug(Class cl, String msg) {
-
-        if (LogMapper.getInstance().isLogEnabled(filename)) {
-            Logger.debug(SecurityLogger.class, cl.toString() + " : " + annointMessage(msg));
-        }
+        Logger.debug(SecurityLogger.class, cl.toString() + " : " + annointMessage(msg));
     }
     
     private static String annointMessage(String msg) {

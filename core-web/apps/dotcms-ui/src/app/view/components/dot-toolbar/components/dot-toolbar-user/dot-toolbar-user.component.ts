@@ -4,9 +4,9 @@ import { IframeOverlayService } from '../../../_common/iframe/service/iframe-ove
 import { LoginService, Auth, LoggerService, LOGOUT_URL, CurrentUser } from '@dotcms/dotcms-js';
 import { LOCATION_TOKEN } from '@dotcms/app/providers';
 import { DotNavigationService } from '@components/dot-navigation/services/dot-navigation.service';
-import { DotRouterService } from '@services/dot-router/dot-router.service';
 import { map } from 'rxjs/operators';
 import { Observable } from 'rxjs';
+import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
 
 @Component({
     selector: 'dot-toolbar-user',

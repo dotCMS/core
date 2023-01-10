@@ -1,4 +1,4 @@
-import { DotPageMode } from '@models/dot-page/dot-page-mode.enum';
+import { DotPageMode } from '@dotcms/dotcms-models';
 
 export interface DotEditPageState {
     locked?: boolean;

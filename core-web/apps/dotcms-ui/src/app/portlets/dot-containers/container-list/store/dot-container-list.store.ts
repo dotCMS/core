@@ -1,23 +1,22 @@
 import { Injectable } from '@angular/core';
 import { ComponentStore } from '@ngrx/component-store';
 import { MenuItem } from 'primeng/api';
-import { DotContainer } from '@models/container/dot-container.model';
 import { ActionHeaderOptions } from '@models/action-header';
 import { DataTableColumn } from '@models/data-table';
 import { ActivatedRoute } from '@angular/router';
 import { pluck, take } from 'rxjs/operators';
-import { DotMessageService } from '@services/dot-message/dot-messages.service';
+import {
+    DotAlertConfirmService,
+    DotMessageService,
+    DotSiteBrowserService
+} from '@dotcms/data-access';
 import { DotRouterService } from '@services/dot-router/dot-router.service';
 import { DotPushPublishDialogService } from '@dotcms/dotcms-js';
 import { DotActionMenuItem } from '@models/dot-action-menu/dot-action-menu-item.model';
-import { DotSiteBrowserService } from '@services/dot-site-browser/dot-site-browser.service';
-import { DotAlertConfirmService } from '@services/dot-alert-confirm';
-import {
-    DotActionBulkResult,
-    DotBulkFailItem
-} from '@models/dot-action-bulk-result/dot-action-bulk-result.model';
+
 import { DotContainersService } from '@services/dot-containers/dot-containers.service';
 import { DotListingDataTableComponent } from '@components/dot-listing-data-table/dot-listing-data-table.component';
+import { DotContainer, DotActionBulkResult, DotBulkFailItem } from '@dotcms/dotcms-models';
 
 export interface DotContainerListState {
     containerBulkActions: MenuItem[];
@@ -154,15 +153,13 @@ export class DotContainerListStore extends ComponentStore<DotContainerListState>
             options = this.setArchiveContainerActions(container);
         } else {
             options = this.setBaseContainerOptions(container);
-            options = [...options, ...this.setCopyContainerOptions(container)];
+            options = [
+                ...options,
+                ...this.getLicenseAndRemotePublishContainerOptions(container),
+                ...this.getUnPublishAndArchiveContainerOptions(container)
+            ];
 
-            if (!container.live) {
-                options = [
-                    ...options,
-                    ...this.getLicenseAndRemotePublishContainerOptions(container),
-                    ...this.getUnPublishAndArchiveContainerOptions(container)
-                ];
-            }
+            options = [...options, ...this.setCopyContainerOptions(container)];
         }
 
         return options;
@@ -362,50 +359,45 @@ export class DotContainerListStore extends ComponentStore<DotContainerListState>
     }
 
     private setCopyContainerOptions(container: DotContainer): DotActionMenuItem[] {
-        return !container.locked
-            ? [
-                  {
-                      menuItem: {
-                          label: this.dotMessageService.get('Duplicate'),
-                          command: () => {
-                              this.copyContainer(container.identifier);
-                          }
-                      }
-                  }
-              ]
-            : [];
+        return [
+            {
+                menuItem: {
+                    label: this.dotMessageService.get('Duplicate'),
+                    command: () => {
+                        this.copyContainer(container.identifier);
+                    }
+                }
+            }
+        ];
     }
 
     private setBaseContainerOptions(container: DotContainer): DotActionMenuItem[] {
         const options: DotActionMenuItem[] = [];
 
-        if (!container.locked) {
-            options.push({
-                menuItem: {
-                    label: this.dotMessageService.get('edit'),
-                    command: () => {
-                        this.editContainer(container);
-                    }
+        options.push({
+            menuItem: {
+                label: this.dotMessageService.get('edit'),
+                command: () => {
+                    this.editContainer(container);
                 }
-            });
-        }
+            }
+        });
 
-        if (!container.live) {
-            options.push({
-                menuItem: {
-                    label: this.dotMessageService.get('publish'),
-                    command: () => {
-                        this.publishContainer([container.identifier]);
-                    }
+        options.push({
+            menuItem: {
+                label: this.dotMessageService.get('publish'),
+                command: () => {
+                    this.publishContainer([container.identifier]);
                 }
-            });
-        }
+            }
+        });
 
         return options;
     }
 
     private setArchiveContainerActions(container: DotContainer): DotActionMenuItem[] {
         const options: DotActionMenuItem[] = [];
+
         if (!container.live) {
             options.push({
                 menuItem: {
@@ -466,7 +458,7 @@ export class DotContainerListStore extends ComponentStore<DotContainerListState>
                     .subscribe((payload: DotActionBulkResult) => {
                         this.updateNotifyMessages({
                             payload,
-                            message: this.dotMessageService.get('message.container.full_delete')
+                            message: this.dotMessageService.get('message.containers.full_delete')
                         });
                     });
             },
@@ -474,7 +466,7 @@ export class DotContainerListStore extends ComponentStore<DotContainerListState>
                 //
             },
             header: this.dotMessageService.get('Delete-Container'),
-            message: this.dotMessageService.get('message.container.confirm.delete.container')
+            message: this.dotMessageService.get('message.containers.confirm.delete.container')
         });
     }
 
@@ -509,7 +501,7 @@ export class DotContainerListStore extends ComponentStore<DotContainerListState>
             .subscribe((payload: DotActionBulkResult) => {
                 this.updateNotifyMessages({
                     payload,
-                    message: this.dotMessageService.get('message.container.unpublished')
+                    message: this.dotMessageService.get('message.containers.unpublished')
                 });
             });
     }
@@ -521,7 +513,7 @@ export class DotContainerListStore extends ComponentStore<DotContainerListState>
             .subscribe((payload: DotActionBulkResult) => {
                 this.updateNotifyMessages({
                     payload,
-                    message: this.dotMessageService.get('message.container.undelete')
+                    message: this.dotMessageService.get('message.containers.undelete')
                 });
             });
     }
@@ -533,7 +525,7 @@ export class DotContainerListStore extends ComponentStore<DotContainerListState>
             .subscribe((payload: DotActionBulkResult) => {
                 this.updateNotifyMessages({
                     payload,
-                    message: this.dotMessageService.get('message.container.delete')
+                    message: this.dotMessageService.get('message.containers.delete')
                 });
             });
     }

@@ -14,9 +14,9 @@ import {
 } from '@angular/core';
 import { DotKeyValueTableRowComponent } from './dot-key-value-table-row.component';
 import { UiDotIconButtonModule } from '@components/_common/dot-icon-button/dot-icon-button.module';
-import { MockDotMessageService } from '@tests/dot-message-service.mock';
-import { DOTTestBed } from '@tests/dot-test-bed';
-import { DotMessageService } from '@services/dot-message/dot-messages.service';
+import { MockDotMessageService } from '@dotcms/utils-testing';
+import { DOTTestBed } from '@dotcms/app/test/dot-test-bed';
+import { DotMessageService } from '@dotcms/data-access';
 import { DotKeyValue } from '@shared/models/dot-key-value-ng/dot-key-value-ng.model';
 import { mockKeyValue } from '../dot-key-value-ng.component.spec';
 import { PrimeTemplate } from 'primeng/api';

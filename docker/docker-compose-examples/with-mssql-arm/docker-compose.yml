@@ -35,7 +35,6 @@ services:
   dotcms-dev:
     image: dotcms/dotcms:latest
     environment:
-      "LANG": 'C.UTF-8'
       "CATALINA_OPTS": " -Xms1g -Xmx1g "
       "DB_BASE_URL": "jdbc:sqlserver://db-dev;databaseName=master"
       "DB_USERNAME": "sa"

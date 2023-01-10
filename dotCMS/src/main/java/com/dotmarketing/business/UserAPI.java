@@ -1,13 +1,15 @@
 package com.dotmarketing.business;
 
 import com.dotcms.rest.api.v1.authentication.DotInvalidTokenException;
-import java.util.Date;
-import java.util.List;
-
+import com.dotmarketing.common.util.SQLUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.liferay.portal.model.User;
+
+import java.util.Date;
+import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 /**
@@ -101,6 +103,24 @@ public interface UserAPI {
 	public List<User> getUsersByName(String filter, int start,int limit, User user, boolean respectFrontEndRoles) throws  DotDataException;
 
 	public List<User> getUsersByName(String filter, List<Role> roles, int start,int limit) throws DotDataException;
+
+	/**
+	 * Returns a list of Users in dotCMS that match the specified search criteria. It's worth noting that this method
+	 * WILL hit the database EVERY time.
+	 *
+	 * @param filter          Any character sequence that might be present in the combination of a User's first and last
+	 *                        name. For example, for a {@code filter} value of {@code "hn Do"}, the User named {@code
+	 *                        "John Doe"} will match this filter.
+	 * @param roles           The list of {@link Role} objects that Users must match.
+	 * @param start           The start page of the result set, for pagination purposes.
+	 * @param limit           The end or limit page of the result set, for pagination purposes.
+	 * @param filteringParams Additional filtering parameters for the query. Please refer to {@link FilteringParams}.
+	 *
+	 * @return The list of {@link User} objects matching the specified search criteria.
+	 *
+	 * @throws DotDataException An error occurred when accessing the data source.
+	 */
+	List<User> getUsersByName(final String filter, final List<Role> roles, final int start, final int limit, final FilteringParams filteringParams) throws DotDataException;
 
 	public long getCountUsersByName(String filter) throws DotDataException;
 
@@ -410,5 +430,150 @@ public interface UserAPI {
 	 */
 	public Optional<String> getUserIdByToken(final String token)
             throws DotInvalidTokenException, DotDataException;
+
+	/**
+	 * This class allows you to provide more filtering criteria when retrieving lists of Users in dotCMS. Most of the
+	 * search operations are meant for internal back-end use only.
+	 */
+	class FilteringParams {
+
+		private final String orderBy;
+		private final String orderDirection;
+
+		private final boolean includeAnonymousUser;
+		private final boolean includeDefaultUser;
+
+		public static final String INCLUDE_ANONYMOUS_PARAM = "includeanonymous";
+		public static final String INCLUDE_DEFAULT_PARAM = "includedefault";
+		public static final String ORDER_BY_PARAM = "orderby";
+		public static final String ORDER_DIRECTION_PARAM = "orderdirection";
+
+		/**
+		 * Creates an instance of the filtering params object with the provided criteria.
+		 *
+		 * @param builder The filtering params builder object.
+		 */
+		private FilteringParams(final Builder builder) {
+			this.orderBy = builder.orderBy;
+			this.orderDirection = builder.orderDirection;
+			this.includeAnonymousUser = builder.includeAnonymousUser;
+			this.includeDefaultUser = builder.includeDefaultUser;
+		}
+
+		/**
+		 * Returns the ordering criterion for the result list.
+		 *
+		 * @return The ordering criterion.
+		 */
+		public String orderBy() {
+			return orderBy;
+		}
+
+		/**
+		 * Returns the order direction for the result list, e.g., {@code ASC} or {@code DESC}.
+		 *
+		 * @return The order direction.
+		 */
+		public String orderDirection() {
+			return orderDirection;
+		}
+
+		/**
+		 * Returns whether the Anonymous User must be included in the result list or not.
+		 *
+		 * @return If the Anonymous User must be part of the result list, returns {@code true}.
+		 */
+		public boolean includeAnonymousUser() {
+			return includeAnonymousUser;
+		}
+
+		/**
+		 * Returns whether the Default User must be included in the result list or not.
+		 *
+		 * @return If the Default User must be part of the result list, returns {@code true}.
+		 */
+		public boolean includeDefaultUser() {
+			return includeDefaultUser;
+		}
+
+		/**
+		 * Internal builder class
+		 */
+		public static final class Builder {
+
+			private String orderBy = null;
+			private String orderDirection = SQLUtil._ASC;
+
+			private boolean includeAnonymousUser = false;
+			private boolean includeDefaultUser = false;
+
+			/**
+			 * Specifies the criterion used to order the result list. Keep in mind that only a specific lit of columns
+			 * can be used for this. Please refer to {@link SQLUtil#ORDERBY_WHITELIST}.
+			 *
+			 * @param orderBy The term used to order the result list.
+			 */
+			public void orderBy(String orderBy) {
+				this.orderBy = orderBy;
+			}
+
+			/**
+			 * The order direction for the result list. Defaults to ascending order: {@code "ASC"}.
+			 *
+			 * @param orderDirection The order direction.
+			 */
+			public void orderDirection(String orderDirection) {
+				this.orderDirection = orderDirection;
+			}
+
+			/**
+			 * Specifies whether the Anonymous User must be included in the result list or not. Keep in mind that,
+			 * depending on the other filtering parameters, such a user might not be part of the result list either.
+			 *
+			 * @param includeAnonymousUser If the Anonymous User must be part of the result list, set it to {@code
+			 * true}.
+			 */
+			public void includeAnonymousUser(boolean includeAnonymousUser) {
+				this.includeAnonymousUser = includeAnonymousUser;
+			}
+
+			/**
+			 * Specified whether the Anonymous User must be included in the result list or not. Keep in mind that,
+			 * depending on the other filtering parameters, such a user might not be part of the result list either.
+			 *
+			 * @param includeDefaultUser If the Default User must be part of the result list, set it to {@code true}.
+			 */
+			public void includeDefaultUser(boolean includeDefaultUser) {
+				this.includeDefaultUser = includeDefaultUser;
+			}
+
+			/**
+			 * Creates an instance of the {@link FilteringParams} class with the specified filtering criteria.
+			 *
+			 * @return An instance of the {@link FilteringParams} class.
+			 */
+			public FilteringParams build() {
+				return new FilteringParams(this);
+			}
+
+			/**
+			 * Creates an instance of the {@link FilteringParams} class based on the values specified in the provided
+			 * Map. If any of the is not available, the default value provided by this Builder will be used instead.
+			 *
+			 * @return An instance of the {@link FilteringParams} class.
+			 */
+			public FilteringParams build(final Map<String, Object> extraParams) {
+				this.orderBy = (String) extraParams.getOrDefault(ORDER_BY_PARAM, this.orderBy);
+				this.orderDirection = (String) extraParams.getOrDefault(ORDER_DIRECTION_PARAM, this.orderDirection);
+				this.includeAnonymousUser = (boolean) extraParams.getOrDefault(INCLUDE_ANONYMOUS_PARAM,
+						this.includeAnonymousUser);
+				this.includeDefaultUser = (boolean) extraParams.getOrDefault(INCLUDE_DEFAULT_PARAM,
+						this.includeDefaultUser);
+				return new FilteringParams(this);
+			}
+
+		}
+
+	}
 
 }

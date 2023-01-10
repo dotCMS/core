@@ -1,11 +1,6 @@
 package com.dotmarketing.portlets.osgi.AJAX;
 
-import java.io.IOException;
-import javax.servlet.ServletException;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
-import com.dotcms.repackage.org.directwebremoting.WebContextFactory;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.cms.factories.PublicCompanyFactory;
 import com.dotmarketing.exception.DotRuntimeException;
@@ -15,6 +10,10 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.WebKeys;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
+import java.io.IOException;
+import javax.servlet.ServletException;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 
 abstract class OSGIBaseAJAX extends AjaxAction {
 
@@ -97,7 +96,7 @@ abstract class OSGIBaseAJAX extends AjaxAction {
 		if (ret == null) {
 			ret = error;
 		}
-
+		response.setContentType("text/plain");
 		response.getWriter().println("FAILURE: " + ret);
 	}
 	
@@ -120,7 +119,7 @@ abstract class OSGIBaseAJAX extends AjaxAction {
 		if (ret == null) {
 			ret = success;
 		}
-
+		response.setContentType("text/plain");
 		response.getWriter().println("SUCCESS:" + success );
 	}
 }

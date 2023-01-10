@@ -10,7 +10,7 @@ import {
 } from '@angular/core';
 import { ContentTypeFieldsPropertiesFormComponent } from './content-type-fields-properties-form.component';
 import { ComponentFixture, waitForAsync, TestBed } from '@angular/core/testing';
-import { MockDotMessageService } from '@tests/dot-message-service.mock';
+import { MockDotMessageService } from '@dotcms/utils-testing';
 import {
     UntypedFormBuilder,
     UntypedFormGroup,
@@ -19,10 +19,10 @@ import {
     ReactiveFormsModule
 } from '@angular/forms';
 import { FieldPropertyService } from '../service';
-import { DotMessageService } from '@services/dot-message/dot-messages.service';
+import { DotMessageService } from '@dotcms/data-access';
 import { DotCMSContentTypeField } from '@dotcms/dotcms-models';
 import { By } from '@angular/platform-browser';
-import { dotcmsContentTypeFieldBasicMock } from '@tests/dot-content-types.mock';
+import { dotcmsContentTypeFieldBasicMock } from '@dotcms/utils-testing';
 import { DotPipesModule } from '@pipes/dot-pipes.module';
 
 const mockDFormFieldData = {

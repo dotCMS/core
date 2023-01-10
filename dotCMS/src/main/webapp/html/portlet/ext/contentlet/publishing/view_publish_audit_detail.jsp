@@ -147,7 +147,7 @@
     </tr>
     <tr>
         <th><b><%= LanguageUtil.get(pageContext, "publisher_Audit_Asset_Number") %>: </b></th>
-        <td style="background: white"><%=currentEndpointHistory.getAssets().size() %></td>
+        <td style="background: white"><%=currentEndpointHistory.getAssets()==null ? 0 : currentEndpointHistory.getAssets().size() %></td>
 
     </tr>
 </table>
