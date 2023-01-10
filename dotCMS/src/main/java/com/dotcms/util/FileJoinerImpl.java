@@ -14,9 +14,9 @@ import java.io.OutputStream;
 import java.util.function.Function;
 
 /**
- * A File Joiner is a class take chucks of a file (they could be an actual file [previously splitted]) or a collection of byte chucks.
+ * A File Joiner is a class take chunks of a file (they could be an actual file [previously splitted]) or a collection of byte chunks.
  * or both.
- * In case you are gonna use the file instead of the raw bytes, you should need to define a buffer previous by passing the chuck file of the
+ * In case you are goint to use the file instead of the raw bytes, you should need to define a buffer previous by passing the chunk file of the
  * diff pieces (by default is 2mb) witch is the same default of the {@link FileSplitter} and {@link FileByteSplitter}
  * @author jsanca
  */
@@ -27,7 +27,7 @@ public class FileJoinerImpl implements FileJoiner {
     private final Function<File, InputStream> inputStreamCreatorFunction;
 
     /**
-     * Defaut size for the chucks, 2mb
+     * Defaut size for the chunks, 2mb
      */
     private static final int CHUNK_SIZE = Config.getIntProperty("FILE_SPLITTER_CHUNK_SIZE", 2097152); // 2mb
 
