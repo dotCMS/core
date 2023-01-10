@@ -9277,6 +9277,7 @@ Styles for commons fields along the backend
   color: #fff;
   cursor: pointer;
   padding: 0 1rem;
+
 }
 .fileAjaxUploader input[type=file]::-webkit-file-upload-button:hover {
   background-color: var(--color-main_mod);
