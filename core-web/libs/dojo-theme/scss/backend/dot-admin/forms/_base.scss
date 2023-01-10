@@ -11,7 +11,7 @@
     color: $gray-dark;
     display: block;
     font-size: $font-size-small;
-    margin-bottom: $basic-padding / 2;
+    margin-bottom: calc($basic-padding / 2);
 }
 
 #checkbox-radio {
@@ -21,7 +21,7 @@
     white-space: nowrap;
 
     & > .dijit {
-        margin-right: $basic-padding / 2;
+        margin-right: calc($basic-padding / 2);
     }
 }
 
@@ -80,7 +80,7 @@
 
     .dijitRadio,
     .dijitCheckBox {
-        margin-right: $basic-padding / 2;
+        margin-right: calc($basic-padding / 2);
     }
 }
 
@@ -333,7 +333,7 @@ dd {
 
     .dijitButton,
     .fakeDojoButton {
-        margin: 0 $basic-padding / 2;
+        margin: 0 calc($basic-padding / 2);
     }
 }
 
@@ -350,6 +350,6 @@ dd {
 
 .who-can-use__list {
     td {
-        padding: $basic-padding / 2;
+        padding: calc($basic-padding / 2);
     }
 }

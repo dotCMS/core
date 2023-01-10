@@ -126,7 +126,7 @@
 
         img {
             display: inline-block;
-            margin-right: $basic-padding / 2;
+            margin-right: calc($basic-padding / 2);
             vertical-align: sub;
         }
     }
@@ -144,7 +144,7 @@
     }
 
     td {
-        padding: $basic-padding / 2;
+        padding: calc($basic-padding / 2);
     }
 
     th {

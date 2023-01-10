@@ -45,7 +45,7 @@
         display: flex;
 
         img {
-            margin-right: $basic-padding / 2;
+            margin-right: calc($basic-padding / 2);
         }
     }
 
@@ -94,7 +94,7 @@
     }
 
     .dijitTreeNode {
-        padding: $basic-padding / 2 0;
+        padding: calc($basic-padding / 2) 0;
     }
 }
 
@@ -113,13 +113,13 @@
     display: flex;
 
     span {
-        margin-right: $basic-padding / 2;
+        margin-right: calc($basic-padding / 2);
         font-weight: bold;
     }
 
     img {
         cursor: pointer;
-        margin: 0 $basic-padding / 2;
+        margin: 0 calc($basic-padding / 2);
     }
 }
 

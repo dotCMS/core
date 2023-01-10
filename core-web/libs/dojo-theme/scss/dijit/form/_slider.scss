@@ -108,11 +108,11 @@
 
         &ImageHandle {
             transition: all $field-animation-speed;
-            border-radius: $slider-handle-size / 2;
+            border-radius: calc($slider-handle-size / 2);
             background-color: $slider-handle-normal-bgcolor;
             border: $slider-handle-normal-border;
             height: $slider-handle-size;
-            top: ceil(-($slider-handle-size / 2) + $field-border-size);
+            top: ceil(-(calc($slider-handle-size / 2)) + $field-border-size);
             width: $slider-handle-size;
         }
 

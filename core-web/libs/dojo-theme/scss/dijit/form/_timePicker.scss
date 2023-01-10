@@ -3,7 +3,7 @@
         .dijitDownArrowButton,
         .dijitUpArrowButton {
             background-color: $gray-ligthest;
-            padding: $basic-padding / 2;
+            padding: calc($basic-padding / 2);
         }
 
         .dijitDownArrowHover,

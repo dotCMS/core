@@ -33,7 +33,7 @@
 
     .arrowRightIcon {
         font-size: $font-size-small;
-        margin-top: -($font-size-small / 2);
+        margin-top: -(calc($font-size-small / 2));
         position: absolute;
         right: $basic-padding;
         top: 50%;

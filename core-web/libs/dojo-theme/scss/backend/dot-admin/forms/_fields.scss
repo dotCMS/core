@@ -9,7 +9,7 @@ Styles for commons fields along the backend
 .glossaryTermPopup {
     border-radius: $border-radius;
     background-color: $gray-ligthest;
-    padding: ($field-padding / 2) $field-padding;
+    padding: (calc($field-padding / 2)) $field-padding;
     border: solid 1px $gray-ligther;
     position: absolute;
 }
@@ -81,7 +81,7 @@ Styles for commons fields along the backend
     margin-top: $basic-padding;
     max-width: $content-edit-field-max-width;
     min-height: 38px;
-    padding: $basic-padding / 2;
+    padding: calc($basic-padding / 2);
 
     li {
         background: $gray-ligthest;
@@ -90,7 +90,8 @@ Styles for commons fields along the backend
         display: inline-block;
         font-size: 12px;
         margin: 2px 5px 2px 0px;
-        padding: ($basic-padding / 2) $basic-padding ($basic-padding / 2) ($basic-padding / 2);
+        padding: (calc($basic-padding / 2)) $basic-padding (calc($basic-padding / 2))
+            (calc($basic-padding / 2));
         position: relative;
         text-decoration: none;
     }

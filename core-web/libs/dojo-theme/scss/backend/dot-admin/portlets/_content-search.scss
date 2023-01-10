@@ -32,7 +32,7 @@
 }
 
 .content-search__key-fields {
-    margin-top: $basic-padding/2;
+    margin-top: calc($basic-padding / 2);
 }
 
 .content-search__import-content-form {

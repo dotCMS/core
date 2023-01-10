@@ -18,7 +18,7 @@
 .dijit {
     &Icon {
         @extend #dijit-icon;
-        margin-right: $basic-padding / 2;
+        margin-right: calc($basic-padding / 2);
 
         &Task {
             &:before {

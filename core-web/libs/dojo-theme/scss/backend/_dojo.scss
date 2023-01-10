@@ -69,7 +69,7 @@ select[multiple] {
     &DropDownActionButton {
         background-color: $color-main;
         border: none;
-        border-radius: $action-button-size / 2;
+        border-radius: calc($action-button-size / 2);
         height: $action-button-size;
         width: $action-button-size;
 

@@ -122,8 +122,8 @@ $sidebar-width: 300px;
 
         td,
         th {
-            padding-bottom: $basic-padding / 2;
-            padding-top: $basic-padding / 2;
+            padding-bottom: calc($basic-padding / 2);
+            padding-top: calc($basic-padding / 2);
         }
 
         th {

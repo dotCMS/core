@@ -89,7 +89,7 @@
 
         [class$="Icon"],
         [class*="Icon"] {
-            margin-right: $basic-padding / 2;
+            margin-right: calc($basic-padding / 2);
         }
     }
 }
@@ -205,7 +205,7 @@
     }
 
     .fakeDojoButton {
-        margin: 0 $basic-padding / 2;
+        margin: 0 calc($basic-padding / 2);
     }
 
     img {

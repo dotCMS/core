@@ -3510,9 +3510,6 @@ body {
     margin-top: -2.5px;
     position: absolute;
     top: 50%;
-    border-left: 5px solid transparent;
-    border-right: 5px solid transparent;
-    border-top: 5px solid #5b5b5b;
     content: '';
     height: 0;
     width: 0;
@@ -3555,9 +3552,6 @@ body {
     margin-top: -2.5px;
     position: absolute;
     top: 50%;
-    border-left: 5px solid transparent;
-    border-right: 5px solid transparent;
-    border-top: 5px solid var(--color-sec);
     content: '';
     height: 0;
     width: 0;
@@ -3572,9 +3566,6 @@ body {
     margin-top: -2.5px;
     position: absolute;
     top: 50%;
-    border-left: 5px solid transparent;
-    border-right: 5px solid transparent;
-    border-top: 5px solid var(--color-main);
     content: '';
     height: 0;
     width: 0;
@@ -3593,9 +3584,6 @@ body {
     margin-top: -2.5px;
     position: absolute;
     top: 50%;
-    border-left: 5px solid transparent;
-    border-right: 5px solid transparent;
-    border-top: 5px solid #c5c5c5;
     content: '';
     height: 0;
     width: 0;
@@ -3672,9 +3660,6 @@ body {
     margin-top: -2.5px;
     position: absolute;
     top: 50%;
-    border-left: 5px solid transparent;
-    border-right: 5px solid transparent;
-    border-top: 5px solid #8a8a8a;
     content: '';
     height: 0;
     width: 0;
@@ -3845,9 +3830,6 @@ body {
     margin-top: -2.5px;
     position: absolute;
     top: 50%;
-    border-left: 5px solid transparent;
-    border-right: 5px solid transparent;
-    border-top: 5px solid var(--color-sec);
     content: '';
     height: 0;
     width: 0;
@@ -3867,9 +3849,6 @@ body {
     margin-top: -2.5px;
     position: absolute;
     top: 50%;
-    border-left: 5px solid transparent;
-    border-right: 5px solid transparent;
-    border-top: 5px solid var(--color-main);
     content: '';
     height: 0;
     width: 0;
@@ -3889,9 +3868,6 @@ body {
     margin-top: -2.5px;
     position: absolute;
     top: 50%;
-    border-left: 5px solid transparent;
-    border-right: 5px solid transparent;
-    border-top: 5px solid #fff;
     content: '';
     height: 0;
     width: 0;
@@ -3917,9 +3893,6 @@ body {
     margin-top: -2.5px;
     position: absolute;
     top: 50%;
-    border-left: 5px solid transparent;
-    border-right: 5px solid transparent;
-    border-top: 5px solid #c5c5c5;
     content: '';
     height: 0;
     width: 0;
@@ -3940,9 +3913,6 @@ body {
     margin-top: -2.5px;
     position: absolute;
     top: 50%;
-    border-left: 5px solid transparent;
-    border-right: 5px solid transparent;
-    border-top: 5px solid var(--color-sec);
     content: '';
     height: 0;
     width: 0;
@@ -3968,9 +3938,6 @@ body {
     margin-top: -2.5px;
     position: absolute;
     top: 50%;
-    border-left: 5px solid transparent;
-    border-right: 5px solid transparent;
-    border-top: 5px solid var(--color-main);
     content: '';
     height: 0;
     width: 0;
@@ -3990,9 +3957,6 @@ body {
     margin-top: -2.5px;
     position: absolute;
     top: 50%;
-    border-left: 5px solid transparent;
-    border-right: 5px solid transparent;
-    border-top: 5px solid var(--color-main);
     content: '';
     height: 0;
     width: 0;
@@ -4015,9 +3979,6 @@ body {
     margin-top: -2.5px;
     position: absolute;
     top: 50%;
-    border-left: 5px solid transparent;
-    border-right: 5px solid transparent;
-    border-top: 5px solid var(--color-main);
     content: '';
     height: 0;
     width: 0;
@@ -4038,9 +3999,6 @@ body {
     margin-top: -2.5px;
     position: absolute;
     top: 50%;
-    border-left: 5px solid transparent;
-    border-right: 5px solid transparent;
-    border-top: 5px solid #c5c5c5;
     content: '';
     height: 0;
     width: 0;
@@ -4169,9 +4127,6 @@ body {
     margin-top: -2.5px;
     position: absolute;
     top: 50%;
-    border-left: 5px solid transparent;
-    border-right: 5px solid transparent;
-    border-top: 5px solid #8a8a8a;
     content: '';
     height: 0;
     width: 0;
@@ -4194,9 +4149,6 @@ body {
     margin-top: -2.5px;
     position: absolute;
     top: 50%;
-    border-left: 5px solid transparent;
-    border-right: 5px solid transparent;
-    border-top: 5px solid var(--color-main);
     content: '';
     height: 0;
     width: 0;
@@ -4219,9 +4171,6 @@ body {
     margin-top: -2.5px;
     position: absolute;
     top: 50%;
-    border-left: 5px solid transparent;
-    border-right: 5px solid transparent;
-    border-top: 5px solid var(--color-main);
     content: '';
     height: 0;
     width: 0;
@@ -4411,9 +4360,6 @@ body {
     margin-top: -2.5px;
     position: absolute;
     top: 50%;
-    border-left: 5px solid transparent;
-    border-right: 5px solid transparent;
-    border-top: 5px solid #8a8a8a;
     content: '';
     height: 0;
     width: 0;
@@ -4580,9 +4526,6 @@ body {
     margin-top: -2.5px;
     position: absolute;
     top: 50%;
-    border-left: 5px solid transparent;
-    border-right: 5px solid transparent;
-    border-top: 5px solid #5b5b5b;
     content: '';
     height: 0;
     width: 0;
@@ -4800,9 +4743,6 @@ body {
     margin-top: -2.5px;
     position: absolute;
     top: 50%;
-    border-left: 5px solid transparent;
-    border-right: 5px solid transparent;
-    border-top: 5px solid #161616;
     content: '';
     height: 0;
     width: 0;

@@ -13,7 +13,7 @@
     }
 
     .dijitArrowButton {
-        height: #{$field-height / ($field-border-size * 2)}px;
+        height: #{calc($field-height / ($field-border-size * 2))}px;
         border-left: $spinner-normal-arrow-border;
         background-color: $spinner-normal-arrow-bgcolor;
 

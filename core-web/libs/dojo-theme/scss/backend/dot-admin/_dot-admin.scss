@@ -355,7 +355,7 @@ $table-border: 1px solid $gray-ligther;
 }
 .sTypeItem a {
     display: block;
-    padding: $basic-padding / 2 10px;
+    padding: calc($basic-padding / 2) 10px;
     text-decoration: none;
 }
 .sTypeItem a:hover {

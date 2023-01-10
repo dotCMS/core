@@ -37,7 +37,7 @@
 
     th,
     td {
-        padding: $basic-padding / 2;
+        padding: calc($basic-padding / 2);
     }
 
     tr:first-child td:first-child {

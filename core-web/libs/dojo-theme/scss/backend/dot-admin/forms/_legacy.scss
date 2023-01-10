@@ -9,7 +9,7 @@
 
     .who-user {
         label {
-            margin-right: $field-padding / 2;
+            margin-right: calc($field-padding / 2);
         }
     }
 }
