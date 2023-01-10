@@ -16,7 +16,7 @@
     color: $gray-ligth;
 }
 
-@mixin create-arrow($arrow-size, $arrow-color, $direction: "") {
+@mixin create-arrow($arrow-size, $arrow-color, $direction: "bottom") {
     @include center-icon(
         $arrow-size * 2,
         $arrow-size,
