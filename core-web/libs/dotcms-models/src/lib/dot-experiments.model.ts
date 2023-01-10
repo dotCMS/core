@@ -40,7 +40,7 @@ export interface Goal {
 export type Goals = Record<GoalsTypes, Goal>;
 
 export interface GoalCondition {
-    parameter: GOAL_PARAMETERS; // TODO: ask to Daniel the list
+    parameter: GOAL_PARAMETERS;
     operator: GOAL_OPERATORS;
     value: string;
 }

@@ -4,6 +4,7 @@ import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 import { ActivatedRoute } from '@angular/router';
 import { RouterTestingModule } from '@angular/router/testing';
+import { ExperimentMocks, GoalsMock } from '@portlets/dot-experiments/test/mocks';
 
 import { MessageService } from 'primeng/api';
 
@@ -157,7 +158,8 @@ describe('DotExperimentsListStore', () => {
                     variants: [{ id: '111', name: 'DEFAULT', weight: '100.0' }]
                 },
                 creationDate: new Date('2022-08-21 14:50:03'),
-                modDate: new Date('2022-08-21 18:50:03')
+                modDate: new Date('2022-08-21 18:50:03'),
+                goals: { ...GoalsMock }
             }
         ];
         const archivedExperiments: DotExperiment[] = [
@@ -177,7 +179,8 @@ describe('DotExperimentsListStore', () => {
                     variants: [{ id: '222', name: 'DEFAULT', weight: '100.0' }]
                 },
                 creationDate: new Date('2022-08-21 14:50:03'),
-                modDate: new Date('2022-08-21 18:50:03')
+                modDate: new Date('2022-08-21 18:50:03'),
+                goals: { ...GoalsMock }
             }
         ];
 

@@ -1,3 +1,7 @@
+import { DotExperimentsService } from '@portlets/dot-experiments/shared/services/dot-experiments.service';
+import { ActivatedRoute } from '@angular/router';
+import { ExperimentMocks, GoalsMock } from '@portlets/dot-experiments/test/mocks';
+
 import { createServiceFactory, mockProvider, SpectatorService, SpyObject } from '@ngneat/spectator';
 import { of } from 'rxjs';
 
@@ -11,6 +15,7 @@ import {
     DEFAULT_VARIANT_NAME,
     DotExperiment,
     ExperimentSteps,
+    Goals,
     LoadingState,
     Status,
     Variant
@@ -100,7 +105,7 @@ describe('DotExperimentsConfigurationStore', () => {
     });
 
     it('should update sidebar status(SAVING/IDLE/DONE) to the store', (done) => {
-        store.setSidebarStatus(Status.SAVING);
+        store.setSidebarStatus({ status: Status.SAVING });
         store.state$.subscribe(({ stepStatusSidebar }) => {
             expect(stepStatusSidebar.status).toEqual(Status.SAVING);
             done();
@@ -259,6 +264,30 @@ describe('DotExperimentsConfigurationStore', () => {
                 expect(experiment.trafficProportion.variants).toEqual(
                     expectedResponseRemoveVariant.trafficProportion.variants
                 );
+                done();
+            });
+        });
+
+        it('should set a Goal to the experiment', (done) => {
+            const expectedGoals: Goals = { ...GoalsMock };
+
+            dotExperimentsService.getById.and
+                .callThrough()
+                .and.returnValue(of({ ...ExperimentMocks[0] }));
+
+            dotExperimentsService.setGoal.and.callThrough().and.returnValue(
+                of({
+                    ...ExperimentMocks[0],
+                    goals: expectedGoals
+                })
+            );
+
+            store.loadExperiment(EXPERIMENT_ID);
+
+            store.setSelectedGoal({ goals: expectedGoals });
+
+            store.state$.subscribe(({ experiment }) => {
+                expect(experiment.goals).toEqual(expectedGoals);
                 done();
             });
         });

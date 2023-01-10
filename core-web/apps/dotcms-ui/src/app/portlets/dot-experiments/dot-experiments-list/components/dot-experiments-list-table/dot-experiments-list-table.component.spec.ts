@@ -4,6 +4,13 @@ import { Pipe, PipeTransform } from '@angular/core';
 
 import { ConfirmationService, MessageService } from 'primeng/api';
 import { ConfirmPopup, ConfirmPopupModule } from 'primeng/confirmpopup';
+import { DotExperimentsEmptyExperimentsComponent } from '../dot-experiments-empty-experiments/dot-experiments-empty-experiments.component';
+import {
+    DotExperiment,
+    DotExperimentStatusList,
+    GroupedExperimentByStatus,
+    TrafficProportionTypes
+} from '@dotcms/dotcms-models';
 import { Table, TableModule } from 'primeng/table';
 import { ToastModule } from 'primeng/toast';
 
@@ -17,6 +24,7 @@ import {
     TrafficProportionTypes
 } from '@dotcms/dotcms-models';
 import { DotIconModule } from '@dotcms/ui';
+import { DotMessagePipeModule } from '@pipes/dot-message/dot-message-pipe.module';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 import { DotMessagePipeModule } from '@pipes/dot-message/dot-message-pipe.module';
 
@@ -42,7 +50,8 @@ const draftExperiments: DotExperiment[] = [
             variants: [{ id: '111', name: 'DEFAULT', weight: '100.0' }]
         },
         creationDate: new Date('2022-08-21 14:50:03'),
-        modDate: new Date('2022-08-21 18:50:03')
+        modDate: new Date('2022-08-21 18:50:03'),
+        goals: null
     }
 ];
 const endedExperiments: DotExperiment[] = [
@@ -62,7 +71,8 @@ const endedExperiments: DotExperiment[] = [
             variants: [{ id: '222', name: 'DEFAULT', weight: '100.0' }]
         },
         creationDate: new Date('2022-08-21 14:50:03'),
-        modDate: new Date('2022-08-21 18:50:03')
+        modDate: new Date('2022-08-21 18:50:03'),
+        goals: null
     }
 ];
 const archivedExperiments: DotExperiment[] = [
@@ -82,7 +92,8 @@ const archivedExperiments: DotExperiment[] = [
             variants: [{ id: '333', name: 'DEFAULT', weight: '100.0' }]
         },
         creationDate: new Date('2022-08-21 14:50:03'),
-        modDate: new Date('2022-08-21 18:50:03')
+        modDate: new Date('2022-08-21 18:50:03'),
+        goals: null
     }
 ];
 const scheduledExperiments: DotExperiment[] = [
@@ -102,7 +113,8 @@ const scheduledExperiments: DotExperiment[] = [
             variants: [{ id: '4444', name: 'DEFAULT', weight: '100.0' }]
         },
         creationDate: new Date('2022-08-21 14:50:03'),
-        modDate: new Date('2022-08-21 18:50:03')
+        modDate: new Date('2022-08-21 18:50:03'),
+        goals: null
     }
 ];
 
