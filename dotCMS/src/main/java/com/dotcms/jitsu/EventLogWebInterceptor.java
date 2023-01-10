@@ -121,7 +121,7 @@ public class EventLogWebInterceptor implements WebInterceptor {
                 WebAPILocator.getLanguageWebAPI().getLanguage(request).getId()));
         eventPayload.put("persona",
                 WebAPILocator.getPersonalizationWebAPI().getContainerPersonalization(request));
-        eventPayload.put("clusterId", ClusterFactory.getClusterId());
+        //eventPayload.put("clusterId", ClusterFactory.getClusterId());
 
         for (final Map<String, String> experiment : experiments) {
             eventPayload.addExperiment(experiment.get("experiment"), experiment.get("variant"),

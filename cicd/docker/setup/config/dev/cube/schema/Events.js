@@ -59,7 +59,7 @@ cube(`Events`, {
     },
 
     lookBackWindow: {
-      sql: `look_back_window`,
+      sql: `lookbackwindow`,
       type: `string`
     },
 
@@ -174,7 +174,7 @@ cube(`Events`, {
     },
 
     userLanguage: {
-      sql: `user_language`,
+      sql: `userlanguage`,
       type: `string`
     },
 
@@ -191,7 +191,12 @@ cube(`Events`, {
     utcTime: {
       sql: `utc_time`,
       type: `time`
-    }
+    },
+
+    language: {
+      sql: `language`,
+      type: `string`
+    },
   },
 
   dataSource: `default`

@@ -1,8 +1,21 @@
 
+function setJitsuExperimentData (experimentData) {
+    let experimentsShortData = {
+        experiments: experimentData.experiments.map((experiment) => ({
+                experiment: experiment.id,
+                variant: experiment.variant.name,
+                lookBackWindow: experiment.lookBackWindow
+            })
+        )
+    };
+
+    jitsu('set', experimentsShortData);
+}
+
 let experimentAlreadyCheck = sessionStorage.getItem("experimentAlreadyCheck");
 
 if (!experimentAlreadyCheck) {
-    let currentRunningExperimentsId = [${running_experiments_list}]
+    let currentRunningExperimentsId = [${running_experiments_list}];
 
     function shouldHitEndPoint() {
         let experimentData = localStorage.getItem('experiment_data');
@@ -40,19 +53,8 @@ if (!experimentAlreadyCheck) {
     }
 
     window.addEventListener("experiment_loaded", function (event) {
-        console.log("experiment_loaded");
-        let experimentData = event.detail;
 
-        let experimentsShortData = {
-            experiments : experimentData.experiments.map((experiment) => ({
-                    experiment: experiment.id,
-                    variant: experiment.variant.name,
-                    lookBackWindow: experiment.lookBackWindow
-                })
-            )
-        };
-        console.log('experimentsShortData', experimentsShortData);
-        jitsu('set', experimentsShortData);
+        setJitsuExperimentData(event.detail);
 
         if (!window.location.href.includes("redirect=true")) {
 
@@ -79,6 +81,7 @@ if (!experimentAlreadyCheck) {
     });
 
     if (shouldHitEndPoint()) {
+
         let experimentData = localStorage.getItem('experiment_data');
         let body = experimentData ?
             {
@@ -138,5 +141,8 @@ if (!experimentAlreadyCheck) {
     }
 
     sessionStorage.setItem("experimentAlreadyCheck", true);
+} else {
+    let experimentData = JSON.parse(localStorage.getItem('experiment_data'));
+    setJitsuExperimentData(experimentData);
 }
 
