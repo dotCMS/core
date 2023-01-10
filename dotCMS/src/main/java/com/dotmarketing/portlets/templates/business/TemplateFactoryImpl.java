@@ -760,7 +760,7 @@ public class TemplateFactoryImpl implements TemplateFactory {
 	/**
 	 * Determine if the folder lives under /application/templates
 	 * @param folder to check
-	 * @return true if the folder lives under /application/templatesu
+	 * @return true if the folder lives under /application/templates
 	 */
 	private boolean isValidTemplateFolderPath(final Folder folder) {
 		return null != folder && UtilMethods.isSet(folder.getPath()) && folder.getPath().contains(Constants.TEMPLATE_FOLDER_PATH);

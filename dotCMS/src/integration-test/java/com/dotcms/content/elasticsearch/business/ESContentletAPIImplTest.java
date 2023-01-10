@@ -1798,9 +1798,8 @@ public class ESContentletAPIImplTest extends IntegrationTestBase {
      * When:
      * - Create two {@link Language}: A and B
      * - Create two {@link Template}: A and B
-     * - Create a {@link HTMLPageAsset} in the first language.
-     * - Create a new version of the same {@link HTMLPageAsset} but with different {@link Language}
-     * and {@link Template}
+     * - Create a {@link HTMLPageAsset} with {@link Language} A and {@link Template} A.
+     * - Create a new version of the same {@link HTMLPageAsset} but with {@link Language} B and {@link Template} B.
      * Should: Create a new version in the first {@link Language} using the {@link Template} from the second language version.
      *
      * @throws DotDataException
@@ -1814,7 +1813,6 @@ public class ESContentletAPIImplTest extends IntegrationTestBase {
         final Host host = new SiteDataGen().nextPersisted();
         final Template template_A = new TemplateDataGen().host(host).nextPersisted();
         final Template template_B = new TemplateDataGen().host(host).nextPersisted();
-
 
         final HTMLPageAsset htmlPageAsset_1 = createHtmlPageAsset(VariantAPI.DEFAULT_VARIANT, language_A, host, template_A);
         final HTMLPageAsset htmlPageAsset_2 = createNewVersion(htmlPageAsset_1, VariantAPI.DEFAULT_VARIANT, language_B, template_B);

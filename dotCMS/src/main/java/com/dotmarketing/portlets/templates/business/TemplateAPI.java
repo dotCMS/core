@@ -409,13 +409,13 @@ public interface TemplateAPI {
 	Template getTemplateByFolder(final Folder folder, final Host host, final User user, final boolean showLive) throws DotSecurityException, DotDataException;
 
 	/**
-	 * Return the List of Page's Inode tha used the {@link Template}
+	 * Return the List of Pages tha used the {@link Template}
 	 * In case that the Template is not used by any Page then it returns an empty List
 	 * If the Template is used by more than one version of a Page then it returns all the
 	 * Inodes of the different versions.
 	 *
 	 * @param templateId Template's ID that we are looking for
-	 * @return
+	 * @return List of {@link HTMLPageVersion} this objects contains a resume of the page data
 	 */
 	List<HTMLPageVersion> getPages(final String templateId) throws DotDataException, DotSecurityException;
 
