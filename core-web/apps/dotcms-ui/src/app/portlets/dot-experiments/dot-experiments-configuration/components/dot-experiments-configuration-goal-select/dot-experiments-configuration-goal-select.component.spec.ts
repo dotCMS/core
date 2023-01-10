@@ -105,7 +105,7 @@ describe('DotExperimentsConfigurationGoalSelectComponent', () => {
         sidebar = spectator.query(Sidebar);
         expect(sidebar.visible).toEqual(false);
 
-        sidebar.onHide.subscribe((event) => {
+        sidebar.onHide.subscribe(() => {
             expect(closedSidebarOutput).toEqual(true);
         });
     });
