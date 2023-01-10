@@ -132,10 +132,23 @@ public class MapToContentletPopulator  {
             if (type != null && InodeUtils.isSet(type.inode())) {
                 // basic data
                 contentlet.setContentTypeId(type.inode());
-                contentlet.setLanguageId(map.containsKey(LANGUAGE_ID)?
-                        Long.parseLong(map.get(LANGUAGE_ID).toString()):
-                        APILocator.getLanguageAPI().getDefaultLanguage().getId()
-                );
+
+                    final Long fallbackLang = Try.of(() -> {
+                        if(contentlet.getLanguageId() > 0){
+                            return contentlet.getLanguageId();
+                        }
+                        if (UtilMethods.isSet(contentlet.getInode())) {
+                            return APILocator.getContentletAPI().find(contentlet.getInode(), APILocator.systemUser(), false).getLanguageId();
+                        }
+                        //We shouldn't be relying on the default lang if we know the inode (which has a lang of its own)
+                        //That's why we're trying other options first as fallback
+                        return APILocator.getLanguageAPI().getDefaultLanguage().getId();
+                    }).getOrNull();
+
+                    contentlet.setLanguageId(map.containsKey(LANGUAGE_ID) ?
+                            Long.parseLong(map.get(LANGUAGE_ID).toString()) :
+                            fallbackLang
+                    );
 
                 this.processIdentifier(contentlet, map);
 
