@@ -372,5 +372,55 @@ public class SiteAndFolderResolverImplTest extends IntegrationTestBase {
 
     }
 
+    /**
+     * Here we're testing that the SiteAndFolder property is aware of default values being returned or not
+     * on the contentType  properties host and folder
+     * Basically if something has been explicitly set on host
+     *   contentType.siteAndFolder().host() should be not null
+     * Similar if something has been set explicitly set on folder
+     *   contentType.siteAndFolder().folder() should be not null
+     * If on the contrary if something gets explicitly set on those two fields
+     * we should continue to see the new values that were manually set
+     */
+    @Test
+    public void Test_Get_SiteAndFolderParams_When_No_Host_Value_Is_Expect_Null(){
+        final String path = "path";
+        final String host = "host";
+        final String folder = "folder";
+        final String variable = "dotTest" + System.currentTimeMillis();
+        ContentType contentType = ContentTypeBuilder.builder(FileAssetContentType.class)
+                // We're not setting any values on host nor folder
+                .name(variable)
+                .folderPath(path)
+                .build();
+        //These are expected to return the default value
+        Assert.assertEquals(Host.SYSTEM_HOST, contentType.host());
+        Assert.assertEquals(Folder.SYSTEM_FOLDER, contentType.folder());
+        Assert.assertEquals(path,contentType.folderPath());
+
+        SiteAndFolder siteAndFolder = contentType.siteAndFolder();
+
+        Assert.assertNull(siteAndFolder.host());
+        Assert.assertNull(siteAndFolder.folder());
+        Assert.assertEquals(path,siteAndFolder.folderPath());
+
+        //Now test the values on siteAndFolder after setting explicit values on host and folder
+        contentType = ContentTypeBuilder.builder(FileAssetContentType.class)
+                .loadedOrResolved(true)
+                // here We're explicitly setting values on folder and host
+                .name(variable)
+                .host(path)
+                .folder(folder)
+                .host(host)
+                .folderPath(folder + path)
+                .build();
+
+        siteAndFolder = contentType.siteAndFolder();
+
+        Assert.assertEquals(host,siteAndFolder.host());
+        Assert.assertEquals(folder,siteAndFolder.folder());
+        Assert.assertEquals(folder + path, siteAndFolder.folderPath());
+    }
+
 
 }

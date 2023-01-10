@@ -18,7 +18,6 @@ import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
 import io.vavr.control.Try;
-import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
 import java.util.Optional;
@@ -67,7 +66,7 @@ public class SiteAndFolderResolverImpl implements SiteAndFolderResolver {
             return build;
         }
 
-        //by setting a null id we block all lazy calculations happening within ContentType
+
         //when lazy calculations are blocked we can get null values when nothing has been set on those fields instead of the lazy calculation
         //Immutables work in such a way that if a getter
 
@@ -95,7 +94,6 @@ public class SiteAndFolderResolverImpl implements SiteAndFolderResolver {
      * @throws DotDataException
      * @throws DotSecurityException
      */
-    @NotNull
     String resolveSite(final SiteAndFolder params)
             throws DotDataException, DotSecurityException {
 

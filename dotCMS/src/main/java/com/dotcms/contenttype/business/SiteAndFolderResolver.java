@@ -6,6 +6,9 @@ import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.util.Config;
 import com.liferay.portal.model.User;
 
+/**
+ * SiteAndFolderResolver API Entry point
+ */
 public interface SiteAndFolderResolver {
 
     String CT_SKIP_RESOLVE_SITE = "CT_SKIP_RESOLVE_SITE";

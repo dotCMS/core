@@ -188,6 +188,7 @@ public abstract class ContentType implements Serializable, Permissionable, Conte
 
   @Value.Default
   public String host() {
+    hostDefaultNotChanged = true;
     return Host.SYSTEM_HOST;
   }
 
@@ -287,6 +288,7 @@ public abstract class ContentType implements Serializable, Permissionable, Conte
 
   @Value.Default
   public String folder() {
+    folderDefaultNotChanged = true;
     return Folder.SYSTEM_FOLDER;
   }
 
@@ -297,6 +299,8 @@ public abstract class ContentType implements Serializable, Permissionable, Conte
   @Nullable
   @Value.Default
   public String folderPath() {
+    // This basically tells me if the CT has been loaded from the db it should use the calculated value
+    //Otherwise it should return null, so we can identify if looking at a value explicitly set or a default
     return loadedOrResolved() ? canonicalFolderPath() : null;
   }
 
@@ -320,14 +324,27 @@ public abstract class ContentType implements Serializable, Permissionable, Conte
     ).getOrNull();
   }
 
+  /**
+   * The code below serves as
+   * @return
+   */
   @JsonIgnore
   @Auxiliary
   public SiteAndFolder siteAndFolder() {
     return ImmutableSiteAndFolder.builder()
-            .folder(folder()).host(host())
+            //Here we need to know if we're looking at the default value or a value set
+            .host( hostDefaultNotChanged ? null : host())
+            .folder( folderDefaultNotChanged ? null : folder())
+            // These are calculated fields
             .folderPath(folderPath())
-            .siteName(siteName()).build();
+            .siteName(siteName())
+            .build();
   }
+
+  //Theses tw properties help me determine if I'm seeing the default value or something explicitly set
+  private boolean hostDefaultNotChanged = false;
+
+  private boolean folderDefaultNotChanged = false;
 
   @JsonIgnore
   public Permissionable permissionable() {

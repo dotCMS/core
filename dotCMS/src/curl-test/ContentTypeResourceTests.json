@@ -2464,7 +2464,7 @@
 						"header": [],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"defaultType\":false,\n    \"fixed\":false,\n    \"clazz\":\"com.dotcms.contenttype.model.type.ImmutableSimpleContentType\",\n    \"description\":\"CT created using the folderPath property\",    \n    \"folderPath\":\"default:/non-existing-folder\",\n    \"name\":\"SimpleContentTypeFromFolderPathNonExistingFolder\",\n    \"systemActionMappings\":{\"NEW\":\"\"},\n    \"workflow\":[\"d61a59e1-a49c-46f2-a929-db2b4bfa88b2\"],\n    \"fields\" : [\n        {\n\t\t\t\"clazz\": \"com.dotcms.contenttype.model.field.TextField\",\n\t\t\t\"indexed\": true,\n\t\t\t\"dataType\": \"TEXT\",\n\t\t\t\"readOnly\": false,\n\t\t\t\"required\": true,\n\t\t\t\"searchable\": true,\n\t\t\t\"listed\": true,\n\t\t\t\"sortOrder\": 2,\n\t\t\t\"unique\": false,\n\t\t\t\"name\": \"title\",\n\t\t\t\"variable\": \"title\",\n\t\t\t\"fixed\": true\n\t\t}\n    ]\n}",
+							"raw": "{\n    \"defaultType\":false,\n    \"fixed\":false,\n    \"clazz\":\"com.dotcms.contenttype.model.type.ImmutableSimpleContentType\",\n    \"description\":\"CT created using the folderPath property, passing an invalid path.\",    \n    \"folderPath\":\"default:/non-existing-folder\",\n    \"name\":\"SimpleContentTypeFromFolderPathNonExistingFolder\",\n    \"systemActionMappings\":{\"NEW\":\"\"},\n    \"workflow\":[\"d61a59e1-a49c-46f2-a929-db2b4bfa88b2\"],\n    \"fields\" : [\n        {\n\t\t\t\"clazz\": \"com.dotcms.contenttype.model.field.TextField\",\n\t\t\t\"indexed\": true,\n\t\t\t\"dataType\": \"TEXT\",\n\t\t\t\"readOnly\": false,\n\t\t\t\"required\": true,\n\t\t\t\"searchable\": true,\n\t\t\t\"listed\": true,\n\t\t\t\"sortOrder\": 2,\n\t\t\t\"unique\": false,\n\t\t\t\"name\": \"title\",\n\t\t\t\"variable\": \"title\",\n\t\t\t\"fixed\": true\n\t\t}\n    ]\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -2487,7 +2487,7 @@
 					"response": []
 				},
 				{
-					"name": "Create ContentType Fixed Content Type Expect default-Host and System-Folder",
+					"name": "Create FIXED ContentType  Expect System-Host and System-Folder",
 					"event": [
 						{
 							"listen": "test",
@@ -2499,9 +2499,8 @@
 									"    pm.response.to.have.status(200);    ",
 									"    pm.expect(contentType.folderPath).to.eql(\"/\");",
 									"    pm.expect(contentType.folder).to.eql(\"SYSTEM_FOLDER\");",
-									"    pm.expect(contentType.host).to.eql(\"{{folder.hostId}}\");",
-									"})",
-									""
+									"    pm.expect(contentType.host).to.eql(\"SYSTEM_HOST\");",
+									"})"
 								],
 								"type": "text/javascript"
 							}
@@ -2624,6 +2623,10 @@
 		},
 		{
 			"key": "folder.identifier",
+			"value": ""
+		},
+		{
+			"key": "folder.hostId",
 			"value": ""
 		}
 	]
