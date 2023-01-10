@@ -15,12 +15,21 @@
                 ]
             }
         },
-        "build": {
+        "publish": {
             "executor": "nx:run-commands",
             "outputs": [],
             "options": {
                 "commands": [
                     "sass libs/dojo-theme/dotcms.scss ../dotCMS/src/main/webapp/html/css/dijit-dotcms/dotcms.css --no-source-map"
+                ]
+            }
+        },
+        "development": {
+            "executor": "nx:run-commands",
+            "outputs": [],
+            "options": {
+                "commands": [
+                    "sass libs/dojo-theme/dotcms.scss ../dotCMS/src/main/webapp/html/css/dijit-dotcms/dotcms.css --no-source-map --watch"
                 ]
             }
         }
