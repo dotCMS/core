@@ -24,8 +24,7 @@
     padding: 5px 0 0 0;
     margin-right: 15px;
 }
-#admin-site-tools-div a:hover {
-}
+
 #admin-site-tools-div a span {
     float: left;
     white-space: nowrap;
@@ -169,9 +168,7 @@
     margin-bottom: -10px;
 }
 .dotcmsHelpButton {
-    display: block;
     padding: 10px 25px;
-    font-size: 12px;
     font-weight: bold;
     text-decoration: none;
     background: #000;
@@ -187,7 +184,6 @@
     color: #ddd;
     line-height: 14px;
     font-size: 11px;
-    text-decoration: none;
     -moz-box-shadow: 0px 0px 5px rgba(0, 0, 0, 0.5);
     -webkit-box-shadow: 0px 0px 5px rgba(0, 0, 0, 0.5);
     box-shadow: 0px 0px 5px rgba(0, 0, 0, 0.5);
@@ -358,9 +354,7 @@ $table-border: 1px solid $gray-ligther;
     padding: calc($basic-padding / 2) 10px;
     text-decoration: none;
 }
-.sTypeItem a:hover {
-    //   background: rgba($color-main, 0.1);
-}
+
 /* RELATIONSHIP TABLE */
 
 .relationLanguageFlag th,
@@ -384,8 +378,7 @@ $table-border: 1px solid $gray-ligther;
     margin: 100px auto;
     z-index: 100;
     padding: 10px;
-    -moz-border-radius: 5px;
-    -webkit-border-radius: 5px;
+    border-radius: 5px;
 }
 .noResultsMessage {
     font-weight: bold;
@@ -571,8 +564,7 @@ tr.active {
     margin-bottom: 10px;
     padding: 3px 10px 3px 10px;
     vertical-align: middle;
-    -moz-border-radius: 5px;
-    -webkit-border-radius: 5px;
+    border-radius: 5px;
 }
 .warningText {
     font-weight: bold;
@@ -608,7 +600,6 @@ tr.active {
 }
 .tagsCaption {
     display: block;
-    font-size: 93%;
     color: #999;
     line-height: 140%;
     font-size: 80%;
@@ -672,8 +663,7 @@ ul.withBullets li {
 
 .dotContextMenu {
     border-left: 1px solid #d1d1d1;
-    -moz-box-shadow: 0px 0px 5px #ccc;
-    -webkit-box-shadow: 0px 0px 5px #ccc;
+    box-shadow: 0px 0px 5px #ccc;
 }
 td.dijitMenuArrowCell {
     width: 30px;
@@ -944,8 +934,6 @@ tr.pop_divider {
 
 /*===== WELCOME MESSAGE ===== */
 
-.welcome_wrapper td * {
-}
 .welcome_wrapper a {
     color: #3b3b3b;
     text-decoration: none;
@@ -955,8 +943,6 @@ tr.pop_divider {
 }
 /* ====================== BROWSER, HMTL, LINKS, FILES, TEMPLATES, CONTAINERS  (all POP UPs) ================= */
 
-table.sTypeTable {
-}
 table.sTypeTd {
     vertical-align: top;
 }
@@ -1076,7 +1062,6 @@ table.sTypeTable.sTypeItem {
 .loadingIcon {
     background: url($ajax-loader) no-repeat left center;
     padding: 0 5px 0 3px;
-    height: 20px;
     vertical-align: middle;
     display: inline-block;
     width: 16px;
@@ -1199,8 +1184,7 @@ table.sTypeTable.sTypeItem {
 .viewSelectorBox img {
     vertical-align: middle;
 }
-.fileSelectorControls {
-}
+
 .fileSelectorControls:after {
     content: ".";
     display: block;
@@ -1286,8 +1270,7 @@ table.dojoxLegendNode td {
     padding: 20px;
     background: #aaa;
     border: solid 2px #f6f6f6;
-    -moz-border-radius: 10px;
-    -webkit-border-radius: 10px;
+    border-radius: 10px;
     color: #fff;
     text-align: center;
     font-size: 131%;
@@ -1306,8 +1289,7 @@ table.dojoxLegendNode td {
     padding: 5px;
     background: #aaa;
     border: solid 2px #f6f6f6;
-    -moz-border-radius: 10px;
-    -webkit-border-radius: 10px;
+    border-radius: 10px;
     color: #fff;
     text-align: center;
 }
@@ -1348,8 +1330,7 @@ table.dojoxLegendNode td {
 
 .dojoxColorPicker {
     padding: 8px;
-    -moz-border-radius: 8px;
-    -webkit-border-radius: 8px;
+    border-radius: 8px;
     -webkit-drop-shadow: 8px;
     background: #ededed;
     border: 1px solid #ccc;
@@ -1360,7 +1341,7 @@ table.dojoxLegendNode td {
 }
 .dotcms .dojoxColorPicker {
     background: #ededed;
-    border: 1px solid #ccc;
+    border: 1px solid #cdcdcd;
 }
 .dojoxColorPickerBox {
     position: relative;
@@ -1378,15 +1359,9 @@ table.dojoxLegendNode td {
     z-index: 1;
 }
 .dotcms .dojoxColorPickerUnderlay {
-    border: 1px solid #a0a0a0;
-}
-.dotcms .dojoxColorPicker {
-    background: #ededed;
-    border: 1px solid #cdcdcd;
-}
-.dotcms .dojoxColorPickerUnderlay {
     border: 1px solid #cccccc;
 }
+
 .dojoxHuePickerUnderlay {
     position: relative;
     top: 0;

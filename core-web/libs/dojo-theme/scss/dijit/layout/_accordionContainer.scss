@@ -18,7 +18,6 @@
     &Title {
         transition: all $field-animation-speed;
         background-color: $accordion-title-normal-bgcolor;
-        border-bottom: $accordion-title-border;
         border-top: $accordion-title-border;
         border-bottom: none;
         height: $accordion-title-heigth;
@@ -37,10 +36,5 @@
             background-color: $accordion-title-selected-bgcolor;
             font-weight: bold;
         }
-    }
-
-    &ChildWrapper {
-        //border-left: $accordion-title-border;
-        //border-right: $accordion-title-border;
     }
 }

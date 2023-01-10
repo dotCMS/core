@@ -10,7 +10,7 @@
 @at-root {
     // Import the fonts
     @font-face {
-        font-family: "Glyphicons Halflings";
+        font-family: "Glyphicons Halflings", sans-serif;
         src: url(if(
             $bootstrap-sass-asset-helper,
             twbs-font-path("#{$icon-font-path}#{$icon-font-name}.eot"),
@@ -54,7 +54,7 @@
     position: relative;
     top: 1px;
     display: inline-block;
-    font-family: "Glyphicons Halflings";
+    font-family: "Glyphicons Halflings", sans-serif;
     font-style: normal;
     font-weight: normal;
     line-height: 1;
