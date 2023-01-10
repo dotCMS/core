@@ -98,13 +98,18 @@ public class ContainerFactoryImpl implements ContainerFactory {
 
 	@WrapInTransaction
 	public void save(final Container container) throws DotDataException {
+		save(container, UUIDGenerator.generateUuid());
+	}
+
+	@WrapInTransaction
+	public void save(final Container container, final String existingId) throws DotDataException {
 		if(!UtilMethods.isSet(container.getIdentifier())){
 			throw new DotStateException("Cannot save a container without an Identifier");
 		}
 
-		//if(!UtilMethods.isSet(container.getInode())) {
+		if(!UtilMethods.isSet(container.getInode())) {
 			container.setInode(UUIDGenerator.generateUuid());
-		//}
+		}
 
 		if(!UtilMethods.isSet(find(container.getInode()))) {
 			insertInodeInDB(container);
@@ -193,10 +198,10 @@ public class ContainerFactoryImpl implements ContainerFactory {
 	}
 
 	private void insertInodeInDB(final Container container) throws DotDataException{
-		executeQueryWithData(ContainerSQL.INSERT_INODE, container.getInode(), container.getiDate(), container.getOwner(), true);
+		executeQueryWithData(ContainerSQL.INSERT_INODE, container.getInode(), new Date(), container.getOwner(), true);
 	}
 	private void updateInodeInDB(final Container container) throws DotDataException{
-		executeQueryWithData(ContainerSQL.UPDATE_INODE, container.getInode(), container.getiDate(), container.getOwner(), false);
+		executeQueryWithData(ContainerSQL.UPDATE_INODE, container.getInode(), new Date(), container.getOwner(), false);
 	}
 	@Override
 	public List<Container> findContainersUnder(final Host parentPermissionable) throws DotDataException {

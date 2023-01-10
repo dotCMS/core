@@ -223,6 +223,7 @@ public class ContainerAPIImpl extends BaseWebAssetAPI implements ContainerAPI, D
 	 * @throws DotDataException
 	 */
 	private void save(final Container container) throws DotDataException {
+		Logger.debug(this, ()-> "Saving container: " + container);
 		if (Container.SYSTEM_CONTAINER.equals(container.getIdentifier())) {
 			Logger.debug(this, "System Container cannot be saved.");
 			return;
@@ -237,12 +238,11 @@ public class ContainerAPIImpl extends BaseWebAssetAPI implements ContainerAPI, D
 	 * @throws DotDataException
 	 */
 	private void save(final Container container, final String existingId) throws DotDataException {
+		Logger.debug(this, ()-> "Saving container: " + container + " with existing Id " + existingId);
 		if (Container.SYSTEM_CONTAINER.equals(container.getIdentifier())) {
 			Logger.debug(this, "System Container cannot be saved/updated.");
 			return;
 		}
-
-		container.setInode(existingId);
 		containerFactory.save(container);
 	}
 
@@ -705,11 +705,6 @@ public class ContainerAPIImpl extends BaseWebAssetAPI implements ContainerAPI, D
 			throw new IllegalArgumentException("System Container and its associated data cannot be saved.");
 		}
 
-		if(!permissionAPI.doesUserHavePermission(host, PermissionAPI.PERMISSION_WRITE, user, respectFrontendRoles)) {
-			throw new DotSecurityException(
-					String.format("User '%s' does not have WRITE permission on Site '%s'", user.getUserId(), host));
-		}
-
 		if(!APILocator.getPermissionAPI().doesUserHavePermission(host, PermissionAPI.PERMISSION_CAN_ADD_CHILDREN, user, respectFrontendRoles)
 				|| !APILocator.getPermissionAPI().doesUserHavePermissions(PermissionAPI.PermissionableType.CONTAINERS, PermissionAPI.PERMISSION_EDIT, user)) {
 
@@ -725,22 +720,30 @@ public class ContainerAPIImpl extends BaseWebAssetAPI implements ContainerAPI, D
 		boolean existingInode=false;
 
 		if(UtilMethods.isSet(container.getInode())) {
-			final Container existing = find(container.getInode(), user, respectFrontendRoles);
-			existingInode = !(existing==null || !UtilMethods.isSet(existing.getInode()));
+			try {
+				Container existing=(Container) HibernateUtil.load(Container.class, container.getInode());
+				existingInode = existing==null || !UtilMethods.isSet(existing.getInode());
+			}
+			catch(Exception ex) {
+				existingInode=true;
+			}
 		}
 
 		if (UtilMethods.isSet(container.getIdentifier())) {
 			identifier = APILocator.getIdentifierAPI().find(container.getIdentifier());
 			if(identifier!=null && UtilMethods.isSet(identifier.getId())) {
-				if(existingInode) {
+				if(!existingInode) {
 					currentContainer = getWorkingContainerById(container.getIdentifier(), user, respectFrontendRoles);
 					currentTemplates = APILocator.getTemplateAPI().findTemplatesByContainerInode(currentContainer.getInode());
 				}
+			}
+			else {
 				existingId=true;
+				identifier=null;
 			}
 		}
 
-		if ((identifier != null && existingInode)  && !permissionAPI.doesUserHavePermission(currentContainer, PermissionAPI.PERMISSION_WRITE, user, respectFrontendRoles)) {
+		if ((identifier != null && !existingInode)  && !permissionAPI.doesUserHavePermission(currentContainer, PermissionAPI.PERMISSION_WRITE, user, respectFrontendRoles)) {
 			throw new DotSecurityException(
 					String.format("User '%s' does not have WRITE permission on Container '%s'", user.getUserId(),
 							container.getName()));
@@ -751,7 +754,7 @@ public class ContainerAPIImpl extends BaseWebAssetAPI implements ContainerAPI, D
 			for (ContainerStructure cs : containerStructureList) {
 				Structure st = CacheLocator.getContentTypeCache()
 						.getStructureByInode(cs.getStructureId());
-				if ((st != null && existingInode) && !permissionAPI.doesUserHavePermission(st,
+				if ((st != null && !existingInode) && !permissionAPI.doesUserHavePermission(st,
 						PermissionAPI.PERMISSION_READ, user, respectFrontendRoles)) {
 					throw new DotSecurityException(
 							String.format(
@@ -762,14 +765,20 @@ public class ContainerAPIImpl extends BaseWebAssetAPI implements ContainerAPI, D
 			}
 		}
 
+		if(!permissionAPI.doesUserHavePermission(host, PermissionAPI.PERMISSION_WRITE, user, respectFrontendRoles)) {
+			throw new DotSecurityException(
+					String.format("User '%s' does not have WRITE permission on Site '%s'", user.getUserId(), host));
+		}
+
+		String userId = user.getUserId();
 		container.setModUser(user.getUserId());
 		container.setModDate(new Date());
 
 		// it saves or updates the asset
-		if (existingId) {
+		if (identifier != null) {
 			container.setIdentifier(identifier.getId());
 		} else {
-			final Identifier ident = UtilMethods.isSet(container.getIdentifier()) ?
+			Identifier ident= (existingId) ?
 					APILocator.getIdentifierAPI().createNew(container, host, container.getIdentifier()) :
 					APILocator.getIdentifierAPI().createNew(container, host);
 			container.setIdentifier(ident.getId());
