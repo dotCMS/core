@@ -11,6 +11,7 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
+import com.dotmarketing.util.ImportUtil;
 import com.dotmarketing.util.UUIDUtil;
 import com.liferay.portal.model.User;
 import org.junit.Assert;
@@ -30,86 +31,6 @@ public class SiteAndFolderResolverImplTest extends IntegrationTestBase {
     public static void prepare() throws Exception {
         //Setting web app environment
         IntegrationTestInitService.getInstance().init();
-    }
-
-    /**
-     * Here we're basically testing that
-     * When Building a CT that is marked as source DB
-     * The values on folderPath and siteName should show a calculated value
-     * When Source is different from DB It is considered that the CT is used to capture values
-     * e.g. When the class is used in the resource to capture a user input
-     * @throws DotDataException
-     * @throws DotSecurityException
-     */
-    @Test
-    public void Test_CT_SiteAndFolderParams() throws DotDataException, DotSecurityException {
-
-        final User user = APILocator.systemUser();
-        final Host host = new SiteDataGen().nextPersisted();
-        final Folder foo = folderAPI
-                .createFolders("/foo"+System.currentTimeMillis(), host, user, false);
-
-        final String variable = "variableName" + System.currentTimeMillis();
-        ContentType contentType = ContentTypeBuilder.builder(FileAssetContentType.class)
-                .folder(foo.getInode())
-                .host(host.getIdentifier())
-                .name(variable)
-                .id(UUIDUtil.uuid())
-                .owner(user.getUserId()).build();
-
-        Assert.assertFalse(contentType.loadedOrResolved());
-        //If source isn't db These two provide default value therefore the expected is they'll be null
-        //These two should only provide a calculated value when the content-type is loaded from the db.
-        Assert.assertNull(contentType.folderPath());
-        Assert.assertNull(contentType.siteName());
-
-        final SiteAndFolder siteAndFolder1 = contentType.siteAndFolder();
-        Assert.assertNotNull(siteAndFolder1.folder());
-        Assert.assertNotNull(siteAndFolder1.host());
-        //However, these two should return null because no value has been used to set them in reality
-        Assert.assertNull(siteAndFolder1.folderPath());
-        Assert.assertNull(siteAndFolder1.siteName());
-
-        final ImmutableFileAssetContentType copy = ImmutableFileAssetContentType.copyOf(
-                (FileAssetContentType) contentType);
-        final SiteAndFolder siteAndFolder = copy.siteAndFolder();
-        Assert.assertNotNull(siteAndFolder.folder());
-        Assert.assertNotNull(siteAndFolder.host());
-        Assert.assertNull(siteAndFolder.folderPath());
-        Assert.assertNull(siteAndFolder.siteName());
-
-        final ContentType copyContentType = ContentTypeBuilder.builder(contentType).build();
-
-        final SiteAndFolder siteAndFolder2 = copyContentType.siteAndFolder();
-        Assert.assertNotNull(siteAndFolder2.folder());
-        Assert.assertNotNull(siteAndFolder2.host());
-        //However, these two should return null because no value has been used to set them in reality
-        Assert.assertNull(siteAndFolder2.folderPath());
-        Assert.assertNull(siteAndFolder2.siteName());
-
-        ContentType contentTypeFromDB = ContentTypeBuilder.builder(FileAssetContentType.class)
-                .folder(foo.getInode())
-                .host(host.getIdentifier())
-                .name(variable)
-                .id(UUIDUtil.uuid())
-                .owner(user.getUserId())
-                .loadedOrResolved(true)
-                .build();
-
-        Assert.assertTrue(contentTypeFromDB.loadedOrResolved());
-        //These two should only provide a calculated value when the content-type is loaded from the db.
-        //Therefore, not null is the expected here. All good.
-        Assert.assertNotNull(contentTypeFromDB.folderPath());
-        Assert.assertNotNull(contentTypeFromDB.siteName());
-
-        final SiteAndFolder fromDB = contentTypeFromDB.siteAndFolder();
-        Assert.assertNotNull(fromDB.folder());
-        Assert.assertNotNull(fromDB.host());
-
-        //However, these should still be not null as this comes from the db
-        Assert.assertNotNull(fromDB.folderPath());
-        Assert.assertNotNull(fromDB.siteName());
-
     }
 
     /**
@@ -406,7 +327,7 @@ public class SiteAndFolderResolverImplTest extends IntegrationTestBase {
 
         //Now test the values on siteAndFolder after setting explicit values on host and folder
         contentType = ContentTypeBuilder.builder(FileAssetContentType.class)
-                .loadedOrResolved(true)
+                //.loadedOrResolved(true)
                 // here We're explicitly setting values on folder and host
                 .name(variable)
                 .host(path)
@@ -422,5 +343,11 @@ public class SiteAndFolderResolverImplTest extends IntegrationTestBase {
         Assert.assertEquals(folder + path, siteAndFolder.folderPath());
     }
 
+
+    @Test
+    public void TestCaller(){
+        Assert.assertTrue(SiteAndFolderResolver.isCalledByClass(SiteAndFolderResolverImplTest.class.getName()));
+        Assert.assertFalse(SiteAndFolderResolver.isCalledByClass(ImportUtil.class.getName()));
+    }
 
 }

@@ -1,7 +1,5 @@
 package com.dotcms.contenttype.util;
 
-import static com.dotcms.contenttype.business.SiteAndFolderResolver.CT_SKIP_RESOLVE_SITE;
-
 import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.business.FieldAPI;
 import com.dotcms.contenttype.model.field.Field;
@@ -11,7 +9,6 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.util.Config;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.core.JsonEncoding;
 import com.fasterxml.jackson.core.JsonFactory;
@@ -24,6 +21,7 @@ import com.fasterxml.jackson.databind.SerializationFeature;
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.File;
+import java.io.FilenameFilter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -58,24 +56,24 @@ public class ContentTypeImportExportUtil {
     }
 
     public void importContentTypes(File fileOrDirectory) throws IOException, DotDataException {
-        //We're gonna turn off site CT host/site resolution
-        //As we import stuff from the starter as it is
-        Config.setProperty(CT_SKIP_RESOLVE_SITE, true);
-        try {
-            if (!fileOrDirectory.isDirectory()) {
-                streamingJsonImport(fileOrDirectory);
-            } else {
-                String[] files = fileOrDirectory.list(
-                        (dir, name) -> (name.endsWith(CONTENT_TYPE_FILE_EXTENSION)));
 
-                for (String fileStr : files) {
-                    File file = new File(fileOrDirectory, fileStr);
-                    streamingJsonImport(file);
+        if(!fileOrDirectory.isDirectory()){
+            streamingJsonImport(fileOrDirectory);
+        }else{
+            String[] files =fileOrDirectory.list(new FilenameFilter() {
+
+                @Override
+                public boolean accept(File dir, String name) {
+                    return (name.endsWith(CONTENT_TYPE_FILE_EXTENSION));
                 }
+            });
+
+            for (String fileStr : files) {
+                File file = new File(fileOrDirectory,fileStr);
+                streamingJsonImport(file);
             }
-        }finally {
-            Config.setProperty(CT_SKIP_RESOLVE_SITE, false);
         }
+
     }
 
     private void streamingJsonExport(File file, int run) throws DotDataException, DotSecurityException, IOException {

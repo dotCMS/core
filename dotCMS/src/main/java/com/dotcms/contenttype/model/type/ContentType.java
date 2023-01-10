@@ -164,21 +164,6 @@ public abstract class ContentType implements Serializable, Permissionable, Conte
     return null;
   }
 
-  /**
-   * This property is here to help identify when the CT was loaded from the db or instantiated by hand
-   * The idea is that depending on the nature of the problem we intend to solve
-   * We can use certain properties to capture info provided by the user
-   * Or use those same properties to display calculated values.
-   * The name of the property is intended to reflect the status o the CT Loaded (from the db) or resolved by the SiteAndFolderResolver API
-   * @return
-   */
-  @Auxiliary
-  @JsonIgnore
-  @Value.Default
-  public boolean loadedOrResolved(){
-    return false;
-  }
-
   @Value.Default
   public Date modDate() {
     return DateUtils.round(new Date(), Calendar.SECOND);
@@ -192,6 +177,9 @@ public abstract class ContentType implements Serializable, Permissionable, Conte
     return Host.SYSTEM_HOST;
   }
 
+  //This property help me determine if I'm seeing the default value or something explicitly set
+  private boolean hostDefaultNotChanged = false;
+
   /**
    * by default our site name is the same as SYSTEM_HOST
    * @return
@@ -199,8 +187,11 @@ public abstract class ContentType implements Serializable, Permissionable, Conte
   @Nullable
   @Value.Default
   public String siteName() {
-    return loadedOrResolved() ? canonicalSiteName() : null;
+    siteNameDefaultNotChanged = true;
+    return canonicalSiteName();
   }
+
+  private boolean siteNameDefaultNotChanged = false;
 
   private String canonicalSiteName(){
 
@@ -292,6 +283,9 @@ public abstract class ContentType implements Serializable, Permissionable, Conte
     return Folder.SYSTEM_FOLDER;
   }
 
+  //This property help me determine if I'm seeing the default value or something explicitly set
+  private boolean folderDefaultNotChanged = false;
+
   /**
    * By default, our system folder is "/"
    * @return
@@ -299,10 +293,11 @@ public abstract class ContentType implements Serializable, Permissionable, Conte
   @Nullable
   @Value.Default
   public String folderPath() {
-    // This basically tells me if the CT has been loaded from the db it should use the calculated value
-    //Otherwise it should return null, so we can identify if looking at a value explicitly set or a default
-    return loadedOrResolved() ? canonicalFolderPath() : null;
+    folderPathDefaultNotChanged = true;
+    return canonicalFolderPath();
   }
+
+  private boolean folderPathDefaultNotChanged = false;
 
   private String canonicalFolderPath(){
     final String folder = folder();
@@ -336,15 +331,10 @@ public abstract class ContentType implements Serializable, Permissionable, Conte
             .host( hostDefaultNotChanged ? null : host())
             .folder( folderDefaultNotChanged ? null : folder())
             // These are calculated fields
-            .folderPath(folderPath())
-            .siteName(siteName())
+            .folderPath( folderPathDefaultNotChanged ? null : folderPath())
+            .siteName( siteNameDefaultNotChanged ? null : siteName())
             .build();
   }
-
-  //Theses tw properties help me determine if I'm seeing the default value or something explicitly set
-  private boolean hostDefaultNotChanged = false;
-
-  private boolean folderDefaultNotChanged = false;
 
   @JsonIgnore
   public Permissionable permissionable() {
