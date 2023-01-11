@@ -1,9 +1,11 @@
+import { Component, DebugElement, Input } from '@angular/core';
 import { ComponentFixture, waitForAsync } from '@angular/core/testing';
-import { Component, Input, DebugElement } from '@angular/core';
-import { DOTTestBed } from '@dotcms/app/test/dot-test-bed';
-import { DotDropdownComponent } from './dot-dropdown.component';
 import { By } from '@angular/platform-browser';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
+
+import { DOTTestBed } from '@dotcms/app/test/dot-test-bed';
+
+import { DotDropdownComponent } from './dot-dropdown.component';
 
 @Component({
     selector: 'dot-test-host-component',

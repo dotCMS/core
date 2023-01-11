@@ -1,10 +1,13 @@
-import { waitForAsync, ComponentFixture, TestBed } from '@angular/core/testing';
-import { DotCrumbtrailComponent } from './dot-crumbtrail.component';
-import { BreadcrumbModule } from 'primeng/breadcrumb';
-import { DotCrumbtrailService, DotCrumb } from './service/dot-crumbtrail.service';
-import { Injectable, DebugElement } from '@angular/core';
-import { By } from '@angular/platform-browser';
 import { Observable, Subject } from 'rxjs';
+
+import { DebugElement, Injectable } from '@angular/core';
+import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing';
+import { By } from '@angular/platform-browser';
+
+import { BreadcrumbModule } from 'primeng/breadcrumb';
+
+import { DotCrumbtrailComponent } from './dot-crumbtrail.component';
+import { DotCrumb, DotCrumbtrailService } from './service/dot-crumbtrail.service';
 
 @Injectable()
 class MockDotCrumbtrailService {
@@ -24,20 +27,18 @@ describe('DotCrumbtrailComponent', () => {
     let de: DebugElement;
     const dotCrumbtrailService: MockDotCrumbtrailService = new MockDotCrumbtrailService();
 
-    beforeEach(
-        waitForAsync(() => {
-            TestBed.configureTestingModule({
-                declarations: [DotCrumbtrailComponent],
-                imports: [BreadcrumbModule],
-                providers: [
-                    {
-                        provide: DotCrumbtrailService,
-                        useValue: dotCrumbtrailService
-                    }
-                ]
-            }).compileComponents();
-        })
-    );
+    beforeEach(waitForAsync(() => {
+        TestBed.configureTestingModule({
+            declarations: [DotCrumbtrailComponent],
+            imports: [BreadcrumbModule],
+            providers: [
+                {
+                    provide: DotCrumbtrailService,
+                    useValue: dotCrumbtrailService
+                }
+            ]
+        }).compileComponents();
+    }));
 
     beforeEach(() => {
         fixture = TestBed.createComponent(DotCrumbtrailComponent);

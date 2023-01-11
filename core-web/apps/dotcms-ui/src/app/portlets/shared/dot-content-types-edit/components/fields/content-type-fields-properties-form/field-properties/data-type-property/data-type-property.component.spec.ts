@@ -1,12 +1,13 @@
-import { DataTypePropertyComponent } from '.';
-import { ComponentFixture, waitForAsync } from '@angular/core/testing';
 import { DebugElement } from '@angular/core';
-import { MockDotMessageService } from '@dotcms/utils-testing';
+import { ComponentFixture, waitForAsync } from '@angular/core/testing';
+import { UntypedFormControl, UntypedFormGroup } from '@angular/forms';
+import { By } from '@angular/platform-browser';
+
 import { DOTTestBed } from '@dotcms/app/test/dot-test-bed';
 import { DotMessageService } from '@dotcms/data-access';
-import { UntypedFormGroup, UntypedFormControl } from '@angular/forms';
-import { By } from '@angular/platform-browser';
-import { dotcmsContentTypeFieldBasicMock } from '@dotcms/utils-testing';
+import { dotcmsContentTypeFieldBasicMock, MockDotMessageService } from '@dotcms/utils-testing';
+
+import { DataTypePropertyComponent } from '.';
 
 describe('DataTypePropertyComponent', () => {
     let comp: DataTypePropertyComponent;

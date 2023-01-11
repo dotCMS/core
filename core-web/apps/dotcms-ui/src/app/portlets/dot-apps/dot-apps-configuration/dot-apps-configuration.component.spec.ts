@@ -1,33 +1,39 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { of, Observable } from 'rxjs';
-import { waitForAsync, ComponentFixture, fakeAsync, tick, TestBed } from '@angular/core/testing';
-import { RouterTestingModule } from '@angular/router/testing';
-import { MockDotMessageService } from '@dotcms/utils-testing';
-import { DotMessageService } from '@dotcms/data-access';
-import { ActivatedRoute } from '@angular/router';
-import { DotAppsConfigurationComponent } from './dot-apps-configuration.component';
-import { DotActionButtonModule } from '@components/_common/dot-action-button/dot-action-button.module';
-import { InputTextModule } from 'primeng/inputtext';
-import { ButtonModule } from 'primeng/button';
-import { DotAppsService } from '@dotcms/app/api/services/dot-apps/dot-apps.service';
-import { DotAppsConfigurationResolver } from './dot-apps-configuration-resolver.service';
-import { By } from '@angular/platform-browser';
-import { Injectable } from '@angular/core';
-import { DotAlertConfirmService } from '@dotcms/data-access';
-import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
-import { MockDotRouterService } from '@dotcms/utils-testing';
-import { CommonModule } from '@angular/common';
-import { DotAppsConfigurationListModule } from './dot-apps-configuration-list/dot-apps-configuration-list.module';
-import { PaginatorService } from '@dotcms/data-access';
-import { DotAppsConfigurationHeaderModule } from '../dot-apps-configuration-header/dot-apps-configuration-header.module';
 import { MarkdownModule } from 'ngx-markdown';
-import { DotAppsImportExportDialogModule } from '../dot-apps-import-export-dialog/dot-apps-import-export-dialog.module';
+import { Observable, of } from 'rxjs';
+
+import { CommonModule } from '@angular/common';
 import { HttpClientTestingModule } from '@angular/common/http/testing';
-import { DotPipesModule } from '@pipes/dot-pipes.module';
+import { Injectable } from '@angular/core';
+import { ComponentFixture, fakeAsync, TestBed, tick, waitForAsync } from '@angular/core/testing';
+import { By } from '@angular/platform-browser';
+import { ActivatedRoute } from '@angular/router';
+import { RouterTestingModule } from '@angular/router/testing';
+
 import { ConfirmationService } from 'primeng/api';
+import { ButtonModule } from 'primeng/button';
+import { InputTextModule } from 'primeng/inputtext';
+
+import { DotActionButtonModule } from '@components/_common/dot-action-button/dot-action-button.module';
+import { DotAppsService } from '@dotcms/app/api/services/dot-apps/dot-apps.service';
+import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
+import { DotAlertConfirmService, DotMessageService, PaginatorService } from '@dotcms/data-access';
 import { CoreWebService } from '@dotcms/dotcms-js';
-import { CoreWebServiceMock } from '@dotcms/utils-testing';
+import {
+    CoreWebServiceMock,
+    MockDotMessageService,
+    MockDotRouterService
+} from '@dotcms/utils-testing';
+import { DotPipesModule } from '@pipes/dot-pipes.module';
+
+
+import { DotAppsConfigurationListModule } from './dot-apps-configuration-list/dot-apps-configuration-list.module';
+import { DotAppsConfigurationResolver } from './dot-apps-configuration-resolver.service';
+import { DotAppsConfigurationComponent } from './dot-apps-configuration.component';
+
+import { DotAppsConfigurationHeaderModule } from '../dot-apps-configuration-header/dot-apps-configuration-header.module';
+import { DotAppsImportExportDialogModule } from '../dot-apps-import-export-dialog/dot-apps-import-export-dialog.module';
 
 const messages = {
     'apps.key': 'Key',

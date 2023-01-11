@@ -274,11 +274,15 @@ function printStatus {
   [[ "${INCLUDE_RESULTS}" == 'true' ]] && echo -e "\e[31m         ${BRANCH_TEST_RESULT_URL}\e[0m"
   if [[ "${INCLUDE_LOGS}" == 'true' ]]; then
     if [[ "${INPUT_TEST_TYPE}" == 'postman' ]]; then
-      cd ${INPUT_PROJECT_ROOT}/${TEST_RESULTS_GITHUB_REPO}/projects/core/postman/logs
-      for l in *.log
-      do
-        echo -e "\e[31m         ${GITHUB_PERSIST_BRANCH_URL}/logs/${l}\e[0m"
-      done
+      if [[ -n "${INPUT_RUN_IDENTIFIER}" ]]; then
+        echo -e "\e[31m         ${TEST_LOG_URL}\e[0m"
+      else
+        cd ${INPUT_PROJECT_ROOT}/${TEST_RESULTS_GITHUB_REPO}/projects/core/postman/logs
+        for l in *.log
+        do
+          echo -e "\e[31m         ${GITHUB_PERSIST_BRANCH_URL}/logs/${l}\e[0m"
+        done
+      fi
     else
       echo -e "\e[31m         ${TEST_LOG_URL}\e[0m"
     fi

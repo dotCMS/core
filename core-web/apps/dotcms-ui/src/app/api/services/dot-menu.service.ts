@@ -1,17 +1,20 @@
-import {
-    filter,
-    refCount,
-    defaultIfEmpty,
-    map,
-    pluck,
-    find,
-    mergeMap,
-    first,
-    publishLast
-} from 'rxjs/operators';
-import { CoreWebService } from '@dotcms/dotcms-js';
-import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
+
+import { Injectable } from '@angular/core';
+
+import {
+    defaultIfEmpty,
+    filter,
+    find,
+    first,
+    map,
+    mergeMap,
+    pluck,
+    publishLast,
+    refCount
+} from 'rxjs/operators';
+
+import { CoreWebService } from '@dotcms/dotcms-js';
 import { DotMenu, DotMenuItem } from '@models/navigation';
 
 @Injectable()

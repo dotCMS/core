@@ -1,3 +1,4 @@
+import { CommonModule } from '@angular/common';
 import {
     ChangeDetectionStrategy,
     Component,
@@ -6,17 +7,18 @@ import {
     OnInit,
     Output
 } from '@angular/core';
-import { CommonModule } from '@angular/common';
-import { DotExperiment } from '@dotcms/dotcms-models';
-import { DotSidebarHeaderComponent } from '@shared/dot-sidebar-header/dot-sidebar-header.component';
-import { SidebarModule } from 'primeng/sidebar';
-import { DotMessagePipeModule } from '@pipes/dot-message/dot-message-pipe.module';
-import { DotFieldValidationMessageModule } from '@components/_common/dot-field-validation-message/dot-file-validation-message.module';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+
 import { ButtonModule } from 'primeng/button';
-import { DotSidebarDirective } from '@portlets/shared/directives/dot-sidebar.directive';
 import { InputTextModule } from 'primeng/inputtext';
+import { SidebarModule } from 'primeng/sidebar';
+
+import { DotFieldValidationMessageModule } from '@components/_common/dot-field-validation-message/dot-file-validation-message.module';
 import { DotAutofocusModule } from '@directives/dot-autofocus/dot-autofocus.module';
+import { DotExperiment } from '@dotcms/dotcms-models';
+import { DotMessagePipeModule } from '@pipes/dot-message/dot-message-pipe.module';
+import { DotSidebarDirective } from '@portlets/shared/directives/dot-sidebar.directive';
+import { DotSidebarHeaderComponent } from '@shared/dot-sidebar-header/dot-sidebar-header.component';
 
 @Component({
     selector: 'dot-experiments-configuration-variants-add',

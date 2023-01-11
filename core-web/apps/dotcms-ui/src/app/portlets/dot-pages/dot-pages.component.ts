@@ -1,6 +1,9 @@
 import { Component } from '@angular/core';
-import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
+
 import { Observable } from 'rxjs/internal/Observable';
+
+import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
+
 import { DotPagesState, DotPageStore } from './dot-pages-store/dot-pages.store';
 
 @Component({

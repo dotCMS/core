@@ -1,21 +1,23 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
+import { of, throwError } from 'rxjs';
+
+import { HttpErrorResponse } from '@angular/common/http';
 import { fakeAsync, TestBed, tick } from '@angular/core/testing';
 import { ActivatedRoute } from '@angular/router';
 
-import { of, throwError } from 'rxjs';
 
-import { DotTemplateContainersCacheService } from '@dotcms/app/api/services/dot-template-containers-cache/dot-template-containers-cache.service';
-import { DotTemplatesService } from '@dotcms/app/api/services/dot-templates/dot-templates.service';
-import { DotTemplateStore, DotTemplateItem } from './dot-template.store';
-import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
 import { DotGlobalMessageService } from '@components/_common/dot-global-message/dot-global-message.service';
-import { MockDotMessageService, mockResponseView } from '@dotcms/utils-testing';
-import { DotMessageService } from '@dotcms/data-access';
-
 import { DotEditLayoutService } from '@dotcms/app/api/services/dot-edit-layout/dot-edit-layout.service';
 import { DotHttpErrorManagerService } from '@dotcms/app/api/services/dot-http-error-manager/dot-http-error-manager.service';
-import { HttpErrorResponse } from '@angular/common/http';
+import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
+import { DotTemplateContainersCacheService } from '@dotcms/app/api/services/dot-template-containers-cache/dot-template-containers-cache.service';
+import { DotTemplatesService } from '@dotcms/app/api/services/dot-templates/dot-templates.service';
+import { DotMessageService } from '@dotcms/data-access';
+import { MockDotMessageService, mockResponseView } from '@dotcms/utils-testing';
+
+import { DotTemplateItem, DotTemplateStore } from './dot-template.store';
+
 
 const messageServiceMock = new MockDotMessageService({
     'dot.common.message.saved': 'saved',

@@ -11,6 +11,7 @@ import com.dotcms.rest.api.v1.page.PageContainerForm.ContainerEntry;
 import com.dotcms.rest.exception.BadRequestException;
 import com.dotcms.util.CollectionsUtils;
 import com.dotcms.variant.VariantAPI;
+import com.dotcms.variant.business.web.VariantWebAPI.RenderContext;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.MultiTree;
 import com.dotmarketing.business.APILocator;
@@ -32,6 +33,7 @@ import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.business.DotContentletStateException;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
 import com.dotmarketing.portlets.htmlpageasset.business.HTMLPageAssetAPI;
 import com.dotmarketing.portlets.htmlpageasset.business.render.HTMLPageAssetNotFoundException;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
@@ -49,6 +51,7 @@ import com.liferay.portal.PortalException;
 import com.liferay.portal.SystemException;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
+import org.apache.velocity.exception.ResourceNotFoundException;
 import org.jetbrains.annotations.NotNull;
 
 import javax.servlet.http.HttpServletRequest;
@@ -258,30 +261,57 @@ public class PageResourceHelper implements Serializable {
         try {
             final PageMode mode = PageMode.get(request);
             final Language currentLanguage = WebAPILocator.getLanguageWebAPI().getLanguage(request);
-            
-            
-            final IHTMLPage page = this.htmlPageAssetAPI.findByIdLanguageFallback(pageId, currentLanguage.getId(), mode.showLive, user, mode.respectAnonPerms);
+
+            final RenderContext renderContext = WebAPILocator.getVariantWebAPI()
+                    .getRenderContext(currentLanguage.getId(), pageId, mode, user);
+
+            final ContentletVersionInfo contentletVersionInfo = APILocator.getVersionableAPI()
+                    .getContentletVersionInfo(pageId, renderContext.getCurrentLanguageId(),
+                            renderContext.getCurrentVariantKey())
+                    .orElseThrow(() -> new HTMLPageAssetNotFoundException(pageId));
+
+            final String pageInode = mode.showLive ? contentletVersionInfo.getLiveInode() :
+                    contentletVersionInfo.getWorkingInode();
+
+            IHTMLPage page = this.htmlPageAssetAPI.findPage(pageInode, user,
+                            mode.respectAnonPerms);
 
             if (page == null) {
                 throw new HTMLPageAssetNotFoundException(pageId);
             }
 
+            final String currentVariantId = WebAPILocator.getVariantWebAPI().currentVariantId();
+
+            if (!contentletVersionInfo.getVariant().equals(currentVariantId)) {
+                page = createNewVersion(user, pageInode, currentVariantId);
+            }
+
             return page;
-        }catch (DotContentletStateException e) {
+        }catch (DotContentletStateException | ResourceNotFoundException e) {
             throw new HTMLPageAssetNotFoundException(pageId, e);
         }
 
     }
 
+    private IHTMLPage createNewVersion(final User user, final String pageInode,
+            final String currentVariantId) throws DotDataException, DotSecurityException {
+        final Contentlet checkout = APILocator.getContentletAPI()
+                .checkout(pageInode, user, false);
+        checkout.setVariantId(currentVariantId);
+        final Contentlet checkin = APILocator.getContentletAPI()
+                .checkin(checkout, user, false);
+        return APILocator.getHTMLPageAssetAPI().fromContentlet(checkin);
+    }
+
     @WrapInTransaction
     public Template saveTemplate(final IHTMLPage page, final User user, final PageForm pageForm)
-            throws BadRequestException, DotDataException, DotSecurityException {
+            throws DotDataException, DotSecurityException {
 
-        Template template = new Template();
+        final Host host = getHost(pageForm.getHostId(), user);
+        final User systemUser = userAPI.getSystemUser();
+        final Template template = checkoutTemplate(page, systemUser, pageForm);
+
         try {
-            final Host host = getHost(pageForm.getHostId(), user);
-            final User systemUser = userAPI.getSystemUser();
-            template = checkoutTemplate(page, systemUser, pageForm);
             final boolean hasPermission = template.isAnonymous() ?
                     permissionAPI.doesUserHavePermission(page, PermissionLevel.EDIT.getType(), user) :
                     permissionAPI.doesUserHavePermission(template, PermissionLevel.EDIT.getType(), user);
@@ -292,12 +322,11 @@ public class PageResourceHelper implements Serializable {
             }
 
             template.setDrawed(true);
-
             updateMultiTrees(page, pageForm);
 
             // permissions have been updated above
             return this.templateAPI.saveTemplate(template, host, APILocator.systemUser(), false);
-        } catch (final BadRequestException | DotDataException | DotSecurityException e) {
+        } catch (final DotDataException | DotSecurityException e) {
             final String errorMsg = String.format("An error occurred when saving Template '%s' [ %s ]: %s",
                     template.getTitle(), template.getIdentifier(), e.getMessage());
             throw new DotRuntimeException(errorMsg, e);
@@ -380,8 +409,10 @@ public class PageResourceHelper implements Serializable {
 
         final Template oldTemplate = this.templateAPI.findWorkingTemplate(page.getTemplateId(), user, false);
         final Template saveTemplate;
+        final boolean useByAnotherPage = this.templateAPI.getPages(page.getTemplateId()).stream()
+                .anyMatch(pageVersion -> page.getInode().equals(page.getInode()));
 
-        if (UtilMethods.isSet(oldTemplate) && (!form.isAnonymousLayout() || oldTemplate.isAnonymous())) {
+        if (!useByAnotherPage) {
             saveTemplate = oldTemplate;
         } else {
             saveTemplate = new Template();

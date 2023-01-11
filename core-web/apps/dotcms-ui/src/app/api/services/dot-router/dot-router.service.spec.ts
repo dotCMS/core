@@ -1,11 +1,14 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { DotRouterService } from './dot-router.service';
-import { RouterTestingModule } from '@angular/router/testing';
-import { LoginService } from '@dotcms/dotcms-js';
-import { Router, ActivatedRoute, NavigationEnd } from '@angular/router';
-import { waitForAsync, TestBed } from '@angular/core/testing';
 import { Subject } from 'rxjs';
+
+import { TestBed, waitForAsync } from '@angular/core/testing';
+import { ActivatedRoute, NavigationEnd, Router } from '@angular/router';
+import { RouterTestingModule } from '@angular/router/testing';
+
+import { LoginService } from '@dotcms/dotcms-js';
+
+import { DotRouterService } from './dot-router.service';
 
 class RouterMock {
     _events: Subject<any> = new Subject();
@@ -50,31 +53,29 @@ describe('DotRouterService', () => {
     let service: DotRouterService;
     let router;
 
-    beforeEach(
-        waitForAsync(() => {
-            const testbed = TestBed.configureTestingModule({
-                providers: [
-                    DotRouterService,
-                    {
-                        provide: LoginService,
-                        useValue: {}
-                    },
-                    {
-                        provide: Router,
-                        useClass: RouterMock
-                    },
-                    {
-                        provide: ActivatedRoute,
-                        useClass: ActivatedRouteMock
-                    }
-                ],
-                imports: [RouterTestingModule]
-            });
+    beforeEach(waitForAsync(() => {
+        const testbed = TestBed.configureTestingModule({
+            providers: [
+                DotRouterService,
+                {
+                    provide: LoginService,
+                    useValue: {}
+                },
+                {
+                    provide: Router,
+                    useClass: RouterMock
+                },
+                {
+                    provide: ActivatedRoute,
+                    useClass: ActivatedRouteMock
+                }
+            ],
+            imports: [RouterTestingModule]
+        });
 
-            service = testbed.inject(DotRouterService);
-            router = testbed.inject(Router);
-        })
-    );
+        service = testbed.inject(DotRouterService);
+        router = testbed.inject(Router);
+    }));
 
     it('should set current url value', () => {
         expect(service.currentSavedURL).toEqual(router.url);

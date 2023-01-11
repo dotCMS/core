@@ -1,14 +1,14 @@
 /* tslint:disable:no-unused-variable */
 
-import { TestBed, ComponentFixture } from '@angular/core/testing';
-import { DebugElement, Component } from '@angular/core';
+import { Component, DebugElement } from '@angular/core';
+import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 
 import { DotAutofocusDirective } from './dot-autofocus.directive';
 
 @Component({
     template: `
-        <input type="text" dotAutofocus disabled *ngIf="disabled; else not" />
+        <input *ngIf="disabled; else not" type="text" dotAutofocus disabled />
         <ng-template #not>
             <input type="text" dotAutofocus />
         </ng-template>

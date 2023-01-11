@@ -1,22 +1,24 @@
-import { NgModule } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { NgModule } from '@angular/core';
+
+import { ButtonModule } from 'primeng/button';
+import { CheckboxModule } from 'primeng/checkbox';
+import { DialogService } from 'primeng/dynamicdialog';
+import { MenuModule } from 'primeng/menu';
+
+import { DotActionMenuButtonModule } from '@components/_common/dot-action-menu-button/dot-action-menu-button.module';
+import { DotAddToBundleModule } from '@components/_common/dot-add-to-bundle';
+import { DotEmptyStateModule } from '@components/_common/dot-empty-state/dot-empty-state.module';
+import { DotBaseTypeSelectorModule } from '@components/dot-base-type-selector';
+import { DotListingDataTableModule } from '@components/dot-listing-data-table';
+import { DotPortletBaseModule } from '@components/dot-portlet-base/dot-portlet-base.module';
+import { DotSiteBrowserService } from '@dotcms/data-access';
+import { DotMessagePipeModule } from '@pipes/dot-message/dot-message-pipe.module';
+import { DotContainerListResolver } from '@portlets/dot-containers/container-list/dot-container-list-resolver.service';
+import { DotContainersService } from '@services/dot-containers/dot-containers.service';
 
 import { ContainerListRoutingModule } from './container-list-routing.module';
-import { DotPortletBaseModule } from '@components/dot-portlet-base/dot-portlet-base.module';
 import { ContainerListComponent } from './container-list.component';
-import { DotListingDataTableModule } from '@components/dot-listing-data-table';
-import { DotBaseTypeSelectorModule } from '@components/dot-base-type-selector';
-import { ButtonModule } from 'primeng/button';
-import { DotMessagePipeModule } from '@pipes/dot-message/dot-message-pipe.module';
-import { CheckboxModule } from 'primeng/checkbox';
-import { MenuModule } from 'primeng/menu';
-import { DotEmptyStateModule } from '@components/_common/dot-empty-state/dot-empty-state.module';
-import { DotContainerListResolver } from '@portlets/dot-containers/container-list/dot-container-list-resolver.service';
-import { DotAddToBundleModule } from '@components/_common/dot-add-to-bundle';
-import { DotSiteBrowserService } from '@dotcms/data-access';
-import { DotContainersService } from '@services/dot-containers/dot-containers.service';
-import { DialogService } from 'primeng/dynamicdialog';
-import { DotActionMenuButtonModule } from '@components/_common/dot-action-menu-button/dot-action-menu-button.module';
 
 @NgModule({
     declarations: [ContainerListComponent],

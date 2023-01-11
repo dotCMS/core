@@ -1,11 +1,13 @@
+import { HttpTestingController, HttpClientTestingModule } from '@angular/common/http/testing';
+import { TestBed, getTestBed } from '@angular/core/testing';
+
+import { CoreWebService } from '@dotcms/dotcms-js';
+import { CoreWebServiceMock } from '@dotcms/utils-testing';
+
 import {
     DotPushPublishFiltersService,
     DotPushPublishFilter
 } from './dot-push-publish-filters.service';
-import { TestBed, getTestBed } from '@angular/core/testing';
-import { HttpTestingController, HttpClientTestingModule } from '@angular/common/http/testing';
-import { CoreWebService } from '@dotcms/dotcms-js';
-import { CoreWebServiceMock } from '@dotcms/utils-testing';
 
 describe('DotPushPublishFiltersService', () => {
     let injector: TestBed;

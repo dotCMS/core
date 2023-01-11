@@ -1,5 +1,5 @@
-import { UntypedFormGroup } from '@angular/forms';
 import { Component, Input, ViewEncapsulation } from '@angular/core';
+import { UntypedFormGroup } from '@angular/forms';
 
 @Component({
     selector: 'dot-layout-properties',

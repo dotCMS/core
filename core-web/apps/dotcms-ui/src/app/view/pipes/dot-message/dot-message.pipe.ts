@@ -1,4 +1,5 @@
 import { Pipe, PipeTransform } from '@angular/core';
+
 import { DotMessageService } from '@dotcms/data-access';
 
 @Pipe({

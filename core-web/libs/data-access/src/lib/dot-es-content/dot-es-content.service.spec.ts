@@ -1,7 +1,9 @@
-import { TestBed, getTestBed } from '@angular/core/testing';
 import { HttpTestingController, HttpClientTestingModule } from '@angular/common/http/testing';
+import { TestBed, getTestBed } from '@angular/core/testing';
+
 import { CoreWebService } from '@dotcms/dotcms-js';
 import { CoreWebServiceMock } from '@dotcms/utils-testing';
+
 import { DotESContentService, ESOrderDirection } from './dot-es-content.service';
 
 describe('DotESContentService', () => {

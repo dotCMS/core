@@ -1,33 +1,33 @@
-import { ComponentRef } from '@angular/core';
+import { EditorState, NodeSelection, Plugin, PluginKey } from 'prosemirror-state';
 import { EditorView } from 'prosemirror-view';
-import { posToDOMRect } from '@tiptap/core';
-import { EditorState, Plugin, PluginKey, NodeSelection } from 'prosemirror-state';
-import { BubbleMenuView } from '@tiptap/extension-bubble-menu';
 import tippy, { Instance } from 'tippy.js';
 
+import { ComponentRef } from '@angular/core';
+
+import { filter, take } from 'rxjs/operators';
+
+import { posToDOMRect } from '@tiptap/core';
+import { BubbleMenuView } from '@tiptap/extension-bubble-menu';
+
 import {
-    // Bubble Menu
     BubbleMenuComponentProps,
     BubbleMenuItem,
+    BUBBLE_FORM_PLUGIN_KEY,
+    changeToItems,
+    deleteByNode,
+    deleteByRange,
     DotBubbleMenuPluginProps,
     DotBubbleMenuViewProps,
-    // Suggestions
-    changeToItems,
-    SuggestionsComponent,
-    // Utils
-    setBubbleMenuCoords,
-    getNodeCoords,
-    deleteByRange,
-    deleteByNode,
-    ImageNode,
     findParentNode,
+    getNodeCoords,
+    ImageNode,
+    LINK_FORM_PLUGIN_KEY,
+    setBubbleMenuCoords,
+    SuggestionsComponent,
     tableChangeToItems
 } from '@dotcms/block-editor';
 
-import { LINK_FORM_PLUGIN_KEY, BUBBLE_FORM_PLUGIN_KEY } from '@dotcms/block-editor';
-
 import { getBubbleMenuItem, isListNode, popperModifiers } from '../utils';
-import { filter, take } from 'rxjs/operators';
 
 export const DotBubbleMenuPlugin = (options: DotBubbleMenuPluginProps) => {
     const component = options.component.instance;

@@ -3,6 +3,7 @@
     "projects": {
         "block-editor": "libs/block-editor",
         "data-access": "libs/data-access",
+        "dojo-theme": "libs/dojo-theme",
         "dot-layout-grid": "libs/dot-layout-grid",
         "dot-primeng-theme-styles": "libs/dot-primeng-theme-styles",
         "dot-rules": "libs/dot-rules",

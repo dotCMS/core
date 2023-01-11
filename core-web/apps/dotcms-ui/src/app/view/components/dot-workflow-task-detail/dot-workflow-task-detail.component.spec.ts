@@ -1,19 +1,21 @@
 import { of as observableOf } from 'rxjs';
-import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
-import { By } from '@angular/platform-browser';
+
 import { DebugElement } from '@angular/core';
+import { ComponentFixture, waitForAsync } from '@angular/core/testing';
+import { By } from '@angular/platform-browser';
+import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { RouterTestingModule } from '@angular/router/testing';
-import { waitForAsync, ComponentFixture } from '@angular/core/testing';
 
-import { LoginService } from '@dotcms/dotcms-js';
-
+import { DotMenuService } from '@dotcms/app/api/services/dot-menu.service';
 import { DOTTestBed } from '@dotcms/app/test/dot-test-bed';
-import { DotWorkflowTaskDetailService } from './services/dot-workflow-task-detail.service';
+import { LoginService } from '@dotcms/dotcms-js';
+import { LoginServiceMock } from '@dotcms/utils-testing';
+
 import { DotWorkflowTaskDetailComponent } from './dot-workflow-task-detail.component';
+import { DotWorkflowTaskDetailService } from './services/dot-workflow-task-detail.service';
+
 import { DotIframeDialogComponent } from '../dot-iframe-dialog/dot-iframe-dialog.component';
 import { DotIframeDialogModule } from '../dot-iframe-dialog/dot-iframe-dialog.module';
-import { DotMenuService } from '@dotcms/app/api/services/dot-menu.service';
-import { LoginServiceMock } from '@dotcms/utils-testing';
 
 describe('DotWorkflowTaskDetailComponent', () => {
     let component: DotWorkflowTaskDetailComponent;

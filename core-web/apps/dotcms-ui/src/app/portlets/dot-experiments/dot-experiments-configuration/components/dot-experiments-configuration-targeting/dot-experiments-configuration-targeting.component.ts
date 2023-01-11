@@ -1,8 +1,10 @@
-import { ChangeDetectionStrategy, Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { CardModule } from 'primeng/card';
-import { DotMessagePipeModule } from '@pipes/dot-message/dot-message-pipe.module';
+import { ChangeDetectionStrategy, Component } from '@angular/core';
+
 import { ButtonModule } from 'primeng/button';
+import { CardModule } from 'primeng/card';
+
+import { DotMessagePipeModule } from '@pipes/dot-message/dot-message-pipe.module';
 
 @Component({
     selector: 'dot-experiments-configuration-targeting',

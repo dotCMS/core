@@ -1,18 +1,17 @@
-import { DotDOMHtmlUtilService } from './dot-dom-html-util.service';
 import { TestBed, waitForAsync } from '@angular/core/testing';
+
+import { DotDOMHtmlUtilService } from './dot-dom-html-util.service';
 
 describe('DotDOMHtmlUtilService', () => {
     let service: DotDOMHtmlUtilService;
 
-    beforeEach(
-        waitForAsync(() => {
-            TestBed.configureTestingModule({
-                providers: [DotDOMHtmlUtilService]
-            });
+    beforeEach(waitForAsync(() => {
+        TestBed.configureTestingModule({
+            providers: [DotDOMHtmlUtilService]
+        });
 
-            service = TestBed.get(DotDOMHtmlUtilService);
-        })
-    );
+        service = TestBed.get(DotDOMHtmlUtilService);
+    }));
 
     it('should create a link element', () => {
         const href = 'https://testing/test.css';
