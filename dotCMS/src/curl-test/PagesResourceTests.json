@@ -1,9 +1,9 @@
 {
 	"info": {
-		"_postman_id": "f63f86ef-eb2d-4ccc-9e79-ae27a447857b",
+		"_postman_id": "a00d8188-4ece-43a6-8153-772a319295ab",
 		"name": "Page API - [api/v1/page]",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
-		"_exporter_id": "11174695"
+		"_exporter_id": "1549189"
 	},
 	"item": [
 		{
@@ -2330,7 +2330,7 @@
 									"",
 									"",
 									"pm.test(\"Response body contains\", function () {",
-									"    pm.expect(pm.response.text()).to.include(\"Unable to find Page\");",
+									"    pm.expect(pm.response.text()).to.include(\"Page '2c12fe7e6-d338-49d5-973b-2d974d57015b' not found\");",
 									"});",
 									"",
 									"",
