@@ -316,6 +316,49 @@ public class LanguagesResource {
     }
 
     /**
+     * Takes the requested language and resolves it to a locale
+     * that the Admin console understands
+     * @param language
+     * @return
+     */
+    private Locale resolveAdminLocale(String language) {
+        final Locale defaultLocale = APILocator.getCompanyAPI().getDefaultCompany().getLocale();
+        final Locale requestedLocale = ConversionUtils.toLocale(language);
+        final Locale[] locales = LanguageUtil.getAvailableLocales();
+        Locale currentLocale = null;
+        
+        for(int i=0;i<locales.length;i++){
+            if(locales[i].equals(requestedLocale)) {
+                currentLocale=locales[i];
+                break;
+            }
+        }
+        
+        if(null==currentLocale) {
+            for(int i=0;i<locales.length;i++){
+                if(locales[i].getLanguage().equalsIgnoreCase(requestedLocale.getLanguage())){
+                    currentLocale=locales[i];
+                    break;
+                }
+            }
+            
+        }
+        
+        if(null==currentLocale) {
+            currentLocale = defaultLocale;
+        }
+        
+        
+        return currentLocale;
+        
+    }
+    
+    
+    
+    
+    
+    
+    /**
      * Gets all the Messages from the language passed.
      * If default is passed it will get the messages for the default language.
      * Checks also if the language exists in dotcms to get all language keys and
@@ -341,36 +384,18 @@ public class LanguagesResource {
 
         final User user = initData.getUser();
 
-        final Locale locale = "default".equalsIgnoreCase(language) ? APILocator.getLanguageAPI().getDefaultLanguage().asLocale() : ConversionUtils.toLocale(language);
-        final Locale[] locales = LanguageUtil.getAvailableLocales();
-        for(int i=0;i<locales.length;i++){
-            final Locale currentLocale = locales[i];
-            if(currentLocale.getLanguage().equalsIgnoreCase(locale.getLanguage())){
-                if(UtilMethods.isSet(locale.getCountry())){
-                    if(currentLocale.getCountry().equalsIgnoreCase(locale.getCountry())){
-                        break;
-                    }
-                }else{
-                    break;
-                }
-
-            } else if(i == (locales.length-1)){
-                final String message = "Locale: "+ locale + " not found in Portal.properties file";
-                Logger.error(this,message);
-                throw new DoesNotExistException(message);
-            }
-        }
-
+        final Locale currentLocale=resolveAdminLocale(language);
+        
         //Messages in the properties file
-        final Map mapPropertiesFile = LanguageUtil.getAllMessagesByLocale(locale);
+        final Map mapPropertiesFile = LanguageUtil.getAllMessagesByLocale(currentLocale);
 
         final Map result = new TreeMap(mapPropertiesFile);
 
-        final Language language1 = APILocator.getLanguageAPI().getLanguage(locale.getLanguage(),locale.getCountry());
+        final Language language1 = APILocator.getLanguageAPI().getLanguage(currentLocale.getLanguage(),currentLocale.getCountry());
         if(UtilMethods.isSet(language1)) {
             //Language Keys
             final Map mapLanguageKeys = APILocator.getLanguageAPI()
-                    .getLanguageKeys(locale.getLanguage()).stream().collect(
+                    .getLanguageKeys(currentLocale.getLanguage()).stream().collect(
                             Collectors.toMap(LanguageKey::getKey, LanguageKey::getValue));
 
             result.putAll(mapLanguageKeys);
