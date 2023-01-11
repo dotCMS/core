@@ -1,6 +1,5 @@
 import { of } from 'rxjs';
 
-
 import { CommonModule } from '@angular/common';
 import { HttpClientTestingModule } from '@angular/common/http/testing';
 import {
@@ -25,11 +24,11 @@ import { DialogService, DynamicDialogModule } from 'primeng/dynamicdialog';
 import { InplaceModule } from 'primeng/inplace';
 import { MenuModule } from 'primeng/menu';
 
-import { DotMessageDisplayService } from '@components/dot-message-display/services';
 import { DotActionButtonModule } from '@components/_common/dot-action-button/dot-action-button.module';
 import { DotActionMenuButtonModule } from '@components/_common/dot-action-menu-button/dot-action-menu-button.module';
 import { DotAddToBundleModule } from '@components/_common/dot-add-to-bundle';
 import { DotGlobalMessageService } from '@components/_common/dot-global-message/dot-global-message.service';
+import { DotMessageDisplayService } from '@components/dot-message-display/services';
 import { DotAutofocusModule } from '@directives/dot-autofocus/dot-autofocus.module';
 import {
     DotAlertConfirmService,
@@ -43,7 +42,9 @@ import {
     DotcmsConfigService,
     DotcmsEventsService,
     DotEventsSocket,
-    DotEventsSocketURL, LoggerService, LoginService,
+    DotEventsSocketURL,
+    LoggerService,
+    LoginService,
     StringUtils
 } from '@dotcms/dotcms-js';
 import { DotCMSContentType } from '@dotcms/dotcms-models';
@@ -58,7 +59,6 @@ import { DotFormatDateService } from '@services/dot-format-date-service';
 import { DotHttpErrorManagerService } from '@services/dot-http-error-manager/dot-http-error-manager.service';
 import { DotRouterService } from '@services/dot-router/dot-router.service';
 import { dotEventSocketURLFactory } from '@tests/dot-test-bed';
-
 
 import { DotContainerPropertiesComponent } from './dot-container-properties.component';
 

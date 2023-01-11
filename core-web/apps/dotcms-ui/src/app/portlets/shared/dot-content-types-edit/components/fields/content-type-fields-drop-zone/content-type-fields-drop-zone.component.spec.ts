@@ -25,20 +25,16 @@ import { CheckboxModule } from 'primeng/checkbox';
 import { TableModule } from 'primeng/table';
 import { TabViewModule } from 'primeng/tabview';
 
-import { DotDialogActions, DotDialogComponent } from '@components/dot-dialog/dot-dialog.component';
-import { DotDialogModule } from '@components/dot-dialog/dot-dialog.module';
-import { DotMessageDisplayService } from '@components/dot-message-display/services';
 import { DotActionButtonModule } from '@components/_common/dot-action-button/dot-action-button.module';
 import { DotFieldValidationMessageModule } from '@components/_common/dot-field-validation-message/dot-file-validation-message.module';
 import { UiDotIconButtonModule } from '@components/_common/dot-icon-button/dot-icon-button.module';
+import { DotDialogActions, DotDialogComponent } from '@components/dot-dialog/dot-dialog.component';
+import { DotDialogModule } from '@components/dot-dialog/dot-dialog.module';
+import { DotMessageDisplayService } from '@components/dot-message-display/services';
 import { DotFormatDateService } from '@dotcms/app/api/services/dot-format-date-service';
+import { DotHttpErrorManagerService } from '@dotcms/app/api/services/dot-http-error-manager/dot-http-error-manager.service';
 import { DotEventsService, DotMessageService } from '@dotcms/data-access';
-
 import { CoreWebService, DotEventsSocket, LoginService } from '@dotcms/dotcms-js';
-import { ContentTypeFieldsDropZoneComponent } from '.';
-import { ContentTypeFieldsAddRowModule } from '..';
-
-
 import {
     DotCMSContentType,
     DotCMSContentTypeField,
@@ -46,27 +42,28 @@ import {
     DotFieldVariable
 } from '@dotcms/dotcms-models';
 import { DotIconModule } from '@dotcms/ui';
-import { FieldUtil, MockDotMessageService } from '@dotcms/utils-testing';
+import { DotLoadingIndicatorService } from '@dotcms/utils';
+import {
+    cleanUpDialog,
+    CoreWebServiceMock,
+    dotcmsContentTypeBasicMock,
+    dotcmsContentTypeFieldBasicMock,
+    fieldsBrokenWithColumns,
+    fieldsWithBreakColumn,
+    FieldUtil,
+    MockDotMessageService
+} from '@dotcms/utils-testing';
+import { DotMessagePipeModule } from '@pipes/dot-message/dot-message-pipe.module';
 
+import { ContentTypeFieldsDropZoneComponent } from '.';
 
-
+import { ContentTypeFieldsAddRowModule } from '..';
 import { DotConvertToBlockInfoComponent } from '../../dot-convert-to-block-info/dot-convert-to-block-info.component';
 import { DotConvertWysiwygToBlockComponent } from '../../dot-convert-wysiwyg-to-block/dot-convert-wysiwyg-to-block.component';
 import { DotContentTypeFieldsVariablesModule } from '../dot-content-type-fields-variables/dot-content-type-fields-variables.module';
 import { FieldPropertyService } from '../service/field-properties.service';
 import { FieldService } from '../service/field.service';
 import { FieldDragDropService } from '../service/index';
-
-import { DotHttpErrorManagerService } from '@dotcms/app/api/services/dot-http-error-manager/dot-http-error-manager.service';
-import { DotLoadingIndicatorService } from '@dotcms/utils';
-import {
-    cleanUpDialog, CoreWebServiceMock, dotcmsContentTypeBasicMock,
-    dotcmsContentTypeFieldBasicMock,
-    fieldsBrokenWithColumns,
-    fieldsWithBreakColumn
-} from '@dotcms/utils-testing';
-import { DotMessagePipeModule } from '@pipes/dot-message/dot-message-pipe.module';
-
 
 const COLUMN_BREAK_FIELD = FieldUtil.createColumnBreak();
 

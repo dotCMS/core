@@ -22,36 +22,35 @@ import { OverlayPanelModule } from 'primeng/overlaypanel';
 import { TabViewModule } from 'primeng/tabview';
 
 import { DotFieldValidationMessageModule } from '@components/_common/dot-field-validation-message/dot-file-validation-message.module';
-
-// tslint:disable-next-line:max-line-length
-
 import { UiDotIconButtonModule } from '@components/_common/dot-icon-button/dot-icon-button.module';
 import { DotPageSelectorModule } from '@components/_common/dot-page-selector/dot-page-selector.module';
-
-// eslint-disable-next-line max-len
-
-import { DotFieldHelperModule } from '@components/dot-field-helper/dot-field-helper.module';
 import { DotWorkflowsActionsSelectorFieldModule } from '@components/_common/dot-workflows-actions-selector-field/dot-workflows-actions-selector-field.module';
 import { DotWorkflowsSelectorFieldModule } from '@components/_common/dot-workflows-selector-field/dot-workflows-selector-field.module';
+import { DotFieldHelperModule } from '@components/dot-field-helper/dot-field-helper.module';
 import { DOTTestBed } from '@dotcms/app/test/dot-test-bed';
 import { DotMdIconSelectorModule } from '@dotcms/app/view/components/_common/dot-md-icon-selector/dot-md-icon-selector.module';
 import {
-    DotContentTypesInfoService, DotLicenseService, DotMessageService,
+    DotContentTypesInfoService,
+    DotLicenseService,
+    DotMessageService,
     DotWorkflowService
 } from '@dotcms/data-access';
 import { DotcmsConfigService, LoginService, SiteService } from '@dotcms/dotcms-js';
 import { DotCMSContentTypeLayoutRow, DotCMSSystemActionType } from '@dotcms/dotcms-models';
 import { DotIconModule } from '@dotcms/ui';
 import {
-    dotcmsContentTypeBasicMock, dotcmsContentTypeFieldBasicMock, DotWorkflowServiceMock,
+    dotcmsContentTypeBasicMock,
+    dotcmsContentTypeFieldBasicMock,
+    DotWorkflowServiceMock,
     LoginServiceMock,
     MockDotMessageService,
-    mockWorkflows, mockWorkflowsActions, SiteServiceMock
+    mockWorkflows,
+    mockWorkflowsActions,
+    SiteServiceMock
 } from '@dotcms/utils-testing';
 import { DotDirectivesModule } from '@shared/dot-directives.module';
 
 import { ContentTypesFormComponent } from './content-types-form.component';
-
 
 @Component({
     selector: 'dot-site-selector-field',

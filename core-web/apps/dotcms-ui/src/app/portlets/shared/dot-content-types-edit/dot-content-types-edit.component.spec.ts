@@ -15,12 +15,18 @@ import { RouterTestingModule } from '@angular/router/testing';
 
 import { ConfirmationService, MenuItem } from 'primeng/api';
 
-import { DotDialogModule } from '@components/dot-dialog/dot-dialog.module';
 import { UiDotIconButtonModule } from '@components/_common/dot-icon-button/dot-icon-button.module';
+import { DotDialogModule } from '@components/dot-dialog/dot-dialog.module';
 import { DotHttpErrorManagerService } from '@dotcms/app/api/services/dot-http-error-manager/dot-http-error-manager.service';
 import { DotMenuService } from '@dotcms/app/api/services/dot-menu.service';
 import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
-import { DotAlertConfirmService, DotContentTypesInfoService, DotCrudService, DotEventsService, DotMessageService } from '@dotcms/data-access';
+import {
+    DotAlertConfirmService,
+    DotContentTypesInfoService,
+    DotCrudService,
+    DotEventsService,
+    DotMessageService
+} from '@dotcms/data-access';
 import { CoreWebService, LoginService, SiteService } from '@dotcms/dotcms-js';
 import {
     DotCMSContentType,
@@ -29,10 +35,14 @@ import {
 } from '@dotcms/dotcms-models';
 import { DotIconModule } from '@dotcms/ui';
 import {
-    cleanUpDialog, CoreWebServiceMock,
+    cleanUpDialog,
+    CoreWebServiceMock,
     dotcmsContentTypeBasicMock,
-    dotcmsContentTypeFieldBasicMock, LoginServiceMock,
-    MockDotMessageService, MockDotRouterService, mockResponseView,
+    dotcmsContentTypeFieldBasicMock,
+    LoginServiceMock,
+    MockDotMessageService,
+    MockDotRouterService,
+    mockResponseView,
     SiteServiceMock
 } from '@dotcms/utils-testing';
 
@@ -40,11 +50,7 @@ import { DotEditContentTypeCacheService } from './components/fields/content-type
 import { FieldService } from './components/fields/service';
 import { DotContentTypesEditComponent } from './dot-content-types-edit.component';
 
-
-
 // eslint-disable-next-line max-len
-
-
 
 @Component({
     selector: 'dot-content-type-fields-drop-zone',

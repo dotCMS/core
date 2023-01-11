@@ -1,13 +1,13 @@
 import { NgModule } from '@angular/core';
 import { RouteReuseStrategy, RouterModule, Routes } from '@angular/router';
 
+import { IframePortletLegacyComponent } from '@components/_common/iframe/iframe-porlet-legacy/index';
+import { DotIframePortletLegacyResolver } from '@components/_common/iframe/service/dot-iframe-porlet-legacy-resolver.service';
 import { DotLoginPageResolver } from '@components/login/dot-login-page-resolver.service';
 import { DotLogOutContainerComponent } from '@components/login/dot-logout-container-component/dot-log-out-container';
 import { DotLoginPageComponent } from '@components/login/main/dot-login-page.component';
 import { MainCoreLegacyComponent } from '@components/main-core-legacy/main-core-legacy-component';
 import { MainComponentLegacyComponent } from '@components/main-legacy/main-legacy.component';
-import { IframePortletLegacyComponent } from '@components/_common/iframe/iframe-porlet-legacy/index';
-import { DotIframePortletLegacyResolver } from '@components/_common/iframe/service/dot-iframe-porlet-legacy-resolver.service';
 import { DotCustomReuseStrategyService } from '@shared/dot-custom-reuse-strategy/dot-custom-reuse-strategy.service';
 
 import { AuthGuardService } from './api/services/guards/auth-guard.service';

@@ -1,4 +1,3 @@
-
 import { fromEvent as observableFromEvent, Subject } from 'rxjs';
 
 import {
@@ -18,9 +17,8 @@ import { DataView } from 'primeng/dataview';
 
 import { debounceTime, take, takeUntil } from 'rxjs/operators';
 
-
-import { DotDialogActions } from '@components/dot-dialog/dot-dialog.component';
 import { DotSiteSelectorComponent } from '@components/_common/dot-site-selector/dot-site-selector.component';
+import { DotDialogActions } from '@components/dot-dialog/dot-dialog.component';
 import { DotMessageService, PaginatorService } from '@dotcms/data-access';
 import { Site, SiteService } from '@dotcms/dotcms-js';
 import { DotTheme } from '@dotcms/dotcms-models';

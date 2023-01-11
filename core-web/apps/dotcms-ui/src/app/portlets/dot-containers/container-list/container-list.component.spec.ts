@@ -1,6 +1,4 @@
-
 import { of } from 'rxjs';
-
 
 import { CommonModule } from '@angular/common';
 import { HttpClientTestingModule } from '@angular/common/http/testing';
@@ -16,23 +14,27 @@ import { CheckboxModule } from 'primeng/checkbox';
 import { DialogService, DynamicDialogModule } from 'primeng/dynamicdialog';
 import { Menu, MenuModule } from 'primeng/menu';
 
-import { DotListingDataTableModule } from '@components/dot-listing-data-table';
-import { DotListingDataTableComponent } from '@components/dot-listing-data-table/dot-listing-data-table.component';
-import { DotMessageDisplayService } from '@components/dot-message-display/services';
 import { DotActionButtonModule } from '@components/_common/dot-action-button/dot-action-button.module';
 import { DotActionMenuButtonComponent } from '@components/_common/dot-action-menu-button/dot-action-menu-button.component';
 import { DotActionMenuButtonModule } from '@components/_common/dot-action-menu-button/dot-action-menu-button.module';
 import { DotAddToBundleModule } from '@components/_common/dot-add-to-bundle';
+import { DotListingDataTableModule } from '@components/dot-listing-data-table';
+import { DotListingDataTableComponent } from '@components/dot-listing-data-table/dot-listing-data-table.component';
+import { DotMessageDisplayService } from '@components/dot-message-display/services';
 import {
     DotAlertConfirmService,
     DotMessageService,
     DotSiteBrowserService
 } from '@dotcms/data-access';
 import {
-    CoreWebService, CoreWebServiceMock, DotcmsConfigService,
+    CoreWebService,
+    CoreWebServiceMock,
+    DotcmsConfigService,
     DotcmsEventsService,
     DotEventsSocket,
-    DotEventsSocketURL, DotPushPublishDialogService, LoginService,
+    DotEventsSocketURL,
+    DotPushPublishDialogService,
+    LoginService,
     StringUtils
 } from '@dotcms/dotcms-js';
 import { CONTAINER_SOURCE, DotActionBulkResult, DotContainer } from '@dotcms/dotcms-models';

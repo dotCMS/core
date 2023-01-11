@@ -4,11 +4,10 @@ import { FormsModule } from '@angular/forms';
 
 import { ButtonModule } from 'primeng/button';
 
-import { DotContainerSelectorModule } from '@components/dot-container-selector/dot-container-selector.module';
 import { UiDotIconButtonModule } from '@components/_common/dot-icon-button/dot-icon-button.module';
+import { DotContainerSelectorModule } from '@components/dot-container-selector/dot-container-selector.module';
 import { PaginatorService } from '@dotcms/data-access';
 import { DotPipesModule } from '@pipes/dot-pipes.module';
-
 
 import { DotContainerSelectorLayoutComponent } from './dot-container-selector-layout.component';
 

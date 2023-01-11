@@ -9,11 +9,10 @@ import { RouterTestingModule } from '@angular/router/testing';
 import { ButtonModule } from 'primeng/button';
 import { InputTextModule } from 'primeng/inputtext';
 
+import { DotFieldValidationMessageModule } from '@components/_common/dot-field-validation-message/dot-file-validation-message.module';
 import { DotLoginPageComponent } from '@components/login/main/dot-login-page.component';
 import { DotLoginPageStateService } from '@components/login/shared/services/dot-login-page-state.service';
-import { DotFieldValidationMessageModule } from '@components/_common/dot-field-validation-message/dot-file-validation-message.module';
 import { mockLoginFormResponse } from '@dotcms/utils-testing';
-
 
 @Injectable()
 class MockLoginPageStateService {

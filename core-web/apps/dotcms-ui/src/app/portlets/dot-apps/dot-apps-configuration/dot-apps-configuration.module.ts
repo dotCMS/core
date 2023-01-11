@@ -6,10 +6,10 @@ import { NgModule } from '@angular/core';
 import { ButtonModule } from 'primeng/button';
 import { InputTextModule } from 'primeng/inputtext';
 
-import { DotCopyButtonModule } from '@components/dot-copy-button/dot-copy-button.module';
-import { DotDialogModule } from '@components/dot-dialog/dot-dialog.module';
 import { DotActionButtonModule } from '@components/_common/dot-action-button/dot-action-button.module';
 import { DotAvatarModule } from '@components/_common/dot-avatar/dot-avatar.module';
+import { DotCopyButtonModule } from '@components/dot-copy-button/dot-copy-button.module';
+import { DotDialogModule } from '@components/dot-dialog/dot-dialog.module';
 import { DotAppsService } from '@dotcms/app/api/services/dot-apps/dot-apps.service';
 import { DotPipesModule } from '@pipes/dot-pipes.module';
 

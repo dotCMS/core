@@ -16,14 +16,6 @@ import { RadioButtonModule } from 'primeng/radiobutton';
 import { SplitButtonModule } from 'primeng/splitbutton';
 import { TabViewModule } from 'primeng/tabview';
 
-import { DotApiLinkModule } from '@components/dot-api-link/dot-api-link.module';
-import { DotBaseTypeSelectorModule } from '@components/dot-base-type-selector';
-import { DotCopyLinkModule } from '@components/dot-copy-link/dot-copy-link.module';
-import { DotDialogModule } from '@components/dot-dialog/dot-dialog.module';
-import { DotFieldHelperModule } from '@components/dot-field-helper/dot-field-helper.module';
-import { DotPortletBoxModule } from '@components/dot-portlet-base/components/dot-portlet-box/dot-portlet-box.module';
-import { DotRelationshipTreeModule } from '@components/dot-relationship-tree/dot-relationship-tree.module';
-import { DotSecondaryToolbarModule } from '@components/dot-secondary-toolbar';
 import { DotAddToBundleModule } from '@components/_common/dot-add-to-bundle';
 import { DotFieldValidationMessageModule } from '@components/_common/dot-field-validation-message/dot-file-validation-message.module';
 import { UiDotIconButtonTooltipModule } from '@components/_common/dot-icon-button-tooltip/dot-icon-button-tooltip.module';
@@ -37,6 +29,14 @@ import { DotWorkflowsActionsSelectorFieldModule } from '@components/_common/dot-
 import { DotWorkflowsSelectorFieldModule } from '@components/_common/dot-workflows-selector-field/dot-workflows-selector-field.module';
 import { IFrameModule } from '@components/_common/iframe';
 import { SearchableDropDownModule } from '@components/_common/searchable-dropdown';
+import { DotApiLinkModule } from '@components/dot-api-link/dot-api-link.module';
+import { DotBaseTypeSelectorModule } from '@components/dot-base-type-selector';
+import { DotCopyLinkModule } from '@components/dot-copy-link/dot-copy-link.module';
+import { DotDialogModule } from '@components/dot-dialog/dot-dialog.module';
+import { DotFieldHelperModule } from '@components/dot-field-helper/dot-field-helper.module';
+import { DotPortletBoxModule } from '@components/dot-portlet-base/components/dot-portlet-box/dot-portlet-box.module';
+import { DotRelationshipTreeModule } from '@components/dot-relationship-tree/dot-relationship-tree.module';
+import { DotSecondaryToolbarModule } from '@components/dot-secondary-toolbar';
 import { DotAutofocusModule } from '@directives/dot-autofocus/dot-autofocus.module';
 import { DotMaxlengthModule } from '@directives/dot-maxlength/dot-maxlength.module';
 import { DotMdIconSelectorModule } from '@dotcms/app/view/components/_common/dot-md-icon-selector/dot-md-icon-selector.module';
@@ -71,7 +71,6 @@ import {
     FieldService
 } from '@portlets/shared/dot-content-types-edit/components/fields/service';
 import { DotDirectivesModule } from '@shared/dot-directives.module';
-
 
 import { DotBlockEditorSettingsComponent } from './components/dot-block-editor-settings/dot-block-editor-settings.component';
 import { DotConvertToBlockInfoComponent } from './components/dot-convert-to-block-info/dot-convert-to-block-info.component';

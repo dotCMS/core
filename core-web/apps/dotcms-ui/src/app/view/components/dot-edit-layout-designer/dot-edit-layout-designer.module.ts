@@ -9,10 +9,10 @@ import { InputTextModule } from 'primeng/inputtext';
 import { ToolbarModule } from 'primeng/toolbar';
 import { TooltipModule } from 'primeng/tooltip';
 
-import { DotContainerSelectorModule } from '@components/dot-container-selector/dot-container-selector.module';
-import { DotSecondaryToolbarModule } from '@components/dot-secondary-toolbar';
 import { DotActionButtonModule } from '@components/_common/dot-action-button/dot-action-button.module';
 import { DotGlobalMessageModule } from '@components/_common/dot-global-message/dot-global-message.module';
+import { DotContainerSelectorModule } from '@components/dot-container-selector/dot-container-selector.module';
+import { DotSecondaryToolbarModule } from '@components/dot-secondary-toolbar';
 import { DotPageLayoutService } from '@dotcms/data-access';
 import { DotPipesModule } from '@pipes/dot-pipes.module';
 import { DotEditPageInfoModule } from '@portlets/dot-edit-page/components/dot-edit-page-info/dot-edit-page-info.module';
@@ -23,8 +23,8 @@ import { DotSidebarPropertiesModule } from './components/dot-sidebar-properties/
 import { DotThemeSelectorModule } from './components/dot-theme-selector/dot-theme-selector.module';
 import { DotEditLayoutDesignerComponent } from './dot-edit-layout-designer.component';
 
-import { DotDialogModule } from '../dot-dialog/dot-dialog.module';
 import { UiDotIconButtonModule } from '../_common/dot-icon-button/dot-icon-button.module';
+import { DotDialogModule } from '../dot-dialog/dot-dialog.module';
 
 @NgModule({
     declarations: [DotEditLayoutDesignerComponent],

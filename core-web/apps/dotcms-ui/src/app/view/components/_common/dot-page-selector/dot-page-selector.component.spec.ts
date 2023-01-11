@@ -11,10 +11,8 @@ import {
 } from '@angular/forms';
 import { By } from '@angular/platform-browser';
 
-
 import { AutoCompleteModule } from 'primeng/autocomplete';
 
-import { DotFieldHelperModule } from '@components/dot-field-helper/dot-field-helper.module';
 import {
     DotFolder,
     DotPageSelectorItem
@@ -24,6 +22,7 @@ import {
     expectedPagesMap,
     expectedSitesMap
 } from '@components/_common/dot-page-selector/service/dot-page-selector.service.spec';
+import { DotFieldHelperModule } from '@components/dot-field-helper/dot-field-helper.module';
 import { DotMessageService } from '@dotcms/data-access';
 import { LoginService } from '@dotcms/dotcms-js';
 import { LoginServiceMock, MockDotMessageService } from '@dotcms/utils-testing';
@@ -32,8 +31,6 @@ import { DotDirectivesModule } from '@shared/dot-directives.module';
 
 import { DotPageSelectorComponent } from './dot-page-selector.component';
 import { DotPageAsset, DotPageSelectorService } from './service/dot-page-selector.service';
-
-
 
 export const mockDotPageSelectorResults = {
     type: 'page',

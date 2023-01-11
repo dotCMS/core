@@ -7,9 +7,9 @@ import { ActivatedRoute, Router } from '@angular/router';
 
 import { DialogService } from 'primeng/dynamicdialog';
 
-import { DotContentletEditorService } from '@components/dot-contentlet-editor/services/dot-contentlet-editor.service';
 import { DotGlobalMessageService } from '@components/_common/dot-global-message/dot-global-message.service';
 import { IframeOverlayService } from '@components/_common/iframe/service/iframe-overlay.service';
+import { DotContentletEditorService } from '@components/dot-contentlet-editor/services/dot-contentlet-editor.service';
 import {
     DotAlertConfirmService,
     DotEditPageService,

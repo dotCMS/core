@@ -11,11 +11,11 @@ import { RouterTestingModule } from '@angular/router/testing';
 
 import { ConfirmationService } from 'primeng/api';
 
-import { DotContentletEditorService } from '@components/dot-contentlet-editor/services/dot-contentlet-editor.service';
-import { DotMessageDisplayService } from '@components/dot-message-display/services';
 import { DotDownloadBundleDialogModule } from '@components/_common/dot-download-bundle-dialog/dot-download-bundle-dialog.module';
 import { DotGlobalMessageService } from '@components/_common/dot-global-message/dot-global-message.service';
 import { DotIframeService } from '@components/_common/iframe/service/dot-iframe/dot-iframe.service';
+import { DotContentletEditorService } from '@components/dot-contentlet-editor/services/dot-contentlet-editor.service';
+import { DotMessageDisplayService } from '@components/dot-message-display/services';
 import { DotCustomEventHandlerService } from '@dotcms/app/api/services/dot-custom-event-handler/dot-custom-event-handler.service';
 import { DotFormatDateService } from '@dotcms/app/api/services/dot-format-date-service';
 import { DotHttpErrorManagerService } from '@dotcms/app/api/services/dot-http-error-manager/dot-http-error-manager.service';
@@ -57,7 +57,6 @@ import {
 } from '@dotcms/utils-testing';
 import { DotEditPageNavDirective } from '@portlets/dot-edit-page/main/dot-edit-page-nav/directives/dot-edit-page-nav.directive';
 import { DotExperimentClassDirective } from '@portlets/shared/directives/dot-experiment-class.directive';
-
 
 import { DotEditPageMainComponent } from './dot-edit-page-main.component';
 

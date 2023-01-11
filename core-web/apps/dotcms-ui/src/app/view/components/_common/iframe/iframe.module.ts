@@ -3,8 +3,8 @@ import { NgModule } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RouterModule } from '@angular/router';
 
-import { NotLicensedModule } from '@components/not-licensed/not-licensed.module';
 import { DotOverlayMaskModule } from '@components/_common/dot-overlay-mask/dot-overlay-mask.module';
+import { NotLicensedModule } from '@components/not-licensed/not-licensed.module';
 import { DotCustomEventHandlerService } from '@dotcms/app/api/services/dot-custom-event-handler/dot-custom-event-handler.service';
 import { DotPipesModule } from '@pipes/dot-pipes.module';
 

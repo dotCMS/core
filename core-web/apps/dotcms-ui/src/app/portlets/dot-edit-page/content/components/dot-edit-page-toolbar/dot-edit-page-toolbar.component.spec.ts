@@ -15,11 +15,11 @@ import { DialogService } from 'primeng/dynamicdialog';
 import { ToolbarModule } from 'primeng/toolbar';
 import { TooltipModule } from 'primeng/tooltip';
 
-import { DotMessageDisplayService } from '@components/dot-message-display/services';
-import { DotSecondaryToolbarModule } from '@components/dot-secondary-toolbar';
 import { DotGlobalMessageService } from '@components/_common/dot-global-message/dot-global-message.service';
 import { DotWizardModule } from '@components/_common/dot-wizard/dot-wizard.module';
 import { DotIframeService } from '@components/_common/iframe/service/dot-iframe/dot-iframe.service';
+import { DotMessageDisplayService } from '@components/dot-message-display/services';
+import { DotSecondaryToolbarModule } from '@components/dot-secondary-toolbar';
 import { DotFormatDateService } from '@dotcms/app/api/services/dot-format-date-service';
 import { DotHttpErrorManagerService } from '@dotcms/app/api/services/dot-http-error-manager/dot-http-error-manager.service';
 import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
@@ -27,7 +27,10 @@ import { dotEventSocketURLFactory } from '@dotcms/app/test/dot-test-bed';
 import {
     DotAlertConfirmService,
     DotESContentService,
-    DotEventsService, DotLicenseService, DotMessageService, DotPropertiesService
+    DotEventsService,
+    DotLicenseService,
+    DotMessageService,
+    DotPropertiesService
 } from '@dotcms/data-access';
 import {
     ApiRoot,
@@ -44,17 +47,21 @@ import {
 } from '@dotcms/dotcms-js';
 import { DotPageMode, DotPageRender, DotPageRenderState, ESContent } from '@dotcms/dotcms-models';
 import {
-    CoreWebServiceMock, dotcmsContentletMock, DotFormatDateServiceMock,
-    LoginServiceMock, MockDotMessageService, mockDotPersona, mockDotRenderedPage,
-    mockDotRenderedPageState, MockDotRouterService,
+    CoreWebServiceMock,
+    dotcmsContentletMock,
+    DotFormatDateServiceMock,
+    LoginServiceMock,
+    MockDotMessageService,
+    mockDotPersona,
+    mockDotRenderedPage,
+    mockDotRenderedPageState,
+    MockDotRouterService,
     mockUser,
     SiteServiceMock
 } from '@dotcms/utils-testing';
 import { DotPipesModule } from '@pipes/dot-pipes.module';
 import { DotEditPageInfoModule } from '@portlets/dot-edit-page/components/dot-edit-page-info/dot-edit-page-info.module';
 import { DotExperimentClassDirective } from '@portlets/shared/directives/dot-experiment-class.directive';
-
-
 
 import { DotEditPageToolbarComponent } from './dot-edit-page-toolbar.component';
 

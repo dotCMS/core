@@ -12,9 +12,9 @@ import { DropdownModule } from 'primeng/dropdown';
 import { InputTextModule } from 'primeng/inputtext';
 import { RadioButtonModule } from 'primeng/radiobutton';
 
+import { DotFieldValidationMessageModule } from '@components/_common/dot-field-validation-message/dot-file-validation-message.module';
 import { DotDialogModule } from '@components/dot-dialog/dot-dialog.module';
 import { DotMenuServiceMock } from '@components/dot-navigation/services/dot-navigation.service.spec';
-import { DotFieldValidationMessageModule } from '@components/_common/dot-field-validation-message/dot-file-validation-message.module';
 import {
     DotAddToMenuService,
     DotCreateCustomTool
@@ -29,7 +29,6 @@ import {
 } from '@dotcms/utils-testing';
 import { DotPipesModule } from '@pipes/dot-pipes.module';
 import { DotFormSelectorModule } from '@portlets/dot-edit-page/content/components/dot-form-selector/dot-form-selector.module';
-
 
 import { DotAddToMenuComponent } from './dot-add-to-menu.component';
 

@@ -5,8 +5,8 @@ import { DebugElement } from '@angular/core';
 import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 
-import { DotCopyLinkModule } from '@components/dot-copy-link/dot-copy-link.module';
 import { DotAvatarModule } from '@components/_common/dot-avatar/dot-avatar.module';
+import { DotCopyLinkModule } from '@components/dot-copy-link/dot-copy-link.module';
 import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
 import { DotMessageService } from '@dotcms/data-access';
 import { MockDotMessageService, MockDotRouterService } from '@dotcms/utils-testing';

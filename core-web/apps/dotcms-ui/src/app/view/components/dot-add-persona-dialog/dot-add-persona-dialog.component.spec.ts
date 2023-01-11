@@ -8,21 +8,22 @@ import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 
 import { FileUploadModule } from 'primeng/fileupload';
 
+import { SiteSelectorFieldModule } from '@components/_common/dot-site-selector-field/dot-site-selector-field.module';
 import { DotCreatePersonaFormModule } from '@components/dot-add-persona-dialog/dot-create-persona-form/dot-create-persona-form.module';
 import { DotDialogModule } from '@components/dot-dialog/dot-dialog.module';
-import { SiteSelectorFieldModule } from '@components/_common/dot-site-selector-field/dot-site-selector-field.module';
 import { DotHttpErrorManagerService } from '@dotcms/app/api/services/dot-http-error-manager/dot-http-error-manager.service';
 import { DOTTestBed } from '@dotcms/app/test/dot-test-bed';
 import { DotMessageService, DotWorkflowActionsFireService } from '@dotcms/data-access';
 import { LoginService, SiteService } from '@dotcms/dotcms-js';
 import {
-    LoginServiceMock, MockDotMessageService, mockDotPersona,
+    LoginServiceMock,
+    MockDotMessageService,
+    mockDotPersona,
     mockResponseView,
     SiteServiceMock
 } from '@dotcms/utils-testing';
 
 import { DotAddPersonaDialogComponent } from './dot-add-persona-dialog.component';
-
 
 @Component({
     selector: 'dot-field-validation-message',

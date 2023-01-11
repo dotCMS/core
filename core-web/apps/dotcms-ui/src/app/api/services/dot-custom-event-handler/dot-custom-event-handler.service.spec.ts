@@ -6,10 +6,10 @@ import { RouterTestingModule } from '@angular/router/testing';
 
 import { ConfirmationService } from 'primeng/api';
 
-import { DotContentletEditorService } from '@components/dot-contentlet-editor/services/dot-contentlet-editor.service';
-import { DotMessageDisplayService } from '@components/dot-message-display/services';
 import { DotGlobalMessageService } from '@components/_common/dot-global-message/dot-global-message.service';
 import { DotIframeService } from '@components/_common/iframe/service/dot-iframe/dot-iframe.service';
+import { DotContentletEditorService } from '@components/dot-contentlet-editor/services/dot-contentlet-editor.service';
+import { DotMessageDisplayService } from '@components/dot-message-display/services';
 import { dotEventSocketURLFactory, MockDotUiColorsService } from '@dotcms/app/test/dot-test-bed';
 import {
     DotAlertConfirmService,

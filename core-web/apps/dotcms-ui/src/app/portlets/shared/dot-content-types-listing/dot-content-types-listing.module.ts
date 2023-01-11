@@ -1,9 +1,9 @@
 import { CommonModule } from '@angular/common';
 import { NgModule } from '@angular/core';
 
+import { DotAddToBundleModule } from '@components/_common/dot-add-to-bundle';
 import { DotBaseTypeSelectorModule } from '@components/dot-base-type-selector';
 import { DotListingDataTableModule } from '@components/dot-listing-data-table';
-import { DotAddToBundleModule } from '@components/_common/dot-add-to-bundle';
 import {
     DotContentTypeService,
     DotContentTypesInfoService,

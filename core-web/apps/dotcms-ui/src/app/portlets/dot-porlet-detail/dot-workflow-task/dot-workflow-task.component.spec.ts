@@ -10,12 +10,12 @@ import { RouterTestingModule } from '@angular/router/testing';
 
 import { ConfirmationService } from 'primeng/api';
 
+import { DotGlobalMessageService } from '@components/_common/dot-global-message/dot-global-message.service';
+import { DotIframeService } from '@components/_common/iframe/service/dot-iframe/dot-iframe.service';
 import { DotContentletEditorService } from '@components/dot-contentlet-editor/services/dot-contentlet-editor.service';
 import { DotMessageDisplayService } from '@components/dot-message-display/services';
 import { DotWorkflowTaskDetailModule } from '@components/dot-workflow-task-detail/dot-workflow-task-detail.module';
 import { DotWorkflowTaskDetailService } from '@components/dot-workflow-task-detail/services/dot-workflow-task-detail.service';
-import { DotGlobalMessageService } from '@components/_common/dot-global-message/dot-global-message.service';
-import { DotIframeService } from '@components/_common/iframe/service/dot-iframe/dot-iframe.service';
 import { DotCustomEventHandlerService } from '@dotcms/app/api/services/dot-custom-event-handler/dot-custom-event-handler.service';
 import { DotDownloadBundleDialogService } from '@dotcms/app/api/services/dot-download-bundle-dialog/dot-download-bundle-dialog.service';
 import { DotFormatDateService } from '@dotcms/app/api/services/dot-format-date-service';
@@ -52,7 +52,6 @@ import {
     MockDotMessageService,
     MockDotRouterService
 } from '@dotcms/utils-testing';
-
 
 import { DotWorkflowTaskComponent } from './dot-workflow-task.component';
 @Injectable()

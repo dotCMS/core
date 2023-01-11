@@ -19,9 +19,9 @@ import { MenuModule } from 'primeng/menu';
 import { PaginatorModule } from 'primeng/paginator';
 import { TableModule } from 'primeng/table';
 
-import { DotPortletBaseModule } from '@components/dot-portlet-base/dot-portlet-base.module';
 import { DotActionMenuButtonModule } from '@components/_common/dot-action-menu-button/dot-action-menu-button.module';
 import { DotEmptyStateModule } from '@components/_common/dot-empty-state/dot-empty-state.module';
+import { DotPortletBaseModule } from '@components/dot-portlet-base/dot-portlet-base.module';
 import { DotCategoriesService } from '@dotcms/app/api/services/dot-categories/dot-categories.service';
 import { DotCategory } from '@dotcms/app/shared/models/dot-categories/dot-categories.model';
 import { DotMessagePipeModule } from '@dotcms/app/view/pipes/dot-message/dot-message-pipe.module';
@@ -29,7 +29,6 @@ import { DotMessageService } from '@dotcms/data-access';
 import { CoreWebService } from '@dotcms/dotcms-js';
 import { CoreWebServiceMock, MockDotMessageService } from '@dotcms/utils-testing';
 import { DotPipesModule } from '@pipes/dot-pipes.module';
-
 
 import { DotCategoriesListComponent } from './dot-categories-list.component';
 

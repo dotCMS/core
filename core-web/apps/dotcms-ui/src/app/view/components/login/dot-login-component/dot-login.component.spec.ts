@@ -15,10 +15,10 @@ import { ButtonModule } from 'primeng/button';
 import { Checkbox, CheckboxModule } from 'primeng/checkbox';
 import { Dropdown, DropdownModule } from 'primeng/dropdown';
 
-import { DotLoginComponent } from '@components/login/dot-login-component/dot-login.component';
-import { DotLoginPageStateService } from '@components/login/shared/services/dot-login-page-state.service';
 import { DotFieldValidationMessageModule } from '@components/_common/dot-field-validation-message/dot-file-validation-message.module';
 import { DotLoadingIndicatorModule } from '@components/_common/iframe/dot-loading-indicator/dot-loading-indicator.module';
+import { DotLoginComponent } from '@components/login/dot-login-component/dot-login.component';
+import { DotLoginPageStateService } from '@components/login/shared/services/dot-login-page-state.service';
 import { DotFormatDateService } from '@dotcms/app/api/services/dot-format-date-service';
 import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
 import { DotMessageService } from '@dotcms/data-access';
@@ -26,13 +26,12 @@ import { CoreWebService, LoggerService, LoginService, StringUtils } from '@dotcm
 import { DotLoginInformation } from '@dotcms/dotcms-models';
 import { DotLoadingIndicatorService } from '@dotcms/utils';
 import {
-    CoreWebServiceMock, DotFormatDateServiceMock,
+    CoreWebServiceMock,
+    DotFormatDateServiceMock,
     LoginServiceMock,
     mockLoginFormResponse,
     mockUser
 } from '@dotcms/utils-testing';
-
-
 
 const mockLoginInfo = {
     ...mockLoginFormResponse,

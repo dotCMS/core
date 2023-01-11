@@ -13,16 +13,11 @@ import { DotPipesModule } from '@pipes/dot-pipes.module';
 
 import { AppRoutingModule } from './app-routing.module';
 import { AppComponent } from './app.component';
-
-// Custom Components
 import { COMPONENTS } from './components';
 import { CUSTOM_MODULES, NGFACES_MODULES } from './modules';
 import { ENV_PROVIDERS } from './providers';
 import { DotDirectivesModule } from './shared/dot-directives.module';
 import { SharedModule } from './shared/shared.module';
-
-
-
 
 @NgModule({
     bootstrap: [AppComponent],

@@ -11,22 +11,20 @@ import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { ActivatedRoute } from '@angular/router';
 import { RouterTestingModule } from '@angular/router/testing';
 
-
-
 import { ConfirmationService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
 import { DialogModule } from 'primeng/dialog';
 import { DialogService } from 'primeng/dynamicdialog';
 
-import { DotContentletEditorModule } from '@components/dot-contentlet-editor/dot-contentlet-editor.module';
-import { DotContentletEditorService } from '@components/dot-contentlet-editor/services/dot-contentlet-editor.service';
-import { DotMessageDisplayService } from '@components/dot-message-display/services';
 import { DotGlobalMessageService } from '@components/_common/dot-global-message/dot-global-message.service';
 import { DotOverlayMaskModule } from '@components/_common/dot-overlay-mask/dot-overlay-mask.module';
 import { DotWizardModule } from '@components/_common/dot-wizard/dot-wizard.module';
 import { DotLoadingIndicatorModule } from '@components/_common/iframe/dot-loading-indicator/dot-loading-indicator.module';
 import { DotIframeService } from '@components/_common/iframe/service/dot-iframe/dot-iframe.service';
 import { IframeOverlayService } from '@components/_common/iframe/service/iframe-overlay.service';
+import { DotContentletEditorModule } from '@components/dot-contentlet-editor/dot-contentlet-editor.module';
+import { DotContentletEditorService } from '@components/dot-contentlet-editor/services/dot-contentlet-editor.service';
+import { DotMessageDisplayService } from '@components/dot-message-display/services';
 import { DotCustomEventHandlerService } from '@dotcms/app/api/services/dot-custom-event-handler/dot-custom-event-handler.service';
 import { DotDownloadBundleDialogService } from '@dotcms/app/api/services/dot-download-bundle-dialog/dot-download-bundle-dialog.service';
 import { DotHttpErrorManagerService } from '@dotcms/app/api/services/dot-http-error-manager/dot-http-error-manager.service';
@@ -62,7 +60,14 @@ import {
     StringUtils,
     UserModel
 } from '@dotcms/dotcms-js';
-import { DotCMSContentlet, DotCMSContentType, DotPageContainer, DotPageMode, DotPageRender, DotPageRenderState } from '@dotcms/dotcms-models';
+import {
+    DotCMSContentlet,
+    DotCMSContentType,
+    DotPageContainer,
+    DotPageMode,
+    DotPageRender,
+    DotPageRenderState
+} from '@dotcms/dotcms-models';
 import { DotLoadingIndicatorService } from '@dotcms/utils';
 import {
     CoreWebServiceMock,

@@ -8,15 +8,14 @@ import { DialogService } from 'primeng/dynamicdialog';
 import { ToolbarModule } from 'primeng/toolbar';
 import { TooltipModule } from 'primeng/tooltip';
 
-import { DotSecondaryToolbarModule } from '@components/dot-secondary-toolbar';
 import { UiDotIconButtonModule } from '@components/_common/dot-icon-button/dot-icon-button.module';
+import { DotSecondaryToolbarModule } from '@components/dot-secondary-toolbar';
 import { DotGlobalMessageModule } from '@dotcms/app/view/components/_common/dot-global-message/dot-global-message.module';
 import { DotPropertiesService } from '@dotcms/data-access';
 import { DotIconModule } from '@dotcms/ui';
 import { DotPipesModule } from '@pipes/dot-pipes.module';
 import { DotEditPageInfoModule } from '@portlets/dot-edit-page/components/dot-edit-page-info/dot-edit-page-info.module';
 import { DotEditPageNavDirective } from '@portlets/dot-edit-page/main/dot-edit-page-nav/directives/dot-edit-page-nav.directive';
-
 
 import { DotEditPageToolbarComponent } from './dot-edit-page-toolbar.component';
 

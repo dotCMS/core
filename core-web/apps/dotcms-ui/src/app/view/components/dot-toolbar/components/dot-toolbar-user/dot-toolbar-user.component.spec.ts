@@ -14,11 +14,11 @@ import { ButtonModule } from 'primeng/button';
 import { CheckboxModule } from 'primeng/checkbox';
 import { PasswordModule } from 'primeng/password';
 
-import { DotDialogModule } from '@components/dot-dialog/dot-dialog.module';
-import { DotNavigationService } from '@components/dot-navigation/services/dot-navigation.service';
 import { UiDotIconButtonModule } from '@components/_common/dot-icon-button/dot-icon-button.module';
 import { DotIframeService } from '@components/_common/iframe/service/dot-iframe/dot-iframe.service';
 import { SearchableDropDownModule } from '@components/_common/searchable-dropdown';
+import { DotDialogModule } from '@components/dot-dialog/dot-dialog.module';
+import { DotNavigationService } from '@components/dot-navigation/services/dot-navigation.service';
 import { DotFormatDateService } from '@dotcms/app/api/services/dot-format-date-service';
 import { DotMenuService } from '@dotcms/app/api/services/dot-menu.service';
 import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
@@ -41,8 +41,6 @@ import { DotIconModule } from '@dotcms/ui';
 import { CoreWebServiceMock, LoginServiceMock, mockAuth, mockUser } from '@dotcms/utils-testing';
 import { DotPipesModule } from '@pipes/dot-pipes.module';
 
-
-
 import { DotToolbarUserComponent } from './dot-toolbar-user.component';
 
 import { DotDropdownComponent } from '../../../_common/dot-dropdown-component/dot-dropdown.component';
@@ -50,7 +48,6 @@ import { IframeOverlayService } from '../../../_common/iframe/service/iframe-ove
 import { DotGravatarModule } from '../dot-gravatar/dot-gravatar.module';
 import { DotLoginAsComponent } from '../dot-login-as/dot-login-as.component';
 import { DotMyAccountComponent } from '../dot-my-account/dot-my-account.component';
-
 
 describe('DotToolbarUserComponent', () => {
     let comp: DotToolbarUserComponent;

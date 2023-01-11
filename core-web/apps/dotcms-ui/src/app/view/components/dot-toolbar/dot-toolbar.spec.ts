@@ -16,9 +16,9 @@ import { mockSites, SiteServiceMock } from '@dotcms/utils-testing';
 
 import { DotToolbarComponent } from './dot-toolbar.component';
 
-import { DotNavigationService } from '../dot-navigation/services/dot-navigation.service';
 import { UiDotIconButtonModule } from '../_common/dot-icon-button/dot-icon-button.module';
 import { IframeOverlayService } from '../_common/iframe/service/iframe-overlay.service';
+import { DotNavigationService } from '../dot-navigation/services/dot-navigation.service';
 
 @Injectable()
 class MockDotNavigationService {
