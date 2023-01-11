@@ -1,27 +1,31 @@
 import { Component, CUSTOM_ELEMENTS_SCHEMA, DebugElement } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { By } from '@angular/platform-browser';
-import { of, throwError } from 'rxjs';
-
 import {
     FormsModule,
     ReactiveFormsModule,
     UntypedFormBuilder,
     UntypedFormGroup
 } from '@angular/forms';
+import { By } from '@angular/platform-browser';
+
+import { of, throwError } from 'rxjs';
+
+import { DotTemplateThumbnailFieldComponent } from './dot-template-thumbnail-field.component';
+
 import { DotTempFileUploadService } from '@dotcms/app/api/services/dot-temp-file-upload/dot-temp-file-upload.service';
+import { DotMessagePipe } from '@dotcms/app/view/pipes/dot-message/dot-message.pipe';
 import {
     DotCrudService,
     DotMessageService,
     DotWorkflowActionsFireService
 } from '@dotcms/data-access';
 import { dotcmsContentletMock, MockDotMessageService } from '@dotcms/utils-testing';
-import { DotTemplateThumbnailFieldComponent } from './dot-template-thumbnail-field.component';
 
 const messageServiceMock = new MockDotMessageService({
     'templates.properties.form.thumbnail.error.invalid.url': 'Invalid url',
     'templates.properties.form.thumbnail.error': 'Error',
-    'templates.properties.form.thumbnail.error.invalid.image': 'Invalid image'
+    'templates.properties.form.thumbnail.error.invalid.image': 'Invalid image',
+    'templates.properties.form.thumbnail.placeholder': 'Drop or paste image or image url'
 });
 
 @Component({
@@ -50,7 +54,7 @@ describe('DotTemplateThumbnailFieldComponent', () => {
 
     beforeEach(async () => {
         await TestBed.configureTestingModule({
-            declarations: [DotTemplateThumbnailFieldComponent, TestHostComponent],
+            declarations: [DotTemplateThumbnailFieldComponent, TestHostComponent, DotMessagePipe],
             providers: [
                 {
                     provide: DotTempFileUploadService,
@@ -103,6 +107,7 @@ describe('DotTemplateThumbnailFieldComponent', () => {
 
             expect(field.nativeNode.previewImageUrl).toBeNull();
             expect(field.nativeNode.previewImageName).toBeNull();
+            expect(field.nativeNode.placeholder).toBe('Drop or paste image or image url');
         });
 
         it('should have fillted attr', () => {

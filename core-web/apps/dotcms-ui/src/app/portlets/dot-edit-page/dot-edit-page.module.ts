@@ -4,7 +4,8 @@ import {
     DotContentletLockerService,
     DotESContentService,
     DotPageLayoutService,
-    DotPageRenderService
+    DotPageRenderService,
+    DotSessionStorageService
 } from '@dotcms/data-access';
 import { DotPipesModule } from '@pipes/dot-pipes.module';
 import { DotExperimentExperimentResolver } from '@portlets/dot-experiments/shared/resolvers/dot-experiment-experiment.resolver';
@@ -35,6 +36,7 @@ import { DotEditPageResolver } from './shared/services/dot-edit-page-resolver/do
         DotESContentService,
         DotPageStateService,
         DotPageRenderService,
+        DotSessionStorageService,
         DotPageLayoutService,
         DotFeatureFlagResolver
     ]

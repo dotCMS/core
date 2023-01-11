@@ -1,0 +1,119 @@
+$dropdown-position: 43px;
+
+.navbar {
+    ul {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+    }
+
+    li {
+        list-style: none;
+        position: relative;
+
+        a {
+            display: block;
+            text-decoration: none;
+            float: none;
+        }
+    }
+
+    .dropdown {
+        background: #fff;
+        border: 1px solid #d1d1d1;
+        border-top: 0;
+        left: -1px;
+        min-width: 200px;
+        position: absolute;
+        opacity: 0;
+        transition: opacity 200ms;
+        top: $dropdown-position;
+        visibility: hidden;
+        z-index: 999;
+
+        li.level2 {
+            padding: 0;
+
+            a {
+                background: #fff;
+                color: #5f5f5f;
+                display: block;
+                font-size: 85%;
+                margin: 0;
+                padding: 3px 10px;
+                vertical-align: middle;
+
+                &:hover {
+                    background: #f2f2f2;
+                }
+
+                span {
+                    display: inline-block;
+                    float: left;
+                    margin: 0 5px 2px;
+                }
+            }
+        }
+    }
+
+    .horizontal {
+        li.level1 {
+            background-color: #f2f2f2;
+            border-top-left-radius: 3px;
+            border-top-right-radius: 3px;
+            border: solid 1px #dadada;
+            border-right: 0;
+            box-shadow: inset 0 1px 1px 0 #fff;
+            float: left;
+            padding: 0;
+            width: auto;
+
+            &:hover {
+                background-color: #fff;
+
+                > .dropdown {
+                    visibility: visible;
+                    opacity: 1;
+                }
+
+                .navMenu-title {
+                    color: #c00;
+                }
+            }
+
+            &:last-child {
+                border-right: solid 1px #dadada;
+            }
+
+            .tabLeft {
+                padding: 8px 10px 5px;
+            }
+
+            &.active {
+                background-color: #fff;
+
+                .navMenu-title {
+                    color: #c00;
+                }
+            }
+        }
+    }
+
+    .navMenu-title {
+        color: #404040;
+        font-size: 93%;
+        font-weight: 700;
+        line-height: 14px;
+        margin: 0;
+        overflow: hidden;
+        padding: 0;
+    }
+
+    .navMenu-subtitle {
+        color: #5f5f5f;
+        font-size: 77%;
+        margin: 0;
+        overflow: hidden;
+        padding: 0;
+    }
+}

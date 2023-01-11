@@ -4947,8 +4947,12 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 //Clean-up the contentlet object, we don' want to persist this URL in the db
                 removeURLFromContentlet( contentlet );
 
-                //Verify if the template needs to be update for all versions of the content page
-                updateTemplateInAllLanguageVersions(contentlet, user);
+                try {
+                    //Verify if the template needs to be update for all versions of the content page
+                    updateTemplateInAllLanguageVersions(contentlet, user);
+                } catch (NotFoundInDbException e) {
+                    Logger.debug(ESContentletAPIImpl.class, e.getMessage(), e);
+                }
             }
 
             final boolean structureHasAHostField = hasAHostField(contentlet.getStructureInode());
@@ -5866,33 +5870,45 @@ public class ESContentletAPIImpl implements ContentletAPI {
             if(templateField.isPresent()){
                 final String identifier = contentlet.getIdentifier();
                 final String newTemplate = contentlet.get(HTMLPageAssetAPI.TEMPLATE_FIELD).toString();
-                final Contentlet contentInAnyLang = findContentletByIdentifierAnyLanguage(contentlet.getIdentifier());
+                final Contentlet contentInAnyLang = findContentletByIdentifierAnyLanguage(contentlet.getIdentifier(), contentlet.getVariantId());
+
                 if (null == contentInAnyLang || !UtilMethods.isSet(contentInAnyLang.getIdentifier())) {
-                    throw new DotDataException(String.format("Contentlet with ID '%s' has not been found, or is currently" +
-                            " marked as 'Archived'.", contentlet.getIdentifier()));
+                    final Contentlet contentletByIdentifierAnyLanguageArchived = findContentletByIdentifierAnyLanguage(
+                            contentlet.getIdentifier(), true);
+
+                    if (null == contentletByIdentifierAnyLanguageArchived || !UtilMethods.isSet(contentletByIdentifierAnyLanguageArchived.getIdentifier())) {
+                        throw new NotFoundInDbException(String.format(
+                                "Contentlet with ID '%s' has not been found: ", contentlet.getIdentifier()));
+                    } else if (contentletByIdentifierAnyLanguageArchived.isArchived()) {
+                        throw new DotDataException(String.format(
+                                "Contentlet is currently marked as 'Archived'.", contentlet.getIdentifier()));
+                    } else {
+                        return;
+                    }
                 }
+
                 final String existingTemplate = loadField(contentInAnyLang.getInode(), templateField.get()).toString();
                 if (!existingTemplate.equals(newTemplate)){
-                    final List<ContentletVersionInfo> contentletVersions = APILocator.getVersionableAPI().findContentletVersionInfos(identifier);
+                    final List<ContentletVersionInfo> contentletVersions = APILocator.getVersionableAPI().findContentletVersionInfos(identifier, contentlet.getVariantId());
 
-                for (final ContentletVersionInfo version : contentletVersions) {
-                    final Contentlet contentVersion = find(version.getWorkingInode(), user, DONT_RESPECT_FRONTEND_ROLES);
-                    if (contentlet.getInode().equals(contentVersion.getInode())) {
-                        continue;
-                    }
+                    for (final ContentletVersionInfo version : contentletVersions) {
+                        final Contentlet contentVersion = find(version.getWorkingInode(), user, DONT_RESPECT_FRONTEND_ROLES);
+                        if (contentlet.getInode().equals(contentVersion.getInode())) {
+                            continue;
+                        }
 
-                    //Create a new working version with the template when the page version is live and working
-                    final Contentlet newPageVersion = checkout(contentVersion.getInode(), user, DONT_RESPECT_FRONTEND_ROLES);
-                    newPageVersion.setBoolProperty(DO_NOT_UPDATE_TEMPLATES, true);
-                    newPageVersion.setStringProperty(HTMLPageAssetAPI.TEMPLATE_FIELD, newTemplate);
-                    newPageVersion.setBoolProperty(Contentlet.DONT_VALIDATE_ME, true);
+                        //Create a new working version with the template when the page version is live and working
+                        final Contentlet newPageVersion = checkout(contentVersion.getInode(), user, DONT_RESPECT_FRONTEND_ROLES);
+                        newPageVersion.setBoolProperty(DO_NOT_UPDATE_TEMPLATES, true);
+                        newPageVersion.setStringProperty(HTMLPageAssetAPI.TEMPLATE_FIELD, newTemplate);
+                        newPageVersion.setBoolProperty(Contentlet.DONT_VALIDATE_ME, true);
 
-                    if (contentlet.getMap().containsKey(Contentlet.DISABLE_WORKFLOW)) {
-                        newPageVersion.getMap().put(Contentlet.DISABLE_WORKFLOW, contentlet.getMap().get(Contentlet.DISABLE_WORKFLOW));
-                    }
-                    if (contentlet.getMap().containsKey(Contentlet.WORKFLOW_IN_PROGRESS)) {
-                        newPageVersion.getMap().put(Contentlet.WORKFLOW_IN_PROGRESS, contentlet.getMap().get(Contentlet.WORKFLOW_IN_PROGRESS));
-                    }
+                        if (contentlet.getMap().containsKey(Contentlet.DISABLE_WORKFLOW)) {
+                            newPageVersion.getMap().put(Contentlet.DISABLE_WORKFLOW, contentlet.getMap().get(Contentlet.DISABLE_WORKFLOW));
+                        }
+                        if (contentlet.getMap().containsKey(Contentlet.WORKFLOW_IN_PROGRESS)) {
+                            newPageVersion.getMap().put(Contentlet.WORKFLOW_IN_PROGRESS, contentlet.getMap().get(Contentlet.WORKFLOW_IN_PROGRESS));
+                        }
 
                         checkin(newPageVersion,  user, DONT_RESPECT_FRONTEND_ROLES);
                     }

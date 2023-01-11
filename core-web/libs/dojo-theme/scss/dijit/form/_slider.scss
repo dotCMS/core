@@ -1,0 +1,201 @@
+.dijit {
+    &SliderBarH,
+    &SliderBumperH {
+        height: $slider-bar-size;
+    }
+
+    &SliderBarV,
+    &SliderBumperV {
+        width: $slider-bar-size;
+    }
+
+    &Rule {
+        &Label {
+            transition: color $field-animation-speed;
+            color: $slider-rule-label-normal-color;
+        }
+        &Mark {
+            transition: border-color $field-animation-speed;
+            border: $slider-rule-mark-normal;
+        }
+    }
+
+    &Slider {
+        &ProgressBar,
+        &BottomBumper,
+        &LeftBumper {
+            background: $slider-progress-normal-color;
+            border-color: $slider-progress-normal-border-color;
+        }
+
+        &RemainingBar,
+        &TopBumper,
+        &RightBumper {
+            background: $slider-remaining-normal-color;
+            border-color: $slider-remaining-normal-border-color;
+        }
+
+        &LeftBumper {
+            border-left-width: 1px;
+        }
+
+        &RightBumper {
+            border-right-width: 1px;
+        }
+
+        &BottomBumper {
+            border-bottom-width: 1px;
+        }
+
+        &TopBumper {
+            border-top-width: 1px;
+        }
+
+        &DecrementIconH,
+        &IncrementIconH,
+        &DecrementIconV,
+        &IncrementIconV {
+            border-radius: $field-border-radius;
+            width: 20px;
+            height: 16px;
+            border: $button-normal-border;
+            background-color: $button-normal-bgcolor;
+            position: relative;
+
+            .dijitSliderButtonInner {
+                display: none;
+            }
+        }
+
+        &DecrementButtonHover,
+        &IncrementButtonHover {
+            border: $button-hover-border;
+        }
+
+        &IncrementIconV {
+            margin-bottom: 5px;
+
+            &:before {
+                @include create-arrow(5px, $field-normal-arrow-color, up);
+            }
+        }
+
+        &DecrementIconV {
+            margin-top: 5px;
+
+            &:before {
+                @include create-arrow(5px, $field-normal-arrow-color);
+            }
+        }
+
+        &DecrementButtonActive,
+        &IncrementButtonActive {
+            background-color: $button-active-bgcolor;
+            border: $button-active-border;
+        }
+
+        &IncrementButtonActive {
+            &:before {
+                border-top-color: $field-active-arrow-color;
+            }
+        }
+
+        &DecrementButtonActive {
+            &:before {
+                border-bottom-color: $field-active-arrow-color;
+            }
+        }
+
+        &ImageHandle {
+            transition: all $field-animation-speed;
+            border-radius: calc($slider-handle-size / 2);
+            background-color: $slider-handle-normal-bgcolor;
+            border: $slider-handle-normal-border;
+            height: $slider-handle-size;
+            top: ceil(-(calc($slider-handle-size / 2)) + $field-border-size);
+            width: $slider-handle-size;
+        }
+
+        &Hover {
+            .dijitRuleLabel {
+                color: $slider-rule-label-hover-color;
+            }
+
+            .dijitRuleMark {
+                border: $slider-rule-mark-hover;
+            }
+
+            .dijitSliderBottomBumper,
+            .dijitSliderProgressBar,
+            .dijitSliderLeftBumper {
+                background: $slider-progress-hover-color;
+                border-color: $slider-progress-hover-border-color;
+            }
+
+            .dijitSliderRemainingBar,
+            .dijitSliderTopBumper,
+            .dijitSliderRightBumper {
+                background: $slider-remaining-hover-color;
+                border-color: $slider-remaining-hover-border-color;
+            }
+
+            .dijitSliderImageHandle {
+                background-color: $slider-handle-hover-bgcolor;
+                border: $slider-handle-hover-border;
+            }
+
+            .dijitSliderThumbFocused {
+                background: $slider-handle-focused-bgcolor;
+                border: $slider-handle-focused-border;
+            }
+        }
+
+        &Disabled {
+            .dijitRuleLabel {
+                color: $slider-rule-label-disabled-color;
+            }
+
+            .dijitRuleMark {
+                border: $slider-rule-mark-disabled;
+            }
+
+            .dijitSliderBottomBumper,
+            .dijitSliderProgressBar,
+            .dijitSliderLeftBumper {
+                background: $slider-progress-disabled-color;
+                border-color: $slider-progress-disabled-border-color;
+            }
+
+            .dijitSliderRemainingBar,
+            .dijitSliderTopBumper,
+            .dijitSliderRightBumper {
+                background: $slider-remaining-disabled-color;
+                border-color: $slider-remaining-disabled-border-color;
+            }
+
+            .dijitSliderImageHandle {
+                background-color: $slider-handle-disabled-bgcolor;
+                border: $slider-handle-disabled-border;
+            }
+
+            .dijitSliderDecrementIconH,
+            .dijitSliderIncrementIconH,
+            .dijitSliderDecrementIconV,
+            .dijitSliderIncrementIconV {
+                border: $button-disabled-border;
+            }
+
+            .dijitSliderDecrementIconV {
+                &:before {
+                    border-top-color: $field-disabled-arrow-color;
+                }
+            }
+
+            .dijitSliderIncrementIconV {
+                &:before {
+                    border-bottom-color: $field-disabled-arrow-color;
+                }
+            }
+        }
+    }
+}
