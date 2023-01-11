@@ -4,8 +4,8 @@ import { Component, Inject, OnInit, ViewChild } from '@angular/core';
 
 import { map } from 'rxjs/operators';
 
-import { DotDropdownComponent } from '@components/_common/dot-dropdown-component/dot-dropdown.component';
 import { DotNavigationService } from '@components/dot-navigation/services/dot-navigation.service';
+import { DotDropdownComponent } from '@components/_common/dot-dropdown-component/dot-dropdown.component';
 import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
 import { LOCATION_TOKEN } from '@dotcms/app/providers';
 import { Auth, CurrentUser, LoggerService, LoginService, LOGOUT_URL } from '@dotcms/dotcms-js';

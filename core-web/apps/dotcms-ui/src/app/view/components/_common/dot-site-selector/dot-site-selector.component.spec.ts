@@ -11,11 +11,9 @@ import { FormsModule } from '@angular/forms';
 import { By } from '@angular/platform-browser';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 
-import { DotMessageService } from '@dotcms/data-access';
-import { DotEventsService, PaginatorService } from '@dotcms/data-access';
+import { DotEventsService, DotMessageService, PaginatorService } from '@dotcms/data-access';
 import { CoreWebService, Site, SiteService } from '@dotcms/dotcms-js';
-import { MockDotMessageService, mockSites, SiteServiceMock } from '@dotcms/utils-testing';
-import { CoreWebServiceMock } from '@dotcms/utils-testing';
+import { CoreWebServiceMock, MockDotMessageService, mockSites, SiteServiceMock } from '@dotcms/utils-testing';
 
 import { DotSiteSelectorComponent } from './dot-site-selector.component';
 

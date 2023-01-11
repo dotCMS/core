@@ -8,8 +8,7 @@ import { By } from '@angular/platform-browser';
 import { PaginationEvent } from '@components/_common/searchable-dropdown/component';
 import { DOTTestBed } from '@dotcms/app/test/dot-test-bed';
 import { DotMessageService, PaginatorService } from '@dotcms/data-access';
-import { MockDotMessageService } from '@dotcms/utils-testing';
-import { dotcmsContentTypeFieldBasicMock } from '@dotcms/utils-testing';
+import { dotcmsContentTypeFieldBasicMock, MockDotMessageService } from '@dotcms/utils-testing';
 
 import { CategoriesPropertyComponent } from './categories-property.component';
 

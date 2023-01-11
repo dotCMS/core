@@ -6,8 +6,7 @@ import { By } from '@angular/platform-browser';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 
 import { DOTTestBed } from '@dotcms/app/test/dot-test-bed';
-import { DotLanguagesService } from '@dotcms/data-access';
-import { DotMessageService } from '@dotcms/data-access';
+import { DotLanguagesService, DotMessageService } from '@dotcms/data-access';
 import { DotLanguage } from '@dotcms/dotcms-models';
 import { DotIconModule } from '@dotcms/ui';
 import {

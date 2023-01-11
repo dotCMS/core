@@ -7,18 +7,16 @@ import { CheckboxModule } from 'primeng/checkbox';
 import { DialogModule } from 'primeng/dialog';
 import { TooltipModule } from 'primeng/tooltip';
 
+import { DotContentletEditorModule } from '@components/dot-contentlet-editor/dot-contentlet-editor.module';
 import { DotOverlayMaskModule } from '@components/_common/dot-overlay-mask/dot-overlay-mask.module';
 import { DotLoadingIndicatorModule } from '@components/_common/iframe/dot-loading-indicator/dot-loading-indicator.module';
 import { IframeOverlayService } from '@components/_common/iframe/service/iframe-overlay.service';
-import { DotContentletEditorModule } from '@components/dot-contentlet-editor/dot-contentlet-editor.module';
 import { DotCustomEventHandlerService } from '@dotcms/app/api/services/dot-custom-event-handler/dot-custom-event-handler.service';
 import { DotPaletteModule } from '@dotcms/app/portlets/dot-edit-page/components/dot-palette/dot-palette.module';
-import { DotEditPageService, DotPageRenderService, DotWorkflowService } from '@dotcms/data-access';
 import {
-    DotESContentService,
-    DotLicenseService,
-    DotSessionStorageService,
-    DotWorkflowActionsFireService
+    DotEditPageService, DotESContentService,
+    DotLicenseService, DotPageRenderService, DotSessionStorageService,
+    DotWorkflowActionsFireService, DotWorkflowService
 } from '@dotcms/data-access';
 import { DotIconModule } from '@dotcms/ui';
 import { DotPipesModule } from '@pipes/dot-pipes.module';

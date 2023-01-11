@@ -11,11 +11,9 @@ import { DotDeviceSelectorComponent } from '@components/dot-device-selector/dot-
 import { DotLanguageSelectorComponent } from '@components/dot-language-selector/dot-language-selector.component';
 import { DotPersonaSelectorComponent } from '@components/dot-persona-selector/dot-persona-selector.component';
 import { DOTTestBed } from '@dotcms/app/test/dot-test-bed';
-import { DotDevicesService, DotLanguagesService, DotPersonasService } from '@dotcms/data-access';
-import { DotLicenseService, DotMessageService, DotPersonalizeService } from '@dotcms/data-access';
+import { DotDevicesService, DotLanguagesService, DotLicenseService, DotMessageService, DotPersonalizeService, DotPersonasService } from '@dotcms/data-access';
 import { LoginService } from '@dotcms/dotcms-js';
-import { DotDevice, DotLanguage, DotPageRenderState, DotPersona } from '@dotcms/dotcms-models';
-import { DotPageRender } from '@dotcms/dotcms-models';
+import { DotDevice, DotLanguage, DotPageRender, DotPageRenderState, DotPersona } from '@dotcms/dotcms-models';
 import {
     DotDevicesServiceMock,
     DotLanguagesServiceMock,

@@ -5,12 +5,10 @@ import {
     ChangeDetectionStrategy,
     Component,
     EventEmitter,
-    Input,
-    OnDestroy,
+    Input, OnChanges, OnDestroy,
     OnInit,
-    Output
+    Output, SimpleChanges
 } from '@angular/core';
-import { OnChanges, SimpleChanges } from '@angular/core';
 import { FormBuilder, FormGroup } from '@angular/forms';
 
 import { catchError, take, takeUntil } from 'rxjs/operators';

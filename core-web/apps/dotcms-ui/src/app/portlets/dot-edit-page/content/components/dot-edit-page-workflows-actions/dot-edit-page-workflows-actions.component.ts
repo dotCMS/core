@@ -19,10 +19,8 @@ import { DotGlobalMessageService } from '@components/_common/dot-global-message/
 import { DotHttpErrorManagerService } from '@dotcms/app/api/services/dot-http-error-manager/dot-http-error-manager.service';
 import { DotWizardService } from '@dotcms/app/api/services/dot-wizard/dot-wizard.service';
 import { DotWorkflowEventHandlerService } from '@dotcms/app/api/services/dot-workflow-event-handler/dot-workflow-event-handler.service';
-import { DotWorkflowsActionsService } from '@dotcms/data-access';
-import { DotMessageService, DotWorkflowActionsFireService } from '@dotcms/data-access';
-import { DotCMSContentlet, DotCMSWorkflowAction, DotPage } from '@dotcms/dotcms-models';
-import { DotWorkflowPayload } from '@dotcms/dotcms-models';
+import { DotMessageService, DotWorkflowActionsFireService, DotWorkflowsActionsService } from '@dotcms/data-access';
+import { DotCMSContentlet, DotCMSWorkflowAction, DotPage, DotWorkflowPayload } from '@dotcms/dotcms-models';
 
 @Component({
     selector: 'dot-edit-page-workflows-actions',

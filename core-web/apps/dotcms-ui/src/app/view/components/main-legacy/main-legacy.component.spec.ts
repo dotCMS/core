@@ -8,10 +8,10 @@ import { RouterTestingModule } from '@angular/router/testing';
 
 import { ConfirmationService } from 'primeng/api';
 
+import { DotMessageDisplayService } from '@components/dot-message-display/services';
 import { DotDownloadBundleDialogModule } from '@components/_common/dot-download-bundle-dialog/dot-download-bundle-dialog.module';
 import { DotGlobalMessageService } from '@components/_common/dot-global-message/dot-global-message.service';
 import { DotWizardModule } from '@components/_common/dot-wizard/dot-wizard.module';
-import { DotMessageDisplayService } from '@components/dot-message-display/services';
 import { DotCustomEventHandlerService } from '@dotcms/app/api/services/dot-custom-event-handler/dot-custom-event-handler.service';
 import { DotFormatDateService } from '@dotcms/app/api/services/dot-format-date-service';
 import { DotHttpErrorManagerService } from '@dotcms/app/api/services/dot-http-error-manager/dot-http-error-manager.service';
@@ -43,8 +43,8 @@ import { CoreWebServiceMock, LoginServiceMock, MockDotRouterService } from '@dot
 
 import { MainComponentLegacyComponent } from './main-legacy.component';
 
-import { DotIframeService } from '../_common/iframe/service/dot-iframe/dot-iframe.service';
 import { DotContentletEditorModule } from '../dot-contentlet-editor/dot-contentlet-editor.module';
+import { DotIframeService } from '../_common/iframe/service/dot-iframe/dot-iframe.service';
 
 @Component({
     selector: 'dot-alert-confirm',

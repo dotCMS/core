@@ -8,8 +8,8 @@ import { DialogService } from 'primeng/dynamicdialog';
 import { ToolbarModule } from 'primeng/toolbar';
 import { TooltipModule } from 'primeng/tooltip';
 
-import { UiDotIconButtonModule } from '@components/_common/dot-icon-button/dot-icon-button.module';
 import { DotSecondaryToolbarModule } from '@components/dot-secondary-toolbar';
+import { UiDotIconButtonModule } from '@components/_common/dot-icon-button/dot-icon-button.module';
 import { DotGlobalMessageModule } from '@dotcms/app/view/components/_common/dot-global-message/dot-global-message.module';
 import { DotPropertiesService } from '@dotcms/data-access';
 import { DotIconModule } from '@dotcms/ui';

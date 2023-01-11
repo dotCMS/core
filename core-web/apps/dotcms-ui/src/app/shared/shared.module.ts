@@ -3,9 +3,9 @@ import { ModuleWithProviders, NgModule } from '@angular/core';
 
 
 // Common Modules
-import { DotDropdownModule } from '@components/_common/dot-dropdown-component/dot-dropdown.module';
 import { MainNavigationModule } from '@components/dot-navigation/dot-navigation.module';
 import { DotNavigationService } from '@components/dot-navigation/services/dot-navigation.service';
+import { DotDropdownModule } from '@components/_common/dot-dropdown-component/dot-dropdown.module';
 import { DotEventsService } from '@dotcms/data-access';
 import {
     ApiRoot,

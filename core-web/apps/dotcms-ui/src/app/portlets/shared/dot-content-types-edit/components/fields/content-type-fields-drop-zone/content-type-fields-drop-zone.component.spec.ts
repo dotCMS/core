@@ -25,12 +25,12 @@ import { CheckboxModule } from 'primeng/checkbox';
 import { TableModule } from 'primeng/table';
 import { TabViewModule } from 'primeng/tabview';
 
-import { DotActionButtonModule } from '@components/_common/dot-action-button/dot-action-button.module';
-import { DotFieldValidationMessageModule } from '@components/_common/dot-field-validation-message/dot-file-validation-message.module';
-import { UiDotIconButtonModule } from '@components/_common/dot-icon-button/dot-icon-button.module';
 import { DotDialogActions, DotDialogComponent } from '@components/dot-dialog/dot-dialog.component';
 import { DotDialogModule } from '@components/dot-dialog/dot-dialog.module';
 import { DotMessageDisplayService } from '@components/dot-message-display/services';
+import { DotActionButtonModule } from '@components/_common/dot-action-button/dot-action-button.module';
+import { DotFieldValidationMessageModule } from '@components/_common/dot-field-validation-message/dot-file-validation-message.module';
+import { UiDotIconButtonModule } from '@components/_common/dot-icon-button/dot-icon-button.module';
 import { DotFormatDateService } from '@dotcms/app/api/services/dot-format-date-service';
 import { DotEventsService, DotMessageService } from '@dotcms/data-access';
 
@@ -57,15 +57,14 @@ import { FieldPropertyService } from '../service/field-properties.service';
 import { FieldService } from '../service/field.service';
 import { FieldDragDropService } from '../service/index';
 
+import { DotHttpErrorManagerService } from '@dotcms/app/api/services/dot-http-error-manager/dot-http-error-manager.service';
+import { DotLoadingIndicatorService } from '@dotcms/utils';
 import {
-    dotcmsContentTypeBasicMock,
+    cleanUpDialog, CoreWebServiceMock, dotcmsContentTypeBasicMock,
     dotcmsContentTypeFieldBasicMock,
     fieldsBrokenWithColumns,
     fieldsWithBreakColumn
 } from '@dotcms/utils-testing';
-import { DotHttpErrorManagerService } from '@dotcms/app/api/services/dot-http-error-manager/dot-http-error-manager.service';
-import { DotLoadingIndicatorService } from '@dotcms/utils';
-import { cleanUpDialog, CoreWebServiceMock } from '@dotcms/utils-testing';
 import { DotMessagePipeModule } from '@pipes/dot-message/dot-message-pipe.module';
 
 

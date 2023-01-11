@@ -5,8 +5,7 @@ import { By } from '@angular/platform-browser';
 
 import { DotMessageService } from '@dotcms/data-access';
 import { DotPageRenderState } from '@dotcms/dotcms-models';
-import { mockDotRenderedPage, mockUser } from '@dotcms/utils-testing';
-import { MockDotMessageService } from '@dotcms/utils-testing';
+import { MockDotMessageService, mockDotRenderedPage, mockUser } from '@dotcms/utils-testing';
 import { DotPipesModule } from '@pipes/dot-pipes.module';
 
 import { DotEditPageLockInfoComponent } from './dot-edit-page-lock-info.component';

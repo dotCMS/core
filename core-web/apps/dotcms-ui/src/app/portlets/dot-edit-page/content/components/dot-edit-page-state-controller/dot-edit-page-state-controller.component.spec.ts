@@ -19,11 +19,10 @@ import {
 } from '@dotcms/data-access';
 import { DotPageMode, DotPageRender, DotPageRenderState } from '@dotcms/dotcms-models';
 import {
-    DotPageStateServiceMock,
+    dotcmsContentletMock, DotPageStateServiceMock,
     DotPersonalizeServiceMock,
-    MockDotMessageService
+    MockDotMessageService, mockDotRenderedPage, mockUser
 } from '@dotcms/utils-testing';
-import { dotcmsContentletMock, mockDotRenderedPage, mockUser } from '@dotcms/utils-testing';
 import { DotPipesModule } from '@pipes/dot-pipes.module';
 
 

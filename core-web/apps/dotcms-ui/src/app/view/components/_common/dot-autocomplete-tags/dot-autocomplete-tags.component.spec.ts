@@ -11,8 +11,7 @@ import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { AutoComplete, AutoCompleteModule } from 'primeng/autocomplete';
 import { ChipsModule } from 'primeng/chips';
 
-import { DotTagsService } from '@dotcms/data-access';
-import { DotMessageService } from '@dotcms/data-access';
+import { DotMessageService, DotTagsService } from '@dotcms/data-access';
 import { DotTag } from '@dotcms/dotcms-models';
 import { DotIconModule } from '@dotcms/ui';
 import { MockDotMessageService } from '@dotcms/utils-testing';

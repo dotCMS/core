@@ -23,8 +23,7 @@ import {
     UserModel
 } from '@dotcms/dotcms-js';
 import { CONTAINER_SOURCE, DotContainer } from '@dotcms/dotcms-models';
-import { MockDotMessageService } from '@dotcms/utils-testing';
-import { CoreWebServiceMock } from '@dotcms/utils-testing';
+import { CoreWebServiceMock, MockDotMessageService } from '@dotcms/utils-testing';
 import { DotPipesModule } from '@pipes/dot-pipes.module';
 
 import { DotContainerSelectorLayoutComponent } from './dot-container-selector-layout.component';

@@ -12,19 +12,16 @@ import { ConfirmationService } from 'primeng/api';
 
 import { DotHttpErrorManagerService } from '@dotcms/app/api/services/dot-http-error-manager/dot-http-error-manager.service';
 import { DotGlobalMessageService } from '@dotcms/app/view/components/_common/dot-global-message/dot-global-message.service';
-import { DotAlertConfirmService, DotLicenseService, DotMessageService } from '@dotcms/data-access';
-import { DotEventsService, DotWorkflowActionsFireService } from '@dotcms/data-access';
+import { DotAlertConfirmService, DotEventsService, DotLicenseService, DotMessageService, DotWorkflowActionsFireService } from '@dotcms/data-access';
 import { CoreWebService, HttpCode, LoggerService, StringUtils } from '@dotcms/dotcms-js';
-import { DotCMSContentType, DotPageRenderState } from '@dotcms/dotcms-models';
-import { DotPageContainer, DotPageRender } from '@dotcms/dotcms-models';
+import { DotCMSContentType, DotPageContainer, DotPageRender, DotPageRenderState } from '@dotcms/dotcms-models';
 import {
-    mockDotLayout,
+    CoreWebServiceMock, dotcmsContentTypeBasicMock, mockDotLayout,
     MockDotMessageService,
     mockDotPage,
     mockDotRenderedPage,
-    mockResponseView
+    mockResponseView, mockUser
 } from '@dotcms/utils-testing';
-import { CoreWebServiceMock, dotcmsContentTypeBasicMock, mockUser } from '@dotcms/utils-testing';
 import { DotPageContent } from '@portlets/dot-edit-page/shared/models';
 
 import {

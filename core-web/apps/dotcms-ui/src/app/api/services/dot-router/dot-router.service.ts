@@ -4,10 +4,8 @@ import { Injectable } from '@angular/core';
 import {
     ActivatedRoute,
     Event,
-    NavigationEnd,
-    Params,
-    Router,
-    NavigationExtras
+    NavigationEnd, NavigationExtras, Params,
+    Router
 } from '@angular/router';
 
 import { filter } from 'rxjs/operators';

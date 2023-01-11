@@ -11,19 +11,16 @@ import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { DataViewModule } from 'primeng/dataview';
 
 import { DotDialogModule } from '@components/dot-dialog/dot-dialog.module';
-import { PaginatorService } from '@dotcms/data-access';
-import { DotMessageService, DotThemesService } from '@dotcms/data-access';
-import { DotEventsService } from '@dotcms/data-access';
+import { DotEventsService, DotMessageService, DotThemesService, PaginatorService } from '@dotcms/data-access';
 import { CoreWebService, Site, SiteService } from '@dotcms/dotcms-js';
 import { DotIconModule } from '@dotcms/ui';
 import {
-    DotThemesServiceMock,
+    CoreWebServiceMock, DotThemesServiceMock,
     MockDotMessageService,
     mockDotThemes,
     mockSites,
     SiteServiceMock
 } from '@dotcms/utils-testing';
-import { CoreWebServiceMock } from '@dotcms/utils-testing';
 import { DotMessagePipeModule } from '@pipes/dot-message/dot-message-pipe.module';
 
 import { DotThemeSelectorComponent } from './dot-theme-selector.component';

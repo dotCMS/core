@@ -12,8 +12,7 @@ import {
     DotHttpErrorManagerService
 } from '@dotcms/app/api/services/dot-http-error-manager/dot-http-error-manager.service';
 import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
-import { DotContentletLockerService, DotPageRenderService } from '@dotcms/data-access';
-import { DotESContentService } from '@dotcms/data-access';
+import { DotContentletLockerService, DotESContentService, DotPageRenderService } from '@dotcms/data-access';
 import { HttpCode, LoginService, User } from '@dotcms/dotcms-js';
 import {
     DotCMSContentlet,

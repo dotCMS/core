@@ -2,6 +2,14 @@
 
 
 
+import { DotContentCompareModule } from '@components/dot-content-compare/dot-content-compare.module';
+import { DotDialogModule } from '@components/dot-dialog/dot-dialog.module';
+import { DotMessageDisplayModule } from '@components/dot-message-display/dot-message-display.module';
+import { DotToolbarModule } from '@components/dot-toolbar/dot-toolbar.module';
+import { DotDownloadBundleDialogModule } from '@components/_common/dot-download-bundle-dialog/dot-download-bundle-dialog.module';
+import { DotPushPublishDialogModule } from '@components/_common/dot-push-publish-dialog';
+import { DotWizardModule } from '@components/_common/dot-wizard/dot-wizard.module';
+import { DotIconModule } from '@dotcms/ui';
 import { SharedModule } from 'primeng/api';
 import { AutoCompleteModule } from 'primeng/autocomplete';
 import { BreadcrumbModule } from 'primeng/breadcrumb';
@@ -22,15 +30,11 @@ import { TableModule } from 'primeng/table';
 import { TabViewModule } from 'primeng/tabview';
 import { ToolbarModule } from 'primeng/toolbar';
 import { TreeTableModule } from 'primeng/treetable';
-import { DotDownloadBundleDialogModule } from '@components/_common/dot-download-bundle-dialog/dot-download-bundle-dialog.module';
-import { DotPushPublishDialogModule } from '@components/_common/dot-push-publish-dialog';
-import { DotWizardModule } from '@components/_common/dot-wizard/dot-wizard.module';
-import { DotContentCompareModule } from '@components/dot-content-compare/dot-content-compare.module';
-import { DotDialogModule } from '@components/dot-dialog/dot-dialog.module';
-import { DotMessageDisplayModule } from '@components/dot-message-display/dot-message-display.module';
-import { DotToolbarModule } from '@components/dot-toolbar/dot-toolbar.module';
-import { DotIconModule } from '@dotcms/ui';
 
+import { DotContentletEditorModule } from './view/components/dot-contentlet-editor/dot-contentlet-editor.module';
+import { DotLargeMessageDisplayModule } from './view/components/dot-large-message-display/dot-large-message-display.module';
+import { DotListingDataTableModule } from './view/components/dot-listing-data-table/dot-listing-data-table.module';
+import { DotWorkflowTaskDetailModule } from './view/components/dot-workflow-task-detail/dot-workflow-task-detail.module';
 import { DotActionButtonModule } from './view/components/_common/dot-action-button/dot-action-button.module';
 import { DotFieldValidationMessageModule } from './view/components/_common/dot-field-validation-message/dot-file-validation-message.module';
 import { DotGenerateSecurePasswordModule } from './view/components/_common/dot-generate-secure-password/dot-generate-secure-password.module';
@@ -39,10 +43,6 @@ import { DotSiteSelectorModule } from './view/components/_common/dot-site-select
 import { DotTextareaContentModule } from './view/components/_common/dot-textarea-content/dot-textarea-content.module';
 import { IFrameModule } from './view/components/_common/iframe';
 import { SearchableDropDownModule } from './view/components/_common/searchable-dropdown';
-import { DotContentletEditorModule } from './view/components/dot-contentlet-editor/dot-contentlet-editor.module';
-import { DotLargeMessageDisplayModule } from './view/components/dot-large-message-display/dot-large-message-display.module';
-import { DotListingDataTableModule } from './view/components/dot-listing-data-table/dot-listing-data-table.module';
-import { DotWorkflowTaskDetailModule } from './view/components/dot-workflow-task-detail/dot-workflow-task-detail.module';
 
 export const CUSTOM_MODULES = [
     DotToolbarModule,

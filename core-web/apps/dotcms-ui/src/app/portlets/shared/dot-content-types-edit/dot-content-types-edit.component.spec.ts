@@ -15,13 +15,12 @@ import { RouterTestingModule } from '@angular/router/testing';
 
 import { ConfirmationService, MenuItem } from 'primeng/api';
 
-import { UiDotIconButtonModule } from '@components/_common/dot-icon-button/dot-icon-button.module';
 import { DotDialogModule } from '@components/dot-dialog/dot-dialog.module';
+import { UiDotIconButtonModule } from '@components/_common/dot-icon-button/dot-icon-button.module';
 import { DotHttpErrorManagerService } from '@dotcms/app/api/services/dot-http-error-manager/dot-http-error-manager.service';
 import { DotMenuService } from '@dotcms/app/api/services/dot-menu.service';
 import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
-import { DotContentTypesInfoService, DotCrudService, DotMessageService } from '@dotcms/data-access';
-import { DotAlertConfirmService, DotEventsService } from '@dotcms/data-access';
+import { DotAlertConfirmService, DotContentTypesInfoService, DotCrudService, DotEventsService, DotMessageService } from '@dotcms/data-access';
 import { CoreWebService, LoginService, SiteService } from '@dotcms/dotcms-js';
 import {
     DotCMSContentType,
@@ -30,18 +29,12 @@ import {
 } from '@dotcms/dotcms-models';
 import { DotIconModule } from '@dotcms/ui';
 import {
-    LoginServiceMock,
-    MockDotMessageService,
-    mockResponseView,
+    cleanUpDialog, CoreWebServiceMock,
+    dotcmsContentTypeBasicMock,
+    dotcmsContentTypeFieldBasicMock, LoginServiceMock,
+    MockDotMessageService, MockDotRouterService, mockResponseView,
     SiteServiceMock
 } from '@dotcms/utils-testing';
-import {
-    CoreWebServiceMock,
-    dotcmsContentTypeBasicMock,
-    dotcmsContentTypeFieldBasicMock,
-    MockDotRouterService
-} from '@dotcms/utils-testing';
-import { cleanUpDialog } from '@dotcms/utils-testing';
 
 import { DotEditContentTypeCacheService } from './components/fields/content-type-fields-properties-form/field-properties/dot-relationships-property/services/dot-edit-content-type-cache.service';
 import { FieldService } from './components/fields/service';

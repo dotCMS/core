@@ -6,12 +6,12 @@ import { SharedModule } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
 import { TooltipModule } from 'primeng/tooltip';
 
-import { DotAvatarModule } from '@components/_common/dot-avatar/dot-avatar.module';
-import { IframeOverlayService } from '@components/_common/iframe/service/iframe-overlay.service';
-import { SearchableDropDownModule } from '@components/_common/searchable-dropdown';
 import { DotAddPersonaDialogModule } from '@components/dot-add-persona-dialog/dot-add-persona-dialog.module';
 import { DotPersonaSelectedItemModule } from '@components/dot-persona-selected-item/dot-persona-selected-item.module';
 import { DotPersonaSelectorOptionModule } from '@components/dot-persona-selector-option/dot-persona-selector-option.module';
+import { DotAvatarModule } from '@components/_common/dot-avatar/dot-avatar.module';
+import { IframeOverlayService } from '@components/_common/iframe/service/iframe-overlay.service';
+import { SearchableDropDownModule } from '@components/_common/searchable-dropdown';
 import { DotPersonalizeService, DotPersonasService, PaginatorService } from '@dotcms/data-access';
 import { DotIconModule } from '@dotcms/ui';
 import { DotPipesModule } from '@pipes/dot-pipes.module';

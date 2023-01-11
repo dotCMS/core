@@ -23,8 +23,8 @@ import { DialogService, DynamicDialogConfig, DynamicDialogRef } from 'primeng/dy
 
 
 
-import { DotGlobalMessageService } from '@components/_common/dot-global-message/dot-global-message.service';
 import { DotMessageDisplayService } from '@components/dot-message-display/services';
+import { DotGlobalMessageService } from '@components/_common/dot-global-message/dot-global-message.service';
 import { DotHttpErrorManagerService } from '@dotcms/app/api/services/dot-http-error-manager/dot-http-error-manager.service';
 import { ActivatedRouteMock } from '@dotcms/app/portlets/dot-experiments/test/mocks';
 import { dotEventSocketURLFactory } from '@dotcms/app/test/dot-test-bed';

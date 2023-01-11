@@ -6,9 +6,9 @@ import { CalendarModule } from 'primeng/calendar';
 import { DropdownModule } from 'primeng/dropdown';
 import { SelectButtonModule } from 'primeng/selectbutton';
 
+import { DotDialogModule } from '@components/dot-dialog/dot-dialog.module';
 import { DotPushPublishDialogComponent } from '@components/_common/dot-push-publish-dialog/dot-push-publish-dialog.component';
 import { DotPushPublishFormModule } from '@components/_common/forms/dot-push-publish-form/dot-push-publish-form.module';
-import { DotDialogModule } from '@components/dot-dialog/dot-dialog.module';
 import { DotPushPublishFiltersService } from '@dotcms/data-access';
 import { DotPipesModule } from '@pipes/dot-pipes.module';
 

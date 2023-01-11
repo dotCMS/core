@@ -12,9 +12,8 @@ import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router
 import { DotMessageService } from '@dotcms/data-access';
 import { CoreWebService } from '@dotcms/dotcms-js';
 import { DotApps } from '@dotcms/dotcms-models';
-import { CoreWebServiceMock } from '@dotcms/utils-testing';
 import {
-    MockDotMessageService,
+    CoreWebServiceMock, MockDotMessageService,
     MockDotNotLicensedComponent,
     MockDotRouterService
 } from '@dotcms/utils-testing';

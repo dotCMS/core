@@ -4,8 +4,8 @@ import { FormsModule } from '@angular/forms';
 
 import { ButtonModule } from 'primeng/button';
 
-import { DotActionButtonModule } from '@components/_common/dot-action-button/dot-action-button.module';
 import { DotContainerSelectorLayoutModule } from '@components/dot-container-selector-layout/dot-container-selector-layout.module';
+import { DotActionButtonModule } from '@components/_common/dot-action-button/dot-action-button.module';
 import { DotPipesModule } from '@pipes/dot-pipes.module';
 
 

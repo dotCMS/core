@@ -2,12 +2,12 @@ import { Component, EventEmitter, Input, OnInit, Output, ViewChild } from '@angu
 
 import { delay, take } from 'rxjs/operators';
 
+import { DotAddPersonaDialogComponent } from '@components/dot-add-persona-dialog/dot-add-persona-dialog.component';
 import { IframeOverlayService } from '@components/_common/iframe/service/iframe-overlay.service';
 import {
     PaginationEvent,
     SearchableDropdownComponent
 } from '@components/_common/searchable-dropdown/component';
-import { DotAddPersonaDialogComponent } from '@components/dot-add-persona-dialog/dot-add-persona-dialog.component';
 import { PaginatorService } from '@dotcms/data-access';
 import { DotPageMode, DotPageRenderState, DotPersona } from '@dotcms/dotcms-models';
 

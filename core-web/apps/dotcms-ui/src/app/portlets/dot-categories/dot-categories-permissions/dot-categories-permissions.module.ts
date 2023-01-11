@@ -1,8 +1,8 @@
 import { CommonModule } from '@angular/common';
 import { NgModule } from '@angular/core';
 
-import { IFrameModule } from '@components/_common/iframe';
 import { DotPortletBaseModule } from '@components/dot-portlet-base/dot-portlet-base.module';
+import { IFrameModule } from '@components/_common/iframe';
 
 import { DotCategoriesPermissionsComponent } from './dot-categories-permissions.component';
 
