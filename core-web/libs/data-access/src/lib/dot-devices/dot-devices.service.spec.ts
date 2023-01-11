@@ -1,9 +1,11 @@
-import { DotDevicesService } from './dot-devices.service';
-import { TestBed, getTestBed } from '@angular/core/testing';
 import { HttpTestingController, HttpClientTestingModule } from '@angular/common/http/testing';
+import { TestBed, getTestBed } from '@angular/core/testing';
+
 import { CoreWebService } from '@dotcms/dotcms-js';
-import { CoreWebServiceMock, mockDotDevices } from '@dotcms/utils-testing';
 import { DotDevice } from '@dotcms/dotcms-models';
+import { CoreWebServiceMock, mockDotDevices } from '@dotcms/utils-testing';
+
+import { DotDevicesService } from './dot-devices.service';
 
 describe('DotDevicesService', () => {
     let injector: TestBed;

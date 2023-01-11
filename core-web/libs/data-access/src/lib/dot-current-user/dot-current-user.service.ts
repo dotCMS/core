@@ -1,16 +1,17 @@
-import { Injectable } from '@angular/core';
-import { CoreWebService } from '@dotcms/dotcms-js';
 import { Observable } from 'rxjs';
+
+import { Injectable } from '@angular/core';
 
 import { map, pluck, take } from 'rxjs/operators';
 
-import { formatMessage } from '@dotcms/utils';
+import { CoreWebService } from '@dotcms/dotcms-js';
 import {
     DotCurrentUser,
     UserPermissions,
     PermissionsType,
     DotPermissionsType
 } from '@dotcms/dotcms-models';
+import { formatMessage } from '@dotcms/utils';
 @Injectable()
 export class DotCurrentUserService {
     private currentUsersUrl = 'v1/users/current/';

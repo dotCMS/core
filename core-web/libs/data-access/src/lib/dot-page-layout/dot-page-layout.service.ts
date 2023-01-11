@@ -1,12 +1,12 @@
+import { Observable } from 'rxjs';
+
 import { Injectable } from '@angular/core';
 
-import { Observable } from 'rxjs';
 import { pluck, map } from 'rxjs/operators';
 
-import { CoreWebService, DotRequestOptionsArgs } from '@dotcms/dotcms-js';
-
-import { DotLayout, DotPageRender, DotPageRenderParameters } from '@dotcms/dotcms-models';
 import { DotSessionStorageService } from '@dotcms/data-access';
+import { CoreWebService, DotRequestOptionsArgs } from '@dotcms/dotcms-js';
+import { DotLayout, DotPageRender, DotPageRenderParameters } from '@dotcms/dotcms-models';
 
 /**
  * Provide util methods interact with layout API
