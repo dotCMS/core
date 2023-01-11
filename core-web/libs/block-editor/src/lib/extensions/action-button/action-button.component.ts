@@ -5,4 +5,10 @@ import { Component } from '@angular/core';
     templateUrl: './action-button.component.html',
     styleUrls: ['./action-button.component.scss']
 })
-export class ActionButtonComponent {}
+export class ActionButtonComponent {
+    letsGo() {
+        return;
+
+        return;
+    }
+}
