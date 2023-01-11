@@ -1,14 +1,13 @@
 import { Observable, of } from 'rxjs';
 
+import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { Injectable } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 
 import { mockDotCMSTempFile } from '@components/dot-add-persona-dialog/dot-create-persona-form/dot-create-persona-form.component.spec';
-
 import { DotHttpErrorManagerService } from '@dotcms/app/api/services/dot-http-error-manager/dot-http-error-manager.service';
 import { DotTempFileUploadService } from '@dotcms/app/api/services/dot-temp-file-upload/dot-temp-file-upload.service';
 import { CurrentUserDataMock } from '@dotcms/app/portlets/dot-starter/dot-starter-resolver.service.spec';
-
 import { MockDotHttpErrorManagerService } from '@dotcms/app/test/dot-http-error-manager.service.mock';
 import {
     DotContentletService,
@@ -18,6 +17,7 @@ import {
     DotRolesService,
     DotWorkflowActionsFireService
 } from '@dotcms/data-access';
+import { CoreWebService } from '@dotcms/dotcms-js';
 import { DotCurrentUser, DotRole } from '@dotcms/dotcms-models';
 import {
     CoreWebServiceMock,
@@ -28,8 +28,6 @@ import {
 } from '@dotcms/utils-testing';
 
 import { DotFavoritePageActionState, DotFavoritePageStore } from './dot-favorite-page.store';
-import { CoreWebService } from '@dotcms/dotcms-js';
-import { HttpClientTestingModule } from '@angular/common/http/testing';
 
 @Injectable()
 class MockDotRolesService {

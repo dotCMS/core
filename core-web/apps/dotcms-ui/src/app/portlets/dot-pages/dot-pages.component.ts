@@ -1,11 +1,16 @@
 import { Component } from '@angular/core';
+
+import { DialogService } from 'primeng/dynamicdialog';
+
+import { Observable } from 'rxjs/internal/Observable';
+
 import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
 import { DotMessageService } from '@dotcms/data-access';
 import { DotCMSContentlet } from '@dotcms/dotcms-models';
-import { DialogService } from 'primeng/dynamicdialog';
-import { Observable } from 'rxjs/internal/Observable';
-import { DotFavoritePageComponent } from '../dot-edit-page/components/dot-favorite-page/dot-favorite-page.component';
+
 import { DotPagesState, DotPageStore } from './dot-pages-store/dot-pages.store';
+
+import { DotFavoritePageComponent } from '../dot-edit-page/components/dot-favorite-page/dot-favorite-page.component';
 
 @Component({
     selector: 'dot-pages',

@@ -1,5 +1,11 @@
+import { ComponentStore, tapResponse } from '@ngrx/component-store';
+import { Observable, throwError, of, forkJoin } from 'rxjs';
+
 import { HttpErrorResponse } from '@angular/common/http';
 import { Injectable } from '@angular/core';
+
+import { switchMap, take } from 'rxjs/operators';
+
 import { DotHttpErrorManagerService } from '@dotcms/app/api/services/dot-http-error-manager/dot-http-error-manager.service';
 import { DotTempFileUploadService } from '@dotcms/app/api/services/dot-temp-file-upload/dot-temp-file-upload.service';
 import {
@@ -18,9 +24,7 @@ import {
     DotPageRenderParameters,
     DotContentletPermissions
 } from '@dotcms/dotcms-models';
-import { ComponentStore, tapResponse } from '@ngrx/component-store';
-import { Observable, throwError, of, forkJoin } from 'rxjs';
-import { switchMap, take } from 'rxjs/operators';
+
 import { DotFavoritePageFormData } from '../dot-favorite-page.component';
 
 export const enum DotFavoritePageActionState {

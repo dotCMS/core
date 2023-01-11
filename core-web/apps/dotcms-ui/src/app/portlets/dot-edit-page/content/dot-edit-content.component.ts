@@ -1,6 +1,7 @@
-import { Observable, Subject, fromEvent, merge, of } from 'rxjs';
+import { fromEvent, merge, Observable, of, Subject } from 'rxjs';
 
-import { Component, OnInit, ViewChild, ElementRef, NgZone, OnDestroy } from '@angular/core';
+import { HttpErrorResponse } from '@angular/common/http';
+import { Component, ElementRef, NgZone, OnDestroy, OnInit, ViewChild } from '@angular/core';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { ActivatedRoute, Router } from '@angular/router';
 
@@ -11,6 +12,10 @@ import { catchError, filter, map, pluck, skip, take, takeUntil, tap } from 'rxjs
 import { DotGlobalMessageService } from '@components/_common/dot-global-message/dot-global-message.service';
 import { IframeOverlayService } from '@components/_common/iframe/service/iframe-overlay.service';
 import { DotContentletEditorService } from '@components/dot-contentlet-editor/services/dot-contentlet-editor.service';
+import { DotCustomEventHandlerService } from '@dotcms/app/api/services/dot-custom-event-handler/dot-custom-event-handler.service';
+import { DotHttpErrorManagerService } from '@dotcms/app/api/services/dot-http-error-manager/dot-http-error-manager.service';
+import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
+import { DotUiColorsService } from '@dotcms/app/api/services/dot-ui-colors/dot-ui-colors.service';
 import {
     DotAlertConfirmService,
     DotEditPageService,
@@ -27,6 +32,7 @@ import {
     DotCMSContentType,
     DotContainerStructure,
     DotExperiment,
+    DotIframeEditEvent,
     DotPageContainer,
     DotPageContainerPersonalized,
     DotPageMode,
@@ -35,25 +41,18 @@ import {
     DotVariantData,
     ESContent
 } from '@dotcms/dotcms-models';
+import { DotLoadingIndicatorService, generateDotFavoritePageUrl } from '@dotcms/utils';
 
 import { DotEditContentHtmlService } from './services/dot-edit-content-html/dot-edit-content-html.service';
-
-import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
-
 import {
     PageModelChangeEvent,
     PageModelChangeEventType
 } from './services/dot-edit-content-html/models';
-import { DotCustomEventHandlerService } from '@dotcms/app/api/services/dot-custom-event-handler/dot-custom-event-handler.service';
-import { DotHttpErrorManagerService } from '@dotcms/app/api/services/dot-http-error-manager/dot-http-error-manager.service';
-import { HttpErrorResponse } from '@angular/common/http';
 import { DotContentletEventAddContentType } from './services/dot-edit-content-html/models/dot-contentlets-events.model';
-import { DotIframeEditEvent } from '@dotcms/dotcms-models';
-import { DotFavoritePageComponent } from '../components/dot-favorite-page/dot-favorite-page.component';
-import { DotUiColorsService } from '@dotcms/app/api/services/dot-ui-colors/dot-ui-colors.service';
-import { DotLoadingIndicatorService, generateDotFavoritePageUrl } from '@dotcms/utils';
-import { DotPageContent } from '../shared/models';
 import { DotPageStateService } from './services/dot-page-state/dot-page-state.service';
+
+import { DotFavoritePageComponent } from '../components/dot-favorite-page/dot-favorite-page.component';
+import { DotPageContent } from '../shared/models';
 
 export const EDIT_BLOCK_EDITOR_CUSTOM_EVENT = 'edit-block-editor';
 

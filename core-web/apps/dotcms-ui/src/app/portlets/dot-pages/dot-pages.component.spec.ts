@@ -7,6 +7,7 @@ import { By } from '@angular/platform-browser';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 
 import { ButtonModule } from 'primeng/button';
+import { DialogService } from 'primeng/dynamicdialog';
 import { PanelModule } from 'primeng/panel';
 import { TabViewModule } from 'primeng/tabview';
 
@@ -23,7 +24,6 @@ import {
 } from '@dotcms/utils-testing';
 
 import { DotPagesCardEmptyModule } from './dot-pages-card-empty/dot-pages-card-empty.module';
-import { DialogService } from 'primeng/dynamicdialog';
 import { DotPagesCardModule } from './dot-pages-card/dot-pages-card.module';
 import { DotPageStore } from './dot-pages-store/dot-pages.store';
 import { DotPagesComponent } from './dot-pages.component';
