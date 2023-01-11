@@ -10,7 +10,7 @@ export class DotUiColorsService {
     private readonly COL_MAIN_LIGHTEN_VAL = 12;
 
     /**
-     * Set css variables colors
+     * Set CSS variables colors
      *
      * @param DotUiColors colors
      * @memberof DotUiColorsService
