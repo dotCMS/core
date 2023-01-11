@@ -2414,7 +2414,7 @@
 					"response": []
 				},
 				{
-					"name": "Create ContentType From Invalid folder in Path Expect System-Folder Fall Back",
+					"name": "Create ContentType From Invalid folder path - Expect  default site  and System-Folder",
 					"event": [
 						{
 							"listen": "test",
@@ -2425,9 +2425,9 @@
 									"pm.test(\"Status code should be 200\", function() {",
 									"    pm.response.to.have.status(200);",
 									"    let folder = pm.collectionVariables.get(\"folder\");",
-									"    pm.expect(contentType.folderPath).to.eql(\"/\");",
-									"    pm.expect(contentType.folder).to.eql(\"SYSTEM_FOLDER\");",
-									"    pm.expect(contentType.host).to.eql(folder.hostId);",
+									"    pm.expect(\"/\").to.eql(contentType.folderPath);",
+									"    pm.expect(\"SYSTEM_FOLDER\").to.eql(contentType.folder);",
+									"    pm.expect(folder.hostId).to.eql(contentType.host);",
 									"})",
 									""
 								],
@@ -2482,7 +2482,7 @@
 								"contenttype"
 							]
 						},
-						"description": "Creates a simple contentType, that uses the folderPath property to set the location"
+						"description": "Creates a simple contentType, that uses the folderPath property to set the location.Here We pass an invalid folderPath and the resulting CT should comeback under the default site"
 					},
 					"response": []
 				},
