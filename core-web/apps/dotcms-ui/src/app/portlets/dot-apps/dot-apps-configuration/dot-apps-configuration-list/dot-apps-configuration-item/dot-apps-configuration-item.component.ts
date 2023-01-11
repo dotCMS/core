@@ -1,7 +1,6 @@
-import { Component, Input, Output, EventEmitter, HostListener } from '@angular/core';
-import { DotAlertConfirmService } from '@dotcms/data-access';
+import { Component, EventEmitter, HostListener, Input, Output } from '@angular/core';
 
-import { DotMessageService } from '@dotcms/data-access';
+import { DotAlertConfirmService, DotMessageService } from '@dotcms/data-access';
 import { DotAppsSites } from '@dotcms/dotcms-models';
 
 @Component({

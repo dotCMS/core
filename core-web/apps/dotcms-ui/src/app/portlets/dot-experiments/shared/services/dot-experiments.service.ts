@@ -1,9 +1,12 @@
-import { Injectable } from '@angular/core';
-import { DotExperiment, Variant } from '@dotcms/dotcms-models';
-import { HttpClient } from '@angular/common/http';
-import { pluck } from 'rxjs/operators';
-import { DotCMSResponse } from '@dotcms/dotcms-js';
 import { Observable } from 'rxjs';
+
+import { HttpClient } from '@angular/common/http';
+import { Injectable } from '@angular/core';
+
+import { pluck } from 'rxjs/operators';
+
+import { DotCMSResponse } from '@dotcms/dotcms-js';
+import { DotExperiment, Variant } from '@dotcms/dotcms-models';
 
 const API_ENDPOINT = '/api/v1/experiments';
 

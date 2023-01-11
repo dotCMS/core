@@ -1,29 +1,29 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { DotCMSContentType } from '@dotcms/dotcms-models';
-import { DotNewRelationshipsComponent } from './dot-new-relationships.component';
-import { ComponentFixture, waitForAsync } from '@angular/core/testing';
-import {
-    DebugElement,
-    Component,
-    Input,
-    Output,
-    EventEmitter,
-    Injectable,
-    forwardRef
-} from '@angular/core';
-import { PaginatorService } from '@dotcms/data-access';
-import { MockDotMessageService } from '@dotcms/utils-testing';
-import { DOTTestBed } from '@dotcms/app/test/dot-test-bed';
-import { PaginationEvent } from '@components/_common/searchable-dropdown/component';
-import { DotMessageService } from '@dotcms/data-access';
-import { DotRelationshipService } from '@portlets/shared/dot-content-types-edit/components/fields/content-type-fields-properties-form/field-properties/dot-relationships-property/services/dot-relationship.service';
-import { DotContentTypeService } from '@dotcms/data-access';
-import { By } from '@angular/platform-browser';
 import { Observable, of } from 'rxjs';
-import { DotRelationshipCardinality } from '@portlets/shared/dot-content-types-edit/components/fields/content-type-fields-properties-form/field-properties/dot-relationships-property/model/dot-relationship-cardinality.model';
+
+import {
+    Component,
+    DebugElement,
+    EventEmitter,
+    forwardRef,
+    Injectable,
+    Input,
+    Output
+} from '@angular/core';
+import { ComponentFixture, waitForAsync } from '@angular/core/testing';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
-import { dotcmsContentTypeBasicMock } from '@dotcms/utils-testing';
+import { By } from '@angular/platform-browser';
+
+import { PaginationEvent } from '@components/_common/searchable-dropdown/component';
+import { DOTTestBed } from '@dotcms/app/test/dot-test-bed';
+import { DotContentTypeService, DotMessageService, PaginatorService } from '@dotcms/data-access';
+import { DotCMSContentType } from '@dotcms/dotcms-models';
+import { dotcmsContentTypeBasicMock, MockDotMessageService } from '@dotcms/utils-testing';
+import { DotRelationshipCardinality } from '@portlets/shared/dot-content-types-edit/components/fields/content-type-fields-properties-form/field-properties/dot-relationships-property/model/dot-relationship-cardinality.model';
+import { DotRelationshipService } from '@portlets/shared/dot-content-types-edit/components/fields/content-type-fields-properties-form/field-properties/dot-relationships-property/services/dot-relationship.service';
+
+import { DotNewRelationshipsComponent } from './dot-new-relationships.component';
 
 const cardinalities = [
     {

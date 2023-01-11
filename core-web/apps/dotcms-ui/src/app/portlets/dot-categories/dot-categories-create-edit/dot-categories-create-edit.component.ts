@@ -1,5 +1,7 @@
 import { Component } from '@angular/core';
+
 import { MenuItem } from 'primeng/api';
+
 import { DotCategoriesCreateEditStore } from './store/dot-categories-create-edit.store';
 @Component({
     selector: 'dot-categories-create-edit-list',

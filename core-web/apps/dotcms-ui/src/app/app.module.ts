@@ -1,24 +1,23 @@
-import { CommonModule } from '@angular/common';
-import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
-import { BrowserModule } from '@angular/platform-browser';
-import { FormsModule, ReactiveFormsModule } from '@angular/forms';
-import { CUSTOM_ELEMENTS_SCHEMA, NgModule } from '@angular/core';
-import { HttpClientModule } from '@angular/common/http';
-
-// App is our top level component
-import { AppComponent } from './app.component';
-import { AppRoutingModule } from './app-routing.module';
-
-// Custom Components
-import { COMPONENTS } from './components';
-import { ENV_PROVIDERS } from './providers';
-import { CUSTOM_MODULES, NGFACES_MODULES } from './modules';
-import { SharedModule } from './shared/shared.module';
-
-import { DotDirectivesModule } from './shared/dot-directives.module';
-import { DotPipesModule } from '@pipes/dot-pipes.module';
 import { MonacoEditorModule } from '@materia-ui/ngx-monaco-editor';
 import { MarkdownModule } from 'ngx-markdown';
+
+import { CommonModule } from '@angular/common';
+import { HttpClientModule } from '@angular/common/http';
+import { CUSTOM_ELEMENTS_SCHEMA, NgModule } from '@angular/core';
+import { FormsModule, ReactiveFormsModule } from '@angular/forms';
+import { BrowserModule } from '@angular/platform-browser';
+import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
+
+// App is our top level component
+import { DotPipesModule } from '@pipes/dot-pipes.module';
+
+import { AppRoutingModule } from './app-routing.module';
+import { AppComponent } from './app.component';
+import { COMPONENTS } from './components';
+import { CUSTOM_MODULES, NGFACES_MODULES } from './modules';
+import { ENV_PROVIDERS } from './providers';
+import { DotDirectivesModule } from './shared/dot-directives.module';
+import { SharedModule } from './shared/shared.module';
 
 @NgModule({
     bootstrap: [AppComponent],

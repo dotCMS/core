@@ -1,3 +1,5 @@
+import { fromEvent, Subject } from 'rxjs';
+
 import {
     AfterViewInit,
     Component,
@@ -8,15 +10,16 @@ import {
     ViewChild
 } from '@angular/core';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
+
+import { LazyLoadEvent } from 'primeng/api';
+
+import { debounceTime, filter, take, takeUntil, tap } from 'rxjs/operators';
+
 import { DotSiteSelectorComponent } from '@components/_common/dot-site-selector/dot-site-selector.component';
 import { SearchableDropdownComponent } from '@components/_common/searchable-dropdown/component';
-import { DotTheme } from '@dotcms/dotcms-models';
-import { DotThemesService } from '@dotcms/data-access';
-import { PaginatorService } from '@dotcms/data-access';
+import { DotThemesService, PaginatorService } from '@dotcms/data-access';
 import { Site, SiteService } from '@dotcms/dotcms-js';
-import { LazyLoadEvent } from 'primeng/api';
-import { fromEvent, Subject } from 'rxjs';
-import { debounceTime, filter, take, takeUntil, tap } from 'rxjs/operators';
+import { DotTheme } from '@dotcms/dotcms-models';
 
 @Component({
     selector: 'dot-theme-selector-dropdown',

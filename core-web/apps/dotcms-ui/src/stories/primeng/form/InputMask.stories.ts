@@ -1,7 +1,9 @@
-import { Story, Meta } from '@storybook/angular/types-6-0';
-import { InputMaskModule, InputMask } from 'primeng/inputmask';
 import { moduleMetadata } from '@storybook/angular';
+import { Meta, Story } from '@storybook/angular/types-6-0';
+
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
+
+import { InputMask, InputMaskModule } from 'primeng/inputmask';
 
 export default {
     title: 'PrimeNG/Form/InputText/InputMask',

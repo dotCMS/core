@@ -1,8 +1,11 @@
-import { DotSidebarHeaderComponent } from './dot-sidebar-header.component';
-import { Sidebar } from 'primeng/sidebar';
 import { byTestId, createComponentFactory, Spectator } from '@ngneat/spectator';
-import { UiDotIconButtonModule } from '@components/_common/dot-icon-button/dot-icon-button.module';
+
+import { Sidebar } from 'primeng/sidebar';
+
 import { UiDotIconButtonComponent } from '@components/_common/dot-icon-button/dot-icon-button.component';
+import { UiDotIconButtonModule } from '@components/_common/dot-icon-button/dot-icon-button.module';
+
+import { DotSidebarHeaderComponent } from './dot-sidebar-header.component';
 
 describe('DotSidebarHeaderComponent', () => {
     let spectator: Spectator<DotSidebarHeaderComponent>;

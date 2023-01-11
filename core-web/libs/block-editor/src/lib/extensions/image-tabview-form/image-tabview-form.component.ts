@@ -1,22 +1,23 @@
+import { BehaviorSubject, merge } from 'rxjs';
+
 import {
-    Component,
-    OnInit,
-    Input,
-    ViewChild,
-    ElementRef,
     ChangeDetectionStrategy,
-    ChangeDetectorRef
+    ChangeDetectorRef,
+    Component,
+    ElementRef,
+    Input,
+    OnInit,
+    ViewChild
 } from '@angular/core';
 import { FormBuilder, FormGroup } from '@angular/forms';
-import { BehaviorSubject, merge } from 'rxjs';
-import { debounceTime, map, throttleTime, mergeMap, tap } from 'rxjs/operators';
-import { Observable } from 'rxjs/internal/Observable';
 
+import { Observable } from 'rxjs/internal/Observable';
+import { debounceTime, map, mergeMap, tap, throttleTime } from 'rxjs/operators';
+
+import { DEFAULT_LANG_ID } from '@dotcms/block-editor';
 import { DotCMSContentlet } from '@dotcms/dotcms-models';
 
 import { DotLanguageService, Languages } from '../../shared';
-import { DEFAULT_LANG_ID } from '@dotcms/block-editor';
-
 import {
     ESOrderDirection,
     queryEsParams,

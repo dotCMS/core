@@ -1,8 +1,11 @@
 import { Component, forwardRef, Input, OnInit, ViewChild } from '@angular/core';
-import { DotTagsService } from '@dotcms/data-access';
-import { take } from 'rxjs/operators';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
+
 import { AutoComplete } from 'primeng/autocomplete';
+
+import { take } from 'rxjs/operators';
+
+import { DotTagsService } from '@dotcms/data-access';
 import { DotTag } from '@dotcms/dotcms-models';
 
 /**

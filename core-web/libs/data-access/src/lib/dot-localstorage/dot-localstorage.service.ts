@@ -1,5 +1,7 @@
-import { Injectable } from '@angular/core';
 import { fromEvent, Observable } from 'rxjs';
+
+import { Injectable } from '@angular/core';
+
 import { map, filter } from 'rxjs/operators';
 
 const getValue = <T>(item): T => {

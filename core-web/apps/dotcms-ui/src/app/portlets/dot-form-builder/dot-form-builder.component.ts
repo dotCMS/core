@@ -1,7 +1,10 @@
+import { Observable } from 'rxjs';
+
 import { Component, OnInit } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
+
 import { pluck } from 'rxjs/operators';
-import { Observable } from 'rxjs';
+
 import { DotUnlicensedPortlet } from './resolvers/dot-form-resolver.service';
 
 @Component({

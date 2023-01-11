@@ -1,13 +1,14 @@
 import { CommonModule } from '@angular/common';
+import { NgModule } from '@angular/core';
 import { ReactiveFormsModule } from '@angular/forms';
 
-import { NgModule } from '@angular/core';
+import { PasswordModule } from 'primeng/password';
+
+import { SearchableDropDownModule } from '@components/_common/searchable-dropdown';
+import { DotDialogModule } from '@components/dot-dialog/dot-dialog.module';
+import { DotPipesModule } from '@pipes/dot-pipes.module';
 
 import { DotLoginAsComponent } from './dot-login-as.component';
-import { DotDialogModule } from '@components/dot-dialog/dot-dialog.module';
-import { SearchableDropDownModule } from '@components/_common/searchable-dropdown';
-import { PasswordModule } from 'primeng/password';
-import { DotPipesModule } from '@pipes/dot-pipes.module';
 
 @NgModule({
     imports: [

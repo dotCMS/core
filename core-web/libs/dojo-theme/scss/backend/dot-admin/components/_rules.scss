@@ -1,0 +1,9 @@
+.dijit {
+    &Tab {
+        &PaneWrapper {
+            .rules__tab-container .dijitContentPane {
+                padding: 0;
+            }
+        }
+    }
+}

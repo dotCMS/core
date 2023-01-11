@@ -1,26 +1,29 @@
 import {
     Component,
-    Input,
-    Output,
-    EventEmitter,
-    ViewChild,
-    ElementRef,
-    OnInit,
-    TemplateRef,
+    ContentChild,
     ContentChildren,
+    ElementRef,
+    EventEmitter,
+    Input,
+    OnInit,
+    Output,
     QueryList,
-    ContentChild
+    TemplateRef,
+    ViewChild
 } from '@angular/core';
+
 import { LazyLoadEvent, MenuItem, PrimeTemplate } from 'primeng/api';
 import { Table } from 'primeng/table';
+
+import { take } from 'rxjs/operators';
+
+import { DotFormatDateService } from '@dotcms/app/api/services/dot-format-date-service';
+import { OrderDirection, PaginatorService } from '@dotcms/data-access';
+import { LoggerService } from '@dotcms/dotcms-js';
 import { ActionHeaderOptions, ButtonAction } from '@models/action-header';
 import { DataTableColumn } from '@models/data-table/data-table-column';
-import { LoggerService } from '@dotcms/dotcms-js';
-import { DotFormatDateService } from '@dotcms/app/api/services/dot-format-date-service';
-
 import { DotActionMenuItem } from '@shared/models/dot-action-menu/dot-action-menu-item.model';
-import { take } from 'rxjs/operators';
-import { OrderDirection, PaginatorService } from '@dotcms/data-access';
+
 
 function tableFactory(dotListingDataTableComponent: DotListingDataTableComponent) {
     return dotListingDataTableComponent.dataTable;

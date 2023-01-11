@@ -1,10 +1,9 @@
 package com.dotcms.publisher.ajax;
 
-import static com.dotcms.util.CollectionsUtils.list;
-
 import com.dotcms.enterprise.publishing.staticpublishing.AWSS3Publisher;
 import com.dotcms.enterprise.publishing.staticpublishing.StaticPublisher;
 import com.dotcms.publisher.bundle.bean.Bundle;
+import com.dotcms.publisher.bundle.business.BundleAPI;
 import com.dotcms.publisher.business.DotPublisherException;
 import com.dotcms.publisher.business.PublishAuditAPI;
 import com.dotcms.publisher.business.PublishAuditHistory;
@@ -14,6 +13,7 @@ import com.dotcms.publisher.business.PublishQueueElement;
 import com.dotcms.publisher.business.PublisherAPI;
 import com.dotcms.publisher.endpoint.bean.PublishingEndPoint;
 import com.dotcms.publisher.environment.bean.Environment;
+import com.dotcms.publisher.environment.business.EnvironmentAPI;
 import com.dotcms.publisher.pusher.PushPublisherConfig;
 import com.dotcms.publisher.util.PublisherUtil;
 import com.dotcms.publishing.BundlerUtil;
@@ -28,14 +28,6 @@ import com.dotcms.publishing.manifest.CSVManifestReader;
 import com.dotcms.publishing.manifest.ManifestItem.ManifestInfo;
 import com.dotcms.publishing.manifest.ManifestReaderFactory;
 import com.dotcms.publishing.manifest.ManifestReason;
-import com.dotmarketing.util.DateUtil;
-import java.util.Collection;
-import java.util.TimeZone;
-import org.apache.commons.fileupload.FileItem;
-import org.apache.commons.fileupload.FileItemFactory;
-import org.apache.commons.fileupload.FileUploadException;
-import org.apache.commons.fileupload.disk.DiskFileItemFactory;
-import org.apache.commons.fileupload.servlet.ServletFileUpload;
 import com.dotcms.repackage.org.apache.commons.httpclient.HttpStatus;
 import com.dotcms.rest.PushPublisherJob;
 import com.dotmarketing.beans.Identifier;
@@ -50,6 +42,7 @@ import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.workflows.model.WorkflowActionFailureException;
 import com.dotmarketing.servlets.ajax.AjaxAction;
 import com.dotmarketing.util.ConfigUtils;
+import com.dotmarketing.util.DateUtil;
 import com.dotmarketing.util.FileUtil;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
@@ -61,9 +54,17 @@ import com.dotmarketing.util.json.JSONObject;
 import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
-
+import com.liferay.util.StringPool;
 import io.vavr.control.Try;
+import org.apache.commons.fileupload.FileItem;
+import org.apache.commons.fileupload.FileItemFactory;
+import org.apache.commons.fileupload.FileUploadException;
+import org.apache.commons.fileupload.disk.DiskFileItemFactory;
+import org.apache.commons.fileupload.servlet.ServletFileUpload;
 
+import javax.servlet.ServletException;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.IOException;
@@ -74,16 +75,14 @@ import java.nio.file.Files;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Arrays;
-
-import javax.servlet.ServletException;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
+import java.util.TimeZone;
 
 /**
  * This class handles the different action mechanisms related to the handling of 
@@ -107,6 +106,7 @@ public class RemotePublishAjaxAction extends AjaxAction {
 	public static final String DIALOG_ACTION_PUBLISH="publish";
 	public static final String DIALOG_ACTION_PUBLISH_AND_EXPIRE="publishexpire";
     public static final String ADD_ALL_CATEGORIES_TO_BUNDLE_KEY = "CAT";
+    public static final String STANDARD_DATE_FORMAT = "yyyy-MM-dd-H-m";
 
     @Override
 	public void action(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
@@ -233,7 +233,7 @@ public class RemotePublishAjaxAction extends AjaxAction {
 
             final Date publishDate = DateUtil
                     .convertDate(_contentPushPublishDate + "-" + _contentPushPublishTime,
-                            currentTimeZone, "yyyy-MM-dd-H-m");
+                            currentTimeZone, STANDARD_DATE_FORMAT);
 
             List<String> ids;
             if ( _assetId.startsWith( "query_" ) ) { //Support for lucene queries
@@ -248,7 +248,7 @@ public class RemotePublishAjaxAction extends AjaxAction {
                 String[] _assetsIds = _assetId.split( "," );//Support for multiple ids in the assetIdentifier parameter
                 List<String> assetsIds = Arrays.asList( _assetsIds );
 
-                ids = getIdsToPush( assetsIds, null, _contentFilterDate, new SimpleDateFormat( "yyyy-MM-dd-H-m" ) );
+                ids = getIdsToPush( assetsIds, null, _contentFilterDate, new SimpleDateFormat(STANDARD_DATE_FORMAT) );
             }
 
             //Response map with the status of the addContents operation (error messages and counts )
@@ -264,7 +264,7 @@ public class RemotePublishAjaxAction extends AjaxAction {
                 if ((UtilMethods.isSet( _contentPushExpireDate) && UtilMethods.isSet( _contentPushExpireTime.trim()))) {
                     final Date expireDate = DateUtil
                             .convertDate(_contentPushExpireDate + "-" + _contentPushExpireTime,
-                                    currentTimeZone, "yyyy-MM-dd-H-m");
+                                    currentTimeZone, STANDARD_DATE_FORMAT);
 
                     Bundle bundle = new Bundle(null, publishDate, expireDate, getUser().getUserId(), forcePush,filterKey);
                 	APILocator.getBundleAPI().saveBundle(bundle, envsToSendTo);
@@ -820,7 +820,7 @@ public class RemotePublishAjaxAction extends AjaxAction {
                 String[] assetsIds = assetIdentifier.split( "," );//Support for multiple ids in the assetIdentifier parameter
                 List<String> assetsIdsList = Arrays.asList( assetsIds );
 
-                ids = getIdsToPush( assetsIdsList,bundle.getId(), contentFilterDate, new SimpleDateFormat( "yyyy-MM-dd-H-m" ) );
+                ids = getIdsToPush( assetsIdsList,bundle.getId(), contentFilterDate, new SimpleDateFormat(STANDARD_DATE_FORMAT) );
             }
 
             Map<String, Object> responseMap = publisherAPI.saveBundleAssets( ids, bundle.getId(), getUser() );
@@ -874,36 +874,33 @@ public class RemotePublishAjaxAction extends AjaxAction {
      * @param response HttpResponse
      * @throws WorkflowActionFailureException If fails trying to Publish the bundle contents
      */
-    public void pushBundle ( HttpServletRequest request, HttpServletResponse response ) throws WorkflowActionFailureException, IOException {
+    public void pushBundle(final HttpServletRequest request, final HttpServletResponse response) throws WorkflowActionFailureException, IOException {
         response.setContentType("text/plain");
+        final PublisherAPI publisherAPI = PublisherAPI.getInstance();
+        final BundleAPI bundleAPI = APILocator.getBundleAPI();
+        final EnvironmentAPI environmentAPI = APILocator.getEnvironmentAPI();
+        final PermissionAPI permissionAPI = APILocator.getPermissionAPI();
+
+        // Read the form values
+        final String bundleId = request.getParameter( "assetIdentifier" );
+        final String contentPushPublishDate = request.getParameter( "remotePublishDate" );
+        final String contentPushPublishTime = request.getParameter( "remotePublishTime" );
+        final String contentPushExpireDate = request.getParameter( "remotePublishExpireDate" );
+        final String contentPushExpireTime = request.getParameter( "remotePublishExpireTime" );
+        final String iWantTo = request.getParameter( "iWantTo" );
+        final String whoToSendTmp = request.getParameter( "whoToSend" );
+        final String filterKey = request.getParameter("filterKey");
+
         try {
-
-            PublisherAPI publisherAPI = PublisherAPI.getInstance();
-
-            //Read the form values
-            final String bundleId = request.getParameter( "assetIdentifier" );
-            final String contentPushPublishDate = request.getParameter( "remotePublishDate" );
-            final String contentPushPublishTime = request.getParameter( "remotePublishTime" );
-            final String contentPushExpireDate = request.getParameter( "remotePublishExpireDate" );
-            final String contentPushExpireTime = request.getParameter( "remotePublishExpireTime" );
-            final String iWantTo = request.getParameter( "iWantTo" );
-            final String whoToSendTmp = request.getParameter( "whoToSend" );
-            final String filterKey = request.getParameter("filterKey");
-            final boolean forcePush = Optional.ofNullable(
-                APILocator.getPublisherAPI().getFilterDescriptorByKey(filterKey))
-                .map(FilterDescriptor::getFilters)
-                .map(filters -> (boolean) filters.getOrDefault(FilterDescriptor.FORCE_PUSH_KEY, false))
-                .orElse(false);
-            
-            List<String> whereToSend = Arrays.asList(whoToSendTmp.split(","));
-            List<Environment> envsToSendTo = new ArrayList<Environment>();
+            final boolean forcePush = (boolean) APILocator.getPublisherAPI().getFilterDescriptorByKey(filterKey).getFilters().getOrDefault(FilterDescriptor.FORCE_PUSH_KEY,false);
+            final List<String> whereToSend = Arrays.asList(whoToSendTmp.split(StringPool.COMMA));
+            final List<Environment> envsToSendTo = new ArrayList<>();
 
             // Lists of Environments to push to
-            for (String envId : whereToSend) {
-            	Environment e = APILocator.getEnvironmentAPI().findEnvironmentById(envId);
-
-            	if(e!=null && APILocator.getPermissionAPI().doesUserHavePermission(e, PermissionAPI.PERMISSION_USE, getUser())) {
-            		envsToSendTo.add(e);
+            for (final String envId : whereToSend) {
+            	final Environment environment = environmentAPI.findEnvironmentById(envId);
+            	if (environment != null && permissionAPI.doesUserHavePermission(environment, PermissionAPI.PERMISSION_USE, getUser())) {
+            		envsToSendTo.add(environment);
             	}
 			}
 
@@ -918,42 +915,36 @@ public class RemotePublishAjaxAction extends AjaxAction {
             //Clean up the selected bundle
             request.getSession().removeAttribute( WebKeys.SELECTED_BUNDLE + getUser().getUserId() );
 
-            SimpleDateFormat dateFormat = new SimpleDateFormat( "yyyy-MM-dd-H-m" );
-            Date publishDate = dateFormat.parse( contentPushPublishDate + "-" + contentPushPublishTime );
-            final Bundle bundle = APILocator.getBundleAPI().getBundleById(bundleId);
+            final SimpleDateFormat dateFormat = new SimpleDateFormat(STANDARD_DATE_FORMAT);
+            final Date publishDate = dateFormat.parse( contentPushPublishDate + "-" + contentPushPublishTime );
+            final Bundle bundle = bundleAPI.getBundleById(bundleId);
             bundle.setForcePush(forcePush);
             bundle.setFilterKey(filterKey);
-            APILocator.getBundleAPI().saveBundleEnvironments(bundle, envsToSendTo);
+            bundleAPI.saveBundleEnvironments(bundle, envsToSendTo);
 
             if ( iWantTo.equals( RemotePublishAjaxAction.DIALOG_ACTION_PUBLISH )) {
             	bundle.setPublishDate(publishDate);
-             	APILocator.getBundleAPI().updateBundle(bundle);
-
+                bundleAPI.updateBundle(bundle);
              	publisherAPI.publishBundleAssets(bundle.getId(), publishDate);
-
-            } else if ( iWantTo.equals( RemotePublishAjaxAction.DIALOG_ACTION_EXPIRE )) {
-            	if ( (!"".equals( contentPushExpireDate.trim() ) && !"".equals( contentPushExpireTime.trim() )) ) {
-                    Date expireDate = dateFormat.parse( contentPushExpireDate + "-" + contentPushExpireTime );
-                    bundle.setExpireDate(expireDate);
-                	APILocator.getBundleAPI().updateBundle(bundle);
-
-                	publisherAPI.unpublishBundleAssets(bundle.getId(), expireDate);
-                }
-
-            } else if(iWantTo.equals( RemotePublishAjaxAction.DIALOG_ACTION_PUBLISH_AND_EXPIRE ) ) {
-                if ( (!"".equals( contentPushExpireDate.trim() ) && !"".equals( contentPushExpireTime.trim() )) ) {
-                    Date expireDate = dateFormat.parse( contentPushExpireDate + "-" + contentPushExpireTime );
-                    bundle.setPublishDate(publishDate);
-                    bundle.setExpireDate(expireDate);
-                	APILocator.getBundleAPI().updateBundle(bundle);
-
-                	publisherAPI.publishAndExpireBundleAssets(bundle.getId(), publishDate, expireDate, getUser());
-                }
+            } else if (iWantTo.equals(RemotePublishAjaxAction.DIALOG_ACTION_EXPIRE) && UtilMethods.isSet(contentPushExpireDate) && UtilMethods.isSet(contentPushExpireTime)) {
+                final Date expireDate = dateFormat.parse( contentPushExpireDate + "-" + contentPushExpireTime );
+                bundle.setExpireDate(expireDate);
+                bundleAPI.updateBundle(bundle);
+                publisherAPI.unpublishBundleAssets(bundle.getId(), expireDate);
+            } else if (iWantTo.equals(RemotePublishAjaxAction.DIALOG_ACTION_PUBLISH_AND_EXPIRE) && UtilMethods.isSet(contentPushExpireDate) && UtilMethods.isSet(contentPushExpireTime)) {
+                final Date expireDate = dateFormat.parse( contentPushExpireDate + "-" + contentPushExpireTime );
+                bundle.setPublishDate(publishDate);
+                bundle.setExpireDate(expireDate);
+                bundleAPI.updateBundle(bundle);
+                publisherAPI.publishAndExpireBundleAssets(bundle.getId(), publishDate, expireDate, getUser());
             }
-
-        } catch ( Exception e ) {
-            Logger.error( RemotePublishAjaxAction.class, e.getMessage(), e );
-            response.sendError( HttpStatus.SC_INTERNAL_SERVER_ERROR, "Error Push Publishing Bundle: " + e.getMessage() );
+            final Map<String, Object> dataMap = Map.of("deliveryStrategy", DeliveryStrategy.ALL_ENDPOINTS);
+            publisherAPI.firePublisherQueueNow(dataMap);
+        } catch (final Exception e) {
+            final String errorMsg = String.format("An error occurred when trying to '%s' Bundle ID '%s' to env IDs [ " +
+                                                          "%s ]: %s", iWantTo, bundleId, whoToSendTmp, e.getMessage());
+            Logger.error(RemotePublishAjaxAction.class, errorMsg, e);
+            response.sendError(HttpStatus.SC_INTERNAL_SERVER_ERROR, errorMsg);
         }
     }
 

@@ -1,7 +1,9 @@
-import { Story, Meta } from '@storybook/angular/types-6-0';
-import { InputTextModule, InputText } from 'primeng/inputtext';
 import { moduleMetadata } from '@storybook/angular';
+import { Meta, Story } from '@storybook/angular/types-6-0';
+
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
+
+import { InputText, InputTextModule } from 'primeng/inputtext';
 import { PasswordModule } from 'primeng/password';
 
 export default {

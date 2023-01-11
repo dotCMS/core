@@ -1,21 +1,23 @@
-import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { DotCreatePersonaFormComponent } from './dot-create-persona-form.component';
+import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { DebugElement } from '@angular/core';
-import { MockDotMessageService } from '@dotcms/utils-testing';
+import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { UntypedFormBuilder } from '@angular/forms';
+import { By } from '@angular/platform-browser';
+import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
+
+import { FileUploadModule } from 'primeng/fileupload';
+
+import { DotAutocompleteTagsComponent } from '@components/_common/dot-autocomplete-tags/dot-autocomplete-tags.component';
+import { DotAutocompleteTagsModule } from '@components/_common/dot-autocomplete-tags/dot-autocomplete-tags.module';
+import { DotFieldValidationMessageModule } from '@components/_common/dot-field-validation-message/dot-file-validation-message.module';
+import { SiteSelectorFieldModule } from '@components/_common/dot-site-selector-field/dot-site-selector-field.module';
+import { DotAutofocusModule } from '@directives/dot-autofocus/dot-autofocus.module';
 import { DOTTestBed } from '@dotcms/app/test/dot-test-bed';
 import { DotMessageService } from '@dotcms/data-access';
-import { mockSites, SiteServiceMock } from '@dotcms/utils-testing';
-import { By } from '@angular/platform-browser';
-import { FileUploadModule } from 'primeng/fileupload';
-import { DotFieldValidationMessageModule } from '@components/_common/dot-field-validation-message/dot-file-validation-message.module';
-import { DotAutofocusModule } from '@directives/dot-autofocus/dot-autofocus.module';
-import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
-import { UntypedFormBuilder } from '@angular/forms';
-import { SiteSelectorFieldModule } from '@components/_common/dot-site-selector-field/dot-site-selector-field.module';
 import { SiteService } from '@dotcms/dotcms-js';
-import { DotAutocompleteTagsModule } from '@components/_common/dot-autocomplete-tags/dot-autocomplete-tags.module';
-import { DotAutocompleteTagsComponent } from '@components/_common/dot-autocomplete-tags/dot-autocomplete-tags.component';
-import { HttpClientTestingModule } from '@angular/common/http/testing';
+import { MockDotMessageService, mockSites, SiteServiceMock } from '@dotcms/utils-testing';
+
+import { DotCreatePersonaFormComponent } from './dot-create-persona-form.component';
 
 const FROM_INITIAL_VALUE = {
     hostFolder: mockSites[0].identifier,

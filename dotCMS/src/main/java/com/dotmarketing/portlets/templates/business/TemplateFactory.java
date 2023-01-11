@@ -120,4 +120,77 @@ public interface TemplateFactory {
 	 * @throws DotSecurityException
 	 */
 	Template getTemplateByFolder(final Host site, final Folder folder, final User user, final boolean showLive) throws DotDataException,DotSecurityException;
+
+	/**
+	 * Return the List of Page's Version tha used the {@link Template}
+	 * In case that the Template is not used by any Page then it returns an empty List
+	 * If the Template is used by more than one version of a Page then it returns all the
+	 * Inodes of the different versions.
+	 *
+	 * @param templateId Template's ID that we are looking for
+	 * @return
+	 */
+	List<HTMLPageVersion> getPages(final String templateId) throws DotDataException, DotSecurityException;
+
+	class HTMLPageVersion {
+		private String identifier;
+		private String inode;
+		private String variantName;
+		private long languageId;
+
+		private HTMLPageVersion(final String identifier, final String inode, final String variantName,
+				final long languageId) {
+			this.identifier = identifier;
+			this.inode = inode;
+			this.variantName = variantName;
+			this.languageId = languageId;
+		}
+
+		public String getIdentifier() {
+			return identifier;
+		}
+
+		public String getInode() {
+			return inode;
+		}
+
+		public String getVariantName() {
+			return variantName;
+		}
+
+		public long getLanguageId() {
+			return languageId;
+		}
+
+		static class Builder {
+			private String identifier;
+			private String inode;
+			private String variantName;
+			private long languageId;
+
+			public Builder identifier(final String identifier) {
+				this.identifier = identifier;
+				return this;
+			}
+
+			public Builder inode(final String inode) {
+				this.inode = inode;
+				return this;
+			}
+
+			public Builder variantName(final String variantName) {
+				this.variantName = variantName;
+				return this;
+			}
+
+			public Builder languageId(final long languageId) {
+				this.languageId = languageId;
+				return this;
+			}
+
+			public HTMLPageVersion build(){
+				return new HTMLPageVersion(identifier, inode, variantName, languageId);
+			}
+		}
+	}
 }

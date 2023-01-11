@@ -1,8 +1,10 @@
-import { getTestBed, TestBed } from '@angular/core/testing';
-import { DotVersionableService } from './dot-versionable.service';
 import { HttpClientTestingModule, HttpTestingController } from '@angular/common/http/testing';
+import { getTestBed, TestBed } from '@angular/core/testing';
+
 import { CoreWebService } from '@dotcms/dotcms-js';
 import { CoreWebServiceMock } from '@dotcms/utils-testing';
+
+import { DotVersionableService } from './dot-versionable.service';
 
 const mockResponse = { entity: { inode: '123' } };
 

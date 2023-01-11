@@ -1,11 +1,12 @@
-import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 
-import { DotSafeUrlPipe } from '@pipes/dot-safe-url/dot-safe-url.pipe';
-import { ActivatedRoute } from '@angular/router';
-import { DomSanitizer } from '@angular/platform-browser';
-import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
 import { TestBed } from '@angular/core/testing';
+import { DomSanitizer } from '@angular/platform-browser';
+import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
+import { ActivatedRoute } from '@angular/router';
+
+import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
 import { MockDotRouterService } from '@dotcms/utils-testing';
+import { DotSafeUrlPipe } from '@pipes/dot-safe-url/dot-safe-url.pipe';
 
 const fakeActivatedRoute = {
     snapshot: {

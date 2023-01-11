@@ -1,25 +1,31 @@
-import { of, Observable } from 'rxjs';
 import * as _ from 'lodash';
+import { MarkdownModule } from 'ngx-markdown';
+import { Observable, of } from 'rxjs';
+
+import { CommonModule } from '@angular/common';
+import { Component, EventEmitter, Injectable, Input, Output } from '@angular/core';
 import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing';
-import { RouterTestingModule } from '@angular/router/testing';
-import { MockDotMessageService } from '@dotcms/utils-testing';
-import { DotMessageService } from '@dotcms/data-access';
+import { By } from '@angular/platform-browser';
 import { ActivatedRoute } from '@angular/router';
+import { RouterTestingModule } from '@angular/router/testing';
+
+import { ButtonModule } from 'primeng/button';
+
 import { DotCopyButtonModule } from '@components/dot-copy-button/dot-copy-button.module';
 import { DotAppsService } from '@dotcms/app/api/services/dot-apps/dot-apps.service';
-import { Injectable, Component, Input, Output, EventEmitter } from '@angular/core';
 import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
-import { MockDotRouterService } from '@dotcms/utils-testing';
-import { CommonModule } from '@angular/common';
-import { DotAppsConfigurationDetailResolver } from './dot-apps-configuration-detail-resolver.service';
-import { ButtonModule } from 'primeng/button';
-import { DotAppsConfigurationDetailComponent } from './dot-apps-configuration-detail.component';
-import { By } from '@angular/platform-browser';
-import { DotKeyValue } from '@shared/models/dot-key-value-ng/dot-key-value-ng.model';
-import { DotAppsConfigurationHeaderModule } from '../dot-apps-configuration-header/dot-apps-configuration-header.module';
-import { MarkdownModule } from 'ngx-markdown';
-import { DotPipesModule } from '@pipes/dot-pipes.module';
+import { DotMessageService } from '@dotcms/data-access';
 import { DotAppsSaveData, DotAppsSecrets } from '@dotcms/dotcms-models';
+import { MockDotMessageService, MockDotRouterService } from '@dotcms/utils-testing';
+import { DotPipesModule } from '@pipes/dot-pipes.module';
+import { DotKeyValue } from '@shared/models/dot-key-value-ng/dot-key-value-ng.model';
+
+
+
+import { DotAppsConfigurationDetailResolver } from './dot-apps-configuration-detail-resolver.service';
+import { DotAppsConfigurationDetailComponent } from './dot-apps-configuration-detail.component';
+
+import { DotAppsConfigurationHeaderModule } from '../dot-apps-configuration-header/dot-apps-configuration-header.module';
 
 const messages = {
     'apps.key': 'Key',

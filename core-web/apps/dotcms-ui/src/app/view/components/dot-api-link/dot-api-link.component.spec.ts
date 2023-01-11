@@ -1,8 +1,8 @@
-import { waitForAsync, ComponentFixture, TestBed } from '@angular/core/testing';
+import { Component, DebugElement } from '@angular/core';
+import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing';
+import { By } from '@angular/platform-browser';
 
 import { DotApiLinkComponent } from './dot-api-link.component';
-import { DebugElement, Component } from '@angular/core';
-import { By } from '@angular/platform-browser';
 
 @Component({
     template: `<dot-api-link [href]="href"></dot-api-link>`
@@ -22,13 +22,11 @@ describe('DotApiLinkComponent', () => {
     let de: DebugElement;
     let link: DebugElement;
 
-    beforeEach(
-        waitForAsync(() => {
-            TestBed.configureTestingModule({
-                declarations: [TestHostComponent, DotApiLinkComponent]
-            }).compileComponents();
-        })
-    );
+    beforeEach(waitForAsync(() => {
+        TestBed.configureTestingModule({
+            declarations: [TestHostComponent, DotApiLinkComponent]
+        }).compileComponents();
+    }));
 
     beforeEach(() => {
         hostFixture = TestBed.createComponent(TestHostComponent);

@@ -1,20 +1,24 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { of } from 'rxjs';
 
-import { DotCommentAndAssignFormComponent } from './dot-comment-and-assign-form.component';
-import { DotRolesService } from '@dotcms/data-access';
+import { HttpClientTestingModule } from '@angular/common/http/testing';
+import { Component, DebugElement, Input } from '@angular/core';
+import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
-import { InputTextareaModule } from 'primeng/inputtextarea';
+import { By } from '@angular/platform-browser';
+
 import { Dropdown, DropdownModule } from 'primeng/dropdown';
-import { DotPipesModule } from '@pipes/dot-pipes.module';
+import { InputTextareaModule } from 'primeng/inputtextarea';
+
+import { DotFormatDateService } from '@dotcms/app/api/services/dot-format-date-service';
+import { DotRolesService } from '@dotcms/data-access';
 import { CoreWebService } from '@dotcms/dotcms-js';
 import { CoreWebServiceMock, mockProcessedRoles } from '@dotcms/utils-testing';
-import { DotFormatDateService } from '@dotcms/app/api/services/dot-format-date-service';
-import { Component, DebugElement, Input } from '@angular/core';
-import { By } from '@angular/platform-browser';
-import { of } from 'rxjs';
-import { HttpClientTestingModule } from '@angular/common/http/testing';
+import { DotPipesModule } from '@pipes/dot-pipes.module';
+
+
+import { DotCommentAndAssignFormComponent } from './dot-comment-and-assign-form.component';
 
 @Component({
     selector: 'dot-test-host-component',
