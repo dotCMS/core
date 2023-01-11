@@ -1,11 +1,13 @@
 import { Component, Input, OnChanges, OnInit, ViewChild } from '@angular/core';
-import { DotDiffPipe } from '@dotcms/app/view/pipes';
-import { IframeComponent } from '@components/_common/iframe/iframe-component';
-import { DotEditPageService } from '@dotcms/data-access';
+
 import { catchError, take } from 'rxjs/operators';
-import { DotDOMHtmlUtilService } from '@portlets/dot-edit-page/content/services/html/dot-dom-html-util.service';
+
+import { IframeComponent } from '@components/_common/iframe/iframe-component';
 import { DotHttpErrorManagerService } from '@dotcms/app/api/services/dot-http-error-manager/dot-http-error-manager.service';
+import { DotDiffPipe } from '@dotcms/app/view/pipes';
+import { DotEditPageService } from '@dotcms/data-access';
 import { DotWhatChanged } from '@dotcms/dotcms-models';
+import { DotDOMHtmlUtilService } from '@portlets/dot-edit-page/content/services/html/dot-dom-html-util.service';
 
 export const SHOW_DIFF_STYLES =
     'del{text-decoration: line-through; background-color:#fdb8c0 } ins{ text-decoration: underline; background-color: #ddffdd}';

@@ -1,26 +1,33 @@
-import { take, mergeMap, pluck, takeUntil } from 'rxjs/operators';
+import { Subject } from 'rxjs';
+
+import { HttpErrorResponse } from '@angular/common/http';
+import { Component, OnDestroy, OnInit, ViewChild } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
-import { Component, ViewChild, OnInit, OnDestroy } from '@angular/core';
+
+import { MenuItem } from 'primeng/api';
+
+import { mergeMap, pluck, take, takeUntil } from 'rxjs/operators';
+
+import { DotDialogActions } from '@components/dot-dialog/dot-dialog.component';
+import { DotHttpErrorManagerService } from '@dotcms/app/api/services/dot-http-error-manager/dot-http-error-manager.service';
+import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
+import {
+    DotContentTypesInfoService,
+    DotCrudService,
+    DotEventsService,
+    DotMessageService
+} from '@dotcms/data-access';
 import {
     DotCMSContentType,
     DotCMSContentTypeField,
     DotCMSContentTypeLayoutRow,
     DotCMSWorkflow
 } from '@dotcms/dotcms-models';
-import { ContentTypesFormComponent } from './components/form';
-import { DotCrudService } from '@dotcms/data-access';
+
+import { DotEditContentTypeCacheService } from './components/fields/content-type-fields-properties-form/field-properties/dot-relationships-property/services/dot-edit-content-type-cache.service';
 import { ContentTypeFieldsDropZoneComponent } from './components/fields/index';
 import { FieldService } from './components/fields/service';
-import { DotMessageService } from '@dotcms/data-access';
-import { DotContentTypesInfoService } from '@dotcms/data-access';
-import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
-import { DotEventsService } from '@dotcms/data-access';
-import { MenuItem } from 'primeng/api';
-import { Subject } from 'rxjs';
-import { DotEditContentTypeCacheService } from './components/fields/content-type-fields-properties-form/field-properties/dot-relationships-property/services/dot-edit-content-type-cache.service';
-import { DotDialogActions } from '@components/dot-dialog/dot-dialog.component';
-import { HttpErrorResponse } from '@angular/common/http';
-import { DotHttpErrorManagerService } from '@dotcms/app/api/services/dot-http-error-manager/dot-http-error-manager.service';
+import { ContentTypesFormComponent } from './components/form';
 
 /**
  * Portlet component for edit content types

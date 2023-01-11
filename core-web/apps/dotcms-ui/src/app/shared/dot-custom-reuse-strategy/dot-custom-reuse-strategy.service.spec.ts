@@ -1,7 +1,7 @@
 import { TestBed } from '@angular/core/testing';
+import { ActivatedRouteSnapshot } from '@angular/router';
 
 import { DotCustomReuseStrategyService } from './dot-custom-reuse-strategy.service';
-import { ActivatedRouteSnapshot } from '@angular/router';
 
 describe('DotCustomReuseStrategyService', () => {
     let service: DotCustomReuseStrategyService;
@@ -40,7 +40,7 @@ describe('DotCustomReuseStrategyService', () => {
         expect(
             service.shouldReuseRoute(
                 regularRoute as ActivatedRouteSnapshot,
-                (renewRoute as unknown) as ActivatedRouteSnapshot
+                renewRoute as unknown as ActivatedRouteSnapshot
             )
         ).toEqual(true);
     });

@@ -1,9 +1,12 @@
-import { DotExperimentsConfigurationSchedulingComponent } from './dot-experiments-configuration-scheduling.component';
 import { byTestId, createComponentFactory, Spectator } from '@ngneat/spectator';
+
 import { ButtonModule } from 'primeng/button';
 import { Card, CardModule } from 'primeng/card';
+
 import { DotMessageService } from '@dotcms/data-access';
 import { MockDotMessageService } from '@dotcms/utils-testing';
+
+import { DotExperimentsConfigurationSchedulingComponent } from './dot-experiments-configuration-scheduling.component';
 
 const messageServiceMock = new MockDotMessageService({
     'experiments.configure.scheduling.name': 'Scheduling',

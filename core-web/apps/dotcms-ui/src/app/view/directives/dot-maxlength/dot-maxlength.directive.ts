@@ -1,5 +1,7 @@
-import { Directive, ElementRef, Input, OnDestroy, OnInit } from '@angular/core';
 import { fromEvent, merge, Subject } from 'rxjs';
+
+import { Directive, ElementRef, Input, OnDestroy, OnInit } from '@angular/core';
+
 import { delay, filter, takeUntil, tap } from 'rxjs/operators';
 
 /**

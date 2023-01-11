@@ -1,20 +1,22 @@
-import { ComponentFixture } from '@angular/core/testing';
-import { DotLanguageSelectorComponent } from './dot-language-selector.component';
-import { DotLanguagesService } from '@dotcms/data-access';
+import { of } from 'rxjs';
 
-import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
-import { DOTTestBed } from '@dotcms/app/test/dot-test-bed';
 import { Component, DebugElement } from '@angular/core';
+import { ComponentFixture } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
+import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
+
+import { DOTTestBed } from '@dotcms/app/test/dot-test-bed';
+import { DotLanguagesService, DotMessageService } from '@dotcms/data-access';
+import { DotLanguage } from '@dotcms/dotcms-models';
+import { DotIconModule } from '@dotcms/ui';
 import {
     DotLanguagesServiceMock,
     mockDotLanguage,
     MockDotMessageService
 } from '@dotcms/utils-testing';
-import { DotMessageService } from '@dotcms/data-access';
-import { DotIconModule } from '@dotcms/ui';
-import { of } from 'rxjs';
-import { DotLanguage } from '@dotcms/dotcms-models';
+
+import { DotLanguageSelectorComponent } from './dot-language-selector.component';
+
 
 const messageServiceMock = new MockDotMessageService({
     'editpage.viewas.label.language': 'Language'

@@ -1,6 +1,6 @@
 import { Image } from '@tiptap/extension-image';
 
-import { imageLinkElement, imageElement } from './helpers';
+import { imageElement, imageLinkElement } from './helpers';
 
 declare module '@tiptap/core' {
     interface Commands<ReturnType> {

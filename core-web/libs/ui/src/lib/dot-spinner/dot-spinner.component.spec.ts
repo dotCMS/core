@@ -1,7 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { By } from '@angular/platform-browser';
 
 import { DotSpinnerComponent } from './dot-spinner.component';
-import { By } from '@angular/platform-browser';
 import { DotSpinnerModule } from './dot-spinner.module';
 
 describe('DotSpinnerComponent', () => {

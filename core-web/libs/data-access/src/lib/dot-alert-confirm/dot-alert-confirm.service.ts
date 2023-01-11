@@ -1,8 +1,12 @@
-import { DotMessageService } from '../dot-messages/dot-messages.service';
-import { Injectable } from '@angular/core';
-import { DotAlertConfirm } from '@dotcms/dotcms-models';
 import { Observable, Subject } from 'rxjs';
+
+import { Injectable } from '@angular/core';
+
 import { ConfirmationService } from 'primeng/api';
+
+import { DotAlertConfirm } from '@dotcms/dotcms-models';
+
+import { DotMessageService } from '../dot-messages/dot-messages.service';
 
 /**
  * Handle global confirmation and alert dialog component

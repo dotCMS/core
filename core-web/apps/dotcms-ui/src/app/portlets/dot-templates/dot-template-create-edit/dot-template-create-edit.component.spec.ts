@@ -1,39 +1,46 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { Component, DebugElement, EventEmitter, Input, Output } from '@angular/core';
-import { FormsModule, ReactiveFormsModule } from '@angular/forms';
-import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
-import { By } from '@angular/platform-browser';
-import { ComponentFixture, TestBed } from '@angular/core/testing';
-
 import { BehaviorSubject, of, Subject } from 'rxjs';
 
-import { DialogService } from 'primeng/dynamicdialog';
-import { ButtonModule } from 'primeng/button';
+import { HttpClientTestingModule } from '@angular/common/http/testing';
+import { Component, DebugElement, EventEmitter, Input, Output } from '@angular/core';
+import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { FormsModule, ReactiveFormsModule } from '@angular/forms';
+import { By } from '@angular/platform-browser';
+import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 
+
+import { ButtonModule } from 'primeng/button';
+import { DialogService } from 'primeng/dynamicdialog';
+
+
+import { DotFormDialogModule } from '@components/dot-form-dialog/dot-form-dialog.module';
+import { DotTempFileUploadService } from '@dotcms/app/api/services/dot-temp-file-upload/dot-temp-file-upload.service';
 import {
+    DotCrudService,
+    DotEventsService,
+    DotMessageService,
+    DotThemesService,
+    DotWorkflowActionsFireService,
+    PaginatorService
+} from '@dotcms/data-access';
+import { CoreWebService, SiteService } from '@dotcms/dotcms-js';
+import {
+    CoreWebServiceMock,
+    MockDotMessageService,
+    mockDotThemes,
+    mockSites
+} from '@dotcms/utils-testing';
+import { DotMessagePipe } from '@pipes/dot-message/dot-message.pipe';
+
+import { DotTemplateCreateEditComponent } from './dot-template-create-edit.component';
+import { DotTemplatePropsModule } from './dot-template-props/dot-template-props.module';
+import {
+    DotTemplateItem,
     DotTemplateStore,
     EMPTY_TEMPLATE_ADVANCED,
     EMPTY_TEMPLATE_DESIGN
 } from './store/dot-template.store';
-import { DotTemplateCreateEditComponent } from './dot-template-create-edit.component';
-import { DotFormDialogModule } from '@components/dot-form-dialog/dot-form-dialog.module';
-import { DotTemplatePropsModule } from './dot-template-props/dot-template-props.module';
-import { DotMessageService } from '@dotcms/data-access';
-import { MockDotMessageService } from '@dotcms/utils-testing';
-import { DotMessagePipe } from '@pipes/dot-message/dot-message.pipe';
-import { DotCrudService } from '@dotcms/data-access';
-import { DotTempFileUploadService } from '@dotcms/app/api/services/dot-temp-file-upload/dot-temp-file-upload.service';
-import { DotWorkflowActionsFireService } from '@dotcms/data-access';
-import { PaginatorService } from '@dotcms/data-access';
-import { mockDotThemes } from '@dotcms/utils-testing';
-import { CoreWebService, SiteService } from '@dotcms/dotcms-js';
-import { DotThemesService } from '@dotcms/data-access';
-import { CoreWebServiceMock } from '@dotcms/utils-testing';
-import { HttpClientTestingModule } from '@angular/common/http/testing';
-import { DotEventsService } from '@dotcms/data-access';
-import { mockSites } from '@dotcms/utils-testing';
-import { DotTemplateItem } from './store/dot-template.store';
 
 @Component({
     selector: 'dot-api-link',

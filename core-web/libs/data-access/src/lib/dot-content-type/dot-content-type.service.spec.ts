@@ -1,6 +1,6 @@
-import { DotContentTypeService } from './dot-content-type.service';
-import { getTestBed, TestBed } from '@angular/core/testing';
 import { HttpClientTestingModule, HttpTestingController } from '@angular/common/http/testing';
+import { getTestBed, TestBed } from '@angular/core/testing';
+
 import { CoreWebService } from '@dotcms/dotcms-js';
 import {
     DotCMSContentType,
@@ -12,6 +12,8 @@ import {
     dotcmsContentTypeBasicMock,
     mockDotContentlet
 } from '@dotcms/utils-testing';
+
+import { DotContentTypeService } from './dot-content-type.service';
 
 function isRecentContentType(type: StructureTypeView): boolean {
     return type.name.startsWith('RECENT');

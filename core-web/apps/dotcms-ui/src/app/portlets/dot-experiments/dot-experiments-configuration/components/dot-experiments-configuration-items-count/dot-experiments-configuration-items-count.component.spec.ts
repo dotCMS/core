@@ -1,5 +1,6 @@
-import { DotExperimentsConfigurationItemsCountComponent } from './dot-experiments-configuration-items-count.component';
 import { byTestId, createComponentFactory, Spectator } from '@ngneat/spectator';
+
+import { DotExperimentsConfigurationItemsCountComponent } from './dot-experiments-configuration-items-count.component';
 
 describe('DotExperimentsConfigurationItemsCountComponent', () => {
     let spectator: Spectator<DotExperimentsConfigurationItemsCountComponent>;

@@ -1,5 +1,6 @@
-import { CommonModule } from '@angular/common';
 import { moduleMetadata, Story } from '@storybook/angular';
+
+import { CommonModule } from '@angular/common';
 
 import { SuggestionsListItemComponent } from './components/suggestions-list-item/suggestions-list-item.component';
 import { SuggestionListComponent } from './suggestion-list.component';

@@ -1,17 +1,18 @@
 import {
     Component,
-    Input,
-    ViewChild,
-    OnInit,
-    HostBinding,
-    SimpleChanges,
     EventEmitter,
-    Output,
+    HostBinding,
     HostListener,
-    OnChanges
+    Input,
+    OnChanges,
+    OnInit,
+    Output,
+    SimpleChanges,
+    ViewChild
 } from '@angular/core';
-import { Menu } from 'primeng/menu';
+
 import { MenuItem } from 'primeng/api';
+import { Menu } from 'primeng/menu';
 
 /**
  * The ActionButtonComponent is a configurable button with

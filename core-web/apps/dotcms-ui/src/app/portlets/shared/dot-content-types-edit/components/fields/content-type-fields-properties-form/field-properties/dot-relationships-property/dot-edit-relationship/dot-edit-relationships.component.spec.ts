@@ -1,21 +1,22 @@
 /* eslint-disable @typescript-eslint/no-empty-function */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { DOTTestBed } from '@dotcms/app/test/dot-test-bed';
-import { DotEditRelationshipsComponent } from './dot-edit-relationships.component';
-import { Component, Input, Output, EventEmitter, Injectable, DebugElement } from '@angular/core';
-import { DotMessageService } from '@dotcms/data-access';
-import { PaginationEvent } from '@components/_common/searchable-dropdown/component';
-import { MockDotMessageService } from '@dotcms/utils-testing';
-import { DotEditContentTypeCacheService } from '@portlets/shared/dot-content-types-edit/components/fields/content-type-fields-properties-form/field-properties/dot-relationships-property/services/dot-edit-content-type-cache.service';
-import { PaginatorService } from '@dotcms/data-access';
-import { DotRelationshipService } from '@portlets/shared/dot-content-types-edit/components/fields/content-type-fields-properties-form/field-properties/dot-relationships-property/services/dot-relationship.service';
+import { Observable, of } from 'rxjs';
+
+import { Component, DebugElement, EventEmitter, Injectable, Input, Output } from '@angular/core';
 import { ComponentFixture, waitForAsync } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
-import { Observable, of } from 'rxjs';
-import { DotRelationshipCardinality } from '@portlets/shared/dot-content-types-edit/components/fields/content-type-fields-properties-form/field-properties/dot-relationships-property/model/dot-relationship-cardinality.model';
+
+import { PaginationEvent } from '@components/_common/searchable-dropdown/component';
+import { DOTTestBed } from '@dotcms/app/test/dot-test-bed';
+import { DotMessageService, PaginatorService } from '@dotcms/data-access';
 import { DotCMSContentType } from '@dotcms/dotcms-models';
-import { dotcmsContentTypeBasicMock } from '@dotcms/utils-testing';
+import { dotcmsContentTypeBasicMock, MockDotMessageService } from '@dotcms/utils-testing';
+import { DotRelationshipCardinality } from '@portlets/shared/dot-content-types-edit/components/fields/content-type-fields-properties-form/field-properties/dot-relationships-property/model/dot-relationship-cardinality.model';
+import { DotEditContentTypeCacheService } from '@portlets/shared/dot-content-types-edit/components/fields/content-type-fields-properties-form/field-properties/dot-relationships-property/services/dot-edit-content-type-cache.service';
+import { DotRelationshipService } from '@portlets/shared/dot-content-types-edit/components/fields/content-type-fields-properties-form/field-properties/dot-relationships-property/services/dot-relationship.service';
+
+import { DotEditRelationshipsComponent } from './dot-edit-relationships.component';
 
 const mockRelationships = [
     {

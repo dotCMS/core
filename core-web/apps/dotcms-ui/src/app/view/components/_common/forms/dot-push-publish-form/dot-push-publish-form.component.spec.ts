@@ -1,41 +1,47 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { DotPushPublishFormComponent } from './dot-push-publish-form.component';
-import {
-    DotcmsConfigServiceMock,
-    MockDotMessageService,
-    mockDotTimeZones
-} from '@dotcms/utils-testing';
-import { Component, DebugElement, Input } from '@angular/core';
-import { PushPublishServiceMock } from '@components/_common/dot-push-publish-env-selector/dot-push-publish-env-selector.component.spec';
-import { PushPublishService } from '@dotcms/app/api/services/push-publish/push-publish.service';
-import { DotMessageService } from '@dotcms/data-access';
-import { FormsModule, ReactiveFormsModule } from '@angular/forms';
-import { DotDialogModule } from '@components/dot-dialog/dot-dialog.module';
-import { PushPublishEnvSelectorModule } from '@components/_common/dot-push-publish-env-selector/dot-push-publish-env-selector.module';
-import { DotFieldValidationMessageModule } from '@components/_common/dot-field-validation-message/dot-file-validation-message.module';
-import { DotPipesModule } from '@pipes/dot-pipes.module';
-import { DotPushPublishFilter, DotPushPublishFiltersService } from '@dotcms/data-access';
-import { CoreWebService, DotcmsConfigService, LoginService } from '@dotcms/dotcms-js';
-import { CoreWebServiceMock } from '@dotcms/utils-testing';
-import { DotHttpErrorManagerService } from '@dotcms/app/api/services/dot-http-error-manager/dot-http-error-manager.service';
-import { DotAlertConfirmService } from '@dotcms/data-access';
-import { LoginServiceMock } from '@dotcms/utils-testing';
-import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
-import { MockDotRouterService } from '@dotcms/utils-testing';
-import { By } from '@angular/platform-browser';
-import { DotPushPublishDialogData } from '@dotcms/dotcms-models';
-import { ConfirmationService, SelectItem } from 'primeng/api';
-import { PushPublishEnvSelectorComponent } from '@components/_common/dot-push-publish-env-selector/dot-push-publish-env-selector.component';
 import { of } from 'rxjs';
+
 import { HttpClientTestingModule } from '@angular/common/http/testing';
-import { SelectButton, SelectButtonModule } from 'primeng/selectbutton';
+import { Component, DebugElement, Input } from '@angular/core';
+import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { FormsModule, ReactiveFormsModule } from '@angular/forms';
+import { By } from '@angular/platform-browser';
+
+import { ConfirmationService, SelectItem } from 'primeng/api';
+import { AutoFocusModule } from 'primeng/autofocus';
 import { CalendarModule } from 'primeng/calendar';
 import { Dropdown, DropdownModule } from 'primeng/dropdown';
+import { SelectButton, SelectButtonModule } from 'primeng/selectbutton';
 
-import { AutoFocusModule } from 'primeng/autofocus';
+import { DotFieldValidationMessageModule } from '@components/_common/dot-field-validation-message/dot-file-validation-message.module';
+import { PushPublishEnvSelectorComponent } from '@components/_common/dot-push-publish-env-selector/dot-push-publish-env-selector.component';
+import { PushPublishServiceMock } from '@components/_common/dot-push-publish-env-selector/dot-push-publish-env-selector.component.spec';
+import { PushPublishEnvSelectorModule } from '@components/_common/dot-push-publish-env-selector/dot-push-publish-env-selector.module';
+import { DotDialogModule } from '@components/dot-dialog/dot-dialog.module';
+import { DotHttpErrorManagerService } from '@dotcms/app/api/services/dot-http-error-manager/dot-http-error-manager.service';
 import { DotParseHtmlService } from '@dotcms/app/api/services/dot-parse-html/dot-parse-html.service';
+import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
+import { PushPublishService } from '@dotcms/app/api/services/push-publish/push-publish.service';
+import {
+    DotAlertConfirmService,
+    DotMessageService,
+    DotPushPublishFilter,
+    DotPushPublishFiltersService
+} from '@dotcms/data-access';
+import { CoreWebService, DotcmsConfigService, LoginService } from '@dotcms/dotcms-js';
+import { DotPushPublishDialogData } from '@dotcms/dotcms-models';
+import {
+    CoreWebServiceMock,
+    DotcmsConfigServiceMock,
+    LoginServiceMock,
+    MockDotMessageService,
+    MockDotRouterService,
+    mockDotTimeZones
+} from '@dotcms/utils-testing';
+import { DotPipesModule } from '@pipes/dot-pipes.module';
+
+import { DotPushPublishFormComponent } from './dot-push-publish-form.component';
 
 const messageServiceMock = new MockDotMessageService({
     'contenttypes.content.push_publish.action.push': 'Push',

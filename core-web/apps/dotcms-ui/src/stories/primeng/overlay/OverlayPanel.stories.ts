@@ -1,14 +1,17 @@
 // also exported from '@storybook/angular' if you can deal with breaking changes in 6.1
-import { Story, Meta } from '@storybook/angular/types-6-0';
+import { moduleMetadata } from '@storybook/angular';
+import { Meta, Story } from '@storybook/angular/types-6-0';
+
+import { HttpClientModule } from '@angular/common/http';
 import { BrowserModule } from '@angular/platform-browser';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
+
 import { ButtonModule } from 'primeng/button';
-import { ToastModule } from 'primeng/toast';
-import { TableModule } from 'primeng/table';
-import { HttpClientModule } from '@angular/common/http';
-import { ProductService } from './SharedProducts.service';
 import { OverlayPanelModule } from 'primeng/overlaypanel';
-import { moduleMetadata } from '@storybook/angular';
+import { TableModule } from 'primeng/table';
+import { ToastModule } from 'primeng/toast';
+
+import { ProductService } from './SharedProducts.service';
 
 const OverlayPanelTemplate = `
   <p-button [label]="selectedProduct ? selectedProduct.name : 'Select a Product'" icon="pi pi-search" (click)="op.toggle($event)"></p-button>

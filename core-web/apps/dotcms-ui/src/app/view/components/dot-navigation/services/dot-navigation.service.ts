@@ -1,19 +1,19 @@
+
+import { BehaviorSubject, Observable } from 'rxjs';
+
 import { Injectable } from '@angular/core';
-import { Router, NavigationEnd, Event } from '@angular/router';
+import { Title } from '@angular/platform-browser';
+import { Event, NavigationEnd, Router } from '@angular/router';
 
-import { Observable, BehaviorSubject } from 'rxjs';
-import { filter, switchMap, map, tap, take } from 'rxjs/operators';
+import { filter, map, switchMap, take, tap } from 'rxjs/operators';
 
-import { Auth } from '@dotcms/dotcms-js';
-import { DotcmsEventsService, LoginService } from '@dotcms/dotcms-js';
-
-import { DotMenu, DotMenuItem } from '@models/navigation';
 import { DotMenuService } from '@dotcms/app/api/services/dot-menu.service';
 import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
+import { DotEventsService, DotLocalstorageService } from '@dotcms/data-access';
+import { Auth, DotcmsEventsService, LoginService } from '@dotcms/dotcms-js';
+import { DotMenu, DotMenuItem } from '@models/navigation';
+
 import { DotIframeService } from '../../_common/iframe/service/dot-iframe/dot-iframe.service';
-import { DotEventsService } from '@dotcms/data-access';
-import { DotLocalstorageService } from '@dotcms/data-access';
-import { Title } from '@angular/platform-browser';
 
 export const replaceSectionsMap = {
     'edit-page': 'site-browser'
