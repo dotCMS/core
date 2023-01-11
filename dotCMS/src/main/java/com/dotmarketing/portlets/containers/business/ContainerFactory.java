@@ -25,7 +25,6 @@ public interface ContainerFactory {
 	 * @throws DotDataException
 	 */
 	void save(Container container) throws DotDataException;
-
 	/**
 	 * Save an existing container
 	 * @param container

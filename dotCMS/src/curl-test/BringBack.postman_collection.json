@@ -1,6 +1,6 @@
 {
 	"info": {
-		"_postman_id": "bcb92a0a-19ee-4710-8120-847372062cac",
+		"_postman_id": "07fa881b-476f-49a9-9e00-997cc61e4840",
 		"name": "Bring-Back Version Feature",
 		"description": "Verifies that the Bring-Back Version feature available in the **History** tab of Templates, Containers and Contentlets -- i.e., Contents, Files, Sites, etc. -- is working as expected.",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
