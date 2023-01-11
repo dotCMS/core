@@ -42,6 +42,7 @@ export class DotExperimentsConfigurationComponent implements OnInit {
 
     /**
      * Go to Experiment List
+     * @param {string} pageId
      * @returns void
      * @memberof DotExperimentsConfigurationComponent
      */
@@ -73,7 +74,8 @@ export class DotExperimentsConfigurationComponent implements OnInit {
 
     /**
      * Save a specific variant
-     * @param {Pick<DotExperiment, 'name'>} variant
+     * @param data
+     * @param {string} experimentId
      * @returns void
      * @memberof DotExperimentsConfigurationComponent
      */
@@ -86,7 +88,8 @@ export class DotExperimentsConfigurationComponent implements OnInit {
 
     /**
      * Edit a specific variant
-     * @param {Variant} variant
+     * @param data
+     * @param {string} experimentId
      * @returns void
      * @memberof DotExperimentsConfigurationComponent
      */
@@ -100,6 +103,7 @@ export class DotExperimentsConfigurationComponent implements OnInit {
     /**
      * Delete a specific variant
      * @param {Variant} variant
+     * @param {string} experimentId
      * @returns void
      * @memberof DotExperimentsConfigurationComponent
      */
