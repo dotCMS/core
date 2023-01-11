@@ -8,4 +8,10 @@ import org.immutables.value.Value;
 @JsonDeserialize(as = ImmutableHiddenField.class)
 public abstract class HiddenField extends Field {
 
+    @Value.Default
+    @Override
+    public DataTypes dataType(){
+        return DataTypes.SYSTEM;
+    };
+
 }

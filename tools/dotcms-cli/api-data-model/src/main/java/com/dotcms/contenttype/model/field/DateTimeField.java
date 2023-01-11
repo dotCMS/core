@@ -10,4 +10,10 @@ import org.immutables.value.Value;
 @JsonDeserialize(as = ImmutableDateTimeField.class)
 public abstract class DateTimeField extends Field {
 
+    @Value.Default
+    @Override
+    public DataTypes dataType(){
+        return DataTypes.DATE;
+    };
+
 }

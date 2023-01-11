@@ -9,4 +9,10 @@ import org.immutables.value.Value;
 @JsonDeserialize(as = ImmutableFileField.class)
 public abstract class FileField extends Field {
 
+    @Value.Default
+    @Override
+    public DataTypes dataType(){
+        return DataTypes.TEXT;
+    };
+
 }
