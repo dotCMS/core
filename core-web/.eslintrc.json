@@ -74,21 +74,27 @@
                         "groups": [
                             "builtin",
                             "external",
+                            "internal",
+                            "object",
                             "index",
                             "sibling",
                             "parent",
-                            "internal",
-                            "object",
                             "type"
                         ],
                         "pathGroups": [
-                            { "pattern": "@angular/**", "group": "builtin" },
-                            { "pattern": "primeng/**", "group": "external" },
-                            { "pattern": "rxjs/**", "group": "external" },
-                            { "pattern": "@portlets/**", "group": "internal" },
-                            { "pattern": "@dotcms/**", "group": "internal" },
+                            { "pattern": "@angular/**", "group": "external", "position": "after" },
+                            { "pattern": "primeng/**", "group": "external", "position": "after" },
+                            { "pattern": "rxjs/**", "group": "external", "position": "after" },
                             { "pattern": "@components/**", "group": "internal" },
-                            { "pattern": "@services/**", "group": "internal" }
+                            { "pattern": "@directives/**", "group": "internal" },
+                            { "pattern": "@dotcms-ui/**", "group": "internal" },
+                            { "pattern": "@dotcms/**", "group": "internal" },
+                            { "pattern": "@portlets/**", "group": "internal" },
+                            { "pattern": "@models/**", "group": "internal" },
+                            { "pattern": "@pipes/**", "group": "internal" },
+                            { "pattern": "@services/**", "group": "internal" },
+                            { "pattern": "@shared/**", "group": "internal" },
+                            { "pattern": "@tests/**", "group": "internal" }
                         ],
                         "pathGroupsExcludedImportTypes": ["internal"],
                         "alphabetize": {
