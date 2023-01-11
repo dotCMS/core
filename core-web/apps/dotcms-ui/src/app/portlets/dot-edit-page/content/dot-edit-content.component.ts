@@ -1,13 +1,14 @@
-import { fromEvent, merge, Observable, of, Subject } from 'rxjs';
-
+import { HttpErrorResponse } from '@angular/common/http';
 import { Component, ElementRef, NgZone, OnDestroy, OnInit, ViewChild } from '@angular/core';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { ActivatedRoute, Router } from '@angular/router';
 
-import { HttpErrorResponse } from '@angular/common/http';
-import { DotContentletEditorService } from '@components/dot-contentlet-editor/services/dot-contentlet-editor.service';
+import { DialogService } from 'primeng/dynamicdialog';
+import { fromEvent, merge, Observable, of, Subject } from 'rxjs';
+
 import { DotGlobalMessageService } from '@components/_common/dot-global-message/dot-global-message.service';
 import { IframeOverlayService } from '@components/_common/iframe/service/iframe-overlay.service';
+import { DotContentletEditorService } from '@components/dot-contentlet-editor/services/dot-contentlet-editor.service';
 import {
     DotAlertConfirmService,
     DotEditPageService,
@@ -47,7 +48,6 @@ import { DotCustomEventHandlerService } from '@services/dot-custom-event-handler
 import { DotHttpErrorManagerService } from '@services/dot-http-error-manager/dot-http-error-manager.service';
 import { DotRouterService } from '@services/dot-router/dot-router.service';
 import { DotUiColorsService } from '@services/dot-ui-colors/dot-ui-colors.service';
-import { DialogService } from 'primeng/dynamicdialog';
 
 export const EDIT_BLOCK_EDITOR_CUSTOM_EVENT = 'edit-block-editor';
 
