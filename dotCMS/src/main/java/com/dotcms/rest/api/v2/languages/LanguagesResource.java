@@ -49,6 +49,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.validation.constraints.NotNull;
 import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
@@ -321,11 +322,15 @@ public class LanguagesResource {
      * @param language
      * @return
      */
-    private Locale resolveAdminLocale(String language) {
+    private Locale resolveAdminLocale(@NotNull String language) {
         final Locale defaultLocale = APILocator.getCompanyAPI().getDefaultCompany().getLocale();
         final Locale requestedLocale = ConversionUtils.toLocale(language);
         final Locale[] locales = LanguageUtil.getAvailableLocales();
 
+        if(null == requestedLocale) {
+            return defaultLocale;
+        }
+        
         for(int i=0;i<locales.length;i++){
             if(locales[i].equals(requestedLocale)) {
                 return locales[i];
@@ -367,9 +372,8 @@ public class LanguagesResource {
             @Context final HttpServletResponse response,
             @PathParam("language") final String language){
 
-        final InitDataObject initData = new WebResource.InitBuilder(webResource)
+        final InitDataObject initData = new WebResource.InitBuilder(request, response)
                 .requiredAnonAccess(AnonymousAccess.READ)
-                .requestAndResponse(request, response)
                 .rejectWhenNoUser(false).init();
 
         final User user = initData.getUser();
