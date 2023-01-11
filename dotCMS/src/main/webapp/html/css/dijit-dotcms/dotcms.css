@@ -9756,6 +9756,7 @@ Styles for commons fields along the backend
   border: 0;
   color: #fff;
   cursor: pointer;
+  padding: 0 14px;
 }
 
 .fileAjaxUploader input[type="file"]::-webkit-file-upload-button:hover {
