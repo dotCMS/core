@@ -1,10 +1,14 @@
-import { pluck } from 'rxjs/operators';
-import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
-import { FieldType } from '../models';
-import { DotCMSContentTypeField, DotCMSContentTypeLayoutRow } from '@dotcms/dotcms-models';
+
+import { Injectable } from '@angular/core';
+
+import { pluck } from 'rxjs/operators';
+
 import { CoreWebService } from '@dotcms/dotcms-js';
+import { DotCMSContentTypeField, DotCMSContentTypeLayoutRow } from '@dotcms/dotcms-models';
+
 import { FIELD_ICONS } from '../content-types-fields-list/content-types-fields-icon-map';
+import { FieldType } from '../models';
 
 /**
  * Provide method to handle with the Field Types

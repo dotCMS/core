@@ -1,16 +1,20 @@
+import { Subject } from 'rxjs';
+
 import { Component, OnDestroy, OnInit } from '@angular/core';
 import { UntypedFormBuilder, UntypedFormGroup, Validators } from '@angular/forms';
 
-import { Subject } from 'rxjs';
-import { filter, takeUntil } from 'rxjs/operators';
 import { DialogService } from 'primeng/dynamicdialog';
+import { DynamicDialogRef } from 'primeng/dynamicdialog/dynamicdialog-ref';
+
+import { filter, takeUntil } from 'rxjs/operators';
+
+import { DotMessageService } from '@dotcms/data-access';
+import { Site, SiteService } from '@dotcms/dotcms-js';
+import { DotLayout, DotTemplate } from '@dotcms/dotcms-models';
+
 
 import { DotTemplatePropsComponent } from './dot-template-props/dot-template-props.component';
 import { DotTemplateItem, DotTemplateState, DotTemplateStore } from './store/dot-template.store';
-import { DotMessageService } from '@dotcms/data-access';
-import { DynamicDialogRef } from 'primeng/dynamicdialog/dynamicdialog-ref';
-import { Site, SiteService } from '@dotcms/dotcms-js';
-import { DotTemplate, DotLayout } from '@dotcms/dotcms-models';
 
 @Component({
     selector: 'dot-template-create-edit',

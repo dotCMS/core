@@ -1,13 +1,15 @@
-import { catchError, map, pluck, take } from 'rxjs/operators';
-import { Injectable } from '@angular/core';
-import { HttpErrorResponse } from '@angular/common/http';
-
 import { Observable } from 'rxjs';
+
+import { HttpErrorResponse } from '@angular/common/http';
+import { Injectable } from '@angular/core';
+
+import { catchError, map, pluck, take } from 'rxjs/operators';
+
 import { CoreWebService, DotRequestOptionsArgs } from '@dotcms/dotcms-js';
+import { DotActionBulkResult, DotTemplate } from '@dotcms/dotcms-models';
 
 import { DotHttpErrorManagerService } from '../dot-http-error-manager/dot-http-error-manager.service';
 
-import { DotActionBulkResult, DotTemplate } from '@dotcms/dotcms-models';
 
 export const TEMPLATE_API_URL = '/api/v1/templates/';
 

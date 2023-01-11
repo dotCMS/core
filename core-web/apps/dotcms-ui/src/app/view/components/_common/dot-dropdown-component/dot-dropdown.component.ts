@@ -1,14 +1,14 @@
+import { animate, style, transition, trigger } from '@angular/animations';
 import {
     Component,
-    EventEmitter,
-    Input,
-    Output,
     ElementRef,
+    EventEmitter,
     HostListener,
+    Input,
     OnChanges,
+    Output,
     SimpleChanges
 } from '@angular/core';
-import { trigger, transition, style, animate } from '@angular/animations';
 
 @Component({
     animations: [

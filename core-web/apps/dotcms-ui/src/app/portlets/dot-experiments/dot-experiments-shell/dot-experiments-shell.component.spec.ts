@@ -1,12 +1,17 @@
-import { DotExperimentsShellComponent } from './dot-experiments-shell.component';
 import { createComponentFactory, Spectator } from '@ngneat/spectator';
+import { ComponentStore } from '@ngrx/component-store';
+
 import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
-import { DotExperimentsUiHeaderComponent } from '@portlets/dot-experiments/shared/ui/dot-experiments-header/dot-experiments-ui-header.component';
-import { DotLoadingIndicatorModule } from '@components/_common/iframe/dot-loading-indicator/dot-loading-indicator.module';
-import { ComponentStore } from '@ngrx/component-store';
-import { Toast, ToastModule } from 'primeng/toast';
+
 import { MessageService } from 'primeng/api';
+import { Toast, ToastModule } from 'primeng/toast';
+
+import { DotLoadingIndicatorModule } from '@components/_common/iframe/dot-loading-indicator/dot-loading-indicator.module';
+import { DotExperimentsUiHeaderComponent } from '@portlets/dot-experiments/shared/ui/dot-experiments-header/dot-experiments-ui-header.component';
+
+
+import { DotExperimentsShellComponent } from './dot-experiments-shell.component';
 
 class ActivatedRouteMock {
     get parent() {

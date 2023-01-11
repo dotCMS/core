@@ -1,5 +1,15 @@
-import { Injectable } from '@angular/core';
 import { ComponentStore, tapResponse } from '@ngrx/component-store';
+import { Observable, throwError } from 'rxjs';
+
+import { HttpErrorResponse } from '@angular/common/http';
+import { Injectable } from '@angular/core';
+import { Title } from '@angular/platform-browser';
+
+import { MessageService } from 'primeng/api';
+
+import { switchMap, tap, withLatestFrom } from 'rxjs/operators';
+
+import { DotMessageService } from '@dotcms/data-access';
 import {
     DotExperiment,
     ExperimentSteps,
@@ -9,13 +19,10 @@ import {
     TrafficProportion,
     Variant
 } from '@dotcms/dotcms-models';
-import { Observable, throwError } from 'rxjs';
-import { switchMap, tap, withLatestFrom } from 'rxjs/operators';
-import { HttpErrorResponse } from '@angular/common/http';
 import { DotExperimentsService } from '@portlets/dot-experiments/shared/services/dot-experiments.service';
-import { Title } from '@angular/platform-browser';
-import { DotMessageService } from '@dotcms/data-access';
-import { MessageService } from 'primeng/api';
+
+
+
 
 export interface DotExperimentsConfigurationState {
     experiment: DotExperiment | null;

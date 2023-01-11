@@ -1,7 +1,9 @@
-import { Injectable } from '@angular/core';
-import { pluck } from 'rxjs/operators';
-import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
+
+import { HttpClient } from '@angular/common/http';
+import { Injectable } from '@angular/core';
+
+import { pluck } from 'rxjs/operators';
 
 export enum ESOrderDirection {
     ASC = 'ASC',

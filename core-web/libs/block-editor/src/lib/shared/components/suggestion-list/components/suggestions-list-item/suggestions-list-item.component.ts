@@ -1,6 +1,5 @@
-import { Component, ElementRef, HostBinding, Input, OnInit, HostListener } from '@angular/core';
-
 import { FocusableOption } from '@angular/cdk/a11y';
+import { Component, ElementRef, HostBinding, HostListener, Input, OnInit } from '@angular/core';
 
 @Component({
     selector: 'dot-suggestions-list-item',

@@ -1,19 +1,29 @@
 import { byTestId, createComponentFactory, Spectator } from '@ngneat/spectator';
+
 import { Pipe, PipeTransform } from '@angular/core';
-import { DotExperimentsListTableComponent } from './dot-experiments-list-table.component';
-import { DotMessageService } from '@dotcms/data-access';
+
 import { ConfirmationService, MessageService } from 'primeng/api';
 import { ConfirmPopup, ConfirmPopupModule } from 'primeng/confirmpopup';
-import { DotExperimentsEmptyExperimentsComponent } from '../dot-experiments-empty-experiments/dot-experiments-empty-experiments.component';
-import { DotExperiment, GroupedExperimentByStatus } from '@dotcms/dotcms-models';
 import { Table, TableModule } from 'primeng/table';
-import { DotIconModule } from '@dotcms/ui';
-import { UiDotIconButtonTooltipModule } from '@components/_common/dot-icon-button-tooltip/dot-icon-button-tooltip.module';
-import { UiDotIconButtonTooltipComponent } from '@components/_common/dot-icon-button-tooltip/dot-icon-button-tooltip.component';
 import { ToastModule } from 'primeng/toast';
-import { DotExperimentStatusList, TrafficProportionTypes } from '@dotcms/dotcms-models';
-import { DotMessagePipeModule } from '@pipes/dot-message/dot-message-pipe.module';
+
+import { UiDotIconButtonTooltipComponent } from '@components/_common/dot-icon-button-tooltip/dot-icon-button-tooltip.component';
+import { UiDotIconButtonTooltipModule } from '@components/_common/dot-icon-button-tooltip/dot-icon-button-tooltip.module';
+import { DotMessageService } from '@dotcms/data-access';
+import {
+    DotExperiment,
+    DotExperimentStatusList,
+    GroupedExperimentByStatus,
+    TrafficProportionTypes
+} from '@dotcms/dotcms-models';
+import { DotIconModule } from '@dotcms/ui';
 import { MockDotMessageService } from '@dotcms/utils-testing';
+import { DotMessagePipeModule } from '@pipes/dot-message/dot-message-pipe.module';
+
+
+import { DotExperimentsListTableComponent } from './dot-experiments-list-table.component';
+
+import { DotExperimentsEmptyExperimentsComponent } from '../dot-experiments-empty-experiments/dot-experiments-empty-experiments.component';
 
 const draftExperiments: DotExperiment[] = [
     {

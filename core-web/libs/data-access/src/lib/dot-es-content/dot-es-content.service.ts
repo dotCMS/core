@@ -1,7 +1,10 @@
-import { take, pluck } from 'rxjs/operators';
-import { CoreWebService } from '@dotcms/dotcms-js';
-import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
+
+import { Injectable } from '@angular/core';
+
+import { take, pluck } from 'rxjs/operators';
+
+import { CoreWebService } from '@dotcms/dotcms-js';
 import { ESContent } from '@dotcms/dotcms-models';
 
 export enum ESOrderDirection {

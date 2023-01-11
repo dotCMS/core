@@ -1,16 +1,13 @@
-import { TestBed } from '@angular/core/testing';
-
-import { DotExperimentsListStore, DotExperimentsState } from './dot-experiments-list-store.service';
-import { DotExperimentsService } from '@portlets/dot-experiments/shared/services/dot-experiments.service';
 import { of } from 'rxjs';
+
 import { HttpClientTestingModule } from '@angular/common/http/testing';
-import { DotMessagePipeModule } from '@pipes/dot-message/dot-message-pipe.module';
-import { MockDotMessageService } from '@dotcms/utils-testing';
-import { DotMessageService } from '@dotcms/data-access';
-import { MessageService } from 'primeng/api';
+import { TestBed } from '@angular/core/testing';
 import { ActivatedRoute } from '@angular/router';
 import { RouterTestingModule } from '@angular/router/testing';
-import { ExperimentMocks } from '@portlets/dot-experiments/test/mocks';
+
+import { MessageService } from 'primeng/api';
+
+import { DotMessageService } from '@dotcms/data-access';
 import {
     DotExperiment,
     DotExperimentStatusList,
@@ -18,6 +15,12 @@ import {
     LoadingState,
     TrafficProportionTypes
 } from '@dotcms/dotcms-models';
+import { MockDotMessageService } from '@dotcms/utils-testing';
+import { DotMessagePipeModule } from '@pipes/dot-message/dot-message-pipe.module';
+import { DotExperimentsService } from '@portlets/dot-experiments/shared/services/dot-experiments.service';
+import { ExperimentMocks } from '@portlets/dot-experiments/test/mocks';
+
+import { DotExperimentsListStore, DotExperimentsState } from './dot-experiments-list-store.service';
 
 const routerParamsPageId = '1111-1111-111';
 const ActivatedRouteMock = {

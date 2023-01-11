@@ -1,18 +1,19 @@
-import { NamePropertyComponent } from './index';
-import { ComponentFixture, waitForAsync, TestBed } from '@angular/core/testing';
-import { DebugElement, Component, Input } from '@angular/core';
-import { MockDotMessageService } from '@dotcms/utils-testing';
-import { DotMessageService } from '@dotcms/data-access';
+import { Component, DebugElement, Input } from '@angular/core';
+import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing';
 import {
-    UntypedFormGroup,
-    UntypedFormControl,
     NgControl,
-    ReactiveFormsModule
+    ReactiveFormsModule,
+    UntypedFormControl,
+    UntypedFormGroup
 } from '@angular/forms';
 import { By } from '@angular/platform-browser';
+
 import { DotCopyLinkModule } from '@components/dot-copy-link/dot-copy-link.module';
-import { dotcmsContentTypeFieldBasicMock } from '@dotcms/utils-testing';
+import { DotMessageService } from '@dotcms/data-access';
+import { dotcmsContentTypeFieldBasicMock, MockDotMessageService } from '@dotcms/utils-testing';
 import { DotPipesModule } from '@pipes/dot-pipes.module';
+
+import { NamePropertyComponent } from './index';
 
 @Component({
     selector: 'dot-field-validation-message',

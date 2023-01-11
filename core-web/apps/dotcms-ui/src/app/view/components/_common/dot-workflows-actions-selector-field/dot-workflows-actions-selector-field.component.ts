@@ -1,20 +1,25 @@
+import { Observable } from 'rxjs';
+
 import {
     Component,
+    forwardRef,
     Input,
     OnChanges,
-    SimpleChanges,
-    forwardRef,
     OnInit,
+    SimpleChanges,
     ViewChild
 } from '@angular/core';
-import { NG_VALUE_ACCESSOR, ControlValueAccessor } from '@angular/forms';
-import { Observable } from 'rxjs';
-import { tap } from 'rxjs/operators';
+import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
 
-import { DotCMSWorkflowAction, DotCMSWorkflow } from '@dotcms/dotcms-models';
-import { DotWorkflowsActionsSelectorFieldService } from './services/dot-workflows-actions-selector-field.service';
 import { SelectItem, SelectItemGroup } from 'primeng/api';
 import { Dropdown } from 'primeng/dropdown';
+
+import { tap } from 'rxjs/operators';
+
+import { DotCMSWorkflow, DotCMSWorkflowAction } from '@dotcms/dotcms-models';
+
+
+import { DotWorkflowsActionsSelectorFieldService } from './services/dot-workflows-actions-selector-field.service';
 
 interface DropdownEvent {
     originalEvent: MouseEvent;

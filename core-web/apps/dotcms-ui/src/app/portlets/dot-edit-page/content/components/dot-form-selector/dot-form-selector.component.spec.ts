@@ -1,21 +1,29 @@
-import { of as observableOf, Observable } from 'rxjs';
-import { DebugElement, Component } from '@angular/core';
-import { DotFormSelectorComponent } from './dot-form-selector.component';
+import { Observable, of as observableOf } from 'rxjs';
+
+import { HttpClientTestingModule } from '@angular/common/http/testing';
+import { Component, DebugElement } from '@angular/core';
 import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
-import { PaginatorService } from '@dotcms/data-access';
-import { CoreWebServiceMock, MockDotMessageService } from '@dotcms/utils-testing';
-import { DotMessageService } from '@dotcms/data-access';
-import { DotDialogModule } from '@components/dot-dialog/dot-dialog.module';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
-import { dotcmsContentTypeBasicMock } from '@dotcms/utils-testing';
-import { DotCMSContentType } from '@dotcms/dotcms-models';
-import { HttpClientTestingModule } from '@angular/common/http/testing';
+
 import { ButtonModule } from 'primeng/button';
-import { DotPipesModule } from '@dotcms/app/view/pipes/dot-pipes.module';
 import { TableModule } from 'primeng/table';
-import { CoreWebService } from '@dotcms/dotcms-js';
+
 import { delay } from 'rxjs/operators';
+
+import { DotDialogModule } from '@components/dot-dialog/dot-dialog.module';
+import { DotPipesModule } from '@dotcms/app/view/pipes/dot-pipes.module';
+import { DotMessageService, PaginatorService } from '@dotcms/data-access';
+import { CoreWebService } from '@dotcms/dotcms-js';
+import { DotCMSContentType } from '@dotcms/dotcms-models';
+import {
+    CoreWebServiceMock,
+    dotcmsContentTypeBasicMock,
+    MockDotMessageService
+} from '@dotcms/utils-testing';
+
+
+import { DotFormSelectorComponent } from './dot-form-selector.component';
 
 const mockContentType: DotCMSContentType = {
     ...dotcmsContentTypeBasicMock,

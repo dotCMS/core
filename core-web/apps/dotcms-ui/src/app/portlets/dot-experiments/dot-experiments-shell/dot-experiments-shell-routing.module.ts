@@ -1,10 +1,11 @@
-import { NgModule } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { HTTP_INTERCEPTORS } from '@angular/common/http';
+import { NgModule } from '@angular/core';
 import { RouterModule, Routes } from '@angular/router';
 
-import { DotExperimentsShellComponent } from './dot-experiments-shell.component';
-import { HTTP_INTERCEPTORS } from '@angular/common/http';
 import { ServerErrorInterceptor } from '@shared/interceptors/server-error.interceptor';
+
+import { DotExperimentsShellComponent } from './dot-experiments-shell.component';
 
 const routes: Routes = [
     {

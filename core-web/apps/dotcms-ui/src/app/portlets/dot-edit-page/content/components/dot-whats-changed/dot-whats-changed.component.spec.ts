@@ -1,13 +1,16 @@
+import { of } from 'rxjs';
+
+import { Component, DebugElement, ElementRef, ViewChild } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
-import { DebugElement, Component, ViewChild, ElementRef } from '@angular/core';
-import { DotWhatsChangedComponent, SHOW_DIFF_STYLES } from './dot-whats-changed.component';
+
 import { IframeComponent } from '@components/_common/iframe/iframe-component';
-import { DotEditPageService } from '@dotcms/data-access';
-import { of } from 'rxjs';
-import { DotDOMHtmlUtilService } from '@portlets/dot-edit-page/content/services/html/dot-dom-html-util.service';
-import { DotMessagePipeModule } from '@pipes/dot-message/dot-message-pipe.module';
 import { DotHttpErrorManagerService } from '@dotcms/app/api/services/dot-http-error-manager/dot-http-error-manager.service';
+import { DotEditPageService } from '@dotcms/data-access';
+import { DotMessagePipeModule } from '@pipes/dot-message/dot-message-pipe.module';
+import { DotDOMHtmlUtilService } from '@portlets/dot-edit-page/content/services/html/dot-dom-html-util.service';
+
+import { DotWhatsChangedComponent, SHOW_DIFF_STYLES } from './dot-whats-changed.component';
 
 @Component({
     selector: 'dot-test',

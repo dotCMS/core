@@ -1,16 +1,17 @@
 import { Component, OnDestroy } from '@angular/core';
+
 import { MessageService } from 'primeng/api';
+import { DialogService, DynamicDialogRef } from 'primeng/dynamicdialog';
+
 import { DynamicDialogProductsComponent } from './DynamicDialogProducts.component';
 import { Product } from './Product.interface';
-import { DialogService } from 'primeng/dynamicdialog';
-import { DynamicDialogRef } from 'primeng/dynamicdialog';
 
 @Component({
     selector: 'dot-p-dialog-button',
     providers: [DialogService, MessageService],
     template: `<button
-        type="button"
         (click)="show()"
+        type="button"
         pButton
         icon="pi pi-info-circle"
         label="Show"

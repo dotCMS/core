@@ -1,11 +1,14 @@
 import { Observable } from 'rxjs';
 
-import { map } from 'rxjs/operators';
 import { Injectable } from '@angular/core';
-import { CanActivate, ActivatedRouteSnapshot, RouterStateSnapshot } from '@angular/router';
+import { ActivatedRouteSnapshot, CanActivate, RouterStateSnapshot } from '@angular/router';
+
+import { map } from 'rxjs/operators';
+
+import { DotNavigationService } from '@components/dot-navigation/services/dot-navigation.service';
+
 import { DotMenuService } from '../dot-menu.service';
 import { DotRouterService } from '../dot-router/dot-router.service';
-import { DotNavigationService } from '@components/dot-navigation/services/dot-navigation.service';
 
 /**
  * Route Guard that checks if a User have access to the specified Menu portlet.

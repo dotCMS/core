@@ -1,10 +1,12 @@
-import { DotContainerContentletService } from './dot-container-contentlet.service';
-import { DotCMSContentType, DotPage, DotPageContainer } from '@dotcms/dotcms-models';
-import { dotcmsContentTypeBasicMock } from '@dotcms/utils-testing';
-import { TestBed, getTestBed } from '@angular/core/testing';
-import { HttpTestingController, HttpClientTestingModule } from '@angular/common/http/testing';
+import { HttpClientTestingModule, HttpTestingController } from '@angular/common/http/testing';
+import { getTestBed, TestBed } from '@angular/core/testing';
+
 import { CoreWebService } from '@dotcms/dotcms-js';
-import { CoreWebServiceMock } from '@dotcms/utils-testing';
+import { DotCMSContentType, DotPage, DotPageContainer } from '@dotcms/dotcms-models';
+import { CoreWebServiceMock, dotcmsContentTypeBasicMock } from '@dotcms/utils-testing';
+
+import { DotContainerContentletService } from './dot-container-contentlet.service';
+
 import { DotPageContent } from '../../shared/models';
 
 describe('DotContainerContentletService', () => {

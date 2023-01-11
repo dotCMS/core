@@ -1,9 +1,10 @@
-import { NgModule } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { DotGlobalMessageService } from './dot-global-message.service';
+import { NgModule } from '@angular/core';
+
+import { DotIconModule, DotSpinnerModule } from '@dotcms/ui';
+
 import { DotGlobalMessageComponent } from './dot-global-message.component';
-import { DotIconModule } from '@dotcms/ui';
-import { DotSpinnerModule } from '@dotcms/ui';
+import { DotGlobalMessageService } from './dot-global-message.service';
 
 @NgModule({
     imports: [CommonModule, DotIconModule, DotSpinnerModule],

@@ -1,17 +1,22 @@
-import { DotExperimentsConfigurationVariantsAddComponent } from './dot-experiments-configuration-variants-add.component';
 import { byTestId, createComponentFactory, mockProvider, Spectator } from '@ngneat/spectator';
-import { MockDotMessageService } from '@dotcms/utils-testing';
-import { DotMessageService } from '@dotcms/data-access';
+
+import { CommonModule } from '@angular/common';
+import { ReactiveFormsModule } from '@angular/forms';
+
 import { MessageService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
-import { DotSidebarHeaderComponent } from '@shared/dot-sidebar-header/dot-sidebar-header.component';
-import { DotSidebarDirective } from '@portlets/shared/directives/dot-sidebar.directive';
-import { DotFieldValidationMessageModule } from '@components/_common/dot-field-validation-message/dot-file-validation-message.module';
 import { InputTextModule } from 'primeng/inputtext';
-import { SidebarModule } from 'primeng/sidebar';
 import { InputTextareaModule } from 'primeng/inputtextarea';
-import { ReactiveFormsModule } from '@angular/forms';
-import { CommonModule } from '@angular/common';
+import { SidebarModule } from 'primeng/sidebar';
+
+import { DotFieldValidationMessageModule } from '@components/_common/dot-field-validation-message/dot-file-validation-message.module';
+import { DotMessageService } from '@dotcms/data-access';
+import { MockDotMessageService } from '@dotcms/utils-testing';
+import { DotSidebarDirective } from '@portlets/shared/directives/dot-sidebar.directive';
+import { DotSidebarHeaderComponent } from '@shared/dot-sidebar-header/dot-sidebar-header.component';
+
+
+import { DotExperimentsConfigurationVariantsAddComponent } from './dot-experiments-configuration-variants-add.component';
 
 const messageServiceMock = new MockDotMessageService({
     'experiments.create.form.sidebar.header': 'Add a new experiment',

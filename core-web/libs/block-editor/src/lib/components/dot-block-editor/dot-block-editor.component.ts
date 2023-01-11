@@ -1,40 +1,39 @@
-import { Component, Injector, Input, OnInit, ViewContainerRef, OnDestroy } from '@angular/core';
-
 import { Subject } from 'rxjs';
+
+import { Component, Injector, Input, OnDestroy, OnInit, ViewContainerRef } from '@angular/core';
+
 import { debounceTime, takeUntil } from 'rxjs/operators';
 
 import { AnyExtension, Content, Editor } from '@tiptap/core';
+import CharacterCount, { CharacterCountStorage } from '@tiptap/extension-character-count';
 import { HeadingOptions, Level } from '@tiptap/extension-heading';
-import StarterKit, { StarterKitOptions } from '@tiptap/starter-kit';
+import { Highlight } from '@tiptap/extension-highlight';
+import { Link } from '@tiptap/extension-link';
 import Placeholder from '@tiptap/extension-placeholder';
+import { TableRow } from '@tiptap/extension-table-row';
+import { TextAlign } from '@tiptap/extension-text-align';
+import { Underline } from '@tiptap/extension-underline';
+import StarterKit, { StarterKitOptions } from '@tiptap/starter-kit';
 
 import {
     ActionsMenu,
+    BubbleFormExtension,
+    BubbleImageTabviewFormExtension,
     BubbleLinkFormExtension,
     ContentletBlock,
     DEFAULT_LANG_ID,
     DotBubbleMenuExtension,
-    DragHandler,
-    ImageUpload,
     DotConfigExtension,
-    BubbleFormExtension,
     DotFloatingButton,
-    ImageNode,
-    SetDocAttrStep,
-    formatHTML,
     DotTableCellExtension,
     DotTableExtension,
     DotTableHeaderExtension,
-    BubbleImageTabviewFormExtension
+    DragHandler,
+    formatHTML,
+    ImageNode,
+    ImageUpload,
+    SetDocAttrStep
 } from '@dotcms/block-editor';
-
-// Marks Extensions
-import { Highlight } from '@tiptap/extension-highlight';
-import { Link } from '@tiptap/extension-link';
-import { TextAlign } from '@tiptap/extension-text-align';
-import { Underline } from '@tiptap/extension-underline';
-import CharacterCount, { CharacterCountStorage } from '@tiptap/extension-character-count';
-import { TableRow } from '@tiptap/extension-table-row';
 
 function toTitleCase(str) {
     return str.replace(/\p{L}+('\p{L}+)?/gu, function (txt) {

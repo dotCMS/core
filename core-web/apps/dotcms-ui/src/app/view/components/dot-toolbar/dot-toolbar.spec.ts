@@ -1,22 +1,24 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { By } from '@angular/platform-browser';
+import { Component, DebugElement, Injectable, Input } from '@angular/core';
 import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing';
-import { DebugElement, Injectable, Component, Input } from '@angular/core';
-import { DotToolbarComponent } from './dot-toolbar.component';
+import { By } from '@angular/platform-browser';
+import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
+import { ActivatedRoute } from '@angular/router';
+import { RouterTestingModule } from '@angular/router/testing';
+
+import { DotNavLogoService } from '@dotcms/app/api/services/dot-nav-logo/dot-nav-logo.service';
+import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
 import { DOTTestBed } from '@dotcms/app/test/dot-test-bed';
 import { SiteService } from '@dotcms/dotcms-js';
-import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
-import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
-import { IframeOverlayService } from '../_common/iframe/service/iframe-overlay.service';
-import { DotNavigationService } from '../dot-navigation/services/dot-navigation.service';
-
-import { RouterTestingModule } from '@angular/router/testing';
-import { ActivatedRoute } from '@angular/router';
-import { UiDotIconButtonModule } from '../_common/dot-icon-button/dot-icon-button.module';
 import { DotIconModule } from '@dotcms/ui';
 import { mockSites, SiteServiceMock } from '@dotcms/utils-testing';
-import { DotNavLogoService } from '@dotcms/app/api/services/dot-nav-logo/dot-nav-logo.service';
+
+import { DotToolbarComponent } from './dot-toolbar.component';
+
+import { UiDotIconButtonModule } from '../_common/dot-icon-button/dot-icon-button.module';
+import { IframeOverlayService } from '../_common/iframe/service/iframe-overlay.service';
+import { DotNavigationService } from '../dot-navigation/services/dot-navigation.service';
 
 @Injectable()
 class MockDotNavigationService {

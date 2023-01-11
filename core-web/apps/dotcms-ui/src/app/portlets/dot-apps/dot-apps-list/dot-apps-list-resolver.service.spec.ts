@@ -1,11 +1,14 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { of as observableOf, of } from 'rxjs';
+
 import { TestBed } from '@angular/core/testing';
 import { ActivatedRouteSnapshot, RouterStateSnapshot } from '@angular/router';
-import { DotAppsListResolver } from './dot-apps-list-resolver.service';
-import { DotLicenseService } from '@dotcms/data-access';
+
 import { DotAppsService } from '@dotcms/app/api/services/dot-apps/dot-apps.service';
+import { DotLicenseService } from '@dotcms/data-access';
+
+import { DotAppsListResolver } from './dot-apps-list-resolver.service';
 import { appsResponse, AppsServicesMock } from './dot-apps-list.component.spec';
 
 class DotLicenseServicesMock {

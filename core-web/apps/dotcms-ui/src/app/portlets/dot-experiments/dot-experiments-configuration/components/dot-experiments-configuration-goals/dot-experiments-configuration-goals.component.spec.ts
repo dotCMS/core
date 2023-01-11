@@ -1,9 +1,12 @@
-import { DotExperimentsConfigurationGoalsComponent } from './dot-experiments-configuration-goals.component';
 import { byTestId, createComponentFactory, Spectator } from '@ngneat/spectator';
+
 import { ButtonModule } from 'primeng/button';
 import { Card, CardModule } from 'primeng/card';
-import { MockDotMessageService } from '@dotcms/utils-testing';
+
 import { DotMessageService } from '@dotcms/data-access';
+import { MockDotMessageService } from '@dotcms/utils-testing';
+
+import { DotExperimentsConfigurationGoalsComponent } from './dot-experiments-configuration-goals.component';
 
 const messageServiceMock = new MockDotMessageService({
     'experiments.configure.goals.name': 'Goals'

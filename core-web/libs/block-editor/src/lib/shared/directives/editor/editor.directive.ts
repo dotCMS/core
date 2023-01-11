@@ -1,3 +1,5 @@
+import { Transaction } from 'prosemirror-state';
+
 import {
     Directive,
     ElementRef,
@@ -8,8 +10,8 @@ import {
     Renderer2
 } from '@angular/core';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
+
 import { Content, Editor, JSONContent } from '@tiptap/core';
-import { Transaction } from 'prosemirror-state';
 
 @Directive({
     // eslint-disable-next-line @angular-eslint/directive-selector
