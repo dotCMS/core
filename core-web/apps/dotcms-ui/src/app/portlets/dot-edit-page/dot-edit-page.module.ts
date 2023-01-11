@@ -14,7 +14,8 @@ import {
     DotContentletLockerService,
     DotESContentService,
     DotPageLayoutService,
-    DotPageRenderService
+    DotPageRenderService,
+    DotSessionStorageService
 } from '@dotcms/data-access';
 
 @NgModule({
@@ -35,6 +36,7 @@ import {
         DotESContentService,
         DotPageStateService,
         DotPageRenderService,
+        DotSessionStorageService,
         DotPageLayoutService,
         DotFeatureFlagResolver
     ]

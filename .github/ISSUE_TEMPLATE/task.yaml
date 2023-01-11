@@ -52,11 +52,7 @@ body:
     id: parent-issue
     attributes:
       label: "Parent Issue"
-      description: "Please include a GitHub issue link to the parent issue."
-      placeholder:
-      value: 
-    validations:
-      required: true
+      description: "Please include a GitHub issue link to the parent issue if apply."
       
   - type: textarea
     id: task-body

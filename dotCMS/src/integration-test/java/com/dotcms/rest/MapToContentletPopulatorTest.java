@@ -31,12 +31,14 @@ import com.dotmarketing.portlets.categories.model.Category;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
+import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.structure.model.ContentletRelationships;
 import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys.Relationship.RELATIONSHIP_CARDINALITY;
 import com.dotmarketing.util.json.JSONObject;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
 import com.tngtech.java.junit.dataprovider.DataProvider;
@@ -47,6 +49,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+
+import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -624,6 +628,54 @@ public class MapToContentletPopulatorTest extends IntegrationTestBase {
         assertFalse("Must not contain the categories that were removed",
                 present.contains(categories.get(0)));
     }
+
+
+    /**
+     * We're testing a few improvements that come handy when dealing with language
+     * The old impl relied on the given param passed on the map to establish the language Id
+     * If not lang id was passed the old impl would fall back directly to the default lang
+     * But that can cause an issue if the inode that is passed is bound to a different lang
+     * therefore the new impl will try a few other things like extracting the lang from the given inode
+     * keep the lang passed on the original contentlet (if any)
+     * And at least attempt to use the default lang
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    @Test
+    public void Test_Set_Or_Resolve_Language() throws DotDataException, DotSecurityException {
+        final long defaultLanguage = APILocator.getLanguageAPI().getDefaultLanguage().getId();
+        final long spanish =  TestDataUtils.getSpanishLanguage().getId();
+
+        final Contentlet contentInSpanish = TestDataUtils.getGenericContentContent(true, spanish);
+
+        final MapToContentletPopulator populator = new MapToContentletPopulator();
+        //We're sending no Language here but since the incoming contentlet has a lang of its own
+        Contentlet populatedContentlet = populator.populate(contentInSpanish, Map.of(
+             Contentlet.STRUCTURE_INODE_KEY, contentInSpanish.getContentTypeId())
+        );
+       //We should expect it to come back with one
+        Assert.assertEquals(spanish, populatedContentlet.getLanguageId());
+
+        //Now set any arbitrary lang and corroborate it takes precedence over the existing one on the contentlet
+        populatedContentlet = populator.populate(contentInSpanish, Map.of(
+                  Contentlet.STRUCTURE_INODE_KEY, contentInSpanish.getContentTypeId(),
+                  Contentlet.LANGUAGEID_KEY, defaultLanguage
+                )
+        );
+        Assert.assertEquals(defaultLanguage, populatedContentlet.getLanguageId());
+
+        //Here we send no lang but since we have an inode we'll use it to derive the lang
+        contentInSpanish.setLanguageId(0);
+        Assert.assertNotNull(contentInSpanish.getInode());
+        populatedContentlet = populator.populate(contentInSpanish, Map.of(
+                        Contentlet.STRUCTURE_INODE_KEY, contentInSpanish.getContentTypeId()
+                )
+        );
+
+        Assert.assertEquals(spanish, populatedContentlet.getLanguageId());
+
+    }
+
 
     /**
      * Nulls must be ignored
