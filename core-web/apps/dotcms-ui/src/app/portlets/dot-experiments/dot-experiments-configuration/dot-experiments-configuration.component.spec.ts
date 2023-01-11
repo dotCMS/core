@@ -1,28 +1,34 @@
-import { DotExperimentsConfigurationComponent } from './dot-experiments-configuration.component';
 import { createComponentFactory, mockProvider, Spectator, SpyObject } from '@ngneat/spectator';
-import { DotExperimentsService } from '@portlets/dot-experiments/shared/services/dot-experiments.service';
-import { ActivatedRoute, Router } from '@angular/router';
-import { Title } from '@angular/platform-browser';
-import { HttpClientTestingModule } from '@angular/common/http/testing';
-import { ButtonModule } from 'primeng/button';
 import { of } from 'rxjs';
-import { DotExperimentsUiHeaderComponent } from '@portlets/dot-experiments/shared/ui/dot-experiments-header/dot-experiments-ui-header.component';
+
+import { HttpClientTestingModule } from '@angular/common/http/testing';
+import { Title } from '@angular/platform-browser';
+import { ActivatedRoute, Router } from '@angular/router';
+
+import { MessageService } from 'primeng/api';
+import { ButtonModule } from 'primeng/button';
+
+import { DotMessageService, DotSessionStorageService } from '@dotcms/data-access';
+import { Status } from '@dotcms/dotcms-models';
+import { MockDotMessageService } from '@dotcms/utils-testing';
 import { DotExperimentsConfigurationExperimentStatusBarComponent } from '@portlets/dot-experiments/dot-experiments-configuration/components/dot-experiments-configuration-experiment-status-bar/dot-experiments-configuration-experiment-status-bar.component';
-import { DotExperimentsConfigurationVariantsComponent } from '@portlets/dot-experiments/dot-experiments-configuration/components/dot-experiments-configuration-variants/dot-experiments-configuration-variants.component';
-import { DotExperimentsConfigurationTargetingComponent } from '@portlets/dot-experiments/dot-experiments-configuration/components/dot-experiments-configuration-targeting/dot-experiments-configuration-targeting.component';
-import { DotExperimentsConfigurationTrafficComponent } from '@portlets/dot-experiments/dot-experiments-configuration/components/dot-experiments-configuration-traffic/dot-experiments-configuration-traffic.component';
+import { DotExperimentsConfigurationGoalsComponent } from '@portlets/dot-experiments/dot-experiments-configuration/components/dot-experiments-configuration-goals/dot-experiments-configuration-goals.component';
 import { DotExperimentsConfigurationSchedulingComponent } from '@portlets/dot-experiments/dot-experiments-configuration/components/dot-experiments-configuration-scheduling/dot-experiments-configuration-scheduling.component';
 import { DotExperimentsConfigurationSkeletonComponent } from '@portlets/dot-experiments/dot-experiments-configuration/components/dot-experiments-configuration-skeleton/dot-experiments-configuration-skeleton.component';
-import { DotExperimentsConfigurationGoalsComponent } from '@portlets/dot-experiments/dot-experiments-configuration/components/dot-experiments-configuration-goals/dot-experiments-configuration-goals.component';
+import { DotExperimentsConfigurationTargetingComponent } from '@portlets/dot-experiments/dot-experiments-configuration/components/dot-experiments-configuration-targeting/dot-experiments-configuration-targeting.component';
+import { DotExperimentsConfigurationTrafficComponent } from '@portlets/dot-experiments/dot-experiments-configuration/components/dot-experiments-configuration-traffic/dot-experiments-configuration-traffic.component';
+import { DotExperimentsConfigurationVariantsComponent } from '@portlets/dot-experiments/dot-experiments-configuration/components/dot-experiments-configuration-variants/dot-experiments-configuration-variants.component';
+import { DotExperimentsConfigurationStore } from '@portlets/dot-experiments/dot-experiments-configuration/store/dot-experiments-configuration-store';
+import { DotExperimentsService } from '@portlets/dot-experiments/shared/services/dot-experiments.service';
+import { DotExperimentsUiHeaderComponent } from '@portlets/dot-experiments/shared/ui/dot-experiments-header/dot-experiments-ui-header.component';
 import {
     DotExperimentsConfigurationStoreMock,
     ExperimentMocks
 } from '@portlets/dot-experiments/test/mocks';
-import { MockDotMessageService } from '@dotcms/utils-testing';
-import { DotMessageService, DotSessionStorageService } from '@dotcms/data-access';
-import { MessageService } from 'primeng/api';
-import { Status } from '@dotcms/dotcms-models';
-import { DotExperimentsConfigurationStore } from '@portlets/dot-experiments/dot-experiments-configuration/store/dot-experiments-configuration-store';
+
+
+
+import { DotExperimentsConfigurationComponent } from './dot-experiments-configuration.component';
 
 const ActivatedRouteMock = {
     snapshot: {

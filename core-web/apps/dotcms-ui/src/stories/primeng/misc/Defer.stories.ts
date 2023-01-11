@@ -1,13 +1,16 @@
-import { Meta } from '@storybook/angular/types-6-0';
 import { moduleMetadata } from '@storybook/angular';
-import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
-import { ToastModule } from 'primeng/toast';
-import { MessageService } from 'primeng/api';
-import { DeferComponent } from './Defer.component';
+import { Meta } from '@storybook/angular/types-6-0';
+
+import { HttpClientModule } from '@angular/common/http';
 import { BrowserModule } from '@angular/platform-browser';
+import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
+
+import { MessageService } from 'primeng/api';
 import { DeferModule } from 'primeng/defer';
 import { TableModule } from 'primeng/table';
-import { HttpClientModule } from '@angular/common/http';
+import { ToastModule } from 'primeng/toast';
+
+import { DeferComponent } from './Defer.component';
 
 export default {
     title: 'PrimeNG/Misc/Defer',

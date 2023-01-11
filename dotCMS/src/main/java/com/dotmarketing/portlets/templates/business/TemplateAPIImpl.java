@@ -26,6 +26,7 @@ import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.htmlpageasset.business.HTMLPageAssetAPI;
 import com.dotmarketing.portlets.htmlpageasset.business.HTMLPageAssetAPI.TemplateContainersReMap.ContainerRemapTuple;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
+import com.dotmarketing.portlets.templates.business.TemplateFactory.HTMLPageVersion;
 import com.dotmarketing.portlets.templates.design.bean.*;
 import com.dotmarketing.portlets.templates.model.FileAssetTemplate;
 import com.dotmarketing.portlets.templates.model.SystemTemplate;
@@ -1192,6 +1193,18 @@ public class TemplateAPIImpl extends BaseWebAssetAPI implements TemplateAPI, Dot
 							+ ", host: " + host.getHostname());
 
 		return templateFactory.getTemplateByFolder(host,folder,user,showLive);
+	}
+
+	/**
+	 * Implementation of {@link TemplateAPI#getPages(String)}
+	 *
+	 * @param templateId Template's ID that we are looking for
+	 * @return
+	 */
+	@Override
+	@WrapInTransaction
+	public List<HTMLPageVersion> getPages(final String templateId) throws DotDataException, DotSecurityException {
+		return FactoryLocator.getTemplateFactory().getPages(templateId);
 	}
 
 	private Template findTemplateByPath (final String path,final String hostId, final User user, final boolean respectFrontendRoles, final boolean showLive) throws DotDataException, DotSecurityException {

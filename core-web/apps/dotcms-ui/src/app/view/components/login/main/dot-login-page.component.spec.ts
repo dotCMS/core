@@ -1,15 +1,18 @@
-import { DotLoginPageComponent } from '@components/login/main/dot-login-page.component';
+import { of } from 'rxjs';
+
+import { Injectable } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
-import { mockLoginFormResponse } from '@dotcms/utils-testing';
 import { FormsModule } from '@angular/forms';
+import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
+import { RouterTestingModule } from '@angular/router/testing';
+
 import { ButtonModule } from 'primeng/button';
 import { InputTextModule } from 'primeng/inputtext';
+
 import { DotFieldValidationMessageModule } from '@components/_common/dot-field-validation-message/dot-file-validation-message.module';
-import { of } from 'rxjs';
+import { DotLoginPageComponent } from '@components/login/main/dot-login-page.component';
 import { DotLoginPageStateService } from '@components/login/shared/services/dot-login-page-state.service';
-import { RouterTestingModule } from '@angular/router/testing';
-import { Injectable } from '@angular/core';
+import { mockLoginFormResponse } from '@dotcms/utils-testing';
 
 @Injectable()
 class MockLoginPageStateService {

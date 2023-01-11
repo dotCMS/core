@@ -2,16 +2,17 @@
 
 import { Component, DebugElement, EventEmitter, forwardRef, Input, Output } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { By } from '@angular/platform-browser';
 import {
     ControlValueAccessor,
     FormsModule,
     NG_VALUE_ACCESSOR,
     ReactiveFormsModule
 } from '@angular/forms';
+import { By } from '@angular/platform-browser';
 
 import { DotMessageService } from '@dotcms/data-access';
 import { MockDotMessageService } from '@dotcms/utils-testing';
+
 import { DotTemplateAdvancedComponent } from './dot-template-advanced.component';
 
 @Component({

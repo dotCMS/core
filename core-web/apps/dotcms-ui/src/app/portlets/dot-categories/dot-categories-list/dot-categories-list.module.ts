@@ -1,21 +1,24 @@
-import { NgModule } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { DotCategoriesListRoutingModule } from './dot-categories-list-routing.module';
-import { DotCategoriesListComponent } from './dot-categories-list.component';
-import { DotPortletBaseModule } from '@components/dot-portlet-base/dot-portlet-base.module';
-import { MenuModule } from 'primeng/menu';
+import { NgModule } from '@angular/core';
+
+import { BreadcrumbModule } from 'primeng/breadcrumb';
 import { ButtonModule } from 'primeng/button';
-import { InputTextModule } from 'primeng/inputtext';
-import { TableModule } from 'primeng/table';
-import { PaginatorModule } from 'primeng/paginator';
-import { DotActionMenuButtonModule } from '@components/_common/dot-action-menu-button/dot-action-menu-button.module';
-import { DotMessagePipeModule } from '@pipes/dot-message/dot-message-pipe.module';
+import { CheckboxModule } from 'primeng/checkbox';
 import { InplaceModule } from 'primeng/inplace';
 import { InputNumberModule } from 'primeng/inputnumber';
-import { BreadcrumbModule } from 'primeng/breadcrumb';
-import { CheckboxModule } from 'primeng/checkbox';
-import { DotCategoriesService } from '@dotcms/app/api/services/dot-categories/dot-categories.service';
+import { InputTextModule } from 'primeng/inputtext';
+import { MenuModule } from 'primeng/menu';
+import { PaginatorModule } from 'primeng/paginator';
+import { TableModule } from 'primeng/table';
+
+import { DotActionMenuButtonModule } from '@components/_common/dot-action-menu-button/dot-action-menu-button.module';
 import { DotEmptyStateModule } from '@components/_common/dot-empty-state/dot-empty-state.module';
+import { DotPortletBaseModule } from '@components/dot-portlet-base/dot-portlet-base.module';
+import { DotCategoriesService } from '@dotcms/app/api/services/dot-categories/dot-categories.service';
+import { DotMessagePipeModule } from '@pipes/dot-message/dot-message-pipe.module';
+
+import { DotCategoriesListRoutingModule } from './dot-categories-list-routing.module';
+import { DotCategoriesListComponent } from './dot-categories-list.component';
 
 @NgModule({
     declarations: [DotCategoriesListComponent],

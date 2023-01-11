@@ -1,16 +1,23 @@
-import { Injectable } from '@angular/core';
-import { DotRolesService } from '@dotcms/data-access';
 import { ComponentStore, tapResponse } from '@ngrx/component-store';
 import { forkJoin, Observable, of, throwError } from 'rxjs';
-import { switchMap, take } from 'rxjs/operators';
-import { DotFavoritePageFormData } from '../dot-favorite-page.component';
-import { DotMessageService } from '@dotcms/data-access';
+
 import { HttpErrorResponse } from '@angular/common/http';
+import { Injectable } from '@angular/core';
+
+import { switchMap, take } from 'rxjs/operators';
+
 import { DotHttpErrorManagerService } from '@dotcms/app/api/services/dot-http-error-manager/dot-http-error-manager.service';
 import { DotTempFileUploadService } from '@dotcms/app/api/services/dot-temp-file-upload/dot-temp-file-upload.service';
-import { DotWorkflowActionsFireService } from '@dotcms/data-access';
+import {
+    DotCurrentUserService,
+    DotMessageService,
+    DotRolesService,
+    DotWorkflowActionsFireService
+} from '@dotcms/data-access';
 import { DotCMSContentlet, DotCMSTempFile, DotCurrentUser, DotRole } from '@dotcms/dotcms-models';
-import { DotCurrentUserService } from '@dotcms/data-access';
+
+
+import { DotFavoritePageFormData } from '../dot-favorite-page.component';
 
 export const enum DotFavoritePageActionState {
     SAVED = 'SAVED',

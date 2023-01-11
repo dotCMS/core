@@ -1,11 +1,16 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { CoreWebService, CoreWebServiceMock } from '@dotcms/dotcms-js';
 import { of } from 'rxjs';
-import { TestBed, getTestBed } from '@angular/core/testing';
+
 import { HttpClientTestingModule } from '@angular/common/http/testing';
-import { DotLocalstorageService } from '../dot-localstorage/dot-localstorage.service';
+import { TestBed, getTestBed } from '@angular/core/testing';
+
+import { CoreWebService, CoreWebServiceMock } from '@dotcms/dotcms-js';
+
 import { DotMessageService } from './dot-messages.service';
+
+import { DotLocalstorageService } from '../dot-localstorage/dot-localstorage.service';
+
 
 describe('DotMessageService', () => {
     let dotMessageService: DotMessageService;

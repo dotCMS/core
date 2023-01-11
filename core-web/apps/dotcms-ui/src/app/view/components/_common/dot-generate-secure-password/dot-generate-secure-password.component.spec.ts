@@ -1,18 +1,20 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
+import { Component, DebugElement } from '@angular/core';
 import { ComponentFixture, fakeAsync, TestBed, tick } from '@angular/core/testing';
-import { DebugElement, Component } from '@angular/core';
-import { MockDotMessageService } from '@dotcms/utils-testing';
 import { By } from '@angular/platform-browser';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
-import { DotMessageService } from '@dotcms/data-access';
+
+import { ButtonModule } from 'primeng/button';
+
 import { DotDialogComponent } from '@components/dot-dialog/dot-dialog.component';
 import { DotDialogModule } from '@components/dot-dialog/dot-dialog.module';
-import { DotGenerateSecurePasswordComponent } from './dot-generate-secure-password.component';
-import { DotGenerateSecurePasswordService } from '@dotcms/data-access';
 import { DotClipboardUtil } from '@dotcms/app/api/util/clipboard/ClipboardUtil';
+import { DotGenerateSecurePasswordService, DotMessageService } from '@dotcms/data-access';
+import { MockDotMessageService } from '@dotcms/utils-testing';
 import { DotPipesModule } from '@pipes/dot-pipes.module';
-import { ButtonModule } from 'primeng/button';
+
+import { DotGenerateSecurePasswordComponent } from './dot-generate-secure-password.component';
 
 @Component({
     selector: 'dot-test-host-component',

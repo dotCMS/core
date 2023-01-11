@@ -52,6 +52,12 @@ inputs:
     - RESULTS
     - LOGS
     default: 'ALL'
+  partial:
+    description: 'Partial command to execute'
+    required: false
+  run_identifier:
+    description: 'Test results run identifier'
+    required: false
 outputs:
   tests_report_url:
     description: 'Test results commit url'

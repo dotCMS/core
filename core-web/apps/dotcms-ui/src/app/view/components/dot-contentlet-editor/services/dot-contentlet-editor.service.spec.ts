@@ -1,18 +1,20 @@
 import { of as observableOf } from 'rxjs';
-import { DotContentletEditorService } from './dot-contentlet-editor.service';
+
+import { HttpClientTestingModule, HttpTestingController } from '@angular/common/http/testing';
+import { TestBed } from '@angular/core/testing';
+
+import { ConfirmationService } from 'primeng/api';
+
+import { DotFormatDateService } from '@dotcms/app/api/services/dot-format-date-service';
+import { DotHttpErrorManagerService } from '@dotcms/app/api/services/dot-http-error-manager/dot-http-error-manager.service';
 import { DotMenuService } from '@dotcms/app/api/services/dot-menu.service';
 import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
-import { CoreWebServiceMock } from '@dotcms/utils-testing';
-import { MockDotRouterService } from '@dotcms/utils-testing';
-import { LoginServiceMock } from '@dotcms/utils-testing';
-import { CoreWebService, LoginService } from '@dotcms/dotcms-js';
-import { TestBed } from '@angular/core/testing';
-import { HttpClientTestingModule, HttpTestingController } from '@angular/common/http/testing';
-import { DotHttpErrorManagerService } from '@dotcms/app/api/services/dot-http-error-manager/dot-http-error-manager.service';
 import { DotAlertConfirmService } from '@dotcms/data-access';
-import { ConfirmationService } from 'primeng/api';
-import { DotFormatDateService } from '@dotcms/app/api/services/dot-format-date-service';
+import { CoreWebService, LoginService } from '@dotcms/dotcms-js';
 import { DotCMSContentlet, DotCMSContentType } from '@dotcms/dotcms-models';
+import { CoreWebServiceMock, LoginServiceMock, MockDotRouterService } from '@dotcms/utils-testing';
+
+import { DotContentletEditorService } from './dot-contentlet-editor.service';
 
 describe('DotContentletEditorService', () => {
     const load = () => {

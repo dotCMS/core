@@ -1,9 +1,19 @@
+import { CommonModule } from '@angular/common';
 import { HttpClientTestingModule } from '@angular/common/http/testing';
-
-import { DotHttpErrorManagerService } from './../api/services/dot-http-error-manager/dot-http-error-manager.service';
-import { DotIframeService } from './../view/components/_common/iframe/service/dot-iframe/dot-iframe.service';
-import { ComponentFixture, TestBed, TestModuleMetadata } from '@angular/core/testing';
 import { Injector, LOCALE_ID, Provider, ReflectiveInjector, Type } from '@angular/core';
+import { ComponentFixture, TestBed, TestModuleMetadata } from '@angular/core/testing';
+import { FormsModule, ReactiveFormsModule } from '@angular/forms';
+
+import { ConfirmationService } from 'primeng/api';
+
+import { DotGlobalMessageService } from '@components/_common/dot-global-message/dot-global-message.service';
+import { DotContentletEditorService } from '@components/dot-contentlet-editor/services/dot-contentlet-editor.service';
+import {
+    DotAlertConfirmService,
+    DotEventsService,
+    DotLicenseService,
+    DotMessageService
+} from '@dotcms/data-access';
 import {
     ApiRoot,
     BrowserUtil,
@@ -18,25 +28,18 @@ import {
     StringUtils,
     UserModel
 } from '@dotcms/dotcms-js';
-import { ConfirmationService } from 'primeng/api';
-import { FormsModule, ReactiveFormsModule } from '@angular/forms';
-import { CommonModule } from '@angular/common';
-import { DotContentletEditorService } from '@components/dot-contentlet-editor/services/dot-contentlet-editor.service';
-import { DotGlobalMessageService } from '@components/_common/dot-global-message/dot-global-message.service';
-import {
-    DotAlertConfirmService,
-    DotEventsService,
-    DotMessageService,
-    DotLicenseService
-} from '@dotcms/data-access';
+import { MockDotRouterService } from '@dotcms/utils-testing';
+
+import { DotHttpErrorManagerService } from './../api/services/dot-http-error-manager/dot-http-error-manager.service';
+import { DotIframeService } from './../view/components/_common/iframe/service/dot-iframe/dot-iframe.service';
+
 import { DotCustomEventHandlerService } from '../api/services/dot-custom-event-handler/dot-custom-event-handler.service';
 import { DotDownloadBundleDialogService } from '../api/services/dot-download-bundle-dialog/dot-download-bundle-dialog.service';
 import { DotFormatDateService } from '../api/services/dot-format-date-service';
+import { DotRouterService } from '../api/services/dot-router/dot-router.service';
 import { DotUiColorsService } from '../api/services/dot-ui-colors/dot-ui-colors.service';
 import { NGFACES_MODULES } from '../modules';
 import { DotPipesModule } from '../view/pipes/dot-pipes.module';
-import { MockDotRouterService } from '@dotcms/utils-testing';
-import { DotRouterService } from '../api/services/dot-router/dot-router.service';
 
 export class MockDotUiColorsService {
     setColors() {

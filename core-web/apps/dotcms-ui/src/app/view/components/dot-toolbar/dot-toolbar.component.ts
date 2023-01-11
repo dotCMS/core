@@ -1,10 +1,13 @@
-import { Component, Input, OnInit } from '@angular/core';
-import { SiteService, Site, DotcmsEventsService, DotcmsConfigService } from '@dotcms/dotcms-js';
-import { IframeOverlayService } from '../_common/iframe/service/iframe-overlay.service';
-import { DotNavigationService } from '../dot-navigation/services/dot-navigation.service';
 import { BehaviorSubject } from 'rxjs';
+
+import { Component, Input, OnInit } from '@angular/core';
+
 import { DotNavLogoService } from '@dotcms/app/api/services/dot-nav-logo/dot-nav-logo.service';
 import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
+import { DotcmsConfigService, DotcmsEventsService, Site, SiteService } from '@dotcms/dotcms-js';
+
+import { IframeOverlayService } from '../_common/iframe/service/iframe-overlay.service';
+import { DotNavigationService } from '../dot-navigation/services/dot-navigation.service';
 
 @Component({
     selector: 'dot-toolbar',

@@ -1,7 +1,10 @@
-import { Injectable } from '@angular/core';
-import { CoreWebService } from '@dotcms/dotcms-js';
-import { pluck, take } from 'rxjs/operators';
 import { Observable } from 'rxjs';
+
+import { Injectable } from '@angular/core';
+
+import { pluck, take } from 'rxjs/operators';
+
+import { CoreWebService } from '@dotcms/dotcms-js';
 
 @Injectable({
     providedIn: 'root'

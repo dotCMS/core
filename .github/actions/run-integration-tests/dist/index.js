@@ -342,7 +342,7 @@ const fetchAccessToken = () => __awaiter(void 0, void 0, void 0, function* () {
 });
 const warmUpIdp = () => __awaiter(void 0, void 0, void 0, function* () {
     yield fetchAccessToken();
-    waitFor(1000, "IDP warmup");
+    waitFor(1000, 'IDP warmup');
     const response = yield fetchAccessToken();
     const accessToken = (yield response.json());
     return accessToken;
@@ -360,7 +360,7 @@ const fetchAnalyticsKey = (accessToken) => __awaiter(void 0, void 0, void 0, fun
 });
 const warmUpConfig = (accessToken) => __awaiter(void 0, void 0, void 0, function* () {
     yield fetchAnalyticsKey(accessToken);
-    waitFor(1000, "Config warmup");
+    waitFor(1000, 'Config warmup');
     const response = yield fetchAnalyticsKey(accessToken);
     const analyticsKey = (yield response.json());
     return analyticsKey;

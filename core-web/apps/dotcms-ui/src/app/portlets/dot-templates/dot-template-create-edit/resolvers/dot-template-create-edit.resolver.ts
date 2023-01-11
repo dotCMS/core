@@ -1,8 +1,10 @@
-import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
+
+import { Injectable } from '@angular/core';
 import { ActivatedRouteSnapshot, Resolve, RouterStateSnapshot } from '@angular/router';
 
 import { map } from 'rxjs/operators';
+
 import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
 import { DotTemplatesService } from '@dotcms/app/api/services/dot-templates/dot-templates.service';
 import { DotTemplate } from '@dotcms/dotcms-models';

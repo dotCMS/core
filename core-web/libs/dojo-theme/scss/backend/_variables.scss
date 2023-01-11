@@ -1,0 +1,27 @@
+$dotcms-host: "";
+@if compass-env() == "development" {
+    $dotcms-host: "http://localhost:8080";
+}
+
+$ajax-loader: "#{$dotcms-host}/html/images/icons/ajax-loader.gif";
+$chevron-menu: "#{$dotcms-host}/html/images/icons/chevron-menu.png";
+$dotcms-sprite: "#{$dotcms-host}/html/images/icons/dotcms-sprite.png";
+$elastic-search: "#{$dotcms-host}/html/images/icons/elasticsearch.png";
+$lucene: "#{$dotcms-host}/html/images/icons/lucene.png";
+$skin-sprite: "#{$dotcms-host}/html/images/skin/skin-sprite.png";
+$portal-tab: "#{$dotcms-host}/html/images/skin/portalTab_bg.gif";
+$button-hover: "#{$dotcms-host}/images/buttonHover.png";
+$button-enabled: "#{$dotcms-host}/images/buttonEnabled.png";
+$clock-select-remain: "#{$dotcms-host}/html/images/icons/clock-select-remain.png";
+$exclamation-octagon: "#{$dotcms-host}/html/images/icons/exclamation-octagon.png";
+$dotcms-sprite-off: "#{$dotcms-host}/html/images/icons/dotcms-sprite-off.png";
+$twitter: "#{$dotcms-host}/html/images/icons/twitter.png";
+$overlay: "#{$dotcms-host}/html/js/dotcms-utils/overlay.png";
+$globe-green: "#{$dotcms-host}/html/images/icons/globe-green.png";
+$line-chart-bg: "#{$dotcms-host}/html/images/skin/lineChartBg.png";
+$pie-bg: "#{$dotcms-host}/html/images/skin/pieBg.png";
+$yui-background-line: "#{$dotcms-host}/html/images/skin/yuiBackgroundLine.gif";
+$shim: "#{$dotcms-host}/html/images/shim.gif";
+$ajax-loader: "#{$dotcms-host}/html/images/icons/ajax-loader.gif";
+
+$content-edit-field-max-width: 1100px;

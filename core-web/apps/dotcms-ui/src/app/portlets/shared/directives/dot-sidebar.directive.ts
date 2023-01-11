@@ -1,4 +1,5 @@
 import { Directive, Optional, Self } from '@angular/core';
+
 import { Sidebar } from 'primeng/sidebar';
 
 export const enum SIDEBAR_PLACEMENT {

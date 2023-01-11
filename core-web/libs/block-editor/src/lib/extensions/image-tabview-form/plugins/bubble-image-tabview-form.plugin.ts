@@ -1,10 +1,11 @@
-import { ComponentRef } from '@angular/core';
-import { Subject } from 'rxjs';
-
-import { Editor, posToDOMRect } from '@tiptap/core';
 import { EditorState, Plugin, PluginKey, Transaction } from 'prosemirror-state';
 import { EditorView } from 'prosemirror-view';
+import { Subject } from 'rxjs';
 import tippy, { Instance, Props } from 'tippy.js';
+
+import { ComponentRef } from '@angular/core';
+
+import { Editor, posToDOMRect } from '@tiptap/core';
 
 import { ImageNode } from '@dotcms/block-editor';
 import { DotCMSContentlet } from '@dotcms/dotcms-models';

@@ -1,14 +1,15 @@
-import { UntypedFormGroup, UntypedFormControl } from '@angular/forms';
+import { DebugElement } from '@angular/core';
+import { ComponentFixture, waitForAsync } from '@angular/core/testing';
+import { UntypedFormControl, UntypedFormGroup } from '@angular/forms';
 import { By } from '@angular/platform-browser';
 import { NoopAnimationsModule } from '@angular/platform-browser/animations';
 
-import { RegexCheckPropertyComponent } from './index';
-import { ComponentFixture, waitForAsync } from '@angular/core/testing';
-import { DebugElement } from '@angular/core';
-import { MockDotMessageService } from '@dotcms/utils-testing';
+
 import { DOTTestBed } from '@dotcms/app/test/dot-test-bed';
 import { DotMessageService } from '@dotcms/data-access';
-import { dotcmsContentTypeFieldBasicMock } from '@dotcms/utils-testing';
+import { dotcmsContentTypeFieldBasicMock, MockDotMessageService } from '@dotcms/utils-testing';
+
+import { RegexCheckPropertyComponent } from './index';
 
 describe('RegexCheckPropertyComponent', () => {
     let comp: RegexCheckPropertyComponent;

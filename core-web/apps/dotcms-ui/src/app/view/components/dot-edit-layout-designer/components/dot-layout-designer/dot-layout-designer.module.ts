@@ -1,11 +1,12 @@
-import { NgModule } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { NgModule } from '@angular/core';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 
-import { DotLayoutDesignerComponent } from './dot-layout-designer.component';
-import { DotEditLayoutSidebarModule } from '@components/dot-edit-layout-designer/components/dot-edit-layout-sidebar/dot-edit-layout-sidebar.module';
 import { DotEditLayoutGridModule } from '@components/dot-edit-layout-designer/components/dot-edit-layout-grid/dot-edit-layout-grid.module';
+import { DotEditLayoutSidebarModule } from '@components/dot-edit-layout-designer/components/dot-edit-layout-sidebar/dot-edit-layout-sidebar.module';
 import { DotPipesModule } from '@pipes/dot-pipes.module';
+
+import { DotLayoutDesignerComponent } from './dot-layout-designer.component';
 
 @NgModule({
     imports: [

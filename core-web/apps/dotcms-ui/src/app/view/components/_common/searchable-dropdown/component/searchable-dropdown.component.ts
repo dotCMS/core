@@ -1,29 +1,32 @@
-import { debounceTime } from 'rxjs/operators';
+import * as _ from 'lodash';
+import { fromEvent } from 'rxjs';
+
 import {
-    Component,
-    ElementRef,
-    EventEmitter,
-    Input,
-    Output,
-    ViewChild,
-    forwardRef,
-    SimpleChanges,
-    OnChanges,
-    SimpleChange,
-    TemplateRef,
-    ContentChildren,
-    QueryList,
     AfterContentInit,
     AfterViewInit,
-    ChangeDetectorRef
+    ChangeDetectorRef,
+    Component,
+    ContentChildren,
+    ElementRef,
+    EventEmitter,
+    forwardRef,
+    Input,
+    OnChanges,
+    Output,
+    QueryList,
+    SimpleChange,
+    SimpleChanges,
+    TemplateRef,
+    ViewChild
 } from '@angular/core';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
-import { fromEvent } from 'rxjs';
-import { tap } from 'rxjs/operators';
-import * as _ from 'lodash';
-import { OverlayPanel } from 'primeng/overlaypanel';
-import { DataView } from 'primeng/dataview';
+
 import { PrimeTemplate } from 'primeng/api';
+import { DataView } from 'primeng/dataview';
+import { OverlayPanel } from 'primeng/overlaypanel';
+
+
+import { debounceTime, tap } from 'rxjs/operators';
 
 /**
  * Dropdown with pagination and global search

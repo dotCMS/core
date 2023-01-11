@@ -1,9 +1,13 @@
-import { pluck, mergeMap, map } from 'rxjs/operators';
-import { CoreWebService } from '@dotcms/dotcms-js';
-import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
-import { DotCurrentUserService } from '../dot-current-user/dot-current-user.service';
+
+import { Injectable } from '@angular/core';
+
+import { pluck, mergeMap, map } from 'rxjs/operators';
+
+import { CoreWebService } from '@dotcms/dotcms-js';
 import { DotBundle, DotCurrentUser, DotAjaxActionResponseView } from '@dotcms/dotcms-models';
+
+import { DotCurrentUserService } from '../dot-current-user/dot-current-user.service';
 
 @Injectable()
 export class AddToBundleService {

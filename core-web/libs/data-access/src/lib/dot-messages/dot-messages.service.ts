@@ -1,8 +1,11 @@
-import { pluck, take } from 'rxjs/operators';
 import { Injectable } from '@angular/core';
+
+import { pluck, take } from 'rxjs/operators';
+
 import { CoreWebService } from '@dotcms/dotcms-js';
-import { DotLocalstorageService } from '../dot-localstorage/dot-localstorage.service';
 import { formatMessage } from '@dotcms/utils';
+
+import { DotLocalstorageService } from '../dot-localstorage/dot-localstorage.service';
 
 export interface DotMessageServiceParams {
     buildDate?: string;

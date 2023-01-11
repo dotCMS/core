@@ -1,15 +1,17 @@
-import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing';
-import { MockDotMessageService } from '@dotcms/utils-testing';
-import { DotMessageService } from '@dotcms/data-access';
 import { CommonModule } from '@angular/common';
+import { HttpClientTestingModule } from '@angular/common/http/testing';
+import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
+
+import { ConfirmationService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
+
+import { DotAlertConfirmService, DotMessageService } from '@dotcms/data-access';
+import { MockDotMessageService } from '@dotcms/utils-testing';
+import { DotPipesModule } from '@pipes/dot-pipes.module';
+
 import { DotAppsConfigurationItemModule } from './dot-apps-configuration-item/dot-apps-configuration-item.module';
 import { DotAppsConfigurationListComponent } from './dot-apps-configuration-list.component';
-import { HttpClientTestingModule } from '@angular/common/http/testing';
-import { DotPipesModule } from '@pipes/dot-pipes.module';
-import { DotAlertConfirmService } from '@dotcms/data-access';
-import { ConfirmationService } from 'primeng/api';
 
 const messages = {
     'apps.configurations.show.more': 'SHOW MORE'

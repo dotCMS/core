@@ -1,12 +1,13 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { DotFieldVariablesService } from './dot-field-variables.service';
-import { DotCMSContentTypeField, DotFieldVariable } from '@dotcms/dotcms-models';
-import { dotcmsContentTypeFieldBasicMock } from '@dotcms/utils-testing';
-import { HttpTestingController, HttpClientTestingModule } from '@angular/common/http/testing';
-import { TestBed, getTestBed } from '@angular/core/testing';
+import { HttpClientTestingModule, HttpTestingController } from '@angular/common/http/testing';
+import { getTestBed, TestBed } from '@angular/core/testing';
+
 import { CoreWebService } from '@dotcms/dotcms-js';
-import { CoreWebServiceMock } from '@dotcms/utils-testing';
+import { DotCMSContentTypeField, DotFieldVariable } from '@dotcms/dotcms-models';
+import { CoreWebServiceMock, dotcmsContentTypeFieldBasicMock } from '@dotcms/utils-testing';
+
+import { DotFieldVariablesService } from './dot-field-variables.service';
 
 describe('DotFieldVariablesService', () => {
     let injector: TestBed;

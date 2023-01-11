@@ -1,8 +1,11 @@
-import { Injectable } from '@angular/core';
 import { Observable, of } from 'rxjs';
+
+import { Injectable } from '@angular/core';
 import { ActivatedRouteSnapshot, Resolve } from '@angular/router';
-import { DotPropertiesService } from '@dotcms/data-access';
+
 import { map } from 'rxjs/operators';
+
+import { DotPropertiesService } from '@dotcms/data-access';
 
 /**
  * Return if the Feature flag exist or not

@@ -1,10 +1,14 @@
+import { merge, Observable, Subject } from 'rxjs';
+
 import { Injectable } from '@angular/core';
-import { Observable, Subject, merge } from 'rxjs';
-import { DotcmsEventsService } from '@dotcms/dotcms-js';
-import { DotMessage } from '../model/dot-message.model';
-import { takeUntil, filter } from 'rxjs/operators';
+
+import { filter, takeUntil } from 'rxjs/operators';
+
 import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
+import { DotcmsEventsService } from '@dotcms/dotcms-js';
+
 import { DotMessageSeverity } from '../model';
+import { DotMessage } from '../model/dot-message.model';
 
 /**
  * Handle message send by the Backend, this message are sended as Event through the {@link DotcmsEventsService}

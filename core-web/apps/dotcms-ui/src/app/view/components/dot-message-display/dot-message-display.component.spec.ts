@@ -1,19 +1,21 @@
 /* eslint-disable @typescript-eslint/no-empty-function */
 
-import { Injectable } from '@angular/core';
-import { DotMessageDisplayComponent } from './dot-message-display.component';
-import { ComponentFixture, waitForAsync, TestBed } from '@angular/core/testing';
-import { ToastModule } from 'primeng/toast';
-import { MessageService } from 'primeng/api';
-import { By } from '@angular/platform-browser';
-import { DotMessageDisplayService } from './services';
 import { Observable, Subject } from 'rxjs';
-import { DotMessage } from './model';
-import { DotMessageSeverity } from './model';
-import { DotMessageType } from './model';
-import { UiDotIconButtonModule } from '@components/_common/dot-icon-button/dot-icon-button.module';
-import { DotIconModule, DotIconComponent } from '@dotcms/ui';
+
+import { Injectable } from '@angular/core';
+import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing';
+import { By } from '@angular/platform-browser';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
+
+import { MessageService } from 'primeng/api';
+import { ToastModule } from 'primeng/toast';
+
+import { UiDotIconButtonModule } from '@components/_common/dot-icon-button/dot-icon-button.module';
+import { DotIconComponent, DotIconModule } from '@dotcms/ui';
+
+import { DotMessageDisplayComponent } from './dot-message-display.component';
+import { DotMessage, DotMessageSeverity, DotMessageType } from './model';
+import { DotMessageDisplayService } from './services';
 
 @Injectable()
 export class DotMessageDisplayServiceMock {
@@ -32,22 +34,15 @@ describe('DotMessageDisplayComponent', () => {
         new DotMessageDisplayServiceMock();
     let fixture: ComponentFixture<DotMessageDisplayComponent>;
 
-    beforeEach(
-        waitForAsync(() => {
-            TestBed.configureTestingModule({
-                imports: [
-                    ToastModule,
-                    DotIconModule,
-                    UiDotIconButtonModule,
-                    BrowserAnimationsModule
-                ],
-                declarations: [DotMessageDisplayComponent],
-                providers: [
-                    { provide: DotMessageDisplayService, useValue: dotMessageDisplayServiceMock }
-                ]
-            }).compileComponents();
-        })
-    );
+    beforeEach(waitForAsync(() => {
+        TestBed.configureTestingModule({
+            imports: [ToastModule, DotIconModule, UiDotIconButtonModule, BrowserAnimationsModule],
+            declarations: [DotMessageDisplayComponent],
+            providers: [
+                { provide: DotMessageDisplayService, useValue: dotMessageDisplayServiceMock }
+            ]
+        }).compileComponents();
+    }));
 
     beforeEach(() => {
         fixture = TestBed.createComponent(DotMessageDisplayComponent);

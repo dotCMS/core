@@ -1,18 +1,19 @@
-import { DefaultValuePropertyComponent } from './index';
-import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing';
 import { DebugElement } from '@angular/core';
-import { MockDotMessageService } from '@dotcms/utils-testing';
-import { DotMessageService } from '@dotcms/data-access';
+import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing';
 import {
+    ReactiveFormsModule,
     UntypedFormControl,
     UntypedFormGroup,
-    ReactiveFormsModule,
     Validators
 } from '@angular/forms';
 import { By } from '@angular/platform-browser';
+
 import { DotFieldValidationMessageComponent } from '@components/_common/dot-field-validation-message/dot-field-validation-message';
-import { dotcmsContentTypeFieldBasicMock } from '@dotcms/utils-testing';
+import { DotMessageService } from '@dotcms/data-access';
+import { dotcmsContentTypeFieldBasicMock, MockDotMessageService } from '@dotcms/utils-testing';
 import { DotPipesModule } from '@pipes/dot-pipes.module';
+
+import { DefaultValuePropertyComponent } from './index';
 
 describe('DefaultValuePropertyComponent', () => {
     let comp: DefaultValuePropertyComponent;

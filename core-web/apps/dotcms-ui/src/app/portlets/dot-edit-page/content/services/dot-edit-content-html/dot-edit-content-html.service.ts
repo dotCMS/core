@@ -1,21 +1,31 @@
-import { fromEvent, of, Observable, Subject, Subscription } from 'rxjs';
+import { fromEvent, Observable, of, Subject, Subscription } from 'rxjs';
+
+import { HttpErrorResponse } from '@angular/common/http';
+import { ElementRef, Injectable, NgZone } from '@angular/core';
 
 import { filter, map, take } from 'rxjs/operators';
-import { Injectable, ElementRef, NgZone } from '@angular/core';
 
-import { DotContainerContentletService } from '../dot-container-contentlet.service';
-import { DotDOMHtmlUtilService } from '../html/dot-dom-html-util.service';
-import { DotAlertConfirmService } from '@dotcms/data-access';
-import { DotDragDropAPIHtmlService } from '../html/dot-drag-drop-api-html.service';
-import { DotEditContentToolbarHtmlService } from '../html/dot-edit-content-toolbar-html.service';
-import { DotMessageService } from '@dotcms/data-access';
-import { DotPageContent } from '@portlets/dot-edit-page/shared/models';
 import { DotGlobalMessageService } from '@components/_common/dot-global-message/dot-global-message.service';
-import { DotWorkflowActionsFireService } from '@dotcms/data-access';
-import { getEditPageCss } from '../html/libraries/iframe-edit-mode.css';
+import { DotHttpErrorManagerService } from '@dotcms/app/api/services/dot-http-error-manager/dot-http-error-manager.service';
 import { MODEL_VAR_NAME } from '@dotcms/app/portlets/dot-edit-page/content/services/html/libraries/iframe-edit-mode.js';
+import { INLINE_TINYMCE_SCRIPTS } from '@dotcms/app/portlets/dot-edit-page/content/services/html/libraries/inline-edit-mode.js';
+import {
+    DotAlertConfirmService,
+    DotLicenseService,
+    DotMessageService,
+    DotWorkflowActionsFireService
+} from '@dotcms/data-access';
+import {
+    DotIframeEditEvent,
+    DotPage,
+    DotPageContainer,
+    DotPageRenderState
+} from '@dotcms/dotcms-models';
+import { DotPageContent } from '@portlets/dot-edit-page/shared/models';
+
 import { PageModelChangeEvent, PageModelChangeEventType } from './models';
 import {
+    DotAddContentTypePayload,
     DotAssetPayload,
     DotContentletEvent,
     DotContentletEventDragAndDropDotAsset,
@@ -25,17 +35,12 @@ import {
     DotInlineEditContent,
     DotRelocatePayload
 } from './models/dot-contentlets-events.model';
-import { DotLicenseService } from '@dotcms/data-access';
-import { INLINE_TINYMCE_SCRIPTS } from '@dotcms/app/portlets/dot-edit-page/content/services/html/libraries/inline-edit-mode.js';
-import { HttpErrorResponse } from '@angular/common/http';
-import { DotHttpErrorManagerService } from '@dotcms/app/api/services/dot-http-error-manager/dot-http-error-manager.service';
-import { DotAddContentTypePayload } from './models/dot-contentlets-events.model';
-import {
-    DotIframeEditEvent,
-    DotPage,
-    DotPageContainer,
-    DotPageRenderState
-} from '@dotcms/dotcms-models';
+
+import { DotContainerContentletService } from '../dot-container-contentlet.service';
+import { DotDOMHtmlUtilService } from '../html/dot-dom-html-util.service';
+import { DotDragDropAPIHtmlService } from '../html/dot-drag-drop-api-html.service';
+import { DotEditContentToolbarHtmlService } from '../html/dot-edit-content-toolbar-html.service';
+import { getEditPageCss } from '../html/libraries/iframe-edit-mode.css';
 export enum DotContentletAction {
     EDIT,
     ADD

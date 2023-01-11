@@ -1,10 +1,11 @@
-import { DotExperimentsService } from '@portlets/dot-experiments/shared/services/dot-experiments.service';
-import { ActivatedRoute } from '@angular/router';
-import { ExperimentMocks } from '@portlets/dot-experiments/test/mocks';
-
 import { createServiceFactory, mockProvider, SpectatorService, SpyObject } from '@ngneat/spectator';
-import { Title } from '@angular/platform-browser';
 import { of } from 'rxjs';
+
+import { Title } from '@angular/platform-browser';
+import { ActivatedRoute } from '@angular/router';
+
+import { MessageService } from 'primeng/api';
+
 import { DotMessageService } from '@dotcms/data-access';
 import {
     DEFAULT_VARIANT_NAME,
@@ -14,11 +15,15 @@ import {
     Status,
     Variant
 } from '@dotcms/dotcms-models';
-import { MessageService } from 'primeng/api';
 import {
     DotExperimentsConfigurationState,
     DotExperimentsConfigurationStore
 } from '@portlets/dot-experiments/dot-experiments-configuration/store/dot-experiments-configuration-store';
+import { DotExperimentsService } from '@portlets/dot-experiments/shared/services/dot-experiments.service';
+import { ExperimentMocks } from '@portlets/dot-experiments/test/mocks';
+
+
+
 
 const EXPERIMENT_ID = ExperimentMocks[0].id;
 const PAGE_ID = ExperimentMocks[0].pageId;

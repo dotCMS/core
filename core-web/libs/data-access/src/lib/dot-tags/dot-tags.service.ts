@@ -1,8 +1,11 @@
+import { Observable } from 'rxjs';
+
 import { Injectable } from '@angular/core';
+
+import { map, pluck } from 'rxjs/operators';
+
 import { CoreWebService } from '@dotcms/dotcms-js';
 import { DotTag } from '@dotcms/dotcms-models';
-import { Observable } from 'rxjs';
-import { map, pluck } from 'rxjs/operators';
 
 /**
  * Provide util methods to get Tags available in the system.

@@ -1,10 +1,11 @@
 import { ResolvedPos } from 'prosemirror-model';
-import { EditorView } from 'prosemirror-view';
 import { SelectionRange, TextSelection } from 'prosemirror-state';
-import { Editor } from '@tiptap/core';
 import { Step, StepResult } from 'prosemirror-transform';
+import { EditorView } from 'prosemirror-view';
 
-import { NodeTypes, CustomNodeTypes } from '@dotcms/block-editor';
+import { Editor } from '@tiptap/core';
+
+import { CustomNodeTypes, NodeTypes } from '@dotcms/block-editor';
 
 const aTagRex = new RegExp(/<a(|\s+[^>]*)>(\s|\n|<img[^>]*src="[^"]*"[^>]*>)*?<\/a>/gm);
 const imgTagRex = new RegExp(/<img[^>]*src="[^"]*"[^>]*>/gm);

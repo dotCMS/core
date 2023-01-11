@@ -1,13 +1,13 @@
-import { waitForAsync, ComponentFixture, TestBed } from '@angular/core/testing';
-import { By } from '@angular/platform-browser';
 import { DebugElement } from '@angular/core';
+import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing';
+import { By } from '@angular/platform-browser';
 
 import { DotApiLinkModule } from '@components/dot-api-link/dot-api-link.module';
 import { DotCopyButtonModule } from '@components/dot-copy-button/dot-copy-button.module';
-import { DotEditPageInfoComponent } from './dot-edit-page-info.component';
-
-import { DotMessagePipe } from '@pipes/dot-message/dot-message.pipe';
 import { DotMessageService } from '@dotcms/data-access';
+import { DotMessagePipe } from '@pipes/dot-message/dot-message.pipe';
+
+import { DotEditPageInfoComponent } from './dot-edit-page-info.component';
 
 describe('DotEditPageInfoComponent', () => {
     let component: DotEditPageInfoComponent;

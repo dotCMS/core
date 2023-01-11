@@ -1,13 +1,13 @@
 import { Component, DebugElement } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
+
 import { DotCopyButtonModule } from '@components/dot-copy-button/dot-copy-button.module';
-import { DotIconModule } from '@dotcms/ui';
-import { DotPipesModule } from '@pipes/dot-pipes.module';
 import { DotMessageService } from '@dotcms/data-access';
-import { dotcmsContentTypeBasicMock } from '@dotcms/utils-testing';
-import { MockDotMessageService } from '@dotcms/utils-testing';
 import { DotCMSContentType } from '@dotcms/dotcms-models';
+import { DotIconModule } from '@dotcms/ui';
+import { dotcmsContentTypeBasicMock, MockDotMessageService } from '@dotcms/utils-testing';
+import { DotPipesModule } from '@pipes/dot-pipes.module';
 
 import { DotRelationshipTreeComponent } from './dot-relationship-tree.component';
 
