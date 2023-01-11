@@ -1,8 +1,12 @@
-import { Injectable } from '@angular/core';
-import { CoreWebService, ResponseView, SiteService } from '@dotcms/dotcms-js';
 import { format, subDays } from 'date-fns';
 import { Observable } from 'rxjs';
+
+import { Injectable } from '@angular/core';
+
 import { mergeMap, pluck } from 'rxjs/operators';
+
+import { CoreWebService, ResponseView, SiteService } from '@dotcms/dotcms-js';
+
 import { DotCDNStats, PurgeReturnData, PurgeUrlOptions } from './app.models';
 
 @Injectable({

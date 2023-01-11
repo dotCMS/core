@@ -1,10 +1,14 @@
+import { ChartOptions } from 'chart.js';
+import { Observable } from 'rxjs';
+
 import { Component, OnInit, ViewChild } from '@angular/core';
 import { UntypedFormBuilder, UntypedFormGroup } from '@angular/forms';
-import { ChartOptions } from 'chart.js';
+
 import { SelectItem } from 'primeng/api';
 import { UIChart } from 'primeng/chart';
-import { Observable } from 'rxjs';
+
 import { take } from 'rxjs/operators';
+
 import { CdnChartOptions, ChartPeriod, DotCDNState } from './app.models';
 import { DotCDNStore } from './dotcdn.component.store';
 

@@ -4,6 +4,15 @@ import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { BrowserModule } from '@angular/platform-browser';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { RouterModule } from '@angular/router';
+
+import { ButtonModule } from 'primeng/button';
+import { ChartModule } from 'primeng/chart';
+import { DropdownModule } from 'primeng/dropdown';
+import { InputTextModule } from 'primeng/inputtext';
+import { InputTextareaModule } from 'primeng/inputtextarea';
+import { SkeletonModule } from 'primeng/skeleton';
+import { TabViewModule } from 'primeng/tabview';
+
 import {
     CoreWebService,
     DotcmsConfigService,
@@ -16,13 +25,7 @@ import {
     StringUtils
 } from '@dotcms/dotcms-js';
 import { DotIconModule, DotSpinnerModule } from '@dotcms/ui';
-import { ButtonModule } from 'primeng/button';
-import { ChartModule } from 'primeng/chart';
-import { DropdownModule } from 'primeng/dropdown';
-import { InputTextModule } from 'primeng/inputtext';
-import { InputTextareaModule } from 'primeng/inputtextarea';
-import { SkeletonModule } from 'primeng/skeleton';
-import { TabViewModule } from 'primeng/tabview';
+
 import { AppComponent } from './app.component';
 import { DotCDNStore } from './dotcdn.component.store';
 

@@ -1,6 +1,12 @@
 import { HttpClientTestingModule, HttpTestingController } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
-import { CoreWebService, SiteService, CoreWebServiceMock, SiteServiceMock } from '@dotcms/dotcms-js';
+
+import {
+    CoreWebService,
+    CoreWebServiceMock,
+    SiteService,
+    SiteServiceMock
+} from '@dotcms/dotcms-js';
 
 import { DotCDNService } from './dotcdn.service';
 
