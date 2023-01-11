@@ -1,0 +1,15 @@
+// LEGACY CODE
+// Not sure where is being use or if is useful at all.
+// We figure it out as we work on more porlets.
+
+// WORKFLOW TASK SEARCH FORM
+
+.filter-tasks-frm {
+    margin: 56px 20px 0 0;
+
+    .who-user {
+        label {
+            margin-right: calc($field-padding / 2);
+        }
+    }
+}

@@ -1,0 +1,105 @@
+#select-arrow {
+    float: none;
+    height: 0 !important;
+    margin: 0;
+    position: static;
+}
+
+.dijitSelect {
+    background-color: $select-normal-bgcolor;
+    border: $select-normal-border;
+    color: $select-normal-textcolor;
+
+    .dijitButtonContents {
+        padding: 0 $select-padding;
+        border: none;
+
+        &.dijitSelectFixedWidth & {
+            width: auto;
+        }
+    }
+
+    .dijitArrowButton {
+        border-left: $select-normal-arrow-border;
+        width: $select-arrow-container-size;
+
+        @if $select-normal-arrow-bgcolor != "transparent" {
+            // TODO: write this mixin
+            background-color: $select-normal-arrow-bgcolor;
+        }
+
+        & > .dijitArrowButtonInner {
+            @include create-arrow($select-arrow-size, $select-normal-arrow-color);
+            @extend #select-arrow;
+        }
+    }
+
+    .dijitArrowButtonInner {
+        width: $select-arrow-container-size;
+    }
+
+    &Hover {
+        background-color: $select-hover-bgcolor;
+        border: $select-hover-border;
+        color: $select-hover-textcolor;
+
+        .dijitArrowButton {
+            border-left: $select-hover-arrow-border;
+
+            @if $select-hover-arrow-bgcolor != "transparent" {
+                background-color: $select-hover-arrow-bgcolor;
+            }
+
+            & > .dijitArrowButtonInner {
+                @include create-arrow($select-arrow-size, $select-hover-arrow-color);
+                @extend #select-arrow;
+            }
+        }
+    }
+
+    &Active,
+    &Opened {
+        background-color: $select-active-bgcolor;
+        border: $select-active-border;
+        color: $select-active-textcolor;
+
+        .dijitArrowButton {
+            border-left: $select-active-arrow-border;
+
+            @if $select-active-arrow-bgcolor != "transparent" {
+                background-color: $select-active-arrow-bgcolor;
+            }
+
+            & > .dijitArrowButtonInner {
+                @include create-arrow($select-arrow-size, $select-active-arrow-color);
+                @extend #select-arrow;
+            }
+        }
+    }
+
+    &Disabled {
+        background-color: $select-disabled-bgcolor;
+        border: $select-disabled-border;
+        color: $select-disabled-textcolor;
+
+        .dijitButtonContents {
+            opacity: 0.5;
+        }
+
+        .dijitArrowButton {
+            border-left: $select-disabled-arrow-border;
+
+            @if $select-disabled-arrow-bgcolor != "transparent" {
+                background-color: $select-disabled-arrow-bgcolor;
+            }
+
+            &:before {
+                border-top-color: $select-disabled-arrow-color;
+            }
+        }
+    }
+
+    &.dijitSelectFixedWidth .dijitButtonContents {
+        width: auto;
+    }
+}
