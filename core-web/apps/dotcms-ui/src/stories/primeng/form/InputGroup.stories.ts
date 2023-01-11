@@ -1,13 +1,16 @@
-import { FormsModule } from '@angular/forms';
+import { moduleMetadata } from '@storybook/angular';
 import { Meta, Story } from '@storybook/angular/types-6-0';
+
+import { FormsModule } from '@angular/forms';
+import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
+
 import { ButtonModule } from 'primeng/button';
 import { CheckboxModule } from 'primeng/checkbox';
 import { InputTextModule } from 'primeng/inputtext';
 import { RadioButtonModule } from 'primeng/radiobutton';
 import { RippleModule } from 'primeng/ripple';
 
-import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
-import { moduleMetadata } from '@storybook/angular';
+
 
 export default {
     title: 'PrimeNG/Form/InputText/InputGroup',

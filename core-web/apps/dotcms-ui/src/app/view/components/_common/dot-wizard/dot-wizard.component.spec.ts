@@ -5,6 +5,7 @@ import { Component, DebugElement, EventEmitter, Input, Output } from '@angular/c
 import { ComponentFixture, fakeAsync, TestBed, tick, waitForAsync } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import { BrowserDynamicTestingModule } from '@angular/platform-browser-dynamic/testing';
+
 import { DotDialogComponent } from '@components/dot-dialog/dot-dialog.component';
 import { DotDialogModule } from '@components/dot-dialog/dot-dialog.module';
 import { DotContainerReferenceModule } from '@directives/dot-container-reference/dot-container-reference.module';
@@ -14,6 +15,7 @@ import { DotPushPublishDialogData } from '@dotcms/dotcms-models';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 import { DotWizardInput } from '@models/dot-wizard-input/dot-wizard-input.model';
 import { DotWizardStep } from '@models/dot-wizard-step/dot-wizard-step.model';
+
 import { DotWizardComponent } from './dot-wizard.component';
 
 const messageServiceMock = new MockDotMessageService({

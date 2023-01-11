@@ -1,5 +1,10 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
+import * as _ from 'lodash';
+import { DragulaModule, DragulaService } from 'ng2-dragula';
+import { Observable, of, Subject } from 'rxjs';
+
+import { HttpClientTestingModule } from '@angular/common/http/testing';
 import {
     Component,
     DebugElement,
@@ -10,21 +15,30 @@ import {
     Renderer2
 } from '@angular/core';
 import { ComponentFixture, fakeAsync, TestBed, tick, waitForAsync } from '@angular/core/testing';
-import { By } from '@angular/platform-browser';
-import { ContentTypeFieldsDropZoneComponent } from '.';
-import { ContentTypeFieldsAddRowModule } from '..';
-
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
+import { By } from '@angular/platform-browser';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { Router } from '@angular/router';
 import { RouterTestingModule } from '@angular/router/testing';
-import { DotDialogModule } from '@components/dot-dialog/dot-dialog.module';
+
+import { CheckboxModule } from 'primeng/checkbox';
+import { TableModule } from 'primeng/table';
+import { TabViewModule } from 'primeng/tabview';
+
 import { DotActionButtonModule } from '@components/_common/dot-action-button/dot-action-button.module';
 import { DotFieldValidationMessageModule } from '@components/_common/dot-field-validation-message/dot-file-validation-message.module';
 import { UiDotIconButtonModule } from '@components/_common/dot-icon-button/dot-icon-button.module';
+import { DotDialogActions, DotDialogComponent } from '@components/dot-dialog/dot-dialog.component';
+import { DotDialogModule } from '@components/dot-dialog/dot-dialog.module';
+import { DotMessageDisplayService } from '@components/dot-message-display/services';
 import { DotFormatDateService } from '@dotcms/app/api/services/dot-format-date-service';
 import { DotEventsService, DotMessageService } from '@dotcms/data-access';
+
 import { CoreWebService, DotEventsSocket, LoginService } from '@dotcms/dotcms-js';
+import { ContentTypeFieldsDropZoneComponent } from '.';
+import { ContentTypeFieldsAddRowModule } from '..';
+
+
 import {
     DotCMSContentType,
     DotCMSContentTypeField,
@@ -33,10 +47,11 @@ import {
 } from '@dotcms/dotcms-models';
 import { DotIconModule } from '@dotcms/ui';
 import { FieldUtil, MockDotMessageService } from '@dotcms/utils-testing';
-import * as _ from 'lodash';
-import { DragulaModule, DragulaService } from 'ng2-dragula';
-import { TableModule } from 'primeng/table';
-import { Observable, of, Subject } from 'rxjs';
+
+
+
+import { DotConvertToBlockInfoComponent } from '../../dot-convert-to-block-info/dot-convert-to-block-info.component';
+import { DotConvertWysiwygToBlockComponent } from '../../dot-convert-wysiwyg-to-block/dot-convert-wysiwyg-to-block.component';
 import { DotContentTypeFieldsVariablesModule } from '../dot-content-type-fields-variables/dot-content-type-fields-variables.module';
 import { FieldPropertyService } from '../service/field-properties.service';
 import { FieldService } from '../service/field.service';
@@ -48,18 +63,11 @@ import {
     fieldsBrokenWithColumns,
     fieldsWithBreakColumn
 } from '@dotcms/utils-testing';
-
-import { HttpClientTestingModule } from '@angular/common/http/testing';
-import { DotDialogActions, DotDialogComponent } from '@components/dot-dialog/dot-dialog.component';
-import { DotMessageDisplayService } from '@components/dot-message-display/services';
 import { DotHttpErrorManagerService } from '@dotcms/app/api/services/dot-http-error-manager/dot-http-error-manager.service';
 import { DotLoadingIndicatorService } from '@dotcms/utils';
 import { cleanUpDialog, CoreWebServiceMock } from '@dotcms/utils-testing';
 import { DotMessagePipeModule } from '@pipes/dot-message/dot-message-pipe.module';
-import { CheckboxModule } from 'primeng/checkbox';
-import { TabViewModule } from 'primeng/tabview';
-import { DotConvertToBlockInfoComponent } from '../../dot-convert-to-block-info/dot-convert-to-block-info.component';
-import { DotConvertWysiwygToBlockComponent } from '../../dot-convert-wysiwyg-to-block/dot-convert-wysiwyg-to-block.component';
+
 
 const COLUMN_BREAK_FIELD = FieldUtil.createColumnBreak();
 

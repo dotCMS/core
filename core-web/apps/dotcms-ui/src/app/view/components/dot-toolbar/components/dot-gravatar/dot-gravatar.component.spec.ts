@@ -1,13 +1,18 @@
+import * as md5 from 'md5';
+import { Observable, of } from 'rxjs';
+
+import { CommonModule } from '@angular/common';
 import { Component, DebugElement, Input } from '@angular/core';
 import { ComponentFixture, waitForAsync } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
+
 import { DotGravatarService } from '@dotcms/app/api/services/dot-gravatar-service';
+import { DOTTestBed } from '@dotcms/app/test/dot-test-bed';
+
 import { DotGravatarComponent } from './dot-gravatar.component';
 
-import { CommonModule } from '@angular/common';
-import { DOTTestBed } from '@dotcms/app/test/dot-test-bed';
-import * as md5 from 'md5';
-import { Observable, of } from 'rxjs';
+
+
 import { DotAvatarModule } from '../../../_common/dot-avatar/dot-avatar.module';
 
 @Component({

@@ -9,10 +9,12 @@ import {
     UntypedFormGroup
 } from '@angular/forms';
 import { By } from '@angular/platform-browser';
+
 import { DotFieldHelperModule } from '@components/dot-field-helper/dot-field-helper.module';
 import { DotMessageService } from '@dotcms/data-access';
 import { dotcmsContentTypeFieldBasicMock, MockDotMessageService } from '@dotcms/utils-testing';
 import { DotPipesModule } from '@pipes/dot-pipes.module';
+
 import { ValuesPropertyComponent } from './index';
 
 @Component({

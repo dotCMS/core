@@ -1,8 +1,11 @@
+import { of, throwError } from 'rxjs';
+
 import { HttpErrorResponse } from '@angular/common/http';
 import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 import { Router } from '@angular/router';
 import { RouterTestingModule } from '@angular/router/testing';
+
 import { DotHttpErrorManagerService } from '@dotcms/app/api/services/dot-http-error-manager/dot-http-error-manager.service';
 import { DotContentTypeService } from '@dotcms/data-access';
 import { CoreWebService } from '@dotcms/dotcms-js';
@@ -13,7 +16,6 @@ import {
     mockResponseView
 } from '@dotcms/utils-testing';
 import { DotContentTypeStore } from '@portlets/shared/dot-content-types-listing/dot-content-type.store';
-import { of, throwError } from 'rxjs';
 
 describe('DotContentTypeComponentStore', () => {
     let store: DotContentTypeStore;

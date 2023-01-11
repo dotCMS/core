@@ -1,3 +1,5 @@
+import { Subject } from 'rxjs';
+
 import {
     Component,
     ElementRef,
@@ -8,10 +10,12 @@ import {
     Output,
     ViewChild
 } from '@angular/core';
-import { DotEventsService, DotMessageService } from '@dotcms/data-access';
+
 import { MenuItem } from 'primeng/api';
-import { Subject } from 'rxjs';
+
 import { takeUntil } from 'rxjs/operators';
+
+import { DotEventsService, DotMessageService } from '@dotcms/data-access';
 
 /**
  * Display select columns row

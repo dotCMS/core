@@ -1,3 +1,5 @@
+import { from, Observable, of } from 'rxjs';
+
 import {
     Component,
     EventEmitter,
@@ -8,7 +10,8 @@ import {
     ViewChild
 } from '@angular/core';
 
-import { from, Observable, of } from 'rxjs';
+import { SelectItem } from 'primeng/api';
+
 import { switchMap, take } from 'rxjs/operators';
 
 import {
@@ -24,7 +27,7 @@ import {
 } from '@dotcms/dotcms-models';
 import { DotEditPageLockInfoComponent } from '@portlets/dot-edit-page/content/components/dot-edit-page-state-controller/components/dot-edit-page-lock-info/dot-edit-page-lock-info.component';
 import { DotPageStateService } from '@portlets/dot-edit-page/content/services/dot-page-state/dot-page-state.service';
-import { SelectItem } from 'primeng/api';
+
 
 enum DotConfirmationType {
     LOCK,

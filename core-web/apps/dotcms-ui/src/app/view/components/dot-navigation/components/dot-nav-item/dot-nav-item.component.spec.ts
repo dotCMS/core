@@ -1,18 +1,22 @@
 import { Component, DebugElement } from '@angular/core';
 import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
-
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { RouterTestingModule } from '@angular/router/testing';
+
+import { TooltipModule } from 'primeng/tooltip';
+
 import { DotIconModule } from '@dotcms/ui';
 import { DotMenu } from '@models/navigation';
 import { LABEL_IMPORTANT_ICON } from '@pipes/dot-radom-icon/dot-random-icon.pipe';
 import { DotRandomIconPipeModule } from '@pipes/dot-radom-icon/dot-random-icon.pipe.module';
-import { TooltipModule } from 'primeng/tooltip';
+
+import { DotNavItemComponent } from './dot-nav-item.component';
+
 import { dotMenuMock } from '../../services/dot-navigation.service.spec';
 import { DotNavIconModule } from '../dot-nav-icon/dot-nav-icon.module';
 import { DotSubNavComponent } from '../dot-sub-nav/dot-sub-nav.component';
-import { DotNavItemComponent } from './dot-nav-item.component';
+
 
 @Component({
     selector: 'dot-test-host-component',

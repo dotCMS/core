@@ -1,5 +1,11 @@
+import { throwError } from 'rxjs';
+
 import { HttpClientTestingModule, HttpTestingController } from '@angular/common/http/testing';
 import { getTestBed, TestBed } from '@angular/core/testing';
+
+import { ConfirmationService } from 'primeng/api';
+
+import { DotAlertConfirmService } from '@dotcms/data-access';
 import { CoreWebService, LoginService } from '@dotcms/dotcms-js';
 import {
     CoreWebServiceMock,
@@ -11,10 +17,8 @@ import {
 import { DotFormatDateService } from '@services/dot-format-date-service';
 import { DotHttpErrorManagerService } from '@services/dot-http-error-manager/dot-http-error-manager.service';
 import { DotRouterService } from '@services/dot-router/dot-router.service';
-import { ConfirmationService } from 'primeng/api';
 
-import { DotAlertConfirmService } from '@dotcms/data-access';
-import { throwError } from 'rxjs';
+
 import { DotAddToMenuService, DotCreateCustomTool } from './add-to-menu.service';
 
 const customToolData: DotCreateCustomTool = {

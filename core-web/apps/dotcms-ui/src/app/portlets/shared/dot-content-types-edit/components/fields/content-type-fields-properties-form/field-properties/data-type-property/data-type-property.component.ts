@@ -1,5 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { UntypedFormGroup } from '@angular/forms';
+
 import { DATA_TYPE_PROPERTY_INFO } from '../../../service/data-type-property-info';
 import { FieldProperty } from '../field-properties.model';
 

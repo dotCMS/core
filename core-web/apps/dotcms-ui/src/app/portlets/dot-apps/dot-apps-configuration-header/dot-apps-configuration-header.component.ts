@@ -1,4 +1,5 @@
 import { Component, Input } from '@angular/core';
+
 import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
 import { DotApps } from '@dotcms/dotcms-models';
 

@@ -1,5 +1,10 @@
+import { throwError } from 'rxjs';
+
 import { HttpClientTestingModule, HttpTestingController } from '@angular/common/http/testing';
 import { TestBed, waitForAsync } from '@angular/core/testing';
+
+import { ConfirmationService } from 'primeng/api';
+
 import { DotFormatDateService } from '@dotcms/app/api/services/dot-format-date-service';
 import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
 import { DotAlertConfirmService } from '@dotcms/data-access';
@@ -11,8 +16,7 @@ import {
     MockDotRouterService,
     mockResponseView
 } from '@dotcms/utils-testing';
-import { ConfirmationService } from 'primeng/api';
-import { throwError } from 'rxjs';
+
 import { DotAccountService, DotAccountUser } from './dot-account-service';
 import { DotHttpErrorManagerService } from './dot-http-error-manager/dot-http-error-manager.service';
 

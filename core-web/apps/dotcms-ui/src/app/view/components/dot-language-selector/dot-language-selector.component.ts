@@ -8,9 +8,11 @@ import {
     Output,
     SimpleChanges
 } from '@angular/core';
+
+import { take } from 'rxjs/operators';
+
 import { DotLanguagesService } from '@dotcms/data-access';
 import { DotLanguage } from '@dotcms/dotcms-models';
-import { take } from 'rxjs/operators';
 
 @Component({
     selector: 'dot-language-selector',

@@ -1,7 +1,9 @@
+import { Observable } from 'rxjs';
+
 import { Injectable } from '@angular/core';
 import { ActivatedRouteSnapshot, Resolve, RouterStateSnapshot } from '@angular/router';
+
 import { DotLicenseService } from '@dotcms/data-access';
-import { Observable } from 'rxjs';
 
 /**
  *

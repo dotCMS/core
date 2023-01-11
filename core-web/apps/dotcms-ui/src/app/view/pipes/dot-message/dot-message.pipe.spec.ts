@@ -1,5 +1,6 @@
 import { DotMessageService } from '@dotcms/data-access';
 import { MockDotMessageService } from '@dotcms/utils-testing';
+
 import { DotMessagePipe } from './dot-message.pipe';
 
 describe('DotMessagePipe', () => {

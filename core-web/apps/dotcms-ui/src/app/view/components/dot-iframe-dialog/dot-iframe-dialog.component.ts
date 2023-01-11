@@ -8,8 +8,10 @@ import {
     SimpleChanges,
     ViewChild
 } from '@angular/core';
-import { DotDialogComponent } from '@components/dot-dialog/dot-dialog.component';
+
 import { filter } from 'rxjs/operators';
+
+import { DotDialogComponent } from '@components/dot-dialog/dot-dialog.component';
 
 @Component({
     selector: 'dot-iframe-dialog',

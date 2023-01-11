@@ -1,14 +1,18 @@
 /* eslint-disable @typescript-eslint/no-empty-function */
 
+import { Observable, Subject } from 'rxjs';
+
 import { Injectable } from '@angular/core';
 import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
-import { UiDotIconButtonModule } from '@components/_common/dot-icon-button/dot-icon-button.module';
-import { DotIconComponent, DotIconModule } from '@dotcms/ui';
+
 import { MessageService } from 'primeng/api';
 import { ToastModule } from 'primeng/toast';
-import { Observable, Subject } from 'rxjs';
+
+import { UiDotIconButtonModule } from '@components/_common/dot-icon-button/dot-icon-button.module';
+import { DotIconComponent, DotIconModule } from '@dotcms/ui';
+
 import { DotMessageDisplayComponent } from './dot-message-display.component';
 import { DotMessage, DotMessageSeverity, DotMessageType } from './model';
 import { DotMessageDisplayService } from './services';

@@ -1,13 +1,16 @@
 // also exported from '@storybook/angular' if you can deal with breaking changes in 6.1
+import { moduleMetadata } from '@storybook/angular';
+import { Meta, Story } from '@storybook/angular/types-6-0';
+
 import { HttpClientModule } from '@angular/common/http';
 import { BrowserModule } from '@angular/platform-browser';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
-import { moduleMetadata } from '@storybook/angular';
-import { Meta, Story } from '@storybook/angular/types-6-0';
+
 import { ButtonModule } from 'primeng/button';
 import { OverlayPanelModule } from 'primeng/overlaypanel';
 import { TableModule } from 'primeng/table';
 import { ToastModule } from 'primeng/toast';
+
 import { ProductService } from './SharedProducts.service';
 
 const OverlayPanelTemplate = `

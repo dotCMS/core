@@ -1,21 +1,24 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
+import { Observable, of } from 'rxjs';
+
 import { DebugElement } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { FormsModule } from '@angular/forms';
+import { By } from '@angular/platform-browser';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
-import { DotTagsService } from '@dotcms/data-access';
+
 import { AutoComplete, AutoCompleteModule } from 'primeng/autocomplete';
 import { ChipsModule } from 'primeng/chips';
-import { Observable, of } from 'rxjs';
-import { DotAutocompleteTagsComponent } from './dot-autocomplete-tags.component';
 
-import { By } from '@angular/platform-browser';
+import { DotTagsService } from '@dotcms/data-access';
 import { DotMessageService } from '@dotcms/data-access';
 import { DotTag } from '@dotcms/dotcms-models';
 import { DotIconModule } from '@dotcms/ui';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 import { DotPipesModule } from '@pipes/dot-pipes.module';
+
+import { DotAutocompleteTagsComponent } from './dot-autocomplete-tags.component';
 
 const mockResponse = [
     { label: 'test', siteId: '1', siteName: 'Site', persona: false },

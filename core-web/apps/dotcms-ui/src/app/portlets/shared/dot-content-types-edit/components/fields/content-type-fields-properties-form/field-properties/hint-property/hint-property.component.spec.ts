@@ -2,9 +2,11 @@ import { DebugElement } from '@angular/core';
 import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing';
 import { ReactiveFormsModule, UntypedFormControl, UntypedFormGroup } from '@angular/forms';
 import { By } from '@angular/platform-browser';
+
 import { DotMessageService } from '@dotcms/data-access';
 import { dotcmsContentTypeFieldBasicMock, MockDotMessageService } from '@dotcms/utils-testing';
 import { DotPipesModule } from '@pipes/dot-pipes.module';
+
 import { HintPropertyComponent } from './index';
 
 describe('HintPropertyComponent', () => {

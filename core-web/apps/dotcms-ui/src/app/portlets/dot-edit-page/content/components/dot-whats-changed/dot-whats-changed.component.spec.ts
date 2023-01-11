@@ -1,12 +1,15 @@
+import { of } from 'rxjs';
+
 import { Component, DebugElement, ElementRef, ViewChild } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
+
 import { IframeComponent } from '@components/_common/iframe/iframe-component';
 import { DotHttpErrorManagerService } from '@dotcms/app/api/services/dot-http-error-manager/dot-http-error-manager.service';
 import { DotEditPageService } from '@dotcms/data-access';
 import { DotMessagePipeModule } from '@pipes/dot-message/dot-message-pipe.module';
 import { DotDOMHtmlUtilService } from '@portlets/dot-edit-page/content/services/html/dot-dom-html-util.service';
-import { of } from 'rxjs';
+
 import { DotWhatsChangedComponent, SHOW_DIFF_STYLES } from './dot-whats-changed.component';
 
 @Component({

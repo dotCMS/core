@@ -3,8 +3,10 @@ import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { Component, DebugElement, Input, TemplateRef } from '@angular/core';
 import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
+
 import { SharedModule } from 'primeng/api';
 import { InplaceModule } from 'primeng/inplace';
+
 import { DotInlineEditComponent } from './dot-inline-edit.component';
 
 @Component({

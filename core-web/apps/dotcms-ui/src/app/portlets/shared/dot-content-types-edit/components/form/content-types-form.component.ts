@@ -1,3 +1,6 @@
+import * as _ from 'lodash';
+import { Observable, Subject } from 'rxjs';
+
 import {
     Component,
     ElementRef,
@@ -15,11 +18,11 @@ import {
     Validators
 } from '@angular/forms';
 
-import { Observable, Subject } from 'rxjs';
+import { SelectItem } from 'primeng/api';
+
 import { filter, take, takeUntil } from 'rxjs/operators';
 
-import * as _ from 'lodash';
-import { SelectItem } from 'primeng/api';
+
 
 import { DotLicenseService, DotMessageService, DotWorkflowService } from '@dotcms/data-access';
 import {

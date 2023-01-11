@@ -1,8 +1,9 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-
 import { By } from '@angular/platform-browser';
+
 import { DotEventsService } from '@dotcms/data-access';
 import { DotIconModule, DotSpinnerModule } from '@dotcms/ui';
+
 import { DotGlobalMessageComponent } from './dot-global-message.component';
 
 describe('DotGlobalMessageComponent', () => {

@@ -1,9 +1,11 @@
 import { NgModule } from '@angular/core';
 import { RouterModule, Routes } from '@angular/router';
+
 import {
     DotContentTypesListingModule,
     DotContentTypesPortletComponent
 } from '@portlets/shared/dot-content-types-listing';
+
 import { DotContentTypeEditResolver } from '../shared/dot-content-types-edit/dot-content-types-edit-resolver.service';
 
 const contentTypesRoutes: Routes = [

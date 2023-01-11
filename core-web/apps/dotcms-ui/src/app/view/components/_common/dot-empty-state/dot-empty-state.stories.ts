@@ -1,9 +1,11 @@
 /* eslint-disable no-console */
+import { moduleMetadata } from '@storybook/angular';
+import { Meta, Story } from '@storybook/angular/types-6-0';
+
 import { DotMessageService } from '@dotcms/data-access';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 import { DotPipesModule } from '@pipes/dot-pipes.module';
-import { moduleMetadata } from '@storybook/angular';
-import { Meta, Story } from '@storybook/angular/types-6-0';
+
 import { DotEmptyStateModule } from './dot-empty-state.module';
 
 const messageServiceMock = new MockDotMessageService({

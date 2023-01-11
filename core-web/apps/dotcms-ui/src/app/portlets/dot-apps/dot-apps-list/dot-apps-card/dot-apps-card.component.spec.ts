@@ -1,13 +1,16 @@
 import { Component } from '@angular/core';
 import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
+
+import { CardModule } from 'primeng/card';
+import { TooltipModule } from 'primeng/tooltip';
+
 import { DotAvatarModule } from '@components/_common/dot-avatar/dot-avatar.module';
 import { DotMessageService } from '@dotcms/data-access';
 import { DotIconModule } from '@dotcms/ui';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 import { DotPipesModule } from '@pipes/dot-pipes.module';
-import { CardModule } from 'primeng/card';
-import { TooltipModule } from 'primeng/tooltip';
+
 import { DotAppsCardComponent } from './dot-apps-card.component';
 
 @Component({

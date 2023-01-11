@@ -1,5 +1,7 @@
 import { Component, OnDestroy, OnInit } from '@angular/core';
+
 import { MessageService } from 'primeng/api';
+
 import { DotMessage } from './model/dot-message.model';
 import { DotMessageDisplayService } from './services';
 

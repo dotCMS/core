@@ -1,13 +1,18 @@
 import { CommonModule } from '@angular/common';
 import { NgModule } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { DotContainerSelectorModule } from '@components/dot-container-selector/dot-container-selector.module';
+
+import { ButtonModule } from 'primeng/button';
+
 import { UiDotIconButtonModule } from '@components/_common/dot-icon-button/dot-icon-button.module';
+import { DotContainerSelectorModule } from '@components/dot-container-selector/dot-container-selector.module';
 import { PaginatorService } from '@dotcms/data-access';
 import { DotPipesModule } from '@pipes/dot-pipes.module';
-import { ButtonModule } from 'primeng/button';
-import { SearchableDropDownModule } from '../_common/searchable-dropdown/searchable-dropdown.module';
+
+
 import { DotContainerSelectorLayoutComponent } from './dot-container-selector-layout.component';
+
+import { SearchableDropDownModule } from '../_common/searchable-dropdown/searchable-dropdown.module';
 
 @NgModule({
     declarations: [DotContainerSelectorLayoutComponent],

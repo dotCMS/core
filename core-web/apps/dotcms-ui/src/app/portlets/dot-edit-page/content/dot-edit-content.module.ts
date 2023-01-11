@@ -2,22 +2,18 @@ import { CommonModule } from '@angular/common';
 import { NgModule } from '@angular/core';
 import { RouterModule, Routes } from '@angular/router';
 
-import { DotLoadingIndicatorModule } from '@components/_common/iframe/dot-loading-indicator/dot-loading-indicator.module';
-import { DotEditPageService, DotPageRenderService, DotWorkflowService } from '@dotcms/data-access';
-import { DotDirectivesModule } from '@shared/dot-directives.module';
-import { DotWhatsChangedModule } from './components/dot-whats-changed/dot-whats-changed.module';
-import { DotEditContentComponent } from './dot-edit-content.component';
-import { DotContainerContentletService } from './services/dot-container-contentlet.service';
-import { DotEditContentHtmlService } from './services/dot-edit-content-html/dot-edit-content-html.service';
-import { DotDOMHtmlUtilService } from './services/html/dot-dom-html-util.service';
-import { DotDragDropAPIHtmlService } from './services/html/dot-drag-drop-api-html.service';
-import { DotEditContentToolbarHtmlService } from './services/html/dot-edit-content-toolbar-html.service';
+import { ButtonModule } from 'primeng/button';
+import { CheckboxModule } from 'primeng/checkbox';
+import { DialogModule } from 'primeng/dialog';
+import { TooltipModule } from 'primeng/tooltip';
 
-import { DotContentletEditorModule } from '@components/dot-contentlet-editor/dot-contentlet-editor.module';
 import { DotOverlayMaskModule } from '@components/_common/dot-overlay-mask/dot-overlay-mask.module';
+import { DotLoadingIndicatorModule } from '@components/_common/iframe/dot-loading-indicator/dot-loading-indicator.module';
 import { IframeOverlayService } from '@components/_common/iframe/service/iframe-overlay.service';
+import { DotContentletEditorModule } from '@components/dot-contentlet-editor/dot-contentlet-editor.module';
 import { DotCustomEventHandlerService } from '@dotcms/app/api/services/dot-custom-event-handler/dot-custom-event-handler.service';
 import { DotPaletteModule } from '@dotcms/app/portlets/dot-edit-page/components/dot-palette/dot-palette.module';
+import { DotEditPageService, DotPageRenderService, DotWorkflowService } from '@dotcms/data-access';
 import {
     DotESContentService,
     DotLicenseService,
@@ -26,14 +22,20 @@ import {
 } from '@dotcms/data-access';
 import { DotIconModule } from '@dotcms/ui';
 import { DotPipesModule } from '@pipes/dot-pipes.module';
-import { ButtonModule } from 'primeng/button';
-import { CheckboxModule } from 'primeng/checkbox';
-import { DialogModule } from 'primeng/dialog';
-import { TooltipModule } from 'primeng/tooltip';
+import { DotDirectivesModule } from '@shared/dot-directives.module';
+
+
 import { DotEditPageStateControllerModule } from './components/dot-edit-page-state-controller/dot-edit-page-state-controller.module';
 import { DotEditPageToolbarModule } from './components/dot-edit-page-toolbar/dot-edit-page-toolbar.module';
 import { DotEditPageViewAsControllerModule } from './components/dot-edit-page-view-as-controller/dot-edit-page-view-as-controller.module';
 import { DotFormSelectorModule } from './components/dot-form-selector/dot-form-selector.module';
+import { DotWhatsChangedModule } from './components/dot-whats-changed/dot-whats-changed.module';
+import { DotEditContentComponent } from './dot-edit-content.component';
+import { DotContainerContentletService } from './services/dot-container-contentlet.service';
+import { DotEditContentHtmlService } from './services/dot-edit-content-html/dot-edit-content-html.service';
+import { DotDOMHtmlUtilService } from './services/html/dot-dom-html-util.service';
+import { DotDragDropAPIHtmlService } from './services/html/dot-drag-drop-api-html.service';
+import { DotEditContentToolbarHtmlService } from './services/html/dot-edit-content-toolbar-html.service';
 
 const routes: Routes = [
     {

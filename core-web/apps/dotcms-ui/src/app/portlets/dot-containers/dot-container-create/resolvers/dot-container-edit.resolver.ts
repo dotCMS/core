@@ -1,6 +1,7 @@
+import { Observable } from 'rxjs';
+
 import { Injectable } from '@angular/core';
 import { ActivatedRouteSnapshot, Resolve, RouterStateSnapshot } from '@angular/router';
-import { Observable } from 'rxjs';
 
 import { DotContainerEntity } from '@dotcms/dotcms-models';
 import { DotContainersService } from '@services/dot-containers/dot-containers.service';

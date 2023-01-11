@@ -3,21 +3,17 @@ import { forkJoin, Subject } from 'rxjs';
 
 import { Component, OnDestroy, OnInit, ViewChild, ViewContainerRef } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
-import { DotAlertConfirmService, DotCrudService } from '@dotcms/data-access';
+
 import { map, pluck, take, takeUntil } from 'rxjs/operators';
 
-import { DotContentTypesInfoService, DotMessageService } from '@dotcms/data-access';
-import { ActionHeaderOptions } from '@models/action-header';
-import { ButtonModel } from '@models/action-header/button.model';
-import { DataTableColumn } from '@models/data-table';
-import { DotActionMenuItem } from '@shared/models/dot-action-menu/dot-action-menu-item.model';
 
-import { DotLicenseService } from '@dotcms/data-access';
-import { DotEnvironment } from '@models/dot-environment/dot-environment';
 
 import { DotListingDataTableComponent } from '@components/dot-listing-data-table/dot-listing-data-table.component';
 import { DotHttpErrorManagerService } from '@dotcms/app/api/services/dot-http-error-manager/dot-http-error-manager.service';
 import { PushPublishService } from '@dotcms/app/api/services/push-publish/push-publish.service';
+import { DotLicenseService } from '@dotcms/data-access';
+import { DotContentTypesInfoService, DotMessageService } from '@dotcms/data-access';
+import { DotAlertConfirmService, DotCrudService } from '@dotcms/data-access';
 import { DotContentTypeService } from '@dotcms/data-access';
 import { DotPushPublishDialogService } from '@dotcms/dotcms-js';
 import {
@@ -26,6 +22,12 @@ import {
     DotCopyContentTypeDialogFormFields,
     StructureTypeView
 } from '@dotcms/dotcms-models';
+import { ActionHeaderOptions } from '@models/action-header';
+import { ButtonModel } from '@models/action-header/button.model';
+import { DataTableColumn } from '@models/data-table';
+import { DotEnvironment } from '@models/dot-environment/dot-environment';
+import { DotActionMenuItem } from '@shared/models/dot-action-menu/dot-action-menu-item.model';
+
 import { DotContentTypeStore } from './dot-content-type.store';
 
 type DotRowActions = {

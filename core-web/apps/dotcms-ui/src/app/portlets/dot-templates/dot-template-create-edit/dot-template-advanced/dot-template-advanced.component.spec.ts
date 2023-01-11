@@ -12,6 +12,7 @@ import { By } from '@angular/platform-browser';
 
 import { DotMessageService } from '@dotcms/data-access';
 import { MockDotMessageService } from '@dotcms/utils-testing';
+
 import { DotTemplateAdvancedComponent } from './dot-template-advanced.component';
 
 @Component({

@@ -1,6 +1,8 @@
 import { Component, OnInit } from '@angular/core';
-import { DotAddVariableStore } from '@dotcms/app/portlets/dot-containers/dot-container-create/dot-container-code/dot-add-variable/store/dot-add-variable.store';
+
 import { DynamicDialogConfig, DynamicDialogRef } from 'primeng/dynamicdialog';
+
+import { DotAddVariableStore } from '@dotcms/app/portlets/dot-containers/dot-container-create/dot-container-code/dot-add-variable/store/dot-add-variable.store';
 
 @Component({
     selector: 'dot-add-variable',

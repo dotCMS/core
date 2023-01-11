@@ -1,8 +1,12 @@
+import { merge, Observable, Subject } from 'rxjs';
+
 import { Injectable } from '@angular/core';
+
+import { filter, takeUntil } from 'rxjs/operators';
+
 import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
 import { DotcmsEventsService } from '@dotcms/dotcms-js';
-import { merge, Observable, Subject } from 'rxjs';
-import { filter, takeUntil } from 'rxjs/operators';
+
 import { DotMessageSeverity } from '../model';
 import { DotMessage } from '../model/dot-message.model';
 

@@ -6,6 +6,7 @@ import { DropdownModule } from 'primeng/dropdown';
 
 import { DotWorkflowsActionsService } from '@dotcms/data-access';
 import { DotPipesModule } from '@pipes/dot-pipes.module';
+
 import { DotWorkflowsActionsSelectorFieldComponent } from './dot-workflows-actions-selector-field.component';
 import { DotWorkflowsActionsSelectorFieldService } from './services/dot-workflows-actions-selector-field.service';
 

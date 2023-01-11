@@ -1,11 +1,13 @@
+import { Observable } from 'rxjs';
+
 import { Injectable } from '@angular/core';
 import { ActivatedRouteSnapshot, Resolve, RouterStateSnapshot } from '@angular/router';
-import { Observable } from 'rxjs';
+
+import { map } from 'rxjs/operators';
 
 import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
 import { DotTemplatesService } from '@dotcms/app/api/services/dot-templates/dot-templates.service';
 import { DotTemplate } from '@dotcms/dotcms-models';
-import { map } from 'rxjs/operators';
 
 @Injectable()
 export class DotTemplateCreateEditResolver implements Resolve<DotTemplate> {

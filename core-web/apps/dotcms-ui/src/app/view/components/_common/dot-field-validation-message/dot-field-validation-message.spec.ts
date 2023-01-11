@@ -1,12 +1,13 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { DebugElement, Pipe, PipeTransform } from '@angular/core';
-
 import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing';
 import { UntypedFormControl, Validators } from '@angular/forms';
 import { By } from '@angular/platform-browser';
+
 import { DotMessageService } from '@dotcms/data-access';
 import { MockDotMessageService } from '@dotcms/utils-testing';
+
 import { DotFieldValidationMessageComponent } from './dot-field-validation-message';
 
 @Pipe({

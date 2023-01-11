@@ -1,19 +1,23 @@
-import { CommonModule } from '@angular/common';
-import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { DotAppsConfigurationDetailFormComponent } from './dot-apps-configuration-detail-form.component';
 
+import { MarkdownService } from 'ngx-markdown';
+
+import { CommonModule } from '@angular/common';
 import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { DebugElement } from '@angular/core';
+import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ReactiveFormsModule } from '@angular/forms';
 import { By } from '@angular/platform-browser';
-import { DotIconModule } from '@dotcms/ui';
-import { MarkdownService } from 'ngx-markdown';
+
 import { ButtonModule } from 'primeng/button';
 import { CheckboxModule } from 'primeng/checkbox';
 import { DropdownModule } from 'primeng/dropdown';
 import { InputTextModule } from 'primeng/inputtext';
 import { InputTextareaModule } from 'primeng/inputtextarea';
 import { TooltipModule } from 'primeng/tooltip';
+
+import { DotIconModule } from '@dotcms/ui';
+
+import { DotAppsConfigurationDetailFormComponent } from './dot-apps-configuration-detail-form.component';
 
 const secrets = [
     {

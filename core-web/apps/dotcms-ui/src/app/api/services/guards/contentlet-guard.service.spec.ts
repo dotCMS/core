@@ -1,9 +1,12 @@
+import { of } from 'rxjs';
+
 import { Injectable } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { ActivatedRouteSnapshot, RouterStateSnapshot } from '@angular/router';
+
 import { DotNavigationService } from '@components/dot-navigation/services/dot-navigation.service';
 import { DotContentTypeService } from '@dotcms/data-access';
-import { of } from 'rxjs';
+
 import { ContentletGuardService } from './contentlet-guard.service';
 
 @Injectable()

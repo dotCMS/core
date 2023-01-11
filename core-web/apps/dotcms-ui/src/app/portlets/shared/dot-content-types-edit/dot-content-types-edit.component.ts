@@ -1,6 +1,13 @@
+import { Subject } from 'rxjs';
+
 import { HttpErrorResponse } from '@angular/common/http';
 import { Component, OnDestroy, OnInit, ViewChild } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
+
+import { MenuItem } from 'primeng/api';
+
+import { mergeMap, pluck, take, takeUntil } from 'rxjs/operators';
+
 import { DotDialogActions } from '@components/dot-dialog/dot-dialog.component';
 import { DotHttpErrorManagerService } from '@dotcms/app/api/services/dot-http-error-manager/dot-http-error-manager.service';
 import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
@@ -16,9 +23,7 @@ import {
     DotCMSContentTypeLayoutRow,
     DotCMSWorkflow
 } from '@dotcms/dotcms-models';
-import { MenuItem } from 'primeng/api';
-import { Subject } from 'rxjs';
-import { mergeMap, pluck, take, takeUntil } from 'rxjs/operators';
+
 import { DotEditContentTypeCacheService } from './components/fields/content-type-fields-properties-form/field-properties/dot-relationships-property/services/dot-edit-content-type-cache.service';
 import { ContentTypeFieldsDropZoneComponent } from './components/fields/index';
 import { FieldService } from './components/fields/service';

@@ -1,6 +1,7 @@
 // import AUTOSCROLLER_JS from './autoscroller.js.js';
 import AUTOSCROLLER_JS from '@dotcms/app/portlets/dot-edit-page/content/services/html/libraries/autoscroller.js';
 import { EDIT_PAGE_JS } from '@dotcms/app/portlets/dot-edit-page/content/services/html/libraries/iframe-edit-mode.js';
+
 import DRAGULA_JS from './dragula.min.js';
 
 const EDIT_MODE_DRAG_DROP = `

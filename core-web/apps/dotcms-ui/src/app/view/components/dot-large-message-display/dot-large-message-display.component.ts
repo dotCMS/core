@@ -1,3 +1,5 @@
+import { Observable, Subject } from 'rxjs';
+
 import {
     AfterViewInit,
     Component,
@@ -6,11 +8,12 @@ import {
     QueryList,
     ViewChildren
 } from '@angular/core';
+
+import { filter, takeUntil } from 'rxjs/operators';
+
 import { DotDialogComponent } from '@components/dot-dialog/dot-dialog.component';
 import { DotParseHtmlService } from '@dotcms/app/api/services/dot-parse-html/dot-parse-html.service';
 import { DotcmsEventsService } from '@dotcms/dotcms-js';
-import { Observable, Subject } from 'rxjs';
-import { filter, takeUntil } from 'rxjs/operators';
 
 interface DotLargeMessageDisplayParams {
     title: string;

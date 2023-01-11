@@ -1,16 +1,22 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
+import { of } from 'rxjs';
+
 import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { Component, DebugElement, Input } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { RouterTestingModule } from '@angular/router/testing';
-import { DotMessageSeverity, DotMessageType } from '@components/dot-message-display/model';
-import { DotMessageDisplayService } from '@components/dot-message-display/services';
+
+import { ConfirmationService } from 'primeng/api';
+import { Menu, MenuModule } from 'primeng/menu';
+
 import { DotGlobalMessageService } from '@components/_common/dot-global-message/dot-global-message.service';
 import { UiDotIconButtonModule } from '@components/_common/dot-icon-button/dot-icon-button.module';
 import { DotIframeService } from '@components/_common/iframe/service/dot-iframe/dot-iframe.service';
+import { DotMessageSeverity, DotMessageType } from '@components/dot-message-display/model';
+import { DotMessageDisplayService } from '@components/dot-message-display/services';
 import { DotFormatDateService } from '@dotcms/app/api/services/dot-format-date-service';
 import { DotHttpErrorManagerService } from '@dotcms/app/api/services/dot-http-error-manager/dot-http-error-manager.service';
 import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
@@ -47,9 +53,8 @@ import {
     mockWorkflowsActions
 } from '@dotcms/utils-testing';
 import { MockPushPublishService } from '@portlets/shared/dot-content-types-listing/dot-content-types.component.spec';
-import { ConfirmationService } from 'primeng/api';
-import { Menu, MenuModule } from 'primeng/menu';
-import { of } from 'rxjs';
+
+
 import { DotEditPageWorkflowsActionsComponent } from './dot-edit-page-workflows-actions.component';
 
 @Component({

@@ -1,6 +1,8 @@
-import { DotExperiment, Variant } from '@dotcms/dotcms-models';
 import { createHttpFactory, HttpMethod, SpectatorHttp } from '@ngneat/spectator';
+
+import { DotExperiment, Variant } from '@dotcms/dotcms-models';
 import { ExperimentMocks } from '@portlets/dot-experiments/test/mocks';
+
 import { DotExperimentsService } from './dot-experiments.service';
 
 const API_ENDPOINT = '/api/v1/experiments';

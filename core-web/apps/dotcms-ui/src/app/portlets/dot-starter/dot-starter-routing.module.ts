@@ -1,5 +1,6 @@
 import { NgModule } from '@angular/core';
 import { RouterModule, Routes } from '@angular/router';
+
 import { DotStarterResolver } from './dot-starter-resolver.service';
 import { DotStarterComponent } from './dot-starter.component';
 

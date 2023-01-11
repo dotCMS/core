@@ -1,7 +1,10 @@
+import { Observable, Observer, of as observableOf } from 'rxjs';
+
 import { Injectable } from '@angular/core';
 import { ActivatedRouteSnapshot, CanDeactivate, RouterStateSnapshot } from '@angular/router';
+
 import { DotAlertConfirmService } from '@dotcms/data-access';
-import { Observable, Observer, of as observableOf } from 'rxjs';
+
 import { OnSaveDeactivate } from './save-on-deactivate';
 
 @Injectable()

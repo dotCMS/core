@@ -4,6 +4,9 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { UntypedFormBuilder } from '@angular/forms';
 import { By } from '@angular/platform-browser';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
+
+import { FileUploadModule } from 'primeng/fileupload';
+
 import { DotAutocompleteTagsComponent } from '@components/_common/dot-autocomplete-tags/dot-autocomplete-tags.component';
 import { DotAutocompleteTagsModule } from '@components/_common/dot-autocomplete-tags/dot-autocomplete-tags.module';
 import { DotFieldValidationMessageModule } from '@components/_common/dot-field-validation-message/dot-file-validation-message.module';
@@ -13,7 +16,7 @@ import { DOTTestBed } from '@dotcms/app/test/dot-test-bed';
 import { DotMessageService } from '@dotcms/data-access';
 import { SiteService } from '@dotcms/dotcms-js';
 import { MockDotMessageService, mockSites, SiteServiceMock } from '@dotcms/utils-testing';
-import { FileUploadModule } from 'primeng/fileupload';
+
 import { DotCreatePersonaFormComponent } from './dot-create-persona-form.component';
 
 const FROM_INITIAL_VALUE = {

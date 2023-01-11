@@ -1,3 +1,5 @@
+import { fromEvent as observableFromEvent, Subject } from 'rxjs';
+
 import {
     Component,
     ElementRef,
@@ -8,7 +10,7 @@ import {
     Output,
     ViewChild
 } from '@angular/core';
-import { fromEvent as observableFromEvent, Subject } from 'rxjs';
+
 import { debounceTime, takeUntil } from 'rxjs/operators';
 
 @Component({

@@ -1,11 +1,13 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
+import { of } from 'rxjs';
+
+import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { DebugElement } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import { RouterTestingModule } from '@angular/router/testing';
 
-import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { DotUiColorsService } from '@dotcms/app/api/services/dot-ui-colors/dot-ui-colors.service';
 import { DotMessageService } from '@dotcms/data-access';
 import {
@@ -15,7 +17,8 @@ import {
     LoggerService,
     StringUtils
 } from '@dotcms/dotcms-js';
-import { of } from 'rxjs';
+
+
 import { DotNavLogoService } from './api/services/dot-nav-logo/dot-nav-logo.service';
 import { AppComponent } from './app.component';
 

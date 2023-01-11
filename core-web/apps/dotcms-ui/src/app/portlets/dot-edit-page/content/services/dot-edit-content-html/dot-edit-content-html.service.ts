@@ -1,9 +1,10 @@
 import { fromEvent, Observable, of, Subject, Subscription } from 'rxjs';
 
+import { HttpErrorResponse } from '@angular/common/http';
 import { ElementRef, Injectable, NgZone } from '@angular/core';
+
 import { filter, map, take } from 'rxjs/operators';
 
-import { HttpErrorResponse } from '@angular/common/http';
 import { DotGlobalMessageService } from '@components/_common/dot-global-message/dot-global-message.service';
 import { DotHttpErrorManagerService } from '@dotcms/app/api/services/dot-http-error-manager/dot-http-error-manager.service';
 import { MODEL_VAR_NAME } from '@dotcms/app/portlets/dot-edit-page/content/services/html/libraries/iframe-edit-mode.js';
@@ -21,11 +22,7 @@ import {
     DotPageRenderState
 } from '@dotcms/dotcms-models';
 import { DotPageContent } from '@portlets/dot-edit-page/shared/models';
-import { DotContainerContentletService } from '../dot-container-contentlet.service';
-import { DotDOMHtmlUtilService } from '../html/dot-dom-html-util.service';
-import { DotDragDropAPIHtmlService } from '../html/dot-drag-drop-api-html.service';
-import { DotEditContentToolbarHtmlService } from '../html/dot-edit-content-toolbar-html.service';
-import { getEditPageCss } from '../html/libraries/iframe-edit-mode.css';
+
 import { PageModelChangeEvent, PageModelChangeEventType } from './models';
 import {
     DotAddContentTypePayload,
@@ -38,6 +35,12 @@ import {
     DotInlineEditContent,
     DotRelocatePayload
 } from './models/dot-contentlets-events.model';
+
+import { DotContainerContentletService } from '../dot-container-contentlet.service';
+import { DotDOMHtmlUtilService } from '../html/dot-dom-html-util.service';
+import { DotDragDropAPIHtmlService } from '../html/dot-drag-drop-api-html.service';
+import { DotEditContentToolbarHtmlService } from '../html/dot-edit-content-toolbar-html.service';
+import { getEditPageCss } from '../html/libraries/iframe-edit-mode.css';
 export enum DotContentletAction {
     EDIT,
     ADD

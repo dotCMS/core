@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { CONTAINER_SOURCE } from '@dotcms/dotcms-models';
+
 import { DotLayoutGridBox } from './dot-layout-grid-box.model';
 import { DotLayoutGrid } from './dot-layout-grid.model';
 

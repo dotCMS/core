@@ -1,6 +1,8 @@
 /* eslint-disable @typescript-eslint/no-empty-function */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
+import { Observable, of as observableOf, throwError as observableThrowError } from 'rxjs';
+
 import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { Component, DebugElement, EventEmitter, Injectable, Input, Output } from '@angular/core';
 import { ComponentFixture, fakeAsync, TestBed, tick } from '@angular/core/testing';
@@ -9,6 +11,9 @@ import { By } from '@angular/platform-browser';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { ActivatedRoute } from '@angular/router';
 import { RouterTestingModule } from '@angular/router/testing';
+
+import { ConfirmationService, SelectItem } from 'primeng/api';
+
 import { DotListingDataTableModule } from '@components/dot-listing-data-table/dot-listing-data-table.module';
 import { DotFormatDateService } from '@dotcms/app/api/services/dot-format-date-service';
 import {
@@ -39,8 +44,7 @@ import {
     MockDotMessageService
 } from '@dotcms/utils-testing';
 import { DotContentTypeStore } from '@portlets/shared/dot-content-types-listing/dot-content-type.store';
-import { ConfirmationService, SelectItem } from 'primeng/api';
-import { Observable, of as observableOf, throwError as observableThrowError } from 'rxjs';
+
 import { DotContentTypesPortletComponent } from './dot-content-types.component';
 
 const DELETE_MENU_ITEM_INDEX = 4;

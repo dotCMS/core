@@ -1,11 +1,14 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
+import { of } from 'rxjs';
+
 import { TestBed } from '@angular/core/testing';
+
 import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
 import { DotTemplatesService } from '@dotcms/app/api/services/dot-templates/dot-templates.service';
 import { DotTemplate } from '@dotcms/dotcms-models';
 import { MockDotRouterService } from '@dotcms/utils-testing';
-import { of } from 'rxjs';
+
 import { DotTemplateCreateEditResolver } from './dot-template-create-edit.resolver';
 
 const templateMock: DotTemplate = {

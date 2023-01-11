@@ -1,15 +1,19 @@
+import { Observable, of as observableOf } from 'rxjs';
+
 import { TestBed } from '@angular/core/testing';
 import { Validators } from '@angular/forms';
-import { Observable, of as observableOf } from 'rxjs';
+
+
+import { FieldPropertyService } from './field-properties.service';
+import { FieldService } from './field.service';
+import { validateDateDefaultValue } from './validators';
+
 import { FieldType } from '..';
 import {
     CategoriesPropertyComponent,
     DataTypePropertyComponent,
     DefaultValuePropertyComponent
 } from '../content-type-fields-properties-form/field-properties';
-import { FieldPropertyService } from './field-properties.service';
-import { FieldService } from './field.service';
-import { validateDateDefaultValue } from './validators';
 
 class TestFieldService {
     loadFieldTypes(): Observable<FieldType[]> {

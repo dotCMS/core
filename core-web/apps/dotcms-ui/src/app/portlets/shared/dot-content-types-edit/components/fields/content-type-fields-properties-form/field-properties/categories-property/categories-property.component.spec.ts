@@ -1,15 +1,19 @@
+import { of } from 'rxjs';
+
 import { Component, DebugElement, EventEmitter, Injectable, Input, Output } from '@angular/core';
 import { ComponentFixture, waitForAsync } from '@angular/core/testing';
+import { NgControl, UntypedFormGroup } from '@angular/forms';
+import { By } from '@angular/platform-browser';
+
 import { PaginationEvent } from '@components/_common/searchable-dropdown/component';
 import { DOTTestBed } from '@dotcms/app/test/dot-test-bed';
 import { DotMessageService, PaginatorService } from '@dotcms/data-access';
 import { MockDotMessageService } from '@dotcms/utils-testing';
+import { dotcmsContentTypeFieldBasicMock } from '@dotcms/utils-testing';
+
 import { CategoriesPropertyComponent } from './categories-property.component';
 
-import { NgControl, UntypedFormGroup } from '@angular/forms';
-import { By } from '@angular/platform-browser';
-import { dotcmsContentTypeFieldBasicMock } from '@dotcms/utils-testing';
-import { of } from 'rxjs';
+
 
 @Component({
     selector: 'dot-searchable-dropdown',

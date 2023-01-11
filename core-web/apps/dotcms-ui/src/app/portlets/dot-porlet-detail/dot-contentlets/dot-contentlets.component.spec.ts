@@ -6,11 +6,14 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import { ActivatedRoute } from '@angular/router';
 import { RouterTestingModule } from '@angular/router/testing';
+
+import { ConfirmationService } from 'primeng/api';
+
+import { DotGlobalMessageService } from '@components/_common/dot-global-message/dot-global-message.service';
+import { DotIframeService } from '@components/_common/iframe/service/dot-iframe/dot-iframe.service';
 import { DotContentletEditorModule } from '@components/dot-contentlet-editor/dot-contentlet-editor.module';
 import { DotContentletEditorService } from '@components/dot-contentlet-editor/services/dot-contentlet-editor.service';
 import { DotMessageDisplayService } from '@components/dot-message-display/services';
-import { DotGlobalMessageService } from '@components/_common/dot-global-message/dot-global-message.service';
-import { DotIframeService } from '@components/_common/iframe/service/dot-iframe/dot-iframe.service';
 import { DotCustomEventHandlerService } from '@dotcms/app/api/services/dot-custom-event-handler/dot-custom-event-handler.service';
 import { DotDownloadBundleDialogService } from '@dotcms/app/api/services/dot-download-bundle-dialog/dot-download-bundle-dialog.service';
 import { DotFormatDateService } from '@dotcms/app/api/services/dot-format-date-service';
@@ -40,9 +43,11 @@ import {
     UserModel
 } from '@dotcms/dotcms-js';
 import { CoreWebServiceMock, LoginServiceMock, MockDotRouterService } from '@dotcms/utils-testing';
-import { ConfirmationService } from 'primeng/api';
-import { dotEventSocketURLFactory, MockDotUiColorsService } from '../../../test/dot-test-bed';
+
+
 import { DotContentletsComponent } from './dot-contentlets.component';
+
+import { dotEventSocketURLFactory, MockDotUiColorsService } from '../../../test/dot-test-bed';
 
 @Injectable()
 class MockDotContentletEditorService {

@@ -1,5 +1,7 @@
-import { Injectable } from '@angular/core';
 import { TinyColor } from '@ctrl/tinycolor';
+
+import { Injectable } from '@angular/core';
+
 import { DotUiColors } from '@dotcms/dotcms-js';
 
 @Injectable()

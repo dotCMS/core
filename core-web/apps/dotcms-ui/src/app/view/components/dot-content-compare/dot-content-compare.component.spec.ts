@@ -1,26 +1,29 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { of } from 'rxjs';
 
 import { Component, DebugElement, EventEmitter, Input, Output } from '@angular/core';
+import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { By } from '@angular/platform-browser';
+
+import { ConfirmationService } from 'primeng/api';
+
+import { DotIframeService } from '@components/_common/iframe/service/dot-iframe/dot-iframe.service';
+import { DotContentCompareTableComponent } from '@components/dot-content-compare/components/dot-content-compare-table/dot-content-compare-table.component';
 import { dotContentCompareTableDataMock } from '@components/dot-content-compare/components/dot-content-compare-table/dot-content-compare-table.component.spec';
+import { DotContentCompareModule } from '@components/dot-content-compare/dot-content-compare.module';
 import { DotContentCompareStore } from '@components/dot-content-compare/store/dot-content-compare.store';
+import { DotFormatDateService } from '@dotcms/app/api/services/dot-format-date-service';
 import { DotMessageService } from '@dotcms/data-access';
+import { DotAlertConfirmService } from '@dotcms/data-access';
+import { DotcmsConfigService } from '@dotcms/dotcms-js';
+import { DotCMSContentlet } from '@dotcms/dotcms-models';
 import { MockDotMessageService } from '@dotcms/utils-testing';
-import { of } from 'rxjs';
+
 import {
     DotContentCompareComponent,
     DotContentCompareEvent
 } from './dot-content-compare.component';
 
-import { By } from '@angular/platform-browser';
-import { DotContentCompareTableComponent } from '@components/dot-content-compare/components/dot-content-compare-table/dot-content-compare-table.component';
-import { DotContentCompareModule } from '@components/dot-content-compare/dot-content-compare.module';
-import { DotIframeService } from '@components/_common/iframe/service/dot-iframe/dot-iframe.service';
-import { DotFormatDateService } from '@dotcms/app/api/services/dot-format-date-service';
-import { DotAlertConfirmService } from '@dotcms/data-access';
-import { DotcmsConfigService } from '@dotcms/dotcms-js';
-import { DotCMSContentlet } from '@dotcms/dotcms-models';
-import { ConfirmationService } from 'primeng/api';
 
 const DotContentCompareEventMOCK = {
     inode: '1',

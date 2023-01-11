@@ -1,18 +1,21 @@
+import { of as observableOf } from 'rxjs';
+
 import { DebugElement } from '@angular/core';
 import { ComponentFixture, waitForAsync } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
-import { of as observableOf } from 'rxjs';
-
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { RouterTestingModule } from '@angular/router/testing';
+
 import { DotMenuService } from '@dotcms/app/api/services/dot-menu.service';
 import { DOTTestBed } from '@dotcms/app/test/dot-test-bed';
 import { LoginService } from '@dotcms/dotcms-js';
 import { LoginServiceMock } from '@dotcms/utils-testing';
+
+import { DotEditContentletComponent } from './dot-edit-contentlet.component';
+
 import { DotIframeDialogModule } from '../../../dot-iframe-dialog/dot-iframe-dialog.module';
 import { DotContentletEditorService } from '../../services/dot-contentlet-editor.service';
 import { DotContentletWrapperComponent } from '../dot-contentlet-wrapper/dot-contentlet-wrapper.component';
-import { DotEditContentletComponent } from './dot-edit-contentlet.component';
 
 describe('DotEditContentletComponent', () => {
     let component: DotEditContentletComponent;

@@ -1,8 +1,13 @@
+import { of } from 'rxjs';
+
 import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { DebugElement } from '@angular/core';
 import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import { ActivatedRoute } from '@angular/router';
+
+import { Checkbox, CheckboxModule } from 'primeng/checkbox';
+
 import { DotAccountService } from '@dotcms/app/api/services/dot-account-service';
 import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
 import { DotMessageService } from '@dotcms/data-access';
@@ -13,8 +18,7 @@ import {
     MockDotRouterService
 } from '@dotcms/utils-testing';
 import { DotMessagePipeModule } from '@pipes/dot-message/dot-message-pipe.module';
-import { Checkbox, CheckboxModule } from 'primeng/checkbox';
-import { of } from 'rxjs';
+
 import { DotStarterResolver } from './dot-starter-resolver.service';
 import { DotStarterComponent } from './dot-starter.component';
 

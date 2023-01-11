@@ -1,8 +1,11 @@
+import { of } from 'rxjs';
+
 import { TestBed } from '@angular/core/testing';
+
 import { MockDotPropertiesService } from '@dotcms/app/portlets/dot-edit-page/main/dot-edit-page-nav/dot-edit-page-nav.component.spec';
 import { DotPropertiesService } from '@dotcms/data-access';
 import { FeaturedFlags } from '@dotcms/dotcms-models';
-import { of } from 'rxjs';
+
 import { PagesGuardService } from './pages-guard.service';
 
 describe('PagesGuardService', () => {

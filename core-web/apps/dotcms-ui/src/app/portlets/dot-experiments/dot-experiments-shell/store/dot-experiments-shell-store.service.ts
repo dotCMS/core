@@ -1,7 +1,9 @@
+import { ComponentStore, OnStoreInit } from '@ngrx/component-store';
+
 import { Injectable } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
+
 import { DotPageRenderState } from '@dotcms/dotcms-models';
-import { ComponentStore, OnStoreInit } from '@ngrx/component-store';
 
 export interface DotExperimentsShellState {
     pageTitle: string;

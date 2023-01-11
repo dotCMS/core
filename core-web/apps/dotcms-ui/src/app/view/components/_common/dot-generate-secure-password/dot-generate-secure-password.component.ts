@@ -1,8 +1,12 @@
+import { Subject } from 'rxjs';
+
 import { Component, OnDestroy, OnInit } from '@angular/core';
+
+import { takeUntil } from 'rxjs/operators';
+
 import { DotClipboardUtil } from '@dotcms/app/api/util/clipboard/ClipboardUtil';
 import { DotGenerateSecurePasswordService, DotMessageService } from '@dotcms/data-access';
-import { Subject } from 'rxjs';
-import { takeUntil } from 'rxjs/operators';
+
 import { DotDialogActions } from '../../dot-dialog/dot-dialog.component';
 
 @Component({

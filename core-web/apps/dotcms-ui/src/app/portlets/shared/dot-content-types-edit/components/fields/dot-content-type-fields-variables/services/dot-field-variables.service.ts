@@ -1,8 +1,11 @@
+import { Observable } from 'rxjs';
+
 import { Injectable } from '@angular/core';
+
+import { pluck } from 'rxjs/operators';
+
 import { CoreWebService } from '@dotcms/dotcms-js';
 import { DotCMSContentTypeField, DotFieldVariable } from '@dotcms/dotcms-models';
-import { Observable } from 'rxjs';
-import { pluck } from 'rxjs/operators';
 
 /**
  * Provide method to handle with the Field Variables

@@ -1,10 +1,11 @@
+import { fromEvent, merge, Observable, of, Subject } from 'rxjs';
+
 import { HttpErrorResponse } from '@angular/common/http';
 import { Component, ElementRef, NgZone, OnDestroy, OnInit, ViewChild } from '@angular/core';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { ActivatedRoute, Router } from '@angular/router';
 
 import { DialogService } from 'primeng/dynamicdialog';
-import { fromEvent, merge, Observable, of, Subject } from 'rxjs';
 
 import { DotGlobalMessageService } from '@components/_common/dot-global-message/dot-global-message.service';
 import { IframeOverlayService } from '@components/_common/iframe/service/iframe-overlay.service';

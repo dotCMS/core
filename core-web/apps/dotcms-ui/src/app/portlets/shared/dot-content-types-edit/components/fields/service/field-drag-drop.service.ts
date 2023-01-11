@@ -1,11 +1,13 @@
-import { Injectable } from '@angular/core';
-import { DotCMSContentTypeField, DotCMSContentTypeLayoutRow } from '@dotcms/dotcms-models';
 import * as _ from 'lodash';
 import { DragulaService } from 'ng2-dragula';
 import { merge, Observable } from 'rxjs';
+
+import { Injectable } from '@angular/core';
+
 import { filter, map, tap } from 'rxjs/operators';
 
 import { DotAlertConfirmService, DotMessageService } from '@dotcms/data-access';
+import { DotCMSContentTypeField, DotCMSContentTypeLayoutRow } from '@dotcms/dotcms-models';
 import { FieldUtil } from '@dotcms/utils-testing';
 
 const MAX_COLS_PER_ROW = 4;

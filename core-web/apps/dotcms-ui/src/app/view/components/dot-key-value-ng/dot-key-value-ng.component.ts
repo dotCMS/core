@@ -1,6 +1,9 @@
-import { Component, EventEmitter, Input, OnChanges, Output, SimpleChanges } from '@angular/core';
-import { DotKeyValue } from '@shared/models/dot-key-value-ng/dot-key-value-ng.model';
 import * as _ from 'lodash';
+
+import { Component, EventEmitter, Input, OnChanges, Output, SimpleChanges } from '@angular/core';
+
+import { DotKeyValue } from '@shared/models/dot-key-value-ng/dot-key-value-ng.model';
+
 import { DotKeyValueUtil } from './util/dot-key-value-util';
 
 @Component({

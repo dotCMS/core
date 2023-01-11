@@ -1,32 +1,36 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
+import * as _ from 'lodash';
+import { of } from 'rxjs';
+
 import { Component, DebugElement } from '@angular/core';
 import { ComponentFixture, waitForAsync } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 
-import { DOTTestBed } from '@dotcms/app/test/dot-test-bed';
-import {
-    DotPageStateServiceMock,
-    DotPersonalizeServiceMock,
-    MockDotMessageService
-} from '@dotcms/utils-testing';
+import { InputSwitchModule } from 'primeng/inputswitch';
+import { SelectButtonModule } from 'primeng/selectbutton';
+import { TooltipModule } from 'primeng/tooltip';
 
+import { DOTTestBed } from '@dotcms/app/test/dot-test-bed';
 import {
     DotAlertConfirmService,
     DotMessageService,
     DotPersonalizeService
 } from '@dotcms/data-access';
 import { DotPageMode, DotPageRender, DotPageRenderState } from '@dotcms/dotcms-models';
+import {
+    DotPageStateServiceMock,
+    DotPersonalizeServiceMock,
+    MockDotMessageService
+} from '@dotcms/utils-testing';
 import { dotcmsContentletMock, mockDotRenderedPage, mockUser } from '@dotcms/utils-testing';
 import { DotPipesModule } from '@pipes/dot-pipes.module';
-import * as _ from 'lodash';
-import { InputSwitchModule } from 'primeng/inputswitch';
-import { SelectButtonModule } from 'primeng/selectbutton';
-import { TooltipModule } from 'primeng/tooltip';
-import { of } from 'rxjs';
-import { DotPageStateService } from '../../services/dot-page-state/dot-page-state.service';
+
+
 import { DotEditPageLockInfoComponent } from './components/dot-edit-page-lock-info/dot-edit-page-lock-info.component';
 import { DotEditPageStateControllerComponent } from './dot-edit-page-state-controller.component';
+
+import { DotPageStateService } from '../../services/dot-page-state/dot-page-state.service';
 
 const mockDotMessageService = new MockDotMessageService({
     'editpage.toolbar.edit.page': 'Edit',

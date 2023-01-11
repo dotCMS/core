@@ -1,9 +1,13 @@
+import { Observable } from 'rxjs';
+
 import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
+
+import { SelectItem } from 'primeng/api';
+
+import { map, take } from 'rxjs/operators';
+
 import { DotContentTypeService, DotMessageService } from '@dotcms/data-access';
 import { StructureTypeView } from '@dotcms/dotcms-models';
-import { SelectItem } from 'primeng/api';
-import { Observable } from 'rxjs';
-import { map, take } from 'rxjs/operators';
 
 @Component({
     selector: 'dot-base-type-selector',

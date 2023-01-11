@@ -1,6 +1,7 @@
 import { Component, DebugElement } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
+
 import { DotCopyButtonModule } from '@components/dot-copy-button/dot-copy-button.module';
 import { DotMessageService } from '@dotcms/data-access';
 import { DotCMSContentType } from '@dotcms/dotcms-models';

@@ -5,10 +5,13 @@ import { Component, DebugElement, Input } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import { RouterTestingModule } from '@angular/router/testing';
-import { DotMessageDisplayService } from '@components/dot-message-display/services';
+
+import { ConfirmationService } from 'primeng/api';
+
 import { DotDownloadBundleDialogModule } from '@components/_common/dot-download-bundle-dialog/dot-download-bundle-dialog.module';
 import { DotGlobalMessageService } from '@components/_common/dot-global-message/dot-global-message.service';
 import { DotWizardModule } from '@components/_common/dot-wizard/dot-wizard.module';
+import { DotMessageDisplayService } from '@components/dot-message-display/services';
 import { DotCustomEventHandlerService } from '@dotcms/app/api/services/dot-custom-event-handler/dot-custom-event-handler.service';
 import { DotFormatDateService } from '@dotcms/app/api/services/dot-format-date-service';
 import { DotHttpErrorManagerService } from '@dotcms/app/api/services/dot-http-error-manager/dot-http-error-manager.service';
@@ -36,10 +39,12 @@ import {
     UserModel
 } from '@dotcms/dotcms-js';
 import { CoreWebServiceMock, LoginServiceMock, MockDotRouterService } from '@dotcms/utils-testing';
-import { ConfirmationService } from 'primeng/api';
-import { DotContentletEditorModule } from '../dot-contentlet-editor/dot-contentlet-editor.module';
-import { DotIframeService } from '../_common/iframe/service/dot-iframe/dot-iframe.service';
+
+
 import { MainComponentLegacyComponent } from './main-legacy.component';
+
+import { DotIframeService } from '../_common/iframe/service/dot-iframe/dot-iframe.service';
+import { DotContentletEditorModule } from '../dot-contentlet-editor/dot-contentlet-editor.module';
 
 @Component({
     selector: 'dot-alert-confirm',

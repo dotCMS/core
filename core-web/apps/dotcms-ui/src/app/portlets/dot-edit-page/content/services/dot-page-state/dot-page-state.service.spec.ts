@@ -1,5 +1,10 @@
+import { of, throwError } from 'rxjs';
+
 import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { getTestBed, TestBed } from '@angular/core/testing';
+
+import { ConfirmationService } from 'primeng/api';
+
 import { DotFormatDateService } from '@dotcms/app/api/services/dot-format-date-service';
 import { DotHttpErrorManagerService } from '@dotcms/app/api/services/dot-http-error-manager/dot-http-error-manager.service';
 import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
@@ -28,10 +33,11 @@ import {
     mockUser,
     mockUserAuth
 } from '@dotcms/utils-testing';
-import { ConfirmationService } from 'primeng/api';
-import { of, throwError } from 'rxjs';
-import { PageModelChangeEventType } from '../dot-edit-content-html/models';
+
 import { DotPageStateService } from './dot-page-state.service';
+
+import { PageModelChangeEventType } from '../dot-edit-content-html/models';
+
 
 const getDotPageRenderStateMock = (favoritePage?: DotCMSContentlet) => {
     return new DotPageRenderState(mockUser(), mockDotRenderedPage(), favoritePage);

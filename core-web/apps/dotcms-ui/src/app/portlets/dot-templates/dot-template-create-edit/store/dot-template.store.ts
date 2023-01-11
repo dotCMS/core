@@ -1,9 +1,14 @@
-import { Injectable } from '@angular/core';
-import { ActivatedRoute } from '@angular/router';
 
 import { ComponentStore } from '@ngrx/component-store';
 import * as _ from 'lodash';
 import { Observable, of, zip } from 'rxjs';
+
+
+
+import { HttpErrorResponse } from '@angular/common/http';
+import { Injectable } from '@angular/core';
+import { ActivatedRoute } from '@angular/router';
+
 import {
     catchError,
     debounceTime,
@@ -17,14 +22,12 @@ import {
 } from 'rxjs/operators';
 
 import { DotGlobalMessageService } from '@components/_common/dot-global-message/dot-global-message.service';
-import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
-import { DotMessageService } from '@dotcms/data-access';
-
-import { HttpErrorResponse } from '@angular/common/http';
 import { DotEditLayoutService } from '@dotcms/app/api/services/dot-edit-layout/dot-edit-layout.service';
 import { DotHttpErrorManagerService } from '@dotcms/app/api/services/dot-http-error-manager/dot-http-error-manager.service';
+import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
 import { DotTemplateContainersCacheService } from '@dotcms/app/api/services/dot-template-containers-cache/dot-template-containers-cache.service';
 import { DotTemplatesService } from '@dotcms/app/api/services/dot-templates/dot-templates.service';
+import { DotMessageService } from '@dotcms/data-access';
 import { DotContainerMap, DotLayout, DotTemplate } from '@dotcms/dotcms-models';
 
 type DotTemplateType = 'design' | 'advanced';

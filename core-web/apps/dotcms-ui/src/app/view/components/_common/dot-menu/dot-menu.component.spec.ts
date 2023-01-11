@@ -1,11 +1,14 @@
-import { ComponentFixture, TestBed } from '@angular/core/testing';
 
 import { CommonModule } from '@angular/common';
 import { DebugElement } from '@angular/core';
+import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
-import { UiDotIconButtonModule } from '@components/_common/dot-icon-button/dot-icon-button.module';
+
 import { Menu, MenuModule } from 'primeng/menu';
+
+import { UiDotIconButtonModule } from '@components/_common/dot-icon-button/dot-icon-button.module';
+
 import { DotMenuComponent } from './dot-menu.component';
 
 describe('DotMenuComponent', () => {

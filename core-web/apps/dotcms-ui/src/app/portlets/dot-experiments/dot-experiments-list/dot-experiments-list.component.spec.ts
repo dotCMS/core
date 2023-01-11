@@ -1,11 +1,18 @@
+import { byTestId, createComponentFactory, mockProvider, Spectator } from '@ngneat/spectator';
+import { of } from 'rxjs';
+
 import { CUSTOM_ELEMENTS_SCHEMA } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
+
+import { ConfirmationService, MessageService } from 'primeng/api';
+import { ButtonModule } from 'primeng/button';
+import { SkeletonModule } from 'primeng/skeleton';
+
 import { UiDotIconButtonTooltipModule } from '@components/_common/dot-icon-button-tooltip/dot-icon-button-tooltip.module';
 import { UiDotIconButtonModule } from '@components/_common/dot-icon-button/dot-icon-button.module';
 import { DotMessagePipe } from '@dotcms/app/view/pipes';
 import { DotMessageService } from '@dotcms/data-access';
 import { DotIconModule } from '@dotcms/ui';
-import { byTestId, createComponentFactory, mockProvider, Spectator } from '@ngneat/spectator';
 import { DotMessagePipeModule } from '@pipes/dot-message/dot-message-pipe.module';
 import { DotExperimentsCreateComponent } from '@portlets/dot-experiments/dot-experiments-create/dot-experiments-create.component';
 import { DotExperimentsEmptyExperimentsComponent } from '@portlets/dot-experiments/dot-experiments-list/components/dot-experiments-empty-experiments/dot-experiments-empty-experiments.component';
@@ -21,10 +28,9 @@ import {
     DotExperimentsListStoreMock,
     ExperimentMocks
 } from '@portlets/dot-experiments/test/mocks';
-import { ConfirmationService, MessageService } from 'primeng/api';
-import { ButtonModule } from 'primeng/button';
-import { SkeletonModule } from 'primeng/skeleton';
-import { of } from 'rxjs';
+
+
+
 import { DotExperimentsListComponent } from './dot-experiments-list.component';
 
 describe('ExperimentsListComponent', () => {

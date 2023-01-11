@@ -8,6 +8,7 @@ import {
     Output,
     ViewChild
 } from '@angular/core';
+
 import { DotMenu, DotMenuItem } from '@models/navigation';
 
 @Component({

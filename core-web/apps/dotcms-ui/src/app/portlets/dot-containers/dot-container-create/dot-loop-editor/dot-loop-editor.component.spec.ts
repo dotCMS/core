@@ -8,10 +8,13 @@ import {
 } from '@angular/forms';
 import { By } from '@angular/platform-browser';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
+
+import { ButtonModule } from 'primeng/button';
+
 import { DotMessageService } from '@dotcms/data-access';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 import { DotMessagePipeModule } from '@pipes/dot-message/dot-message-pipe.module';
-import { ButtonModule } from 'primeng/button';
+
 import { DotLoopEditorComponent } from './dot-loop-editor.component';
 
 @Component({

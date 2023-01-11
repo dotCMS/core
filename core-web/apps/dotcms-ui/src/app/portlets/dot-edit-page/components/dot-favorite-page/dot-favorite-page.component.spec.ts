@@ -3,6 +3,13 @@ import { Component, DebugElement, EventEmitter, Input, Output } from '@angular/c
 import { ComponentFixture, getTestBed, TestBed } from '@angular/core/testing';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { By } from '@angular/platform-browser';
+
+import { ButtonModule } from 'primeng/button';
+import { DynamicDialogConfig, DynamicDialogRef } from 'primeng/dynamicdialog';
+import { MultiSelectModule } from 'primeng/multiselect';
+
+import { of } from 'rxjs/internal/observable/of';
+
 import { DotFieldValidationMessageModule } from '@components/_common/dot-field-validation-message/dot-file-validation-message.module';
 import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
 import { DotMessageService } from '@dotcms/data-access';
@@ -16,10 +23,8 @@ import {
     mockUser
 } from '@dotcms/utils-testing';
 import { DotMessagePipe } from '@pipes/dot-message/dot-message.pipe';
-import { ButtonModule } from 'primeng/button';
-import { DynamicDialogConfig, DynamicDialogRef } from 'primeng/dynamicdialog';
-import { MultiSelectModule } from 'primeng/multiselect';
-import { of } from 'rxjs/internal/observable/of';
+
+
 import { DotFavoritePageComponent } from './dot-favorite-page.component';
 import { DotFavoritePageActionState, DotFavoritePageStore } from './store/dot-favorite-page.store';
 @Component({

@@ -1,5 +1,7 @@
-import { NgGridItemConfig } from '@dotcms/dot-layout-grid';
 import * as _ from 'lodash';
+
+import { NgGridItemConfig } from '@dotcms/dot-layout-grid';
+
 import { DotContainerColumnBox } from './dot-container-column-box.model';
 import { DotLayoutGridBox } from './dot-layout-grid-box.model';
 import { DotLayoutGridRow } from './dot-layout-grid-row.model';

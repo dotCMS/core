@@ -1,10 +1,13 @@
+import { ComponentStore } from '@ngrx/component-store';
+import * as _ from 'lodash';
+import { Observable, of, pipe } from 'rxjs';
+
 import { HttpErrorResponse } from '@angular/common/http';
 import { Injectable } from '@angular/core';
-import { ComponentStore } from '@ngrx/component-store';
-import { Observable, of, pipe } from 'rxjs';
+import { ActivatedRoute } from '@angular/router';
+
 import { catchError, filter, pluck, switchMap, take, tap } from 'rxjs/operators';
 
-import { ActivatedRoute } from '@angular/router';
 import { DotGlobalMessageService } from '@components/_common/dot-global-message/dot-global-message.service';
 import { DotHttpErrorManagerService } from '@dotcms/app/api/services/dot-http-error-manager/dot-http-error-manager.service';
 import { DotContentTypeService, DotMessageService } from '@dotcms/data-access';
@@ -17,7 +20,7 @@ import {
 } from '@dotcms/dotcms-models';
 import { DotContainersService } from '@services/dot-containers/dot-containers.service';
 import { DotRouterService } from '@services/dot-router/dot-router.service';
-import * as _ from 'lodash';
+
 
 export interface DotContainerPropertiesState {
     showPrePostLoopInput: boolean;

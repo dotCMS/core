@@ -1,11 +1,16 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { TestBed } from '@angular/core/testing';
-import { DotAlertConfirmService, DotMessageService } from '@dotcms/data-access';
-import { FieldUtil, MockDotMessageService } from '@dotcms/utils-testing';
 import { DragulaService } from 'ng2-dragula';
 import { Observable, Subject } from 'rxjs';
+
+import { TestBed } from '@angular/core/testing';
+
 import { filter, map } from 'rxjs/operators';
+
+import { DotAlertConfirmService, DotMessageService } from '@dotcms/data-access';
+import { FieldUtil, MockDotMessageService } from '@dotcms/utils-testing';
+
+
 import { FieldDragDropService } from './field-drag-drop.service';
 
 const by = (opt: string) => (source: Observable<any>) => {

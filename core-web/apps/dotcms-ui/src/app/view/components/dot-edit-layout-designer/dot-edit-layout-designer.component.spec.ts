@@ -1,3 +1,6 @@
+import * as _ from 'lodash';
+import { of as observableOf, of } from 'rxjs';
+
 import { Component, DebugElement, EventEmitter, Input, Output } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import {
@@ -8,28 +11,22 @@ import {
 } from '@angular/forms';
 import { By } from '@angular/platform-browser';
 import { RouterTestingModule } from '@angular/router/testing';
-import { of as observableOf, of } from 'rxjs';
 
-import * as _ from 'lodash';
+
 import { ButtonModule } from 'primeng/button';
 import { TooltipModule } from 'primeng/tooltip';
 
 import { DotActionButtonModule } from '@components/_common/dot-action-button/dot-action-button.module';
-import { DotEditLayoutDesignerComponent } from './dot-edit-layout-designer.component';
-
-import { DotSecondaryToolbarModule } from '@components/dot-secondary-toolbar';
 import { DotFieldValidationMessageModule } from '@components/_common/dot-field-validation-message/dot-file-validation-message.module';
 import { DotGlobalMessageModule } from '@components/_common/dot-global-message/dot-global-message.module';
+import { DotGlobalMessageService } from '@components/_common/dot-global-message/dot-global-message.service';
 import { UiDotIconButtonModule } from '@components/_common/dot-icon-button/dot-icon-button.module';
+import { DotSecondaryToolbarModule } from '@components/dot-secondary-toolbar';
 import { DotEditLayoutService } from '@dotcms/app/api/services/dot-edit-layout/dot-edit-layout.service';
 import { DotHttpErrorManagerService } from '@dotcms/app/api/services/dot-http-error-manager/dot-http-error-manager.service';
 import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
 import { DotTemplateContainersCacheService } from '@dotcms/app/api/services/dot-template-containers-cache/dot-template-containers-cache.service';
 import { DotEventsService, DotMessageService, DotThemesService } from '@dotcms/data-access';
-import { DotMessagePipe } from '@pipes/dot-message/dot-message.pipe';
-import { DotEditPageInfoModule } from '@portlets/dot-edit-page/components/dot-edit-page-info/dot-edit-page-info.module';
-
-import { DotGlobalMessageService } from '@components/_common/dot-global-message/dot-global-message.service';
 import { DotTheme } from '@dotcms/dotcms-models';
 import {
     cleanUpDialog,
@@ -39,6 +36,10 @@ import {
     mockDotRenderedPage,
     mockDotThemes
 } from '@dotcms/utils-testing';
+import { DotMessagePipe } from '@pipes/dot-message/dot-message.pipe';
+import { DotEditPageInfoModule } from '@portlets/dot-edit-page/components/dot-edit-page-info/dot-edit-page-info.module';
+
+import { DotEditLayoutDesignerComponent } from './dot-edit-layout-designer.component';
 
 @Component({
     selector: 'dot-template-addtional-actions-menu',

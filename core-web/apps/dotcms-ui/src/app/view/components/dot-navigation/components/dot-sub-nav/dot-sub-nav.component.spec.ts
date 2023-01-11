@@ -5,8 +5,10 @@ import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { RouterTestingModule } from '@angular/router/testing';
 
 import { DotMenu } from '@models/navigation';
-import { dotMenuMock } from '../../services/dot-navigation.service.spec';
+
 import { DotSubNavComponent } from './dot-sub-nav.component';
+
+import { dotMenuMock } from '../../services/dot-navigation.service.spec';
 
 const data: DotMenu = {
     ...dotMenuMock(),

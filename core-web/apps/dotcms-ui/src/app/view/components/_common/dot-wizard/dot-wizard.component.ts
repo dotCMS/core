@@ -1,3 +1,5 @@
+import { Subject } from 'rxjs';
+
 import {
     Component,
     ComponentFactoryResolver,
@@ -10,6 +12,9 @@ import {
     ViewChild,
     ViewChildren
 } from '@angular/core';
+
+import { takeUntil } from 'rxjs/operators';
+
 import {
     DialogButton,
     DotDialogActions,
@@ -21,8 +26,6 @@ import { DotMessageService } from '@dotcms/data-access';
 import { DotFormModel } from '@models/dot-form/dot-form.model';
 import { DotWizardInput } from '@models/dot-wizard-input/dot-wizard-input.model';
 import { DotWizardStep } from '@models/dot-wizard-step/dot-wizard-step.model';
-import { Subject } from 'rxjs';
-import { takeUntil } from 'rxjs/operators';
 
 @Component({
     selector: 'dot-wizard',

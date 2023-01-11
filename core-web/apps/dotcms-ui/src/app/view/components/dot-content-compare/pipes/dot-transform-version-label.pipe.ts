@@ -1,4 +1,5 @@
 import { Pipe, PipeTransform } from '@angular/core';
+
 import { DotFormatDateService } from '@dotcms/app/api/services/dot-format-date-service';
 import { DotMessageService } from '@dotcms/data-access';
 import { DotCMSContentlet } from '@dotcms/dotcms-models';

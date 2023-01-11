@@ -1,6 +1,9 @@
+import { DragulaModule, DragulaService } from 'ng2-dragula';
+
 import { Component, DebugElement, EventEmitter, Input, Output } from '@angular/core';
 import { ComponentFixture, waitForAsync } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
+
 import { UiDotIconButtonTooltipModule } from '@components/_common/dot-icon-button-tooltip/dot-icon-button-tooltip.module';
 import { DOTTestBed } from '@dotcms/app/test/dot-test-bed';
 import { DotAlertConfirmService, DotMessageService } from '@dotcms/data-access';
@@ -10,8 +13,9 @@ import {
     FieldUtil,
     MockDotMessageService
 } from '@dotcms/utils-testing';
-import { DragulaModule, DragulaService } from 'ng2-dragula';
+
 import { ContentTypeFieldsRowComponent } from '.';
+
 import { FieldDragDropService } from '../service';
 
 const mockFieldRow: DotCMSContentTypeLayoutRow = FieldUtil.createFieldRow(2);

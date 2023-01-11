@@ -7,10 +7,12 @@ import {
     Output,
     ViewChild
 } from '@angular/core';
+
 import { DotMessageSeverity, DotMessageType } from '@components/dot-message-display/model';
 import { DotMessageDisplayService } from '@components/dot-message-display/services';
 import { DotMessageService } from '@dotcms/data-access';
 import { DotKeyValue } from '@shared/models/dot-key-value-ng/dot-key-value-ng.model';
+
 import { DotKeyValueUtil } from '../util/dot-key-value-util';
 
 @Component({

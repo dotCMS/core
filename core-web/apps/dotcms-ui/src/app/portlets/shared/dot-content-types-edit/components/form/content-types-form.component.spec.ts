@@ -1,5 +1,8 @@
 /* eslint-disable @typescript-eslint/no-empty-function */
 
+import { Observable, of } from 'rxjs';
+
+import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { Component, DebugElement, forwardRef, Injectable, Input } from '@angular/core';
 import { ComponentFixture, waitForAsync } from '@angular/core/testing';
 import {
@@ -11,9 +14,37 @@ import {
 import { By } from '@angular/platform-browser';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { RouterTestingModule } from '@angular/router/testing';
-import { Observable, of } from 'rxjs';
 
+import { ButtonModule } from 'primeng/button';
+import { DropdownModule } from 'primeng/dropdown';
+import { InputTextModule } from 'primeng/inputtext';
+import { OverlayPanelModule } from 'primeng/overlaypanel';
+import { TabViewModule } from 'primeng/tabview';
+
+import { DotFieldValidationMessageModule } from '@components/_common/dot-field-validation-message/dot-file-validation-message.module';
+
+// tslint:disable-next-line:max-line-length
+
+import { UiDotIconButtonModule } from '@components/_common/dot-icon-button/dot-icon-button.module';
+import { DotPageSelectorModule } from '@components/_common/dot-page-selector/dot-page-selector.module';
+
+// eslint-disable-next-line max-len
+
+import { DotWorkflowsActionsSelectorFieldModule } from '@components/_common/dot-workflows-actions-selector-field/dot-workflows-actions-selector-field.module';
+import { DotWorkflowsSelectorFieldModule } from '@components/_common/dot-workflows-selector-field/dot-workflows-selector-field.module';
+import { DotFieldHelperModule } from '@components/dot-field-helper/dot-field-helper.module';
 import { DOTTestBed } from '@dotcms/app/test/dot-test-bed';
+import { DotMdIconSelectorModule } from '@dotcms/app/view/components/_common/dot-md-icon-selector/dot-md-icon-selector.module';
+import { DotLicenseService } from '@dotcms/data-access';
+import {
+    DotContentTypesInfoService,
+    DotMessageService,
+    DotWorkflowService
+} from '@dotcms/data-access';
+import { DotcmsConfigService, LoginService, SiteService } from '@dotcms/dotcms-js';
+import { DotCMSContentTypeLayoutRow, DotCMSSystemActionType } from '@dotcms/dotcms-models';
+import { DotIconModule } from '@dotcms/ui';
+import { dotcmsContentTypeBasicMock, dotcmsContentTypeFieldBasicMock } from '@dotcms/utils-testing';
 import {
     DotWorkflowServiceMock,
     LoginServiceMock,
@@ -21,37 +52,11 @@ import {
     mockWorkflows,
     SiteServiceMock
 } from '@dotcms/utils-testing';
-
-import { DotcmsConfigService, LoginService, SiteService } from '@dotcms/dotcms-js';
-
-import { DotFieldValidationMessageModule } from '@components/_common/dot-field-validation-message/dot-file-validation-message.module';
-import {
-    DotContentTypesInfoService,
-    DotMessageService,
-    DotWorkflowService
-} from '@dotcms/data-access';
-import { DotCMSContentTypeLayoutRow, DotCMSSystemActionType } from '@dotcms/dotcms-models';
-import { ContentTypesFormComponent } from './content-types-form.component';
-// tslint:disable-next-line:max-line-length
-import { DotWorkflowsSelectorFieldModule } from '@components/_common/dot-workflows-selector-field/dot-workflows-selector-field.module';
-
-import { DotFieldHelperModule } from '@components/dot-field-helper/dot-field-helper.module';
-import { UiDotIconButtonModule } from '@components/_common/dot-icon-button/dot-icon-button.module';
-import { DotPageSelectorModule } from '@components/_common/dot-page-selector/dot-page-selector.module';
-import { DotLicenseService } from '@dotcms/data-access';
-import { DotIconModule } from '@dotcms/ui';
-import { dotcmsContentTypeBasicMock, dotcmsContentTypeFieldBasicMock } from '@dotcms/utils-testing';
-import { DotDirectivesModule } from '@shared/dot-directives.module';
-// eslint-disable-next-line max-len
-import { HttpClientTestingModule } from '@angular/common/http/testing';
-import { DotWorkflowsActionsSelectorFieldModule } from '@components/_common/dot-workflows-actions-selector-field/dot-workflows-actions-selector-field.module';
-import { DotMdIconSelectorModule } from '@dotcms/app/view/components/_common/dot-md-icon-selector/dot-md-icon-selector.module';
 import { mockWorkflowsActions } from '@dotcms/utils-testing';
-import { ButtonModule } from 'primeng/button';
-import { DropdownModule } from 'primeng/dropdown';
-import { InputTextModule } from 'primeng/inputtext';
-import { OverlayPanelModule } from 'primeng/overlaypanel';
-import { TabViewModule } from 'primeng/tabview';
+import { DotDirectivesModule } from '@shared/dot-directives.module';
+
+import { ContentTypesFormComponent } from './content-types-form.component';
+
 
 @Component({
     selector: 'dot-site-selector-field',

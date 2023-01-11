@@ -1,34 +1,39 @@
-import { Component, DebugElement, Injectable } from '@angular/core';
-import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing';
-import { By } from '@angular/platform-browser';
 import { Observable, of as observableOf } from 'rxjs';
 
+import { CommonModule } from '@angular/common';
+import { Component, DebugElement, Injectable } from '@angular/core';
+import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing';
 import {
     FormsModule,
     ReactiveFormsModule,
     UntypedFormBuilder,
     UntypedFormGroup
 } from '@angular/forms';
+import { By } from '@angular/platform-browser';
+
+
+import { AutoCompleteModule } from 'primeng/autocomplete';
+
 import {
     DotFolder,
     DotPageSelectorItem
 } from '@components/_common/dot-page-selector/models/dot-page-selector.models';
-import { LoginService } from '@dotcms/dotcms-js';
-import { DotDirectivesModule } from '@shared/dot-directives.module';
-import { AutoCompleteModule } from 'primeng/autocomplete';
-import { DotPageSelectorComponent } from './dot-page-selector.component';
-import { DotPageAsset, DotPageSelectorService } from './service/dot-page-selector.service';
-
-import { CommonModule } from '@angular/common';
-import { DotFieldHelperModule } from '@components/dot-field-helper/dot-field-helper.module';
 import {
     expectedFolderMap,
     expectedPagesMap,
     expectedSitesMap
 } from '@components/_common/dot-page-selector/service/dot-page-selector.service.spec';
+import { DotFieldHelperModule } from '@components/dot-field-helper/dot-field-helper.module';
 import { DotMessageService } from '@dotcms/data-access';
+import { LoginService } from '@dotcms/dotcms-js';
 import { LoginServiceMock, MockDotMessageService } from '@dotcms/utils-testing';
 import { DotPipesModule } from '@pipes/dot-pipes.module';
+import { DotDirectivesModule } from '@shared/dot-directives.module';
+
+import { DotPageSelectorComponent } from './dot-page-selector.component';
+import { DotPageAsset, DotPageSelectorService } from './service/dot-page-selector.service';
+
+
 
 export const mockDotPageSelectorResults = {
     type: 'page',

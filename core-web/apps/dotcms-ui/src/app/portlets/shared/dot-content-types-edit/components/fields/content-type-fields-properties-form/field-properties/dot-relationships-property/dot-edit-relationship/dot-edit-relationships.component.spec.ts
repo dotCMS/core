@@ -1,9 +1,12 @@
 /* eslint-disable @typescript-eslint/no-empty-function */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
+import { Observable, of } from 'rxjs';
+
 import { Component, DebugElement, EventEmitter, Injectable, Input, Output } from '@angular/core';
 import { ComponentFixture, waitForAsync } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
+
 import { PaginationEvent } from '@components/_common/searchable-dropdown/component';
 import { DOTTestBed } from '@dotcms/app/test/dot-test-bed';
 import { DotMessageService, PaginatorService } from '@dotcms/data-access';
@@ -12,7 +15,7 @@ import { dotcmsContentTypeBasicMock, MockDotMessageService } from '@dotcms/utils
 import { DotRelationshipCardinality } from '@portlets/shared/dot-content-types-edit/components/fields/content-type-fields-properties-form/field-properties/dot-relationships-property/model/dot-relationship-cardinality.model';
 import { DotEditContentTypeCacheService } from '@portlets/shared/dot-content-types-edit/components/fields/content-type-fields-properties-form/field-properties/dot-relationships-property/services/dot-edit-content-type-cache.service';
 import { DotRelationshipService } from '@portlets/shared/dot-content-types-edit/components/fields/content-type-fields-properties-form/field-properties/dot-relationships-property/services/dot-relationship.service';
-import { Observable, of } from 'rxjs';
+
 import { DotEditRelationshipsComponent } from './dot-edit-relationships.component';
 
 const mockRelationships = [

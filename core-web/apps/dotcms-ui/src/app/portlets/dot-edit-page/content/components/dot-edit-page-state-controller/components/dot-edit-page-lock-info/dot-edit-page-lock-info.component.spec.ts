@@ -2,12 +2,13 @@ import { DebugElement } from '@angular/core';
 import { ComponentFixture, fakeAsync, TestBed, tick, waitForAsync } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 
-import { mockDotRenderedPage, mockUser } from '@dotcms/utils-testing';
 
 import { DotMessageService } from '@dotcms/data-access';
 import { DotPageRenderState } from '@dotcms/dotcms-models';
+import { mockDotRenderedPage, mockUser } from '@dotcms/utils-testing';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 import { DotPipesModule } from '@pipes/dot-pipes.module';
+
 import { DotEditPageLockInfoComponent } from './dot-edit-page-lock-info.component';
 
 const messageServiceMock = new MockDotMessageService({

@@ -1,3 +1,5 @@
+import { combineLatest, Observable, of } from 'rxjs';
+
 import {
     AfterViewChecked,
     ChangeDetectionStrategy,
@@ -15,13 +17,14 @@ import {
     UntypedFormGroup,
     Validators
 } from '@angular/forms';
+
+import { map } from 'rxjs/operators';
+
 import { DotDialogActions } from '@components/dot-dialog/dot-dialog.component';
 import { DotMessageService } from '@dotcms/data-access';
 import { DotCopyContentTypeDialogFormFields } from '@dotcms/dotcms-models';
 import { DotCMSAssetDialogCopyFields } from '@portlets/shared/dot-content-types-listing/dot-content-type.store';
 import { DotValidators } from '@shared/validators/dotValidators';
-import { combineLatest, Observable, of } from 'rxjs';
-import { map } from 'rxjs/operators';
 
 @Component({
     selector: 'dot-content-type-copy-dialog',

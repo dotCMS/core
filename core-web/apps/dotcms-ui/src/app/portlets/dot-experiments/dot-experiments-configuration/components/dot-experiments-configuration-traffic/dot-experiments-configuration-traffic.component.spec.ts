@@ -1,8 +1,11 @@
-import { DotMessageService } from '@dotcms/data-access';
-import { MockDotMessageService } from '@dotcms/utils-testing';
 import { byTestId, createComponentFactory, Spectator } from '@ngneat/spectator';
+
 import { ButtonModule } from 'primeng/button';
 import { Card, CardModule } from 'primeng/card';
+
+import { DotMessageService } from '@dotcms/data-access';
+import { MockDotMessageService } from '@dotcms/utils-testing';
+
 import { DotExperimentsConfigurationTrafficComponent } from './dot-experiments-configuration-traffic.component';
 
 const messageServiceMock = new MockDotMessageService({

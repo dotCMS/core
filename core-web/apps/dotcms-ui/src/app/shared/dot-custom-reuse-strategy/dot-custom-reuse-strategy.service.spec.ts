@@ -1,6 +1,6 @@
 import { TestBed } from '@angular/core/testing';
-
 import { ActivatedRouteSnapshot } from '@angular/router';
+
 import { DotCustomReuseStrategyService } from './dot-custom-reuse-strategy.service';
 
 describe('DotCustomReuseStrategyService', () => {

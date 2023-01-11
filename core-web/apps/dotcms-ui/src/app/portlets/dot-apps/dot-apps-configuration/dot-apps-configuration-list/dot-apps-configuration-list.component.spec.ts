@@ -2,11 +2,14 @@ import { CommonModule } from '@angular/common';
 import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
+
+import { ConfirmationService } from 'primeng/api';
+import { ButtonModule } from 'primeng/button';
+
 import { DotAlertConfirmService, DotMessageService } from '@dotcms/data-access';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 import { DotPipesModule } from '@pipes/dot-pipes.module';
-import { ConfirmationService } from 'primeng/api';
-import { ButtonModule } from 'primeng/button';
+
 import { DotAppsConfigurationItemModule } from './dot-apps-configuration-item/dot-apps-configuration-item.module';
 import { DotAppsConfigurationListComponent } from './dot-apps-configuration-list.component';
 

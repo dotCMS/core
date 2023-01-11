@@ -1,13 +1,17 @@
+import { of as observableOf } from 'rxjs';
+
 import { DebugElement, Injectable } from '@angular/core';
 import { ComponentFixture } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
+
+import { SelectItem } from 'primeng/api';
+import { Dropdown } from 'primeng/dropdown';
+
 import { DOTTestBed } from '@dotcms/app/test/dot-test-bed';
 import { DotContentTypeService, DotMessageService } from '@dotcms/data-access';
 import { MockDotMessageService } from '@dotcms/utils-testing';
-import { SelectItem } from 'primeng/api';
-import { Dropdown } from 'primeng/dropdown';
-import { of as observableOf } from 'rxjs';
+
 import { DotBaseTypeSelectorComponent } from './dot-base-type-selector.component';
 
 @Injectable()

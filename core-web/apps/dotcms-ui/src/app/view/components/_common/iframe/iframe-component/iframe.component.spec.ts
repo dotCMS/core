@@ -1,11 +1,11 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { RouterTestingModule } from '@angular/router/testing';
-import { IframeOverlayService } from './../service/iframe-overlay.service';
 
 import { Component, DebugElement } from '@angular/core';
 import { ComponentFixture, fakeAsync, TestBed, tick, waitForAsync } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
+import { RouterTestingModule } from '@angular/router/testing';
+
 import { DotOverlayMaskModule } from '@components/_common/dot-overlay-mask/dot-overlay-mask.module';
 import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
 import { DotUiColorsService } from '@dotcms/app/api/services/dot-ui-colors/dot-ui-colors.service';
@@ -17,9 +17,12 @@ import {
     MockDotRouterService
 } from '@dotcms/utils-testing';
 import { DotPipesModule } from '@pipes/dot-pipes.module';
+
+import { IframeOverlayService } from './../service/iframe-overlay.service';
+import { IframeComponent } from './iframe.component';
+
 import { MockDotUiColorsService } from '../../../../../test/dot-test-bed';
 import { DotIframeService } from '../service/dot-iframe/dot-iframe.service';
-import { IframeComponent } from './iframe.component';
 
 const fakeHtmlEl = {
     hello: 'html'

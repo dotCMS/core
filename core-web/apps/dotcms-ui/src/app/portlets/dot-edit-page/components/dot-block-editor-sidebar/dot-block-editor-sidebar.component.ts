@@ -1,5 +1,10 @@
+import { Observable, of, Subject } from 'rxjs';
+
 import { HttpErrorResponse } from '@angular/common/http';
 import { Component, OnDestroy, OnInit, ViewChild } from '@angular/core';
+
+import { switchMap, take, takeUntil } from 'rxjs/operators';
+
 import { DotBlockEditorComponent } from '@dotcms/block-editor';
 import {
     DotAlertConfirmService,
@@ -9,8 +14,6 @@ import {
     DotWorkflowActionsFireService
 } from '@dotcms/data-access';
 import { DotCMSContentTypeField, DotCMSContentTypeFieldVariable } from '@dotcms/dotcms-models';
-import { Observable, of, Subject } from 'rxjs';
-import { switchMap, take, takeUntil } from 'rxjs/operators';
 
 export interface BlockEditorInput {
     content: { [key: string]: string };

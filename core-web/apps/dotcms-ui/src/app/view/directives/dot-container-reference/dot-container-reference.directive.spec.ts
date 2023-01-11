@@ -1,6 +1,4 @@
 /* eslint-disable @typescript-eslint/no-empty-function */
-import { DotContainerReferenceDirective } from './dot-container-reference.directive';
-
 import {
     ComponentRef,
     ElementRef,
@@ -9,6 +7,9 @@ import {
     ViewContainerRef,
     ViewRef
 } from '@angular/core';
+
+import { DotContainerReferenceDirective } from './dot-container-reference.directive';
+
 
 class TestViewContainerRef extends ViewContainerRef {
     readonly element: ElementRef;

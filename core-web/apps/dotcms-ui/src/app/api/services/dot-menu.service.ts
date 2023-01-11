@@ -1,7 +1,7 @@
-import { Injectable } from '@angular/core';
-import { CoreWebService } from '@dotcms/dotcms-js';
-import { DotMenu, DotMenuItem } from '@models/navigation';
 import { Observable } from 'rxjs';
+
+import { Injectable } from '@angular/core';
+
 import {
     defaultIfEmpty,
     filter,
@@ -13,6 +13,9 @@ import {
     publishLast,
     refCount
 } from 'rxjs/operators';
+
+import { CoreWebService } from '@dotcms/dotcms-js';
+import { DotMenu, DotMenuItem } from '@models/navigation';
 
 @Injectable()
 export class DotMenuService {

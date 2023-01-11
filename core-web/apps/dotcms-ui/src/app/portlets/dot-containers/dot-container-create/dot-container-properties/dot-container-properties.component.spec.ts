@@ -1,9 +1,5 @@
-import { ComponentFixture, fakeAsync, TestBed, tick } from '@angular/core/testing';
-import { LoggerService } from '@dotcms/dotcms-js';
-import { DotRouterService } from '@services/dot-router/dot-router.service';
-import { DialogService, DynamicDialogModule } from 'primeng/dynamicdialog';
 import { of } from 'rxjs';
-import { DotContainerPropertiesComponent } from './dot-container-properties.component';
+
 
 import { CommonModule } from '@angular/common';
 import { HttpClientTestingModule } from '@angular/common/http/testing';
@@ -16,15 +12,24 @@ import {
     Input,
     Output
 } from '@angular/core';
+import { ComponentFixture, fakeAsync, TestBed, tick } from '@angular/core/testing';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR, ReactiveFormsModule } from '@angular/forms';
 import { By } from '@angular/platform-browser';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { ActivatedRoute } from '@angular/router';
-import { DotMessageDisplayService } from '@components/dot-message-display/services';
+
+import { ConfirmationService, SharedModule } from 'primeng/api';
+import { ButtonModule } from 'primeng/button';
+import { CheckboxModule } from 'primeng/checkbox';
+import { DialogService, DynamicDialogModule } from 'primeng/dynamicdialog';
+import { InplaceModule } from 'primeng/inplace';
+import { MenuModule } from 'primeng/menu';
+
 import { DotActionButtonModule } from '@components/_common/dot-action-button/dot-action-button.module';
 import { DotActionMenuButtonModule } from '@components/_common/dot-action-menu-button/dot-action-menu-button.module';
 import { DotAddToBundleModule } from '@components/_common/dot-add-to-bundle';
 import { DotGlobalMessageService } from '@components/_common/dot-global-message/dot-global-message.service';
+import { DotMessageDisplayService } from '@components/dot-message-display/services';
 import { DotAutofocusModule } from '@directives/dot-autofocus/dot-autofocus.module';
 import {
     DotAlertConfirmService,
@@ -42,6 +47,7 @@ import {
     LoginService,
     StringUtils
 } from '@dotcms/dotcms-js';
+import { LoggerService } from '@dotcms/dotcms-js';
 import { DotCMSContentType } from '@dotcms/dotcms-models';
 import {
     CoreWebServiceMock,
@@ -52,12 +58,11 @@ import { DotMessagePipeModule } from '@pipes/dot-message/dot-message-pipe.module
 import { DotContainersService } from '@services/dot-containers/dot-containers.service';
 import { DotFormatDateService } from '@services/dot-format-date-service';
 import { DotHttpErrorManagerService } from '@services/dot-http-error-manager/dot-http-error-manager.service';
+import { DotRouterService } from '@services/dot-router/dot-router.service';
 import { dotEventSocketURLFactory } from '@tests/dot-test-bed';
-import { ConfirmationService, SharedModule } from 'primeng/api';
-import { ButtonModule } from 'primeng/button';
-import { CheckboxModule } from 'primeng/checkbox';
-import { InplaceModule } from 'primeng/inplace';
-import { MenuModule } from 'primeng/menu';
+
+
+import { DotContainerPropertiesComponent } from './dot-container-properties.component';
 
 @Component({
     selector: 'dot-container-code',

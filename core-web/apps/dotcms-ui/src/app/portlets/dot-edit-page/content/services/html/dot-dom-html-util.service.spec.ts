@@ -1,4 +1,5 @@
 import { TestBed, waitForAsync } from '@angular/core/testing';
+
 import { DotDOMHtmlUtilService } from './dot-dom-html-util.service';
 
 describe('DotDOMHtmlUtilService', () => {

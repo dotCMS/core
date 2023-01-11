@@ -1,14 +1,15 @@
 import { CommonModule } from '@angular/common';
 import { NgModule } from '@angular/core';
+import { ReactiveFormsModule } from '@angular/forms';
 
+import { InputTextModule } from 'primeng/inputtext';
+import { PasswordModule } from 'primeng/password';
+
+import { DotDialogModule } from '@components/dot-dialog/dot-dialog.module';
+import { DotAutofocusModule } from '@directives/dot-autofocus/dot-autofocus.module';
 import { DotAppsService } from '@dotcms/app/api/services/dot-apps/dot-apps.service';
 import { DotPipesModule } from '@pipes/dot-pipes.module';
 
-import { ReactiveFormsModule } from '@angular/forms';
-import { DotDialogModule } from '@components/dot-dialog/dot-dialog.module';
-import { DotAutofocusModule } from '@directives/dot-autofocus/dot-autofocus.module';
-import { InputTextModule } from 'primeng/inputtext';
-import { PasswordModule } from 'primeng/password';
 import { DotAppsImportExportDialogComponent } from './dot-apps-import-export-dialog.component';
 
 @NgModule({

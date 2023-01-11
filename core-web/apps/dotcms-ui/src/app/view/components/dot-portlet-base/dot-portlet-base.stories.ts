@@ -1,7 +1,8 @@
 /* eslint-disable no-console */
+import { moduleMetadata } from '@storybook/angular';
+
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 
-import { moduleMetadata } from '@storybook/angular';
 
 import { ButtonModule } from 'primeng/button';
 import { CheckboxModule } from 'primeng/checkbox';

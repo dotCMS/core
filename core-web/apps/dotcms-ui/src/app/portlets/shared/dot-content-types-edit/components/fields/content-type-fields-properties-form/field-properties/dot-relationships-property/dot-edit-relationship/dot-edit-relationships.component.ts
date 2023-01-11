@@ -1,7 +1,11 @@
-import { Component, EventEmitter, OnInit, Output } from '@angular/core';
-import { PaginatorService } from '@dotcms/data-access';
 import { Observable, of as observableOf } from 'rxjs';
+
+import { Component, EventEmitter, OnInit, Output } from '@angular/core';
+
 import { flatMap, map, switchMap, toArray } from 'rxjs/operators';
+
+import { PaginatorService } from '@dotcms/data-access';
+
 import { DotRelationshipCardinality } from '../model/dot-relationship-cardinality.model';
 import { DotRelationship } from '../model/dot-relationship.model';
 import { DotRelationshipsPropertyValue } from '../model/dot-relationships-property-value.model';

@@ -1,23 +1,27 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { Component, DebugElement, Input } from '@angular/core';
-import { ComponentFixture, fakeAsync, TestBed, tick, waitForAsync } from '@angular/core/testing';
-import { By } from '@angular/platform-browser';
-import { DotMessageService } from '@dotcms/data-access';
-import { MockDotMessageService, mockSites, SiteServiceMock } from '@dotcms/utils-testing';
 import { Observable, of as observableOf } from 'rxjs';
-import { SearchableDropDownModule } from '../searchable-dropdown/searchable-dropdown.module';
-import { DotSiteSelectorComponent } from './dot-site-selector.component';
+
 
 import { CommonModule } from '@angular/common';
 import { HttpClientTestingModule } from '@angular/common/http/testing';
+import { Component, DebugElement, Input } from '@angular/core';
+import { ComponentFixture, fakeAsync, TestBed, tick, waitForAsync } from '@angular/core/testing';
 import { FormsModule } from '@angular/forms';
+import { By } from '@angular/platform-browser';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
+
+import { DotMessageService } from '@dotcms/data-access';
 import { DotEventsService, PaginatorService } from '@dotcms/data-access';
 import { CoreWebService, Site, SiteService } from '@dotcms/dotcms-js';
+import { MockDotMessageService, mockSites, SiteServiceMock } from '@dotcms/utils-testing';
 import { CoreWebServiceMock } from '@dotcms/utils-testing';
+
+import { DotSiteSelectorComponent } from './dot-site-selector.component';
+
 import { IframeOverlayService } from '../iframe/service/iframe-overlay.service';
 import { SearchableDropdownComponent } from '../searchable-dropdown/component/searchable-dropdown.component';
+import { SearchableDropDownModule } from '../searchable-dropdown/searchable-dropdown.module';
 
 const sites: Site[] = [
     {

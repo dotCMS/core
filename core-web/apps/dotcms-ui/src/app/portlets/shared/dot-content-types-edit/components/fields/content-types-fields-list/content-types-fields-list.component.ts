@@ -1,6 +1,9 @@
 import { Component, Input, OnInit } from '@angular/core';
-import { FieldUtil } from '@dotcms/utils-testing';
+
 import { filter, flatMap, take, toArray } from 'rxjs/operators';
+
+import { FieldUtil } from '@dotcms/utils-testing';
+
 import { FieldType } from '..';
 import { FieldService } from '../service';
 /**

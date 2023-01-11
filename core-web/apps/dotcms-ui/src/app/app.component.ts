@@ -1,9 +1,11 @@
 import { Component, OnInit } from '@angular/core';
+
 import { map, take } from 'rxjs/operators';
 
 import { DotUiColorsService } from '@dotcms/app/api/services/dot-ui-colors/dot-ui-colors.service';
 import { DotMessageService } from '@dotcms/data-access';
 import { ConfigParams, DotcmsConfigService, DotUiColors } from '@dotcms/dotcms-js';
+
 import { DotNavLogoService } from './api/services/dot-nav-logo/dot-nav-logo.service';
 
 @Component({

@@ -1,10 +1,13 @@
 /* eslint-disable @typescript-eslint/no-empty-function */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
+import { of } from 'rxjs';
+
 import { TestBed, waitForAsync } from '@angular/core/testing';
 import { ActivatedRouteSnapshot } from '@angular/router';
+
 import { DotContentletEditorService } from '@components/dot-contentlet-editor/services/dot-contentlet-editor.service';
-import { of } from 'rxjs';
+
 import { DotCreateContentletResolver } from './dot-create-contentlet.resolver.service';
 
 const activatedRouteSnapshotMock: any = jasmine.createSpyObj<ActivatedRouteSnapshot>(

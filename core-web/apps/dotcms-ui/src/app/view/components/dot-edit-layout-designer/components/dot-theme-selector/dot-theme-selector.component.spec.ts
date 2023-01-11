@@ -1,7 +1,21 @@
+import { of } from 'rxjs';
+
+
+
+import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { Component, DebugElement, Input } from '@angular/core';
 import { ComponentFixture, fakeAsync, TestBed, tick } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
+import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
+
+import { DataViewModule } from 'primeng/dataview';
+
+import { DotDialogModule } from '@components/dot-dialog/dot-dialog.module';
+import { PaginatorService } from '@dotcms/data-access';
 import { DotMessageService, DotThemesService } from '@dotcms/data-access';
+import { DotEventsService } from '@dotcms/data-access';
+import { CoreWebService, Site, SiteService } from '@dotcms/dotcms-js';
+import { DotIconModule } from '@dotcms/ui';
 import {
     DotThemesServiceMock,
     MockDotMessageService,
@@ -9,20 +23,10 @@ import {
     mockSites,
     SiteServiceMock
 } from '@dotcms/utils-testing';
-import { DataViewModule } from 'primeng/dataview';
-import { of } from 'rxjs';
-import { DotThemeSelectorComponent } from './dot-theme-selector.component';
-
-import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
-import { PaginatorService } from '@dotcms/data-access';
-import { CoreWebService, Site, SiteService } from '@dotcms/dotcms-js';
-
-import { HttpClientTestingModule } from '@angular/common/http/testing';
-import { DotDialogModule } from '@components/dot-dialog/dot-dialog.module';
-import { DotEventsService } from '@dotcms/data-access';
-import { DotIconModule } from '@dotcms/ui';
 import { CoreWebServiceMock } from '@dotcms/utils-testing';
 import { DotMessagePipeModule } from '@pipes/dot-message/dot-message-pipe.module';
+
+import { DotThemeSelectorComponent } from './dot-theme-selector.component';
 
 @Component({
     selector: 'dot-site-selector',

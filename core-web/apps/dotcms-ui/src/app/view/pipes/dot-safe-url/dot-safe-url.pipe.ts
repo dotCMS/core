@@ -1,6 +1,7 @@
 import { Pipe, PipeTransform } from '@angular/core';
 import { DomSanitizer } from '@angular/platform-browser';
 import { ActivatedRoute } from '@angular/router';
+
 import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
 
 @Pipe({ name: 'dotSafeUrl' })

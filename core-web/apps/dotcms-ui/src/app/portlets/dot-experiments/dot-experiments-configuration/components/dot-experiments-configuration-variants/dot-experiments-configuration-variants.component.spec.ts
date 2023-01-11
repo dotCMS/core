@@ -1,4 +1,11 @@
+import { byTestId, createComponentFactory, Spectator } from '@ngneat/spectator';
+
 import { DecimalPipe } from '@angular/common';
+
+import { ButtonModule } from 'primeng/button';
+import { Card, CardModule } from 'primeng/card';
+import { Inplace, InplaceModule } from 'primeng/inplace';
+
 import { DotCopyButtonComponent } from '@components/dot-copy-button/dot-copy-button.component';
 import { DotCopyButtonModule } from '@components/dot-copy-button/dot-copy-button.module';
 import { DotMessageService } from '@dotcms/data-access';
@@ -11,11 +18,9 @@ import {
     Variant
 } from '@dotcms/dotcms-models';
 import { MockDotMessageService } from '@dotcms/utils-testing';
-import { byTestId, createComponentFactory, Spectator } from '@ngneat/spectator';
 import { DotExperimentsConfigurationVariantsAddComponent } from '@portlets/dot-experiments/dot-experiments-configuration/components/dot-experiments-configuration-variants-add/dot-experiments-configuration-variants-add.component';
-import { ButtonModule } from 'primeng/button';
-import { Card, CardModule } from 'primeng/card';
-import { Inplace, InplaceModule } from 'primeng/inplace';
+
+
 import { DotExperimentsConfigurationVariantsComponent } from './dot-experiments-configuration-variants.component';
 
 const messageServiceMock = new MockDotMessageService({

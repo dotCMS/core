@@ -7,10 +7,12 @@ import {
     UntypedFormGroup
 } from '@angular/forms';
 import { By } from '@angular/platform-browser';
+
 import { DotCopyLinkModule } from '@components/dot-copy-link/dot-copy-link.module';
 import { DotMessageService } from '@dotcms/data-access';
 import { dotcmsContentTypeFieldBasicMock, MockDotMessageService } from '@dotcms/utils-testing';
 import { DotPipesModule } from '@pipes/dot-pipes.module';
+
 import { NamePropertyComponent } from './index';
 
 @Component({

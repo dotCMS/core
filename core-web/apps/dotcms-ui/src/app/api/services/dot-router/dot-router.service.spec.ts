@@ -1,10 +1,13 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
+import { Subject } from 'rxjs';
+
 import { TestBed, waitForAsync } from '@angular/core/testing';
 import { ActivatedRoute, NavigationEnd, Router } from '@angular/router';
 import { RouterTestingModule } from '@angular/router/testing';
+
 import { LoginService } from '@dotcms/dotcms-js';
-import { Subject } from 'rxjs';
+
 import { DotRouterService } from './dot-router.service';
 
 class RouterMock {

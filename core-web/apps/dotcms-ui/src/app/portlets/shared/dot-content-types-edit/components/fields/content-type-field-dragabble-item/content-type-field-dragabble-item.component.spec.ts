@@ -1,15 +1,18 @@
 import { DebugElement } from '@angular/core';
 import { ComponentFixture, waitForAsync } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
-import { DotCopyLinkModule } from '@components/dot-copy-link/dot-copy-link.module';
+
 import { UiDotIconButtonTooltipModule } from '@components/_common/dot-icon-button-tooltip/dot-icon-button-tooltip.module';
+import { DotCopyLinkModule } from '@components/dot-copy-link/dot-copy-link.module';
 import { DOTTestBed } from '@dotcms/app/test/dot-test-bed';
 import { DotMessageService } from '@dotcms/data-access';
 import { DotCMSContentTypeField } from '@dotcms/dotcms-models';
 import { DotIconModule } from '@dotcms/ui';
 import { dotcmsContentTypeFieldBasicMock, MockDotMessageService } from '@dotcms/utils-testing';
-import { FieldService } from '../service';
+
 import { ContentTypesFieldDragabbleItemComponent } from './content-type-field-dragabble-item.component';
+
+import { FieldService } from '../service';
 
 describe('ContentTypesFieldDragabbleItemComponent', () => {
     let comp: ContentTypesFieldDragabbleItemComponent;

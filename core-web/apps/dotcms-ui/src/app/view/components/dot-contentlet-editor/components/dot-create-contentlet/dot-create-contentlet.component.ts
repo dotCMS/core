@@ -1,9 +1,13 @@
+import { merge, Observable } from 'rxjs';
+
 import { Component, EventEmitter, OnInit, Output } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
+
+import { filter, pluck } from 'rxjs/operators';
+
 import { DotIframeService } from '@components/_common/iframe/service/dot-iframe/dot-iframe.service';
 import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
-import { merge, Observable } from 'rxjs';
-import { filter, pluck } from 'rxjs/operators';
+
 import { DotContentletEditorService } from '../../services/dot-contentlet-editor.service';
 
 /**

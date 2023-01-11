@@ -1,6 +1,8 @@
 import { Component, Input, OnInit } from '@angular/core';
-import { DotActionMenuItem } from '@shared/models/dot-action-menu/dot-action-menu-item.model';
+
 import { MenuItem } from 'primeng/api';
+
+import { DotActionMenuItem } from '@shared/models/dot-action-menu/dot-action-menu-item.model';
 
 /**
  * The DotActionMenuButtonComponent is a configurable button with

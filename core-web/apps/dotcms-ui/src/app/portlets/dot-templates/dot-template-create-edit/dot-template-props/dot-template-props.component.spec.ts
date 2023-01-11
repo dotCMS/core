@@ -8,13 +8,15 @@ import {
     NG_VALUE_ACCESSOR,
     ReactiveFormsModule
 } from '@angular/forms';
+import { By } from '@angular/platform-browser';
+
 import { DynamicDialogConfig, DynamicDialogRef } from 'primeng/dynamicdialog';
 
-import { By } from '@angular/platform-browser';
 import { DotFieldValidationMessageModule } from '@components/_common/dot-field-validation-message/dot-file-validation-message.module';
 import { DotMessageService } from '@dotcms/data-access';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 import { DotMessagePipe } from '@pipes/dot-message/dot-message.pipe';
+
 import { DotTemplatePropsComponent } from './dot-template-props.component';
 @Component({
     selector: 'dot-form-dialog',

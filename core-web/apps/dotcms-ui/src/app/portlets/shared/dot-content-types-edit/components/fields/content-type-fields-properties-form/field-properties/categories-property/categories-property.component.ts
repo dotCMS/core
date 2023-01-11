@@ -1,7 +1,9 @@
 import { Component, OnInit } from '@angular/core';
 import { UntypedFormGroup } from '@angular/forms';
+
 import { DotMessageService, PaginatorService } from '@dotcms/data-access';
 import { DotCMSContentTypeFieldCategories } from '@dotcms/dotcms-models';
+
 import { FieldProperty } from '../field-properties.model';
 
 /**

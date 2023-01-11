@@ -1,18 +1,21 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing';
 import { of, Subject } from 'rxjs';
 
 import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { Component, EventEmitter, Injectable, Output } from '@angular/core';
+import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing';
 import { By, Title } from '@angular/platform-browser';
 import { ActivatedRoute } from '@angular/router';
 import { RouterTestingModule } from '@angular/router/testing';
-import { DotContentletEditorService } from '@components/dot-contentlet-editor/services/dot-contentlet-editor.service';
-import { DotMessageDisplayService } from '@components/dot-message-display/services';
+
+import { ConfirmationService } from 'primeng/api';
+
 import { DotDownloadBundleDialogModule } from '@components/_common/dot-download-bundle-dialog/dot-download-bundle-dialog.module';
 import { DotGlobalMessageService } from '@components/_common/dot-global-message/dot-global-message.service';
 import { DotIframeService } from '@components/_common/iframe/service/dot-iframe/dot-iframe.service';
+import { DotContentletEditorService } from '@components/dot-contentlet-editor/services/dot-contentlet-editor.service';
+import { DotMessageDisplayService } from '@components/dot-message-display/services';
 import { DotCustomEventHandlerService } from '@dotcms/app/api/services/dot-custom-event-handler/dot-custom-event-handler.service';
 import { DotFormatDateService } from '@dotcms/app/api/services/dot-format-date-service';
 import { DotHttpErrorManagerService } from '@dotcms/app/api/services/dot-http-error-manager/dot-http-error-manager.service';
@@ -54,11 +57,13 @@ import {
 } from '@dotcms/utils-testing';
 import { DotEditPageNavDirective } from '@portlets/dot-edit-page/main/dot-edit-page-nav/directives/dot-edit-page-nav.directive';
 import { DotExperimentClassDirective } from '@portlets/shared/directives/dot-experiment-class.directive';
-import { ConfirmationService } from 'primeng/api';
+
+
+import { DotEditPageMainComponent } from './dot-edit-page-main.component';
+
 import { DotPageStateService } from '../../content/services/dot-page-state/dot-page-state.service';
 import { DotEditPageNavComponent } from '../dot-edit-page-nav/dot-edit-page-nav.component';
 import { DotEditPageNavModule } from '../dot-edit-page-nav/dot-edit-page-nav.module';
-import { DotEditPageMainComponent } from './dot-edit-page-main.component';
 
 @Injectable()
 class MockDotContentletEditorService {

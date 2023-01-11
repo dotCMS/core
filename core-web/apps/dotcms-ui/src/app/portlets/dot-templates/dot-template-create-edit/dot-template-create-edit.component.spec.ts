@@ -1,17 +1,19 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
+import { BehaviorSubject, of, Subject } from 'rxjs';
+
+import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { Component, DebugElement, EventEmitter, Input, Output } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { By } from '@angular/platform-browser';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 
-import { BehaviorSubject, of, Subject } from 'rxjs';
 
 import { ButtonModule } from 'primeng/button';
 import { DialogService } from 'primeng/dynamicdialog';
 
-import { HttpClientTestingModule } from '@angular/common/http/testing';
+
 import { DotFormDialogModule } from '@components/dot-form-dialog/dot-form-dialog.module';
 import { DotTempFileUploadService } from '@dotcms/app/api/services/dot-temp-file-upload/dot-temp-file-upload.service';
 import {
@@ -30,6 +32,7 @@ import {
     mockSites
 } from '@dotcms/utils-testing';
 import { DotMessagePipe } from '@pipes/dot-message/dot-message.pipe';
+
 import { DotTemplateCreateEditComponent } from './dot-template-create-edit.component';
 import { DotTemplatePropsModule } from './dot-template-props/dot-template-props.module';
 import {

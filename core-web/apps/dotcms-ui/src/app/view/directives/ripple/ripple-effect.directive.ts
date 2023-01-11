@@ -1,4 +1,5 @@
 import { Directive, ElementRef, HostBinding, HostListener, Renderer2 } from '@angular/core';
+
 import { ColorUtil } from '../../../api/util/ColorUtil';
 
 /**

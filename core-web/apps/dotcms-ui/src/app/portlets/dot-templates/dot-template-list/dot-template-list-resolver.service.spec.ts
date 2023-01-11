@@ -1,5 +1,10 @@
+import { of } from 'rxjs';
+
 import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
+
+import { take } from 'rxjs/operators';
+
 import { DotFormatDateService } from '@dotcms/app/api/services/dot-format-date-service';
 import { PushPublishService } from '@dotcms/app/api/services/push-publish/push-publish.service';
 import { DotCurrentUserService, DotLicenseService } from '@dotcms/data-access';
@@ -12,8 +17,7 @@ import {
     UserModel
 } from '@dotcms/dotcms-js';
 import { CoreWebServiceMock } from '@dotcms/utils-testing';
-import { of } from 'rxjs';
-import { take } from 'rxjs/operators';
+
 import { DotTemplateListResolver } from './dot-template-list-resolver.service';
 
 describe('DotTemplateListResolverService', () => {

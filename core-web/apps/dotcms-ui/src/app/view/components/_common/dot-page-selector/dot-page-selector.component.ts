@@ -1,13 +1,15 @@
+import { Observable, of, Subject } from 'rxjs';
+
 import { Component, EventEmitter, forwardRef, Input, Output, ViewChild } from '@angular/core';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
 
+import { AutoComplete } from 'primeng/autocomplete';
+
 import { switchMap, take } from 'rxjs/operators';
 
+import { DotMessageService } from '@dotcms/data-access';
 import { Site } from '@dotcms/dotcms-js';
 
-import { DotMessageService } from '@dotcms/data-access';
-import { AutoComplete } from 'primeng/autocomplete';
-import { Observable, of, Subject } from 'rxjs';
 import {
     CompleteEvent,
     DotFolder,

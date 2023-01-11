@@ -1,7 +1,9 @@
 import { Component, OnInit } from '@angular/core';
+
+import { pluck, take } from 'rxjs/operators';
+
 import { DotLoginPageStateService } from '@components/login/shared/services/dot-login-page-state.service';
 import { DotLoginUserSystemInformation } from '@dotcms/dotcms-models';
-import { pluck, take } from 'rxjs/operators';
 
 @Component({
     selector: 'dot-login-page-component',

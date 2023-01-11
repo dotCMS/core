@@ -1,8 +1,11 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
+import { of } from 'rxjs';
+
 import { Component, DebugElement } from '@angular/core';
 import { ComponentFixture } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
+
 import { DotKeyValueModule } from '@components/dot-key-value-ng/dot-key-value-ng.module';
 import { DotMessageDisplayService } from '@components/dot-message-display/services';
 import { DOTTestBed } from '@dotcms/app/test/dot-test-bed';
@@ -15,7 +18,7 @@ import {
     LoginServiceMock,
     mockFieldVariables
 } from '@dotcms/utils-testing';
-import { of } from 'rxjs';
+
 import { DotContentTypeFieldsVariablesComponent } from './dot-content-type-fields-variables.component';
 import { DotFieldVariablesService } from './services/dot-field-variables.service';
 

@@ -7,27 +7,26 @@ import { UntypedFormControl, UntypedFormGroup } from '@angular/forms';
 import { By } from '@angular/platform-browser';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 
-import { NgGridModule } from '@dotcms/dot-layout-grid';
 
-import { DotAutofocusModule } from '@dotcms/dot-rules';
-import { DotEditLayoutGridComponent } from './dot-edit-layout-grid.component';
 
+import { UiDotIconButtonTooltipModule } from '@components/_common/dot-icon-button-tooltip/dot-icon-button-tooltip.module';
 import { DotContainerSelectorLayoutModule } from '@components/dot-container-selector-layout/dot-container-selector-layout.module';
 import { DotDialogActions } from '@components/dot-dialog/dot-dialog.component';
-import { UiDotIconButtonTooltipModule } from '@components/_common/dot-icon-button-tooltip/dot-icon-button-tooltip.module';
+import { DotEditLayoutService } from '@dotcms/app/api/services/dot-edit-layout/dot-edit-layout.service';
 import { DotTemplateContainersCacheService } from '@dotcms/app/api/services/dot-template-containers-cache/dot-template-containers-cache.service';
-
+import { DOTTestBed } from '@dotcms/app/test/dot-test-bed';
 import {
     DotAlertConfirmService,
     DotEventsService,
     DotMessageService,
     PaginatorService
 } from '@dotcms/data-access';
-
-import { DotEditLayoutService } from '@dotcms/app/api/services/dot-edit-layout/dot-edit-layout.service';
-import { DOTTestBed } from '@dotcms/app/test/dot-test-bed';
+import { NgGridModule } from '@dotcms/dot-layout-grid';
+import { DotAutofocusModule } from '@dotcms/dot-rules';
 import { DotLayoutBody } from '@dotcms/dotcms-models';
 import { MockDotMessageService } from '@dotcms/utils-testing';
+
+import { DotEditLayoutGridComponent } from './dot-edit-layout-grid.component';
 
 let fakeValue: DotLayoutBody;
 

@@ -1,7 +1,9 @@
 import { Component, OnInit } from '@angular/core';
-import { take } from 'rxjs/operators';
 
 import { DialogService } from 'primeng/dynamicdialog';
+
+import { take } from 'rxjs/operators';
+
 
 import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
 import { DotMessageService } from '@dotcms/data-access';

@@ -1,9 +1,31 @@
 /* eslint-disable @typescript-eslint/no-empty-function */
 
+import { of } from 'rxjs';
+
+import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { DebugElement } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { By } from '@angular/platform-browser';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
+import { RouterTestingModule } from '@angular/router/testing';
+
+import { ButtonModule } from 'primeng/button';
+import { CheckboxModule } from 'primeng/checkbox';
+import { PasswordModule } from 'primeng/password';
+
+import { UiDotIconButtonModule } from '@components/_common/dot-icon-button/dot-icon-button.module';
+import { DotIframeService } from '@components/_common/iframe/service/dot-iframe/dot-iframe.service';
+import { SearchableDropDownModule } from '@components/_common/searchable-dropdown';
+import { DotDialogModule } from '@components/dot-dialog/dot-dialog.module';
+import { DotNavigationService } from '@components/dot-navigation/services/dot-navigation.service';
+import { DotFormatDateService } from '@dotcms/app/api/services/dot-format-date-service';
+import { DotMenuService } from '@dotcms/app/api/services/dot-menu.service';
+import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
+import { DotUiColorsService } from '@dotcms/app/api/services/dot-ui-colors/dot-ui-colors.service';
+import { LOCATION_TOKEN } from '@dotcms/app/providers';
+import { dotEventSocketURLFactory, MockDotUiColorsService } from '@dotcms/app/test/dot-test-bed';
+import { DotEventsService } from '@dotcms/data-access';
 import {
     CoreWebService,
     DotcmsConfigService,
@@ -15,36 +37,20 @@ import {
     StringUtils,
     UserModel
 } from '@dotcms/dotcms-js';
-import { DotDropdownComponent } from '../../../_common/dot-dropdown-component/dot-dropdown.component';
-import { IframeOverlayService } from '../../../_common/iframe/service/iframe-overlay.service';
-import { DotLoginAsComponent } from '../dot-login-as/dot-login-as.component';
-import { DotMyAccountComponent } from '../dot-my-account/dot-my-account.component';
-
-import { HttpClientTestingModule } from '@angular/common/http/testing';
-import { FormsModule, ReactiveFormsModule } from '@angular/forms';
-import { RouterTestingModule } from '@angular/router/testing';
-import { DotDialogModule } from '@components/dot-dialog/dot-dialog.module';
-import { DotNavigationService } from '@components/dot-navigation/services/dot-navigation.service';
-import { UiDotIconButtonModule } from '@components/_common/dot-icon-button/dot-icon-button.module';
-import { DotIframeService } from '@components/_common/iframe/service/dot-iframe/dot-iframe.service';
-import { SearchableDropDownModule } from '@components/_common/searchable-dropdown';
-import { DotMenuService } from '@dotcms/app/api/services/dot-menu.service';
-import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
-import { LOCATION_TOKEN } from '@dotcms/app/providers';
-import { DotEventsService } from '@dotcms/data-access';
 import { DotIconModule } from '@dotcms/ui';
 import { CoreWebServiceMock, LoginServiceMock, mockAuth, mockUser } from '@dotcms/utils-testing';
 import { DotPipesModule } from '@pipes/dot-pipes.module';
-import { ButtonModule } from 'primeng/button';
-import { CheckboxModule } from 'primeng/checkbox';
-import { PasswordModule } from 'primeng/password';
-import { DotGravatarModule } from '../dot-gravatar/dot-gravatar.module';
+
+
+
 import { DotToolbarUserComponent } from './dot-toolbar-user.component';
 
-import { DotFormatDateService } from '@dotcms/app/api/services/dot-format-date-service';
-import { DotUiColorsService } from '@dotcms/app/api/services/dot-ui-colors/dot-ui-colors.service';
-import { dotEventSocketURLFactory, MockDotUiColorsService } from '@dotcms/app/test/dot-test-bed';
-import { of } from 'rxjs';
+import { DotDropdownComponent } from '../../../_common/dot-dropdown-component/dot-dropdown.component';
+import { IframeOverlayService } from '../../../_common/iframe/service/iframe-overlay.service';
+import { DotGravatarModule } from '../dot-gravatar/dot-gravatar.module';
+import { DotLoginAsComponent } from '../dot-login-as/dot-login-as.component';
+import { DotMyAccountComponent } from '../dot-my-account/dot-my-account.component';
+
 
 describe('DotToolbarUserComponent', () => {
     let comp: DotToolbarUserComponent;

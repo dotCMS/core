@@ -1,12 +1,15 @@
+import { Observable } from 'rxjs';
+
 import { Component, OnInit, ViewEncapsulation } from '@angular/core';
 import { UntypedFormBuilder, UntypedFormGroup, Validators } from '@angular/forms';
 import { NavigationExtras } from '@angular/router';
+
+import { take, tap } from 'rxjs/operators';
+
 import { DotLoginPageStateService } from '@components/login/shared/services/dot-login-page-state.service';
 import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
 import { LoginService } from '@dotcms/dotcms-js';
 import { DotLoginInformation } from '@dotcms/dotcms-models';
-import { Observable } from 'rxjs';
-import { take, tap } from 'rxjs/operators';
 
 @Component({
     encapsulation: ViewEncapsulation.Emulated,

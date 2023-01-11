@@ -7,7 +7,9 @@ import {
     Output,
     ViewChild
 } from '@angular/core';
+
 import { IframeComponent } from '@components/_common/iframe/iframe-component';
+
 import { DotTemplateItem } from '../store/dot-template.store';
 
 @Component({

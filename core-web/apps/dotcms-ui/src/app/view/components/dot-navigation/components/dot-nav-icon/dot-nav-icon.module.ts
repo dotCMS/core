@@ -1,6 +1,8 @@
 import { CommonModule } from '@angular/common';
 import { NgModule } from '@angular/core';
+
 import { DotIconModule } from '@dotcms/ui';
+
 import { DotNavIconComponent } from './dot-nav-icon.component';
 
 @NgModule({

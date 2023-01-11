@@ -1,5 +1,10 @@
+import { of } from 'rxjs';
+
 import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
+
+import { take } from 'rxjs/operators';
+
 import { DotCurrentUserService, DotLicenseService } from '@dotcms/data-access';
 import {
     ApiRoot,
@@ -12,8 +17,7 @@ import {
 import { CoreWebServiceMock } from '@dotcms/utils-testing';
 import { DotFormatDateService } from '@services/dot-format-date-service';
 import { PushPublishService } from '@services/push-publish/push-publish.service';
-import { of } from 'rxjs';
-import { take } from 'rxjs/operators';
+
 import { DotContainerListResolver } from './dot-container-list-resolver.service';
 
 describe('DotContainerListResolverService', () => {

@@ -3,9 +3,12 @@ import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { RouterTestingModule } from '@angular/router/testing';
+
 import { MenuModule } from 'primeng/menu';
-import { UiDotIconButtonModule } from '../dot-icon-button/dot-icon-button.module';
+
 import { DotActionButtonComponent } from './dot-action-button.component';
+
+import { UiDotIconButtonModule } from '../dot-icon-button/dot-icon-button.module';
 
 describe('ActionButtonComponent', () => {
     let comp: DotActionButtonComponent;

@@ -1,8 +1,10 @@
 import { Component, forwardRef, Input, OnInit, ViewEncapsulation } from '@angular/core';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
+
+import { take } from 'rxjs/operators';
+
 import { PushPublishService } from '@dotcms/app/api/services/push-publish/push-publish.service';
 import { DotEnvironment } from '@models/dot-environment/dot-environment';
-import { take } from 'rxjs/operators';
 @Component({
     encapsulation: ViewEncapsulation.None,
     selector: 'dot-push-publish-env-selector',

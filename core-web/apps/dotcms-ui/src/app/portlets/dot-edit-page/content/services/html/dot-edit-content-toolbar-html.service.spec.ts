@@ -1,8 +1,11 @@
+import { Observable, of as observableOf } from 'rxjs';
+
 import { Injectable } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
+
 import { DotLicenseService, DotMessageService } from '@dotcms/data-access';
 import { MockDotMessageService } from '@dotcms/utils-testing';
-import { Observable, of as observableOf } from 'rxjs';
+
 import { DotDOMHtmlUtilService } from './dot-dom-html-util.service';
 import { DotEditContentToolbarHtmlService } from './dot-edit-content-toolbar-html.service';
 

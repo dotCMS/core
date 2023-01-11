@@ -1,16 +1,18 @@
-import { Injectable } from '@angular/core';
-import { Event, NavigationEnd, Router } from '@angular/router';
 
 import { BehaviorSubject, Observable } from 'rxjs';
+
+import { Injectable } from '@angular/core';
+import { Title } from '@angular/platform-browser';
+import { Event, NavigationEnd, Router } from '@angular/router';
+
 import { filter, map, switchMap, take, tap } from 'rxjs/operators';
 
-import { Auth, DotcmsEventsService, LoginService } from '@dotcms/dotcms-js';
-
-import { Title } from '@angular/platform-browser';
 import { DotMenuService } from '@dotcms/app/api/services/dot-menu.service';
 import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
 import { DotEventsService, DotLocalstorageService } from '@dotcms/data-access';
+import { Auth, DotcmsEventsService, LoginService } from '@dotcms/dotcms-js';
 import { DotMenu, DotMenuItem } from '@models/navigation';
+
 import { DotIframeService } from '../../_common/iframe/service/dot-iframe/dot-iframe.service';
 
 export const replaceSectionsMap = {

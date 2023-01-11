@@ -1,7 +1,8 @@
 import { TestBed } from '@angular/core/testing';
 
-import { DotEditLayoutService } from '../dot-edit-layout/dot-edit-layout.service';
 import { LayoutEditorCanDeactivateGuardService } from './layout-editor-can-deactivate-guard.service';
+
+import { DotEditLayoutService } from '../dot-edit-layout/dot-edit-layout.service';
 
 describe('LayoutEditorCanDeactivateGuardService', () => {
     let service: LayoutEditorCanDeactivateGuardService;

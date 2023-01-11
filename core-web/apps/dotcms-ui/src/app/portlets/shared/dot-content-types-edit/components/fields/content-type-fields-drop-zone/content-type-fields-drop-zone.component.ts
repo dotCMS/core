@@ -1,3 +1,8 @@
+import * as autoScroll from 'dom-autoscroller';
+import * as _ from 'lodash';
+import { DragulaService } from 'ng2-dragula';
+import { Subject } from 'rxjs';
+
 import {
     Component,
     ElementRef,
@@ -11,6 +16,9 @@ import {
     SimpleChanges,
     ViewChild
 } from '@angular/core';
+
+import { takeUntil } from 'rxjs/operators';
+
 import { DotDialogActions } from '@components/dot-dialog/dot-dialog.component';
 import { DotEventsService, DotMessageService } from '@dotcms/data-access';
 import {
@@ -21,11 +29,8 @@ import {
 } from '@dotcms/dotcms-models';
 import { DotLoadingIndicatorService } from '@dotcms/utils';
 import { FieldUtil } from '@dotcms/utils-testing';
-import * as autoScroll from 'dom-autoscroller';
-import * as _ from 'lodash';
-import { DragulaService } from 'ng2-dragula';
-import { Subject } from 'rxjs';
-import { takeUntil } from 'rxjs/operators';
+
+
 import { ContentTypeFieldsPropertiesFormComponent } from '../content-type-fields-properties-form';
 import { FieldType } from '../models';
 import { DropFieldData, FieldDragDropService } from '../service';

@@ -1,8 +1,10 @@
+import { BehaviorSubject, Subject } from 'rxjs';
+
 import { Component, OnDestroy, OnInit } from '@angular/core';
 import { ActivatedRoute, UrlSegment } from '@angular/router';
+
 import { map, mergeMap, pluck, skip, takeUntil, withLatestFrom } from 'rxjs/operators';
 
-import { BehaviorSubject, Subject } from 'rxjs';
 
 import { DotCustomEventHandlerService } from '@dotcms/app/api/services/dot-custom-event-handler/dot-custom-event-handler.service';
 import { DotMenuService } from '@dotcms/app/api/services/dot-menu.service';

@@ -1,12 +1,16 @@
+import { of as observableOf } from 'rxjs';
+
 import { Injectable } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { ActivatedRouteSnapshot, RouterStateSnapshot } from '@angular/router';
+
 import { DotNavigationService } from '@components/dot-navigation/services/dot-navigation.service';
 import { DOTTestBed } from '@dotcms/app/test/dot-test-bed';
-import { of as observableOf } from 'rxjs';
-import { DotMenuService } from '../dot-menu.service';
 
 import { MenuGuardService } from './menu-guard.service';
+
+import { DotMenuService } from '../dot-menu.service';
+
 
 @Injectable()
 class MockDotMenuService {

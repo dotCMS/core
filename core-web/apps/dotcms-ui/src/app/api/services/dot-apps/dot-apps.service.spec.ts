@@ -1,15 +1,14 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
+import { throwError } from 'rxjs';
+
 import { HttpClientTestingModule, HttpTestingController } from '@angular/common/http/testing';
 import { fakeAsync, getTestBed, TestBed, tick } from '@angular/core/testing';
-import { throwError } from 'rxjs';
 
 import { ConfirmationService } from 'primeng/api';
 
+import { DotAlertConfirmService } from '@dotcms/data-access';
 import { CoreWebService, LoginService } from '@dotcms/dotcms-js';
-
 import { DotApps, DotAppsImportConfiguration, DotAppsSaveData } from '@dotcms/dotcms-models';
-import { DotAppsService } from './dot-apps.service';
-
 import {
     CoreWebServiceMock,
     DotFormatDateServiceMock,
@@ -17,14 +16,16 @@ import {
     MockDotRouterService,
     mockResponseView
 } from '@dotcms/utils-testing';
+import * as dotUtils from '@dotcms/utils/lib/dot-utils';
 
-import { DotAlertConfirmService } from '@dotcms/data-access';
+import { DotAppsService } from './dot-apps.service';
+
+
 import { DotFormatDateService } from '../dot-format-date-service';
 import { DotHttpErrorManagerService } from '../dot-http-error-manager/dot-http-error-manager.service';
 import { DotRouterService } from '../dot-router/dot-router.service';
 
 // INFO: needs to import this way so we can spy on.
-import * as dotUtils from '@dotcms/utils/lib/dot-utils';
 
 const mockDotApps = [
     {

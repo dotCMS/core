@@ -1,7 +1,14 @@
+import { Observable, Subject } from 'rxjs';
+
 import { HttpErrorResponse } from '@angular/common/http';
 import { Component, OnDestroy, OnInit } from '@angular/core';
 import { UntypedFormBuilder, UntypedFormGroup, Validators } from '@angular/forms';
 import { ActivatedRoute, Params } from '@angular/router';
+
+import { SelectItem } from 'primeng/api';
+
+import { take, takeUntil, tap } from 'rxjs/operators';
+
 import { DotLoginPageStateService } from '@components/login/shared/services/dot-login-page-state.service';
 import { DotFormatDateService } from '@dotcms/app/api/services/dot-format-date-service';
 import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
@@ -9,9 +16,6 @@ import { DotMessageService } from '@dotcms/data-access';
 import { DotLoginParams, HttpCode, LoggerService, LoginService, User } from '@dotcms/dotcms-js';
 import { DotLoginInformation, DotLoginLanguage } from '@dotcms/dotcms-models';
 import { DotLoadingIndicatorService } from '@dotcms/utils';
-import { SelectItem } from 'primeng/api';
-import { Observable, Subject } from 'rxjs';
-import { take, takeUntil, tap } from 'rxjs/operators';
 
 @Component({
     selector: 'dot-login-component',

@@ -1,4 +1,5 @@
 import { Site } from '@dotcms/dotcms-js';
+
 import { DotPageAsset } from '../service/dot-page-selector.service';
 
 export interface DotPageSelectorItem {

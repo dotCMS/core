@@ -1,10 +1,13 @@
+import { Observable, of as observableOf } from 'rxjs';
+
 import { Component } from '@angular/core';
+
 import { DOTTestBed } from '@dotcms/app/test/dot-test-bed';
 import { DotAlertConfirmService } from '@dotcms/data-access';
 import { LoginService } from '@dotcms/dotcms-js';
 import { DotAlertConfirm } from '@dotcms/dotcms-models';
 import { LoginServiceMock } from '@dotcms/utils-testing';
-import { Observable, of as observableOf } from 'rxjs';
+
 import { DotSaveOnDeactivateService } from './dot-save-on-deactivate.service';
 import { OnSaveDeactivate } from './save-on-deactivate';
 

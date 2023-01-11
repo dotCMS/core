@@ -8,7 +8,9 @@ import {
     ViewContainerRef
 } from '@angular/core';
 import { UntypedFormGroup } from '@angular/forms';
+
 import { DotCMSContentTypeField, DotDynamicFieldComponent } from '@dotcms/dotcms-models';
+
 import { FieldPropertyService } from '../../../service';
 
 @Directive({

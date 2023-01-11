@@ -1,4 +1,12 @@
+import { ComponentStore } from '@ngrx/component-store';
+import { forkJoin, Observable } from 'rxjs';
+
 import { Injectable } from '@angular/core';
+
+import { LazyLoadEvent } from 'primeng/api';
+
+import { debounceTime, map, take } from 'rxjs/operators';
+
 import { DotContentTypeService, DotESContentService, PaginatorService } from '@dotcms/data-access';
 import {
     DotCMSContentlet,
@@ -6,10 +14,8 @@ import {
     ESContent,
     LoadingState
 } from '@dotcms/dotcms-models';
-import { ComponentStore } from '@ngrx/component-store';
-import { LazyLoadEvent } from 'primeng/api';
-import { forkJoin, Observable } from 'rxjs';
-import { debounceTime, map, take } from 'rxjs/operators';
+
+
 
 export interface DotPaletteState {
     contentlets: DotCMSContentlet[] | DotCMSContentType[];

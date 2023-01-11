@@ -1,3 +1,6 @@
+import * as _ from 'lodash';
+import { fromEvent } from 'rxjs';
+
 import {
     AfterContentInit,
     AfterViewInit,
@@ -17,11 +20,12 @@ import {
     ViewChild
 } from '@angular/core';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
-import * as _ from 'lodash';
+
 import { PrimeTemplate } from 'primeng/api';
 import { DataView } from 'primeng/dataview';
 import { OverlayPanel } from 'primeng/overlaypanel';
-import { fromEvent } from 'rxjs';
+
+
 import { debounceTime, tap } from 'rxjs/operators';
 
 /**

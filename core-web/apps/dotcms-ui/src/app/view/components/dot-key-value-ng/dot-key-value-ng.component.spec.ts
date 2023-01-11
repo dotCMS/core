@@ -1,6 +1,9 @@
 import { Component, DebugElement } from '@angular/core';
 import { ComponentFixture } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
+
+import { TableModule } from 'primeng/table';
+
 import { DotKeyValueTableRowModule } from '@components/dot-key-value-ng/dot-key-value-table-row/dot-key-value-table-row.module';
 import { DotMessageDisplayService } from '@components/dot-message-display/services';
 import { DOTTestBed } from '@dotcms/app/test/dot-test-bed';
@@ -8,7 +11,7 @@ import { DotMessageService } from '@dotcms/data-access';
 import { DotIconModule } from '@dotcms/ui';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 import { DotKeyValue } from '@shared/models/dot-key-value-ng/dot-key-value-ng.model';
-import { TableModule } from 'primeng/table';
+
 import { DotKeyValueComponent } from './dot-key-value-ng.component';
 import { DotKeyValueTableInputRowModule } from './dot-key-value-table-input-row/dot-key-value-table-input-row.module';
 import { DotKeyValueTableRowComponent } from './dot-key-value-table-row/dot-key-value-table-row.component';

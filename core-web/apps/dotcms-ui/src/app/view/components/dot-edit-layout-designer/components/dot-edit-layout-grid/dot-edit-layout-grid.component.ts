@@ -1,4 +1,7 @@
 /* eslint-disable @angular-eslint/component-selector */
+
+import { Subject } from 'rxjs';
+
 import { Component, forwardRef, OnDestroy, OnInit, ViewChild } from '@angular/core';
 import {
     ControlValueAccessor,
@@ -7,14 +10,12 @@ import {
     UntypedFormGroup
 } from '@angular/forms';
 
-import { NgGrid, NgGridConfig } from '@dotcms/dot-layout-grid';
-import { Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
 
 import { DotDialogActions } from '@components/dot-dialog/dot-dialog.component';
-
 import { DotEditLayoutService } from '@dotcms/app/api/services/dot-edit-layout/dot-edit-layout.service';
 import { DotAlertConfirmService, DotEventsService, DotMessageService } from '@dotcms/data-access';
+import { NgGrid, NgGridConfig } from '@dotcms/dot-layout-grid';
 import { DotLayoutBody } from '@dotcms/dotcms-models';
 import { DotLayoutGrid, DOT_LAYOUT_GRID_MAX_COLUMNS } from '@models/dot-edit-layout-designer';
 

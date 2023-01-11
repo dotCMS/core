@@ -1,12 +1,20 @@
 /* eslint-disable no-console */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
+import { of } from 'rxjs';
+
 import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { Component, DebugElement, Input } from '@angular/core';
 import { ComponentFixture, fakeAsync, TestBed, tick } from '@angular/core/testing';
 import { FormsModule } from '@angular/forms';
 import { By } from '@angular/platform-browser';
 import { RouterTestingModule } from '@angular/router/testing';
+
+import { ConfirmationService, SharedModule } from 'primeng/api';
+import { ContextMenuModule } from 'primeng/contextmenu';
+import { MenuModule } from 'primeng/menu';
+import { TableModule } from 'primeng/table';
+
 import { UiDotIconButtonTooltipModule } from '@components/_common/dot-icon-button-tooltip/dot-icon-button-tooltip.module';
 import { DotFormatDateService } from '@dotcms/app/api/services/dot-format-date-service';
 import { DotAlertConfirmService, DotMessageService } from '@dotcms/data-access';
@@ -18,17 +26,15 @@ import { DataTableColumn } from '@models/data-table';
 import { DotPipesModule } from '@pipes/dot-pipes.module';
 import { DotStringFormatPipe } from '@pipes/dot-string-format/dot-string-format.pipe';
 import { DotActionMenuItem } from '@shared/models/dot-action-menu/dot-action-menu-item.model';
-import { ConfirmationService, SharedModule } from 'primeng/api';
-import { ContextMenuModule } from 'primeng/contextmenu';
-import { MenuModule } from 'primeng/menu';
-import { TableModule } from 'primeng/table';
-import { of } from 'rxjs';
+
+import { ActionHeaderComponent } from './action-header/action-header.component';
+import { DotListingDataTableComponent } from './dot-listing-data-table.component';
+
 import { DotActionButtonComponent } from '../_common/dot-action-button/dot-action-button.component';
 import { DotActionMenuButtonComponent } from '../_common/dot-action-menu-button/dot-action-menu-button.component';
 import { UiDotIconButtonModule } from '../_common/dot-icon-button/dot-icon-button.module';
 import { DotMenuModule } from '../_common/dot-menu/dot-menu.module';
-import { ActionHeaderComponent } from './action-header/action-header.component';
-import { DotListingDataTableComponent } from './dot-listing-data-table.component';
+
 
 @Component({
     selector: 'dot-empty-state',

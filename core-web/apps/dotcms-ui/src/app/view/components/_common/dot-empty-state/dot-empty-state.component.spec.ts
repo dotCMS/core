@@ -1,11 +1,13 @@
 import { DebugElement } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
+
+import { ButtonModule } from 'primeng/button';
+
 import { DotMessageService } from '@dotcms/data-access';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 import { DotPipesModule } from '@pipes/dot-pipes.module';
 
-import { ButtonModule } from 'primeng/button';
 import { DotEmptyStateComponent } from './dot-empty-state.component';
 
 const messageServiceMock = new MockDotMessageService({

@@ -1,12 +1,14 @@
-import { Injectable } from '@angular/core';
-import { ApiRoot, CoreWebService } from '@dotcms/dotcms-js';
-import { DotEnvironment } from '@models/dot-environment/dot-environment';
 import { Observable } from 'rxjs';
+
+import { Injectable } from '@angular/core';
+
 import { filter, map, mergeMap, pluck, toArray } from 'rxjs/operators';
 
 import { DotFormatDateService } from '@dotcms/app/api/services/dot-format-date-service';
 import { DotCurrentUserService } from '@dotcms/data-access';
+import { ApiRoot, CoreWebService } from '@dotcms/dotcms-js';
 import { DotAjaxActionResponseView, DotCurrentUser } from '@dotcms/dotcms-models';
+import { DotEnvironment } from '@models/dot-environment/dot-environment';
 import { DotPushPublishData } from '@models/dot-push-publish-data/dot-push-publish-data';
 
 /**

@@ -1,12 +1,17 @@
+import { ComponentStore } from '@ngrx/component-store';
+import { Observable, of } from 'rxjs';
+
 import { HttpErrorResponse } from '@angular/common/http';
 import { Injectable } from '@angular/core';
+
+import { catchError, switchMap, tap } from 'rxjs/operators';
+
 import { DotGlobalMessageService } from '@components/_common/dot-global-message/dot-global-message.service';
 import { DotContentTypeService } from '@dotcms/data-access';
 import { DotCMSContentType, DotCMSContentTypeField } from '@dotcms/dotcms-models';
-import { ComponentStore } from '@ngrx/component-store';
 import { DotHttpErrorManagerService } from '@services/dot-http-error-manager/dot-http-error-manager.service';
-import { Observable, of } from 'rxjs';
-import { catchError, switchMap, tap } from 'rxjs/operators';
+
+
 
 export interface DotAddVariableState {
     variables: DotCMSContentTypeField[];

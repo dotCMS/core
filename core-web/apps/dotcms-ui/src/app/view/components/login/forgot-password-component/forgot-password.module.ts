@@ -2,10 +2,13 @@ import { CommonModule } from '@angular/common';
 import { NgModule } from '@angular/core';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { RouterModule, Routes } from '@angular/router';
-import { DotFieldValidationMessageModule } from '@components/_common/dot-field-validation-message/dot-file-validation-message.module';
-import { DotAutofocusModule } from '@directives/dot-autofocus/dot-autofocus.module';
+
 import { ButtonModule } from 'primeng/button';
 import { InputTextModule } from 'primeng/inputtext';
+
+import { DotFieldValidationMessageModule } from '@components/_common/dot-field-validation-message/dot-file-validation-message.module';
+import { DotAutofocusModule } from '@directives/dot-autofocus/dot-autofocus.module';
+
 import { ForgotPasswordComponent } from './forgot-password.component';
 
 const routes: Routes = [

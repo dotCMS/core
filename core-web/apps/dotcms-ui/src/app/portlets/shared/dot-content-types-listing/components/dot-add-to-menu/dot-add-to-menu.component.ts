@@ -1,3 +1,5 @@
+import { Observable, Subject } from 'rxjs';
+
 import {
     Component,
     ElementRef,
@@ -9,18 +11,19 @@ import {
     ViewChild
 } from '@angular/core';
 import { UntypedFormBuilder, UntypedFormGroup, Validators } from '@angular/forms';
-import { DotDialogActions } from '@components/dot-dialog/dot-dialog.component';
-import { DotMenu } from '@dotcms/app/shared/models/navigation';
-import { DotMessageService } from '@dotcms/data-access';
-import { DotCMSContentType } from '@dotcms/dotcms-models';
-import { Observable, Subject } from 'rxjs';
+
 import { switchMap, take, takeUntil, tap } from 'rxjs/operators';
 
+import { DotDialogActions } from '@components/dot-dialog/dot-dialog.component';
 import {
     DotAddToMenuService,
     DotCreateCustomTool
 } from '@dotcms/app/api/services/add-to-menu/add-to-menu.service';
 import { DotMenuService } from '@dotcms/app/api/services/dot-menu.service';
+import { DotMenu } from '@dotcms/app/shared/models/navigation';
+import { DotMessageService } from '@dotcms/data-access';
+import { DotCMSContentType } from '@dotcms/dotcms-models';
+
 
 @Component({
     selector: 'dot-add-to-menu',

@@ -1,5 +1,7 @@
-import { Component, Input, OnInit } from '@angular/core';
 import { Observable } from 'rxjs';
+
+import { Component, Input, OnInit } from '@angular/core';
+
 import { take } from 'rxjs/operators';
 
 import {
@@ -16,6 +18,7 @@ import {
     DotPersona,
     DotVariantData
 } from '@dotcms/dotcms-models';
+
 import { DotPageStateService } from '../../services/dot-page-state/dot-page-state.service';
 
 @Component({

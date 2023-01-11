@@ -1,22 +1,28 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
+import { Observable, of } from 'rxjs';
+
 import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { Component, DebugElement, Input } from '@angular/core';
 import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import { ActivatedRoute } from '@angular/router';
 import { RouterTestingModule } from '@angular/router/testing';
+
+import { ConfirmationService } from 'primeng/api';
+
 import { DotIframeService } from '@components/_common/iframe/service/dot-iframe/dot-iframe.service';
 import { DotFormatDateService } from '@dotcms/app/api/services/dot-format-date-service';
 import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
 import { DotAlertConfirmService } from '@dotcms/data-access';
 import { CoreWebService, LoginService } from '@dotcms/dotcms-js';
 import { CoreWebServiceMock, LoginServiceMock, MockDotRouterService } from '@dotcms/utils-testing';
-import { ConfirmationService } from 'primeng/api';
-import { Observable, of } from 'rxjs';
+
+import { DotCreateContentletComponent } from './dot-create-contentlet.component';
+
 import { DotContentletEditorService } from '../../services/dot-contentlet-editor.service';
 import { DotContentletWrapperComponent } from '../dot-contentlet-wrapper/dot-contentlet-wrapper.component';
-import { DotCreateContentletComponent } from './dot-create-contentlet.component';
+
 
 class DotContentletEditorServiceMock {
     get createUrl$(): Observable<any> {

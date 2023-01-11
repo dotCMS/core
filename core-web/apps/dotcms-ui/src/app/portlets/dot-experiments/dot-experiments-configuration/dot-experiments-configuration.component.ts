@@ -1,5 +1,6 @@
-import { ChangeDetectionStrategy, Component, OnInit } from '@angular/core';
+import { Observable } from 'rxjs';
 
+import { ChangeDetectionStrategy, Component, OnInit } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 
 import { DotSessionStorageService } from '@dotcms/data-access';
@@ -14,7 +15,6 @@ import {
     ConfigurationViewModel,
     DotExperimentsConfigurationStore
 } from '@portlets/dot-experiments/dot-experiments-configuration/store/dot-experiments-configuration-store';
-import { Observable } from 'rxjs';
 
 @Component({
     selector: 'dot-experiments-configuration',

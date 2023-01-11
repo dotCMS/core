@@ -1,18 +1,20 @@
+import { CommonModule } from '@angular/common';
 import { DebugElement } from '@angular/core';
 import { ComponentFixture } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 
-import { DOTTestBed } from '@dotcms/app/test/dot-test-bed';
-import { MockDotMessageService } from '@dotcms/utils-testing';
+import { ButtonModule } from 'primeng/button';
 
-import { CommonModule } from '@angular/common';
+import { DOTTestBed } from '@dotcms/app/test/dot-test-bed';
 import {
     DotLicenseService,
     DotMessageService,
     DotUnlicensedPortletData
 } from '@dotcms/data-access';
 import { DotIconModule } from '@dotcms/ui';
-import { ButtonModule } from 'primeng/button';
+import { MockDotMessageService } from '@dotcms/utils-testing';
+
+
 import { NotLicensedComponent } from './not-licensed.component';
 
 const messageServiceMock = new MockDotMessageService({

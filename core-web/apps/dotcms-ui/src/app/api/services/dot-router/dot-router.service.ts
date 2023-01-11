@@ -1,3 +1,5 @@
+import { Subject } from 'rxjs';
+
 import { Injectable } from '@angular/core';
 import {
     ActivatedRoute,
@@ -8,11 +10,11 @@ import {
     NavigationExtras
 } from '@angular/router';
 
+import { filter } from 'rxjs/operators';
+
 import { LOGOUT_URL } from '@dotcms/dotcms-js';
 import { DotAppsSites } from '@dotcms/dotcms-models';
 import { PortletNav } from '@models/navigation';
-import { Subject } from 'rxjs';
-import { filter } from 'rxjs/operators';
 
 @Injectable()
 export class DotRouterService {

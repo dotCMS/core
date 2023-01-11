@@ -1,3 +1,5 @@
+import { Subject } from 'rxjs';
+
 import {
     Component,
     EventEmitter,
@@ -9,10 +11,12 @@ import {
     SimpleChanges,
     ViewChild
 } from '@angular/core';
+
+import { delay, retryWhen, take, takeUntil, tap } from 'rxjs/operators';
+
 import { DotEventsService, PaginatorService } from '@dotcms/data-access';
 import { Site, SiteService } from '@dotcms/dotcms-js';
-import { Subject } from 'rxjs';
-import { delay, retryWhen, take, takeUntil, tap } from 'rxjs/operators';
+
 import { SearchableDropdownComponent } from '../searchable-dropdown/component';
 
 /**

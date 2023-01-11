@@ -1,11 +1,13 @@
-import { ComponentFixture, TestBed } from '@angular/core/testing';
-
 import { DebugElement } from '@angular/core';
+import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
+
+import { OverlayPanel, OverlayPanelModule } from 'primeng/overlaypanel';
+
 import { UiDotIconButtonComponent } from '@components/_common/dot-icon-button/dot-icon-button.component';
 import { UiDotIconButtonModule } from '@components/_common/dot-icon-button/dot-icon-button.module';
-import { OverlayPanel, OverlayPanelModule } from 'primeng/overlaypanel';
+
 import { DotFieldHelperComponent } from './dot-field-helper.component';
 
 describe('DotFieldHelperComponent', () => {

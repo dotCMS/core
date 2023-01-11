@@ -1,3 +1,5 @@
+import { Observable, Subject } from 'rxjs';
+
 import {
     AfterViewInit,
     Component,
@@ -9,13 +11,15 @@ import {
     ViewChild
 } from '@angular/core';
 import { UntypedFormBuilder, UntypedFormGroup, Validators } from '@angular/forms';
+
+import { Dropdown } from 'primeng/dropdown';
+
+import { map, take, takeUntil, tap } from 'rxjs/operators';
+
 import { DotDialogActions } from '@components/dot-dialog/dot-dialog.component';
 import { AddToBundleService, DotMessageService } from '@dotcms/data-access';
 import { LoggerService } from '@dotcms/dotcms-js';
 import { DotAjaxActionResponseView, DotBundle } from '@dotcms/dotcms-models';
-import { Dropdown } from 'primeng/dropdown';
-import { Observable, Subject } from 'rxjs';
-import { map, take, takeUntil, tap } from 'rxjs/operators';
 
 const LAST_BUNDLE_USED = 'lastSelectedBundle';
 

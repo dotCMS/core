@@ -1,7 +1,9 @@
 import { Component, DebugElement, ElementRef, Input, SimpleChange, ViewChild } from '@angular/core';
 import { ComponentFixture, ComponentFixtureAutoDetect, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
+
 import { DotPortletBaseModule } from '@components/dot-portlet-base/dot-portlet-base.module';
+
 import { DotCategoriesPermissionsComponent } from './dot-categories-permissions.component';
 
 @Component({

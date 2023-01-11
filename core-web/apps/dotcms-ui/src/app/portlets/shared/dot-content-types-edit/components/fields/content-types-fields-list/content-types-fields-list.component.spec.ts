@@ -1,14 +1,20 @@
 /* eslint-disable @typescript-eslint/no-empty-function */
 
+import { DragulaModule, DragulaService } from 'ng2-dragula';
+import { of } from 'rxjs';
+
 import { DebugElement } from '@angular/core';
 import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
-import { of } from 'rxjs';
-import { FieldService } from '../service';
-import { ContentTypesFieldsListComponent } from './content-types-fields-list.component';
 
 import { DotIconModule } from '@dotcms/ui';
-import { DragulaModule, DragulaService } from 'ng2-dragula';
+
+import { ContentTypesFieldsListComponent } from './content-types-fields-list.component';
+
+import { FieldService } from '../service';
+
+
+
 
 const itemsData = [
     {

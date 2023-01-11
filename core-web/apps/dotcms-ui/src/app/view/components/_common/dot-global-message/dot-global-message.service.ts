@@ -1,4 +1,5 @@
 import { Injectable } from '@angular/core';
+
 import { DotEventsService, DotMessageService } from '@dotcms/data-access';
 import { DotGlobalMessage } from '@models/dot-global-message/dot-global-message.model';
 

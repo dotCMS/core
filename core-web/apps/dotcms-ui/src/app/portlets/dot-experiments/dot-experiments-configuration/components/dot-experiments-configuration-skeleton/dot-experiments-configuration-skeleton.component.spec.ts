@@ -1,4 +1,5 @@
 import { createComponentFactory, Spectator } from '@ngneat/spectator';
+
 import { DotExperimentsConfigurationSkeletonComponent } from './dot-experiments-configuration-skeleton.component';
 
 describe('DotExperimentsConfigurationSkeletonComponent', () => {

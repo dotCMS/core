@@ -1,6 +1,16 @@
+import { Observable } from 'rxjs';
+
 import { CommonModule } from '@angular/common';
 import { ChangeDetectionStrategy, Component, EventEmitter, OnInit, Output } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+
+import { ButtonModule } from 'primeng/button';
+import { InputTextModule } from 'primeng/inputtext';
+import { InputTextareaModule } from 'primeng/inputtextarea';
+import { SidebarModule } from 'primeng/sidebar';
+
+import { take } from 'rxjs/operators';
+
 import { DotFieldValidationMessageModule } from '@components/_common/dot-field-validation-message/dot-file-validation-message.module';
 import { UiDotIconButtonModule } from '@components/_common/dot-icon-button/dot-icon-button.module';
 import { DotExperiment } from '@dotcms/dotcms-models';
@@ -12,12 +22,7 @@ import {
 import { DotExperimentsListStore } from '@portlets/dot-experiments/dot-experiments-list/store/dot-experiments-list-store.service';
 import { DotSidebarDirective } from '@portlets/shared/directives/dot-sidebar.directive';
 import { DotSidebarHeaderComponent } from '@shared/dot-sidebar-header/dot-sidebar-header.component';
-import { ButtonModule } from 'primeng/button';
-import { InputTextModule } from 'primeng/inputtext';
-import { InputTextareaModule } from 'primeng/inputtextarea';
-import { SidebarModule } from 'primeng/sidebar';
-import { Observable } from 'rxjs';
-import { take } from 'rxjs/operators';
+
 
 interface CreateForm {
     pageId: FormControl<string>;

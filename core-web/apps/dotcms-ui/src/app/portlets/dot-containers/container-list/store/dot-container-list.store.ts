@@ -1,22 +1,28 @@
+import { ComponentStore } from '@ngrx/component-store';
+
 import { Injectable } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
+
+import { MenuItem } from 'primeng/api';
+
+import { pluck, take } from 'rxjs/operators';
+
+import { DotListingDataTableComponent } from '@components/dot-listing-data-table/dot-listing-data-table.component';
 import {
     DotAlertConfirmService,
     DotMessageService,
     DotSiteBrowserService
 } from '@dotcms/data-access';
 import { DotPushPublishDialogService } from '@dotcms/dotcms-js';
+import { DotActionBulkResult, DotBulkFailItem, DotContainer } from '@dotcms/dotcms-models';
 import { ActionHeaderOptions } from '@models/action-header';
 import { DataTableColumn } from '@models/data-table';
 import { DotActionMenuItem } from '@models/dot-action-menu/dot-action-menu-item.model';
-import { ComponentStore } from '@ngrx/component-store';
-import { DotRouterService } from '@services/dot-router/dot-router.service';
-import { MenuItem } from 'primeng/api';
-import { pluck, take } from 'rxjs/operators';
-
-import { DotListingDataTableComponent } from '@components/dot-listing-data-table/dot-listing-data-table.component';
-import { DotActionBulkResult, DotBulkFailItem, DotContainer } from '@dotcms/dotcms-models';
 import { DotContainersService } from '@services/dot-containers/dot-containers.service';
+import { DotRouterService } from '@services/dot-router/dot-router.service';
+
+
+
 
 export interface DotContainerListState {
     containerBulkActions: MenuItem[];

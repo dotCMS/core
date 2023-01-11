@@ -1,13 +1,15 @@
+import { of } from 'rxjs';
+
 import { HttpErrorResponse } from '@angular/common/http';
 import { HttpClientTestingModule, HttpTestingController } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 
 import { CoreWebService } from '@dotcms/dotcms-js';
-import { of } from 'rxjs';
-
 import { CoreWebServiceMock } from '@dotcms/utils-testing';
-import { DotHttpErrorManagerService } from '../dot-http-error-manager/dot-http-error-manager.service';
+
 import { DotTempFileUploadService } from './dot-temp-file-upload.service';
+
+import { DotHttpErrorManagerService } from '../dot-http-error-manager/dot-http-error-manager.service';
 
 describe('DotTempFileUploadService', () => {
     let service: DotTempFileUploadService;

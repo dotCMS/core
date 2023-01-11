@@ -1,3 +1,5 @@
+import { of as observableOf } from 'rxjs';
+
 import { CommonModule } from '@angular/common';
 import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { DebugElement } from '@angular/core';
@@ -5,6 +7,9 @@ import { ComponentFixture, fakeAsync, TestBed, tick } from '@angular/core/testin
 import { FormsModule } from '@angular/forms';
 import { By } from '@angular/platform-browser';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
+
+import { ButtonModule } from 'primeng/button';
+
 import {
     PaginationEvent,
     SearchableDropdownComponent
@@ -22,11 +27,12 @@ import {
 import { CONTAINER_SOURCE, DotContainer } from '@dotcms/dotcms-models';
 import { CoreWebServiceMock, MockDotMessageService } from '@dotcms/utils-testing';
 import { DotPipesModule } from '@pipes/dot-pipes.module';
-import { ButtonModule } from 'primeng/button';
-import { of as observableOf } from 'rxjs';
+
+import { DotContainerSelectorComponent } from './dot-container-selector.component';
+
 import { IframeOverlayService } from '../_common/iframe/service/iframe-overlay.service';
 import { SearchableDropDownModule } from '../_common/searchable-dropdown/searchable-dropdown.module';
-import { DotContainerSelectorComponent } from './dot-container-selector.component';
+
 
 describe('ContainerSelectorComponent', () => {
     let fixture: ComponentFixture<DotContainerSelectorComponent>;

@@ -1,13 +1,19 @@
+import { ComponentStore } from '@ngrx/component-store';
+import { Observable } from 'rxjs';
+
 import { Injectable } from '@angular/core';
+
+import { LazyLoadEvent, MenuItem } from 'primeng/api';
+
+import { map, take } from 'rxjs/operators';
+
 import { DotCategoriesService } from '@dotcms/app/api/services/dot-categories/dot-categories.service';
 import { DotActionMenuItem } from '@dotcms/app/shared/models/dot-action-menu/dot-action-menu-item.model';
 import { DotCategory } from '@dotcms/app/shared/models/dot-categories/dot-categories.model';
 import { DotMessageService, OrderDirection } from '@dotcms/data-access';
 import { DataTableColumn } from '@models/data-table';
-import { ComponentStore } from '@ngrx/component-store';
-import { LazyLoadEvent, MenuItem } from 'primeng/api';
-import { Observable } from 'rxjs';
-import { map, take } from 'rxjs/operators';
+
+
 
 export interface DotCategoriesListState {
     categoriesBulkActions: MenuItem[];

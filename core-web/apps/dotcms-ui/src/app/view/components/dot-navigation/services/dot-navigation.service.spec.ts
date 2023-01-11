@@ -1,8 +1,13 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
+import { Observable, of, Subject } from 'rxjs';
+
 import { TestBed, waitForAsync } from '@angular/core/testing';
+import { Title } from '@angular/platform-browser';
 import { NavigationEnd, Router } from '@angular/router';
 import { RouterTestingModule } from '@angular/router/testing';
+
+import { skip } from 'rxjs/operators';
 
 import { DotMenuService } from '@dotcms/app/api/services/dot-menu.service';
 import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
@@ -10,12 +15,11 @@ import { DotEventsService } from '@dotcms/data-access';
 import { Auth, DotcmsEventsService, LoginService } from '@dotcms/dotcms-js';
 import { LoginServiceMock } from '@dotcms/utils-testing';
 import { DotMenu } from '@models/navigation';
-import { DotIframeService } from '../../_common/iframe/service/dot-iframe/dot-iframe.service';
+
 import { DotNavigationService } from './dot-navigation.service';
 
-import { Title } from '@angular/platform-browser';
-import { Observable, of, Subject } from 'rxjs';
-import { skip } from 'rxjs/operators';
+import { DotIframeService } from '../../_common/iframe/service/dot-iframe/dot-iframe.service';
+
 
 class RouterMock {
     _events: Subject<any> = new Subject();

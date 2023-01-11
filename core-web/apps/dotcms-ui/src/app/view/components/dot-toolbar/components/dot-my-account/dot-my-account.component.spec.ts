@@ -1,12 +1,20 @@
 /* eslint-disable @typescript-eslint/no-empty-function */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
+import { of, throwError } from 'rxjs';
+
 import { CommonModule } from '@angular/common';
 import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { DebugElement } from '@angular/core';
 import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing';
 import { FormsModule } from '@angular/forms';
 import { By } from '@angular/platform-browser';
+
+import { ConfirmationService } from 'primeng/api';
+import { CheckboxModule } from 'primeng/checkbox';
+import { InputTextModule } from 'primeng/inputtext';
+import { PasswordModule } from 'primeng/password';
+
 import { DotDialogModule } from '@components/dot-dialog/dot-dialog.module';
 import { DotAccountService } from '@dotcms/app/api/services/dot-account-service';
 import { DotHttpErrorManagerService } from '@dotcms/app/api/services/dot-http-error-manager/dot-http-error-manager.service';
@@ -30,11 +38,7 @@ import {
     mockUser
 } from '@dotcms/utils-testing';
 import { DotPipesModule } from '@pipes/dot-pipes.module';
-import { ConfirmationService } from 'primeng/api';
-import { CheckboxModule } from 'primeng/checkbox';
-import { InputTextModule } from 'primeng/inputtext';
-import { PasswordModule } from 'primeng/password';
-import { of, throwError } from 'rxjs';
+
 import { DotMyAccountComponent } from './dot-my-account.component';
 
 class DotAccountServiceMock {

@@ -1,16 +1,20 @@
+import { Observable, of as observableOf } from 'rxjs';
+
 import { Component, DebugElement, Injectable, Input } from '@angular/core';
 import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import { ActivatedRoute } from '@angular/router';
 import { RouterTestingModule } from '@angular/router/testing';
+
+import { TooltipModule } from 'primeng/tooltip';
+
 import { DotContentletEditorService } from '@components/dot-contentlet-editor/services/dot-contentlet-editor.service';
 import { DotLicenseService, DotMessageService, DotPropertiesService } from '@dotcms/data-access';
 import { DotPageRender, DotPageRenderState } from '@dotcms/dotcms-models';
 import { DotIconModule } from '@dotcms/ui';
 import { MockDotMessageService, mockDotRenderedPage, mockUser } from '@dotcms/utils-testing';
 import { DotPipesModule } from '@pipes/dot-pipes.module';
-import { TooltipModule } from 'primeng/tooltip';
-import { Observable, of as observableOf } from 'rxjs';
+
 import { DotEditPageNavComponent } from './dot-edit-page-nav.component';
 
 class ActivatedRouteMock {

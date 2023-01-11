@@ -9,6 +9,7 @@ import { ToolbarModule } from 'primeng/toolbar';
 import { DotMessageService } from '@dotcms/data-access';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 import { DotMessagePipeModule } from '@pipes/dot-message/dot-message-pipe.module';
+
 import { DotPortletToolbarComponent } from './dot-portlet-toolbar.component';
 
 @Component({

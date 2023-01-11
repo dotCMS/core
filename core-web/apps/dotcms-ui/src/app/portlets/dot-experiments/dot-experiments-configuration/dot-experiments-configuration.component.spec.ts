@@ -1,10 +1,16 @@
+import { createComponentFactory, mockProvider, Spectator, SpyObject } from '@ngneat/spectator';
+import { of } from 'rxjs';
+
 import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { Title } from '@angular/platform-browser';
 import { ActivatedRoute, Router } from '@angular/router';
+
+import { MessageService } from 'primeng/api';
+import { ButtonModule } from 'primeng/button';
+
 import { DotMessageService, DotSessionStorageService } from '@dotcms/data-access';
 import { Status } from '@dotcms/dotcms-models';
 import { MockDotMessageService } from '@dotcms/utils-testing';
-import { createComponentFactory, mockProvider, Spectator, SpyObject } from '@ngneat/spectator';
 import { DotExperimentsConfigurationExperimentStatusBarComponent } from '@portlets/dot-experiments/dot-experiments-configuration/components/dot-experiments-configuration-experiment-status-bar/dot-experiments-configuration-experiment-status-bar.component';
 import { DotExperimentsConfigurationGoalsComponent } from '@portlets/dot-experiments/dot-experiments-configuration/components/dot-experiments-configuration-goals/dot-experiments-configuration-goals.component';
 import { DotExperimentsConfigurationSchedulingComponent } from '@portlets/dot-experiments/dot-experiments-configuration/components/dot-experiments-configuration-scheduling/dot-experiments-configuration-scheduling.component';
@@ -19,9 +25,9 @@ import {
     DotExperimentsConfigurationStoreMock,
     ExperimentMocks
 } from '@portlets/dot-experiments/test/mocks';
-import { MessageService } from 'primeng/api';
-import { ButtonModule } from 'primeng/button';
-import { of } from 'rxjs';
+
+
+
 import { DotExperimentsConfigurationComponent } from './dot-experiments-configuration.component';
 
 const ActivatedRouteMock = {

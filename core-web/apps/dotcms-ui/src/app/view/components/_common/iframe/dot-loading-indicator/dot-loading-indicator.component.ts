@@ -1,4 +1,5 @@
 import { Component, Input, ViewEncapsulation } from '@angular/core';
+
 import { LoadingState } from '@dotcms/dotcms-models';
 import { DotLoadingIndicatorService } from '@dotcms/utils';
 

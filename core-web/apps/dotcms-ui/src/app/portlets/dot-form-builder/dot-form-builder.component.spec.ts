@@ -1,10 +1,10 @@
+import { of } from 'rxjs';
+
 import { Component, DebugElement, Input } from '@angular/core';
 import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
-
-import { of } from 'rxjs';
-
 import { ActivatedRoute } from '@angular/router';
+
 import { DotFormBuilderComponent } from './dot-form-builder.component';
 
 @Component({

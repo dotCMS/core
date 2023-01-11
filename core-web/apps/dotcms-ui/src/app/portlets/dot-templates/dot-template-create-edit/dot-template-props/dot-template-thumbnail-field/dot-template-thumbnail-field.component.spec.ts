@@ -1,3 +1,5 @@
+import { of, throwError } from 'rxjs';
+
 import { Component, CUSTOM_ELEMENTS_SCHEMA, DebugElement } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import {
@@ -8,9 +10,6 @@ import {
 } from '@angular/forms';
 import { By } from '@angular/platform-browser';
 
-import { of, throwError } from 'rxjs';
-
-import { DotTemplateThumbnailFieldComponent } from './dot-template-thumbnail-field.component';
 
 import { DotTempFileUploadService } from '@dotcms/app/api/services/dot-temp-file-upload/dot-temp-file-upload.service';
 import { DotMessagePipe } from '@dotcms/app/view/pipes/dot-message/dot-message.pipe';
@@ -20,6 +19,8 @@ import {
     DotWorkflowActionsFireService
 } from '@dotcms/data-access';
 import { dotcmsContentletMock, MockDotMessageService } from '@dotcms/utils-testing';
+
+import { DotTemplateThumbnailFieldComponent } from './dot-template-thumbnail-field.component';
 
 const messageServiceMock = new MockDotMessageService({
     'templates.properties.form.thumbnail.error.invalid.url': 'Invalid url',

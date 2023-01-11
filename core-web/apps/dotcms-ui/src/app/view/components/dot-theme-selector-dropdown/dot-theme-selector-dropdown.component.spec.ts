@@ -1,5 +1,7 @@
 /* eslint-disable @typescript-eslint/no-empty-function */
 
+import { of } from 'rxjs';
+
 import { Component, DebugElement, Input } from '@angular/core';
 import { ComponentFixture, fakeAsync, TestBed, tick } from '@angular/core/testing';
 import {
@@ -8,21 +10,20 @@ import {
     UntypedFormBuilder,
     UntypedFormGroup
 } from '@angular/forms';
-import { of } from 'rxjs';
-
-import { SiteService } from '@dotcms/dotcms-js';
-
 import { By } from '@angular/platform-browser';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
+
 import { SearchableDropDownModule } from '@components/_common/searchable-dropdown';
 import {
     PaginationEvent,
     SearchableDropdownComponent
 } from '@components/_common/searchable-dropdown/component/searchable-dropdown.component';
 import { DotMessageService, DotThemesService, PaginatorService } from '@dotcms/data-access';
+import { SiteService } from '@dotcms/dotcms-js';
 import { DotIconModule } from '@dotcms/ui';
 import { MockDotMessageService, mockDotThemes } from '@dotcms/utils-testing';
 import { DotMessagePipeModule } from '@pipes/dot-message/dot-message-pipe.module';
+
 import { DotThemeSelectorDropdownComponent } from './dot-theme-selector-dropdown.component';
 
 const messageServiceMock = new MockDotMessageService({

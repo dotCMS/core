@@ -17,12 +17,15 @@ import {
     Validators
 } from '@angular/forms';
 import { By } from '@angular/platform-browser';
+
 import { DotMessageService } from '@dotcms/data-access';
 import { DotCMSContentTypeField } from '@dotcms/dotcms-models';
 import { dotcmsContentTypeFieldBasicMock, MockDotMessageService } from '@dotcms/utils-testing';
 import { DotPipesModule } from '@pipes/dot-pipes.module';
-import { FieldPropertyService } from '../service';
+
 import { ContentTypeFieldsPropertiesFormComponent } from './content-type-fields-properties-form.component';
+
+import { FieldPropertyService } from '../service';
 
 const mockDFormFieldData = {
     ...dotcmsContentTypeFieldBasicMock,

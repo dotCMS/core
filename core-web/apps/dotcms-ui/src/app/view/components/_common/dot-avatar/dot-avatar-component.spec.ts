@@ -2,6 +2,7 @@ import { CommonModule } from '@angular/common';
 import { Component, DebugElement, Input } from '@angular/core';
 import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
+
 import { DotAvatarComponent } from './dot-avatar.component';
 
 @Component({

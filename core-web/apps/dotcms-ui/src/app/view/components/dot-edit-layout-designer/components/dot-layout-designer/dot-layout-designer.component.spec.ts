@@ -17,6 +17,7 @@ import { DotMessageService } from '@dotcms/data-access';
 import { DotLayout } from '@dotcms/dotcms-models';
 import { mockDotLayout } from '@dotcms/utils-testing';
 import { DotMessagePipe } from '@pipes/dot-message/dot-message.pipe';
+
 import { DotLayoutDesignerComponent } from './dot-layout-designer.component';
 
 @Component({

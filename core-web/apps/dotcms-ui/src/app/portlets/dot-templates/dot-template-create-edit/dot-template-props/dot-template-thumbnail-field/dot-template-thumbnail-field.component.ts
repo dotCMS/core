@@ -1,13 +1,13 @@
+import { throwError } from 'rxjs';
+
 import { HttpErrorResponse } from '@angular/common/http';
 import { Component, forwardRef } from '@angular/core';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
 
-import { throwError } from 'rxjs';
 import { finalize, switchMap, take } from 'rxjs/operators';
 
-import { DotCrudService, DotMessageService } from '@dotcms/data-access';
-
 import { DotTempFileUploadService } from '@dotcms/app/api/services/dot-temp-file-upload/dot-temp-file-upload.service';
+import { DotCrudService, DotMessageService } from '@dotcms/data-access';
 import { DotWorkflowActionsFireService } from '@dotcms/data-access';
 import { DotCMSContentlet, DotCMSTempFile } from '@dotcms/dotcms-models';
 

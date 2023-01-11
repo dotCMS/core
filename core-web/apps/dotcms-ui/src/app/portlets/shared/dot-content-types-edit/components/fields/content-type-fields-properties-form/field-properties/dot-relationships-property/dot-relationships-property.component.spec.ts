@@ -4,9 +4,11 @@ import { Component, DebugElement, EventEmitter, Input, Output } from '@angular/c
 import { ComponentFixture, waitForAsync } from '@angular/core/testing';
 import { NgControl, UntypedFormControl, UntypedFormGroup } from '@angular/forms';
 import { By } from '@angular/platform-browser';
+
 import { DOTTestBed } from '@dotcms/app/test/dot-test-bed';
 import { DotMessageService } from '@dotcms/data-access';
 import { dotcmsContentTypeFieldBasicMock, MockDotMessageService } from '@dotcms/utils-testing';
+
 import { DotRelationshipsPropertyComponent } from './dot-relationships-property.component';
 
 @Component({

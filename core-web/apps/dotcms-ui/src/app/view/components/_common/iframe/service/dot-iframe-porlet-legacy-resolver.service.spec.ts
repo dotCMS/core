@@ -1,8 +1,11 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
+import { of } from 'rxjs';
+
 import { waitForAsync } from '@angular/core/testing';
 import { ActivatedRouteSnapshot, RouterStateSnapshot } from '@angular/router';
 import { RouterTestingModule } from '@angular/router/testing';
+
 import { DOTTestBed } from '@dotcms/app/test/dot-test-bed';
 import {
     DotContentletLockerService,
@@ -14,7 +17,7 @@ import { LoginService } from '@dotcms/dotcms-js';
 import { DotPageRender, DotPageRenderState } from '@dotcms/dotcms-models';
 import { LoginServiceMock, mockDotRenderedPage, mockUser } from '@dotcms/utils-testing';
 import { DotPageStateService } from '@portlets/dot-edit-page/content/services/dot-page-state/dot-page-state.service';
-import { of } from 'rxjs';
+
 import { DotIframePortletLegacyResolver } from './dot-iframe-porlet-legacy-resolver.service';
 
 const route: any = jasmine.createSpyObj<ActivatedRouteSnapshot>('ActivatedRouteSnapshot', [

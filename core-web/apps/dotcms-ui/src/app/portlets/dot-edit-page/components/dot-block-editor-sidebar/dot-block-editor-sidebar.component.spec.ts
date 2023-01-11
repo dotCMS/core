@@ -1,8 +1,15 @@
+import { of, throwError } from 'rxjs';
+
 import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { Component, DebugElement, Injectable, Input } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
+
+import { ConfirmationService } from 'primeng/api';
+import { ButtonModule } from 'primeng/button';
+import { Sidebar, SidebarModule } from 'primeng/sidebar';
+
 import { DEFAULT_LANG_ID } from '@dotcms/block-editor';
 import {
     DotAlertConfirmService,
@@ -15,10 +22,6 @@ import { CoreWebService } from '@dotcms/dotcms-js';
 import { CoreWebServiceMock, MockDotMessageService, mockResponseView } from '@dotcms/utils-testing';
 import { DotMessagePipeModule } from '@pipes/dot-message/dot-message-pipe.module';
 import { DotBlockEditorSidebarComponent } from '@portlets/dot-edit-page/components/dot-block-editor-sidebar/dot-block-editor-sidebar.component';
-import { ConfirmationService } from 'primeng/api';
-import { ButtonModule } from 'primeng/button';
-import { Sidebar, SidebarModule } from 'primeng/sidebar';
-import { of, throwError } from 'rxjs';
 
 @Component({
     selector: 'dot-block-editor',

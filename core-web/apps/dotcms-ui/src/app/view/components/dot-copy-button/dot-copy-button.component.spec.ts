@@ -2,13 +2,16 @@ import { DebugElement } from '@angular/core';
 import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 
-import { DotMessageService } from '@dotcms/data-access';
-import { MockDotMessageService } from '@dotcms/utils-testing';
-import { DotCopyButtonComponent } from './dot-copy-button.component';
+import { TooltipModule } from 'primeng/tooltip';
 
 import { UiDotIconButtonModule } from '@components/_common/dot-icon-button/dot-icon-button.module';
 import { DotClipboardUtil } from '@dotcms/app/api/util/clipboard/ClipboardUtil';
-import { TooltipModule } from 'primeng/tooltip';
+import { DotMessageService } from '@dotcms/data-access';
+import { MockDotMessageService } from '@dotcms/utils-testing';
+
+import { DotCopyButtonComponent } from './dot-copy-button.component';
+
+
 
 const messageServiceMock = new MockDotMessageService({
     Copy: 'Copy',

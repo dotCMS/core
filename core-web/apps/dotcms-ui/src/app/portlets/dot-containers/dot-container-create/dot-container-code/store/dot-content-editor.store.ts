@@ -1,10 +1,15 @@
+import { ComponentStore } from '@ngrx/component-store';
+
 import { Injectable } from '@angular/core';
+
+import { MenuItem } from 'primeng/api';
+
+import { take } from 'rxjs/operators';
+
 import { DotContentTypeService } from '@dotcms/app/api/services/dot-content-type';
 import { DotCMSContentType } from '@dotcms/dotcms-models';
 import { DotContainerStructure } from '@models/container/dot-container.model';
-import { ComponentStore } from '@ngrx/component-store';
-import { MenuItem } from 'primeng/api';
-import { take } from 'rxjs/operators';
+
 
 export interface DotContentEditorState {
     activeTabIndex: number;

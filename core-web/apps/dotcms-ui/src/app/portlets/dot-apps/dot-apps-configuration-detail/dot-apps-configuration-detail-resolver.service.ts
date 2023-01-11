@@ -1,9 +1,12 @@
+import { Observable } from 'rxjs';
+
 import { Injectable } from '@angular/core';
 import { ActivatedRouteSnapshot, Resolve } from '@angular/router';
+
+import { take } from 'rxjs/operators';
+
 import { DotAppsService } from '@dotcms/app/api/services/dot-apps/dot-apps.service';
 import { DotApps } from '@dotcms/dotcms-models';
-import { Observable } from 'rxjs';
-import { take } from 'rxjs/operators';
 
 /**
  * Returns app configuration detail from the api

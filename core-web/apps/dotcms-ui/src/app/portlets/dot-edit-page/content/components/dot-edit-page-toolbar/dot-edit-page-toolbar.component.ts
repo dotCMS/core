@@ -1,3 +1,5 @@
+import { Observable, Subject } from 'rxjs';
+
 import {
     Component,
     EventEmitter,
@@ -7,6 +9,9 @@ import {
     OnInit,
     Output
 } from '@angular/core';
+
+import { take } from 'rxjs/operators';
+
 import { DotLicenseService, DotPropertiesService } from '@dotcms/data-access';
 import {
     DotCMSContentlet,
@@ -15,8 +20,6 @@ import {
     DotVariantData,
     FeaturedFlags
 } from '@dotcms/dotcms-models';
-import { Observable, Subject } from 'rxjs';
-import { take } from 'rxjs/operators';
 
 @Component({
     selector: 'dot-edit-page-toolbar',

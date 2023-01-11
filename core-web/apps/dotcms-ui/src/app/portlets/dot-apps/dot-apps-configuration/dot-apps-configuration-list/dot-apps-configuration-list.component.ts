@@ -1,7 +1,9 @@
 import { Component, ElementRef, EventEmitter, Input, Output, ViewChild } from '@angular/core';
-import { DotAppsSites } from '@dotcms/dotcms-models';
 
 import { LazyLoadEvent } from 'primeng/api';
+
+import { DotAppsSites } from '@dotcms/dotcms-models';
+
 
 @Component({
     selector: 'dot-apps-configuration-list',

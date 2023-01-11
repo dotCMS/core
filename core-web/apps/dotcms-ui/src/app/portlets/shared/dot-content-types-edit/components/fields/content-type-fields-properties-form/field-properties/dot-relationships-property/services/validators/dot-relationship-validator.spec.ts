@@ -1,4 +1,5 @@
 import { UntypedFormControl } from '@angular/forms';
+
 import { validateRelationship } from './dot-relationship-validator';
 
 describe('validateRelationship', () => {

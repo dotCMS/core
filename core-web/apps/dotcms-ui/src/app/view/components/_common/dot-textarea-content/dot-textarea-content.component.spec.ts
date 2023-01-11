@@ -1,13 +1,15 @@
 /* eslint-disable @typescript-eslint/no-empty-function */
 /* eslint-disable @typescript-eslint/no-explicit-any */
+import { MonacoEditorComponent } from '@materia-ui/ngx-monaco-editor';
+
 import { Component, DebugElement, forwardRef, Input } from '@angular/core';
 import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing';
+import { FormsModule, NG_VALUE_ACCESSOR } from '@angular/forms';
 import { By } from '@angular/platform-browser';
 
-import { FormsModule, NG_VALUE_ACCESSOR } from '@angular/forms';
-import { MonacoEditorComponent } from '@materia-ui/ngx-monaco-editor';
 import { InputTextareaModule } from 'primeng/inputtextarea';
 import { SelectButtonModule } from 'primeng/selectbutton';
+
 import { DotTextareaContentComponent } from './dot-textarea-content.component';
 
 function cleanOptionText(option) {

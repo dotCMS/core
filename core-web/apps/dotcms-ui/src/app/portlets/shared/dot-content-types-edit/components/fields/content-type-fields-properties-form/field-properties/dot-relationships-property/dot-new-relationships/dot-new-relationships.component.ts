@@ -1,3 +1,5 @@
+import { Observable } from 'rxjs';
+
 import {
     Component,
     EventEmitter,
@@ -7,9 +9,10 @@ import {
     Output,
     SimpleChanges
 } from '@angular/core';
+
 import { DotContentTypeService, PaginatorService } from '@dotcms/data-access';
 import { DotCMSContentType } from '@dotcms/dotcms-models';
-import { Observable } from 'rxjs';
+
 import { DotRelationshipsPropertyValue } from '../model/dot-relationships-property-value.model';
 
 @Component({

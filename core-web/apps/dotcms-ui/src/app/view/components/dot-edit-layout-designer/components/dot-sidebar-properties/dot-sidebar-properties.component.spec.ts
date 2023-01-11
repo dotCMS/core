@@ -2,10 +2,13 @@ import { DebugElement } from '@angular/core';
 import { ComponentFixture } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
+
+import { OverlayPanelModule } from 'primeng/overlaypanel';
+
 import { DOTTestBed } from '@dotcms/app/test/dot-test-bed';
 import { DotEventsService, DotMessageService } from '@dotcms/data-access';
 import { MockDotMessageService } from '@dotcms/utils-testing';
-import { OverlayPanelModule } from 'primeng/overlaypanel';
+
 import { DotSidebarPropertiesComponent } from './dot-sidebar-properties.component';
 
 describe('DotSidebarPropertiesComponent', () => {

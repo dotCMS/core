@@ -1,22 +1,19 @@
 import { of as observableOf } from 'rxjs';
 
-import { Component, DebugElement } from '@angular/core';
-import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { By } from '@angular/platform-browser';
-import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
-import { DOTTestBed } from '@dotcms/app/test/dot-test-bed';
-import { DotMessageService, PaginatorService } from '@dotcms/data-access';
-import { CONTAINER_SOURCE, DotContainer } from '@dotcms/dotcms-models';
-import { MockDotMessageService } from '@dotcms/utils-testing';
-import { IframeOverlayService } from '../_common/iframe/service/iframe-overlay.service';
-import { SearchableDropDownModule } from '../_common/searchable-dropdown/searchable-dropdown.module';
-import { DotContainerSelectorLayoutComponent } from './dot-container-selector-layout.component';
-
 import { CommonModule } from '@angular/common';
 import { HttpClientTestingModule } from '@angular/common/http/testing';
+import { Component, DebugElement } from '@angular/core';
+import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { FormsModule } from '@angular/forms';
+import { By } from '@angular/platform-browser';
+import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
+
+import { ButtonModule } from 'primeng/button';
+
 import { DotContainerSelectorModule } from '@components/dot-container-selector/dot-container-selector.module';
 import { DotTemplateContainersCacheService } from '@dotcms/app/api/services/dot-template-containers-cache/dot-template-containers-cache.service';
+import { DOTTestBed } from '@dotcms/app/test/dot-test-bed';
+import { DotMessageService, PaginatorService } from '@dotcms/data-access';
 import {
     ApiRoot,
     BrowserUtil,
@@ -25,9 +22,18 @@ import {
     StringUtils,
     UserModel
 } from '@dotcms/dotcms-js';
+import { CONTAINER_SOURCE, DotContainer } from '@dotcms/dotcms-models';
+import { MockDotMessageService } from '@dotcms/utils-testing';
 import { CoreWebServiceMock } from '@dotcms/utils-testing';
 import { DotPipesModule } from '@pipes/dot-pipes.module';
-import { ButtonModule } from 'primeng/button';
+
+import { DotContainerSelectorLayoutComponent } from './dot-container-selector-layout.component';
+
+import { IframeOverlayService } from '../_common/iframe/service/iframe-overlay.service';
+import { SearchableDropDownModule } from '../_common/searchable-dropdown/searchable-dropdown.module';
+
+
+
 
 @Component({
     selector: 'dot-icon-button',

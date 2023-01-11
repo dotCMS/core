@@ -1,4 +1,5 @@
 import { ChangeDetectionStrategy, Component } from '@angular/core';
+
 import { CardModule } from 'primeng/card';
 import { SkeletonModule } from 'primeng/skeleton';
 

@@ -15,8 +15,10 @@ import {
     MockDotMessageService,
     processedContainers
 } from '@dotcms/utils-testing';
-import { DotSidebarPropertiesModule } from '../dot-sidebar-properties/dot-sidebar-properties.module';
+
 import { DotEditLayoutSidebarComponent } from './dot-edit-layout-sidebar.component';
+
+import { DotSidebarPropertiesModule } from '../dot-sidebar-properties/dot-sidebar-properties.module';
 
 let fakeValue: DotLayoutSideBar;
 

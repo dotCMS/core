@@ -1,12 +1,16 @@
+import { formatInTimeZone } from 'date-fns-tz';
+import { of } from 'rxjs';
+
 import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
+
 import { DotFormatDateService } from '@dotcms/app/api/services/dot-format-date-service';
 import { DotMessageService } from '@dotcms/data-access';
 import { CoreWebService, CoreWebServiceMock, DotcmsConfigService } from '@dotcms/dotcms-js';
-import { formatInTimeZone } from 'date-fns-tz';
-import { of } from 'rxjs';
-import { dotContentCompareTableDataMock } from '../components/dot-content-compare-table/dot-content-compare-table.component.spec';
+
 import { DotTransformVersionLabelPipe } from './dot-transform-version-label.pipe';
+
+import { dotContentCompareTableDataMock } from '../components/dot-content-compare-table/dot-content-compare-table.component.spec';
 
 describe('DotTransformVersionLabelPipe', () => {
     beforeEach(() => {

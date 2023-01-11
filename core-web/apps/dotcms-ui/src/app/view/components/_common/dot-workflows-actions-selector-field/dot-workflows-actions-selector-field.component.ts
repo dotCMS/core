@@ -1,3 +1,5 @@
+import { Observable } from 'rxjs';
+
 import {
     Component,
     forwardRef,
@@ -8,12 +10,15 @@ import {
     ViewChild
 } from '@angular/core';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
-import { Observable } from 'rxjs';
+
+import { SelectItem, SelectItemGroup } from 'primeng/api';
+import { Dropdown } from 'primeng/dropdown';
+
 import { tap } from 'rxjs/operators';
 
 import { DotCMSWorkflow, DotCMSWorkflowAction } from '@dotcms/dotcms-models';
-import { SelectItem, SelectItemGroup } from 'primeng/api';
-import { Dropdown } from 'primeng/dropdown';
+
+
 import { DotWorkflowsActionsSelectorFieldService } from './services/dot-workflows-actions-selector-field.service';
 
 interface DropdownEvent {

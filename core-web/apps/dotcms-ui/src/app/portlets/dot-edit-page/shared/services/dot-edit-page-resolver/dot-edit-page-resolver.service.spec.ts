@@ -1,9 +1,14 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
+import { of, throwError } from 'rxjs';
+
 import { HttpErrorResponse, HttpResponse } from '@angular/common/http';
 import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { getTestBed, TestBed } from '@angular/core/testing';
 import { ActivatedRouteSnapshot } from '@angular/router';
+
+import { ConfirmationService } from 'primeng/api';
+
 import { DotFormatDateService } from '@dotcms/app/api/services/dot-format-date-service';
 import { DotHttpErrorManagerService } from '@dotcms/app/api/services/dot-http-error-manager/dot-http-error-manager.service';
 import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
@@ -23,10 +28,11 @@ import {
     mockResponseView,
     mockUser
 } from '@dotcms/utils-testing';
-import { ConfirmationService } from 'primeng/api';
-import { of, throwError } from 'rxjs';
-import { DotPageStateService } from '../../../content/services/dot-page-state/dot-page-state.service';
+
 import { DotEditPageResolver } from './dot-edit-page-resolver.service';
+
+import { DotPageStateService } from '../../../content/services/dot-page-state/dot-page-state.service';
+
 
 const route: any = jasmine.createSpyObj<ActivatedRouteSnapshot>('ActivatedRouteSnapshot', [
     'toString'

@@ -2,8 +2,11 @@ import { Observable } from 'rxjs';
 
 import { Injectable } from '@angular/core';
 import { ActivatedRouteSnapshot, CanActivate, RouterStateSnapshot } from '@angular/router';
-import { DotNavigationService } from '@components/dot-navigation/services/dot-navigation.service';
+
 import { map } from 'rxjs/operators';
+
+import { DotNavigationService } from '@components/dot-navigation/services/dot-navigation.service';
+
 import { DotMenuService } from '../dot-menu.service';
 import { DotRouterService } from '../dot-router/dot-router.service';
 

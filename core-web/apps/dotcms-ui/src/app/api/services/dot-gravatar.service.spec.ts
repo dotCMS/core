@@ -1,5 +1,6 @@
 import { HttpClientTestingModule, HttpTestingController } from '@angular/common/http/testing';
 import { TestBed, waitForAsync } from '@angular/core/testing';
+
 import { DotGravatarService } from './dot-gravatar-service';
 
 const mockProfile = {

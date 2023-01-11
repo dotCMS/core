@@ -1,18 +1,20 @@
 /* eslint-disable no-console */
 import { BehaviorSubject, Observable, of, Subject } from 'rxjs';
 
-import { Injectable } from '@angular/core';
-import { DotContentletLockerService, DotPageRenderService } from '@dotcms/data-access';
-import { HttpCode, LoginService, User } from '@dotcms/dotcms-js';
-import { catchError, map, pluck, switchMap, take, tap } from 'rxjs/operators';
 
 import { HttpErrorResponse } from '@angular/common/http';
+import { Injectable } from '@angular/core';
+
+import { catchError, map, pluck, switchMap, take, tap } from 'rxjs/operators';
+
 import {
     DotHttpErrorHandled,
     DotHttpErrorManagerService
 } from '@dotcms/app/api/services/dot-http-error-manager/dot-http-error-manager.service';
 import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
+import { DotContentletLockerService, DotPageRenderService } from '@dotcms/data-access';
 import { DotESContentService } from '@dotcms/data-access';
+import { HttpCode, LoginService, User } from '@dotcms/dotcms-js';
 import {
     DotCMSContentlet,
     DotDevice,
@@ -23,6 +25,7 @@ import {
     ESContent
 } from '@dotcms/dotcms-models';
 import { generateDotFavoritePageUrl } from '@dotcms/utils';
+
 import { PageModelChangeEvent, PageModelChangeEventType } from '../dot-edit-content-html/models';
 
 @Injectable()

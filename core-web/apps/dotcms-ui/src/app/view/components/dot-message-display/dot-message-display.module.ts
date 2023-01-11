@@ -1,8 +1,11 @@
 import { CommonModule } from '@angular/common';
 import { NgModule } from '@angular/core';
+
+import { ToastModule } from 'primeng/toast';
+
 import { UiDotIconButtonModule } from '@components/_common/dot-icon-button/dot-icon-button.module';
 import { DotIconModule } from '@dotcms/ui';
-import { ToastModule } from 'primeng/toast';
+
 import { DotMessageDisplayComponent } from './dot-message-display.component';
 import { DotMessageDisplayService } from './services';
 

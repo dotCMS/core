@@ -2,13 +2,16 @@ import { DebugElement } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
+
+import { TooltipModule } from 'primeng/tooltip';
+
 import { DotAvatarModule } from '@components/_common/dot-avatar/dot-avatar.module';
 import { DotMessageService } from '@dotcms/data-access';
 import { LoginService } from '@dotcms/dotcms-js';
 import { DotIconModule } from '@dotcms/ui';
 import { LoginServiceMock, MockDotMessageService, mockDotPersona } from '@dotcms/utils-testing';
 import { DotPipesModule } from '@pipes/dot-pipes.module';
-import { TooltipModule } from 'primeng/tooltip';
+
 import { DotPersonaSelectedItemComponent } from './dot-persona-selected-item.component';
 
 const messageServiceMock = new MockDotMessageService({

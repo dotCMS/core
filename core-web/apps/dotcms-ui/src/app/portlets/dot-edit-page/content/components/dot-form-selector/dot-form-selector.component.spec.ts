@@ -1,8 +1,16 @@
+import { Observable, of as observableOf } from 'rxjs';
+
 import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { Component, DebugElement } from '@angular/core';
 import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
+
+import { ButtonModule } from 'primeng/button';
+import { TableModule } from 'primeng/table';
+
+import { delay } from 'rxjs/operators';
+
 import { DotDialogModule } from '@components/dot-dialog/dot-dialog.module';
 import { DotPipesModule } from '@dotcms/app/view/pipes/dot-pipes.module';
 import { DotMessageService, PaginatorService } from '@dotcms/data-access';
@@ -13,10 +21,8 @@ import {
     dotcmsContentTypeBasicMock,
     MockDotMessageService
 } from '@dotcms/utils-testing';
-import { ButtonModule } from 'primeng/button';
-import { TableModule } from 'primeng/table';
-import { Observable, of as observableOf } from 'rxjs';
-import { delay } from 'rxjs/operators';
+
+
 import { DotFormSelectorComponent } from './dot-form-selector.component';
 
 const mockContentType: DotCMSContentType = {

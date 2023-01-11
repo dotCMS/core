@@ -1,8 +1,12 @@
+import { Observable } from 'rxjs';
+
 import { Injectable } from '@angular/core';
+
+import { pluck } from 'rxjs/operators';
+
 import { CoreWebService } from '@dotcms/dotcms-js';
 import { DotPage, DotPageContainer } from '@dotcms/dotcms-models';
-import { Observable } from 'rxjs';
-import { pluck } from 'rxjs/operators';
+
 import { DotPageContent } from '../../shared/models/dot-page-content.model';
 
 @Injectable()

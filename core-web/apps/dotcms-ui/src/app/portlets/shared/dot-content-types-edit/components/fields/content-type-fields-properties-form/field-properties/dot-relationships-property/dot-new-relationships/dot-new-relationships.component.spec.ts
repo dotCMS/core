@@ -1,5 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
+import { Observable, of } from 'rxjs';
+
 import {
     Component,
     DebugElement,
@@ -12,6 +14,7 @@ import {
 import { ComponentFixture, waitForAsync } from '@angular/core/testing';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
 import { By } from '@angular/platform-browser';
+
 import { PaginationEvent } from '@components/_common/searchable-dropdown/component';
 import { DOTTestBed } from '@dotcms/app/test/dot-test-bed';
 import { DotContentTypeService, DotMessageService, PaginatorService } from '@dotcms/data-access';
@@ -19,7 +22,7 @@ import { DotCMSContentType } from '@dotcms/dotcms-models';
 import { dotcmsContentTypeBasicMock, MockDotMessageService } from '@dotcms/utils-testing';
 import { DotRelationshipCardinality } from '@portlets/shared/dot-content-types-edit/components/fields/content-type-fields-properties-form/field-properties/dot-relationships-property/model/dot-relationship-cardinality.model';
 import { DotRelationshipService } from '@portlets/shared/dot-content-types-edit/components/fields/content-type-fields-properties-form/field-properties/dot-relationships-property/services/dot-relationship.service';
-import { Observable, of } from 'rxjs';
+
 import { DotNewRelationshipsComponent } from './dot-new-relationships.component';
 
 const cardinalities = [

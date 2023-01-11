@@ -1,15 +1,19 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { TestBed } from '@angular/core/testing';
+import { of } from 'rxjs';
 
 import { HttpClientTestingModule } from '@angular/common/http/testing';
+import { TestBed } from '@angular/core/testing';
 import { RouterTestingModule } from '@angular/router/testing';
-import { DotMessageSeverity, DotMessageType } from '@components/dot-message-display/model';
-import { DotMessageDisplayService } from '@components/dot-message-display/services';
+
+import { ConfirmationService } from 'primeng/api';
+
 import { DotGlobalMessageService } from '@components/_common/dot-global-message/dot-global-message.service';
 import { DotCommentAndAssignFormComponent } from '@components/_common/forms/dot-comment-and-assign-form/dot-comment-and-assign-form.component';
 import { DotPushPublishFormComponent } from '@components/_common/forms/dot-push-publish-form/dot-push-publish-form.component';
 import { DotIframeService } from '@components/_common/iframe/service/dot-iframe/dot-iframe.service';
+import { DotMessageSeverity, DotMessageType } from '@components/dot-message-display/model';
+import { DotMessageDisplayService } from '@components/dot-message-display/services';
 import { DotFormatDateService } from '@dotcms/app/api/services/dot-format-date-service';
 import { DotHttpErrorManagerService } from '@dotcms/app/api/services/dot-http-error-manager/dot-http-error-manager.service';
 import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
@@ -51,8 +55,8 @@ import {
 import { DotWizardInput } from '@models/dot-wizard-input/dot-wizard-input.model';
 import { DotWizardStep } from '@models/dot-wizard-step/dot-wizard-step.model';
 import { MockPushPublishService } from '@portlets/shared/dot-content-types-listing/dot-content-types.component.spec';
-import { ConfirmationService } from 'primeng/api';
-import { of } from 'rxjs';
+
+
 
 const mockWAEvent: DotCMSWorkflowActionEvent = {
     workflow: mockWorkflowsActions[0],

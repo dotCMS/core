@@ -1,5 +1,8 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
+import { of } from 'rxjs';
+
+import { HttpClientTestingModule } from '@angular/common/http/testing';
 import {
     Component,
     CUSTOM_ELEMENTS_SCHEMA,
@@ -9,6 +12,22 @@ import {
 } from '@angular/core';
 import { ComponentFixture, fakeAsync, TestBed, tick } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
+import { ActivatedRoute } from '@angular/router';
+
+import { ConfirmationService, SharedModule } from 'primeng/api';
+import { ButtonModule } from 'primeng/button';
+import { DataViewModule } from 'primeng/dataview';
+import { DialogService, DynamicDialogConfig, DynamicDialogRef } from 'primeng/dynamicdialog';
+
+
+
+
+
+import { DotGlobalMessageService } from '@components/_common/dot-global-message/dot-global-message.service';
+import { DotMessageDisplayService } from '@components/dot-message-display/services';
+import { DotHttpErrorManagerService } from '@dotcms/app/api/services/dot-http-error-manager/dot-http-error-manager.service';
+import { ActivatedRouteMock } from '@dotcms/app/portlets/dot-experiments/test/mocks';
+import { dotEventSocketURLFactory } from '@dotcms/app/test/dot-test-bed';
 import {
     DotAlertConfirmService,
     DotContentTypeService,
@@ -26,25 +45,13 @@ import {
     LoginService,
     StringUtils
 } from '@dotcms/dotcms-js';
+import { DotCMSContentType } from '@dotcms/dotcms-models';
 import { CoreWebServiceMock, MockDotMessageService } from '@dotcms/utils-testing';
+import { DotMessagePipeModule } from '@pipes/dot-message/dot-message-pipe.module';
 import { DotRouterService } from '@services/dot-router/dot-router.service';
-import { ButtonModule } from 'primeng/button';
-import { DataViewModule } from 'primeng/dataview';
-import { DialogService, DynamicDialogConfig, DynamicDialogRef } from 'primeng/dynamicdialog';
+
 import { DotAddVariableComponent } from './dot-add-variable.component';
 
-import { HttpClientTestingModule } from '@angular/common/http/testing';
-import { DotCMSContentType } from '@dotcms/dotcms-models';
-import { of } from 'rxjs';
-
-import { ActivatedRoute } from '@angular/router';
-import { DotMessageDisplayService } from '@components/dot-message-display/services';
-import { DotGlobalMessageService } from '@components/_common/dot-global-message/dot-global-message.service';
-import { DotHttpErrorManagerService } from '@dotcms/app/api/services/dot-http-error-manager/dot-http-error-manager.service';
-import { ActivatedRouteMock } from '@dotcms/app/portlets/dot-experiments/test/mocks';
-import { dotEventSocketURLFactory } from '@dotcms/app/test/dot-test-bed';
-import { DotMessagePipeModule } from '@pipes/dot-message/dot-message-pipe.module';
-import { ConfirmationService, SharedModule } from 'primeng/api';
 
 @Component({
     selector: 'dot-form-dialog',

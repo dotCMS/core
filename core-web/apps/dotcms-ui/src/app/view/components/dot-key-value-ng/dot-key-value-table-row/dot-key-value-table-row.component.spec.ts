@@ -12,15 +12,19 @@ import {
 } from '@angular/core';
 import { ComponentFixture } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
+
+import { PrimeTemplate } from 'primeng/api';
+import { InputSwitchModule } from 'primeng/inputswitch';
+
 import { UiDotIconButtonModule } from '@components/_common/dot-icon-button/dot-icon-button.module';
 import { DOTTestBed } from '@dotcms/app/test/dot-test-bed';
 import { DotMessageService } from '@dotcms/data-access';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 import { DotKeyValue } from '@shared/models/dot-key-value-ng/dot-key-value-ng.model';
-import { PrimeTemplate } from 'primeng/api';
-import { InputSwitchModule } from 'primeng/inputswitch';
-import { mockKeyValue } from '../dot-key-value-ng.component.spec';
+
 import { DotKeyValueTableRowComponent } from './dot-key-value-table-row.component';
+
+import { mockKeyValue } from '../dot-key-value-ng.component.spec';
 
 @Component({
     selector: 'dot-test-host-component',

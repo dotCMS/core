@@ -6,6 +6,7 @@ import { TableModule } from 'primeng/table';
 
 import { DotDialogModule } from '@components/dot-dialog/dot-dialog.module';
 import { DotPipesModule } from '@pipes/dot-pipes.module';
+
 import { DotFormSelectorComponent } from './dot-form-selector.component';
 
 @NgModule({

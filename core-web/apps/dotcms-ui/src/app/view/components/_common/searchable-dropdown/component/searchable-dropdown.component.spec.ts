@@ -1,5 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
+import * as _ from 'lodash';
+
 import { Component, DebugElement, Input } from '@angular/core';
 import {
     ComponentFixture,
@@ -10,16 +12,18 @@ import {
     waitForAsync
 } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
-import { DotMessageService } from '@dotcms/data-access';
-import { MockDotMessageService } from '@dotcms/utils-testing';
-
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
+
 import { UiDotIconButtonModule } from '@components/_common/dot-icon-button/dot-icon-button.module';
+import { DotMessageService } from '@dotcms/data-access';
 import { DotIconModule } from '@dotcms/ui';
+import { MockDotMessageService } from '@dotcms/utils-testing';
 import { DotPipesModule } from '@pipes/dot-pipes.module';
-import * as _ from 'lodash';
-import { SEARCHABLE_NGFACES_MODULES } from '../searchable-dropdown.module';
+
+
 import { SearchableDropdownComponent } from './searchable-dropdown.component';
+
+import { SEARCHABLE_NGFACES_MODULES } from '../searchable-dropdown.module';
 @Component({
     selector: 'dot-host-component',
     template: ` <dot-searchable-dropdown

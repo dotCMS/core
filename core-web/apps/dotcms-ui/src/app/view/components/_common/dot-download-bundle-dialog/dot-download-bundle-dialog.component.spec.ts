@@ -1,8 +1,14 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
+import { of, throwError } from 'rxjs';
+
 import { DebugElement } from '@angular/core';
 import { ComponentFixture, fakeAsync, tick } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
+
+import { Dropdown, DropdownModule } from 'primeng/dropdown';
+import { SelectButton, SelectButtonModule } from 'primeng/selectbutton';
+
 import { DotDialogComponent } from '@components/dot-dialog/dot-dialog.component';
 import { DotDialogModule } from '@components/dot-dialog/dot-dialog.module';
 import { DotDownloadBundleDialogService } from '@dotcms/app/api/services/dot-download-bundle-dialog/dot-download-bundle-dialog.service';
@@ -13,14 +19,12 @@ import {
     DotPushPublishFiltersService
 } from '@dotcms/data-access';
 import { MockDotMessageService } from '@dotcms/utils-testing';
-import { of, throwError } from 'rxjs';
+import * as dotUtils from '@dotcms/utils/lib/dot-utils';
+
 import { DotDownloadBundleDialogComponent } from './dot-download-bundle-dialog.component';
 
-import { Dropdown, DropdownModule } from 'primeng/dropdown';
-import { SelectButton, SelectButtonModule } from 'primeng/selectbutton';
 
 // INFO: needs to import this way so we can spy on.
-import * as dotUtils from '@dotcms/utils/lib/dot-utils';
 
 const mockFilters: DotPushPublishFilter[] = [
     {

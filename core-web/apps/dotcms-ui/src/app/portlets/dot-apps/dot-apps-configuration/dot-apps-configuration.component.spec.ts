@@ -1,5 +1,8 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
+import { MarkdownModule } from 'ngx-markdown';
+import { Observable, of } from 'rxjs';
+
 import { CommonModule } from '@angular/common';
 import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { Injectable } from '@angular/core';
@@ -7,6 +10,11 @@ import { ComponentFixture, fakeAsync, TestBed, tick, waitForAsync } from '@angul
 import { By } from '@angular/platform-browser';
 import { ActivatedRoute } from '@angular/router';
 import { RouterTestingModule } from '@angular/router/testing';
+
+import { ConfirmationService } from 'primeng/api';
+import { ButtonModule } from 'primeng/button';
+import { InputTextModule } from 'primeng/inputtext';
+
 import { DotActionButtonModule } from '@components/_common/dot-action-button/dot-action-button.module';
 import { DotAppsService } from '@dotcms/app/api/services/dot-apps/dot-apps.service';
 import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
@@ -18,16 +26,14 @@ import {
     MockDotRouterService
 } from '@dotcms/utils-testing';
 import { DotPipesModule } from '@pipes/dot-pipes.module';
-import { MarkdownModule } from 'ngx-markdown';
-import { ConfirmationService } from 'primeng/api';
-import { ButtonModule } from 'primeng/button';
-import { InputTextModule } from 'primeng/inputtext';
-import { Observable, of } from 'rxjs';
-import { DotAppsConfigurationHeaderModule } from '../dot-apps-configuration-header/dot-apps-configuration-header.module';
-import { DotAppsImportExportDialogModule } from '../dot-apps-import-export-dialog/dot-apps-import-export-dialog.module';
+
+
 import { DotAppsConfigurationListModule } from './dot-apps-configuration-list/dot-apps-configuration-list.module';
 import { DotAppsConfigurationResolver } from './dot-apps-configuration-resolver.service';
 import { DotAppsConfigurationComponent } from './dot-apps-configuration.component';
+
+import { DotAppsConfigurationHeaderModule } from '../dot-apps-configuration-header/dot-apps-configuration-header.module';
+import { DotAppsImportExportDialogModule } from '../dot-apps-import-export-dialog/dot-apps-import-export-dialog.module';
 
 const messages = {
     'apps.key': 'Key',

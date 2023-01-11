@@ -1,18 +1,19 @@
+
+import { of, throwError } from 'rxjs';
+
+import { HttpResponse } from '@angular/common/http';
 import { Component, DebugElement, Input } from '@angular/core';
 import { ComponentFixture, fakeAsync, TestBed, tick, waitForAsync } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import { ActivatedRoute } from '@angular/router';
 
-import { HttpCode, ResponseView } from '@dotcms/dotcms-js';
-import { of, throwError } from 'rxjs';
-
-import { HttpResponse } from '@angular/common/http';
 import { DotGlobalMessageService } from '@components/_common/dot-global-message/dot-global-message.service';
 import { DotEditLayoutService } from '@dotcms/app/api/services/dot-edit-layout/dot-edit-layout.service';
 import { DotHttpErrorManagerService } from '@dotcms/app/api/services/dot-http-error-manager/dot-http-error-manager.service';
 import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
 import { DotTemplateContainersCacheService } from '@dotcms/app/api/services/dot-template-containers-cache/dot-template-containers-cache.service';
 import { DotMessageService, DotPageLayoutService } from '@dotcms/data-access';
+import { HttpCode, ResponseView } from '@dotcms/dotcms-js';
 import { DotLayout, DotPageRender } from '@dotcms/dotcms-models';
 import {
     MockDotMessageService,
@@ -20,6 +21,7 @@ import {
     mockResponseView,
     processedContainers
 } from '@dotcms/utils-testing';
+
 import { DotEditLayoutComponent } from './dot-edit-layout.component';
 
 @Component({
