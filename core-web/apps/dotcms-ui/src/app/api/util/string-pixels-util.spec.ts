@@ -1,5 +1,6 @@
-import { StringPixels } from './string-pixels-util';
 import { TestBed } from '@angular/core/testing';
+
+import { StringPixels } from './string-pixels-util';
 
 describe('StringPixelsUtil', () => {
     beforeEach(() => {

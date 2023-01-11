@@ -1,10 +1,13 @@
 import { of as observableOf } from 'rxjs';
-import { DotWorkflowTaskDetailService } from './dot-workflow-task-detail.service';
-import { DotMenuService } from '@dotcms/app/api/services/dot-menu.service';
+
+import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
+
+import { DotMenuService } from '@dotcms/app/api/services/dot-menu.service';
 import { CoreWebService } from '@dotcms/dotcms-js';
 import { CoreWebServiceMock } from '@dotcms/utils-testing';
-import { HttpClientTestingModule } from '@angular/common/http/testing';
+
+import { DotWorkflowTaskDetailService } from './dot-workflow-task-detail.service';
 
 describe('DotWorkflowTaskDetailService', () => {
     let service: DotWorkflowTaskDetailService;

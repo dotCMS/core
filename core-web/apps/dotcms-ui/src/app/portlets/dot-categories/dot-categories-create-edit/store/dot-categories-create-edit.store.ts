@@ -1,5 +1,7 @@
-import { Injectable } from '@angular/core';
 import { ComponentStore } from '@ngrx/component-store';
+
+import { Injectable } from '@angular/core';
+
 import { MenuItem } from 'primeng/api';
 
 export interface DotCategoriesCreateEditState {

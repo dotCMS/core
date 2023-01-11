@@ -1,8 +1,10 @@
 import { NgModule } from '@angular/core';
 import { RouterModule, Routes } from '@angular/router';
+
 import { DotContentTypeEditResolver } from '@portlets/shared/dot-content-types-edit/dot-content-types-edit-resolver.service';
-import { DotFormResolver } from './resolvers/dot-form-resolver.service';
+
 import { DotFormBuilderComponent } from './dot-form-builder.component';
+import { DotFormResolver } from './resolvers/dot-form-resolver.service';
 
 const routes: Routes = [
     {

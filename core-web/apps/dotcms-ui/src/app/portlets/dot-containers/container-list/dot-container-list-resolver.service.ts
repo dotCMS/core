@@ -1,10 +1,13 @@
+import { forkJoin, Observable } from 'rxjs';
+
 import { Injectable } from '@angular/core';
 import { Resolve } from '@angular/router';
-import { forkJoin, Observable } from 'rxjs';
+
 import { map, take } from 'rxjs/operators';
+
+import { DotLicenseService } from '@dotcms/data-access';
 import { DotEnvironment } from '@models/dot-environment/dot-environment';
 import { PushPublishService } from '@services/push-publish/push-publish.service';
-import { DotLicenseService } from '@dotcms/data-access';
 
 @Injectable()
 export class DotContainerListResolver implements Resolve<[boolean, boolean]> {

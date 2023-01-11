@@ -1,29 +1,31 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import {
-    DebugElement,
+    Component,
     ComponentFactoryResolver,
+    DebugElement,
     Directive,
-    Input,
     Injectable,
-    Component
+    Input
 } from '@angular/core';
-import { ContentTypeFieldsPropertiesFormComponent } from './content-type-fields-properties-form.component';
-import { ComponentFixture, waitForAsync, TestBed } from '@angular/core/testing';
-import { MockDotMessageService } from '@dotcms/utils-testing';
+import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing';
 import {
+    ReactiveFormsModule,
     UntypedFormBuilder,
     UntypedFormGroup,
     ValidationErrors,
-    Validators,
-    ReactiveFormsModule
+    Validators
 } from '@angular/forms';
-import { FieldPropertyService } from '../service';
+import { By } from '@angular/platform-browser';
+
 import { DotMessageService } from '@dotcms/data-access';
 import { DotCMSContentTypeField } from '@dotcms/dotcms-models';
-import { By } from '@angular/platform-browser';
-import { dotcmsContentTypeFieldBasicMock } from '@dotcms/utils-testing';
+import { dotcmsContentTypeFieldBasicMock, MockDotMessageService } from '@dotcms/utils-testing';
 import { DotPipesModule } from '@pipes/dot-pipes.module';
+
+import { ContentTypeFieldsPropertiesFormComponent } from './content-type-fields-properties-form.component';
+
+import { FieldPropertyService } from '../service';
 
 const mockDFormFieldData = {
     ...dotcmsContentTypeFieldBasicMock,

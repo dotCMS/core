@@ -1,9 +1,11 @@
 // also exported from '@storybook/angular' if you can deal with breaking changes in 6.1
 import { Meta } from '@storybook/angular/types-6-0';
-import { Menu } from 'primeng/menu';
+
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
-import { TabViewModule, TabView } from 'primeng/tabview';
+
 import { ButtonModule } from 'primeng/button';
+import { Menu } from 'primeng/menu';
+import { TabView, TabViewModule } from 'primeng/tabview';
 
 export default {
     title: 'PrimeNG/Tabs/TabView',

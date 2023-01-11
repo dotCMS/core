@@ -1,9 +1,12 @@
-import { ViewContainerRef, Injector } from '@angular/core';
 import { PluginKey } from 'prosemirror-state';
+
+import { Injector, ViewContainerRef } from '@angular/core';
+
 import { Extension } from '@tiptap/core';
 
 import { FloatingButtonComponent } from './floating-button.component';
 import { DotFloatingButtonPlugin } from './plugin/floating-button.plugin';
+
 import { DotImageService } from '../image-uploader/services/dot-image/dot-image.service';
 
 export const FLOATING_BUTTON_PLUGIN_KEY = new PluginKey('floating-button');

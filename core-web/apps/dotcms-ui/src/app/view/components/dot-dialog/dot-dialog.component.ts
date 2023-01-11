@@ -1,3 +1,5 @@
+import { fromEvent, Subscription } from 'rxjs';
+
 import {
     Component,
     ElementRef,
@@ -9,7 +11,7 @@ import {
     SimpleChanges,
     ViewChild
 } from '@angular/core';
-import { fromEvent, Subscription } from 'rxjs';
+
 import { filter } from 'rxjs/operators';
 
 @Component({

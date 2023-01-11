@@ -1,17 +1,19 @@
-import { waitForAsync, ComponentFixture, TestBed } from '@angular/core/testing';
-import { MockDotMessageService } from '@dotcms/utils-testing';
-import { DotMessageService } from '@dotcms/data-access';
-import { DotAlertConfirmService } from '@dotcms/data-access';
 import { CommonModule } from '@angular/common';
-import { DotAppsConfigurationItemComponent } from './dot-apps-configuration-item.component';
-import { UiDotIconButtonModule } from '@components/_common/dot-icon-button/dot-icon-button.module';
-import { By } from '@angular/platform-browser';
-import { DotIconModule } from '@dotcms/ui';
-import { TooltipModule } from 'primeng/tooltip';
 import { HttpClientTestingModule } from '@angular/common/http/testing';
+import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing';
+import { By } from '@angular/platform-browser';
+
 import { ConfirmationService } from 'primeng/api';
-import { DotPipesModule } from '@pipes/dot-pipes.module';
+import { TooltipModule } from 'primeng/tooltip';
+
+import { UiDotIconButtonModule } from '@components/_common/dot-icon-button/dot-icon-button.module';
 import { DotCopyLinkModule } from '@dotcms/app/view/components/dot-copy-link/dot-copy-link.module';
+import { DotAlertConfirmService, DotMessageService } from '@dotcms/data-access';
+import { DotIconModule } from '@dotcms/ui';
+import { MockDotMessageService } from '@dotcms/utils-testing';
+import { DotPipesModule } from '@pipes/dot-pipes.module';
+
+import { DotAppsConfigurationItemComponent } from './dot-apps-configuration-item.component';
 
 const messages = {
     'apps.key': 'Key',

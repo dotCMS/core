@@ -1,8 +1,12 @@
+import { Observable } from 'rxjs';
+
 import { Injectable } from '@angular/core';
+
+import { map, pluck } from 'rxjs/operators';
+
 import { CoreWebService } from '@dotcms/dotcms-js';
 import { DotRole } from '@dotcms/dotcms-models';
-import { Observable } from 'rxjs';
-import { map, pluck } from 'rxjs/operators';
+
 import { DotMessageService } from '../dot-messages/dot-messages.service';
 
 const CURRENT_USER_KEY = 'CMS Anonymous';

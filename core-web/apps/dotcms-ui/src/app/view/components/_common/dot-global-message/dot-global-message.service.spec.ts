@@ -1,12 +1,13 @@
+import { Observable } from 'rxjs';
+
 import { TestBed } from '@angular/core/testing';
 
-import { DotGlobalMessageService } from './dot-global-message.service';
-import { DotMessageService } from '@dotcms/data-access';
-import { DotEventsService } from '@dotcms/data-access';
+import { DotEventsService, DotMessageService } from '@dotcms/data-access';
 import { DotEvent } from '@dotcms/dotcms-models';
 import { MockDotMessageService } from '@dotcms/utils-testing';
-import { Observable } from 'rxjs';
 import { DotGlobalMessage } from '@models/dot-global-message/dot-global-message.model';
+
+import { DotGlobalMessageService } from './dot-global-message.service';
 
 xdescribe('DotGlobalMessageService', () => {
     let dotGlobalMessageService: DotGlobalMessageService;

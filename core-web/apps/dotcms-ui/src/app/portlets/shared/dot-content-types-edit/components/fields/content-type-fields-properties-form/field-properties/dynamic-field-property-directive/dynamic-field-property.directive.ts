@@ -1,14 +1,16 @@
 import {
-    Directive,
-    ViewContainerRef,
-    Input,
     ComponentFactoryResolver,
     ComponentRef,
+    Directive,
+    Input,
+    OnChanges,
     SimpleChanges,
-    OnChanges
+    ViewContainerRef
 } from '@angular/core';
-import { DotCMSContentTypeField, DotDynamicFieldComponent } from '@dotcms/dotcms-models';
 import { UntypedFormGroup } from '@angular/forms';
+
+import { DotCMSContentTypeField, DotDynamicFieldComponent } from '@dotcms/dotcms-models';
+
 import { FieldPropertyService } from '../../../service';
 
 @Directive({
