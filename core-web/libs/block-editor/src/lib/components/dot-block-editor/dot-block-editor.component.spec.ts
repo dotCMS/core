@@ -1,6 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 
 import { SuggestionsService } from '@dotcms/block-editor';
+
 import { DotBlockEditorComponent } from './dot-block-editor.component';
 
 describe('DotBlockEditorComponent', () => {

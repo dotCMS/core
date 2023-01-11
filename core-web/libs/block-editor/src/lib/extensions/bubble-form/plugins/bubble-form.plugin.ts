@@ -1,17 +1,19 @@
-import { ComponentRef } from '@angular/core';
-import { Observable, Subject } from 'rxjs';
-import { takeUntil } from 'rxjs/operators';
-
 import { Node } from 'prosemirror-model';
 import { EditorState, NodeSelection, Plugin, PluginKey, Transaction } from 'prosemirror-state';
 import { EditorView } from 'prosemirror-view';
+import { Observable, Subject } from 'rxjs';
+import tippy, { Instance, Props } from 'tippy.js';
+
+import { ComponentRef } from '@angular/core';
+
+import { takeUntil } from 'rxjs/operators';
 
 import { Editor, posToDOMRect } from '@tiptap/core';
 import { BubbleMenuView } from '@tiptap/extension-bubble-menu';
-import tippy, { Instance, Props } from 'tippy.js';
-import { imageFormControls } from '../utils';
 
 import { BubbleFormComponent, BUBBLE_FORM_PLUGIN_KEY, getNodePosition } from '@dotcms/block-editor';
+
+import { imageFormControls } from '../utils';
 
 export interface BubbleFormProps {
     pluginKey: PluginKey;

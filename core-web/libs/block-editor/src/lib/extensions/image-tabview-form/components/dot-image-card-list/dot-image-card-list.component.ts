@@ -2,6 +2,7 @@ import { ChangeDetectionStrategy, Component, EventEmitter, Input, Output } from 
 
 import { sanitizeUrl } from '@dotcms/block-editor';
 import { DotCMSContentlet } from '@dotcms/dotcms-models';
+
 import { squarePlus } from '../../../../shared/components/suggestions/suggestion-icons';
 
 @Component({

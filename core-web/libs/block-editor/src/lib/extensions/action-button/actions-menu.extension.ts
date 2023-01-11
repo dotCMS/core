@@ -1,13 +1,15 @@
-import { ComponentRef, ViewContainerRef } from '@angular/core';
+import { PluginKey } from 'prosemirror-state';
 import { Subject } from 'rxjs';
+import tippy, { GetReferenceClientRect } from 'tippy.js';
+
+import { ComponentRef, ViewContainerRef } from '@angular/core';
+
 import { filter, take, takeUntil } from 'rxjs/operators';
 
 import { Editor, Extension, Range } from '@tiptap/core';
 import { FloatingMenuPluginProps } from '@tiptap/extension-floating-menu';
 import { Level } from '@tiptap/extension-heading';
 import Suggestion, { SuggestionOptions, SuggestionProps } from '@tiptap/suggestion';
-import { PluginKey } from 'prosemirror-state';
-import tippy, { GetReferenceClientRect } from 'tippy.js';
 
 import {
     BUBBLE_IMAGE_TABVIEW_FORM_PLUGIN_KEY,

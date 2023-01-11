@@ -1,9 +1,12 @@
+import { from, Observable, throwError } from 'rxjs';
+
 import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
+
+import { catchError, pluck, switchMap } from 'rxjs/operators';
+
 import { DotCMSContentlet, DotCMSTempFile } from '@dotcms/dotcms-models';
 import { uploadFile } from '@dotcms/utils';
-import { from, Observable, throwError } from 'rxjs';
-import { catchError, pluck, switchMap } from 'rxjs/operators';
 
 export enum FileStatus {
     DOWNLOAD = 'DOWNLOADING',

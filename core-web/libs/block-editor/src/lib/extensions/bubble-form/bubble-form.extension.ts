@@ -1,9 +1,11 @@
-import { ViewContainerRef } from '@angular/core';
-import BubbleMenu from '@tiptap/extension-bubble-menu';
 import { PluginKey } from 'prosemirror-state';
-
 import { Subject } from 'rxjs';
 import { Props } from 'tippy.js';
+
+import { ViewContainerRef } from '@angular/core';
+
+import BubbleMenu from '@tiptap/extension-bubble-menu';
+
 import { BubbleFormComponent } from './bubble-form.component';
 import { DynamicControl } from './model';
 import { bubbleFormPlugin } from './plugins/bubble-form.plugin';

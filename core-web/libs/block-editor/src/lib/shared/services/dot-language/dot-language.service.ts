@@ -1,9 +1,9 @@
-import { Injectable } from '@angular/core';
-
 import { Observable, of } from 'rxjs';
-import { map, pluck } from 'rxjs/operators';
 
 import { HttpClient, HttpHeaders } from '@angular/common/http';
+import { Injectable } from '@angular/core';
+
+import { map, pluck } from 'rxjs/operators';
 
 interface DotLanguage {
     country: string;

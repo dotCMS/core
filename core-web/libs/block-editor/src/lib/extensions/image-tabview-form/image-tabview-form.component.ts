@@ -1,3 +1,5 @@
+import { BehaviorSubject, merge } from 'rxjs';
+
 import {
     ChangeDetectionStrategy,
     ChangeDetectorRef,
@@ -8,15 +10,14 @@ import {
     ViewChild
 } from '@angular/core';
 import { FormBuilder, FormGroup } from '@angular/forms';
-import { BehaviorSubject, merge } from 'rxjs';
+
 import { Observable } from 'rxjs/internal/Observable';
 import { debounceTime, map, mergeMap, tap, throttleTime } from 'rxjs/operators';
 
+import { DEFAULT_LANG_ID } from '@dotcms/block-editor';
 import { DotCMSContentlet } from '@dotcms/dotcms-models';
 
-import { DEFAULT_LANG_ID } from '@dotcms/block-editor';
 import { DotLanguageService, Languages } from '../../shared';
-
 import {
     ESOrderDirection,
     queryEsParams,

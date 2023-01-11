@@ -1,8 +1,9 @@
-import { Editor } from '@tiptap/core';
 import { ResolvedPos } from 'prosemirror-model';
 import { SelectionRange, TextSelection } from 'prosemirror-state';
 import { Step, StepResult } from 'prosemirror-transform';
 import { EditorView } from 'prosemirror-view';
+
+import { Editor } from '@tiptap/core';
 
 import { CustomNodeTypes, NodeTypes } from '@dotcms/block-editor';
 

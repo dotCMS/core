@@ -1,31 +1,34 @@
+import { of } from 'rxjs';
+
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
-import { of } from 'rxjs';
 
 import { ListboxModule } from 'primeng/listbox';
 import { MenuModule } from 'primeng/menu';
 import { OrderListModule } from 'primeng/orderlist';
 
 import { debounceTime, delay, tap } from 'rxjs/operators';
-import { ImageTabviewFormComponent } from '../../extensions/image-tabview-form/image-tabview-form.component';
-import { SearchService } from '../../shared/services/search/search.service';
 
 import {
     ActionButtonComponent,
     BlockEditorModule,
+    BubbleLinkFormComponent,
     ContentletBlockComponent,
+    CONTENTLETS_MOCK,
     DotBlockEditorComponent,
     DotImageService,
     DotLanguageService,
     DragHandlerComponent,
     FileStatus,
+    IMAGE_CONTENTLETS_MOCK,
     LoaderComponent,
     SuggestionsComponent,
-    SuggestionsService,
-    BubbleLinkFormComponent,
-    CONTENTLETS_MOCK, IMAGE_CONTENTLETS_MOCK
+    SuggestionsService
 } from '@dotcms/block-editor';
+
+import { ImageTabviewFormComponent } from '../../extensions/image-tabview-form/image-tabview-form.component';
+import { SearchService } from '../../shared/services/search/search.service';
 
 // MOCKS
 

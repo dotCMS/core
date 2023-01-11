@@ -1,3 +1,5 @@
+import { isTextSelection } from '@tiptap/core';
+
 import {
     BubbleMenuItem,
     findParentNode,
@@ -5,7 +7,6 @@ import {
     LINK_FORM_PLUGIN_KEY,
     ShouldShowProps
 } from '@dotcms/block-editor';
-import { isTextSelection } from '@tiptap/core';
 
 const hideBubbleMenuOn = {
     tableCell: true,

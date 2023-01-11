@@ -1,3 +1,5 @@
+import { Subject } from 'rxjs';
+
 import { FocusKeyManager } from '@angular/cdk/a11y';
 import {
     AfterViewInit,
@@ -11,11 +13,12 @@ import {
 } from '@angular/core';
 
 // Components
+import { takeUntil } from 'rxjs/operators';
+
 import { SuggestionsListItemComponent } from './components/suggestions-list-item/suggestions-list-item.component';
 
 // Interfaces
-import { Subject } from 'rxjs';
-import { takeUntil } from 'rxjs/operators';
+
 import { DotMenuItem } from '../suggestions/suggestions.component';
 
 @Component({

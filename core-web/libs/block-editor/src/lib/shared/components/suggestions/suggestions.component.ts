@@ -8,15 +8,15 @@ import {
     Output,
     ViewChild
 } from '@angular/core';
-
 import { SafeUrl } from '@angular/platform-browser';
-import { DotCMSContentlet, DotCMSContentType } from '@dotcms/dotcms-models';
 
 import { MenuItem } from 'primeng/api';
+
 import { map, take } from 'rxjs/operators';
 
 import { DEFAULT_LANG_ID, SuggestionListComponent, suggestionOptions } from '@dotcms/block-editor';
 import { DotLanguageService, Languages, SuggestionsService } from '@dotcms/block-editor/services';
+import { DotCMSContentlet, DotCMSContentType } from '@dotcms/dotcms-models';
 
 export interface SuggestionsCommandProps {
     payload?: DotCMSContentlet;

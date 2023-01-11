@@ -72,8 +72,8 @@
                     {
                         "newlines-between": "always",
                         "groups": [
-                            "builtin",
                             "external",
+                            "builtin",
                             "internal",
                             "object",
                             "index",
@@ -85,6 +85,7 @@
                             { "pattern": "@angular/**", "group": "external", "position": "after" },
                             { "pattern": "primeng/**", "group": "external", "position": "after" },
                             { "pattern": "rxjs/**", "group": "external", "position": "after" },
+                            { "pattern": "@tiptap/**", "group": "external", "position": "after" },
                             { "pattern": "@components/**", "group": "internal" },
                             { "pattern": "@directives/**", "group": "internal" },
                             { "pattern": "@dotcms-ui/**", "group": "internal" },

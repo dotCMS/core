@@ -1,8 +1,10 @@
 import { Component, OnInit } from '@angular/core';
+
+import { DotCMSContentlet } from '@dotcms/dotcms-models';
+
 import { AngularNodeViewComponent } from '../../NodeViewRenderer';
 
 // Models
-import { DotCMSContentlet } from '@dotcms/dotcms-models';
 
 @Component({
     selector: 'dot-contentlet-block',

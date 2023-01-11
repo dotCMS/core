@@ -9,16 +9,16 @@ import {
     ViewChild
 } from '@angular/core';
 import { FormBuilder, FormGroup } from '@angular/forms';
+
 import { debounceTime, take } from 'rxjs/operators';
 
-// Components
 import { SuggestionsCommandProps } from '@dotcms/block-editor';
-
-// Models
 import { DotCMSContentlet } from '@dotcms/dotcms-models';
+
+import { SuggestionPageComponent } from './components/suggestion-page/suggestion-page.component';
+
 import { DotLanguageService, Languages, SuggestionsService } from '../../shared';
 import { isValidURL } from '../bubble-menu/utils';
-import { SuggestionPageComponent } from './components/suggestion-page/suggestion-page.component';
 
 export interface NodeProps {
     link: string;

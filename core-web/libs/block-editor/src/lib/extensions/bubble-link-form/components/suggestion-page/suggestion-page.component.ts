@@ -1,4 +1,5 @@
 import { Component, EventEmitter, Input, Output, ViewChild } from '@angular/core';
+
 import { DotMenuItem, SuggestionListComponent } from '@dotcms/block-editor';
 
 @Component({

@@ -1,11 +1,18 @@
+import { Subject } from 'rxjs';
+
 import { Component, Injector, Input, OnDestroy, OnInit, ViewContainerRef } from '@angular/core';
 
-import { Subject } from 'rxjs';
 import { debounceTime, takeUntil } from 'rxjs/operators';
 
 import { AnyExtension, Content, Editor } from '@tiptap/core';
+import CharacterCount, { CharacterCountStorage } from '@tiptap/extension-character-count';
 import { HeadingOptions, Level } from '@tiptap/extension-heading';
+import { Highlight } from '@tiptap/extension-highlight';
+import { Link } from '@tiptap/extension-link';
 import Placeholder from '@tiptap/extension-placeholder';
+import { TableRow } from '@tiptap/extension-table-row';
+import { TextAlign } from '@tiptap/extension-text-align';
+import { Underline } from '@tiptap/extension-underline';
 import StarterKit, { StarterKitOptions } from '@tiptap/starter-kit';
 
 import {
@@ -27,14 +34,6 @@ import {
     ImageUpload,
     SetDocAttrStep
 } from '@dotcms/block-editor';
-
-// Marks Extensions
-import CharacterCount, { CharacterCountStorage } from '@tiptap/extension-character-count';
-import { Highlight } from '@tiptap/extension-highlight';
-import { Link } from '@tiptap/extension-link';
-import { TableRow } from '@tiptap/extension-table-row';
-import { TextAlign } from '@tiptap/extension-text-align';
-import { Underline } from '@tiptap/extension-underline';
 
 function toTitleCase(str) {
     return str.replace(/\p{L}+('\p{L}+)?/gu, function (txt) {

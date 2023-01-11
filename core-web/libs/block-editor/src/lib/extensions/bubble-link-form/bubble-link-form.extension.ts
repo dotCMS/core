@@ -1,7 +1,9 @@
-import { ViewContainerRef } from '@angular/core';
-import { Extension } from '@tiptap/core';
 import { PluginKey } from 'prosemirror-state';
 import { Props } from 'tippy.js';
+
+import { ViewContainerRef } from '@angular/core';
+
+import { Extension } from '@tiptap/core';
 
 import { BubbleLinkFormComponent } from './bubble-link-form.component';
 import { bubbleLinkFormPlugin } from './plugins/bubble-link-form.plugin';

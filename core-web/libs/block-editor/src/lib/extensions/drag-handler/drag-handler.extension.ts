@@ -1,9 +1,12 @@
-import { ViewContainerRef } from '@angular/core';
-import { Extension } from '@tiptap/core';
 import { NodeSelection, Plugin, PluginKey } from 'prosemirror-state';
 import { EditorView } from 'prosemirror-view';
 
+import { ViewContainerRef } from '@angular/core';
+
+import { Extension } from '@tiptap/core';
+
 import { deselectCurrentNode } from '@dotcms/block-editor';
+
 import { DragHandlerComponent } from './drag-handler.component';
 
 export const DragHandler = (viewContainerRef: ViewContainerRef) => {
