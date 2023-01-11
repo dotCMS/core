@@ -1,7 +1,3 @@
-import { DotExperimentsService } from '@portlets/dot-experiments/shared/services/dot-experiments.service';
-import { ActivatedRoute } from '@angular/router';
-import { ExperimentMocks, GoalsMock } from '@portlets/dot-experiments/test/mocks';
-
 import { createServiceFactory, mockProvider, SpectatorService, SpyObject } from '@ngneat/spectator';
 import { of } from 'rxjs';
 
@@ -25,10 +21,7 @@ import {
     DotExperimentsConfigurationStore
 } from '@portlets/dot-experiments/dot-experiments-configuration/store/dot-experiments-configuration-store';
 import { DotExperimentsService } from '@portlets/dot-experiments/shared/services/dot-experiments.service';
-import { ExperimentMocks } from '@portlets/dot-experiments/test/mocks';
-
-
-
+import { ExperimentMocks, GoalsMock } from '@portlets/dot-experiments/test/mocks';
 
 const EXPERIMENT_ID = ExperimentMocks[0].id;
 const PAGE_ID = ExperimentMocks[0].pageId;

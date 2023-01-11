@@ -1,8 +1,6 @@
 import { createHttpFactory, HttpMethod, SpectatorHttp } from '@ngneat/spectator';
-import { ExperimentMocks } from '@portlets/dot-experiments/test/mocks';
-import { DefaultGoalConfiguration, DotExperiment, Goals, Variant } from '@dotcms/dotcms-models';
 
-import { DotExperiment, Variant } from '@dotcms/dotcms-models';
+import { DefaultGoalConfiguration, DotExperiment, Goals, Variant } from '@dotcms/dotcms-models';
 import { ExperimentMocks } from '@portlets/dot-experiments/test/mocks';
 
 import { DotExperimentsService } from './dot-experiments.service';

@@ -4,13 +4,6 @@ import { Pipe, PipeTransform } from '@angular/core';
 
 import { ConfirmationService, MessageService } from 'primeng/api';
 import { ConfirmPopup, ConfirmPopupModule } from 'primeng/confirmpopup';
-import { DotExperimentsEmptyExperimentsComponent } from '../dot-experiments-empty-experiments/dot-experiments-empty-experiments.component';
-import {
-    DotExperiment,
-    DotExperimentStatusList,
-    GroupedExperimentByStatus,
-    TrafficProportionTypes
-} from '@dotcms/dotcms-models';
 import { Table, TableModule } from 'primeng/table';
 import { ToastModule } from 'primeng/toast';
 
@@ -24,10 +17,8 @@ import {
     TrafficProportionTypes
 } from '@dotcms/dotcms-models';
 import { DotIconModule } from '@dotcms/ui';
-import { DotMessagePipeModule } from '@pipes/dot-message/dot-message-pipe.module';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 import { DotMessagePipeModule } from '@pipes/dot-message/dot-message-pipe.module';
-
 
 import { DotExperimentsListTableComponent } from './dot-experiments-list-table.component';
 

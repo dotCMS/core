@@ -4,7 +4,6 @@ import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 import { ActivatedRoute } from '@angular/router';
 import { RouterTestingModule } from '@angular/router/testing';
-import { ExperimentMocks, GoalsMock } from '@portlets/dot-experiments/test/mocks';
 
 import { MessageService } from 'primeng/api';
 
@@ -19,7 +18,7 @@ import {
 import { MockDotMessageService } from '@dotcms/utils-testing';
 import { DotMessagePipeModule } from '@pipes/dot-message/dot-message-pipe.module';
 import { DotExperimentsService } from '@portlets/dot-experiments/shared/services/dot-experiments.service';
-import { ExperimentMocks } from '@portlets/dot-experiments/test/mocks';
+import { ExperimentMocks, GoalsMock } from '@portlets/dot-experiments/test/mocks';
 
 import { DotExperimentsListStore, DotExperimentsState } from './dot-experiments-list-store.service';
 

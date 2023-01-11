@@ -5,18 +5,21 @@ import {
     Spectator,
     SpyObject
 } from '@ngneat/spectator';
+import { of } from 'rxjs';
+
+import { MessageService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
 import { Card, CardModule } from 'primeng/card';
 
 import { DotMessageService } from '@dotcms/data-access';
-import { DotExperimentsService } from '@portlets/dot-experiments/shared/services/dot-experiments.service';
-import { DotExperimentsConfigurationStore } from '@portlets/dot-experiments/dot-experiments-configuration/store/dot-experiments-configuration-store';
-import { ExperimentMocks, GoalsMock } from '@portlets/dot-experiments/test/mocks';
-import { of } from 'rxjs';
 import { ExperimentSteps, Goals, Status, StepStatus } from '@dotcms/dotcms-models';
+import { MockDotMessageService } from '@dotcms/utils-testing';
 import { DotExperimentsConfigurationGoalSelectComponent } from '@portlets/dot-experiments/dot-experiments-configuration/components/dot-experiments-configuration-goal-select/dot-experiments-configuration-goal-select.component';
+import { DotExperimentsConfigurationGoalsComponent } from '@portlets/dot-experiments/dot-experiments-configuration/components/dot-experiments-configuration-goals/dot-experiments-configuration-goals.component';
+import { DotExperimentsConfigurationStore } from '@portlets/dot-experiments/dot-experiments-configuration/store/dot-experiments-configuration-store';
+import { DotExperimentsService } from '@portlets/dot-experiments/shared/services/dot-experiments.service';
+import { ExperimentMocks, GoalsMock } from '@portlets/dot-experiments/test/mocks';
 import { DotDynamicDirective } from '@portlets/shared/directives/dot-dynamic.directive';
-import { MessageService } from 'primeng/api';
 
 const messageServiceMock = new MockDotMessageService({
     'experiments.configure.goals.name': 'Goals',

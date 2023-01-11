@@ -1,4 +1,3 @@
-import { DotExperimentsConfigurationGoalSelectComponent } from './dot-experiments-configuration-goal-select.component';
 import {
     byTestId,
     createComponentFactory,
@@ -6,17 +5,21 @@ import {
     Spectator,
     SpyObject
 } from '@ngneat/spectator';
+import { of } from 'rxjs';
+
+import { MessageService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
 import { CardModule } from 'primeng/card';
-import { DotExperimentsConfigurationStore } from '@portlets/dot-experiments/dot-experiments-configuration/store/dot-experiments-configuration-store';
-import { DotExperimentsService } from '@portlets/dot-experiments/shared/services/dot-experiments.service';
-import { MessageService } from 'primeng/api';
-import { of } from 'rxjs';
-import { ExperimentMocks } from '@portlets/dot-experiments/test/mocks';
+import { Sidebar } from 'primeng/sidebar';
+
 import { DotMessageService } from '@dotcms/data-access';
 import { DefaultGoalConfiguration, ExperimentSteps, GOAL_TYPES } from '@dotcms/dotcms-models';
 import { MockDotMessageService } from '@dotcms/utils-testing';
-import { Sidebar } from 'primeng/sidebar';
+import { DotExperimentsConfigurationStore } from '@portlets/dot-experiments/dot-experiments-configuration/store/dot-experiments-configuration-store';
+import { DotExperimentsService } from '@portlets/dot-experiments/shared/services/dot-experiments.service';
+import { ExperimentMocks } from '@portlets/dot-experiments/test/mocks';
+
+import { DotExperimentsConfigurationGoalSelectComponent } from './dot-experiments-configuration-goal-select.component';
 
 const messageServiceMock = new MockDotMessageService({
     'experiments.configure.goals.sidebar.header': 'Select a goal',

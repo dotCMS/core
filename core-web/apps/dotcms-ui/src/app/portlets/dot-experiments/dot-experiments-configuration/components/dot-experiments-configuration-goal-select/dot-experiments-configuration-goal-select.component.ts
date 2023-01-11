@@ -1,13 +1,15 @@
-import { ChangeDetectionStrategy, Component, EventEmitter, OnInit, Output } from '@angular/core';
+import { Observable } from 'rxjs';
+
 import { CommonModule } from '@angular/common';
-import { SidebarModule } from 'primeng/sidebar';
-import { DotSidebarHeaderComponent } from '@shared/dot-sidebar-header/dot-sidebar-header.component';
-import { DotSidebarDirective } from '@portlets/shared/directives/dot-sidebar.directive';
+import { ChangeDetectionStrategy, Component, EventEmitter, OnInit, Output } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+
 import { ButtonModule } from 'primeng/button';
-import { DotMessagePipeModule } from '@pipes/dot-message/dot-message-pipe.module';
-import { DotFieldValidationMessageModule } from '@components/_common/dot-field-validation-message/dot-file-validation-message.module';
+import { CardModule } from 'primeng/card';
 import { SelectButtonModule } from 'primeng/selectbutton';
+import { SidebarModule } from 'primeng/sidebar';
+
+import { DotFieldValidationMessageModule } from '@components/_common/dot-field-validation-message/dot-file-validation-message.module';
 import {
     DefaultGoalConfiguration,
     ExperimentsGoalsList,
@@ -16,9 +18,10 @@ import {
     Status,
     StepStatus
 } from '@dotcms/dotcms-models';
-import { CardModule } from 'primeng/card';
+import { DotMessagePipeModule } from '@pipes/dot-message/dot-message-pipe.module';
 import { DotExperimentsConfigurationStore } from '@portlets/dot-experiments/dot-experiments-configuration/store/dot-experiments-configuration-store';
-import { Observable } from 'rxjs';
+import { DotSidebarDirective } from '@portlets/shared/directives/dot-sidebar.directive';
+import { DotSidebarHeaderComponent } from '@shared/dot-sidebar-header/dot-sidebar-header.component';
 
 @Component({
     selector: 'dot-experiments-configuration-goal-select',

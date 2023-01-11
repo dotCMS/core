@@ -7,7 +7,7 @@ import { Title } from '@angular/platform-browser';
 
 import { MessageService } from 'primeng/api';
 
-import { switchMap, tap, withLatestFrom } from 'rxjs/operators';
+import { switchMap, tap } from 'rxjs/operators';
 
 import { DotMessageService } from '@dotcms/data-access';
 import {
@@ -20,13 +20,7 @@ import {
     TrafficProportion,
     Variant
 } from '@dotcms/dotcms-models';
-import { Observable, throwError } from 'rxjs';
-import { switchMap, tap } from 'rxjs/operators';
-import { HttpErrorResponse } from '@angular/common/http';
 import { DotExperimentsService } from '@portlets/dot-experiments/shared/services/dot-experiments.service';
-
-
-
 
 export interface DotExperimentsConfigurationState {
     experiment: DotExperiment | null;

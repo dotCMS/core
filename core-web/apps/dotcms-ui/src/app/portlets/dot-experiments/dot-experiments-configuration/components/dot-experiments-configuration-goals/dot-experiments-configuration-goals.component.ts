@@ -1,33 +1,31 @@
-import { ChangeDetectionStrategy, Component, ComponentRef, OnDestroy, ViewChild } from "@angular/core";
-import { CommonModule } from "@angular/common";
-import { CardModule } from "primeng/card";
-import { DotMessagePipeModule } from "@pipes/dot-message/dot-message-pipe.module";
-import { ButtonModule } from "primeng/button";
-import { ExperimentSteps, Goals, GOALS_METADATA_MAP, Status, StepStatus } from "@dotcms/dotcms-models";
-import { DotDynamicDirective } from "@portlets/shared/directives/dot-dynamic.directive";
+import { Observable, Subject } from 'rxjs';
+
+import { CommonModule } from '@angular/common';
 import {
-    DotExperimentsConfigurationGoalSelectComponent
-} from "@portlets/dot-experiments/dot-experiments-configuration/components/dot-experiments-configuration-goal-select/dot-experiments-configuration-goal-select.component";
-import { Observable, Subject } from "rxjs";
-import { takeUntil, tap } from "rxjs/operators";
-import { DotIconModule } from "@dotcms/ui";
     ChangeDetectionStrategy,
     Component,
     ComponentRef,
     OnDestroy,
     ViewChild
 } from '@angular/core';
-import { CommonModule } from '@angular/common';
-import { ChangeDetectionStrategy, Component } from '@angular/core';
 
 import { ButtonModule } from 'primeng/button';
 import { CardModule } from 'primeng/card';
 
-import { DotMessagePipeModule } from '@pipes/dot-message/dot-message-pipe.module';
-import { ButtonModule } from 'primeng/button';
+import { takeUntil, tap } from 'rxjs/operators';
+
 import {
-    DotExperimentsConfigurationStore
-} from "@portlets/dot-experiments/dot-experiments-configuration/store/dot-experiments-configuration-store";
+    ExperimentSteps,
+    Goals,
+    GOALS_METADATA_MAP,
+    Status,
+    StepStatus
+} from '@dotcms/dotcms-models';
+import { DotIconModule } from '@dotcms/ui';
+import { DotMessagePipeModule } from '@pipes/dot-message/dot-message-pipe.module';
+import { DotExperimentsConfigurationGoalSelectComponent } from '@portlets/dot-experiments/dot-experiments-configuration/components/dot-experiments-configuration-goal-select/dot-experiments-configuration-goal-select.component';
+import { DotExperimentsConfigurationStore } from '@portlets/dot-experiments/dot-experiments-configuration/store/dot-experiments-configuration-store';
+import { DotDynamicDirective } from '@portlets/shared/directives/dot-dynamic.directive';
 
 /**
  * Assign goal to experiment
