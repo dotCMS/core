@@ -45,7 +45,7 @@ public interface SiteAndFolderResolver {
 
     Lazy<Boolean> skipResolveSite = Lazy.of(()->Config.getBooleanProperty(CT_SKIP_RESOLVE_SITE, false));
 
-    Lazy<Boolean> fallbackDefaultSite = Lazy.of(()->Config.getBooleanProperty(CT_FALLBACK_DEFAULT_SITE, false));
+    Lazy<Boolean> fallbackDefaultSite = Lazy.of(()->Config.getBooleanProperty(CT_FALLBACK_DEFAULT_SITE, true));
 
     private static boolean isCalledByContentTypeImportExportUtil() {
         return isCalledByClass(ContentTypeImportExportUtil.class.getName());
