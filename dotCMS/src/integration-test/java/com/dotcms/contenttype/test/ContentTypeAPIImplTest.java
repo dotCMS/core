@@ -2329,7 +2329,12 @@ public class ContentTypeAPIImplTest extends ContentTypeBaseTest {
 			//Here we test that the fields are still present even when the site is null
 			Assert.assertFalse(savedContentType.fields().isEmpty());
 			assertNotNull(savedContentType.host());
-			assertEquals(testCase.expected, savedContentType.host());
+
+			final String expected = DEFAULT.equals(testCase.expected) ? APILocator.getHostAPI()
+					.findDefaultHost(APILocator.systemUser(), false).getIdentifier()
+					: testCase.expected;
+
+			assertEquals(expected, savedContentType.host());
 
 		} finally {
 			if(null != savedContentType) {
@@ -2338,8 +2343,10 @@ public class ContentTypeAPIImplTest extends ContentTypeBaseTest {
 		}
 	}
 
+	static final String DEFAULT = "default";
+
 	@DataProvider
-	public static Object[] getSites() throws DotDataException, DotSecurityException {
+	public static Object[] getSites() throws DotSecurityException {
 
 		final Host emptyIdentifierHost = Mockito.mock(Host.class);
 		Mockito.when(emptyIdentifierHost.getIdentifier()).thenReturn("");
@@ -2348,16 +2355,16 @@ public class ContentTypeAPIImplTest extends ContentTypeBaseTest {
 		Mockito.when(systemHost.getIdentifier()).thenReturn(Host.SYSTEM_HOST);
 		Mockito.when(systemHost.getHostname()).thenReturn(Host.SYSTEM_HOST_NAME);
 
-		final String defaultSiteId = "8a7d5e23-da1e-420a-b4f0-471e7da8ea2d";
-
 		final Host namedHost = Mockito.mock(Host.class);
-		Mockito.when(namedHost.getIdentifier()).thenReturn(defaultSiteId);
-		Mockito.when(namedHost.getHostname()).thenReturn("default");
+		//At this moment (When the data provider is getting instantiated)
+		//it is troublesome getting the Current default site therefore we're going to set this placeholder
+		Mockito.when(namedHost.getIdentifier()).thenReturn("unk");
+		Mockito.when(namedHost.getHostname()).thenReturn(DEFAULT);
 
 		return new Object[]{
-				new SiteTestCase(emptyIdentifierHost, defaultSiteId),
+				new SiteTestCase(emptyIdentifierHost, DEFAULT),
 				new SiteTestCase(systemHost, Host.SYSTEM_HOST),
-				new SiteTestCase(namedHost, defaultSiteId)
+				new SiteTestCase(namedHost, DEFAULT)
 		};
 	}
 
