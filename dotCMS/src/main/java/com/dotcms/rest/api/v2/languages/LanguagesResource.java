@@ -325,31 +325,21 @@ public class LanguagesResource {
         final Locale defaultLocale = APILocator.getCompanyAPI().getDefaultCompany().getLocale();
         final Locale requestedLocale = ConversionUtils.toLocale(language);
         final Locale[] locales = LanguageUtil.getAvailableLocales();
-        Locale currentLocale = null;
-        
+
         for(int i=0;i<locales.length;i++){
             if(locales[i].equals(requestedLocale)) {
-                currentLocale=locales[i];
-                break;
+                return locales[i];
             }
         }
         
-        if(null==currentLocale) {
-            for(int i=0;i<locales.length;i++){
-                if(locales[i].getLanguage().equalsIgnoreCase(requestedLocale.getLanguage())){
-                    currentLocale=locales[i];
-                    break;
-                }
+        for(int i=0;i<locales.length;i++){
+            if(locales[i].getLanguage().equalsIgnoreCase(requestedLocale.getLanguage())){
+                return locales[i];
             }
+        }
             
-        }
-        
-        if(null==currentLocale) {
-            currentLocale = defaultLocale;
-        }
-        
-        
-        return currentLocale;
+
+        return defaultLocale;
         
     }
     
