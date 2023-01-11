@@ -15,7 +15,8 @@ import {
     DotCMSContentlet,
     DotCMSTempFile,
     DotCurrentUser,
-    DotPageRenderParameters
+    DotPageRenderParameters,
+    DotContentletPermissions
 } from '@dotcms/dotcms-models';
 import { ComponentStore, tapResponse } from '@ngrx/component-store';
 import { Observable, throwError, of, forkJoin } from 'rxjs';
@@ -43,10 +44,6 @@ export interface DotFavoritePageState {
 interface DotFavoritePageInitialProps {
     favoritePageUrl: string;
     favoritePage?: DotCMSContentlet;
-
-    imgWidth?: string;
-    imgHeight?: string;
-    pageRenderedHtml?: string;
 }
 
 export const CMS_OWNER_ROLE_ID = '6b1fa42f-8729-4625-80d1-17e4ef691ce7';
@@ -235,7 +232,7 @@ export class DotFavoritePageStore extends ComponentStore<DotFavoritePageState> {
                     DotRole[],
                     DotCurrentUser,
                     DotPageRenderParameters,
-                    { [READ: string]: string[] }
+                    DotContentletPermissions
                 ]): void => {
                     this.patchState({
                         loading: false,

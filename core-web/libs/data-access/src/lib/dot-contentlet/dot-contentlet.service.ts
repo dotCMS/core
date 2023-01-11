@@ -2,7 +2,7 @@ import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 import { pluck, take } from 'rxjs/operators';
 import { CoreWebService } from '@dotcms/dotcms-js';
-import { DotCMSContentlet } from '@dotcms/dotcms-models';
+import { DotCMSContentlet, DotContentletPermissions } from '@dotcms/dotcms-models';
 
 @Injectable()
 export class DotContentletService {
@@ -27,10 +27,10 @@ export class DotContentletService {
     /**
      * Get Contentlet permissions data
      * @param string identifier
-     * @returns Observable<{ [key: string]: string[] }
+     * @returns Observable<DotContentletPermissions>
      * @memberof DotContentletService
      */
-    getContentletPermissions(identifier: string): Observable<{ [key: string]: string[] }> {
+    getContentletPermissions(identifier: string): Observable<DotContentletPermissions> {
         return this.coreWebService
             .requestView({
                 url: `v1/permissions/_bycontent/_groupbytype?contentletId=${identifier}`

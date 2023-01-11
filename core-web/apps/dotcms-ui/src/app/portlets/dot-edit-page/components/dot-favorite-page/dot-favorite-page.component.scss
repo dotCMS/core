@@ -1,11 +1,13 @@
 @use "libs/dot-primeng-theme-styles/src/scss/variables" as *;
 
 :host {
+    display: block;
+    min-height: 353px;
+
     form {
         column-gap: $spacing-4;
         display: grid;
-        grid-template-columns: 50% 49%;
-        min-height: 375px;
+        grid-template-columns: minmax(0, 1fr) 45%;
     }
 
     .dot-favorite-dialog-footer__delete-button {
@@ -15,6 +17,7 @@
 
     .dot-favorite-dialog__thumbnailField {
         margin-bottom: 0;
+        min-height: 353px;
         position: relative;
     }
 
@@ -26,24 +29,25 @@
     }
 
     .dot-favorite-dialog__image-container {
-        background-position: center;
-        background-repeat: no-repeat;
-        background-size: contain;
         border: 1px solid $gray-lighter;
-        padding-bottom: 75.25%;
         display: block;
+        text-align: center;
 
         img {
-            height: 0;
-            position: absolute;
-            width: 0;
+            object-fit: contain;
+            object-position: top;
+            height: 348px;
         }
     }
 
-    ::ng-deep dot-html-to-image img {
-        border: 1px solid $gray-lighter;
-        height: 384px;
-        object-fit: contain;
-        width: 100%;
+    ::ng-deep dot-html-to-image {
+        min-height: 353px;
+
+        img {
+            border: 1px solid $gray-lighter;
+            height: 353px;
+            object-fit: contain;
+            width: 100%;
+        }
     }
 }

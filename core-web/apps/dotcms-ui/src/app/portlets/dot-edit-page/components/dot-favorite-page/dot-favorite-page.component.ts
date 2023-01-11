@@ -2,7 +2,7 @@ import { Observable, Subject } from 'rxjs';
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { FormGroup, Validators, UntypedFormBuilder } from '@angular/forms';
 import { DynamicDialogConfig, DynamicDialogRef } from 'primeng/dynamicdialog';
-import { map, startWith, takeUntil } from 'rxjs/operators';
+import { filter, map, startWith, takeUntil } from 'rxjs/operators';
 import {
     DotFavoritePageState,
     DotFavoritePageStore,
@@ -89,13 +89,14 @@ export class DotFavoritePageComponent implements OnInit, OnDestroy {
             });
 
         this.store.renderThumbnail$
-            .pipe(takeUntil(this.destroy$))
-            .subscribe((renderThumbnail: boolean) => {
-                if (renderThumbnail) {
-                    requestAnimationFrame(() => {
-                        this.setPreviewThumbnailListener();
-                    });
-                }
+            .pipe(
+                takeUntil(this.destroy$),
+                filter((renderThumbnail) => renderThumbnail)
+            )
+            .subscribe(() => {
+                requestAnimationFrame(() => {
+                    this.setPreviewThumbnailListener();
+                });
             });
 
         this.store.closeDialog$.pipe(takeUntil(this.destroy$)).subscribe((closeDialog: boolean) => {

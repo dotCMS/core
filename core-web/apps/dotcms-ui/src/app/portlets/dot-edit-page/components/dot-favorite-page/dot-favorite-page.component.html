@@ -7,7 +7,7 @@
 >
     <form class="p-fluid" *ngIf="form" [formGroup]="form" data-testId="form">
         <div class="fields-col">
-            <div class="field dot-favorite-dialog__thumbnailField" data-testId="thumbnailField">
+            <div class="dot-favorite-dialog__thumbnailField" data-testId="thumbnailField">
                 <ng-template [ngIf]="vm.renderThumbnail" [ngIfElse]="existingFavoritePage">
                     <dot-html-to-image
                         *ngIf="vm.renderThumbnail"
@@ -20,10 +20,6 @@
                 <ng-template #existingFavoritePage>
                     <div
                         class="dot-favorite-dialog__image-container"
-                        [ngStyle]="{
-                            'background-image':
-                                'url(' + vm.formState.thumbnail + '?' + timeStamp + ')'
-                        }"
                         data-testId="favoriteCardImageContainer"
                     >
                         <img

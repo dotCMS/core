@@ -192,7 +192,6 @@ describe('DotFavoritePageComponent', () => {
                     const field = de.query(By.css('[data-testId="thumbnailField"]'));
                     const webcomponent = field.query(By.css('dot-html-to-image'));
 
-                    expect(field.classes['field']).toBe(true);
                     expect(webcomponent.attributes['ng-reflect-height']).toBe('768.192048012003');
                     expect(webcomponent.attributes['ng-reflect-width']).toBe('1024');
                 });
