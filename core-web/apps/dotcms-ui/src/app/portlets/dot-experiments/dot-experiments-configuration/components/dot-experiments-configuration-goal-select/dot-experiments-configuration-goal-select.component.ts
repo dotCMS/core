@@ -11,6 +11,7 @@ import { SelectButtonModule } from 'primeng/selectbutton';
 import {
     DefaultGoalConfiguration,
     ExperimentsGoalsList,
+    Goals,
     GoalSelectOption,
     Status,
     StepStatus
@@ -51,7 +52,8 @@ export class DotExperimentsConfigurationGoalSelectComponent implements OnInit {
     goalsList: Array<GoalSelectOption> = ExperimentsGoalsList;
     statusList = Status;
 
-    vm$: Observable<StepStatus> = this.dotExperimentsConfigurationStore.goalsStatus$;
+    vm$: Observable<{ experimentId: string; goals: Goals; status: StepStatus }> =
+        this.dotExperimentsConfigurationStore.goalsStepVm$;
 
     constructor(
         private readonly dotExperimentsConfigurationStore: DotExperimentsConfigurationStore
@@ -61,9 +63,10 @@ export class DotExperimentsConfigurationGoalSelectComponent implements OnInit {
         this.initForm();
     }
 
-    save() {
+    save(experimentId: string) {
         const { goal } = this.form.value;
         this.dotExperimentsConfigurationStore.setSelectedGoal({
+            experimentId,
             goals: {
                 ...DefaultGoalConfiguration,
                 primary: {

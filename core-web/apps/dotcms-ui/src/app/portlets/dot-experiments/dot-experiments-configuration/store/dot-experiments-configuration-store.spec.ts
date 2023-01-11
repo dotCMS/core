@@ -258,7 +258,7 @@ describe('DotExperimentsConfigurationStore', () => {
             store.loadExperiment(EXPERIMENT_ID);
             expect(dotExperimentsService.getById).toHaveBeenCalledWith(EXPERIMENT_ID);
 
-            store.deleteVariant(variants[1]);
+            store.deleteVariant({ experimentId: EXPERIMENT_ID, variant: variants[1] });
 
             store.state$.subscribe(({ experiment }) => {
                 expect(experiment.trafficProportion.variants).toEqual(
@@ -284,7 +284,7 @@ describe('DotExperimentsConfigurationStore', () => {
 
             store.loadExperiment(EXPERIMENT_ID);
 
-            store.setSelectedGoal({ goals: expectedGoals });
+            store.setSelectedGoal({ experimentId: EXPERIMENT_ID, goals: expectedGoals });
 
             store.state$.subscribe(({ experiment }) => {
                 expect(experiment.goals).toEqual(expectedGoals);

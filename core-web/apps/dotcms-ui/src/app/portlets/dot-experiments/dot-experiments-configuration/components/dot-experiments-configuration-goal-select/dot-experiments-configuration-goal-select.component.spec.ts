@@ -22,7 +22,7 @@ const messageServiceMock = new MockDotMessageService({
     'experiments.configure.goals.sidebar.header': 'Select a goal',
     'experiments.configure.goals.sidebar.header.button': 'Add'
 });
-
+const EXPERIMENT_ID = ExperimentMocks[0].id;
 describe('DotExperimentsConfigurationGoalSelectComponent', () => {
     let spectator: Spectator<DotExperimentsConfigurationGoalSelectComponent>;
     let store: DotExperimentsConfigurationStore;
@@ -65,6 +65,7 @@ describe('DotExperimentsConfigurationGoalSelectComponent', () => {
     it('should call saveForm() on add button click and form valid', () => {
         const selectedGoal = GOAL_TYPES.REACH_PAGE;
         const expectedGoal = {
+            experimentId: EXPERIMENT_ID,
             goals: {
                 ...DefaultGoalConfiguration,
                 primary: {

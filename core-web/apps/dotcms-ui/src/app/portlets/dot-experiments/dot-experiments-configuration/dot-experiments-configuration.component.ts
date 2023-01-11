@@ -103,8 +103,11 @@ export class DotExperimentsConfigurationComponent implements OnInit {
      * @returns void
      * @memberof DotExperimentsConfigurationComponent
      */
-    deleteVariant(variant: Variant) {
-        this.dotExperimentsConfigurationStore.deleteVariant(variant);
+    deleteVariant(variant: Variant, experimentId: string) {
+        this.dotExperimentsConfigurationStore.deleteVariant({
+            experimentId,
+            variant
+        });
     }
 
     /**
