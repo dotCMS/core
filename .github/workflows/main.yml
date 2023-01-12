@@ -1,0 +1,13 @@
+name: Remove old package versions
+on:
+  schedule:
+    - cron:  '*/5 * * * *'
+jobs:
+  remove-package-versions:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Remove package versions
+        id: remove-package-versions
+        uses: epitomeglobal/remove-package-versions@master
+        env:
+          GITHUB_TOKEN: ${{ secrets.GHCR_TOKEN }}
