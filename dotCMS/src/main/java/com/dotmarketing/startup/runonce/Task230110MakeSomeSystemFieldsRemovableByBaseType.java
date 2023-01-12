@@ -1,9 +1,11 @@
 package com.dotmarketing.startup.runonce;
 
+import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.startup.AbstractJDBCStartupTask;
 import com.dotmarketing.util.Logger;
+import org.apache.commons.lang.math.NumberUtils;
 
 import java.util.List;
 import java.util.Map;
@@ -63,15 +65,16 @@ import static com.dotmarketing.db.DbConnectionFactory.isPostgres;
  * @author Jose Castro
  * @since Jan 10th, 2023
  */
-public class Task230110MakeSomeSystemFieldsRemovableByVarName extends AbstractJDBCStartupTask {
+public class Task230110MakeSomeSystemFieldsRemovableByBaseType extends AbstractJDBCStartupTask {
 
-    private static final String FIND_CONTENT_TYPE_QUERY = "SELECT inode FROM structure WHERE velocity_var_name = ?";
+    private static final String FIND_CONTENT_TYPE_QUERY = "SELECT inode, name FROM structure WHERE %s";
     private static final String UPDATE_CONTENT_TYPE_FIELDS_QUERY = "UPDATE field SET fixed = " + getDBFalse() + " WHERE velocity_var_name = ? AND structure_inode = ?";
 
-    private static final Map<String, List<String>> CONTENT_TYPES_AND_FIELDS = Map.of(
-            "htmlpageasset", List.of("friendlyName", "showOnMenu", "sortOrder", "cachettl", "redirecturl", "httpsreq", "seodescription", "seokeywords", "pagemetadata"),
-            "FileAsset", List.of("title", "showOnMenu", "sortOrder", "description"),
-            "persona", List.of("description"),
+    private static final Map<Object, List<String>> BASE_TYPES_AND_FIELDS = Map.of(
+            BaseContentType.HTMLPAGE.getType(), List.of("friendlyName", "showOnMenu", "sortOrder", "cachettl",
+                    "redirecturl", "httpsreq", "seodescription", "seokeywords", "pagemetadata"),
+            BaseContentType.FILEASSET.getType(), List.of("title", "showOnMenu", "sortOrder", "description"),
+            BaseContentType.PERSONA.getType(), List.of("description"),
             "Host", List.of("hostThumbnail"));
 
     @Override
@@ -82,28 +85,50 @@ public class Task230110MakeSomeSystemFieldsRemovableByVarName extends AbstractJD
     @Override
     public void executeUpgrade() throws DotDataException {
         if (isPostgres() || isMsSql()) {
-            for (final String typeVarName : CONTENT_TYPES_AND_FIELDS.keySet()) {
-                final List<Map<String, Object>> contentTypeData =
-                        new DotConnect().setSQL(FIND_CONTENT_TYPE_QUERY).addParam(typeVarName).loadObjectResults();
-                if (!contentTypeData.isEmpty()) {
-                    final String typeId = contentTypeData.get(0).get("inode").toString();
-                    final List<String> fieldVarNameList = CONTENT_TYPES_AND_FIELDS.get(typeVarName);
+            for (final Map.Entry<Object, List<String>> entry : BASE_TYPES_AND_FIELDS.entrySet()) {
+                final Object type = entry.getKey();
+                final List<Map<String, Object>> contentTypeList = this.getContentTypes(type);
+                for (final Map<String, Object> contentTypeData : contentTypeList) {
+                    final String typeId = contentTypeData.get("inode").toString();
+                    final String name = contentTypeData.get("name").toString();
+                    final List<String> fieldVarNameList = entry.getValue();
                     fieldVarNameList.forEach(fieldVarName -> {
 
                         try {
                             new DotConnect().setSQL(UPDATE_CONTENT_TYPE_FIELDS_QUERY).addParam(fieldVarName).addParam(typeId).loadResult();
                             Logger.info(this, String.format("Removable field '%s' in '%s' Type has been updated " +
-                                                                    "successfully!", fieldVarName, typeVarName));
+                                                                    "successfully!", fieldVarName, name));
                         } catch (final DotDataException e) {
                             Logger.error(this, String.format("An error occurred when updating field '%s' for type " +
-                                                                     "'%s': %s", fieldVarName, typeVarName,
+                                                                     "'%s': %s", fieldVarName, name,
                                     e.getMessage()), e);
                         }
 
                     });
                 }
+
             }
         }
+    }
+
+    /**
+     * Returns the list of Content Types that match either a specific Base Type, or a Velocity Variable Name.
+     *
+     * @param type The Base Type -- see {@link BaseContentType} -- or a specific Velocity Variable Name.
+     *
+     * @return The list with one or more Content Types that match the specified search criterion.
+     */
+    private List<Map<String, Object>> getContentTypes(final Object type) throws DotDataException {
+        Object param;
+        String sqlQuery;
+        if (NumberUtils.isNumber(type.toString())) {
+            sqlQuery = String.format(FIND_CONTENT_TYPE_QUERY, "structuretype = ?");
+            param = Integer.valueOf(type.toString());
+        } else {
+            sqlQuery = String.format(FIND_CONTENT_TYPE_QUERY, "velocity_var_name = ?");
+            param = type;
+        }
+        return new DotConnect().setSQL(sqlQuery).addParam(param).loadObjectResults();
     }
 
 }

@@ -206,7 +206,7 @@ import com.dotmarketing.startup.runonce.Task220829CreateExperimentsTableTest;
 import com.dotmarketing.startup.runonce.Task220912UpdateCorrectShowOnMenuPropertyTest;
 import com.dotmarketing.startup.runonce.Task220928AddLookbackWindowColumnToExperimentTest;
 import com.dotmarketing.startup.runonce.Task221007AddVariantIntoPrimaryKeyTest;
-import com.dotmarketing.startup.runonce.Task230110MakeSomeSystemFieldsRemovableByVarNameTest;
+import com.dotmarketing.startup.runonce.Task230110MakeSomeSystemFieldsRemovableByBaseTypeTest;
 import com.dotmarketing.util.ConfigTest;
 import com.dotmarketing.util.HashBuilderTest;
 import com.dotmarketing.util.MaintenanceUtilTest;
@@ -652,7 +652,7 @@ import org.junit.runners.Suite.SuiteClasses;
         VisitorsGeolocationConditionletTest.class,
         ManifestUtilTest.class,
         ZipUtilTest.class,
-        Task230110MakeSomeSystemFieldsRemovableByVarNameTest.class
+        Task230110MakeSomeSystemFieldsRemovableByBaseTypeTest.class
 })
 
 public class MainSuite {
