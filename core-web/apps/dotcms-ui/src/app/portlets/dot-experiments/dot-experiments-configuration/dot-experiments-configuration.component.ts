@@ -25,6 +25,7 @@ import {
 })
 export class DotExperimentsConfigurationComponent implements OnInit {
     vm$: Observable<ConfigurationViewModel> = this.dotExperimentsConfigurationStore.vm$;
+    experimentSteps = ExperimentSteps;
 
     constructor(
         private readonly dotExperimentsConfigurationStore: DotExperimentsConfigurationStore,
@@ -41,6 +42,7 @@ export class DotExperimentsConfigurationComponent implements OnInit {
 
     /**
      * Go to Experiment List
+     * @param {string} pageId
      * @returns void
      * @memberof DotExperimentsConfigurationComponent
      */
@@ -56,13 +58,15 @@ export class DotExperimentsConfigurationComponent implements OnInit {
     }
 
     /**
-     * Open/Close sidebar
+     * Sidebar controller
+     * @param {SidebarStatus} action
+     * @param {ExperimentSteps} step
      * @returns void
      * @memberof DotExperimentsConfigurationComponent
      */
-    sidebarStatusChanged(action: SidebarStatus) {
+    sidebarStatusController(action: SidebarStatus, step?: ExperimentSteps) {
         if (action === SidebarStatus.OPEN) {
-            this.dotExperimentsConfigurationStore.openSidebar(ExperimentSteps.VARIANTS);
+            this.dotExperimentsConfigurationStore.openSidebar(step);
         } else {
             this.dotExperimentsConfigurationStore.closeSidebar();
         }
@@ -70,7 +74,8 @@ export class DotExperimentsConfigurationComponent implements OnInit {
 
     /**
      * Save a specific variant
-     * @param {Pick<DotExperiment, 'name'>} variant
+     * @param data
+     * @param {string} experimentId
      * @returns void
      * @memberof DotExperimentsConfigurationComponent
      */
@@ -83,7 +88,8 @@ export class DotExperimentsConfigurationComponent implements OnInit {
 
     /**
      * Edit a specific variant
-     * @param {Variant} variant
+     * @param data
+     * @param {string} experimentId
      * @returns void
      * @memberof DotExperimentsConfigurationComponent
      */
@@ -97,11 +103,15 @@ export class DotExperimentsConfigurationComponent implements OnInit {
     /**
      * Delete a specific variant
      * @param {Variant} variant
+     * @param {string} experimentId
      * @returns void
      * @memberof DotExperimentsConfigurationComponent
      */
-    deleteVariant(variant: Variant) {
-        this.dotExperimentsConfigurationStore.deleteVariant(variant);
+    deleteVariant(variant: Variant, experimentId: string) {
+        this.dotExperimentsConfigurationStore.deleteVariant({
+            experimentId,
+            variant
+        });
     }
 
     /**
