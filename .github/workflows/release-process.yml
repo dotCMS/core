@@ -133,7 +133,7 @@ jobs:
           context: ./docker/dotcms
           push: true
           tags: ${{ steps.discover-docker-tags.outputs.discovered_tags }}
-          platforms: ${{ steps.docker-setup-buildx.outputs.platforms }}
+          platforms: linux/amd64,linux/arm64
         if: success()
       - name: Slack Notification
         uses: rtCamp/action-slack-notify@v2
