@@ -9,8 +9,6 @@ import com.dotcms.contenttype.exception.NotFoundInDbException;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
 import com.dotcms.rendering.velocity.services.ContainerLoader;
-import com.dotcms.rendering.velocity.services.TemplateLoader;
-import com.dotcms.rest.api.v1.container.ContainerForm;
 import com.dotcms.system.event.local.model.Subscriber;
 import com.dotcms.util.CollectionsUtils;
 import com.dotcms.util.transform.TransformerLocator;
@@ -23,7 +21,6 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.exception.WebAssetException;
-import com.dotmarketing.factories.InodeFactory;
 import com.dotmarketing.factories.PublishFactory;
 import com.dotmarketing.factories.TreeFactory;
 import com.dotmarketing.factories.WebAssetFactory;
@@ -52,7 +49,6 @@ import java.net.URL;
 import java.util.*;
 import java.util.function.Supplier;
 
-import static com.dotmarketing.business.PermissionAPI.PERMISSION_EDIT;
 import static com.dotmarketing.business.PermissionAPI.PERMISSION_PUBLISH;
 import static com.dotmarketing.business.PermissionAPI.PERMISSION_WRITE;
 
@@ -222,11 +218,12 @@ public class ContainerAPIImpl extends BaseWebAssetAPI implements ContainerAPI, D
 	}
 
 	/**
-	 * 
+	 *
 	 * @param container
 	 * @throws DotDataException
 	 */
 	private void save(final Container container) throws DotDataException {
+		Logger.debug(this, ()-> "Saving container: " + container);
 		if (Container.SYSTEM_CONTAINER.equals(container.getIdentifier())) {
 			Logger.debug(this, "System Container cannot be saved.");
 			return;
@@ -235,17 +232,18 @@ public class ContainerAPIImpl extends BaseWebAssetAPI implements ContainerAPI, D
 	}
 
 	/**
-	 * 
+	 *
 	 * @param container
 	 * @param existingId
 	 * @throws DotDataException
 	 */
 	private void save(final Container container, final String existingId) throws DotDataException {
+		Logger.debug(this, ()-> "Saving container: " + container + " with existing Id " + existingId);
 		if (Container.SYSTEM_CONTAINER.equals(container.getIdentifier())) {
 			Logger.debug(this, "System Container cannot be saved/updated.");
 			return;
 		}
-		containerFactory.save(container, existingId);
+		containerFactory.save(container);
 	}
 
 	@WrapInTransaction
@@ -701,58 +699,62 @@ public class ContainerAPIImpl extends BaseWebAssetAPI implements ContainerAPI, D
 	@WrapInTransaction
 	@Override
 	@SuppressWarnings("unchecked")
-	public Container save(final Container container,final List<ContainerStructure> containerStructureList,final Host host,final User user,final boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
+	public Container save(final Container container,
+			final List<ContainerStructure> containerStructureList, final Host host, final User user,
+			final boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
 		if (Container.SYSTEM_CONTAINER.equals(container.getIdentifier())) {
 			Logger.debug(this, "System Container cannot be saved/updated.");
-			throw new IllegalArgumentException("System Container and its associated data cannot be saved.");
+			throw new IllegalArgumentException(
+					"System Container and its associated data cannot be saved.");
 		}
+		if (!APILocator.getPermissionAPI()
+				.doesUserHavePermission(host, PermissionAPI.PERMISSION_CAN_ADD_CHILDREN, user,
+						respectFrontendRoles)
+				|| !APILocator.getPermissionAPI()
+				.doesUserHavePermissions(PermissionAPI.PermissionableType.CONTAINERS,
+						PermissionAPI.PERMISSION_EDIT, user)) {
 
-		if(!APILocator.getPermissionAPI().doesUserHavePermission(host, PermissionAPI.PERMISSION_CAN_ADD_CHILDREN, user, respectFrontendRoles)
-				|| !APILocator.getPermissionAPI().doesUserHavePermissions(PermissionAPI.PermissionableType.CONTAINERS, PermissionAPI.PERMISSION_EDIT, user)) {
-
-			Logger.info(this, "The user: " + user.getUserId() + ", does not have ADD children permissions to the host: " + host.getHostname()
+			Logger.info(this, "The user: " + user.getUserId()
+					+ ", does not have ADD children permissions to the host: " + host.getHostname()
 					+ " or add containers");
 			throw new DotSecurityException(WebKeys.USER_PERMISSIONS_EXCEPTION);
 		}
-
 		Container currentContainer = null;
 		List<Template> currentTemplates = null;
 		Identifier identifier = null;
-		boolean existingId=false;
-		boolean existingInode=false;
-
-		if(UtilMethods.isSet(container.getInode())) {
-            try {
-                Container existing=(Container) HibernateUtil.load(Container.class, container.getInode());
-                existingInode = existing==null || !UtilMethods.isSet(existing.getInode());
-            }
-            catch(Exception ex) {
-                existingInode=true;
-            }
-        }
-
-		if (UtilMethods.isSet(container.getIdentifier())) {
-		    identifier = APILocator.getIdentifierAPI().find(container.getIdentifier());
-		    if(identifier!=null && UtilMethods.isSet(identifier.getId())) {
-		        if(!existingInode) {
-        		    currentContainer = getWorkingContainerById(container.getIdentifier(), user, respectFrontendRoles);
-        			currentTemplates = APILocator.getTemplateAPI().findTemplatesByContainerInode(currentContainer.getInode());
-		        }
-		    }
-		    else {
-		        existingId=true;
-		        identifier=null;
-		    }
+		boolean existingId = false;
+		boolean existingInode = false;
+		if (UtilMethods.isSet(container.getInode())) {
+			try {
+				Container existing = (Container) HibernateUtil.load(Container.class,
+						container.getInode());
+				existingInode = existing == null || !UtilMethods.isSet(existing.getInode());
+			} catch (Exception ex) {
+				existingInode = true;
+			}
 		}
-
-		if ((identifier != null && !existingInode)  && !permissionAPI.doesUserHavePermission(currentContainer, PermissionAPI.PERMISSION_WRITE, user, respectFrontendRoles)) {
+		if (UtilMethods.isSet(container.getIdentifier())) {
+			identifier = APILocator.getIdentifierAPI().find(container.getIdentifier());
+			if (identifier != null && UtilMethods.isSet(identifier.getId())) {
+				if (!existingInode) {
+					currentContainer = getWorkingContainerById(container.getIdentifier(), user,
+							respectFrontendRoles);
+					currentTemplates = APILocator.getTemplateAPI()
+							.findTemplatesByContainerInode(currentContainer.getInode());
+				}
+			} else {
+				existingId = true;
+				identifier = null;
+			}
+		}
+		if ((identifier != null && !existingInode) && !permissionAPI.doesUserHavePermission(
+				currentContainer, PermissionAPI.PERMISSION_WRITE, user, respectFrontendRoles)) {
 			throw new DotSecurityException(
-					String.format("User '%s' does not have WRITE permission on Container '%s'", user.getUserId(),
+					String.format("User '%s' does not have WRITE permission on Container '%s'",
+							user.getUserId(),
 							container.getName()));
 		}
-
-		if(containerStructureList != null) {
-
+		if (containerStructureList != null) {
 			for (ContainerStructure cs : containerStructureList) {
 				Structure st = CacheLocator.getContentTypeCache()
 						.getStructureByInode(cs.getStructureId());
@@ -766,13 +768,13 @@ public class ContainerAPIImpl extends BaseWebAssetAPI implements ContainerAPI, D
 				}
 			}
 		}
-
-		if(!permissionAPI.doesUserHavePermission(host, PermissionAPI.PERMISSION_WRITE, user, respectFrontendRoles)) {
+		if (!permissionAPI.doesUserHavePermission(host, PermissionAPI.PERMISSION_WRITE, user,
+				respectFrontendRoles)) {
 			throw new DotSecurityException(
-					String.format("User '%s' does not have WRITE permission on Site '%s'", user.getUserId(), host));
+					String.format("User '%s' does not have WRITE permission on Site '%s'",
+							user.getUserId(), host));
 		}
 
-		String userId = user.getUserId();
 		container.setModUser(user.getUserId());
 		container.setModDate(new Date());
 
@@ -780,18 +782,18 @@ public class ContainerAPIImpl extends BaseWebAssetAPI implements ContainerAPI, D
 		if (identifier != null) {
 			container.setIdentifier(identifier.getId());
 		} else {
-		    Identifier ident= (existingId) ?
-		           APILocator.getIdentifierAPI().createNew(container, host, container.getIdentifier()) :
-			       APILocator.getIdentifierAPI().createNew(container, host);
+			Identifier ident = (existingId) ?
+					APILocator.getIdentifierAPI()
+							.createNew(container, host, container.getIdentifier()) :
+					APILocator.getIdentifierAPI().createNew(container, host);
 			container.setIdentifier(ident.getId());
 		}
 
-		if(existingInode){
-            save(container, container.getInode());
+		if (existingInode) {
+			save(container, container.getInode());
+		} else {
+			save(container);
 		}
-        else{
-            save(container);
-        }
 
 		APILocator.getVersionableAPI().setWorking(container);
 
@@ -799,15 +801,13 @@ public class ContainerAPIImpl extends BaseWebAssetAPI implements ContainerAPI, D
 		// information to this new version.
 		if (currentTemplates != null) {
 			Iterator<Template> it = currentTemplates.iterator();
-
 			// update templates to new version
 			while (it.hasNext()) {
 				Template parentInode = it.next();
 				TreeFactory.saveTree(new Tree(parentInode.getInode(), container.getInode()));
 			}
 		}
-
-		if(containerStructureList != null) {
+		if (containerStructureList != null) {
 			// save the container-structure relationships , issue-2093
 			for (ContainerStructure cs : containerStructureList) {
 				cs.setContainerId(container.getIdentifier());

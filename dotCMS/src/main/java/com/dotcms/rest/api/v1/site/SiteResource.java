@@ -90,6 +90,14 @@ public class SiteResource implements Serializable {
     private static final long serialVersionUID = 1L;
 
     private static final String NO_FILTER = "*";
+    public static final String RUN_DASHBOARD = "runDashboard";
+    public static final String KEYWORDS = "keywords";
+    public static final String DESCRIPTION = "description";
+    public static final String GOOGLE_MAP = "googleMap";
+    public static final String GOOGLE_ANALYTICS = "googleAnalytics";
+    public static final String ADD_THIS = "addThis";
+    public static final String PROXY_EDIT_MODE_URL = "proxyEditModeUrl";
+    public static final String EMBEDDED_DASHBOARD = "embeddedDashboard";
 
     private final WebResource webResource;
     private final SiteHelper siteHelper;
@@ -846,33 +854,33 @@ public class SiteResource implements Serializable {
             newSite.setTagStorage(newSiteForm.getTagStorage());
         }
 
-        newSite.setProperty("runDashboard", newSiteForm.isRunDashboard());
+        newSite.setProperty(RUN_DASHBOARD, newSiteForm.isRunDashboard());
         if (UtilMethods.isSet(newSiteForm.getKeywords())) {
-            newSite.setProperty("keywords", newSiteForm.getKeywords());
+            newSite.setProperty(KEYWORDS, newSiteForm.getKeywords());
         }
 
         if (UtilMethods.isSet(newSiteForm.getDescription())) {
-            newSite.setProperty("description", newSiteForm.getDescription());
+            newSite.setProperty(DESCRIPTION, newSiteForm.getDescription());
         }
 
         if (UtilMethods.isSet(newSiteForm.getGoogleMap())) {
-            newSite.setProperty("googleMap", newSiteForm.getGoogleMap());
+            newSite.setProperty(GOOGLE_MAP, newSiteForm.getGoogleMap());
         }
 
         if (UtilMethods.isSet(newSiteForm.getGoogleAnalytics())) {
-            newSite.setProperty("googleAnalytics", newSiteForm.getGoogleAnalytics());
+            newSite.setProperty(GOOGLE_ANALYTICS, newSiteForm.getGoogleAnalytics());
         }
 
         if (UtilMethods.isSet(newSiteForm.getAddThis())) {
-            newSite.setProperty("addThis", newSiteForm.getAddThis());
+            newSite.setProperty(ADD_THIS, newSiteForm.getAddThis());
         }
 
         if (UtilMethods.isSet(newSiteForm.getProxyUrlForEditMode())) {
-            newSite.setProperty("proxyEditModeUrl", newSiteForm.getProxyUrlForEditMode());
+            newSite.setProperty(PROXY_EDIT_MODE_URL, newSiteForm.getProxyUrlForEditMode());
         }
 
         if (UtilMethods.isSet(newSiteForm.getEmbeddedDashboard())) {
-            newSite.setProperty("embeddedDashboard", newSiteForm.getEmbeddedDashboard());
+            newSite.setProperty(EMBEDDED_DASHBOARD, newSiteForm.getEmbeddedDashboard());
         }
 
         final long languageId = 0 == newSiteForm.getLanguageId()?
@@ -882,7 +890,7 @@ public class SiteResource implements Serializable {
 
         Logger.debug(this, ()-> "Creating new Host: " + newSiteForm);
 
-        return Response.ok(new ResponseEntityView(
+        return Response.ok(new ResponseEntityView<>(
                 this.toView(this.siteHelper.save(newSite, user, pageMode.respectAnonPerms)))).build();
     }
 
@@ -1156,33 +1164,33 @@ public class SiteResource implements Serializable {
             site.setTagStorage(newSiteForm.getTagStorage());
         }
 
-        site.setProperty("runDashboard", newSiteForm.isRunDashboard());
+        site.setProperty(RUN_DASHBOARD, newSiteForm.isRunDashboard());
         if (UtilMethods.isSet(newSiteForm.getKeywords())) {
-            site.setProperty("keywords", newSiteForm.getKeywords());
+            site.setProperty(KEYWORDS, newSiteForm.getKeywords());
         }
 
         if (UtilMethods.isSet(newSiteForm.getDescription())) {
-            site.setProperty("description", newSiteForm.getDescription());
+            site.setProperty(DESCRIPTION, newSiteForm.getDescription());
         }
 
         if (UtilMethods.isSet(newSiteForm.getGoogleMap())) {
-            site.setProperty("googleMap", newSiteForm.getGoogleMap());
+            site.setProperty(GOOGLE_MAP, newSiteForm.getGoogleMap());
         }
 
         if (UtilMethods.isSet(newSiteForm.getGoogleAnalytics())) {
-            site.setProperty("googleAnalytics", newSiteForm.getGoogleAnalytics());
+            site.setProperty(GOOGLE_ANALYTICS, newSiteForm.getGoogleAnalytics());
         }
 
         if (UtilMethods.isSet(newSiteForm.getAddThis())) {
-            site.setProperty("addThis", newSiteForm.getAddThis());
+            site.setProperty(ADD_THIS, newSiteForm.getAddThis());
         }
 
         if (UtilMethods.isSet(newSiteForm.getProxyUrlForEditMode())) {
-            site.setProperty("proxyEditModeUrl", newSiteForm.getProxyUrlForEditMode());
+            site.setProperty(PROXY_EDIT_MODE_URL, newSiteForm.getProxyUrlForEditMode());
         }
 
         if (UtilMethods.isSet(newSiteForm.getEmbeddedDashboard())) {
-            site.setProperty("embeddedDashboard", newSiteForm.getEmbeddedDashboard());
+            site.setProperty(EMBEDDED_DASHBOARD, newSiteForm.getEmbeddedDashboard());
         }
 
         final long languageId = 0 == newSiteForm.getLanguageId()?
@@ -1192,7 +1200,7 @@ public class SiteResource implements Serializable {
 
         Logger.debug(this, ()-> "Creating new Host: " + newSiteForm);
 
-        return Response.ok(new ResponseEntityView(
+        return Response.ok(new ResponseEntityView<>(
                 this.toView(this.siteHelper.update(site, user, pageMode.respectAnonPerms)))).build();
     }
 
@@ -1253,17 +1261,37 @@ public class SiteResource implements Serializable {
                             copySiteForm.isCopySiteVariables());
 
         HostAssetsJobProxy.fireJob(newSite.getIdentifier(), sourceHost.getIdentifier(), hostCopyOptions, user.getUserId());
-        return Response.ok(new ResponseEntityView(newSite)).build();
+        return Response.ok(new ResponseEntityView<>(newSite)).build();
     }
 
     private SiteView toView (final Host host) throws DotStateException, DotDataException, DotSecurityException {
 
-        return new SiteView(host.getIdentifier(), host.getInode(), host.getAliases(), host.getHostname(), host.getTagStorage(),
-                null != host.getHostThumbnail()? host.getHostThumbnail().getName(): StringPool.BLANK,
-                host.getBoolProperty("runDashboard"), host.getStringProperty("keywords"), host.getStringProperty("description"),
-                host.getStringProperty("googleMap"), host.getStringProperty("googleAnalytics"), host.getStringProperty("addThis"),
-                host.getStringProperty("proxyEditModeUrl"), host.getStringProperty("embeddedDashboard"), host.getLanguageId(),
-                host.isSystemHost(), host.isDefault(), host.isArchived(), host.isLive(), host.isLocked(), host.isWorking(), host.getModDate(), host.getModUser()
-        );
+        return SiteView.Builder.builder()
+                .withIdentifier(host.getIdentifier())
+                .withInode(host.getInode())
+                .withAliases(host.getAliases())
+                .withSiteName(host.getHostname())
+                .withFolder(host.getFolder())
+                .withTagStorage(host.getTagStorage())
+                .withSiteThumbnail(null != host.getHostThumbnail() ? host.getHostThumbnail().getName(): StringPool.BLANK)
+                .withRunDashboard(host.getBoolProperty(RUN_DASHBOARD))
+                .withKeywords(host.getStringProperty(KEYWORDS))
+                .withDescription(host.getStringProperty(DESCRIPTION))
+                .withGoogleMap(host.getStringProperty(GOOGLE_MAP))
+                .withGoogleAnalytics(host.getStringProperty(GOOGLE_ANALYTICS))
+                .withAddThis(host.getStringProperty(ADD_THIS))
+                .withProxyUrlForEditMode(host.getStringProperty(PROXY_EDIT_MODE_URL))
+                .withEmbeddedDashboard(host.getStringProperty(EMBEDDED_DASHBOARD))
+                .withLanguageId(host.getLanguageId())
+                .withIsSystemHost(host.isSystemHost())
+                .withIsDefault(host.isDefault())
+                .withIsArchived(host.isArchived())
+                .withIsLive(host.isLive())
+                .withIsLocked(host.isLocked())
+                .withIsWorking(host.isWorking())
+                .withModDate(host.getModDate())
+                .withModUser(host.getModUser())
+                .build();
+
     }
 } // E:O:F:SiteBrowserResource.
