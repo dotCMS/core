@@ -156,7 +156,7 @@ const runTests = (cmds) => __awaiter(void 0, void 0, void 0, function* () {
             yield warmUpAnalytics();
         }
         execCmdAsync(START_DEPENDENCIES_CMD);
-        yield waitFor(depsLoadingTime(), `ES and ${dbType}`);
+        yield waitFor(15, `ES and ${dbType}`);
         // Executes ITs
         const cmd = cmds[idx];
         resolveParams(cmd);
@@ -190,9 +190,6 @@ const runTests = (cmds) => __awaiter(void 0, void 0, void 0, function* () {
     }
 });
 exports.runTests = runTests;
-const depsLoadingTime = () => {
-    return dbType === 'mssql' ? 140 : 60;
-};
 /**
  * Stops dependencies.
  */

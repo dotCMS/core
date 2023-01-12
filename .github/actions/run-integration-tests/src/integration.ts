@@ -165,7 +165,7 @@ export const runTests = async (cmds: Command[]): Promise<CommandResult> => {
 
     execCmdAsync(START_DEPENDENCIES_CMD)
 
-    await waitFor(depsLoadingTime(), `ES and ${dbType}`)
+    await waitFor(15, `ES and ${dbType}`)
 
     // Executes ITs
     const cmd = cmds[idx]
@@ -197,10 +197,6 @@ export const runTests = async (cmds: Command[]): Promise<CommandResult> => {
   } finally {
     await stopDeps()
   }
-}
-
-const depsLoadingTime = () => {
-  return dbType === 'mssql' ? 40 : 60
 }
 
 /**
