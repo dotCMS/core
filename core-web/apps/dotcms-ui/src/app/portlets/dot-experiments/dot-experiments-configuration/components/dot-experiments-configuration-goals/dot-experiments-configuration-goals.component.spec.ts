@@ -32,7 +32,6 @@ describe('DotExperimentsConfigurationGoalsComponent', () => {
     let spectator: Spectator<DotExperimentsConfigurationGoalsComponent>;
     let store: DotExperimentsConfigurationStore;
     let dotExperimentsService: SpyObject<DotExperimentsService>;
-    let dotExperimentsConfigurationGoalSelectComponent: DotExperimentsConfigurationGoalSelectComponent;
 
     const createComponent = createComponentFactory({
         imports: [
@@ -124,10 +123,10 @@ describe('DotExperimentsConfigurationGoalsComponent', () => {
         spectator.detectComponentChanges();
         expect(spectator.query(DotExperimentsConfigurationGoalSelectComponent)).toExist();
 
-        dotExperimentsConfigurationGoalSelectComponent = spectator.query(
-            DotExperimentsConfigurationGoalSelectComponent
-        );
-        dotExperimentsConfigurationGoalSelectComponent.closedSidebar.emit(true);
+        store.setSidebarStatus({
+            experimentStep: ExperimentSteps.GOAL,
+            isOpen: false
+        });
 
         spectator.detectComponentChanges();
         expect(spectator.query(DotExperimentsConfigurationGoalSelectComponent)).not.toExist();

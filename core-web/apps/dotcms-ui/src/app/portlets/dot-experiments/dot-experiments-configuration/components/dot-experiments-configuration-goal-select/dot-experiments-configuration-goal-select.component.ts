@@ -1,7 +1,7 @@
 import { Observable } from 'rxjs';
 
 import { CommonModule } from '@angular/common';
-import { ChangeDetectionStrategy, Component, EventEmitter, OnInit, Output } from '@angular/core';
+import { ChangeDetectionStrategy, Component, OnInit } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 
 import { ButtonModule } from 'primeng/button';
@@ -45,12 +45,6 @@ import { DotSidebarHeaderComponent } from '@shared/dot-sidebar-header/dot-sideba
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotExperimentsConfigurationGoalSelectComponent implements OnInit {
-    /**
-     * Emit when the sidebar is closed
-     */
-    @Output()
-    closedSidebar = new EventEmitter<boolean>();
-
     form: FormGroup;
     goalsList: Array<GoalSelectOption> = ExperimentsGoalsList;
     statusList = Status;
@@ -64,6 +58,10 @@ export class DotExperimentsConfigurationGoalSelectComponent implements OnInit {
 
     ngOnInit(): void {
         this.initForm();
+    }
+
+    closeSidebar() {
+        this.dotExperimentsConfigurationStore.closeSidebar();
     }
 
     save(experimentId: string) {

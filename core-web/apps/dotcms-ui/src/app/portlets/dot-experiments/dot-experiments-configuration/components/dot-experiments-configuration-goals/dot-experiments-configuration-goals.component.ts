@@ -1,18 +1,12 @@
 import { Observable, Subject } from 'rxjs';
 
 import { CommonModule } from '@angular/common';
-import {
-    ChangeDetectionStrategy,
-    Component,
-    ComponentRef,
-    OnDestroy,
-    ViewChild
-} from '@angular/core';
+import { ChangeDetectionStrategy, Component, ComponentRef, ViewChild } from '@angular/core';
 
 import { ButtonModule } from 'primeng/button';
 import { CardModule } from 'primeng/card';
 
-import { takeUntil, tap } from 'rxjs/operators';
+import { tap } from 'rxjs/operators';
 
 import {
     ExperimentSteps,
@@ -47,10 +41,10 @@ import { DotDynamicDirective } from '@portlets/shared/directives/dot-dynamic.dir
     styleUrls: ['./dot-experiments-configuration-goals.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class DotExperimentsConfigurationGoalsComponent implements OnDestroy {
+export class DotExperimentsConfigurationGoalsComponent {
     vm$: Observable<{ goals: Goals; status: StepStatus }> =
         this.dotExperimentsConfigurationStore.goalsStepVm$.pipe(
-            tap(({ status }) => this.loadSidebarComponent(status))
+            tap(({ status }) => this.handleSidebar(status))
         );
 
     goalTypeMap = GOALS_METADATA_MAP;
@@ -62,11 +56,6 @@ export class DotExperimentsConfigurationGoalsComponent implements OnDestroy {
         private readonly dotExperimentsConfigurationStore: DotExperimentsConfigurationStore
     ) {}
 
-    ngOnDestroy(): void {
-        this.destroy$.next(true);
-        this.destroy$.complete();
-    }
-
     /**
      * Open the sidebar to select the principal goal
      * @returns void
@@ -76,11 +65,12 @@ export class DotExperimentsConfigurationGoalsComponent implements OnDestroy {
         this.dotExperimentsConfigurationStore.openSidebar(ExperimentSteps.GOAL);
     }
 
-    private listenOutputsSidebar(): void {
-        this.componentRef.instance.closedSidebar.pipe(takeUntil(this.destroy$)).subscribe(() => {
-            this.dotExperimentsConfigurationStore.closeSidebar();
-            this.sidebarHost.viewContainerRef.clear();
-        });
+    private handleSidebar(status: StepStatus) {
+        if (status && status.isOpen) {
+            this.loadSidebarComponent(status);
+        } else {
+            this.removeSidebarComponent();
+        }
     }
 
     private loadSidebarComponent(status: StepStatus): void {
@@ -90,8 +80,12 @@ export class DotExperimentsConfigurationGoalsComponent implements OnDestroy {
                 this.sidebarHost.viewContainerRef.createComponent<DotExperimentsConfigurationGoalSelectComponent>(
                     DotExperimentsConfigurationGoalSelectComponent
                 );
+        }
+    }
 
-            this.listenOutputsSidebar();
+    private removeSidebarComponent() {
+        if (this.componentRef) {
+            this.sidebarHost.viewContainerRef.clear();
         }
     }
 }
