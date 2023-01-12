@@ -11,6 +11,7 @@ import {
     DEFAULT_VARIANT_NAME,
     DotExperiment,
     ExperimentSteps,
+    Goals,
     LoadingState,
     Status,
     Variant
@@ -20,10 +21,7 @@ import {
     DotExperimentsConfigurationStore
 } from '@portlets/dot-experiments/dot-experiments-configuration/store/dot-experiments-configuration-store';
 import { DotExperimentsService } from '@portlets/dot-experiments/shared/services/dot-experiments.service';
-import { ExperimentMocks } from '@portlets/dot-experiments/test/mocks';
-
-
-
+import { ExperimentMocks, GoalsMock } from '@portlets/dot-experiments/test/mocks';
 
 const EXPERIMENT_ID = ExperimentMocks[0].id;
 const PAGE_ID = ExperimentMocks[0].pageId;
@@ -100,7 +98,7 @@ describe('DotExperimentsConfigurationStore', () => {
     });
 
     it('should update sidebar status(SAVING/IDLE/DONE) to the store', (done) => {
-        store.setSidebarStatus(Status.SAVING);
+        store.setSidebarStatus({ status: Status.SAVING });
         store.state$.subscribe(({ stepStatusSidebar }) => {
             expect(stepStatusSidebar.status).toEqual(Status.SAVING);
             done();
@@ -253,12 +251,36 @@ describe('DotExperimentsConfigurationStore', () => {
             store.loadExperiment(EXPERIMENT_ID);
             expect(dotExperimentsService.getById).toHaveBeenCalledWith(EXPERIMENT_ID);
 
-            store.deleteVariant(variants[1]);
+            store.deleteVariant({ experimentId: EXPERIMENT_ID, variant: variants[1] });
 
             store.state$.subscribe(({ experiment }) => {
                 expect(experiment.trafficProportion.variants).toEqual(
                     expectedResponseRemoveVariant.trafficProportion.variants
                 );
+                done();
+            });
+        });
+
+        it('should set a Goal to the experiment', (done) => {
+            const expectedGoals: Goals = { ...GoalsMock };
+
+            dotExperimentsService.getById.and
+                .callThrough()
+                .and.returnValue(of({ ...ExperimentMocks[0] }));
+
+            dotExperimentsService.setGoal.and.callThrough().and.returnValue(
+                of({
+                    ...ExperimentMocks[0],
+                    goals: expectedGoals
+                })
+            );
+
+            store.loadExperiment(EXPERIMENT_ID);
+
+            store.setSelectedGoal({ experimentId: EXPERIMENT_ID, goals: expectedGoals });
+
+            store.state$.subscribe(({ experiment }) => {
+                expect(experiment.goals).toEqual(expectedGoals);
                 done();
             });
         });
