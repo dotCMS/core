@@ -79,8 +79,7 @@ const DEPS_ENV = {
     postgres: {
         POSTGRES_USER: 'postgres',
         POSTGRES_PASSWORD: 'postgres',
-        POSTGRES_DB: 'dotcms' /*,
-        MAX_LOCKS_PER_TRANSACTION: '128'*/
+        POSTGRES_DB: 'dotcms'
     }
 };
 exports.COMMANDS = {
@@ -157,7 +156,7 @@ const runTests = (cmds) => __awaiter(void 0, void 0, void 0, function* () {
             yield warmUpAnalytics();
         }
         execCmdAsync(START_DEPENDENCIES_CMD);
-        yield waitFor(60, `ES and ${dbType}`);
+        yield waitFor(depsLoadingTime(), `ES and ${dbType}`);
         // Executes ITs
         const cmd = cmds[idx];
         resolveParams(cmd);
@@ -191,6 +190,9 @@ const runTests = (cmds) => __awaiter(void 0, void 0, void 0, function* () {
     }
 });
 exports.runTests = runTests;
+const depsLoadingTime = () => {
+    return dbType === 'mssql' ? 140 : 60;
+};
 /**
  * Stops dependencies.
  */
