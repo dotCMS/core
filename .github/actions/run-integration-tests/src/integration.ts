@@ -165,7 +165,7 @@ export const runTests = async (cmds: Command[]): Promise<CommandResult> => {
 
     execCmdAsync(START_DEPENDENCIES_CMD)
 
-    await waitFor(15, `ES and ${dbType}`)
+    await waitFor(30, `ES and ${dbType}`)
 
     // Executes ITs
     const cmd = cmds[idx]
