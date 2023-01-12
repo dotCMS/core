@@ -1,21 +1,25 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
+import { Observable, of, Subject } from 'rxjs';
+
 import { TestBed, waitForAsync } from '@angular/core/testing';
-import { RouterTestingModule } from '@angular/router/testing';
-import { Router, NavigationEnd } from '@angular/router';
-
-import { LoginServiceMock } from '@dotcms/utils-testing';
-import { DotEventsService } from '@dotcms/data-access';
-import { DotMenu } from '@models/navigation';
-import { DotMenuService } from '@dotcms/app/api/services/dot-menu.service';
-import { DotNavigationService } from './dot-navigation.service';
-import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
-import { DotIframeService } from '../../_common/iframe/service/dot-iframe/dot-iframe.service';
-import { DotcmsEventsService, LoginService, Auth } from '@dotcms/dotcms-js';
-
-import { Observable, Subject, of } from 'rxjs';
-import { skip } from 'rxjs/operators';
 import { Title } from '@angular/platform-browser';
+import { NavigationEnd, Router } from '@angular/router';
+import { RouterTestingModule } from '@angular/router/testing';
+
+import { skip } from 'rxjs/operators';
+
+import { DotMenuService } from '@dotcms/app/api/services/dot-menu.service';
+import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
+import { DotEventsService } from '@dotcms/data-access';
+import { Auth, DotcmsEventsService, LoginService } from '@dotcms/dotcms-js';
+import { LoginServiceMock } from '@dotcms/utils-testing';
+import { DotMenu } from '@models/navigation';
+
+import { DotNavigationService } from './dot-navigation.service';
+
+import { DotIframeService } from '../../_common/iframe/service/dot-iframe/dot-iframe.service';
+
 
 class RouterMock {
     _events: Subject<any> = new Subject();

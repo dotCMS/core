@@ -1,19 +1,26 @@
+import { of, throwError } from 'rxjs';
+
+import { CommonModule } from '@angular/common';
 import { DebugElement, SimpleChange } from '@angular/core';
 import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing';
-import { of, throwError } from 'rxjs';
-import { DotFieldVariablesService } from '../fields/dot-content-type-fields-variables/services/dot-field-variables.service';
-import {
-    DotBlockEditorSettingsComponent,
-    BLOCK_EDITOR_BLOCKS
-} from './dot-block-editor-settings.component';
-import { MockDotMessageService, mockFieldVariables } from '@dotcms/utils-testing';
-import { DotHttpErrorManagerService } from '@dotcms/app/api/services/dot-http-error-manager/dot-http-error-manager.service';
-import { DotMessageService } from '@dotcms/data-access';
-import { FormBuilder, ReactiveFormsModule, FormsModule } from '@angular/forms';
+import { FormBuilder, FormsModule, ReactiveFormsModule } from '@angular/forms';
+import { By } from '@angular/platform-browser';
 
 import { MultiSelect, MultiSelectModule } from 'primeng/multiselect';
-import { By } from '@angular/platform-browser';
-import { CommonModule } from '@angular/common';
+
+import { DotHttpErrorManagerService } from '@dotcms/app/api/services/dot-http-error-manager/dot-http-error-manager.service';
+import { DotMessageService } from '@dotcms/data-access';
+import { MockDotMessageService, mockFieldVariables } from '@dotcms/utils-testing';
+
+import {
+    BLOCK_EDITOR_BLOCKS,
+    DotBlockEditorSettingsComponent
+} from './dot-block-editor-settings.component';
+
+import { DotFieldVariablesService } from '../fields/dot-content-type-fields-variables/services/dot-field-variables.service';
+
+
+
 
 describe('DotContentTypeFieldsVariablesComponent', () => {
     let fixture: ComponentFixture<DotBlockEditorSettingsComponent>;

@@ -53,6 +53,7 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.liferay.portal.model.User;
+import com.liferay.util.StringPool;
 import java.io.IOException;
 import java.io.Serializable;
 import java.io.StringWriter;
@@ -172,7 +173,8 @@ public class ContainerResource implements Serializable {
             @DefaultValue("ASC") @QueryParam(PaginationUtil.DIRECTION)  final String direction,
             @QueryParam(ContainerPaginator.HOST_PARAMETER_ID)           final String hostId,
             @QueryParam(ContainerPaginator.SYSTEM_PARAMETER_NAME)       final Boolean showSystemContainer,
-            @QueryParam(ContainerPaginator.ARCHIVE_PARAMETER_NAME)       final Boolean showArchiveContainer) {
+            @QueryParam(ContainerPaginator.ARCHIVE_PARAMETER_NAME)       final Boolean showArchiveContainer,
+            @QueryParam(ContainerPaginator.CONTENT_TYPE_ID_OR_VAR_PARAMETER_NAME)   final String contentTypeIdOrVar) {
 
         final InitDataObject initData = webResource.init(null, httpRequest, httpResponse, true, null);
         final User user = initData.getUser();
@@ -185,8 +187,11 @@ public class ContainerResource implements Serializable {
             }
             extraParams.put(ContainerPaginator.SYSTEM_PARAMETER_NAME, showSystemContainer);
             extraParams.put(ContainerPaginator.ARCHIVE_PARAMETER_NAME, showArchiveContainer);
+            extraParams.put(ContainerPaginator.CONTENT_TYPE_ID_OR_VAR_PARAMETER_NAME, contentTypeIdOrVar);
+
             return this.paginationUtil.getPage(httpRequest, user, filter, page, perPage, orderBy, OrderDirection.valueOf(direction),
                     extraParams);
+
         } catch (final Exception e) {
             Logger.error(this, e.getMessage(), e);
             return ExceptionMapperUtil.createResponse(e, Response.Status.INTERNAL_SERVER_ERROR);
@@ -731,13 +736,11 @@ public class ContainerResource implements Serializable {
             Logger.error(this, MessageConstants.CONTAINER + containerForm.getIdentifier() + ", does not exists");
             throw new DoesNotExistException(MessageConstants.CONTAINER + containerForm.getIdentifier() + " does not exists");
         }
+            Logger.debug(this,
+                () -> "Updating container. Request payload is : " + JsonUtil.getJsonStringFromObject(
+                        containerForm));
 
-            ActivityLogger.logInfo(this.getClass(),
-                    "Update Container: " + containerForm.getIdentifier(),
-                    getInfoMessage(user,
-                            MessageConstants.SAVED + container.getTitle()),
-                    host.getHostname());
-
+            container.setInode(StringPool.BLANK);
             container.setCode(containerForm.getCode());
             container.setMaxContentlets(containerForm.getMaxContentlets());
             container.setNotes(containerForm.getNotes());
@@ -760,7 +763,11 @@ public class ContainerResource implements Serializable {
             this.containerAPI.save(container, containerForm.getContainerStructures(), host, user,
                     pageMode.respectAnonPerms);
 
-            Logger.error(this, "The container: " + container.getIdentifier() + " has been updated");
+        ActivityLogger.logInfo(this.getClass(),
+                "Update Container: " + containerForm.getIdentifier(),
+                getInfoMessage(user,
+                        MessageConstants.SAVED + container.getTitle()),
+                host.getHostname());
 
         return Response.ok(new ResponseEntityView(new ContainerView(container))).build();
     }

@@ -1,5 +1,6 @@
-import { DotUiColorsService } from './dot-ui-colors.service';
 import { TestBed } from '@angular/core/testing';
+
+import { DotUiColorsService } from './dot-ui-colors.service';
 
 describe('DotUiColorsService', () => {
     let service: DotUiColorsService;

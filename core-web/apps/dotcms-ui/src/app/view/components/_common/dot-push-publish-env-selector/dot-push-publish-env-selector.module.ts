@@ -1,12 +1,15 @@
-import { FormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
-import { ButtonModule } from 'primeng/button';
 import { NgModule } from '@angular/core';
-import { PushPublishEnvSelectorComponent } from './dot-push-publish-env-selector.component';
+import { FormsModule } from '@angular/forms';
+
+import { ButtonModule } from 'primeng/button';
+import { MultiSelectModule } from 'primeng/multiselect';
+
 import { PushPublishService } from '@dotcms/app/api/services/push-publish/push-publish.service';
 import { DotCurrentUserService } from '@dotcms/data-access';
 import { DotPipesModule } from '@pipes/dot-pipes.module';
-import { MultiSelectModule } from 'primeng/multiselect';
+
+import { PushPublishEnvSelectorComponent } from './dot-push-publish-env-selector.component';
 
 @NgModule({
     declarations: [PushPublishEnvSelectorComponent],

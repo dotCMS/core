@@ -1,6 +1,6 @@
 import { Image } from '@tiptap/extension-image';
 
-import { imageLinkElement, imageElement } from './helpers';
+import { imageElement, imageLinkElement } from './helpers';
 
 declare module '@tiptap/core' {
     interface Commands<ReturnType> {
@@ -86,7 +86,7 @@ export const ImageNode = Image.extend({
 
         return [
             'div',
-            { style },
+            { style, class: 'node-container' },
             href
                 ? imageLinkElement(this.options.HTMLAttributes, HTMLAttributes)
                 : imageElement(this.options.HTMLAttributes, HTMLAttributes)

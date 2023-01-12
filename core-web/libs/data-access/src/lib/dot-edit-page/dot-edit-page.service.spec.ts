@@ -1,9 +1,12 @@
-import { DotEditPageService } from './dot-edit-page.service';
-import { TestBed, getTestBed } from '@angular/core/testing';
 import { HttpTestingController, HttpClientTestingModule } from '@angular/common/http/testing';
+import { TestBed, getTestBed } from '@angular/core/testing';
+
 import { CoreWebService } from '@dotcms/dotcms-js';
-import { CoreWebServiceMock } from '@dotcms/utils-testing';
 import { DotPageContainer } from '@dotcms/dotcms-models';
+import { CoreWebServiceMock } from '@dotcms/utils-testing';
+
+import { DotEditPageService } from './dot-edit-page.service';
+
 import { DotSessionStorageService } from '../dot-session-storage/dot-session-storage.service';
 
 describe('DotEditPageService', () => {

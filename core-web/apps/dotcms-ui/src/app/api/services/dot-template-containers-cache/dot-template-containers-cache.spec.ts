@@ -1,6 +1,8 @@
-import { DotTemplateContainersCacheService } from './dot-template-containers-cache.service';
 import { TestBed } from '@angular/core/testing';
+
 import { CONTAINER_SOURCE, DotContainerMap } from '@dotcms/dotcms-models';
+
+import { DotTemplateContainersCacheService } from './dot-template-containers-cache.service';
 
 describe('TemplateContainersCacheService', () => {
     let service: DotTemplateContainersCacheService;

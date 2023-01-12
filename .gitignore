@@ -125,6 +125,11 @@ karma_html/
 dist-docs/
 **/test-reports/
 
-
 #env
 /core-web/**/.env
+
+/**/**/*.css.map
+
+# Maven
+installs/
+target/

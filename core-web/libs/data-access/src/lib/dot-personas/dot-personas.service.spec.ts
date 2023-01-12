@@ -1,8 +1,10 @@
-import { DotPersonasService } from './dot-personas.service';
-import { TestBed, getTestBed } from '@angular/core/testing';
 import { HttpTestingController, HttpClientTestingModule } from '@angular/common/http/testing';
+import { TestBed, getTestBed } from '@angular/core/testing';
+
 import { CoreWebService } from '@dotcms/dotcms-js';
 import { CoreWebServiceMock, mockDotPersona } from '@dotcms/utils-testing';
+
+import { DotPersonasService } from './dot-personas.service';
 
 describe('DotPersonasService', () => {
     let injector: TestBed;

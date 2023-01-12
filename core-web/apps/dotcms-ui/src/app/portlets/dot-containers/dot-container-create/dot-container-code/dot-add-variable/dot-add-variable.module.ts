@@ -1,8 +1,11 @@
-import { NgModule } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { DotMessagePipeModule } from '@dotcms/app/view/pipes/dot-message/dot-message-pipe.module';
+import { NgModule } from '@angular/core';
+
 import { ButtonModule } from 'primeng/button';
 import { DataViewModule } from 'primeng/dataview';
+
+import { DotMessagePipeModule } from '@dotcms/app/view/pipes/dot-message/dot-message-pipe.module';
+
 import { DotAddVariableComponent } from './dot-add-variable.component';
 
 @NgModule({

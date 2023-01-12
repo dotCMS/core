@@ -1,29 +1,31 @@
-import { ComponentRef, ViewContainerRef } from '@angular/core';
+import { PluginKey } from 'prosemirror-state';
 import { Subject } from 'rxjs';
+import tippy, { GetReferenceClientRect } from 'tippy.js';
+
+import { ComponentRef, ViewContainerRef } from '@angular/core';
+
 import { filter, take, takeUntil } from 'rxjs/operators';
 
-import { PluginKey } from 'prosemirror-state';
 import { Editor, Extension, Range } from '@tiptap/core';
 import { FloatingMenuPluginProps } from '@tiptap/extension-floating-menu';
 import { Level } from '@tiptap/extension-heading';
 import Suggestion, { SuggestionOptions, SuggestionProps } from '@tiptap/suggestion';
-import tippy, { GetReferenceClientRect } from 'tippy.js';
 
 import {
-    // Floating Menu
-    FLOATING_ACTIONS_MENU_KEYBOARD,
+    BUBBLE_IMAGE_TABVIEW_FORM_PLUGIN_KEY,
+    CONTENT_SUGGESTION_ID,
+    findParentNode,
     FloatingActionsKeydownProps,
     FloatingActionsPlugin,
     FloatingActionsProps,
+    FLOATING_ACTIONS_MENU_KEYBOARD,
     // Suggestions
     ItemsType,
-    SuggestionsCommandProps,
-    SuggestionsComponent,
-    CONTENT_SUGGESTION_ID,
+    NodeTypes,
     suggestionOptions,
     SuggestionPopperModifiers,
-    findParentNode,
-    NodeTypes
+    SuggestionsCommandProps,
+    SuggestionsComponent
 } from '@dotcms/block-editor';
 
 import { ActionButtonComponent } from './action-button.component';
@@ -168,6 +170,12 @@ function execCommand({
         },
         horizontalLine: () => {
             editor.chain().deleteRange(range).setHorizontalRule().focus().run();
+        },
+        image: () => {
+            const transaction = editor.state.tr.setMeta(BUBBLE_IMAGE_TABVIEW_FORM_PLUGIN_KEY, {
+                open: true
+            });
+            editor.view.dispatch(transaction);
         }
     };
 

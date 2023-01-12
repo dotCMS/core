@@ -18,16 +18,21 @@
         </div>
     </ng-template>
 
-    <ng-container
-        *ngFor="let variant of variants; let first = first; let last = last; let index = index"
-    >
+    <ng-container *ngFor="let variant of variants; let first = first; let last = last">
         <p-card [ngClass]="{ first: first, last: last }" data-testId="variant-row-card">
             <div class="flex flex-row align-items-center align-content-between gap-2">
-                <div class="title flex flex-grow-1 flex-column">
-                    <span data-testId="variant-name">{{ variant.name }}</span>
-                    <span class="muted" *ngIf="variant.url" data-testId="variant-url">{{
-                        variant.url
-                    }}</span>
+                <div class="title flex flex-grow-1 flex-row align-items-center gap-2">
+                    <ng-container
+                        *ngIf="variant.name === defaultVariantName; else editVariantNameTpl"
+                    >
+                        <span data-testId="variant-name"> {{ variant.name }} </span>
+                    </ng-container>
+
+                    <dot-copy-button
+                        *ngIf="variant.url"
+                        [copy]="variant.url"
+                        [tooltipText]="'dot.common.message.pageurl.copy.clipboard' | dm"
+                    ></dot-copy-button>
                 </div>
 
                 <span class="separator">|</span>
@@ -52,18 +57,6 @@
                     ></button>
                 </ng-container>
 
-                <ng-template #editableButtonTpl>
-                    <button
-                        class="p-button-sm p-button-outlined no-padding p-button-warning"
-                        (click)="goToEditPage.emit({variant, mode:'edit'})"
-                        data-testId="variant-edit-button"
-                        label="{{ 'experiments.configure.variants.edit' | dm }}"
-                        pButton
-                        pRipple
-                        type="button"
-                    ></button>
-                </ng-template>
-
                 <button
                     class="p-button-sm p-button-danger p-button-text"
                     [disabled]="variant.name === defaultVariantName"
@@ -76,6 +69,50 @@
                 ></button>
             </div>
         </p-card>
+
+        <ng-template #editableButtonTpl>
+            <button
+                class="p-button-sm p-button-outlined no-padding p-button-warning"
+                (click)="goToEditPage.emit({variant, mode:'edit'})"
+                data-testId="variant-edit-button"
+                label="{{ 'experiments.action.edit' | dm }}"
+                pButton
+                pRipple
+                type="button"
+            ></button>
+        </ng-template>
+        <ng-template #editVariantNameTpl>
+            <p-inplace #editName>
+                <ng-template pTemplate="display">
+                    <span data-testId="variant-name">{{ variant.name }}</span>
+                    <i class="pi pi-pencil cursor-pointer"></i>
+                </ng-template>
+                <ng-template pTemplate="content">
+                    <span class="p-input-icon-right">
+                        <i class="pi pi-times cursor-pointer" (click)="editName.deactivate()"></i>
+                        <input
+                            class="dot-container-properties__title-input w-20rem"
+                            #variantName
+                            [required]="true"
+                            [value]="variant.name"
+                            data-testId="inplace-input"
+                            dotAutofocus
+                            pInputText
+                            type="text"
+                        />
+                    </span>
+                    <button
+                        class="p-button-rounded p-button-text"
+                        [loading]="loading"
+                        (click)="editVariantName(variantName.value, variant)"
+                        data-testId="variant-save-name-btn"
+                        icon="pi pi-save"
+                        pButton
+                        type="button"
+                    ></button>
+                </ng-template>
+            </p-inplace>
+        </ng-template>
     </ng-container>
 
     <ng-template pTemplate="footer">

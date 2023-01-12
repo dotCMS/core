@@ -1,4 +1,5 @@
-import { UntypedFormGroup, UntypedFormControl } from '@angular/forms';
+import { UntypedFormControl, UntypedFormGroup } from '@angular/forms';
+
 import { validateDateDefaultValue } from './date.validator';
 
 describe('validateDateDefaultValue', () => {
@@ -40,7 +41,9 @@ describe('validateDateDefaultValue', () => {
 
     it('should be valid (DateField)', () => {
         const group: UntypedFormGroup = new UntypedFormGroup({
-            clazz: new UntypedFormControl('com.dotcms.contenttype.model.field.ImmutableDateTimeField'),
+            clazz: new UntypedFormControl(
+                'com.dotcms.contenttype.model.field.ImmutableDateTimeField'
+            ),
             defaultValue: new UntypedFormControl('2017-08-27 14:06:45')
         });
 
@@ -50,7 +53,9 @@ describe('validateDateDefaultValue', () => {
 
     it('should be invalid (DateField)', () => {
         const group: UntypedFormGroup = new UntypedFormGroup({
-            clazz: new UntypedFormControl('com.dotcms.contenttype.model.field.ImmutableDateTimeField'),
+            clazz: new UntypedFormControl(
+                'com.dotcms.contenttype.model.field.ImmutableDateTimeField'
+            ),
             defaultValue: new UntypedFormControl('2017-08-27 140645')
         });
 
@@ -98,7 +103,9 @@ describe('validateDateDefaultValue', () => {
     });
     it('should be valid (DateField) when clazz equal com.dotcms.contenttype.model.field.ImmutableDateTimeField', () => {
         const group: UntypedFormGroup = new UntypedFormGroup({
-            clazz: new UntypedFormControl('com.dotcms.contenttype.model.field.ImmutableDateTimeField'),
+            clazz: new UntypedFormControl(
+                'com.dotcms.contenttype.model.field.ImmutableDateTimeField'
+            ),
             defaultValue: new UntypedFormControl('now')
         });
 

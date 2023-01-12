@@ -1,29 +1,29 @@
 import { of } from 'rxjs';
-import { ComponentFixture, fakeAsync, TestBed, tick } from '@angular/core/testing';
-import { DotThemeSelectorComponent } from './dot-theme-selector.component';
+
+
+
+import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { Component, DebugElement, Input } from '@angular/core';
-import { DotMessageService } from '@dotcms/data-access';
-import { DotThemesService } from '@dotcms/data-access';
+import { ComponentFixture, fakeAsync, TestBed, tick } from '@angular/core/testing';
+import { By } from '@angular/platform-browser';
+import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
+
+import { DataViewModule } from 'primeng/dataview';
+
+import { DotDialogModule } from '@components/dot-dialog/dot-dialog.module';
+import { DotEventsService, DotMessageService, DotThemesService, PaginatorService } from '@dotcms/data-access';
+import { CoreWebService, Site, SiteService } from '@dotcms/dotcms-js';
+import { DotIconModule } from '@dotcms/ui';
 import {
-    DotThemesServiceMock,
+    CoreWebServiceMock, DotThemesServiceMock,
     MockDotMessageService,
     mockDotThemes,
     mockSites,
     SiteServiceMock
 } from '@dotcms/utils-testing';
-import { By } from '@angular/platform-browser';
-import { DataViewModule } from 'primeng/dataview';
-
-import { CoreWebService, Site, SiteService } from '@dotcms/dotcms-js';
-import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
-import { PaginatorService } from '@dotcms/data-access';
-
-import { DotIconModule } from '@dotcms/ui';
-import { DotDialogModule } from '@components/dot-dialog/dot-dialog.module';
-import { CoreWebServiceMock } from '@dotcms/utils-testing';
 import { DotMessagePipeModule } from '@pipes/dot-message/dot-message-pipe.module';
-import { DotEventsService } from '@dotcms/data-access';
-import { HttpClientTestingModule } from '@angular/common/http/testing';
+
+import { DotThemeSelectorComponent } from './dot-theme-selector.component';
 
 @Component({
     selector: 'dot-site-selector',

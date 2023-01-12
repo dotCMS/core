@@ -1,14 +1,14 @@
-import { waitForAsync, ComponentFixture } from '@angular/core/testing';
-import { DOTTestBed } from '@dotcms/app/test/dot-test-bed';
-import { DebugElement, Component } from '@angular/core';
-import { ContentTypeFieldsTabComponent } from '.';
+import { Component, DebugElement } from '@angular/core';
+import { ComponentFixture, waitForAsync } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
-import { DotCMSContentTypeField, DotCMSContentTypeLayoutRow } from '@dotcms/dotcms-models';
+
 import { UiDotIconButtonTooltipModule } from '@components/_common/dot-icon-button-tooltip/dot-icon-button-tooltip.module';
-import { DotMessageService } from '@dotcms/data-access';
-import { MockDotMessageService } from '@dotcms/utils-testing';
-import { DotAlertConfirmService } from '@dotcms/data-access';
-import { dotcmsContentTypeFieldBasicMock } from '@dotcms/utils-testing';
+import { DOTTestBed } from '@dotcms/app/test/dot-test-bed';
+import { DotAlertConfirmService, DotMessageService } from '@dotcms/data-access';
+import { DotCMSContentTypeField, DotCMSContentTypeLayoutRow } from '@dotcms/dotcms-models';
+import { dotcmsContentTypeFieldBasicMock, MockDotMessageService } from '@dotcms/utils-testing';
+
+import { ContentTypeFieldsTabComponent } from '.';
 
 const tabField: DotCMSContentTypeField = {
     ...dotcmsContentTypeFieldBasicMock,

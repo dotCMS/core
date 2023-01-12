@@ -1,9 +1,12 @@
-import { Injectable } from '@angular/core';
-import { DotExperiment, Variant } from '@dotcms/dotcms-models';
-import { HttpClient } from '@angular/common/http';
-import { pluck } from 'rxjs/operators';
-import { DotCMSResponse } from '@dotcms/dotcms-js';
 import { Observable } from 'rxjs';
+
+import { HttpClient } from '@angular/common/http';
+import { Injectable } from '@angular/core';
+
+import { pluck } from 'rxjs/operators';
+
+import { DotCMSResponse } from '@dotcms/dotcms-js';
+import { DotExperiment, Variant } from '@dotcms/dotcms-models';
 
 const API_ENDPOINT = '/api/v1/experiments';
 
@@ -77,7 +80,7 @@ export class DotExperimentsService {
      * Add variant to experiment
      * @param  {number} experimentId
      * @param {Variant} variant
-     * @returns Observable<DotExperiment[]>
+     * @returns Observable<DotExperiment>
      * @memberof DotExperimentsService
      */
     addVariant(experimentId: string, variant: Pick<Variant, 'name'>): Observable<DotExperiment> {
@@ -90,10 +93,30 @@ export class DotExperimentsService {
     }
 
     /**
-     * Add variant to experiment
+     * Modify a variant of an experiment
+     * @param  {number} experimentId
+     * @param {Variant} variant
+     * @returns Observable<DotExperiment>
+     * @memberof DotExperimentsService
+     */
+    editVariant(
+        experimentId: string,
+        variantId: string,
+        changes: { description: string }
+    ): Observable<DotExperiment> {
+        return this.http
+            .put<DotCMSResponse<DotExperiment>>(
+                `${API_ENDPOINT}/${experimentId}/variants/${variantId}`,
+                changes
+            )
+            .pipe(pluck('entity'));
+    }
+
+    /**
+     * Remove variant of experiment
      * @param  {string} experimentId
      * @param {string} variantId
-     * @returns Observable<DotExperiment[]>
+     * @returns Observable<DotExperiment>
      * @memberof DotExperimentsService
      */
 

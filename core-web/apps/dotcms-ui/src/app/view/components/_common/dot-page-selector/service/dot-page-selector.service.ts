@@ -1,7 +1,11 @@
-import { map, pluck, flatMap } from 'rxjs/operators';
-import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
-import { Site, CoreWebService } from '@dotcms/dotcms-js';
+
+import { Injectable } from '@angular/core';
+
+import { flatMap, map, pluck } from 'rxjs/operators';
+
+import { CoreWebService, Site } from '@dotcms/dotcms-js';
+
 import { DotFolder, DotPageSelectorItem } from '../models/dot-page-selector.models';
 
 export interface DotPageAsset {

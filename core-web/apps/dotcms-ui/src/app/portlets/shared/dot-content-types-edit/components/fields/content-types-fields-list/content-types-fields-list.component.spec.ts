@@ -1,15 +1,20 @@
 /* eslint-disable @typescript-eslint/no-empty-function */
 
+import { DragulaModule, DragulaService } from 'ng2-dragula';
 import { of } from 'rxjs';
-import { waitForAsync, ComponentFixture, TestBed } from '@angular/core/testing';
+
 import { DebugElement } from '@angular/core';
-import { ContentTypesFieldsListComponent } from './content-types-fields-list.component';
+import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
+
+import { DotIconModule } from '@dotcms/ui';
+
+import { ContentTypesFieldsListComponent } from './content-types-fields-list.component';
+
 import { FieldService } from '../service';
 
-import { DragulaModule } from 'ng2-dragula';
-import { DragulaService } from 'ng2-dragula';
-import { DotIconModule } from '@dotcms/ui';
+
+
 
 const itemsData = [
     {
@@ -44,29 +49,27 @@ describe('ContentTypesFieldsListComponent', () => {
     let de: DebugElement;
     let items: DebugElement[];
 
-    beforeEach(
-        waitForAsync(() => {
-            TestBed.configureTestingModule({
-                declarations: [ContentTypesFieldsListComponent],
-                imports: [DragulaModule, DotIconModule],
-                providers: [
-                    DragulaService,
-                    {
-                        provide: FieldService,
-                        useValue: {
-                            loadFieldTypes() {
-                                return of(itemsData);
-                            },
-                            getIcon() {}
-                        }
+    beforeEach(waitForAsync(() => {
+        TestBed.configureTestingModule({
+            declarations: [ContentTypesFieldsListComponent],
+            imports: [DragulaModule, DotIconModule],
+            providers: [
+                DragulaService,
+                {
+                    provide: FieldService,
+                    useValue: {
+                        loadFieldTypes() {
+                            return of(itemsData);
+                        },
+                        getIcon() {}
                     }
-                ]
-            }).compileComponents();
+                }
+            ]
+        }).compileComponents();
 
-            fixture = TestBed.createComponent(ContentTypesFieldsListComponent);
-            de = fixture.debugElement;
-        })
-    );
+        fixture = TestBed.createComponent(ContentTypesFieldsListComponent);
+        de = fixture.debugElement;
+    }));
 
     describe('with empty Content baseType ', () => {
         beforeEach(() => {

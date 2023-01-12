@@ -43,10 +43,10 @@ public class PaginationUtil {
 	public static final String DIRECTION = "direction";
 
 	private static final String LINK_HEADER_NAME = "Link";
-	private static final String PAGINATION_PER_PAGE_HEADER_NAME = "X-Pagination-Per-Page";
-	private static final String PAGINATION_CURRENT_PAGE_HEADER_NAME = "X-Pagination-Current-Page";
+	public static final String PAGINATION_PER_PAGE_HEADER_NAME = "X-Pagination-Per-Page";
+	public static final String PAGINATION_CURRENT_PAGE_HEADER_NAME = "X-Pagination-Current-Page";
 	private static final String PAGINATION_MAX_LINK_PAGES_HEADER_NAME = "X-Pagination-Link-Pages";
-	private static final String PAGINATION_TOTAL_ENTRIES_HEADER_NAME = "X-Pagination-Total-Entries";
+	public static final String PAGINATION_TOTAL_ENTRIES_HEADER_NAME = "X-Pagination-Total-Entries";
 	public static final String PAGE_VALUE_TEMPLATE = "pageValue";
 
 	private static final String LINK_TEMPLATE = "<{URL}>;rel=\"{relValue}\"";

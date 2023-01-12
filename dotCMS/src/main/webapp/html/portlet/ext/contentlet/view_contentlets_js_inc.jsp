@@ -174,7 +174,7 @@ final String calendarEventInode = null!=calendarEventSt ? calendarEventSt.inode(
 		**/
 		require([ "dijit/focus", "dojo/dom", "dojo/domReady!" ], function(focusUtil, dom){
 			dojo.require('dojox.timing');
-			t = new dojox.timing.Timer(500);
+			t = new dojox.timing.Timer(900);
 			t.onTick = function(){
 			  focusUtil.focus(dom.byId("allFieldTB"));
 			  t.stop();
@@ -2455,11 +2455,11 @@ final String calendarEventInode = null!=calendarEventSt ? calendarEventSt.inode(
                         list.style.display = '';
                     }
 
-                    let dataViewButton = "<dot-data-view-button style=\"margin-left:24px" + showDataViewButton +"\" value=\""+ state.view +"\"></dot-data-view-button>";
+                    let dataViewButton = "<dot-data-view-button " + showDataViewButton +"\" value=\""+ state.view +"\"></dot-data-view-button>";
 
                         div = document.getElementById("matchingResultsDiv")
                         var structureInode = dijit.byId('structure_inode').value;
-                        var strbuff = "<div id=\"tablemessage\" class=\"contentlet-selection\"></div><div class=\"contentlet-results\"><%= LanguageUtil.get(pageContext, "Showing") %> " + begin + "-" + end + " <%= LanguageUtil.get(pageContext, "of1") %> " + num + "</div>" + dataViewButton ;
+                        var strbuff = dataViewButton + "<div id=\"tablemessage\" class=\"contentlet-selection\"></div><div class=\"contentlet-results\"><%= LanguageUtil.get(pageContext, "Showing") %> " + begin + "-" + end + " <%= LanguageUtil.get(pageContext, "of1") %> " + num + "</div>";
                         var actionPrimaryMenu = dijit.byId('actionPrimaryMenu');
                         var donwloadToExcelMenuItem = dijit.byId('donwloadToExcel');
                         if (num > 0 && structureInode != "catchall") {

@@ -1,10 +1,13 @@
+import { Observable } from 'rxjs';
+
 import { Component, OnInit } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
+
+import { map, pluck, take } from 'rxjs/operators';
+
 import { DotAccountService } from '@dotcms/app/api/services/dot-account-service';
 import { DotCurrentUser, DotPermissionsType, PermissionsType } from '@dotcms/dotcms-models';
 
-import { Observable } from 'rxjs';
-import { pluck, take, map } from 'rxjs/operators';
 
 @Component({
     selector: 'dot-starter',

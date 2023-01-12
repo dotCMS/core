@@ -1,11 +1,14 @@
-import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
-import { of as observableOf, Observable } from 'rxjs';
-import { TestBed } from '@angular/core/testing';
+import { Observable, of as observableOf } from 'rxjs';
+
 import { Injectable } from '@angular/core';
-import { AuthGuardService } from './auth-guard.service';
-import { LoginService } from '@dotcms/dotcms-js';
+import { TestBed } from '@angular/core/testing';
 import { ActivatedRouteSnapshot, RouterStateSnapshot } from '@angular/router';
+
+import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
 import { DOTTestBed } from '@dotcms/app/test/dot-test-bed';
+import { LoginService } from '@dotcms/dotcms-js';
+
+import { AuthGuardService } from './auth-guard.service';
 
 @Injectable()
 class MockLoginService {

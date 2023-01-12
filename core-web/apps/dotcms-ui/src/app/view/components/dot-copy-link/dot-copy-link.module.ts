@@ -1,10 +1,13 @@
-import { NgModule } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { DotCopyLinkComponent } from './dot-copy-link.component';
+import { NgModule } from '@angular/core';
+
+import { TooltipModule } from 'primeng/tooltip';
+
 import { UiDotIconButtonModule } from '@components/_common/dot-icon-button/dot-icon-button.module';
 import { DotClipboardUtil } from '@dotcms/app/api/util/clipboard/ClipboardUtil';
-import { TooltipModule } from 'primeng/tooltip';
 import { DotIconModule } from '@dotcms/ui';
+
+import { DotCopyLinkComponent } from './dot-copy-link.component';
 
 @NgModule({
     imports: [CommonModule, UiDotIconButtonModule, TooltipModule, DotIconModule],

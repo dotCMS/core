@@ -1,37 +1,38 @@
+import * as _ from 'lodash';
+import { Observable, Subject } from 'rxjs';
+
 import {
     Component,
     ElementRef,
     EventEmitter,
     Input,
+    OnDestroy,
     OnInit,
     Output,
-    ViewChild,
-    OnDestroy
+    ViewChild
 } from '@angular/core';
 import {
-    UntypedFormGroup,
     UntypedFormBuilder,
-    Validators,
-    UntypedFormControl
+    UntypedFormControl,
+    UntypedFormGroup,
+    Validators
 } from '@angular/forms';
 
-import { Observable, Subject } from 'rxjs';
-import { take, takeUntil, filter } from 'rxjs/operators';
-
-import * as _ from 'lodash';
 import { SelectItem } from 'primeng/api';
 
-import { DotMessageService } from '@dotcms/data-access';
-import { DotWorkflowService } from '@dotcms/data-access';
-import { DotLicenseService } from '@dotcms/data-access';
+import { filter, take, takeUntil } from 'rxjs/operators';
+
+
+
+import { DotLicenseService, DotMessageService, DotWorkflowService } from '@dotcms/data-access';
 import {
     DotCMSContentType,
     DotCMSContentTypeField,
     DotCMSContentTypeLayoutRow,
+    DotCMSSystemAction,
     DotCMSSystemActionMappings,
     DotCMSSystemActionType,
-    DotCMSWorkflow,
-    DotCMSSystemAction
+    DotCMSWorkflow
 } from '@dotcms/dotcms-models';
 import { FieldUtil } from '@dotcms/utils-testing';
 

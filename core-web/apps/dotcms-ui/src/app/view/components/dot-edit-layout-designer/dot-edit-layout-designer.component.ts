@@ -1,43 +1,42 @@
-import {
-    Component,
-    OnInit,
-    ViewChild,
-    ElementRef,
-    Input,
-    OnDestroy,
-    Output,
-    EventEmitter,
-    ChangeDetectionStrategy,
-    OnChanges,
-    SimpleChanges,
-    ChangeDetectorRef
-} from '@angular/core';
-import { HttpErrorResponse } from '@angular/common/http';
-import { UntypedFormGroup, UntypedFormBuilder } from '@angular/forms';
-
 import * as _ from 'lodash';
+import { Observable, Subject } from 'rxjs';
 
-import { Observable } from 'rxjs';
-import { Subject } from 'rxjs';
-import { tap, take, takeUntil } from 'rxjs/operators';
-import { DotEditLayoutService } from '@dotcms/app/api/services/dot-edit-layout/dot-edit-layout.service';
-
+import { HttpErrorResponse } from '@angular/common/http';
 import {
-    DotLayout,
-    DotTemplate,
-    DotTheme,
-    DotLayoutBody,
-    DotLayoutRow,
-    DotLayoutColumn,
-    DotLayoutSideBar,
-    DotPageContainer
-} from '@dotcms/dotcms-models';
-import { DotEventsService, DotThemesService } from '@dotcms/data-access';
+    ChangeDetectionStrategy,
+    ChangeDetectorRef,
+    Component,
+    ElementRef,
+    EventEmitter,
+    Input,
+    OnChanges,
+    OnDestroy,
+    OnInit,
+    Output,
+    SimpleChanges,
+    ViewChild
+} from '@angular/core';
+import { UntypedFormBuilder, UntypedFormGroup } from '@angular/forms';
+
+import { take, takeUntil, tap } from 'rxjs/operators';
+
+import { DotEditLayoutService } from '@dotcms/app/api/services/dot-edit-layout/dot-edit-layout.service';
 import {
     DotHttpErrorHandled,
     DotHttpErrorManagerService
 } from '@dotcms/app/api/services/dot-http-error-manager/dot-http-error-manager.service';
 import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
+import { DotEventsService, DotThemesService } from '@dotcms/data-access';
+import {
+    DotLayout,
+    DotLayoutBody,
+    DotLayoutColumn,
+    DotLayoutRow,
+    DotLayoutSideBar,
+    DotPageContainer,
+    DotTemplate,
+    DotTheme
+} from '@dotcms/dotcms-models';
 
 @Component({
     selector: 'dot-edit-layout-designer',

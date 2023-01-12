@@ -1,8 +1,10 @@
-import { TestBed, getTestBed } from '@angular/core/testing';
-import { HttpTestingController, HttpClientTestingModule } from '@angular/common/http/testing';
-import { CoreWebService } from '@dotcms/dotcms-js';
 import { HttpHeaders } from '@angular/common/http';
+import { HttpTestingController, HttpClientTestingModule } from '@angular/common/http/testing';
+import { TestBed, getTestBed } from '@angular/core/testing';
+
+import { CoreWebService } from '@dotcms/dotcms-js';
 import { CoreWebServiceMock } from '@dotcms/utils-testing';
+
 import { OrderDirection, PaginatorService } from './paginator.service';
 
 describe('PaginatorService', () => {

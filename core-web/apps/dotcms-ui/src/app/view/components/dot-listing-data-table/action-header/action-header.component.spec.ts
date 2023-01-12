@@ -1,14 +1,16 @@
-import { DotAlertConfirmService } from '@dotcms/data-access';
-import { DotActionButtonModule } from '../../_common/dot-action-button/dot-action-button.module';
-import { ActionHeaderComponent } from './action-header.component';
-import { By } from '@angular/platform-browser';
-import { ComponentFixture, waitForAsync } from '@angular/core/testing';
-import { DOTTestBed } from '@dotcms/app/test/dot-test-bed';
 import { DebugElement } from '@angular/core';
-import { DotMessageService } from '@dotcms/data-access';
-import { RouterTestingModule } from '@angular/router/testing';
+import { ComponentFixture, waitForAsync } from '@angular/core/testing';
+import { By } from '@angular/platform-browser';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
+import { RouterTestingModule } from '@angular/router/testing';
+
+import { DOTTestBed } from '@dotcms/app/test/dot-test-bed';
+import { DotAlertConfirmService, DotMessageService } from '@dotcms/data-access';
 import { MockDotMessageService } from '@dotcms/utils-testing';
+
+import { ActionHeaderComponent } from './action-header.component';
+
+import { DotActionButtonModule } from '../../_common/dot-action-button/dot-action-button.module';
 
 xdescribe('ActionHeaderComponent', () => {
     let comp: ActionHeaderComponent;

@@ -1,22 +1,24 @@
+import { Subject } from 'rxjs';
+
 import {
     Component,
     EventEmitter,
+    Input,
+    OnChanges,
     OnDestroy,
     OnInit,
     Output,
-    Input,
-    SimpleChanges,
-    OnChanges
+    SimpleChanges
 } from '@angular/core';
 import { UntypedFormBuilder, UntypedFormGroup } from '@angular/forms';
 
-import { Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
 
-import { DotTemplateItem } from '../store/dot-template.store';
-import { DotPortletToolbarActions } from '@models/dot-portlet-toolbar.model/dot-portlet-toolbar-actions.model';
 import { DotMessageService } from '@dotcms/data-access';
 import { DotContainer } from '@dotcms/dotcms-models';
+import { DotPortletToolbarActions } from '@models/dot-portlet-toolbar.model/dot-portlet-toolbar-actions.model';
+
+import { DotTemplateItem } from '../store/dot-template.store';
 
 interface MonacoEditorOperation {
     range: number;

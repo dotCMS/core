@@ -1,24 +1,28 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { By } from '@angular/platform-browser';
-import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing';
-import { Component, DebugElement, Input } from '@angular/core';
-import { DotContentletEditorService } from '../../services/dot-contentlet-editor.service';
-import { DotCreateContentletComponent } from './dot-create-contentlet.component';
-import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
-import { CoreWebService, LoginService } from '@dotcms/dotcms-js';
-import { LoginServiceMock } from '@dotcms/utils-testing';
-import { RouterTestingModule } from '@angular/router/testing';
-import { MockDotRouterService } from '@dotcms/utils-testing';
-import { CoreWebServiceMock } from '@dotcms/utils-testing';
-import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { Observable, of } from 'rxjs';
-import { DotFormatDateService } from '@dotcms/app/api/services/dot-format-date-service';
-import { DotIframeService } from '@components/_common/iframe/service/dot-iframe/dot-iframe.service';
+
+import { HttpClientTestingModule } from '@angular/common/http/testing';
+import { Component, DebugElement, Input } from '@angular/core';
+import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing';
+import { By } from '@angular/platform-browser';
 import { ActivatedRoute } from '@angular/router';
-import { DotContentletWrapperComponent } from '../dot-contentlet-wrapper/dot-contentlet-wrapper.component';
-import { DotAlertConfirmService } from '@dotcms/data-access';
+import { RouterTestingModule } from '@angular/router/testing';
+
 import { ConfirmationService } from 'primeng/api';
+
+import { DotIframeService } from '@components/_common/iframe/service/dot-iframe/dot-iframe.service';
+import { DotFormatDateService } from '@dotcms/app/api/services/dot-format-date-service';
+import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
+import { DotAlertConfirmService } from '@dotcms/data-access';
+import { CoreWebService, LoginService } from '@dotcms/dotcms-js';
+import { CoreWebServiceMock, LoginServiceMock, MockDotRouterService } from '@dotcms/utils-testing';
+
+import { DotCreateContentletComponent } from './dot-create-contentlet.component';
+
+import { DotContentletEditorService } from '../../services/dot-contentlet-editor.service';
+import { DotContentletWrapperComponent } from '../dot-contentlet-wrapper/dot-contentlet-wrapper.component';
+
 
 class DotContentletEditorServiceMock {
     get createUrl$(): Observable<any> {

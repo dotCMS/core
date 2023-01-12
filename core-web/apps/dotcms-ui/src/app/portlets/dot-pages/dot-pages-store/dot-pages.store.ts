@@ -1,12 +1,15 @@
-import { Injectable } from '@angular/core';
 import { ComponentStore, tapResponse } from '@ngrx/component-store';
 import { forkJoin, Observable } from 'rxjs';
+
+
+import { HttpErrorResponse } from '@angular/common/http';
+import { Injectable } from '@angular/core';
+
 import { switchMap, take } from 'rxjs/operators';
-import { DotCMSContentlet, DotCurrentUser, ESContent } from '@dotcms/dotcms-models';
 
 import { DotHttpErrorManagerService } from '@dotcms/app/api/services/dot-http-error-manager/dot-http-error-manager.service';
-import { HttpErrorResponse } from '@angular/common/http';
 import { DotCurrentUserService, DotESContentService, ESOrderDirection } from '@dotcms/data-access';
+import { DotCMSContentlet, DotCurrentUser, ESContent } from '@dotcms/dotcms-models';
 
 export interface DotPagesState {
     favoritePages: {

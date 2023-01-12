@@ -1,10 +1,13 @@
 import { Injectable, Type } from '@angular/core';
-import { PROPERTY_INFO } from './field-property-info';
-import { DATA_TYPE_PROPERTY_INFO } from './data-type-property-info';
 import { ValidationErrors } from '@angular/forms';
-import { FieldService } from './field.service';
-import { FieldType } from '../models';
+
 import { DotDynamicFieldComponent } from '@dotcms/dotcms-models';
+
+import { DATA_TYPE_PROPERTY_INFO } from './data-type-property-info';
+import { PROPERTY_INFO } from './field-property-info';
+import { FieldService } from './field.service';
+
+import { FieldType } from '../models';
 
 /**
  * Provide method to handle with the Field Types's properties

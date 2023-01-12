@@ -1,12 +1,11 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { waitForAsync } from '@angular/core/testing';
-import { TestBed } from '@angular/core/testing';
+import { TestBed, waitForAsync } from '@angular/core/testing';
 
-import { DotDragDropAPIHtmlService } from './dot-drag-drop-api-html.service';
 import { DotDOMHtmlUtilService } from './dot-dom-html-util.service';
-import DRAGULA_CSS from './libraries/dragula.css';
+import { DotDragDropAPIHtmlService } from './dot-drag-drop-api-html.service';
 import EDIT_MODE_DRAG_DROP, { EDIT_PAGE_JS_DOJO_REQUIRE } from './libraries';
+import DRAGULA_CSS from './libraries/dragula.css';
 
 describe('DotDragDropAPIHtmlService', () => {
     let service: DotDragDropAPIHtmlService;
@@ -15,19 +14,17 @@ describe('DotDragDropAPIHtmlService', () => {
     document.body.appendChild(iframe);
     const doc = iframe.contentWindow.document;
 
-    beforeEach(
-        waitForAsync(() => {
-            TestBed.configureTestingModule({
-                providers: [DotDragDropAPIHtmlService, DotDOMHtmlUtilService],
-                imports: []
-            });
+    beforeEach(waitForAsync(() => {
+        TestBed.configureTestingModule({
+            providers: [DotDragDropAPIHtmlService, DotDOMHtmlUtilService],
+            imports: []
+        });
 
-            service = TestBed.inject(DotDragDropAPIHtmlService);
+        service = TestBed.inject(DotDragDropAPIHtmlService);
 
-            spyOn(doc.head, 'appendChild').and.callThrough();
-            spyOn(doc.body, 'appendChild').and.callThrough();
-        })
-    );
+        spyOn(doc.head, 'appendChild').and.callThrough();
+        spyOn(doc.body, 'appendChild').and.callThrough();
+    }));
 
     it('should include drag and drop css and js', () => {
         service.initDragAndDropContext(iframe);

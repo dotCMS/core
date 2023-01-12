@@ -41,6 +41,7 @@ import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.factories.PreviewFactory;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.user.business.UserUtil;
+import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.UtilMethods;
@@ -72,6 +73,7 @@ import com.liferay.util.StringUtil;
 import com.liferay.util.servlet.SessionErrors;
 import com.liferay.util.servlet.UploadServletRequest;
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.Enumeration;
 import java.util.LinkedHashMap;
@@ -116,12 +118,12 @@ public class PortalRequestProcessor extends StxxTilesRequestProcessor {
 	}
 
 	public void process(HttpServletRequest req, HttpServletResponse res)
-		throws IOException, ServletException {
+			throws IOException, ServletException {
 
 		String path = super.processPath(req, res);
 
 		ActionMapping mapping =
-			(ActionMapping)moduleConfig.findActionConfig(path);
+				(ActionMapping)moduleConfig.findActionConfig(path);
 
 		if ((mapping == null) && !path.startsWith(_PATH_WSRP)) {
 			String lastPath = getLastPath(req).toString();
@@ -149,20 +151,20 @@ public class PortalRequestProcessor extends StxxTilesRequestProcessor {
 
 	protected void callParentDoForward(
 			String uri, HttpServletRequest req, HttpServletResponse res)
-		throws IOException, ServletException {
+			throws IOException, ServletException {
 
 		super.doForward(uri, req, res);
 	}
 
 	protected void doForward(
 			String uri, HttpServletRequest req, HttpServletResponse res)
-		throws IOException, ServletException {
+			throws IOException, ServletException {
 
 		StrutsUtil.forward(uri, getServletContext(), req, res);
 	}
 
 	protected HttpServletRequest callParentProcessMultipart(
-		HttpServletRequest req) {
+			HttpServletRequest req) {
 
 		return super.processMultipart(req);
 	}
@@ -177,14 +179,14 @@ public class PortalRequestProcessor extends StxxTilesRequestProcessor {
 
 	protected String callParentProcessPath(
 			HttpServletRequest req, HttpServletResponse res)
-		throws IOException {
+			throws IOException {
 
 		return super.processPath(req, res);
 	}
 
 	protected String processPath(
 			HttpServletRequest req, HttpServletResponse res)
-		throws IOException {
+			throws IOException {
 
 		String path = super.processPath(req, res);
 
@@ -195,15 +197,15 @@ public class PortalRequestProcessor extends StxxTilesRequestProcessor {
 		String companyId = PortalUtil.getCompanyId(req);
 
 		Map currentUsers = (Map)WebAppPool.get(
-			companyId, WebKeys.CURRENT_USERS);
+				companyId, WebKeys.CURRENT_USERS);
 
 		UserTracker userTracker = (UserTracker)currentUsers.get(ses.getId());
 
 		if ((userTracker != null) &&
-			((path != null) &&
-				(!path.equals(_PATH_C)) &&
-				(path.indexOf(_PATH_J_SECURITY_CHECK) == -1) &&
-				(path.indexOf(_PATH_PORTAL_PROTECTED) == -1))) {
+				((path != null) &&
+						(!path.equals(_PATH_C)) &&
+						(path.indexOf(_PATH_J_SECURITY_CHECK) == -1) &&
+						(path.indexOf(_PATH_PORTAL_PROTECTED) == -1))) {
 
 			/*Map parameterMap = null;
 
@@ -225,10 +227,10 @@ public class PortalRequestProcessor extends StxxTilesRequestProcessor {
 			fullPathSB.append(req.getQueryString());
 
 			userTracker.addPath(
-				new UserTrackerPath(
-					userTracker.getUserTrackerId(),
-					userTracker.getUserTrackerId(), fullPathSB.toString(),
-					new Date()));
+					new UserTrackerPath(
+							userTracker.getUserTrackerId(),
+							userTracker.getUserTrackerId(), fullPathSB.toString(),
+							new Date()));
 		}
 
 		String userId = req.getRemoteUser();
@@ -244,18 +246,18 @@ public class PortalRequestProcessor extends StxxTilesRequestProcessor {
 		// Last path
 
 		if ((path != null) &&
-			(path.equals(_PATH_PORTAL_LAYOUT) ||
-			 path.equals(_PATH_PORTAL_PUBLIC_LAYOUT))) {
+				(path.equals(_PATH_PORTAL_LAYOUT) ||
+						path.equals(_PATH_PORTAL_PUBLIC_LAYOUT))) {
 
 			String strutsAction = req.getParameter("_2_struts_action");
 
 			if (strutsAction == null ||
-				!strutsAction.equals(_PATH_MY_ACCOUNT_CREATE_ACCOUNT)) {
+					!strutsAction.equals(_PATH_MY_ACCOUNT_CREATE_ACCOUNT)) {
 
 				Map parameterMap = new LinkedHashMap();
 				if (req instanceof UploadServletRequest) {
 					UploadServletRequest uploadServletReq =
-						(UploadServletRequest)req;
+							(UploadServletRequest)req;
 
 					Enumeration paramNames = uploadServletReq.getParameterNames();
 					while (paramNames.hasMoreElements()) {
@@ -270,15 +272,15 @@ public class PortalRequestProcessor extends StxxTilesRequestProcessor {
 				}
 
 				ses.setAttribute(
-					WebKeys.LAST_PATH,
-					new ObjectValuePair(
-						path, new LinkedHashMap(parameterMap)));
+						WebKeys.LAST_PATH,
+						new ObjectValuePair(
+								path, new LinkedHashMap(parameterMap)));
 			}
 		}
 
 		// Authenticated users can always log out
 		if ((userId != null || user != null) && (path != null) &&
-			(path.equals(_PATH_PORTAL_LOGOUT))) {
+				(path.equals(_PATH_PORTAL_LOGOUT))) {
 
 			return _PATH_PORTAL_LOGOUT;
 		}
@@ -286,19 +288,19 @@ public class PortalRequestProcessor extends StxxTilesRequestProcessor {
 		if ((userId != null || user != null) && (path != null) &&
 				(path.equals(_PATH_PORTAL_LOGOUT_AS))) {
 
-				return _PATH_PORTAL_LOGOUT_AS;
+			return _PATH_PORTAL_LOGOUT_AS;
 		}
 
 		if ((userId != null || user != null) && (path != null) &&
 				(path.equals(_PATH_PORTAL_LOGIN_AS))) {
 
-				return _PATH_PORTAL_LOGIN_AS;
+			return _PATH_PORTAL_LOGIN_AS;
 		}
 
 		// Authenticated users can always agree to terms of use
 
 		if ((userId != null || user != null) && (path != null) &&
-			(path.equals(_PATH_PORTAL_UPDATE_TERMS_OF_USE))) {
+				(path.equals(_PATH_PORTAL_UPDATE_TERMS_OF_USE))) {
 
 			return _PATH_PORTAL_UPDATE_TERMS_OF_USE;
 		}
@@ -313,7 +315,7 @@ public class PortalRequestProcessor extends StxxTilesRequestProcessor {
 
 		if ((user != null) && (!user.isAgreedToTermsOfUse())) {
 			boolean termsOfUseRequired = GetterUtil.get(
-				PropsUtil.get(PropsUtil.TERMS_OF_USE_REQUIRED), true);
+					PropsUtil.get(PropsUtil.TERMS_OF_USE_REQUIRED), true);
 
 			if (termsOfUseRequired) {
 				return _PATH_PORTAL_TERMS_OF_USE;
@@ -331,14 +333,14 @@ public class PortalRequestProcessor extends StxxTilesRequestProcessor {
 		// Authenticated users may not be allowed to have simultaneous logins
 
 		boolean simultaenousLogins = GetterUtil.get(
-			PropsUtil.get(PropsUtil.AUTH_SIMULTANEOUS_LOGINS), true);
+				PropsUtil.get(PropsUtil.AUTH_SIMULTANEOUS_LOGINS), true);
 
 		if (!simultaenousLogins) {
 			Boolean staleSession =
-				(Boolean)ses.getAttribute(WebKeys.STALE_SESSION);
+					(Boolean)ses.getAttribute(WebKeys.STALE_SESSION);
 
 			if ((user != null) &&
-				(staleSession != null && staleSession.booleanValue() == true)) {
+					(staleSession != null && staleSession.booleanValue() == true)) {
 
 				return _PATH_PORTAL_ERROR;
 			}
@@ -363,7 +365,7 @@ public class PortalRequestProcessor extends StxxTilesRequestProcessor {
 
 
 		ActionMapping mapping =
-			(ActionMapping)moduleConfig.findActionConfig(path);
+				(ActionMapping)moduleConfig.findActionConfig(path);
 
 		if (path.startsWith(_PATH_WSRP)) {
 			path = _PATH_WSRP;
@@ -381,7 +383,7 @@ public class PortalRequestProcessor extends StxxTilesRequestProcessor {
 
 				if (false) {
 					SessionErrors.add(
-						req, RequiredRoleException.class.getName());
+							req, RequiredRoleException.class.getName());
 
 					return _PATH_PORTAL_ERROR;
 				}
@@ -451,14 +453,14 @@ public class PortalRequestProcessor extends StxxTilesRequestProcessor {
 		// try to get the last host from the user record
 		else{
 
-				try {
-					host = UserUtil.getLastHost(user);
-					req.getSession().setAttribute(com.dotmarketing.util.WebKeys.CMS_SELECTED_HOST_ID, host.getIdentifier());
-				} catch (DotDataException e) {
-					Logger.debug(this.getClass(), e.toString());
-				} catch (DotSecurityException e) {
-					Logger.warn(this.getClass(), "User " + user.getUserId() + " does not have permissions to host " + e.toString());
-				}
+			try {
+				host = UserUtil.getLastHost(user);
+				req.getSession().setAttribute(com.dotmarketing.util.WebKeys.CMS_SELECTED_HOST_ID, host.getIdentifier());
+			} catch (DotDataException e) {
+				Logger.debug(this.getClass(), e.toString());
+			} catch (DotSecurityException e) {
+				Logger.warn(this.getClass(), "User " + user.getUserId() + " does not have permissions to host " + e.toString());
+			}
 
 		}
 
@@ -497,13 +499,13 @@ public class PortalRequestProcessor extends StxxTilesRequestProcessor {
 
 		if(req.getSession().getAttribute(WebKeys.LOGIN_TO_EDIT_MODE) != null){
 			try{
-				String sendMeTo =(String) req.getSession().getAttribute(WebKeys.LOGIN_TO_EDIT_MODE) ;
+				final String sendMeTo =(String) req.getSession().getAttribute(WebKeys.LOGIN_TO_EDIT_MODE) ;
 				req.getSession().removeAttribute(WebKeys.LOGIN_TO_EDIT_MODE);
 				Layout layout = null;
 				List<Layout> userLayouts;
 
 				userLayouts = APILocator.getLayoutAPI().loadLayoutsForUser(user);
-				if(userLayouts != null && userLayouts.size() > 0){
+				if(userLayouts != null && !userLayouts.isEmpty()){
 					layout = userLayouts.get(0);
 					req.setAttribute(WebKeys.LAYOUT, layout);
 				}
@@ -517,8 +519,12 @@ public class PortalRequestProcessor extends StxxTilesRequestProcessor {
 				PageMode.setPageMode(req, PageMode.PREVIEW_MODE);
 
 				if(host != null){
-					res.sendRedirect(SecurityUtils.stripReferer(req, sendMeTo + "?host_id=" +host.getIdentifier() +"&r="  +System.currentTimeMillis()));
-					return null;
+
+					final List<String> allowed = getAllowedRedirectedHosts();
+					if(allowed.contains(sendMeTo) || allowed.stream().anyMatch(sendMeTo::startsWith) || allowed.contains("/*") ){
+						res.sendRedirect(SecurityUtils.stripReferer(req, sendMeTo + "?host_id=" +host.getIdentifier() +"&r="  +System.currentTimeMillis()));
+						return null;
+					}
 				}
 
 			}
@@ -530,15 +536,19 @@ public class PortalRequestProcessor extends StxxTilesRequestProcessor {
 			return null;
 		}
 
-
-
 		return path;
+	}
+
+	List<String> getAllowedRedirectedHosts(){
+		return  Arrays.asList(
+				Config.getStringArrayProperty("LOGIN_TO_EDIT_MODE_ALLOWED_URLS", new String[]{"/","/*"})
+		);
 	}
 
 	protected boolean callParentProcessRoles(
 			HttpServletRequest req, HttpServletResponse res,
 			ActionMapping mapping)
-		throws IOException, ServletException {
+			throws IOException, ServletException {
 
 		return super.processRoles(req, res, mapping);
 	}
@@ -546,7 +556,7 @@ public class PortalRequestProcessor extends StxxTilesRequestProcessor {
 	protected boolean processRoles(
 			HttpServletRequest req, HttpServletResponse res,
 			ActionMapping mapping)
-		throws IOException, ServletException {
+			throws IOException, ServletException {
 
 		boolean authorized = true;
 
@@ -576,7 +586,7 @@ public class PortalRequestProcessor extends StxxTilesRequestProcessor {
 				// Check roles
 
 				String strutsPath = path.substring(
-					1, path.lastIndexOf(StringPool.SLASH));
+						1, path.lastIndexOf(StringPool.SLASH));
 
 				Portlet portlet = null;
 
@@ -588,7 +598,7 @@ public class PortalRequestProcessor extends StxxTilesRequestProcessor {
 				}
 				else if (portlet != null && !portlet.isActive()) {
 					SessionErrors.add(
-						req, PortletActiveException.class.getName());
+							req, PortletActiveException.class.getName());
 
 					authorized = false;
 				}
@@ -602,7 +612,7 @@ public class PortalRequestProcessor extends StxxTilesRequestProcessor {
 
 		if (!authorized) {
 			ForwardConfig forwardConfig =
-				mapping.findForward(_PATH_PORTAL_ERROR);
+					mapping.findForward(_PATH_PORTAL_ERROR);
 
 			processForwardConfig(req, res, forwardConfig);
 
@@ -633,14 +643,14 @@ public class PortalRequestProcessor extends StxxTilesRequestProcessor {
 		}
 
 		boolean forwardByLastPath = GetterUtil.get(
-			PropsUtil.get(PropsUtil.AUTH_FORWARD_BY_LAST_PATH), true);
+				PropsUtil.get(PropsUtil.AUTH_FORWARD_BY_LAST_PATH), true);
 
 		if (!forwardByLastPath) {
 			return defaultPathSB;
 		}
 
 		ObjectValuePair ovp =
-			(ObjectValuePair)ses.getAttribute(WebKeys.LAST_PATH);
+				(ObjectValuePair)ses.getAttribute(WebKeys.LAST_PATH);
 
 		if (ovp == null) {
 			return defaultPathSB;
@@ -650,13 +660,13 @@ public class PortalRequestProcessor extends StxxTilesRequestProcessor {
 
 		if (userId != null) {
 			lastPath = StringUtil.replace(
-				lastPath, _PATH_PORTAL_PUBLIC_LAYOUT, _PATH_PORTAL_LAYOUT);
+					lastPath, _PATH_PORTAL_PUBLIC_LAYOUT, _PATH_PORTAL_LAYOUT);
 		}
 
 		Map parameterMap = (Map)ovp.getValue();
 
 		ActionMapping mapping =
-			(ActionMapping)moduleConfig.findActionConfig(lastPath);
+				(ActionMapping)moduleConfig.findActionConfig(lastPath);
 
 		if (parameterMap == null) {
 			return defaultPathSB;
@@ -674,12 +684,12 @@ public class PortalRequestProcessor extends StxxTilesRequestProcessor {
 
 	protected boolean isPortletPath(String path) {
 		if ((path != null) &&
-			(!path.equals(_PATH_C)) &&
-			(!path.startsWith(_PATH_COMMON)) &&
-			(path.indexOf(_PATH_J_SECURITY_CHECK) == -1) &&
-			(!path.startsWith(_PATH_PORTAL)) &&
-			(!path.startsWith(_PATH_PORTAL_PUBLIC)) &&
-			(!path.startsWith(_PATH_WSRP))) {
+				(!path.equals(_PATH_C)) &&
+				(!path.startsWith(_PATH_COMMON)) &&
+				(path.indexOf(_PATH_J_SECURITY_CHECK) == -1) &&
+				(!path.startsWith(_PATH_PORTAL)) &&
+				(!path.startsWith(_PATH_PORTAL_PUBLIC)) &&
+				(!path.startsWith(_PATH_WSRP))) {
 
 			return true;
 		}
@@ -690,9 +700,9 @@ public class PortalRequestProcessor extends StxxTilesRequestProcessor {
 
 	protected boolean isPublicPath(String path) {
 		if ((path != null) &&
-			(_publicPaths.contains(path)) ||
-			(path.startsWith(_PATH_COMMON)) ||
-			(path.startsWith(_PATH_WSRP))) {
+				(_publicPaths.contains(path)) ||
+				(path.startsWith(_PATH_COMMON)) ||
+				(path.startsWith(_PATH_WSRP))) {
 
 			return true;
 		}
@@ -703,25 +713,25 @@ public class PortalRequestProcessor extends StxxTilesRequestProcessor {
 
 	protected void defineObjects(
 			HttpServletRequest req, HttpServletResponse res, Portlet portlet)
-		throws PortalException, PortletException, SystemException {
+			throws PortalException, PortletException, SystemException {
 
 		String portletId = portlet.getPortletId();
 
 		ConcretePortletWrapper concretePortletWrapper = (ConcretePortletWrapper)  APILocator.getPortletAPI().getImplementingInstance(portlet);
 
-    PortletPreferences portletPrefs =
-        PortletPreferencesManagerUtil.getPreferences(portlet.getCompanyId(), PortalUtil.getPortletPreferencesPK(req, portletId));
+		PortletPreferences portletPrefs =
+				PortletPreferencesManagerUtil.getPreferences(portlet.getCompanyId(), PortalUtil.getPortletPreferencesPK(req, portletId));
 
 		PortletConfig portletConfig = APILocator.getPortletAPI().getPortletConfig(portlet);
 		PortletContext portletCtx =
-			portletConfig.getPortletContext();
+				portletConfig.getPortletContext();
 
 		RenderRequestImpl renderRequest = new RenderRequestImpl(
-			req, portlet, concretePortletWrapper, portletCtx, WindowState.MAXIMIZED,
-			PortletMode.VIEW, portletPrefs);
+				req, portlet, concretePortletWrapper, portletCtx, WindowState.MAXIMIZED,
+				PortletMode.VIEW, portletPrefs);
 
 		RenderResponseImpl renderResponse = new RenderResponseImpl(
-			renderRequest, res, portletId, portlet.getCompanyId());
+				renderRequest, res, portletId, portlet.getCompanyId());
 
 		renderRequest.defineObjects(portletConfig, renderResponse);
 	}
@@ -734,12 +744,12 @@ public class PortalRequestProcessor extends StxxTilesRequestProcessor {
 	private static String _PATH_J_SECURITY_CHECK = "/j_security_check";
 
 	private static String _PATH_MY_ACCOUNT_CREATE_ACCOUNT =
-		"/my_account/create_account";
+			"/my_account/create_account";
 
 	private static String _PATH_PORTAL = "/portal";
 	private static String _PATH_PORTAL_ADD_PAGE = "/portal/add_page";
 	private static String _PATH_PORTAL_CHANGE_PASSWORD =
-		"/portal/change_password";
+			"/portal/change_password";
 	private static String _PATH_PORTAL_ERROR = Constants.PORTAL_ERROR;
 	private static String _PATH_PORTAL_LAST_PATH = "/portal/last_path";
 	private static String _PATH_PORTAL_LAYOUT = "/portal/layout";
@@ -749,14 +759,14 @@ public class PortalRequestProcessor extends StxxTilesRequestProcessor {
 	private static String _PATH_PORTAL_PROTECTED = "/portal/protected";
 	private static String _PATH_PORTAL_TERMS_OF_USE = "/portal/terms_of_use";
 	private static String _PATH_PORTAL_UPDATE_TERMS_OF_USE =
-		"/portal/update_terms_of_use";
+			"/portal/update_terms_of_use";
 
 	private static String _PATH_PORTAL_PUBLIC = "/portal_public";
 	private static String _PATH_PORTAL_PUBLIC_ABOUT = "/portal_public/about";
 	private static String _PATH_PORTAL_PUBLIC_DISCLAIMER =
-		"/portal_public/disclaimer";
+			"/portal_public/disclaimer";
 	private static String _PATH_PORTAL_PUBLIC_J_LOGIN =
-		"/portal_public/j_login";
+			"/portal_public/j_login";
 	private static String _PATH_PORTAL_PUBLIC_LAYOUT = "/portal_public/layout";
 	private static String _PATH_PORTAL_PUBLIC_LOGIN = "/portal_public/login";
 	private static String _PATH_PORTAL_PUBLIC_TCK = "/portal_public/tck";

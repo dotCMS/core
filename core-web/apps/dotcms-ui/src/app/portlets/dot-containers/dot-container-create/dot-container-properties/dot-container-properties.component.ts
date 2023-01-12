@@ -1,18 +1,28 @@
+import { Subject } from 'rxjs';
+
+import { animate, style, transition, trigger } from '@angular/animations';
 import { Component, OnInit } from '@angular/core';
 import { FormArray, FormBuilder, FormControl, FormGroup, Validators } from '@angular/forms';
-import {
-    DotContainerPropertiesStore,
-    DotContainerPropertiesState
-} from '@portlets/dot-containers/dot-container-create/dot-container-properties/store/dot-container-properties.store';
-import { MonacoEditor } from '@models/monaco-editor';
-import { DotAlertConfirmService, DotMessageService } from '@dotcms/data-access';
-import { DotRouterService } from '@services/dot-router/dot-router.service';
-import { pairwise, startWith, take, takeUntil } from 'rxjs/operators';
+
 import { MenuItem } from 'primeng/api';
-import { Subject } from 'rxjs';
+
+import { pairwise, startWith, take, takeUntil } from 'rxjs/operators';
+
+import { DotAlertConfirmService, DotMessageService } from '@dotcms/data-access';
 import { DotContainerPayload, DotContainerStructure } from '@dotcms/dotcms-models';
+import { MonacoEditor } from '@models/monaco-editor';
+import {
+    DotContainerPropertiesState,
+    DotContainerPropertiesStore
+} from '@portlets/dot-containers/dot-container-create/dot-container-properties/store/dot-container-properties.store';
+import { DotRouterService } from '@services/dot-router/dot-router.service';
 
 @Component({
+    animations: [
+        trigger('contentTypeAnimation', [
+            transition(':enter', [style({ opacity: 0 }), animate(500, style({ opacity: 1 }))])
+        ])
+    ],
     selector: 'dot-container-properties',
     templateUrl: './dot-container-properties.component.html',
     styleUrls: ['./dot-container-properties.component.scss'],

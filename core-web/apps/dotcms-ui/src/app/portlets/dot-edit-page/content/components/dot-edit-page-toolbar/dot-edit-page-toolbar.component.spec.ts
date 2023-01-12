@@ -1,23 +1,37 @@
-import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { Component, DebugElement, Injectable, Input } from '@angular/core';
-import { By } from '@angular/platform-browser';
-import {
-    dotcmsContentletMock,
-    MockDotMessageService,
-    mockDotRenderedPage
-} from '@dotcms/utils-testing';
-import { mockDotRenderedPageState } from '@dotcms/utils-testing';
-import { DotPageStateService } from '../../services/dot-page-state/dot-page-state.service';
-import { DotEditPageToolbarComponent } from './dot-edit-page-toolbar.component';
-import { DotLicenseService } from '@dotcms/data-access';
-import { DotMessageService } from '@dotcms/data-access';
+import { Observable, of } from 'rxjs';
 
 import { CommonModule } from '@angular/common';
+import { HttpClientTestingModule } from '@angular/common/http/testing';
+import { Component, DebugElement, Injectable, Input } from '@angular/core';
+import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { FormsModule } from '@angular/forms';
-import { Observable, of } from 'rxjs';
-import { DotEditPageViewAsControllerModule } from '../dot-edit-page-view-as-controller/dot-edit-page-view-as-controller.module';
-import { DotEditPageStateControllerModule } from '../dot-edit-page-state-controller/dot-edit-page-state-controller.module';
-import { DotEditPageInfoModule } from '@portlets/dot-edit-page/components/dot-edit-page-info/dot-edit-page-info.module';
+import { By } from '@angular/platform-browser';
+import { ActivatedRoute } from '@angular/router';
+
+import { ConfirmationService } from 'primeng/api';
+import { ButtonModule } from 'primeng/button';
+import { CheckboxModule } from 'primeng/checkbox';
+import { DialogService } from 'primeng/dynamicdialog';
+import { ToolbarModule } from 'primeng/toolbar';
+import { TooltipModule } from 'primeng/tooltip';
+
+import { DotGlobalMessageService } from '@components/_common/dot-global-message/dot-global-message.service';
+import { DotWizardModule } from '@components/_common/dot-wizard/dot-wizard.module';
+import { DotIframeService } from '@components/_common/iframe/service/dot-iframe/dot-iframe.service';
+import { DotMessageDisplayService } from '@components/dot-message-display/services';
+import { DotSecondaryToolbarModule } from '@components/dot-secondary-toolbar';
+import { DotFormatDateService } from '@dotcms/app/api/services/dot-format-date-service';
+import { DotHttpErrorManagerService } from '@dotcms/app/api/services/dot-http-error-manager/dot-http-error-manager.service';
+import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
+import { dotEventSocketURLFactory } from '@dotcms/app/test/dot-test-bed';
+import {
+    DotAlertConfirmService,
+    DotESContentService,
+    DotEventsService,
+    DotLicenseService,
+    DotMessageService,
+    DotPropertiesService
+} from '@dotcms/data-access';
 import {
     ApiRoot,
     CoreWebService,
@@ -31,37 +45,30 @@ import {
     StringUtils,
     UserModel
 } from '@dotcms/dotcms-js';
-import { SiteServiceMock } from '@dotcms/utils-testing';
-import { DotEditPageWorkflowsActionsModule } from '../dot-edit-page-workflows-actions/dot-edit-page-workflows-actions.module';
-import { LoginServiceMock, mockUser } from '@dotcms/utils-testing';
-import { DotSecondaryToolbarModule } from '@components/dot-secondary-toolbar';
-import { mockDotPersona } from '@dotcms/utils-testing';
-import { DotMessageDisplayService } from '@components/dot-message-display/services';
-import { DotEventsService } from '@dotcms/data-access';
-import { DotPipesModule } from '@pipes/dot-pipes.module';
-import { CoreWebServiceMock } from '@dotcms/utils-testing';
-import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
-import { MockDotRouterService } from '@dotcms/utils-testing';
-import { DotHttpErrorManagerService } from '@dotcms/app/api/services/dot-http-error-manager/dot-http-error-manager.service';
-import { DotAlertConfirmService } from '@dotcms/data-access';
-import { DotGlobalMessageService } from '@components/_common/dot-global-message/dot-global-message.service';
-import { DotWizardModule } from '@components/_common/dot-wizard/dot-wizard.module';
-import { HttpClientTestingModule } from '@angular/common/http/testing';
-import { DotIframeService } from '@components/_common/iframe/service/dot-iframe/dot-iframe.service';
-import { ButtonModule } from 'primeng/button';
-import { CheckboxModule } from 'primeng/checkbox';
-import { ToolbarModule } from 'primeng/toolbar';
-import { ConfirmationService } from 'primeng/api';
 import { DotPageMode, DotPageRender, DotPageRenderState, ESContent } from '@dotcms/dotcms-models';
-import { DotFormatDateService } from '@dotcms/app/api/services/dot-format-date-service';
-import { DotFormatDateServiceMock } from '@dotcms/utils-testing';
-import { DialogService } from 'primeng/dynamicdialog';
-import { DotESContentService } from '@dotcms/data-access';
-import { TooltipModule } from 'primeng/tooltip';
-import { DotPropertiesService } from '@dotcms/data-access';
-import { dotEventSocketURLFactory } from '@dotcms/app/test/dot-test-bed';
-import { ActivatedRoute } from '@angular/router';
+import {
+    CoreWebServiceMock,
+    dotcmsContentletMock,
+    DotFormatDateServiceMock,
+    LoginServiceMock,
+    MockDotMessageService,
+    mockDotPersona,
+    mockDotRenderedPage,
+    mockDotRenderedPageState,
+    MockDotRouterService,
+    mockUser,
+    SiteServiceMock
+} from '@dotcms/utils-testing';
+import { DotPipesModule } from '@pipes/dot-pipes.module';
+import { DotEditPageInfoModule } from '@portlets/dot-edit-page/components/dot-edit-page-info/dot-edit-page-info.module';
 import { DotExperimentClassDirective } from '@portlets/shared/directives/dot-experiment-class.directive';
+
+import { DotEditPageToolbarComponent } from './dot-edit-page-toolbar.component';
+
+import { DotPageStateService } from '../../services/dot-page-state/dot-page-state.service';
+import { DotEditPageStateControllerModule } from '../dot-edit-page-state-controller/dot-edit-page-state-controller.module';
+import { DotEditPageViewAsControllerModule } from '../dot-edit-page-view-as-controller/dot-edit-page-view-as-controller.module';
+import { DotEditPageWorkflowsActionsModule } from '../dot-edit-page-workflows-actions/dot-edit-page-workflows-actions.module';
 
 @Component({
     selector: 'dot-test-host-component',

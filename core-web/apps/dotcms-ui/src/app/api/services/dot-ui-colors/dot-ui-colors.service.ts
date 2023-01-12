@@ -1,5 +1,7 @@
-import { Injectable } from '@angular/core';
 import { TinyColor } from '@ctrl/tinycolor';
+
+import { Injectable } from '@angular/core';
+
 import { DotUiColors } from '@dotcms/dotcms-js';
 
 @Injectable()
@@ -8,7 +10,7 @@ export class DotUiColorsService {
     private readonly COL_MAIN_LIGHTEN_VAL = 12;
 
     /**
-     * Set css variables colors
+     * Set CSS variables colors
      *
      * @param DotUiColors colors
      * @memberof DotUiColorsService

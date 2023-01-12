@@ -1,7 +1,10 @@
-import { map, take } from 'rxjs/operators';
+import { Observable } from 'rxjs';
+
 import { Injectable } from '@angular/core';
 import { CanActivate } from '@angular/router';
-import { Observable } from 'rxjs';
+
+import { map, take } from 'rxjs/operators';
+
 import { DotPropertiesService } from '@dotcms/data-access';
 import { FeaturedFlags } from '@dotcms/dotcms-models';
 
