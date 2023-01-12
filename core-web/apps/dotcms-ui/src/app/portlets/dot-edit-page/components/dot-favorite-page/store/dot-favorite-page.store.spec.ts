@@ -1,23 +1,28 @@
+import { Observable, of } from 'rxjs';
+
 import { Injectable } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
+
 import { mockDotCMSTempFile } from '@components/dot-add-persona-dialog/dot-create-persona-form/dot-create-persona-form.component.spec';
-import { DotCurrentUserService } from '@dotcms/data-access';
 import { DotHttpErrorManagerService } from '@dotcms/app/api/services/dot-http-error-manager/dot-http-error-manager.service';
-import { DotMessageService } from '@dotcms/data-access';
-import { DotRolesService } from '@dotcms/data-access';
 import { DotTempFileUploadService } from '@dotcms/app/api/services/dot-temp-file-upload/dot-temp-file-upload.service';
-import { DotWorkflowActionsFireService } from '@dotcms/data-access';
 import { CurrentUserDataMock } from '@dotcms/app/portlets/dot-starter/dot-starter-resolver.service.spec';
-import { Observable, of } from 'rxjs';
-import { DotFavoritePageActionState, DotFavoritePageStore } from './dot-favorite-page.store';
-import { DotRole, DotCurrentUser, DotPageRenderState, DotPageRender } from '@dotcms/dotcms-models';
+import { MockDotHttpErrorManagerService } from '@dotcms/app/test/dot-http-error-manager.service.mock';
+import {
+    DotCurrentUserService,
+    DotMessageService,
+    DotRolesService,
+    DotWorkflowActionsFireService
+} from '@dotcms/data-access';
+import { DotCurrentUser, DotPageRender, DotPageRenderState, DotRole } from '@dotcms/dotcms-models';
 import {
     MockDotMessageService,
     mockDotRenderedPage,
     mockProcessedRoles,
     mockUser
 } from '@dotcms/utils-testing';
-import { MockDotHttpErrorManagerService } from '@dotcms/app/test/dot-http-error-manager.service.mock';
+
+import { DotFavoritePageActionState, DotFavoritePageStore } from './dot-favorite-page.store';
 
 @Injectable()
 class MockDotRolesService {

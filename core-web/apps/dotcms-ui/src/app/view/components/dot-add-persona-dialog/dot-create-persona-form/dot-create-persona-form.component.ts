@@ -1,11 +1,15 @@
-import { Component, EventEmitter, Input, OnDestroy, OnInit, Output } from '@angular/core';
-import { takeUntil } from 'rxjs/operators';
-import { UntypedFormBuilder, UntypedFormGroup, Validators } from '@angular/forms';
 import * as _ from 'lodash';
 import { Subject } from 'rxjs';
-import { DotFileUpload } from '@models/dot-file-upload/dot-file-upload.model';
-import { DotCMSTempFile } from '@dotcms/dotcms-models';
+
+import { Component, EventEmitter, Input, OnDestroy, OnInit, Output } from '@angular/core';
+import { UntypedFormBuilder, UntypedFormGroup, Validators } from '@angular/forms';
+
+import { takeUntil } from 'rxjs/operators';
+
 import { SiteService } from '@dotcms/dotcms-js';
+import { DotCMSTempFile } from '@dotcms/dotcms-models';
+import { DotFileUpload } from '@models/dot-file-upload/dot-file-upload.model';
+
 
 @Component({
     selector: 'dot-create-persona-form',

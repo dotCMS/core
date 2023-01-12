@@ -1,5 +1,6 @@
 import { NgModule } from '@angular/core';
-import { Routes, RouterModule } from '@angular/router';
+import { RouterModule, Routes } from '@angular/router';
+
 import { DotTemplateCreateEditComponent } from './dot-template-create-edit.component';
 
 const routes: Routes = [

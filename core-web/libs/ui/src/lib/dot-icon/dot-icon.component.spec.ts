@@ -1,7 +1,8 @@
-import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { DebugElement } from '@angular/core';
-import { DotIconComponent } from './dot-icon.component';
+import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
+
+import { DotIconComponent } from './dot-icon.component';
 
 describe('DotIconComponent', () => {
     let comp: DotIconComponent;

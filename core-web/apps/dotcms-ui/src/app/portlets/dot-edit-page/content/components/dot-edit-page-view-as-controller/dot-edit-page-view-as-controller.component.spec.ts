@@ -1,25 +1,24 @@
-import { ComponentFixture, waitForAsync } from '@angular/core/testing';
-import { DotDevicesService } from '@dotcms/data-access';
-import { DotLanguagesService } from '@dotcms/data-access';
-import { DotPersonasService } from '@dotcms/data-access';
-import { DOTTestBed } from '@dotcms/app/test/dot-test-bed';
-import { Component, DebugElement, EventEmitter, Input, Output } from '@angular/core';
-import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
-import { By } from '@angular/platform-browser';
+import { of } from 'rxjs';
 
-import { DotPageRenderState, DotPersona } from '@dotcms/dotcms-models';
-import { DotDevice } from '@dotcms/dotcms-models';
-import { DotLanguage } from '@dotcms/dotcms-models';
+import { Component, DebugElement, EventEmitter, Input, Output } from '@angular/core';
+import { ComponentFixture, waitForAsync } from '@angular/core/testing';
+import { By } from '@angular/platform-browser';
+import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
+
+import { TooltipModule } from 'primeng/tooltip';
 
 import { DotDeviceSelectorComponent } from '@components/dot-device-selector/dot-device-selector.component';
-import { DotPersonaSelectorComponent } from '@components/dot-persona-selector/dot-persona-selector.component';
 import { DotLanguageSelectorComponent } from '@components/dot-language-selector/dot-language-selector.component';
+import { DotPersonaSelectorComponent } from '@components/dot-persona-selector/dot-persona-selector.component';
+import { DOTTestBed } from '@dotcms/app/test/dot-test-bed';
+import { DotDevicesService, DotLanguagesService, DotLicenseService, DotMessageService, DotPersonalizeService, DotPersonasService } from '@dotcms/data-access';
 import { LoginService } from '@dotcms/dotcms-js';
-import { DotLicenseService } from '@dotcms/data-access';
-import { of } from 'rxjs';
+import { DotDevice, DotLanguage, DotPageRender, DotPageRenderState, DotPersona } from '@dotcms/dotcms-models';
 import {
     DotDevicesServiceMock,
     DotLanguagesServiceMock,
+    DotPageStateServiceMock,
+    DotPersonalizeServiceMock,
     DotPersonasServiceMock,
     LoginServiceMock,
     mockDotDevices,
@@ -29,15 +28,13 @@ import {
     mockDotRenderedPage,
     mockUser
 } from '@dotcms/utils-testing';
-import { DotMessageService } from '@dotcms/data-access';
-import { DotEditPageViewAsControllerComponent } from './dot-edit-page-view-as-controller.component';
-import { DotPageRender } from '@dotcms/dotcms-models';
-import { DotPageStateService } from '../../services/dot-page-state/dot-page-state.service';
-import { DotPageStateServiceMock } from '@dotcms/utils-testing';
-import { DotPersonalizeService } from '@dotcms/data-access';
-import { DotPersonalizeServiceMock } from '@dotcms/utils-testing';
-import { TooltipModule } from 'primeng/tooltip';
 import { DotPipesModule } from '@pipes/dot-pipes.module';
+
+
+import { DotEditPageViewAsControllerComponent } from './dot-edit-page-view-as-controller.component';
+
+import { DotPageStateService } from '../../services/dot-page-state/dot-page-state.service';
+
 
 @Component({
     selector: 'dot-test-host',

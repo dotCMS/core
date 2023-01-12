@@ -1,24 +1,28 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { RouterTestingModule } from '@angular/router/testing';
-import { IframeOverlayService } from './../service/iframe-overlay.service';
 
-import { ComponentFixture, waitForAsync, fakeAsync, tick } from '@angular/core/testing';
 import { Component, DebugElement } from '@angular/core';
+import { ComponentFixture, fakeAsync, TestBed, tick, waitForAsync } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
-import { MockDotUiColorsService } from '../../../../../test/dot-test-bed';
-import { IframeComponent } from './iframe.component';
-import { DotcmsEventsService, LoggerService, LoginService, StringUtils } from '@dotcms/dotcms-js';
-import { DotIframeService } from '../service/dot-iframe/dot-iframe.service';
-import { DotUiColorsService } from '@dotcms/app/api/services/dot-ui-colors/dot-ui-colors.service';
+import { RouterTestingModule } from '@angular/router/testing';
+
 import { DotOverlayMaskModule } from '@components/_common/dot-overlay-mask/dot-overlay-mask.module';
-import { DotcmsEventsServiceMock } from '@dotcms/utils-testing';
-import { TestBed } from '@angular/core/testing';
-import { DotPipesModule } from '@pipes/dot-pipes.module';
 import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
-import { MockDotRouterService } from '@dotcms/utils-testing';
-import { LoginServiceMock } from '@dotcms/utils-testing';
+import { DotUiColorsService } from '@dotcms/app/api/services/dot-ui-colors/dot-ui-colors.service';
+import { DotcmsEventsService, LoggerService, LoginService, StringUtils } from '@dotcms/dotcms-js';
 import { DotLoadingIndicatorService } from '@dotcms/utils';
+import {
+    DotcmsEventsServiceMock,
+    LoginServiceMock,
+    MockDotRouterService
+} from '@dotcms/utils-testing';
+import { DotPipesModule } from '@pipes/dot-pipes.module';
+
+import { IframeOverlayService } from './../service/iframe-overlay.service';
+import { IframeComponent } from './iframe.component';
+
+import { MockDotUiColorsService } from '../../../../../test/dot-test-bed';
+import { DotIframeService } from '../service/dot-iframe/dot-iframe.service';
 
 const fakeHtmlEl = {
     hello: 'html'

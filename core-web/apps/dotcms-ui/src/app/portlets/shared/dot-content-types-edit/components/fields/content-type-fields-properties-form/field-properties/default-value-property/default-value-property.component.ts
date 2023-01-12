@@ -1,7 +1,9 @@
 import { Component, OnInit } from '@angular/core';
-import { FieldProperty } from '../field-properties.model';
-import { DotMessageService } from '@dotcms/data-access';
 import { UntypedFormGroup } from '@angular/forms';
+
+import { DotMessageService } from '@dotcms/data-access';
+
+import { FieldProperty } from '../field-properties.model';
 
 @Component({
     selector: 'dot-default-value-property',

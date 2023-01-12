@@ -1,5 +1,6 @@
-import { Meta, Story } from '@storybook/angular/types-6-0';
 import { moduleMetadata } from '@storybook/angular';
+import { Meta, Story } from '@storybook/angular/types-6-0';
+
 import { ButtonModule } from 'primeng/button';
 
 export default {

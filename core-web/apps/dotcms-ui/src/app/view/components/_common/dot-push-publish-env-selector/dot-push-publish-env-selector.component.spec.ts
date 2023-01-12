@@ -1,16 +1,19 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { of as observableOf, Observable } from 'rxjs';
+import { Observable, of as observableOf } from 'rxjs';
+
+import { Component, DebugElement } from '@angular/core';
 import { ComponentFixture } from '@angular/core/testing';
-import { DebugElement, Component } from '@angular/core';
-import { MockDotMessageService } from '@dotcms/utils-testing';
-import { DOTTestBed } from '@dotcms/app/test/dot-test-bed';
-import { PushPublishEnvSelectorComponent } from './dot-push-publish-env-selector.component';
-import { PushPublishService } from '@dotcms/app/api/services/push-publish/push-publish.service';
-import { UntypedFormGroup, UntypedFormControl } from '@angular/forms';
+import { UntypedFormControl, UntypedFormGroup } from '@angular/forms';
 import { By } from '@angular/platform-browser';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
+
+import { PushPublishService } from '@dotcms/app/api/services/push-publish/push-publish.service';
+import { DOTTestBed } from '@dotcms/app/test/dot-test-bed';
 import { DotMessageService } from '@dotcms/data-access';
+import { MockDotMessageService } from '@dotcms/utils-testing';
+
+import { PushPublishEnvSelectorComponent } from './dot-push-publish-env-selector.component';
 
 export class PushPublishServiceMock {
     _lastEnvironmentPushed: string[];

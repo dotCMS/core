@@ -1,23 +1,29 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { DotContentCompareTableComponent } from './dot-content-compare-table.component';
-import { MockDotMessageService } from '@dotcms/utils-testing';
-import { DotMessageService } from '@dotcms/data-access';
+import { of } from 'rxjs';
+
 import { Component, DebugElement, EventEmitter, Input, Output } from '@angular/core';
-import { DotContentCompareTableData } from '@components/dot-content-compare/store/dot-content-compare.store';
-import { TableModule } from 'primeng/table';
+import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { FormsModule } from '@angular/forms';
+import { By } from '@angular/platform-browser';
+
 import { Dropdown, DropdownModule } from 'primeng/dropdown';
 import { SelectButton, SelectButtonModule } from 'primeng/selectbutton';
-import { DotDiffPipeModule } from '@pipes/dot-diff/dot-diff.pipe.module';
-import { FormsModule } from '@angular/forms';
+import { TableModule } from 'primeng/table';
+
 import { DotContentComparePreviewFieldComponent } from '@components/dot-content-compare/components/fields/dot-content-compare-preview-field/dot-content-compare-preview-field.component';
-import { By } from '@angular/platform-browser';
-import { DotMessagePipeModule } from '@pipes/dot-message/dot-message-pipe.module';
-import { DotcmsConfigService } from '@dotcms/dotcms-js';
+import { DotContentCompareTableData } from '@components/dot-content-compare/store/dot-content-compare.store';
 import { DotFormatDateService } from '@dotcms/app/api/services/dot-format-date-service';
-import { of } from 'rxjs';
+import { DotMessageService } from '@dotcms/data-access';
+import { DotcmsConfigService } from '@dotcms/dotcms-js';
+import { MockDotMessageService } from '@dotcms/utils-testing';
+import { DotDiffPipeModule } from '@pipes/dot-diff/dot-diff.pipe.module';
+import { DotMessagePipeModule } from '@pipes/dot-message/dot-message-pipe.module';
+
+import { DotContentCompareTableComponent } from './dot-content-compare-table.component';
+
 import { DotTransformVersionLabelPipe } from '../../pipes/dot-transform-version-label.pipe';
+
 
 @Component({
     selector: 'dot-test-host-component',

@@ -1,12 +1,12 @@
+import { HttpClientTestingModule, HttpTestingController } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
-import { FieldService } from '.';
-import { FieldType } from '@portlets/shared/dot-content-types-edit/components/fields';
-import { HttpTestingController, HttpClientTestingModule } from '@angular/common/http/testing';
+
 import { CoreWebService } from '@dotcms/dotcms-js';
-import { CoreWebServiceMock } from '@dotcms/utils-testing';
-import { dotcmsContentTypeFieldBasicMock } from '@dotcms/utils-testing';
-import { DotCMSContentTypeField } from '@dotcms/dotcms-models';
-import { DotCMSContentTypeLayoutRow } from '@dotcms/dotcms-models';
+import { DotCMSContentTypeField, DotCMSContentTypeLayoutRow } from '@dotcms/dotcms-models';
+import { CoreWebServiceMock, dotcmsContentTypeFieldBasicMock } from '@dotcms/utils-testing';
+import { FieldType } from '@portlets/shared/dot-content-types-edit/components/fields';
+
+import { FieldService } from '.';
 
 export const mockFieldType: FieldType = {
     clazz: 'TextField',

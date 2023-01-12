@@ -1,7 +1,8 @@
-import { Component, EventEmitter, Input, Output, ChangeDetectionStrategy } from '@angular/core';
+import { ChangeDetectionStrategy, Component, EventEmitter, Input, Output } from '@angular/core';
 
-import { DotCMSContentlet } from '@dotcms/dotcms-models';
 import { sanitizeUrl } from '@dotcms/block-editor';
+import { DotCMSContentlet } from '@dotcms/dotcms-models';
+
 import { squarePlus } from '../../../../shared/components/suggestions/suggestion-icons';
 
 @Component({

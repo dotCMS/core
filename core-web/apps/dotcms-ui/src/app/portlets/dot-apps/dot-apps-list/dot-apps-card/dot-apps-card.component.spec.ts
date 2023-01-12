@@ -1,14 +1,17 @@
+import { Component } from '@angular/core';
 import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing';
-import { MockDotMessageService } from '@dotcms/utils-testing';
-import { DotMessageService } from '@dotcms/data-access';
 import { By } from '@angular/platform-browser';
-import { DotAppsCardComponent } from './dot-apps-card.component';
-import { DotAvatarModule } from '@components/_common/dot-avatar/dot-avatar.module';
-import { DotIconModule } from '@dotcms/ui';
-import { DotPipesModule } from '@pipes/dot-pipes.module';
+
 import { CardModule } from 'primeng/card';
 import { TooltipModule } from 'primeng/tooltip';
-import { Component } from '@angular/core';
+
+import { DotAvatarModule } from '@components/_common/dot-avatar/dot-avatar.module';
+import { DotMessageService } from '@dotcms/data-access';
+import { DotIconModule } from '@dotcms/ui';
+import { MockDotMessageService } from '@dotcms/utils-testing';
+import { DotPipesModule } from '@pipes/dot-pipes.module';
+
+import { DotAppsCardComponent } from './dot-apps-card.component';
 
 @Component({
     // eslint-disable-next-line @angular-eslint/component-selector

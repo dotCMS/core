@@ -1,13 +1,14 @@
-import { fakeAsync, TestBed, tick } from '@angular/core/testing';
 import { Observable, of } from 'rxjs';
-import { DotPaletteStore } from './dot-palette.store';
-import { Injectable } from '@angular/core';
-import { DotESContentService } from '@dotcms/data-access';
-import { PaginatorService } from '@dotcms/data-access';
-import { contentTypeDataMock } from '../dot-palette-content-type/dot-palette-content-type.component.spec';
-import { DotCMSContentlet, DotCMSContentType, ESContent } from '@dotcms/dotcms-models';
-import { DotContentTypeService } from '@dotcms/data-access';
 
+import { Injectable } from '@angular/core';
+import { fakeAsync, TestBed, tick } from '@angular/core/testing';
+
+import { DotContentTypeService, DotESContentService, PaginatorService } from '@dotcms/data-access';
+import { DotCMSContentlet, DotCMSContentType, ESContent } from '@dotcms/dotcms-models';
+
+import { DotPaletteStore } from './dot-palette.store';
+
+import { contentTypeDataMock } from '../dot-palette-content-type/dot-palette-content-type.component.spec';
 import {
     contentletFormDataMock,
     contentletProductDataMock

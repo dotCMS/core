@@ -1,27 +1,32 @@
-import { Component, Input, Output, EventEmitter, DebugElement } from '@angular/core';
+import { HttpClientTestingModule } from '@angular/common/http/testing';
+import { Component, DebugElement, EventEmitter, Input, Output } from '@angular/core';
 import { ComponentFixture, getTestBed, TestBed } from '@angular/core/testing';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
-import { DynamicDialogRef, DynamicDialogConfig } from 'primeng/dynamicdialog';
-import { DotMessagePipe } from '@pipes/dot-message/dot-message.pipe';
+import { By } from '@angular/platform-browser';
+
+import { ButtonModule } from 'primeng/button';
+import { DynamicDialogConfig, DynamicDialogRef } from 'primeng/dynamicdialog';
+import { MultiSelectModule } from 'primeng/multiselect';
+
+import { of } from 'rxjs/internal/observable/of';
+
+import { DotFieldValidationMessageModule } from '@components/_common/dot-field-validation-message/dot-file-validation-message.module';
+import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
 import { DotMessageService } from '@dotcms/data-access';
+import { CoreWebService, CoreWebServiceMock, LoginService } from '@dotcms/dotcms-js';
+import { DotPageRender, DotPageRenderState } from '@dotcms/dotcms-models';
 import {
     LoginServiceMock,
     MockDotMessageService,
     mockDotRenderedPage,
+    MockDotRouterService,
     mockUser
 } from '@dotcms/utils-testing';
-import { DotFieldValidationMessageModule } from '@components/_common/dot-field-validation-message/dot-file-validation-message.module';
-import { By } from '@angular/platform-browser';
+import { DotMessagePipe } from '@pipes/dot-message/dot-message.pipe';
+
+
 import { DotFavoritePageComponent } from './dot-favorite-page.component';
-import { CoreWebService, CoreWebServiceMock, LoginService } from '@dotcms/dotcms-js';
-import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
-import { MockDotRouterService } from '@dotcms/utils-testing';
-import { HttpClientTestingModule } from '@angular/common/http/testing';
-import { MultiSelectModule } from 'primeng/multiselect';
 import { DotFavoritePageActionState, DotFavoritePageStore } from './store/dot-favorite-page.store';
-import { of } from 'rxjs/internal/observable/of';
-import { ButtonModule } from 'primeng/button';
-import { DotPageRenderState, DotPageRender } from '@dotcms/dotcms-models';
 @Component({
     selector: 'dot-form-dialog',
     template: '<ng-content></ng-content><ng-content select="[footerActions]"></ng-content>',

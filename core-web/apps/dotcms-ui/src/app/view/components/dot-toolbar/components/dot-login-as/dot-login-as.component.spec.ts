@@ -2,31 +2,34 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import {
-    throwError as observableThrowError,
+    from as observableFrom,
     of as observableOf,
-    from as observableFrom
+    throwError as observableThrowError
 } from 'rxjs';
 
-import { By } from '@angular/platform-browser';
+import { Component, DebugElement, EventEmitter, forwardRef, Input, Output } from '@angular/core';
 import { ComponentFixture, waitForAsync } from '@angular/core/testing';
-import { DebugElement, Component, Input, forwardRef, Output, EventEmitter } from '@angular/core';
-import { DotLoginAsComponent } from './dot-login-as.component';
-import { LoginServiceMock, MockDotMessageService, mockUser } from '@dotcms/utils-testing';
-import { DOTTestBed } from '@dotcms/app/test/dot-test-bed';
-import { SEARCHABLE_NGFACES_MODULES } from '../../../_common/searchable-dropdown/searchable-dropdown.module';
-import { DotMessageService } from '@dotcms/data-access';
-import { LoginService, User } from '@dotcms/dotcms-js';
-import { PaginatorService } from '@dotcms/data-access';
-import { ActivatedRoute } from '@angular/router';
-import { InputTextModule } from 'primeng/inputtext';
-import { ReactiveFormsModule, NG_VALUE_ACCESSOR } from '@angular/forms';
+import { NG_VALUE_ACCESSOR, ReactiveFormsModule } from '@angular/forms';
+import { By } from '@angular/platform-browser';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
-import { DotEventsService } from '@dotcms/data-access';
-import { DotDialogModule } from '@components/dot-dialog/dot-dialog.module';
+import { ActivatedRoute } from '@angular/router';
 import { RouterTestingModule } from '@angular/router/testing';
-import { LOCATION_TOKEN } from '@dotcms/app/providers';
+
+import { InputTextModule } from 'primeng/inputtext';
+
+import { DotDialogModule } from '@components/dot-dialog/dot-dialog.module';
 import { DotNavigationService } from '@components/dot-navigation/services/dot-navigation.service';
 import { DotMenuService } from '@dotcms/app/api/services/dot-menu.service';
+import { LOCATION_TOKEN } from '@dotcms/app/providers';
+import { DOTTestBed } from '@dotcms/app/test/dot-test-bed';
+import { DotEventsService, DotMessageService, PaginatorService } from '@dotcms/data-access';
+import { LoginService, User } from '@dotcms/dotcms-js';
+import { LoginServiceMock, MockDotMessageService, mockUser } from '@dotcms/utils-testing';
+
+import { DotLoginAsComponent } from './dot-login-as.component';
+
+import { SEARCHABLE_NGFACES_MODULES } from '../../../_common/searchable-dropdown/searchable-dropdown.module';
+
 
 @Component({
     selector: 'dot-searchable-dropdown',

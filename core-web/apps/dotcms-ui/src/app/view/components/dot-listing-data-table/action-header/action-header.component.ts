@@ -1,7 +1,6 @@
-import { DotAlertConfirmService } from '@dotcms/data-access';
-import { Component, Input, SimpleChanges, ViewEncapsulation, OnChanges } from '@angular/core';
+import { Component, Input, OnChanges, SimpleChanges, ViewEncapsulation } from '@angular/core';
 
-import { DotMessageService } from '@dotcms/data-access';
+import { DotAlertConfirmService, DotMessageService } from '@dotcms/data-access';
 import { ActionHeaderOptions, ButtonAction } from '@models/action-header';
 
 @Component({

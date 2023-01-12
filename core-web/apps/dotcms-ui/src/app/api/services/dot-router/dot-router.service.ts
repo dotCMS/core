@@ -1,12 +1,18 @@
-import { Injectable } from '@angular/core';
-import { Router, ActivatedRoute, Params, Event, NavigationEnd } from '@angular/router';
-
-import { PortletNav } from '@models/navigation';
 import { Subject } from 'rxjs';
-import { NavigationExtras } from '@angular/router';
-import { LOGOUT_URL } from '@dotcms/dotcms-js';
+
+import { Injectable } from '@angular/core';
+import {
+    ActivatedRoute,
+    Event,
+    NavigationEnd, NavigationExtras, Params,
+    Router
+} from '@angular/router';
+
 import { filter } from 'rxjs/operators';
+
+import { LOGOUT_URL } from '@dotcms/dotcms-js';
 import { DotAppsSites } from '@dotcms/dotcms-models';
+import { PortletNav } from '@models/navigation';
 
 @Injectable()
 export class DotRouterService {

@@ -1,4 +1,5 @@
 import { Injectable } from '@angular/core';
+
 import { SESSION_STORAGE_VARIATION_KEY } from '@dotcms/dotcms-models';
 
 @Injectable()

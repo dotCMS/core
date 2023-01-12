@@ -1,34 +1,38 @@
 import { of as observableOf } from 'rxjs';
-import { CONTAINER_SOURCE, DotContainer } from '@dotcms/dotcms-models';
-import { By } from '@angular/platform-browser';
-import { PaginatorService } from '@dotcms/data-access';
-import { IframeOverlayService } from '../_common/iframe/service/iframe-overlay.service';
-import { MockDotMessageService } from '@dotcms/utils-testing';
-import { DotMessageService } from '@dotcms/data-access';
-import { SearchableDropDownModule } from '../_common/searchable-dropdown/searchable-dropdown.module';
-import { ComponentFixture, fakeAsync, tick, TestBed } from '@angular/core/testing';
-import { DebugElement } from '@angular/core';
-import { DotContainerSelectorComponent } from './dot-container-selector.component';
-import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
-import { DotTemplateContainersCacheService } from '@dotcms/app/api/services/dot-template-containers-cache/dot-template-containers-cache.service';
+
 import { CommonModule } from '@angular/common';
-import { ButtonModule } from 'primeng/button';
-import { DotPipesModule } from '@pipes/dot-pipes.module';
-import { FormsModule } from '@angular/forms';
-import {
-    CoreWebService,
-    ApiRoot,
-    UserModel,
-    LoggerService,
-    StringUtils,
-    BrowserUtil
-} from '@dotcms/dotcms-js';
-import { CoreWebServiceMock } from '@dotcms/utils-testing';
 import { HttpClientTestingModule } from '@angular/common/http/testing';
+import { DebugElement } from '@angular/core';
+import { ComponentFixture, fakeAsync, TestBed, tick } from '@angular/core/testing';
+import { FormsModule } from '@angular/forms';
+import { By } from '@angular/platform-browser';
+import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
+
+import { ButtonModule } from 'primeng/button';
+
 import {
     PaginationEvent,
     SearchableDropdownComponent
 } from '@components/_common/searchable-dropdown/component';
+import { DotTemplateContainersCacheService } from '@dotcms/app/api/services/dot-template-containers-cache/dot-template-containers-cache.service';
+import { DotMessageService, PaginatorService } from '@dotcms/data-access';
+import {
+    ApiRoot,
+    BrowserUtil,
+    CoreWebService,
+    LoggerService,
+    StringUtils,
+    UserModel
+} from '@dotcms/dotcms-js';
+import { CONTAINER_SOURCE, DotContainer } from '@dotcms/dotcms-models';
+import { CoreWebServiceMock, MockDotMessageService } from '@dotcms/utils-testing';
+import { DotPipesModule } from '@pipes/dot-pipes.module';
+
+import { DotContainerSelectorComponent } from './dot-container-selector.component';
+
+import { IframeOverlayService } from '../_common/iframe/service/iframe-overlay.service';
+import { SearchableDropDownModule } from '../_common/searchable-dropdown/searchable-dropdown.module';
+
 
 describe('ContainerSelectorComponent', () => {
     let fixture: ComponentFixture<DotContainerSelectorComponent>;

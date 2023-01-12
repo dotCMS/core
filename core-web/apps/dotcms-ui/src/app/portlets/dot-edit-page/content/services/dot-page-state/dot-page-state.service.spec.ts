@@ -1,33 +1,43 @@
 import { of, throwError } from 'rxjs';
-import { LoginService, CoreWebService, HttpCode } from '@dotcms/dotcms-js';
-import { DotContentletLockerService } from '@dotcms/data-access';
-import { DotPageStateService } from './dot-page-state.service';
-import { DotPageRenderService } from '@dotcms/data-access';
+
+import { HttpClientTestingModule } from '@angular/common/http/testing';
+import { getTestBed, TestBed } from '@angular/core/testing';
+
+import { ConfirmationService } from 'primeng/api';
+
+import { DotFormatDateService } from '@dotcms/app/api/services/dot-format-date-service';
+import { DotHttpErrorManagerService } from '@dotcms/app/api/services/dot-http-error-manager/dot-http-error-manager.service';
+import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
+import {
+    DotAlertConfirmService,
+    DotContentletLockerService,
+    DotESContentService,
+    DotPageRenderService
+} from '@dotcms/data-access';
+import { CoreWebService, HttpCode, LoginService } from '@dotcms/dotcms-js';
 import {
     DotCMSContentlet,
     DotDevice,
     DotPageMode,
-    DotPageRenderState
+    DotPageRenderState,
+    DotPersona
 } from '@dotcms/dotcms-models';
-import { LoginServiceMock } from '@dotcms/utils-testing';
-import { mockDotRenderedPage } from '@dotcms/utils-testing';
-import { dotcmsContentletMock } from '@dotcms/utils-testing';
-import { mockUser } from '@dotcms/utils-testing';
-import { DotPersona } from '@dotcms/dotcms-models';
-import { DotHttpErrorManagerService } from '@dotcms/app/api/services/dot-http-error-manager/dot-http-error-manager.service';
-import { getTestBed, TestBed } from '@angular/core/testing';
-import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
-import { HttpClientTestingModule } from '@angular/common/http/testing';
-import { CoreWebServiceMock } from '@dotcms/utils-testing';
-import { DotAlertConfirmService } from '@dotcms/data-access';
-import { ConfirmationService } from 'primeng/api';
-import { DotFormatDateService } from '@dotcms/app/api/services/dot-format-date-service';
-import { MockDotRouterService } from '@dotcms/utils-testing';
-import { mockResponseView } from '@dotcms/utils-testing';
+import {
+    CoreWebServiceMock,
+    dotcmsContentletMock,
+    LoginServiceMock,
+    mockDotPersona,
+    mockDotRenderedPage,
+    MockDotRouterService,
+    mockResponseView,
+    mockUser,
+    mockUserAuth
+} from '@dotcms/utils-testing';
+
+import { DotPageStateService } from './dot-page-state.service';
+
 import { PageModelChangeEventType } from '../dot-edit-content-html/models';
-import { mockDotPersona } from '@dotcms/utils-testing';
-import { mockUserAuth } from '@dotcms/utils-testing';
-import { DotESContentService } from '@dotcms/data-access';
+
 
 const getDotPageRenderStateMock = (favoritePage?: DotCMSContentlet) => {
     return new DotPageRenderState(mockUser(), mockDotRenderedPage(), favoritePage);

@@ -1,19 +1,22 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
+import { DebugElement } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { FormsModule, ReactiveFormsModule } from '@angular/forms';
+import { By } from '@angular/platform-browser';
 
+import { AutoFocusModule } from 'primeng/autofocus';
+import { ButtonModule } from 'primeng/button';
 import { DynamicDialogRef } from 'primeng/dynamicdialog';
 
+
 import { DotMessageService } from '@dotcms/data-access';
-import { MockDotMessageService } from '@dotcms/utils-testing';
-import { DotTemplateSelectorComponent } from './dot-template-selector.component';
-import { DotMessagePipeModule } from '@pipes/dot-message/dot-message-pipe.module';
-import { DebugElement } from '@angular/core';
-import { By } from '@angular/platform-browser';
 import { DotIconModule } from '@dotcms/ui';
-import { FormsModule, ReactiveFormsModule } from '@angular/forms';
-import { ButtonModule } from 'primeng/button';
-import { AutoFocusModule } from 'primeng/autofocus';
+import { MockDotMessageService } from '@dotcms/utils-testing';
+import { DotMessagePipeModule } from '@pipes/dot-message/dot-message-pipe.module';
+
+
+import { DotTemplateSelectorComponent } from './dot-template-selector.component';
 
 const messageServiceMock = new MockDotMessageService({
     next: 'Next',

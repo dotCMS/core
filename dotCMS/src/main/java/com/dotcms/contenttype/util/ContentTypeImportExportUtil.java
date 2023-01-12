@@ -61,7 +61,7 @@ public class ContentTypeImportExportUtil {
             streamingJsonImport(fileOrDirectory);
         }else{
             String[] files =fileOrDirectory.list(new FilenameFilter() {
-                
+
                 @Override
                 public boolean accept(File dir, String name) {
                     return (name.endsWith(CONTENT_TYPE_FILE_EXTENSION));

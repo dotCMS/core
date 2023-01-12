@@ -1,19 +1,19 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { ComponentFixture, TestBed } from '@angular/core/testing';
-
-import { DotContentCompareDialogComponent } from './dot-content-compare-dialog.component';
-import { cleanUpDialog, MockDotMessageService } from '@dotcms/utils-testing';
-import { DotDialogModule } from '@components/dot-dialog/dot-dialog.module';
-import { DotMessageService } from '@dotcms/data-access';
-import { DotEventsService } from '@dotcms/data-access';
-import { DotMessagePipeModule } from '@pipes/dot-message/dot-message-pipe.module';
 import { Component, EventEmitter, Input, Output } from '@angular/core';
-import { COMPARE_CUSTOM_EVENT } from '@dotcms/app/api/services/dot-custom-event-handler/dot-custom-event-handler.service';
+import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 
-import { DotDialogComponent } from '@components/dot-dialog/dot-dialog.component';
 import { DotContentCompareEvent } from '@components/dot-content-compare/dot-content-compare.component';
+import { DotDialogComponent } from '@components/dot-dialog/dot-dialog.component';
+import { DotDialogModule } from '@components/dot-dialog/dot-dialog.module';
+import { COMPARE_CUSTOM_EVENT } from '@dotcms/app/api/services/dot-custom-event-handler/dot-custom-event-handler.service';
+import { DotEventsService, DotMessageService } from '@dotcms/data-access';
+import { cleanUpDialog, MockDotMessageService } from '@dotcms/utils-testing';
+import { DotMessagePipeModule } from '@pipes/dot-message/dot-message-pipe.module';
+
+import { DotContentCompareDialogComponent } from './dot-content-compare-dialog.component';
+
 
 @Component({
     selector: 'dot-content-compare',

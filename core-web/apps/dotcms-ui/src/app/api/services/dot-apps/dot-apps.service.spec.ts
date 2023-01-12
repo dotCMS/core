@@ -1,27 +1,31 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { throwError } from 'rxjs';
-import { TestBed, getTestBed, fakeAsync, tick } from '@angular/core/testing';
-import { HttpTestingController, HttpClientTestingModule } from '@angular/common/http/testing';
+
+import { HttpClientTestingModule, HttpTestingController } from '@angular/common/http/testing';
+import { fakeAsync, getTestBed, TestBed, tick } from '@angular/core/testing';
 
 import { ConfirmationService } from 'primeng/api';
 
+import { DotAlertConfirmService } from '@dotcms/data-access';
 import { CoreWebService, LoginService } from '@dotcms/dotcms-js';
+import { DotApps, DotAppsImportConfiguration, DotAppsSaveData } from '@dotcms/dotcms-models';
+import {
+    CoreWebServiceMock,
+    DotFormatDateServiceMock,
+    LoginServiceMock,
+    MockDotRouterService,
+    mockResponseView
+} from '@dotcms/utils-testing';
+import * as dotUtils from '@dotcms/utils/lib/dot-utils';
 
 import { DotAppsService } from './dot-apps.service';
-import { DotApps, DotAppsImportConfiguration, DotAppsSaveData } from '@dotcms/dotcms-models';
 
-import { DotFormatDateServiceMock, LoginServiceMock } from '@dotcms/utils-testing';
-import { CoreWebServiceMock } from '@dotcms/utils-testing';
-import { mockResponseView } from '@dotcms/utils-testing';
-import { MockDotRouterService } from '@dotcms/utils-testing';
 
+import { DotFormatDateService } from '../dot-format-date-service';
 import { DotHttpErrorManagerService } from '../dot-http-error-manager/dot-http-error-manager.service';
 import { DotRouterService } from '../dot-router/dot-router.service';
-import { DotFormatDateService } from '../dot-format-date-service';
-import { DotAlertConfirmService } from '@dotcms/data-access';
 
 // INFO: needs to import this way so we can spy on.
-import * as dotUtils from '@dotcms/utils/lib/dot-utils';
 
 const mockDotApps = [
     {
