@@ -36,6 +36,8 @@ jobs:
         uses: actions/checkout@v3
         with:
           ref: ${{ env.BUILD_ID }}
+          token: ${{ secrets.CICD_GITHUB_TOKEN }}
+          submodules: recursively
       - name: Set Common Vars
         run: |
           BUILD_HASH=$(git log -1 --pretty=%h)
@@ -53,25 +55,36 @@ jobs:
           echo "jobRun=${jobRun}" >> $GITHUB_ENV
       - name: Discover docker tags
         id: discover-docker-tags
-        uses: dotcms/discover-docker-tags-action@main
+        uses: dotcms/discover-docker-tags-action@v2.0
         with:
           version: ${{ env.DOTCMS_VERSION }}
           hash: ${{ env.BUILD_HASH }}
           label: 'SNAPSHOT'
           update_stable: false
           also_latest: false
+          image_name: dotcms/dotcms
         if: env.jobRun == 'true'
-      - name: Publish docker image
-        id: publish-docker-image
-        uses: dotcms/publish-docker-image-action@main
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v2
+      - name: Docker Setup Buildx
+        uses: docker/setup-buildx-action@v2.2.1
         with:
-          dot_cicd_branch: master
-          build_id: ${{ env.BUILD_ID }}
+          version: v0.10.0
+          driver-opts: |
+            image=moby/buildkit:master
+          platforms: linux/amd64,linux/arm64
+      - name: Docker Hub login
+        uses: docker/login-action@v2.1.0
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_TOKEN }}
+      - name: Build and push
+        uses: docker/build-push-action@v3.2.0
+        with:
+          context: ./docker/dotcms
+          push: true
           tags: ${{ steps.discover-docker-tags.outputs.discovered_tags }}
-          github_user_token: ${{ secrets.CICD_GITHUB_TOKEN }}
-          docker_hub_username: ${{ secrets.DOCKER_USERNAME }}
-          docker_hub_token: ${{ secrets.DOCKER_TOKEN }}
-          dry_run: false
+          platforms: ${{ steps.docker-setup-buildx.outputs.platforms }}
         if: env.jobRun == 'true'
       - name: Slack Notification
         if: success() && env.jobRun == 'true' 
