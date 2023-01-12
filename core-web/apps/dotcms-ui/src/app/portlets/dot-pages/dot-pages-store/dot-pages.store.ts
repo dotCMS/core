@@ -1,6 +1,6 @@
+/* eslint-disable no-console */
 import { ComponentStore, tapResponse } from '@ngrx/component-store';
 import { forkJoin, Observable } from 'rxjs';
-
 
 import { HttpErrorResponse } from '@angular/common/http';
 import { Injectable } from '@angular/core';
@@ -18,6 +18,9 @@ export interface DotPagesState {
         total: number;
     };
     loggedUserId: string;
+    pages?: {
+        items: DotCMSContentlet[];
+    };
 }
 
 const FAVORITE_PAGES_ES_QUERY = `+contentType:dotFavoritePage +deleted:false +working:true`;
@@ -38,6 +41,21 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
                 favoritePages: {
                     ...state.favoritePages,
                     items: [...favoritePages]
+                }
+            };
+        }
+    );
+
+    readonly setPages = this.updater<DotCMSContentlet[]>(
+        (state: DotPagesState, pages: DotCMSContentlet[]) => {
+            console.log('*** state pages', state.pages.items);
+            console.log('*** rrecibe pages', pages);
+
+            return {
+                ...state,
+                pages: {
+                    ...state.pages,
+                    items: [...pages]
                 }
             };
         }
@@ -66,6 +84,60 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
                     )
                 )
             )
+        );
+    });
+
+    // TODO: ver si
+    // - meto un parametro extra aparte de OFFSET para el filtro
+    // - meter INPUT para filtro
+    // - meter template para rows al mostrar data
+    // - meter doc
+    // - meter const para LIMIT de 40
+    // - meter const para QUERY de getPages()
+    readonly getPages = this.effect((offset$: Observable<number>) => {
+        return offset$.pipe(
+            switchMap((offset: number) => {
+                return this.dotESContentService
+                    .get({
+                        itemsPerPage: 40,
+                        offset: offset.toString(),
+                        query: '+conhost:48190c8c-42c4-46af-8d1a-0cd5db894797 +deleted:false  +(urlmap:* OR basetype:5)',
+                        sortField: 'modDate',
+                        // filter:'surf camp',
+                        sortOrder: ESOrderDirection.ASC
+                    })
+                    .pipe(
+                        tapResponse(
+                            (items) => {
+                                console.log('**resp', items.jsonObjectView.contentlets);
+
+                                let tempPages = this.get().pages.items;
+
+                                if (tempPages.length === 0) {
+                                    tempPages = Array.from({ length: items.resultsSize });
+                                }
+
+                                Array.prototype.splice.apply(tempPages, [
+                                    ...[offset, 40],
+                                    ...items.jsonObjectView.contentlets
+                                ]);
+
+                                console.log('**tempPages', tempPages);
+
+                                this.setPages(tempPages);
+                                // this.patchState({
+                                //     pages: {
+                                //         items: [...items.jsonObjectView.contentlets],
+                                //         total: items.resultsSize
+                                //     }
+                                // });
+                            },
+                            (error: HttpErrorResponse) => {
+                                return this.httpErrorManagerService.handle(error);
+                            }
+                        )
+                    );
+            })
         );
     });
 
@@ -107,7 +179,11 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
                             favoritePages.resultsSize,
                         total: favoritePages.resultsSize
                     },
-                    loggedUserId: currentUser.userId
+                    loggedUserId: currentUser.userId,
+                    pages: {
+                        items: []
+                        // items: Array.from({ length: 124 }),
+                    }
                 });
             });
     }

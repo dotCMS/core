@@ -3,6 +3,8 @@ import { NgModule } from '@angular/core';
 
 import { ButtonModule } from 'primeng/button';
 import { PanelModule } from 'primeng/panel';
+import { SkeletonModule } from 'primeng/skeleton';
+import { TableModule } from 'primeng/table';
 import { TabViewModule } from 'primeng/tabview';
 
 import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
@@ -15,9 +17,6 @@ import { DotPagesCardModule } from './dot-pages-card/dot-pages-card.module';
 import { DotPagesRoutingModule } from './dot-pages-routing.module';
 import { DotPagesComponent } from './dot-pages.component';
 
-
-
-
 @NgModule({
     declarations: [DotPagesComponent],
     imports: [
@@ -29,6 +28,8 @@ import { DotPagesComponent } from './dot-pages.component';
         DotIconModule,
         PanelModule,
         ButtonModule,
+        SkeletonModule,
+        TableModule,
         TabViewModule
     ],
     providers: [DotESContentService, DotRouterService]

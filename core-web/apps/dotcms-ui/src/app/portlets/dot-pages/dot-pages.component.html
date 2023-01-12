@@ -56,4 +56,42 @@
             </div>
         </ng-template>
     </p-panel>
+
+    <p-table
+        [columns]="cols"
+        [value]="vm.pages.items"
+        [scrollable]="true"
+        [rows]="40"
+        [virtualScroll]="true"
+        [virtualScrollItemSize]="26"
+        [lazy]="true"
+        (onLazyLoad)="loadPagesLazy($event)"
+        scrollHeight="550px"
+    >
+        <ng-template pTemplate="header" let-columns>
+            <tr>
+                <th *ngFor="let col of columns" style="width: 20%">
+                    {{ col.header }}
+                </th>
+            </tr>
+        </ng-template>
+        <ng-template pTemplate="body" let-rowData let-columns="columns">
+            <tr style="height: 26px">
+                <td *ngFor="let col of columns">
+                    {{ rowData[col.field] }}
+                </td>
+            </tr>
+        </ng-template>
+        <ng-template pTemplate="loadingbody" let-columns="columns">
+            <tr style="height: 26px">
+                <td *ngFor="let col of columns; let even = even">
+                    <p-skeleton
+                        [ngStyle]="{
+                            width: even ? (col.field === 'year' ? '30%' : '40%') : '60%'
+                        }"
+                    ></p-skeleton>
+                </td>
+            </tr>
+        </ng-template>
+    </p-table>
 </div>
