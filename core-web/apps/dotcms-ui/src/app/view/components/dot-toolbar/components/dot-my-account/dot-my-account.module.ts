@@ -1,14 +1,16 @@
 import { CommonModule } from '@angular/common';
-import { FormsModule } from '@angular/forms';
 import { NgModule } from '@angular/core';
+import { FormsModule } from '@angular/forms';
+
+import { CheckboxModule } from 'primeng/checkbox';
+import { InputTextModule } from 'primeng/inputtext';
+import { PasswordModule } from 'primeng/password';
+
+import { DotDialogModule } from '@components/dot-dialog/dot-dialog.module';
+import { DotAlertConfirmService } from '@dotcms/data-access';
+import { DotPipesModule } from '@pipes/dot-pipes.module';
 
 import { DotMyAccountComponent } from './dot-my-account.component';
-import { DotDialogModule } from '@components/dot-dialog/dot-dialog.module';
-import { DotPipesModule } from '@pipes/dot-pipes.module';
-import { PasswordModule } from 'primeng/password';
-import { InputTextModule } from 'primeng/inputtext';
-import { CheckboxModule } from 'primeng/checkbox';
-import { DotAlertConfirmService } from '@dotcms/data-access';
 
 @NgModule({
     imports: [

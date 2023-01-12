@@ -1,9 +1,12 @@
-import { filter, takeUntil } from 'rxjs/operators';
-import { ChangeDetectorRef, Component, HostBinding, OnDestroy, OnInit } from '@angular/core';
-import { DotGlobalMessage } from '@models/dot-global-message/dot-global-message.model';
-import { DotEventsService } from '@dotcms/data-access';
 import { Subject } from 'rxjs';
+
+import { ChangeDetectorRef, Component, HostBinding, OnDestroy, OnInit } from '@angular/core';
+
+import { filter, takeUntil } from 'rxjs/operators';
+
+import { DotEventsService } from '@dotcms/data-access';
 import { DotEvent } from '@dotcms/dotcms-models';
+import { DotGlobalMessage } from '@models/dot-global-message/dot-global-message.model';
 
 /**
  * Set a listener to display Global Messages in the main top toolbar

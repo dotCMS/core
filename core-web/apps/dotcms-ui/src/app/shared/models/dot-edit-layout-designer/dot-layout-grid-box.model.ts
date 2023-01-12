@@ -1,5 +1,6 @@
-import { DotContainerColumnBox } from './dot-container-column-box.model';
 import { NgGridItemConfig } from '@dotcms/dot-layout-grid';
+
+import { DotContainerColumnBox } from './dot-container-column-box.model';
 
 /**
  * It is NgGrid box

@@ -1,6 +1,8 @@
-import { DotExperimentsUiHeaderComponent } from './dot-experiments-ui-header.component';
 import { byTestId, createComponentFactory, Spectator } from '@ngneat/spectator';
+
 import { DotIconComponent } from '@dotcms/ui';
+
+import { DotExperimentsUiHeaderComponent } from './dot-experiments-ui-header.component';
 
 describe('ExperimentsHeaderComponent', () => {
     let spectator: Spectator<DotExperimentsUiHeaderComponent>;

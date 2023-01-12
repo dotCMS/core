@@ -1,23 +1,30 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { ComponentFixture, fakeAsync, tick } from '@angular/core/testing';
-import { DotDownloadBundleDialogComponent } from './dot-download-bundle-dialog.component';
-import { DOTTestBed } from '@dotcms/app/test/dot-test-bed';
-import { DotMessageService } from '@dotcms/data-access';
-import { DotDownloadBundleDialogService } from '@dotcms/app/api/services/dot-download-bundle-dialog/dot-download-bundle-dialog.service';
-import { DotPushPublishFilter, DotPushPublishFiltersService } from '@dotcms/data-access';
-import { MockDotMessageService } from '@dotcms/utils-testing';
-import { DotDialogModule } from '@components/dot-dialog/dot-dialog.module';
-import { DotDialogComponent } from '@components/dot-dialog/dot-dialog.component';
-import { By } from '@angular/platform-browser';
 import { of, throwError } from 'rxjs';
-import { DebugElement } from '@angular/core';
 
-import { SelectButton, SelectButtonModule } from 'primeng/selectbutton';
+import { DebugElement } from '@angular/core';
+import { ComponentFixture, fakeAsync, tick } from '@angular/core/testing';
+import { By } from '@angular/platform-browser';
+
 import { Dropdown, DropdownModule } from 'primeng/dropdown';
+import { SelectButton, SelectButtonModule } from 'primeng/selectbutton';
+
+import { DotDialogComponent } from '@components/dot-dialog/dot-dialog.component';
+import { DotDialogModule } from '@components/dot-dialog/dot-dialog.module';
+import { DotDownloadBundleDialogService } from '@dotcms/app/api/services/dot-download-bundle-dialog/dot-download-bundle-dialog.service';
+import { DOTTestBed } from '@dotcms/app/test/dot-test-bed';
+import {
+    DotMessageService,
+    DotPushPublishFilter,
+    DotPushPublishFiltersService
+} from '@dotcms/data-access';
+import { MockDotMessageService } from '@dotcms/utils-testing';
+import * as dotUtils from '@dotcms/utils/lib/dot-utils';
+
+import { DotDownloadBundleDialogComponent } from './dot-download-bundle-dialog.component';
+
 
 // INFO: needs to import this way so we can spy on.
-import * as dotUtils from '@dotcms/utils/lib/dot-utils';
 
 const mockFilters: DotPushPublishFilter[] = [
     {

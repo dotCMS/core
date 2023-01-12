@@ -1,7 +1,10 @@
-import { pluck } from 'rxjs/operators';
-import { Injectable } from '@angular/core';
-import { CoreWebService } from '@dotcms/dotcms-js';
 import { Observable } from 'rxjs';
+
+import { Injectable } from '@angular/core';
+
+import { pluck } from 'rxjs/operators';
+
+import { CoreWebService } from '@dotcms/dotcms-js';
 import { DotTheme } from '@dotcms/dotcms-models';
 
 /**

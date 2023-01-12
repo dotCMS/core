@@ -1,11 +1,15 @@
-import { DotExperimentsEmptyExperimentsComponent } from './dot-experiments-empty-experiments.component';
 import { byTestId, createComponentFactory, mockProvider, Spectator } from '@ngneat/spectator';
+
 import { Button, ButtonModule } from 'primeng/button';
-import { DotIconComponent, DotIconModule } from '@dotcms/ui';
-import { DotMessagePipeModule } from '@pipes/dot-message/dot-message-pipe.module';
-import { MockDotMessageService } from '@dotcms/utils-testing';
-import { CoreWebService } from '@dotcms/dotcms-js';
+
 import { DotMessageService } from '@dotcms/data-access';
+import { CoreWebService } from '@dotcms/dotcms-js';
+import { DotIconComponent, DotIconModule } from '@dotcms/ui';
+import { MockDotMessageService } from '@dotcms/utils-testing';
+import { DotMessagePipeModule } from '@pipes/dot-message/dot-message-pipe.module';
+
+
+import { DotExperimentsEmptyExperimentsComponent } from './dot-experiments-empty-experiments.component';
 
 const messageServiceMock = new MockDotMessageService({
     'experimentspage.add.new.experiment': 'Add a new experiment'

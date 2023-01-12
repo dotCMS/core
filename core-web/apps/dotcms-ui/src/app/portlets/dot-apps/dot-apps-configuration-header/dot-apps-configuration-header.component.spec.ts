@@ -1,16 +1,18 @@
-import { waitForAsync, ComponentFixture, TestBed } from '@angular/core/testing';
-import { MockDotMessageService } from '@dotcms/utils-testing';
-import { DotMessageService } from '@dotcms/data-access';
+import { MarkdownService } from 'ngx-markdown';
+
 import { CommonModule } from '@angular/common';
+import { DebugElement } from '@angular/core';
+import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
-import { DotAppsConfigurationHeaderComponent } from './dot-apps-configuration-header.component';
+
 import { DotAvatarModule } from '@components/_common/dot-avatar/dot-avatar.module';
 import { DotCopyLinkModule } from '@components/dot-copy-link/dot-copy-link.module';
-import { MockDotRouterService } from '@dotcms/utils-testing';
 import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
-import { DebugElement } from '@angular/core';
+import { DotMessageService } from '@dotcms/data-access';
+import { MockDotMessageService, MockDotRouterService } from '@dotcms/utils-testing';
 import { DotPipesModule } from '@pipes/dot-pipes.module';
-import { MarkdownService } from 'ngx-markdown';
+
+import { DotAppsConfigurationHeaderComponent } from './dot-apps-configuration-header.component';
 
 const messages = {
     'apps.configurations': 'Configurations',

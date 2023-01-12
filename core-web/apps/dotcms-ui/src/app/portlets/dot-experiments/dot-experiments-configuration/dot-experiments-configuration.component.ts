@@ -1,5 +1,6 @@
-import { ChangeDetectionStrategy, Component, OnInit } from '@angular/core';
+import { Observable } from 'rxjs';
 
+import { ChangeDetectionStrategy, Component, OnInit } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 
 import { DotSessionStorageService } from '@dotcms/data-access';
@@ -10,7 +11,6 @@ import {
     SidebarStatus,
     Variant
 } from '@dotcms/dotcms-models';
-import { Observable } from 'rxjs';
 import {
     ConfigurationViewModel,
     DotExperimentsConfigurationStore

@@ -1,8 +1,11 @@
+import { Subject } from 'rxjs';
+
 import { Directive, ElementRef, OnDestroy, Optional, Renderer2, Self } from '@angular/core';
 import { ActivatedRoute, NavigationEnd, Router } from '@angular/router';
+
 import { filter, takeUntil } from 'rxjs/operators';
+
 import { DotEditPageNavComponent } from '@portlets/dot-edit-page/main/dot-edit-page-nav/dot-edit-page-nav.component';
-import { Subject } from 'rxjs';
 
 const urlPortletRules = {
     content: { clazz: 'portlet-content' },

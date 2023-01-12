@@ -1,12 +1,14 @@
-import BubbleMenu from '@tiptap/extension-bubble-menu';
 import { PluginKey } from 'prosemirror-state';
+import { Subject } from 'rxjs';
+import { Props } from 'tippy.js';
+
 import { ViewContainerRef } from '@angular/core';
 
-import { bubbleFormPlugin } from './plugins/bubble-form.plugin';
+import BubbleMenu from '@tiptap/extension-bubble-menu';
+
 import { BubbleFormComponent } from './bubble-form.component';
-import { Props } from 'tippy.js';
 import { DynamicControl } from './model';
-import { Subject } from 'rxjs';
+import { bubbleFormPlugin } from './plugins/bubble-form.plugin';
 
 export const BUBBLE_FORM_PLUGIN_KEY = new PluginKey('bubble-form');
 

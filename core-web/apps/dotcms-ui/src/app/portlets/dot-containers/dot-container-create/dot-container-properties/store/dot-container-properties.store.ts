@@ -1,16 +1,16 @@
-import { Injectable } from '@angular/core';
 import { ComponentStore } from '@ngrx/component-store';
-import { Observable, of, pipe } from 'rxjs';
-import { catchError, filter, pluck, switchMap, take, tap } from 'rxjs/operators';
-import { HttpErrorResponse } from '@angular/common/http';
-
-import { DotContentTypeService, DotMessageService } from '@dotcms/data-access';
-import { DotGlobalMessageService } from '@components/_common/dot-global-message/dot-global-message.service';
-import { DotContainersService } from '@services/dot-containers/dot-containers.service';
-import { DotHttpErrorManagerService } from '@dotcms/app/api/services/dot-http-error-manager/dot-http-error-manager.service';
-import { DotRouterService } from '@services/dot-router/dot-router.service';
-import { ActivatedRoute } from '@angular/router';
 import * as _ from 'lodash';
+import { Observable, of, pipe } from 'rxjs';
+
+import { HttpErrorResponse } from '@angular/common/http';
+import { Injectable } from '@angular/core';
+import { ActivatedRoute } from '@angular/router';
+
+import { catchError, filter, pluck, switchMap, take, tap } from 'rxjs/operators';
+
+import { DotGlobalMessageService } from '@components/_common/dot-global-message/dot-global-message.service';
+import { DotHttpErrorManagerService } from '@dotcms/app/api/services/dot-http-error-manager/dot-http-error-manager.service';
+import { DotContentTypeService, DotMessageService } from '@dotcms/data-access';
 import {
     DotCMSContentType,
     DotContainer,
@@ -18,6 +18,9 @@ import {
     DotContainerPayload,
     DotContainerStructure
 } from '@dotcms/dotcms-models';
+import { DotContainersService } from '@services/dot-containers/dot-containers.service';
+import { DotRouterService } from '@services/dot-router/dot-router.service';
+
 
 export interface DotContainerPropertiesState {
     showPrePostLoopInput: boolean;

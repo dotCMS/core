@@ -1,7 +1,8 @@
-import { Editor, posToDOMRect, Range } from '@tiptap/core';
 import { EditorState, Plugin, PluginKey, Transaction } from 'prosemirror-state';
 import { EditorView } from 'prosemirror-view';
 import tippy, { Instance, Props } from 'tippy.js';
+
+import { Editor, posToDOMRect, Range } from '@tiptap/core';
 
 import { SuggestionsCommandProps } from '@dotcms/block-editor';
 

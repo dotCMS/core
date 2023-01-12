@@ -1,10 +1,11 @@
-import { TestBed } from '@angular/core/testing';
-import { DotContentCompareStore } from '@components/dot-content-compare/store/dot-content-compare.store';
-import { DotContentTypeService } from '@dotcms/data-access';
-import { DotContentletService } from '@dotcms/data-access';
-import { DotFormatDateService } from '@dotcms/app/api/services/dot-format-date-service';
-import { DotcmsConfigService } from '@dotcms/dotcms-js';
 import { of } from 'rxjs';
+
+import { TestBed } from '@angular/core/testing';
+
+import { DotContentCompareStore } from '@components/dot-content-compare/store/dot-content-compare.store';
+import { DotFormatDateService } from '@dotcms/app/api/services/dot-format-date-service';
+import { DotContentletService, DotContentTypeService } from '@dotcms/data-access';
+import { DotcmsConfigService } from '@dotcms/dotcms-js';
 
 const getContentTypeMOCKResponse = {
     baseType: 'CONTENT',

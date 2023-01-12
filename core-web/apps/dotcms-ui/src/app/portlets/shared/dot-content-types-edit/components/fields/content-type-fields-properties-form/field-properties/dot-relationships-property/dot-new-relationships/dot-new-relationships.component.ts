@@ -1,16 +1,18 @@
+import { Observable } from 'rxjs';
+
 import {
     Component,
-    OnInit,
-    Input,
-    Output,
     EventEmitter,
-    SimpleChanges,
-    OnChanges
+    Input,
+    OnChanges,
+    OnInit,
+    Output,
+    SimpleChanges
 } from '@angular/core';
-import { PaginatorService } from '@dotcms/data-access';
+
+import { DotContentTypeService, PaginatorService } from '@dotcms/data-access';
 import { DotCMSContentType } from '@dotcms/dotcms-models';
-import { Observable } from 'rxjs';
-import { DotContentTypeService } from '@dotcms/data-access';
+
 import { DotRelationshipsPropertyValue } from '../model/dot-relationships-property-value.model';
 
 @Component({

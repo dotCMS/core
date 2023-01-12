@@ -1,11 +1,20 @@
-import { By } from '@angular/platform-browser';
-import { ComponentFixture, waitForAsync, TestBed } from '@angular/core/testing';
+import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { DebugElement } from '@angular/core';
-import { DotContentletEditorService } from '../../services/dot-contentlet-editor.service';
-import { DotContentletWrapperComponent } from '../dot-contentlet-wrapper/dot-contentlet-wrapper.component';
-import { DotAddContentletComponent } from './dot-add-contentlet.component';
-import { DotIframeDialogModule } from '../../../dot-iframe-dialog/dot-iframe-dialog.module';
+import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing';
+import { By } from '@angular/platform-browser';
+import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
+import { RouterTestingModule } from '@angular/router/testing';
+
+import { ConfirmationService } from 'primeng/api';
+
+import { DotIframeService } from '@components/_common/iframe/service/dot-iframe/dot-iframe.service';
+import { DotFormatDateService } from '@dotcms/app/api/services/dot-format-date-service';
+import { DotHttpErrorManagerService } from '@dotcms/app/api/services/dot-http-error-manager/dot-http-error-manager.service';
 import { DotMenuService } from '@dotcms/app/api/services/dot-menu.service';
+import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
+import { DotUiColorsService } from '@dotcms/app/api/services/dot-ui-colors/dot-ui-colors.service';
+import { dotEventSocketURLFactory, MockDotUiColorsService } from '@dotcms/app/test/dot-test-bed';
+import { DotAlertConfirmService } from '@dotcms/data-access';
 import {
     ApiRoot,
     CoreWebService,
@@ -18,20 +27,19 @@ import {
     StringUtils,
     UserModel
 } from '@dotcms/dotcms-js';
+import {
+    cleanUpDialog,
+    CoreWebServiceMock,
+    LoginServiceMock,
+    MockDotRouterService
+} from '@dotcms/utils-testing';
 
-import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
-import { RouterTestingModule } from '@angular/router/testing';
-import { DotAlertConfirmService } from '@dotcms/data-access';
-import { ConfirmationService } from 'primeng/api';
-import { DotFormatDateService } from '@dotcms/app/api/services/dot-format-date-service';
-import { cleanUpDialog, CoreWebServiceMock, LoginServiceMock } from '@dotcms/utils-testing';
-import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
-import { MockDotRouterService } from '@dotcms/utils-testing';
-import { DotIframeService } from '@components/_common/iframe/service/dot-iframe/dot-iframe.service';
-import { DotUiColorsService } from '@dotcms/app/api/services/dot-ui-colors/dot-ui-colors.service';
-import { HttpClientTestingModule } from '@angular/common/http/testing';
-import { DotHttpErrorManagerService } from '@dotcms/app/api/services/dot-http-error-manager/dot-http-error-manager.service';
-import { MockDotUiColorsService, dotEventSocketURLFactory } from '@dotcms/app/test/dot-test-bed';
+import { DotAddContentletComponent } from './dot-add-contentlet.component';
+
+import { DotIframeDialogModule } from '../../../dot-iframe-dialog/dot-iframe-dialog.module';
+import { DotContentletEditorService } from '../../services/dot-contentlet-editor.service';
+import { DotContentletWrapperComponent } from '../dot-contentlet-wrapper/dot-contentlet-wrapper.component';
+
 
 describe('DotAddContentletComponent', () => {
     let component: DotAddContentletComponent;

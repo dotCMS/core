@@ -1,7 +1,8 @@
-import { DotMaxlengthDirective } from './dot-maxlength.directive';
 import { Component, DebugElement } from '@angular/core';
 import { ComponentFixture, fakeAsync, TestBed, tick } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
+
+import { DotMaxlengthDirective } from './dot-maxlength.directive';
 
 @Component({
     template: `<div contenteditable="true" dotMaxlength="10"></div>`

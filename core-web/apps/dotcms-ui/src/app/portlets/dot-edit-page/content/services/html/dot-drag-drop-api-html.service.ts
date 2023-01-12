@@ -1,10 +1,12 @@
 import { Injectable } from '@angular/core';
-import { DotDOMHtmlUtilService } from './dot-dom-html-util.service';
+
 
 import DRAGULA_CSS from '@dotcms/app/portlets/dot-edit-page/content/services/html/libraries/dragula.css';
 import EDIT_PAGE_DRAG_DROP, {
     EDIT_PAGE_JS_DOJO_REQUIRE
 } from '@dotcms/app/portlets/dot-edit-page/content/services/html/libraries/index';
+
+import { DotDOMHtmlUtilService } from './dot-dom-html-util.service';
 
 /**
  * Util class for init the dragula API.

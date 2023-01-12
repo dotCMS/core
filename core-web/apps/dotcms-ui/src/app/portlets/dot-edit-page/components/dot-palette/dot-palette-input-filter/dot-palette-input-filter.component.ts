@@ -1,3 +1,5 @@
+import { fromEvent as observableFromEvent, Subject } from 'rxjs';
+
 import {
     Component,
     ElementRef,
@@ -8,8 +10,8 @@ import {
     Output,
     ViewChild
 } from '@angular/core';
+
 import { debounceTime, takeUntil } from 'rxjs/operators';
-import { fromEvent as observableFromEvent, Subject } from 'rxjs';
 
 @Component({
     selector: 'dot-palette-input-filter',

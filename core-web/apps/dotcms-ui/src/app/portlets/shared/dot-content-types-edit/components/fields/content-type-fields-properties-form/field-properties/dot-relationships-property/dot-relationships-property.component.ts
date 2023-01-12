@@ -1,9 +1,14 @@
-import { Component, OnInit } from '@angular/core';
-import { DotMessageService } from '@dotcms/data-access';
-import { UntypedFormGroup } from '@angular/forms';
 import * as _ from 'lodash';
-import { FieldProperty } from '../field-properties.model';
+
+import { Component, OnInit } from '@angular/core';
+import { UntypedFormGroup } from '@angular/forms';
+
+import { DotMessageService } from '@dotcms/data-access';
+
 import { DotRelationshipsPropertyValue } from './model/dot-relationships-property-value.model';
+
+import { FieldProperty } from '../field-properties.model';
+
 
 /**
  *Component for relationships property field

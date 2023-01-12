@@ -1,7 +1,8 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 
-import { DotOverlayMaskComponent } from './dot-overlay-mask.component';
 import { DotOverlayMaskModule } from '@components/_common/dot-overlay-mask/dot-overlay-mask.module';
+
+import { DotOverlayMaskComponent } from './dot-overlay-mask.component';
 
 describe('DotOverlayMaskComponent', () => {
     let component: DotOverlayMaskComponent;

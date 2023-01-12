@@ -1,23 +1,28 @@
-import { ChangeDetectionStrategy, Component, EventEmitter, OnInit, Output } from '@angular/core';
-import { CommonModule } from '@angular/common';
-import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
-import { InputTextareaModule } from 'primeng/inputtextarea';
-import { InputTextModule } from 'primeng/inputtext';
-import { SidebarModule } from 'primeng/sidebar';
-import { DotSidebarDirective } from '@portlets/shared/directives/dot-sidebar.directive';
-import { DotSidebarHeaderComponent } from '@shared/dot-sidebar-header/dot-sidebar-header.component';
-import { UiDotIconButtonModule } from '@components/_common/dot-icon-button/dot-icon-button.module';
-import { ButtonModule } from 'primeng/button';
-import { DotMessagePipeModule } from '@pipes/dot-message/dot-message-pipe.module';
-import { DotFieldValidationMessageModule } from '@components/_common/dot-field-validation-message/dot-file-validation-message.module';
 import { Observable } from 'rxjs';
+
+import { CommonModule } from '@angular/common';
+import { ChangeDetectionStrategy, Component, EventEmitter, OnInit, Output } from '@angular/core';
+import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+
+import { ButtonModule } from 'primeng/button';
+import { InputTextModule } from 'primeng/inputtext';
+import { InputTextareaModule } from 'primeng/inputtextarea';
+import { SidebarModule } from 'primeng/sidebar';
+
+import { take } from 'rxjs/operators';
+
+import { DotFieldValidationMessageModule } from '@components/_common/dot-field-validation-message/dot-file-validation-message.module';
+import { UiDotIconButtonModule } from '@components/_common/dot-icon-button/dot-icon-button.module';
+import { DotExperiment } from '@dotcms/dotcms-models';
+import { DotMessagePipeModule } from '@pipes/dot-message/dot-message-pipe.module';
 import {
     DotExperimentCreateStore,
     DotExperimentsCreateStore
 } from '@portlets/dot-experiments/dot-experiments-create/store/dot-experiments-create-store';
-import { DotExperiment } from '@dotcms/dotcms-models';
-import { take } from 'rxjs/operators';
 import { DotExperimentsListStore } from '@portlets/dot-experiments/dot-experiments-list/store/dot-experiments-list-store.service';
+import { DotSidebarDirective } from '@portlets/shared/directives/dot-sidebar.directive';
+import { DotSidebarHeaderComponent } from '@shared/dot-sidebar-header/dot-sidebar-header.component';
+
 
 interface CreateForm {
     pageId: FormControl<string>;

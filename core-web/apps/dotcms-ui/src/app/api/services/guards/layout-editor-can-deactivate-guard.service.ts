@@ -1,8 +1,11 @@
+import { Observable } from 'rxjs';
+
 import { Injectable } from '@angular/core';
 import { CanDeactivate } from '@angular/router';
-import { DotEditLayoutService } from '../dot-edit-layout/dot-edit-layout.service';
+
 import { filter } from 'rxjs/operators';
-import { Observable } from 'rxjs';
+
+import { DotEditLayoutService } from '../dot-edit-layout/dot-edit-layout.service';
 
 /**
  *

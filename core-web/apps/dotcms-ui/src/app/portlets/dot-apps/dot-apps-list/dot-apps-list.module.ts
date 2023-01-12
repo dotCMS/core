@@ -1,16 +1,20 @@
-import { NgModule } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { NgModule } from '@angular/core';
+
+import { ButtonModule } from 'primeng/button';
 import { InputTextModule } from 'primeng/inputtext';
 
-import { DotAppsListComponent } from './dot-apps-list.component';
-import { DotAppsCardModule } from './dot-apps-card/dot-apps-card.module';
-import { DotAppsService } from '@dotcms/app/api/services/dot-apps/dot-apps.service';
-import { DotAppsListResolver } from './dot-apps-list-resolver.service';
-import { DotPipesModule } from '@pipes/dot-pipes.module';
 import { NotLicensedModule } from '@components/not-licensed/not-licensed.module';
-import { ButtonModule } from 'primeng/button';
-import { DotAppsImportExportDialogModule } from '../dot-apps-import-export-dialog/dot-apps-import-export-dialog.module';
+import { DotAppsService } from '@dotcms/app/api/services/dot-apps/dot-apps.service';
 import { DotIconModule } from '@dotcms/ui';
+import { DotPipesModule } from '@pipes/dot-pipes.module';
+
+
+import { DotAppsCardModule } from './dot-apps-card/dot-apps-card.module';
+import { DotAppsListResolver } from './dot-apps-list-resolver.service';
+import { DotAppsListComponent } from './dot-apps-list.component';
+
+import { DotAppsImportExportDialogModule } from '../dot-apps-import-export-dialog/dot-apps-import-export-dialog.module';
 
 @NgModule({
     imports: [

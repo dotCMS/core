@@ -1,18 +1,21 @@
-import { DotLoopEditorComponent } from './dot-loop-editor.component';
-import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { DotMessagePipeModule } from '@pipes/dot-message/dot-message-pipe.module';
 import { Component, CUSTOM_ELEMENTS_SCHEMA, DebugElement, forwardRef, Input } from '@angular/core';
+import { ComponentFixture, TestBed } from '@angular/core/testing';
 import {
     ControlValueAccessor,
     FormControl,
     NG_VALUE_ACCESSOR,
     ReactiveFormsModule
 } from '@angular/forms';
-import { MockDotMessageService } from '@dotcms/utils-testing';
-import { DotMessageService } from '@dotcms/data-access';
-import { ButtonModule } from 'primeng/button';
 import { By } from '@angular/platform-browser';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
+
+import { ButtonModule } from 'primeng/button';
+
+import { DotMessageService } from '@dotcms/data-access';
+import { MockDotMessageService } from '@dotcms/utils-testing';
+import { DotMessagePipeModule } from '@pipes/dot-message/dot-message-pipe.module';
+
+import { DotLoopEditorComponent } from './dot-loop-editor.component';
 
 @Component({
     selector: `dot-host-component`,

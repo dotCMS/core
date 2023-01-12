@@ -1,12 +1,15 @@
+
+import { CommonModule } from '@angular/common';
+import { DebugElement } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { By } from '@angular/platform-browser';
+import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
+
+import { Menu, MenuModule } from 'primeng/menu';
+
+import { UiDotIconButtonModule } from '@components/_common/dot-icon-button/dot-icon-button.module';
 
 import { DotMenuComponent } from './dot-menu.component';
-import { DebugElement } from '@angular/core';
-import { By } from '@angular/platform-browser';
-import { CommonModule } from '@angular/common';
-import { UiDotIconButtonModule } from '@components/_common/dot-icon-button/dot-icon-button.module';
-import { Menu, MenuModule } from 'primeng/menu';
-import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 
 describe('DotMenuComponent', () => {
     let component: DotMenuComponent;

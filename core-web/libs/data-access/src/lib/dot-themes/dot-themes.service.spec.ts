@@ -1,10 +1,12 @@
-import { TestBed, getTestBed } from '@angular/core/testing';
 import { HttpTestingController, HttpClientTestingModule } from '@angular/common/http/testing';
+import { TestBed, getTestBed } from '@angular/core/testing';
+
 import { CoreWebService } from '@dotcms/dotcms-js';
+import { DotTheme } from '@dotcms/dotcms-models';
+import { mockDotThemes, CoreWebServiceMock } from '@dotcms/utils-testing';
 
 import { DotThemesService } from './dot-themes.service';
-import { mockDotThemes, CoreWebServiceMock } from '@dotcms/utils-testing';
-import { DotTheme } from '@dotcms/dotcms-models';
+
 
 describe('DotThemesService', () => {
     let injector: TestBed;

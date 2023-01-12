@@ -1,25 +1,32 @@
+import { Observable, of, Subject } from 'rxjs';
+
 import {
     Component,
     ElementRef,
     EventEmitter,
     Input,
+    OnDestroy,
     OnInit,
     Output,
-    ViewChild,
-    OnDestroy
+    ViewChild
 } from '@angular/core';
-import { DotPushPublishFilter, DotPushPublishFiltersService } from '@dotcms/data-access';
-import { catchError, filter, map, take, takeUntil } from 'rxjs/operators';
-import { DotPushPublishDialogData } from '@dotcms/dotcms-models';
-import { Observable, of, Subject } from 'rxjs';
 import { UntypedFormBuilder, UntypedFormGroup, Validators } from '@angular/forms';
-import { DotMessageService } from '@dotcms/data-access';
-import { DotPushPublishData } from '@models/dot-push-publish-data/dot-push-publish-data';
+
 import { SelectItem } from 'primeng/api';
-import { DotFormModel } from '@models/dot-form/dot-form.model';
+
+import { catchError, filter, map, take, takeUntil } from 'rxjs/operators';
+
 import { DotHttpErrorManagerService } from '@dotcms/app/api/services/dot-http-error-manager/dot-http-error-manager.service';
-import { DotcmsConfigService, DotTimeZone } from '@dotcms/dotcms-js';
 import { DotParseHtmlService } from '@dotcms/app/api/services/dot-parse-html/dot-parse-html.service';
+import {
+    DotMessageService,
+    DotPushPublishFilter,
+    DotPushPublishFiltersService
+} from '@dotcms/data-access';
+import { DotcmsConfigService, DotTimeZone } from '@dotcms/dotcms-js';
+import { DotPushPublishDialogData } from '@dotcms/dotcms-models';
+import { DotFormModel } from '@models/dot-form/dot-form.model';
+import { DotPushPublishData } from '@models/dot-push-publish-data/dot-push-publish-data';
 
 @Component({
     selector: 'dot-push-publish-form',

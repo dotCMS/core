@@ -1,8 +1,10 @@
 import { Observable, of } from 'rxjs';
+
 import { Injectable } from '@angular/core';
 import { ActivatedRouteSnapshot, Resolve } from '@angular/router';
-import { DotExperimentsService } from '@portlets/dot-experiments/shared/services/dot-experiments.service';
+
 import { DotExperiment } from '@dotcms/dotcms-models';
+import { DotExperimentsService } from '@portlets/dot-experiments/shared/services/dot-experiments.service';
 
 /**
  * Return a DotExperiment getting the experimentId from query params

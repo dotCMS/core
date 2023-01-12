@@ -1,14 +1,19 @@
-import { By } from '@angular/platform-browser';
+import { Component, DebugElement, Input } from '@angular/core';
 import { ComponentFixture } from '@angular/core/testing';
-import { DebugElement, Component, Input } from '@angular/core';
-import { MockDotMessageService } from '@dotcms/utils-testing';
+import { By } from '@angular/platform-browser';
+
+import { InputSwitchModule } from 'primeng/inputswitch';
+
+import { DotMessageDisplayService } from '@components/dot-message-display/services';
 import { DOTTestBed } from '@dotcms/app/test/dot-test-bed';
 import { DotMessageService } from '@dotcms/data-access';
-import { InputSwitchModule } from 'primeng/inputswitch';
-import { DotMessageDisplayService } from '@components/dot-message-display/services';
+import { MockDotMessageService } from '@dotcms/utils-testing';
 import { DotKeyValue } from '@shared/models/dot-key-value-ng/dot-key-value-ng.model';
-import { mockKeyValue } from '../dot-key-value-ng.component.spec';
+
 import { DotKeyValueTableInputRowComponent } from './dot-key-value-table-input-row.component';
+
+import { mockKeyValue } from '../dot-key-value-ng.component.spec';
+
 
 @Component({
     selector: 'dot-test-host-component',

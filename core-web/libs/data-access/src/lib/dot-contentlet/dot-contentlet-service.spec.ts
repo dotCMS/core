@@ -1,10 +1,12 @@
+
+import { HttpClientTestingModule, HttpTestingController } from '@angular/common/http/testing';
 import { getTestBed, TestBed } from '@angular/core/testing';
 
-import { DotContentletService } from './dot-contentlet.service';
-import { HttpClientTestingModule, HttpTestingController } from '@angular/common/http/testing';
 import { CoreWebService } from '@dotcms/dotcms-js';
-import { CoreWebServiceMock } from '@dotcms/utils-testing';
 import { DotCMSContentlet } from '@dotcms/dotcms-models';
+import { CoreWebServiceMock } from '@dotcms/utils-testing';
+
+import { DotContentletService } from './dot-contentlet.service';
 
 const mockResponse = {
     entity: {

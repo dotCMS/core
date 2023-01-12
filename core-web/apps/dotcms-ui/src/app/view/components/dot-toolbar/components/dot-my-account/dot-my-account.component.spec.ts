@@ -1,10 +1,27 @@
 /* eslint-disable @typescript-eslint/no-empty-function */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
+import { of, throwError } from 'rxjs';
+
+import { CommonModule } from '@angular/common';
+import { HttpClientTestingModule } from '@angular/common/http/testing';
+import { DebugElement } from '@angular/core';
 import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing';
-import { MockDotMessageService } from '@dotcms/utils-testing';
+import { FormsModule } from '@angular/forms';
+import { By } from '@angular/platform-browser';
+
+import { ConfirmationService } from 'primeng/api';
+import { CheckboxModule } from 'primeng/checkbox';
+import { InputTextModule } from 'primeng/inputtext';
+import { PasswordModule } from 'primeng/password';
+
 import { DotDialogModule } from '@components/dot-dialog/dot-dialog.module';
-import { DotMyAccountComponent } from './dot-my-account.component';
+import { DotAccountService } from '@dotcms/app/api/services/dot-account-service';
+import { DotHttpErrorManagerService } from '@dotcms/app/api/services/dot-http-error-manager/dot-http-error-manager.service';
+import { DotMenuService } from '@dotcms/app/api/services/dot-menu.service';
+import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
+import { StringFormat } from '@dotcms/app/api/util/stringFormat';
+import { DotAlertConfirmService, DotMessageService } from '@dotcms/data-access';
 import {
     CoreWebService,
     DotcmsConfigService,
@@ -13,27 +30,16 @@ import {
     StringUtils,
     UserModel
 } from '@dotcms/dotcms-js';
-import { LoginServiceMock, mockUser } from '@dotcms/utils-testing';
-import { StringFormat } from '@dotcms/app/api/util/stringFormat';
-import { FormsModule } from '@angular/forms';
-import { CommonModule } from '@angular/common';
-import { DebugElement } from '@angular/core';
-import { DotMessageService } from '@dotcms/data-access';
-import { By } from '@angular/platform-browser';
-import { of, throwError } from 'rxjs';
-import { PasswordModule } from 'primeng/password';
-import { InputTextModule } from 'primeng/inputtext';
-import { CheckboxModule } from 'primeng/checkbox';
-import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
+import {
+    CoreWebServiceMock,
+    LoginServiceMock,
+    MockDotMessageService,
+    MockDotRouterService,
+    mockUser
+} from '@dotcms/utils-testing';
 import { DotPipesModule } from '@pipes/dot-pipes.module';
-import { MockDotRouterService } from '@dotcms/utils-testing';
-import { HttpClientTestingModule } from '@angular/common/http/testing';
-import { CoreWebServiceMock } from '@dotcms/utils-testing';
-import { DotMenuService } from '@dotcms/app/api/services/dot-menu.service';
-import { DotAccountService } from '@dotcms/app/api/services/dot-account-service';
-import { DotHttpErrorManagerService } from '@dotcms/app/api/services/dot-http-error-manager/dot-http-error-manager.service';
-import { DotAlertConfirmService } from '@dotcms/data-access';
-import { ConfirmationService } from 'primeng/api';
+
+import { DotMyAccountComponent } from './dot-my-account.component';
 
 class DotAccountServiceMock {
     addStarterPage() {}

@@ -1,7 +1,9 @@
 import { Component, OnInit } from '@angular/core';
-import { ProductService } from './SharedProducts.service';
+
+import { DynamicDialogConfig, DynamicDialogRef } from 'primeng/dynamicdialog';
+
 import { Product } from './Product.interface';
-import { DynamicDialogRef, DynamicDialogConfig } from 'primeng/dynamicdialog';
+import { ProductService } from './SharedProducts.service';
 
 export const ProductsTableTemplate = `
   <p-table [value]="products" [paginator]="true" [rows]="5" [responsive]="true">
