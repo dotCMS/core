@@ -81,3 +81,6 @@ jobs:
           push: true
           tags: ${{ steps.discover-docker-tags.outputs.discovered_tags }}
           platforms: ${{ env.PLATFORMS }}
+          build-args: |
+            BUILD_FROM=COMMIT
+            BUILD_ID=${{ env.BUILD_ID }}

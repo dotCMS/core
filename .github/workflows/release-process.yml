@@ -134,6 +134,9 @@ jobs:
           push: true
           tags: ${{ steps.discover-docker-tags.outputs.discovered_tags }}
           platforms: linux/amd64,linux/arm64
+          build-args: |
+            BUILD_FROM=TAG
+            BUILD_ID=${{ env.BUILD_ID }}
         if: success()
       - name: Slack Notification
         uses: rtCamp/action-slack-notify@v2

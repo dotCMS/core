@@ -79,6 +79,9 @@ jobs:
           push: true
           tags: ${{ steps.discover-docker-tags.outputs.discovered_tags }}
           platforms: linux/amd64,linux/arm64
+          build-args: |
+            BUILD_FROM=COMMIT
+            BUILD_ID=${{ env.BUILD_ID }}
         if: env.jobRun == 'true'
       - name: Slack Notification
         if: success() && env.jobRun == 'true' 
