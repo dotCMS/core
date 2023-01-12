@@ -12,6 +12,7 @@ import { DotPagesState, DotPageStore } from './dot-pages-store/dot-pages.store';
 
 import { DotFavoritePageComponent } from '../dot-edit-page/components/dot-favorite-page/dot-favorite-page.component';
 
+const FAVORITE_PAGE_LIMIT = 5;
 @Component({
     selector: 'dot-pages',
     templateUrl: './dot-pages.component.html',
@@ -24,8 +25,7 @@ export class DotPagesComponent {
     // Needed to avoid browser to cache thumbnail img when reloaded, since it's fetched from the same URL
     timeStamp = this.getTimeStamp();
 
-    private initialFavoritePagesLimit = 5;
-    private currentLimitSize = this.initialFavoritePagesLimit;
+    private currentLimitSize = FAVORITE_PAGE_LIMIT;
 
     constructor(
         private store: DotPageStore,
@@ -33,7 +33,7 @@ export class DotPagesComponent {
         private dialogService: DialogService,
         private dotMessageService: DotMessageService
     ) {
-        this.store.setInitialStateData(this.initialFavoritePagesLimit);
+        this.store.setInitialStateData(FAVORITE_PAGE_LIMIT);
     }
 
     /**
@@ -48,12 +48,12 @@ export class DotPagesComponent {
         favoritePagesToLoad?: number
     ): void {
         if (areAllFavoritePagesLoaded) {
-            this.store.limitFavoritePages(this.initialFavoritePagesLimit);
+            this.store.limitFavoritePages(FAVORITE_PAGE_LIMIT);
         } else {
             this.store.getFavoritePages(favoritePagesToLoad);
         }
 
-        this.currentLimitSize = this.initialFavoritePagesLimit;
+        this.currentLimitSize = FAVORITE_PAGE_LIMIT;
     }
 
     /**
