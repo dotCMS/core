@@ -349,7 +349,7 @@ jobs:
         uses: ./.github/actions/build-docker-image
         with:
           build_id: ${{ env.BUILD_ID }}
-          image_name: ghcr.io/dotcms/dotcms:cicd-${{ env.BUILD_HASH }}
+          image_name: ghcr.io/dotcms/core:cicd-${{ env.BUILD_HASH }}
           push: true
       - id: github-init-test-results
         name: Github init tests results
@@ -462,6 +462,11 @@ jobs:
       - id: read-cicd-local-env
         name: Read CICD local library
         run: source ${GITHUB_WORKSPACE}/cicd/local-env.sh
+      - uses: chipkent/action-cleanup-package@v1.0.1
+        with:
+          package-name: core
+          tag: cicd-${{ env.BUILD_HASH }}
+          github-token: ${{ secrets.GHCR_TOKEN }}
       - id: github-init-test-results
         name: Github close tests results
         uses: ./.github/actions/publish-test-results
