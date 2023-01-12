@@ -14,6 +14,7 @@ case "${INPUT_PARTIAL}" in
     ;;
   close)
     closeResults
+    setOutputs
     printStatus
     exit 0
     ;;
