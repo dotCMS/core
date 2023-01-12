@@ -228,6 +228,14 @@ jobs:
         with:
           cache_metadata: ${{ needs.build-core-job.outputs.cache_metadata }}
         if: success()
+      - id: docker-login
+        name: Login to GHCR
+        uses: docker/login-action@v2
+        with:
+          registry: ghcr.io
+          username: ${{ env.GITHUB_USER }}
+          password: ${{ secrets.GHCR_TOKEN }}
+        if: success()
       - id: run-integration-tests
         name: Run Integration Tests
         uses: ./.github/actions/run-integration-tests
