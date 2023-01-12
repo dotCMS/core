@@ -164,7 +164,7 @@ public abstract class ImageFilter implements ImageFilterIf {
 	 * @throws IOException
 	 * @throws DotRuntimeException
 	 */
-	protected File getResultsFile(File file, Map<String, String[]> parameters) throws DotRuntimeException{
+	public File getResultsFile(File file, Map<String, String[]> parameters) throws DotRuntimeException{
 		return  getResultsFile(file, parameters, FILE_EXT);
 	}
 
