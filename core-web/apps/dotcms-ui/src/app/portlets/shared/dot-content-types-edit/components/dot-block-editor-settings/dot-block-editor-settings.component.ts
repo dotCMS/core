@@ -14,7 +14,7 @@ import {
 } from '@angular/core';
 import { FormBuilder, FormGroup } from '@angular/forms';
 
-import { catchError, take, takeUntil } from 'rxjs/operators';
+import { catchError, take, takeUntil, tap } from 'rxjs/operators';
 
 // Services
 import { DotDialogActions } from '@components/dot-dialog/dot-dialog.component';
