@@ -1,7 +1,8 @@
-import { byTestId, createComponentFactory, Spectator } from '@ngneat/spectator';
+import { byTestId, createComponentFactory, mockProvider, Spectator } from '@ngneat/spectator';
 
 import { DecimalPipe } from '@angular/common';
 
+import { MessageService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
 import { Card, CardModule } from 'primeng/card';
 import { Inplace, InplaceModule } from 'primeng/inplace';
@@ -19,7 +20,8 @@ import {
 } from '@dotcms/dotcms-models';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 import { DotExperimentsConfigurationVariantsAddComponent } from '@portlets/dot-experiments/dot-experiments-configuration/components/dot-experiments-configuration-variants-add/dot-experiments-configuration-variants-add.component';
-
+import { DotExperimentsConfigurationStore } from '@portlets/dot-experiments/dot-experiments-configuration/store/dot-experiments-configuration-store';
+import { DotExperimentsService } from '@portlets/dot-experiments/shared/services/dot-experiments.service';
 import { DotExperimentsConfigurationVariantsComponent } from './dot-experiments-configuration-variants.component';
 
 const messageServiceMock = new MockDotMessageService({
@@ -45,10 +47,13 @@ describe('DotExperimentsConfigurationVariantsComponent', () => {
         ],
         component: DotExperimentsConfigurationVariantsComponent,
         providers: [
+            DotExperimentsConfigurationStore,
             {
                 provide: DotMessageService,
                 useValue: messageServiceMock
-            }
+            },
+            mockProvider(DotExperimentsService),
+            mockProvider(MessageService)
         ]
     });
 

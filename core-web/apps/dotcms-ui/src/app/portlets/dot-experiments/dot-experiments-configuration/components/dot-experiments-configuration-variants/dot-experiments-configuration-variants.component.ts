@@ -1,3 +1,5 @@
+import { Observable } from 'rxjs';
+
 import { CommonModule } from '@angular/common';
 import { ChangeDetectionStrategy, Component, EventEmitter, Input, Output } from '@angular/core';
 
@@ -24,6 +26,7 @@ import { DotIconModule } from '@dotcms/ui';
 import { DotMessagePipeModule } from '@pipes/dot-message/dot-message-pipe.module';
 import { DotExperimentsConfigurationItemsCountComponent } from '@portlets/dot-experiments/dot-experiments-configuration/components/dot-experiments-configuration-items-count/dot-experiments-configuration-items-count.component';
 import { DotExperimentsConfigurationVariantsAddComponent } from '@portlets/dot-experiments/dot-experiments-configuration/components/dot-experiments-configuration-variants-add/dot-experiments-configuration-variants-add.component';
+import { DotExperimentsConfigurationStore } from '@portlets/dot-experiments/dot-experiments-configuration/store/dot-experiments-configuration-store';
 
 @Component({
     selector: 'dot-experiments-configuration-variants',
@@ -49,6 +52,7 @@ import { DotExperimentsConfigurationVariantsAddComponent } from '@portlets/dot-e
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotExperimentsConfigurationVariantsComponent {
+    vm$: Observable<{ status: StepStatus }> = this.dotExperimentsConfigurationStore.variantsStepVm$;
     statusList = Status;
     sidebarStatusList = SidebarStatus;
     maxVariantsAllowed = MAX_VARIANTS_ALLOWED;
@@ -63,6 +67,10 @@ export class DotExperimentsConfigurationVariantsComponent {
     @Output() edit = new EventEmitter<Pick<DotExperiment, 'name' | 'id'>>();
     @Output() save = new EventEmitter<Pick<DotExperiment, 'name'>>();
     @Output() goToEditPage = new EventEmitter<{ variant: Variant; mode: EditPageTabs }>();
+
+    constructor(
+        private readonly dotExperimentsConfigurationStore: DotExperimentsConfigurationStore
+    ) {}
 
     editVariantName(newVariantName: string, variant: Variant) {
         this.edit.emit({
