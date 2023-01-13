@@ -8,7 +8,6 @@ import { map, pluck, take } from 'rxjs/operators';
 import { DotAccountService } from '@dotcms/app/api/services/dot-account-service';
 import { DotCurrentUser, DotPermissionsType, PermissionsType } from '@dotcms/dotcms-models';
 
-
 @Component({
     selector: 'dot-starter',
     templateUrl: './dot-starter.component.html',

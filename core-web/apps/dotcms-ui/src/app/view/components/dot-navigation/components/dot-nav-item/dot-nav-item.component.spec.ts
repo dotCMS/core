@@ -17,7 +17,6 @@ import { dotMenuMock } from '../../services/dot-navigation.service.spec';
 import { DotNavIconModule } from '../dot-nav-icon/dot-nav-icon.module';
 import { DotSubNavComponent } from '../dot-sub-nav/dot-sub-nav.component';
 
-
 @Component({
     selector: 'dot-test-host-component',
     template: ` <dot-nav-item [data]="menu" [collapsed]="collapsed"></dot-nav-item> `

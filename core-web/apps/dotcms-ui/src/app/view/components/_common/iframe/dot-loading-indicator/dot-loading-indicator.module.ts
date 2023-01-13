@@ -6,7 +6,6 @@ import { DotLoadingIndicatorService } from '@dotcms/utils';
 
 import { DotLoadingIndicatorComponent } from './dot-loading-indicator.component';
 
-
 @NgModule({
     imports: [CommonModule, DotSpinnerModule],
     declarations: [DotLoadingIndicatorComponent],

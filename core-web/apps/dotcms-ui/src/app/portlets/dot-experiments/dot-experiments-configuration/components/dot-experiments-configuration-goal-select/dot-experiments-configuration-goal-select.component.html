@@ -1,0 +1,51 @@
+<ng-container *ngIf="vm$ | async as vm">
+    <p-sidebar [(visible)]="vm.status.isOpen" (onHide)="closeSidebar()" dotSidebar>
+        <dot-sidebar-header
+            [actionButtonTpl]="actionHeaderBtnTpl"
+            dotTitle="{{ 'experiments.configure.goals.sidebar.header' | dm }}"
+        ></dot-sidebar-header>
+
+        <div class="experiment-goal-select__form-wrapper flex flex-column">
+            <p>{{ 'experiments.configure.goals.sidebar.description' | dm }}</p>
+            <form
+                class="p-fluid"
+                id="select-goal-form"
+                [formGroup]="form"
+                data-testId="select-goal-form"
+                novalidate
+            >
+                <div class="field">
+                    <label class="p-label-input-required">{{
+                        'experiments.configure.goals.sidebar.form.name.label' | dm
+                    }}</label>
+
+                    <p-selectButton
+                        [options]="goalsList"
+                        formControlName="goal"
+                        optionDisabled="inactive"
+                    >
+                        <ng-template let-item>
+                            <div class="flex flex-column w-full option-wrapper">
+                                <h2>{{ item.label | dm }}</h2>
+                                <p>{{ item.description | dm }}</p>
+                            </div>
+                        </ng-template>
+                    </p-selectButton>
+                </div>
+            </form>
+        </div>
+    </p-sidebar>
+
+    <ng-template #actionHeaderBtnTpl>
+        <button
+            [disabled]="!form.valid"
+            [loading]="vm.status.status === statusList.SAVING"
+            (click)="save(vm.experimentId)"
+            data-testId="add-goal-button"
+            label="{{ 'experiments.configure.goals.sidebar.header.button' | dm }}"
+            pButton
+            pRipple
+            type="submit"
+        ></button>
+    </ng-template>
+</ng-container>

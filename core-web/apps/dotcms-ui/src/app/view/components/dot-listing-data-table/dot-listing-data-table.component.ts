@@ -24,7 +24,6 @@ import { ActionHeaderOptions, ButtonAction } from '@models/action-header';
 import { DataTableColumn } from '@models/data-table/data-table-column';
 import { DotActionMenuItem } from '@shared/models/dot-action-menu/dot-action-menu-item.model';
 
-
 function tableFactory(dotListingDataTableComponent: DotListingDataTableComponent) {
     return dotListingDataTableComponent.dataTable;
 }

@@ -13,9 +13,6 @@ import { ContentTypesFieldsListComponent } from './content-types-fields-list.com
 
 import { FieldService } from '../service';
 
-
-
-
 const itemsData = [
     {
         label: 'Text',

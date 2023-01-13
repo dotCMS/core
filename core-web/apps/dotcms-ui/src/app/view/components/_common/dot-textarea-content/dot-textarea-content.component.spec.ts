@@ -191,6 +191,18 @@ describe('DotTextareaContentComponent', () => {
         expect(spy).toHaveBeenCalledTimes(2);
     });
 
+    it('should init editor with the correct value', () => {
+        const mockEditor = { test: 'editor' };
+        component.editorName = 'testName';
+        spyOn(component.monacoInit, 'emit');
+        fixture.detectChanges();
+        component.onInit(mockEditor);
+        expect(component.monacoInit.emit).toHaveBeenCalledWith({
+            name: 'testName',
+            editor: mockEditor
+        });
+    });
+
     describe('code', () => {
         it('should have default options', () => {
             component.show = ['code'];

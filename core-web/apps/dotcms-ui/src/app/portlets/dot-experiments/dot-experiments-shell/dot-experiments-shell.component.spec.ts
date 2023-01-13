@@ -10,7 +10,6 @@ import { Toast, ToastModule } from 'primeng/toast';
 import { DotLoadingIndicatorModule } from '@components/_common/iframe/dot-loading-indicator/dot-loading-indicator.module';
 import { DotExperimentsUiHeaderComponent } from '@portlets/dot-experiments/shared/ui/dot-experiments-header/dot-experiments-ui-header.component';
 
-
 import { DotExperimentsShellComponent } from './dot-experiments-shell.component';
 
 class ActivatedRouteMock {

@@ -18,7 +18,6 @@ import { takeUntil } from 'rxjs/operators';
 
 import { DotCMSContentType, DotCMSContentTypeField } from '@dotcms/dotcms-models';
 
-
 import { FieldPropertyService } from '../service';
 
 @Component({

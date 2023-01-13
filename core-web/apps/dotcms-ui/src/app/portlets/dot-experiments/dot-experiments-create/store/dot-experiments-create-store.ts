@@ -13,9 +13,6 @@ import { DotMessageService } from '@dotcms/data-access';
 import { DotExperiment } from '@dotcms/dotcms-models';
 import { DotExperimentsService } from '@portlets/dot-experiments/shared/services/dot-experiments.service';
 
-
-
-
 export interface DotExperimentCreateStore {
     isOpenSidebar: boolean;
     isLoading: boolean;

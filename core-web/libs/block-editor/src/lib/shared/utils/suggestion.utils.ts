@@ -77,7 +77,7 @@ const block: DotMenuItem[] = [
     {
         label: 'Horizontal Line',
         icon: sanitizeUrl(lineIcon),
-        id: 'horizontalLine'
+        id: 'horizontalRule'
     }
 ];
 

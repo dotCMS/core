@@ -2,7 +2,6 @@ import { DebugElement } from '@angular/core';
 import { ComponentFixture, fakeAsync, TestBed, tick, waitForAsync } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 
-
 import { DotMessageService } from '@dotcms/data-access';
 import { DotPageRenderState } from '@dotcms/dotcms-models';
 import { MockDotMessageService, mockDotRenderedPage, mockUser } from '@dotcms/utils-testing';

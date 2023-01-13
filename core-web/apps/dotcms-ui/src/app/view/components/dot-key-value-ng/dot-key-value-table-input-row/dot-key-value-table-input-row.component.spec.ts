@@ -14,7 +14,6 @@ import { DotKeyValueTableInputRowComponent } from './dot-key-value-table-input-r
 
 import { mockKeyValue } from '../dot-key-value-ng.component.spec';
 
-
 @Component({
     selector: 'dot-test-host-component',
     template: `

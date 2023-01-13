@@ -21,7 +21,6 @@ import {
 import { DotContainersService } from '@services/dot-containers/dot-containers.service';
 import { DotRouterService } from '@services/dot-router/dot-router.service';
 
-
 export interface DotContainerPropertiesState {
     showPrePostLoopInput: boolean;
     isContentTypeVisible: boolean;

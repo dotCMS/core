@@ -1,5 +1,3 @@
-
-
 import { MarkdownModule } from 'ngx-markdown';
 
 import { CommonModule } from '@angular/common';
