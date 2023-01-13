@@ -21,9 +21,6 @@ import { DotActionMenuItem } from '@models/dot-action-menu/dot-action-menu-item.
 import { DotContainersService } from '@services/dot-containers/dot-containers.service';
 import { DotRouterService } from '@services/dot-router/dot-router.service';
 
-
-
-
 export interface DotContainerListState {
     containerBulkActions: MenuItem[];
     selectedContainers: DotContainer[];

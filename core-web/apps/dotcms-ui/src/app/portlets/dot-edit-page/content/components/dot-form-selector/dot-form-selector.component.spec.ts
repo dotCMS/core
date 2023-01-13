@@ -22,7 +22,6 @@ import {
     MockDotMessageService
 } from '@dotcms/utils-testing';
 
-
 import { DotFormSelectorComponent } from './dot-form-selector.component';
 
 const mockContentType: DotCMSContentType = {

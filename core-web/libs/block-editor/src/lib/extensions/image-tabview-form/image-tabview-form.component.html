@@ -1,32 +1,23 @@
 <div class="tabview-container">
-    <ng-container [formGroup]="form">
-        <p-tabView>
-            <p-tabPanel header="dotCMS" leftIcon="pi pi-images">
-                <div class="search-box">
-                    <span class="p-input-icon-right">
-                        <input
-                            class="search"
-                            #inputSearch
-                            type="text"
-                            pInputText
-                            formControlName="search"
-                            placeholder="Search"
-                        />
-                        <i class="pi pi-search"></i>
-                    </span>
+    <p-tabView>
+        <p-tabPanel [cache]="false" header="dotCMS" leftIcon="pi pi-images">
+            <ng-template pTemplate="content">
+                <div class="wrapper">
+                    <dot-image-search
+                        [languageId]="languageId"
+                        (addImage)="onSelectImage($event)"
+                    ></dot-image-search>
                 </div>
-                <ng-container *ngIf="contentlets$ | async as contentlets">
-                    <dot-image-card-list
-                        [contentlets]="contentlets"
-                        [done]="preventScroll"
-                        [loading]="loading"
-                        (selectedItem)="selectItemCallback($event)"
-                        (nextBatch)="offset$.next($event)"
-                    ></dot-image-card-list>
-                </ng-container>
-            </p-tabPanel>
-            <!-- <p-tabPanel header="Upload" leftIcon="pi pi-upload"> Content 2 </p-tabPanel> -->
-            <!-- <p-tabPanel header="Image URL" leftIcon="pi pi-link"> Content 3 </p-tabPanel> -->
-        </p-tabView>
-    </ng-container>
+            </ng-template>
+        </p-tabPanel>
+        <p-tabPanel [cache]="false" header="Image URL" leftIcon="pi pi-link">
+            <ng-template pTemplate="content">
+                <div class="wrapper">
+                    <dot-insert-external-image
+                        (addImage)="onSelectImage($event)"
+                    ></dot-insert-external-image>
+                </div>
+            </ng-template>
+        </p-tabPanel>
+    </p-tabView>
 </div>

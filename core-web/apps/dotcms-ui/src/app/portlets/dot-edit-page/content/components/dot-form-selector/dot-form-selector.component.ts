@@ -18,7 +18,6 @@ import { DotDialogComponent } from '@components/dot-dialog/dot-dialog.component'
 import { PaginatorService } from '@dotcms/data-access';
 import { DotCMSContentType } from '@dotcms/dotcms-models';
 
-
 @Component({
     selector: 'dot-form-selector',
     templateUrl: './dot-form-selector.component.html',

@@ -10,16 +10,16 @@ import { MessageService } from 'primeng/api';
         <p-toast position="top-center" key="tc"></p-toast>
         <p-toast position="bottom-center" key="bc"></p-toast>
         <p>
-            <button type="button" pButton pRipple (click)="showSuccess()" label="Success"></button>
+            <button (click)="showSuccess()" type="button" pButton pRipple label="Success"></button>
         </p>
         <p>
-            <button type="button" pButton pRipple (click)="showError()" label="Error"></button>
+            <button (click)="showError()" type="button" pButton pRipple label="Error"></button>
         </p>
         <p>
-            <button type="button" pButton pRipple (click)="showInfo()" label="Info"></button>
+            <button (click)="showInfo()" type="button" pButton pRipple label="Info"></button>
         </p>
         <p>
-            <button type="button" pButton pRipple (click)="showWarn()" label="Warning"></button>
+            <button (click)="showWarn()" type="button" pButton pRipple label="Warning"></button>
         </p>
     `
 })

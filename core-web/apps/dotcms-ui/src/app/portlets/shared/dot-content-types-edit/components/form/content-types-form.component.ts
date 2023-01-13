@@ -22,8 +22,6 @@ import { SelectItem } from 'primeng/api';
 
 import { filter, take, takeUntil } from 'rxjs/operators';
 
-
-
 import { DotLicenseService, DotMessageService, DotWorkflowService } from '@dotcms/data-access';
 import {
     DotCMSContentType,

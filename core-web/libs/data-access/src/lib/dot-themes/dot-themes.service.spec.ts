@@ -7,7 +7,6 @@ import { mockDotThemes, CoreWebServiceMock } from '@dotcms/utils-testing';
 
 import { DotThemesService } from './dot-themes.service';
 
-
 describe('DotThemesService', () => {
     let injector: TestBed;
     let dotThemesService: DotThemesService;

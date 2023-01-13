@@ -256,7 +256,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
     private static final String backupPath =
             ConfigUtils.getBackupPath() + File.separator + "contentlets";
 
-    public final static String UNIQUE_PER_SITE_FIELD_VARIABLE_NAME = "uniquePerSite";
+    public static final String UNIQUE_PER_SITE_FIELD_VARIABLE_NAME = "uniquePerSite";
 
 
     /**
@@ -271,7 +271,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
     private final BaseTypeToContentTypeStrategyResolver baseTypeToContentTypeStrategyResolver =
             BaseTypeToContentTypeStrategyResolver.getInstance();
 
-    public static enum QueryType {
+    public enum QueryType {
         search, suggest, moreLike, Facets
     }
 
@@ -7954,32 +7954,30 @@ public class ESContentletAPIImpl implements ContentletAPI {
     @WrapInTransaction
     @Override
     public Contentlet copyContentlet(final Contentlet sourceContentlet, final Host host, final Folder folder, final User user, final String copySuffix, final boolean respectFrontendRoles) throws DotDataException, DotSecurityException, DotContentletStateException {
-
+        if (user == null || UtilMethods.isNotSet(user.getUserId())) {
+            throw new DotSecurityException("A user must be specified.");
+        }
         final Map<String, HTMLPageAssetAPI.TemplateContainersReMap> templateMappings = (Map<String, TemplateContainersReMap>) sourceContentlet.get(Contentlet.TEMPLATE_MAPPINGS);
         Contentlet copyContentlet = new Contentlet();
         String newIdentifier = StringPool.BLANK;
-        List<Contentlet> versionsToMarkWorking = new ArrayList<>();
-        Map<String, Map<String, Contentlet>> contentletsToCopyRules = Maps.newHashMap();
+        final List<Contentlet> versionsToMarkWorking = new ArrayList<>();
+        final Map<String, Map<String, Contentlet>> contentletsToCopyRules = Maps.newHashMap();
         final Identifier sourceContentletIdentifier = APILocator.getIdentifierAPI().find(sourceContentlet.getIdentifier());
-        List<Contentlet> versionsToCopy = new ArrayList<>(
+        final List<Contentlet> versionsToCopy = new ArrayList<>(
                 findAllVersions(sourceContentletIdentifier, false, user, respectFrontendRoles));
 
         // we need to save the versions from older-to-newer to make sure the last save
         // is the current version
         Collections.sort(versionsToCopy, Comparator.comparing(Contentlet::getModDate));
 
-        for(Contentlet contentlet : versionsToCopy){
-
+        for (final Contentlet contentlet : versionsToCopy) {
             final boolean isContentletLive = contentlet.isLive();
             final boolean isContentletWorking = contentlet.isWorking();
             final boolean isContentletDeleted = contentlet.isArchived();
 
-            if (user == null) {
-                throw new DotSecurityException("A user must be specified.");
-            }
-
             if (!permissionAPI.doesUserHavePermission(contentlet, PermissionAPI.PERMISSION_READ, user, respectFrontendRoles)) {
-                throw new DotSecurityException("You don't have permission to read the source file.");
+                throw new DotSecurityException(String.format("User '%s' does not have READ permissions on Contentlet " +
+                                                                     "Inode '%s'", user.getUserId(), contentlet.getInode()));
             }
 
             // gets the new information for the template from the request object
@@ -8013,14 +8011,14 @@ public class ESContentletAPIImpl implements ContentletAPI {
                     APILocator.getFileAssetAPI().getRealAssetPathTmpBinary() + File.separator
                             + UUIDGenerator.generateUuid();
 
-            List <Field> fields = FieldsCache.getFieldsByStructureInode(contentlet.getStructureInode());
+            final List <Field> fields = FieldsCache.getFieldsByStructureInode(contentlet.getStructureInode());
             File srcFile;
             File destFile = new File(temporalFolder);
-            if (!destFile.exists())
+            if (!destFile.exists()) {
                 destFile.mkdirs();
-
+            }
             String fieldValue;
-            for (Field tempField: fields) {
+            for (final Field tempField: fields) {
                 if (tempField.getFieldType().equals(Field.FieldType.BINARY.toString())) {
                     fieldValue = "";
                     try {
@@ -8032,14 +8030,14 @@ public class ESContentletAPIImpl implements ContentletAPI {
                                 fieldValue=srcFile.getName();
                             }
                             destFile = new File(temporalFolder + File.separator + fieldValue);
-                            if (!destFile.exists())
+                            if (!destFile.exists()) {
                                 destFile.createNewFile();
-
+                            }
                             FileUtils.copyFile(srcFile, destFile);
                             newContentlet.setBinary(tempField.getVelocityVarName(), destFile);
                         }
-                    } catch (Exception e) {
-                        throw new DotDataException("Error copying binary file: '" + fieldValue + "'", e);
+                    } catch (final Exception e) {
+                        throw new DotDataException("Error copying binary file: '" + fieldValue + "': " + e.getMessage(), e);
                     }
                 }
 
@@ -8056,9 +8054,9 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 }
             }
 
-            List<Category> parentCats = categoryAPI.getParents(contentlet, false, user, respectFrontendRoles);
-            Map<Relationship, List<Contentlet>> rels = new HashMap<Relationship, List<Contentlet>>();
-            String destinationHostId = "";
+            final List<Category> parentCats = categoryAPI.getParents(contentlet, false, user, respectFrontendRoles);
+            final Map<Relationship, List<Contentlet>> rels = new HashMap<>();
+            String destinationHostId;
             if(host != null && UtilMethods.isSet(host.getIdentifier())){
                 destinationHostId = host.getIdentifier();
             } else if(folder!=null){
@@ -8067,9 +8065,9 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 destinationHostId = contentlet.getHost();
             }
             if(sourceContentlet.getHost().equals(destinationHostId)){
-                ContentletRelationships cr = getAllRelationships(contentlet);
-                List<ContentletRelationshipRecords> rr = cr.getRelationshipsRecords();
-                for (ContentletRelationshipRecords crr : rr) {
+                final ContentletRelationships cr = getAllRelationships(contentlet);
+                final List<ContentletRelationshipRecords> rr = cr.getRelationshipsRecords();
+                for (final ContentletRelationshipRecords crr : rr) {
                     rels.put(crr.getRelationship(), crr.getRecords());
                 }
             }
@@ -8088,12 +8086,12 @@ public class ESContentletAPIImpl implements ContentletAPI {
                     }
                 }
 
-                Identifier identifier = APILocator.getIdentifierAPI().find(contentlet);
+                final Identifier identifier = APILocator.getIdentifierAPI().find(contentlet);
                 if(UtilMethods.isSet(identifier) && UtilMethods.isSet(identifier.getAssetName())){
                     final String newAssetName = generateCopyName(identifier.getAssetName(), copySuffix);
                     newContentlet.setProperty(HTMLPageAssetAPI.URL_FIELD, newAssetName);
                 } else {
-                    Logger.warn(this, "Unable to get URL from Contentlet " + contentlet);
+                    Logger.warn(this, "Unable to get URL from Contentlet: " + contentlet);
                 }
             }
 
@@ -8118,7 +8116,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
             //Using a map to make sure one identifier per page.
             //Avoiding multi languages pages.
             if (!contentletsToCopyRules.containsKey(contentlet.getIdentifier())){
-                Map<String, Contentlet> contentletMap = Maps.newHashMap();
+                final Map<String, Contentlet> contentletMap = Maps.newHashMap();
                 contentletMap.put("contentlet", contentlet);
                 contentletMap.put("newContentlet", newContentlet);
                 contentletsToCopyRules.put(contentlet.getIdentifier(), contentletMap);
@@ -8139,12 +8137,12 @@ public class ESContentletAPIImpl implements ContentletAPI {
             }
         }
 
-        for (Map<String, Contentlet> stringContentletMap : contentletsToCopyRules.values()) {
+        for (final Map<String, Contentlet> stringContentletMap : contentletsToCopyRules.values()) {
             try{
-                Contentlet contentlet = stringContentletMap.get("contentlet");
-                Contentlet newContentlet = stringContentletMap.get("newContentlet");
+                final Contentlet contentlet = stringContentletMap.get("contentlet");
+                final Contentlet newContentlet = stringContentletMap.get("newContentlet");
                 APILocator.getRulesAPI().copyRulesByParent(contentlet, newContentlet, user, respectFrontendRoles);
-            } catch (InvalidLicenseException ilexp){
+            } catch (final InvalidLicenseException ilexp){
                 Logger.warn(this, "License is required to copy rules under pages") ;
             }
         }
@@ -8172,31 +8170,49 @@ public class ESContentletAPIImpl implements ContentletAPI {
             }
         }
 
-        // copy the workflow state
-        final WorkflowTask task = APILocator.getWorkflowAPI().findTaskByContentlet(sourceContentlet);
-        if(null != task) {
-
-            final WorkflowTask newTask = new WorkflowTask();
-            Try.run(()->  BeanUtils.copyProperties(newTask, task));
-            newTask.setId(null);
-            newTask.setWebasset(copyContentlet.getIdentifier());
-            newTask.setLanguageId(copyContentlet.getLanguageId());
-            APILocator.getWorkflowAPI().saveWorkflowTask(newTask);
-
-
-            final WorkflowComment newComment = new WorkflowComment();
-            newComment.setPostedBy(user.getUserId());
-            newComment.setComment("Content copied from content id: " + sourceContentlet.getIdentifier());
-            newComment.setCreationDate(new Date());
-            newComment.setWorkflowtaskId(newTask.getId());
-            APILocator.getWorkflowAPI().saveComment(newComment);
-
-
-        }
-
+        this.copyWorkflowState(sourceContentlet, copyContentlet, user);
         this.sendCopyEvent(copyContentlet);
 
         return copyContentlet;
+    }
+
+    /**
+     * Copies the Workflow Task information from the "source" Contentlet to the "destination" Contentlet. This is very
+     * important in order to keep the copied Contentlet and its respective language versions in the same Workflow Step
+     * as the source Contentlet.
+     *
+     * @param sourceContentlet The {@link Contentlet} instance that will be copied.
+     * @param copyContentlet   The resulting copy of the original Contentlet.
+     * @param user             The {@link User} executing this action.
+     *
+     * @throws DotDataException An error occurred when interacting with the data source.
+     */
+    private void copyWorkflowState(final Contentlet sourceContentlet, final Contentlet copyContentlet, final User user) throws DotDataException {
+        final long sourceLangId = sourceContentlet.getLanguageId();
+        final List<Language> availableLanguages = APILocator.getLanguageAPI().getLanguages();
+        try {
+            for (final Language language : availableLanguages) {
+                sourceContentlet.setLanguageId(language.getId());
+                final WorkflowTask task = APILocator.getWorkflowAPI().findTaskByContentlet(sourceContentlet);
+                if (null != task) {
+                    final WorkflowTask newTask = new WorkflowTask();
+                    Try.run(() -> BeanUtils.copyProperties(newTask, task));
+                    newTask.setId(null);
+                    newTask.setWebasset(copyContentlet.getIdentifier());
+                    newTask.setLanguageId(language.getId());
+                    APILocator.getWorkflowAPI().saveWorkflowTask(newTask);
+
+                    final WorkflowComment newComment = new WorkflowComment();
+                    newComment.setPostedBy(user.getUserId());
+                    newComment.setComment("Content copied from content id: " + sourceContentlet.getIdentifier());
+                    newComment.setCreationDate(new Date());
+                    newComment.setWorkflowtaskId(newTask.getId());
+                    APILocator.getWorkflowAPI().saveComment(newComment);
+                }
+            }
+        } finally {
+            sourceContentlet.setLanguageId(sourceLangId);
+        }
     }
 
     private String generateCopyName(final String originalName, final String copySuffix) {

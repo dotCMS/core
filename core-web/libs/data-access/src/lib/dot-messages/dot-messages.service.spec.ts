@@ -11,7 +11,6 @@ import { DotMessageService } from './dot-messages.service';
 
 import { DotLocalstorageService } from '../dot-localstorage/dot-localstorage.service';
 
-
 describe('DotMessageService', () => {
     let dotMessageService: DotMessageService;
     let coreWebService: CoreWebService;

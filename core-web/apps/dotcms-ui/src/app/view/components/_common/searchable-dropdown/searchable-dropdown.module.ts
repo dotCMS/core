@@ -15,7 +15,6 @@ import { SearchableDropdownComponent } from './component';
 
 import { UiDotIconButtonModule } from '../dot-icon-button/dot-icon-button.module';
 
-
 export const SEARCHABLE_NGFACES_MODULES = [
     ButtonModule,
     CommonModule,

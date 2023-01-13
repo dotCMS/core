@@ -17,7 +17,6 @@ import {
 
 import { DotLanguageSelectorComponent } from './dot-language-selector.component';
 
-
 const messageServiceMock = new MockDotMessageService({
     'editpage.viewas.label.language': 'Language'
 });

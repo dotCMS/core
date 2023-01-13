@@ -15,9 +15,6 @@ import { DotPagesCardModule } from './dot-pages-card/dot-pages-card.module';
 import { DotPagesRoutingModule } from './dot-pages-routing.module';
 import { DotPagesComponent } from './dot-pages.component';
 
-
-
-
 @NgModule({
     declarations: [DotPagesComponent],
     imports: [

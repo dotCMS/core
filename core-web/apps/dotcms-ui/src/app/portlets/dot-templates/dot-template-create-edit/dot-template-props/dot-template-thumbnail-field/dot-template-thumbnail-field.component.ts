@@ -7,7 +7,11 @@ import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
 import { finalize, switchMap, take } from 'rxjs/operators';
 
 import { DotTempFileUploadService } from '@dotcms/app/api/services/dot-temp-file-upload/dot-temp-file-upload.service';
-import { DotCrudService, DotMessageService, DotWorkflowActionsFireService } from '@dotcms/data-access';
+import {
+    DotCrudService,
+    DotMessageService,
+    DotWorkflowActionsFireService
+} from '@dotcms/data-access';
 import { DotCMSContentlet, DotCMSTempFile } from '@dotcms/dotcms-models';
 
 export interface DotCMSTemplateThumbnail extends DotCMSContentlet {

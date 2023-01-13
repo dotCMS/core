@@ -125,8 +125,8 @@ describe('DotTemplateAdvancedComponent', () => {
 
         const code = de.query(By.css('dot-textarea-content'));
         code.triggerEventHandler('monacoInit', {
-            executeEdits: jasmine.createSpy(),
-            getSelection: () => 100
+            name: 'testEditor',
+            editor: { executeEdits: jasmine.createSpy(), getSelection: () => 100 }
         });
     });
 

@@ -26,8 +26,6 @@ import {
     ExperimentMocks
 } from '@portlets/dot-experiments/test/mocks';
 
-
-
 import { DotExperimentsConfigurationComponent } from './dot-experiments-configuration.component';
 
 const ActivatedRouteMock = {

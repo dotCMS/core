@@ -10,7 +10,6 @@ import { PaginatorService } from '@dotcms/data-access';
 import { DotContainer } from '@dotcms/dotcms-models';
 import { DotContainerColumnBox } from '@models/dot-edit-layout-designer';
 
-
 @Component({
     providers: [PaginatorService],
     selector: 'dot-container-selector',

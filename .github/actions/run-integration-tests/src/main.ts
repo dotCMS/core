@@ -20,7 +20,7 @@ const run = async () => {
   const result = await integration.runTests(cmds)
   const skipReport = !(result.outputDir && fs.existsSync(result.outputDir))
   setOutput('tests_results_location', result.outputDir)
-  setOutput('tests_results_report_location', result.reportDir, true)
+  setOutput('tests_results_report_location', result.reportDir)
   setOutput('ci_index', result.ciIndex)
   setOutput('tests_results_status', result.exitCode === 0 ? 'PASSED' : 'FAILED')
   setOutput('tests_results_skip_report', skipReport)

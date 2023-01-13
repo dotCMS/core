@@ -4,7 +4,9 @@ import { Injectable } from '@angular/core';
 import {
     ActivatedRoute,
     Event,
-    NavigationEnd, NavigationExtras, Params,
+    NavigationEnd,
+    NavigationExtras,
+    Params,
     Router
 } from '@angular/router';
 

@@ -9,12 +9,9 @@ import { LoginService } from '@dotcms/dotcms-js';
 import { DotAlertConfirm } from '@dotcms/dotcms-models';
 import { LoginServiceMock, MockDotMessageService } from '@dotcms/utils-testing';
 
-
 import { DotAlertConfirmService } from './dot-alert-confirm.service';
 
-
 import { DotMessageService } from '../dot-messages/dot-messages.service';
-
 
 const messageServiceMock = new MockDotMessageService({
     'dot.common.dialog.accept': 'Go',

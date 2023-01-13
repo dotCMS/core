@@ -6,7 +6,6 @@ import { ActivatedRouteSnapshot, Resolve } from '@angular/router';
 
 import { catchError, filter, map, switchMap, tap } from 'rxjs/operators';
 
-
 import { DotHttpErrorManagerService } from '@dotcms/app/api/services/dot-http-error-manager/dot-http-error-manager.service';
 import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
 import { DotCMSResponse, HttpCode } from '@dotcms/dotcms-js';
