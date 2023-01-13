@@ -1,9 +1,4 @@
-import {
-    DotExperimentStatusList,
-    DotPage,
-    Status,
-    TrafficProportionTypes
-} from '@dotcms/dotcms-models';
+import { DotExperimentStatusList, Status, TrafficProportionTypes } from '@dotcms/dotcms-models';
 
 export interface DotExperiment {
     id: string;
@@ -19,11 +14,8 @@ export interface DotExperiment {
     scheduling: RangeOfDateAndTime | null;
     creationDate: Date;
     modDate: Date;
+    goals: Goals | null;
 }
-
-export type RenderedPageExperiments = Pick<DotPage, 'title' | 'identifier'>;
-
-export type GroupedExperimentByStatus = Partial<Record<DotExperimentStatusList, DotExperiment[]>>;
 
 export interface TrafficProportion {
     type: TrafficProportionTypes;
@@ -37,10 +29,28 @@ export interface Variant {
     url?: string;
 }
 
+type GoalsTypes = 'primary';
+
+export interface Goal {
+    name: string;
+    type: GOAL_TYPES;
+    conditions: Array<GoalCondition>;
+}
+
+export type Goals = Record<GoalsTypes, Goal>;
+
+export interface GoalCondition {
+    parameter: GOAL_PARAMETERS;
+    operator: GOAL_OPERATORS;
+    value: string;
+}
+
 interface RangeOfDateAndTime {
     startDate: Date;
     endDate: Date;
 }
+
+export type GroupedExperimentByStatus = Partial<Record<DotExperimentStatusList, DotExperiment[]>>;
 
 export interface StepStatus {
     status: Status;
@@ -48,14 +58,14 @@ export interface StepStatus {
     experimentStep: ExperimentSteps | null;
 }
 
-export interface DotStoreWithSidebar {
-    isOpenSidebar: boolean;
-    isSaving: boolean;
-}
+export type GoalSelectOption = {
+    label: string;
+    value: string;
+    inactive: boolean;
+    description: string;
+};
 
 export type EditPageTabs = 'edit' | 'preview';
-
-export type EditPageQueryParams = 'editPageTab' | 'variationName';
 
 export enum ExperimentSteps {
     VARIANTS = 'variants',
@@ -63,4 +73,19 @@ export enum ExperimentSteps {
     TARGETING = 'targeting',
     TRAFFIC = 'traffic',
     SCHEDULING = 'scheduling'
+}
+
+export enum GOAL_TYPES {
+    REACH_PAGE = 'REACH_PAGE',
+    BOUNCE_RATE = 'BOUNCE_RATE',
+    CLICK_ON_ELEMENT = 'CLICK_ON_ELEMENT'
+}
+
+export enum GOAL_OPERATORS {
+    EQUALS = 'EQUALS',
+    CONTAINS = 'CONTAINS'
+}
+
+export enum GOAL_PARAMETERS {
+    URL = 'url'
 }

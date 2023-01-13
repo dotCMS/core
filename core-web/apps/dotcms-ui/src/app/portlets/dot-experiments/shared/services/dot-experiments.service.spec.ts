@@ -1,6 +1,6 @@
 import { createHttpFactory, HttpMethod, SpectatorHttp } from '@ngneat/spectator';
 
-import { DotExperiment, Variant } from '@dotcms/dotcms-models';
+import { DefaultGoalConfiguration, DotExperiment, Goals, Variant } from '@dotcms/dotcms-models';
 import { ExperimentMocks } from '@portlets/dot-experiments/test/mocks';
 
 import { DotExperimentsService } from './dot-experiments.service';
@@ -71,5 +71,13 @@ describe('DotExperimentsService', () => {
             `${API_ENDPOINT}/${EXPERIMENT_ID}/variants/${variantIdToRemove}`,
             HttpMethod.DELETE
         );
+    });
+
+    it('should asign a goal to experiment ', () => {
+        const goal: Goals = {
+            ...DefaultGoalConfiguration
+        };
+        spectator.service.setGoal(EXPERIMENT_ID, goal).subscribe();
+        spectator.expectOne(`${API_ENDPOINT}/${EXPERIMENT_ID}`, HttpMethod.PATCH);
     });
 });
