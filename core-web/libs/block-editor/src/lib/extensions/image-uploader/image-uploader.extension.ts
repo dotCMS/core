@@ -1,7 +1,8 @@
+import { ComponentRef, Injector, ViewContainerRef } from '@angular/core';
+
 import { Plugin, PluginKey } from 'prosemirror-state';
 import { EditorView } from 'prosemirror-view';
 
-import { ComponentRef, Injector, ViewContainerRef } from '@angular/core';
 
 import { take } from 'rxjs/operators';
 

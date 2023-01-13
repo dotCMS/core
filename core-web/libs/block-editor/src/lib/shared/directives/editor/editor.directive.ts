@@ -1,4 +1,3 @@
-import { Transaction } from 'prosemirror-state';
 
 import {
     Directive,
@@ -10,6 +9,8 @@ import {
     Renderer2
 } from '@angular/core';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
+
+import { Transaction } from 'prosemirror-state';
 
 import { Content, Editor, JSONContent } from '@tiptap/core';
 

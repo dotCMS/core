@@ -1,7 +1,8 @@
+import { ViewContainerRef } from '@angular/core';
+
 import { NodeSelection, Plugin, PluginKey } from 'prosemirror-state';
 import { EditorView } from 'prosemirror-view';
 
-import { ViewContainerRef } from '@angular/core';
 
 import { Extension } from '@tiptap/core';
 

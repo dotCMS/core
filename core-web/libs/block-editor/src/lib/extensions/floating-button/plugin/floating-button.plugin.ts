@@ -1,9 +1,10 @@
+import { ComponentRef } from '@angular/core';
+
 import { EditorState, Plugin, PluginKey } from 'prosemirror-state';
 import { EditorView } from 'prosemirror-view';
 import { Subject } from 'rxjs';
 import tippy, { Instance } from 'tippy.js';
 
-import { ComponentRef } from '@angular/core';
 
 import { take, takeUntil, tap } from 'rxjs/operators';
 

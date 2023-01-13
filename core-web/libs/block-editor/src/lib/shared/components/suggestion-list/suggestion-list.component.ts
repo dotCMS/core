@@ -1,4 +1,3 @@
-import { Subject } from 'rxjs';
 
 import { FocusKeyManager } from '@angular/cdk/a11y';
 import {
@@ -11,6 +10,8 @@ import {
     OnDestroy,
     QueryList
 } from '@angular/core';
+
+import { Subject } from 'rxjs';
 
 // Components
 import { takeUntil } from 'rxjs/operators';

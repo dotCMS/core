@@ -1,8 +1,9 @@
-import { of } from 'rxjs';
 
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
+
+import { of } from 'rxjs';
 
 import { ListboxModule } from 'primeng/listbox';
 import { MenuModule } from 'primeng/menu';

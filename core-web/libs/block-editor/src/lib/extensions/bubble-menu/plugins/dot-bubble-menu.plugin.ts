@@ -1,8 +1,9 @@
+import { ComponentRef } from '@angular/core';
+
 import { EditorState, NodeSelection, Plugin, PluginKey } from 'prosemirror-state';
 import { EditorView } from 'prosemirror-view';
 import tippy, { Instance } from 'tippy.js';
 
-import { ComponentRef } from '@angular/core';
 
 import { filter, take } from 'rxjs/operators';
 

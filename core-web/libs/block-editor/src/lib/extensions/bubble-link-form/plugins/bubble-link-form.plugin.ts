@@ -1,10 +1,11 @@
+import { ComponentRef } from '@angular/core';
+
 import isEqual from 'lodash.isequal';
 import { EditorState, Plugin, PluginKey, Transaction } from 'prosemirror-state';
 import { EditorView } from 'prosemirror-view';
 import { Subject } from 'rxjs';
 import tippy, { Instance, Props } from 'tippy.js';
 
-import { ComponentRef } from '@angular/core';
 
 import { takeUntil } from 'rxjs/operators';
 

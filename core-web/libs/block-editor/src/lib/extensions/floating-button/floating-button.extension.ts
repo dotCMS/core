@@ -1,6 +1,7 @@
+import { Injector, ViewContainerRef } from '@angular/core';
+
 import { PluginKey } from 'prosemirror-state';
 
-import { Injector, ViewContainerRef } from '@angular/core';
 
 import { Extension } from '@tiptap/core';
 

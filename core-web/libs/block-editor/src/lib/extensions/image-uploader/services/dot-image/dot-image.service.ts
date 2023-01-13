@@ -1,7 +1,8 @@
-import { from, Observable, throwError } from 'rxjs';
 
 import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
+
+import { from, Observable, throwError } from 'rxjs';
 
 import { catchError, pluck, switchMap } from 'rxjs/operators';
 

@@ -1,4 +1,3 @@
-import { BehaviorSubject, merge } from 'rxjs';
 
 import {
     ChangeDetectionStrategy,
@@ -10,6 +9,8 @@ import {
     ViewChild
 } from '@angular/core';
 import { FormBuilder, FormGroup } from '@angular/forms';
+
+import { BehaviorSubject, merge } from 'rxjs';
 
 import { Observable } from 'rxjs/internal/Observable';
 import { debounceTime, map, mergeMap, tap, throttleTime } from 'rxjs/operators';

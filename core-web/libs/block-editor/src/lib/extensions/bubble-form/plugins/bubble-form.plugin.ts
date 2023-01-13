@@ -1,10 +1,11 @@
+import { ComponentRef } from '@angular/core';
+
 import { Node } from 'prosemirror-model';
 import { EditorState, NodeSelection, Plugin, PluginKey, Transaction } from 'prosemirror-state';
 import { EditorView } from 'prosemirror-view';
 import { Observable, Subject } from 'rxjs';
 import tippy, { Instance, Props } from 'tippy.js';
 
-import { ComponentRef } from '@angular/core';
 
 import { takeUntil } from 'rxjs/operators';
 

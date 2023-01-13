@@ -1,8 +1,9 @@
+import { ComponentRef, ViewContainerRef } from '@angular/core';
+
 import { PluginKey } from 'prosemirror-state';
 import { Subject } from 'rxjs';
 import tippy, { GetReferenceClientRect } from 'tippy.js';
 
-import { ComponentRef, ViewContainerRef } from '@angular/core';
 
 import { filter, take, takeUntil } from 'rxjs/operators';
 

@@ -1,6 +1,7 @@
+import { Injector } from '@angular/core';
+
 import { DOMOutputSpec, ParseRule } from 'prosemirror-model';
 
-import { Injector } from '@angular/core';
 
 import { mergeAttributes, Node, NodeViewRenderer } from '@tiptap/core';
 

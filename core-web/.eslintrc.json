@@ -82,7 +82,7 @@
                             "type"
                         ],
                         "pathGroups": [
-                            { "pattern": "@angular/**", "group": "external", "position": "after" },
+                            { "pattern": "@angular/**", "group": "external", "position": "before" },
                             { "pattern": "primeng/**", "group": "external", "position": "after" },
                             { "pattern": "rxjs/**", "group": "external", "position": "after" },
                             { "pattern": "@tiptap/**", "group": "external", "position": "after" },
