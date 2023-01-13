@@ -1,4 +1,3 @@
-import { of } from 'rxjs';
 
 import { CommonModule } from '@angular/common';
 import { HttpClientTestingModule } from '@angular/common/http/testing';
@@ -16,6 +15,8 @@ import { ControlValueAccessor, NG_VALUE_ACCESSOR, ReactiveFormsModule } from '@a
 import { By } from '@angular/platform-browser';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { ActivatedRoute } from '@angular/router';
+
+import { of } from 'rxjs';
 
 import { ConfirmationService, SharedModule } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';

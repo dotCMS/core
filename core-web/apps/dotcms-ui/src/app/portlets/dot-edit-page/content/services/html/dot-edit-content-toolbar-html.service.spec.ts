@@ -1,7 +1,8 @@
-import { Observable, of as observableOf } from 'rxjs';
 
 import { Injectable } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
+
+import { Observable, of as observableOf } from 'rxjs';
 
 import { DotLicenseService, DotMessageService } from '@dotcms/data-access';
 import { MockDotMessageService } from '@dotcms/utils-testing';

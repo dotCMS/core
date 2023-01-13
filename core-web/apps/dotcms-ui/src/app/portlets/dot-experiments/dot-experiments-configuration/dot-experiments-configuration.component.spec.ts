@@ -1,9 +1,10 @@
-import { createComponentFactory, mockProvider, Spectator, SpyObject } from '@ngneat/spectator';
-import { of } from 'rxjs';
 
 import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { Title } from '@angular/platform-browser';
 import { ActivatedRoute, Router } from '@angular/router';
+
+import { createComponentFactory, mockProvider, Spectator, SpyObject } from '@ngneat/spectator';
+import { of } from 'rxjs';
 
 import { MessageService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';

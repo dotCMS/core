@@ -1,5 +1,3 @@
-import { from, Observable, of } from 'rxjs';
-
 import {
     Component,
     EventEmitter,
@@ -9,6 +7,9 @@ import {
     SimpleChanges,
     ViewChild
 } from '@angular/core';
+
+import { from, Observable, of } from 'rxjs';
+
 
 import { SelectItem } from 'primeng/api';
 

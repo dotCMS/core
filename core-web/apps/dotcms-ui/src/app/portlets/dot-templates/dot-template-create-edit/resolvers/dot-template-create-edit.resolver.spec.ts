@@ -1,8 +1,9 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
+import { TestBed } from '@angular/core/testing';
+
 import { of } from 'rxjs';
 
-import { TestBed } from '@angular/core/testing';
 
 import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
 import { DotTemplatesService } from '@dotcms/app/api/services/dot-templates/dot-templates.service';

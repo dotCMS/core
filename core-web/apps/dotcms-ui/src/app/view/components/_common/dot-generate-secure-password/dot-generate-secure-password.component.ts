@@ -1,6 +1,7 @@
+import { Component, OnDestroy, OnInit } from '@angular/core';
+
 import { Subject } from 'rxjs';
 
-import { Component, OnDestroy, OnInit } from '@angular/core';
 
 import { takeUntil } from 'rxjs/operators';
 

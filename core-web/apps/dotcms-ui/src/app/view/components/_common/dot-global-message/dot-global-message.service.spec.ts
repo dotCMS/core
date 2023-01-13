@@ -1,6 +1,7 @@
+import { TestBed } from '@angular/core/testing';
+
 import { Observable } from 'rxjs';
 
-import { TestBed } from '@angular/core/testing';
 
 import { DotEventsService, DotMessageService } from '@dotcms/data-access';
 import { DotEvent } from '@dotcms/dotcms-models';

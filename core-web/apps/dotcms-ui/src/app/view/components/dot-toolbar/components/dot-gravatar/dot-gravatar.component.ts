@@ -1,7 +1,8 @@
+import { Component, Input, OnChanges, SimpleChanges } from '@angular/core';
+
 import * as md5 from 'md5';
 import { Observable } from 'rxjs';
 
-import { Component, Input, OnChanges, SimpleChanges } from '@angular/core';
 
 import { DotGravatarService } from '@dotcms/app/api/services/dot-gravatar-service';
 

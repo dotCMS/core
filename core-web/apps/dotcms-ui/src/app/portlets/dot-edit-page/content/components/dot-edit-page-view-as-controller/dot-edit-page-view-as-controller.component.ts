@@ -1,6 +1,7 @@
+import { Component, Input, OnInit } from '@angular/core';
+
 import { Observable } from 'rxjs';
 
-import { Component, Input, OnInit } from '@angular/core';
 
 import { take } from 'rxjs/operators';
 

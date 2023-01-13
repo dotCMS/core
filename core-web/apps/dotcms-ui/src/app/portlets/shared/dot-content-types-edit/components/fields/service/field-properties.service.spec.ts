@@ -1,7 +1,8 @@
-import { Observable, of as observableOf } from 'rxjs';
 
 import { TestBed } from '@angular/core/testing';
 import { Validators } from '@angular/forms';
+
+import { Observable, of as observableOf } from 'rxjs';
 
 
 import { FieldPropertyService } from './field-properties.service';

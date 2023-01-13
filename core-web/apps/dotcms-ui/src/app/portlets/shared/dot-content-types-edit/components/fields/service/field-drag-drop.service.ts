@@ -1,8 +1,9 @@
+import { Injectable } from '@angular/core';
+
 import * as _ from 'lodash';
 import { DragulaService } from 'ng2-dragula';
 import { merge, Observable } from 'rxjs';
 
-import { Injectable } from '@angular/core';
 
 import { filter, map, tap } from 'rxjs/operators';
 

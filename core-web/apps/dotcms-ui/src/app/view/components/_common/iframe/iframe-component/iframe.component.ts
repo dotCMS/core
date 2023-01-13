@@ -1,6 +1,4 @@
 
-import { Subject } from 'rxjs';
-
 import {
     Component,
     ElementRef,
@@ -12,6 +10,9 @@ import {
     Output,
     ViewChild
 } from '@angular/core';
+
+import { Subject } from 'rxjs';
+
 
 import { debounceTime, filter, takeUntil } from 'rxjs/operators';
 

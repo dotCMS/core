@@ -1,11 +1,12 @@
 /* eslint-disable @typescript-eslint/no-empty-function */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { of as observableOf, throwError as observableThrowError } from 'rxjs';
 
 import { waitForAsync } from '@angular/core/testing';
 import { ActivatedRouteSnapshot } from '@angular/router';
 import { RouterTestingModule } from '@angular/router/testing';
+
+import { of as observableOf, throwError as observableThrowError } from 'rxjs';
 
 import { DotHttpErrorManagerService } from '@dotcms/app/api/services/dot-http-error-manager/dot-http-error-manager.service';
 import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';

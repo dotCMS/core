@@ -1,10 +1,11 @@
 
 
-import { MarkdownModule } from 'ngx-markdown';
 
 import { CommonModule } from '@angular/common';
 import { NgModule } from '@angular/core';
 import { ReactiveFormsModule } from '@angular/forms';
+
+import { MarkdownModule } from 'ngx-markdown';
 
 import { ButtonModule } from 'primeng/button';
 import { CheckboxModule } from 'primeng/checkbox';

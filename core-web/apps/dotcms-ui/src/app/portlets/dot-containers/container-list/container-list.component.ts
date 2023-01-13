@@ -1,6 +1,7 @@
+import { Component, OnDestroy, ViewChild } from '@angular/core';
+
 import { Subject } from 'rxjs';
 
-import { Component, OnDestroy, ViewChild } from '@angular/core';
 
 import { DialogService } from 'primeng/dynamicdialog';
 

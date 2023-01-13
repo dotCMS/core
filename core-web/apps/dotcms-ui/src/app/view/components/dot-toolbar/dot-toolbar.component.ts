@@ -1,6 +1,7 @@
+import { Component, Input, OnInit } from '@angular/core';
+
 import { BehaviorSubject } from 'rxjs';
 
-import { Component, Input, OnInit } from '@angular/core';
 
 import { DotNavLogoService } from '@dotcms/app/api/services/dot-nav-logo/dot-nav-logo.service';
 import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';

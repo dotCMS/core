@@ -1,8 +1,6 @@
 /* eslint-disable @typescript-eslint/no-empty-function */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import * as _ from 'lodash';
-import { of, throwError } from 'rxjs';
 
 import { Location } from '@angular/common';
 import { HttpClientTestingModule } from '@angular/common/http/testing';
@@ -12,6 +10,9 @@ import { By } from '@angular/platform-browser';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { ActivatedRoute } from '@angular/router';
 import { RouterTestingModule } from '@angular/router/testing';
+
+import * as _ from 'lodash';
+import { of, throwError } from 'rxjs';
 
 import { ConfirmationService, MenuItem } from 'primeng/api';
 

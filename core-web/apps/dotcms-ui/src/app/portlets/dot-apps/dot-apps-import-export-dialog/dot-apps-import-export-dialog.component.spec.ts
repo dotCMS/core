@@ -1,4 +1,3 @@
-import { Observable, of } from 'rxjs';
 
 import { CommonModule } from '@angular/common';
 import { HttpClientTestingModule } from '@angular/common/http/testing';
@@ -6,6 +5,8 @@ import { Component, DebugElement, Input } from '@angular/core';
 import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing';
 import { ReactiveFormsModule } from '@angular/forms';
 import { By } from '@angular/platform-browser';
+
+import { Observable, of } from 'rxjs';
 
 import { InputTextModule } from 'primeng/inputtext';
 

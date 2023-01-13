@@ -1,6 +1,7 @@
+import { Injectable } from '@angular/core';
+
 import { merge, Observable, Subject } from 'rxjs';
 
-import { Injectable } from '@angular/core';
 
 import { filter, takeUntil } from 'rxjs/operators';
 

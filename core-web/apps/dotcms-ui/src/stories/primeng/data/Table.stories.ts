@@ -1,8 +1,9 @@
 /* eslint-disable no-console */
 // also exported from '@storybook/angular' if you can deal with breaking changes in 6.1
+import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
+
 import { Meta } from '@storybook/angular/types-6-0';
 
-import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 
 import { ButtonModule } from 'primeng/button';
 import { InputTextModule } from 'primeng/inputtext';

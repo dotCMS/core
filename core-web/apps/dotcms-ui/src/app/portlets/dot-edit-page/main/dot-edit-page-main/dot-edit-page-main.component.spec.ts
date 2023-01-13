@@ -1,6 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { of, Subject } from 'rxjs';
 
 import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { Component, EventEmitter, Injectable, Output } from '@angular/core';
@@ -8,6 +7,8 @@ import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing';
 import { By, Title } from '@angular/platform-browser';
 import { ActivatedRoute } from '@angular/router';
 import { RouterTestingModule } from '@angular/router/testing';
+
+import { of, Subject } from 'rxjs';
 
 import { ConfirmationService } from 'primeng/api';
 

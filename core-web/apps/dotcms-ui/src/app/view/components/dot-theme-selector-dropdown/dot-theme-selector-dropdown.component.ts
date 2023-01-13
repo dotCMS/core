@@ -1,4 +1,3 @@
-import { fromEvent, Subject } from 'rxjs';
 
 import {
     AfterViewInit,
@@ -10,6 +9,8 @@ import {
     ViewChild
 } from '@angular/core';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
+
+import { fromEvent, Subject } from 'rxjs';
 
 import { LazyLoadEvent } from 'primeng/api';
 

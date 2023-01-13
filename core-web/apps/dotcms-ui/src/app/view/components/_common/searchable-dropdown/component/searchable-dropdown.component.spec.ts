@@ -1,6 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import * as _ from 'lodash';
 
 import { Component, DebugElement, Input } from '@angular/core';
 import {
@@ -13,6 +12,8 @@ import {
 } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
+
+import * as _ from 'lodash';
 
 import { UiDotIconButtonModule } from '@components/_common/dot-icon-button/dot-icon-button.module';
 import { DotMessageService } from '@dotcms/data-access';

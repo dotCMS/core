@@ -1,9 +1,10 @@
 
-import { BehaviorSubject, Observable } from 'rxjs';
 
 import { Injectable } from '@angular/core';
 import { Title } from '@angular/platform-browser';
 import { Event, NavigationEnd, Router } from '@angular/router';
+
+import { BehaviorSubject, Observable } from 'rxjs';
 
 import { filter, map, switchMap, take, tap } from 'rxjs/operators';
 

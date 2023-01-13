@@ -1,6 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { Observable, of } from 'rxjs';
 
 import {
     Component,
@@ -14,6 +13,8 @@ import {
 import { ComponentFixture, waitForAsync } from '@angular/core/testing';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
 import { By } from '@angular/platform-browser';
+
+import { Observable, of } from 'rxjs';
 
 import { PaginationEvent } from '@components/_common/searchable-dropdown/component';
 import { DOTTestBed } from '@dotcms/app/test/dot-test-bed';

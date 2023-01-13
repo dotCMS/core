@@ -1,7 +1,8 @@
-import { of } from 'rxjs';
 
 import { HttpClientTestingModule, HttpTestingController } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
+
+import { of } from 'rxjs';
 
 import { CoreWebService } from '@dotcms/dotcms-js';
 import {

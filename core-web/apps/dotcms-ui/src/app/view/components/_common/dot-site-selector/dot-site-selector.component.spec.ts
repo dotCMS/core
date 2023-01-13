@@ -1,6 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { Observable, of as observableOf } from 'rxjs';
 
 
 import { CommonModule } from '@angular/common';
@@ -10,6 +9,8 @@ import { ComponentFixture, fakeAsync, TestBed, tick, waitForAsync } from '@angul
 import { FormsModule } from '@angular/forms';
 import { By } from '@angular/platform-browser';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
+
+import { Observable, of as observableOf } from 'rxjs';
 
 import { DotEventsService, DotMessageService, PaginatorService } from '@dotcms/data-access';
 import { CoreWebService, Site, SiteService } from '@dotcms/dotcms-js';

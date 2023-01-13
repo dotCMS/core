@@ -1,9 +1,10 @@
-import { of } from 'rxjs';
 
 import { Component, EventEmitter, Input, Output } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import { ActivatedRoute } from '@angular/router';
+
+import { of } from 'rxjs';
 
 import { ButtonModule } from 'primeng/button';
 

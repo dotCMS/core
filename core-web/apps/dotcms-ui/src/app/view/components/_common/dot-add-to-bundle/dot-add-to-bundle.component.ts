@@ -1,4 +1,3 @@
-import { Observable, Subject } from 'rxjs';
 
 import {
     AfterViewInit,
@@ -11,6 +10,8 @@ import {
     ViewChild
 } from '@angular/core';
 import { UntypedFormBuilder, UntypedFormGroup, Validators } from '@angular/forms';
+
+import { Observable, Subject } from 'rxjs';
 
 import { Dropdown } from 'primeng/dropdown';
 

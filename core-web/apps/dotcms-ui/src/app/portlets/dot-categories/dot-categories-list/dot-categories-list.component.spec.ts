@@ -1,12 +1,13 @@
 /* eslint-disable no-console */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { of } from 'rxjs';
 
 import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { Component, DebugElement } from '@angular/core';
 import { ComponentFixture, fakeAsync, TestBed, tick } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
+
+import { of } from 'rxjs';
 
 import { SharedModule } from 'primeng/api';
 import { BreadcrumbModule } from 'primeng/breadcrumb';

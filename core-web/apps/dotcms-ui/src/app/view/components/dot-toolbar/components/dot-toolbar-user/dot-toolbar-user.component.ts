@@ -1,6 +1,7 @@
+import { Component, Inject, OnInit, ViewChild } from '@angular/core';
+
 import { Observable } from 'rxjs';
 
-import { Component, Inject, OnInit, ViewChild } from '@angular/core';
 
 import { map } from 'rxjs/operators';
 

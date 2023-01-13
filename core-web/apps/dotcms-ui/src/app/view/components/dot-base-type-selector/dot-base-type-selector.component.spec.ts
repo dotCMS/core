@@ -1,9 +1,10 @@
-import { of as observableOf } from 'rxjs';
 
 import { DebugElement, Injectable } from '@angular/core';
 import { ComponentFixture } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
+
+import { of as observableOf } from 'rxjs';
 
 import { SelectItem } from 'primeng/api';
 import { Dropdown } from 'primeng/dropdown';

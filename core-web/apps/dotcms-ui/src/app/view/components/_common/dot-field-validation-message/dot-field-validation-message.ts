@@ -2,7 +2,6 @@
 - TODO: maybe crawl the html to find the form parent and save one @Input
 */
 
-import { Subject } from 'rxjs';
 
 import {
     ChangeDetectionStrategy,
@@ -12,6 +11,8 @@ import {
     OnDestroy
 } from '@angular/core';
 import { AbstractControl, UntypedFormControl, ValidationErrors } from '@angular/forms';
+
+import { Subject } from 'rxjs';
 
 import { takeUntil } from 'rxjs/operators';
 

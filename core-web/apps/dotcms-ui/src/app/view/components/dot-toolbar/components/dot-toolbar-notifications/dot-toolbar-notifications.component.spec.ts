@@ -1,11 +1,12 @@
 /* eslint-disable @typescript-eslint/no-empty-function */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { Observable, of as observableOf, Subject } from 'rxjs';
 
 import { Component, DebugElement, Injectable, Input } from '@angular/core';
 import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
+
+import { Observable, of as observableOf, Subject } from 'rxjs';
 
 import { ButtonModule } from 'primeng/button';
 

@@ -1,11 +1,12 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { Observable, of as observableOf } from 'rxjs';
 
 import { Component, DebugElement } from '@angular/core';
 import { async, ComponentFixture } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
+
+import { Observable, of as observableOf } from 'rxjs';
 
 import { DOTTestBed } from '@dotcms/app/test/dot-test-bed';
 import { AddToBundleService, DotMessageService } from '@dotcms/data-access';

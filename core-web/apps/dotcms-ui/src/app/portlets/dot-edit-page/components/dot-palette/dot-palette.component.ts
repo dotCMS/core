@@ -1,7 +1,8 @@
-import { Observable } from 'rxjs';
 
 import { animate, AnimationEvent, state, style, transition, trigger } from '@angular/animations';
 import { Component, Input, OnInit, ViewChild } from '@angular/core';
+
+import { Observable } from 'rxjs';
 
 import { LazyLoadEvent } from 'primeng/api';
 

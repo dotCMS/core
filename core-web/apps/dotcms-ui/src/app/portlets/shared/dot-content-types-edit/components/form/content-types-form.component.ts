@@ -1,6 +1,3 @@
-import * as _ from 'lodash';
-import { Observable, Subject } from 'rxjs';
-
 import {
     Component,
     ElementRef,
@@ -17,6 +14,10 @@ import {
     UntypedFormGroup,
     Validators
 } from '@angular/forms';
+
+import * as _ from 'lodash';
+import { Observable, Subject } from 'rxjs';
+
 
 import { SelectItem } from 'primeng/api';
 

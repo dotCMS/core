@@ -1,5 +1,3 @@
-import { fromEvent as observableFromEvent, Subject } from 'rxjs';
-
 import {
     ChangeDetectorRef,
     Component,
@@ -11,6 +9,9 @@ import {
     Output,
     ViewChild
 } from '@angular/core';
+
+import { fromEvent as observableFromEvent, Subject } from 'rxjs';
+
 
 import { LazyLoadEvent } from 'primeng/api';
 import { DataView } from 'primeng/dataview';

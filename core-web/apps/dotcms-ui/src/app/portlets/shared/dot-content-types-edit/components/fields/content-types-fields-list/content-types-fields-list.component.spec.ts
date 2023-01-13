@@ -1,11 +1,12 @@
 /* eslint-disable @typescript-eslint/no-empty-function */
 
-import { DragulaModule, DragulaService } from 'ng2-dragula';
-import { of } from 'rxjs';
 
 import { DebugElement } from '@angular/core';
 import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
+
+import { DragulaModule, DragulaService } from 'ng2-dragula';
+import { of } from 'rxjs';
 
 import { DotIconModule } from '@dotcms/ui';
 

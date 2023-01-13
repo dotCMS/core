@@ -1,8 +1,9 @@
+import { ChangeDetectionStrategy, Component, ViewChild } from '@angular/core';
+import { Router } from '@angular/router';
+
 import { provideComponentStore } from '@ngrx/component-store';
 import { Observable } from 'rxjs';
 
-import { ChangeDetectionStrategy, Component, ViewChild } from '@angular/core';
-import { Router } from '@angular/router';
 
 import { take } from 'rxjs/operators';
 

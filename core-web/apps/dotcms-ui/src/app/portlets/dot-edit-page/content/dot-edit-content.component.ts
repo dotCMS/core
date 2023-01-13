@@ -1,9 +1,10 @@
-import { fromEvent, merge, Observable, of, Subject } from 'rxjs';
 
 import { HttpErrorResponse } from '@angular/common/http';
 import { Component, ElementRef, NgZone, OnDestroy, OnInit, ViewChild } from '@angular/core';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { ActivatedRoute, Router } from '@angular/router';
+
+import { fromEvent, merge, Observable, of, Subject } from 'rxjs';
 
 import { DialogService } from 'primeng/dynamicdialog';
 

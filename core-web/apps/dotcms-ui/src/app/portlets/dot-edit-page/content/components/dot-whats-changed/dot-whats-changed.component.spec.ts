@@ -1,8 +1,9 @@
-import { of } from 'rxjs';
 
 import { Component, DebugElement, ElementRef, ViewChild } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
+
+import { of } from 'rxjs';
 
 import { IframeComponent } from '@components/_common/iframe/iframe-component';
 import { DotHttpErrorManagerService } from '@dotcms/app/api/services/dot-http-error-manager/dot-http-error-manager.service';

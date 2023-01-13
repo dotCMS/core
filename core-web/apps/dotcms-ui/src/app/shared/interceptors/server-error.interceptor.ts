@@ -1,4 +1,3 @@
-import { Observable } from 'rxjs';
 
 import {
     HttpErrorResponse,
@@ -8,6 +7,8 @@ import {
     HttpRequest
 } from '@angular/common/http';
 import { Injectable } from '@angular/core';
+
+import { Observable } from 'rxjs';
 
 import { catchError, map, take } from 'rxjs/operators';
 

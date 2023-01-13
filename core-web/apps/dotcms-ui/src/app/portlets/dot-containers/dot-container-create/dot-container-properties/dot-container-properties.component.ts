@@ -1,8 +1,9 @@
-import { Subject } from 'rxjs';
 
 import { animate, style, transition, trigger } from '@angular/animations';
 import { Component, OnInit } from '@angular/core';
 import { FormArray, FormBuilder, FormControl, FormGroup, Validators } from '@angular/forms';
+
+import { Subject } from 'rxjs';
 
 import { MenuItem } from 'primeng/api';
 

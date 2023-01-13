@@ -1,10 +1,11 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { of } from 'rxjs';
 
 import { Component, DebugElement } from '@angular/core';
 import { ComponentFixture } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
+
+import { of } from 'rxjs';
 
 import { DotKeyValueModule } from '@components/dot-key-value-ng/dot-key-value-ng.module';
 import { DotMessageDisplayService } from '@components/dot-message-display/services';

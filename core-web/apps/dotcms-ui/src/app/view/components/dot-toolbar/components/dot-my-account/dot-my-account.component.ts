@@ -1,4 +1,3 @@
-import { BehaviorSubject, Subject } from 'rxjs';
 
 import {
     Component,
@@ -10,6 +9,8 @@ import {
     ViewChild
 } from '@angular/core';
 import { NgForm } from '@angular/forms';
+
+import { BehaviorSubject, Subject } from 'rxjs';
 
 import { map, take, takeUntil } from 'rxjs/operators';
 

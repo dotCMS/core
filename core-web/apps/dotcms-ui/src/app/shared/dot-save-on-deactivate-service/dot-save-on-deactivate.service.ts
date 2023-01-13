@@ -1,7 +1,8 @@
-import { Observable, Observer, of as observableOf } from 'rxjs';
 
 import { Injectable } from '@angular/core';
 import { ActivatedRouteSnapshot, CanDeactivate, RouterStateSnapshot } from '@angular/router';
+
+import { Observable, Observer, of as observableOf } from 'rxjs';
 
 import { DotAlertConfirmService } from '@dotcms/data-access';
 

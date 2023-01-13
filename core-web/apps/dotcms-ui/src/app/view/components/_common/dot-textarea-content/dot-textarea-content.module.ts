@@ -1,8 +1,9 @@
-import { MonacoEditorModule } from '@materia-ui/ngx-monaco-editor';
 
 import { CommonModule } from '@angular/common';
 import { NgModule } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+
+import { MonacoEditorModule } from '@materia-ui/ngx-monaco-editor';
 
 import { SelectButtonModule } from 'primeng/selectbutton';
 

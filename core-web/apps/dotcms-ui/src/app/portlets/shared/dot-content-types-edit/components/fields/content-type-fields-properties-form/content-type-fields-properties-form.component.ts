@@ -1,6 +1,3 @@
-import * as _ from 'lodash';
-import { Subject } from 'rxjs';
-
 import {
     Component,
     EventEmitter,
@@ -13,6 +10,10 @@ import {
     ViewChild
 } from '@angular/core';
 import { AbstractControl, UntypedFormBuilder, UntypedFormGroup } from '@angular/forms';
+
+import * as _ from 'lodash';
+import { Subject } from 'rxjs';
+
 
 import { takeUntil } from 'rxjs/operators';
 

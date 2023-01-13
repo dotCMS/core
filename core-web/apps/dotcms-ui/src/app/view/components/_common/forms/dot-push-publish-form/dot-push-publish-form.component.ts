@@ -1,4 +1,3 @@
-import { Observable, of, Subject } from 'rxjs';
 
 import {
     Component,
@@ -11,6 +10,8 @@ import {
     ViewChild
 } from '@angular/core';
 import { UntypedFormBuilder, UntypedFormGroup, Validators } from '@angular/forms';
+
+import { Observable, of, Subject } from 'rxjs';
 
 import { SelectItem } from 'primeng/api';
 

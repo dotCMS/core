@@ -1,7 +1,8 @@
-import { Subscription } from 'rxjs';
 
 import { Component, forwardRef, Input } from '@angular/core';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
+
+import { Subscription } from 'rxjs';
 
 import { Site, SiteService } from '@dotcms/dotcms-js';
 /**

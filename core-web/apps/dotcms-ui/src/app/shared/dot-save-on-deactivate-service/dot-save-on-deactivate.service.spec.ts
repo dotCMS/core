@@ -1,6 +1,7 @@
+import { Component } from '@angular/core';
+
 import { Observable, of as observableOf } from 'rxjs';
 
-import { Component } from '@angular/core';
 
 import { DOTTestBed } from '@dotcms/app/test/dot-test-bed';
 import { DotAlertConfirmService } from '@dotcms/data-access';

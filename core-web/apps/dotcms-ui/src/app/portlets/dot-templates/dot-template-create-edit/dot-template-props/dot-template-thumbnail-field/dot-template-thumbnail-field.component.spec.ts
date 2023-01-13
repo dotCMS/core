@@ -1,4 +1,3 @@
-import { of, throwError } from 'rxjs';
 
 import { Component, CUSTOM_ELEMENTS_SCHEMA, DebugElement } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
@@ -9,6 +8,8 @@ import {
     UntypedFormGroup
 } from '@angular/forms';
 import { By } from '@angular/platform-browser';
+
+import { of, throwError } from 'rxjs';
 
 
 import { DotTempFileUploadService } from '@dotcms/app/api/services/dot-temp-file-upload/dot-temp-file-upload.service';

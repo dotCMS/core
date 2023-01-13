@@ -1,6 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { of } from 'rxjs';
 
 import { HttpClientTestingModule } from '@angular/common/http/testing';
 import {
@@ -13,6 +12,8 @@ import {
 import { ComponentFixture, fakeAsync, TestBed, tick } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import { ActivatedRoute } from '@angular/router';
+
+import { of } from 'rxjs';
 
 import { ConfirmationService, SharedModule } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';

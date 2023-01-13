@@ -1,7 +1,8 @@
-import { of as observableOf } from 'rxjs';
 
 import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
+
+import { of as observableOf } from 'rxjs';
 
 import { DotMenuService } from '@dotcms/app/api/services/dot-menu.service';
 import { CoreWebService } from '@dotcms/dotcms-js';

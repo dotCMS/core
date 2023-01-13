@@ -1,6 +1,3 @@
-import * as _ from 'lodash';
-import { MarkdownModule } from 'ngx-markdown';
-import { Observable, of } from 'rxjs';
 
 import { CommonModule } from '@angular/common';
 import { Component, EventEmitter, Injectable, Input, Output } from '@angular/core';
@@ -8,6 +5,10 @@ import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import { ActivatedRoute } from '@angular/router';
 import { RouterTestingModule } from '@angular/router/testing';
+
+import * as _ from 'lodash';
+import { MarkdownModule } from 'ngx-markdown';
+import { Observable, of } from 'rxjs';
 
 import { ButtonModule } from 'primeng/button';
 

@@ -1,4 +1,3 @@
-import { combineLatest, Observable, of } from 'rxjs';
 
 import {
     AfterViewChecked,
@@ -17,6 +16,8 @@ import {
     UntypedFormGroup,
     Validators
 } from '@angular/forms';
+
+import { combineLatest, Observable, of } from 'rxjs';
 
 import { map } from 'rxjs/operators';
 

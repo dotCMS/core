@@ -1,8 +1,9 @@
-import { of as observableOf } from 'rxjs';
 
 import { Component, Input } from '@angular/core';
 import { ComponentFixture } from '@angular/core/testing';
 import { ActivatedRoute } from '@angular/router';
+
+import { of as observableOf } from 'rxjs';
 
 import { DotMenuService } from '@dotcms/app/api/services/dot-menu.service';
 import { DOTTestBed } from '@dotcms/app/test/dot-test-bed';

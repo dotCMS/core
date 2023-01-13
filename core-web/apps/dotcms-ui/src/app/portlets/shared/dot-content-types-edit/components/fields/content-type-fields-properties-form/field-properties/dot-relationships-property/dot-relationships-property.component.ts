@@ -1,7 +1,8 @@
-import * as _ from 'lodash';
 
 import { Component, OnInit } from '@angular/core';
 import { UntypedFormGroup } from '@angular/forms';
+
+import * as _ from 'lodash';
 
 import { DotMessageService } from '@dotcms/data-access';
 

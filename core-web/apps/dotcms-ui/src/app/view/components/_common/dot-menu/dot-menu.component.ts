@@ -1,6 +1,7 @@
+import { Component, Input, ViewChild } from '@angular/core';
+
 import { fromEvent as observableFromEvent } from 'rxjs';
 
-import { Component, Input, ViewChild } from '@angular/core';
 
 import { MenuItem } from 'primeng/api';
 import { Menu } from 'primeng/menu';

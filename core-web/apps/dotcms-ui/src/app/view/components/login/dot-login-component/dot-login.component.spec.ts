@@ -1,6 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { BehaviorSubject, of, throwError } from 'rxjs';
 
 import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { DebugElement, Injectable } from '@angular/core';
@@ -10,6 +9,8 @@ import { By } from '@angular/platform-browser';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { ActivatedRoute, Params } from '@angular/router';
 import { RouterTestingModule } from '@angular/router/testing';
+
+import { BehaviorSubject, of, throwError } from 'rxjs';
 
 import { ButtonModule } from 'primeng/button';
 import { Checkbox, CheckboxModule } from 'primeng/checkbox';

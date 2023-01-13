@@ -1,10 +1,11 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { BehaviorSubject, Observable, of, Subject } from 'rxjs';
 
 import { Injectable } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { ActivatedRoute, NavigationEnd, Router } from '@angular/router';
+
+import { BehaviorSubject, Observable, of, Subject } from 'rxjs';
 
 import { DotCrumb, DotCrumbtrailService } from './dot-crumbtrail.service';
 

@@ -1,5 +1,3 @@
-import { Observable } from 'rxjs';
-
 import {
     Component,
     EventEmitter,
@@ -9,6 +7,9 @@ import {
     Output,
     SimpleChanges
 } from '@angular/core';
+
+import { Observable } from 'rxjs';
+
 
 import { DotContentTypeService, PaginatorService } from '@dotcms/data-access';
 import { DotCMSContentType } from '@dotcms/dotcms-models';

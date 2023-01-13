@@ -1,7 +1,8 @@
-import { of } from 'rxjs';
 
 import { Injectable } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
+
+import { of } from 'rxjs';
 
 import { DotLoginPageResolver } from '@components/login/dot-login-page-resolver.service';
 import { DotLoginPageStateService } from '@components/login/shared/services/dot-login-page-state.service';

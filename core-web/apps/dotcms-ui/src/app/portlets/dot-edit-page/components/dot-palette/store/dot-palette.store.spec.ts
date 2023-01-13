@@ -1,7 +1,8 @@
-import { Observable, of } from 'rxjs';
 
 import { Injectable } from '@angular/core';
 import { fakeAsync, TestBed, tick } from '@angular/core/testing';
+
+import { Observable, of } from 'rxjs';
 
 import { DotContentTypeService, DotESContentService, PaginatorService } from '@dotcms/data-access';
 import { DotCMSContentlet, DotCMSContentType, ESContent } from '@dotcms/dotcms-models';

@@ -1,8 +1,9 @@
-import { DragulaModule, DragulaService } from 'ng2-dragula';
 
 import { CommonModule } from '@angular/common';
 import { NgModule } from '@angular/core';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
+
+import { DragulaModule, DragulaService } from 'ng2-dragula';
 
 import { ButtonModule } from 'primeng/button';
 import { CheckboxModule } from 'primeng/checkbox';

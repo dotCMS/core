@@ -1,6 +1,5 @@
 /* eslint-disable @typescript-eslint/no-empty-function */
 
-import { Observable, of } from 'rxjs';
 
 import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { Component, DebugElement, forwardRef, Injectable, Input } from '@angular/core';
@@ -14,6 +13,8 @@ import {
 import { By } from '@angular/platform-browser';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { RouterTestingModule } from '@angular/router/testing';
+
+import { Observable, of } from 'rxjs';
 
 import { ButtonModule } from 'primeng/button';
 import { DropdownModule } from 'primeng/dropdown';

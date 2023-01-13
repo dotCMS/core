@@ -1,6 +1,7 @@
+import { Component, OnDestroy, OnInit } from '@angular/core';
+
 import { Observable, Subject } from 'rxjs';
 
-import { Component, OnDestroy, OnInit } from '@angular/core';
 
 import { map, pluck, takeUntil, tap } from 'rxjs/operators';
 

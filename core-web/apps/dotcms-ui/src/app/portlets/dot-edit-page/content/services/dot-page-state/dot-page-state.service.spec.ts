@@ -1,7 +1,8 @@
-import { of, throwError } from 'rxjs';
 
 import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { getTestBed, TestBed } from '@angular/core/testing';
+
+import { of, throwError } from 'rxjs';
 
 import { ConfirmationService } from 'primeng/api';
 

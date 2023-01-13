@@ -1,5 +1,3 @@
-import { MonacoEditorModule } from '@materia-ui/ngx-monaco-editor';
-import { MarkdownModule } from 'ngx-markdown';
 
 import { CommonModule } from '@angular/common';
 import { HttpClientModule } from '@angular/common/http';
@@ -7,6 +5,9 @@ import { CUSTOM_ELEMENTS_SCHEMA, NgModule } from '@angular/core';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { BrowserModule } from '@angular/platform-browser';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
+
+import { MonacoEditorModule } from '@materia-ui/ngx-monaco-editor';
+import { MarkdownModule } from 'ngx-markdown';
 
 // App is our top level component
 import { DotPipesModule } from '@pipes/dot-pipes.module';

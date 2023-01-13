@@ -1,6 +1,5 @@
 /* eslint-disable @typescript-eslint/no-empty-function */
 
-import { of } from 'rxjs';
 
 import { Component, DebugElement, Input } from '@angular/core';
 import { ComponentFixture, fakeAsync, TestBed, tick } from '@angular/core/testing';
@@ -12,6 +11,8 @@ import {
 } from '@angular/forms';
 import { By } from '@angular/platform-browser';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
+
+import { of } from 'rxjs';
 
 import { SearchableDropDownModule } from '@components/_common/searchable-dropdown';
 import {

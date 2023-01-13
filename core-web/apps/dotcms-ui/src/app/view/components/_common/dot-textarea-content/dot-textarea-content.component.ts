@@ -1,4 +1,3 @@
-import { MonacoEditorConstructionOptions } from '@materia-ui/ngx-monaco-editor';
 
 import {
     ChangeDetectionStrategy,
@@ -12,6 +11,8 @@ import {
 } from '@angular/core';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
 import { DomSanitizer, SafeStyle } from '@angular/platform-browser';
+
+import { MonacoEditorConstructionOptions } from '@materia-ui/ngx-monaco-editor';
 
 import { SelectItem } from 'primeng/api';
 

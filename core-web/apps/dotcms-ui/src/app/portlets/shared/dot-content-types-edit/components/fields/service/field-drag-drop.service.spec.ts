@@ -1,9 +1,10 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
+import { TestBed } from '@angular/core/testing';
+
 import { DragulaService } from 'ng2-dragula';
 import { Observable, Subject } from 'rxjs';
 
-import { TestBed } from '@angular/core/testing';
 
 import { filter, map } from 'rxjs/operators';
 

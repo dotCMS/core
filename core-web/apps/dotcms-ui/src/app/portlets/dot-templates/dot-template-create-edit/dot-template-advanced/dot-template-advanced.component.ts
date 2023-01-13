@@ -1,4 +1,3 @@
-import { Subject } from 'rxjs';
 
 import {
     Component,
@@ -11,6 +10,8 @@ import {
     SimpleChanges
 } from '@angular/core';
 import { UntypedFormBuilder, UntypedFormGroup } from '@angular/forms';
+
+import { Subject } from 'rxjs';
 
 import { takeUntil } from 'rxjs/operators';
 

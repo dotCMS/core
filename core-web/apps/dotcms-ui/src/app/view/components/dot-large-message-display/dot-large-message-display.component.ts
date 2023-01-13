@@ -1,5 +1,3 @@
-import { Observable, Subject } from 'rxjs';
-
 import {
     AfterViewInit,
     Component,
@@ -8,6 +6,9 @@ import {
     QueryList,
     ViewChildren
 } from '@angular/core';
+
+import { Observable, Subject } from 'rxjs';
+
 
 import { filter, takeUntil } from 'rxjs/operators';
 

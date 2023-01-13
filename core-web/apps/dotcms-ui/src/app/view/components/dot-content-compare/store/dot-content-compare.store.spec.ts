@@ -1,6 +1,7 @@
+import { TestBed } from '@angular/core/testing';
+
 import { of } from 'rxjs';
 
-import { TestBed } from '@angular/core/testing';
 
 import { DotContentCompareStore } from '@components/dot-content-compare/store/dot-content-compare.store';
 import { DotFormatDateService } from '@dotcms/app/api/services/dot-format-date-service';

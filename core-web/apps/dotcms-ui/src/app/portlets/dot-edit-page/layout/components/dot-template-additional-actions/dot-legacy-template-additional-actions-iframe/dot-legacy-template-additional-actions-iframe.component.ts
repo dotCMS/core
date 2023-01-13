@@ -1,7 +1,8 @@
-import { Observable, of as observableOf } from 'rxjs';
 
 import { Component, OnInit } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
+
+import { Observable, of as observableOf } from 'rxjs';
 
 import { combineLatest, switchMap } from 'rxjs/operators';
 

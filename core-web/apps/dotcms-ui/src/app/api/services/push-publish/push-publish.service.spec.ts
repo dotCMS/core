@@ -1,10 +1,11 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
+import { HttpClientTestingModule, HttpTestingController } from '@angular/common/http/testing';
+import { TestBed } from '@angular/core/testing';
+
 import { format } from 'date-fns';
 import { of } from 'rxjs';
 
-import { HttpClientTestingModule, HttpTestingController } from '@angular/common/http/testing';
-import { TestBed } from '@angular/core/testing';
 
 import { DotFormatDateService } from '@dotcms/app/api/services/dot-format-date-service';
 import { DotCurrentUserService } from '@dotcms/data-access';

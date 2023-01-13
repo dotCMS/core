@@ -1,7 +1,8 @@
-import { Observable } from 'rxjs';
 
 import { ChangeDetectionStrategy, Component, OnInit } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
+
+import { Observable } from 'rxjs';
 
 import { DotSessionStorageService } from '@dotcms/data-access';
 import {

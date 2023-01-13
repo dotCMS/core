@@ -1,6 +1,7 @@
+import { Component, EventEmitter, OnInit, Output } from '@angular/core';
+
 import { Observable, of as observableOf } from 'rxjs';
 
-import { Component, EventEmitter, OnInit, Output } from '@angular/core';
 
 import { flatMap, map, switchMap, toArray } from 'rxjs/operators';
 

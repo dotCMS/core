@@ -1,8 +1,9 @@
-import { Observable, of } from 'rxjs';
 
 import { HttpErrorResponse } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { ActivatedRouteSnapshot, Resolve } from '@angular/router';
+
+import { Observable, of } from 'rxjs';
 
 import { catchError, map, take } from 'rxjs/operators';
 

@@ -1,8 +1,9 @@
+import { Injectable } from '@angular/core';
+import { Router } from '@angular/router';
+
 import { ComponentStore } from '@ngrx/component-store';
 import { Observable } from 'rxjs';
 
-import { Injectable } from '@angular/core';
-import { Router } from '@angular/router';
 
 import { catchError, switchMap, tap, withLatestFrom } from 'rxjs/operators';
 

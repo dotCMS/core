@@ -1,11 +1,12 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { of } from 'rxjs';
 
 import { Component, DebugElement, EventEmitter, Input, Output } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { FormsModule } from '@angular/forms';
 import { By } from '@angular/platform-browser';
+
+import { of } from 'rxjs';
 
 import { Dropdown, DropdownModule } from 'primeng/dropdown';
 import { SelectButton, SelectButtonModule } from 'primeng/selectbutton';

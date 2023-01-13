@@ -1,7 +1,8 @@
-import { ComponentStore, OnStoreInit } from '@ngrx/component-store';
 
 import { Injectable } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
+
+import { ComponentStore, OnStoreInit } from '@ngrx/component-store';
 
 import { DotPageRenderState } from '@dotcms/dotcms-models';
 

@@ -1,10 +1,11 @@
-import { Observable } from 'rxjs';
 
 import { CommonModule } from '@angular/common';
 import { Component, DebugElement, Injectable, Input } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
+
+import { Observable } from 'rxjs';
 
 import { ButtonModule } from 'primeng/button';
 import { PanelModule } from 'primeng/panel';

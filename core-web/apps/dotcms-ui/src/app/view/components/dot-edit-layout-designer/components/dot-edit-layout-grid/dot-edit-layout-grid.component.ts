@@ -1,6 +1,5 @@
 /* eslint-disable @angular-eslint/component-selector */
 
-import { Subject } from 'rxjs';
 
 import { Component, forwardRef, OnDestroy, OnInit, ViewChild } from '@angular/core';
 import {
@@ -9,6 +8,8 @@ import {
     UntypedFormBuilder,
     UntypedFormGroup
 } from '@angular/forms';
+
+import { Subject } from 'rxjs';
 
 import { takeUntil } from 'rxjs/operators';
 

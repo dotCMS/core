@@ -1,7 +1,8 @@
-import { throwError } from 'rxjs';
 
 import { HttpClientTestingModule, HttpTestingController } from '@angular/common/http/testing';
 import { TestBed, waitForAsync } from '@angular/core/testing';
+
+import { throwError } from 'rxjs';
 
 import { ConfirmationService } from 'primeng/api';
 

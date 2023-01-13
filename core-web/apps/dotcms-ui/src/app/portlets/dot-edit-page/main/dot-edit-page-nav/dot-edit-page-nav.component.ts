@@ -1,7 +1,8 @@
-import { Observable, of as observableOf } from 'rxjs';
 
 import { Component, Input, OnChanges } from '@angular/core';
 import { ActivatedRoute, Params } from '@angular/router';
+
+import { Observable, of as observableOf } from 'rxjs';
 
 import { map } from 'rxjs/operators';
 

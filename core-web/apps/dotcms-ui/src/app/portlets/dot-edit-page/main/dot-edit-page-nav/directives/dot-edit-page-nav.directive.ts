@@ -1,7 +1,8 @@
-import { Subject } from 'rxjs';
 
 import { Directive, ElementRef, OnDestroy, Optional, Renderer2, Self } from '@angular/core';
 import { ActivatedRoute, NavigationEnd, Router } from '@angular/router';
+
+import { Subject } from 'rxjs';
 
 import { filter, takeUntil } from 'rxjs/operators';
 

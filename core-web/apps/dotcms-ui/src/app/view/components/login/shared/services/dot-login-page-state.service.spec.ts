@@ -1,6 +1,7 @@
+import { TestBed } from '@angular/core/testing';
+
 import { of } from 'rxjs';
 
-import { TestBed } from '@angular/core/testing';
 
 import { LoginService } from '@dotcms/dotcms-js';
 import { DotLoginInformation } from '@dotcms/dotcms-models';

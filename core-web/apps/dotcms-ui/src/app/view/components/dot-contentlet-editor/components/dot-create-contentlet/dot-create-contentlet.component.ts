@@ -1,7 +1,8 @@
-import { merge, Observable } from 'rxjs';
 
 import { Component, EventEmitter, OnInit, Output } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
+
+import { merge, Observable } from 'rxjs';
 
 import { filter, pluck } from 'rxjs/operators';
 

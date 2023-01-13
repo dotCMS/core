@@ -1,9 +1,10 @@
-import { moduleMetadata } from '@storybook/angular';
-import { Meta } from '@storybook/angular/types-6-0';
 
 import { HttpClientModule } from '@angular/common/http';
 import { BrowserModule } from '@angular/platform-browser';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
+
+import { moduleMetadata } from '@storybook/angular';
+import { Meta } from '@storybook/angular/types-6-0';
 
 import { MessageService } from 'primeng/api';
 import { DeferModule } from 'primeng/defer';

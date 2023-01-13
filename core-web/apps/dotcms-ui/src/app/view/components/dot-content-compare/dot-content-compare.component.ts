@@ -1,6 +1,7 @@
+import { Component, EventEmitter, Input, Output } from '@angular/core';
+
 import { Observable } from 'rxjs';
 
-import { Component, EventEmitter, Input, Output } from '@angular/core';
 
 import { DotIframeService } from '@components/_common/iframe/service/dot-iframe/dot-iframe.service';
 import {

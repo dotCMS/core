@@ -1,7 +1,8 @@
-import { Observable } from 'rxjs';
 
 import { Component, forwardRef, OnInit } from '@angular/core';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
+
+import { Observable } from 'rxjs';
 
 import { DotWorkflowService } from '@dotcms/data-access';
 import { DotCMSWorkflow } from '@dotcms/dotcms-models';

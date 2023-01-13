@@ -1,6 +1,7 @@
+import { Injectable } from '@angular/core';
+
 import { Observable } from 'rxjs';
 
-import { Injectable } from '@angular/core';
 
 import { flatMap, map, pluck } from 'rxjs/operators';
 

@@ -1,8 +1,9 @@
-import { DragulaModule, DragulaService } from 'ng2-dragula';
 
 import { Component, DebugElement, EventEmitter, Input, Output } from '@angular/core';
 import { ComponentFixture, waitForAsync } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
+
+import { DragulaModule, DragulaService } from 'ng2-dragula';
 
 import { UiDotIconButtonTooltipModule } from '@components/_common/dot-icon-button-tooltip/dot-icon-button-tooltip.module';
 import { DOTTestBed } from '@dotcms/app/test/dot-test-bed';

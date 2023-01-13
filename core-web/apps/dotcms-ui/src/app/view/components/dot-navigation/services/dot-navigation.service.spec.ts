@@ -1,11 +1,12 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { Observable, of, Subject } from 'rxjs';
 
 import { TestBed, waitForAsync } from '@angular/core/testing';
 import { Title } from '@angular/platform-browser';
 import { NavigationEnd, Router } from '@angular/router';
 import { RouterTestingModule } from '@angular/router/testing';
+
+import { Observable, of, Subject } from 'rxjs';
 
 import { skip } from 'rxjs/operators';
 

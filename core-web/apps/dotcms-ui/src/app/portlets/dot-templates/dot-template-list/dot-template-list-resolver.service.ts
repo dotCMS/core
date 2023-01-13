@@ -1,7 +1,8 @@
-import { forkJoin, Observable } from 'rxjs';
 
 import { Injectable } from '@angular/core';
 import { Resolve } from '@angular/router';
+
+import { forkJoin, Observable } from 'rxjs';
 
 import { map, take } from 'rxjs/operators';
 

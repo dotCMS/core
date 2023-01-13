@@ -1,9 +1,10 @@
-import { BehaviorSubject } from 'rxjs';
 
 import { Component, DebugElement, OnInit } from '@angular/core';
 import { ComponentFixture, waitForAsync } from '@angular/core/testing';
 import { UntypedFormBuilder, UntypedFormGroup } from '@angular/forms';
 import { By } from '@angular/platform-browser';
+
+import { BehaviorSubject } from 'rxjs';
 
 import { SelectItemGroup } from 'primeng/api';
 import { Dropdown, DropdownModule } from 'primeng/dropdown';

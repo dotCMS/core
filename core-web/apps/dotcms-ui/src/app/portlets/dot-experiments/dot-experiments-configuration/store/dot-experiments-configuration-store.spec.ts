@@ -1,8 +1,9 @@
+import { Title } from '@angular/platform-browser';
+import { ActivatedRoute } from '@angular/router';
+
 import { createServiceFactory, mockProvider, SpectatorService, SpyObject } from '@ngneat/spectator';
 import { of } from 'rxjs';
 
-import { Title } from '@angular/platform-browser';
-import { ActivatedRoute } from '@angular/router';
 
 import { MessageService } from 'primeng/api';
 

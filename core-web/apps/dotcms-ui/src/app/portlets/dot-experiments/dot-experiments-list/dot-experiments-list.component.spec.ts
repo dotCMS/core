@@ -1,8 +1,9 @@
+import { CUSTOM_ELEMENTS_SCHEMA } from '@angular/core';
+import { ActivatedRoute } from '@angular/router';
+
 import { byTestId, createComponentFactory, mockProvider, Spectator } from '@ngneat/spectator';
 import { of } from 'rxjs';
 
-import { CUSTOM_ELEMENTS_SCHEMA } from '@angular/core';
-import { ActivatedRoute } from '@angular/router';
 
 import { ConfirmationService, MessageService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';

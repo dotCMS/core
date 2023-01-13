@@ -1,7 +1,8 @@
-import { Observable, Subject } from 'rxjs';
 
 import { CommonModule } from '@angular/common';
 import { ChangeDetectionStrategy, Component, ComponentRef, ViewChild } from '@angular/core';
+
+import { Observable, Subject } from 'rxjs';
 
 import { ButtonModule } from 'primeng/button';
 import { CardModule } from 'primeng/card';

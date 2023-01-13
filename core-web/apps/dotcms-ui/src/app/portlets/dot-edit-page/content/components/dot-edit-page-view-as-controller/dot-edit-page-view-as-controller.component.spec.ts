@@ -1,9 +1,10 @@
-import { of } from 'rxjs';
 
 import { Component, DebugElement, EventEmitter, Input, Output } from '@angular/core';
 import { ComponentFixture, waitForAsync } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
+
+import { of } from 'rxjs';
 
 import { TooltipModule } from 'primeng/tooltip';
 

@@ -1,4 +1,3 @@
-import { forkJoin, of, Subject } from 'rxjs';
 
 import { HttpErrorResponse } from '@angular/common/http';
 import {
@@ -10,6 +9,8 @@ import {
     Output, SimpleChanges
 } from '@angular/core';
 import { FormBuilder, FormGroup } from '@angular/forms';
+
+import { forkJoin, of, Subject } from 'rxjs';
 
 import { catchError, take, takeUntil } from 'rxjs/operators';
 

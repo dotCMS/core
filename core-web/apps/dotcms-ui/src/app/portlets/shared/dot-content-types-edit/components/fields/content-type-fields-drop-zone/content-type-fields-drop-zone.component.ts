@@ -1,8 +1,3 @@
-import * as autoScroll from 'dom-autoscroller';
-import * as _ from 'lodash';
-import { DragulaService } from 'ng2-dragula';
-import { Subject } from 'rxjs';
-
 import {
     Component,
     ElementRef,
@@ -16,6 +11,12 @@ import {
     SimpleChanges,
     ViewChild
 } from '@angular/core';
+
+import * as autoScroll from 'dom-autoscroller';
+import * as _ from 'lodash';
+import { DragulaService } from 'ng2-dragula';
+import { Subject } from 'rxjs';
+
 
 import { takeUntil } from 'rxjs/operators';
 

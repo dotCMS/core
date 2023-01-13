@@ -1,12 +1,13 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { Observable, of } from 'rxjs';
 
 import { DebugElement } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { FormsModule } from '@angular/forms';
 import { By } from '@angular/platform-browser';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
+
+import { Observable, of } from 'rxjs';
 
 import { AutoComplete, AutoCompleteModule } from 'primeng/autocomplete';
 import { ChipsModule } from 'primeng/chips';

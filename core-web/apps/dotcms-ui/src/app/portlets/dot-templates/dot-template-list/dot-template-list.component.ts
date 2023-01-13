@@ -1,7 +1,8 @@
-import { Subject } from 'rxjs';
 
 import { Component, OnDestroy, OnInit, ViewChild } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
+
+import { Subject } from 'rxjs';
 
 import { MenuItem } from 'primeng/api';
 import { DialogService } from 'primeng/dynamicdialog';

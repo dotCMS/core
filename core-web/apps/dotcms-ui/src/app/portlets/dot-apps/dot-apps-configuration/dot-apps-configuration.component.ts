@@ -1,7 +1,8 @@
-import { fromEvent as observableFromEvent, Subject } from 'rxjs';
 
 import { Component, ElementRef, OnDestroy, OnInit, ViewChild } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
+
+import { fromEvent as observableFromEvent, Subject } from 'rxjs';
 
 import { LazyLoadEvent } from 'primeng/api';
 

@@ -1,5 +1,3 @@
-import { fromEvent, Subject } from 'rxjs';
-
 import {
     Component,
     ElementRef,
@@ -9,6 +7,9 @@ import {
     OnInit,
     Output
 } from '@angular/core';
+
+import { fromEvent, Subject } from 'rxjs';
+
 
 import { DynamicDialogRef } from 'primeng/dynamicdialog';
 

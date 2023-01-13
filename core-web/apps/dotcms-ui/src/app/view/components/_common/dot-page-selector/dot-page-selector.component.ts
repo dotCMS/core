@@ -1,7 +1,8 @@
-import { Observable, of, Subject } from 'rxjs';
 
 import { Component, EventEmitter, forwardRef, Input, Output, ViewChild } from '@angular/core';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
+
+import { Observable, of, Subject } from 'rxjs';
 
 import { AutoComplete } from 'primeng/autocomplete';
 

@@ -1,7 +1,8 @@
-import { MarkdownModule } from 'ngx-markdown';
 
 import { CommonModule } from '@angular/common';
 import { NgModule } from '@angular/core';
+
+import { MarkdownModule } from 'ngx-markdown';
 
 import { CardModule } from 'primeng/card';
 import { TooltipModule } from 'primeng/tooltip';

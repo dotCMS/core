@@ -1,6 +1,5 @@
 /* eslint-disable @typescript-eslint/no-empty-function */
 
-import { BehaviorSubject, Observable } from 'rxjs';
 
 import { DebugElement } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
@@ -8,6 +7,8 @@ import { By } from '@angular/platform-browser';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { NavigationEnd } from '@angular/router';
 import { RouterTestingModule } from '@angular/router/testing';
+
+import { BehaviorSubject, Observable } from 'rxjs';
 
 import { TooltipModule } from 'primeng/tooltip';
 

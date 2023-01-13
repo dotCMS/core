@@ -1,4 +1,3 @@
-import { Observable, of as observableOf } from 'rxjs';
 
 import { CommonModule } from '@angular/common';
 import { Component, DebugElement, Injectable } from '@angular/core';
@@ -10,6 +9,8 @@ import {
     UntypedFormGroup
 } from '@angular/forms';
 import { By } from '@angular/platform-browser';
+
+import { Observable, of as observableOf } from 'rxjs';
 
 import { AutoCompleteModule } from 'primeng/autocomplete';
 

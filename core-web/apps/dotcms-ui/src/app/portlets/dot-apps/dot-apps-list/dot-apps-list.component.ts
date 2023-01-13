@@ -1,8 +1,9 @@
+import { Component, ElementRef, OnDestroy, OnInit, ViewChild } from '@angular/core';
+import { ActivatedRoute } from '@angular/router';
+
 import * as _ from 'lodash';
 import { fromEvent as observableFromEvent, Subject } from 'rxjs';
 
-import { Component, ElementRef, OnDestroy, OnInit, ViewChild } from '@angular/core';
-import { ActivatedRoute } from '@angular/router';
 
 import { debounceTime, pluck, take, takeUntil } from 'rxjs/operators';
 

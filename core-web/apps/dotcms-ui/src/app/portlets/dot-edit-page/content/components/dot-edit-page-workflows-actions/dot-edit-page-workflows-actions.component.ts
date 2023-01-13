@@ -1,5 +1,3 @@
-import { Observable } from 'rxjs';
-
 import {
     ChangeDetectionStrategy,
     Component,
@@ -9,6 +7,9 @@ import {
     Output,
     SimpleChanges
 } from '@angular/core';
+
+import { Observable } from 'rxjs';
+
 
 import { MenuItem } from 'primeng/api';
 

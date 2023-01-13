@@ -1,8 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import * as _ from 'lodash';
-import { DragulaModule, DragulaService } from 'ng2-dragula';
-import { Observable, of, Subject } from 'rxjs';
 
 import { HttpClientTestingModule } from '@angular/common/http/testing';
 import {
@@ -20,6 +17,10 @@ import { By } from '@angular/platform-browser';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { Router } from '@angular/router';
 import { RouterTestingModule } from '@angular/router/testing';
+
+import * as _ from 'lodash';
+import { DragulaModule, DragulaService } from 'ng2-dragula';
+import { Observable, of, Subject } from 'rxjs';
 
 import { CheckboxModule } from 'primeng/checkbox';
 import { TableModule } from 'primeng/table';

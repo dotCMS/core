@@ -1,4 +1,3 @@
-import { Observable } from 'rxjs';
 
 import {
     Component,
@@ -10,6 +9,8 @@ import {
     ViewChild
 } from '@angular/core';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
+
+import { Observable } from 'rxjs';
 
 import { SelectItem, SelectItemGroup } from 'primeng/api';
 import { Dropdown } from 'primeng/dropdown';

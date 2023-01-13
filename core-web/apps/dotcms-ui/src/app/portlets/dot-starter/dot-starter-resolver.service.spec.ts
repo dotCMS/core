@@ -1,7 +1,8 @@
-import { Observable, of } from 'rxjs';
 
 import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { TestBed, waitForAsync } from '@angular/core/testing';
+
+import { Observable, of } from 'rxjs';
 
 import { DotCurrentUserService } from '@dotcms/data-access';
 import { CoreWebService } from '@dotcms/dotcms-js';

@@ -1,6 +1,7 @@
+import { DecimalPipe } from '@angular/common';
+
 import { byTestId, createComponentFactory, Spectator } from '@ngneat/spectator';
 
-import { DecimalPipe } from '@angular/common';
 
 import { ButtonModule } from 'primeng/button';
 import { Card, CardModule } from 'primeng/card';

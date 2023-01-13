@@ -1,10 +1,11 @@
-import { of as observableOf, throwError } from 'rxjs';
 
 import { Component, DebugElement, Input } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { NgControl } from '@angular/forms';
 import { By } from '@angular/platform-browser';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
+
+import { of as observableOf, throwError } from 'rxjs';
 
 import { FileUploadModule } from 'primeng/fileupload';
 

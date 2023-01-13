@@ -1,6 +1,7 @@
+import { Component, OnInit } from '@angular/core';
+
 import { Observable } from 'rxjs';
 
-import { Component, OnInit } from '@angular/core';
 
 import { DotCrumb, DotCrumbtrailService } from './service/dot-crumbtrail.service';
 @Component({

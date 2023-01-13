@@ -1,7 +1,8 @@
-import { Observable, of, Subject } from 'rxjs';
 
 import { HttpErrorResponse } from '@angular/common/http';
 import { Component, OnDestroy, OnInit, ViewChild } from '@angular/core';
+
+import { Observable, of, Subject } from 'rxjs';
 
 import { switchMap, take, takeUntil } from 'rxjs/operators';
 

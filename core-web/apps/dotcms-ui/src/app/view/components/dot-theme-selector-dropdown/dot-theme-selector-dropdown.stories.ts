@@ -1,8 +1,9 @@
 /* eslint-disable no-console */
+import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
+
 import { Meta, moduleMetadata } from '@storybook/angular';
 import { of } from 'rxjs';
 
-import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 
 import { SearchableDropDownModule } from '@components/_common/searchable-dropdown';
 import { DotFormatDateService } from '@dotcms/app/api/services/dot-format-date-service';

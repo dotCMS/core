@@ -1,5 +1,3 @@
-import { Subject } from 'rxjs';
-
 import {
     Component,
     ComponentFactoryResolver,
@@ -12,6 +10,9 @@ import {
     ViewChild,
     ViewChildren
 } from '@angular/core';
+
+import { Subject } from 'rxjs';
+
 
 import { takeUntil } from 'rxjs/operators';
 

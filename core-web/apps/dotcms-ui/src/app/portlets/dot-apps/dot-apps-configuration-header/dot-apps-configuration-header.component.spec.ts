@@ -1,9 +1,10 @@
-import { MarkdownService } from 'ngx-markdown';
 
 import { CommonModule } from '@angular/common';
 import { DebugElement } from '@angular/core';
 import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
+
+import { MarkdownService } from 'ngx-markdown';
 
 import { DotAvatarModule } from '@components/_common/dot-avatar/dot-avatar.module';
 import { DotCopyLinkModule } from '@components/dot-copy-link/dot-copy-link.module';

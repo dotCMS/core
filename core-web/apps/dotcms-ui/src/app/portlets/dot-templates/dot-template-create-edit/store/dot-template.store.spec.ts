@@ -1,10 +1,11 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { of, throwError } from 'rxjs';
 
 import { HttpErrorResponse } from '@angular/common/http';
 import { fakeAsync, TestBed, tick } from '@angular/core/testing';
 import { ActivatedRoute } from '@angular/router';
+
+import { of, throwError } from 'rxjs';
 
 
 import { DotGlobalMessageService } from '@components/_common/dot-global-message/dot-global-message.service';

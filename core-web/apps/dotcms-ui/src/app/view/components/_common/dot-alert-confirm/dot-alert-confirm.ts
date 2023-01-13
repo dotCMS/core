@@ -1,6 +1,7 @@
+import { Component, ElementRef, OnDestroy, OnInit, ViewChild } from '@angular/core';
+
 import { Subject } from 'rxjs';
 
-import { Component, ElementRef, OnDestroy, OnInit, ViewChild } from '@angular/core';
 
 import { ConfirmDialog } from 'primeng/confirmdialog';
 

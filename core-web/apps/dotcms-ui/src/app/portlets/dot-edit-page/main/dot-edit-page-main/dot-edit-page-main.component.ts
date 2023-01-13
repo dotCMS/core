@@ -1,8 +1,9 @@
-import { merge, Observable, Subject } from 'rxjs';
 
 import { Component, OnDestroy, OnInit } from '@angular/core';
 import { Title } from '@angular/platform-browser';
 import { ActivatedRoute } from '@angular/router';
+
+import { merge, Observable, Subject } from 'rxjs';
 
 import { pluck, takeUntil, tap } from 'rxjs/operators';
 

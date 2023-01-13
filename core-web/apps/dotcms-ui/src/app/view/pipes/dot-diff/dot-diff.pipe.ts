@@ -1,6 +1,7 @@
+import { Pipe, PipeTransform } from '@angular/core';
+
 import HtmlDiff from 'htmldiff-js';
 
-import { Pipe, PipeTransform } from '@angular/core';
 
 @Pipe({
     name: 'dotDiff'

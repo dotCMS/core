@@ -2,12 +2,13 @@
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { of } from 'rxjs';
 
 import { Component, CUSTOM_ELEMENTS_SCHEMA, DebugElement } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
+
+import { of } from 'rxjs';
 
 import { DotMessagePipe } from '@dotcms/app/view/pipes';
 import { DotDevicesService, DotMessageService } from '@dotcms/data-access';

@@ -1,6 +1,7 @@
+import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
+
 import { Observable } from 'rxjs';
 
-import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
 
 import { SelectItem } from 'primeng/api';
 

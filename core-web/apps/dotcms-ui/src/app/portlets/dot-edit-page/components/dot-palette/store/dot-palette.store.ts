@@ -1,7 +1,8 @@
+import { Injectable } from '@angular/core';
+
 import { ComponentStore } from '@ngrx/component-store';
 import { forkJoin, Observable } from 'rxjs';
 
-import { Injectable } from '@angular/core';
 
 import { LazyLoadEvent } from 'primeng/api';
 

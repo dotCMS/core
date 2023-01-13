@@ -1,11 +1,6 @@
 /* eslint-disable @typescript-eslint/no-empty-function */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import {
-    from as observableFrom,
-    of as observableOf,
-    throwError as observableThrowError
-} from 'rxjs';
 
 import { Component, DebugElement, EventEmitter, forwardRef, Input, Output } from '@angular/core';
 import { ComponentFixture, waitForAsync } from '@angular/core/testing';
@@ -14,6 +9,12 @@ import { By } from '@angular/platform-browser';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { ActivatedRoute } from '@angular/router';
 import { RouterTestingModule } from '@angular/router/testing';
+
+import {
+    from as observableFrom,
+    of as observableOf,
+    throwError as observableThrowError
+} from 'rxjs';
 
 import { InputTextModule } from 'primeng/inputtext';
 

@@ -1,7 +1,8 @@
-import { Observable, of } from 'rxjs';
 
 import { Injectable } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
+
+import { Observable, of } from 'rxjs';
 
 import { DotHttpErrorManagerService } from '@dotcms/app/api/services/dot-http-error-manager/dot-http-error-manager.service';
 import { MockDotHttpErrorManagerService } from '@dotcms/app/test/dot-http-error-manager.service.mock';

@@ -1,5 +1,3 @@
-import { Subject } from 'rxjs';
-
 import {
     Component,
     EventEmitter,
@@ -11,6 +9,9 @@ import {
     SimpleChanges,
     ViewChild
 } from '@angular/core';
+
+import { Subject } from 'rxjs';
+
 
 import { delay, retryWhen, take, takeUntil, tap } from 'rxjs/operators';
 

@@ -1,5 +1,3 @@
-import * as _ from 'lodash';
-import { Observable, Subject } from 'rxjs';
 
 import { HttpErrorResponse } from '@angular/common/http';
 import {
@@ -17,6 +15,9 @@ import {
     ViewChild
 } from '@angular/core';
 import { UntypedFormBuilder, UntypedFormGroup } from '@angular/forms';
+
+import * as _ from 'lodash';
+import { Observable, Subject } from 'rxjs';
 
 import { take, takeUntil, tap } from 'rxjs/operators';
 

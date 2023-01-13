@@ -1,10 +1,11 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { of } from 'rxjs';
 
 import { waitForAsync } from '@angular/core/testing';
 import { ActivatedRouteSnapshot, RouterStateSnapshot } from '@angular/router';
 import { RouterTestingModule } from '@angular/router/testing';
+
+import { of } from 'rxjs';
 
 import { DOTTestBed } from '@dotcms/app/test/dot-test-bed';
 import {

@@ -1,6 +1,7 @@
+import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
+
 import { Observable } from 'rxjs';
 
-import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
 
 import { DotRelationshipCardinality } from '@portlets/shared/dot-content-types-edit/components/fields/content-type-fields-properties-form/field-properties/dot-relationships-property/model/dot-relationship-cardinality.model';
 import { DotRelationshipService } from '@portlets/shared/dot-content-types-edit/components/fields/content-type-fields-properties-form/field-properties/dot-relationships-property/services/dot-relationship.service';

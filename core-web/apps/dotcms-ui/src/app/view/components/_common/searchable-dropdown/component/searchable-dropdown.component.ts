@@ -1,6 +1,3 @@
-import * as _ from 'lodash';
-import { fromEvent } from 'rxjs';
-
 import {
     AfterContentInit,
     AfterViewInit,
@@ -20,6 +17,10 @@ import {
     ViewChild
 } from '@angular/core';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
+
+import * as _ from 'lodash';
+import { fromEvent } from 'rxjs';
+
 
 import { PrimeTemplate } from 'primeng/api';
 import { DataView } from 'primeng/dataview';

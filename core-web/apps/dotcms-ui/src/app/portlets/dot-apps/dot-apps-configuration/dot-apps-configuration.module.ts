@@ -1,7 +1,8 @@
-import { MarkdownModule } from 'ngx-markdown';
 
 import { CommonModule } from '@angular/common';
 import { NgModule } from '@angular/core';
+
+import { MarkdownModule } from 'ngx-markdown';
 
 import { ButtonModule } from 'primeng/button';
 import { InputTextModule } from 'primeng/inputtext';

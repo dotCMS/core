@@ -1,8 +1,9 @@
+import { HttpErrorResponse } from '@angular/common/http';
+import { Injectable } from '@angular/core';
+
 import { ComponentStore } from '@ngrx/component-store';
 import { Observable, of } from 'rxjs';
 
-import { HttpErrorResponse } from '@angular/common/http';
-import { Injectable } from '@angular/core';
 
 import { catchError, switchMap, tap } from 'rxjs/operators';
 

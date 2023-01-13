@@ -1,4 +1,3 @@
-import { Subject } from 'rxjs';
 
 import { Injectable } from '@angular/core';
 import {
@@ -7,6 +6,8 @@ import {
     NavigationEnd, NavigationExtras, Params,
     Router
 } from '@angular/router';
+
+import { Subject } from 'rxjs';
 
 import { filter } from 'rxjs/operators';
 

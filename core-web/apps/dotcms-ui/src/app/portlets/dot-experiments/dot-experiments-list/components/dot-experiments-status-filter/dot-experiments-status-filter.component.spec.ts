@@ -1,7 +1,8 @@
+import { FormsModule } from '@angular/forms';
+
 import { createComponentFactory, Spectator } from '@ngneat/spectator';
 
 
-import { FormsModule } from '@angular/forms';
 
 import { MultiSelect, MultiSelectModule } from 'primeng/multiselect';
 

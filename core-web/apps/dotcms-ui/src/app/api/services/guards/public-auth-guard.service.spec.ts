@@ -1,8 +1,9 @@
-import { Observable, of as observableOf } from 'rxjs';
 
 import { Injectable } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { ActivatedRouteSnapshot, RouterStateSnapshot } from '@angular/router';
+
+import { Observable, of as observableOf } from 'rxjs';
 
 import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
 import { DOTTestBed } from '@dotcms/app/test/dot-test-bed';

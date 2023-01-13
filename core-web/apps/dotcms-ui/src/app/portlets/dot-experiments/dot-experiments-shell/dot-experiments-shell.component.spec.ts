@@ -1,8 +1,9 @@
+import { HttpClientTestingModule } from '@angular/common/http/testing';
+import { ActivatedRoute, Router, RouterModule } from '@angular/router';
+
 import { createComponentFactory, Spectator } from '@ngneat/spectator';
 import { ComponentStore } from '@ngrx/component-store';
 
-import { HttpClientTestingModule } from '@angular/common/http/testing';
-import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 
 import { MessageService } from 'primeng/api';
 import { Toast, ToastModule } from 'primeng/toast';

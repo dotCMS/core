@@ -1,6 +1,7 @@
+import { Component, EventEmitter, OnDestroy, OnInit, Output } from '@angular/core';
+
 import { Subject } from 'rxjs';
 
-import { Component, EventEmitter, OnDestroy, OnInit, Output } from '@angular/core';
 
 import { takeUntil } from 'rxjs/operators';
 

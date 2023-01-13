@@ -1,6 +1,7 @@
+import { Component, ElementRef, ViewChild } from '@angular/core';
+
 import { Observable } from 'rxjs';
 
-import { Component, ElementRef, ViewChild } from '@angular/core';
 
 import { LazyLoadEvent } from 'primeng/api';
 import { Table } from 'primeng/table';

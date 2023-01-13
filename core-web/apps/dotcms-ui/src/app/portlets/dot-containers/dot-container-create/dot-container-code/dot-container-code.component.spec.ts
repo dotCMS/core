@@ -1,4 +1,3 @@
-import { of } from 'rxjs';
 
 import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { Component, DebugElement, EventEmitter, forwardRef, Input, Output } from '@angular/core';
@@ -13,6 +12,8 @@ import {
     ReactiveFormsModule
 } from '@angular/forms';
 import { By } from '@angular/platform-browser';
+
+import { of } from 'rxjs';
 
 import { ButtonModule } from 'primeng/button';
 import { DialogService, DynamicDialogModule } from 'primeng/dynamicdialog';

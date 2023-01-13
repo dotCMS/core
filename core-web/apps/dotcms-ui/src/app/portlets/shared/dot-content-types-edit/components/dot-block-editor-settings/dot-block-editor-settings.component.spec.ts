@@ -1,10 +1,11 @@
-import { of, throwError } from 'rxjs';
 
 import { CommonModule } from '@angular/common';
 import { DebugElement, SimpleChange } from '@angular/core';
 import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing';
 import { FormBuilder, FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { By } from '@angular/platform-browser';
+
+import { of, throwError } from 'rxjs';
 
 import { MultiSelect, MultiSelectModule } from 'primeng/multiselect';
 

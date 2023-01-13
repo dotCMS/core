@@ -1,8 +1,9 @@
+import { Component, OnDestroy, OnInit, ViewChild, ViewContainerRef } from '@angular/core';
+import { ActivatedRoute, Router } from '@angular/router';
+
 import * as _ from 'lodash';
 import { forkJoin, Subject } from 'rxjs';
 
-import { Component, OnDestroy, OnInit, ViewChild, ViewContainerRef } from '@angular/core';
-import { ActivatedRoute, Router } from '@angular/router';
 
 import { map, pluck, take, takeUntil } from 'rxjs/operators';
 

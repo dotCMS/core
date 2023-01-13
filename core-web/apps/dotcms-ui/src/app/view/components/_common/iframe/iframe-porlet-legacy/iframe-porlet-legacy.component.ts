@@ -1,7 +1,8 @@
-import { BehaviorSubject, Subject } from 'rxjs';
 
 import { Component, OnDestroy, OnInit } from '@angular/core';
 import { ActivatedRoute, UrlSegment } from '@angular/router';
+
+import { BehaviorSubject, Subject } from 'rxjs';
 
 import { map, mergeMap, pluck, skip, takeUntil, withLatestFrom } from 'rxjs/operators';
 

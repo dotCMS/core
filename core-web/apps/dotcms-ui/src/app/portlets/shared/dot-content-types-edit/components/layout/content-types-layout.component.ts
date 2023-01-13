@@ -1,5 +1,3 @@
-import { Observable } from 'rxjs';
-
 import {
     Component,
     ElementRef,
@@ -10,6 +8,9 @@ import {
     Output,
     ViewChild
 } from '@angular/core';
+
+import { Observable } from 'rxjs';
+
 
 import { MenuItem } from 'primeng/api';
 

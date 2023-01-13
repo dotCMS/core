@@ -1,8 +1,9 @@
+import { CommonModule } from '@angular/common';
+import { Injectable } from '@angular/core';
+
 import { moduleMetadata } from '@storybook/angular';
 import { Meta, Story } from '@storybook/angular/types-6-0';
 
-import { CommonModule } from '@angular/common';
-import { Injectable } from '@angular/core';
 
 import { DotContentletEditorService } from '@components/dot-contentlet-editor/services/dot-contentlet-editor.service';
 import { DotPaletteComponent } from '@dotcms/app/portlets/dot-edit-page/components/dot-palette/dot-palette.component';
