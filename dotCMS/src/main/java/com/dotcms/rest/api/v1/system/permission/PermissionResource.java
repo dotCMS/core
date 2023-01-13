@@ -167,8 +167,11 @@ public class PermissionResource {
         PermissionAPI.Type permissionType = "ALL".equalsIgnoreCase(type)?
                 null:PermissionAPI.Type.valueOf(type);
 
-        final List<Permission> permissions = APILocator.getPermissionAPI().getPermissions(
-                APILocator.getContentletAPI().findContentletByIdentifierAnyLanguage(contentletId));
+        final Contentlet contentlet = APILocator.getContentletAPI().findContentletByIdentifierAnyLanguage(contentletId);
+        if(null == contentlet){
+             return Response.status(Response.Status.NOT_FOUND).build();
+        }
+        final List<Permission> permissions = APILocator.getPermissionAPI().getPermissions(contentlet);
 
         return Response.ok(new ResponseEntityPermissionView(permissions.stream()
                 .filter(permission -> this.filter(permissionType, permission))
