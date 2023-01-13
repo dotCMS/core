@@ -4,7 +4,6 @@ import { DialogService } from 'primeng/dynamicdialog';
 
 import { take } from 'rxjs/operators';
 
-
 import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
 import { DotMessageService } from '@dotcms/data-access';
 import { DotTemplateSelectorComponent } from '@portlets/dot-templates/dot-template-list/components/dot-template-selector/dot-template-selector.component';

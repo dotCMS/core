@@ -10,7 +10,6 @@ import { DotFormatDateService } from '@dotcms/app/api/services/dot-format-date-s
 import { DotContentletService, DotContentTypeService } from '@dotcms/data-access';
 import { DotCMSContentlet, DotCMSContentType, DotCMSContentTypeField } from '@dotcms/dotcms-models';
 
-
 export interface DotContentCompareTableData {
     working: DotCMSContentlet;
     compare: DotCMSContentlet;

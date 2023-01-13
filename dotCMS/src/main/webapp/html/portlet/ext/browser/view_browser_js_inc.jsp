@@ -195,14 +195,15 @@ Structure defaultFileAssetStructure = CacheLocator.getContentTypeCache().getStru
         return false;
     }
 
-   function toggleArchive(showArchived){
+   function toggleArchive(archiveCheckboxValue){
        if (selectedFolder != null && isInodeSet(selectedFolder)) {
            //Emptying the assets rigth hand side listing
            cleanContentSide();
+           showArchived = !!archiveCheckboxValue;
 
            //Showing the loading message
            Element.show('loadingContentListing');
-           BrowserAjax.openFolderContent (selectedFolder, '', !!showArchived, selectedLang, selectFolderContentCallBack);
+           BrowserAjax.openFolderContent (selectedFolder, '', showArchived, selectedLang, selectFolderContentCallBack);
        }
    }
 

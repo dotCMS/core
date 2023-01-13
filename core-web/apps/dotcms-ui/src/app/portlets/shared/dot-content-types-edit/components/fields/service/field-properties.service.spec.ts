@@ -3,7 +3,6 @@ import { Observable, of as observableOf } from 'rxjs';
 import { TestBed } from '@angular/core/testing';
 import { Validators } from '@angular/forms';
 
-
 import { FieldPropertyService } from './field-properties.service';
 import { FieldService } from './field.service';
 import { validateDateDefaultValue } from './validators';

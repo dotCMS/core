@@ -2,7 +2,6 @@
 
 import { Observable, of as observableOf } from 'rxjs';
 
-
 import { CommonModule } from '@angular/common';
 import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { Component, DebugElement, Input } from '@angular/core';
@@ -13,7 +12,12 @@ import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 
 import { DotEventsService, DotMessageService, PaginatorService } from '@dotcms/data-access';
 import { CoreWebService, Site, SiteService } from '@dotcms/dotcms-js';
-import { CoreWebServiceMock, MockDotMessageService, mockSites, SiteServiceMock } from '@dotcms/utils-testing';
+import {
+    CoreWebServiceMock,
+    MockDotMessageService,
+    mockSites,
+    SiteServiceMock
+} from '@dotcms/utils-testing';
 
 import { DotSiteSelectorComponent } from './dot-site-selector.component';
 

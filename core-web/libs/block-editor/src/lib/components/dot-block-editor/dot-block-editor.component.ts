@@ -147,11 +147,11 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy {
             }),
             DotTableCellExtension(this.viewContainerRef),
             DotTableHeaderExtension(),
-            TableRow,
-            DotTableExtension()
+            TableRow
         ];
         const customExtensions: Map<string, AnyExtension> = new Map([
             ['contentlets', ContentletBlock(this.injector)],
+            ['table', DotTableExtension()],
             ['image', ImageNode]
         ]);
 

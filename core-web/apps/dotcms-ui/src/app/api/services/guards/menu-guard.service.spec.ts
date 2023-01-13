@@ -11,7 +11,6 @@ import { MenuGuardService } from './menu-guard.service';
 
 import { DotMenuService } from '../dot-menu.service';
 
-
 @Injectable()
 class MockDotMenuService {
     isPortletInMenu() {

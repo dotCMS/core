@@ -9,7 +9,6 @@ import { DotRelationshipsPropertyValue } from './model/dot-relationships-propert
 
 import { FieldProperty } from '../field-properties.model';
 
-
 /**
  *Component for relationships property field
  *

@@ -27,7 +27,6 @@ import {
 } from '@dotcms/utils-testing';
 import { DotPipesModule } from '@pipes/dot-pipes.module';
 
-
 import { DotAppsConfigurationListModule } from './dot-apps-configuration-list/dot-apps-configuration-list.module';
 import { DotAppsConfigurationResolver } from './dot-apps-configuration-resolver.service';
 import { DotAppsConfigurationComponent } from './dot-apps-configuration.component';

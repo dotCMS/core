@@ -38,7 +38,6 @@ import { DotPageStateService } from './dot-page-state.service';
 
 import { PageModelChangeEventType } from '../dot-edit-content-html/models';
 
-
 const getDotPageRenderStateMock = (favoritePage?: DotCMSContentlet) => {
     return new DotPageRenderState(mockUser(), mockDotRenderedPage(), favoritePage);
 };

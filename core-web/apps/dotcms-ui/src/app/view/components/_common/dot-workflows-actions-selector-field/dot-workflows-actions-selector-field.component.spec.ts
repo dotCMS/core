@@ -13,7 +13,6 @@ import { DotMessageService } from '@dotcms/data-access';
 import { DotCMSWorkflow } from '@dotcms/dotcms-models';
 import { MockDotMessageService, mockWorkflows } from '@dotcms/utils-testing';
 
-
 import { DotWorkflowsActionsSelectorFieldComponent } from './dot-workflows-actions-selector-field.component';
 import { DotWorkflowsActionsSelectorFieldService } from './services/dot-workflows-actions-selector-field.service';
 

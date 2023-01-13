@@ -9,7 +9,6 @@ import { CoreWebService } from '@dotcms/dotcms-js';
 import { CONTAINER_SOURCE } from '@dotcms/dotcms-models';
 import { CoreWebServiceMock } from '@dotcms/utils-testing';
 
-
 import { DotContainerCreateComponent } from './dot-container-create.component';
 
 @Pipe({

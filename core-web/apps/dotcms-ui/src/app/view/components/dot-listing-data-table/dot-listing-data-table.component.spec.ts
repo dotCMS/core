@@ -35,7 +35,6 @@ import { DotActionMenuButtonComponent } from '../_common/dot-action-menu-button/
 import { UiDotIconButtonModule } from '../_common/dot-icon-button/dot-icon-button.module';
 import { DotMenuModule } from '../_common/dot-menu/dot-menu.module';
 
-
 @Component({
     selector: 'dot-empty-state',
     template: `<h1>Im empty</h1>`

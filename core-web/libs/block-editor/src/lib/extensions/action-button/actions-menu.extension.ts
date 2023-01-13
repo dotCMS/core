@@ -12,17 +12,14 @@ import { Level } from '@tiptap/extension-heading';
 import Suggestion, { SuggestionOptions, SuggestionProps } from '@tiptap/suggestion';
 
 import {
-    BUBBLE_IMAGE_TABVIEW_FORM_PLUGIN_KEY,
     CONTENT_SUGGESTION_ID,
     findParentNode,
     FloatingActionsKeydownProps,
     FloatingActionsPlugin,
     FloatingActionsProps,
     FLOATING_ACTIONS_MENU_KEYBOARD,
-    // Suggestions
     ItemsType,
     NodeTypes,
-    suggestionOptions,
     SuggestionPopperModifiers,
     SuggestionsCommandProps,
     SuggestionsComponent
@@ -50,13 +47,6 @@ export type FloatingMenuOptions = Omit<FloatingMenuPluginProps, 'editor' | 'elem
     element: HTMLElement | null;
     suggestion: Omit<SuggestionOptions, 'editor'>;
 };
-
-function getSuggestionComponent(viewContainerRef: ViewContainerRef) {
-    const component = viewContainerRef.createComponent(SuggestionsComponent);
-    component.changeDetectorRef.detectChanges();
-
-    return component;
-}
 
 function getTippyInstance({
     element,
@@ -172,10 +162,7 @@ function execCommand({
             editor.chain().deleteRange(range).setHorizontalRule().focus().run();
         },
         image: () => {
-            const transaction = editor.state.tr.setMeta(BUBBLE_IMAGE_TABVIEW_FORM_PLUGIN_KEY, {
-                open: true
-            });
-            editor.view.dispatch(transaction);
+            editor.commands.toggleImageForm(true);
         }
     };
 
@@ -222,28 +209,28 @@ export const ActionsMenu = (viewContainerRef: ViewContainerRef) => {
     }
 
     function setUpSuggestionComponent(editor: Editor, range: Range) {
-        const allowedBlocks: string[] = editor.storage.dotConfig.allowedBlocks;
-        suggestionsComponent = getSuggestionComponent(viewContainerRef);
-        suggestionsComponent.instance.currentLanguage = editor.storage.dotConfig.lang;
-        suggestionsComponent.instance.allowedContentTypes =
-            editor.storage.dotConfig.allowedContentTypes;
-        if (allowedBlocks.length > 1) {
-            suggestionsComponent.instance.items = suggestionOptions.filter((item) =>
-                allowedBlocks.includes(item.id)
-            );
-            if (allowedBlocks.includes(CONTENT_SUGGESTION_ID)) {
-                suggestionsComponent.instance.addContentletItem();
-            }
-        } else {
-            suggestionsComponent.instance.addContentletItem();
-        }
+        const { allowedBlocks, allowedContentTypes, lang } = editor.storage.dotConfig;
+        suggestionsComponent = viewContainerRef.createComponent(SuggestionsComponent);
 
+        // Setting Inputs
+        suggestionsComponent.instance.currentLanguage = lang;
+        suggestionsComponent.instance.allowedContentTypes = allowedContentTypes;
+        suggestionsComponent.instance.allowedBlocks = allowedBlocks.length > 1 ? allowedBlocks : [];
         suggestionsComponent.instance.onSelection = (item) => {
             const suggestionQuery = suggestionKey.getState(editor.view.state).query?.length || 0;
             range.to = range.to + suggestionQuery;
             execCommand({ editor: editor, range: range, props: item });
         };
 
+        // Needs to be called after settings the component Inputs
+        // To avoid calling the `onInit` hook before the Inputs are initialized
+        suggestionsComponent.changeDetectorRef.detectChanges();
+
+        if (allowedBlocks.length <= 1 || allowedBlocks.includes(CONTENT_SUGGESTION_ID)) {
+            suggestionsComponent.instance.addContentletItem();
+        }
+
+        // Subscribe to @Output
         suggestionsComponent.instance.clearFilter.pipe(takeUntil(destroy$)).subscribe((type) => {
             const queryRange = {
                 to: range.to + suggestionKey.getState(editor.view.state).query?.length,

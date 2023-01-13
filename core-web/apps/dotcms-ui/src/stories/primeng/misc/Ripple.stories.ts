@@ -4,7 +4,6 @@ import { Meta } from '@storybook/angular/types-6-0';
 import { BrowserModule } from '@angular/platform-browser';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 
-
 import { ButtonModule } from 'primeng/button';
 import { RippleModule } from 'primeng/ripple';
 

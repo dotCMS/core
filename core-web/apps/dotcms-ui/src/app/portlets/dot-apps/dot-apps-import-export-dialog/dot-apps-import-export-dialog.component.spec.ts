@@ -24,8 +24,6 @@ import { DotPipesModule } from '@pipes/dot-pipes.module';
 
 import { DotAppsImportExportDialogComponent } from './dot-apps-import-export-dialog.component';
 
-
-
 export class DotAppsServiceMock {
     exportConfiguration(_configuration: DotAppsExportConfiguration): Promise<string> {
         return Promise.resolve('');

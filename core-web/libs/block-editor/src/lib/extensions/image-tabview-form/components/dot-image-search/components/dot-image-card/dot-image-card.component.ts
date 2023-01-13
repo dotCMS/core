@@ -10,4 +10,8 @@ import { DotCMSContentlet } from '@dotcms/dotcms-models';
 })
 export class DotImageCardComponent {
     @Input() contentlet: DotCMSContentlet;
+
+    getImage(inode) {
+        return `/dA/${inode}/500w/20q`;
+    }
 }

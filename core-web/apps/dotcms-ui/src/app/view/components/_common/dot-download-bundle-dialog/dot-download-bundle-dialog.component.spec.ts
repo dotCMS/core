@@ -23,7 +23,6 @@ import * as dotUtils from '@dotcms/utils/lib/dot-utils';
 
 import { DotDownloadBundleDialogComponent } from './dot-download-bundle-dialog.component';
 
-
 // INFO: needs to import this way so we can spy on.
 
 const mockFilters: DotPushPublishFilter[] = [

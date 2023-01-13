@@ -28,7 +28,6 @@ import {
 import { DotEditPageLockInfoComponent } from '@portlets/dot-edit-page/content/components/dot-edit-page-state-controller/components/dot-edit-page-lock-info/dot-edit-page-lock-info.component';
 import { DotPageStateService } from '@portlets/dot-edit-page/content/services/dot-page-state/dot-page-state.service';
 
-
 enum DotConfirmationType {
     LOCK,
     PERSONALIZATION
