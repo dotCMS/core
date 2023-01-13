@@ -58,7 +58,6 @@ export class DotExperimentsConfigurationVariantsComponent {
     maxVariantsAllowed = MAX_VARIANTS_ALLOWED;
     defaultVariantName = DEFAULT_VARIANT_NAME;
     experimentStepName = ExperimentSteps.VARIANTS;
-    loading: boolean;
 
     @Input() stepStatus: StepStatus;
     @Input() variants: Variant[];
@@ -77,6 +76,5 @@ export class DotExperimentsConfigurationVariantsComponent {
             ...variant,
             name: newVariantName
         });
-        this.loading = true;
     }
 }
