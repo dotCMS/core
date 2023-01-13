@@ -1,5 +1,6 @@
-import { EditorView } from 'prosemirror-view';
 import { EditorState, Plugin, PluginKey, Transaction } from 'prosemirror-state';
+import { EditorView } from 'prosemirror-view';
+
 import { Editor, posToDOMRect } from '@tiptap/core';
 
 import { RenderProps } from '../image-tabview-form.extension';

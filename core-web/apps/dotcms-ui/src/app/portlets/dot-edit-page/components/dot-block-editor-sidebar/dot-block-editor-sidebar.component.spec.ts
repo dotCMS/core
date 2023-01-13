@@ -1,24 +1,27 @@
-import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { DotBlockEditorSidebarComponent } from '@portlets/dot-edit-page/components/dot-block-editor-sidebar/dot-block-editor-sidebar.component';
-import { DotEventsService } from '@services/dot-events/dot-events.service';
-import { CoreWebService } from '@dotcms/dotcms-js';
-import { CoreWebServiceMock } from '@tests/core-web.service.mock';
-import { DotWorkflowActionsFireService } from '@services/dot-workflow-actions-fire/dot-workflow-actions-fire.service';
-import { Component, DebugElement, Injectable, Input } from '@angular/core';
-import { DEFAULT_LANG_ID } from '@dotcms/block-editor';
-import { By } from '@angular/platform-browser';
-import { Sidebar, SidebarModule } from 'primeng/sidebar';
-import { HttpClientTestingModule } from '@angular/common/http/testing';
-import { DotMessagePipeModule } from '@pipes/dot-message/dot-message-pipe.module';
-import { ButtonModule } from 'primeng/button';
-import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { of, throwError } from 'rxjs';
-import { MockDotMessageService } from '@tests/dot-message-service.mock';
-import { DotMessageService } from '@services/dot-message/dot-messages.service';
-import { mockResponseView } from '@tests/response-view.mock';
-import { DotContentTypeService } from '@services/dot-content-type';
-import { DotAlertConfirmService } from '@services/dot-alert-confirm';
+
+import { HttpClientTestingModule } from '@angular/common/http/testing';
+import { Component, DebugElement, Injectable, Input } from '@angular/core';
+import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { By } from '@angular/platform-browser';
+import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
+
 import { ConfirmationService } from 'primeng/api';
+import { ButtonModule } from 'primeng/button';
+import { Sidebar, SidebarModule } from 'primeng/sidebar';
+
+import { DEFAULT_LANG_ID } from '@dotcms/block-editor';
+import {
+    DotAlertConfirmService,
+    DotContentTypeService,
+    DotEventsService,
+    DotMessageService,
+    DotWorkflowActionsFireService
+} from '@dotcms/data-access';
+import { CoreWebService } from '@dotcms/dotcms-js';
+import { CoreWebServiceMock, MockDotMessageService, mockResponseView } from '@dotcms/utils-testing';
+import { DotMessagePipeModule } from '@pipes/dot-message/dot-message-pipe.module';
+import { DotBlockEditorSidebarComponent } from '@portlets/dot-edit-page/components/dot-block-editor-sidebar/dot-block-editor-sidebar.component';
 
 @Component({
     selector: 'dot-block-editor',

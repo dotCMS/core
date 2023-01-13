@@ -1,16 +1,19 @@
-import { pluck, catchError, take, map } from 'rxjs/operators';
-import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
+
+import { HttpErrorResponse } from '@angular/common/http';
+import { Injectable } from '@angular/core';
+
+import { catchError, map, pluck, take } from 'rxjs/operators';
+
+import { DotHttpErrorManagerService } from '@dotcms/app/api/services/dot-http-error-manager/dot-http-error-manager.service';
+import { CoreWebService } from '@dotcms/dotcms-js';
 import {
     DotApps,
     DotAppsExportConfiguration,
     DotAppsImportConfiguration,
     DotAppsSaveData
-} from '@models/dot-apps/dot-apps.model';
-import { CoreWebService } from '@dotcms/dotcms-js';
-import { DotHttpErrorManagerService } from '@services/dot-http-error-manager/dot-http-error-manager.service';
-import { HttpErrorResponse } from '@angular/common/http';
-import { getDownloadLink } from '@shared/dot-utils';
+} from '@dotcms/dotcms-models';
+import { getDownloadLink } from '@dotcms/utils';
 
 const appsUrl = `v1/apps`;
 
@@ -32,7 +35,7 @@ export class DotAppsService {
      * @returns Observable<DotApps[]>
      * @memberof DotAppsService
      */
-    get(filter?: string): Observable<DotApps[]> {
+    get(filter?: string): Observable<DotApps[] | null> {
         const url = filter ? `${appsUrl}?filter=${filter}` : appsUrl;
 
         return this.coreWebService
@@ -56,7 +59,7 @@ export class DotAppsService {
      * @returns Observable<DotApps>
      * @memberof DotAppsService
      */
-    getConfigurationList(appKey: string): Observable<DotApps> {
+    getConfigurationList(appKey: string): Observable<DotApps | null> {
         return this.coreWebService
             .requestView({
                 url: `${appsUrl}/${appKey}`
@@ -79,7 +82,7 @@ export class DotAppsService {
      * @returns Observable<DotApps>
      * @memberof DotAppsService
      */
-    getConfiguration(appKey: string, id: string): Observable<DotApps> {
+    getConfiguration(appKey: string, id: string): Observable<DotApps | null> {
         return this.coreWebService
             .requestView({
                 url: `${appsUrl}/${appKey}/${id}`
@@ -103,7 +106,11 @@ export class DotAppsService {
      * @returns Observable<string>
      * @memberof DotAppsService
      */
-    saveSiteConfiguration(appKey: string, id: string, params: DotAppsSaveData): Observable<string> {
+    saveSiteConfiguration(
+        appKey: string,
+        id: string,
+        params: DotAppsSaveData
+    ): Observable<string | null> {
         return this.coreWebService
             .requestView({
                 body: {
@@ -129,7 +136,7 @@ export class DotAppsService {
      * @returns Promise<string>
      * @memberof DotAppsService
      */
-    exportConfiguration(conf: DotAppsExportConfiguration): Promise<string> {
+    exportConfiguration(conf: DotAppsExportConfiguration): Promise<string | null> {
         let fileName = '';
 
         return fetch(`/api/${appsUrl}/export`, {
@@ -194,7 +201,7 @@ export class DotAppsService {
      * @returns Observable<string>
      * @memberof DotAppsService
      */
-    deleteConfiguration(appKey: string, hostId: string): Observable<string> {
+    deleteConfiguration(appKey: string, hostId: string): Observable<string | null> {
         return this.coreWebService
             .requestView({
                 method: 'DELETE',
@@ -217,7 +224,7 @@ export class DotAppsService {
      * @returns Observable<string>
      * @memberof DotAppsService
      */
-    deleteAllConfigurations(appKey: string): Observable<string> {
+    deleteAllConfigurations(appKey: string): Observable<string | null> {
         return this.coreWebService
             .requestView({
                 method: 'DELETE',

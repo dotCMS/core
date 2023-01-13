@@ -51,6 +51,8 @@ public class ContentletVersionInfo extends VersionInfo implements Serializable {
                 "identifier='" + getIdentifier() + '\'' +
                 ", workingInode='" + getWorkingInode() + '\'' +
                 ", liveInode='" + getLiveInode() + '\'' +
+                ", variant='" + getVariant() + '\'' +
+                ", language ='" + getLang() + '\'' +
                 '}';
     }
 }

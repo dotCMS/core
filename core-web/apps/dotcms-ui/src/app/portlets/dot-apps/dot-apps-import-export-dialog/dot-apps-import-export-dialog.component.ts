@@ -1,32 +1,35 @@
+import { Subject } from 'rxjs';
+
 import {
     Component,
-    OnDestroy,
+    ElementRef,
+    EventEmitter,
     Input,
     OnChanges,
-    SimpleChanges,
-    ViewChild,
-    ElementRef,
+    OnDestroy,
     Output,
-    EventEmitter
+    SimpleChanges,
+    ViewChild
 } from '@angular/core';
 import {
-    UntypedFormGroup,
     UntypedFormBuilder,
     UntypedFormControl,
+    UntypedFormGroup,
     Validators
 } from '@angular/forms';
+
+import { take, takeUntil } from 'rxjs/operators';
+
 import { DotDialogActions } from '@components/dot-dialog/dot-dialog.component';
-import { DotAppsService } from '@services/dot-apps/dot-apps.service';
-import { DotMessageService } from '@services/dot-message/dot-messages.service';
+import { DotAppsService } from '@dotcms/app/api/services/dot-apps/dot-apps.service';
+import { DotMessageService } from '@dotcms/data-access';
 import {
     dialogAction,
     DotApps,
     DotAppsExportConfiguration,
     DotAppsImportConfiguration,
     DotAppsSites
-} from '@shared/models/dot-apps/dot-apps.model';
-import { Subject } from 'rxjs';
-import { take, takeUntil } from 'rxjs/operators';
+} from '@dotcms/dotcms-models';
 
 @Component({
     selector: 'dot-apps-import-export-dialog',

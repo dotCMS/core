@@ -1,17 +1,17 @@
 import { Injectable } from '@angular/core';
-import { DotLoadingIndicatorService } from '@components/_common/iframe/dot-loading-indicator/dot-loading-indicator.service';
+
+import { DotIframeService } from '@components/_common/iframe/service/dot-iframe/dot-iframe.service';
+import { DotContentCompareEvent } from '@components/dot-content-compare/dot-content-compare.component';
+import { DotCMSEditPageEvent } from '@components/dot-contentlet-editor/components/dot-contentlet-wrapper/dot-contentlet-wrapper.component';
+import { DotContentletEditorService } from '@components/dot-contentlet-editor/services/dot-contentlet-editor.service';
+import { DotEventsService, DotGenerateSecurePasswordService } from '@dotcms/data-access';
+import { DotPushPublishDialogService, DotUiColors } from '@dotcms/dotcms-js';
+import { DotLoadingIndicatorService } from '@dotcms/utils';
+import { DotDownloadBundleDialogService } from '@services/dot-download-bundle-dialog/dot-download-bundle-dialog.service';
+import { DotNavLogoService } from '@services/dot-nav-logo/dot-nav-logo.service';
 import { DotRouterService } from '@services/dot-router/dot-router.service';
 import { DotUiColorsService } from '@services/dot-ui-colors/dot-ui-colors.service';
-import { DotIframeService } from '@components/_common/iframe/service/dot-iframe/dot-iframe.service';
-import { DotCMSEditPageEvent } from '@components/dot-contentlet-editor/components/dot-contentlet-wrapper/dot-contentlet-wrapper.component';
-import { DotPushPublishDialogService, DotUiColors } from '@dotcms/dotcms-js';
-import { DotDownloadBundleDialogService } from '@services/dot-download-bundle-dialog/dot-download-bundle-dialog.service';
 import { DotWorkflowEventHandlerService } from '@services/dot-workflow-event-handler/dot-workflow-event-handler.service';
-import { DotContentletEditorService } from '@components/dot-contentlet-editor/services/dot-contentlet-editor.service';
-import { DotNavLogoService } from '@services/dot-nav-logo/dot-nav-logo.service';
-import { DotGenerateSecurePasswordService } from '@services/dot-generate-secure-password/dot-generate-secure-password.service';
-import { DotEventsService } from '@services/dot-events/dot-events.service';
-import { DotContentCompareEvent } from '@components/dot-content-compare/dot-content-compare.component';
 
 export const COMPARE_CUSTOM_EVENT = 'compare-contentlet';
 

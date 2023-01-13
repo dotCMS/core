@@ -1,0 +1,20 @@
+$input-width: 200px;
+
+.add-relationship {
+    dt {
+        width: $input-width;
+    }
+
+    .dijitComboBox {
+        width: $input-width;
+    }
+
+    .dijitTextBox {
+        width: $input-width;
+    }
+
+    .required:before {
+        color: $red;
+        content: "* ";
+    }
+}

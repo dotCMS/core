@@ -1,17 +1,19 @@
-import { ChangeDetectionStrategy, Component, ViewChild } from '@angular/core';
+import { provideComponentStore } from '@ngrx/component-store';
 import { Observable } from 'rxjs';
-import { DotExperiment } from '../shared/models/dot-experiments.model';
-import { ExperimentsStatusList } from '@portlets/dot-experiments/shared/models/dot-experiments-constants';
+
+import { ChangeDetectionStrategy, Component, ViewChild } from '@angular/core';
+import { Router } from '@angular/router';
+
+import { take } from 'rxjs/operators';
+
 import { DotMessagePipe } from '@dotcms/app/view/pipes';
+import { DotExperiment, ExperimentsStatusList } from '@dotcms/dotcms-models';
+import { DotExperimentsCreateComponent } from '@portlets/dot-experiments/dot-experiments-create/dot-experiments-create.component';
 import {
     DotExperimentsListStore,
     VmListExperiments
 } from '@portlets/dot-experiments/dot-experiments-list/store/dot-experiments-list-store.service';
 import { DotDynamicDirective } from '@portlets/shared/directives/dot-dynamic.directive';
-import { DotExperimentsCreateComponent } from '@portlets/dot-experiments/dot-experiments-create/dot-experiments-create.component';
-import { take } from 'rxjs/operators';
-import { Router } from '@angular/router';
-import { provideComponentStore } from '@ngrx/component-store';
 
 @Component({
     selector: 'dot-experiments-list',
@@ -88,6 +90,13 @@ export class DotExperimentsListComponent {
      * @memberof DotExperimentsShellComponent
      */
     goToBrowserBack() {
-        this.router.navigate(['edit-page/content'], { queryParamsHandling: 'preserve' });
+        this.router.navigate(['edit-page/content'], {
+            queryParams: {
+                editPageTab: null,
+                variationName: null,
+                experimentId: null
+            },
+            queryParamsHandling: 'merge'
+        });
     }
 }

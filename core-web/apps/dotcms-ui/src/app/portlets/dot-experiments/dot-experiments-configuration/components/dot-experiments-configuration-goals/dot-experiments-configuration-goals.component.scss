@@ -7,6 +7,22 @@ h2 {
     text-transform: uppercase;
 }
 
-:host ::ng-deep p-card .p-card-footer .p-button-link {
-    padding: $spacing-0;
+h3 {
+    margin: 0;
+    font-size: $font-size-large;
+    font-weight: 400;
+}
+
+:host ::ng-deep {
+    dot-icon {
+        color: $gray-light;
+
+        &.isDone {
+            color: $success;
+        }
+    }
+
+    p-card .p-card-footer .p-button-link {
+        padding: $spacing-0;
+    }
 }

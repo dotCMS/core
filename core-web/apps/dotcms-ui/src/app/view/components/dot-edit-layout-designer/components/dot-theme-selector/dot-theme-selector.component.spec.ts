@@ -1,24 +1,33 @@
 import { of } from 'rxjs';
-import { ComponentFixture, fakeAsync, TestBed, tick } from '@angular/core/testing';
-import { DotThemeSelectorComponent } from './dot-theme-selector.component';
-import { Component, DebugElement, Input } from '@angular/core';
-import { DotMessageService } from '@services/dot-message/dot-messages.service';
-import { DotThemesService } from '@services/dot-themes/dot-themes.service';
-import { MockDotMessageService } from '../../../../../test/dot-message-service.mock';
-import { By } from '@angular/platform-browser';
-import { mockDotThemes } from '../../../../../test/dot-themes.mock';
-import { DataViewModule } from 'primeng/dataview';
-import { mockSites, SiteServiceMock } from '../../../../../test/site-service.mock';
-import { CoreWebService, Site, SiteService } from '@dotcms/dotcms-js';
-import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
-import { PaginatorService } from '@services/paginator/paginator.service';
-import { DotThemesServiceMock } from '../../../../../test/dot-themes-service.mock';
-import { DotIconModule } from '@dotcms/ui';
-import { DotDialogModule } from '@components/dot-dialog/dot-dialog.module';
-import { CoreWebServiceMock } from '@tests/core-web.service.mock';
-import { DotMessagePipeModule } from '@pipes/dot-message/dot-message-pipe.module';
-import { DotEventsService } from '@services/dot-events/dot-events.service';
+
 import { HttpClientTestingModule } from '@angular/common/http/testing';
+import { Component, DebugElement, Input } from '@angular/core';
+import { ComponentFixture, fakeAsync, TestBed, tick } from '@angular/core/testing';
+import { By } from '@angular/platform-browser';
+import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
+
+import { DataViewModule } from 'primeng/dataview';
+
+import { DotDialogModule } from '@components/dot-dialog/dot-dialog.module';
+import {
+    DotEventsService,
+    DotMessageService,
+    DotThemesService,
+    PaginatorService
+} from '@dotcms/data-access';
+import { CoreWebService, Site, SiteService } from '@dotcms/dotcms-js';
+import { DotIconModule } from '@dotcms/ui';
+import {
+    CoreWebServiceMock,
+    DotThemesServiceMock,
+    MockDotMessageService,
+    mockDotThemes,
+    mockSites,
+    SiteServiceMock
+} from '@dotcms/utils-testing';
+import { DotMessagePipeModule } from '@pipes/dot-message/dot-message-pipe.module';
+
+import { DotThemeSelectorComponent } from './dot-theme-selector.component';
 
 @Component({
     selector: 'dot-site-selector',

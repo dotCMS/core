@@ -1,28 +1,34 @@
+import { Subject } from 'rxjs';
+
 import { Component, OnDestroy, OnInit, ViewChild } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
-import { filter, pluck, take, takeUntil } from 'rxjs/operators';
-import { Subject } from 'rxjs';
-import { DotTemplate } from '@models/dot-edit-layout-designer';
-import { DataTableColumn } from '@models/data-table';
-import { DotMessageService } from '@services/dot-message/dot-messages.service';
-import { DotListingDataTableComponent } from '@components/dot-listing-data-table/dot-listing-data-table.component';
+
 import { MenuItem } from 'primeng/api';
-import { ActionHeaderOptions } from '@models/action-header';
-import { DotActionMenuItem } from '@models/dot-action-menu/dot-action-menu-item.model';
-import { DotTemplatesService } from '@services/dot-templates/dot-templates.service';
-import { DotMessageDisplayService } from '@components/dot-message-display/services';
-import { DotMessageSeverity, DotMessageType } from '@components/dot-message-display/model';
-import { DotPushPublishDialogService, Site, SiteService } from '@dotcms/dotcms-js';
-import { DotRouterService } from '@services/dot-router/dot-router.service';
 import { DialogService } from 'primeng/dynamicdialog';
+
+import { filter, pluck, take, takeUntil } from 'rxjs/operators';
+
 import { DotBulkInformationComponent } from '@components/_common/dot-bulk-information/dot-bulk-information.component';
+import { DotListingDataTableComponent } from '@components/dot-listing-data-table/dot-listing-data-table.component';
+import { DotMessageSeverity, DotMessageType } from '@components/dot-message-display/model';
+import { DotMessageDisplayService } from '@components/dot-message-display/services';
+import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
+import { DotTemplatesService } from '@dotcms/app/api/services/dot-templates/dot-templates.service';
+import {
+    DotAlertConfirmService,
+    DotMessageService,
+    DotSiteBrowserService
+} from '@dotcms/data-access';
+import { DotPushPublishDialogService, Site, SiteService } from '@dotcms/dotcms-js';
 import {
     DotActionBulkResult,
-    DotBulkFailItem
-} from '@models/dot-action-bulk-result/dot-action-bulk-result.model';
-import { DotContentState } from '@dotcms/dotcms-models';
-import { DotAlertConfirmService } from '@services/dot-alert-confirm';
-import { DotSiteBrowserService } from '@services/dot-site-browser/dot-site-browser.service';
+    DotBulkFailItem,
+    DotContentState,
+    DotTemplate
+} from '@dotcms/dotcms-models';
+import { ActionHeaderOptions } from '@models/action-header';
+import { DataTableColumn } from '@models/data-table';
+import { DotActionMenuItem } from '@models/dot-action-menu/dot-action-menu-item.model';
 
 @Component({
     selector: 'dot-template-list',

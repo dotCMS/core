@@ -1,16 +1,17 @@
-import { HttpResponse, HttpHeaders, HttpErrorResponse } from '@angular/common/http';
-import { throwError, Observable, of } from 'rxjs';
+import { Observable, of, throwError } from 'rxjs';
+
+import { HttpErrorResponse, HttpHeaders, HttpResponse } from '@angular/common/http';
 import { Injectable } from '@angular/core';
-import { Resolve, ActivatedRouteSnapshot } from '@angular/router';
+import { ActivatedRouteSnapshot, Resolve } from '@angular/router';
 
-import { HttpCode, DotCMSResponse } from '@dotcms/dotcms-js';
-import { tap, switchMap, filter, catchError, map } from 'rxjs/operators';
+import { catchError, filter, map, switchMap, tap } from 'rxjs/operators';
 
-import { DotPageRenderState } from '../../models/dot-rendered-page-state.model';
+import { DotHttpErrorManagerService } from '@dotcms/app/api/services/dot-http-error-manager/dot-http-error-manager.service';
+import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
+import { DotCMSResponse, HttpCode } from '@dotcms/dotcms-js';
+import { DotPageRenderOptions, DotPageRenderState } from '@dotcms/dotcms-models';
+
 import { DotPageStateService } from '../../../content/services/dot-page-state/dot-page-state.service';
-import { DotPageRenderOptions } from '@services/dot-page-render/dot-page-render.service';
-import { DotRouterService } from '@services/dot-router/dot-router.service';
-import { DotHttpErrorManagerService } from '@services/dot-http-error-manager/dot-http-error-manager.service';
 
 /**
  * With the url return a string of the edit page html

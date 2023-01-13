@@ -1,16 +1,18 @@
 import {
     Component,
     EventEmitter,
+    HostBinding,
     Input,
+    OnChanges,
     OnInit,
     Output,
-    HostBinding,
-    SimpleChanges,
-    OnChanges
+    SimpleChanges
 } from '@angular/core';
+
 import { take } from 'rxjs/operators';
-import { DotLanguagesService } from '@services/dot-languages/dot-languages.service';
-import { DotLanguage } from '@models/dot-language/dot-language.model';
+
+import { DotLanguagesService } from '@dotcms/data-access';
+import { DotLanguage } from '@dotcms/dotcms-models';
 
 @Component({
     selector: 'dot-language-selector',
@@ -19,6 +21,7 @@ import { DotLanguage } from '@models/dot-language/dot-language.model';
 })
 export class DotLanguageSelectorComponent implements OnInit, OnChanges {
     @Input() value: DotLanguage;
+    @Input() readonly: boolean;
     @Output() selected = new EventEmitter<DotLanguage>();
     @HostBinding('class.disabled') disabled: boolean;
 

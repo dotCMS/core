@@ -1,5 +1,7 @@
 package com.dotcms.experiments.business;
 
+import static com.dotcms.experiments.model.AbstractExperimentVariant.ORIGINAL_VARIANT;
+import static com.dotcms.variant.VariantAPI.DEFAULT_VARIANT;
 import static junit.framework.TestCase.assertEquals;
 import static junit.framework.TestCase.assertTrue;
 import static org.junit.Assert.assertFalse;
@@ -10,17 +12,21 @@ import com.dotcms.datagen.ContentTypeDataGen;
 import com.dotcms.datagen.ContentletDataGen;
 import com.dotcms.datagen.ExperimentDataGen;
 import com.dotcms.datagen.MultiTreeDataGen;
+import com.dotcms.datagen.TestDataUtils;
 import com.dotcms.experiments.model.AbstractExperiment.Status;
 import com.dotcms.experiments.model.Experiment;
 import com.dotcms.experiments.model.ExperimentVariant;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotcms.variant.model.Variant;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
+import com.dotmarketing.util.Logger;
 import com.liferay.portal.model.User;
 import io.vavr.control.Try;
 import java.util.List;
@@ -153,10 +159,101 @@ public class ExperimentAPIImpIT {
                 assertTrue(Try.of(contentlet::isLive).getOrElse(false));
             }));
 
-        } finally {
+        } catch(Exception e) {
+            Logger.error(this, e);
+            throw e;
+        }finally {
             APILocator.getExperimentsAPI().end(newExperiment.id().orElseThrow()
                     , APILocator.systemUser());
         }
 
+    }
+
+    /**
+     * Method to test: {@link ExperimentsAPI#addVariant(String, String, User)} (String, User)}
+     * When: The {@link com.dotcms.experiments.model.AbstractExperimentVariant#ORIGINAL_VARIANT} variant is created
+     * Should: copy the page and the contentlet related to the page in the new variant
+     */
+    @Test
+    public void testAddOriginalVariant_shouldCopyPageAndContentletToVariant()
+            throws DotDataException, DotSecurityException {
+        final HTMLPageAsset page = APILocator.getHTMLPageAssetAPI().fromContentlet(
+                TestDataUtils.getPageContent(true, 1));
+        ContentletDataGen.publish(page);
+
+        final Container container = new ContainerDataGen().nextPersisted();
+
+        final ContentType contentType = new ContentTypeDataGen().nextPersisted();
+
+        final Contentlet content1 = new ContentletDataGen(contentType)
+                .nextPersisted();
+        ContentletDataGen.publish(content1);
+
+        final Contentlet content2 = new ContentletDataGen(contentType)
+                .nextPersisted();
+        ContentletDataGen.publish(content2);
+
+        final Contentlet content3 = new ContentletDataGen(contentType)
+                .nextPersisted();
+        ContentletDataGen.publish(content3);
+
+        new MultiTreeDataGen().setPage(page).setContainer(container)
+                .setContentlet(content1).nextPersisted();
+
+        new MultiTreeDataGen().setPage(page).setContainer(container)
+                .setContentlet(content2).nextPersisted();
+
+        new MultiTreeDataGen().setPage(page).setContainer(container)
+                .setContentlet(content3).nextPersisted();
+
+        final Experiment newExperiment = new ExperimentDataGen()
+                .page(page)
+                .addVariant("Test Gray Button")
+                .nextPersisted();
+
+        final ExperimentVariant originalVariant = newExperiment.
+                trafficProportion().variants().first();
+
+        List<Contentlet> experimentContentlets = APILocator.getContentletAPI()
+                .getAllContentByVariants(APILocator.systemUser(),
+                        false, originalVariant.id());
+
+        // expecting the page + the 3 contentlets
+        assertEquals(4, experimentContentlets.size());
+    }
+
+    /*
+     * Method to test: {@link ExperimentsAPI#start(String, User)}
+     * When: an {@link Experiment} is started
+     * Should: publish all the contents in the variants created for the experiment.
+     */
+    @Test(expected = IllegalArgumentException.class)
+    public void testAddMoreThanOneOriginalVariant_shouldFail() throws DotDataException, DotSecurityException {
+        final Experiment newExperiment = new ExperimentDataGen()
+                .addVariant("Test Green Button")
+                .nextPersisted();
+
+        APILocator.getExperimentsAPI().addVariant(newExperiment.id().orElse(""), ORIGINAL_VARIANT,
+                APILocator.systemUser());
+    }
+
+    /**
+     * Method to test: {@link ExperimentsAPI#deleteVariant(String, String, User)} (String, User)}
+     * When: an {@link com.dotcms.experiments.model.AbstractExperimentVariant#ORIGINAL_VARIANT} is provided
+     * Should: publish all the contents in the variants created for the experiment.
+     */
+    @Test(expected = IllegalArgumentException.class)
+    public void testADeleteOriginalVariant_shouldFail() throws DotDataException, DotSecurityException {
+        final Experiment newExperiment = new ExperimentDataGen()
+                .addVariant("Test Green Button")
+                .nextPersisted();
+
+        final ExperimentVariant originalVariant = newExperiment.trafficProportion()
+                .variants().stream().filter((experimentVariant ->
+                        experimentVariant.description().equals(ORIGINAL_VARIANT))).findFirst()
+                .orElseThrow(()->new DotStateException("Unable to find Original Variant"));
+
+        APILocator.getExperimentsAPI().deleteVariant(newExperiment.id().orElse(""), originalVariant.id(),
+                APILocator.systemUser());
     }
 }

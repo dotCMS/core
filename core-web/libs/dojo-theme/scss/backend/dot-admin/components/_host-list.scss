@@ -1,0 +1,18 @@
+.host-list__item {
+    a {
+        color: $text-color;
+        text-decoration: none;
+    }
+
+    .hostArchivedIcon + a {
+        color: $red;
+    }
+
+    .hostDefaultIcon + a {
+        color: $color-main;
+    }
+
+    .hostStoppedIcon + a {
+        color: $gray-ligth;
+    }
+}

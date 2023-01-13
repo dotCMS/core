@@ -1,22 +1,31 @@
-import { DotExperimentsConfigurationVariantsComponent } from './dot-experiments-configuration-variants.component';
 import { byTestId, createComponentFactory, Spectator } from '@ngneat/spectator';
+
+import { DecimalPipe } from '@angular/common';
+
 import { ButtonModule } from 'primeng/button';
 import { Card, CardModule } from 'primeng/card';
-import { DotMessageService } from '@services/dot-message/dot-messages.service';
-import { MockDotMessageService } from '@tests/dot-message-service.mock';
-import { DecimalPipe } from '@angular/common';
+import { Inplace, InplaceModule } from 'primeng/inplace';
+
+import { DotCopyButtonComponent } from '@components/dot-copy-button/dot-copy-button.component';
+import { DotCopyButtonModule } from '@components/dot-copy-button/dot-copy-button.module';
+import { DotMessageService } from '@dotcms/data-access';
 import {
     DEFAULT_VARIANT_ID,
-    SidebarStatus
-} from '@portlets/dot-experiments/shared/models/dot-experiments-constants';
+    DEFAULT_VARIANT_NAME,
+    ExperimentSteps,
+    SidebarStatus,
+    Status,
+    Variant
+} from '@dotcms/dotcms-models';
+import { MockDotMessageService } from '@dotcms/utils-testing';
 import { DotExperimentsConfigurationVariantsAddComponent } from '@portlets/dot-experiments/dot-experiments-configuration/components/dot-experiments-configuration-variants-add/dot-experiments-configuration-variants-add.component';
-import { Status } from '@portlets/shared/models/shared-models';
-import { ExperimentSteps } from '@portlets/dot-experiments/shared/models/dot-experiments.model';
+
+import { DotExperimentsConfigurationVariantsComponent } from './dot-experiments-configuration-variants.component';
 
 const messageServiceMock = new MockDotMessageService({
     'experiments.configure.variants.weight': 'weight',
     'experiments.configure.variants.view': 'view',
-    'experiments.configure.variants.edit': 'edit',
+    'experiments.action.edit': 'edit',
     'experiments.configure.variants.delete': 'delete',
     'experiments.configure.variants.add': 'Add new variant'
 });
@@ -29,8 +38,10 @@ describe('DotExperimentsConfigurationVariantsComponent', () => {
         imports: [
             ButtonModule,
             CardModule,
+            InplaceModule,
             DecimalPipe,
-            DotExperimentsConfigurationVariantsAddComponent
+            DotExperimentsConfigurationVariantsAddComponent,
+            DotCopyButtonModule
         ],
         component: DotExperimentsConfigurationVariantsComponent,
         providers: [
@@ -55,15 +66,14 @@ describe('DotExperimentsConfigurationVariantsComponent', () => {
                     experimentStep: ExperimentSteps.VARIANTS,
                     isOpen: false
                 },
-                variants: [{ id: DEFAULT_VARIANT_ID, name: 'a', weight: '100' }]
+                variants: [{ id: DEFAULT_VARIANT_ID, name: DEFAULT_VARIANT_NAME, weight: '100' }]
             };
 
             spectator.setInput(variantsVm);
             spectator.detectChanges();
 
-            expect(spectator.query(byTestId('variant-name'))).toHaveText(
-                variantsVm.variants[0].name
-            );
+            expect(spectator.queryAll(byTestId('variant-name')).length).toBe(1);
+
             expect(spectator.query(byTestId('variant-weight'))).toHaveText(
                 variantsVm.variants[0].weight + '.00% weight'
             );
@@ -80,7 +90,7 @@ describe('DotExperimentsConfigurationVariantsComponent', () => {
                     isOpen: false
                 },
                 variants: [
-                    { id: DEFAULT_VARIANT_ID, name: 'a', weight: '33.33', url: 'link1' },
+                    { id: '0000000', name: DEFAULT_VARIANT_NAME, weight: '33.33', url: 'link1' },
                     { id: '1111111', name: 'b', weight: '33.33', url: 'link2' },
                     { id: '2222222', name: 'c', weight: '33.33', url: 'link3' }
                 ]
@@ -88,7 +98,7 @@ describe('DotExperimentsConfigurationVariantsComponent', () => {
 
             spectator.setInput(variantsVm);
 
-            spectator.detectChanges();
+            spectator.detectComponentChanges();
 
             expect(spectator.query(byTestId('variant-title-step-done'))).toHaveClass('isDone');
             expect(spectator.queryAll(Card).length).toBe(4);
@@ -98,10 +108,9 @@ describe('DotExperimentsConfigurationVariantsComponent', () => {
             expect(variantsName[1]).toContainText(variantsVm.variants[1].name);
             expect(variantsName[2]).toContainText(variantsVm.variants[2].name);
 
-            const variantsUrl = spectator.queryAll(byTestId('variant-url'));
-            expect(variantsUrl[0]).toContainText(variantsVm.variants[0].url);
-            expect(variantsUrl[1]).toContainText(variantsVm.variants[1].url);
-            expect(variantsUrl[2]).toContainText(variantsVm.variants[2].url);
+            expect(spectator.queryAll(DotCopyButtonComponent).length).toBe(3);
+
+            expect(spectator.queryAll(Inplace).length).toBe(2);
 
             const variantsWeight = spectator.queryAll(byTestId('variant-weight'));
             expect(variantsWeight[0]).toContainText(variantsVm.variants[0].weight);
@@ -146,7 +155,12 @@ describe('DotExperimentsConfigurationVariantsComponent', () => {
                 isOpen: false
             },
             variants: [
-                { id: DEFAULT_VARIANT_ID, name: 'a', weight: '33.33', url: 'link1' },
+                {
+                    id: DEFAULT_VARIANT_ID,
+                    name: DEFAULT_VARIANT_NAME,
+                    weight: '33.33',
+                    url: 'link1'
+                },
                 { id: '1111111', name: 'b', weight: '33.33', url: 'link2' }
             ]
         };
@@ -184,6 +198,7 @@ describe('DotExperimentsConfigurationVariantsComponent', () => {
 
             expect(output).toEqual({ variant: variantsVm.variants[0], mode: 'preview' });
         });
+
         it('should goToEditPage emit a variant and mode(edit) when edit button is clicked', () => {
             let output;
             spectator.output('goToEditPage').subscribe((result) => (output = result));
@@ -197,6 +212,38 @@ describe('DotExperimentsConfigurationVariantsComponent', () => {
 
             expect(output).toEqual({ variant: variantsVm.variants[1], mode: 'edit' });
         });
+
+        it('should edit output emit the new name', () => {
+            const newVariantName = 'new name';
+            const variants: Variant[] = [
+                { id: '1', name: DEFAULT_VARIANT_NAME, weight: '50.00', url: 'url' },
+                { id: '2', name: 'to edit', weight: '50.00', url: 'url' }
+            ];
+
+            let output;
+            spectator.output('edit').subscribe((result) => (output = result));
+
+            spectator.setInput({
+                variants
+            });
+
+            spectator.query(Inplace).activate();
+
+            spectator.detectComponentChanges();
+
+            const viewButton = spectator.query(
+                byTestId('variant-save-name-btn')
+            ) as HTMLButtonElement;
+
+            const inplaceInput = spectator.query(byTestId('inplace-input')) as HTMLInputElement;
+            inplaceInput.value = newVariantName;
+
+            expect(viewButton.disabled).not.toBe(true);
+            spectator.click(viewButton);
+
+            expect(output).toEqual({ ...variants[1], name: newVariantName });
+        });
+
         it('should delete a variant', () => {
             let output;
             spectator.output('delete').subscribe((result) => (output = result));

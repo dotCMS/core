@@ -1,19 +1,20 @@
+import { CommonModule } from '@angular/common';
+import { DebugElement } from '@angular/core';
 import { ComponentFixture } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
-import { DebugElement } from '@angular/core';
 
-import { DOTTestBed } from '@tests/dot-test-bed';
-import { MockDotMessageService } from '@tests/dot-message-service.mock';
-
-import { DotMessageService } from '@services/dot-message/dot-messages.service';
-import { NotLicensedComponent } from './not-licensed.component';
-import { CommonModule } from '@angular/common';
 import { ButtonModule } from 'primeng/button';
-import { DotIconModule } from '@dotcms/ui';
+
+import { DOTTestBed } from '@dotcms/app/test/dot-test-bed';
 import {
     DotLicenseService,
+    DotMessageService,
     DotUnlicensedPortletData
-} from '@services/dot-license/dot-license.service';
+} from '@dotcms/data-access';
+import { DotIconModule } from '@dotcms/ui';
+import { MockDotMessageService } from '@dotcms/utils-testing';
+
+import { NotLicensedComponent } from './not-licensed.component';
 
 const messageServiceMock = new MockDotMessageService({
     'portlet.title': 'Enterprise Portlet',

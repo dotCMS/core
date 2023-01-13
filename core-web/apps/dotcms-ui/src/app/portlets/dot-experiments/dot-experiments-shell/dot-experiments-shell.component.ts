@@ -1,4 +1,5 @@
-import { ChangeDetectionStrategy, Component } from '@angular/core';
+import { ChangeDetectionStrategy, Component, OnInit } from '@angular/core';
+import { Router } from '@angular/router';
 
 @Component({
     selector: 'dot-experiments-shell',
@@ -6,4 +7,22 @@ import { ChangeDetectionStrategy, Component } from '@angular/core';
     styleUrls: ['./dot-experiments-shell.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class DotExperimentsShellComponent {}
+export class DotExperimentsShellComponent implements OnInit {
+    constructor(private readonly router: Router) {}
+
+    ngOnInit() {
+        this.removeVariantQueryParams();
+    }
+
+    private removeVariantQueryParams() {
+        this.router.navigate([], {
+            queryParams: {
+                editPageTab: null,
+                variationName: null,
+                experimentId: null
+            },
+            queryParamsHandling: 'merge',
+            replaceUrl: true
+        });
+    }
+}

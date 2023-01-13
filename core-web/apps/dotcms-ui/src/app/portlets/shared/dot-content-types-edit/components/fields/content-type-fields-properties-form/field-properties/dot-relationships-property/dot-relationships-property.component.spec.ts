@@ -1,14 +1,15 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { DotRelationshipsPropertyComponent } from './dot-relationships-property.component';
+import { Component, DebugElement, EventEmitter, Input, Output } from '@angular/core';
 import { ComponentFixture, waitForAsync } from '@angular/core/testing';
-import { DebugElement, Component, Input, Output, EventEmitter } from '@angular/core';
-import { MockDotMessageService } from '@dotcms/app/test/dot-message-service.mock';
-import { DOTTestBed } from '@dotcms/app/test/dot-test-bed';
-import { NgControl, UntypedFormGroup, UntypedFormControl } from '@angular/forms';
-import { DotMessageService } from '@services/dot-message/dot-messages.service';
+import { NgControl, UntypedFormControl, UntypedFormGroup } from '@angular/forms';
 import { By } from '@angular/platform-browser';
-import { dotcmsContentTypeFieldBasicMock } from '@tests/dot-content-types.mock';
+
+import { DOTTestBed } from '@dotcms/app/test/dot-test-bed';
+import { DotMessageService } from '@dotcms/data-access';
+import { dotcmsContentTypeFieldBasicMock, MockDotMessageService } from '@dotcms/utils-testing';
+
+import { DotRelationshipsPropertyComponent } from './dot-relationships-property.component';
 
 @Component({
     selector: 'dot-field-validation-message',
@@ -60,36 +61,34 @@ describe('DotRelationshipsPropertyComponent', () => {
         'contenttypes.field.properties.relationships.edit.error.required': 'Edit validation error'
     });
 
-    beforeEach(
-        waitForAsync(() => {
-            DOTTestBed.configureTestingModule({
-                declarations: [
-                    DotRelationshipsPropertyComponent,
-                    TestFieldValidationMessageComponent,
-                    TestNewRelationshipsComponent,
-                    TestEditRelationshipsComponent
-                ],
-                imports: [],
-                providers: [{ provide: DotMessageService, useValue: messageServiceMock }]
-            });
+    beforeEach(waitForAsync(() => {
+        DOTTestBed.configureTestingModule({
+            declarations: [
+                DotRelationshipsPropertyComponent,
+                TestFieldValidationMessageComponent,
+                TestNewRelationshipsComponent,
+                TestEditRelationshipsComponent
+            ],
+            imports: [],
+            providers: [{ provide: DotMessageService, useValue: messageServiceMock }]
+        });
 
-            fixture = DOTTestBed.createComponent(DotRelationshipsPropertyComponent);
-            de = fixture.debugElement;
-            comp = fixture.componentInstance;
+        fixture = DOTTestBed.createComponent(DotRelationshipsPropertyComponent);
+        de = fixture.debugElement;
+        comp = fixture.componentInstance;
 
-            comp.property = {
-                name: 'relationship',
-                value: {},
-                field: {
-                    ...dotcmsContentTypeFieldBasicMock
-                }
-            };
+        comp.property = {
+            name: 'relationship',
+            value: {},
+            field: {
+                ...dotcmsContentTypeFieldBasicMock
+            }
+        };
 
-            comp.group = new UntypedFormGroup({
-                relationship: new UntypedFormControl('')
-            });
-        })
-    );
+        comp.group = new UntypedFormGroup({
+            relationship: new UntypedFormControl('')
+        });
+    }));
 
     describe('not editing mode', () => {
         beforeEach(() => {

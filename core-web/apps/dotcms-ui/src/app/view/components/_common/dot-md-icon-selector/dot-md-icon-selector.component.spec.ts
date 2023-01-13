@@ -1,6 +1,11 @@
 import { Component, CUSTOM_ELEMENTS_SCHEMA, DebugElement } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { UntypedFormBuilder, UntypedFormGroup, FormsModule, ReactiveFormsModule } from '@angular/forms';
+import {
+    FormsModule,
+    ReactiveFormsModule,
+    UntypedFormBuilder,
+    UntypedFormGroup
+} from '@angular/forms';
 import { By } from '@angular/platform-browser';
 
 import { DotMdIconSelectorComponent } from './dot-md-icon-selector.component';
@@ -44,8 +49,8 @@ describe('DotMdIconSelectorComponent', () => {
     });
 
     it('should create', () => {
-        const selector = de.query(By.css('dot-md-icon-selector [data-testId="icon-picker"]'))
-        selector.triggerEventHandler('dotValueChange', {target: {value: 'someicon'}});
+        const selector = de.query(By.css('dot-md-icon-selector [data-testId="icon-picker"]'));
+        selector.triggerEventHandler('dotValueChange', { target: { value: 'someicon' } });
         fixture.detectChanges();
         expect(hostComp.form.value).toEqual({ icon: 'someicon' });
     });

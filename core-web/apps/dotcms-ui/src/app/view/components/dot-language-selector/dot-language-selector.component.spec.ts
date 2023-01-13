@@ -1,17 +1,21 @@
-import { ComponentFixture } from '@angular/core/testing';
-import { DotLanguageSelectorComponent } from './dot-language-selector.component';
-import { DotLanguagesService } from '@services/dot-languages/dot-languages.service';
-import { DotLanguagesServiceMock } from '../../../test/dot-languages-service.mock';
-import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
-import { DOTTestBed } from '../../../test/dot-test-bed';
-import { Component, DebugElement } from '@angular/core';
-import { By } from '@angular/platform-browser';
-import { mockDotLanguage } from '../../../test/dot-language.mock';
-import { MockDotMessageService } from '@tests/dot-message-service.mock';
-import { DotMessageService } from '@services/dot-message/dot-messages.service';
-import { DotIconModule } from '@dotcms/ui';
 import { of } from 'rxjs';
-import { DotLanguage } from '@shared/models/dot-language/dot-language.model';
+
+import { Component, DebugElement } from '@angular/core';
+import { ComponentFixture } from '@angular/core/testing';
+import { By } from '@angular/platform-browser';
+import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
+
+import { DOTTestBed } from '@dotcms/app/test/dot-test-bed';
+import { DotLanguagesService, DotMessageService } from '@dotcms/data-access';
+import { DotLanguage } from '@dotcms/dotcms-models';
+import { DotIconModule } from '@dotcms/ui';
+import {
+    DotLanguagesServiceMock,
+    mockDotLanguage,
+    MockDotMessageService
+} from '@dotcms/utils-testing';
+
+import { DotLanguageSelectorComponent } from './dot-language-selector.component';
 
 const messageServiceMock = new MockDotMessageService({
     'editpage.viewas.label.language': 'Language'
@@ -73,6 +77,7 @@ describe('DotLanguageSelectorComponent', () => {
     });
 
     it('should have right attributes on dropdown', () => {
+        fixtureHost.detectChanges();
         const pDropDown: DebugElement = de.query(By.css('p-dropdown'));
         expect(pDropDown.attributes.dataKey).toBe('id');
         expect(pDropDown.attributes.optionLabel).toBe('language');
@@ -80,6 +85,7 @@ describe('DotLanguageSelectorComponent', () => {
     });
 
     it('should emit the selected language', () => {
+        fixtureHost.detectChanges();
         const pDropDown: DebugElement = de.query(By.css('p-dropdown'));
 
         spyOn(component.selected, 'emit');

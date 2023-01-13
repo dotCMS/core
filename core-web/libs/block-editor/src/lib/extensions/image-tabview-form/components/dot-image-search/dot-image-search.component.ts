@@ -1,21 +1,24 @@
+import { BehaviorSubject, fromEvent, Subject } from 'rxjs';
+
 import {
+    AfterViewInit,
+    ChangeDetectionStrategy,
     Component,
-    OnInit,
-    OnDestroy,
-    ViewChild,
-    Input,
     ElementRef,
+    EventEmitter,
+    Input,
+    OnDestroy,
+    OnInit,
     Output,
-    EventEmitter
+    ViewChild
 } from '@angular/core';
-import { BehaviorSubject, Subject, fromEvent } from 'rxjs';
-import { debounceTime, throttleTime, skip, takeUntil } from 'rxjs/operators';
+
+import { debounceTime, skip, takeUntil, throttleTime } from 'rxjs/operators';
 
 import { DotCMSContentlet } from '@dotcms/dotcms-models';
 
 // services
 import { DotImageSearchStore } from './store/dot-image-search.store';
-import { AfterViewInit, ChangeDetectionStrategy } from '@angular/core';
 
 @Component({
     selector: 'dot-image-search',

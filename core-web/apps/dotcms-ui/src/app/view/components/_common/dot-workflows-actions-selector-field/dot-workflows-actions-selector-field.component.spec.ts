@@ -1,26 +1,28 @@
-import { waitForAsync, ComponentFixture } from '@angular/core/testing';
-import { DOTTestBed } from '@tests/dot-test-bed';
 import { BehaviorSubject } from 'rxjs';
-import { DebugElement, Component, OnInit } from '@angular/core';
 
-import { DotWorkflowsActionsSelectorFieldComponent } from './dot-workflows-actions-selector-field.component';
-import { MockDotMessageService } from '@tests/dot-message-service.mock';
-import { DotMessageService } from '@services/dot-message/dot-messages.service';
-import { By } from '@angular/platform-browser';
+import { Component, DebugElement, OnInit } from '@angular/core';
+import { ComponentFixture, waitForAsync } from '@angular/core/testing';
 import { UntypedFormBuilder, UntypedFormGroup } from '@angular/forms';
-import { DotWorkflowsActionsSelectorFieldService } from './services/dot-workflows-actions-selector-field.service';
-import { DotCMSWorkflow } from '@dotcms/dotcms-models';
-import { mockWorkflows } from '@tests/dot-workflow-service.mock';
+import { By } from '@angular/platform-browser';
+
 import { SelectItemGroup } from 'primeng/api';
 import { Dropdown, DropdownModule } from 'primeng/dropdown';
+
+import { DOTTestBed } from '@dotcms/app/test/dot-test-bed';
+import { DotMessageService } from '@dotcms/data-access';
+import { DotCMSWorkflow } from '@dotcms/dotcms-models';
+import { MockDotMessageService, mockWorkflows } from '@dotcms/utils-testing';
+
+import { DotWorkflowsActionsSelectorFieldComponent } from './dot-workflows-actions-selector-field.component';
+import { DotWorkflowsActionsSelectorFieldService } from './services/dot-workflows-actions-selector-field.service';
 
 @Component({
     selector: 'dot-fake-form',
     template: `
         <form [formGroup]="form">
             <dot-workflows-actions-selector-field
-                formControlName="action"
                 [workflows]="workfows"
+                formControlName="action"
             ></dot-workflows-actions-selector-field>
             {{ form.value | json }}
         </form>
@@ -70,24 +72,22 @@ describe('DotWorkflowsActionsSelectorFieldComponent', () => {
     const getDropdownDebugElement = () => de.query(By.css('p-dropdown'));
     const getDropdownComponent = () => getDropdownDebugElement().componentInstance;
 
-    beforeEach(
-        waitForAsync(() => {
-            DOTTestBed.configureTestingModule({
-                declarations: [DotWorkflowsActionsSelectorFieldComponent, FakeFormComponent],
-                providers: [
-                    {
-                        provide: DotMessageService,
-                        useValue: messageServiceMock
-                    },
-                    {
-                        provide: DotWorkflowsActionsSelectorFieldService,
-                        useClass: DotWorkflowsActionsSelectorFieldServiceMock
-                    }
-                ],
-                imports: [DropdownModule]
-            });
-        })
-    );
+    beforeEach(waitForAsync(() => {
+        DOTTestBed.configureTestingModule({
+            declarations: [DotWorkflowsActionsSelectorFieldComponent, FakeFormComponent],
+            providers: [
+                {
+                    provide: DotMessageService,
+                    useValue: messageServiceMock
+                },
+                {
+                    provide: DotWorkflowsActionsSelectorFieldService,
+                    useClass: DotWorkflowsActionsSelectorFieldServiceMock
+                }
+            ],
+            imports: [DropdownModule]
+        });
+    }));
 
     beforeEach(() => {
         fixtureHost = DOTTestBed.createComponent(FakeFormComponent);

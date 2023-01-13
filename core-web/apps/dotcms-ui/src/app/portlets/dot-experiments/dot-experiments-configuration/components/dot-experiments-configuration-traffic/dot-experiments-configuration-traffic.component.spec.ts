@@ -1,9 +1,12 @@
-import { DotExperimentsConfigurationTrafficComponent } from './dot-experiments-configuration-traffic.component';
-import { MockDotMessageService } from '@tests/dot-message-service.mock';
 import { byTestId, createComponentFactory, Spectator } from '@ngneat/spectator';
+
 import { ButtonModule } from 'primeng/button';
 import { Card, CardModule } from 'primeng/card';
-import { DotMessageService } from '@services/dot-message/dot-messages.service';
+
+import { DotMessageService } from '@dotcms/data-access';
+import { MockDotMessageService } from '@dotcms/utils-testing';
+
+import { DotExperimentsConfigurationTrafficComponent } from './dot-experiments-configuration-traffic.component';
 
 const messageServiceMock = new MockDotMessageService({
     'experiments.configure.traffic.name': 'Traffic',

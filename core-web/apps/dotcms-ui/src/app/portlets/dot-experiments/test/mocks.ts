@@ -1,9 +1,28 @@
 import { of } from 'rxjs';
+
 import {
+    DotExperiment,
     DotExperimentStatusList,
+    GOAL_OPERATORS,
+    GOAL_PARAMETERS,
+    GOAL_TYPES,
+    Goals,
     TrafficProportionTypes
-} from '@portlets/dot-experiments/shared/models/dot-experiments-constants';
-import { DotExperiment } from '@portlets/dot-experiments/shared/models/dot-experiments.model';
+} from '@dotcms/dotcms-models';
+
+export const GoalsMock: Goals = {
+    primary: {
+        name: 'default',
+        type: GOAL_TYPES.REACH_PAGE,
+        conditions: [
+            {
+                parameter: GOAL_PARAMETERS.URL,
+                operator: GOAL_OPERATORS.EQUALS,
+                value: 'to-define'
+            }
+        ]
+    }
+};
 
 export const ExperimentMocks: Array<DotExperiment> = [
     {
@@ -22,7 +41,8 @@ export const ExperimentMocks: Array<DotExperiment> = [
             variants: [{ id: '111', name: 'DEFAULT', weight: '100.0' }]
         },
         creationDate: new Date('2022-08-21 14:50:03'),
-        modDate: new Date('2022-08-21 18:50:03')
+        modDate: new Date('2022-08-21 18:50:03'),
+        goals: null
     },
     {
         id: '222',
@@ -40,7 +60,8 @@ export const ExperimentMocks: Array<DotExperiment> = [
             variants: [{ id: '222', name: 'DEFAULT', weight: '100.0' }]
         },
         creationDate: new Date('2022-08-21 14:50:03'),
-        modDate: new Date('2022-08-21 18:50:03')
+        modDate: new Date('2022-08-21 18:50:03'),
+        goals: null
     }
 ];
 
@@ -74,6 +95,10 @@ export const DotExperimentsConfigurationStoreMock = {
         experimentId: '',
         experiment: null,
         isLoading: true
+    }),
+    goalsStepVm$: of({
+        goals: '',
+        status: ''
     })
 };
 

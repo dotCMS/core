@@ -1,15 +1,19 @@
-import { Injectable } from '@angular/core';
-import { DotCMSContentlet } from '@dotcms/dotcms-models';
 import { ComponentStore } from '@ngrx/component-store';
 
-import { Languages, queryEsParams } from '@dotcms/block-editor';
-import { mergeMap, tap, map, withLatestFrom } from 'rxjs/operators';
-import { Observable } from 'rxjs/internal/Observable';
-import { SearchService } from '../../../../../shared/services/search/search.service';
+import { Injectable } from '@angular/core';
 
-import { DEFAULT_LANG_ID } from '../../../../bubble-menu/models/index';
-import { ESOrderDirection } from '@dotcms/block-editor';
-import { DotLanguageService } from '../../../../../shared/services/dot-language/dot-language.service';
+import { Observable } from 'rxjs/internal/Observable';
+import { map, mergeMap, tap, withLatestFrom } from 'rxjs/operators';
+
+import {
+    DEFAULT_LANG_ID,
+    DotLanguageService,
+    ESOrderDirection,
+    Languages,
+    queryEsParams,
+    SearchService
+} from '@dotcms/block-editor';
+import { DotCMSContentlet } from '@dotcms/dotcms-models';
 
 export interface DotImageSearchState {
     loading: boolean;

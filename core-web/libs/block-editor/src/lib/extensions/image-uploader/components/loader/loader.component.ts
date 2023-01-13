@@ -1,4 +1,5 @@
 import { Component, ViewEncapsulation } from '@angular/core';
+
 import { AngularNodeViewComponent } from '../../../../NodeViewRenderer';
 
 export const enum MessageType {

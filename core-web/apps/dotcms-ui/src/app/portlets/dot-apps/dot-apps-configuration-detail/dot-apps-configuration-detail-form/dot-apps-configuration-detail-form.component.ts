@@ -1,14 +1,15 @@
 import {
     Component,
-    OnInit,
-    Input,
-    Output,
+    ElementRef,
     EventEmitter,
-    ViewChild,
-    ElementRef
+    Input,
+    OnInit,
+    Output,
+    ViewChild
 } from '@angular/core';
-import { UntypedFormControl, UntypedFormGroup, Validators, NgForm } from '@angular/forms';
-import { DotAppsSecrets } from '@shared/models/dot-apps/dot-apps.model';
+import { NgForm, UntypedFormControl, UntypedFormGroup, Validators } from '@angular/forms';
+
+import { DotAppsSecrets } from '@dotcms/dotcms-models';
 
 const getFieldValueFn = {
     BOOL: (field: DotAppsSecrets) => {

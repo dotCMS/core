@@ -1,14 +1,16 @@
 /* eslint-disable @typescript-eslint/no-empty-function */
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { By } from '@angular/platform-browser';
+import { MonacoEditorComponent } from '@materia-ui/ngx-monaco-editor';
+
 import { Component, DebugElement, forwardRef, Input } from '@angular/core';
-import { waitForAsync, ComponentFixture, TestBed } from '@angular/core/testing';
+import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing';
+import { FormsModule, NG_VALUE_ACCESSOR } from '@angular/forms';
+import { By } from '@angular/platform-browser';
+
+import { InputTextareaModule } from 'primeng/inputtextarea';
+import { SelectButtonModule } from 'primeng/selectbutton';
 
 import { DotTextareaContentComponent } from './dot-textarea-content.component';
-import { FormsModule, NG_VALUE_ACCESSOR } from '@angular/forms';
-import { SelectButtonModule } from 'primeng/selectbutton';
-import { InputTextareaModule } from 'primeng/inputtextarea';
-import { MonacoEditorComponent } from '@materia-ui/ngx-monaco-editor';
 
 function cleanOptionText(option) {
     return option.replace(/\r?\n|\r/g, '');

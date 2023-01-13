@@ -1,8 +1,10 @@
 // also exported from '@storybook/angular' if you can deal with breaking changes in 6.1
-import { Story, Meta } from '@storybook/angular/types-6-0';
-import { CalendarModule, Calendar } from 'primeng/calendar';
 import { moduleMetadata } from '@storybook/angular';
+import { Meta, Story } from '@storybook/angular/types-6-0';
+
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
+
+import { Calendar, CalendarModule } from 'primeng/calendar';
 
 export default {
     title: 'PrimeNG/Form/Calendar',

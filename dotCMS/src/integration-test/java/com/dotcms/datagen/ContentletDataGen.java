@@ -50,7 +50,7 @@ public class ContentletDataGen extends AbstractDataGen<Contentlet> {
     private boolean skipValidation = false;
     private IndexPolicy policy = null;
     private Date modDate;
-    private String variantId;
+    protected String variantId;
 
     public ContentletDataGen(final ContentType contentType) {
         this(contentType.id());

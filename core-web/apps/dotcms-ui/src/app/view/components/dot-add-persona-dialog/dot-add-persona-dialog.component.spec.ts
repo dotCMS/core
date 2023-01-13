@@ -1,26 +1,29 @@
-import { ComponentFixture, TestBed } from '@angular/core/testing';
-
-import { DotAddPersonaDialogComponent } from './dot-add-persona-dialog.component';
-import { MockDotMessageService } from '@tests/dot-message-service.mock';
-
-import { DOTTestBed } from '@tests/dot-test-bed';
-import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
-import { DotMessageService } from '@services/dot-message/dot-messages.service';
-import { DotDialogModule } from '@components/dot-dialog/dot-dialog.module';
-import { DotWorkflowActionsFireService } from '@services/dot-workflow-actions-fire/dot-workflow-actions-fire.service';
-import { Component, DebugElement, Input } from '@angular/core';
-import { By } from '@angular/platform-browser';
-import { DotHttpErrorManagerService } from '@services/dot-http-error-manager/dot-http-error-manager.service';
-import { LoginService, SiteService } from '@dotcms/dotcms-js';
-import { LoginServiceMock } from '@tests/login-service.mock';
-import { mockDotPersona } from '@tests/dot-persona.mock';
 import { of as observableOf, throwError } from 'rxjs';
+
+import { Component, DebugElement, Input } from '@angular/core';
+import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { NgControl } from '@angular/forms';
+import { By } from '@angular/platform-browser';
+import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
+
 import { FileUploadModule } from 'primeng/fileupload';
-import { SiteServiceMock } from '@tests/site-service.mock';
-import { mockResponseView } from '@tests/response-view.mock';
+
 import { SiteSelectorFieldModule } from '@components/_common/dot-site-selector-field/dot-site-selector-field.module';
 import { DotCreatePersonaFormModule } from '@components/dot-add-persona-dialog/dot-create-persona-form/dot-create-persona-form.module';
+import { DotDialogModule } from '@components/dot-dialog/dot-dialog.module';
+import { DotHttpErrorManagerService } from '@dotcms/app/api/services/dot-http-error-manager/dot-http-error-manager.service';
+import { DOTTestBed } from '@dotcms/app/test/dot-test-bed';
+import { DotMessageService, DotWorkflowActionsFireService } from '@dotcms/data-access';
+import { LoginService, SiteService } from '@dotcms/dotcms-js';
+import {
+    LoginServiceMock,
+    MockDotMessageService,
+    mockDotPersona,
+    mockResponseView,
+    SiteServiceMock
+} from '@dotcms/utils-testing';
+
+import { DotAddPersonaDialogComponent } from './dot-add-persona-dialog.component';
 
 @Component({
     selector: 'dot-field-validation-message',

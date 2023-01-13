@@ -1,12 +1,14 @@
-import { waitForAsync, ComponentFixture, TestBed } from '@angular/core/testing';
-import { By } from '@angular/platform-browser';
 import { DebugElement } from '@angular/core';
-import { RouterTestingModule } from '@angular/router/testing';
+import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing';
+import { By } from '@angular/platform-browser';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
+import { RouterTestingModule } from '@angular/router/testing';
+
+import { DotMenu } from '@models/navigation';
 
 import { DotSubNavComponent } from './dot-sub-nav.component';
+
 import { dotMenuMock } from '../../services/dot-navigation.service.spec';
-import { DotMenu } from '@models/navigation';
 
 const data: DotMenu = {
     ...dotMenuMock(),
@@ -26,14 +28,12 @@ describe('DotSubNavComponent', () => {
     let fixture: ComponentFixture<DotSubNavComponent>;
     let de: DebugElement;
 
-    beforeEach(
-        waitForAsync(() => {
-            TestBed.configureTestingModule({
-                declarations: [DotSubNavComponent],
-                imports: [RouterTestingModule, BrowserAnimationsModule]
-            }).compileComponents();
-        })
-    );
+    beforeEach(waitForAsync(() => {
+        TestBed.configureTestingModule({
+            declarations: [DotSubNavComponent],
+            imports: [RouterTestingModule, BrowserAnimationsModule]
+        }).compileComponents();
+    }));
 
     beforeEach(() => {
         fixture = TestBed.createComponent(DotSubNavComponent);

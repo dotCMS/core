@@ -1,6 +1,8 @@
 import { Component, OnInit } from '@angular/core';
+
 import { DynamicDialogConfig, DynamicDialogRef } from 'primeng/dynamicdialog';
-import { DotActionBulkResult } from '@models/dot-action-bulk-result/dot-action-bulk-result.model';
+
+import { DotActionBulkResult } from '@dotcms/dotcms-models';
 @Component({
     selector: 'dot-bulk-information',
     templateUrl: './dot-bulk-information.component.html',

@@ -1,18 +1,18 @@
+import { throwError } from 'rxjs';
+
 import { HttpErrorResponse } from '@angular/common/http';
 import { Component, forwardRef } from '@angular/core';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
 
-import { throwError } from 'rxjs';
 import { finalize, switchMap, take } from 'rxjs/operators';
 
-import { DotCrudService } from '@services/dot-crud';
-import { DotMessageService } from '@services/dot-message/dot-messages.service';
+import { DotTempFileUploadService } from '@dotcms/app/api/services/dot-temp-file-upload/dot-temp-file-upload.service';
 import {
-    DotCMSTempFile,
-    DotTempFileUploadService
-} from '@services/dot-temp-file-upload/dot-temp-file-upload.service';
-import { DotWorkflowActionsFireService } from '@services/dot-workflow-actions-fire/dot-workflow-actions-fire.service';
-import { DotCMSContentlet } from '@dotcms/dotcms-models';
+    DotCrudService,
+    DotMessageService,
+    DotWorkflowActionsFireService
+} from '@dotcms/data-access';
+import { DotCMSContentlet, DotCMSTempFile } from '@dotcms/dotcms-models';
 
 export interface DotCMSTemplateThumbnail extends DotCMSContentlet {
     assetVersion: string;

@@ -1,24 +1,28 @@
-import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing';
-import { MockDotMessageService } from '@dotcms/app/test/dot-message-service.mock';
-import { DotDialogModule } from '@components/dot-dialog/dot-dialog.module';
-import { ReactiveFormsModule } from '@angular/forms';
+import { Observable, of } from 'rxjs';
+
 import { CommonModule } from '@angular/common';
-import { Component, DebugElement, Input } from '@angular/core';
-import { DotMessageService } from '@services/dot-message/dot-messages.service';
-import { InputTextModule } from 'primeng/inputtext';
-import { DotPipesModule } from '@pipes/dot-pipes.module';
 import { HttpClientTestingModule } from '@angular/common/http/testing';
-import { DotAppsImportExportDialogComponent } from './dot-apps-import-export-dialog.component';
+import { Component, DebugElement, Input } from '@angular/core';
+import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing';
+import { ReactiveFormsModule } from '@angular/forms';
+import { By } from '@angular/platform-browser';
+
+import { InputTextModule } from 'primeng/inputtext';
+
+import { DotDialogModule } from '@components/dot-dialog/dot-dialog.module';
 import { DotAutofocusModule } from '@directives/dot-autofocus/dot-autofocus.module';
-import { DotAppsService } from '@services/dot-apps/dot-apps.service';
+import { DotAppsService } from '@dotcms/app/api/services/dot-apps/dot-apps.service';
+import { DotMessageService } from '@dotcms/data-access';
 import {
     DotApps,
     DotAppsExportConfiguration,
     DotAppsImportConfiguration,
     DotAppsSites
-} from '@shared/models/dot-apps/dot-apps.model';
-import { By } from '@angular/platform-browser';
-import { Observable, of } from 'rxjs';
+} from '@dotcms/dotcms-models';
+import { MockDotMessageService } from '@dotcms/utils-testing';
+import { DotPipesModule } from '@pipes/dot-pipes.module';
+
+import { DotAppsImportExportDialogComponent } from './dot-apps-import-export-dialog.component';
 
 export class DotAppsServiceMock {
     exportConfiguration(_configuration: DotAppsExportConfiguration): Promise<string> {
@@ -45,7 +49,9 @@ class HostTestComponent {
     @Input() action?: string;
     @Input() app?: DotApps;
     @Input() site?: DotAppsSites;
-    resolveHandler(_$event) {return;}
+    resolveHandler(_$event) {
+        return;
+    }
 }
 
 describe('DotAppsImportExportDialogComponent', () => {
@@ -65,34 +71,33 @@ describe('DotAppsImportExportDialogComponent', () => {
         'apps.confirmation.import.header': 'Import Configuration'
     });
 
-    beforeEach(
-        waitForAsync(() => {
-            TestBed.configureTestingModule({
-                declarations: [DotAppsImportExportDialogComponent, HostTestComponent],
-                imports: [
-                    InputTextModule,
-                    DotAutofocusModule,
-                    DotDialogModule,
-                    CommonModule,
-                    ReactiveFormsModule,
-                    DotPipesModule,
-                    HttpClientTestingModule
-                ],
-                providers: [
-                    { provide: DotAppsService, useClass: DotAppsServiceMock },
-                    { provide: DotMessageService, useValue: messageServiceMock }
-                ]
-            }).compileComponents();
+    beforeEach(waitForAsync(() => {
+        TestBed.configureTestingModule({
+            declarations: [DotAppsImportExportDialogComponent, HostTestComponent],
+            imports: [
+                InputTextModule,
+                DotAutofocusModule,
+                DotDialogModule,
+                CommonModule,
+                ReactiveFormsModule,
+                DotPipesModule,
+                HttpClientTestingModule
+            ],
+            providers: [
+                { provide: DotAppsService, useClass: DotAppsServiceMock },
+                { provide: DotMessageService, useValue: messageServiceMock }
+            ]
+        }).compileComponents();
 
-            hostFixture = TestBed.createComponent(HostTestComponent);
-            hostComponent = hostFixture.componentInstance;
-            de = hostFixture.debugElement;
-            comp = hostFixture.debugElement.query(By.css('dot-apps-import-export-dialog'))
-                .componentInstance;
-            dotAppsService = TestBed.inject(DotAppsService);
-            comp.show = true;
-        })
-    );
+        hostFixture = TestBed.createComponent(HostTestComponent);
+        hostComponent = hostFixture.componentInstance;
+        de = hostFixture.debugElement;
+        comp = hostFixture.debugElement.query(
+            By.css('dot-apps-import-export-dialog')
+        ).componentInstance;
+        dotAppsService = TestBed.inject(DotAppsService);
+        comp.show = true;
+    }));
 
     afterEach(() => {
         comp.show = false;

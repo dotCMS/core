@@ -1,28 +1,30 @@
+import { forkJoin, of, Subject } from 'rxjs';
+
+import { HttpErrorResponse } from '@angular/common/http';
 import {
+    ChangeDetectionStrategy,
     Component,
     EventEmitter,
     Input,
+    OnChanges,
     OnDestroy,
     OnInit,
     Output,
-    ChangeDetectionStrategy
+    SimpleChanges
 } from '@angular/core';
-import { FormGroup, FormBuilder } from '@angular/forms';
-import { HttpErrorResponse } from '@angular/common/http';
+import { FormBuilder, FormGroup } from '@angular/forms';
 
-import { forkJoin, Subject, of } from 'rxjs';
-import { catchError, take, takeUntil, tap } from 'rxjs/operators';
+import { catchError, take, takeUntil } from 'rxjs/operators';
 
 // Services
+import { DotDialogActions } from '@components/dot-dialog/dot-dialog.component';
+import { DotMessageService } from '@dotcms/data-access';
+import { DotCMSContentTypeField, DotFieldVariable } from '@dotcms/dotcms-models';
 import { DotHttpErrorManagerService } from '@services/dot-http-error-manager/dot-http-error-manager.service';
+
 import { DotFieldVariablesService } from '../fields/dot-content-type-fields-variables/services/dot-field-variables.service';
 
 // Interfaces
-import { DotCMSContentTypeField } from '@dotcms/dotcms-models';
-import { DotFieldVariable } from '../fields/dot-content-type-fields-variables/models/dot-field-variable.interface';
-import { DotDialogActions } from '@components/dot-dialog/dot-dialog.component';
-import { DotMessageService } from '@dotcms/app/api/services/dot-message/dot-messages.service';
-import { OnChanges, SimpleChanges } from '@angular/core';
 
 export const BLOCK_EDITOR_BLOCKS = [
     { label: 'Block Quote', code: 'blockquote' },

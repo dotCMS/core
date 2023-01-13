@@ -1,12 +1,13 @@
-import BubbleMenu from '@tiptap/extension-bubble-menu';
 import { PluginKey } from 'prosemirror-state';
-import { ViewContainerRef, ComponentRef } from '@angular/core';
+import tippy, { GetReferenceClientRect, Instance, Props } from 'tippy.js';
+
+import { ComponentRef, ViewContainerRef } from '@angular/core';
+
+import { Editor } from '@tiptap/core';
+import BubbleMenu from '@tiptap/extension-bubble-menu';
 
 import { ImageTabviewFormComponent } from './image-tabview-form.component';
 import { bubbleImageTabviewFormPlugin } from './plugins/bubble-image-tabview-form.plugin';
-
-import { Editor } from '@tiptap/core';
-import tippy, { Instance, Props, GetReferenceClientRect } from 'tippy.js';
 
 export const BUBBLE_IMAGE_TABVIEW_FORM_PLUGIN_KEY = new PluginKey('bubble-image-form');
 

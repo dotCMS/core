@@ -1,13 +1,52 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { of, throwError } from 'rxjs';
-import { ActivatedRoute } from '@angular/router';
-import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
+
+import { HttpErrorResponse } from '@angular/common/http';
+import { HttpClientTestingModule } from '@angular/common/http/testing';
+import { Component, DebugElement, ElementRef, EventEmitter, Input, Output } from '@angular/core';
+import { ComponentFixture, fakeAsync, flush, TestBed, tick } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
-import { ComponentFixture, tick, fakeAsync, TestBed, flush } from '@angular/core/testing';
-import { Component, DebugElement, EventEmitter, Input, Output, ElementRef } from '@angular/core';
+import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
+import { ActivatedRoute } from '@angular/router';
 import { RouterTestingModule } from '@angular/router/testing';
+
+import { ConfirmationService } from 'primeng/api';
+import { ButtonModule } from 'primeng/button';
+import { DialogModule } from 'primeng/dialog';
+import { DialogService } from 'primeng/dynamicdialog';
+
+import { DotGlobalMessageService } from '@components/_common/dot-global-message/dot-global-message.service';
+import { DotOverlayMaskModule } from '@components/_common/dot-overlay-mask/dot-overlay-mask.module';
+import { DotWizardModule } from '@components/_common/dot-wizard/dot-wizard.module';
+import { DotLoadingIndicatorModule } from '@components/_common/iframe/dot-loading-indicator/dot-loading-indicator.module';
+import { DotIframeService } from '@components/_common/iframe/service/dot-iframe/dot-iframe.service';
+import { IframeOverlayService } from '@components/_common/iframe/service/iframe-overlay.service';
+import { DotContentletEditorModule } from '@components/dot-contentlet-editor/dot-contentlet-editor.module';
+import { DotContentletEditorService } from '@components/dot-contentlet-editor/services/dot-contentlet-editor.service';
+import { DotMessageDisplayService } from '@components/dot-message-display/services';
+import { DotCustomEventHandlerService } from '@dotcms/app/api/services/dot-custom-event-handler/dot-custom-event-handler.service';
+import { DotDownloadBundleDialogService } from '@dotcms/app/api/services/dot-download-bundle-dialog/dot-download-bundle-dialog.service';
+import { DotHttpErrorManagerService } from '@dotcms/app/api/services/dot-http-error-manager/dot-http-error-manager.service';
+import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
+import { DotUiColorsService } from '@dotcms/app/api/services/dot-ui-colors/dot-ui-colors.service';
+import { DotPaletteComponent } from '@dotcms/app/portlets/dot-edit-page/components/dot-palette/dot-palette.component';
+import { dotEventSocketURLFactory, MockDotUiColorsService } from '@dotcms/app/test/dot-test-bed';
+import {
+    DotAlertConfirmService,
+    DotContentletLockerService,
+    DotEditPageService,
+    DotESContentService,
+    DotEventsService,
+    DotGenerateSecurePasswordService,
+    DotLicenseService,
+    DotMessageService,
+    DotPageRenderService,
+    DotPropertiesService,
+    DotSessionStorageService,
+    DotWorkflowActionsFireService,
+    DotWorkflowService
+} from '@dotcms/data-access';
 import {
     ApiRoot,
     CoreWebService,
@@ -21,72 +60,45 @@ import {
     StringUtils,
     UserModel
 } from '@dotcms/dotcms-js';
+import {
+    DotCMSContentlet,
+    DotCMSContentType,
+    DotPageContainer,
+    DotPageMode,
+    DotPageRender,
+    DotPageRenderState
+} from '@dotcms/dotcms-models';
+import { DotLoadingIndicatorService } from '@dotcms/utils';
+import {
+    CoreWebServiceMock,
+    dotcmsContentletMock,
+    DotWorkflowServiceMock,
+    LoginServiceMock,
+    mockDotLanguage,
+    MockDotMessageService,
+    mockDotRenderedPage,
+    mockDotRenderedPageState,
+    MockDotRouterService,
+    mockUser,
+    processedContainers,
+    SiteServiceMock
+} from '@dotcms/utils-testing';
 
-import { ButtonModule } from 'primeng/button';
-import { DialogModule } from 'primeng/dialog';
-import { ConfirmationService } from 'primeng/api';
-import { DotCMSContentlet, DotCMSContentType } from '@dotcms/dotcms-models';
-
-import { DotAlertConfirmService } from '@services/dot-alert-confirm/index';
-import { DotEditContentHtmlService } from './services/dot-edit-content-html/dot-edit-content-html.service';
-import { DotEditPageService } from '@services/dot-edit-page/dot-edit-page.service';
-import { DotGlobalMessageService } from '@components/_common/dot-global-message/dot-global-message.service';
-import { DotLoadingIndicatorModule } from '@components/_common/iframe/dot-loading-indicator/dot-loading-indicator.module';
-import { DotMessageService } from '@services/dot-message/dot-messages.service';
-import { DotPageRenderState } from '@portlets/dot-edit-page/shared/models/dot-rendered-page-state.model';
-import { DotPageStateService } from './services/dot-page-state/dot-page-state.service';
-import { DotWorkflowService } from '@services/dot-workflow/dot-workflow.service';
-import { DotRouterService } from '@services/dot-router/dot-router.service';
-import { DotPageRender } from '@models/dot-page/dot-rendered-page.model';
+import { DotEditPageWorkflowsActionsModule } from './components/dot-edit-page-workflows-actions/dot-edit-page-workflows-actions.module';
 import {
     DotEditContentComponent,
     EDIT_BLOCK_EDITOR_CUSTOM_EVENT
 } from './dot-edit-content.component';
-import { DotContentletEditorModule } from '@components/dot-contentlet-editor/dot-contentlet-editor.module';
-import { DotEditPageInfoModule } from '../components/dot-edit-page-info/dot-edit-page-info.module';
-import { DotUiColorsService } from '@services/dot-ui-colors/dot-ui-colors.service';
-import { DotEditPageWorkflowsActionsModule } from './components/dot-edit-page-workflows-actions/dot-edit-page-workflows-actions.module';
-import { DotOverlayMaskModule } from '@components/_common/dot-overlay-mask/dot-overlay-mask.module';
-import { DotContentletLockerService } from '@services/dot-contentlet-locker/dot-contentlet-locker.service';
-import { DotPageRenderService } from '@services/dot-page-render/dot-page-render.service';
 import { DotContainerContentletService } from './services/dot-container-contentlet.service';
-import { DotDragDropAPIHtmlService } from './services/html/dot-drag-drop-api-html.service';
-import { DotDOMHtmlUtilService } from './services/html/dot-dom-html-util.service';
-import { DotEditContentToolbarHtmlService } from './services/html/dot-edit-content-toolbar-html.service';
-import { SiteServiceMock } from '@tests/site-service.mock';
-import { LoginServiceMock, mockUser } from '@tests/login-service.mock';
-import { MockDotMessageService } from '@tests/dot-message-service.mock';
-import { DotWorkflowServiceMock } from '@tests/dot-workflow-service.mock';
-import { mockDotRenderedPage, processedContainers } from '@tests/dot-page-render.mock';
-import { IframeOverlayService } from '@components/_common/iframe/service/iframe-overlay.service';
-import { DotLoadingIndicatorService } from '@components/_common/iframe/dot-loading-indicator/dot-loading-indicator.service';
-import { DotPageContent } from '../shared/models';
-import { DotContentletEditorService } from '@components/dot-contentlet-editor/services/dot-contentlet-editor.service';
-import { dotcmsContentletMock } from '@tests/dotcms-contentlet.mock';
-import { DotCustomEventHandlerService } from '@services/dot-custom-event-handler/dot-custom-event-handler.service';
-import { DotMessageDisplayService } from '@components/dot-message-display/services';
-import { DotWizardModule } from '@components/_common/dot-wizard/dot-wizard.module';
-import { CoreWebServiceMock } from '@tests/core-web.service.mock';
-import { DotEventsService } from '@services/dot-events/dot-events.service';
-import { DotHttpErrorManagerService } from '@services/dot-http-error-manager/dot-http-error-manager.service';
-import { MockDotRouterService } from '@tests/dot-router-service.mock';
-import { dotEventSocketURLFactory, MockDotUiColorsService } from '@tests/dot-test-bed';
-import { DotIframeService } from '@components/_common/iframe/service/dot-iframe/dot-iframe.service';
-import { DotDownloadBundleDialogService } from '@services/dot-download-bundle-dialog/dot-download-bundle-dialog.service';
-import { DotLicenseService } from '@services/dot-license/dot-license.service';
-import { DotPageContainer } from '@models/dot-page-container/dot-page-container.model';
-import { DotPageMode } from '@models/dot-page/dot-page-mode.enum';
-import { DotPaletteComponent } from '@dotcms/app/portlets/dot-edit-page/components/dot-palette/dot-palette.component';
-import { HttpErrorResponse } from '@angular/common/http';
-import { DotGenerateSecurePasswordService } from '@services/dot-generate-secure-password/dot-generate-secure-password.service';
-import { DotPropertiesService } from '@services/dot-properties/dot-properties.service';
+import { DotEditContentHtmlService } from './services/dot-edit-content-html/dot-edit-content-html.service';
 import { PageModelChangeEventType } from './services/dot-edit-content-html/models';
-import { DotESContentService } from '@dotcms/app/api/services/dot-es-content/dot-es-content.service';
-import { mockDotLanguage } from '@dotcms/app/test/dot-language.mock';
-import { mockDotRenderedPageState } from '@dotcms/app/test/dot-rendered-page-state.mock';
-import { DotWorkflowActionsFireService } from '@dotcms/app/api/services/dot-workflow-actions-fire/dot-workflow-actions-fire.service';
-import { DialogService } from 'primeng/dynamicdialog';
-import { DotSessionStorageService } from '@shared/services/dot-session-storage.service';
+import { DotPageStateService } from './services/dot-page-state/dot-page-state.service';
+import { DotDOMHtmlUtilService } from './services/html/dot-dom-html-util.service';
+import { DotDragDropAPIHtmlService } from './services/html/dot-drag-drop-api-html.service';
+import { DotEditContentToolbarHtmlService } from './services/html/dot-edit-content-toolbar-html.service';
+
+import { DotEditPageInfoModule } from '../components/dot-edit-page-info/dot-edit-page-info.module';
+import { DotPageContent } from '../shared/models';
 
 @Component({
     selector: 'dot-global-message',

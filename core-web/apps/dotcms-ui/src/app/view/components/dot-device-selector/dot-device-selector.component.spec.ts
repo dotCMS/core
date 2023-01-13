@@ -2,21 +2,24 @@
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
+import { of } from 'rxjs';
+
+import { Component, CUSTOM_ELEMENTS_SCHEMA, DebugElement } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { By } from '@angular/platform-browser';
+import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
+
+import { DotMessagePipe } from '@dotcms/app/view/pipes';
+import { DotDevicesService, DotMessageService } from '@dotcms/data-access';
+import { DotDevice } from '@dotcms/dotcms-models';
+import { DotIconModule } from '@dotcms/ui';
+import {
+    DotDevicesServiceMock,
+    mockDotDevices,
+    MockDotMessageService
+} from '@dotcms/utils-testing';
 
 import { DotDeviceSelectorComponent } from './dot-device-selector.component';
-import { Component, CUSTOM_ELEMENTS_SCHEMA, DebugElement } from '@angular/core';
-import { DotDevicesService } from '@services/dot-devices/dot-devices.service';
-import { DotDevicesServiceMock } from '../../../test/dot-device-service.mock';
-import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
-import { DotMessageService } from '@services/dot-message/dot-messages.service';
-import { MockDotMessageService } from '../../../test/dot-message-service.mock';
-import { By } from '@angular/platform-browser';
-import { mockDotDevices } from '../../../test/dot-device.mock';
-import { DotDevice } from '@models/dot-device/dot-device.model';
-import { DotIconModule } from '@dotcms/ui';
-import { DotMessagePipe } from '@dotcms/app/view/pipes';
-import { of } from 'rxjs';
 
 @Component({
     selector: 'dot-test-host-component',

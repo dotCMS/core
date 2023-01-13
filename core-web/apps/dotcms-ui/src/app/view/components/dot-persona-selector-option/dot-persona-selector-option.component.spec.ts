@@ -1,15 +1,16 @@
-import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { DebugElement } from '@angular/core';
+import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
+import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 
 import { ButtonModule } from 'primeng/button';
+
 import { DotAvatarModule } from '@components/_common/dot-avatar/dot-avatar.module';
-import { DotMessageService } from '@services/dot-message/dot-messages.service';
-import { DotPersonaSelectorOptionComponent } from './dot-persona-selector-option.component';
+import { DotMessageService } from '@dotcms/data-access';
+import { MockDotMessageService, mockDotPersona } from '@dotcms/utils-testing';
 import { DotPipesModule } from '@pipes/dot-pipes.module';
-import { MockDotMessageService } from '@tests/dot-message-service.mock';
-import { mockDotPersona } from '@tests/dot-persona.mock';
+
+import { DotPersonaSelectorOptionComponent } from './dot-persona-selector-option.component';
 
 describe('DotPersonaSelectorOptionComponent', () => {
     let component: DotPersonaSelectorOptionComponent;

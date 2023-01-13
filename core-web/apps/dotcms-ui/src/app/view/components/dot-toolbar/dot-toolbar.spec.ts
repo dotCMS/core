@@ -1,21 +1,24 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { By } from '@angular/platform-browser';
+import { Component, DebugElement, Injectable, Input } from '@angular/core';
 import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing';
-import { DebugElement, Injectable, Component, Input } from '@angular/core';
-import { DotToolbarComponent } from './dot-toolbar.component';
-import { DOTTestBed } from '../../../test/dot-test-bed';
-import { SiteService } from '@dotcms/dotcms-js';
-import { DotRouterService } from '@services/dot-router/dot-router.service';
+import { By } from '@angular/platform-browser';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
+import { ActivatedRoute } from '@angular/router';
+import { RouterTestingModule } from '@angular/router/testing';
+
+import { DotNavLogoService } from '@dotcms/app/api/services/dot-nav-logo/dot-nav-logo.service';
+import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
+import { DOTTestBed } from '@dotcms/app/test/dot-test-bed';
+import { SiteService } from '@dotcms/dotcms-js';
+import { DotIconModule } from '@dotcms/ui';
+import { mockSites, SiteServiceMock } from '@dotcms/utils-testing';
+
+import { DotToolbarComponent } from './dot-toolbar.component';
+
+import { UiDotIconButtonModule } from '../_common/dot-icon-button/dot-icon-button.module';
 import { IframeOverlayService } from '../_common/iframe/service/iframe-overlay.service';
 import { DotNavigationService } from '../dot-navigation/services/dot-navigation.service';
-import { SiteServiceMock, mockSites } from '../../../test/site-service.mock';
-import { RouterTestingModule } from '@angular/router/testing';
-import { ActivatedRoute } from '@angular/router';
-import { UiDotIconButtonModule } from '../_common/dot-icon-button/dot-icon-button.module';
-import { DotIconModule } from '@dotcms/ui';
-import { DotNavLogoService } from '@services/dot-nav-logo/dot-nav-logo.service';
 
 @Injectable()
 class MockDotNavigationService {
@@ -96,41 +99,39 @@ describe('DotToolbarComponent', () => {
     const siteServiceMock = new SiteServiceMock();
     const siteMock = mockSites[0];
 
-    beforeEach(
-        waitForAsync(() => {
-            DOTTestBed.configureTestingModule({
-                declarations: [
-                    DotToolbarComponent,
-                    MockSiteSelectorComponent,
-                    MockToolbarNotificationsComponent,
-                    MockToolbarUsersComponent,
-                    MockToolbarAddContentletComponent,
-                    MockDotCrumbtrailComponent
-                ],
-                imports: [
-                    BrowserAnimationsModule,
-                    RouterTestingModule,
-                    DotIconModule,
-                    UiDotIconButtonModule
-                ],
-                providers: [
-                    { provide: DotNavigationService, useClass: MockDotNavigationService },
-                    { provide: SiteService, useValue: siteServiceMock },
-                    { provide: ActivatedRoute, useClass: MockRouterService },
-                    IframeOverlayService,
-                    DotNavLogoService
-                ]
-            });
+    beforeEach(waitForAsync(() => {
+        DOTTestBed.configureTestingModule({
+            declarations: [
+                DotToolbarComponent,
+                MockSiteSelectorComponent,
+                MockToolbarNotificationsComponent,
+                MockToolbarUsersComponent,
+                MockToolbarAddContentletComponent,
+                MockDotCrumbtrailComponent
+            ],
+            imports: [
+                BrowserAnimationsModule,
+                RouterTestingModule,
+                DotIconModule,
+                UiDotIconButtonModule
+            ],
+            providers: [
+                { provide: DotNavigationService, useClass: MockDotNavigationService },
+                { provide: SiteService, useValue: siteServiceMock },
+                { provide: ActivatedRoute, useClass: MockRouterService },
+                IframeOverlayService,
+                DotNavLogoService
+            ]
+        });
 
-            fixture = DOTTestBed.createComponent(DotToolbarComponent);
-            comp = fixture.componentInstance;
-            de = fixture.debugElement;
-            dotRouterService = de.injector.get(DotRouterService);
-            dotNavigationService = de.injector.get(DotNavigationService);
-            dotNavLogoService = TestBed.inject(DotNavLogoService);
-            spyOn(comp, 'siteChange').and.callThrough();
-        })
-    );
+        fixture = DOTTestBed.createComponent(DotToolbarComponent);
+        comp = fixture.componentInstance;
+        de = fixture.debugElement;
+        dotRouterService = de.injector.get(DotRouterService);
+        dotNavigationService = de.injector.get(DotNavigationService);
+        dotNavLogoService = TestBed.inject(DotNavLogoService);
+        spyOn(comp, 'siteChange').and.callThrough();
+    }));
 
     it(`should has a crumbtrail`, () => {
         fixture.detectChanges();

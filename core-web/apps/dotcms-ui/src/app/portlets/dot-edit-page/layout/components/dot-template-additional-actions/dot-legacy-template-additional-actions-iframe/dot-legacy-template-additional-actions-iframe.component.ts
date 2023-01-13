@@ -1,9 +1,11 @@
-import { of as observableOf, Observable } from 'rxjs';
+import { Observable, of as observableOf } from 'rxjs';
 
-import { switchMap, combineLatest } from 'rxjs/operators';
 import { Component, OnInit } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
-import { DotMenuService } from '@services/dot-menu.service';
+
+import { combineLatest, switchMap } from 'rxjs/operators';
+
+import { DotMenuService } from '@dotcms/app/api/services/dot-menu.service';
 
 @Component({
     selector: 'dot-legacy-addtional-actions',

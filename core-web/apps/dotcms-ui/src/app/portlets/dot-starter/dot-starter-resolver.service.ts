@@ -1,14 +1,17 @@
 import { Observable } from 'rxjs';
+
 import { Injectable } from '@angular/core';
 import { Resolve } from '@angular/router';
-import { DotCurrentUserService } from '@services/dot-current-user/dot-current-user.service';
+
+import { map, mergeMap } from 'rxjs/operators';
+
+import { DotCurrentUserService } from '@dotcms/data-access';
 import {
     DotCurrentUser,
     DotPermissionsType,
     PermissionsType,
     UserPermissions
-} from '@models/dot-current-user/dot-current-user';
-import { map, mergeMap } from 'rxjs/operators';
+} from '@dotcms/dotcms-models';
 
 /**
  * Returns user's data and permissions
@@ -19,7 +22,8 @@ import { map, mergeMap } from 'rxjs/operators';
  */
 @Injectable()
 export class DotStarterResolver
-    implements Resolve<Observable<{ user: DotCurrentUser; permissions: DotPermissionsType }>> {
+    implements Resolve<Observable<{ user: DotCurrentUser; permissions: DotPermissionsType }>>
+{
     constructor(private dotCurrentUserService: DotCurrentUserService) {}
 
     resolve(): Observable<{ user: DotCurrentUser; permissions: DotPermissionsType }> {

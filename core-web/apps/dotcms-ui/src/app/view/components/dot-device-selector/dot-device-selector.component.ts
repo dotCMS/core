@@ -10,10 +10,11 @@ import {
     Output,
     SimpleChanges
 } from '@angular/core';
-import { DotDevicesService } from '@services/dot-devices/dot-devices.service';
-import { DotDevice } from '@models/dot-device/dot-device.model';
-import { DotMessageService } from '@services/dot-message/dot-messages.service';
+
 import { filter, flatMap, map, take, toArray } from 'rxjs/operators';
+
+import { DotDevicesService, DotMessageService } from '@dotcms/data-access';
+import { DotDevice } from '@dotcms/dotcms-models';
 
 @Component({
     selector: 'dot-device-selector',

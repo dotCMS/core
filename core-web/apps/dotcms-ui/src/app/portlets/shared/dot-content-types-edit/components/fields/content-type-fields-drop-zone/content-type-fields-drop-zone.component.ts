@@ -1,36 +1,39 @@
-import {
-    Component,
-    SimpleChanges,
-    Input,
-    Output,
-    EventEmitter,
-    OnInit,
-    OnChanges,
-    OnDestroy,
-    ViewChild,
-    ElementRef,
-    Renderer2
-} from '@angular/core';
-import { FieldDragDropService, DropFieldData } from '../service';
-import { FieldType } from '../models';
-import {
-    DotCMSContentTypeField,
-    DotCMSContentTypeLayoutRow,
-    DotCMSContentTypeLayoutColumn,
-    DotCMSContentType
-} from '@dotcms/dotcms-models';
-import { ContentTypeFieldsPropertiesFormComponent } from '../content-type-fields-properties-form';
-import { DotMessageService } from '@services/dot-message/dot-messages.service';
-import { FieldUtil } from '../util/field-util';
-import { FieldPropertyService } from '../service/field-properties.service';
-import { DotDialogActions } from '@components/dot-dialog/dot-dialog.component';
-import { DotEventsService } from '@services/dot-events/dot-events.service';
-import { takeUntil } from 'rxjs/operators';
-import { Subject } from 'rxjs';
-import { DotLoadingIndicatorService } from '@components/_common/iframe/dot-loading-indicator/dot-loading-indicator.service';
+import * as autoScroll from 'dom-autoscroller';
 import * as _ from 'lodash';
 import { DragulaService } from 'ng2-dragula';
-import * as autoScroll from 'dom-autoscroller';
+import { Subject } from 'rxjs';
+
+import {
+    Component,
+    ElementRef,
+    EventEmitter,
+    Input,
+    OnChanges,
+    OnDestroy,
+    OnInit,
+    Output,
+    Renderer2,
+    SimpleChanges,
+    ViewChild
+} from '@angular/core';
+
+import { takeUntil } from 'rxjs/operators';
+
+import { DotDialogActions } from '@components/dot-dialog/dot-dialog.component';
+import { DotEventsService, DotMessageService } from '@dotcms/data-access';
+import {
+    DotCMSContentType,
+    DotCMSContentTypeField,
+    DotCMSContentTypeLayoutColumn,
+    DotCMSContentTypeLayoutRow
+} from '@dotcms/dotcms-models';
+import { DotLoadingIndicatorService } from '@dotcms/utils';
+import { FieldUtil } from '@dotcms/utils-testing';
+
+import { ContentTypeFieldsPropertiesFormComponent } from '../content-type-fields-properties-form';
+import { FieldType } from '../models';
+import { DropFieldData, FieldDragDropService } from '../service';
+import { FieldPropertyService } from '../service/field-properties.service';
 
 /**
  * Display all the Field Types

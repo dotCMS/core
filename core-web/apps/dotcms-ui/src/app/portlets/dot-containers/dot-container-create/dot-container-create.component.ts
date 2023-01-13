@@ -1,8 +1,10 @@
 import { Component, OnInit } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
-import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
-import { DotContainerEntity } from '@dotcms/app/shared/models/container/dot-container.model';
+
 import { pluck, take } from 'rxjs/operators';
+
+import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
+import { DotContainerEntity } from '@dotcms/dotcms-models';
 
 @Component({
     selector: 'dot-container-create',

@@ -1,21 +1,24 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { LoginService } from '@dotcms/dotcms-js';
-import { LoginServiceMock, mockUser } from '@tests/login-service.mock';
-import { RouterTestingModule } from '@angular/router/testing';
-import { waitForAsync } from '@angular/core/testing';
-import { mockDotRenderedPage } from '@tests/dot-page-render.mock';
 import { of } from 'rxjs';
+
+import { waitForAsync } from '@angular/core/testing';
 import { ActivatedRouteSnapshot, RouterStateSnapshot } from '@angular/router';
+import { RouterTestingModule } from '@angular/router/testing';
+
+import { DOTTestBed } from '@dotcms/app/test/dot-test-bed';
+import {
+    DotContentletLockerService,
+    DotESContentService,
+    DotLicenseService,
+    DotPageRenderService
+} from '@dotcms/data-access';
+import { LoginService } from '@dotcms/dotcms-js';
+import { DotPageRender, DotPageRenderState } from '@dotcms/dotcms-models';
+import { LoginServiceMock, mockDotRenderedPage, mockUser } from '@dotcms/utils-testing';
 import { DotPageStateService } from '@portlets/dot-edit-page/content/services/dot-page-state/dot-page-state.service';
-import { DOTTestBed } from '@tests/dot-test-bed';
-import { DotPageRenderService } from '@services/dot-page-render/dot-page-render.service';
-import { DotContentletLockerService } from '@services/dot-contentlet-locker/dot-contentlet-locker.service';
-import { DotPageRenderState } from '@portlets/dot-edit-page/shared/models';
+
 import { DotIframePortletLegacyResolver } from './dot-iframe-porlet-legacy-resolver.service';
-import { DotLicenseService } from '@services/dot-license/dot-license.service';
-import { DotPageRender } from '@models/dot-page/dot-rendered-page.model';
-import { DotESContentService } from '@dotcms/app/api/services/dot-es-content/dot-es-content.service';
 
 const route: any = jasmine.createSpyObj<ActivatedRouteSnapshot>('ActivatedRouteSnapshot', [
     'toString'

@@ -1,6 +1,7 @@
-import { ChangeDetectionStrategy, Component, Input } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { DotExperimentStatusList } from '@portlets/dot-experiments/shared/models/dot-experiments-constants';
+import { ChangeDetectionStrategy, Component, Input } from '@angular/core';
+
+import { DotExperimentStatusList } from '@dotcms/dotcms-models';
 
 @Component({
     selector: 'dot-experiments-configuration-experiment-status-bar',

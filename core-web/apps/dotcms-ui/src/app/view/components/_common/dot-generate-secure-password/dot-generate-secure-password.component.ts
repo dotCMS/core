@@ -1,10 +1,13 @@
-import { Component, OnDestroy, OnInit } from '@angular/core';
 import { Subject } from 'rxjs';
+
+import { Component, OnDestroy, OnInit } from '@angular/core';
+
 import { takeUntil } from 'rxjs/operators';
-import { DotDialogActions } from '../../dot-dialog/dot-dialog.component';
-import { DotMessageService } from '@services/dot-message/dot-messages.service';
-import { DotGenerateSecurePasswordService } from '@services/dot-generate-secure-password/dot-generate-secure-password.service';
+
 import { DotClipboardUtil } from '@dotcms/app/api/util/clipboard/ClipboardUtil';
+import { DotGenerateSecurePasswordService, DotMessageService } from '@dotcms/data-access';
+
+import { DotDialogActions } from '../../dot-dialog/dot-dialog.component';
 
 @Component({
     selector: 'dot-generate-secure-password',
@@ -12,7 +15,7 @@ import { DotClipboardUtil } from '@dotcms/app/api/util/clipboard/ClipboardUtil';
     styleUrls: ['./dot-generate-secure-password.component.scss']
 })
 export class DotGenerateSecurePasswordComponent implements OnInit, OnDestroy {
-    copyBtnLabel: string;    
+    copyBtnLabel: string;
     dialogActions: DotDialogActions;
     dialogShow = false;
     revealBtnLabel: string;
@@ -76,7 +79,10 @@ export class DotGenerateSecurePasswordComponent implements OnInit, OnDestroy {
         $event.stopPropagation();
         $event.preventDefault();
         this.typeInput = this.typeInput === 'password' ? 'text' : 'password';
-        this.revealBtnLabel = this.typeInput === 'password' ? this.dotMessageService.get('generate.secure.password.reveal') : this.dotMessageService.get('hide');
+        this.revealBtnLabel =
+            this.typeInput === 'password'
+                ? this.dotMessageService.get('generate.secure.password.reveal')
+                : this.dotMessageService.get('hide');
     }
 
     private setUILabels() {

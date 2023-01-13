@@ -1,15 +1,13 @@
-import { waitForAsync, ComponentFixture, fakeAsync, tick, TestBed } from '@angular/core/testing';
-import { By } from '@angular/platform-browser';
 import { DebugElement } from '@angular/core';
+import { ComponentFixture, fakeAsync, TestBed, tick, waitForAsync } from '@angular/core/testing';
+import { By } from '@angular/platform-browser';
 
-import { mockDotRenderedPage } from '@tests/dot-page-render.mock';
-import { mockUser } from '@tests/login-service.mock';
+import { DotMessageService } from '@dotcms/data-access';
+import { DotPageRenderState } from '@dotcms/dotcms-models';
+import { MockDotMessageService, mockDotRenderedPage, mockUser } from '@dotcms/utils-testing';
+import { DotPipesModule } from '@pipes/dot-pipes.module';
 
 import { DotEditPageLockInfoComponent } from './dot-edit-page-lock-info.component';
-import { DotMessageService } from '@services/dot-message/dot-messages.service';
-import { DotPageRenderState } from '@portlets/dot-edit-page/shared/models/dot-rendered-page-state.model';
-import { MockDotMessageService } from '@tests/dot-message-service.mock';
-import { DotPipesModule } from '@pipes/dot-pipes.module';
 
 const messageServiceMock = new MockDotMessageService({
     'editpage.toolbar.page.cant.edit': 'No permissions...',
@@ -21,20 +19,18 @@ describe('DotEditPageLockInfoComponent', () => {
     let fixture: ComponentFixture<DotEditPageLockInfoComponent>;
     let de: DebugElement;
 
-    beforeEach(
-        waitForAsync(() => {
-            TestBed.configureTestingModule({
-                imports: [DotPipesModule],
-                declarations: [DotEditPageLockInfoComponent],
-                providers: [
-                    {
-                        provide: DotMessageService,
-                        useValue: messageServiceMock
-                    }
-                ]
-            }).compileComponents();
-        })
-    );
+    beforeEach(waitForAsync(() => {
+        TestBed.configureTestingModule({
+            imports: [DotPipesModule],
+            declarations: [DotEditPageLockInfoComponent],
+            providers: [
+                {
+                    provide: DotMessageService,
+                    useValue: messageServiceMock
+                }
+            ]
+        }).compileComponents();
+    }));
 
     beforeEach(() => {
         fixture = TestBed.createComponent(DotEditPageLockInfoComponent);

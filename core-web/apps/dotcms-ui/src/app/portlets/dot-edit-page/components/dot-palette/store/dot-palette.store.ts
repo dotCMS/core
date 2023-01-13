@@ -1,14 +1,19 @@
-import { Injectable } from '@angular/core';
-import { DotESContentService } from '@dotcms/app/api/services/dot-es-content/dot-es-content.service';
-import { PaginatorService } from '@dotcms/app/api/services/paginator';
-import { ESContent } from '@dotcms/app/shared/models/dot-es-content/dot-es-content.model';
-import { DotCMSContentlet, DotCMSContentType } from '@dotcms/dotcms-models';
 import { ComponentStore } from '@ngrx/component-store';
-import { LazyLoadEvent } from 'primeng/api';
 import { forkJoin, Observable } from 'rxjs';
-import { map, take, debounceTime } from 'rxjs/operators';
-import { DotContentTypeService } from '@services/dot-content-type';
-import { LoadingState } from '@dotcms/app/portlets/shared/models/shared-models';
+
+import { Injectable } from '@angular/core';
+
+import { LazyLoadEvent } from 'primeng/api';
+
+import { debounceTime, map, take } from 'rxjs/operators';
+
+import { DotContentTypeService, DotESContentService, PaginatorService } from '@dotcms/data-access';
+import {
+    DotCMSContentlet,
+    DotCMSContentType,
+    ESContent,
+    LoadingState
+} from '@dotcms/dotcms-models';
 
 export interface DotPaletteState {
     contentlets: DotCMSContentlet[] | DotCMSContentType[];

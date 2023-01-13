@@ -1,10 +1,27 @@
 /* eslint-disable @typescript-eslint/no-empty-function */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
+import { of, throwError } from 'rxjs';
+
+import { CommonModule } from '@angular/common';
+import { HttpClientTestingModule } from '@angular/common/http/testing';
+import { DebugElement } from '@angular/core';
 import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing';
-import { MockDotMessageService } from '@dotcms/app/test/dot-message-service.mock';
+import { FormsModule } from '@angular/forms';
+import { By } from '@angular/platform-browser';
+
+import { ConfirmationService } from 'primeng/api';
+import { CheckboxModule } from 'primeng/checkbox';
+import { InputTextModule } from 'primeng/inputtext';
+import { PasswordModule } from 'primeng/password';
+
 import { DotDialogModule } from '@components/dot-dialog/dot-dialog.module';
-import { DotMyAccountComponent } from './dot-my-account.component';
+import { DotAccountService } from '@dotcms/app/api/services/dot-account-service';
+import { DotHttpErrorManagerService } from '@dotcms/app/api/services/dot-http-error-manager/dot-http-error-manager.service';
+import { DotMenuService } from '@dotcms/app/api/services/dot-menu.service';
+import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
+import { StringFormat } from '@dotcms/app/api/util/stringFormat';
+import { DotAlertConfirmService, DotMessageService } from '@dotcms/data-access';
 import {
     CoreWebService,
     DotcmsConfigService,
@@ -13,27 +30,16 @@ import {
     StringUtils,
     UserModel
 } from '@dotcms/dotcms-js';
-import { LoginServiceMock, mockUser } from '@tests/login-service.mock';
-import { StringFormat } from '@dotcms/app/api/util/stringFormat';
-import { FormsModule } from '@angular/forms';
-import { CommonModule } from '@angular/common';
-import { DebugElement } from '@angular/core';
-import { DotMessageService } from '@services/dot-message/dot-messages.service';
-import { By } from '@angular/platform-browser';
-import { of, throwError } from 'rxjs';
-import { PasswordModule } from 'primeng/password';
-import { InputTextModule } from 'primeng/inputtext';
-import { CheckboxModule } from 'primeng/checkbox';
-import { DotRouterService } from '@services/dot-router/dot-router.service';
+import {
+    CoreWebServiceMock,
+    LoginServiceMock,
+    MockDotMessageService,
+    MockDotRouterService,
+    mockUser
+} from '@dotcms/utils-testing';
 import { DotPipesModule } from '@pipes/dot-pipes.module';
-import { MockDotRouterService } from '@tests/dot-router-service.mock';
-import { HttpClientTestingModule } from '@angular/common/http/testing';
-import { CoreWebServiceMock } from '@tests/core-web.service.mock';
-import { DotMenuService } from '@services/dot-menu.service';
-import { DotAccountService } from '@services/dot-account-service';
-import { DotHttpErrorManagerService } from '@services/dot-http-error-manager/dot-http-error-manager.service';
-import { DotAlertConfirmService } from '@services/dot-alert-confirm';
-import { ConfirmationService } from 'primeng/api';
+
+import { DotMyAccountComponent } from './dot-my-account.component';
 
 class DotAccountServiceMock {
     addStarterPage() {}
@@ -73,54 +79,52 @@ describe('DotMyAccountComponent', () => {
         'starter.show.getting.started': 'Show starter'
     });
 
-    beforeEach(
-        waitForAsync(() => {
-            TestBed.configureTestingModule({
-                declarations: [DotMyAccountComponent],
-                imports: [
-                    PasswordModule,
-                    InputTextModule,
-                    FormsModule,
-                    DotDialogModule,
-                    CommonModule,
-                    CheckboxModule,
-                    DotPipesModule,
-                    HttpClientTestingModule
-                ],
-                providers: [
-                    {
-                        provide: LoginService,
-                        useClass: LoginServiceMock
-                    },
-                    { provide: DotMessageService, useValue: messageServiceMock },
-                    { provide: DotAccountService, useClass: DotAccountServiceMock },
-                    StringFormat,
-                    { provide: DotRouterService, useClass: MockDotRouterService },
-                    { provide: CoreWebService, useClass: CoreWebServiceMock },
-                    DotcmsConfigService,
-                    LoggerService,
-                    StringUtils,
-                    DotMenuService,
-                    UserModel,
-                    DotHttpErrorManagerService,
-                    DotAlertConfirmService,
-                    ConfirmationService
-                ]
-            });
+    beforeEach(waitForAsync(() => {
+        TestBed.configureTestingModule({
+            declarations: [DotMyAccountComponent],
+            imports: [
+                PasswordModule,
+                InputTextModule,
+                FormsModule,
+                DotDialogModule,
+                CommonModule,
+                CheckboxModule,
+                DotPipesModule,
+                HttpClientTestingModule
+            ],
+            providers: [
+                {
+                    provide: LoginService,
+                    useClass: LoginServiceMock
+                },
+                { provide: DotMessageService, useValue: messageServiceMock },
+                { provide: DotAccountService, useClass: DotAccountServiceMock },
+                StringFormat,
+                { provide: DotRouterService, useClass: MockDotRouterService },
+                { provide: CoreWebService, useClass: CoreWebServiceMock },
+                DotcmsConfigService,
+                LoggerService,
+                StringUtils,
+                DotMenuService,
+                UserModel,
+                DotHttpErrorManagerService,
+                DotAlertConfirmService,
+                ConfirmationService
+            ]
+        });
 
-            fixture = TestBed.createComponent(DotMyAccountComponent);
-            comp = fixture.componentInstance;
-            de = fixture.debugElement;
-            dotAccountService = TestBed.inject(DotAccountService);
-            loginService = TestBed.inject(LoginService);
-            dotRouterService = TestBed.inject(DotRouterService);
-            dotAlertConfirmService = TestBed.inject(DotAlertConfirmService);
-            dotMenuService = TestBed.inject(DotMenuService);
-            httpErrorManagerService = TestBed.inject(DotHttpErrorManagerService);
+        fixture = TestBed.createComponent(DotMyAccountComponent);
+        comp = fixture.componentInstance;
+        de = fixture.debugElement;
+        dotAccountService = TestBed.inject(DotAccountService);
+        loginService = TestBed.inject(LoginService);
+        dotRouterService = TestBed.inject(DotRouterService);
+        dotAlertConfirmService = TestBed.inject(DotAlertConfirmService);
+        dotMenuService = TestBed.inject(DotMenuService);
+        httpErrorManagerService = TestBed.inject(DotHttpErrorManagerService);
 
-            comp.visible = true;
-        })
-    );
+        comp.visible = true;
+    }));
 
     afterEach(() => {
         comp.visible = false;

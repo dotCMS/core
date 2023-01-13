@@ -1,39 +1,38 @@
+import * as _ from 'lodash';
+import { Observable, Subject } from 'rxjs';
+
 import {
     Component,
     ElementRef,
     EventEmitter,
     Input,
+    OnDestroy,
     OnInit,
     Output,
-    ViewChild,
-    OnDestroy
+    ViewChild
 } from '@angular/core';
 import {
-    UntypedFormGroup,
     UntypedFormBuilder,
-    Validators,
-    UntypedFormControl
+    UntypedFormControl,
+    UntypedFormGroup,
+    Validators
 } from '@angular/forms';
 
-import { Observable, Subject } from 'rxjs';
-import { take, takeUntil, filter } from 'rxjs/operators';
-
-import * as _ from 'lodash';
 import { SelectItem } from 'primeng/api';
 
-import { DotMessageService } from '@services/dot-message/dot-messages.service';
-import { DotWorkflowService } from '@services/dot-workflow/dot-workflow.service';
-import { DotLicenseService } from '@services/dot-license/dot-license.service';
+import { filter, take, takeUntil } from 'rxjs/operators';
+
+import { DotLicenseService, DotMessageService, DotWorkflowService } from '@dotcms/data-access';
 import {
     DotCMSContentType,
     DotCMSContentTypeField,
     DotCMSContentTypeLayoutRow,
+    DotCMSSystemAction,
     DotCMSSystemActionMappings,
     DotCMSSystemActionType,
-    DotCMSWorkflow,
-    DotCMSSystemAction
+    DotCMSWorkflow
 } from '@dotcms/dotcms-models';
-import { FieldUtil } from '../fields/util/field-util';
+import { FieldUtil } from '@dotcms/utils-testing';
 
 /**
  * Form component to create or edit content types

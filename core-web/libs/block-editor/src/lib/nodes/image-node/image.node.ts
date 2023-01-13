@@ -1,8 +1,8 @@
 import { Image } from '@tiptap/extension-image';
 
-import { imageLinkElement, imageElement, getImageAttr } from './helpers';
-
 import { DotCMSContentlet } from '@dotcms/dotcms-models';
+
+import { getImageAttr, imageElement, imageLinkElement } from './helpers';
 
 declare module '@tiptap/core' {
     interface Commands<ReturnType> {

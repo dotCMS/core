@@ -1,21 +1,23 @@
 /* eslint-disable @typescript-eslint/no-empty-function */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
+import { Component, DebugElement } from '@angular/core';
+import { ComponentFixture, waitForAsync } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
-import { DebugElement, Component } from '@angular/core';
-import { waitForAsync, ComponentFixture } from '@angular/core/testing';
-
-import { DOTTestBed } from '../../../test/dot-test-bed';
-import { DotIframeDialogComponent } from './dot-iframe-dialog.component';
-import { IFrameModule } from '../_common/iframe';
-import { LoginService } from '@dotcms/dotcms-js';
-import { LoginServiceMock } from '../../../test/login-service.mock';
+import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { RouterTestingModule } from '@angular/router/testing';
-import { IframeComponent } from '../_common/iframe/iframe-component';
+
 import { UiDotIconButtonModule } from '@components/_common/dot-icon-button/dot-icon-button.module';
-import { DotDialogModule } from '@components/dot-dialog/dot-dialog.module';
 import { DotDialogComponent } from '@components/dot-dialog/dot-dialog.component';
+import { DotDialogModule } from '@components/dot-dialog/dot-dialog.module';
+import { DOTTestBed } from '@dotcms/app/test/dot-test-bed';
+import { LoginService } from '@dotcms/dotcms-js';
+import { LoginServiceMock } from '@dotcms/utils-testing';
+
+import { DotIframeDialogComponent } from './dot-iframe-dialog.component';
+
+import { IFrameModule } from '../_common/iframe';
+import { IframeComponent } from '../_common/iframe/iframe-component';
 
 let component: DotIframeDialogComponent;
 let de: DebugElement;
@@ -80,11 +82,9 @@ describe('DotIframeDialogComponent', () => {
         let hostComponent: TestHostComponent;
         let hostFixture: ComponentFixture<TestHostComponent>;
 
-        beforeEach(
-            waitForAsync(() => {
-                DOTTestBed.configureTestingModule(getTestConfig(TestHostComponent));
-            })
-        );
+        beforeEach(waitForAsync(() => {
+            DOTTestBed.configureTestingModule(getTestConfig(TestHostComponent));
+        }));
 
         beforeEach(() => {
             hostFixture = DOTTestBed.createComponent(TestHostComponent);
@@ -235,11 +235,9 @@ describe('DotIframeDialogComponent', () => {
         let hostFixture: ComponentFixture<TestHost2Component>;
         let hostComponent: TestHostComponent;
 
-        beforeEach(
-            waitForAsync(() => {
-                DOTTestBed.configureTestingModule(getTestConfig(TestHost2Component));
-            })
-        );
+        beforeEach(waitForAsync(() => {
+            DOTTestBed.configureTestingModule(getTestConfig(TestHost2Component));
+        }));
 
         beforeEach(() => {
             hostFixture = DOTTestBed.createComponent(TestHost2Component);

@@ -1,15 +1,11 @@
-import { TestBed } from '@angular/core/testing';
-import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { of } from 'rxjs';
 
-import { DotImageSearchStore } from './dot-image-search.store';
+import { HttpClientTestingModule } from '@angular/common/http/testing';
+import { TestBed } from '@angular/core/testing';
 
-import { IMAGE_CONTENTLETS_MOCK } from '@dotcms/block-editor';
-import { DotLanguageService } from '../../../../../shared/services/dot-language/dot-language.service';
-import {
-    SearchService,
-    ESOrderDirection
-} from '../../../../../shared/services/search/search.service';
+import { DotLanguageService, IMAGE_CONTENTLETS_MOCK, SearchService } from '@dotcms/block-editor';
+
+import { DotImageSearchStore } from './dot-image-search.store';
 
 const INITIAL_STATE = { contentlets: [], loading: true, preventScroll: false };
 const LanguageMock = {

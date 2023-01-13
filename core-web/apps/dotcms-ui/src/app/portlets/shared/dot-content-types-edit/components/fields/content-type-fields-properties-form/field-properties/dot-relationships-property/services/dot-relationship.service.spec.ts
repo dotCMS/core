@@ -1,10 +1,12 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { DotRelationshipService } from './dot-relationship.service';
-import { HttpTestingController, HttpClientTestingModule } from '@angular/common/http/testing';
+import { HttpClientTestingModule, HttpTestingController } from '@angular/common/http/testing';
+import { getTestBed, TestBed } from '@angular/core/testing';
+
 import { CoreWebService } from '@dotcms/dotcms-js';
-import { CoreWebServiceMock } from '@tests/core-web.service.mock';
-import { TestBed, getTestBed } from '@angular/core/testing';
+import { CoreWebServiceMock } from '@dotcms/utils-testing';
+
+import { DotRelationshipService } from './dot-relationship.service';
 
 const cardinalities = [
     {

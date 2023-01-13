@@ -1,13 +1,14 @@
-import { Component, OnInit, Output, EventEmitter, Input } from '@angular/core';
-
-import { PaginatorService } from '@services/paginator/paginator.service';
-import { DotTemplateContainersCacheService } from '@services/dot-template-containers-cache/dot-template-containers-cache.service';
-
-import { DotContainerColumnBox } from '@models/dot-edit-layout-designer';
-import { DotContainer } from '@models/container/dot-container.model';
 import { Observable } from 'rxjs';
+
+import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
+
 import { map, take } from 'rxjs/operators';
+
 import { PaginationEvent } from '@components/_common/searchable-dropdown/component';
+import { DotTemplateContainersCacheService } from '@dotcms/app/api/services/dot-template-containers-cache/dot-template-containers-cache.service';
+import { PaginatorService } from '@dotcms/data-access';
+import { DotContainer } from '@dotcms/dotcms-models';
+import { DotContainerColumnBox } from '@models/dot-edit-layout-designer';
 
 @Component({
     providers: [PaginatorService],

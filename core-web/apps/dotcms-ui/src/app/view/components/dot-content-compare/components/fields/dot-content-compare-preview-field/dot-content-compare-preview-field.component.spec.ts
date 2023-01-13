@@ -1,9 +1,11 @@
-import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { DotContentComparePreviewFieldComponent } from './dot-content-compare-preview-field.component';
 import { DebugElement } from '@angular/core';
+import { ComponentFixture, TestBed } from '@angular/core/testing';
+
+import { DotMessageService } from '@dotcms/data-access';
+import { MockDotMessageService } from '@dotcms/utils-testing';
 import { DotMessagePipeModule } from '@pipes/dot-message/dot-message-pipe.module';
-import { DotMessageService } from '@services/dot-message/dot-messages.service';
-import { MockDotMessageService } from '@tests/dot-message-service.mock';
+
+import { DotContentComparePreviewFieldComponent } from './dot-content-compare-preview-field.component';
 
 describe('DotContentComparePreviewFieldComponent', () => {
     let component: DotContentComparePreviewFieldComponent;

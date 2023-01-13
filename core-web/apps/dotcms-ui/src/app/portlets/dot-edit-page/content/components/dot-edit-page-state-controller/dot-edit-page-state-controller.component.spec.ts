@@ -1,32 +1,37 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { By } from '@angular/platform-browser';
-import { Component, DebugElement } from '@angular/core';
-import { waitForAsync, ComponentFixture } from '@angular/core/testing';
-
-import { DOTTestBed } from '@tests/dot-test-bed';
-import { MockDotMessageService } from '@tests/dot-message-service.mock';
-import { DotPageStateServiceMock } from '@tests/dot-page-state.service.mock';
-import { DotPersonalizeServiceMock } from '@tests/dot-personalize-service.mock';
-
-import { DotAlertConfirmService } from '@services/dot-alert-confirm';
-import { DotEditPageLockInfoComponent } from './components/dot-edit-page-lock-info/dot-edit-page-lock-info.component';
-import { DotEditPageStateControllerComponent } from './dot-edit-page-state-controller.component';
-import { DotMessageService } from '@services/dot-message/dot-messages.service';
-import { DotPageStateService } from '../../services/dot-page-state/dot-page-state.service';
-import { DotPersonalizeService } from '@services/dot-personalize/dot-personalize.service';
-import { DotPageRenderState } from '@portlets/dot-edit-page/shared/models';
 import * as _ from 'lodash';
-import { mockUser } from '@tests/login-service.mock';
-import { mockDotRenderedPage } from '@tests/dot-page-render.mock';
-import { dotcmsContentletMock } from '@tests/dotcms-contentlet.mock';
 import { of } from 'rxjs';
-import { DotPipesModule } from '@pipes/dot-pipes.module';
+
+import { Component, DebugElement } from '@angular/core';
+import { ComponentFixture, waitForAsync } from '@angular/core/testing';
+import { By } from '@angular/platform-browser';
+
 import { InputSwitchModule } from 'primeng/inputswitch';
 import { SelectButtonModule } from 'primeng/selectbutton';
 import { TooltipModule } from 'primeng/tooltip';
-import { DotPageRender } from '@models/dot-page/dot-rendered-page.model';
-import { DotPageMode } from '@models/dot-page/dot-page-mode.enum';
+
+import { DOTTestBed } from '@dotcms/app/test/dot-test-bed';
+import {
+    DotAlertConfirmService,
+    DotMessageService,
+    DotPersonalizeService
+} from '@dotcms/data-access';
+import { DotPageMode, DotPageRender, DotPageRenderState } from '@dotcms/dotcms-models';
+import {
+    dotcmsContentletMock,
+    DotPageStateServiceMock,
+    DotPersonalizeServiceMock,
+    MockDotMessageService,
+    mockDotRenderedPage,
+    mockUser
+} from '@dotcms/utils-testing';
+import { DotPipesModule } from '@pipes/dot-pipes.module';
+
+import { DotEditPageLockInfoComponent } from './components/dot-edit-page-lock-info/dot-edit-page-lock-info.component';
+import { DotEditPageStateControllerComponent } from './dot-edit-page-state-controller.component';
+
+import { DotPageStateService } from '../../services/dot-page-state/dot-page-state.service';
 
 const mockDotMessageService = new MockDotMessageService({
     'editpage.toolbar.edit.page': 'Edit',

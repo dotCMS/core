@@ -1,14 +1,14 @@
-import { UntypedFormGroup, UntypedFormControl } from '@angular/forms';
+import { DebugElement } from '@angular/core';
+import { ComponentFixture, waitForAsync } from '@angular/core/testing';
+import { UntypedFormControl, UntypedFormGroup } from '@angular/forms';
 import { By } from '@angular/platform-browser';
 import { NoopAnimationsModule } from '@angular/platform-browser/animations';
 
+import { DOTTestBed } from '@dotcms/app/test/dot-test-bed';
+import { DotMessageService } from '@dotcms/data-access';
+import { dotcmsContentTypeFieldBasicMock, MockDotMessageService } from '@dotcms/utils-testing';
+
 import { RegexCheckPropertyComponent } from './index';
-import { ComponentFixture, waitForAsync } from '@angular/core/testing';
-import { DebugElement } from '@angular/core';
-import { MockDotMessageService } from '@tests/dot-message-service.mock';
-import { DOTTestBed } from '@tests/dot-test-bed';
-import { DotMessageService } from '@services/dot-message/dot-messages.service';
-import { dotcmsContentTypeFieldBasicMock } from '@tests/dot-content-types.mock';
 
 describe('RegexCheckPropertyComponent', () => {
     let comp: RegexCheckPropertyComponent;
@@ -26,29 +26,27 @@ describe('RegexCheckPropertyComponent', () => {
         'contenttypes.field.properties.validation_regex.values.no_html': 'No HTML'
     });
 
-    beforeEach(
-        waitForAsync(() => {
-            DOTTestBed.configureTestingModule({
-                declarations: [RegexCheckPropertyComponent],
-                imports: [NoopAnimationsModule],
-                providers: [{ provide: DotMessageService, useValue: messageServiceMock }]
-            });
+    beforeEach(waitForAsync(() => {
+        DOTTestBed.configureTestingModule({
+            declarations: [RegexCheckPropertyComponent],
+            imports: [NoopAnimationsModule],
+            providers: [{ provide: DotMessageService, useValue: messageServiceMock }]
+        });
 
-            fixture = DOTTestBed.createComponent(RegexCheckPropertyComponent);
-            comp = fixture.componentInstance;
+        fixture = DOTTestBed.createComponent(RegexCheckPropertyComponent);
+        comp = fixture.componentInstance;
 
-            comp.group = new UntypedFormGroup({
-                regexCheck: new UntypedFormControl('')
-            });
-            comp.property = {
-                name: 'regexCheck',
-                value: 'value',
-                field: {
-                    ...dotcmsContentTypeFieldBasicMock
-                }
-            };
-        })
-    );
+        comp.group = new UntypedFormGroup({
+            regexCheck: new UntypedFormControl('')
+        });
+        comp.property = {
+            name: 'regexCheck',
+            value: 'value',
+            field: {
+                ...dotcmsContentTypeFieldBasicMock
+            }
+        };
+    }));
 
     it('should have a form', () => {
         const group = new UntypedFormGroup({});

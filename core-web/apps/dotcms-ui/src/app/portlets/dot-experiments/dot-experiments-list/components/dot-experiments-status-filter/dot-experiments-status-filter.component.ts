@@ -1,5 +1,6 @@
 import { ChangeDetectionStrategy, Component, EventEmitter, Input, Output } from '@angular/core';
-import { DotExperimentStatusList } from '@portlets/dot-experiments/shared/models/dot-experiments-constants';
+
+import { DotExperimentStatusList } from '@dotcms/dotcms-models';
 
 interface optionItem {
     label: string;

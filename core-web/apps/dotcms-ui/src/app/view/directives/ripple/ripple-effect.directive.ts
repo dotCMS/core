@@ -1,4 +1,5 @@
-import { Directive, ElementRef, HostListener, HostBinding, Renderer2 } from '@angular/core';
+import { Directive, ElementRef, HostBinding, HostListener, Renderer2 } from '@angular/core';
+
 import { ColorUtil } from '../../../api/util/ColorUtil';
 
 /**
@@ -62,8 +63,10 @@ export class DotRippleEffectDirective {
     }
 
     private getRippleColor(): string {
-        const hostBackgroundColor = window.getComputedStyle(this.hostNativeElement, null)
-            .backgroundColor;
+        const hostBackgroundColor = window.getComputedStyle(
+            this.hostNativeElement,
+            null
+        ).backgroundColor;
         const isBright = this.colorUtil.isBrightness(hostBackgroundColor);
 
         return isBright

@@ -1,27 +1,27 @@
+import { fromEvent as observableFromEvent, Subject } from 'rxjs';
+
 import {
+    ChangeDetectorRef,
     Component,
-    OnInit,
-    Output,
+    ElementRef,
     EventEmitter,
     Input,
-    ViewChild,
-    ElementRef,
-    ChangeDetectorRef,
-    OnDestroy
+    OnDestroy,
+    OnInit,
+    Output,
+    ViewChild
 } from '@angular/core';
 
-import { fromEvent as observableFromEvent, Subject } from 'rxjs';
+import { LazyLoadEvent } from 'primeng/api';
+import { DataView } from 'primeng/dataview';
+
 import { debounceTime, take, takeUntil } from 'rxjs/operators';
 
-import { Site, SiteService } from '@dotcms/dotcms-js';
-import { DataView } from 'primeng/dataview';
-import { LazyLoadEvent } from 'primeng/api';
-
-import { DotMessageService } from '@services/dot-message/dot-messages.service';
-import { PaginatorService } from '@services/paginator';
-import { DotDialogActions } from '@components/dot-dialog/dot-dialog.component';
-import { DotTheme } from '@models/dot-edit-layout-designer';
 import { DotSiteSelectorComponent } from '@components/_common/dot-site-selector/dot-site-selector.component';
+import { DotDialogActions } from '@components/dot-dialog/dot-dialog.component';
+import { DotMessageService, PaginatorService } from '@dotcms/data-access';
+import { Site, SiteService } from '@dotcms/dotcms-js';
+import { DotTheme } from '@dotcms/dotcms-models';
 
 /**
  * The DotThemeSelectorComponent is modal that

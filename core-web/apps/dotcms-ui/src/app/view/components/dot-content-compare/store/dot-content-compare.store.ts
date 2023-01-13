@@ -1,12 +1,14 @@
-import { Injectable } from '@angular/core';
 import { ComponentStore } from '@ngrx/component-store';
-import { DotCMSContentlet, DotCMSContentType, DotCMSContentTypeField } from '@dotcms/dotcms-models';
-import { DotContentTypeService } from '@services/dot-content-type';
 import { Observable } from 'rxjs';
-import { DotContentCompareEvent } from '@components/dot-content-compare/dot-content-compare.component';
+
+import { Injectable } from '@angular/core';
+
 import { map, switchMap, take } from 'rxjs/operators';
-import { DotContentletService } from '@services/dot-contentlet/dot-contentlet.service';
-import { DotFormatDateService } from '@services/dot-format-date-service';
+
+import { DotContentCompareEvent } from '@components/dot-content-compare/dot-content-compare.component';
+import { DotFormatDateService } from '@dotcms/app/api/services/dot-format-date-service';
+import { DotContentletService, DotContentTypeService } from '@dotcms/data-access';
+import { DotCMSContentlet, DotCMSContentType, DotCMSContentTypeField } from '@dotcms/dotcms-models';
 
 export interface DotContentCompareTableData {
     working: DotCMSContentlet;

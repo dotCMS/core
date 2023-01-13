@@ -1,4 +1,5 @@
 {
+    "name": "dotcms-ui",
     "$schema": "../../node_modules/nx/schemas/project-schema.json",
     "projectType": "application",
     "sourceRoot": "apps/dotcms-ui/src",
@@ -77,6 +78,15 @@
                             "maximumError": "250kb"
                         }
                     ]
+                },
+                "development": {
+                    "deployUrl": "dotAdmin/",
+                    "baseHref": "",
+                    "optimization": false,
+                    "sourceMap": true,
+                    "namedChunks": true,
+                    "vendorChunk": true,
+                    "buildOptimizer": false
                 }
             },
             "defaultConfiguration": "",
@@ -85,13 +95,8 @@
         "serve": {
             "executor": "@angular-devkit/build-angular:dev-server",
             "options": {
-                "browserTarget": "dotcms-ui:build",
-                "proxyConfig": "apps/dotcms-ui/proxy.conf.json"
-            },
-            "configurations": {
-                "production": {
-                    "browserTarget": "dotcms-ui:build:production"
-                }
+                "browserTarget": "dotcms-ui:build:development",
+                "proxyConfig": "apps/dotcms-ui/proxy-dev.conf.json"
             }
         },
         "extract-i18n": {
@@ -118,6 +123,13 @@
                 "scripts": [],
                 "stylePreprocessorOptions": {
                     "includePaths": ["libs/dot-primeng-theme-styles/src/scss"]
+                }
+            },
+
+            "configurations": {
+                "development": {
+                    "watch": true,
+                    "browsers": "Chrome"
                 }
             }
         },

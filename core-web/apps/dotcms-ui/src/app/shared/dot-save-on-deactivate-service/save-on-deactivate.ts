@@ -1,5 +1,6 @@
-import { DotAlertConfirm } from '../models/dot-alert-confirm/dot-alert-confirm.model';
 import { Observable } from 'rxjs';
+
+import { DotAlertConfirm } from '@dotcms/dotcms-models';
 
 export interface OnSaveDeactivate {
     shouldSaveBefore(): boolean;

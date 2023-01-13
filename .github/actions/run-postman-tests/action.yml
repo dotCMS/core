@@ -31,6 +31,39 @@ inputs:
   custom_starter_url:
     description: 'Custom starter URL'
     required: false
+  parallel_collections:
+    description: 'List of parallel collections'
+    required: false
+    default: |
+            [
+              {
+                "name": "graphql",
+                "collections": ["GraphQLTests"]
+              },
+              {
+                "name": "workflow",
+                "collections": ["Workflow Resource Tests"]
+              },
+              {
+                "name": "template",
+                "collections": ["Template Resource.postman_collection"]
+              },
+              {
+                "name": "page",
+                "collections": ["PagesResourceTests"]
+              },
+              {
+                "name": "container",
+                "collections": ["ContainerResource.postman_collection", "Containers.postman_collection"]
+              },
+              {
+                "name": "pp",
+                "collections": ["PublishQueueResource", "Push Publish from sender.postman_collection", "Push Publish JWT Token Test.postman_collection", "PushPublishFilterResource.postman_collection"]
+              }
+            ]
+  parallel_collection:
+    description: 'Collection to run in parallel'
+    required: true
   tests:
     description: 'Comma delimited list with the specific prefix: runt-tests:'
     required: false
@@ -53,6 +86,9 @@ outputs:
     description: 'Postman tests report location'
   tests_results_skip_report:
     description: 'Flag indicating if results report is skipped'
+  normalized_parallel_collection:
+    description: 'Normalized parallel collection'
+  
 runs:
   using: 'node16'
   main: 'dist/index.js'

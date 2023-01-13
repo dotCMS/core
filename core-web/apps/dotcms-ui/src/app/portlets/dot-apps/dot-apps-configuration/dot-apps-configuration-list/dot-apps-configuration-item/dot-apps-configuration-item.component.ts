@@ -1,8 +1,7 @@
-import { Component, Input, Output, EventEmitter, HostListener } from '@angular/core';
-import { DotAppsSites } from '@shared/models/dot-apps/dot-apps.model';
-import { DotAlertConfirmService } from '@services/dot-alert-confirm';
+import { Component, EventEmitter, HostListener, Input, Output } from '@angular/core';
 
-import { DotMessageService } from '@services/dot-message/dot-messages.service';
+import { DotAlertConfirmService, DotMessageService } from '@dotcms/data-access';
+import { DotAppsSites } from '@dotcms/dotcms-models';
 
 @Component({
     selector: 'dot-apps-configuration-item',

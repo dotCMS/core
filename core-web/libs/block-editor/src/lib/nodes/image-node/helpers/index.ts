@@ -1,4 +1,5 @@
 import { mergeAttributes } from '@tiptap/core';
+
 import { DotCMSContentlet } from '@dotcms/dotcms-models';
 
 export const imageLinkElement = (attrs, newAttrs) => {

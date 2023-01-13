@@ -1,29 +1,33 @@
+import { Observable } from 'rxjs';
+
 import { Injectable } from '@angular/core';
+
 import { catchError, map, take } from 'rxjs/operators';
-import { DotMessageSeverity, DotMessageType } from '@components/dot-message-display/model';
-import {
-    DotCMSWorkflowAction,
-    DotCMSWorkflowInput,
-    DotCMSWorkflowActionEvent
-} from '@dotcms/dotcms-models';
-import { PushPublishService } from '@services/push-publish/push-publish.service';
-import { DotMessageDisplayService } from '@components/dot-message-display/services';
-import { DotMessageService } from '@services/dot-message/dot-messages.service';
-import { DotWizardService } from '@services/dot-wizard/dot-wizard.service';
-import { DotWizardInput } from '@models/dot-wizard-input/dot-wizard-input.model';
-import { DotWizardStep } from '@models/dot-wizard-step/dot-wizard-step.model';
-import { DotIframeService } from '@components/_common/iframe/service/dot-iframe/dot-iframe.service';
+
+import { DotGlobalMessageService } from '@components/_common/dot-global-message/dot-global-message.service';
 import { DotCommentAndAssignFormComponent } from '@components/_common/forms/dot-comment-and-assign-form/dot-comment-and-assign-form.component';
 import { DotPushPublishFormComponent } from '@components/_common/forms/dot-push-publish-form/dot-push-publish-form.component';
-import { DotHttpErrorManagerService } from '@services/dot-http-error-manager/dot-http-error-manager.service';
-import { DotWorkflowActionsFireService } from '@services/dot-workflow-actions-fire/dot-workflow-actions-fire.service';
-import { DotGlobalMessageService } from '@components/_common/dot-global-message/dot-global-message.service';
-import { Observable } from 'rxjs';
+import { DotIframeService } from '@components/_common/iframe/service/dot-iframe/dot-iframe.service';
+import { DotMessageSeverity, DotMessageType } from '@components/dot-message-display/model';
+import { DotMessageDisplayService } from '@components/dot-message-display/services';
+import { DotFormatDateService } from '@dotcms/app/api/services/dot-format-date-service';
+import { DotHttpErrorManagerService } from '@dotcms/app/api/services/dot-http-error-manager/dot-http-error-manager.service';
+import { PushPublishService } from '@dotcms/app/api/services/push-publish/push-publish.service';
+import { DotMessageService, DotWorkflowActionsFireService } from '@dotcms/data-access';
+import {
+    DotActionBulkRequestOptions,
+    DotActionBulkResult,
+    DotCMSWorkflowAction,
+    DotCMSWorkflowActionEvent,
+    DotCMSWorkflowInput,
+    DotProcessedWorkflowPayload,
+    DotWorkflowPayload
+} from '@dotcms/dotcms-models';
 import { DotEnvironment } from '@models/dot-environment/dot-environment';
-import { DotActionBulkResult } from '@models/dot-action-bulk-result/dot-action-bulk-result.model';
-import { DotActionBulkRequestOptions } from '@models/dot-action-bulk-request-options/dot-action-bulk-request-options.model';
-import { DotFormatDateService } from '@services/dot-format-date-service';
-import { DotWorkflowPayload, DotProcessedWorkflowPayload } from '@dotcms/dotcms-models';
+import { DotWizardInput } from '@models/dot-wizard-input/dot-wizard-input.model';
+import { DotWizardStep } from '@models/dot-wizard-step/dot-wizard-step.model';
+
+import { DotWizardService } from '../dot-wizard/dot-wizard.service';
 
 enum DotActionInputs {
     ASSIGNABLE = 'assignable',

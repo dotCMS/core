@@ -1,16 +1,18 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { of } from 'rxjs';
-import { PushPublishService } from './push-publish.service';
-import { TestBed } from '@angular/core/testing';
-import { DotCurrentUserService } from '../dot-current-user/dot-current-user.service';
-import { DotPushPublishData } from '@models/dot-push-publish-data/dot-push-publish-data';
-import { ApiRoot, CoreWebService, LoggerService, StringUtils, UserModel } from '@dotcms/dotcms-js';
 import { format } from 'date-fns';
-import { CoreWebServiceMock } from '@tests/core-web.service.mock';
+import { of } from 'rxjs';
+
 import { HttpClientTestingModule, HttpTestingController } from '@angular/common/http/testing';
-import { DotFormatDateService } from '@services/dot-format-date-service';
-import { DotFormatDateServiceMock } from '@dotcms/app/test/format-date-service.mock';
+import { TestBed } from '@angular/core/testing';
+
+import { DotFormatDateService } from '@dotcms/app/api/services/dot-format-date-service';
+import { DotCurrentUserService } from '@dotcms/data-access';
+import { ApiRoot, CoreWebService, LoggerService, StringUtils, UserModel } from '@dotcms/dotcms-js';
+import { CoreWebServiceMock, DotFormatDateServiceMock } from '@dotcms/utils-testing';
+import { DotPushPublishData } from '@models/dot-push-publish-data/dot-push-publish-data';
+
+import { PushPublishService } from './push-publish.service';
 
 const mockResponse = {
     errorMessages: [],
@@ -147,7 +149,7 @@ describe('PushPublishService', () => {
 
     it('should do a post with the correct URL when is a bundle', () => {
         const currentDateStr = new Date().toISOString().split('T')[0];
-        const currentTimeStr = format(new Date(), "HH-mm");
+        const currentTimeStr = format(new Date(), 'HH-mm');
 
         pushPublishService
             .pushPublishContent('1234567890', mockFormValue, true)

@@ -1,12 +1,15 @@
-import { DOTTestBed } from '../../../../../../test/dot-test-bed';
-import { DotMessageService } from '@services/dot-message/dot-messages.service';
-import { MockDotMessageService } from '../../../../../../test/dot-message-service.mock';
-import { DotLayoutSidebarComponent } from './dot-layout-property-sidebar.component';
-import { UntypedFormGroup, UntypedFormControl } from '@angular/forms';
-import { DotLayoutPropertiesItemModule } from '../dot-layout-properties-item/dot-layout-properties-item.module';
+import { Component, DebugElement } from '@angular/core';
 import { ComponentFixture } from '@angular/core/testing';
-import { DebugElement, Component } from '@angular/core';
+import { UntypedFormControl, UntypedFormGroup } from '@angular/forms';
 import { By } from '@angular/platform-browser';
+
+import { DOTTestBed } from '@dotcms/app/test/dot-test-bed';
+import { DotMessageService } from '@dotcms/data-access';
+import { MockDotMessageService } from '@dotcms/utils-testing';
+
+import { DotLayoutSidebarComponent } from './dot-layout-property-sidebar.component';
+
+import { DotLayoutPropertiesItemModule } from '../dot-layout-properties-item/dot-layout-properties-item.module';
 
 @Component({
     selector: 'dot-test-host-component',
