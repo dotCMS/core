@@ -29,8 +29,6 @@ import {
     ExperimentMocks
 } from '@portlets/dot-experiments/test/mocks';
 
-
-
 import { DotExperimentsListComponent } from './dot-experiments-list.component';
 
 describe('ExperimentsListComponent', () => {

@@ -49,6 +49,26 @@
 
             img {
                 max-width: 100%;
+                position: relative;
+                min-height: 100px;
+                min-width: 400px;
+
+                &:before {
+                    align-items: center;
+                    background: $gray-bg;
+                    border-radius: 3px;
+                    border: 1px solid $gray-light;
+                    color: $gray;
+                    content: "The image URL " attr(src)
+                        " seems to be broken, please double check the URL.";
+                    display: flex;
+                    height: 100%;
+                    left: 0;
+                    padding: $spacing-3;
+                    position: absolute;
+                    text-align: center;
+                    width: 100%;
+                }
             }
 
             ul,

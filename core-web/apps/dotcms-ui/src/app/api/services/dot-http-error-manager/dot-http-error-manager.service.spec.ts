@@ -17,7 +17,6 @@ import { DotHttpErrorManagerService } from './dot-http-error-manager.service';
 
 import { DotRouterService } from '../dot-router/dot-router.service';
 
-
 describe('DotHttpErrorManagerService', () => {
     let service: DotHttpErrorManagerService;
     let dotRouterService: DotRouterService;

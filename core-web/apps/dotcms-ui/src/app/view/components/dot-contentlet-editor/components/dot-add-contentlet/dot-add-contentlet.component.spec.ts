@@ -40,7 +40,6 @@ import { DotIframeDialogModule } from '../../../dot-iframe-dialog/dot-iframe-dia
 import { DotContentletEditorService } from '../../services/dot-contentlet-editor.service';
 import { DotContentletWrapperComponent } from '../dot-contentlet-wrapper/dot-contentlet-wrapper.component';
 
-
 describe('DotAddContentletComponent', () => {
     let component: DotAddContentletComponent;
     let de: DebugElement;

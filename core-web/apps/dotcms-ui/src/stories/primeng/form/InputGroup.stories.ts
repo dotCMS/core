@@ -10,8 +10,6 @@ import { InputTextModule } from 'primeng/inputtext';
 import { RadioButtonModule } from 'primeng/radiobutton';
 import { RippleModule } from 'primeng/ripple';
 
-
-
 export default {
     title: 'PrimeNG/Form/InputText/InputGroup',
     parameters: {

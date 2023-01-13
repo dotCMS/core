@@ -30,7 +30,6 @@ import { DotLoginAsComponent } from './dot-login-as.component';
 
 import { SEARCHABLE_NGFACES_MODULES } from '../../../_common/searchable-dropdown/searchable-dropdown.module';
 
-
 @Component({
     selector: 'dot-searchable-dropdown',
     template: ``,

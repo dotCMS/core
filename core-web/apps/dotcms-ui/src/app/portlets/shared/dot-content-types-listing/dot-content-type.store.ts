@@ -10,7 +10,6 @@ import { DotHttpErrorManagerService } from '@dotcms/app/api/services/dot-http-er
 import { DotContentTypeService } from '@dotcms/data-access';
 import { DotCMSAssetDialogFields, DotCopyContentTypeDialogFormFields } from '@dotcms/dotcms-models';
 
-
 export type DotCMSAssetDialogCopyFields = DotCMSAssetDialogFields & {
     data: {
         icon: string;

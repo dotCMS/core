@@ -13,7 +13,6 @@ import { DotPageStore } from './dot-pages.store';
 import { CurrentUserDataMock } from '../../dot-starter/dot-starter-resolver.service.spec';
 import { pagesInitialTestData } from '../dot-pages.component.spec';
 
-
 @Injectable()
 class MockDotCurrentUserService {
     public getCurrentUser(): Observable<DotCurrentUser> {

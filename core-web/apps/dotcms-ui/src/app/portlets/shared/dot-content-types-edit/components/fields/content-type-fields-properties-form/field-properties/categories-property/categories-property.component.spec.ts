@@ -12,8 +12,6 @@ import { dotcmsContentTypeFieldBasicMock, MockDotMessageService } from '@dotcms/
 
 import { CategoriesPropertyComponent } from './categories-property.component';
 
-
-
 @Component({
     selector: 'dot-searchable-dropdown',
     template: ''

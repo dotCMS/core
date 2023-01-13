@@ -12,7 +12,6 @@ import { DotPipesModule } from '@pipes/dot-pipes.module';
 
 import { DotAppsCardComponent } from './dot-apps-card.component';
 
-
 @NgModule({
     imports: [
         CommonModule,

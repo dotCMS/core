@@ -10,7 +10,6 @@ import { DotContentTypeService } from '@dotcms/app/api/services/dot-content-type
 import { DotCMSContentType } from '@dotcms/dotcms-models';
 import { DotContainerStructure } from '@models/container/dot-container.model';
 
-
 export interface DotContentEditorState {
     activeTabIndex: number;
     contentTypes: MenuItem[];

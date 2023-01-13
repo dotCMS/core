@@ -4,7 +4,6 @@ import { LazyLoadEvent } from 'primeng/api';
 
 import { DotAppsSites } from '@dotcms/dotcms-models';
 
-
 @Component({
     selector: 'dot-apps-configuration-list',
     templateUrl: './dot-apps-configuration-list.component.html',

@@ -11,8 +11,6 @@ import { DotContentTypeService } from '@dotcms/data-access';
 import { DotCMSContentType, DotCMSContentTypeField } from '@dotcms/dotcms-models';
 import { DotHttpErrorManagerService } from '@services/dot-http-error-manager/dot-http-error-manager.service';
 
-
-
 export interface DotAddVariableState {
     variables: DotCMSContentTypeField[];
 }

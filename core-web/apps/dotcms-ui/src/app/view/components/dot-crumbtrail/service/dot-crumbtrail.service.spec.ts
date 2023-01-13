@@ -11,7 +11,6 @@ import { DotCrumb, DotCrumbtrailService } from './dot-crumbtrail.service';
 import { DotMenu } from '../../../../shared/models/navigation';
 import { DotNavigationService } from '../../dot-navigation/services/dot-navigation.service';
 
-
 @Injectable()
 class MockDotNavigationService {
     readonly navigationEnd: Subject<NavigationEnd> = new Subject();
