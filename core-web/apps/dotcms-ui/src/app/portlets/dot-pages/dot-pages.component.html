@@ -65,20 +65,68 @@
         [virtualScroll]="true"
         [virtualScrollItemSize]="26"
         [lazy]="true"
+        [customSort]="true"
+        (sortFunction)="customSort($event)"
         (onLazyLoad)="loadPagesLazy($event)"
-        scrollHeight="550px"
+        scrollHeight="flex"
     >
         <ng-template pTemplate="header" let-columns>
             <tr>
-                <th *ngFor="let col of columns" style="width: 20%">
-                    {{ col.header }}
+                <th pSortableColumn="title" style="width: 20%">
+                    {{ 'title' | dm }}<p-sortIcon field="title"></p-sortIcon>
                 </th>
+                <th style="width: 20%">
+                    {{ 'url' | dm }}
+                </th>
+                <th style="width: 10%">
+                    {{ 'status' | dm }}
+                </th>
+                <th style="width: 10%">
+                    {{ 'type' | dm }}
+                </th>
+                <th style="width: 10%">
+                    {{ 'language' | dm }}
+                </th>
+                <th style="width: 10%">
+                    {{ 'Last-Editor' | dm }}
+                </th>
+                <th style="width: 10%">
+                    {{ 'Last-Edit-Date' | dm }}
+                </th>
+                <th style="width: 10%"></th>
             </tr>
         </ng-template>
         <ng-template pTemplate="body" let-rowData let-columns="columns">
             <tr style="height: 26px">
-                <td *ngFor="let col of columns">
-                    {{ rowData[col.field] }}
+                <td>
+                    {{ rowData['title'] }}
+                </td>
+                <td>
+                    {{ rowData['url'] }}
+                </td>
+                <td>
+                    <dot-state-icon
+                        [labels]="dotStateLabels"
+                        [state]="rowData"
+                        size="14px"
+                    ></dot-state-icon>
+                </td>
+                <td>
+                    {{ rowData['contentType'] }}
+                </td>
+                <td>
+                    <dot-badge style="white-space: nowrap" bordered="true">{{
+                        rowData['languageId']
+                    }}</dot-badge>
+                </td>
+                <td>
+                    {{ rowData['modUserName'] }}
+                </td>
+                <td>
+                    {{ rowData['modDate'] }}
+                </td>
+                <td>
+                    <button>*</button>
                 </td>
             </tr>
         </ng-template>

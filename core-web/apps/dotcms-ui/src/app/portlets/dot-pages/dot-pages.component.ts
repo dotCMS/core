@@ -1,10 +1,14 @@
+/* eslint-disable no-console */
 import { Component, OnInit } from '@angular/core';
 
+import { SortEvent } from 'primeng/api';
 import { LazyLoadEvent } from 'primeng/api/lazyloadevent';
 
 import { Observable } from 'rxjs/internal/Observable';
 
 import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
+import { DataTableColumn } from '@dotcms/app/shared/models/data-table';
+import { DotMessageService } from '@dotcms/data-access';
 
 import { DotPagesState, DotPageStore } from './dot-pages-store/dot-pages.store';
 
@@ -17,19 +21,58 @@ import { DotPagesState, DotPageStore } from './dot-pages-store/dot-pages.store';
 export class DotPagesComponent implements OnInit {
     vm$: Observable<DotPagesState> = this.store.vm$;
 
-    cols: { field: string; header: string }[];
+    cols: DataTableColumn[];
+    dotStateLabels = {
+        archived: this.dotMessageService.get('Archived'),
+        published: this.dotMessageService.get('Published'),
+        revision: this.dotMessageService.get('Revision'),
+        draft: this.dotMessageService.get('Draft')
+    };
 
     private initialFavoritePagesLimit = 5;
 
-    constructor(private store: DotPageStore, private dotRouterService: DotRouterService) {
+    constructor(
+        private store: DotPageStore,
+        private dotRouterService: DotRouterService,
+        private dotMessageService: DotMessageService
+    ) {
         this.store.setInitialStateData(this.initialFavoritePagesLimit);
     }
 
     ngOnInit(): void {
         this.cols = [
-            { field: 'title', header: 'Title' },
-            { field: 'url', header: 'Url' },
-            { field: 'languageId', header: 'languageId' }
+            {
+                fieldName: 'title',
+                header: this.dotMessageService.get('title'),
+                sortable: true
+            },
+            {
+                fieldName: 'url',
+                header: this.dotMessageService.get('url'),
+                width: '8%'
+            },
+            {
+                fieldName: '',
+                header: this.dotMessageService.get('status')
+            },
+            {
+                fieldName: 'contentType',
+                header: this.dotMessageService.get('type')
+            },
+            {
+                fieldName: 'languageId',
+                header: this.dotMessageService.get('language')
+            },
+            {
+                fieldName: 'modUserName',
+                header: this.dotMessageService.get('Last-Editor')
+            },
+            {
+                fieldName: 'modDate',
+                format: 'date',
+                header: this.dotMessageService.get('Last-Editor-Date'),
+                sortable: true
+            }
         ];
     }
 
@@ -69,7 +112,26 @@ export class DotPagesComponent implements OnInit {
         this.dotRouterService.goToEditPage(urlParams);
     }
 
+    customSort(event: SortEvent) {
+        console.log('***sort', event);
+        event.data.sort((data1, data2) => {
+            const value1 = data1[event.field];
+            const value2 = data2[event.field];
+            let result = null;
+
+            if (value1 == null && value2 != null) result = -1;
+            else if (value1 != null && value2 == null) result = 1;
+            else if (value1 == null && value2 == null) result = 0;
+            else if (typeof value1 === 'string' && typeof value2 === 'string')
+                result = value1.localeCompare(value2);
+            else result = value1 < value2 ? -1 : value1 > value2 ? 1 : 0;
+
+            return event.order * result;
+        });
+    }
+
     loadPagesLazy(event: LazyLoadEvent) {
+        console.log('***loadPagesLazy', event);
         this.store.getPages(event.first >= 0 ? event.first : 0);
         //simulate remote connection with a timeout
         // setTimeout(() => {
