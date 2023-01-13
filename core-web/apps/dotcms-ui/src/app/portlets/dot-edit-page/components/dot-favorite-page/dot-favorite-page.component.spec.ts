@@ -33,6 +33,7 @@ import { DotFavoritePageActionState, DotFavoritePageStore } from './store/dot-fa
 })
 export class DotFormDialogMockComponent {
     @Input() saveButtonDisabled: boolean;
+    @Input() saveButtonLoading: boolean;
     @Output() save = new EventEmitter();
     @Output() cancel = new EventEmitter();
 }
@@ -340,7 +341,7 @@ describe('DotFavoritePageComponent', () => {
                 fixture.detectChanges();
             });
 
-            it('should exits a Remove Favorite with attributes', () => {
+            it('should exist a Remove Favorite with attributes', () => {
                 const element = de.query(By.css('[data-testId="dotFavoriteDialogDeleteButton"]'));
                 expect(element.nativeElement.textContent).toBe('Remove Favorite');
                 expect(element.nativeElement.disabled).toBe(true);
@@ -357,6 +358,11 @@ describe('DotFavoritePageComponent', () => {
                 const dialog = de.query(By.css('[data-testId="dialogForm"]'));
                 dialog.triggerEventHandler('cancel', {});
                 expect(dialogRef.close).toHaveBeenCalledWith(true);
+            });
+
+            it('should exist binding of store Loading state property to dot-form-dialog component', () => {
+                const element = de.query(By.css('dot-form-dialog'));
+                expect(element.componentInstance.saveButtonLoading).toBeDefined();
             });
         });
 
