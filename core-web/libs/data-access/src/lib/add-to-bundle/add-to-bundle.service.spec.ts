@@ -1,9 +1,9 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { of } from 'rxjs';
-
 import { HttpClientTestingModule, HttpTestingController } from '@angular/common/http/testing';
 import { TestBed, getTestBed } from '@angular/core/testing';
+
+import { of } from 'rxjs';
 
 import { ApiRoot, UserModel, LoggerService, StringUtils, CoreWebService } from '@dotcms/dotcms-js';
 import { DotAjaxActionResponseView, DotCurrentUser } from '@dotcms/dotcms-models';
@@ -12,7 +12,6 @@ import { CoreWebServiceMock } from '@dotcms/utils-testing';
 import { AddToBundleService } from './add-to-bundle.service';
 
 import { DotCurrentUserService } from '../dot-current-user/dot-current-user.service';
-
 
 describe('AddToBundleService', () => {
     let injector: TestBed;

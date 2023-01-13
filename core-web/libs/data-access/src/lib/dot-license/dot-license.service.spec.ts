@@ -1,14 +1,12 @@
-import { of } from 'rxjs';
-
 import { HttpTestingController, HttpClientTestingModule } from '@angular/common/http/testing';
 import { TestBed, getTestBed } from '@angular/core/testing';
 
+import { of } from 'rxjs';
 
 import { CoreWebService } from '@dotcms/dotcms-js';
 import { CoreWebServiceMock } from '@dotcms/utils-testing';
 
 import { DotLicenseService } from './dot-license.service';
-
 
 describe('DotLicenseService', () => {
     let injector: TestBed;

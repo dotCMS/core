@@ -1,7 +1,7 @@
+import { Injectable } from '@angular/core';
+
 import { format, subDays } from 'date-fns';
 import { Observable } from 'rxjs';
-
-import { Injectable } from '@angular/core';
 
 import { mergeMap, pluck } from 'rxjs/operators';
 

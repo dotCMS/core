@@ -1,7 +1,7 @@
-import { Observable } from 'rxjs';
-
 import { Injectable } from '@angular/core';
 import { Params } from '@angular/router';
+
+import { Observable } from 'rxjs';
 
 import { pluck } from 'rxjs/operators';
 

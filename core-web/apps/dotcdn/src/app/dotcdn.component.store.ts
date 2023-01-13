@@ -1,7 +1,7 @@
+import { Injectable } from '@angular/core';
+
 import { ComponentStore, tapResponse } from '@ngrx/component-store';
 import { Observable, of } from 'rxjs';
-
-import { Injectable } from '@angular/core';
 
 import { SelectItem } from 'primeng/api';
 

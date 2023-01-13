@@ -1,8 +1,8 @@
-import { ChartOptions } from 'chart.js';
-import { Observable } from 'rxjs';
-
 import { Component, OnInit, ViewChild } from '@angular/core';
 import { UntypedFormBuilder, UntypedFormGroup } from '@angular/forms';
+
+import { ChartOptions } from 'chart.js';
+import { Observable } from 'rxjs';
 
 import { SelectItem } from 'primeng/api';
 import { UIChart } from 'primeng/chart';
