@@ -27,7 +27,7 @@ public class Task220912UpdateCorrectShowOnMenuPropertyTest {
     private static final String VELOCITY_VAR_NAME = "showOnMenu";
     private static final String FIND_CONTENT_TYPES_WITH_FIELD = "SELECT structure_inode, field_contentlet FROM field " +
                                                                         "WHERE velocity_var_name = ?";
-    private static final String FIND_CONTENTS_WITH_INCORRECT_SHOW_ON_MENU_VALUE = "SELECT COUNT(*) FROM contentlet " +
+    private static final String FIND_CONTENTS_WITH_INCORRECT_SHOW_ON_MENU_VALUE = "SELECT COUNT(*) as count FROM contentlet " +
                                                                                           "WHERE %s = 'true' AND " +
                                                                                           "show_on_menu = " + getDBFalse() + " AND " +
                                                                                           "structure_inode = ?";
@@ -67,8 +67,8 @@ public class Task220912UpdateCorrectShowOnMenuPropertyTest {
                                    ".", "0".equals(contentletList.get(0).get("count").toString()));
             }
         } catch (final Exception e) {
-            fail(String.format("An error occurred when running the 'Task220912UpdateCorrectShowOnMenuProperty' " +
-                                       "UT: %s", e.getMessage()));
+            throw new AssertionError(String.format("An error occurred when running the 'Task220912UpdateCorrectShowOnMenuProperty' " +
+                                       "UT: %s", e.getMessage()), e);
         }
     }
 
@@ -86,7 +86,7 @@ public class Task220912UpdateCorrectShowOnMenuPropertyTest {
                 columnName = ContentletJsonAPI.CONTENTLET_AS_JSON + "->'fields'->'" + VELOCITY_VAR_NAME + "'->>'value'";
             } else if (isMsSql()) {
                 columnName =
-                        "JSON_VALUE(c." + ContentletJsonAPI.CONTENTLET_AS_JSON + ", '$.fields." + VELOCITY_VAR_NAME + ".value')";
+                        "JSON_VALUE(" + ContentletJsonAPI.CONTENTLET_AS_JSON + ", '$.fields." + VELOCITY_VAR_NAME + ".value')";
             }
         }
         return columnName;
