@@ -6,6 +6,13 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * Payload for a JITSU Event
+ *
+ * @see EventLogWebInterceptor
+ * @see EventLogSubmitter
+ * @see EventLogRunnable
+ */
 public class EventsPayload {
     private JSONObject jsonObject;
     final List<ShortExperiment> shortExperiments = new ArrayList<>();
