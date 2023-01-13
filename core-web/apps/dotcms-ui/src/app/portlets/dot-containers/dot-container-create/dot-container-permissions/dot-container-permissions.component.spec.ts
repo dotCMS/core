@@ -1,8 +1,10 @@
 import { Component, DebugElement, ElementRef, Input, ViewChild } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
-import { DotContainerPermissionsComponent } from './dot-container-permissions.component';
+
 import { DotPortletBoxModule } from '@components/dot-portlet-base/components/dot-portlet-box/dot-portlet-box.module';
+
+import { DotContainerPermissionsComponent } from './dot-container-permissions.component';
 
 @Component({
     selector: 'dot-iframe',

@@ -1,16 +1,18 @@
 import {
     Component,
-    OnInit,
-    Input,
-    Output,
+    ElementRef,
     EventEmitter,
-    ViewChild,
-    ElementRef
+    Input,
+    OnInit,
+    Output,
+    ViewChild
 } from '@angular/core';
-import { DotMessageService } from '@dotcms/data-access';
-import { DotMessageDisplayService } from '@components/dot-message-display/services';
+
 import { DotMessageSeverity, DotMessageType } from '@components/dot-message-display/model';
+import { DotMessageDisplayService } from '@components/dot-message-display/services';
+import { DotMessageService } from '@dotcms/data-access';
 import { DotKeyValue } from '@shared/models/dot-key-value-ng/dot-key-value-ng.model';
+
 import { DotKeyValueUtil } from '../util/dot-key-value-util';
 
 @Component({

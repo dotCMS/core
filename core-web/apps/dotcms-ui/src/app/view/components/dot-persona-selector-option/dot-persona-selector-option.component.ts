@@ -1,4 +1,5 @@
-import { Component, EventEmitter, Input, Output, HostListener } from '@angular/core';
+import { Component, EventEmitter, HostListener, Input, Output } from '@angular/core';
+
 import { DotPersona } from '@dotcms/dotcms-models';
 
 @Component({

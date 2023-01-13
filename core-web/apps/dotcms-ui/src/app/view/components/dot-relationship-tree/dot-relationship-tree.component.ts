@@ -1,4 +1,5 @@
 import { Component, Input, OnChanges } from '@angular/core';
+
 import { DotCMSContentType } from '@dotcms/dotcms-models';
 
 @Component({

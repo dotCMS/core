@@ -1,7 +1,15 @@
-import { Component, Input, OnInit } from '@angular/core';
 import { Observable } from 'rxjs';
+
+import { Component, Input, OnInit } from '@angular/core';
+
 import { take } from 'rxjs/operators';
 
+import {
+    DotAlertConfirmService,
+    DotLicenseService,
+    DotMessageService,
+    DotPersonalizeService
+} from '@dotcms/data-access';
 import {
     DotDevice,
     DotLanguage,
@@ -10,12 +18,7 @@ import {
     DotPersona,
     DotVariantData
 } from '@dotcms/dotcms-models';
-import {
-    DotAlertConfirmService,
-    DotLicenseService,
-    DotMessageService,
-    DotPersonalizeService
-} from '@dotcms/data-access';
+
 import { DotPageStateService } from '../../services/dot-page-state/dot-page-state.service';
 
 @Component({

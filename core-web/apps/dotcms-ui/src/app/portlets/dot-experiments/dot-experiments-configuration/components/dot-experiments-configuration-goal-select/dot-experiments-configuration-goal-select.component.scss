@@ -1,0 +1,61 @@
+@use "variables" as *;
+
+.experiment-goal-select__form-wrapper {
+    padding: $spacing-5;
+
+    p,
+    h2 {
+        margin: 0;
+        line-height: $line-height;
+        text-align: left;
+        text-transform: initial;
+    }
+
+    form {
+        margin-top: $spacing-4;
+
+        label {
+            font-weight: $font-weight-semi-bold;
+            margin-bottom: $spacing-3;
+            font-size: $font-size-large;
+        }
+    }
+
+    .option-wrapper {
+        padding: $spacing-3;
+        gap: $spacing-2;
+
+        h2 {
+            color: $dark;
+            font-size: $font-size-large;
+            font-weight: $font-weight-semi-bold;
+        }
+
+        p {
+            font-weight: $font-weight-regular-bold;
+            color: $gray;
+        }
+    }
+}
+
+::ng-deep {
+    p-selectbutton .p-selectbutton {
+        flex-direction: column;
+        gap: $spacing-2;
+
+        .p-button.p-element,
+        .p-button:not(:first-of-type):not(:last-of-type) {
+            border: 1px solid $gray-lighter;
+            border-radius: $border-radius-md;
+            padding: 0;
+
+            &:focus {
+                background-color: $brand-primary-100-hover;
+            }
+        }
+
+        .p-highlight {
+            background-color: $brand-primary-100-hover;
+        }
+    }
+}

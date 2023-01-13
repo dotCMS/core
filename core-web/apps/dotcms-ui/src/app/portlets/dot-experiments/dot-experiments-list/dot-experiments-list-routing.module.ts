@@ -1,5 +1,6 @@
 import { NgModule } from '@angular/core';
 import { RouterModule, Routes } from '@angular/router';
+
 import { DotExperimentsListComponent } from './dot-experiments-list.component';
 
 const routes: Routes = [{ path: ':pageId', component: DotExperimentsListComponent }];

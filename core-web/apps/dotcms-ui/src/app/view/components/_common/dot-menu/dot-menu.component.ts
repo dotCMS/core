@@ -1,9 +1,11 @@
 import { fromEvent as observableFromEvent } from 'rxjs';
 
-import { take, skip } from 'rxjs/operators';
 import { Component, Input, ViewChild } from '@angular/core';
+
 import { MenuItem } from 'primeng/api';
 import { Menu } from 'primeng/menu';
+
+import { skip, take } from 'rxjs/operators';
 
 /**
  * Custom Menu to display options as a pop-up.

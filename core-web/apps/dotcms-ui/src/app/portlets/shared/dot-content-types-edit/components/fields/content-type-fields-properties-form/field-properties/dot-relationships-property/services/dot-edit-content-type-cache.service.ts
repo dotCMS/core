@@ -1,6 +1,8 @@
-import { Injectable } from '@angular/core';
-import { DotCMSContentType } from '@dotcms/dotcms-models';
 import * as _ from 'lodash';
+
+import { Injectable } from '@angular/core';
+
+import { DotCMSContentType } from '@dotcms/dotcms-models';
 
 /**
  *Store the current Content Type to Add or Edit the Relationships

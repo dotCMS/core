@@ -1,12 +1,15 @@
+import { BehaviorSubject, Observable, Subject } from 'rxjs';
+
 import { Injectable } from '@angular/core';
+import { ActivatedRoute, Data, NavigationEnd, Router } from '@angular/router';
+
+import { filter, map, switchMap, take } from 'rxjs/operators';
+
+import { DotMenu, DotMenuItem } from '../../../../shared/models/navigation';
 import {
     DotNavigationService,
     replaceSectionsMap
 } from '../../dot-navigation/services/dot-navigation.service';
-import { map, switchMap, filter, take } from 'rxjs/operators';
-import { NavigationEnd, Router, ActivatedRoute, Data } from '@angular/router';
-import { DotMenu, DotMenuItem } from '../../../../shared/models/navigation';
-import { Observable, BehaviorSubject, Subject } from 'rxjs';
 
 @Injectable()
 export class DotCrumbtrailService {

@@ -1,9 +1,13 @@
+import { Observable } from 'rxjs';
+
 import { Component, ElementRef, ViewChild } from '@angular/core';
-import { DotCategory } from '@dotcms/app/shared/models/dot-categories/dot-categories.model';
+
 import { LazyLoadEvent } from 'primeng/api';
 import { Table } from 'primeng/table';
-import { Observable } from 'rxjs';
-import { DotCategoriesListStore, DotCategoriesListState } from './store/dot-categories-list-store';
+
+import { DotCategory } from '@dotcms/app/shared/models/dot-categories/dot-categories.model';
+
+import { DotCategoriesListState, DotCategoriesListStore } from './store/dot-categories-list-store';
 
 @Component({
     selector: 'dot-categories-list',

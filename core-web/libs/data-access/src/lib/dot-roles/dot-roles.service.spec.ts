@@ -1,15 +1,17 @@
-import { DotRolesService } from './dot-roles.service';
-import { TestBed } from '@angular/core/testing';
-import { CoreWebService } from '@dotcms/dotcms-js';
-
 import { HttpTestingController, HttpClientTestingModule } from '@angular/common/http/testing';
+import { TestBed } from '@angular/core/testing';
+
+import { CoreWebService } from '@dotcms/dotcms-js';
 import { DotRole } from '@dotcms/dotcms-models';
-import { DotMessageService } from '../dot-messages/dot-messages.service';
 import {
     CoreWebServiceMock,
     MockDotMessageService,
     mockProcessedRoles
 } from '@dotcms/utils-testing';
+
+import { DotRolesService } from './dot-roles.service';
+
+import { DotMessageService } from '../dot-messages/dot-messages.service';
 
 const mockRoles: DotRole[] = [
     {

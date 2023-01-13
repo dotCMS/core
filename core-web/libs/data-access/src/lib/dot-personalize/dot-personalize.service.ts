@@ -1,8 +1,11 @@
+import { Observable } from 'rxjs';
+
 import { Injectable } from '@angular/core';
+
+import { pluck } from 'rxjs/operators';
+
 import { CoreWebService } from '@dotcms/dotcms-js';
 import { DotCMSPersonalizedItem } from '@dotcms/dotcms-models';
-import { Observable } from 'rxjs';
-import { pluck } from 'rxjs/operators';
 
 @Injectable()
 export class DotPersonalizeService {

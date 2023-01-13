@@ -1,26 +1,30 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { By } from '@angular/platform-browser';
-import { ComponentFixture } from '@angular/core/testing';
 import {
-    DebugElement,
+    AfterContentInit,
     Component,
+    ContentChildren,
+    DebugElement,
     Directive,
     Input,
-    AfterContentInit,
-    ContentChildren,
     QueryList,
     TemplateRef
 } from '@angular/core';
-import { DotKeyValueTableRowComponent } from './dot-key-value-table-row.component';
-import { UiDotIconButtonModule } from '@components/_common/dot-icon-button/dot-icon-button.module';
-import { MockDotMessageService } from '@dotcms/utils-testing';
-import { DOTTestBed } from '@dotcms/app/test/dot-test-bed';
-import { DotMessageService } from '@dotcms/data-access';
-import { DotKeyValue } from '@shared/models/dot-key-value-ng/dot-key-value-ng.model';
-import { mockKeyValue } from '../dot-key-value-ng.component.spec';
+import { ComponentFixture } from '@angular/core/testing';
+import { By } from '@angular/platform-browser';
+
 import { PrimeTemplate } from 'primeng/api';
 import { InputSwitchModule } from 'primeng/inputswitch';
+
+import { UiDotIconButtonModule } from '@components/_common/dot-icon-button/dot-icon-button.module';
+import { DOTTestBed } from '@dotcms/app/test/dot-test-bed';
+import { DotMessageService } from '@dotcms/data-access';
+import { MockDotMessageService } from '@dotcms/utils-testing';
+import { DotKeyValue } from '@shared/models/dot-key-value-ng/dot-key-value-ng.model';
+
+import { DotKeyValueTableRowComponent } from './dot-key-value-table-row.component';
+
+import { mockKeyValue } from '../dot-key-value-ng.component.spec';
 
 @Component({
     selector: 'dot-test-host-component',

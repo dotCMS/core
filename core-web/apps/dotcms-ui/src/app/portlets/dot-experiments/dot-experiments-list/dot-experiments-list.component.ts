@@ -1,17 +1,19 @@
-import { ChangeDetectionStrategy, Component, ViewChild } from '@angular/core';
+import { provideComponentStore } from '@ngrx/component-store';
 import { Observable } from 'rxjs';
 
+import { ChangeDetectionStrategy, Component, ViewChild } from '@angular/core';
+import { Router } from '@angular/router';
+
+import { take } from 'rxjs/operators';
+
 import { DotMessagePipe } from '@dotcms/app/view/pipes';
+import { DotExperiment, ExperimentsStatusList } from '@dotcms/dotcms-models';
+import { DotExperimentsCreateComponent } from '@portlets/dot-experiments/dot-experiments-create/dot-experiments-create.component';
 import {
     DotExperimentsListStore,
     VmListExperiments
 } from '@portlets/dot-experiments/dot-experiments-list/store/dot-experiments-list-store.service';
 import { DotDynamicDirective } from '@portlets/shared/directives/dot-dynamic.directive';
-import { DotExperimentsCreateComponent } from '@portlets/dot-experiments/dot-experiments-create/dot-experiments-create.component';
-import { take } from 'rxjs/operators';
-import { Router } from '@angular/router';
-import { provideComponentStore } from '@ngrx/component-store';
-import { DotExperiment, ExperimentsStatusList } from '@dotcms/dotcms-models';
 
 @Component({
     selector: 'dot-experiments-list',

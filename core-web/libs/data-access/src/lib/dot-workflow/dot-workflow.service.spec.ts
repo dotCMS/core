@@ -2,11 +2,13 @@
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { DotWorkflowService } from './dot-workflow.service';
-import { TestBed, getTestBed } from '@angular/core/testing';
 import { HttpTestingController, HttpClientTestingModule } from '@angular/common/http/testing';
+import { TestBed, getTestBed } from '@angular/core/testing';
+
 import { CoreWebService } from '@dotcms/dotcms-js';
 import { CoreWebServiceMock, mockWorkflows } from '@dotcms/utils-testing';
+
+import { DotWorkflowService } from './dot-workflow.service';
 
 describe('DotWorkflowService', () => {
     let injector: TestBed;

@@ -1,11 +1,13 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { DOTTestBed } from '@dotcms/app/test/dot-test-bed';
-import { DotLayoutPropertiesItemComponent } from './dot-layout-properties-item.component';
-import { UntypedFormGroup, UntypedFormControl } from '@angular/forms';
+import { Component, DebugElement } from '@angular/core';
 import { ComponentFixture } from '@angular/core/testing';
-import { DebugElement, Component } from '@angular/core';
+import { UntypedFormControl, UntypedFormGroup } from '@angular/forms';
 import { By } from '@angular/platform-browser';
+
+import { DOTTestBed } from '@dotcms/app/test/dot-test-bed';
+
+import { DotLayoutPropertiesItemComponent } from './dot-layout-properties-item.component';
 
 @Component({
     selector: 'dot-test-host-component',

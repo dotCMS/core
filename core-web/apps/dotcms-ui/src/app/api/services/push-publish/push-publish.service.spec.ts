@@ -1,16 +1,18 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { of } from 'rxjs';
-import { PushPublishService } from './push-publish.service';
-import { TestBed } from '@angular/core/testing';
-import { DotPushPublishData } from '@models/dot-push-publish-data/dot-push-publish-data';
-import { ApiRoot, CoreWebService, LoggerService, StringUtils, UserModel } from '@dotcms/dotcms-js';
 import { format } from 'date-fns';
-import { CoreWebServiceMock } from '@dotcms/utils-testing';
+import { of } from 'rxjs';
+
 import { HttpClientTestingModule, HttpTestingController } from '@angular/common/http/testing';
+import { TestBed } from '@angular/core/testing';
+
 import { DotFormatDateService } from '@dotcms/app/api/services/dot-format-date-service';
-import { DotFormatDateServiceMock } from '@dotcms/utils-testing';
 import { DotCurrentUserService } from '@dotcms/data-access';
+import { ApiRoot, CoreWebService, LoggerService, StringUtils, UserModel } from '@dotcms/dotcms-js';
+import { CoreWebServiceMock, DotFormatDateServiceMock } from '@dotcms/utils-testing';
+import { DotPushPublishData } from '@models/dot-push-publish-data/dot-push-publish-data';
+
+import { PushPublishService } from './push-publish.service';
 
 const mockResponse = {
     errorMessages: [],

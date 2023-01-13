@@ -1,13 +1,15 @@
-import { toArray, filter, pluck, mergeMap, map } from 'rxjs/operators';
-import { CoreWebService, ApiRoot } from '@dotcms/dotcms-js';
-import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
-import { DotEnvironment } from '@models/dot-environment/dot-environment';
 
-import { DotPushPublishData } from '@models/dot-push-publish-data/dot-push-publish-data';
+import { Injectable } from '@angular/core';
+
+import { filter, map, mergeMap, pluck, toArray } from 'rxjs/operators';
+
 import { DotFormatDateService } from '@dotcms/app/api/services/dot-format-date-service';
 import { DotCurrentUserService } from '@dotcms/data-access';
-import { DotCurrentUser, DotAjaxActionResponseView } from '@dotcms/dotcms-models';
+import { ApiRoot, CoreWebService } from '@dotcms/dotcms-js';
+import { DotAjaxActionResponseView, DotCurrentUser } from '@dotcms/dotcms-models';
+import { DotEnvironment } from '@models/dot-environment/dot-environment';
+import { DotPushPublishData } from '@models/dot-push-publish-data/dot-push-publish-data';
 
 /**
  * Provide method to push publish to content types

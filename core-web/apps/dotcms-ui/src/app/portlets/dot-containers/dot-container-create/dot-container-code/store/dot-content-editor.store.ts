@@ -1,8 +1,12 @@
 import { ComponentStore } from '@ngrx/component-store';
-import { take } from 'rxjs/operators';
-import { DotContentTypeService } from '@dotcms/app/api/services/dot-content-type';
+
 import { Injectable } from '@angular/core';
+
 import { MenuItem } from 'primeng/api';
+
+import { take } from 'rxjs/operators';
+
+import { DotContentTypeService } from '@dotcms/app/api/services/dot-content-type';
 import { DotCMSContentType } from '@dotcms/dotcms-models';
 import { DotContainerStructure } from '@models/container/dot-container.model';
 

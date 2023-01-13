@@ -53,6 +53,7 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.liferay.portal.model.User;
+import com.liferay.util.StringPool;
 import java.io.IOException;
 import java.io.Serializable;
 import java.io.StringWriter;
@@ -735,13 +736,11 @@ public class ContainerResource implements Serializable {
             Logger.error(this, MessageConstants.CONTAINER + containerForm.getIdentifier() + ", does not exists");
             throw new DoesNotExistException(MessageConstants.CONTAINER + containerForm.getIdentifier() + " does not exists");
         }
+            Logger.debug(this,
+                () -> "Updating container. Request payload is : " + JsonUtil.getJsonStringFromObject(
+                        containerForm));
 
-            ActivityLogger.logInfo(this.getClass(),
-                    "Update Container: " + containerForm.getIdentifier(),
-                    getInfoMessage(user,
-                            MessageConstants.SAVED + container.getTitle()),
-                    host.getHostname());
-
+            container.setInode(StringPool.BLANK);
             container.setCode(containerForm.getCode());
             container.setMaxContentlets(containerForm.getMaxContentlets());
             container.setNotes(containerForm.getNotes());
@@ -764,7 +763,11 @@ public class ContainerResource implements Serializable {
             this.containerAPI.save(container, containerForm.getContainerStructures(), host, user,
                     pageMode.respectAnonPerms);
 
-            Logger.error(this, "The container: " + container.getIdentifier() + " has been updated");
+        ActivityLogger.logInfo(this.getClass(),
+                "Update Container: " + containerForm.getIdentifier(),
+                getInfoMessage(user,
+                        MessageConstants.SAVED + container.getTitle()),
+                host.getHostname());
 
         return Response.ok(new ResponseEntityView(new ContainerView(container))).build();
     }

@@ -1,11 +1,15 @@
-import { Component, Input, OnDestroy, OnChanges, SimpleChanges } from '@angular/core';
-import { DotFieldVariablesService } from './services/dot-field-variables.service';
-import { take, takeUntil } from 'rxjs/operators';
 import { Subject } from 'rxjs';
+
+import { HttpErrorResponse } from '@angular/common/http';
+import { Component, Input, OnChanges, OnDestroy, SimpleChanges } from '@angular/core';
+
+import { take, takeUntil } from 'rxjs/operators';
+
+import { DotHttpErrorManagerService } from '@dotcms/app/api/services/dot-http-error-manager/dot-http-error-manager.service';
 import { DotCMSContentTypeField, DotFieldVariable } from '@dotcms/dotcms-models';
 import { DotKeyValue } from '@shared/models/dot-key-value-ng/dot-key-value-ng.model';
-import { HttpErrorResponse } from '@angular/common/http';
-import { DotHttpErrorManagerService } from '@dotcms/app/api/services/dot-http-error-manager/dot-http-error-manager.service';
+
+import { DotFieldVariablesService } from './services/dot-field-variables.service';
 
 @Component({
     selector: 'dot-content-type-fields-variables',

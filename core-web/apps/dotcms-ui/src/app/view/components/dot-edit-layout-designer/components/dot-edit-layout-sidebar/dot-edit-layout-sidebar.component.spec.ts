@@ -1,19 +1,24 @@
-import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
-import { By } from '@angular/platform-browser';
 import { Component, DebugElement } from '@angular/core';
 import { ComponentFixture } from '@angular/core/testing';
 import { UntypedFormControl, UntypedFormGroup } from '@angular/forms';
+import { By } from '@angular/platform-browser';
+import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 
-import { DOTTestBed } from '@dotcms/app/test/dot-test-bed';
 import { DotContainerSelectorLayoutModule } from '@components/dot-container-selector-layout/dot-container-selector-layout.module';
-import { DotEditLayoutSidebarComponent } from './dot-edit-layout-sidebar.component';
-import { DotMessageService } from '@dotcms/data-access';
-import { MockDotMessageService } from '@dotcms/utils-testing';
-import { DotTemplateContainersCacheService } from '@dotcms/app/api/services/dot-template-containers-cache/dot-template-containers-cache.service';
-import { DotSidebarPropertiesModule } from '../dot-sidebar-properties/dot-sidebar-properties.module';
-import { mockDotContainers, processedContainers } from '@dotcms/utils-testing';
 import { DotEditLayoutService } from '@dotcms/app/api/services/dot-edit-layout/dot-edit-layout.service';
+import { DotTemplateContainersCacheService } from '@dotcms/app/api/services/dot-template-containers-cache/dot-template-containers-cache.service';
+import { DOTTestBed } from '@dotcms/app/test/dot-test-bed';
+import { DotMessageService } from '@dotcms/data-access';
 import { DotLayoutSideBar } from '@dotcms/dotcms-models';
+import {
+    mockDotContainers,
+    MockDotMessageService,
+    processedContainers
+} from '@dotcms/utils-testing';
+
+import { DotEditLayoutSidebarComponent } from './dot-edit-layout-sidebar.component';
+
+import { DotSidebarPropertiesModule } from '../dot-sidebar-properties/dot-sidebar-properties.module';
 
 let fakeValue: DotLayoutSideBar;
 

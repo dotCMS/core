@@ -1,10 +1,26 @@
 import { fromEvent, merge, Observable, of, Subject } from 'rxjs';
 
-import { catchError, filter, map, pluck, skip, take, takeUntil, tap } from 'rxjs/operators';
-import { ActivatedRoute, Router } from '@angular/router';
+import { HttpErrorResponse } from '@angular/common/http';
 import { Component, ElementRef, NgZone, OnDestroy, OnInit, ViewChild } from '@angular/core';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
+import { ActivatedRoute, Router } from '@angular/router';
 
+import { DialogService } from 'primeng/dynamicdialog';
+
+import { catchError, filter, map, pluck, skip, take, takeUntil, tap } from 'rxjs/operators';
+
+import { DotGlobalMessageService } from '@components/_common/dot-global-message/dot-global-message.service';
+import { IframeOverlayService } from '@components/_common/iframe/service/iframe-overlay.service';
+import { DotContentletEditorService } from '@components/dot-contentlet-editor/services/dot-contentlet-editor.service';
+import {
+    DotAlertConfirmService,
+    DotEditPageService,
+    DotESContentService,
+    DotEventsService,
+    DotLicenseService,
+    DotMessageService,
+    DotPropertiesService
+} from '@dotcms/data-access';
 import { SiteService } from '@dotcms/dotcms-js';
 import {
     DEFAULT_VARIANT_NAME,
@@ -21,34 +37,20 @@ import {
     DotVariantData,
     ESContent
 } from '@dotcms/dotcms-models';
-import { DialogService } from 'primeng/dynamicdialog';
-import { DotContentletEditorService } from '@components/dot-contentlet-editor/services/dot-contentlet-editor.service';
-import { DotGlobalMessageService } from '@components/_common/dot-global-message/dot-global-message.service';
 import { DotLoadingIndicatorService } from '@dotcms/utils';
-import { DotContentletEventAddContentType } from '@portlets/dot-edit-page/content/services/dot-edit-content-html/models/dot-contentlets-events.model';
-import {
-    DotAlertConfirmService,
-    DotEditPageService,
-    DotESContentService,
-    DotEventsService,
-    DotLicenseService,
-    DotMessageService,
-    DotPropertiesService
-} from '@dotcms/data-access';
-import { IframeOverlayService } from '@components/_common/iframe/service/iframe-overlay.service';
-import { DotEditContentHtmlService } from '@portlets/dot-edit-page/content/services/dot-edit-content-html/dot-edit-content-html.service';
 import { DotFavoritePageComponent } from '@portlets/dot-edit-page/components/dot-favorite-page/dot-favorite-page.component';
+import { DotEditContentHtmlService } from '@portlets/dot-edit-page/content/services/dot-edit-content-html/dot-edit-content-html.service';
 import {
     PageModelChangeEvent,
     PageModelChangeEventType
 } from '@portlets/dot-edit-page/content/services/dot-edit-content-html/models';
-import { DotPageContent } from '@portlets/dot-edit-page/shared/models';
-import { DotHttpErrorManagerService } from '@services/dot-http-error-manager/dot-http-error-manager.service';
+import { DotContentletEventAddContentType } from '@portlets/dot-edit-page/content/services/dot-edit-content-html/models/dot-contentlets-events.model';
 import { DotPageStateService } from '@portlets/dot-edit-page/content/services/dot-page-state/dot-page-state.service';
+import { DotPageContent } from '@portlets/dot-edit-page/shared/models';
 import { DotCustomEventHandlerService } from '@services/dot-custom-event-handler/dot-custom-event-handler.service';
-import { DotUiColorsService } from '@services/dot-ui-colors/dot-ui-colors.service';
-import { HttpErrorResponse } from '@angular/common/http';
+import { DotHttpErrorManagerService } from '@services/dot-http-error-manager/dot-http-error-manager.service';
 import { DotRouterService } from '@services/dot-router/dot-router.service';
+import { DotUiColorsService } from '@services/dot-ui-colors/dot-ui-colors.service';
 
 export const EDIT_BLOCK_EDITOR_CUSTOM_EVENT = 'edit-block-editor';
 

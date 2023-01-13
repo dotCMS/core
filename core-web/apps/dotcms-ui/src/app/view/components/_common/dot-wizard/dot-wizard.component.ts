@@ -1,28 +1,31 @@
+import { Subject } from 'rxjs';
+
 import {
     Component,
     ComponentFactoryResolver,
+    ComponentRef,
     Input,
+    OnDestroy,
     OnInit,
     QueryList,
+    Type,
     ViewChild,
-    ViewChildren,
-    OnDestroy,
-    ComponentRef
+    ViewChildren
 } from '@angular/core';
-import { DotContainerReferenceDirective } from '@directives/dot-container-reference/dot-container-reference.directive';
+
+import { takeUntil } from 'rxjs/operators';
+
 import {
     DialogButton,
     DotDialogActions,
     DotDialogComponent
 } from '@components/dot-dialog/dot-dialog.component';
-import { DotMessageService } from '@dotcms/data-access';
-import { DotWizardStep } from '@models/dot-wizard-step/dot-wizard-step.model';
-import { Subject } from 'rxjs';
-import { takeUntil } from 'rxjs/operators';
-import { DotWizardInput } from '@models/dot-wizard-input/dot-wizard-input.model';
-import { Type } from '@angular/core';
-import { DotFormModel } from '@models/dot-form/dot-form.model';
+import { DotContainerReferenceDirective } from '@directives/dot-container-reference/dot-container-reference.directive';
 import { DotWizardService } from '@dotcms/app/api/services/dot-wizard/dot-wizard.service';
+import { DotMessageService } from '@dotcms/data-access';
+import { DotFormModel } from '@models/dot-form/dot-form.model';
+import { DotWizardInput } from '@models/dot-wizard-input/dot-wizard-input.model';
+import { DotWizardStep } from '@models/dot-wizard-step/dot-wizard-step.model';
 
 @Component({
     selector: 'dot-wizard',

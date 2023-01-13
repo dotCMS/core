@@ -1,19 +1,22 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { of as observableOf, Observable, of } from 'rxjs';
+import { Observable, of as observableOf, of } from 'rxjs';
+
+import { Component, DebugElement, EventEmitter, Input, Output } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { DebugElement, Component, Input, Output, EventEmitter } from '@angular/core';
-import { MockDotMessageService } from '@dotcms/utils-testing';
-import { DotPushPublishDialogComponent } from './dot-push-publish-dialog.component';
 import { By } from '@angular/platform-browser';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
-import { DotMessageService } from '@dotcms/data-access';
-import { PushPublishService } from '@dotcms/app/api/services/push-publish/push-publish.service';
-import { DotPushPublishDialogService } from '@dotcms/dotcms-js';
+
 import { DotDialogComponent } from '@components/dot-dialog/dot-dialog.component';
-import { DotPushPublishDialogData } from '@dotcms/dotcms-models';
 import { DotDialogModule } from '@components/dot-dialog/dot-dialog.module';
+import { PushPublishService } from '@dotcms/app/api/services/push-publish/push-publish.service';
+import { DotMessageService } from '@dotcms/data-access';
+import { DotPushPublishDialogService } from '@dotcms/dotcms-js';
+import { DotPushPublishDialogData } from '@dotcms/dotcms-models';
+import { MockDotMessageService } from '@dotcms/utils-testing';
 import { DotPushPublishData } from '@models/dot-push-publish-data/dot-push-publish-data';
+
+import { DotPushPublishDialogComponent } from './dot-push-publish-dialog.component';
 
 class PushPublishServiceMock {
     pushPublishContent(): Observable<any> {

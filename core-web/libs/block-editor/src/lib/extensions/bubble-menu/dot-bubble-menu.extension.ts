@@ -1,12 +1,14 @@
-import { ViewContainerRef } from '@angular/core';
 import { PluginKey } from 'prosemirror-state';
-import BubbleMenu, { BubbleMenuOptions } from '@tiptap/extension-bubble-menu';
 import { Props } from 'tippy.js';
+
+import { ViewContainerRef } from '@angular/core';
+
+import BubbleMenu, { BubbleMenuOptions } from '@tiptap/extension-bubble-menu';
+
+import { BubbleMenuComponent, SuggestionsComponent } from '@dotcms/block-editor';
 
 import { DotBubbleMenuPlugin } from './plugins/dot-bubble-menu.plugin';
 import { shouldShowBubbleMenu } from './utils/index';
-
-import { BubbleMenuComponent, SuggestionsComponent } from '@dotcms/block-editor';
 
 const defaultTippyOptions: Partial<Props> = {
     duration: 500,

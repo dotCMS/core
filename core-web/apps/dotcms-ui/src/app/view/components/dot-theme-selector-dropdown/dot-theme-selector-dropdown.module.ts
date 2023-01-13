@@ -1,14 +1,16 @@
-import { NgModule } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { DotThemeSelectorDropdownComponent } from './dot-theme-selector-dropdown.component';
-import { PaginatorService } from '@dotcms/data-access';
-import { SearchableDropDownModule } from '@components/_common/searchable-dropdown';
+import { NgModule } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { DotThemesService } from '@dotcms/data-access';
-import { DotMessagePipeModule } from '@pipes/dot-message/dot-message-pipe.module';
-import { DotSiteSelectorModule } from '@components/_common/dot-site-selector/dot-site-selector.module';
+
 import { InputTextModule } from 'primeng/inputtext';
+
+import { DotSiteSelectorModule } from '@components/_common/dot-site-selector/dot-site-selector.module';
+import { SearchableDropDownModule } from '@components/_common/searchable-dropdown';
+import { DotThemesService, PaginatorService } from '@dotcms/data-access';
 import { DotIconModule } from '@dotcms/ui';
+import { DotMessagePipeModule } from '@pipes/dot-message/dot-message-pipe.module';
+
+import { DotThemeSelectorDropdownComponent } from './dot-theme-selector-dropdown.component';
 
 @NgModule({
     declarations: [DotThemeSelectorDropdownComponent],

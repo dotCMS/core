@@ -1,18 +1,21 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { DotPipesModule } from '@pipes/dot-pipes.module';
-import { DotIconModule } from '@dotcms/ui';
-import { DotCMSContentType } from '@dotcms/dotcms-models';
-import { By } from '@angular/platform-browser';
-import { Component, DebugElement, EventEmitter, Injectable, Input, Output } from '@angular/core';
-import { DotContentletEditorService } from '@components/dot-contentlet-editor/services/dot-contentlet-editor.service';
-import { DotFilterPipeModule } from '@pipes/dot-filter/dot-filter-pipe.module';
-import { FormsModule } from '@angular/forms';
-import { DotPaletteContentTypeComponent } from './dot-palette-content-type.component';
-import { DotPaletteInputFilterModule } from '../dot-palette-input-filter/dot-palette-input-filter.module';
 import { HttpClientTestingModule } from '@angular/common/http/testing';
+import { Component, DebugElement, EventEmitter, Injectable, Input, Output } from '@angular/core';
+import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { FormsModule } from '@angular/forms';
+import { By } from '@angular/platform-browser';
+
+import { DotContentletEditorService } from '@components/dot-contentlet-editor/services/dot-contentlet-editor.service';
 import { CoreWebService, CoreWebServiceMock } from '@dotcms/dotcms-js';
+import { DotCMSContentType } from '@dotcms/dotcms-models';
+import { DotIconModule } from '@dotcms/ui';
+import { DotFilterPipeModule } from '@pipes/dot-filter/dot-filter-pipe.module';
+import { DotPipesModule } from '@pipes/dot-pipes.module';
+
+import { DotPaletteContentTypeComponent } from './dot-palette-content-type.component';
+
+import { DotPaletteInputFilterModule } from '../dot-palette-input-filter/dot-palette-input-filter.module';
 
 export const contentTypeDataMock = [
     {
@@ -56,7 +59,11 @@ export const contentTypeDataMock = [
 @Component({
     selector: 'dot-test-host-component',
     template: `
-        <dot-palette-content-type [items]="items" [loading]="loading" [viewContentlet]="viewContentlet"></dot-palette-content-type>
+        <dot-palette-content-type
+            [items]="items"
+            [loading]="loading"
+            [viewContentlet]="viewContentlet"
+        ></dot-palette-content-type>
     `
 })
 class TestHostComponent {
