@@ -88,7 +88,7 @@ public class ExperimentWebAPIImpl implements ExperimentWebAPI {
             totalWeight += variant.weight();
 
             if (randomValue < totalWeight) {
-                return new SelectedVariant(variant.id(), variant.url().get());
+                return new SelectedVariant(variant.id(), variant.url().orElse(StringPool.BLANK));
             }
         }
 
