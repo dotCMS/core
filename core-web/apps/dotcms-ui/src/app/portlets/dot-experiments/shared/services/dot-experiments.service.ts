@@ -1,9 +1,12 @@
-import { Injectable } from '@angular/core';
-import { DotExperiment, Variant } from '@dotcms/dotcms-models';
-import { HttpClient } from '@angular/common/http';
-import { pluck } from 'rxjs/operators';
-import { DotCMSResponse } from '@dotcms/dotcms-js';
 import { Observable } from 'rxjs';
+
+import { HttpClient } from '@angular/common/http';
+import { Injectable } from '@angular/core';
+
+import { pluck } from 'rxjs/operators';
+
+import { DotCMSResponse } from '@dotcms/dotcms-js';
+import { DotExperiment, Goals, Variant } from '@dotcms/dotcms-models';
 
 const API_ENDPOINT = '/api/v1/experiments';
 
@@ -122,6 +125,18 @@ export class DotExperimentsService {
             .delete<DotCMSResponse<DotExperiment>>(
                 `${API_ENDPOINT}/${experimentId}/variants/${variantId}`
             )
+            .pipe(pluck('entity'));
+    }
+
+    /**
+     * Set a selectedGoal to an experiment
+     * @param {Goal} selectedGoal
+     * @returns Observable<DotExperiment>
+     * @memberof DotExperimentsService
+     */
+    setGoal(experimentId: string, goals: Goals): Observable<DotExperiment> {
+        return this.http
+            .patch<DotCMSResponse<DotExperiment>>(`${API_ENDPOINT}/${experimentId}`, { goals })
             .pipe(pluck('entity'));
     }
 }

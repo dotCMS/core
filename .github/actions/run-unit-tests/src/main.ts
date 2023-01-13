@@ -17,8 +17,8 @@ const run = async () => {
 
   const exitCode = await unit.runTests(cmd)
   setOutput('tests_results_location', cmd.outputDir)
-  setOutput('tests_results_report_location', cmd.reportDir, true)
-  setOutput('tests_results_status', exitCode === 0 ? 'PASSED' : 'FAILED')
+  setOutput('tests_results_report_location', cmd.reportDir)
+  setOutput('tests_results_status', exitCode === 0 ? 'PASSED' : 'FAILED', true)
   setOutput('tests_results_skip_report', !fs.existsSync(cmd.outputDir))
 }
 

@@ -1,20 +1,22 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { ComponentFixture, fakeAsync, TestBed, tick, waitForAsync } from '@angular/core/testing';
-import { DotWizardComponent } from './dot-wizard.component';
-import { DotMessageService } from '@dotcms/data-access';
-import { MockDotMessageService } from '@dotcms/utils-testing';
-import { DotWizardService } from '@dotcms/app/api/services/dot-wizard/dot-wizard.service';
-import { Component, DebugElement, EventEmitter, Input, Output } from '@angular/core';
-import { DotDialogModule } from '@components/dot-dialog/dot-dialog.module';
-import { DotPushPublishDialogData } from '@dotcms/dotcms-models';
-import { DotWizardStep } from '@models/dot-wizard-step/dot-wizard-step.model';
 import { CommonModule } from '@angular/common';
-import { DotContainerReferenceModule } from '@directives/dot-container-reference/dot-container-reference.module';
-import { BrowserDynamicTestingModule } from '@angular/platform-browser-dynamic/testing';
+import { Component, DebugElement, EventEmitter, Input, Output } from '@angular/core';
+import { ComponentFixture, fakeAsync, TestBed, tick, waitForAsync } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
-import { DotWizardInput } from '@models/dot-wizard-input/dot-wizard-input.model';
+import { BrowserDynamicTestingModule } from '@angular/platform-browser-dynamic/testing';
+
 import { DotDialogComponent } from '@components/dot-dialog/dot-dialog.component';
+import { DotDialogModule } from '@components/dot-dialog/dot-dialog.module';
+import { DotContainerReferenceModule } from '@directives/dot-container-reference/dot-container-reference.module';
+import { DotWizardService } from '@dotcms/app/api/services/dot-wizard/dot-wizard.service';
+import { DotMessageService } from '@dotcms/data-access';
+import { DotPushPublishDialogData } from '@dotcms/dotcms-models';
+import { MockDotMessageService } from '@dotcms/utils-testing';
+import { DotWizardInput } from '@models/dot-wizard-input/dot-wizard-input.model';
+import { DotWizardStep } from '@models/dot-wizard-step/dot-wizard-step.model';
+
+import { DotWizardComponent } from './dot-wizard.component';
 
 const messageServiceMock = new MockDotMessageService({
     send: 'Send',

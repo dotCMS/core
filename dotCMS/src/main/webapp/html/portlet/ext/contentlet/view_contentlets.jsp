@@ -626,7 +626,6 @@
                 <!-- START Advanced Search-->
                 <div id="advancedSearch">
                     <dl class="vertical">
-                        <dd><input type="text" dojoType="dijit.form.TextBox" tabindex="1" placeholder="<%= LanguageUtil.get(pageContext, "Search").replace("\"", "'") %>" onKeyUp='doSearch()' name="allFieldTB" id="allFieldTB" value="<%=_allValue %>"></dd>
                         <div class="clear"></div>
                        <%if(contentTypes!=null && contentTypes.size()==1){ %>
                            <input type="hidden" name="structure_inode_select" value="<%=structures.get(0).getInode()%>"/>
@@ -752,12 +751,15 @@
                     <input type="hidden" name="cmd" value="prepublish">
                     <div class="portlet-toolbar" style="height: 48px">
                         <div class="portlet-toolbar__actions-secondary">
+                            <div id="matchingResultsDiv" style="display: none" class="portlet-toolbar__info"></div>
+                        </div>
+                        <div class="portlet-toolbar__actions-search" style="width: 270px;">
+                            <input type="text" dojoType="dijit.form.TextBox" tabindex="1" placeholder="<%= LanguageUtil.get(pageContext, "Type-To-Search").replace("\"", "'") %>" onKeyUp='doSearch()' name="allFieldTB" id="allFieldTB" value="<%=_allValue %>">
+                        </div>
+                        <div class="portlet-toolbar__actions-primary">
                             <button id="bulkAvailableActions" dojoType="dijit.form.Button" data-dojo-props="onClick: doShowAvailableActions" iconClass="actionIcon" >
                                 <%= LanguageUtil.get(pageContext, "Available-actions")%>
                             </button>
-                        </div>
-                        <div id="matchingResultsDiv" style="display: none" class="portlet-toolbar__info"></div>
-                        <div class="portlet-toolbar__actions-primary">
                             <div data-dojo-type="dijit/form/DropDownButton" data-dojo-props='iconClass:"fa-plus", class:"dijitDropDownActionButton"'>
                                 <span></span>
                                 <script type="text/javascript">

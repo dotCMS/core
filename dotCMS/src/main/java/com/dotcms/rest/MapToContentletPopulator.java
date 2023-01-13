@@ -1,9 +1,5 @@
 package com.dotcms.rest;
 
-import static com.dotmarketing.portlets.contentlet.model.Contentlet.WORKFLOW_ASSIGN_KEY;
-import static com.dotmarketing.portlets.contentlet.model.Contentlet.WORKFLOW_COMMENTS_KEY;
-import static com.liferay.util.StringPool.*;
-
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.contenttype.model.field.CategoryField;
@@ -41,21 +37,19 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.liferay.portal.model.User;
-import com.liferay.util.StringPool;
 import io.vavr.control.Try;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.Set;
-import java.util.stream.Collectors;
-import javax.servlet.http.HttpServletRequest;
 import org.jetbrains.annotations.NotNull;
+
+import javax.servlet.http.HttpServletRequest;
+import java.util.*;
+import java.util.Map.Entry;
+import java.util.function.LongSupplier;
+import java.util.stream.Collectors;
+
+import static com.dotmarketing.portlets.contentlet.model.Contentlet.WORKFLOW_ASSIGN_KEY;
+import static com.dotmarketing.portlets.contentlet.model.Contentlet.WORKFLOW_COMMENTS_KEY;
+import static com.liferay.util.StringPool.BLANK;
+import static com.liferay.util.StringPool.COMMA;
 
 /**
  * Complete populator to populate a contentlet from a map (from a resources form) using all logic needed
@@ -132,10 +126,11 @@ public class MapToContentletPopulator  {
             if (type != null && InodeUtils.isSet(type.inode())) {
                 // basic data
                 contentlet.setContentTypeId(type.inode());
-                contentlet.setLanguageId(map.containsKey(LANGUAGE_ID)?
-                        Long.parseLong(map.get(LANGUAGE_ID).toString()):
-                        APILocator.getLanguageAPI().getDefaultLanguage().getId()
-                );
+
+                contentlet.setLanguageId(map.containsKey(LANGUAGE_ID) ?
+                        Long.parseLong(map.get(LANGUAGE_ID).toString()) :
+                        fallbackLanguage(contentlet)
+                    );
 
                 this.processIdentifier(contentlet, map);
 
@@ -157,6 +152,25 @@ public class MapToContentletPopulator  {
             this.setIndexPolicy (contentlet, map);
         }
     } // processMap.
+
+    /**
+     * if we fail to establish a language param then we need to supply a fallback
+     * @param contentlet
+     * @return
+     */
+    private long fallbackLanguage(Contentlet contentlet) {
+        return Try.of(() -> {
+            if(contentlet.getLanguageId() > 0){
+                return contentlet.getLanguageId();
+            }
+            if (UtilMethods.isSet(contentlet.getInode())) {
+                return APILocator.getContentletAPI().find(contentlet.getInode(), APILocator.systemUser(), false).getLanguageId();
+            }
+            //We shouldn't be relying on the default lang if we know the inode (which has a lang of its own)
+            //That's why we're trying other options first as fallback
+            return APILocator.getLanguageAPI().getDefaultLanguage().getId();
+        }).getOrElse(()->0L);
+    }
 
     private void setIndexPolicy(final Contentlet contentlet, final Map<String, Object> map) {
 

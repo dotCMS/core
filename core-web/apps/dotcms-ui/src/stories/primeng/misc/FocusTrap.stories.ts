@@ -1,19 +1,21 @@
-import { Story, Meta } from '@storybook/angular/types-6-0';
-import { BrowserModule } from '@angular/platform-browser';
+import { moduleMetadata } from '@storybook/angular';
+import { Meta, Story } from '@storybook/angular/types-6-0';
+
 import { HttpClientModule } from '@angular/common/http';
 import { FormsModule } from '@angular/forms';
+import { BrowserModule } from '@angular/platform-browser';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
-import { DialogModule } from 'primeng/dialog';
-import { ButtonModule } from 'primeng/button';
+
 import { AccordionModule } from 'primeng/accordion';
-import { InputTextModule } from 'primeng/inputtext';
-import { CodeHighlighterModule } from 'primeng/codehighlighter';
-import { FocusTrapModule } from 'primeng/focustrap';
 import { AutoCompleteModule } from 'primeng/autocomplete';
+import { ButtonModule } from 'primeng/button';
 import { CalendarModule } from 'primeng/calendar';
-import { MultiSelectModule } from 'primeng/multiselect';
+import { CodeHighlighterModule } from 'primeng/codehighlighter';
+import { DialogModule } from 'primeng/dialog';
 import { DropdownModule } from 'primeng/dropdown';
-import { moduleMetadata } from '@storybook/angular';
+import { FocusTrapModule } from 'primeng/focustrap';
+import { InputTextModule } from 'primeng/inputtext';
+import { MultiSelectModule } from 'primeng/multiselect';
 
 export default {
     title: 'PrimeNG/Misc/FocusTrap',

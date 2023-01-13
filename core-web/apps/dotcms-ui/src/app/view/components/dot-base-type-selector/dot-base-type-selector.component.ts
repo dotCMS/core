@@ -1,9 +1,12 @@
-import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
 import { Observable } from 'rxjs';
-import { DotMessageService } from '@dotcms/data-access';
+
+import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
+
 import { SelectItem } from 'primeng/api';
+
 import { map, take } from 'rxjs/operators';
-import { DotContentTypeService } from '@dotcms/data-access';
+
+import { DotContentTypeService, DotMessageService } from '@dotcms/data-access';
 import { StructureTypeView } from '@dotcms/dotcms-models';
 
 @Component({

@@ -1,8 +1,10 @@
-import { DotLanguagesService } from './dot-languages.service';
-import { TestBed, getTestBed } from '@angular/core/testing';
 import { HttpTestingController, HttpClientTestingModule } from '@angular/common/http/testing';
+import { TestBed, getTestBed } from '@angular/core/testing';
+
 import { CoreWebService } from '@dotcms/dotcms-js';
 import { CoreWebServiceMock, mockDotLanguage } from '@dotcms/utils-testing';
+
+import { DotLanguagesService } from './dot-languages.service';
 
 describe('DotLanguagesService', () => {
     let injector: TestBed;

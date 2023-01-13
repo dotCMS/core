@@ -1,6 +1,8 @@
-import { DotExperimentsConfigurationExperimentStatusBarComponent } from './dot-experiments-configuration-experiment-status-bar.component';
 import { byTestId, createComponentFactory, Spectator } from '@ngneat/spectator';
+
 import { DotExperimentStatusList } from '@dotcms/dotcms-models';
+
+import { DotExperimentsConfigurationExperimentStatusBarComponent } from './dot-experiments-configuration-experiment-status-bar.component';
 
 describe('DotExperimentsConfigurationExperimentStatusBarComponent', () => {
     let spectator: Spectator<DotExperimentsConfigurationExperimentStatusBarComponent>;

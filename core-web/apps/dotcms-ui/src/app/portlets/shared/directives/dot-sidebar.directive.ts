@@ -1,4 +1,5 @@
 import { Directive, Optional, Self } from '@angular/core';
+
 import { Sidebar } from 'primeng/sidebar';
 
 export const enum SIDEBAR_PLACEMENT {
@@ -25,6 +26,7 @@ export class DotSidebarDirective {
             primeSidebar.styleClass = SIDEBAR_SIZES.MD;
             primeSidebar.showCloseIcon = false;
             primeSidebar.dismissible = false;
+            primeSidebar.closeOnEscape = false;
         } else {
             console.warn('DotSidebarDirective is for use with PrimeNg Sidebar');
         }

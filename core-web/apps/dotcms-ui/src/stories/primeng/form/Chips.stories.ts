@@ -1,7 +1,9 @@
-import { Story, Meta } from '@storybook/angular/types-6-0';
-import { ChipsModule, Chips } from 'primeng/chips';
 import { moduleMetadata } from '@storybook/angular';
+import { Meta, Story } from '@storybook/angular/types-6-0';
+
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
+
+import { Chips, ChipsModule } from 'primeng/chips';
 
 export default {
     title: 'PrimeNG/Form/Chips',

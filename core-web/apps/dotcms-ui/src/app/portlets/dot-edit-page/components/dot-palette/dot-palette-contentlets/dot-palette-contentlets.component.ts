@@ -1,7 +1,10 @@
 import { Component, EventEmitter, Input, Output, ViewChild } from '@angular/core';
+
+import { LazyLoadEvent } from 'primeng/api';
+
 import { DotContentletEditorService } from '@dotcms/app/view/components/dot-contentlet-editor/services/dot-contentlet-editor.service';
 import { DotCMSContentlet } from '@dotcms/dotcms-models';
-import { LazyLoadEvent } from 'primeng/api';
+
 import { DotPaletteInputFilterComponent } from '../dot-palette-input-filter/dot-palette-input-filter.component';
 
 @Component({

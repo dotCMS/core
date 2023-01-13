@@ -1,12 +1,14 @@
 import { DebugElement } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { DotPipesModule } from '@pipes/dot-pipes.module';
-import { DotMessageService } from '@dotcms/data-access';
-import { MockDotMessageService } from '@dotcms/utils-testing';
 import { By } from '@angular/platform-browser';
 
-import { DotEmptyStateComponent } from './dot-empty-state.component';
 import { ButtonModule } from 'primeng/button';
+
+import { DotMessageService } from '@dotcms/data-access';
+import { MockDotMessageService } from '@dotcms/utils-testing';
+import { DotPipesModule } from '@pipes/dot-pipes.module';
+
+import { DotEmptyStateComponent } from './dot-empty-state.component';
 
 const messageServiceMock = new MockDotMessageService({
     'message.template.empty.title': 'Your template list is empty',

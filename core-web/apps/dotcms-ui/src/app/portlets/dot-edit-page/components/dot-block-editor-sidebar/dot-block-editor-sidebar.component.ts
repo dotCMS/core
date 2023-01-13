@@ -1,14 +1,19 @@
-import { Component, OnDestroy, OnInit, ViewChild } from '@angular/core';
-import { switchMap, take, takeUntil } from 'rxjs/operators';
-import { DotWorkflowActionsFireService } from '@dotcms/data-access';
-import { DotEventsService } from '@dotcms/data-access';
 import { Observable, of, Subject } from 'rxjs';
-import { DotBlockEditorComponent } from '@dotcms/block-editor';
+
 import { HttpErrorResponse } from '@angular/common/http';
-import { DotMessageService } from '@dotcms/data-access';
-import { DotContentTypeService } from '@dotcms/data-access';
+import { Component, OnDestroy, OnInit, ViewChild } from '@angular/core';
+
+import { switchMap, take, takeUntil } from 'rxjs/operators';
+
+import { DotBlockEditorComponent } from '@dotcms/block-editor';
+import {
+    DotAlertConfirmService,
+    DotContentTypeService,
+    DotEventsService,
+    DotMessageService,
+    DotWorkflowActionsFireService
+} from '@dotcms/data-access';
 import { DotCMSContentTypeField, DotCMSContentTypeFieldVariable } from '@dotcms/dotcms-models';
-import { DotAlertConfirmService } from '@dotcms/data-access';
 
 export interface BlockEditorInput {
     content: { [key: string]: string };

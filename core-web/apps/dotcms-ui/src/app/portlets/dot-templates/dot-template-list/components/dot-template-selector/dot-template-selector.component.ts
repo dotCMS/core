@@ -1,6 +1,8 @@
 import { Component } from '@angular/core';
-import { DotMessageService } from '@dotcms/data-access';
+
 import { DynamicDialogRef } from 'primeng/dynamicdialog';
+
+import { DotMessageService } from '@dotcms/data-access';
 
 @Component({
     selector: 'dot-dot-template-selector',

@@ -1,20 +1,19 @@
-import { ComponentRef } from '@angular/core';
+import isEqual from 'lodash.isequal';
+import { EditorState, Plugin, PluginKey, Transaction } from 'prosemirror-state';
+import { EditorView } from 'prosemirror-view';
 import { Subject } from 'rxjs';
+import tippy, { Instance, Props } from 'tippy.js';
+
+import { ComponentRef } from '@angular/core';
+
 import { takeUntil } from 'rxjs/operators';
 
 import { Editor, posToDOMRect } from '@tiptap/core';
-import { EditorState, Plugin, PluginKey, Transaction } from 'prosemirror-state';
-import { EditorView } from 'prosemirror-view';
-import tippy, { Instance, Props } from 'tippy.js';
 
-import isEqual from 'lodash.isequal';
+import { getPosAtDocCoords, ImageNode, isValidURL } from '@dotcms/block-editor';
 
-// Interface
 import { BubbleLinkFormComponent, NodeProps } from '../bubble-link-form.component';
 import { LINK_FORM_PLUGIN_KEY } from '../bubble-link-form.extension';
-
-// Utils
-import { getPosAtDocCoords, isValidURL, ImageNode } from '@dotcms/block-editor';
 import { openFormLinkOnclik } from '../utils';
 
 interface PluginState {
