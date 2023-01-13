@@ -69,8 +69,11 @@ import java.util.SortedSet;
 import java.util.TreeSet;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
-
+import io.vavr.Lazy;
 public class ExperimentsAPIImpl implements ExperimentsAPI {
+
+    private Lazy<Boolean> isExperimentEnabled =
+            Lazy.of(() -> Config.getBooleanProperty("FEATURE_FLAG_EXPERIMENTS", false));
 
     final ExperimentsFactory factory = FactoryLocator.getExperimentsFactory();
     final PermissionAPI permissionAPI = APILocator.getPermissionAPI();
@@ -656,7 +659,7 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
 
     @Override
     public boolean isAnyExperimentRunning() throws DotDataException {
-        return Config.getBooleanProperty("FEATURE_FLAG_EXPERIMENTS", false) &&
+        return isExperimentEnabled.get() &&
                 !APILocator.getExperimentsAPI().getRunningExperiments().isEmpty();
     }
 
