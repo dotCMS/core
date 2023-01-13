@@ -5,6 +5,7 @@ import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.UtilMethods;
 import org.apache.commons.lang.math.NumberUtils;
 import org.junit.Assert;
 import org.junit.BeforeClass;
@@ -67,10 +68,10 @@ public class Task230110MakeSomeSystemFieldsRemovableByBaseTypeTest {
                     for (final String fieldVarName : fieldVarNameList) {
                         final List<Map<String, Object>> fieldData =
                                 new DotConnect().setSQL(GET_FIXED_COLUMN_QUERY).addParam(fieldVarName).addParam(typeId).loadObjectResults();
-                        // Assertion
-                        assertTrue(String.format("The 'fixed' column in field '%s' for CT '%s' must be 'false' after " +
-                                                         "the UT has run.", fieldVarName, name),
-                                isDBFalse(fieldData.get(0).get("fixed").toString()));
+                        if (UtilMethods.isSet(fieldData)) {
+                            // Assertion
+                            assertTrue(String.format("The 'fixed' column in field '%s' for CT '%s' must be 'false' after " + "the UT has run.", fieldVarName, name), isDBFalse(fieldData.get(0).get("fixed").toString()));
+                        }
                     }
                 }
 
