@@ -112,7 +112,7 @@ public class ExperimentWebAPIImpl implements ExperimentWebAPI {
 
         try {
             return new SelectedExperiment.Builder()
-                    .id(experiment.id().get())
+                    .id(experiment.id().orElse(StringPool.BLANK))
                     .name(experiment.name())
                     .pageUrl(htmlPageAsset.getURI())
                     .variant(variantSelected)
