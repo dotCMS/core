@@ -36,13 +36,13 @@ const tippyOptions: Partial<Props> = {
     }
 };
 
-interface onStartProps {
+interface StartProps {
     editor: Editor;
     getPosition: GetReferenceClientRect;
 }
 
 export interface RenderProps {
-    onStart: (value: onStartProps) => void;
+    onStart: (value: StartProps) => void;
     onHide: (editor: Editor) => void;
     onDestroy: () => void;
 }
@@ -52,7 +52,7 @@ export const BubbleImageTabviewFormExtension = (viewContainerRef: ViewContainerR
     let component: ComponentRef<ImageTabviewFormComponent>;
     let element: Element;
 
-    function onStart({ editor, getPosition }: onStartProps) {
+    function onStart({ editor, getPosition }: StartProps) {
         setUpTippy(editor);
         setUpComponent(editor);
 
