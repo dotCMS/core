@@ -1,6 +1,7 @@
 <dot-form-dialog
     *ngIf="vm$ | async as vm"
     [saveButtonDisabled]="(isFormValid$ | async) === false"
+    [saveButtonLoading]="vm.loading"
     (cancel)="onCancel()"
     (save)="onSave()"
     data-testId="dialogForm"
