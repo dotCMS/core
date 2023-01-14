@@ -109,7 +109,7 @@ public class PageResourceHelper implements Serializable {
         return PageResourceHelper.SingletonHolder.INSTANCE;
     }
 
-    private final static ParameterDecorator LANGUAGE_PARAMETER_DECORATOR = new LanguageIdParameterDecorator();
+    private static final ParameterDecorator LANGUAGE_PARAMETER_DECORATOR = new LanguageIdParameterDecorator();
 
 
     public HttpServletRequest decorateRequest(final HttpServletRequest request) {
@@ -410,7 +410,8 @@ public class PageResourceHelper implements Serializable {
         final Template oldTemplate = this.templateAPI.findWorkingTemplate(page.getTemplateId(), user, false);
         final Template saveTemplate;
         final boolean useByAnotherPage = this.templateAPI.getPages(page.getTemplateId()).stream()
-                .anyMatch(pageVersion -> page.getInode().equals(page.getInode()));
+                .anyMatch(pageVersion -> !page.getIdentifier().equals(pageVersion.getIdentifier()) ||
+                        !((HTMLPageAsset) page).getVariantId().equals(pageVersion.getVariantName()));
 
         if (!useByAnotherPage) {
             saveTemplate = oldTemplate;
@@ -474,21 +475,44 @@ public class PageResourceHelper implements Serializable {
         return copiedContentlet;
     }
 
+    /**
+     * Takes the information related to an existing piece of Content -- which is already associated to a Container
+     * inside an HTML Page -- and creates an exact copy of it. This is particularly useful when a User wants to:
+     * <ul>
+     *     <li>Update a Contentlet that is referenced in several pages, but only want to update the one in a specific
+     *     page.</li>
+     *     <li>Perform a deep copy of a page; i.e., create an exact cpy of an HTML Page and all its contents.</li>
+     * </ul>
+     *
+     * @param copyContentletForm The {@link CopyContentletForm} object which contains all the Multi-Tree information of
+     *                           the Contentlet being copied.
+     * @param user               The {@link User} performing this action.
+     * @param pageMode           The currently selected {@link PageMode}, which allows to get information such as the
+     *                          "Respect Anonymous Permissions" flag.
+     * @param languageId         The language ID in which the Contentlet copy will be created.
+     *
+     * @return The fresh copy of the specified Contentlet.
+     *
+     * @throws DotDataException     An error occurred when interacting with the data source.
+     * @throws DotSecurityException The specified User does not have the required permissions to execute this action.
+     */
     private Contentlet copyContent(final CopyContentletForm copyContentletForm, final User user,
                                    final PageMode pageMode, final long languageId) throws DotDataException, DotSecurityException {
-
-        Logger.debug(this, ()-> "Copying the contenlet: " + copyContentletForm.getContentId());
-        final Contentlet currentContentlet = this.contentletAPI.findContentletByIdentifier(
+        Logger.debug(this, ()-> "Copying existing contentlet: " + copyContentletForm.getContentId());
+        Contentlet currentContentlet = this.contentletAPI.findContentletByIdentifier(
                 copyContentletForm.getContentId(), pageMode.showLive, languageId, user, pageMode.respectAnonPerms);
-
-        if (null == currentContentlet) {
-
+        if (null == currentContentlet || UtilMethods.isNotSet(currentContentlet.getIdentifier())) {
+            Logger.debug(this, () -> String.format("Contentlet '%s' is not available in language ID '%s'.",
+                    copyContentletForm.getContentId(), languageId));
+            currentContentlet =
+                    this.contentletAPI.findContentletByIdentifierAnyLanguage(copyContentletForm.getContentId(), false);
+        }
+        if (null == currentContentlet || UtilMethods.isNotSet(currentContentlet.getIdentifier())) {
             throw new DoesNotExistException(
                     "The Contentlet being copied does not exist. Content id: " + copyContentletForm.getContentId());
         }
-
         final Contentlet copiedContentlet  = this.contentletAPI.copyContentlet(currentContentlet, user, pageMode.respectAnonPerms);
-        Logger.debug(this, ()-> "Copied the contenlet: " + copiedContentlet.getIdentifier());
+        Logger.debug(this, ()-> "Contentlet: " + copiedContentlet.getIdentifier() + " has been copied");
 
         return copiedContentlet;
     }

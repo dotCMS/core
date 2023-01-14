@@ -41,7 +41,8 @@ const draftExperiments: DotExperiment[] = [
             variants: [{ id: '111', name: 'DEFAULT', weight: '100.0' }]
         },
         creationDate: new Date('2022-08-21 14:50:03'),
-        modDate: new Date('2022-08-21 18:50:03')
+        modDate: new Date('2022-08-21 18:50:03'),
+        goals: null
     }
 ];
 const endedExperiments: DotExperiment[] = [
@@ -61,7 +62,8 @@ const endedExperiments: DotExperiment[] = [
             variants: [{ id: '222', name: 'DEFAULT', weight: '100.0' }]
         },
         creationDate: new Date('2022-08-21 14:50:03'),
-        modDate: new Date('2022-08-21 18:50:03')
+        modDate: new Date('2022-08-21 18:50:03'),
+        goals: null
     }
 ];
 const archivedExperiments: DotExperiment[] = [
@@ -81,7 +83,8 @@ const archivedExperiments: DotExperiment[] = [
             variants: [{ id: '333', name: 'DEFAULT', weight: '100.0' }]
         },
         creationDate: new Date('2022-08-21 14:50:03'),
-        modDate: new Date('2022-08-21 18:50:03')
+        modDate: new Date('2022-08-21 18:50:03'),
+        goals: null
     }
 ];
 const scheduledExperiments: DotExperiment[] = [
@@ -101,7 +104,8 @@ const scheduledExperiments: DotExperiment[] = [
             variants: [{ id: '4444', name: 'DEFAULT', weight: '100.0' }]
         },
         creationDate: new Date('2022-08-21 14:50:03'),
-        modDate: new Date('2022-08-21 18:50:03')
+        modDate: new Date('2022-08-21 18:50:03'),
+        goals: null
     }
 ];
 

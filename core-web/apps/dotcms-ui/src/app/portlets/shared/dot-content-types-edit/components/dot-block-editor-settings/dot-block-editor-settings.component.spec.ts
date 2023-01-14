@@ -114,6 +114,7 @@ describe('DotContentTypeFieldsVariablesComponent', () => {
         component.saveSettings();
         expect(dotFieldVariableService.save).toHaveBeenCalledTimes(amountFields);
         expect(component.save.emit).toHaveBeenCalled();
+        expect(component.settingsMap['allowedBlocks'].variable).toEqual(mockFieldVariables[0]);
     });
 
     it('should delete properties on saveSettings when is empty', () => {
@@ -124,6 +125,7 @@ describe('DotContentTypeFieldsVariablesComponent', () => {
         component.saveSettings();
         expect(dotFieldVariableService.delete).toHaveBeenCalled();
         expect(component.save.emit).toHaveBeenCalled();
+        expect(component.settingsMap['allowedBlocks'].variable).toEqual(mockFieldVariables[0]);
     });
 
     it('should not call save or delete when is empty and not previus vairable exist', () => {

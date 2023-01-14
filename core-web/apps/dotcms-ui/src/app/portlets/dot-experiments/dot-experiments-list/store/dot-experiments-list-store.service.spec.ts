@@ -18,7 +18,7 @@ import {
 import { MockDotMessageService } from '@dotcms/utils-testing';
 import { DotMessagePipeModule } from '@pipes/dot-message/dot-message-pipe.module';
 import { DotExperimentsService } from '@portlets/dot-experiments/shared/services/dot-experiments.service';
-import { ExperimentMocks } from '@portlets/dot-experiments/test/mocks';
+import { ExperimentMocks, GoalsMock } from '@portlets/dot-experiments/test/mocks';
 
 import { DotExperimentsListStore, DotExperimentsState } from './dot-experiments-list-store.service';
 
@@ -157,7 +157,8 @@ describe('DotExperimentsListStore', () => {
                     variants: [{ id: '111', name: 'DEFAULT', weight: '100.0' }]
                 },
                 creationDate: new Date('2022-08-21 14:50:03'),
-                modDate: new Date('2022-08-21 18:50:03')
+                modDate: new Date('2022-08-21 18:50:03'),
+                goals: { ...GoalsMock }
             }
         ];
         const archivedExperiments: DotExperiment[] = [
@@ -177,7 +178,8 @@ describe('DotExperimentsListStore', () => {
                     variants: [{ id: '222', name: 'DEFAULT', weight: '100.0' }]
                 },
                 creationDate: new Date('2022-08-21 14:50:03'),
-                modDate: new Date('2022-08-21 18:50:03')
+                modDate: new Date('2022-08-21 18:50:03'),
+                goals: { ...GoalsMock }
             }
         ];
 

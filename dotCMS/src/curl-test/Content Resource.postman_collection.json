@@ -1,6 +1,6 @@
 {
 	"info": {
-		"_postman_id": "e1ee324d-4967-406b-92d9-d46492fc319c",
+		"_postman_id": "64a156b5-40b4-46ce-8bab-6083e910e48a",
 		"name": "Content Resource",
 		"description": "Content Resource test",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
@@ -1565,6 +1565,380 @@
 			]
 		},
 		{
+			"name": "File Asset Metadata",
+			"item": [
+				{
+					"name": "Create Test File",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Test File created successfully\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"No errors must be present\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.errors.length).to.eql(0);",
+									"",
+									"    pm.collectionVariables.set(\"fileId\", jsonData.entity.identifier);",
+									"    pm.collectionVariables.set(\"fileInode\", jsonData.entity.inode);",
+									"    pm.collectionVariables.set(\"fileName\", jsonData.entity.fileName);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Origin",
+								"value": "{{serverURL}}",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "file",
+									"type": "file",
+									"src": "resources/testpdf.pdf"
+								},
+								{
+									"key": "json",
+									"value": "{\"contentlet\": {\"contentType\":\"FileAsset\",\"title\":\"testpdf.pdf\",\"hostFolder\":\"default\"}}",
+									"type": "text"
+								},
+								{
+									"key": "file",
+									"type": "file",
+									"src": [],
+									"disabled": true
+								}
+							]
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/workflow/actions/default/fire/PUBLISH",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"workflow",
+								"actions",
+								"default",
+								"fire",
+								"PUBLISH"
+							]
+						},
+						"description": "Create a test File Asset that will be used to read Metadata from."
+					},
+					"response": []
+				},
+				{
+					"name": "Check Metadata Section",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"HTTP Status must be successfully\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"var jsonData = pm.response.json();",
+									"",
+									"pm.test(\"Metadata section must be present and not empty\", function () {",
+									"    pm.expect(jsonData.contentlets[0].metaData.length).to.greaterThan(0);",
+									"});",
+									"",
+									"pm.test(\"Expected Metadata are present\", function () {",
+									"    var expectedFileName = pm.collectionVariables.get(\"fileName\");",
+									"    var expectedFileInode = pm.collectionVariables.get(\"fileInode\");",
+									"    pm.expect(jsonData.contentlets[0].metaData.isImage).to.eq(false);",
+									"    pm.expect(jsonData.contentlets[0].metaData.name).to.eq(expectedFileName);",
+									"    pm.expect(jsonData.contentlets[0].metaData.contentType).to.eq(\"application/pdf\");",
+									"    pm.expect(jsonData.contentlets[0].metaData.path).to.include(\"/\" + expectedFileInode + \"/fileAsset/\" + expectedFileName);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/content/id/{{fileId}}",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"content",
+								"id",
+								"{{fileId}}"
+							]
+						},
+						"description": "Checks a few Metadata properties, such as:\n\n- **isImage:** should be \"false\" for a PDF.\n- **name:** File name.\n- **contentType**: The HTTP content type, not the dotCMS content Type.\n- **path**: The Inode-based path to the file."
+					},
+					"response": []
+				},
+				{
+					"name": "Unpublish Test File",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Test File unpublished successfully\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"No errors must be present\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.errors.length).to.eql(0);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Origin",
+								"value": "{{serverURL}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/workflow/actions/default/fire/UNPUBLISH?inode={{fileInode}}&identifier={{fileId}}",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"workflow",
+								"actions",
+								"default",
+								"fire",
+								"UNPUBLISH"
+							],
+							"query": [
+								{
+									"key": "inode",
+									"value": "{{fileInode}}"
+								},
+								{
+									"key": "identifier",
+									"value": "{{fileId}}"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Archive Test File",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Test File archived successfully\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"No errors must be present\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.errors.length).to.eql(0);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Origin",
+								"value": "{{serverURL}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/workflow/actions/default/fire/ARCHIVE?inode={{fileInode}}&identifier={{fileId}}",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"workflow",
+								"actions",
+								"default",
+								"fire",
+								"ARCHIVE"
+							],
+							"query": [
+								{
+									"key": "inode",
+									"value": "{{fileInode}}"
+								},
+								{
+									"key": "identifier",
+									"value": "{{fileId}}"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Test File",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Test File deleted successfully\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"No errors must be present\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.errors.length).to.eql(0);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Origin",
+								"value": "{{serverURL}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/workflow/actions/default/fire/DELETE?inode={{fileInode}}&identifier={{fileId}}",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"workflow",
+								"actions",
+								"default",
+								"fire",
+								"DELETE"
+							],
+							"query": [
+								{
+									"key": "inode",
+									"value": "{{fileInode}}"
+								},
+								{
+									"key": "identifier",
+									"value": "{{fileId}}"
+								}
+							]
+						}
+					},
+					"response": []
+				}
+			],
+			"description": "Verifies that the Metadata section in the JSON response in a File Asset is added."
+		},
+		{
 			"name": "Save Multiple Generic Contentlets",
 			"event": [
 				{
@@ -2183,6 +2557,18 @@
 		},
 		{
 			"key": "identifier22756",
+			"value": ""
+		},
+		{
+			"key": "fileId",
+			"value": ""
+		},
+		{
+			"key": "fileInode",
+			"value": ""
+		},
+		{
+			"key": "fileName",
 			"value": ""
 		}
 	]

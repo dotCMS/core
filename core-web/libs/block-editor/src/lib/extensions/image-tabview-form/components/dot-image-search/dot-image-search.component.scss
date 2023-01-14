@@ -1,0 +1,23 @@
+@use "variables" as *;
+
+:host {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+}
+
+.search-box {
+    padding: 0 $spacing-5;
+    flex-grow: 1;
+    display: flex;
+    align-items: center;
+
+    &,
+    span,
+    .search {
+        width: 100%;
+    }
+}
