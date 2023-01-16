@@ -199,15 +199,27 @@
                                           <% } %>
                                       </tr>
                                       <tr>
-                                          <th><%= LanguageUtil.get(pageContext, "First-Name") %>:</th>
+                                          <th>
+											<span class="required">
+												<%= LanguageUtil.get(pageContext, "First-Name") %>
+											</span>
+										  </th>
                                           <td><input id="firstName" type="text" onkeyup="userInfoChanged()" required="true" invalidMessage="Required." dojoType="dijit.form.ValidationTextBox" /></td>
                                       </tr>
                                       <tr>
-                                          <th><%= LanguageUtil.get(pageContext, "Last-Name") %>:</th>
+                                          <th>
+											<span class="required">
+												<%= LanguageUtil.get(pageContext, "Last-Name") %>
+											</span>
+										  </th>
                                           <td><input id="lastName" type="text" onkeyup="userInfoChanged()" required="true" invalidMessage="Required." dojoType="dijit.form.ValidationTextBox" /></td>
                                       </tr>
                                       <tr>
-                                          <th><%= LanguageUtil.get(pageContext, "Email-Address") %>:</th>
+                                           <th>
+											   <span class="required">
+													<%= LanguageUtil.get(pageContext, "Email-Address") %>
+												</span>
+											</th>
                                           <td><input id="emailAddress" type="text" onkeyup="userEmailChanged()" required="true" invalidMessage="Required." dojoType="dijit.form.ValidationTextBox" /></td>
                                       </tr>
                                       <tr>
@@ -215,11 +227,19 @@
                                         <td><button dojoType="dijit.form.Button" onclick="generateSecurePasswordModal()" type="button"><%= LanguageUtil.get(pageContext, "generate.secure.password") %></button></td>
                                       </tr>
                                       <tr>
-                                          <th><%= LanguageUtil.get(pageContext, "Password") %>:</th>
+                                          	<th>
+												<span class="required">
+													<%= LanguageUtil.get(pageContext, "Password") %>
+												</span>
+											</th>
                                           <td><input id="password" type="password" onkeyup="userPasswordChanged()" required="true" invalidMessage="Required." dojoType="dijit.form.ValidationTextBox" autocomplete="new-password" /></td>
                                       </tr>
                                       <tr>
-                                          <th><%= LanguageUtil.get(pageContext, "Password-Again") %>:</th>
+                                          	<th>
+												<span class="required">
+													<%= LanguageUtil.get(pageContext, "Password-Again") %>
+												</span>
+											</th>
                                           <td><input id="passwordCheck" type="password" onkeyup="userPasswordChanged()" required="true" invalidMessage="Required." dojoType="dijit.form.ValidationTextBox" autocomplete="new-password" /></td>
                                       </tr>
                                     <tr>

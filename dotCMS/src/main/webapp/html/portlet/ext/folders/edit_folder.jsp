@@ -148,14 +148,14 @@ dojo.require("dotcms.dojo.data.StructureReadStore");
 
 				<% if (InodeUtils.isSet(folder.getInode())) { %>
 					<dl>
-						<dt><%= LanguageUtil.get(pageContext, "Identity") %>:</dt>
+						<dt><%= LanguageUtil.get(pageContext, "Identity") %></dt>
 						<dd><%= folder.getInode() %></dd>
 					</dl>
 				<%}%>
 
 				<dl>
 					<%if(InodeUtils.isSet(folder.getInode())){%>
-						<dt><%= LanguageUtil.get(pageContext, "Path-To-Folder") %>:</dt>
+						<dt><%= LanguageUtil.get(pageContext, "Path-To-Folder") %></dt>
 						<dd style="width:80%">
 							<% if (parentFolder != null) { %>
 								<div id="pathToFolder" style="word-break: break-all;"><%= APILocator.getIdentifierAPI().find(parentFolder.getIdentifier()).getPath() %><%= folder.getName() %></div>
@@ -177,11 +177,11 @@ dojo.require("dotcms.dojo.data.StructureReadStore");
 					<%}%>
 				</dl>
 				<dl>
-					<dt><%= LanguageUtil.get(pageContext, "Title") %>:</dt>
+					<dt><%= LanguageUtil.get(pageContext, "Title") %></dt>
 					<dd><input type="text" dojoType="dijit.form.TextBox"  onchange="beLazy();" style="width:250px" name="title"  id="friendlyNameField" value="<%= UtilMethods.isSet(folder.getTitle()) ? UtilMethods.escapeDoubleQuotes(folder.getTitle()) : "" %>" /></dd>
 				</dl>
 				<dl>
-					<dt><span class="required"></span> <%= LanguageUtil.get(pageContext, "Name-URL") %>:</dt>
+					<dt class="required2"> <%= LanguageUtil.get(pageContext, "Name-URL") %></dt>
 					<dd><input type="text" dojoType="dijit.form.TextBox"   style="width:250px" name="name"  id="titleField" value="<%= UtilMethods.isSet(folder.getName()) ? UtilMethods.escapeDoubleQuotes(folder.getName()) : "" %>" /></dd>
 				</dl>
 				<dl>
@@ -200,7 +200,7 @@ dojo.require("dotcms.dojo.data.StructureReadStore");
 					</dd>
 				</dl>
 				<dl>
-					<dt><span class="required"></span> <%= LanguageUtil.get(pageContext, "Default-File-Structure-Type") %>:</dt>
+					<dt class="required2"><%= LanguageUtil.get(pageContext, "Default-File-Structure-Type") %>:</dt>
 					<dd>
 						<span dojoType="dotcms.dojo.data.StructureReadStore" jsId="fileAssetStructureStore" dojoId="fileAssetStructureStoreDojo" structureType="<%=Structure.STRUCTURE_TYPE_FILEASSET %>" ></span>
 						<select id="defaultFileType"

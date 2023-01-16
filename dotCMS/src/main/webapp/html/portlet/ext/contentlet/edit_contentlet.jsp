@@ -277,7 +277,7 @@
             <% if(widgetUsageField != null && UtilMethods.isSet(widgetUsageField.getValues())){ %>
                 <div class="fieldWrapper">
                     <div class="fieldName">
-                        <%=widgetUsageField.getFieldName()%>:
+                        <%=widgetUsageField.getFieldName()%>
                     </div>
                     <div class="fieldValue">
                         <%
@@ -366,7 +366,7 @@
                             		<%} else {%>
                             			<span>
                             		<% } %>
-                                <%=f.getFieldName()%>:</span>
+                                <%=f.getFieldName()%></span>
                             </div>
 								<div class="fieldValue" style="overflow-x: scroll">
                                 <%

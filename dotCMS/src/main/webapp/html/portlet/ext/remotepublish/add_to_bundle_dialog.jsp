@@ -33,8 +33,8 @@ String inode=request.getParameter( "inode" );// DOTCMS-7085
         <%--DATE FILTERING BOX--%>
 
 		<div class="fieldWrapper" id="bundleSelectDiv">
-			<div class="fieldName" style="width:120px">
-				<%= LanguageUtil.get(pageContext, "publisher_dialog_choose_bundle") %>:
+			<div class="fieldName required" style="width:120px">
+				<%= LanguageUtil.get(pageContext, "publisher_dialog_choose_bundle") %>
 			</div>
 			<div class="fieldValue">
 				<input data-dojo-type="dijit/form/ComboBox" autocomplete="false" data-dojo-props="store:pushHandler.bundleStore, searchAttr:'name', pageSize:30"

@@ -27,11 +27,10 @@
 
 <div class="fieldWrapper">
 	<div class="fieldName">
-		<%if(field.isRequired()) {%>
-			<span class="required"></span>
-		<%}%>
-
-		<%=field.getFieldName()%>:
+		<%
+			String requiredClass = field.isRequired() ? "required2" : "";
+		%>
+		<span class='<%= requiredClass %>'><%=field.getFieldName()%></span>
 		<%if (hint != null) {%>
 			<a href="javascript: ;" id='<%=field.getFieldContentlet()%>HintHook'>?</a>
 			<div id='<%=field.getFieldContentlet()%>Hint' class="fieldHint"><%=hint%></div>

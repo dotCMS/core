@@ -206,7 +206,9 @@ if(query == null){
 	<table class="listingTable" style="width:90%;">
         <tr>
             <th width="170" valign="top">
-                <strong><%= LanguageUtil.get(pageContext, "ES Query") %>:</strong>
+				<label for="">
+					<%= LanguageUtil.get(pageContext, "ES Query") %>
+				</label>
             </th>
             <td>
                 <div class="esEditorWrapper">

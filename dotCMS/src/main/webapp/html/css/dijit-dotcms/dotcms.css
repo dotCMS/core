@@ -6803,7 +6803,6 @@ select[multiple]:hover {
   padding-right: 24px;
 }
 #listing-table th, .listingTable th, .dojoxUploaderFileListTable th {
-  font-weight: bold;
   background-color: #fafafa;
 }
 
@@ -9277,7 +9276,6 @@ Styles for commons fields along the backend
   color: #fff;
   cursor: pointer;
   padding: 0 1rem;
-
 }
 .fileAjaxUploader input[type=file]::-webkit-file-upload-button:hover {
   background-color: var(--color-main_mod);
@@ -9509,31 +9507,31 @@ Styles for commons fields along the backend
 - Handle vertical and horizontal forms
 */
 #label, .fieldName, dl.vertical dt label {
-  color: #5b5b5b;
+  color: #161616;
   display: block;
   font-size: 12px;
   margin-bottom: 4px;
 }
 
-#checkbox-radio, .radio,
-.checkbox {
+#checkbox-radio, .radio, .checkbox {
   align-items: center;
   display: flex;
   margin: 8px 0;
   white-space: nowrap;
 }
-#checkbox-radio > .dijit, .radio > .dijit,
-.checkbox > .dijit {
+#checkbox-radio > .dijit, .radio > .dijit, .checkbox > .dijit {
   margin-right: 4px;
 }
 
 .required:before {
-  content: "\f069";
-  color: #d0021b;
   font-size: 9px;
   position: relative;
   top: -4px;
   left: 2px;
+}
+.required::after {
+  content: " *";
+  color: #cb3927;
 }
 
 #inline-form, .inline-form, .fileSelectorControls {
@@ -9570,14 +9568,13 @@ Styles for commons fields along the backend
   margin-right: 4px;
 }
 
-.listingTable .radio,
-.listingTable .checkbox {
+.listingTable .radio, .listingTable .checkbox {
   margin: 0;
 }
 
-.required2 {
+.required2::after {
   color: #cb3927;
-  font-weight: bold;
+  content: " *";
 }
 
 .hint-text {
@@ -9595,8 +9592,7 @@ dl#indexed dd, dl#listed dd, dl#required dd, dl#unique dd, dl#userSearchable dd 
 dl#indexed dd .dijitCheckBox, dl#listed dd .dijitCheckBox, dl#required dd .dijitCheckBox, dl#unique dd .dijitCheckBox, dl#userSearchable dd .dijitCheckBox {
   margin: 0;
 }
-dl.vertical dd,
-dl.vertical dt {
+dl.vertical dd, dl.vertical dt {
   clear: none;
   float: none;
   margin: 0;
@@ -9614,8 +9610,7 @@ dl.radio-check-one-line {
   justify-content: flex-end;
   margin-bottom: 16px;
 }
-dl.radio-check-one-line dt,
-dl.radio-check-one-line dd {
+dl.radio-check-one-line dt, dl.radio-check-one-line dd {
   float: none;
   margin: 0;
   min-height: 0;
@@ -9623,8 +9618,7 @@ dl.radio-check-one-line dd {
   text-align: left;
   width: auto;
 }
-dl.radio-check-one-line dd .radio,
-dl.radio-check-one-line dd .checkbox {
+dl.radio-check-one-line dd .radio, dl.radio-check-one-line dd .checkbox {
   display: inline-block;
   margin: 0;
 }
@@ -9658,9 +9652,7 @@ dd .buttonCaption {
   margin-bottom: 8px;
   min-height: 36px;
 }
-#form-horizontal-flexbox dd, .form-horizontal dd,
-#form-horizontal-flexbox dt,
-.form-horizontal dt {
+#form-horizontal-flexbox dd, .form-horizontal dd, #form-horizontal-flexbox dt, .form-horizontal dt {
   clear: none;
   float: none;
   margin: 0;
@@ -9692,8 +9684,7 @@ dd .buttonCaption {
 #form-horizontal-table dl {
   display: table-row;
 }
-#form-horizontal-table dd,
-#form-horizontal-table dt {
+#form-horizontal-table dd, #form-horizontal-table dt {
   display: table-cell;
 }
 #form-horizontal-table dt {

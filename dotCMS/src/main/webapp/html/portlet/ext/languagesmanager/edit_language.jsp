@@ -99,27 +99,27 @@ dojo.ready(function() {
 	    
 	    <%if(languageId > 0){ %>
 		    <dl> 
-			    <dt><%= LanguageUtil.get(pageContext, "Language-Id") %>:</dt>
+			    <dt><%= LanguageUtil.get(pageContext, "Language-Id") %></dt>
 			    <dd><%=languageId %> </dd>
 			</dl>
 			<dl> 
-			    <dt><%= LanguageUtil.get(pageContext, "Use") %>:</dt>
+			    <dt><%= LanguageUtil.get(pageContext, "Use") %></dt>
 			    <dd>http://yoursite.com/?language_id=<%=languageId %></dd>
 			</dl>
 	    <%} %>
 	    <dl>
-		    <dt class="required2"><%= LanguageUtil.get(pageContext, "Language-Code") %>:</dt>
+		    <dt class="required2"><%= LanguageUtil.get(pageContext, "Language-Code") %></dt>
 		    <dd><html:text size="30" property="languageCode" maxlength="2" styleId="languageCode" /></dd>
 	    </dl>
 		<dl>
-		    <dt class="required2"><%= LanguageUtil.get(pageContext, "Language") %>:</dt>
+		    <dt class="required2"><%= LanguageUtil.get(pageContext, "Language") %></dt>
 		    <dd>
 				<html:text size="30" property="language" styleId="language" />
 				<div class="hint-text"><%= LanguageUtil.get(pageContext, "descriptive") %></div>
 			</dd>
 	    </dl>
 		<dl>
-		    <dt><%= LanguageUtil.get(pageContext, "Country-Code") %>:</dt>
+		    <dt><%= LanguageUtil.get(pageContext, "Country-Code") %></dt>
 		    <dd><html:text size="30" property="countryCode" maxlength="2" styleId="countryCode" /></dd>
 
 	    </dl>

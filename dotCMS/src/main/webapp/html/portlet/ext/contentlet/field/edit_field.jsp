@@ -84,7 +84,7 @@
 
                     ) {
         %>
-     		<%=field.getFieldName()%>:</span>
+     		<%=field.getFieldName()%></span>
 		<% } %>
     </div>
 

@@ -8,10 +8,10 @@
 */
 
 #label {
-    color: $gray-dark;
+    color: $black;
     display: block;
     font-size: $font-size-small;
-    margin-bottom: calc($basic-padding / 2);
+    margin-bottom: $basic-padding / 2;
 }
 
 #checkbox-radio {
@@ -21,7 +21,7 @@
     white-space: nowrap;
 
     & > .dijit {
-        margin-right: calc($basic-padding / 2);
+        margin-right: $basic-padding / 2;
     }
 }
 
@@ -33,12 +33,15 @@
 .required {
     &:before {
         @extend #dijit-icon;
-        content: $fa-var-asterisk;
-        color: $error;
         font-size: 9px;
         position: relative;
         top: -4px;
         left: 2px;
+    }
+
+    &::after {
+        content: " *";
+        color: $red;
     }
 }
 
@@ -80,7 +83,7 @@
 
     .dijitRadio,
     .dijitCheckBox {
-        margin-right: calc($basic-padding / 2);
+        margin-right: $basic-padding / 2;
     }
 }
 
@@ -92,8 +95,10 @@
 }
 
 .required2 {
-    color: $red;
-    font-weight: bold;
+    &::after {
+        color: $red;
+        content: " *";
+    }
 }
 
 .hint-text {
@@ -333,7 +338,7 @@ dd {
 
     .dijitButton,
     .fakeDojoButton {
-        margin: 0 calc($basic-padding / 2);
+        margin: 0 $basic-padding / 2;
     }
 }
 
@@ -350,6 +355,6 @@ dd {
 
 .who-can-use__list {
     td {
-        padding: calc($basic-padding / 2);
+        padding: $basic-padding / 2;
     }
 }

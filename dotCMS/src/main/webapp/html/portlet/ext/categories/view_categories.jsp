@@ -986,8 +986,8 @@
 								<input type="hidden" id=""/>
 								<input type="text" dojoType="dijit.form.TextBox" id="CatVelVarName" readonly="readonly" name="categoryVarName" maxlength="50" size="30"  value="" />
 							</dd>
-							<dt>
-								<%= LanguageUtil.get(pageContext, "category-name") %>:
+							<dt class="required">
+								<%= LanguageUtil.get(pageContext, "category-name") %>
 							</dt>
 							<dd>
 								<input type="text" required="true" invalidMessage="Required." dojoType="dijit.form.ValidationTextBox" id="CatName" name="categoryName" maxlength="50" size="30"  value="" />
@@ -1061,7 +1061,7 @@
 					<dd><input id="addCatVelVarName" readonly="true" style="width:100%;" class="input-text-naked" /></dd>
 				</dl>
 				<dl>
-					<dt><%= LanguageUtil.get(pageContext, "Name") %>:</dt>
+					<dt  class="required"><%= LanguageUtil.get(pageContext, "Name") %></dt>
 					<dd><input dojoType="dijit.form.ValidationTextBox" id="addCatName" type="text" tabindex="1" required="true" onblur="fillVelocityVarName(); " invalidMessage="Required." maxlength="255"/></dd>
 				</dl>
 				<dl>
@@ -1085,11 +1085,11 @@
 <div id="importCategoriesOptions" dojoType="dijit.Dialog" style="display:none" title="<%= LanguageUtil.get(pageContext, "import") %>">
 	<div dojoType="dijit.layout.ContentPane" style="width:300px;" class="box" hasShadow="true">
 		<dl class="vertical">
-			<dt><label><%= LanguageUtil.get(pageContext, "Import-Options") %>:</label></dt>
+			<dt><label class="required"><%= LanguageUtil.get(pageContext, "Import-Options") %></label></dt>
 			<dd><input type="file" id="uploadFile" class="upload"/></dd>
 			<div class="clear"></div>
 
-			<dt><label><%= LanguageUtil.get(pageContext, "Import-Options") %>:</label></dt>
+			<dt><label class="required"><%= LanguageUtil.get(pageContext, "Import-Options") %></label></dt>
 			<dd>
 				<input type="radio" dojoType="dijit.form.RadioButton" name="importMode" id="radioOne" checked /></span>
 				<label for="radioOne"><%= LanguageUtil.get(pageContext, "Replace") %></label>

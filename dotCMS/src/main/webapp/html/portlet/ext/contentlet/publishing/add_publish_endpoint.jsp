@@ -354,7 +354,7 @@
 			<%} %>
 			<dl>
 				<dt>
-					<label for="serverName"><%= (isServer) ? LanguageUtil.get(pageContext, "publisher_Server_Name") : LanguageUtil.get(pageContext, "publisher_Endpoint_Name") %>:</label>
+					<label for="serverName" class="required"><%= (isServer) ? LanguageUtil.get(pageContext, "publisher_Server_Name") : LanguageUtil.get(pageContext, "publisher_Endpoint_Name") %></label>
 				</dt>
 				<dd>
 					<input type="text" dojoType="dijit.form.ValidationTextBox"
@@ -370,7 +370,7 @@
 
 			<dl id="protocolRow">
 				<dt>
-					<label form="protocol"><%= LanguageUtil.get(pageContext, "publisher_Endpoints_Type") %>:</label>
+					<label form="protocol" class="required"><%= LanguageUtil.get(pageContext, "publisher_Endpoints_Type") %></label>
 				</dt>
 				<dd>
 					<select dojoType="dijit.form.Select" name="protocol" id="protocol" onchange="onChangeProtocolTypeSelectCheck();">
@@ -390,7 +390,7 @@
 			</dl>
 			<dl>
 				<dt>
-					<%= LanguageUtil.get(pageContext, "publisher_Endpoints_Enabled") %>:
+					<%= LanguageUtil.get(pageContext, "publisher_Endpoints_Enabled") %>
 				</dt>
 				<dd>
 					<input dojoType="dijit.form.CheckBox" type="checkbox" name="enabled" <%=(currentEndpoint.isEnabled()) ? "checked=true" : "" %> />
@@ -399,7 +399,7 @@
 			<dl id="addressRow">
 				<dt>
 					<span id="addressToSpan">
-						<label for="address"><%= LanguageUtil.get(pageContext, "publisher_Endpoints_Address_To") %>:</label>
+						<label for="address" class="required"><%= LanguageUtil.get(pageContext, "publisher_Endpoints_Address_To") %></label>
 					</span>
 					<span id="addressFromSpan" style="display:none;">
 						<label for="address"><%= LanguageUtil.get(pageContext, "publisher_Endpoints_Address_From") %>:</label>
@@ -416,7 +416,7 @@
 							   onKeyUp="shouldEnabledGeToken()"
 						/>
 						<span id="portSpan">
-							<label for="port"><%= LanguageUtil.get(pageContext, "publisher_Endpoints_Port") %>:</label>
+							<label for="port" class="required"><%= LanguageUtil.get(pageContext, "publisher_Endpoints_Port") %></label>
 							<input type="text" dojoType="dijit.form.ValidationTextBox"
 								   name="port" id="port" style="width:60px"
 								   value="<%=UtilMethods.webifyString(currentEndpoint.getPort()) %>"

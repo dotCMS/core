@@ -203,22 +203,23 @@
 						<% } %>
 						<div class="fieldWrapper">
 							<div class="fieldName">
-								<span class="required"></span>
-								<%= LanguageUtil.get(pageContext, "Title") %>:&nbsp;
+								<span class="required">
+									<%= LanguageUtil.get(pageContext, "Title") %>
+								</span>
 							</div>
 							<div class="fieldValue"><input type="text" dojoType="dijit.form.TextBox" style="width:650px" name="title" id="titleField" value="<%= form.getTitle() %>" /></div>
 						</div>
 						<div class="fieldWrapper">
-							<div class="fieldName"><%= LanguageUtil.get(pageContext, "Description") %>:&nbsp;</div>
+							<div class="fieldName"><%= LanguageUtil.get(pageContext, "Description") %>&nbsp;</div>
 							<div class="fieldValue"><input type="text" dojoType="dijit.form.TextBox" style="width:650px" name="friendlyName" id="friendlyNameField" value="<%= form.getFriendlyName() %>" /></div>
 						</div>
 						<div class="fieldWrapper">
-							<div class="fieldName"><%= LanguageUtil.get(pageContext, "Max-Contents") %>:&nbsp;</div>
+							<div class="fieldName"><%= LanguageUtil.get(pageContext, "Max-Contents") %>&nbsp;</div>
 							<div class="fieldValue"><input type="text" dojoType="dijit.form.TextBox" style="width:100px" maxlength="2" name="maxContentlets" id="maxContentlets" onchange="showHideCode()" value="<%= form.getMaxContentlets() %>" /></div>
 						</div>
 						<div id="preLoopDiv">
 							<div class="fieldWrapper">
-								<div class="fieldName"><%= LanguageUtil.get(pageContext, "Pre-Loop") %>:
+								<div class="fieldName"><%= LanguageUtil.get(pageContext, "Pre-Loop") %>
 								</div>
 								<div class="fieldValue">
 									<div id="preLoopEditorArea" style="border: 0px;max-width:900px">
@@ -251,8 +252,9 @@
 						<div id="multiCodeButtonDiv">
 							<div class="fieldWrapper">
 								<div class="fieldName">
-									<span class="required"></span>
-									<%= LanguageUtil.get(pageContext, "Code-Per-Content-Type") %>:
+									<span class="required">
+										<%= LanguageUtil.get(pageContext, "Code-Per-Content-Type") %>
+									</span>
 								</div>
 								<div class="fieldValue">
 									<div id="structureSelecttDiv" >
@@ -339,8 +341,9 @@
 						<div id="codeButtonDiv">
 							<div class="fieldWrapper">
 								<div class="fieldName">
-									<span class="required"></span>
-									<%= LanguageUtil.get(pageContext, "Code") %>:
+									<span class="required">
+										<%= LanguageUtil.get(pageContext, "Code") %>
+									</span>
 								</div>
 								<div class="fieldValue">
 									<br/>

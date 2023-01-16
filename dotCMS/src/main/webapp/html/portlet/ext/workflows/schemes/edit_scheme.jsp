@@ -44,7 +44,7 @@
 		<%if(!scheme.isNew()){%>
 			<dl>
 				<dt>
-					<label for=""><%=LanguageUtil.get(pageContext, "Scheme")%> <%=LanguageUtil.get(pageContext, "Id")%>:</label>
+					<label for=""><%=LanguageUtil.get(pageContext, "Scheme")%> <%=LanguageUtil.get(pageContext, "Id")%></label>
 				</dt>
 				<dd>
 					<strong>
@@ -55,7 +55,7 @@
 		<%}%>
 		<dl>
 			<dt>
-				<label for=""><%=LanguageUtil.get(pageContext, "Name")%>:</label>
+				<label class="required" for=""><%=LanguageUtil.get(pageContext, "Name")%></label>
 			</dt>
 			<dd>
 				<input type="text" name="schemeName" id="schemeName"
@@ -67,7 +67,7 @@
 
 		<dl>
 			<dt>
-				<label for=""><%=LanguageUtil.get(pageContext, "Description")%>:</label>
+				<label for=""><%=LanguageUtil.get(pageContext, "Description")%></label>
 			</dt>
 			<dd>
 				<input type="textarea" name="schemeDescription"
@@ -79,7 +79,7 @@
 		
 			<dl>
 				<dt>
-					<label style="<%if(scheme.isNew()){%>color:silver<%}%>"><%if(!contentTypes.isEmpty()) { %><%=contentTypes.size() %><%} %> <%=LanguageUtil.get(pageContext, "structures")%>:</label>
+					<label style="<%if(scheme.isNew()){%>color:silver<%}%>"><%if(!contentTypes.isEmpty()) { %><%=contentTypes.size() %><%} %> <%=LanguageUtil.get(pageContext, "structures")%></label>
 				</dt>
 	
 				<dd class="wf-content-types">

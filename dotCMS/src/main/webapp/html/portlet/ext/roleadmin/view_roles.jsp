@@ -20,20 +20,24 @@
 		<dl>
 			<dt></dt>
 			<dd><ul id="addRoleErrorMessagesList"></ul></dd>
-			<dt><%= LanguageUtil.get(pageContext, "role") %>:</dt>
+			<dt>
+				<span class="required">
+					<%= LanguageUtil.get(pageContext, "role") %>
+				</span>
+			</dt>
 			<dd><input id="roleName" type="text" required="true" invalidMessage="Required." dojoType="dijit.form.ValidationTextBox" /></dd>
-			<dt><%= LanguageUtil.get(pageContext, "Key") %>:</dt>
+			<dt><%= LanguageUtil.get(pageContext, "Key") %></dt>
 			<dd><input id="roleKey" type="text" dojoType="dijit.form.ValidationTextBox" /></dd>
-			<dt><%= LanguageUtil.get(pageContext, "Parent") %>:</dt>
+			<dt><%= LanguageUtil.get(pageContext, "Parent") %></dt>
 			<dd id="parentRoleWrapper"><div id="parentRoleDiv"></div>
 										<input type="hidden" id="parentRoleValue" value="0" />   </dd>
-			<dt><%= LanguageUtil.get(pageContext, "can-grant") %>:</dt>
+			<dt><%= LanguageUtil.get(pageContext, "can-grant") %></dt>
 			<dd>
 				<input id="editUsers" type="checkbox" value="true" dojoType="dijit.form.CheckBox" /> <%= LanguageUtil.get(pageContext, "users") %>
 				<input id="editPermissions" type="checkbox" value="true" dojoType="dijit.form.CheckBox" /> <%= LanguageUtil.get(pageContext, "Permissions") %>
 				<input id="editTabs" type="checkbox" value="true" dojoType="dijit.form.CheckBox" /><%= LanguageUtil.get(pageContext, "Tabs") %>
 			</dd>
-			<dt><%= LanguageUtil.get(pageContext, "Description") %>:</dt>
+			<dt><%= LanguageUtil.get(pageContext, "Description") %></dt>
 
 			<dd><textarea  dojoType="dijit.form.Textarea" style="width:200px;min-height:2px;max-height: 600px"
         name="roleDescription" required="true" invalidMessage="<%= LanguageUtil.get(pageContext, "Required") %>" id="roleDescription" ></textarea> </dd>
