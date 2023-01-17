@@ -1259,60 +1259,63 @@ public class ImportUtil {
                 // Retaining Categories when content updated with partial imports
                 if(UtilMethods.isSet(cont.getIdentifier())){
 
-                    List<Field> structureFields = FieldsCache.getFieldsByStructureInode(contentType.getInode());
-                    List<Field> categoryFields = new ArrayList<>();
-                    List<Field> nonHeaderCategoryFields = new ArrayList<>();
-                    List<Category> nonHeaderParentCats = new ArrayList<>();
-                    List<Category> categoriesToRetain = new ArrayList<>();
-                    List<Category> categoriesOnWorkingContent = new ArrayList<>();
-
+                    final List<Field> structureFields = FieldsCache.getFieldsByStructureInode(contentType.getInode());
+                    final List<Field> categoryFields = new ArrayList<>();
                     for(Field field : structureFields){
                         if(field.getFieldType().equals(Field.FieldType.CATEGORY.toString()) || field.getFieldType().equals(Field.FieldType.CATEGORIES_TAB.toString()))
                             categoryFields.add(field);
                     }
-
                     for (Integer column : headers.keySet()) {
                         Field headerField = headers.get(column);
                         Iterator<Field> itr = categoryFields.iterator();
-                        while(itr.hasNext()){
+                        while (itr.hasNext()) {
                             Field field = itr.next();
-                            if(headerField.getInode().equalsIgnoreCase(field.getInode())){
+                            if (headerField.getInode().equalsIgnoreCase(field.getInode())) {
                                 itr.remove();
                             }
                         }
                     }
 
-                    nonHeaderCategoryFields.addAll(categoryFields);
+                    //Only run if there is Category Field missing from the Headers
+                    if(!categoryFields.isEmpty()) {
+                        final List<Field> nonHeaderCategoryFields = new ArrayList<>(categoryFields);
+                        final List<Category> nonHeaderParentCats = new ArrayList<>();
+                        final List<Category> nonHeaderCategories = new ArrayList<>();
+                        List<Category> categoriesOnWorkingContent = new ArrayList<>();
 
-                    for(Field field : nonHeaderCategoryFields){
-                        nonHeaderParentCats.add(catAPI.find(field.getValues(), user, false));
-                    }
+                        //Find the Parent Category for each of the fields
+                        for (final Field field : nonHeaderCategoryFields) {
+                            nonHeaderParentCats.add(catAPI.find(field.getValues(), user, false));
+                        }
 
-                    for(Category cat : nonHeaderParentCats){
-                        categoriesToRetain.addAll(catAPI.getAllChildren(cat, user, false));
-                    }
+                        //Get All the children of All the Parent Categories
+                        for (final Category cat : nonHeaderParentCats) {
+                            nonHeaderCategories.addAll(catAPI.getAllChildren(cat, user, false));
+                        }
 
                     /*
                      We need to verify that we are not trying to save a contentlet that have as language the default language because that mean that
                      contentlet for that default language couldn't exist, we are just saving it after all....
                      */
-                    Long languageId = langAPI.getDefaultLanguage().getId();
-                    if ( existingMultilingualLanguage != null ) {
-                        languageId = existingMultilingualLanguage;//Using the language another an existing contentlet with the same identifier
-                    }
+                        Long languageId = langAPI.getDefaultLanguage().getId();
+                        if (existingMultilingualLanguage != null) {
+                            languageId = existingMultilingualLanguage;//Using the language another an existing contentlet with the same identifier
+                        }
 
-                    Contentlet workingCont;
-                    try{
-                        workingCont = conAPI.findContentletByIdentifier( cont.getIdentifier(), false, languageId, user, false );
-                        categoriesOnWorkingContent = catAPI.getParents( workingCont, user, false );
-                    }catch(DotContentletStateException dse){
-                        Logger.error(ImportContentletsAction.class,dse.getMessage());
-                    }
+                        try {
+                            final Contentlet workingCont = conAPI.findContentletByIdentifier(cont.getIdentifier(), false, languageId, user, false);
+                            categoriesOnWorkingContent = catAPI.getParents(workingCont, user, false);
+                        } catch (DotContentletStateException dse) {
+                            Logger.error(ImportContentletsAction.class, dse.getMessage());
+                        }
 
-                    for(Category existingCat : categoriesOnWorkingContent){
-                        for(Category retainCat :categoriesToRetain){
-                            if(existingCat.compareTo(retainCat) == 0){
-                                categories.add(existingCat);
+                        //We do this to only add the categories from non Header Categories Field, could be that there is
+                        //more than one Category field, but only some of them are being excluded in the headers.
+                        for (final Category contentCategory : categoriesOnWorkingContent) {
+                            for (final Category nonHeaderCategory : nonHeaderCategories) {
+                                if (contentCategory.getCategoryVelocityVarName().equals(nonHeaderCategory.getCategoryVelocityVarName())) {
+                                    categories.add(contentCategory);
+                                }
                             }
                         }
                     }
@@ -1442,7 +1445,7 @@ public class ImportUtil {
                         } else {
                             Logger.debug(ImportUtil.class, "runWorkflowIfCould");
                             cont = runWorkflowIfCould(user, contentTypePermissions,
-                                    categories, cont, contentletRelationships);
+                                    new ArrayList<>(categories), cont, contentletRelationships);
                         }
 
                         for (Integer column : headers.keySet()) {
@@ -1517,7 +1520,7 @@ public class ImportUtil {
     }
 
     private static Contentlet runWorkflowIfCould(final User user, final List<Permission> contentTypePermissions,
-                                                 final Set<Category> categories, final Contentlet contentlet,
+                                                 final List<Category> categories, final Contentlet contentlet,
                                                  final ContentletRelationships contentletRelationships) throws DotDataException, DotSecurityException {
         // If the User doesn't have permissions to execute the wfActionId or
         // not action Id is set on the CSV/Import select box then use the old
@@ -1527,7 +1530,6 @@ public class ImportUtil {
         final Optional<WorkflowAction> workflowActionSaveOpt =
                 workflowAPI.findActionMappedBySystemActionContentlet
                         (contentlet, WorkflowAPI.SystemAction.NEW, user);
-        final List<Category> categoryList = new ArrayList<>(categories);
 
         if (workflowActionSaveOpt.isPresent()) {
 
@@ -1539,11 +1541,11 @@ public class ImportUtil {
                 final Contentlet savedContent = workflowAPI.fireContentWorkflow
                         (contentlet, new ContentletDependencies.Builder()
                                 .workflowActionId(workflowActionSaveOpt.get().getId())
-                                .relationships(contentletRelationships).categories(new ArrayList<>(categoryList))
+                                .relationships(contentletRelationships).categories(categories)
                                 .permissions(contentTypePermissions).modUser(user).build());
                 return live && !workflowActionSaveOpt.get().hasPublishActionlet()?
                         runWorkflowPublishIfCould(contentletRelationships,
-                                categoryList, contentTypePermissions, user, savedContent):
+                                categories, contentTypePermissions, user, savedContent):
                         savedContent;
             } else {
 
@@ -1556,7 +1558,7 @@ public class ImportUtil {
         }
         contentlet.setProperty(Contentlet.DONT_VALIDATE_ME, true);
         final Contentlet contentletSaved = conAPI.checkin(contentlet, contentletRelationships,
-                categoryList, contentTypePermissions,
+                categories, contentTypePermissions,
                 user, false);
 
         if (live) {
