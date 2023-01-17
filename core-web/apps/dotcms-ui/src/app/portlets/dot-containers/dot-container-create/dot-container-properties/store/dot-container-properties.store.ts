@@ -63,9 +63,9 @@ export class DotContainerPropertiesStore extends ComponentStore<DotContainerProp
             )
             .subscribe((containerEntity: DotContainerEntity) => {
                 const { container, contentTypes } = containerEntity;
-                if (container && (container.preLoop || container.postLoop)) {
+                if (container && contentTypes?.length > 0) {
                     this.updatePrePostLoopAndContentTypeVisibility({
-                        showPrePostLoopInput: true,
+                        showPrePostLoopInput: !!container.preLoop || !!container.postLoop,
                         isContentTypeVisible: true,
                         container: container,
                         containerStructures: contentTypes ?? []
