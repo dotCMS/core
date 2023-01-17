@@ -144,8 +144,8 @@ export class DotExperimentsService {
      * Delete a goal of an experiment
      * @returns Observable<DotExperiment>
      * @memberof DotExperimentsService
-     * @param experimentId
-     * @param goalType
+     * @param {string} experimentId
+     * @param {GoalsLevels} goalType
      */
     deleteGoal(experimentId: string, goalType: GoalsLevels): Observable<DotExperiment> {
         return this.http

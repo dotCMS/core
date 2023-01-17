@@ -76,13 +76,13 @@ export class DotExperimentsConfigurationGoalsComponent {
 
     /**
      * Show confirmation dialog to allow the user confirmation to delete a goal
-     * @param event
+     * @param {Event} event
      * @param {GoalsLevels} goalLevel
      * @param {string} experimentId
      * @returns void
      * @memberof DotExperimentsConfigurationGoalsComponent
      */
-    deleteGoal(event, goalLevel: GoalsLevels, experimentId: string) {
+    deleteGoal(event: Event, goalLevel: GoalsLevels, experimentId: string) {
         this.confirmationService.confirm({
             target: event.target,
             message: this.dotMessageService.get(
