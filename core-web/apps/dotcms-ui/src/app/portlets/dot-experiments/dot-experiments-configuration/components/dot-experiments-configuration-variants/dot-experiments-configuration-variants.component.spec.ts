@@ -33,6 +33,7 @@ const messageServiceMock = new MockDotMessageService({
     'experiments.configure.variants.delete': 'delete',
     'experiments.configure.variants.add': 'Add new variant'
 });
+
 describe('DotExperimentsConfigurationVariantsComponent', () => {
     let spectator: Spectator<DotExperimentsConfigurationVariantsComponent>;
 
