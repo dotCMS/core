@@ -71,6 +71,11 @@ export class DotExperimentsConfigurationVariantsComponent {
         private readonly dotExperimentsConfigurationStore: DotExperimentsConfigurationStore
     ) {}
 
+    /**
+     * Edit the name of the selected variant
+     * @param {string} newVariantName
+     * @param {Variant} variant
+     */
     editVariantName(newVariantName: string, variant: Variant) {
         this.edit.emit({
             ...variant,

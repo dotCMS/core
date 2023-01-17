@@ -1,4 +1,5 @@
 import { byTestId, createComponentFactory, mockProvider, Spectator } from '@ngneat/spectator';
+import { of } from 'rxjs';
 
 import { DecimalPipe } from '@angular/common';
 
@@ -219,6 +220,14 @@ describe('DotExperimentsConfigurationVariantsComponent', () => {
         });
 
         it('should edit output emit the new name', () => {
+            spectator.component.vm$ = of({
+                status: {
+                    status: Status.IDLE,
+                    isOpen: false,
+                    experimentStep: ExperimentSteps.GOAL
+                }
+            });
+
             const newVariantName = 'new name';
             const variants: Variant[] = [
                 { id: '1', name: DEFAULT_VARIANT_NAME, weight: '50.00', url: 'url' },
@@ -242,11 +251,35 @@ describe('DotExperimentsConfigurationVariantsComponent', () => {
 
             const inplaceInput = spectator.query(byTestId('inplace-input')) as HTMLInputElement;
             inplaceInput.value = newVariantName;
+            spectator.detectComponentChanges();
 
             expect(viewButton.disabled).not.toBe(true);
+            spectator.detectComponentChanges();
+
             spectator.click(viewButton);
 
+            spectator.detectComponentChanges();
+
             expect(output).toEqual({ ...variants[1], name: newVariantName });
+        });
+
+        it('should the button of save show loading when is SAVING', () => {
+            spectator.query(Inplace).activate();
+
+            spectator.component.vm$ = of({
+                status: {
+                    status: Status.SAVING,
+                    isOpen: false,
+                    experimentStep: ExperimentSteps.GOAL
+                }
+            });
+
+            spectator.detectComponentChanges();
+            const viewButton = spectator.query(
+                byTestId('variant-save-name-btn')
+            ) as HTMLButtonElement;
+
+            expect(viewButton).toHaveClass('p-disabled p-button-loading');
         });
 
         it('should delete a variant', () => {
