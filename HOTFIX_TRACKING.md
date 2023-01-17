@@ -80,3 +80,5 @@ This maintenance release includes the following code fixes:
 66. https://github.com/dotCMS/core/issues/23365 : Placeholder Issue #23365
 67. https://github.com/dotCMS/core/issues/23401 : Insure zip file integrity #23401
 68. https://github.com/dotCMS/core/issues/23474 : Switch Site endpoint is nor working if user doesn't have access to Sites Portlet #23474
+
+**Release-22.03.5**
