@@ -49,7 +49,7 @@ import { DotDynamicDirective } from '@portlets/shared/directives/dot-dynamic.dir
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotExperimentsConfigurationGoalsComponent {
-    vm$: Observable<{ goals: Goals; status: StepStatus }> =
+    vm$: Observable<{ experimentId: string; goals: Goals; status: StepStatus }> =
         this.dotExperimentsConfigurationStore.goalsStepVm$.pipe(
             tap(({ status }) => this.handleSidebar(status))
         );
@@ -75,19 +75,22 @@ export class DotExperimentsConfigurationGoalsComponent {
     }
 
     /**
-     * Delete goal
+     * Show confirmation dialog to allow the user confirmation to delete a goal
+     * @param event
      * @param {GoalsLevels} goalLevel
+     * @param {string} experimentId
      * @returns void
      * @memberof DotExperimentsConfigurationGoalsComponent
      */
-    deleteGoal(event, goalLevel: GoalsLevels) {
+    deleteGoal(event, goalLevel: GoalsLevels, experimentId: string) {
         this.confirmationService.confirm({
             target: event.target,
             message: this.dotMessageService.get(
                 'experiments.configure.action.delete.confirm-question'
             ),
             icon: 'pi pi-exclamation-triangle',
-            accept: () => this.dotExperimentsConfigurationStore.deleteGoal(goalLevel)
+            accept: () =>
+                this.dotExperimentsConfigurationStore.deleteGoal({ goalLevel, experimentId })
         });
     }
 

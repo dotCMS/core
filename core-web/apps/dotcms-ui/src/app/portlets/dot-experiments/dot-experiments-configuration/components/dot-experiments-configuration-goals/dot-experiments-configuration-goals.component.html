@@ -25,13 +25,12 @@
                                 <h3 data-testId="goal-label">
                                     {{ goalTypeMap[vm.goals.primary.type].label | dm }}
                                 </h3>
-                                <dot-icon
-                                    class="delete cursor-pointer"
-                                    (click)="deleteGoal($event, 'primary')"
+
+                                <i
+                                    class="pi pi-trash delete cursor-pointer"
+                                    (click)="deleteGoal($event, 'primary', vm.experimentId)"
                                     data-testId="goal-delete-button"
-                                    name="delete"
-                                    size="16"
-                                ></dot-icon>
+                                ></i>
                             </div>
                         </ng-template>
                         <p data-testId="goal-description">

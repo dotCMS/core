@@ -305,7 +305,7 @@ describe('DotExperimentsConfigurationStore', () => {
 
             store.loadExperiment(EXPERIMENT_ID);
 
-            store.deleteGoal(goalLevelToDelete);
+            store.deleteGoal({ experimentId: EXPERIMENT_ID, goalLevel: goalLevelToDelete });
 
             store.state$.subscribe(({ experiment }) => {
                 expect(experiment.goals).toEqual(null);

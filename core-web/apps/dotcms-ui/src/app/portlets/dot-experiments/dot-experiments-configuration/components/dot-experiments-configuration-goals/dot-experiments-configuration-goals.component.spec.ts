@@ -29,6 +29,7 @@ const messageServiceMock = new MockDotMessageService({
     'experiments.goal.reach_page.description': 'description',
     'experiments.configure.goals.no.seleted.goal.message': 'empty message'
 });
+const EXPERIMENT_ID = ExperimentMocks[0].id;
 describe('DotExperimentsConfigurationGoalsComponent', () => {
     let spectator: Spectator<DotExperimentsConfigurationGoalsComponent>;
     let store: DotExperimentsConfigurationStore;
@@ -88,7 +89,8 @@ describe('DotExperimentsConfigurationGoalsComponent', () => {
     });
 
     it('should disable the button of add goal if a goal was selected already', () => {
-        const vmMock$: { goals: Goals; status: StepStatus } = {
+        const vmMock$: { experimentId: string; goals: Goals; status: StepStatus } = {
+            experimentId: EXPERIMENT_ID,
             goals: GoalsMock,
             status: {
                 status: Status.IDLE,
@@ -132,7 +134,8 @@ describe('DotExperimentsConfigurationGoalsComponent', () => {
 
     it('should show a confirmation to delete a goal', () => {
         spyOn(store, 'deleteGoal');
-        const vmMock$: { goals: Goals; status: StepStatus } = {
+        const vmMock$: { experimentId: string; goals: Goals; status: StepStatus } = {
+            experimentId: EXPERIMENT_ID,
             goals: GoalsMock,
             status: {
                 status: Status.IDLE,

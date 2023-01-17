@@ -40,6 +40,7 @@ export class DotImageSearchStore extends ComponentStore<DotImageSearchState> {
         loading,
         preventScroll
     }));
+
     // Setters
     readonly updateContentlets = this.updater<DotCMSContentlet[]>((state, contentlets) => {
         return {
@@ -47,30 +48,35 @@ export class DotImageSearchStore extends ComponentStore<DotImageSearchState> {
             contentlets
         };
     });
+
     readonly updatelanguageId = this.updater<number>((state, languageId) => {
         return {
             ...state,
             languageId
         };
     });
+
     readonly updateLoading = this.updater<boolean>((state, loading) => {
         return {
             ...state,
             loading
         };
     });
+
     readonly updatePreventScroll = this.updater<boolean>((state, preventScroll) => {
         return {
             ...state,
             preventScroll
         };
     });
+
     readonly updateSearch = this.updater<string>((state, search) => {
         return {
             ...state,
             search
         };
     });
+
     // Effects
     readonly searchContentlet = this.effect((origin$: Observable<string>) => {
         return origin$.pipe(
@@ -83,6 +89,7 @@ export class DotImageSearchStore extends ComponentStore<DotImageSearchState> {
             mergeMap((data) => this.searchContentletsRequest(this.params({ ...data }), []))
         );
     });
+
     readonly nextBatch = this.effect((origin$: Observable<number>) => {
         return origin$.pipe(
             withLatestFrom(this.state$),
@@ -92,6 +99,7 @@ export class DotImageSearchStore extends ComponentStore<DotImageSearchState> {
             )
         );
     });
+
     private languages: Languages;
 
     constructor(
