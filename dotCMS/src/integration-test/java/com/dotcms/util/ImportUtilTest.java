@@ -2349,6 +2349,17 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
         }
     }
 
+    /***
+     * Creates a ContentType that has all the fields, but for this test
+     * we'll only use the title and the categories fields.
+     * Creates a content with a couple of categories.
+     * Creates a CSV without the categories column.
+     * Import the CSV and the Content should retain the original categories.
+     *
+     * @throws DotSecurityException
+     * @throws DotDataException
+     * @throws IOException
+     */
     @Test
     public void importLine_shouldRetainCategoriesIfHeaderNotSent() throws DotSecurityException, DotDataException, IOException {
         CsvReader csvreader;
