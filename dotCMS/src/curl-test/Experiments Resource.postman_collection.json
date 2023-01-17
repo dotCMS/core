@@ -4087,7 +4087,7 @@
 							}
 						},
 						"url": {
-							"raw": "{{serverURL}}/api/v1/experiments/{{experimentToAddVariant}}/_stop",
+							"raw": "{{serverURL}}/api/v1/experiments/{{experimentToAddVariant}}/_end",
 							"host": [
 								"{{serverURL}}"
 							],
@@ -4096,7 +4096,7 @@
 								"v1",
 								"experiments",
 								"{{experimentToAddVariant}}",
-								"_stop"
+								"_end"
 							]
 						}
 					},
