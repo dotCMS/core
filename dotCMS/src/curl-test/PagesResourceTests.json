@@ -10,7 +10,7 @@
 			"name": "CreateTestContext",
 			"item": [
 				{
-					"name": "Delete Image ContentType Copy",
+					"name": "Delete Image ContentType",
 					"event": [
 						{
 							"listen": "test",
@@ -69,7 +69,7 @@
 					"response": []
 				},
 				{
-					"name": "Delete Video ContentType Copy",
+					"name": "Delete Video ContentType",
 					"event": [
 						{
 							"listen": "test",
