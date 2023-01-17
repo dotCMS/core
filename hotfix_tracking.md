@@ -179,3 +179,5 @@ This maintenance release includes the following code fixes:
 104. https://github.com/dotCMS/core/issues/23401 : Insure zip file integrity #23401
 
 **Release-21.06.13**
+
+105. https://github.com/dotCMS/core/issues/23440 : Categories being removed from content items when updating content via CSV file upload #23440

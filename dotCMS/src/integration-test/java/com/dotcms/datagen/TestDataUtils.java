@@ -2,20 +2,7 @@ package com.dotcms.datagen;
 
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.contenttype.exception.NotFoundInDbException;
-import com.dotcms.contenttype.model.field.BinaryField;
-import com.dotcms.contenttype.model.field.CategoryField;
-import com.dotcms.contenttype.model.field.ConstantField;
-import com.dotcms.contenttype.model.field.CustomField;
-import com.dotcms.contenttype.model.field.DateField;
-import com.dotcms.contenttype.model.field.HostFolderField;
-import com.dotcms.contenttype.model.field.ImageField;
-import com.dotcms.contenttype.model.field.LineDividerField;
-import com.dotcms.contenttype.model.field.RadioField;
-import com.dotcms.contenttype.model.field.SelectField;
-import com.dotcms.contenttype.model.field.TagField;
-import com.dotcms.contenttype.model.field.TextAreaField;
-import com.dotcms.contenttype.model.field.TextField;
-import com.dotcms.contenttype.model.field.WysiwygField;
+import com.dotcms.contenttype.model.field.*;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.util.ConfigTestHelper;
@@ -25,6 +12,7 @@ import com.dotmarketing.business.RelationshipAPI;
 import com.dotmarketing.business.Treeable;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.image.focalpoint.FocalPointAPITest;
+import com.dotmarketing.portlets.categories.business.CategoryAPI;
 import com.dotmarketing.portlets.categories.model.Category;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
@@ -2009,5 +1997,242 @@ public class TestDataUtils {
                     .collect(Collectors.toList());
             jsonFiles.forEach(file -> file.delete());
         }
+    }
+
+    public static ContentType newContentTypeFieldTypesGalore() {
+        final String contentTypeName = String.format("WithAllAvailableFieldTypes%s",System.nanoTime());
+        return newContentTypeFieldTypesGalore(contentTypeName,null);
+    }
+
+    public static ContentType newContentTypeFieldTypesGalore(final Category parent) {
+        final String contentTypeName = String.format("WithAllAvailableFieldTypes%s",System.nanoTime());
+        return newContentTypeFieldTypesGalore(contentTypeName,null, parent);
+    }
+
+    public static ContentType newContentTypeFieldTypesGalore(final String contentTypeName, final Set<String> workflowIds) {
+        final CategoryAPI categoryAPI = APILocator.getCategoryAPI();
+        final Optional<Category> anyTopLevelCategory = Try.of(()->categoryAPI.findTopLevelCategories(APILocator.systemUser(), false).stream().findAny()).get();
+        return newContentTypeFieldTypesGalore(contentTypeName,workflowIds, anyTopLevelCategory.orElse(null));
+    }
+
+    @WrapInTransaction
+    public static ContentType newContentTypeFieldTypesGalore(final String contentTypeName, Set<String> workflowIds, final Category parent) {
+
+        ContentType contentType = null;
+        try {
+            try {
+                contentType = APILocator.getContentTypeAPI(APILocator.systemUser()).find(contentTypeName);
+            } catch (NotFoundInDbException e) {
+                //Do nothing...
+            }
+            if (contentType == null) {
+
+                final WorkflowScheme systemWorkflow = TestWorkflowUtils.getSystemWorkflow();
+                final Set<String> collectedWorkflowIds = new HashSet<>();
+                collectedWorkflowIds.add(systemWorkflow.getId());
+                if(null != workflowIds){
+                    collectedWorkflowIds.addAll(workflowIds);
+                }
+
+                List<com.dotcms.contenttype.model.field.Field> fields = new ArrayList<>();
+
+                fields.add(
+                        new FieldDataGen()
+                                .name("hiddenBool")
+                                .velocityVarName("hiddenBool")
+                                .type(HiddenField.class)
+                                .dataType(DataTypes.BOOL)
+                                .next()
+                );
+                fields.add(
+                        new FieldDataGen()
+                                .name("hostFolder")
+                                .velocityVarName("hostFolder")
+                                .type(HostFolderField.class)
+                                .next()
+                );
+                fields.add(
+                        new FieldDataGen()
+                                .name("textFieldNumeric")
+                                .velocityVarName("textFieldNumeric")
+                                .type(TextField.class)
+                                .dataType(DataTypes.INTEGER)
+                                .next()
+                );
+                fields.add(
+                        new FieldDataGen()
+                                .name("textFieldFloat")
+                                .velocityVarName("textFieldFloat")
+                                .type(TextField.class)
+                                .dataType(DataTypes.FLOAT)
+                                .next()
+                );
+                fields.add(
+                        new FieldDataGen()
+                                .name("textField")
+                                .velocityVarName("textField")
+                                .type(TextField.class)
+                                .dataType(DataTypes.TEXT)
+                                .next()
+                );
+                fields.add(
+                        new FieldDataGen()
+                                .name("binaryField")
+                                .velocityVarName("binaryField")
+                                .type(BinaryField.class).dataType(DataTypes.SYSTEM)
+                                .next()
+                );
+                fields.add(
+                        new FieldDataGen()
+                                .name("textAreaField")
+                                .velocityVarName("textAreaField")
+                                .type(TextAreaField.class)
+                                .next()
+                );
+                fields.add(
+                        new FieldDataGen()
+                                .name("dateField")
+                                .velocityVarName("dateField")
+                                .defaultValue(null)
+                                .type(DateField.class)
+                                .next()
+                );
+                fields.add(
+                        new FieldDataGen()
+                                .name("dateTimeField")
+                                .velocityVarName("dateTimeField")
+                                .defaultValue(null)
+                                .type(DateTimeField.class)
+                                .next()
+                );
+
+                fields.add(
+                        new FieldDataGen()
+                                .name("timeField")
+                                .velocityVarName("timeField")
+                                .defaultValue(null)
+                                .type(TimeField.class)
+                                .next()
+                );
+
+                fields.add(
+                        new FieldDataGen()
+                                .name("tagField")
+                                .velocityVarName("tagField")
+                                .defaultValue(null)
+                                .type(TagField.class)
+                                .next()
+                );
+
+                fields.add(
+                        new FieldDataGen()
+                                .name("keyValueField")
+                                .velocityVarName("keyValueField")
+                                .type(KeyValueField.class)
+                                .next()
+                );
+
+                fields.add(
+                        new FieldDataGen()
+                                .name("imageField")
+                                .velocityVarName("imageField")
+                                .type(ImageField.class)
+                                .next()
+                );
+
+                fields.add(
+                        new FieldDataGen()
+                                .name("checkboxField")
+                                .velocityVarName("checkboxField")
+                                .type(CheckboxField.class)
+                                .next()
+                );
+
+                fields.add(
+                        new FieldDataGen()
+                                .name("selectField")
+                                .velocityVarName("selectField")
+                                .type(SelectField.class)
+                                .next()
+                );
+
+                fields.add(
+                        new FieldDataGen()
+                                .name("multiSelectField")
+                                .velocityVarName("multiSelectField")
+                                .type(MultiSelectField.class)
+                                .next()
+
+                );
+
+                fields.add(
+                        new FieldDataGen()
+                                .name("radioField")
+                                .velocityVarName("radioField")
+                                .type(RadioField.class)
+                                .next()
+
+                );
+
+                fields.add(
+                        new FieldDataGen()
+                                .name("wysiwygField")
+                                .velocityVarName("wysiwygField")
+                                .type(WysiwygField.class)
+                                .next()
+
+                );
+
+                //Category field
+                if(null != parent) {
+                    fields.add(new FieldDataGen()
+                            .name("categoryField")
+                            .velocityVarName("categoryField")
+                            .type(CategoryField.class)
+                            .values(parent.getInode()).next());
+                }
+
+                contentType = new ContentTypeDataGen()
+                        .baseContentType(BaseContentType.CONTENT)
+                        .name(contentTypeName)
+                        .velocityVarName(contentTypeName)
+                        .fields(fields)
+                        .workflowId(collectedWorkflowIds)
+                        .nextPersisted();
+            }
+        } catch (Exception e) {
+            throw new DotRuntimeException(e);
+        }
+
+        return contentType;
+    }
+
+    /**
+     * This method creates a parent category and a couple of child categories.
+     * @return the parent category
+     */
+    public static Category createCategories(){
+
+        final String parentCategoryName = String.format("Parent-Category-[%d]", System.currentTimeMillis());
+        final Category parentCategory = new CategoryDataGen()
+                .setCategoryName(parentCategoryName)
+                .setKey(parentCategoryName + "Key")
+                .setCategoryVelocityVarName(parentCategoryName)
+                .setSortOrder(1)
+                .nextPersisted();
+
+        for(int i=0; i<=2; i++) {
+            final String childCategoryName = String.format("Child-Category-[%d]-[%d]", i, System.currentTimeMillis());
+
+            new CategoryDataGen()
+                    .setCategoryName(childCategoryName)
+                    .setKey(childCategoryName + "Key")
+                    .setCategoryVelocityVarName(childCategoryName)
+                    .setSortOrder(1)
+                    .parent(parentCategory).nextPersisted();
+
+        }
+
+        return parentCategory;
     }
 }
