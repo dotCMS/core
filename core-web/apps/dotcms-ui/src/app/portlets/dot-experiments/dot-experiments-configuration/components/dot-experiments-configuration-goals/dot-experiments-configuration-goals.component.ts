@@ -3,15 +3,20 @@ import { Observable, Subject } from 'rxjs';
 import { CommonModule } from '@angular/common';
 import { ChangeDetectionStrategy, Component, ComponentRef, ViewChild } from '@angular/core';
 
+import { ConfirmationService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
 import { CardModule } from 'primeng/card';
+import { ConfirmPopupModule } from 'primeng/confirmpopup';
 
 import { tap } from 'rxjs/operators';
 
+import { UiDotIconButtonTooltipModule } from '@components/_common/dot-icon-button-tooltip/dot-icon-button-tooltip.module';
+import { DotMessageService } from '@dotcms/data-access';
 import {
     ExperimentSteps,
     Goals,
     GOALS_METADATA_MAP,
+    GoalsLevels,
     Status,
     StepStatus
 } from '@dotcms/dotcms-models';
@@ -33,16 +38,18 @@ import { DotDynamicDirective } from '@portlets/shared/directives/dot-dynamic.dir
         DotMessagePipeModule,
         DotDynamicDirective,
         DotIconModule,
+        UiDotIconButtonTooltipModule,
         // PrimeNg
         ButtonModule,
-        CardModule
+        CardModule,
+        ConfirmPopupModule
     ],
     templateUrl: './dot-experiments-configuration-goals.component.html',
     styleUrls: ['./dot-experiments-configuration-goals.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotExperimentsConfigurationGoalsComponent {
-    vm$: Observable<{ goals: Goals; status: StepStatus }> =
+    vm$: Observable<{ experimentId: string; goals: Goals; status: StepStatus }> =
         this.dotExperimentsConfigurationStore.goalsStepVm$.pipe(
             tap(({ status }) => this.handleSidebar(status))
         );
@@ -53,7 +60,9 @@ export class DotExperimentsConfigurationGoalsComponent {
     private componentRef: ComponentRef<DotExperimentsConfigurationGoalSelectComponent>;
 
     constructor(
-        private readonly dotExperimentsConfigurationStore: DotExperimentsConfigurationStore
+        private readonly dotExperimentsConfigurationStore: DotExperimentsConfigurationStore,
+        private readonly dotMessageService: DotMessageService,
+        private readonly confirmationService: ConfirmationService
     ) {}
 
     /**
@@ -63,6 +72,26 @@ export class DotExperimentsConfigurationGoalsComponent {
      */
     openSelectGoalSidebar() {
         this.dotExperimentsConfigurationStore.openSidebar(ExperimentSteps.GOAL);
+    }
+
+    /**
+     * Show confirmation dialog to allow the user confirmation to delete a goal
+     * @param {Event} event
+     * @param {GoalsLevels} goalLevel
+     * @param {string} experimentId
+     * @returns void
+     * @memberof DotExperimentsConfigurationGoalsComponent
+     */
+    deleteGoal(event: Event, goalLevel: GoalsLevels, experimentId: string) {
+        this.confirmationService.confirm({
+            target: event.target,
+            message: this.dotMessageService.get(
+                'experiments.configure.action.delete.confirm-question'
+            ),
+            icon: 'pi pi-exclamation-triangle',
+            accept: () =>
+                this.dotExperimentsConfigurationStore.deleteGoal({ goalLevel, experimentId })
+        });
     }
 
     private handleSidebar(status: StepStatus) {

@@ -14,6 +14,7 @@ import {
     DotExperiment,
     ExperimentSteps,
     Goals,
+    GoalsLevels,
     LoadingState,
     Status,
     StepStatus,
@@ -280,6 +281,35 @@ export class DotExperimentsConfigurationStore extends ComponentStore<DotExperime
                             (error: HttpErrorResponse) => throwError(error)
                         )
                     )
+                )
+            );
+        }
+    );
+
+    readonly deleteGoal = this.effect(
+        (goalLevel$: Observable<{ goalLevel: GoalsLevels; experimentId: string }>) => {
+            return goalLevel$.pipe(
+                switchMap((selected) =>
+                    this.dotExperimentsService
+                        .deleteGoal(selected.experimentId, selected.goalLevel)
+                        .pipe(
+                            tapResponse(
+                                (experiment) => {
+                                    this.messageService.add({
+                                        severity: 'info',
+                                        summary: this.dotMessageService.get(
+                                            'experiments.configure.goals.delete.confirm-title'
+                                        ),
+                                        detail: this.dotMessageService.get(
+                                            'experiments.configure.goals.delete.confirm-message'
+                                        )
+                                    });
+
+                                    this.setGoals(experiment.goals);
+                                },
+                                (error: HttpErrorResponse) => throwError(error)
+                            )
+                        )
                 )
             );
         }

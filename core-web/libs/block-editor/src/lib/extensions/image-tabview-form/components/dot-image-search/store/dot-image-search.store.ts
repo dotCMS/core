@@ -6,7 +6,6 @@ import { Observable } from 'rxjs/internal/Observable';
 import { map, mergeMap, tap, withLatestFrom } from 'rxjs/operators';
 
 import {
-    DEFAULT_LANG_ID,
     DotLanguageService,
     ESOrderDirection,
     Languages,
@@ -14,6 +13,8 @@ import {
     SearchService
 } from '@dotcms/block-editor';
 import { DotCMSContentlet } from '@dotcms/dotcms-models';
+
+const DEFAULT_LANG_ID = 1;
 
 export interface DotImageSearchState {
     loading: boolean;
@@ -33,8 +34,6 @@ const defaultState: DotImageSearchState = {
 
 @Injectable()
 export class DotImageSearchStore extends ComponentStore<DotImageSearchState> {
-    private languages: Languages;
-
     // Selectors
     readonly vm$ = this.select(({ contentlets, loading, preventScroll }) => ({
         contentlets,
@@ -100,6 +99,8 @@ export class DotImageSearchStore extends ComponentStore<DotImageSearchState> {
             )
         );
     });
+
+    private languages: Languages;
 
     constructor(
         private searchService: SearchService,
