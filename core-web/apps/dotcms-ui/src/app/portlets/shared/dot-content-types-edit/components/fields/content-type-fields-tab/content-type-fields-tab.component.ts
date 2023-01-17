@@ -1,7 +1,7 @@
-import { Component, Input, OnInit, Output, EventEmitter } from '@angular/core';
+import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
+
+import { DotAlertConfirmService, DotMessageService } from '@dotcms/data-access';
 import { DotCMSContentTypeField, DotCMSContentTypeLayoutRow } from '@dotcms/dotcms-models';
-import { DotMessageService } from '@dotcms/data-access';
-import { DotAlertConfirmService } from '@dotcms/data-access';
 
 /**
  * Display Tab Field

@@ -1,8 +1,10 @@
 import { Component, DebugElement, ElementRef, Input, ViewChild } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
-import { DotContainerHistoryComponent } from './dot-container-history.component';
+
 import { DotPortletBoxModule } from '@components/dot-portlet-base/components/dot-portlet-box/dot-portlet-box.module';
+
+import { DotContainerHistoryComponent } from './dot-container-history.component';
 
 @Component({
     selector: 'dot-iframe',

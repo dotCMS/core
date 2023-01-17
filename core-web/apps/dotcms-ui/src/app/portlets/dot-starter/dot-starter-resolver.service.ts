@@ -1,14 +1,16 @@
 import { Observable } from 'rxjs';
+
 import { Injectable } from '@angular/core';
 import { Resolve } from '@angular/router';
-import { DotCurrentUserService } from '@dotcms/data-access';
 
 import { map, mergeMap } from 'rxjs/operators';
+
+import { DotCurrentUserService } from '@dotcms/data-access';
 import {
     DotCurrentUser,
     DotPermissionsType,
-    UserPermissions,
-    PermissionsType
+    PermissionsType,
+    UserPermissions
 } from '@dotcms/dotcms-models';
 
 /**

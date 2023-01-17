@@ -1,9 +1,12 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { of } from 'rxjs';
-import { waitForAsync, TestBed } from '@angular/core/testing';
+
+import { TestBed, waitForAsync } from '@angular/core/testing';
 import { ActivatedRouteSnapshot } from '@angular/router';
+
 import { DotAppsService } from '@dotcms/app/api/services/dot-apps/dot-apps.service';
+
 import { DotAppsConfigurationResolver } from './dot-apps-configuration-resolver.service';
 
 class AppsServicesMock {

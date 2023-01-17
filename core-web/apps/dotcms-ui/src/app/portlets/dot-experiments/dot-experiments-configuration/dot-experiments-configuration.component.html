@@ -16,10 +16,11 @@
             <dot-experiments-configuration-variants
                 [stepStatus]="vm.stepStatusSidebar"
                 [variants]="vm.experiment.trafficProportion.variants"
-                (delete)="deleteVariant($event)"
+                (delete)="deleteVariant($event, vm.experiment.id)"
+                (edit)="editVariant($event, vm.experiment.id)"
                 (goToEditPage)="goToEditPageVariant($event)"
-                (save)="saveVariant($event)"
-                (sidebarStatusChanged)="sidebarStatusChanged($event)"
+                (save)="saveVariant($event, vm.experiment.id)"
+                (sidebarStatusChanged)="sidebarStatusController($event, experimentSteps.VARIANTS)"
             ></dot-experiments-configuration-variants>
 
             <dot-experiments-configuration-goals></dot-experiments-configuration-goals>

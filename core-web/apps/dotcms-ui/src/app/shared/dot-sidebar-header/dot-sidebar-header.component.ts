@@ -1,3 +1,4 @@
+import { CommonModule } from '@angular/common';
 import {
     ChangeDetectionStrategy,
     Component,
@@ -6,9 +7,10 @@ import {
     Optional,
     TemplateRef
 } from '@angular/core';
-import { CommonModule } from '@angular/common';
-import { UiDotIconButtonModule } from '@components/_common/dot-icon-button/dot-icon-button.module';
+
 import { Sidebar } from 'primeng/sidebar';
+
+import { UiDotIconButtonModule } from '@components/_common/dot-icon-button/dot-icon-button.module';
 
 /**
  * Used to add a header bar to Sidebar (PrimeNg)

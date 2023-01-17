@@ -1,13 +1,14 @@
-import { NgModule } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { NgModule } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 
 import { DropdownModule } from 'primeng/dropdown';
 
-import { DotWorkflowsActionsSelectorFieldComponent } from './dot-workflows-actions-selector-field.component';
 import { DotWorkflowsActionsService } from '@dotcms/data-access';
-import { DotWorkflowsActionsSelectorFieldService } from './services/dot-workflows-actions-selector-field.service';
 import { DotPipesModule } from '@pipes/dot-pipes.module';
+
+import { DotWorkflowsActionsSelectorFieldComponent } from './dot-workflows-actions-selector-field.component';
+import { DotWorkflowsActionsSelectorFieldService } from './services/dot-workflows-actions-selector-field.service';
 
 @NgModule({
     providers: [DotWorkflowsActionsService, DotWorkflowsActionsSelectorFieldService],

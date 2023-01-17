@@ -50,6 +50,7 @@ import com.dotmarketing.portlets.rules.model.LogicalOperator;
 import com.dotmarketing.portlets.rules.model.ParameterModel;
 import com.dotmarketing.portlets.rules.model.Rule;
 import com.dotmarketing.portlets.rules.model.Rule.FireOn;
+import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.UtilMethods;
@@ -68,8 +69,11 @@ import java.util.SortedSet;
 import java.util.TreeSet;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
-
+import io.vavr.Lazy;
 public class ExperimentsAPIImpl implements ExperimentsAPI {
+
+    private Lazy<Boolean> isExperimentEnabled =
+            Lazy.of(() -> Config.getBooleanProperty("FEATURE_FLAG_EXPERIMENTS", false));
 
     final ExperimentsFactory factory = FactoryLocator.getExperimentsFactory();
     final PermissionAPI permissionAPI = APILocator.getPermissionAPI();
@@ -106,9 +110,6 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
                     + " Experiment name: " + experiment.name() + ". Page Id: " + experiment.pageId());
             throw new DotSecurityException("You don't have permission to save the Experiment.");
         }
-
-        DotPreconditions.isTrue(pageAsContent.isLive(),
-                ()-> "Cannot create an Experiment on a non-Live Page.", DotStateException.class);
 
         Experiment.Builder builder = Experiment.builder().from(experiment);
 
@@ -507,17 +508,21 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
                                 contentlet.getLanguageId()))
                 .getOrElseThrow((e->new DotStateException("Unable to get the live version of the page", e)));
 
-        final String liveInode = versionInfo.orElseThrow().getLiveInode();
+        final ContentletVersionInfo contentletVersionInfo = versionInfo.orElseThrow();
+
+        final String inode = UtilMethods.isSet(contentletVersionInfo.getLiveInode())
+                ? contentletVersionInfo.getLiveInode()
+                : contentletVersionInfo.getWorkingInode();
 
         final Contentlet checkedoutContentlet = Try.of(() -> contentletAPI
-                        .checkout(liveInode, user, false))
+                        .checkout(inode, user, false))
                 .getOrElseThrow(
-                        (e) -> new DotStateException("Unable to checkout Experiment's content. Inode:" + liveInode, e));
+                        (e) -> new DotStateException("Unable to checkout Experiment's content. Inode:" + inode, e));
 
         checkedoutContentlet.setVariantId(variantName);
         Try.of(() -> contentletAPI.checkin(checkedoutContentlet, user, false))
                 .getOrElseThrow(
-                        (e) -> new DotStateException("Unable to checkin Experiment's content. Inode:" + liveInode, e));
+                        (e) -> new DotStateException("Unable to checkin Experiment's content. Inode:" + inode, e));
 
     }
 
@@ -654,7 +659,8 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
 
     @Override
     public boolean isAnyExperimentRunning() throws DotDataException {
-        return !APILocator.getExperimentsAPI().getRunningExperiments().isEmpty();
+        return isExperimentEnabled.get() &&
+                !APILocator.getExperimentsAPI().getRunningExperiments().isEmpty();
     }
 
     private TreeSet<ExperimentVariant> redistributeWeights(final Set<ExperimentVariant> variants) {

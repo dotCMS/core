@@ -1,7 +1,10 @@
-import { Component, OnInit, OnDestroy } from '@angular/core';
-import { DotUnlicensedPortletData, DotLicenseService } from '@dotcms/data-access';
-import { takeUntil } from 'rxjs/operators';
 import { Subject } from 'rxjs';
+
+import { Component, OnDestroy, OnInit } from '@angular/core';
+
+import { takeUntil } from 'rxjs/operators';
+
+import { DotLicenseService, DotUnlicensedPortletData } from '@dotcms/data-access';
 
 @Component({
     selector: 'dot-not-licensed-component',

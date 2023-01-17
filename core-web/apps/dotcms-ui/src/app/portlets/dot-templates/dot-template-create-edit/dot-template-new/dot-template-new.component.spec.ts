@@ -1,13 +1,15 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
+import { Subject } from 'rxjs';
+
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 
 import { DialogService } from 'primeng/dynamicdialog';
-import { Subject } from 'rxjs';
 
-import { DotMessageService } from '@dotcms/data-access';
 import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
+import { DotMessageService } from '@dotcms/data-access';
 import { MockDotMessageService } from '@dotcms/utils-testing';
+
 import { DotTemplateNewComponent } from './dot-template-new.component';
 
 describe('DotTemplateNewComponent', () => {

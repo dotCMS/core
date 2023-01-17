@@ -1,4 +1,5 @@
 import { TestBed } from '@angular/core/testing';
+
 import { DotEventsService } from './dot-events.service';
 
 describe('DotEventsService', () => {

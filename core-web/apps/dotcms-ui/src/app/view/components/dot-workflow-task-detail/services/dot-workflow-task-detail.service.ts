@@ -1,6 +1,9 @@
-import { Injectable } from '@angular/core';
 import { BehaviorSubject, Observable, of } from 'rxjs';
-import { mergeMap, map } from 'rxjs/operators';
+
+import { Injectable } from '@angular/core';
+
+import { map, mergeMap } from 'rxjs/operators';
+
 import { DotMenuService } from '@dotcms/app/api/services/dot-menu.service';
 
 export interface DotTaskAction {

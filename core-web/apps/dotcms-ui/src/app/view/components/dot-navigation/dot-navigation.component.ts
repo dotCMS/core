@@ -1,9 +1,11 @@
-import { Component, HostListener, OnInit, HostBinding } from '@angular/core';
 import { Observable } from 'rxjs';
 
-import { DotMenu, DotMenuItem } from '@models/navigation';
-import { DotNavigationService } from './services/dot-navigation.service';
+import { Component, HostBinding, HostListener, OnInit } from '@angular/core';
+
 import { IframeOverlayService } from '@components/_common/iframe/service/iframe-overlay.service';
+import { DotMenu, DotMenuItem } from '@models/navigation';
+
+import { DotNavigationService } from './services/dot-navigation.service';
 
 @Component({
     providers: [],

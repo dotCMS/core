@@ -1,33 +1,30 @@
 /* eslint-disable @typescript-eslint/no-empty-function */
 
-import { DebugElement, Input } from '@angular/core';
-import { Component } from '@angular/core';
-import { ComponentFixture, fakeAsync, TestBed, tick } from '@angular/core/testing';
-import {
-    UntypedFormBuilder,
-    UntypedFormGroup,
-    FormsModule,
-    ReactiveFormsModule
-} from '@angular/forms';
 import { of } from 'rxjs';
 
-import { SiteService } from '@dotcms/dotcms-js';
-
-import { DotThemeSelectorDropdownComponent } from './dot-theme-selector-dropdown.component';
-import { DotThemesService } from '@dotcms/data-access';
-import { PaginatorService } from '@dotcms/data-access';
+import { Component, DebugElement, Input } from '@angular/core';
+import { ComponentFixture, fakeAsync, TestBed, tick } from '@angular/core/testing';
+import {
+    FormsModule,
+    ReactiveFormsModule,
+    UntypedFormBuilder,
+    UntypedFormGroup
+} from '@angular/forms';
 import { By } from '@angular/platform-browser';
-import { mockDotThemes } from '@dotcms/utils-testing';
-import { DotMessagePipeModule } from '@pipes/dot-message/dot-message-pipe.module';
-import { MockDotMessageService } from '@dotcms/utils-testing';
-import { DotMessageService } from '@dotcms/data-access';
+import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
+
+import { SearchableDropDownModule } from '@components/_common/searchable-dropdown';
 import {
     PaginationEvent,
     SearchableDropdownComponent
 } from '@components/_common/searchable-dropdown/component/searchable-dropdown.component';
-import { SearchableDropDownModule } from '@components/_common/searchable-dropdown';
+import { DotMessageService, DotThemesService, PaginatorService } from '@dotcms/data-access';
+import { SiteService } from '@dotcms/dotcms-js';
 import { DotIconModule } from '@dotcms/ui';
-import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
+import { MockDotMessageService, mockDotThemes } from '@dotcms/utils-testing';
+import { DotMessagePipeModule } from '@pipes/dot-message/dot-message-pipe.module';
+
+import { DotThemeSelectorDropdownComponent } from './dot-theme-selector-dropdown.component';
 
 const messageServiceMock = new MockDotMessageService({
     'dot.common.select.themes': 'Select Themes',

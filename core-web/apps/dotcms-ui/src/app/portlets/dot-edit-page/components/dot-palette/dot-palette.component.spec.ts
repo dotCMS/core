@@ -1,19 +1,21 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { DotPaletteComponent } from './dot-palette.component';
-import { Component, EventEmitter, Injectable, Input, Output } from '@angular/core';
-import { By } from '@angular/platform-browser';
-import { HttpClientTestingModule } from '@angular/common/http/testing';
-import { CoreWebService, CoreWebServiceMock } from '@dotcms/dotcms-js';
-import { NoopAnimationsModule } from '@angular/platform-browser/animations';
 import { Observable, of } from 'rxjs';
-import { DotESContentService } from '@dotcms/data-access';
-import { PaginatorService } from '@dotcms/data-access';
-import { DotPaletteStore } from './store/dot-palette.store';
-import { contentletProductDataMock } from './dot-palette-contentlets/dot-palette-contentlets.component.spec';
+
+import { HttpClientTestingModule } from '@angular/common/http/testing';
+import { Component, EventEmitter, Injectable, Input, Output } from '@angular/core';
+import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { By } from '@angular/platform-browser';
+import { NoopAnimationsModule } from '@angular/platform-browser/animations';
+
+import { DotESContentService, PaginatorService } from '@dotcms/data-access';
+import { CoreWebService, CoreWebServiceMock } from '@dotcms/dotcms-js';
 import { LoadingState } from '@dotcms/dotcms-models';
 import { dotcmsContentTypeBasicMock } from '@dotcms/utils-testing';
+
+import { contentletProductDataMock } from './dot-palette-contentlets/dot-palette-contentlets.component.spec';
+import { DotPaletteComponent } from './dot-palette.component';
+import { DotPaletteStore } from './store/dot-palette.store';
 
 @Component({
     selector: 'dot-palette-content-type',

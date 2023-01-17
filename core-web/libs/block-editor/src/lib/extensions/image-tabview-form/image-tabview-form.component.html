@@ -1,0 +1,23 @@
+<div class="tabview-container">
+    <p-tabView>
+        <p-tabPanel [cache]="false" header="dotCMS" leftIcon="pi pi-images">
+            <ng-template pTemplate="content">
+                <div class="wrapper">
+                    <dot-image-search
+                        [languageId]="languageId"
+                        (addImage)="onSelectImage($event)"
+                    ></dot-image-search>
+                </div>
+            </ng-template>
+        </p-tabPanel>
+        <p-tabPanel [cache]="false" header="Image URL" leftIcon="pi pi-link">
+            <ng-template pTemplate="content">
+                <div class="wrapper">
+                    <dot-insert-external-image
+                        (addImage)="onSelectImage($event)"
+                    ></dot-insert-external-image>
+                </div>
+            </ng-template>
+        </p-tabPanel>
+    </p-tabView>
+</div>

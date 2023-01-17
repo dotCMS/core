@@ -1,10 +1,13 @@
+import { DebugElement } from '@angular/core';
 import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
-import { DebugElement } from '@angular/core';
-import { RouterTestingModule } from '@angular/router/testing';
-import { MenuModule } from 'primeng/menu';
-import { DotActionButtonComponent } from './dot-action-button.component';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
+import { RouterTestingModule } from '@angular/router/testing';
+
+import { MenuModule } from 'primeng/menu';
+
+import { DotActionButtonComponent } from './dot-action-button.component';
+
 import { UiDotIconButtonModule } from '../dot-icon-button/dot-icon-button.module';
 
 describe('ActionButtonComponent', () => {
@@ -12,28 +15,26 @@ describe('ActionButtonComponent', () => {
     let fixture: ComponentFixture<DotActionButtonComponent>;
     let de: DebugElement;
 
-    beforeEach(
-        waitForAsync(() => {
-            TestBed.configureTestingModule({
-                declarations: [DotActionButtonComponent],
-                imports: [
-                    BrowserAnimationsModule,
-                    MenuModule,
-                    UiDotIconButtonModule,
-                    RouterTestingModule.withRoutes([
-                        {
-                            component: DotActionButtonComponent,
-                            path: 'test'
-                        }
-                    ])
-                ]
-            }).compileComponents();
+    beforeEach(waitForAsync(() => {
+        TestBed.configureTestingModule({
+            declarations: [DotActionButtonComponent],
+            imports: [
+                BrowserAnimationsModule,
+                MenuModule,
+                UiDotIconButtonModule,
+                RouterTestingModule.withRoutes([
+                    {
+                        component: DotActionButtonComponent,
+                        path: 'test'
+                    }
+                ])
+            ]
+        }).compileComponents();
 
-            fixture = TestBed.createComponent(DotActionButtonComponent);
-            de = fixture.debugElement;
-            comp = fixture.componentInstance;
-        })
-    );
+        fixture = TestBed.createComponent(DotActionButtonComponent);
+        de = fixture.debugElement;
+        comp = fixture.componentInstance;
+    }));
 
     it('should have no-label class by default', () => {
         fixture.detectChanges();

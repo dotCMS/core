@@ -5,6 +5,7 @@ import static com.dotcms.variant.VariantAPI.DEFAULT_VARIANT;
 import com.dotcms.publisher.util.PusheableAsset;
 import com.dotcms.publishing.manifest.ManifestItem;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.PermissionSummary;
 import com.dotmarketing.business.Permissionable;
 import com.dotmarketing.business.RelatedPermissionableGroup;
@@ -131,7 +132,9 @@ public interface AbstractExperiment extends Serializable, ManifestItem, Ruleable
     default Permissionable getParentPermissionable() {
         return Try.of(()->APILocator.getContentletAPI().findContentletByIdentifierAnyLanguage(pageId(),
                         DEFAULT_VARIANT.name()))
-                .getOrNull();
+                .getOrElseThrow((e)->{
+                    throw new DotStateException(e.getMessage() + ". Page ID:" + pageId(), e);
+                });
     }
 
     @Value.Derived

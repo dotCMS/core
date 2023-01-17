@@ -1,3 +1,5 @@
+import { BehaviorSubject, Subject } from 'rxjs';
+
 import {
     Component,
     EventEmitter,
@@ -8,18 +10,16 @@ import {
     ViewChild
 } from '@angular/core';
 import { NgForm } from '@angular/forms';
+
 import { map, take, takeUntil } from 'rxjs/operators';
-import { BehaviorSubject, Subject } from 'rxjs';
 
 import { DotDialogActions } from '@components/dot-dialog/dot-dialog.component';
-import { DotMessageService } from '@dotcms/data-access';
-import { Auth, DotcmsConfigService, LoginService, User } from '@dotcms/dotcms-js';
-
-import { DotAlertConfirmService } from '@dotcms/data-access';
 import { DotAccountService, DotAccountUser } from '@dotcms/app/api/services/dot-account-service';
-import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
-import { DotMenuService } from '@dotcms/app/api/services/dot-menu.service';
 import { DotHttpErrorManagerService } from '@dotcms/app/api/services/dot-http-error-manager/dot-http-error-manager.service';
+import { DotMenuService } from '@dotcms/app/api/services/dot-menu.service';
+import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
+import { DotAlertConfirmService, DotMessageService } from '@dotcms/data-access';
+import { Auth, DotcmsConfigService, LoginService, User } from '@dotcms/dotcms-js';
 
 interface AccountUserForm extends DotAccountUser {
     confirmPassword?: string;

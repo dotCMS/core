@@ -1,9 +1,11 @@
-import { pluck } from 'rxjs/operators';
-import { CoreWebService } from '@dotcms/dotcms-js';
-import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 
+import { Injectable } from '@angular/core';
 import { Params } from '@angular/router';
+
+import { pluck } from 'rxjs/operators';
+
+import { CoreWebService } from '@dotcms/dotcms-js';
 import {
     DotPageMode,
     DotPersona,

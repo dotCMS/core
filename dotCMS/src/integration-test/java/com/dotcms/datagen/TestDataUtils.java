@@ -2408,5 +2408,33 @@ public class TestDataUtils {
         return contentType;
     }
 
+    /**
+     * This method creates a parent category and a couple of child categories.
+     * @return the parent category
+     */
+    public static Category createCategories(){
+
+        final String parentCategoryName = String.format("Parent-Category-[%d]", System.currentTimeMillis());
+        final Category parentCategory = new CategoryDataGen()
+                .setCategoryName(parentCategoryName)
+                .setKey(parentCategoryName + "Key")
+                .setCategoryVelocityVarName(parentCategoryName)
+                .setSortOrder(1)
+                .nextPersisted();
+
+        for(int i=0; i<=2; i++) {
+            final String childCategoryName = String.format("Child-Category-[%d]-[%d]", i, System.currentTimeMillis());
+
+            new CategoryDataGen()
+                    .setCategoryName(childCategoryName)
+                    .setKey(childCategoryName + "Key")
+                    .setCategoryVelocityVarName(childCategoryName)
+                    .setSortOrder(1)
+                    .parent(parentCategory).nextPersisted();
+
+        }
+
+        return parentCategory;
+    }
 
 }

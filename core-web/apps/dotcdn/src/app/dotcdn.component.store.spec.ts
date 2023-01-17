@@ -1,11 +1,18 @@
+import { of } from 'rxjs';
+
 import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
-import { CoreWebService, SiteService } from '@dotcms/dotcms-js';
-import { of } from 'rxjs';
+
+import {
+    CoreWebService,
+    CoreWebServiceMock,
+    SiteService,
+    SiteServiceMock
+} from '@dotcms/dotcms-js';
+
+import { DotCDNStats } from './app.models';
 import { DotCDNStore } from './dotcdn.component.store';
 import { DotCDNService } from './dotcdn.service';
-import { DotCDNStats } from './app.models';
-import { SiteServiceMock, CoreWebServiceMock } from '@dotcms/dotcms-js';
 
 import 'ts-jest/utils';
 

@@ -1,19 +1,26 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { By } from '@angular/platform-browser';
-import { DebugElement, Component } from '@angular/core';
-import { ComponentFixture } from '@angular/core/testing';
-import { DotContentTypeFieldsVariablesComponent } from './dot-content-type-fields-variables.component';
-import { LoginService } from '@dotcms/dotcms-js';
-import { DotFieldVariablesService } from './services/dot-field-variables.service';
-import { DOTTestBed } from '@dotcms/app/test/dot-test-bed';
-import { EMPTY_FIELD, LoginServiceMock } from '@dotcms/utils-testing';
-import { DotFieldVariablesServiceMock, mockFieldVariables } from '@dotcms/utils-testing';
 import { of } from 'rxjs';
-import { dotcmsContentTypeFieldBasicMock } from '@dotcms/utils-testing';
-import { DotMessageDisplayService } from '@components/dot-message-display/services';
-import { DotCMSContentTypeField, DotFieldVariable } from '@dotcms/dotcms-models';
+
+import { Component, DebugElement } from '@angular/core';
+import { ComponentFixture } from '@angular/core/testing';
+import { By } from '@angular/platform-browser';
+
 import { DotKeyValueModule } from '@components/dot-key-value-ng/dot-key-value-ng.module';
+import { DotMessageDisplayService } from '@components/dot-message-display/services';
+import { DOTTestBed } from '@dotcms/app/test/dot-test-bed';
+import { LoginService } from '@dotcms/dotcms-js';
+import { DotCMSContentTypeField, DotFieldVariable } from '@dotcms/dotcms-models';
+import {
+    dotcmsContentTypeFieldBasicMock,
+    DotFieldVariablesServiceMock,
+    EMPTY_FIELD,
+    LoginServiceMock,
+    mockFieldVariables
+} from '@dotcms/utils-testing';
+
+import { DotContentTypeFieldsVariablesComponent } from './dot-content-type-fields-variables.component';
+import { DotFieldVariablesService } from './services/dot-field-variables.service';
 
 @Component({
     selector: 'dot-test-host-component',

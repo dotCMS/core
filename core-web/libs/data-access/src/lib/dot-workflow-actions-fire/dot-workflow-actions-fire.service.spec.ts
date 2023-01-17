@@ -1,11 +1,13 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { DotWorkflowActionsFireService } from './dot-workflow-actions-fire.service';
-import { TestBed, getTestBed } from '@angular/core/testing';
 import { HttpTestingController, HttpClientTestingModule } from '@angular/common/http/testing';
+import { TestBed, getTestBed } from '@angular/core/testing';
+
 import { CoreWebService } from '@dotcms/dotcms-js';
 import { DotActionBulkRequestOptions, DotActionBulkResult } from '@dotcms/dotcms-models';
 import { CoreWebServiceMock } from '@dotcms/utils-testing';
+
+import { DotWorkflowActionsFireService } from './dot-workflow-actions-fire.service';
 
 const mockBulkOptions: DotActionBulkRequestOptions = {
     workflowActionId: '1',

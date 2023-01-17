@@ -1,0 +1,30 @@
+// TODO: design it :)
+// TODO: style the animation for dijitProgressBarIndeterminate
+
+.dijitProgressBar {
+    border-radius: 2px;
+    background-color: $progressbar-bgcolor;
+    height: $progressbar-heigth;
+
+    &Empty {
+        border: solid $progressbar-border-size $progressbar-border-color;
+    }
+
+    &Full {
+        background: none;
+        height: 100%;
+    }
+
+    &Label {
+        line-height: $progressbar-heigth - ($progressbar-border-size * 2);
+    }
+
+    &Tile {
+        background-color: $progressbar-tile-bgcolor;
+        height: 100%;
+    }
+}
+
+.dijitProgressBarIndeterminate .dijitProgressBarTile {
+    background-image: url("/html/js/dojo/custom-build/dijit/themes/dmundra/images/progressBarAnim.gif");
+}
