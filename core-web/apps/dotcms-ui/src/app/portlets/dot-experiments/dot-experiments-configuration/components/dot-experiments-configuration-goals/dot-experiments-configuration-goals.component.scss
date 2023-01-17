@@ -16,9 +16,14 @@ h3 {
 :host ::ng-deep {
     dot-icon {
         color: $gray-light;
+        transition-duration: $basic-speed;
 
         &.isDone {
             color: $success;
+        }
+
+        &.delete:hover {
+            color: $warn;
         }
     }
 

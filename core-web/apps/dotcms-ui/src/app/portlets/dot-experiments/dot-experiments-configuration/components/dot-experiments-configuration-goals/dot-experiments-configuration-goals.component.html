@@ -21,9 +21,18 @@
                 <div class="col-4">
                     <p-card dataTestId="card-primary-goal">
                         <ng-template pTemplate="title">
-                            <h3 data-testId="goal-label">
-                                {{ goalTypeMap[vm.goals.primary.type].label | dm }}
-                            </h3>
+                            <div class="flex flex-row justify-content-between">
+                                <h3 data-testId="goal-label">
+                                    {{ goalTypeMap[vm.goals.primary.type].label | dm }}
+                                </h3>
+                                <dot-icon
+                                    class="delete cursor-pointer"
+                                    (click)="deleteGoal($event, 'primary')"
+                                    data-testId="goal-delete-button"
+                                    name="delete"
+                                    size="16"
+                                ></dot-icon>
+                            </div>
                         </ng-template>
                         <p data-testId="goal-description">
                             {{ goalTypeMap[vm.goals.primary.type].description | dm }}
@@ -54,3 +63,4 @@
 </ng-template>
 
 <ng-container dotDynamic></ng-container>
+<p-confirmPopup></p-confirmPopup>

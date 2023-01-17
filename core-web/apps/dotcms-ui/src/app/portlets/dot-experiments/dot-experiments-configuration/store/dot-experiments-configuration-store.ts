@@ -7,13 +7,14 @@ import { Title } from '@angular/platform-browser';
 
 import { MessageService } from 'primeng/api';
 
-import { switchMap, tap } from 'rxjs/operators';
+import { switchMap, tap, withLatestFrom } from 'rxjs/operators';
 
 import { DotMessageService } from '@dotcms/data-access';
 import {
     DotExperiment,
     ExperimentSteps,
     Goals,
+    GoalsLevels,
     LoadingState,
     Status,
     StepStatus,
@@ -284,6 +285,32 @@ export class DotExperimentsConfigurationStore extends ComponentStore<DotExperime
             );
         }
     );
+
+    readonly deleteGoal = this.effect((goalLevel$: Observable<GoalsLevels>) => {
+        return goalLevel$.pipe(
+            withLatestFrom(this.state$),
+            switchMap(([goalLevel, { experiment }]) =>
+                this.dotExperimentsService.deleteGoal(experiment.id, goalLevel).pipe(
+                    tapResponse(
+                        (experiment) => {
+                            this.messageService.add({
+                                severity: 'info',
+                                summary: this.dotMessageService.get(
+                                    'experiments.configure.goals.delete.confirm-title'
+                                ),
+                                detail: this.dotMessageService.get(
+                                    'experiments.configure.goals.delete.confirm-message'
+                                )
+                            });
+
+                            this.setGoals(experiment.goals);
+                        },
+                        (error: HttpErrorResponse) => throwError(error)
+                    )
+                )
+            )
+        );
+    });
 
     readonly vm$: Observable<ConfigurationViewModel> = this.select(
         this.state$,
