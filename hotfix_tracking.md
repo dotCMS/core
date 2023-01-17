@@ -177,3 +177,5 @@ This maintenance release includes the following code fixes:
 102. https://github.com/dotCMS/core/issues/22522 : Remote URL access should be run in a threadpool #22522
 103. https://github.com/dotCMS/core/issues/23365 : Placeholder Issue #23365
 104. https://github.com/dotCMS/core/issues/23401 : Insure zip file integrity #23401
+
+**Release-21.06.13**
