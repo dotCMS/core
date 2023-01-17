@@ -67,6 +67,7 @@ import java.util.stream.Collectors;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import org.apache.commons.lang3.StringUtils;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * Implementation class for the {@link HTMLPageAssetRenderedAPI}.
@@ -614,11 +615,11 @@ public class HTMLPageAssetRenderedAPIImpl implements HTMLPageAssetRenderedAPI {
     }
 
     private String getExperimentJSCode(final Host host, final HttpServletRequest request) {
-        try {
-            //final AnalyticsApp analyticsApp = AnalyticsHelper.appFromHost(host);
 
+        try {
+            final String analyticsKey = getAnalyticsKey(host);
             final String jsJitsuCode =  getFileContentFromResourceContext("experiment/html/experiment_head.html")
-                    .replaceAll("\\$\\{jitsu_key}", "")//analyticsApp.getAnalyticsProperties().analyticsKey())
+                    .replaceAll("\\$\\{jitsu_key}", analyticsKey)
                     .replaceAll("\\$\\{site}", getLocalServerName(request));
 
             final String runningExperimentsId = APILocator.getExperimentsAPI().getRunningExperiments().stream()
@@ -631,6 +632,16 @@ public class HTMLPageAssetRenderedAPIImpl implements HTMLPageAssetRenderedAPI {
             return jsJitsuCode + "\n<SCRIPT>" + shouldBeInExperimentCalled + "</SCRIPT>";
         } catch (IOException | DotDataException e) {
             throw new RuntimeException(e);
+        }
+    }
+
+    @Nullable
+    private static String getAnalyticsKey(Host host) {
+        try {
+            final AnalyticsApp analyticsApp = AnalyticsHelper.appFromHost(host);
+            return analyticsApp.getAnalyticsProperties().analyticsKey();
+        } catch (IllegalStateException e) {
+            return StringPool.BLANK;
         }
     }
 
