@@ -2,7 +2,6 @@ package com.dotcms.jitsu;
 
 import com.dotmarketing.util.json.JSONObject;
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
@@ -15,7 +14,7 @@ import java.util.Map;
  */
 public class EventsPayload {
     private JSONObject jsonObject;
-    final List<ShortExperiment> shortExperiments = new ArrayList<>();
+    final List<LiteExperiment> shortExperiments = new ArrayList<>();
 
     public EventsPayload(final Map<String, Object> payload) {
         jsonObject = new JSONObject(payload);
@@ -26,14 +25,14 @@ public class EventsPayload {
     }
 
     public void addExperiment(final String name, final String variant, final String lookBackWindow){
-        shortExperiments.add(new ShortExperiment(name, variant, lookBackWindow));
+        shortExperiments.add(new LiteExperiment(name, variant, lookBackWindow));
     }
 
     public Iterable<EventPayload> payloads() {
         final String jsonObjectString = jsonObject.toString();
         final List<EventPayload> eventPayloads = new ArrayList<>();
 
-        for (ShortExperiment shortExperiment : shortExperiments) {
+        for (LiteExperiment shortExperiment : shortExperiments) {
             final JSONObject experimentJsonPayload = new JSONObject(jsonObjectString);
 
             experimentJsonPayload.put("experiment", shortExperiment.name);
@@ -59,12 +58,12 @@ public class EventsPayload {
         }
     }
 
-    private static class ShortExperiment{
+    private static class LiteExperiment {
         final String name;
         final String variant;
         final String lookBackWindow;
 
-        public ShortExperiment(String name, String variant, String lookBackWindow) {
+        public LiteExperiment(String name, String variant, String lookBackWindow) {
             this.name = name;
             this.variant = variant;
             this.lookBackWindow = lookBackWindow;
