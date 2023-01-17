@@ -222,7 +222,7 @@
 							"    pm.response.to.have.status(404);",
 							"    var body = pm.response.body;",
 							"",
-							"    pm.expect(pm.response.text(), \"Got wrong page\").to.include(\"not found\");",
+							"    pm.expect(pm.response.text(), \"Got wrong page\").to.include(\"Not Found\");",
 							"});"
 						],
 						"type": "text/javascript"
