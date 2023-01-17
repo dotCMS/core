@@ -1,7 +1,10 @@
-import { defaultIfEmpty, filter, flatMap, map, pluck, take, toArray } from 'rxjs/operators';
-import { CoreWebService } from '@dotcms/dotcms-js';
-import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
+
+import { Injectable } from '@angular/core';
+
+import { defaultIfEmpty, filter, flatMap, map, pluck, take, toArray } from 'rxjs/operators';
+
+import { CoreWebService } from '@dotcms/dotcms-js';
 import {
     DotCMSContentType,
     StructureTypeView,

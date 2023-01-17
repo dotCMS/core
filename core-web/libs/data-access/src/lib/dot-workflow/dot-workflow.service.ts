@@ -1,7 +1,10 @@
-import { pluck, switchMap, take } from 'rxjs/operators';
-import { Injectable } from '@angular/core';
-import { CoreWebService } from '@dotcms/dotcms-js';
 import { Observable } from 'rxjs';
+
+import { Injectable } from '@angular/core';
+
+import { pluck, switchMap, take } from 'rxjs/operators';
+
+import { CoreWebService } from '@dotcms/dotcms-js';
 import { DotCMSWorkflow } from '@dotcms/dotcms-models';
 
 /**

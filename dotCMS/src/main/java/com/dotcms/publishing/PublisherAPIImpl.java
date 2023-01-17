@@ -157,7 +157,7 @@ public class PublisherAPIImpl implements PublisherAPI, DotInitializer {
                         }
                     } else {
                         Logger.info(this, "Retrying bundle: " + config.getId()
-                             + ", we don't need to run bundlers again");
+                                + ", we don't need to run bundlers again");
                     }
                 }
 
@@ -222,7 +222,7 @@ public class PublisherAPIImpl implements PublisherAPI, DotInitializer {
                 Logger.info(this, ()->"Push Publishing Filters directory does not exist. Creating it under: " + PUBLISHING_FILTERS_FOLDER.get());
                 final boolean mkDirOk = basePath.mkdirs();
                 if(!mkDirOk){
-                   Logger.error(PublisherAPIImpl.class,String.format("Failure creating basePath dir [%s]", basePath));
+                    Logger.error(PublisherAPIImpl.class,String.format("Failure creating basePath dir [%s]", basePath));
                 }
                 // If the directory does not exist, copy the YAML files that are shipped with dotCMS into the created
                 // directory
@@ -230,8 +230,8 @@ public class PublisherAPIImpl implements PublisherAPI, DotInitializer {
                         Config.CONTEXT.getRealPath(File.separator + "WEB-INF" + File.separator + "publishing-filters" + File.separator);
                 final File systemFilters = new File(systemFiltersPathString);
                 try (
-                    final Stream<Path> list = Try.of(()->Files.list(systemFilters.toPath())).getOrElse(Stream.of())
-                    ) {
+                        final Stream<Path> list = Try.of(()->Files.list(systemFilters.toPath())).getOrElse(Stream.of())
+                ) {
                     list.forEach(filter -> {
                         try {
                             final Path partialPath = filter.getFileName();
@@ -249,7 +249,7 @@ public class PublisherAPIImpl implements PublisherAPI, DotInitializer {
             Logger.info(this, ()->"Push Publishing Filters Directory: " + PUBLISHING_FILTERS_FOLDER);
             // Read each YAML file under the directory and re-load the Filter list
             try(
-                final Stream<Path> list = Files.list(basePath.toPath());){
+                    final Stream<Path> list = Files.list(basePath.toPath());){
                 final List<FilterDescriptor> descriptors = this.loadFiltersFromFolder(list);
                 Collections.sort(descriptors);
                 this.filterList = descriptors;
@@ -305,9 +305,9 @@ public class PublisherAPIImpl implements PublisherAPI, DotInitializer {
     public FilterDescriptor getFilterDescriptorByKey(final String filterKey) {
         final FilterDescriptor defaultFilter = getDefaultFilter();
         return !UtilMethods.isSet(filterKey) ? defaultFilter :
-                       this.filterList.stream().filter(filter -> filterKey.equalsIgnoreCase(filter.getKey())).findFirst().orElse(defaultFilter);
+                this.filterList.stream().filter(filter -> filterKey.equalsIgnoreCase(filter.getKey())).findFirst().orElse(defaultFilter);
     }
-    
+
     @CloseDBIfOpened
     @Override
     public PublisherFilter createPublisherFilter(final String bundleId) throws DotDataException, DotSecurityException {
@@ -328,13 +328,13 @@ public class PublisherAPIImpl implements PublisherAPI, DotInitializer {
         if(filterDescriptor.getFilters().containsKey(FilterDescriptor.EXCLUDE_QUERY_KEY)){
             final String query = filterDescriptor.getFilters().get(FilterDescriptor.EXCLUDE_QUERY_KEY).toString();
             APILocator.getContentletAPI().search(query, 0, 0, MOD_DATE, APILocator.systemUser(), false)
-                .forEach(contentlet -> publisherFilter.addContentletIdToExcludeQueryAssetIdSet(contentlet.getIdentifier()));
+                    .forEach(contentlet -> publisherFilter.addContentletIdToExcludeQueryAssetIdSet(contentlet.getIdentifier()));
         }
 
         if(filterDescriptor.getFilters().containsKey(FilterDescriptor.EXCLUDE_DEPENDENCY_QUERY_KEY)){
             final String query = filterDescriptor.getFilters().get(FilterDescriptor.EXCLUDE_DEPENDENCY_QUERY_KEY).toString();
             APILocator.getContentletAPI().search(query, 0, 0, MOD_DATE, APILocator.systemUser(), false)
-                .forEach(contentlet -> publisherFilter.addContentletIdToExcludeDependencyQueryAssetIdSet(contentlet.getIdentifier()));
+                    .forEach(contentlet -> publisherFilter.addContentletIdToExcludeDependencyQueryAssetIdSet(contentlet.getIdentifier()));
         }
 
         return publisherFilter;
@@ -359,7 +359,7 @@ public class PublisherAPIImpl implements PublisherAPI, DotInitializer {
                 return Boolean.TRUE;
             }
         }catch (IOException e){
-           Logger.error(PublisherAPIImpl.class, String.format("Exception trying to get canonical path from file [%s]",filterPathFile), e);
+            Logger.error(PublisherAPIImpl.class, String.format("Exception trying to get canonical path from file [%s]",filterPathFile), e);
         }
         return Boolean.FALSE;
     }

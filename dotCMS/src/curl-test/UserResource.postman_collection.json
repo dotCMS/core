@@ -1,8 +1,10 @@
 {
 	"info": {
-		"_postman_id": "d960c039-ae36-4467-ad17-7682b26d49f1",
+		"_postman_id": "27680e39-328c-463b-b69b-5b65b5091a36",
 		"name": "UserResource",
-		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+		"description": "Verifies that commonly-used routines for interacting with User data are working as expected. Most of these are related to filtering operations and for back-end use only.",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "5403727"
 	},
 	"item": [
 		{
@@ -16,13 +18,28 @@
 							"    pm.response.to.have.status(200);",
 							"});",
 							"",
-							"var jsonData = pm.response.json().entity.data;",
+							"var jsonData = pm.response.json().entity;",
 							"",
-							"",
-							"pm.test(\"Contains anonymous\", function () {",
-							"    pm.expect(_isContains(jsonData, \"id\" ,\"anonymous\")).to.be.true;",
+							"/*pm.test(\"Contains anonymous\", function () {",
+							"    pm.expect(containsAttrAndValue(jsonData, \"userId\" ,\"anonymous\")).to.be.true;",
 							"});",
 							"",
+							"pm.test(\"Contains default\", function () {",
+							"    pm.expect(containsAttrAndValue(jsonData, \"userId\" ,\"dotcms.org.default\")).to.be.true;",
+							"});*/",
+							"",
+							"pm.test(\"Contains anonymous\", function () {",
+							"    containsAttrAndValue = eval(pm.collectionVariables.get(\"containsAttrAndValue\", containsAttrAndValue.toString()));",
+							"    pm.expect(containsAttrAndValue(jsonData, \"userId\" ,\"anonymous\")).to.be.true;",
+							"});",
+							"",
+							"pm.test(\"Contains default\", function () {",
+							"    containsAttrAndValue = eval(pm.collectionVariables.get(\"containsAttrAndValue\", containsAttrAndValue.toString()));",
+							"    pm.expect(containsAttrAndValue(jsonData, \"userId\" ,\"dotcms.org.default\")).to.be.true;",
+							"});",
+							"",
+							"",
+							"/*",
 							"function _isContains(json, keyname, value) {",
 							" return Object.keys(json).some(key => {",
 							"        return typeof json[key] === 'object' ? ",
@@ -31,8 +48,9 @@
 							"}",
 							"",
 							"pm.test(\"Contains default\", function () {",
-							"    pm.expect(_isContains(jsonData, \"id\" ,\"dotcms.org.default\")).to.be.true;",
-							"});"
+							"    pm.expect(containsUserId(jsonData, \"userId\" ,\"dotcms.org.default\")).to.be.true;",
+							"});",
+							"*/"
 						],
 						"type": "text/javascript"
 					}
@@ -169,22 +187,16 @@
 							"    pm.response.to.have.status(200);",
 							"});",
 							"",
-							"var jsonData = pm.response.json().entity.data;",
-							"",
+							"var jsonData = pm.response.json().entity;",
 							"",
 							"pm.test(\"Contains anonymous\", function () {",
-							"    pm.expect(_isContains(jsonData, \"id\" ,\"anonymous\")).to.be.true;",
+							"    containsAttrAndValue = eval(pm.collectionVariables.get(\"containsAttrAndValue\", containsAttrAndValue.toString()));",
+							"    pm.expect(containsAttrAndValue(jsonData, \"userId\" ,\"anonymous\")).to.be.true;",
 							"});",
 							"",
-							"function _isContains(json, keyname, value) {",
-							" return Object.keys(json).some(key => {",
-							"        return typeof json[key] === 'object' ? ",
-							"        _isContains(json[key], keyname, value) : key === keyname && json[key] === value;",
-							"    });",
-							"}",
-							"",
-							"pm.test(\"Not Contains default\", function () {",
-							"    pm.expect(_isContains(jsonData, \"id\" ,\"dotcms.org.default\")).to.be.false;",
+							"pm.test(\"Does not contain default\", function () {",
+							"    containsAttrAndValue = eval(pm.collectionVariables.get(\"containsAttrAndValue\", containsAttrAndValue.toString()));",
+							"    pm.expect(containsAttrAndValue(jsonData, \"userId\" ,\"dotcms.org.default\")).to.be.false;",
 							"});"
 						],
 						"type": "text/javascript"
@@ -250,21 +262,16 @@
 							"    pm.response.to.have.status(200);",
 							"});",
 							"",
-							"var jsonData = pm.response.json().entity.data;",
+							"var jsonData = pm.response.json().entity;",
 							"",
-							"pm.test(\"Not Contains anonymous\", function () {",
-							"    pm.expect(_isContains(jsonData, \"id\" ,\"anonymous\")).to.be.false;",
+							"pm.test(\"Does not contain anonymous\", function () {",
+							"    containsAttrAndValue = eval(pm.collectionVariables.get(\"containsAttrAndValue\", containsAttrAndValue.toString()));",
+							"    pm.expect(containsAttrAndValue(jsonData, \"userId\" ,\"anonymous\")).to.be.false;",
 							"});",
 							"",
-							"function _isContains(json, keyname, value) {",
-							" return Object.keys(json).some(key => {",
-							"        return typeof json[key] === 'object' ? ",
-							"        _isContains(json[key], keyname, value) : key === keyname && json[key] === value;",
-							"    });",
-							"}",
-							"",
-							"pm.test(\"Not Contains default\", function () {",
-							"    pm.expect(_isContains(jsonData, \"id\" ,\"dotcms.org.default\")).to.be.false;",
+							"pm.test(\"Does not contain default\", function () {",
+							"    containsAttrAndValue = eval(pm.collectionVariables.get(\"containsAttrAndValue\", containsAttrAndValue.toString()));",
+							"    pm.expect(containsAttrAndValue(jsonData, \"userId\" ,\"dotcms.org.default\")).to.be.false;",
 							"});"
 						],
 						"type": "text/javascript"
@@ -331,9 +338,11 @@
 							"});",
 							"",
 							"var jsonData = pm.response.json().entity;",
+							"console.log(jsonData);",
+							"console.log('Length = ' + jsonData.length);",
 							"",
-							"pm.test(\"Total Check\", function () {",
-							"    pm.expect(jsonData.total).to.be.greaterThan(0);",
+							"pm.test(\"Total User Count\", function () {",
+							"    pm.expect(jsonData.length).to.be.greaterThan(0);",
 							"});"
 						],
 						"type": "text/javascript"
@@ -440,6 +449,50 @@
 				"description": "Method to test: current <br/>\nGiven Scenario: request the current endpoint and expects to recovery the loginAs <br/>\nExpectedResult: The login as should be true"
 			},
 			"response": []
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					"/**",
+					" * Traverses the provided JSON data looking for a specific attribute and value. If it exists, returns 'true'.",
+					" */",
+					"containsAttrAndValue = (json, keyname, value) => {",
+					"",
+					"    var isUserPresent = false;",
+					"    json.every((userData) => {",
+					"        console.log('DATA = ' + userData[keyname]);",
+					"        if (userData[keyname] === value) {",
+					"            isUserPresent = true;",
+					"            return false;",
+					"        }",
+					"        return true;",
+					"    });",
+					"    return isUserPresent;",
+					"",
+					"};",
+					"",
+					"pm.collectionVariables.set(\"containsAttrAndValue\", containsAttrAndValue.toString());"
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		}
+	],
+	"variable": [
+		{
+			"key": "containsAttrAndValue",
+			"value": ""
 		}
 	]
 }

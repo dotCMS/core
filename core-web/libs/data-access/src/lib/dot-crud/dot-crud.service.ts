@@ -1,7 +1,10 @@
-import { pluck } from 'rxjs/operators';
-import { CoreWebService } from '@dotcms/dotcms-js';
-import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
+
+import { Injectable } from '@angular/core';
+
+import { pluck } from 'rxjs/operators';
+
+import { CoreWebService } from '@dotcms/dotcms-js';
 
 /**
  * Provides util listing methods

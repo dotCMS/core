@@ -1,14 +1,15 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { DotRelationshipsPropertyComponent } from './dot-relationships-property.component';
+import { Component, DebugElement, EventEmitter, Input, Output } from '@angular/core';
 import { ComponentFixture, waitForAsync } from '@angular/core/testing';
-import { DebugElement, Component, Input, Output, EventEmitter } from '@angular/core';
-import { MockDotMessageService } from '@dotcms/utils-testing';
-import { DOTTestBed } from '@dotcms/app/test/dot-test-bed';
-import { NgControl, UntypedFormGroup, UntypedFormControl } from '@angular/forms';
-import { DotMessageService } from '@dotcms/data-access';
+import { NgControl, UntypedFormControl, UntypedFormGroup } from '@angular/forms';
 import { By } from '@angular/platform-browser';
-import { dotcmsContentTypeFieldBasicMock } from '@dotcms/utils-testing';
+
+import { DOTTestBed } from '@dotcms/app/test/dot-test-bed';
+import { DotMessageService } from '@dotcms/data-access';
+import { dotcmsContentTypeFieldBasicMock, MockDotMessageService } from '@dotcms/utils-testing';
+
+import { DotRelationshipsPropertyComponent } from './dot-relationships-property.component';
 
 @Component({
     selector: 'dot-field-validation-message',

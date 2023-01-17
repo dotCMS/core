@@ -1,70 +1,10 @@
 package com.dotcms.contenttype.test;
 
-import static com.dotcms.contenttype.business.ContentTypeAPIImpl.TYPES_AND_FIELDS_VALID_VARIABLE_REGEX;
-import static com.dotcms.datagen.TestDataUtils.FILE_ASSET_1;
-import static com.dotcms.datagen.TestDataUtils.FILE_ASSET_2;
-import static junit.framework.Assert.assertTrue;
-import static junit.framework.TestCase.assertEquals;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.fail;
-
-import com.dotcms.contenttype.business.ContentTypeAPI;
-import com.dotcms.contenttype.business.ContentTypeAPIImpl;
-import com.dotcms.contenttype.business.ContentTypeFactoryImpl;
-import com.dotcms.contenttype.business.CopyContentTypeBean;
-import com.dotcms.contenttype.business.FieldAPI;
+import com.dotcms.contenttype.business.*;
 import com.dotcms.contenttype.exception.NotFoundInDbException;
-import com.dotcms.contenttype.model.field.BinaryField;
-import com.dotcms.contenttype.model.field.ConstantField;
-import com.dotcms.contenttype.model.field.DataTypes;
-import com.dotcms.contenttype.model.field.DateTimeField;
-import com.dotcms.contenttype.model.field.Field;
-import com.dotcms.contenttype.model.field.FieldBuilder;
-import com.dotcms.contenttype.model.field.FieldVariable;
-import com.dotcms.contenttype.model.field.HostFolderField;
-import com.dotcms.contenttype.model.field.ImmutableConstantField;
-import com.dotcms.contenttype.model.field.ImmutableDateField;
-import com.dotcms.contenttype.model.field.ImmutableFieldVariable;
-import com.dotcms.contenttype.model.field.ImmutableHostFolderField;
-import com.dotcms.contenttype.model.field.ImmutableTextAreaField;
-import com.dotcms.contenttype.model.field.ImmutableTextField;
-import com.dotcms.contenttype.model.field.OnePerContentType;
-import com.dotcms.contenttype.model.field.RelationshipField;
-import com.dotcms.contenttype.model.field.SelectField;
-import com.dotcms.contenttype.model.field.TextField;
-import com.dotcms.contenttype.model.field.WysiwygField;
-import com.dotcms.contenttype.model.type.BaseContentType;
-import com.dotcms.contenttype.model.type.ContentType;
-import com.dotcms.contenttype.model.type.ContentTypeBuilder;
-import com.dotcms.contenttype.model.type.DotAssetContentType;
-import com.dotcms.contenttype.model.type.EnterpriseType;
-import com.dotcms.contenttype.model.type.Expireable;
-import com.dotcms.contenttype.model.type.FileAssetContentType;
-import com.dotcms.contenttype.model.type.FormContentType;
-import com.dotcms.contenttype.model.type.ImmutableFileAssetContentType;
-import com.dotcms.contenttype.model.type.ImmutableFormContentType;
-import com.dotcms.contenttype.model.type.ImmutableKeyValueContentType;
-import com.dotcms.contenttype.model.type.ImmutablePageContentType;
-import com.dotcms.contenttype.model.type.ImmutablePersonaContentType;
-import com.dotcms.contenttype.model.type.ImmutableSimpleContentType;
-import com.dotcms.contenttype.model.type.ImmutableVanityUrlContentType;
-import com.dotcms.contenttype.model.type.ImmutableWidgetContentType;
-import com.dotcms.contenttype.model.type.KeyValueContentType;
-import com.dotcms.contenttype.model.type.PageContentType;
-import com.dotcms.contenttype.model.type.PersonaContentType;
-import com.dotcms.contenttype.model.type.SimpleContentType;
-import com.dotcms.contenttype.model.type.UrlMapable;
-import com.dotcms.contenttype.model.type.VanityUrlContentType;
-import com.dotcms.contenttype.model.type.WidgetContentType;
-import com.dotcms.datagen.ContentTypeDataGen;
-import com.dotcms.datagen.ContentletDataGen;
-import com.dotcms.datagen.FieldDataGen;
-import com.dotcms.datagen.FolderDataGen;
-import com.dotcms.datagen.SiteDataGen;
-import com.dotcms.datagen.TestDataUtils;
-import com.dotcms.datagen.TestUserUtils;
+import com.dotcms.contenttype.model.field.*;
+import com.dotcms.contenttype.model.type.*;
+import com.dotcms.datagen.*;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Permission;
 import com.dotmarketing.beans.PermissionableProxy;
@@ -79,35 +19,31 @@ import com.dotmarketing.portlets.contentlet.model.ContentletDependencies;
 import com.dotmarketing.portlets.contentlet.model.IndexPolicy;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
-import com.dotmarketing.util.FileUtil;
-import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.UUIDGenerator;
-import com.dotmarketing.util.UtilMethods;
-import com.dotmarketing.util.WebKeys;
+import com.dotmarketing.util.*;
 import com.liferay.portal.model.User;
 import com.tngtech.java.junit.dataprovider.DataProvider;
 import com.tngtech.java.junit.dataprovider.DataProviderRunner;
 import com.tngtech.java.junit.dataprovider.UseDataProvider;
 import io.vavr.Tuple2;
-import java.io.File;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
-import java.nio.charset.Charset;
-import java.nio.file.Files;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Date;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mockito;
+
+import java.io.*;
+import java.nio.charset.Charset;
+import java.nio.file.Files;
+import java.util.*;
+
+import static com.dotcms.contenttype.business.ContentTypeAPIImpl.TYPES_AND_FIELDS_VALID_VARIABLE_REGEX;
+import static com.dotcms.datagen.TestDataUtils.FILE_ASSET_1;
+import static com.dotcms.datagen.TestDataUtils.FILE_ASSET_2;
+import static junit.framework.Assert.assertTrue;
+import static junit.framework.TestCase.assertEquals;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.Assert.*;
 
 @RunWith(DataProviderRunner.class)
 public class ContentTypeAPIImplTest extends ContentTypeBaseTest {
@@ -2062,7 +1998,7 @@ public class ContentTypeAPIImplTest extends ContentTypeBaseTest {
 	 
 	 
 	 /**
-	  * This test is to insure that a content type is returing the corrent
+	  * This test is to ensure that a content type is returning the correct
 	  * parent permissionable based on where it lives in the hierarchy
 	  * If the content type lives on a folder, then that will be the parent
 	  * if it lives on a host, then that, else the system host
@@ -2072,17 +2008,17 @@ public class ContentTypeAPIImplTest extends ContentTypeBaseTest {
    public void test_content_type_parent_permissionable() throws Exception{
      Host site = new SiteDataGen().nextPersisted();
      Folder folder = new FolderDataGen().site(site).nextPersisted();
-     
-     
+
+
      ContentType systemHostType = ImmutableSimpleContentType.builder()
          .name("ContentTypeTesting"+System.currentTimeMillis())
          .variable("velocityVarNameTesting"+System.currentTimeMillis())
-  
+
          .host(APILocator.systemHost().getIdentifier())
          .folder(APILocator.getFolderAPI().SYSTEM_FOLDER)
          .build();
      systemHostType = contentTypeApi.save(systemHostType);
-     
+
      ContentType hostType = ImmutableSimpleContentType.builder()
          .name("ContentTypeTesting"+System.currentTimeMillis())
          .variable("velocityVarNameTesting"+System.currentTimeMillis())
@@ -2090,16 +2026,16 @@ public class ContentTypeAPIImplTest extends ContentTypeBaseTest {
          .folder(APILocator.getFolderAPI().SYSTEM_FOLDER)
          .build();
      hostType = contentTypeApi.save(hostType);
-	 
+
      ContentType folderType = ImmutableSimpleContentType.builder()
          .name("ContentTypeTesting"+System.currentTimeMillis())
          .variable("velocityVarNameTesting"+System.currentTimeMillis())
          .host(site.getIdentifier())
          .folder(folder.getInode())
          .build();
-     
+
      folderType = contentTypeApi.save(folderType);
-     
+
      assertEquals(systemHostType.getParentPermissionable(), APILocator.systemHost());
      assertEquals(hostType.getParentPermissionable(), site);
      assertEquals(folderType.getParentPermissionable(), folder);
@@ -2379,31 +2315,26 @@ public class ContentTypeAPIImplTest extends ContentTypeBaseTest {
             final Host site = testCase.site;
 
             final String contentTypeName = "ContentTypeXYZ" + System.currentTimeMillis();
-			final ContentTypeDataGen contentTypeDataGen = new ContentTypeDataGen()
+
+			contentType = ImmutableSimpleContentType.builder()
 					.name(contentTypeName)
-					.velocityVarName(contentTypeName)
-					.workflowId((String)null)
-					.fields(fields)
-					.host(site);
+					.variable(contentTypeName)
+					//There's mocked site that is intended to simulate the missing id
+					//Therefore here we always pass it
+					.host(site.getIdentifier())
+					.build();
 
-			if(UtilMethods.isSet(site.getHostname()) && UtilMethods.isNotSet(site.getIdentifier())){
-				contentTypeDataGen.hostName(site.getHostname());
-			}
-
-			contentType = contentTypeDataGen.next();
             contentType.constructWithFields(fields);
-
 			savedContentType = APILocator.getContentTypeAPI(APILocator.systemUser()).save(contentType);
 			//Here we test that the fields are still present even when the site is null
 			Assert.assertFalse(savedContentType.fields().isEmpty());
-
 			assertNotNull(savedContentType.host());
 
-			final String expected = "default".equals(testCase.expected) ? APILocator.getHostAPI()
+			final String expected = DEFAULT.equals(testCase.expected) ? APILocator.getHostAPI()
 					.findDefaultHost(APILocator.systemUser(), false).getIdentifier()
 					: testCase.expected;
 
-			assertEquals(savedContentType.host(), expected);
+			assertEquals(expected, savedContentType.host());
 
 		} finally {
 			if(null != savedContentType) {
@@ -2412,28 +2343,28 @@ public class ContentTypeAPIImplTest extends ContentTypeBaseTest {
 		}
 	}
 
+	static final String DEFAULT = "default";
+
 	@DataProvider
-	public static Object[] getSites() {
+	public static Object[] getSites() throws DotSecurityException {
 
 		final Host emptyIdentifierHost = Mockito.mock(Host.class);
 		Mockito.when(emptyIdentifierHost.getIdentifier()).thenReturn("");
 
-		final Host nullIdentifierHost = Mockito.mock(Host.class);
-		Mockito.when(nullIdentifierHost.getIdentifier()).thenReturn("");
-
 		final Host systemHost = Mockito.mock(Host.class);
 		Mockito.when(systemHost.getIdentifier()).thenReturn(Host.SYSTEM_HOST);
-		Mockito.when(systemHost.getHostname()).thenReturn(Host.SYSTEM_HOST);
+		Mockito.when(systemHost.getHostname()).thenReturn(Host.SYSTEM_HOST_NAME);
 
 		final Host namedHost = Mockito.mock(Host.class);
-		Mockito.when(namedHost.getIdentifier()).thenReturn("");
-		Mockito.when(namedHost.getHostname()).thenReturn("default");
+		//At this moment (When the data provider is getting instantiated)
+		//it is troublesome getting the Current default site therefore we're going to set this placeholder
+		Mockito.when(namedHost.getIdentifier()).thenReturn("unk");
+		Mockito.when(namedHost.getHostname()).thenReturn(DEFAULT);
 
 		return new Object[]{
-				new SiteTestCase(emptyIdentifierHost, Host.SYSTEM_HOST),
-				new SiteTestCase(nullIdentifierHost, Host.SYSTEM_HOST),
+				new SiteTestCase(emptyIdentifierHost, DEFAULT),
 				new SiteTestCase(systemHost, Host.SYSTEM_HOST),
-				new SiteTestCase(namedHost, "default")
+				new SiteTestCase(namedHost, DEFAULT)
 		};
 	}
 

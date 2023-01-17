@@ -1,19 +1,20 @@
-import { ComponentRef } from '@angular/core';
-import { Subject } from 'rxjs';
-import { take, takeUntil, tap } from 'rxjs/operators';
-
 import { EditorState, Plugin, PluginKey } from 'prosemirror-state';
 import { EditorView } from 'prosemirror-view';
-import { Editor } from '@tiptap/core';
-
+import { Subject } from 'rxjs';
 import tippy, { Instance } from 'tippy.js';
 
+import { ComponentRef } from '@angular/core';
+
+import { take, takeUntil, tap } from 'rxjs/operators';
+
+import { Editor } from '@tiptap/core';
+
 import {
-    FloatingButtonComponent,
     DotImageService,
-    ImageNode,
+    FileStatus,
+    FloatingButtonComponent,
     getNodeCoords,
-    FileStatus
+    ImageNode
 } from '@dotcms/block-editor';
 import { DotCMSContentlet } from '@dotcms/dotcms-models';
 

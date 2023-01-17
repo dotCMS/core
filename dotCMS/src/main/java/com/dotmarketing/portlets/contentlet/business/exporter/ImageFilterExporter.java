@@ -76,7 +76,7 @@ public class ImageFilterExporter implements BinaryContentExporter {
         try {
             
             canRun = semaphore.tryAcquire();
-            Logger.warn(getClass(), "Image permits/requests : " + allowedRequests + "/" + (allowedRequests-semaphore.availablePermits()));
+            Logger.debug(getClass(), "Image permits/requests : " + allowedRequests + "/" + (allowedRequests-semaphore.availablePermits()));
             
             if(!canRun) {
                 Logger.warn(getClass(), "Image permits exhausted : " + allowedRequests + "/" + (allowedRequests-semaphore.availablePermits()));

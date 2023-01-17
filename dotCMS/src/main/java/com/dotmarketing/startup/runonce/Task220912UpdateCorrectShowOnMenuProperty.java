@@ -81,7 +81,7 @@ public class Task220912UpdateCorrectShowOnMenuProperty implements StartupTask {
             if (isPostgres()) {
                 columnReference += " OR " + ContentletJsonAPI.CONTENTLET_AS_JSON + "->'fields'->'" + VELOCITY_VAR_NAME + "'->>'value' = 'true'";
             } else if (isMsSql()) {
-                columnReference += " OR " + "JSON_VALUE(c." + ContentletJsonAPI.CONTENTLET_AS_JSON + ", '$.fields." + VELOCITY_VAR_NAME + ".value') = 'true'";
+                columnReference += " OR " + "JSON_VALUE(" + ContentletJsonAPI.CONTENTLET_AS_JSON + ", '$.fields." + VELOCITY_VAR_NAME + ".value') = 'true'";
             }
         }
         return "(" + columnReference + ")";

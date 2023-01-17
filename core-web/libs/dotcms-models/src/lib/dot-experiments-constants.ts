@@ -1,3 +1,11 @@
+import {
+    GOAL_OPERATORS,
+    GOAL_PARAMETERS,
+    GOAL_TYPES,
+    Goals,
+    GoalSelectOption
+} from './dot-experiments.model';
+
 export const MAX_VARIANTS_ALLOWED = 3;
 
 export const DEFAULT_VARIANT_ID = 'DEFAULT';
@@ -42,7 +50,57 @@ export const ExperimentsStatusList = [
     }
 ];
 
+export const ExperimentsGoalsList: Array<GoalSelectOption> = [
+    {
+        label: 'experiments.goal.reach_page.name',
+        value: GOAL_TYPES.REACH_PAGE,
+        description: 'experiments.goal.reach_page.description',
+        inactive: false
+    },
+    {
+        label: 'experiments.goal.bounce_rate.name',
+        value: GOAL_TYPES.BOUNCE_RATE,
+        description: 'experiments.goal.bounce_rate.description',
+        inactive: false
+    },
+    {
+        label: 'experiments.goal.click_on_element.name',
+        value: GOAL_TYPES.CLICK_ON_ELEMENT,
+        description: 'experiments.goal.click_on_element.description',
+        inactive: true
+    }
+];
+
 export enum SidebarStatus {
     OPEN = 'OPEN',
     CLOSE = 'CLOSED'
 }
+
+export const DefaultGoalConfiguration: Goals = {
+    primary: {
+        name: 'default',
+        type: GOAL_TYPES.REACH_PAGE,
+        conditions: [
+            {
+                parameter: GOAL_PARAMETERS.URL,
+                operator: GOAL_OPERATORS.EQUALS,
+                value: 'to-define'
+            }
+        ]
+    }
+};
+
+export const GOALS_METADATA_MAP: Record<GOAL_TYPES, { label: string; description: string }> = {
+    [GOAL_TYPES.REACH_PAGE]: {
+        label: 'experiments.goal.reach_page.name',
+        description: 'experiments.goal.reach_page.description'
+    },
+    [GOAL_TYPES.BOUNCE_RATE]: {
+        label: 'experiments.goal.bounce_rate',
+        description: 'experiments.goal.bounce_rate.description'
+    },
+    [GOAL_TYPES.CLICK_ON_ELEMENT]: {
+        label: 'experiments.goal.click_on_element.name',
+        description: 'experiments.goal.click_on_element.description'
+    }
+};

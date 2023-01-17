@@ -2,8 +2,6 @@ package com.dotcms;
 
 import com.dotcms.analytics.AnalyticsAPIImplTest;
 import com.dotcms.analytics.bayesian.BayesianAPIImplTest;
-import com.dotcms.auth.providers.jwt.JsonWebTokenUtilsIntegrationTest;
-import com.dotcms.auth.providers.jwt.factories.ApiTokenAPITest;
 import com.dotcms.auth.providers.saml.v1.DotSamlResourceTest;
 import com.dotcms.auth.providers.saml.v1.SAMLHelperTest;
 import com.dotcms.cache.lettuce.DotObjectCodecTest;
@@ -18,6 +16,7 @@ import com.dotcms.content.elasticsearch.util.ESMappingUtilHelperTest;
 import com.dotcms.content.model.hydration.MetadataDelegateTest;
 import com.dotcms.contenttype.business.ContentTypeInitializerTest;
 import com.dotcms.contenttype.business.DotAssetBaseTypeToContentTypeStrategyImplTest;
+import com.dotcms.contenttype.business.SiteAndFolderResolverImplTest;
 import com.dotcms.contenttype.business.StoryBlockAPITest;
 import com.dotcms.contenttype.test.DotAssetAPITest;
 import com.dotcms.csspreproc.CSSCacheTest;
@@ -229,14 +228,16 @@ import org.junit.runners.Suite.SuiteClasses;
 @RunWith(MainBaseSuite.class)
 @SuiteClasses({
         RulesAPIImplIntegrationTest.class,
+        Task220825CreateVariantFieldTest.class,
+//        AnalyticsAPIImplTest.class,
+        Task221007AddVariantIntoPrimaryKeyTest.class,
+        ESContentletAPIImplTest.class,
         ExperimentAPIImpIT.class,
         ExperimentWebAPIImplIT.class,
-        AnalyticsAPIImplTest.class,
-        AccessTokenRenewJobTest.class,
-        Task220825CreateVariantFieldTest.class,
-        Task221007AddVariantIntoPrimaryKeyTest.class,
+//        AccessTokenRenewJobTest.class,
         ContentletWebAPIImplIntegrationTest.class, // moved to top because of failures on GHA
         DependencyBundlerTest.class, // moved to top because of failures on GHA
+        SiteAndFolderResolverImplTest.class, //Moved up to avoid conflicts with CT deletion
         FolderCacheImplIntegrationTest.class,
         StaticPublisherIntegrationTest.class,
         com.dotcms.publishing.PublisherAPIImplTest.class,
@@ -454,7 +455,6 @@ import org.junit.runners.Suite.SuiteClasses;
         Task05195CreatesDestroyActionAndAssignDestroyDefaultActionsToTheSystemWorkflowTest.class,
         Task05210CreateDefaultDotAssetTest.class,
         CleanUpFieldReferencesJobTest.class,
-        ESContentletAPIImplTest.class,
         CachedParameterDecoratorTest.class,
         ContainerFactoryImplTest.class,
         TemplateFactoryImplTest.class,

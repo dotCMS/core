@@ -61,23 +61,30 @@ public class AWSS3PublishingEndPoint extends PublishingEndPoint {
             publishingEndPointValidationExceptionBuilder.addMessage("publisher_Endpoint_awss3_authKey_missing_bucket_id");
         }
 
-        try {
-            if (!UtilMethods.isSet(token) || !UtilMethods.isSet(secret)) {
+
+        if (!UtilMethods.isSet(token) || !UtilMethods.isSet(secret)) {
+            try {
                 // Validate DefaultAWSCredentialsProviderChain configuration
                 DefaultAWSCredentialsProviderChain creds = new DefaultAWSCredentialsProviderChain();
                 new AWSS3EndPointPublisher(creds).checkConnectSuccessfully(bucketValidationName);
-            } else {
+            } catch (EndPointPublisherConnectionException e) {
+                publishingEndPointValidationExceptionBuilder.addMessage(
+                        "publisher_Endpoint_DefaultAWSCredentialsProviderChain_invalid", e.getMessage());
+            }
+        } else {
+            try {
                 // Validate correctness of AWS S3 connection properties
                 AWSS3Configuration awss3Config =
                         new AWSS3Configuration.Builder().accessKey(token).secretKey(secret)
                                 .endPoint(s3Endpoint).region(s3Region).build();
                 new AWSS3EndPointPublisher(awss3Config).checkConnectSuccessfully(
                         bucketValidationName);
+            } catch (EndPointPublisherConnectionException e) {
+                publishingEndPointValidationExceptionBuilder.addMessage(
+                        "publisher_Endpoint_awss3_authKey_properties_invalid", e.getMessage());
             }
-        } catch (EndPointPublisherConnectionException e) {
-            publishingEndPointValidationExceptionBuilder.addMessage(
-                    "publisher_Endpoint_DefaultAWSCredentialsProviderChain_invalid", e.getMessage());
         }
+
 
         //If we have i18nmessages means that we have errors and  we need to throw an Exception.
         if (!publishingEndPointValidationExceptionBuilder.isEmpty()) {

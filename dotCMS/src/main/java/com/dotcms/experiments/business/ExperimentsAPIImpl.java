@@ -33,12 +33,16 @@ import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.PermissionLevel;
+import com.dotmarketing.business.VersionableAPI;
 import com.dotmarketing.exception.DoesNotExistException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.exception.InvalidLicenseException;
+import com.dotmarketing.factories.MultiTreeAPI;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
+import com.dotmarketing.portlets.htmlpageasset.business.HTMLPageAssetAPI;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.rules.model.Condition;
 import com.dotmarketing.portlets.rules.model.ConditionGroup;
@@ -46,6 +50,7 @@ import com.dotmarketing.portlets.rules.model.LogicalOperator;
 import com.dotmarketing.portlets.rules.model.ParameterModel;
 import com.dotmarketing.portlets.rules.model.Rule;
 import com.dotmarketing.portlets.rules.model.Rule.FireOn;
+import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.UtilMethods;
@@ -64,8 +69,11 @@ import java.util.SortedSet;
 import java.util.TreeSet;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
-
+import io.vavr.Lazy;
 public class ExperimentsAPIImpl implements ExperimentsAPI {
+
+    private Lazy<Boolean> isExperimentEnabled =
+            Lazy.of(() -> Config.getBooleanProperty("FEATURE_FLAG_EXPERIMENTS", false));
 
     final ExperimentsFactory factory = FactoryLocator.getExperimentsFactory();
     final PermissionAPI permissionAPI = APILocator.getPermissionAPI();
@@ -73,6 +81,9 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
     final VariantAPI variantAPI = APILocator.getVariantAPI();
     final ShortyIdAPI shortyIdAPI = APILocator.getShortyAPI();
     final RulesAPI rulesAPI = APILocator.getRulesAPI();
+    final MultiTreeAPI multiTreeAPI = APILocator.getMultiTreeAPI();
+    final VersionableAPI versionableAPI = APILocator.getVersionableAPI();
+    final HTMLPageAssetAPI pageAssetAPI = APILocator.getHTMLPageAssetAPI();
 
     private final LicenseValiditySupplier licenseValiditySupplierSupplier =
             new LicenseValiditySupplier() {};
@@ -88,7 +99,7 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
                 invalidLicenseMessageSupplier);
 
         final Contentlet pageAsContent = contentletAPI
-                .findContentletByIdentifierAnyLanguage(experiment.pageId(), false);
+                .findContentletByIdentifierAnyLanguage(experiment.pageId(), DEFAULT_VARIANT.name());
 
         DotPreconditions.isTrue(pageAsContent!=null
                 && UtilMethods.isSet(pageAsContent.getIdentifier()),
@@ -319,33 +330,32 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
                 ()-> new IllegalArgumentException("Experiment with provided id not found")
         );
 
-        final Experiment experimentFromFactory = persistedExperiment;
-        validatePermissions(user, experimentFromFactory,
+        validatePermissions(user, persistedExperiment,
                 "You don't have permission to start the Experiment. "
                         + "Experiment Id: " + persistedExperiment.id());
 
-        DotPreconditions.isTrue(experimentFromFactory.status()!=Status.RUNNING ||
-                        experimentFromFactory.status() == Status.SCHEDULED,()-> "Cannot start an already started Experiment.",
+        DotPreconditions.isTrue(persistedExperiment.status()!=Status.RUNNING ||
+                        persistedExperiment.status() == Status.SCHEDULED,()-> "Cannot start an already started Experiment.",
                 DotStateException.class);
 
-        DotPreconditions.isTrue(experimentFromFactory.status()== DRAFT
+        DotPreconditions.isTrue(persistedExperiment.status()== DRAFT
                 ,()-> "Only DRAFT experiments can be started",
                 DotStateException.class);
 
-        DotPreconditions.checkState(hasAtLeastOneVariant(experimentFromFactory), "The Experiment needs at "
+        DotPreconditions.checkState(hasAtLeastOneVariant(persistedExperiment), "The Experiment needs at "
                 + "least one Page Variant in order to be started.");
 
-        DotPreconditions.checkState(experimentFromFactory.goals().isPresent(), "The Experiment needs to "
+        DotPreconditions.checkState(persistedExperiment.goals().isPresent(), "The Experiment needs to "
                 + "have the Goal set.");
 
         final Experiment experimentToStart;
 
-        if(experimentFromFactory.scheduling().isEmpty()) {
-            final Scheduling scheduling = startNowScheduling(experimentFromFactory);
-            experimentToStart = experimentFromFactory.withScheduling(scheduling);
+        if(persistedExperiment.scheduling().isEmpty()) {
+            final Scheduling scheduling = startNowScheduling(persistedExperiment);
+            experimentToStart = persistedExperiment.withScheduling(scheduling);
         } else {
-            Scheduling scheduling = validateScheduling(experimentFromFactory.scheduling().get());
-            experimentToStart = experimentFromFactory.withScheduling(scheduling);
+            Scheduling scheduling = validateScheduling(persistedExperiment.scheduling().get());
+            experimentToStart = persistedExperiment.withScheduling(scheduling);
         }
 
         Experiment running = experimentToStart.withStatus(Status.RUNNING);
@@ -356,7 +366,6 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
         return running;
 
     }
-
     private void publishContentOnExperimentVariants(final User user,
             final Experiment runningExperiment)
             throws DotDataException, DotSecurityException {
@@ -417,7 +426,7 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
                 .orElseThrow(()->new DoesNotExistException("Experiment with provided id not found"));
 
         ExperimentVariant experimentVariant = createExperimentVariant(
-                persistedExperiment, variantDescription);
+                persistedExperiment, variantDescription, user);
 
         final TrafficProportion trafficProportion = persistedExperiment.trafficProportion();
 
@@ -438,7 +447,8 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
         return save(updatedExperiment, user);
     }
 
-    private ExperimentVariant createExperimentVariant(final Experiment experiment, final String variantDescription)
+    private ExperimentVariant createExperimentVariant(final Experiment experiment,
+            final String variantDescription, final User user)
             throws DotDataException {
 
         final String experimentId = experiment.getIdentifier();
@@ -454,19 +464,66 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
         variantAPI.save(Variant.builder().name(variantName)
                 .description(Optional.of(variantDescription)).build());
 
-        APILocator.getMultiTreeAPI().copyVariantForPage(experiment.pageId(),
+        multiTreeAPI.copyVariantForPage(experiment.pageId(),
                 DEFAULT_VARIANT.name(), variantName);
 
         final Contentlet pageContentlet = contentletAPI
                 .findContentletByIdentifierAnyLanguage(experiment.pageId(), false);
 
-        final HTMLPageAsset page = APILocator.getHTMLPageAssetAPI().fromContentlet(pageContentlet);
+        copyPageAndItsContentForVariant(experiment, variantDescription, user, variantName, pageContentlet);
 
-        final ExperimentVariant experimentVariant = ExperimentVariant.builder().id(variantName)
+        final HTMLPageAsset page = pageAssetAPI.fromContentlet(pageContentlet);
+
+        return ExperimentVariant.builder().id(variantName)
                 .description(variantDescription).weight(0)
                 .url(page.getURI()+"?variantName="+variantName)
                 .build();
-        return experimentVariant;
+    }
+
+    private void copyPageAndItsContentForVariant(final Experiment experiment,
+            final String variantDescription, final User user,
+            final String variantName, final Contentlet pageContentlet) throws DotDataException {
+        if(variantDescription.equals(ORIGINAL_VARIANT)) {
+            saveContentOnVariant(pageContentlet,
+                    variantName, user);
+
+            multiTreeAPI.getMultiTrees(experiment.pageId()).forEach(
+                    (multiTree -> {
+                        final Contentlet contentlet = Try.of(()->contentletAPI.
+                                findContentletByIdentifierAnyLanguage(multiTree.getContentlet()))
+                                .getOrElseThrow(()->new DotStateException("Unable to find content. Id:"
+                                        + multiTree.getContentlet()));
+
+                        saveContentOnVariant(contentlet, variantName, user);
+                    })
+            );
+        }
+    }
+
+    private void saveContentOnVariant(final Contentlet contentlet, final String variantName,
+            final User user) {
+
+        final Optional<ContentletVersionInfo> versionInfo = Try.of(
+                        ()->versionableAPI.getContentletVersionInfo(contentlet.getIdentifier(),
+                                contentlet.getLanguageId()))
+                .getOrElseThrow((e->new DotStateException("Unable to get the live version of the page", e)));
+
+        final ContentletVersionInfo contentletVersionInfo = versionInfo.orElseThrow();
+
+        final String inode = UtilMethods.isSet(contentletVersionInfo.getLiveInode())
+                ? contentletVersionInfo.getLiveInode()
+                : contentletVersionInfo.getWorkingInode();
+
+        final Contentlet checkedoutContentlet = Try.of(() -> contentletAPI
+                        .checkout(inode, user, false))
+                .getOrElseThrow(
+                        (e) -> new DotStateException("Unable to checkout Experiment's content. Inode:" + inode, e));
+
+        checkedoutContentlet.setVariantId(variantName);
+        Try.of(() -> contentletAPI.checkin(checkedoutContentlet, user, false))
+                .getOrElseThrow(
+                        (e) -> new DotStateException("Unable to checkin Experiment's content. Inode:" + inode, e));
+
     }
 
     private String getVariantName(final String experimentId) throws DotDataException {
@@ -520,6 +577,49 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
 
     @Override
     @WrapInTransaction
+    public Experiment editVariantDescription(String experimentId, String variantName,
+            String newDescription, final User user)
+            throws DotDataException, DotSecurityException {
+        final Experiment persistedExperiment = find(experimentId, user)
+                .orElseThrow(()->new DoesNotExistException("Experiment with provided id not found"));
+
+        DotPreconditions.isTrue(variantName!= null &&
+                        variantName.contains(shortyIdAPI.shortify(experimentId)), ()->"Invalid Variant provided",
+                IllegalArgumentException.class);
+
+        final Variant toEdit = variantAPI.get(variantName)
+                .orElseThrow(()->new DoesNotExistException("Provided Variant not found"));
+
+        final String currentDescription = toEdit.description()
+                .orElseThrow(()->new DotStateException("Variant without description. Variant name: "
+                        + toEdit.name()));
+
+        DotPreconditions.isTrue(!currentDescription.equals(ORIGINAL_VARIANT),
+                ()->"Cannot update Original Variant", IllegalArgumentException.class);
+
+        final TreeSet<ExperimentVariant> updatedVariants =
+                persistedExperiment.trafficProportion()
+                        .variants().stream().map((variant) -> {
+                            if (variant.id().equals(variantName)) {
+                                return variant.withDescription(newDescription);
+                            } else {
+                                return variant;
+                            }
+                        }).collect(Collectors.toCollection(TreeSet::new));
+
+        final TrafficProportion trafficProportion = persistedExperiment.trafficProportion()
+                .withVariants(updatedVariants);
+        final Experiment withUpdatedTraffic = persistedExperiment.withTrafficProportion(trafficProportion);
+        final Experiment fromDB = save(withUpdatedTraffic, user);
+
+        final Optional<Variant> variant = variantAPI.get(variantName);
+        variantAPI.update(variant.orElseThrow().withDescription(Optional.of(newDescription)));
+        return fromDB;
+
+    }
+
+    @Override
+    @WrapInTransaction
     public Experiment deleteTargetingCondition(String experimentId, String conditionId, User user)
             throws DotDataException, DotSecurityException {
         final Experiment persistedExperiment = find(experimentId, user)
@@ -559,7 +659,8 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
 
     @Override
     public boolean isAnyExperimentRunning() throws DotDataException {
-        return !APILocator.getExperimentsAPI().getRunningExperiments().isEmpty();
+        return isExperimentEnabled.get() &&
+                !APILocator.getExperimentsAPI().getRunningExperiments().isEmpty();
     }
 
     private TreeSet<ExperimentVariant> redistributeWeights(final Set<ExperimentVariant> variants) {

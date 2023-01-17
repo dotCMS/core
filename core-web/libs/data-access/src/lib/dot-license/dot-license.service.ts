@@ -1,7 +1,10 @@
-import { pluck, map, take } from 'rxjs/operators';
-import { Injectable } from '@angular/core';
-import { CoreWebService } from '@dotcms/dotcms-js';
 import { Observable, Subject, BehaviorSubject } from 'rxjs';
+
+import { Injectable } from '@angular/core';
+
+import { pluck, map, take } from 'rxjs/operators';
+
+import { CoreWebService } from '@dotcms/dotcms-js';
 import { DotLicense } from '@dotcms/dotcms-models';
 
 export interface DotUnlicensedPortletData {
@@ -55,6 +58,11 @@ const enterprisePorlets: DotUnlicensedPortletData[] = [
         icon: 'apps',
         titleKey: 'com.dotcms.repackage.javax.portlet.title.apps',
         url: '/apps'
+    },
+    {
+        icon: 'integration_instructions',
+        titleKey: 'com.dotcms.repackage.javax.portlet.title.velocity',
+        url: '/c/velocity_playground'
     }
 ];
 

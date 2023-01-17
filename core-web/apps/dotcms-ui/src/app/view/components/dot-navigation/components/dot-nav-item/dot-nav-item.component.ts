@@ -1,16 +1,18 @@
 import {
     Component,
-    Output,
-    EventEmitter,
-    Input,
-    HostBinding,
-    ViewChild,
     ElementRef,
-    HostListener
+    EventEmitter,
+    HostBinding,
+    HostListener,
+    Input,
+    Output,
+    ViewChild
 } from '@angular/core';
+
 import { DotMenu, DotMenuItem } from '@models/navigation';
-import { DotSubNavComponent } from '../dot-sub-nav/dot-sub-nav.component';
 import { LABEL_IMPORTANT_ICON } from '@pipes/dot-radom-icon/dot-random-icon.pipe';
+
+import { DotSubNavComponent } from '../dot-sub-nav/dot-sub-nav.component';
 
 @Component({
     selector: 'dot-nav-item',

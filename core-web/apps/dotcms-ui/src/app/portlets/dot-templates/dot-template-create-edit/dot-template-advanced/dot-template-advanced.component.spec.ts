@@ -2,16 +2,17 @@
 
 import { Component, DebugElement, EventEmitter, forwardRef, Input, Output } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { By } from '@angular/platform-browser';
 import {
     ControlValueAccessor,
     FormsModule,
     NG_VALUE_ACCESSOR,
     ReactiveFormsModule
 } from '@angular/forms';
+import { By } from '@angular/platform-browser';
 
 import { DotMessageService } from '@dotcms/data-access';
 import { MockDotMessageService } from '@dotcms/utils-testing';
+
 import { DotTemplateAdvancedComponent } from './dot-template-advanced.component';
 
 @Component({
@@ -124,8 +125,8 @@ describe('DotTemplateAdvancedComponent', () => {
 
         const code = de.query(By.css('dot-textarea-content'));
         code.triggerEventHandler('monacoInit', {
-            executeEdits: jasmine.createSpy(),
-            getSelection: () => 100
+            name: 'testEditor',
+            editor: { executeEdits: jasmine.createSpy(), getSelection: () => 100 }
         });
     });
 

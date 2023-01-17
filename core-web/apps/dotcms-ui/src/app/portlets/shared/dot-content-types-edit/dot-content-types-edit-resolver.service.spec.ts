@@ -1,19 +1,21 @@
 /* eslint-disable @typescript-eslint/no-empty-function */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { throwError as observableThrowError, of as observableOf } from 'rxjs';
-import { DotHttpErrorManagerService } from '@dotcms/app/api/services/dot-http-error-manager/dot-http-error-manager.service';
-import { DotContentTypeEditResolver } from './dot-content-types-edit-resolver.service';
+import { of as observableOf, throwError as observableThrowError } from 'rxjs';
+
 import { waitForAsync } from '@angular/core/testing';
-import { DotContentTypesInfoService } from '@dotcms/data-access';
-import { DotCrudService } from '@dotcms/data-access';
-import { LoginService } from '@dotcms/dotcms-js';
 import { ActivatedRouteSnapshot } from '@angular/router';
-import { LoginServiceMock } from '@dotcms/utils-testing';
 import { RouterTestingModule } from '@angular/router/testing';
+
+import { DotHttpErrorManagerService } from '@dotcms/app/api/services/dot-http-error-manager/dot-http-error-manager.service';
 import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
 import { DOTTestBed } from '@dotcms/app/test/dot-test-bed';
+import { DotContentTypesInfoService, DotCrudService } from '@dotcms/data-access';
+import { LoginService } from '@dotcms/dotcms-js';
 import { DotCMSContentType } from '@dotcms/dotcms-models';
+import { LoginServiceMock } from '@dotcms/utils-testing';
+
+import { DotContentTypeEditResolver } from './dot-content-types-edit-resolver.service';
 
 class CrudServiceMock {
     getDataById() {}

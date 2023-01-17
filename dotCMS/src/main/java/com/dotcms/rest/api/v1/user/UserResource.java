@@ -2,17 +2,33 @@ package com.dotcms.rest.api.v1.user;
 
 import com.dotcms.exception.ExceptionUtil;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
-import com.dotcms.rest.*;
+import com.dotcms.rest.ErrorEntity;
+import com.dotcms.rest.ErrorResponseHelper;
+import com.dotcms.rest.InitDataObject;
+import com.dotcms.rest.ResponseEntityView;
+import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.NoCache;
+import com.dotcms.rest.api.DotRestInstanceProvider;
 import com.dotcms.rest.api.v1.authentication.IncorrectPasswordException;
 import com.dotcms.rest.exception.BadRequestException;
 import com.dotcms.rest.exception.ForbiddenException;
 import com.dotcms.rest.exception.mapper.ExceptionMapperUtil;
+import com.dotcms.util.CollectionsUtils;
 import com.dotcms.util.PaginationUtil;
+import com.dotcms.util.pagination.OrderDirection;
 import com.dotcms.util.pagination.UserPaginator;
 import com.dotmarketing.beans.Host;
-import com.dotmarketing.business.*;
-import com.dotmarketing.exception.*;
+import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.ApiProvider;
+import com.dotmarketing.business.NoSuchUserException;
+import com.dotmarketing.business.Role;
+import com.dotmarketing.business.RoleAPI;
+import com.dotmarketing.business.UserAPI;
+import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotRuntimeException;
+import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.exception.UserFirstNameException;
+import com.dotmarketing.exception.UserLastNameException;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.util.DateUtil;
 import com.dotmarketing.util.Logger;
@@ -24,13 +40,20 @@ import com.liferay.portal.model.User;
 import com.liferay.portal.util.PortalUtil;
 import com.liferay.portal.util.WebKeys;
 import com.liferay.util.LocaleUtil;
+import com.liferay.util.StringPool;
 import io.vavr.control.Try;
 import org.glassfish.jersey.server.JSONP;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
-import javax.ws.rs.*;
+import javax.ws.rs.GET;
+import javax.ws.rs.POST;
+import javax.ws.rs.PUT;
+import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
+import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
@@ -40,7 +63,9 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
-import static com.dotcms.util.CollectionsUtils.*;
+import static com.dotcms.util.CollectionsUtils.getMapValue;
+import static com.dotcms.util.CollectionsUtils.list;
+import static com.dotcms.util.CollectionsUtils.map;
 
 /**
  * This end-point provides access to information associated to dotCMS users.
@@ -51,7 +76,6 @@ import static com.dotcms.util.CollectionsUtils.*;
  *
  */
 @Path("/v1/users")
-@SuppressWarnings("serial")
 public class UserResource implements Serializable {
 
 	private final WebResource webResource;
@@ -66,20 +90,24 @@ public class UserResource implements Serializable {
 	 * Default class constructor.
 	 */
 	public UserResource() {
-		this(new WebResource(new ApiProvider()), APILocator.getUserAPI(), APILocator.getHostAPI(), UserResourceHelper.getInstance(),
-				ErrorResponseHelper.INSTANCE, new PaginationUtil(new UserPaginator()), APILocator.getRoleAPI());
+		this(new WebResource(new ApiProvider()), UserResourceHelper.getInstance(),
+				new PaginationUtil(new UserPaginator()), new DotRestInstanceProvider()
+																 .setUserAPI(APILocator.getUserAPI())
+																 .setHostAPI(APILocator.getHostAPI())
+																 .setRoleAPI(APILocator.getRoleAPI())
+																 .setErrorHelper(ErrorResponseHelper.INSTANCE));
 	}
 
 	@VisibleForTesting
-	protected UserResource(final WebResource webResource,  final UserAPI userAPI, final HostAPI siteAPI, final UserResourceHelper userHelper,
-						   final ErrorResponseHelper errorHelper, PaginationUtil paginationUtil, final RoleAPI roleAPI) {
+	protected UserResource(final WebResource webResource, final UserResourceHelper userHelper,
+						   PaginationUtil paginationUtil, final DotRestInstanceProvider instanceProvider) {
 		this.webResource = webResource;
-		this.userAPI = userAPI;
-		this.siteAPI = siteAPI;
 		this.helper = userHelper;
-		this.errorHelper = errorHelper;
 		this.paginationUtil = paginationUtil;
-		this.roleAPI = roleAPI;
+		this.userAPI = instanceProvider.getUserAPI();
+		this.siteAPI = instanceProvider.getHostAPI();
+		this.errorHelper = instanceProvider.getErrorHelper();
+		this.roleAPI = instanceProvider.getRoleAPI();
 	}
 
 	/**
@@ -235,39 +263,35 @@ public class UserResource implements Serializable {
 	} // update.
 
 	/**
-	 * Returns a list of dotCMS users based on the specified search criteria.
-	 * Depending on the filtering values, 2 types of result can be returned:
+	 * Returns a list of dotCMS users based on the specified search criteria. Depending on the filtering values, 2 types
+	 * of result can be returned:
 	 * <ol>
-	 * <li>If the {@code assetInode} and {@code permission} parameters <b>are
-	 * specified</b>, this method will return a list of users that have the
-	 * specified permission type on the specified asset Inode.</li>
-	 * <li>If the {@code assetInode} and {@code permission} parameters <b>are
-	 * NOT specified</b>, this method will return a list of users based on
-	 * specific filtering parameters (see
-	 * {@link UserResourceHelper#getUserList(String, String, Map)}).</li>
+	 * 		<li>If the {@code assetInode} and {@code permission} parameters <b>are specified</b>, this method will
+	 * 		return a list of users that have the specified permission type on the specified asset Inode.</li>
+	 * 		<li>If the {@code assetInode} and {@code permission} parameters <b>are NOT specified</b>, this method will
+	 * 		return a list of users based on specific filtering parameters.</li>
 	 * </ol>
 	 * <p>
-	 * The parameters for this REST call are the following:
+	 * All parameters for this REST call are optional -- they have theire respective fallback values --, and are as
+	 * follows:
 	 * <ul>
-	 * <li>{@code assetInode}</li>
-	 * <li>{@code permission}</li>
-	 * <li>{@code query}</li>
-	 * <li>{@code start}</li>
-	 * <li>{@code limit}</li>
-	 * <li>{@code includeAnonymous}</li>
-	 * <li>{@code includeDefault}</li>
+	 * 		<li>{@code assetInode}</li>
+	 * 		<li>{@code permission}</li>
+	 * 		<li>{@code query}</li>
+	 * 		<li>{@code start}</li>
+	 * 		<li>{@code limit}</li>
+	 * 		<li>{@code includeAnonymous}</li>
+	 * 		<li>{@code includeDefault}</li>
 	 * </ul>
 	 * <p>
-	 * Example #1
-	 *
+	 * Example #1:
 	 * <pre>
-	 * http://localhost:8080/api/v1/users/filter/permission/1/start/0/limit/30/includeAnonymous/false/includeDefault/false
+	 * http://localhost:8080/api/v1/users/filter/start/0/limit/30/includeAnonymous/false/includeDefault/false
 	 * </pre>
 	 *
-	 * Example #2
-	 *
+	 * Example #2:
 	 * <pre>
-	 * http://localhost:8080/api/v1/users/filter/assetInode/6e13c345-4599-49d0-aa47-6a7e59245247/permission/1/query/John/start/0/limit/10/includeAnonymous/false/includeDefault/false
+	 * http://localhost:8080/api/v1/users/filter/assetInode/6e13c345-4599-49d0-aa47-6a7e59245247/permission/1/query/John/start/0/limit/10/includeAnonymous/false
 	 * </pre>
 	 *
 	 * @param request
@@ -283,7 +307,6 @@ public class UserResource implements Serializable {
 	@NoCache
 	@Produces({ MediaType.APPLICATION_JSON, "application/javascript" })
 	public Response filter(@Context final HttpServletRequest request, @Context final HttpServletResponse response, @PathParam("params") final String params) {
-
 		final InitDataObject initData = new WebResource.InitBuilder(webResource)
 				.requiredBackendUser(true)
 				.requiredFrontendUser(false)
@@ -293,26 +316,33 @@ public class UserResource implements Serializable {
 				.init();
 
 		final Map<String, String> urlParams = initData.getParamsMap();
-		Map<String, Object> userList;
-		final String FILTER_PARAM_QUERY = "query";
-		final String FILTER_PARAM_START = "start";
-		final String FILTER_PARAM_LIMIT = "limit";
-		final String FILTER_PARAM_INCLUDE_ANONYMOUS = "includeAnonymous";
-		final String FILTER_PARAM_INCLUDE_DEFAULT = "includeDefault";
-		try {
-			final Map<String, String> filterParams = map(
-					FILTER_PARAM_QUERY, urlParams.get(FILTER_PARAM_QUERY),
-					FILTER_PARAM_START, getMapValue(urlParams, FILTER_PARAM_START, "0"),
-					FILTER_PARAM_LIMIT, getMapValue(urlParams, FILTER_PARAM_LIMIT, "40"),
-					FILTER_PARAM_INCLUDE_ANONYMOUS, getMapValue(urlParams, FILTER_PARAM_INCLUDE_ANONYMOUS.toLowerCase(), "false"),
-                    FILTER_PARAM_INCLUDE_DEFAULT, getMapValue(urlParams, FILTER_PARAM_INCLUDE_DEFAULT.toLowerCase(), "false"));
-			userList = this.helper.getUserList(urlParams.get("assetInode"), urlParams.get("permission"), filterParams);
-		} catch (final Exception e) {
-			// In case of unknown error, a Status 500 is returned
-			Logger.error(this, "An error occurred when filtering the list of dotCMS users: " + e.getMessage(), e);
-			return ExceptionMapperUtil.createResponse(e, Response.Status.INTERNAL_SERVER_ERROR);
-		}
-		return Response.ok(new ResponseEntityView(userList)).build();
+		final Map<String, Object> extraParams = this.getParamsFromUrl(initData.getParamsMap());
+		final String query = urlParams.get(UserPaginator.QUERY_PARAM);
+		final int page = Integer.parseInt(getMapValue(urlParams, UserPaginator.START_PARAM, "0"));
+		final int perPage = Integer.parseInt(getMapValue(urlParams, UserPaginator.LIMIT_PARAM, "40"));
+		final String orderBy = urlParams.get(UserAPI.FilteringParams.ORDER_BY_PARAM);
+		final OrderDirection direction =
+				Try.of(() -> OrderDirection.valueOf(urlParams.get(UserAPI.FilteringParams.ORDER_DIRECTION_PARAM))).getOrElse(OrderDirection.ASC);
+		final User user = initData.getUser();
+		return this.paginationUtil.getPage(request, user, query, page, perPage, orderBy, direction, extraParams);
+	}
+
+	/**
+	 * Utility method that takes the parameters provided by the endpoint URL and transforms them into the expected
+	 * representation for the {@link PaginationUtil} class.
+	 *
+	 * @param paramsMap The incoming parameters from the endpoint URL call.
+	 *
+	 * @return The expected Map of parameters required by the {@link PaginationUtil} class.
+	 */
+	private Map<String, Object> getParamsFromUrl(final Map<String, String> paramsMap) {
+		return CollectionsUtils.map(
+				UserPaginator.ASSET_INODE_PARAM, paramsMap.get(UserPaginator.ASSET_INODE_PARAM),
+				UserPaginator.PERMISSION_PARAM, paramsMap.get(UserPaginator.PERMISSION_PARAM),
+				UserAPI.FilteringParams.INCLUDE_ANONYMOUS_PARAM, Boolean.valueOf(paramsMap.getOrDefault(UserAPI.FilteringParams.INCLUDE_ANONYMOUS_PARAM, "false")),
+				UserAPI.FilteringParams.INCLUDE_DEFAULT_PARAM, Boolean.valueOf(paramsMap.getOrDefault(UserAPI.FilteringParams.INCLUDE_DEFAULT_PARAM, "false")),
+				UserAPI.FilteringParams.ORDER_BY_PARAM, getMapValue(paramsMap, UserAPI.FilteringParams.ORDER_BY_PARAM, StringPool.BLANK)
+		);
 	}
 
 	/**
@@ -361,14 +391,7 @@ public class UserResource implements Serializable {
 				.rejectWhenNoUser(true)
 				.init();
 
-		final Role    loginAsRole = roleAPI.loadRoleByKey(Role.LOGIN_AS);
-		if (!Try.of(()->roleAPI.doesUserHaveRole(initData.getUser(), loginAsRole)).getOrElse(false)) {
-
-			Logger.debug(this, "The user: " + initData.getUser().getUserId()
-					+ " does not have the LOGIN AS role, can not execute this action");
-			throw new DotSecurityException("The user: " + initData.getUser().getUserId()
-					+ " must have the Login As role to execute this action");
-		}
+		checkUserLoginAsRole(initData.getUser());
 
 		final String serverName = request.getServerName();
 		final User currentUser = initData.getUser();
@@ -574,30 +597,45 @@ public class UserResource implements Serializable {
 				.requestAndResponse(httpServletRequest, httpServletResponse)
 				.rejectWhenNoUser(true).init();
 
-		Response response = null;
+		Response response;
 		final User user = initData.getUser();
-
 		try {
-
-			final Role    loginAsRole = roleAPI.loadRoleByKey(Role.LOGIN_AS);
-			if (!Try.of(()->roleAPI.doesUserHaveRole(initData.getUser(), loginAsRole)).getOrElse(false)) {
-
-				Logger.debug(this, "The user: " + initData.getUser().getUserId()
-						+ " does not have the LOGIN AS role, can not execute this action");
-				throw new DotSecurityException("The user: " + initData.getUser().getUserId()
-						+ " must have the Login As role to execute this action");
-			}
-
-			response = this.paginationUtil.getPage( httpServletRequest, user, filter, page, perPage );
-		} catch (Exception e) {
+			checkUserLoginAsRole(initData.getUser());
+			final List<Role> roles = Collections.singletonList(roleAPI.loadBackEndUserRole());
+			final Map<String, Object> extraParams = Map.of(
+					UserPaginator.ROLES_PARAM, roles,
+					UserAPI.FilteringParams.INCLUDE_ANONYMOUS_PARAM, false,
+					UserAPI.FilteringParams.INCLUDE_DEFAULT_PARAM, false,
+					UserPaginator.REMOVE_CURRENT_USER_PARAM, true,
+					UserPaginator.REQUEST_PASSWORD_PARAM, true);
+			response = this.paginationUtil.getPage( httpServletRequest, user, filter, page, perPage, extraParams);
+		} catch (final Exception e) {
 			if (ExceptionUtil.causedBy(e, DotSecurityException.class)) {
 				throw new ForbiddenException(e);
 			}
 			response = ExceptionMapperUtil.createResponse(e, Response.Status.INTERNAL_SERVER_ERROR);
 			Logger.error(this, e.getMessage(), e);
 		}
-
 		return response;
+	}
+
+	/**
+	 * Utility method that verifies whether the specified User has the required "Login As" Role.
+	 *
+	 * @param user The {@link User} being checked.
+	 *
+	 * @throws DotDataException     An error occurred when interacting with the data source.
+	 * @throws DotSecurityException The specified User does not have the required "Login As" Role.
+	 */
+	private void checkUserLoginAsRole(final User user) throws DotDataException, DotSecurityException {
+		final Role loginAsRole = this.roleAPI.loadRoleByKey(Role.LOGIN_AS);
+		final boolean hasRole = Try.of(() -> this.roleAPI.doesUserHaveRole(user, loginAsRole)).getOrElse(Boolean.FALSE);
+		if (!hasRole) {
+			final String errorMsg = String.format("User '%s' must have the Login As role to execute this action",
+					user.getUserId());
+			Logger.debug(this, errorMsg);
+			throw new DotSecurityException(errorMsg);
+		}
 	}
 
 }

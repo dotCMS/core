@@ -1,5 +1,6 @@
-import { DotValidators } from './dotValidators';
 import { UntypedFormControl } from '@angular/forms';
+
+import { DotValidators } from './dotValidators';
 
 describe('DotValidators', () => {
     it('should return hasError false when input value is only alphanumeric', () => {

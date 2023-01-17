@@ -1,9 +1,10 @@
 import { Component, OnInit } from '@angular/core';
-import { DotMessageService } from '@dotcms/data-access';
-import { FieldProperty } from '../field-properties.model';
-import { PaginatorService } from '@dotcms/data-access';
 import { UntypedFormGroup } from '@angular/forms';
+
+import { DotMessageService, PaginatorService } from '@dotcms/data-access';
 import { DotCMSContentTypeFieldCategories } from '@dotcms/dotcms-models';
+
+import { FieldProperty } from '../field-properties.model';
 
 /**
  * List all the categories and allow select one.
