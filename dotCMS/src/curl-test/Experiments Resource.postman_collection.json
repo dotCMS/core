@@ -1,9 +1,9 @@
 {
 	"info": {
-		"_postman_id": "20e0245f-a5b6-4b23-9ca9-d0b91fdf4d0a",
+		"_postman_id": "9043147d-8a40-47ea-81e5-665c81175bfc",
 		"name": "Experiments Resource",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
-		"_exporter_id": "4500400"
+		"_exporter_id": "1549189"
 	},
 	"item": [
 		{
@@ -4033,6 +4033,70 @@
 								"experiments",
 								"{{experimentNoGoalsId}}",
 								"_start"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "stopExperiment_shouldSucceed",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"",
+									"",
+									"pm.test(\"Started Experiment with expected values\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/experiments/{{experimentToAddVariant}}/_end",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"experiments",
+								"{{experimentToAddVariant}}",
+								"_end"
 							]
 						}
 					},
