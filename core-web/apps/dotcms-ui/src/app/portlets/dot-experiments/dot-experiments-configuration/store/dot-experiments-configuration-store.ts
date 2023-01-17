@@ -50,6 +50,11 @@ export class DotExperimentsConfigurationStore extends ComponentStore<DotExperime
     readonly isLoading$ = this.select(({ status }) => status === LoadingState.LOADING);
     readonly getExperimentId = this.select(({ experiment }) => experiment.id);
 
+    // Variants Step //
+    readonly variantsStatus$ = this.select(this.state$, ({ stepStatusSidebar }) =>
+        stepStatusSidebar.experimentStep === ExperimentSteps.VARIANTS ? stepStatusSidebar : null
+    );
+
     // Goals Step //
     readonly goals$: Observable<Goals> = this.select(({ experiment }) =>
         experiment.goals ? experiment.goals : null
@@ -193,8 +198,15 @@ export class DotExperimentsConfigurationStore extends ComponentStore<DotExperime
                                     });
 
                                     this.setTrafficProportion(experiment.trafficProportion);
+                                    this.setSidebarStatus({
+                                        status: Status.IDLE,
+                                        experimentStep: null
+                                    });
                                 },
                                 (error: HttpErrorResponse) => {
+                                    this.setSidebarStatus({
+                                        status: Status.IDLE
+                                    });
                                     throwError(error);
                                 }
                             )
@@ -282,6 +294,12 @@ export class DotExperimentsConfigurationStore extends ComponentStore<DotExperime
             isLoading
         })
     );
+
+    readonly variantsStepVm$: Observable<{
+        status: StepStatus;
+    }> = this.select(this.variantsStatus$, (status) => ({
+        status
+    }));
 
     readonly goalsStepVm$: Observable<{ experimentId: string; goals: Goals; status: StepStatus }> =
         this.select(

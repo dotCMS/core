@@ -228,6 +228,14 @@ jobs:
         with:
           cache_metadata: ${{ needs.build-core-job.outputs.cache_metadata }}
         if: success()
+      - id: docker-login
+        name: Login to GHCR
+        uses: docker/login-action@v2
+        with:
+          registry: ghcr.io
+          username: ${{ env.GITHUB_USER }}
+          password: ${{ secrets.GHCR_TOKEN }}
+        if: success()
       - id: run-integration-tests
         name: Run Integration Tests
         uses: ./.github/actions/run-integration-tests
@@ -341,7 +349,7 @@ jobs:
         uses: ./.github/actions/build-docker-image
         with:
           build_id: ${{ env.BUILD_ID }}
-          image_name: ghcr.io/dotcms/dotcms:cicd-${{ env.BUILD_HASH }}
+          image_name: ghcr.io/dotcms/core:cicd-${{ env.BUILD_HASH }}
           push: true
       - id: github-init-test-results
         name: Github init tests results
@@ -454,7 +462,7 @@ jobs:
       - id: read-cicd-local-env
         name: Read CICD local library
         run: source ${GITHUB_WORKSPACE}/cicd/local-env.sh
-      - id: github-init-test-results
+      - id: github-close-test-results
         name: Github close tests results
         uses: ./.github/actions/publish-test-results
         with:
@@ -473,8 +481,8 @@ jobs:
           pull_request: ${{ github.event.number }}
           github_user: ${{ env.GITHUB_USER }}
           cicd_github_token: ${{ secrets.CICD_GITHUB_TOKEN }}
-          tests_report_url: ${{ steps.github-init-test-results.outputs.tests_report_url }}
-        if: (success() || failure()) && steps.github-init-test-results.outputs.tests_report_url != ''
+          tests_report_url: ${{ steps.github-close-test-results.outputs.tests_report_url }}
+        if: (success() || failure()) && steps.github-close-test-results.outputs.tests_report_url != ''
 #      - id: complete
 #        name: Post submit complete
 #        if: ${{ env.TESTMO_ENABLED }} == 'true'
