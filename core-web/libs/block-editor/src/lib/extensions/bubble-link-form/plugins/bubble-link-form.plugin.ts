@@ -1,3 +1,11 @@
+import {
+    BubbleLinkFormComponent,
+    NodeProps,
+    LINK_FORM_PLUGIN_KEY,
+    isValidURL
+} from '@lib/extensions';
+import { ImageNode } from '@lib/nodes';
+import { getPosAtDocCoords } from '@lib/shared/utils';
 import isEqual from 'lodash.isequal';
 import { EditorState, Plugin, PluginKey, Transaction } from 'prosemirror-state';
 import { EditorView } from 'prosemirror-view';
@@ -10,11 +18,6 @@ import { takeUntil } from 'rxjs/operators';
 
 import { Editor, posToDOMRect } from '@tiptap/core';
 
-import { ImageNode } from '../../../nodes';
-import { getPosAtDocCoords } from '../../../shared';
-import { isValidURL } from '../../bubble-menu/utils';
-import { BubbleLinkFormComponent, NodeProps } from '../bubble-link-form.component';
-import { LINK_FORM_PLUGIN_KEY } from '../bubble-link-form.extension';
 import { openFormLinkOnclik } from '../utils';
 
 interface PluginState {

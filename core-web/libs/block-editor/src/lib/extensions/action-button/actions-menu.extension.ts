@@ -1,3 +1,16 @@
+import { NodeTypes, ActionButtonComponent } from '@lib/extensions';
+import { ItemsType, SuggestionsCommandProps, SuggestionsComponent } from '@lib/shared/components';
+import {
+    FloatingActionsProps,
+    FLOATING_ACTIONS_MENU_KEYBOARD,
+    FloatingActionsKeydownProps,
+    FloatingActionsPlugin
+} from '@lib/shared/plugins';
+import {
+    findParentNode,
+    SuggestionPopperModifiers,
+    CONTENT_SUGGESTION_ID
+} from '@lib/shared/utils';
 import { PluginKey } from 'prosemirror-state';
 import { Subject } from 'rxjs';
 import tippy, { GetReferenceClientRect } from 'tippy.js';
@@ -10,22 +23,6 @@ import { Editor, Extension, Range } from '@tiptap/core';
 import { FloatingMenuPluginProps } from '@tiptap/extension-floating-menu';
 import { Level } from '@tiptap/extension-heading';
 import Suggestion, { SuggestionOptions, SuggestionProps } from '@tiptap/suggestion';
-
-import { ActionButtonComponent } from './action-button.component';
-
-import {
-    SuggestionPopperModifiers,
-    SuggestionsCommandProps,
-    SuggestionsComponent,
-    FloatingActionsProps,
-    FLOATING_ACTIONS_MENU_KEYBOARD,
-    CONTENT_SUGGESTION_ID,
-    ItemsType,
-    FloatingActionsKeydownProps,
-    FloatingActionsPlugin,
-    findParentNode
-} from '../../shared';
-import { NodeTypes } from '../bubble-menu/models';
 
 declare module '@tiptap/core' {
     interface Commands<ReturnType> {

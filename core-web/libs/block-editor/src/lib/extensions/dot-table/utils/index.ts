@@ -1,8 +1,7 @@
+import { DotMenuItem } from '@lib/shared/components';
 import { Instance } from 'tippy.js';
 
 import { Editor } from '@tiptap/core';
-
-import { DotMenuItem } from '../../../shared';
 
 export const getCellsOptions = (editor: Editor, tippy: Instance) => {
     const menu: DotMenuItem[] = [

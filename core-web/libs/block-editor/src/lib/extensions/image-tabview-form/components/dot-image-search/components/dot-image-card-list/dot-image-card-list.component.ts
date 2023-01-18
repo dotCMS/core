@@ -1,8 +1,8 @@
+import { sanitizeUrl, squarePlus } from '@lib/shared/utils';
+
 import { ChangeDetectionStrategy, Component, EventEmitter, Input, Output } from '@angular/core';
 
 import { DotCMSContentlet } from '@dotcms/dotcms-models';
-
-import { sanitizeUrl, squarePlus } from '../../../../../../shared';
 
 @Component({
     selector: 'dot-image-card-list',

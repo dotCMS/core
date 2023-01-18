@@ -1,3 +1,10 @@
+import {
+    SearchService,
+    Languages,
+    DotLanguageService,
+    queryEsParams,
+    ESOrderDirection
+} from '@lib/shared/services';
 import { ComponentStore } from '@ngrx/component-store';
 
 import { Injectable } from '@angular/core';
@@ -6,14 +13,6 @@ import { Observable } from 'rxjs/internal/Observable';
 import { map, mergeMap, tap, withLatestFrom } from 'rxjs/operators';
 
 import { DotCMSContentlet } from '@dotcms/dotcms-models';
-
-import {
-    SearchService,
-    Languages,
-    DotLanguageService,
-    queryEsParams,
-    ESOrderDirection
-} from '../../../../../shared';
 
 const DEFAULT_LANG_ID = 1;
 

@@ -1,3 +1,5 @@
+import { EditorDirective } from '@lib/shared/directives';
+
 import { Component, Input } from '@angular/core';
 import { ComponentFixture, fakeAsync, TestBed, tick } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
@@ -6,8 +8,6 @@ import { Editor } from '@tiptap/core';
 import StarterKit from '@tiptap/starter-kit';
 
 import { FloatingMenuDirective } from './floating-menu.directive';
-
-import { EditorDirective } from '../editor/editor.directive';
 
 @Component({
     template: `

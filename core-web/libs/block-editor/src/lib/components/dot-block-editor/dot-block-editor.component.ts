@@ -1,3 +1,20 @@
+import {
+    ActionsMenu,
+    BubbleFormExtension,
+    BubbleLinkFormExtension,
+    DotBubbleMenuExtension,
+    DEFAULT_LANG_ID,
+    DotConfigExtension,
+    DotTableCellExtension,
+    DotTableHeaderExtension,
+    DotTableExtension,
+    DragHandler,
+    DotFloatingButton,
+    BubbleImageTabviewFormExtension,
+    ImageUpload
+} from '@lib/extensions';
+import { ContentletBlock, ImageNode } from '@lib/nodes';
+import { formatHTML, SetDocAttrStep } from '@lib/shared/utils';
 import { Subject } from 'rxjs';
 
 import { Component, Injector, Input, OnDestroy, OnInit, ViewContainerRef } from '@angular/core';
@@ -14,23 +31,6 @@ import { TableRow } from '@tiptap/extension-table-row';
 import { TextAlign } from '@tiptap/extension-text-align';
 import { Underline } from '@tiptap/extension-underline';
 import StarterKit, { StarterKitOptions } from '@tiptap/starter-kit';
-
-import { ActionsMenu } from '../../extensions/action-button/actions-menu.extension';
-import { BubbleFormExtension } from '../../extensions/bubble-form/bubble-form.extension';
-import { BubbleLinkFormExtension } from '../../extensions/bubble-link-form/bubble-link-form.extension';
-import { DotBubbleMenuExtension } from '../../extensions/bubble-menu/dot-bubble-menu.extension';
-import { DEFAULT_LANG_ID } from '../../extensions/bubble-menu/models';
-import { DotConfigExtension } from '../../extensions/dot-config/dot-config.extension';
-import { DotTableCellExtension } from '../../extensions/dot-table/dot-table-cell.extension';
-import { DotTableHeaderExtension } from '../../extensions/dot-table/dot-table-header.extension';
-import { DotTableExtension } from '../../extensions/dot-table/dot-table.extension';
-import { DragHandler } from '../../extensions/drag-handler/drag-handler.extension';
-import { DotFloatingButton } from '../../extensions/floating-button/floating-button.extension';
-import { BubbleImageTabviewFormExtension } from '../../extensions/image-tabview-form/image-tabview-form.extension';
-import { ImageUpload } from '../../extensions/image-uploader/image-uploader.extension';
-import { ContentletBlock } from '../../nodes/contentlet-block/contentlet-block.node';
-import { ImageNode } from '../../nodes/image-node/image.node';
-import { formatHTML, SetDocAttrStep } from '../../shared/utils/prosemirror.utils';
 
 function toTitleCase(str) {
     return str.replace(/\p{L}+('\p{L}+)?/gu, function (txt) {

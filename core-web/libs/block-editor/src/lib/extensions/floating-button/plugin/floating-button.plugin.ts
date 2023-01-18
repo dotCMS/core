@@ -1,3 +1,10 @@
+import {
+    DotImageService,
+    FloatingButtonComponent,
+    getNodeCoords,
+    FileStatus
+} from '@lib/extensions';
+import { ImageNode } from '@lib/nodes';
 import { EditorState, Plugin, PluginKey } from 'prosemirror-state';
 import { EditorView } from 'prosemirror-view';
 import { Subject } from 'rxjs';
@@ -10,14 +17,6 @@ import { take, takeUntil, tap } from 'rxjs/operators';
 import { Editor } from '@tiptap/core';
 
 import { DotCMSContentlet } from '@dotcms/dotcms-models';
-
-import { ImageNode } from '../../../nodes';
-import { getNodeCoords } from '../../bubble-menu/utils';
-import {
-    DotImageService,
-    FileStatus
-} from '../../image-uploader/services/dot-image/dot-image.service';
-import { FloatingButtonComponent } from '../floating-button.component';
 
 export const setCoords = ({ viewCoords, nodeCoords }): DOMRect => {
     const offset = 65;

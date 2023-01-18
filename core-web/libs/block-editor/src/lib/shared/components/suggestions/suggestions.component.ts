@@ -1,3 +1,8 @@
+import { DEFAULT_LANG_ID } from '@lib/extensions';
+import { SuggestionListComponent } from '@lib/shared/components';
+import { DotLanguageService, Languages, SuggestionsService } from '@lib/shared/services';
+import { suggestionOptions } from '@lib/shared/utils';
+
 import {
     ChangeDetectorRef,
     Component,
@@ -16,10 +21,6 @@ import { map, take } from 'rxjs/operators';
 
 import { DotCMSContentlet, DotCMSContentType } from '@dotcms/dotcms-models';
 
-import { DEFAULT_LANG_ID } from '../../../extensions';
-import { DotLanguageService, Languages, SuggestionsService } from '../../services';
-import { suggestionOptions } from '../../utils/suggestion.utils';
-import { SuggestionListComponent } from '../suggestion-list/suggestion-list.component';
 export interface SuggestionsCommandProps {
     payload?: DotCMSContentlet;
     type: { name: string; level?: number };

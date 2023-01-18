@@ -1,16 +1,11 @@
+import { IMAGE_CONTENTLETS_MOCK } from '@lib/shared/mocks';
+import { SearchService, ESOrderDirection, DotLanguageService } from '@lib/shared/services';
 import { of } from 'rxjs';
 
 import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 
 import { DotImageSearchStore } from './dot-image-search.store';
-
-import {
-    DotLanguageService,
-    ESOrderDirection,
-    IMAGE_CONTENTLETS_MOCK,
-    SearchService
-} from '../../../../../shared';
 
 const INITIAL_STATE = { contentlets: [], loading: true, preventScroll: false };
 const LanguageMock = {

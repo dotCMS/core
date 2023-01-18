@@ -1,21 +1,4 @@
-import { CommonModule } from '@angular/common';
-import { NgModule } from '@angular/core';
-import { FormsModule, ReactiveFormsModule } from '@angular/forms';
-
-// DotCMS JS
-import { LoggerService, StringUtils } from '@dotcms/dotcms-js';
-
-// Directives
-
-// Nodes
-
-// Extension Components
-
-// Shared
-
-//Editor
-import { DotBlockEditorComponent } from './components/dot-block-editor/dot-block-editor.component';
-import { DotEditorCountBarComponent } from './components/dot-editor-count-bar/dot-editor-count-bar.component';
+import { DotBlockEditorComponent, DotEditorCountBarComponent } from '@lib/components';
 import {
     ActionButtonComponent,
     BubbleLinkFormComponent,
@@ -25,11 +8,20 @@ import {
     DragHandlerComponent,
     FormActionsComponent,
     LoaderComponent,
-    SuggestionPageComponent
-} from './extensions';
-import { BubbleFormComponent } from './extensions/bubble-form/bubble-form.component';
-import { FloatingButtonComponent } from './extensions/floating-button/floating-button.component';
-import { ImageTabviewFormModule } from './extensions/image-tabview-form/image-tabview-form.module';
+    SuggestionPageComponent,
+    BubbleFormComponent,
+    FloatingButtonComponent,
+    ImageTabviewFormModule
+} from '@lib/extensions';
+
+import { CommonModule } from '@angular/common';
+import { NgModule } from '@angular/core';
+import { FormsModule, ReactiveFormsModule } from '@angular/forms';
+
+// DotCMS JS
+import { LoggerService, StringUtils } from '@dotcms/dotcms-js';
+
+//Editor
 import { ContentletBlockComponent } from './nodes';
 import { EditorDirective } from './shared/directives';
 import { PrimengModule } from './shared/primeng.module';

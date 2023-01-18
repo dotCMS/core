@@ -1,3 +1,6 @@
+import { LoaderComponent, MessageType, DotImageService, PlaceholderPlugin } from '@lib/extensions';
+import { ImageNode } from '@lib/nodes';
+import { deselectCurrentNode } from '@lib/shared/utils';
 import { Plugin, PluginKey } from 'prosemirror-state';
 import { EditorView } from 'prosemirror-view';
 
@@ -8,13 +11,6 @@ import { take } from 'rxjs/operators';
 import { Extension } from '@tiptap/core';
 
 import { DotCMSContentlet } from '@dotcms/dotcms-models';
-
-import { LoaderComponent, MessageType } from './components/loader/loader.component';
-import { PlaceholderPlugin } from './plugins/placeholder.plugin';
-import { DotImageService } from './services/dot-image/dot-image.service';
-
-import { ImageNode } from '../../nodes';
-import { deselectCurrentNode } from '../../shared';
 
 function checkImageURL(url) {
     return url.match(/\.(jpeg|jpg|gif|png)$/) != null;

@@ -1,3 +1,7 @@
+import { isValidURL } from '@lib/extensions';
+import { SuggestionsCommandProps } from '@lib/shared/components';
+import { DotLanguageService, SuggestionsService, Languages } from '@lib/shared/services';
+
 import {
     Component,
     ElementRef,
@@ -15,10 +19,6 @@ import { debounceTime, take } from 'rxjs/operators';
 import { DotCMSContentlet } from '@dotcms/dotcms-models';
 
 import { SuggestionPageComponent } from './components/suggestion-page/suggestion-page.component';
-
-import { Languages, SuggestionsCommandProps } from '../../shared';
-import { DotLanguageService, SuggestionsService } from '../../shared/services';
-import { isValidURL } from '../bubble-menu/utils';
 
 export interface NodeProps {
     link: string;

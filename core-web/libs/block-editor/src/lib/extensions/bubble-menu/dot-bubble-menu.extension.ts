@@ -1,3 +1,4 @@
+import { SuggestionsComponent } from '@lib/shared/components';
 import { PluginKey } from 'prosemirror-state';
 import { Props } from 'tippy.js';
 
@@ -8,8 +9,6 @@ import BubbleMenu, { BubbleMenuOptions } from '@tiptap/extension-bubble-menu';
 import { BubbleMenuComponent } from './bubble-menu.component';
 import { DotBubbleMenuPlugin } from './plugins/dot-bubble-menu.plugin';
 import { shouldShowBubbleMenu } from './utils/index';
-
-import { SuggestionsComponent } from '../../shared';
 
 const defaultTippyOptions: Partial<Props> = {
     duration: 500,

@@ -1,16 +1,9 @@
+import { DotMenuItem } from '@lib/shared/components';
+
 import { SafeUrl, ɵDomSanitizerImpl } from '@angular/platform-browser';
 
 // Assets
-import {
-    codeIcon,
-    headerIcons,
-    lineIcon,
-    olIcon,
-    pIcon,
-    quoteIcon,
-    ulIcon
-} from '../components/suggestions/suggestion-icons';
-import { DotMenuItem } from '../components/suggestions/suggestions.component';
+import { codeIcon, headerIcons, lineIcon, olIcon, pIcon, quoteIcon, ulIcon } from './icons';
 
 const domSanitizer = new ɵDomSanitizerImpl(document);
 

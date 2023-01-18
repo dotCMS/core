@@ -1,3 +1,5 @@
+import { EditorDirective } from '@lib/shared/directives';
+
 import { Component, Input } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
@@ -6,8 +8,6 @@ import { Editor } from '@tiptap/core';
 import StarterKit from '@tiptap/starter-kit';
 
 import { BubbleMenuDirective } from './bubble-menu.directive';
-
-import { EditorDirective } from '../editor/editor.directive';
 
 @Component({
     template: `
