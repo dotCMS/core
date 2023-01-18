@@ -98,11 +98,7 @@
                 label="pre_loop"
                 formControlName="preLoop"
             ></dot-loop-editor>
-            <dot-container-code
-                *ngIf="vm.contentTypes.length > 0"
-                [contentTypes]="vm.contentTypes"
-                [fg]="form"
-            ></dot-container-code>
+            <dot-container-code [contentTypes]="vm.contentTypes" [fg]="form"></dot-container-code>
             <dot-loop-editor
                 [isEditorVisible]="vm.showPrePostLoopInput"
                 (buttonClick)="showLoopInput()"

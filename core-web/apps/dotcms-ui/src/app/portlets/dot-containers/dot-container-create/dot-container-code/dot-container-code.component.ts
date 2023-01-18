@@ -1,4 +1,4 @@
-import { Component, Input, OnInit } from '@angular/core';
+import { Component, Input, OnChanges, OnInit, SimpleChanges } from '@angular/core';
 import { FormArray, FormControl, FormGroup, Validators } from '@angular/forms';
 
 import { MenuItem } from 'primeng/api';
@@ -22,7 +22,7 @@ interface DotContainerContent extends DotCMSContentType {
     templateUrl: './dot-container-code.component.html',
     styleUrls: ['./dot-container-code.component.scss']
 })
-export class DotContentEditorComponent implements OnInit {
+export class DotContentEditorComponent implements OnInit, OnChanges {
     @Input() fg: FormGroup;
     @Input() contentTypes: DotCMSContentType[];
 
@@ -38,6 +38,15 @@ export class DotContentEditorComponent implements OnInit {
 
     ngOnInit() {
         this.contentTypes.forEach(({ id, name }: DotCMSContentType) => {
+            this.contentTypeNamesById[id] = name;
+        });
+
+        this.init();
+        this.updateActiveTabIndex(this.getcontainerStructures.length);
+    }
+
+    ngOnChanges(changes: SimpleChanges) {
+        changes.contentTypes.currentValue.map(({ id, name }: DotCMSContentType) => {
             this.contentTypeNamesById[id] = name;
         });
 
