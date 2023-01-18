@@ -10,6 +10,7 @@
         "../**/*.stories.jsx",
         "../**/*.stories.tsx",
         "../**/*.stories.mdx",
-        "*.js"
+        "*.js",
+        "*.ts"
     ]
 }

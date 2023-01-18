@@ -1,5 +1,5 @@
 {
-    "extends": "../../tsconfig.base.json",
+    "extends": "../../libs/block-editor/tsconfig.json",
     "files": [],
     "include": [],
     "references": [
