@@ -1,6 +1,6 @@
 import { CommonModule } from '@angular/common';
 import { HttpClientModule } from '@angular/common/http';
-import { NgModule, Injector } from '@angular/core';
+import { NgModule, Injector, DoBootstrap } from '@angular/core';
 import { createCustomElement } from '@angular/elements';
 import { FormsModule } from '@angular/forms';
 import { BrowserModule } from '@angular/platform-browser';
@@ -27,7 +27,7 @@ import { AppComponent } from './app.component';
     ],
     providers: []
 })
-export class AppModule {
+export class AppModule implements DoBootstrap {
     constructor(private injector: Injector) {}
 
     ngDoBootstrap() {

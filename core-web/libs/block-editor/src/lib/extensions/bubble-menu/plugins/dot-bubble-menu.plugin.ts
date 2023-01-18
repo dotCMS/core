@@ -9,25 +9,30 @@ import { filter, take } from 'rxjs/operators';
 import { posToDOMRect } from '@tiptap/core';
 import { BubbleMenuView } from '@tiptap/extension-bubble-menu';
 
+import { ImageNode } from '../../../nodes';
 import {
-    BubbleMenuComponentProps,
-    BubbleMenuItem,
-    BUBBLE_FORM_PLUGIN_KEY,
     changeToItems,
     deleteByNode,
     deleteByRange,
-    DotBubbleMenuPluginProps,
-    DotBubbleMenuViewProps,
     findParentNode,
-    getNodeCoords,
-    ImageNode,
-    LINK_FORM_PLUGIN_KEY,
-    setBubbleMenuCoords,
     SuggestionsComponent,
     tableChangeToItems
-} from '@dotcms/block-editor';
-
-import { getBubbleMenuItem, isListNode, popperModifiers } from '../utils';
+} from '../../../shared';
+import { BUBBLE_FORM_PLUGIN_KEY } from '../../bubble-form/bubble-form.extension';
+import { LINK_FORM_PLUGIN_KEY } from '../../bubble-link-form/bubble-link-form.extension';
+import {
+    BubbleMenuComponentProps,
+    BubbleMenuItem,
+    DotBubbleMenuPluginProps,
+    DotBubbleMenuViewProps
+} from '../models';
+import {
+    getBubbleMenuItem,
+    getNodeCoords,
+    isListNode,
+    popperModifiers,
+    setBubbleMenuCoords
+} from '../utils';
 
 export const DotBubbleMenuPlugin = (options: DotBubbleMenuPluginProps) => {
     const component = options.component.instance;

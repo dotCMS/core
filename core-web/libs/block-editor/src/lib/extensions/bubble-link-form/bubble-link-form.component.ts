@@ -16,12 +16,8 @@ import { DotCMSContentlet } from '@dotcms/dotcms-models';
 
 import { SuggestionPageComponent } from './components/suggestion-page/suggestion-page.component';
 
-import {
-    DotLanguageService,
-    Languages,
-    SuggestionsCommandProps,
-    SuggestionsService
-} from '../../shared';
+import { Languages, SuggestionsCommandProps } from '../../shared';
+import { DotLanguageService, SuggestionsService } from '../../shared/services';
 import { isValidURL } from '../bubble-menu/utils';
 
 export interface NodeProps {

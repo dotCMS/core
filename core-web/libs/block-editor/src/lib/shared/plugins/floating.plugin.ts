@@ -4,6 +4,8 @@ import tippy, { Instance, Props } from 'tippy.js';
 
 import { Editor, posToDOMRect, Range } from '@tiptap/core';
 
+import { SuggestionsCommandProps } from '../components/suggestions/suggestions.component';
+
 interface PluginState {
     open: boolean;
     range?: Range;

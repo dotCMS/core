@@ -1,4 +1,4 @@
-import { textNodeRange } from '@dotcms/block-editor';
+import { textNodeRange } from '../../../shared';
 
 export const openFormLinkOnclik = ({ editor, view, pos }) => {
     const selectionStart = view.state.doc?.resolve(pos);
