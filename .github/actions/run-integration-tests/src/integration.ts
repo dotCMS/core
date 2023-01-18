@@ -71,8 +71,7 @@ const DEPS_ENV: DatabaseEnvs = {
   postgres: {
     POSTGRES_USER: 'postgres',
     POSTGRES_PASSWORD: 'postgres',
-    POSTGRES_DB: 'dotcms' /*,
-    MAX_LOCKS_PER_TRANSACTION: '128'*/
+    POSTGRES_DB: 'dotcms'
   }
 }
 
@@ -166,7 +165,7 @@ export const runTests = async (cmds: Command[]): Promise<CommandResult> => {
 
     execCmdAsync(START_DEPENDENCIES_CMD)
 
-    await waitFor(60, `ES and ${dbType}`)
+    await waitFor(resolveWait(), `ES and ${dbType}`)
 
     // Executes ITs
     const cmd = cmds[idx]
@@ -198,6 +197,10 @@ export const runTests = async (cmds: Command[]): Promise<CommandResult> => {
   } finally {
     await stopDeps()
   }
+}
+
+const resolveWait = (): number => {
+  return dbType === 'mssql' ? 15 : 30
 }
 
 /**
