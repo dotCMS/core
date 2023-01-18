@@ -203,9 +203,9 @@
 						<% } %>
 						<div class="fieldWrapper">
 							<div class="fieldName">
-								<span class="required">
+								<label class="required">
 									<%= LanguageUtil.get(pageContext, "Title") %>
-								</span>
+								</label>
 							</div>
 							<div class="fieldValue"><input type="text" dojoType="dijit.form.TextBox" style="width:650px" name="title" id="titleField" value="<%= form.getTitle() %>" /></div>
 						</div>
@@ -252,9 +252,9 @@
 						<div id="multiCodeButtonDiv">
 							<div class="fieldWrapper">
 								<div class="fieldName">
-									<span class="required">
+									<label class="required">
 										<%= LanguageUtil.get(pageContext, "Code-Per-Content-Type") %>
-									</span>
+									</label>
 								</div>
 								<div class="fieldValue">
 									<div id="structureSelecttDiv" >
@@ -341,9 +341,9 @@
 						<div id="codeButtonDiv">
 							<div class="fieldWrapper">
 								<div class="fieldName">
-									<span class="required">
+									<label class="required">
 										<%= LanguageUtil.get(pageContext, "Code") %>
-									</span>
+									</label>
 								</div>
 								<div class="fieldValue">
 									<br/>

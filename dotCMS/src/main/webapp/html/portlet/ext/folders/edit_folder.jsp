@@ -181,11 +181,15 @@ dojo.require("dotcms.dojo.data.StructureReadStore");
 					<dd><input type="text" dojoType="dijit.form.TextBox"  onchange="beLazy();" style="width:250px" name="title"  id="friendlyNameField" value="<%= UtilMethods.isSet(folder.getTitle()) ? UtilMethods.escapeDoubleQuotes(folder.getTitle()) : "" %>" /></dd>
 				</dl>
 				<dl>
-					<dt class="required2"> <%= LanguageUtil.get(pageContext, "Name-URL") %></dt>
+					<dt>
+						<label for="" class="required2">
+							<%= LanguageUtil.get(pageContext, "Name-URL") %>
+						</label>
+					</dt>
 					<dd><input type="text" dojoType="dijit.form.TextBox"   style="width:250px" name="name"  id="titleField" value="<%= UtilMethods.isSet(folder.getName()) ? UtilMethods.escapeDoubleQuotes(folder.getName()) : "" %>" /></dd>
 				</dl>
 				<dl>
-					<dt><%= LanguageUtil.get(pageContext, "Sort-Order") %>:</dt>
+					<dt><%= LanguageUtil.get(pageContext, "Sort-Order") %></dt>
 					<dd><input type="text" dojoType="dijit.form.TextBox"   style="width:60px" name="sortOrder"  value="<%= UtilMethods.isSet(folder.getSortOrder()+"") ? UtilMethods.escapeDoubleQuotes(folder.getSortOrder()+"") : "" %>" /></dd>
 				</dl>
 				<dl>
@@ -200,7 +204,10 @@ dojo.require("dotcms.dojo.data.StructureReadStore");
 					</dd>
 				</dl>
 				<dl>
-					<dt class="required2"><%= LanguageUtil.get(pageContext, "Default-File-Structure-Type") %>:</dt>
+					<dt>
+						<label for="" class="required2">
+							<%= LanguageUtil.get(pageContext, "Default-File-Structure-Type") %>:</dt>
+						</label>
 					<dd>
 						<span dojoType="dotcms.dojo.data.StructureReadStore" jsId="fileAssetStructureStore" dojoId="fileAssetStructureStoreDojo" structureType="<%=Structure.STRUCTURE_TYPE_FILEASSET %>" ></span>
 						<select id="defaultFileType"

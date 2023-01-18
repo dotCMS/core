@@ -265,7 +265,11 @@
 				<input type="hidden" name="fileName" value="" />
 						<div class="form-horizontal content-search__import-content-form">
 							<dl>
-								<dt class="required"><%= LanguageUtil.get(pageContext, "Structure-to-Import") %></dt>
+								<dt>
+									<label for="" class="required">
+										<%= LanguageUtil.get(pageContext, "Structure-to-Import") %>
+									</label>
+								</dt>
 								<dd>
 									<select dojoType="dijit.form.FilteringSelect" name="structure" id="structuresSelect" onchange="structureChanged()" value="<%= UtilMethods.isSet(form.getStructure()) ? form.getStructure() : "" %>" >
 										<%
@@ -280,7 +284,11 @@
 							</dl>
 							<div id="importDetails">
 								<dl>
-									<dt class="required"><%= LanguageUtil.get(pageContext, "Language-of-the-Contents-to-Import") %></dt>
+									<dt>
+										<label for="" class="required">
+											<%= LanguageUtil.get(pageContext, "Language-of-the-Contents-to-Import") %>
+										</label>
+									</dt>
 									<dd>
 										<select dojoType="dijit.form.FilteringSelect" name="language" id="languageSelect" onchange="languageChanged()" value="<%= UtilMethods.isSet(form.getLanguage()) ? form.getLanguage() : "" %>" >
 										<%
@@ -322,7 +330,11 @@
 									</dd>
 								</dl>
 								<dl>
-									<dt class="required"><%= LanguageUtil.get(pageContext, "File-to-Import-CSV-File-Required") %></dt>
+									<dt>
+										<label for="" class="required">
+											<%= LanguageUtil.get(pageContext, "File-to-Import-CSV-File-Required") %>
+										</label>
+									</dt>
 									<dd>
 										<input type="file" name="file" id="file" />
 									</dd>

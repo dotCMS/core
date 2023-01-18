@@ -200,25 +200,25 @@
                                       </tr>
                                       <tr>
                                           <th>
-											<span class="required">
+											<label class="required">
 												<%= LanguageUtil.get(pageContext, "First-Name") %>
-											</span>
+											</label>
 										  </th>
                                           <td><input id="firstName" type="text" onkeyup="userInfoChanged()" required="true" invalidMessage="Required." dojoType="dijit.form.ValidationTextBox" /></td>
                                       </tr>
                                       <tr>
                                           <th>
-											<span class="required">
+											<label class="required">
 												<%= LanguageUtil.get(pageContext, "Last-Name") %>
-											</span>
+											</label>
 										  </th>
                                           <td><input id="lastName" type="text" onkeyup="userInfoChanged()" required="true" invalidMessage="Required." dojoType="dijit.form.ValidationTextBox" /></td>
                                       </tr>
                                       <tr>
                                            <th>
-											   <span class="required">
+											   <label class="required">
 													<%= LanguageUtil.get(pageContext, "Email-Address") %>
-												</span>
+												</label>
 											</th>
                                           <td><input id="emailAddress" type="text" onkeyup="userEmailChanged()" required="true" invalidMessage="Required." dojoType="dijit.form.ValidationTextBox" /></td>
                                       </tr>
@@ -228,17 +228,17 @@
                                       </tr>
                                       <tr>
                                           	<th>
-												<span class="required">
+												<label class="required">
 													<%= LanguageUtil.get(pageContext, "Password") %>
-												</span>
+												</label>
 											</th>
                                           <td><input id="password" type="password" onkeyup="userPasswordChanged()" required="true" invalidMessage="Required." dojoType="dijit.form.ValidationTextBox" autocomplete="new-password" /></td>
                                       </tr>
                                       <tr>
                                           	<th>
-												<span class="required">
+												<label class="required">
 													<%= LanguageUtil.get(pageContext, "Password-Again") %>
-												</span>
+												</label>
 											</th>
                                           <td><input id="passwordCheck" type="password" onkeyup="userPasswordChanged()" required="true" invalidMessage="Required." dojoType="dijit.form.ValidationTextBox" autocomplete="new-password" /></td>
                                       </tr>

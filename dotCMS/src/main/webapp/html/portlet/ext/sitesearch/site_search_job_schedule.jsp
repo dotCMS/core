@@ -106,9 +106,9 @@ final String siteSearch = APILocator.getIndiciesAPI().loadIndicies().getSiteSear
 
 		<dl class="showScheduler">
 			<dt>
-				<span class="required">
+				<label for="" class="required">
 					<strong><%= LanguageUtil.get(pageContext, "name") %></strong>
-				</span> 
+				</label> 
 			</dt>
 			<dd>
 				<input name="QUARTZ_JOB_NAME" id="QUARTZ_JOB_NAME" type="text" dojoType='dijit.form.ValidationTextBox' regExp="[\w -]+" required="true" style='width: 400px' value="<%=QUARTZ_JOB_NAME %>" size="200" />
@@ -118,9 +118,9 @@ final String siteSearch = APILocator.getIndiciesAPI().loadIndicies().getSiteSear
 
 		<dl>
 			<dt>
-				<span class="required">
+				<label class="required">
 					<strong><%= LanguageUtil.get(pageContext, "select-hosts-to-index") %></strong> <a href="javascript: ;" id="hostsHintHook">?</a> <span dojoType="dijit.Tooltip" connectId="hostsHintHook" id="hostsHint" class="fieldHint"><%=LanguageUtil.get(pageContext, "hosts-hint") %></span>
-				</span>
+				</label>
 			</dt>
 			<dd>
 				<div class="inline-form">
@@ -169,9 +169,9 @@ final String siteSearch = APILocator.getIndiciesAPI().loadIndicies().getSiteSear
 
 		<dl>
 			<dt>
-				<span class="required">
+				<label class="required">
 					<strong><%= LanguageUtil.get(pageContext, "Index-Name") %> </strong><a href="javascript: ;" id="aliasHintHook">?</a> <span dojoType="dijit.Tooltip" connectId="aliasHintHook" id="aliasHint" class="fieldHint"><%=LanguageUtil.get(pageContext, "search-alias-hint") %></span>
-				</span>
+				</label>
 			</dt>
 			<dd>
 				<select id="indexAlias" name="indexAlias" dojoType="dijit.form.ComboBox" required="true" style="width:400px">
@@ -201,11 +201,11 @@ final String siteSearch = APILocator.getIndiciesAPI().loadIndicies().getSiteSear
 
 		<dl>
             <dt>
-              <span class="required">
+              <label class="required">
 				  <strong>
 					 <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Language")) %>
 				  </strong>
-			  </span>
+			  </label>
             </dt>
             <dd>
                  <% for(Language lang : langs) { %>
@@ -245,9 +245,9 @@ final String siteSearch = APILocator.getIndiciesAPI().loadIndicies().getSiteSear
 
 		<dl class="showScheduler">
 			<dt>
-				<span class="required">
+				<label class="required">
 					<strong><%= LanguageUtil.get(pageContext, "cron-expression") %> </strong>
-				</span>
+				</label>
 			</dt>
 			<dd>
 				<input name="CRON_EXPRESSION" id="cronExpression" type="text" dojoType='dijit.form.ValidationTextBox' required="true" style='width: 400px'" value="<%=CRON_EXPRESSION %>" size="10" />
@@ -271,7 +271,7 @@ final String siteSearch = APILocator.getIndiciesAPI().loadIndicies().getSiteSear
 			<button dojoType="dijit.form.Button"
 				id="saveAndExecuteButton" onClick="scheduleJob();"
 				iconClass="republishIcon"><%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Execute")) %>
-			</button>.
+			</button>
 		</span>
 		<span class="showScheduler" style='<%=(runNow) ? "display: none; " : "" %>;'>
 			<button dojoType="dijit.form.Button"

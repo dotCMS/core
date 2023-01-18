@@ -21,9 +21,9 @@
 			<dt></dt>
 			<dd><ul id="addRoleErrorMessagesList"></ul></dd>
 			<dt>
-				<span class="required">
+				<label class="required">
 					<%= LanguageUtil.get(pageContext, "role") %>
-				</span>
+				</label>
 			</dt>
 			<dd><input id="roleName" type="text" required="true" invalidMessage="Required." dojoType="dijit.form.ValidationTextBox" /></dd>
 			<dt><%= LanguageUtil.get(pageContext, "Key") %></dt>

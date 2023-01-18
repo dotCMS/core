@@ -129,9 +129,9 @@
 	<div class="form-horizontal">
 		<dl>
 			<dt>
-				<span class="required">
+				<label class="required">
 					<%= LanguageUtil.get(pageContext, "publisher_Environment_Name") %>
-				</span>
+				</label>
 			</dt>
 			<dd>
 				<input type="text" dojoType="dijit.form.ValidationTextBox"

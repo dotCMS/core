@@ -125,8 +125,10 @@
 				<dd style="clear: none;">
 					<html:text property="categoryVelocityVarName" readonly="true" style="width:250px;border:0;" />	
 				</dd>
-				<dt class="required">
-					<%= LanguageUtil.get(pageContext, "category-name") %>
+				<dt>
+					<label for="" class="required">
+						<%= LanguageUtil.get(pageContext, "category-name") %>
+					</label>
 				</dt>
 				<dd>
 					<input type="text" dojoType="dijit.form.TextBox" name="categoryName" maxlength="50" size="30" onblur="fillVelocityVarNameIfNew()" value="<%= UtilMethods.isSet(categoryForm.getCategoryName()) ?categoryForm.getCategoryName() : "" %>" />
