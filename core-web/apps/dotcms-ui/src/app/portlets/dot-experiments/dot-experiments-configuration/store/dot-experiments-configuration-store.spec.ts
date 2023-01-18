@@ -12,6 +12,7 @@ import {
     DotExperiment,
     ExperimentSteps,
     Goals,
+    GoalsLevels,
     LoadingState,
     Status,
     Variant
@@ -281,6 +282,33 @@ describe('DotExperimentsConfigurationStore', () => {
 
             store.state$.subscribe(({ experiment }) => {
                 expect(experiment.goals).toEqual(expectedGoals);
+                done();
+            });
+        });
+
+        it('should delete a Goal from an experiment', (done) => {
+            const goalLevelToDelete: GoalsLevels = 'primary';
+            const experimentWithGoals: DotExperiment = {
+                ...ExperimentMocks[0],
+                goals: { ...GoalsMock }
+            };
+
+            dotExperimentsService.getById.and
+                .callThrough()
+                .and.returnValue(of({ ...experimentWithGoals }));
+
+            dotExperimentsService.deleteGoal.and.callThrough().and.returnValue(
+                of({
+                    ...ExperimentMocks[0]
+                })
+            );
+
+            store.loadExperiment(EXPERIMENT_ID);
+
+            store.deleteGoal({ experimentId: EXPERIMENT_ID, goalLevel: goalLevelToDelete });
+
+            store.state$.subscribe(({ experiment }) => {
+                expect(experiment.goals).toEqual(null);
                 done();
             });
         });

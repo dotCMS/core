@@ -13,6 +13,14 @@ h3 {
     font-weight: 400;
 }
 
+i {
+    transition-duration: $basic-speed;
+
+    &.delete:hover {
+        color: $warn;
+    }
+}
+
 :host ::ng-deep {
     dot-icon {
         color: $gray-light;
