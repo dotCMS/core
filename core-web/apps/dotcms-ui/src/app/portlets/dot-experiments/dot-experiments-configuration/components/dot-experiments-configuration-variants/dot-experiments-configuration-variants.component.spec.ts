@@ -23,6 +23,7 @@ import { MockDotMessageService } from '@dotcms/utils-testing';
 import { DotExperimentsConfigurationVariantsAddComponent } from '@portlets/dot-experiments/dot-experiments-configuration/components/dot-experiments-configuration-variants-add/dot-experiments-configuration-variants-add.component';
 import { DotExperimentsConfigurationStore } from '@portlets/dot-experiments/dot-experiments-configuration/store/dot-experiments-configuration-store';
 import { DotExperimentsService } from '@portlets/dot-experiments/shared/services/dot-experiments.service';
+
 import { DotExperimentsConfigurationVariantsComponent } from './dot-experiments-configuration-variants.component';
 
 const messageServiceMock = new MockDotMessageService({
@@ -32,6 +33,7 @@ const messageServiceMock = new MockDotMessageService({
     'experiments.configure.variants.delete': 'delete',
     'experiments.configure.variants.add': 'Add new variant'
 });
+
 describe('DotExperimentsConfigurationVariantsComponent', () => {
     let spectator: Spectator<DotExperimentsConfigurationVariantsComponent>;
 

@@ -5,6 +5,7 @@ import { Component, Input } from '@angular/core';
  * https://material.io/tools/icons
  * @export
  * @class DotIconComponent
+ * @deprecated
  */
 @Component({
     selector: 'dot-icon',
