@@ -164,7 +164,7 @@ public abstract class ImageFilter implements ImageFilterIf {
 	 * @throws IOException
 	 * @throws DotRuntimeException
 	 */
-	public File getResultsFile(File file, Map<String, String[]> parameters) throws DotRuntimeException{
+	public File getResultsFile(File file, Map<String, String[]> parameters) {
 		return  getResultsFile(file, parameters, FILE_EXT);
 	}
 
@@ -178,7 +178,7 @@ public abstract class ImageFilter implements ImageFilterIf {
 	 * @throws IOException
 	 * @throws DotRuntimeException
 	 */
-	protected File getResultsFile(File file, Map<String, String[]> parameters, String fileExt) throws DotRuntimeException{
+	protected File getResultsFile(File file, Map<String, String[]> parameters, String fileExt) {
 		String fileFolderPath = file.getParent();
 
 		String inode =null;

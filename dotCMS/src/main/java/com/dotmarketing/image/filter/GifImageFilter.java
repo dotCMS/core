@@ -78,7 +78,7 @@ public class GifImageFilter extends ImageFilter {
 	}
 	
     @Override
-    public File getResultsFile(final File file, final Map<String, String[]> parameters) throws DotRuntimeException {
+    public File getResultsFile(final File file, final Map<String, String[]> parameters) {
         return getResultsFile(file, parameters, "gif");
     }
 
