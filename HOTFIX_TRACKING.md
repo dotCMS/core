@@ -82,3 +82,5 @@ This maintenance release includes the following code fixes:
 68. https://github.com/dotCMS/core/issues/23474 : Switch Site endpoint is nor working if user doesn't have access to Sites Portlet #23474
 
 **Release-22.03.5**
+
+69. https://github.com/dotCMS/core/issues/23440 : Categories being removed from content items when updating content via CSV file upload #23440
