@@ -4,8 +4,6 @@ import tippy, { Instance, Props } from 'tippy.js';
 
 import { Editor, posToDOMRect, Range } from '@tiptap/core';
 
-import { SuggestionsCommandProps } from '@dotcms/block-editor';
-
 interface PluginState {
     open: boolean;
     range?: Range;

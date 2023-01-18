@@ -10,27 +10,27 @@ import { OrderListModule } from 'primeng/orderlist';
 
 import { debounceTime, delay, tap } from 'rxjs/operators';
 
+import { DotBlockEditorComponent } from './dot-block-editor.component';
+
+import { BlockEditorModule } from '../../block-editor.module';
 import {
     ActionButtonComponent,
-    BlockEditorModule,
     BubbleLinkFormComponent,
-    ContentletBlockComponent,
-    CONTENTLETS_MOCK,
-    DotBlockEditorComponent,
     DotImageService,
-    DotLanguageService,
     DragHandlerComponent,
     FileStatus,
+    ImageTabviewFormComponent,
+    LoaderComponent
+} from '../../extensions';
+import { ContentletBlockComponent } from '../../nodes';
+import {
+    CONTENTLETS_MOCK,
+    DotLanguageService,
     IMAGE_CONTENTLETS_MOCK,
-    LoaderComponent,
+    SearchService,
     SuggestionsComponent,
     SuggestionsService
-} from '@dotcms/block-editor';
-
-import { ImageTabviewFormComponent } from '../../extensions/image-tabview-form/image-tabview-form.component';
-import { SearchService } from '../../shared/services/search/search.service';
-
-// MOCKS
+} from '../../shared';
 
 export default {
     title: 'Block Editor'

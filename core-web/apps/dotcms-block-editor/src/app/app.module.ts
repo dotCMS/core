@@ -1,17 +1,17 @@
+import { CommonModule } from '@angular/common';
+import { HttpClientModule } from '@angular/common/http';
 import { NgModule, Injector } from '@angular/core';
+import { createCustomElement } from '@angular/elements';
+import { FormsModule } from '@angular/forms';
 import { BrowserModule } from '@angular/platform-browser';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 
-import { FormsModule } from '@angular/forms';
-import { CommonModule } from '@angular/common';
-
-import { OrderListModule } from 'primeng/orderlist';
 import { ListboxModule } from 'primeng/listbox';
+import { OrderListModule } from 'primeng/orderlist';
 
-import { createCustomElement } from '@angular/elements';
-import { AppComponent } from './app.component';
 import { DotBlockEditorComponent, BlockEditorModule } from '@dotcms/block-editor';
-import { HttpClientModule } from '@angular/common/http';
+
+import { AppComponent } from './app.component';
 
 @NgModule({
     declarations: [AppComponent],

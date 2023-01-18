@@ -1,4 +1,3 @@
-// Directive
 export * from './bubble-menu/bubble-menu.directive';
 export * from './draggable/draggable.directive';
 export * from './editor/editor.directive';
