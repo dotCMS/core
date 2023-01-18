@@ -362,11 +362,11 @@
 
                             <div class="fieldName">
                                 <% if(f.isRequired()) {%>
-                                    <span class="required2">
+                                    <label class="required2">
                             		<%} else {%>
-                            			<span>
+                            			<label>
                             		<% } %>
-                                <%=f.getFieldName()%></span>
+                                <%=f.getFieldName()%></label>
                             </div>
 								<div class="fieldValue" style="overflow-x: scroll">
                                 <%
