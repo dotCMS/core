@@ -1,10 +1,12 @@
 <dot-menu
-    *ngIf="actions.length > 1 && filteredActions.length"
+    *ngIf="(actions?.length > 1 && filteredActions?.length) || lazy"
     [icon]="icon"
+    [lazy]="lazy"
     [model]="filteredActions"
+    (menuVisible)="handleMenuStatus($event)"
 ></dot-menu>
 <dot-icon-button-tooltip
-    *ngIf="actions.length === 1 && filteredActions.length === 1"
+    *ngIf="actions?.length === 1 && filteredActions?.length === 1"
     [icon]="filteredActions[0].icon"
     [tooltipText]="filteredActions[0].label"
     (click)="filteredActions[0].command($event)"

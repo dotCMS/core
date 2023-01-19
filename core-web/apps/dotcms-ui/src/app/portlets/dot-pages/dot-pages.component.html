@@ -58,53 +58,80 @@
     </p-panel>
 
     <p-table
-        [columns]="cols"
         [value]="vm.pages.items"
         [scrollable]="true"
-        [rows]="40"
         [virtualScroll]="true"
         [virtualScrollItemSize]="26"
         [lazy]="true"
-        [customSort]="true"
-        (sortFunction)="customSort($event)"
         (onLazyLoad)="loadPagesLazy($event)"
-        scrollHeight="flex"
+        (onRowSelect)="onRowSelect($event)"
+        selectionMode="single"
+        scrollHeight="600px"
     >
+        <ng-template pTemplate="caption">
+            <div class="flex justify-content-between dot-pages-listing-header">
+                <div class="dot-pages-listing-header__inputs">
+                    <input
+                        [placeholder]="'Type-To-Search' | dm"
+                        (input)="filterData($event.target.value)"
+                        type="text"
+                        pInputText
+                    />
+                    <p-dropdown
+                        [options]="vm.languageOptions"
+                        (onChange)="setPagesLanguage($event.value)"
+                    ></p-dropdown>
+                    <p-checkbox
+                        [binary]="true"
+                        [label]="'Show-Archived' | dm"
+                        (onChange)="setPagesArchived($event.checked)"
+                    ></p-checkbox>
+                </div>
+                <button
+                    class="p-button-primary"
+                    [label]="'create.page' | dm"
+                    routerLink="/c/content/new/htmlpageasset"
+                    data-testid="createPageButton"
+                    pButton
+                ></button>
+            </div>
+        </ng-template>
         <ng-template pTemplate="header" let-columns>
             <tr>
-                <th pSortableColumn="title" style="width: 20%">
+                <th pSortableColumn="title" style="width: 25%">
                     {{ 'title' | dm }}<p-sortIcon field="title"></p-sortIcon>
                 </th>
-                <th style="width: 20%">
-                    {{ 'url' | dm }}
+                <th pSortableColumn="urlMap" style="width: 20%">
+                    {{ 'url' | dm }}<p-sortIcon field="urlMap"></p-sortIcon>
                 </th>
-                <th style="width: 10%">
+                <th style="width: 8%">
                     {{ 'status' | dm }}
                 </th>
-                <th style="width: 10%">
-                    {{ 'type' | dm }}
+                <th pSortableColumn="contentType" style="width: 12%">
+                    {{ 'type' | dm }}<p-sortIcon field="contentType"></p-sortIcon>
                 </th>
-                <th style="width: 10%">
-                    {{ 'language' | dm }}
+                <th pSortableColumn="languageId" style="width: 10%">
+                    {{ 'language' | dm }}<p-sortIcon field="languageId"></p-sortIcon>
                 </th>
                 <th style="width: 10%">
                     {{ 'Last-Editor' | dm }}
                 </th>
-                <th style="width: 10%">
-                    {{ 'Last-Edit-Date' | dm }}
+                <th pSortableColumn="modDate" style="width: 10%">
+                    {{ 'Last-Edit-Date' | dm }}<p-sortIcon field="modDate"></p-sortIcon>
                 </th>
-                <th style="width: 10%"></th>
+                <th style="width: 5%"></th>
             </tr>
         </ng-template>
-        <ng-template pTemplate="body" let-rowData let-columns="columns">
-            <tr style="height: 26px">
+        <ng-template pTemplate="body" let-rowData let-columns="columns" let-rowIndex="rowIndex">
+            <tr [pSelectableRow]="rowData" style="height: 26px">
                 <td>
+                    {{ rowIndex + '*' }}
                     {{ rowData['title'] }}
                 </td>
                 <td>
-                    {{ rowData['url'] }}
+                    {{ rowData['urlMap'] || rowData['url'] }}
                 </td>
-                <td>
+                <td style="text-align: center">
                     <dot-state-icon
                         [labels]="dotStateLabels"
                         [state]="rowData"
@@ -115,9 +142,15 @@
                     {{ rowData['contentType'] }}
                 </td>
                 <td>
-                    <dot-badge style="white-space: nowrap" bordered="true">{{
-                        rowData['languageId']
-                    }}</dot-badge>
+                    <img
+                        src="{{
+                            '/html/images/languages/' +
+                                vm.languageLabels[rowData['languageId']] +
+                                '.gif'
+                        }}"
+                        border="0"
+                    />
+                    {{ vm.languageLabels[rowData['languageId']] }}
                 </td>
                 <td>
                     {{ rowData['modUserName'] }}
@@ -126,19 +159,30 @@
                     {{ rowData['modDate'] }}
                 </td>
                 <td>
-                    <button>*</button>
+                    <dot-action-menu-button
+                        class="listing-datatable__action-button"
+                        [actions]="
+                            actions && actions[rowData?.identifier]
+                                ? actions[rowData?.identifier]
+                                : null
+                        "
+                        [lazy]="true"
+                        [item]="rowData"
+                        (actionMenuStatus)="hizoClick($event)"
+                    ></dot-action-menu-button>
                 </td>
             </tr>
         </ng-template>
-        <ng-template pTemplate="loadingbody" let-columns="columns">
+        <ng-template pTemplate="loadingbody">
             <tr style="height: 26px">
-                <td *ngFor="let col of columns; let even = even">
-                    <p-skeleton
-                        [ngStyle]="{
-                            width: even ? (col.field === 'year' ? '30%' : '40%') : '60%'
-                        }"
-                    ></p-skeleton>
-                </td>
+                <td><p-skeleton [ngStyle]="{ width: '25%' }"></p-skeleton></td>
+                <td><p-skeleton [ngStyle]="{ width: '20%' }"></p-skeleton></td>
+                <td><p-skeleton [ngStyle]="{ width: '6%' }"></p-skeleton></td>
+                <td><p-skeleton [ngStyle]="{ width: '10%' }"></p-skeleton></td>
+                <td><p-skeleton [ngStyle]="{ width: '10%' }"></p-skeleton></td>
+                <td><p-skeleton [ngStyle]="{ width: '10%' }"></p-skeleton></td>
+                <td><p-skeleton [ngStyle]="{ width: '15%' }"></p-skeleton></td>
+                <td><p-skeleton [ngStyle]="{ width: '4%' }"></p-skeleton></td>
             </tr>
         </ng-template>
     </p-table>

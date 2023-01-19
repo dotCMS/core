@@ -95,7 +95,7 @@ export class DotESContentService {
             filterValue = `'${params.filter.replace(/'/g, "\\'")}'`;
         }
 
-        this.setExtraParams('+title', `${filterValue || params.filter || ''}*`);
+        if (filterValue) this.setExtraParams('+title', `${filterValue || params.filter || ''}*`);
     }
 
     private getObjectFromMap(map: Map<string, string>): { [key: string]: string | number } {

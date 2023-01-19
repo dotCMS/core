@@ -1,14 +1,17 @@
 /* eslint-disable no-console */
-import { Component, OnInit } from '@angular/core';
 
-import { SortEvent } from 'primeng/api';
+import { Component } from '@angular/core';
+
+import { SelectItem } from 'primeng/api';
 import { LazyLoadEvent } from 'primeng/api/lazyloadevent';
 
 import { Observable } from 'rxjs/internal/Observable';
 
 import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
 import { DataTableColumn } from '@dotcms/app/shared/models/data-table';
+import { DotActionMenuItem } from '@dotcms/app/shared/models/dot-action-menu/dot-action-menu-item.model';
 import { DotMessageService } from '@dotcms/data-access';
+import { DotCMSContentlet } from '@dotcms/dotcms-models';
 
 import { DotPagesState, DotPageStore } from './dot-pages-store/dot-pages.store';
 
@@ -18,8 +21,10 @@ import { DotPagesState, DotPageStore } from './dot-pages-store/dot-pages.store';
     styleUrls: ['./dot-pages.component.scss'],
     providers: [DotPageStore]
 })
-export class DotPagesComponent implements OnInit {
+export class DotPagesComponent {
     vm$: Observable<DotPagesState> = this.store.vm$;
+
+    langOptions: SelectItem[];
 
     cols: DataTableColumn[];
     dotStateLabels = {
@@ -29,6 +34,8 @@ export class DotPagesComponent implements OnInit {
         draft: this.dotMessageService.get('Draft')
     };
 
+    actions: { [key: string]: DotActionMenuItem[] };
+
     private initialFavoritePagesLimit = 5;
 
     constructor(
@@ -37,43 +44,6 @@ export class DotPagesComponent implements OnInit {
         private dotMessageService: DotMessageService
     ) {
         this.store.setInitialStateData(this.initialFavoritePagesLimit);
-    }
-
-    ngOnInit(): void {
-        this.cols = [
-            {
-                fieldName: 'title',
-                header: this.dotMessageService.get('title'),
-                sortable: true
-            },
-            {
-                fieldName: 'url',
-                header: this.dotMessageService.get('url'),
-                width: '8%'
-            },
-            {
-                fieldName: '',
-                header: this.dotMessageService.get('status')
-            },
-            {
-                fieldName: 'contentType',
-                header: this.dotMessageService.get('type')
-            },
-            {
-                fieldName: 'languageId',
-                header: this.dotMessageService.get('language')
-            },
-            {
-                fieldName: 'modUserName',
-                header: this.dotMessageService.get('Last-Editor')
-            },
-            {
-                fieldName: 'modDate',
-                format: 'date',
-                header: this.dotMessageService.get('Last-Editor-Date'),
-                sortable: true
-            }
-        ];
     }
 
     /**
@@ -101,6 +71,7 @@ export class DotPagesComponent implements OnInit {
      * @memberof DotPagesComponent
      */
     goToUrl(url: string) {
+        console.log('***url', url);
         const splittedUrl = url.split('?');
         const urlParams = { url: splittedUrl[0] };
         const searchParams = new URLSearchParams(splittedUrl[1]);
@@ -112,27 +83,104 @@ export class DotPagesComponent implements OnInit {
         this.dotRouterService.goToEditPage(urlParams);
     }
 
-    customSort(event: SortEvent) {
-        console.log('***sort', event);
-        event.data.sort((data1, data2) => {
-            const value1 = data1[event.field];
-            const value2 = data2[event.field];
-            let result = null;
-
-            if (value1 == null && value2 != null) result = -1;
-            else if (value1 != null && value2 == null) result = 1;
-            else if (value1 == null && value2 == null) result = 0;
-            else if (typeof value1 === 'string' && typeof value2 === 'string')
-                result = value1.localeCompare(value2);
-            else result = value1 < value2 ? -1 : value1 > value2 ? 1 : 0;
-
-            return event.order * result;
-        });
+    filterData(keyword: string) {
+        console.log('***filterData', keyword);
+        this.store.setKeyword(keyword);
+        this.store.getPages({ offset: 0 });
     }
 
+    onRowSelect(event: Event) {
+        this.goToUrl(event['data'].urlMap || event['data'].url);
+    }
+
+    setPagesLanguage(languageId: string) {
+        console.log('===langid', languageId);
+        this.store.setLanguageId(languageId);
+        this.store.getPages({ offset: 0 });
+    }
+
+    setPagesArchived(archived: string) {
+        console.log('===archived', archived);
+        this.store.setArchived(archived);
+        this.store.getPages({ offset: 0 });
+    }
+
+    hizoClick(item: DotCMSContentlet) {
+        // console.log('---hizoClick', item);
+        // requestAnimationFrame(() => {
+        // setTimeout(() => {
+
+        this.store.getContentletActions(item).subscribe((data) => {
+            console.log('-----sub', data);
+            this.actions = {
+                ...this.actions,
+                [item.identifier]: data
+            };
+            console.log('-----actions', this.actions);
+        });
+
+        // of({})
+        //     .pipe(timeout(500))
+        //     .subscribe(() => {
+        //         this.actions = {
+        //             ...this.actions,
+        //             [item.identifier]: [
+        //                 {
+        //                     menuItem: {
+        //                         label: `${this.dotMessageService.get(
+        //                             'contenttypes.action.delete'
+        //                         )} - ${item.identifier}`,
+        //                         command: (item) => {
+        //                             console.log(item);
+        //                         },
+        //                         icon: 'delete'
+        //                     },
+        //                     shouldShow: (item) => !item.fixed && !item.defaultType
+        //                 },
+        //                 {
+        //                     menuItem: {
+        //                         label: this.dotMessageService.get('contenttypes.action.create'),
+        //                         command: (item) => {
+        //                             console.log(item);
+        //                         },
+        //                         icon: 'list'
+        //                     },
+        //                     shouldShow: (item) => !item.fixed && !item.defaultType
+        //                 }
+        //             ]
+        //         };
+        //         console.log('---actions', this.actions);
+        //     });
+
+        // }, 500);
+        // });
+    }
+
+    // customSort(event: SortEvent) {
+    //     // TODO: IMPLEMENTATION
+    //     console.log('***sort', event);
+    //     event.data.sort((data1, data2) => {
+    //         const value1 = data1[event.field];
+    //         const value2 = data2[event.field];
+    //         let result = null;
+
+    //         if (value1 == null && value2 != null) result = -1;
+    //         else if (value1 != null && value2 == null) result = 1;
+    //         else if (value1 == null && value2 == null) result = 0;
+    //         else if (typeof value1 === 'string' && typeof value2 === 'string')
+    //             result = value1.localeCompare(value2);
+    //         else result = value1 < value2 ? -1 : value1 > value2 ? 1 : 0;
+
+    //         return event.order * result;
+    //     });
+    // }
+
     loadPagesLazy(event: LazyLoadEvent) {
-        console.log('***loadPagesLazy', event);
-        this.store.getPages(event.first >= 0 ? event.first : 0);
+        this.store.getPages({
+            offset: event.first >= 0 ? event.first : 0,
+            sortField: event.sortField || '',
+            sortOrder: event.sortOrder || null
+        });
         //simulate remote connection with a timeout
         // setTimeout(() => {
         //   //load data of required page
