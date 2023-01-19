@@ -50,7 +50,7 @@ export class DotExperimentsConfigurationComponent implements OnInit {
         this.router.navigate(['/edit-page/experiments/', pageId], {
             queryParams: {
                 editPageTab: null,
-                variationName: null,
+                variantName: null,
                 experimentId: null
             },
             queryParamsHandling: 'merge'
@@ -126,7 +126,7 @@ export class DotExperimentsConfigurationComponent implements OnInit {
         this.router.navigate(['edit-page/content'], {
             queryParams: {
                 editPageTab: variant.mode,
-                variationName: variant.variant.id,
+                variantName: variant.variant.id,
                 experimentId: this.route.snapshot.params.experimentId
             },
             queryParamsHandling: 'merge'
