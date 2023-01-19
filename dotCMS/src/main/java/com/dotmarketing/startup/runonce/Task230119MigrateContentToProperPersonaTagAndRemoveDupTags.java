@@ -29,11 +29,11 @@ public class Task230119MigrateContentToProperPersonaTagAndRemoveDupTags extends 
             + "DELETE FROM tag_inode ti USING tag t WHERE t.tag_id = ti.tag_id\n"
             + "AND t.tagname LIKE '%:persona';\n"
             + "\n"
-            + "DELETE FROM tag WHERE tag.tagname LIKE '%:persona';"
+            + "DELETE FROM tag WHERE tag.tagname LIKE '%:persona';";
 
     @Override
     public boolean forceRun() {
-        Try.of(()->!new DotConnect().setSQL("SELECT * FROM tag WHERE tagname LIKE '%:persona'")
+        return Try.of(()->!new DotConnect().setSQL("SELECT * FROM tag WHERE tagname LIKE '%:persona'")
                 .loadResults().isEmpty()).getOrElse(false);
     }
 
