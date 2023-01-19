@@ -217,7 +217,6 @@ export class DotContainerPropertiesStore extends ComponentStore<DotContainerProp
             }),
             tap((contentTypes: DotCMSContentType[]) => {
                 this.updateContentTypes(contentTypes);
-                this.updateContentTypeVisibility(true);
             }),
             catchError((err: HttpErrorResponse) => {
                 this.dotHttpErrorManagerService.handle(err);

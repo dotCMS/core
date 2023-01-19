@@ -13,19 +13,22 @@ import {
     ReactiveFormsModule
 } from '@angular/forms';
 import { By } from '@angular/platform-browser';
+import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 
 import { ButtonModule } from 'primeng/button';
 import { DialogService, DynamicDialogModule } from 'primeng/dynamicdialog';
 import { Menu, MenuModule } from 'primeng/menu';
+import { SkeletonModule } from 'primeng/skeleton';
 import { TabViewModule } from 'primeng/tabview';
 
+import { DotCMSContentType } from '@dotcms/dotcms-models';
+import { MockDotMessageService } from '@dotcms/utils-testing';
 import { DotPipesModule } from '@dotcms/app/view/pipes/dot-pipes.module';
 import { DotMessageService } from '@dotcms/data-access';
 import { CoreWebService, CoreWebServiceMock } from '@dotcms/dotcms-js';
-import { DotCMSContentType } from '@dotcms/dotcms-models';
-import { MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotAddVariableModule } from './dot-add-variable/dot-add-variable.module';
+
 import { DotContentEditorComponent } from './dot-container-code.component';
 
 const mockContentTypes: DotCMSContentType[] = [
@@ -171,7 +174,9 @@ describe('DotContentEditorComponent', () => {
                 MenuModule,
                 ButtonModule,
                 DotPipesModule,
-                HttpClientTestingModule
+                HttpClientTestingModule,
+                BrowserAnimationsModule,
+                SkeletonModule
             ],
 
             providers: [
@@ -322,6 +327,27 @@ describe('DotContentEditorComponent', () => {
                 );
                 expect(comp.monacoEditors[mockContentTypes[0].id].focus).toHaveBeenCalled();
             }));
+        });
+    });
+
+    describe('without data', () => {
+        beforeEach(fakeAsync(() => {
+            spyOn<CoreWebService>(coreWebService, 'requestView').and.returnValue(
+                of({
+                    entity: []
+                })
+            );
+            hostFixture.detectChanges();
+            tick();
+            de = hostFixture.debugElement;
+            hostComponent = hostFixture.componentInstance;
+            hostComponent.contentTypes = [];
+            hostFixture.detectChanges();
+        }));
+
+        it('shoud have add loader on content types', () => {
+            const loader = de.query(By.css('p-skeleton'));
+            expect(loader).toBeDefined();
         });
     });
 });

@@ -1,3 +1,4 @@
+import { trigger, transition, style, animate } from '@angular/animations';
 import { Component, Input, OnChanges, OnInit, SimpleChanges } from '@angular/core';
 import { FormArray, FormControl, FormGroup, Validators } from '@angular/forms';
 
@@ -18,6 +19,11 @@ interface DotContainerContent extends DotCMSContentType {
 }
 
 @Component({
+    animations: [
+        trigger('contentCodeAnimation', [
+            transition(':enter', [style({ opacity: 0 }), animate(500, style({ opacity: 1 }))])
+        ])
+    ],
     selector: 'dot-container-code',
     templateUrl: './dot-container-code.component.html',
     styleUrls: ['./dot-container-code.component.scss']
@@ -52,6 +58,11 @@ export class DotContentEditorComponent implements OnInit, OnChanges {
 
         this.init();
         this.updateActiveTabIndex(this.getcontainerStructures.length);
+        if (changes.contentTypes.currentValue.length > 0) {
+            Object.keys(this.monacoEditors).forEach((editorId) => {
+                this.monacoEditors[editorId].updateOptions({ readOnly: false });
+            });
+        }
     }
 
     /**
@@ -89,10 +100,12 @@ export class DotContentEditorComponent implements OnInit, OnChanges {
      * @memberof DotContentEditorComponent
      */
     removeItem(index: number = null): void {
-        this.getcontainerStructures.removeAt(index - 1);
-        const currentTabIndex = this.findCurrentTabIndex(index);
-        this.updateActiveTabIndex(currentTabIndex);
-        this.focusCurrentEditor(currentTabIndex);
+        if (this.contentTypes.length > 0) {
+            this.getcontainerStructures.removeAt(index - 1);
+            const currentTabIndex = this.findCurrentTabIndex(index);
+            this.updateActiveTabIndex(currentTabIndex);
+            this.focusCurrentEditor(currentTabIndex);
+        }
     }
 
     /**
@@ -156,6 +169,10 @@ export class DotContentEditorComponent implements OnInit, OnChanges {
      */
     monacoInit(monacoEditor) {
         this.monacoEditors[monacoEditor.name] = monacoEditor.editor;
+        if (this.contentTypes.length === 0) {
+            this.monacoEditors[monacoEditor.name].updateOptions({ readOnly: true });
+        }
+
         requestAnimationFrame(() => this.monacoEditors[monacoEditor.name].focus());
     }
 
