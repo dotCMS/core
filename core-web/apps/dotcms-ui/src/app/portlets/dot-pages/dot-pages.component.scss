@@ -101,6 +101,13 @@
         min-height: unset;
         margin-bottom: $spacing-4;
     }
+
+    .p-datatable .p-datatable-tbody tr td {
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        max-width: 0;
+    }
 }
 
 .dot-pages-empty__container {
@@ -123,4 +130,9 @@
 
 .dot-pages-empty__header {
     font-size: large;
+}
+
+p-panel {
+    display: block;
+    margin-bottom: $spacing-3;
 }

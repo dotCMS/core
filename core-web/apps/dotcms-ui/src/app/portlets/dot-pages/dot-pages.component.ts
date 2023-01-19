@@ -1,13 +1,13 @@
 /* eslint-disable no-console */
-import { Component, OnInit } from '@angular/core';
+import { Component } from '@angular/core';
 
-import { SortEvent } from 'primeng/api';
 import { LazyLoadEvent } from 'primeng/api/lazyloadevent';
 
 import { Observable } from 'rxjs/internal/Observable';
 
 import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
 import { DataTableColumn } from '@dotcms/app/shared/models/data-table';
+import { DotActionMenuItem } from '@dotcms/app/shared/models/dot-action-menu/dot-action-menu-item.model';
 import { DotMessageService } from '@dotcms/data-access';
 
 import { DotPagesState, DotPageStore } from './dot-pages-store/dot-pages.store';
@@ -18,7 +18,7 @@ import { DotPagesState, DotPageStore } from './dot-pages-store/dot-pages.store';
     styleUrls: ['./dot-pages.component.scss'],
     providers: [DotPageStore]
 })
-export class DotPagesComponent implements OnInit {
+export class DotPagesComponent {
     vm$: Observable<DotPagesState> = this.store.vm$;
 
     cols: DataTableColumn[];
@@ -29,6 +29,29 @@ export class DotPagesComponent implements OnInit {
         draft: this.dotMessageService.get('Draft')
     };
 
+    actions: DotActionMenuItem[] = [
+        {
+            menuItem: {
+                label: this.dotMessageService.get('contenttypes.action.delete'),
+                command: (item) => {
+                    console.log(item);
+                },
+                icon: 'delete'
+            },
+            shouldShow: (item) => !item.fixed && !item.defaultType
+        },
+        {
+            menuItem: {
+                label: this.dotMessageService.get('contenttypes.action.create'),
+                command: (item) => {
+                    console.log(item);
+                },
+                icon: 'list'
+            },
+            shouldShow: (item) => !item.fixed && !item.defaultType
+        }
+    ];
+
     private initialFavoritePagesLimit = 5;
 
     constructor(
@@ -37,43 +60,6 @@ export class DotPagesComponent implements OnInit {
         private dotMessageService: DotMessageService
     ) {
         this.store.setInitialStateData(this.initialFavoritePagesLimit);
-    }
-
-    ngOnInit(): void {
-        this.cols = [
-            {
-                fieldName: 'title',
-                header: this.dotMessageService.get('title'),
-                sortable: true
-            },
-            {
-                fieldName: 'url',
-                header: this.dotMessageService.get('url'),
-                width: '8%'
-            },
-            {
-                fieldName: '',
-                header: this.dotMessageService.get('status')
-            },
-            {
-                fieldName: 'contentType',
-                header: this.dotMessageService.get('type')
-            },
-            {
-                fieldName: 'languageId',
-                header: this.dotMessageService.get('language')
-            },
-            {
-                fieldName: 'modUserName',
-                header: this.dotMessageService.get('Last-Editor')
-            },
-            {
-                fieldName: 'modDate',
-                format: 'date',
-                header: this.dotMessageService.get('Last-Editor-Date'),
-                sortable: true
-            }
-        ];
     }
 
     /**
@@ -101,6 +87,7 @@ export class DotPagesComponent implements OnInit {
      * @memberof DotPagesComponent
      */
     goToUrl(url: string) {
+        console.log('***url', url);
         const splittedUrl = url.split('?');
         const urlParams = { url: splittedUrl[0] };
         const searchParams = new URLSearchParams(splittedUrl[1]);
@@ -112,27 +99,41 @@ export class DotPagesComponent implements OnInit {
         this.dotRouterService.goToEditPage(urlParams);
     }
 
-    customSort(event: SortEvent) {
-        console.log('***sort', event);
-        event.data.sort((data1, data2) => {
-            const value1 = data1[event.field];
-            const value2 = data2[event.field];
-            let result = null;
-
-            if (value1 == null && value2 != null) result = -1;
-            else if (value1 != null && value2 == null) result = 1;
-            else if (value1 == null && value2 == null) result = 0;
-            else if (typeof value1 === 'string' && typeof value2 === 'string')
-                result = value1.localeCompare(value2);
-            else result = value1 < value2 ? -1 : value1 > value2 ? 1 : 0;
-
-            return event.order * result;
-        });
+    filterData(keyword: string) {
+        console.log('***filterData', keyword);
+        this.store.setFilter(keyword);
+        this.store.getPages({ offset: 0 });
     }
 
+    onRowSelect(event: Event) {
+        this.goToUrl(event['data'].urlMap || event['data'].url);
+    }
+
+    // customSort(event: SortEvent) {
+    //     // TODO: IMPLEMENTATION
+    //     console.log('***sort', event);
+    //     event.data.sort((data1, data2) => {
+    //         const value1 = data1[event.field];
+    //         const value2 = data2[event.field];
+    //         let result = null;
+
+    //         if (value1 == null && value2 != null) result = -1;
+    //         else if (value1 != null && value2 == null) result = 1;
+    //         else if (value1 == null && value2 == null) result = 0;
+    //         else if (typeof value1 === 'string' && typeof value2 === 'string')
+    //             result = value1.localeCompare(value2);
+    //         else result = value1 < value2 ? -1 : value1 > value2 ? 1 : 0;
+
+    //         return event.order * result;
+    //     });
+    // }
+
     loadPagesLazy(event: LazyLoadEvent) {
-        console.log('***loadPagesLazy', event);
-        this.store.getPages(event.first >= 0 ? event.first : 0);
+        this.store.getPages({
+            offset: event.first >= 0 ? event.first : 0,
+            sortField: event.sortField || '',
+            sortOrder: event.sortOrder || null
+        });
         //simulate remote connection with a timeout
         // setTimeout(() => {
         //   //load data of required page

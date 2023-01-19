@@ -7,9 +7,15 @@ import { Injectable } from '@angular/core';
 
 import { switchMap, take } from 'rxjs/operators';
 
+import { DotFormatDateService } from '@dotcms/app/api/services/dot-format-date-service';
 import { DotHttpErrorManagerService } from '@dotcms/app/api/services/dot-http-error-manager/dot-http-error-manager.service';
-import { DotCurrentUserService, DotESContentService, ESOrderDirection } from '@dotcms/data-access';
-import { DotCMSContentlet, DotCurrentUser, ESContent } from '@dotcms/dotcms-models';
+import {
+    DotCurrentUserService,
+    DotESContentService,
+    DotLanguagesService,
+    ESOrderDirection
+} from '@dotcms/data-access';
+import { DotCMSContentlet, DotCurrentUser, DotLanguage, ESContent } from '@dotcms/dotcms-models';
 
 export interface DotPagesState {
     favoritePages: {
@@ -17,9 +23,11 @@ export interface DotPagesState {
         showLoadMoreButton: boolean;
         total: number;
     };
+    languageLabels: { [id: string]: string };
     loggedUserId: string;
     pages?: {
         items: DotCMSContentlet[];
+        filter: string;
     };
 }
 
@@ -48,9 +56,6 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
 
     readonly setPages = this.updater<DotCMSContentlet[]>(
         (state: DotPagesState, pages: DotCMSContentlet[]) => {
-            console.log('*** state pages', state.pages.items);
-            console.log('*** rrecibe pages', pages);
-
             return {
                 ...state,
                 pages: {
@@ -60,6 +65,16 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
             };
         }
     );
+
+    readonly setFilter = this.updater<string>((state: DotPagesState, keyword: string) => {
+        return {
+            ...state,
+            pages: {
+                items: [],
+                filter: keyword
+            }
+        };
+    });
 
     // EFFECTS
     readonly getFavoritePages = this.effect((itemsPerPage$: Observable<number>) => {
@@ -88,58 +103,86 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
     });
 
     // TODO: ver si
-    // - meto un parametro extra aparte de OFFSET para el filtro
-    // - meter INPUT para filtro
     // - meter template para rows al mostrar data
     // - meter doc
+    // - hacer lo de SORT
+    // - hacer lo del hamburguer button
     // - meter const para LIMIT de 40
     // - meter const para QUERY de getPages()
-    readonly getPages = this.effect((offset$: Observable<number>) => {
-        return offset$.pipe(
-            switchMap((offset: number) => {
-                return this.dotESContentService
-                    .get({
-                        itemsPerPage: 40,
-                        offset: offset.toString(),
-                        query: '+conhost:48190c8c-42c4-46af-8d1a-0cd5db894797 +deleted:false  +(urlmap:* OR basetype:5)',
-                        sortField: 'modDate',
-                        // filter:'surf camp',
-                        sortOrder: ESOrderDirection.ASC
-                    })
-                    .pipe(
-                        tapResponse(
-                            (items) => {
-                                console.log('**resp', items.jsonObjectView.contentlets);
+    readonly getPages = this.effect(
+        (params$: Observable<{ offset: number; sortField?: string; sortOrder?: number }>) => {
+            return params$.pipe(
+                switchMap((params) => {
+                    const filter = this.get().pages.filter;
+                    const { offset, sortField, sortOrder } = params;
 
-                                let tempPages = this.get().pages.items;
+                    return this.dotESContentService
+                        .get({
+                            itemsPerPage: 40,
+                            offset: offset.toString(),
+                            query: '+conhost:48190c8c-42c4-46af-8d1a-0cd5db894797 +deleted:false  +(urlmap:* OR basetype:5)',
+                            sortField: sortField || 'modDate',
+                            filter,
+                            sortOrder:
+                                sortOrder === -1 ? ESOrderDirection.DESC : ESOrderDirection.ASC
+                        })
+                        .pipe(
+                            tapResponse(
+                                (items) => {
+                                    console.log('===items.resultsSize', items.resultsSize);
 
-                                if (tempPages.length === 0) {
-                                    tempPages = Array.from({ length: items.resultsSize });
+                                    let tempPages = this.get().pages.items;
+
+                                    if (tempPages.length === 0) {
+                                        tempPages = Array.from({ length: items.resultsSize });
+                                    }
+
+                                    Array.prototype.splice.apply(tempPages, [
+                                        ...[offset, 40],
+                                        ...items.jsonObjectView.contentlets
+                                    ]);
+
+                                    // console.log('**tempPages', tempPages);
+                                    /*
+                                    tempPages = this.formatRelativeDates(tempPages);
+                                    console.log(
+                                        '**tempPages format',
+                                        // this.formatRelativeDates(tempPages)
+                                        tempPages
+                                    );
+*/
+                                    this.setPages(tempPages);
+                                    // this.patchState({
+                                    //     pages: {
+                                    //         items: [...items.jsonObjectView.contentlets],
+                                    //         total: items.resultsSize
+                                    //     }
+                                    // });
+                                },
+                                (error: HttpErrorResponse) => {
+                                    return this.httpErrorManagerService.handle(error);
                                 }
+                            )
+                        );
+                })
+            );
+        }
+    );
 
-                                Array.prototype.splice.apply(tempPages, [
-                                    ...[offset, 40],
-                                    ...items.jsonObjectView.contentlets
-                                ]);
+    private formatRelativeDates(pages: DotCMSContentlet[]): DotCMSContentlet[] {
+        this.dotFormatDateService.setLang('es_ES');
 
-                                console.log('**tempPages', tempPages);
+        const data = pages.map((page: DotCMSContentlet) => {
+            return page
+                ? {
+                      ...page,
+                      modDate: this.dotFormatDateService.getRelative(page.modDate)
+                  }
+                : undefined;
+        });
 
-                                this.setPages(tempPages);
-                                // this.patchState({
-                                //     pages: {
-                                //         items: [...items.jsonObjectView.contentlets],
-                                //         total: items.resultsSize
-                                //     }
-                                // });
-                            },
-                            (error: HttpErrorResponse) => {
-                                return this.httpErrorManagerService.handle(error);
-                            }
-                        )
-                    );
-            })
-        );
-    });
+        return data;
+    }
 
     private getFavoritePagesData = (limit: number) => {
         return this.dotESContentService.get({
@@ -154,7 +197,9 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
     constructor(
         private dotCurrentUser: DotCurrentUserService,
         private httpErrorManagerService: DotHttpErrorManagerService,
-        private dotESContentService: DotESContentService
+        private dotESContentService: DotESContentService,
+        private dotFormatDateService: DotFormatDateService,
+        private dotLanguagesService: DotLanguagesService
     ) {
         super(null);
     }
@@ -167,25 +212,41 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
     setInitialStateData(initialFavoritePagesLimit: number): void {
         forkJoin([
             this.getFavoritePagesData(initialFavoritePagesLimit),
-            this.dotCurrentUser.getCurrentUser()
+            this.dotCurrentUser.getCurrentUser(),
+            this.dotLanguagesService.get()
         ])
             .pipe(take(1))
-            .subscribe(([favoritePages, currentUser]: [ESContent, DotCurrentUser]): void => {
-                this.setState({
-                    favoritePages: {
-                        items: favoritePages?.jsonObjectView.contentlets,
-                        showLoadMoreButton:
-                            favoritePages.jsonObjectView.contentlets.length <
-                            favoritePages.resultsSize,
-                        total: favoritePages.resultsSize
-                    },
-                    loggedUserId: currentUser.userId,
-                    pages: {
-                        items: []
-                        // items: Array.from({ length: 124 }),
-                    }
-                });
-            });
+            .subscribe(
+                ([favoritePages, currentUser, languages]: [
+                    ESContent,
+                    DotCurrentUser,
+                    DotLanguage[]
+                ]): void => {
+                    const langLabels = {};
+                    languages.forEach((language) => {
+                        langLabels[
+                            language.id
+                        ] = `${language.languageCode}_${language.countryCode}`;
+                    });
+
+                    this.setState({
+                        favoritePages: {
+                            items: favoritePages?.jsonObjectView.contentlets,
+                            showLoadMoreButton:
+                                favoritePages.jsonObjectView.contentlets.length <
+                                favoritePages.resultsSize,
+                            total: favoritePages.resultsSize
+                        },
+                        languageLabels: langLabels,
+                        loggedUserId: currentUser.userId,
+                        pages: {
+                            items: [],
+                            filter: ''
+                            // items: Array.from({ length: 124 }),
+                        }
+                    });
+                }
+            );
     }
 
     /**
