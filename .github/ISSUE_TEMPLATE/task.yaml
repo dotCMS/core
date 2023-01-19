@@ -2,7 +2,10 @@ name: Task
 
 description: I just need to create a simple to-do for someone on the team.
 
-labels: ["Type : Task", "Triage"]
+labels: ['Type : Task',Triage]
+
+assignees:
+  - damen-dotcms
 
 body:
 
@@ -11,46 +14,15 @@ body:
       value: |
         If you have any questions about how to use this form, check out [How dotCMS uses GitHub](https://docs.google.com/presentation/d/1C1oCESIL9Z84xXo1DPWQZh48c4BSGlVRAn1DYGEFMUw).
 
-  - type: dropdown
-    id: proposed-objective
-    attributes:
-      label: "Proposed Objective"
-      description: 
-      options:
-        - "Accessibility (WCAG)"
-        - "Application Performance"
-        - "Core Improvement (Features)"
-        - "Customer Acquisition"
-        - "Customer Success"
-        - "Developer Experience"
-        - "Documentation"
-        - "Integration Support"
-        - "Maintenance"
-        - "Quality Assurance"
-        - "Scalability"
-        - "Security"
-        - "User Experience"
-    validations:
-      required: true
-
-  - type: dropdown
-    id: proposed-prioritiy
-    attributes:
-      label: "Proposed Priority"
-      description: 
-      options:
-        - "Priority 1 - Show Stopper"
-        - "Priority 2 - Important"
-        - "Priority 3 - Average"
-        - "Priority 4 - Trivial"
-    validations:
-      required: true
-
   - type: textarea
     id: parent-issue
     attributes:
       label: "Parent Issue"
-      description: "Please include a GitHub issue link to the parent issue if apply."
+      description: "Please include a GitHub issue link to the parent issue."
+      placeholder:
+      value: 
+    validations:
+      required: true
       
   - type: textarea
     id: task-body
@@ -95,21 +67,52 @@ body:
   - type: textarea
     id: sub-tasks
     attributes:
-      label: "Sub-Tasks"
+      label: "Sub-Tasks & Estimates"
       description: "Use a task-list format, and feel free to @ people responsible for completion."
       placeholder: |
-        - [ ] Some Task Related to this Issue
-        - [ ] Some Task for Damen @damen-dotcms        
+        - [ ] Some Task Related to this Issue (4 points)
+        - [ ] Some Task for Damen (2 points) @damen-dotcms
       value:
     validations:
       required: false
-      
-  - type: textarea
-    id: estimates
+            
+  - type: dropdown
+    id: proposed-objective
     attributes:
-      label: "Estimates"
-      description: "Used by development team."
-      placeholder:
-      value:
+      label: "Proposed Objective"
+      description: 
+      options:
+        - "Please Select"
+        - "Same as Parent Issue"
+        - "Application Performance"
+        - "Code Maintenance"
+        - "Core Features"
+        - "Customer Retention"
+        - "Customer Success"
+        - "Customer Support"
+        - "Documentation"
+        - "Integration Support"
+        - "Marketing"
+        - "Quality Assurance"
+        - "Reliability"
+        - "Sales"
+        - "Security"
+        - "Technical User Experience"
+        - "User Experience"
     validations:
-      required: false
+      required: true
+
+  - type: dropdown
+    id: proposed-prioritiy
+    attributes:
+      label: "Proposed Priority"
+      description: 
+      options:
+        - "Please Select"
+        - "Same as Parent Issue"
+        - "Priority 1 - Show Stopper"
+        - "Priority 2 - Important"
+        - "Priority 3 - Average"
+        - "Priority 4 - Trivial"
+    validations:
+      required: true
