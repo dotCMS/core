@@ -93,8 +93,6 @@ public class TagAPIImpl implements TagAPI {
                     ? tagName.substring(0, tagName.indexOf(":persona"))
                     : tagName;
 
-            final String tagNameNoPersona = tagName;
-
             //Before to decide if exist or not lets give it a try to the System host
             if ( searchInSystemHost ) {
 
