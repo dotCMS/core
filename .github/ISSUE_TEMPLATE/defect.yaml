@@ -2,7 +2,7 @@ name: Defect
 
 description: I need to report a bug or issue with dotCMS.
 
-labels: ["Type - Defect", Triage]
+labels: ["Type : Defect", "Triage"]
 
 body:
 

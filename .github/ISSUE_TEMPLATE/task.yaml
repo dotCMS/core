@@ -2,7 +2,7 @@ name: Task
 
 description: I just need to create a simple to-do for someone on the team.
 
-labels: ["Type - Task", Triage]
+labels: ["Type : Task", "Triage"]
 
 body:
 
