@@ -2,9 +2,7 @@ name: Feature
 
 description: I need to change the way something works, or create new functionality.
 
-title: "[Feature]: "
-
-labels: ['Type - Feature', Triage]
+labels: ["Type - Feature", Triage]
 
 
 body:
