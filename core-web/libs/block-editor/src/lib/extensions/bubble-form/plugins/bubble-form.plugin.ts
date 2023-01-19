@@ -11,8 +11,9 @@ import { takeUntil } from 'rxjs/operators';
 import { Editor, posToDOMRect } from '@tiptap/core';
 import { BubbleMenuView } from '@tiptap/extension-bubble-menu';
 
-import { BubbleFormComponent, BUBBLE_FORM_PLUGIN_KEY, getNodePosition } from '@dotcms/block-editor';
-
+import { getNodePosition } from '../../bubble-menu/utils';
+import { BubbleFormComponent } from '../bubble-form.component';
+import { BUBBLE_FORM_PLUGIN_KEY } from '../bubble-form.extension';
 import { imageFormControls } from '../utils';
 
 export interface BubbleFormProps {

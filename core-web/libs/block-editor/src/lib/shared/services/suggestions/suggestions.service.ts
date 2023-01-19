@@ -5,8 +5,9 @@ import { Injectable } from '@angular/core';
 
 import { pluck } from 'rxjs/operators';
 
-import { ContentletFilters, DEFAULT_LANG_ID } from '@dotcms/block-editor';
 import { DotCMSContentlet, DotCMSContentType } from '@dotcms/dotcms-models';
+
+import { ContentletFilters, DEFAULT_LANG_ID } from '../../../extensions';
 
 @Injectable()
 export class SuggestionsService {

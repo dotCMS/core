@@ -1,7 +1,5 @@
 import { SafeUrl, ɵDomSanitizerImpl } from '@angular/platform-browser';
 
-import { DotMenuItem } from '@dotcms/block-editor';
-
 // Assets
 import {
     codeIcon,
@@ -12,6 +10,7 @@ import {
     quoteIcon,
     ulIcon
 } from '../components/suggestions/suggestion-icons';
+import { DotMenuItem } from '../components/suggestions/suggestions.component';
 
 const domSanitizer = new ɵDomSanitizerImpl(document);
 
