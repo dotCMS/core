@@ -1,6 +1,3 @@
-import { DotBlockEditorComponent } from '@lib/components';
-import { BlockEditorModule } from '@lib/editor/module';
-
 import { CommonModule } from '@angular/common';
 import { HttpClientModule } from '@angular/common/http';
 import { NgModule, Injector, DoBootstrap } from '@angular/core';
@@ -12,8 +9,9 @@ import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { ListboxModule } from 'primeng/listbox';
 import { OrderListModule } from 'primeng/orderlist';
 
-import { AppComponent } from './app.component';
+import { BlockEditorModule, DotBlockEditorComponent } from '@dotcms/block-editor';
 
+import { AppComponent } from './app.component';
 @NgModule({
     declarations: [AppComponent],
     imports: [
