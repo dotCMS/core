@@ -1,4 +1,3 @@
-import { deselectCurrentNode } from '@lib/shared/utils';
 import { NodeSelection, Plugin, PluginKey } from 'prosemirror-state';
 import { EditorView } from 'prosemirror-view';
 
@@ -7,6 +6,8 @@ import { ViewContainerRef } from '@angular/core';
 import { Extension } from '@tiptap/core';
 
 import { DragHandlerComponent } from './drag-handler.component';
+
+import { deselectCurrentNode } from '../../shared';
 
 export const DragHandler = (viewContainerRef: ViewContainerRef) => {
     return Extension.create({

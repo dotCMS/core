@@ -1,4 +1,4 @@
-import { textNodeRange } from '@lib/shared/utils';
+import { textNodeRange } from '../../../shared';
 
 export const openFormLinkOnclik = ({ editor, view, pos }) => {
     const selectionStart = view.state.doc?.resolve(pos);

@@ -1,7 +1,7 @@
-// Interface
-import { BubbleMenuItem } from '@lib/extensions';
-
 import { Component, Input } from '@angular/core';
+
+// Interface
+import { BubbleMenuItem } from '../../models';
 
 @Component({
     selector: 'dot-bubble-menu-button',

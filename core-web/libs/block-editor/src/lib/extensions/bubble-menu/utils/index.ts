@@ -1,9 +1,8 @@
-import { LINK_FORM_PLUGIN_KEY } from '@lib/extensions';
-import { ImageNode } from '@lib/nodes';
-import { findParentNode } from '@lib/shared/utils';
-
 import { isTextSelection } from '@tiptap/core';
 
+import { ImageNode } from '../../../nodes';
+import { findParentNode } from '../../../shared';
+import { LINK_FORM_PLUGIN_KEY } from '../../bubble-link-form/bubble-link-form.extension';
 import { BubbleMenuItem, ShouldShowProps } from '../models';
 
 const hideBubbleMenuOn = {

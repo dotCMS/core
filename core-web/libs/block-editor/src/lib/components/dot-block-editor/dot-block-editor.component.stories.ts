@@ -1,18 +1,3 @@
-import { DotBlockEditorComponent } from '@lib/components';
-import { BlockEditorModule } from '@lib/editor/module';
-import {
-    ActionButtonComponent,
-    BubbleLinkFormComponent,
-    DotImageService,
-    DragHandlerComponent,
-    FileStatus,
-    ImageTabviewFormComponent,
-    LoaderComponent
-} from '@lib/extensions';
-import { ContentletBlockComponent } from '@lib/nodes';
-import { SuggestionsComponent } from '@lib/shared/components';
-import { CONTENTLETS_MOCK, IMAGE_CONTENTLETS_MOCK } from '@lib/shared/mocks';
-import { SuggestionsService, SearchService, DotLanguageService } from '@lib/shared/services';
 import { of } from 'rxjs';
 
 import { CommonModule } from '@angular/common';
@@ -24,6 +9,28 @@ import { MenuModule } from 'primeng/menu';
 import { OrderListModule } from 'primeng/orderlist';
 
 import { debounceTime, delay, tap } from 'rxjs/operators';
+
+import { DotBlockEditorComponent } from './dot-block-editor.component';
+
+import { BlockEditorModule } from '../../block-editor.module';
+import {
+    ActionButtonComponent,
+    BubbleLinkFormComponent,
+    DotImageService,
+    DragHandlerComponent,
+    FileStatus,
+    ImageTabviewFormComponent,
+    LoaderComponent
+} from '../../extensions';
+import { ContentletBlockComponent } from '../../nodes';
+import {
+    CONTENTLETS_MOCK,
+    DotLanguageService,
+    IMAGE_CONTENTLETS_MOCK,
+    SearchService,
+    SuggestionsComponent,
+    SuggestionsService
+} from '../../shared';
 
 export default {
     title: 'Block Editor'

@@ -14,26 +14,6 @@
         }
     ],
     "compilerOptions": {
-        "target": "es2020",
-        "baseUrl": "./src",
-        "paths": {
-            "@dotcms/dotcms-js": ["../../dotcms-js/src/public_api.ts"],
-            "@dotcms/dotcms-models": ["../../dotcms-models/src/index.ts"],
-            "@dotcms/dotcms-webcomponents/loader": [
-                "../../../dist/libs/dotcms-webcomponents/loader"
-            ],
-            "@dotcms/utils": ["../../utils/src"],
-            "@lib/components": ["./lib/components/index"],
-            "@lib/editor/module": ["./lib/block-editor.module.ts"],
-            "@lib/extensions": ["./lib/extensions/index"],
-            "@lib/nodes": ["./lib/nodes/index"],
-            "@lib/shared/components": ["./lib/shared/components/index"],
-            "@lib/shared/directives": ["./lib/shared/directives/index"],
-            "@lib/shared/mocks": ["./lib/shared/mocks/index"],
-            "@lib/shared/pipes": ["./lib/shared/pipes/index"],
-            "@lib/shared/plugins": ["./lib/shared/plugins/index"],
-            "@lib/shared/services": ["./lib/shared/services/index"],
-            "@lib/shared/utils": ["./lib/shared/utils/index.ts"]
-        }
+        "target": "es2020"
     }
 }

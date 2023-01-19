@@ -1,13 +1,3 @@
-import { BUBBLE_FORM_PLUGIN_KEY, LINK_FORM_PLUGIN_KEY } from '@lib/extensions';
-import { ImageNode } from '@lib/nodes';
-import { SuggestionsComponent } from '@lib/shared/components';
-import {
-    changeToItems,
-    deleteByNode,
-    deleteByRange,
-    findParentNode,
-    tableChangeToItems
-} from '@lib/shared/utils';
 import { EditorState, NodeSelection, Plugin, PluginKey } from 'prosemirror-state';
 import { EditorView } from 'prosemirror-view';
 import tippy, { Instance } from 'tippy.js';
@@ -19,6 +9,17 @@ import { filter, take } from 'rxjs/operators';
 import { posToDOMRect } from '@tiptap/core';
 import { BubbleMenuView } from '@tiptap/extension-bubble-menu';
 
+import { ImageNode } from '../../../nodes';
+import {
+    changeToItems,
+    deleteByNode,
+    deleteByRange,
+    findParentNode,
+    SuggestionsComponent,
+    tableChangeToItems
+} from '../../../shared';
+import { BUBBLE_FORM_PLUGIN_KEY } from '../../bubble-form/bubble-form.extension';
+import { LINK_FORM_PLUGIN_KEY } from '../../bubble-link-form/bubble-link-form.extension';
 import {
     BubbleMenuComponentProps,
     BubbleMenuItem,

@@ -1,4 +1,3 @@
-import { BUBBLE_FORM_PLUGIN_KEY, BubbleFormComponent, getNodePosition } from '@lib/extensions';
 import { Node } from 'prosemirror-model';
 import { EditorState, NodeSelection, Plugin, PluginKey, Transaction } from 'prosemirror-state';
 import { EditorView } from 'prosemirror-view';
@@ -12,7 +11,11 @@ import { takeUntil } from 'rxjs/operators';
 import { Editor, posToDOMRect } from '@tiptap/core';
 import { BubbleMenuView } from '@tiptap/extension-bubble-menu';
 
+import { getNodePosition } from '../../bubble-menu/utils';
+import { BubbleFormComponent } from '../bubble-form.component';
+import { BUBBLE_FORM_PLUGIN_KEY } from '../bubble-form.extension';
 import { imageFormControls } from '../utils';
+
 export interface BubbleFormProps {
     pluginKey: PluginKey;
     editor: Editor;
