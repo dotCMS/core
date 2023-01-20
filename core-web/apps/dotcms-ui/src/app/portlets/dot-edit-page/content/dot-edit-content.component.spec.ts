@@ -1485,8 +1485,8 @@ describe('DotEditContentComponent', () => {
     });
 
     it('should remove variant key from session storage on destoy', () => {
-        spyOn(dotSessionStorageService, 'removeVariationId');
+        spyOn(dotSessionStorageService, 'removeVariantId');
         component.ngOnDestroy();
-        expect(dotSessionStorageService.removeVariationId).toHaveBeenCalledTimes(1);
+        expect(dotSessionStorageService.removeVariantId).toHaveBeenCalledTimes(1);
     });
 });

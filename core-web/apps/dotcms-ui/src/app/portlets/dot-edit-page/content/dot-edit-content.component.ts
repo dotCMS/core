@@ -185,7 +185,7 @@ browse from the page internal links
     }
 
     ngOnDestroy(): void {
-        this.dotSessionStorageService.removeVariationId();
+        this.dotSessionStorageService.removeVariantId();
         this.destroy$.next(true);
         this.destroy$.complete();
     }
