@@ -2,9 +2,10 @@ import { Plugin, PluginKey } from 'prosemirror-state';
 import { Decoration, DecorationSet } from 'prosemirror-view';
 import tippy, { Instance, Props } from 'tippy.js';
 
-import { popperModifiers, SuggestionsComponent } from '@dotcms/block-editor';
-
 import { getCellsOptions } from './utils';
+
+import { SuggestionsComponent } from '../../shared';
+import { popperModifiers } from '../bubble-menu/utils';
 
 class DotTableCellPluginView {
     public tippy: Instance | undefined;
