@@ -200,7 +200,7 @@ export const runTests = async (cmds: Command[]): Promise<CommandResult> => {
 }
 
 const resolveWait = (): number => {
-  return dbType === 'mssql' ? 15 : 30
+  return dbType === 'mssql' ? 100 : 30
 }
 
 /**
