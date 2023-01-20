@@ -1569,6 +1569,10 @@ public class TestDataUtils {
         return bannerType;
     }
 
+    public static Contentlet getBannerLikeContent(Boolean persist, long languageId) {
+        return getBannerLikeContent(persist, languageId, null, null);
+    }
+
     public static Contentlet getBannerLikeContent(Boolean persist, long languageId,
             String contentTypeId, Host site) {
 
