@@ -7,11 +7,14 @@ import { take } from 'rxjs/operators';
 
 import { Extension } from '@tiptap/core';
 
-import { deselectCurrentNode, ImageNode, LoaderComponent, MessageType } from '@dotcms/block-editor';
 import { DotCMSContentlet } from '@dotcms/dotcms-models';
 
+import { LoaderComponent, MessageType } from './components/loader/loader.component';
 import { PlaceholderPlugin } from './plugins/placeholder.plugin';
 import { DotImageService } from './services/dot-image/dot-image.service';
+
+import { ImageNode } from '../../nodes';
+import { deselectCurrentNode } from '../../shared';
 
 function checkImageURL(url) {
     return url.match(/\.(jpeg|jpg|gif|png)$/) != null;
