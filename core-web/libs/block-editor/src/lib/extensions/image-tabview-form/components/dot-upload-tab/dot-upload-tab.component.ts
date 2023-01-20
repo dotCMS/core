@@ -5,7 +5,7 @@ import { DotCMSContentlet } from '@dotcms/dotcms-models';
 
 import { DotImageService } from '../../../image-uploader/services/dot-image/dot-image.service';
 
-enum STATUS {
+export enum STATUS {
     SELECT = 'SELECT',
     PREVIEW = 'PREVIEW',
     UPLOAD = 'UPLOAD'
@@ -45,6 +45,7 @@ export class DotUploadTabComponent {
         this.imageService.publishContent({ data: this.file }).subscribe((data) => {
             const contentlet = data[0];
             this.uploadedFile.emit(contentlet[Object.keys(contentlet)[0]]);
+            this.status = STATUS.SELECT;
         });
     }
 }

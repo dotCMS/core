@@ -26,11 +26,19 @@
                 class="p-button-outlined"
                 [disabled]="status === 'UPLOAD'"
                 (click)="onBack()"
+                data-test-id="back-btn"
                 pButton
             >
                 Back
             </button>
-            <button [disabled]="status === 'UPLOAD'" (click)="onInsert()" pButton>Insert</button>
+            <button
+                [disabled]="status === 'UPLOAD'"
+                (click)="onInsert()"
+                data-test-id="upload-btn"
+                pButton
+            >
+                Insert
+            </button>
         </div>
     </div>
 </ng-template>
