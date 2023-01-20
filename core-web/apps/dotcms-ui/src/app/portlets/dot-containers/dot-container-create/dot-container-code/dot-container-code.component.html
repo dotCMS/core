@@ -53,13 +53,10 @@
             formArrayName="containerStructures"
         >
             <ng-template pTemplate="header">
-                <ng-container *ngIf="contentTypes.length > 0; then showHeader; else hideHeader">
-                </ng-container>
-
-                <ng-template #showHeader>
+                <ng-container *ngIf="contentTypes.length > 0; else headerLoader">
                     {{ contentTypeNamesById[containerContent.value.structureId] }}
-                </ng-template>
-                <ng-template #hideHeader>
+                </ng-container>
+                <ng-template #headerLoader>
                     <p-skeleton borderRadius="0px" width="3rem" height="1.2rem"></p-skeleton>
                 </ng-template>
             </ng-template>
