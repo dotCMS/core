@@ -1,6 +1,5 @@
 package com.dotcms;
 
-import com.dotcms.analytics.AnalyticsAPIImplTest;
 import com.dotcms.analytics.bayesian.BayesianAPIImplTest;
 import com.dotcms.auth.providers.saml.v1.DotSamlResourceTest;
 import com.dotcms.auth.providers.saml.v1.SAMLHelperTest;
@@ -157,7 +156,6 @@ import com.dotmarketing.portlets.workflows.actionlet.VelocityScriptActionletAbor
 import com.dotmarketing.portlets.workflows.model.TestWorkflowAction;
 import com.dotmarketing.portlets.workflows.util.WorkflowEmailUtilTest;
 import com.dotmarketing.quartz.DotStatefulJobTest;
-import com.dotmarketing.quartz.job.AccessTokenRenewJobTest;
 import com.dotmarketing.quartz.job.CleanUpFieldReferencesJobTest;
 import com.dotmarketing.quartz.job.IntegrityDataGenerationJobTest;
 import com.dotmarketing.startup.StartupTasksExecutorTest;
@@ -208,6 +206,7 @@ import com.dotmarketing.startup.runonce.Task220829CreateExperimentsTableTest;
 import com.dotmarketing.startup.runonce.Task220912UpdateCorrectShowOnMenuPropertyTest;
 import com.dotmarketing.startup.runonce.Task220928AddLookbackWindowColumnToExperimentTest;
 import com.dotmarketing.startup.runonce.Task221007AddVariantIntoPrimaryKeyTest;
+import com.dotmarketing.startup.runonce.Task230110MakeSomeSystemFieldsRemovableByBaseTypeTest;
 import com.dotmarketing.util.ConfigTest;
 import com.dotmarketing.util.HashBuilderTest;
 import com.dotmarketing.util.MaintenanceUtilTest;
@@ -223,7 +222,6 @@ import org.junit.runners.Suite.SuiteClasses;
 
 /* grep -l -r "@Test" dotCMS/src/integration-test */
 /* ./gradlew integrationTest -Dtest.single=com.dotcms.MainSuite */
-
 
 @RunWith(MainBaseSuite.class)
 @SuiteClasses({
@@ -653,10 +651,10 @@ import org.junit.runners.Suite.SuiteClasses;
         VisitorsCurrentURLConditionletTest.class,
         VisitorsGeolocationConditionletTest.class,
         ManifestUtilTest.class,
-        ZipUtilTest.class
+        ZipUtilTest.class,
+        Task230110MakeSomeSystemFieldsRemovableByBaseTypeTest.class
 })
+
 public class MainSuite {
 
 }
-
-
