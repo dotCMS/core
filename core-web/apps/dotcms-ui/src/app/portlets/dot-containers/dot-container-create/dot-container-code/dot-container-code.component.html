@@ -20,7 +20,7 @@
                     (click)="handleTabClick($event); actionsMenu.toggle($event)"
                 ></i>
                 <ng-template #contentTypesLoader>
-                    <p-skeleton borderRadius="0px" width="3rem" height="4.5rem"></p-skeleton>
+                    <p-skeleton borderRadius="0px" width="3rem" height="3.75rem"></p-skeleton>
                 </ng-template>
                 <p-menu #actionsMenu [popup]="true" [model]="menuItems" appendTo="body"></p-menu>
             </ng-template>
@@ -60,7 +60,7 @@
                     {{ contentTypeNamesById[containerContent.value.structureId] }}
                 </ng-template>
                 <ng-template #hideHeader>
-                    <p-skeleton borderRadius="0px" width="2rem" height="2rem"></p-skeleton>
+                    <p-skeleton borderRadius="0px" width="3rem" height="1.2rem"></p-skeleton>
                 </ng-template>
             </ng-template>
             <div [formGroupName]="i">

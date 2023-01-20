@@ -327,24 +327,11 @@ describe('DotContentEditorComponent', () => {
                 expect(comp.monacoEditors[mockContentTypes[0].id].focus).toHaveBeenCalled();
             }));
         });
-    });
 
-    describe('without data', () => {
-        beforeEach(fakeAsync(() => {
-            spyOn<CoreWebService>(coreWebService, 'requestView').and.returnValue(
-                of({
-                    entity: []
-                })
-            );
+        fit('shoud have add loader on content types', () => {
+            // remove all content types
+            comp.contentTypes = [];
             hostFixture.detectChanges();
-            tick();
-            de = hostFixture.debugElement;
-            hostComponent = hostFixture.componentInstance;
-            hostComponent.contentTypes = [];
-            hostFixture.detectChanges();
-        }));
-
-        it('shoud have add loader on content types', () => {
             const loader = de.query(By.css('p-skeleton'));
             expect(loader).toBeDefined();
         });
