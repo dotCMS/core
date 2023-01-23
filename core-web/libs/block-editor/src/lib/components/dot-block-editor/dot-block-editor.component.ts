@@ -32,6 +32,7 @@ import {
 } from '../../extensions';
 import { ContentletBlock, ImageNode } from '../../nodes';
 import { formatHTML, SetDocAttrStep } from '../../shared/utils';
+import { from } from 'rxjs';
 
 function toTitleCase(str) {
     return str.replace(/\p{L}+('\p{L}+)?/gu, function (txt) {
@@ -90,14 +91,23 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy {
     constructor(private injector: Injector, public viewContainerRef: ViewContainerRef) {}
 
     ngOnInit() {
-        this.editor = new Editor({
-            extensions: this.setEditorExtensions()
-        });
+        //  const extensions = await this.setEditorExtensions()
+        from(this.loadImageNode()).subscribe((image) => {
+            console.log('image', image);
+            // Todo el Codigo
+            this.editor = new Editor({
+                extensions: [StarterKit.configure(this.setStarterKitOptions()), image]
+            });
+            this.editor.commands.setContent(
+                '<img src="https://img.freepik.com/free-vector/flat-design-abstract-geometric-real-estate-youtube-thumbnail_23-2149124845.jpg?w=2000" />'
+            );
+            console.log(this.editor);
 
-        this.editor.on('create', () => this.updateChartCount());
+            /*   this.editor.on('create', () => this.updateChartCount());
         this.subject
             .pipe(takeUntil(this.destroy$), debounceTime(250))
-            .subscribe(() => this.updateChartCount());
+            .subscribe(() => this.updateChartCount()); */
+        });
     }
 
     ngOnDestroy() {
@@ -113,7 +123,15 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy {
         this.editor.view.dispatch(tr);
     }
 
-    private setEditorExtensions(): AnyExtension[] {
+    private async loadImageNode() {
+        const url =
+            'https://cdn.skypack.dev/-/@tiptap/extension-image@v2.0.0-beta.209-ZTnvxbVFzhKCGGatBhJQ/dist=es2019,mode=imports/optimized/@tiptap/extension-image.js';
+        const module = await import(/* webpackIgnore: true */ url);
+        console.log('Module', module);
+        return module.Image;
+    }
+
+    private async setEditorExtensions(): Promise<AnyExtension[]> {
         const defaultExtensions: AnyExtension[] = [
             DotConfigExtension({
                 lang: this.lang,
@@ -147,10 +165,11 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy {
             DotTableHeaderExtension(),
             TableRow
         ];
+
         const customExtensions: Map<string, AnyExtension> = new Map([
             ['contentlets', ContentletBlock(this.injector)],
             ['table', DotTableExtension()],
-            ['image', ImageNode]
+            ['image', await this.loadImageNode()]
         ]);
 
         return [
