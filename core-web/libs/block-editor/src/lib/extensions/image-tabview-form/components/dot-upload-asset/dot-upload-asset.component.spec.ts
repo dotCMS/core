@@ -8,7 +8,7 @@ import { delay } from 'rxjs/operators';
 
 import { DotCMSContentlet } from '@dotcms/dotcms-models';
 
-import { DotUploadTabComponent, STATUS } from './dot-upload-tab.component';
+import { DotUploadAssetComponent, STATUS } from './dot-upload-asset.component';
 
 import { DotImageService } from '../../../image-uploader/services/dot-image/dot-image.service';
 
@@ -41,17 +41,21 @@ class FileUploadMockComponent {
 })
 class DotSpinnerMockComponent {}
 
-describe('DotUploadTabComponent', () => {
-    let fixture: ComponentFixture<DotUploadTabComponent>;
+describe('DotUploadAssetComponent', () => {
+    let fixture: ComponentFixture<DotUploadAssetComponent>;
     let de: DebugElement;
-    let component: DotUploadTabComponent;
+    let component: DotUploadAssetComponent;
 
     let dotImageService: DotImageService;
     let domSanitizer: DomSanitizer;
 
     beforeEach(async () => {
         await TestBed.configureTestingModule({
-            declarations: [DotUploadTabComponent, FileUploadMockComponent, DotSpinnerMockComponent],
+            declarations: [
+                DotUploadAssetComponent,
+                FileUploadMockComponent,
+                DotSpinnerMockComponent
+            ],
             providers: [
                 {
                     provide: DotImageService,
@@ -70,7 +74,7 @@ describe('DotUploadTabComponent', () => {
 
         dotImageService = TestBed.inject(DotImageService);
         domSanitizer = TestBed.inject(DomSanitizer);
-        fixture = TestBed.createComponent(DotUploadTabComponent);
+        fixture = TestBed.createComponent(DotUploadAssetComponent);
         de = fixture.debugElement;
         component = fixture.componentInstance;
     });
@@ -92,7 +96,7 @@ describe('DotUploadTabComponent', () => {
             const fileMock = new File([''], 'filename', { type: 'image/png' });
             global.URL.createObjectURL = jest.fn();
 
-            jest.spyOn(component, 'onSelect');
+            jest.spyOn(component, 'onSelectFile');
 
             fixture.detectChanges();
             const element = de.query(By.css('p-fileUpload'));
@@ -102,7 +106,7 @@ describe('DotUploadTabComponent', () => {
 
             const img = de.query(By.css('img'));
 
-            expect(component.onSelect).toHaveBeenCalled();
+            expect(component.onSelectFile).toHaveBeenCalled();
             expect(component.status).toEqual(STATUS.PREVIEW);
             expect(component.file).toEqual(fileMock);
             expect(img).toBeTruthy();

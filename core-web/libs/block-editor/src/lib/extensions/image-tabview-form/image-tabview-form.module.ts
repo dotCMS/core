@@ -9,7 +9,7 @@ import { DotImageCardSkeletonComponent } from './components/dot-image-search/com
 import { DotImageCardComponent } from './components/dot-image-search/components/dot-image-card/dot-image-card.component';
 import { DotImageSearchComponent } from './components/dot-image-search/dot-image-search.component';
 import { DotInsertExternalImageComponent } from './components/dot-insert-external-image/dot-insert-external-image.component';
-import { DotUploadTabComponent } from './components/dot-upload-tab/dot-upload-tab.component';
+import { DotUploadAssetComponent } from './components/dot-upload-asset/dot-upload-asset.component';
 import { ImageTabviewFormComponent } from './image-tabview-form.component';
 
 import { PrimengModule } from '../../shared/primeng.module';
@@ -24,7 +24,7 @@ import { DotImageService } from '../image-uploader/services/dot-image/dot-image.
         DotImageCardSkeletonComponent,
         DotInsertExternalImageComponent,
         DotImageSearchComponent,
-        DotUploadTabComponent
+        DotUploadAssetComponent
     ],
     providers: [DotImageService],
     exports: [ImageTabviewFormComponent, DotImageSearchComponent]

@@ -1,20 +1,14 @@
 @use "variables" as *;
 
 :host {
-    &,
-    .container {
-        height: 100%;
-        width: 100%;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        flex-direction: column;
-    }
-}
-
-.container {
+    height: 100%;
+    width: 100%;
     padding: $spacing-3;
     gap: $spacing-3;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
 
     .preview-container {
         align-items: center;
@@ -23,6 +17,7 @@
         justify-content: center;
         overflow: hidden;
         width: 100%;
+
         img {
             height: 100%;
             width: 100%;
@@ -30,7 +25,7 @@
         }
     }
 
-    .controls {
+    .btn-container {
         display: flex;
         gap: $spacing-3;
         height: fit-content;

@@ -1,4 +1,4 @@
-import { Component, EventEmitter, Output } from '@angular/core';
+import { Component, EventEmitter, Output, Input } from '@angular/core';
 import { DomSanitizer } from '@angular/platform-browser';
 
 import { DotCMSContentlet } from '@dotcms/dotcms-models';
@@ -12,13 +12,16 @@ export enum STATUS {
 }
 
 @Component({
-    selector: 'dot-upload-tab',
-    templateUrl: './dot-upload-tab.component.html',
-    styleUrls: ['./dot-upload-tab.component.scss']
+    selector: 'dot-upload-asset',
+    templateUrl: './dot-upload-asset.component.html',
+    styleUrls: ['./dot-upload-asset.component.scss']
 })
-export class DotUploadTabComponent {
+export class DotUploadAssetComponent {
     @Output()
     uploadedFile = new EventEmitter<DotCMSContentlet>();
+
+    @Input()
+    acceptedTypes = 'image/*';
 
     public status = STATUS.SELECT;
     public file: File;
@@ -28,19 +31,35 @@ export class DotUploadTabComponent {
         private readonly imageService: DotImageService
     ) {}
 
-    onSelect(event) {
+    /**
+     * Set Selected File
+     *
+     * @param {*} event
+     * @memberof DotUploadAssetComponent
+     */
+    onSelectFile(event) {
         const file = event.files[0];
         file.objectURL = this.sanitizer.bypassSecurityTrustUrl(window.URL.createObjectURL(file));
         this.file = file;
         this.status = STATUS.PREVIEW;
     }
 
-    onBack() {
+    /**
+     * Remove Current Selected File.
+     *
+     * @memberof DotUploadAssetComponent
+     */
+    removeFile() {
         this.file = null;
         this.status = STATUS.SELECT;
     }
 
-    onInsert() {
+    /**
+     * Upload the selected File to dotCMS
+     *
+     * @memberof DotUploadAssetComponent
+     */
+    uploadFile() {
         this.status = STATUS.UPLOAD;
         this.imageService.publishContent({ data: this.file }).subscribe((data) => {
             const contentlet = data[0];

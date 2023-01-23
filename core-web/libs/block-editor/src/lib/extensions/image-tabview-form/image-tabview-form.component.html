@@ -13,7 +13,7 @@
         <p-tabPanel [cache]="false" header="Upload Images" leftIcon="pi pi-folder">
             <ng-template pTemplate="content">
                 <div class="wrapper">
-                    <dot-upload-tab (uploadedFile)="onSelectImage($event)"></dot-upload-tab>
+                    <dot-upload-asset (uploadedFile)="onSelectImage($event)"></dot-upload-asset>
                 </div>
             </ng-template>
         </p-tabPanel>
