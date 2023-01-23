@@ -10,7 +10,6 @@ import { DotAppsService } from '@dotcms/app/api/services/dot-apps/dot-apps.servi
 import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
 import { DotApps, DotAppsListResolverData } from '@dotcms/dotcms-models';
 
-
 import { DotAppsImportExportDialogComponent } from '../dot-apps-import-export-dialog/dot-apps-import-export-dialog.component';
 
 @Component({

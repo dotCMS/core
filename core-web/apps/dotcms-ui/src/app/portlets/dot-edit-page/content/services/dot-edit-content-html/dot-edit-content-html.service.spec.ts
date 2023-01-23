@@ -9,18 +9,31 @@ import { TestBed, waitForAsync } from '@angular/core/testing';
 
 import { ConfirmationService } from 'primeng/api';
 
-
 import { DotHttpErrorManagerService } from '@dotcms/app/api/services/dot-http-error-manager/dot-http-error-manager.service';
 import { DotGlobalMessageService } from '@dotcms/app/view/components/_common/dot-global-message/dot-global-message.service';
-import { DotAlertConfirmService, DotEventsService, DotLicenseService, DotMessageService, DotWorkflowActionsFireService } from '@dotcms/data-access';
-import { CoreWebService, HttpCode, LoggerService, StringUtils } from '@dotcms/dotcms-js';
-import { DotCMSContentType, DotPageContainer, DotPageRender, DotPageRenderState } from '@dotcms/dotcms-models';
 import {
-    CoreWebServiceMock, dotcmsContentTypeBasicMock, mockDotLayout,
+    DotAlertConfirmService,
+    DotEventsService,
+    DotLicenseService,
+    DotMessageService,
+    DotWorkflowActionsFireService
+} from '@dotcms/data-access';
+import { CoreWebService, HttpCode, LoggerService, StringUtils } from '@dotcms/dotcms-js';
+import {
+    DotCMSContentType,
+    DotPageContainer,
+    DotPageRender,
+    DotPageRenderState
+} from '@dotcms/dotcms-models';
+import {
+    CoreWebServiceMock,
+    dotcmsContentTypeBasicMock,
+    mockDotLayout,
     MockDotMessageService,
     mockDotPage,
     mockDotRenderedPage,
-    mockResponseView, mockUser
+    mockResponseView,
+    mockUser
 } from '@dotcms/utils-testing';
 import { DotPageContent } from '@portlets/dot-edit-page/shared/models';
 
@@ -34,8 +47,6 @@ import { DotContainerContentletService } from '../dot-container-contentlet.servi
 import { DotDOMHtmlUtilService } from '../html/dot-dom-html-util.service';
 import { DotDragDropAPIHtmlService } from '../html/dot-drag-drop-api-html.service';
 import { DotEditContentToolbarHtmlService } from '../html/dot-edit-content-toolbar-html.service';
-
-
 
 @Injectable()
 class MockDotLicenseService {

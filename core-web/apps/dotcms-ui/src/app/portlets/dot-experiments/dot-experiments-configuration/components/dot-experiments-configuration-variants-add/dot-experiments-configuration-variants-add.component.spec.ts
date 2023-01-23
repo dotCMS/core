@@ -15,7 +15,6 @@ import { MockDotMessageService } from '@dotcms/utils-testing';
 import { DotSidebarDirective } from '@portlets/shared/directives/dot-sidebar.directive';
 import { DotSidebarHeaderComponent } from '@shared/dot-sidebar-header/dot-sidebar-header.component';
 
-
 import { DotExperimentsConfigurationVariantsAddComponent } from './dot-experiments-configuration-variants-add.component';
 
 const messageServiceMock = new MockDotMessageService({

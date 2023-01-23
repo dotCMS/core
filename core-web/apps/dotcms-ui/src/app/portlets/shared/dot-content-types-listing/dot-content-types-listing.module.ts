@@ -4,6 +4,7 @@ import { NgModule } from '@angular/core';
 import { DotAddToBundleModule } from '@components/_common/dot-add-to-bundle';
 import { DotBaseTypeSelectorModule } from '@components/dot-base-type-selector';
 import { DotListingDataTableModule } from '@components/dot-listing-data-table';
+import { DotPortletBaseModule } from '@components/dot-portlet-base/dot-portlet-base.module';
 import {
     DotContentTypeService,
     DotContentTypesInfoService,
@@ -21,7 +22,8 @@ import { DotContentTypesPortletComponent } from './dot-content-types.component';
         DotBaseTypeSelectorModule,
         DotAddToBundleModule,
         DotAddToMenuModule,
-        DotContentTypeCopyDialogModule
+        DotContentTypeCopyDialogModule,
+        DotPortletBaseModule
     ],
     declarations: [DotContentTypesPortletComponent],
     exports: [DotContentTypesPortletComponent],

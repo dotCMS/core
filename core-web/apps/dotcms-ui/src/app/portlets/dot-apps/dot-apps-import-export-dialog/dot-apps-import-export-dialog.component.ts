@@ -31,7 +31,6 @@ import {
     DotAppsSites
 } from '@dotcms/dotcms-models';
 
-
 @Component({
     selector: 'dot-apps-import-export-dialog',
     templateUrl: './dot-apps-import-export-dialog.component.html',

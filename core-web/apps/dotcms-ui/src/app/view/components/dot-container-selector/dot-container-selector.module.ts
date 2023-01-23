@@ -11,7 +11,6 @@ import { DotContainerSelectorComponent } from './dot-container-selector.componen
 
 import { SearchableDropDownModule } from '../_common/searchable-dropdown/searchable-dropdown.module';
 
-
 @NgModule({
     declarations: [DotContainerSelectorComponent],
     exports: [DotContainerSelectorComponent],

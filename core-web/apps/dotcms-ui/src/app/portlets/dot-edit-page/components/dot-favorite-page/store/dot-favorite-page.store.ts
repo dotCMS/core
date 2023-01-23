@@ -16,7 +16,6 @@ import {
 } from '@dotcms/data-access';
 import { DotCMSContentlet, DotCMSTempFile, DotCurrentUser, DotRole } from '@dotcms/dotcms-models';
 
-
 import { DotFavoritePageFormData } from '../dot-favorite-page.component';
 
 export const enum DotFavoritePageActionState {

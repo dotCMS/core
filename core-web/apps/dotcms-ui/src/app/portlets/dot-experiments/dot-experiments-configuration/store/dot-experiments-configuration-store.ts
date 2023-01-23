@@ -7,12 +7,14 @@ import { Title } from '@angular/platform-browser';
 
 import { MessageService } from 'primeng/api';
 
-import { switchMap, tap, withLatestFrom } from 'rxjs/operators';
+import { switchMap, tap } from 'rxjs/operators';
 
 import { DotMessageService } from '@dotcms/data-access';
 import {
     DotExperiment,
     ExperimentSteps,
+    Goals,
+    GoalsLevels,
     LoadingState,
     Status,
     StepStatus,
@@ -20,9 +22,6 @@ import {
     Variant
 } from '@dotcms/dotcms-models';
 import { DotExperimentsService } from '@portlets/dot-experiments/shared/services/dot-experiments.service';
-
-
-
 
 export interface DotExperimentsConfigurationState {
     experiment: DotExperiment | null;
@@ -50,6 +49,20 @@ export interface ConfigurationViewModel {
 export class DotExperimentsConfigurationStore extends ComponentStore<DotExperimentsConfigurationState> {
     // Selectors
     readonly isLoading$ = this.select(({ status }) => status === LoadingState.LOADING);
+    readonly getExperimentId = this.select(({ experiment }) => experiment.id);
+
+    // Variants Step //
+    readonly variantsStatus$ = this.select(this.state$, ({ stepStatusSidebar }) =>
+        stepStatusSidebar.experimentStep === ExperimentSteps.VARIANTS ? stepStatusSidebar : null
+    );
+
+    // Goals Step //
+    readonly goals$: Observable<Goals> = this.select(({ experiment }) =>
+        experiment.goals ? experiment.goals : null
+    );
+    readonly goalsStatus$ = this.select(this.state$, ({ stepStatusSidebar }) =>
+        stepStatusSidebar.experimentStep === ExperimentSteps.GOAL ? stepStatusSidebar : null
+    );
 
     // Updaters
     readonly setComponentStatus = this.updater((state, status: LoadingState) => ({
@@ -57,12 +70,9 @@ export class DotExperimentsConfigurationStore extends ComponentStore<DotExperime
         status
     }));
 
-    readonly setSidebarStatus = this.updater((state, status: Status) => ({
+    readonly setSidebarStatus = this.updater((state, stepStatusSidebar: Partial<StepStatus>) => ({
         ...state,
-        stepStatusSidebar: {
-            ...state.stepStatusSidebar,
-            status
-        }
+        stepStatusSidebar: { ...state.stepStatusSidebar, ...stepStatusSidebar }
     }));
 
     readonly closeSidebar = this.updater((state) => ({
@@ -91,6 +101,11 @@ export class DotExperimentsConfigurationStore extends ComponentStore<DotExperime
         experiment: { ...state.experiment, trafficProportion }
     }));
 
+    readonly setGoals = this.updater((state, goals: Goals) => ({
+        ...state,
+        experiment: { ...state.experiment, goals }
+    }));
+
     // Effects
     readonly loadExperiment = this.effect((experimentId$: Observable<string>) => {
         return experimentId$.pipe(
@@ -116,7 +131,12 @@ export class DotExperimentsConfigurationStore extends ComponentStore<DotExperime
     readonly addVariant = this.effect(
         (variant$: Observable<{ experimentId: string; data: Pick<DotExperiment, 'name'> }>) => {
             return variant$.pipe(
-                tap(() => this.setSidebarStatus(Status.SAVING)),
+                tap(() =>
+                    this.setSidebarStatus({
+                        status: Status.SAVING,
+                        experimentStep: ExperimentSteps.VARIANTS
+                    })
+                ),
                 switchMap((variant) =>
                     this.dotExperimentsService.addVariant(variant.experimentId, variant.data).pipe(
                         tapResponse(
@@ -136,8 +156,9 @@ export class DotExperimentsConfigurationStore extends ComponentStore<DotExperime
                                 this.closeSidebar();
                             },
                             (error: HttpErrorResponse) => {
-                                this.setSidebarStatus(Status.IDLE);
-
+                                this.setSidebarStatus({
+                                    status: Status.IDLE
+                                });
                                 throwError(error);
                             }
                         )
@@ -152,7 +173,12 @@ export class DotExperimentsConfigurationStore extends ComponentStore<DotExperime
             variant$: Observable<{ experimentId: string; data: Pick<DotExperiment, 'name' | 'id'> }>
         ) => {
             return variant$.pipe(
-                tap(() => this.setSidebarStatus(Status.SAVING)),
+                tap(() =>
+                    this.setSidebarStatus({
+                        status: Status.SAVING,
+                        experimentStep: ExperimentSteps.VARIANTS
+                    })
+                ),
                 switchMap((variant) =>
                     this.dotExperimentsService
                         .editVariant(variant.experimentId, variant.data.id, {
@@ -173,8 +199,15 @@ export class DotExperimentsConfigurationStore extends ComponentStore<DotExperime
                                     });
 
                                     this.setTrafficProportion(experiment.trafficProportion);
+                                    this.setSidebarStatus({
+                                        status: Status.IDLE,
+                                        experimentStep: null
+                                    });
                                 },
                                 (error: HttpErrorResponse) => {
+                                    this.setSidebarStatus({
+                                        status: Status.IDLE
+                                    });
                                     throwError(error);
                                 }
                             )
@@ -184,32 +217,103 @@ export class DotExperimentsConfigurationStore extends ComponentStore<DotExperime
         }
     );
 
-    readonly deleteVariant = this.effect((variant$: Observable<Variant>) => {
-        return variant$.pipe(
-            withLatestFrom(this.state$),
-            switchMap(([variant, { experiment }]) =>
-                this.dotExperimentsService.removeVariant(experiment.id, variant.id).pipe(
-                    tapResponse(
-                        (experiment) => {
-                            this.messageService.add({
-                                severity: 'info',
-                                summary: this.dotMessageService.get(
-                                    'experiments.configure.variant.delete.confirm-title'
-                                ),
-                                detail: this.dotMessageService.get(
-                                    'experiments.configure.variant.delete.confirm-message',
-                                    variant.name
-                                )
-                            });
+    readonly deleteVariant = this.effect(
+        (variant$: Observable<{ experimentId: string; variant: Variant }>) => {
+            return variant$.pipe(
+                switchMap((selected) =>
+                    this.dotExperimentsService
+                        .removeVariant(selected.experimentId, selected.variant.id)
+                        .pipe(
+                            tapResponse(
+                                (experiment) => {
+                                    this.messageService.add({
+                                        severity: 'info',
+                                        summary: this.dotMessageService.get(
+                                            'experiments.configure.variant.delete.confirm-title'
+                                        ),
+                                        detail: this.dotMessageService.get(
+                                            'experiments.configure.variant.delete.confirm-message',
+                                            selected.variant.name
+                                        )
+                                    });
 
-                            this.setTrafficProportion(experiment.trafficProportion);
-                        },
-                        (error: HttpErrorResponse) => throwError(error)
+                                    this.setTrafficProportion(experiment.trafficProportion);
+                                },
+                                (error: HttpErrorResponse) => throwError(error)
+                            )
+                        )
+                )
+            );
+        }
+    );
+
+    // Goals
+    readonly setSelectedGoal = this.effect(
+        (selectedGoal$: Observable<{ experimentId: string; goals: Goals }>) => {
+            return selectedGoal$.pipe(
+                tap(() =>
+                    this.setSidebarStatus({
+                        status: Status.SAVING,
+                        experimentStep: ExperimentSteps.GOAL
+                    })
+                ),
+                switchMap((selected) =>
+                    this.dotExperimentsService.setGoal(selected.experimentId, selected.goals).pipe(
+                        tapResponse(
+                            (experiment) => {
+                                this.messageService.add({
+                                    severity: 'info',
+                                    summary: this.dotMessageService.get(
+                                        'experiments.configure.goals.select.confirm-title'
+                                    ),
+                                    detail: this.dotMessageService.get(
+                                        'experiments.configure.goals.select.confirm-message'
+                                    )
+                                });
+
+                                this.setGoals(experiment.goals);
+                                this.setSidebarStatus({
+                                    status: Status.DONE,
+                                    experimentStep: ExperimentSteps.GOAL,
+                                    isOpen: false
+                                });
+                            },
+                            (error: HttpErrorResponse) => throwError(error)
+                        )
                     )
                 )
-            )
-        );
-    });
+            );
+        }
+    );
+
+    readonly deleteGoal = this.effect(
+        (goalLevel$: Observable<{ goalLevel: GoalsLevels; experimentId: string }>) => {
+            return goalLevel$.pipe(
+                switchMap((selected) =>
+                    this.dotExperimentsService
+                        .deleteGoal(selected.experimentId, selected.goalLevel)
+                        .pipe(
+                            tapResponse(
+                                (experiment) => {
+                                    this.messageService.add({
+                                        severity: 'info',
+                                        summary: this.dotMessageService.get(
+                                            'experiments.configure.goals.delete.confirm-title'
+                                        ),
+                                        detail: this.dotMessageService.get(
+                                            'experiments.configure.goals.delete.confirm-message'
+                                        )
+                                    });
+
+                                    this.setGoals(experiment.goals);
+                                },
+                                (error: HttpErrorResponse) => throwError(error)
+                            )
+                        )
+                )
+            );
+        }
+    );
 
     readonly vm$: Observable<ConfigurationViewModel> = this.select(
         this.state$,
@@ -220,6 +324,24 @@ export class DotExperimentsConfigurationStore extends ComponentStore<DotExperime
             isLoading
         })
     );
+
+    readonly variantsStepVm$: Observable<{
+        status: StepStatus;
+    }> = this.select(this.variantsStatus$, (status) => ({
+        status
+    }));
+
+    readonly goalsStepVm$: Observable<{ experimentId: string; goals: Goals; status: StepStatus }> =
+        this.select(
+            this.getExperimentId,
+            this.goals$,
+            this.goalsStatus$,
+            (experimentId, goals, status) => ({
+                experimentId,
+                goals,
+                status
+            })
+        );
 
     constructor(
         private readonly dotExperimentsService: DotExperimentsService,

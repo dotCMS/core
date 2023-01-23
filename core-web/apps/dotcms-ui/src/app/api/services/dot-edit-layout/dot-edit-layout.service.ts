@@ -2,7 +2,6 @@ import { BehaviorSubject, Observable, Subject } from 'rxjs';
 
 import { Injectable } from '@angular/core';
 
-
 import {
     DotLayoutBody,
     DotLayoutColumn,

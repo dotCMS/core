@@ -15,8 +15,6 @@ import {
     LoadingState
 } from '@dotcms/dotcms-models';
 
-
-
 export interface DotPaletteState {
     contentlets: DotCMSContentlet[] | DotCMSContentType[];
     contentTypes: DotCMSContentType[];

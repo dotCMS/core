@@ -24,7 +24,6 @@ import {
 } from '@dotcms/utils-testing';
 import { DotMessagePipe } from '@pipes/dot-message/dot-message.pipe';
 
-
 import { DotFavoritePageComponent } from './dot-favorite-page.component';
 import { DotFavoritePageActionState, DotFavoritePageStore } from './store/dot-favorite-page.store';
 @Component({

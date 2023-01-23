@@ -2,9 +2,7 @@ name: Defect
 
 description: I need to report a bug or issue with dotCMS.
 
-title: "[Defect]: "
-
-labels: ['Type - Defect', Triage]
+labels: ['Type : Defect',Triage]
 
 body:
 
@@ -13,51 +11,6 @@ body:
       value: |
         If you have any questions about how to use this form, check out [How dotCMS uses GitHub](https://docs.google.com/presentation/d/1C1oCESIL9Z84xXo1DPWQZh48c4BSGlVRAn1DYGEFMUw).
 
-  - type: dropdown
-    id: proposed-objective
-    attributes:
-      label: "Proposed Objective"
-      description: 
-      options:
-        - "Accessibility (WCAG)"
-        - "Application Performance"
-        - "Core Improvement (Features)"
-        - "Customer Acquisition"
-        - "Customer Success"
-        - "Developer Experience"
-        - "Documentation"
-        - "Integration Support"
-        - "Maintenance"
-        - "Quality Assurance"
-        - "Scalability"
-        - "Security"
-        - "User Experience"
-    validations:
-      required: true
-
-  - type: dropdown
-    id: proposed-prioritiy
-    attributes:
-      label: "Proposed Priority"
-      description: 
-      options:
-        - "Priority 1 - Show Stopper"
-        - "Priority 2 - Important"
-        - "Priority 3 - Average"
-        - "Priority 4 - Trivial"
-    validations:
-      required: true
-
-  - type: textarea
-    id: dotCMS-version
-    attributes:
-      label: "dotCMS Version"
-      description: "What version, or environment, is this problem related to?"
-      placeholder:
-      value: 
-    validations:
-      required: true
-      
   - type: textarea
     id: problem-statement
     attributes:
@@ -67,7 +20,7 @@ body:
       value: 
     validations:
       required: true
-
+      
   - type: textarea
     id: steps-to-reproduce
     attributes:
@@ -85,6 +38,55 @@ body:
       description: "What objective needs to be met in order to resolve this?"
       placeholder: 
       value: 
+    validations:
+      required: true
+
+  - type: textarea
+    id: dotCMS-version
+    attributes:
+      label: "dotCMS Version"
+      description: "What version, or environment, is this problem related to?"
+      placeholder:
+      value: 
+    validations:
+      required: true
+
+  - type: dropdown
+    id: proposed-objective
+    attributes:
+      label: "Proposed Objective"
+      description: 
+      options:
+        - "Please Select"
+        - "Application Performance"
+        - "Code Maintenance"
+        - "Core Features"
+        - "Customer Retention"
+        - "Customer Success"
+        - "Customer Support"
+        - "Documentation"
+        - "Integration Support"
+        - "Marketing"
+        - "Quality Assurance"
+        - "Reliability"
+        - "Sales"
+        - "Security"
+        - "Technical User Experience"
+        - "User Experience"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: proposed-prioritiy
+    attributes:
+      label: "Proposed Priority"
+      description: 
+      options:
+        - "Please Select"
+        - "Priority 1 - Show Stopper"
+        - "Priority 2 - Important"
+        - "Priority 3 - Average"
+        - "Priority 4 - Trivial"
     validations:
       required: true
 
@@ -111,21 +113,11 @@ body:
   - type: textarea
     id: sub-tasks
     attributes:
-      label: "Sub-Tasks"
+      label: "Sub-Tasks & Estimates"
       description: "Use a task-list format, and feel free to @ people responsible for completion."
       placeholder: |
-        - [ ] Some Task Related to this Issue
-        - [ ] Some Task for Damen @damen-dotcms        
-      value:
-    validations:
-      required: false
-      
-  - type: textarea
-    id: estimates
-    attributes:
-      label: "Estimates"
-      description: "Used by development team."
-      placeholder:
+        - [ ] Some Task Related to this Issue (4 points)
+        - [ ] Some Task for Damen (2 points) @damen-dotcms
       value:
     validations:
       required: false

@@ -58,6 +58,11 @@ const enterprisePorlets: DotUnlicensedPortletData[] = [
         icon: 'apps',
         titleKey: 'com.dotcms.repackage.javax.portlet.title.apps',
         url: '/apps'
+    },
+    {
+        icon: 'integration_instructions',
+        titleKey: 'com.dotcms.repackage.javax.portlet.title.velocity',
+        url: '/c/velocity_playground'
     }
 ];
 

@@ -11,9 +11,22 @@ import { DotDeviceSelectorComponent } from '@components/dot-device-selector/dot-
 import { DotLanguageSelectorComponent } from '@components/dot-language-selector/dot-language-selector.component';
 import { DotPersonaSelectorComponent } from '@components/dot-persona-selector/dot-persona-selector.component';
 import { DOTTestBed } from '@dotcms/app/test/dot-test-bed';
-import { DotDevicesService, DotLanguagesService, DotLicenseService, DotMessageService, DotPersonalizeService, DotPersonasService } from '@dotcms/data-access';
+import {
+    DotDevicesService,
+    DotLanguagesService,
+    DotLicenseService,
+    DotMessageService,
+    DotPersonalizeService,
+    DotPersonasService
+} from '@dotcms/data-access';
 import { LoginService } from '@dotcms/dotcms-js';
-import { DotDevice, DotLanguage, DotPageRender, DotPageRenderState, DotPersona } from '@dotcms/dotcms-models';
+import {
+    DotDevice,
+    DotLanguage,
+    DotPageRender,
+    DotPageRenderState,
+    DotPersona
+} from '@dotcms/dotcms-models';
 import {
     DotDevicesServiceMock,
     DotLanguagesServiceMock,
@@ -30,11 +43,9 @@ import {
 } from '@dotcms/utils-testing';
 import { DotPipesModule } from '@pipes/dot-pipes.module';
 
-
 import { DotEditPageViewAsControllerComponent } from './dot-edit-page-view-as-controller.component';
 
 import { DotPageStateService } from '../../services/dot-page-state/dot-page-state.service';
-
 
 @Component({
     selector: 'dot-test-host',

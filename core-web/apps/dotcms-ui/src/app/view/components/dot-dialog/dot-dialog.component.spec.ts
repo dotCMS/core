@@ -11,7 +11,6 @@ import { DotDialogActions, DotDialogComponent } from './dot-dialog.component';
 
 import { UiDotIconButtonModule } from '../_common/dot-icon-button/dot-icon-button.module';
 
-
 const dispatchKeydownEvent = (key: string, meta = false, alt = false) => {
     const event = new KeyboardEvent('keydown', {
         key: key,

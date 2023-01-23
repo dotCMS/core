@@ -541,6 +541,539 @@
 				}
 			],
 			"description": "Steps:\n\n1. Create two Templates with:\n    \n\n- First\n    \n\nName: page_version_different_lang_template_1\n\nBody: Template 1\n\n- Second\n    \n\nName: page_version_different_lang_template_2\n\nBody: Template 2\n\nPublish both.\n\n2\\. Create a Page with DEFAULT lang and using the \"page_version_different_lang_template_1\" template\n\n3\\. Render the Page and check that the result is \"Template 1\"\n\n4\\. Create a new Experiment and Variant.\n\n5\\. Create a new version of the Page using the newly Variant and the 'page_version_different_lang_template_2' Template.\n\n6\\. Render both Page version and check that now the results is \"Template 2\" for both."
+		},
+		{
+			"name": "Should save the same template to LIVE and WORKING version",
+			"item": [
+				{
+					"name": "Create Template 1",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"",
+									"",
+									"pm.test(\"Status code should be ok 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.collectionVariables.set(\"template_1_id\", jsonData.entity.identifier);",
+									"",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\t\t\n    \"layout\":{\n        \"body\":{\n            \"rows\":[\n                {\n                    \"styleClass\":\"\",\n                    \"columns\":[\n                        {\n                            \"styleClass\":\"\",\n                            \"leftOffset\":1,\n                            \"width\":12,\n                            \"containers\":[\n                                {\"identifier\":\"SYSTEM_CONTAINER\"}\n                            ]\n                        }\n                    ]\n                }\n            ]\n        }    \n    },\n    \"friendlyName\": \"\",\n    \"title\": \"page_version_different_lang_template_1\",\n    \"theme\": \"SYSTEM_THEME\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/templates",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"templates"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Pubish Templates",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"",
+									"pm.test(\"Status code should be ok 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "[\"{{template_1_id}}\"]",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/templates/_publish",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"templates",
+								"_publish"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Create page 1 And Publish",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"",
+									"",
+									"pm.test(\"Status code should be ok 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.collectionVariables.set(\"page_version_different_template_id\", jsonData.entity.identifier);",
+									"",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{ \n    \"contentlet\" : {\n        \"title\" : \"page_version_different_template_2\",\n        \"languageId\" : 1,\n        \"stInode\": \"c541abb1-69b3-4bc5-8430-5e09e5239cc8\",\n        \"url\": \"page_version_different_template_2\",\n        \"hostFolder\": \"8a7d5e23-da1e-420a-b4f0-471e7da8ea2d\",\n        \"template\": \"{{template_1_id}}\",\n        \"cachettl\": 0,\n        \"friendlyName\": \"friendlyName\"\n    }\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/workflow/actions/default/fire/PUBLISH",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"workflow",
+								"actions",
+								"default",
+								"fire",
+								"PUBLISH"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Render Page 1 IN PREVIEW MODE after create",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"",
+									"",
+									"pm.test(\"Status code should be ok 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"",
+									"pm.expect(jsonData.entity.layout.body.rows[0].columns[0].width).to.equal(12);",
+									"pm.expect(jsonData.entity.layout.body.rows[0].columns[0].containers[0].identifier).to.equal(\"SYSTEM_CONTAINER\");",
+									"",
+									""
+								],
+								"type": "text/javascript"
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/page/render/page_version_different_template_2?host_id=8a7d5e23-da1e-420a-b4f0-471e7da8ea2d&language_id=1&mode=PREVIEW_MODE",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"page",
+								"render",
+								"page_version_different_template_2"
+							],
+							"query": [
+								{
+									"key": "host_id",
+									"value": "8a7d5e23-da1e-420a-b4f0-471e7da8ea2d"
+								},
+								{
+									"key": "language_id",
+									"value": "1"
+								},
+								{
+									"key": "mode",
+									"value": "PREVIEW_MODE"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Render Page 1 IN LIVE MODE after create",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"",
+									"",
+									"pm.test(\"Status code should be ok 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"",
+									"pm.expect(jsonData.entity.layout.body.rows[0].columns[0].width).to.equal(12);",
+									"pm.expect(jsonData.entity.layout.body.rows[0].columns[0].containers[0].identifier).to.equal(\"SYSTEM_CONTAINER\");",
+									"",
+									""
+								],
+								"type": "text/javascript"
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/page/render/page_version_different_template_2?host_id=8a7d5e23-da1e-420a-b4f0-471e7da8ea2d&language_id=1&mode=LIVE_MODE",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"page",
+								"render",
+								"page_version_different_template_2"
+							],
+							"query": [
+								{
+									"key": "host_id",
+									"value": "8a7d5e23-da1e-420a-b4f0-471e7da8ea2d"
+								},
+								{
+									"key": "language_id",
+									"value": "1"
+								},
+								{
+									"key": "mode",
+									"value": "LIVE_MODE"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Change Page 2 Layout Copy",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"",
+									"",
+									"pm.test(\"Status code should be ok 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\t\t\n    \"layout\":{\n        \"body\":{\n            \"rows\":[\n                {\n                    \"styleClass\":\"\",\n                    \"columns\":[\n                        {\n                            \"styleClass\":\"\",\n                            \"leftOffset\":1,\n                            \"width\":1,\n                            \"containers\":[\n                                {\"identifier\":\"SYSTEM_CONTAINER\"}\n                            ]\n                        }\n                    ]\n                }\n            ]\n        }    \n    },\n    \"themeId\": \"SYSTEM_THEME\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/page/{{page_version_different_template_id}}/layout",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"page",
+								"{{page_version_different_template_id}}",
+								"layout"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Render Page 1 IN PREVIEW MODE after change layout",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"",
+									"",
+									"pm.test(\"Status code should be ok 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"",
+									"pm.expect(jsonData.entity.layout.body.rows[0].columns[0].width).to.equal(1);",
+									"pm.expect(jsonData.entity.layout.body.rows[0].columns[0].containers[0].identifier).to.equal(\"SYSTEM_CONTAINER\");",
+									"",
+									""
+								],
+								"type": "text/javascript"
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/page/render/page_version_different_template_2?host_id=8a7d5e23-da1e-420a-b4f0-471e7da8ea2d&language_id=1&mode=PREVIEW_MODE",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"page",
+								"render",
+								"page_version_different_template_2"
+							],
+							"query": [
+								{
+									"key": "host_id",
+									"value": "8a7d5e23-da1e-420a-b4f0-471e7da8ea2d"
+								},
+								{
+									"key": "language_id",
+									"value": "1"
+								},
+								{
+									"key": "mode",
+									"value": "PREVIEW_MODE"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Render Page 1 IN LIVE MODE after change layout",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"",
+									"",
+									"pm.test(\"Status code should be ok 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"",
+									"pm.expect(jsonData.entity.layout.body.rows[0].columns[0].width).to.equal(1);",
+									"pm.expect(jsonData.entity.layout.body.rows[0].columns[0].containers[0].identifier).to.equal(\"SYSTEM_CONTAINER\");",
+									"",
+									""
+								],
+								"type": "text/javascript"
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/page/render/page_version_different_template_2?host_id=8a7d5e23-da1e-420a-b4f0-471e7da8ea2d&language_id=1&mode=LIVE_MODE",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"page",
+								"render",
+								"page_version_different_template_2"
+							],
+							"query": [
+								{
+									"key": "host_id",
+									"value": "8a7d5e23-da1e-420a-b4f0-471e7da8ea2d"
+								},
+								{
+									"key": "language_id",
+									"value": "1"
+								},
+								{
+									"key": "mode",
+									"value": "LIVE_MODE"
+								}
+							]
+						}
+					},
+					"response": []
+				}
+			],
+			"description": "Steps:\n\n1. Create one drawed Templates with:\n    \n\nName: should_have_same_template_to_LIVE_and_working_1\n\nBody: Add the SYSTEM_CONTAINER with a with of 12\n\nPublish it.\n\n2\\. Create a Page with DEFAULT lang and using the \"should_have_same_template_to_LIVE_and_working_1\" template\n\n3\\. Render the Page in LIVE and PREVIEW MODE and check that the layout have the SYSTEM_CONTAINER with a width of 12.\n\n4\\. Change the page's Template to \"should_have_same_template_to_LIVE_and_working_2\" and just save.\n\n6\\. Render both Page version and check that now the results is \"Template 2\" for both."
 		}
 	],
 	"variable": [

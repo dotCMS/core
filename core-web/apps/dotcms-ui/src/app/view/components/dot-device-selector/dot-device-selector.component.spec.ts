@@ -19,7 +19,6 @@ import {
     MockDotMessageService
 } from '@dotcms/utils-testing';
 
-
 import { DotDeviceSelectorComponent } from './dot-device-selector.component';
 
 @Component({

@@ -18,9 +18,6 @@ import {
 } from '@dotcms/dotcms-models';
 import { DotExperimentsService } from '@portlets/dot-experiments/shared/services/dot-experiments.service';
 
-
-
-
 export interface DotExperimentsState {
     page: {
         pageId: string;

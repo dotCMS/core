@@ -11,8 +11,6 @@ import { DOTTestBed } from '@dotcms/app/test/dot-test-bed';
 
 import { DotGravatarComponent } from './dot-gravatar.component';
 
-
-
 import { DotAvatarModule } from '../../../_common/dot-avatar/dot-avatar.module';
 
 @Component({

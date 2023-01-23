@@ -13,7 +13,6 @@ import { DotcmsConfigService, LoggerService } from '@dotcms/dotcms-js';
 import { DotIconModule } from '@dotcms/ui';
 import { DotPipesModule } from '@pipes/dot-pipes.module';
 
-
 import { ActionHeaderModule } from './action-header/action-header.module';
 import { DotListingDataTableComponent } from './dot-listing-data-table.component';
 

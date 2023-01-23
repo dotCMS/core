@@ -13,7 +13,6 @@ import {
     UserPermissions
 } from '@dotcms/dotcms-models';
 
-
 /**
  * Returns user's data and permissions
  *

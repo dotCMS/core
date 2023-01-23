@@ -24,7 +24,6 @@ import { DotMenu } from '@dotcms/app/shared/models/navigation';
 import { DotMessageService } from '@dotcms/data-access';
 import { DotCMSContentType } from '@dotcms/dotcms-models';
 
-
 @Component({
     selector: 'dot-add-to-menu',
     templateUrl: 'dot-add-to-menu.component.html'

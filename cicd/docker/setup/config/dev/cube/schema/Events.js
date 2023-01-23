@@ -43,6 +43,26 @@ cube(`Events`, {
       type: `string`
     },
 
+    ip: {
+      sql: `ip`,
+      type: `string`
+    },
+
+    experiment: {
+      sql: `experiment`,
+      type: `string`
+    },
+
+    variant: {
+      sql: `variant`,
+      type: `string`
+    },
+
+    lookBackWindow: {
+      sql: `lookbackwindow`,
+      type: `string`
+    },
+
     src: {
       sql: `src`,
       type: `string`
@@ -154,7 +174,12 @@ cube(`Events`, {
     },
 
     userLanguage: {
-      sql: `user_language`,
+      sql: `userlanguage`,
+      type: `string`
+    },
+
+    persona: {
+      sql: `persona`,
       type: `string`
     },
 
@@ -166,7 +191,12 @@ cube(`Events`, {
     utcTime: {
       sql: `utc_time`,
       type: `time`
-    }
+    },
+
+    language: {
+      sql: `language`,
+      type: `string`
+    },
   },
 
   dataSource: `default`
