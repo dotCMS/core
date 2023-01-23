@@ -75,14 +75,10 @@ public class TagAPIImpl implements TagAPI {
     }
 
     @Override
+    @WrapInTransaction
     public Tag getTagAndCreate(final String tagName, final String userId, final String siteId, final boolean persona, final boolean searchInSystemHost) throws DotDataException, DotSecurityException {
 
-        boolean localTransaction = false;
-
         try {
-
-            //Check for a transaction and start one if required
-            localTransaction = HibernateUtil.startLocalTransactionIfNeeded();
 
             Tag newTag = new Tag();
 
@@ -188,26 +184,13 @@ public class TagAPIImpl implements TagAPI {
                 }
             }
 
-            //Everything ok..., committing the transaction
-            if ( localTransaction ) {
-                HibernateUtil.closeAndCommitTransaction();
-            }
-
             return newTag;
 
         } catch (final Exception e) {
             Logger.error(this, String.format("An error occurred when getting and creating Tag with name '%s' under " +
                     "Site ID '%s': %s", tagName, siteId, e.getMessage()));
-            if ( localTransaction ) {
-                HibernateUtil.rollbackTransaction();
-            }
             throw e;
-        } finally {
-            if ( localTransaction ) {
-                HibernateUtil.closeSessionSilently();
-            }
         }
-
     }
 
     @CloseDBIfOpened
