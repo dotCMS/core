@@ -4,7 +4,7 @@ import { Subject } from 'rxjs';
 import { debounceTime, takeUntil } from 'rxjs/operators';
 
 import { AnyExtension, Content, Editor } from '@tiptap/core';
-import { HeadingOptions, Level } from '@tiptap/extension-heading';
+import { Level } from '@tiptap/extension-heading';
 import StarterKit, { StarterKitOptions } from '@tiptap/starter-kit';
 import Placeholder from '@tiptap/extension-placeholder';
 
@@ -30,10 +30,10 @@ import {
 // Marks Extensions
 import { Highlight } from '@tiptap/extension-highlight';
 import { Link } from '@tiptap/extension-link';
-import { TextAlign } from '@tiptap/extension-text-align';
-import { Underline } from '@tiptap/extension-underline';
+import TextAlign from '@tiptap/extension-text-align';
+import Underline from '@tiptap/extension-underline';
 import CharacterCount, { CharacterCountStorage } from '@tiptap/extension-character-count';
-import { TableRow } from '@tiptap/extension-table-row';
+import TableRow from '@tiptap/extension-table-row';
 
 function toTitleCase(str) {
     return str.replace(/\p{L}+('\p{L}+)?/gu, function (txt) {
@@ -55,7 +55,7 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy {
 
     @Input() set allowedBlocks(blocks: string) {
         this._allowedBlocks = [
-            ...this._allowedBlocks,
+            'paragraph', //paragraph should be always.
             ...(blocks ? blocks.replace(/ /g, '').split(',').filter(Boolean) : [])
         ];
     }
@@ -70,11 +70,11 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy {
     editor: Editor;
     subject = new Subject();
 
-    private _allowedBlocks = ['paragraph']; //paragraph should be always.
+    private _allowedBlocks = ['paragraph', 'heading1', 'codeBlock'];
     private destroy$: Subject<boolean> = new Subject<boolean>();
 
     get characterCount(): CharacterCountStorage {
-        return this.editor.storage.characterCount;
+        return this.editor?.storage.characterCount;
     }
 
     get showCharData() {
@@ -118,23 +118,13 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy {
     }
 
     private editorNode(): AnyExtension[] {
-        let nodes;
+        const starterkit = this._allowedBlocks
+            ? StarterKit.configure(this.starterConfig())
+            : StarterKit;
 
-        const customExtensions: Map<string, AnyExtension> = new Map([
-            ['contentlets', ContentletBlock(this.injector)],
-            ['image', ImageNode]
-        ]);
+        const customNodes = this.getAllowedCustomBlocks(this._allowedBlocks);
 
-        if (this._allowedBlocks) {
-            nodes = [
-                StarterKit.configure(this.setStarterKitOptions()),
-                ...this.getAllowedBlocks(customExtensions, this._allowedBlocks)
-            ];
-        } else {
-            nodes = [StarterKit, ...customExtensions.values()];
-        }
-
-        return nodes;
+        return [starterkit, ...customNodes];
     }
 
     /**
@@ -143,7 +133,7 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy {
      * ONLY if is not present will add an attribute with false to disable it. ex. {orderedList: false}.
      * Exception, headings fill the HeadingOptions or false.
      */
-    private setStarterKitOptions(): Partial<StarterKitOptions> {
+    private starterConfig(): Partial<StarterKitOptions> {
         // These are the keys that meter for the starter kit.
         const staterKitOptions = [
             'orderedList',
@@ -152,39 +142,36 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy {
             'codeBlock',
             'horizontalRule'
         ];
-        const headingOptions: HeadingOptions = { levels: [], HTMLAttributes: {} };
 
         //Heading types supported by default in the editor.
-        ['heading1', 'heading2', 'heading3', 'heading4', 'heading5', 'heading6'].forEach(
-            (heading) => {
-                if (this._allowedBlocks.includes(heading)) {
-                    headingOptions.levels.push(+heading.slice(-1) as Level);
-                }
-            }
-        );
+        const heading = ['heading1', 'heading2', 'heading3', 'heading4', 'heading5', 'heading6'];
+        const levels = heading
+            .filter((heading) => this._allowedBlocks.includes(heading))
+            .map((heading) => +heading.slice(-1) as Level);
+
+        const starterKit = staterKitOptions
+            .filter((option) => this._allowedBlocks.includes(option))
+            .reduce((options, option) => ({ ...options, [option]: false }), {});
 
         return {
-            heading: headingOptions.levels.length ? headingOptions : false,
-            ...staterKitOptions.reduce(
-                (object, item) => ({
-                    ...object,
-                    ...(this._allowedBlocks.includes(item) ? {} : { [item]: false })
-                }),
-                {}
-            )
+            heading: levels?.length ? { levels, HTMLAttributes: {} } : false,
+            ...starterKit
         };
     }
 
-    // What is this?
-    private getAllowedBlocks(map: Map<string, AnyExtension>, list: string[] = []): AnyExtension[] {
+    private getAllowedCustomBlocks(list: string[] = []): AnyExtension[] {
+        const whiteList = [];
+        const customBlock: Map<string, AnyExtension> = new Map([
+            ['contentlets', ContentletBlock(this.injector)],
+            ['image', ImageNode]
+        ]);
+
         if (!list.length) {
-            return [...map.values()];
+            return [...customBlock.values()];
         }
 
-        const whiteList = [];
-
         for (const item of list) {
-            const node = map.get(item);
+            const node = customBlock.get(item);
             if (node) {
                 whiteList.push(node);
             }
@@ -193,6 +180,13 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy {
         return whiteList;
     }
 
+    /**
+     * Extensions that improve the user experience
+     *
+     * @private
+     * @return {*}
+     * @memberof DotBlockEditorComponent
+     */
     private dotExtensions() {
         return [
             DotConfigExtension({
@@ -200,6 +194,7 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy {
                 allowedContentTypes: this.allowedContentTypes,
                 allowedBlocks: this._allowedBlocks
             }),
+            Placeholder.configure({ placeholder: this.placeholder }),
             ActionsMenu(this.viewContainerRef),
             DragHandler(this.viewContainerRef),
             ImageUpload(this.injector, this.viewContainerRef),
@@ -207,15 +202,6 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy {
             DotBubbleMenuExtension(this.viewContainerRef),
             BubbleFormExtension(this.viewContainerRef),
             DotFloatingButton(this.injector, this.viewContainerRef),
-            Placeholder.configure({
-                placeholder: ({ node }) => {
-                    if (node.type.name === 'heading') {
-                        return `${toTitleCase(node.type.name)} ${node.attrs.level}`;
-                    }
-
-                    return 'Type "/" for commmands';
-                }
-            }),
             DotTableCellExtension(this.viewContainerRef),
             DotTableHeaderExtension(),
             DotTableExtension(),
@@ -224,6 +210,13 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy {
         ];
     }
 
+    /**
+     * Styles that can be applied to Paragraph
+     *
+     * @private
+     * @return {*}
+     * @memberof DotBlockEditorComponent
+     */
     private editorMarks() {
         return [
             Underline,
@@ -231,5 +224,13 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy {
             Highlight.configure({ HTMLAttributes: { style: 'background: #accef7;' } }),
             Link.configure({ autolink: false, openOnClick: false })
         ];
+    }
+
+    private placeholder({ node }) {
+        if (node.type.name === 'heading') {
+            return `${toTitleCase(node.type.name)} ${node.attrs.level}`;
+        }
+
+        return 'Type "/" for commmands';
     }
 }
