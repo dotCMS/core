@@ -61,7 +61,12 @@ public class FieldVariableResource implements Serializable {
 	public Response createFieldVariableByFieldId(@PathParam("typeId") final String typeId, @PathParam("fieldId") final String fieldId,
 												 final String fieldVariableJson, @Context final HttpServletRequest req, @Context final HttpServletResponse res) throws DotDataException {
 
-		final InitDataObject initData = this.webResource.init(null, req, res, false, null);
+		final InitDataObject initData = new WebResource.InitBuilder()
+		                .requestAndResponse(req, res)
+		                .rejectWhenNoUser(true)
+		                .requiredBackendUser(true)
+		                .init();
+
 		final User user = initData.getUser();
 		final FieldAPI fapi = APILocator.getContentTypeFieldAPI();
 		
@@ -114,7 +119,11 @@ public class FieldVariableResource implements Serializable {
 	public Response createFieldVariableByFieldVar(@PathParam("typeId") final String typeId, @PathParam("fieldVar") final String fieldVar,
 			final String fieldVariableJson, @Context final HttpServletRequest req, @Context final HttpServletResponse res) throws DotDataException {
 
-		final InitDataObject initData = this.webResource.init(null, req, res, false, null);
+        final InitDataObject initData = new WebResource.InitBuilder()
+                        .requestAndResponse(req, res)
+                        .rejectWhenNoUser(true)
+                        .requiredBackendUser(true)
+                        .init();
 		final User user = initData.getUser();
 		final FieldAPI fapi = APILocator.getContentTypeFieldAPI();
 		
@@ -172,7 +181,11 @@ public class FieldVariableResource implements Serializable {
 	public final Response getFieldVariablesByFieldId(@PathParam("typeId") final String typeId, // todo: this is not being used
 			@PathParam("fieldId") final String fieldId, @Context final HttpServletRequest req, @Context final HttpServletResponse res) {
 
-		this.webResource.init(null, req, res, true, null);
+        final InitDataObject initData = new WebResource.InitBuilder()
+                        .requestAndResponse(req, res)
+                        .rejectWhenNoUser(true)
+                        .requiredBackendUser(true)
+                        .init();
 		final FieldAPI typeFieldAPI = APILocator.getContentTypeFieldAPI();
 
 		Response response = null;
@@ -204,7 +217,13 @@ public class FieldVariableResource implements Serializable {
 	public final Response getFieldVariablesByFieldVar(@PathParam("typeId") final String typeId,
 			@PathParam("fieldVar") final String fieldVar, @Context final HttpServletRequest req, @Context final HttpServletResponse res) {
 
-		this.webResource.init(null, req, res, true, null);
+        final InitDataObject initData = new WebResource.InitBuilder()
+                        .requestAndResponse(req, res)
+                        .rejectWhenNoUser(true)
+                        .requiredBackendUser(true)
+                        .init();
+        
+        final User user = initData.getUser();
 		final FieldAPI typeFieldAPI = APILocator.getContentTypeFieldAPI();
 
 		Response response = null;

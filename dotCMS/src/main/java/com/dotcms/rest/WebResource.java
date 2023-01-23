@@ -92,6 +92,7 @@ public  class WebResource {
      *
      * @param request  {@link HttpServletRequest}
      */
+    @Deprecated
     public void init(final HttpServletRequest request) {
         checkForceSSL(request);
     }
@@ -106,6 +107,7 @@ public  class WebResource {
      * @param request  {@link HttpServletRequest}
      * @return an initDataObject with the resulting <code>Map</code>
      */
+    @Deprecated
     public InitDataObject init(final String params, final HttpServletRequest request) {
 
         checkForceSSL(request);
@@ -190,6 +192,7 @@ public  class WebResource {
      * @param requiredPortlet portlet name which the user needs to have access to
      * @return an initDataObject with the resulting <code>Map</code>
      */
+    @Deprecated
     public InitDataObject init(final String params, final HttpServletRequest request, final HttpServletResponse response,
                                final boolean rejectWhenNoUser, final String requiredPortlet) throws SecurityException {
 
@@ -285,6 +288,7 @@ public  class WebResource {
      * @param requiredPortlet portlet name which the user needs to have access to
      * @return an initDataObject with the resulting <code>Map</code>
      */
+    @Deprecated
     public InitDataObject init(final String userId, final String password,
                                final HttpServletRequest request, final HttpServletResponse response,
                                final boolean rejectWhenNoUser, final String requiredPortlet) throws SecurityException {
@@ -294,7 +298,7 @@ public  class WebResource {
       
         return initWithMap(CollectionsUtils.map("userid", userId, "pwd", password), request, response, access, requiredPortlet);
     }
-
+    @Deprecated
     private InitDataObject initWithMap(final Map<String, String> paramsMap,
                                        final HttpServletRequest request,
                                        final HttpServletResponse response,
