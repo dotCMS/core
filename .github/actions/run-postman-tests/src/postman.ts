@@ -208,7 +208,7 @@ const normalize = (provided: string): string => {
  * @returns an overall ivew of the tests results
  */
 const runPostmanCollections = async (): Promise<PostmanTestsResult> => {
-  await waitFor(60, `DotCMS instance`)
+  await waitFor(120, `DotCMS instance`)
 
   // Executes Postman tests
   core.info(`

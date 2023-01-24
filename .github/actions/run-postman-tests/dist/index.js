@@ -263,7 +263,7 @@ const normalize = (provided) => {
  * @returns an overall ivew of the tests results
  */
 const runPostmanCollections = () => __awaiter(void 0, void 0, void 0, function* () {
-    yield waitFor(60, `DotCMS instance`);
+    yield waitFor(120, `DotCMS instance`);
     // Executes Postman tests
     core.info(`
     ===========================================
