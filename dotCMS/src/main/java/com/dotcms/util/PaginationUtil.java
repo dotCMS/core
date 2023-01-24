@@ -1,9 +1,5 @@
 package com.dotcms.util;
 
-import static com.dotcms.util.CollectionsUtils.map;
-import static com.dotmarketing.util.WebKeys.DOTCMS_PAGINATION_LINKS;
-import static com.dotmarketing.util.WebKeys.DOTCMS_PAGINATION_ROWS;
-
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.util.pagination.OrderDirection;
 import com.dotcms.util.pagination.Paginator;
@@ -14,6 +10,10 @@ import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
 import com.liferay.util.StringUtil;
+import org.apache.commons.lang.StringUtils;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.ws.rs.core.Response;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.util.ArrayList;
@@ -22,15 +22,17 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
-import javax.servlet.http.HttpServletRequest;
-import javax.ws.rs.core.Response;
-import org.apache.commons.lang.StringUtils;
+
+import static com.dotcms.util.CollectionsUtils.map;
+import static com.dotmarketing.util.WebKeys.DOTCMS_PAGINATION_LINKS;
+import static com.dotmarketing.util.WebKeys.DOTCMS_PAGINATION_ROWS;
 
 /**
- * Utility class to the pagination elements and filter
+ * This class provides the base information and structure for any {@link com.dotcms.util.pagination.PaginatorOrdered}
+ * inheriting class in dotCMS. Any common-use functionality or features can be implemented at this level.
  *
  * @author oswaldogallango
- *
+ * @since Dec 5th, 2016
  */
 public class PaginationUtil {
 
@@ -41,16 +43,13 @@ public class PaginationUtil {
 	public static final String PER_PAGE = "per_page";
 	public static final String ORDER_BY = "orderby";
 	public static final String DIRECTION = "direction";
-
 	private static final String LINK_HEADER_NAME = "Link";
 	public static final String PAGINATION_PER_PAGE_HEADER_NAME = "X-Pagination-Per-Page";
 	public static final String PAGINATION_CURRENT_PAGE_HEADER_NAME = "X-Pagination-Current-Page";
 	private static final String PAGINATION_MAX_LINK_PAGES_HEADER_NAME = "X-Pagination-Link-Pages";
 	public static final String PAGINATION_TOTAL_ENTRIES_HEADER_NAME = "X-Pagination-Total-Entries";
 	public static final String PAGE_VALUE_TEMPLATE = "pageValue";
-
 	private static final String LINK_TEMPLATE = "<{URL}>;rel=\"{relValue}\"";
-
 	private static final String  FIRST_REL_VALUE = "first";
 	private static final String  LAST_REL_VALUE = "last";
 	private static final String  PREV_REL_VALUE = "prev";
@@ -68,78 +67,132 @@ public class PaginationUtil {
 	}
 
 	/**
-	 * Get the minimum pagination element index
-	 * @param currentPage The current page
-	 * @param perPage The max amount of element per page
-	 * @return minimum pagination element index
+	 * Returns the minimum index for a specific page.
+	 *
+	 * @param currentPage The current page.
+	 * @param perPage     The max amount of items per page.
+	 *
+	 * @return The minimum index.
 	 */
-	private int getMinIndex(int currentPage, int perPage){
+	private int getMinIndex(final int currentPage, final int perPage) {
 		return (currentPage - 1) * perPage;
-
 	}
 
 	/**
-	 * Get the maximum pagination element index
-	 * @param currentPage The current page
-	 * @param perPage The max amount of element per page
-	 * @return maximum pagination element index
+	 * Returns a paginated response of elements to the User based on a specific set of parameters. Any class inheriting
+	 * the {@link Paginator} interface will be able to provide paginated items.
+	 *
+	 * @param req     The current instance of the {@link HttpServletRequest}.
+	 * @param user    The {@link User} calling this pagination.
+	 * @param filter  A multipurpose String filtering parameter.
+	 * @param page    The page offset value, for pagination purposes.
+	 * @param perPage The number of items per page, for pagination purposes.
+	 *
+	 * @return The {@link Response} object including the paginated items and the respective pagination headers.
 	 */
-	private int getMaxIndex(int currentPage, int perPage){
-		return perPage * currentPage;
+	public Response getPage(final HttpServletRequest req, final User user, final String filter, final int page, final int perPage) {
+		return getPage(req, user, filter, page, perPage, StringUtils.EMPTY, null, null);
 	}
 
-	public Response getPage(final HttpServletRequest req, final User user, final String filter, final int pageParam, final int perPageParam) {
-		return getPage(req, user, filter, pageParam, perPageParam, StringUtils.EMPTY, (OrderDirection) null, null);
-	}
-
-	public Response getPage(final HttpServletRequest req, final User user, final String filter, final int pageParam,
-							final int perPageParam, final String orderBy, final String direction) {
-		return getPage(req, user, filter, pageParam, perPageParam, orderBy,
+	/**
+	 * Returns a paginated response of elements to the User based on a specific set of parameters. Any class inheriting
+	 * the {@link Paginator} interface will be able to provide paginated items.
+	 *
+	 * @param req       The current instance of the {@link HttpServletRequest}.
+	 * @param user      The {@link User} calling this pagination.
+	 * @param filter    A multipurpose String filtering parameter.
+	 * @param page      The page offset value, for pagination purposes.
+	 * @param perPage   The number of items per page, for pagination purposes.
+	 * @param orderBy   The column name that will be used to sort the paginated results. For reference, please
+	 *                  check {@link SQLUtil#ORDERBY_WHITELIST}.
+	 * @param direction The sorting direction for the results: {@code "ASC"} or {@code "DESC"}
+	 *
+	 * @return The {@link Response} object including the paginated items and the respective pagination headers.
+	 */
+	public Response getPage(final HttpServletRequest req, final User user, final String filter, final int page,
+							final int perPage, final String orderBy, final String direction) {
+		return getPage(req, user, filter, page, perPage, orderBy,
 				OrderDirection.valueOf(direction), null);
 	}
 
-	public Response getPage(final HttpServletRequest req, final User user, final String filter, final int pageParam,
-							final int perPageParam, final Map<String, Object>  extraParams) {
-		return getPage(req, user, filter, pageParam, perPageParam, null, null, extraParams);
+	/**
+	 * Returns a paginated response of elements to the User based on a specific set of parameters. Any class inheriting
+	 * the {@link Paginator} interface will be able to provide paginated items.
+	 *
+	 * @param req         The current instance of the {@link HttpServletRequest}.
+	 * @param user        The {@link User} calling this pagination.
+	 * @param filter      A multipurpose String filtering parameter.
+	 * @param page        The page offset value, for pagination purposes.
+	 * @param perPage     The number of items per page, for pagination purposes.
+	 * @param extraParams A flexible map with custom or very specific parameters that may be required by the Paginator
+	 *                    class to return the expected items.
+	 *
+	 * @return The {@link Response} object including the paginated items and the respective pagination headers.
+	 */
+	public Response getPage(final HttpServletRequest req, final User user, final String filter, final int page,
+							final int perPage, final Map<String, Object>  extraParams) {
+		return getPage(req, user, filter, page, perPage, null, null, extraParams);
 	}
 
 	/**
-	 * Return a pagination's response
+	 * Returns a paginated response of elements to the User based on a specific set of parameters. Any class inheriting
+	 * the {@link Paginator} interface will be able to provide paginated items.
 	 *
-	 * @param req
-	 * @param user Login User
-	 * @param filter
-	 * @param page Page to return
-	 * @param perPage Number of items by page
-	 * @param orderBy Field name to order by
-	 * @param direction Order direction (ASC, DESC)
-	 * @return
+	 * @param req          The current instance of the {@link HttpServletRequest}.
+	 * @param user         The {@link User} calling this pagination.
+	 * @param filter       A multipurpose String filtering parameter.
+	 * @param page		   The page offset value, for pagination purposes.
+	 * @param perPage	   The number of items per page, for pagination purposes.
+	 * @param orderBy      The column name that will be used to sort the paginated results. For reference, please check
+	 *                     {@link SQLUtil#ORDERBY_WHITELIST}.
+	 * @param direction    The sorting direction for the results: {@code "ASC"} or {@code "DESC"}
+	 * @param extraParams  A flexible map with custom or very specific parameters that may be required by the Paginator
+	 *                     class to return the expected items.
+	 *
+	 * @return The {@link Response} object including the paginated items and the respective pagination headers.
 	 */
 	public Response getPage(final HttpServletRequest req, final User user, final String filter, final int page,
 							final int perPage, final String orderBy, final OrderDirection direction,
 							final Map<String, Object> extraParams) {
+		return getPage(req, user, filter, page, perPage, orderBy, direction, extraParams, null);
+	}
 
+	/**
+	 * Typically, our pagination is directly wrapped into a ResponseEntityView object. But, what if we had a more
+	 * complex situation where the paginated items are meant to live within a nested level in our JSON object? This
+	 * method comes to solve that problem.
+	 *
+	 * @param req          The current instance of the {@link HttpServletRequest}.
+	 * @param user         The {@link User} calling this pagination.
+	 * @param filter       A multipurpose String filtering parameter.
+	 * @param page		   The page offset value, for pagination purposes.
+	 * @param perPage	   The number of items per page, for pagination purposes.
+	 * @param orderBy      The column name that will be used to sort the paginated results. For reference, please
+	 *                     check {@link SQLUtil#ORDERBY_WHITELIST}.
+	 * @param direction    The sorting direction for the results: {@code "ASC"} or {@code "DESC"}
+	 * @param function     This is function must feed the items into whatever json we want to use.
+	 *
+	 * @return The {@link Response} object including the paginated items and the respective pagination headers.
+	 */
+	public <T, R> Response getPage(final HttpServletRequest req, final User user, final String filter, final int page,
+								   final int perPage, final String orderBy, final OrderDirection direction,
+								   final Map<String, Object> extraParams,
+								   final Function<PaginatedArrayList<T>, R> function) {
 		final int pageValue = page == 0 ? FIRST_PAGE_INDEX : page;
 		final int perPageValue = perPage == 0 ? perPageDefault : perPage;
-		final int minIndex = getMinIndex(pageValue, perPageValue);
-
-		final String sanitizefilter = filter != null ? SQLUtil.sanitizeParameter(filter) : "";
-
-		final Map<String, Object> params = getParameters(sanitizefilter, orderBy, direction, extraParams);
-
-		PaginatedArrayList items = paginator.getItems(user, perPageValue, minIndex, params);
-
-		if (!UtilMethods.isSet(items)){
-			items = new PaginatedArrayList();
+		final int minIndex = this.getMinIndex(pageValue, perPageValue);
+		final String sanitizeFilter = filter != null ? SQLUtil.sanitizeParameter(filter) : StringPool.BLANK;
+		final Map<String, Object> params = this.getParameters(sanitizeFilter, orderBy, direction, extraParams);
+		PaginatedArrayList items = minIndex >= 0 ? paginator.getItems(user, perPageValue, minIndex, params) : null;
+		if (!UtilMethods.isSet(items)) {
+			items = new PaginatedArrayList<>();
 		}
-
 		final long totalRecords = items.getTotalResults();
-
-		final String linkHeaderValue = getHeaderValue(req.getRequestURI(), sanitizefilter, pageValue, perPageValue,
+		final String linkHeaderValue = this.getHeaderValue(req.getRequestURI(), sanitizeFilter, pageValue, perPageValue,
 				totalRecords, orderBy, direction, extraParams);
-
+		final Object paginatedItems = null != function ? function.apply(items) : items;
 		return Response.
-				ok(new ResponseEntityView((Object) items))
+				ok(new ResponseEntityView<>(paginatedItems))
 				.header(LINK_HEADER_NAME, linkHeaderValue)
 				.header(PAGINATION_PER_PAGE_HEADER_NAME, perPageValue)
 				.header(PAGINATION_CURRENT_PAGE_HEADER_NAME, pageValue)
@@ -149,55 +202,15 @@ public class PaginationUtil {
 	}
 
 	/**
-	 * Typically our Pagination is directly wrapped into a ResponseEntityView
-	 * But if we had a more complex situation where the paginated item are meant to live within a nested level in our json object?
-	 * This Method comes to solve that problem.
-	 * Return a pagination's response
+	 * Utility method that condenses a list of provided filtering parameters into a single Object Map.
 	 *
-	 * @param req
-	 * @param user Login User
-	 * @param filter
-	 * @param page Page to return
-	 * @param perPage Number of items by page
-	 * @param orderBy Field name to order by
-	 * @param direction Order direction (ASC, DESC)
-	 * @param function This is function must feed the items into whatever json we want to use.
-	 * @return
+	 * @param filter      The multipurpose filtering parameter.
+	 * @param orderBy     The result sorting criterion.
+	 * @param direction   The sorting direction.
+	 * @param extraParams The initially-provided Map with more filtering parameters.
+	 *
+	 * @return The Map with all the filtering parameters.
 	 */
-	public <T,R> Response getPage(final HttpServletRequest req, final User user, final String filter, final int page,
-			final int perPage, final String orderBy, final OrderDirection direction,
-			final Map<String, Object> extraParams,
-			final Function<PaginatedArrayList<T>, R> function) {
-
-		final int pageValue = page == 0 ? FIRST_PAGE_INDEX : page;
-		final int perPageValue = perPage == 0 ? perPageDefault : perPage;
-		final int minIndex = getMinIndex(pageValue, perPageValue);
-
-		final String sanitizeFilter = filter != null ? SQLUtil.sanitizeParameter(filter) : StringPool.BLANK;
-
-		final Map<String, Object> params = getParameters(sanitizeFilter, orderBy, direction, extraParams);
-
-		PaginatedArrayList items = paginator.getItems(user, perPageValue, minIndex, params);
-
-		if (!UtilMethods.isSet(items)){
-			items = new PaginatedArrayList();
-		}
-
-		final long totalRecords = items.getTotalResults();
-
-		final String linkHeaderValue = getHeaderValue(req.getRequestURI(), sanitizeFilter, pageValue, perPageValue,
-				totalRecords, orderBy, direction, extraParams);
-
-		return Response.
-				ok(new ResponseEntityView(function.apply(items)))
-				.header(LINK_HEADER_NAME, linkHeaderValue)
-				.header(PAGINATION_PER_PAGE_HEADER_NAME, perPageValue)
-				.header(PAGINATION_CURRENT_PAGE_HEADER_NAME, pageValue)
-				.header(PAGINATION_MAX_LINK_PAGES_HEADER_NAME, nLinks)
-				.header(PAGINATION_TOTAL_ENTRIES_HEADER_NAME, totalRecords)
-				.build();
-	}
-
 	protected Map<String, Object> getParameters(final String filter,
 												final String orderBy,
 												final OrderDirection direction,
@@ -219,7 +232,6 @@ public class PaginationUtil {
 		}
 		return params;
 	}
-
 
 	/**
 	 * Return the valur for the Link header according tis RFC:
@@ -245,44 +257,45 @@ public class PaginationUtil {
 	 * @param direction
 	 * @return
 	 */
-	private static String getHeaderValue(final String urlBase, final String filter, final int page, final int perPage,
+	private String getHeaderValue(final String urlBase, final String filter, final int page, final int perPage,
 										 final long totalRecords, final String orderBy, final OrderDirection direction,
 										 final Map<String, Object> extraParams) {
 		final List<String> links = new ArrayList<>();
-
+		final String URL_KEY = "URL";
+		final String REL_VALUE_KEY = "relValue";
 		links.add(StringUtil.format(LINK_TEMPLATE, map(
-				"URL", getUrl(urlBase, filter, FIRST_PAGE_INDEX, perPage, orderBy, direction, extraParams),
-				"relValue", FIRST_REL_VALUE
+				URL_KEY, getUrl(urlBase, filter, FIRST_PAGE_INDEX, perPage, orderBy, direction, extraParams),
+				REL_VALUE_KEY, FIRST_REL_VALUE
 		)));
 
 		int lastPage = (int) (Math.ceil((double) totalRecords/perPage));
 		links.add(StringUtil.format(LINK_TEMPLATE, map(
-				"URL", getUrl(urlBase, filter, lastPage, perPage, orderBy, direction, extraParams),
-				"relValue", LAST_REL_VALUE
+				URL_KEY, getUrl(urlBase, filter, lastPage, perPage, orderBy, direction, extraParams),
+				REL_VALUE_KEY, LAST_REL_VALUE
 		)));
 
 		links.add(StringUtil.format(LINK_TEMPLATE, map(
-				"URL", getUrl(urlBase, filter, -1, perPage, orderBy, direction, extraParams),
-				"relValue", PAGE_REL_VALUE
+				URL_KEY, getUrl(urlBase, filter, -1, perPage, orderBy, direction, extraParams),
+				REL_VALUE_KEY, PAGE_REL_VALUE
 		)));
 
 		int next = page + 1;
 		if (next <= lastPage){
 			links.add(StringUtil.format(LINK_TEMPLATE, map(
-					"URL", getUrl(urlBase, filter, next, perPage, orderBy, direction, extraParams),
-					"relValue", NEXT_REL_VALUE
+					URL_KEY, getUrl(urlBase, filter, next, perPage, orderBy, direction, extraParams),
+					REL_VALUE_KEY, NEXT_REL_VALUE
 			)));
 		}
 
 		int prev = page - 1;
 		if (prev > 0){
 			links.add(StringUtil.format(LINK_TEMPLATE, map(
-					"URL", getUrl(urlBase, filter, prev, perPage, orderBy, direction, extraParams),
-					"relValue", PREV_REL_VALUE
+					URL_KEY, getUrl(urlBase, filter, prev, perPage, orderBy, direction, extraParams),
+					REL_VALUE_KEY, PREV_REL_VALUE
 			)));
 		}
 
-		return String.join(",", links);
+		return String.join(StringPool.COMMA, links);
 	}
 
 	/**
@@ -305,7 +318,7 @@ public class PaginationUtil {
 		final Map<String, String> params = new HashMap<>();
 
 		if (UtilMethods.isSet(filter)){
-			params.put(FILTER, String.valueOf(filter));
+			params.put(FILTER, filter);
 		}
 
 		params.put(PER_PAGE, String.valueOf(perPage));
@@ -330,7 +343,7 @@ public class PaginationUtil {
 
 						for (final Object valueItem : valueCollection) {
 							if (buffer.length() != 0) {
-								buffer.append(",");
+								buffer.append(StringPool.COMMA);
 							}
 
 							buffer.append(valueItem.toString());
@@ -351,10 +364,10 @@ public class PaginationUtil {
 		for (final Map.Entry<String, String> paramsEntry : params.entrySet()) {
 
 			if (firstParam){
-				buffer.append('?');
+				buffer.append(StringPool.QUESTION);
 				firstParam = false;
 			}else{
-				buffer.append('&');
+				buffer.append(StringPool.AMPERSAND);
 			}
 
 
@@ -364,10 +377,11 @@ public class PaginationUtil {
 						.append('=')
 						.append(encode);
 			} catch (UnsupportedEncodingException e) {
-				continue;
+				// Ignore error
 			}
 		}
 
 		return buffer.toString();
 	}
+
 }
