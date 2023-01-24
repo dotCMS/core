@@ -4,7 +4,7 @@ import { Component, DebugElement, Input } from '@angular/core';
 import { waitForAsync, ComponentFixture, TestBed, fakeAsync, tick } from '@angular/core/testing';
 
 import { of, throwError } from 'rxjs';
-import { HttpCode, ResponseView } from '@dotcms/dotcms-js';
+import { DotCMSResponse, HttpCode, ResponseView } from '@dotcms/dotcms-js';
 
 import { DotEditLayoutComponent } from './dot-edit-layout.component';
 import { mockDotRenderedPage, processedContainers } from '@dotcms/utils-testing';
@@ -222,7 +222,11 @@ describe('DotEditLayoutComponent', () => {
         it('should handle error when save fail', (done) => {
             spyOn(dotPageLayoutService, 'save').and.returnValue(
                 throwError(
-                    new ResponseView(new HttpResponse(mockResponseView(HttpCode.BAD_REQUEST)))
+                    new ResponseView(
+                        new HttpResponse<DotCMSResponse<unknown>>(
+                            mockResponseView(HttpCode.BAD_REQUEST)
+                        )
+                    )
                 )
             );
 
