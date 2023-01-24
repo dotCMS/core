@@ -38,7 +38,13 @@ declare module '@tiptap/core' {
                 range: Range;
                 type: { name: string; level?: number };
             }) => ReturnType;
-            addContentletBlock: ({ range: Range, payload: unknown }) => ReturnType;
+            addContentletBlock: ({
+                range,
+                payload
+            }: {
+                range: Range;
+                payload: unknown;
+            }) => ReturnType;
             addNextLine: () => ReturnType;
         };
     }
