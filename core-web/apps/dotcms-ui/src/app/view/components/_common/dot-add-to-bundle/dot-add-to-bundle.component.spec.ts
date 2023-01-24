@@ -1,17 +1,19 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { of as observableOf, Observable } from 'rxjs';
-import { ComponentFixture, async } from '@angular/core/testing';
-import { DebugElement, Component } from '@angular/core';
+import { Observable, of as observableOf } from 'rxjs';
 
-import { DOTTestBed } from '@dotcms/app/test/dot-test-bed';
+import { Component, DebugElement } from '@angular/core';
+import { async, ComponentFixture } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
-import { DotMessageService } from '@dotcms/data-access';
-import { DotFieldValidationMessageModule } from '../dot-field-validation-message/dot-file-validation-message.module';
-import { DotAddToBundleComponent } from './dot-add-to-bundle.component';
-import { AddToBundleService } from '@dotcms/data-access';
+
+import { DOTTestBed } from '@dotcms/app/test/dot-test-bed';
+import { AddToBundleService, DotMessageService } from '@dotcms/data-access';
 import { MockDotMessageService } from '@dotcms/utils-testing';
+
+import { DotAddToBundleComponent } from './dot-add-to-bundle.component';
+
+import { DotFieldValidationMessageModule } from '../dot-field-validation-message/dot-file-validation-message.module';
 
 class AddToBundleServiceMock {
     getBundles(): Observable<any> {

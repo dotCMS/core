@@ -1,4 +1,5 @@
-import { Component, Input, ElementRef, ViewChild } from '@angular/core';
+import { Component, ElementRef, Input, ViewChild } from '@angular/core';
+
 import { DotPageRenderState } from '@dotcms/dotcms-models';
 
 /**

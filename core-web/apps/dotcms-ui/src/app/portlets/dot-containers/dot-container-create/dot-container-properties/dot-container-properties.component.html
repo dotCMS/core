@@ -87,7 +87,11 @@
             ></button>
         </div>
 
-        <div class="dot-container-properties__code-loop-container" *ngIf="vm.isContentTypeVisible">
+        <div
+            class="dot-container-properties__code-loop-container"
+            *ngIf="vm.isContentTypeVisible"
+            [@contentTypeAnimation]
+        >
             <dot-loop-editor
                 [isEditorVisible]="vm.showPrePostLoopInput"
                 (buttonClick)="showLoopInput()"

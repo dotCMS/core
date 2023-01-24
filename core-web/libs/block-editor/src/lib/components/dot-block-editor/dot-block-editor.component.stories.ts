@@ -1,33 +1,36 @@
+import { of } from 'rxjs';
+
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
-import { of } from 'rxjs';
 
 import { ListboxModule } from 'primeng/listbox';
-import { OrderListModule } from 'primeng/orderlist';
 import { MenuModule } from 'primeng/menu';
+import { OrderListModule } from 'primeng/orderlist';
 
 import { debounceTime, delay, tap } from 'rxjs/operators';
-import { BubbleLinkFormComponent } from '@dotcms/block-editor';
-import { ImageTabviewFormComponent } from '../../extensions/image-tabview-form/image-tabview-form.component';
-import { SearchService } from '../../shared/services/search/search.service';
 
+import { DotBlockEditorComponent } from './dot-block-editor.component';
+
+import { BlockEditorModule } from '../../block-editor.module';
 import {
     ActionButtonComponent,
-    ContentletBlockComponent,
-    BlockEditorModule,
-    SuggestionsComponent,
-    SuggestionsService,
-    DragHandlerComponent,
-    LoaderComponent,
+    BubbleLinkFormComponent,
     DotImageService,
+    DragHandlerComponent,
+    FileStatus,
+    ImageTabviewFormComponent,
+    LoaderComponent
+} from '../../extensions';
+import { ContentletBlockComponent } from '../../nodes';
+import {
+    CONTENTLETS_MOCK,
     DotLanguageService,
-    DotBlockEditorComponent,
-    FileStatus
-} from '@dotcms/block-editor';
-
-// MOCKS
-import { CONTENTLETS_MOCK, IMAGE_CONTENTLETS_MOCK } from '@dotcms/block-editor';
+    IMAGE_CONTENTLETS_MOCK,
+    SearchService,
+    SuggestionsComponent,
+    SuggestionsService
+} from '../../shared';
 
 export default {
     title: 'Block Editor'

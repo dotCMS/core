@@ -1,12 +1,13 @@
+import { Observable } from 'rxjs';
+
+import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 
-import { Observable } from 'rxjs';
 import { pluck } from 'rxjs/operators';
 
 import { DotCMSContentlet, DotCMSContentType } from '@dotcms/dotcms-models';
 
-import { HttpClient, HttpHeaders } from '@angular/common/http';
-import { ContentletFilters, DEFAULT_LANG_ID } from '@dotcms/block-editor';
+import { ContentletFilters, DEFAULT_LANG_ID } from '../../../extensions';
 
 @Injectable()
 export class SuggestionsService {

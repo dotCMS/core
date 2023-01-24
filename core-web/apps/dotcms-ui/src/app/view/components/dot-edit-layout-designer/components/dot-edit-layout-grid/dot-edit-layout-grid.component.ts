@@ -1,22 +1,23 @@
 /* eslint-disable @angular-eslint/component-selector */
-import { Component, OnInit, forwardRef, ViewChild, OnDestroy } from '@angular/core';
+
+import { Subject } from 'rxjs';
+
+import { Component, forwardRef, OnDestroy, OnInit, ViewChild } from '@angular/core';
 import {
     ControlValueAccessor,
     NG_VALUE_ACCESSOR,
-    UntypedFormGroup,
-    UntypedFormBuilder
+    UntypedFormBuilder,
+    UntypedFormGroup
 } from '@angular/forms';
 
-import { Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
-import { NgGrid, NgGridConfig } from '@dotcms/dot-layout-grid';
 
 import { DotDialogActions } from '@components/dot-dialog/dot-dialog.component';
-
-import { DotLayoutGrid, DOT_LAYOUT_GRID_MAX_COLUMNS } from '@models/dot-edit-layout-designer';
 import { DotEditLayoutService } from '@dotcms/app/api/services/dot-edit-layout/dot-edit-layout.service';
-import { DotAlertConfirmService, DotMessageService, DotEventsService } from '@dotcms/data-access';
+import { DotAlertConfirmService, DotEventsService, DotMessageService } from '@dotcms/data-access';
+import { NgGrid, NgGridConfig } from '@dotcms/dot-layout-grid';
 import { DotLayoutBody } from '@dotcms/dotcms-models';
+import { DotLayoutGrid, DOT_LAYOUT_GRID_MAX_COLUMNS } from '@models/dot-edit-layout-designer';
 
 interface DotAddClass {
     setter: (string) => void;

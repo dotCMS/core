@@ -1,4 +1,5 @@
 import { Component } from '@angular/core';
+
 import { MessageService } from 'primeng/api';
 
 export interface Car {
@@ -17,7 +18,7 @@ export interface Car {
 
         <p-toast></p-toast>
 
-        <div pDefer (onLoad)="initData()">
+        <div (onLoad)="initData()" pDefer>
             <ng-template>
                 <p-table [value]="cars">
                     <ng-template pTemplate="header">

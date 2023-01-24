@@ -1,17 +1,24 @@
-import { TestBed, waitForAsync } from '@angular/core/testing';
-import { HttpClientTestingModule, HttpTestingController } from '@angular/common/http/testing';
-import { DotAccountUser, DotAccountService } from './dot-account-service';
-import { CoreWebService, LoginService } from '@dotcms/dotcms-js';
-import { CoreWebServiceMock, mockResponseView } from '@dotcms/utils-testing';
-import { LoginServiceMock } from '@dotcms/utils-testing';
-import { DotFormatDateServiceMock } from '@dotcms/utils-testing';
 import { throwError } from 'rxjs';
-import { DotHttpErrorManagerService } from './dot-http-error-manager/dot-http-error-manager.service';
-import { DotAlertConfirmService } from '@dotcms/data-access';
-import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
-import { MockDotRouterService } from '@dotcms/utils-testing';
+
+import { HttpClientTestingModule, HttpTestingController } from '@angular/common/http/testing';
+import { TestBed, waitForAsync } from '@angular/core/testing';
+
 import { ConfirmationService } from 'primeng/api';
+
 import { DotFormatDateService } from '@dotcms/app/api/services/dot-format-date-service';
+import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
+import { DotAlertConfirmService } from '@dotcms/data-access';
+import { CoreWebService, LoginService } from '@dotcms/dotcms-js';
+import {
+    CoreWebServiceMock,
+    DotFormatDateServiceMock,
+    LoginServiceMock,
+    MockDotRouterService,
+    mockResponseView
+} from '@dotcms/utils-testing';
+
+import { DotAccountService, DotAccountUser } from './dot-account-service';
+import { DotHttpErrorManagerService } from './dot-http-error-manager/dot-http-error-manager.service';
 
 describe('DotAccountService', () => {
     let service: DotAccountService;

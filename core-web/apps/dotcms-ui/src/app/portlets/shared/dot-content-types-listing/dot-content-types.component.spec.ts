@@ -2,22 +2,33 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { Observable, of as observableOf, throwError as observableThrowError } from 'rxjs';
-import { DotCrudService } from '@dotcms/data-access';
-import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
-import { DotListingDataTableModule } from '@components/dot-listing-data-table/dot-listing-data-table.module';
-import { DotAlertConfirmService } from '@dotcms/data-access';
+
+import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { Component, DebugElement, EventEmitter, Injectable, Input, Output } from '@angular/core';
-import { By } from '@angular/platform-browser';
 import { ComponentFixture, fakeAsync, TestBed, tick } from '@angular/core/testing';
-import { DotContentTypesInfoService } from '@dotcms/data-access';
-import { DotContentTypesPortletComponent } from './dot-content-types.component';
-import { DotFormatDateService } from '@dotcms/app/api/services/dot-format-date-service';
-import { DotMessageService } from '@dotcms/data-access';
-import { MockDotMessageService } from '@dotcms/utils-testing';
+import { ReactiveFormsModule } from '@angular/forms';
+import { By } from '@angular/platform-browser';
+import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
+import { ActivatedRoute } from '@angular/router';
 import { RouterTestingModule } from '@angular/router/testing';
-import { PushPublishService } from '@dotcms/app/api/services/push-publish/push-publish.service';
-import { DotLicenseService } from '@dotcms/data-access';
+
 import { ConfirmationService, SelectItem } from 'primeng/api';
+
+import { DotListingDataTableModule } from '@components/dot-listing-data-table/dot-listing-data-table.module';
+import { DotFormatDateService } from '@dotcms/app/api/services/dot-format-date-service';
+import {
+    DotHttpErrorHandled,
+    DotHttpErrorManagerService
+} from '@dotcms/app/api/services/dot-http-error-manager/dot-http-error-manager.service';
+import { PushPublishService } from '@dotcms/app/api/services/push-publish/push-publish.service';
+import {
+    DotAlertConfirmService,
+    DotContentTypeService,
+    DotContentTypesInfoService,
+    DotCrudService,
+    DotLicenseService,
+    DotMessageService
+} from '@dotcms/data-access';
 import {
     CoreWebService,
     DotPushPublishDialogService,
@@ -27,17 +38,14 @@ import {
     StringUtils
 } from '@dotcms/dotcms-js';
 import { DotCMSContentType, DotCopyContentTypeDialogFormFields } from '@dotcms/dotcms-models';
-import { DotContentTypeService } from '@dotcms/data-access';
-import { dotcmsContentTypeBasicMock } from '@dotcms/utils-testing';
-import { ActivatedRoute } from '@angular/router';
-import { ReactiveFormsModule } from '@angular/forms';
-import { DotContentTypeStore } from '@portlets/shared/dot-content-types-listing/dot-content-type.store';
-import { CoreWebServiceMock } from '@dotcms/utils-testing';
-import { HttpClientTestingModule } from '@angular/common/http/testing';
 import {
-    DotHttpErrorHandled,
-    DotHttpErrorManagerService
-} from '@dotcms/app/api/services/dot-http-error-manager/dot-http-error-manager.service';
+    CoreWebServiceMock,
+    dotcmsContentTypeBasicMock,
+    MockDotMessageService
+} from '@dotcms/utils-testing';
+import { DotContentTypeStore } from '@portlets/shared/dot-content-types-listing/dot-content-type.store';
+
+import { DotContentTypesPortletComponent } from './dot-content-types.component';
 
 const DELETE_MENU_ITEM_INDEX = 4;
 const ADD_TO_MENU_INDEX = 2;

@@ -1,11 +1,13 @@
-import { waitForAsync, ComponentFixture, TestBed } from '@angular/core/testing';
 import { DebugElement } from '@angular/core';
-import { DotUnlicensedPorletComponent } from '.';
-import { MockDotMessageService } from '@dotcms/utils-testing';
-import { DotMessageService } from '@dotcms/data-access';
+import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
+
+import { DotMessageService } from '@dotcms/data-access';
 import { DotIconModule } from '@dotcms/ui';
+import { MockDotMessageService } from '@dotcms/utils-testing';
 import { DotPipesModule } from '@pipes/dot-pipes.module';
+
+import { DotUnlicensedPorletComponent } from '.';
 
 describe('DotUnlicensedPorletComponent', () => {
     let component: DotUnlicensedPorletComponent;

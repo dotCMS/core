@@ -1,12 +1,16 @@
 // also exported from '@storybook/angular' if you can deal with breaking changes in 6.1
 import { Meta } from '@storybook/angular/types-6-0';
+
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
-import { ConfirmDialogModule } from 'primeng/confirmdialog';
+
+import { ConfirmationService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
+import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { MessagesModule } from 'primeng/messages';
 import { ToastModule } from 'primeng/toast';
-import { ConfirmationService } from 'primeng/api';
+
 import { ConfirmDialogComponent, ConfirmDialogTemplate } from './ConfirmDialog.component';
+
 import { ToastComponent } from '../messages/Toast.component';
 
 export default {

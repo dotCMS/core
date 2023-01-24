@@ -2,17 +2,9 @@ name: 'Build DotCMS Docker image'
 description: 'Build a custom DotCMS image'
 author: 'victoralfaro-dotcms'
 inputs:
-  pull_over_build:
-    description: 'Pull instead of an actual build flag'
-    required: true
-    default: 'false'
   build_id:
     description: 'Branch or commit to use to build DotCMS Docker image'
     required: true
-  skip_pull:
-    description: 'Skip build pull flag'
-    required: false
-    default: 'false'
   image_name:
     description: 'Image name'
     required: true
@@ -20,6 +12,11 @@ inputs:
     description: 'Path where the Dockerfile is located'
     required: true
     default: './docker/dotcms'
+  push:
+    description: 'Push flag'
+    type: boolean
+    required: false
+    default: 'false'
 outputs:
   built_image_name:
     description: 'Built image name'

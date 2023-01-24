@@ -1,7 +1,9 @@
 import { Component, ViewChild } from '@angular/core';
-import { FieldProperty } from '../field-properties.model';
 import { UntypedFormGroup } from '@angular/forms';
+
 import { DotTextareaContentComponent } from '@components/_common/dot-textarea-content/dot-textarea-content.component';
+
+import { FieldProperty } from '../field-properties.model';
 
 @Component({
     selector: 'dot-values-property',

@@ -1,14 +1,18 @@
-import { Injectable } from '@angular/core';
 import { ComponentStore, tapResponse } from '@ngrx/component-store';
-import { SelectItem } from 'primeng/api';
 import { Observable, of } from 'rxjs';
-import { mergeMap, switchMapTo, tap, pluck } from 'rxjs/operators';
+
+import { Injectable } from '@angular/core';
+
+import { SelectItem } from 'primeng/api';
+
+import { mergeMap, pluck, switchMapTo, tap } from 'rxjs/operators';
+
 import {
     ChartData,
+    ChartPeriod,
     DotCDNState,
     DotCDNStats,
     DotChartStats,
-    ChartPeriod,
     Loader,
     LoadingState,
     PurgeReturnData

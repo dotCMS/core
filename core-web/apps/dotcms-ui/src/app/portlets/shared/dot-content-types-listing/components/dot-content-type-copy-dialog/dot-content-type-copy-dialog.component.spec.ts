@@ -1,24 +1,23 @@
-import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { of } from 'rxjs';
 
-import { DotContentTypeCopyDialogComponent } from './dot-content-type-copy-dialog.component';
-import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
-import { DotFieldValidationMessageModule } from '@components/_common/dot-field-validation-message/dot-file-validation-message.module';
-import { By } from '@angular/platform-browser';
+import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { Component, DebugElement } from '@angular/core';
+import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { ReactiveFormsModule } from '@angular/forms';
+import { By } from '@angular/platform-browser';
+import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
+
+import { DotFieldValidationMessageModule } from '@components/_common/dot-field-validation-message/dot-file-validation-message.module';
 import { DotMdIconSelectorModule } from '@components/_common/dot-md-icon-selector/dot-md-icon-selector.module';
 import { SiteSelectorFieldModule } from '@components/_common/dot-site-selector-field/dot-site-selector-field.module';
-import { CoreWebService, SiteService } from '@dotcms/dotcms-js';
-import { SiteServiceMock } from '@dotcms/utils-testing';
-import { DotFormSelectorModule } from '@portlets/dot-edit-page/content/components/dot-form-selector/dot-form-selector.module';
 import { DotDialogModule } from '@components/dot-dialog/dot-dialog.module';
-import { ReactiveFormsModule } from '@angular/forms';
-import { DotMessageService } from '@dotcms/data-access';
-import { MockDotMessageService } from '@dotcms/utils-testing';
+import { DotEventsService, DotMessageService } from '@dotcms/data-access';
+import { CoreWebService, SiteService } from '@dotcms/dotcms-js';
+import { CoreWebServiceMock, MockDotMessageService, SiteServiceMock } from '@dotcms/utils-testing';
 import { DotPipesModule } from '@pipes/dot-pipes.module';
-import { CoreWebServiceMock } from '@dotcms/utils-testing';
-import { HttpClientTestingModule } from '@angular/common/http/testing';
-import { DotEventsService } from '@dotcms/data-access';
-import { of } from 'rxjs';
+import { DotFormSelectorModule } from '@portlets/dot-edit-page/content/components/dot-form-selector/dot-form-selector.module';
+
+import { DotContentTypeCopyDialogComponent } from './dot-content-type-copy-dialog.component';
 
 @Component({
     selector: 'dot-test-host-component',

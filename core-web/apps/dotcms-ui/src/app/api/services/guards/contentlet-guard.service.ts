@@ -1,7 +1,10 @@
-import { map } from 'rxjs/operators';
-import { Injectable } from '@angular/core';
-import { CanActivateChild, ActivatedRouteSnapshot, RouterStateSnapshot } from '@angular/router';
 import { Observable } from 'rxjs';
+
+import { Injectable } from '@angular/core';
+import { ActivatedRouteSnapshot, CanActivateChild, RouterStateSnapshot } from '@angular/router';
+
+import { map } from 'rxjs/operators';
+
 import { DotNavigationService } from '@components/dot-navigation/services/dot-navigation.service';
 import { DotContentTypeService } from '@dotcms/data-access';
 

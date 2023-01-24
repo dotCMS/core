@@ -1,4 +1,5 @@
 import { Extension } from '@tiptap/core';
+
 import { DotConfigModel } from './models';
 
 // Storage configuration in the editor under the name space dotConfig

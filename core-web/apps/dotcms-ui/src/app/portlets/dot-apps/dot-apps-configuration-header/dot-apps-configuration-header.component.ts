@@ -1,6 +1,7 @@
 import { Component, Input } from '@angular/core';
-import { DotApps } from '@dotcms/dotcms-models';
+
 import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
+import { DotApps } from '@dotcms/dotcms-models';
 
 @Component({
     selector: 'dot-apps-configuration-header',

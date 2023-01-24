@@ -1,9 +1,11 @@
+import { of } from 'rxjs';
+
+import { Injectable } from '@angular/core';
+import { TestBed } from '@angular/core/testing';
+
 import { DotLoginPageResolver } from '@components/login/dot-login-page-resolver.service';
 import { DotLoginPageStateService } from '@components/login/shared/services/dot-login-page-state.service';
-import { Injectable } from '@angular/core';
 import { mockLoginFormResponse } from '@dotcms/utils-testing';
-import { of } from 'rxjs';
-import { TestBed } from '@angular/core/testing';
 
 @Injectable()
 export class MockDotLoginPageStateService {

@@ -6,9 +6,9 @@ h2 {
     font-weight: $font-weight-semi-bold;
 }
 
-.muted {
-    color: $gray;
-    font-size: $font-size-x-small;
+.variant-name dot-icon {
+    display: inline;
+    color: $brand-primary;
 }
 
 .separator {
@@ -49,6 +49,27 @@ button {
 
         .p-card-footer .p-button-link {
             padding: $spacing-0;
+        }
+    }
+
+    p-inplace .p-inplace {
+        .p-inplace-display {
+            padding: 0;
+
+            i {
+                margin-left: $spacing-1;
+                margin-right: $spacing-1;
+                font-size: 0.85rem;
+            }
+
+            &:hover {
+                background: transparent;
+            }
+        }
+
+        .p-inplace-content {
+            display: flex;
+            gap: $spacing-1;
         }
     }
 }

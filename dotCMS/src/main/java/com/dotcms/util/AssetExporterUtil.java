@@ -41,6 +41,8 @@ public class AssetExporterUtil {
             "/5/",
             "/6/",
             "/7/",
+            "/8/",
+            "/9/",
             "/a/",
             "/b/",
             "/c/",

@@ -1,7 +1,7 @@
 {
     "root": true,
     "ignorePatterns": ["**/*"],
-    "plugins": ["@nrwl/nx"],
+    "plugins": ["@nrwl/nx", "eslint-plugin-import"],
     "overrides": [
         {
             "files": ["*.ts", "*.tsx", "*.js", "*.jsx"],
@@ -64,6 +64,44 @@
                     "error",
                     {
                         "allow": ["warn", "error"]
+                    }
+                ],
+                "no-duplicate-imports": "error",
+                "import/order": [
+                    "error",
+                    {
+                        "newlines-between": "always",
+                        "groups": [
+                            "external",
+                            "builtin",
+                            "internal",
+                            "object",
+                            "index",
+                            "sibling",
+                            "parent",
+                            "type"
+                        ],
+                        "pathGroups": [
+                            { "pattern": "@angular/**", "group": "external", "position": "after" },
+                            { "pattern": "primeng/**", "group": "external", "position": "after" },
+                            { "pattern": "rxjs/**", "group": "external", "position": "after" },
+                            { "pattern": "@tiptap/**", "group": "external", "position": "after" },
+                            { "pattern": "@components/**", "group": "internal" },
+                            { "pattern": "@directives/**", "group": "internal" },
+                            { "pattern": "@dotcms-ui/**", "group": "internal" },
+                            { "pattern": "@dotcms/**", "group": "internal" },
+                            { "pattern": "@portlets/**", "group": "internal" },
+                            { "pattern": "@models/**", "group": "internal" },
+                            { "pattern": "@pipes/**", "group": "internal" },
+                            { "pattern": "@services/**", "group": "internal" },
+                            { "pattern": "@shared/**", "group": "internal" },
+                            { "pattern": "@tests/**", "group": "internal" }
+                        ],
+                        "pathGroupsExcludedImportTypes": ["internal"],
+                        "alphabetize": {
+                            "order": "asc",
+                            "caseInsensitive": true
+                        }
                     }
                 ]
             }

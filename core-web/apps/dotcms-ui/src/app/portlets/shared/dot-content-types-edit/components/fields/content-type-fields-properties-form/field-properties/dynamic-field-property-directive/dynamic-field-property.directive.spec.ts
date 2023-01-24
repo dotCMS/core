@@ -3,16 +3,19 @@
 
 import {
     Component,
-    Type,
+    ComponentFactoryResolver,
     SimpleChange,
-    ViewContainerRef,
-    ComponentFactoryResolver
+    Type,
+    ViewContainerRef
 } from '@angular/core';
+import { UntypedFormGroup } from '@angular/forms';
+
+import { FieldType } from '@portlets/shared/dot-content-types-edit/components/fields';
+
 import { DynamicFieldPropertyDirective } from './dynamic-field-property.directive';
+
 import { FieldPropertyService } from '../../../service';
 import { FieldProperty } from '../field-properties.model';
-import { UntypedFormGroup } from '@angular/forms';
-import { FieldType } from '@portlets/shared/dot-content-types-edit/components/fields';
 
 @Component({
     selector: 'dot-test',

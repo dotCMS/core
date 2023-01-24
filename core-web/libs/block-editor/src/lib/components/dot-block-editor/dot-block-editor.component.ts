@@ -1,40 +1,37 @@
-import { Component, Injector, Input, OnInit, ViewContainerRef, OnDestroy } from '@angular/core';
-
 import { Subject } from 'rxjs';
+
+import { Component, Injector, Input, OnDestroy, OnInit, ViewContainerRef } from '@angular/core';
+
 import { debounceTime, takeUntil } from 'rxjs/operators';
 
 import { AnyExtension, Content, Editor } from '@tiptap/core';
+import CharacterCount, { CharacterCountStorage } from '@tiptap/extension-character-count';
 import { HeadingOptions, Level } from '@tiptap/extension-heading';
-import StarterKit, { StarterKitOptions } from '@tiptap/starter-kit';
+import { Highlight } from '@tiptap/extension-highlight';
+import { Link } from '@tiptap/extension-link';
 import Placeholder from '@tiptap/extension-placeholder';
+import { TableRow } from '@tiptap/extension-table-row';
+import { TextAlign } from '@tiptap/extension-text-align';
+import { Underline } from '@tiptap/extension-underline';
+import StarterKit, { StarterKitOptions } from '@tiptap/starter-kit';
 
 import {
     ActionsMenu,
-    BubbleLinkFormExtension,
-    ContentletBlock,
-    DEFAULT_LANG_ID,
-    DotBubbleMenuExtension,
-    DragHandler,
-    ImageUpload,
-    DotConfigExtension,
     BubbleFormExtension,
-    DotFloatingButton,
-    ImageNode,
-    SetDocAttrStep,
-    formatHTML,
+    BubbleLinkFormExtension,
+    DotBubbleMenuExtension,
+    DEFAULT_LANG_ID,
+    DotConfigExtension,
     DotTableCellExtension,
-    DotTableExtension,
     DotTableHeaderExtension,
-    BubbleImageTabviewFormExtension
-} from '@dotcms/block-editor';
-
-// Marks Extensions
-import { Highlight } from '@tiptap/extension-highlight';
-import { Link } from '@tiptap/extension-link';
-import { TextAlign } from '@tiptap/extension-text-align';
-import { Underline } from '@tiptap/extension-underline';
-import CharacterCount, { CharacterCountStorage } from '@tiptap/extension-character-count';
-import { TableRow } from '@tiptap/extension-table-row';
+    DotTableExtension,
+    DragHandler,
+    DotFloatingButton,
+    BubbleImageTabviewFormExtension,
+    ImageUpload
+} from '../../extensions';
+import { ContentletBlock, ImageNode } from '../../nodes';
+import { formatHTML, SetDocAttrStep } from '../../shared/utils';
 
 function toTitleCase(str) {
     return str.replace(/\p{L}+('\p{L}+)?/gu, function (txt) {
@@ -148,11 +145,11 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy {
             }),
             DotTableCellExtension(this.viewContainerRef),
             DotTableHeaderExtension(),
-            TableRow,
-            DotTableExtension()
+            TableRow
         ];
         const customExtensions: Map<string, AnyExtension> = new Map([
             ['contentlets', ContentletBlock(this.injector)],
+            ['table', DotTableExtension()],
             ['image', ImageNode]
         ]);
 

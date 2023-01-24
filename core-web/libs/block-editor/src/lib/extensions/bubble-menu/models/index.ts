@@ -1,9 +1,12 @@
-import { Editor } from '@tiptap/core';
-import { EditorView } from 'prosemirror-view';
 import { EditorState } from 'prosemirror-state';
-import { BubbleMenuPluginProps, BubbleMenuViewProps } from '@tiptap/extension-bubble-menu';
+import { EditorView } from 'prosemirror-view';
+
 import { ComponentRef, EventEmitter } from '@angular/core';
-import { SuggestionsComponent } from '@dotcms/block-editor';
+
+import { Editor } from '@tiptap/core';
+import { BubbleMenuPluginProps, BubbleMenuViewProps } from '@tiptap/extension-bubble-menu';
+
+import { SuggestionsComponent } from '../../../shared';
 
 export const DEFAULT_LANG_ID = 1;
 

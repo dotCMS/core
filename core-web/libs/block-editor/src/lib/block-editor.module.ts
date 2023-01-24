@@ -1,40 +1,39 @@
-import { NgModule } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { NgModule } from '@angular/core';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 
 // DotCMS JS
-import { LoggerService } from '@dotcms/dotcms-js';
-import { StringUtils } from '@dotcms/dotcms-js';
+import { LoggerService, StringUtils } from '@dotcms/dotcms-js';
 
 // Directives
-import { EditorDirective } from './shared/directives';
 
 // Nodes
-import { ContentletBlockComponent } from './nodes';
 
 // Extension Components
+
+// Shared
+
+//Editor
+import { DotBlockEditorComponent } from './components/dot-block-editor/dot-block-editor.component';
+import { DotEditorCountBarComponent } from './components/dot-editor-count-bar/dot-editor-count-bar.component';
 import {
     ActionButtonComponent,
     BubbleLinkFormComponent,
     BubbleMenuButtonComponent,
     BubbleMenuComponent,
+    DotImageService,
     DragHandlerComponent,
     FormActionsComponent,
     LoaderComponent,
-    DotImageService,
     SuggestionPageComponent
 } from './extensions';
-
-// Shared
-import { SharedModule } from './shared/shared.module';
-import { PrimengModule } from './shared/primeng.module';
 import { BubbleFormComponent } from './extensions/bubble-form/bubble-form.component';
-
-//Editor
-import { DotBlockEditorComponent } from './components/dot-block-editor/dot-block-editor.component';
-import { DotEditorCountBarComponent } from './components/dot-editor-count-bar/dot-editor-count-bar.component';
 import { FloatingButtonComponent } from './extensions/floating-button/floating-button.component';
 import { ImageTabviewFormModule } from './extensions/image-tabview-form/image-tabview-form.module';
+import { ContentletBlockComponent } from './nodes';
+import { EditorDirective } from './shared/directives';
+import { PrimengModule } from './shared/primeng.module';
+import { SharedModule } from './shared/shared.module';
 
 @NgModule({
     imports: [

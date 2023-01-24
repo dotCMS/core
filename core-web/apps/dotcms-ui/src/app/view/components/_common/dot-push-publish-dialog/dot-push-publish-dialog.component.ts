@@ -1,11 +1,13 @@
-import { Component, Output, EventEmitter, OnInit, OnDestroy } from '@angular/core';
+import { Subject } from 'rxjs';
+
+import { Component, EventEmitter, OnDestroy, OnInit, Output } from '@angular/core';
+
+import { takeUntil } from 'rxjs/operators';
+
+import { DotDialogActions } from '@components/dot-dialog/dot-dialog.component';
 import { PushPublishService } from '@dotcms/app/api/services/push-publish/push-publish.service';
 import { DotMessageService } from '@dotcms/data-access';
 import { DotPushPublishDialogService } from '@dotcms/dotcms-js';
-import { DotDialogActions } from '@components/dot-dialog/dot-dialog.component';
-import { takeUntil } from 'rxjs/operators';
-
-import { Subject } from 'rxjs';
 import { DotAjaxActionResponseView, DotPushPublishDialogData } from '@dotcms/dotcms-models';
 import { DotPushPublishData } from '@models/dot-push-publish-data/dot-push-publish-data';
 

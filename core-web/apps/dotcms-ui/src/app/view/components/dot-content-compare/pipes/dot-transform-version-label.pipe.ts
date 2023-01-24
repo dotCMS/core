@@ -1,7 +1,8 @@
 import { Pipe, PipeTransform } from '@angular/core';
-import { DotCMSContentlet } from '@dotcms/dotcms-models';
-import { DotMessageService } from '@dotcms/data-access';
+
 import { DotFormatDateService } from '@dotcms/app/api/services/dot-format-date-service';
+import { DotMessageService } from '@dotcms/data-access';
+import { DotCMSContentlet } from '@dotcms/dotcms-models';
 
 @Pipe({
     name: 'dotTransformVersionLabel'

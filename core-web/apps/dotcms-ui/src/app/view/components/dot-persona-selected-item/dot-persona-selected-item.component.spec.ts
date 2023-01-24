@@ -1,17 +1,18 @@
-import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { DotPersonaSelectedItemComponent } from './dot-persona-selected-item.component';
 import { DebugElement } from '@angular/core';
-import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
-import { DotIconModule } from '@dotcms/ui';
-import { DotAvatarModule } from '@components/_common/dot-avatar/dot-avatar.module';
+import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
-import { mockDotPersona } from '@dotcms/utils-testing';
+import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
+
 import { TooltipModule } from 'primeng/tooltip';
-import { LoginService } from '@dotcms/dotcms-js';
-import { LoginServiceMock } from '@dotcms/utils-testing';
-import { MockDotMessageService } from '@dotcms/utils-testing';
+
+import { DotAvatarModule } from '@components/_common/dot-avatar/dot-avatar.module';
 import { DotMessageService } from '@dotcms/data-access';
+import { LoginService } from '@dotcms/dotcms-js';
+import { DotIconModule } from '@dotcms/ui';
+import { LoginServiceMock, MockDotMessageService, mockDotPersona } from '@dotcms/utils-testing';
 import { DotPipesModule } from '@pipes/dot-pipes.module';
+
+import { DotPersonaSelectedItemComponent } from './dot-persona-selected-item.component';
 
 const messageServiceMock = new MockDotMessageService({
     'modes.persona.selector.title.preview': 'Previewing As',

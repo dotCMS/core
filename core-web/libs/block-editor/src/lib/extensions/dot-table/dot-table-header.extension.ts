@@ -1,5 +1,5 @@
-import { TableHeader } from '@tiptap/extension-table-header';
 import { mergeAttributes } from '@tiptap/core';
+import { TableHeader } from '@tiptap/extension-table-header';
 
 export function DotTableHeaderExtension() {
     return TableHeader.extend({

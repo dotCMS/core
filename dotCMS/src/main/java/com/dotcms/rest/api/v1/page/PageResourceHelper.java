@@ -11,6 +11,7 @@ import com.dotcms.rest.api.v1.page.PageContainerForm.ContainerEntry;
 import com.dotcms.rest.exception.BadRequestException;
 import com.dotcms.util.CollectionsUtils;
 import com.dotcms.variant.VariantAPI;
+import com.dotcms.variant.business.web.VariantWebAPI.RenderContext;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.MultiTree;
 import com.dotmarketing.business.APILocator;
@@ -32,6 +33,7 @@ import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.business.DotContentletStateException;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
 import com.dotmarketing.portlets.htmlpageasset.business.HTMLPageAssetAPI;
 import com.dotmarketing.portlets.htmlpageasset.business.render.HTMLPageAssetNotFoundException;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
@@ -49,6 +51,7 @@ import com.liferay.portal.PortalException;
 import com.liferay.portal.SystemException;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
+import org.apache.velocity.exception.ResourceNotFoundException;
 import org.jetbrains.annotations.NotNull;
 
 import javax.servlet.http.HttpServletRequest;
@@ -106,7 +109,7 @@ public class PageResourceHelper implements Serializable {
         return PageResourceHelper.SingletonHolder.INSTANCE;
     }
 
-    private final static ParameterDecorator LANGUAGE_PARAMETER_DECORATOR = new LanguageIdParameterDecorator();
+    private static final ParameterDecorator LANGUAGE_PARAMETER_DECORATOR = new LanguageIdParameterDecorator();
 
 
     public HttpServletRequest decorateRequest(final HttpServletRequest request) {
@@ -258,30 +261,57 @@ public class PageResourceHelper implements Serializable {
         try {
             final PageMode mode = PageMode.get(request);
             final Language currentLanguage = WebAPILocator.getLanguageWebAPI().getLanguage(request);
-            
-            
-            final IHTMLPage page = this.htmlPageAssetAPI.findByIdLanguageFallback(pageId, currentLanguage.getId(), mode.showLive, user, mode.respectAnonPerms);
+
+            final RenderContext renderContext = WebAPILocator.getVariantWebAPI()
+                    .getRenderContext(currentLanguage.getId(), pageId, mode, user);
+
+            final ContentletVersionInfo contentletVersionInfo = APILocator.getVersionableAPI()
+                    .getContentletVersionInfo(pageId, renderContext.getCurrentLanguageId(),
+                            renderContext.getCurrentVariantKey())
+                    .orElseThrow(() -> new HTMLPageAssetNotFoundException(pageId));
+
+            final String pageInode = mode.showLive ? contentletVersionInfo.getLiveInode() :
+                    contentletVersionInfo.getWorkingInode();
+
+            IHTMLPage page = this.htmlPageAssetAPI.findPage(pageInode, user,
+                            mode.respectAnonPerms);
 
             if (page == null) {
                 throw new HTMLPageAssetNotFoundException(pageId);
             }
 
+            final String currentVariantId = WebAPILocator.getVariantWebAPI().currentVariantId();
+
+            if (!contentletVersionInfo.getVariant().equals(currentVariantId)) {
+                page = createNewVersion(user, pageInode, currentVariantId);
+            }
+
             return page;
-        }catch (DotContentletStateException e) {
+        }catch (DotContentletStateException | ResourceNotFoundException e) {
             throw new HTMLPageAssetNotFoundException(pageId, e);
         }
 
     }
 
+    private IHTMLPage createNewVersion(final User user, final String pageInode,
+            final String currentVariantId) throws DotDataException, DotSecurityException {
+        final Contentlet checkout = APILocator.getContentletAPI()
+                .checkout(pageInode, user, false);
+        checkout.setVariantId(currentVariantId);
+        final Contentlet checkin = APILocator.getContentletAPI()
+                .checkin(checkout, user, false);
+        return APILocator.getHTMLPageAssetAPI().fromContentlet(checkin);
+    }
+
     @WrapInTransaction
     public Template saveTemplate(final IHTMLPage page, final User user, final PageForm pageForm)
-            throws BadRequestException, DotDataException, DotSecurityException {
+            throws DotDataException, DotSecurityException {
 
-        Template template = new Template();
+        final Host host = getHost(pageForm.getHostId(), user);
+        final User systemUser = userAPI.getSystemUser();
+        final Template template = checkoutTemplate(page, systemUser, pageForm);
+
         try {
-            final Host host = getHost(pageForm.getHostId(), user);
-            final User systemUser = userAPI.getSystemUser();
-            template = checkoutTemplate(page, systemUser, pageForm);
             final boolean hasPermission = template.isAnonymous() ?
                     permissionAPI.doesUserHavePermission(page, PermissionLevel.EDIT.getType(), user) :
                     permissionAPI.doesUserHavePermission(template, PermissionLevel.EDIT.getType(), user);
@@ -292,12 +322,11 @@ public class PageResourceHelper implements Serializable {
             }
 
             template.setDrawed(true);
-
             updateMultiTrees(page, pageForm);
 
             // permissions have been updated above
             return this.templateAPI.saveTemplate(template, host, APILocator.systemUser(), false);
-        } catch (final BadRequestException | DotDataException | DotSecurityException e) {
+        } catch (final DotDataException | DotSecurityException e) {
             final String errorMsg = String.format("An error occurred when saving Template '%s' [ %s ]: %s",
                     template.getTitle(), template.getIdentifier(), e.getMessage());
             throw new DotRuntimeException(errorMsg, e);
@@ -380,8 +409,11 @@ public class PageResourceHelper implements Serializable {
 
         final Template oldTemplate = this.templateAPI.findWorkingTemplate(page.getTemplateId(), user, false);
         final Template saveTemplate;
+        final boolean useByAnotherPage = this.templateAPI.getPages(page.getTemplateId()).stream()
+                .anyMatch(pageVersion -> !page.getIdentifier().equals(pageVersion.getIdentifier()) ||
+                        !((HTMLPageAsset) page).getVariantId().equals(pageVersion.getVariantName()));
 
-        if (UtilMethods.isSet(oldTemplate) && (!form.isAnonymousLayout() || oldTemplate.isAnonymous())) {
+        if (!useByAnotherPage) {
             saveTemplate = oldTemplate;
         } else {
             saveTemplate = new Template();
@@ -443,21 +475,44 @@ public class PageResourceHelper implements Serializable {
         return copiedContentlet;
     }
 
+    /**
+     * Takes the information related to an existing piece of Content -- which is already associated to a Container
+     * inside an HTML Page -- and creates an exact copy of it. This is particularly useful when a User wants to:
+     * <ul>
+     *     <li>Update a Contentlet that is referenced in several pages, but only want to update the one in a specific
+     *     page.</li>
+     *     <li>Perform a deep copy of a page; i.e., create an exact cpy of an HTML Page and all its contents.</li>
+     * </ul>
+     *
+     * @param copyContentletForm The {@link CopyContentletForm} object which contains all the Multi-Tree information of
+     *                           the Contentlet being copied.
+     * @param user               The {@link User} performing this action.
+     * @param pageMode           The currently selected {@link PageMode}, which allows to get information such as the
+     *                          "Respect Anonymous Permissions" flag.
+     * @param languageId         The language ID in which the Contentlet copy will be created.
+     *
+     * @return The fresh copy of the specified Contentlet.
+     *
+     * @throws DotDataException     An error occurred when interacting with the data source.
+     * @throws DotSecurityException The specified User does not have the required permissions to execute this action.
+     */
     private Contentlet copyContent(final CopyContentletForm copyContentletForm, final User user,
                                    final PageMode pageMode, final long languageId) throws DotDataException, DotSecurityException {
-
-        Logger.debug(this, ()-> "Copying the contenlet: " + copyContentletForm.getContentId());
-        final Contentlet currentContentlet = this.contentletAPI.findContentletByIdentifier(
+        Logger.debug(this, ()-> "Copying existing contentlet: " + copyContentletForm.getContentId());
+        Contentlet currentContentlet = this.contentletAPI.findContentletByIdentifier(
                 copyContentletForm.getContentId(), pageMode.showLive, languageId, user, pageMode.respectAnonPerms);
-
-        if (null == currentContentlet) {
-
+        if (null == currentContentlet || UtilMethods.isNotSet(currentContentlet.getIdentifier())) {
+            Logger.debug(this, () -> String.format("Contentlet '%s' is not available in language ID '%s'.",
+                    copyContentletForm.getContentId(), languageId));
+            currentContentlet =
+                    this.contentletAPI.findContentletByIdentifierAnyLanguage(copyContentletForm.getContentId(), false);
+        }
+        if (null == currentContentlet || UtilMethods.isNotSet(currentContentlet.getIdentifier())) {
             throw new DoesNotExistException(
                     "The Contentlet being copied does not exist. Content id: " + copyContentletForm.getContentId());
         }
-
         final Contentlet copiedContentlet  = this.contentletAPI.copyContentlet(currentContentlet, user, pageMode.respectAnonPerms);
-        Logger.debug(this, ()-> "Copied the contenlet: " + copiedContentlet.getIdentifier());
+        Logger.debug(this, ()-> "Contentlet: " + copiedContentlet.getIdentifier() + " has been copied");
 
         return copiedContentlet;
     }

@@ -1,4 +1,5 @@
 import { TestBed } from '@angular/core/testing';
+
 import { DotGenerateSecurePasswordService } from './dot-generate-secure-password.service';
 
 describe('DotGenerateSecurePasswordService', () => {

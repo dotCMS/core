@@ -1,11 +1,13 @@
-import { Story, Meta } from '@storybook/angular/types-6-0';
 import { moduleMetadata } from '@storybook/angular';
-import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
-import { InputTextModule } from 'primeng/inputtext';
-import { MessageModule } from 'primeng/message';
-import { KeyFilterModule } from 'primeng/keyfilter';
-import { BrowserModule } from '@angular/platform-browser';
+import { Meta, Story } from '@storybook/angular/types-6-0';
+
 import { FormsModule } from '@angular/forms';
+import { BrowserModule } from '@angular/platform-browser';
+import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
+
+import { InputTextModule } from 'primeng/inputtext';
+import { KeyFilterModule } from 'primeng/keyfilter';
+import { MessageModule } from 'primeng/message';
 
 export default {
     title: 'PrimeNG/Form/KeyFilter',

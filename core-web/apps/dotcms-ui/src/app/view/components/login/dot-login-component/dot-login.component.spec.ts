@@ -1,35 +1,37 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { DotLoginComponent } from '@components/login/dot-login-component/dot-login.component';
-import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { BehaviorSubject, of, throwError } from 'rxjs';
+
+import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { DebugElement, Injectable } from '@angular/core';
+import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { FormsModule, ReactiveFormsModule } from '@angular/forms';
+import { By } from '@angular/platform-browser';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
+import { ActivatedRoute, Params } from '@angular/router';
+import { RouterTestingModule } from '@angular/router/testing';
+
+import { ButtonModule } from 'primeng/button';
+import { Checkbox, CheckboxModule } from 'primeng/checkbox';
+import { Dropdown, DropdownModule } from 'primeng/dropdown';
+
+import { DotFieldValidationMessageModule } from '@components/_common/dot-field-validation-message/dot-file-validation-message.module';
+import { DotLoadingIndicatorModule } from '@components/_common/iframe/dot-loading-indicator/dot-loading-indicator.module';
+import { DotLoginComponent } from '@components/login/dot-login-component/dot-login.component';
+import { DotLoginPageStateService } from '@components/login/shared/services/dot-login-page-state.service';
+import { DotFormatDateService } from '@dotcms/app/api/services/dot-format-date-service';
+import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
+import { DotMessageService } from '@dotcms/data-access';
 import { CoreWebService, LoggerService, LoginService, StringUtils } from '@dotcms/dotcms-js';
+import { DotLoginInformation } from '@dotcms/dotcms-models';
+import { DotLoadingIndicatorService } from '@dotcms/utils';
 import {
+    CoreWebServiceMock,
     DotFormatDateServiceMock,
     LoginServiceMock,
     mockLoginFormResponse,
     mockUser
 } from '@dotcms/utils-testing';
-import { By } from '@angular/platform-browser';
-import { FormsModule, ReactiveFormsModule } from '@angular/forms';
-import { ButtonModule } from 'primeng/button';
-import { DotFieldValidationMessageModule } from '@components/_common/dot-field-validation-message/dot-file-validation-message.module';
-import { DotLoadingIndicatorModule } from '@components/_common/iframe/dot-loading-indicator/dot-loading-indicator.module';
-import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
-import { RouterTestingModule } from '@angular/router/testing';
-import { DotLoginPageStateService } from '@components/login/shared/services/dot-login-page-state.service';
-
-import { DotMessageService } from '@dotcms/data-access';
-import { Checkbox, CheckboxModule } from 'primeng/checkbox';
-import { Dropdown, DropdownModule } from 'primeng/dropdown';
-import { BehaviorSubject, of, throwError } from 'rxjs';
-import { DotFormatDateService } from '@dotcms/app/api/services/dot-format-date-service';
-import { CoreWebServiceMock } from '@dotcms/utils-testing';
-import { HttpClientTestingModule } from '@angular/common/http/testing';
-import { ActivatedRoute, Params } from '@angular/router';
-import { DotLoginInformation } from '@dotcms/dotcms-models';
-import { DotLoadingIndicatorService } from '@dotcms/utils';
 
 const mockLoginInfo = {
     ...mockLoginFormResponse,

@@ -1,17 +1,16 @@
-import { TestBed, getTestBed } from '@angular/core/testing';
 import { HttpTestingController, HttpClientTestingModule } from '@angular/common/http/testing';
+import { TestBed, getTestBed } from '@angular/core/testing';
 
 import { LoginService, CoreWebService, CoreWebServiceMock } from '@dotcms/dotcms-js';
-
 import { DotPageRenderParameters, DotPageMode } from '@dotcms/dotcms-models';
-
-import { DotPageRenderService } from './dot-page-render.service';
 import {
     LoginServiceMock,
     mockDotRenderedPage,
     mockDotDevices,
     mockDotPersona
 } from '@dotcms/utils-testing';
+
+import { DotPageRenderService } from './dot-page-render.service';
 describe('DotPageRenderService', () => {
     let injector: TestBed;
     let dotPageRenderService: DotPageRenderService;

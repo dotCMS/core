@@ -1,9 +1,11 @@
+import { Observable } from 'rxjs';
+
 import { Injectable } from '@angular/core';
 
-import { Observable } from 'rxjs';
 import { pluck, map } from 'rxjs/operators';
 
-import { CoreWebService } from '@dotcms/dotcms-js';
+import { DotSessionStorageService } from '@dotcms/data-access';
+import { CoreWebService, DotRequestOptionsArgs } from '@dotcms/dotcms-js';
 import { DotLayout, DotPageRender, DotPageRenderParameters } from '@dotcms/dotcms-models';
 
 /**
@@ -14,7 +16,10 @@ import { DotLayout, DotPageRender, DotPageRenderParameters } from '@dotcms/dotcm
  */
 @Injectable()
 export class DotPageLayoutService {
-    constructor(private coreWebService: CoreWebService) {}
+    constructor(
+        private coreWebService: CoreWebService,
+        private readonly dotSessionStorageService: DotSessionStorageService
+    ) {}
 
     /**
      * Save the layout of a page
@@ -25,18 +30,26 @@ export class DotPageLayoutService {
      * @memberof DotPageLayoutService
      */
     save(pageIdentifier: string, dotLayout: DotLayout): Observable<DotPageRender> {
-        return this.coreWebService
-            .requestView({
-                body: dotLayout,
-                method: 'POST',
-                url: `v1/page/${pageIdentifier}/layout`
-            })
-            .pipe(
-                pluck('entity'),
-                map(
-                    (dotPageRenderResponse: DotPageRenderParameters) =>
-                        new DotPageRender(dotPageRenderResponse)
-                )
-            );
+        const requestOptions: DotRequestOptionsArgs = {
+            body: dotLayout,
+            method: 'POST',
+            url: `v1/page/${pageIdentifier}/layout`
+        };
+
+        const currentVariantName = this.dotSessionStorageService.getVariationId();
+
+        if (currentVariantName) {
+            requestOptions.params = {
+                variantName: currentVariantName
+            };
+        }
+
+        return this.coreWebService.requestView(requestOptions).pipe(
+            pluck('entity'),
+            map(
+                (dotPageRenderResponse: DotPageRenderParameters) =>
+                    new DotPageRender(dotPageRenderResponse)
+            )
+        );
     }
 }

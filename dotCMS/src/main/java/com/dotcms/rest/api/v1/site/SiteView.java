@@ -12,6 +12,8 @@ public class SiteView {
 
     private final String siteName;
 
+    private final String folder;
+
     private final String tagStorage;
 
     private final String siteThumbnail;
@@ -50,34 +52,31 @@ public class SiteView {
 
     private final  String modUser;
 
-    public SiteView(String identifier, String inode, String aliases, String siteName, String tagStorage, String hostThumbnail,
-                    boolean runDashboard, String keywords, String description, String googleMap, String googleAnalytics, String addThis,
-                    String proxyUrlForEditMode, String embeddedDashboard, long languageId, boolean isSystemHost, boolean isDefault, boolean isArchived,
-                    boolean isLive, boolean isLocked, boolean isWorking, Date modDate, String modUser) {
-
-        this.identifier = identifier;
-        this.inode = inode;
-        this.aliases = aliases;
-        this.siteName = siteName;
-        this.tagStorage = tagStorage;
-        this.siteThumbnail = hostThumbnail;
-        this.runDashboard = runDashboard;
-        this.keywords = keywords;
-        this.description = description;
-        this.googleMap = googleMap;
-        this.googleAnalytics = googleAnalytics;
-        this.addThis = addThis;
-        this.proxyUrlForEditMode = proxyUrlForEditMode;
-        this.embeddedDashboard = embeddedDashboard;
-        this.languageId = languageId;
-        this.isSystemHost = isSystemHost;
-        this.isDefault = isDefault;
-        this.isArchived = isArchived;
-        this.isLive = isLive;
-        this.isLocked = isLocked;
-        this.isWorking = isWorking;
-        this.modDate = modDate;
-        this.modUser = modUser;
+    private SiteView(Builder builder) {
+        identifier = builder.identifier;
+        inode = builder.inode;
+        aliases = builder.aliases;
+        siteName = builder.siteName;
+        folder = builder.folder;
+        tagStorage = builder.tagStorage;
+        siteThumbnail = builder.siteThumbnail;
+        runDashboard = builder.runDashboard;
+        keywords = builder.keywords;
+        description = builder.description;
+        googleMap = builder.googleMap;
+        googleAnalytics = builder.googleAnalytics;
+        addThis = builder.addThis;
+        proxyUrlForEditMode = builder.proxyUrlForEditMode;
+        embeddedDashboard = builder.embeddedDashboard;
+        languageId = builder.languageId;
+        isSystemHost = builder.isSystemHost;
+        isDefault = builder.isDefault;
+        isArchived = builder.isArchived;
+        isLive = builder.isLive;
+        isLocked = builder.isLocked;
+        isWorking = builder.isWorking;
+        modDate = builder.modDate;
+        modUser = builder.modUser;
     }
 
     public String getIdentifier() {
@@ -94,6 +93,10 @@ public class SiteView {
 
     public String getSiteName() {
         return siteName;
+    }
+
+    public String getFolder() {
+        return folder;
     }
 
     public String getTagStorage() {
@@ -170,5 +173,164 @@ public class SiteView {
 
     public String getModUser() {
         return modUser;
+    }
+
+
+    public static final class Builder {
+        private String identifier;
+        private String inode;
+        private String aliases;
+        private String siteName;
+        private String folder;
+        private String tagStorage;
+        private String siteThumbnail;
+        private boolean runDashboard;
+        private String keywords;
+        private String description;
+        private String googleMap;
+        private String googleAnalytics;
+        private String addThis;
+        private String proxyUrlForEditMode;
+        private String embeddedDashboard;
+        private long languageId;
+        private boolean isSystemHost;
+        private boolean isDefault;
+        private boolean isArchived;
+        private boolean isLive;
+        private boolean isLocked;
+        private boolean isWorking;
+        private Date modDate;
+        private String modUser;
+
+        private Builder() {
+        }
+
+        public static Builder builder() {
+            return new Builder();
+        }
+
+        public Builder withIdentifier(String val) {
+            identifier = val;
+            return this;
+        }
+
+        public Builder withInode(String val) {
+            inode = val;
+            return this;
+        }
+
+        public Builder withAliases(String val) {
+            aliases = val;
+            return this;
+        }
+
+        public Builder withSiteName(String val) {
+            siteName = val;
+            return this;
+        }
+
+        public Builder withFolder(String val) {
+            folder = val;
+            return this;
+        }
+
+        public Builder withTagStorage(String val) {
+            tagStorage = val;
+            return this;
+        }
+
+        public Builder withSiteThumbnail(String val) {
+            siteThumbnail = val;
+            return this;
+        }
+
+        public Builder withRunDashboard(boolean val) {
+            runDashboard = val;
+            return this;
+        }
+
+        public Builder withKeywords(String val) {
+            keywords = val;
+            return this;
+        }
+
+        public Builder withDescription(String val) {
+            description = val;
+            return this;
+        }
+
+        public Builder withGoogleMap(String val) {
+            googleMap = val;
+            return this;
+        }
+
+        public Builder withGoogleAnalytics(String val) {
+            googleAnalytics = val;
+            return this;
+        }
+
+        public Builder withAddThis(String val) {
+            addThis = val;
+            return this;
+        }
+
+        public Builder withProxyUrlForEditMode(String val) {
+            proxyUrlForEditMode = val;
+            return this;
+        }
+
+        public Builder withEmbeddedDashboard(String val) {
+            embeddedDashboard = val;
+            return this;
+        }
+
+        public Builder withLanguageId(long val) {
+            languageId = val;
+            return this;
+        }
+
+        public Builder withIsSystemHost(boolean val) {
+            isSystemHost = val;
+            return this;
+        }
+
+        public Builder withIsDefault(boolean val) {
+            isDefault = val;
+            return this;
+        }
+
+        public Builder withIsArchived(boolean val) {
+            isArchived = val;
+            return this;
+        }
+
+        public Builder withIsLive(boolean val) {
+            isLive = val;
+            return this;
+        }
+
+        public Builder withIsLocked(boolean val) {
+            isLocked = val;
+            return this;
+        }
+
+        public Builder withIsWorking(boolean val) {
+            isWorking = val;
+            return this;
+        }
+
+        public Builder withModDate(Date val) {
+            modDate = val;
+            return this;
+        }
+
+        public Builder withModUser(String val) {
+            modUser = val;
+            return this;
+        }
+
+        public SiteView build() {
+            return new SiteView(this);
+        }
     }
 }

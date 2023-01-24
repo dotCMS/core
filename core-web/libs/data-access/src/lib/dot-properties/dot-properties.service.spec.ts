@@ -1,8 +1,10 @@
-import { TestBed } from '@angular/core/testing';
-import { DotPropertiesService } from './dot-properties.service';
 import { HttpClientTestingModule, HttpTestingController } from '@angular/common/http/testing';
+import { TestBed } from '@angular/core/testing';
+
 import { CoreWebService } from '@dotcms/dotcms-js';
 import { CoreWebServiceMock } from '@dotcms/utils-testing';
+
+import { DotPropertiesService } from './dot-properties.service';
 
 const fakeResponse = {
     entity: {
