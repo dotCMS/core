@@ -14,7 +14,7 @@ import { ConfirmPopup, ConfirmPopupModule } from 'primeng/confirmpopup';
 
 import { DotMessagePipe } from '@dotcms/app/view/pipes';
 import { DotMessageService } from '@dotcms/data-access';
-import { ExperimentSteps, Goals, Status, StepStatus } from '@dotcms/dotcms-models';
+import { ComponentStatus, ExperimentSteps, Goals, StepStatus } from '@dotcms/dotcms-models';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 import { DotExperimentsConfigurationGoalSelectComponent } from '@portlets/dot-experiments/dot-experiments-configuration/components/dot-experiments-configuration-goal-select/dot-experiments-configuration-goal-select.component';
 import { DotExperimentsConfigurationGoalsComponent } from '@portlets/dot-experiments/dot-experiments-configuration/components/dot-experiments-configuration-goals/dot-experiments-configuration-goals.component';
@@ -97,7 +97,7 @@ describe('DotExperimentsConfigurationGoalsComponent', () => {
             experimentId: EXPERIMENT_ID,
             goals: GoalsMock,
             status: {
-                status: Status.IDLE,
+                status: ComponentStatus.IDLE,
                 isOpen: false,
                 experimentStep: null
             }
@@ -142,7 +142,7 @@ describe('DotExperimentsConfigurationGoalsComponent', () => {
             experimentId: EXPERIMENT_ID,
             goals: GoalsMock,
             status: {
-                status: Status.IDLE,
+                status: ComponentStatus.IDLE,
                 isOpen: false,
                 experimentStep: null
             }

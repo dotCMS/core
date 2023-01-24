@@ -9,10 +9,10 @@ import { MessageService } from 'primeng/api';
 
 import { DotMessageService } from '@dotcms/data-access';
 import {
+    ComponentStatus,
     DotExperiment,
     DotExperimentStatusList,
     GroupedExperimentByStatus,
-    LoadingState,
     TrafficProportionTypes
 } from '@dotcms/dotcms-models';
 import { MockDotMessageService } from '@dotcms/utils-testing';
@@ -81,7 +81,7 @@ describe('DotExperimentsListStore', () => {
                 DotExperimentStatusList.SCHEDULED,
                 DotExperimentStatusList.ARCHIVED
             ],
-            status: LoadingState.INIT
+            status: ComponentStatus.INIT
         };
 
         store.state$.subscribe((state) => {
@@ -92,14 +92,14 @@ describe('DotExperimentsListStore', () => {
 
     it('should have getState$ from the store', () => {
         store.getStatus$.subscribe((data) => {
-            expect(data).toEqual(LoadingState.INIT);
+            expect(data).toEqual(ComponentStatus.INIT);
         });
     });
 
     it('should update status to the store', () => {
-        store.setComponentStatus(LoadingState.LOADED);
+        store.setComponentStatus(ComponentStatus.LOADED);
         store.getStatus$.subscribe((status) => {
-            expect(status).toEqual(LoadingState.LOADED);
+            expect(status).toEqual(ComponentStatus.LOADED);
         });
     });
     it('should update experiments to the store', () => {
@@ -231,7 +231,7 @@ describe('DotExperimentsListStore', () => {
 
             expectedExperimentsInStore[0].status = DotExperimentStatusList.ARCHIVED;
 
-            dotExperimentsService.archive.and.returnValue(of([expectedExperimentsInStore[0]]));
+            dotExperimentsService.archive.and.returnValue(of(expectedExperimentsInStore[0]));
 
             const experimentToArchive = ExperimentMocks[0];
 

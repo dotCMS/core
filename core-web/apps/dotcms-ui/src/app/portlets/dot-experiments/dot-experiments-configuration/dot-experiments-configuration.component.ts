@@ -1,10 +1,12 @@
 import { Observable } from 'rxjs';
 
-import { ChangeDetectionStrategy, Component, OnInit } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, OnInit } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 
+import { DotMessagePipe } from '@dotcms/app/view/pipes';
 import { DotSessionStorageService } from '@dotcms/data-access';
 import {
+    DOT_EXPERIMENT_STATUS_METADATA_MAP,
     DotExperiment,
     EditPageTabs,
     ExperimentSteps,
@@ -20,19 +22,22 @@ import {
     selector: 'dot-experiments-configuration',
     templateUrl: './dot-experiments-configuration.component.html',
     styleUrls: ['./dot-experiments-configuration.component.scss'],
-    providers: [DotExperimentsConfigurationStore],
+    providers: [DotExperimentsConfigurationStore, DotMessagePipe],
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotExperimentsConfigurationComponent implements OnInit {
     vm$: Observable<ConfigurationViewModel> = this.dotExperimentsConfigurationStore.vm$;
     experimentSteps = ExperimentSteps;
+    experimentStatusMap;
 
     constructor(
         private readonly dotExperimentsConfigurationStore: DotExperimentsConfigurationStore,
         private readonly dotSessionStorageService: DotSessionStorageService,
         private readonly router: Router,
         private readonly route: ActivatedRoute
-    ) {}
+    ) {
+        this.experimentStatusMap = this.statusTranslations();
+    }
 
     ngOnInit(): void {
         this.dotExperimentsConfigurationStore.loadExperiment(
@@ -55,6 +60,16 @@ export class DotExperimentsConfigurationComponent implements OnInit {
             },
             queryParamsHandling: 'merge'
         });
+    }
+
+    /**
+     * Run the Experiment
+     * @param {DotExperiment} experiment
+     * @returns void
+     * @memberof DotExperimentsConfigurationVariantsComponent
+     */
+    runExperiment(experiment: DotExperiment) {
+        this.dotExperimentsConfigurationStore.startExperiment(experiment);
     }
 
     /**
@@ -131,5 +146,19 @@ export class DotExperimentsConfigurationComponent implements OnInit {
             },
             queryParamsHandling: 'merge'
         });
+    }
+
+    private statusTranslations() {
+        const dotMessagePipe = inject(DotMessagePipe);
+        const statusWithTranslations = { ...DOT_EXPERIMENT_STATUS_METADATA_MAP };
+
+        Object.keys(DOT_EXPERIMENT_STATUS_METADATA_MAP).forEach((key) => {
+            statusWithTranslations[key] = {
+                ...DOT_EXPERIMENT_STATUS_METADATA_MAP[key],
+                label: dotMessagePipe.transform(DOT_EXPERIMENT_STATUS_METADATA_MAP[key].label)
+            };
+        });
+
+        return statusWithTranslations;
     }
 }
