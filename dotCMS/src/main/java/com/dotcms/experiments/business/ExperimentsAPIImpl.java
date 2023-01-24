@@ -452,25 +452,28 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
             throws DotDataException {
 
         final String experimentId = experiment.getIdentifier();
-        final String variantName = getVariantName(experimentId);
+        String variantName = null;
 
         if(variantDescription.equals(ORIGINAL_VARIANT)) {
             DotPreconditions.isTrue(
                     experiment.trafficProportion().variants().stream().noneMatch((variant) ->
                             variant.description().equals(ORIGINAL_VARIANT)),
                     "Original Variant already created");
+            variantName = DEFAULT_VARIANT.name();
+        } else {
+            variantName = getVariantName(experimentId);
+            variantAPI.save(Variant.builder().name(variantName)
+                    .description(Optional.of(variantDescription)).build());
         }
 
-        variantAPI.save(Variant.builder().name(variantName)
-                .description(Optional.of(variantDescription)).build());
-
-        multiTreeAPI.copyVariantForPage(experiment.pageId(),
-                DEFAULT_VARIANT.name(), variantName);
+        // TODO commenting out for know while we evaluate this approach
+//        multiTreeAPI.copyVariantForPage(experiment.pageId(),
+//                DEFAULT_VARIANT.name(), variantName);
+//
+//        copyPageAndItsContentForVariant(experiment, variantDescription, user, variantName, pageContentlet);
 
         final Contentlet pageContentlet = contentletAPI
-                .findContentletByIdentifierAnyLanguage(experiment.pageId(), false);
-
-        copyPageAndItsContentForVariant(experiment, variantDescription, user, variantName, pageContentlet);
+        .findContentletByIdentifierAnyLanguage(experiment.pageId(), false);
 
         final HTMLPageAsset page = pageAssetAPI.fromContentlet(pageContentlet);
 
