@@ -128,7 +128,7 @@
     "@compodoc/compodoc": "^1.1.11",
     "@materia-ui/ngx-monaco-editor": "^6.0.0",
     "@mdx-js/react": "^2.1.2",
-    "@ngneat/spectator": "^11.3.0",
+    "@ngneat/spectator": "^14.0.0",
     "@nrwl/cli": "15.6.0",
     "@nrwl/cypress": "15.6.0",
     "@nrwl/eslint-plugin-nx": "15.6.0",
