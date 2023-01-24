@@ -36,6 +36,7 @@ import static com.dotmarketing.db.DbConnectionFactory.getDBFalse;
  *     <li>
  *         File Asset Type:
  *         <ul>
+ *             <li>Title.</li>
  *             <li>Show on Menu.</li>
  *             <li>Sort Order.</li>
  *             <li>Description.</li>

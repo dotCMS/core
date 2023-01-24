@@ -10,7 +10,6 @@ import { filter, map } from 'rxjs/operators';
 import { DotAlertConfirmService, DotMessageService } from '@dotcms/data-access';
 import { FieldUtil, MockDotMessageService } from '@dotcms/utils-testing';
 
-
 import { FieldDragDropService } from './field-drag-drop.service';
 
 const by = (opt: string) => (source: Observable<any>) => {

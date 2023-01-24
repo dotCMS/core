@@ -23,7 +23,6 @@ import { DotCreateContentletComponent } from './dot-create-contentlet.component'
 import { DotContentletEditorService } from '../../services/dot-contentlet-editor.service';
 import { DotContentletWrapperComponent } from '../dot-contentlet-wrapper/dot-contentlet-wrapper.component';
 
-
 class DotContentletEditorServiceMock {
     get createUrl$(): Observable<any> {
         return of(undefined);

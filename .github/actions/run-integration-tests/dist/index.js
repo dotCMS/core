@@ -79,8 +79,7 @@ const DEPS_ENV = {
     postgres: {
         POSTGRES_USER: 'postgres',
         POSTGRES_PASSWORD: 'postgres',
-        POSTGRES_DB: 'dotcms' /*,
-        MAX_LOCKS_PER_TRANSACTION: '128'*/
+        POSTGRES_DB: 'dotcms'
     }
 };
 exports.COMMANDS = {
@@ -157,7 +156,7 @@ const runTests = (cmds) => __awaiter(void 0, void 0, void 0, function* () {
             yield warmUpAnalytics();
         }
         execCmdAsync(START_DEPENDENCIES_CMD);
-        yield waitFor(60, `ES and ${dbType}`);
+        yield waitFor(resolveWait(), `ES and ${dbType}`);
         // Executes ITs
         const cmd = cmds[idx];
         resolveParams(cmd);
@@ -191,6 +190,9 @@ const runTests = (cmds) => __awaiter(void 0, void 0, void 0, function* () {
     }
 });
 exports.runTests = runTests;
+const resolveWait = () => {
+    return dbType === 'mssql' ? 15 : 30;
+};
 /**
  * Stops dependencies.
  */
@@ -719,7 +721,7 @@ const run = () => __awaiter(void 0, void 0, void 0, function* () {
     const result = yield integration.runTests(cmds);
     const skipReport = !(result.outputDir && fs.existsSync(result.outputDir));
     setOutput('tests_results_location', result.outputDir);
-    setOutput('tests_results_report_location', result.reportDir, true);
+    setOutput('tests_results_report_location', result.reportDir);
     setOutput('ci_index', result.ciIndex);
     setOutput('tests_results_status', result.exitCode === 0 ? 'PASSED' : 'FAILED');
     setOutput('tests_results_skip_report', skipReport);

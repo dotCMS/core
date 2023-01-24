@@ -14,7 +14,6 @@ import {
 import { DotIconModule } from '@dotcms/ui';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 
-
 import { NotLicensedComponent } from './not-licensed.component';
 
 const messageServiceMock = new MockDotMessageService({

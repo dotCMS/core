@@ -14,7 +14,6 @@ import { DotMessagePipeModule } from '@pipes/dot-message/dot-message-pipe.module
 
 import { DotContentCompareDialogComponent } from './dot-content-compare-dialog.component';
 
-
 @Component({
     selector: 'dot-content-compare',
     template: ''

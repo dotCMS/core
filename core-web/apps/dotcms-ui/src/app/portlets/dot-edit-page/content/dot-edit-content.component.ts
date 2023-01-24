@@ -203,7 +203,7 @@ browse from the page internal links
             {
                 queryParams: {
                     editPageTab: null,
-                    variationName: null,
+                    variantName: null,
                     experimentId: null
                 },
                 queryParamsHandling: 'merge'
@@ -649,14 +649,14 @@ browse from the page internal links
     }
 
     private getExperimentResolverData(): void {
-        const { variationName, editPageTab } = this.route.snapshot.queryParams;
+        const { variantName, editPageTab } = this.route.snapshot.queryParams;
         this.variantData = this.route.parent.parent.data.pipe(
             take(1),
             pluck('experiment'),
             filter((experiment) => !!experiment),
             map((experiment: DotExperiment) => {
                 const variant = experiment.trafficProportion.variants.find(
-                    (variant) => variant.id === variationName
+                    (variant) => variant.id === variantName
                 );
 
                 return {

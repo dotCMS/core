@@ -13,8 +13,6 @@ import {
 import { DotExperimentsService } from '@portlets/dot-experiments/shared/services/dot-experiments.service';
 import { DotExperimentsServiceMock } from '@portlets/dot-experiments/test/mocks';
 
-
-
 const MessageServiceMock = {
     add: () => of({})
 };

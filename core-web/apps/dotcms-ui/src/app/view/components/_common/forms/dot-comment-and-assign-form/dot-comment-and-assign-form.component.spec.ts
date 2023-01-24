@@ -17,7 +17,6 @@ import { CoreWebService } from '@dotcms/dotcms-js';
 import { CoreWebServiceMock, mockProcessedRoles } from '@dotcms/utils-testing';
 import { DotPipesModule } from '@pipes/dot-pipes.module';
 
-
 import { DotCommentAndAssignFormComponent } from './dot-comment-and-assign-form.component';
 
 @Component({

@@ -5,7 +5,6 @@ import { ActivatedRoute, UrlSegment } from '@angular/router';
 
 import { map, mergeMap, pluck, skip, takeUntil, withLatestFrom } from 'rxjs/operators';
 
-
 import { DotCustomEventHandlerService } from '@dotcms/app/api/services/dot-custom-event-handler/dot-custom-event-handler.service';
 import { DotMenuService } from '@dotcms/app/api/services/dot-menu.service';
 import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';

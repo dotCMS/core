@@ -18,7 +18,7 @@ export interface Car {
 
         <p-toast></p-toast>
 
-        <div pDefer (onLoad)="initData()">
+        <div (onLoad)="initData()" pDefer>
             <ng-template>
                 <p-table [value]="cars">
                     <ng-template pTemplate="header">

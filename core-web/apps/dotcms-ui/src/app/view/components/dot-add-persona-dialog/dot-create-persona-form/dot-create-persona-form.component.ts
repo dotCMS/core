@@ -10,7 +10,6 @@ import { SiteService } from '@dotcms/dotcms-js';
 import { DotCMSTempFile } from '@dotcms/dotcms-models';
 import { DotFileUpload } from '@models/dot-file-upload/dot-file-upload.model';
 
-
 @Component({
     selector: 'dot-create-persona-form',
     templateUrl: './dot-create-persona-form.component.html',

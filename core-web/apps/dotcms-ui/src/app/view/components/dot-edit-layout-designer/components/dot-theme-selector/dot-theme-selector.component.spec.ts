@@ -1,7 +1,5 @@
 import { of } from 'rxjs';
 
-
-
 import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { Component, DebugElement, Input } from '@angular/core';
 import { ComponentFixture, fakeAsync, TestBed, tick } from '@angular/core/testing';
@@ -11,11 +9,17 @@ import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { DataViewModule } from 'primeng/dataview';
 
 import { DotDialogModule } from '@components/dot-dialog/dot-dialog.module';
-import { DotEventsService, DotMessageService, DotThemesService, PaginatorService } from '@dotcms/data-access';
+import {
+    DotEventsService,
+    DotMessageService,
+    DotThemesService,
+    PaginatorService
+} from '@dotcms/data-access';
 import { CoreWebService, Site, SiteService } from '@dotcms/dotcms-js';
 import { DotIconModule } from '@dotcms/ui';
 import {
-    CoreWebServiceMock, DotThemesServiceMock,
+    CoreWebServiceMock,
+    DotThemesServiceMock,
     MockDotMessageService,
     mockDotThemes,
     mockSites,

@@ -9,7 +9,6 @@ import { DotDropdownComponent } from './dot-dropdown.component';
 
 import { DotGravatarModule } from '../../dot-toolbar/components/dot-gravatar/dot-gravatar.module';
 
-
 @NgModule({
     imports: [CommonModule, ButtonModule, DotGravatarModule, UiDotIconButtonModule],
     declarations: [DotDropdownComponent],

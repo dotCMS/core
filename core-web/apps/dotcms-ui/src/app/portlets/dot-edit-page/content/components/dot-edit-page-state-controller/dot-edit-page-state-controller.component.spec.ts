@@ -19,12 +19,14 @@ import {
 } from '@dotcms/data-access';
 import { DotPageMode, DotPageRender, DotPageRenderState } from '@dotcms/dotcms-models';
 import {
-    dotcmsContentletMock, DotPageStateServiceMock,
+    dotcmsContentletMock,
+    DotPageStateServiceMock,
     DotPersonalizeServiceMock,
-    MockDotMessageService, mockDotRenderedPage, mockUser
+    MockDotMessageService,
+    mockDotRenderedPage,
+    mockUser
 } from '@dotcms/utils-testing';
 import { DotPipesModule } from '@pipes/dot-pipes.module';
-
 
 import { DotEditPageLockInfoComponent } from './components/dot-edit-page-lock-info/dot-edit-page-lock-info.component';
 import { DotEditPageStateControllerComponent } from './dot-edit-page-state-controller.component';

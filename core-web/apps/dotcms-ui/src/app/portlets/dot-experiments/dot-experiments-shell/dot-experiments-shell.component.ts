@@ -18,7 +18,7 @@ export class DotExperimentsShellComponent implements OnInit {
         this.router.navigate([], {
             queryParams: {
                 editPageTab: null,
-                variationName: null,
+                variantName: null,
                 experimentId: null
             },
             queryParamsHandling: 'merge',

@@ -33,7 +33,6 @@ import { DotEditPageResolver } from './dot-edit-page-resolver.service';
 
 import { DotPageStateService } from '../../../content/services/dot-page-state/dot-page-state.service';
 
-
 const route: any = jasmine.createSpyObj<ActivatedRouteSnapshot>('ActivatedRouteSnapshot', [
     'toString'
 ]);

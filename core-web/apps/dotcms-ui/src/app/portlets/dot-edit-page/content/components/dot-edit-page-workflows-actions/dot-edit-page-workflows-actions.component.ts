@@ -14,13 +14,21 @@ import { MenuItem } from 'primeng/api';
 
 import { catchError, map, take, tap } from 'rxjs/operators';
 
-
 import { DotGlobalMessageService } from '@components/_common/dot-global-message/dot-global-message.service';
 import { DotHttpErrorManagerService } from '@dotcms/app/api/services/dot-http-error-manager/dot-http-error-manager.service';
 import { DotWizardService } from '@dotcms/app/api/services/dot-wizard/dot-wizard.service';
 import { DotWorkflowEventHandlerService } from '@dotcms/app/api/services/dot-workflow-event-handler/dot-workflow-event-handler.service';
-import { DotMessageService, DotWorkflowActionsFireService, DotWorkflowsActionsService } from '@dotcms/data-access';
-import { DotCMSContentlet, DotCMSWorkflowAction, DotPage, DotWorkflowPayload } from '@dotcms/dotcms-models';
+import {
+    DotMessageService,
+    DotWorkflowActionsFireService,
+    DotWorkflowsActionsService
+} from '@dotcms/data-access';
+import {
+    DotCMSContentlet,
+    DotCMSWorkflowAction,
+    DotPage,
+    DotWorkflowPayload
+} from '@dotcms/dotcms-models';
 
 @Component({
     selector: 'dot-edit-page-workflows-actions',

@@ -1,4 +1,3 @@
-
 import { Component, DebugElement } from '@angular/core';
 import { ComponentFixture } from '@angular/core/testing';
 import { UntypedFormControl, UntypedFormGroup } from '@angular/forms';
@@ -11,7 +10,6 @@ import { MockDotMessageService } from '@dotcms/utils-testing';
 import { DotLayoutSidebarComponent } from './dot-layout-property-sidebar.component';
 
 import { DotLayoutPropertiesItemModule } from '../dot-layout-properties-item/dot-layout-properties-item.module';
-
 
 @Component({
     selector: 'dot-test-host-component',
