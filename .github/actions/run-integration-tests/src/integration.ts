@@ -84,11 +84,6 @@ export const COMMANDS: Commands = {
   gradle: [
     {
       cmd: './gradlew',
-      args: ['createDistPrep'],
-      workingDir: dotCmsRoot
-    },
-    {
-      cmd: './gradlew',
       args: ['integrationTest', `-PdatabaseType=${dbType}`],
       workingDir: dotCmsRoot
     }
@@ -200,7 +195,7 @@ export const runTests = async (cmds: Command[]): Promise<CommandResult> => {
 }
 
 const resolveWait = (): number => {
-  return dbType === 'mssql' ? 15 : 30
+  return dbType === 'mssql' ? 45 : 30
 }
 
 /**

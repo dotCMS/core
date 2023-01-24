@@ -86,11 +86,6 @@ exports.COMMANDS = {
     gradle: [
         {
             cmd: './gradlew',
-            args: ['createDistPrep'],
-            workingDir: dotCmsRoot
-        },
-        {
-            cmd: './gradlew',
             args: ['integrationTest', `-PdatabaseType=${dbType}`],
             workingDir: dotCmsRoot
         }
@@ -191,7 +186,7 @@ const runTests = (cmds) => __awaiter(void 0, void 0, void 0, function* () {
 });
 exports.runTests = runTests;
 const resolveWait = () => {
-    return dbType === 'mssql' ? 15 : 30;
+    return dbType === 'mssql' ? 45 : 30;
 };
 /**
  * Stops dependencies.
