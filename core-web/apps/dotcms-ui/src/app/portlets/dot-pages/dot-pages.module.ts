@@ -10,8 +10,8 @@ import { DotPipesModule } from '@dotcms/app/view/pipes/dot-pipes.module';
 import { DotESContentService } from '@dotcms/data-access';
 import { DotIconModule } from '@dotcms/ui';
 
-import { DotPagesCardModule } from './dot-pages-card/dot-pages-card.module';
 import { DotPagesCardEmptyModule } from './dot-pages-card-empty/dot-pages-card-empty.module';
+import { DotPagesCardModule } from './dot-pages-card/dot-pages-card.module';
 import { DotPagesRoutingModule } from './dot-pages-routing.module';
 import { DotPagesComponent } from './dot-pages.component';
 

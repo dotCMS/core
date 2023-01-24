@@ -12,7 +12,7 @@ import { DotHttpErrorManagerService } from '@dotcms/app/api/services/dot-http-er
 import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
 import { DotTemplateContainersCacheService } from '@dotcms/app/api/services/dot-template-containers-cache/dot-template-containers-cache.service';
 import { DotMessageService, DotPageLayoutService } from '@dotcms/data-access';
-import { HttpCode, ResponseView } from '@dotcms/dotcms-js';
+import { DotCMSResponse, HttpCode, ResponseView } from '@dotcms/dotcms-js';
 import { DotLayout, DotPageRender } from '@dotcms/dotcms-models';
 import {
     MockDotMessageService,
@@ -225,7 +225,11 @@ describe('DotEditLayoutComponent', () => {
         it('should handle error when save fail', (done) => {
             spyOn(dotPageLayoutService, 'save').and.returnValue(
                 throwError(
-                    new ResponseView(new HttpResponse(mockResponseView(HttpCode.BAD_REQUEST)))
+                    new ResponseView(
+                        new HttpResponse<DotCMSResponse<unknown>>(
+                            mockResponseView(HttpCode.BAD_REQUEST)
+                        )
+                    )
                 )
             );
 

@@ -22,8 +22,8 @@ import {
     MockDotRouterService
 } from '@dotcms/utils-testing';
 
-import { DotPagesCardModule } from './dot-pages-card/dot-pages-card.module';
 import { DotPagesCardEmptyModule } from './dot-pages-card-empty/dot-pages-card-empty.module';
+import { DotPagesCardModule } from './dot-pages-card/dot-pages-card.module';
 import { DotPageStore } from './dot-pages-store/dot-pages.store';
 import { DotPagesComponent } from './dot-pages.component';
 
