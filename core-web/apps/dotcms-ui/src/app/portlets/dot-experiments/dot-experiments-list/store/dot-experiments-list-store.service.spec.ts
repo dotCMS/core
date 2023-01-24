@@ -118,7 +118,7 @@ describe('DotExperimentsListStore', () => {
 
     it('should delete experiment by id of the store', () => {
         const ID_TO_DELETE = '222';
-        const expected: DotExperiment[] = [ExperimentMocks[0]];
+        const expected: DotExperiment[] = [ExperimentMocks[0], ExperimentMocks[2]];
 
         store.setExperiments(ExperimentMocks);
         store.deleteExperimentById(ID_TO_DELETE);
@@ -213,7 +213,7 @@ describe('DotExperimentsListStore', () => {
         it('should delete experiment from the store', (done) => {
             dotExperimentsService.delete.and.returnValue(of('deleted'));
 
-            const expectedExperimentsInStore = [ExperimentMocks[1]];
+            const expectedExperimentsInStore = [ExperimentMocks[1], ExperimentMocks[2]];
             const experimentToDelete = ExperimentMocks[0];
 
             store.deleteExperiment(experimentToDelete);
