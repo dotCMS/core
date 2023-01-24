@@ -30,6 +30,11 @@ const image: DotMenuItem[] = [
         label: 'Image',
         icon: 'image',
         id: 'image'
+    },
+    {
+        label: 'Video',
+        icon: 'movie',
+        id: 'video'
     }
 ];
 

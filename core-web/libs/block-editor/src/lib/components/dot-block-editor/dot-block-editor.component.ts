@@ -30,7 +30,7 @@ import {
     BubbleImageTabviewFormExtension,
     ImageUpload
 } from '../../extensions';
-import { ContentletBlock, ImageNode } from '../../nodes';
+import { ContentletBlock, ImageNode, CustomNode } from '../../nodes';
 import { formatHTML, SetDocAttrStep } from '../../shared/utils';
 
 function toTitleCase(str) {
@@ -50,7 +50,8 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy {
     @Input() customStyles: string;
     @Input() displayCountBar: boolean | string = true;
     @Input() charLimit: number;
-    @Input() content: Content;
+    @Input() content: Content =
+        '<video src="https://demo.dotcms.com/dA/67d67b37-4694-4394-a83f-6812ef72c60f/asset/Screen Recording 2023-01-23 at 3.14.53 PM.mov"></video>';
 
     @Input() set allowedBlocks(blocks: string) {
         this._allowedBlocks = [
@@ -145,7 +146,8 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy {
             }),
             DotTableCellExtension(this.viewContainerRef),
             DotTableHeaderExtension(),
-            TableRow
+            TableRow,
+            CustomNode
         ];
         const customExtensions: Map<string, AnyExtension> = new Map([
             ['contentlets', ContentletBlock(this.injector)],
