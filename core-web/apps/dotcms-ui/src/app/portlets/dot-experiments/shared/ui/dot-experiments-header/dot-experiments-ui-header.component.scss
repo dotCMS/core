@@ -8,17 +8,12 @@
     font-size: $font-size-x-large;
     border-bottom: 1px solid $gray-lighter;
 
-    .title {
-        color: $black;
-        font-size: 24px;
-    }
-
     a {
         color: $gray;
         font-weight: $font-weight-regular-bold;
 
         i {
-            font-size: 2rem;
+            font-size: $md-icon-size-extra-big;
         }
     }
 }
