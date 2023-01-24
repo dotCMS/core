@@ -1,6 +1,6 @@
 import { CommonModule } from '@angular/common';
 import { ChangeDetectionStrategy, Component, EventEmitter, Input, Output } from '@angular/core';
-import { RouterLinkWithHref } from '@angular/router';
+import { RouterLink } from '@angular/router';
 
 import { SkeletonModule } from 'primeng/skeleton';
 
@@ -12,7 +12,7 @@ import { DotIconModule } from '@dotcms/ui';
     templateUrl: './dot-experiments-ui-header.component.html',
     styleUrls: ['./dot-experiments-ui-header.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush,
-    imports: [DotIconModule, SkeletonModule, CommonModule, RouterLinkWithHref]
+    imports: [DotIconModule, SkeletonModule, CommonModule, RouterLink]
 })
 export class DotExperimentsUiHeaderComponent {
     @Input()
