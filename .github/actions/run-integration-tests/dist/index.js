@@ -108,6 +108,18 @@ const STOP_ANALYTICS_INFRA_CMD = {
     args: ['-f', 'analytics-compose.yml', 'down', '-v'],
     workingDir: dockerFolder
 };
+const PULL_OPEN_DISTRO_CMD = {
+    cmd: 'docker',
+    args: ['pull', 'ghcr.io/dotcms/elasticsearch:7.9.1'],
+    workingDir: dockerFolder,
+    env: DEPS_ENV[dbType]
+};
+const PULL_DB_CMD = {
+    cmd: 'docker',
+    args: ['pull', `${dbType === 'mssql' ? 'ghcr.io/dotcms/mssqlserver:2017-latest' : 'ghcr.io/dotcms/postgres:13-alpine'}`],
+    workingDir: dockerFolder,
+    env: DEPS_ENV[dbType]
+};
 const START_DEPENDENCIES_CMD = {
     cmd: 'docker-compose',
     args: ['-f', 'open-distro-compose.yml', '-f', `${dbType}-compose.yml`, 'up'],
@@ -150,6 +162,8 @@ const runTests = (cmds) => __awaiter(void 0, void 0, void 0, function* () {
             yield waitFor(160, 'Analytics Infrastructure');
             yield warmUpAnalytics();
         }
+        yield execCmd(PULL_OPEN_DISTRO_CMD);
+        yield execCmd(PULL_DB_CMD);
         execCmdAsync(START_DEPENDENCIES_CMD);
         yield waitFor(resolveWait(), `ES and ${dbType}`);
         // Executes ITs
