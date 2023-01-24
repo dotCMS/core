@@ -328,7 +328,7 @@ describe('DotContentEditorComponent', () => {
             }));
         });
 
-        fit('shoud have add loader on content types', () => {
+        it('shoud have add loader on content types', () => {
             // remove all content types
             comp.contentTypes = [];
             hostFixture.detectChanges();
