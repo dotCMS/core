@@ -129,7 +129,7 @@
 	<div class="form-horizontal">
 		<dl>
 			<dt>
-				<label class="required">
+				<label id="environmentName" class="required">
 					<%= LanguageUtil.get(pageContext, "publisher_Environment_Name") %>
 				</label>
 			</dt>

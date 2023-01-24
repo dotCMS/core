@@ -106,8 +106,8 @@ final String siteSearch = APILocator.getIndiciesAPI().loadIndicies().getSiteSear
 
 		<dl class="showScheduler">
 			<dt>
-				<label for="" class="required">
-					<strong><%= LanguageUtil.get(pageContext, "name") %></strong>
+				<label for="QUARTZ_JOB_NAME" class="required">
+					<%= LanguageUtil.get(pageContext, "name") %>
 				</label> 
 			</dt>
 			<dd>
@@ -118,8 +118,8 @@ final String siteSearch = APILocator.getIndiciesAPI().loadIndicies().getSiteSear
 
 		<dl>
 			<dt>
-				<label class="required">
-					<strong><%= LanguageUtil.get(pageContext, "select-hosts-to-index") %></strong> <a href="javascript: ;" id="hostsHintHook">?</a> <span dojoType="dijit.Tooltip" connectId="hostsHintHook" id="hostsHint" class="fieldHint"><%=LanguageUtil.get(pageContext, "hosts-hint") %></span>
+				<label for="hostSelector" class="required">
+					<%= LanguageUtil.get(pageContext, "select-hosts-to-index") %><a href="javascript: ;" id="hostsHintHook">?</a> <span dojoType="dijit.Tooltip" connectId="hostsHintHook" id="hostsHint" class="fieldHint"><%=LanguageUtil.get(pageContext, "hosts-hint") %></span>
 				</label>
 			</dt>
 			<dd>
@@ -169,8 +169,8 @@ final String siteSearch = APILocator.getIndiciesAPI().loadIndicies().getSiteSear
 
 		<dl>
 			<dt>
-				<label class="required">
-					<strong><%= LanguageUtil.get(pageContext, "Index-Name") %> </strong><a href="javascript: ;" id="aliasHintHook">?</a> <span dojoType="dijit.Tooltip" connectId="aliasHintHook" id="aliasHint" class="fieldHint"><%=LanguageUtil.get(pageContext, "search-alias-hint") %></span>
+				<label for="indexAlias" class="required">
+					<%= LanguageUtil.get(pageContext, "Index-Name") %><a href="javascript: ;" id="aliasHintHook">?</a> <span dojoType="dijit.Tooltip" connectId="aliasHintHook" id="aliasHint" class="fieldHint"><%=LanguageUtil.get(pageContext, "search-alias-hint") %></span>
 				</label>
 			</dt>
 			<dd>
@@ -201,10 +201,8 @@ final String siteSearch = APILocator.getIndiciesAPI().loadIndicies().getSiteSear
 
 		<dl>
             <dt>
-              <label class="required">
-				  <strong>
-					 <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Language")) %>
-				  </strong>
+              <label id="op_<%=lang.getId()%>" class="required">
+					<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Language")) %>
 			  </label>
             </dt>
             <dd>
@@ -245,8 +243,8 @@ final String siteSearch = APILocator.getIndiciesAPI().loadIndicies().getSiteSear
 
 		<dl class="showScheduler">
 			<dt>
-				<label class="required">
-					<strong><%= LanguageUtil.get(pageContext, "cron-expression") %> </strong>
+				<label for="cronExpression" class="required">
+					<%= LanguageUtil.get(pageContext, "cron-expression") %>
 				</label>
 			</dt>
 			<dd>

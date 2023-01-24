@@ -266,7 +266,7 @@
 						<div class="form-horizontal content-search__import-content-form">
 							<dl>
 								<dt>
-									<label for="" class="required">
+									<label for="structuresSelect" class="required">
 										<%= LanguageUtil.get(pageContext, "Structure-to-Import") %>
 									</label>
 								</dt>
@@ -285,7 +285,7 @@
 							<div id="importDetails">
 								<dl>
 									<dt>
-										<label for="" class="required">
+										<label for="languageSelect" class="required">
 											<%= LanguageUtil.get(pageContext, "Language-of-the-Contents-to-Import") %>
 										</label>
 									</dt>
@@ -322,7 +322,9 @@
 								</dl>
 								<dl>
 									<dt>
-										<%= LanguageUtil.get(pageContext, "Workflow-Action")%>
+										<label for="workflowActionId">
+											<%= LanguageUtil.get(pageContext, "Workflow-Action")%>
+										</label>
 									</dt>
 									<dd>
 										<select dojoType="dijit.form.FilteringSelect" name="workflowActionId" id="workflowActionId" required="false" store="actionStore" value="<%= UtilMethods.isSet(form.getWorkflowActionId()) ? form.getWorkflowActionId() : "" %>" >
@@ -331,7 +333,7 @@
 								</dl>
 								<dl>
 									<dt>
-										<label for="" class="required">
+										<label for="file" class="required">
 											<%= LanguageUtil.get(pageContext, "File-to-Import-CSV-File-Required") %>
 										</label>
 									</dt>

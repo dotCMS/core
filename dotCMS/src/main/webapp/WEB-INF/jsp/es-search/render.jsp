@@ -206,7 +206,7 @@ if(query == null){
 	<table class="listingTable" style="width:90%;">
         <tr>
             <th width="170" valign="top">
-				<label for="">
+				<label for="wrapEditor">
 					<%= LanguageUtil.get(pageContext, "ES Query") %>
 				</label>
             </th>
@@ -220,14 +220,14 @@ if(query == null){
             </td>
         </tr>
 		<tr>
-			<th><strong><%= LanguageUtil.get(pageContext, "Live") %>:</strong></th>
+			<th><label for="live"><%= LanguageUtil.get(pageContext, "Live") %></label></th>
 			<td nowrap="nowrap">
 				<input dojoType="dijit.form.CheckBox" name="live"  id="live" type="checkbox" value="true" <%=live ? "checked=true" : ""%>
 			</td>
 		</tr>
 
 		<tr>
-			<th><strong><%= LanguageUtil.get(pageContext, "User ID or Email") %>:</strong></th>
+			<th><label for="userid"><%= LanguageUtil.get(pageContext, "User ID or Email") %></label></th>
 			<td nowrap="nowrap">
 
 				<input name="userid" id="userid"  type="text" value="<%=UtilMethods.webifyString(userToPullID)%>" size="40"   dojoType="dijit.form.TextBox"  />
@@ -245,11 +245,11 @@ if(query == null){
 	<%if(UtilMethods.isSet(cons)){ %>
 		<table class="listingTable" style="width:90%;">
 			<tr>
-				<th nowrap="nowrap"><strong><%= LanguageUtil.get(pageContext, "Showing Hits") %> :</strong></th>
+				<th nowrap="nowrap"><%= LanguageUtil.get(pageContext, "Showing Hits") %></th>
 				<td><%=cons.getCount() %> of <%=cons.getTotalResults()%></td>
 			</tr>
 			<tr>
-				<th><strong><%= LanguageUtil.get(pageContext, "Took") %> :</strong></th>
+				<th><%= LanguageUtil.get(pageContext, "Took") %></th>
 				<td style="width:100%">
 					<%=cons.getQueryTook()%> ms <%= LanguageUtil.get(pageContext, "query") %><br>
 					<%=cons.getPopulationTook()%> ms <%= LanguageUtil.get(pageContext, "population") %><br>

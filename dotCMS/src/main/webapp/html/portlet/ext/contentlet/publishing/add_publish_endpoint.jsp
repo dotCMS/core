@@ -370,7 +370,7 @@
 
 			<dl id="protocolRow">
 				<dt>
-					<label form="protocol" class="required"><%= LanguageUtil.get(pageContext, "publisher_Endpoints_Type") %></label>
+					<label for="protocol" class="required"><%= LanguageUtil.get(pageContext, "publisher_Endpoints_Type") %></label>
 				</dt>
 				<dd>
 					<select dojoType="dijit.form.Select" name="protocol" id="protocol" onchange="onChangeProtocolTypeSelectCheck();">
@@ -390,10 +390,12 @@
 			</dl>
 			<dl>
 				<dt>
-					<%= LanguageUtil.get(pageContext, "publisher_Endpoints_Enabled") %>
+					<label for="publisher_endpoint">
+						<%= LanguageUtil.get(pageContext, "publisher_Endpoints_Enabled") %>
+					</label>
 				</dt>
 				<dd>
-					<input dojoType="dijit.form.CheckBox" type="checkbox" name="enabled" <%=(currentEndpoint.isEnabled()) ? "checked=true" : "" %> />
+					<input dojoType="dijit.form.CheckBox" type="checkbox" id="publisher_endpoint" name="enabled" <%=(currentEndpoint.isEnabled()) ? "checked=true" : "" %> />
 				</dd>
 			</dl>
 			<dl id="addressRow">
@@ -402,7 +404,7 @@
 						<label for="address" class="required"><%= LanguageUtil.get(pageContext, "publisher_Endpoints_Address_To") %></label>
 					</span>
 					<span id="addressFromSpan" style="display:none;">
-						<label for="address"><%= LanguageUtil.get(pageContext, "publisher_Endpoints_Address_From") %>:</label>
+						<label for="address"><%= LanguageUtil.get(pageContext, "publisher_Endpoints_Address_From") %></label>
 					</span>
 				</dt>
 				<dd>
@@ -431,10 +433,10 @@
 			<dl id="authPropertiesRow">
 				<dt>
 					<span id="authKeyHttpSpan">
-						<label for="authKey"><%= LanguageUtil.get(pageContext, "publisher_Endpoints_Auth_key_type_http") %>:</label>
+						<label for="authKey"><%= LanguageUtil.get(pageContext, "publisher_Endpoints_Auth_key_type_http") %></label>
 					</span>
 					<span id="authKeyStaticSpan" style="display:none;">
-						<label for="authKey"><%= LanguageUtil.get(pageContext, "publisher_Endpoints_Auth_key_type_static") %>:</label>
+						<label for="authKey"><%= LanguageUtil.get(pageContext, "publisher_Endpoints_Auth_key_type_static") %></label>
 					</span>
 				</dt>
 				<dd>
@@ -449,10 +451,10 @@
 
 				<dt>
                     <span id="authKeyHttpSpan">
-                        <label for="authKey"><%= LanguageUtil.get(pageContext, "publisher_Endpoints_Auth_key_type_http") %>:</label>
+                        <label for="tokenForm"><%= LanguageUtil.get(pageContext, "publisher_Endpoints_Auth_key_type_http") %></label>
                     </span>
 					<span id="authKeyStaticSpan" style="display:none;">
-                        <label for="authKey"><%= LanguageUtil.get(pageContext, "publisher_Endpoints_Auth_key_type_static") %>:</label>
+                        <label for="tokenForm"><%= LanguageUtil.get(pageContext, "publisher_Endpoints_Auth_key_type_static") %></label>
                     </span>
 				</dt>
 				<dd>
@@ -497,7 +499,7 @@
 							</tr>
 
 							<tr>
-								<td><label for="netmask"><%=LanguageUtil.get(pageContext, "api.token.allowed.network")%>:
+								<td><label for="netmask"><%=LanguageUtil.get(pageContext, "api.token.allowed.network")%>
 								</label></td>
 
 								<td><input dojoType="dijit.form.TextBox" type="text"

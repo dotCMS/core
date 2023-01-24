@@ -980,14 +980,16 @@
 					<form id="updateCatPropertiesForm" dojoType="dijit.form.Form">
 						<dl >
 							<dt>
-								<%= LanguageUtil.get(pageContext, "Variable-ID") %>:
+								<label for="CatVelVarName">
+                                    <%= LanguageUtil.get(pageContext, "Variable-ID") %>
+                                </label>
 							</dt>
 							<dd style="clear: none;">
 								<input type="hidden" id=""/>
 								<input type="text" dojoType="dijit.form.TextBox" id="CatVelVarName" readonly="readonly" name="categoryVarName" maxlength="50" size="30"  value="" />
 							</dd>
 							<dt>
-                                <label for="" class="required">
+                                <label for="CatName" class="required">
                                     <%= LanguageUtil.get(pageContext, "category-name") %>
                                 </label>
 							</dt>
@@ -995,14 +997,18 @@
 								<input type="text" required="true" invalidMessage="Required." dojoType="dijit.form.ValidationTextBox" id="CatName" name="categoryName" maxlength="50" size="30"  value="" />
 							</dd>
 							<dt>
-								<%= LanguageUtil.get(pageContext, "category-unique-key") %>:
+                                <label for="CatKey">
+                                    <%= LanguageUtil.get(pageContext, "category-unique-key") %>
+                                </label>
 							</dt>
 							<dd>
 								<input type="text" dojoType="dijit.form.TextBox" id="CatKey" name="key" size="30" maxlength="255" value="" />
 							</dd>
 
 							<dt>
-								<%= LanguageUtil.get(pageContext, "keywords") %>:
+								<label for="CatKeywords">
+                                    <%= LanguageUtil.get(pageContext, "keywords") %>
+                                </label>
 							</dt>
 							<dd>
 								<textarea dojoType="dijit.form.Textarea" id="CatKeywords" name="keywords" style="width:250px; min-height:40px;"></textarea>
@@ -1059,23 +1065,31 @@
 		<form id="addCatPropertiesForm" dojoType="dijit.form.Form" style="max-width: 260px; max-height: 300px;">
 			<div class="form-inline">
 				<dl>
-					<dt><span id="VariableIdTitle"><%= LanguageUtil.get(pageContext, "Variable-ID") %>:</span></dt>
+					<dt><label for="addCatVelVarName" id="VariableIdTitle"><%= LanguageUtil.get(pageContext, "Variable-ID") %></label></dt>
 					<dd><input id="addCatVelVarName" readonly="true" style="width:100%;" class="input-text-naked" /></dd>
 				</dl>
 				<dl>
 					<dt>
-                        <label for="" class="required">
+                        <label for="addCatName" class="required">
                             <%= LanguageUtil.get(pageContext, "Name") %>
                         </label>
                     </dt>
 					<dd><input dojoType="dijit.form.ValidationTextBox" id="addCatName" type="text" tabindex="1" required="true" onblur="fillVelocityVarName(); " invalidMessage="Required." maxlength="255"/></dd>
 				</dl>
 				<dl>
-					<dt><%= LanguageUtil.get(pageContext, "Key") %></dt>
+					<dt>
+                        <label for="addCatKey">
+                            <%= LanguageUtil.get(pageContext, "Key") %>
+                        </label>
+                    </dt>
 					<dd><input dojoType="dijit.form.TextBox" id="addCatKey" type="text" tabindex="2" maxlength="255"/></dd>
 				</dl>
 				<dl>
-					<dt><%= LanguageUtil.get(pageContext, "keywords") %></dt>
+					<dt>
+                        <label for="addCatKeywords">
+                            <%= LanguageUtil.get(pageContext, "keywords") %>
+                        </label>
+                    </dt>
 					<dd><textarea dojoType="dijit.form.Textarea" id="addCatKeywords" tabindex="3" style="min-height:100px; max-height:100px"></textarea></dd>
 				</dl>
 			</div>
@@ -1091,7 +1105,7 @@
 <div id="importCategoriesOptions" dojoType="dijit.Dialog" style="display:none" title="<%= LanguageUtil.get(pageContext, "import") %>">
 	<div dojoType="dijit.layout.ContentPane" style="width:300px;" class="box" hasShadow="true">
 		<dl class="vertical">
-			<dt><label class="required"><%= LanguageUtil.get(pageContext, "Import-Options") %></label></dt>
+			<dt><label for="uploadFile" class="required"><%= LanguageUtil.get(pageContext, "Import-Options") %></label></dt>
 			<dd><input type="file" id="uploadFile" class="upload"/></dd>
 			<div class="clear"></div>
 

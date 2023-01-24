@@ -31,16 +31,9 @@
 }
 
 .required {
-    &:before {
-        @extend #dijit-icon;
-        font-size: 9px;
-        position: relative;
-        top: -4px;
-        left: 2px;
-    }
-
     &::after {
-        content: $fa-var-asterisk;
+        padding-left: 2px;
+        content: "*";
         color: $red;
     }
 }
@@ -91,13 +84,6 @@
     .radio,
     .checkbox {
         margin: 0;
-    }
-}
-
-.required2 {
-    &::after {
-        color: $red;
-        content: $fa-var-asterisk;
     }
 }
 

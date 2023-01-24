@@ -34,7 +34,7 @@ String inode=request.getParameter( "inode" );// DOTCMS-7085
 
 		<div class="fieldWrapper" id="bundleSelectDiv">
 			<div class="fieldName" style="width:120px">
-				<label for="" class="required">
+				<label for="bundleSelect" class="required">
 					<%= LanguageUtil.get(pageContext, "publisher_dialog_choose_bundle") %>
 				</label>
 			</div>

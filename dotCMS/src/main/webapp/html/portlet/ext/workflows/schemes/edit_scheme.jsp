@@ -44,7 +44,7 @@
 		<%if(!scheme.isNew()){%>
 			<dl>
 				<dt>
-					<label for=""><%=LanguageUtil.get(pageContext, "Scheme")%> <%=LanguageUtil.get(pageContext, "Id")%></label>
+					<span><%=LanguageUtil.get(pageContext, "Scheme")%> <%=LanguageUtil.get(pageContext, "Id")%></span>
 				</dt>
 				<dd>
 					<strong>
@@ -55,7 +55,7 @@
 		<%}%>
 		<dl>
 			<dt>
-				<label class="required" for=""><%=LanguageUtil.get(pageContext, "Name")%></label>
+				<label for="schemeName" class="required" for=""><%=LanguageUtil.get(pageContext, "Name")%></label>
 			</dt>
 			<dd>
 				<input type="text" name="schemeName" id="schemeName"
@@ -67,7 +67,7 @@
 
 		<dl>
 			<dt>
-				<label for=""><%=LanguageUtil.get(pageContext, "Description")%></label>
+				<label for="schemeDescription"><%=LanguageUtil.get(pageContext, "Description")%></label>
 			</dt>
 			<dd>
 				<input type="textarea" name="schemeDescription"

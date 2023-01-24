@@ -109,7 +109,7 @@ dojo.ready(function() {
 	    <%} %>
 	    <dl>
 		    <dt>
-				<label for="" class="required2">
+				<label for="languageCode" class="required">
 					<%= LanguageUtil.get(pageContext, "Language-Code") %>
 				</label>
 			</dt>
@@ -117,7 +117,7 @@ dojo.ready(function() {
 	    </dl>
 		<dl>
 		    <dt>
-				<label for="" class="required2">
+				<label for="language" class="required">
 					<%= LanguageUtil.get(pageContext, "Language") %></dt>
 				</label>
 		    <dd>
@@ -126,12 +126,12 @@ dojo.ready(function() {
 			</dd>
 	    </dl>
 		<dl>
-		    <dt><%= LanguageUtil.get(pageContext, "Country-Code") %></dt>
+		    <dt><label for="countryCode"><%= LanguageUtil.get(pageContext, "Country-Code") %></label></dt>
 		    <dd><html:text size="30" property="countryCode" maxlength="2" styleId="countryCode" /></dd>
 
 	    </dl>
 		<dl>
-		    <dt><%= LanguageUtil.get(pageContext, "Country") %></dt>
+		    <dt><label for="country"><%= LanguageUtil.get(pageContext, "Country") %></label></dt>
 		    <dd>
 				<html:text size="30" property="country" styleId="country" />
 				<div class="hint-text"><%= LanguageUtil.get(pageContext, "descriptive") %></div>

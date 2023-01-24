@@ -362,7 +362,7 @@
 
                             <div class="fieldName">
                                 <% if(f.isRequired()) {%>
-                                    <label class="required2">
+                                    <label class="required">
                             		<%} else {%>
                             			<label>
                             		<% } %>
