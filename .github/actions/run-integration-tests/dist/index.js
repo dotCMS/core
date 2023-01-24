@@ -186,7 +186,7 @@ const runTests = (cmds) => __awaiter(void 0, void 0, void 0, function* () {
 });
 exports.runTests = runTests;
 const resolveWait = () => {
-    return dbType === 'mssql' ? 45 : 30;
+    return dbType === 'mssql' ? 10 : 30;
 };
 /**
  * Stops dependencies.

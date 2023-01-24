@@ -149,7 +149,7 @@ jobs:
         if: (success() || failure()) && steps.github-publish-unit-tests.outputs.tests_report_url != ''
 
   integration-tests-thread-setup-job:
-    name: Integration tests matrix setup
+    name: Integration Tests Setup
     runs-on: ubuntu-latest
     needs: build-core-job
     outputs:
@@ -286,7 +286,7 @@ jobs:
           tests_report_url: ${{ steps.github-publish-integration-tests.outputs.tests_report_url }}
         if: (success() || failure()) && steps.github-publish-integration-tests.outputs.tests_report_url != ''
   integration-tests-complete-job:
-    name: Integration tests publish complete setup
+    name: Integration Tests Complete
     runs-on: ubuntu-latest
     needs: [integration-tests-thread-setup-job, run-integration-tests-job]
     if: (success() || failure()) && needs.run-integration-tests-job.outputs.tests_results_skip_report != 'true'
@@ -313,7 +313,7 @@ jobs:
 #          debug: true
 
   postman-tests-thread-setup-job:
-    name: Postman tests matrix setup
+    name: Postman Tests Setup
     runs-on: ubuntu-latest
     outputs:
       testmo_run_id: ${{ steps.thread-setup.outputs.testmo_run_id }}
@@ -443,10 +443,10 @@ jobs:
 #          debug: true
 #        if: (success() || failure()) && ${{ env.TESTMO_ENABLED }} == 'true' && steps.run-postman-tests.outputs.tests_results_skip_report != 'true'
   postman-tests-complete-job:
-    name: Postman tests publish complete setup
+    name: Postman Tests Complete
     runs-on: ubuntu-latest
     needs: run-postman-tests-job
-    if: (success() || failure()) && needs.run-postman-tests-job.outputs.tests_results_skip_report != 'true'
+    if: (success() || failure())
     steps:
       - id: fetch-core
         name: Fetch Core Repo
@@ -464,6 +464,7 @@ jobs:
           partial: close
           pull_request: ${{ github.event.number }}
           cicd_github_token: ${{ secrets.CICD_GITHUB_TOKEN }}
+        if: (success() || failure()) && needs.run-postman-tests-job.outputs.tests_results_skip_report != 'true'
       - id: github-status
         name: Send Github Status
         uses: ./.github/actions/github-status
@@ -489,7 +490,7 @@ jobs:
 #          debug: true
 
   test-results-handler-job:
-    name: Tests results handler
+    name: Tests Results Handler
     runs-on: ubuntu-latest
     needs: [run-unit-tests-job, run-integration-tests-job, integration-tests-complete-job, run-postman-tests-job]
     if: (success() || failure()) && (needs.run-unit-tests-job.outputs.tests_results_report_url != '' || needs.run-integration-tests-job.outputs.postgres_tests_results_report_url != '' || needs.run-integration-tests-job.outputs.mssql_tests_results_report_url != '' || needs.run-postman-tests-job.outputs.tests_results_report_url != '')
