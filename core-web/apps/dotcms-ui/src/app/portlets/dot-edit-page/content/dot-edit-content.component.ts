@@ -19,7 +19,8 @@ import {
     DotEventsService,
     DotLicenseService,
     DotMessageService,
-    DotPropertiesService
+    DotPropertiesService,
+    DotSessionStorageService
 } from '@dotcms/data-access';
 import { SiteService } from '@dotcms/dotcms-js';
 import {
@@ -112,7 +113,8 @@ export class DotEditContentComponent implements OnInit, OnDestroy {
         private dotConfigurationService: DotPropertiesService,
         private dotLicenseService: DotLicenseService,
         private dotEventsService: DotEventsService,
-        private dotESContentService: DotESContentService
+        private dotESContentService: DotESContentService,
+        private dotSessionStorageService: DotSessionStorageService
     ) {
         if (!this.customEventsHandler) {
             this.customEventsHandler = {
@@ -183,6 +185,7 @@ browse from the page internal links
     }
 
     ngOnDestroy(): void {
+        this.dotSessionStorageService.removeVariantId();
         this.destroy$.next(true);
         this.destroy$.complete();
     }
