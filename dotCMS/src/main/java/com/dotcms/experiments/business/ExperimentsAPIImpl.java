@@ -466,12 +466,6 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
                     .description(Optional.of(variantDescription)).build());
         }
 
-        // TODO commenting out for know while we evaluate this approach
-//        multiTreeAPI.copyVariantForPage(experiment.pageId(),
-//                DEFAULT_VARIANT.name(), variantName);
-//
-//        copyPageAndItsContentForVariant(experiment, variantDescription, user, variantName, pageContentlet);
-
         final Contentlet pageContentlet = contentletAPI
         .findContentletByIdentifierAnyLanguage(experiment.pageId(), false);
 
