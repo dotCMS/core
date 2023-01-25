@@ -1,0 +1,25 @@
+<div class="tabview-container">
+    <p-tabView>
+        <p-tabPanel [cache]="false" header="dotCMS" leftIcon="pi pi-images">
+            <ng-template pTemplate="content">
+                <div class="wrapper">
+                    <dot-asset-search
+                        [assetType]="assetType"
+                        [languageId]="languageId"
+                        (asset)="onSelectAsset($event)"
+                    ></dot-asset-search>
+                </div>
+            </ng-template>
+        </p-tabPanel>
+        <p-tabPanel [cache]="false" [header]="assetType + ' URL'" leftIcon="pi pi-link">
+            <ng-template pTemplate="content">
+                <div class="wrapper">
+                    <dot-external-asset
+                        [assetType]="assetType"
+                        (assetURL)="onSelectAsset($event)"
+                    ></dot-external-asset>
+                </div>
+            </ng-template>
+        </p-tabPanel>
+    </p-tabView>
+</div>

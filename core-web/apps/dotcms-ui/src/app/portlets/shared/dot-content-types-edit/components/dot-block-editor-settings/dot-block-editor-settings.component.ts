@@ -18,6 +18,7 @@ import { catchError, take, takeUntil, tap } from 'rxjs/operators';
 
 // Services
 import { DotDialogActions } from '@components/dot-dialog/dot-dialog.component';
+import { getEditorBlockOptions } from '@dotcms/block-editor';
 import { DotMessageService } from '@dotcms/data-access';
 import { DotCMSContentTypeField, DotFieldVariable } from '@dotcms/dotcms-models';
 import { DotHttpErrorManagerService } from '@services/dot-http-error-manager/dot-http-error-manager.service';
@@ -70,7 +71,7 @@ export class DotBlockEditorSettingsComponent implements OnInit, OnDestroy, OnCha
         allowedBlocks: {
             label: 'Allowed Blocks',
             placeholder: 'Select Blocks',
-            options: BLOCK_EDITOR_BLOCKS,
+            options: getEditorBlockOptions(),
             key: 'allowedBlocks',
             variable: null
         }

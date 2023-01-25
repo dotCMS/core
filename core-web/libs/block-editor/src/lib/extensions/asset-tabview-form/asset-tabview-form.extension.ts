@@ -1,0 +1,168 @@
+import { PluginKey } from 'prosemirror-state';
+import tippy, { GetReferenceClientRect, Instance, Props } from 'tippy.js';
+
+import { ComponentRef, ViewContainerRef } from '@angular/core';
+
+import { Editor } from '@tiptap/core';
+import BubbleMenu from '@tiptap/extension-bubble-menu';
+
+import { AssetTabviewFormComponent } from './asset-tabview-form.component';
+import { bubbleAssetTabviewFormPlugin } from './plugins/bubble-asset-tabview-form.plugin';
+
+export const BUBBLE_IMAGE_TABVIEW_FORM_PLUGIN_KEY = new PluginKey('bubble-image-form');
+
+type Asset = 'image' | 'video';
+declare module '@tiptap/core' {
+    interface Commands<ReturnType> {
+        AssetTabviewForm: {
+            openAssetForm: (asset?: Asset) => ReturnType;
+            closeAssetForm: () => ReturnType;
+        };
+    }
+}
+
+const tippyOptions: Partial<Props> = {
+    interactive: true,
+    duration: 0,
+    maxWidth: 'none',
+    trigger: 'manual',
+    placement: 'bottom-start',
+    hideOnClick: 'toggle',
+    popperOptions: {
+        modifiers: [
+            {
+                name: 'flip',
+                options: { fallbackPlacements: ['top-start'] }
+            }
+        ]
+    }
+};
+
+interface StartProps {
+    editor: Editor;
+    asset: string;
+    getPosition: GetReferenceClientRect;
+}
+
+export interface RenderProps {
+    onStart: (value: StartProps) => void;
+    onHide: (editor: Editor) => void;
+    onDestroy: () => void;
+}
+
+export const BubbleAssetTabviewFormExtension = (viewContainerRef: ViewContainerRef) => {
+    let formTippy: Instance | undefined;
+    let component: ComponentRef<AssetTabviewFormComponent>;
+    let element: Element;
+
+    function onStart({ editor, asset, getPosition }: StartProps) {
+        setUpTippy(editor);
+        setUpComponent(editor, asset);
+
+        formTippy.setProps({
+            content: element,
+            getReferenceClientRect: getPosition,
+            onClickOutside: () => onHide(editor)
+        });
+        formTippy.show();
+    }
+
+    function onHide(editor): void {
+        editor.commands.toggleImageForm(false);
+        formTippy?.hide();
+        component?.destroy();
+    }
+
+    function onDestroy() {
+        formTippy?.destroy();
+        component?.destroy();
+    }
+
+    function setUpTippy(editor: Editor) {
+        const { element } = editor.options;
+        const editorIsAttached = !!element.parentElement;
+
+        if (formTippy || !editorIsAttached) {
+            return;
+        }
+
+        formTippy = tippy(element.parentElement, tippyOptions);
+    }
+
+    function setUpComponent(editor: Editor, asset: string) {
+        component = viewContainerRef.createComponent(AssetTabviewFormComponent);
+        component.instance.languageId = editor.storage.dotConfig.lang;
+        component.instance.assetType = asset;
+        component.instance.onSelectAsset = (payload) => {
+            switch (asset) {
+                case 'video':
+                    editor.chain().setVideo(payload).addNextLine().closeAssetForm().run();
+                    break;
+
+                case 'image':
+                    editor.chain().addDotImage(payload).addNextLine().closeAssetForm().run();
+                    break;
+            }
+        };
+
+        element = component.location.nativeElement;
+        component.changeDetectorRef.detectChanges();
+    }
+
+    return BubbleMenu.extend<unknown>({
+        name: 'bubbleImageForm',
+
+        addOptions() {
+            return {
+                element: null,
+                tippyOptions: {},
+                pluginKey: BUBBLE_IMAGE_TABVIEW_FORM_PLUGIN_KEY
+            };
+        },
+
+        addCommands() {
+            return {
+                openAssetForm:
+                    (asset) =>
+                    ({ chain }) => {
+                        return chain()
+                            .command(({ tr }) => {
+                                tr.setMeta(BUBBLE_IMAGE_TABVIEW_FORM_PLUGIN_KEY, {
+                                    open: true,
+                                    contenttype: asset
+                                });
+
+                                return true;
+                            })
+                            .run();
+                    },
+                closeAssetForm:
+                    () =>
+                    ({ chain }) => {
+                        return chain()
+                            .command(({ tr }) => {
+                                tr.setMeta(BUBBLE_IMAGE_TABVIEW_FORM_PLUGIN_KEY, { open: false });
+
+                                return true;
+                            })
+                            .run();
+                    }
+            };
+        },
+
+        addProseMirrorPlugins() {
+            return [
+                bubbleAssetTabviewFormPlugin({
+                    pluginKey: BUBBLE_IMAGE_TABVIEW_FORM_PLUGIN_KEY,
+                    editor: this.editor,
+                    render: () =>
+                        ({
+                            onStart,
+                            onHide,
+                            onDestroy
+                        } as RenderProps)
+                })
+            ];
+        }
+    });
+};

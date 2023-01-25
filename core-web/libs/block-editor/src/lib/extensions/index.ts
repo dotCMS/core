@@ -30,11 +30,11 @@ export * from './floating-button/floating-button.component';
 export * from './floating-button/floating-button.extension';
 export * from './floating-button/plugin/floating-button.plugin';
 // Image Tabview Form
-export * from './image-tabview-form/image-tabview-form.extension';
-export * from './image-tabview-form/plugins/bubble-image-tabview-form.plugin';
+export * from './asset-tabview-form/asset-tabview-form.extension';
+export * from './asset-tabview-form/plugins/bubble-asset-tabview-form.plugin';
 export * from './image-uploader/components/loader/loader.component';
 // Image Uploader
 export * from './image-uploader/image-uploader.extension';
 export * from './image-uploader/services/dot-image/dot-image.service';
 
-export * from './image-tabview-form/image-tabview-form.component';
+export * from './asset-tabview-form/asset-tabview-form.component';

@@ -27,9 +27,9 @@ import {
     LoaderComponent,
     SuggestionPageComponent
 } from './extensions';
+import { AssetTabviewFormModule } from './extensions/asset-tabview-form/asset-tabview-form.module';
 import { BubbleFormComponent } from './extensions/bubble-form/bubble-form.component';
 import { FloatingButtonComponent } from './extensions/floating-button/floating-button.component';
-import { ImageTabviewFormModule } from './extensions/image-tabview-form/image-tabview-form.module';
 import { ContentletBlockComponent } from './nodes';
 import { EditorDirective } from './shared/directives';
 import { PrimengModule } from './shared/primeng.module';
@@ -42,7 +42,7 @@ import { SharedModule } from './shared/shared.module';
         ReactiveFormsModule,
         SharedModule,
         PrimengModule,
-        ImageTabviewFormModule
+        AssetTabviewFormModule
     ],
     declarations: [
         EditorDirective,

@@ -46,13 +46,11 @@ const table: DotMenuItem[] = [
     }
 ];
 
-const paragraph: DotMenuItem[] = [
-    {
-        label: 'Paragraph',
-        icon: sanitizeUrl(pIcon),
-        id: 'paragraph'
-    }
-];
+const paragraph: DotMenuItem = {
+    label: 'Paragraph',
+    icon: sanitizeUrl(pIcon),
+    id: 'paragraph'
+};
 
 const list: DotMenuItem[] = [
     {
@@ -85,20 +83,30 @@ const block: DotMenuItem[] = [
     }
 ];
 
-export function sanitizeUrl(url: string): SafeUrl {
-    return domSanitizer.bypassSecurityTrustUrl(url);
-}
-
 export const suggestionOptions: DotMenuItem[] = [
     ...image,
     ...headings,
     ...table,
-    ...paragraph,
     ...list,
-    ...block
+    ...block,
+    paragraph
 ];
 
-export const tableChangeToItems: DotMenuItem[] = [...headings, ...paragraph, ...list];
+export const getEditorBlockOptions = () => {
+    return (
+        suggestionOptions
+            // get all blocks except the Paragraph
+            .filter(({ id }) => id != paragraph.id)
+            .map(({ label, id }) => ({ label, code: id }))
+            .sort((a, b) => a.label.localeCompare(b.label))
+    );
+};
+
+export function sanitizeUrl(url: string): SafeUrl {
+    return domSanitizer.bypassSecurityTrustUrl(url);
+}
+
+export const tableChangeToItems: DotMenuItem[] = [...headings, ...list, paragraph];
 
 export const SuggestionPopperModifiers = [
     {

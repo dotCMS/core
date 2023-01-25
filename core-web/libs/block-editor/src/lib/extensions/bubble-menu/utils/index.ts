@@ -42,9 +42,11 @@ export const shouldShowBubbleMenu = ({ editor, state, from, to }: ShouldShowProp
     // If it's empty or the parent and node itself is part of the hideBubbleMenuOn , it will not open.
     if (
         !isOpen &&
-        (!view.hasFocus() || empty || isEmptyTextBlock || hideBubbleMenuOn[parentNode?.type.name]
-            ? true
-            : hideBubbleMenuOn[node?.type.name])
+        (!view.hasFocus() ||
+            empty ||
+            isEmptyTextBlock ||
+            hideBubbleMenuOn[parentNode?.type.name] ||
+            hideBubbleMenuOn[node?.type.name])
     ) {
         return false;
     }

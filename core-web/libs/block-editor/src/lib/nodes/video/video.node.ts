@@ -1,15 +1,17 @@
 import { mergeAttributes, Node } from '@tiptap/core';
 
+import { DotCMSContentlet } from '@dotcms/dotcms-models';
+
 declare module '@tiptap/core' {
     interface Commands<ReturnType> {
         videoBlock: {
-            setVideo: (attributes: { href: string }) => ReturnType;
+            setVideo: (attrs: DotCMSContentlet | string) => ReturnType;
         };
     }
 }
 
 export const CustomNode = Node.create({
-    name: 'customNode',
+    name: 'video',
 
     addAttributes() {
         return {
@@ -53,31 +55,29 @@ export const CustomNode = Node.create({
             setVideo:
                 (attrs) =>
                 ({ commands }) => {
+                    const src = typeof attrs === 'string' ? attrs : attrs.asset;
+
                     return commands.insertContent({
                         type: this.name,
-                        attrs
+                        attrs: {
+                            src
+                        }
                     });
                 }
         };
     },
 
-    renderHTML() {
-        // eslint-disable-next-line no-console
-
+    renderHTML({ HTMLAttributes }) {
         return [
             'div',
             { class: 'node-container' },
             [
                 'video',
-                mergeAttributes(
-                    {},
-                    {
-                        width: '400px',
-                        height: 'auto',
-                        controls: true,
-                        src: 'https://www.w3schools.com/tags/movie.mp4'
-                    }
-                )
+                mergeAttributes(HTMLAttributes, {
+                    width: 'auto',
+                    height: 'auto',
+                    controls: true
+                })
             ]
         ];
     }

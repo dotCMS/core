@@ -27,7 +27,7 @@ import {
     DotTableExtension,
     DragHandler,
     DotFloatingButton,
-    BubbleImageTabviewFormExtension,
+    BubbleAssetTabviewFormExtension,
     ImageUpload
 } from '../../extensions';
 import { ContentletBlock, ImageNode, CustomNode } from '../../nodes';
@@ -50,8 +50,7 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy {
     @Input() customStyles: string;
     @Input() displayCountBar: boolean | string = true;
     @Input() charLimit: number;
-    @Input() content: Content =
-        '<video src="https://demo.dotcms.com/dA/67d67b37-4694-4394-a83f-6812ef72c60f/asset/Screen Recording 2023-01-23 at 3.14.53 PM.mov"></video>';
+    @Input() content: Content = '<hellow-world></hellow-world>';
 
     @Input() set allowedBlocks(blocks: string) {
         this._allowedBlocks = [
@@ -128,7 +127,7 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy {
             DotBubbleMenuExtension(this.viewContainerRef),
             BubbleFormExtension(this.viewContainerRef),
             DotFloatingButton(this.injector, this.viewContainerRef),
-            BubbleImageTabviewFormExtension(this.viewContainerRef),
+            BubbleAssetTabviewFormExtension(this.viewContainerRef),
             // Marks Extensions
             Underline,
             CharacterCount,
