@@ -36,3 +36,5 @@ export * from './image-uploader/components/loader/loader.component';
 // Image Uploader
 export * from './image-uploader/image-uploader.extension';
 export * from './image-uploader/services/dot-image/dot-image.service';
+
+export * from './image-tabview-form/image-tabview-form.component';

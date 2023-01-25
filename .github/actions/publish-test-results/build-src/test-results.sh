@@ -100,15 +100,16 @@ function closeResults {
 
     gitClone ${test_results_repo_url} ${BUILD_ID} ${test_results_path}
     cd ${test_results_path}/projects/core/postman/reports/html
-
-    cat ./postman-results-header.html > ./index.html
-    cat ./*.inc >> ./index.html
-    cat ./postman-results-footer.html >> ./index.html
-    rm ./*.inc
-    rm ./postman-results-header.html
-    rm ./postman-results-footer.html
-
     gitConfig ${GITHUB_USER}
+
+    executeCmd "cat ./postman-results-header.html > ./index.html"
+    executeCmd "cat ./*.inc >> ./index.html"
+    executeCmd "cat ./postman-results-footer.html >> ./index.html"
+    executeCmd "rm ./*.inc"
+    executeCmd "rm ./postman-results-header.html"
+    executeCmd "rm ./postman-results-footer.html"
+    executeCmd "cat ./index.html"
+    executeCmd "ls -las ."
 
     executeCmd "git status"
     executeCmd "git add ."

@@ -1,8 +1,21 @@
 
+function setJitsuExperimentData (experimentData) {
+    let experimentsShortData = {
+        experiments: experimentData.experiments.map((experiment) => ({
+                experiment: experiment.id,
+                variant: experiment.variant.name,
+                lookBackWindow: experiment.lookBackWindow
+            })
+        )
+    };
+
+    jitsu('set', experimentsShortData);
+}
+
 let experimentAlreadyCheck = sessionStorage.getItem("experimentAlreadyCheck");
 
 if (!experimentAlreadyCheck) {
-    let currentRunningExperimentsId = [${running_experiments_list}]
+    let currentRunningExperimentsId = [${running_experiments_list}];
 
     function shouldHitEndPoint() {
         let experimentData = localStorage.getItem('experiment_data');
@@ -39,30 +52,36 @@ if (!experimentAlreadyCheck) {
         }
     }
 
-    window.addEventListener("experiment_data_loaded", function (event) {
+    window.addEventListener("experiment_loaded", function (event) {
 
-        let experimentData = event.detail;
+        setJitsuExperimentData(event.detail);
 
-        for (let i = 0; i < experimentData.experiments.length; i++) {
-            let pageUrl = experimentData.experiments[i].pageUrl;
+        if (!window.location.href.includes("redirect=true")) {
 
-            let alternativePageUrl = experimentData.experiments[i].pageUrl.endsWith(
-                "/index") ?
-                experimentData.experiments[i].pageUrl.replace("/index", "") :
-                experimentData.experiments[i].pageUrl;
+            for (let i = 0; i < experimentData.experiments.length; i++) {
+                let pageUrl = experimentData.experiments[i].pageUrl;
 
-            if (window.location.href.includes(pageUrl)
-                || window.location.href.includes(alternativePageUrl)) {
+                let alternativePageUrl = experimentData.experiments[i].pageUrl.endsWith(
+                    "/index") ?
+                    experimentData.experiments[i].pageUrl.replace("/index", "")
+                    :
+                    experimentData.experiments[i].pageUrl;
 
-                let url = experimentData.experiments[i].variant.url
-                const param = (url.includes("?") ? "&" : "?") + "redirect=true";
-                window.location.href = url + param;
-                break;
+                if (window.location.href.includes(pageUrl)
+                    || window.location.href.includes(alternativePageUrl)) {
+
+                    let url = experimentData.experiments[i].variant.url
+                    const param = (url.includes("?") ? "&" : "?")
+                        + "redirect=true";
+                    window.location.href = url + param;
+                    break;
+                }
             }
         }
     });
 
     if (shouldHitEndPoint()) {
+
         let experimentData = localStorage.getItem('experiment_data');
         let body = experimentData ?
             {
@@ -113,15 +132,17 @@ if (!experimentAlreadyCheck) {
     cleanExperimentDataUp();
     let experimentDataAsString = localStorage.getItem('experiment_data');
 
-    if (experimentDataAsString && !window.location.href.includes(
-        "redirect=true")) {
+    if (experimentDataAsString) {
         let experimentData = JSON.parse(experimentDataAsString);
 
-        const event = new CustomEvent('experiment_data_loaded',
+        const event = new CustomEvent('experiment_loaded',
             {detail: experimentData});
         window.dispatchEvent(event);
     }
 
     sessionStorage.setItem("experimentAlreadyCheck", true);
+} else {
+    let experimentData = JSON.parse(localStorage.getItem('experiment_data'));
+    setJitsuExperimentData(experimentData);
 }
 

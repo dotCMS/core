@@ -5,10 +5,11 @@ import { ViewContainerRef } from '@angular/core';
 
 import BubbleMenu, { BubbleMenuOptions } from '@tiptap/extension-bubble-menu';
 
-import { BubbleMenuComponent, SuggestionsComponent } from '@dotcms/block-editor';
-
+import { BubbleMenuComponent } from './bubble-menu.component';
 import { DotBubbleMenuPlugin } from './plugins/dot-bubble-menu.plugin';
 import { shouldShowBubbleMenu } from './utils/index';
+
+import { SuggestionsComponent } from '../../shared';
 
 const defaultTippyOptions: Partial<Props> = {
     duration: 500,

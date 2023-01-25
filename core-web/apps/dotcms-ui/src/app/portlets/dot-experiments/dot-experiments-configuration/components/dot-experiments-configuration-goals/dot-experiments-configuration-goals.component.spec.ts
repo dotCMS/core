@@ -7,9 +7,10 @@ import {
 } from '@ngneat/spectator';
 import { of } from 'rxjs';
 
-import { MessageService } from 'primeng/api';
+import { ConfirmationService, MessageService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
 import { Card, CardModule } from 'primeng/card';
+import { ConfirmPopup, ConfirmPopupModule } from 'primeng/confirmpopup';
 
 import { DotMessageService } from '@dotcms/data-access';
 import { ExperimentSteps, Goals, Status, StepStatus } from '@dotcms/dotcms-models';
@@ -28,22 +29,26 @@ const messageServiceMock = new MockDotMessageService({
     'experiments.goal.reach_page.description': 'description',
     'experiments.configure.goals.no.seleted.goal.message': 'empty message'
 });
+const EXPERIMENT_ID = ExperimentMocks[0].id;
 describe('DotExperimentsConfigurationGoalsComponent', () => {
     let spectator: Spectator<DotExperimentsConfigurationGoalsComponent>;
     let store: DotExperimentsConfigurationStore;
     let dotExperimentsService: SpyObject<DotExperimentsService>;
+    let confirmPopupComponent: ConfirmPopup;
 
     const createComponent = createComponentFactory({
         imports: [
             ButtonModule,
             CardModule,
             DotExperimentsConfigurationGoalSelectComponent,
-            DotDynamicDirective
+            DotDynamicDirective,
+            ConfirmPopupModule
         ],
         component: DotExperimentsConfigurationGoalsComponent,
         componentProviders: [],
         providers: [
             DotExperimentsConfigurationStore,
+            ConfirmationService,
             {
                 provide: DotMessageService,
                 useValue: messageServiceMock
@@ -63,29 +68,29 @@ describe('DotExperimentsConfigurationGoalsComponent', () => {
         dotExperimentsService.getById.and.returnValue(of(ExperimentMocks[0]));
 
         store.loadExperiment(ExperimentMocks[0].id);
+
+        spectator.detectChanges();
     });
 
     it('should render the card', () => {
-        spectator.detectComponentChanges();
         expect(spectator.queryAll(Card).length).toEqual(1);
         expect(spectator.query(byTestId('goals-card-name'))).toContainText('Goals');
         expect(spectator.query(byTestId('goals-add-button'))).toExist();
     });
 
     it('should render empty message of select a goal', () => {
-        spectator.detectComponentChanges();
-
         expect(spectator.query(byTestId('goals-empty-msg'))).toContainText('empty message');
     });
-    it('should enabled the button of add goal', () => {
-        spectator.detectComponentChanges();
 
+    it('should enabled the button of add goal', () => {
         const addButton = spectator.query(byTestId('goals-add-button')) as HTMLButtonElement;
 
         expect(addButton.disabled).not.toBe(true);
     });
+
     it('should disable the button of add goal if a goal was selected already', () => {
-        const vmMock$: { goals: Goals; status: StepStatus } = {
+        const vmMock$: { experimentId: string; goals: Goals; status: StepStatus } = {
+            experimentId: EXPERIMENT_ID,
             goals: GoalsMock,
             status: {
                 status: Status.IDLE,
@@ -105,22 +110,18 @@ describe('DotExperimentsConfigurationGoalsComponent', () => {
     it('should call openSelectGoalSidebar if you click the add goal button', () => {
         spyOn(spectator.component, 'openSelectGoalSidebar');
 
-        spectator.detectComponentChanges();
-
         const addButton = spectator.query(byTestId('goals-add-button')) as HTMLButtonElement;
         spectator.click(addButton);
 
-        spectator.detectComponentChanges();
-
         expect(spectator.component.openSelectGoalSidebar).toHaveBeenCalledTimes(1);
     });
+
     it('should show sidebar and close (remove it)', () => {
         store.setSidebarStatus({
             experimentStep: ExperimentSteps.GOAL,
             isOpen: true
         });
 
-        spectator.detectComponentChanges();
         expect(spectator.query(DotExperimentsConfigurationGoalSelectComponent)).toExist();
 
         store.setSidebarStatus({
@@ -128,7 +129,33 @@ describe('DotExperimentsConfigurationGoalsComponent', () => {
             isOpen: false
         });
 
-        spectator.detectComponentChanges();
         expect(spectator.query(DotExperimentsConfigurationGoalSelectComponent)).not.toExist();
+    });
+
+    it('should show a confirmation to delete a goal', () => {
+        spyOn(store, 'deleteGoal');
+        const vmMock$: { experimentId: string; goals: Goals; status: StepStatus } = {
+            experimentId: EXPERIMENT_ID,
+            goals: GoalsMock,
+            status: {
+                status: Status.IDLE,
+                isOpen: false,
+                experimentStep: null
+            }
+        };
+
+        spectator.component.vm$ = of(vmMock$);
+
+        spectator.detectComponentChanges();
+
+        const deleteIcon = spectator.query(byTestId('goal-delete-button'));
+        spectator.click(deleteIcon);
+
+        expect(spectator.query(ConfirmPopup)).toExist();
+
+        confirmPopupComponent = spectator.query(ConfirmPopup);
+        confirmPopupComponent.accept();
+
+        expect(store.deleteGoal).toHaveBeenCalled();
     });
 });

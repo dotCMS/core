@@ -3,9 +3,14 @@ import { of } from 'rxjs';
 import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 
-import { DotLanguageService, IMAGE_CONTENTLETS_MOCK, SearchService } from '@dotcms/block-editor';
-
 import { DotImageSearchStore } from './dot-image-search.store';
+
+import {
+    DotLanguageService,
+    ESOrderDirection,
+    IMAGE_CONTENTLETS_MOCK,
+    SearchService
+} from '../../../../../shared';
 
 const INITIAL_STATE = { contentlets: [], loading: true, preventScroll: false };
 const LanguageMock = {

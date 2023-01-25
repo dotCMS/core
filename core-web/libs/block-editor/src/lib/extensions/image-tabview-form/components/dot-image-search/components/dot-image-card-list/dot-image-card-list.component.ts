@@ -1,7 +1,8 @@
 import { ChangeDetectionStrategy, Component, EventEmitter, Input, Output } from '@angular/core';
 
-import { sanitizeUrl, squarePlus } from '@dotcms/block-editor';
 import { DotCMSContentlet } from '@dotcms/dotcms-models';
+
+import { sanitizeUrl, squarePlus } from '../../../../../../shared';
 
 @Component({
     selector: 'dot-image-card-list',

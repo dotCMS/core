@@ -1,7 +1,9 @@
-import { byTestId, createComponentFactory, Spectator } from '@ngneat/spectator';
+import { byTestId, createComponentFactory, mockProvider, Spectator } from '@ngneat/spectator';
+import { of } from 'rxjs';
 
 import { DecimalPipe } from '@angular/common';
 
+import { MessageService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
 import { Card, CardModule } from 'primeng/card';
 import { Inplace, InplaceModule } from 'primeng/inplace';
@@ -19,6 +21,8 @@ import {
 } from '@dotcms/dotcms-models';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 import { DotExperimentsConfigurationVariantsAddComponent } from '@portlets/dot-experiments/dot-experiments-configuration/components/dot-experiments-configuration-variants-add/dot-experiments-configuration-variants-add.component';
+import { DotExperimentsConfigurationStore } from '@portlets/dot-experiments/dot-experiments-configuration/store/dot-experiments-configuration-store';
+import { DotExperimentsService } from '@portlets/dot-experiments/shared/services/dot-experiments.service';
 
 import { DotExperimentsConfigurationVariantsComponent } from './dot-experiments-configuration-variants.component';
 
@@ -29,6 +33,7 @@ const messageServiceMock = new MockDotMessageService({
     'experiments.configure.variants.delete': 'delete',
     'experiments.configure.variants.add': 'Add new variant'
 });
+
 describe('DotExperimentsConfigurationVariantsComponent', () => {
     let spectator: Spectator<DotExperimentsConfigurationVariantsComponent>;
 
@@ -45,10 +50,13 @@ describe('DotExperimentsConfigurationVariantsComponent', () => {
         ],
         component: DotExperimentsConfigurationVariantsComponent,
         providers: [
+            DotExperimentsConfigurationStore,
             {
                 provide: DotMessageService,
                 useValue: messageServiceMock
-            }
+            },
+            mockProvider(DotExperimentsService),
+            mockProvider(MessageService)
         ]
     });
 
@@ -214,6 +222,14 @@ describe('DotExperimentsConfigurationVariantsComponent', () => {
         });
 
         it('should edit output emit the new name', () => {
+            spectator.component.vm$ = of({
+                status: {
+                    status: Status.IDLE,
+                    isOpen: false,
+                    experimentStep: ExperimentSteps.GOAL
+                }
+            });
+
             const newVariantName = 'new name';
             const variants: Variant[] = [
                 { id: '1', name: DEFAULT_VARIANT_NAME, weight: '50.00', url: 'url' },
@@ -237,11 +253,35 @@ describe('DotExperimentsConfigurationVariantsComponent', () => {
 
             const inplaceInput = spectator.query(byTestId('inplace-input')) as HTMLInputElement;
             inplaceInput.value = newVariantName;
+            spectator.detectComponentChanges();
 
             expect(viewButton.disabled).not.toBe(true);
+            spectator.detectComponentChanges();
+
             spectator.click(viewButton);
 
+            spectator.detectComponentChanges();
+
             expect(output).toEqual({ ...variants[1], name: newVariantName });
+        });
+
+        it('should the button of save show loading when is SAVING', () => {
+            spectator.query(Inplace).activate();
+
+            spectator.component.vm$ = of({
+                status: {
+                    status: Status.SAVING,
+                    isOpen: false,
+                    experimentStep: ExperimentSteps.GOAL
+                }
+            });
+
+            spectator.detectComponentChanges();
+            const viewButton = spectator.query(
+                byTestId('variant-save-name-btn')
+            ) as HTMLButtonElement;
+
+            expect(viewButton).toHaveClass('p-disabled p-button-loading');
         });
 
         it('should delete a variant', () => {
