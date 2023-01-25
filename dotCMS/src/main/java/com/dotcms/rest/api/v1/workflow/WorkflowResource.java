@@ -201,7 +201,7 @@ public class WorkflowResource {
     private final WorkflowImportExportUtil workflowImportExportUtil;
     private final MultiPartUtils   multiPartUtils;
     private final SystemActionApiFireCommandFactory systemActionApiFireCommandProvider;
-    private final Set<String> validRenderModeSet = ImmutableSet.of(LISTING, EDITING);
+    private final Set<String>   validRenderModeSet = ImmutableSet.of(LISTING, EDITING);
 
 
     /**
