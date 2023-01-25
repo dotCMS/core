@@ -12,6 +12,10 @@ import { catchError, filter, map, pluck, skip, take, takeUntil, tap } from 'rxjs
 import { DotGlobalMessageService } from '@components/_common/dot-global-message/dot-global-message.service';
 import { IframeOverlayService } from '@components/_common/iframe/service/iframe-overlay.service';
 import { DotContentletEditorService } from '@components/dot-contentlet-editor/services/dot-contentlet-editor.service';
+import { DotCustomEventHandlerService } from '@dotcms/app/api/services/dot-custom-event-handler/dot-custom-event-handler.service';
+import { DotHttpErrorManagerService } from '@dotcms/app/api/services/dot-http-error-manager/dot-http-error-manager.service';
+import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
+import { DotUiColorsService } from '@dotcms/app/api/services/dot-ui-colors/dot-ui-colors.service';
 import {
     DotAlertConfirmService,
     DotEditPageService,
@@ -38,20 +42,18 @@ import {
     DotVariantData,
     ESContent
 } from '@dotcms/dotcms-models';
-import { DotLoadingIndicatorService } from '@dotcms/utils';
-import { DotFavoritePageComponent } from '@portlets/dot-edit-page/components/dot-favorite-page/dot-favorite-page.component';
-import { DotEditContentHtmlService } from '@portlets/dot-edit-page/content/services/dot-edit-content-html/dot-edit-content-html.service';
+import { DotLoadingIndicatorService, generateDotFavoritePageUrl } from '@dotcms/utils';
+
+import { DotEditContentHtmlService } from './services/dot-edit-content-html/dot-edit-content-html.service';
 import {
     PageModelChangeEvent,
     PageModelChangeEventType
-} from '@portlets/dot-edit-page/content/services/dot-edit-content-html/models';
-import { DotContentletEventAddContentType } from '@portlets/dot-edit-page/content/services/dot-edit-content-html/models/dot-contentlets-events.model';
-import { DotPageStateService } from '@portlets/dot-edit-page/content/services/dot-page-state/dot-page-state.service';
-import { DotPageContent } from '@portlets/dot-edit-page/shared/models';
-import { DotCustomEventHandlerService } from '@services/dot-custom-event-handler/dot-custom-event-handler.service';
-import { DotHttpErrorManagerService } from '@services/dot-http-error-manager/dot-http-error-manager.service';
-import { DotRouterService } from '@services/dot-router/dot-router.service';
-import { DotUiColorsService } from '@services/dot-ui-colors/dot-ui-colors.service';
+} from './services/dot-edit-content-html/models';
+import { DotContentletEventAddContentType } from './services/dot-edit-content-html/models/dot-contentlets-events.model';
+import { DotPageStateService } from './services/dot-page-state/dot-page-state.service';
+
+import { DotFavoritePageComponent } from '../components/dot-favorite-page/dot-favorite-page.component';
+import { DotPageContent } from '../shared/models';
 
 export const EDIT_BLOCK_EDITOR_CUSTOM_EVENT = 'edit-block-editor';
 
@@ -83,7 +85,6 @@ export class DotEditContentComponent implements OnInit, OnDestroy {
     isEditMode = false;
     paletteCollapsed = false;
     isEnterpriseLicense = false;
-
     variantData: Observable<DotVariantData>;
 
     private readonly customEventsHandler;
@@ -123,9 +124,9 @@ export class DotEditContentComponent implements OnInit, OnDestroy {
                 },
                 'load-edit-mode-page': (pageRendered: DotPageRender) => {
                     /*
-This is the events that gets emitted from the backend when the user
-browse from the page internal links
-*/
+                        This is the events that gets emitted from the backend when the user
+                        browse from the page internal links
+                    */
 
                     const dotRenderedPageState = new DotPageRenderState(
                         this.pageStateInternal.user,
@@ -315,26 +316,26 @@ browse from the page internal links
      * @memberof DotEditContentComponent
      */
     showFavoritePageDialog(openDialog: boolean): void {
-        this.pageState$.pipe(take(1)).subscribe((pageState: DotPageRenderState) => {
-            if (openDialog) {
-                this.dialogService.open(DotFavoritePageComponent, {
-                    header: this.dotMessageService.get('favoritePage.dialog.header.add.page'),
-                    width: '80rem',
-                    data: {
-                        page: {
-                            pageState: pageState,
-                            pageRenderedHtml: pageState.params.page.rendered || null
-                        },
-                        onSave: (favoritePageUrl: string) => {
-                            this.updateFavoritePageIconStatus(favoritePageUrl);
-                        },
-                        onDelete: (favoritePageUrl: string) => {
-                            this.updateFavoritePageIconStatus(favoritePageUrl);
-                        }
+        if (openDialog) {
+            const favoritePageUrl = generateDotFavoritePageUrl(this.pageStateInternal);
+
+            this.dialogService.open(DotFavoritePageComponent, {
+                header: this.dotMessageService.get('favoritePage.dialog.header.add.page'),
+                width: '80rem',
+                data: {
+                    page: {
+                        favoritePageUrl: favoritePageUrl,
+                        favoritePage: this.pageStateInternal.state.favoritePage
+                    },
+                    onSave: (favoritePageUrl: string) => {
+                        this.updateFavoritePageIconStatus(favoritePageUrl);
+                    },
+                    onDelete: (favoritePageUrl: string) => {
+                        this.updateFavoritePageIconStatus(favoritePageUrl);
                     }
-                });
-            }
-        });
+                }
+            });
+        }
     }
 
     private updateFavoritePageIconStatus(pageUrl: string) {
