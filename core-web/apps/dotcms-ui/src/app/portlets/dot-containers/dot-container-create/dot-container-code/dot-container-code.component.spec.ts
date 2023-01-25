@@ -13,10 +13,12 @@ import {
     ReactiveFormsModule
 } from '@angular/forms';
 import { By } from '@angular/platform-browser';
+import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 
 import { ButtonModule } from 'primeng/button';
 import { DialogService, DynamicDialogModule } from 'primeng/dynamicdialog';
 import { Menu, MenuModule } from 'primeng/menu';
+import { SkeletonModule } from 'primeng/skeleton';
 import { TabViewModule } from 'primeng/tabview';
 
 import { DotPipesModule } from '@dotcms/app/view/pipes/dot-pipes.module';
@@ -171,7 +173,9 @@ describe('DotContentEditorComponent', () => {
                 MenuModule,
                 ButtonModule,
                 DotPipesModule,
-                HttpClientTestingModule
+                HttpClientTestingModule,
+                BrowserAnimationsModule,
+                SkeletonModule
             ],
 
             providers: [
@@ -322,6 +326,14 @@ describe('DotContentEditorComponent', () => {
                 );
                 expect(comp.monacoEditors[mockContentTypes[0].id].focus).toHaveBeenCalled();
             }));
+        });
+
+        it('shoud have add loader on content types', () => {
+            // remove all content types
+            comp.contentTypes = [];
+            hostFixture.detectChanges();
+            const loader = de.query(By.css('p-skeleton'));
+            expect(loader).toBeDefined();
         });
     });
 });
