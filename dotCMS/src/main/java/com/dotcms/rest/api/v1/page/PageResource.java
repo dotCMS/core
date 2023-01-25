@@ -979,6 +979,7 @@ public class PageResource {
     @Path("/types")
     public Response getPageTypes(@Context final HttpServletRequest originalRequest,
                              @Context final HttpServletResponse response,
+                             @DefaultValue("") @QueryParam(PaginationUtil.FILTER)   final String filter,
                              @QueryParam(PaginationUtil.PAGE)     final int page,
                              @QueryParam(PaginationUtil.PER_PAGE) final int perPage,
                              @DefaultValue("UPPER(name)") @QueryParam(PaginationUtil.ORDER_BY) final String orderbyParam,
@@ -991,6 +992,7 @@ public class PageResource {
         Logger.debug(this, ()-> "Getting page types, page: " +page + ",per page: " + perPage +
                 ",order by" + orderbyParam + ", direction: " + direction);
 
+
         final List<ContentType> pageTypes    = contentTypeAPI.findByBaseType(BaseContentType.HTMLPAGE, "mod_date", 100, 0);
         final List<String> typeVarNames = new ImmutableList.Builder<String>()
                 .addAll(pageTypes.stream().map(ContentType::variable).collect(Collectors.toList()))
@@ -999,7 +1001,7 @@ public class PageResource {
         extraParams.put(ContentTypesPaginator.TYPES_PARAMETER_NAME, typeVarNames);
             final PaginationUtil paginationUtil =
                     new PaginationUtil(new ContentTypesPaginator(contentTypeAPI));
-        return paginationUtil.getPage(originalRequest, user, StringPool.BLANK, page, perPage, orderbyParam,
+        return paginationUtil.getPage(originalRequest, user, filter, page, perPage, orderbyParam,
                     OrderDirection.valueOf(direction), extraParams);
     }
 } // E:O:F:PageResource
