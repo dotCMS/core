@@ -22,6 +22,7 @@ export enum PermissionsType {
  * @interface
  */
 export interface DotCurrentUser {
+    admin: boolean;
     email: string;
     givenName: string;
     roleId: string;

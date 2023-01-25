@@ -52,7 +52,7 @@ export class DotRolesService {
                 if (role.roleKey === CURRENT_USER_KEY) {
                     role.name = this.dotMessageService.get('current-user');
                 } else if (role.user) {
-                    role.name = `${role.name} (${this.dotMessageService.get('user')})`;
+                    role.name = `${role.name}`;
                 }
 
                 return role;
