@@ -2924,7 +2924,7 @@ body {
 
 #font-icon-base, .arrowLeftIcon, .arrowRightIcon, .chevronExpandIcon, .deleteIcon, .editIcon, .folderIcon, .folderOpenIcon, .folderSelectedIcon,
 .toggleCloseIcon,
-.toggleOpenIcon, .dijitIconCopy, #dijit-icon, .required:before, .tagLink.persona:before, .wmaIcon, .wavIcon, .raIcon, .mpaIcon, .mp3Icon, .midIcon, .m3uIcon, .iffIcon, .aifIcon, .aacIcon, .docxIcon, .docIcon, .pptxIcon, .pptIcon, .keynoteIcon, .pdfIcon, .svgIcon, .webpIcon, .gifIcon, .pngIcon, .pctIcon, .jpgIcon, .jpegIcon, .imageIcon, .bmpIcon, .xlsxIcon, .xlsIcon, .wksIcon, .numbersIcon, .csvIcon, .vobIcon, .rmIcon, .ogvIcon, .oggIcon, .mpgIcon, .mp4Icon, .movIcon, .aviIcon, .asfIcon, .wysiwygIcon, .workStreamIcon, .workingIcon, .workflowIcon, .windowsIcon, .vtlIcon, .vanityIcon, .userIcon, .uploadIcon, .unpublishIcon, .unlockIcon, .unarchiveIcon, .trashIcon, .toggleOpenIcon, .toggleCloseIcon, .thumbnailViewIcon, .textFieldIcon, .tagIcon, .tabIcon, .stopIcon, .statisticsIcon, .sServerIcon, .splitterIcon, .spellIcon, .shrinkIcon, .selectIcon, .searchIcon, .scrollPaneIcon, .saveAssignIcon, .statusIcon, .saveIcon, .rServerIcon, .rolesIcon, .resolveWorkflowIcon, .resolveIcon, .resetIcon, .requiredIcon, .republishIcon, .repeatIcon, .reorderIcon, .reopenWorkflowIcon, .rememberIcon, .reindexIcon, .radioIcon, .queryIcon, .publishIcon, .propertyIcon, .previousIcon, .previewIcon, .plusIcon, .personaIcon, .pasteIcon, .pagePropIcon, .pageIcon, .nextIcon, .newWorkflowIcon, .newTaskIcon, .newPageIcon, .multiSelectIcon, .movePageIcon, .mobileIcon, .minusIcon, .mapPinIcon, .mailListIcon, .loginAsIcon, .loginIcon, .lockIcon, .liveIcon, .listViewIcon, .linkAddIcon, .licenseIcon, .languageVarIcon, .keyvalueIcon, .keyIcon, .infoIcon, .imageNewIcon, .hourGlassIcon, .hostStoppedIcon, .hostDefaultIcon, .hostArchivedIcon, .hostIcon, .hintIcon, .hideIcon, .helpIcon, .greyDotIcon, .gearPlusIcon, .gearPencilIcon, .gearMinusIcon, .gearIcon, .formNewIcon, .formIcon, .folderGlobeIcon, .folderFilesIcon, .folderEditIcon, .folderDeleteIcon, .folderCopyIcon, .folderAddIcon, .fixIcon, .fileNewIcon, .fileMultiIcon, .fileIcon, .femaleIcon, .exclamationIcon, .exclamation-redIcon, .encryptIcon, .editScriptIcon, .dropIcon, .downloadIcon, .dotAssetIcon, .documentIcon, .docTextIcon, .docNumIcon, .docCopyIcon, .docConvertIcon, .detailViewIcon, .deleteWorkflowIcon, .cutIcon, .copyIcon, .contentIcon, .colorIcon, .closeIcon, .chevronIcon, .checkBoxIcon, .cartIcon, .cancelWorkflowIcon, .cancelIcon, .calWeekIcon, .calMonthIcon, .calListIcon, .calDayIcon, .calClockIcon, .bundleIcon, .bugIcon, .browseIcon, .bgIcon, .backupIcon, .assignWorkflowIcon, .archivedIcon, .archiveIcon, .appMonitorIcon, .appleIcon, .androidIcon, .addIcon, .actionIcon, .uknIcon, .dijitIcon {
+.toggleOpenIcon, .dijitIconCopy, #dijit-icon, .tagLink.persona:before, .wmaIcon, .wavIcon, .raIcon, .mpaIcon, .mp3Icon, .midIcon, .m3uIcon, .iffIcon, .aifIcon, .aacIcon, .docxIcon, .docIcon, .pptxIcon, .pptIcon, .keynoteIcon, .pdfIcon, .svgIcon, .webpIcon, .gifIcon, .pngIcon, .pctIcon, .jpgIcon, .jpegIcon, .imageIcon, .bmpIcon, .xlsxIcon, .xlsIcon, .wksIcon, .numbersIcon, .csvIcon, .vobIcon, .rmIcon, .ogvIcon, .oggIcon, .mpgIcon, .mp4Icon, .movIcon, .aviIcon, .asfIcon, .wysiwygIcon, .workStreamIcon, .workingIcon, .workflowIcon, .windowsIcon, .vtlIcon, .vanityIcon, .userIcon, .uploadIcon, .unpublishIcon, .unlockIcon, .unarchiveIcon, .trashIcon, .toggleOpenIcon, .toggleCloseIcon, .thumbnailViewIcon, .textFieldIcon, .tagIcon, .tabIcon, .stopIcon, .statisticsIcon, .sServerIcon, .splitterIcon, .spellIcon, .shrinkIcon, .selectIcon, .searchIcon, .scrollPaneIcon, .saveAssignIcon, .statusIcon, .saveIcon, .rServerIcon, .rolesIcon, .resolveWorkflowIcon, .resolveIcon, .resetIcon, .requiredIcon, .republishIcon, .repeatIcon, .reorderIcon, .reopenWorkflowIcon, .rememberIcon, .reindexIcon, .radioIcon, .queryIcon, .publishIcon, .propertyIcon, .previousIcon, .previewIcon, .plusIcon, .personaIcon, .pasteIcon, .pagePropIcon, .pageIcon, .nextIcon, .newWorkflowIcon, .newTaskIcon, .newPageIcon, .multiSelectIcon, .movePageIcon, .mobileIcon, .minusIcon, .mapPinIcon, .mailListIcon, .loginAsIcon, .loginIcon, .lockIcon, .liveIcon, .listViewIcon, .linkAddIcon, .licenseIcon, .languageVarIcon, .keyvalueIcon, .keyIcon, .infoIcon, .imageNewIcon, .hourGlassIcon, .hostStoppedIcon, .hostDefaultIcon, .hostArchivedIcon, .hostIcon, .hintIcon, .hideIcon, .helpIcon, .greyDotIcon, .gearPlusIcon, .gearPencilIcon, .gearMinusIcon, .gearIcon, .formNewIcon, .formIcon, .folderGlobeIcon, .folderFilesIcon, .folderEditIcon, .folderDeleteIcon, .folderCopyIcon, .folderAddIcon, .fixIcon, .fileNewIcon, .fileMultiIcon, .fileIcon, .femaleIcon, .exclamationIcon, .exclamation-redIcon, .encryptIcon, .editScriptIcon, .dropIcon, .downloadIcon, .dotAssetIcon, .documentIcon, .docTextIcon, .docNumIcon, .docCopyIcon, .docConvertIcon, .detailViewIcon, .deleteWorkflowIcon, .cutIcon, .copyIcon, .contentIcon, .colorIcon, .closeIcon, .chevronIcon, .checkBoxIcon, .cartIcon, .cancelWorkflowIcon, .cancelIcon, .calWeekIcon, .calMonthIcon, .calListIcon, .calDayIcon, .calClockIcon, .bundleIcon, .bugIcon, .browseIcon, .bgIcon, .backupIcon, .assignWorkflowIcon, .archivedIcon, .archiveIcon, .appMonitorIcon, .appleIcon, .androidIcon, .addIcon, .actionIcon, .uknIcon, .dijitIcon {
   font: normal normal normal 14px/1 FontAwesome;
   text-rendering: auto;
   -webkit-font-smoothing: antialiased;
@@ -2932,7 +2932,7 @@ body {
   transform: translate(0, 0);
 }
 
-#dijit-icon, .required:before, .tagLink.persona:before, .wmaIcon, .wavIcon, .raIcon, .mpaIcon, .mp3Icon, .midIcon, .m3uIcon, .iffIcon, .aifIcon, .aacIcon, .docxIcon, .docIcon, .pptxIcon, .pptIcon, .keynoteIcon, .pdfIcon, .svgIcon, .webpIcon, .gifIcon, .pngIcon, .pctIcon, .jpgIcon, .jpegIcon, .imageIcon, .bmpIcon, .xlsxIcon, .xlsIcon, .wksIcon, .numbersIcon, .csvIcon, .vobIcon, .rmIcon, .ogvIcon, .oggIcon, .mpgIcon, .mp4Icon, .movIcon, .aviIcon, .asfIcon, .wysiwygIcon, .workStreamIcon, .workingIcon, .workflowIcon, .windowsIcon, .vtlIcon, .vanityIcon, .userIcon, .uploadIcon, .unpublishIcon, .unlockIcon, .unarchiveIcon, .trashIcon, .toggleOpenIcon, .toggleCloseIcon, .thumbnailViewIcon, .textFieldIcon, .tagIcon, .tabIcon, .stopIcon, .statisticsIcon, .sServerIcon, .splitterIcon, .spellIcon, .shrinkIcon, .selectIcon, .searchIcon, .scrollPaneIcon, .saveAssignIcon, .statusIcon, .saveIcon, .rServerIcon, .rolesIcon, .resolveWorkflowIcon, .resolveIcon, .resetIcon, .requiredIcon, .republishIcon, .repeatIcon, .reorderIcon, .reopenWorkflowIcon, .rememberIcon, .reindexIcon, .radioIcon, .queryIcon, .publishIcon, .propertyIcon, .previousIcon, .previewIcon, .plusIcon, .personaIcon, .pasteIcon, .pagePropIcon, .pageIcon, .nextIcon, .newWorkflowIcon, .newTaskIcon, .newPageIcon, .multiSelectIcon, .movePageIcon, .mobileIcon, .minusIcon, .mapPinIcon, .mailListIcon, .loginAsIcon, .loginIcon, .lockIcon, .liveIcon, .listViewIcon, .linkAddIcon, .licenseIcon, .languageVarIcon, .keyvalueIcon, .keyIcon, .infoIcon, .imageNewIcon, .hourGlassIcon, .hostStoppedIcon, .hostDefaultIcon, .hostArchivedIcon, .hostIcon, .hintIcon, .hideIcon, .helpIcon, .greyDotIcon, .gearPlusIcon, .gearPencilIcon, .gearMinusIcon, .gearIcon, .formNewIcon, .formIcon, .folderSelectedIcon, .folderOpenIcon, .folderGlobeIcon, .folderFilesIcon, .folderEditIcon, .folderDeleteIcon, .folderCopyIcon, .folderAddIcon, .folderIcon, .fixIcon, .fileNewIcon, .fileMultiIcon, .fileIcon, .femaleIcon, .exclamationIcon, .exclamation-redIcon, .encryptIcon, .editScriptIcon, .editIcon, .dropIcon, .downloadIcon, .dotAssetIcon, .documentIcon, .docTextIcon, .docNumIcon, .docCopyIcon, .docConvertIcon, .detailViewIcon, .deleteWorkflowIcon, .deleteIcon, .cutIcon, .copyIcon, .contentIcon, .colorIcon, .closeIcon, .chevronExpandIcon, .chevronIcon, .checkBoxIcon, .cartIcon, .cancelWorkflowIcon, .cancelIcon, .calWeekIcon, .calMonthIcon, .calListIcon, .calDayIcon, .calClockIcon, .bundleIcon, .bugIcon, .browseIcon, .bgIcon, .backupIcon, .assignWorkflowIcon, .arrowRightIcon, .arrowLeftIcon, .archivedIcon, .archiveIcon, .appMonitorIcon, .appleIcon, .androidIcon, .addIcon, .actionIcon, .uknIcon, .dijitIcon {
+#dijit-icon, .tagLink.persona:before, .wmaIcon, .wavIcon, .raIcon, .mpaIcon, .mp3Icon, .midIcon, .m3uIcon, .iffIcon, .aifIcon, .aacIcon, .docxIcon, .docIcon, .pptxIcon, .pptIcon, .keynoteIcon, .pdfIcon, .svgIcon, .webpIcon, .gifIcon, .pngIcon, .pctIcon, .jpgIcon, .jpegIcon, .imageIcon, .bmpIcon, .xlsxIcon, .xlsIcon, .wksIcon, .numbersIcon, .csvIcon, .vobIcon, .rmIcon, .ogvIcon, .oggIcon, .mpgIcon, .mp4Icon, .movIcon, .aviIcon, .asfIcon, .wysiwygIcon, .workStreamIcon, .workingIcon, .workflowIcon, .windowsIcon, .vtlIcon, .vanityIcon, .userIcon, .uploadIcon, .unpublishIcon, .unlockIcon, .unarchiveIcon, .trashIcon, .toggleOpenIcon, .toggleCloseIcon, .thumbnailViewIcon, .textFieldIcon, .tagIcon, .tabIcon, .stopIcon, .statisticsIcon, .sServerIcon, .splitterIcon, .spellIcon, .shrinkIcon, .selectIcon, .searchIcon, .scrollPaneIcon, .saveAssignIcon, .statusIcon, .saveIcon, .rServerIcon, .rolesIcon, .resolveWorkflowIcon, .resolveIcon, .resetIcon, .requiredIcon, .republishIcon, .repeatIcon, .reorderIcon, .reopenWorkflowIcon, .rememberIcon, .reindexIcon, .radioIcon, .queryIcon, .publishIcon, .propertyIcon, .previousIcon, .previewIcon, .plusIcon, .personaIcon, .pasteIcon, .pagePropIcon, .pageIcon, .nextIcon, .newWorkflowIcon, .newTaskIcon, .newPageIcon, .multiSelectIcon, .movePageIcon, .mobileIcon, .minusIcon, .mapPinIcon, .mailListIcon, .loginAsIcon, .loginIcon, .lockIcon, .liveIcon, .listViewIcon, .linkAddIcon, .licenseIcon, .languageVarIcon, .keyvalueIcon, .keyIcon, .infoIcon, .imageNewIcon, .hourGlassIcon, .hostStoppedIcon, .hostDefaultIcon, .hostArchivedIcon, .hostIcon, .hintIcon, .hideIcon, .helpIcon, .greyDotIcon, .gearPlusIcon, .gearPencilIcon, .gearMinusIcon, .gearIcon, .formNewIcon, .formIcon, .folderSelectedIcon, .folderOpenIcon, .folderGlobeIcon, .folderFilesIcon, .folderEditIcon, .folderDeleteIcon, .folderCopyIcon, .folderAddIcon, .folderIcon, .fixIcon, .fileNewIcon, .fileMultiIcon, .fileIcon, .femaleIcon, .exclamationIcon, .exclamation-redIcon, .encryptIcon, .editScriptIcon, .editIcon, .dropIcon, .downloadIcon, .dotAssetIcon, .documentIcon, .docTextIcon, .docNumIcon, .docCopyIcon, .docConvertIcon, .detailViewIcon, .deleteWorkflowIcon, .deleteIcon, .cutIcon, .copyIcon, .contentIcon, .colorIcon, .closeIcon, .chevronExpandIcon, .chevronIcon, .checkBoxIcon, .cartIcon, .cancelWorkflowIcon, .cancelIcon, .calWeekIcon, .calMonthIcon, .calListIcon, .calDayIcon, .calClockIcon, .bundleIcon, .bugIcon, .browseIcon, .bgIcon, .backupIcon, .assignWorkflowIcon, .arrowRightIcon, .arrowLeftIcon, .archivedIcon, .archiveIcon, .appMonitorIcon, .appleIcon, .androidIcon, .addIcon, .actionIcon, .uknIcon, .dijitIcon {
   display: inline-block;
   height: 16px;
   line-height: 16px;
@@ -6803,7 +6803,6 @@ select[multiple]:hover {
   padding-right: 24px;
 }
 #listing-table th, .listingTable th, .dojoxUploaderFileListTable th {
-  font-weight: bold;
   background-color: #fafafa;
 }
 
@@ -9277,7 +9276,6 @@ Styles for commons fields along the backend
   color: #fff;
   cursor: pointer;
   padding: 0 1rem;
-
 }
 .fileAjaxUploader input[type=file]::-webkit-file-upload-button:hover {
   background-color: var(--color-main_mod);
@@ -9509,7 +9507,7 @@ Styles for commons fields along the backend
 - Handle vertical and horizontal forms
 */
 #label, .fieldName, dl.vertical dt label {
-  color: #5b5b5b;
+  color: #161616;
   display: block;
   font-size: 12px;
   margin-bottom: 4px;
@@ -9527,13 +9525,10 @@ Styles for commons fields along the backend
   margin-right: 4px;
 }
 
-.required:before {
-  content: "\f069";
-  color: #d0021b;
-  font-size: 9px;
-  position: relative;
-  top: -4px;
-  left: 2px;
+.required::after {
+  padding-left: 2px;
+  content: "*";
+  color: #cb3927;
 }
 
 #inline-form, .inline-form, .fileSelectorControls {
@@ -9573,11 +9568,6 @@ Styles for commons fields along the backend
 .listingTable .radio,
 .listingTable .checkbox {
   margin: 0;
-}
-
-.required2 {
-  color: #cb3927;
-  font-weight: bold;
 }
 
 .hint-text {
