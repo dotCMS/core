@@ -181,3 +181,4 @@ This maintenance release includes the following code fixes:
 **Release-21.06.13**
 
 105. https://github.com/dotCMS/core/issues/23440 : Categories being removed from content items when updating content via CSV file upload #23440
+106. https://github.com/dotCMS/core/issues/21832 : [Static Push] Removing a Page removes all files related to the page, not only the page #21832
