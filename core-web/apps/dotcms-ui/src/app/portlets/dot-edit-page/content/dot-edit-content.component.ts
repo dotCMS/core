@@ -19,7 +19,8 @@ import {
     DotEventsService,
     DotLicenseService,
     DotMessageService,
-    DotPropertiesService
+    DotPropertiesService,
+    DotSessionStorageService
 } from '@dotcms/data-access';
 import { SiteService } from '@dotcms/dotcms-js';
 import {
@@ -112,7 +113,8 @@ export class DotEditContentComponent implements OnInit, OnDestroy {
         private dotConfigurationService: DotPropertiesService,
         private dotLicenseService: DotLicenseService,
         private dotEventsService: DotEventsService,
-        private dotESContentService: DotESContentService
+        private dotESContentService: DotESContentService,
+        private dotSessionStorageService: DotSessionStorageService
     ) {
         if (!this.customEventsHandler) {
             this.customEventsHandler = {
@@ -183,6 +185,7 @@ browse from the page internal links
     }
 
     ngOnDestroy(): void {
+        this.dotSessionStorageService.removeVariantId();
         this.destroy$.next(true);
         this.destroy$.complete();
     }
@@ -203,7 +206,7 @@ browse from the page internal links
             {
                 queryParams: {
                     editPageTab: null,
-                    variationName: null,
+                    variantName: null,
                     experimentId: null
                 },
                 queryParamsHandling: 'merge'
@@ -649,14 +652,14 @@ browse from the page internal links
     }
 
     private getExperimentResolverData(): void {
-        const { variationName, editPageTab } = this.route.snapshot.queryParams;
+        const { variantName, editPageTab } = this.route.snapshot.queryParams;
         this.variantData = this.route.parent.parent.data.pipe(
             take(1),
             pluck('experiment'),
             filter((experiment) => !!experiment),
             map((experiment: DotExperiment) => {
                 const variant = experiment.trafficProportion.variants.find(
-                    (variant) => variant.id === variationName
+                    (variant) => variant.id === variantName
                 );
 
                 return {

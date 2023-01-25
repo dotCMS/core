@@ -93,7 +93,7 @@ export class DotExperimentsListComponent {
         this.router.navigate(['edit-page/content'], {
             queryParams: {
                 editPageTab: null,
-                variationName: null,
+                variantName: null,
                 experimentId: null
             },
             queryParamsHandling: 'merge'
