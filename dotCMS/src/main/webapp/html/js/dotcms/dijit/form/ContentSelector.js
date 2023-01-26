@@ -530,6 +530,16 @@ dojo.declare("dotcms.dijit.form.ContentSelector", [dijit._Widget, dijit._Templat
             inodes[0] = content.inode;
         }
 
+		// If we add a new relation,
+		// We have to wait until that relation is loaded to save the content.
+		if(
+			typeof relationsLoadedMap !== 'undefined' &&
+			relationsLoadedMap[this.relationJsName] &&
+			inodes?.length > 0
+		) {
+			relationsLoadedMap[this.relationJsName] = false;
+		}
+
 		setTimeout("ContentletAjax.getContentletsData ('" + inodes + "', "+this.relationJsName+"_addRelationshipCallback)", 50);
 
 		this._clearSearch();

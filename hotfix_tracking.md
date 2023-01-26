@@ -185,3 +185,4 @@ This maintenance release includes the following code fixes:
 107. https://github.com/dotCMS/core/issues/21929 : PullRelatedField is not pulling the content in any order #21929
 108. https://github.com/dotCMS/core/issues/22236 : Pagination not working when querying related content by Rest API #22236
 109. https://github.com/dotCMS/core/issues/21735 : Content with 2 Relationship Fields of Same Type Also Shows Non-Available Languages #21735
+110. https://github.com/dotCMS/core/issues/22323 : Relationships will get cleared if you Save a contentlet before they are loaded #22323
