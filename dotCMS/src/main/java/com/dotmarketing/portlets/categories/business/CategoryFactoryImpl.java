@@ -120,7 +120,7 @@ public class CategoryFactoryImpl extends CategoryFactory {
 		DotPreconditions.checkArgument(UtilMethods.isSet(variable));
 		HibernateUtil hu = new HibernateUtil(Category.class);
 		hu.setQuery("from " + Category.class.getCanonicalName()
-				+ " WHERE category_velocity_var_name=?");
+				+ " WHERE lower(category_velocity_var_name)=?");
 		hu.setParam(variable);
 		return (Category) hu.load();
 	}
