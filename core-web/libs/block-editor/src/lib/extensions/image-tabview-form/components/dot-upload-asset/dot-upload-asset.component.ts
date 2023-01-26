@@ -38,9 +38,7 @@ export class DotUploadAssetComponent {
      * @memberof DotUploadAssetComponent
      */
     onSelectFile(event) {
-        const file = event.files[0];
-        file.objectURL = this.sanitizer.bypassSecurityTrustUrl(window.URL.createObjectURL(file));
-        this.file = file;
+        this.file = event.files[0];
         this.status = STATUS.PREVIEW;
     }
 
