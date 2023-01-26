@@ -53,8 +53,8 @@ const run = () => __awaiter(void 0, void 0, void 0, function* () {
     core.info("Running Core's postman tests");
     const results = yield postman.runTests();
     setOutput('tests_results_location', resultsFolder);
-    setOutput('tests_results_report_location', reportFolder, true);
-    setOutput('tests_results_status', results.testsResultsStatus);
+    setOutput('tests_results_report_location', reportFolder);
+    setOutput('tests_results_status', results.testsResultsStatus, true);
     setOutput('tests_results_skip_report', results.skipResultsReport);
     if (results.testsRunExitCode !== 0) {
         core.setFailed(`Postman tests failed: ${JSON.stringify(results)}`);
@@ -225,6 +225,9 @@ const startDeps = () => __awaiter(void 0, void 0, void 0, function* () {
         yield waitFor(160, 'Analytics Infrastructure');
         yield warmUpAnalytics();
     }
+    yield execCmd(toCommand('docker', ['pull', 'ghcr.io/dotcms/elasticsearch:7.9.1'], dockerFolder));
+    yield execCmd(toCommand('docker', ['pull', 'ghcr.io/dotcms/postgres:13-alpine'], dockerFolder));
+    yield execCmd(toCommand('docker', ['pull', builtImageName], dockerFolder));
     execCmdAsync(toCommand('docker-compose', ['-f', 'open-distro-compose.yml', '-f', `${dbType}-compose.yml`, '-f', 'dotcms-compose.yml', 'up'], dockerFolder, DEPS_ENV));
 });
 /**
@@ -260,7 +263,7 @@ const normalize = (provided) => {
  * @returns an overall ivew of the tests results
  */
 const runPostmanCollections = () => __awaiter(void 0, void 0, void 0, function* () {
-    yield waitFor(150, `DotCMS instance`);
+    yield waitFor(120, `DotCMS instance`);
     // Executes Postman tests
     core.info(`
     ===========================================

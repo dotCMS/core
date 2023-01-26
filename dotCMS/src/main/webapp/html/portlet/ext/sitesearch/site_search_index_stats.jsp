@@ -57,9 +57,9 @@ Map<String,ClusterIndexHealth> map = esapi.getClusterHealth();
 
 <div data-dojo-type="dijit.Dialog" style="width:400px;" id="createIndexDialog">
 	<div class="dotForm">
-		<label for="createIndexAlias">Alias:</label>
+		<label form="createIndexAlias" class="required" for="createIndexAlias">Alias</label>
 		<input id="createIndexAlias" dojoType="dijit.form.TextBox" class="dotFormInput"/><br/><br/>
-		<label for="createIndexNumShards">Shards:</label>
+		<label id="createIndexNumShards" class="required" for="createIndexNumShards">Shards:</label>
 		<input id="createIndexNumShards" dojoType="dijit.form.TextBox" class="dotFormInput"/><br/><br/>
 		<div class="buttonRow-right">
 			<button dojoType="dijit.form.Button" class="dijitButtonFlat" onClick="dijit.byId('createIndexDialog').hide()">

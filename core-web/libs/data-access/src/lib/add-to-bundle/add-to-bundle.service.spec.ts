@@ -13,7 +13,6 @@ import { AddToBundleService } from './add-to-bundle.service';
 
 import { DotCurrentUserService } from '../dot-current-user/dot-current-user.service';
 
-
 describe('AddToBundleService', () => {
     let injector: TestBed;
     let addToBundleService: AddToBundleService;

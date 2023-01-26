@@ -15,8 +15,9 @@ import javax.imageio.ImageWriteParam;
 import javax.imageio.ImageWriter;
 import javax.imageio.stream.FileImageOutputStream;
 import javax.imageio.stream.ImageOutputStream;
-
+import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.UtilMethods;
 
 public class GifImageFilter extends ImageFilter {
 	public String[] getAcceptedParameters(){
@@ -27,7 +28,7 @@ public class GifImageFilter extends ImageFilter {
 	}
 	public File runFilter(File file,   Map<String, String[]> parameters) {
 
-		File resultFile = getResultsFile(file, parameters, "gif");
+		File resultFile = getResultsFile(file, parameters);
 
 		if(!overwrite(resultFile,parameters)){
 			return resultFile;
@@ -76,5 +77,10 @@ public class GifImageFilter extends ImageFilter {
 		return resultFile;
 	}
 	
+    @Override
+    public File getResultsFile(final File file, final Map<String, String[]> parameters) {
+        return getResultsFile(file, parameters, "gif");
+    }
+
 
 }

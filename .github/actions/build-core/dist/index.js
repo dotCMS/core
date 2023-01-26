@@ -51,7 +51,7 @@ const COMMANDS = {
     gradle: [
         {
             cmd: gradleCmd,
-            args: ['build', '-x', 'test'],
+            args: ['createDistPrep'],
             workingDir: dotCmsRoot
         }
     ],

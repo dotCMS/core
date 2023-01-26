@@ -112,7 +112,9 @@ const RESTORE_CONFIGURATION = {
         buildOutput: [
             path.join(DOTCMS_ROOT, '.gradle'),
             path.join(DOTCMS_ROOT, 'build', 'classes'),
-            path.join(DOTCMS_ROOT, 'build', 'resources')
+            path.join(DOTCMS_ROOT, 'build', 'generated'),
+            path.join(DOTCMS_ROOT, 'build', 'resources'),
+            path.join(PROJECT_ROOT, 'dist', 'dotserver')
         ]
     },
     maven: {
@@ -151,7 +153,7 @@ const restoreLocations = (cacheMetadata) => __awaiter(void 0, void 0, void 0, fu
         const cacheKey = yield cache.restoreCache(locationMetadata.cacheLocations, locationMetadata.cacheKey);
         core.info(`Locations restored with key ${cacheKey}`);
         for (const location of locationMetadata.cacheLocations) {
-            ls(location);
+            du(location);
         }
         const type = locationMetadata.type;
         const configLocations = restoreConfig[type];
@@ -204,15 +206,15 @@ const relocate = (type, cacheLocations, configLocations, rellocatable) => {
         }
         core.info(`Relocating cache from ${location} to ${newLocation}`);
         fs.renameSync(location, newLocation);
-        ls(newLocation);
+        du(newLocation);
         return newLocation;
     })
         .filter(location => location !== '');
 };
-const ls = (location) => __awaiter(void 0, void 0, void 0, function* () {
+const du = (location) => __awaiter(void 0, void 0, void 0, function* () {
     core.info(`Listing folder ${location}`);
     try {
-        yield exec.exec('ls', ['-las', location]);
+        yield exec.exec('du', ['-hs', location]);
     }
     catch (err) {
         core.info(`Cannot list folder ${location}`);

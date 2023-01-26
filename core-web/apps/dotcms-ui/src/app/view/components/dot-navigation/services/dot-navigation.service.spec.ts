@@ -20,7 +20,6 @@ import { DotNavigationService } from './dot-navigation.service';
 
 import { DotIframeService } from '../../_common/iframe/service/dot-iframe/dot-iframe.service';
 
-
 class RouterMock {
     _events: Subject<any> = new Subject();
     _routerState: any;

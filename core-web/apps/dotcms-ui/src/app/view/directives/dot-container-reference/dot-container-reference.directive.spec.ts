@@ -10,7 +10,6 @@ import {
 
 import { DotContainerReferenceDirective } from './dot-container-reference.directive';
 
-
 class TestViewContainerRef extends ViewContainerRef {
     readonly element: ElementRef;
     readonly injector: Injector;

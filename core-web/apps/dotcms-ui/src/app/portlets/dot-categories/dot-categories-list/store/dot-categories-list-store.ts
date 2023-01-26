@@ -13,8 +13,6 @@ import { DotCategory } from '@dotcms/app/shared/models/dot-categories/dot-catego
 import { DotMessageService, OrderDirection } from '@dotcms/data-access';
 import { DataTableColumn } from '@models/data-table';
 
-
-
 export interface DotCategoriesListState {
     categoriesBulkActions: MenuItem[];
     categoriesActions: DotActionMenuItem[];

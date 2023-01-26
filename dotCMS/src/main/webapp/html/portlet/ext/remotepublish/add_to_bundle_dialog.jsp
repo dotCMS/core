@@ -34,7 +34,9 @@ String inode=request.getParameter( "inode" );// DOTCMS-7085
 
 		<div class="fieldWrapper" id="bundleSelectDiv">
 			<div class="fieldName" style="width:120px">
-				<%= LanguageUtil.get(pageContext, "publisher_dialog_choose_bundle") %>:
+				<label for="bundleSelect" class="required">
+					<%= LanguageUtil.get(pageContext, "publisher_dialog_choose_bundle") %>
+				</label>
 			</div>
 			<div class="fieldValue">
 				<input data-dojo-type="dijit/form/ComboBox" autocomplete="false" data-dojo-props="store:pushHandler.bundleStore, searchAttr:'name', pageSize:30"

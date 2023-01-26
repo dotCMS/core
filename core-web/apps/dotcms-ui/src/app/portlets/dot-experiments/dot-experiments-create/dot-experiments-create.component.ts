@@ -23,7 +23,6 @@ import { DotExperimentsListStore } from '@portlets/dot-experiments/dot-experimen
 import { DotSidebarDirective } from '@portlets/shared/directives/dot-sidebar.directive';
 import { DotSidebarHeaderComponent } from '@shared/dot-sidebar-header/dot-sidebar-header.component';
 
-
 interface CreateForm {
     pageId: FormControl<string>;
     name: FormControl<string>;

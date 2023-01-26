@@ -20,8 +20,6 @@ import { MockDotMessageService, MockDotRouterService } from '@dotcms/utils-testi
 import { DotPipesModule } from '@pipes/dot-pipes.module';
 import { DotKeyValue } from '@shared/models/dot-key-value-ng/dot-key-value-ng.model';
 
-
-
 import { DotAppsConfigurationDetailResolver } from './dot-apps-configuration-detail-resolver.service';
 import { DotAppsConfigurationDetailComponent } from './dot-apps-configuration-detail.component';
 

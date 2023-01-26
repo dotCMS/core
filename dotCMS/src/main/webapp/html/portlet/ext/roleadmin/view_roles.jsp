@@ -20,20 +20,24 @@
 		<dl>
 			<dt></dt>
 			<dd><ul id="addRoleErrorMessagesList"></ul></dd>
-			<dt><%= LanguageUtil.get(pageContext, "role") %>:</dt>
+			<dt>
+				<label for="roleName" class="required">
+					<%= LanguageUtil.get(pageContext, "role") %>
+				</label>
+			</dt>
 			<dd><input id="roleName" type="text" required="true" invalidMessage="Required." dojoType="dijit.form.ValidationTextBox" /></dd>
-			<dt><%= LanguageUtil.get(pageContext, "Key") %>:</dt>
+			<dt><label for="roleKey"><%= LanguageUtil.get(pageContext, "Key") %></label></dt>
 			<dd><input id="roleKey" type="text" dojoType="dijit.form.ValidationTextBox" /></dd>
-			<dt><%= LanguageUtil.get(pageContext, "Parent") %>:</dt>
+			<dt><%= LanguageUtil.get(pageContext, "Parent") %></dt>
 			<dd id="parentRoleWrapper"><div id="parentRoleDiv"></div>
 										<input type="hidden" id="parentRoleValue" value="0" />   </dd>
-			<dt><%= LanguageUtil.get(pageContext, "can-grant") %>:</dt>
+			<dt><%= LanguageUtil.get(pageContext, "can-grant") %></dt>
 			<dd>
 				<input id="editUsers" type="checkbox" value="true" dojoType="dijit.form.CheckBox" /> <%= LanguageUtil.get(pageContext, "users") %>
 				<input id="editPermissions" type="checkbox" value="true" dojoType="dijit.form.CheckBox" /> <%= LanguageUtil.get(pageContext, "Permissions") %>
 				<input id="editTabs" type="checkbox" value="true" dojoType="dijit.form.CheckBox" /><%= LanguageUtil.get(pageContext, "Tabs") %>
 			</dd>
-			<dt><%= LanguageUtil.get(pageContext, "Description") %>:</dt>
+			<dt> <label for="roleDescription"> <%= LanguageUtil.get(pageContext, "Description") %></label></dt>
 
 			<dd><textarea  dojoType="dijit.form.Textarea" style="width:200px;min-height:2px;max-height: 600px"
         name="roleDescription" required="true" invalidMessage="<%= LanguageUtil.get(pageContext, "Required") %>" id="roleDescription" ></textarea> </dd>
@@ -139,14 +143,14 @@ margin:0px auto;
 
     <table class="listingTable">
         <tr>
-            <td style="white-space: nowrap;"><label for="customPortletName"><%=LanguageUtil.get(pageContext, "custom.content.portlet.portletName")%>:
+            <td style="white-space: nowrap;"><label for="customPortletName"><%=LanguageUtil.get(pageContext, "custom.content.portlet.portletName")%>
             </label></td>
 
             <td><input dojoType="dijit.form.ValidationTextBox" type="text" required="true"
                 name="customPortletName" id="customPortletName" value="" onKeyUp="setPortletIdValue(this.getValue())"></td>
         </tr>
         <tr>
-            <td style="white-space: nowrap;"><label for="customPortletId"><%=LanguageUtil.get(pageContext, "custom.content.portlet.portletId")%>:
+            <td style="white-space: nowrap;"><label for="customPortletId"><%=LanguageUtil.get(pageContext, "custom.content.portlet.portletId")%>
             </label></td>
 
             <td><input dojoType="dijit.form.ValidationTextBox" type="text" required="true"
@@ -154,7 +158,7 @@ margin:0px auto;
         </tr>
         
         <tr>
-            <td style="white-space: nowrap;"><label for="customPortletBaseTypes"><%=LanguageUtil.get(pageContext, "custom.content.portlet.baseTypes")%>:
+            <td style="white-space: nowrap;"><label for="customPortletBaseTypes"><%=LanguageUtil.get(pageContext, "custom.content.portlet.baseTypes")%>
             </label></td>
 
             <td><input dojoType="dijit.form.TextBox" type="text"
@@ -167,7 +171,7 @@ margin:0px auto;
             <td style="white-space: nowrap;"><label for="customPortletContentTypes">
             <%=LanguageUtil.get(pageContext, "OR")%>&nbsp;
             
-            <%=LanguageUtil.get(pageContext, "com.dotcms.repackage.javax.portlet.title.content-types-angular")%>:
+            <%=LanguageUtil.get(pageContext, "com.dotcms.repackage.javax.portlet.title.content-types-angular")%>
             </label></td>
 
             <td><input dojoType="dijit.form.TextBox" type="text"
@@ -178,7 +182,7 @@ margin:0px auto;
         </tr>
         <tr>
             <td style="white-space: nowrap;">
-                <label><%=LanguageUtil.get(pageContext, "custom.content.portlet.dataViewMode")%>:</label></td>
+                <label><%=LanguageUtil.get(pageContext, "custom.content.portlet.dataViewMode")%></label></td>
             <td>
                 <input type="radio" dojoType="dijit.form.RadioButton" name="dataViewMode" id="radioOne" value="list" checked /></span>
                 <label for="radioOne"><%= LanguageUtil.get(pageContext, "custom.content.portlet.dataViewMode.list") %></label>&nbsp;
@@ -217,8 +221,8 @@ margin:0px auto;
 
 <%-- Begin Page Layout --%>
 <div style="display:none">
-	<div class="label"><%= LanguageUtil.get(pageContext, "key") %>:</div> <div id="roleKey" class="title"></div><br/>
-	<div class="label"><%= LanguageUtil.get(pageContext, "path") %>:</div> <div id="rolePath" class="title"></div>
+	<div class="label"><%= LanguageUtil.get(pageContext, "key") %></div> <div id="roleKey" class="title"></div><br/>
+	<div class="label"><%= LanguageUtil.get(pageContext, "path") %></div> <div id="rolePath" class="title"></div>
 </div>
 
 <!-- START Tool Bar -->
@@ -298,7 +302,7 @@ margin:0px auto;
 						<div class="view-roles__heading">
 							<h3 class="nameText" id="displayRoleName1"></h3>
 							<div class="inline-form">
-								<label for><%= LanguageUtil.get(pageContext, "grant") %>:</label>
+								<label for="grantUserSelect"><%= LanguageUtil.get(pageContext, "grant") %></label>
 								<span dojoType="dotcms.dojo.data.UsersReadStore" jsId="grantUsersStore" includeRoles="false"></span>
 								<select id="grantUserSelect" dojoType="dijit.form.FilteringSelect" store="grantUsersStore" searchDelay="300" pageSize="30" labelAttr="name" invalidMessage="<%= LanguageUtil.get(pageContext, "Invalid-option-selected") %>"></select>
 								<button dojoType="dijit.form.Button" onclick="grantUser()" type="button" iconClass="plusIcon"><%= LanguageUtil.get(pageContext, "grant") %></button>

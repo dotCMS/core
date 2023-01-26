@@ -61,7 +61,7 @@ const cacheCore = () => __awaiter(void 0, void 0, void 0, function* () {
     core.info(`Attempting to cache core using these locations:\n ${JSON.stringify(cacheLocations, null, 2)}`);
     const availableCacheKeysStr = core.getInput('available_cache_keys');
     core.info(`Available cache keys: ${availableCacheKeysStr}`);
-    const availableCacheKeys = JSON.parse(core.getInput('available_cache_keys'));
+    const availableCacheKeys = JSON.parse(availableCacheKeysStr);
     const cacheKeys = availableCacheKeys[buildEnv];
     core.info(`Cache keys: ${JSON.stringify(cacheKeys, null, 2)}`);
     const cacheMetadata = {
@@ -96,7 +96,7 @@ const cacheLocation = (cacheLocations, resolvedKeys, locationType) => __awaiter(
         const cacheId = yield cache.saveCache(resolvedLocations, cacheKey);
         core.info('Location contents');
         for (const location of resolvedLocations) {
-            ls(location);
+            du(location);
         }
         core.info(`Cache id found: ${cacheId}`);
         cacheResult = {
@@ -122,10 +122,10 @@ const cacheLocation = (cacheLocations, resolvedKeys, locationType) => __awaiter(
     }
     return Promise.resolve(cacheResult);
 });
-const ls = (location) => __awaiter(void 0, void 0, void 0, function* () {
+const du = (location) => __awaiter(void 0, void 0, void 0, function* () {
     core.info(`Listing folder ${location}`);
     try {
-        yield exec.exec('ls', ['-las', location]);
+        yield exec.exec('du', ['-hs', location]);
     }
     catch (err) {
         core.info(`Cannot list folder ${location}`);

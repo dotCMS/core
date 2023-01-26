@@ -24,8 +24,6 @@ import {
 } from '@portlets/shared/directives/dot-sidebar.directive';
 import { DotSidebarHeaderComponent } from '@shared/dot-sidebar-header/dot-sidebar-header.component';
 
-
-
 import { DotExperimentsCreateStore } from './store/dot-experiments-create-store';
 
 const messageServiceMock = new MockDotMessageService({

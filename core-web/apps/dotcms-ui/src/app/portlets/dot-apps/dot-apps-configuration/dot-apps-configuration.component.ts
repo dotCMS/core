@@ -12,7 +12,6 @@ import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router
 import { DotAlertConfirmService, DotMessageService, PaginatorService } from '@dotcms/data-access';
 import { dialogAction, DotApps, DotAppsSites } from '@dotcms/dotcms-models';
 
-
 import { DotAppsImportExportDialogComponent } from '../dot-apps-import-export-dialog/dot-apps-import-export-dialog.component';
 
 @Component({

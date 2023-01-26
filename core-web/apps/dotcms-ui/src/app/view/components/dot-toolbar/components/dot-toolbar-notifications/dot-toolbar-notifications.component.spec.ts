@@ -19,7 +19,6 @@ import { INotification } from '@shared/models/notifications';
 
 import { DotToolbarNotificationsComponent } from './dot-toolbar-notifications.component';
 
-
 @Component({
     selector: 'dot-dropdown-component',
     template: ''

@@ -9,12 +9,10 @@ import { AutoFocusModule } from 'primeng/autofocus';
 import { ButtonModule } from 'primeng/button';
 import { DynamicDialogRef } from 'primeng/dynamicdialog';
 
-
 import { DotMessageService } from '@dotcms/data-access';
 import { DotIconModule } from '@dotcms/ui';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 import { DotMessagePipeModule } from '@pipes/dot-message/dot-message-pipe.module';
-
 
 import { DotTemplateSelectorComponent } from './dot-template-selector.component';
 

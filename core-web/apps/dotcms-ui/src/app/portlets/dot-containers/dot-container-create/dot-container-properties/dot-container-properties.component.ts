@@ -1,7 +1,7 @@
 import { Subject } from 'rxjs';
 
 import { animate, style, transition, trigger } from '@angular/animations';
-import { Component, OnInit } from '@angular/core';
+import { AfterViewInit, Component, OnInit } from '@angular/core';
 import { FormArray, FormBuilder, FormControl, FormGroup, Validators } from '@angular/forms';
 
 import { MenuItem } from 'primeng/api';
@@ -28,7 +28,7 @@ import { DotRouterService } from '@services/dot-router/dot-router.service';
     styleUrls: ['./dot-container-properties.component.scss'],
     providers: [DotContainerPropertiesStore]
 })
-export class DotContainerPropertiesComponent implements OnInit {
+export class DotContainerPropertiesComponent implements OnInit, AfterViewInit {
     vm$ = this.store.vm$;
     editor: MonacoEditor;
     form: FormGroup;
@@ -88,6 +88,10 @@ export class DotContainerPropertiesComponent implements OnInit {
                     this.clearContentConfirmationModal(prevValue.maxContentlets || 1);
                 }
             });
+    }
+
+    ngAfterViewInit(): void {
+        this.store.loadContentTypesAndUpdateVisibility();
     }
 
     /**
@@ -165,7 +169,7 @@ export class DotContainerPropertiesComponent implements OnInit {
             ]);
             this.form.get('code').clearValidators();
             this.form.get('code').reset('');
-            this.store.loadContentTypesAndUpdateVisibility();
+            this.store.updateContentTypeVisibility(true);
         } else {
             this.form.get('code').setValidators(Validators.required);
             this.form.get('containerStructures').clearValidators();

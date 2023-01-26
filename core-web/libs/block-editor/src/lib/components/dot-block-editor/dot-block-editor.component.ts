@@ -18,22 +18,20 @@ import StarterKit, { StarterKitOptions } from '@tiptap/starter-kit';
 import {
     ActionsMenu,
     BubbleFormExtension,
-    BubbleImageTabviewFormExtension,
     BubbleLinkFormExtension,
-    ContentletBlock,
-    DEFAULT_LANG_ID,
     DotBubbleMenuExtension,
+    DEFAULT_LANG_ID,
     DotConfigExtension,
-    DotFloatingButton,
     DotTableCellExtension,
-    DotTableExtension,
     DotTableHeaderExtension,
+    DotTableExtension,
     DragHandler,
-    formatHTML,
-    ImageNode,
-    ImageUpload,
-    SetDocAttrStep
-} from '@dotcms/block-editor';
+    DotFloatingButton,
+    BubbleImageTabviewFormExtension,
+    ImageUpload
+} from '../../extensions';
+import { ContentletBlock, ImageNode } from '../../nodes';
+import { formatHTML, SetDocAttrStep } from '../../shared/utils';
 
 function toTitleCase(str) {
     return str.replace(/\p{L}+('\p{L}+)?/gu, function (txt) {
@@ -147,11 +145,11 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy {
             }),
             DotTableCellExtension(this.viewContainerRef),
             DotTableHeaderExtension(),
-            TableRow,
-            DotTableExtension()
+            TableRow
         ];
         const customExtensions: Map<string, AnyExtension> = new Map([
             ['contentlets', ContentletBlock(this.injector)],
+            ['table', DotTableExtension()],
             ['image', ImageNode]
         ]);
 

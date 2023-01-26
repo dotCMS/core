@@ -11,55 +11,15 @@
 }
 
 .wrapper {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 25rem;
     width: 100%;
-    padding: $spacing-4;
-    height: 400px;
-}
-
-.search-box {
-    padding: $spacing-4 $spacing-5;
-    overflow: auto;
-
-    &,
-    span,
-    .search {
-        width: 100%;
-    }
 }
 
 :host::ng-deep {
-    .p-tabview {
-        .p-tabview-nav li.p-highlight .p-tabview-nav-link {
-            border-bottom: 4px solid $brand-primary;
-        }
-
-        .p-tabview-nav {
-            padding: 0 $spacing-5;
-
-            li {
-                .p-tabview-nav-link {
-                    padding: $spacing-4 $spacing-5;
-
-                    &:focus {
-                        background: $white;
-                    }
-                }
-
-                &:hover .p-tabview-nav-link {
-                    background: rgba($brand-secondary_rgb, 0.12);
-                }
-            }
-        }
-        .p-tabview-title {
-            font-size: $dot-editor-size;
-            color: $brand-secondary;
-            font-weight: normal;
-            text-transform: unset;
-        }
-
-        .p-tabview-left-icon {
-            font-size: 1.5 * $dot-editor-size;
-            color: $brand-primary;
-        }
+    .p-tabview-nav {
+        padding: 0 $spacing-5;
     }
 }

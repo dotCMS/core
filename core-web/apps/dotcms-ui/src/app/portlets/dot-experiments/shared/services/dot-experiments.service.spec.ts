@@ -1,9 +1,14 @@
 import { createHttpFactory, HttpMethod, SpectatorHttp } from '@ngneat/spectator';
 
-import { DotExperiment, Variant } from '@dotcms/dotcms-models';
+import {
+    DefaultGoalConfiguration,
+    DotExperiment,
+    Goals,
+    GoalsLevels,
+    Variant
+} from '@dotcms/dotcms-models';
+import { DotExperimentsService } from '@portlets/dot-experiments/shared/services/dot-experiments.service';
 import { ExperimentMocks } from '@portlets/dot-experiments/test/mocks';
-
-import { DotExperimentsService } from './dot-experiments.service';
 
 const API_ENDPOINT = '/api/v1/experiments';
 const PAGE_Id = '123';
@@ -69,6 +74,23 @@ describe('DotExperimentsService', () => {
         spectator.service.removeVariant(EXPERIMENT_ID, variantIdToRemove).subscribe();
         spectator.expectOne(
             `${API_ENDPOINT}/${EXPERIMENT_ID}/variants/${variantIdToRemove}`,
+            HttpMethod.DELETE
+        );
+    });
+
+    it('should asign a goal to experiment ', () => {
+        const goal: Goals = {
+            ...DefaultGoalConfiguration
+        };
+        spectator.service.setGoal(EXPERIMENT_ID, goal).subscribe();
+        spectator.expectOne(`${API_ENDPOINT}/${EXPERIMENT_ID}`, HttpMethod.PATCH);
+    });
+
+    it('should delete a goal with experimentId', () => {
+        const goalType: GoalsLevels = 'primary';
+        spectator.service.deleteGoal(EXPERIMENT_ID, goalType).subscribe();
+        spectator.expectOne(
+            `${API_ENDPOINT}/${EXPERIMENT_ID}/goals/${goalType}`,
             HttpMethod.DELETE
         );
     });

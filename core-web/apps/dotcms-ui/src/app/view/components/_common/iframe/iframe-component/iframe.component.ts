@@ -1,4 +1,3 @@
-
 import { Subject } from 'rxjs';
 
 import {
@@ -14,8 +13,6 @@ import {
 } from '@angular/core';
 
 import { debounceTime, filter, takeUntil } from 'rxjs/operators';
-
-
 
 import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
 import { DotUiColorsService } from '@dotcms/app/api/services/dot-ui-colors/dot-ui-colors.service';

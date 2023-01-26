@@ -31,9 +31,6 @@ import { DotContainerSelectorLayoutComponent } from './dot-container-selector-la
 import { IframeOverlayService } from '../_common/iframe/service/iframe-overlay.service';
 import { SearchableDropDownModule } from '../_common/searchable-dropdown/searchable-dropdown.module';
 
-
-
-
 @Component({
     selector: 'dot-icon-button',
     template: ''

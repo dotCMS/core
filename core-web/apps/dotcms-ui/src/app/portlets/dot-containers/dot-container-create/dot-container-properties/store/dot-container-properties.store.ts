@@ -21,7 +21,6 @@ import {
 import { DotContainersService } from '@services/dot-containers/dot-containers.service';
 import { DotRouterService } from '@services/dot-router/dot-router.service';
 
-
 export interface DotContainerPropertiesState {
     showPrePostLoopInput: boolean;
     isContentTypeVisible: boolean;
@@ -64,9 +63,9 @@ export class DotContainerPropertiesStore extends ComponentStore<DotContainerProp
             )
             .subscribe((containerEntity: DotContainerEntity) => {
                 const { container, contentTypes } = containerEntity;
-                if (container && (container.preLoop || container.postLoop)) {
+                if (container && contentTypes?.length > 0) {
                     this.updatePrePostLoopAndContentTypeVisibility({
-                        showPrePostLoopInput: true,
+                        showPrePostLoopInput: !!container.preLoop || !!container.postLoop,
                         isContentTypeVisible: true,
                         container: container,
                         containerStructures: contentTypes ?? []
@@ -218,7 +217,6 @@ export class DotContainerPropertiesStore extends ComponentStore<DotContainerProp
             }),
             tap((contentTypes: DotCMSContentType[]) => {
                 this.updateContentTypes(contentTypes);
-                this.updateContentTypeVisibility(true);
             }),
             catchError((err: HttpErrorResponse) => {
                 this.dotHttpErrorManagerService.handle(err);

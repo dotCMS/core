@@ -18,7 +18,6 @@ import { tap } from 'rxjs/operators';
 
 import { DotCMSWorkflow, DotCMSWorkflowAction } from '@dotcms/dotcms-models';
 
-
 import { DotWorkflowsActionsSelectorFieldService } from './services/dot-workflows-actions-selector-field.service';
 
 interface DropdownEvent {

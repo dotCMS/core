@@ -24,7 +24,6 @@ import { DotContentCompareTableComponent } from './dot-content-compare-table.com
 
 import { DotTransformVersionLabelPipe } from '../../pipes/dot-transform-version-label.pipe';
 
-
 @Component({
     selector: 'dot-test-host-component',
     template:

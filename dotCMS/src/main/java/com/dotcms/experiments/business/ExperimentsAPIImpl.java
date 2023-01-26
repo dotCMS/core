@@ -50,6 +50,7 @@ import com.dotmarketing.portlets.rules.model.LogicalOperator;
 import com.dotmarketing.portlets.rules.model.ParameterModel;
 import com.dotmarketing.portlets.rules.model.Rule;
 import com.dotmarketing.portlets.rules.model.Rule.FireOn;
+import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.UtilMethods;
@@ -68,8 +69,11 @@ import java.util.SortedSet;
 import java.util.TreeSet;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
-
+import io.vavr.Lazy;
 public class ExperimentsAPIImpl implements ExperimentsAPI {
+
+    private Lazy<Boolean> isExperimentEnabled =
+            Lazy.of(() -> Config.getBooleanProperty("FEATURE_FLAG_EXPERIMENTS", false));
 
     final ExperimentsFactory factory = FactoryLocator.getExperimentsFactory();
     final PermissionAPI permissionAPI = APILocator.getPermissionAPI();
@@ -448,25 +452,22 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
             throws DotDataException {
 
         final String experimentId = experiment.getIdentifier();
-        final String variantName = getVariantName(experimentId);
+        String variantName = null;
 
         if(variantDescription.equals(ORIGINAL_VARIANT)) {
             DotPreconditions.isTrue(
                     experiment.trafficProportion().variants().stream().noneMatch((variant) ->
                             variant.description().equals(ORIGINAL_VARIANT)),
                     "Original Variant already created");
+            variantName = DEFAULT_VARIANT.name();
+        } else {
+            variantName = getVariantName(experimentId);
+            variantAPI.save(Variant.builder().name(variantName)
+                    .description(Optional.of(variantDescription)).build());
         }
 
-        variantAPI.save(Variant.builder().name(variantName)
-                .description(Optional.of(variantDescription)).build());
-
-        multiTreeAPI.copyVariantForPage(experiment.pageId(),
-                DEFAULT_VARIANT.name(), variantName);
-
         final Contentlet pageContentlet = contentletAPI
-                .findContentletByIdentifierAnyLanguage(experiment.pageId(), false);
-
-        copyPageAndItsContentForVariant(experiment, variantDescription, user, variantName, pageContentlet);
+        .findContentletByIdentifierAnyLanguage(experiment.pageId(), false);
 
         final HTMLPageAsset page = pageAssetAPI.fromContentlet(pageContentlet);
 
@@ -655,7 +656,8 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
 
     @Override
     public boolean isAnyExperimentRunning() throws DotDataException {
-        return !APILocator.getExperimentsAPI().getRunningExperiments().isEmpty();
+        return isExperimentEnabled.get() &&
+                !APILocator.getExperimentsAPI().getRunningExperiments().isEmpty();
     }
 
     private TreeSet<ExperimentVariant> redistributeWeights(final Set<ExperimentVariant> variants) {
