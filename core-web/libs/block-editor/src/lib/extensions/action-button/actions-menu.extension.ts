@@ -215,7 +215,7 @@ export const ActionsMenu = (viewContainerRef: ViewContainerRef) => {
         // Setting Inputs
         suggestionsComponent.instance.currentLanguage = lang;
         suggestionsComponent.instance.allowedContentTypes = allowedContentTypes;
-        suggestionsComponent.instance.allowedBlocks = allowedBlocks.length > 1 ? allowedBlocks : [];
+        suggestionsComponent.instance.allowedBlocks = allowedBlocks || [];
         suggestionsComponent.instance.onSelection = (item) => {
             const suggestionQuery = suggestionKey.getState(editor.view.state).query?.length || 0;
             range.to = range.to + suggestionQuery;
@@ -226,7 +226,7 @@ export const ActionsMenu = (viewContainerRef: ViewContainerRef) => {
         // To avoid calling the `onInit` hook before the Inputs are initialized
         suggestionsComponent.changeDetectorRef.detectChanges();
 
-        if (allowedBlocks.length <= 1 || allowedBlocks.includes(CONTENT_SUGGESTION_ID)) {
+        if (!allowedBlocks || allowedBlocks?.includes(CONTENT_SUGGESTION_ID)) {
             suggestionsComponent.instance.addContentletItem();
         }
 

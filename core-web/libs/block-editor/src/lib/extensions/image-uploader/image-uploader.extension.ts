@@ -50,7 +50,7 @@ export const ImageUpload = (injector: Injector, viewContainerRef: ViewContainerR
             function isImageBlockAllowed(): boolean {
                 const allowedBlocks: string[] = editor.storage.dotConfig.allowedBlocks;
 
-                return allowedBlocks.length > 1 ? allowedBlocks.includes('image') : true;
+                return allowedBlocks?.length > 1 ? allowedBlocks.includes('image') : true;
             }
 
             function setPlaceHolder(view: EditorView, position: number, id: string) {

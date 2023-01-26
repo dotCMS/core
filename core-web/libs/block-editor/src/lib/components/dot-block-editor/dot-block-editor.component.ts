@@ -6,7 +6,7 @@ import { debounceTime, takeUntil } from 'rxjs/operators';
 
 import { AnyExtension, Content, Editor } from '@tiptap/core';
 import CharacterCount, { CharacterCountStorage } from '@tiptap/extension-character-count';
-import { HeadingOptions, Level } from '@tiptap/extension-heading';
+import { Level } from '@tiptap/extension-heading';
 import { Highlight } from '@tiptap/extension-highlight';
 import { Link } from '@tiptap/extension-link';
 import Placeholder from '@tiptap/extension-placeholder';
@@ -50,12 +50,14 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy {
     @Input() customStyles: string;
     @Input() displayCountBar: boolean | string = true;
     @Input() charLimit: number;
-    @Input() content: Content;
+    @Input() content: Content = '';
 
     @Input() set allowedBlocks(blocks: string) {
+        const allowedBlocks = blocks ? blocks.replace(/ /g, '').split(',').filter(Boolean) : [];
+
         this._allowedBlocks = [
-            ...this._allowedBlocks,
-            ...(blocks ? blocks.replace(/ /g, '').split(',').filter(Boolean) : [])
+            'paragraph', //paragraph should be always.
+            ...allowedBlocks
         ];
     }
 
@@ -66,11 +68,16 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy {
     editor: Editor;
     subject = new Subject();
 
-    private _allowedBlocks = ['paragraph']; //paragraph should be always.
+    private _allowedBlocks: string[];
+    private _dotNodes: Map<string, AnyExtension> = new Map([
+        ['contentlets', ContentletBlock(this.injector)],
+        ['image', ImageNode]
+    ]);
+
     private destroy$: Subject<boolean> = new Subject<boolean>();
 
     get characterCount(): CharacterCountStorage {
-        return this.editor.storage.characterCount;
+        return this.editor?.storage.characterCount;
     }
 
     get showCharData() {
@@ -91,7 +98,11 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy {
 
     ngOnInit() {
         this.editor = new Editor({
-            extensions: this.setEditorExtensions()
+            extensions: [
+                ...this.getEditorExtensions(),
+                ...this.getEditorMarks(),
+                ...this.getEditorNodes()
+            ]
         });
 
         this.editor.on('create', () => this.updateChartCount());
@@ -113,55 +124,14 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy {
         this.editor.view.dispatch(tr);
     }
 
-    private setEditorExtensions(): AnyExtension[] {
-        const defaultExtensions: AnyExtension[] = [
-            DotConfigExtension({
-                lang: this.lang,
-                allowedContentTypes: this.allowedContentTypes,
-                allowedBlocks: this._allowedBlocks
-            }),
-            ActionsMenu(this.viewContainerRef),
-            DragHandler(this.viewContainerRef),
-            ImageUpload(this.injector, this.viewContainerRef),
-            BubbleLinkFormExtension(this.viewContainerRef),
-            DotBubbleMenuExtension(this.viewContainerRef),
-            BubbleFormExtension(this.viewContainerRef),
-            DotFloatingButton(this.injector, this.viewContainerRef),
-            BubbleImageTabviewFormExtension(this.viewContainerRef),
-            // Marks Extensions
-            Underline,
-            CharacterCount,
-            TextAlign.configure({ types: ['heading', 'paragraph', 'listItem', 'dotImage'] }),
-            Highlight.configure({ HTMLAttributes: { style: 'background: #accef7;' } }),
-            Link.configure({ autolink: false, openOnClick: false }),
-            Placeholder.configure({
-                placeholder: ({ node }) => {
-                    if (node.type.name === 'heading') {
-                        return `${toTitleCase(node.type.name)} ${node.attrs.level}`;
-                    }
+    private getEditorNodes(): AnyExtension[] {
+        const starterkit = this._allowedBlocks
+            ? StarterKit.configure(this.starterConfig())
+            : StarterKit;
 
-                    return 'Type "/" for commmands';
-                }
-            }),
-            DotTableCellExtension(this.viewContainerRef),
-            DotTableHeaderExtension(),
-            TableRow
-        ];
-        const customExtensions: Map<string, AnyExtension> = new Map([
-            ['contentlets', ContentletBlock(this.injector)],
-            ['table', DotTableExtension()],
-            ['image', ImageNode]
-        ]);
+        const customNodes = this.getAllowedDotNodes(this._allowedBlocks);
 
-        return [
-            ...defaultExtensions,
-            ...(this._allowedBlocks.length > 1
-                ? [
-                      StarterKit.configure(this.setStarterKitOptions()),
-                      ...this.setCustomExtensions(customExtensions)
-                  ]
-                : [StarterKit, ...customExtensions.values()])
-        ];
+        return [starterkit, ...customNodes];
     }
 
     /**
@@ -170,7 +140,7 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy {
      * ONLY if is not present will add an attribute with false to disable it. ex. {orderedList: false}.
      * Exception, headings fill the HeadingOptions or false.
      */
-    private setStarterKitOptions(): Partial<StarterKitOptions> {
+    private starterConfig(): Partial<StarterKitOptions> {
         // These are the keys that meter for the starter kit.
         const staterKitOptions = [
             'orderedList',
@@ -179,35 +149,108 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy {
             'codeBlock',
             'horizontalRule'
         ];
-        const headingOptions: HeadingOptions = { levels: [], HTMLAttributes: {} };
 
         //Heading types supported by default in the editor.
-        ['heading1', 'heading2', 'heading3', 'heading4', 'heading5', 'heading6'].forEach(
-            (heading) => {
-                if (this._allowedBlocks.includes(heading)) {
-                    headingOptions.levels.push(+heading.slice(-1) as Level);
-                }
-            }
-        );
+        const heading = ['heading1', 'heading2', 'heading3', 'heading4', 'heading5', 'heading6'];
+        const levels = heading
+            .filter((heading) => this._allowedBlocks.includes(heading))
+            .map((heading) => +heading.slice(-1) as Level);
+
+        const starterKit = staterKitOptions
+            .filter((option) => this._allowedBlocks.includes(option))
+            .reduce((options, option) => ({ ...options, [option]: false }), {});
 
         return {
-            heading: headingOptions.levels.length ? headingOptions : false,
-            ...staterKitOptions.reduce(
-                (object, item) => ({
-                    ...object,
-                    ...(this._allowedBlocks.includes(item) ? {} : { [item]: false })
-                }),
-                {}
-            )
+            heading: levels?.length ? { levels, HTMLAttributes: {} } : false,
+            ...starterKit
         };
     }
 
-    private setCustomExtensions(customExtensions: Map<string, AnyExtension>): AnyExtension[] {
+    /**
+     * Filter the dot Nodes that are allowed by the user
+     *
+     * @private
+     * @param {string[]} [list=[]]
+     * @return {*}  {AnyExtension[]}
+     * @memberof DotBlockEditorComponent
+     */
+    private getAllowedDotNodes(list: string[] = []): AnyExtension[] {
+        const whiteList = [];
+
+        if (!list.length) {
+            return [...this._dotNodes.values()];
+        }
+
+        for (const item of list) {
+            const node = this._dotNodes.get(item);
+            if (node) {
+                whiteList.push(node);
+            }
+        }
+
+        return whiteList;
+    }
+
+    /**
+     * Extensions that improve the user experience
+     *
+     * @private
+     * @return {*}
+     * @memberof DotBlockEditorComponent
+     */
+    private getEditorExtensions() {
         return [
-            ...(this._allowedBlocks.includes('contentlets')
-                ? [customExtensions.get('contentlets')]
-                : []),
-            ...(this._allowedBlocks.includes('dotImage') ? [customExtensions.get('dotImage')] : [])
+            DotConfigExtension({
+                lang: this.lang,
+                allowedContentTypes: this.allowedContentTypes,
+                allowedBlocks: this._allowedBlocks
+            }),
+            Placeholder.configure({ placeholder: this.placeholder }),
+            ActionsMenu(this.viewContainerRef),
+            DragHandler(this.viewContainerRef),
+            ImageUpload(this.injector, this.viewContainerRef),
+            BubbleLinkFormExtension(this.viewContainerRef),
+            DotBubbleMenuExtension(this.viewContainerRef),
+            BubbleFormExtension(this.viewContainerRef),
+            DotFloatingButton(this.injector, this.viewContainerRef),
+            DotTableCellExtension(this.viewContainerRef),
+            BubbleImageTabviewFormExtension(this.viewContainerRef),
+            DotTableHeaderExtension(),
+            DotTableExtension(),
+            TableRow,
+            CharacterCount
         ];
+    }
+
+    /**
+     * Editor Marks
+     *
+     * @private
+     * @return {*}
+     * @memberof DotBlockEditorComponent
+     */
+    private getEditorMarks() {
+        return [
+            Underline,
+            TextAlign.configure({ types: ['heading', 'paragraph', 'listItem', 'dotImage'] }),
+            Highlight.configure({ HTMLAttributes: { style: 'background: #accef7;' } }),
+            Link.configure({ autolink: false, openOnClick: false })
+        ];
+    }
+
+    /**
+     * Placeholder function
+     *
+     * @private
+     * @param {*} { node }
+     * @return {*}
+     * @memberof DotBlockEditorComponent
+     */
+    private placeholder({ node }) {
+        if (node.type.name === 'heading') {
+            return `${toTitleCase(node.type.name)} ${node.attrs.level}`;
+        }
+
+        return 'Type "/" for commmands';
     }
 }

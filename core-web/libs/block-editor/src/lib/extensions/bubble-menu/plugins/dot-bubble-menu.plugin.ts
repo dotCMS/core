@@ -416,7 +416,7 @@ export class DotBubbleMenuPluginView extends BubbleMenuView {
         let changeToOptions = parentNode.type.name === 'table' ? tableChangeToItems : changeToItems;
 
         // means the user restrict the allowed blocks with the prop "allowedBlocks"
-        if (allowedBlocks.length > 1) {
+        if (allowedBlocks?.length > 1) {
             changeToOptions = changeToOptions.filter((item) => allowedBlocks.includes(item.id));
         }
 
