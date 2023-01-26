@@ -203,22 +203,27 @@
 						<% } %>
 						<div class="fieldWrapper">
 							<div class="fieldName">
-								<span class="required"></span>
-								<%= LanguageUtil.get(pageContext, "Title") %>:&nbsp;
+								<label for="titleField" class="required">
+									<%= LanguageUtil.get(pageContext, "Title") %>
+								</label>
 							</div>
 							<div class="fieldValue"><input type="text" dojoType="dijit.form.TextBox" style="width:650px" name="title" id="titleField" value="<%= form.getTitle() %>" /></div>
 						</div>
 						<div class="fieldWrapper">
-							<div class="fieldName"><%= LanguageUtil.get(pageContext, "Description") %>:&nbsp;</div>
+							<div class="fieldName">
+								<label for="friendlyNameField"><%= LanguageUtil.get(pageContext, "Description") %></label>&nbsp;
+							</div>
 							<div class="fieldValue"><input type="text" dojoType="dijit.form.TextBox" style="width:650px" name="friendlyName" id="friendlyNameField" value="<%= form.getFriendlyName() %>" /></div>
 						</div>
 						<div class="fieldWrapper">
-							<div class="fieldName"><%= LanguageUtil.get(pageContext, "Max-Contents") %>:&nbsp;</div>
+							<div class="fieldName"><label for="maxContentlets"><%= LanguageUtil.get(pageContext, "Max-Contents") %></label> &nbsp;</div>
 							<div class="fieldValue"><input type="text" dojoType="dijit.form.TextBox" style="width:100px" maxlength="2" name="maxContentlets" id="maxContentlets" onchange="showHideCode()" value="<%= form.getMaxContentlets() %>" /></div>
 						</div>
 						<div id="preLoopDiv">
 							<div class="fieldWrapper">
-								<div class="fieldName"><%= LanguageUtil.get(pageContext, "Pre-Loop") %>:
+								<div class="fieldName"><label for="preLoopMask">
+									<%= LanguageUtil.get(pageContext, "Pre-Loop") %>
+								</label>
 								</div>
 								<div class="fieldValue">
 									<div id="preLoopEditorArea" style="border: 0px;max-width:900px">
@@ -251,8 +256,9 @@
 						<div id="multiCodeButtonDiv">
 							<div class="fieldWrapper">
 								<div class="fieldName">
-									<span class="required"></span>
-									<%= LanguageUtil.get(pageContext, "Code-Per-Content-Type") %>:
+									<label for="structureSelect" class="required">
+										<%= LanguageUtil.get(pageContext, "Code-Per-Content-Type") %>
+									</label>
 								</div>
 								<div class="fieldValue">
 									<div id="structureSelecttDiv" >
@@ -339,8 +345,9 @@
 						<div id="codeButtonDiv">
 							<div class="fieldWrapper">
 								<div class="fieldName">
-									<span class="required"></span>
-									<%= LanguageUtil.get(pageContext, "Code") %>:
+									<label for="codeMask" class="required">
+										<%= LanguageUtil.get(pageContext, "Code") %>
+									</label>
 								</div>
 								<div class="fieldValue">
 									<br/>
@@ -358,7 +365,11 @@
 						</div>
 						<div id="postLoopDiv">
 							<div class="fieldWrapper">
-								<div class="fieldName"><%= LanguageUtil.get(pageContext, "Post-Loop") %>:</div>
+								<div class="fieldName">
+									<label for="postLoopMask">
+										<%= LanguageUtil.get(pageContext, "Post-Loop") %>
+									</label>
+								</div>
 								<div class="fieldValue">
 									<br/>
 									<div id="postLoopEditorArea" style="border: 0px;">
@@ -381,7 +392,11 @@
 						</div>
 						<div id="notesDiv">
 							<div class="fieldWrapper">
-								<div class="fieldName"><%= LanguageUtil.get(pageContext, "Notes") %>:</div>
+								<div class="fieldName">
+									<label for="notes">
+										<%= LanguageUtil.get(pageContext, "Notes") %>
+									</label>
+								</div>
 								<div class="fieldValue"><textarea dojoType="dijit.form.Textarea" style="width:450px; min-height:150px" maxlength="255" name="notes" id="notes"><%= UtilMethods.isSet(form.getNotes()) ? form.getNotes() : "" %></textarea></div>
 							</div>
 							<script type="text/javascript">

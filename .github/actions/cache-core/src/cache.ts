@@ -50,7 +50,7 @@ export const cacheCore = async (): Promise<CacheMetadata> => {
 
   const availableCacheKeysStr = core.getInput('available_cache_keys')
   core.info(`Available cache keys: ${availableCacheKeysStr}`)
-  const availableCacheKeys: CacheKeys = JSON.parse(core.getInput('available_cache_keys'))
+  const availableCacheKeys: CacheKeys = JSON.parse(availableCacheKeysStr)
 
   const cacheKeys = availableCacheKeys[buildEnv as keyof CacheKeys]
   core.info(`Cache keys: ${JSON.stringify(cacheKeys, null, 2)}`)
@@ -94,7 +94,7 @@ const cacheLocation = async (
     const cacheId = await cache.saveCache(resolvedLocations, cacheKey)
     core.info('Location contents')
     for (const location of resolvedLocations) {
-      ls(location)
+      du(location)
     }
     core.info(`Cache id found: ${cacheId}`)
     cacheResult = {
@@ -120,10 +120,10 @@ const cacheLocation = async (
   return Promise.resolve(cacheResult)
 }
 
-const ls = async (location: string) => {
+const du = async (location: string) => {
   core.info(`Listing folder ${location}`)
   try {
-    await exec.exec('ls', ['-las', location])
+    await exec.exec('du', ['-hs', location])
   } catch (err) {
     core.info(`Cannot list folder ${location}`)
   }

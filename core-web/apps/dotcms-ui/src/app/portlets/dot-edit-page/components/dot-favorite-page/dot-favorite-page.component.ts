@@ -1,33 +1,34 @@
 import { Observable, Subject } from 'rxjs';
 
-import { AfterViewInit, Component, OnDestroy, OnInit } from '@angular/core';
-import { FormGroup, UntypedFormBuilder, Validators } from '@angular/forms';
+import { Component, OnInit, OnDestroy } from '@angular/core';
+import { FormGroup, Validators, UntypedFormBuilder } from '@angular/forms';
 
 import { DynamicDialogConfig, DynamicDialogRef } from 'primeng/dynamicdialog';
 
-import { map, startWith, takeUntil } from 'rxjs/operators';
+import { filter, map, startWith, takeUntil } from 'rxjs/operators';
 
-import { DotPageRenderState, DotPageState, DotRole } from '@dotcms/dotcms-models';
-import { generateDotFavoritePageUrl } from '@dotcms/utils';
+import { DotCMSContentlet } from '@dotcms/dotcms-models';
 
 import {
-    DotFavoritePageActionState,
     DotFavoritePageState,
-    DotFavoritePageStore
+    DotFavoritePageStore,
+    DotFavoritePageActionState
 } from './store/dot-favorite-page.store';
 
 export interface DotFavoritePageProps {
-    pageRenderedHtml?: string;
-    pageState: DotPageRenderState;
+    favoritePageUrl?: string;
+    isAdmin: boolean;
+    favoritePage?: DotCMSContentlet;
 }
 
 export interface DotFavoritePageFormData {
     currentUserRoleId: string;
+    inode?: string;
     thumbnail?: string;
     title: string;
     url: string;
     order: number;
-    permissions?: DotRole[];
+    permissions?: string[];
 }
 
 @Component({
@@ -36,9 +37,10 @@ export interface DotFavoritePageFormData {
     styleUrls: ['./dot-favorite-page.component.scss'],
     providers: [DotFavoritePageStore]
 })
-export class DotFavoritePageComponent implements OnInit, AfterViewInit, OnDestroy {
+export class DotFavoritePageComponent implements OnInit, OnDestroy {
     form: FormGroup;
     isFormValid$: Observable<boolean>;
+    timeStamp: string;
 
     vm$: Observable<DotFavoritePageState> = this.store.vm$;
 
@@ -51,29 +53,55 @@ export class DotFavoritePageComponent implements OnInit, AfterViewInit, OnDestro
         private store: DotFavoritePageStore
     ) {
         this.store.setInitialStateData({
-            isAdmin: this.config.data.page.pageState.user.admin,
-            imgWidth: this.config.data.page.pageState.viewAs.device?.cssWidth,
-            imgHeight: this.config.data.page.pageState.viewAs.device?.cssHeight,
-            pageRenderedHtml: this.config.data.page.pageRenderedHtml
+            favoritePageUrl: this.config.data.page.favoritePageUrl,
+            favoritePage: this.config.data.page.favoritePage
         });
     }
 
     ngOnInit(): void {
-        const { page }: { page: DotFavoritePageProps } = this.config.data;
+        // Needed to avoid browser to cache thumbnail img when reloaded, since it's fetched from the same URL
+        this.timeStamp = new Date().getTime().toString();
 
-        this.form = this.fb.group(this.setupForm(page.pageState));
-        this.isFormValid$ = this.form.valueChanges.pipe(
-            takeUntil(this.destroy$),
-            map(() => {
-                return this.form.valid;
-            }),
-            startWith(false)
-        );
-
-        this.store.currentUserRoleId$
+        this.store.formState$
             .pipe(takeUntil(this.destroy$))
-            .subscribe((currentUserRoleId: string) => {
-                this.form.get('currentUserRoleId').setValue(currentUserRoleId);
+            .subscribe((formStateData: DotFavoritePageFormData) => {
+                if (formStateData) {
+                    this.form = this.fb.group({
+                        currentUserRoleId: [formStateData?.currentUserRoleId, Validators.required],
+                        inode: [formStateData?.inode],
+                        thumbnail: [formStateData?.thumbnail, Validators.required],
+                        title: [formStateData?.title, Validators.required],
+                        url: [{ value: formStateData?.url, disabled: true }, Validators.required],
+                        order: [formStateData?.order, Validators.required],
+                        permissions: [formStateData?.permissions]
+                    });
+                    this.isFormValid$ = this.form.valueChanges.pipe(
+                        takeUntil(this.destroy$),
+                        map(() => {
+                            return this.form.valid;
+                        }),
+                        startWith(false)
+                    );
+
+                    requestAnimationFrame(() => {
+                        if (formStateData?.inode) {
+                            this.form.get('thumbnail').setValue(formStateData?.thumbnail);
+                        } else {
+                            this.setPreviewThumbnailListener();
+                        }
+                    });
+                }
+            });
+
+        this.store.renderThumbnail$
+            .pipe(
+                takeUntil(this.destroy$),
+                filter((renderThumbnail) => renderThumbnail)
+            )
+            .subscribe(() => {
+                requestAnimationFrame(() => {
+                    this.setPreviewThumbnailListener();
+                });
             });
 
         this.store.closeDialog$.pipe(takeUntil(this.destroy$)).subscribe((closeDialog: boolean) => {
@@ -93,20 +121,13 @@ export class DotFavoritePageComponent implements OnInit, AfterViewInit, OnDestro
             });
     }
 
-    ngAfterViewInit(): void {
-        const dotHtmlToImageElement = document.querySelector('dot-html-to-image');
-        dotHtmlToImageElement.addEventListener('pageThumbnail', (event: CustomEvent) => {
-            this.form.get('thumbnail').setValue(event.detail.file);
-        });
-    }
-
     /**
      * Handle save button
      *
      * @memberof DotFavoritePageComponent
      */
     onSave(): void {
-        this.store.saveFavoritePage(this.form.value);
+        this.store.saveFavoritePage(this.form.getRawValue());
     }
 
     /**
@@ -133,38 +154,14 @@ export class DotFavoritePageComponent implements OnInit, AfterViewInit, OnDestro
         this.destroy$.complete();
     }
 
-    private setupForm(pageState: DotPageRenderState) {
-        const params: DotFavoritePageFormData = {
-            currentUserRoleId: '',
-            thumbnail: '',
-            title: '',
-            url: '',
-            order: 1,
-            permissions: []
-        };
+    renderThumbnail(): void {
+        this.store.setRenderThumbnail(true);
+    }
 
-        if (pageState.state?.favoritePage) {
-            const { state }: { state: DotPageState } = pageState;
-
-            params.title = state.favoritePage.title;
-            params.order = state.favoritePage['order'];
-            params.thumbnail = state.favoritePage['screenshot'];
-            params.url = state.favoritePage.url;
-
-            this.store.setInodeStored(state.favoritePage.inode);
-        } else {
-            params.title = pageState.params.page?.title;
-            params.url = generateDotFavoritePageUrl(pageState);
-            params.order = 1;
-        }
-
-        return {
-            currentUserRoleId: ['', Validators.required],
-            thumbnail: [params.thumbnail, Validators.required],
-            title: [params.title, Validators.required],
-            url: [params.url, Validators.required],
-            order: [params.order, Validators.required],
-            permissions: []
-        };
+    private setPreviewThumbnailListener() {
+        const dotHtmlToImageElement = document.querySelector('dot-html-to-image');
+        dotHtmlToImageElement.addEventListener('pageThumbnail', (event: CustomEvent) => {
+            this.form.get('thumbnail').setValue(event.detail.file);
+        });
     }
 }

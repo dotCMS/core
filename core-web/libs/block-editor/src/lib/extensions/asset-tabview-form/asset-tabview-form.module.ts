@@ -8,6 +8,7 @@ import { DotAssetCardSkeletonComponent } from './components/dot-asset-search/com
 import { DotAssetCardComponent } from './components/dot-asset-search/components/dot-asset-card/dot-asset-card.component';
 import { DotAssetSearchComponent } from './components/dot-asset-search/dot-asset-search.component';
 import { DotExternalAssetComponent } from './components/dot-external-asset/dot-external-asset.component';
+import { DotUploadAssetComponent } from './components/dot-upload-asset/dot-upload-asset.component';
 
 import { PrimengModule } from '../../shared/primeng.module';
 import { DotImageService } from '../image-uploader/services/dot-image/dot-image.service';
@@ -20,7 +21,8 @@ import { DotImageService } from '../image-uploader/services/dot-image/dot-image.
         DotAssetCardComponent,
         DotAssetCardSkeletonComponent,
         DotExternalAssetComponent,
-        DotAssetSearchComponent
+        DotAssetSearchComponent,
+        DotUploadAssetComponent
     ],
     providers: [DotImageService],
     exports: [AssetTabviewFormComponent, DotAssetSearchComponent]
