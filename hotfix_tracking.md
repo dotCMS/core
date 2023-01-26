@@ -187,3 +187,5 @@ This maintenance release includes the following code fixes:
 109. https://github.com/dotCMS/core/issues/21735 : Content with 2 Relationship Fields of Same Type Also Shows Non-Available Languages #21735
 110. https://github.com/dotCMS/core/issues/22323 : Relationships will get cleared if you Save a contentlet before they are loaded #22323
 111. https://github.com/dotCMS/core/issues/22549 : Relationship is not showing the right parent #22549
+112. https://github.com/dotCMS/core/issues/22667 : Cannot change date or time fields to never on an existing contentlet #22667
+

@@ -23,6 +23,7 @@ import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.ContentTypeBuilder;
 import com.dotcms.contenttype.model.type.DotAssetContentType;
+import com.dotcms.contenttype.transform.field.LegacyFieldTransformer;
 import com.dotcms.datagen.*;
 import com.dotcms.datagen.TestDataUtils.TestFile;
 import com.dotcms.exception.ExceptionUtil;
@@ -7247,5 +7248,37 @@ public class ContentletAPITest extends ContentletBaseTest {
 
     }
 
+    @DataProvider
+    public static Object[] testCasesDateTime() {
+        return new Object[]{" +0000", "00:00 +0000"};
+    }
 
+    /**
+     * Given scenario: Contentlet with a {@link DateTimeField} where it was initially saved with
+     * correct value, and then it was tried to be cleared.
+     * Expected result: the field should be properly cleared
+     *
+     */
+    @Test
+    @UseDataProvider("testCasesDateTime")
+    public void clearDateTimeFieldValue(final String testCase) throws Exception {
+        // create content type with JSON field
+        ContentType typeWithDateTimeField = new ContentTypeDataGen().nextPersisted();
+        com.dotcms.contenttype.model.field.Field dateTimeField = new FieldDataGen()
+                .type(DateTimeField.class)
+                .contentTypeId(typeWithDateTimeField.id())
+                .defaultValue(null)
+                .nextPersisted();
+
+        Contentlet contentletWithDate = new ContentletDataGen(typeWithDateTimeField)
+                .next();
+
+        contentletAPI.setContentletProperty(contentletWithDate,
+                new LegacyFieldTransformer(dateTimeField).asOldField(), testCase);
+
+        // Save the content
+        contentletWithDate = contentletAPI.checkin(contentletWithDate, user, Boolean.TRUE);
+
+        assertEquals(null, contentletWithDate.getStringProperty(typeWithDateTimeField.variable()));
+    }
 }
