@@ -184,4 +184,4 @@ This maintenance release includes the following code fixes:
 106. https://github.com/dotCMS/core/issues/21832 : [Static Push] Removing a Page removes all files related to the page, not only the page #21832
 107. https://github.com/dotCMS/core/issues/21929 : PullRelatedField is not pulling the content in any order #21929
 108. https://github.com/dotCMS/core/issues/22236 : Pagination not working when querying related content by Rest API #22236
-109. 
+109. https://github.com/dotCMS/core/issues/21735 : Content with 2 Relationship Fields of Same Type Also Shows Non-Available Languages #21735

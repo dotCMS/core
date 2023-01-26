@@ -238,7 +238,7 @@
         }
 
 		//Function used to render language id
-		function <%= relationJsName %>_lang(o) {
+		function <%= relationJsName %>_lang(o, preId) {
 			if (o !== null && dijit.byId("langcombo")) {
 			    var contentletLangCode = '<%= langAPI.getLanguageCodeAndCountry(contentlet.getLanguageId(),null)%>';
                 var currentLanguageIndex = getCurrentLanguageIndex(o);
@@ -247,7 +247,7 @@
                 var anchorValue = "";
                 var imgLangName = '';
 
-                result = '<div class="relationLanguageFlag" id="' + o.id + '"><div value="' + currentLanguageIndex + '" data-dojo-type="dijit/form/Select">';
+				result = '<div class="relationLanguageFlag" data-id="' + preId + '_' + o.id +'" id="' + o.id + '"><div value="' + currentLanguageIndex + '" data-dojo-type="dijit/form/Select">';
 
 				for(var sibIndex = 0; sibIndex < o['siblings'].length ; sibIndex++){
 					langImg = o['siblings'][sibIndex]['langCode'];
@@ -528,7 +528,7 @@
 
 		}
 
-        function createLangTd(row, item) {
+		function createLangTd(row, item, preId) {
             var langTD = document.createElement("td");
             row.appendChild(langTD);
             // displays the publish/unpublish/archive status of the content and language flag, if multiple languages exists.
@@ -536,8 +536,9 @@
                 if(dijit.byId("langcombo")){
                     langTD.style.whiteSpace="nowrap";
                     langTD.style.textAlign = 'right';
-                    langTD.innerHTML = <%= relationJsName %>_lang(item);
-                    setTimeout(function () { dojo.parser.parse(item.id); }, 0);
+					langTD.innerHTML = <%= relationJsName %>_lang(item, preId);
+					setTimeout(function () { dojo.parser.parse(document.querySelector('[data-id="' + preId + '_'+ item.id +'"]')
+					); }, 0);
                 }
             <%}%>
         }
@@ -568,12 +569,12 @@
                 var titleCell = row.insertCell (row.cells.length);
                 titleCell.innerHTML = <%= relationJsName%>WriteLinkTitle (item);
 
-                createLangTd(row, item);
+				createLangTd(row, item, '<%= relationJsName %>');
             } else {
                 <%= relationJsName %>_showFields.forEach(function(fieldName) {
                     var fieldValue = '';
                     if (fieldName === 'languageId') {
-                        createLangTd(row, item);
+						createLangTd(row, item, '<%= relationJsName %>');
                     } else if (fieldName === 'titleImage') {
                         createImageCell(row, <%= relationJsName %>_specialFields[fieldName]);
                     } else {
