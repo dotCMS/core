@@ -467,10 +467,17 @@ public class LoginFactory {
                 user.setLastLoginDate(new java.util.Date());
                 APILocator.getUserAPI().save(user, APILocator.getUserAPI().getSystemUser(), false);
 
-                SecurityLogger.logInfo(LoginFactory.class, "User password was rehash with id: " + user.getUserId());
+                
+                String radix = user.getPassword().substring(user.getPassword().indexOf(":i=") + 3);
+                radix = radix.substring(0, radix.indexOf(":"));
+                int hashes = Integer.parseInt(radix, 16);
+                
+                SecurityLogger.logInfo(LoginFactory.class, "User " + user.getEmailAddress() + " password was re-hashed " +hashes + " times" );
             }
-        } catch (PasswordException | DuplicateUserException | DotDataException | DotSecurityException e) {
+        } catch (Exception e) {
             Logger.error(LoginFactory.class, "Error validating password from userId: " + user.getUserId(), e);
+            SecurityLogger.logInfo(LoginFactory.class,"An invalid attempt to login as " + user.getEmailAddress() + " has been made :" + e);
+
             return false;
         }
 
