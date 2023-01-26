@@ -4,7 +4,6 @@ package com.dotcms.analytics.listener;
 import com.dotcms.analytics.AnalyticsAPI;
 import com.dotcms.analytics.app.AnalyticsApp;
 import com.dotcms.analytics.helper.AnalyticsHelper;
-import com.dotcms.analytics.model.AccessToken;
 import com.dotcms.analytics.model.AnalyticsAppProperty;
 import com.dotcms.api.system.event.SystemEventType;
 import com.dotcms.api.system.event.message.MessageSeverity;
@@ -66,12 +65,12 @@ public final class AnalyticsAppListener implements EventSubscriber<AppSecretSave
     @Override
     public void notify(final AppSecretSavedEvent event) {
         if (Objects.isNull(event)) {
-            Logger.info(this, "Missing event, aborting");
+            Logger.debug(this, "Missing event, aborting");
             return;
         }
 
         if (StringUtils.isBlank(event.getHostIdentifier())) {
-            Logger.info(this, "Missing event's host id, aborting");
+            Logger.debug(this, "Missing event's host id, aborting");
             return;
         }
 
