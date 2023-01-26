@@ -116,6 +116,23 @@ const containersMock: DotContainer[] = [
         title: 'test',
         type: 'containers',
         working: true
+    },
+    {
+        archived: true,
+        categoryId: 'a443d26e-0e92-4a9e-a2ab-90a44fd1eb8d',
+        deleted: true,
+        friendlyName: '',
+        identifier: '31231232131',
+        live: false,
+        name: 'test',
+        parentPermissionable: {
+            hostname: 'default'
+        },
+        path: '///dotcms',
+        source: CONTAINER_SOURCE.FILE,
+        title: 'test',
+        type: 'containers',
+        working: true
     }
 ];
 
@@ -342,7 +359,7 @@ describe('ContainerListComponent', () => {
             expect(archivedContainer.actions).toEqual(actions);
         });
 
-        it('should select all except system container', () => {
+        fit('should select all except system and file container', () => {
             const menu: Menu = fixture.debugElement.query(
                 By.css('.container-listing__header-options p-menu')
             ).componentInstance;

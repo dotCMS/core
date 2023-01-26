@@ -432,8 +432,8 @@ export class DotContainerListStore extends ComponentStore<DotContainerListState>
      * @returns boolean
      * @memberof DotContainerListComponent
      */
-    private isContainerAsFile({ identifier }: DotContainer): boolean {
-        return identifier.includes('/');
+    private isContainerAsFile({ path }: DotContainer): boolean {
+        return !!path;
     }
 
     /**
@@ -444,7 +444,7 @@ export class DotContainerListStore extends ComponentStore<DotContainerListState>
     editContainer(container: DotContainer): void {
         this.isContainerAsFile(container)
             ? this.dotSiteBrowserService
-                  .setSelectedFolder(container.identifier)
+                  .setSelectedFolder(container.path)
                   .pipe(take(1))
                   .subscribe(() => {
                       this.dotRouterService.goToSiteBrowser();
