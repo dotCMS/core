@@ -628,7 +628,7 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
       Map<String, Field> varNamesCantDelete = new HashMap<>();
 
       for (Field oldField : oldFields) {
-        if (!newFields.stream().anyMatch(f -> f.id().equals(oldField.id()))) {
+        if (!newFields.stream().anyMatch(f -> oldField.id().equals(f.id()))) {
           if (!oldField.fixed() && !oldField.readOnly()) {
             Logger.info(this, "Deleting no longer needed Field: " + oldField.name() + " with ID: " + oldField.id()
                 + ", from Content Type: " + contentTypeToSave.name());

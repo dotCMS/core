@@ -1,21 +1,41 @@
 <dot-form-dialog
     *ngIf="vm$ | async as vm"
     [saveButtonDisabled]="(isFormValid$ | async) === false"
+    [saveButtonLoading]="vm.loading"
     (cancel)="onCancel()"
     (save)="onSave()"
     data-testId="dialogForm"
 >
     <form class="p-fluid" *ngIf="form" [formGroup]="form" data-testId="form">
         <div class="fields-col">
-            <div class="field" data-testId="thumbnailField">
-                <label class="p-label-input-required" for="previewThumbnail">{{
-                    'preview' | dm
-                }}</label>
-                <dot-html-to-image
-                    [value]="vm.pageRenderedHtml"
-                    [width]="vm.imgWidth"
-                    [height]="vm.imgHeight"
-                ></dot-html-to-image>
+            <div class="dot-favorite-dialog__thumbnailField" data-testId="thumbnailField">
+                <ng-template [ngIf]="vm.renderThumbnail" [ngIfElse]="existingFavoritePage">
+                    <dot-html-to-image
+                        *ngIf="vm.renderThumbnail"
+                        [value]="vm.pageRenderedHtml"
+                        [width]="vm.imgWidth"
+                        [height]="vm.imgHeight"
+                    ></dot-html-to-image>
+                </ng-template>
+
+                <ng-template #existingFavoritePage>
+                    <div
+                        class="dot-favorite-dialog__image-container"
+                        data-testId="favoriteCardImageContainer"
+                    >
+                        <img
+                            [alt]="vm.formState.title"
+                            [src]="vm.formState.thumbnail + '?' + timeStamp"
+                        />
+                    </div>
+                    <button
+                        class="p-button-secondary dot-favorite-dialog__image-reload"
+                        [label]="'favoritePage.dialog.reload.image.button' | dm"
+                        (click)="renderThumbnail()"
+                        data-testid="dotFavoriteDialogReloadThumbnailButton"
+                        pButton
+                    ></button>
+                </ng-template>
             </div>
         </div>
         <div class="fields-col">
@@ -63,6 +83,7 @@
                     [options]="vm.roleOptions"
                     formControlName="permissions"
                     optionLabel="name"
+                    optionValue="id"
                     appendTo="body"
                 ></p-multiSelect>
             </div>
@@ -71,9 +92,9 @@
 
     <button
         class="p-button-secondary dot-favorite-dialog-footer__delete-button"
-        [disabled]="!vm.inodeStored"
+        [disabled]="!vm.formState?.inode"
         [label]="'favoritePage.dialog.delete.button' | dm"
-        (click)="onDelete(vm.inodeStored)"
+        (click)="onDelete(vm.formState?.inode)"
         footerActions
         data-testid="dotFavoriteDialogDeleteButton"
         pButton

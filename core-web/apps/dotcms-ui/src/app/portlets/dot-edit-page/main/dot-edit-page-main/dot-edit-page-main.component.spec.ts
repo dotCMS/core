@@ -143,7 +143,7 @@ describe('DotEditPageMainComponent', () => {
                                 url: '/about-us/index'
                             }
                         },
-                        queryParams: of({ editPageTab: 'a', variationName: 'b', experimentId: 'c' })
+                        queryParams: of({ editPageTab: 'a', variantName: 'b', experimentId: 'c' })
                     }
                 },
 
