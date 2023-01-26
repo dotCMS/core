@@ -1,7 +1,23 @@
 name: Core
 on:
   pull_request:
+    paths:
+      - '.cicd/**'
+      - '.github/**'
+      - 'cicd/**'
+      - 'docker/**'
+      - 'dotCMS/**'
+      - 'pom.xml'
+      - '!docker/dotcms-compose-examples/**'
   push:
+    paths:
+      - '.cicd/**'
+      - '.github/**'
+      - 'cicd/**'
+      - 'docker/**'
+      - 'dotCMS/**'
+      - 'pom.xml'
+      - '!docker/dotcms-compose-examples/**'
     branches:
       - master
       - release-*
@@ -9,50 +25,27 @@ env:
   TESTMO_ENABLED: false
 
 jobs:
-  repo-metadata-job:
-    name: Get Github Metadata
+  build-core-job:
+    name: Build Core
     runs-on: ubuntu-latest
+    if: success()
+    env:
+      DEBUG: true
     outputs:
+      cache_metadata: ${{ steps.cache-core.outputs.cache_metadata }}
       commit_message: ${{ steps.get-commit-message.outputs.commit_message }}
-      module_found: ${{ steps.module-matcher.outputs.module_found }}
     steps:
       - id: fetch-core
         name: Fetch Core repo
         uses: actions/checkout@v3
-        with:
-          fetch-depth: 0
       - id: read-cicd-local-env
         name: Read CICD local library
         run: source ${GITHUB_WORKSPACE}/cicd/local-env.sh
-      - id: module-matcher
-        name: Module Matcher
-        uses: ./.github/actions/module-matcher
-        with:
-          build_id: ${{ env.BUILD_ID }}
-          current: core
       - id: get-commit-message
         name: Get commit message
         uses: dotcms/get-commit-message@master
         with:
           accessToken: ${{ secrets.GITHUB_TOKEN }}
-
-  build-core-job:
-    name: Build Core
-    runs-on: ubuntu-latest
-    needs: repo-metadata-job
-    if: needs.repo-metadata-job.outputs.module_found == 'true'
-    env:
-      DEBUG: true
-    outputs:
-      cache_metadata: ${{ steps.cache-core.outputs.cache_metadata }}
-    steps:
-      - id: fetch-core
-        name: Fetch Core repo
-        uses: actions/checkout@v3
-      - id: read-cicd-local-env
-        name: Read CICD local library
-        run: source ${GITHUB_WORKSPACE}/cicd/local-env.sh
-        if: success()
       - name: Set up JDK 11
         uses: actions/setup-java@v3.9.0
         with:
@@ -69,7 +62,7 @@ jobs:
         uses: ./.github/actions/core-cache-locator
         with:
           build_env: ${{ env.BUILD_ENV }}
-          cache_build_output: false
+          cache_build_output: true
         if: success()
       - id: cache-core
         name: Cache Core
@@ -82,7 +75,7 @@ jobs:
   run-unit-tests-job:
     name: Run Unit Tests
     runs-on: ubuntu-latest
-    needs: [repo-metadata-job, build-core-job]
+    needs: [build-core-job]
     if: success()
     outputs:
       tests_results_status: ${{ steps.run-unit-tests.outputs.tests_results_status }}
@@ -99,7 +92,6 @@ jobs:
       - id: read-cicd-local-env
         name: Read CICD local library
         run: source ${GITHUB_WORKSPACE}/cicd/local-env.sh
-        if: success()
       - id: restore-core
         name: Restore Core Cache
         uses: ./.github/actions/restore-core
@@ -111,7 +103,7 @@ jobs:
         uses: ./.github/actions/run-unit-tests
         with:
           build_env: ${{ env.BUILD_ENV }}
-          tests: ${{ needs.repo-metadata-job.outputs.commit_message }}
+          tests: ${{ needs.build-core-job.outputs.commit_message }}
       - id: unit-tests-comment
         name: Unit Test Comment
         uses: EnricoMi/publish-unit-test-result-action@v1
@@ -169,7 +161,6 @@ jobs:
       - id: read-cicd-local-env
         name: Read CICD local library
         run: source ${GITHUB_WORKSPACE}/cicd/local-env.sh
-        if: success()
       - id: github-init-test-results
         name: Github init tests results
         uses: ./.github/actions/publish-test-results
@@ -195,7 +186,7 @@ jobs:
   run-integration-tests-job:
     name: Run Integration Tests
     runs-on: ubuntu-latest
-    needs: [repo-metadata-job, build-core-job, integration-tests-thread-setup-job]
+    needs: [build-core-job, integration-tests-thread-setup-job]
     strategy:
       fail-fast: false
       matrix:
@@ -221,7 +212,6 @@ jobs:
       - id: read-cicd-local-env
         name: Read CICD local library
         run: source ${GITHUB_WORKSPACE}/cicd/local-env.sh
-        if: success()
       - id: restore-core
         name: Restore Core Cache
         uses: ./.github/actions/restore-core
@@ -239,12 +229,12 @@ jobs:
       - id: run-integration-tests
         name: Run Integration Tests
         uses: ./.github/actions/run-integration-tests
-        timeout-minutes: 180
+        timeout-minutes: 210
         with:
           build_env: ${{ env.BUILD_ENV }}
           db_type: ${{ matrix.db_type }}
           license_key: ${{ secrets.DOTCMS_LICENSE }}
-          tests: ${{ needs.repo-metadata-job.outputs.commit_message }}
+          tests: ${{ needs.build-core-job.outputs.commit_message }}
         if: success()
       - id: integration-tests-comment
         name: Integration Test Comment
@@ -308,7 +298,7 @@ jobs:
       - id: read-cicd-local-env
         name: Read CICD local library
         run: source ${GITHUB_WORKSPACE}/cicd/local-env.sh
-        if: success() && ${{ env.TESTMO_ENABLED }} == 'true'
+        if: ${{ env.TESTMO_ENABLED }} == 'true'
 #      - id: complete
 #        name: Post submit complete
 #        if: ${{ env.TESTMO_ENABLED }} == 'true'
@@ -325,7 +315,6 @@ jobs:
   postman-tests-thread-setup-job:
     name: Postman tests matrix setup
     runs-on: ubuntu-latest
-    needs: repo-metadata-job
     outputs:
       testmo_run_id: ${{ steps.thread-setup.outputs.testmo_run_id }}
       built_image_name: ${{ steps.build-dotcms-image.outputs.built_image_name }}
@@ -336,7 +325,6 @@ jobs:
       - id: read-cicd-local-env
         name: Read CICD local library
         run: source ${GITHUB_WORKSPACE}/cicd/local-env.sh
-        if: success()
       - id: docker-login
         name: Login to GHCR
         uses: docker/login-action@v2
@@ -377,7 +365,7 @@ jobs:
     name: Run Postman Tests
     runs-on: ubuntu-latest
     needs: postman-tests-thread-setup-job
-    if: success() && needs.repo-metadata-job.outputs.module_found == 'true'
+    if: success()
     outputs:
       tests_results_status: ${{ steps.run-postman-tests.outputs.tests_results_status }}
       tests_results_skip_report: ${{ steps.run-postman-tests.outputs.tests_results_skip_report }}
@@ -398,7 +386,11 @@ jobs:
       - id: read-cicd-local-env
         name: Read CICD local library
         run: source ${GITHUB_WORKSPACE}/cicd/local-env.sh
-        if: success()
+      - id: get-commit-message
+        name: Get commit message
+        uses: dotcms/get-commit-message@master
+        with:
+          accessToken: ${{ secrets.GITHUB_TOKEN }}
       - id: docker-login
         name: Login to GHCR
         uses: docker/login-action@v2
@@ -413,7 +405,7 @@ jobs:
         with:
           built_image_name: ${{ needs.postman-tests-thread-setup-job.outputs.built_image_name }}
           license_key: ${{ secrets.DOTCMS_LICENSE }}
-          tests: ${{ needs.repo-metadata-job.outputs.commit_message }}
+          tests: ${{ steps.get-commit-message.outputs.commit_message }}
           parallel_collection: ${{ matrix.parallel_collection }}
           export_report: ${{ env.PUBLISH_MODE == 'ALL' || env.PUBLISH_MODE == 'RESULTS' }}
       - id: postman-tests-comment

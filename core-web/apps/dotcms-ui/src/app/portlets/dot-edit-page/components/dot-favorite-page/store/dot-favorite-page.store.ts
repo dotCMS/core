@@ -16,7 +16,6 @@ import {
     DotWorkflowActionsFireService,
     DotContentletService
 } from '@dotcms/data-access';
-
 import {
     DotRole,
     DotCMSContentlet,
