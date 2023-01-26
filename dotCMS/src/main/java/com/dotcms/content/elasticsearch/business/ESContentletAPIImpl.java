@@ -6162,7 +6162,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 if(((String) value).trim().length()>0) {
                     try {
                         final String trimmedValue = ((String) value).trim();
-                        if(trimmedValue.equals("+0000") || trimmedValue.equals("00:00 +0000")) {
+                        if(trimmedValue.equals("+0000") || trimmedValue.equals("00:00 +0000") || trimmedValue.equals("00:00")) {
                             contentlet.setDateProperty(field.getVelocityVarName(),
                                     null);
                         } else {
