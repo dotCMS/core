@@ -52,6 +52,7 @@ import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.EmailUtils;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.SecurityLogger;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
 import com.liferay.portal.NoSuchUserException;
@@ -582,15 +583,13 @@ public class UserManagerImpl extends PrincipalBean implements UserManager {
         User user = null;
 
         try {
-            if (byEmailAddress) {
-                user = UserUtil.findByC_EA(companyId, login);
-            } else {
-                user = UserUtil.findByC_U(companyId, login);
-            }
+            user =  byEmailAddress 
+                        ? UserUtil.findByC_EA(companyId, login) 
+                        : UserUtil.findByC_U(companyId, login);
+            
         } catch (NoSuchUserException nsue) {
-
-            Logger.error(this, "Could not find the user: " + nsue.getMessage() + ", return DNE");
-
+            SecurityLogger.logInfo(this.getClass(),"An invalid attempt to login as " + login + " has been made.  No such User.");
+            delayRequest(1);
             return Authenticator.DNE;
         }
 
