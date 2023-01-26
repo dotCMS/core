@@ -549,12 +549,14 @@ public class UserManagerImpl extends PrincipalBean implements UserManager {
             if (!Validator.isEmailAddress(login)) {
 
                 Logger.error(this, "Invalid email throwing a UserEmailAddressException: " + login);
+                delayRequest(1);
                 throw new UserEmailAddressException();
             }
         } else {
             if (Validator.isNull(login)) {
 
                 Logger.error(this, "User can not be null, throwing UserIdException: " + login);
+                delayRequest(1);
                 throw new UserIdException();
             }
         }
@@ -562,10 +564,11 @@ public class UserManagerImpl extends PrincipalBean implements UserManager {
         if (Validator.isNull(password)) {
 
             Logger.error(this, "Password can not be null, throwing UserPasswordException");
+            delayRequest(1);
             throw new UserPasswordException(UserPasswordException.PASSWORD_INVALID);
         }
 
-        int authResult = Authenticator.FAILURE;
+        int authResult ;
 
         if (byEmailAddress) {
 
@@ -706,7 +709,7 @@ public class UserManagerImpl extends PrincipalBean implements UserManager {
      */
     private void delayRequest(int defaultSeed) {
         int seed = defaultSeed;
-        String delayStrat = Config.getStringProperty(WebKeys.AUTH_FAILED_ATTEMPTS_DELAY_STRATEGY, "pow");
+        String delayStrat = Config.getStringProperty(WebKeys.AUTH_FAILED_ATTEMPTS_DELAY_STRATEGY, "TIME_MILLS:2000");
         String[] stratParams = delayStrat.split(":");
         DelayStrategy strategy;
         try {

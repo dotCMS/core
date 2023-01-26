@@ -247,6 +247,7 @@ import org.junit.runners.Suite.SuiteClasses;
         com.dotcms.content.elasticsearch.business.ESMappingAPITest.class,
         org.apache.velocity.runtime.parser.node.SimpleNodeTest.class,
         com.liferay.portal.ejb.UserLocalManagerTest.class,
+        com.liferay.portal.ejb.UserManagerImplTest.class,
         com.liferay.portal.ejb.UserUtilTest.class,
         com.liferay.util.LocaleUtilTest.class,
         com.dotcms.languagevariable.business.LanguageVariableAPITest.class,
