@@ -45,7 +45,7 @@ export interface GoalCondition {
     value: string;
 }
 
-interface RangeOfDateAndTime {
+export interface RangeOfDateAndTime {
     startDate: Date;
     endDate: Date;
 }

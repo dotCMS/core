@@ -16,6 +16,7 @@ import {
     Goals,
     GoalsLevels,
     LoadingState,
+    RangeOfDateAndTime,
     Status,
     StepStatus,
     TrafficProportion,
@@ -64,6 +65,14 @@ export class DotExperimentsConfigurationStore extends ComponentStore<DotExperime
         stepStatusSidebar.experimentStep === ExperimentSteps.GOAL ? stepStatusSidebar : null
     );
 
+    // Scheduling Step //
+    readonly scheduling$: Observable<RangeOfDateAndTime> = this.select(({ experiment }) =>
+        experiment.scheduling ? experiment.scheduling : null
+    );
+    readonly schedulingStatus$ = this.select(this.state$, ({ stepStatusSidebar }) =>
+        stepStatusSidebar.experimentStep === ExperimentSteps.SCHEDULING ? stepStatusSidebar : null
+    );
+
     // Updaters
     readonly setComponentStatus = this.updater((state, status: LoadingState) => ({
         ...state,
@@ -104,6 +113,11 @@ export class DotExperimentsConfigurationStore extends ComponentStore<DotExperime
     readonly setGoals = this.updater((state, goals: Goals) => ({
         ...state,
         experiment: { ...state.experiment, goals }
+    }));
+
+    readonly setScheduling = this.updater((state, scheduling: RangeOfDateAndTime) => ({
+        ...state,
+        experiment: { ...state.experiment, scheduling }
     }));
 
     // Effects
@@ -315,6 +329,31 @@ export class DotExperimentsConfigurationStore extends ComponentStore<DotExperime
         }
     );
 
+    readonly setSelectedScheduling = this.effect(
+        (setScheduling$: Observable<{ scheduling: RangeOfDateAndTime; experimentId: string }>) => {
+            return setScheduling$.pipe(
+                tap(() =>
+                    this.setSidebarStatus({
+                        status: Status.SAVING,
+                        experimentStep: ExperimentSteps.SCHEDULING
+                    })
+                ),
+                switchMap((data) => {
+                    return this.dotExperimentsService
+                        .setScheduling(data.experimentId, data.scheduling)
+                        .pipe(
+                            tapResponse(
+                                (experiment) => {
+                                    this.setScheduling(experiment.scheduling);
+                                },
+                                (error: HttpErrorResponse) => throwError(error)
+                            )
+                        );
+                })
+            );
+        }
+    );
+
     readonly vm$: Observable<ConfigurationViewModel> = this.select(
         this.state$,
         this.isLoading$,
@@ -342,6 +381,21 @@ export class DotExperimentsConfigurationStore extends ComponentStore<DotExperime
                 status
             })
         );
+
+    readonly schedulingStepVm$: Observable<{
+        experimentId: string;
+        scheduling: RangeOfDateAndTime;
+        status: StepStatus;
+    }> = this.select(
+        this.getExperimentId,
+        this.scheduling$,
+        this.schedulingStatus$,
+        (experimentId, scheduling, status) => ({
+            experimentId,
+            scheduling,
+            status
+        })
+    );
 
     constructor(
         private readonly dotExperimentsService: DotExperimentsService,
