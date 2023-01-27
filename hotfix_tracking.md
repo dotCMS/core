@@ -193,3 +193,4 @@ This maintenance release includes the following code fixes:
 115. https://github.com/dotCMS/core/issues/22763 : Copy folder duplicates content on pages #22763
 116. https://github.com/dotCMS/core/issues/22850 : Catch Throwable in PublisherJobQueue #22850
 117. https://github.com/dotCMS/core/issues/22910 : Multilingual content related slows down edit content screen #22910
+118. https://github.com/dotCMS/core/issues/23009 : Add a way to set categories on workflow #23009
