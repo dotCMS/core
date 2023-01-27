@@ -1,10 +1,13 @@
 import { createServiceFactory, mockProvider, SpectatorService, SpyObject } from '@ngneat/spectator';
 import { of, throwError } from 'rxjs';
 
+import { HttpErrorResponse } from '@angular/common/http';
 import { Title } from '@angular/platform-browser';
 import { ActivatedRoute } from '@angular/router';
 
 import { MessageService } from 'primeng/api';
+
+import { take } from 'rxjs/operators';
 
 import { DotMessageService } from '@dotcms/data-access';
 import {
@@ -25,8 +28,6 @@ import {
 import { DotExperimentsService } from '@portlets/dot-experiments/shared/services/dot-experiments.service';
 import { ExperimentMocks, GoalsMock } from '@portlets/dot-experiments/test/mocks';
 import { DotHttpErrorManagerService } from '@services/dot-http-error-manager/dot-http-error-manager.service';
-import { take } from 'rxjs/operators';
-import { HttpErrorResponse } from '@angular/common/http';
 
 const EXPERIMENT_ID = ExperimentMocks[0].id;
 const PAGE_ID = ExperimentMocks[0].pageId;

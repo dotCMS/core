@@ -5,21 +5,23 @@ import {
     Spectator,
     SpyObject
 } from '@ngneat/spectator';
+import { of } from 'rxjs';
 
-import { DotExperimentsConfigurationSchedulingAddComponent } from './dot-experiments-configuration-scheduling-add.component';
+import { MessageService } from 'primeng/api';
+import { ButtonModule } from 'primeng/button';
+import { Calendar } from 'primeng/calendar';
+import { CardModule } from 'primeng/card';
+import { Sidebar } from 'primeng/sidebar';
+
+import { DotMessageService } from '@dotcms/data-access';
+import { ExperimentSteps } from '@dotcms/dotcms-models';
+import { MockDotMessageService } from '@dotcms/utils-testing';
 import { DotExperimentsConfigurationStore } from '@portlets/dot-experiments/dot-experiments-configuration/store/dot-experiments-configuration-store';
 import { DotExperimentsService } from '@portlets/dot-experiments/shared/services/dot-experiments.service';
-import { Sidebar } from 'primeng/sidebar';
-import { ButtonModule } from 'primeng/button';
-import { CardModule } from 'primeng/card';
-import { MessageService } from 'primeng/api';
-import { DotMessageService } from '@dotcms/data-access';
-import { MockDotMessageService } from '@dotcms/utils-testing';
 import { ExperimentMocks } from '@portlets/dot-experiments/test/mocks';
-import { of } from 'rxjs';
-import { ExperimentSteps } from '@dotcms/dotcms-models';
-import { Calendar } from 'primeng/calendar';
 import { DotHttpErrorManagerService } from '@services/dot-http-error-manager/dot-http-error-manager.service';
+
+import { DotExperimentsConfigurationSchedulingAddComponent } from './dot-experiments-configuration-scheduling-add.component';
 
 const messageServiceMock = new MockDotMessageService({
     Done: 'Done',
@@ -102,6 +104,7 @@ describe('DotExperimentsConfigurationSchedulingAddComponent', () => {
         expect(store.closeSidebar).toHaveBeenCalledTimes(1);
     });
 
-    //TODO: Will be tested once defined the rules.
+    //TODO: Will be tested once defined the rules of edit.
+    // eslint-disable-next-line
     xit('should not submit the form when invalid', () => {});
 });

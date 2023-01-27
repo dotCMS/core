@@ -5,23 +5,23 @@ import {
     Spectator,
     SpyObject
 } from '@ngneat/spectator';
+import { of } from 'rxjs';
 
+import { ConfirmationService, MessageService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
 import { Card, CardModule } from 'primeng/card';
 
 import { DotMessageService } from '@dotcms/data-access';
+import { ExperimentSteps } from '@dotcms/dotcms-models';
 import { MockDotMessageService } from '@dotcms/utils-testing';
+import { DotExperimentsConfigurationSchedulingAddComponent } from '@portlets/dot-experiments/dot-experiments-configuration/components/dot-experiments-configuration-scheduling-add/dot-experiments-configuration-scheduling-add.component';
+import { DotExperimentsConfigurationStore } from '@portlets/dot-experiments/dot-experiments-configuration/store/dot-experiments-configuration-store';
+import { DotExperimentsService } from '@portlets/dot-experiments/shared/services/dot-experiments.service';
+import { ExperimentMocks } from '@portlets/dot-experiments/test/mocks';
+import { DotDynamicDirective } from '@portlets/shared/directives/dot-dynamic.directive';
+import { DotHttpErrorManagerService } from '@services/dot-http-error-manager/dot-http-error-manager.service';
 
 import { DotExperimentsConfigurationSchedulingComponent } from './dot-experiments-configuration-scheduling.component';
-import { DotExperimentsConfigurationStore } from '@portlets/dot-experiments/dot-experiments-configuration/store/dot-experiments-configuration-store';
-import { ExperimentMocks } from '@portlets/dot-experiments/test/mocks';
-import { DotExperimentsService } from '@portlets/dot-experiments/shared/services/dot-experiments.service';
-import { ConfirmationService, MessageService } from 'primeng/api';
-import { DotDynamicDirective } from '@portlets/shared/directives/dot-dynamic.directive';
-import { DotExperimentsConfigurationSchedulingAddComponent } from '@portlets/dot-experiments/dot-experiments-configuration/components/dot-experiments-configuration-scheduling-add/dot-experiments-configuration-scheduling-add.component';
-import { of } from 'rxjs';
-import { DotHttpErrorManagerService } from '@services/dot-http-error-manager/dot-http-error-manager.service';
-import { ExperimentSteps } from '@dotcms/dotcms-models';
 
 const messageServiceMock = new MockDotMessageService({
     'experiments.configure.scheduling.name': 'Scheduling',

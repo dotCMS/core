@@ -50,7 +50,6 @@ export class DotExperimentsConfigurationSchedulingComponent {
      * @memberof DotExperimentsConfigurationSchedulingComponent
      */
     setupSchedule() {
-        debugger;
         this.dotExperimentsConfigurationStore.openSidebar(ExperimentSteps.SCHEDULING);
     }
 
