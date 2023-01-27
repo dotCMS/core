@@ -10,7 +10,6 @@ import { ConfirmationService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
 import { Sidebar, SidebarModule } from 'primeng/sidebar';
 
-import { DEFAULT_LANG_ID } from '@dotcms/block-editor';
 import {
     DotAlertConfirmService,
     DotContentTypeService,
@@ -22,6 +21,8 @@ import { CoreWebService } from '@dotcms/dotcms-js';
 import { CoreWebServiceMock, MockDotMessageService, mockResponseView } from '@dotcms/utils-testing';
 import { DotMessagePipeModule } from '@pipes/dot-message/dot-message-pipe.module';
 import { DotBlockEditorSidebarComponent } from '@portlets/dot-edit-page/components/dot-block-editor-sidebar/dot-block-editor-sidebar.component';
+
+const DEFAULT_LANG_ID = 1;
 
 @Component({
     selector: 'dot-block-editor',

@@ -1,7 +1,6 @@
 import { Component, EventEmitter, Input, Output, ViewChild } from '@angular/core';
 
-import { DotMenuItem, SuggestionListComponent } from '@dotcms/block-editor';
-
+import { DotMenuItem, SuggestionListComponent } from '../../../../shared';
 @Component({
     selector: 'dot-suggestion-page',
     templateUrl: './suggestion-page.component.html',

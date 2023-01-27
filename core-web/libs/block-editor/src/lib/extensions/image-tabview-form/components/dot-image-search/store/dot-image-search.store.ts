@@ -5,14 +5,15 @@ import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs/internal/Observable';
 import { map, mergeMap, tap, withLatestFrom } from 'rxjs/operators';
 
-import {
-    DotLanguageService,
-    ESOrderDirection,
-    Languages,
-    queryEsParams,
-    SearchService
-} from '@dotcms/block-editor';
 import { DotCMSContentlet } from '@dotcms/dotcms-models';
+
+import {
+    SearchService,
+    Languages,
+    DotLanguageService,
+    queryEsParams,
+    ESOrderDirection
+} from '../../../../../shared';
 
 const DEFAULT_LANG_ID = 1;
 

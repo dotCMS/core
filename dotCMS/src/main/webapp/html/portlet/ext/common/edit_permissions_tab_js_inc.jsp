@@ -115,17 +115,20 @@
             //dwr.util.useLoadingMessage();
             dojo.style(dijit.byId('savingPermissionsDialog').closeButtonNode, 'visibility', 'hidden');
             loadPermissions();
-      }
+      	}
       catch(err){
           //console.log("error",err)
       }
     }
-    setTimeout(loadPermissions, 0);
-    setTimeout(loadPermissions, 500);
-    setTimeout(loadPermissions, 1000);
     var permissionsLoaded = false;
 	//Initialization
 	dojo.addOnLoad(preloadingPermissions);
+
+	require(['dojo/_base/window', 'dojo/on'], function(baseWin, on) {
+		on(baseWin.global, 'load', function() {
+			loadPermissions();
+		});
+	});
 
     
     
@@ -141,7 +144,7 @@
 			dojo.byId('assetPermissionsMessageWrapper').innerHTML = newAssetPermissionsMsg;
 			return;
 		}
-
+		
 		dojo.style('loadingPermissionsAccordion', { display: '' });
 		dojo.style('assetPermissionsWrapper', { display: 'none' });
 
