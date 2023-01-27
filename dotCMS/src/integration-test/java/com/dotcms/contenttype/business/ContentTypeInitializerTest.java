@@ -34,25 +34,25 @@ public class ContentTypeInitializerTest extends IntegrationTestBase {
         final ContentTypeAPI contentTypeAPI = APILocator.getContentTypeAPI(APILocator.systemUser());
 
         ContentType contentType = Try.of(()-> APILocator.getContentTypeAPI(APILocator.systemUser())
-                .find("dotFavoritePage")).getOrNull();
+                .find(ContentTypeInitializer.FAVORITE_PAGE_VAR_NAME)).getOrNull();
 
         if (null != contentType) {
-
             contentTypeAPI.delete(contentType);
         }
 
         new ContentTypeInitializer().init();
 
         contentType = Try.of(()->APILocator.getContentTypeAPI(APILocator.systemUser())
-                .find("dotFavoritePage")).getOrNull();
+                .find(ContentTypeInitializer.FAVORITE_PAGE_VAR_NAME)).getOrNull();
 
-        Assert.assertNotNull("The content type dotFavoritePage should be not null", contentType);
+        Assert.assertNotNull("The content type dotFavoritePage shouldn't be null", contentType);
 
-        //we make sure the url field is unique
-        Assert.assertTrue(contentType.fieldMap().get("url").unique());
+        Assert.assertTrue("CT : "+contentType, contentType.fieldMap().get("order").indexed());
+        //we make sure the url field isn't unique
+        Assert.assertFalse("CT : "+contentType,contentType.fieldMap().get("url").unique());
 
         //we make sure there is no content type using the legacy name
         Assert.assertNull(Try.of(()->APILocator.getContentTypeAPI(APILocator.systemUser())
-                .find("favoritePage")).getOrNull());
+                .find(ContentTypeInitializer.LEGACY_FAVORITE_PAGE_VAR_NAME)).getOrNull());
     }
 }

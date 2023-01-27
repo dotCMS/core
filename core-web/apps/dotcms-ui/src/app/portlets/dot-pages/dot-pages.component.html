@@ -34,11 +34,12 @@
         <ng-template [ngIf]="vm.favoritePages?.items?.length !== 0" [ngIfElse]="emptyState">
             <dot-pages-card
                 *ngFor="let item of vm.favoritePages.items"
-                [imageUri]="item.screenshot"
+                [imageUri]="item.screenshot + '?' + timeStamp"
                 [title]="item.title"
                 [url]="item.url"
                 [ownerPage]="item.owner === vm.loggedUserId"
-                (click)="goToUrl(item.url)"
+                (edit)="editFavoritePage(item)"
+                (goTo)="goToUrl(item.url)"
             ></dot-pages-card>
         </ng-template>
 

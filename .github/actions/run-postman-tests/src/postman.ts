@@ -153,6 +153,10 @@ const startDeps = async () => {
     await warmUpAnalytics()
   }
 
+  await execCmd(toCommand('docker', ['pull', 'ghcr.io/dotcms/elasticsearch:7.9.1'], dockerFolder))
+  await execCmd(toCommand('docker', ['pull', 'ghcr.io/dotcms/postgres:13-alpine'], dockerFolder))
+  await execCmd(toCommand('docker', ['pull', builtImageName], dockerFolder))
+
   execCmdAsync(
     toCommand(
       'docker-compose',
@@ -204,7 +208,7 @@ const normalize = (provided: string): string => {
  * @returns an overall ivew of the tests results
  */
 const runPostmanCollections = async (): Promise<PostmanTestsResult> => {
-  await waitFor(150, `DotCMS instance`)
+  await waitFor(120, `DotCMS instance`)
 
   // Executes Postman tests
   core.info(`

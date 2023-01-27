@@ -265,7 +265,11 @@
 				<input type="hidden" name="fileName" value="" />
 						<div class="form-horizontal content-search__import-content-form">
 							<dl>
-								<dt><%= LanguageUtil.get(pageContext, "Structure-to-Import") %>:</dt>
+								<dt>
+									<label for="structuresSelect" class="required">
+										<%= LanguageUtil.get(pageContext, "Structure-to-Import") %>
+									</label>
+								</dt>
 								<dd>
 									<select dojoType="dijit.form.FilteringSelect" name="structure" id="structuresSelect" onchange="structureChanged()" value="<%= UtilMethods.isSet(form.getStructure()) ? form.getStructure() : "" %>" >
 										<%
@@ -280,7 +284,11 @@
 							</dl>
 							<div id="importDetails">
 								<dl>
-									<dt><%= LanguageUtil.get(pageContext, "Language-of-the-Contents-to-Import") %>:</dt>
+									<dt>
+										<label for="languageSelect" class="required">
+											<%= LanguageUtil.get(pageContext, "Language-of-the-Contents-to-Import") %>
+										</label>
+									</dt>
 									<dd>
 										<select dojoType="dijit.form.FilteringSelect" name="language" id="languageSelect" onchange="languageChanged()" value="<%= UtilMethods.isSet(form.getLanguage()) ? form.getLanguage() : "" %>" >
 										<%
@@ -292,7 +300,7 @@
 										%>
 										</select>
 										<div id="multiLingualImportNotes" style="display: none">
-											<%= LanguageUtil.get(pageContext, "Note") %>:
+											<%= LanguageUtil.get(pageContext, "Note") %>
 											<p>
 												<%= LanguageUtil.get(pageContext, "In-order-to-import-correctly-a-multilingual-file") %>:
 												<ol>
@@ -305,7 +313,7 @@
 									</dd>
 								</dl>
 								<dl>
-									<dt><%= LanguageUtil.get(pageContext, "Key-Fields") %>:</dt>
+									<dt><%= LanguageUtil.get(pageContext, "Key-Fields") %></dt>
 									<dd>
 										<table class="content-search__key-fields">
 											<tbody id="import_fields_table"> </tbody>
@@ -314,7 +322,9 @@
 								</dl>
 								<dl>
 									<dt>
-										<%= LanguageUtil.get(pageContext, "Workflow-Action")%>
+										<label for="workflowActionId">
+											<%= LanguageUtil.get(pageContext, "Workflow-Action")%>
+										</label>
 									</dt>
 									<dd>
 										<select dojoType="dijit.form.FilteringSelect" name="workflowActionId" id="workflowActionId" required="false" store="actionStore" value="<%= UtilMethods.isSet(form.getWorkflowActionId()) ? form.getWorkflowActionId() : "" %>" >
@@ -322,7 +332,11 @@
 									</dd>
 								</dl>
 								<dl>
-									<dt><%= LanguageUtil.get(pageContext, "File-to-Import-CSV-File-Required") %>:</dt>
+									<dt>
+										<label for="file" class="required">
+											<%= LanguageUtil.get(pageContext, "File-to-Import-CSV-File-Required") %>
+										</label>
+									</dt>
 									<dd>
 										<input type="file" name="file" id="file" />
 									</dd>
