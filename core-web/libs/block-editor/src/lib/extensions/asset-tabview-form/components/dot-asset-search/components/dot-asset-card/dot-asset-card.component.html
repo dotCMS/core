@@ -7,14 +7,7 @@
                 [alt]="contentlet?.fileName || contentlet?.title"
             />
             <ng-template #icon>
-                <dot-contentlet-icon
-                    [icon]="
-                        contentlet?.baseType !== 'FILEASSET'
-                            ? contentlet?.contentTypeIcon
-                            : contentlet?.__icon__
-                    "
-                    [size]="'94px'"
-                >
+                <dot-contentlet-icon [icon]="contentletIcon()" [size]="'94px'">
                 </dot-contentlet-icon>
             </ng-template>
         </div>

@@ -13,13 +13,12 @@ import { bubbleAssetTabviewFormPlugin } from './plugins/bubble-asset-tabview-for
 
 export const BUBBLE_IMAGE_TABVIEW_FORM_PLUGIN_KEY = new PluginKey('bubble-image-form');
 
-type Asset = 'image' | 'video';
 declare module '@tiptap/core' {
     interface Commands<ReturnType> {
         AssetTabviewForm: {
-            openAssetForm: (asset?: Asset) => ReturnType;
+            openAssetForm: (asset?: EditorAssetTypes) => ReturnType;
             closeAssetForm: () => ReturnType;
-            setMedia: (mediaType, payload) => ReturnType;
+            setMedia: (mediaType: EditorAssetTypes, payload) => ReturnType;
         };
     }
 }

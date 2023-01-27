@@ -30,7 +30,7 @@ import {
     BubbleAssetTabviewFormExtension,
     ImageUpload
 } from '../../extensions';
-import { ContentletBlock, ImageNode, CustomNode } from '../../nodes';
+import { ContentletBlock, ImageNode, VideoNode } from '../../nodes';
 import { formatHTML, SetDocAttrStep } from '../../shared/utils';
 
 function toTitleCase(str) {
@@ -146,7 +146,7 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy {
             DotTableCellExtension(this.viewContainerRef),
             DotTableHeaderExtension(),
             TableRow,
-            CustomNode
+            VideoNode
         ];
         const customExtensions: Map<string, AnyExtension> = new Map([
             ['contentlets', ContentletBlock(this.injector)],

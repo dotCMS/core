@@ -10,7 +10,7 @@ declare module '@tiptap/core' {
     }
 }
 
-export const CustomNode = Node.create({
+export const VideoNode = Node.create({
     name: 'video',
 
     addAttributes() {
