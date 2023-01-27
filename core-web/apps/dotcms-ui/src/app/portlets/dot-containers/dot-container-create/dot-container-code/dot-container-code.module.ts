@@ -5,6 +5,7 @@ import { ReactiveFormsModule } from '@angular/forms';
 import { ButtonModule } from 'primeng/button';
 import { DialogService, DynamicDialogModule } from 'primeng/dynamicdialog';
 import { MenuModule } from 'primeng/menu';
+import { SkeletonModule } from 'primeng/skeleton';
 import { TabViewModule } from 'primeng/tabview';
 
 import { DotTextareaContentModule } from '@components/_common/dot-textarea-content/dot-textarea-content.module';
@@ -26,7 +27,8 @@ import { DotContentEditorComponent } from './dot-container-code.component';
         ButtonModule,
         DynamicDialogModule,
         DotAddVariableModule,
-        DotIconModule
+        DotIconModule,
+        SkeletonModule
     ],
     exports: [DotContentEditorComponent],
     providers: [DialogService]

@@ -11,21 +11,21 @@ import { FloatingMenuPluginProps } from '@tiptap/extension-floating-menu';
 import { Level } from '@tiptap/extension-heading';
 import Suggestion, { SuggestionOptions, SuggestionProps } from '@tiptap/suggestion';
 
+import { ActionButtonComponent } from './action-button.component';
+
 import {
-    CONTENT_SUGGESTION_ID,
-    findParentNode,
-    FloatingActionsKeydownProps,
-    FloatingActionsPlugin,
-    FloatingActionsProps,
-    FLOATING_ACTIONS_MENU_KEYBOARD,
-    ItemsType,
-    NodeTypes,
     SuggestionPopperModifiers,
     SuggestionsCommandProps,
-    SuggestionsComponent
-} from '@dotcms/block-editor';
-
-import { ActionButtonComponent } from './action-button.component';
+    SuggestionsComponent,
+    FloatingActionsProps,
+    FLOATING_ACTIONS_MENU_KEYBOARD,
+    CONTENT_SUGGESTION_ID,
+    ItemsType,
+    FloatingActionsKeydownProps,
+    FloatingActionsPlugin,
+    findParentNode
+} from '../../shared';
+import { NodeTypes } from '../bubble-menu/models';
 
 declare module '@tiptap/core' {
     interface Commands<ReturnType> {
