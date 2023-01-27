@@ -1,7 +1,5 @@
 package com.dotmarketing.portlets.workflows.ajax;
 
-import com.fasterxml.jackson.databind.DeserializationFeature;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.Role;
 import com.dotmarketing.business.RoleAPI;
@@ -10,20 +8,19 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.portlets.workflows.model.WorkflowAction;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
+import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
+import org.apache.commons.beanutils.BeanUtils;
+
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import org.apache.commons.beanutils.BeanUtils;
+import java.io.IOException;
+import java.util.*;
 
 @Deprecated
 public class WfRoleStoreAjax extends WfBaseAction {
@@ -245,6 +242,17 @@ public class WfRoleStoreAjax extends WfBaseAction {
         m.put( "items", list );
 
         return mapper.writerWithDefaultPrettyPrinter().writeValueAsString( m );
+    }
+
+    /**
+     * Security check demanded by Sonar
+     * We register all the allowed methods down here
+     *
+     * @return allowed method names
+     */
+    @Override
+    protected Set<String> getAllowedCommands() {
+        return Set.of( "rolesToJson", "assignable", "action" );
     }
 
 }
