@@ -7,7 +7,6 @@ import static com.dotcms.util.DotPreconditions.checkArgument;
 import com.dotcms.cluster.ClusterUtils;
 import com.dotcms.content.elasticsearch.util.RestHighLevelClientProvider;
 import com.dotcms.enterprise.cluster.ClusterFactory;
-import com.dotcms.repackage.org.dts.spell.utils.FileUtils;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.exception.DotDataException;
@@ -25,15 +24,18 @@ import com.google.common.collect.ImmutableMap;
 import com.rainerhahnekamp.sneakythrow.Sneaky;
 import io.vavr.Lazy;
 import io.vavr.control.Try;
+import java.io.BufferedOutputStream;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.net.URL;
 import java.nio.file.Files;
+import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -1252,7 +1254,12 @@ public class ESIndexAPI {
 		}
 		// zip file extraction
 		outFile = File.createTempFile(SNAPSHOT_PREFIX, null, toDirectory);
-		FileUtils.copyStreamToFile(outFile, inputFile, null);
+
+		Files.copy(
+				inputFile,
+				outFile.toPath(),
+				StandardCopyOption.REPLACE_EXISTING);
+
 		ZipFile zipIn = new ZipFile(outFile);
 		return uploadSnapshot(zipIn, toDirectory.getAbsolutePath(), cleanRepository);
 	}
