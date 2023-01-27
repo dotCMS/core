@@ -18,16 +18,16 @@ import { debounceTime, skip, takeUntil, throttleTime } from 'rxjs/operators';
 import { DotCMSContentlet } from '@dotcms/dotcms-models';
 
 // services
-import { DotImageSearchStore } from './store/dot-image-search.store';
+import { DotAssetSearchStore } from './store/dot-asset-search.store';
 
 @Component({
-    selector: 'dot-image-search',
-    templateUrl: './dot-image-search.component.html',
-    styleUrls: ['./dot-image-search.component.scss'],
-    providers: [DotImageSearchStore],
+    selector: 'dot-asset-search',
+    templateUrl: './dot-asset-search.component.html',
+    styleUrls: ['./dot-asset-search.component.scss'],
+    providers: [DotAssetSearchStore],
     changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class DotImageSearchComponent implements OnInit, OnDestroy, AfterViewInit {
+export class DotAssetSearchComponent implements OnInit, OnDestroy, AfterViewInit {
     @ViewChild('input') input!: ElementRef;
     @Output() addImage = new EventEmitter<DotCMSContentlet>();
 
@@ -40,7 +40,7 @@ export class DotImageSearchComponent implements OnInit, OnDestroy, AfterViewInit
 
     private destroy$: Subject<boolean> = new Subject<boolean>();
 
-    constructor(private store: DotImageSearchStore) {}
+    constructor(private store: DotAssetSearchStore) {}
 
     ngOnInit(): void {
         this.offset$

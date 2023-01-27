@@ -3,29 +3,29 @@ import { EditorView } from 'prosemirror-view';
 
 import { Editor, posToDOMRect } from '@tiptap/core';
 
-import { RenderProps } from '../image-tabview-form.extension';
+import { RenderProps } from '../asset-form.extension';
 
 interface PluginState {
     open: boolean;
 }
 
-export interface BubbleImageTabFormProps {
+export interface BubbleAssetFormProps {
     pluginKey: PluginKey;
     editor: Editor;
     render?: () => RenderProps;
 }
 
-export type BubbleImageTabFormViewProps = BubbleImageTabFormProps & {
+export type BubbleAssetFormViewProps = BubbleAssetFormProps & {
     view: EditorView;
 };
 
-export class BubbleImageTabFormView {
+export class BubbleAssetFormView {
     private editor: Editor;
     private view: EditorView;
     private pluginKey: PluginKey;
     private render: () => RenderProps;
 
-    constructor({ editor, view, pluginKey, render }: BubbleImageTabFormViewProps) {
+    constructor({ editor, view, pluginKey, render }: BubbleAssetFormViewProps) {
         this.editor = editor;
         this.view = view;
         this.pluginKey = pluginKey;
@@ -65,10 +65,10 @@ export class BubbleImageTabFormView {
     }
 }
 
-export const bubbleImageTabviewFormPlugin = (options: BubbleImageTabFormProps) => {
+export const bubbleAssetFormPlugin = (options: BubbleAssetFormProps) => {
     return new Plugin({
         key: options.pluginKey as PluginKey,
-        view: (view) => new BubbleImageTabFormView({ view, ...options }),
+        view: (view) => new BubbleAssetFormView({ view, ...options }),
         state: {
             init(): PluginState {
                 return {

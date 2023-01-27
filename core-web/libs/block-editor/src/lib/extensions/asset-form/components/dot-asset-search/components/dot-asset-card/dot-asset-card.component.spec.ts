@@ -1,17 +1,17 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 
-import { DotImageSearchComponent } from './dot-image-search.component';
+import { DotAssetCardComponent } from './dot-asset-card.component';
 
-describe('DotImageSearchComponent', () => {
-    let component: DotImageSearchComponent;
-    let fixture: ComponentFixture<DotImageSearchComponent>;
+describe('DotAssetCardComponent', () => {
+    let component: DotAssetCardComponent;
+    let fixture: ComponentFixture<DotAssetCardComponent>;
 
     beforeEach(async () => {
         await TestBed.configureTestingModule({
-            declarations: [DotImageSearchComponent]
+            declarations: [DotAssetCardComponent]
         }).compileComponents();
 
-        fixture = TestBed.createComponent(DotImageSearchComponent);
+        fixture = TestBed.createComponent(DotAssetCardComponent);
         component = fixture.componentInstance;
         fixture.detectChanges();
     });

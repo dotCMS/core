@@ -5,12 +5,12 @@ import { DotCMSContentlet } from '@dotcms/dotcms-models';
 import { DEFAULT_LANG_ID } from '../bubble-menu/models/index';
 
 @Component({
-    selector: 'dot-image-tabview-form',
-    templateUrl: './image-tabview-form.component.html',
-    styleUrls: ['./image-tabview-form.component.scss'],
+    selector: 'dot-asset-form',
+    templateUrl: './asset-form.component.html',
+    styleUrls: ['./asset-form.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class ImageTabviewFormComponent {
+export class AssetFormComponent {
     @Input() languageId = DEFAULT_LANG_ID;
     @Input() onSelectImage: (payload: DotCMSContentlet | string) => void;
 }

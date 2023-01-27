@@ -5,12 +5,12 @@ import { DotCMSContentlet } from '@dotcms/dotcms-models';
 import { sanitizeUrl, squarePlus } from '../../../../../../shared';
 
 @Component({
-    selector: 'dot-image-card-list',
-    templateUrl: './dot-image-card-list.component.html',
-    styleUrls: ['./dot-image-card-list.component.scss'],
+    selector: 'dot-asset-card-list',
+    templateUrl: './dot-asset-card-list.component.html',
+    styleUrls: ['./dot-asset-card-list.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class DotImageCardListComponent {
+export class DotAssetCardListComponent {
     @Output() nextBatch: EventEmitter<number> = new EventEmitter();
     @Output() selectedItem: EventEmitter<DotCMSContentlet> = new EventEmitter();
 
@@ -56,7 +56,7 @@ export class DotImageCardListComponent {
      * @param {DotCMSContentlet[][]} prev
      * @param {DotCMSContentlet[]} contentlets
      * @return {*}
-     * @memberof DotImageSearchStore
+     * @memberof DotAssetSearchStore
      */
     private createRowItem(contentlets: DotCMSContentlet[] = []) {
         const rows = [];

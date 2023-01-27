@@ -28,8 +28,8 @@
     }
 
     &::ng-deep {
-        dot-image-card,
-        dot-image-card-skeleton {
+        dot-asset-card,
+        dot-asset-card-skeleton {
             width: calc(50% - $spacing-1);
         }
 

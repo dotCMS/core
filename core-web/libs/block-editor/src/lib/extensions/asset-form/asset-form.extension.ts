@@ -6,10 +6,10 @@ import { ComponentRef, ViewContainerRef } from '@angular/core';
 import { Editor } from '@tiptap/core';
 import BubbleMenu from '@tiptap/extension-bubble-menu';
 
-import { ImageTabviewFormComponent } from './image-tabview-form.component';
-import { bubbleImageTabviewFormPlugin } from './plugins/bubble-image-tabview-form.plugin';
+import { AssetFormComponent } from './asset-form.component';
+import { bubbleAssetFormPlugin } from './plugins/bubble-asset-form.plugin';
 
-export const BUBBLE_IMAGE_TABVIEW_FORM_PLUGIN_KEY = new PluginKey('bubble-image-form');
+export const BUBBLE_ASSET_FORM_PLUGIN_KEY = new PluginKey('bubble-image-form');
 
 declare module '@tiptap/core' {
     interface Commands<ReturnType> {
@@ -47,9 +47,9 @@ export interface RenderProps {
     onDestroy: () => void;
 }
 
-export const BubbleImageTabviewFormExtension = (viewContainerRef: ViewContainerRef) => {
+export const BubbleAssetFormExtension = (viewContainerRef: ViewContainerRef) => {
     let formTippy: Instance | undefined;
-    let component: ComponentRef<ImageTabviewFormComponent>;
+    let component: ComponentRef<AssetFormComponent>;
     let element: Element;
 
     function onStart({ editor, getPosition }: StartProps) {
@@ -87,7 +87,7 @@ export const BubbleImageTabviewFormExtension = (viewContainerRef: ViewContainerR
     }
 
     function setUpComponent(editor: Editor) {
-        component = viewContainerRef.createComponent(ImageTabviewFormComponent);
+        component = viewContainerRef.createComponent(AssetFormComponent);
         component.instance.languageId = editor.storage.dotConfig.lang;
         component.instance.onSelectImage = (payload) => {
             editor.chain().addDotImage(payload).addNextLine().toggleImageForm(false).run();
@@ -104,7 +104,7 @@ export const BubbleImageTabviewFormExtension = (viewContainerRef: ViewContainerR
             return {
                 element: null,
                 tippyOptions: {},
-                pluginKey: BUBBLE_IMAGE_TABVIEW_FORM_PLUGIN_KEY
+                pluginKey: BUBBLE_ASSET_FORM_PLUGIN_KEY
             };
         },
 
@@ -115,7 +115,7 @@ export const BubbleImageTabviewFormExtension = (viewContainerRef: ViewContainerR
                     ({ chain }) => {
                         return chain()
                             .command(({ tr }) => {
-                                tr.setMeta(BUBBLE_IMAGE_TABVIEW_FORM_PLUGIN_KEY, {
+                                tr.setMeta(BUBBLE_ASSET_FORM_PLUGIN_KEY, {
                                     open: value
                                 });
 
@@ -128,8 +128,8 @@ export const BubbleImageTabviewFormExtension = (viewContainerRef: ViewContainerR
 
         addProseMirrorPlugins() {
             return [
-                bubbleImageTabviewFormPlugin({
-                    pluginKey: BUBBLE_IMAGE_TABVIEW_FORM_PLUGIN_KEY,
+                bubbleAssetFormPlugin({
+                    pluginKey: BUBBLE_ASSET_FORM_PLUGIN_KEY,
                     editor: this.editor,
                     render: () =>
                         ({

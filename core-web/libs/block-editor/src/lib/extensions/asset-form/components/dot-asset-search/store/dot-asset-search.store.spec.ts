@@ -3,7 +3,7 @@ import { of } from 'rxjs';
 import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 
-import { DotImageSearchStore } from './dot-image-search.store';
+import { DotAssetSearchStore } from './dot-asset-search.store';
 
 import {
     DotLanguageService,
@@ -37,15 +37,15 @@ const CONTENTLETS_MOCK_WITH_LANG = IMAGE_CONTENTLETS_MOCK.splice(0, 4).map((cont
     language: 'en-US'
 }));
 
-describe('DotImageSearchStore', () => {
-    let service: DotImageSearchStore;
+describe('DotAssetSearchStore', () => {
+    let service: DotAssetSearchStore;
     let searchService: SearchService;
 
     beforeEach(() => {
         TestBed.configureTestingModule({
             imports: [HttpClientTestingModule],
             providers: [
-                DotImageSearchStore,
+                DotAssetSearchStore,
                 {
                     provide: SearchService,
                     useValue: {
@@ -61,7 +61,7 @@ describe('DotImageSearchStore', () => {
             ]
         });
 
-        service = TestBed.inject(DotImageSearchStore);
+        service = TestBed.inject(DotAssetSearchStore);
     });
 
     test('should have inital state', (done) => {

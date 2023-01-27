@@ -3,10 +3,10 @@
         <p-tabPanel [cache]="false" header="dotCMS" leftIcon="pi pi-images">
             <ng-template pTemplate="content">
                 <div class="wrapper">
-                    <dot-image-search
+                    <dot-asset-search
                         [languageId]="languageId"
                         (addImage)="onSelectImage($event)"
-                    ></dot-image-search>
+                    ></dot-asset-search>
                 </div>
             </ng-template>
         </p-tabPanel>
@@ -20,9 +20,7 @@
         <p-tabPanel [cache]="false" header="Image URL" leftIcon="pi pi-link">
             <ng-template pTemplate="content">
                 <div class="wrapper">
-                    <dot-insert-external-image
-                        (addImage)="onSelectImage($event)"
-                    ></dot-insert-external-image>
+                    <dot-external-asset (addImage)="onSelectImage($event)"></dot-external-asset>
                 </div>
             </ng-template>
         </p-tabPanel>

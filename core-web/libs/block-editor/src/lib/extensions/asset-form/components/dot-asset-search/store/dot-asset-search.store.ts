@@ -34,7 +34,7 @@ const defaultState: DotImageSearchState = {
 };
 
 @Injectable()
-export class DotImageSearchStore extends ComponentStore<DotImageSearchState> {
+export class DotAssetSearchStore extends ComponentStore<DotImageSearchState> {
     // Selectors
     readonly vm$ = this.select(({ contentlets, loading, preventScroll }) => ({
         contentlets,

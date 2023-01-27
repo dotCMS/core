@@ -19,7 +19,7 @@ import {
     DotImageService,
     DragHandlerComponent,
     FileStatus,
-    ImageTabviewFormComponent,
+    AssetFormComponent,
     LoaderComponent
 } from '../../extensions';
 import { ContentletBlockComponent } from '../../nodes';
@@ -184,7 +184,7 @@ export const primary = () => ({
             DragHandlerComponent,
             LoaderComponent,
             BubbleLinkFormComponent,
-            ImageTabviewFormComponent
+            AssetFormComponent
         ]
     },
     component: DotBlockEditorComponent

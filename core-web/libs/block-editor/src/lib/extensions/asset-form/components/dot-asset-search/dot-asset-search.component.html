@@ -7,11 +7,11 @@
     </div>
 </ng-container>
 <ng-container *ngIf="vm$ | async as vm">
-    <dot-image-card-list
+    <dot-asset-card-list
         [contentlets]="vm.contentlets"
         [done]="vm.preventScroll"
         [loading]="vm.loading"
         (selectedItem)="addImage.emit($event)"
         (nextBatch)="offset$.next($event)"
-    ></dot-image-card-list>
+    ></dot-asset-card-list>
 </ng-container>

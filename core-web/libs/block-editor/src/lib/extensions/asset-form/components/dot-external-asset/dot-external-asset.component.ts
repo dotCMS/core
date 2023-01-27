@@ -12,12 +12,12 @@ const regexURL =
     '^((http|https)://)[-a-zA-Z0-9@:%._\\+~#?&//=]{2,256}\\.[a-z]{2,6}\\b([-a-zA-Z0-9@:%._\\+~#?&//=]*)$';
 
 @Component({
-    selector: 'dot-insert-external-image',
-    templateUrl: './dot-insert-external-image.component.html',
-    styleUrls: ['./dot-insert-external-image.component.scss'],
+    selector: 'dot-external-asset',
+    templateUrl: './dot-external-asset.component.html',
+    styleUrls: ['./dot-external-asset.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class DotInsertExternalImageComponent {
+export class DotExternalAssetComponent {
     @ViewChild('input') input!: ElementRef;
     @Output() addImage = new EventEmitter();
 

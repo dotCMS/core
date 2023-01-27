@@ -8,16 +8,16 @@
 >
     <ng-template pTemplate="item" let-contentlet>
         <div class="card-list-row">
-            <dot-image-card
+            <dot-asset-card
                 *ngIf="contentlet[0]"
                 [contentlet]="contentlet[0]"
                 (click)="selectedItem.emit(contentlet[0])"
-            ></dot-image-card>
-            <dot-image-card
+            ></dot-asset-card>
+            <dot-asset-card
                 *ngIf="contentlet[1]"
                 [contentlet]="contentlet[1]"
                 (click)="selectedItem.emit(contentlet[1])"
-            ></dot-image-card>
+            ></dot-asset-card>
         </div>
     </ng-template>
 </p-scroller>
@@ -25,8 +25,8 @@
 <ng-template #loadingBlock>
     <div class="wrapper justify-start">
         <div class="card-list-row" *ngFor="let loadingItem of loadingItems">
-            <dot-image-card-skeleton></dot-image-card-skeleton>
-            <dot-image-card-skeleton></dot-image-card-skeleton>
+            <dot-asset-card-skeleton></dot-asset-card-skeleton>
+            <dot-asset-card-skeleton></dot-asset-card-skeleton>
         </div>
     </div>
 </ng-template>
