@@ -98,6 +98,7 @@ import com.dotmarketing.startup.runonce.Task210510UpdateStorageTableDropMetadata
 import com.dotmarketing.util.ConfigTest;
 import com.dotmarketing.util.HashBuilderTest;
 import com.dotmarketing.util.TestConfig;
+import com.dotmarketing.util.UtilMethodsITest;
 import com.liferay.portal.language.LanguageUtilTest;
 import org.apache.velocity.tools.view.tools.CookieToolTest;
 import org.junit.runner.RunWith;
@@ -423,7 +424,8 @@ import org.junit.runners.Suite.SuiteClasses;
         CSSCacheTest.class,
         URLMapBundlerTest.class,
         PermissionBitFactoryImplTest.class,
-        ContentletDependenciesTest.class
+        ContentletDependenciesTest.class,
+        UtilMethodsITest.class
 })
 public class MainSuite {
 
