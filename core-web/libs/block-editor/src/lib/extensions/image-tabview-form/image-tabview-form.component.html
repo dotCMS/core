@@ -10,6 +10,13 @@
                 </div>
             </ng-template>
         </p-tabPanel>
+        <p-tabPanel [cache]="false" header="Upload Images" leftIcon="pi pi-folder">
+            <ng-template pTemplate="content">
+                <div class="wrapper">
+                    <dot-upload-asset (uploadedFile)="onSelectImage($event)"></dot-upload-asset>
+                </div>
+            </ng-template>
+        </p-tabPanel>
         <p-tabPanel [cache]="false" header="Image URL" leftIcon="pi pi-link">
             <ng-template pTemplate="content">
                 <div class="wrapper">
