@@ -423,7 +423,7 @@ import org.junit.runners.Suite.SuiteClasses;
         CSSCacheTest.class,
         URLMapBundlerTest.class,
         PermissionBitFactoryImplTest.class,
-        ContentletDependenciesTest.class,
+        ContentletDependenciesTest.class
 })
 public class MainSuite {
 

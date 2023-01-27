@@ -653,14 +653,24 @@
 							]
 						},
 						"url": {
-							"raw": "{{serverURL}}/api/bundle/sync",
+							"raw": "{{serverURL}}/api/bundle?sync=true",
 							"host": [
 								"{{serverURL}}"
 							],
 							"path": [
 								"api",
-								"bundle",
-								"sync"
+								"bundle"
+							],
+							"query": [
+								{
+									"key": "sync",
+									"value": "true"
+								},
+								{
+									"key": "AUTH_TOKEN",
+									"value": "",
+									"disabled": true
+								}
 							]
 						},
 						"description": "This endpoint imports a bundle that contains an instance of a Content Type that contains 2 category fields."
