@@ -99,7 +99,8 @@ export const DotExperimentsConfigurationStoreMock = {
     goalsStepVm$: of({
         goals: '',
         status: ''
-    })
+    }),
+    schedulingStepVm$: of({})
 };
 
 export const DotExperimentsServiceMock = {
