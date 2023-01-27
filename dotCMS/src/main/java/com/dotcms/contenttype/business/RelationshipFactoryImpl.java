@@ -613,7 +613,7 @@ public class RelationshipFactoryImpl implements RelationshipFactory{
             query.append(" order by c.")
                     .append(orderBy);
         } else {
-            query.append(" order by tree1.tree_order, c.language_id");
+            query.append(" order by t.tree_order, c.language_id");
         }
 
         final DotConnect dc = new DotConnect();
@@ -665,7 +665,7 @@ public class RelationshipFactoryImpl implements RelationshipFactory{
             query.append(" order by c.")
                     .append(orderBy);
         } else {
-            query.append(" order by tree1.tree_order, c.language_id");
+            query.append(" order by t.tree_order, c.language_id");
         }
 
         final DotConnect dc = new DotConnect();
