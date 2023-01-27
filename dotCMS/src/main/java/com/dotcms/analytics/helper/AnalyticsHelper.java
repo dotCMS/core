@@ -34,6 +34,8 @@ import java.util.function.BiPredicate;
  */
 public class AnalyticsHelper {
 
+    private  AnalyticsHelper() {}
+
     /**
      * Evaluates if a given status code instance has a http status within the SUCCESSFUL range.
      *
