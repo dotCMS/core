@@ -23,12 +23,12 @@ import java.util.List;
 import java.util.Map;
 import org.junit.Test;
 
-public class CubeClientTest {
+public class CubeJSClientTest {
 
     /**
-     * Method to test: {@link CubeClient#send(CubeJSQuery)}
-     * WHen: Sen a request to Cube JS
-     * Should: Return teh right data end send the right Query
+     * Method to test: {@link CubeJSClient#send(CubeJSQuery)}
+     * When: Send a request to Cube JS
+     * Should: Return the right data end send the right Query
      */
     @Test
     public void sendAllOk() {
@@ -78,7 +78,7 @@ public class CubeClientTest {
             mockhttpServer.addContext(mockHttpServerContext);
             mockhttpServer.start();
 
-            final CubeClient cubeClient =  new CubeClient(String.format("http://%s:%s", cubeServerIp, cubeJsServerPort));
+            final CubeJSClient cubeClient =  new CubeJSClient(String.format("http://%s:%s", cubeServerIp, cubeJsServerPort));
             final CubeJSResultSet cubeJSResultSet = cubeClient.send(cubeJSQuery);
 
             mockhttpServer.validate();
@@ -100,8 +100,8 @@ public class CubeClientTest {
     }
 
     /**
-     * Method to test: {@link CubeClient#send(CubeJSQuery)}
-     * WHen: Sen a request to Cube JS but the CubeJS Server is down
+     * Method to test: {@link CubeJSClient#send(CubeJSQuery)}
+     * When: Send a request to Cube JS but the CubeJS Server is down
      * Should: Return an empty {@lik CubeJSResultSet} Also it print in the console the follow:
      * <pre>
      * Connection attempts failed Connect to 127.0.0.1:8000 [/127.0.0.1] failed: Connection refused (Connection refused)
@@ -119,14 +119,14 @@ public class CubeClientTest {
                 .dimensions("Events.experiment", "Events.variant")
                 .build();
 
-        final CubeClient cubeClient =  new CubeClient(String.format("http://%s:%s", cubeServerIp, cubeJsServerPort));
+        final CubeJSClient cubeClient =  new CubeJSClient(String.format("http://%s:%s", cubeServerIp, cubeJsServerPort));
         final CubeJSResultSet cubeJSResultSet = cubeClient.send(cubeJSQuery);
 
         assertEquals(0, cubeJSResultSet.size());
     }
 
     /**
-     * Method to test: {@link CubeClient#send(CubeJSQuery)}
+     * Method to test: {@link CubeJSClient#send(CubeJSQuery)}
      * When: Send a request with a Null {@link CubeJSQuery}
      * Should: throw {@link IllegalArgumentException}
      */
@@ -149,7 +149,7 @@ public class CubeClientTest {
             mockhttpServer.addContext(mockHttpServerContext);
             mockhttpServer.start();
 
-            final CubeClient cubeClient =  new CubeClient(String.format("http://%s:%s", cubeServerIp, cubeJsServerPort));
+            final CubeJSClient cubeClient =  new CubeJSClient(String.format("http://%s:%s", cubeServerIp, cubeJsServerPort));
 
             try {
                 cubeClient.send(null);

@@ -16,7 +16,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 /**
- * Mock fro a HttpServer
+ * Mock for a HttpServer
  */
 public class MockHttpServer {
 
@@ -33,10 +33,17 @@ public class MockHttpServer {
         this.port = port;
     }
 
+    /**
+     * Add a {@link MockHttpServerContext} to the MockHttpServer
+     * @param mockHttpServerContext
+     */
     public void addContext(final MockHttpServerContext mockHttpServerContext) {
         this.mockHttpServerContexts.add(mockHttpServerContext);
     }
 
+    /**
+     * Start the Mock Http Server
+     */
     public void start() {
 
         try {
@@ -68,6 +75,9 @@ public class MockHttpServer {
         }
     }
 
+    /**
+     * Stop the Mock Http Server
+     */
     public void stop(){
         httpServer.stop(0);
     }
@@ -95,12 +105,19 @@ public class MockHttpServer {
         return true;
     }
 
+    /**
+     * Validate if
+     */
     public void validate() {
         if (!errors.isEmpty()) {
             throw new AssertionError(errors.stream().collect(Collectors.joining("\n")) );
         }
     }
 
+    /**
+     * Check if the path was hit, if it is not then throw an {@link AssertionError}
+     * @param path
+     */
     public void mustNeverCalled(final String path) {
         if (uris.stream().anyMatch(uri -> uri.getPath().equals(path))) {
             throw new AssertException(path + " Must never called");

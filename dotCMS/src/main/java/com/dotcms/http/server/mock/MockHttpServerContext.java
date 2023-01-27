@@ -18,6 +18,55 @@ import java.util.Optional;
 import java.util.function.Function;
 import org.apache.commons.io.IOUtils;
 
+/**
+ * Represent a url to mock into a {@link MockHttpServer}, you can set the URL to response and also
+ * what is going to  be the URL.
+ *
+ * Examples:
+ *
+ *  To listing to http://127.0.0.1:5000/testing and response with a http code of 200 and a response
+ *  body of "It is working"
+ *
+ * <code>
+ * final String cubeServerIp = "127.0.0.1";
+ * final int cubeJsServerPort = 5000;
+ *
+ * final MockHttpServer mockhttpServer = new MockHttpServer(cubeServerIp, cubeJsServerPort);
+ *
+ * final MockHttpServerContext mockHttpServerContext = new  MockHttpServerContext.Builder()
+ *      .uri("/testing")
+ *      .responseStatus(HttpURLConnection.HTTP_OK)
+ *      .responseBody("It is working")
+ *      .build();
+ *
+ *      mockhttpServer.addContext(mockHttpServerContext);
+ *      mockhttpServer.start();
+ * </code>
+ *
+ * If you want to check a condition to every request you can do:
+ *
+ * <code>
+ * final String cubeServerIp = "127.0.0.1";
+ * final int cubeJsServerPort = 5000;
+ *
+ * final MockHttpServer mockhttpServer = new MockHttpServer(cubeServerIp, cubeJsServerPort);
+ *
+ * final MockHttpServerContext mockHttpServerContext = new  MockHttpServerContext.Builder()
+ *      .uri("/testing")
+ *      .responseStatus(HttpURLConnection.HTTP_OK)
+ *      .responseBody("It is working")
+ *      .requestCondition("Cube JS Query is not right",
+ *           context -> context.getRequestParameter("mode")
+ *              .orElse(StringPool.BLANK)
+ *              .equals("test")
+ *      .build();
+ *
+ *      mockhttpServer.addContext(mockHttpServerContext);
+ *      mockhttpServer.start();
+ * </code>
+ *
+ * In this case we are checking that the URl include a "mode" query parameters with a "test" value.
+ */
 public class MockHttpServerContext {
 
     private String uri;

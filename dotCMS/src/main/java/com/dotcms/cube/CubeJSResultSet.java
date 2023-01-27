@@ -11,18 +11,16 @@ import java.util.stream.Collectors;
 import org.jetbrains.annotations.NotNull;
 
 /**
- * Represent a Result from RUN a CubeJS Query in a CubeJS Server.
+ * Represent a Result from running a CubeJS Query in a CubeJS Server.
  */
 public class CubeJSResultSet implements Iterable<ResultSetItem> {
     private List<ResultSetItem> data;
-    private int size;
     public CubeJSResultSet(final List<Map<String, Object>> data){
         this.data = data.stream().map(map -> new ResultSetItem(map)).collect(Collectors.toList());
-        size = data.size();
     }
 
     public int size() {
-        return size;
+        return data.size();
     }
 
     @NotNull
