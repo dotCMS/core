@@ -60,8 +60,8 @@ apply plugin: 'project-report' /*For gradle dependencies: ./gradlew htmlDependen
 apply plugin: 'idea'
 apply plugin: 'eclipse'
 
-targetCompatibility = 11
-sourceCompatibility = 11
+targetCompatibility = 1.8
+sourceCompatibility = 1.8
 
 // Compile Java.
 compileJava {
@@ -85,6 +85,7 @@ repositories {
 testSets {
     individualTest { dirName = 'test' }
     integrationTest { dirName = 'integration-test' }
+    functionalTest { dirName = 'functional-test' }
 }
 
 
@@ -162,9 +163,9 @@ dependencies {
     /**** And now the libs we pull in from internal company sources - libs stored in ./plugins, ./bin, ./libs, the starter site, etc. ****/
     compile fileTree("src/main/plugins/com.dotcms.config/build/jar").include('plugin-com.dotcms.config.jar')
 
-    //starter group: 'com.dotcms', name: 'starter', version: 'empty_20210614', ext: 'zip'
+    starter group: 'com.dotcms', name: 'starter', version: 'empty_20210614', ext: 'zip'
     //Uncomment this line if you want to download the starter that comes with data
-    starter group: 'com.dotcms', name: 'starter', version: '20210615', ext: 'zip'
+    //starter group: 'com.dotcms', name: 'starter', version: '20210615', ext: 'zip'
     testsStarter group: 'com.dotcms', name: 'starter', version: 'empty_20210614', ext: 'zip'
 
     profiler group: 'glowroot-custom', name: 'glowroot-agent', version: '0.13.1'
@@ -175,6 +176,8 @@ dependencies {
 
     individualTestCompile sourceSets.test.output
     integrationTestCompile sourceSets.test.output
+    functionalTestCompile sourceSets.test.output
+    functionalTestCompile sourceSets.integrationTest.output
 
     if (project.gradle.startParameter.taskNames.contains('deployWarTomcatDev') || project.gradle.startParameter.taskNames.contains('testDev')) {
         configurations.compile.exclude group: 'com.dotcms.enterprise', module: 'ee'
@@ -188,13 +191,13 @@ apply from: "$rootDir/dependencies.gradle"
 def enterpriseSrcFolder = file("$enterpriseProjectHome/src/main/java")
 
 if (enterpriseSrcFolder.exists()){
-	sourceSets {
-    	main {
-        	java {
-            	srcDirs = ["src/main/java", "$enterpriseProjectHome/src/main/java"]
-	        }
-    	}
-	}
+    sourceSets {
+        main {
+            java {
+                srcDirs = ["src/main/java", "$enterpriseProjectHome/src/main/java"]
+            }
+        }
+    }
 }
 
 ant.lifecycleLogLevel = "INFO"
@@ -270,7 +273,7 @@ jar{
     exclude 'com/dotcms/enterprise/**'
 
     if (gradle.startParameter.taskNames.contains("deployWarTomcatTests")) {
-        from project.sourceSets.main.output + project.sourceSets.test.output + project.sourceSets.integrationTest.output
+        from project.sourceSets.main.output + project.sourceSets.test.output + project.sourceSets.integrationTest.output + project.sourceSets.functionalTest.output
     }
 }
 
@@ -640,7 +643,7 @@ compileAspect {
 task immutables() {
     doLast {
         println "\nChecking immutables..."
-        def generatedFolder = project.file("$generatedSourceFolder");
+        def generatedFolder = new File("$generatedSourceFolder");
         if (!generatedFolder.exists()) {
 
             println "Generating immutables...\n"
@@ -687,11 +690,11 @@ task buildPlugins(dependsOn: 'jar') {
         println project.buildDir
         println project.buildDir
 
-//        def pluginsFolder = project.file("src/main/plugins");
+//        def pluginsFolder = new File("src/main/plugins");
         def pluginsFolder = file('src/main/plugins')
 
         if (!pluginsFolder.exists()) {
-            pluginsFolder = project.file("../plugins");
+            pluginsFolder = new File("../plugins");
         }
 
         pluginsFolder.eachDir() {
@@ -720,7 +723,7 @@ task deployConfig(type: Copy) {
 
     def webAppFolder = 'src/main/webapp'
 
-    if (project.file('src/main/resources').exists()){
+    if (new File('src/main/resources').exists()){
         from 'src/main/resources'
     }else{
         webAppFolder = "$dotcmsDistBase$webAppRootFolder"
@@ -746,11 +749,11 @@ task deployPlugins(dependsOn: ['buildPlugins']) {
 
     doLast {
 
-        def pluginsFolder = project.file("src/main/plugins")
+        def pluginsFolder = new File("src/main/plugins")
         def webAppFolder = 'src/main/webapp'
 
         if (!pluginsFolder.exists()) {
-            pluginsFolder = project.file("../plugins");
+            pluginsFolder = new File("../plugins");
             webAppFolder = "$dotcmsDistBase$webAppRootFolder"
         }
 
@@ -793,7 +796,7 @@ task undeployPlugins() {
     doLast {
         def webAppFolder = 'src/main/webapp'
 
-        if( !project.file("$webAppFolder").exists() ) {
+        if( !new File("$webAppFolder").exists() ) {
             webAppFolder = "$dotcmsDistBase$webAppRootFolder"
         }
 
@@ -882,7 +885,7 @@ task restoreBackupWarTomcatData() {
             include "*.db"
         }
 
-        FileUtils.cleanDirectory(project.file("$tomcatInstallLocation/temp"));
+        FileUtils.cleanDirectory(new File("$tomcatInstallLocation/temp"));
         delete "$tomcatInstallLocation$webAppRootFolder/WEB-INF/classes/com"
     }
 }
@@ -896,19 +899,19 @@ undeployPlugins.finalizedBy 'deployConfig'
 task generateMoveCleanEnterpriseTomcat(type: GradleBuild) {
     buildFile = "$enterpriseProjectHome/build.gradle"
     tasks = gradle.startParameter.taskNames.contains('clean') ? ['clean', 'build'] : ['build']
-	startParameter.projectProperties = [dotcmsReleaseVersion: "$dotcmsReleaseVersion"]
+    startParameter.projectProperties = [dotcmsReleaseVersion: "$dotcmsReleaseVersion"]
 
-	doLast {
-		delete fileTree("$tomcatInstallLocation$webAppRootFolder/WEB-INF/lib"){
-			include "ee-*", "ee_*"
-		}
+    doLast {
+        delete fileTree("$tomcatInstallLocation$webAppRootFolder/WEB-INF/lib"){
+            include "ee-*", "ee_*"
+        }
 
-		copy{
-			from "$enterpriseProjectHome/build/libs"
-			into "$tomcatInstallLocation$webAppRootFolder/WEB-INF/lib"
-			include "ee_clean.jar"
-		}
-	}
+        copy{
+            from "$enterpriseProjectHome/build/libs"
+            into "$tomcatInstallLocation$webAppRootFolder/WEB-INF/lib"
+            include "ee_clean.jar"
+        }
+    }
 }
 generateMoveCleanEnterpriseTomcat.group='dotCMS Util'
 generateMoveCleanEnterpriseTomcat.description='Creates a no-obfuscated enterprise JAR and moves it into WEB-INF/lib .'
@@ -921,10 +924,10 @@ def getDate() {
 }
 
 //Util method that replaces the occurrence of a string in a specified file
-def replaceText(filePath, fromString, toString) {
+static def replaceText(filePath, fromString, toString) {
     def sourceFile = filePath
-    def updatedContent = project.file(sourceFile).getText('UTF-8').replaceAll(fromString, toString)
-    project.file(sourceFile).write(updatedContent, 'UTF-8')
+    def updatedContent = new File(sourceFile).getText('UTF-8').replaceAll(fromString, toString)
+    new File(sourceFile).write(updatedContent, 'UTF-8')
 }
 
 // Clones dotCMS's tomcat repo following tomcatInstall under gradle.properties.
@@ -1010,15 +1013,13 @@ class NpmArtifactExtractTask extends DefaultTask {
     def extract() {
         project.mkdir(artifactFolder)
         String artifactUrl = "$url/$artifact"
-        Set<String> knownTags = new HashSet<>(Arrays.asList("latest", "stable", "next", "rc"));
-
-        String artifactVersion = knownTags.contains(version)
-                ? new JsonSlurper().parse(new URL(artifactUrl))."dist-tags"[version]
+        String artifactVersion = version == 'latest'
+                ? new JsonSlurper().parse(new URL(artifactUrl))."dist-tags".latest
                 : version
         String versionUrl = "$artifactUrl/-/$artifact-${artifactVersion}.tgz"
         println "Downloading from $versionUrl"
         String downloadArtifact = "$artifactFolder/${artifact}.tgz"
-        def downloadFile = project.file(downloadArtifact)
+        def downloadFile = new File(downloadArtifact)
         new URL(versionUrl).withInputStream { i -> downloadFile.withOutputStream { it << i } }
 
         project.copy {
@@ -1093,6 +1094,7 @@ task downloadDependencies(type: Exec) {
     configurations.ajtools.files
     configurations.compileOnly.files
     configurations.default.files
+    configurations.functionalTestCompile.files
     configurations.individualTestCompile.files
     configurations.integrationTestCompile.files
     configurations.testCompile.files
