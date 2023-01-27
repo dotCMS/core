@@ -190,3 +190,4 @@ This maintenance release includes the following code fixes:
 112. https://github.com/dotCMS/core/issues/22667 : Cannot change date or time fields to never on an existing contentlet #22667
 113. https://github.com/dotCMS/core/issues/22729 : Image Selector Issues #22729
 114. https://github.com/dotCMS/core/issues/22756 : Removing Categories through REST API #22756
+115. https://github.com/dotCMS/core/issues/22763 : Copy folder duplicates content on pages #22763
