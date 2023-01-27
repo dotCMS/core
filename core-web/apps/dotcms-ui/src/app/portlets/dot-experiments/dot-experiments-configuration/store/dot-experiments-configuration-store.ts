@@ -23,6 +23,8 @@ import {
     Variant
 } from '@dotcms/dotcms-models';
 import { DotExperimentsService } from '@portlets/dot-experiments/shared/services/dot-experiments.service';
+import { DotGlobalMessageService } from '@components/_common/dot-global-message/dot-global-message.service';
+import { DotHttpErrorManagerService } from '@services/dot-http-error-manager/dot-http-error-manager.service';
 
 export interface DotExperimentsConfigurationState {
     experiment: DotExperiment | null;
@@ -345,8 +347,20 @@ export class DotExperimentsConfigurationStore extends ComponentStore<DotExperime
                             tapResponse(
                                 (experiment) => {
                                     this.setScheduling(experiment.scheduling);
+                                    this.setSidebarStatus({
+                                        status: Status.DONE,
+                                        experimentStep: ExperimentSteps.SCHEDULING,
+                                        isOpen: false
+                                    });
                                 },
-                                (error: HttpErrorResponse) => throwError(error)
+                                (response: HttpErrorResponse) => {
+                                    this.dotHttpErrorManagerService.handle(response);
+                                    this.setSidebarStatus({
+                                        status: Status.DONE,
+                                        experimentStep: ExperimentSteps.SCHEDULING,
+                                        isOpen: true
+                                    });
+                                }
                             )
                         );
                 })
@@ -400,6 +414,7 @@ export class DotExperimentsConfigurationStore extends ComponentStore<DotExperime
     constructor(
         private readonly dotExperimentsService: DotExperimentsService,
         private readonly dotMessageService: DotMessageService,
+        private dotHttpErrorManagerService: DotHttpErrorManagerService,
         private readonly messageService: MessageService,
         private readonly title: Title
     ) {

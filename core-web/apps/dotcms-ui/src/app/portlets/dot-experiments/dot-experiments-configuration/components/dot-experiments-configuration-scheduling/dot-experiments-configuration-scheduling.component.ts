@@ -3,14 +3,12 @@ import { Observable } from 'rxjs';
 import { CommonModule } from '@angular/common';
 import { ChangeDetectionStrategy, Component, ComponentRef, ViewChild } from '@angular/core';
 
-import { ConfirmationService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
 import { CardModule } from 'primeng/card';
 import { ConfirmPopupModule } from 'primeng/confirmpopup';
 
 import { tap } from 'rxjs/operators';
 
-import { DotMessageService } from '@dotcms/data-access';
 import { ExperimentSteps, RangeOfDateAndTime, Status, StepStatus } from '@dotcms/dotcms-models';
 import { DotMessagePipeModule } from '@pipes/dot-message/dot-message-pipe.module';
 import { DotExperimentsConfigurationSchedulingAddComponent } from '@portlets/dot-experiments/dot-experiments-configuration/components/dot-experiments-configuration-scheduling-add/dot-experiments-configuration-scheduling-add.component';
@@ -43,17 +41,16 @@ export class DotExperimentsConfigurationSchedulingComponent {
     private componentRef: ComponentRef<DotExperimentsConfigurationSchedulingAddComponent>;
 
     constructor(
-        private readonly dotExperimentsConfigurationStore: DotExperimentsConfigurationStore,
-        private readonly dotMessageService: DotMessageService,
-        private readonly confirmationService: ConfirmationService
+        private readonly dotExperimentsConfigurationStore: DotExperimentsConfigurationStore
     ) {}
 
     /**
-     * Open the sidebar to select the principal goal
+     * Open the sidebar to set the Scheduling
      * @returns void
      * @memberof DotExperimentsConfigurationSchedulingComponent
      */
     setupSchedule() {
+        debugger;
         this.dotExperimentsConfigurationStore.openSidebar(ExperimentSteps.SCHEDULING);
     }
 

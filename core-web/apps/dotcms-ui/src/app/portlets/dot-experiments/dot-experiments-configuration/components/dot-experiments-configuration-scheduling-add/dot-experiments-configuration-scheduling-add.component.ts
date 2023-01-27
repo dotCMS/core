@@ -59,14 +59,28 @@ export class DotExperimentsConfigurationSchedulingAddComponent implements OnInit
         this.initForm();
     }
 
+    /**
+     * Close sidebar
+     * @returns void
+     * @memberof DotExperimentsConfigurationSchedulingAddComponent
+     */
     closeSidebar() {
         this.dotExperimentsConfigurationStore.closeSidebar();
     }
 
+    /**
+     * Save selected Scheduling.
+     * @param {string} experimentId
+     * @returns void
+     * @memberof DotExperimentsConfigurationSchedulingAddComponent
+     */
     save(experimentId: string) {
         const { startDate, endDate } = this.form.value;
         this.dotExperimentsConfigurationStore.setSelectedScheduling({
-            scheduling: { startDate, endDate },
+            scheduling: {
+                startDate: startDate ? startDate.getTime() : startDate,
+                endDate: endDate ? endDate.getTime() : endDate
+            },
             experimentId
         });
     }

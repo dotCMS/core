@@ -5,13 +5,7 @@
             dotTitle="{{ 'experiments.configure.scheduling.name' | dm }}"
         ></dot-sidebar-header>
         <div class="experiment-scheduling-add__form-wrapper flex flex-column">
-            <form
-                class="p-fluid"
-                id="add-scheduling-form"
-                [formGroup]="form"
-                data-testId="add-scheduling-form"
-                novalidate
-            >
+            <form class="p-fluid" [formGroup]="form" data-testId="add-scheduling-form" novalidate>
                 <div class="field">
                     <label class="p-label-input-required">
                         {{ 'experiments.configure.scheduling.start.time' | dm }}
@@ -20,6 +14,7 @@
                         [showTime]="true"
                         [minDate]="today"
                         formControlName="startDate"
+                        data-testId="scheduling-startDate"
                     ></p-calendar>
                 </div>
                 <div class="field">
@@ -31,6 +26,7 @@
                         [defaultDate]="form.get('startDate').value"
                         [minDate]="form.get('startDate').value"
                         formControlName="endDate"
+                        data-testId="scheduling-endDate"
                     >
                     </p-calendar>
                 </div>
@@ -43,7 +39,7 @@
             [disabled]="!form.valid"
             [loading]="vm.status.status === statusList.SAVING"
             (click)="save(vm.experimentId)"
-            data-testId="add-goal-button"
+            data-testId="add-scheduling-button"
             label="{{ 'Done' | dm }}"
             pButton
             pRipple

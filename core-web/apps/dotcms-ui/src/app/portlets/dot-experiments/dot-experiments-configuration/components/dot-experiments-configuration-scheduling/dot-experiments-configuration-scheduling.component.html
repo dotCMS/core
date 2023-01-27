@@ -14,16 +14,16 @@
                     }}</span>
                 </div>
 
-                <p-button
-                    (onClick)="setupSchedule()"
+                <button
+                    (click)="setupSchedule()"
                     data-testId="scheduling-setup-button"
-                    label=""
                     styleClass="p-button-sm p-button-link"
+                    pButton
                 >
                     <ng-container *ngIf="!vm.scheduling; else dateRange">
                         {{ 'experiments.configure.scheduling.setup' | dm }}
                     </ng-container>
-                </p-button>
+                </button>
             </div>
         </p-card>
     </p-card>

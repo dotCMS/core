@@ -1,5 +1,5 @@
 import { createServiceFactory, mockProvider, SpectatorService, SpyObject } from '@ngneat/spectator';
-import { of } from 'rxjs';
+import { of, throwError } from 'rxjs';
 
 import { Title } from '@angular/platform-browser';
 import { ActivatedRoute } from '@angular/router';
@@ -14,6 +14,7 @@ import {
     Goals,
     GoalsLevels,
     LoadingState,
+    RangeOfDateAndTime,
     Status,
     Variant
 } from '@dotcms/dotcms-models';
@@ -23,6 +24,9 @@ import {
 } from '@portlets/dot-experiments/dot-experiments-configuration/store/dot-experiments-configuration-store';
 import { DotExperimentsService } from '@portlets/dot-experiments/shared/services/dot-experiments.service';
 import { ExperimentMocks, GoalsMock } from '@portlets/dot-experiments/test/mocks';
+import { DotHttpErrorManagerService } from '@services/dot-http-error-manager/dot-http-error-manager.service';
+import { take } from 'rxjs/operators';
+import { HttpErrorResponse } from '@angular/common/http';
 
 const EXPERIMENT_ID = ExperimentMocks[0].id;
 const PAGE_ID = ExperimentMocks[0].pageId;
@@ -39,6 +43,7 @@ describe('DotExperimentsConfigurationStore', () => {
     let spectator: SpectatorService<DotExperimentsConfigurationStore>;
     let store: DotExperimentsConfigurationStore;
     let dotExperimentsService: SpyObject<DotExperimentsService>;
+    let dotHttpErrorManagerService: SpyObject<DotHttpErrorManagerService>;
 
     const createStoreService = createServiceFactory({
         service: DotExperimentsConfigurationStore,
@@ -46,6 +51,7 @@ describe('DotExperimentsConfigurationStore', () => {
             mockProvider(DotExperimentsService),
             mockProvider(DotMessageService),
             mockProvider(MessageService),
+            mockProvider(DotHttpErrorManagerService),
             mockProvider(Title),
             {
                 provide: ActivatedRoute,
@@ -59,6 +65,7 @@ describe('DotExperimentsConfigurationStore', () => {
 
         store = spectator.inject(DotExperimentsConfigurationStore);
         dotExperimentsService = spectator.inject(DotExperimentsService);
+        dotHttpErrorManagerService = spectator.inject(DotHttpErrorManagerService);
         dotExperimentsService.getById.and.callThrough().and.returnValue(of(ExperimentMocks[0]));
     });
 
@@ -311,6 +318,47 @@ describe('DotExperimentsConfigurationStore', () => {
                 expect(experiment.goals).toEqual(null);
                 done();
             });
+        });
+
+        it('should set a Scheduling to the experiment', (done) => {
+            const expectedScheduling: RangeOfDateAndTime = {
+                startDate: 1,
+                endDate: 2
+            };
+
+            dotExperimentsService.setScheduling.and.callThrough().and.returnValue(
+                of({
+                    ...ExperimentMocks[0],
+                    scheduling: expectedScheduling
+                })
+            );
+
+            store.setSelectedScheduling({
+                scheduling: expectedScheduling,
+                experimentId: EXPERIMENT_ID
+            });
+
+            store.state$.pipe(take(1)).subscribe(({ experiment }) => {
+                expect(experiment.scheduling).toEqual(expectedScheduling);
+                expect(dotExperimentsService.setScheduling).toHaveBeenCalledOnceWith(
+                    EXPERIMENT_ID,
+                    expectedScheduling
+                );
+                done();
+            });
+        });
+
+        it('should throw an error if update scheduling fails', () => {
+            dotExperimentsService.setScheduling.and.returnValue(throwError('error'));
+
+            store.setSelectedScheduling({
+                scheduling: null,
+                experimentId: EXPERIMENT_ID
+            });
+
+            expect(dotHttpErrorManagerService.handle).toHaveBeenCalledOnceWith(
+                'error' as unknown as HttpErrorResponse
+            );
         });
     });
 });
