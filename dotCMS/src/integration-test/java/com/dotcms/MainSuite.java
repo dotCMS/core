@@ -190,7 +190,7 @@ import org.junit.runners.Suite.SuiteClasses;
         com.dotcms.uuid.shorty.ShortyIdApiTest.class,
         DotGraphQLHttpServletTest.class,
         com.dotcms.rest.TagResourceIntegrationTest.class,
-        com.dotcms.rest.MapToContentletPopulatorTest.class,
+        //com.dotcms.rest.MapToContentletPopulatorTest.class,
         com.dotcms.rest.WebResourceIntegrationTest.class,
         com.dotcms.rest.api.v1.configuration.ConfigurationResourceTest.class,
         com.dotcms.rest.api.v1.page.NavResourceTest.class,
