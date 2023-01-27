@@ -365,14 +365,8 @@ public class RelationshipFactoryImpl implements RelationshipFactory{
             return matches;
         }
 
-        if (hasParent) {
-            matches = live ? dbRelatedContentByParent(iden, relationship.getRelationTypeValue(),true, orderBy, limit, offset):
-                    dbRelatedContentByParent(iden, relationship.getRelationTypeValue(),false, orderBy, limit, offset);
-        } else {
-            matches = live ? dbRelatedContentByChild(iden, relationship.getRelationTypeValue(),true, orderBy, limit, offset):
-                    dbRelatedContentByChild(iden, relationship.getRelationTypeValue(),false, orderBy, limit, offset);
-        }
-        return matches;
+        return hasParent? dbRelatedContentByParent(iden, relationship.getRelationTypeValue(),live, orderBy, limit, offset):
+                dbRelatedContentByChild(iden, relationship.getRelationTypeValue(),live, orderBy, limit, offset);
     }
 
     @Override
@@ -619,7 +613,7 @@ public class RelationshipFactoryImpl implements RelationshipFactory{
             query.append(" order by c.")
                     .append(orderBy);
         } else {
-            query.append(" order by t.tree_order");
+            query.append(" order by tree1.tree_order, c.language_id");
         }
 
         final DotConnect dc = new DotConnect();
@@ -671,7 +665,7 @@ public class RelationshipFactoryImpl implements RelationshipFactory{
             query.append(" order by c.")
                     .append(orderBy);
         } else {
-            query.append(" order by t.tree_order");
+            query.append(" order by tree1.tree_order, c.language_id");
         }
 
         final DotConnect dc = new DotConnect();
