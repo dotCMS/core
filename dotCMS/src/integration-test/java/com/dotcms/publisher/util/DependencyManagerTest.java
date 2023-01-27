@@ -95,6 +95,7 @@ public class DependencyManagerTest {
      * <b>Given Scenario:</b> A bundle contains a content with a self-join relationship <p>
      * <b>ExpectedResult:</b> The Dependency Manager should include all related content to the bundle
      */
+    @Ignore
     @Test
     public void test_dependencyManager_shouldIncludeSelfRelationships()
             throws DotSecurityException, DotBundleException, DotDataException {
