@@ -15,10 +15,11 @@
                 </div>
 
                 <button
+                    class="p-button-sm p-button-link"
                     (click)="setupSchedule()"
                     data-testId="scheduling-setup-button"
-                    styleClass="p-button-sm p-button-link"
                     pButton
+                    pRipple
                 >
                     <ng-container *ngIf="!vm.scheduling; else dateRange">
                         {{ 'experiments.configure.scheduling.setup' | dm }}

@@ -333,12 +333,12 @@ export class DotExperimentsConfigurationStore extends ComponentStore<DotExperime
     readonly setSelectedScheduling = this.effect(
         (setScheduling$: Observable<{ scheduling: RangeOfDateAndTime; experimentId: string }>) => {
             return setScheduling$.pipe(
-                tap(() =>
+                tap(() => {
                     this.setSidebarStatus({
                         status: Status.SAVING,
                         experimentStep: ExperimentSteps.SCHEDULING
-                    })
-                ),
+                    });
+                }),
                 switchMap((data) => {
                     return this.dotExperimentsService
                         .setScheduling(data.experimentId, data.scheduling)
@@ -346,6 +346,15 @@ export class DotExperimentsConfigurationStore extends ComponentStore<DotExperime
                             tapResponse(
                                 (experiment) => {
                                     this.setScheduling(experiment.scheduling);
+                                    this.messageService.add({
+                                        severity: 'info',
+                                        summary: this.dotMessageService.get(
+                                            'experiments.configure.scheduling.add.confirm.title'
+                                        ),
+                                        detail: this.dotMessageService.get(
+                                            'experiments.configure.scheduling.add.confirm.message'
+                                        )
+                                    });
                                     this.setSidebarStatus({
                                         status: Status.DONE,
                                         experimentStep: ExperimentSteps.SCHEDULING,
@@ -356,8 +365,7 @@ export class DotExperimentsConfigurationStore extends ComponentStore<DotExperime
                                     this.dotHttpErrorManagerService.handle(response);
                                     this.setSidebarStatus({
                                         status: Status.DONE,
-                                        experimentStep: ExperimentSteps.SCHEDULING,
-                                        isOpen: true
+                                        experimentStep: ExperimentSteps.SCHEDULING
                                     });
                                 }
                             )
