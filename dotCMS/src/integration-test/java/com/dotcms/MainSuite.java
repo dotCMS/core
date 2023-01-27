@@ -108,6 +108,7 @@ import org.junit.runners.Suite.SuiteClasses;
 @RunWith(MainBaseSuite.class)
 @SuiteClasses({
         com.dotcms.content.elasticsearch.business.ESMappingAPITest.class,
+        ESMappingUtilHelperTest.class,
         org.apache.velocity.runtime.parser.node.SimpleNodeTest.class,
         com.liferay.portal.ejb.UserLocalManagerTest.class,
         com.liferay.portal.ejb.UserUtilTest.class,
@@ -190,7 +191,7 @@ import org.junit.runners.Suite.SuiteClasses;
         com.dotcms.uuid.shorty.ShortyIdApiTest.class,
         DotGraphQLHttpServletTest.class,
         com.dotcms.rest.TagResourceIntegrationTest.class,
-        //com.dotcms.rest.MapToContentletPopulatorTest.class,
+        com.dotcms.rest.MapToContentletPopulatorTest.class,
         com.dotcms.rest.WebResourceIntegrationTest.class,
         com.dotcms.rest.api.v1.configuration.ConfigurationResourceTest.class,
         com.dotcms.rest.api.v1.page.NavResourceTest.class,
@@ -356,7 +357,6 @@ import org.junit.runners.Suite.SuiteClasses;
         TestWorkflowAction.class,
         SamlConfigurationServiceTest.class,
         ClusterFactoryTest.class,
-        ESMappingUtilHelperTest.class,
         BundleResourceTest.class,
         IdentityProviderConfigurationFactoryTest.class,
         EMAWebInterceptorTest.class,
