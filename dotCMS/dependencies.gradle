@@ -11,6 +11,9 @@ dependencies {
         because 'undated for security'
     }
 
+    // provided by catalina-ant.jar in tomcat including this in webapp can cause
+    // classpath issues from Jasper JSP classes that extend ant Task
+    compileOnly group: 'org.apache.ant', name: 'ant', version: '1.10.13'
 
     implementation group: 'com.sun.mail', name: 'jakarta.mail', version: '1.6.7'
 
@@ -163,7 +166,6 @@ dependencies {
     implementation group: 'org.jvnet', name: 'mimepull', version: '1.6'
 
     implementation group: 'com.dotcms.lib', name: 'dot.msnm', version:'ukv_2'
-    implementation group: 'com.dotcms.lib', name: 'dot.myspell', version:'ukv_2'
     implementation group: 'com.dotcms.lib', name: 'dot.odmg', version:'ukv_3'
     implementation group: 'com.dotcms.lib', name: 'dot.org.eclipse.mylyn.wikitext.confluence.core', version:'1.8.0.I20120918-1109_2'
     implementation group: 'com.dotcms.lib', name: 'dot.org.eclipse.mylyn.wikitext.core', version:'1.8.0.I20120918-1109_2'

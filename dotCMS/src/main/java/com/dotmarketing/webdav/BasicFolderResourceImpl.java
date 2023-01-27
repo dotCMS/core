@@ -8,7 +8,6 @@ import com.bradmcevoy.http.Resource;
 import com.bradmcevoy.http.exceptions.BadRequestException;
 import com.bradmcevoy.http.exceptions.NotAuthorizedException;
 import com.bradmcevoy.http.exceptions.NotFoundException;
-import  com.dotcms.repackage.org.dts.spell.utils.FileUtils;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotRuntimeException;
@@ -19,6 +18,8 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.nio.file.Files;
+import java.nio.file.StandardCopyOption;
 import java.util.Map;
 
 public abstract class BasicFolderResourceImpl implements FolderResource {
@@ -93,7 +94,10 @@ public abstract class BasicFolderResourceImpl implements FolderResource {
 
             this.originalPath = (!this.originalPath.endsWith("/"))? this.originalPath + "/":this.originalPath;
             final File tempFile = this.dotDavHelper.createTempFile("/" + this.host.getHostname() + this.originalPath + newName);
-            FileUtils.copyStreamToFile(tempFile, in, null);
+            Files.copy(
+                    in,
+                    tempFile.toPath(),
+                    StandardCopyOption.REPLACE_EXISTING);
             final Resource tempFileResource = new TempFileResourceImpl(tempFile, this.originalPath + newName, this.isAutoPub);
             return tempFileResource;
         } catch (Exception e){
