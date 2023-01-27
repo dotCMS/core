@@ -191,3 +191,4 @@ This maintenance release includes the following code fixes:
 113. https://github.com/dotCMS/core/issues/22729 : Image Selector Issues #22729
 114. https://github.com/dotCMS/core/issues/22756 : Removing Categories through REST API #22756
 115. https://github.com/dotCMS/core/issues/22763 : Copy folder duplicates content on pages #22763
+116. https://github.com/dotCMS/core/issues/22850 : Catch Throwable in PublisherJobQueue #22850
