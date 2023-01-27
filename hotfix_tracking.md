@@ -196,3 +196,4 @@ This maintenance release includes the following code fixes:
 118. https://github.com/dotCMS/core/issues/23009 : Add a way to set categories on workflow #23009
 119. https://github.com/dotCMS/core/issues/23062 : PP queue breaks if push of a bundle fails #23062
 120. https://github.com/dotCMS/core/issues/23128 : UI showing wrong date when changing Timezones #23128
+121. https://github.com/dotCMS/core/issues/23341 : Menu Nav in the BE not showing options when collapse #23341
