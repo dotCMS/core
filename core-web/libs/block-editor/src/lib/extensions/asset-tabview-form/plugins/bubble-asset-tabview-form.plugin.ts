@@ -3,11 +3,13 @@ import { EditorView } from 'prosemirror-view';
 
 import { Editor, posToDOMRect } from '@tiptap/core';
 
+import { EditorAssetTypes } from '@dotcms/dotcms-models';
+
 import { RenderProps } from '../asset-tabview-form.extension';
 
 interface PluginState {
     open: boolean;
-    asset: string;
+    asset: EditorAssetTypes;
 }
 
 export interface BubbleAssetTabFormProps {
@@ -35,7 +37,7 @@ export class BubbleAssetTabFormView {
     }
 
     update(view: EditorView, prevState?: EditorState): void {
-        const next = this.pluginKey?.getState(view.state);
+        const next = this.pluginKey?.getState(view.state) as PluginState;
         const prev = prevState ? this.pluginKey?.getState(prevState) : { open: false };
 
         const { state } = view;
@@ -76,7 +78,7 @@ export const bubbleAssetTabviewFormPlugin = (options: BubbleAssetTabFormProps) =
             init(): PluginState {
                 return {
                     open: false,
-                    asset: ''
+                    asset: null
                 };
             },
 

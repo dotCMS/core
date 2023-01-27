@@ -1,6 +1,6 @@
 <p-fileUpload
     *ngIf="status === 'SELECT'; else preview"
-    [accept]="acceptedTypes"
+    [accept]="assetType + '/*'"
     [customUpload]="true"
     (onSelect)="onSelectFile($event)"
     chooseLabel="browse files"
@@ -10,7 +10,11 @@
 
 <ng-template #preview>
     <div class="preview-container">
-        <img *ngIf="status === 'PREVIEW'; else loading" [src]="file.objectURL" [alt]="file.name" />
+        <dot-asset-preview
+            *ngIf="status === 'PREVIEW'; else loading"
+            [assetType]="assetType"
+            [file]="file"
+        ></dot-asset-preview>
         <ng-template #loading>
             <dot-spinner></dot-spinner>
         </ng-template>

@@ -86,7 +86,7 @@ describe('DotAssetSearchStore', () => {
         });
 
         test('should update LanguageId', (done) => {
-            service.updatelanguageId(2);
+            service.updateLanguageId(2);
 
             service.state$.subscribe((res) => {
                 expect(res.languageId).toEqual(2);

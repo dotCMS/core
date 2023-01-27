@@ -15,7 +15,7 @@ import {
 
 import { debounceTime, skip, takeUntil, throttleTime } from 'rxjs/operators';
 
-import { DotCMSContentlet } from '@dotcms/dotcms-models';
+import { DotCMSContentlet, EditorAssetTypes } from '@dotcms/dotcms-models';
 
 // services
 import { DotAssetSearchStore } from './store/dot-asset-search.store';
@@ -32,11 +32,11 @@ export class DotAssetSearchComponent implements OnInit, OnDestroy, AfterViewInit
     @Output() asset = new EventEmitter<DotCMSContentlet>();
 
     @Input() set languageId(id) {
-        this.store.updatelanguageId(id);
+        this.store.updateLanguageId(id);
     }
 
-    @Input() set assetType(assetType) {
-        this.store.updateContenttype(assetType);
+    @Input() set assetType(assetType: EditorAssetTypes) {
+        this.store.updateAssetType(assetType);
     }
 
     vm$ = this.store.vm$;
@@ -47,6 +47,8 @@ export class DotAssetSearchComponent implements OnInit, OnDestroy, AfterViewInit
     constructor(private store: DotAssetSearchStore) {}
 
     ngOnInit(): void {
+        this.store.searchContentlet('');
+
         this.offset$
             .pipe(takeUntil(this.destroy$), skip(1), throttleTime(450))
             .subscribe(this.store.nextBatch);

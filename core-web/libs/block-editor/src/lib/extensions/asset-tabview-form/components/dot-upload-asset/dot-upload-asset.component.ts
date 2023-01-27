@@ -1,7 +1,7 @@
 import { Component, EventEmitter, Output, Input } from '@angular/core';
 import { DomSanitizer } from '@angular/platform-browser';
 
-import { DotCMSContentlet } from '@dotcms/dotcms-models';
+import { EditorAssetTypes, DotCMSContentlet } from '@dotcms/dotcms-models';
 
 import { DotImageService } from '../../../image-uploader/services/dot-image/dot-image.service';
 
@@ -21,7 +21,7 @@ export class DotUploadAssetComponent {
     uploadedFile = new EventEmitter<DotCMSContentlet>();
 
     @Input()
-    acceptedTypes = 'image/*';
+    assetType: EditorAssetTypes = 'image';
 
     public status = STATUS.SELECT;
     public file: File;

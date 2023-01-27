@@ -5,7 +5,7 @@ import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs/internal/Observable';
 import { map, mergeMap, tap, withLatestFrom } from 'rxjs/operators';
 
-import { DotCMSContentlet } from '@dotcms/dotcms-models';
+import { DotCMSContentlet, EditorAssetTypes } from '@dotcms/dotcms-models';
 
 import {
     SearchService,
@@ -23,7 +23,7 @@ export interface DotAssetSearchState {
     contentlets: DotCMSContentlet[];
     languageId: number;
     search: string;
-    contenttype: string;
+    assetType: EditorAssetTypes;
 }
 
 const defaultState: DotAssetSearchState = {
@@ -32,7 +32,7 @@ const defaultState: DotAssetSearchState = {
     contentlets: [],
     languageId: DEFAULT_LANG_ID,
     search: '',
-    contenttype: ''
+    assetType: null
 };
 
 @Injectable()
@@ -52,17 +52,17 @@ export class DotAssetSearchStore extends ComponentStore<DotAssetSearchState> {
         };
     });
 
-    readonly updatelanguageId = this.updater<number>((state, languageId) => {
+    readonly updateLanguageId = this.updater<number>((state, languageId) => {
         return {
             ...state,
             languageId
         };
     });
 
-    readonly updateContenttype = this.updater<string>((state, contenttype) => {
+    readonly updateAssetType = this.updater<EditorAssetTypes>((state, assetType) => {
         return {
             ...state,
-            contenttype
+            assetType
         };
     });
 
@@ -120,7 +120,6 @@ export class DotAssetSearchStore extends ComponentStore<DotAssetSearchState> {
 
         this.dotLanguageService.getLanguages().subscribe((languages) => {
             this.languages = languages;
-            this.searchContentlet('');
         });
     }
 
@@ -136,10 +135,10 @@ export class DotAssetSearchStore extends ComponentStore<DotAssetSearchState> {
         );
     }
 
-    private params({ search, contenttype, offset = 0, languageId }): queryEsParams {
+    private params({ search, assetType, offset = 0, languageId }): queryEsParams {
         return {
             query: `+catchall:${search}* title:'${search}'^15 +languageId:${languageId} +baseType:(4 OR 9) +metadata.contenttype:${
-                contenttype ? contenttype + '/' : ''
+                assetType ? assetType + '/' : ''
             }* +deleted:false +working:true`,
             sortOrder: ESOrderDirection.ASC,
             limit: 20,

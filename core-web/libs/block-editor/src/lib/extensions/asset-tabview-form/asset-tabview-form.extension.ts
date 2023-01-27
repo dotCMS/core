@@ -6,6 +6,8 @@ import { ComponentRef, ViewContainerRef } from '@angular/core';
 import { Editor } from '@tiptap/core';
 import BubbleMenu from '@tiptap/extension-bubble-menu';
 
+import { EditorAssetTypes } from '@dotcms/dotcms-models';
+
 import { AssetTabviewFormComponent } from './asset-tabview-form.component';
 import { bubbleAssetTabviewFormPlugin } from './plugins/bubble-asset-tabview-form.plugin';
 
@@ -17,6 +19,7 @@ declare module '@tiptap/core' {
         AssetTabviewForm: {
             openAssetForm: (asset?: Asset) => ReturnType;
             closeAssetForm: () => ReturnType;
+            setMedia: (mediaType, payload) => ReturnType;
         };
     }
 }
@@ -40,7 +43,7 @@ const tippyOptions: Partial<Props> = {
 
 interface StartProps {
     editor: Editor;
-    asset: string;
+    asset: EditorAssetTypes;
     getPosition: GetReferenceClientRect;
 }
 
@@ -68,7 +71,7 @@ export const BubbleAssetTabviewFormExtension = (viewContainerRef: ViewContainerR
     }
 
     function onHide(editor): void {
-        editor.commands.toggleImageForm(false);
+        editor.commands.closeAssetForm(false);
         formTippy?.hide();
         component?.destroy();
     }
@@ -89,20 +92,12 @@ export const BubbleAssetTabviewFormExtension = (viewContainerRef: ViewContainerR
         formTippy = tippy(element.parentElement, tippyOptions);
     }
 
-    function setUpComponent(editor: Editor, asset: string) {
+    function setUpComponent(editor: Editor, asset: EditorAssetTypes) {
         component = viewContainerRef.createComponent(AssetTabviewFormComponent);
         component.instance.languageId = editor.storage.dotConfig.lang;
         component.instance.assetType = asset;
         component.instance.onSelectAsset = (payload) => {
-            switch (asset) {
-                case 'video':
-                    editor.chain().setVideo(payload).addNextLine().closeAssetForm().run();
-                    break;
-
-                case 'image':
-                    editor.chain().addDotImage(payload).addNextLine().closeAssetForm().run();
-                    break;
-            }
+            editor.chain().setMedia(asset, payload).addNextLine().closeAssetForm().run();
         };
 
         element = component.location.nativeElement;
@@ -129,7 +124,7 @@ export const BubbleAssetTabviewFormExtension = (viewContainerRef: ViewContainerR
                             .command(({ tr }) => {
                                 tr.setMeta(BUBBLE_IMAGE_TABVIEW_FORM_PLUGIN_KEY, {
                                     open: true,
-                                    contenttype: asset
+                                    asset
                                 });
 
                                 return true;
@@ -146,6 +141,17 @@ export const BubbleAssetTabviewFormExtension = (viewContainerRef: ViewContainerR
                                 return true;
                             })
                             .run();
+                    },
+                setMedia:
+                    (mediaType, payload) =>
+                    ({ chain }) => {
+                        switch (mediaType) {
+                            case 'video':
+                                return chain().setVideo(payload).run();
+
+                            case 'image':
+                                return chain().addDotImage(payload).run();
+                        }
                     }
             };
         },
