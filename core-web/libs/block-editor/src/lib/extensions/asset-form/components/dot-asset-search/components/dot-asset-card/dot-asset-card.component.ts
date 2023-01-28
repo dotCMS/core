@@ -14,4 +14,10 @@ export class DotAssetCardComponent {
     getImage(inode) {
         return `/dA/${inode}/500w/20q`;
     }
+
+    contentletIcon() {
+        return this.contentlet?.baseType !== 'FILEASSET'
+            ? this.contentlet?.contentTypeIcon
+            : this.contentlet?.__icon__;
+    }
 }
