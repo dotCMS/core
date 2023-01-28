@@ -25,6 +25,7 @@ import com.dotcms.publisher.bundle.business.BundleAPITest;
 import com.dotcms.publisher.bundle.business.BundleFactoryTest;
 import com.dotcms.publisher.business.PublishAuditAPITest;
 import com.dotcms.publisher.util.DependencyManagerTest;
+import com.dotcms.publisher.util.DependencySetTest;
 import com.dotcms.publishing.PublisherAPIImplTest;
 import com.dotcms.publishing.PublisherFilterImplTest;
 import com.dotcms.publishing.PushPublishFiltersInitializerTest;
@@ -61,6 +62,7 @@ import com.dotmarketing.osgi.GenericBundleActivatorTest;
 import com.dotmarketing.portlets.cmsmaintenance.factories.CMSMaintenanceFactoryTest;
 import com.dotmarketing.portlets.containers.business.ContainerFactoryImplTest;
 import com.dotmarketing.portlets.containers.business.ContainerStructureFinderStrategyResolverTest;
+import com.dotmarketing.portlets.contentlet.business.HostAPITest;
 import com.dotmarketing.portlets.contentlet.business.web.ContentletWebAPIImplIntegrationTest;
 import com.dotmarketing.portlets.contentlet.model.ContentletDependenciesTest;
 import com.dotmarketing.portlets.contentlet.model.IntegrationResourceLinkTest;
@@ -420,7 +422,13 @@ import org.junit.runners.Suite.SuiteClasses;
         PermissionBitFactoryImplTest.class,
         com.dotcms.util.pagination.ContainerPaginatorTest.class,
         ContentletDependenciesTest.class,
-        UtilMethodsITest.class
+        UtilMethodsITest.class,
+        DependencySetTest.class,
+        HostAPITest.class,
+        HTMLDiffUtilTest.class,
+        BundleFactoryTest.class,
+        IntegrityDataGenerationJobTest.class,
+        StaticPushPublishBundleGeneratorTest.class
 })
 public class MainSuite {
 
