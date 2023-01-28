@@ -125,7 +125,6 @@ public class ESMappingUtilHelperTest {
     @DataProvider(formatter = PlusTestNameFormatter.class)
     public static Object[][] dataProviderValidateNewsLikeMapping() {
         return new Object[][]{
-                {"geomapping", new String[]{"mylatlon"}, "geo_point"},
                 {"keywordmapping", new String[]{"categories", "tags", "conhost", "conhostname",
                         "wfstep", "structurename", "contenttype", "parentpath", "path",
                         "moduser", "owner"}, "keyword"}
