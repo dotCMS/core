@@ -1,0 +1,9 @@
+<ng-container [ngSwitch]="assetType">
+    <ng-container *ngSwitchCase="'image'">
+        <img [src]="file.objectURL" [alt]="file.name" />
+    </ng-container>
+    <ng-container *ngSwitchCase="'video'">
+        <video [src]="file.objectURL" [description]="file.name" controls></video>
+    </ng-container>
+    <p *ngSwitchDefault>Select a accepted asset type</p>
+</ng-container>

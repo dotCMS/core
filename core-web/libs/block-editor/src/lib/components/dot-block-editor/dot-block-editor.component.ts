@@ -208,7 +208,8 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy {
             ...(this._allowedBlocks.includes('contentlets')
                 ? [customExtensions.get('contentlets')]
                 : []),
-            ...(this._allowedBlocks.includes('image') ? [customExtensions.get('image')] : [])
+            ...(this._allowedBlocks.includes('image') ? [customExtensions.get('image')] : []),
+            ...(this._allowedBlocks.includes('video') ? [customExtensions.get('video')] : [])
         ];
     }
 }

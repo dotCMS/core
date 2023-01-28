@@ -3,10 +3,13 @@ import { EditorView } from 'prosemirror-view';
 
 import { Editor, posToDOMRect } from '@tiptap/core';
 
+import { EditorAssetTypes } from '@dotcms/dotcms-models';
+
 import { RenderProps } from '../asset-form.extension';
 
 interface PluginState {
     open: boolean;
+    assetType: EditorAssetTypes;
 }
 
 export interface BubbleAssetFormProps {
@@ -46,11 +49,10 @@ export class BubbleAssetFormView {
 
         if (!next?.open) {
             this.render().onHide(this.editor);
-
-            return;
         } else {
             this.render().onStart({
                 editor: this.editor,
+                assetType: next.assetType,
                 getPosition: () => {
                     const { from, to } = selection;
 
@@ -72,7 +74,8 @@ export const bubbleAssetFormPlugin = (options: BubbleAssetFormProps) => {
         state: {
             init(): PluginState {
                 return {
-                    open: false
+                    open: false,
+                    assetType: null
                 };
             },
 
@@ -81,11 +84,11 @@ export const bubbleAssetFormPlugin = (options: BubbleAssetFormProps) => {
                 value: PluginState,
                 oldState: EditorState
             ): PluginState {
-                const { open } = transaction.getMeta(options.pluginKey) || {};
+                const { open, assetType } = transaction.getMeta(options.pluginKey) || {};
                 const state = options.pluginKey?.getState(oldState);
 
                 if (typeof open === 'boolean') {
-                    return { open };
+                    return { open, assetType };
                 }
 
                 // keep the old state in case we do not receive a new one.

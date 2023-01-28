@@ -4,9 +4,12 @@ import {
     EventEmitter,
     Output,
     ViewChild,
-    ElementRef
+    ElementRef,
+    Input
 } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
+
+import { EditorAssetTypes } from '@dotcms/dotcms-models';
 
 const regexURL =
     '^((http|https)://)[-a-zA-Z0-9@:%._\\+~#?&//=]{2,256}\\.[a-z]{2,6}\\b([-a-zA-Z0-9@:%._\\+~#?&//=]*)$';
@@ -20,6 +23,9 @@ const regexURL =
 export class DotExternalAssetComponent {
     @ViewChild('input') input!: ElementRef;
     @Output() addImage = new EventEmitter();
+
+    @Input()
+    assetType: EditorAssetTypes;
 
     form: FormGroup;
 

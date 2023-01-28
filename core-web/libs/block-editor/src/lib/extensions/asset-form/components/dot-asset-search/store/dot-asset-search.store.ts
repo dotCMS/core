@@ -5,7 +5,7 @@ import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs/internal/Observable';
 import { map, mergeMap, tap, withLatestFrom } from 'rxjs/operators';
 
-import { DotCMSContentlet } from '@dotcms/dotcms-models';
+import { DotCMSContentlet, EditorAssetTypes } from '@dotcms/dotcms-models';
 
 import {
     SearchService,
@@ -23,6 +23,7 @@ export interface DotImageSearchState {
     contentlets: DotCMSContentlet[];
     languageId: number;
     search: string;
+    assetType: EditorAssetTypes;
 }
 
 const defaultState: DotImageSearchState = {
@@ -30,7 +31,8 @@ const defaultState: DotImageSearchState = {
     preventScroll: false,
     contentlets: [],
     languageId: DEFAULT_LANG_ID,
-    search: ''
+    search: '',
+    assetType: null
 };
 
 @Injectable()
@@ -47,6 +49,13 @@ export class DotAssetSearchStore extends ComponentStore<DotImageSearchState> {
         return {
             ...state,
             contentlets
+        };
+    });
+
+    readonly updateAssetType = this.updater<EditorAssetTypes>((state, assetType) => {
+        return {
+            ...state,
+            assetType
         };
     });
 
@@ -111,7 +120,6 @@ export class DotAssetSearchStore extends ComponentStore<DotImageSearchState> {
 
         this.dotLanguageService.getLanguages().subscribe((languages) => {
             this.languages = languages;
-            this.searchContentlet('');
         });
     }
 
@@ -127,9 +135,11 @@ export class DotAssetSearchStore extends ComponentStore<DotImageSearchState> {
         );
     }
 
-    private params({ search, offset = 0, languageId }): queryEsParams {
+    private params({ search, assetType, offset = 0, languageId }): queryEsParams {
         return {
-            query: ` +catchall:${search}* title:'${search}'^15 +languageId:${languageId} +baseType:(4 OR 9) +metadata.contenttype:image/* +deleted:false +working:true`,
+            query: ` +catchall:${search}* title:'${search}'^15 +languageId:${languageId} +baseType:(4 OR 9) +metadata.contenttype:${
+                assetType || ''
+            }/* +deleted:false +working:true`,
             sortOrder: ESOrderDirection.ASC,
             limit: 20,
             offset

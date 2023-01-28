@@ -6,6 +6,8 @@ import { ComponentRef, ViewContainerRef } from '@angular/core';
 import { Editor } from '@tiptap/core';
 import BubbleMenu from '@tiptap/extension-bubble-menu';
 
+import { EditorAssetTypes } from '@dotcms/dotcms-models';
+
 import { AssetFormComponent } from './asset-form.component';
 import { bubbleAssetFormPlugin } from './plugins/bubble-asset-form.plugin';
 
@@ -13,8 +15,10 @@ export const BUBBLE_ASSET_FORM_PLUGIN_KEY = new PluginKey('bubble-image-form');
 
 declare module '@tiptap/core' {
     interface Commands<ReturnType> {
-        ImageTabviewForm: {
-            toggleImageForm: (value: boolean) => ReturnType;
+        AssetTabviewForm: {
+            openAssetForm: (data: { assetType: EditorAssetTypes }) => ReturnType;
+            closeAssetForm: () => ReturnType;
+            addAsset: (data: { assetType: EditorAssetTypes; payload }) => ReturnType;
         };
     }
 }
@@ -38,6 +42,7 @@ const tippyOptions: Partial<Props> = {
 
 interface StartProps {
     editor: Editor;
+    assetType: EditorAssetTypes;
     getPosition: GetReferenceClientRect;
 }
 
@@ -52,9 +57,9 @@ export const BubbleAssetFormExtension = (viewContainerRef: ViewContainerRef) => 
     let component: ComponentRef<AssetFormComponent>;
     let element: Element;
 
-    function onStart({ editor, getPosition }: StartProps) {
+    function onStart({ editor, assetType, getPosition }: StartProps) {
         setUpTippy(editor);
-        setUpComponent(editor);
+        setUpComponent(editor, assetType);
 
         formTippy.setProps({
             content: element,
@@ -65,7 +70,7 @@ export const BubbleAssetFormExtension = (viewContainerRef: ViewContainerRef) => 
     }
 
     function onHide(editor): void {
-        editor.commands.toggleImageForm(false);
+        editor.commands.closeAssetForm();
         formTippy?.hide();
         component?.destroy();
     }
@@ -86,11 +91,12 @@ export const BubbleAssetFormExtension = (viewContainerRef: ViewContainerRef) => 
         formTippy = tippy(element.parentElement, tippyOptions);
     }
 
-    function setUpComponent(editor: Editor) {
+    function setUpComponent(editor: Editor, assetType: EditorAssetTypes) {
         component = viewContainerRef.createComponent(AssetFormComponent);
         component.instance.languageId = editor.storage.dotConfig.lang;
+        component.instance.assetType = assetType;
         component.instance.onSelectImage = (payload) => {
-            editor.chain().addDotImage(payload).addNextLine().toggleImageForm(false).run();
+            editor.chain().addAsset({ assetType, payload }).addNextLine().closeAssetForm().run();
         };
 
         element = component.location.nativeElement;
@@ -98,7 +104,7 @@ export const BubbleAssetFormExtension = (viewContainerRef: ViewContainerRef) => 
     }
 
     return BubbleMenu.extend<unknown>({
-        name: 'bubbleImageForm',
+        name: 'bubbleAssetForm',
 
         addOptions() {
             return {
@@ -110,18 +116,38 @@ export const BubbleAssetFormExtension = (viewContainerRef: ViewContainerRef) => 
 
         addCommands() {
             return {
-                toggleImageForm:
-                    (value) =>
+                openAssetForm:
+                    ({ assetType }) =>
                     ({ chain }) => {
                         return chain()
                             .command(({ tr }) => {
-                                tr.setMeta(BUBBLE_ASSET_FORM_PLUGIN_KEY, {
-                                    open: value
-                                });
+                                tr.setMeta(BUBBLE_ASSET_FORM_PLUGIN_KEY, { open: true, assetType });
 
                                 return true;
                             })
                             .run();
+                    },
+                closeAssetForm:
+                    () =>
+                    ({ chain }) => {
+                        return chain()
+                            .command(({ tr }) => {
+                                tr.setMeta(BUBBLE_ASSET_FORM_PLUGIN_KEY, { open: false });
+
+                                return true;
+                            })
+                            .run();
+                    },
+                addAsset:
+                    ({ assetType, payload }) =>
+                    ({ chain }) => {
+                        switch (assetType) {
+                            case 'video':
+                                return chain().setVideo(payload).run();
+
+                            case 'image':
+                                return chain().addDotImage(payload).run();
+                        }
                     }
             };
         },

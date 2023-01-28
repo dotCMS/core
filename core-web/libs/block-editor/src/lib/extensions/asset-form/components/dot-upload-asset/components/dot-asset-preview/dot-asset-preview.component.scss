@@ -1,0 +1,22 @@
+@use "variables" as *;
+
+:host {
+    height: 100%;
+    width: 100%;
+
+    display: flex;
+    justify-content: center;
+    align-items: center;
+
+    img {
+        height: 100%;
+        width: 100%;
+        object-fit: contain;
+    }
+
+    video {
+        max-height: 100%;
+        max-width: 100%;
+        object-fit: contain;
+    }
+}

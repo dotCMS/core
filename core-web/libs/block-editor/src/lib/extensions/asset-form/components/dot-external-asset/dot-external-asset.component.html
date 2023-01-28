@@ -1,6 +1,6 @@
 <form class="wrapper" [formGroup]="form" (ngSubmit)="onSubmit(form.value)">
     <div class="form-control">
-        <label for="url">Insert Image URL</label>
+        <label for="url">Insert {{ assetType }} URL</label>
         <input
             id="url"
             #input
@@ -8,7 +8,7 @@
             autocomplete="off"
             type="text"
             pInputText
-            placeholder="https://example.com/image.jpg"
+            placeholder="https://example.com/asset"
         />
     </div>
     <div class="footer">
