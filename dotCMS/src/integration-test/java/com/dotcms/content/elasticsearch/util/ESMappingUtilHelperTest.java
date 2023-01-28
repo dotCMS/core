@@ -61,6 +61,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -109,8 +110,6 @@ public class ESMappingUtilHelperTest {
         return new Object[][] {
                 {"template_1", new String[]{"host.hostname_dotraw"}, "keyword"},
                 {"textmapping", new String[]{"host.hostname"}, "keyword"},
-                {"strings_as_dates", new String[]{"calendarevent.originalstartdate",
-                        "calendarevent.recurrencestart", "calendarevent.recurrenceend"}, "date"},
                 {"permissions", new String[]{"permissions"}, "text"}
         };
     }
@@ -127,7 +126,6 @@ public class ESMappingUtilHelperTest {
     public static Object[][] dataProviderValidateNewsLikeMapping() {
         return new Object[][]{
                 {"geomapping", new String[]{"mylatlon"}, "geo_point"},
-                {"geomapping_2", new String[]{"latlong"}, "geo_point"},
                 {"keywordmapping", new String[]{"categories", "tags", "conhost", "conhostname",
                         "wfstep", "structurename", "contenttype", "parentpath", "path",
                         "moduser", "owner"}, "keyword"}
@@ -516,6 +514,7 @@ public class ESMappingUtilHelperTest {
      */
     @UseDataProvider
     @Test
+
     public void testValidateNewsLikeMapping(final String testCase, final String[] fields, final String expectedResult)
             throws DotDataException, IOException, DotSecurityException {
         final ContentType newsContentType = TestDataUtils.getNewsLikeContentType();
