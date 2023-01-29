@@ -1,8 +1,6 @@
 package com.dotmarketing.portlets.workflows.ajax;
 
 import com.dotcms.exception.ExceptionUtil;
-import com.fasterxml.jackson.databind.DeserializationFeature;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.dotcms.workflow.form.WorkflowActionStepBean;
 import com.dotcms.workflow.form.WorkflowStepAddForm;
 import com.dotcms.workflow.form.WorkflowStepUpdateForm;
@@ -15,6 +13,8 @@ import com.dotmarketing.portlets.workflows.model.WorkflowScheme;
 import com.dotmarketing.portlets.workflows.model.WorkflowStep;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.StringUtils;
+import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.liferay.portal.model.User;
 
 import javax.servlet.ServletException;
@@ -200,7 +200,16 @@ public class WfStepAjax extends WfBaseAction {
         m.put("items", list);
 		return mapper.writerWithDefaultPrettyPrinter().writeValueAsString(m);
 	}
-	
-	
+
+	/**
+	 * Security check demanded by Sonar
+	 * We register all the allowed methods down here
+	 *
+	 * @return allowed method names
+	 */
+	@Override
+	protected Set<String> getAllowedCommands() {
+		return Set.of( "listByScheme", "add", "addActionToStep", "delete", "reorder", "action" );
+	}
 	
 }
