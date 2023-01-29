@@ -69,7 +69,7 @@ export class BubbleAssetFormView {
 
 export const bubbleAssetFormPlugin = (options: BubbleAssetFormProps) => {
     return new Plugin({
-        key: options.pluginKey as PluginKey,
+        key: options.pluginKey,
         view: (view) => new BubbleAssetFormView({ view, ...options }),
         state: {
             init(): PluginState {

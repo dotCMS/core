@@ -14,4 +14,7 @@ export class DotAssetPreviewComponent {
 
     @Input()
     file: File;
+
+    @Input()
+    src: string;
 }

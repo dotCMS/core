@@ -14,6 +14,7 @@
             *ngIf="status === 'PREVIEW'; else loading"
             [assetType]="assetType"
             [file]="file"
+            [src]="src"
         ></dot-asset-preview>
 
         <ng-template #loading>
