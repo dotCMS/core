@@ -3,10 +3,13 @@ package com.dotcms.api;
 import com.dotcms.api.provider.DefaultResponseExceptionMapper;
 import com.dotcms.api.provider.DotCMSClientHeaders;
 import com.dotcms.model.ResponseEntityView;
+import com.dotcms.model.site.GetSiteByNameRequest;
 import com.dotcms.model.site.Site;
+import com.dotcms.model.site.SiteView;
 import java.util.List;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
+import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
@@ -16,7 +19,6 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 import org.eclipse.microprofile.openapi.annotations.tags.Tags;
 import org.eclipse.microprofile.rest.client.annotation.RegisterClientHeaders;
 import org.eclipse.microprofile.rest.client.annotation.RegisterProvider;
-import org.eclipse.microprofile.rest.client.inject.RegisterRestClient;
 
 /**
  * Entry point to dotCMS Site Rest API
@@ -49,5 +51,14 @@ public interface SiteAPI {
             @QueryParam("showArchived") Boolean showArchived,
             @QueryParam("showLive") Boolean showLive, @QueryParam("showSystem") Boolean showSystem,
             @QueryParam("page") Integer page, @QueryParam("perPage") Integer perPage);
+
+
+    @POST
+    @Path("/_byname")
+    @Operation(
+            summary = " Returns the Site that matches the specified search criteria"
+    )
+    ResponseEntityView<SiteView>findHostByName(final GetSiteByNameRequest request);
+
 
 }

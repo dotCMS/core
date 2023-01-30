@@ -9,4 +9,10 @@ import org.immutables.value.Value;
 @JsonDeserialize(as = ImmutableStoryBlockField.class)
 public abstract class StoryBlockField extends Field {
 
+    @Value.Default
+    @Override
+    public DataTypes dataType(){
+        return DataTypes.LONG_TEXT;
+    };
+
 }

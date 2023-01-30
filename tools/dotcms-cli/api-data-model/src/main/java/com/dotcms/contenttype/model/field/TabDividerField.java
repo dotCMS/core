@@ -9,4 +9,10 @@ import org.immutables.value.Value;
 @JsonDeserialize(as = ImmutableTabDividerField.class)
 public abstract class TabDividerField extends Field {
 
+    @Value.Default
+    @Override
+    public DataTypes dataType(){
+        return DataTypes.SYSTEM;
+    };
+
 }

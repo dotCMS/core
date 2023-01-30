@@ -9,6 +9,7 @@ on:
       - 'dotCMS/**'
       - 'pom.xml'
       - '!docker/dotcms-compose-examples/**'
+      - 'tools/**'
   push:
     paths:
       - '.cicd/**'

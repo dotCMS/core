@@ -20,7 +20,8 @@ public interface AbstractSite {
     @Nullable
     String aliases();
 
-    String hostname();
+    @JsonProperty("hostname")
+    String hostName();
 
     String folder();
 
