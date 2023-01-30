@@ -20,12 +20,6 @@ import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.util.Logger;
 
 public class PngImageFilter extends ImageFilter {
-	public String[] getAcceptedParameters(){
-		return  new String[] {
-				
-
-		};
-	}
 	public File runFilter(File file,   Map<String, String[]> parameters) {
 
 		File resultFile = getResultsFile(file, parameters);
@@ -33,9 +27,10 @@ public class PngImageFilter extends ImageFilter {
 		if(!overwrite(resultFile,parameters)){
 			return resultFile;
 		}
-		
-		resultFile.delete();
+
 		try{
+			final File tempResultFile = new File(resultFile.getAbsoluteFile() + "_" + System.currentTimeMillis() + ".tmp.png");
+
 			BufferedImage src = ImageIO.read(file);
 			Iterator<ImageWriter> iter = ImageIO.getImageWritersByFormatName("png");
 			ImageWriter writer = iter.next();
@@ -43,23 +38,22 @@ public class PngImageFilter extends ImageFilter {
 			BufferedImage dst = new BufferedImage(src.getWidth(), src.getHeight(), BufferedImage.TYPE_4BYTE_ABGR);
 			Graphics2D graphics = dst.createGraphics();  
 
-			//graphics.fillRect(0, 0, src.getWidth(), src.getHeight());
+
 			graphics.drawImage(src, 0, 0, src.getWidth(), src.getHeight(),null);
-			ImageOutputStream ios = ImageIO.createImageOutputStream(resultFile);
-			writer.setOutput(ios);
-			writer.write(null,new IIOImage(dst,null,null),iwp);
-			ios.flush();
-			writer.dispose();
-			ios.close();
+			try(ImageOutputStream ios = ImageIO.createImageOutputStream(tempResultFile)){
+				writer.setOutput(ios);
+				writer.write(null,new IIOImage(dst,null,null),iwp);
+				ios.flush();
+				writer.dispose();
+				ios.close();
+			}
+			if (!tempResultFile.renameTo(resultFile)) {
+				throw new DotRuntimeException("unable to create file:" + resultFile);
+			}
+			return resultFile;
 		} catch (Exception e) {
 			throw new DotRuntimeException("unable to convert file:" +file + " : " +  e.getMessage(),e);
 		}
-		
-		
-		
-		
-		
-		return resultFile;
 	}
 	
 

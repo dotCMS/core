@@ -198,3 +198,4 @@ This maintenance release includes the following code fixes:
 120. https://github.com/dotCMS/core/issues/23128 : UI showing wrong date when changing Timezones #23128
 121. https://github.com/dotCMS/core/issues/23341 : Menu Nav in the BE not showing options when collapse #23341
 122. https://github.com/dotCMS/core/issues/23280 : Unable to assign contentlets in a secondary language from the task screen if there is a working version of the default language #23280
+123. https://github.com/dotCMS/core/issues/23384 : Thumbnailing Large/Complex pdfs can blow heap #23384
