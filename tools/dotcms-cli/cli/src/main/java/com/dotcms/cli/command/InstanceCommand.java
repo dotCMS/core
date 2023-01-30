@@ -83,8 +83,8 @@ public class InstanceCommand implements Callable<Integer> {
                     final String suffix = entry.getKey();
                     final URI uri = entry.getValue();
                     final boolean active =
-                            serviceBeanByName.containsKey(suffix) ? serviceBeanByName.get(suffix)
-                                    .active() : false;
+                            serviceBeanByName.containsKey(suffix) && serviceBeanByName.get(suffix)
+                                    .active();
                     final String color = active ? "green" : "blue";
 
                     output.info(String.format(

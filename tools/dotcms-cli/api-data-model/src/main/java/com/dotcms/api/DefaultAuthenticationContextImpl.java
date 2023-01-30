@@ -74,7 +74,7 @@ public class DefaultAuthenticationContextImpl implements AuthenticationContext {
                     .credentials(CredentialsBean.builder().user(user).token(token).build()).build();
             serviceManager.persist(serviceBean);
         } catch (IOException e) {
-            throw new RuntimeException(e);
+            throw new IllegalStateException(e);
         }
         this.user = user;
         this.token = token;
@@ -97,7 +97,7 @@ public class DefaultAuthenticationContextImpl implements AuthenticationContext {
     String getServiceKey() {
         final Optional<ServiceBean> selected = serviceManager.selected();
         if(selected.isEmpty()){
-           throw new RuntimeException("No dotCMS instance has been activated.");
+           throw new IllegalStateException("No dotCMS instance has been activated.");
         }
         return selected.get().name();
     }
