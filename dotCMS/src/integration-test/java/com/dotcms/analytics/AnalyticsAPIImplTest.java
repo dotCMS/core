@@ -22,6 +22,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assume.assumeTrue;
 
 /**
  * Analytics API integration tests.
@@ -56,6 +57,7 @@ public class AnalyticsAPIImplTest extends IntegrationTestBase {
      */
     @Test
     public void test_getAccessToken_fetchWhenNotCached() throws Exception {
+        runIfAnalyticsEnabled();
         AccessToken accessToken = analyticsAPI.getAccessToken(analyticsApp, true);
         assertNotNull(accessToken);
         assertTrue(analyticsCache.getAccessToken(analyticsApp.getAnalyticsProperties().clientId(), null).isPresent());
@@ -67,6 +69,7 @@ public class AnalyticsAPIImplTest extends IntegrationTestBase {
      */
     @Test
     public void test_getAccessToken() throws Exception {
+        runIfAnalyticsEnabled();
         analyticsCache.removeAccessToken(
             analyticsApp.getAnalyticsProperties().clientId(),
             AnalyticsHelper.resolveAudience(analyticsApp));
@@ -98,6 +101,7 @@ public class AnalyticsAPIImplTest extends IntegrationTestBase {
      */
     @Test 
     public void test_refreshAccessToken() throws AnalyticsException {
+        runIfAnalyticsEnabled();
         analyticsCache.removeAccessToken(
             analyticsApp.getAnalyticsProperties().clientId(),
             AnalyticsHelper.resolveAudience(analyticsApp));
@@ -136,6 +140,8 @@ public class AnalyticsAPIImplTest extends IntegrationTestBase {
      */
     @Test(expected = UnrecoverableAnalyticsException.class)
     public void test_refreshAccessToken_fail_wrong_clientId() throws Exception {
+        runIfAnalyticsEnabled();
+
         analyticsApp = AnalyticsTestUtils.prepareAnalyticsApp(host, "some-client-id");
 
         analyticsCache.removeAccessToken(
@@ -148,6 +154,8 @@ public class AnalyticsAPIImplTest extends IntegrationTestBase {
         analyticsAPI.refreshAccessToken(analyticsApp);
     }
 
+
+
     /**
      * Given a cached {@link AccessToken}
      * When resetting access token
@@ -155,6 +163,7 @@ public class AnalyticsAPIImplTest extends IntegrationTestBase {
      */
     @Test
     public void test_resetAccessToken() throws Exception {
+        runIfAnalyticsEnabled();
         AccessToken accessToken = analyticsAPI.getAccessToken(analyticsApp, true);
         assertNotNull(accessToken);
 
@@ -170,6 +179,7 @@ public class AnalyticsAPIImplTest extends IntegrationTestBase {
      */
     @Test
     public void test_getAnalyticsKey() throws Exception {
+        runIfAnalyticsEnabled();
         analyticsAPI.getAccessToken(analyticsApp, true);
         final String analyticsKey = analyticsAPI.getAnalyticsKey(host);
         assertNotNull(analyticsKey);
@@ -185,6 +195,7 @@ public class AnalyticsAPIImplTest extends IntegrationTestBase {
      */
     @Test
     public void test_resetAnalyticsKey() throws Exception {
+        runIfAnalyticsEnabled();
         analyticsAPI.getAccessToken(analyticsApp, true);
         analyticsAPI.getAnalyticsKey(host);
         analyticsAPI.resetAnalyticsKey(analyticsApp);
@@ -193,4 +204,7 @@ public class AnalyticsAPIImplTest extends IntegrationTestBase {
         assertNotNull(analyticsApp.getAnalyticsProperties().analyticsKey());
     }
 
+    private static void runIfAnalyticsEnabled() {
+        assumeTrue("Analytics tests not enabled", Config.getBooleanProperty(AnalyticsApp.ANALYTICS_TESTS_ENABLED, false));
+    }
 }

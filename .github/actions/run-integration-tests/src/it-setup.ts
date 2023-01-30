@@ -217,6 +217,10 @@ const getOverrides = (propertyMap: Map<string, string>): OverrideProperties => {
           {
             original: '^felix.base.dir=.*$',
             replacement: `felix.base.dir=${felixFolder}`
+          },
+          {
+            original: '^analytics.tests.enabled=.*$',
+            replacement: `analytics.tests.enabled=true`
           }
         ]
       }

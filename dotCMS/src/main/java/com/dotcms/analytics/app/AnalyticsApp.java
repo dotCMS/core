@@ -34,6 +34,7 @@ public class AnalyticsApp {
     public static final String ANALYTICS_APP_WRITE_URL_KEY = "analytics.app.write.url";
     public static final String ANALYTICS_APP_READ_URL_KEY = "analytics.app.read.url";
     public static final String ANALYTICS_APP_OVERRIDE_NOT_ALLOWED_KEY = "analytics.app.override.not.allowed";
+    public static final String ANALYTICS_TESTS_ENABLED = "analytics.tests.enabled";
 
     private final Host host;
     private final AnalyticsProperties analyticsProperties;

@@ -38,6 +38,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assume.assumeTrue;
 
 
 /**
@@ -93,6 +94,7 @@ public class AccessTokenRenewJobTest extends IntegrationTestBase {
      */
     @Test
     public void test_accessTokenRenew_none() throws Exception {
+        runIfAnalyticsEnabled();
         analyticsAPI.resetAccessToken(analyticsApp);
 
         accessTokenRenewJob.execute(getJobContext());
@@ -109,6 +111,7 @@ public class AccessTokenRenewJobTest extends IntegrationTestBase {
      */
     @Test
     public void test_accessTokenRenew_expired() throws Exception {
+        runIfAnalyticsEnabled();
         analyticsAPI.resetAccessToken(analyticsApp);
 
         final Instant issueDate = Instant.now().minusSeconds(ANALYTICS_ACCESS_TOKEN_TTL);
@@ -130,6 +133,7 @@ public class AccessTokenRenewJobTest extends IntegrationTestBase {
      */
     @Test
     public void test_accessTokenRenew_inWindow() throws Exception {
+        runIfAnalyticsEnabled();
         analyticsAPI.resetAccessToken(analyticsApp);
 
         final Instant issueDate = Instant.now().minusSeconds(ANALYTICS_ACCESS_TOKEN_TTL).plusSeconds(30);
@@ -151,6 +155,7 @@ public class AccessTokenRenewJobTest extends IntegrationTestBase {
      */
     @Test
     public void test_accessTokenRenew_whenNoop() throws Exception {
+        runIfAnalyticsEnabled();
         final String reason = "some-reason";
         final String clientId = analyticsApp.getAnalyticsProperties().clientId();
         analyticsCache.putAccessToken(AnalyticsHelper.createNoopToken(analyticsApp, reason).withClientId(clientId));
@@ -189,6 +194,7 @@ public class AccessTokenRenewJobTest extends IntegrationTestBase {
      */
     @Test
     public void test_accessTokenRenew_whenOk() throws Exception {
+        runIfAnalyticsEnabled();
         analyticsAPI.resetAccessToken(analyticsApp);
         analyticsAPI.getAccessToken(analyticsApp, true);
 
@@ -206,6 +212,7 @@ public class AccessTokenRenewJobTest extends IntegrationTestBase {
      */
     @Test
     public void test_accessTokenRenew_fail_wrongClientId() throws Exception {
+        runIfAnalyticsEnabled();
         analyticsApp = AnalyticsTestUtils.prepareAnalyticsApp(host, "some-client-id");
 
         accessTokenRenewJob.execute(getJobContext());
@@ -264,4 +271,7 @@ public class AccessTokenRenewJobTest extends IntegrationTestBase {
             .loadObjectResults();
     }
 
+    private static void runIfAnalyticsEnabled() {
+        assumeTrue("Analytics tests not enabled", Config.getBooleanProperty(AnalyticsApp.ANALYTICS_TESTS_ENABLED, false));
+    }
 }
