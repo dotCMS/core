@@ -197,3 +197,4 @@ This maintenance release includes the following code fixes:
 119. https://github.com/dotCMS/core/issues/23062 : PP queue breaks if push of a bundle fails #23062
 120. https://github.com/dotCMS/core/issues/23128 : UI showing wrong date when changing Timezones #23128
 121. https://github.com/dotCMS/core/issues/23341 : Menu Nav in the BE not showing options when collapse #23341
+122. https://github.com/dotCMS/core/issues/23280 : Unable to assign contentlets in a secondary language from the task screen if there is a working version of the default language #23280
