@@ -282,22 +282,25 @@ public class MaintenanceResource implements Serializable {
      * Generates and download a ZIP file with all the data structures and their respective records that are required to
      * create a Starter Site in dotCMS.
      *
-     * @param request The current instance of the {@link HttpServletRequest}
-     * @param response The current instance of the {@link HttpServletResponse}
-     * @param withAssets If
-     * @return
+     * @param request    The current instance of the {@link HttpServletRequest}
+     * @param response   The current instance of the {@link HttpServletResponse}
+     * @param withAssets If the generated Starter must include all assets as well, set this to {@code true}.
+     *
+     * @return The streamed Starter ZIP file.
      */
     private Response downloadStarter(final HttpServletRequest request, final HttpServletResponse response,
                                      final boolean withAssets) {
         this.assertBackendUser(request, response);
         final ExportStarterUtil exportStarterUtil = new ExportStarterUtil();
         final String zipName = exportStarterUtil.generateStarterFileName();
+        Logger.info(this, String.format("Generating Starter ZIP file '%s'", zipName));
 
         final StreamingOutput stream = output -> {
 
             exportStarterUtil.streamZipStarter(output, withAssets);
             output.flush();
             output.close();
+            Logger.info(this, String.format("Starter ZIP file '%s' has been generated successfully!", zipName));
 
         };
 
