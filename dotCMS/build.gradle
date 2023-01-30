@@ -75,7 +75,7 @@ project.ext {
     dotcmsHome = serverFolder + webAppRootFolder
 
 
-
+    logConfigFile = project.file("src/test/resources/log4j2-test.xml")
 
     if (project.gradle.startParameter.taskNames.contains('deployWarTomcat') || project.gradle.startParameter.taskNames.contains('createDist')|| project.gradle.startParameter.taskNames.contains('docker')){
         try {
@@ -413,19 +413,26 @@ task integrationTest(type: Test, dependsOn:['prepareIntegrationTests']) {
     group = "verification"
     testClassesDirs = sourceSets.integrationTest.output.classesDirs
     classpath = sourceSets.integrationTest.runtimeClasspath
-
-
-    // Check if we want to run the tests suite
-    def singleTest = System.getProperty("test.single")
-    if (null != singleTest && singleTest == "com.dotcms.MainSuite"){
-        include "**/MainSuite.class"
-    } else {
-        exclude "**/MainSuite.class"
-    }
-
-
     doFirst
             {
+
+                // Deprecated prefer to use --tests property in gradle
+                def singleTest = System.getProperty("test.single")
+                if (null != singleTest) {
+                    println "Tests requested with -Dtest.single property (deprecated) use --tests property instead IDE may pass this when selecting individual test:"
+                    include singleTest.replace(".", "/") + ".class"
+                }
+                else {
+                    // Test if --tests parameter was passed otherwise default to MainSuite
+                    def includePatterns = filter.getCommandLineIncludePatterns();
+                    if (includePatterns.size() == 0) {
+                        print "Running Integration tests defaulting to MainSuite, specify --tests property for individual tests: "
+                        include "**/MainSuite.class"
+                    } else {
+                        print "Individual tests requested with --tests property: " + includePatterns
+                    }
+                }
+
                 if (project.hasProperty('databaseType')){
                     systemProperty "databaseType", "$databaseType"
                 }
@@ -443,6 +450,7 @@ tasks.withType(Test) {
     useJUnitPlatform()
     maxHeapSize = '1G'
     // jvmArgs = ["--add-opens=java.base/jdk.internal.loader=ALL-UNNAMED", "-javaagent:${configurations.byteBuddyAgent.singleFile}"]
+    systemProperty 'log4j2.configurationFile', logConfigFile.getAbsolutePath()
 
     testLogging {
         // set options for log level LIFECYCLE

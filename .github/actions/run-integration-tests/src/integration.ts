@@ -316,7 +316,7 @@ const resolveParams = (cmd: Command) => {
 const addFallbackTest = (tests: string[]) => {
   core.info('No specific integration tests found using MainSuite')
   if (buildEnv === 'gradle') {
-    tests.push('-Dtest.single=com.dotcms.MainSuite')
+    tests.push('--tests com.dotcms.MainSuite')
   } else if (buildEnv === 'maven') {
     tests.push('-Dit.test=com.dotcms.MainSuite')
   }

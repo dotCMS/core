@@ -222,7 +222,7 @@ import org.junit.runner.RunWith;
 import org.junit.runners.Suite.SuiteClasses;
 
 /* grep -l -r "@Test" dotCMS/src/integration-test */
-/* ./gradlew integrationTest -Dtest.single=com.dotcms.MainSuite */
+/* ./gradlew integrationTest --tests 'com.dotcms.MainSuite' */
 
 @RunWith(MainBaseSuite.class)
 @SuiteClasses({
