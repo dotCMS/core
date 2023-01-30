@@ -2,6 +2,9 @@ package com.dotcms.exception;
 
 import com.dotmarketing.exception.DotRuntimeException;
 
+/**
+ * Thrown when a not allowed operation is attempted
+ */
 public class NotAllowedException extends DotRuntimeException {
 
     public NotAllowedException(String message) {
