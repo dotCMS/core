@@ -18,6 +18,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.file.Files;
+import java.util.Set;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -266,4 +267,19 @@ public class OSGIAJAX extends OSGIBaseAJAX {
 
     }
 
+    @Override
+    protected Set<String> getAllowedCommands() {
+        return Set.of(
+                "remove",
+                "restart",
+                "modifyExtraPackages",
+                "getExtraPackages",
+                "add",
+                "start",
+                "stop",
+                "deploy",
+                "undeploy",
+                "action"
+        );
+    }
 }
