@@ -27,6 +27,11 @@
 .content-search__show-query-dialog {
     .dijitDialogTitleBar {
         z-index: 1;
+        width: inherit !important;
+    }
+
+    .dijitDialogPaneContent {
+        width: inherit !important;
     }
 }
 

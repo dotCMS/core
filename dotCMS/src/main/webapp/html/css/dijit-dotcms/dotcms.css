@@ -10477,6 +10477,10 @@ a.category_higlighted, a.tag_higlighted {
 
 .content-search__show-query-dialog .dijitDialogTitleBar {
   z-index: 1;
+  width: inherit !important;
+}
+.content-search__show-query-dialog .dijitDialogPaneContent {
+  width: inherit !important;
 }
 
 .content-search__key-fields {
