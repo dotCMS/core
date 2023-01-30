@@ -1,14 +1,28 @@
 package com.dotcms.rest.api.v1.maintenance;
 
-import java.io.File;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.io.Serializable;
-import java.text.SimpleDateFormat;
-import java.util.Date;
-import java.util.Optional;
-import java.util.concurrent.TimeUnit;
+import com.dotcms.concurrent.DotConcurrentFactory;
+import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
+import com.dotcms.rest.InitDataObject;
+import com.dotcms.rest.ResponseEntityView;
+import com.dotcms.rest.WebResource;
+import com.dotcms.rest.annotation.NoCache;
+import com.dotcms.util.AssetExporterUtil;
+import com.dotcms.util.DbExporterUtil;
+import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.ApiProvider;
+import com.dotmarketing.business.Role;
+import com.dotmarketing.exception.DoesNotExistException;
+import com.dotmarketing.util.Config;
+import com.dotmarketing.util.FileUtil;
+import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.SecurityLogger;
+import com.dotmarketing.util.StringUtils;
+import com.dotmarketing.util.starter.ExportStarterUtil;
+import com.liferay.portal.model.User;
+import io.vavr.control.Try;
+import org.apache.commons.io.IOUtils;
+import org.glassfish.jersey.server.JSONP;
+
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.Consumes;
@@ -23,28 +37,14 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 import javax.ws.rs.core.StreamingOutput;
-import org.apache.commons.io.IOUtils;
-import org.glassfish.jersey.server.JSONP;
-import com.dotcms.concurrent.DotConcurrentFactory;
-import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
-import com.dotcms.rest.InitDataObject;
-import com.dotcms.rest.ResponseEntityView;
-import com.dotcms.rest.WebResource;
-import com.dotcms.rest.annotation.NoCache;
-import com.dotcms.util.AssetExporterUtil;
-import com.dotcms.util.DbExporterUtil;
-import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.ApiProvider;
-import com.dotmarketing.business.Role;
-import com.dotmarketing.exception.DoesNotExistException;
-import com.dotmarketing.util.Config;
-import com.dotmarketing.util.starter.ExportStarterUtil;
-import com.dotmarketing.util.FileUtil;
-import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.SecurityLogger;
-import com.dotmarketing.util.StringUtils;
-import com.liferay.portal.model.User;
-import io.vavr.control.Try;
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.io.Serializable;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.concurrent.TimeUnit;
 
 
 /**
@@ -244,12 +244,11 @@ public class MaintenanceResource implements Serializable {
     }
 
     /**
-     * This method attempts to download a zip file containing the starter with assets.
+     * This method attempts to download a zip file containing the starter data only.
      *
      * @param request  http request
      * @param response http response
      * @return octet stream response with octet stream
-     * @throws IOException
      */
     @Path("/_downloadStarter")
     @GET
@@ -257,12 +256,12 @@ public class MaintenanceResource implements Serializable {
     @NoCache
     @Produces({MediaType.APPLICATION_OCTET_STREAM, MediaType.APPLICATION_JSON})
     public final Response downloadStarter(@Context final HttpServletRequest request,
-                                          @Context final HttpServletResponse response) throws IOException {
-        return downloadStarter(request, response, false, false);
+                                          @Context final HttpServletResponse response) {
+        return downloadStarter(request, response, false);
     }
 
     /**
-     * This method attempts to download a zip file containing the starter with just data.
+     * This method attempts to download a zip file containing the starter with both data and assets.
      *
      * @param request  http request
      * @param response http response
@@ -275,42 +274,36 @@ public class MaintenanceResource implements Serializable {
     @NoCache
     @Produces({MediaType.APPLICATION_OCTET_STREAM, MediaType.APPLICATION_JSON})
     public final Response downloadStarterWithAssets(@Context final HttpServletRequest request,
-                                                    @Context final HttpServletResponse response) throws IOException {
-        return downloadStarter(request, response, true, false);
+                                                    @Context final HttpServletResponse response) {
+        return downloadStarter(request, response, true);
     }
 
     /**
-     * This method attempts to download a zip file containing the starter whether it is with just data or assets.
+     * Generates and download a ZIP file with all the data structures and their respective records that are required to
+     * create a Starter Site in dotCMS.
      *
-     * @param request http request
-     * @param response http response
-     * @param withAssets flag telling to include or not assets
-     * @param download flag telling to download or to stream
-     * @return octet stream response with octet stream
-     * @throws IOException
+     * @param request The current instance of the {@link HttpServletRequest}
+     * @param response The current instance of the {@link HttpServletResponse}
+     * @param withAssets If
+     * @return
      */
-    private Response downloadStarter(final HttpServletRequest request,
-                                     final HttpServletResponse response,
-                                     final boolean withAssets,
-                                     final boolean download) throws IOException {
-        assertBackendUser(request, response);
-
+    private Response downloadStarter(final HttpServletRequest request, final HttpServletResponse response,
+                                     final boolean withAssets) {
+        this.assertBackendUser(request, response);
         final ExportStarterUtil exportStarterUtil = new ExportStarterUtil();
-        final Optional<File> starterFile = exportStarterUtil.zipStarter(
-                response.getOutputStream(),
-                withAssets,
-                download);
-        if (!starterFile.isPresent()) {
-            return Response.status(Status.UNAUTHORIZED).build();
-        }
+        final String zipName = exportStarterUtil.generateStarterFileName();
 
-        final File file = starterFile.get();
-        Logger.info(this.getClass(), "Requested starter file: " + file.getCanonicalPath());
+        final StreamingOutput stream = output -> {
 
-        response.setHeader("Content-type", download ? "application/zip" : MediaType.APPLICATION_OCTET_STREAM);
-        response.setHeader("Content-Disposition", "attachment; filename=" + file.getName());
+            exportStarterUtil.streamZipStarter(output, withAssets);
+            output.flush();
+            output.close();
 
-        return Response.ok(file, MediaType.APPLICATION_OCTET_STREAM).build();
+        };
+
+        response.setHeader("Content-Disposition", "attachment; filename=" + zipName);
+        Response.ResponseBuilder responseBuilder = Response.ok(stream);
+        return responseBuilder.build();
     }
 
     /**
