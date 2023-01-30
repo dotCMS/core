@@ -208,7 +208,7 @@ public class ContainerAPITest extends ContentletBaseTest {
                 .findContainers(user, false, null, defaultHost.getIdentifier(), null, null,
                         contentType.id(), 0,
                         -1, null);
-        assertTrue(UtilMethods.isSet(results));
+        assertTrue(container.toString(), UtilMethods.isSet(results));
     }
 
     private Container createContainer()
