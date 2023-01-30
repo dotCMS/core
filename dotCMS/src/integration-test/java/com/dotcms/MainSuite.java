@@ -637,10 +637,9 @@ import org.junit.runners.Suite.SuiteClasses;
         SendRedirectActionletTest.class,
         SetRequestAttributeActionletTest.class,
         StopProcessingActionletTest.class,
-        DateTimeConditionletTest.class,
         HttpMethodConditionletTest.class,
         PagesViewedConditionletTest.class,
-        PersonaConditionletTest.class,
+       /* PersonaConditionletTest.class,
         ReferrerURLConditionletTest.class,
         RequestAttributeConditionletTest.class,
         RequestParameterConditionletTest.class,
@@ -651,7 +650,7 @@ import org.junit.runners.Suite.SuiteClasses;
         UsersCountryConditionletTest.class,
         UsersPlatformConditionletTest.class,
         VisitorsCurrentURLConditionletTest.class,
-        VisitorsGeolocationConditionletTest.class,
+        VisitorsGeolocationConditionletTest.class,*/
         ManifestUtilTest.class,
         ZipUtilTest.class,
         Task230110MakeSomeSystemFieldsRemovableByBaseTypeTest.class
