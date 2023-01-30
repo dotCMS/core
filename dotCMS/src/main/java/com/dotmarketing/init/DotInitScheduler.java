@@ -13,6 +13,7 @@ import com.dotmarketing.quartz.job.CleanUnDeletedUsersJob;
 import com.dotmarketing.quartz.job.ContentReindexerThread;
 import com.dotmarketing.quartz.job.DeleteInactiveLiveWorkingIndicesJob;
 import com.dotmarketing.quartz.job.DeleteOldClickstreams;
+import com.dotmarketing.quartz.job.EndFinalizedExperimentsJob;
 import com.dotmarketing.quartz.job.EsReadOnlyMonitorJob;
 import com.dotmarketing.quartz.job.FreeServerFromClusterJob;
 import com.dotmarketing.quartz.job.ServerHeartbeatJob;
@@ -473,6 +474,8 @@ public class DotInitScheduler {
 
 			AccessTokenRenewJob.AccessTokensRenewJobScheduler.schedule();
 
+			addEndFinalizedExperimentsJob(sched);
+
             //Starting the sequential and standard Schedulers
 	        QuartzUtils.startSchedulers();
 		} catch (SchedulerException e) {
@@ -632,6 +635,33 @@ public class DotInitScheduler {
 		} catch (Exception e) {
 			Logger.error(DotInitScheduler.class, "An error occurred when initializing the '" + jobBuilder.jobName + "': "
 					+ e.getMessage(), e);
+		}
+	}
+
+	private static void addEndFinalizedExperimentsJob (final Scheduler scheduler) {
+		try {
+			final String jobName      = "EndFinalizedExperimentsJob";
+			final String triggerName  = "trigger31";
+			final String triggerGroup = "group31";
+
+			if (Config.getBooleanProperty( "ENABLE_END_FINALIZED_EXPERIMENTS_JOB", true)) {
+				final JobBuilder endFinalizedExperimentsJob = new JobBuilder().setJobClass(
+								EndFinalizedExperimentsJob.class)
+						.setJobName(jobName)
+						.setJobGroup(DOTCMS_JOB_GROUP_NAME)
+						.setTriggerName(triggerName)
+						.setTriggerGroup(triggerGroup)
+						.setCronExpressionProp("END_FINALIZED_EXPERIMENTS_JOB_CRON_EXPRESSION")
+						.setCronExpressionPropDefault("0 0 1 ? * *")
+						.setCronMissfireInstruction(CronTrigger.MISFIRE_INSTRUCTION_FIRE_ONCE_NOW);
+				scheduleJob(endFinalizedExperimentsJob);
+			} else {
+				if ((scheduler.getJobDetail(jobName, DOTCMS_JOB_GROUP_NAME)) != null) {
+					scheduler.deleteJob(jobName, DOTCMS_JOB_GROUP_NAME);
+				}
+			}
+		} catch (Exception e) {
+			Logger.info(DotInitScheduler.class, e.toString());
 		}
 	}
 

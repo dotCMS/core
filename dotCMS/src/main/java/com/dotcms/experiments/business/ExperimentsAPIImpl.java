@@ -662,6 +662,17 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
                 !APILocator.getExperimentsAPI().getRunningExperiments().isEmpty();
     }
 
+    @Override
+    public void endFinalizedExperiments(final User user) throws DotDataException {
+        final List<Experiment> finalizedExperiments = getRunningExperiments().stream()
+                .filter((experiment -> experiment.scheduling().orElseThrow().endDate().orElseThrow()
+                        .isAfter(Instant.now()))).collect(Collectors.toList());
+
+        finalizedExperiments.forEach((experiment ->
+                Try.of(()->end(experiment.id().orElseThrow(), user)).getOrElseThrow((e)->
+                        new DotStateException("Unable to end Experiment. Cause:" + e))));
+    }
+
     private TreeSet<ExperimentVariant> redistributeWeights(final Set<ExperimentVariant> variants) {
 
         final int count = variants.size();
