@@ -35,8 +35,8 @@ export class DotAssetSearchComponent implements OnInit, OnDestroy, AfterViewInit
         this.store.updatelanguageId(id);
     }
 
-    @Input() set assetType(assetType: EditorAssetTypes) {
-        this.store.updateAssetType(assetType);
+    @Input() set type(type: EditorAssetTypes) {
+        this.store.updateAssetType(type);
     }
 
     vm$ = this.store.vm$;

@@ -9,7 +9,7 @@ import { RenderProps } from '../asset-form.extension';
 
 interface PluginState {
     open: boolean;
-    assetType: EditorAssetTypes;
+    type: EditorAssetTypes;
 }
 
 export interface BubbleAssetFormProps {
@@ -52,7 +52,7 @@ export class BubbleAssetFormView {
         } else {
             this.render().onStart({
                 editor: this.editor,
-                assetType: next.assetType,
+                type: next.type,
                 getPosition: () => {
                     const { from, to } = selection;
 
@@ -75,7 +75,7 @@ export const bubbleAssetFormPlugin = (options: BubbleAssetFormProps) => {
             init(): PluginState {
                 return {
                     open: false,
-                    assetType: null
+                    type: null
                 };
             },
 
@@ -84,11 +84,11 @@ export const bubbleAssetFormPlugin = (options: BubbleAssetFormProps) => {
                 value: PluginState,
                 oldState: EditorState
             ): PluginState {
-                const { open, assetType } = transaction.getMeta(options.pluginKey) || {};
+                const { open, type } = transaction.getMeta(options.pluginKey) || {};
                 const state = options.pluginKey?.getState(oldState);
 
                 if (typeof open === 'boolean') {
-                    return { open, assetType };
+                    return { open, type };
                 }
 
                 // keep the old state in case we do not receive a new one.

@@ -10,11 +10,11 @@ import { EditorAssetTypes } from '@dotcms/dotcms-models';
 })
 export class DotAssetPreviewComponent {
     @Input()
-    assetType: EditorAssetTypes;
+    type: EditorAssetTypes;
 
     @Input()
     file: File;
 
     @Input()
-    src: string;
+    src: string | ArrayBuffer;
 }

@@ -161,8 +161,8 @@ function execCommand({
         horizontalLine: () => {
             editor.chain().deleteRange(range).setHorizontalRule().focus().run();
         },
-        image: () => editor.commands.openAssetForm({ assetType: 'image' }),
-        video: () => editor.commands.openAssetForm({ assetType: 'video' })
+        image: () => editor.commands.openAssetForm({ type: 'image' }),
+        video: () => editor.commands.openAssetForm({ type: 'video' })
     };
 
     whatToDo[props.type.name]

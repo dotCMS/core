@@ -74,7 +74,7 @@ export const VideoNode = Node.create({
             [
                 'video',
                 mergeAttributes(HTMLAttributes, {
-                    width: '100%',
+                    width: 'auto',
                     height: 'auto',
                     controls: true
                 })

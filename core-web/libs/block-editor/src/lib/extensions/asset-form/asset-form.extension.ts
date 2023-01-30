@@ -16,9 +16,9 @@ export const BUBBLE_ASSET_FORM_PLUGIN_KEY = new PluginKey('bubble-image-form');
 declare module '@tiptap/core' {
     interface Commands<ReturnType> {
         AssetTabviewForm: {
-            openAssetForm: (data: { assetType: EditorAssetTypes }) => ReturnType;
+            openAssetForm: (data: { type: EditorAssetTypes }) => ReturnType;
             closeAssetForm: () => ReturnType;
-            addAsset: (data: { assetType: EditorAssetTypes; payload }) => ReturnType;
+            insertAsset: (data: { type: EditorAssetTypes; payload }) => ReturnType;
         };
     }
 }
@@ -42,7 +42,7 @@ const tippyOptions: Partial<Props> = {
 
 interface StartProps {
     editor: Editor;
-    assetType: EditorAssetTypes;
+    type: EditorAssetTypes;
     getPosition: GetReferenceClientRect;
 }
 
@@ -57,9 +57,9 @@ export const BubbleAssetFormExtension = (viewContainerRef: ViewContainerRef) => 
     let component: ComponentRef<AssetFormComponent>;
     let element: Element;
 
-    function onStart({ editor, assetType, getPosition }: StartProps) {
+    function onStart({ editor, type, getPosition }: StartProps) {
         setUpTippy(editor);
-        setUpComponent(editor, assetType);
+        setUpComponent(editor, type);
 
         formTippy.setProps({
             content: element,
@@ -91,12 +91,12 @@ export const BubbleAssetFormExtension = (viewContainerRef: ViewContainerRef) => 
         formTippy = tippy(element.parentElement, tippyOptions);
     }
 
-    function setUpComponent(editor: Editor, assetType: EditorAssetTypes) {
+    function setUpComponent(editor: Editor, type: EditorAssetTypes) {
         component = viewContainerRef.createComponent(AssetFormComponent);
         component.instance.languageId = editor.storage.dotConfig.lang;
-        component.instance.assetType = assetType;
+        component.instance.type = type;
         component.instance.onSelectImage = (payload) => {
-            editor.chain().addAsset({ assetType, payload }).addNextLine().closeAssetForm().run();
+            editor.chain().insertAsset({ type, payload }).addNextLine().closeAssetForm().run();
         };
 
         element = component.location.nativeElement;
@@ -117,11 +117,11 @@ export const BubbleAssetFormExtension = (viewContainerRef: ViewContainerRef) => 
         addCommands() {
             return {
                 openAssetForm:
-                    ({ assetType }) =>
+                    ({ type }) =>
                     ({ chain }) => {
                         return chain()
                             .command(({ tr }) => {
-                                tr.setMeta(BUBBLE_ASSET_FORM_PLUGIN_KEY, { open: true, assetType });
+                                tr.setMeta(BUBBLE_ASSET_FORM_PLUGIN_KEY, { open: true, type });
 
                                 return true;
                             })
@@ -138,10 +138,10 @@ export const BubbleAssetFormExtension = (viewContainerRef: ViewContainerRef) => 
                             })
                             .run();
                     },
-                addAsset:
-                    ({ assetType, payload }) =>
+                insertAsset:
+                    ({ type, payload }) =>
                     ({ chain }) => {
-                        switch (assetType) {
+                        switch (type) {
                             case 'video':
                                 return chain().setVideo(payload).run();
 

@@ -12,6 +12,6 @@ import { DEFAULT_LANG_ID } from '../bubble-menu/models/index';
 })
 export class AssetFormComponent {
     @Input() languageId = DEFAULT_LANG_ID;
-    @Input() assetType: EditorAssetTypes;
+    @Input() type: EditorAssetTypes;
     @Input() onSelectImage: (payload: DotCMSContentlet | string) => void;
 }

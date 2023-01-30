@@ -25,7 +25,7 @@ export class DotExternalAssetComponent {
     @Output() addImage = new EventEmitter();
 
     @Input()
-    assetType: EditorAssetTypes;
+    type: EditorAssetTypes;
 
     form: FormGroup;
 
@@ -37,7 +37,13 @@ export class DotExternalAssetComponent {
         requestAnimationFrame(() => this.input.nativeElement.focus());
     }
 
-    onSubmit({ url }) {
+    /**
+     *
+     *
+     * @param {{ url: string }} { url }
+     * @memberof DotExternalAssetComponent
+     */
+    onSubmit({ url }: { url: string }) {
         this.addImage.emit(url);
     }
 }

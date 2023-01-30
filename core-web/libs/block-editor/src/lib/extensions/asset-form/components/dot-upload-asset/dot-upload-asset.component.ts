@@ -29,11 +29,11 @@ export class DotUploadAssetComponent {
     uploadedFile = new EventEmitter<DotCMSContentlet>();
 
     @Input()
-    assetType: EditorAssetTypes;
+    type: EditorAssetTypes;
 
     public status = STATUS.SELECT;
     public file: File;
-    public src: string;
+    public src: string | ArrayBuffer;
 
     constructor(
         private readonly sanitizer: DomSanitizer,
@@ -44,10 +44,10 @@ export class DotUploadAssetComponent {
     /**
      * Set Selected File
      *
-     * @param {*} event
+     * @param {{ files: File[] }} event
      * @memberof DotUploadAssetComponent
      */
-    onSelectFile(event) {
+    onSelectFile(event: { files: File[] }) {
         const file = event.files[0];
         const reader = new FileReader();
         reader.onload = (e) => this.setFile(file, e.target.result);
@@ -83,11 +83,11 @@ export class DotUploadAssetComponent {
      * Set vide File and asset src.
      *
      * @private
-     * @param {*} file
-     * @param {*} src
+     * @param {File} file
+     * @param {string | ArrayBuffer} src
      * @memberof DotUploadAssetComponent
      */
-    private setFile(file, src) {
+    private setFile(file: File, src: string | ArrayBuffer): void {
         this.file = file;
         this.src = src;
         this.status = STATUS.PREVIEW;

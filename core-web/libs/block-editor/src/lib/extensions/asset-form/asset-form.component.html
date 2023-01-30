@@ -4,28 +4,28 @@
             <ng-template pTemplate="content">
                 <div class="wrapper">
                     <dot-asset-search
-                        [assetType]="assetType"
+                        [type]="type"
                         [languageId]="languageId"
                         (addImage)="onSelectImage($event)"
                     ></dot-asset-search>
                 </div>
             </ng-template>
         </p-tabPanel>
-        <p-tabPanel [cache]="false" [header]="'Upload ' + assetType" leftIcon="pi pi-folder">
+        <p-tabPanel [cache]="false" [header]="'Upload ' + type" leftIcon="pi pi-folder">
             <ng-template pTemplate="content">
                 <div class="wrapper">
                     <dot-upload-asset
-                        [assetType]="assetType"
+                        [type]="type"
                         (uploadedFile)="onSelectImage($event)"
                     ></dot-upload-asset>
                 </div>
             </ng-template>
         </p-tabPanel>
-        <p-tabPanel [cache]="false" [header]="assetType + ' URL'" leftIcon="pi pi-link">
+        <p-tabPanel [cache]="false" [header]="type + ' URL'" leftIcon="pi pi-link">
             <ng-template pTemplate="content">
                 <div class="wrapper">
                     <dot-external-asset
-                        [assetType]="assetType"
+                        [type]="type"
                         (addImage)="onSelectImage($event)"
                     ></dot-external-asset>
                 </div>

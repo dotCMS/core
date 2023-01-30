@@ -11,11 +11,24 @@ import { DotCMSContentlet } from '@dotcms/dotcms-models';
 export class DotAssetCardComponent {
     @Input() contentlet: DotCMSContentlet;
 
-    getImage(inode) {
+    /**
+     *
+     *
+     * @param {string} inode
+     * @return {*}  {string}
+     * @memberof DotAssetCardComponent
+     */
+    getImage(inode: string): string {
         return `/dA/${inode}/500w/20q`;
     }
 
-    contentletIcon() {
+    /**
+     *
+     *
+     * @return {*}  {string}
+     * @memberof DotAssetCardComponent
+     */
+    getContentletIcon(): string {
         return this.contentlet?.baseType !== 'FILEASSET'
             ? this.contentlet?.contentTypeIcon
             : this.contentlet?.__icon__;
