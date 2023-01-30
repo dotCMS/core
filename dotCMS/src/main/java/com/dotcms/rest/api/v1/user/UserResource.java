@@ -146,6 +146,8 @@ public class UserResource implements Serializable {
 
 					currentUser.loginAs(APILocator.getRoleAPI().doesUserHaveRole(user, loginAsRole));
 				}
+
+				currentUser.admin(user.isAdmin());
 			} catch (final DotDataException e) {
 				Logger.error(this, "Could not provide current user: " + e.getMessage(), e);
 				throw new BadRequestException("Could not provide current user.");

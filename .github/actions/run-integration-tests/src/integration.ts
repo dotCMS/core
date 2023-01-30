@@ -84,11 +84,6 @@ export const COMMANDS: Commands = {
   gradle: [
     {
       cmd: './gradlew',
-      args: ['createDistPrep'],
-      workingDir: dotCmsRoot
-    },
-    {
-      cmd: './gradlew',
       args: ['integrationTest', `-PdatabaseType=${dbType}`],
       workingDir: dotCmsRoot
     }
@@ -112,6 +107,23 @@ const STOP_ANALYTICS_INFRA_CMD: Command = {
   cmd: 'docker-compose',
   args: ['-f', 'analytics-compose.yml', 'down', '-v'],
   workingDir: dockerFolder
+}
+
+const PULL_OPEN_DISTRO_CMD: Command = {
+  cmd: 'docker',
+  args: ['pull', 'ghcr.io/dotcms/elasticsearch:7.9.1'],
+  workingDir: dockerFolder,
+  env: DEPS_ENV[dbType as keyof DatabaseEnvs]
+}
+
+const PULL_DB_CMD: Command = {
+  cmd: 'docker',
+  args: [
+    'pull',
+    `${dbType === 'mssql' ? 'ghcr.io/dotcms/mssqlserver:2017-latest' : 'ghcr.io/dotcms/postgres:13-alpine'}`
+  ],
+  workingDir: dockerFolder,
+  env: DEPS_ENV[dbType as keyof DatabaseEnvs]
 }
 
 const START_DEPENDENCIES_CMD: Command = {
@@ -163,6 +175,8 @@ export const runTests = async (cmds: Command[]): Promise<CommandResult> => {
       await warmUpAnalytics()
     }
 
+    await execCmd(PULL_OPEN_DISTRO_CMD)
+    await execCmd(PULL_DB_CMD)
     execCmdAsync(START_DEPENDENCIES_CMD)
 
     await waitFor(resolveWait(), `ES and ${dbType}`)
@@ -200,7 +214,7 @@ export const runTests = async (cmds: Command[]): Promise<CommandResult> => {
 }
 
 const resolveWait = (): number => {
-  return dbType === 'mssql' ? 15 : 30
+  return dbType === 'mssql' ? 45 : 30
 }
 
 /**

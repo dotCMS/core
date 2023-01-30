@@ -8,7 +8,7 @@
 */
 
 #label {
-    color: $gray-dark;
+    color: $black;
     display: block;
     font-size: $font-size-small;
     margin-bottom: calc($basic-padding / 2);
@@ -31,14 +31,10 @@
 }
 
 .required {
-    &:before {
-        @extend #dijit-icon;
-        content: $fa-var-asterisk;
-        color: $error;
-        font-size: 9px;
-        position: relative;
-        top: -4px;
-        left: 2px;
+    &::after {
+        padding-left: 2px;
+        content: "*";
+        color: $red;
     }
 }
 
@@ -89,11 +85,6 @@
     .checkbox {
         margin: 0;
     }
-}
-
-.required2 {
-    color: $red;
-    font-weight: bold;
 }
 
 .hint-text {

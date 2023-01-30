@@ -18,6 +18,7 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Set;
 
 
 @Deprecated
@@ -137,4 +138,15 @@ public class WfActionAjax extends WfBaseAction {
             writeError(response, e.getMessage());
         }
     } // save.
+
+	/**
+	 * Security check demanded by Sonar
+	 * We register all the allowed methods down here
+	 *
+	 * @return allowed method names
+	 */
+	@Override
+	protected Set<String> getAllowedCommands() {
+		return Set.of( "action", "reorder", "delete", "add", "save", "deleteActionForStep" );
+	}
 }

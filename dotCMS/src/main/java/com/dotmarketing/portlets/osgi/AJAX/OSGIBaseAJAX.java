@@ -3,14 +3,19 @@ package com.dotmarketing.portlets.osgi.AJAX;
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.cms.factories.PublicCompanyFactory;
+import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.servlets.ajax.AjaxAction;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
+import com.google.common.annotations.VisibleForTesting;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
 import java.io.IOException;
+import java.lang.reflect.Method;
+import java.util.Set;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -31,9 +36,9 @@ abstract class OSGIBaseAJAX extends AjaxAction {
             throw new DotRuntimeException (e.getMessage());
         }
     }
-    
-    
-    
+
+
+	protected abstract Set<String> getAllowedCommands();
     
 	public void service(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 		
@@ -46,20 +51,23 @@ abstract class OSGIBaseAJAX extends AjaxAction {
 		Class partypes[] = new Class[] { HttpServletRequest.class, HttpServletResponse.class };
 		Object arglist[] = new Object[] { request, response };
 		try {
-		    if(getUser()==null || !APILocator.getLayoutAPI().doesUserHaveAccessToPortlet("dynamic-plugins", getUser())){
+		    if(getUser()==null || !doesUserHaveAccessToPortlet(getUser())){
 				response.sendError(401);
 				return;
 			}
-			
-			
 
-			meth = this.getClass().getMethod(cmd, partypes);
+			if(getAllowedCommands().contains(cmd)) {
+				meth = getMethod(cmd, partypes);
+			}	else  if (UtilMethods.isSet(cmd)){
+				Logger.error(this.getClass(), String.format("Attempt to run Invalid command %s :",cmd));
+				return;
+			}
 
 		} catch (Exception e) {
 
 			try {
 				cmd = "action";
-				meth = this.getClass().getMethod(cmd, partypes);
+				meth = getMethod(cmd, partypes);
 			} catch (Exception ex) {
 				Logger.error(this.getClass(), "Trying to run method:" + cmd);
 				Logger.error(this.getClass(), e.getMessage(), e.getCause());
@@ -76,6 +84,30 @@ abstract class OSGIBaseAJAX extends AjaxAction {
 		}
 
 	}
+
+	/**
+	 * Extracted so it can be mocked
+	 * @param user
+	 * @return
+	 * @throws DotDataException
+	 */
+	@VisibleForTesting
+	boolean doesUserHaveAccessToPortlet(final User user) throws DotDataException {
+	  return APILocator.getLayoutAPI().doesUserHaveAccessToPortlet("dynamic-plugins", user);
+	}
+
+	/**
+	 * extracted as a separated method, so it can be verified when called
+	 * @param method
+	 * @param parameterTypes
+	 * @return
+	 * @throws NoSuchMethodException
+	 */
+	@VisibleForTesting
+	Method getMethod(String method, Class<?>... parameterTypes ) throws NoSuchMethodException {
+		return this.getClass().getMethod(method, parameterTypes);
+	}
+
 
 	public void writeError(HttpServletResponse response, String error) throws IOException {
 		String ret = null;

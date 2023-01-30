@@ -10,8 +10,9 @@ import { takeUntil } from 'rxjs/operators';
 
 import { Editor, posToDOMRect } from '@tiptap/core';
 
-import { getPosAtDocCoords, ImageNode, isValidURL } from '@dotcms/block-editor';
-
+import { ImageNode } from '../../../nodes';
+import { getPosAtDocCoords } from '../../../shared';
+import { isValidURL } from '../../bubble-menu/utils';
 import { BubbleLinkFormComponent, NodeProps } from '../bubble-link-form.component';
 import { LINK_FORM_PLUGIN_KEY } from '../bubble-link-form.extension';
 import { openFormLinkOnclik } from '../utils';
