@@ -184,12 +184,15 @@ public class PaginationUtil {
 		final String sanitizeFilter = filter != null ? SQLUtil.sanitizeParameter(filter) : StringPool.BLANK;
 		final Map<String, Object> params = this.getParameters(sanitizeFilter, orderBy, direction, extraParams);
 		PaginatedArrayList items = minIndex >= 0 ? paginator.getItems(user, perPageValue, minIndex, params) : null;
-		if (!UtilMethods.isSet(items)) {
+		if (UtilMethods.isNotSet(items)) {
 			items = new PaginatedArrayList<>();
 		}
 		final long totalRecords = items.getTotalResults();
-		final String linkHeaderValue = this.getHeaderValue(req.getRequestURI(), sanitizeFilter, pageValue, perPageValue,
-				totalRecords, orderBy, direction, extraParams);
+		final LinkHeader linkHeader =
+				new LinkHeader.Builder().baseUrl(req.getRequestURI()).filter(sanitizeFilter).page(pageValue)
+						.perPage(perPageValue).totalRecords(totalRecords).orderBy(orderBy).direction(direction)
+						.extraParams(extraParams).build();
+		final String linkHeaderValue = this.getHeaderValue(linkHeader);
 		final Object paginatedItems = null != function ? function.apply(items) : items;
 		return Response.
 				ok(new ResponseEntityView<>(paginatedItems))
@@ -234,63 +237,55 @@ public class PaginationUtil {
 	}
 
 	/**
-	 * Return the valur for the Link header according tis RFC:
+	 * Returns the value of the Link header according this RFC:
+	 * <a href="https://tools.ietf.org/html/rfc5988#page-6">https://tools.ietf.org/html/rfc5988#page-6</a> . The syntax
+	 * to build each URL is the following:
+	 * <pre>
+	 *     [urlBase]?filter=[filter]&page=[page]&perPage=[perPage]&archived=[showArchived]&direction=[direction]&orderBy=[orderBy]
+	 * </pre>
+	 * <p>
+	 * The real parameter can have the follow values: next, prev, last, first and x-page. For more information, please
+	 * see: https://developer.github.com/v3/#pagination
 	 *
-	 * https://tools.ietf.org/html/rfc5988#page-6
-	 *
-	 * The sintax to build each URL is the follow:
-	 *
-	 * [urlBase]?filter=[filter]&page=[page]&perPage=[perPage]&archived=[showArchived]&direction=[direction]&orderBy=[orderBy]
-	 *
-	 * The real parameter could hve the follow values:  next, prev, last, fisrt and x-page.
-	 *
-	 * For more information, you can see:
-	 *
-	 * https://developer.github.com/v3/#pagination
-	 *
-	 * @param urlBase
-	 * @param filter
-	 * @param page
-	 * @param perPage
-	 * @param totalRecords
-	 * @param orderBy
-	 * @param direction
-	 * @return
+	 * @return The value of the {@code Link} header.
 	 */
-	private String getHeaderValue(final String urlBase, final String filter, final int page, final int perPage,
-										 final long totalRecords, final String orderBy, final OrderDirection direction,
-										 final Map<String, Object> extraParams) {
+	private String getHeaderValue(final LinkHeader linkHeader) {
 		final List<String> links = new ArrayList<>();
 		final String URL_KEY = "URL";
 		final String REL_VALUE_KEY = "relValue";
 		links.add(StringUtil.format(LINK_TEMPLATE, map(
-				URL_KEY, getUrl(urlBase, filter, FIRST_PAGE_INDEX, perPage, orderBy, direction, extraParams),
+				URL_KEY, getUrl(linkHeader.baseUrl(), linkHeader.filter(), FIRST_PAGE_INDEX, linkHeader.perPage(),
+						linkHeader.orderBy(), linkHeader.direction(), linkHeader.extraParams()),
 				REL_VALUE_KEY, FIRST_REL_VALUE
 		)));
 
-		int lastPage = (int) (Math.ceil((double) totalRecords/perPage));
+		int lastPage = (int) (Math.ceil((double) linkHeader.totalRecords() / linkHeader.perPage()));
 		links.add(StringUtil.format(LINK_TEMPLATE, map(
-				URL_KEY, getUrl(urlBase, filter, lastPage, perPage, orderBy, direction, extraParams),
+				URL_KEY, getUrl(linkHeader.baseUrl(), linkHeader.filter(), lastPage, linkHeader.perPage(),
+						linkHeader.orderBy(), linkHeader.direction(), linkHeader.extraParams()),
 				REL_VALUE_KEY, LAST_REL_VALUE
 		)));
 
 		links.add(StringUtil.format(LINK_TEMPLATE, map(
-				URL_KEY, getUrl(urlBase, filter, -1, perPage, orderBy, direction, extraParams),
+				URL_KEY, getUrl(linkHeader.baseUrl(), linkHeader.filter(), -1, linkHeader.perPage(),
+						linkHeader.orderBy(), linkHeader.direction(), linkHeader.extraParams()),
 				REL_VALUE_KEY, PAGE_REL_VALUE
 		)));
 
-		int next = page + 1;
+		int next = linkHeader.page() + 1;
 		if (next <= lastPage){
 			links.add(StringUtil.format(LINK_TEMPLATE, map(
-					URL_KEY, getUrl(urlBase, filter, next, perPage, orderBy, direction, extraParams),
+					URL_KEY, getUrl(linkHeader.baseUrl(), linkHeader.filter(), next, linkHeader.perPage(),
+							linkHeader.orderBy(), linkHeader.direction(), linkHeader.extraParams()),
 					REL_VALUE_KEY, NEXT_REL_VALUE
 			)));
 		}
 
-		int prev = page - 1;
+		int prev = linkHeader.page() - 1;
 		if (prev > 0){
 			links.add(StringUtil.format(LINK_TEMPLATE, map(
-					URL_KEY, getUrl(urlBase, filter, prev, perPage, orderBy, direction, extraParams),
+					URL_KEY, getUrl(linkHeader.baseUrl(), linkHeader.filter(), prev, linkHeader.perPage(),
+							linkHeader.orderBy(), linkHeader.direction(), linkHeader.extraParams()),
 					REL_VALUE_KEY, PREV_REL_VALUE
 			)));
 		}
@@ -299,20 +294,22 @@ public class PaginationUtil {
 	}
 
 	/**
-	 *  Build each URL for the Link header.
-	 *  The sintax to build each URL is the follow:
+	 * Builds the expected URL for the {@code Link} header. The syntax to build each URL is the following:
+	 * <pre>
+	 *     [urlBase]?filter=[filter]&page=[page]&perPage=[perPage]&archived=[showArchived]&direction=[direction]&orderBy=[orderBy]
+	 * </pre>
 	 *
-	 * [urlBase]?filter=[filter]&page=[page]&perPage=[perPage]&archived=[showArchived]&direction=[direction]&orderBy=[orderBy]
+	 * @param baseUrl     The URI for the current HTTP Request.
+	 * @param filter      The specified filter parameter.
+	 * @param page        The value of the page parameter, for result pagination purposes.
+	 * @param perPage     The value of the per-page parameter, for result pagination purposes.
+	 * @param orderBy     The criterion used to sort the returned values.
+	 * @param direction   The sort ordering: Ascending or descending.
+	 * @param extraParams A map with additional/uncommon extra parameters.
 	 *
-	 * @param urlBase
-	 * @param filter
-	 * @param page
-	 * @param perPage
-	 * @param orderBy
-	 * @param direction
-	 * @return
+	 * @return The resulting value of the {@code Link} header.
 	 */
-	private static String getUrl(final String urlBase, final String filter, final int page, final int perPage,
+	private static String getUrl(final String baseUrl, final String filter, final int page, final int perPage,
 								 final String orderBy, final OrderDirection direction, final Map<String, Object> extraParams){
 
 		final Map<String, String> params = new HashMap<>();
@@ -357,7 +354,7 @@ public class PaginationUtil {
 			}
 		}
 
-		final StringBuilder buffer = new StringBuilder(urlBase);
+		final StringBuilder buffer = new StringBuilder(baseUrl);
 
 		boolean firstParam = true;
 
@@ -382,6 +379,126 @@ public class PaginationUtil {
 		}
 
 		return buffer.toString();
+	}
+
+	/**
+	 * Contains the required information for generating the value of the {@code Link} header.
+	 */
+	protected static class LinkHeader {
+
+		private final String baseUrl;
+		private final String filter;
+		private final int page;
+		private final int perPage;
+		private final long totalRecords;
+		private final String orderBy;
+		private final OrderDirection direction;
+		private final Map<String, Object> extraParams;
+
+		/**
+		 *
+		 * @param builder
+		 */
+		private LinkHeader(final Builder builder) {
+			this.baseUrl = builder.baseUrl;
+			this.filter = builder.filter;
+			this.page = builder.page;
+			this.perPage = builder.perPage;
+			this.totalRecords = builder.totalRecords;
+			this.orderBy = builder.orderBy;
+			this.direction = builder.direction;
+			this.extraParams = builder.extraParams;
+		}
+
+		public String baseUrl() {
+			return baseUrl;
+		}
+
+		public String filter() {
+			return filter;
+		}
+
+		public int page() {
+			return page;
+		}
+
+		public int perPage() {
+			return perPage;
+		}
+
+		public long totalRecords() {
+			return totalRecords;
+		}
+
+		public String orderBy() {
+			return orderBy;
+		}
+
+		public OrderDirection direction() {
+			return direction;
+		}
+
+		public Map<String, Object> extraParams() {
+			return extraParams;
+		}
+
+		protected static final class Builder {
+
+			private String baseUrl;
+			private String filter;
+			private int page;
+			private int perPage;
+			private long totalRecords;
+			private String orderBy;
+			private OrderDirection direction;
+			private Map<String, Object> extraParams;
+
+			public Builder baseUrl(final String urlBase) {
+				this.baseUrl = urlBase;
+				return this;
+			}
+
+			public Builder filter(final String filter) {
+				this.filter = filter;
+				return this;
+			}
+
+			public Builder page(final int page) {
+				this.page = page;
+				return this;
+			}
+
+			public Builder perPage(final int perPage) {
+				this.perPage = perPage;
+				return this;
+			}
+
+			public Builder totalRecords(final long totalRecords) {
+				this.totalRecords = totalRecords;
+				return this;
+			}
+
+			public Builder orderBy(final String orderBy) {
+				this.orderBy = orderBy;
+				return this;
+			}
+
+			public Builder direction(final OrderDirection direction) {
+				this.direction = direction;
+				return this;
+			}
+
+			public Builder extraParams(final Map<String, Object> extraParams) {
+				this.extraParams = extraParams;
+				return this;
+			}
+
+			public LinkHeader build () {
+				return new LinkHeader(this);
+			}
+
+		}
+
 	}
 
 }
