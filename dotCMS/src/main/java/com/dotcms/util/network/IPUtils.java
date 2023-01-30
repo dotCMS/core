@@ -10,7 +10,7 @@ import io.vavr.Lazy;
 import io.vavr.control.Try;
 
 public class IPUtils {
-    
+    private static boolean disabledIpPrivateSubnet = false;
     
     private IPUtils() {
         throw new IllegalStateException("static Utility class");
@@ -71,7 +71,10 @@ public class IPUtils {
     public static boolean isIpPrivateSubnet(final String ipOrHostName) {
 
         
-        
+        if (disabledIpPrivateSubnet) {
+            return false;
+        }
+
         if (ipOrHostName == null) {
             return true;
         }
@@ -96,6 +99,9 @@ public class IPUtils {
 
     }
 
-    
-    
+
+
+    public static void disabledIpPrivateSubnet(final boolean disabledIpPrivateSubnet) {
+        IPUtils.disabledIpPrivateSubnet = disabledIpPrivateSubnet;
+    }
 }

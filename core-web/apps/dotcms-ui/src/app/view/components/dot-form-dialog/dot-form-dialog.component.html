@@ -14,6 +14,7 @@
     <button
         [label]="'save' | dm"
         [disabled]="saveButtonDisabled"
+        [loading]="saveButtonLoading"
         (click)="onPrimaryClick($event)"
         data-testid="dotFormDialogSave"
         pButton

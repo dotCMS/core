@@ -13,4 +13,10 @@ public abstract class RowField extends Field {
     @Nullable
     public abstract String variable();
 
+    @Value.Default
+    @Override
+    public DataTypes dataType(){
+        return DataTypes.SYSTEM;
+    };
+
 }

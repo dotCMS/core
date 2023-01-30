@@ -1,21 +1,20 @@
 package com.dotmarketing.portlets.workflows.ajax;
 
-import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.ContentletDependencies;
-import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.workflows.business.WorkflowAPI;
 import com.dotmarketing.portlets.workflows.model.WorkflowAction;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.UtilMethods;
-import java.io.IOException;
-import java.util.List;
-import java.util.StringTokenizer;
+
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import java.io.IOException;
+import java.util.Set;
+import java.util.StringTokenizer;
 
 @Deprecated
 public class WfTaskAjax extends WfBaseAction {
@@ -138,6 +137,16 @@ public class WfTaskAjax extends WfBaseAction {
 		}
 	} // executeActions.
 
+	/**
+	 * Security check demanded by Sonar
+	 * We register all the allowed methods down here
+	 *
+	 * @return allowed method names
+	 */
+	@Override
+	protected Set<String> getAllowedCommands() {
+		return Set.of( "executeActions", "executeAction", "action" );
+	}
 	
 	
 }
