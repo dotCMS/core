@@ -25,13 +25,21 @@
 }
 
 .content-search__show-query-dialog {
-    .dijitDialogTitleBar {
-        z-index: 1;
-        width: inherit !important;
+    .dijitDialogPaneContent {
+        padding: 0;
+
+        #queryResults {
+            padding: 16px;
+        }
     }
 
-    .dijitDialogPaneContent {
-        width: inherit !important;
+    .dijitDialogTitleBar {
+        z-index: 1;
+        padding: 0;
+
+        .dijitDialogTitle {
+            padding-left: 16px;
+        }
     }
 }
 
