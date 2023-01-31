@@ -203,7 +203,7 @@ public class AnalyticsAPIImpl implements AnalyticsAPI {
             Logger.info(
                 this,
                 String.format(
-                    "For clientId %s foond this ANALYTICS_KEY response:\n%s",
+                    "For clientId %s found this ANALYTICS_KEY response:\n%s",
                     analyticsApp.getAnalyticsProperties().clientId(),
                     DotObjectMapperProvider.getInstance().getDefaultObjectMapper().writeValueAsString(response)));
 
@@ -250,16 +250,17 @@ public class AnalyticsAPIImpl implements AnalyticsAPI {
      * @param analyticsApp analytics app
      */
     private void logTokenResponse(final CircuitBreakerUrl.Response<AccessToken> response, AnalyticsApp analyticsApp) {
-        if (!AnalyticsHelper.isSuccessResponse(response)) {
+        if (AnalyticsHelper.isSuccessResponse(response)) {
             return;
         }
+
         Logger.error(
             this,
             String.format(
                 "Error requesting ACCESS_TOKEN with clientId %s from IDP server %s (response: %s)",
                 analyticsApp.getAnalyticsProperties().clientId(),
                 analyticsIdpUrl,
-                response));
+                response.getStatusCode()));
     }
 
     /**
@@ -364,25 +365,44 @@ public class AnalyticsAPIImpl implements AnalyticsAPI {
     private CircuitBreakerUrl.Response<AnalyticsKey> requestAnalyticsKey(final AnalyticsApp analyticsApp,
                                                                          final boolean force)
         throws AnalyticsException {
+        final CircuitBreakerUrl.Response<AnalyticsKey> response = CircuitBreakerUrl.builder()
+            .setMethod(CircuitBreakerUrl.Method.GET)
+            .setUrl(analyticsApp.getAnalyticsProperties().analyticsConfigUrl())
+            .setTimeout(ANALYTICS_KEY_RENEW_TIMEOUT)
+            .setTryAgainAttempts(ANALYTICS_KEY_RENEW_ATTEMPTS)
+            .setHeaders(analyticsKeyHeaders(resolveToken(analyticsApp, force)))
+            .build()
+            .doResponse(AnalyticsKey.class);
+        logKeyResponse(response, analyticsApp);
+
+        return response;
+    }
+
+    /**
+     * Resolves token for analytics key taking into consideration if the app is being saved (thai is force == true).
+     * If so, it will try to refresh the access token.
+     *
+     * @param analyticsApp analytics app
+     * @param force force flag
+     * @return ready to use {@link AccessToken} instance
+     * @throws AnalyticsException if is null and force is disabled
+     */
+    private AccessToken resolveToken(AnalyticsApp analyticsApp, boolean force) throws AnalyticsException {
         final AccessToken accessToken = getAccessToken(analyticsApp, force);
-        if (Objects.isNull(accessToken)) {
+
+        if (Objects.isNull(accessToken) && !force) {
             throw new AnalyticsException(String.format(
                 "ACCESS_TOKEN could not be fetched for clientId %s from %s",
                 analyticsApp.getAnalyticsProperties().clientId(),
                 analyticsIdpUrl));
         }
 
-        final CircuitBreakerUrl.Response<AnalyticsKey> response = CircuitBreakerUrl.builder()
-            .setMethod(CircuitBreakerUrl.Method.GET)
-            .setUrl(analyticsApp.getAnalyticsProperties().analyticsConfigUrl())
-            .setTimeout(ANALYTICS_KEY_RENEW_TIMEOUT)
-            .setTryAgainAttempts(ANALYTICS_KEY_RENEW_ATTEMPTS)
-            .setHeaders(analyticsKeyHeaders(accessToken))
-            .build()
-            .doResponse(AnalyticsKey.class);
-        logKeyResponse(response, analyticsApp);
+        if ((Objects.isNull(accessToken) || AnalyticsHelper.hasTokenExpired(accessToken)) && force) {
+            refreshAccessToken(analyticsApp);
+            return getAccessToken(analyticsApp, true);
+        }
 
-        return response;
+        return accessToken;
     }
 
 }

@@ -96,7 +96,7 @@ public final class AnalyticsAppListener implements EventSubscriber<AppSecretSave
                         } catch (AnalyticsException e) {
                             Logger.error(
                                 this,
-                                String.format("Cannot process event %s due to: %s", event, e.getMessage()), e);
+                                String.format("Cannot process event for app update due to: %s", e.getMessage()), e);
                         }
                     });
             });
