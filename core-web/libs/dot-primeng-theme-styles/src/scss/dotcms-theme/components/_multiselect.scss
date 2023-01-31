@@ -17,7 +17,7 @@
     outline: 0 none;
     outline-offset: 0;
     box-shadow: none;
-    border-color: $brand-primary;
+    border-color: $color-primary-500;
 }
 
 .p-multiselect .p-multiselect-label {
@@ -162,7 +162,7 @@
 }
 
 .p-multiselect.p-multiselect-chip {
-    color: $gray-dark;
+    color: $color-gray-600;
 }
 
 .p-multiselect.p-multiselect-chip .p-multiselect-label {

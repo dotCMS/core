@@ -16,7 +16,7 @@
     outline: 0 none;
     outline-offset: 0;
     box-shadow: none;
-    border-color: $brand-primary;
+    border-color: $color-primary-500;
 }
 
 .p-dropdown.p-dropdown-clearable .p-dropdown-label {
@@ -39,7 +39,7 @@
 
 .p-dropdown .p-dropdown-trigger {
     background: transparent;
-    color: $dark;
+    color: $color-primary-800;
     width: 2.357rem;
     border-top-right-radius: $border-radius;
     border-bottom-right-radius: $border-radius;

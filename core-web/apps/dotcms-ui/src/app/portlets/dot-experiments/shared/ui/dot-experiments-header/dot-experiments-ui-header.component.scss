@@ -6,24 +6,17 @@
     min-height: $navigation-item-height;
     align-items: center;
     background-color: $white;
-    color: $gray;
+    color: $color-gray-500;
     font-size: $font-size-medium;
     column-gap: $spacing-3;
-    border-bottom: 1px solid $gray-lighter;
+    border-bottom: 1px solid $color-gray-300;
 
     a {
-        padding-left: $spacing-3;
-        align-items: center;
-        display: flex;
-        height: 100%;
-        color: $gray;
-        cursor: pointer;
-        border-right: 1px solid $gray-bg;
-        text-decoration: none;
-        transition: background-color ease $basic-speed;
+        color: $color-gray-500;
+        font-weight: $font-weight-regular-bold;
 
         &:hover {
-            background-color: $gray-hover;
+            background-color: $color-gray-200;
         }
     }
 }

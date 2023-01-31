@@ -12,7 +12,7 @@
         position: absolute;
         top: 15px;
         right: $spacing-1;
-        color: $gray;
+        color: $color-gray-500;
         display: flex;
         align-items: baseline;
 
@@ -63,7 +63,7 @@
 
                 .p-autocomplete-token {
                     border-radius: $border-radius;
-                    border: solid 1px $gray-light;
+                    border: solid 1px $color-gray-400;
                     margin: $spacing-1 $spacing-1 0 0;
                     padding: $spacing-1 $spacing-1;
                     max-width: 100%;

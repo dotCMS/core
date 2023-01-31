@@ -1,15 +1,18 @@
 @use "variables" as *;
+
 .p-progressbar {
     border: 0 none;
     height: 4px;
     background: $bg-highlight;
     border-radius: $border-radius;
 }
+
 .p-progressbar .p-progressbar-value {
     border: 0 none;
     margin: 0;
-    background: $brand-primary;
+    background: $color-primary-500;
 }
+
 .p-progressbar .p-progressbar-label {
     color: $black;
     line-height: 4px;
@@ -18,6 +21,7 @@
 .p-progressbar {
     border-radius: 0;
 }
+
 .p-progressbar .p-progressbar-label {
     display: none;
 }

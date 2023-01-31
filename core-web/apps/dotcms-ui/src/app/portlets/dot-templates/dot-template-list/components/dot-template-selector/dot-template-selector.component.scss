@@ -20,15 +20,15 @@
 
 p {
     line-height: 1.5;
-    color: $gray-dark;
+    color: $color-gray-600;
 }
 
 .item {
     align-items: center;
-    background-color: $gray-bg;
-    border: solid 2px $gray-bg;
+    background-color: $color-gray-200;
+    border: solid 2px $color-gray-200;
     border-radius: $border-radius;
-    color: $gray-light;
+    color: $color-gray-400;
     cursor: pointer;
     display: flex;
     flex-direction: column;
@@ -36,7 +36,7 @@ p {
     transition: border-color $basic-speed ease, color $basic-speed ease;
 
     &:hover {
-        color: $gray;
+        color: $color-gray-500;
     }
 
     span {
@@ -49,8 +49,8 @@ input[type="radio"] {
     position: absolute;
 
     &:checked + .item {
-        border-color: $brand-primary;
-        color: $brand-primary;
+        border-color: $color-primary-500;
+        color: $color-primary-500;
         background-color: rgba($brand-secondary_rgb, 0.1);
     }
 }

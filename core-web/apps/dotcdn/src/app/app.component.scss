@@ -14,6 +14,7 @@ dot-spinner {
     align-items: center;
     justify-content: center;
 }
+
 h1 {
     margin: 0;
 }
@@ -29,6 +30,7 @@ h1 {
 
 .dot-cdn__tab-content--contained {
     padding: $spacing-4;
+
     textarea {
         width: 100%;
         margin-bottom: $spacing-4;
@@ -46,11 +48,12 @@ h1 {
 }
 
 .dot-cdn__col {
-    color: $brand-primary;
+    color: $color-primary-500;
     margin-bottom: $spacing-3;
     display: grid;
     column-gap: $spacing-3;
     grid-template-columns: repeat(2, 7rem);
+
     dot-icon {
         align-self: center;
     }
@@ -73,8 +76,9 @@ h1 {
     justify-content: space-between;
     margin-bottom: $spacing-0;
 }
+
 .dot-cdn__tab-domain small {
-    color: $gray;
+    color: $color-gray-500;
 }
 
 .dot-cdn__tab-domain p {
@@ -94,6 +98,7 @@ h1 {
     button {
         min-width: 12.71rem;
     }
+
     button:focus {
         color: white;
     }

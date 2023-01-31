@@ -37,10 +37,10 @@
             tr > th {
                 height: 40px;
                 padding: 0;
-                color: $gray;
+                color: $color-gray-500;
                 font-size: $font-size-medium;
                 font-weight: normal;
-                border: 1px solid $gray-lighter;
+                border: 1px solid $color-gray-300;
                 border-width: 0 0 1px 0;
                 font-weight: 500;
 
@@ -56,18 +56,18 @@
 
         .p-datatable-header {
             border: none;
-            color: $gray;
+            color: $color-gray-500;
             background: transparent;
         }
 
         .p-datatable-wrapper {
             border-radius: $border-radius-md;
-            border: 1px solid $gray-lighter;
+            border: 1px solid $color-gray-300;
 
             .p-datatable-tbody {
                 tr {
                     height: 40px;
-                    border: 1px solid $gray-lighter;
+                    border: 1px solid $color-gray-300;
                     transition: background-color $basic-speed ease;
                     background: transparent;
 
@@ -76,7 +76,7 @@
                     }
 
                     &:hover {
-                        background-color: $tr-hover-color;
+                        background-color: $color-primary-200;
                     }
 
                     td {

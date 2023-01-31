@@ -1,7 +1,7 @@
 @use "variables" as *;
 
 :host {
-    border: 1px solid $gray-light;
+    border: 1px solid $color-gray-400;
     display: block;
     border-radius: $border-radius;
     padding: $spacing-3;
@@ -9,8 +9,9 @@
     ::ng-deep {
         .dot-tree--active {
             position: relative;
+
             &::after {
-                background: $brand-primary;
+                background: $color-primary-500;
                 width: $spacing-1;
                 height: $spacing-1;
                 position: absolute;
@@ -30,14 +31,14 @@
     position: relative;
 
     & > li::after {
-        background: $gray-light;
+        background: $color-gray-400;
         width: 1px;
         height: 1.3rem;
         content: "•";
         position: absolute;
         top: 1.4rem;
         left: 0.8rem;
-        color: $gray-light;
+        color: $color-gray-400;
         display: flex;
         justify-content: space-evenly;
         align-items: flex-end;
@@ -45,6 +46,7 @@
         line-height: 1px;
     }
 }
+
 .dot-tree--child {
     position: relative;
 
@@ -53,7 +55,7 @@
     }
 
     & > li::after {
-        background: $gray-light;
+        background: $color-gray-400;
         width: 1.3rem;
         height: 1px;
         content: "";
@@ -76,7 +78,7 @@
     }
 
     code {
-        color: $gray;
+        color: $color-gray-500;
     }
 }
 

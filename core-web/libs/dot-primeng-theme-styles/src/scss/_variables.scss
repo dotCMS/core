@@ -1,48 +1,71 @@
 @use "sass:math";
 
-/*
-* Variable names convention:
-* element-property-state
-*/
-
-// COLORS
-$dark: #1b3359;
-$black: #0a0725;
-$orange: #f3762a;
+// Colors
+$black: #11152e;
 $white: #ffffff;
-$red: #c93926;
-$green: #29c175;
-$gray-dark: #524e5c;
-$gray: #7e7a86;
-$gray-light: #b3b1b8;
-$gray-lighter: #e2e2e2;
-$gray-bg: #f1f3f4;
-$gray-hover: #eee;
-$deleted-content-color: #fdb8c0;
-$new-content-color: #ddffdd;
-$tr-hover-color: #e0e9f6;
-$blue-link: #1d4ed8;
 
-$white_rgb: var(--color-white_rgb);
-$brand-primary: var(--color-main);
+$color-primary-800: var(--color-background);
+$color-primary-700: #34408b;
+$color-primary-600: #4656ba;
+$color-primary-500: var(--color-main); // brand primary
+$color-primary-400: #819eee;
+$color-primary-300: #bccbf6;
+$color-primary-200: #edf3ff;
+$color-primary-100: #f7f9fe;
+
+$color-secondary-700: #5b2b99;
+$color-secondary-600: #7939cc;
+$color-secondary-500: var(--color-sec); // brand secondary
+$color-secondary-400: #b175ff;
+$color-secondary-300: #cba3ff;
+$color-secondary-200: #e5d1ff;
+$color-secondary-100: #f5edff;
+$color-secondary-000: #faf6ff;
+
+$color-gray-600: #4d5062;
+$color-gray-500: #888a97;
+$color-gray-400: #c3c5cb;
+$color-gray-300: #e7e8ea;
+$color-gray-200: #f3f3f4;
+$color-gray-100: #fafafb;
+
+$color-alert-yellow: #ffb444;
+$color-alert-yellow-light: #fff8ec;
+$color-alert-green: #3ed97a;
+$color-alert-green-light: #f5fdf8;
+$color-alert-red: #f65446;
+$color-alert-red-light: #fff6f6;
+
+$color-accessible-text-red: #d82b2e;
+$color-accessible-text-red-bg: $color-alert-green-light;
+$color-accessible-text-green: #0b6948;
+$color-accessible-text-green-bg: $color-alert-green-light;
+$color-accessible-text-purple: $color-secondary-600;
+$color-accessible-text-purple-bg: $color-secondary-000;
+$color-accessible-text-blue: $color-primary-600;
+$color-accessible-text-blue-bg: $color-primary-200;
+$color-accessible-text-yellow: #bc5b0d;
+$color-accessible-text-yellow-bg: $color-alert-yellow-light;
+$color-accessible-text-gray: $color-gray-600;
+$color-accessible-text-gray-bg: $color-gray-100;
+
+// COLORS OLDs
 $brand-primary_mod: var(--color-main_mod);
 $brand-primary_rgb: var(--color-main_rgb);
-$brand-primary-100: #e9ebfc;
-$brand-primary-100-hover: #d2d6f9;
 $brand-secondary: var(--color-sec);
 $brand-secondary_rgb: var(--color-sec_rgb);
-$brand-background: var(--color-background);
+$white_rgb: var(--color-white_rgb);
 
-$input-border-color-hover: $brand-primary;
-$input-inset-shadow: inset 0 0 0 1px $brand-primary, inset 0 0 0 1px $brand-primary,
-    inset 0 0 0 1px $brand-primary, inset 0 0 0 1px $brand-primary;
-$input-border-color: $gray-light;
-$input-border-color-focus: $gray-light;
-$input-bg-color: $gray-light;
-$input-bg-color-hover: $gray-light;
+$input-border-color-hover: $color-primary-500;
+$input-inset-shadow: inset 0 0 0 1px $color-primary-500, inset 0 0 0 1px $color-primary-500,
+    inset 0 0 0 1px $color-primary-500, inset 0 0 0 1px $color-primary-500;
+$input-border-color: $color-gray-400;
+$input-border-color-focus: $color-gray-400;
+$input-bg-color: $color-gray-400;
+$input-bg-color-hover: $color-gray-400;
 
 $bg-highlight: rgba($brand-secondary_rgb, 0.12);
-$text-color-highlight: $brand-primary;
+$text-color-highlight: $color-primary-500;
 $border-color-highlight: rgba($brand-secondary_rgb, 0.12);
 
 $focus-bg: rgba($brand-secondary_rgb, 0.12);
@@ -50,15 +73,15 @@ $focus-text-color: $black;
 
 $bg-hover: rgba($brand-secondary_rgb, 0.12);
 $text-color-hover: $black;
-$border-color-hover: $brand-primary;
+$border-color-hover: $color-primary-500;
 
-$button-text-color-disabled: $gray-light;
-$button-text-color: $gray-light;
+$button-text-color-disabled: $color-gray-400;
+$button-text-color: $color-gray-400;
 $button-shadow-focus: 0 0 0 4px rgba(var(--color-sec_rgb), 0.2);
 
 // Tables
-$th-text-color: $gray-light;
-$table-border-color: $gray-light;
+$th-text-color: $color-gray-400;
+$table-border-color: $color-gray-400;
 
 // Spacing
 $spacing-0: 0;
@@ -74,9 +97,9 @@ $spacing-9: 4.5rem;
 $spacing-10: 7rem;
 
 $error: #d0021b;
-$warn: $orange;
-$info: $brand-secondary;
-$success: $green;
+$warn: $color-alert-yellow;
+$info: $color-secondary-500;
+$success: $color-alert-green;
 
 // Basic stuffs
 $border-radius: 2px;
@@ -153,7 +176,7 @@ $md-shadow-4: 0 2px 4px 0 rgba(0, 0, 0, 0.1);
 $md-shadow-5: 0 10px 20px 0 rgba(0, 0, 0, 0.15);
 
 // FORMS
-$label-color: rgba($gray-dark, 0.6);
+$label-color: rgba($color-gray-600, 0.6);
 $label-font-size: $font-size-small;
 $form-field-spacing: $spacing-3;
 $form-width: 400px;

@@ -76,7 +76,7 @@
     background: $white;
     font-weight: $font-weight-semi-bold;
     margin: 0;
-    border-bottom: 1px solid $gray-lighter;
+    border-bottom: 1px solid $color-gray-300;
     border-top-right-radius: $border-radius;
     border-top-left-radius: $border-radius;
 }
@@ -119,7 +119,7 @@
     outline: 0 none;
     outline-offset: 0;
     box-shadow: none;
-    border-color: $brand-primary;
+    border-color: $color-primary-500;
 }
 
 .p-datepicker .p-datepicker-header .p-datepicker-title .p-datepicker-month {
@@ -166,7 +166,7 @@
 .p-datepicker table td.p-datepicker-today > span {
     background: $white;
     color: $black;
-    border-color: $gray-light;
+    border-color: $color-gray-400;
 }
 
 .p-datepicker table td.p-datepicker-today > span.p-highlight {
@@ -176,7 +176,7 @@
 
 .p-datepicker .p-datepicker-buttonbar {
     padding: $spacing-2 0;
-    border-top: 1px solid $gray-lighter;
+    border-top: 1px solid $color-gray-300;
 }
 
 .p-datepicker .p-datepicker-buttonbar .p-button {
@@ -184,7 +184,7 @@
 }
 
 .p-datepicker .p-timepicker {
-    border-top: 1px solid $gray-lighter;
+    border-top: 1px solid $color-gray-300;
     padding: $spacing-1;
 }
 
@@ -242,7 +242,7 @@
 }
 
 .p-datepicker.p-datepicker-multiple-month .p-datepicker-group {
-    border-right: 1px solid $gray-lighter;
+    border-right: 1px solid $color-gray-300;
     padding-right: $spacing-1;
     padding-left: $spacing-1;
     padding-top: 0;
@@ -307,7 +307,7 @@
 }
 
 .p-datepicker table th {
-    border-bottom: 1px solid $gray-lighter;
+    border-bottom: 1px solid $color-gray-300;
     color: $th-text-color;
     font-weight: 400;
     font-size: 0.875rem;

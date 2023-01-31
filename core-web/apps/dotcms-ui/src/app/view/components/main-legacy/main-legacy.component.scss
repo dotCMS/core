@@ -26,7 +26,7 @@
 }
 
 .layout__sidebar {
-    background-color: $brand-background;
+    background-color: $color-primary-800;
     flex-shrink: 0;
     transition: width $basic-speed * 2 cubic-bezier(0.25, 0.8, 0.25, 1);
 

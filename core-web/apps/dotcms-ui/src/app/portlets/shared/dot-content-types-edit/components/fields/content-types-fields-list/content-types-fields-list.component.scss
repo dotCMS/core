@@ -1,4 +1,5 @@
 @use "variables" as *;
+
 $icon-size: 24px;
 
 .content-types-fields-list {
@@ -17,7 +18,7 @@ $icon-size: 24px;
     transition: background-color $basic-speed;
 
     dot-icon {
-        color: $gray;
+        color: $color-gray-500;
         margin-right: $spacing-3;
         transition: color $basic-speed;
     }
@@ -31,6 +32,6 @@ $icon-size: 24px;
     }
 
     &:nth-child(2) {
-        border-bottom: solid 1px $gray-lighter;
+        border-bottom: solid 1px $color-gray-300;
     }
 }

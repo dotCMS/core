@@ -8,11 +8,11 @@ h2 {
 
 .variant-name dot-icon {
     display: inline;
-    color: $brand-primary;
+    color: $color-primary-500;
 }
 
 .separator {
-    color: $gray-lighter;
+    color: $color-gray-300;
 }
 
 button {
@@ -21,7 +21,7 @@ button {
 
 :host ::ng-deep {
     dot-icon {
-        color: $gray-light;
+        color: $color-gray-400;
 
         &.isDone {
             color: $success;
@@ -43,7 +43,7 @@ button {
             &.last .p-card {
                 border-bottom-right-radius: $border-radius-md;
                 border-bottom-left-radius: $border-radius-md;
-                border: 1px solid $gray-lighter;
+                border: 1px solid $color-gray-300;
             }
         }
 

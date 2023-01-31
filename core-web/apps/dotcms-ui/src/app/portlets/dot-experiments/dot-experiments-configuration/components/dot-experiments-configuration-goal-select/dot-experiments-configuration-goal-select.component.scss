@@ -26,14 +26,14 @@
         gap: $spacing-2;
 
         h2 {
-            color: $dark;
+            color: $color-primary-800;
             font-size: $font-size-large;
             font-weight: $font-weight-semi-bold;
         }
 
         p {
             font-weight: $font-weight-regular-bold;
-            color: $gray;
+            color: $color-gray-500;
         }
     }
 }
@@ -45,17 +45,17 @@
 
         .p-button.p-element,
         .p-button:not(:first-of-type):not(:last-of-type) {
-            border: 1px solid $gray-lighter;
+            border: 1px solid $color-gray-300;
             border-radius: $border-radius-md;
             padding: 0;
 
             &:focus {
-                background-color: $brand-primary-100-hover;
+                background-color: $color-primary-300;
             }
         }
 
         .p-highlight {
-            background-color: $brand-primary-100-hover;
+            background-color: $color-primary-300;
         }
     }
 }

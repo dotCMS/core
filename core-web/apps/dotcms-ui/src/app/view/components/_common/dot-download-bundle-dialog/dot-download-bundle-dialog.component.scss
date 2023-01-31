@@ -1,11 +1,12 @@
 @use "variables" as *;
+
 form {
     width: $form-width;
 }
 
 p-selectbutton {
     display: block;
-    border-bottom: solid 1px $gray-light;
+    border-bottom: solid 1px $color-gray-400;
 }
 
 .download-bundle__error {

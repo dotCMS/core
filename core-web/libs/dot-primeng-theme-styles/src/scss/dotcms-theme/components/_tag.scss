@@ -1,0 +1,40 @@
+@use "variables" as *;
+
+.p-tag {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+
+    background: $color-primary-500;
+    color: $white;
+    font-size: $font-size-medium;
+    font-weight: $font-weight-regular-bold;
+    padding: $spacing-1 $spacing-3;
+
+    border-radius: $tag-radius-md;
+}
+
+.p-tag.p-tag-success {
+    background-color: #22c55e;
+    color: #ffffff;
+}
+
+.p-tag.p-tag-info {
+    background-color: #3b82f6;
+    color: #ffffff;
+}
+
+.p-tag.p-tag-warning {
+    background-color: #f59e0b;
+    color: #ffffff;
+}
+
+.p-tag.p-tag-danger {
+    background-color: #ef4444;
+    color: #ffffff;
+}
+
+.p-tag .p-tag-icon {
+    margin-right: 0.25rem;
+    font-size: 0.75rem;
+}

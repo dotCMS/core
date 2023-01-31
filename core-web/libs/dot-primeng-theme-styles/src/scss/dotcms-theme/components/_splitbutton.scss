@@ -5,11 +5,11 @@
 }
 
 .p-splitbutton.p-button-secondary > .p-splitbutton-menubutton:not(:disabled) {
-    border-right: 1px solid $brand-secondary;
+    border-right: 1px solid $color-secondary-500;
 }
 
 .p-splitbutton.p-button-secondary > .p-splitbutton-menubutton:not(:disabled):hover {
-    border-right: 1px solid $brand-primary;
+    border-right: 1px solid $color-primary-500;
 }
 
 .p-splitbutton-menubutton.p-button {
@@ -18,20 +18,20 @@
 
 .p-splitbutton.p-button-secondary > .p-splitbutton-defaultbutton:enabled:active,
 .p-splitbutton.p-button-secondary > .p-splitbutton-defaultbutton:enabled:focus {
-    border-left: 1px solid $brand-primary;
-    border-bottom: 1px solid $brand-primary;
-    border-top: 1px solid $brand-primary;
-    color: $brand-primary; // ok
+    border-left: 1px solid $color-primary-500;
+    border-bottom: 1px solid $color-primary-500;
+    border-top: 1px solid $color-primary-500;
+    color: $color-primary-500; // ok
     border-right: none;
 }
 
 .p-splitbutton.p-button-secondary > .p-splitbutton-menubutton:enabled:active,
 .p-splitbutton.p-button-secondary > .p-splitbutton-menubutton:enabled:focus {
-    border-left: 1px solid $brand-primary;
-    border-bottom: 1px solid $brand-primary;
-    border-top: 1px solid $brand-primary;
-    border-right: 1px solid $brand-primary;
-    color: $brand-primary; // ok
+    border-left: 1px solid $color-primary-500;
+    border-bottom: 1px solid $color-primary-500;
+    border-top: 1px solid $color-primary-500;
+    border-right: 1px solid $color-primary-500;
+    color: $color-primary-500; // ok
 }
 
 .p-splitbutton > .p-splitbutton-menubutton {
@@ -39,5 +39,5 @@
 }
 
 .p-splitbutton > .p-splitbutton-menubutton:disabled {
-    border-left: 1px solid $gray-light;
+    border-left: 1px solid $color-gray-400;
 }

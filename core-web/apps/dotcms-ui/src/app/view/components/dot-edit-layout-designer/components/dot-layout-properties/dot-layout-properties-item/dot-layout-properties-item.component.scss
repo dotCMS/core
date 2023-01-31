@@ -7,7 +7,7 @@
     padding: $spacing-1 $spacing-3;
 
     &:hover {
-        background-color: $gray-bg;
+        background-color: $color-gray-200;
     }
 
     &.property-item__footer {
@@ -31,12 +31,12 @@
 
 .property-item__icon--selected {
     rect {
-        stroke: $brand-primary;
+        stroke: $color-primary-500;
         fill: rgba($brand-primary_rgb, 0.2);
     }
 
     path {
-        fill: $brand-primary;
+        fill: $color-primary-500;
     }
 }
 

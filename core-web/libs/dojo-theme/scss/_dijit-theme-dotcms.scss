@@ -1,16 +1,32 @@
+// please copy from
+// core-web/libs/dot-primeng-theme-styles/src/scss/_variables.scss
+$black: #11152e;
+$white: #ffffff;
+
+$color-gray-600: #4d5062;
+$color-gray-500: #888a97;
+$color-gray-400: #c3c5cb;
+$color-gray-300: #e7e8ea;
+$color-gray-200: #f3f3f4;
+$color-gray-100: #fafafb;
+
+$color-alert-yellow: #ffb444;
+$color-alert-green: #3ed97a;
+$color-alert-red: #f65446;
+
 // COLORS
-$black: #161616;
-$gray-dark: #5b5b5b;
-$gray: #8a8a8a;
-$gray-ligth: #c5c5c5;
-$gray-ligther: #ecedee;
-$gray-ligthest: #fafafa;
+$black: $black;
+$gray-dark: $color-gray-600;
+$gray: $color-gray-500;
+$gray-ligth: $color-gray-400;
+$gray-ligther: $color-gray-200;
+$gray-ligthest: $color-gray-100;
 $green-ligth: #e7e7e7;
-$green: #4a9d51;
-$orange: #f3762a;
+$green: $color-alert-green;
+$orange: $color-alert-yellow;
 $white: #fff;
-$error: #d0021b;
-$red: #cb3927;
+$error: $color-alert-red;
+$red: $color-alert-red;
 
 // BRAND COLORS
 $color-main: var(--color-main);

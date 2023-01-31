@@ -2,7 +2,8 @@
 @import "forms";
 @import "mixins";
 @import "typography";
-@import "dotcms-theme/utils/theme-variables"; /* temporary */
+@import "dotcms-theme/utils/theme-variables";
+/* temporary */
 @import "dotcms-theme/theme"; /* prime-ng */
 
 // CSS VARIABLEs
@@ -65,6 +66,7 @@
             url("/dotAdmin/assets/roboto-v27-vietnamese_latin-ext_latin_greek-ext_greek_cyrillic-ext_cyrillic-regular.woff")
             format("woff"); /* Chrome 6+, Firefox 3.6+, IE 9+, Safari 5.1+ */
 }
+
 /* roboto-500 - vietnamese_latin-ext_latin_greek-ext_greek_cyrillic-ext_cyrillic */
 @font-face {
     font-family: "Roboto";
@@ -78,6 +80,7 @@
             url("/dotAdmin/assets/roboto-v27-vietnamese_latin-ext_latin_greek-ext_greek_cyrillic-ext_cyrillic-500.woff")
             format("woff"); /* Chrome 6+, Firefox 3.6+, IE 9+, Safari 5.1+ */
 }
+
 /* roboto-700 - vietnamese_latin-ext_latin_greek-ext_greek_cyrillic-ext_cyrillic */
 @font-face {
     font-family: "Roboto";
@@ -120,18 +123,18 @@ body {
 }
 
 a {
-    color: $brand-primary;
+    color: $color-primary-500;
 
     &:hover {
         text-decoration: none;
     }
 
     &.link-secondary {
-        color: $brand-secondary;
+        color: $color-secondary-500;
     }
 
     &[actionlink] {
-        color: $brand-secondary;
+        color: $color-secondary-500;
         font-size: $button-tiny-text-size;
         text-transform: uppercase;
         cursor: pointer;
@@ -152,9 +155,11 @@ However this is for the dragula we use in the angular components the one in the 
     opacity: 1;
     transform-origin: right top;
 }
+
 .gu-hide {
     display: none !important;
 }
+
 .gu-unselectable {
     user-select: none !important;
 }

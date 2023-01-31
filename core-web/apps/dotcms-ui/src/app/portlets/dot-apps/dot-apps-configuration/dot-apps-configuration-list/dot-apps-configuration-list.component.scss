@@ -10,8 +10,8 @@ dot-apps-configuration-item {
     overflow: auto;
 
     &.dot-apps-configuration-item__not-configured {
-        background-color: $gray-bg;
-        color: $gray;
+        background-color: $color-gray-200;
+        color: $color-gray-500;
 
         &:hover {
             background-color: transparent;

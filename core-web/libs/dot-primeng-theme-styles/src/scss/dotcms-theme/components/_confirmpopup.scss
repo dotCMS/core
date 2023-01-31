@@ -7,7 +7,7 @@
     left: 0;
 
     background: $white;
-    color: $gray-dark;
+    color: $color-gray-600;
     border: 0 none;
     border-radius: $border-radius;
     box-shadow: $md-shadow-1;
@@ -86,6 +86,6 @@
 
 .p-confirm-popup .p-button.p-button-text {
     background-color: transparent;
-    color: $brand-primary;
+    color: $color-primary-500;
     border-color: transparent;
 }

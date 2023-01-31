@@ -45,6 +45,7 @@
 
 .form__group--helper {
     position: relative;
+
     input[pinputtext] {
         padding-right: $spacing-9;
     }
@@ -56,7 +57,7 @@
 
 .p-field-hint,
 .form__group-hint {
-    color: $gray;
+    color: $color-gray-500;
     display: block;
     font-size: $font-size-small;
     margin-top: 0.25rem;
@@ -71,7 +72,7 @@
 .form__hint-icon {
     border-radius: 50%;
     border: solid 1px;
-    color: $gray;
+    color: $color-gray-500;
     cursor: pointer;
     margin-left: $spacing-3;
     text-align: center;

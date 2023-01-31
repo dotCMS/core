@@ -13,8 +13,9 @@ p-fileupload {
     span {
         margin: 0px $spacing-1 0px $spacing-3;
     }
+
     img {
-        border: 1px solid $gray;
+        border: 1px solid $color-gray-500;
         width: 100px;
     }
 }

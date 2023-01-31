@@ -17,7 +17,7 @@
 }
 
 #inputtext-error-border {
-    box-shadow: 0 $field-active-border-size 0 $red;
+    box-shadow: 0 $field-active-border-size 0 $color-alert-red;
 }
 
 #field-default-state {
@@ -44,7 +44,7 @@
 }
 
 #ui-hover-state {
-    background: $gray-bg;
+    background: $color-gray-200;
     color: $field-hover-color;
 }
 
@@ -71,7 +71,7 @@
 // EDIT PAGE
 
 #edit-page-selector-label {
-    color: $gray;
+    color: $color-gray-500;
     font-size: $font-size-small;
     position: absolute;
     top: 0;

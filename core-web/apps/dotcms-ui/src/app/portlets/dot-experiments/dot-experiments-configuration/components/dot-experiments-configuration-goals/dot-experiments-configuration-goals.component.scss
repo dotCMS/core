@@ -23,7 +23,7 @@ i {
 
 :host ::ng-deep {
     dot-icon {
-        color: $gray-light;
+        color: $color-gray-400;
 
         &.isDone {
             color: $success;

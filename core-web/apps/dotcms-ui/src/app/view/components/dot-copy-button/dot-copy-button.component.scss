@@ -14,8 +14,8 @@
     align-items: center;
     background-color: transparent;
     border-radius: $border-radius;
-    border: solid 1px $brand-secondary;
-    color: $brand-secondary;
+    border: solid 1px $color-secondary-500;
+    color: $color-secondary-500;
     cursor: pointer;
     display: inline-flex;
     font-size: 0.75rem;
@@ -24,8 +24,9 @@
     text-decoration: none;
     text-transform: uppercase;
     transition: background-color $basic-speed ease, color $basic-speed ease;
+
     &:hover {
-        background-color: $brand-secondary;
+        background-color: $color-secondary-500;
         color: $white;
     }
 }

@@ -23,7 +23,7 @@
 
     &[float] {
         button {
-            background-color: $brand-primary;
+            background-color: $color-primary-500;
             border-radius: 50%;
             box-shadow: $md-shadow-1;
 
@@ -66,11 +66,11 @@
             }
 
             &:active ::ng-deep i {
-                color: $brand-primary;
+                color: $color-primary-500;
             }
 
             &:hover ::ng-deep i {
-                color: $brand-primary;
+                color: $color-primary-500;
             }
 
             ::ng-deep i {
@@ -116,7 +116,7 @@
         background: transparent;
         border-radius: 50%;
         border: none;
-        color: $gray;
+        color: $color-gray-500;
         cursor: pointer;
         display: inline-flex;
         justify-content: center;

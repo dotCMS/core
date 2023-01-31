@@ -23,12 +23,12 @@
         overflow: hidden;
         position: relative;
         resize: vertical;
-        outline: $gray-light solid 1px;
+        outline: $color-gray-400 solid 1px;
     }
 
     // If a child is focused, set this style to the parent
     &:focus-within {
-        outline-color: $brand-primary;
+        outline-color: $color-primary-500;
     }
 
     tiptap-editor ::ng-deep {
@@ -55,10 +55,10 @@
 
                 &:before {
                     align-items: center;
-                    background: $gray-bg;
+                    background: $color-gray-200;
                     border-radius: 3px;
-                    border: 1px solid $gray-light;
-                    color: $gray;
+                    border: 1px solid $color-gray-400;
+                    color: $color-gray-500;
                     content: "The image URL " attr(src)
                         " seems to be broken, please double check the URL.";
                     display: flex;
@@ -153,7 +153,7 @@
 
             // Placeholder styling
             .is-empty::before {
-                color: $gray-light;
+                color: $color-gray-400;
                 content: attr(data-placeholder);
                 float: left;
                 height: 0;
@@ -169,13 +169,14 @@
 
                 td,
                 th {
-                    border: 2px solid $gray-light;
+                    border: 2px solid $color-gray-400;
                     box-sizing: border-box;
                     min-width: $spacing-3;
                     padding: 3px 20px 3px 5px;
                     position: relative;
                     vertical-align: top;
                 }
+
                 /* fix borders in FF: https://stackoverflow.com/a/16337203/3847132*/
                 th {
                     background-clip: padding-box;
@@ -187,13 +188,13 @@
                 }
 
                 th {
-                    background-color: $gray-bg;
+                    background-color: $color-gray-200;
                     font-weight: 700;
                     text-align: left;
                 }
 
                 .selectedCell {
-                    background-color: $gray-lighter;
+                    background-color: $color-gray-300;
                 }
 
                 .selectedCell:after {
@@ -243,11 +244,13 @@
                     cursor: pointer;
                     z-index: 100;
                 }
+
                 .selectedCell {
                     .dot-cell-arrow {
                         display: block;
                     }
                 }
+
                 td.focus,
                 th.focus {
                     .dot-cell-arrow {

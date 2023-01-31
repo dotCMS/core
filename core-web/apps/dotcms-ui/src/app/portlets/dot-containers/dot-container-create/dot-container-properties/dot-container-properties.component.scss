@@ -41,7 +41,7 @@
 
 .p-button-info.dot-container-properties__button-clear,
 .p-button-info.dot-container-properties__button-clear:hover {
-    background-color: $gray;
+    background-color: $color-gray-500;
     color: $white;
     padding: 0.82rem $spacing-3;
 }
@@ -53,7 +53,7 @@
 
 :host ::ng-deep {
     .tab-panel-btn {
-        background: $brand-background;
+        background: $color-primary-800;
 
         a.p-tabview-nav-link {
             padding: 0;

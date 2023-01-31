@@ -1,6 +1,8 @@
 @use "variables" as *;
 
 :host {
+    background: $color-gray-200;
+    box-shadow: $md-shadow-4;
     display: flex;
     height: 100%;
 }
@@ -25,7 +27,7 @@
 
 ::ng-deep {
     .p-panel-toggleable {
-        border: 1px solid $gray-lighter;
+        border: 1px solid $color-gray-300;
 
         &.p-panel-expanded {
             border-color: $white;
@@ -39,7 +41,7 @@
         position: relative;
 
         .p-panel-icons span {
-            color: $brand-primary;
+            color: $color-primary-500;
             font-size: $font-size-x-large;
             margin-left: $spacing-1;
             margin-right: $spacing-2;
@@ -113,7 +115,7 @@
     width: max-content;
 
     dot-icon {
-        color: $brand-primary;
+        color: $color-primary-500;
         margin-bottom: $spacing-3;
     }
 }

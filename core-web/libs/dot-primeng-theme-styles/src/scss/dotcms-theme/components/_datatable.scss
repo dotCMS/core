@@ -32,9 +32,9 @@ $datatable-bg-hover: rgba($brand-secondary_rgb, 0.05);
 
 .p-datatable .p-datatable-thead > tr > th {
     background: $white;
-    border: 1px solid $gray-lighter;
+    border: 1px solid $color-gray-300;
     border-width: 0 0 1px 0;
-    color: $gray;
+    color: $color-gray-500;
     font-size: $font-size-small;
     font-weight: $font-weight-semi-bold;
     padding: $spacing-2 $spacing-2;
@@ -65,7 +65,7 @@ $datatable-bg-hover: rgba($brand-secondary_rgb, 0.05);
 }
 
 .p-datatable .p-sortable-column .p-sortable-column-icon {
-    color: $gray;
+    color: $color-gray-500;
     margin-left: $spacing-1;
 }
 
@@ -74,7 +74,7 @@ $datatable-bg-hover: rgba($brand-secondary_rgb, 0.05);
     height: 1.143rem;
     min-width: 1.143rem;
     line-height: 1.143rem;
-    color: $brand-primary;
+    color: $color-primary-500;
     background: $bg-highlight;
     margin-left: $spacing-1;
 }
@@ -109,7 +109,7 @@ $datatable-bg-hover: rgba($brand-secondary_rgb, 0.05);
 
 .p-datatable .p-datatable-tbody > tr > td {
     text-align: left;
-    border: 1px solid $gray-lighter;
+    border: 1px solid $color-gray-300;
     border-width: 0 0 1px 0;
     padding: $spacing-1 $spacing-2;
 
@@ -163,8 +163,8 @@ $datatable-bg-hover: rgba($brand-secondary_rgb, 0.05);
 }
 
 .p-datatable .p-datatable-tbody > tr.disabled-row {
-    background: $gray-bg;
-    color: $gray;
+    background: $color-gray-200;
+    color: $color-gray-500;
     cursor: default;
 }
 
@@ -182,12 +182,12 @@ $datatable-bg-hover: rgba($brand-secondary_rgb, 0.05);
 }
 
 .p-datatable.p-datatable-hoverable-rows .p-datatable-tbody > tr.disabled-row:hover {
-    background: $gray-bg;
-    color: $gray;
+    background: $color-gray-200;
+    color: $color-gray-500;
 }
 
 .p-datatable .p-column-resizer-helper {
-    background: $brand-primary;
+    background: $color-primary-500;
 }
 
 .p-datatable .p-datatable-scrollable-header,
@@ -197,7 +197,7 @@ $datatable-bg-hover: rgba($brand-secondary_rgb, 0.05);
 
 .p-datatable .p-datatable-loading-icon {
     font-size: $font-size-xxx-large;
-    color: $brand-secondary;
+    color: $color-secondary-500;
 }
 
 .p-datatable.p-datatable-gridlines .p-datatable-header {

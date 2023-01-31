@@ -8,8 +8,8 @@
 a {
     align-items: center;
     border-radius: 2px;
-    border: solid 1px $brand-secondary;
-    color: $brand-secondary;
+    border: solid 1px $color-secondary-500;
+    color: $color-secondary-500;
     display: inline-flex;
     line-height: 1em;
     padding: 0.25rem 6px 0.25rem $spacing-1;
@@ -18,7 +18,7 @@ a {
     transition: background-color $basic-speed ease, color $basic-speed ease;
 
     &:hover {
-        background-color: $brand-secondary;
+        background-color: $color-secondary-500;
         color: $white;
 
         dot-icon {
@@ -28,7 +28,7 @@ a {
 }
 
 dot-icon {
-    color: $brand-secondary;
+    color: $color-secondary-500;
     margin-right: $spacing-1;
     transition: color $basic-speed ease;
 }

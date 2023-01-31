@@ -9,7 +9,7 @@ $number-link-icon-size: 2.28rem;
     overflow: auto;
 
     hr {
-        border-top: 1px solid $gray-lighter;
+        border-top: 1px solid $color-gray-300;
     }
 
     a {
@@ -33,7 +33,7 @@ $number-link-icon-size: 2.28rem;
     }
 
     .dot-starter-description {
-        color: $gray;
+        color: $color-gray-500;
         margin: 0 $spacing-3 $spacing-5 $spacing-3;
     }
 
@@ -57,7 +57,7 @@ $number-link-icon-size: 2.28rem;
 
     .dot-starter-top-main__block {
         align-content: space-between;
-        border-bottom: 1px solid $gray-lighter;
+        border-bottom: 1px solid $color-gray-300;
         display: flex;
         margin: 0;
         padding: $spacing-5 0;
@@ -75,7 +75,7 @@ $number-link-icon-size: 2.28rem;
 
         span {
             align-items: center;
-            background-color: $brand-primary;
+            background-color: $color-primary-500;
             border-radius: 50%;
             color: $white;
             counter-increment: css-counter 1;
@@ -96,13 +96,14 @@ $number-link-icon-size: 2.28rem;
         flex-grow: 1;
 
         h4 {
-            color: $brand-primary;
+            color: $color-primary-500;
             font-size: $font-size-large;
             font-weight: bold;
             margin: 0;
         }
+
         p {
-            color: $gray;
+            color: $color-gray-500;
             margin: 0;
         }
     }
@@ -111,7 +112,7 @@ $number-link-icon-size: 2.28rem;
         align-self: center;
 
         i {
-            color: $gray-light;
+            color: $color-gray-400;
             font-size: $font-size-x-large;
             margin-right: $spacing-3;
         }
@@ -136,14 +137,14 @@ $number-link-icon-size: 2.28rem;
         padding-top: 0;
 
         span {
-            color: $brand-primary;
-            fill: $brand-primary;
+            color: $color-primary-500;
+            fill: $color-primary-500;
             display: inline-flex;
             width: $number-link-icon-size;
         }
 
         svg {
-            fill: $brand-primary;
+            fill: $color-primary-500;
             height: 1.71rem;
             width: $md-icon-size-normal;
         }
@@ -157,8 +158,9 @@ $number-link-icon-size: 2.28rem;
             font-size: $font-size-large;
             margin: 0;
         }
+
         p {
-            color: $gray;
+            color: $color-gray-500;
             margin: 0;
         }
     }
@@ -171,7 +173,7 @@ $number-link-icon-size: 2.28rem;
 
     .dot-starter-bottom__block {
         background-color: $white;
-        border-bottom: 1px solid $gray-lighter;
+        border-bottom: 1px solid $color-gray-300;
         box-shadow: $md-shadow-4;
         display: flex;
         flex-grow: 1;
@@ -192,7 +194,7 @@ $number-link-icon-size: 2.28rem;
         text-align: center;
 
         span {
-            color: $brand-primary;
+            color: $color-primary-500;
             display: inline-flex;
         }
     }
@@ -207,8 +209,9 @@ $number-link-icon-size: 2.28rem;
             font-size: $font-size-large;
             margin: 0;
         }
+
         p {
-            color: $gray;
+            color: $color-gray-500;
             margin: 0;
         }
     }

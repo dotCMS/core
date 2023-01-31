@@ -10,7 +10,7 @@
         }
 
         &:not([disabled]) {
-            background-color: $brand-primary;
+            background-color: $color-primary-500;
             box-shadow: $md-shadow-1;
             opacity: 1;
 

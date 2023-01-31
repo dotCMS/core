@@ -2,7 +2,7 @@
 @use "variables" as *;
 
 .p-button {
-    background: $brand-primary;
+    background: $color-primary-500;
     border-radius: $border-radius;
     border: 0 none;
     border: solid 1px transparent;
@@ -24,14 +24,14 @@
 
 .p-button.p-button-text {
     background-color: transparent;
-    color: $brand-primary;
+    color: $color-primary-500;
     border-color: transparent;
 }
 
 .p-button.p-button-text:enabled:hover,
 .p-button.p-button-text:enabled:focus {
     background: $bg-hover;
-    color: $brand-primary;
+    color: $color-primary-500;
     border-color: transparent;
 }
 
@@ -52,11 +52,11 @@
 .p-button.p-button-vertical {
     font-size: $font-size-medium;
     padding: $spacing-1 $spacing-2;
-    color: $brand-secondary;
+    color: $color-secondary-500;
 
     &:enabled:hover,
     &:enabled:focus {
-        color: $brand-secondary;
+        color: $color-secondary-500;
     }
 
     .p-button-icon {
@@ -92,7 +92,7 @@
     min-width: $spacing-3;
     height: $spacing-3;
     line-height: $spacing-3;
-    color: $brand-primary;
+    color: $color-primary-500;
     background-color: $white;
 }
 
@@ -106,20 +106,20 @@
 }
 
 .p-button-rounded.p-button.p-button-icon-only {
-    color: $gray-dark;
+    color: $color-gray-600;
     padding: 0.571rem;
     min-width: auto;
 
     &:enabled {
         &:hover {
-            color: $gray-dark;
+            color: $color-gray-600;
         }
     }
 
     &:enabled {
         &:active,
         &:focus {
-            color: $brand-primary;
+            color: $color-primary-500;
             background: $focus-bg;
         }
     }
@@ -182,15 +182,15 @@
 .p-button.p-button-secondary,
 .p-buttonset.p-button-secondary > .p-button,
 .p-splitbutton.p-button-secondary > .p-button {
-    color: $brand-secondary;
-    border-top: 1px solid $brand-secondary;
-    border-left: 1px solid $brand-secondary;
-    border-bottom: 1px solid $brand-secondary;
+    color: $color-secondary-500;
+    border-top: 1px solid $color-secondary-500;
+    border-left: 1px solid $color-secondary-500;
+    border-bottom: 1px solid $color-secondary-500;
     background: none;
 }
 
 .p-button.p-button-secondary {
-    border-right: 1px solid $brand-secondary;
+    border-right: 1px solid $color-secondary-500;
 
     &:hover {
         background: none;
@@ -205,21 +205,21 @@
 .p-button.p-button-secondary:enabled:hover,
 .p-buttonset.p-button-secondary > .p-button:enabled:hover,
 .p-splitbutton.p-button-secondary > .p-button:enabled:hover {
-    border-top: 1px solid $brand-primary;
-    border-left: 1px solid $brand-primary;
-    border-bottom: 1px solid $brand-primary;
-    color: $brand-primary;
+    border-top: 1px solid $color-primary-500;
+    border-left: 1px solid $color-primary-500;
+    border-bottom: 1px solid $color-primary-500;
+    color: $color-primary-500;
 
     ~ .p-splitbutton-menubutton {
-        border-left: 1px solid $brand-primary;
+        border-left: 1px solid $color-primary-500;
     }
 }
 
 .p-button-secondary.p-confirm-dialog-reject {
-    border-right: 1px solid $brand-secondary;
+    border-right: 1px solid $color-secondary-500;
 
     &:hover {
-        border-color: $brand-primary;
+        border-color: $color-primary-500;
         background: none;
     }
 }
@@ -230,7 +230,7 @@
 .p-button.p-button-secondary:enabled:focus {
     background: none;
     border-color: transparent;
-    color: $brand-secondary;
+    color: $color-secondary-500;
 }
 
 .p-button.p-button-info,
@@ -318,7 +318,7 @@
 }
 
 .p-button.p-button-link {
-    color: $brand-primary;
+    color: $color-primary-500;
     background: transparent;
     border: transparent;
     text-decoration: underline;
@@ -332,7 +332,7 @@
 .p-button.p-button-link:enabled:hover {
     background: transparent;
     border-color: transparent;
-    color: $brand-primary;
+    color: $color-primary-500;
 }
 
 .p-button.p-button-link:enabled:hover .p-button-label {
@@ -374,6 +374,12 @@
     color: $button-text-color-disabled !important;
 }
 
+.p-button:disabled.p-button-outlined {
+    background-color: transparent !important;
+    border-color: $color-gray-400;
+    color: $color-gray-400;
+}
+
 .p-button.p-button-raised:enabled:focus {
     box-shadow: 0 3px 1px -2px rgba(0, 0, 0, 0.2), 0 2px 2px 0 rgba(0, 0, 0, 0.14),
         0 1px 5px 0 rgba(0, 0, 0, 0.12);
@@ -382,13 +388,13 @@
 .p-button.p-button-secondary:enabled:focus,
 .p-buttonset.p-button-secondary > .p-button:enabled:focus,
 .p-splitbutton.p-button-secondary > .p-button:enabled:focus {
-    border: 1px solid $brand-secondary;
+    border: 1px solid $color-secondary-500;
 }
 
 .p-button.p-button-secondary:enabled:active,
 .p-buttonset.p-button-secondary > .p-button:enabled:active,
 .p-splitbutton.p-button-secondary > .p-button:enabled:active {
-    border: 1px solid $brand-secondary;
+    border: 1px solid $color-secondary-500;
 }
 
 .p-button.p-button-secondary.p-button-text:enabled:focus,
@@ -441,19 +447,19 @@
 
 .p-button.p-button-outlined {
     background-color: transparent;
-    color: $brand-primary;
+    color: $color-primary-500;
     border: 1px solid;
 }
 
 .p-button.p-button-outlined:enabled:hover {
     background: rgba(33, 150, 243, 0.04);
-    color: $brand-primary;
+    color: $color-primary-500;
     border: 1px solid;
 }
 
 .p-button.p-button-outlined:enabled:active {
     background: rgba(33, 150, 243, 0.16);
-    color: $brand-primary;
+    color: $color-primary-500;
     border: 1px solid;
 }
 

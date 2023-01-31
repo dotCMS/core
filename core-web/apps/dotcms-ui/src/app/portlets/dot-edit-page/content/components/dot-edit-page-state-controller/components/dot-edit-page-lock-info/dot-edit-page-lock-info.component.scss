@@ -3,12 +3,12 @@
 
 :host {
     font-size: $font-size-small;
-    color: $gray;
+    color: $color-gray-500;
 }
 
 .page-info {
     &__locked-by-message {
-        color: $red;
+        color: $color-alert-red;
     }
 
     &__locked-by-message--blink {

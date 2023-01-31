@@ -1,7 +1,7 @@
 @use "variables" as *;
 
 .p-breadcrumb ul > .p-breadcrumb-chevron.pi {
-    color: $gray-light;
+    color: $color-gray-400;
 
     &:not(:nth-child(2)) {
         font-size: $font-size-x-small;
@@ -16,7 +16,7 @@
     content: "";
     width: 1px;
     height: 20px;
-    background: $gray-light;
+    background: $color-gray-400;
     display: block;
 }
 
@@ -35,13 +35,13 @@
     font-size: $font-size-large;
 
     &:hover {
-        color: $brand-primary;
+        color: $color-primary-500;
         text-decoration: underline;
     }
 }
 
 .p-breadcrumb ul li .p-menuitem-link .p-menuitem-text {
-    color: $gray;
+    color: $color-gray-500;
 }
 
 .p-breadcrumb ul li .p-menuitem-link .p-menuitem-icon {

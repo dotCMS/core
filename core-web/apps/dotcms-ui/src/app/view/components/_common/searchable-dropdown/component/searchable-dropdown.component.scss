@@ -36,9 +36,9 @@
 
         .p-fluid & {
             /*
-            We have to use important because in the component we have a 300px default value for
-            the element as inline styles, but when the parent have .fluid we need to enforce 100%
-            */
+      We have to use important because in the component we have a 300px default value for
+      the element as inline styles, but when the parent have .fluid we need to enforce 100%
+      */
             width: 100% !important;
         }
 
@@ -141,7 +141,7 @@
 }
 
 .searchable-dropdown__search-icon {
-    color: $gray;
+    color: $color-gray-500;
     position: absolute;
     right: $spacing-1;
     top: 9px;

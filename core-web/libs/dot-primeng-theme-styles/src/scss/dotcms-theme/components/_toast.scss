@@ -56,7 +56,7 @@
 
 .p-toast .p-toast-message .p-toast-message-icon {
     color: $white;
-    background: $brand-secondary;
+    background: $color-secondary-500;
     border-radius: 50%;
     display: flex;
     justify-content: center;
@@ -66,7 +66,7 @@
 }
 
 .p-toast .p-toast-message .p-toast-icon-close {
-    color: $gray-dark;
+    color: $color-gray-600;
     position: absolute;
     top: $spacing-2;
     right: $spacing-2;

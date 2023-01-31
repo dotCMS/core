@@ -6,7 +6,7 @@
     display: flex;
     flex-direction: column;
     padding: $spacing-1;
-    border-left: 1px solid $gray-lighter;
+    border-left: 1px solid $color-gray-300;
     background: $white;
     transition: all $basic-speed ease-in-out;
     height: 100%;
@@ -21,7 +21,7 @@
     overflow: hidden auto;
 
     div {
-        border: 1px solid $gray-lighter;
+        border: 1px solid $color-gray-300;
         color: $black;
         cursor: grab;
         overflow: hidden;
@@ -30,7 +30,7 @@
         text-align: center;
 
         &:hover {
-            background: $gray-bg;
+            background: $color-gray-200;
         }
 
         p {
@@ -46,7 +46,7 @@
         .arrow {
             background-color: transparent;
             border: none;
-            color: $gray;
+            color: $color-gray-500;
             cursor: pointer;
             padding: 0;
             position: absolute;
@@ -66,5 +66,3 @@
     padding: $spacing-1 0;
     margin: $spacing-4;
 }
-
-

@@ -15,7 +15,7 @@
 
 .row-columns {
     display: flex;
-    background: $gray-bg;
+    background: $color-gray-200;
     padding: $spacing-1;
 }
 
@@ -30,9 +30,9 @@
     width: 0;
 
     &:after {
-        border: dashed 1px $gray;
+        border: dashed 1px $color-gray-500;
         bottom: 0;
-        color: $gray;
+        color: $color-gray-500;
         content: var(--empty-message);
         display: flex;
         flex-direction: column;
@@ -61,7 +61,7 @@
     }
 
     &.empty {
-        background: $gray-bg;
+        background: $color-gray-200;
         min-height: $content-type-field-height * 2;
 
         dot-content-type-field-dragabble-item {

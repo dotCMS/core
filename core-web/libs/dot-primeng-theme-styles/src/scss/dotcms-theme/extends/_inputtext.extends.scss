@@ -14,16 +14,16 @@
 
     &:enabled {
         &:hover {
-            border-color: $brand-primary;
+            border-color: $color-primary-500;
         }
 
         &:focus {
             outline: 0 none;
             outline-offset: 0;
             box-shadow: none;
-            border-color: $brand-primary;
-            box-shadow: inset 0 0 0 1px $brand-primary, inset 0 0 0 1px $brand-primary,
-                inset 0 0 0 1px $brand-primary, inset 0 0 0 1px $brand-primary;
+            border-color: $color-primary-500;
+            box-shadow: inset 0 0 0 1px $color-primary-500, inset 0 0 0 1px $color-primary-500,
+                inset 0 0 0 1px $color-primary-500, inset 0 0 0 1px $color-primary-500;
         }
     }
 }

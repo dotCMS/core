@@ -22,12 +22,13 @@
 
 .dot-container-code__content-tab-container ::ng-deep {
     dot-icon {
-        color: $brand-primary;
+        color: $color-primary-500;
     }
 
     .p-tabview {
         height: 100%;
     }
+
     .p-tabview-panels {
         height: 100%;
         flex-grow: 1;
@@ -38,6 +39,7 @@
     .p-tabview-nav-content {
         border: 1px solid $input-border-color;
     }
+
     .p-tabview-nav {
         padding: 0;
     }
@@ -54,14 +56,14 @@
         width: $tabView-scroll-btn-width;
         border: 1px solid $input-border-color;
         border-left: none;
-        background: $gray-bg;
+        background: $color-gray-200;
     }
 
     .p-tabview-nav-prev {
         width: $tabView-scroll-btn-width;
         border: 1px solid $input-border-color;
         border-right: none;
-        background: $gray-bg;
+        background: $color-gray-200;
     }
 
     .p-tabview .p-tabview-nav {

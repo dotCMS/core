@@ -26,7 +26,7 @@
     }
 
     dot-icon {
-        color: $brand-primary;
+        color: $color-primary-500;
         margin-left: $spacing-1;
         vertical-align: middle;
     }
@@ -43,7 +43,7 @@
 
         p-checkbox.required label:before,
         label.required:before {
-            color: $red;
+            color: $color-alert-red;
             content: "* ";
         }
 

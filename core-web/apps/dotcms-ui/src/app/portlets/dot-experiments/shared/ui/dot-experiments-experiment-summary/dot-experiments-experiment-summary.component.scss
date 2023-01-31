@@ -1,0 +1,21 @@
+@use "variables" as *;
+
+:host {
+    padding: 1.5rem;
+    color: $color-gray-600;
+    line-height: 140%;
+
+    span span {
+        font-weight: 700;
+        color: #000000;
+    }
+
+    i {
+        font-size: 1.3rem;
+        color: $color-primary-500;
+
+        &.pi-ban {
+            color: $color-alert-red;
+        }
+    }
+}

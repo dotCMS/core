@@ -2,10 +2,10 @@
 
 ::ng-deep {
     del {
-        background-color: $deleted-content-color;
+        background-color: $color-alert-red-light;
     }
 
     ins {
-        background-color: $new-content-color;
+        background-color: $color-alert-green-light;
     }
 }

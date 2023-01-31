@@ -1,7 +1,7 @@
 @use "variables" as *;
 
 dotcms-message {
-    background-color: $gray-light;
+    background-color: $color-gray-400;
     display: block;
     padding: $dot-editor-size;
 }

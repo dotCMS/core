@@ -9,20 +9,17 @@
 
     .p-menuitem-link {
         padding: $spacing-2;
-        color: $brand-background;
+        color: $color-primary-800;
         border-radius: 0;
         transition: none;
         user-select: none;
 
         &:not(.p-disabled):hover {
-            background: rgba($brand-secondary_rgb, .12);
+            background: rgba($brand-secondary_rgb, 0.12);
         }
     }
 
     &.p-tieredmenu-overlay {
         box-shadow: $md-shadow-3;
     }
-
-
 }
-
