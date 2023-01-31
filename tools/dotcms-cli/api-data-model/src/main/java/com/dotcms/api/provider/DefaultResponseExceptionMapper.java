@@ -25,7 +25,7 @@ public class DefaultResponseExceptionMapper implements
     public RuntimeException toThrowable(Response response) {
         int status = response.getStatus();
 
-        String msg = "";
+        String message = "";
       if (response.hasEntity() && response.getMediaType()
               .isCompatible(MediaType.APPLICATION_JSON_TYPE)) {
         GenericType<ResponseEntityView<String>> genericType = new GenericType<>() {
@@ -33,32 +33,32 @@ public class DefaultResponseExceptionMapper implements
         ResponseEntityView<String> resp;
         try {
           resp = response.readEntity(genericType);
-          msg = resp.errors().get(0).message();
+          message = resp.errors().get(0).message();
         } catch (Exception px) {
           // Fallback to json
           JsonNode jsonResp = response.readEntity(JsonNode.class);
           if (null != jsonResp) {
-            msg = "JSON error body : " + jsonResp.toPrettyString();
+            message = String.format(" Status: (%s) With error: %s ", status, jsonResp.toPrettyString());
           }
         }
 
       } else {
-        msg = getBody(response);
+        message = getBody(response);
       }
 
         RuntimeException re;
         switch (status) {
             case 412:
-                re = new ValidationException(msg);
+                re = new ValidationException(message);
                 break;
             case 401:
-                re = new UnauthorizedException(msg);
+                re = new UnauthorizedException(message);
                 break;
             case 404:
-                re = new NotFoundException(msg);
+                re = new NotFoundException(message);
                 break;
             default:
-                re = new WebApplicationException(status);
+                re = new WebApplicationException(message, status);
         }
         return re;
     }

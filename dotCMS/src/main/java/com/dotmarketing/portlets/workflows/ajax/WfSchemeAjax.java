@@ -15,6 +15,7 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.util.Set;
 
 @Deprecated
 public class WfSchemeAjax extends WfBaseAction {
@@ -56,6 +57,17 @@ public class WfSchemeAjax extends WfBaseAction {
         final WorkflowHelper helper = WorkflowHelper.getInstance();
         helper.saveOrUpdate(schemeId, schemeForm, user);
         return "SUCCESS";
+    }
+
+    /**
+     * Security check demanded by Sonar
+     * We register all the allowed methods down here
+     *
+     * @return allowed method names
+     */
+    @Override
+    protected Set<String> getAllowedCommands() {
+        return Set.of( "save", "action" );
     }
 
 }

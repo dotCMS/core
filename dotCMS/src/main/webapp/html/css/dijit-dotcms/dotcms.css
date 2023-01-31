@@ -10467,7 +10467,6 @@ a.category_higlighted, a.tag_higlighted {
 }
 
 .content-search__show-query-dialog .dijitDialogTitleBar {
-  height: 0px;
   z-index: 1;
 }
 
