@@ -12,12 +12,12 @@ import { FormBuilder, FormGroup } from '@angular/forms';
 
 import { debounceTime, take } from 'rxjs/operators';
 
-import { SuggestionsCommandProps } from '@dotcms/block-editor';
 import { DotCMSContentlet } from '@dotcms/dotcms-models';
 
 import { SuggestionPageComponent } from './components/suggestion-page/suggestion-page.component';
 
-import { DotLanguageService, Languages, SuggestionsService } from '../../shared';
+import { Languages, SuggestionsCommandProps } from '../../shared';
+import { DotLanguageService, SuggestionsService } from '../../shared/services';
 import { isValidURL } from '../bubble-menu/utils';
 
 export interface NodeProps {

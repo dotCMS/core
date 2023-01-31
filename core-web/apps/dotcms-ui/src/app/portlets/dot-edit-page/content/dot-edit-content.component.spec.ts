@@ -145,6 +145,7 @@ export class MockDotFormSelectorComponent {
 })
 export class MockDotEditPageToolbarComponent {
     @Input() pageState = mockDotRenderedPageState;
+    @Input() variant;
     @Output() actionFired = new EventEmitter<DotCMSContentlet>();
     @Output() cancel = new EventEmitter<boolean>();
     @Output() favoritePage = new EventEmitter<boolean>();
@@ -186,6 +187,7 @@ describe('DotEditContentComponent', () => {
     let dotConfigurationService: DotPropertiesService;
     let dotLicenseService: DotLicenseService;
     let dotEventsService: DotEventsService;
+    let dotSessionStorageService: DotSessionStorageService;
 
     function detectChangesForIframeRender(fix) {
         fix.detectChanges();
@@ -260,6 +262,7 @@ describe('DotEditContentComponent', () => {
                 DotCustomEventHandlerService,
                 DotPropertiesService,
                 DotESContentService,
+                DotSessionStorageService,
                 {
                     provide: LoginService,
                     useClass: LoginServiceMock
@@ -336,6 +339,7 @@ describe('DotEditContentComponent', () => {
         dotConfigurationService = de.injector.get(DotPropertiesService);
         dotLicenseService = de.injector.get(DotLicenseService);
         dotEventsService = de.injector.get(DotEventsService);
+        dotSessionStorageService = de.injector.get(DotSessionStorageService);
         spyOn(dotPageStateService, 'reload');
 
         spyOn(dotEditContentHtmlService, 'renderAddedForm').and.returnValue(
@@ -1479,5 +1483,11 @@ describe('DotEditContentComponent', () => {
             fixture.detectChanges();
             expect(component.allowedContent).toEqual([...allowedContent]);
         }));
+    });
+
+    it('should remove variant key from session storage on destoy', () => {
+        spyOn(dotSessionStorageService, 'removeVariantId');
+        component.ngOnDestroy();
+        expect(dotSessionStorageService.removeVariantId).toHaveBeenCalledTimes(1);
     });
 });

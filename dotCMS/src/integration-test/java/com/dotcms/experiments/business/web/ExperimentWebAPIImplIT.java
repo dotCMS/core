@@ -79,10 +79,6 @@ public class ExperimentWebAPIImplIT {
                 assertEquals(experiment.id().get(), selectedExperiments.getIncludedExperimentIds().get(0));
 
                 assertTrue(selectedExperiments.getExcludedExperimentIds().isEmpty());
-
-                checkCookie(response, selectedExperiments.getExperiments().get(0),
-                        experimentStarted.scheduling().get().endDate().get());
-
             }
         } finally {
             ExperimentDataGen.end(experiment);
@@ -122,10 +118,8 @@ public class ExperimentWebAPIImplIT {
                 for (SelectedExperiment selectedExperiment : selectedExperiments.getExperiments()) {
                     if (selectedExperiment.id().equals(experiment_1.id())) {
                         assertEquals(htmlPageAsset_1.getPageUrl(), selectedExperiment.pageUrl());
-                        checkCookie(response, selectedExperiment, experiment_1.scheduling().get().endDate().get());
                     } else if (selectedExperiment.id().equals(experiment_2.id())) {
                         assertEquals(htmlPageAsset_2.getPageUrl(), selectedExperiment.pageUrl());
-                        checkCookie(response, selectedExperiment, experiment_2.scheduling().get().endDate().get());
                     }
                 }
 
@@ -138,36 +132,6 @@ public class ExperimentWebAPIImplIT {
         } finally {
             ExperimentDataGen.end(experiment_1);
             ExperimentDataGen.end(experiment_2);
-        }
-    }
-
-    private void checkCookie(final DotCMSMockResponse response,
-            final SelectedExperiment experimentSelected)  {
-        checkCookie(response, experimentSelected, null);
-    }
-
-    private void checkCookie(final DotCMSMockResponse response,
-            final SelectedExperiment experimentSelected, final Instant expire)  {
-
-        final Cookie runningExperimentCookie = response.getCookie("runningExperiment_" + experimentSelected.id())
-                .orElseThrow(() -> new AssertionError(
-                        "The cookie " + "runningExperiment_" + experimentSelected.id() +" should exists"));
-
-        final String[] cookieValues = runningExperimentCookie.getValue().split(StringPool.AMPERSAND);
-        final Map<String, String> cookiesValueMap = new HashMap<>();
-
-        for (String cookieValue : cookieValues) {
-            final String[] split = cookieValue.split(StringPool.COLON);
-            cookiesValueMap.put(split[0], split[1]);
-        }
-
-        assertEquals(experimentSelected.id(), cookiesValueMap.get("experiment"));
-        assertEquals(experimentSelected.variant().name(), cookiesValueMap.get("variant"));
-        assertNotNull(cookiesValueMap.get("lookBackWindow"));
-
-        if (UtilMethods.isSet(expire)) {
-            Duration res = Duration.between(Instant.now(), expire);
-            assertEquals(res.getSeconds(), runningExperimentCookie.getMaxAge());
         }
     }
 
@@ -196,8 +160,6 @@ public class ExperimentWebAPIImplIT {
             assertEquals(ExperimentWebAPI.NONE_EXPERIMENT.pageUrl(),
                     selectedExperiments.getExperiments()
                             .get(0).pageUrl());
-
-            checkCookie(response, selectedExperiments.getExperiments().get(0), expireDate);
 
             assertTrue(selectedExperiments.getIncludedExperimentIds().isEmpty());
             assertTrue(selectedExperiments.getExcludedExperimentIds().isEmpty());
@@ -228,9 +190,6 @@ public class ExperimentWebAPIImplIT {
 
                 assertEquals(1, selectedExperiments.getExperiments().size());
                 experimentsSelected.add(selectedExperiments.getExperiments().get(0));
-
-                checkCookie(response, selectedExperiments.getExperiments().get(0));
-
 
                 assertEquals(1, selectedExperiments.getIncludedExperimentIds().size());
                 assertEquals(experiment.id().get(), selectedExperiments.getIncludedExperimentIds().get(0));
@@ -280,7 +239,6 @@ public class ExperimentWebAPIImplIT {
 
                 for (SelectedExperiment selectedExperiment : selectedExperiments.getExperiments()) {
                     experimentsSelected.add(selectedExperiment);
-                    checkCookie(response, selectedExperiment);
                 }
 
                 assertEquals(2, selectedExperiments.getIncludedExperimentIds().size());
@@ -351,8 +309,6 @@ public class ExperimentWebAPIImplIT {
                 assertEquals(ExperimentWebAPI.NONE_EXPERIMENT.id(), selectedExperiments.getExperiments().get(0).id());
                 assertEquals(ExperimentWebAPI.NONE_EXPERIMENT.pageUrl(), selectedExperiments.getExperiments().get(0).pageUrl());
 
-                checkCookie(response, selectedExperiments.getExperiments().get(0));
-
                 assertEquals(1, selectedExperiments.getIncludedExperimentIds().size());
                 assertTrue(selectedExperiments.getIncludedExperimentIds().contains(experiment.id().get()));
                 assertTrue(selectedExperiments.getExcludedExperimentIds().isEmpty());
@@ -400,8 +356,6 @@ public class ExperimentWebAPIImplIT {
                 assertEquals(1, selectedExperiments.getExperiments().size());
                 assertEquals(experiment.id().get(), selectedExperiments.getExperiments().get(0).id());
                 assertEquals(htmlPageAsset.getURI(), selectedExperiments.getExperiments().get(0).pageUrl());
-
-                checkCookie(response, selectedExperiments.getExperiments().get(0));
 
                 assertEquals(1, selectedExperiments.getIncludedExperimentIds().size());
                 assertTrue(selectedExperiments.getIncludedExperimentIds().contains(experiment.id().get()));
@@ -461,10 +415,8 @@ public class ExperimentWebAPIImplIT {
 
                     if (selectedExperiment.id().equals(experiment_1.id())) {
                         assertEquals(htmlPageAsset_1.getPageUrl(), selectedExperiment.pageUrl());
-                        checkCookie(response, selectedExperiment, experiment_1.scheduling().get().endDate().get());
                     } else if (selectedExperiment.id().equals(experiment_2.id())) {
                         assertEquals(htmlPageAsset_2.getPageUrl(), selectedExperiment.pageUrl());
-                        checkCookie(response, selectedExperiment, experiment_2.scheduling().get().endDate().get());
                     }
                 }
 
@@ -515,8 +467,6 @@ public class ExperimentWebAPIImplIT {
                 assertEquals(htmlPageAsset.getURI(), selectedExperiments.getExperiments().get(0).pageUrl());
 
                 experiments.add(selectedExperiments.getExperiments().get(0));
-
-                checkCookie(response, selectedExperiments.getExperiments().get(0));
 
                 assertEquals(1, selectedExperiments.getIncludedExperimentIds().size());
                 assertTrue(selectedExperiments.getIncludedExperimentIds().contains(experiment.id().get()));

@@ -6,7 +6,7 @@ import { Injectable } from '@angular/core';
 import { pluck } from 'rxjs/operators';
 
 import { DotCMSResponse } from '@dotcms/dotcms-js';
-import { DotExperiment, Goals, Variant } from '@dotcms/dotcms-models';
+import { DotExperiment, Goals, GoalsLevels, Variant } from '@dotcms/dotcms-models';
 
 const API_ENDPOINT = '/api/v1/experiments';
 
@@ -137,6 +137,21 @@ export class DotExperimentsService {
     setGoal(experimentId: string, goals: Goals): Observable<DotExperiment> {
         return this.http
             .patch<DotCMSResponse<DotExperiment>>(`${API_ENDPOINT}/${experimentId}`, { goals })
+            .pipe(pluck('entity'));
+    }
+
+    /**
+     * Delete a goal of an experiment
+     * @returns Observable<DotExperiment>
+     * @memberof DotExperimentsService
+     * @param {string} experimentId
+     * @param {GoalsLevels} goalType
+     */
+    deleteGoal(experimentId: string, goalType: GoalsLevels): Observable<DotExperiment> {
+        return this.http
+            .delete<DotCMSResponse<DotExperiment>>(
+                `${API_ENDPOINT}/${experimentId}/goals/${goalType}`
+            )
             .pipe(pluck('entity'));
     }
 }

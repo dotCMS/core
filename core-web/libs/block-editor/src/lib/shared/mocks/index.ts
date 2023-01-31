@@ -1,4 +1,5 @@
 import { DotCMSContentlet } from '@dotcms/dotcms-models';
+
 export const CONTENTLETS_MOCK = [
     {
         name: 'Empty Content',
