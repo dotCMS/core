@@ -11,6 +11,8 @@
 <%@ page import="com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo" %>
 <%@ page import="com.dotmarketing.util.Logger" %>
 <%@ page import="com.dotmarketing.util.PageMode" %>
+<%@ page import="com.dotmarketing.business.web.WebAPILocator"%>
+<%@ page import="java.util.Optional" %>
 <%
 
 if(user == null){
@@ -52,9 +54,23 @@ catch(Exception e){
 					APILocator.getWorkflowAPI().findScheme(action.getSchemeId()).getName());
 		}
 	}
+   
+   
+boolean canUserWriteToContentlet = conPerAPI.doesUserHavePermission(contentlet,PermissionAPI.PERMISSION_WRITE,user, PageMode.get(request).respectAnonPerms);
+
+
+
+String previewUrl = null;
+if(contentlet.isHTMLPage() && UtilMethods.isSet(contentlet.getIdentifier())){
+    previewUrl= APILocator.getIdentifierAPI().find(contentlet.getIdentifier()).getURI();
+}else{
+
+previewUrl = APILocator.getContentletAPI().getUrlMapForContentlet(contentlet, user, PageMode.get(request).respectAnonPerms);
+   
+}
+   
 %>
-<%@page import="com.dotmarketing.business.web.WebAPILocator"%>
-<%@ page import="java.util.Optional" %>
+
 
 
 <script>
@@ -127,11 +143,10 @@ function jumpToContentType(){
 <%}%>
 
 <%--check permissions to display the save and publish button or not--%>
-<%boolean canUserWriteToContentlet = conPerAPI.doesUserHavePermission(contentlet,PermissionAPI.PERMISSION_WRITE,user, PageMode.get(request).respectAnonPerms);%>
 
-<%if(!"edit-page".equals(request.getParameter("angularCurrentPortlet")) && contentlet.isHTMLPage() && contentlet.getIdentifier() != "" && (canUserWriteToContentlet)) {%>
+<%if(!"edit-page".equals(request.getParameter("angularCurrentPortlet")) && UtilMethods.isSet(previewUrl)) {%>
    <div class="content-edit-actions" >
-       <a style="border:0px;" onClick="editPage('<%= APILocator.getIdentifierAPI().find(contentlet.getIdentifier()).getURI() %>', '<%= contentlet.getLanguageId() %>')">
+       <a style="border:0px;" onClick="editPage('<%= previewUrl %>', '<%= contentlet.getLanguageId() %>')">
            <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "editpage.toolbar.preview.page")) %>
            <div style="display:inline-block;float:right;">&rarr;</div>
        </a>
