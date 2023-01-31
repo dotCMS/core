@@ -5,12 +5,16 @@ import { ButtonModule } from 'primeng/button';
 import { CheckboxModule } from 'primeng/checkbox';
 import { DropdownModule } from 'primeng/dropdown';
 import { InputTextModule } from 'primeng/inputtext';
+import { MenuModule } from 'primeng/menu';
 import { PanelModule } from 'primeng/panel';
 import { SkeletonModule } from 'primeng/skeleton';
 import { TableModule } from 'primeng/table';
 import { TabViewModule } from 'primeng/tabview';
+import { TooltipModule } from 'primeng/tooltip';
 
 import { DotActionMenuButtonModule } from '@components/_common/dot-action-menu-button/dot-action-menu-button.module';
+import { DotAddToBundleModule } from '@components/_common/dot-add-to-bundle';
+import { UiDotIconButtonModule } from '@components/_common/dot-icon-button/dot-icon-button.module';
 import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
 import { DotPipesModule } from '@dotcms/app/view/pipes/dot-pipes.module';
 import {
@@ -39,11 +43,15 @@ import { DotPagesComponent } from './dot-pages.component';
         DotPipesModule,
         DotIconModule,
         InputTextModule,
+        MenuModule,
         PanelModule,
         ButtonModule,
         SkeletonModule,
         TableModule,
-        TabViewModule
+        TabViewModule,
+        TooltipModule,
+        UiDotIconButtonModule,
+        DotAddToBundleModule
     ],
     providers: [
         DotESContentService,

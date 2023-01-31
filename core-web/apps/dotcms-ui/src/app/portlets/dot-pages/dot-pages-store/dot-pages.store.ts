@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/member-ordering */
 /* eslint-disable no-console */
 import { ComponentStore, tapResponse } from '@ngrx/component-store';
 import { forkJoin, Observable } from 'rxjs';
@@ -6,29 +5,38 @@ import { forkJoin, Observable } from 'rxjs';
 import { HttpErrorResponse } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 
-import { SelectItem } from 'primeng/api';
+import { MenuItem, SelectItem } from 'primeng/api';
 
-import { map, switchMap, take } from 'rxjs/operators';
+import { filter, map, mergeMap, switchMap, take, tap } from 'rxjs/operators';
 
+import { DotMessageSeverity, DotMessageType } from '@components/dot-message-display/model';
+import { DotMessageDisplayService } from '@components/dot-message-display/services';
 import { DotFormatDateService } from '@dotcms/app/api/services/dot-format-date-service';
 import { DotHttpErrorManagerService } from '@dotcms/app/api/services/dot-http-error-manager/dot-http-error-manager.service';
-import { DotActionMenuItem } from '@dotcms/app/shared/models/dot-action-menu/dot-action-menu-item.model';
+import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
+import { PushPublishService } from '@dotcms/app/api/services/push-publish/push-publish.service';
+import { DotEnvironment } from '@dotcms/app/shared/models/dot-environment/dot-environment';
 import {
     DotCurrentUserService,
     DotESContentService,
     DotLanguagesService,
+    DotLicenseService,
     DotMessageService,
     DotRenderMode,
     DotWorkflowActionsFireService,
     DotWorkflowsActionsService,
     ESOrderDirection
 } from '@dotcms/data-access';
+import { DotPushPublishDialogService } from '@dotcms/dotcms-js';
 import {
     DotCMSContentlet,
     DotCMSWorkflowAction,
     DotCurrentUser,
     DotLanguage,
-    ESContent
+    DotPermissionsType,
+    ESContent,
+    PermissionsType,
+    UserPermissions
 } from '@dotcms/dotcms-models';
 
 export interface DotPagesState {
@@ -37,9 +45,18 @@ export interface DotPagesState {
         showLoadMoreButton: boolean;
         total: number;
     };
+    environments: boolean;
+    isEnterprise: boolean;
     languages: DotLanguage[];
-    loggedUserId: string;
+    loggedUser: {
+        id: string;
+        canRead: { contentlets: boolean; htmlPages: boolean };
+        canWrite: { contentlets: boolean; htmlPages: boolean };
+    };
     pages?: {
+        addToBundleCTId?: string;
+        rowActionMenuIndex?: number;
+        menuActions?: MenuItem[];
         items: DotCMSContentlet[];
         keyword?: string;
         languageId?: string;
@@ -47,14 +64,14 @@ export interface DotPagesState {
     };
 }
 
-export interface DotPagesViewModel extends DotPagesState {
-    languageOptions: SelectItem[];
-}
-
 const FAVORITE_PAGES_ES_QUERY = `+contentType:dotFavoritePage +deleted:false +working:true`;
 
 @Injectable()
 export class DotPageStore extends ComponentStore<DotPagesState> {
+    readonly rowActionMenuIndex$: Observable<number> = this.select(
+        ({ pages }) => pages.rowActionMenuIndex
+    ).pipe(filter((i) => i !== null));
+
     readonly languageOptions$: Observable<SelectItem[]> = this.select(
         ({ languages }: DotPagesState) => {
             const languageOptions: SelectItem[] = [];
@@ -79,7 +96,7 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
         ({ languages }: DotPagesState) => {
             const langLabels = {};
             languages.forEach((language) => {
-                langLabels[language.id] = `${language.languageCode}_${language.countryCode}`;
+                langLabels[language.id] = `${language.languageCode}-${language.countryCode}`;
             });
 
             return langLabels;
@@ -105,6 +122,14 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
 
     readonly setPages = this.updater<DotCMSContentlet[]>(
         (state: DotPagesState, pages: DotCMSContentlet[]) => {
+            console.log('***set pages', {
+                ...state,
+                pages: {
+                    ...state.pages,
+                    items: [...pages]
+                }
+            });
+
             return {
                 ...state,
                 pages: {
@@ -144,6 +169,49 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
                 ...state.pages,
                 items: [],
                 archived: !!archived
+            }
+        };
+    });
+
+    readonly setMenuActions = this.updater(
+        (
+            state: DotPagesState,
+            { actions, rowIndex }: { actions: MenuItem[]; rowIndex: number }
+        ) => {
+            console.log('===setMenuActions', {
+                ...state,
+                pages: {
+                    ...state.pages,
+                    menuActions: actions,
+                    rowActionMenuIndex: rowIndex
+                }
+            });
+
+            return {
+                ...state,
+                pages: {
+                    ...state.pages,
+                    menuActions: actions,
+                    rowActionMenuIndex: rowIndex
+                }
+            };
+        }
+    );
+
+    readonly showAddToBundle = this.updater((state: DotPagesState, addToBundleCTId: string) => {
+        console.log('***showAddToBundle', addToBundleCTId, {
+            ...state,
+            pages: {
+                ...state.pages,
+                addToBundleCTId
+            }
+        });
+
+        return {
+            ...state,
+            pages: {
+                ...state.pages,
+                addToBundleCTId
             }
         };
     });
@@ -240,6 +308,48 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
         }
     );
 
+    readonly showActionsMenu = this.effect(
+        (params$: Observable<{ item: DotCMSContentlet; rowIndex: number }>) => {
+            return params$.pipe(
+                switchMap(({ item, rowIndex }) => {
+                    return this.dotWorkflowsActionsService
+                        .getByInode(item.inode, DotRenderMode.LISTING)
+                        .pipe(
+                            take(1),
+                            map((actions: DotCMSWorkflowAction[]) => {
+                                console.log(actions);
+
+                                return { actions: this.getSelectActions(actions, item), rowIndex };
+                            })
+                        );
+                }),
+                tap(({ actions, rowIndex }: { actions: MenuItem[]; rowIndex: number }) => {
+                    this.setMenuActions({ actions, rowIndex });
+                })
+            );
+        }
+    );
+
+    readonly vm$: Observable<DotPagesState> = this.select(
+        this.state$,
+        this.languageOptions$,
+        this.languageLabels$,
+        (
+            { favoritePages, isEnterprise, environments, languages, loggedUser, pages },
+            languageOptions,
+            languageLabels
+        ) => ({
+            favoritePages,
+            isEnterprise,
+            environments,
+            languages,
+            loggedUser,
+            pages,
+            languageOptions,
+            languageLabels
+        })
+    );
+
     private getESQuery() {
         const { keyword, languageId, archived } = this.get().pages;
         const langQuery = languageId ? `+languageId:${languageId}` : '';
@@ -277,29 +387,91 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
         });
     };
 
-    readonly vm$: Observable<DotPagesViewModel> = this.select(
-        this.state$,
-        this.languageOptions$,
-        this.languageLabels$,
-        ({ favoritePages, languages, loggedUserId, pages }, languageOptions, languageLabels) => ({
-            favoritePages,
-            languages,
-            loggedUserId,
-            pages,
-            languageOptions,
-            languageLabels
-        })
-    );
+    private getSelectActions(actions: DotCMSWorkflowAction[], item: DotCMSContentlet): MenuItem[] {
+        const selectItems: MenuItem[] = [];
+
+        // Adding Edit & View actions
+        const { loggedUser, isEnterprise, environments } = this.get();
+
+        if (
+            (item.live || item.working) &&
+            ((item.baseType === 'HTMLPAGE' && loggedUser.canRead.htmlPages == true) ||
+                (item.baseType === 'CONTENT' && loggedUser.canRead.contentlets == true)) &&
+            !item.deleted
+        ) {
+            selectItems.push({
+                label:
+                    (item.baseType === 'HTMLPAGE' && loggedUser.canWrite.htmlPages == true) ||
+                    (item.baseType === 'CONTENT' && loggedUser.canWrite.contentlets == true)
+                        ? this.dotMessageService.get('Edit')
+                        : this.dotMessageService.get('View'),
+                command: () => {
+                    console.log('===EDIT', item);
+                    this.dotRouterService.goToEditContentlet(item.inode);
+                }
+            });
+        }
+
+        // Adding Workflow actions
+        actions.forEach((action: DotCMSWorkflowAction) => {
+            selectItems.push({
+                label: `${this.dotMessageService.get(action.name)}`,
+                command: () => {
+                    console.log('===getSelectActions coommand', item);
+                    this.dotWorkflowActionsFireService
+                        .fireTo(item.inode, action.id)
+                        .subscribe((data) => {
+                            console.log('===fireTo', data);
+                            this.dotMessageDisplayService.push({
+                                life: 3000,
+                                message: this.dotMessageService.get('Workflow-executed'),
+                                severity: DotMessageSeverity.SUCCESS,
+                                type: DotMessageType.SIMPLE_MESSAGE
+                            });
+                        });
+                }
+            });
+        });
+
+        // Adding Add To Bundle action
+        if (isEnterprise) {
+            selectItems.push({
+                label: this.dotMessageService.get('contenttypes.content.add_to_bundle'),
+                // command: (item) => this.addToBundleContentType(item)
+                command: () => this.showAddToBundle(item.identifier)
+            });
+        }
+
+        // Adding Push Publish action
+        if (isEnterprise && environments) {
+            selectItems.push({
+                label: this.dotMessageService.get('contenttypes.content.push_publish'),
+                command: (item) =>
+                    this.dotPushPublishDialogService.open({
+                        assetIdentifier: item.identifier,
+                        title: this.dotMessageService.get('contenttypes.content.push_publish')
+                    })
+            });
+        }
+
+        return selectItems;
+    }
 
     constructor(
         private dotCurrentUser: DotCurrentUserService,
+        private dotCurrentUserService: DotCurrentUserService,
+        private dotRouterService: DotRouterService,
         private httpErrorManagerService: DotHttpErrorManagerService,
         private dotESContentService: DotESContentService,
         private dotFormatDateService: DotFormatDateService,
         private dotMessageService: DotMessageService,
+        private dotMessageDisplayService: DotMessageDisplayService,
         private dotLanguagesService: DotLanguagesService,
+        private dotPushPublishDialogService: DotPushPublishDialogService,
         private dotWorkflowsActionsService: DotWorkflowsActionsService,
-        private dotWorkflowActionsFireService: DotWorkflowActionsFireService
+        private dotWorkflowActionsFireService: DotWorkflowActionsFireService,
+        private dotLicenseService: DotLicenseService,
+        private pushPublishService: PushPublishService
     ) {
         super(null);
     }
@@ -313,14 +485,44 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
         forkJoin([
             this.getFavoritePagesData(initialFavoritePagesLimit),
             this.dotCurrentUser.getCurrentUser(),
-            this.dotLanguagesService.get()
+            this.dotLanguagesService.get(),
+            this.dotLicenseService.isEnterprise(),
+            this.pushPublishService
+                .getEnvironments()
+                .pipe(map((environments: DotEnvironment[]) => !!environments.length))
         ])
-            .pipe(take(1))
+            .pipe(
+                take(1),
+                mergeMap(([favoritePages, currentUser, languages, isEnterprise, environments]) => {
+                    return this.dotCurrentUserService
+                        .getUserPermissions(
+                            currentUser.userId,
+                            [UserPermissions.READ, UserPermissions.WRITE],
+                            [PermissionsType.CONTENTLETS, PermissionsType.HTMLPAGES]
+                        )
+                        .pipe(
+                            take(1),
+                            map((permissionsType: DotPermissionsType) => {
+                                return [
+                                    favoritePages,
+                                    currentUser,
+                                    languages,
+                                    isEnterprise,
+                                    environments,
+                                    permissionsType
+                                ];
+                            })
+                        );
+                })
+            )
             .subscribe(
-                ([favoritePages, currentUser, languages]: [
+                ([favoritePages, currentUser, languages, isEnterprise, environments, permissions]: [
                     ESContent,
                     DotCurrentUser,
-                    DotLanguage[]
+                    DotLanguage[],
+                    boolean,
+                    boolean,
+                    DotPermissionsType
                 ]): void => {
                     this.setState({
                         favoritePages: {
@@ -330,8 +532,20 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
                                 favoritePages.resultsSize,
                             total: favoritePages.resultsSize
                         },
+                        isEnterprise,
+                        environments,
                         languages,
-                        loggedUserId: currentUser.userId,
+                        loggedUser: {
+                            id: currentUser.userId,
+                            canRead: {
+                                contentlets: permissions.CONTENTLETS.canRead,
+                                htmlPages: permissions.HTMLPAGES.canRead
+                            },
+                            canWrite: {
+                                contentlets: permissions.CONTENTLETS.canWrite,
+                                htmlPages: permissions.HTMLPAGES.canWrite
+                            }
+                        },
                         pages: {
                             items: [],
                             keyword: ''
@@ -351,55 +565,4 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
         const favoritePages = this.get().favoritePages.items;
         this.setFavoritePages(favoritePages.slice(0, limit));
     }
-
-    getContentletActions(item: DotCMSContentlet): Observable<DotActionMenuItem[]> {
-        return this.dotWorkflowsActionsService.getByInode(item.inode, DotRenderMode.LISTING).pipe(
-            take(1),
-            map((actions: DotCMSWorkflowAction[]) => {
-                console.log(actions);
-
-                return this.getSelectActions(actions);
-            })
-        );
-    }
-
-    private getSelectActions(actions: DotCMSWorkflowAction[]): DotActionMenuItem[] {
-        const selectItems: DotActionMenuItem[] = [];
-
-        actions.forEach((action: DotCMSWorkflowAction) => {
-            selectItems.push({
-                menuItem: {
-                    label: `${this.dotMessageService.get(action.name)}`,
-                    command: (item) => {
-                        console.log(item);
-                        this.dotWorkflowActionsFireService
-                            .fireTo(item.inode, action.id)
-                            .subscribe((data) => {
-                                console.log('===fireTo', data);
-                            });
-                    }
-                }
-            });
-        });
-
-        return selectItems;
-    }
-
-    // getLanguageOptions(): SelectItem[] {
-    //     const languageOptions = [];
-    //     languageOptions.push({
-    //         // label: `${language.languageCode}_${language.countryCode}`,
-    //         label: `All`,
-    //         value: null
-    //     });
-    //     this.get().languages.forEach((language) => {
-    //         languageOptions.push({
-    //             // label: `${language.languageCode}_${language.countryCode}`,
-    //             label: `${language.language} (${language.countryCode})`,
-    //             value: language.id
-    //         });
-    //     });
-
-    //     return languageOptions;
-    // }
 }

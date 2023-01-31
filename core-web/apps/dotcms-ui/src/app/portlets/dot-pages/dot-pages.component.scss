@@ -107,6 +107,10 @@
         overflow: hidden;
         text-overflow: ellipsis;
         max-width: 0;
+
+        &:last-child {
+            text-overflow: unset;
+        }
     }
 
     .p-datatable .p-datatable-header {
@@ -146,6 +150,12 @@
         font-weight: $font-weight-regular-bold;
         margin-left: $spacing-3;
     }
+}
+
+.dot-pages-table__status-field {
+    align-items: center;
+    display: flex;
+    justify-content: space-evenly;
 }
 
 p-panel {

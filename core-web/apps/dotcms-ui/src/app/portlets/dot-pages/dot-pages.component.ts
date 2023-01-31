@@ -1,15 +1,18 @@
 /* eslint-disable no-console */
 
-import { Component } from '@angular/core';
+import { Subject } from 'rxjs';
 
-import { SelectItem } from 'primeng/api';
+import { Component, ElementRef, OnDestroy, OnInit, ViewChild } from '@angular/core';
+
+import { MenuItem, SelectItem } from 'primeng/api';
 import { LazyLoadEvent } from 'primeng/api/lazyloadevent';
+import { Menu } from 'primeng/menu';
 
 import { Observable } from 'rxjs/internal/Observable';
+import { takeUntil } from 'rxjs/operators';
 
 import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
 import { DataTableColumn } from '@dotcms/app/shared/models/data-table';
-import { DotActionMenuItem } from '@dotcms/app/shared/models/dot-action-menu/dot-action-menu-item.model';
 import { DotMessageService } from '@dotcms/data-access';
 import { DotCMSContentlet } from '@dotcms/dotcms-models';
 
@@ -21,7 +24,8 @@ import { DotPagesState, DotPageStore } from './dot-pages-store/dot-pages.store';
     styleUrls: ['./dot-pages.component.scss'],
     providers: [DotPageStore]
 })
-export class DotPagesComponent {
+export class DotPagesComponent implements OnInit, OnDestroy {
+    @ViewChild('menu') menu: Menu;
     vm$: Observable<DotPagesState> = this.store.vm$;
 
     langOptions: SelectItem[];
@@ -34,14 +38,16 @@ export class DotPagesComponent {
         draft: this.dotMessageService.get('Draft')
     };
 
-    actions: { [key: string]: DotActionMenuItem[] };
+    actions: { [key: string]: MenuItem[] };
 
     private initialFavoritePagesLimit = 5;
+    private destroy$: Subject<boolean> = new Subject<boolean>();
 
     constructor(
         private store: DotPageStore,
         private dotRouterService: DotRouterService,
-        private dotMessageService: DotMessageService
+        private dotMessageService: DotMessageService,
+        private element: ElementRef
     ) {
         this.store.setInitialStateData(this.initialFavoritePagesLimit);
     }
@@ -105,75 +111,14 @@ export class DotPagesComponent {
         this.store.getPages({ offset: 0 });
     }
 
-    hizoClick(item: DotCMSContentlet) {
-        // console.log('---hizoClick', item);
-        // requestAnimationFrame(() => {
-        // setTimeout(() => {
+    showActionsMenu(event: MouseEvent, rowIndex: number, item: DotCMSContentlet) {
+        event.stopPropagation();
+        this.menu.hide();
 
-        this.store.getContentletActions(item).subscribe((data) => {
-            console.log('-----sub', data);
-            this.actions = {
-                ...this.actions,
-                [item.identifier]: data
-            };
-            console.log('-----actions', this.actions);
-        });
+        console.log(event, rowIndex, item);
 
-        // of({})
-        //     .pipe(timeout(500))
-        //     .subscribe(() => {
-        //         this.actions = {
-        //             ...this.actions,
-        //             [item.identifier]: [
-        //                 {
-        //                     menuItem: {
-        //                         label: `${this.dotMessageService.get(
-        //                             'contenttypes.action.delete'
-        //                         )} - ${item.identifier}`,
-        //                         command: (item) => {
-        //                             console.log(item);
-        //                         },
-        //                         icon: 'delete'
-        //                     },
-        //                     shouldShow: (item) => !item.fixed && !item.defaultType
-        //                 },
-        //                 {
-        //                     menuItem: {
-        //                         label: this.dotMessageService.get('contenttypes.action.create'),
-        //                         command: (item) => {
-        //                             console.log(item);
-        //                         },
-        //                         icon: 'list'
-        //                     },
-        //                     shouldShow: (item) => !item.fixed && !item.defaultType
-        //                 }
-        //             ]
-        //         };
-        //         console.log('---actions', this.actions);
-        //     });
-
-        // }, 500);
-        // });
+        this.store.showActionsMenu({ item, rowIndex });
     }
-
-    // customSort(event: SortEvent) {
-    //     // TODO: IMPLEMENTATION
-    //     console.log('***sort', event);
-    //     event.data.sort((data1, data2) => {
-    //         const value1 = data1[event.field];
-    //         const value2 = data2[event.field];
-    //         let result = null;
-
-    //         if (value1 == null && value2 != null) result = -1;
-    //         else if (value1 != null && value2 == null) result = 1;
-    //         else if (value1 == null && value2 == null) result = 0;
-    //         else if (typeof value1 === 'string' && typeof value2 === 'string')
-    //             result = value1.localeCompare(value2);
-    //         else result = value1 < value2 ? -1 : value1 > value2 ? 1 : 0;
-
-    //         return event.order * result;
-    //     });
-    // }
 
     loadPagesLazy(event: LazyLoadEvent) {
         this.store.getPages({
@@ -181,20 +126,24 @@ export class DotPagesComponent {
             sortField: event.sortField || '',
             sortOrder: event.sortOrder || null
         });
-        //simulate remote connection with a timeout
-        // setTimeout(() => {
-        //   //load data of required page
-        //   let loadedCars = this.cars.slice(event.first, event.first + event.rows);
+    }
 
-        //   //populate page of virtual cars
-        //   Array.prototype.splice.apply(this.virtualCars, [
-        //     ...[event.first, event.rows],
-        //     ...loadedCars,
-        //   ]);
-        // console.log('**** this.virtualCars', this.virtualCars)
+    ngOnInit(): void {
+        this.store.rowActionMenuIndex$
+            .pipe(takeUntil(this.destroy$))
+            .subscribe((rowIndex: number) => {
+                if (rowIndex !== undefined) {
+                    const target = this.element.nativeElement.querySelector(
+                        `#pageActionButton-${rowIndex}`
+                    );
+                    console.log('***rowIndex', rowIndex, target);
+                    this.menu.show({ currentTarget: target });
+                }
+            });
+    }
 
-        //   //trigger change detection
-        //   event.forceUpdate();
-        // }, Math.random() * 1000 + 250);
+    ngOnDestroy(): void {
+        this.destroy$.next(true);
+        this.destroy$.complete();
     }
 }

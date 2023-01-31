@@ -37,7 +37,7 @@
                 [imageUri]="item.screenshot"
                 [title]="item.title"
                 [url]="item.url"
-                [ownerPage]="item.owner === vm.loggedUserId"
+                [ownerPage]="item.owner === vm.loggedUser.id"
                 (click)="goToUrl(item.url)"
             ></dot-pages-card>
         </ng-template>
@@ -56,7 +56,8 @@
             </div>
         </ng-template>
     </p-panel>
-
+    <div>{{ vm.pages.addToBundleCTId | json }}</div>
+    <p-menu #menu [popup]="true" [model]="vm.pages.menuActions"></p-menu>
     <p-table
         [value]="vm.pages.items"
         [scrollable]="true"
@@ -104,20 +105,17 @@
                 <th pSortableColumn="urlMap" style="width: 20%">
                     {{ 'url' | dm }}<p-sortIcon field="urlMap"></p-sortIcon>
                 </th>
-                <th style="width: 8%">
-                    {{ 'status' | dm }}
-                </th>
                 <th pSortableColumn="contentType" style="width: 12%">
                     {{ 'type' | dm }}<p-sortIcon field="contentType"></p-sortIcon>
                 </th>
-                <th pSortableColumn="languageId" style="width: 10%">
-                    {{ 'language' | dm }}<p-sortIcon field="languageId"></p-sortIcon>
+                <th pSortableColumn="languageId" style="text-align: center; width: 12%">
+                    {{ 'status' | dm }}<p-sortIcon field="languageId"></p-sortIcon>
                 </th>
-                <th style="width: 10%">
+                <th style="width: 13%">
                     {{ 'Last-Editor' | dm }}
                 </th>
-                <th pSortableColumn="modDate" style="width: 10%">
-                    {{ 'Last-Edit-Date' | dm }}<p-sortIcon field="modDate"></p-sortIcon>
+                <th pSortableColumn="modDate" style="width: 13%">
+                    {{ 'last.edited' | dm }}<p-sortIcon field="modDate"></p-sortIcon>
                 </th>
                 <th style="width: 5%"></th>
             </tr>
@@ -125,32 +123,28 @@
         <ng-template pTemplate="body" let-rowData let-columns="columns" let-rowIndex="rowIndex">
             <tr [pSelectableRow]="rowData" style="height: 26px">
                 <td>
-                    {{ rowIndex + '*' }}
                     {{ rowData['title'] }}
                 </td>
-                <td>
+                <td [pTooltip]="rowData['urlMap'] || rowData['url']" tooltipPosition="bottom">
                     {{ rowData['urlMap'] || rowData['url'] }}
-                </td>
-                <td style="text-align: center">
-                    <dot-state-icon
-                        [labels]="dotStateLabels"
-                        [state]="rowData"
-                        size="14px"
-                    ></dot-state-icon>
                 </td>
                 <td>
                     {{ rowData['contentType'] }}
                 </td>
                 <td>
-                    <img
-                        src="{{
-                            '/html/images/languages/' +
-                                vm.languageLabels[rowData['languageId']] +
-                                '.gif'
-                        }}"
-                        border="0"
-                    />
-                    {{ vm.languageLabels[rowData['languageId']] }}
+                    <div class="dot-pages-table__status-field">
+                        <dot-state-icon
+                            [labels]="dotStateLabels"
+                            [state]="rowData"
+                            size="14px"
+                        ></dot-state-icon>
+                        <dot-badge bordered="{true}">{{
+                            vm.languageLabels[rowData['languageId']]
+                        }}</dot-badge>
+                        <dot-contentlet-lock-icon
+                            locked="{{ rowData['locked'] }}"
+                        ></dot-contentlet-lock-icon>
+                    </div>
                 </td>
                 <td>
                     {{ rowData['modUserName'] }}
@@ -159,17 +153,12 @@
                     {{ rowData['modDate'] }}
                 </td>
                 <td>
-                    <dot-action-menu-button
-                        class="listing-datatable__action-button"
-                        [actions]="
-                            actions && actions[rowData?.identifier]
-                                ? actions[rowData?.identifier]
-                                : null
-                        "
-                        [lazy]="true"
-                        [item]="rowData"
-                        (actionMenuStatus)="hizoClick($event)"
-                    ></dot-action-menu-button>
+                    <dot-icon-button
+                        id="pageActionButton-{{ rowIndex }}"
+                        (click)="showActionsMenu($event, rowIndex, rowData)"
+                        icon="more_vert"
+                        size="32"
+                    ></dot-icon-button>
                 </td>
             </tr>
         </ng-template>
@@ -177,13 +166,19 @@
             <tr style="height: 26px">
                 <td><p-skeleton [ngStyle]="{ width: '25%' }"></p-skeleton></td>
                 <td><p-skeleton [ngStyle]="{ width: '20%' }"></p-skeleton></td>
-                <td><p-skeleton [ngStyle]="{ width: '6%' }"></p-skeleton></td>
-                <td><p-skeleton [ngStyle]="{ width: '10%' }"></p-skeleton></td>
-                <td><p-skeleton [ngStyle]="{ width: '10%' }"></p-skeleton></td>
-                <td><p-skeleton [ngStyle]="{ width: '10%' }"></p-skeleton></td>
-                <td><p-skeleton [ngStyle]="{ width: '15%' }"></p-skeleton></td>
-                <td><p-skeleton [ngStyle]="{ width: '4%' }"></p-skeleton></td>
+                <td><p-skeleton [ngStyle]="{ width: '12%' }"></p-skeleton></td>
+                <td><p-skeleton [ngStyle]="{ width: '12%' }"></p-skeleton></td>
+                <td><p-skeleton [ngStyle]="{ width: '13%' }"></p-skeleton></td>
+                <td><p-skeleton [ngStyle]="{ width: '13%' }"></p-skeleton></td>
+                <td><p-skeleton [ngStyle]="{ width: '5%' }"></p-skeleton></td>
             </tr>
         </ng-template>
     </p-table>
+
+    <dot-add-to-bundle
+        *ngIf="vm.pages.addToBundleCTId"
+        [assetIdentifier]="vm.pages.addToBundleCTId"
+        (cancel)="vm.pages.addToBundleCTId = null"
+    ></dot-add-to-bundle>
 </div>
+<router-outlet></router-outlet>
