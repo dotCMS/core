@@ -111,7 +111,7 @@ public class AccessTokenRenewJob implements StatefulJob {
             () -> hostAPI.findAll(APILocator.systemUser(), 0, 0, null, false)
                 .stream()
                 .filter(Objects::nonNull)
-                .map(host -> Try.of(() -> AnalyticsHelper.appFromHost(host)).getOrElse((AnalyticsApp) null))
+                .map(host -> Try.of(() -> AnalyticsHelper.get().appFromHost(host)).getOrElse((AnalyticsApp) null))
                 .filter(Objects::nonNull)
                 .filter(AnalyticsApp::isConfigValid)
                 .map(this::withStatus)
@@ -139,7 +139,7 @@ public class AccessTokenRenewJob implements StatefulJob {
      */
     private AnalyticsAppWithStatus withStatus(final AnalyticsApp analyticsApp) {
         final AccessToken accessToken = analyticsAPI.getAccessToken(analyticsApp);
-        final TokenStatus tokenStatus = AnalyticsHelper.resolveTokenStatus(accessToken);
+        final TokenStatus tokenStatus = AnalyticsHelper.get().resolveTokenStatus(accessToken);
 
         switch (tokenStatus) {
             case NONE:
@@ -162,7 +162,7 @@ public class AccessTokenRenewJob implements StatefulJob {
                     String.format(
                         "ACCESS_TOKEN for clientId %s is NOOP it cannot be used due to a permanent error",
                         analyticsApp.getAnalyticsProperties().clientId()));
-                Logger.error(this, AnalyticsHelper.resolveStatusMessage(accessToken));
+                Logger.error(this, AnalyticsHelper.get().resolveStatusMessage(accessToken));
                 break;
             case BLOCKED:
                 Logger.error(
@@ -170,7 +170,7 @@ public class AccessTokenRenewJob implements StatefulJob {
                     String.format(
                         "ACCESS_TOKEN for clientId %s is BLOCKED due to renew process",
                         analyticsApp.getAnalyticsProperties().clientId()));
-                Logger.error(this, AnalyticsHelper.resolveStatusMessage(accessToken));
+                Logger.error(this, AnalyticsHelper.get().resolveStatusMessage(accessToken));
                 break;
             case EXPIRED:
             case IN_WINDOW:

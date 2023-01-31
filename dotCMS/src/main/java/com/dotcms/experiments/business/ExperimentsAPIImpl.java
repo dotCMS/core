@@ -11,10 +11,22 @@ import static com.dotcms.util.CollectionsUtils.set;
 import static com.dotcms.experiments.model.AbstractExperimentVariant.ORIGINAL_VARIANT;
 import static com.dotcms.variant.VariantAPI.DEFAULT_VARIANT;
 
+import com.dotcms.analytics.app.AnalyticsApp;
+import com.dotcms.analytics.helper.AnalyticsHelper;
+import com.dotcms.analytics.metrics.EventType;
 import com.dotcms.analytics.metrics.MetricsUtil;
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
+import com.dotcms.cube.CubeClient;
+import com.dotcms.cube.CubeJSQuery;
+import com.dotcms.cube.CubeJSResultSet;
+import com.dotcms.cube.CubeJSResultSet.ResultSetItem;
 import com.dotcms.enterprise.rules.RulesAPI;
+import com.dotcms.experiments.business.result.BrowserSession;
+import com.dotcms.experiments.business.result.Event;
+import com.dotcms.experiments.business.result.ExperimentAnalyzerUtil;
+import com.dotcms.experiments.business.result.ExperimentResult;
+import com.dotcms.experiments.business.result.ExperimentResultQueryFactory;
 import com.dotcms.experiments.model.AbstractExperiment.Status;
 import com.dotcms.experiments.model.AbstractTrafficProportion.Type;
 import com.dotcms.experiments.model.Experiment;
@@ -27,6 +39,7 @@ import com.dotcms.util.LicenseValiditySupplier;
 import com.dotcms.uuid.shorty.ShortyIdAPI;
 import com.dotcms.variant.VariantAPI;
 import com.dotcms.variant.model.Variant;
+import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.PermissionableProxy;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
@@ -34,6 +47,7 @@ import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.PermissionLevel;
 import com.dotmarketing.business.VersionableAPI;
+import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.exception.DoesNotExistException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -55,6 +69,9 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
+import com.liferay.util.StringPool;
+import eu.bitwalker.useragentutils.Browser;
+import graphql.VisibleForTesting;
 import io.vavr.control.Try;
 import java.time.Duration;
 import java.time.Instant;
@@ -90,6 +107,17 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
 
     private final Supplier<String> invalidLicenseMessageSupplier =
             ()->"Valid License is required";
+
+    private final AnalyticsHelper analyticsHelper;
+
+    @VisibleForTesting
+    public ExperimentsAPIImpl(final AnalyticsHelper analyticsHelper) {
+        this.analyticsHelper = analyticsHelper;
+    }
+
+    public ExperimentsAPIImpl() {
+        this(AnalyticsHelper.get());
+    }
 
     @Override
     @WrapInTransaction
@@ -659,6 +687,72 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
         return isExperimentEnabled.get() &&
                 !APILocator.getExperimentsAPI().getRunningExperiments().isEmpty();
     }
+
+    /**
+     * Return the Experiment partial or total result:
+     * This method do the follow:
+     *
+     * <ul>
+     *     <li>Hit the CubeJS Server to get the Experiment's data</li>
+     *     <li>Analyze Experiment's data to get The Experiment's result according to the {@link com.dotcms.experiments.model.Goals}</li>
+     * </ul>
+     *
+     * @param experiment
+     * @return
+     */
+    @Override
+    public ExperimentResult getResult(final Experiment experiment) {
+        final List<BrowserSession> events = getEvents(experiment);
+        return ExperimentAnalyzerUtil.INSTANCE.getExperimentResult(experiment, events);
+    }
+
+    @Override
+    public List<BrowserSession> getEvents(Experiment experiment) {
+        try{
+            final Host currentHost = WebAPILocator.getHostWebAPI().getCurrentHost();
+
+            final AnalyticsApp analyticsApp = analyticsHelper.appFromHost(currentHost);
+
+            final CubeClient cubeClient = new CubeClient(
+                    analyticsApp.getAnalyticsProperties().analyticsReadUrl());
+
+            final CubeJSQuery cubeJSQuery = ExperimentResultQueryFactory.INSTANCE
+                    .create(experiment);
+
+            final CubeJSResultSet cubeJSResultSet = cubeClient.send(cubeJSQuery);
+
+            String previousLookBackWindow = null;
+            final List<Event> currentEvents = new ArrayList<>();
+            final List<BrowserSession> sessions = new ArrayList<>();
+
+            for (final ResultSetItem resultSetItem : cubeJSResultSet) {
+                final String currentLookBackWindow = resultSetItem.get("Events.lookBackWindow")
+                        .map(lookBackWindow -> lookBackWindow.toString())
+                        .orElse(StringPool.BLANK);
+
+                if (!currentLookBackWindow.equals(previousLookBackWindow)) {
+                    if (!currentEvents.isEmpty()) {
+                        sessions.add(new BrowserSession(previousLookBackWindow, new ArrayList<>(currentEvents)));
+                        currentEvents.clear();
+                    }
+                }
+
+                currentEvents.add(new Event(resultSetItem.getAll(),
+                            EventType.get(resultSetItem.get("Events.eventType").get().toString())));
+
+                previousLookBackWindow = currentLookBackWindow;
+            }
+
+            if (!currentEvents.isEmpty()) {
+                sessions.add(new BrowserSession(previousLookBackWindow, new ArrayList<>(currentEvents)));
+            }
+
+            return sessions;
+        } catch (DotDataException | DotSecurityException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
 
     private TreeSet<ExperimentVariant> redistributeWeights(final Set<ExperimentVariant> variants) {
 

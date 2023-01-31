@@ -23,8 +23,22 @@ public interface AbstractCondition {
     String value();
 
     enum Operator {
-        EQUALS,
-        CONTAINS
+        EQUALS((value1, value2) -> value1.equals(value2)),
+        CONTAINS((value1, value2) -> value1.toString().contains(value2.toString()));
+
+        private OperatorFunc function;
+
+        Operator(final OperatorFunc func){
+            this.function = func;
+        }
+
+        public OperatorFunc getFunction() {
+            return function;
+        }
+    }
+
+    interface OperatorFunc {
+        boolean apply(Object value1, Object value2);
     }
 
     @Value.Style(typeImmutable="*", typeAbstract="Abstract*")

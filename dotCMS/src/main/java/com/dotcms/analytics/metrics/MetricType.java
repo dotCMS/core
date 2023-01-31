@@ -16,7 +16,7 @@ public enum MetricType {
     REACH_PAGE(new Builder()
             .goalName("Maximize Reaching a Page")
             .allRequiredParameters (Parameter.builder().name("url").build()) //TODO we can create singletons of these Parameters in order to reuse
-            .optionalParameters(Parameter.builder().name("referrer").build())
+            .optionalParameters(Parameter.builder().name("referer").build())
             .availableOperators(Operator.EQUALS, Operator.CONTAINS)),
     CLICK_ON_ELEMENT(new Builder()
             .goalName("Maximize Clicking on Element")

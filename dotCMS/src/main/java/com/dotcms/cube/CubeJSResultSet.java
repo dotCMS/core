@@ -1,6 +1,7 @@
 package com.dotcms.cube;
 
 import com.dotcms.cube.CubeJSResultSet.ResultSetItem;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -15,14 +16,12 @@ import org.jetbrains.annotations.NotNull;
  */
 public class CubeJSResultSet implements Iterable<ResultSetItem> {
     private List<ResultSetItem> data;
-    private int size;
     public CubeJSResultSet(final List<Map<String, Object>> data){
         this.data = data.stream().map(map -> new ResultSetItem(map)).collect(Collectors.toList());
-        size = data.size();
     }
 
     public int size() {
-        return size;
+        return data.size();
     }
 
     @NotNull
@@ -50,6 +49,10 @@ public class CubeJSResultSet implements Iterable<ResultSetItem> {
 
         public Optional<Object> get(final String name){
             return Optional.ofNullable(item.get(name));
+        }
+
+        public Map<String, Object> getAll(){
+            return new HashMap<>(item);
         }
     }
 
