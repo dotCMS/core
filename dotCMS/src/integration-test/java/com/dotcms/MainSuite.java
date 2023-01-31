@@ -34,6 +34,7 @@ import com.dotcms.rendering.velocity.directive.DotParseTest;
 import com.dotcms.rendering.velocity.servlet.VelocityServletIntegrationTest;
 import com.dotcms.rendering.velocity.viewtools.DotTemplateToolTest;
 import com.dotcms.rendering.velocity.viewtools.JSONToolTest;
+import com.dotcms.rendering.velocity.viewtools.XmlToolTest;
 import com.dotcms.rendering.velocity.viewtools.content.BinaryMapTest;
 import com.dotcms.rest.BundlePublisherResourceIntegrationTest;
 import com.dotcms.rest.BundleResourceTest;
@@ -428,7 +429,8 @@ import org.junit.runners.Suite.SuiteClasses;
         HTMLDiffUtilTest.class,
         BundleFactoryTest.class,
         IntegrityDataGenerationJobTest.class,
-        StaticPushPublishBundleGeneratorTest.class
+        StaticPushPublishBundleGeneratorTest.class,
+        XmlToolTest.class
 })
 public class MainSuite {
 

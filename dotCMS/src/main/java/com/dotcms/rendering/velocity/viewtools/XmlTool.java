@@ -30,6 +30,10 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+
+import com.dotcms.util.network.IPUtils;
+import com.dotmarketing.exception.DotRuntimeException;
+import com.dotmarketing.util.Config;
 import org.apache.velocity.tools.generic.ValueParser;
 import org.apache.velocity.tools.view.tools.ViewTool;
 import org.dom4j.Attribute;
@@ -146,7 +150,14 @@ public class XmlTool implements ViewTool {
 	 * this instance.
 	 */
 	protected void read(URL url) throws Exception {
+		if(IPUtils.isIpPrivateSubnet(url.getHost()) && !Config.getBooleanProperty("ALLOW_ACCESS_TO_PRIVATE_SUBNETS", false)){
+			throw new DotRuntimeException("XMLTool Cannot access private subnets.  Set ALLOW_ACCESS_TO_PRIVATE_SUBNETS=true to allow");
+		}
+
 		SAXReader reader = new SAXReader();
+		reader.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true);
+		reader.setFeature("http://xml.org/sax/features/external-general-entities", false);
+		reader.setFeature("http://xml.org/sax/features/external-parameter-entities", false);
 		setRoot(reader.read(url));
 	}
 
