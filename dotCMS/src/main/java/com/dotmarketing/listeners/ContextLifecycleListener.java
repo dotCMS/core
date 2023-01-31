@@ -12,7 +12,6 @@ import com.dotmarketing.quartz.QuartzUtils;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import io.vavr.control.Try;
-import java.util.Optional;
 import org.apache.logging.log4j.core.async.BasicAsyncLoggerContextSelector;
 
 import javax.servlet.ServletContext;
@@ -27,6 +26,8 @@ import org.apache.logging.log4j.core.selector.BasicContextSelector;
  */
 public class ContextLifecycleListener implements ServletContextListener {
 
+    public static final String SHUTDOWN = "Shutdown : ";
+
     public ContextLifecycleListener() {
         AsciiArt.doArt();
     }
@@ -34,25 +35,25 @@ public class ContextLifecycleListener implements ServletContextListener {
     public void contextDestroyed(ServletContextEvent arg0) {
         Logger.info(this, "Shutdown : Started, executing a clean shutdown.");
 
-        Try.run(() -> QuartzUtils.stopSchedulers())
+        Try.run(QuartzUtils::stopSchedulers)
                 .onFailure(e -> Logger.warn(ContextLifecycleListener.class,
-                        "Shutdown : " + e.getMessage()));
+                        SHUTDOWN + e.getMessage()));
 
-        Try.run(() -> LicenseUtil.freeLicenseOnRepo())
+        Try.run(LicenseUtil::freeLicenseOnRepo)
                 .onFailure(e -> Logger.warn(ContextLifecycleListener.class,
-                        "Shutdown : " + e.getMessage()));
+                        SHUTDOWN + e.getMessage()));
 
         Try.run(() -> CacheLocator.getCacheAdministrator().shutdown())
                 .onFailure(e -> Logger.warn(ContextLifecycleListener.class,
-                        "Shutdown : " + e.getMessage()));
+                        SHUTDOWN + e.getMessage()));
 
         Try.run(() -> DotConcurrentFactory.getInstance().shutdownAndDestroy())
                 .onFailure(e -> Logger.warn(ContextLifecycleListener.class,
-                        "Shutdown : " + e.getMessage()));
+                        SHUTDOWN + e.getMessage()));
 
-        Try.run(() -> ReindexThread.stopThread())
+        Try.run(ReindexThread::stopThread)
                 .onFailure(e -> Logger.warn(ContextLifecycleListener.class,
-                        "Shutdown : " + e.getMessage()));
+                        SHUTDOWN + e.getMessage()));
 
         Logger.info(this, "Shutdown : Finished.");
 
@@ -84,8 +85,8 @@ public class ContextLifecycleListener implements ServletContextListener {
         // This is called infrequently on context startup so do not need to cache
         // getting system property
         String log4jContextSelector = System.getProperty("Log4jContextSelector");
-        if (log4jContextSelector != null && log4jContextSelector.equals(BasicAsyncLoggerContextSelector.class.getName())
-        || log4jContextSelector.equals(BasicContextSelector.class.getName())) {
+        if (log4jContextSelector != null && (log4jContextSelector.equals(BasicAsyncLoggerContextSelector.class.getName())
+        || log4jContextSelector.equals(BasicContextSelector.class.getName()))) {
             Logger.debug(this, "Reinitializing configuration from " + path);
             Log4jUtil.initializeFromPath(path);
         }
