@@ -15,26 +15,26 @@
 }
 
 .p-tag.p-tag-success {
-    background-color: #22c55e;
-    color: #ffffff;
+    background-color: $color-alert-green-light;
+    color: $color-alert-green;
 }
 
 .p-tag.p-tag-info {
-    background-color: #3b82f6;
-    color: #ffffff;
+    background-color: $color-alert-blue-light;
+    color: $color-alert-blue;
 }
 
 .p-tag.p-tag-warning {
-    background-color: #f59e0b;
-    color: #ffffff;
+    background-color: $color-alert-yellow-light;
+    color: $color-alert-yellow;
 }
 
 .p-tag.p-tag-danger {
-    background-color: #ef4444;
-    color: #ffffff;
+    background-color: $color-alert-red-light;
+    color: $color-alert-red;
 }
 
 .p-tag .p-tag-icon {
-    margin-right: 0.25rem;
-    font-size: 0.75rem;
+    margin-right: $spacing-1;
+    font-size: $font-size-x-small;
 }

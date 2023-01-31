@@ -57,7 +57,8 @@ describe('DotExperimentsConfigurationStore', () => {
             {
                 provide: ActivatedRoute,
                 useValue: ActivatedRouteMock
-            }
+            },
+            mockProvider(DotHttpErrorManagerService)
         ]
     });
 

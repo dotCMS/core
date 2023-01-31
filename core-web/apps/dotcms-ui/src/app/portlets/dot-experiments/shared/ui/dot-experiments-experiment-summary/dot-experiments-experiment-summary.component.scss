@@ -1,21 +1,21 @@
-@use "colors" as *;
+@use "variables" as *;
 
 :host {
-    padding: 1.5rem;
+    padding: $spacing-4;
     color: $color-gray-600;
     line-height: 140%;
 
     span span {
         font-weight: 700;
-        color: #000000;
+        color: $black;
     }
 
     i {
-        font-size: 1.3rem;
+        font-size: $md-icon-size-big;
         color: $color-primary-500;
 
         &.pi-ban {
-            color: $color-error-red;
+            color: $color-alert-red;
         }
     }
 }

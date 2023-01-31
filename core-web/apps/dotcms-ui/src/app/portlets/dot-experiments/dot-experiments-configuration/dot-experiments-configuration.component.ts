@@ -8,6 +8,7 @@ import { DotSessionStorageService } from '@dotcms/data-access';
 import {
     DOT_EXPERIMENT_STATUS_METADATA_MAP,
     DotExperiment,
+    DotExperimentStatusList,
     EditPageTabs,
     ExperimentSteps,
     SidebarStatus,
@@ -28,7 +29,7 @@ import {
 export class DotExperimentsConfigurationComponent implements OnInit {
     vm$: Observable<ConfigurationViewModel> = this.dotExperimentsConfigurationStore.vm$;
     experimentSteps = ExperimentSteps;
-    experimentStatusMap;
+    experimentStatusMap: Record<DotExperimentStatusList, { classz: string; label: string }>;
 
     constructor(
         private readonly dotExperimentsConfigurationStore: DotExperimentsConfigurationStore,

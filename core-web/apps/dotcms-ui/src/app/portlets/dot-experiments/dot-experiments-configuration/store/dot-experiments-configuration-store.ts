@@ -1,5 +1,5 @@
 import { ComponentStore, tapResponse } from '@ngrx/component-store';
-import { EMPTY, Observable, throwError } from 'rxjs';
+import { Observable, throwError } from 'rxjs';
 
 import { HttpErrorResponse } from '@angular/common/http';
 import { Injectable } from '@angular/core';
@@ -7,7 +7,7 @@ import { Title } from '@angular/platform-browser';
 
 import { MessageService } from 'primeng/api';
 
-import { catchError, switchMap, tap } from 'rxjs/operators';
+import { switchMap, tap } from 'rxjs/operators';
 
 import { DotMessageService } from '@dotcms/data-access';
 import {
@@ -163,7 +163,7 @@ export class DotExperimentsConfigurationStore extends ComponentStore<DotExperime
                             });
                             this.updateTabTitle(experiment);
                         },
-                        (error: HttpErrorResponse) => throwError(error),
+                        (error: HttpErrorResponse) => this.dotHttpErrorManagerService.handle(error),
                         () => this.setComponentStatus(ComponentStatus.IDLE)
                     )
                 )
@@ -191,8 +191,7 @@ export class DotExperimentsConfigurationStore extends ComponentStore<DotExperime
                         },
                         (error) => throwError(error),
                         () => this.setComponentStatus(ComponentStatus.IDLE)
-                    ),
-                    catchError(() => EMPTY)
+                    )
                 )
             )
         );

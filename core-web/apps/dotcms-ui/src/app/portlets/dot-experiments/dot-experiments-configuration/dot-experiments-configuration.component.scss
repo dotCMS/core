@@ -1,5 +1,4 @@
 @use "variables" as *;
-@use "colors" as *;
 
 :host {
     width: 100%;
@@ -16,7 +15,7 @@
         width: 100%;
         overflow-y: scroll;
         height: 100%;
-        background-color: $color-gray-000;
+        background-color: $color-gray-100;
 
         p {
             font-size: $font-size-medium;
@@ -59,10 +58,11 @@
         }
 
         &.p-button-outlined {
-            padding-left: 1rem;
-            padding-right: 1rem;
+            padding-left: $spacing-3;
+            padding-right: $spacing-3;
             border-color: $color-secondary-500;
             color: $color-secondary-500;
+            min-width: 60px;
         }
     }
 }
