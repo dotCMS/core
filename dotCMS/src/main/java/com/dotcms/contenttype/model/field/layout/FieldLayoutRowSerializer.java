@@ -8,6 +8,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializerProvider;
 
 import java.io.IOException;
+import java.util.List;
 
 /**
  * {@link FieldLayoutRow} serializer, it serialize a json with the follow format:
@@ -36,7 +37,7 @@ import java.io.IOException;
  * @see FieldLayoutColumnSerializer
  */
 public class FieldLayoutRowSerializer extends JsonSerializer<FieldLayoutRow> {
-    final ObjectMapper MAPPER;
+    final ObjectMapper mapper;
 
     public FieldLayoutRowSerializer(){
         this(new ObjectMapper());
@@ -45,7 +46,7 @@ public class FieldLayoutRowSerializer extends JsonSerializer<FieldLayoutRow> {
     @VisibleForTesting
     FieldLayoutRowSerializer(final ObjectMapper mapper){
         super();
-        this.MAPPER = mapper;
+        this.mapper = mapper;
     }
 
     @Override
@@ -59,14 +60,14 @@ public class FieldLayoutRowSerializer extends JsonSerializer<FieldLayoutRow> {
         final JsonFieldTransformer jsonFieldDividerTransformer = new JsonFieldTransformer(fieldLayoutRow.getDivider());
         jsonGenerator.writeObjectField("divider", jsonFieldDividerTransformer.mapObject());
 
-        jsonGenerator.writeFieldName("columns");
-
-
-        MAPPER.writer()
-                .withAttribute("type", serializerProvider.getAttribute("type"))
-                .withAttribute("internationalization", serializerProvider.getAttribute("internationalization"))
-                .writeValue(jsonGenerator, fieldLayoutRow.getColumns());
-
+        List<FieldLayoutColumn> columns = fieldLayoutRow.getColumns();
+        if(!columns.isEmpty()) {
+            jsonGenerator.writeFieldName("columns");
+            mapper.writer()
+                    .withAttribute("type", serializerProvider.getAttribute("type"))
+                    .withAttribute("internationalization", serializerProvider.getAttribute("internationalization"))
+                    .writeValue(jsonGenerator, columns);
+        }
         jsonGenerator.writeEndObject();
         jsonGenerator.flush();
     }

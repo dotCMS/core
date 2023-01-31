@@ -9,7 +9,9 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 public interface JsonTransformer {
   
-  static final ObjectMapper mapper = new ObjectMapper().setSerializationInclusion(Include.NON_NULL)
+  static final ObjectMapper mapper = new ObjectMapper()
+      //.setSerializationInclusion(Include.NON_NULL)
+      .setSerializationInclusion(Include.NON_DEFAULT)
       .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
 
   JSONObject jsonObject();

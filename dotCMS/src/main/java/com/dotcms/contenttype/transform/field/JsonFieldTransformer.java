@@ -163,7 +163,10 @@ public class JsonFieldTransformer implements FieldTransformer, JsonTransformer {
     try {
       final Field field = from();
       final Map<String, Object> fieldMap = mapper.convertValue(field, HashMap.class);
-      fieldMap.put("fieldVariables", new JsonFieldVariableTransformer(field.fieldVariables()).mapList());
+      final List<Map<String, Object>> fieldVars = new JsonFieldVariableTransformer(field.fieldVariables()).mapList();
+      if (!fieldVars.isEmpty()){
+         fieldMap.put("fieldVariables", fieldVars);
+      }
       fieldMap.remove("acceptedDataTypes");
       fieldMap.remove("dbColumn");
 

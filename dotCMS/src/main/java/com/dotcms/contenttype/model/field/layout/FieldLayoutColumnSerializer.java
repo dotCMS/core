@@ -57,7 +57,9 @@ public class FieldLayoutColumnSerializer extends JsonSerializer<FieldLayoutColum
         final List<Map<String, Object>> fieldsMap = getFieldInternationalization(serializerProvider,
                 jsonColumnsTransformer.mapList());
 
-        jsonGenerator.writeObjectField("fields", fieldsMap);
+        if(!fieldsMap.isEmpty()) {
+            jsonGenerator.writeObjectField("fields", fieldsMap);
+        }
 
         jsonGenerator.writeEndObject();
         jsonGenerator.flush();
