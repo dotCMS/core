@@ -99,6 +99,16 @@ public class MockHttpServer {
         if (!errors.isEmpty()) {
             throw new AssertionError(errors.stream().collect(Collectors.joining("\n")) );
         }
+
+        final List<MockHttpServerContext> mustBeCalledContext = this.mockHttpServerContexts.stream()
+                .filter(context -> context.isMustBeCalled())
+                .collect(Collectors.toList());
+
+        for (final MockHttpServerContext mockHttpServerContext : mustBeCalledContext) {
+            if (!uris.stream().anyMatch(uri -> uri.getPath().equals(mockHttpServerContext.getUri()))) {
+                throw new AssertException(mockHttpServerContext.getUri() + " Must be called");
+            }
+        }
     }
 
     public void mustNeverCalled(final String path) {
@@ -106,4 +116,5 @@ public class MockHttpServer {
             throw new AssertException(path + " Must never called");
         }
     }
+
 }
