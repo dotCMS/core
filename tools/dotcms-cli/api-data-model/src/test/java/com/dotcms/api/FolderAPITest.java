@@ -4,19 +4,19 @@ import com.dotcms.api.client.RestClientFactory;
 import com.dotcms.api.client.ServiceManager;
 import com.dotcms.model.ResponseEntityView;
 import com.dotcms.model.config.ServiceBean;
-import com.dotcms.model.site.GetSiteByNameRequest;
-import com.dotcms.model.site.Site;
-import com.dotcms.model.site.SiteView;
+import com.dotcms.model.folder.SearchByPathRequest;
+import com.google.common.collect.ImmutableList;
 import io.quarkus.test.junit.QuarkusTest;
 import java.io.IOException;
 import java.util.List;
+import java.util.Map;
 import javax.inject.Inject;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 @QuarkusTest
-public class SiteAPITest {
+public class FolderAPITest {
 
     @Inject
     AuthenticationContext authenticationContext;
@@ -37,20 +37,17 @@ public class SiteAPITest {
     }
 
     @Test
-    public void Test_Get_Sites() {
+    public void Test_Make_Folder() {
 
-        final ResponseEntityView<List<Site>> sitesResponse = clientFactory.getClient(SiteAPI.class).getSites(null, false, true, true, 1, 10);
-        Assertions.assertNotNull(sitesResponse);
+        final FolderAPI folderAPI = clientFactory.getClient(FolderAPI.class);
+        final ResponseEntityView<List<Map<String, Object>>> makeFoldersResponse = folderAPI.makeFolders(
+                ImmutableList.of("/f1", "/f1/f2", "/f1/f2/f3"), "default");
+        Assertions.assertNotNull(makeFoldersResponse.entity());
+
+        final ResponseEntityView<List<Map<String, Object>>> byPathResponse = folderAPI.findByPath(
+                SearchByPathRequest.builder().path("//default/").build());
+        Assertions.assertNotNull(byPathResponse.entity());
+
     }
-
-    @Test
-    public void Test_Find_Host_By_Name() {
-        final ResponseEntityView<SiteView> sitesResponse = clientFactory.getClient(SiteAPI.class)
-                .findHostByName(
-                        GetSiteByNameRequest.builder().siteName("default").build());
-        Assertions.assertNotNull(sitesResponse);
-        Assertions.assertEquals("default",sitesResponse.entity().hostName());
-    }
-
 
 }

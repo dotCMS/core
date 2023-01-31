@@ -13,6 +13,35 @@ import com.dotcms.contenttype.model.field.FileField;
 import com.dotcms.contenttype.model.field.HiddenField;
 import com.dotcms.contenttype.model.field.HostFolderField;
 import com.dotcms.contenttype.model.field.ImageField;
+import com.dotcms.contenttype.model.field.ImmutableBinaryField;
+import com.dotcms.contenttype.model.field.ImmutableCategoryField;
+import com.dotcms.contenttype.model.field.ImmutableCheckboxField;
+import com.dotcms.contenttype.model.field.ImmutableColumnField;
+import com.dotcms.contenttype.model.field.ImmutableConstantField;
+import com.dotcms.contenttype.model.field.ImmutableCustomField;
+import com.dotcms.contenttype.model.field.ImmutableDateField;
+import com.dotcms.contenttype.model.field.ImmutableDateTimeField;
+import com.dotcms.contenttype.model.field.ImmutableEmptyField;
+import com.dotcms.contenttype.model.field.ImmutableFileField;
+import com.dotcms.contenttype.model.field.ImmutableHiddenField;
+import com.dotcms.contenttype.model.field.ImmutableHostFolderField;
+import com.dotcms.contenttype.model.field.ImmutableImageField;
+import com.dotcms.contenttype.model.field.ImmutableKeyValueField;
+import com.dotcms.contenttype.model.field.ImmutableLineDividerField;
+import com.dotcms.contenttype.model.field.ImmutableMultiSelectField;
+import com.dotcms.contenttype.model.field.ImmutablePermissionTabField;
+import com.dotcms.contenttype.model.field.ImmutableRadioField;
+import com.dotcms.contenttype.model.field.ImmutableRelationshipField;
+import com.dotcms.contenttype.model.field.ImmutableRelationshipsTabField;
+import com.dotcms.contenttype.model.field.ImmutableRowField;
+import com.dotcms.contenttype.model.field.ImmutableSelectField;
+import com.dotcms.contenttype.model.field.ImmutableStoryBlockField;
+import com.dotcms.contenttype.model.field.ImmutableTabDividerField;
+import com.dotcms.contenttype.model.field.ImmutableTagField;
+import com.dotcms.contenttype.model.field.ImmutableTextAreaField;
+import com.dotcms.contenttype.model.field.ImmutableTextField;
+import com.dotcms.contenttype.model.field.ImmutableTimeField;
+import com.dotcms.contenttype.model.field.ImmutableWysiwygField;
 import com.dotcms.contenttype.model.field.KeyValueField;
 import com.dotcms.contenttype.model.field.LineDividerField;
 import com.dotcms.contenttype.model.field.MultiSelectField;
@@ -32,15 +61,22 @@ import com.dotcms.contenttype.model.field.WysiwygField;
 import com.dotcms.contenttype.model.type.DotAssetContentType;
 import com.dotcms.contenttype.model.type.FileAssetContentType;
 import com.dotcms.contenttype.model.type.FormContentType;
+import com.dotcms.contenttype.model.type.ImmutableDotAssetContentType;
+import com.dotcms.contenttype.model.type.ImmutableFileAssetContentType;
+import com.dotcms.contenttype.model.type.ImmutableFormContentType;
+import com.dotcms.contenttype.model.type.ImmutableKeyValueContentType;
+import com.dotcms.contenttype.model.type.ImmutablePageContentType;
+import com.dotcms.contenttype.model.type.ImmutablePersonaContentType;
+import com.dotcms.contenttype.model.type.ImmutableSimpleContentType;
+import com.dotcms.contenttype.model.type.ImmutableVanityUrlContentType;
+import com.dotcms.contenttype.model.type.ImmutableWidgetContentType;
 import com.dotcms.contenttype.model.type.KeyValueContentType;
 import com.dotcms.contenttype.model.type.PageContentType;
 import com.dotcms.contenttype.model.type.PersonaContentType;
 import com.dotcms.contenttype.model.type.SimpleContentType;
 import com.dotcms.contenttype.model.type.VanityUrlContentType;
 import com.dotcms.contenttype.model.type.WidgetContentType;
-import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
-import com.fasterxml.jackson.annotation.JsonInclude.Value;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.databind.jsontype.BasicPolymorphicTypeValidator;
@@ -76,51 +112,7 @@ public class ClientObjectMapper implements ContextResolver<ObjectMapper> {
              */
             @Override
             public PolymorphicTypeValidator getPolymorphicTypeValidator() {
-                return BasicPolymorphicTypeValidator.builder()
-
-                        .allowIfBaseType(FileAssetContentType.class)
-                        .allowIfBaseType(DotAssetContentType.class)
-                        .allowIfBaseType(FormContentType.class)
-                        .allowIfBaseType(KeyValueContentType.class)
-                        .allowIfBaseType(PageContentType.class)
-                        .allowIfBaseType(PersonaContentType.class)
-                        .allowIfBaseType(SimpleContentType.class)
-                        .allowIfBaseType(VanityUrlContentType.class)
-                        .allowIfBaseType(WidgetContentType.class)
-
-                        .allowIfSubType(BinaryField.class)
-                        .allowIfSubType(CategoryField.class)
-                        .allowIfSubType(CheckboxField.class)
-                        .allowIfSubType(ColumnField.class)
-                        .allowIfSubType(ConstantField.class)
-                        .allowIfSubType(CustomField.class)
-                        .allowIfSubType(DateField.class)
-                        .allowIfSubType(DateTimeField.class)
-                        .allowIfSubType(EmptyField.class)
-                        .allowIfSubType(FileField.class)
-                        .allowIfSubType(HiddenField.class)
-                        .allowIfSubType(HostFolderField.class)
-                        .allowIfSubType(ImageField.class)
-                        .allowIfSubType(KeyValueField.class)
-                        .allowIfSubType(LineDividerField.class)
-                        .allowIfSubType(MultiSelectField.class)
-                        .allowIfSubType(PermissionTabField.class)
-                        .allowIfSubType(RadioField.class)
-                        .allowIfSubType(RelationshipField.class)
-                        .allowIfSubType(RelationshipsTabField.class)
-                        .allowIfSubType(RowField.class)
-                        .allowIfSubType(SelectField.class)
-                        .allowIfSubType(StoryBlockField.class)
-                        .allowIfSubType(TabDividerField.class)
-                        .allowIfSubType(TagField.class)
-                        .allowIfSubType(TextAreaField.class)
-                        .allowIfSubType(TextField.class)
-                        .allowIfSubType(TimeField.class)
-                        .allowIfSubType(WysiwygField.class)
-
-                        .allowIfSubType(Map.class)
-                        .allowIfSubType(List.class)
-                        .build();
+                return defaultPolymorphicTypeValidator();
             }
         };
         mapper.enable(SerializationFeature.INDENT_OUTPUT);
@@ -129,42 +121,56 @@ public class ClientObjectMapper implements ContextResolver<ObjectMapper> {
         mapper.registerModule(new JavaTimeModule());
         mapper.registerModule(new VersioningModule());
         mapper.configure(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, false);
-
-        mapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
-        mapper.setDefaultPropertyInclusion(
-                Value.construct(Include.NON_EMPTY, Include.CUSTOM, null,
-                        ExcludeEmptyObjects.class)
-        );
+        mapper.setSerializationInclusion( Include.NON_DEFAULT);
         return mapper;
     }
 
-    /**
-     * Custom exclusion class
-     * We're supposed to exclude empty and defaults values
-     */
-    private static class ExcludeEmptyObjects {
+    public static PolymorphicTypeValidator defaultPolymorphicTypeValidator(){
+        return BasicPolymorphicTypeValidator.builder()
 
-        @Override
-        public boolean equals(Object o) {
+                .allowIfSubType(ImmutableSimpleContentType.class)
+                .allowIfSubType(ImmutableFileAssetContentType.class)
+                .allowIfSubType(ImmutableDotAssetContentType.class)
+                .allowIfSubType(ImmutableFormContentType.class)
+                .allowIfSubType(ImmutableKeyValueContentType.class)
+                .allowIfSubType(ImmutablePageContentType.class)
+                .allowIfSubType(ImmutablePersonaContentType.class)
+                .allowIfSubType(ImmutableVanityUrlContentType.class)
+                .allowIfSubType(ImmutableWidgetContentType.class)
 
-            if (o instanceof Boolean) {
-                return !((Boolean) o);
-            }
+                .allowIfSubType(ImmutableBinaryField.class)
+                .allowIfSubType(ImmutableCategoryField.class)
+                .allowIfSubType(ImmutableCheckboxField.class)
+                .allowIfSubType(ImmutableColumnField.class)
+                .allowIfSubType(ImmutableConstantField.class)
+                .allowIfSubType(ImmutableCustomField.class)
+                .allowIfSubType(ImmutableDateField.class)
+                .allowIfSubType(ImmutableDateTimeField.class)
+                .allowIfSubType(ImmutableEmptyField.class)
+                .allowIfSubType(ImmutableFileField.class)
+                .allowIfSubType(ImmutableHiddenField.class)
+                .allowIfSubType(ImmutableHostFolderField.class)
+                .allowIfSubType(ImmutableImageField.class)
+                .allowIfSubType(ImmutableKeyValueField.class)
+                .allowIfSubType(ImmutableLineDividerField.class)
+                .allowIfSubType(ImmutableMultiSelectField.class)
+                .allowIfSubType(ImmutablePermissionTabField.class)
+                .allowIfSubType(ImmutableRadioField.class)
+                .allowIfSubType(ImmutableRelationshipField.class)
+                .allowIfSubType(ImmutableRelationshipsTabField.class)
+                .allowIfSubType(ImmutableRowField.class)
+                .allowIfSubType(ImmutableSelectField.class)
+                .allowIfSubType(ImmutableStoryBlockField.class)
+                .allowIfSubType(ImmutableTabDividerField.class)
+                .allowIfSubType(ImmutableTagField.class)
+                .allowIfSubType(ImmutableTextAreaField.class)
+                .allowIfSubType(ImmutableTextField.class)
+                .allowIfSubType(ImmutableTimeField.class)
+                .allowIfSubType(ImmutableWysiwygField.class)
 
-            if (o instanceof Number) {
-                return ((Number) o).floatValue() == 0;
-            }
-
-            if (o instanceof Map) {
-                return ((Map<?, ?>) o).isEmpty();
-            }
-            if (o instanceof Collection) {
-                return ((Collection<?>) o).isEmpty();
-            }
-            return false;
-        }
-
+                .allowIfSubType(Map.class)
+                .allowIfSubType(List.class)
+                .build();
     }
-
 
 }

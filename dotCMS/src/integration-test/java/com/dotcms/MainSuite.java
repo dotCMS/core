@@ -100,6 +100,7 @@ import com.dotcms.security.multipart.ContentDispositionFileNameParserTest;
 import com.dotcms.security.multipart.SecureFileValidatorTest;
 import com.dotcms.storage.FileMetadataAPITest;
 import com.dotcms.storage.StoragePersistenceAPITest;
+import com.dotcms.storage.repository.HashedLocalFileRepositoryManagerTest;
 import com.dotcms.translate.GoogleTranslationServiceIntegrationTest;
 import com.dotcms.uuid.shorty.LegacyShortyIdApiTest;
 import com.dotcms.variant.VariantAPITest;
@@ -631,6 +632,7 @@ import org.junit.runners.Suite.SuiteClasses;
         StoryBlockAPITest.class,
         UtilMethodsITest.class,
         Task220912UpdateCorrectShowOnMenuPropertyTest.class,
+        HashedLocalFileRepositoryManagerTest.class,
         PersonaActionletTest.class,
         SendRedirectActionletTest.class,
         SetRequestAttributeActionletTest.class,

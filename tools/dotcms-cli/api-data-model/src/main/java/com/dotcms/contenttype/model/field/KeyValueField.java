@@ -9,4 +9,11 @@ import org.immutables.value.Value;
 @JsonDeserialize(as = ImmutableKeyValueField.class)
 public abstract class KeyValueField extends Field {
 
+    @Value.Default
+    @Override
+    public DataTypes dataType(){
+        return DataTypes.LONG_TEXT;
+    };
+
+
 }

@@ -8,4 +8,10 @@ import org.immutables.value.Value;
 @JsonDeserialize(as = ImmutableHostFolderField.class)
 public abstract class HostFolderField extends Field {
 
+    @Value.Default
+    @Override
+    public DataTypes dataType(){
+        return DataTypes.SYSTEM;
+    };
+
 }
