@@ -93,6 +93,8 @@ public interface ExperimentsAPI {
     Experiment addVariant(String experimentId, String variantName, User user)
             throws DotDataException, DotSecurityException;
 
+    void startScheduledToStartExperiments(User user) throws DotDataException;
+
     /**
      * Validates a {@link Scheduling} by the following:
      *

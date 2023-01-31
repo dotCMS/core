@@ -13,7 +13,7 @@ import com.dotmarketing.quartz.job.CleanUnDeletedUsersJob;
 import com.dotmarketing.quartz.job.ContentReindexerThread;
 import com.dotmarketing.quartz.job.DeleteInactiveLiveWorkingIndicesJob;
 import com.dotmarketing.quartz.job.DeleteOldClickstreams;
-import com.dotmarketing.quartz.job.EndFinalizedExperimentsJob;
+import com.dotmarketing.quartz.job.StartEndScheduledExperimentsJob;
 import com.dotmarketing.quartz.job.EsReadOnlyMonitorJob;
 import com.dotmarketing.quartz.job.FreeServerFromClusterJob;
 import com.dotmarketing.quartz.job.ServerHeartbeatJob;
@@ -474,7 +474,7 @@ public class DotInitScheduler {
 
 			AccessTokenRenewJob.AccessTokensRenewJobScheduler.schedule();
 
-			addEndFinalizedExperimentsJob(sched);
+			addStartEndScheduledExperimentsJob(sched);
 
             //Starting the sequential and standard Schedulers
 	        QuartzUtils.startSchedulers();
@@ -638,20 +638,20 @@ public class DotInitScheduler {
 		}
 	}
 
-	private static void addEndFinalizedExperimentsJob (final Scheduler scheduler) {
+	private static void addStartEndScheduledExperimentsJob(final Scheduler scheduler) {
 		try {
 			final String jobName      = "EndFinalizedExperimentsJob";
 			final String triggerName  = "trigger31";
 			final String triggerGroup = "group31";
 
-			if (Config.getBooleanProperty( "ENABLE_END_FINALIZED_EXPERIMENTS_JOB", true)) {
+			if (Config.getBooleanProperty( "ENABLE_START_END_SCHEDULED_EXPERIMENTS_JOB", true)) {
 				final JobBuilder endFinalizedExperimentsJob = new JobBuilder().setJobClass(
-								EndFinalizedExperimentsJob.class)
+								StartEndScheduledExperimentsJob.class)
 						.setJobName(jobName)
 						.setJobGroup(DOTCMS_JOB_GROUP_NAME)
 						.setTriggerName(triggerName)
 						.setTriggerGroup(triggerGroup)
-						.setCronExpressionProp("END_FINALIZED_EXPERIMENTS_JOB_CRON_EXPRESSION")
+						.setCronExpressionProp("START_END_SCHEDULED_EXPERIMENTS_JOB_CRON_EXPRESSION")
 						.setCronExpressionPropDefault("0 0 1 ? * *")
 						.setCronMissfireInstruction(CronTrigger.MISFIRE_INSTRUCTION_FIRE_ONCE_NOW);
 				scheduleJob(endFinalizedExperimentsJob);
