@@ -83,8 +83,8 @@ public class ContextLifecycleListener implements ServletContextListener {
         // This is called infrequently on context startup so do not need to cache
         // getting system property
         String log4jContextSelector = System.getProperty("Log4jContextSelector");
-        if (log4jContextSelector != null && log4jContextSelector.equals(BasicAsyncLoggerContextSelector.class.getName())
-        || log4jContextSelector.equals(BasicContextSelector.class.getName())) {
+        if (log4jContextSelector != null && (log4jContextSelector.equals(BasicAsyncLoggerContextSelector.class.getName())
+        || log4jContextSelector.equals(BasicContextSelector.class.getName()))) {
             Logger.debug(this, "Reinitializing configuration from " + path);
             Log4jUtil.initializeFromPath(path);
         }
