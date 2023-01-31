@@ -11,7 +11,7 @@ making sure that dependencies have been installed first
 ./mvnw clean install
 ```
 
-To run cli. 
+To run cli.
 
 First Start a dotCMS instance locally
 

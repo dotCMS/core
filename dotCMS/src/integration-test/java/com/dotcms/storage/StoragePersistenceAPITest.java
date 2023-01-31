@@ -10,6 +10,7 @@ import static junit.framework.TestCase.assertTrue;
 
 import com.dotcms.datagen.TestDataUtils.TestFile;
 import com.dotcms.storage.StoragePersistenceProvider.INSTANCE;
+import com.dotcms.storage.repository.BinaryFileWrapper;
 import com.dotcms.util.ConfigTestHelper;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.exception.DotDataException;
@@ -144,7 +145,8 @@ public class StoragePersistenceAPITest {
             assertTrue(pullFile.canRead());
             assertTrue(pullFile.canWrite());
             assertNotSame(pushFile, pullFile);
-            assertEquals(pullFile.length(), pushFile.length());
+            final long pullFileLength = pullFile instanceof BinaryFileWrapper? BinaryFileWrapper.class.cast(pullFile).getBufferByte().length: pullFile.length();
+            assertEquals(pullFileLength, pushFile.length());
         } finally {
             count = storage.deleteGroup(groupName);
         }
