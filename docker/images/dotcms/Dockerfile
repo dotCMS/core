@@ -118,3 +118,5 @@ EXPOSE 8081
 EXPOSE 8082
 # Direct connect for HTTPS, secure
 EXPOSE 8443
+# Expose Elasticsearch Node
+EXPOSE 9300
