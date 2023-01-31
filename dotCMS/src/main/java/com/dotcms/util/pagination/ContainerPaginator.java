@@ -130,7 +130,7 @@ public class ContainerPaginator implements PaginatorOrdered<ContainerView> {
         for (final Container container : allContainers) {
 
             if (container.getSource() == Source.DB) {
-                if(container.getInode().equals("SYSTEM_CONTAINER") && container.getIdentifier().equals("SYSTEM_CONTAINER")){
+                if(container.getInode().equals(Container.SYSTEM_CONTAINER) && container.getIdentifier().equals(Container.SYSTEM_CONTAINER)){
                     systemContainers.add(container);
                 }
                 else {
