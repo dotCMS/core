@@ -86,6 +86,7 @@ public class AccessTokenRenewRunnable implements Runnable {
 
         try {
             analyticsAPI.refreshAccessToken(analyticsApp);
+            Logger.info(this, String.format("ACCESS_TOKEN for clientId %s has been successfully renewed", clientId));
         } catch (AnalyticsException e) {
             Logger.error(this, String.format("Could not renew token for clientId %s", clientId), e);
             if (e instanceof UnrecoverableAnalyticsException) {
