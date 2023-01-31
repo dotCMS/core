@@ -24,6 +24,14 @@ import java.util.Set;
 import java.util.TreeSet;
 import java.util.stream.Collectors;
 import org.jetbrains.annotations.NotNull;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
+
 
 /**
  * Represents a Cube JS Query
@@ -118,6 +126,7 @@ public class CubeJSQuery {
     }
 
     private Map<String, String> getOrdersAsMap() {
+
         final Map<String, String> resultMap = new LinkedHashMap<>();
 
         for (final OrderItem order : orders) {
@@ -135,6 +144,7 @@ public class CubeJSQuery {
     public static class Builder {
         private String[] dimensions;
         private String[] measures;
+
         private Collection<Filter> filters = new ArrayList<>();
         private Collection<OrderItem> orders = new ArrayList<>();
 
@@ -249,8 +259,11 @@ public class CubeJSQuery {
             return map.keySet();
         }
 
-
         public CubeJSQuery build(){
+            if (!UtilMethods.isSet(dimensions) && !UtilMethods.isSet(measures)) {
+                throw new IllegalStateException("Must set dimensions or measures");
+            }
+
             return new CubeJSQuery(dimensions, measures,
                     filters.toArray(new Filter[filters.size()]),
                     orders.toArray(new OrderItem[orders.size()]));

@@ -27,6 +27,7 @@ import com.dotcms.experiments.business.result.Event;
 import com.dotcms.experiments.business.result.ExperimentAnalyzerUtil;
 import com.dotcms.experiments.business.result.ExperimentResult;
 import com.dotcms.experiments.business.result.ExperimentResultQueryFactory;
+import com.dotcms.exception.NotAllowedException;
 import com.dotcms.experiments.model.AbstractExperiment.Status;
 import com.dotcms.experiments.model.AbstractTrafficProportion.Type;
 import com.dotcms.experiments.model.Experiment;
@@ -566,6 +567,10 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
     @WrapInTransaction
     public Experiment deleteVariant(String experimentId, String variantName, User user)
             throws DotDataException, DotSecurityException {
+
+        DotPreconditions.isTrue(!variantName.equals(DEFAULT_VARIANT.name()),
+                ()->"Cannot delete Original Variant", NotAllowedException.class);
+
         final Experiment persistedExperiment = find(experimentId, user)
                 .orElseThrow(()->new DoesNotExistException("Experiment with provided id not found"));
 
@@ -579,9 +584,6 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
         final String variantDescription = toDelete.description()
                 .orElseThrow(()->new DotStateException("Variant without description. Variant name: "
                                 + toDelete.name()));
-
-        DotPreconditions.isTrue(!variantDescription.equals(ORIGINAL_VARIANT),
-                ()->"Cannot delete Original Variant", IllegalArgumentException.class);
 
         final TreeSet<ExperimentVariant> updatedVariants =
                 new TreeSet<>(persistedExperiment.trafficProportion()

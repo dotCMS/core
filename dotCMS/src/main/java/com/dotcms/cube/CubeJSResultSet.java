@@ -12,7 +12,7 @@ import java.util.stream.Collectors;
 import org.jetbrains.annotations.NotNull;
 
 /**
- * Represent a Result from RUN a CubeJS Query in a CubeJS Server.
+ * Represent a Result from running a CubeJS Query in a CubeJS Server.
  */
 public class CubeJSResultSet implements Iterable<ResultSetItem> {
     private List<ResultSetItem> data;
