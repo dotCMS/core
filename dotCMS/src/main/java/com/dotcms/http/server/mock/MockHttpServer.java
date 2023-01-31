@@ -16,11 +16,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 /**
-<<<<<<< HEAD
- * Mock fro a HttpServer
-=======
  * Mock for a HttpServer
->>>>>>> origin/master
  */
 public class MockHttpServer {
 
