@@ -95,7 +95,7 @@ export const BubbleAssetFormExtension = (viewContainerRef: ViewContainerRef) => 
         component = viewContainerRef.createComponent(AssetFormComponent);
         component.instance.languageId = editor.storage.dotConfig.lang;
         component.instance.type = type;
-        component.instance.onSelectImage = (payload) => {
+        component.instance.onSelectAsset = (payload) => {
             editor.chain().insertAsset({ type, payload }).addNextLine().closeAssetForm().run();
         };
 

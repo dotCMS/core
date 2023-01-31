@@ -6,7 +6,7 @@
                     <dot-asset-search
                         [type]="type"
                         [languageId]="languageId"
-                        (addImage)="onSelectImage($event)"
+                        (addAsset)="onSelectAsset($event)"
                     ></dot-asset-search>
                 </div>
             </ng-template>
@@ -16,7 +16,7 @@
                 <div class="wrapper">
                     <dot-upload-asset
                         [type]="type"
-                        (uploadedFile)="onSelectImage($event)"
+                        (uploadedFile)="onSelectAsset($event)"
                     ></dot-upload-asset>
                 </div>
             </ng-template>
@@ -26,7 +26,7 @@
                 <div class="wrapper">
                     <dot-external-asset
                         [type]="type"
-                        (addImage)="onSelectImage($event)"
+                        (addAsset)="onSelectAsset($event)"
                     ></dot-external-asset>
                 </div>
             </ng-template>

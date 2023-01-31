@@ -22,7 +22,7 @@ const regexURL =
 })
 export class DotExternalAssetComponent {
     @ViewChild('input') input!: ElementRef;
-    @Output() addImage = new EventEmitter();
+    @Output() addAsset = new EventEmitter();
 
     @Input()
     type: EditorAssetTypes;
@@ -44,6 +44,6 @@ export class DotExternalAssetComponent {
      * @memberof DotExternalAssetComponent
      */
     onSubmit({ url }: { url: string }) {
-        this.addImage.emit(url);
+        this.addAsset.emit(url);
     }
 }

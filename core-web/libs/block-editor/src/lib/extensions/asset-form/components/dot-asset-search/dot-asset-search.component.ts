@@ -29,7 +29,7 @@ import { DotAssetSearchStore } from './store/dot-asset-search.store';
 })
 export class DotAssetSearchComponent implements OnInit, OnDestroy, AfterViewInit {
     @ViewChild('input') input!: ElementRef;
-    @Output() addImage = new EventEmitter<DotCMSContentlet>();
+    @Output() addAsset = new EventEmitter<DotCMSContentlet>();
 
     @Input() set languageId(id) {
         this.store.updatelanguageId(id);

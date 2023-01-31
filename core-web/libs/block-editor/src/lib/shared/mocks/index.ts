@@ -224,7 +224,20 @@ const EMPTY_VIDEO_CONTENTLET: DotCMSContentlet = {
     mimeType: 'video/mp4',
     type: 'file_asset',
     asset: '',
-    hasTitleImage: false
+    hasTitleImage: false,
+    assetMetaData: {
+        modDate: 1675183379270,
+        sha256: '3bb938fb70049e3e45f533b37ccae995ae96516e04c2f35b0c1142e47b2a39c1',
+        length: 788493,
+        title: 'mov_bbb.mp4',
+        version: 20220201,
+        isImage: false,
+        fileSize: 788493,
+        name: 'mov_bbb.mp4',
+        width: 320,
+        contentType: 'video/mp4',
+        height: 176
+    }
 };
 
 export const IMAGE_CONTENTLETS_MOCK = [

@@ -19,6 +19,26 @@ export const VideoNode = Node.create({
                 default: null,
                 parseHTML: (element) => element.getAttribute('src'),
                 renderHTML: (attributes) => ({ src: attributes.src })
+            },
+            mineType: {
+                default: null,
+                parseHTML: (element) => element.getAttribute('mineType'),
+                renderHTML: (attributes) => ({ mineType: attributes.mineType })
+            },
+            width: {
+                default: null,
+                parseHTML: (element) => element.getAttribute('width'),
+                renderHTML: (attributes) => ({ width: attributes.width })
+            },
+            height: {
+                default: null,
+                parseHTML: (element) => element.getAttribute('height'),
+                renderHTML: (attributes) => ({ height: attributes.height })
+            },
+            data: {
+                default: null,
+                parseHTML: (element) => element.getAttribute('data'),
+                renderHTML: (attributes) => ({ data: attributes.data })
             }
         };
     },
@@ -55,13 +75,9 @@ export const VideoNode = Node.create({
             setVideo:
                 (attrs) =>
                 ({ commands }) => {
-                    const src = typeof attrs === 'string' ? attrs : attrs.asset;
-
                     return commands.insertContent({
                         type: this.name,
-                        attrs: {
-                            src
-                        }
+                        attrs: getVideoAttrs(attrs)
                     });
                 }
         };
@@ -71,14 +87,24 @@ export const VideoNode = Node.create({
         return [
             'div',
             { class: 'node-container' },
-            [
-                'video',
-                mergeAttributes(HTMLAttributes, {
-                    width: 'auto',
-                    height: 'auto',
-                    controls: true
-                })
-            ]
+            ['video', mergeAttributes(HTMLAttributes, { controls: true })]
         ];
     }
 });
+
+const getVideoAttrs = (attrs: DotCMSContentlet | string) => {
+    if (typeof attrs === 'string') {
+        return { src: attrs };
+    }
+
+    const { assetMetaData, asset, assetVersion, mimeType } = attrs;
+    const { width = 'auto', height = 'auto' } = assetMetaData || {};
+
+    return {
+        src: assetVersion || asset,
+        data: attrs,
+        width,
+        height,
+        mimeType
+    };
+};
