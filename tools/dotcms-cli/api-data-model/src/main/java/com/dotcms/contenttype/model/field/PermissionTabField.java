@@ -9,4 +9,10 @@ import org.immutables.value.Value;
 @JsonDeserialize(as = ImmutablePermissionTabField.class)
 public abstract class PermissionTabField extends Field {
 
+    @Value.Default
+    @Override
+    public DataTypes dataType(){
+        return DataTypes.SYSTEM;
+    };
+
 }

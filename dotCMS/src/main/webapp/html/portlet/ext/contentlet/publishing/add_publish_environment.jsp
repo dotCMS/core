@@ -128,7 +128,11 @@
 	<input type="hidden" name="identifier" value="<%=UtilMethods.webifyString(String.valueOf(currentEnvironment.getId())) %>">
 	<div class="form-horizontal">
 		<dl>
-			<dt><%= LanguageUtil.get(pageContext, "publisher_Environment_Name") %>:</dt>
+			<dt>
+				<label id="environmentName" class="required">
+					<%= LanguageUtil.get(pageContext, "publisher_Environment_Name") %>
+				</label>
+			</dt>
 			<dd>
 				<input type="text" dojoType="dijit.form.ValidationTextBox"
 					name="environmentName"
@@ -140,7 +144,7 @@
 			</dd>
 		</dl>
 		<dl>
-			<dt><%= LanguageUtil.get(pageContext, "publisher_Environment_Push_Mode") %>:</dt>
+			<dt><%= LanguageUtil.get(pageContext, "publisher_Environment_Push_Mode") %></dt>
 			<dd>
 				<div class="checkbox">
 					<input dojoType="dijit.form.RadioButton" type="radio" name="pushType" value="pushToOne" checked="<%=!currentEnvironment.getPushToAll()%>" id="pushToOne" />
@@ -153,7 +157,7 @@
 			</dd>
 		</dl>
 		<dl>
-			<dt><%=LanguageUtil.get(pageContext, "publisher_Environment_Who_Can_Send_To_Env")%>:</dt>
+			<dt><%=LanguageUtil.get(pageContext, "publisher_Environment_Who_Can_Send_To_Env")%></dt>
 			<dd>
 				<input id="actionWhoCanUseSelect" />
 				<div class="who-can-use">

@@ -15,6 +15,7 @@ import com.dotcms.analytics.metrics.MetricsUtil;
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.enterprise.rules.RulesAPI;
+import com.dotcms.exception.NotAllowedException;
 import com.dotcms.experiments.model.AbstractExperiment.Status;
 import com.dotcms.experiments.model.AbstractTrafficProportion.Type;
 import com.dotcms.experiments.model.Experiment;
@@ -452,25 +453,22 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
             throws DotDataException {
 
         final String experimentId = experiment.getIdentifier();
-        final String variantName = getVariantName(experimentId);
+        String variantName = null;
 
         if(variantDescription.equals(ORIGINAL_VARIANT)) {
             DotPreconditions.isTrue(
                     experiment.trafficProportion().variants().stream().noneMatch((variant) ->
                             variant.description().equals(ORIGINAL_VARIANT)),
                     "Original Variant already created");
+            variantName = DEFAULT_VARIANT.name();
+        } else {
+            variantName = getVariantName(experimentId);
+            variantAPI.save(Variant.builder().name(variantName)
+                    .description(Optional.of(variantDescription)).build());
         }
 
-        variantAPI.save(Variant.builder().name(variantName)
-                .description(Optional.of(variantDescription)).build());
-
-        multiTreeAPI.copyVariantForPage(experiment.pageId(),
-                DEFAULT_VARIANT.name(), variantName);
-
         final Contentlet pageContentlet = contentletAPI
-                .findContentletByIdentifierAnyLanguage(experiment.pageId(), false);
-
-        copyPageAndItsContentForVariant(experiment, variantDescription, user, variantName, pageContentlet);
+        .findContentletByIdentifierAnyLanguage(experiment.pageId(), false);
 
         final HTMLPageAsset page = pageAssetAPI.fromContentlet(pageContentlet);
 
@@ -541,6 +539,10 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
     @WrapInTransaction
     public Experiment deleteVariant(String experimentId, String variantName, User user)
             throws DotDataException, DotSecurityException {
+
+        DotPreconditions.isTrue(!variantName.equals(DEFAULT_VARIANT.name()),
+                ()->"Cannot delete Original Variant", NotAllowedException.class);
+
         final Experiment persistedExperiment = find(experimentId, user)
                 .orElseThrow(()->new DoesNotExistException("Experiment with provided id not found"));
 
@@ -554,9 +556,6 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
         final String variantDescription = toDelete.description()
                 .orElseThrow(()->new DotStateException("Variant without description. Variant name: "
                                 + toDelete.name()));
-
-        DotPreconditions.isTrue(!variantDescription.equals(ORIGINAL_VARIANT),
-                ()->"Cannot delete Original Variant", IllegalArgumentException.class);
 
         final TreeSet<ExperimentVariant> updatedVariants =
                 new TreeSet<>(persistedExperiment.trafficProportion()

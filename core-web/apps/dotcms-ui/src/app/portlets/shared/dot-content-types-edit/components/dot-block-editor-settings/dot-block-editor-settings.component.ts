@@ -24,8 +24,6 @@ import { DotHttpErrorManagerService } from '@services/dot-http-error-manager/dot
 
 import { DotFieldVariablesService } from '../fields/dot-content-type-fields-variables/services/dot-field-variables.service';
 
-// Interfaces
-
 export const BLOCK_EDITOR_BLOCKS = [
     { label: 'Block Quote', code: 'blockquote' },
     { label: 'Bullet List', code: 'bulletList' },
@@ -36,7 +34,6 @@ export const BLOCK_EDITOR_BLOCKS = [
     { label: 'Heading 3', code: 'heading3' },
     { label: 'Horizontal Line', code: 'horizontalRule' },
     { label: 'Image', code: 'image' },
-    { label: '`Paragraph`', code: 'paragraph' },
     { label: 'Ordered List', code: 'orderedList' },
     { label: 'Table', code: 'table' }
 ];

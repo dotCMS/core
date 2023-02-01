@@ -250,19 +250,19 @@ query = Xss.strip(query);
 				<form name="query" id="luceneQueryForm" onsubmit="search(event);return false">
 					<dl class="vertical">
 
-						<dt><label><%= LanguageUtil.get(pageContext, "Lucene-Query") %> :</label></dt>
+						<dt><label for="query"><%= LanguageUtil.get(pageContext, "Lucene-Query") %> </label></dt>
 						<dd><textarea dojoType="dijit.form.Textarea" name="query" style="width:365px;min-height: 150px;" id="query" type="text"><%=UtilMethods.htmlifyString(query)%></textarea></dd>
 
-						<dt><label><%= LanguageUtil.get(pageContext, "Offset") %> : </label></dt>
+						<dt><label for="offset"><%= LanguageUtil.get(pageContext, "Offset") %> </label></dt>
 						<dd><input name="offset" id="offset" dojoType="dijit.form.NumberTextBox" type="text" value="<%=offset%>" size="10" /></dd>
 
-						<dt><label><%= LanguageUtil.get(pageContext, "Limit") %> : </label></dt>
+						<dt><label for="limit"><%= LanguageUtil.get(pageContext, "Limit") %> </label></dt>
 						<dd><input name="limit" id="limit" dojoType="dijit.form.NumberTextBox" type="text" value="<%=limit%>" size="10" /></dd>
 
-						<dt><label><%= LanguageUtil.get(pageContext, "Sort") %> : </label></dt>
+						<dt><label  for="sort"><%= LanguageUtil.get(pageContext, "Sort") %> </label></dt>
 						<dd><input name="sort" id="sort" dojoType="dijit.form.TextBox" type="text" value="<%=sortBy%>" size="10" /></dd>
 
-						<dt><label><%= LanguageUtil.get(pageContext, "UserID") %> : </label></dt>
+						<dt><label for="userId"><%= LanguageUtil.get(pageContext, "UserID") %> </label></dt>
 						<dd><input name="userId" id="userId" dojoType="dijit.form.TextBox" type="text" value="<%=UtilMethods.webifyString(userToPullID)%>" size="40" <% if(!userIsAdmin){ %> disabled="disabled" <% } %>/></dd>
 					</dl>
 						<div class="buttonRow">

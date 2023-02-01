@@ -584,18 +584,18 @@
 				<div id="elementFormTable">
 					<dl <%if(!UtilMethods.isSet(fieldForm.getVelocityVarName())){%> style="display:none"<%}%>>
 		<dt>
-							<span id="VariableIdTitle">
-				<%= LanguageUtil.get(pageContext, "Variable-ID") %>:
-			</span>
+							<label for="velocityVarName" id="VariableIdTitle">
+				<%= LanguageUtil.get(pageContext, "Variable-ID") %>
+			</label>
 		</dt>
 						<dd>
-							<html:text property="velocityVarName" readonly="true" style="border:0" />
+							<html:text property="velocityVarName" styleId="velocityVarName" readonly="true" style="border:0" />
 		</dd>
 					</dl>
 					<dl>
 		<dt>
 			<div id="displayType">
-				<span class="required"></span>  <%= LanguageUtil.get(pageContext, "message.field.fieldType") %>:
+				<label for="elementSelectBox" class="required"><%= LanguageUtil.get(pageContext, "message.field.fieldType") %></label>  
 			</div>
 		</dt>
 		<dd>
@@ -608,20 +608,24 @@
 
 	<dl id="labelRow" style="display:none">
 		<dt>
-			<span class="required"></span>  <%= LanguageUtil.get(pageContext, "Label") %>:
+			<label for="fieldName" class="required">
+				<%= LanguageUtil.get(pageContext, "Label") %>
+			</label>  
 		</dt>
 		<dd>
 			<% if(fixed) { %>
-			<input type="text" dojoType="dijit.form.TextBox" name="fieldName" readonly="readonly" style="width:250px" value="<%= UtilMethods.isSet(fieldForm.getFieldName()) ? UtilMethods.webifyString(fieldForm.getFieldName()) : "" %>" />
+			<input type="text" dojoType="dijit.form.TextBox" name="fieldName" id="fieldName" readonly="readonly" style="width:250px" value="<%= UtilMethods.isSet(fieldForm.getFieldName()) ? UtilMethods.webifyString(fieldForm.getFieldName()) : "" %>" />
 			<% } else { %>
-			<input type="text" dojoType="dijit.form.TextBox" name="fieldName" style="width:250px" value="<%= UtilMethods.isSet(fieldForm.getFieldName()) ? UtilMethods.webifyString(fieldForm.getFieldName()) : "" %>" />
+			<input type="text" dojoType="dijit.form.TextBox" name="fieldName" id="fieldName" style="width:250px" value="<%= UtilMethods.isSet(fieldForm.getFieldName()) ? UtilMethods.webifyString(fieldForm.getFieldName()) : "" %>" />
 			<% }  %>
 		</dd>
 	</dl>
 
 	<dl id="dataTypeRow" style="display:none">
 		<dt>
-			<span id="req_data_type" class="required"></span> <%= LanguageUtil.get(pageContext, "Data-Type") %>:
+			<label id="req_data_type" class="required">
+				<%= LanguageUtil.get(pageContext, "Data-Type") %>
+			</label>
 		</dt>
 		<dd>
 						<div class="radio" id="radioText">
@@ -665,7 +669,7 @@
 
 	<dl id="valueRow" style="display:none">
 		<dt id="valueRowLabel" style="width:150px;">
-			<span class="required"></span> &nbsp;<%= LanguageUtil.get(pageContext, "Value") %>:
+			<span class="required"><%= LanguageUtil.get(pageContext, "Value") %> &nbsp;</span> 
 			<img src="/html/images/shim.gif" width="150" height="1">
 		</dt>
 		<dd>
@@ -682,7 +686,7 @@
 
 	<dl id="categoryRow" style="display:none">
 		<dt id="valueRowLabel">
-			<span class="required"></span> &nbsp;<%= LanguageUtil.get(pageContext, "Category") %>:
+			<label for="categories" class="required"><%= LanguageUtil.get(pageContext, "Category") %> &nbsp;</label>
 		</dt>
 		<dd>
 						<select dojoType="dijit.form.FilteringSelect" name="categories" id="categories" style="min-width: 250px">
@@ -709,7 +713,7 @@
 	</dl>
 
 	<dl id="validationRow" style="display:none">
-		<dt><%= LanguageUtil.get(pageContext, "Validation-RegEx") %>:</dt>
+		<dt><label for="regexCheck"><%= LanguageUtil.get(pageContext, "Validation-RegEx") %></label> </dt>
 		<dd>
 						<div class="inline-form">
 			<input type="text" dojoType="dijit.form.TextBox" name="regexCheck" id="regexCheck" style="width:250px" readonly="<%=fieldForm.isFixed() || fieldForm.isReadOnly()%>" value="<%= UtilMethods.isSet(fieldForm.getRegexCheck()) ? UtilMethods.webifyString(fieldForm.getRegexCheck()) : "" %>" />
@@ -729,13 +733,13 @@
 	</dl>
 
 	<dl id="defaultText" style="display:none">
-		<dt><span id="defaultText" ><%= LanguageUtil.get(pageContext, "Default-Value") %>:</span></dt>
-		<dd><input type="text" dojoType="dijit.form.TextBox" name="defaultValue" style="width:250px" onblur="validateCategories(this);" value="<%= UtilMethods.isSet(fieldForm.getDefaultValue()) ? UtilMethods.webifyString(fieldForm.getDefaultValue()) : "" %>" /></span></dd>
+		<dt><label for="defaultValue" id="defaultText" ><%= LanguageUtil.get(pageContext, "Default-Value") %></label></dt>
+		<dd><input type="text" dojoType="dijit.form.TextBox" name="defaultValue" id="defaultValue" style="width:250px" onblur="validateCategories(this);" value="<%= UtilMethods.isSet(fieldForm.getDefaultValue()) ? UtilMethods.webifyString(fieldForm.getDefaultValue()) : "" %>" /></dd>
 	</dl>
 
 	<dl id="hintText" style="display:none">
-		<dt><%= LanguageUtil.get(pageContext, "Hint") %>:</dt>
-		<dd><input type="text" dojoType="dijit.form.TextBox" name="hint" style="width:250px" value="<%= UtilMethods.isSet(fieldForm.getHint()) ? UtilMethods.webifyString(fieldForm.getHint()) : "" %>" /></dd>
+		<dt><label for="hint"><%= LanguageUtil.get(pageContext, "Hint") %></label> </dt>
+		<dd><input type="text" dojoType="dijit.form.TextBox" name="hint" id="hint" style="width:250px" value="<%= UtilMethods.isSet(fieldForm.getHint()) ? UtilMethods.webifyString(fieldForm.getHint()) : "" %>" /></dd>
 	</dl>
 	<!-- END Field Options -->
 

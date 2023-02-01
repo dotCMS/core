@@ -54,7 +54,7 @@ public class ContentTypeCommandTest extends CommandTest{
      * @throws JsonProcessingException
      */
     @Test
-    public void Test_Command_Content_List_Option() throws JsonProcessingException {
+    void Test_Command_Content_List_Option() throws JsonProcessingException {
 
         final CommandLine commandLine = factory.create();
         final StringWriter writer = new StringWriter();
@@ -72,13 +72,14 @@ public class ContentTypeCommandTest extends CommandTest{
      * @throws JsonProcessingException
      */
     @Test
-    public void Test_Command_Content_Type_Pass_Pull_Option() throws JsonProcessingException {
+    void Test_Command_Content_Type_Pass_Pull_Option() throws JsonProcessingException {
 
         final CommandLine commandLine = factory.create();
         final StringWriter writer = new StringWriter();
         try (PrintWriter out = new PrintWriter(writer)) {
             commandLine.setOut(out);
-            final int status = commandLine.execute(ContentTypeCommand.NAME, "--pull", "fileAsset", "--saveTo", "./lol.text");
+            final String fileName = String.format("./fileAsset%d.json", System.currentTimeMillis());
+            final int status = commandLine.execute(ContentTypeCommand.NAME, "--pull", "fileAsset", "--saveTo", fileName);
             Assertions.assertEquals(ExitCode.OK, status);
             final String output = writer.toString();
             //System.out.println(output);
@@ -93,7 +94,7 @@ public class ContentTypeCommandTest extends CommandTest{
      * Simple filter test
      */
     @Test
-    public void Test_Command_Content_Type_Pass_Filter_Short_View_Option() {
+    void Test_Command_Content_Type_Pass_Filter_Short_View_Option() {
 
         final CommandLine commandLine = factory.create();
         final StringWriter writer = new StringWriter();
@@ -110,7 +111,7 @@ public class ContentTypeCommandTest extends CommandTest{
      * Test invalid combination to verify group of options are mutually exclusive
      */
     @Test
-    public void Test_Command_Content_Type_Pass_Filter_Invalid_Options() {
+    void Test_Command_Content_Type_Pass_Filter_Invalid_Options() {
         final CommandLine commandLine = factory.create();
         final int status = commandLine.execute(ContentTypeCommand.NAME, "--filter", "-ls");
         Assertions.assertEquals(ExitCode.USAGE, status);
@@ -121,9 +122,9 @@ public class ContentTypeCommandTest extends CommandTest{
      * @throws IOException
      */
     @Test
-    public void Test_Push_New_Content_Type_From_File_Then_Remove() throws IOException {
+    void Test_Push_New_Content_Type_From_File_Then_Remove() throws IOException {
 
-        long identifier =  System.currentTimeMillis();
+        final long identifier =  System.currentTimeMillis();
 
         final String varName = "__var__"+identifier;
 
