@@ -610,6 +610,7 @@ public class NavToolTest extends IntegrationTestBase{
         pageAssetEng.setIndexPolicy(IndexPolicy.FORCE);
         APILocator.getContentletAPI().publish(pageAssetEng, user, false);
         final Contentlet pageAssetSpa = APILocator.getContentletAPI().checkout(pageAssetEng.getInode(),user,false);
+        pageAssetSpa.setProperty("title","SPA Version");
         pageAssetSpa.setLanguageId(spanishLanguage.getId());
         APILocator.getContentletAPI().checkin(pageAssetSpa,user,false);
         APILocator.getContentletAPI().publish(pageAssetSpa,user,false);
@@ -618,5 +619,6 @@ public class NavToolTest extends IntegrationTestBase{
         final NavResult navResult = new NavTool().getNav(site,folder.getPath(),spanishLanguage.getId(),user);
         assertNotNull(navResult);
         assertEquals(1,navResult.getChildren().size());
+        assertEquals("SPA Version", navResult.getChildren().get(0).getTitle());
     }
 }
