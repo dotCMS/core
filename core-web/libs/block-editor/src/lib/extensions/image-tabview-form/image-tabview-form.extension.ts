@@ -97,6 +97,17 @@ export const BubbleImageTabviewFormExtension = (viewContainerRef: ViewContainerR
         component.changeDetectorRef.detectChanges();
     }
 
+    function scrollHandler(e: Event, editor: Editor) {
+        // If the scoll event belongs to the component or its child
+        // Then we do not hide the modal
+        if (formTippy?.popper && formTippy?.popper.contains(e.target as HTMLElement)) {
+            return true;
+        }
+
+        onHide(editor);
+        formTippy?.popperInstance.forceUpdate();
+    }
+
     return BubbleMenu.extend<unknown>({
         name: 'bubbleImageForm',
 
@@ -136,7 +147,8 @@ export const BubbleImageTabviewFormExtension = (viewContainerRef: ViewContainerR
                             onStart,
                             onHide,
                             onDestroy
-                        } as RenderProps)
+                        } as RenderProps),
+                    scrollHandler
                 })
             ];
         }

@@ -13,6 +13,7 @@ export interface BubbleImageTabFormProps {
     pluginKey: PluginKey;
     editor: Editor;
     render?: () => RenderProps;
+    scrollHandler?: (e: Event, editor: Editor) => void;
 }
 
 export type BubbleImageTabFormViewProps = BubbleImageTabFormProps & {
@@ -24,13 +25,18 @@ export class BubbleImageTabFormView {
     private view: EditorView;
     private pluginKey: PluginKey;
     private render: () => RenderProps;
+    private scrollHandler: (e: Event, editor: Editor) => void;
 
-    constructor({ editor, view, pluginKey, render }: BubbleImageTabFormViewProps) {
+    constructor({ editor, view, pluginKey, render, scrollHandler }: BubbleImageTabFormViewProps) {
         this.editor = editor;
         this.view = view;
         this.pluginKey = pluginKey;
         this.render = render;
+        this.scrollHandler = (e) => scrollHandler(e, this.editor);
         this.editor.on('focus', () => this.render().onHide(this.editor));
+
+        // We need to also react to page scrolling.
+        document.body.addEventListener('scroll', this.scrollHandler.bind(this), true);
     }
 
     update(view: EditorView, prevState?: EditorState): void {
@@ -62,6 +68,7 @@ export class BubbleImageTabFormView {
 
     destroy() {
         this.render().onDestroy();
+        document.removeEventListener('scroll', this.scrollHandler.bind(this), true);
     }
 }
 
