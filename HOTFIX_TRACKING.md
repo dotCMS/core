@@ -88,3 +88,4 @@ This maintenance release includes the following code fixes:
 71. https://github.com/dotCMS/core/issues/23280 : Unable to assign contentlets in a secondary language from the task screen if there is a working version of the default language #23280
 72. https://github.com/dotCMS/core/issues/21735 : Content with 2 Relationship Fields of Same Type Also Shows Non-Available Languages #21735
 73. https://github.com/dotCMS/core/issues/21832 : [Static Push] Removing a Page removes all files related to the page, not only the page #21832
+74. https://github.com/dotCMS/core/issues/21929 : PullRelatedField is not pulling the content in any order #21929
