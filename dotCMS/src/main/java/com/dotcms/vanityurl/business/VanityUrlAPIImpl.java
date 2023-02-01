@@ -1,8 +1,16 @@
 package com.dotcms.vanityurl.business;
 
+import java.text.MessageFormat;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
+import javax.servlet.http.HttpServletResponse;
+import org.apache.http.HttpStatus;
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.business.CloseDBIfOpened;
-import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.VanityUrlContentType;
 import com.dotcms.http.CircuitBreakerUrl;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
@@ -34,16 +42,6 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.liferay.util.StringPool;
 import io.vavr.control.Try;
-import java.util.Objects;
-import org.apache.http.HttpStatus;
-
-import java.text.MessageFormat;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
-import java.util.stream.Collectors;
-import javax.servlet.http.HttpServletResponse;
 
 /**
  * Implementation class for the {@link VanityUrlAPI}.
@@ -60,9 +58,15 @@ public class VanityUrlAPIImpl implements VanityUrlAPI {
           .add(HttpStatus.SC_MOVED_TEMPORARILY).build();
 
   private static final String SELECT_LIVE_VANITY_URL_INODES =
-      "SELECT cvi.live_inode FROM contentlet c, contentlet_version_info cvi, structure s "
-          + " where s.structuretype = ? and c.structure_inode = s.inode "
-          + " and cvi.live_inode=c.inode and cvi.lang =?";
+       " SELECT cvi.live_inode  "
+     + " FROM identifier, contentlet_version_info cvi "
+     + " where  "
+     + " identifier.id = cvi.identifier and  "
+     + " identifier.host_inode = ? and  "
+     + " cvi.lang = ? and "
+     + " identifier.asset_subtype in   "
+     + " (select velocity_var_name from structure where structuretype=7)";
+  
 
   public static final String   LEGACY_CMS_HOME_PAGE = "/cmsHomePage";
   private final ContentletAPI  contentletAPI;
@@ -134,8 +138,9 @@ public class VanityUrlAPIImpl implements VanityUrlAPI {
 
       final List<Map<String, Object>> vanityUrls = new DotConnect().setSQL(
                       SELECT_LIVE_VANITY_URL_INODES)
-              .addParam(BaseContentType.VANITY_URL.getType())
-              .addParam(language.getId()).loadObjectResults();
+              .addParam(site.getIdentifier())
+              .addParam(language.getId())
+              .loadObjectResults();
 
       final List<String> vanityUrlInodes =
               vanityUrls.stream()
