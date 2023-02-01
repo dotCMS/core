@@ -45,7 +45,6 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.concurrent.TimeUnit;
 
-
 /**
  * Maintenance (portlet) resource.
  */
@@ -142,9 +141,7 @@ public class MaintenanceResource implements Serializable {
         }
 
         Logger.info(this.getClass(), "Requested logFile: " + logFile.getCanonicalPath());
-
-        response.setHeader( "Content-Disposition", "attachment; filename=" + fileName );
-        return Response.ok(logFile, MediaType.APPLICATION_OCTET_STREAM).build();
+        return this.buildFileResponse(response, logFile, fileName);
     }
 
     /**
@@ -171,7 +168,6 @@ public class MaintenanceResource implements Serializable {
      * @param request  http request
      * @param response http response
      * @return octet stream response with file contents
-     * @throws IOException
      */
     @Path("/_downloadDb")
     @GET
@@ -179,8 +175,8 @@ public class MaintenanceResource implements Serializable {
     @NoCache
     @Produces({MediaType.APPLICATION_OCTET_STREAM, MediaType.APPLICATION_JSON})
     public final Response downloadDb(@Context final HttpServletRequest request,
-                                     @Context final HttpServletResponse response) throws IOException {
-        User user = assertBackendUser(request, response).getUser();
+                                     @Context final HttpServletResponse response) {
+        final User user = assertBackendUser(request, response).getUser();
         
         final String hostName = Try.of(()-> APILocator.getHostAPI().findDefaultHost(APILocator.systemUser(), false).getHostname()).getOrElse("dotcms");
 
@@ -188,13 +184,8 @@ public class MaintenanceResource implements Serializable {
         final String fileName = StringUtils.sanitizeFileName(hostName)  + "_db_" + dateToString.format(new Date()) + ".sql.gz";
 
         SecurityLogger.logInfo(this.getClass(), "User : " + user.getEmailAddress() + " downloading database");
-        
-        response.setHeader("Content-Type", MediaType.APPLICATION_OCTET_STREAM);
-        response.setHeader("Content-Disposition", "attachment; filename=\"" + fileName + "\"");
-        
-        return Response.ok(new PGDumpStreamingOutput()).build();
+        return this.buildFileResponse(response, new PGDumpStreamingOutput(), fileName);
     }
-
     
     public static class PGDumpStreamingOutput implements StreamingOutput {
 
@@ -212,7 +203,6 @@ public class MaintenanceResource implements Serializable {
 
         }
     }
-
 
     /**
      * Provides a compressed file with all the assets living in the current dotCMS instance.
@@ -244,9 +234,7 @@ public class MaintenanceResource implements Serializable {
 
         };
 
-        response.setHeader("Content-Disposition", "attachment; filename=" + zipName);
-        Response.ResponseBuilder responseBuilder = Response.ok(stream);
-        return responseBuilder.build();
+        return this.buildFileResponse(response, stream, zipName);
     }
 
     /**
@@ -310,9 +298,7 @@ public class MaintenanceResource implements Serializable {
 
         };
 
-        response.setHeader("Content-Disposition", "attachment; filename=" + zipName);
-        Response.ResponseBuilder responseBuilder = Response.ok(stream);
-        return responseBuilder.build();
+        return this.buildFileResponse(response, stream, zipName);
     }
 
     /**
@@ -330,6 +316,21 @@ public class MaintenanceResource implements Serializable {
                 .rejectWhenNoUser(true)
                 .requiredPortlet("maintenance")
                 .init();
+    }
+
+    /**
+     * Builds a file response with the provided information. The {@code entity} parameter can be an actual File, or the
+     * Streaming Output of it.
+     *
+     * @param response The current {@link HttpServletResponse} instance.
+     * @param entity   The Entity being sent back as the response.
+     * @param fileName The name of the file in the response.
+     *
+     * @return The {@link Response} object.
+     */
+    private Response buildFileResponse(final HttpServletResponse response, final Object entity, final String fileName) {
+        response.setHeader("Content-Disposition", "attachment; filename=" + fileName);
+        return Response.ok(entity).build();
     }
 
 }

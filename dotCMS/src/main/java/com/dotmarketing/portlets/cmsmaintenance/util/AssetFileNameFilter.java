@@ -3,7 +3,6 @@ package com.dotmarketing.portlets.cmsmaintenance.util;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
-import com.google.common.collect.ImmutableSet;
 import com.liferay.util.FileUtil;
 
 import java.io.File;
@@ -20,7 +19,7 @@ import java.util.Set;
  */
 public class AssetFileNameFilter implements FileFilter {
 
-    private static final Set<String> EXCLUDE_FOLDERS_LIST = ImmutableSet
+    private static final Set<String> EXCLUDE_FOLDERS_LIST = Set
             .of("license.zip", "license", "bundles", "tmp_upload",
                     "timemachine", "integrity", "server", "dotGenerated");
 

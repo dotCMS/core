@@ -44,7 +44,6 @@ import com.dotmarketing.util.StringUtils;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.ZipUtil;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.common.collect.ImmutableList;
 import com.liferay.portal.ejb.ImageLocalManagerUtil;
 import com.liferay.portal.model.Company;
 import com.liferay.portal.model.User;
@@ -116,10 +115,6 @@ public class ExportStarterUtil {
     /** Only 10,000,000 records of any given data type wil be exported. */
     private static final int MAX_EXPORTED_RECORDS = 10000000;
     private static final int EXPORTED_RECORDS_PAGE_SIZE = 1000;
-    
-    public ExportStarterUtil() {
-
-    }
 
     public File createStarterWithAssets() {
         throw new UnsupportedOperationException("This legacy Starter generation process is not supported anymore");
@@ -137,35 +132,35 @@ public class ExportStarterUtil {
      * @throws HibernateException An error occurred when retrieving Hibernate-managed tables.
      */
     private Set<Class<?>> getTableSet() throws HibernateException {
-        final Set<Class<?>> _tablesToDump = new HashSet<>();
-        _tablesToDump.add(Identifier.class);
-        _tablesToDump.add(Language.class);
-        _tablesToDump.add(Relationship.class);
-        _tablesToDump.add(ContentletVersionInfo.class);
-        _tablesToDump.add(Template.class);
-        _tablesToDump.add(Contentlet.class);
-        _tablesToDump.add(Category.class);
-        _tablesToDump.add(Tree.class);
-        _tablesToDump.add(MultiTree.class);
-        _tablesToDump.add(Folder.class);
-        _tablesToDump.add(Company.class);
-        _tablesToDump.add(User.class);
+        final Set<Class<?>> dbTables = new HashSet<>();
+        dbTables.add(Identifier.class);
+        dbTables.add(Language.class);
+        dbTables.add(Relationship.class);
+        dbTables.add(ContentletVersionInfo.class);
+        dbTables.add(Template.class);
+        dbTables.add(Contentlet.class);
+        dbTables.add(Category.class);
+        dbTables.add(Tree.class);
+        dbTables.add(MultiTree.class);
+        dbTables.add(Folder.class);
+        dbTables.add(Company.class);
+        dbTables.add(User.class);
 
         //end classes no longer mapped with Hibernate
-        _tablesToDump.addAll(HibernateUtil.getSession().getSessionFactory().getAllClassMetadata().keySet());
+        dbTables.addAll(HibernateUtil.getSession().getSessionFactory().getAllClassMetadata().keySet());
 
-        _tablesToDump.removeIf(c->c.equals(Inode.class));
-        _tablesToDump.removeIf(c->c.equals(Clickstream.class));
-        _tablesToDump.removeIf(c->c.equals(ClickstreamRequest.class));
-        _tablesToDump.removeIf(c->c.equals(Clickstream404.class));
-        _tablesToDump.removeIf(c->c.equals(Structure.class));
-        _tablesToDump.removeIf(c->c.equals(Field.class));
-        _tablesToDump.removeIf(c->c.equals(WorkflowHistory.class));
-        _tablesToDump.removeIf(c->c.equals(PermissionReference.class));
-        _tablesToDump.removeIf(t->t.getName().startsWith("Dashboard"));
-        _tablesToDump.removeIf(t->t.getName().contains("HBM"));
+        dbTables.removeIf(c->c.equals(Inode.class));
+        dbTables.removeIf(c->c.equals(Clickstream.class));
+        dbTables.removeIf(c->c.equals(ClickstreamRequest.class));
+        dbTables.removeIf(c->c.equals(Clickstream404.class));
+        dbTables.removeIf(c->c.equals(Structure.class));
+        dbTables.removeIf(c->c.equals(Field.class));
+        dbTables.removeIf(c->c.equals(WorkflowHistory.class));
+        dbTables.removeIf(c->c.equals(PermissionReference.class));
+        dbTables.removeIf(t->t.getName().startsWith("Dashboard"));
+        dbTables.removeIf(t->t.getName().contains("HBM"));
 
-        return _tablesToDump;
+        return dbTables;
     }
 
     /**
@@ -193,6 +188,9 @@ public class ExportStarterUtil {
             }
             this.streamFilesToZip(completionService, futures, zip);
             Logger.debug(this, "Exportable JSON files have been generated successfully!");
+        } catch (final InterruptedException | ExecutionException e) {
+            Logger.error(this, e.getMessage(), e);
+            Thread.currentThread().interrupt();
         } catch (final Exception e) {
             Logger.error(this, e.getMessage(), e);
             throw new DotRuntimeException(e);
@@ -284,19 +282,19 @@ public class ExportStarterUtil {
     @CloseDBIfOpened
     private List<FileEntry> getStarterDataAsJSON(final List<Class<?>> dbTablesAsClasses)  {
         final List<FileEntry> starterFiles = new ArrayList<>();
+        HibernateUtil hibernateUtil;
+        DotConnect dc;
+        List resultList;
+        final ObjectMapper defaultObjectMapper = DotObjectMapperProvider.getInstance().getDefaultObjectMapper();
         try {
-            HibernateUtil _dh;
-            DotConnect dc;
-            List _list;
-            final ObjectMapper defaultObjectMapper = DotObjectMapperProvider.getInstance().getDefaultObjectMapper();
             for (final Class<?> clazz : dbTablesAsClasses) {
                 int i;
                 int step = EXPORTED_RECORDS_PAGE_SIZE;
                 int total = 0;
                 for (i = 0; i < MAX_EXPORTED_RECORDS; i = i + step) {
-                    _dh = new HibernateUtil(clazz);
-                    _dh.setFirstResult(i);
-                    _dh.setMaxResults(step);
+                    hibernateUtil = new HibernateUtil(clazz);
+                    hibernateUtil.setFirstResult(i);
+                    hibernateUtil.setMaxResults(step);
                     dc = new DotConnect();
                     if (Tree.class.equals(clazz)) {
                         dc.setSQL("SELECT * FROM tree order by parent, child, relation_type").setStartRow(i).setMaxRows(step);
@@ -304,9 +302,9 @@ public class ExportStarterUtil {
                         dc.setSQL(
                                 "SELECT * FROM multi_tree order by parent1, parent2, child, relation_type").setStartRow(i).setMaxRows(step);
                     } else if (TagInode.class.equals(clazz)) {
-                        _dh.setQuery("from " + clazz.getName() + " order by inode, tag_id");
+                        hibernateUtil.setQuery("FROM " + clazz.getName() + " ORDER BY inode, tag_id");
                     } else if (Tag.class.equals(clazz)) {
-                        _dh.setQuery("from " + clazz.getName() + " order by tag_id, tagname");
+                        hibernateUtil.setQuery("FROM " + clazz.getName() + " ORDER BY tag_id, tagname");
                     } else if (Identifier.class.equals(clazz)) {
                         dc.setSQL("select * from identifier order by parent_path, id").setStartRow(i).setMaxRows(step);
                     } else if (Language.class.equals(clazz)) {
@@ -325,24 +323,24 @@ public class ExportStarterUtil {
                     } else if (Folder.class.equals(clazz)) {
                         dc.setSQL("SELECT * FROM folder ORDER BY inode").setStartRow(i).setMaxRows(step);
                     } else {
-                        _dh.setQuery("from " + clazz.getName() + " order by 1");
+                        hibernateUtil.setQuery("FROM " + clazz.getName() + " ORDER BY 1");
                     }
 
                     if (Identifier.class.equals(clazz)) {
-                        _list = TransformerLocator
+                        resultList = TransformerLocator
                                         .createIdentifierTransformer(dc.loadObjectResults()).asList();
                     } else if (Language.class.equals(clazz)) {
-                        _list = TransformerLocator
+                        resultList = TransformerLocator
                                         .createLanguageTransformer(dc.loadObjectResults()).asList();
                     } else if (Relationship.class.equals(clazz)) {
-                        _list = TransformerLocator
+                        resultList = TransformerLocator
                                         .createRelationshipTransformer(dc.loadObjectResults()).asList();
                     } else if (ContentletVersionInfo.class.equals(clazz)) {
-                        _list = TransformerLocator
+                        resultList = TransformerLocator
                                         .createContentletVersionInfoTransformer(dc.loadObjectResults())
                                         .asList();
                     } else if (Template.class.equals(clazz)) {
-                        _list = TransformerLocator
+                        resultList = TransformerLocator
                                         .createTemplateTransformer(dc.loadObjectResults())
                                         .asList();
                     } else if (Contentlet.class.equals(clazz)) {
@@ -350,31 +348,31 @@ public class ExportStarterUtil {
                         final List<Contentlet> contentlets = TransformerLocator
                                                                      .createContentletTransformer(dc.loadObjectResults())
                                                                      .asList();
-                        _list = contentlets.stream().map(contentletJsonAPI::toImmutable).collect(Collectors.toList());
+                        resultList = contentlets.stream().map(contentletJsonAPI::toImmutable).collect(Collectors.toList());
                     } else if (Category.class.equals(clazz)) {
-                        _list = TransformerLocator
+                        resultList = TransformerLocator
                                         .createCategoryTransformer(dc.loadObjectResults())
                                         .asList();
                     } else if(Folder.class.equals(clazz)) {
-                        _list = TransformerLocator
+                        resultList = TransformerLocator
                                         .createFolderTransformer(dc.loadObjectResults())
                                         .asList();
                     } else if (Tree.class.equals(clazz)){
-                        _list = TransformerLocator.createTreeTransformer(dc.loadObjectResults()).asList();
+                        resultList = TransformerLocator.createTreeTransformer(dc.loadObjectResults()).asList();
                     } else if (MultiTree.class.equals(clazz)){
-                        _list = TransformerLocator.createMultiTreeTransformer(dc.loadObjectResults()).asList();
+                        resultList = TransformerLocator.createMultiTreeTransformer(dc.loadObjectResults()).asList();
                     } else {
-                        _list = _dh.list();
+                        resultList = hibernateUtil.list();
                     }
-                    if (!UtilMethods.isSet(_list)) {
+                    if (!UtilMethods.isSet(resultList)) {
                         break;
                     }
                     final String zippedFileName =
                             clazz.getName() + StringPool.UNDERLINE + DEFAULT_JSON_FILE_DATA_FORMAT.format(i) + JSON_FILE_EXT;
-                    final String contentAsJson = defaultObjectMapper.writeValueAsString(_list);
+                    final String contentAsJson = defaultObjectMapper.writeValueAsString(resultList);
                     final FileEntry jsonFileEntry = new FileEntry(zippedFileName, contentAsJson);
                     starterFiles.add(jsonFileEntry);
-                    total += _list.size();
+                    total += resultList.size();
                 }
                 Logger.debug(this, total + " records were generated for " + clazz.getName());
             }
@@ -397,29 +395,29 @@ public class ExportStarterUtil {
         final List<FileEntry> starterFiles = new ArrayList<>();
         final ObjectMapper defaultObjectMapper = DotObjectMapperProvider.getInstance().getDefaultObjectMapper();
         try {
-            List _list = ImmutableList.of(APILocator.getCompanyAPI().getDefaultCompany());
-            String contentAsJson = defaultObjectMapper.writeValueAsString(_list);
+            List resultList = List.of(APILocator.getCompanyAPI().getDefaultCompany());
+            String contentAsJson = defaultObjectMapper.writeValueAsString(resultList);
             starterFiles.add(new FileEntry(Company.class.getName() + JSON_FILE_EXT, contentAsJson));
 
-            _list = APILocator.getUserAPI().findAllUsers();
-            _list.add(APILocator.getUserAPI().getDefaultUser());
-            contentAsJson = defaultObjectMapper.writeValueAsString(_list);
+            resultList = APILocator.getUserAPI().findAllUsers();
+            resultList.add(APILocator.getUserAPI().getDefaultUser());
+            contentAsJson = defaultObjectMapper.writeValueAsString(resultList);
             starterFiles.add(new FileEntry(User.class.getName() + JSON_FILE_EXT, contentAsJson));
 
             final DotConnect dc = new DotConnect();
 
             dc.setSQL("select * from counter");
-            _list = dc.loadResults();
-            contentAsJson = defaultObjectMapper.writeValueAsString(_list);
+            resultList = dc.loadResults();
+            contentAsJson = defaultObjectMapper.writeValueAsString(resultList);
             starterFiles.add(new FileEntry("Counter" + JSON_FILE_EXT, contentAsJson));
 
-            _list = ImageLocalManagerUtil.getImages();
-            contentAsJson = defaultObjectMapper.writeValueAsString(_list);
+            resultList = ImageLocalManagerUtil.getImages();
+            contentAsJson = defaultObjectMapper.writeValueAsString(resultList);
             starterFiles.add(new FileEntry("Image" + JSON_FILE_EXT, contentAsJson));
 
             dc.setSQL("select * from portlet");
-            _list = dc.loadResults();
-            contentAsJson = defaultObjectMapper.writeValueAsString(_list);
+            resultList = dc.loadResults();
+            contentAsJson = defaultObjectMapper.writeValueAsString(resultList);
             starterFiles.add(new FileEntry("Portlet" + JSON_FILE_EXT, contentAsJson));
 
             final List<FileEntry> jsonFileEntries = new ContentTypeImportExportUtil().exportContentTypes();
