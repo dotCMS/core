@@ -6,7 +6,6 @@ import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.NoCache;
-import com.dotcms.util.AssetExporterUtil;
 import com.dotcms.util.DbExporterUtil;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.ApiProvider;
@@ -213,15 +212,15 @@ public class MaintenanceResource implements Serializable {
 
         }
     }
-    
-    
+
+
     /**
-     * This method attempts to send resolved DB dump file using an octet stream http response.
+     * Provides a compressed file with all the assets living in the current dotCMS instance.
      *
-     * @param request  http request
-     * @param response http response
-     * @return octet stream response with file contents
-     * @throws IOException
+     * @param request  The current instance of the {@link HttpServletRequest}.
+     * @param response The current instance of the {@link HttpServletResponse}.
+     *
+     * @return The {@link StreamingOutput} with the compressed file.
      */
     @Path("/_downloadAssets")
     @GET
@@ -229,18 +228,25 @@ public class MaintenanceResource implements Serializable {
     @NoCache
     @Produces({MediaType.APPLICATION_OCTET_STREAM, MediaType.APPLICATION_JSON})
     public final Response downloadAssets(@Context final HttpServletRequest request,
-                                         @Context final HttpServletResponse response) throws IOException {
-        final String assetsFile = AssetExporterUtil.resolveFileName();
-        response.setHeader("Content-Type", MediaType.APPLICATION_OCTET_STREAM);
-        response.setHeader("Content-Disposition", "attachment; filename=\"" + assetsFile + "\"");
+                                         @Context final HttpServletResponse response) {
+        final User user = Try.of(() -> this.assertBackendUser(request, response).getUser()).get();
+        final ExportStarterUtil exportStarterUtil = new ExportStarterUtil();
+        final String zipName = exportStarterUtil.resolveAssetsFileName();
+        Logger.info(this, String.format("User '%s' is generating compressed Assets file '%s'", user.getUserId(),
+                zipName));
 
-        final User user = Try.of(() -> assertBackendUser(request, response).getUser()).get();
-        SecurityLogger.logInfo(AssetExporterUtil.class, "User : " + user.getEmailAddress() + " downloading assets");
+        final StreamingOutput stream = output -> {
 
-        AssetExporterUtil.exportAssets(response.getOutputStream());
-        Logger.info(this.getClass(), "Requested assets file: " + assetsFile);
+            exportStarterUtil.streamCompressedAssets(output);
+            output.flush();
+            output.close();
+            Logger.info(this, String.format("Compressed Assets file '%s' has been generated successfully!", zipName));
 
-        return Response.ok(assetsFile, MediaType.APPLICATION_OCTET_STREAM).build();
+        };
+
+        response.setHeader("Content-Disposition", "attachment; filename=" + zipName);
+        Response.ResponseBuilder responseBuilder = Response.ok(stream);
+        return responseBuilder.build();
     }
 
     /**
@@ -266,7 +272,6 @@ public class MaintenanceResource implements Serializable {
      * @param request  http request
      * @param response http response
      * @return octet stream response with octet stream
-     * @throws IOException
      */
     @Path("/_downloadStarterWithAssets")
     @GET
@@ -282,25 +287,26 @@ public class MaintenanceResource implements Serializable {
      * Generates and download a ZIP file with all the data structures and their respective records that are required to
      * create a Starter Site in dotCMS.
      *
-     * @param request    The current instance of the {@link HttpServletRequest}
-     * @param response   The current instance of the {@link HttpServletResponse}
-     * @param withAssets If the generated Starter must include all assets as well, set this to {@code true}.
+     * @param request       The current instance of the {@link HttpServletRequest}.
+     * @param response      The current instance of the {@link HttpServletResponse}.
+     * @param includeAssets If the generated Starter must include all assets as well, set this to {@code true}.
      *
      * @return The streamed Starter ZIP file.
      */
     private Response downloadStarter(final HttpServletRequest request, final HttpServletResponse response,
-                                     final boolean withAssets) {
-        this.assertBackendUser(request, response);
+                                     final boolean includeAssets) {
+        final User user = Try.of(() -> this.assertBackendUser(request, response).getUser()).get();
         final ExportStarterUtil exportStarterUtil = new ExportStarterUtil();
-        final String zipName = exportStarterUtil.generateStarterFileName();
-        Logger.info(this, String.format("Generating Starter ZIP file '%s'", zipName));
+        final String zipName = exportStarterUtil.resolveStarterFileName();
+        Logger.info(this, String.format("User '%s' is generating compressed Starter file '%s'", user.getUserId(),
+                zipName));
 
         final StreamingOutput stream = output -> {
 
-            exportStarterUtil.streamZipStarter(output, withAssets);
+            exportStarterUtil.streamCompressedStarter(output, includeAssets);
             output.flush();
             output.close();
-            Logger.info(this, String.format("Starter ZIP file '%s' has been generated successfully!", zipName));
+            Logger.info(this, String.format("Compressed Starter file '%s' has been generated successfully!", zipName));
 
         };
 

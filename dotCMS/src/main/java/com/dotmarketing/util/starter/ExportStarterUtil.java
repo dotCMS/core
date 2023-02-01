@@ -38,7 +38,9 @@ import com.dotmarketing.tag.model.Tag;
 import com.dotmarketing.tag.model.TagInode;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.ConfigUtils;
+import com.dotmarketing.util.DateUtil;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.StringUtils;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.ZipUtil;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -54,6 +56,7 @@ import io.vavr.control.Try;
 import java.io.BufferedOutputStream;
 import java.io.ByteArrayInputStream;
 import java.io.File;
+import java.io.FileFilter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -83,17 +86,20 @@ import java.util.zip.ZipOutputStream;
  */
 public class ExportStarterUtil {
 
-    private static final String STARTER_FILE_NAME_PROP = "starter.filename";
-    private static final String STARTER_GENERATION_SPLIT_VALUE_PROP = "starter.generation.tables.splitvalue";
-    private static final String STARTER_GENERATION_POOL_SIZE_PROP = "starter.generation.poolsize";
-    private static final String STARTER_GENERATION_MAX_POOL_SIZE_PROP = "starter.generation.maxpoolsize";
-    private static final String STARTER_GENERATION_QUEUE_CAPACITY_PROP = "starter.generation.queuecapacity";
-    private static final String STARTER_GENERATION_ASSETS_FOLDER_PROP = "starter.generation.assets";
+    private static final String STARTER_FILE_NAME_PROP = "export.starter.filename";
+    private static final String ASSETS_FILE_NAME_PROP = "export.assets.filename";
+    private static final String STARTER_GENERATION_SPLIT_VALUE_PROP = "export.starter.generation.tables.splitvalue";
+    private static final String STARTER_GENERATION_POOL_SIZE_PROP = "export.starter.generation.poolsize";
+    private static final String STARTER_GENERATION_MAX_POOL_SIZE_PROP = "export.starter.generation.maxpoolsize";
+    private static final String STARTER_GENERATION_QUEUE_CAPACITY_PROP = "export.starter.generation.queuecapacity";
+    private static final String STARTER_GENERATION_ASSETS_FOLDER_PROP = "export.starter.generation.assets";
 
     private static final NumberFormat DEFAULT_JSON_FILE_DATA_FORMAT = new DecimalFormat("0000000000");
 
     private static final Lazy<String> STARTER_FILE_NAME =
             Lazy.of(() -> Config.getStringProperty(STARTER_FILE_NAME_PROP, "backup_%s-%s.zip"));
+    private static final Lazy<String> ASSETS_FILE_NAME =
+            Lazy.of(() -> Config.getStringProperty(ASSETS_FILE_NAME_PROP, "%s_assets_%s.zip"));
     private static final Lazy<Integer> SPLIT_VALUE =
             Lazy.of(() -> Config.getIntProperty(STARTER_GENERATION_SPLIT_VALUE_PROP, 10));
     private static final Lazy<Integer> POOL_SIZE =
@@ -124,11 +130,13 @@ public class ExportStarterUtil {
     }
 
     /**
+     * Returns a list with all the dotCMS database tables whose contents must be added to the Starter bundle.
      *
-     * @return
-     * @throws HibernateException
+     * @return The list of exportable dotCMS database tables.
+     *
+     * @throws HibernateException An error occurred when retrieving Hibernate-managed tables.
      */
-    private Set getTableSet() throws HibernateException {
+    private Set<Class<?>> getTableSet() throws HibernateException {
         final Set<Class<?>> _tablesToDump = new HashSet<>();
         _tablesToDump.add(Identifier.class);
         _tablesToDump.add(Language.class);
@@ -171,7 +179,7 @@ public class ExportStarterUtil {
      */
     public void getStarterDataAsJSON(final ZipOutputStream zip)  {
         Logger.info(this, "Converting all repository data to JSON data...");
-        final Set<Class<?>> dotcmsTables = Try.of(() -> this.getTableSet()).getOrElse(new HashSet<>());
+        final Set<Class<?>> dotcmsTables = Try.of(this::getTableSet).getOrElse(new HashSet<>());
         final List<List<Class<?>>> dotcmsTablesSubset = this.splitTableList(dotcmsTables, SPLIT_VALUE.get());
         try {
             final DotSubmitter dotSubmitter = DotConcurrentFactory.getInstance().getSubmitter(
@@ -204,7 +212,7 @@ public class ExportStarterUtil {
      */
     private void streamFilesToZip(final CompletionService<List<FileEntry>> completionService,
                                   final List<Future<List<FileEntry>>> futures, final ZipOutputStream zip) throws InterruptedException, ExecutionException {
-        Logger.info(this, "Streaming all JSON data files to starter ZIP...");
+        Logger.info(this, "Streaming all JSON data files to starter file...");
         for (int i = 0; i < futures.size(); i++) {
             Logger.debug(this, "Recovering result " + (i + 1) + " of " + futures.size());
             this.addFilesToZip(completionService.take().get(), zip);
@@ -235,7 +243,7 @@ public class ExportStarterUtil {
             try {
                 ZipUtil.addZipEntry(zip, entry.fileName(), entry.getInputStream(), true);
             } catch (final IOException e) {
-                Logger.error(this, String.format("An error occurred when streaming file '%s' into starter ZIP: " +
+                Logger.error(this, String.format("An error occurred when streaming file '%s' into starter file: " +
                                                          "%s", entry.fileName(), e.getMessage()), e);
             }
 
@@ -436,13 +444,26 @@ public class ExportStarterUtil {
      * reference. This will allow dotCMS to add their contents to the final Starter ZIP file without copying them to
      * any backup or temporary location.
      *
-     * @return The file references to all assets in the dotCMS repository.
+     * @param zip The {@link ZipOutputStream} which will receive all the streamed data.
      */
     private void getAssets(final ZipOutputStream zip) {
+        this.getAssets(zip, new AssetFileNameFilter());
+    }
+
+
+    /**
+     * Traverses the complete list of assets in the current dotCMS instance in order to retrieve their respective file
+     * reference. This will allow dotCMS to add their contents to the final Starter ZIP file without copying them to
+     * any backup or temporary location.
+     *
+     * @param zip        The {@link ZipOutputStream} which will receive all the streamed data.
+     * @param fileFilter The {@link FileFilter} being used to get the appropriate asset data.
+     */
+    private void getAssets(final ZipOutputStream zip, final FileFilter fileFilter) {
         final String assetsRootPath = ConfigUtils.getAbsoluteAssetsRootPath();
         final File source = new File(assetsRootPath);
-        Logger.info(this, "Adding all Assets into starter ZIP...");
-        FileUtil.listFilesRecursively(source, new AssetFileNameFilter()).stream().filter(File::isFile).forEach(file -> {
+        Logger.info(this, "Adding all Assets into compressed file...");
+        FileUtil.listFilesRecursively(source, fileFilter).stream().filter(File::isFile).forEach(file -> {
 
             final String filePath = file.getPath().replace(assetsRootPath, ZIP_FILE_ASSETS_FOLDER.get());
             final FileEntry entry = new FileEntry(filePath, file);
@@ -452,28 +473,62 @@ public class ExportStarterUtil {
     }
 
     /**
-     * Generates all the contents that go into the dotCMS Starter zip file. It's very important to point out that <b>no
-     * temporary files are created, nor any piece of data is written to the FS at any point.</b>
-     * <p>The resulting ZIP file is fully created in memory and, as soon as the first entry is added, it is directly
-     * streamed to the {@link OutputStream} for users to be able to download it even before it is 100% ready.</p>
+     * Generates all the contents that go into the compressed dotCMS Starter file. It's very important to point out
+     * that <b>no temporary files are created, and no data is written to the file system at any point.</b>
+     * <p>The resulting compressed file is directly streamed to the {@link OutputStream} for users to be able to
+     * download it even before it is 100% ready.</p>
      *
-     * @param output The {@link OutputStream} instance.
+     * @param output        The {@link OutputStream} instance.
      * @param includeAssets If the Starter file must contain all dotCMS assets as well, set this to {@code true}.
      */
-    public void streamZipStarter(final OutputStream output, final boolean includeAssets) {
+    public void streamCompressedStarter(final OutputStream output, final boolean includeAssets) {
+        this.streamCompressedData(output, true, includeAssets, false);
+    }
+
+    /**
+     * Generates a compressed file with all the assets living in the current dotCMS repository. It's very important to
+     * point out that <b>no temporary files are created, and no data is written to the file system at any point.</b>
+     * <p>The resulting compressed file is directly streamed to the {@link OutputStream} for users to be able to
+     * download it even before it is 100% ready.</p>
+     *
+     * @param output The {@link OutputStream} instance.
+     */
+    public void streamCompressedAssets(final OutputStream output) {
+        this.streamCompressedData(output, false, false, true);
+    }
+
+    /**
+     * Generates a compressed file with specific dotCMS data.</p>
+     *
+     * @param output                      The {@link OutputStream} instance.
+     * @param includeStarterData          If the dotCMS data must be added to the compressed file, set this to {@code
+     *                                    true}.
+     * @param includeStarterDataAndAssets If the Starter file must contain all dotCMS assets as well, set this to
+     *                                    {@code true}.
+     * @param includeAssetsOnly           If only the assets must be included in the compressed file, set this to
+     *                                    {@code true}.
+     */
+    private void streamCompressedData(final OutputStream output, boolean includeStarterData,
+                                     final boolean includeStarterDataAndAssets, boolean includeAssetsOnly) {
         try (final ZipOutputStream zip = new ZipOutputStream(new BufferedOutputStream(output))) {
-            this.getStarterDataAsJSON(zip);
-            if (includeAssets) {
+            if (includeStarterData) {
+                this.getStarterDataAsJSON(zip);
+            }
+            if (includeStarterDataAndAssets) {
                 this.getAssets(zip);
             }
+            if (includeAssetsOnly) {
+                final AssetFileNameFilter fileFilter = new AssetFileNameFilter();
+                fileFilter.addExcludedFolder("messages");
+                this.getAssets(zip, fileFilter);
+            }
         } catch (final Exception e) {
-            Logger.error(this, String.format("An error occurred when generating Starter ZIP with includeAssets = %s :" +
-                                                     " %s", includeAssets, e.getMessage()), e);
+            Logger.error(this, String.format("An error occurred when generating compressed data file with [ includeStarterData = %s, includeStarterDataAndAssets = %s, includeAssetsOnly = %s ] : %s", includeStarterData, includeStarterDataAndAssets, includeAssetsOnly, e.getMessage()), e);
         }
     }
 
     /**
-     * Generates the name of the dotCMS Starter zip file. By default, the zip file name has the following format:
+     * Generates the name of the compressed dotCMS Starter file. By default, such a file name has the following format:
      * <pre>
      *     backup_%s-%s.zip
      * </pre>
@@ -486,18 +541,41 @@ public class ExportStarterUtil {
      *     <li>The file extension: {@code ".zip"}</li>
      * </ul>
      * If you need to customize the starter's file name by overriding the following configuration property:
-     * {@code starter.download.filename}
+     * {@link #STARTER_FILE_NAME_PROP}
      *
      * @return The dotCMS Starter's file name.
      */
-    public String generateStarterFileName() {
-        return String.format(STARTER_FILE_NAME.get(), System.currentTimeMillis(), UtilMethods.dateToJDBC(new Date()))
-                                  .replace(StringPool.COLON, StringPool.DASH)
-                                  .replace(StringPool.SPACE, StringPool.UNDERLINE);
+    public String resolveStarterFileName() {
+        return String.format(STARTER_FILE_NAME.get(), System.currentTimeMillis(),
+                DateUtil.EXPORTING_DATE_FORMAT.format(new Date()));
     }
 
     /**
-     * Represents a file entry in the generated ZIP file, which can be in the form of a byte array, or a file reference.
+     * Generates the name of the compressed dotCMS assets file. By default, such a file name has the following format:
+     * <pre>
+     *     %s_assets_%s.zip
+     * </pre>
+     * It's made up of:
+     * <ul>
+     *     <li>The name of the Default Site as prefix, or "dotcms" if not available.</li>
+     *     <li>The current date in JDBC format -- replacing colons with dashes and blank spaces with underlines.</li>
+     *     <li>The file extension: {@code ".zip"}</li>
+     * </ul>
+     * If you need to customize the assets' file name by overriding the following configuration property:
+     * {@link #ASSETS_FILE_NAME_PROP}
+     *
+     * @return The dotCMS Starter's file name.
+     */
+    public String resolveAssetsFileName() {
+        final String siteName =
+                Try.of(() -> APILocator.getHostAPI().findDefaultHost(APILocator.systemUser(), false).getHostname()).getOrElse("dotcms");
+        return String.format(ASSETS_FILE_NAME.get(), StringUtils.sanitizeFileName(siteName),
+                DateUtil.EXPORTING_DATE_FORMAT.format(new Date()));
+    }
+
+    /**
+     * Represents a file entry in the generated compressed file, which can be in the form of a byte array or a file
+     * reference.
      */
     public static class FileEntry implements Serializable {
 
