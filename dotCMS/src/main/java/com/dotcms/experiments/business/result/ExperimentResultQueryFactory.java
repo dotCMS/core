@@ -8,6 +8,7 @@ import com.dotcms.cube.CubeJSQuery;
 import com.dotcms.cube.filters.Filter.Order;
 import com.dotcms.cube.filters.SimpleFilter.Operator;
 import com.dotcms.experiments.model.Experiment;
+import com.dotcms.util.DotPreconditions;
 import io.vavr.Lazy;
 import java.util.HashMap;
 import java.util.Map;
@@ -101,7 +102,11 @@ public enum ExperimentResultQueryFactory {
         return CubeJSQuery.Builder.merge(cubeJSQuery, rootCubeJSQuery);
     }
 
-    private static CubeJSQuery getMetricCubeJSQuery(Experiment experiment) {
+    private static CubeJSQuery getMetricCubeJSQuery(final Experiment experiment) {
+        DotPreconditions.notNull(experiment.goals(), "The must have a Goal");
+        DotPreconditions.notNull(experiment.goals().get(), "The must have a Goal");
+        DotPreconditions.notNull(experiment.goals().get().primary(), "The must have a Goal");
+
         final Metric primaryGoal = experiment.goals().get().primary();
         final MetricExperimentResultQuery metricExperimentResultQuery = experimentResultQueryHelpers.get()
                 .get(primaryGoal.type());

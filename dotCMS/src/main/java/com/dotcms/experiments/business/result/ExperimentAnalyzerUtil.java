@@ -19,7 +19,9 @@ import java.util.SortedSet;
 import java.util.stream.Collectors;
 
 /**
- * Analyze  a set of {@link BrowserSession} to get the total or partial {@link Experiment} result.
+ * Analyze the {@link Event} into an {@link Experiment} to realize when the {@link com.dotcms.experiments.model.Goals}
+ * was success into the {@link Experiment}, to put it in another way analyze a set of  {@link BrowserSession}
+ * to retur the {@link ExperimentResult}.
  *
  */
 public enum ExperimentAnalyzerUtil {

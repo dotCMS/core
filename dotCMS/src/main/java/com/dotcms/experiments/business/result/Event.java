@@ -4,6 +4,10 @@ import com.dotcms.analytics.metrics.EventType;
 import java.util.Map;
 import java.util.Optional;
 
+/**
+ * Represents a Event that can be trigger in a {@link com.dotcms.experiments.business.result.BrowserSession}
+ * These events are storage into a Jitsu Server.
+ */
 public class Event {
 
     private Map<String, Object> eventAttributes;

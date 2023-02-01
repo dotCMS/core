@@ -139,6 +139,10 @@ public class MockHttpServerContext {
             return this;
         }
 
+        /**
+         * Make required that this context get at least one hit during the test
+         * @return
+         */
         public Builder mustBeCalled() {
             this.mustBeCalled = true;
             return this;

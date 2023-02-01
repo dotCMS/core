@@ -32,11 +32,19 @@ public interface AbstractCondition {
             this.function = func;
         }
 
+        /**
+         * Return a {@link OperatorFunc} to check whether the condition is valid oor not.
+         * @return
+         */
         public OperatorFunc getFunction() {
             return function;
         }
     }
 
+    /**
+     * Function to compare two values with an Operator.
+     * If return true means that the Operator is valid for this two values, in otherwise return false.
+     */
     interface OperatorFunc {
         boolean apply(Object value1, Object value2);
     }

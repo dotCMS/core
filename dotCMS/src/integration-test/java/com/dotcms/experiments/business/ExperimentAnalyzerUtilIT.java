@@ -40,6 +40,9 @@ import net.bytebuddy.utility.RandomString;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
+/**
+ * Test of {@link ExperimentAnalyzerUtil}
+ */
 public class ExperimentAnalyzerUtilIT {
 
     @BeforeClass

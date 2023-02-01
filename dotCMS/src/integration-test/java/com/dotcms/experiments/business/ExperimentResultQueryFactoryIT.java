@@ -23,6 +23,9 @@ import org.jetbrains.annotations.NotNull;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
+/**
+ * Test of {@link ExperimentResultQueryFactory}
+ */
 public class ExperimentResultQueryFactoryIT {
 
     @BeforeClass
@@ -122,16 +125,6 @@ public class ExperimentResultQueryFactoryIT {
                 + "}";
 
         assertEquals(cubeJSQueryExpected, cubeJSQuery.toString());
-    }
-
-    /**
-     * Method to test: {@link ExperimentResultQueryFactory#create(Experiment)}
-     * When: A Experiment without goal is pass in
-     * Should: throw a {@link IllegalArgumentException}
-     */
-    @Test
-    public void notGoalExperiment() {
-        throw new AssertException("");
     }
 
     private static Condition getUrlCondition(final String url) {

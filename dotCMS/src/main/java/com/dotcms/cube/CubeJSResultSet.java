@@ -47,10 +47,20 @@ public class CubeJSResultSet implements Iterable<ResultSetItem> {
             this.item = item;
         }
 
-        public Optional<Object> get(final String name){
-            return Optional.ofNullable(item.get(name));
+        /**
+         * Return the value of the specific attribute
+         * @param attributeName
+         * @return
+         */
+        public Optional<Object> get(final String attributeName){
+            return Optional.ofNullable(item.get(attributeName));
         }
 
+        /**
+         * Return all the attributes and values.
+         *
+         * @return
+         */
         public Map<String, Object> getAll(){
             return new HashMap<>(item);
         }

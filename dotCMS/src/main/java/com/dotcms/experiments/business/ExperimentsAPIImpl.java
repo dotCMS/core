@@ -17,7 +17,7 @@ import com.dotcms.analytics.metrics.EventType;
 import com.dotcms.analytics.metrics.MetricsUtil;
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
-import com.dotcms.cube.CubeClient;
+import com.dotcms.cube.CubeJSClient;
 import com.dotcms.cube.CubeJSQuery;
 import com.dotcms.cube.CubeJSResultSet;
 import com.dotcms.cube.CubeJSResultSet.ResultSetItem;
@@ -71,7 +71,6 @@ import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
-import eu.bitwalker.useragentutils.Browser;
 import graphql.VisibleForTesting;
 import io.vavr.control.Try;
 import java.time.Duration;
@@ -715,7 +714,7 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
 
             final AnalyticsApp analyticsApp = analyticsHelper.appFromHost(currentHost);
 
-            final CubeClient cubeClient = new CubeClient(
+            final CubeJSClient cubeClient = new CubeJSClient(
                     analyticsApp.getAnalyticsProperties().analyticsReadUrl());
 
             final CubeJSQuery cubeJSQuery = ExperimentResultQueryFactory.INSTANCE
