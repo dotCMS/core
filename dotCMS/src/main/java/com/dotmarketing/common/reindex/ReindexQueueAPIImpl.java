@@ -205,7 +205,7 @@ public class ReindexQueueAPIImpl implements ReindexQueueAPI {
     }
 
 
-    @WrapInTransaction /*This is a highly concurrent method, in order to avoid table locks we won't use here WrapInTransaction*/
+    @WrapInTransaction 
     @Override
     public void deleteReindexEntry(List<ReindexEntry> recordsToDelete) throws DotDataException {
         reindexQueueFactory.deleteReindexEntry(recordsToDelete);
