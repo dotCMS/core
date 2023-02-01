@@ -79,8 +79,9 @@ public class IPUtilsTest {
     
     @Test
     public void test_ip_private_subnets() {
+
         for(String testCase : ipsOnPrivateSubnets) {
-            assertTrue( IPUtils.isIpPrivateSubnet(testCase));
+            assertTrue( "Must be a private subnets: " + testCase, IPUtils.isIpPrivateSubnet(testCase));
         }
     }
     @Test
