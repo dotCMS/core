@@ -1,5 +1,6 @@
 package com.dotcms.api.client;
 
+import com.dotcms.model.annotation.SecuredPassword;
 import com.dotcms.model.config.CredentialsBean;
 import com.dotcms.model.config.ServiceBean;
 import com.google.errorprone.annotations.CanIgnoreReturnValue;
@@ -19,9 +20,13 @@ import java.util.Optional;
  * This class offers a Hybrid strategy storing sensitive info using native system's keychain support when possible
  * Other service related properties are stored in the yml file
  */
+@SecuredPassword
 @ApplicationScoped
-public class HybridServiceManagerImpl extends YamlFactoryServiceManagerImpl {
+public class HybridServiceManagerImpl implements ServiceManager {
     private static final char[] EMPTY_TOKEN = "".toCharArray();
+
+    @Inject
+    ServiceManager defaultManager;
 
     @Inject
     Logger logger;
@@ -39,14 +44,14 @@ public class HybridServiceManagerImpl extends YamlFactoryServiceManagerImpl {
                 // then strip any sensitive data from the info that is going to be saved into the yml/text file
                 CredentialsBean strippedTokenBean = CredentialsBean.builder().from(credentialsBean).token(EMPTY_TOKEN).build();
                 ServiceBean strippedCredentialsBean = ServiceBean.builder().from(service).credentials(strippedTokenBean).build();
-                super.persist(strippedCredentialsBean);
+                defaultManager.persist(strippedCredentialsBean);
             } catch (KeytarException e) {
                 logger.warn(String.format("Unable to persist credentials for service [%s] using the Key-Chain. access credentials will be stored as plain text.", service.name()), e);
             }
             return this;
         }
         //In case of missing info or an error proceed to store the service info as text
-        super.persist(service);
+        defaultManager.persist(service);
         return this;
     }
 
@@ -54,7 +59,7 @@ public class HybridServiceManagerImpl extends YamlFactoryServiceManagerImpl {
     public List<ServiceBean> services() {
         final Keytar keytar = Keytar.getInstance();
         //Retrieve the beans stored in the yml file
-        final List<ServiceBean> services = super.services();
+        final List<ServiceBean> services = defaultManager.services();
         final List<ServiceBean> beans = new ArrayList<>(services.size());
         //Now we have to join them with the credentials stored in the keyChain
         for (ServiceBean service : services) {
@@ -85,7 +90,7 @@ public class HybridServiceManagerImpl extends YamlFactoryServiceManagerImpl {
     @CanIgnoreReturnValue
     public ServiceManager removeAll() {
         final Keytar keytar = Keytar.getInstance();
-        List<ServiceBean> services = super.services();
+        List<ServiceBean> services = defaultManager.services();
         for (ServiceBean service : services) {
             CredentialsBean credentialsBean = service.credentials();
             if (null != credentialsBean && null != credentialsBean.user()) {
@@ -96,14 +101,14 @@ public class HybridServiceManagerImpl extends YamlFactoryServiceManagerImpl {
                 }
             }
         }
-        super.removeAll();
+        defaultManager.removeAll();
         return this;
     }
 
     @Override
     public Optional<ServiceBean> selected(){
         //It's cheaper if we use base impl
-        return super.services().stream().filter(ServiceBean::active)
+        return defaultManager.services().stream().filter(ServiceBean::active)
                 .findFirst();
     }
 }

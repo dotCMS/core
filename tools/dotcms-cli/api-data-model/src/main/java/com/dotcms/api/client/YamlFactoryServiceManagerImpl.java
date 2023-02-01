@@ -19,9 +19,9 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
-@DefaultBean
+//@DefaultBean
 @ApplicationScoped
-public class YamlFactoryServiceManagerImpl implements ServiceManager{
+public class YamlFactoryServiceManagerImpl implements ServiceManager {
 
     private static final ObjectMapper ymlMapper = new ObjectMapper(new YAMLFactory())
             .findAndRegisterModules();

@@ -1,5 +1,6 @@
 package com.dotcms.api.client;
 
+import com.dotcms.model.annotation.SecuredPassword;
 import com.dotcms.model.config.CredentialsBean;
 import com.dotcms.model.config.ServiceBean;
 import com.starxg.keytar.Keytar;
@@ -11,14 +12,14 @@ import org.junit.jupiter.api.Test;
 
 import javax.inject.Inject;
 import java.io.IOException;
-import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 
 @QuarkusTest
 class HybridServiceManagerTest {
 
     public static final char[] FAKE_TOKEN = "7WK5T79u5mIzjIXXi2oI9Fglmgivv7RAJ7izyj9tUyQ".toCharArray();
+
+    @SecuredPassword
     @Inject
     ServiceManager serviceManager;
 
