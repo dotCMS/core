@@ -27,6 +27,7 @@ import com.dotcms.datagen.HTMLPageDataGen;
 import com.dotcms.datagen.MultiTreeDataGen;
 import com.dotcms.datagen.SiteDataGen;
 import com.dotcms.datagen.TemplateDataGen;
+import com.dotcms.exception.NotAllowedException;
 import com.dotcms.experiments.business.result.BrowserSession;
 import com.dotcms.experiments.business.result.ExperimentResult;
 import com.dotcms.experiments.business.result.ExperimentResult.GoalResult;
@@ -226,10 +227,10 @@ public class ExperimentAPIImpIT {
 
     /**
      * Method to test: {@link ExperimentsAPI#deleteVariant(String, String, User)} (String, User)}
-     * When: an {@link com.dotcms.experiments.model.AbstractExperimentVariant#ORIGINAL_VARIANT} is provided
-     * Should: publish all the contents in the variants created for the experiment.
+     * When: Try to delete the Experiment Original variant
+     * Should: throw a NotAllowedException
      */
-    @Test(expected = IllegalArgumentException.class)
+    @Test(expected = NotAllowedException.class)
     public void testADeleteOriginalVariant_shouldFail() throws DotDataException, DotSecurityException {
         final Experiment newExperiment = new ExperimentDataGen()
                 .addVariant("Test Green Button")
