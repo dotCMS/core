@@ -204,6 +204,8 @@ public class ReindexQueueAPIImpl implements ReindexQueueAPI {
         this.reindexQueueFactory.addIdentifierReindex(identifier.getId());
     }
 
+
+    @WrapInTransaction /*This is a highly concurrent method, in order to avoid table locks we won't use here WrapInTransaction*/
     @Override
     public void deleteReindexEntry(List<ReindexEntry> recordsToDelete) throws DotDataException {
         reindexQueueFactory.deleteReindexEntry(recordsToDelete);
