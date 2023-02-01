@@ -89,24 +89,32 @@ public class StaticPublisherIntegrationTestHelper {
                 .language(language)
                 .buildAndPublishWithImage(imageContentlet);
 
+        final TestCase workingContentWithURlMap = getWorkingContentWithURlMap(livePageWithContent);
         final ContentTypeWithDependencies urlMapContentType = createURLMapContentType(
                 livePageWithContent);
 
+        final Contentlet workingContentlet = (Contentlet) workingContentWithURlMap.addToBundle;
+        final Contentlet liveContentlet = ContentletDataGen.publish(workingContentlet);
+
         final Map<String, String> assetsMap = getAssetsMap(urlMapContentType.detailPage.page);
 
-        final String xmlFilePath = getXmlFilePath(livePageWithContent);
-        final String pageFilePath = getPageFilePath(livePageWithContent);
         final String imageFilePath = getImageFilePath(
                 language,
                 imageContentlet, urlMapContentType.detailPage);
 
+        final String urlMapPath = getUrlMapPath(host, language);
+
+        final String pageContent = String.format(
+                "<div><img src=\"/dA/%s\" style=\"width:33px;\" class=\"img-circles border mr-2\"></div>",
+                imageContentlet.getIdentifier());
+
         final List<FileExpected> filesExpected = list(
-                new FileExpected(xmlFilePath, null),
-                new FileExpected(pageFilePath, String.format("<div>%s</div>", urlMapContentType.detailPage.code)),
-                new FileExpected(imageFilePath, testImage)
+                new FileExpected(urlMapPath + "testing.dotUrlMap.xml", null, true),
+                new FileExpected(urlMapPath + "testing", pageContent, true),
+                new FileExpected(imageFilePath, testImage, false)
         );
 
-        return new TestCase(urlMapContentType.detailPage.page, filesExpected, list(language), assetsMap);
+        return new TestCase(liveContentlet, filesExpected, list(language), assetsMap);
     }
 
     @NotNull
@@ -146,9 +154,49 @@ public class StaticPublisherIntegrationTestHelper {
         final String imageFilePath = getImageFilePath(language, imageContentlet, livePageWithContent);
 
         final List<FileExpected> filesExpected = list(
-                new FileExpected(xmlFilePath, null),
-                new FileExpected(pageFilePath, String.format("<div>%s</div>", livePageWithContent.code)),
-                new FileExpected(imageFilePath, testImage)
+                new FileExpected(xmlFilePath, null, true),
+                new FileExpected(pageFilePath, String.format("<div>%s</div>", livePageWithContent.code), true),
+                new FileExpected(imageFilePath, testImage, false)
+        );
+
+        final Map<String, String> assetsMap = getAssetsMap(livePageWithContent.page);
+
+        return new TestCase(livePageWithContent.page, filesExpected, list(language), assetsMap);
+    }
+
+    public static TestCase getPageWithCSS()
+            throws IOException, DotDataException, DotSecurityException, WebAssetException {
+
+        final Host host = new SiteDataGen().nextPersisted();
+        final Language language = new LanguageDataGen().nextPersisted();
+        final Folder folder = new FolderDataGen().site(host).nextPersisted();
+
+        final String testCSSContent = "h1{color:red;}";
+
+        final Contentlet cssContentlet = FileAssetDataGen
+                .createFileAssetDataGen(folder, "styles", ".dotsass", testCSSContent)
+                .host(host)
+                .languageId(language.getId())
+                .folder(folder)
+                .nextPersisted();
+
+        ContentletDataGen.publish(cssContentlet);
+
+        final PageWithDependencies livePageWithContent = new PageWithDependenciesBuilder()
+                .host(host)
+                .folder(folder)
+                .language(language)
+                .buildAndPublishWithCSS(cssContentlet);
+
+        final String xmlFilePath = getXmlFilePath(livePageWithContent);
+        final String pageFilePath = getPageFilePath(livePageWithContent);
+        final Identifier identifier = APILocator.getIdentifierAPI()
+                .find(cssContentlet.getIdentifier());
+
+        final List<FileExpected> filesExpected = list(
+                new FileExpected(xmlFilePath, null, true),
+                new FileExpected(pageFilePath, null, true),
+                new FileExpected(identifier.getPath(), null, false)
         );
 
         final Map<String, String> assetsMap = getAssetsMap(livePageWithContent.page);
@@ -157,8 +205,8 @@ public class StaticPublisherIntegrationTestHelper {
     }
 
     private static String getImageFilePath(final Language language,
-            final Contentlet imageContentlet,
-            final PageWithDependencies livePageWithContent) {
+                                           final Contentlet imageContentlet,
+                                           final PageWithDependencies livePageWithContent) {
         final String imageFilePath = File.separator
                 + "live" + File.separator
                 + livePageWithContent.host.getHostname() + File.separator
@@ -196,15 +244,43 @@ public class StaticPublisherIntegrationTestHelper {
     public static TestCase getLiveContentWithURlMap()
             throws WebAssetException, DotDataException, DotSecurityException {
         final TestCase workingContentWithURlMap = getWorkingContentWithURlMap();
-        ContentletDataGen.publish((Contentlet) workingContentWithURlMap.addToBundle);
+        final Contentlet workingContentlet = (Contentlet) workingContentWithURlMap.addToBundle;
+        final Contentlet liveContentlet = ContentletDataGen.publish(workingContentlet);
 
-        return workingContentWithURlMap;
+        final Host host = APILocator.getHostAPI()
+                .find(liveContentlet.getHost(), APILocator.systemUser(), false);
+
+        final Language language = APILocator.getLanguageAPI()
+                .getLanguage(liveContentlet.getLanguageId());
+
+        final String urlMapPath = getUrlMapPath(host, language);
+
+        final List<FileExpected> filesExpected = list(
+                new FileExpected(urlMapPath + "testing.dotUrlMap.xml", null, true),
+                new FileExpected(urlMapPath + "testing", "<div>testing</div>", true)
+        );
+
+        return new TestCase(liveContentlet, filesExpected, list(language), workingContentWithURlMap.assetsMap);
+    }
+
+    @NotNull
+    private static String getUrlMapPath(Host host, Language language) {
+        return File.separator
+                + "live" + File.separator
+                + host.getHostname() + File.separator
+                + language.getId()  + File.separator
+                + "url-map-testing" + File.separator;
     }
 
     public static TestCase getWorkingContentWithURlMap()
             throws WebAssetException, DotDataException, DotSecurityException {
+        return getWorkingContentWithURlMap(null);
+    }
 
-        final ContentTypeWithDependencies contentTypeWithDependencies = createURLMapContentType();
+    public static TestCase getWorkingContentWithURlMap(final PageWithDependencies pageWithContent )
+            throws WebAssetException, DotDataException, DotSecurityException {
+
+        final ContentTypeWithDependencies contentTypeWithDependencies = createURLMapContentType(pageWithContent);
 
         final Host host = APILocator.getHostAPI()
                 .find(contentTypeWithDependencies.detailPage.host.getIdentifier(), APILocator.systemUser(),
@@ -216,25 +292,12 @@ public class StaticPublisherIntegrationTestHelper {
                 .setProperty(contentTypeWithDependencies.textFieldUseInURLMap.variable(), "testing")
                 .nextPersisted();
 
-        ContentletDataGen.publish(contentlet);
-
         final Map<String, String> assetsMap = getAssetsMap(contentlet);
 
         final Language language = APILocator.getLanguageAPI()
                 .getLanguage(contentlet.getLanguageId());
 
-        final String urlMapPath = File.separator
-                + "live" + File.separator
-                + host.getHostname() + File.separator
-                + language.getId()  + File.separator
-                + "url-map-testing" + File.separator;
-
-        final List<FileExpected> filesExpected = list(
-                new FileExpected(urlMapPath + "testing.dotUrlMap.xml", null),
-                new FileExpected(urlMapPath + "testing", "<div>Testing Field Value</div>")
-        );
-
-        return new TestCase(contentlet, filesExpected, list(language), assetsMap);
+        return new TestCase(contentlet, list(), list(language), assetsMap);
     }
 
     private static String getPageFileParentFolder(final PageWithDependencies detailPage) {
@@ -250,38 +313,39 @@ public class StaticPublisherIntegrationTestHelper {
     }
 
     private static ContentTypeWithDependencies createURLMapContentType(PageWithDependencies livePageWithContent )
-        throws WebAssetException, DotDataException, DotSecurityException {
+            throws WebAssetException, DotDataException, DotSecurityException {
         final Host host = new SiteDataGen().nextPersisted();
         final Folder folder = new FolderDataGen().site(host).nextPersisted();
 
-        final Template template = new TemplateDataGen().site(host).nextPersisted();
-        TemplateDataGen.publish(template);
-
         final Language language;
+
+        final Field textField = new FieldDataGen().type(TextField.class).next();
 
         if (!UtilMethods.isSet(livePageWithContent)) {
             language = new LanguageDataGen().nextPersisted();
 
+            final String code = String.format("$URLMapContent.%s", textField.variable());
+
+            ContentType contentType = ContentTypeDataGen.createWidgetContentType(code)
+                    .host(host)
+                    .nextPersisted();
+
+            final Contentlet contentlet = new ContentletDataGen(contentType)
+                    .host(host)
+                    .languageId(language.getId())
+                    .setProperty("widgetTitle", "title_" + System.currentTimeMillis())
+                    .nextPersistedAndPublish();
+
             livePageWithContent = new PageWithDependenciesBuilder()
                     .host(host)
                     .folder(folder)
-                    .language(APILocator.getLanguageAPI().getDefaultLanguage())
+                    .language(language)
+                    .contentlet(contentlet)
                     .buildAndPublish();
 
             createNewVersionInDifferentLang(livePageWithContent.page, language, null);
             livePageWithContent.language = language;
-        } else {
-            language = livePageWithContent.language;
         }
-
-        final ContentType pageContentletContentType = livePageWithContent.contentlet.getContentType();
-        final Contentlet contentlet = createNewVersionInDifferentLang(livePageWithContent.contentlet, language,
-                map(pageContentletContentType.fields().get(0).variable(), "Testing Field Value"));
-
-        ContentletDataGen.publish(contentlet);
-        ContentletDataGen.publish(livePageWithContent.page);
-
-        final Field textField = new FieldDataGen().type(TextField.class).next();
 
         final ContentType contentType = new ContentTypeDataGen()
                 .urlMapPattern("/url-map-testing/{" + textField.variable() + "}")
@@ -321,8 +385,8 @@ public class StaticPublisherIntegrationTestHelper {
         final String pageFilePath = getPageFilePath(livePageWithContent);
 
         final List<FileExpected> filesExpected = list(
-                new FileExpected(xmlFilePath, null),
-                new FileExpected(pageFilePath, "<div>Testing Field Value</div>")
+                new FileExpected(xmlFilePath, null, true),
+                new FileExpected(pageFilePath, "<div>Testing Field Value</div>", true)
         );
 
         final Map<String, String> assetsMap = getAssetsMap(livePageWithContent.page);
@@ -355,8 +419,8 @@ public class StaticPublisherIntegrationTestHelper {
         final Map<String, String> assetsMap = getAssetsMap(fileAssetLive_1);
 
         final List<FileExpected> filesExpected = list(
-            new FileExpected(getFileAssetPath(fileAssetLive_1), "LIVE File Assets"),
-            new FileExpected(getFileAssetPath(fileAssetLive_2), "LIVE File Assets")
+                new FileExpected(getFileAssetPath(fileAssetLive_1), "LIVE File Assets", true),
+                new FileExpected(getFileAssetPath(fileAssetLive_2), "LIVE File Assets", true)
         );
 
         return new TestCase(fileAssetLive_1, filesExpected, list(language_1, language_2), assetsMap);
@@ -371,7 +435,7 @@ public class StaticPublisherIntegrationTestHelper {
         final Map<String, String> assetsMap = getAssetsMap(fileAssetLive);
 
         final List<FileExpected> filesExpected = list(
-                new FileExpected(getFileAssetPath(fileAssetLive), "LIVE File Assets")
+                new FileExpected(getFileAssetPath(fileAssetLive), "LIVE File Assets", true)
         );
 
         return new TestCase(fileAssetLive, filesExpected, language, assetsMap);
@@ -413,8 +477,8 @@ public class StaticPublisherIntegrationTestHelper {
         hostWithDependencies.getPages(folderToAddInBundle).stream()
                 .filter(pageWithDependencies -> isLive(pageWithDependencies.page))
                 .forEach(pageWithDependencies -> {
-                    filesExpected.add(new FileExpected(getXmlFilePath(pageWithDependencies)));
-                    filesExpected.add(new FileExpected(getPageFilePath(pageWithDependencies)));
+                    filesExpected.add(new FileExpected(getXmlFilePath(pageWithDependencies), null, true));
+                    filesExpected.add(new FileExpected(getPageFilePath(pageWithDependencies), null, true));
 
                     languages.add(pageWithDependencies.language);
                 });
@@ -422,7 +486,7 @@ public class StaticPublisherIntegrationTestHelper {
         hostWithDependencies.getFileAssets(folderToAddInBundle).stream()
                 .filter(fileAsset -> isLive(fileAsset))
                 .forEach(fileAsset -> {
-                    filesExpected.add(new FileExpected(getFileAssetPath(fileAsset), "LIVE File Assets in Folder " + folderToAddInBundle.getIdentifier()));
+                    filesExpected.add(new FileExpected(getFileAssetPath(fileAsset), "LIVE File Assets in Folder " + folderToAddInBundle.getIdentifier(), true));
 
                     final Language language = APILocator.getLanguageAPI()
                             .getLanguage(fileAsset.getLanguageId());
@@ -449,8 +513,8 @@ public class StaticPublisherIntegrationTestHelper {
             hostWithDependencies.getPages(folder).stream()
                     .filter(pageWithDependencies -> isLive(pageWithDependencies.page))
                     .forEach(pageWithDependencies -> {
-                        filesExpected.add(new FileExpected(getXmlFilePath(pageWithDependencies)));
-                        filesExpected.add(new FileExpected(getPageFilePath(pageWithDependencies)));
+                        filesExpected.add(new FileExpected(getXmlFilePath(pageWithDependencies), null, true));
+                        filesExpected.add(new FileExpected(getPageFilePath(pageWithDependencies), null, true));
 
                         languages.add(pageWithDependencies.language);
                     });
@@ -458,7 +522,7 @@ public class StaticPublisherIntegrationTestHelper {
             hostWithDependencies.getFileAssets(folder).stream()
                     .filter(fileAsset -> isLive(fileAsset))
                     .forEach(fileAsset -> {
-                        filesExpected.add(new FileExpected(getFileAssetPath(fileAsset), "LIVE File Assets in Folder " + folder.getIdentifier()));
+                        filesExpected.add(new FileExpected(getFileAssetPath(fileAsset), "LIVE File Assets in Folder " + folder.getIdentifier(), true));
 
                         final Language language = APILocator.getLanguageAPI()
                                 .getLanguage(fileAsset.getLanguageId());
@@ -565,8 +629,8 @@ public class StaticPublisherIntegrationTestHelper {
         final String pageFilePath = getPageFilePath(livePageWithContent);
 
         final List<FileExpected> filesExpected = list(
-                new FileExpected(xmlFilePath, null),
-                new FileExpected(pageFilePath, "<div>Testing Field Value</div>")
+                new FileExpected(xmlFilePath, null, true),
+                new FileExpected(pageFilePath, "<div>Testing Field Value</div>", true)
         );
 
         final Map<String, String> assetsMap = getAssetsMap(livePageWithContent.page);
@@ -610,10 +674,10 @@ public class StaticPublisherIntegrationTestHelper {
         ContentletDataGen.publish(pageAnotherLang.page);
 
         final List<FileExpected> filesExpected = list(
-                new FileExpected(getXmlFilePath(livePageWithContent)),
-                new FileExpected(getPageFilePath(livePageWithContent), "<div>Testing Field Value</div>"),
-                new FileExpected(getXmlFilePath(livePageWithContent, language)),
-                new FileExpected(getPageFilePath(livePageWithContent, language), "<div>Content in another Lang</div>")
+                new FileExpected(getXmlFilePath(livePageWithContent), null, true),
+                new FileExpected(getPageFilePath(livePageWithContent), "<div>Testing Field Value</div>", true),
+                new FileExpected(getXmlFilePath(livePageWithContent, language), null, true),
+                new FileExpected(getPageFilePath(livePageWithContent, language), "<div>Content in another Lang</div>", true)
         );
 
         final Map<String, String> assetsMap = getAssetsMap(livePageWithContent.page);
@@ -623,20 +687,20 @@ public class StaticPublisherIntegrationTestHelper {
     }
 
     private static Contentlet createNewVersionInDifferentLang(final Contentlet contentlet,
-            final Language language, final Map<String, String> fieldValues) throws DotDataException, DotSecurityException {
+                                                              final Language language, final Map<String, String> fieldValues) throws DotDataException, DotSecurityException {
 
         final Contentlet contentletCheckout = APILocator.getContentletAPI().checkout(
                 contentlet.getInode(), APILocator.systemUser(), false);
         final List<Field> fields = contentlet.getContentType().fields();
 
         if (UtilMethods.isSet(fieldValues))
-        for (Entry<String, String> value : fieldValues.entrySet()) {
-            final Field fieldFound = fields.stream()
-                    .filter(field -> field.variable().equals(value.getKey()))
-                    .collect(Collectors.toList()).get(0);
+            for (Entry<String, String> value : fieldValues.entrySet()) {
+                final Field fieldFound = fields.stream()
+                        .filter(field -> field.variable().equals(value.getKey()))
+                        .collect(Collectors.toList()).get(0);
 
-            contentletCheckout.setProperty(fieldFound.variable(), value.getValue());
-        }
+                contentletCheckout.setProperty(fieldFound.variable(), value.getValue());
+            }
 
         contentletCheckout.setLanguageId(language.getId());
         contentletCheckout.setIndexPolicy(IndexPolicy.WAIT_FOR);
@@ -650,7 +714,7 @@ public class StaticPublisherIntegrationTestHelper {
     }
 
     private static String getXmlFilePath(final PageWithDependencies livePageWithContent,
-            final Language language) {
+                                         final Language language) {
         try {
             return File.separator + "live" + File.separator
                     + livePageWithContent.host.getHostname() + File.separator
@@ -681,6 +745,7 @@ public class StaticPublisherIntegrationTestHelper {
     public static class FileExpected {
         String path;
         Object content;
+        boolean shouldBeIncludeInUnPublish;
 
         public FileExpected(final String path) {
             this(path, null);
@@ -689,6 +754,12 @@ public class StaticPublisherIntegrationTestHelper {
         public FileExpected(final String path, final Object content) {
             this.path = path;
             this.content = content;
+        }
+
+        public FileExpected(final String path, final Object content, final boolean shouldBeIncludeInUnPublish) {
+            this.path = path;
+            this.content = content;
+            this.shouldBeIncludeInUnPublish = shouldBeIncludeInUnPublish;
         }
     }
 
@@ -699,16 +770,16 @@ public class StaticPublisherIntegrationTestHelper {
         Map<String, String> assetsMap;
 
         public TestCase(final Object addToBundle,
-                final List<FileExpected> filesExpected,
-                final Language language,
-                final Map<String, String> assetsMap) {
+                        final List<FileExpected> filesExpected,
+                        final Language language,
+                        final Map<String, String> assetsMap) {
             this(addToBundle, filesExpected, list(language), assetsMap);
         }
 
         public TestCase(final Object addToBundle,
-                final List<FileExpected> filesExpected,
-                final Collection<Language> languages,
-                final Map<String, String> assetsMap) {
+                        final List<FileExpected> filesExpected,
+                        final Collection<Language> languages,
+                        final Map<String, String> assetsMap) {
             this.addToBundle = addToBundle;
             this.filesExpected = filesExpected;
             this.languages = languages;
@@ -724,6 +795,12 @@ public class StaticPublisherIntegrationTestHelper {
 
             return Optional.empty();
         }
+
+        public Collection<FileExpected> getAddToBundleFiles() {
+            return filesExpected.stream()
+                    .filter(fileExpected -> fileExpected.shouldBeIncludeInUnPublish)
+                    .collect(Collectors.toList());
+        }
     }
 
     private static class PageWithDependencies {
@@ -736,8 +813,8 @@ public class StaticPublisherIntegrationTestHelper {
         String code;
 
         public PageWithDependencies(final HTMLPageAsset page,
-                final Language language, final Host host, final Contentlet contentlet,
-                final Container container, final Template template, final String code) {
+                                    final Language language, final Host host, final Contentlet contentlet,
+                                    final Container container, final Template template, final String code) {
             this.page = page;
             this.language = language;
             this.host = host;
@@ -780,7 +857,7 @@ public class StaticPublisherIntegrationTestHelper {
         Field textFieldUseInURLMap;
 
         public ContentTypeWithDependencies(ContentType contentType,
-                PageWithDependencies detailPage, Field textFieldUseInURLMap) {
+                                           PageWithDependencies detailPage, Field textFieldUseInURLMap) {
             this.contentType = contentType;
             this.detailPage = detailPage;
             this.textFieldUseInURLMap = textFieldUseInURLMap;
@@ -907,6 +984,34 @@ public class StaticPublisherIntegrationTestHelper {
                     .build();
         }
 
+        private PageWithDependencies buildWithCss(final Contentlet cssContentlet)
+                throws DotDataException {
+
+            final Identifier identifier = APILocator.getIdentifierAPI()
+                    .find(cssContentlet.getIdentifier());
+
+            code = String.format("<link rel=\"preload\" as=\"style\" href=\"%s\">",
+                    identifier.getPath());
+
+            ContentType contentType = ContentTypeDataGen.createWidgetContentType(code)
+                    .host(host)
+                    .nextPersisted();
+
+            contentlet = new ContentletDataGen(contentType)
+                    .host(host)
+                    .languageId(language.getId())
+                    .setProperty("widgetTitle", "title_" + System.currentTimeMillis())
+                    .nextPersistedAndPublish();
+
+            return new PageWithDependenciesBuilder()
+                    .host(host)
+                    .folder(folder)
+                    .language(language)
+                    .contentlet(contentlet)
+                    .code(code)
+                    .build();
+        }
+
         private PageWithDependencies buildAndPublishWithImage(final Contentlet imageContentlet)
                 throws DotDataException, DotSecurityException, WebAssetException {
 
@@ -920,8 +1025,21 @@ public class StaticPublisherIntegrationTestHelper {
             return pageWithDependencies;
         }
 
+        private PageWithDependencies buildAndPublishWithCSS(final Contentlet cssContentlet)
+                throws DotDataException, DotSecurityException, WebAssetException {
+
+            final PageWithDependencies pageWithDependencies = buildWithCss(cssContentlet);
+            ContentletDataGen.publish(contentlet);
+
+            TemplateDataGen.publish(pageWithDependencies.template);
+            ContainerDataGen.publish(pageWithDependencies.container);
+            HTMLPageDataGen.publish(pageWithDependencies.page);
+
+            return pageWithDependencies;
+        }
+
         public static PageWithDependencies buildAnotherVersion(final PageWithDependencies pageWithDependencies,
-                final Language language)
+                                                               final Language language)
                 throws DotDataException, DotSecurityException {
 
             Contentlet pageAnotherLang = APILocator.getContentletAPI().checkout(
