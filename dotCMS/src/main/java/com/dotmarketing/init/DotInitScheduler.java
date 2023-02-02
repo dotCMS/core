@@ -640,7 +640,7 @@ public class DotInitScheduler {
 
 	private static void addStartEndScheduledExperimentsJob(final Scheduler scheduler) {
 		try {
-			final String jobName      = "EndFinalizedExperimentsJob";
+			final String jobName      = "StartEndScheduledExperimentsJob";
 			final String triggerName  = "trigger32";
 			final String triggerGroup = "group32";
 
