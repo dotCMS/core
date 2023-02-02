@@ -54,6 +54,7 @@ import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
+import com.google.common.collect.ImmutableList;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
 import io.vavr.control.Try;
@@ -857,5 +858,46 @@ public class ExperimentAPIImpIT {
         return mockhttpServer;
     }
 
-    //get result to a Experiment not started
+    @Test
+    public void sasas() throws DotDataException, DotSecurityException {
+        final Host host = new SiteDataGen().nextPersisted();
+        final Template template = new TemplateDataGen().host(host).nextPersisted();
+
+        final HTMLPageAsset experimentPage = new HTMLPageDataGen(host, template).nextPersisted();
+        final HTMLPageAsset reachPage = new HTMLPageDataGen(host, template).nextPersisted();
+
+        final Metric metric = Metric.builder()
+                .name("Testing Metric")
+                .type(MetricType.REACH_PAGE)
+                .addConditions(getUrlCondition(reachPage.getPageUrl()))
+                .build();
+
+        final Goals goal = Goals.builder().primary(metric).build();
+
+        final Experiment experiment = new ExperimentDataGen()
+                .addVariant("Experiment Variant")
+                .page(experimentPage)
+                .addVariant("description")
+                .addGoal(goal)
+                .nextPersisted();
+
+        final Experiment experimentFromDataBase = APILocator.getExperimentsAPI()
+                .find(experiment.id().orElseThrow(), APILocator.systemUser())
+                .orElseThrow();
+
+        final Goals goals = experimentFromDataBase.goals().orElseThrow();
+        final ImmutableList<Condition> conditions = goals.primary().conditions();
+
+        assertEquals(2, conditions.size());
+
+        for (final Condition condition : conditions) {
+            if (condition.parameter().equals("url")) {
+                assertEquals(reachPage.getPageUrl(), condition.value());
+                assertEquals(Operator.CONTAINS, condition.operator());
+            } else if (condition.parameter().equals("referer")) {
+                assertEquals(experimentPage.getPageUrl(), condition.value());
+                assertEquals(Operator.CONTAINS, condition.operator());
+            }
+        }
+    }
 }

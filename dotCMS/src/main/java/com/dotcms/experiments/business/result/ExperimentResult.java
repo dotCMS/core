@@ -24,13 +24,11 @@ import java.util.stream.Collectors;
  */
 public class ExperimentResult {
 
-    private int totalEvents;
     private int totalSessions;
 
     private List<GoalResult> goals;
 
-    private ExperimentResult(int totalEvents, int totalSessions, final List<GoalResult> goalResults) {
-        this.totalEvents = totalEvents;
+    private ExperimentResult(int totalSessions, final List<GoalResult> goalResults) {
         this.totalSessions = totalSessions;
         this.goals = goalResults;
     }
@@ -70,16 +68,12 @@ public class ExperimentResult {
             this.totalSessions = totalSessions;
         }
 
-        public Object getGoal() {
-            return null;
-        }
-
         public void addGoal(final Metric goal) {
             this.goals.add(new GoalResult(goal, variants));
         }
 
         public ExperimentResult build() {
-            return new ExperimentResult(totalEvents, totalSessions, goals);
+            return new ExperimentResult(totalSessions, goals);
         }
 
         public void addVariants(final Collection<ExperimentVariant> variants) {
@@ -106,6 +100,10 @@ public class ExperimentResult {
             this.variants = variants.stream()
                     .collect(Collectors.toMap(ExperimentVariant::id,
                             variant -> new VariantResult(variant.id())));
+        }
+
+        public Metric getGoal() {
+            return goal;
         }
 
         public Map<String, VariantResult> getVariants() {

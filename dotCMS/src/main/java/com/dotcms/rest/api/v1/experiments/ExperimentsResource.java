@@ -2,6 +2,7 @@ package com.dotcms.rest.api.v1.experiments;
 
 import com.dotcms.experiments.business.ExperimentFilter;
 import com.dotcms.experiments.business.ExperimentsAPI;
+import com.dotcms.experiments.business.result.ExperimentResult;
 import com.dotcms.experiments.model.AbstractExperiment.Status;
 import com.dotcms.experiments.model.Experiment;
 import com.dotcms.experiments.model.Scheduling;
@@ -424,6 +425,28 @@ public class ExperimentsResource {
                         UtilMethods.isSet(excludedExperimentListForm) ? excludedExperimentListForm.getExclude()
                                 : Collections.emptyList())
         );
+    }
+
+    /**
+     * Returns the partoal or total Result of a {@link Experiment}
+     */
+    @GET
+    @NoCache
+    @Path("/{id}/result")
+    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    public ResponseEntityResultExperimentView getResult(@Context final HttpServletRequest request,
+            @Context final HttpServletResponse response, @PathParam("id") String id
+    ) throws DotDataException, DotSecurityException {
+        final InitDataObject initData = getInitData(request, response);
+        final User user = initData.getUser();
+
+        final Experiment experiment = experimentsAPI.find(id, user)
+                .orElseThrow(
+                        () -> new NotFoundException("Experiment with id: " + id + " not found."));
+
+        final ExperimentResult experimentResult = APILocator.getExperimentsAPI().getResult(experiment);
+
+        return new ResponseEntityResultExperimentView(experimentResult);
     }
 
     private Experiment patchExperiment(final Experiment experimentToUpdate,
