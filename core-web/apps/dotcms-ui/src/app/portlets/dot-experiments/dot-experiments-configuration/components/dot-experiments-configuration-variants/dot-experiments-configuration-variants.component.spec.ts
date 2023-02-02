@@ -297,7 +297,10 @@ describe('DotExperimentsConfigurationVariantsComponent', () => {
 
             spectator.detectComponentChanges();
 
-            expect(spectator.component.editVariantName).toHaveBeenCalled();
+            expect(spectator.component.editVariantName).toHaveBeenCalledWith(
+                'new value',
+                variants[1]
+            );
         });
 
         it('should the button of save show loading when is SAVING', () => {
