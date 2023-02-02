@@ -641,8 +641,8 @@ public class DotInitScheduler {
 	private static void addStartEndScheduledExperimentsJob(final Scheduler scheduler) {
 		try {
 			final String jobName      = "EndFinalizedExperimentsJob";
-			final String triggerName  = "trigger31";
-			final String triggerGroup = "group31";
+			final String triggerName  = "trigger32";
+			final String triggerGroup = "group32";
 
 			if (Config.getBooleanProperty( "ENABLE_START_END_SCHEDULED_EXPERIMENTS_JOB", true)) {
 				final JobBuilder endFinalizedExperimentsJob = new JobBuilder().setJobClass(
