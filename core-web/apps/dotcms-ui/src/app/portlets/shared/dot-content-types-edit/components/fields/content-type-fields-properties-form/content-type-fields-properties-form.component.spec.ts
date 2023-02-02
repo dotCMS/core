@@ -84,7 +84,7 @@ class TestFieldPropertiesService {
     }
 }
 
-fdescribe('ContentTypeFieldsPropertiesFormComponent', () => {
+describe('ContentTypeFieldsPropertiesFormComponent', () => {
     let hostComp: DotHostTesterComponent;
     let hostFixture: ComponentFixture<DotHostTesterComponent>;
 
