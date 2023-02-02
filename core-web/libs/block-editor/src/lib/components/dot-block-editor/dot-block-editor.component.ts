@@ -157,7 +157,7 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy {
             .map((heading) => +heading.slice(-1) as Level);
 
         const starterKit = staterKitOptions
-            .filter((option) => this._allowedBlocks.includes(option))
+            .filter((option) => !this._allowedBlocks.includes(option))
             .reduce((options, option) => ({ ...options, [option]: false }), {});
 
         return {
