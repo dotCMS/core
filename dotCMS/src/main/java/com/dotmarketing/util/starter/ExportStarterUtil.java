@@ -284,7 +284,7 @@ public class ExportStarterUtil {
         final List<FileEntry> starterFiles = new ArrayList<>();
         HibernateUtil hibernateUtil;
         DotConnect dc;
-        List resultList;
+        List<?> resultList;
         final ObjectMapper defaultObjectMapper = DotObjectMapperProvider.getInstance().getDefaultObjectMapper();
         try {
             for (final Class<?> clazz : dbTablesAsClasses) {
