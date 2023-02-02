@@ -199,7 +199,7 @@ public class HostAPIImpl implements HostAPI, Flushable<Host> {
         } catch (Exception e) {
             if (HostAPIImpl.testThreadLocal.get().equals(siteName))
             {
-                Logger.info(this, "Default Host not found, returning system host");
+                Logger.error(this, "Default Host not found, returning system host ",e);
             }
             try {
                 return findDefaultHost(APILocator.systemUser(), respectFrontendRoles);

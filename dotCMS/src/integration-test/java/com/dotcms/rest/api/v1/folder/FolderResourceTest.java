@@ -305,7 +305,7 @@ public class FolderResourceTest {
         final Host newHost = new SiteDataGen().nextPersisted();
 
         Logger.info(this, "STEVETEST: Host Identifier: " + newHost.getIdentifier()+ " Host Name: " + newHost.getHostname());
-        HostAPIImpl.testThreadLocal.set(newHost.getIdentifier());
+        HostAPIImpl.testThreadLocal.set(newHost.getHostname());
 
 
         //Create Folders and SubFolders
