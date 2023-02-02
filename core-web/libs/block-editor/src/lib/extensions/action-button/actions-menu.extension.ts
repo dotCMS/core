@@ -158,7 +158,7 @@ function execCommand({
         codeBlock: () => {
             editor.chain().deleteRange(range).setCodeBlock().focus().run();
         },
-        horizontalLine: () => {
+        horizontalRule: () => {
             editor.chain().deleteRange(range).setHorizontalRule().focus().run();
         },
         image: () => {

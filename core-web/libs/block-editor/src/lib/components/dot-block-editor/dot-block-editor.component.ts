@@ -31,7 +31,7 @@ import {
     ImageUpload
 } from '../../extensions';
 import { ContentletBlock, ImageNode } from '../../nodes';
-import { formatHTML, SetDocAttrStep } from '../../shared/utils';
+import { formatHTML, removeInvalidNodes, SetDocAttrStep } from '../../shared/utils';
 
 function toTitleCase(str) {
     return str.replace(/\p{L}+('\p{L}+)?/gu, function (txt) {
@@ -60,7 +60,16 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy {
     }
 
     @Input() set value(content: Content) {
-        this.content = typeof content === 'string' ? formatHTML(content) : content;
+        if (typeof content === 'string') {
+            this.content = formatHTML(content);
+
+            return;
+        }
+
+        this.content =
+            this._allowedBlocks.length > 1
+                ? removeInvalidNodes(content, this._allowedBlocks)
+                : content;
     }
 
     editor: Editor;
@@ -207,7 +216,8 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy {
             ...(this._allowedBlocks.includes('contentlets')
                 ? [customExtensions.get('contentlets')]
                 : []),
-            ...(this._allowedBlocks.includes('image') ? [customExtensions.get('image')] : [])
+            ...(this._allowedBlocks.includes('image') ? [customExtensions.get('image')] : []),
+            ...(this._allowedBlocks.includes('table') ? [customExtensions.get('table')] : [])
         ];
     }
 }

@@ -114,7 +114,7 @@ export const SuggestionPopperModifiers = [
 export const CONTENT_SUGGESTION_ID = 'contentlets';
 
 const FORBIDDEN_CHANGE_TO_BLOCKS = {
-    horizontalLine: true,
+    horizontalRule: true,
     table: true,
     image: true
 };
