@@ -12,7 +12,7 @@ export class DotAssetCardComponent {
     @Input() contentlet: DotCMSContentlet;
 
     /**
-     *
+     * Return the contentlet Thumbanil based in the inode
      *
      * @param {string} inode
      * @return {*}  {string}
@@ -23,7 +23,7 @@ export class DotAssetCardComponent {
     }
 
     /**
-     *
+     * Return the contentlet icon
      *
      * @return {*}  {string}
      * @memberof DotAssetCardComponent

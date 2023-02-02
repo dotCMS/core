@@ -29,6 +29,10 @@ export class DotExternalAssetComponent {
 
     form: FormGroup;
 
+    get placerHolder() {
+        return `https://example.com/${this.type === 'video' ? 'video.mp4' : 'image.jpg'}`;
+    }
+
     constructor(private fb: FormBuilder) {
         this.form = this.fb.group({
             url: ['', [Validators.required, Validators.pattern(regexURL)]]
@@ -38,7 +42,7 @@ export class DotExternalAssetComponent {
     }
 
     /**
-     *
+     * Emit the url of the externa asset
      *
      * @param {{ url: string }} { url }
      * @memberof DotExternalAssetComponent

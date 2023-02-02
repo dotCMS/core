@@ -2,7 +2,7 @@
     *ngIf="status === 'SELECT'; else preview"
     [accept]="type + '/*'"
     [customUpload]="true"
-    (onSelect)="onSelectFile($event)"
+    (onSelect)="onSelectFile($event.files)"
     chooseLabel="browse files"
     mode="basic"
     maxFileSize="1000000"

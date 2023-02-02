@@ -44,11 +44,11 @@ export class DotUploadAssetComponent {
     /**
      * Set Selected File
      *
-     * @param {{ files: File[] }} event
+     * @param {File[]} files
      * @memberof DotUploadAssetComponent
      */
-    onSelectFile(event: { files: File[] }) {
-        const file = event.files[0];
+    onSelectFile(files: File[]) {
+        const file = files[0];
         const reader = new FileReader();
         reader.onload = (e) => this.setFile(file, e.target.result);
         // Allows us to get a secure url without usin the Angular bypasssecuritytrusthtml
