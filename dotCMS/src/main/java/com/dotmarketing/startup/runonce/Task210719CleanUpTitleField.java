@@ -48,25 +48,11 @@ public class Task210719CleanUpTitleField implements StartupTask {
 
     public void executePgUpgrade() throws DotDataException, DotRuntimeException {
 
-        
-        
-        
-        int rowsAffecrted=0;
-        
         try (Connection conn = DbConnectionFactory.getDataSource().getConnection()){
             
-            int remaining = (int) new DotConnect().setSQL("select inode from contentlet where title is not null limit 1").loadObjectResults(conn).size();
-            while(remaining>0) {
-                
-                new DotConnect()
-                .executeStatement("update contentlet set title=null where contentlet.inode in (select inode from contentlet where title is not null limit 500)", conn);
-                rowsAffecrted+=500;
-                Logger.info(getClass(), "Task210719CleanUpTitleField Updated: "+ rowsAffecrted );
-                remaining = (int) new DotConnect().setSQL("select inode from contentlet where title is not null limit 1").loadObjectResults(conn).size();
-            }
-            
-            
-
+            new DotConnect().executeStatement("ALTER TABLE contentlet drop column title", conn);
+            new DotConnect().executeStatement("ALTER TABLE contentlet add column title varchar(255)", conn);
+                    
         } catch (SQLException exception) {
             throw new DotRuntimeException(exception);
         }

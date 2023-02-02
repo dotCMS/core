@@ -64,7 +64,6 @@ public class VanityUrlAPIImpl implements VanityUrlAPI {
      + " cvi.live_inode is not null and "
      + " identifier.id = cvi.identifier and  "
      + " identifier.host_inode = ? and  "
-     + " cvi.lang = ? and "
      + " identifier.asset_subtype in   "
      + " (select velocity_var_name from structure where structuretype=7)";
   
@@ -103,9 +102,14 @@ public class VanityUrlAPIImpl implements VanityUrlAPI {
     if(site==null || site.getIdentifier()==null) {
         throw new DotStateException("Site cannot be null. Got: " + site);
     }
-    Logger.info(this.getClass(), String.format("Populating Vanity URLs for Site '%s'", site.getHostname()));
+    
+    List<CachedVanityUrl> vanitiesAllLanguages = findInDb(site);
+    
+    Logger.info(this.getClass(), String.format("Populating " +vanitiesAllLanguages.size() + " Vanity URLs for Site '%s'", site.getHostname()));
+    
+    
     for (final Language language : languageAPI.getLanguages()) {
-      cache.putSiteMappings(site, language, findInDb(site, language));
+      cache.putSiteMappings(site, language, vanitiesAllLanguages.stream().filter(v->v.languageId == language.getId()).collect(Collectors.toList()));
     }
   }
 
@@ -117,6 +121,21 @@ public class VanityUrlAPIImpl implements VanityUrlAPI {
     populateVanityURLsCacheBySite(APILocator.getHostAPI().findSystemHost());
   }
 
+  
+  @Override
+  public List<CachedVanityUrl> findInDb(Host site, Language language) {
+
+      if (!UtilMethods.isSet(site) || !UtilMethods.isSet(site.getIdentifier())) {
+          return List.of();
+      }
+      if (language == null) {
+          return List.of();
+      }
+
+      return findInDb(site).stream().filter(v -> v.languageId == language.getId()).collect(Collectors.toList());
+  }
+  
+  
   /**
    * Executes a SQL query that will return all the Vanity URLs that belong to a specific Site. This
    * method moved from using the ES index to using a SQL query in order to avoid situations where the
@@ -129,18 +148,17 @@ public class VanityUrlAPIImpl implements VanityUrlAPI {
    */
   @Override
   @CloseDBIfOpened
-  public List<CachedVanityUrl> findInDb(final Host site, final Language language) {
+  public List<CachedVanityUrl> findInDb(final Host site) {
 
     try {
 
       if (!UtilMethods.isSet(site) || !UtilMethods.isSet(site.getIdentifier())) {
-        return null;
+        return List.of();
       }
 
       final List<Map<String, Object>> vanityUrls = new DotConnect().setSQL(
                       SELECT_LIVE_VANITY_URL_INODES)
               .addParam(site.getIdentifier())
-              .addParam(language.getId())
               .loadObjectResults();
 
       final List<String> vanityUrlInodes =
@@ -168,8 +186,8 @@ public class VanityUrlAPIImpl implements VanityUrlAPI {
     } catch (final Exception e) {
       Logger.error(this,
               String.format(
-                      "An error occurred when retrieving Vanity URLs: siteId=[%s], languageId=[%s]",
-                      site.getIdentifier(), language.getId()),
+                      "An error occurred when retrieving Vanity URLs: siteId=[%s]",
+                      site.getIdentifier()),
               e);
       throw new DotStateException(e);
     }
@@ -367,4 +385,6 @@ public class VanityUrlAPIImpl implements VanityUrlAPI {
       }
       return false;
   }
+
+
 }
