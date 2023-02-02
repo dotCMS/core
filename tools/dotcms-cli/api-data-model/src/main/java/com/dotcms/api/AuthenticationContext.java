@@ -3,12 +3,12 @@ package com.dotcms.api;
 import java.util.Optional;
 
 /**
- * Context that keeps the loged in user info
+ * Context that keeps the logged-in user info
  */
 public interface AuthenticationContext {
 
     /**
-     * Current logged in user Empty Optional if none
+     * Current logged-in user Empty Optional if none
      * @return
      */
     Optional<String> getUser() ;
