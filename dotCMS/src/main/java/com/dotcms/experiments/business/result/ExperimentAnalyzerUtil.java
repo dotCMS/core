@@ -7,6 +7,7 @@ import com.dotcms.analytics.metrics.MetricType;
 import com.dotcms.cube.CubeJSResultSet;
 import com.dotcms.experiments.model.Experiment;
 import com.dotcms.experiments.model.ExperimentVariant;
+import com.dotcms.experiments.model.Goals;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
@@ -47,7 +48,10 @@ public enum ExperimentAnalyzerUtil {
      */
     public ExperimentResult getExperimentResult(final Experiment experiment,
             final List<BrowserSession> browserSessions)  {
-        final MetricType goalMetricType = experiment.goals().get().primary().type();
+        final Goals goals = experiment.goals()
+                .orElseThrow(() -> new IllegalArgumentException("The Experiment must have a Goal"));
+
+        final MetricType goalMetricType = goals.primary().type();
         final MetricExperimentAnalyzer metricExperimentAnalyzer = experimentResultQueryHelpers.get()
                 .get(goalMetricType);
 
@@ -56,7 +60,7 @@ public enum ExperimentAnalyzerUtil {
         final SortedSet<ExperimentVariant> variants = experiment.trafficProportion().variants();
         builder.addVariants(variants);
 
-        final Metric goal = experiment.goals().get().primary();
+        final Metric goal = goals.primary();
         builder.addGoal(goal);
 
         final String pageId = experiment.pageId();
