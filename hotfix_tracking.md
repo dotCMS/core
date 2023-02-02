@@ -1,0 +1,7 @@
+#DOTCMS_CORE
+
+This maintenance release includes the following code fixes:
+
+**Release-23.01.1**
+
+1. https://github.com/dotCMS/core/issues/23280 : Unable to assign contentlets in a secondary language from the task screen if there is a working version of the default language #23280
