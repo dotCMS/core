@@ -74,8 +74,9 @@ public class PaginationUtil {
 	 *
 	 * @return The minimum index.
 	 */
-	private int getMinIndex(final int currentPage, final int perPage) {
-		return (Math.abs(currentPage) - 1) * perPage;
+	private int getMinIndex(int currentPage, int perPage){
+		return (currentPage - 1) * perPage;
+
 	}
 
 	/**
@@ -178,8 +179,8 @@ public class PaginationUtil {
 								   final int perPage, final String orderBy, final OrderDirection direction,
 								   final Map<String, Object> extraParams,
 								   final Function<PaginatedArrayList<T>, R> function) {
-		final int pageValue = page == 0 ? FIRST_PAGE_INDEX : page;
-		final int perPageValue = perPage == 0 ? perPageDefault : perPage;
+		final int pageValue = page <= 0 ? FIRST_PAGE_INDEX : page;
+		final int perPageValue = perPage <= 0 ? perPageDefault : perPage;
 		final int minIndex = this.getMinIndex(pageValue, perPageValue);
 		final String sanitizeFilter = filter != null ? SQLUtil.sanitizeParameter(filter) : StringPool.BLANK;
 		final Map<String, Object> params = this.getParameters(sanitizeFilter, orderBy, direction, extraParams);
