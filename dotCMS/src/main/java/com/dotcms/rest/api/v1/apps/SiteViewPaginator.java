@@ -5,7 +5,6 @@ import com.dotcms.util.pagination.OrderDirection;
 import com.dotcms.util.pagination.PaginationException;
 import com.dotcms.util.pagination.PaginatorOrdered;
 import com.dotmarketing.beans.Host;
-import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
@@ -75,13 +74,13 @@ public class SiteViewPaginator implements PaginatorOrdered<SiteView> {
 
             final long totalCount = allSitesIdentifiers.size();
 
-            //This values are fed from the outside through the appsAPI.
+            //These values are fed from the outside through the appsAPI.
             final Set<String> sitesWithConfigurations = configuredSitesSupplier.get().stream()
                     .map(String::toLowerCase).collect(Collectors.toSet());
             final LinkedHashSet<String> allSites = new LinkedHashSet<>(allSitesIdentifiers);
 
             //By doing this we remove from the configured-sites collection whatever sites didn't match the search.
-            //If it isn't part of the search results also discard from the configured sites we intent to show.
+            //If it isn't part of the search results also discard from the configured sites we intend to show.
             final LinkedHashSet<String> configuredSites = sitesWithConfigurations.stream()
                     .filter(allSites::contains)
                     .collect(Collectors.toCollection(LinkedHashSet::new));
@@ -125,12 +124,12 @@ public class SiteViewPaginator implements PaginatorOrdered<SiteView> {
      * First-one the Set coming from the serviceIntegrations-API containing all the sites with configurations.
      * Second-one a List with all the sites coming from querying the index.
      * Meaning this list is expected to come filtered and sorted.
-     * The resulting list will have all the configured items first and then he rest of the entries.
-     * Additionally to that SYSTEM_HOST is always expected to appear first if it ever existed on the allSites list.
+     * The resulting list will have all the configured items first and then the rest of the entries.
+     * Additionally, to that SYSTEM_HOST is always expected to appear first if it ever existed on the allSites list.
      * (Cuz it could have been removed from applying filtering).
      * @param configuredSites sites with configurations coming from service Integration API.
      * @param allSites all-sites sorted and filtered loaded from ES
-     * @return a brand new List ordered.
+     * @return a brand-new List ordered.
      */
     private List<String> join(final Set<String> configuredSites, final List<String> allSites) {
         final List<String> newList = new LinkedList<>();
@@ -178,8 +177,9 @@ public class SiteViewPaginator implements PaginatorOrdered<SiteView> {
             hostStream = hostStream.filter(host -> host.getHostname().matches(regexFilter));
         }
         return hostStream.filter(host -> Try.of(() -> permissionAPI
-                .doesUserHavePermission(host, PermissionAPI.PERMISSION_READ, user))
-                .getOrElse(false)).sorted(Comparator.comparing(Host::getHostname))
+                                .doesUserHavePermission(host, PermissionAPI.PERMISSION_READ, user))
+                        .getOrElse(false)).filter(h -> h.getHostname() != null)
+                .sorted(Comparator.comparing(Host::getHostname))
                 .map(Contentlet::getIdentifier).filter(Objects::nonNull).map(String::toLowerCase)
                 .collect(Collectors.toList());
 
