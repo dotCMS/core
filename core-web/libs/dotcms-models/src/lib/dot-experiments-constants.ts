@@ -96,7 +96,7 @@ export const GOALS_METADATA_MAP: Record<GOAL_TYPES, { label: string; description
         description: 'experiments.goal.reach_page.description'
     },
     [GOAL_TYPES.BOUNCE_RATE]: {
-        label: 'experiments.goal.bounce_rate',
+        label: 'experiments.goal.bounce_rate.name',
         description: 'experiments.goal.bounce_rate.description'
     },
     [GOAL_TYPES.CLICK_ON_ELEMENT]: {
