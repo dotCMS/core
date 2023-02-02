@@ -75,7 +75,7 @@ public class PaginationUtil {
 	 * @return The minimum index.
 	 */
 	private int getMinIndex(final int currentPage, final int perPage) {
-		return (currentPage - 1) * perPage;
+		return (Math.abs(currentPage) - 1) * perPage;
 	}
 
 	/**
