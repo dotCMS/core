@@ -4,7 +4,11 @@ import com.dotcms.model.config.ServiceBean;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
+import com.google.errorprone.annotations.CanIgnoreReturnValue;
 import io.quarkus.arc.DefaultBean;
+import org.eclipse.microprofile.config.inject.ConfigProperty;
+
+import javax.enterprise.context.ApplicationScoped;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -14,13 +18,10 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
-import javax.enterprise.context.ApplicationScoped;
-import javax.inject.Inject;
-import org.eclipse.microprofile.config.inject.ConfigProperty;
 
-@DefaultBean
+//@DefaultBean
 @ApplicationScoped
-public class YamlFactoryServiceManagerImpl implements ServiceManager{
+public class YamlFactoryServiceManagerImpl implements ServiceManager {
 
     private static final ObjectMapper ymlMapper = new ObjectMapper(new YAMLFactory())
             .findAndRegisterModules();
@@ -30,13 +31,12 @@ public class YamlFactoryServiceManagerImpl implements ServiceManager{
     String dotServiceYml;
 
     @Override
+    @CanIgnoreReturnValue
     public ServiceManager persist(ServiceBean service) throws IOException {
         final List<ServiceBean> beans = services();
         final List<ServiceBean> merged = mergeServiceBeans(beans, service);
         try (OutputStream outputStream = Files.newOutputStream(filePath())) {
             ymlMapper.writeValue(outputStream, merged);
-        }catch (Exception e){
-            throw new RuntimeException(e);
         }
         cached = null;
         return this;
@@ -46,30 +46,34 @@ public class YamlFactoryServiceManagerImpl implements ServiceManager{
 
     @Override
     public List<ServiceBean> services() {
-        //TODO: make his thread safe
         if(null != cached){
            return cached;
         }
         final Path path = filePath();
         final File yaml = path.toFile();
-        if(!yaml.exists()){
-            return new ArrayList<>();
+        if(!yaml.exists() || yaml.length() == 0 ){
+            return List.of();
         }
         try (InputStream inputStream = Files.newInputStream(path)) {
             cached = ymlMapper.readValue(inputStream, new TypeReference<>() {
             });
         } catch (IOException e){
-            throw new RuntimeException(e);
+            throw new IllegalStateException(e);
         }
         return cached;
     }
 
     @Override
+    @CanIgnoreReturnValue
     public ServiceManager removeAll() {
         final Path path = filePath();
         final File yaml = path.toFile();
         if(yaml.exists()){
-           yaml.delete();
+            try {
+                Files.delete(path);
+            } catch (IOException e) {
+                throw new IllegalStateException(e);
+            }
         }
         cached = null;
         return this;
@@ -86,7 +90,7 @@ public class YamlFactoryServiceManagerImpl implements ServiceManager{
     private List<ServiceBean> mergeServiceBeans(final List<ServiceBean> beans, ServiceBean newServiceBean) {
         int activeCount = 0;
         List<ServiceBean> merged = new ArrayList<>();
-        final Iterator<ServiceBean> iterator = beans.iterator();
+        final Iterator<ServiceBean> iterator =  new ArrayList<>(beans).iterator();
         while (iterator.hasNext()) {
             ServiceBean serviceBean = iterator.next();
             //if the new incoming bean is meant to be the new active one.. We mark all others inactive

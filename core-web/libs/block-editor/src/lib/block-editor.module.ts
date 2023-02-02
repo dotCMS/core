@@ -5,14 +5,6 @@ import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 // DotCMS JS
 import { LoggerService, StringUtils } from '@dotcms/dotcms-js';
 
-// Directives
-
-// Nodes
-
-// Extension Components
-
-// Shared
-
 //Editor
 import { DotBlockEditorComponent } from './components/dot-block-editor/dot-block-editor.component';
 import { DotEditorCountBarComponent } from './components/dot-editor-count-bar/dot-editor-count-bar.component';
@@ -27,9 +19,9 @@ import {
     LoaderComponent,
     SuggestionPageComponent
 } from './extensions';
+import { AssetFormModule } from './extensions/asset-form/asset-form.module';
 import { BubbleFormComponent } from './extensions/bubble-form/bubble-form.component';
 import { FloatingButtonComponent } from './extensions/floating-button/floating-button.component';
-import { ImageTabviewFormModule } from './extensions/image-tabview-form/image-tabview-form.module';
 import { ContentletBlockComponent } from './nodes';
 import { EditorDirective } from './shared/directives';
 import { PrimengModule } from './shared/primeng.module';
@@ -42,7 +34,7 @@ import { SharedModule } from './shared/shared.module';
         ReactiveFormsModule,
         SharedModule,
         PrimengModule,
-        ImageTabviewFormModule
+        AssetFormModule
     ],
     declarations: [
         EditorDirective,

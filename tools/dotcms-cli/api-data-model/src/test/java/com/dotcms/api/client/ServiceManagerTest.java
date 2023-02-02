@@ -12,8 +12,11 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 @QuarkusTest
-public class ServiceManagerTest {
+class ServiceManagerTest {
 
+    public static final String FAKE_TOKEN_1 = "7WK5T79u5mIzjIXXi2oI9Fglmgivv7RAJ7izyj9tUyQ";
+    public static final String FAKE_TOKEN_2 = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9";
+    public static final String FAKE_TOKEN_3 = "OpOSSw7e485LOP5PrzScxHb7SR6sAOMRckfFwi4rp7o";
     @Inject
     ServiceManager serviceManager;
 
@@ -23,14 +26,14 @@ public class ServiceManagerTest {
     }
 
     @Test
-    public void Test_Persist_Then_Recover() throws IOException {
+    void Test_Persist_Then_Recover() throws IOException {
 
 
         final ServiceBean serviceBeanDefault = ServiceBean.builder().name("default")
                 .active(false)
                 .credentials(
                         CredentialsBean.builder().user("admin")
-                                .token("7WK5T79u5mIzjIXXi2oI9Fglmgivv7RAJ7izyj9tUyQ".toCharArray()).build())
+                                .token(FAKE_TOKEN_1.toCharArray()).build())
                 .build();
         serviceManager.persist(serviceBeanDefault);
 
@@ -38,7 +41,7 @@ public class ServiceManagerTest {
                 .active(false)
                 .credentials(
                         CredentialsBean.builder().user("admin")
-                                .token("eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9".toCharArray()).build())
+                                .token(FAKE_TOKEN_2.toCharArray()).build())
                 .build();
         serviceManager.persist(serviceBeanDemo1);
 
@@ -46,7 +49,7 @@ public class ServiceManagerTest {
                 .active(false)
                 .credentials(
                         CredentialsBean.builder().user("admin")
-                                .token("OpOSSw7e485LOP5PrzScxHb7SR6sAOMRckfFwi4rp7o".toCharArray()).build())
+                                .token(FAKE_TOKEN_3.toCharArray()).build())
                 .build();
         serviceManager.persist(serviceBeanDemo2);
 
@@ -68,7 +71,7 @@ public class ServiceManagerTest {
                 .active(false)
                 .credentials(
                         CredentialsBean.builder().user("admin")
-                                .token("OpOSSw7e485LOP5PrzScxHb7SR6sAOMRckfFwi4rp7o".toCharArray()).build())
+                                .token(FAKE_TOKEN_3.toCharArray()).build())
                 .build();
         serviceManager.persist(serviceBeanDemoDupe);
         final List<ServiceBean> serviceBeansAfterDupeWasAdded = serviceManager.services();
@@ -81,7 +84,7 @@ public class ServiceManagerTest {
                 .active(true)
                 .credentials(
                         CredentialsBean.builder().user("admin")
-                                .token("OpOSSw7e485LOP5PrzScxHb7SR6sAOMRckfFwi4rp7o".toCharArray()).build())
+                                .token(FAKE_TOKEN_3.toCharArray()).build())
                 .build();
 
         serviceManager.persist(activeBean);

@@ -19,17 +19,17 @@ import {
     DotImageService,
     DragHandlerComponent,
     FileStatus,
-    ImageTabviewFormComponent,
+    AssetFormComponent,
     LoaderComponent
 } from '../../extensions';
 import { ContentletBlockComponent } from '../../nodes';
 import {
     CONTENTLETS_MOCK,
     DotLanguageService,
-    IMAGE_CONTENTLETS_MOCK,
     SearchService,
     SuggestionsComponent,
-    SuggestionsService
+    SuggestionsService,
+    ASSET_MOCK
 } from '../../shared';
 
 export default {
@@ -160,17 +160,20 @@ export const primary = () => ({
                 useValue: {
                     get(params) {
                         const query = params.query.match(new RegExp(/(?<=:)(.*?)(?=\*)/))[0];
+                        const contenttype = params.query.match(
+                            new RegExp(/(?<=(contenttype:))(.*?)(?=\/)/)
+                        )[0];
+
+                        const mock = ASSET_MOCK[contenttype];
                         const contentlets = query
-                            ? IMAGE_CONTENTLETS_MOCK.filter(({ fileName }) =>
-                                  fileName.includes(query)
-                              )
-                            : IMAGE_CONTENTLETS_MOCK;
+                            ? mock.filter(({ fileName }) => fileName.includes(query))
+                            : mock;
 
                         return of({
                             jsonObjectView: {
                                 contentlets: contentlets.slice(params.offset, params.offset + 20)
                             },
-                            resultsSize: query ? contentlets?.length : IMAGE_CONTENTLETS_MOCK.length
+                            resultsSize: query ? contentlets?.length : mock.length
                         }).pipe(delay(1000));
                     }
                 }
@@ -184,7 +187,7 @@ export const primary = () => ({
             DragHandlerComponent,
             LoaderComponent,
             BubbleLinkFormComponent,
-            ImageTabviewFormComponent
+            AssetFormComponent
         ]
     },
     component: DotBlockEditorComponent

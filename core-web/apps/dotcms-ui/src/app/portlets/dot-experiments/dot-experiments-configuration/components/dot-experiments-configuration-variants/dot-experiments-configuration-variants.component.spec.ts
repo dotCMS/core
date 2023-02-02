@@ -265,6 +265,44 @@ describe('DotExperimentsConfigurationVariantsComponent', () => {
             expect(output).toEqual({ ...variants[1], name: newVariantName });
         });
 
+        it('should save when press enter', () => {
+            spyOn(spectator.component, 'editVariantName');
+
+            spectator.component.vm$ = of({
+                status: {
+                    status: Status.IDLE,
+                    isOpen: false,
+                    experimentStep: ExperimentSteps.GOAL
+                }
+            });
+
+            const variants: Variant[] = [
+                { id: '1', name: DEFAULT_VARIANT_NAME, weight: '50.00', url: 'url' },
+                { id: '2', name: 'to edit', weight: '50.00', url: 'url' }
+            ];
+
+            spectator.setInput({
+                variants
+            });
+
+            spectator.query(Inplace).activate();
+
+            spectator.detectComponentChanges();
+
+            const inplaceInput = spectator.query(byTestId('inplace-input')) as HTMLInputElement;
+            inplaceInput.value = 'new value';
+            spectator.detectComponentChanges();
+
+            spectator.dispatchKeyboardEvent(inplaceInput, 'keydown', 'Enter');
+
+            spectator.detectComponentChanges();
+
+            expect(spectator.component.editVariantName).toHaveBeenCalledWith(
+                'new value',
+                variants[1]
+            );
+        });
+
         it('should the button of save show loading when is SAVING', () => {
             spectator.query(Inplace).activate();
 
