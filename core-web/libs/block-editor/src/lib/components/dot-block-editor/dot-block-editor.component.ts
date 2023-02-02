@@ -91,22 +91,16 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy {
     constructor(private injector: Injector, public viewContainerRef: ViewContainerRef) {}
 
     ngOnInit() {
-        //  const extensions = await this.setEditorExtensions()
-        from(this.loadImageNode()).subscribe((image) => {
-            console.log('image', image);
-            // Todo el Codigo
+        from(this.setEditorExtensions()).subscribe((extensions) => {
             this.editor = new Editor({
-                extensions: [StarterKit.configure(this.setStarterKitOptions()), image]
+                extensions,
+                content: '<p>Hello World!</p><hellow-world></hellow-world>'
             });
-            this.editor.commands.setContent(
-                '<img src="https://img.freepik.com/free-vector/flat-design-abstract-geometric-real-estate-youtube-thumbnail_23-2149124845.jpg?w=2000" />'
-            );
-            console.log(this.editor);
 
-            /*   this.editor.on('create', () => this.updateChartCount());
-        this.subject
-            .pipe(takeUntil(this.destroy$), debounceTime(250))
-            .subscribe(() => this.updateChartCount()); */
+            this.editor.on('create', () => this.updateChartCount());
+            this.subject
+                .pipe(takeUntil(this.destroy$), debounceTime(250))
+                .subscribe(() => this.updateChartCount());
         });
     }
 
@@ -124,11 +118,15 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy {
     }
 
     private async loadImageNode() {
-        const url =
-            'https://cdn.skypack.dev/-/@tiptap/extension-image@v2.0.0-beta.209-ZTnvxbVFzhKCGGatBhJQ/dist=es2019,mode=imports/optimized/@tiptap/extension-image.js';
-        const module = await import(/* webpackIgnore: true */ url);
-        console.log('Module', module);
-        return module.Image;
+        //const url = './index.js';
+
+        const { CustomNode, CustomExtension, HighlightCustom } = await import('./index.js');
+
+        return {
+            CustomNode,
+            CustomExtension,
+            HighlightCustom
+        };
     }
 
     private async setEditorExtensions(): Promise<AnyExtension[]> {
@@ -165,11 +163,13 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy {
             DotTableHeaderExtension(),
             TableRow
         ];
-
+        const { CustomNode, CustomExtension, HighlightCustom } = await this.loadImageNode();
         const customExtensions: Map<string, AnyExtension> = new Map([
             ['contentlets', ContentletBlock(this.injector)],
             ['table', DotTableExtension()],
-            ['image', await this.loadImageNode()]
+            ['customNode', CustomNode],
+            ['customExtension', CustomExtension],
+            ['highlightCustom', HighlightCustom]
         ]);
 
         return [
