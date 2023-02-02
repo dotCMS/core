@@ -157,7 +157,7 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy {
             TableRow
         ];
         const customExtensions: Map<string, AnyExtension> = new Map([
-            ['contentlets', ContentletBlock(this.injector)],
+            ['dotContent', ContentletBlock(this.injector)],
             ['table', DotTableExtension()],
             ['image', ImageNode]
         ]);
@@ -213,8 +213,8 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy {
 
     private setCustomExtensions(customExtensions: Map<string, AnyExtension>): AnyExtension[] {
         return [
-            ...(this._allowedBlocks.includes('contentlets')
-                ? [customExtensions.get('contentlets')]
+            ...(this._allowedBlocks.includes('dotContent')
+                ? [customExtensions.get('dotContent')]
                 : []),
             ...(this._allowedBlocks.includes('image') ? [customExtensions.get('image')] : []),
             ...(this._allowedBlocks.includes('table') ? [customExtensions.get('table')] : [])
