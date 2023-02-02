@@ -89,3 +89,4 @@ This maintenance release includes the following code fixes:
 72. https://github.com/dotCMS/core/issues/21735 : Content with 2 Relationship Fields of Same Type Also Shows Non-Available Languages #21735
 73. https://github.com/dotCMS/core/issues/21832 : [Static Push] Removing a Page removes all files related to the page, not only the page #21832
 74. https://github.com/dotCMS/core/issues/21929 : PullRelatedField is not pulling the content in any order #21929
+75. https://github.com/dotCMS/core/issues/22140 : Contentlet loosing in the page after layout change #22140
