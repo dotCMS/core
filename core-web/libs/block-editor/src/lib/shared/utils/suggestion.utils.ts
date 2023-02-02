@@ -111,7 +111,7 @@ export const SuggestionPopperModifiers = [
     }
 ];
 
-export const CONTENT_SUGGESTION_ID = 'contentlets';
+export const CONTENT_SUGGESTION_ID = 'dotContent';
 
 const FORBIDDEN_CHANGE_TO_BLOCKS = {
     horizontalRule: true,
