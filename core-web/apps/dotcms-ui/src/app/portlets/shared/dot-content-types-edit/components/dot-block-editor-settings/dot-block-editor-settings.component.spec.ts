@@ -9,13 +9,11 @@ import { By } from '@angular/platform-browser';
 import { MultiSelect, MultiSelectModule } from 'primeng/multiselect';
 
 import { DotHttpErrorManagerService } from '@dotcms/app/api/services/dot-http-error-manager/dot-http-error-manager.service';
+import { getEditorBlockOptions } from '@dotcms/block-editor';
 import { DotMessageService } from '@dotcms/data-access';
 import { MockDotMessageService, mockFieldVariables } from '@dotcms/utils-testing';
 
-import {
-    BLOCK_EDITOR_BLOCKS,
-    DotBlockEditorSettingsComponent
-} from './dot-block-editor-settings.component';
+import { DotBlockEditorSettingsComponent } from './dot-block-editor-settings.component';
 
 import { DotFieldVariablesService } from '../fields/dot-content-type-fields-variables/services/dot-field-variables.service';
 
@@ -161,8 +159,8 @@ describe('DotContentTypeFieldsVariablesComponent', () => {
             expect(multiselect.appendTo).toEqual('body');
         });
 
-        it('should have BLOCK_EDITOR_BLOCKS options', () => {
-            expect(multiselect.options).toEqual(BLOCK_EDITOR_BLOCKS);
+        it('should have Editor Block Options options', () => {
+            expect(multiselect.options).toEqual(getEditorBlockOptions());
         });
     });
 

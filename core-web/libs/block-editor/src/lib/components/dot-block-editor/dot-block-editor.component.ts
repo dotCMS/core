@@ -27,10 +27,10 @@ import {
     DotTableExtension,
     DragHandler,
     DotFloatingButton,
-    BubbleImageTabviewFormExtension,
+    BubbleAssetFormExtension,
     ImageUpload
 } from '../../extensions';
-import { ContentletBlock, ImageNode } from '../../nodes';
+import { ContentletBlock, ImageNode, VideoNode } from '../../nodes';
 import { formatHTML, SetDocAttrStep } from '../../shared/utils';
 
 function toTitleCase(str) {
@@ -127,7 +127,7 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy {
             DotBubbleMenuExtension(this.viewContainerRef),
             BubbleFormExtension(this.viewContainerRef),
             DotFloatingButton(this.injector, this.viewContainerRef),
-            BubbleImageTabviewFormExtension(this.viewContainerRef),
+            BubbleAssetFormExtension(this.viewContainerRef),
             // Marks Extensions
             Underline,
             CharacterCount,
@@ -150,7 +150,8 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy {
         const customExtensions: Map<string, AnyExtension> = new Map([
             ['contentlets', ContentletBlock(this.injector)],
             ['table', DotTableExtension()],
-            ['image', ImageNode]
+            ['image', ImageNode],
+            ['video', VideoNode]
         ]);
 
         return [
@@ -207,7 +208,8 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy {
             ...(this._allowedBlocks.includes('contentlets')
                 ? [customExtensions.get('contentlets')]
                 : []),
-            ...(this._allowedBlocks.includes('dotImage') ? [customExtensions.get('dotImage')] : [])
+            ...(this._allowedBlocks.includes('image') ? [customExtensions.get('image')] : []),
+            ...(this._allowedBlocks.includes('video') ? [customExtensions.get('video')] : [])
         ];
     }
 }
