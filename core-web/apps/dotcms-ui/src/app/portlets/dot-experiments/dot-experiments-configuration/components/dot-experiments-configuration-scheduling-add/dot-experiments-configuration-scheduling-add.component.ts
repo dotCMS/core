@@ -44,7 +44,7 @@ import { DotSidebarHeaderComponent } from '@shared/dot-sidebar-header/dot-sideba
 export class DotExperimentsConfigurationSchedulingAddComponent implements OnInit {
     form: FormGroup;
     scheduling: RangeOfDateAndTime;
-    statusList = Status;
+    stepStatus = Status;
 
     today = new Date();
 

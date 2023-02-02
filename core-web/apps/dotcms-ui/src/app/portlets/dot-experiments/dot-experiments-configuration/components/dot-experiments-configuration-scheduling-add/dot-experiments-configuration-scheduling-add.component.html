@@ -37,7 +37,7 @@
     <ng-template #actionHeaderBtnTpl>
         <button
             [disabled]="!form.valid"
-            [loading]="vm.status.status === statusList.SAVING"
+            [loading]="vm.status.status === stepStatus.SAVING"
             (click)="save(vm.experimentId)"
             data-testId="add-scheduling-button"
             label="{{ 'Done' | dm }}"
