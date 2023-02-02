@@ -4,7 +4,7 @@ interface BlockMap {
     [key: string]: boolean;
 }
 
-// If we allowed tables, we must allowed its dependencies.
+// If we allowed tables, we must allow its dependencies.
 const tableContent: BlockMap = {
     table: true,
     tableRow: true,
