@@ -46,6 +46,30 @@
 
 </style>
 
+<script type="text/javascript">
+	const relationsLoadedMap = {};
+	function waitForRelation() {
+		return new Promise((resolve) => {
+			const observer = new MutationObserver((mutations) => {
+				if (allRelationsHaveLoad()) {
+					resolve(true);
+					observer.disconnect();
+				}
+			});
+			observer.observe(document.body, {
+				childList: true,
+				attributes: true,
+				characterData: true,
+				subtree: true
+			});
+		});
+	}
+	function allRelationsHaveLoad() {
+		// Check all the Relation fields exist.
+		return !(Object.values(relationsLoadedMap).filter((loaded) => !loaded).length);
+	}
+</script>
+
 
 
 
