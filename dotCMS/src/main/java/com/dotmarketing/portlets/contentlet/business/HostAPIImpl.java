@@ -60,6 +60,8 @@ import java.util.stream.Collectors;
  */
 public class HostAPIImpl implements HostAPI, Flushable<Host> {
 
+    public static ThreadLocal<String> testThreadLocal = new ThreadLocal<>();
+
     private HostCache hostCache = CacheLocator.getHostCache();
     private Host systemHost;
     private final SystemEventsAPI systemEventsAPI;
@@ -192,9 +194,13 @@ public class HostAPIImpl implements HostAPI, Flushable<Host> {
                            final boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
         
         try {
+
             return findByNameNotDefault(siteName, user, respectFrontendRoles);
         } catch (Exception e) {
-            
+            if (HostAPIImpl.testThreadLocal.get().equals(siteName))
+            {
+                Logger.info(this, "Default Host not found, returning system host");
+            }
             try {
                 return findDefaultHost(APILocator.systemUser(), respectFrontendRoles);
             } catch(Exception ex){

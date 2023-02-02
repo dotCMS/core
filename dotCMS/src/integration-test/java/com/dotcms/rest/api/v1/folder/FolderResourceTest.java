@@ -16,9 +16,11 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.portlets.contentlet.business.HostAPIImpl;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.folders.exception.InvalidFolderNameException;
 import com.dotmarketing.portlets.folders.model.Folder;
+import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UUIDGenerator;
 import com.liferay.portal.model.User;
 import com.liferay.util.Base64;
@@ -39,6 +41,7 @@ public class FolderResourceTest {
     static FolderResource resource;
     static FolderAPI folderAPI;
     static User adminUser;
+
 
     @BeforeClass
     public static void prepare() throws Exception {
@@ -300,6 +303,10 @@ public class FolderResourceTest {
         final long currentTime = System.currentTimeMillis();
         final List<String> foldersToCreate = Arrays.asList("test_"+currentTime+"/folder_"+currentTime);
         final Host newHost = new SiteDataGen().nextPersisted();
+
+        Logger.info(this, "STEVETEST: Host Identifier: " + newHost.getIdentifier()+ " Host Name: " + newHost.getHostname());
+        HostAPIImpl.testThreadLocal.set(newHost.getIdentifier());
+
 
         //Create Folders and SubFolders
         Response responseResource = resource.createFolders(getHttpRequest(adminUser.getEmailAddress(),"admin"),response,foldersToCreate,newHost.getHostname());

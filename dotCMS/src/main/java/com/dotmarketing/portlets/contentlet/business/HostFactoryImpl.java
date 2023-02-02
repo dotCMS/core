@@ -164,7 +164,15 @@ public class HostFactoryImpl implements HostFactory {
 
     @Override
     public Host bySiteName(final String siteName) {
+        if (HostAPIImpl.testThreadLocal.get().equals(siteName))
+        {
+            Logger.info(this, "Checking for site: " + siteName + " in cache");
+        }
         Host site = siteCache.get(siteName);
+        if (HostAPIImpl.testThreadLocal.get().equals(siteName))
+        {
+            Logger.info(this, "Found site: " + siteName + " in cache with identifier: " + (site != null ? site.getIdentifier() : "null"));
+        }
         if (null == site || !UtilMethods.isSet(site.getIdentifier())) {
             final DotConnect dc = new DotConnect();
             final StringBuilder sqlQuery = new StringBuilder().append(SELECT_SITE_INODE)
@@ -175,10 +183,18 @@ public class HostFactoryImpl implements HostFactory {
             try {
                 final List<Map<String, String>> dbResults = dc.loadResults();
                 if (dbResults.isEmpty()) {
+                    if (HostAPIImpl.testThreadLocal.get().equals(siteName))
+                    {
+                        Logger.info(this, "site: " + siteName + " not found in db");
+                    }
                     return null;
                 }
                 final String siteInode = dbResults.get(0).get("inode");
                 if (dbResults.size() > 1) {
+                    if (HostAPIImpl.testThreadLocal.get().equals(siteName))
+                    {
+                        Logger.info(this, "site: " + siteName + " Found Multiple sites");
+                    }
                     // This situation should NOT happen at all
                     final StringBuilder warningMsg = new StringBuilder().append("ERROR: ").append(dbResults.size())
                             .append(" Sites have the same name '").append(siteName).append("':\n");
@@ -190,6 +206,10 @@ public class HostFactoryImpl implements HostFactory {
                 }
                 final Contentlet siteAsContentlet = this.contentFactory.find(siteInode);
                 site = new Host(siteAsContentlet);
+                if (HostAPIImpl.testThreadLocal.get().equals(siteName))
+                {
+                    Logger.info(this, "site: " + siteName + " Adding to sitecache");
+                }
                 this.siteCache.add(site);
             } catch (final Exception e) {
                 final String errorMsg = String.format("An error occurred when retrieving Site by name '%s': %s",
