@@ -281,6 +281,8 @@ public class NavToolTest extends IntegrationTestBase{
         final Language spanishLanguage = TestDataUtils.getSpanishLanguage();
 
         final FileAsset fileAssetInSpanish = new FileAsset();
+        fileAssetInSpanish.setContentType(APILocator.getContentTypeAPI(APILocator.systemUser())
+                .find("FileAsset"));
         fileAssetInSpanish.setIdentifier("mutiLangFileAsset");
         fileAssetInSpanish.setLanguageId(spanishLanguage.getId());
 
@@ -297,6 +299,8 @@ public class NavToolTest extends IntegrationTestBase{
         case2.expectedResult = false;
 
         final FileAsset fileAssetInEnglish = new FileAsset();
+        fileAssetInEnglish.setContentType(APILocator.getContentTypeAPI(APILocator.systemUser())
+                .find("FileAsset"));
         fileAssetInEnglish.setIdentifier("mutiLangFileAsset");
         fileAssetInEnglish.setLanguageId(1);
 
@@ -328,8 +332,8 @@ public class NavToolTest extends IntegrationTestBase{
     }
 
     private static class NavToolTestCase {
-        List<IFileAsset> menuItems;
-        FileAsset itemFile;
+        List<Contentlet> menuItems;
+        Contentlet itemFile;
         Long selectedLang;
         Boolean expectedResult;
     }
@@ -339,7 +343,8 @@ public class NavToolTest extends IntegrationTestBase{
     public void testShouldAddFileInAnotherLang(final NavToolTestCase testCase) {
 
         final NavTool navTool = new NavTool();
-        assertEquals(testCase.expectedResult, navTool.shouldAddFileInAnotherLang(testCase.menuItems, testCase.itemFile,
+        final IFileAsset itemFile = APILocator.getFileAssetAPI().fromContentlet(Contentlet.class.cast(testCase.itemFile));
+        assertEquals(testCase.expectedResult, navTool.shouldAddFileInAnotherLang(testCase.menuItems, itemFile,
             testCase.selectedLang));
 
     }
