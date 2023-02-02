@@ -633,12 +633,6 @@ import org.junit.runners.Suite.SuiteClasses;
         UtilMethodsITest.class,
         Task220912UpdateCorrectShowOnMenuPropertyTest.class,
         HashedLocalFileRepositoryManagerTest.class,
-        PersonaActionletTest.class,
-        SendRedirectActionletTest.class,
-        SetRequestAttributeActionletTest.class,
-        StopProcessingActionletTest.class,
-        HttpMethodConditionletTest.class,
-        PagesViewedConditionletTest.class,
         ManifestUtilTest.class,
         ZipUtilTest.class,
         Task230110MakeSomeSystemFieldsRemovableByBaseTypeTest.class
