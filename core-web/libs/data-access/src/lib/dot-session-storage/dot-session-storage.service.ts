@@ -33,7 +33,7 @@ export class DotSessionStorageService {
      *
      * @memberof DotSessionStorageService
      */
-    removeVariationId(): void {
+    removeVariantId(): void {
         sessionStorage.removeItem(SESSION_STORAGE_VARIATION_KEY);
     }
 }

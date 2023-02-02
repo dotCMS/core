@@ -207,7 +207,7 @@
         <div class="form-horizontal">
             <dl>
                 <dt>
-                    <label for=""><%= LanguageUtil.get(pageContext, "TIMEMACHINE-SELECTHOST") %>:</label>
+                    <label class="required" for="hostSelector"><%= LanguageUtil.get(pageContext, "TIMEMACHINE-SELECTHOST") %></label>
                 </dt>
                 <dd>
                     <select id="hostSelector" name="hostSelector" dojoType="dijit.form.FilteringSelect" store="HostStore" pageSize="30" labelAttr="hostname"
@@ -237,7 +237,7 @@
             </dl>
             <dl>
                 <dt>
-                    <label for=""><%= LanguageUtil.get(pageContext, "TIMEMACHINE-ALLHOSTS") %>:</label>
+                    <label for="allhosts"><%= LanguageUtil.get(pageContext, "TIMEMACHINE-ALLHOSTS") %></label>
                 </dt>
                 <dd>
                     <div class="checkbox">
@@ -248,7 +248,7 @@
             </dl>
             <dl>
                 <dt>
-                    <label for=""><%= LanguageUtil.get(pageContext, "TIMEMACHINE-LANGUAGE") %>:</label>
+                    <label class="required" for=""><%= LanguageUtil.get(pageContext, "TIMEMACHINE-LANGUAGE") %></label>
                 </dt>
                 <dd>
                     <% for(Language lang : APILocator.getLanguageAPI().getLanguages()) { %>
@@ -274,7 +274,7 @@
             </dl>
             <dl>
                 <dt>
-                    <label for=""><%= LanguageUtil.get(pageContext, "TIMEMACHINE-CRONEXP") %>:</label>
+                    <label for="cronExp" class="required" for=""><%= LanguageUtil.get(pageContext, "TIMEMACHINE-CRONEXP") %></label>
                 </dt>
                 <dd>
                     <input name="cronExp" id="cronExp" type="text" dojoType='dijit.form.ValidationTextBox' required="true" style='width: 200px'" value="<%=cronExp %>" size="10" />

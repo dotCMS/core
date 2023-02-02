@@ -12,6 +12,7 @@ import { ButtonModule } from 'primeng/button';
 import { Card, CardModule } from 'primeng/card';
 import { ConfirmPopup, ConfirmPopupModule } from 'primeng/confirmpopup';
 
+import { DotMessagePipe } from '@dotcms/app/view/pipes';
 import { DotMessageService } from '@dotcms/data-access';
 import { ExperimentSteps, Goals, Status, StepStatus } from '@dotcms/dotcms-models';
 import { MockDotMessageService } from '@dotcms/utils-testing';
@@ -56,6 +57,7 @@ describe('DotExperimentsConfigurationGoalsComponent', () => {
             },
             mockProvider(DotExperimentsService),
             mockProvider(MessageService),
+            mockProvider(DotMessagePipe),
             mockProvider(DotHttpErrorManagerService)
         ]
     });
