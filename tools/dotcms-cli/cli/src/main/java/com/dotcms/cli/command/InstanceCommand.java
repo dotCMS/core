@@ -1,11 +1,15 @@
 package com.dotcms.cli.command;
 
-import static org.apache.commons.lang3.BooleanUtils.toStringYesNo;
-
 import com.dotcms.api.client.DotCmsClientConfig;
 import com.dotcms.api.client.ServiceManager;
 import com.dotcms.cli.common.OutputOptionMixin;
+import com.dotcms.model.annotation.SecuredPassword;
 import com.dotcms.model.config.ServiceBean;
+import picocli.CommandLine;
+import picocli.CommandLine.ExitCode;
+
+import javax.enterprise.context.control.ActivateRequestContext;
+import javax.inject.Inject;
 import java.io.IOException;
 import java.net.URI;
 import java.util.ArrayList;
@@ -15,10 +19,8 @@ import java.util.Optional;
 import java.util.concurrent.Callable;
 import java.util.function.Function;
 import java.util.stream.Collectors;
-import javax.enterprise.context.control.ActivateRequestContext;
-import javax.inject.Inject;
-import picocli.CommandLine;
-import picocli.CommandLine.ExitCode;
+
+import static org.apache.commons.lang3.BooleanUtils.toStringYesNo;
 
 @ActivateRequestContext
 @CommandLine.Command(
@@ -39,6 +41,7 @@ public class InstanceCommand implements Callable<Integer> {
     @Inject
     DotCmsClientConfig clientConfig;
 
+    @SecuredPassword
     @Inject
     ServiceManager serviceManager;
 
@@ -83,8 +86,8 @@ public class InstanceCommand implements Callable<Integer> {
                     final String suffix = entry.getKey();
                     final URI uri = entry.getValue();
                     final boolean active =
-                            serviceBeanByName.containsKey(suffix) ? serviceBeanByName.get(suffix)
-                                    .active() : false;
+                            serviceBeanByName.containsKey(suffix) && serviceBeanByName.get(suffix)
+                                    .active();
                     final String color = active ? "green" : "blue";
 
                     output.info(String.format(

@@ -40,7 +40,7 @@ public class LoginCommandTest extends CommandTest {
      */
     @Test
     @Order(1)
-    public void Test_Command_Login_No_Params()  {
+    void Test_Command_Login_No_Params()  {
         final CommandLine commandLine = factory.create();
         final StringWriter writer = new StringWriter();
         try(PrintWriter out = new PrintWriter(writer)){
@@ -59,7 +59,7 @@ public class LoginCommandTest extends CommandTest {
      */
     @Test
     @Order(2)
-    public void Test_Command_Login_With_Params_Expect_Successful_Login()  {
+    void Test_Command_Login_With_Params_Expect_Successful_Login()  {
         final String user = "admin@dotCMS.com";
 
         final String [][] options = {
@@ -86,7 +86,7 @@ public class LoginCommandTest extends CommandTest {
      */
     @Test
     @Order(3)
-    public void Test_Command_Login_With_Params_Expect_Login_Reject()  {
+    void Test_Command_Login_With_Params_Expect_Login_Reject()  {
 
         final String [][] options = {
                 {"--user=admin@dotCMS.com","--password=lol"},
