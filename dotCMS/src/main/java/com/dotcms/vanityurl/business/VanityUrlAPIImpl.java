@@ -61,6 +61,7 @@ public class VanityUrlAPIImpl implements VanityUrlAPI {
        " SELECT cvi.live_inode  "
      + " FROM identifier, contentlet_version_info cvi "
      + " where  "
+     + " cvi.live_inode is not null and "
      + " identifier.id = cvi.identifier and  "
      + " identifier.host_inode = ? and  "
      + " cvi.lang = ? and "
