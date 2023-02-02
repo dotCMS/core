@@ -60,8 +60,8 @@ export class ContainerListComponent implements OnDestroy {
      */
     changeBaseTypeSelector(value: string) {
         value !== ''
-            ? this.listing.paginatorService.setExtraParams('type', value)
-            : this.listing.paginatorService.deleteExtraParams('type');
+            ? this.listing.paginatorService.setExtraParams('content_type', value)
+            : this.listing.paginatorService.deleteExtraParams('content_type');
         this.listing.loadFirstPage();
     }
 

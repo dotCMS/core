@@ -366,7 +366,10 @@ describe('ContainerListComponent', () => {
         spyOn(comp.listing, 'loadFirstPage');
         baseTypesSelector.selected.emit('test');
 
-        expect(comp.listing.paginatorService.setExtraParams).toHaveBeenCalledWith('type', 'test');
+        expect(comp.listing.paginatorService.setExtraParams).toHaveBeenCalledWith(
+            'content_type',
+            'test'
+        );
         expect(comp.listing.loadFirstPage).toHaveBeenCalledWith();
     });
 
