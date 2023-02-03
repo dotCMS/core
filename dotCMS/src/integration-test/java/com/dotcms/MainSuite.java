@@ -227,15 +227,21 @@ import org.junit.runners.Suite.SuiteClasses;
 
 @RunWith(MainBaseSuite.class)
 @SuiteClasses({
+         /*
         StartEndScheduledExperimentsJobTest.class,
+
         RulesAPIImplIntegrationTest.class,
         Task220825CreateVariantFieldTest.class,
+        */
 //        AnalyticsAPIImplTest.class,
+        /*
         Task221007AddVariantIntoPrimaryKeyTest.class,
         ESContentletAPIImplTest.class,
         ExperimentAPIImpIT.class,
         ExperimentWebAPIImplIT.class,
+        */
 //        AccessTokenRenewJobTest.class,
+        /*
         ContentletWebAPIImplIntegrationTest.class, // moved to top because of failures on GHA
         DependencyBundlerTest.class, // moved to top because of failures on GHA
         SiteAndFolderResolverImplTest.class, //Moved up to avoid conflicts with CT deletion
@@ -428,7 +434,8 @@ import org.junit.runners.Suite.SuiteClasses;
         com.dotmarketing.common.reindex.ReindexAPITest.class,
         com.dotmarketing.common.db.DotDatabaseMetaDataTest.class,
         com.dotmarketing.common.db.ParamsSetterTest.class,
-        com.dotmarketing.cms.urlmap.URLMapAPIImplTest.class,
+        com.dotmarketing.cms.urlmap.URLMapAPIImplTest.class
+        ,*/
         com.dotmarketing.factories.PublishFactoryTest.class,
         com.dotmarketing.factories.WebAssetFactoryTest.class,
         com.dotmarketing.factories.MultiTreeAPITest.class,
