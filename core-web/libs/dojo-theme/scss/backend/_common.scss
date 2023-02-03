@@ -25,6 +25,19 @@
     border: none;
     background: none;
     height: 18px;
+    padding: 0;
+}
+
+.dijitDialogTitleBar {
+    padding: 0;
+
+    .dijitDialogTitle {
+        padding-left: 16px;
+    }
+}
+
+.dijitDialogPaneContent {
+    padding: 0;
 }
 
 .input-text-naked {
