@@ -24,12 +24,15 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Optional;
+import java.util.concurrent.atomic.AtomicBoolean;
 import javax.naming.Binding;
 import javax.naming.Context;
 import javax.naming.InitialContext;
 import javax.naming.NamingEnumeration;
 import javax.naming.NamingException;
 import javax.sql.DataSource;
+import org.apache.commons.lang3.exception.ExceptionUtils;
 
 public class DbConnectionFactory {
 
@@ -41,6 +44,7 @@ public class DbConnectionFactory {
 
     private static DataSource defaultDataSource = null;
 
+    private static AtomicBoolean connectionLogger = new AtomicBoolean(false);
     /**
      * Gets the autoCommit for the current connection
      * @return boolean
@@ -104,6 +108,10 @@ public class DbConnectionFactory {
     private static final ThreadLocal<HashMap<String, Connection>>
         connectionsHolder =
         new ThreadLocal<HashMap<String, Connection>>();
+
+    private static final ThreadLocal<Throwable>
+            creatorStack =
+            new ThreadLocal<>();
 
     public static DataSource getDataSource() {
 
@@ -227,9 +235,13 @@ public class DbConnectionFactory {
                 DataSource db = getDataSource();
                 connection = db.getConnection();
                 connectionsList.put(DATABASE_DEFAULT_DATASOURCE, connection);
-                Logger.debug(DbConnectionFactory.class,
-                    "Connection opened for thread " + Thread.currentThread().getId() + "-" +
-                        DATABASE_DEFAULT_DATASOURCE);
+                if (connectionLogger.get()) {
+                    Logger.error(DbConnectionFactory.class,
+                            "Connection opened for thread " + Thread.currentThread().getId() + "-" +
+                                    DATABASE_DEFAULT_DATASOURCE,
+                            new Throwable("Connection created"));
+                }
+                creatorStack.set(new Throwable("Connection created here"));
             }
 
             // _dbType would only be null until the getDbType was called, then it is static
@@ -268,6 +280,14 @@ public class DbConnectionFactory {
 
         return isCreated;
     } // connectionExists.
+
+    public static Optional<Throwable> getCreatorStack() {
+        if (connectionExists()) {
+            return Optional.ofNullable(creatorStack.get());
+        } else {
+            return Optional.empty();
+        }
+    }
 
     /**
      * Returns if the db is in a transaction - it will not open a db connection
@@ -362,13 +382,16 @@ public class DbConnectionFactory {
 
             if (connection == null || connection.isClosed()) {
                 DataSource db = getDataSource(dataSource);
-                Logger.debug(DbConnectionFactory.class,
-                                ()-> "Opening connection for thread " + Thread.currentThread().getId() + "-" +
-                        dataSource + "\n" + UtilMethods.getDotCMSStackTrace());
+                if (connectionLogger.get()) {
+                    Logger.error(DbConnectionFactory.class,
+                            "Opening connection for thread " + Thread.currentThread().getName()
+                                    + "[" + Thread.currentThread().getId() + "]" +
+                                    dataSource + "\n" + UtilMethods.getDotCMSStackTrace());
+                }
                 connection = db.getConnection();
                 connectionsList.put(dataSource, connection);
                 Logger.debug(DbConnectionFactory.class,
-                    "Connection opened for thread " + Thread.currentThread().getId() + "-" +
+                    "Connection opened for thread " + Thread.currentThread().getName()+"["+Thread.currentThread().getId()+"]" + "-" +
                         dataSource);
             }
 
@@ -395,8 +418,13 @@ public class DbConnectionFactory {
                 connectionsHolder.set(connectionsList);
             }
 
-            Logger.debug(DbConnectionFactory.class, ()-> "Closing all connections for " + Thread.currentThread().getId() +
-                "\n" + UtilMethods.getDotCMSStackTrace());
+            if (connectionLogger.get()) {
+                Logger.error(DbConnectionFactory.class,
+                        "Closing all connections for " + Thread.currentThread().getName() + "["
+                                + Thread.currentThread().getId() + "]" +
+                                "\n" + ExceptionUtils.getStackTrace(creatorStack.get()),
+                        new Throwable("Close Connection"));
+            }
             for (Entry<String, Connection> entry : connectionsList.entrySet()) {
 
                 String ds = entry.getKey();
@@ -412,7 +440,10 @@ public class DbConnectionFactory {
                 }
             }
 
-            Logger.debug(DbConnectionFactory.class, ()-> "All connections closed for " + Thread.currentThread().getId());
+            if (connectionLogger.get()) {
+                Logger.debug(DbConnectionFactory.class,
+                        () -> "All connections closed for " + Thread.currentThread().getId());
+            }
             connectionsList.clear();
 
         } catch (Exception e) {
@@ -440,9 +471,13 @@ public class DbConnectionFactory {
             Connection cn = connectionsList.get(ds);
 
             if (cn != null) {
-                Logger.debug(DbConnectionFactory.class,
-                    "Closing connection for ()-> " + Thread.currentThread().getId() + "-" + ds +
-                        "\n" + UtilMethods.getDotCMSStackTrace());
+                if (connectionLogger.get()) {
+                    Logger.error(DbConnectionFactory.class,
+                            "Closing all connections for " + Thread.currentThread().getName() + "["
+                                    + Thread.currentThread().getId() + "]" +
+                                    "\n" + ExceptionUtils.getStackTrace(creatorStack.get()),
+                            new Throwable("Close Connection"));
+                }
                 cn.close();
                 connectionsList.remove(ds);
                 Logger.debug(DbConnectionFactory.class,
@@ -455,6 +490,10 @@ public class DbConnectionFactory {
             throw new DotRuntimeException(e.toString());
         }
 
+    }
+
+    public static void setConnectionLogger(boolean connectionLogger) {
+        DbConnectionFactory.connectionLogger.set(connectionLogger);
     }
 
     public static String getDBType() {
