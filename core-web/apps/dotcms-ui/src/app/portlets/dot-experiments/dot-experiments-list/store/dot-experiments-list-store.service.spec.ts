@@ -200,7 +200,7 @@ describe('DotExperimentsListStore', () => {
             dotExperimentsService.getAll.and.returnValue(of(ExperimentMocks));
 
             store.initStore();
-            store.loadExperiments();
+            store.loadExperiments(routerParamsPageId);
         });
         it('should load experiments to store', (done) => {
             expect(dotExperimentsService.getAll).toHaveBeenCalledWith(routerParamsPageId);

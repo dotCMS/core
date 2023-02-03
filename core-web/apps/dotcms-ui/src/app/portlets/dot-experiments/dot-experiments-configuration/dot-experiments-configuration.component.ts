@@ -1,14 +1,12 @@
 import { Observable } from 'rxjs';
 
-import { ChangeDetectionStrategy, Component, inject, OnInit } from '@angular/core';
+import { ChangeDetectionStrategy, Component, OnInit } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 
 import { DotMessagePipe } from '@dotcms/app/view/pipes';
 import { DotSessionStorageService } from '@dotcms/data-access';
 import {
-    DOT_EXPERIMENT_STATUS_METADATA_MAP,
     DotExperiment,
-    DotExperimentStatusList,
     EditPageTabs,
     ExperimentSteps,
     SidebarStatus,
@@ -29,16 +27,13 @@ import {
 export class DotExperimentsConfigurationComponent implements OnInit {
     vm$: Observable<ConfigurationViewModel> = this.dotExperimentsConfigurationStore.vm$;
     experimentSteps = ExperimentSteps;
-    experimentStatusMap: Record<DotExperimentStatusList, { classz: string; label: string }>;
 
     constructor(
         private readonly dotExperimentsConfigurationStore: DotExperimentsConfigurationStore,
         private readonly dotSessionStorageService: DotSessionStorageService,
         private readonly router: Router,
         private readonly route: ActivatedRoute
-    ) {
-        this.experimentStatusMap = this.statusTranslations();
-    }
+    ) {}
 
     ngOnInit(): void {
         this.dotExperimentsConfigurationStore.loadExperiment(
@@ -147,19 +142,5 @@ export class DotExperimentsConfigurationComponent implements OnInit {
             },
             queryParamsHandling: 'merge'
         });
-    }
-
-    private statusTranslations() {
-        const dotMessagePipe = inject(DotMessagePipe);
-        const statusWithTranslations = { ...DOT_EXPERIMENT_STATUS_METADATA_MAP };
-
-        Object.keys(DOT_EXPERIMENT_STATUS_METADATA_MAP).forEach((key) => {
-            statusWithTranslations[key] = {
-                ...DOT_EXPERIMENT_STATUS_METADATA_MAP[key],
-                label: dotMessagePipe.transform(DOT_EXPERIMENT_STATUS_METADATA_MAP[key].label)
-            };
-        });
-
-        return statusWithTranslations;
     }
 }

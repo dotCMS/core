@@ -1,5 +1,5 @@
 import { ComponentStore, OnStoreInit, tapResponse } from '@ngrx/component-store';
-import { EMPTY, Observable, pipe, throwError } from 'rxjs';
+import { EMPTY, Observable, throwError } from 'rxjs';
 
 import { HttpErrorResponse } from '@angular/common/http';
 import { Injectable } from '@angular/core';
@@ -7,7 +7,7 @@ import { ActivatedRoute } from '@angular/router';
 
 import { MessageService } from 'primeng/api';
 
-import { catchError, switchMap, tap, withLatestFrom } from 'rxjs/operators';
+import { catchError, switchMap, tap } from 'rxjs/operators';
 
 import { DotMessageService } from '@dotcms/data-access';
 import {
@@ -132,12 +132,10 @@ export class DotExperimentsListStore
         )
     }));
 
-    // Effects
-    readonly loadExperiments = this.effect<void>(
-        pipe(
+    readonly loadExperiments = this.effect((pageId$: Observable<string>) => {
+        return pageId$.pipe(
             tap(() => this.setComponentStatus(ComponentStatus.LOADING)),
-            withLatestFrom(this.getPage$),
-            switchMap(([, { pageId }]) =>
+            switchMap((pageId) =>
                 this.dotExperimentsService.getAll(pageId).pipe(
                     tapResponse(
                         (experiments) => this.setExperiments(experiments),
@@ -146,8 +144,8 @@ export class DotExperimentsListStore
                     )
                 )
             )
-        )
-    );
+        );
+    });
 
     readonly deleteExperiment = this.effect((experiment$: Observable<DotExperiment>) => {
         return experiment$.pipe(
@@ -236,6 +234,7 @@ export class DotExperimentsListStore
     }
 
     ngrxOnStoreInit() {
-        this.loadExperiments();
+        const pageId = this.route.snapshot.params.pageId;
+        this.loadExperiments(pageId);
     }
 }

@@ -12,6 +12,7 @@ import { switchMap, tap } from 'rxjs/operators';
 import { DotMessageService } from '@dotcms/data-access';
 import {
     ComponentStatus,
+    DOT_EXPERIMENT_STATUS_METADATA_MAP,
     DotExperiment,
     DotExperimentStatusList,
     ExperimentSteps,
@@ -48,6 +49,7 @@ export interface ConfigurationViewModel {
     canStartExperiment: boolean;
     disabledStartExperiment: boolean;
     showExperimentSummary: boolean;
+    statusExperiment: { classz: string; label: string };
     isSaving: boolean;
 }
 
@@ -67,6 +69,15 @@ export class DotExperimentsConfigurationStore extends ComponentStore<DotExperime
     );
     readonly disabledStartExperiment$: Observable<boolean> = this.select(
         ({ experiment }) => experiment?.trafficProportion.variants.length < 2 || !experiment?.goals
+    );
+
+    readonly getStatusExperiment$: Observable<{ label: string; classz: string }> = this.select(
+        ({ experiment }) => {
+            return {
+                ...DOT_EXPERIMENT_STATUS_METADATA_MAP[experiment.status],
+                label: DOT_EXPERIMENT_STATUS_METADATA_MAP[experiment.status].label
+            };
+        }
     );
 
     readonly showExperimentSummary$: Observable<boolean> = this.select(({ experiment }) =>
@@ -437,13 +448,15 @@ export class DotExperimentsConfigurationStore extends ComponentStore<DotExperime
         this.disabledStartExperiment$,
         this.showExperimentSummary$,
         this.isSaving$,
+        this.getStatusExperiment$,
         (
             { experiment, stepStatusSidebar },
             canStartExperiment,
             isLoading,
             disabledStartExperiment,
             showExperimentSummary,
-            isSaving
+            isSaving,
+            statusExperiment
         ) => ({
             experiment,
             stepStatusSidebar,
@@ -451,7 +464,8 @@ export class DotExperimentsConfigurationStore extends ComponentStore<DotExperime
             isLoading,
             disabledStartExperiment,
             showExperimentSummary,
-            isSaving
+            isSaving,
+            statusExperiment
         })
     );
 

@@ -64,7 +64,8 @@ const defaultVmMock: ConfigurationViewModel = {
     canStartExperiment: false,
     disabledStartExperiment: false,
     showExperimentSummary: false,
-    isSaving: false
+    isSaving: false,
+    statusExperiment: { classz: '', label: '' }
 };
 
 describe('DotExperimentsConfigurationComponent', () => {

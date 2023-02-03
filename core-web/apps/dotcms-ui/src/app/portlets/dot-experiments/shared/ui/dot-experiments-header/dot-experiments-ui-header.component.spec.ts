@@ -24,13 +24,11 @@ describe('ExperimentsHeaderComponent', () => {
     it('should emit goBack output when icon is clicked. ', () => {
         let output;
         spectator.output('goBack').subscribe((result) => (output = result));
-
         const goBackButton = spectator.query(byTestId('goback-link')) as HTMLAnchorElement;
-
         spectator.click(goBackButton);
-
         expect(output).toBeTrue();
     });
+
     it('should show the skeleton component if isLoading true ', () => {
         spectator.setInput({
             isLoading: true
