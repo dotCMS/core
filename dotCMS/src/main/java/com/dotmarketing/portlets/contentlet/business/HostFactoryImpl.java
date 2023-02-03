@@ -647,6 +647,7 @@ public class HostFactoryImpl implements HostFactory {
             inode = dotConnect.getString("working_inode");
         }
         if (UtilMethods.isNotSet(inode)) {
+            Logger.debug(HostAPIImpl.class, "Unable to find default host inode from db using json ="+APILocator.getContentletJsonAPI().isPersistContentAsJson());
             return Optional.empty();
         }
         defaultHost = new Host(APILocator.getContentletAPI().find(inode, APILocator.systemUser(), false));

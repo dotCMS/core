@@ -506,6 +506,7 @@ public class HostAPIImpl implements HostAPI, Flushable<Host> {
         }
         this.systemHost = this.getHostFactory().findSystemHost(user, respectFrontendRoles);
         if (null == this.systemHost) {
+            Logger.error("System Host not found. Creating one...",new Throwable());
             this.systemHost = this.createSystemHost();
         }
         return this.systemHost;
@@ -679,11 +680,13 @@ public class HostAPIImpl implements HostAPI, Flushable<Host> {
         Logger.error(HostAPIImpl.class, "dbColum: " + defaultField.map(Field::dbColumn).orElse("not found"));
 
         Optional.ofNullable(hostCache.getAllSites()).ifPresent(hosts -> hosts.forEach(host -> {
-            Logger.error(HostAPIImpl.class, "Host in cache: " + host.getHostname());
+            Logger.error(HostAPIImpl.class, "Cache Host Identifier: " + host.getIdentifier()+ " Host Name: " + host.getHostname() + "Is System Host: " + host.isSystemHost() + " Is Default: " + host.isDefault()
+                    + " Tag Storage=" + host.getTagStorage());
         }));
 
         findAllFromDB(APILocator.getUserAPI().getSystemUser(),false).stream().forEach(host -> {
-            Logger.error(HostAPIImpl.class, "Host in db: " + host.getHostname());
+            Logger.error(HostAPIImpl.class, "DB  Host Identifier: " + host.getIdentifier()+ " Host Name: " + host.getHostname() + "Is System Host: " + host.isSystemHost() + " Is Default: " + host.isDefault()
+                    + " Tag Storage=" + host.getTagStorage());
         });
 
         Logger.error(HostAPIImpl.class, "Attempting again to get the default host");
@@ -695,7 +698,8 @@ public class HostAPIImpl implements HostAPI, Flushable<Host> {
             return defaultHostOpt2.get();
         }
 
-        return null;
+        throw new RuntimeException("Unable to locate the default host. Please check the logs for more information.");
+
 
         // If the Default Host doesn't exist or was removed, just go ahead and re-create it
         /*
