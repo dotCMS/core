@@ -54,11 +54,11 @@ export class ContainerListComponent implements OnDestroy {
     }
 
     /**
-     * Change base type to the selected one
+     * Change content type to the selected one
      * @param {string} value
      * @memberof ContainerListComponent
      */
-    changeBaseTypeSelector(value: string) {
+    changeContentTypeSelector(value: string) {
         value !== ''
             ? this.listing.paginatorService.setExtraParams('content_type', value)
             : this.listing.paginatorService.deleteExtraParams('content_type');
