@@ -24,10 +24,8 @@
     height: 100%;
 }
 
-.content-search__show-query-dialog {
-    .dijitDialogTitleBar {
-        z-index: 1;
-    }
+#queryResults {
+    padding: 16px;
 }
 
 .content-search__key-fields {
