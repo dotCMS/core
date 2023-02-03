@@ -2359,7 +2359,7 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 			Logger.error(this, e.getMessage(), e);
 		}
 		finally {
-			HibernateUtil.getSession().clear();
+			HibernateUtil.getSession(false).clear();
 		}
 		return list;
 	}

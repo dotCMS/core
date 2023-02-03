@@ -142,7 +142,7 @@ public class StructureAPIImpl implements StructureAPI {
         // remove structure permissions
         perAPI.removePermissions(st);
 
-        HibernateUtil.getSession().clear();
+        HibernateUtil.getSession(false).clear();
         
         // remove structure itself
         StructureFactory.deleteStructure(st);

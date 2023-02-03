@@ -759,12 +759,14 @@ public class HibernateUtil {
 			throw new DotRuntimeException(e.getMessage(), e);
 		}
 	}
-
+	public static Session getSession() {
+		return getSession(true);
+	}
 	/**
 	 * Attempts to find a session associated with the Thread. If there isn't a
 	 * session, it will create one.
 	 */
-	public static Session getSession() {
+	public static Session getSession(boolean createIfClosed) {
 		try{
 			final Optional<Session> sessionOptional = getSessionIfOpened();
 			Session session = sessionOptional.isPresent() ? sessionOptional.get() : null;
@@ -776,11 +778,15 @@ public class HibernateUtil {
 					if (session.connection().isClosed()) {
                         try {
                             session.close();
+							// is it an issue to close the session if connection is already closed, should this have been closed before
                         } catch (HibernateException e1) {
                             Logger.error(HibernateUtil.class,e1.getMessage(),e1);
                         }
                         session = null;
-						session = sessionFactory.openSession(DbConnectionFactory.getConnection());
+						if (createIfClosed) {
+							session = sessionFactory.openSession(
+									DbConnectionFactory.getConnection());
+						}
 					}
     			} catch (Exception e) {
     	        	try {
@@ -1045,7 +1051,7 @@ public class HibernateUtil {
 			if (null == sessionHolder.get()){
 				return;
 			}
-			Session session = getSession();
+			Session session = getSession(false);
 
 			if (null != session) {
 				session.flush();

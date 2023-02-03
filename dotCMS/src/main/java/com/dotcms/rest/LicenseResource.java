@@ -337,7 +337,7 @@ public class LicenseResource {
         } catch(Exception exception) {
             Logger.error(this, "can't free license ",exception);
             try {
-            	if(HibernateUtil.getSession().isOpen()){
+            	if(HibernateUtil.getSession(false).isOpen()){
             		HibernateUtil.rollbackTransaction();
             	}
             } catch (DotHibernateException dotHibernateException) {

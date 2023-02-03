@@ -132,7 +132,7 @@ public abstract class IntegrationTestBase extends BaseMessageResources {
         //Closing the session
         try {
             HibernateUtil.closeAndCommitTransaction();
-            if (null != HibernateUtil.getSession()) {
+            if (null != HibernateUtil.getSession(false)) {
                 HibernateUtil.getSession().connection().close();
                 HibernateUtil.getSession().close();
             }
