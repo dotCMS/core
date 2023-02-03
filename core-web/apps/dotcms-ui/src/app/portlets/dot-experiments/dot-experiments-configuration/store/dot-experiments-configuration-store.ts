@@ -194,7 +194,7 @@ export class DotExperimentsConfigurationStore extends ComponentStore<DotExperime
                                         ),
                                         detail: this.dotMessageService.get(
                                             'experiments.configure.variant.edit.confirm-message',
-                                            experiment.name
+                                            variant.data.name
                                         )
                                     });
 

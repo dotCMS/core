@@ -1,6 +1,7 @@
 package com.dotcms.util.network;
 
 import java.util.Objects;
+import java.util.concurrent.atomic.AtomicBoolean;
 import org.xbill.DNS.Address;
 import com.dotcms.repackage.org.apache.commons.net.util.SubnetUtils;
 import com.dotmarketing.util.Config;
@@ -10,7 +11,7 @@ import io.vavr.Lazy;
 import io.vavr.control.Try;
 
 public class IPUtils {
-    private static boolean disabledIpPrivateSubnet = false;
+    private static final AtomicBoolean disabledIpPrivateSubnet = new AtomicBoolean(false);
     
     private IPUtils() {
         throw new IllegalStateException("static Utility class");
@@ -71,7 +72,7 @@ public class IPUtils {
     public static boolean isIpPrivateSubnet(final String ipOrHostName) {
 
         
-        if (disabledIpPrivateSubnet) {
+        if (disabledIpPrivateSubnet.get()) {
             return false;
         }
 
@@ -102,6 +103,6 @@ public class IPUtils {
 
 
     public static void disabledIpPrivateSubnet(final boolean disabledIpPrivateSubnet) {
-        IPUtils.disabledIpPrivateSubnet = disabledIpPrivateSubnet;
+        IPUtils.disabledIpPrivateSubnet.set(disabledIpPrivateSubnet);
     }
 }

@@ -12,8 +12,7 @@ import org.immutables.value.Value;
 public interface AbstractServiceBean {
     @NotNull
     String name();
-    @NotNull
-    Boolean active();
+    boolean active();
 
     @Nullable
     CredentialsBean credentials();
