@@ -1,3 +1,4 @@
+
 package com.dotcms.rest.api.v1.experiments;
 
 import com.dotcms.analytics.metrics.MetricType;
@@ -24,10 +25,12 @@ public class ResponseEntityResultExperimentView extends ResponseEntityView<Exper
 
         private long totalSession;
         private Map<String, GoalResultView> goals = new HashMap<>();
+
         public ExperimentResultView(final ExperimentResult experimentResult) {
             this.totalSession = experimentResult.getTotalSessions();
 
-            goals.put("primary", new GoalResultView(experimentResult.getGoalResults().get(0), totalSession));
+            goals.put("primary",
+                    new GoalResultView(experimentResult.getGoalResults().get(0), totalSession));
         }
 
         public long getTotalSession() {
@@ -48,7 +51,8 @@ public class ResponseEntityResultExperimentView extends ResponseEntityView<Exper
             metric = goalResult.getGoal().type();
 
             for (final Entry<String, VariantResult> entry : goalResult.getVariants().entrySet()) {
-                variants.put(entry.getKey(), new VariantResultView(entry.getValue(), totalSessions));
+                variants.put(entry.getKey(),
+                        new VariantResultView(entry.getValue(), totalSessions));
             }
         }
 
@@ -62,11 +66,13 @@ public class ResponseEntityResultExperimentView extends ResponseEntityView<Exper
     }
 
     private static class VariantResultView {
+
         final long multiBySession;
         final ShortResult uniqueBySession;
 
         public VariantResultView(final VariantResult variantResult, final long totalSessions) {
-            this.uniqueBySession = new ShortResult(variantResult.totalUniqueBySession(), totalSessions);
+            this.uniqueBySession = new ShortResult(variantResult.totalUniqueBySession(),
+                    totalSessions);
             this.multiBySession = variantResult.totalMultiBySession();
         }
 
@@ -80,8 +86,10 @@ public class ResponseEntityResultExperimentView extends ResponseEntityView<Exper
     }
 
     private static class ShortResult {
+
         private final long count;
         private final float percentage;
+
         public ShortResult(final int count, final long total) {
             this.count = count;
 

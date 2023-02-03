@@ -8,6 +8,7 @@ import com.dotcms.cube.CubeJSQuery;
 import com.dotcms.cube.filters.Filter.Order;
 import com.dotcms.cube.filters.SimpleFilter.Operator;
 import com.dotcms.experiments.model.Experiment;
+import com.dotcms.experiments.model.Goals;
 import com.dotcms.util.DotPreconditions;
 import io.vavr.Lazy;
 import java.util.HashMap;
@@ -104,10 +105,13 @@ public enum ExperimentResultQueryFactory {
 
     private static CubeJSQuery getMetricCubeJSQuery(final Experiment experiment) {
         DotPreconditions.notNull(experiment.goals(), "The must have a Goal");
-        DotPreconditions.notNull(experiment.goals().get(), "The must have a Goal");
-        DotPreconditions.notNull(experiment.goals().get().primary(), "The must have a Goal");
+        DotPreconditions.notNull(experiment.goals().orElseThrow(), "The must have a Goal");
+        DotPreconditions.notNull(experiment.goals().orElseThrow().primary(), "The must have a Goal");
 
-        final Metric primaryGoal = experiment.goals().get().primary();
+        final Goals goals = experiment.goals()
+                .orElseThrow(() -> new IllegalArgumentException("The Experiment must have a Goal"));
+
+        final Metric primaryGoal = goals.primary();
         final MetricExperimentResultQuery metricExperimentResultQuery = experimentResultQueryHelpers.get()
                 .get(primaryGoal.type());
         return metricExperimentResultQuery.getCubeJSQuery(experiment);

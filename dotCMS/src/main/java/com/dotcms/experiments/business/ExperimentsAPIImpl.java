@@ -796,7 +796,10 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
                 }
 
                 currentEvents.add(new Event(resultSetItem.getAll(),
-                            EventType.get(resultSetItem.get("Events.eventType").get().toString())));
+                            EventType.get(resultSetItem.get("Events.eventType")
+                                    .map(value -> value.toString())
+                                    .orElseThrow(() -> new IllegalStateException("Type into Event is expected")))
+                ));
 
                 previousLookBackWindow = currentLookBackWindow;
             }

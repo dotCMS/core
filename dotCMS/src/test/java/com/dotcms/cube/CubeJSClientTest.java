@@ -115,14 +115,19 @@ public class CubeJSClientTest {
 
         IPUtils.disabledIpPrivateSubnet(true);
 
-        final CubeJSQuery cubeJSQuery = new Builder()
-                .dimensions("Events.experiment", "Events.variant")
-                .build();
+        try {
+            final CubeJSQuery cubeJSQuery = new Builder()
+                    .dimensions("Events.experiment", "Events.variant")
+                    .build();
 
-        final CubeJSClient cubeClient =  new CubeJSClient(String.format("http://%s:%s", cubeServerIp, cubeJsServerPort));
-        final CubeJSResultSet cubeJSResultSet = cubeClient.send(cubeJSQuery);
+            final CubeJSClient cubeClient = new CubeJSClient(
+                    String.format("http://%s:%s", cubeServerIp, cubeJsServerPort));
+            final CubeJSResultSet cubeJSResultSet = cubeClient.send(cubeJSQuery);
 
-        assertEquals(0, cubeJSResultSet.size());
+            assertEquals(0, cubeJSResultSet.size());
+        } finally {
+            IPUtils.disabledIpPrivateSubnet(false);
+        }
     }
 
     /**
