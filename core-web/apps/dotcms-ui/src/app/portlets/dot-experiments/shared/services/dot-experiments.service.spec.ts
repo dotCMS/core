@@ -78,7 +78,7 @@ describe('DotExperimentsService', () => {
         );
     });
 
-    it('should asign a goal to experiment ', () => {
+    it('should assign a goal to experiment ', () => {
         const goal: Goals = {
             ...DefaultGoalConfiguration
         };
@@ -93,5 +93,14 @@ describe('DotExperimentsService', () => {
             `${API_ENDPOINT}/${EXPERIMENT_ID}/goals/${goalType}`,
             HttpMethod.DELETE
         );
+    });
+
+    it('should set scheduling to experiment', () => {
+        const newScheduling = { startDate: 1, endDate: 2 };
+        spectator.service.setScheduling(EXPERIMENT_ID, newScheduling).subscribe();
+
+        const req = spectator.expectOne(`${API_ENDPOINT}/${EXPERIMENT_ID}`, HttpMethod.PATCH);
+
+        expect(req.request.body['scheduling']).toEqual(newScheduling);
     });
 });
