@@ -125,34 +125,39 @@ public class ContainerPaginator implements PaginatorOrdered<ContainerView> {
 
         final List<Container> fileContainers = new ArrayList<>();
         final List<Container> dbContainers   = new ArrayList<>();
+        final List<Container> systemContainers   = new ArrayList<>();
 
         for (final Container container : allContainers) {
 
             if (container.getSource() == Source.DB) {
-
-                dbContainers.add  (container);
+                if(container.getInode().equals(Container.SYSTEM_CONTAINER) && container.getIdentifier().equals(Container.SYSTEM_CONTAINER)){
+                    systemContainers.add(container);
+                }
+                else {
+                    dbContainers.add(container);
+                }
             } else {
                 fileContainers.add(container);
             }
         }
 
         if (direction == OrderDirection.ASC) {
-
-            dbContainers.stream().sorted   (Comparator.comparing(this::hostname));
-            fileContainers.stream().sorted (Comparator.comparing(this::hostname));
+            systemContainers.stream().sorted(Comparator.comparing(this::hostname));
+            dbContainers.stream().sorted(Comparator.comparing(this::hostname));
+            fileContainers.stream().sorted(Comparator.comparing(this::hostname));
         } else {
-
-            dbContainers.stream().sorted   (Comparator.comparing(this::hostname).reversed());
-            fileContainers.stream().sorted (Comparator.comparing(this::hostname).reversed());
+            systemContainers.stream().sorted(Comparator.comparing(this::hostname).reversed());
+            dbContainers.stream().sorted(Comparator.comparing(this::hostname).reversed());
+            fileContainers.stream().sorted(Comparator.comparing(this::hostname).reversed());
         }
-
 
         final PaginatedArrayList<Container> sortedByHostContainers = new PaginatedArrayList<>();
         sortedByHostContainers.setQuery(allContainers.getQuery());
         sortedByHostContainers.setTotalResults(allContainers.getTotalResults());
 
-        sortedByHostContainers.addAll(fileContainers);
+        sortedByHostContainers.addAll(systemContainers);
         sortedByHostContainers.addAll(dbContainers);
+        sortedByHostContainers.addAll(fileContainers);
         return sortedByHostContainers;
     }
 
