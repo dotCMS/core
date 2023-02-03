@@ -55,32 +55,30 @@ public class ExperimentResult {
 
     public static class Builder {
 
-        private int totalEvents;
         private int totalSessions;
         private List<GoalResult> goals = new ArrayList<>();
         private Collection<ExperimentVariant> variants;
 
-        public void setTotalEvents(final int totalEvents) {
-            this.totalEvents = totalEvents;
-        }
-
-        public void setSessionTotal(final int totalSessions) {
+        public Builder setSessionTotal(final int totalSessions) {
             this.totalSessions = totalSessions;
+            return this;
         }
 
-        public void addGoal(final Metric goal) {
+        public Builder addGoal(final Metric goal) {
             this.goals.add(new GoalResult(goal, variants));
+            return this;
         }
 
         public ExperimentResult build() {
             return new ExperimentResult(totalSessions, goals);
         }
 
-        public void addVariants(final Collection<ExperimentVariant> variants) {
+        public Builder addVariants(final Collection<ExperimentVariant> variants) {
             this.variants = variants;
+            return this;
         }
 
-        public void count(final Metric goal, final String lookBackWindow, final Event event) {
+        public Builder count(final Metric goal, final String lookBackWindow, final Event event) {
             final GoalResult goalresult = this.goals.stream()
                     .filter(goalResult -> goalResult.goal.name().equals(goal.name()))
                     .limit(1)
@@ -88,6 +86,7 @@ public class ExperimentResult {
                     .orElseThrow(() -> new IllegalArgumentException("Goal does not exists"));
 
             goalresult.count(lookBackWindow, event);
+            return this;
         }
     }
 

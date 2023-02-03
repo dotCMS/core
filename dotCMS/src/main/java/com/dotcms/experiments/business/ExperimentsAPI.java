@@ -157,7 +157,8 @@ public interface ExperimentsAPI {
      * @param experiment
      * @return
      */
-    ExperimentResult getResult(final Experiment experiment);
+    ExperimentResult getResult(final Experiment experiment)
+            throws DotDataException, DotSecurityException;
 
     /**
      * Return a list of the Events into an Experiment group by {@link BrowserSession}

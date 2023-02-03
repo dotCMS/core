@@ -858,8 +858,16 @@ public class ExperimentAPIImpIT {
         return mockhttpServer;
     }
 
+    /**
+     * Method to test: {@link ExperimentsAPIImpl#save(Experiment, User)}
+     * When: Try to save a Experiment with a REACh PAGE goal and it does not have ane referer parameter set
+     * Should: set this parameter automatically to be CONTAINS the Experiment's page URL
+     *
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
     @Test
-    public void sasas() throws DotDataException, DotSecurityException {
+    public void addRefererCondition() throws DotDataException, DotSecurityException {
         final Host host = new SiteDataGen().nextPersisted();
         final Template template = new TemplateDataGen().host(host).nextPersisted();
 
@@ -899,5 +907,47 @@ public class ExperimentAPIImpIT {
                 assertEquals(Operator.CONTAINS, condition.operator());
             }
         }
+    }
+
+    /**
+     * Method to test: {@link ExperimentsAPIImpl#getResult(Experiment)}
+     * When: Try to get the result from a not starting {@link Experiment}
+     * Should: Throw a {@link IllegalArgumentException}
+     */
+    @Test(expected = IllegalArgumentException.class)
+    public void tryToGetResultFromExperimentNotStarted()
+            throws DotDataException, DotSecurityException {
+        final Host host = new SiteDataGen().nextPersisted();
+        final Template template = new TemplateDataGen().host(host).nextPersisted();
+
+        final HTMLPageAsset experimentPage = new HTMLPageDataGen(host, template).nextPersisted();
+
+        final Experiment experiment = new ExperimentDataGen()
+                .addVariant("Experiment Variant")
+                .page(experimentPage)
+                .addVariant("description")
+                .nextPersisted();
+        APILocator.getExperimentsAPI().getResult(experiment);
+    }
+
+    /**
+     * Method to test: {@link ExperimentsAPIImpl#getResult(Experiment)}
+     * When: Try to get the result from a not saved {@link Experiment}
+     * Should: Throw a {@link IllegalArgumentException}
+     */
+    @Test(expected = IllegalArgumentException.class)
+    public void tryToGetResultFromExperimentNotSaved()
+            throws DotDataException, DotSecurityException {
+        final Host host = new SiteDataGen().nextPersisted();
+        final Template template = new TemplateDataGen().host(host).nextPersisted();
+
+        final HTMLPageAsset experimentPage = new HTMLPageDataGen(host, template).nextPersisted();
+
+        final Experiment experiment = new ExperimentDataGen()
+                .addVariant("Experiment Variant")
+                .page(experimentPage)
+                .addVariant("description")
+                .next();
+        APILocator.getExperimentsAPI().getResult(experiment);
     }
 }

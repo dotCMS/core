@@ -1,7 +1,5 @@
 package com.dotcms.rest.api.v1.experiments;
 
-import static com.dotcms.util.CollectionsUtils.map;
-
 import com.dotcms.analytics.metrics.MetricType;
 import com.dotcms.experiments.business.result.ExperimentResult;
 import com.dotcms.experiments.business.result.ExperimentResult.GoalResult;
@@ -13,6 +11,9 @@ import java.util.Map;
 import java.util.Map.Entry;
 import org.apache.commons.collections.map.HashedMap;
 
+/**
+ * {@link ResponseEntityView} for an array of {@link ExperimentResultView}
+ */
 public class ResponseEntityResultExperimentView extends ResponseEntityView<ExperimentResultView> {
 
     public ResponseEntityResultExperimentView(final ExperimentResult experimentResult) {
@@ -28,6 +29,14 @@ public class ResponseEntityResultExperimentView extends ResponseEntityView<Exper
 
             goals.put("primary", new GoalResultView(experimentResult.getGoalResults().get(0), totalSession));
         }
+
+        public long getTotalSession() {
+            return totalSession;
+        }
+
+        public Map<String, GoalResultView> getGoals() {
+            return goals;
+        }
     }
 
     private static class GoalResultView {
@@ -42,6 +51,14 @@ public class ResponseEntityResultExperimentView extends ResponseEntityView<Exper
                 variants.put(entry.getKey(), new VariantResultView(entry.getValue(), totalSessions));
             }
         }
+
+        public MetricType getMetric() {
+            return metric;
+        }
+
+        public Map<String, VariantResultView> getVariants() {
+            return variants;
+        }
     }
 
     private static class VariantResultView {
@@ -52,6 +69,14 @@ public class ResponseEntityResultExperimentView extends ResponseEntityView<Exper
             this.uniqueBySession = new ShortResult(variantResult.totalUniqueBySession(), totalSessions);
             this.multiBySession = variantResult.totalMultiBySession();
         }
+
+        public long getMultiBySession() {
+            return multiBySession;
+        }
+
+        public ShortResult getUniqueBySession() {
+            return uniqueBySession;
+        }
     }
 
     private static class ShortResult {
@@ -59,7 +84,16 @@ public class ResponseEntityResultExperimentView extends ResponseEntityView<Exper
         private final float percentage;
         public ShortResult(final int count, final long total) {
             this.count = count;
-            this.percentage = (count * 100)/total;
+
+            this.percentage = total > 0 ? (count * 100) / total : 0;
+        }
+
+        public long getCount() {
+            return count;
+        }
+
+        public float getPercentage() {
+            return percentage;
         }
     }
 }

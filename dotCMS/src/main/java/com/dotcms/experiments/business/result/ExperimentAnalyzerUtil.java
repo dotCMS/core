@@ -77,11 +77,6 @@ public enum ExperimentAnalyzerUtil {
         }
 
         builder.setSessionTotal(experimentSessions.size());
-        builder.setTotalEvents(experimentSessions.stream()
-                .map(browserSession -> browserSession.getEvents())
-                .map(events -> events.size())
-                .collect(Collectors.summingInt(Integer::intValue))
-        );
 
         return builder.build();
     }

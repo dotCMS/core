@@ -13,7 +13,10 @@ import static com.dotcms.variant.VariantAPI.DEFAULT_VARIANT;
 
 import com.dotcms.analytics.app.AnalyticsApp;
 import com.dotcms.analytics.helper.AnalyticsHelper;
+import com.dotcms.analytics.metrics.AbstractCondition.Operator;
 import com.dotcms.analytics.metrics.EventType;
+import com.dotcms.analytics.metrics.Metric;
+import com.dotcms.analytics.metrics.MetricType;
 import com.dotcms.analytics.metrics.MetricsUtil;
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
@@ -31,10 +34,13 @@ import com.dotcms.exception.NotAllowedException;
 import com.dotcms.experiments.model.AbstractExperiment.Status;
 import com.dotcms.experiments.model.AbstractTrafficProportion.Type;
 import com.dotcms.experiments.model.Experiment;
+import com.dotcms.experiments.model.Experiment.Builder;
 import com.dotcms.experiments.model.ExperimentVariant;
+import com.dotcms.experiments.model.Goals;
 import com.dotcms.experiments.model.Scheduling;
 import com.dotcms.experiments.model.TargetingCondition;
 import com.dotcms.experiments.model.TrafficProportion;
+import com.dotcms.rest.exception.NotFoundException;
 import com.dotcms.util.DotPreconditions;
 import com.dotcms.util.LicenseValiditySupplier;
 import com.dotcms.uuid.shorty.ShortyIdAPI;
@@ -69,6 +75,7 @@ import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.UtilMethods;
+import com.google.common.collect.ImmutableList;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
 import graphql.VisibleForTesting;
@@ -87,6 +94,8 @@ import java.util.TreeSet;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import io.vavr.Lazy;
+import org.jetbrains.annotations.NotNull;
+
 public class ExperimentsAPIImpl implements ExperimentsAPI {
 
     private Lazy<Boolean> isExperimentEnabled =
@@ -149,7 +158,13 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
         builder.lastModifiedBy(user.getUserId());
         
         if(experiment.goals().isPresent()) {
-            MetricsUtil.INSTANCE.validateGoals(experiment.goals().get());
+            final Goals goals = experiment.goals().get();
+            MetricsUtil.INSTANCE.validateGoals(goals);
+
+            if (goals.primary().type() == MetricType.REACH_PAGE && !hasRefererCondition(goals)) {
+                addRefererCondition(APILocator.getHTMLPageAssetAPI().fromContentlet(pageAsContent),
+                        builder, goals);
+            }
         }
 
         if(experiment.targetingConditions().isPresent()) {
@@ -173,6 +188,36 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
         }
 
         return savedExperiment.get();
+    }
+
+    private void addRefererCondition(final HTMLPageAsset page, final Builder builder, final Goals goals) {
+
+        final com.dotcms.analytics.metrics.Condition refererCondition = createRefererCondition(
+                page, goals);
+
+        final Goals newGoal = createNewGoals(goals, refererCondition);
+        builder.goals(newGoal);
+    }
+
+    @NotNull
+    private static Goals createNewGoals(final Goals oldGoals,
+            final com.dotcms.analytics.metrics.Condition newConditionToAdd) {
+        final Metric newMetric = Metric.builder().from(oldGoals.primary())
+                .addConditions(newConditionToAdd).build();
+        return Goals.builder().from(oldGoals).primary(newMetric).build();
+    }
+
+    private boolean hasRefererCondition(final Goals goals){
+        return goals.primary().conditions()
+            .stream()
+            .anyMatch(condition -> "referer".equals(condition.parameter()));
+    }
+    private com.dotcms.analytics.metrics.Condition createRefererCondition(final HTMLPageAsset page, final Goals goals) {
+        return com.dotcms.analytics.metrics.Condition.builder()
+                    .parameter("referer")
+                    .operator(Operator.CONTAINS)
+                    .value(page.getPageUrl())
+                    .build();
     }
 
     private void saveTargetingConditions(final Experiment experiment, final User user)
@@ -702,7 +747,19 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
      * @return
      */
     @Override
-    public ExperimentResult getResult(final Experiment experiment) {
+    public ExperimentResult getResult(final Experiment experiment)
+            throws DotDataException, DotSecurityException {
+
+        final String experimentId = experiment.id().orElseThrow(
+                () -> new IllegalArgumentException("The Experiment must have an Identifier"));
+
+        final Experiment experimentFromDataBase = APILocator.getExperimentsAPI()
+                .find(experimentId, APILocator.systemUser())
+                .orElseThrow(() -> new NotFoundException("Experiment not found: " + experimentId));
+
+        DotPreconditions.isTrue(experimentFromDataBase.status() == RUNNING,
+                "The Experiment must be RUNNING");
+
         final List<BrowserSession> events = getEvents(experiment);
         return ExperimentAnalyzerUtil.INSTANCE.getExperimentResult(experiment, events);
     }
