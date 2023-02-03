@@ -1,13 +1,11 @@
 package com.dotmarketing.startup.runonce;
 
-import com.dotmarketing.common.db.DotConnect;
-import com.dotmarketing.db.DbConnectionFactory;
-import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.exception.DotRuntimeException;
-import com.dotmarketing.startup.StartupTask;
-import com.dotmarketing.util.Logger;
 import java.sql.Connection;
 import java.sql.SQLException;
+import com.dotmarketing.common.db.DotConnect;
+import com.dotmarketing.db.DbConnectionFactory;
+import com.dotmarketing.exception.DotRuntimeException;
+import com.dotmarketing.startup.StartupTask;
 
 public class Task210719CleanUpTitleField implements StartupTask {
     @Override
@@ -16,7 +14,7 @@ public class Task210719CleanUpTitleField implements StartupTask {
     }
     
     
-    public void executeUpgrade() throws DotDataException, DotRuntimeException {
+    public void executeUpgrade()  {
         
         if(DbConnectionFactory.isPostgres()) {
             executePgUpgrade();
@@ -32,7 +30,7 @@ public class Task210719CleanUpTitleField implements StartupTask {
     }
     
 
-    public void executeSQLServerUpgrade() throws DotDataException, DotRuntimeException {
+    public void executeSQLServerUpgrade() {
 
         try {
              new DotConnect()
@@ -46,7 +44,7 @@ public class Task210719CleanUpTitleField implements StartupTask {
     
     
 
-    public void executePgUpgrade() throws DotDataException, DotRuntimeException {
+    public void executePgUpgrade()  {
 
         try (Connection conn = DbConnectionFactory.getDataSource().getConnection()){
             

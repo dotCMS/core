@@ -38,8 +38,7 @@ import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableSet;
+
 import com.liferay.util.StringPool;
 import io.vavr.control.Try;
 
@@ -52,10 +51,7 @@ import io.vavr.control.Try;
  */
 public class VanityUrlAPIImpl implements VanityUrlAPI {
 
-  private final Set<Integer> allowedActions = new ImmutableSet.Builder<Integer>()
-          .add(HttpStatus.SC_OK)
-          .add(HttpStatus.SC_MOVED_PERMANENTLY)
-          .add(HttpStatus.SC_MOVED_TEMPORARILY).build();
+  private final Set<Integer> allowedActions =  Set.of(HttpStatus.SC_OK,HttpStatus.SC_MOVED_PERMANENTLY,HttpStatus.SC_MOVED_TEMPORARILY);
 
   private static final String SELECT_LIVE_VANITY_URL_INODES =
        " SELECT cvi.live_inode  "
