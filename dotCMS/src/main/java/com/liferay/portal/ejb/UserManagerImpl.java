@@ -19,20 +19,8 @@
 
 package com.liferay.portal.ejb;
 
-import com.liferay.util.StringPool;
-import java.io.IOException;
-import java.util.Date;
-import java.util.List;
-import java.util.Locale;
-
-import javax.mail.internet.InternetAddress;
-
 import com.dotcms.api.system.user.UserService;
 import com.dotcms.business.CloseDBIfOpened;
-import com.dotcms.rest.api.v1.authentication.url.UrlStrategy;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
-
 import com.dotcms.enterprise.AuthPipeProxy;
 import com.dotcms.enterprise.PasswordFactoryProxy;
 import com.dotcms.enterprise.PasswordFactoryProxy.AuthenticationStatus;
@@ -40,6 +28,7 @@ import com.dotcms.enterprise.de.qaware.heimdall.PasswordException;
 import com.dotcms.repackage.com.liferay.mail.ejb.MailManagerUtil;
 import com.dotcms.rest.api.v1.authentication.DotInvalidTokenException;
 import com.dotcms.rest.api.v1.authentication.ResetPasswordTokenUtil;
+import com.dotcms.rest.api.v1.authentication.url.UrlStrategy;
 import com.dotcms.util.ConversionUtils;
 import com.dotcms.util.SecurityUtils;
 import com.dotcms.util.SecurityUtils.DelayStrategy;
@@ -81,6 +70,14 @@ import com.liferay.util.KeyValuePair;
 import com.liferay.util.StringUtil;
 import com.liferay.util.Validator;
 import com.liferay.util.mail.MailMessage;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+
+import javax.mail.internet.InternetAddress;
+import java.io.IOException;
+import java.util.Date;
+import java.util.List;
+import java.util.Locale;
 
 import static com.dotcms.util.CollectionsUtils.map;
 
@@ -537,7 +534,7 @@ public class UserManagerImpl extends PrincipalBean implements UserManager {
      *         user.
      * @throws SystemException - User information could not be updated.
      */
-    private int _authenticate(String companyId, String login, String password, boolean byEmailAddress)
+    private int _authenticate(final String companyId, String login, final String password, final boolean byEmailAddress)
             throws PortalException, SystemException {
 
         login = login.trim().toLowerCase();
@@ -564,7 +561,7 @@ public class UserManagerImpl extends PrincipalBean implements UserManager {
             throw new UserPasswordException(UserPasswordException.PASSWORD_INVALID);
         }
 
-        int authResult = Authenticator.FAILURE;
+        int authResult;
 
         if (byEmailAddress) {
 
@@ -579,7 +576,7 @@ public class UserManagerImpl extends PrincipalBean implements UserManager {
             authResult = AuthPipeProxy.authenticateByUserId(PropsUtil.getArray(PropsUtil.AUTH_PIPELINE_PRE), companyId, login, password);
         }
 
-        User user = null;
+        User user;
 
         try {
             if (byEmailAddress) {
@@ -587,10 +584,9 @@ public class UserManagerImpl extends PrincipalBean implements UserManager {
             } else {
                 user = UserUtil.findByC_U(companyId, login);
             }
-        } catch (NoSuchUserException nsue) {
-
+        } catch (final NoSuchUserException nsue) {
             Logger.error(this, "Could not find the user: " + nsue.getMessage() + ", return DNE");
-
+            this.delayRequest(1);
             return Authenticator.DNE;
         }
 
@@ -669,7 +665,7 @@ public class UserManagerImpl extends PrincipalBean implements UserManager {
 
                 UserUtil.update(user);
 
-                int maxFailures = GetterUtil.get(PropsUtil.get(PropsUtil.AUTH_MAX_FAILURES_LIMIT), 0);
+                final int maxFailures = GetterUtil.get(PropsUtil.get(PropsUtil.AUTH_MAX_FAILURES_LIMIT), 0);
 
                 Logger.debug(this, "Max failures: " + maxFailures);
 
@@ -677,19 +673,21 @@ public class UserManagerImpl extends PrincipalBean implements UserManager {
 
                     if (byEmailAddress) {
 
-                        Logger.debug(this, "Reporting Max failures by email, maxFailures: " + maxFailures + ", failed login attemps: "
+                        Logger.debug(this, "Reporting Max failures by email, maxFailures: " + maxFailures + ", failed login attempts: "
                                 + failedLoginAttempts);
 
                         AuthPipeProxy.onMaxFailuresByEmailAddress(PropsUtil.getArray(PropsUtil.AUTH_MAX_FAILURES), companyId, login);
                     } else {
 
-                        Logger.debug(this, "Reporting Max failures by userId, maxFailures: " + maxFailures + ", failed login attemps: "
+                        Logger.debug(this, "Reporting Max failures by userId, maxFailures: " + maxFailures + ", failed login attempts: "
                                 + failedLoginAttempts);
 
                         AuthPipeProxy.onMaxFailuresByUserId(PropsUtil.getArray(PropsUtil.AUTH_MAX_FAILURES), companyId, login);
                     }
                 }
-            } catch (Exception e) {
+            } catch (final Exception e) {
+                Logger.debug(this, String.format("An error occurred when authenticating User '%s': %s", login,
+                        e.getMessage()), e);
                 Logger.error(this, e.getMessage(), e);
             }
         }
