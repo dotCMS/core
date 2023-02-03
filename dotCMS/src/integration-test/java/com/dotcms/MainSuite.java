@@ -227,6 +227,7 @@ import org.junit.runners.Suite.SuiteClasses;
 
 @RunWith(MainBaseSuite.class)
 @SuiteClasses({
+        StartEndScheduledExperimentsJobTest.class,
         RulesAPIImplIntegrationTest.class,
         Task220825CreateVariantFieldTest.class,
 //        AnalyticsAPIImplTest.class,
@@ -655,8 +656,7 @@ import org.junit.runners.Suite.SuiteClasses;
         VisitorsGeolocationConditionletTest.class,
         ManifestUtilTest.class,
         ZipUtilTest.class,
-        Task230110MakeSomeSystemFieldsRemovableByBaseTypeTest.class,
-        StartEndScheduledExperimentsJobTest.class
+        Task230110MakeSomeSystemFieldsRemovableByBaseTypeTest.class
 })
 
 public class MainSuite {
