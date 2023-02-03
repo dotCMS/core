@@ -14,6 +14,7 @@ import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.PermissionAPI;
+import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.HostAPIImpl;
@@ -31,6 +32,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
+import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -300,55 +302,145 @@ public class FolderResourceTest {
     @Test
     public void test_loadFolderAndSubFoldersByPath_UserNoPermissionsOverSubFolder_returnFoldersWithUserPermissions() throws DotDataException, DotSecurityException {
 
-        final long currentTime = System.currentTimeMillis();
-        final List<String> foldersToCreate = Arrays.asList("test_"+currentTime+"/folder_"+currentTime);
-        final Host newHost = new SiteDataGen().nextPersisted();
+        // system host means all hosts
 
-        Logger.info(this, "STEVETEST: Host Identifier: " + newHost.getIdentifier()+ " Host Name: " + newHost.getHostname());
-        HostAPIImpl.testThreadLocal.set(newHost.getHostname());
+        try {
+            DbConnectionFactory.setConnectionLogger(false);
 
+            Logger.error(FolderResourceTest.class,
+                    "Connection exists before: " + DbConnectionFactory.connectionExists());
+            DbConnectionFactory.getCreatorStack()
+                    .ifPresent(s -> Logger.error(this, "Pre Connection Creator: ", s));
 
-        //Create Folders and SubFolders
-        Response responseResource = resource.createFolders(getHttpRequest(adminUser.getEmailAddress(),"admin"),response,foldersToCreate,newHost.getHostname());
+            Logger.error(FolderResourceTest.class,
+                    "Transaction exists before: " + DbConnectionFactory.inTransaction());
 
-        //Check that the response is 200, OK
-        Assert.assertEquals(Status.OK.getStatusCode(),responseResource.getStatus());
+            List<Host> allHostsCache = APILocator.getHostAPI()
+                    .findAllFromDB(APILocator.getUserAPI().getSystemUser(), false);
 
-        //Get all the folders and subfolders using the admin
-        responseResource = resource.loadFolderAndSubFoldersByPath(getHttpRequest(adminUser.getEmailAddress(),"admin"),response,newHost.getIdentifier(),"test_"+currentTime);
+            logHosts(allHostsCache, "allHostsCacheBefore");
 
-        //Get The parent folder Id to give permission over it
-        ResponseEntityView responseEntityView = ResponseEntityView.class.cast(responseResource.getEntity());
-        FolderView responseFolderView = FolderView.class.cast(responseEntityView.getEntity());
-        final Folder folder = folderAPI.find(responseFolderView.getIdentifier(),adminUser,false);
+            List<Host> allHostsDb = APILocator.getHostAPI()
+                    .findAllFromDB(APILocator.getUserAPI().getSystemUser(), false);
+            logHosts(allHostsDb, "allHostsDbBefore");
 
-        final User limitedUser = new UserDataGen().roles(TestUserUtils.getFrontendRole(), TestUserUtils.getBackendRole()).nextPersisted();
-        final String password = "admin";
-        limitedUser.setPassword(password);
-        APILocator.getUserAPI().save(limitedUser,APILocator.systemUser(),false);
+            final long currentTime = System.currentTimeMillis();
+            final List<String> foldersToCreate = Arrays.asList(
+                    "test_" + currentTime + "/folder_" + currentTime);
+            final Host newHost = new SiteDataGen().nextPersisted();
 
-        //Give Permissions Over the Host
-        Permission permissions = new Permission(PermissionAPI.INDIVIDUAL_PERMISSION_TYPE,
-                newHost.getPermissionId(),
-                APILocator.getRoleAPI().loadRoleByKey(limitedUser.getUserId()).getId(),
-                PermissionAPI.PERMISSION_READ, true);
-        APILocator.getPermissionAPI().save(permissions, newHost, APILocator.systemUser(), false);
+            Logger.error(this, "Connection exists after nextPeristed: "
+                    + DbConnectionFactory.connectionExists());
+            Logger.error(this, "Transaction exists after nextPeristed: "
+                    + DbConnectionFactory.inTransaction());
 
-        //Give Permissions Over the Folder
-        permissions = new Permission(PermissionAPI.INDIVIDUAL_PERMISSION_TYPE,
-                folder.getPermissionId(),
-                APILocator.getRoleAPI().loadRoleByKey(limitedUser.getUserId()).getId(),
-                PermissionAPI.PERMISSION_READ, true);
-        APILocator.getPermissionAPI().save(permissions, folder, APILocator.systemUser(), false);
+            allHostsCache = APILocator.getHostAPI()
+                    .findAllFromDB(APILocator.getUserAPI().getSystemUser(), false);
 
-        //Get all the folders and subfolders using the limited user
-        responseResource = resource.loadFolderAndSubFoldersByPath(getHttpRequest(limitedUser.getEmailAddress(),password),response,newHost.getIdentifier(),"test_"+currentTime);
+            logHosts(allHostsCache, "allHostsCacheAfter");
 
-        //Check Results
-        responseEntityView = ResponseEntityView.class.cast(responseResource.getEntity());
-        responseFolderView = FolderView.class.cast(responseEntityView.getEntity());
-        Assert.assertNotNull("Title is null",responseFolderView.getTitle());
-        Assert.assertEquals("Title is not the same as the one requested",responseFolderView.getTitle(),"test_"+currentTime);
-        Assert.assertTrue("There is no subfolders since user don't have permissions",responseFolderView.getSubFolders().isEmpty());
+            Logger.error(this, "Connection exists before findAllFromDB: "
+                    + DbConnectionFactory.connectionExists());
+            Logger.error(this, "Transaction exists before findAllFromDB: "
+                    + DbConnectionFactory.inTransaction());
+
+            allHostsDb = APILocator.getHostAPI()
+                    .findAllFromDB(APILocator.getUserAPI().getSystemUser(), false);
+            Logger.error(this, "Connection exists after findAllFromDB: "
+                    + DbConnectionFactory.connectionExists());
+            Logger.error(this, "Transaction exists after findAllFromDB: "
+                    + DbConnectionFactory.inTransaction());
+
+            logHosts(allHostsDb, "allHostsDbAfter");
+
+            Logger.info(this, "STEVETEST: Host created Identifier: " + newHost.getIdentifier()
+                    + " Host Name: " + newHost.getHostname());
+            HostAPIImpl.setTestThreadLocal(newHost.getHostname());
+
+            //Create Folders and SubFolders
+            Response responseResource = resource.createFolders(
+                    getHttpRequest(adminUser.getEmailAddress(), "admin"), response, foldersToCreate,
+                    newHost.getHostname());
+
+            allHostsCache = APILocator.getHostAPI()
+                    .findAllFromDB(APILocator.getUserAPI().getSystemUser(), false);
+
+            logHosts(allHostsCache, "allHostsCacheAfterCreateFolders");
+
+            allHostsDb = APILocator.getHostAPI()
+                    .findAllFromDB(APILocator.getUserAPI().getSystemUser(), false);
+            logHosts(allHostsDb, "allHostsDbAfterCreateFolders");
+
+            Logger.info(this, "STEVETEST: Host created Identifier: " + newHost.getIdentifier()
+                    + " Host Name: " + newHost.getHostname());
+
+            //Check that the response is 200, OK
+            Assert.assertEquals(Status.OK.getStatusCode(), responseResource.getStatus());
+
+            //Get all the folders and subfolders using the admin
+            responseResource = resource.loadFolderAndSubFoldersByPath(
+                    getHttpRequest(adminUser.getEmailAddress(), "admin"), response,
+                    newHost.getIdentifier(), "test_" + currentTime);
+
+            //Get The parent folder Id to give permission over it
+            ResponseEntityView responseEntityView = ResponseEntityView.class.cast(
+                    responseResource.getEntity());
+            FolderView responseFolderView = FolderView.class.cast(responseEntityView.getEntity());
+            final Folder folder = folderAPI.find(responseFolderView.getIdentifier(), adminUser,
+                    false);
+
+            final User limitedUser = new UserDataGen().roles(TestUserUtils.getFrontendRole(),
+                    TestUserUtils.getBackendRole()).nextPersisted();
+            final String password = "admin";
+            limitedUser.setPassword(password);
+            APILocator.getUserAPI().save(limitedUser, APILocator.systemUser(), false);
+
+            //Give Permissions Over the Host
+            Permission permissions = new Permission(PermissionAPI.INDIVIDUAL_PERMISSION_TYPE,
+                    newHost.getPermissionId(),
+                    APILocator.getRoleAPI().loadRoleByKey(limitedUser.getUserId()).getId(),
+                    PermissionAPI.PERMISSION_READ, true);
+            APILocator.getPermissionAPI()
+                    .save(permissions, newHost, APILocator.systemUser(), false);
+
+            //Give Permissions Over the Folder
+            permissions = new Permission(PermissionAPI.INDIVIDUAL_PERMISSION_TYPE,
+                    folder.getPermissionId(),
+                    APILocator.getRoleAPI().loadRoleByKey(limitedUser.getUserId()).getId(),
+                    PermissionAPI.PERMISSION_READ, true);
+            APILocator.getPermissionAPI().save(permissions, folder, APILocator.systemUser(), false);
+
+            //Get all the folders and subfolders using the limited user
+            responseResource = resource.loadFolderAndSubFoldersByPath(
+                    getHttpRequest(limitedUser.getEmailAddress(), password), response,
+                    newHost.getIdentifier(), "test_" + currentTime);
+
+            //Check Results
+            responseEntityView = ResponseEntityView.class.cast(responseResource.getEntity());
+            responseFolderView = FolderView.class.cast(responseEntityView.getEntity());
+            Assert.assertNotNull("Title is null", responseFolderView.getTitle());
+            Assert.assertEquals("Title is not the same as the one requested",
+                    responseFolderView.getTitle(), "test_" + currentTime);
+            Assert.assertTrue("There is no subfolders since user don't have permissions",
+                    responseFolderView.getSubFolders().isEmpty());
+
+            Logger.error(this,
+                    "Connection exists at endTest: " + DbConnectionFactory.connectionExists());
+            Logger.error(this,
+                    "Transaction exists at endTest: " + DbConnectionFactory.inTransaction());
+
+        }finally {
+            DbConnectionFactory.setConnectionLogger(false);
+            HostAPIImpl.setTestThreadLocal(null);
+        }
+
+    }
+
+    private static void logHosts(List<Host> allHostsDb, String message) {
+        Logger.error(FolderResourceTest.class,"Logging Hosts: " + message);
+        for (Host host : allHostsDb) {
+            Logger.error(FolderResourceTest.class, "  Host Identifier: " + host.getIdentifier()+ " Host Name: " + host.getHostname() + "Is System Host: " + host.isSystemHost() + " Is Default: " + host.isDefault()
+            + "Tag Storage=" + host.getTagStorage());
+        }
     }
 }
