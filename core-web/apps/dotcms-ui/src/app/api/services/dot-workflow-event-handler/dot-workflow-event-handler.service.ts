@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 import { Observable } from 'rxjs';
 
 import { Injectable } from '@angular/core';
@@ -42,6 +43,7 @@ interface DotAssignableData {
 }
 
 const EDIT_CONTENT_CALLBACK_FUNCTION = 'saveAssignCallBackAngular';
+const VIEW_CONTENT_CALLBACK_FUNCTION = 'angularWorkflowEventCallback';
 
 @Injectable()
 export class DotWorkflowEventHandlerService {
@@ -259,7 +261,12 @@ export class DotWorkflowEventHandlerService {
                     )
                     .subscribe(() => {
                         this.displayNotification(event.workflow.name);
-                        this.dotIframeService.run({ name: event.callback });
+                        console.log('+++ pre VIEW_CONTENT_CALLBACK_FUNCTION,', event.workflow.name);
+
+                        if (event.callback === VIEW_CONTENT_CALLBACK_FUNCTION) {
+                            console.log('+++VIEW_CONTENT_CALLBACK_FUNCTION');
+                            this.dotIframeService.run({ name: event.callback });
+                        }
                     });
             }
         }

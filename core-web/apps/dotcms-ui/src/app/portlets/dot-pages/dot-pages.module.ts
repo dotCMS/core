@@ -15,7 +15,9 @@ import { TooltipModule } from 'primeng/tooltip';
 import { DotActionMenuButtonModule } from '@components/_common/dot-action-menu-button/dot-action-menu-button.module';
 import { DotAddToBundleModule } from '@components/_common/dot-add-to-bundle';
 import { UiDotIconButtonModule } from '@components/_common/dot-icon-button/dot-icon-button.module';
+import { DotAutofocusModule } from '@directives/dot-autofocus/dot-autofocus.module';
 import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
+import { DotWorkflowEventHandlerService } from '@dotcms/app/api/services/dot-workflow-event-handler/dot-workflow-event-handler.service';
 import { DotPipesModule } from '@dotcms/app/view/pipes/dot-pipes.module';
 import {
     DotESContentService,
@@ -51,13 +53,15 @@ import { DotPagesComponent } from './dot-pages.component';
         TabViewModule,
         TooltipModule,
         UiDotIconButtonModule,
-        DotAddToBundleModule
+        DotAddToBundleModule,
+        DotAutofocusModule
     ],
     providers: [
         DotESContentService,
         DotRouterService,
         DotLanguagesService,
         DotWorkflowsActionsService,
+        DotWorkflowEventHandlerService,
         DotWorkflowActionsFireService
     ]
 })

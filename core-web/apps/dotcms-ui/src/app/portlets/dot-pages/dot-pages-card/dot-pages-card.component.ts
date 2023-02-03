@@ -1,4 +1,4 @@
-import { Component, Input } from '@angular/core';
+import { Component, EventEmitter, Input, Output } from '@angular/core';
 
 @Component({
     selector: 'dot-pages-card',
@@ -6,8 +6,10 @@ import { Component, Input } from '@angular/core';
     styleUrls: ['./dot-pages-card.component.scss']
 })
 export class DotPagesCardComponent {
+    @Input() actionButtonId: string;
     @Input() imageUri: string;
     @Input() title: string;
     @Input() url: string;
     @Input() ownerPage: boolean;
+    @Output() showActionMenu = new EventEmitter<MouseEvent>();
 }

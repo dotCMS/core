@@ -1,11 +1,9 @@
 @use "variables" as *;
 
 :host {
-    background: $gray-bg;
-    box-shadow: $md-shadow-4;
     display: flex;
+    min-width: 900px;
     height: 100%;
-    padding: $spacing-4;
 }
 
 .dot-pages__title {

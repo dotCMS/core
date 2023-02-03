@@ -41,4 +41,8 @@
         text-overflow: ellipsis;
         white-space: nowrap;
     }
+
+    .p-card .p-card-body {
+        padding: $spacing-4 $spacing-1 $spacing-4 $spacing-4;
+    }
 }

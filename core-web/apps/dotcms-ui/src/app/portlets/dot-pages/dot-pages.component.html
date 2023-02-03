@@ -33,12 +33,14 @@
 
         <ng-template [ngIf]="vm.favoritePages?.items?.length !== 0" [ngIfElse]="emptyState">
             <dot-pages-card
-                *ngFor="let item of vm.favoritePages.items"
+                *ngFor="let item of vm.favoritePages.items; let i = index"
+                [actionButtonId]="'favoritePageActionButton-' + i"
                 [imageUri]="item.screenshot"
                 [title]="item.title"
                 [url]="item.url"
                 [ownerPage]="item.owner === vm.loggedUser.id"
                 (click)="goToUrl(item.url)"
+                (showActionMenu)="showActionsMenu($event, 'favoritePageActionButton-' + i, item)"
             ></dot-pages-card>
         </ng-template>
 
@@ -57,7 +59,12 @@
         </ng-template>
     </p-panel>
     <div>{{ vm.pages.addToBundleCTId | json }}</div>
-    <p-menu #menu [popup]="true" [model]="vm.pages.menuActions"></p-menu>
+    <p-menu
+        #menu
+        [popup]="true"
+        [model]="vm.pages.menuActions"
+        (onHide)="closedActionsMenu($event)"
+    ></p-menu>
     <p-table
         [value]="vm.pages.items"
         [scrollable]="true"
@@ -77,6 +84,7 @@
                         (input)="filterData($event.target.value)"
                         type="text"
                         pInputText
+                        dotAutofocus
                     />
                     <p-dropdown
                         [options]="vm.languageOptions"
@@ -155,7 +163,7 @@
                 <td>
                     <dot-icon-button
                         id="pageActionButton-{{ rowIndex }}"
-                        (click)="showActionsMenu($event, rowIndex, rowData)"
+                        (click)="showActionsMenu($event, 'pageActionButton-' + rowIndex, rowData)"
                         icon="more_vert"
                         size="32"
                     ></dot-icon-button>

@@ -11,9 +11,11 @@ import { Menu } from 'primeng/menu';
 import { Observable } from 'rxjs/internal/Observable';
 import { takeUntil } from 'rxjs/operators';
 
+import { DotMessageSeverity, DotMessageType } from '@components/dot-message-display/model';
+import { DotMessageDisplayService } from '@components/dot-message-display/services';
 import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
 import { DataTableColumn } from '@dotcms/app/shared/models/data-table';
-import { DotMessageService } from '@dotcms/data-access';
+import { DotEventsService, DotMessageService } from '@dotcms/data-access';
 import { DotCMSContentlet } from '@dotcms/dotcms-models';
 
 import { DotPagesState, DotPageStore } from './dot-pages-store/dot-pages.store';
@@ -41,12 +43,15 @@ export class DotPagesComponent implements OnInit, OnDestroy {
     actions: { [key: string]: MenuItem[] };
 
     private initialFavoritePagesLimit = 5;
+    private domIdMenuAttached = '';
     private destroy$: Subject<boolean> = new Subject<boolean>();
 
     constructor(
         private store: DotPageStore,
         private dotRouterService: DotRouterService,
         private dotMessageService: DotMessageService,
+        private dotMessageDisplayService: DotMessageDisplayService,
+        private dotEventsService: DotEventsService,
         private element: ElementRef
     ) {
         this.store.setInitialStateData(this.initialFavoritePagesLimit);
@@ -111,13 +116,23 @@ export class DotPagesComponent implements OnInit, OnDestroy {
         this.store.getPages({ offset: 0 });
     }
 
-    showActionsMenu(event: MouseEvent, rowIndex: number, item: DotCMSContentlet) {
+    showActionsMenu(event: MouseEvent, actionMenuDomId: string, item: DotCMSContentlet) {
         event.stopPropagation();
-        this.menu.hide();
 
-        console.log(event, rowIndex, item);
+        if (event.currentTarget['id'] === this.domIdMenuAttached) {
+            this.menu.hide();
+        }
 
-        this.store.showActionsMenu({ item, rowIndex });
+        if (event.currentTarget['id'] !== this.domIdMenuAttached) {
+            this.menu.hide();
+            this.store.showActionsMenu({ item, actionMenuDomId });
+        }
+    }
+
+    closedActionsMenu(event: Event) {
+        console.log(event);
+        this.store.clearMenuActions();
+        this.domIdMenuAttached = '';
     }
 
     loadPagesLazy(event: LazyLoadEvent) {
@@ -129,16 +144,31 @@ export class DotPagesComponent implements OnInit, OnDestroy {
     }
 
     ngOnInit(): void {
-        this.store.rowActionMenuIndex$
+        this.store.actionMenuDomId$
             .pipe(takeUntil(this.destroy$))
-            .subscribe((rowIndex: number) => {
-                if (rowIndex !== undefined) {
-                    const target = this.element.nativeElement.querySelector(
-                        `#pageActionButton-${rowIndex}`
-                    );
-                    console.log('***rowIndex', rowIndex, target);
+            .subscribe((actionMenuDomId: string) => {
+                if (actionMenuDomId !== undefined) {
+                    const target = this.element.nativeElement.querySelector(`#${actionMenuDomId}`);
+                    console.log('***rowIndex', actionMenuDomId, target);
+                    this.domIdMenuAttached = actionMenuDomId;
                     this.menu.show({ currentTarget: target });
                 }
+            });
+
+        this.dotEventsService
+            .listen('dot-global-message')
+            .pipe(takeUntil(this.destroy$))
+            .subscribe((evt) => {
+                console.log('---- dot-global-message', evt);
+
+                this.store.getPages({ offset: 0 });
+
+                this.dotMessageDisplayService.push({
+                    life: 3000,
+                    message: evt.data['value'],
+                    severity: DotMessageSeverity.SUCCESS,
+                    type: DotMessageType.SIMPLE_MESSAGE
+                });
             });
     }
 
