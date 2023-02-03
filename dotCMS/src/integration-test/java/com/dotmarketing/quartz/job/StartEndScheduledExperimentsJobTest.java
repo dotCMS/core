@@ -74,25 +74,48 @@ public class StartEndScheduledExperimentsJobTest extends IntegrationTestBase {
                 .scheduling(Scheduling.builder().endDate(NOW_PLUS_TWO_MINUTES).build())
                 .nextPersisted();
 
-        scheduledToEndExperiment = experimentsAPI.start(scheduledToEndExperiment.id().orElseThrow(), APILocator.systemUser());
+        Experiment scheduledToStartExperiment = null;
 
-        assertEquals(Status.RUNNING, scheduledToEndExperiment.status());
-        // wait some minutes for its end date to be reached
-        Thread.sleep(2*60*1000);
+        try {
 
-        // create experiment that should have started
-        final Instant NOW_PLUS_ONE_MINUTE = Instant.now().plus(1, ChronoUnit.MINUTES);
+            scheduledToEndExperiment = experimentsAPI.start(
+                    scheduledToEndExperiment.id().orElseThrow(), APILocator.systemUser());
 
-        final Experiment scheduledToStartExperiment = experimentDataGen
-                .scheduling(Scheduling.builder().startDate(NOW_PLUS_ONE_MINUTE).build()).nextPersisted();
+            assertEquals(Status.RUNNING, scheduledToEndExperiment.status());
+            // wait some minutes for its end date to be reached
+            Thread.sleep(2 * 60 * 1000);
 
-        assertEquals(Status.DRAFT, scheduledToStartExperiment.status());
+            // create experiment that should have started
+            final Instant NOW_PLUS_ONE_MINUTE = Instant.now().plus(1, ChronoUnit.MINUTES);
 
-        new StartEndScheduledExperimentsJob().run(null);
+            scheduledToStartExperiment = experimentDataGen
+                    .scheduling(Scheduling.builder().startDate(NOW_PLUS_ONE_MINUTE).build())
+                    .nextPersisted();
 
-        assertEquals(Status.RUNNING, experimentsAPI.find(scheduledToStartExperiment.id().orElseThrow()
-                , APILocator.systemUser()).orElseThrow().status());
-        assertEquals(Status.ENDED, experimentsAPI.find(scheduledToEndExperiment.id().orElseThrow()
-                , APILocator.systemUser()).orElseThrow().status());
+            assertEquals(Status.DRAFT, scheduledToStartExperiment.status());
+
+            new StartEndScheduledExperimentsJob().run(null);
+
+            assertEquals(Status.RUNNING,
+                    experimentsAPI.find(scheduledToStartExperiment.id().orElseThrow()
+                            , APILocator.systemUser()).orElseThrow().status());
+            assertEquals(Status.ENDED,
+                    experimentsAPI.find(scheduledToEndExperiment.id().orElseThrow()
+                            , APILocator.systemUser()).orElseThrow().status());
+        } finally {
+            final Experiment shouldBeRunning = experimentsAPI.find(scheduledToStartExperiment.id().orElseThrow()
+                    , APILocator.systemUser()).orElseThrow();
+            final Experiment shouldBeEnded = experimentsAPI.find(scheduledToEndExperiment.id().orElseThrow()
+                    , APILocator.systemUser()).orElseThrow();
+
+            if(shouldBeRunning.status()==Status.RUNNING) {
+                experimentsAPI.end(shouldBeRunning.id().orElseThrow(), APILocator.systemUser());
+            }
+
+            if(shouldBeEnded.status()==Status.RUNNING) {
+                experimentsAPI.end(shouldBeEnded.id().orElseThrow(), APILocator.systemUser());
+            }
+
+        }
     }
 }
