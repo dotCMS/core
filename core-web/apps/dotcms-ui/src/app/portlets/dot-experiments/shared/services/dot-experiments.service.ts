@@ -6,7 +6,13 @@ import { Injectable } from '@angular/core';
 import { pluck } from 'rxjs/operators';
 
 import { DotCMSResponse } from '@dotcms/dotcms-js';
-import { DotExperiment, Goals, GoalsLevels, Variant } from '@dotcms/dotcms-models';
+import {
+    DotExperiment,
+    Goals,
+    GoalsLevels,
+    RangeOfDateAndTime,
+    Variant
+} from '@dotcms/dotcms-models';
 
 const API_ENDPOINT = '/api/v1/experiments';
 
@@ -137,6 +143,22 @@ export class DotExperimentsService {
     setGoal(experimentId: string, goals: Goals): Observable<DotExperiment> {
         return this.http
             .patch<DotCMSResponse<DotExperiment>>(`${API_ENDPOINT}/${experimentId}`, { goals })
+            .pipe(pluck('entity'));
+    }
+
+    /**
+     * Set scheduling to an experiment
+     * @param {string} experimentId
+     * @param {RangeOfDateAndTime | null} scheduling
+     * @returns Observable<DotExperiment>
+     * @memberof DotExperimentsService
+     */
+    setScheduling(
+        experimentId: string,
+        scheduling: RangeOfDateAndTime | null
+    ): Observable<DotExperiment> {
+        return this.http
+            .patch<DotCMSResponse<DotExperiment>>(`${API_ENDPOINT}/${experimentId}`, { scheduling })
             .pipe(pluck('entity'));
     }
 
