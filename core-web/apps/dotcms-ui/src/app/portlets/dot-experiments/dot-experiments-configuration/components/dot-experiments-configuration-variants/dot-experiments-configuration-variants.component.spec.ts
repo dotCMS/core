@@ -272,7 +272,7 @@ describe('DotExperimentsConfigurationVariantsComponent', () => {
 
             spectator.component.vm$ = of({
                 status: {
-                    status: Status.IDLE,
+                    status: ComponentStatus.IDLE,
                     isOpen: false,
                     experimentStep: ExperimentSteps.GOAL
                 }
