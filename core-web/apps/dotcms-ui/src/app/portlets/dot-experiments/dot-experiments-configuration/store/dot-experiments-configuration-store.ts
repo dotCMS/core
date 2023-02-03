@@ -74,8 +74,8 @@ export class DotExperimentsConfigurationStore extends ComponentStore<DotExperime
     readonly getStatusExperiment$: Observable<{ label: string; classz: string }> = this.select(
         ({ experiment }) => {
             return {
-                ...DOT_EXPERIMENT_STATUS_METADATA_MAP[experiment.status],
-                label: DOT_EXPERIMENT_STATUS_METADATA_MAP[experiment.status].label
+                ...DOT_EXPERIMENT_STATUS_METADATA_MAP[experiment?.status],
+                label: DOT_EXPERIMENT_STATUS_METADATA_MAP[experiment?.status]?.label
             };
         }
     );
@@ -85,7 +85,7 @@ export class DotExperimentsConfigurationStore extends ComponentStore<DotExperime
             DotExperimentStatusList.ENDED,
             DotExperimentStatusList.RUNNING,
             DotExperimentStatusList.ARCHIVED
-        ]).includes(experiment.status)
+        ]).includes(experiment?.status)
     );
 
     // Variants Step //
@@ -401,7 +401,7 @@ export class DotExperimentsConfigurationStore extends ComponentStore<DotExperime
             return setScheduling$.pipe(
                 tap(() => {
                     this.setSidebarStatus({
-                        status: Status.SAVING,
+                        status: ComponentStatus.SAVING,
                         experimentStep: ExperimentSteps.SCHEDULING
                     });
                 }),
@@ -422,7 +422,7 @@ export class DotExperimentsConfigurationStore extends ComponentStore<DotExperime
                                         )
                                     });
                                     this.setSidebarStatus({
-                                        status: Status.DONE,
+                                        status: ComponentStatus.IDLE,
                                         experimentStep: ExperimentSteps.SCHEDULING,
                                         isOpen: false
                                     });
@@ -430,7 +430,7 @@ export class DotExperimentsConfigurationStore extends ComponentStore<DotExperime
                                 (response: HttpErrorResponse) => {
                                     this.dotHttpErrorManagerService.handle(response);
                                     this.setSidebarStatus({
-                                        status: Status.DONE,
+                                        status: ComponentStatus.IDLE,
                                         experimentStep: ExperimentSteps.SCHEDULING
                                     });
                                 }
@@ -492,7 +492,7 @@ export class DotExperimentsConfigurationStore extends ComponentStore<DotExperime
         scheduling: RangeOfDateAndTime;
         status: StepStatus;
     }> = this.select(
-        this.getExperimentId,
+        this.getExperimentId$,
         this.scheduling$,
         this.schedulingStatus$,
         (experimentId, scheduling, status) => ({
