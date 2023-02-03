@@ -11,7 +11,6 @@ import com.dotcms.experiments.model.Experiment;
 import com.dotcms.experiments.model.Goals;
 import com.dotcms.util.DotPreconditions;
 import io.vavr.Lazy;
-import java.util.HashMap;
 import java.util.Map;
 
 /**
@@ -58,7 +57,7 @@ import java.util.Map;
  *
  * @see MetricExperimentResultQuery
  */
-public enum ExperimentResultQueryFactory {
+public enum ExperimentResultsQueryFactory {
 
     INSTANCE;
 
@@ -95,7 +94,7 @@ public enum ExperimentResultQueryFactory {
      * @param experiment {@link Experiment} to use to create the {@link CubeJSQuery}
      * @return The {@link CubeJSQuery} generated
      *
-     * @see {@link ExperimentResultQueryFactory}
+     * @see {@link ExperimentResultsQueryFactory}
      */
     public CubeJSQuery create(final Experiment experiment){
         final CubeJSQuery cubeJSQuery = getMetricCubeJSQuery(experiment);

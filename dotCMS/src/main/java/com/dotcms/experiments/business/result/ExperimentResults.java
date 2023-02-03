@@ -12,7 +12,7 @@ import java.util.stream.Collectors;
 
 
 /**
- * Represent a partial or total {@link ExperimentResult}.
+ * Represent a partial or total {@link ExperimentResults}.
  * The ExperimentResult include:
  * <ul>
  *     <li>How many Session the {@link com.dotcms.experiments.model.Experiment}'s Page was view.</li>
@@ -22,13 +22,13 @@ import java.util.stream.Collectors;
  * </ul>
  *
  */
-public class ExperimentResult {
+public class ExperimentResults {
 
     private int totalSessions;
 
     private List<GoalResult> goals;
 
-    private ExperimentResult(int totalSessions, final List<GoalResult> goalResults) {
+    private ExperimentResults(int totalSessions, final List<GoalResult> goalResults) {
         this.totalSessions = totalSessions;
         this.goals = goalResults;
     }
@@ -69,8 +69,8 @@ public class ExperimentResult {
             return this;
         }
 
-        public ExperimentResult build() {
-            return new ExperimentResult(totalSessions, goals);
+        public ExperimentResults build() {
+            return new ExperimentResults(totalSessions, goals);
         }
 
         public Builder addVariants(final Collection<ExperimentVariant> variants) {

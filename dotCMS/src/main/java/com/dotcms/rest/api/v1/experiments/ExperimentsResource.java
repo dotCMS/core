@@ -2,7 +2,7 @@ package com.dotcms.rest.api.v1.experiments;
 
 import com.dotcms.experiments.business.ExperimentFilter;
 import com.dotcms.experiments.business.ExperimentsAPI;
-import com.dotcms.experiments.business.result.ExperimentResult;
+import com.dotcms.experiments.business.result.ExperimentResults;
 import com.dotcms.experiments.model.AbstractExperiment.Status;
 import com.dotcms.experiments.model.Experiment;
 import com.dotcms.experiments.model.Scheduling;
@@ -29,7 +29,6 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
-import javax.ws.rs.FormParam;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.PUT;
@@ -444,9 +443,9 @@ public class ExperimentsResource {
                 .orElseThrow(
                         () -> new NotFoundException("Experiment with id: " + id + " not found."));
 
-        final ExperimentResult experimentResult = APILocator.getExperimentsAPI().getResult(experiment);
+        final ExperimentResults experimentResults = APILocator.getExperimentsAPI().getResults(experiment);
 
-        return new ResponseEntityResultExperimentView(experimentResult);
+        return new ResponseEntityResultExperimentView(experimentResults);
     }
 
     private Experiment patchExperiment(final Experiment experimentToUpdate,

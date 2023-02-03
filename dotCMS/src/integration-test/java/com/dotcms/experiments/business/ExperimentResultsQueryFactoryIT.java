@@ -11,22 +11,20 @@ import com.dotcms.datagen.ExperimentDataGen;
 import com.dotcms.datagen.HTMLPageDataGen;
 import com.dotcms.datagen.SiteDataGen;
 import com.dotcms.datagen.TemplateDataGen;
-import com.dotcms.experiments.business.result.ExperimentResultQueryFactory;
+import com.dotcms.experiments.business.result.ExperimentResultsQueryFactory;
 import com.dotcms.experiments.model.Experiment;
 import com.dotcms.experiments.model.Goals;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.templates.model.Template;
-import graphql.AssertException;
-import org.jetbrains.annotations.NotNull;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
 /**
- * Test of {@link ExperimentResultQueryFactory}
+ * Test of {@link ExperimentResultsQueryFactory}
  */
-public class ExperimentResultQueryFactoryIT {
+public class ExperimentResultsQueryFactoryIT {
 
     @BeforeClass
     public static void prepare() throws Exception {
@@ -34,7 +32,7 @@ public class ExperimentResultQueryFactoryIT {
     }
 
     /**
-     * Method to test: {@link ExperimentResultQueryFactory#create(Experiment)}
+     * Method to test: {@link ExperimentResultsQueryFactory#create(Experiment)}
      * When: Try to get the {@link CubeJSQuery} to a Experiment with a REACH_PAGE GOal
      * Should: get the follow query:
      *
@@ -91,7 +89,7 @@ public class ExperimentResultQueryFactoryIT {
                 .addGoal(goal)
                 .nextPersisted();
 
-        final CubeJSQuery cubeJSQuery = ExperimentResultQueryFactory.INSTANCE.create(experiment);
+        final CubeJSQuery cubeJSQuery = ExperimentResultsQueryFactory.INSTANCE.create(experiment);
         final String cubeJSQueryExpected ="{"
                 +   "\"filters\":["
                 +       "{"

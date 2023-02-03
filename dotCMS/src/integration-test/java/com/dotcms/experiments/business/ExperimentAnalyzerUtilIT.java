@@ -9,7 +9,6 @@ import com.dotcms.analytics.metrics.Condition;
 import com.dotcms.analytics.metrics.EventType;
 import com.dotcms.analytics.metrics.Metric;
 import com.dotcms.analytics.metrics.MetricType;
-import com.dotcms.cube.CubeJSResultSet;
 import com.dotcms.datagen.ExperimentDataGen;
 import com.dotcms.datagen.HTMLPageDataGen;
 import com.dotcms.datagen.SiteDataGen;
@@ -17,8 +16,8 @@ import com.dotcms.datagen.TemplateDataGen;
 import com.dotcms.experiments.business.result.BrowserSession;
 import com.dotcms.experiments.business.result.Event;
 import com.dotcms.experiments.business.result.ExperimentAnalyzerUtil;
-import com.dotcms.experiments.business.result.ExperimentResult;
-import com.dotcms.experiments.business.result.ExperimentResult.VariantResult;
+import com.dotcms.experiments.business.result.ExperimentResults;
+import com.dotcms.experiments.business.result.ExperimentResults.VariantResult;
 import com.dotcms.experiments.model.Experiment;
 import com.dotcms.experiments.model.ExperimentVariant;
 import com.dotcms.experiments.model.Goals;
@@ -33,9 +32,7 @@ import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.SortedSet;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 import net.bytebuddy.utility.RandomString;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -135,14 +132,14 @@ public class ExperimentAnalyzerUtilIT {
                 browserSession_5.get(0).get("Events.lookBackWindow").toString(),
                 browserSession_5.stream().map(eventMap -> new Event(eventMap, EventType.PAGE_VIEW)).collect(Collectors.toList())));
 
-        final ExperimentResult experimentResult = ExperimentAnalyzerUtil.INSTANCE
+        final ExperimentResults experimentResults = ExperimentAnalyzerUtil.INSTANCE
                 .getExperimentResult(experiment, browserSessions);
 
-        assertEquals(3, experimentResult.getTotalSessions());
+        assertEquals(3, experimentResults.getTotalSessions());
 
-       assertEquals(1, experimentResult.getGoalResults().size());
+       assertEquals(1, experimentResults.getGoalResults().size());
 
-        final Map<String, VariantResult> variants = experimentResult.getGoalResults().get(0)
+        final Map<String, VariantResult> variants = experimentResults.getGoalResults().get(0)
                 .getVariants();
 
         assertEquals(2, variants.size());
