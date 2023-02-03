@@ -171,8 +171,12 @@ public class HostFactoryImpl implements HostFactory {
         Host site = siteCache.get(siteName);
         if (HostAPIImpl.istTestThreadLocal(siteName))
         {
-            Logger.info(this, "Found site: " + siteName + " in cache with identifier: " + (site != null ? site.getIdentifier() : "null"));
-        }
+            if (site != null){
+                Logger.info(this, "Found site: " + siteName + " in cache with identifier: " + site.getIdentifier());
+            } else {
+                Logger.info(this, "Site "+ siteName + " not found in cache");
+            }
+                  }
         if (null == site || !UtilMethods.isSet(site.getIdentifier())) {
             final DotConnect dc = new DotConnect();
             final StringBuilder sqlQuery = new StringBuilder().append(SELECT_SITE_INODE)
@@ -204,6 +208,10 @@ public class HostFactoryImpl implements HostFactory {
                     warningMsg.append("Defaulting to Site '").append(siteInode).append("'");
                     Logger.fatal(this, warningMsg.toString());
                 }
+                if (HostAPIImpl.istTestThreadLocal(siteName))
+                {
+                    Logger.info(this, "site: " + siteName + " found inode in db: " + siteInode);
+                }
                 final Contentlet siteAsContentlet = this.contentFactory.find(siteInode);
                 site = new Host(siteAsContentlet);
                 if (HostAPIImpl.istTestThreadLocal(siteName))
@@ -212,8 +220,10 @@ public class HostFactoryImpl implements HostFactory {
                 }
                 this.siteCache.add(site);
             } catch (final Exception e) {
+
                 final String errorMsg = String.format("An error occurred when retrieving Site by name '%s': %s",
                         siteName, e.getMessage());
+                Logger.error(this, errorMsg, e);
                 throw new DotRuntimeException(errorMsg, e);
             }
         }

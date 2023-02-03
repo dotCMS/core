@@ -32,7 +32,6 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
-import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -315,11 +314,6 @@ public class FolderResourceTest {
             Logger.error(FolderResourceTest.class,
                     "Transaction exists before: " + DbConnectionFactory.inTransaction());
 
-            List<Host> allHostsCache = APILocator.getHostAPI()
-                    .findAllFromDB(APILocator.getUserAPI().getSystemUser(), false);
-
-            logHosts(allHostsCache, "allHostsCacheBefore");
-
             List<Host> allHostsDb = APILocator.getHostAPI()
                     .findAllFromDB(APILocator.getUserAPI().getSystemUser(), false);
             logHosts(allHostsDb, "allHostsDbBefore");
@@ -333,11 +327,6 @@ public class FolderResourceTest {
                     + DbConnectionFactory.connectionExists());
             Logger.error(this, "Transaction exists after nextPeristed: "
                     + DbConnectionFactory.inTransaction());
-
-            allHostsCache = APILocator.getHostAPI()
-                    .findAllFromDB(APILocator.getUserAPI().getSystemUser(), false);
-
-            logHosts(allHostsCache, "allHostsCacheAfter");
 
             Logger.error(this, "Connection exists before findAllFromDB: "
                     + DbConnectionFactory.connectionExists());
@@ -361,11 +350,6 @@ public class FolderResourceTest {
             Response responseResource = resource.createFolders(
                     getHttpRequest(adminUser.getEmailAddress(), "admin"), response, foldersToCreate,
                     newHost.getHostname());
-
-            allHostsCache = APILocator.getHostAPI()
-                    .findAllFromDB(APILocator.getUserAPI().getSystemUser(), false);
-
-            logHosts(allHostsCache, "allHostsCacheAfterCreateFolders");
 
             allHostsDb = APILocator.getHostAPI()
                     .findAllFromDB(APILocator.getUserAPI().getSystemUser(), false);
@@ -440,7 +424,7 @@ public class FolderResourceTest {
         Logger.error(FolderResourceTest.class,"Logging Hosts: " + message);
         for (Host host : allHostsDb) {
             Logger.error(FolderResourceTest.class, "  Host Identifier: " + host.getIdentifier()+ " Host Name: " + host.getHostname() + "Is System Host: " + host.isSystemHost() + " Is Default: " + host.isDefault()
-            + "Tag Storage=" + host.getTagStorage());
+            + " Tag Storage=" + host.getTagStorage());
         }
     }
 }

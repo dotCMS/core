@@ -213,6 +213,7 @@ public class HostAPIImpl implements HostAPI, Flushable<Host> {
             try {
                 return findDefaultHost(APILocator.systemUser(), respectFrontendRoles);
             } catch(Exception ex){
+                Logger.error(this, "Default Host not found",ex);
                 throw new DotRuntimeException(e.getMessage(), e);
             }
         }

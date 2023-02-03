@@ -554,6 +554,7 @@ public class Config {
 	 */
 	public static void setProperty(String key, Object value) {
 		if(props!=null) {
+			Logger.info(Config.class, "Setting property: " + key + " = " + value);
 			props.setProperty(key, value);
 		}
 	}
