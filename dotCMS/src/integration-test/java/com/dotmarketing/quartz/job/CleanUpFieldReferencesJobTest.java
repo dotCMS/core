@@ -181,7 +181,7 @@ public class CleanUpFieldReferencesJobTest extends IntegrationTestBase {
 
         } finally {
 
-            Config.getBooleanProperty(SAVE_CONTENTLET_AS_JSON, saveFieldsAsJson);
+            Config.setProperty(SAVE_CONTENTLET_AS_JSON, saveFieldsAsJson);
 
             if (contentType != null) {
                 contentTypeAPI.delete(contentType);
