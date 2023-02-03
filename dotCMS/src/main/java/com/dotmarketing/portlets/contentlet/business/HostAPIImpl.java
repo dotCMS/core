@@ -1,5 +1,7 @@
 package com.dotmarketing.portlets.contentlet.business;
 
+import static com.dotcms.content.business.json.ContentletJsonAPI.SAVE_CONTENTLET_AS_JSON;
+
 import com.dotcms.api.system.event.Payload;
 import com.dotcms.api.system.event.SystemEventType;
 import com.dotcms.api.system.event.SystemEventsAPI;
@@ -32,6 +34,7 @@ import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.IndexPolicyProvider;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.links.model.Link;
+import com.dotmarketing.util.Config;
 import com.dotmarketing.util.DateUtil;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PaginatedArrayList;
@@ -674,6 +677,7 @@ public class HostAPIImpl implements HostAPI, Flushable<Host> {
         if (defaultHostOpt.isPresent()) {
             return defaultHostOpt.get();
         }
+        Logger.error(HostAPIImpl.class,"persist.contentlet.as.json is "+Config.getStringProperty(SAVE_CONTENTLET_AS_JSON, "not set"));
         Logger.error(HostAPIImpl.class, "Default Host not found. defaultField: " + defaultField + " siteContentType: " + siteContentType);
         Logger.error(HostAPIImpl.class, "Inode: " + siteContentType.inode());
         Logger.error(HostAPIImpl.class, "Fields: " + fields);
