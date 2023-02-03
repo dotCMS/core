@@ -21,6 +21,7 @@ import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.PermissionLevel;
 import com.dotmarketing.business.Role;
 import com.dotmarketing.business.Treeable;
+import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
@@ -47,6 +48,7 @@ import java.util.Set;
 import java.util.StringTokenizer;
 import java.util.concurrent.Future;
 import java.util.stream.Collectors;
+import org.apache.commons.lang.exception.ExceptionUtils;
 
 /**
  * This API allows developers to access information related to Sites objects in your dotCMS content repository.
@@ -671,7 +673,32 @@ public class HostAPIImpl implements HostAPI, Flushable<Host> {
         if (defaultHostOpt.isPresent()) {
             return defaultHostOpt.get();
         }
+        Logger.error(HostAPIImpl.class, "Default Host not found. defaultField: " + defaultField + " siteContentType: " + siteContentType);
+        Logger.error(HostAPIImpl.class, "Inode: " + siteContentType.inode());
+        Logger.error(HostAPIImpl.class, "Fields: " + fields);
+        Logger.error(HostAPIImpl.class, "dbColum: " + defaultField.map(Field::dbColumn).orElse("not found"));
+
+        Optional.ofNullable(hostCache.getAllSites()).ifPresent(hosts -> hosts.forEach(host -> {
+            Logger.error(HostAPIImpl.class, "Host in cache: " + host.getHostname());
+        }));
+
+        findAllFromDB(APILocator.getUserAPI().getSystemUser(),false).stream().forEach(host -> {
+            Logger.error(HostAPIImpl.class, "Host in db: " + host.getHostname());
+        });
+
+        Logger.error(HostAPIImpl.class, "Attempting again to get the default host");
+
+
+        Logger.error(HostAPIImpl.class, "DbConnection created "+ DbConnectionFactory.getCreatorStack().map(ExceptionUtils::getStackTrace).orElse("No Connection") );
+        final Optional<Host> defaultHostOpt2 = this.getHostFactory().findDefaultHost(siteContentType.inode(), defaultField.get().dbColumn());
+        if (defaultHostOpt2.isPresent()) {
+            return defaultHostOpt2.get();
+        }
+
+        return null;
+
         // If the Default Host doesn't exist or was removed, just go ahead and re-create it
+        /*
         Host defaultHost = new Host();
         defaultHost.setDefault(true);
         defaultHost.setHostname("noDefault-"  + System.currentTimeMillis());
@@ -684,6 +711,8 @@ public class HostAPIImpl implements HostAPI, Flushable<Host> {
         defaultHost = save(defaultHost, APILocator.systemUser(), false);
         sendNotification();
         return defaultHost;
+
+         */
     }
 
     private void sendNotification() {
