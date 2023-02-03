@@ -21,6 +21,12 @@ interface PublishContentProps {
     statusCallback?: (status: FileStatus) => void;
 }
 
+/**
+ *
+ * TODO: Rename service as: "DotUploadFileService"
+ * @export
+ * @class DotImageService
+ */
 @Injectable()
 export class DotImageService {
     constructor(private http: HttpClient) {}

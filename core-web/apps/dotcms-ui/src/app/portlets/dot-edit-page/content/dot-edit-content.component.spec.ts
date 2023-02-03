@@ -8,7 +8,7 @@ import { Component, DebugElement, ElementRef, EventEmitter, Input, Output } from
 import { ComponentFixture, fakeAsync, flush, TestBed, tick } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
-import { ActivatedRoute } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { RouterTestingModule } from '@angular/router/testing';
 
 import { ConfirmationService } from 'primeng/api';
@@ -188,6 +188,7 @@ describe('DotEditContentComponent', () => {
     let dotLicenseService: DotLicenseService;
     let dotEventsService: DotEventsService;
     let dotSessionStorageService: DotSessionStorageService;
+    let router: Router;
 
     function detectChangesForIframeRender(fix) {
         fix.detectChanges();
@@ -340,6 +341,7 @@ describe('DotEditContentComponent', () => {
         dotLicenseService = de.injector.get(DotLicenseService);
         dotEventsService = de.injector.get(DotEventsService);
         dotSessionStorageService = de.injector.get(DotSessionStorageService);
+        router = de.injector.get(Router);
         spyOn(dotPageStateService, 'reload');
 
         spyOn(dotEditContentHtmlService, 'renderAddedForm').and.returnValue(
@@ -1489,5 +1491,12 @@ describe('DotEditContentComponent', () => {
         spyOn(dotSessionStorageService, 'removeVariantId');
         component.ngOnDestroy();
         expect(dotSessionStorageService.removeVariantId).toHaveBeenCalledTimes(1);
+    });
+
+    it('should keep variant key from session storage if going to layout portlet', () => {
+        router.routerState.snapshot.url = '/edit-page/layout';
+        spyOn(dotSessionStorageService, 'removeVariantId');
+        component.ngOnDestroy();
+        expect(dotSessionStorageService.removeVariantId).toHaveBeenCalledTimes(0);
     });
 });

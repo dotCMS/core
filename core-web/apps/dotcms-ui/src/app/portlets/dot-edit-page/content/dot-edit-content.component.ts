@@ -186,7 +186,10 @@ export class DotEditContentComponent implements OnInit, OnDestroy {
     }
 
     ngOnDestroy(): void {
-        this.dotSessionStorageService.removeVariantId();
+        if (!this.router.routerState.snapshot.url.startsWith('/edit-page/layout')) {
+            this.dotSessionStorageService.removeVariantId();
+        }
+
         this.destroy$.next(true);
         this.destroy$.complete();
     }

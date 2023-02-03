@@ -45,9 +45,9 @@ export interface GoalCondition {
     value: string;
 }
 
-interface RangeOfDateAndTime {
-    startDate: Date;
-    endDate: Date;
+export interface RangeOfDateAndTime {
+    startDate: number;
+    endDate: number;
 }
 
 export type GroupedExperimentByStatus = Partial<Record<DotExperimentStatusList, DotExperiment[]>>;

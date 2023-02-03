@@ -113,9 +113,9 @@ public class CubeJSClientTest {
         final String cubeServerIp = "127.0.0.1";
         final int cubeJsServerPort = 8000;
 
-        IPUtils.disabledIpPrivateSubnet(true);
-
         try {
+            IPUtils.disabledIpPrivateSubnet(true);
+            
             final CubeJSQuery cubeJSQuery = new Builder()
                     .dimensions("Events.experiment", "Events.variant")
                     .build();

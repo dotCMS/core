@@ -86,7 +86,7 @@ exports.COMMANDS = {
     gradle: [
         {
             cmd: './gradlew',
-            args: ['integrationTest', `-PdatabaseType=${dbType}`],
+            args: ['integrationTest', `-PdatabaseType=${dbType}`, '--stacktrace'],
             workingDir: dotCmsRoot
         }
     ],

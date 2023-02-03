@@ -2,7 +2,7 @@ import { Subject } from 'rxjs';
 
 import { HttpErrorResponse } from '@angular/common/http';
 import { Component, HostBinding, OnDestroy, OnInit } from '@angular/core';
-import { ActivatedRoute } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 
 import { debounceTime, filter, finalize, pluck, switchMap, take, takeUntil } from 'rxjs/operators';
 
@@ -11,7 +11,11 @@ import { DotEditLayoutService } from '@dotcms/app/api/services/dot-edit-layout/d
 import { DotHttpErrorManagerService } from '@dotcms/app/api/services/dot-http-error-manager/dot-http-error-manager.service';
 import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
 import { DotTemplateContainersCacheService } from '@dotcms/app/api/services/dot-template-containers-cache/dot-template-containers-cache.service';
-import { DotMessageService, DotPageLayoutService } from '@dotcms/data-access';
+import {
+    DotMessageService,
+    DotPageLayoutService,
+    DotSessionStorageService
+} from '@dotcms/data-access';
 import { ResponseView } from '@dotcms/dotcms-js';
 import {
     DotContainer,
@@ -43,7 +47,9 @@ export class DotEditLayoutComponent implements OnInit, OnDestroy {
         private dotEditLayoutService: DotEditLayoutService,
         private dotPageLayoutService: DotPageLayoutService,
         private dotMessageService: DotMessageService,
-        private templateContainersCacheService: DotTemplateContainersCacheService
+        private templateContainersCacheService: DotTemplateContainersCacheService,
+        private dotSessionStorageService: DotSessionStorageService,
+        private router: Router
     ) {}
 
     ngOnInit() {
@@ -64,6 +70,10 @@ export class DotEditLayoutComponent implements OnInit, OnDestroy {
     }
 
     ngOnDestroy() {
+        if (!this.router.routerState.snapshot.url.startsWith('/edit-page/content')) {
+            this.dotSessionStorageService.removeVariantId();
+        }
+
         this.destroy$.next(true);
         this.destroy$.complete();
     }
