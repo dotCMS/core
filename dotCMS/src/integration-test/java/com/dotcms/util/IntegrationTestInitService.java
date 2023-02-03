@@ -1,5 +1,6 @@
 package com.dotcms.util;
 
+import com.dotcms.business.bytebuddy.ByteBuddyFactory;
 import com.dotcms.config.DotInitializationService;
 import com.dotcms.repackage.org.apache.struts.Globals;
 import com.dotcms.repackage.org.apache.struts.config.ModuleConfig;
@@ -33,6 +34,7 @@ public class IntegrationTestInitService {
     }
 
     public static IntegrationTestInitService getInstance() {
+        ByteBuddyFactory.init();
         return service;
     }
 
