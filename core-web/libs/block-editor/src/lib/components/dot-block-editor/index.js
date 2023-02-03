@@ -6861,6 +6861,11 @@ const Nl = ve.create({
             const n = document.createElement('button');
             return (
                 (n.innerText = 'Add'),
+                (n.style.position = 'absolute'),
+                (n.style.top = '-50px'),
+                (n.style.left = '-33px'),
+                (n.style.border = '0'),
+                (n.style.padding = '5px'),
                 (n.onclick = () => this.editor.commands.addHelloWorld()),
                 [Ei({ pluginKey: this.options.pluginKey, editor: this.editor, element: n })]
             );
