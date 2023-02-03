@@ -105,7 +105,7 @@ public class VanityUrlAPIImpl implements VanityUrlAPI {
     
     List<CachedVanityUrl> vanitiesAllLanguages = findInDb(site);
     
-    Logger.info(this.getClass(), String.format("Populating " +vanitiesAllLanguages.size() + " Vanity URLs for Site '%s'", site.getHostname()));
+    Logger.info(this.getClass(), "Populating " +vanitiesAllLanguages.size() + " Vanity URLs for Site " + site.getHostname());
     
     
     for (final Language language : languageAPI.getLanguages()) {
@@ -115,7 +115,7 @@ public class VanityUrlAPIImpl implements VanityUrlAPI {
 
   @Override
   public void populateAllVanityURLsCache() throws DotDataException {
-    for (final Host site : Try.of(() -> APILocator.getHostAPI().findAllFromDB(APILocator.systemUser(), false)).getOrElse(ImmutableList.of())) {
+    for (final Host site : Try.of(() -> APILocator.getHostAPI().findAllFromDB(APILocator.systemUser(), false)).getOrElse(List.of())) {
       populateVanityURLsCacheBySite(site);
     }
     populateVanityURLsCacheBySite(APILocator.getHostAPI().findSystemHost());
@@ -124,13 +124,6 @@ public class VanityUrlAPIImpl implements VanityUrlAPI {
   
   @Override
   public List<CachedVanityUrl> findInDb(Host site, Language language) {
-
-      if (!UtilMethods.isSet(site) || !UtilMethods.isSet(site.getIdentifier())) {
-          return List.of();
-      }
-      if (language == null) {
-          return List.of();
-      }
 
       return findInDb(site).stream().filter(v -> v.languageId == language.getId()).collect(Collectors.toList());
   }
@@ -150,47 +143,49 @@ public class VanityUrlAPIImpl implements VanityUrlAPI {
   @CloseDBIfOpened
   public List<CachedVanityUrl> findInDb(final Host site) {
 
-    try {
-
       if (!UtilMethods.isSet(site) || !UtilMethods.isSet(site.getIdentifier())) {
-        return List.of();
+          return List.of();
       }
+      
+      
+      try {
 
-      final List<Map<String, Object>> vanityUrls = new DotConnect().setSQL(
-                      SELECT_LIVE_VANITY_URL_INODES)
-              .addParam(site.getIdentifier())
-              .loadObjectResults();
+          final List<Map<String, Object>> vanityUrls = new DotConnect()
+                          .setSQL(SELECT_LIVE_VANITY_URL_INODES)
+                          .addParam(site.getIdentifier())
+                          .loadObjectResults();
 
-      final List<String> vanityUrlInodes =
-              vanityUrls.stream()
-                      .map(vanity -> vanity.get("live_inode").toString())
-                      .collect(Collectors.toList());
+          final List<String> vanityUrlInodes =
+                          vanityUrls
+                          .stream()
+                          .map(vanity -> vanity.get("live_inode").toString())
+                          .collect(Collectors.toList());
 
-      final List<Contentlet> contentlets = this.contentletAPI.findContentlets(vanityUrlInodes)
-              .stream()
-              .filter(contentlet ->
-                      site.getIdentifier().equals(contentlet.getHost()))
-              .collect(Collectors.toList());
+          final List<Contentlet> contentlets = this.contentletAPI
+                          .findContentlets(vanityUrlInodes)
+                          .stream()
+                          .filter(contentlet -> site.getIdentifier().equals(contentlet.getHost()))
+                          .collect(Collectors.toList());
 
-      return contentlets.stream().map(contentlet -> {
-        try {
-          return new CachedVanityUrl(this.fromContentlet(contentlet));
-        } catch (DotStateException e) {
-          Logger.error(VanityUrlAPIImpl.class,
-                  String.format("Validation error loading vanityURL[%S] from db.",
-                          contentlet.getIdentifier()), e);
-        }
-        return null;
-      }).filter(Objects::nonNull).sorted().collect(Collectors.toList());
+          return contentlets
+                          .stream().map(contentlet -> {
+              try {
+                  return new CachedVanityUrl(this.fromContentlet(contentlet));
+              } catch (DotStateException e) {
+                  Logger.error(VanityUrlAPIImpl.class,
+                                  String.format("Validation error loading vanityURL[%S] from db.", contentlet.getIdentifier()),
+                                  e);
+              }
+              return null;
+          }).filter(Objects::nonNull)
+                          .sorted()
+                          .collect(Collectors.toList());
 
-    } catch (final Exception e) {
-      Logger.error(this,
-              String.format(
-                      "An error occurred when retrieving Vanity URLs: siteId=[%s]",
-                      site.getIdentifier()),
-              e);
-      throw new DotStateException(e);
-    }
+      } catch (final Exception e) {
+          Logger.error(this, String.format("An error occurred when retrieving Vanity URLs: siteId=[%s]", site.getIdentifier()),
+                          e);
+          throw new DotStateException(e);
+      }
 
   }
 
@@ -218,7 +213,8 @@ public class VanityUrlAPIImpl implements VanityUrlAPI {
 
     // 404 short circuit
     final Optional<CachedVanityUrl> shortCircuit = cache.getDirectMapping(url, site, language);
-    if(shortCircuit!=null) {
+    
+    if(shortCircuit!=null) { //NOSONAR
         return shortCircuit;
     }
 
