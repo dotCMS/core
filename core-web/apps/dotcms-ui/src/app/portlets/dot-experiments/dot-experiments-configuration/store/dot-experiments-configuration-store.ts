@@ -14,13 +14,16 @@ import {
     DotExperiment,
     ExperimentSteps,
     Goals,
+    GoalsLevels,
     LoadingState,
+    RangeOfDateAndTime,
     Status,
     StepStatus,
     TrafficProportion,
     Variant
 } from '@dotcms/dotcms-models';
 import { DotExperimentsService } from '@portlets/dot-experiments/shared/services/dot-experiments.service';
+import { DotHttpErrorManagerService } from '@services/dot-http-error-manager/dot-http-error-manager.service';
 
 export interface DotExperimentsConfigurationState {
     experiment: DotExperiment | null;
@@ -50,12 +53,25 @@ export class DotExperimentsConfigurationStore extends ComponentStore<DotExperime
     readonly isLoading$ = this.select(({ status }) => status === LoadingState.LOADING);
     readonly getExperimentId = this.select(({ experiment }) => experiment.id);
 
+    // Variants Step //
+    readonly variantsStatus$ = this.select(this.state$, ({ stepStatusSidebar }) =>
+        stepStatusSidebar.experimentStep === ExperimentSteps.VARIANTS ? stepStatusSidebar : null
+    );
+
     // Goals Step //
     readonly goals$: Observable<Goals> = this.select(({ experiment }) =>
         experiment.goals ? experiment.goals : null
     );
     readonly goalsStatus$ = this.select(this.state$, ({ stepStatusSidebar }) =>
         stepStatusSidebar.experimentStep === ExperimentSteps.GOAL ? stepStatusSidebar : null
+    );
+
+    // Scheduling Step //
+    readonly scheduling$: Observable<RangeOfDateAndTime> = this.select(({ experiment }) =>
+        experiment.scheduling ? experiment.scheduling : null
+    );
+    readonly schedulingStatus$ = this.select(this.state$, ({ stepStatusSidebar }) =>
+        stepStatusSidebar.experimentStep === ExperimentSteps.SCHEDULING ? stepStatusSidebar : null
     );
 
     // Updaters
@@ -98,6 +114,11 @@ export class DotExperimentsConfigurationStore extends ComponentStore<DotExperime
     readonly setGoals = this.updater((state, goals: Goals) => ({
         ...state,
         experiment: { ...state.experiment, goals }
+    }));
+
+    readonly setScheduling = this.updater((state, scheduling: RangeOfDateAndTime) => ({
+        ...state,
+        experiment: { ...state.experiment, scheduling }
     }));
 
     // Effects
@@ -188,13 +209,20 @@ export class DotExperimentsConfigurationStore extends ComponentStore<DotExperime
                                         ),
                                         detail: this.dotMessageService.get(
                                             'experiments.configure.variant.edit.confirm-message',
-                                            experiment.name
+                                            variant.data.name
                                         )
                                     });
 
                                     this.setTrafficProportion(experiment.trafficProportion);
+                                    this.setSidebarStatus({
+                                        status: Status.IDLE,
+                                        experimentStep: null
+                                    });
                                 },
                                 (error: HttpErrorResponse) => {
+                                    this.setSidebarStatus({
+                                        status: Status.IDLE
+                                    });
                                     throwError(error);
                                 }
                             )
@@ -273,6 +301,80 @@ export class DotExperimentsConfigurationStore extends ComponentStore<DotExperime
         }
     );
 
+    readonly deleteGoal = this.effect(
+        (goalLevel$: Observable<{ goalLevel: GoalsLevels; experimentId: string }>) => {
+            return goalLevel$.pipe(
+                switchMap((selected) =>
+                    this.dotExperimentsService
+                        .deleteGoal(selected.experimentId, selected.goalLevel)
+                        .pipe(
+                            tapResponse(
+                                (experiment) => {
+                                    this.messageService.add({
+                                        severity: 'info',
+                                        summary: this.dotMessageService.get(
+                                            'experiments.configure.goals.delete.confirm-title'
+                                        ),
+                                        detail: this.dotMessageService.get(
+                                            'experiments.configure.goals.delete.confirm-message'
+                                        )
+                                    });
+
+                                    this.setGoals(experiment.goals);
+                                },
+                                (error: HttpErrorResponse) => throwError(error)
+                            )
+                        )
+                )
+            );
+        }
+    );
+
+    readonly setSelectedScheduling = this.effect(
+        (setScheduling$: Observable<{ scheduling: RangeOfDateAndTime; experimentId: string }>) => {
+            return setScheduling$.pipe(
+                tap(() => {
+                    this.setSidebarStatus({
+                        status: Status.SAVING,
+                        experimentStep: ExperimentSteps.SCHEDULING
+                    });
+                }),
+                switchMap((data) => {
+                    return this.dotExperimentsService
+                        .setScheduling(data.experimentId, data.scheduling)
+                        .pipe(
+                            tapResponse(
+                                (experiment) => {
+                                    this.setScheduling(experiment.scheduling);
+                                    this.messageService.add({
+                                        severity: 'info',
+                                        summary: this.dotMessageService.get(
+                                            'experiments.configure.scheduling.add.confirm.title'
+                                        ),
+                                        detail: this.dotMessageService.get(
+                                            'experiments.configure.scheduling.add.confirm.message'
+                                        )
+                                    });
+                                    this.setSidebarStatus({
+                                        status: Status.DONE,
+                                        experimentStep: ExperimentSteps.SCHEDULING,
+                                        isOpen: false
+                                    });
+                                },
+                                (response: HttpErrorResponse) => {
+                                    this.dotHttpErrorManagerService.handle(response);
+                                    this.setSidebarStatus({
+                                        status: Status.DONE,
+                                        experimentStep: ExperimentSteps.SCHEDULING
+                                    });
+                                }
+                            )
+                        );
+                })
+            );
+        }
+    );
+
     readonly vm$: Observable<ConfigurationViewModel> = this.select(
         this.state$,
         this.isLoading$,
@@ -282,6 +384,12 @@ export class DotExperimentsConfigurationStore extends ComponentStore<DotExperime
             isLoading
         })
     );
+
+    readonly variantsStepVm$: Observable<{
+        status: StepStatus;
+    }> = this.select(this.variantsStatus$, (status) => ({
+        status
+    }));
 
     readonly goalsStepVm$: Observable<{ experimentId: string; goals: Goals; status: StepStatus }> =
         this.select(
@@ -295,9 +403,25 @@ export class DotExperimentsConfigurationStore extends ComponentStore<DotExperime
             })
         );
 
+    readonly schedulingStepVm$: Observable<{
+        experimentId: string;
+        scheduling: RangeOfDateAndTime;
+        status: StepStatus;
+    }> = this.select(
+        this.getExperimentId,
+        this.scheduling$,
+        this.schedulingStatus$,
+        (experimentId, scheduling, status) => ({
+            experimentId,
+            scheduling,
+            status
+        })
+    );
+
     constructor(
         private readonly dotExperimentsService: DotExperimentsService,
         private readonly dotMessageService: DotMessageService,
+        private dotHttpErrorManagerService: DotHttpErrorManagerService,
         private readonly messageService: MessageService,
         private readonly title: Title
     ) {

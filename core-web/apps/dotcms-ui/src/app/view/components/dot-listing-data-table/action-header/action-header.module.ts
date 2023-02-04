@@ -9,7 +9,6 @@ import { ActionHeaderComponent } from './action-header.component';
 
 import { DotActionButtonModule } from '../../_common/dot-action-button/dot-action-button.module';
 
-
 @NgModule({
     bootstrap: [],
     declarations: [ActionHeaderComponent],

@@ -51,67 +51,22 @@ public class ExperimentWebAPIImpl implements ExperimentWebAPI {
 
         final List<Experiment> experiments = pickExperiments(experimentFiltered, request, response);
         final List<SelectedExperiment> selectedExperiments = !experiments.isEmpty() ?
-                getSelectedExperimentsResult(response, experiments)
-                : getNoneExperimentListResult(response);
+                getSelectedExperimentsResult(experiments)
+                : getNoneExperimentListResult();
 
         return new SelectedExperiments(selectedExperiments,
                 experimentFiltered.stream().map(experiment -> experiment.id().get()).collect(Collectors.toList()),
                 UtilMethods.isSet(idsToExclude) ? new ArrayList(idsToExclude) : Collections.EMPTY_LIST);
     }
 
-    private List<SelectedExperiment> getSelectedExperimentsResult(HttpServletResponse response,
-            List<Experiment> experiments) {
+    private List<SelectedExperiment> getSelectedExperimentsResult(final List<Experiment> experiments) {
         return experiments.stream()
-                    .map(experiment -> createSelectedExperimentAndCreateCookie(response,
-                            experiment))
+                    .map(experiment -> createSelectedExperiment (experiment))
                     .collect(Collectors.toList());
     }
 
-    private List<SelectedExperiment> getNoneExperimentListResult(HttpServletResponse response) {
-        setCookie(NONE_EXPERIMENT, response, getDefaultExpireDate());
+    private List<SelectedExperiment> getNoneExperimentListResult() {
         return list(NONE_EXPERIMENT);
-    }
-
-    private SelectedExperiment createSelectedExperimentAndCreateCookie(
-            final HttpServletResponse response,
-            final Experiment experiment) {
-        final SelectedExperiment selectedExperiment = createSelectedExperiment(
-                experiment);
-        final Instant instant = experiment.scheduling().get().endDate().get();
-        setCookie(selectedExperiment, response, instant);
-        return selectedExperiment;
-    }
-
-    private Instant getDefaultExpireDate() {
-        return Instant.now().plus(
-                Config.getIntProperty("EXPIRE_DAYS_TO_NONE_EXPERIMENT", 30),
-                ChronoUnit.DAYS);
-    }
-
-    private void setCookie(
-            final SelectedExperiment experimentSelected,
-            final HttpServletResponse response, final Instant expire) {
-
-        final String cookieValue = getCookieValue(experimentSelected);
-        final String cookieName = getCookieName(experimentSelected);
-        final  Cookie runningExperimentCookie = new Cookie(cookieName, cookieValue);
-
-        final Duration res = Duration.between(Instant.now(), expire);
-        runningExperimentCookie.setMaxAge((int) res.getSeconds());
-
-        response.addCookie(runningExperimentCookie);
-    }
-
-    private String getCookieName(final SelectedExperiment experimentSelected) {
-        return "runningExperiment_" + experimentSelected.id();
-    }
-
-    private String getCookieValue(final SelectedExperiment experimentSelected) {
-        final String cookieValue = Arrays.stream((new String[]{"experiment:" + experimentSelected.id(),
-                        "variant:" + experimentSelected.variant().name(),
-                        "lookBackWindow:" + nextLookBackWindow()})).sequential()
-                .collect(Collectors.joining(StringPool.AMPERSAND));
-        return cookieValue;
     }
 
     private String nextLookBackWindow(){
@@ -133,7 +88,7 @@ public class ExperimentWebAPIImpl implements ExperimentWebAPI {
             totalWeight += variant.weight();
 
             if (randomValue < totalWeight) {
-                return new SelectedVariant(variant.id(), variant.url().get());
+                return new SelectedVariant(variant.id(), variant.url().orElse(StringPool.BLANK));
             }
         }
 
@@ -156,8 +111,13 @@ public class ExperimentWebAPIImpl implements ExperimentWebAPI {
         }
 
         try {
-            return new SelectedExperiment(experiment.id().get(), experiment.name(), htmlPageAsset.getURI(),
-                    variantSelected);
+            return new SelectedExperiment.Builder()
+                    .id(experiment.id().orElse(StringPool.BLANK))
+                    .name(experiment.name())
+                    .pageUrl(htmlPageAsset.getURI())
+                    .variant(variantSelected)
+                    .lookBackWindow(nextLookBackWindow())
+                    .build();
         } catch (DotDataException e) {
             throw new DotRuntimeException(e);
         }

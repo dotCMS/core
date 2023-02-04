@@ -56,6 +56,7 @@ import com.dotcms.rest.exception.mapper.InvalidFormatExceptionMapper;
 import com.dotcms.rest.exception.mapper.InvalidLicenseExceptionMapper;
 import com.dotcms.rest.exception.mapper.JsonMappingExceptionMapper;
 import com.dotcms.rest.exception.mapper.JsonParseExceptionMapper;
+import com.dotcms.rest.exception.mapper.NotAllowedExceptionMapper;
 import com.dotcms.rest.exception.mapper.NotFoundInDbExceptionMapper;
 import com.dotcms.rest.exception.mapper.ParamExceptionMapper;
 import com.dotcms.rest.exception.mapper.ResourceNotFoundExceptionMapper;
@@ -205,7 +206,9 @@ public class ReloadableServletContainer extends HttpServlet  {
                 .register(DotDataExceptionMapper.class)
                 .register(ElasticsearchStatusExceptionMapper.class)
                 .register((new DotBadRequestExceptionMapper<InvalidFolderNameException>(){}).getClass())
+                .register(NotAllowedExceptionMapper.class)
                 .register(RuntimeExceptionMapper.class);
-                //.register(ExceptionMapper.class); // temporaly unregister since some services are expecting just a plain message as an error instead of a json, so to keep the compatibility we won't apply this change yet.
+
+        //.register(ExceptionMapper.class); // temporaly unregister since some services are expecting just a plain message as an error instead of a json, so to keep the compatibility we won't apply this change yet.
     }
 }

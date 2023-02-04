@@ -6,7 +6,6 @@ import { TabViewModule } from 'primeng/tabview';
 import { DotPortletBaseModule } from '@components/dot-portlet-base/dot-portlet-base.module';
 import { DotMessagePipeModule } from '@pipes/dot-message/dot-message-pipe.module';
 
-
 import { DotCategoriesCreateEditRoutingModule } from './dot-categories-create-edit-routing.module';
 import { DotCategoriesCreateEditComponent } from './dot-categories-create-edit.component';
 

@@ -35,7 +35,6 @@ import {
     MockDotRouterService
 } from '@dotcms/utils-testing';
 
-
 import { DotContentletWrapperComponent } from './dot-contentlet-wrapper.component';
 
 import { DotIframeDialogModule } from '../../../dot-iframe-dialog/dot-iframe-dialog.module';

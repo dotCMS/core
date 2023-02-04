@@ -110,7 +110,7 @@ export class ActivatedRouteListStoreMock {
     get queryParams() {
         return of({
             editPageTab: 'edit',
-            variationName: 'Original',
+            variantName: 'Original',
             experimentId: '1232121212'
         });
     }

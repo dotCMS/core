@@ -29,7 +29,7 @@ export interface Variant {
     url?: string;
 }
 
-type GoalsTypes = 'primary';
+export type GoalsLevels = 'primary';
 
 export interface Goal {
     name: string;
@@ -37,7 +37,7 @@ export interface Goal {
     conditions: Array<GoalCondition>;
 }
 
-export type Goals = Record<GoalsTypes, Goal>;
+export type Goals = Record<GoalsLevels, Goal>;
 
 export interface GoalCondition {
     parameter: GOAL_PARAMETERS;
@@ -45,9 +45,9 @@ export interface GoalCondition {
     value: string;
 }
 
-interface RangeOfDateAndTime {
-    startDate: Date;
-    endDate: Date;
+export interface RangeOfDateAndTime {
+    startDate: number;
+    endDate: number;
 }
 
 export type GroupedExperimentByStatus = Partial<Record<DotExperimentStatusList, DotExperiment[]>>;

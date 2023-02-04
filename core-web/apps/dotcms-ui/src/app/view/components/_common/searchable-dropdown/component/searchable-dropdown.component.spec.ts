@@ -20,7 +20,6 @@ import { DotIconModule } from '@dotcms/ui';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 import { DotPipesModule } from '@pipes/dot-pipes.module';
 
-
 import { SearchableDropdownComponent } from './searchable-dropdown.component';
 
 import { SEARCHABLE_NGFACES_MODULES } from '../searchable-dropdown.module';

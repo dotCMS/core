@@ -5,9 +5,9 @@ import { ViewContainerRef } from '@angular/core';
 
 import { Extension } from '@tiptap/core';
 
-import { deselectCurrentNode } from '@dotcms/block-editor';
-
 import { DragHandlerComponent } from './drag-handler.component';
+
+import { deselectCurrentNode } from '../../shared';
 
 export const DragHandler = (viewContainerRef: ViewContainerRef) => {
     return Extension.create({

@@ -1,7 +1,7 @@
 import { Component, Input } from '@angular/core';
 
 // Interface
-import type { BubbleMenuItem } from '@dotcms/block-editor';
+import { BubbleMenuItem } from '../../models';
 
 @Component({
     selector: 'dot-bubble-menu-button',

@@ -5,7 +5,7 @@ import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { Title } from '@angular/platform-browser';
 import { ActivatedRoute, Router } from '@angular/router';
 
-import { MessageService } from 'primeng/api';
+import { ConfirmationService, MessageService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
 
 import { DotMessageService, DotSessionStorageService } from '@dotcms/data-access';
@@ -25,8 +25,7 @@ import {
     DotExperimentsConfigurationStoreMock,
     ExperimentMocks
 } from '@portlets/dot-experiments/test/mocks';
-
-
+import { DotHttpErrorManagerService } from '@services/dot-http-error-manager/dot-http-error-manager.service';
 
 import { DotExperimentsConfigurationComponent } from './dot-experiments-configuration.component';
 
@@ -66,6 +65,7 @@ describe('DotExperimentsConfigurationComponent', () => {
             mockProvider(DotExperimentsConfigurationStore, DotExperimentsConfigurationStoreMock)
         ],
         providers: [
+            ConfirmationService,
             {
                 provide: ActivatedRoute,
                 useValue: ActivatedRouteMock
@@ -78,7 +78,8 @@ describe('DotExperimentsConfigurationComponent', () => {
             mockProvider(DotSessionStorageService),
             mockProvider(MessageService),
             mockProvider(Router),
-            mockProvider(Title)
+            mockProvider(Title),
+            mockProvider(DotHttpErrorManagerService)
         ]
     });
 

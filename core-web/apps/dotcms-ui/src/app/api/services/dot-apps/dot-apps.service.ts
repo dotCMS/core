@@ -5,7 +5,6 @@ import { Injectable } from '@angular/core';
 
 import { catchError, map, pluck, take } from 'rxjs/operators';
 
-
 import { DotHttpErrorManagerService } from '@dotcms/app/api/services/dot-http-error-manager/dot-http-error-manager.service';
 import { CoreWebService } from '@dotcms/dotcms-js';
 import {

@@ -148,14 +148,14 @@ dojo.require("dotcms.dojo.data.StructureReadStore");
 
 				<% if (InodeUtils.isSet(folder.getInode())) { %>
 					<dl>
-						<dt><%= LanguageUtil.get(pageContext, "Identity") %>:</dt>
+						<dt><%= LanguageUtil.get(pageContext, "Identity") %></dt>
 						<dd><%= folder.getInode() %></dd>
 					</dl>
 				<%}%>
 
 				<dl>
 					<%if(InodeUtils.isSet(folder.getInode())){%>
-						<dt><%= LanguageUtil.get(pageContext, "Path-To-Folder") %>:</dt>
+						<dt><%= LanguageUtil.get(pageContext, "Path-To-Folder") %></dt>
 						<dd style="width:80%">
 							<% if (parentFolder != null) { %>
 								<div id="pathToFolder" style="word-break: break-all;"><%= APILocator.getIdentifierAPI().find(parentFolder.getIdentifier()).getPath() %><%= folder.getName() %></div>
@@ -177,30 +177,37 @@ dojo.require("dotcms.dojo.data.StructureReadStore");
 					<%}%>
 				</dl>
 				<dl>
-					<dt><%= LanguageUtil.get(pageContext, "Title") %>:</dt>
+					<dt><label for="friendlyNameField"><%= LanguageUtil.get(pageContext, "Title") %></label></dt>
 					<dd><input type="text" dojoType="dijit.form.TextBox"  onchange="beLazy();" style="width:250px" name="title"  id="friendlyNameField" value="<%= UtilMethods.isSet(folder.getTitle()) ? UtilMethods.escapeDoubleQuotes(folder.getTitle()) : "" %>" /></dd>
 				</dl>
 				<dl>
-					<dt><span class="required"></span> <%= LanguageUtil.get(pageContext, "Name-URL") %>:</dt>
+					<dt>
+						<label for="titleField" class="required">
+							<%= LanguageUtil.get(pageContext, "Name-URL") %>
+						</label>
+					</dt>
 					<dd><input type="text" dojoType="dijit.form.TextBox"   style="width:250px" name="name"  id="titleField" value="<%= UtilMethods.isSet(folder.getName()) ? UtilMethods.escapeDoubleQuotes(folder.getName()) : "" %>" /></dd>
 				</dl>
 				<dl>
-					<dt><%= LanguageUtil.get(pageContext, "Sort-Order") %>:</dt>
-					<dd><input type="text" dojoType="dijit.form.TextBox"   style="width:60px" name="sortOrder"  value="<%= UtilMethods.isSet(folder.getSortOrder()+"") ? UtilMethods.escapeDoubleQuotes(folder.getSortOrder()+"") : "" %>" /></dd>
+					<dt><label for="sortOrder"><%= LanguageUtil.get(pageContext, "Sort-Order") %></label></dt>
+					<dd><input type="text" dojoType="dijit.form.TextBox" id="sortOrder"  style="width:60px" name="sortOrder"  value="<%= UtilMethods.isSet(folder.getSortOrder()+"") ? UtilMethods.escapeDoubleQuotes(folder.getSortOrder()+"") : "" %>" /></dd>
 				</dl>
 				<dl>
-					<dt><%= LanguageUtil.get(pageContext, "Show-on-Menu") %>:</dt>
-					<dd><input type="checkbox" dojoType="dijit.form.CheckBox"  name="showOnMenu"  <%if(folder.isShowOnMenu()){ %> checked="checked" <% } %>/></dd>
+					<dt><label for="showOnMenu"><%= LanguageUtil.get(pageContext, "Show-on-Menu") %></label></dt>
+					<dd><input type="checkbox" dojoType="dijit.form.CheckBox" id="showOnMenu" name="showOnMenu"  <%if(folder.isShowOnMenu()){ %> checked="checked" <% } %>/></dd>
 				</dl>
 				<dl>
-					<dt><%= LanguageUtil.get(pageContext, "Allowed-File-Extensions") %>:</dt>
+					<dt><label for="filesMasks"><%= LanguageUtil.get(pageContext, "Allowed-File-Extensions") %></label></dt>
 					<dd>
-						<input type="text" dojoType="dijit.form.TextBox"   style="width:250px" name="filesMasks"  value="<%= UtilMethods.isSet(folder.getFilesMasks()) ? UtilMethods.escapeDoubleQuotes(folder.getFilesMasks()) : "" %>" />
+						<input type="text" dojoType="dijit.form.TextBox" id="filesMasks" style="width:250px" name="filesMasks"  value="<%= UtilMethods.isSet(folder.getFilesMasks()) ? UtilMethods.escapeDoubleQuotes(folder.getFilesMasks()) : "" %>" />
 						<div class="hint-text" >(<%= LanguageUtil.get(pageContext, "a-comma-separated-list") %>)</div>
 					</dd>
 				</dl>
 				<dl>
-					<dt><span class="required"></span> <%= LanguageUtil.get(pageContext, "Default-File-Structure-Type") %>:</dt>
+					<dt>
+						<label for="defaultFileType" class="required">
+							<%= LanguageUtil.get(pageContext, "Default-File-Structure-Type") %>:</dt>
+						</label>
 					<dd>
 						<span dojoType="dotcms.dojo.data.StructureReadStore" jsId="fileAssetStructureStore" dojoId="fileAssetStructureStoreDojo" structureType="<%=Structure.STRUCTURE_TYPE_FILEASSET %>" ></span>
 						<select id="defaultFileType"

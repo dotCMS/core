@@ -33,7 +33,6 @@ import { DotContainerSelectorComponent } from './dot-container-selector.componen
 import { IframeOverlayService } from '../_common/iframe/service/iframe-overlay.service';
 import { SearchableDropDownModule } from '../_common/searchable-dropdown/searchable-dropdown.module';
 
-
 describe('ContainerSelectorComponent', () => {
     let fixture: ComponentFixture<DotContainerSelectorComponent>;
     let comp: DotContainerSelectorComponent;

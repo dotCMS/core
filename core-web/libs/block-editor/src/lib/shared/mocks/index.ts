@@ -1,3 +1,5 @@
+import { DotCMSContentlet } from '@dotcms/dotcms-models';
+
 export const CONTENTLETS_MOCK = [
     {
         name: 'Empty Content',
@@ -175,11 +177,7 @@ export const CONTENTLETS_MOCK = [
     }
 ];
 
-const EMPTY_IMAGE_CONTENTLET = {
-    mimeType: 'image/jpeg',
-    type: 'file_asset',
-    fileAssetVersion: '/dA/14dd5ad9-55ae-42a8-a5a7-e259b6d0901a/fileAsset/rain-forest-view.jpg',
-    fileAsset: 'https://cdn.pixabay.com/photo/2015/04/23/22/00/tree-736885__480.jpg',
+const EMPTY_CONTENTLET: DotCMSContentlet = {
     inode: '14dd5ad9-55ae-42a8-a5a7-e259b6d0901a',
     variantId: 'DEFAULT',
     locked: false,
@@ -192,7 +190,7 @@ const EMPTY_IMAGE_CONTENTLET = {
     hostName: 'demo.dotcms.com',
     extension: 'jpg',
     isContent: true,
-    baseType: 'FILEASSET',
+    baseType: 'FILEASSETS',
     archived: false,
     working: true,
     live: true,
@@ -200,13 +198,52 @@ const EMPTY_IMAGE_CONTENTLET = {
     languageId: 1,
     titleImage: 'fileAsset',
     hasLiveVersion: true,
-    deleted: false
+    deleted: false,
+    folder: '',
+    host: '',
+    modDate: '',
+    modUser: '',
+    modUserName: '',
+    owner: '',
+    title: '',
+    url: '',
+    contentTypeIcon: 'assessment',
+    __icon__: 'Icon'
+};
+
+const EMPTY_IMAGE_CONTENTLET: DotCMSContentlet = {
+    mimeType: 'image/jpeg',
+    type: 'file_asset',
+    fileAssetVersion: 'https://cdn.pixabay.com/photo/2015/04/23/22/00/tree-736885__480.jpg',
+    fileAsset: 'https://cdn.pixabay.com/photo/2015/04/23/22/00/tree-736885__480.jpg',
+    ...EMPTY_CONTENTLET
+};
+
+const EMPTY_VIDEO_CONTENTLET: DotCMSContentlet = {
+    ...EMPTY_CONTENTLET,
+    mimeType: 'video/mp4',
+    type: 'file_asset',
+    asset: '',
+    hasTitleImage: false,
+    assetMetaData: {
+        modDate: 1675183379270,
+        sha256: '3bb938fb70049e3e45f533b37ccae995ae96516e04c2f35b0c1142e47b2a39c1',
+        length: 788493,
+        title: 'mov_bbb.mp4',
+        version: 20220201,
+        isImage: false,
+        fileSize: 788493,
+        name: 'mov_bbb.mp4',
+        width: 320,
+        contentType: 'video/mp4',
+        height: 176
+    }
 };
 
 export const IMAGE_CONTENTLETS_MOCK = [
     {
         ...EMPTY_IMAGE_CONTENTLET,
-        fileName: 'rain-forest-view.jpg',
+        fileName: '1 rain-forest-view.jpg',
         name: 'rain-forest-view.jpg',
         description: 'rain-forest-view',
         title: 'Rain-forest-view.jpg'
@@ -215,7 +252,7 @@ export const IMAGE_CONTENTLETS_MOCK = [
         ...EMPTY_IMAGE_CONTENTLET,
         fileAsset:
             'https://previews.123rf.com/images/rglinsky/rglinsky1201/rglinsky120100188/12336990-vertical-de-la-imagen-orientada-a-la-famosa-torre-eiffel-en-par%C3%ADs-francia-.jpg',
-        fileName: 'Foto8.jpg',
+        fileName: '2 Foto8.jpg',
         name: 'Foto8.jpg',
         description: 'Foto8',
         title: 'Foto8.jpg'
@@ -224,7 +261,7 @@ export const IMAGE_CONTENTLETS_MOCK = [
         ...EMPTY_IMAGE_CONTENTLET,
         fileAsset:
             'https://www.freesvgdownload.com/wp-content/uploads/2021/12/It-Takes-a-Big-Heart-To-Help.jpg',
-        fileName: 'first-chair.jpg',
+        fileName: '3 first-chair.jpg',
         name: 'first-chair.jpg',
         description: 'Stay at one of our resorts and get early hours with our first chair program.',
         title: 'First to the Top'
@@ -232,28 +269,28 @@ export const IMAGE_CONTENTLETS_MOCK = [
     {
         ...EMPTY_IMAGE_CONTENTLET,
         fileAsset: 'https://interactive-examples.mdn.mozilla.net/media/examples/plumeria.jpg',
-        fileName: 'adult-antioxidant.jpg',
+        fileName: '4 adult-antioxidant.jpg',
         name: 'adult-antioxidant.jpg',
         description: 'adult-antioxidant',
         title: 'Adult-antioxidant.jpg'
     },
     {
         ...EMPTY_IMAGE_CONTENTLET,
-        fileName: 'services-2.jpg',
+        fileName: '5 services-2.jpg',
         name: 'services-2.jpg',
         description: 'Backcountry Skiing Services',
         title: 'services-2.jpg'
     },
     {
         ...EMPTY_IMAGE_CONTENTLET,
-        fileName: 'template-breadcrumbs.png',
+        fileName: '6 template-breadcrumbs.png',
         name: 'template-breadcrumbs.png',
         description: 'Thumbnail image for template with breadcrumbs',
         title: 'template-breadcrumbs.png'
     },
     {
         ...EMPTY_IMAGE_CONTENTLET,
-        fileName: 'downloading.jpg',
+        fileName: '7 downloading.jpg',
         name: 'downloading.jpg',
         description:
             'With the opening our our new Peak Bar  this year our Top Expressive lift has improve access for downloading',
@@ -261,28 +298,28 @@ export const IMAGE_CONTENTLETS_MOCK = [
     },
     {
         ...EMPTY_IMAGE_CONTENTLET,
-        fileName: 'resort-cottage.jpg',
+        fileName: '8 resort-cottage.jpg',
         name: 'resort-cottage.jpg',
         description: 'resort-cottage',
         title: 'Resort-cottage.jpg'
     },
     {
         ...EMPTY_IMAGE_CONTENTLET,
-        fileName: 'first-chair.jpg',
+        fileName: '9 first-chair.jpg',
         name: 'first-chair.jpg',
         description: 'Stay at one of our resorts and get early hours with our first chair program.',
         title: 'First to the Top'
     },
     {
         ...EMPTY_IMAGE_CONTENTLET,
-        fileName: 'adult-antioxidant.jpg',
+        fileName: '10 adult-antioxidant.jpg',
         name: 'adult-antioxidant.jpg',
         description: 'adult-antioxidant',
         title: 'Adult-antioxidant.jpg'
     },
     {
         ...EMPTY_IMAGE_CONTENTLET,
-        fileName: 'downloading.jpg',
+        fileName: '11 downloading.jpg',
         name: 'downloading.jpg',
         description:
             'With the opening our our new Peak Bar  this year our Top Expressive lift has improve access for downloading',
@@ -290,56 +327,56 @@ export const IMAGE_CONTENTLETS_MOCK = [
     },
     {
         ...EMPTY_IMAGE_CONTENTLET,
-        fileName: 'rain-forest-view.jpg',
+        fileName: '12 rain-forest-view.jpg',
         name: 'rain-forest-view.jpg',
         description: 'rain-forest-view',
         title: 'Rain-forest-view.jpg'
     },
     {
         ...EMPTY_IMAGE_CONTENTLET,
-        fileName: 'rain-forest-view.jpg',
+        fileName: '13 rain-forest-view.jpg',
         name: 'rain-forest-view.jpg',
         description: 'rain-forest-view',
         title: 'Rain-forest-view.jpg'
     },
     {
         ...EMPTY_IMAGE_CONTENTLET,
-        fileName: 'Foto8.jpg',
+        fileName: '14 Foto8.jpg',
         name: 'Foto8.jpg',
         description: 'Foto8',
         title: 'Foto8.jpg'
     },
     {
         ...EMPTY_IMAGE_CONTENTLET,
-        fileName: 'first-chair.jpg',
+        fileName: '15 first-chair.jpg',
         name: 'first-chair.jpg',
         description: 'Stay at one of our resorts and get early hours with our first chair program.',
         title: 'First to the Top'
     },
     {
         ...EMPTY_IMAGE_CONTENTLET,
-        fileName: 'adult-antioxidant.jpg',
+        fileName: '16 adult-antioxidant.jpg',
         name: 'adult-antioxidant.jpg',
         description: 'adult-antioxidant',
         title: 'Adult-antioxidant.jpg'
     },
     {
         ...EMPTY_IMAGE_CONTENTLET,
-        fileName: 'services-2.jpg',
+        fileName: '17 services-2.jpg',
         name: 'services-2.jpg',
         description: 'Backcountry Skiing Services',
         title: 'services-2.jpg'
     },
     {
         ...EMPTY_IMAGE_CONTENTLET,
-        fileName: 'template-breadcrumbs.png',
+        fileName: '18 template-breadcrumbs.png',
         name: 'template-breadcrumbs.png',
         description: 'Thumbnail image for template with breadcrumbs',
         title: 'template-breadcrumbs.png'
     },
     {
         ...EMPTY_IMAGE_CONTENTLET,
-        fileName: 'downloading.jpg',
+        fileName: '19 downloading.jpg',
         name: 'downloading.jpg',
         description:
             'With the opening our our new Peak Bar  this year our Top Expressive lift has improve access for downloading',
@@ -347,28 +384,28 @@ export const IMAGE_CONTENTLETS_MOCK = [
     },
     {
         ...EMPTY_IMAGE_CONTENTLET,
-        fileName: 'resort-cottage.jpg',
+        fileName: '20 resort-cottage.jpg',
         name: 'resort-cottage.jpg',
         description: 'resort-cottage',
         title: 'Resort-cottage.jpg'
     },
     {
         ...EMPTY_IMAGE_CONTENTLET,
-        fileName: 'first-chair.jpg',
+        fileName: '21 first-chair.jpg',
         name: 'first-chair.jpg',
         description: 'Stay at one of our resorts and get early hours with our first chair program.',
         title: 'First to the Top'
     },
     {
         ...EMPTY_IMAGE_CONTENTLET,
-        fileName: 'adult-antioxidant.jpg',
+        fileName: '22 adult-antioxidant.jpg',
         name: 'adult-antioxidant.jpg',
         description: 'adult-antioxidant',
         title: 'Adult-antioxidant.jpg'
     },
     {
         ...EMPTY_IMAGE_CONTENTLET,
-        fileName: 'downloading.jpg',
+        fileName: '23 downloading.jpg',
         name: 'downloading.jpg',
         description:
             'With the opening our our new Peak Bar  this year our Top Expressive lift has improve access for downloading',
@@ -376,9 +413,57 @@ export const IMAGE_CONTENTLETS_MOCK = [
     },
     {
         ...EMPTY_IMAGE_CONTENTLET,
-        fileName: 'rain-forest-view.jpg',
+        fileName: '24 rain-forest-view.jpg',
         name: 'rain-forest-view.jpg',
         description: 'rain-forest-view',
         title: 'Rain-forest-view.jpg'
     }
 ];
+
+export const VIDEO_CONTENTLETS_MOCK = [
+    {
+        ...EMPTY_VIDEO_CONTENTLET,
+        asset: 'https://www.w3schools.com/tags/movie.mp4',
+        fileName: '1 video',
+        name: 'rain-forest-view.jpg',
+        description: 'rain-forest-view',
+        title: 'Rain-forest-view.jpg'
+    },
+    {
+        ...EMPTY_VIDEO_CONTENTLET,
+        asset: 'https://www.w3schools.com/tags/movie.mp4',
+        fileName: '2 video',
+        name: 'Foto8.jpg',
+        description: 'Foto8',
+        title: 'Foto8.jpg'
+    },
+    {
+        ...EMPTY_VIDEO_CONTENTLET,
+
+        fileName: '3 video',
+        name: 'first-chair.jpg',
+        description: 'Stay at one of our resorts and get early hours with our first chair program.',
+        title: 'First to the Top'
+    },
+    {
+        ...EMPTY_VIDEO_CONTENTLET,
+        asset: 'https://www.w3schools.com/tags/movie.mp4',
+        fileName: '4 video',
+        name: 'adult-antioxidant.jpg',
+        description: 'adult-antioxidant',
+        title: 'Adult-antioxidant.jpg'
+    },
+    {
+        ...EMPTY_VIDEO_CONTENTLET,
+        fileAsset: '',
+        fileName: '5 video',
+        name: 'services-2.jpg',
+        description: 'Backcountry Skiing Services',
+        title: 'services-2.jpg'
+    }
+];
+
+export const ASSET_MOCK = {
+    image: IMAGE_CONTENTLETS_MOCK,
+    video: VIDEO_CONTENTLETS_MOCK
+};

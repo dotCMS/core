@@ -6,6 +6,7 @@ import { Component, ElementRef, OnDestroy, OnInit, ViewChild } from '@angular/co
 
 import { MenuItem, SelectItem } from 'primeng/api';
 import { LazyLoadEvent } from 'primeng/api/lazyloadevent';
+import { DialogService } from 'primeng/dynamicdialog';
 import { Menu } from 'primeng/menu';
 
 import { Observable } from 'rxjs/internal/Observable';
@@ -20,6 +21,9 @@ import { DotCMSContentlet } from '@dotcms/dotcms-models';
 
 import { DotPagesState, DotPageStore } from './dot-pages-store/dot-pages.store';
 
+import { DotFavoritePageComponent } from '../dot-edit-page/components/dot-favorite-page/dot-favorite-page.component';
+
+const FAVORITE_PAGE_LIMIT = 5;
 @Component({
     selector: 'dot-pages',
     templateUrl: './dot-pages.component.html',
@@ -42,19 +46,24 @@ export class DotPagesComponent implements OnInit, OnDestroy {
 
     actions: { [key: string]: MenuItem[] };
 
-    private initialFavoritePagesLimit = 5;
     private domIdMenuAttached = '';
     private destroy$: Subject<boolean> = new Subject<boolean>();
 
+    // Needed to avoid browser to cache thumbnail img when reloaded, since it's fetched from the same URL
+    timeStamp = this.getTimeStamp();
+
+    private currentLimitSize = FAVORITE_PAGE_LIMIT;
+
     constructor(
         private store: DotPageStore,
+        private dialogService: DialogService,
         private dotRouterService: DotRouterService,
         private dotMessageService: DotMessageService,
         private dotMessageDisplayService: DotMessageDisplayService,
         private dotEventsService: DotEventsService,
         private element: ElementRef
     ) {
-        this.store.setInitialStateData(this.initialFavoritePagesLimit);
+        this.store.setInitialStateData(FAVORITE_PAGE_LIMIT);
     }
 
     /**
@@ -69,10 +78,12 @@ export class DotPagesComponent implements OnInit, OnDestroy {
         favoritePagesToLoad?: number
     ): void {
         if (areAllFavoritePagesLoaded) {
-            this.store.limitFavoritePages(this.initialFavoritePagesLimit);
+            this.store.limitFavoritePages(FAVORITE_PAGE_LIMIT);
         } else {
             this.store.getFavoritePages(favoritePagesToLoad);
         }
+
+        this.currentLimitSize = FAVORITE_PAGE_LIMIT;
     }
 
     /**
@@ -175,5 +186,36 @@ export class DotPagesComponent implements OnInit, OnDestroy {
     ngOnDestroy(): void {
         this.destroy$.next(true);
         this.destroy$.complete();
+    }
+
+    /**
+     * Event that opens dialog to edit/delete Favorite Page
+     *
+     * @param {DotCMSContentlet} favoritePage
+     * @memberof DotPagesComponent
+     */
+    editFavoritePage(favoritePage: DotCMSContentlet) {
+        this.dialogService.open(DotFavoritePageComponent, {
+            header: this.dotMessageService.get('favoritePage.dialog.header.add.page'),
+            width: '80rem',
+            data: {
+                page: {
+                    favoritePageUrl: favoritePage.url,
+                    favoritePage: favoritePage
+                },
+                onSave: () => {
+                    this.timeStamp = this.getTimeStamp();
+                    this.store.getFavoritePages(this.currentLimitSize);
+                },
+                onDelete: () => {
+                    this.timeStamp = this.getTimeStamp();
+                    this.store.getFavoritePages(this.currentLimitSize);
+                }
+            }
+        });
+    }
+
+    private getTimeStamp() {
+        return new Date().getTime().toString();
     }
 }

@@ -3,7 +3,6 @@ import { Observable, of as observableOf } from 'rxjs';
 import { TestBed } from '@angular/core/testing';
 import { Validators } from '@angular/forms';
 
-
 import { FieldPropertyService } from './field-properties.service';
 import { FieldService } from './field.service';
 import { validateDateDefaultValue } from './validators';
@@ -111,11 +110,6 @@ describe('FieldPropertyService', () => {
         expect(fieldPropertiesService.isDisabledInEditMode('defaultValue')).toBeUndefined();
 
         expect(fieldPropertiesService.isDisabledInEditMode('property')).toBeNull();
-    });
-
-    it('should return if the property is editable when field is fixed', () => {
-        expect(true).toEqual(fieldPropertiesService.isDisabledInFixed('name'));
-        expect(fieldPropertiesService.isDisabledInFixed('dataType')).toBeUndefined();
     });
 
     it('should return the right proeprties for a Field Class', () => {

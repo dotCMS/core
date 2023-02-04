@@ -1,9 +1,11 @@
+import { HttpClientModule } from '@angular/common/http';
 import { NgModule } from '@angular/core';
 
 // PrimeNg
 import { ButtonModule } from 'primeng/button';
 import { CardModule } from 'primeng/card';
 import { CheckboxModule } from 'primeng/checkbox';
+import { FileUploadModule } from 'primeng/fileupload';
 import { InputTextModule } from 'primeng/inputtext';
 import { ListboxModule } from 'primeng/listbox';
 import { MenuModule } from 'primeng/menu';
@@ -23,7 +25,9 @@ import { TabViewModule } from 'primeng/tabview';
         ListboxModule,
         TabViewModule,
         SkeletonModule,
-        ScrollerModule
+        ScrollerModule,
+        FileUploadModule,
+        HttpClientModule
     ],
     exports: [
         MenuModule,
@@ -35,7 +39,9 @@ import { TabViewModule } from 'primeng/tabview';
         ListboxModule,
         TabViewModule,
         SkeletonModule,
-        ScrollerModule
+        ScrollerModule,
+        FileUploadModule,
+        HttpClientModule
     ]
 })
 export class PrimengModule {}

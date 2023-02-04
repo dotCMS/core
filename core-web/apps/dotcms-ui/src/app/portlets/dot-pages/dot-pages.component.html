@@ -35,11 +35,12 @@
             <dot-pages-card
                 *ngFor="let item of vm.favoritePages.items; let i = index"
                 [actionButtonId]="'favoritePageActionButton-' + i"
-                [imageUri]="item.screenshot"
+                [imageUri]="item.screenshot + '?' + timeStamp"
                 [title]="item.title"
                 [url]="item.url"
                 [ownerPage]="item.owner === vm.loggedUser.id"
-                (click)="goToUrl(item.url)"
+                (edit)="editFavoritePage(item)"
+                (goTo)="goToUrl(item.url)"
                 (showActionMenu)="showActionsMenu($event, 'favoritePageActionButton-' + i, item)"
             ></dot-pages-card>
         </ng-template>

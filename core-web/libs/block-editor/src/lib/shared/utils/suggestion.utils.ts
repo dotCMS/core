@@ -1,7 +1,5 @@
 import { SafeUrl, ɵDomSanitizerImpl } from '@angular/platform-browser';
 
-import { DotMenuItem } from '@dotcms/block-editor';
-
 // Assets
 import {
     codeIcon,
@@ -12,6 +10,7 @@ import {
     quoteIcon,
     ulIcon
 } from '../components/suggestions/suggestion-icons';
+import { DotMenuItem } from '../components/suggestions/suggestions.component';
 
 const domSanitizer = new ɵDomSanitizerImpl(document);
 
@@ -31,6 +30,11 @@ const image: DotMenuItem[] = [
         label: 'Image',
         icon: 'image',
         id: 'image'
+    },
+    {
+        label: 'Video',
+        icon: 'movie',
+        id: 'video'
     }
 ];
 
@@ -42,13 +46,11 @@ const table: DotMenuItem[] = [
     }
 ];
 
-const paragraph: DotMenuItem[] = [
-    {
-        label: 'Paragraph',
-        icon: sanitizeUrl(pIcon),
-        id: 'paragraph'
-    }
-];
+const paragraph: DotMenuItem = {
+    label: 'Paragraph',
+    icon: sanitizeUrl(pIcon),
+    id: 'paragraph'
+};
 
 const list: DotMenuItem[] = [
     {
@@ -77,9 +79,19 @@ const block: DotMenuItem[] = [
     {
         label: 'Horizontal Line',
         icon: sanitizeUrl(lineIcon),
-        id: 'horizontalLine'
+        id: 'horizontalRule'
     }
 ];
+
+export const getEditorBlockOptions = () => {
+    return (
+        suggestionOptions
+            // get all blocks except the Paragraph
+            .filter(({ id }) => id != paragraph.id)
+            .map(({ label, id }) => ({ label, code: id }))
+            .sort((a, b) => a.label.localeCompare(b.label))
+    );
+};
 
 export function sanitizeUrl(url: string): SafeUrl {
     return domSanitizer.bypassSecurityTrustUrl(url);
@@ -89,12 +101,12 @@ export const suggestionOptions: DotMenuItem[] = [
     ...image,
     ...headings,
     ...table,
-    ...paragraph,
     ...list,
-    ...block
+    ...block,
+    paragraph
 ];
 
-export const tableChangeToItems: DotMenuItem[] = [...headings, ...paragraph, ...list];
+export const tableChangeToItems: DotMenuItem[] = [...headings, paragraph, ...list];
 
 export const SuggestionPopperModifiers = [
     {
@@ -112,10 +124,10 @@ export const SuggestionPopperModifiers = [
     }
 ];
 
-export const CONTENT_SUGGESTION_ID = 'contentlets';
+export const CONTENT_SUGGESTION_ID = 'dotContent';
 
 const FORBIDDEN_CHANGE_TO_BLOCKS = {
-    horizontalLine: true,
+    horizontalRule: true,
     table: true,
     image: true
 };

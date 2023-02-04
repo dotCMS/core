@@ -6,18 +6,21 @@ import static javax.ws.rs.core.HttpHeaders.CONTENT_TYPE;
 import com.dotcms.enterprise.cluster.ClusterFactory;
 import com.dotcms.filters.interceptor.Result;
 import com.dotcms.filters.interceptor.WebInterceptor;
+import com.dotcms.util.JsonUtil;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.json.JSONException;
-import com.dotmarketing.util.json.JSONObject;
 import com.liferay.portal.PortalException;
 import com.liferay.portal.SystemException;
 import io.vavr.Lazy;
 import io.vavr.control.Try;
+import java.util.List;
+import java.util.Map;
 import org.apache.commons.io.IOUtils;
 
 import java.io.BufferedReader;
@@ -98,18 +101,36 @@ public class EventLogWebInterceptor implements WebInterceptor {
             return;
         }
 
-        final String payload = IOUtils.toString(request.getReader());
+        final String requestPayload = IOUtils.toString(request.getReader());
         final String realIp = request.getRemoteAddr();
-        final JSONObject json = new JSONObject(payload);
+        final Map<String, Object> requestJsonPayload = JsonUtil.getJsonFromString(requestPayload);
+        final List<Map<String, String>> experiments = (List<Map<String, String>>) requestJsonPayload.get("experiments");
+
+        if (!UtilMethods.isSet(experiments)) {
+            return;
+        }
+
+        requestJsonPayload.remove("experiments");
+
+        final EventsPayload eventPayload = new EventsPayload(requestJsonPayload);
         final String mungedIp = (realIp.lastIndexOf(".") > -1)
                 ? realIp.substring(0, realIp.lastIndexOf(".")) + ".1"
                 : "0.0.0.0";
-        json.put("ip", mungedIp);
-        json.put("clusterId", ClusterFactory.getClusterId());
+        eventPayload.put("ip", mungedIp);
+        eventPayload.put("userLanguage", String.valueOf(
+                WebAPILocator.getLanguageWebAPI().getLanguage(request).getId()));
+        eventPayload.put("persona",
+                WebAPILocator.getPersonalizationWebAPI().getContainerPersonalization(request));
+        //eventPayload.put("clusterId", ClusterFactory.getClusterId());
+
+        for (final Map<String, String> experiment : experiments) {
+            eventPayload.addExperiment(experiment.get("experiment"), experiment.get("variant"),
+                    experiment.get("lookBackWindow"));
+        }
 
         try {
             final Host host = WebAPILocator.getHostWebAPI().getCurrentHost(request);
-            this.submitter.logEvent(host, json.toString());
+            this.submitter.logEvent(host, eventPayload);
         } catch (DotDataException | DotSecurityException | PortalException | SystemException e) {
             Logger.error(this, "Error resolving current host", e);
         } catch(Exception e) {

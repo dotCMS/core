@@ -1,0 +1,35 @@
+@use "variables" as *;
+
+:host {
+    height: 100%;
+    width: 100%;
+    padding: $spacing-3;
+    gap: $spacing-3;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+
+    .preview-container {
+        align-items: center;
+        display: flex;
+        flex-grow: 1;
+        justify-content: center;
+        overflow: hidden;
+        width: 100%;
+
+        img {
+            height: 100%;
+            width: 100%;
+            object-fit: contain;
+        }
+    }
+
+    .btn-container {
+        display: flex;
+        gap: $spacing-3;
+        height: fit-content;
+        justify-content: end;
+        width: 100%;
+    }
+}

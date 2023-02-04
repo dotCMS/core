@@ -1,4 +1,4 @@
-<p-card>
+<p-card (click)="goTo.emit(true)" data-testid="pageCard">
     <ng-template pTemplate="header">
         <div
             class="dot-pages-favorite-card-content__image"
@@ -15,6 +15,7 @@
             'dot-favorite-page-highlight': ownerPage
         }"
         [pTooltip]="'favoritePage.listing.star.icon.tooltip' | dm"
+        (click)="$event.stopPropagation(); edit.emit(true)"
         size="18"
         data-testId="favoriteCardIconButton"
         tooltipPosition="bottom"

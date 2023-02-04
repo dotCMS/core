@@ -1,0 +1,25 @@
+@use "variables" as *;
+
+:host {
+    border: 1px solid $gray-light;
+    display: block;
+}
+
+.tabview-container {
+    width: 720px;
+    background: $white;
+}
+
+.wrapper {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 25rem;
+    width: 100%;
+}
+
+:host::ng-deep {
+    .p-tabview-nav {
+        padding: 0 $spacing-5;
+    }
+}

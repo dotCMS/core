@@ -1,9 +1,14 @@
 import { createHttpFactory, HttpMethod, SpectatorHttp } from '@ngneat/spectator';
 
-import { DefaultGoalConfiguration, DotExperiment, Goals, Variant } from '@dotcms/dotcms-models';
+import {
+    DefaultGoalConfiguration,
+    DotExperiment,
+    Goals,
+    GoalsLevels,
+    Variant
+} from '@dotcms/dotcms-models';
+import { DotExperimentsService } from '@portlets/dot-experiments/shared/services/dot-experiments.service';
 import { ExperimentMocks } from '@portlets/dot-experiments/test/mocks';
-
-import { DotExperimentsService } from './dot-experiments.service';
 
 const API_ENDPOINT = '/api/v1/experiments';
 const PAGE_Id = '123';
@@ -73,11 +78,29 @@ describe('DotExperimentsService', () => {
         );
     });
 
-    it('should asign a goal to experiment ', () => {
+    it('should assign a goal to experiment ', () => {
         const goal: Goals = {
             ...DefaultGoalConfiguration
         };
         spectator.service.setGoal(EXPERIMENT_ID, goal).subscribe();
         spectator.expectOne(`${API_ENDPOINT}/${EXPERIMENT_ID}`, HttpMethod.PATCH);
+    });
+
+    it('should delete a goal with experimentId', () => {
+        const goalType: GoalsLevels = 'primary';
+        spectator.service.deleteGoal(EXPERIMENT_ID, goalType).subscribe();
+        spectator.expectOne(
+            `${API_ENDPOINT}/${EXPERIMENT_ID}/goals/${goalType}`,
+            HttpMethod.DELETE
+        );
+    });
+
+    it('should set scheduling to experiment', () => {
+        const newScheduling = { startDate: 1, endDate: 2 };
+        spectator.service.setScheduling(EXPERIMENT_ID, newScheduling).subscribe();
+
+        const req = spectator.expectOne(`${API_ENDPOINT}/${EXPERIMENT_ID}`, HttpMethod.PATCH);
+
+        expect(req.request.body['scheduling']).toEqual(newScheduling);
     });
 });

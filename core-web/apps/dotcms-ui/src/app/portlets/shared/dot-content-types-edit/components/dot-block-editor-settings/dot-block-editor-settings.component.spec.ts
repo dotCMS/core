@@ -9,18 +9,13 @@ import { By } from '@angular/platform-browser';
 import { MultiSelect, MultiSelectModule } from 'primeng/multiselect';
 
 import { DotHttpErrorManagerService } from '@dotcms/app/api/services/dot-http-error-manager/dot-http-error-manager.service';
+import { getEditorBlockOptions } from '@dotcms/block-editor';
 import { DotMessageService } from '@dotcms/data-access';
 import { MockDotMessageService, mockFieldVariables } from '@dotcms/utils-testing';
 
-import {
-    BLOCK_EDITOR_BLOCKS,
-    DotBlockEditorSettingsComponent
-} from './dot-block-editor-settings.component';
+import { DotBlockEditorSettingsComponent } from './dot-block-editor-settings.component';
 
 import { DotFieldVariablesService } from '../fields/dot-content-type-fields-variables/services/dot-field-variables.service';
-
-
-
 
 describe('DotContentTypeFieldsVariablesComponent', () => {
     let fixture: ComponentFixture<DotBlockEditorSettingsComponent>;
@@ -117,6 +112,7 @@ describe('DotContentTypeFieldsVariablesComponent', () => {
         component.saveSettings();
         expect(dotFieldVariableService.save).toHaveBeenCalledTimes(amountFields);
         expect(component.save.emit).toHaveBeenCalled();
+        expect(component.settingsMap['allowedBlocks'].variable).toEqual(mockFieldVariables[0]);
     });
 
     it('should delete properties on saveSettings when is empty', () => {
@@ -127,6 +123,7 @@ describe('DotContentTypeFieldsVariablesComponent', () => {
         component.saveSettings();
         expect(dotFieldVariableService.delete).toHaveBeenCalled();
         expect(component.save.emit).toHaveBeenCalled();
+        expect(component.settingsMap['allowedBlocks'].variable).toEqual(mockFieldVariables[0]);
     });
 
     it('should not call save or delete when is empty and not previus vairable exist', () => {
@@ -162,8 +159,21 @@ describe('DotContentTypeFieldsVariablesComponent', () => {
             expect(multiselect.appendTo).toEqual('body');
         });
 
-        it('should have BLOCK_EDITOR_BLOCKS options', () => {
-            expect(multiselect.options).toEqual(BLOCK_EDITOR_BLOCKS);
+        it('should have Editor Block Options options', () => {
+            expect(multiselect.options).toEqual(getEditorBlockOptions());
+        });
+    });
+
+    describe('Options', () => {
+        it('should not have a "paragraph" option', () => {
+            const options = component.settingsMap.allowedBlocks.options;
+            const paragraphOption = options.find(
+                ({ label, code }) =>
+                    code.trim().toLowerCase() === 'paragraph' ||
+                    label.trim().toLowerCase() === 'paragraph'
+            );
+
+            expect(paragraphOption).not.toBeDefined();
         });
     });
 });

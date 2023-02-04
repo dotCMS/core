@@ -18,7 +18,6 @@ import { DotFormatDateService } from '@services/dot-format-date-service';
 import { DotHttpErrorManagerService } from '@services/dot-http-error-manager/dot-http-error-manager.service';
 import { DotRouterService } from '@services/dot-router/dot-router.service';
 
-
 import { DotAddToMenuService, DotCreateCustomTool } from './add-to-menu.service';
 
 const customToolData: DotCreateCustomTool = {

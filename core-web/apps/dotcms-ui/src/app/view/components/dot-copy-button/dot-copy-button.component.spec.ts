@@ -11,8 +11,6 @@ import { MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotCopyButtonComponent } from './dot-copy-button.component';
 
-
-
 const messageServiceMock = new MockDotMessageService({
     Copy: 'Copy',
     Copied: 'Copied'

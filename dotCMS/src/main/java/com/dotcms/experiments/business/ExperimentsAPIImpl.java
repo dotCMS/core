@@ -15,6 +15,7 @@ import com.dotcms.analytics.metrics.MetricsUtil;
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.enterprise.rules.RulesAPI;
+import com.dotcms.exception.NotAllowedException;
 import com.dotcms.experiments.model.AbstractExperiment.Status;
 import com.dotcms.experiments.model.AbstractTrafficProportion.Type;
 import com.dotcms.experiments.model.Experiment;
@@ -22,6 +23,7 @@ import com.dotcms.experiments.model.ExperimentVariant;
 import com.dotcms.experiments.model.Scheduling;
 import com.dotcms.experiments.model.TargetingCondition;
 import com.dotcms.experiments.model.TrafficProportion;
+import com.dotcms.util.CollectionsUtils;
 import com.dotcms.util.DotPreconditions;
 import com.dotcms.util.LicenseValiditySupplier;
 import com.dotcms.uuid.shorty.ShortyIdAPI;
@@ -50,6 +52,7 @@ import com.dotmarketing.portlets.rules.model.LogicalOperator;
 import com.dotmarketing.portlets.rules.model.ParameterModel;
 import com.dotmarketing.portlets.rules.model.Rule;
 import com.dotmarketing.portlets.rules.model.Rule.FireOn;
+import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.UtilMethods;
@@ -68,8 +71,11 @@ import java.util.SortedSet;
 import java.util.TreeSet;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
-
+import io.vavr.Lazy;
 public class ExperimentsAPIImpl implements ExperimentsAPI {
+
+    private Lazy<Boolean> isExperimentEnabled =
+            Lazy.of(() -> Config.getBooleanProperty("FEATURE_FLAG_EXPERIMENTS", false));
 
     final ExperimentsFactory factory = FactoryLocator.getExperimentsFactory();
     final PermissionAPI permissionAPI = APILocator.getPermissionAPI();
@@ -128,6 +134,9 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
 
         factory.save(experimentToSave);
 
+        Logger.info(this, "Saving experiment with id: " + experimentToSave.id().get() + ", and status:"
+        + experimentToSave.status());
+
         DotPreconditions.isTrue(experimentToSave.id().isPresent(), "Experiment doesn't have Id");
 
         Optional<Experiment> savedExperiment = find(experimentToSave.id().get(), user);
@@ -138,6 +147,14 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
                 -> variant.description().equals(ORIGINAL_VARIANT)))) {
             savedExperiment = Optional.of(addVariant(savedExperiment.get().id().get(),
                     ORIGINAL_VARIANT, user));
+        }
+
+        if(savedExperiment.get().scheduling().isEmpty()) {
+            final Scheduling scheduling = startNowScheduling(savedExperiment.get());
+            savedExperiment = Optional.of(savedExperiment.get().withScheduling(scheduling));
+        } else if(experiment.status()!=ENDED) {
+            Scheduling scheduling = validateScheduling(savedExperiment.get().scheduling().get());
+            savedExperiment = Optional.of(savedExperiment.get().withScheduling(scheduling));
         }
 
         return savedExperiment.get();
@@ -448,25 +465,22 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
             throws DotDataException {
 
         final String experimentId = experiment.getIdentifier();
-        final String variantName = getVariantName(experimentId);
+        String variantName = null;
 
         if(variantDescription.equals(ORIGINAL_VARIANT)) {
             DotPreconditions.isTrue(
                     experiment.trafficProportion().variants().stream().noneMatch((variant) ->
                             variant.description().equals(ORIGINAL_VARIANT)),
                     "Original Variant already created");
+            variantName = DEFAULT_VARIANT.name();
+        } else {
+            variantName = getVariantName(experimentId);
+            variantAPI.save(Variant.builder().name(variantName)
+                    .description(Optional.of(variantDescription)).build());
         }
 
-        variantAPI.save(Variant.builder().name(variantName)
-                .description(Optional.of(variantDescription)).build());
-
-        multiTreeAPI.copyVariantForPage(experiment.pageId(),
-                DEFAULT_VARIANT.name(), variantName);
-
         final Contentlet pageContentlet = contentletAPI
-                .findContentletByIdentifierAnyLanguage(experiment.pageId(), false);
-
-        copyPageAndItsContentForVariant(experiment, variantDescription, user, variantName, pageContentlet);
+        .findContentletByIdentifierAnyLanguage(experiment.pageId(), false);
 
         final HTMLPageAsset page = pageAssetAPI.fromContentlet(pageContentlet);
 
@@ -537,6 +551,10 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
     @WrapInTransaction
     public Experiment deleteVariant(String experimentId, String variantName, User user)
             throws DotDataException, DotSecurityException {
+
+        DotPreconditions.isTrue(!variantName.equals(DEFAULT_VARIANT.name()),
+                ()->"Cannot delete Original Variant", NotAllowedException.class);
+
         final Experiment persistedExperiment = find(experimentId, user)
                 .orElseThrow(()->new DoesNotExistException("Experiment with provided id not found"));
 
@@ -550,9 +568,6 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
         final String variantDescription = toDelete.description()
                 .orElseThrow(()->new DotStateException("Variant without description. Variant name: "
                                 + toDelete.name()));
-
-        DotPreconditions.isTrue(!variantDescription.equals(ORIGINAL_VARIANT),
-                ()->"Cannot delete Original Variant", IllegalArgumentException.class);
 
         final TreeSet<ExperimentVariant> updatedVariants =
                 new TreeSet<>(persistedExperiment.trafficProportion()
@@ -655,7 +670,31 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
 
     @Override
     public boolean isAnyExperimentRunning() throws DotDataException {
-        return !APILocator.getExperimentsAPI().getRunningExperiments().isEmpty();
+        return isExperimentEnabled.get() &&
+                !APILocator.getExperimentsAPI().getRunningExperiments().isEmpty();
+    }
+
+    @Override
+    public void endFinalizedExperiments(final User user) throws DotDataException {
+        final List<Experiment> finalizedExperiments = getRunningExperiments().stream()
+                .filter((experiment -> experiment.scheduling().orElseThrow().endDate().orElseThrow()
+                        .isBefore(Instant.now()))).collect(Collectors.toList());
+
+        finalizedExperiments.forEach((experiment ->
+                Try.of(()->end(experiment.id().orElseThrow(), user)).getOrElseThrow((e)->
+                        new DotStateException("Unable to end Experiment. Cause:" + e))));
+    }
+
+    @Override
+    public void startScheduledToStartExperiments(final User user) throws DotDataException {
+        final List<Experiment> scheduledToStartExperiments = list(ExperimentFilter.builder()
+                .statuses(CollectionsUtils.set(DRAFT)).build(), user).stream()
+                .filter((experiment -> experiment.scheduling().isPresent() && experiment.scheduling().get().startDate().orElseThrow()
+                        .isAfter(Instant.now()))).collect(Collectors.toList());
+
+        scheduledToStartExperiments.forEach((experiment ->
+                Try.of(()->start(experiment.id().orElseThrow(), user)).getOrElseThrow((e)->
+                        new DotStateException("Unable to start Experiment. Cause:" + e))));
     }
 
     private TreeSet<ExperimentVariant> redistributeWeights(final Set<ExperimentVariant> variants) {
@@ -713,7 +752,7 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
 
     public Scheduling validateScheduling(final Scheduling scheduling) {
         Scheduling toReturn = scheduling;
-        final Instant NOW = Instant.now();
+        final Instant NOW = Instant.now().minus(1, ChronoUnit.MINUTES);
 
         if(scheduling.startDate().isPresent() && scheduling.endDate().isEmpty()) {
             DotPreconditions.checkState(scheduling.startDate().get().isAfter(NOW),

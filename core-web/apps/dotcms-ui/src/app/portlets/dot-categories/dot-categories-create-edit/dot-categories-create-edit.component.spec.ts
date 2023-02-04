@@ -7,7 +7,6 @@ import { DotPortletBaseModule } from '@components/dot-portlet-base/dot-portlet-b
 
 import { DotCategoriesCreateEditComponent } from './dot-categories-create-edit.component';
 
-
 import { DotCategoriesListingModule } from '../dot-categories-list/dot-categories-list.module';
 
 @Pipe({ name: 'dm' })

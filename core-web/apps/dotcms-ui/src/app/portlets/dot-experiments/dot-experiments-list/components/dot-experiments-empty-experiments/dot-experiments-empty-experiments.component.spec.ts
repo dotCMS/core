@@ -8,7 +8,6 @@ import { DotIconComponent, DotIconModule } from '@dotcms/ui';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 import { DotMessagePipeModule } from '@pipes/dot-message/dot-message-pipe.module';
 
-
 import { DotExperimentsEmptyExperimentsComponent } from './dot-experiments-empty-experiments.component';
 
 const messageServiceMock = new MockDotMessageService({

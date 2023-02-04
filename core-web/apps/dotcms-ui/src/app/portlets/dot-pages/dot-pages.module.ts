@@ -4,6 +4,7 @@ import { NgModule } from '@angular/core';
 import { ButtonModule } from 'primeng/button';
 import { CheckboxModule } from 'primeng/checkbox';
 import { DropdownModule } from 'primeng/dropdown';
+import { DialogService } from 'primeng/dynamicdialog';
 import { InputTextModule } from 'primeng/inputtext';
 import { MenuModule } from 'primeng/menu';
 import { PanelModule } from 'primeng/panel';
@@ -17,13 +18,15 @@ import { DotAddToBundleModule } from '@components/_common/dot-add-to-bundle';
 import { UiDotIconButtonModule } from '@components/_common/dot-icon-button/dot-icon-button.module';
 import { DotAutofocusModule } from '@directives/dot-autofocus/dot-autofocus.module';
 import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
+import { DotTempFileUploadService } from '@dotcms/app/api/services/dot-temp-file-upload/dot-temp-file-upload.service';
 import { DotWorkflowEventHandlerService } from '@dotcms/app/api/services/dot-workflow-event-handler/dot-workflow-event-handler.service';
-import { DotPipesModule } from '@dotcms/app/view/pipes/dot-pipes.module';
+import { DotMessagePipeModule } from '@dotcms/app/view/pipes/dot-message/dot-message-pipe.module';
 import {
     DotESContentService,
     DotLanguagesService,
     DotWorkflowActionsFireService,
-    DotWorkflowsActionsService
+    DotWorkflowsActionsService,
+    DotPageRenderService
 } from '@dotcms/data-access';
 import { DotIconModule } from '@dotcms/ui';
 
@@ -42,7 +45,7 @@ import { DotPagesComponent } from './dot-pages.component';
         DotPagesRoutingModule,
         DotPagesCardModule,
         DotPagesCardEmptyModule,
-        DotPipesModule,
+        DotMessagePipeModule,
         DotIconModule,
         InputTextModule,
         MenuModule,
@@ -62,7 +65,10 @@ import { DotPagesComponent } from './dot-pages.component';
         DotLanguagesService,
         DotWorkflowsActionsService,
         DotWorkflowEventHandlerService,
-        DotWorkflowActionsFireService
+        DotWorkflowActionsFireService,
+        DialogService,
+        DotPageRenderService,
+        DotTempFileUploadService
     ]
 })
 export class DotPagesModule {}
