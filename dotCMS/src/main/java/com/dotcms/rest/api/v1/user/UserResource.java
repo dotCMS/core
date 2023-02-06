@@ -24,6 +24,7 @@ import com.dotmarketing.business.NoSuchUserException;
 import com.dotmarketing.business.Role;
 import com.dotmarketing.business.RoleAPI;
 import com.dotmarketing.business.UserAPI;
+import com.dotmarketing.common.util.SQLUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -40,18 +41,17 @@ import com.liferay.portal.model.User;
 import com.liferay.portal.util.PortalUtil;
 import com.liferay.portal.util.WebKeys;
 import com.liferay.util.LocaleUtil;
-import com.liferay.util.StringPool;
 import io.vavr.control.Try;
 import org.glassfish.jersey.server.JSONP;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
+import javax.ws.rs.DefaultValue;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
@@ -63,7 +63,6 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
-import static com.dotcms.util.CollectionsUtils.getMapValue;
 import static com.dotcms.util.CollectionsUtils.list;
 import static com.dotcms.util.CollectionsUtils.map;
 
@@ -265,86 +264,86 @@ public class UserResource implements Serializable {
 	} // update.
 
 	/**
-	 * Returns a list of dotCMS users based on the specified search criteria. Depending on the filtering values, 2 types
-	 * of result can be returned:
+	 * Returns a list of dotCMS users based on the specified search criteria. Depending on the filtering values, 2
+	 * types of results can be returned:
 	 * <ol>
-	 * 		<li>If the {@code assetInode} and {@code permission} parameters <b>are specified</b>, this method will
-	 * 		return a list of users that have the specified permission type on the specified asset Inode.</li>
-	 * 		<li>If the {@code assetInode} and {@code permission} parameters <b>are NOT specified</b>, this method will
-	 * 		return a list of users based on specific filtering parameters.</li>
+	 * 		<li>If both the {@code assetInode} and {@code permission} parameters <b>ARE specified</b>, this method will
+	 * 		return a list of users that have the specified permission type on the specified asset Inode, and match the
+	 * 		remaining filtering parameters as well.</li>
+	 * 		<li>If either the {@code assetInode} or {@code permission} parameters <b>ARE NOT specified</b>, this method
+	 * 		will return a list of users based on the remaining filtering parameters.</li>
 	 * </ol>
 	 * <p>
-	 * All parameters for this REST call are optional -- they have theire respective fallback values --, and are as
+	 * The parameters for this REST call are optional -- they have their respective fallback values -- and are as
 	 * follows:
 	 * <ul>
 	 * 		<li>{@code assetInode}</li>
 	 * 		<li>{@code permission}</li>
 	 * 		<li>{@code query}</li>
-	 * 		<li>{@code start}</li>
-	 * 		<li>{@code limit}</li>
+	 * 		<li>{@code page}</li>
+	 * 		<li>{@code per_page}</li>
 	 * 		<li>{@code includeAnonymous}</li>
 	 * 		<li>{@code includeDefault}</li>
 	 * </ul>
 	 * <p>
 	 * Example #1:
 	 * <pre>
-	 * http://localhost:8080/api/v1/users/filter/start/0/limit/30/includeAnonymous/false/includeDefault/false
+	 * http://localhost:8080/api/v1/users/filter?page=0&per_page=30&includeAnonymous=true&includeDefault=true
 	 * </pre>
-	 *
+	 * <p>
 	 * Example #2:
 	 * <pre>
-	 * http://localhost:8080/api/v1/users/filter/assetInode/6e13c345-4599-49d0-aa47-6a7e59245247/permission/1/query/John/start/0/limit/10/includeAnonymous/false
+	 * http://localhost:8080/api/v1/users/filter?assetInode=6e13c345-4599-49d0-aa47-6a7e59245247&permission=1&query=John&page=0&per_page=10&includeAnonymous=false
 	 * </pre>
 	 *
-	 * @param request
-	 *            - The {@link HttpServletRequest} object.
-	 * @param params
-	 *            - The parameters that can be specified in the REST call.
-	 * @return A {@link Response} containing the list of dotCMS users that match
-	 *         the filtering criteria.
+	 * @param request          The current instance of the {@link HttpServletRequest}.
+	 * @param response         The current instance of the {@link HttpServletResponse}.
+	 * @param filter           Allows you to filter Users by their full name or parts of it.
+	 * @param page             The results page or offset, for pagination purposes.
+	 * @param perPage          The size of the results page, for pagination purposes.
+	 * @param orderBy          The column name that will be used to sort the paginated results. For reference, please
+	 *                         check {@link SQLUtil#ORDERBY_WHITELIST}.
+	 * @param direction        The sorting direction for the results: {@code "ASC"} or {@code "DESC"}
+	 * @param includeAnonymous If the Anonymous User must be included in the results, set this to {@code true}.
+	 * @param includeDefault   If the Default User must be included in the results, set this to {@code true}.
+	 * @param assetInode       The Inode of a specific asset, if you're querying Users that have a specific permission
+	 *                         on it.
+	 * @param permission       The permission type that Users may have on the previous asset.
+	 *
+	 * @return A {@link Response} containing the list of dotCMS users that match the filtering criteria.
 	 */
 	@GET
 	@JSONP
-	@Path("/filter/{params:.*}")
+	@Path("/filter")
 	@NoCache
 	@Produces({ MediaType.APPLICATION_JSON, "application/javascript" })
-	public Response filter(@Context final HttpServletRequest request, @Context final HttpServletResponse response, @PathParam("params") final String params) {
+	public Response filter(@Context final HttpServletRequest request, @Context final HttpServletResponse response,
+						   @QueryParam(UserPaginator.QUERY_PARAM) final String filter,
+						   @DefaultValue("0") @QueryParam(PaginationUtil.PAGE) final int page,
+						   @DefaultValue("40") @QueryParam(PaginationUtil.PER_PAGE) final int perPage,
+						   @QueryParam(PaginationUtil.ORDER_BY) String orderBy,
+						   @DefaultValue("ASC") @QueryParam(PaginationUtil.DIRECTION) String direction,
+						   @QueryParam(UserPaginator.INCLUDE_ANONYMOUS) boolean includeAnonymous,
+						   @QueryParam(UserPaginator.INCLUDE_DEFAULT) boolean includeDefault,
+						   @QueryParam(UserPaginator.ASSET_INODE_PARAM) String assetInode,
+						   @QueryParam(UserPaginator.PERMISSION_PARAM) int permission) {
 		final InitDataObject initData = new WebResource.InitBuilder(webResource)
 				.requiredBackendUser(true)
 				.requiredFrontendUser(false)
-				.params(params)
 				.requestAndResponse(request, response)
 				.rejectWhenNoUser(true)
 				.init();
 
-		final Map<String, String> urlParams = initData.getParamsMap();
-		final Map<String, Object> extraParams = this.getParamsFromUrl(initData.getParamsMap());
-		final String query = urlParams.get(UserPaginator.QUERY_PARAM);
-		final int page = Integer.parseInt(getMapValue(urlParams, UserPaginator.START_PARAM, "0"));
-		final int perPage = Integer.parseInt(getMapValue(urlParams, UserPaginator.LIMIT_PARAM, "40"));
-		final String orderBy = urlParams.get(UserAPI.FilteringParams.ORDER_BY_PARAM);
-		final OrderDirection direction =
-				Try.of(() -> OrderDirection.valueOf(urlParams.get(UserAPI.FilteringParams.ORDER_DIRECTION_PARAM))).getOrElse(OrderDirection.ASC);
-		final User user = initData.getUser();
-		return this.paginationUtil.getPage(request, user, query, page, perPage, orderBy, direction, extraParams);
-	}
-
-	/**
-	 * Utility method that takes the parameters provided by the endpoint URL and transforms them into the expected
-	 * representation for the {@link PaginationUtil} class.
-	 *
-	 * @param paramsMap The incoming parameters from the endpoint URL call.
-	 *
-	 * @return The expected Map of parameters required by the {@link PaginationUtil} class.
-	 */
-	private Map<String, Object> getParamsFromUrl(final Map<String, String> paramsMap) {
-		return CollectionsUtils.map(
-				UserPaginator.ASSET_INODE_PARAM, paramsMap.get(UserPaginator.ASSET_INODE_PARAM),
-				UserPaginator.PERMISSION_PARAM, paramsMap.get(UserPaginator.PERMISSION_PARAM),
-				UserAPI.FilteringParams.INCLUDE_ANONYMOUS_PARAM, Boolean.valueOf(paramsMap.getOrDefault(UserAPI.FilteringParams.INCLUDE_ANONYMOUS_PARAM, "false")),
-				UserAPI.FilteringParams.INCLUDE_DEFAULT_PARAM, Boolean.valueOf(paramsMap.getOrDefault(UserAPI.FilteringParams.INCLUDE_DEFAULT_PARAM, "false")),
-				UserAPI.FilteringParams.ORDER_BY_PARAM, getMapValue(paramsMap, UserAPI.FilteringParams.ORDER_BY_PARAM, StringPool.BLANK)
+		final Map<String, Object> extraParams = CollectionsUtils.map(
+				UserPaginator.ASSET_INODE_PARAM, assetInode,
+				UserPaginator.PERMISSION_PARAM, permission,
+				UserAPI.FilteringParams.INCLUDE_ANONYMOUS_PARAM, includeAnonymous,
+				UserAPI.FilteringParams.INCLUDE_DEFAULT_PARAM, includeDefault,
+				UserAPI.FilteringParams.ORDER_BY_PARAM, orderBy
 		);
+		final OrderDirection orderDirection = OrderDirection.valueOf(direction);
+		final User user = initData.getUser();
+		return this.paginationUtil.getPage(request, user, filter, page, perPage, orderBy, orderDirection, extraParams);
 	}
 
 	/**

@@ -89,16 +89,6 @@ export class FieldPropertyService {
     }
 
     /**
-     * Return true if field is fixed and the property should be disabled when fixed is true
-     * @param boolean fixed
-     * @param string propertyName
-     * @returns boolean
-     */
-    isDisabledInFixed(propertyName: string): boolean {
-        return PROPERTY_INFO[propertyName] ? PROPERTY_INFO[propertyName].disabledInFixed : false;
-    }
-
-    /**
      * Return the properties's name for a specific field type
      * @param string fieldTypeClass Field type's class
      * @returns string[] properties's name

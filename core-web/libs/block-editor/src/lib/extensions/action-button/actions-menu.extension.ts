@@ -37,7 +37,7 @@ declare module '@tiptap/core' {
                 range: Range;
                 type: { name: string; level?: number };
             }) => ReturnType;
-            addContentletBlock: ({ range: Range, payload: unknown }) => ReturnType;
+            addContentletBlock: (data: { range: Range; payload: unknown }) => ReturnType;
             addNextLine: () => ReturnType;
         };
     }
@@ -158,12 +158,11 @@ function execCommand({
         codeBlock: () => {
             editor.chain().deleteRange(range).setCodeBlock().focus().run();
         },
-        horizontalLine: () => {
+        horizontalRule: () => {
             editor.chain().deleteRange(range).setHorizontalRule().focus().run();
         },
-        image: () => {
-            editor.commands.toggleImageForm(true);
-        }
+        image: () => editor.commands.openAssetForm({ type: 'image' }),
+        video: () => editor.commands.openAssetForm({ type: 'video' })
     };
 
     whatToDo[props.type.name]

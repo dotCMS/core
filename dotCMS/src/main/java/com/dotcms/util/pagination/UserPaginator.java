@@ -22,7 +22,10 @@ import java.util.Objects;
 import java.util.stream.Collectors;
 
 /**
- * Paginator util for User
+ * This class allows you to retrieve a paginated list of {@link User} objects in your current dotCMS instance.
+ *
+ * @author Freddy Rodriguez
+ * @since Jul 26th, 2017
  */
 public class UserPaginator implements PaginatorOrdered<Map<String, Object>> {
 
@@ -30,9 +33,9 @@ public class UserPaginator implements PaginatorOrdered<Map<String, Object>> {
     private final RoleAPI roleAPI;
     private final UserResourceHelper helper = UserResourceHelper.getInstance();
 
-    public static final String START_PARAM = "start";
-    public static final String LIMIT_PARAM = "limit";
     public static final String QUERY_PARAM = "query";
+    public static final String INCLUDE_ANONYMOUS = "includeanonymous";
+    public static final String INCLUDE_DEFAULT = "includedefault";
     public static final String ASSET_INODE_PARAM = "assetinode";
     public static final String PERMISSION_PARAM = "permission";
     public static final String ROLES_PARAM = "roles";
@@ -64,7 +67,7 @@ public class UserPaginator implements PaginatorOrdered<Map<String, Object>> {
     }
 
     @Override
-    public PaginatedArrayList<Map<String, Object>> getItems(final User user, final String filter, int limit, int offset,
+    public PaginatedArrayList<Map<String, Object>> getItems(final User user, final String filter, final int limit, final int offset,
                                                     final String orderBy, final OrderDirection direction, final Map<String, Object> extraParams) {
         try {
             final List<Role> roles = (List<Role>) extraParams.get(ROLES_PARAM);

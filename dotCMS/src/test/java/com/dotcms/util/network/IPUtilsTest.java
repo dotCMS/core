@@ -80,7 +80,7 @@ public class IPUtilsTest {
     @Test
     public void test_ip_private_subnets() {
         for(String testCase : ipsOnPrivateSubnets) {
-            assertTrue( IPUtils.isIpPrivateSubnet(testCase));
+            assertTrue(String.format("Testcase %s failed",testCase), IPUtils.isIpPrivateSubnet(testCase));
         }
     }
     @Test

@@ -93,6 +93,8 @@ public interface ExperimentsAPI {
     Experiment addVariant(String experimentId, String variantName, User user)
             throws DotDataException, DotSecurityException;
 
+    void startScheduledToStartExperiments(User user) throws DotDataException;
+
     /**
      * Validates a {@link Scheduling} by the following:
      *
@@ -149,4 +151,12 @@ public interface ExperimentsAPI {
      * @return
      */
     boolean isAnyExperimentRunning() throws DotDataException;
+
+    /**
+     * Ends finalized {@link com.dotcms.experiments.model.Experiment}s
+     * <p>
+     *     A finalized Experiment is an Experiment that is in the {@link com.dotcms.experiments.model.Experiment.Status#RUNNING}
+     *     state and whose {@link  Scheduling#endDate()} is in the past
+     */
+    void endFinalizedExperiments(final User user) throws DotDataException;
 }

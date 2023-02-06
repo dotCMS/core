@@ -9,7 +9,6 @@ import org.immutables.value.Value;
 @JsonDeserialize(as = CredentialsBean.class)
 public interface AbstractCredentialsBean {
      String user();
-
      char[] token();
 
 }

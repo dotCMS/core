@@ -30,6 +30,7 @@ import java.time.ZoneId;
 import java.util.Collections;
 import java.util.Date;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.stream.Collectors;
@@ -95,7 +96,6 @@ public class AccessTokenRenewJob implements StatefulJob {
     }
 
     public void setRenewRunning(boolean renewRunning) {
-        Logger.debug(this, String.format("Setting renewRunning flag to %s", renewRunning));
         this.renewRunning = renewRunning;
     }
 
@@ -115,6 +115,7 @@ public class AccessTokenRenewJob implements StatefulJob {
                 .filter(Objects::nonNull)
                 .filter(AnalyticsApp::isConfigValid)
                 .map(this::withStatus)
+                .peek(this::logAccessTokenStatus)
                 .filter(this::needsRenew)
                 .collect(Collectors.toSet()))
             .getOrElseGet(e -> {
@@ -123,7 +124,6 @@ public class AccessTokenRenewJob implements StatefulJob {
             });
 
         if (apps.isEmpty()) {
-            Logger.warn(this, "No apps were detected that required an ACCESS_TOKEN renewal");
             return;
         }
 
@@ -140,49 +140,46 @@ public class AccessTokenRenewJob implements StatefulJob {
     private AnalyticsAppWithStatus withStatus(final AnalyticsApp analyticsApp) {
         final AccessToken accessToken = analyticsAPI.getAccessToken(analyticsApp);
         final TokenStatus tokenStatus = AnalyticsHelper.resolveTokenStatus(accessToken);
+        return new AnalyticsAppWithStatus(analyticsApp, tokenStatus);
+    }
 
+    /**
+     * Log an appropriate message based on what {@link TokenStatus} is.
+     *
+     * @param analyticsAppWithStatus analytics app and token status instance
+     */
+    private void logAccessTokenStatus(final AnalyticsAppWithStatus analyticsAppWithStatus) {
+        final AnalyticsApp analyticsApp = analyticsAppWithStatus.getAnalyticsApp();
+        final TokenStatus tokenStatus = analyticsAppWithStatus.getTokenStatus();
+
+        final String message;
         switch (tokenStatus) {
             case NONE:
-                Logger.warn(
-                    this,
-                    String.format(
-                        "ACCESS_TOKEN for clientID %s is null or has no status, interpreting this as it needs to renew",
-                        analyticsApp.getAnalyticsProperties().clientId()));
-                break;
-            case OK:
-                Logger.info(
-                    this,
-                    String.format(
-                        "ACCESS_TOKEN for clientId %s DOES NOT need to be renewed",
-                        analyticsApp.getAnalyticsProperties().clientId()));
+                message = String.format(
+                    "ACCESS_TOKEN for clientID %s is null or has no status, interpreting this as it needs to renew",
+                    analyticsApp.getAnalyticsProperties().clientId());
                 break;
             case NOOP:
-                Logger.error(
-                    this,
-                    String.format(
-                        "ACCESS_TOKEN for clientId %s is NOOP it cannot be used due to a permanent error",
-                        analyticsApp.getAnalyticsProperties().clientId()));
-                Logger.error(this, AnalyticsHelper.resolveStatusMessage(accessToken));
+                message = String.format(
+                    "ACCESS_TOKEN for clientId %s is NOOP it cannot be used due to a permanent error",
+                    analyticsApp.getAnalyticsProperties().clientId());
                 break;
             case BLOCKED:
-                Logger.error(
-                    this,
-                    String.format(
-                        "ACCESS_TOKEN for clientId %s is BLOCKED due to renew process",
-                        analyticsApp.getAnalyticsProperties().clientId()));
-                Logger.error(this, AnalyticsHelper.resolveStatusMessage(accessToken));
+                message = String.format(
+                    "ACCESS_TOKEN for clientId %s is BLOCKED due to renew process",
+                    analyticsApp.getAnalyticsProperties().clientId());
                 break;
             case EXPIRED:
             case IN_WINDOW:
-                Logger.warn(
-                    this,
-                    String.format(
-                        "ACCESS_TOKEN for clientId %s needs to be renewed",
-                        analyticsApp.getAnalyticsProperties().clientId()));
+                message = String.format(
+                    "ACCESS_TOKEN for clientId %s needs to be renewed",
+                    analyticsApp.getAnalyticsProperties().clientId());
                 break;
+            default:
+                message = null;
         }
 
-        return new AnalyticsAppWithStatus(analyticsApp, tokenStatus);
+        Optional.ofNullable(message).ifPresent(msg -> Logger.debug(this, message));
     }
 
     /**
