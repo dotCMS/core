@@ -3,7 +3,6 @@ package com.dotcms.experiments.business.result;
 import com.dotcms.analytics.metrics.Condition;
 import com.dotcms.analytics.metrics.EventType;
 import com.dotcms.analytics.metrics.Metric;
-import com.dotcms.experiments.business.result.ExperimentResult.Builder;
 import com.dotcms.experiments.model.Experiment;
 import com.google.common.collect.ImmutableList;
 import com.liferay.util.StringPool;
@@ -30,7 +29,7 @@ public class BounceRateExperimentAnalyzer implements MetricExperimentAnalyzer  {
      */
     @Override
     public void addResults(final Metric goal, final BrowserSession browserSession,
-            final Builder experimentResultBuilder) {
+            final ExperimentResults.Builder experimentResultBuilder) {
         final List<Event> events = browserSession.getEvents().stream()
                 .filter(event -> event.getType() == EventType.PAGE_VIEW)
                 .collect(Collectors.toList());

@@ -2,9 +2,9 @@
 package com.dotcms.rest.api.v1.experiments;
 
 import com.dotcms.analytics.metrics.MetricType;
-import com.dotcms.experiments.business.result.ExperimentResult;
-import com.dotcms.experiments.business.result.ExperimentResult.GoalResult;
-import com.dotcms.experiments.business.result.ExperimentResult.VariantResult;
+import com.dotcms.experiments.business.result.ExperimentResults;
+import com.dotcms.experiments.business.result.ExperimentResults.GoalResult;
+import com.dotcms.experiments.business.result.ExperimentResults.VariantResult;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.api.v1.experiments.ResponseEntityResultExperimentView.ExperimentResultView;
 import java.util.HashMap;
@@ -17,8 +17,8 @@ import org.apache.commons.collections.map.HashedMap;
  */
 public class ResponseEntityResultExperimentView extends ResponseEntityView<ExperimentResultView> {
 
-    public ResponseEntityResultExperimentView(final ExperimentResult experimentResult) {
-        super(new ExperimentResultView(experimentResult));
+    public ResponseEntityResultExperimentView(final ExperimentResults experimentResults) {
+        super(new ExperimentResultView(experimentResults));
     }
 
     public static class ExperimentResultView {
@@ -26,11 +26,11 @@ public class ResponseEntityResultExperimentView extends ResponseEntityView<Exper
         private long totalSession;
         private Map<String, GoalResultView> goals = new HashMap<>();
 
-        public ExperimentResultView(final ExperimentResult experimentResult) {
-            this.totalSession = experimentResult.getTotalSessions();
+        public ExperimentResultView(final ExperimentResults experimentResults) {
+            this.totalSession = experimentResults.getTotalSessions();
 
             goals.put("primary",
-                    new GoalResultView(experimentResult.getGoalResults().get(0), totalSession));
+                    new GoalResultView(experimentResults.getGoalResults().get(0), totalSession));
         }
 
         public long getTotalSession() {

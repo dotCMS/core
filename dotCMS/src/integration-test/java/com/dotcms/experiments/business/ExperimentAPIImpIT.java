@@ -29,9 +29,8 @@ import com.dotcms.datagen.SiteDataGen;
 import com.dotcms.datagen.TemplateDataGen;
 import com.dotcms.exception.NotAllowedException;
 import com.dotcms.experiments.business.result.BrowserSession;
-import com.dotcms.experiments.business.result.ExperimentResult;
-import com.dotcms.experiments.business.result.ExperimentResult.GoalResult;
-import com.dotcms.experiments.business.result.ExperimentResult.VariantResult;
+import com.dotcms.experiments.business.result.ExperimentResults;
+import com.dotcms.experiments.business.result.ExperimentResults.VariantResult;
 import com.dotcms.experiments.model.AbstractExperiment.Status;
 import com.dotcms.experiments.model.Experiment;
 import com.dotcms.experiments.model.ExperimentVariant;
@@ -62,7 +61,6 @@ import java.net.HttpURLConnection;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -248,9 +246,26 @@ public class ExperimentAPIImpIT {
 
     /**
      * Method to test: {@link ExperimentsAPIImpl#getEvents(Experiment)}
-     * When: Call the methods with a Experiment with 4 Session each one with several
-     * {@link com.dotcms.analytics.metrics.EventType#PAGE_VIEW} events.
-     * Should: get all the Events group by lookBackWindow
+     * When: You have 4 pages let call them: A, B, C and D and:
+     * - We create a Experiment with the B page.
+     * - We mock in the test 4 Browser Session with different lookBackWindows, each of this session
+     * navigate by the follow pages.
+     * Session 1: A, B, D and C
+     * Session 2: D and C
+     * Session 3: A and B
+     * Session 4: A, B D and C
+     *
+     * All these navigation cases trigger a pageview Event for each page, so we should got these number
+     * of events for each session:
+     *
+     * Session 1: 4
+     * Session 2: 2
+     * Session 3: 2
+     * Session 4: 4
+     *
+     * If we call the {@link ExperimentsAPIImpl#getEvents(Experiment)} now
+     *
+     * Should: Return 4 {@link BrowserSession} each one with the right numbers of {@link com.dotcms.experiments.business.result.Event}
      *
      * @throws DotDataException
      * @throws DotSecurityException
@@ -388,7 +403,7 @@ public class ExperimentAPIImpIT {
     }
 
     /**
-     * Method to test: {@link ExperimentsAPIImpl#getResult(Experiment)}
+     * Method to test: {@link ExperimentsAPIImpl#getResults(Experiment)}
      * When:
      * - You have four pages: A, B, C and D
      * - You create an {@link Experiment} using the B page with a PAGE_REACH Goal: url EQUALS TO PAge D .
@@ -438,13 +453,13 @@ public class ExperimentAPIImpIT {
                     String.format("http://%s:%s", cubeServerIp, cubeJsServerPort));
 
             final ExperimentsAPIImpl experimentsAPIImpl = new ExperimentsAPIImpl(mockAnalyticsHelper);
-            final ExperimentResult experimentResult = experimentsAPIImpl.getResult(experiment);
+            final ExperimentResults experimentResults = experimentsAPIImpl.getResults(experiment);
 
             mockhttpServer.validate();
 
-            assertEquals(1, experimentResult.getTotalSessions());
+            assertEquals(1, experimentResults.getTotalSessions());
 
-            for (VariantResult variantResult : experimentResult.getGoalResults().get(0).getVariants().values()) {
+            for (VariantResult variantResult : experimentResults.getGoalResults().get(0).getVariants().values()) {
                 if (variantResult.getVariantName().equals(variantName)) {
 
                     Assert.assertEquals(1, variantResult.totalUniqueBySession());
@@ -463,7 +478,7 @@ public class ExperimentAPIImpIT {
     }
 
     /**
-     * Method to test: {@link ExperimentsAPIImpl#getResult(Experiment)}
+     * Method to test: {@link ExperimentsAPIImpl#getResults(Experiment)}
      * When:
      * - You have four pages: A, B, C and D
      * - You create an {@link Experiment} using the B page with a PAGE_REACH Goal: url EQUALS TO PAge D .
@@ -513,13 +528,13 @@ public class ExperimentAPIImpIT {
                     String.format("http://%s:%s", cubeServerIp, cubeJsServerPort));
 
             final ExperimentsAPIImpl experimentsAPIImpl = new ExperimentsAPIImpl(mockAnalyticsHelper);
-            final ExperimentResult experimentResult = experimentsAPIImpl.getResult(experiment);
+            final ExperimentResults experimentResults = experimentsAPIImpl.getResults(experiment);
 
             mockhttpServer.validate();
 
-            assertEquals(1, experimentResult.getTotalSessions());
+            assertEquals(1, experimentResults.getTotalSessions());
 
-            for (VariantResult variantResult : experimentResult.getGoalResults().get(0).getVariants().values()) {
+            for (VariantResult variantResult : experimentResults.getGoalResults().get(0).getVariants().values()) {
                 if (variantResult.getVariantName().equals(variantName)) {
 
                     Assert.assertEquals(0, variantResult.totalUniqueBySession());
@@ -538,7 +553,7 @@ public class ExperimentAPIImpIT {
     }
 
     /**
-     * Method to test: {@link ExperimentsAPIImpl#getResult(Experiment)}
+     * Method to test: {@link ExperimentsAPIImpl#getResults(Experiment)}
      * When:
      * - You have four pages: A, B, C and D
      * - You create an {@link Experiment} using the B page with a PAGE_REACH Goal: url EQUALS TO PAge D .
@@ -588,13 +603,13 @@ public class ExperimentAPIImpIT {
                     String.format("http://%s:%s", cubeServerIp, cubeJsServerPort));
 
             final ExperimentsAPIImpl experimentsAPIImpl = new ExperimentsAPIImpl(mockAnalyticsHelper);
-            final ExperimentResult experimentResult = experimentsAPIImpl.getResult(experiment);
+            final ExperimentResults experimentResults = experimentsAPIImpl.getResults(experiment);
 
             mockhttpServer.validate();
 
-            assertEquals(0, experimentResult.getTotalSessions());
+            assertEquals(0, experimentResults.getTotalSessions());
 
-            for (VariantResult variantResult : experimentResult.getGoalResults().get(0).getVariants().values()) {
+            for (VariantResult variantResult : experimentResults.getGoalResults().get(0).getVariants().values()) {
                 if (variantResult.getVariantName().equals(variantName)) {
 
                     Assert.assertEquals(0, variantResult.totalUniqueBySession());
@@ -613,7 +628,7 @@ public class ExperimentAPIImpIT {
     }
 
     /**
-     * Method to test: {@link ExperimentsAPIImpl#getResult(Experiment)}
+     * Method to test: {@link ExperimentsAPIImpl#getResults(Experiment)}
      * When:
      * - You have four pages: A, B, C and D
      * - You create an {@link Experiment} using the B page with a PAGE_REACH Goal: url EQUALS TO PAge D .
@@ -663,13 +678,13 @@ public class ExperimentAPIImpIT {
                     String.format("http://%s:%s", cubeServerIp, cubeJsServerPort));
 
             final ExperimentsAPIImpl experimentsAPIImpl = new ExperimentsAPIImpl(mockAnalyticsHelper);
-            final ExperimentResult experimentResult = experimentsAPIImpl.getResult(experiment);
+            final ExperimentResults experimentResults = experimentsAPIImpl.getResults(experiment);
 
             mockhttpServer.validate();
 
-            assertEquals(0, experimentResult.getTotalSessions());
+            assertEquals(0, experimentResults.getTotalSessions());
 
-            for (VariantResult variantResult : experimentResult.getGoalResults().get(0).getVariants().values()) {
+            for (VariantResult variantResult : experimentResults.getGoalResults().get(0).getVariants().values()) {
                 if (variantResult.getVariantName().equals(variantName)) {
 
                     Assert.assertEquals(0, variantResult.totalUniqueBySession());
@@ -688,7 +703,7 @@ public class ExperimentAPIImpIT {
     }
 
     /**
-     * Method to test: {@link ExperimentsAPIImpl#getResult(Experiment)}
+     * Method to test: {@link ExperimentsAPIImpl#getResults(Experiment)}
      * When:
      * - You have four pages: A, B, C and D
      * - You create an {@link Experiment} using the B page with a PAGE_REACH Goal: url EQUALS TO PAge D .
@@ -738,13 +753,13 @@ public class ExperimentAPIImpIT {
                     String.format("http://%s:%s", cubeServerIp, cubeJsServerPort));
 
             final ExperimentsAPIImpl experimentsAPIImpl = new ExperimentsAPIImpl(mockAnalyticsHelper);
-            final ExperimentResult experimentResult = experimentsAPIImpl.getResult(experiment);
+            final ExperimentResults experimentResults = experimentsAPIImpl.getResults(experiment);
 
             mockhttpServer.validate();
 
-            assertEquals(1, experimentResult.getTotalSessions());
+            assertEquals(1, experimentResults.getTotalSessions());
 
-            for (VariantResult variantResult : experimentResult.getGoalResults().get(0).getVariants().values()) {
+            for (VariantResult variantResult : experimentResults.getGoalResults().get(0).getVariants().values()) {
                 if (variantResult.getVariantName().equals(variantName)) {
 
                     Assert.assertEquals(0, variantResult.totalUniqueBySession());
@@ -1182,7 +1197,7 @@ public class ExperimentAPIImpIT {
     }
 
     /**
-     * Method to test: {@link ExperimentsAPIImpl#getResult(Experiment)}
+     * Method to test: {@link ExperimentsAPIImpl#getResults(Experiment)}
      * When: Try to get the result from a not starting {@link Experiment}
      * Should: Throw a {@link IllegalArgumentException}
      */
@@ -1199,11 +1214,11 @@ public class ExperimentAPIImpIT {
                 .page(experimentPage)
                 .addVariant("description")
                 .nextPersisted();
-        APILocator.getExperimentsAPI().getResult(experiment);
+        APILocator.getExperimentsAPI().getResults(experiment);
     }
 
     /**
-     * Method to test: {@link ExperimentsAPIImpl#getResult(Experiment)}
+     * Method to test: {@link ExperimentsAPIImpl#getResults(Experiment)}
      * When: Try to get the result from a not saved {@link Experiment}
      * Should: Throw a {@link IllegalArgumentException}
      */
@@ -1220,7 +1235,7 @@ public class ExperimentAPIImpIT {
                 .page(experimentPage)
                 .addVariant("description")
                 .next();
-        APILocator.getExperimentsAPI().getResult(experiment);
+        APILocator.getExperimentsAPI().getResults(experiment);
     }
 
     /**

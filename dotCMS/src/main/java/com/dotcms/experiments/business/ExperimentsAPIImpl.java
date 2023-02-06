@@ -28,8 +28,8 @@ import com.dotcms.enterprise.rules.RulesAPI;
 import com.dotcms.experiments.business.result.BrowserSession;
 import com.dotcms.experiments.business.result.Event;
 import com.dotcms.experiments.business.result.ExperimentAnalyzerUtil;
-import com.dotcms.experiments.business.result.ExperimentResult;
-import com.dotcms.experiments.business.result.ExperimentResultQueryFactory;
+import com.dotcms.experiments.business.result.ExperimentResults;
+import com.dotcms.experiments.business.result.ExperimentResultsQueryFactory;
 import com.dotcms.exception.NotAllowedException;
 import com.dotcms.experiments.model.AbstractExperiment.Status;
 import com.dotcms.experiments.model.AbstractTrafficProportion.Type;
@@ -766,7 +766,7 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
      * @return
      */
     @Override
-    public ExperimentResult getResult(final Experiment experiment)
+    public ExperimentResults getResults(final Experiment experiment)
             throws DotDataException, DotSecurityException {
 
         final String experimentId = experiment.id().orElseThrow(
@@ -793,7 +793,7 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
             final CubeJSClient cubeClient = new CubeJSClient(
                     analyticsApp.getAnalyticsProperties().analyticsReadUrl());
 
-            final CubeJSQuery cubeJSQuery = ExperimentResultQueryFactory.INSTANCE
+            final CubeJSQuery cubeJSQuery = ExperimentResultsQueryFactory.INSTANCE
                     .create(experiment);
 
             final CubeJSResultSet cubeJSResultSet = cubeClient.send(cubeJSQuery);
