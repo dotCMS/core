@@ -1,7 +1,8 @@
 package com.dotcms.experiments.business;
 
 import com.dotcms.business.WrapInTransaction;
-import com.dotcms.experiments.model.AbstractExperiment;
+import com.dotcms.experiments.business.result.BrowserSession;
+import com.dotcms.experiments.business.result.ExperimentResult;
 import com.dotcms.experiments.model.AbstractExperiment.Status;
 import com.dotcms.experiments.model.Experiment;
 import com.dotcms.experiments.model.Scheduling;
@@ -153,6 +154,21 @@ public interface ExperimentsAPI {
     boolean isAnyExperimentRunning() throws DotDataException;
 
     /**
+     * Return the Experiment partial or total result.
+     *
+     * @param experiment
+     * @return
+     */
+    ExperimentResult getResult(final Experiment experiment);
+
+    /**
+     * Return a list of the Events into an Experiment group by {@link BrowserSession}
+     * @param experiment
+     * @return
+     */
+    List<BrowserSession> getEvents(final Experiment experiment);
+
+    /*
      * Ends finalized {@link com.dotcms.experiments.model.Experiment}s
      * <p>
      *     A finalized Experiment is an Experiment that is in the {@link com.dotcms.experiments.model.Experiment.Status#RUNNING}
