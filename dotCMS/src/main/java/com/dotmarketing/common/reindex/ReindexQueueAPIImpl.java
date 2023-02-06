@@ -88,6 +88,29 @@ public class ReindexQueueAPIImpl implements ReindexQueueAPI {
     public long recordsInQueue() throws DotDataException {
         return recordsInQueue(DbConnectionFactory.getConnection());
     }
+
+    @Override
+    public boolean waitForEmptyQueue(int maxWaitSeconds) throws DotDataException {
+        // Uses Busy Waiting with polling of DB every second to check if there are records in the queue
+        // This should be replaced with a more efficient solution that uses a notification mechanism
+        // but that would require a more complex implementation and this is required for some tests currently
+        try {
+            long recordsInQueue = recordsInQueue();
+            while (recordsInQueue > 0) {
+                Logger.info(this, "Waiting for queue to be empty. Records in queue: " + recordsInQueue);
+                if (maxWaitSeconds <= 0) {
+                    return false;
+                }
+                Thread.sleep(1000);
+                maxWaitSeconds--;
+                recordsInQueue = recordsInQueue();
+            }
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt(); // restore interrupted status
+            Logger.error(this, e.getMessage(), e);
+        }
+        return true;
+    }
     
     @Override
     @CloseDBIfOpened

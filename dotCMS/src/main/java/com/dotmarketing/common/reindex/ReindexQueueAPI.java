@@ -78,6 +78,15 @@ public interface ReindexQueueAPI {
     public boolean areRecordsLeftToIndex() throws DotDataException;
 
     /**
+     * Wait for the queue to be empty for the local server
+     *
+     * @param maxWaitSeconds - max number of seconds to wait for the queue to be empty
+     * @return true if the queue is empty, false if the maxWaitSeconds was reached
+     * @throws DotDataException
+     */
+    public boolean waitForEmptyQueue(int maxWaitSeconds) throws DotDataException;
+
+    /**
      * @return the serverId
      */
     default String getServerId() {

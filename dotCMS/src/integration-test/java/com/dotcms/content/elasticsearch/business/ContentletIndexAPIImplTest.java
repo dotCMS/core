@@ -56,6 +56,7 @@ import com.dotmarketing.portlets.structure.factories.StructureFactory;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.sitesearch.business.SiteSearchAPI;
+import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.ThreadUtils;
 import com.dotmarketing.util.UUIDGenerator;
@@ -849,7 +850,9 @@ public class ContentletIndexAPIImplTest extends IntegrationTestBase {
     indexAPI.removeContentFromIndex(content);
     ReindexThread.startThread();
     APILocator.getReindexQueueAPI().addContentletReindex(content);
-    ThreadUtils.sleep(10000);
+    int waitTime=60;
+    boolean  queueEmpty = APILocator.getReindexQueueAPI().waitForEmptyQueue(waitTime);
+    assertTrue("Index queue not empty after "+waitTime,queueEmpty);
     liveSearch = contentletAPI.searchIndex("+identifier:" + content.getIdentifier() + " +live:true", 1, 0, "modDate", user, false);
     workingSearch = contentletAPI.searchIndex("+identifier:" + content.getIdentifier() + " +live:false", 1, 0, "modDate", user, false);
     assert(liveSearch.size()>0);
