@@ -42,7 +42,7 @@ public class InstanceCommandTest extends CommandTest {
      */
     @Test
     @Order(1)
-    public void Test_Command_Instance_No_Params_Expect_Usage_Print() {
+    void Test_Command_Instance_No_Params_Expect_Usage_Print() {
         final CommandLine commandLine = factory.create();
         final StringWriter writer = new StringWriter();
         try (PrintWriter out = new PrintWriter(writer)) {
@@ -61,7 +61,7 @@ public class InstanceCommandTest extends CommandTest {
      */
     @Test
     @Order(2)
-    public void Test_Command_Instance_Pass_Only_List_Param() {
+    void Test_Command_Instance_Pass_Only_List_Param() {
         final String[] options = {"-ls", "--list"};
         for (final String option : options) {
             final CommandLine commandLine = factory.create();
@@ -85,7 +85,7 @@ public class InstanceCommandTest extends CommandTest {
      */
     @Test
     @Order(3)
-    public void Test_Command_Instance_Pass_Activate_Param_No_Profile() {
+    void Test_Command_Instance_Pass_Activate_Param_No_Profile() {
         final String[] options = {"-a", "--activate"};
         for (final String option : options) {
             final CommandLine commandLine = factory.create();
@@ -106,7 +106,7 @@ public class InstanceCommandTest extends CommandTest {
      */
     @Test
     @Order(4)
-    public void Test_Command_Instance_Pass_Activate_Param_Include_Invalid_Instance() {
+    void Test_Command_Instance_Pass_Activate_Param_Include_Invalid_Instance() {
         final String instance = "lol";
         final String[] options = {"-a", "--activate"};
         for (final String option : options) {
@@ -132,7 +132,7 @@ public class InstanceCommandTest extends CommandTest {
      */
     @Test
     @Order(5)
-    public void Test_Command_Instance_Pass_Activate_Param_Include_Valid_Instance()
+    void Test_Command_Instance_Pass_Activate_Param_Include_Valid_Instance()
             throws IOException {
 
         final Optional<ServiceBean> active = serviceManager.selected();
