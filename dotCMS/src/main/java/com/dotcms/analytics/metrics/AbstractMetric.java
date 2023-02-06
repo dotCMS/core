@@ -29,6 +29,12 @@ public interface AbstractMetric extends Serializable {
     List<Condition> conditions();
 
 
+    /**
+     * Return true if all the {@link Condition} are valid for a specific {@link Event}
+     *
+     * @param event
+     * @return
+     */
     default boolean validateConditions(final Event event) {
 
         boolean isValid = true;
