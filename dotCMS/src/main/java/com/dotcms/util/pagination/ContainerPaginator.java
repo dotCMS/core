@@ -32,7 +32,7 @@ public class ContainerPaginator implements PaginatorOrdered<ContainerView> {
     public static final String HOST_PARAMETER_ID = "host";
     public static final String SYSTEM_PARAMETER_NAME = "system";
     public static final String ARCHIVE_PARAMETER_NAME = "archive";
-    public static final String CONTENT_TYPE_ID_OR_VAR_PARAMETER_NAME = "content_type_id_or_var";
+    public static final String CONTENT_TYPE = "content_type";
 
     private final ContainerAPI containerAPI;
     private final HostWebAPI hostWebAPI;
@@ -61,7 +61,7 @@ public class ContainerPaginator implements PaginatorOrdered<ContainerView> {
             siteId = (String) extraParams.get(HOST_PARAMETER_ID);
             showSystemContainer = Boolean.valueOf(String.valueOf(extraParams.get(SYSTEM_PARAMETER_NAME)));
             showArchiveContainer = Boolean.valueOf(String.valueOf(extraParams.get(ARCHIVE_PARAMETER_NAME)));
-            contentTypeIdOrVar = String.valueOf(extraParams.get(CONTENT_TYPE_ID_OR_VAR_PARAMETER_NAME));
+            contentTypeIdOrVar = String.valueOf(extraParams.get(CONTENT_TYPE));
         }
 
         final Map<String, Object> params = map("title", filter);
@@ -125,34 +125,39 @@ public class ContainerPaginator implements PaginatorOrdered<ContainerView> {
 
         final List<Container> fileContainers = new ArrayList<>();
         final List<Container> dbContainers   = new ArrayList<>();
+        final List<Container> systemContainers   = new ArrayList<>();
 
         for (final Container container : allContainers) {
 
             if (container.getSource() == Source.DB) {
-
-                dbContainers.add  (container);
+                if(container.getInode().equals(Container.SYSTEM_CONTAINER) && container.getIdentifier().equals(Container.SYSTEM_CONTAINER)){
+                    systemContainers.add(container);
+                }
+                else {
+                    dbContainers.add(container);
+                }
             } else {
                 fileContainers.add(container);
             }
         }
 
         if (direction == OrderDirection.ASC) {
-
-            dbContainers.stream().sorted   (Comparator.comparing(this::hostname));
-            fileContainers.stream().sorted (Comparator.comparing(this::hostname));
+            systemContainers.stream().sorted(Comparator.comparing(this::hostname));
+            dbContainers.stream().sorted(Comparator.comparing(this::hostname));
+            fileContainers.stream().sorted(Comparator.comparing(this::hostname));
         } else {
-
-            dbContainers.stream().sorted   (Comparator.comparing(this::hostname).reversed());
-            fileContainers.stream().sorted (Comparator.comparing(this::hostname).reversed());
+            systemContainers.stream().sorted(Comparator.comparing(this::hostname).reversed());
+            dbContainers.stream().sorted(Comparator.comparing(this::hostname).reversed());
+            fileContainers.stream().sorted(Comparator.comparing(this::hostname).reversed());
         }
-
 
         final PaginatedArrayList<Container> sortedByHostContainers = new PaginatedArrayList<>();
         sortedByHostContainers.setQuery(allContainers.getQuery());
         sortedByHostContainers.setTotalResults(allContainers.getTotalResults());
 
-        sortedByHostContainers.addAll(fileContainers);
+        sortedByHostContainers.addAll(systemContainers);
         sortedByHostContainers.addAll(dbContainers);
+        sortedByHostContainers.addAll(fileContainers);
         return sortedByHostContainers;
     }
 

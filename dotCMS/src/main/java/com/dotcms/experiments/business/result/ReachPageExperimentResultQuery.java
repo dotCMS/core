@@ -29,7 +29,7 @@ import com.dotcms.experiments.model.Experiment;
  *
  * This Query is merged with the static part create in {@link ExperimentResultsQueryFactory}
  *
- * @see ExperimentResultsQueryFactory
+ * @see ExperimentResultQueryFactory
  * @see MetricExperimentResultQuery
  */
 public class ReachPageExperimentResultQuery implements  MetricExperimentResultQuery {

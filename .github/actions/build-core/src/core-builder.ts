@@ -21,7 +21,7 @@ const COMMANDS: Commands = {
   gradle: [
     {
       cmd: gradleCmd,
-      args: ['createDistPrep'],
+      args: ['createDistPrep', '--stacktrace'],
       workingDir: dotCmsRoot
     }
   ],

@@ -4,6 +4,9 @@ import static com.dotcms.util.CollectionsUtils.map;
 
 import com.dotcms.analytics.metrics.Metric;
 import com.dotcms.analytics.metrics.MetricType;
+
+import com.dotcms.cube.CubeJSResultSet;
+
 import com.dotcms.experiments.model.Experiment;
 import com.dotcms.experiments.model.ExperimentVariant;
 import com.dotcms.experiments.model.Goals;
@@ -17,10 +20,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.SortedSet;
 
+import java.util.stream.Collectors;
+
+
 /**
  * Analyze the {@link Event} into an {@link Experiment} to realize when the {@link com.dotcms.experiments.model.Goals}
  * was success into the {@link Experiment}, to put it in another way analyze a set of  {@link BrowserSession}
- * to retur the {@link ExperimentResults}.
+ * to return the {@link ExperimentResult}.
  *
  */
 public enum ExperimentAnalyzerUtil {
@@ -46,6 +52,7 @@ public enum ExperimentAnalyzerUtil {
      * @return
      */
     public ExperimentResults getExperimentResult(final Experiment experiment,
+
             final List<BrowserSession> browserSessions)  {
         final Goals goals = experiment.goals()
                 .orElseThrow(() -> new IllegalArgumentException("The Experiment must have a Goal"));
@@ -55,6 +62,7 @@ public enum ExperimentAnalyzerUtil {
                 .get(goalMetricType);
 
         final  ExperimentResults.Builder builder = new ExperimentResults.Builder();
+
 
         final SortedSet<ExperimentVariant> variants = experiment.trafficProportion().variants();
         builder.addVariants(variants);

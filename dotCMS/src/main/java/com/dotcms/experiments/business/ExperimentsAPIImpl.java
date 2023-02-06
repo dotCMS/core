@@ -13,6 +13,7 @@ import static com.dotcms.variant.VariantAPI.DEFAULT_VARIANT;
 
 import com.dotcms.analytics.app.AnalyticsApp;
 import com.dotcms.analytics.helper.AnalyticsHelper;
+
 import com.dotcms.analytics.metrics.AbstractCondition.Operator;
 import com.dotcms.analytics.metrics.EventType;
 import com.dotcms.analytics.metrics.Metric;
@@ -30,6 +31,8 @@ import com.dotcms.experiments.business.result.Event;
 import com.dotcms.experiments.business.result.ExperimentAnalyzerUtil;
 import com.dotcms.experiments.business.result.ExperimentResults;
 import com.dotcms.experiments.business.result.ExperimentResultsQueryFactory;
+import com.dotcms.experiments.business.result.ExperimentResult;
+import com.dotcms.experiments.business.result.ExperimentResultQueryFactory;
 import com.dotcms.exception.NotAllowedException;
 import com.dotcms.experiments.model.AbstractExperiment.Status;
 import com.dotcms.experiments.model.AbstractTrafficProportion.Type;
@@ -39,8 +42,12 @@ import com.dotcms.experiments.model.ExperimentVariant;
 import com.dotcms.experiments.model.Goals;
 import com.dotcms.experiments.model.Scheduling;
 import com.dotcms.experiments.model.TargetingCondition;
+
 import com.dotcms.experiments.model.TrafficProportion;
+
+
 import com.dotcms.rest.exception.NotFoundException;
+import com.dotcms.util.CollectionsUtils;
 import com.dotcms.util.DotPreconditions;
 import com.dotcms.util.LicenseValiditySupplier;
 import com.dotcms.uuid.shorty.ShortyIdAPI;
@@ -173,6 +180,9 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
 
         factory.save(experimentToSave);
 
+        Logger.info(this, "Saving experiment with id: " + experimentToSave.id().get() + ", and status:"
+        + experimentToSave.status());
+
         DotPreconditions.isTrue(experimentToSave.id().isPresent(), "Experiment doesn't have Id");
 
         Optional<Experiment> savedExperiment = find(experimentToSave.id().get(), user);
@@ -183,6 +193,14 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
                 -> variant.description().equals(ORIGINAL_VARIANT)))) {
             savedExperiment = Optional.of(addVariant(savedExperiment.get().id().get(),
                     ORIGINAL_VARIANT, user));
+        }
+
+        if(savedExperiment.get().scheduling().isEmpty()) {
+            final Scheduling scheduling = startNowScheduling(savedExperiment.get());
+            savedExperiment = Optional.of(savedExperiment.get().withScheduling(scheduling));
+        } else if(experiment.status()!=ENDED) {
+            Scheduling scheduling = validateScheduling(savedExperiment.get().scheduling().get());
+            savedExperiment = Optional.of(savedExperiment.get().withScheduling(scheduling));
         }
 
         return savedExperiment.get();
@@ -779,6 +797,7 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
         DotPreconditions.isTrue(experimentFromDataBase.status() == RUNNING,
                 "The Experiment must be RUNNING");
 
+
         final List<BrowserSession> events = getEvents(experiment);
         return ExperimentAnalyzerUtil.INSTANCE.getExperimentResult(experiment, events);
     }
@@ -833,7 +852,29 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
         }
     }
 
+    @Override
+    public void endFinalizedExperiments(final User user) throws DotDataException {
+        final List<Experiment> finalizedExperiments = getRunningExperiments().stream()
+                .filter((experiment -> experiment.scheduling().orElseThrow().endDate().orElseThrow()
+                        .isBefore(Instant.now()))).collect(Collectors.toList());
 
+        finalizedExperiments.forEach((experiment ->
+                Try.of(()->end(experiment.id().orElseThrow(), user)).getOrElseThrow((e)->
+                        new DotStateException("Unable to end Experiment. Cause:" + e))));
+    }
+
+    @Override
+    public void startScheduledToStartExperiments(final User user) throws DotDataException {
+        final List<Experiment> scheduledToStartExperiments = list(ExperimentFilter.builder()
+                .statuses(CollectionsUtils.set(DRAFT)).build(), user).stream()
+                .filter((experiment -> experiment.scheduling().isPresent() && experiment.scheduling().get().startDate().orElseThrow()
+                        .isAfter(Instant.now()))).collect(Collectors.toList());
+
+        scheduledToStartExperiments.forEach((experiment ->
+                Try.of(()->start(experiment.id().orElseThrow(), user)).getOrElseThrow((e)->
+                        new DotStateException("Unable to start Experiment. Cause:" + e))));
+    }
+    
     private TreeSet<ExperimentVariant> redistributeWeights(final Set<ExperimentVariant> variants) {
 
         final int count = variants.size();
@@ -889,7 +930,7 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
 
     public Scheduling validateScheduling(final Scheduling scheduling) {
         Scheduling toReturn = scheduling;
-        final Instant NOW = Instant.now();
+        final Instant NOW = Instant.now().minus(1, ChronoUnit.MINUTES);
 
         if(scheduling.startDate().isPresent() && scheduling.endDate().isEmpty()) {
             DotPreconditions.checkState(scheduling.startDate().get().isAfter(NOW),
