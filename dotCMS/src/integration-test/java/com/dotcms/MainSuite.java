@@ -8,12 +8,14 @@ import com.dotcms.cache.lettuce.LettuceCacheTest;
 import com.dotcms.cache.lettuce.RedisClientTest;
 import com.dotcms.content.business.ObjectMapperTest;
 import com.dotcms.content.business.json.ContentletJsonAPITest;
+import com.dotcms.content.elasticsearch.business.ESContentletAPIImplTest;
 import com.dotcms.content.elasticsearch.business.ESIndexAPITest;
 import com.dotcms.content.elasticsearch.business.ElasticsearchUtilTest;
 import com.dotcms.content.elasticsearch.util.ESMappingUtilHelperTest;
 import com.dotcms.content.model.hydration.MetadataDelegateTest;
 import com.dotcms.contenttype.business.ContentTypeInitializerTest;
 import com.dotcms.contenttype.business.DotAssetBaseTypeToContentTypeStrategyImplTest;
+import com.dotcms.contenttype.business.SiteAndFolderResolverImplTest;
 import com.dotcms.contenttype.business.StoryBlockAPITest;
 import com.dotcms.contenttype.test.DotAssetAPITest;
 import com.dotcms.csspreproc.CSSCacheTest;
@@ -23,13 +25,16 @@ import com.dotcms.dotpubsub.RedisPubSubImplTest;
 import com.dotcms.ema.EMAWebInterceptorTest;
 import com.dotcms.enterprise.cluster.ClusterFactoryTest;
 import com.dotcms.enterprise.publishing.bundler.URLMapBundlerTest;
+import com.dotcms.enterprise.publishing.remote.PushPublishBundleGeneratorTest;
 import com.dotcms.enterprise.publishing.remote.StaticPushPublishBundleGeneratorTest;
 import com.dotcms.enterprise.publishing.remote.bundler.ContainerBundlerTest;
 import com.dotcms.enterprise.publishing.remote.bundler.ContentBundlerTest;
 import com.dotcms.enterprise.publishing.remote.bundler.ContentTypeBundlerTest;
+import com.dotcms.enterprise.publishing.remote.bundler.DependencyBundlerTest;
 import com.dotcms.enterprise.publishing.remote.bundler.FolderBundlerTest;
 import com.dotcms.enterprise.publishing.remote.bundler.HostBundlerTest;
 import com.dotcms.enterprise.publishing.remote.bundler.LinkBundlerTest;
+import com.dotcms.enterprise.publishing.remote.bundler.RuleBundlerTest;
 import com.dotcms.enterprise.publishing.remote.bundler.TemplateBundlerTest;
 import com.dotcms.enterprise.publishing.remote.bundler.WorkflowBundlerTest;
 import com.dotcms.enterprise.publishing.remote.handler.ContentHandlerTest;
@@ -37,7 +42,12 @@ import com.dotcms.enterprise.publishing.remote.handler.ContentWorkflowHandlerTes
 import com.dotcms.enterprise.publishing.remote.handler.HandlerUtilTest;
 import com.dotcms.enterprise.publishing.staticpublishing.AWSS3PublisherTest;
 import com.dotcms.enterprise.publishing.staticpublishing.LanguageFolderTest;
+import com.dotcms.enterprise.publishing.staticpublishing.StaticPublisherIntegrationTest;
+import com.dotcms.enterprise.rules.RulesAPIImplIntegrationTest;
+import com.dotcms.experiments.business.ExperimentAPIImpIT;
+import com.dotcms.experiments.business.web.ExperimentWebAPIImplIT;
 import com.dotcms.filters.interceptor.meta.MetaWebInterceptorTest;
+import com.dotcms.graphql.DotGraphQLHttpServletTest;
 import com.dotcms.integritycheckers.HostIntegrityCheckerTest;
 import com.dotcms.integritycheckers.IntegrityUtilTest;
 import com.dotcms.junit.MainBaseSuite;
@@ -46,11 +56,14 @@ import com.dotcms.mock.request.CachedParameterDecoratorTest;
 import com.dotcms.publisher.bundle.business.BundleAPITest;
 import com.dotcms.publisher.bundle.business.BundleFactoryTest;
 import com.dotcms.publisher.business.PublishAuditAPITest;
+import com.dotcms.publisher.business.PublishQueueElementTransformerTest;
 import com.dotcms.publisher.receiver.BundlePublisherTest;
 import com.dotcms.publisher.util.DependencyManagerTest;
+import com.dotcms.publisher.util.DependencyModDateUtilTest;
 import com.dotcms.publishing.BundlerUtilTest;
 import com.dotcms.publishing.PublisherFilterImplTest;
 import com.dotcms.publishing.PushPublishFiltersInitializerTest;
+import com.dotcms.publishing.job.SiteSearchJobImplTest;
 import com.dotcms.publishing.manifest.CSVManifestBuilderTest;
 import com.dotcms.publishing.manifest.CSVManifestReaderTest;
 import com.dotcms.publishing.manifest.ManifestReaderFactoryTest;
@@ -62,6 +75,7 @@ import com.dotcms.rendering.velocity.viewtools.FileToolTest;
 import com.dotcms.rendering.velocity.viewtools.JSONToolTest;
 import com.dotcms.rendering.velocity.viewtools.MessageToolTest;
 import com.dotcms.rendering.velocity.viewtools.XmlToolTest;
+import com.dotcms.rendering.velocity.viewtools.XsltToolTest;
 import com.dotcms.rendering.velocity.viewtools.content.StoryBlockMapTest;
 import com.dotcms.rendering.velocity.viewtools.content.StoryBlockTest;
 import com.dotcms.rest.BundlePublisherResourceIntegrationTest;
@@ -88,6 +102,7 @@ import com.dotcms.storage.FileMetadataAPITest;
 import com.dotcms.storage.StoragePersistenceAPITest;
 import com.dotcms.storage.repository.HashedLocalFileRepositoryManagerTest;
 import com.dotcms.translate.GoogleTranslationServiceIntegrationTest;
+import com.dotcms.uuid.shorty.LegacyShortyIdApiTest;
 import com.dotcms.variant.VariantAPITest;
 import com.dotcms.variant.VariantFactoryTest;
 import com.dotcms.variant.business.VariantCacheTest;
@@ -97,6 +112,7 @@ import com.dotmarketing.business.IdentifierCacheImplTest;
 import com.dotmarketing.business.PermissionBitFactoryImplTest;
 import com.dotmarketing.business.VersionableFactoryImplTest;
 import com.dotmarketing.business.helper.PermissionHelperTest;
+import com.dotmarketing.cache.FolderCacheImplIntegrationTest;
 import com.dotmarketing.common.db.DBTimeZoneCheckTest;
 import com.dotmarketing.filters.AutoLoginFilterTest;
 import com.dotmarketing.image.filter.ImageFilterAPIImplTest;
@@ -106,7 +122,9 @@ import com.dotmarketing.portlets.browser.BrowserUtilTest;
 import com.dotmarketing.portlets.categories.business.CategoryFactoryTest;
 import com.dotmarketing.portlets.cmsmaintenance.factories.CMSMaintenanceFactoryTest;
 import com.dotmarketing.portlets.containers.business.ContainerFactoryImplTest;
+import com.dotmarketing.portlets.containers.business.ContainerStructureFinderStrategyResolverTest;
 import com.dotmarketing.portlets.contentlet.business.ContentletCacheImplTest;
+import com.dotmarketing.portlets.contentlet.business.web.ContentletWebAPIImplIntegrationTest;
 import com.dotmarketing.portlets.contentlet.model.ContentletDependenciesTest;
 import com.dotmarketing.portlets.contentlet.model.IntegrationResourceLinkTest;
 import com.dotmarketing.portlets.fileassets.business.FileAssetAPIImplIntegrationTest;
@@ -141,7 +159,6 @@ import com.dotmarketing.portlets.workflows.util.WorkflowEmailUtilTest;
 import com.dotmarketing.quartz.DotStatefulJobTest;
 import com.dotmarketing.quartz.job.CleanUpFieldReferencesJobTest;
 import com.dotmarketing.quartz.job.IntegrityDataGenerationJobTest;
-import com.dotmarketing.quartz.job.StartEndScheduledExperimentsJobTest;
 import com.dotmarketing.startup.StartupTasksExecutorTest;
 import com.dotmarketing.startup.runalways.Task00050LoadAppsSecretsTest;
 import com.dotmarketing.startup.runonce.Task05195CreatesDestroyActionAndAssignDestroyDefaultActionsToTheSystemWorkflowTest;
@@ -184,10 +201,12 @@ import com.dotmarketing.startup.runonce.Task220512UpdateNoHTMLRegexValueTest;
 import com.dotmarketing.startup.runonce.Task220606UpdatePushNowActionletNameTest;
 import com.dotmarketing.startup.runonce.Task220822CreateVariantTableTest;
 import com.dotmarketing.startup.runonce.Task220824CreateDefaultVariantTest;
+import com.dotmarketing.startup.runonce.Task220825CreateVariantFieldTest;
 import com.dotmarketing.startup.runonce.Task220825MakeSomeSystemFieldsRemovableTest;
 import com.dotmarketing.startup.runonce.Task220829CreateExperimentsTableTest;
 import com.dotmarketing.startup.runonce.Task220912UpdateCorrectShowOnMenuPropertyTest;
 import com.dotmarketing.startup.runonce.Task220928AddLookbackWindowColumnToExperimentTest;
+import com.dotmarketing.startup.runonce.Task221007AddVariantIntoPrimaryKeyTest;
 import com.dotmarketing.startup.runonce.Task230110MakeSomeSystemFieldsRemovableByBaseTypeTest;
 import com.dotmarketing.util.ConfigTest;
 import com.dotmarketing.util.HashBuilderTest;
@@ -207,21 +226,14 @@ import org.junit.runners.Suite.SuiteClasses;
 
 @RunWith(MainBaseSuite.class)
 @SuiteClasses({
-         /*
-        StartEndScheduledExperimentsJobTest.class,
-
         RulesAPIImplIntegrationTest.class,
         Task220825CreateVariantFieldTest.class,
-        */
 //        AnalyticsAPIImplTest.class,
-        /*
         Task221007AddVariantIntoPrimaryKeyTest.class,
         ESContentletAPIImplTest.class,
         ExperimentAPIImpIT.class,
         ExperimentWebAPIImplIT.class,
-        */
 //        AccessTokenRenewJobTest.class,
-        /*
         ContentletWebAPIImplIntegrationTest.class, // moved to top because of failures on GHA
         DependencyBundlerTest.class, // moved to top because of failures on GHA
         SiteAndFolderResolverImplTest.class, //Moved up to avoid conflicts with CT deletion
@@ -414,8 +426,7 @@ import org.junit.runners.Suite.SuiteClasses;
         com.dotmarketing.common.reindex.ReindexAPITest.class,
         com.dotmarketing.common.db.DotDatabaseMetaDataTest.class,
         com.dotmarketing.common.db.ParamsSetterTest.class,
-        com.dotmarketing.cms.urlmap.URLMapAPIImplTest.class
-        ,*/
+        com.dotmarketing.cms.urlmap.URLMapAPIImplTest.class,
         com.dotmarketing.factories.PublishFactoryTest.class,
         com.dotmarketing.factories.WebAssetFactoryTest.class,
         com.dotmarketing.factories.MultiTreeAPITest.class,
@@ -444,7 +455,7 @@ import org.junit.runners.Suite.SuiteClasses;
         Task05210CreateDefaultDotAssetTest.class,
         CleanUpFieldReferencesJobTest.class,
         CachedParameterDecoratorTest.class,
-        //ContainerFactoryImplTest.class,  test remove looks like creating new default host
+        ContainerFactoryImplTest.class,
         TemplateFactoryImplTest.class,
         TestConfig.class,
         ConfigTest.class,
