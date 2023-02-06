@@ -1,5 +1,6 @@
 package com.dotmarketing.util;
 
+import com.dotcms.exception.ExceptionUtil;
 import com.google.common.collect.ImmutableList;
 import java.io.File;
 import java.io.IOException;
@@ -9,9 +10,12 @@ import java.lang.reflect.Array;
 import java.net.URL;
 import java.nio.file.Files;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.NoSuchElementException;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 import org.apache.commons.configuration.Configuration;
 import org.apache.commons.configuration.PropertiesConfiguration;
@@ -45,6 +49,8 @@ public class Config {
 	public static final String RENDITION_FILE ="dotRendition_";
 	public static final AtomicBoolean useWatcherMode = new AtomicBoolean(true);
 	public static final AtomicBoolean isWatching     = new AtomicBoolean(false);
+
+	public static final Map<String,String> testOverrideTracker = new ConcurrentHashMap<>();
 
 
 	/**
@@ -554,10 +560,36 @@ public class Config {
 	 */
 	public static void setProperty(String key, Object value) {
 		if(props!=null) {
-			Logger.info(Config.class, "Setting property: " + key + " = " + value);
+			if (value==null){
+				Logger.warn(Config.class, "Setting null: for property: " + key + ExceptionUtil.getCurrentStackTraceAsString());
+			}
+			if(value == null) {
+				testOverrideTracker.remove(key);
+				return;
+			} else {
+				testOverrideTracker.put(key, value.toString());
+			}
+			Logger.info(Config.class, "Setting property: " + key + " to " + value);
 			props.setProperty(key, value);
 		}
 	}
+
+	public static Map<String,String> getOverrides() {
+		return Map.copyOf(testOverrideTracker);
+	}
+
+	public static Map<String,String> compareOverrides(Map<String,String> before) {
+		Map<String,String> after = getOverrides();
+		Map<String,String> diff = new HashMap<String,String>();
+		for(String key : after.keySet()) {
+			if(!before.containsKey(key) || !before.get(key).equals(after.get(key))) {
+				diff.put(key, after.get(key));
+			}
+		}
+		return diff;
+	}
+
+
 
 	/**
 	 * 
