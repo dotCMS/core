@@ -50,12 +50,12 @@
             padding: 0;
 
             &:focus {
-                background-color: $brand-primary-100-hover;
+                background-color: $color-primary-100;
             }
         }
 
         .p-highlight {
-            background-color: $brand-primary-100-hover;
+            background-color: $color-primary-100;
         }
     }
 }

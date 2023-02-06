@@ -26,10 +26,10 @@ $nav-size: 80px;
     }
 
     &.edit-page-variant-mode {
-        background-color: $brand-primary-100;
+        background-color: $color-primary-300;
 
         a:hover {
-            background-color: $brand-primary-100-hover;
+            background-color: $color-primary-100;
         }
     }
 }

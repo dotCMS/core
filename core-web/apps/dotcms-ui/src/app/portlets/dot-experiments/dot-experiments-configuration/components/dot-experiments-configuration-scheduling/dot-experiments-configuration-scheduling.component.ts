@@ -9,7 +9,12 @@ import { ConfirmPopupModule } from 'primeng/confirmpopup';
 
 import { tap } from 'rxjs/operators';
 
-import { ExperimentSteps, RangeOfDateAndTime, Status, StepStatus } from '@dotcms/dotcms-models';
+import {
+    ComponentStatus,
+    ExperimentSteps,
+    RangeOfDateAndTime,
+    StepStatus
+} from '@dotcms/dotcms-models';
 import { DotMessagePipeModule } from '@pipes/dot-message/dot-message-pipe.module';
 import { DotExperimentsConfigurationSchedulingAddComponent } from '@portlets/dot-experiments/dot-experiments-configuration/components/dot-experiments-configuration-scheduling-add/dot-experiments-configuration-scheduling-add.component';
 import { DotExperimentsConfigurationStore } from '@portlets/dot-experiments/dot-experiments-configuration/store/dot-experiments-configuration-store';
@@ -62,7 +67,7 @@ export class DotExperimentsConfigurationSchedulingComponent {
     }
 
     private loadSidebarComponent(status: StepStatus): void {
-        if (status && status.isOpen && status.status != Status.SAVING) {
+        if (status && status.isOpen && status.status != ComponentStatus.SAVING) {
             this.sidebarHost.viewContainerRef.clear();
             this.componentRef =
                 this.sidebarHost.viewContainerRef.createComponent<DotExperimentsConfigurationSchedulingAddComponent>(
