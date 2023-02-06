@@ -146,10 +146,7 @@ export class ContentTypeFieldsPropertiesFormComponent implements OnChanges, OnIn
     }
 
     private isPropertyDisabled(property: string): boolean {
-        return (
-            this.fieldPropertyService.isDisabledInEditMode(property) ||
-            (this.formFieldData.fixed && this.fieldPropertyService.isDisabledInFixed(property))
-        );
+        return this.fieldPropertyService.isDisabledInEditMode(property);
     }
 
     private sortProperties(properties: string[]): void {

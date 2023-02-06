@@ -638,7 +638,7 @@ public class HTMLPageAssetRenderedAPIImpl implements HTMLPageAssetRenderedAPI {
     @Nullable
     private static String getAnalyticsKey(Host host) {
         try {
-            final AnalyticsApp analyticsApp = AnalyticsHelper.appFromHost(host);
+            final AnalyticsApp analyticsApp = AnalyticsHelper.get().appFromHost(host);
             return analyticsApp.getAnalyticsProperties().analyticsKey();
         } catch (IllegalStateException e) {
             return StringPool.BLANK;

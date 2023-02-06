@@ -11,14 +11,6 @@ on:
       - '!docker/dotcms-compose-examples/**'
       - 'tools/**'
   push:
-    paths:
-      - '.cicd/**'
-      - '.github/**'
-      - 'cicd/**'
-      - 'docker/**'
-      - 'dotCMS/**'
-      - 'pom.xml'
-      - '!docker/dotcms-compose-examples/**'
     branches:
       - master
       - release-*
@@ -122,6 +114,7 @@ jobs:
           pull_request: ${{ github.event.number }}
           tests_results_status: ${{ steps.run-unit-tests.outputs.tests_results_status }}
           tests_results_report_location: ${{ steps.run-unit-tests.outputs.tests_results_report_location }}
+          tests_results_location: ${{ steps.run-unit-tests.outputs.tests_results_location }}
           cicd_github_token: ${{ secrets.CICD_GITHUB_TOKEN }}
         if: (success() || failure()) && steps.run-unit-tests.outputs.tests_results_skip_report != 'true'
 #      - id: publish-unit-tests
@@ -149,7 +142,7 @@ jobs:
           tests_report_url: ${{ steps.github-publish-unit-tests.outputs.test_logs_url }}
         if: (success() || failure()) && steps.github-publish-unit-tests.outputs.tests_report_url != ''
 
-  integration-tests-thread-setup-job:
+  integration-tests-setup-job:
     name: Integration tests matrix setup
     runs-on: ubuntu-latest
     needs: build-core-job
@@ -187,7 +180,7 @@ jobs:
   run-integration-tests-job:
     name: Run Integration Tests
     runs-on: ubuntu-latest
-    needs: [build-core-job, integration-tests-thread-setup-job]
+    needs: [build-core-job, integration-tests-setup-job]
     strategy:
       fail-fast: false
       matrix:
@@ -255,6 +248,7 @@ jobs:
           pull_request: ${{ github.event.number }}
           tests_results_status: ${{ steps.run-integration-tests.outputs.tests_results_status }}
           tests_results_report_location: ${{ steps.run-integration-tests.outputs.tests_results_report_location }}
+          tests_results_location: ${{ steps.run-integration-tests.outputs.tests_results_location }}
           cicd_github_token: ${{ secrets.CICD_GITHUB_TOKEN }}
         if: (success() || failure()) && steps.run-integration-tests.outputs.tests_results_skip_report != 'true'
 #      - id: publish-integration-tests
@@ -266,7 +260,7 @@ jobs:
 #          build_id: ${{ env.BUILD_ID }}
 #          testmo_token: ${{ secrets.TESTMO_TOKEN }}
 #          testmo_project_id: 1
-#          testmo_run_id: ${{ needs.integration-tests-thread-setup-job.outputs.testmo_run_id }}
+#          testmo_run_id: ${{ needs.integration-tests-setup-job.outputs.testmo_run_id }}
 #          test_type: integration
 #          tests_results_location: ${{ steps.run-integration-tests.outputs.tests_results_location }}/*.xml
 #          ci_index: ${{ steps.run-integration-tests.outputs.ci_index }}
@@ -287,9 +281,9 @@ jobs:
           tests_report_url: ${{ steps.github-publish-integration-tests.outputs.tests_report_url }}
         if: (success() || failure()) && steps.github-publish-integration-tests.outputs.tests_report_url != ''
   integration-tests-complete-job:
-    name: Integration tests publish complete setup
+    name: Integration tests complete
     runs-on: ubuntu-latest
-    needs: [integration-tests-thread-setup-job, run-integration-tests-job]
+    needs: [integration-tests-setup-job, run-integration-tests-job]
     if: (success() || failure()) && needs.run-integration-tests-job.outputs.tests_results_skip_report != 'true'
     steps:
       - id: fetch-core
@@ -309,11 +303,11 @@ jobs:
 #          github_sha: ${{ env.BUILD_HASH }}
 #          testmo_token: ${{ secrets.TESTMO_TOKEN }}
 #          testmo_project_id: 1
-#          testmo_run_id: ${{ needs.integration-tests-thread-setup-job.outputs.testmo_run_id }}
+#          testmo_run_id: ${{ needs.integration-tests-setup-job.outputs.testmo_run_id }}
 #          test_type: integration
 #          debug: true
 
-  postman-tests-thread-setup-job:
+  postman-tests-setup-job:
     name: Postman tests matrix setup
     runs-on: ubuntu-latest
     outputs:
@@ -365,7 +359,7 @@ jobs:
   run-postman-tests-job:
     name: Run Postman Tests
     runs-on: ubuntu-latest
-    needs: postman-tests-thread-setup-job
+    needs: postman-tests-setup-job
     if: success()
     outputs:
       tests_results_status: ${{ steps.run-postman-tests.outputs.tests_results_status }}
@@ -404,18 +398,11 @@ jobs:
         timeout-minutes: 80
         uses: ./.github/actions/run-postman-tests
         with:
-          built_image_name: ${{ needs.postman-tests-thread-setup-job.outputs.built_image_name }}
+          built_image_name: ${{ needs.postman-tests-setup-job.outputs.built_image_name }}
           license_key: ${{ secrets.DOTCMS_LICENSE }}
           tests: ${{ steps.get-commit-message.outputs.commit_message }}
           parallel_collection: ${{ matrix.parallel_collection }}
           export_report: ${{ env.PUBLISH_MODE == 'ALL' || env.PUBLISH_MODE == 'RESULTS' }}
-      - id: postman-tests-comment
-        name: Postman Test Comment
-        uses: EnricoMi/publish-unit-test-result-action@v1
-        with:
-          files: ${{ steps.run-postman-tests.outputs.tests_results_location }}/*.xml
-          check_name: 'Postman Tests Report'
-        if: (success() || failure()) && steps.run-postman-tests.outputs.tests_results_skip_report != 'true'
       - id: github-publish-postman-tests
         name: Github publish postman tests
         uses: ./.github/actions/publish-test-results
@@ -426,6 +413,7 @@ jobs:
           pull_request: ${{ github.event.number }}
           tests_results_status: ${{ steps.run-postman-tests.outputs.tests_results_status }}
           tests_results_report_location: ${{ steps.run-postman-tests.outputs.tests_results_report_location }}
+          tests_results_location: ${{ steps.run-postman-tests.outputs.tests_results_location }}
           cicd_github_token: ${{ secrets.CICD_GITHUB_TOKEN }}
           mode: ${{ env.PUBLISH_MODE }}
           run_identifier: ${{ steps.run-postman-tests.outputs.normalized_parallel_collection }}
@@ -444,9 +432,9 @@ jobs:
 #          debug: true
 #        if: (success() || failure()) && ${{ env.TESTMO_ENABLED }} == 'true' && steps.run-postman-tests.outputs.tests_results_skip_report != 'true'
   postman-tests-complete-job:
-    name: Postman tests publish complete setup
+    name: Postman tests complete
     runs-on: ubuntu-latest
-    needs: run-postman-tests-job
+    needs: [postman-tests-setup-job, run-postman-tests-job]
     if: (success() || failure()) && needs.run-postman-tests-job.outputs.tests_results_skip_report != 'true'
     steps:
       - id: fetch-core
@@ -455,6 +443,12 @@ jobs:
       - id: read-cicd-local-env
         name: Read CICD local library
         run: source ${GITHUB_WORKSPACE}/cicd/local-env.sh
+      - id: cleanup-package
+        name: Clean up CICD packages
+        uses: ./.github/actions/cleanup-gh-packages
+        with:
+          delete_version: ${{ needs.postman-tests-setup-job.outputs.built_image_name }}
+          access_token: ${{ secrets.GHCR_TOKEN }}
       - id: github-close-test-results
         name: Github close tests results
         uses: ./.github/actions/publish-test-results
@@ -464,7 +458,15 @@ jobs:
           test_type: postman
           partial: close
           pull_request: ${{ github.event.number }}
+          tests_results_location: ${{ github.workspace }}/dotCMS/build/test-results/postmanTest
           cicd_github_token: ${{ secrets.CICD_GITHUB_TOKEN }}
+      - id: postman-tests-comment
+        name: Postman Test Comment
+        uses: EnricoMi/publish-unit-test-result-action@v1
+        with:
+          files: ${{ steps.github-close-test-results.outputs.tests_results_location }}/*.xml
+          check_name: 'Postman Tests Report'
+        if: (success() || failure()) && steps.github-close-test-results.outputs.tests_report_url != ''
       - id: github-status
         name: Send Github Status
         uses: ./.github/actions/github-status
@@ -485,7 +487,7 @@ jobs:
 #          github_sha: ${{ env.BUILD_HASH }}
 #          testmo_token: ${{ secrets.TESTMO_TOKEN }}
 #          testmo_project_id: 1
-#          testmo_run_id: ${{ needs.postman-tests-thread-setup-job.outputs.testmo_run_id }}
+#          testmo_run_id: ${{ needs.postman-tests-setup-job.outputs.testmo_run_id }}
 #          test_type: integration
 #          debug: true
 

@@ -59,6 +59,21 @@ jobs:
           also_latest: false
           image_name: dotcms/dotcms
         if: env.jobRun == 'true'
+      - name: Format docker tags
+        id: format-docker-tags
+        run: |
+          tags=${{ steps.discover-docker-tags.outputs.discovered_tags }}
+          sep=
+          formatted=
+          for tag in ${tags//,/ }
+          do
+            formatted="$formatted$sep\`$tag\`"
+            [[ -z "$sep" ]] && sep=', '
+          done
+
+          echo "discovered_tags=${formatted}" >> $GITHUB_OUTPUT
+        env:
+        if: env.jobRun == 'true'
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v2.1.0
         with:
@@ -96,4 +111,4 @@ jobs:
           MSG_MINIMAL: true
           SLACK_FOOTER: ""
           SLACK_ICON: https://avatars.githubusercontent.com/u/1005263?s=200&v=4
-          SLACK_MESSAGE: "<!channel> This automated script is happy to announce that a new docker image has been built for *${{ env.DOTCMS_VERSION }}* with tag: ${{ steps.discover-docker-tags.outputs.discovered_tags }} :docker:"
+          SLACK_MESSAGE: "<!channel> This automated script is happy to announce that a new docker image has been built for *${{ env.DOTCMS_VERSION }}* with tag: ${{ steps.format-docker-tags.outputs.discovered_tags }} :docker:"

@@ -806,7 +806,7 @@
         <!-- END Right Column -->
 
         <!-- START Show Query -->
-        <div id="queryDiv" dojoType="dijit.Dialog" title="<%= LanguageUtil.get(pageContext, "Query) %></div>" class="content-search__show-query-dialog" style="display: none;padding-top:15px\9;">
+        <div id="queryDiv" dojoType="dijit.Dialog" title='<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Query" )) %>' class="content-search__show-query-dialog" style="display: none;padding-top:15px\9;">
             <div id="queryResults"></div>
         </div>
         <!-- END Show Query -->
