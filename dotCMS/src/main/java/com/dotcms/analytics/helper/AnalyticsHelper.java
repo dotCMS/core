@@ -37,11 +37,11 @@ public class AnalyticsHelper {
 
     private static Lazy<AnalyticsHelper> analyticsHelper = Lazy.of(() -> new AnalyticsHelper());
 
-    private AnalyticsHelper(){}
-
     public static AnalyticsHelper get(){
         return analyticsHelper.get();
     }
+
+    private  AnalyticsHelper() {}
 
     /**
      * Evaluates if a given status code instance has a http status within the SUCCESSFUL range.
@@ -180,13 +180,23 @@ public class AnalyticsHelper {
     public void checkAccessToken(final AccessToken accessToken) throws AnalyticsException {
         final TokenStatus tokenStatus = resolveTokenStatus(accessToken);
 
-        if (tokenStatus != TokenStatus.OK) {
+        if (!canUseToken(tokenStatus)) {
             throw new AnalyticsException(
                 String.format(
                     "ACCESS_TOKEN for clientId %s is %s",
                     accessToken.clientId(),
                     tokenStatus.name()));
         }
+    }
+
+    /**
+     * Evaluates if provided {@link TokenStatus} is {@link TokenStatus#OK} or {@link TokenStatus#IN_WINDOW}
+     *
+     * @param tokenStatus token status
+     * @return true if it has a {@link TokenStatus#OK} or {@link TokenStatus#IN_WINDOW}
+     */
+    private static boolean canUseToken(final TokenStatus tokenStatus) {
+        return tokenStatus == TokenStatus.OK || tokenStatus == TokenStatus.IN_WINDOW;
     }
 
     /**

@@ -1,6 +1,6 @@
 {
 	"info": {
-		"_postman_id": "45a4fa00-51d5-45cd-972c-5448f21eaa70",
+		"_postman_id": "954b3102-bccd-4546-97ad-16069e737c85",
 		"name": "Containers",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
 	},
@@ -6065,7 +6065,7 @@
 					}
 				],
 				"url": {
-					"raw": "{{serverURL}}/api/v1/containers?filter=&page=0&per_page=50&orderby=modDate&direction=ASC&host=&system=true&archive=true&content_type_id_or_var=DotAsset",
+					"raw": "{{serverURL}}/api/v1/containers?filter=&page=0&per_page=50&orderby=modDate&direction=ASC&host=&system=true&archive=true&content_type=DotAsset",
 					"host": [
 						"{{serverURL}}"
 					],
@@ -6108,7 +6108,7 @@
 							"value": "true"
 						},
 						{
-							"key": "content_type_id_or_var",
+							"key": "content_type",
 							"value": "DotAsset"
 						}
 					]

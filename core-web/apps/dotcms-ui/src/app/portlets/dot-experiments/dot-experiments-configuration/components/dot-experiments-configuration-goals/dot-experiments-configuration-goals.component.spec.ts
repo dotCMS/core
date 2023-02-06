@@ -22,6 +22,7 @@ import { DotExperimentsConfigurationStore } from '@portlets/dot-experiments/dot-
 import { DotExperimentsService } from '@portlets/dot-experiments/shared/services/dot-experiments.service';
 import { ExperimentMocks, GoalsMock } from '@portlets/dot-experiments/test/mocks';
 import { DotDynamicDirective } from '@portlets/shared/directives/dot-dynamic.directive';
+import { DotHttpErrorManagerService } from '@services/dot-http-error-manager/dot-http-error-manager.service';
 
 const messageServiceMock = new MockDotMessageService({
     'experiments.configure.goals.name': 'Goals',
@@ -56,7 +57,8 @@ describe('DotExperimentsConfigurationGoalsComponent', () => {
             },
             mockProvider(DotExperimentsService),
             mockProvider(MessageService),
-            mockProvider(DotMessagePipe)
+            mockProvider(DotMessagePipe),
+            mockProvider(DotHttpErrorManagerService)
         ]
     });
     beforeEach(() => {
