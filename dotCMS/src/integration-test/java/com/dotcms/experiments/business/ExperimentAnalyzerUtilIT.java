@@ -230,7 +230,7 @@ public class ExperimentAnalyzerUtilIT {
                 browserSession_3.get(0).get("Events.lookBackWindow").toString(),
                 browserSession_3.stream().map(eventMap -> new Event(eventMap, EventType.PAGE_VIEW)).collect(Collectors.toList())));
 
-        final ExperimentResult experimentResult = ExperimentAnalyzerUtil.INSTANCE
+        final ExperimentResults experimentResult = ExperimentAnalyzerUtil.INSTANCE
                 .getExperimentResult(experiment, browserSessions);
 
         assertEquals(2, experimentResult.getTotalSessions());

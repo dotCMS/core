@@ -142,7 +142,7 @@ public class ExperimentResultsQueryFactoryIT {
     }
 
     /**
-     * Method to test: {@link ExperimentResultQueryFactory#create(Experiment)}
+     * Method to test: {@link ExperimentResultsQueryFactory#create(Experiment)}
      * When: Try to get the {@link CubeJSQuery} to a Experiment with a BOUNCE_RATE GOal
      * Should: get the follow query:
      *
@@ -198,7 +198,7 @@ public class ExperimentResultsQueryFactoryIT {
                 .addGoal(goal)
                 .nextPersisted();
 
-        final CubeJSQuery cubeJSQuery = ExperimentResultQueryFactory.INSTANCE.create(experiment);
+        final CubeJSQuery cubeJSQuery = ExperimentResultsQueryFactory.INSTANCE.create(experiment);
         final String cubeJSQueryExpected ="{"
                 +   "\"filters\":["
                 +       "{"

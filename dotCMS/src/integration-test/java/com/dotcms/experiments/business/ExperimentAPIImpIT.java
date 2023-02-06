@@ -779,7 +779,7 @@ public class ExperimentAPIImpIT {
 
 
     /**
-     * Method to test: {@link ExperimentsAPIImpl#getResult(Experiment)}
+     * Method to test: {@link ExperimentsAPIImpl#getResults(Experiment)}
      * When:
      * - You have 3 pages: A, B and C
      * - You create an {@link Experiment} using the B page with a BOUNCE_RATE Goal: url EQUALS TO PAge B .
@@ -828,7 +828,7 @@ public class ExperimentAPIImpIT {
                     String.format("http://%s:%s", cubeServerIp, cubeJsServerPort));
 
             final ExperimentsAPIImpl experimentsAPIImpl = new ExperimentsAPIImpl(mockAnalyticsHelper);
-            final ExperimentResult experimentResult = experimentsAPIImpl.getResult(experiment);
+            final ExperimentResults experimentResult = experimentsAPIImpl.getResults(experiment);
 
             mockhttpServer.validate();
 
@@ -853,7 +853,7 @@ public class ExperimentAPIImpIT {
     }
 
     /**
-     * Method to test: {@link ExperimentsAPIImpl#getResult(Experiment)}
+     * Method to test: {@link ExperimentsAPIImpl#getResults(Experiment)}
      * When:
      * - You have 3 pages: A, B and C
      * - You create an {@link Experiment} using the B page with a BOUNCE_RATE Goal: url EQUALS TO PAge B .
@@ -902,7 +902,7 @@ public class ExperimentAPIImpIT {
                     String.format("http://%s:%s", cubeServerIp, cubeJsServerPort));
 
             final ExperimentsAPIImpl experimentsAPIImpl = new ExperimentsAPIImpl(mockAnalyticsHelper);
-            final ExperimentResult experimentResult = experimentsAPIImpl.getResult(experiment);
+            final ExperimentResults experimentResult = experimentsAPIImpl.getResults(experiment);
 
             mockhttpServer.validate();
 
@@ -927,7 +927,7 @@ public class ExperimentAPIImpIT {
     }
 
     /**
-     * Method to test: {@link ExperimentsAPIImpl#getResult(Experiment)}
+     * Method to test: {@link ExperimentsAPIImpl#getResults(Experiment)}
      * When:
      * - You have 3 pages: A, B and C
      * - You create an {@link Experiment} using the B page with a BOUNCE_RATE Goal: url EQUALS TO PAge B .
@@ -976,7 +976,7 @@ public class ExperimentAPIImpIT {
                     String.format("http://%s:%s", cubeServerIp, cubeJsServerPort));
 
             final ExperimentsAPIImpl experimentsAPIImpl = new ExperimentsAPIImpl(mockAnalyticsHelper);
-            final ExperimentResult experimentResult = experimentsAPIImpl.getResult(experiment);
+            final ExperimentResults experimentResult = experimentsAPIImpl.getResults(experiment);
 
             mockhttpServer.validate();
 
