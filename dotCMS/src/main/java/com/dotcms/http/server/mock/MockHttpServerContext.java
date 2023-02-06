@@ -1,6 +1,8 @@
 package com.dotcms.http.server.mock;
 
 
+import com.dotcms.analytics.metrics.Condition;
+import com.dotcms.analytics.metrics.Condition.Builder;
 import com.dotcms.http.CircuitBreakerUrlBuilder;
 import com.dotcms.repackage.com.sun.xml.ws.client.ResponseContext;
 import com.dotmarketing.util.UtilMethods;
@@ -73,16 +75,21 @@ public class MockHttpServerContext {
     private int status;
     private String body;
     private List<Condition> conditions;
-
+    private boolean mustBeCalled = false;
     private MockHttpServerContext(final String uri,
             final int status,
             final String body,
-            final List<Condition> conditions){
-
+            final List<Condition> conditions,
+            final boolean mustBeCalled){
         this.uri = uri;
         this.status = status;
         this.body = body;
         this.conditions = conditions;
+        this.mustBeCalled = mustBeCalled;
+    }
+
+    public boolean isMustBeCalled() {
+        return mustBeCalled;
     }
 
     public String getUri() {
@@ -106,6 +113,7 @@ public class MockHttpServerContext {
         private int status;
         private String body;
         private List<Condition> requestConditions = new ArrayList<>();
+        private boolean mustBeCalled = false;
 
         public Builder uri(final String uri) {
             this.uri = uri;
@@ -113,7 +121,7 @@ public class MockHttpServerContext {
         }
 
         public MockHttpServerContext build(){
-            return new MockHttpServerContext(uri, status, body, requestConditions);
+            return new MockHttpServerContext(uri, status, body, requestConditions, mustBeCalled);
         }
 
         public Builder requestCondition(final String message, final Function<RequestContext, Boolean> handler) {
@@ -128,6 +136,15 @@ public class MockHttpServerContext {
 
         public Builder responseBody(String body) {
             this.body = body;
+            return this;
+        }
+
+        /**
+         * Make required that this context get at least one hit during the test
+         * @return
+         */
+        public Builder mustBeCalled() {
+            this.mustBeCalled = true;
             return this;
         }
     }

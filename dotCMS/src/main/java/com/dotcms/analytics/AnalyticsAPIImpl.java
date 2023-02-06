@@ -62,7 +62,7 @@ public class AnalyticsAPIImpl implements AnalyticsAPI {
         return analyticsCache
             .getAccessToken(
                 analyticsApp.getAnalyticsProperties().clientId(),
-                AnalyticsHelper.resolveAudience(analyticsApp))
+                AnalyticsHelper.get().resolveAudience(analyticsApp))
             .orElse(null);
     }
 
@@ -98,11 +98,12 @@ public class AnalyticsAPIImpl implements AnalyticsAPI {
     public AccessToken refreshAccessToken(final AnalyticsApp analyticsApp) throws AnalyticsException {
         try {
             final CircuitBreakerUrl.Response<AccessToken> response = requestAccessToken(analyticsApp);
-            AnalyticsHelper.throwFromResponse(
+
+            AnalyticsHelper.get().throwFromResponse(
                 response,
                 String.format("Could not extract ACCESS_TOKEN from response at %s", analyticsIdpUrl));
 
-            return AnalyticsHelper
+            return AnalyticsHelper.get()
                 .extractToken(response)
                 .map(accessToken -> {
                     Logger.debug(this, "Saving ACCESS_TOKEN to cache");
@@ -138,7 +139,7 @@ public class AnalyticsAPIImpl implements AnalyticsAPI {
 
         analyticsCache.removeAccessToken(
             analyticsApp.getAnalyticsProperties().clientId(),
-            AnalyticsHelper.resolveAudience(analyticsApp));
+            AnalyticsHelper.get().resolveAudience(analyticsApp));
     }
 
     /**
@@ -146,7 +147,7 @@ public class AnalyticsAPIImpl implements AnalyticsAPI {
      */
     @Override
     public String getAnalyticsKey(final Host host) throws AnalyticsException {
-        final AnalyticsApp analyticsApp = AnalyticsHelper.appFromHost(host);
+        final AnalyticsApp analyticsApp = AnalyticsHelper.get().appFromHost(host);
         try {
             validateAnalyticsApp(analyticsApp);
         } catch (DotStateException e) {
@@ -167,7 +168,7 @@ public class AnalyticsAPIImpl implements AnalyticsAPI {
                 analyticsApp.getAnalyticsProperties().clientId()));
         _resetAnalyticsKey(analyticsApp, false);
 
-        return AnalyticsHelper.appFromHost(host).getAnalyticsProperties().analyticsKey();
+        return AnalyticsHelper.get().appFromHost(host).getAnalyticsProperties().analyticsKey();
     }
 
     /**
@@ -207,7 +208,7 @@ public class AnalyticsAPIImpl implements AnalyticsAPI {
                     analyticsApp.getAnalyticsProperties().clientId(),
                     DotObjectMapperProvider.getInstance().getDefaultObjectMapper().writeValueAsString(response)));
 
-            AnalyticsHelper.extractAnalyticsKey(response)
+            AnalyticsHelper.get().extractAnalyticsKey(response)
                 .map(key -> {
                     try {
                         analyticsApp.saveAnalyticsKey(key);
@@ -250,7 +251,7 @@ public class AnalyticsAPIImpl implements AnalyticsAPI {
      * @param analyticsApp analytics app
      */
     private void logTokenResponse(final CircuitBreakerUrl.Response<AccessToken> response, AnalyticsApp analyticsApp) {
-        if (AnalyticsHelper.isSuccessResponse(response)) {
+        if (AnalyticsHelper.get().isSuccessResponse(response)) {
             return;
         }
 
@@ -331,7 +332,7 @@ public class AnalyticsAPIImpl implements AnalyticsAPI {
      */
     private Map<String, String> analyticsKeyHeaders(final AccessToken accessToken) throws AnalyticsException {
         return ImmutableMap.<String, String>builder()
-            .put(HttpHeaders.AUTHORIZATION, AnalyticsHelper.formatBearer(accessToken))
+            .put(HttpHeaders.AUTHORIZATION, AnalyticsHelper.get().formatBearer(accessToken))
             .put(HttpHeaders.ACCEPT, MediaType.APPLICATION_JSON)
             .build();
     }
@@ -344,7 +345,8 @@ public class AnalyticsAPIImpl implements AnalyticsAPI {
      */
     private void logKeyResponse(final CircuitBreakerUrl.Response<AnalyticsKey> response,
                                 final AnalyticsApp analyticsApp) {
-        if (AnalyticsHelper.isSuccessResponse(response)) {
+
+        if (AnalyticsHelper.get().isSuccessResponse(response)) {
             return;
         }
 
@@ -397,7 +399,7 @@ public class AnalyticsAPIImpl implements AnalyticsAPI {
                 analyticsIdpUrl));
         }
 
-        if ((Objects.isNull(accessToken) || AnalyticsHelper.hasTokenExpired(accessToken)) && force) {
+        if ((Objects.isNull(accessToken) || AnalyticsHelper.get().hasTokenExpired(accessToken)) && force) {
             refreshAccessToken(analyticsApp);
             return getAccessToken(analyticsApp, true);
         }

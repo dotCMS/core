@@ -34,7 +34,7 @@ public class EventLogRunnable implements Runnable {
     private final EventsPayload eventPayload;
 
     EventLogRunnable(final Host host, final EventsPayload eventPayload) {
-        analyticsApp = AnalyticsHelper.appFromHost(host);
+        analyticsApp = AnalyticsHelper.get().appFromHost(host);
 
         if (StringUtils.isBlank(analyticsApp.getAnalyticsProperties().analyticsWriteUrl())) {
             throw new IllegalStateException("Event log URL is missing, cannot log event to an unknown URL");

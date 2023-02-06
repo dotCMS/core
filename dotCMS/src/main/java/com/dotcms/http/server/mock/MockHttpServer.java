@@ -112,7 +112,18 @@ public class MockHttpServer {
         if (!errors.isEmpty()) {
             throw new AssertionError(errors.stream().collect(Collectors.joining("\n")) );
         }
+
+        final List<MockHttpServerContext> mustBeCalledContext = this.mockHttpServerContexts.stream()
+                .filter(context -> context.isMustBeCalled())
+                .collect(Collectors.toList());
+
+        for (final MockHttpServerContext mockHttpServerContext : mustBeCalledContext) {
+            if (!uris.stream().anyMatch(uri -> uri.getPath().equals(mockHttpServerContext.getUri()))) {
+                throw new AssertException(mockHttpServerContext.getUri() + " Must be called");
+            }
+        }
     }
+
 
     /**
      * Check if the path was hit, if it is not then throw an {@link AssertionError}
