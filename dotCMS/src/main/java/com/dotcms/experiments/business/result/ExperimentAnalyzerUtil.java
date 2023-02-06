@@ -35,7 +35,8 @@ public enum ExperimentAnalyzerUtil {
 
     private static Map<MetricType, MetricExperimentAnalyzer> createHelpersMap() {
         return map(
-                MetricType.REACH_PAGE, new ReachPageExperimentAnalyzer()
+                MetricType.REACH_PAGE, new ReachPageExperimentAnalyzer(),
+                MetricType.BOUNCE_RATE, new BounceRateExperimentAnalyzer()
         );
     }
 
