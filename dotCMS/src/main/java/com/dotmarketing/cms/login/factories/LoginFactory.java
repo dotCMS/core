@@ -39,10 +39,10 @@ import javax.servlet.http.HttpSession;
 @Deprecated
 public class LoginFactory {
 
-	public static String PRE_AUTHENTICATOR = PropsUtil.get("auth.pipeline.pre");
+	public static final String PRE_AUTHENTICATOR = PropsUtil.get("auth.pipeline.pre");
 
 	/*Custom Code*/
-	public static boolean useCASLoginFilter = Config.getBooleanProperty("FRONTEND_CAS_FILTER_ON", false);
+	public static final boolean useCASLoginFilter = Config.getBooleanProperty("FRONTEND_CAS_FILTER_ON", false);
 	/*End of Custom Code*/
 
     private static final String LOCK_PREFIX = "UserIdLogin:";
