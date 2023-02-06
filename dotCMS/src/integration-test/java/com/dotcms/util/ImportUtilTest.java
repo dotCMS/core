@@ -8,14 +8,7 @@ import static org.junit.Assert.assertTrue;
 
 import com.dotcms.contenttype.business.ContentTypeAPIImpl;
 import com.dotcms.contenttype.business.FieldAPI;
-import com.dotcms.contenttype.model.field.BinaryField;
-import com.dotcms.contenttype.model.field.DataTypes;
-import com.dotcms.contenttype.model.field.FieldBuilder;
-import com.dotcms.contenttype.model.field.HostFolderField;
-import com.dotcms.contenttype.model.field.ImmutableTextAreaField;
-import com.dotcms.contenttype.model.field.ImmutableTextField;
-import com.dotcms.contenttype.model.field.RelationshipField;
-import com.dotcms.contenttype.model.field.TextField;
+import com.dotcms.contenttype.model.field.*;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
 import com.dotcms.datagen.ContentTypeDataGen;
@@ -27,6 +20,7 @@ import com.dotcms.mock.request.MockHeaderRequest;
 import com.dotcms.mock.request.MockHttpRequestIntegrationTest;
 import com.dotcms.mock.request.MockSessionRequest;
 import com.dotcms.repackage.com.csvreader.CsvReader;
+import com.dotmarketing.portlets.categories.model.Category;
 import org.apache.commons.io.FileUtils;
 import com.dotcms.uuid.shorty.ShortyIdAPI;
 import com.dotmarketing.beans.Host;
@@ -76,13 +70,7 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.Reader;
 import java.nio.charset.Charset;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
+import java.util.*;
 import javax.servlet.http.HttpServletRequest;
 import org.glassfish.jersey.internal.util.Base64;
 import org.junit.BeforeClass;
@@ -2359,5 +2347,64 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
                 e.printStackTrace();
             }
         }
+    }
+
+    /***
+     * Creates a ContentType that has all the fields, but for this test
+     * we'll only use the title and the categories fields.
+     * Creates a content with a couple of categories.
+     * Creates a CSV without the categories column.
+     * Import the CSV and the Content should retain the original categories.
+     *
+     * @throws DotSecurityException
+     * @throws DotDataException
+     * @throws IOException
+     */
+    @Test
+    public void importLine_shouldRetainCategoriesIfHeaderNotSent() throws DotSecurityException, DotDataException, IOException {
+        CsvReader csvreader;
+        HashMap<String, List<String>> results;
+        Reader reader;
+        String[] csvHeaders;
+        com.dotcms.contenttype.model.field.Field titleField;
+
+        final Category parentCategory = TestDataUtils.createCategories();
+        final List<Category> childCategories = APILocator.getCategoryAPI().getAllChildren(parentCategory,user,false);
+        final ContentType contentType = TestDataUtils.newContentTypeFieldTypesGalore(parentCategory);
+        titleField = fieldAPI.byContentTypeAndVar(contentType, "textField");
+
+        final Optional<com.dotcms.contenttype.model.field.Field> categoryField = contentType.fields(CategoryField.class).stream()
+                .findFirst();
+        assertTrue(categoryField.isPresent());
+
+        final Contentlet contentlet = new ContentletDataGen(contentType)
+                .languageId(1)
+                .setProperty("textField", "test1")
+                .addCategory(childCategories.get(0))
+                .nextPersisted();
+
+        //Creating csv
+        reader = createTempFile("textField" + "\r\n" +
+                "test1");
+        csvreader = new CsvReader(reader);
+        csvreader.setSafetySwitch(false);
+        csvHeaders = csvreader.getHeaders();
+
+        results =
+                ImportUtil
+                        .importFile(0L, defaultSite.getInode(), contentType.inode(),
+                                new String[]{titleField.id()}, false, false,
+                                user, defaultLanguage.getId(), csvHeaders, csvreader, -1,
+                                -1, reader,
+                                saveAsDraftAction.getId(), getHttpRequest());
+
+        //Validations
+        validate(results, false, false, true);
+
+        final List<Contentlet> savedData = contentletAPI
+                .findByStructure(contentType.inode(), user, false, 0, 0);
+        assertNotNull(savedData);
+        assertTrue(savedData.size() == 1);
+        assertFalse(APILocator.getCategoryAPI().getParents(savedData.get(0),user,false).isEmpty());
     }
 }
