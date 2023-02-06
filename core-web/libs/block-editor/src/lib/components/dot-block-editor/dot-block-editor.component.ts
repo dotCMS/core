@@ -31,7 +31,7 @@ import {
     ImageUpload
 } from '../../extensions';
 
-import { ContentletBlock, ImageNode,  VideoNode } from '../../nodes';
+import { ContentletBlock, ImageNode, VideoNode } from '../../nodes';
 import { formatHTML, removeInvalidNodes, SetDocAttrStep } from '../../shared/utils';
 
 function toTitleCase(str) {
