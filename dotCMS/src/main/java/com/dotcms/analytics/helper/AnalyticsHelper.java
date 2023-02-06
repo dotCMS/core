@@ -37,12 +37,11 @@ public class AnalyticsHelper {
 
     private static Lazy<AnalyticsHelper> analyticsHelper = Lazy.of(() -> new AnalyticsHelper());
 
-    private AnalyticsHelper(){}
-
-
     public static AnalyticsHelper get(){
         return analyticsHelper.get();
     }
+
+    private  AnalyticsHelper() {}
 
     /**
      * Evaluates if a given status code instance has a http status within the SUCCESSFUL range.
