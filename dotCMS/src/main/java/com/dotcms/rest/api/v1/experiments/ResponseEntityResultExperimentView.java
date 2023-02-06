@@ -1,4 +1,5 @@
 
+
 package com.dotcms.rest.api.v1.experiments;
 
 import com.dotcms.analytics.metrics.MetricType;
@@ -105,3 +106,4 @@ public class ResponseEntityResultExperimentView extends ResponseEntityView<Exper
         }
     }
 }
+

@@ -13,6 +13,7 @@ import static com.dotcms.variant.VariantAPI.DEFAULT_VARIANT;
 
 import com.dotcms.analytics.app.AnalyticsApp;
 import com.dotcms.analytics.helper.AnalyticsHelper;
+
 import com.dotcms.analytics.metrics.AbstractCondition.Operator;
 import com.dotcms.analytics.metrics.EventType;
 import com.dotcms.analytics.metrics.Metric;
@@ -30,6 +31,8 @@ import com.dotcms.experiments.business.result.Event;
 import com.dotcms.experiments.business.result.ExperimentAnalyzerUtil;
 import com.dotcms.experiments.business.result.ExperimentResults;
 import com.dotcms.experiments.business.result.ExperimentResultsQueryFactory;
+import com.dotcms.experiments.business.result.ExperimentResult;
+import com.dotcms.experiments.business.result.ExperimentResultQueryFactory;
 import com.dotcms.exception.NotAllowedException;
 import com.dotcms.experiments.model.AbstractExperiment.Status;
 import com.dotcms.experiments.model.AbstractTrafficProportion.Type;
@@ -770,6 +773,7 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
 
         DotPreconditions.isTrue(experimentFromDataBase.status() == RUNNING,
                 "The Experiment must be RUNNING");
+
 
         final List<BrowserSession> events = getEvents(experiment);
         return ExperimentAnalyzerUtil.INSTANCE.getExperimentResult(experiment, events);

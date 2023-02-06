@@ -31,6 +31,8 @@ import com.dotcms.exception.NotAllowedException;
 import com.dotcms.experiments.business.result.BrowserSession;
 import com.dotcms.experiments.business.result.ExperimentResults;
 import com.dotcms.experiments.business.result.ExperimentResults.VariantResult;
+import com.dotcms.experiments.business.result.ExperimentResult;
+import com.dotcms.experiments.business.result.ExperimentResult.GoalResult;
 import com.dotcms.experiments.model.AbstractExperiment.Status;
 import com.dotcms.experiments.model.Experiment;
 import com.dotcms.experiments.model.ExperimentVariant;
@@ -54,6 +56,7 @@ import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.google.common.collect.ImmutableList;
+
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
 import io.vavr.control.Try;
@@ -61,6 +64,8 @@ import java.net.HttpURLConnection;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
+
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -246,6 +251,7 @@ public class ExperimentAPIImpIT {
 
     /**
      * Method to test: {@link ExperimentsAPIImpl#getEvents(Experiment)}
+<<<<<<< HEAD
      * When: You have 4 pages let call them: A, B, C and D and:
      * - We create a Experiment with the B page.
      * - We mock in the test 4 Browser Session with different lookBackWindows, each of this session
@@ -266,6 +272,11 @@ public class ExperimentAPIImpIT {
      * If we call the {@link ExperimentsAPIImpl#getEvents(Experiment)} now
      *
      * Should: Return 4 {@link BrowserSession} each one with the right numbers of {@link com.dotcms.experiments.business.result.Event}
+=======
+     * When: Call the methods with a Experiment with 4 Session each one with several
+     * {@link com.dotcms.analytics.metrics.EventType#PAGE_VIEW} events.
+     * Should: get all the Events group by lookBackWindow
+>>>>>>> origin/master
      *
      * @throws DotDataException
      * @throws DotSecurityException
@@ -449,6 +460,7 @@ public class ExperimentAPIImpIT {
                     String.format("http://%s:%s", cubeServerIp, cubeJsServerPort));
 
             final ExperimentsAPIImpl experimentsAPIImpl = new ExperimentsAPIImpl(mockAnalyticsHelper);
+
             final ExperimentResults experimentResults = experimentsAPIImpl.getResults(experiment);
 
             mockhttpServer.validate();
@@ -456,6 +468,7 @@ public class ExperimentAPIImpIT {
             assertEquals(1, experimentResults.getTotalSessions());
 
             for (VariantResult variantResult : experimentResults.getGoalResults().get(0).getVariants().values()) {
+
                 if (variantResult.getVariantName().equals(variantName)) {
 
                     Assert.assertEquals(1, variantResult.totalUniqueBySession());
@@ -531,6 +544,7 @@ public class ExperimentAPIImpIT {
             assertEquals(1, experimentResults.getTotalSessions());
 
             for (VariantResult variantResult : experimentResults.getGoalResults().get(0).getVariants().values()) {
+
                 if (variantResult.getVariantName().equals(variantName)) {
 
                     Assert.assertEquals(0, variantResult.totalUniqueBySession());
@@ -599,6 +613,7 @@ public class ExperimentAPIImpIT {
                     String.format("http://%s:%s", cubeServerIp, cubeJsServerPort));
 
             final ExperimentsAPIImpl experimentsAPIImpl = new ExperimentsAPIImpl(mockAnalyticsHelper);
+
             final ExperimentResults experimentResults = experimentsAPIImpl.getResults(experiment);
 
             mockhttpServer.validate();
@@ -606,6 +621,7 @@ public class ExperimentAPIImpIT {
             assertEquals(0, experimentResults.getTotalSessions());
 
             for (VariantResult variantResult : experimentResults.getGoalResults().get(0).getVariants().values()) {
+
                 if (variantResult.getVariantName().equals(variantName)) {
 
                     Assert.assertEquals(0, variantResult.totalUniqueBySession());
@@ -674,6 +690,7 @@ public class ExperimentAPIImpIT {
                     String.format("http://%s:%s", cubeServerIp, cubeJsServerPort));
 
             final ExperimentsAPIImpl experimentsAPIImpl = new ExperimentsAPIImpl(mockAnalyticsHelper);
+
             final ExperimentResults experimentResults = experimentsAPIImpl.getResults(experiment);
 
             mockhttpServer.validate();
@@ -681,6 +698,7 @@ public class ExperimentAPIImpIT {
             assertEquals(0, experimentResults.getTotalSessions());
 
             for (VariantResult variantResult : experimentResults.getGoalResults().get(0).getVariants().values()) {
+
                 if (variantResult.getVariantName().equals(variantName)) {
 
                     Assert.assertEquals(0, variantResult.totalUniqueBySession());
@@ -749,6 +767,7 @@ public class ExperimentAPIImpIT {
                     String.format("http://%s:%s", cubeServerIp, cubeJsServerPort));
 
             final ExperimentsAPIImpl experimentsAPIImpl = new ExperimentsAPIImpl(mockAnalyticsHelper);
+
             final ExperimentResults experimentResults = experimentsAPIImpl.getResults(experiment);
 
             mockhttpServer.validate();
@@ -756,6 +775,7 @@ public class ExperimentAPIImpIT {
             assertEquals(1, experimentResults.getTotalSessions());
 
             for (VariantResult variantResult : experimentResults.getGoalResults().get(0).getVariants().values()) {
+
                 if (variantResult.getVariantName().equals(variantName)) {
 
                     Assert.assertEquals(0, variantResult.totalUniqueBySession());
@@ -965,4 +985,5 @@ public class ExperimentAPIImpIT {
                 .next();
         APILocator.getExperimentsAPI().getResults(experiment);
     }
+
 }

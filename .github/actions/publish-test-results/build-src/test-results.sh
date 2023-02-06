@@ -99,6 +99,11 @@ function closeResults {
       && exit 1
 
     gitClone ${test_results_repo_url} ${BUILD_ID} ${test_results_path}
+
+    executeCmd "mkdir -p ${INPUT_TESTS_RESULTS_LOCATION}"
+    executeCmd "cp -R ${test_results_path}/projects/core/postman/reports/xml/* ${INPUT_TESTS_RESULTS_LOCATION}/"
+    setOutput tests_results_location ${INPUT_TESTS_RESULTS_LOCATION}
+
     cd ${test_results_path}/projects/core/postman/reports/html
     gitConfig ${GITHUB_USER}
 
@@ -229,9 +234,13 @@ function trackCoreTests {
 # Prepares and copies test results in HTML format and the corresponding log file.
 function copyResults {
   if [[ "${INCLUDE_RESULTS}" == 'true' ]]; then
-    mkdir -p ${REPORTS_FOLDER}
-    echo "Copying ${INPUT_TEST_TYPE} tests reports to [${REPORTS_FOLDER}]"
-    executeCmd "cp -R ${INPUT_TESTS_RESULTS_REPORT_LOCATION}/* ${REPORTS_FOLDER}/"
+    executeCmd "mkdir -p ${HTML_REPORTS_FOLDER}"
+    echo "Copying ${INPUT_TEST_TYPE} tests reports to [${HTML_REPORTS_FOLDER}]"
+    executeCmd "cp -R ${INPUT_TESTS_RESULTS_REPORT_LOCATION}/* ${HTML_REPORTS_FOLDER}/"
+
+    executeCmd "mkdir -p ${XML_REPORTS_FOLDER}"
+    echo "Copying ${INPUT_TEST_TYPE} tests results to [${XML_REPORTS_FOLDER}]"
+    executeCmd "cp -R ${INPUT_TESTS_RESULTS_LOCATION}/* ${XML_REPORTS_FOLDER}/"
   fi
   if [[ "${INCLUDE_LOGS}" == 'true' ]]; then
     mkdir -p ${LOGS_FOLDER}
@@ -258,7 +267,7 @@ function appendLogLocation {
     logs_link="<h2 class=\"summaryGroup infoBox\" style=\"margin: 40px; padding: 15px;\"><a href=\"${TEST_LOG_URL}\" target=\"_blank\">dotcms.log</a></h2>"
     echo "
     ${logs_link}
-    " >> ${REPORTS_FOLDER}/index.html
+    " >> ${HTML_REPORTS_FOLDER}/index.html
   fi
 }
 
@@ -312,13 +321,15 @@ BUILD_ID=${INPUT_BUILD_ID}
   && BUILD_ID="${INPUT_BUILD_ID}_${INPUT_BUILD_HASH}"
 export BUILD_ID
 export OUTPUT_FOLDER="${INPUT_PROJECT_ROOT}/output"
-export REPORTS_LOCATION='reports/html'
-export REPORTS_FOLDER="${OUTPUT_FOLDER}/${REPORTS_LOCATION}"
+export HTML_REPORTS_LOCATION='reports/html'
+export HTML_REPORTS_FOLDER="${OUTPUT_FOLDER}/${HTML_REPORTS_LOCATION}"
+export XML_REPORTS_LOCATION='reports/xml'
+export XML_REPORTS_FOLDER="${OUTPUT_FOLDER}/${XML_REPORTS_LOCATION}"
 export LOGS_FOLDER="${OUTPUT_FOLDER}/logs"
 export BASE_STORAGE_URL="${githack_url}/$(urlEncode ${BUILD_ID})/projects/${INPUT_TARGET_PROJECT}"
 export STORAGE_JOB_BRANCH_FOLDER="$(resolveResultsPath '')"
 export GITHUB_PERSIST_BRANCH_URL="${BASE_STORAGE_URL}/${STORAGE_JOB_BRANCH_FOLDER}"
-export REPORT_PERSIST_BRANCH_URL="${GITHUB_PERSIST_BRANCH_URL}/${REPORTS_LOCATION}"
+export REPORT_PERSIST_BRANCH_URL="${GITHUB_PERSIST_BRANCH_URL}/${HTML_REPORTS_LOCATION}"
 BRANCH_TEST_RESULT_URL=${REPORT_PERSIST_BRANCH_URL}/index.html
 TEST_LOG_URL=${GITHUB_PERSIST_BRANCH_URL}/logs/dotcms.log
 if [[ -n "${INPUT_RUN_IDENTIFIER}" ]]; then
@@ -335,7 +346,8 @@ Storage vars
 ############
 BUILD_ID: ${BUILD_ID}
 OUTPUT_FOLDER: ${OUTPUT_FOLDER}
-REPORTS_FOLDER: ${REPORTS_FOLDER}
+HTML_REPORTS_FOLDER: ${HTML_REPORTS_FOLDER}
+XML_REPORTS_FOLDER: ${XML_REPORTS_FOLDER}
 LOGS_FOLDER: ${LOGS_FOLDER}
 BASE_STORAGE_URL: ${BASE_STORAGE_URL}
 GITHUB_PERSIST_BRANCH_URL: ${GITHUB_PERSIST_BRANCH_URL}
