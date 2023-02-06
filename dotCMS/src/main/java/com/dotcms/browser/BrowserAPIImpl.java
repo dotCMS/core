@@ -275,8 +275,8 @@ public class BrowserAPIImpl implements BrowserAPI {
             sqlQuery.append(" and id.parent_path=? ");
             parameters.add(browserQuery.folder.getPath());
         }
-        if (UtilMethods.isSet(browserQuery.filter)) {
-            final String[] spliter = browserQuery.filter.split(" ");
+        if (UtilMethods.isSet(browserQuery.luceneQuery)) {
+            final String[] spliter = browserQuery.luceneQuery.split(" ");
             for (final String token : spliter) {
                 sqlQuery.append(" and c.title like ?");
                 parameters.add("%" + token + "%");

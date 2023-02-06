@@ -503,6 +503,7 @@ public class BrowserAjax {
 						   .maxResults(maxResults)
 						   .withFilter(filter)
 						   .showMimeTypes(mimeTypes)
+						   .showImages(mimeTypes)
 						   .showExtensions(extensions)
 						   .showWorking(true)
 						   .showArchived(showArchived)
