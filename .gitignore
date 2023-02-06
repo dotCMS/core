@@ -133,3 +133,9 @@ dist-docs/
 # Maven
 installs/
 target/
+
+# license
+dotsecure/
+server_id.dat
+license.dat
+license.zip
