@@ -11,8 +11,13 @@
                         {{ 'experiments.configure.scheduling.start.time' | dm }}
                     </label>
                     <p-calendar
+                        [defaultDate]="initialDate"
                         [showTime]="true"
                         [minDate]="today"
+                        [stepMinute]="30"
+                        [readonlyInput]="true"
+                        [showIcon]="true"
+                        [showClear]="true"
                         formControlName="startDate"
                         data-testId="scheduling-startDate"
                     ></p-calendar>
@@ -23,8 +28,12 @@
                     </label>
                     <p-calendar
                         [showTime]="true"
-                        [defaultDate]="form.get('startDate').value"
+                        [defaultDate]="form.get('startDate').value || initialDate"
                         [minDate]="form.get('startDate').value"
+                        [stepMinute]="30"
+                        [readonlyInput]="true"
+                        [showIcon]="true"
+                        [showClear]="true"
                         formControlName="endDate"
                         data-testId="scheduling-endDate"
                     >
