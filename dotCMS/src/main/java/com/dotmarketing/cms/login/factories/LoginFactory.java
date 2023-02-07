@@ -42,7 +42,7 @@ public class LoginFactory {
 	public static final String PRE_AUTHENTICATOR = PropsUtil.get("auth.pipeline.pre");
 
 	/*Custom Code*/
-	public static final boolean useCASLoginFilter = Config.getBooleanProperty("FRONTEND_CAS_FILTER_ON", false);
+	public static final boolean USE_CAS_LOGIN_FILTER = Config.getBooleanProperty("FRONTEND_CAS_FILTER_ON", false);
 	/*End of Custom Code*/
 
     private static final String LOCK_PREFIX = "UserIdLogin:";
@@ -138,7 +138,7 @@ public class LoginFactory {
         	if ((PRE_AUTHENTICATOR != null) &&
         		(0 < PRE_AUTHENTICATOR.length()) &&
         		PRE_AUTHENTICATOR.equals(Config.getStringProperty("LDAP_FRONTEND_AUTH_IMPLEMENTATION")) &&
-        		!useCASLoginFilter) {
+        		!USE_CAS_LOGIN_FILTER) {
 
 				int auth = 0;
 
@@ -200,7 +200,7 @@ public class LoginFactory {
 
 	            } else {
 	            	/*Custom code*/
-					if(useCASLoginFilter){
+					if(USE_CAS_LOGIN_FILTER){
 	            		
 	            		String userIdFromCAS = (String)request.getSession(false).getAttribute("edu.yale.its.tp.cas.client.filter.user");
 	            		

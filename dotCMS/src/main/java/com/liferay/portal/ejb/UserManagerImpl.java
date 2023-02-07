@@ -569,16 +569,7 @@ public class UserManagerImpl extends PrincipalBean implements UserManager {
             }
         }
         if (authResult == Authenticator.FAILURE) {
-            Logger.debug(this, String.format("Authentication for user '%s' has failed.", login));
-            try {
-                this.runCustomOnFailureHandlers(companyId, login, byEmailAddress);
-                this.handleFailedLoginAttempt(user, login, companyId, byEmailAddress);
-            } catch (final Exception e) {
-                final String errorMsg = String.format("An error occurred when handling failed login for User '%s': " +
-                                                              "%s", login, e.getMessage());
-                Logger.debug(this, errorMsg, e);
-                Logger.error(this, errorMsg, e);
-            }
+            this.processFailedLogin(user, login, companyId, byEmailAddress);
         }
         return authResult;
     }
@@ -695,6 +686,28 @@ public class UserManagerImpl extends PrincipalBean implements UserManager {
                     user.getUserId());
             Logger.error(this, errorMsg);
             throw new UserActiveException(errorMsg);
+        }
+    }
+
+    /**
+     * Executes the optional custom on-failure handlers and updates the User information after a failed login attempt.
+     *
+     * @param user           The {@link User} that failed to log in.
+     * @param login          The user's email or ID.
+     * @param companyId      The current Company ID.
+     * @param byEmailAddress If the current authentication method is via email, set this to {@code true}. If it's
+     *                       done via User ID, set to {@code false}.
+     */
+    private void processFailedLogin(final User user, final String login, final String companyId,
+                                    final boolean byEmailAddress) {
+        Logger.debug(this, String.format("Authentication for user '%s' has failed.", login));
+        try {
+            this.runCustomOnFailureHandlers(companyId, login, byEmailAddress);
+            this.handleFailedLoginAttempt(user, login, companyId, byEmailAddress);
+        } catch (final Exception e) {
+            final String errorMsg = String.format("An error occurred when handling failed login for User '%s': " +
+                                                          "%s", login, e.getMessage());
+            Logger.error(this, errorMsg, e);
         }
     }
 
