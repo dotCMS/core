@@ -49,6 +49,25 @@
 
             img {
                 max-width: 100%;
+                max-height: 100%;
+                position: relative;
+
+                &:before {
+                    align-items: center;
+                    background: $gray-bg;
+                    border-radius: 3px;
+                    border: 1px solid $gray-light;
+                    color: $gray;
+                    content: "The image URL " attr(src)
+                        " seems to be broken, please double check the URL.";
+                    display: flex;
+                    height: 100%;
+                    left: 0;
+                    padding: $spacing-3;
+                    position: absolute;
+                    text-align: center;
+                    width: 100%;
+                }
             }
 
             ul,
@@ -156,6 +175,10 @@
                     position: relative;
                     vertical-align: top;
                 }
+                /* fix borders in FF: https://stackoverflow.com/a/16337203/3847132*/
+                th {
+                    background-clip: padding-box;
+                }
 
                 td > *,
                 th > * {
@@ -231,6 +254,10 @@
                     }
                 }
             }
+        }
+
+        .node-container {
+            margin-bottom: $spacing-3;
         }
     }
 }

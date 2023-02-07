@@ -1,17 +1,22 @@
-package com.dotmarketing.portlets.contentlet.business;
+package com.dotmarketing.portlets.contentlet.business; 
 
 import com.dotcms.content.business.DotMappingException;
 import com.dotcms.content.elasticsearch.util.RestHighLevelClientProvider;
+import com.dotcms.repackage.net.sf.hibernate.ObjectNotFoundException;
+import com.dotcms.util.transform.TransformerLocator;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.query.GenericQueryFactory.Query;
 import com.dotmarketing.business.query.ValidationException;
+import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.links.model.Link;
 import com.dotmarketing.portlets.structure.model.Field;
+import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 import org.elasticsearch.ElasticsearchException;
 import org.elasticsearch.search.SearchHits;
@@ -51,8 +56,33 @@ public abstract class ContentletFactory {
 	 * @throws DotDataException
 	 */
 	protected abstract List<Contentlet> findAllCurrent(int offset, int limit) throws DotDataException;
-	
-	/**
+
+    public Optional<Contentlet> findInDb(final String inode, final String variant) {
+        try {
+            if (inode != null) {
+                final DotConnect dotConnect = new DotConnect();
+                dotConnect.setSQL("select contentlet.*, inode.owner from contentlet, inode where contentlet.inode=? and contentlet.inode=inode.inode");
+                dotConnect.addParam(inode);
+
+                final List<Map<String, Object>> result = dotConnect.loadObjectResults();
+
+                if (UtilMethods.isSet(result)) {
+                    return TransformerLocator.createContentletTransformer(result).asList()
+                            .stream().filter((contentlet -> contentlet.getVariantId()
+                                    .equals(variant))).findFirst();
+                }
+            }
+        } catch (DotDataException e) {
+            if (!(e.getCause() instanceof ObjectNotFoundException)) {
+                throw new DotRuntimeException(e);
+            }
+        }
+
+        return Optional.empty();
+
+    }
+
+    /**
 	 * This method gets a Contentlet object given the inode
 	 * @param inode
 	 * @return 
@@ -60,6 +90,16 @@ public abstract class ContentletFactory {
 	 * @throws DotSecurityException 
 	 */
 	protected abstract Contentlet find(String inode) throws DotDataException, DotSecurityException;
+
+	/**
+	 * This method gets a Contentlet object given the inode and variant name
+	 * @param inode
+	 * @param variant
+	 * @return
+	 * @throws DotDataException
+	 * @throws DotSecurityException
+	 */
+	protected abstract Contentlet find(String inode, String variant) throws DotDataException, DotSecurityException;
 
     /**
      * Retrieves a contentlet from the database by its identifier and the working version.
@@ -72,6 +112,9 @@ public abstract class ContentletFactory {
      */
     protected abstract Contentlet findContentletByIdentifierAnyLanguage(String identifier,
             boolean includeDeleted) throws DotDataException, DotSecurityException;
+
+	protected abstract Contentlet findContentletByIdentifierAnyLanguage(String identifier,
+			String variant, boolean includeDeleted) throws DotDataException, DotSecurityException;
 
     /**
 	 * Returns a live Contentlet Object for a given language
@@ -112,7 +155,18 @@ public abstract class ContentletFactory {
 	 * @throws DotSecurityException
 	 */
 	protected abstract Contentlet findContentletByIdentifierAnyLanguage(String identifier) throws DotDataException, DotSecurityException;
-	
+
+	/**
+	 * Retrieves a contentlet from the database based on its identifier, working version and variant
+	 * @param identifier
+	 * @param variant
+	 * @return Contentlet
+	 * @throws DotDataException
+	 * @throws DotSecurityException
+	 */
+	protected abstract Contentlet findContentletByIdentifierAnyLanguage(String identifier, String variant) throws DotDataException, DotSecurityException;
+
+
 	/**
 	 * Retrieves a contentlet from the database based on its identifier
 	 * @param identifier 

@@ -1,26 +1,40 @@
-import { DotExperimentsConfigurationVariantsComponent } from './dot-experiments-configuration-variants.component';
-import { byTestId, createComponentFactory, Spectator } from '@ngneat/spectator';
+import { byTestId, createComponentFactory, mockProvider, Spectator } from '@ngneat/spectator';
+import { of } from 'rxjs';
+
+import { DecimalPipe } from '@angular/common';
+
+import { MessageService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
 import { Card, CardModule } from 'primeng/card';
+import { Inplace, InplaceModule } from 'primeng/inplace';
+
+import { DotCopyButtonComponent } from '@components/dot-copy-button/dot-copy-button.component';
+import { DotCopyButtonModule } from '@components/dot-copy-button/dot-copy-button.module';
+import { DotMessageService } from '@dotcms/data-access';
 import {
+    ComponentStatus,
     DEFAULT_VARIANT_ID,
     DEFAULT_VARIANT_NAME,
     ExperimentSteps,
     SidebarStatus,
-    Status
+    Variant
 } from '@dotcms/dotcms-models';
-import { DotExperimentsConfigurationVariantsAddComponent } from '@portlets/dot-experiments/dot-experiments-configuration/components/dot-experiments-configuration-variants-add/dot-experiments-configuration-variants-add.component';
 import { MockDotMessageService } from '@dotcms/utils-testing';
-import { DotMessageService } from '@dotcms/data-access';
-import { DecimalPipe } from '@angular/common';
+import { DotExperimentsConfigurationVariantsAddComponent } from '@portlets/dot-experiments/dot-experiments-configuration/components/dot-experiments-configuration-variants-add/dot-experiments-configuration-variants-add.component';
+import { DotExperimentsConfigurationStore } from '@portlets/dot-experiments/dot-experiments-configuration/store/dot-experiments-configuration-store';
+import { DotExperimentsService } from '@portlets/dot-experiments/shared/services/dot-experiments.service';
+import { DotHttpErrorManagerService } from '@services/dot-http-error-manager/dot-http-error-manager.service';
+
+import { DotExperimentsConfigurationVariantsComponent } from './dot-experiments-configuration-variants.component';
 
 const messageServiceMock = new MockDotMessageService({
     'experiments.configure.variants.weight': 'weight',
     'experiments.configure.variants.view': 'view',
-    'experiments.configure.variants.edit': 'edit',
+    'experiments.action.edit': 'edit',
     'experiments.configure.variants.delete': 'delete',
     'experiments.configure.variants.add': 'Add new variant'
 });
+
 describe('DotExperimentsConfigurationVariantsComponent', () => {
     let spectator: Spectator<DotExperimentsConfigurationVariantsComponent>;
 
@@ -30,15 +44,21 @@ describe('DotExperimentsConfigurationVariantsComponent', () => {
         imports: [
             ButtonModule,
             CardModule,
+            InplaceModule,
             DecimalPipe,
-            DotExperimentsConfigurationVariantsAddComponent
+            DotExperimentsConfigurationVariantsAddComponent,
+            DotCopyButtonModule
         ],
         component: DotExperimentsConfigurationVariantsComponent,
         providers: [
+            DotExperimentsConfigurationStore,
             {
                 provide: DotMessageService,
                 useValue: messageServiceMock
-            }
+            },
+            mockProvider(DotExperimentsService),
+            mockProvider(MessageService),
+            mockProvider(DotHttpErrorManagerService)
         ]
     });
 
@@ -52,7 +72,7 @@ describe('DotExperimentsConfigurationVariantsComponent', () => {
         it('a DEFAULT variant', () => {
             const variantsVm = {
                 stepStatus: {
-                    status: Status.IDLE,
+                    status: ComponentStatus.IDLE,
                     experimentStep: ExperimentSteps.VARIANTS,
                     isOpen: false
                 },
@@ -62,9 +82,8 @@ describe('DotExperimentsConfigurationVariantsComponent', () => {
             spectator.setInput(variantsVm);
             spectator.detectChanges();
 
-            expect(spectator.query(byTestId('variant-name'))).toHaveText(
-                variantsVm.variants[0].name
-            );
+            expect(spectator.queryAll(byTestId('variant-name')).length).toBe(1);
+
             expect(spectator.query(byTestId('variant-weight'))).toHaveText(
                 variantsVm.variants[0].weight + '.00% weight'
             );
@@ -76,7 +95,7 @@ describe('DotExperimentsConfigurationVariantsComponent', () => {
         it('should load the variant(s)', () => {
             const variantsVm = {
                 stepStatus: {
-                    status: Status.IDLE,
+                    status: ComponentStatus.IDLE,
                     experimentStep: ExperimentSteps.VARIANTS,
                     isOpen: false
                 },
@@ -89,7 +108,7 @@ describe('DotExperimentsConfigurationVariantsComponent', () => {
 
             spectator.setInput(variantsVm);
 
-            spectator.detectChanges();
+            spectator.detectComponentChanges();
 
             expect(spectator.query(byTestId('variant-title-step-done'))).toHaveClass('isDone');
             expect(spectator.queryAll(Card).length).toBe(4);
@@ -99,10 +118,9 @@ describe('DotExperimentsConfigurationVariantsComponent', () => {
             expect(variantsName[1]).toContainText(variantsVm.variants[1].name);
             expect(variantsName[2]).toContainText(variantsVm.variants[2].name);
 
-            const variantsUrl = spectator.queryAll(byTestId('variant-url'));
-            expect(variantsUrl[0]).toContainText(variantsVm.variants[0].url);
-            expect(variantsUrl[1]).toContainText(variantsVm.variants[1].url);
-            expect(variantsUrl[2]).toContainText(variantsVm.variants[2].url);
+            expect(spectator.queryAll(DotCopyButtonComponent).length).toBe(3);
+
+            expect(spectator.queryAll(Inplace).length).toBe(2);
 
             const variantsWeight = spectator.queryAll(byTestId('variant-weight'));
             expect(variantsWeight[0]).toContainText(variantsVm.variants[0].weight);
@@ -142,7 +160,7 @@ describe('DotExperimentsConfigurationVariantsComponent', () => {
     describe('interactions', () => {
         const variantsVm = {
             stepStatus: {
-                status: Status.IDLE,
+                status: ComponentStatus.IDLE,
                 experimentStep: ExperimentSteps.VARIANTS,
                 isOpen: false
             },
@@ -190,6 +208,7 @@ describe('DotExperimentsConfigurationVariantsComponent', () => {
 
             expect(output).toEqual({ variant: variantsVm.variants[0], mode: 'preview' });
         });
+
         it('should goToEditPage emit a variant and mode(edit) when edit button is clicked', () => {
             let output;
             spectator.output('goToEditPage').subscribe((result) => (output = result));
@@ -203,6 +222,108 @@ describe('DotExperimentsConfigurationVariantsComponent', () => {
 
             expect(output).toEqual({ variant: variantsVm.variants[1], mode: 'edit' });
         });
+
+        it('should edit output emit the new name', () => {
+            spectator.component.vm$ = of({
+                status: {
+                    status: ComponentStatus.IDLE,
+                    isOpen: false,
+                    experimentStep: ExperimentSteps.GOAL
+                }
+            });
+
+            const newVariantName = 'new name';
+            const variants: Variant[] = [
+                { id: '1', name: DEFAULT_VARIANT_NAME, weight: '50.00', url: 'url' },
+                { id: '2', name: 'to edit', weight: '50.00', url: 'url' }
+            ];
+
+            let output;
+            spectator.output('edit').subscribe((result) => (output = result));
+
+            spectator.setInput({
+                variants
+            });
+
+            spectator.query(Inplace).activate();
+
+            spectator.detectComponentChanges();
+
+            const viewButton = spectator.query(
+                byTestId('variant-save-name-btn')
+            ) as HTMLButtonElement;
+
+            const inplaceInput = spectator.query(byTestId('inplace-input')) as HTMLInputElement;
+            inplaceInput.value = newVariantName;
+            spectator.detectComponentChanges();
+
+            expect(viewButton.disabled).not.toBe(true);
+            spectator.detectComponentChanges();
+
+            spectator.click(viewButton);
+
+            spectator.detectComponentChanges();
+
+            expect(output).toEqual({ ...variants[1], name: newVariantName });
+        });
+
+        it('should save when press enter', () => {
+            spyOn(spectator.component, 'editVariantName');
+
+            spectator.component.vm$ = of({
+                status: {
+                    status: ComponentStatus.IDLE,
+                    isOpen: false,
+                    experimentStep: ExperimentSteps.GOAL
+                }
+            });
+
+            const variants: Variant[] = [
+                { id: '1', name: DEFAULT_VARIANT_NAME, weight: '50.00', url: 'url' },
+                { id: '2', name: 'to edit', weight: '50.00', url: 'url' }
+            ];
+
+            spectator.setInput({
+                variants
+            });
+
+            spectator.query(Inplace).activate();
+
+            spectator.detectComponentChanges();
+
+            const inplaceInput = spectator.query(byTestId('inplace-input')) as HTMLInputElement;
+            inplaceInput.value = 'new value';
+            spectator.detectComponentChanges();
+
+            spectator.dispatchKeyboardEvent(inplaceInput, 'keydown', 'Enter');
+
+            spectator.detectComponentChanges();
+
+            expect(spectator.component.editVariantName).toHaveBeenCalledWith(
+                'new value',
+                variants[1]
+            );
+        });
+
+        it('should the button of save show loading when is SAVING', () => {
+            spectator.query(Inplace).activate();
+
+            spectator.component.vm$ = of({
+                status: {
+                    status: ComponentStatus.SAVING,
+                    isOpen: false,
+                    experimentStep: ExperimentSteps.GOAL
+                }
+            });
+
+            spectator.detectComponentChanges();
+            const viewButton = spectator.query(
+                byTestId('variant-save-name-btn')
+            ) as HTMLButtonElement;
+
+            expect(viewButton).toHaveClass('p-disabled p-button-loading');
+        });
+
         it('should delete a variant', () => {
             let output;
             spectator.output('delete').subscribe((result) => (output = result));

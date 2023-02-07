@@ -1,18 +1,5 @@
 package com.dotmarketing.business;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Optional;
-import java.util.Set;
-import java.util.SortedSet;
-import java.util.TreeSet;
-import java.util.stream.Collectors;
 import com.dotcms.api.system.event.Payload;
 import com.dotcms.api.system.event.SystemEventType;
 import com.dotcms.api.system.event.SystemEventsAPI;
@@ -49,8 +36,21 @@ import com.google.common.collect.Sets;
 import com.liferay.portal.NoSuchRoleException;
 import com.liferay.portal.model.User;
 import com.liferay.portal.util.PortalUtil;
-import com.rainerhahnekamp.sneakythrow.Sneaky;
 import io.vavr.control.Try;
+
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Optional;
+import java.util.Set;
+import java.util.SortedSet;
+import java.util.TreeSet;
+import java.util.stream.Collectors;
 
 /**
  * PermissionAPI is an API intended to be a helper class for class to get Permissions.  Classes within the dotCMS
@@ -1054,23 +1054,43 @@ public class PermissionBitAPIImpl implements PermissionAPI {
 
 	}
 
-	private Optional<Permissionable> getPermissionableFromInode(final String inode)
-			throws DotDataException, DotSecurityException {
+	/**
+	 * Returns the Permissionable object based on its Inode.
+	 *
+	 * @param inode The Inode of the Permissionable object.
+	 *
+	 * @return The {@link Permissionable} object matching the specified Inode.
+	 *
+	 * @throws DotDataException     An error occurred when accessing the data source.
+	 * @throws DotSecurityException The User accessing this information does not hace the required permissions to do
+	 * so.
+	 */
+	private Optional<Permissionable> getPermissionableFromInode(final String inode) throws DotDataException,
+																								   DotSecurityException {
 		final Inode inodeObj = InodeFactory.getInode(inode, Inode.class);
-
-		if (null != inodeObj && UtilMethods.isSet(inodeObj.getInode())) {
-			return Optional.of(inodeObj);
+		final Class<?> clazz = Inode.Type.CONTENTLET.getTableName().equalsIgnoreCase(inodeObj.getType()) ?
+									   Contentlet.class : InodeUtils.getClassByDBType(inodeObj.getType());
+		Permissionable perm = null;
+		if (Contentlet.class.equals(clazz)) {
+			perm = APILocator.getContentletAPI().find(inode, APILocator.systemUser(), false);
+		} else if (Folder.class.equals(clazz)) {
+			perm = APILocator.getFolderAPI().find(inode, APILocator.systemUser(), false);
+		} else if (Container.class.equals(clazz)) {
+			perm = APILocator.getContainerAPI().find(inode, APILocator.systemUser(), false);
+		} else if (Template.class.equals(clazz)) {
+			perm = APILocator.getTemplateAPI().find(inode, APILocator.systemUser(), false);
+		} else if (Category.class.equals(clazz)) {
+			perm = APILocator.getCategoryAPI().find(inode, APILocator.systemUser(), false);
+		} else if (Link.class.equals(clazz)) {
+			perm = APILocator.getMenuLinkAPI().find(inode, APILocator.systemUser(), false);
 		} else {
-			//In the case an inode isn't found, we should check if it is a folder and return it
-			final Folder folder = APILocator.getFolderAPI()
-					.find(inode, APILocator.systemUser(), false);
-
+			// In the case an inode isn't found, we should check if it is a folder and return it
+			final Folder folder = APILocator.getFolderAPI().find(inode, APILocator.systemUser(), false);
 			if (null != folder && null != folder.getInode()) {
-				return Optional.of(folder);
+				perm = folder;
 			}
 		}
-
-		return Optional.empty();
+		return null != perm && UtilMethods.isSet(perm.getPermissionId()) ? Optional.of(perm) : Optional.empty();
 	}
 
 	@CloseDBIfOpened

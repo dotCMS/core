@@ -1,7 +1,8 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 
 import { DotBlockEditorComponent } from './dot-block-editor.component';
-import { SuggestionsService } from '@dotcms/block-editor';
+
+import { SuggestionsService } from '../../shared';
 
 describe('DotBlockEditorComponent', () => {
     let component: DotBlockEditorComponent;

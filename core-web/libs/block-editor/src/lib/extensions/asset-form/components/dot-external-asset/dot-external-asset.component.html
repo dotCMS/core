@@ -1,0 +1,20 @@
+<form class="wrapper" [formGroup]="form" (ngSubmit)="onSubmit(form.value)">
+    <div class="form-control">
+        <label for="url">Insert {{ type }} URL</label>
+        <input
+            id="url"
+            #input
+            [placeholder]="placerHolder"
+            formControlName="url"
+            autocomplete="off"
+            type="text"
+            pInputText
+        />
+    </div>
+    <div class="footer">
+        <span class="error-message" [class.hide]="!form.controls['url'].invalid || form.pristine"
+            >Enter a valid url</span
+        >
+        <button [disabled]="form.invalid" type="submit" pButton>Insert</button>
+    </div>
+</form>

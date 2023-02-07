@@ -1,10 +1,11 @@
 import { Plugin, PluginKey } from 'prosemirror-state';
 import { Decoration, DecorationSet } from 'prosemirror-view';
-
 import tippy, { Instance, Props } from 'tippy.js';
 
-import { popperModifiers, SuggestionsComponent } from '@dotcms/block-editor';
 import { getCellsOptions } from './utils';
+
+import { SuggestionsComponent } from '../../shared';
+import { popperModifiers } from '../bubble-menu/utils';
 
 class DotTableCellPluginView {
     public tippy: Instance | undefined;
@@ -27,15 +28,11 @@ class DotTableCellPluginView {
 export const DotTableCellPlugin = (options) => {
     let tippyCellOptions;
 
-    // dynamic selection to capture table cells, works with text nodes.
-    function setFocusDecoration(selection, node): Decoration {
-        return Decoration.node(
-            selection.from - (selection.$from.parentOffset + 2),
-            selection.to + (node.textContent.length - selection.$to.parentOffset + 2),
-            {
-                class: 'focus'
-            }
-        );
+    function setFocusDecoration(selection): Decoration {
+        // get the before and after position of the parent cell where the selection is.
+        return Decoration.node(selection.$to.before(3), selection.$to.after(3), {
+            class: 'focus'
+        });
     }
 
     function displayTableOptions(event: MouseEvent): void {
@@ -114,17 +111,15 @@ export const DotTableCellPlugin = (options) => {
         view: (view) => new DotTableCellPluginView(view, tippyCellOptions),
         props: {
             decorations(state) {
-                // get grandparent of the state selection.
-                const grandpaSelectedNode = state.selection.$from.node(
-                    state.selection.$from.depth - 1
-                );
+                // Table cells deep is 3, this approach will work while we don't allow nested tables.
+                const parentCell =
+                    state.selection.$from.depth > 3 ? state.selection.$from.node(3) : null;
+
                 if (
-                    grandpaSelectedNode?.type?.name == 'tableCell' ||
-                    grandpaSelectedNode?.type?.name == 'tableHeader'
+                    parentCell?.type?.name == 'tableCell' ||
+                    parentCell?.type?.name == 'tableHeader'
                 ) {
-                    return DecorationSet.create(state.doc, [
-                        setFocusDecoration(state.selection, grandpaSelectedNode)
-                    ]);
+                    return DecorationSet.create(state.doc, [setFocusDecoration(state.selection)]);
                 }
 
                 return null;

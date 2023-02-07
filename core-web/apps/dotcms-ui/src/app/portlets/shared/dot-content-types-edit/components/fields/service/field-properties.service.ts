@@ -1,10 +1,13 @@
 import { Injectable, Type } from '@angular/core';
-import { PROPERTY_INFO } from './field-property-info';
-import { DATA_TYPE_PROPERTY_INFO } from './data-type-property-info';
 import { ValidationErrors } from '@angular/forms';
-import { FieldService } from './field.service';
-import { FieldType } from '../models';
+
 import { DotDynamicFieldComponent } from '@dotcms/dotcms-models';
+
+import { DATA_TYPE_PROPERTY_INFO } from './data-type-property-info';
+import { PROPERTY_INFO } from './field-property-info';
+import { FieldService } from './field.service';
+
+import { FieldType } from '../models';
 
 /**
  * Provide method to handle with the Field Types's properties
@@ -83,16 +86,6 @@ export class FieldPropertyService {
      */
     isDisabledInEditMode(propertyName: string): boolean {
         return PROPERTY_INFO[propertyName] ? PROPERTY_INFO[propertyName].disabledInEdit : null;
-    }
-
-    /**
-     * Return true if field is fixed and the property should be disabled when fixed is true
-     * @param boolean fixed
-     * @param string propertyName
-     * @returns boolean
-     */
-    isDisabledInFixed(propertyName: string): boolean {
-        return PROPERTY_INFO[propertyName] ? PROPERTY_INFO[propertyName].disabledInFixed : false;
     }
 
     /**

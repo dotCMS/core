@@ -1,29 +1,31 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import {
-    DebugElement,
+    Component,
     ComponentFactoryResolver,
+    DebugElement,
     Directive,
-    Input,
     Injectable,
-    Component
+    Input
 } from '@angular/core';
-import { ContentTypeFieldsPropertiesFormComponent } from './content-type-fields-properties-form.component';
-import { ComponentFixture, waitForAsync, TestBed } from '@angular/core/testing';
-import { MockDotMessageService } from '@dotcms/utils-testing';
+import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing';
 import {
+    ReactiveFormsModule,
     UntypedFormBuilder,
     UntypedFormGroup,
     ValidationErrors,
-    Validators,
-    ReactiveFormsModule
+    Validators
 } from '@angular/forms';
-import { FieldPropertyService } from '../service';
+import { By } from '@angular/platform-browser';
+
 import { DotMessageService } from '@dotcms/data-access';
 import { DotCMSContentTypeField } from '@dotcms/dotcms-models';
-import { By } from '@angular/platform-browser';
-import { dotcmsContentTypeFieldBasicMock } from '@dotcms/utils-testing';
+import { dotcmsContentTypeFieldBasicMock, MockDotMessageService } from '@dotcms/utils-testing';
 import { DotPipesModule } from '@pipes/dot-pipes.module';
+
+import { ContentTypeFieldsPropertiesFormComponent } from './content-type-fields-properties-form.component';
+
+import { FieldPropertyService } from '../service';
 
 const mockDFormFieldData = {
     ...dotcmsContentTypeFieldBasicMock,
@@ -82,7 +84,7 @@ class TestFieldPropertiesService {
     }
 }
 
-xdescribe('ContentTypeFieldsPropertiesFormComponent', () => {
+describe('ContentTypeFieldsPropertiesFormComponent', () => {
     let hostComp: DotHostTesterComponent;
     let hostFixture: ComponentFixture<DotHostTesterComponent>;
 
@@ -140,7 +142,6 @@ xdescribe('ContentTypeFieldsPropertiesFormComponent', () => {
             providers: [
                 UntypedFormBuilder,
                 ComponentFactoryResolver,
-                FieldPropertyService,
                 { provide: FieldPropertyService, useClass: TestFieldPropertiesService },
                 { provide: DotMessageService, useValue: messageServiceMock }
             ]
@@ -253,6 +254,32 @@ xdescribe('ContentTypeFieldsPropertiesFormComponent', () => {
 
             expect(comp.form.get('indexed')).toBe(null);
             expect(comp.form.get('required')).toBe(null);
+        });
+    });
+
+    describe('form fields', () => {
+        beforeEach(() => {
+            spyOn(mockFieldPropertyService, 'getProperties').and.returnValue([
+                'property1',
+                'searchable',
+                'unique',
+                'listed'
+            ]);
+            spyOn(mockFieldPropertyService, 'existsComponent').and.returnValue(true);
+        });
+
+        beforeEach(async () => await startHostComponent());
+
+        it('should only be disabled when isDisabledInEditMode is true', () => {
+            const formProperties = Object.keys(comp.form.controls);
+            formProperties.forEach((property) => {
+                if (
+                    comp.form.controls[property].disabled &&
+                    !mockFieldPropertyService.isDisabledInEditMode(property)
+                ) {
+                    fail();
+                }
+            });
         });
     });
 });

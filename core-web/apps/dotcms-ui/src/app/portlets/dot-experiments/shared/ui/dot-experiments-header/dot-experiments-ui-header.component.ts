@@ -1,8 +1,10 @@
-import { ChangeDetectionStrategy, Component, EventEmitter, Input, Output } from '@angular/core';
-import { DotIconModule } from '@dotcms/ui';
-import { SkeletonModule } from 'primeng/skeleton';
 import { CommonModule } from '@angular/common';
+import { ChangeDetectionStrategy, Component, EventEmitter, Input, Output } from '@angular/core';
 import { RouterLinkWithHref } from '@angular/router';
+
+import { SkeletonModule } from 'primeng/skeleton';
+
+import { DotIconModule } from '@dotcms/ui';
 
 @Component({
     standalone: true,
@@ -20,5 +22,5 @@ export class DotExperimentsUiHeaderComponent {
     isLoading: boolean;
 
     @Output()
-    goBack = new EventEmitter<void>();
+    goBack = new EventEmitter<boolean>();
 }

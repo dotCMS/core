@@ -1,66 +1,69 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { waitForAsync, ComponentFixture, fakeAsync, tick, TestBed } from '@angular/core/testing';
+import * as _ from 'lodash';
+import { DragulaModule, DragulaService } from 'ng2-dragula';
+import { Observable, of, Subject } from 'rxjs';
+
+import { HttpClientTestingModule } from '@angular/common/http/testing';
 import {
-    DebugElement,
     Component,
-    Input,
-    Output,
+    DebugElement,
     EventEmitter,
     Injectable,
+    Input,
+    Output,
     Renderer2
 } from '@angular/core';
-import { ContentTypeFieldsDropZoneComponent } from '.';
-import { By } from '@angular/platform-browser';
-import { ContentTypeFieldsAddRowModule } from '..';
-
-import {
-    DotCMSContentTypeField,
-    DotCMSContentTypeLayoutRow,
-    DotCMSContentType,
-    DotFieldVariable
-} from '@dotcms/dotcms-models';
+import { ComponentFixture, fakeAsync, TestBed, tick, waitForAsync } from '@angular/core/testing';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
-import { DotFieldValidationMessageModule } from '@components/_common/dot-field-validation-message/dot-file-validation-message.module';
-import { DotActionButtonModule } from '@components/_common/dot-action-button/dot-action-button.module';
-import { DotEventsService, DotMessageService } from '@dotcms/data-access';
-import { LoginService, DotEventsSocket, CoreWebService } from '@dotcms/dotcms-js';
+import { By } from '@angular/platform-browser';
+import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { Router } from '@angular/router';
 import { RouterTestingModule } from '@angular/router/testing';
-import { Observable, of, Subject } from 'rxjs';
-import { DotFormatDateService } from '@dotcms/app/api/services/dot-format-date-service';
-import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
-import { FieldDragDropService } from '../service/index';
-import { FieldPropertyService } from '../service/field-properties.service';
-import { FieldService } from '../service/field.service';
-import { UiDotIconButtonModule } from '@components/_common/dot-icon-button/dot-icon-button.module';
-import { DotIconModule } from '@dotcms/ui';
-import { FieldUtil, MockDotMessageService } from '@dotcms/utils-testing';
-import { DragulaModule, DragulaService } from 'ng2-dragula';
-import * as _ from 'lodash';
-import { DotDialogModule } from '@components/dot-dialog/dot-dialog.module';
+
+import { CheckboxModule } from 'primeng/checkbox';
 import { TableModule } from 'primeng/table';
-import { DotContentTypeFieldsVariablesModule } from '../dot-content-type-fields-variables/dot-content-type-fields-variables.module';
-
-import {
-    dotcmsContentTypeFieldBasicMock,
-    fieldsWithBreakColumn,
-    fieldsBrokenWithColumns,
-    dotcmsContentTypeBasicMock
-} from '@dotcms/utils-testing';
-
-import { cleanUpDialog } from '@dotcms/utils-testing';
-import { CoreWebServiceMock } from '@dotcms/utils-testing';
-import { HttpClientTestingModule } from '@angular/common/http/testing';
-import { DotMessagePipeModule } from '@pipes/dot-message/dot-message-pipe.module';
 import { TabViewModule } from 'primeng/tabview';
-import { DotHttpErrorManagerService } from '@dotcms/app/api/services/dot-http-error-manager/dot-http-error-manager.service';
+
+import { DotActionButtonModule } from '@components/_common/dot-action-button/dot-action-button.module';
+import { DotFieldValidationMessageModule } from '@components/_common/dot-field-validation-message/dot-file-validation-message.module';
+import { UiDotIconButtonModule } from '@components/_common/dot-icon-button/dot-icon-button.module';
+import { DotDialogActions, DotDialogComponent } from '@components/dot-dialog/dot-dialog.component';
+import { DotDialogModule } from '@components/dot-dialog/dot-dialog.module';
 import { DotMessageDisplayService } from '@components/dot-message-display/services';
+import { DotFormatDateService } from '@dotcms/app/api/services/dot-format-date-service';
+import { DotHttpErrorManagerService } from '@dotcms/app/api/services/dot-http-error-manager/dot-http-error-manager.service';
+import { DotEventsService, DotMessageService } from '@dotcms/data-access';
+import { CoreWebService, DotEventsSocket, LoginService } from '@dotcms/dotcms-js';
+import {
+    DotCMSContentType,
+    DotCMSContentTypeField,
+    DotCMSContentTypeLayoutRow,
+    DotFieldVariable
+} from '@dotcms/dotcms-models';
+import { DotIconModule } from '@dotcms/ui';
+import { DotLoadingIndicatorService } from '@dotcms/utils';
+import {
+    cleanUpDialog,
+    CoreWebServiceMock,
+    dotcmsContentTypeBasicMock,
+    dotcmsContentTypeFieldBasicMock,
+    fieldsBrokenWithColumns,
+    fieldsWithBreakColumn,
+    FieldUtil,
+    MockDotMessageService
+} from '@dotcms/utils-testing';
+import { DotMessagePipeModule } from '@pipes/dot-message/dot-message-pipe.module';
+
+import { ContentTypeFieldsDropZoneComponent } from '.';
+
+import { ContentTypeFieldsAddRowModule } from '..';
 import { DotConvertToBlockInfoComponent } from '../../dot-convert-to-block-info/dot-convert-to-block-info.component';
 import { DotConvertWysiwygToBlockComponent } from '../../dot-convert-wysiwyg-to-block/dot-convert-wysiwyg-to-block.component';
-import { CheckboxModule } from 'primeng/checkbox';
-import { DotLoadingIndicatorService } from '@dotcms/utils';
-import { DotDialogActions, DotDialogComponent } from '@components/dot-dialog/dot-dialog.component';
+import { DotContentTypeFieldsVariablesModule } from '../dot-content-type-fields-variables/dot-content-type-fields-variables.module';
+import { FieldPropertyService } from '../service/field-properties.service';
+import { FieldService } from '../service/field.service';
+import { FieldDragDropService } from '../service/index';
 
 const COLUMN_BREAK_FIELD = FieldUtil.createColumnBreak();
 

@@ -11,19 +11,21 @@ import {
     ViewChild
 } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { By } from '@angular/platform-browser';
 
-import { DotMessagePipeModule } from '@pipes/dot-message/dot-message-pipe.module';
+import { IframeComponent } from '@components/_common/iframe/iframe-component';
+import { DotPortletBoxModule } from '@components/dot-portlet-base/components/dot-portlet-box/dot-portlet-box.module';
 import { DotMessageService } from '@dotcms/data-access';
 import { MockDotMessageService } from '@dotcms/utils-testing';
+import { DotMessagePipeModule } from '@pipes/dot-message/dot-message-pipe.module';
+
 import { DotTemplateBuilderComponent } from './dot-template-builder.component';
-import { By } from '@angular/platform-browser';
+
 import {
     DotTemplateItem,
     EMPTY_TEMPLATE_ADVANCED,
     EMPTY_TEMPLATE_DESIGN
 } from '../store/dot-template.store';
-import { DotPortletBoxModule } from '@components/dot-portlet-base/components/dot-portlet-box/dot-portlet-box.module';
-import { IframeComponent } from '@components/_common/iframe/iframe-component';
 
 @Component({
     selector: 'dot-edit-layout-designer',

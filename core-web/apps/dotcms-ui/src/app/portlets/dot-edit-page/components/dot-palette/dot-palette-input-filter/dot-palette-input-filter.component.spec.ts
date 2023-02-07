@@ -1,11 +1,13 @@
-import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { Component, DebugElement, Input } from '@angular/core';
-import { By } from '@angular/platform-browser';
-import { DotPaletteInputFilterComponent } from './dot-palette-input-filter.component';
-import { DotPipesModule } from '@pipes/dot-pipes.module';
-import { CoreWebService, CoreWebServiceMock } from '@dotcms/dotcms-js';
 import { HttpClientTestingModule } from '@angular/common/http/testing';
+import { Component, DebugElement, Input } from '@angular/core';
+import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { FormsModule } from '@angular/forms';
+import { By } from '@angular/platform-browser';
+
+import { CoreWebService, CoreWebServiceMock } from '@dotcms/dotcms-js';
+import { DotPipesModule } from '@pipes/dot-pipes.module';
+
+import { DotPaletteInputFilterComponent } from './dot-palette-input-filter.component';
 
 @Component({
     selector: 'dot-icon',

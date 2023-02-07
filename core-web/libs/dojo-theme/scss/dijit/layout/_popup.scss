@@ -1,0 +1,10 @@
+.dijit {
+    &Popup {
+        border: $popup-border;
+        box-shadow: $popup-shadow;
+    }
+
+    &TimePickerPopup {
+        border: $popup-border;
+    }
+}

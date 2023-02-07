@@ -79,20 +79,14 @@ const DEPS_ENV = {
     postgres: {
         POSTGRES_USER: 'postgres',
         POSTGRES_PASSWORD: 'postgres',
-        POSTGRES_DB: 'dotcms' /*,
-        MAX_LOCKS_PER_TRANSACTION: '128'*/
+        POSTGRES_DB: 'dotcms'
     }
 };
 exports.COMMANDS = {
     gradle: [
         {
             cmd: './gradlew',
-            args: ['createDistPrep'],
-            workingDir: dotCmsRoot
-        },
-        {
-            cmd: './gradlew',
-            args: ['integrationTest', `-PdatabaseType=${dbType}`],
+            args: ['integrationTest', `-PdatabaseType=${dbType}`, '--stacktrace'],
             workingDir: dotCmsRoot
         }
     ],
@@ -113,6 +107,21 @@ const STOP_ANALYTICS_INFRA_CMD = {
     cmd: 'docker-compose',
     args: ['-f', 'analytics-compose.yml', 'down', '-v'],
     workingDir: dockerFolder
+};
+const PULL_OPEN_DISTRO_CMD = {
+    cmd: 'docker',
+    args: ['pull', 'ghcr.io/dotcms/elasticsearch:7.9.1'],
+    workingDir: dockerFolder,
+    env: DEPS_ENV[dbType]
+};
+const PULL_DB_CMD = {
+    cmd: 'docker',
+    args: [
+        'pull',
+        `${dbType === 'mssql' ? 'ghcr.io/dotcms/mssqlserver:2017-latest' : 'ghcr.io/dotcms/postgres:13-alpine'}`
+    ],
+    workingDir: dockerFolder,
+    env: DEPS_ENV[dbType]
 };
 const START_DEPENDENCIES_CMD = {
     cmd: 'docker-compose',
@@ -156,8 +165,10 @@ const runTests = (cmds) => __awaiter(void 0, void 0, void 0, function* () {
             yield waitFor(160, 'Analytics Infrastructure');
             yield warmUpAnalytics();
         }
+        yield execCmd(PULL_OPEN_DISTRO_CMD);
+        yield execCmd(PULL_DB_CMD);
         execCmdAsync(START_DEPENDENCIES_CMD);
-        yield waitFor(60, `ES and ${dbType}`);
+        yield waitFor(resolveWait(), `ES and ${dbType}`);
         // Executes ITs
         const cmd = cmds[idx];
         resolveParams(cmd);
@@ -191,6 +202,9 @@ const runTests = (cmds) => __awaiter(void 0, void 0, void 0, function* () {
     }
 });
 exports.runTests = runTests;
+const resolveWait = () => {
+    return dbType === 'mssql' ? 45 : 30;
+};
 /**
  * Stops dependencies.
  */
@@ -342,7 +356,7 @@ const fetchAccessToken = () => __awaiter(void 0, void 0, void 0, function* () {
 });
 const warmUpIdp = () => __awaiter(void 0, void 0, void 0, function* () {
     yield fetchAccessToken();
-    waitFor(1000, "IDP warmup");
+    waitFor(1000, 'IDP warmup');
     const response = yield fetchAccessToken();
     const accessToken = (yield response.json());
     return accessToken;
@@ -360,7 +374,7 @@ const fetchAnalyticsKey = (accessToken) => __awaiter(void 0, void 0, void 0, fun
 });
 const warmUpConfig = (accessToken) => __awaiter(void 0, void 0, void 0, function* () {
     yield fetchAnalyticsKey(accessToken);
-    waitFor(1000, "Config warmup");
+    waitFor(1000, 'Config warmup');
     const response = yield fetchAnalyticsKey(accessToken);
     const analyticsKey = (yield response.json());
     return analyticsKey;
@@ -719,7 +733,7 @@ const run = () => __awaiter(void 0, void 0, void 0, function* () {
     const result = yield integration.runTests(cmds);
     const skipReport = !(result.outputDir && fs.existsSync(result.outputDir));
     setOutput('tests_results_location', result.outputDir);
-    setOutput('tests_results_report_location', result.reportDir, true);
+    setOutput('tests_results_report_location', result.reportDir);
     setOutput('ci_index', result.ciIndex);
     setOutput('tests_results_status', result.exitCode === 0 ? 'PASSED' : 'FAILED');
     setOutput('tests_results_skip_report', skipReport);

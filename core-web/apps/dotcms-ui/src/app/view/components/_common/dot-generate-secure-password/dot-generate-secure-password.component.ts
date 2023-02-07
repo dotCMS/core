@@ -1,10 +1,13 @@
-import { Component, OnDestroy, OnInit } from '@angular/core';
 import { Subject } from 'rxjs';
+
+import { Component, OnDestroy, OnInit } from '@angular/core';
+
 import { takeUntil } from 'rxjs/operators';
-import { DotDialogActions } from '../../dot-dialog/dot-dialog.component';
-import { DotMessageService } from '@dotcms/data-access';
-import { DotGenerateSecurePasswordService } from '@dotcms/data-access';
+
 import { DotClipboardUtil } from '@dotcms/app/api/util/clipboard/ClipboardUtil';
+import { DotGenerateSecurePasswordService, DotMessageService } from '@dotcms/data-access';
+
+import { DotDialogActions } from '../../dot-dialog/dot-dialog.component';
 
 @Component({
     selector: 'dot-generate-secure-password',

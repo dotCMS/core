@@ -1,24 +1,41 @@
-<p-card>
-    <ng-template pTemplate="title">
-        <h2 data-testId="scheduling-card-name">
-            {{ 'experiments.configure.scheduling.name' | dm }}
-        </h2>
-    </ng-template>
+<ng-container *ngIf="vm$ | async as vm">
+    <p-card>
+        <ng-template pTemplate="title">
+            <h2 data-testId="scheduling-card-name">
+                {{ 'experiments.configure.scheduling.name' | dm }}
+            </h2>
+        </ng-template>
 
-    <p-card styleClass="card-rounded">
-        <div class="flex flex-row align-items-center align-content-between gap-2">
-            <div class="title flex flex-grow-1 flex-column">
-                <span data-testId="scheduling-card-title-row">{{
-                    'experiments.configure.scheduling.start' | dm
-                }}</span>
+        <p-card styleClass="card-rounded">
+            <div class="flex flex-row align-items-center align-content-between gap-2">
+                <div class="title flex flex-grow-1 flex-column">
+                    <span data-testId="scheduling-card-title-row">{{
+                        'experiments.configure.scheduling.start' | dm
+                    }}</span>
+                </div>
+
+                <button
+                    class="p-button-sm p-button-link"
+                    (click)="setupSchedule()"
+                    data-testId="scheduling-setup-button"
+                    pButton
+                    pRipple
+                >
+                    <ng-container *ngIf="!vm.scheduling; else dateRange">
+                        {{ 'experiments.configure.scheduling.setup' | dm }}
+                    </ng-container>
+                </button>
             </div>
-
-            <p-button
-                (onClick)="setupSchedule()"
-                data-testId="scheduling-setup-button"
-                label="{{ 'experiments.configure.scheduling.setup' | dm }}"
-                styleClass="p-button-sm p-button-link"
-            ></p-button>
-        </div>
+        </p-card>
     </p-card>
-</p-card>
+
+    <ng-template #dateRange>
+        {{ 'start' | dm | titlecase }}:
+        <span>{{ vm.scheduling.startDate | date : 'EEE, LLL dd, Y, h:mm aa zz' }}</span> -
+        {{ 'end' | dm | titlecase }}:
+        <span>{{ vm.scheduling.endDate | date : 'EEE, LLL dd, Y, h:mm aa zz' }}</span>
+    </ng-template>
+</ng-container>
+
+<ng-container dotDynamic></ng-container>
+<p-confirmPopup></p-confirmPopup>

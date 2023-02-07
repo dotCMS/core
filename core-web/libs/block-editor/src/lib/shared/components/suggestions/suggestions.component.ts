@@ -8,16 +8,18 @@ import {
     Output,
     ViewChild
 } from '@angular/core';
-
 import { SafeUrl } from '@angular/platform-browser';
-import { DotCMSContentlet, DotCMSContentType } from '@dotcms/dotcms-models';
 
-import { map, take } from 'rxjs/operators';
 import { MenuItem } from 'primeng/api';
 
-import { DotLanguageService, SuggestionsService, Languages } from '@dotcms/block-editor/services';
-import { DEFAULT_LANG_ID, suggestionOptions, SuggestionListComponent } from '@dotcms/block-editor';
+import { map, take } from 'rxjs/operators';
 
+import { DotCMSContentlet, DotCMSContentType } from '@dotcms/dotcms-models';
+
+import { DEFAULT_LANG_ID } from '../../../extensions';
+import { DotLanguageService, Languages, SuggestionsService } from '../../services';
+import { suggestionOptions } from '../../utils/suggestion.utils';
+import { SuggestionListComponent } from '../suggestion-list/suggestion-list.component';
 export interface SuggestionsCommandProps {
     payload?: DotCMSContentlet;
     type: { name: string; level?: number };
@@ -50,6 +52,7 @@ export class SuggestionsComponent implements OnInit {
     @Input() noResultsMessage = 'No Results';
     @Input() currentLanguage = DEFAULT_LANG_ID;
     @Input() allowedContentTypes = '';
+    @Input() allowedBlocks = [];
 
     @Output() clearFilter: EventEmitter<string> = new EventEmitter<string>();
 
@@ -80,7 +83,10 @@ export class SuggestionsComponent implements OnInit {
     ngOnInit(): void {
         if (this.items?.length === 0) {
             // assign the default suggestions options.
-            this.items = suggestionOptions;
+            this.items = this.allowedBlocks.length
+                ? suggestionOptions.filter((item) => this.allowedBlocks.includes(item.id))
+                : suggestionOptions;
+            // Extra this to an function
             this.items.forEach((item) => {
                 item.command = () => {
                     this.clearFilter.emit(ItemsType.BLOCK);

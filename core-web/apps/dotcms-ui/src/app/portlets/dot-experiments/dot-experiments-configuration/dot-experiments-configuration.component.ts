@@ -1,7 +1,9 @@
+import { Observable } from 'rxjs';
+
 import { ChangeDetectionStrategy, Component, OnInit } from '@angular/core';
-import { DotExperimentsConfigurationStore } from '@portlets/dot-experiments/dot-experiments-configuration/store/dot-experiments-configuration-store.service';
 import { ActivatedRoute, Router } from '@angular/router';
 
+import { DotMessagePipe } from '@dotcms/app/view/pipes';
 import { DotSessionStorageService } from '@dotcms/data-access';
 import {
     DotExperiment,
@@ -10,16 +12,21 @@ import {
     SidebarStatus,
     Variant
 } from '@dotcms/dotcms-models';
+import {
+    ConfigurationViewModel,
+    DotExperimentsConfigurationStore
+} from '@portlets/dot-experiments/dot-experiments-configuration/store/dot-experiments-configuration-store';
 
 @Component({
     selector: 'dot-experiments-configuration',
     templateUrl: './dot-experiments-configuration.component.html',
     styleUrls: ['./dot-experiments-configuration.component.scss'],
-    providers: [DotExperimentsConfigurationStore],
+    providers: [DotExperimentsConfigurationStore, DotMessagePipe],
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotExperimentsConfigurationComponent implements OnInit {
-    vm$ = this.dotExperimentsConfigurationStore.vm$;
+    vm$: Observable<ConfigurationViewModel> = this.dotExperimentsConfigurationStore.vm$;
+    experimentSteps = ExperimentSteps;
 
     constructor(
         private readonly dotExperimentsConfigurationStore: DotExperimentsConfigurationStore,
@@ -36,6 +43,7 @@ export class DotExperimentsConfigurationComponent implements OnInit {
 
     /**
      * Go to Experiment List
+     * @param {string} pageId
      * @returns void
      * @memberof DotExperimentsConfigurationComponent
      */
@@ -43,7 +51,7 @@ export class DotExperimentsConfigurationComponent implements OnInit {
         this.router.navigate(['/edit-page/experiments/', pageId], {
             queryParams: {
                 editPageTab: null,
-                variationName: null,
+                variantName: null,
                 experimentId: null
             },
             queryParamsHandling: 'merge'
@@ -51,13 +59,25 @@ export class DotExperimentsConfigurationComponent implements OnInit {
     }
 
     /**
-     * Open/Close sidebar
+     * Run the Experiment
+     * @param {DotExperiment} experiment
+     * @returns void
+     * @memberof DotExperimentsConfigurationVariantsComponent
+     */
+    runExperiment(experiment: DotExperiment) {
+        this.dotExperimentsConfigurationStore.startExperiment(experiment);
+    }
+
+    /**
+     * Sidebar controller
+     * @param {SidebarStatus} action
+     * @param {ExperimentSteps} step
      * @returns void
      * @memberof DotExperimentsConfigurationComponent
      */
-    sidebarStatusChanged(action: SidebarStatus) {
+    sidebarStatusController(action: SidebarStatus, step?: ExperimentSteps) {
         if (action === SidebarStatus.OPEN) {
-            this.dotExperimentsConfigurationStore.openSidebar(ExperimentSteps.VARIANTS);
+            this.dotExperimentsConfigurationStore.openSidebar(step);
         } else {
             this.dotExperimentsConfigurationStore.closeSidebar();
         }
@@ -65,22 +85,44 @@ export class DotExperimentsConfigurationComponent implements OnInit {
 
     /**
      * Save a specific variant
-     * @param {Pick<DotExperiment, 'name'>} variant
+     * @param data
+     * @param {string} experimentId
      * @returns void
      * @memberof DotExperimentsConfigurationComponent
      */
-    saveVariant(variant: Pick<DotExperiment, 'name'>) {
-        this.dotExperimentsConfigurationStore.addVariant(variant);
+    saveVariant(data: Pick<DotExperiment, 'name'>, experimentId: string) {
+        this.dotExperimentsConfigurationStore.addVariant({
+            data,
+            experimentId
+        });
+    }
+
+    /**
+     * Edit a specific variant
+     * @param data
+     * @param {string} experimentId
+     * @returns void
+     * @memberof DotExperimentsConfigurationComponent
+     */
+    editVariant(data: Pick<DotExperiment, 'name' | 'id'>, experimentId: string) {
+        this.dotExperimentsConfigurationStore.editVariant({
+            data,
+            experimentId
+        });
     }
 
     /**
      * Delete a specific variant
      * @param {Variant} variant
+     * @param {string} experimentId
      * @returns void
      * @memberof DotExperimentsConfigurationComponent
      */
-    deleteVariant(variant: Variant) {
-        this.dotExperimentsConfigurationStore.deleteVariant(variant);
+    deleteVariant(variant: Variant, experimentId: string) {
+        this.dotExperimentsConfigurationStore.deleteVariant({
+            experimentId,
+            variant
+        });
     }
 
     /**
@@ -95,7 +137,7 @@ export class DotExperimentsConfigurationComponent implements OnInit {
         this.router.navigate(['edit-page/content'], {
             queryParams: {
                 editPageTab: variant.mode,
-                variationName: variant.variant.id,
+                variantName: variant.variant.id,
                 experimentId: this.route.snapshot.params.experimentId
             },
             queryParamsHandling: 'merge'

@@ -1,11 +1,19 @@
-import { DotExperimentsService } from './dot-experiments.service';
 import { createHttpFactory, HttpMethod, SpectatorHttp } from '@ngneat/spectator';
+
+import {
+    DefaultGoalConfiguration,
+    DotExperiment,
+    Goals,
+    GoalsLevels,
+    Variant
+} from '@dotcms/dotcms-models';
+import { DotExperimentsService } from '@portlets/dot-experiments/shared/services/dot-experiments.service';
 import { ExperimentMocks } from '@portlets/dot-experiments/test/mocks';
-import { DotExperiment, Variant } from '@dotcms/dotcms-models';
 
 const API_ENDPOINT = '/api/v1/experiments';
 const PAGE_Id = '123';
 const EXPERIMENT_ID = ExperimentMocks[0].id;
+const VARIANT_ID = ExperimentMocks[0].trafficProportion.variants[0].id;
 
 describe('DotExperimentsService', () => {
     let spectator: SpectatorHttp<DotExperimentsService>;
@@ -33,9 +41,14 @@ describe('DotExperimentsService', () => {
         spectator.expectOne(`${API_ENDPOINT}/${EXPERIMENT_ID}`, HttpMethod.GET);
     });
 
-    it('should archive a experiment with experimentId', () => {
+    it('should archive an experiment with experimentId', () => {
         spectator.service.archive(EXPERIMENT_ID).subscribe();
         spectator.expectOne(`${API_ENDPOINT}/${EXPERIMENT_ID}/_archive`, HttpMethod.PUT);
+    });
+
+    it('should start an experiment with experimentId as param', () => {
+        spectator.service.start(EXPERIMENT_ID).subscribe();
+        spectator.expectOne(`${API_ENDPOINT}/${EXPERIMENT_ID}/_start`, HttpMethod.POST);
     });
 
     it('should delete a experiment with experimentId', () => {
@@ -51,6 +64,16 @@ describe('DotExperimentsService', () => {
         spectator.expectOne(`${API_ENDPOINT}/${EXPERIMENT_ID}/variants`, HttpMethod.POST);
     });
 
+    it('should edit a variant experimentId', () => {
+        spectator.service
+            .editVariant(EXPERIMENT_ID, VARIANT_ID, { description: 'new-name' })
+            .subscribe();
+        spectator.expectOne(
+            `${API_ENDPOINT}/${EXPERIMENT_ID}/variants/${VARIANT_ID}`,
+            HttpMethod.PUT
+        );
+    });
+
     it('should delete a variant with experimentId', () => {
         const variantIdToRemove = '11111111';
         spectator.service.removeVariant(EXPERIMENT_ID, variantIdToRemove).subscribe();
@@ -58,5 +81,31 @@ describe('DotExperimentsService', () => {
             `${API_ENDPOINT}/${EXPERIMENT_ID}/variants/${variantIdToRemove}`,
             HttpMethod.DELETE
         );
+    });
+
+    it('should assign a goal to experiment ', () => {
+        const goal: Goals = {
+            ...DefaultGoalConfiguration
+        };
+        spectator.service.setGoal(EXPERIMENT_ID, goal).subscribe();
+        spectator.expectOne(`${API_ENDPOINT}/${EXPERIMENT_ID}`, HttpMethod.PATCH);
+    });
+
+    it('should delete a goal with experimentId', () => {
+        const goalType: GoalsLevels = 'primary';
+        spectator.service.deleteGoal(EXPERIMENT_ID, goalType).subscribe();
+        spectator.expectOne(
+            `${API_ENDPOINT}/${EXPERIMENT_ID}/goals/${goalType}`,
+            HttpMethod.DELETE
+        );
+    });
+
+    it('should set scheduling to experiment', () => {
+        const newScheduling = { startDate: 1, endDate: 2 };
+        spectator.service.setScheduling(EXPERIMENT_ID, newScheduling).subscribe();
+
+        const req = spectator.expectOne(`${API_ENDPOINT}/${EXPERIMENT_ID}`, HttpMethod.PATCH);
+
+        expect(req.request.body['scheduling']).toEqual(newScheduling);
     });
 });

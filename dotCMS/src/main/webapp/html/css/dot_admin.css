@@ -196,7 +196,6 @@ tr.active{background:#ffffcc;cursor:pointer;}
 
 .fieldValueText{color:#999;border: 1px solid #ddd;padding:3px 8px;width:400px;}
 .lockedAgo{display:block;color:#999;font-size:11px;font-style:italic;line-height:14px;}
-.required2{color:#aa0000;}
 .dijitTooltipData{width:50px !important;}
 
 .fieldWrapperSide{margin: 0 0 10px 0;padding:0;}
@@ -941,7 +940,6 @@ tr.active{background:#ffffcc;cursor:pointer;}
 
 .fieldValueText{color:#999;border: 1px solid #ddd;padding:3px 8px;width:400px;}
 .lockedAgo{display:block;color:#999;font-size:11px;font-style:italic;line-height:14px;}
-.required2{color:#aa0000;}
 .dijitTooltipData{width:50px !important;}
 
 .fieldWrapperSide{margin: 0 0 10px 0;padding:0;}

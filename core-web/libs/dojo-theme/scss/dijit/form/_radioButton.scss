@@ -1,0 +1,36 @@
+.dijitRadio {
+    border-radius: calc($radio-size / 2);
+    background-color: $radio-normal-bgcolor;
+    border: $radio-normal-border;
+    height: $radio-size;
+    width: $radio-size;
+
+    &Checked {
+        border: $radio-checked-border;
+        position: relative;
+
+        &:before {
+            $size: $radio-size - 8;
+            border-radius: calc($size / 2);
+            background-color: $radio-checked-color;
+            content: "";
+            height: $size;
+            left: 50%;
+            margin-left: -(calc($size / 2));
+            margin-top: -(calc($size / 2));
+            position: absolute;
+            top: 50%;
+            width: $size;
+        }
+    }
+
+    &Disabled {
+        background-color: $radio-disabled-bgcolor;
+        border: $radio-disabled-border;
+        position: relative;
+
+        &:before {
+            background-color: $radio-checked-disabled-color;
+        }
+    }
+}

@@ -149,7 +149,7 @@ const resolveCommits = () => __awaiter(void 0, void 0, void 0, function* () {
             core.warning(`Could not get Github pull request ${pullRequest}`);
             return [];
         }
-        const commits = JSON.parse((yield response.text())).map(c => c.sha);
+        const commits = JSON.parse(yield response.text()).map(c => c.sha);
         core.info(`Found pull request ${pullRequest} commits:\n${commits.join(', ')}`);
         return commits;
     }

@@ -1,7 +1,6 @@
 package com.dotcms.rest.api.v1.user;
 
 import com.dotcms.UnitTestBase;
-import com.dotcms.api.system.user.UserService;
 import com.dotcms.cms.login.LoginServiceAPI;
 import com.dotcms.repackage.org.apache.struts.Globals;
 import com.dotcms.rest.ErrorResponseHelper;
@@ -10,9 +9,11 @@ import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.RestUtilTest;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.WebResource.InitBuilder;
+import com.dotcms.rest.api.DotRestInstanceProvider;
 import com.dotcms.rest.exception.ForbiddenException;
 import com.dotcms.util.PaginationUtil;
 import com.dotcms.util.UserUtilTest;
+import com.dotcms.util.pagination.UserPaginator;
 import com.dotmarketing.business.LayoutAPI;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.Role;
@@ -25,6 +26,7 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.util.Config;
+import com.dotmarketing.util.PaginatedArrayList;
 import com.dotmarketing.util.json.JSONException;
 import com.liferay.portal.model.User;
 import org.junit.Assert;
@@ -37,6 +39,7 @@ import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 import javax.ws.rs.core.Response;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -89,8 +92,13 @@ public class UserResourceTest extends UnitTestBase {
         final PaginationUtil paginationUtil = mock(PaginationUtil.class);
         when(paginationUtil.getPage(request, user, filter, page, perPage )).thenReturn(responseExpected);
 
+        final DotRestInstanceProvider instanceProvider = new DotRestInstanceProvider()
+                                                                 .setUserAPI(userAPI)
+                                                                 .setHostAPI(siteAPI)
+                                                                 .setRoleAPI(roleAPI)
+                                                                 .setErrorHelper(errorHelper);
         UserResource userResource =
-                new UserResource(webResource, userAPI, siteAPI, userHelper, errorHelper, paginationUtil, roleAPI);
+                new UserResource(webResource, userHelper, paginationUtil, instanceProvider);
 
         try {
 
@@ -127,7 +135,6 @@ public class UserResourceTest extends UnitTestBase {
         HttpServletRequest request = RestUtilTest.getMockHttpRequest();
         final HttpServletResponse httpServletResponse = mock(HttpServletResponse.class);
         HttpSession session = request.getSession();
-        final UserService userService = mock(UserService.class);
         final RoleAPI roleAPI  = mock( RoleAPI.class );
         final UserAPI userAPI  = mock( UserAPI.class );
         final LayoutAPI layoutAPI  = mock( LayoutAPI.class );
@@ -164,8 +171,16 @@ public class UserResourceTest extends UnitTestBase {
         when(session.getAttribute(Globals.LOCALE_KEY)).thenReturn(new Locale.Builder().setLanguage("en").setRegion("US").build());
         when(loginService.passwordMatch("password", user)).thenReturn(true);
 
-        final UserResourceHelper userHelper  = new UserResourceHelper(userService, roleAPI, userAPI, layoutAPI, hostWebAPI,
-                userWebAPI, permissionAPI, userProxyAPI, loginService);
+        final DotRestInstanceProvider helperInstanceProvider = new DotRestInstanceProvider()
+                                                                       .setRoleAPI(roleAPI)
+                                                                       .setUserAPI(userAPI)
+                                                                       .setLayoutAPI(layoutAPI)
+                                                                       .setHostWebAPI(hostWebAPI)
+                                                                       .setUserWebAPI(userWebAPI)
+                                                                       .setPermissionAPI(permissionAPI)
+                                                                       .setUserProxyAPI(userProxyAPI)
+                                                                       .setLoginService(loginService);
+        final UserResourceHelper userHelper = new UserResourceHelper(helperInstanceProvider);
 
         String filter = "filter";
         int page = 3;
@@ -175,9 +190,13 @@ public class UserResourceTest extends UnitTestBase {
         final PaginationUtil paginationUtil = mock(PaginationUtil.class);
         when(paginationUtil.getPage(request, user, filter, page, perPage )).thenReturn(responseExpected);
 
-
+        final DotRestInstanceProvider instanceProvider = new DotRestInstanceProvider()
+                                                                 .setUserAPI(userAPI)
+                                                                 .setHostAPI(siteAPI)
+                                                                 .setRoleAPI(roleAPI)
+                                                                 .setErrorHelper(errorHelper);
         UserResource userResource =
-                new UserResource(webResource, userAPI, siteAPI, userHelper, errorHelper, paginationUtil, roleAPI);
+                new UserResource(webResource, userHelper, paginationUtil, instanceProvider);
 
         UpdateUserForm updateUserForm = new UpdateUserForm.Builder()
                 .userId("dotcms.org.1")
@@ -207,7 +226,6 @@ public class UserResourceTest extends UnitTestBase {
         HttpServletRequest request = RestUtilTest.getMockHttpRequest();
         final HttpServletResponse httpServletResponse = mock(HttpServletResponse.class);
         HttpSession session = request.getSession();
-        final UserService userService = mock(UserService.class);
         final RoleAPI roleAPI  = mock( RoleAPI.class );
         final UserAPI userAPI  = mock( UserAPI.class );
         final LayoutAPI layoutAPI  = mock( LayoutAPI.class );
@@ -239,8 +257,16 @@ public class UserResourceTest extends UnitTestBase {
         when(session.getAttribute(Globals.LOCALE_KEY)).thenReturn(new Locale.Builder().setLanguage("en").setRegion("US").build());
         when(loginService.passwordMatch("password", user)).thenReturn(true);
 
-        final UserResourceHelper userHelper  = new UserResourceHelper(userService, roleAPI, userAPI, layoutAPI, hostWebAPI,
-                userWebAPI, permissionAPI, userProxyAPI, loginService);
+        final DotRestInstanceProvider helperInstanceProvider = new DotRestInstanceProvider()
+                                                                       .setRoleAPI(roleAPI)
+                                                                       .setUserAPI(userAPI)
+                                                                       .setLayoutAPI(layoutAPI)
+                                                                       .setHostWebAPI(hostWebAPI)
+                                                                       .setUserWebAPI(userWebAPI)
+                                                                       .setPermissionAPI(permissionAPI)
+                                                                       .setUserProxyAPI(userProxyAPI)
+                                                                       .setLoginService(loginService);
+        final UserResourceHelper userHelper  = new UserResourceHelper(helperInstanceProvider);
         String filter = "filter";
         int page = 3;
         int perPage = 4;
@@ -248,8 +274,13 @@ public class UserResourceTest extends UnitTestBase {
         Response responseExpected = Response.ok(new ResponseEntityView<>(users)).build();
         final PaginationUtil paginationUtil = mock(PaginationUtil.class);
         when(paginationUtil.getPage(request, user, filter, page, perPage )).thenReturn(responseExpected);
+        final DotRestInstanceProvider instanceProvider = new DotRestInstanceProvider()
+                                                                 .setUserAPI(userAPI)
+                                                                 .setHostAPI(siteAPI)
+                                                                 .setRoleAPI(roleAPI)
+                                                                 .setErrorHelper(errorHelper);
         UserResource userResource =
-                new UserResource(webResource, userAPI, siteAPI, userHelper, errorHelper, paginationUtil, roleAPI);
+                new UserResource(webResource, userHelper, paginationUtil, instanceProvider);
 
         UpdateUserForm updateUserForm = new UpdateUserForm.Builder()
                 .userId("dotcms.org.1")
@@ -282,7 +313,6 @@ public class UserResourceTest extends UnitTestBase {
         HttpServletRequest request = RestUtilTest.getMockHttpRequest();
         final HttpServletResponse httpServletResponse = mock(HttpServletResponse.class);
         HttpSession session = request.getSession();
-        final UserService userService = mock(UserService.class);
         final RoleAPI roleAPI  = mock( RoleAPI.class );
         final UserAPI userAPI  = mock( UserAPI.class );
         final LayoutAPI layoutAPI  = mock( LayoutAPI.class );
@@ -317,8 +347,16 @@ public class UserResourceTest extends UnitTestBase {
                      .getErrorResponse(Response.Status.BAD_REQUEST, enUsLocale, "current.usermanager.password.incorrect"))
                 .thenReturn(Response.status(Response.Status.BAD_REQUEST).build());
 
-        final UserResourceHelper userHelper  = new UserResourceHelper(userService, roleAPI, userAPI, layoutAPI, hostWebAPI,
-                userWebAPI, permissionAPI, userProxyAPI, loginService);
+        final DotRestInstanceProvider helperInstanceProvider = new DotRestInstanceProvider()
+                                                                       .setRoleAPI(roleAPI)
+                                                                       .setUserAPI(userAPI)
+                                                                       .setLayoutAPI(layoutAPI)
+                                                                       .setHostWebAPI(hostWebAPI)
+                                                                       .setUserWebAPI(userWebAPI)
+                                                                       .setPermissionAPI(permissionAPI)
+                                                                       .setUserProxyAPI(userProxyAPI)
+                                                                       .setLoginService(loginService);
+        final UserResourceHelper userHelper  = new UserResourceHelper(helperInstanceProvider);
 
         String filter = "filter";
         int page = 3;
@@ -328,8 +366,13 @@ public class UserResourceTest extends UnitTestBase {
         final PaginationUtil paginationUtil = mock(PaginationUtil.class);
         when(paginationUtil.getPage(request, user, filter, page, perPage )).thenReturn(responseExpected);
 
+        final DotRestInstanceProvider instanceProvider = new DotRestInstanceProvider()
+                                                                 .setUserAPI(userAPI)
+                                                                 .setHostAPI(siteAPI)
+                                                                 .setRoleAPI(roleAPI)
+                                                                 .setErrorHelper(errorHelper);
         UserResource userResource =
-                new UserResource(webResource, userAPI, siteAPI, userHelper, errorHelper, paginationUtil, roleAPI);
+                new UserResource(webResource, userHelper, paginationUtil, instanceProvider);
 
         UpdateUserForm updateUserForm = new UpdateUserForm.Builder()
                 .userId("dotcms.org.1")
@@ -344,12 +387,19 @@ public class UserResourceTest extends UnitTestBase {
         assertEquals(response.getStatus(), 400);
     }
 
+    /**
+     * <ul>
+     *     <li><b>Method to test:</b> {@link UserResource#loginAsData(HttpServletRequest, HttpServletResponse, String, int, int)}</li>
+     *     <li><b>Given Scenario:</b> Getting the list of Users that can be used for impersonation, and requesting page
+     *     #3 in the pagination.</li>
+     *     <li><b>Expected Result:</b> As page #3 has been requested, the list of results must be empty.</li>
+     * </ul>
+     */
     @Test
     public void testLoginAsData() throws DotDataException {
 
         HttpServletRequest request = RestUtilTest.getMockHttpRequest();
         final HttpServletResponse httpServletResponse = mock(HttpServletResponse.class);
-        final UserService userService = mock(UserService.class);
         final RoleAPI roleAPI  = mock( RoleAPI.class );
         final UserAPI userAPI  = mock( UserAPI.class );
         final LayoutAPI layoutAPI  = mock( LayoutAPI.class );
@@ -362,31 +412,51 @@ public class UserResourceTest extends UnitTestBase {
         final LoginServiceAPI loginService= mock(LoginServiceAPI.class);
         final InitDataObject initDataObject = mock(InitDataObject.class);
 
-        final UserResourceHelper userHelper  = new UserResourceHelper(userService, roleAPI, userAPI, layoutAPI, hostWebAPI,
-                userWebAPI, permissionAPI, userProxyAPI, loginService);
+        final DotRestInstanceProvider helperInstanceProvider = new DotRestInstanceProvider()
+                                                                       .setRoleAPI(roleAPI)
+                                                                       .setUserAPI(userAPI)
+                                                                       .setLayoutAPI(layoutAPI)
+                                                                       .setHostWebAPI(hostWebAPI)
+                                                                       .setUserWebAPI(userWebAPI)
+                                                                       .setPermissionAPI(permissionAPI)
+                                                                       .setUserProxyAPI(userProxyAPI)
+                                                                       .setLoginService(loginService);
+        final UserResourceHelper userHelper  = new UserResourceHelper(helperInstanceProvider);
         final ErrorResponseHelper errorHelper  = mock(ErrorResponseHelper.class);
         final User user = new User();
         final Role loginAsRole = new Role();
+        final Role backEndRole = new Role();
         when(initDataObject.getUser()).thenReturn(user);
-        // final InitDataObject initData = webResource.init(null, httpServletRequest, httpServletResponse, true, null);
         when(webResource.init(Mockito.any(InitBuilder.class))).thenReturn(initDataObject);
         when(roleAPI.loadRoleByKey(Role.LOGIN_AS)).thenReturn(loginAsRole);
+        when(roleAPI.loadBackEndUserRole()).thenReturn(backEndRole);
         when(roleAPI.doesUserHaveRole(initDataObject.getUser(), loginAsRole)).thenReturn(true);
 
-        String filter = "filter";
-        int page = 3;
-        int perPage = 4;
-
-        List<User> users = new ArrayList<>();
+        PaginatedArrayList<?> users = new PaginatedArrayList<>();
         Response responseExpected = Response.ok(new ResponseEntityView<>(users)).build();
 
         final PaginationUtil paginationUtil = mock(PaginationUtil.class);
-        when(paginationUtil.getPage(request, user, filter, page, perPage )).thenReturn(responseExpected);
+        final List<Role> roles = Collections.singletonList(roleAPI.loadBackEndUserRole());
+        final Map<String, Object> extraParams = Map.of(
+                UserPaginator.ROLES_PARAM, roles,
+                UserAPI.FilteringParams.INCLUDE_ANONYMOUS_PARAM, false,
+                UserAPI.FilteringParams.INCLUDE_DEFAULT_PARAM, false,
+                UserPaginator.REMOVE_CURRENT_USER_PARAM, true,
+                UserPaginator.REQUEST_PASSWORD_PARAM, true);
+        final String filter = "";
+        // Setting pagination parameters to NOT RETURN any result
+        final int page = 3;
+        final int perPage = 4;
+        when(paginationUtil.getPage(request, user, filter, page, perPage, extraParams )).thenReturn(responseExpected);
 
+        final DotRestInstanceProvider instanceProvider = new DotRestInstanceProvider()
+                                                                 .setUserAPI(userAPI)
+                                                                 .setHostAPI(siteAPI)
+                                                                 .setRoleAPI(roleAPI)
+                                                                 .setErrorHelper(errorHelper);
         UserResource resource =
-                new UserResource(webResource, userAPI, siteAPI, userHelper, errorHelper, paginationUtil, roleAPI);
-        Response response = null;
-
+                new UserResource(webResource, userHelper, paginationUtil, instanceProvider);
+        Response response;
         RestUtilTest.verifySuccessResponse(
                 response = resource.loginAsData(request, httpServletResponse, filter, page, perPage)
         );
@@ -400,7 +470,6 @@ public class UserResourceTest extends UnitTestBase {
 
         HttpServletRequest request = RestUtilTest.getMockHttpRequest();
         final HttpServletResponse httpServletResponse = mock(HttpServletResponse.class);
-        final UserService userService = mock(UserService.class);
         final RoleAPI roleAPI  = mock( RoleAPI.class );
         final UserAPI userAPI  = mock( UserAPI.class );
         final LayoutAPI layoutAPI  = mock( LayoutAPI.class );
@@ -413,8 +482,6 @@ public class UserResourceTest extends UnitTestBase {
         final LoginServiceAPI loginService= mock(LoginServiceAPI.class);
         final InitDataObject initDataObject = mock(InitDataObject.class);
 
-        final UserResourceHelper userHelper  = new UserResourceHelper(userService, roleAPI, userAPI, layoutAPI, hostWebAPI,
-                userWebAPI, permissionAPI, userProxyAPI, loginService);
         final ErrorResponseHelper errorHelper  = mock(ErrorResponseHelper.class);
         final User user = new User();
         final Role loginAsRole = new Role();
@@ -422,7 +489,18 @@ public class UserResourceTest extends UnitTestBase {
         when(webResource.init(Mockito.any(InitBuilder.class))).thenReturn(initDataObject);
         when(roleAPI.loadRoleByKey(Role.LOGIN_AS)).thenReturn(loginAsRole);
         // does not have permissions
-        when(roleAPI.doesUserHaveRole(initDataObject.getUser(), loginAsRole)).thenReturn(false);
+        when(roleAPI.doesUserHaveRole(user, loginAsRole)).thenReturn(false);
+
+        final DotRestInstanceProvider helperInstanceProvider = new DotRestInstanceProvider()
+                                                                       .setRoleAPI(roleAPI)
+                                                                       .setUserAPI(userAPI)
+                                                                       .setLayoutAPI(layoutAPI)
+                                                                       .setHostWebAPI(hostWebAPI)
+                                                                       .setUserWebAPI(userWebAPI)
+                                                                       .setPermissionAPI(permissionAPI)
+                                                                       .setUserProxyAPI(userProxyAPI)
+                                                                       .setLoginService(loginService);
+        final UserResourceHelper userHelper  = new UserResourceHelper(helperInstanceProvider);
 
         String filter = "filter";
         int page = 3;
@@ -434,8 +512,13 @@ public class UserResourceTest extends UnitTestBase {
         final PaginationUtil paginationUtil = mock(PaginationUtil.class);
         when(paginationUtil.getPage(request, user, filter, page, perPage )).thenReturn(responseExpected);
 
+        final DotRestInstanceProvider instanceProvider = new DotRestInstanceProvider()
+                                                                 .setUserAPI(userAPI)
+                                                                 .setHostAPI(siteAPI)
+                                                                 .setRoleAPI(roleAPI)
+                                                                 .setErrorHelper(errorHelper);
         UserResource resource =
-                new UserResource(webResource, userAPI, siteAPI, userHelper, errorHelper, paginationUtil, roleAPI);
+                new UserResource(webResource, userHelper, paginationUtil, instanceProvider);
 
         Response response = resource.loginAsData(request, httpServletResponse, filter, page, perPage);
     }

@@ -1,23 +1,26 @@
-import { TestBed } from '@angular/core/testing';
-
-import { DotExperimentsListStore, DotExperimentsState } from './dot-experiments-list-store.service';
-import { DotExperimentsService } from '@portlets/dot-experiments/shared/services/dot-experiments.service';
 import { of } from 'rxjs';
+
 import { HttpClientTestingModule } from '@angular/common/http/testing';
-import { DotMessagePipeModule } from '@pipes/dot-message/dot-message-pipe.module';
-import { MockDotMessageService } from '@dotcms/utils-testing';
-import { DotMessageService } from '@dotcms/data-access';
-import { MessageService } from 'primeng/api';
+import { TestBed } from '@angular/core/testing';
 import { ActivatedRoute } from '@angular/router';
 import { RouterTestingModule } from '@angular/router/testing';
-import { ExperimentMocks } from '@portlets/dot-experiments/test/mocks';
+
+import { MessageService } from 'primeng/api';
+
+import { DotMessageService } from '@dotcms/data-access';
 import {
+    ComponentStatus,
     DotExperiment,
     DotExperimentStatusList,
     GroupedExperimentByStatus,
-    LoadingState,
     TrafficProportionTypes
 } from '@dotcms/dotcms-models';
+import { MockDotMessageService } from '@dotcms/utils-testing';
+import { DotMessagePipeModule } from '@pipes/dot-message/dot-message-pipe.module';
+import { DotExperimentsService } from '@portlets/dot-experiments/shared/services/dot-experiments.service';
+import { ExperimentMocks, GoalsMock } from '@portlets/dot-experiments/test/mocks';
+
+import { DotExperimentsListStore, DotExperimentsState } from './dot-experiments-list-store.service';
 
 const routerParamsPageId = '1111-1111-111';
 const ActivatedRouteMock = {
@@ -78,7 +81,7 @@ describe('DotExperimentsListStore', () => {
                 DotExperimentStatusList.SCHEDULED,
                 DotExperimentStatusList.ARCHIVED
             ],
-            status: LoadingState.INIT
+            status: ComponentStatus.INIT
         };
 
         store.state$.subscribe((state) => {
@@ -89,14 +92,14 @@ describe('DotExperimentsListStore', () => {
 
     it('should have getState$ from the store', () => {
         store.getStatus$.subscribe((data) => {
-            expect(data).toEqual(LoadingState.INIT);
+            expect(data).toEqual(ComponentStatus.INIT);
         });
     });
 
     it('should update status to the store', () => {
-        store.setComponentStatus(LoadingState.LOADED);
+        store.setComponentStatus(ComponentStatus.LOADED);
         store.getStatus$.subscribe((status) => {
-            expect(status).toEqual(LoadingState.LOADED);
+            expect(status).toEqual(ComponentStatus.LOADED);
         });
     });
     it('should update experiments to the store', () => {
@@ -115,7 +118,7 @@ describe('DotExperimentsListStore', () => {
 
     it('should delete experiment by id of the store', () => {
         const ID_TO_DELETE = '222';
-        const expected: DotExperiment[] = [ExperimentMocks[0]];
+        const expected: DotExperiment[] = [ExperimentMocks[0], ExperimentMocks[2]];
 
         store.setExperiments(ExperimentMocks);
         store.deleteExperimentById(ID_TO_DELETE);
@@ -154,7 +157,8 @@ describe('DotExperimentsListStore', () => {
                     variants: [{ id: '111', name: 'DEFAULT', weight: '100.0' }]
                 },
                 creationDate: new Date('2022-08-21 14:50:03'),
-                modDate: new Date('2022-08-21 18:50:03')
+                modDate: new Date('2022-08-21 18:50:03'),
+                goals: { ...GoalsMock }
             }
         ];
         const archivedExperiments: DotExperiment[] = [
@@ -174,7 +178,8 @@ describe('DotExperimentsListStore', () => {
                     variants: [{ id: '222', name: 'DEFAULT', weight: '100.0' }]
                 },
                 creationDate: new Date('2022-08-21 14:50:03'),
-                modDate: new Date('2022-08-21 18:50:03')
+                modDate: new Date('2022-08-21 18:50:03'),
+                goals: { ...GoalsMock }
             }
         ];
 
@@ -195,7 +200,7 @@ describe('DotExperimentsListStore', () => {
             dotExperimentsService.getAll.and.returnValue(of(ExperimentMocks));
 
             store.initStore();
-            store.loadExperiments();
+            store.loadExperiments(routerParamsPageId);
         });
         it('should load experiments to store', (done) => {
             expect(dotExperimentsService.getAll).toHaveBeenCalledWith(routerParamsPageId);
@@ -208,7 +213,7 @@ describe('DotExperimentsListStore', () => {
         it('should delete experiment from the store', (done) => {
             dotExperimentsService.delete.and.returnValue(of('deleted'));
 
-            const expectedExperimentsInStore = [ExperimentMocks[1]];
+            const expectedExperimentsInStore = [ExperimentMocks[1], ExperimentMocks[2]];
             const experimentToDelete = ExperimentMocks[0];
 
             store.deleteExperiment(experimentToDelete);
@@ -226,7 +231,7 @@ describe('DotExperimentsListStore', () => {
 
             expectedExperimentsInStore[0].status = DotExperimentStatusList.ARCHIVED;
 
-            dotExperimentsService.archive.and.returnValue(of([expectedExperimentsInStore[0]]));
+            dotExperimentsService.archive.and.returnValue(of(expectedExperimentsInStore[0]));
 
             const experimentToArchive = ExperimentMocks[0];
 

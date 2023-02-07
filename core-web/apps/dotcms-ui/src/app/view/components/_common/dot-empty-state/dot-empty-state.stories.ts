@@ -1,10 +1,12 @@
 /* eslint-disable no-console */
-import { Meta, Story } from '@storybook/angular/types-6-0';
 import { moduleMetadata } from '@storybook/angular';
-import { DotEmptyStateModule } from './dot-empty-state.module';
+import { Meta, Story } from '@storybook/angular/types-6-0';
+
 import { DotMessageService } from '@dotcms/data-access';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 import { DotPipesModule } from '@pipes/dot-pipes.module';
+
+import { DotEmptyStateModule } from './dot-empty-state.module';
 
 const messageServiceMock = new MockDotMessageService({
     'message.template.empty.title': 'Your template list is empty',

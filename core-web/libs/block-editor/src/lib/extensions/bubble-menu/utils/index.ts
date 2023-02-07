@@ -1,15 +1,14 @@
 import { isTextSelection } from '@tiptap/core';
-import {
-    BubbleMenuItem,
-    ShouldShowProps,
-    LINK_FORM_PLUGIN_KEY,
-    ImageNode,
-    findParentNode
-} from '@dotcms/block-editor';
+
+import { ImageNode } from '../../../nodes';
+import { findParentNode } from '../../../shared';
+import { LINK_FORM_PLUGIN_KEY } from '../../bubble-link-form/bubble-link-form.extension';
+import { BubbleMenuItem, ShouldShowProps } from '../models';
 
 const hideBubbleMenuOn = {
     tableCell: true,
-    table: true
+    table: true,
+    video: true
 };
 
 /**

@@ -1,11 +1,15 @@
-import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
-import { DotRolesService } from '@dotcms/data-access';
-import { take, takeUntil } from 'rxjs/operators';
-import { SelectItem } from 'primeng/api';
-import { DotFormModel } from '@models/dot-form/dot-form.model';
-import { UntypedFormBuilder, UntypedFormGroup, Validators } from '@angular/forms';
 import { Subject } from 'rxjs';
+
+import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
+import { UntypedFormBuilder, UntypedFormGroup, Validators } from '@angular/forms';
+
+import { SelectItem } from 'primeng/api';
+
+import { take, takeUntil } from 'rxjs/operators';
+
+import { DotRolesService } from '@dotcms/data-access';
 import { DotRole } from '@dotcms/dotcms-models';
+import { DotFormModel } from '@models/dot-form/dot-form.model';
 
 enum DotActionInputs {
     ASSIGNABLE = 'assignable',

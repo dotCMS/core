@@ -1,0 +1,36 @@
+@use "variables" as *;
+
+:host {
+    width: 100%;
+}
+
+.wrapper {
+    display: flex;
+    justify-content: center;
+    align-items: flex-end;
+    flex-direction: column;
+    padding: $spacing-5;
+    gap: $spacing-3;
+}
+
+.form-control {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: $spacing-2;
+}
+
+.footer {
+    width: 100%;
+    display: flex;
+    justify-content: space-between;
+}
+.error-message {
+    color: $red;
+    font-size: $font-size-small;
+    text-align: left;
+}
+
+.hide {
+    visibility: hidden;
+}

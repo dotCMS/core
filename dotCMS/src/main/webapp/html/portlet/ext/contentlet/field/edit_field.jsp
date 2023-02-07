@@ -70,9 +70,9 @@
         <%}%>
 
         <% if(field.isRequired()) {%>
-        <span class="required2">
+        <label for="<%=field.getVelocityVarName()%>_field" class="required">
 		<%} else {%>
-			<span>
+			<label for="<%=field.getVelocityVarName()%>_field">
 		<% } %>
 		<%
             if(!field.getFieldType().equals(Field.FieldType.CATEGORIES_TAB.toString())&&
@@ -84,7 +84,7 @@
 
                     ) {
         %>
-     		<%=field.getFieldName()%>:</span>
+     		<%=field.getFieldName()%></label>
 		<% } %>
     </div>
 
@@ -234,7 +234,7 @@
                     const field = document.querySelector('#<%=field.getVelocityVarName()%>');
 
                     if (content) {
-                        blockEditor.setValue = content;
+                        blockEditor.value = content;
                         field.value = JSON.stringify(block.editor.getJSON());
                     }
 

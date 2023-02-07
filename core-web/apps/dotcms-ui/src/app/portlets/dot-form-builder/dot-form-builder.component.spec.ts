@@ -1,11 +1,11 @@
-import { waitForAsync, ComponentFixture, TestBed } from '@angular/core/testing';
-import { Component, DebugElement, Input } from '@angular/core';
-import { By } from '@angular/platform-browser';
-
 import { of } from 'rxjs';
 
-import { DotFormBuilderComponent } from './dot-form-builder.component';
+import { Component, DebugElement, Input } from '@angular/core';
+import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing';
+import { By } from '@angular/platform-browser';
 import { ActivatedRoute } from '@angular/router';
+
+import { DotFormBuilderComponent } from './dot-form-builder.component';
 
 @Component({
     selector: 'dot-unlicensed-porlet',

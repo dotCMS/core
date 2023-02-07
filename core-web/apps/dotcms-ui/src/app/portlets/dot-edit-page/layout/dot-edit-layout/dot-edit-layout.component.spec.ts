@@ -1,24 +1,32 @@
-import { ActivatedRoute } from '@angular/router';
-import { By } from '@angular/platform-browser';
-import { Component, DebugElement, Input } from '@angular/core';
-import { waitForAsync, ComponentFixture, TestBed, fakeAsync, tick } from '@angular/core/testing';
-
 import { of, throwError } from 'rxjs';
-import { HttpCode, ResponseView } from '@dotcms/dotcms-js';
 
-import { DotEditLayoutComponent } from './dot-edit-layout.component';
-import { mockDotRenderedPage, processedContainers } from '@dotcms/utils-testing';
-import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
-import { DotGlobalMessageService } from '@components/_common/dot-global-message/dot-global-message.service';
-import { DotPageLayoutService } from '@dotcms/data-access';
-import { MockDotMessageService } from '@dotcms/utils-testing';
-import { DotMessageService } from '@dotcms/data-access';
-import { DotTemplateContainersCacheService } from '@dotcms/app/api/services/dot-template-containers-cache/dot-template-containers-cache.service';
-import { DotLayout, DotPageRender } from '@dotcms/dotcms-models';
 import { HttpResponse } from '@angular/common/http';
-import { mockResponseView } from '@dotcms/utils-testing';
+import { Component, DebugElement, Input } from '@angular/core';
+import { ComponentFixture, fakeAsync, TestBed, tick, waitForAsync } from '@angular/core/testing';
+import { By } from '@angular/platform-browser';
+import { ActivatedRoute, Router } from '@angular/router';
+import { RouterTestingModule } from '@angular/router/testing';
+
+import { DotGlobalMessageService } from '@components/_common/dot-global-message/dot-global-message.service';
 import { DotEditLayoutService } from '@dotcms/app/api/services/dot-edit-layout/dot-edit-layout.service';
 import { DotHttpErrorManagerService } from '@dotcms/app/api/services/dot-http-error-manager/dot-http-error-manager.service';
+import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
+import { DotTemplateContainersCacheService } from '@dotcms/app/api/services/dot-template-containers-cache/dot-template-containers-cache.service';
+import {
+    DotMessageService,
+    DotPageLayoutService,
+    DotSessionStorageService
+} from '@dotcms/data-access';
+import { HttpCode, ResponseView } from '@dotcms/dotcms-js';
+import { DotLayout, DotPageRender } from '@dotcms/dotcms-models';
+import {
+    MockDotMessageService,
+    mockDotRenderedPage,
+    mockResponseView,
+    processedContainers
+} from '@dotcms/utils-testing';
+
+import { DotEditLayoutComponent } from './dot-edit-layout.component';
 
 @Component({
     selector: 'dot-edit-layout-designer',
@@ -58,11 +66,15 @@ describe('DotEditLayoutComponent', () => {
     let fakeLayout: DotLayout;
     let dotHttpErrorManagerService: DotHttpErrorManagerService;
     let dotEditLayoutService: DotEditLayoutService;
+    let dotSessionStorageService: DotSessionStorageService;
+    let router: Router;
 
     beforeEach(waitForAsync(() => {
         TestBed.configureTestingModule({
             declarations: [MockDotEditLayoutDesignerComponent, DotEditLayoutComponent],
             providers: [
+                RouterTestingModule,
+                DotSessionStorageService,
                 DotEditLayoutService,
                 {
                     provide: DotHttpErrorManagerService,
@@ -129,6 +141,8 @@ describe('DotEditLayoutComponent', () => {
         dotTemplateContainersCacheService = TestBed.inject(DotTemplateContainersCacheService);
         dotHttpErrorManagerService = TestBed.inject(DotHttpErrorManagerService);
         dotEditLayoutService = TestBed.inject(DotEditLayoutService);
+        dotSessionStorageService = TestBed.inject(DotSessionStorageService);
+        router = TestBed.inject(Router);
 
         fakeLayout = {
             body: null,
@@ -233,6 +247,19 @@ describe('DotEditLayoutComponent', () => {
                 expect(resp).toBeTruthy();
                 done();
             });
+        });
+
+        it('should remove variant key from session storage on destoy', () => {
+            spyOn(dotSessionStorageService, 'removeVariantId');
+            component.ngOnDestroy();
+            expect(dotSessionStorageService.removeVariantId).toHaveBeenCalledTimes(1);
+        });
+
+        it('should keep variant key from session storage if going to Edit content portlet', () => {
+            router.routerState.snapshot.url = '/edit-page/content';
+            spyOn(dotSessionStorageService, 'removeVariantId');
+            component.ngOnDestroy();
+            expect(dotSessionStorageService.removeVariantId).toHaveBeenCalledTimes(0);
         });
     });
 });

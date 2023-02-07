@@ -1,7 +1,8 @@
-import { ComponentFixture, waitForAsync, TestBed } from '@angular/core/testing';
-import { Component, DebugElement } from '@angular/core';
-import { By } from '@angular/platform-browser';
 import { CommonModule } from '@angular/common';
+import { Component, DebugElement } from '@angular/core';
+import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing';
+import { By } from '@angular/platform-browser';
+
 import { DotSecondaryToolbarComponent } from './dot-secondary-toolbar.component';
 
 @Component({
@@ -21,14 +22,12 @@ describe('DotSecondaryToolbarComponent', () => {
     let fixture: ComponentFixture<HostTestComponent>;
     let dotToolbarComponent: DebugElement;
 
-    beforeEach(
-        waitForAsync(() => {
-            TestBed.configureTestingModule({
-                declarations: [HostTestComponent, DotSecondaryToolbarComponent],
-                imports: [CommonModule]
-            }).compileComponents();
-        })
-    );
+    beforeEach(waitForAsync(() => {
+        TestBed.configureTestingModule({
+            declarations: [HostTestComponent, DotSecondaryToolbarComponent],
+            imports: [CommonModule]
+        }).compileComponents();
+    }));
 
     beforeEach(() => {
         fixture = TestBed.createComponent(HostTestComponent);

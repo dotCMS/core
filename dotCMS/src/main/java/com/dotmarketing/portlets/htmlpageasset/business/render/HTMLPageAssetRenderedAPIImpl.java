@@ -2,6 +2,8 @@ package com.dotmarketing.portlets.htmlpageasset.business.render;
 
 import static com.dotmarketing.util.FileUtil.getFileContentFromResourceContext;
 
+import com.dotcms.analytics.app.AnalyticsApp;
+import com.dotcms.analytics.helper.AnalyticsHelper;
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.rendering.velocity.services.PageLoader;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
@@ -39,6 +41,7 @@ import com.dotmarketing.portlets.rules.model.Rule.FireOn;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.UUIDUtil;
+import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
@@ -64,6 +67,7 @@ import java.util.stream.Collectors;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import org.apache.commons.lang3.StringUtils;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * Implementation class for the {@link HTMLPageAssetRenderedAPI}.
@@ -72,8 +76,6 @@ import org.apache.commons.lang3.StringUtils;
  * @since Apr 12th, 2018
  */
 public class HTMLPageAssetRenderedAPIImpl implements HTMLPageAssetRenderedAPI {
-
-    private Lazy<String> EXPERIMENT_SCRIPT = Lazy.of(() -> getExperimentJSCode());
 
     private final HostWebAPI hostWebAPI;
     private final HTMLPageAssetAPI htmlPageAssetAPI;
@@ -298,17 +300,30 @@ public class HTMLPageAssetRenderedAPIImpl implements HTMLPageAssetRenderedAPI {
                 .setLive(htmlPageUrl.hasLive())
                 .getPageHTML(context.getPageMode());
 
-        return APILocator.getExperimentsAPI().isAnyExperimentRunning() ?
-                injectExperimentJSCode(pageHTML) : pageHTML;
+        if (context.getPageMode() == PageMode.LIVE) {
+            return APILocator.getExperimentsAPI().isAnyExperimentRunning() ?
+                    injectExperimentJSCode(pageHTML, host, request) : injectNoExperimentCode(pageHTML);
+        } else {
+            return pageHTML;
+        }
     }
 
-    private String injectExperimentJSCode(final String pageHTML) {
+    private String injectExperimentJSCode(final String pageHTML, final Host host, final HttpServletRequest request) {
+        return injectJSCode(pageHTML, getExperimentJSCode(host, request));
+    }
+
+    private String injectNoExperimentCode(final String pageHTML) {
+        return injectJSCode(pageHTML, getNotExperimentJSCode());
+    }
+
+
+    private String injectJSCode(final String pageHTML, final String JsCode) {
 
         if (StringUtils.containsIgnoreCase(pageHTML, "<head>")) {
             return StringUtils.replaceIgnoreCase(pageHTML, "<head>",
-                    "<head>" + getExperimentJSCode());
+                    "<head>" + JsCode);
         } else {
-            return EXPERIMENT_SCRIPT.get() + "\n" + pageHTML;
+            return JsCode + "\n" + pageHTML;
         }
     }
 
@@ -595,10 +610,17 @@ public class HTMLPageAssetRenderedAPIImpl implements HTMLPageAssetRenderedAPI {
         return new PageLivePreviewVersionBean(renderLive, renderWorking);
     }
 
-    private String getExperimentJSCode() {
+    private String getNotExperimentJSCode() {
+        return "<SCRIPT>localStorage.removeItem('experiment_data');</SCRIPT>";
+    }
+
+    private String getExperimentJSCode(final Host host, final HttpServletRequest request) {
+
         try {
+            final String analyticsKey = getAnalyticsKey(host);
             final String jsJitsuCode =  getFileContentFromResourceContext("experiment/html/experiment_head.html")
-                    .replaceAll("\\$\\{jitsu_key}", "");
+                    .replaceAll("\\$\\{jitsu_key}", analyticsKey)
+                    .replaceAll("\\$\\{site}", getLocalServerName(request));
 
             final String runningExperimentsId = APILocator.getExperimentsAPI().getRunningExperiments().stream()
                     .map(experiment -> "'" + experiment.id().get() + "'")
@@ -611,5 +633,19 @@ public class HTMLPageAssetRenderedAPIImpl implements HTMLPageAssetRenderedAPI {
         } catch (IOException | DotDataException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    @Nullable
+    private static String getAnalyticsKey(Host host) {
+        try {
+            final AnalyticsApp analyticsApp = AnalyticsHelper.get().appFromHost(host);
+            return analyticsApp.getAnalyticsProperties().analyticsKey();
+        } catch (IllegalStateException e) {
+            return StringPool.BLANK;
+        }
+    }
+
+    private String getLocalServerName(HttpServletRequest request) {
+        return request.getLocalName() + ":" + request.getLocalPort();
     }
 }

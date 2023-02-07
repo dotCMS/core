@@ -1,9 +1,11 @@
-import { Story, Meta } from '@storybook/angular/types-6-0';
-import { BrowserModule } from '@angular/platform-browser';
-import { InputTextareaModule } from 'primeng/inputtextarea';
-import { FormsModule } from '@angular/forms';
 import { moduleMetadata } from '@storybook/angular';
+import { Meta, Story } from '@storybook/angular/types-6-0';
+
+import { FormsModule } from '@angular/forms';
+import { BrowserModule } from '@angular/platform-browser';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
+
+import { InputTextareaModule } from 'primeng/inputtextarea';
 
 export default {
     title: 'PrimeNG/Form/InputTextArea',

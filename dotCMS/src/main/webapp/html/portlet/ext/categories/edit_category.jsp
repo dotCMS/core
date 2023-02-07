@@ -126,23 +126,29 @@
 					<html:text property="categoryVelocityVarName" readonly="true" style="width:250px;border:0;" />	
 				</dd>
 				<dt>
-					<%= LanguageUtil.get(pageContext, "category-name") %>:
+					<label for="categoryName" class="required">
+						<%= LanguageUtil.get(pageContext, "category-name") %>
+					</label>
 				</dt>
 				<dd>
-					<input type="text" dojoType="dijit.form.TextBox" name="categoryName" maxlength="50" size="30" onblur="fillVelocityVarNameIfNew()" value="<%= UtilMethods.isSet(categoryForm.getCategoryName()) ?categoryForm.getCategoryName() : "" %>" />
+					<input type="text" id="categoryName" dojoType="dijit.form.TextBox" name="categoryName" maxlength="50" size="30" onblur="fillVelocityVarNameIfNew()" value="<%= UtilMethods.isSet(categoryForm.getCategoryName()) ?categoryForm.getCategoryName() : "" %>" />
 				</dd>
      			<dt>
-					<%= LanguageUtil.get(pageContext, "category-unique-key") %>:
+					<label for="categoryUniqueKey">
+						<%= LanguageUtil.get(pageContext, "category-unique-key") %>
+					</label>
 				</dt>
 				<dd>
-					<input type="text" dojoType="dijit.form.TextBox" name="key" size="30" maxlength="255" value="<%= UtilMethods.isSet(categoryForm.getKey()) ? categoryForm.getKey() : "" %>" />
+					<input type="text" id="categoryUniqueKey" dojoType="dijit.form.TextBox" name="key" size="30" maxlength="255" value="<%= UtilMethods.isSet(categoryForm.getKey()) ? categoryForm.getKey() : "" %>" />
 				</dd>
 				
 				<dt>
-					<%= LanguageUtil.get(pageContext, "keywords") %>:
+					<label for="categoryKeyWords">
+						<%= LanguageUtil.get(pageContext, "keywords") %>
+					</label>
 				</dt>
 				<dd>
-					<textarea dojoType="dijit.form.Textarea" name="keywords" style="width:250px; min-height:40px;"><%= UtilMethods.isSet(categoryForm.getKeywords()) ? categoryForm.getKeywords() : "" %></textarea>
+					<textarea id="categoryKeyWords" dojoType="dijit.form.Textarea" name="keywords" style="width:250px; min-height:40px;"><%= UtilMethods.isSet(categoryForm.getKeywords()) ? categoryForm.getKeywords() : "" %></textarea>
 				</dd>
 			</dl>	
 

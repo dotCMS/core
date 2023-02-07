@@ -23,7 +23,7 @@ import io.vavr.Lazy;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
-import net.bytebuddy.utility.RandomString;
+import net.bytebuddy.utility.RandomString; 
 
 public class ExperimentDataGen  extends AbstractDataGen<Experiment> {
     final Lazy<RandomString> randomString = Lazy.of(() ->new RandomString());
@@ -35,6 +35,8 @@ public class ExperimentDataGen  extends AbstractDataGen<Experiment> {
     private User user = APILocator.systemUser();
     private List<TargetingCondition> targetingConditions = new ArrayList<>();
     private Scheduling scheduling;
+
+    private Goals goal;
 
     public ExperimentDataGen name(final String name){
         this.name = name;
@@ -73,6 +75,22 @@ public class ExperimentDataGen  extends AbstractDataGen<Experiment> {
 
         final HTMLPageAsset page = UtilMethods.isSet(experimentPage) ? experimentPage : createPage();
 
+        final Goals innerGoal = UtilMethods.isSet(goal) ? goal : createDefaultGoal(page);
+
+        final Builder experimentBuilder = Experiment.builder()
+                .name(innerName)
+                .description(innerDescription)
+                .createdBy(user.getUserId())
+                .lastModifiedBy(user.getUserId())
+                .pageId(page.getIdentifier())
+                .goals(innerGoal)
+                .trafficAllocation(trafficAllocation);
+
+        return UtilMethods.isSet(scheduling) ? experimentBuilder.scheduling(scheduling).build() :
+                experimentBuilder.build();
+    }
+
+    private static Goals createDefaultGoal(HTMLPageAsset page) {
         final Metric metric = Metric.builder()
                 .name("Testing Metric")
                 .type(MetricType.REACH_PAGE)
@@ -83,27 +101,14 @@ public class ExperimentDataGen  extends AbstractDataGen<Experiment> {
                         .build())
                 .build();
 
-        final Goals goal = Goals.builder().primary(metric).build();
-
-        final Builder experimentBuilder = Experiment.builder()
-                .name(innerName)
-                .description(innerDescription)
-                .createdBy(user.getUserId())
-                .lastModifiedBy(user.getUserId())
-                .pageId(page.getIdentifier())
-                .goals(goal)
-                .trafficAllocation(trafficAllocation);
-
-        return UtilMethods.isSet(scheduling) ? experimentBuilder.scheduling(scheduling).build() :
-                experimentBuilder.build();
+        return Goals.builder().primary(metric).build();
     }
 
     private HTMLPageAsset createPage() {
         final Host host = new SiteDataGen().nextPersisted();
         final Template template = new TemplateDataGen().nextPersisted();
-
         final HTMLPageAsset page = new HTMLPageDataGen(host, template).nextPersisted();
-        return page;
+        return APILocator.getHTMLPageAssetAPI().fromContentlet(HTMLPageDataGen.publish(page));
     }
 
     private String getRandomName() {
@@ -164,6 +169,11 @@ public class ExperimentDataGen  extends AbstractDataGen<Experiment> {
 
     public ExperimentDataGen scheduling(final Scheduling scheduling) {
         this.scheduling = scheduling;
+        return this;
+    }
+
+    public ExperimentDataGen addGoal(final Goals goal) {
+        this.goal = goal;
         return this;
     }
 }

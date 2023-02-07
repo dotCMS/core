@@ -9,6 +9,7 @@ import com.dotmarketing.exception.WebAssetException;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.htmlpageasset.business.HTMLPageAssetAPI.TemplateContainersReMap.ContainerRemapTuple;
+import com.dotmarketing.portlets.templates.business.TemplateFactory.HTMLPageVersion;
 import com.dotmarketing.portlets.templates.design.bean.ContainerUUID;
 import com.dotmarketing.portlets.templates.design.bean.TemplateLayout;
 import com.dotmarketing.portlets.templates.model.Template;
@@ -406,5 +407,16 @@ public interface TemplateAPI {
 	 * @throws DotDataException
 	 */
 	Template getTemplateByFolder(final Folder folder, final Host host, final User user, final boolean showLive) throws DotSecurityException, DotDataException;
+
+	/**
+	 * Return the List of Pages tha used the {@link Template}
+	 * In case that the Template is not used by any Page then it returns an empty List
+	 * If the Template is used by more than one version of a Page then it returns all the
+	 * Inodes of the different versions.
+	 *
+	 * @param templateId Template's ID that we are looking for
+	 * @return List of {@link HTMLPageVersion} this objects contains a resume of the page data
+	 */
+	List<HTMLPageVersion> getPages(final String templateId) throws DotDataException, DotSecurityException;
 
 }

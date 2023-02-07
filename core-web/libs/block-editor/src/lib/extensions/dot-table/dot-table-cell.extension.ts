@@ -1,6 +1,8 @@
-import { TableCell } from '@tiptap/extension-table-cell';
-import { mergeAttributes } from '@tiptap/core';
 import { ViewContainerRef } from '@angular/core';
+
+import { mergeAttributes } from '@tiptap/core';
+import { TableCell } from '@tiptap/extension-table-cell';
+
 import { DotTableCellPlugin } from './dot-table-cell.plugin';
 
 export function DotTableCellExtension(viewContainerRef: ViewContainerRef) {

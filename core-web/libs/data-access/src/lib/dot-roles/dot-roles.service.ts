@@ -1,8 +1,12 @@
+import { Observable } from 'rxjs';
+
 import { Injectable } from '@angular/core';
+
+import { map, pluck } from 'rxjs/operators';
+
 import { CoreWebService } from '@dotcms/dotcms-js';
 import { DotRole } from '@dotcms/dotcms-models';
-import { Observable } from 'rxjs';
-import { map, pluck } from 'rxjs/operators';
+
 import { DotMessageService } from '../dot-messages/dot-messages.service';
 
 const CURRENT_USER_KEY = 'CMS Anonymous';
@@ -48,7 +52,7 @@ export class DotRolesService {
                 if (role.roleKey === CURRENT_USER_KEY) {
                     role.name = this.dotMessageService.get('current-user');
                 } else if (role.user) {
-                    role.name = `${role.name} (${this.dotMessageService.get('user')})`;
+                    role.name = `${role.name}`;
                 }
 
                 return role;

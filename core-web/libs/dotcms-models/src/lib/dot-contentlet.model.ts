@@ -33,3 +33,10 @@ export interface DotCMSContentlet {
     working: boolean;
     [key: string]: any;
 }
+
+export interface DotContentletPermissions {
+    READ?: string[];
+    EDIT?: string[];
+    PUBLISH?: string[];
+    CAN_ADD_CHILDREN?: string[];
+}

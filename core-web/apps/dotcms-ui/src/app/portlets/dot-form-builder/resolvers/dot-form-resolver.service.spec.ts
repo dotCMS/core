@@ -1,13 +1,15 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { DOTTestBed } from '@dotcms/app/test/dot-test-bed';
-import { DotLicenseService } from '@dotcms/data-access';
-import { DotMessageService } from '@dotcms/data-access';
-import { MockDotMessageService } from '@dotcms/utils-testing';
-import { waitForAsync } from '@angular/core/testing';
 import { of } from 'rxjs';
-import { DotFormResolver, DotUnlicensedPortlet } from './dot-form-resolver.service';
+
+import { waitForAsync } from '@angular/core/testing';
 import { ActivatedRouteSnapshot } from '@angular/router';
+
+import { DOTTestBed } from '@dotcms/app/test/dot-test-bed';
+import { DotLicenseService, DotMessageService } from '@dotcms/data-access';
+import { MockDotMessageService } from '@dotcms/utils-testing';
+
+import { DotFormResolver, DotUnlicensedPortlet } from './dot-form-resolver.service';
 
 const route: any = jasmine.createSpyObj<ActivatedRouteSnapshot>('ActivatedRouteSnapshot', [
     'toString'

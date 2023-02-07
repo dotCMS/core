@@ -1,26 +1,32 @@
-import { Component, Input, Injectable, DebugElement } from '@angular/core';
+import { Observable } from 'rxjs';
+
+import { CommonModule } from '@angular/common';
+import { Component, DebugElement, Injectable, Input } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { DotESContentService, DotMessageService } from '@dotcms/data-access';
+import { By } from '@angular/platform-browser';
+import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
+
+import { ButtonModule } from 'primeng/button';
+import { DialogService } from 'primeng/dynamicdialog';
+import { PanelModule } from 'primeng/panel';
+import { TabViewModule } from 'primeng/tabview';
+
 import { of } from 'rxjs/internal/observable/of';
+
+import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
+import { DotPipesModule } from '@dotcms/app/view/pipes/dot-pipes.module';
+import { DotESContentService, DotMessageService } from '@dotcms/data-access';
+import { DotIconModule } from '@dotcms/ui';
 import {
     dotcmsContentletMock,
     MockDotMessageService,
     MockDotRouterService
 } from '@dotcms/utils-testing';
-import { DotPageStore } from './dot-pages-store/dot-pages.store';
-import { CommonModule } from '@angular/common';
-import { DotPipesModule } from '@dotcms/app/view/pipes/dot-pipes.module';
-import { DotIconModule } from '@dotcms/ui';
-import { ButtonModule } from 'primeng/button';
-import { TabViewModule } from 'primeng/tabview';
-import { DotPagesCardModule } from './dot-pages-card/dot-pages-card.module';
-import { DotPagesComponent } from './dot-pages.component';
-import { Observable } from 'rxjs';
-import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
-import { By } from '@angular/platform-browser';
-import { PanelModule } from 'primeng/panel';
+
 import { DotPagesCardEmptyModule } from './dot-pages-card-empty/dot-pages-card-empty.module';
-import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
+import { DotPagesCardModule } from './dot-pages-card/dot-pages-card.module';
+import { DotPageStore } from './dot-pages-store/dot-pages.store';
+import { DotPagesComponent } from './dot-pages.component';
 
 @Component({
     selector: 'dot-pages-card',
@@ -74,6 +80,7 @@ describe('DotPagesComponent', () => {
     let de: DebugElement;
     let store: DotPageStore;
     let dotRouterService: DotRouterService;
+    let dialogService: DialogService;
 
     beforeEach(() => {
         TestBed.configureTestingModule({
@@ -90,6 +97,7 @@ describe('DotPagesComponent', () => {
                 TabViewModule
             ],
             providers: [
+                DialogService,
                 { provide: DotRouterService, useClass: MockDotRouterService },
                 {
                     provide: DotMessageService,
@@ -170,6 +178,8 @@ describe('DotPagesComponent', () => {
             dotRouterService = TestBed.inject(DotRouterService);
             fixture = TestBed.createComponent(DotPagesComponent);
             de = fixture.debugElement;
+            dialogService = de.injector.get(DialogService);
+            spyOn(dialogService, 'open');
             fixture.detectChanges();
         });
 
@@ -195,7 +205,9 @@ describe('DotPagesComponent', () => {
         it('should load pages cards with attributes', () => {
             const elem = de.queryAll(By.css('dot-pages-card'));
             expect(elem.length).toBe(2);
-            expect(elem[0].componentInstance.imageUri).toBe(pagesInitialTestData[0].screenshot);
+            expect(
+                elem[0].componentInstance.imageUri.includes(pagesInitialTestData[0].screenshot)
+            ).toBe(true);
             expect(elem[0].componentInstance.title).toBe(pagesInitialTestData[0].title);
             expect(elem[0].componentInstance.url).toBe(pagesInitialTestData[0].url);
             expect(elem[0].componentInstance.ownerPage).toBe(true);
@@ -213,9 +225,16 @@ describe('DotPagesComponent', () => {
                 expect(store.getFavoritePages).toHaveBeenCalledWith(4);
             });
 
+            it('should call edit method to open favorite page dialog', () => {
+                const elem = de.query(By.css('dot-pages-card'));
+                elem.triggerEventHandler('edit', { ...pagesInitialTestData[0] });
+
+                expect(dialogService.open).toHaveBeenCalledTimes(1);
+            });
+
             it('should call redirect method in DotRouterService', () => {
                 const elem = de.query(By.css('dot-pages-card'));
-                elem.triggerEventHandler('click', {
+                elem.triggerEventHandler('goTo', {
                     stopPropagation: () => {
                         //
                     }

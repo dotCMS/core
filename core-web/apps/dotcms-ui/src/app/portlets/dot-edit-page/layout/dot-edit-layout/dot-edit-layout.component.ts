@@ -1,23 +1,28 @@
-import { pluck, filter, take, debounceTime, switchMap, takeUntil } from 'rxjs/operators';
-import { Component, HostBinding, OnInit, OnDestroy } from '@angular/core';
-import { ActivatedRoute } from '@angular/router';
-import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
-import { DotGlobalMessageService } from '@components/_common/dot-global-message/dot-global-message.service';
-import { DotPageLayoutService } from '@dotcms/data-access';
-import { DotMessageService } from '@dotcms/data-access';
-import { ResponseView } from '@dotcms/dotcms-js';
-import { DotHttpErrorManagerService } from '@dotcms/app/api/services/dot-http-error-manager/dot-http-error-manager.service';
-import { HttpErrorResponse } from '@angular/common/http';
 import { Subject } from 'rxjs';
-import { finalize } from 'rxjs/operators';
+
+import { HttpErrorResponse } from '@angular/common/http';
+import { Component, HostBinding, OnDestroy, OnInit } from '@angular/core';
+import { ActivatedRoute, Router } from '@angular/router';
+
+import { debounceTime, filter, finalize, pluck, switchMap, take, takeUntil } from 'rxjs/operators';
+
+import { DotGlobalMessageService } from '@components/_common/dot-global-message/dot-global-message.service';
 import { DotEditLayoutService } from '@dotcms/app/api/services/dot-edit-layout/dot-edit-layout.service';
+import { DotHttpErrorManagerService } from '@dotcms/app/api/services/dot-http-error-manager/dot-http-error-manager.service';
+import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
 import { DotTemplateContainersCacheService } from '@dotcms/app/api/services/dot-template-containers-cache/dot-template-containers-cache.service';
 import {
-    DotPageRender,
-    DotPageRenderState,
-    DotLayout,
+    DotMessageService,
+    DotPageLayoutService,
+    DotSessionStorageService
+} from '@dotcms/data-access';
+import { ResponseView } from '@dotcms/dotcms-js';
+import {
     DotContainer,
-    DotContainerMap
+    DotContainerMap,
+    DotLayout,
+    DotPageRender,
+    DotPageRenderState
 } from '@dotcms/dotcms-models';
 
 @Component({
@@ -42,7 +47,9 @@ export class DotEditLayoutComponent implements OnInit, OnDestroy {
         private dotEditLayoutService: DotEditLayoutService,
         private dotPageLayoutService: DotPageLayoutService,
         private dotMessageService: DotMessageService,
-        private templateContainersCacheService: DotTemplateContainersCacheService
+        private templateContainersCacheService: DotTemplateContainersCacheService,
+        private dotSessionStorageService: DotSessionStorageService,
+        private router: Router
     ) {}
 
     ngOnInit() {
@@ -63,6 +70,10 @@ export class DotEditLayoutComponent implements OnInit, OnDestroy {
     }
 
     ngOnDestroy() {
+        if (!this.router.routerState.snapshot.url.startsWith('/edit-page/content')) {
+            this.dotSessionStorageService.removeVariantId();
+        }
+
         this.destroy$.next(true);
         this.destroy$.complete();
     }

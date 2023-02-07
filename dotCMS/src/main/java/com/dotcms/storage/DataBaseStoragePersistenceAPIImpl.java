@@ -3,10 +3,15 @@ package com.dotcms.storage;
 import static com.dotcms.storage.model.BasicMetadataFields.SHA256_META_KEY;
 
 import com.dotcms.concurrent.DotConcurrentFactory;
+import com.dotcms.storage.repository.BinaryFileWrapper;
+import com.dotcms.storage.repository.FileRepositoryManager;
+import com.dotcms.storage.repository.HashedLocalFileRepositoryManager;
+import com.dotcms.storage.repository.LocalFileRepositoryManager;
+import com.dotcms.storage.repository.TempFileRepositoryManager;
 import com.dotcms.util.CloseUtils;
 import com.dotcms.util.CollectionsUtils;
 import com.dotcms.util.FileByteSplitter;
-import com.dotcms.util.FileJoiner;
+import com.dotcms.util.FileJoinerImpl;
 import com.dotcms.util.ReturnableDelegate;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.common.db.DotConnect;
@@ -25,10 +30,11 @@ import com.google.common.collect.ImmutableSet;
 import com.liferay.util.Encryptor;
 import com.liferay.util.Encryptor.Hashing;
 import com.liferay.util.HashBuilder;
-import com.liferay.util.PropertiesUtil;
 import com.liferay.util.StringPool;
 import io.vavr.Tuple2;
 import io.vavr.control.Try;
+
+import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -41,7 +47,6 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.Collections;
-import java.util.Date;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -50,13 +55,15 @@ import java.util.Set;
 import java.util.concurrent.Future;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
+
+import org.apache.commons.io.output.DeferredFileOutputStream;
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.mutable.MutableBoolean;
 import org.apache.commons.lang3.mutable.MutableObject;
 
 /**
  * Represents a Storage on the database It supports big files since provides the ability to split
- * fat object in smaller pieces, see {@link FileByteSplitter} and {@link com.dotcms.util.FileJoiner}
+ * fat object in smaller pieces, see {@link FileByteSplitter} and {@link FileJoinerImpl}
  * to get more details about the process
  *
  * @author jsanca
@@ -65,6 +72,25 @@ public class DataBaseStoragePersistenceAPIImpl implements StoragePersistenceAPI 
 
     private static final String DATABASE_STORAGE_JDBC_POOL_NAME = "DATABASE_STORAGE_JDBC_POOL_NAME";
     private static final String DB_STORAGE_CHUNK_SIZE = "DB_STORAGE_CHUNK_SIZE";
+    private final FileRepositoryManager fileRepositoryManager = this.getFileRepository();
+    private static final int DATABASE_FILE_BUFFER_SIZE = Config.getIntProperty("DATABASE_FILE_BUFFER_SIZE", 2000);
+
+    private static final String DATA_BASE_STORAGE_FILE_REPO_TYPE = Config.getStringProperty(
+            "DATA_BASE_STORAGE_FILE_REPO_TYPE", FileRepositoryManager.TEMP_REPO).toUpperCase();
+
+    private FileRepositoryManager getFileRepository() {
+
+        switch (DATA_BASE_STORAGE_FILE_REPO_TYPE) {
+
+            case FileRepositoryManager.HASH_LOCAL_REPO:
+                return new HashedLocalFileRepositoryManager();
+            case FileRepositoryManager.LOCAL_REPO:
+                return new LocalFileRepositoryManager();
+
+        }
+
+        return new TempFileRepositoryManager();
+    }
 
     /**
      * custom external connection provider method in case we want to store stuff outside our db
@@ -695,8 +721,15 @@ public class DataBaseStoragePersistenceAPIImpl implements StoragePersistenceAPI 
     }
 
     private File createJoinFile(final String hashId, final Connection connection) throws IOException, DotDataException {
-        final File file = FileUtil.createTemporaryFile("dot-db-storage-recovery", ".tmp", true);
-        try (final FileJoiner fileJoiner = new FileJoiner(file)) {
+
+        if (this.fileRepositoryManager.exists(hashId)) {
+
+            return this.fileRepositoryManager.getOrCreateFile(hashId);
+        }
+
+        File file = this.fileRepositoryManager.getOrCreateFile(hashId);
+        final DeferredFileOutputStream deferredFileOutputStream = null;
+        try (final BinaryBlockFileJoinerImpl fileJoiner = new BinaryBlockFileJoinerImpl(file, DATABASE_FILE_BUFFER_SIZE)) {
             final HashBuilder fileHashBuilder = Try.of(Hashing::sha256)
                     .getOrElseThrow(DotRuntimeException::new);
 
@@ -727,6 +760,12 @@ public class DataBaseStoragePersistenceAPIImpl implements StoragePersistenceAPI 
                         "The file hash `%s` isn't valid. it doesn't match the records in `storage_data/storage_x_data` or they don't exist. ",
                         hashId));
             }
+
+            // this means file is buffered and needs to wrap the binary
+            if (fileJoiner.getBytes() != null) {
+
+                file = new BinaryFileWrapper(file, fileJoiner.getBytes());
+            }
         } catch (Exception e) {
             throw new DotDataException(e.getMessage(), e);
         }
@@ -742,12 +781,16 @@ public class DataBaseStoragePersistenceAPIImpl implements StoragePersistenceAPI 
         final File file = pullFile(groupName, path);
 
         if (null != file) {
-            object = Try.of(() -> {
-                        try (InputStream inputStream = Files.newInputStream(file.toPath())) {
-                            return readerDelegate.read(inputStream);
-                        }
-                    }
-            ).getOrNull();
+            object =
+                    Try.of(() -> {
+                                try (InputStream inputStream = file instanceof BinaryFileWrapper?
+                                        new ByteArrayInputStream(BinaryFileWrapper.class.cast(file).getBufferByte()):
+                                        Files.newInputStream(file.toPath())) {
+
+                                    return readerDelegate.read(inputStream);
+                                }
+                            }
+                    ).getOrNull();
         }
 
         return object;

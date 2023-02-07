@@ -1,4 +1,4 @@
-import { OnChanges, Component, Input, SimpleChanges } from '@angular/core';
+import { Component, Input, OnChanges, SimpleChanges } from '@angular/core';
 @Component({
     selector: 'dot-categories-permissions',
     templateUrl: './dot-categories-permissions.component.html',

@@ -72,6 +72,7 @@
                 [required]="true"
                 data-testId="max-contents"
                 type="number"
+                min="0"
                 formControlName="maxContentlets"
                 pInputText
             />
@@ -84,29 +85,20 @@
                 pButton
                 type="button"
             ></button>
-            <button
-                *ngIf="!vm.isContentTypeVisible"
-                [label]="'message.containers.create.content_type_code' | dm"
-                [disabled]="!vm.isContentTypeButtonEnabled"
-                (click)="showContentTypeAndCode()"
-                data-testId="showContentTypeAndCode"
-                pButton
-                type="button"
-            ></button>
         </div>
 
-        <div class="dot-container-properties__code-loop-container" *ngIf="vm.isContentTypeVisible">
+        <div
+            class="dot-container-properties__code-loop-container"
+            *ngIf="vm.isContentTypeVisible"
+            [@contentTypeAnimation]
+        >
             <dot-loop-editor
                 [isEditorVisible]="vm.showPrePostLoopInput"
                 (buttonClick)="showLoopInput()"
                 label="pre_loop"
                 formControlName="preLoop"
             ></dot-loop-editor>
-            <dot-container-code
-                *ngIf="vm.contentTypes.length > 0"
-                [contentTypes]="vm.contentTypes"
-                [fg]="form"
-            ></dot-container-code>
+            <dot-container-code [contentTypes]="vm.contentTypes" [fg]="form"></dot-container-code>
             <dot-loop-editor
                 [isEditorVisible]="vm.showPrePostLoopInput"
                 (buttonClick)="showLoopInput()"

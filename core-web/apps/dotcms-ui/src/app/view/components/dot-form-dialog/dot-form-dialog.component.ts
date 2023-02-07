@@ -1,3 +1,5 @@
+import { fromEvent, Subject } from 'rxjs';
+
 import {
     Component,
     ElementRef,
@@ -7,8 +9,9 @@ import {
     OnInit,
     Output
 } from '@angular/core';
+
 import { DynamicDialogRef } from 'primeng/dynamicdialog';
-import { fromEvent, Subject } from 'rxjs';
+
 import { takeUntil } from 'rxjs/operators';
 
 @Component({
@@ -22,6 +25,9 @@ export class DotFormDialogComponent implements OnInit, OnDestroy {
 
     @Input()
     saveButtonDisabled: boolean;
+
+    @Input()
+    saveButtonLoading: boolean;
 
     @Output()
     save: EventEmitter<MouseEvent | KeyboardEvent> = new EventEmitter(null);
@@ -48,6 +54,7 @@ export class DotFormDialogComponent implements OnInit, OnDestroy {
                 const nodeName = (keyboardEvent.target as Element).nodeName;
                 if (
                     !this.saveButtonDisabled &&
+                    !this.saveButtonLoading &&
                     nodeName !== 'TEXTAREA' &&
                     keyboardEvent.key === 'Enter' &&
                     (keyboardEvent.metaKey || keyboardEvent.altKey)
@@ -68,7 +75,9 @@ export class DotFormDialogComponent implements OnInit, OnDestroy {
      * @memberof DotFormDialogComponent
      */
     onPrimaryClick(event: MouseEvent): void {
-        this.save.emit(event);
+        if (!this.saveButtonDisabled && !this.saveButtonLoading) {
+            this.save.emit(event);
+        }
     }
 
     /**

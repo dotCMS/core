@@ -1,23 +1,24 @@
 /* eslint-disable @typescript-eslint/no-empty-function */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
+import { Component, DebugElement, forwardRef, Input, OnInit } from '@angular/core';
+import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing';
 import {
     ControlValueAccessor,
-    UntypedFormBuilder,
-    UntypedFormGroup,
     FormsModule,
     NG_VALUE_ACCESSOR,
-    ReactiveFormsModule
+    ReactiveFormsModule,
+    UntypedFormBuilder,
+    UntypedFormGroup
 } from '@angular/forms';
-import { waitForAsync, ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
-import { Component, DebugElement, forwardRef, Input, OnInit } from '@angular/core';
 
-import { DotLayoutDesignerComponent } from './dot-layout-designer.component';
-import { mockDotLayout } from '@dotcms/utils-testing';
-import { DotMessagePipe } from '@pipes/dot-message/dot-message.pipe';
 import { DotMessageService } from '@dotcms/data-access';
 import { DotLayout } from '@dotcms/dotcms-models';
+import { mockDotLayout } from '@dotcms/utils-testing';
+import { DotMessagePipe } from '@pipes/dot-message/dot-message.pipe';
+
+import { DotLayoutDesignerComponent } from './dot-layout-designer.component';
 
 @Component({
     selector: 'dot-edit-layout-grid',

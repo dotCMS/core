@@ -1,5 +1,6 @@
 import { Injectable } from '@angular/core';
 import { CanActivate } from '@angular/router';
+
 import { DotRouterService } from '../dot-router/dot-router.service';
 
 /**
