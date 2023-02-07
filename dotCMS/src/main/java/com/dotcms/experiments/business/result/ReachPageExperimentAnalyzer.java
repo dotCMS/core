@@ -41,25 +41,8 @@ public class ReachPageExperimentAnalyzer implements MetricExperimentAnalyzer {
         for (final Event event : events) {
 
             final ImmutableList<Condition> conditions = goal.conditions();
-            boolean isValid = true;
 
-            for (final Condition condition : conditions) {
-
-                final String realValue = event.get(condition.parameter())
-                        .map(value -> value.toString())
-                        .orElse(StringPool.BLANK);
-
-                final String valueToCompare = condition.value();
-
-                isValid = isValid && condition.operator().getFunction()
-                        .apply(realValue, valueToCompare);
-
-                if (!isValid) {
-                    break;
-                }
-            }
-
-            if (isValid) {
+            if (goal.validateConditions(event)) {
                 experimentResultBuilder.count(goal, session.getLookBackWindow(), event);
             }
         }

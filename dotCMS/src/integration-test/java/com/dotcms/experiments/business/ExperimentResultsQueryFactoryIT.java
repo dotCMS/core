@@ -140,4 +140,96 @@ public class ExperimentResultsQueryFactoryIT {
                 .operator(Operator.EQUALS)
                 .build();
     }
+
+    /**
+     * Method to test: {@link ExperimentResultsQueryFactory#create(Experiment)}
+     * When: Try to get the {@link CubeJSQuery} to a Experiment with a BOUNCE_RATE GOal
+     * Should: get the follow query:
+     *
+     * <code>
+     * {
+     *      "filters":[
+     *          {
+     *              "values":["pageview"],
+     *              "member":"Events.eventType",
+     *              "operator":"equals"
+     *          },
+     *          {
+     *              "values":["e1aa92a0-d266-4482-bdf2-e0c1bbcf013a"],
+     *              "member":"Events.experiment",
+     *              "operator":"equals"
+     *          }
+     *      ],
+     *      "dimensions":[
+     *          "Events.experiment",
+     *          "Events.variant",
+     *          "Events.utcTime",
+     *          "Events.url",
+     *          "Events.lookBackWindow"
+     *      ],
+     *      "order":{
+     *          "Events.utcTime":"asc",
+     *          "Events.lookBackWindow":"asc"
+     *       }
+     * }
+     *
+     * </code>
+     */
+    @Test
+    public void createQueryForBounceRateGoal()  {
+
+        final Host host = new SiteDataGen().nextPersisted();
+        final Template template = new TemplateDataGen().host(host).nextPersisted();
+
+        final HTMLPageAsset experimentPage = new HTMLPageDataGen(host, template).nextPersisted();
+        final HTMLPageAsset bounceRatePage = new HTMLPageDataGen(host, template).nextPersisted();
+
+        final Metric metric = Metric.builder()
+                .name("Testing Bounce Rate Metric")
+                .type(MetricType.BOUNCE_RATE)
+                .addConditions(getUrlCondition(bounceRatePage.getPageUrl()))
+                .build();
+
+        final Goals goal = Goals.builder().primary(metric).build();
+
+        final Experiment experiment = new ExperimentDataGen()
+                .addVariant("page_reach+testing_1")
+                .page(experimentPage)
+                .addGoal(goal)
+                .nextPersisted();
+
+        final CubeJSQuery cubeJSQuery = ExperimentResultsQueryFactory.INSTANCE.create(experiment);
+        final String cubeJSQueryExpected ="{"
+                +   "\"filters\":["
+                +       "{"
+                +           "\"values\":["
+                +               "\"pageview\""
+                +           "],"
+                +           "\"member\":\"Events.eventType\","
+                +           "\"operator\":\"equals\""
+                +       "},"
+                +       "{"
+                +           "\"values\":["
+                +               "\"" + experiment.getIdentifier() + "\""
+                +           "],"
+                +           "\"member\":\"Events.experiment\","
+                +           "\"operator\":\"equals\""
+                +       "}"
+                +   "],"
+                +   "\"dimensions\":["
+                +       "\"Events.experiment\","
+                +       "\"Events.variant\","
+                +       "\"Events.utcTime\","
+                +       "\"Events.url\","
+                +       "\"Events.lookBackWindow\","
+                +       "\"Events.eventType\""
+                +   "],"
+                +   "\"order\":{"
+                +       "\"Events.lookBackWindow\":\"asc\","
+                +       "\"Events.utcTime\":\"asc\""
+                +   "}"
+                + "}";
+
+        assertEquals(cubeJSQueryExpected, cubeJSQuery.toString());
+    }
 }

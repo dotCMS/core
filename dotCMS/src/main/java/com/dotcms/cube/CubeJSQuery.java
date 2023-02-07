@@ -260,9 +260,6 @@ public class CubeJSQuery {
         }
 
         public CubeJSQuery build(){
-            if (!UtilMethods.isSet(dimensions) && !UtilMethods.isSet(measures)) {
-                throw new IllegalStateException("Must set dimensions or measures");
-            }
 
             return new CubeJSQuery(dimensions, measures,
                     filters.toArray(new Filter[filters.size()]),

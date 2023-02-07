@@ -171,6 +171,104 @@ public class ExperimentAnalyzerUtilIT {
 
     }
 
+    /**
+     * Method to test: {@link ExperimentAnalyzerUtil#getExperimentResult(Experiment, List)}
+     * When:
+     * - You have 4 pages: A, B, and C
+     * - Create a Experiment with a BOUNCE_RATE goal where:
+     *      - Page B is the Experiment's Page and also if the page to be check for BOUNCE_RATE
+     * -  Now different users navigate by the site (triggering pageview Events)
+     *      - A, B: Count as a Bounce Rate.
+     *      - A, C and D: Not count as session into the Experiment.
+     *      - A, B, C: not count as a Bounce Rate
+     * Should:
+     * - Total Session: 2
+     * - Unique Session Bounce Rate: 1
+     * - Multi Session: 1 (Really we can not have more than one Bounce Rate by session)
+     */
+    @Test
+    public void analyzerDataBounceRate(){
+        final Host host = new SiteDataGen().nextPersisted();
+        final Template template = new TemplateDataGen().host(host).nextPersisted();
+
+        final HTMLPageAsset pageA = new HTMLPageDataGen(host, template).nextPersisted();
+        final HTMLPageAsset pageB = new HTMLPageDataGen(host, template).nextPersisted();
+        final HTMLPageAsset pageC = new HTMLPageDataGen(host, template).nextPersisted();
+
+        final Metric metric = Metric.builder()
+                .name("Testing Metric")
+                .type(MetricType.BOUNCE_RATE)
+                .addConditions(getUrlCondition(pageB.getPageUrl()))
+                .build();
+
+        final Goals goal = Goals.builder().primary(metric).build();
+
+        final Experiment experiment = new ExperimentDataGen()
+                .addVariant("Testing Variant")
+                .page(pageB)
+                .addGoal(goal)
+                .nextPersisted();
+
+        final ExperimentVariant anotherVariant = experiment.trafficProportion().variants().stream()
+                .filter(experimentVariant -> !experimentVariant.id().equals("DEFAULT"))
+                .limit(1)
+                .findFirst()
+                .orElseThrow(() -> new AssertionError("Must a Variant diffrent from DEFAULT"));
+
+        final List<Map<String, Object>> browserSession_1 = createPageViewEvents(experiment,
+                anotherVariant.id(), pageA, pageB);
+
+        final List<Map<String, Object>> browserSession_2 = createPageViewEvents(experiment,
+                anotherVariant.id(), pageA, pageC);
+
+        final List<Map<String, Object>> browserSession_3 = createPageViewEvents(experiment,
+                anotherVariant.id(), pageA, pageB, pageC);
+
+
+        final List<BrowserSession> browserSessions = new ArrayList<>();
+        browserSessions.add(new BrowserSession(
+                browserSession_1.get(0).get("Events.lookBackWindow").toString(),
+                browserSession_1.stream().map(eventMap -> new Event(eventMap, EventType.PAGE_VIEW)).collect(Collectors.toList())));
+
+        browserSessions.add(new BrowserSession(
+                browserSession_2.get(0).get("Events.lookBackWindow").toString(),
+                browserSession_2.stream().map(eventMap -> new Event(eventMap, EventType.PAGE_VIEW)).collect(Collectors.toList())));
+
+        browserSessions.add(new BrowserSession(
+                browserSession_3.get(0).get("Events.lookBackWindow").toString(),
+                browserSession_3.stream().map(eventMap -> new Event(eventMap, EventType.PAGE_VIEW)).collect(Collectors.toList())));
+
+        final ExperimentResults experimentResult = ExperimentAnalyzerUtil.INSTANCE
+                .getExperimentResult(experiment, browserSessions);
+
+        assertEquals(2, experimentResult.getTotalSessions());
+
+        assertEquals(1, experimentResult.getGoalResults().size());
+
+        final Map<String, VariantResult> variants = experimentResult.getGoalResults().get(0)
+                .getVariants();
+
+        assertEquals(2, variants.size());
+
+        final List<String> expectedVariants = experiment.trafficProportion().variants().stream()
+                .map(experimentVariant -> experimentVariant.id())
+                .collect(Collectors.toList());
+
+        for (VariantResult resultVariant : variants.values()) {
+
+            assertTrue(expectedVariants.contains(resultVariant.getVariantName()));
+
+            if (!resultVariant.getVariantName().equals("DEFAULT")) {
+                assertEquals(1, resultVariant.totalUniqueBySession());
+                assertEquals(1, resultVariant.totalMultiBySession());
+            } else {
+                assertEquals(0, resultVariant.totalUniqueBySession());
+                assertEquals(0, resultVariant.totalMultiBySession());
+            }
+        }
+
+    }
+
     private List<Map<String, Object>> createPageViewEvents(final Experiment experiment,
             final String variantName,
             final HTMLPageAsset... pages) {

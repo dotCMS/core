@@ -1,6 +1,7 @@
 package com.dotcms.experiments.business.result;
 
 import com.dotcms.analytics.metrics.Metric;
+
 import com.dotcms.experiments.model.Experiment;
 
 /**

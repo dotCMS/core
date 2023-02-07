@@ -67,7 +67,8 @@ public enum ExperimentResultsQueryFactory {
 
     private static Map<MetricType, MetricExperimentResultQuery> createHelpersMap() {
         return map(
-            MetricType.REACH_PAGE, new ReachPageExperimentResultQuery()
+            MetricType.REACH_PAGE, new ReachPageExperimentResultQuery(),
+            MetricType.BOUNCE_RATE, new BounceRateExperimentResultQuery()
         );
     }
 
@@ -76,7 +77,6 @@ public enum ExperimentResultsQueryFactory {
                 .dimensions("Events.experiment",
                         "Events.variant",
                         "Events.utcTime",
-                        "Events.referer",
                         "Events.url",
                         "Events.lookBackWindow",
                         "Events.eventType"

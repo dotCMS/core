@@ -246,9 +246,10 @@ public class CubeJSTest {
      */
     @Test(expected = IllegalStateException.class)
     public void filterWithoutDimensions(){
-        final CubeJSQuery cubeJSQuery = new Builder()
+        new Builder()
                 .filter("Events.variant", SimpleFilter.Operator.EQUALS, "B")
-                .build();
+                .build()
+                .toString();
     }
 
     /**

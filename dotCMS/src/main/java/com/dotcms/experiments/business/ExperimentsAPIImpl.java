@@ -167,10 +167,9 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
             final Goals goals = experiment.goals().orElseThrow();
             MetricsUtil.INSTANCE.validateGoals(goals);
 
-            if (goals.primary().type() == MetricType.REACH_PAGE && !hasRefererCondition(goals)) {
-                addRefererCondition(APILocator.getHTMLPageAssetAPI().fromContentlet(pageAsContent),
-                        builder, goals);
-            }
+            addConditionIfIsNeed(goals,
+                    APILocator.getHTMLPageAssetAPI().fromContentlet(pageAsContent), builder);
+
         }
 
         if(experiment.targetingConditions().isPresent()) {
@@ -207,10 +206,29 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
         return savedExperiment.get();
     }
 
+    private void addConditionIfIsNeed(final Goals goals, final HTMLPageAsset page,
+            final Builder builder) {
+
+        if (goals.primary().type() == MetricType.REACH_PAGE && !hasCondition(goals, "referer")) {
+            addRefererCondition(page, builder, goals);
+        } else if (goals.primary().type() == MetricType.BOUNCE_RATE && !hasCondition(goals, "url")) {
+            addUrlCondition(page, builder, goals);
+        }
+    }
+
     private void addRefererCondition(final HTMLPageAsset page, final Builder builder, final Goals goals) {
 
-        final com.dotcms.analytics.metrics.Condition refererCondition = createRefererCondition(
-                page, goals);
+        final com.dotcms.analytics.metrics.Condition refererCondition = createConditionWithUrlValue(
+                page, "referer");
+
+        final Goals newGoal = createNewGoals(goals, refererCondition);
+        builder.goals(newGoal);
+    }
+
+    private void addUrlCondition(final HTMLPageAsset page, final Builder builder, final Goals goals) {
+
+        final com.dotcms.analytics.metrics.Condition refererCondition = createConditionWithUrlValue(
+                page, "url");
 
         final Goals newGoal = createNewGoals(goals, refererCondition);
         builder.goals(newGoal);
@@ -224,17 +242,19 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
         return Goals.builder().from(oldGoals).primary(newMetric).build();
     }
 
-    private boolean hasRefererCondition(final Goals goals){
+    private boolean hasCondition(final Goals goals, final String conditionName){
         return goals.primary().conditions()
-            .stream()
-            .anyMatch(condition -> "referer".equals(condition.parameter()));
+                .stream()
+                .anyMatch(condition ->conditionName .equals(condition.parameter()));
     }
-    private com.dotcms.analytics.metrics.Condition createRefererCondition(final HTMLPageAsset page, final Goals goals) {
+    private com.dotcms.analytics.metrics.Condition createConditionWithUrlValue(final HTMLPageAsset page,
+            final String conditionName) {
+
         return com.dotcms.analytics.metrics.Condition.builder()
-                    .parameter("referer")
-                    .operator(Operator.CONTAINS)
-                    .value(page.getPageUrl())
-                    .build();
+                .parameter(conditionName)
+                .operator(Operator.CONTAINS)
+                .value(page.getPageUrl())
+                .build();
     }
 
     private void saveTargetingConditions(final Experiment experiment, final User user)
