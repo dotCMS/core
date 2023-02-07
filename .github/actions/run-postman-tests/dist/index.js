@@ -186,7 +186,7 @@ exports.runTests = runTests;
  */
 const copyOutputs = () => __awaiter(void 0, void 0, void 0, function* () {
     const logFile = path.join(dotCmsRoot, `${normalize(parallelCollection)}.log`);
-    yield execCmd(toCommand('docker', ['cp', 'docker_dotcms-app_1:/srv/dotserver/tomcat-9.0.60/logs/dotcms.log', logFile]));
+    yield execCmd(toCommand('docker', ['cp', 'dotcms-app_1:/srv/dotserver/tomcat-9.0.60/logs/dotcms.log', logFile]));
 });
 const copyHeaderAndFooter = () => __awaiter(void 0, void 0, void 0, function* () {
     yield execCmd(toCommand('cp', [path.join(resourcesFolder, 'postman-results-header.html'), reportFolder]));
