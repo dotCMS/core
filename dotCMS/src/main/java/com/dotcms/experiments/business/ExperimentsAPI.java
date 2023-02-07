@@ -2,6 +2,7 @@ package com.dotcms.experiments.business;
 
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.experiments.business.result.BrowserSession;
+import com.dotcms.experiments.business.result.ExperimentResults;
 import com.dotcms.experiments.business.result.ExperimentResult;
 import com.dotcms.experiments.model.AbstractExperiment.Status;
 import com.dotcms.experiments.model.Experiment;
@@ -159,7 +160,8 @@ public interface ExperimentsAPI {
      * @param experiment
      * @return
      */
-    ExperimentResult getResult(final Experiment experiment);
+    ExperimentResults getResults(final Experiment experiment)
+            throws DotDataException, DotSecurityException;
 
     /**
      * Return a list of the Events into an Experiment group by {@link BrowserSession}
