@@ -4588,10 +4588,7 @@ body {
 .dijitDialogCloseIcon:after {
     transform: rotate(-45deg);
 }
-.dijitDialogPaneActionBar,
-.dijitDialogPaneContent {
-    padding: 16px;
-}
+
 .dijitDialogPaneActionBar {
     padding-top: 0;
 }
@@ -4604,7 +4601,6 @@ body {
     font-weight: bold;
     height: 50px;
     line-height: 50px;
-    padding: 0 16px;
     position: relative;
 }
 
@@ -12412,6 +12408,10 @@ Resize Handle
     border: none;
     background: none;
     height: 18px;
+}
+
+.dijitDialogTitle {
+    padding-left: 16px;
 }
 
 .input-text-naked {

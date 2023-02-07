@@ -1,0 +1,22 @@
+<p-card>
+    <ng-template pTemplate="header">
+        <div class="thumbnail-container">
+            <img
+                *ngIf="contentlet.hasTitleImage; else icon"
+                [src]="getImage(contentlet.inode)"
+                [alt]="contentlet?.fileName || contentlet?.title"
+            />
+            <ng-template #icon>
+                <dot-contentlet-icon [icon]="getContentletIcon()" [size]="'72px'">
+                </dot-contentlet-icon>
+            </ng-template>
+        </div>
+    </ng-template>
+    <h2 class="title" *pTemplate="'title'">{{ contentlet?.fileName || contentlet?.title }}</h2>
+    <ng-template pTemplate="footer">
+        <div class="state">
+            <span class="badge">{{ contentlet.language }}</span>
+            <dot-state-icon [state]="contentlet" size="16px"> </dot-state-icon>
+        </div>
+    </ng-template>
+</p-card>

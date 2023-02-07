@@ -18,25 +18,12 @@ import { catchError, take, takeUntil, tap } from 'rxjs/operators';
 
 // Services
 import { DotDialogActions } from '@components/dot-dialog/dot-dialog.component';
+import { getEditorBlockOptions } from '@dotcms/block-editor';
 import { DotMessageService } from '@dotcms/data-access';
 import { DotCMSContentTypeField, DotFieldVariable } from '@dotcms/dotcms-models';
 import { DotHttpErrorManagerService } from '@services/dot-http-error-manager/dot-http-error-manager.service';
 
 import { DotFieldVariablesService } from '../fields/dot-content-type-fields-variables/services/dot-field-variables.service';
-
-export const BLOCK_EDITOR_BLOCKS = [
-    { label: 'Block Quote', code: 'blockquote' },
-    { label: 'Bullet List', code: 'bulletList' },
-    { label: 'Code Block', code: 'codeBlock' },
-    { label: 'Contentlet', code: 'contentlets' },
-    { label: 'Heading 1', code: 'heading1' },
-    { label: 'Heading 2', code: 'heading2' },
-    { label: 'Heading 3', code: 'heading3' },
-    { label: 'Horizontal Line', code: 'horizontalRule' },
-    { label: 'Image', code: 'image' },
-    { label: 'Ordered List', code: 'orderedList' },
-    { label: 'Table', code: 'table' }
-];
 
 /* Uncomment this when Content Assets variable is ready
 const BLOCK_EDITOR_ASSETS = [
@@ -67,7 +54,7 @@ export class DotBlockEditorSettingsComponent implements OnInit, OnDestroy, OnCha
         allowedBlocks: {
             label: 'Allowed Blocks',
             placeholder: 'Select Blocks',
-            options: BLOCK_EDITOR_BLOCKS,
+            options: getEditorBlockOptions(),
             key: 'allowedBlocks',
             variable: null
         }

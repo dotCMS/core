@@ -25,6 +25,7 @@ import {
     DotExperimentsConfigurationStoreMock,
     ExperimentMocks
 } from '@portlets/dot-experiments/test/mocks';
+import { DotHttpErrorManagerService } from '@services/dot-http-error-manager/dot-http-error-manager.service';
 
 import { DotExperimentsConfigurationComponent } from './dot-experiments-configuration.component';
 
@@ -77,7 +78,8 @@ describe('DotExperimentsConfigurationComponent', () => {
             mockProvider(DotSessionStorageService),
             mockProvider(MessageService),
             mockProvider(Router),
-            mockProvider(Title)
+            mockProvider(Title),
+            mockProvider(DotHttpErrorManagerService)
         ]
     });
 

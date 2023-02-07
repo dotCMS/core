@@ -4,16 +4,19 @@ package com.dotcms.api;
 import com.dotcms.api.client.RestClientFactory;
 import com.dotcms.api.client.ServiceManager;
 import com.dotcms.model.ResponseEntityView;
+import com.dotcms.model.annotation.SecuredPassword;
 import com.dotcms.model.authentication.APITokenRequest;
 import com.dotcms.model.authentication.TokenEntity;
 import com.dotcms.model.config.CredentialsBean;
 import com.dotcms.model.config.ServiceBean;
+import io.quarkus.arc.All;
 import io.quarkus.arc.DefaultBean;
 import io.quarkus.runtime.StartupEvent;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
+import javax.annotation.PostConstruct;
 import javax.enterprise.context.ApplicationScoped;
 import javax.enterprise.event.Observes;
 import javax.inject.Inject;
@@ -25,6 +28,9 @@ import org.eclipse.microprofile.config.inject.ConfigProperty;
 public class DefaultAuthenticationContextImpl implements AuthenticationContext {
 
     @Inject
+    @All
+    List<ServiceManager> serviceManagers;
+
     ServiceManager serviceManager;
 
     @Inject
@@ -37,6 +43,16 @@ public class DefaultAuthenticationContextImpl implements AuthenticationContext {
     @ConfigProperty(name = "com.dotcms.api.token.expiration", defaultValue = "10")
     Integer expirationDays;
 
+    @PostConstruct
+    void init(){
+        //Always prefer a Service Manager that can securely keep passwords
+        Optional<ServiceManager> optional = serviceManagers.stream().filter(manager -> {
+            final SecuredPassword[] annotationsByType = manager.getClass().getAnnotationsByType(SecuredPassword.class);
+            return annotationsByType.length > 0;
+        }).findFirst();
+        serviceManager = optional.orElseGet(() -> serviceManagers.get(0));
+    }
+
     @Override
     public Optional<String> getUser() {
         return Optional.ofNullable(user);
@@ -46,7 +62,7 @@ public class DefaultAuthenticationContextImpl implements AuthenticationContext {
     public Optional<char[]> getToken() {
         final Optional<String> optionalUser = getUser();
         if (optionalUser.isPresent()) {
-            if(null != token){
+            if(null != token  && token.length > 0){
               return Optional.of(token);
             }
             final String userString = optionalUser.get();
@@ -74,7 +90,7 @@ public class DefaultAuthenticationContextImpl implements AuthenticationContext {
                     .credentials(CredentialsBean.builder().user(user).token(token).build()).build();
             serviceManager.persist(serviceBean);
         } catch (IOException e) {
-            throw new RuntimeException(e);
+            throw new IllegalStateException(e);
         }
         this.user = user;
         this.token = token;
@@ -97,7 +113,7 @@ public class DefaultAuthenticationContextImpl implements AuthenticationContext {
     String getServiceKey() {
         final Optional<ServiceBean> selected = serviceManager.selected();
         if(selected.isEmpty()){
-           throw new RuntimeException("No dotCMS instance has been activated.");
+           throw new IllegalStateException("No dotCMS instance has been activated.");
         }
         return selected.get().name();
     }
