@@ -59,7 +59,7 @@ export class ContainerListComponent implements OnDestroy {
      * @memberof ContainerListComponent
      */
     changeContentTypeSelector(value: string) {
-        value !== ''
+        value
             ? this.listing.paginatorService.setExtraParams('content_type', value)
             : this.listing.paginatorService.deleteExtraParams('content_type');
         this.listing.loadFirstPage();

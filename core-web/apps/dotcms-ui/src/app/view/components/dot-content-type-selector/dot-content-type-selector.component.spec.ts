@@ -11,6 +11,7 @@ import { DotContentTypeService, DotMessageService } from '@dotcms/data-access';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotContentTypeSelectorComponent } from './dot-content-type-selector.component';
+import { Dropdown, DropdownModule } from 'primeng/dropdown';
 
 @Injectable()
 class MockDotContentTypeService {
@@ -34,7 +35,7 @@ describe('DotContentTypeSelectorComponent', () => {
     beforeEach(() => {
         TestBed.configureTestingModule({
             declarations: [DotContentTypeSelectorComponent],
-            imports: [BrowserAnimationsModule],
+            imports: [BrowserAnimationsModule, DropdownModule],
             providers: [
                 {
                     provide: DotMessageService,
@@ -68,5 +69,14 @@ describe('DotContentTypeSelectorComponent', () => {
         component.options.subscribe((options) => {
             expect(options[0]).toEqual(allContentTypesItem);
         });
+    });
+
+    it('should set attributes to dropdown', () => {
+        fixture.detectChanges();
+        const pDropDown: Dropdown = de.query(By.css('p-dropdown')).componentInstance;
+        expect(pDropDown.filter).toBeDefined();
+        expect(pDropDown.filterBy).toBeDefined();
+        expect(pDropDown.showClear).toBeDefined();
+        expect(pDropDown.style).toEqual({ width: '155px' });
     });
 });
