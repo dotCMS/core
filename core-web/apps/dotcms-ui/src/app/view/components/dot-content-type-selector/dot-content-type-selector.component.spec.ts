@@ -7,11 +7,12 @@ import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 
 import { SelectItem } from 'primeng/api';
 
+import { Dropdown, DropdownModule } from 'primeng/dropdown';
+
 import { DotContentTypeService, DotMessageService } from '@dotcms/data-access';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotContentTypeSelectorComponent } from './dot-content-type-selector.component';
-import { Dropdown, DropdownModule } from 'primeng/dropdown';
 
 @Injectable()
 class MockDotContentTypeService {
@@ -66,7 +67,7 @@ describe('DotContentTypeSelectorComponent', () => {
     it('should add All Content Types option as first position', () => {
         fixture.detectChanges();
 
-        component.options.subscribe((options) => {
+        component.options$.subscribe((options) => {
             expect(options[0]).toEqual(allContentTypesItem);
         });
     });
