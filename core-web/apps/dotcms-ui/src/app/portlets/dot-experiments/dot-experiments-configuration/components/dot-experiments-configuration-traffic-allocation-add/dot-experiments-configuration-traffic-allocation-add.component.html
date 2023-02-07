@@ -1,0 +1,33 @@
+<ng-container *ngIf="vm$ | async as vm">
+    <p-sidebar [(visible)]="vm.status.isOpen" (onHide)="closeSidebar()" dotSidebar>
+        <dot-sidebar-header
+            [actionButtonTpl]="actionHeaderBtnTpl"
+            dotTitle="{{ 'experiments.configure.traffic.allocation' | dm }}"
+        ></dot-sidebar-header>
+        <div class="experiment-traffic-allocation-add__form-wrapper flex flex-column">
+            <form class="p-fluid" [formGroup]="form" data-testId="add-scheduling-form" novalidate>
+                <div class="field">
+                    <label class="p-label-input-required">
+                        {{ 'experiments.configure.traffic.allocation' | dm }}
+                    </label>
+                    <p>{{ 'experiments.configure.traffic.allocation.add.description' | dm }}</p>
+                    <p-slider [min]="0" [max]="100" formControlName="trafficAllocation"></p-slider>
+                    <input type="text" pInputText formControlName="trafficAllocation" />
+                </div>
+            </form>
+        </div>
+    </p-sidebar>
+
+    <ng-template #actionHeaderBtnTpl>
+        <button
+            [disabled]="!form.valid"
+            [loading]="vm.status.status === stepStatus.SAVING"
+            (click)="save(vm.experimentId)"
+            data-testId="add-scheduling-button"
+            label="{{ 'Done' | dm }}"
+            pButton
+            pRipple
+            type="submit"
+        ></button>
+    </ng-template>
+</ng-container>
