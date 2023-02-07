@@ -164,7 +164,7 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
         builder.lastModifiedBy(user.getUserId());
         
         if(experiment.goals().isPresent()) {
-            final Goals goals = experiment.goals().get();
+            final Goals goals = experiment.goals().orElseThrow();
             MetricsUtil.INSTANCE.validateGoals(goals);
 
             if (goals.primary().type() == MetricType.REACH_PAGE && !hasRefererCondition(goals)) {
