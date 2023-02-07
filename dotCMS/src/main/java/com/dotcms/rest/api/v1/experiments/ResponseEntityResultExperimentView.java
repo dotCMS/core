@@ -93,8 +93,7 @@ public class ResponseEntityResultExperimentView extends ResponseEntityView<Exper
 
         public ShortResult(final int count, final long total) {
             this.count = count;
-
-            this.percentage = total > 0 ? (count * 100) / total : 0;
+            this.percentage = total > 0 ? (float) (count * 100) / total : 0;
         }
 
         public long getCount() {

@@ -164,7 +164,7 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
         builder.lastModifiedBy(user.getUserId());
         
         if(experiment.goals().isPresent()) {
-            final Goals goals = experiment.goals().get();
+            final Goals goals = experiment.goals().orElseThrow();
             MetricsUtil.INSTANCE.validateGoals(goals);
 
             addConditionIfIsNeed(goals,
@@ -244,17 +244,17 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
 
     private boolean hasCondition(final Goals goals, final String conditionName){
         return goals.primary().conditions()
-            .stream()
-            .anyMatch(condition ->conditionName .equals(condition.parameter()));
+                .stream()
+                .anyMatch(condition ->conditionName .equals(condition.parameter()));
     }
     private com.dotcms.analytics.metrics.Condition createConditionWithUrlValue(final HTMLPageAsset page,
-        final String conditionName) {
+            final String conditionName) {
 
         return com.dotcms.analytics.metrics.Condition.builder()
-                    .parameter(conditionName)
-                    .operator(Operator.CONTAINS)
-                    .value(page.getPageUrl())
-                    .build();
+                .parameter(conditionName)
+                .operator(Operator.CONTAINS)
+                .value(page.getPageUrl())
+                .build();
     }
 
     private void saveTargetingConditions(final Experiment experiment, final User user)

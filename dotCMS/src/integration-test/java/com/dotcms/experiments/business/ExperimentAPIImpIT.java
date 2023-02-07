@@ -251,7 +251,6 @@ public class ExperimentAPIImpIT {
 
     /**
      * Method to test: {@link ExperimentsAPIImpl#getEvents(Experiment)}
-<<<<<<< HEAD
      * When: You have 4 pages let call them: A, B, C and D and:
      * - We create a Experiment with the B page.
      * - We mock in the test 4 Browser Session with different lookBackWindows, each of this session
@@ -272,11 +271,6 @@ public class ExperimentAPIImpIT {
      * If we call the {@link ExperimentsAPIImpl#getEvents(Experiment)} now
      *
      * Should: Return 4 {@link BrowserSession} each one with the right numbers of {@link com.dotcms.experiments.business.result.Event}
-=======
-     * When: Call the methods with a Experiment with 4 Session each one with several
-     * {@link com.dotcms.analytics.metrics.EventType#PAGE_VIEW} events.
-     * Should: get all the Events group by lookBackWindow
->>>>>>> origin/master
      *
      * @throws DotDataException
      * @throws DotSecurityException
@@ -922,13 +916,14 @@ public class ExperimentAPIImpIT {
                     String.format("http://%s:%s", cubeServerIp, cubeJsServerPort));
 
             final ExperimentsAPIImpl experimentsAPIImpl = new ExperimentsAPIImpl(mockAnalyticsHelper);
-            final ExperimentResults experimentResult = experimentsAPIImpl.getResults(experiment);
+            final ExperimentResults experimentResults = experimentsAPIImpl.getResults(experiment);
 
             mockhttpServer.validate();
 
-            assertEquals(1, experimentResult.getTotalSessions());
+            assertEquals(1, experimentResults.getTotalSessions());
 
-            for (VariantResult variantResult : experimentResult.getGoalResults().get(0).getVariants().values()) {
+            for (VariantResult variantResult : experimentResults.getGoalResults().get(0).getVariants().values()) {
+
                 if (variantResult.getVariantName().equals(variantName)) {
 
                     Assert.assertEquals(0, variantResult.totalUniqueBySession());
