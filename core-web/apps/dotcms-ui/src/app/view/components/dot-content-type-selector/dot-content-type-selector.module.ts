@@ -3,12 +3,11 @@ import { NgModule } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 
 import { DropdownModule } from 'primeng/dropdown';
-import { DotMessagePipeModule } from '../../pipes/dot-message/dot-message-pipe.module';
 
 import { DotContentTypeSelectorComponent } from './dot-content-type-selector.component';
 
 @NgModule({
-    imports: [CommonModule, DropdownModule, FormsModule, DotMessagePipeModule],
+    imports: [CommonModule, DropdownModule, FormsModule],
     declarations: [DotContentTypeSelectorComponent],
     exports: [DotContentTypeSelectorComponent]
 })
