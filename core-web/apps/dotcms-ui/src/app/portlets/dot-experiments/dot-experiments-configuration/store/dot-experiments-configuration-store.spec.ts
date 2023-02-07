@@ -11,14 +11,14 @@ import { take } from 'rxjs/operators';
 
 import { DotMessageService } from '@dotcms/data-access';
 import {
+    ComponentStatus,
     DEFAULT_VARIANT_NAME,
     DotExperiment,
+    DotExperimentStatusList,
     ExperimentSteps,
     Goals,
     GoalsLevels,
-    LoadingState,
     RangeOfDateAndTime,
-    Status,
     Variant
 } from '@dotcms/dotcms-models';
 import {
@@ -57,7 +57,8 @@ describe('DotExperimentsConfigurationStore', () => {
             {
                 provide: ActivatedRoute,
                 useValue: ActivatedRouteMock
-            }
+            },
+            mockProvider(DotHttpErrorManagerService)
         ]
     });
 
@@ -75,9 +76,9 @@ describe('DotExperimentsConfigurationStore', () => {
 
         const expectedInitialState: DotExperimentsConfigurationState = {
             experiment: ExperimentMocks[0],
-            status: LoadingState.LOADED,
+            status: ComponentStatus.IDLE,
             stepStatusSidebar: {
-                status: Status.IDLE,
+                status: ComponentStatus.IDLE,
                 isOpen: false,
                 experimentStep: null
             }
@@ -99,7 +100,7 @@ describe('DotExperimentsConfigurationStore', () => {
     });
 
     it('should update component status to the store', (done) => {
-        store.setComponentStatus(LoadingState.LOADED);
+        store.setComponentStatus(ComponentStatus.LOADED);
         store.isLoading$.subscribe((status) => {
             expect(status).toEqual(false);
             done();
@@ -107,9 +108,9 @@ describe('DotExperimentsConfigurationStore', () => {
     });
 
     it('should update sidebar status(SAVING/IDLE/DONE) to the store', (done) => {
-        store.setSidebarStatus({ status: Status.SAVING });
+        store.setSidebarStatus({ status: ComponentStatus.SAVING });
         store.state$.subscribe(({ stepStatusSidebar }) => {
-            expect(stepStatusSidebar.status).toEqual(Status.SAVING);
+            expect(stepStatusSidebar.status).toEqual(ComponentStatus.SAVING);
             done();
         });
     });
@@ -126,7 +127,7 @@ describe('DotExperimentsConfigurationStore', () => {
     it('should update close sidebar and initialize stepStatusSidebar', (done) => {
         store.closeSidebar();
         store.state$.subscribe(({ stepStatusSidebar }) => {
-            expect(stepStatusSidebar.status).toEqual(Status.DONE);
+            expect(stepStatusSidebar.status).toEqual(ComponentStatus.IDLE);
             expect(stepStatusSidebar.isOpen).toEqual(false);
             expect(stepStatusSidebar.experimentStep).toEqual(null);
             done();
@@ -360,6 +361,35 @@ describe('DotExperimentsConfigurationStore', () => {
             expect(dotHttpErrorManagerService.handle).toHaveBeenCalledOnceWith(
                 'error' as unknown as HttpErrorResponse
             );
+        });
+
+        it('should change the experiment status when Start the experiment', (done) => {
+            const experimentWithGoalsAndVariant: DotExperiment = {
+                ...ExperimentMocks[3]
+            };
+            const expectedExperiment: DotExperiment = {
+                ...ExperimentMocks[3],
+                status: DotExperimentStatusList.RUNNING
+            };
+
+            dotExperimentsService.getById.and
+                .callThrough()
+                .and.returnValue(of({ ...experimentWithGoalsAndVariant }));
+
+            dotExperimentsService.start.and.callThrough().and.returnValue(
+                of({
+                    ...expectedExperiment
+                })
+            );
+
+            spectator.service.loadExperiment(EXPERIMENT_ID);
+
+            store.startExperiment(experimentWithGoalsAndVariant);
+
+            store.state$.subscribe(({ experiment }) => {
+                expect(experiment.status).toEqual(DotExperimentStatusList.RUNNING);
+                done();
+            });
         });
     });
 });

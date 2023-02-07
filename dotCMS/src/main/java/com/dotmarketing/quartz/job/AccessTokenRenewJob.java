@@ -111,7 +111,7 @@ public class AccessTokenRenewJob implements StatefulJob {
             () -> hostAPI.findAll(APILocator.systemUser(), 0, 0, null, false)
                 .stream()
                 .filter(Objects::nonNull)
-                .map(host -> Try.of(() -> AnalyticsHelper.appFromHost(host)).getOrElse((AnalyticsApp) null))
+                .map(host -> Try.of(() -> AnalyticsHelper.get().appFromHost(host)).getOrElse((AnalyticsApp) null))
                 .filter(Objects::nonNull)
                 .filter(AnalyticsApp::isConfigValid)
                 .map(this::withStatus)
@@ -139,7 +139,7 @@ public class AccessTokenRenewJob implements StatefulJob {
      */
     private AnalyticsAppWithStatus withStatus(final AnalyticsApp analyticsApp) {
         final AccessToken accessToken = analyticsAPI.getAccessToken(analyticsApp);
-        final TokenStatus tokenStatus = AnalyticsHelper.resolveTokenStatus(accessToken);
+        final TokenStatus tokenStatus = AnalyticsHelper.get().resolveTokenStatus(accessToken);
         return new AnalyticsAppWithStatus(analyticsApp, tokenStatus);
     }
 

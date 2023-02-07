@@ -1,31 +1,41 @@
-import { createComponentFactory, mockProvider, Spectator, SpyObject } from '@ngneat/spectator';
+import {
+    byTestId,
+    createComponentFactory,
+    mockProvider,
+    Spectator,
+    SpyObject
+} from '@ngneat/spectator';
 import { of } from 'rxjs';
 
-import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { Title } from '@angular/platform-browser';
 import { ActivatedRoute, Router } from '@angular/router';
 
 import { ConfirmationService, MessageService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
 
+import { DotMessagePipe } from '@dotcms/app/view/pipes';
 import { DotMessageService, DotSessionStorageService } from '@dotcms/data-access';
-import { Status } from '@dotcms/dotcms-models';
+import { ComponentStatus } from '@dotcms/dotcms-models';
 import { MockDotMessageService } from '@dotcms/utils-testing';
-import { DotExperimentsConfigurationExperimentStatusBarComponent } from '@portlets/dot-experiments/dot-experiments-configuration/components/dot-experiments-configuration-experiment-status-bar/dot-experiments-configuration-experiment-status-bar.component';
 import { DotExperimentsConfigurationGoalsComponent } from '@portlets/dot-experiments/dot-experiments-configuration/components/dot-experiments-configuration-goals/dot-experiments-configuration-goals.component';
 import { DotExperimentsConfigurationSchedulingComponent } from '@portlets/dot-experiments/dot-experiments-configuration/components/dot-experiments-configuration-scheduling/dot-experiments-configuration-scheduling.component';
 import { DotExperimentsConfigurationSkeletonComponent } from '@portlets/dot-experiments/dot-experiments-configuration/components/dot-experiments-configuration-skeleton/dot-experiments-configuration-skeleton.component';
 import { DotExperimentsConfigurationTargetingComponent } from '@portlets/dot-experiments/dot-experiments-configuration/components/dot-experiments-configuration-targeting/dot-experiments-configuration-targeting.component';
 import { DotExperimentsConfigurationTrafficComponent } from '@portlets/dot-experiments/dot-experiments-configuration/components/dot-experiments-configuration-traffic/dot-experiments-configuration-traffic.component';
 import { DotExperimentsConfigurationVariantsComponent } from '@portlets/dot-experiments/dot-experiments-configuration/components/dot-experiments-configuration-variants/dot-experiments-configuration-variants.component';
-import { DotExperimentsConfigurationStore } from '@portlets/dot-experiments/dot-experiments-configuration/store/dot-experiments-configuration-store';
+import {
+    ConfigurationViewModel,
+    DotExperimentsConfigurationStore
+} from '@portlets/dot-experiments/dot-experiments-configuration/store/dot-experiments-configuration-store';
 import { DotExperimentsService } from '@portlets/dot-experiments/shared/services/dot-experiments.service';
+import { DotExperimentsExperimentSummaryComponent } from '@portlets/dot-experiments/shared/ui/dot-experiments-experiment-summary/dot-experiments-experiment-summary.component';
 import { DotExperimentsUiHeaderComponent } from '@portlets/dot-experiments/shared/ui/dot-experiments-header/dot-experiments-ui-header.component';
 import {
     DotExperimentsConfigurationStoreMock,
     ExperimentMocks
 } from '@portlets/dot-experiments/test/mocks';
 import { DotHttpErrorManagerService } from '@services/dot-http-error-manager/dot-http-error-manager.service';
+import { DotMessageMockPipe } from '@tests/dot-message-mock.pipe';
 
 import { DotExperimentsConfigurationComponent } from './dot-experiments-configuration.component';
 
@@ -43,13 +53,27 @@ const messageServiceMock = new MockDotMessageService({
     'experiments.configure.scheduling.start': 'When the experiment start'
 });
 
+const defaultVmMock: ConfigurationViewModel = {
+    experiment: ExperimentMocks[0],
+    stepStatusSidebar: {
+        status: ComponentStatus.IDLE,
+        isOpen: false,
+        experimentStep: null
+    },
+    isLoading: false,
+    canStartExperiment: false,
+    disabledStartExperiment: false,
+    showExperimentSummary: false,
+    isSaving: false,
+    statusExperiment: { classz: '', label: '' }
+};
+
 describe('DotExperimentsConfigurationComponent', () => {
     let spectator: Spectator<DotExperimentsConfigurationComponent>;
     let dotExperimentsService: SpyObject<DotExperimentsService>;
 
     const createComponent = createComponentFactory({
         imports: [
-            HttpClientTestingModule,
             ButtonModule,
             DotExperimentsUiHeaderComponent,
             DotExperimentsConfigurationGoalsComponent,
@@ -58,7 +82,8 @@ describe('DotExperimentsConfigurationComponent', () => {
             DotExperimentsConfigurationTrafficComponent,
             DotExperimentsConfigurationSchedulingComponent,
             DotExperimentsConfigurationSkeletonComponent,
-            DotExperimentsConfigurationExperimentStatusBarComponent
+            DotExperimentsExperimentSummaryComponent,
+            DotMessageMockPipe
         ],
         component: DotExperimentsConfigurationComponent,
         componentProviders: [
@@ -78,8 +103,9 @@ describe('DotExperimentsConfigurationComponent', () => {
             mockProvider(DotSessionStorageService),
             mockProvider(MessageService),
             mockProvider(Router),
+            mockProvider(DotHttpErrorManagerService),
             mockProvider(Title),
-            mockProvider(DotHttpErrorManagerService)
+            mockProvider(DotMessagePipe)
         ]
     });
 
@@ -99,24 +125,67 @@ describe('DotExperimentsConfigurationComponent', () => {
     });
 
     it('should load all the components', () => {
-        const vmMock$ = {
-            experiment: ExperimentMocks[0],
-            stepStatusSidebar: {
-                status: Status.IDLE,
-                isOpen: false,
-                experimentStep: null
-            },
-            isLoading: false
-        };
-        spectator.component.vm$ = of(vmMock$);
+        spectator.component.vm$ = of({ ...defaultVmMock });
         spectator.detectChanges();
 
         expect(spectator.query(DotExperimentsUiHeaderComponent)).toExist();
-        expect(spectator.query(DotExperimentsConfigurationExperimentStatusBarComponent)).toExist();
+        expect(spectator.query(DotExperimentsExperimentSummaryComponent)).not.toExist();
         expect(spectator.query(DotExperimentsConfigurationVariantsComponent)).toExist();
         expect(spectator.query(DotExperimentsConfigurationGoalsComponent)).toExist();
         expect(spectator.query(DotExperimentsConfigurationTargetingComponent)).toExist();
         expect(spectator.query(DotExperimentsConfigurationTrafficComponent)).toExist();
         expect(spectator.query(DotExperimentsConfigurationSchedulingComponent)).toExist();
+    });
+
+    it('should show Start Experiment button if canStartExperiment true', () => {
+        spectator.component.vm$ = of({
+            ...defaultVmMock,
+            canStartExperiment: true
+        });
+        spectator.detectChanges();
+        expect(spectator.query(byTestId('start-experiment-button'))).toExist();
+    });
+
+    it("shouldn't show Start Experiment button if canStartExperiment false", () => {
+        spectator.component.vm$ = of({
+            ...defaultVmMock,
+            canStartExperiment: false
+        });
+        spectator.detectChanges();
+
+        expect(spectator.query(byTestId('start-experiment-button'))).not.toExist();
+    });
+
+    it('should show Start Experiment button disabled if disabledStartExperiment true', () => {
+        spectator.component.vm$ = of({
+            ...defaultVmMock,
+            canStartExperiment: true,
+            disabledStartExperiment: true
+        });
+        spectator.detectChanges();
+
+        const startButton = spectator.query(
+            byTestId('start-experiment-button')
+        ) as HTMLButtonElement;
+
+        expect(startButton.disabled).toBeTrue();
+    });
+
+    it('should show Experiment Summary component if showExperimentSummary is true', () => {
+        spectator.component.vm$ = of({
+            ...defaultVmMock,
+            showExperimentSummary: true
+        });
+        spectator.detectChanges();
+        expect(spectator.query(DotExperimentsExperimentSummaryComponent)).toExist();
+    });
+
+    it("shouldn't show Experiment Summary component if showExperimentSummary false", () => {
+        spectator.component.vm$ = of({
+            ...defaultVmMock,
+            showExperimentSummary: false
+        });
+        spectator.detectChanges();
+        expect(spectator.query(DotExperimentsExperimentSummaryComponent)).not.toExist();
     });
 });

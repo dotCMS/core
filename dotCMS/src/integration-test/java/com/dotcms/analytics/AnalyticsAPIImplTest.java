@@ -69,7 +69,7 @@ public class AnalyticsAPIImplTest extends IntegrationTestBase {
     public void test_getAccessToken() throws Exception {
         analyticsCache.removeAccessToken(
             analyticsApp.getAnalyticsProperties().clientId(),
-            AnalyticsHelper.resolveAudience(analyticsApp));
+            AnalyticsHelper.get().resolveAudience(analyticsApp));
 
         analyticsAPI.getAccessToken(analyticsApp);
         AccessToken accessToken = analyticsAPI.getAccessToken(analyticsApp);
@@ -100,7 +100,7 @@ public class AnalyticsAPIImplTest extends IntegrationTestBase {
     public void test_refreshAccessToken() throws AnalyticsException {
         analyticsCache.removeAccessToken(
             analyticsApp.getAnalyticsProperties().clientId(),
-            AnalyticsHelper.resolveAudience(analyticsApp));
+            AnalyticsHelper.get().resolveAudience(analyticsApp));
 
         AccessToken accessToken = analyticsAPI.getAccessToken(analyticsApp);
         assertNull(accessToken);
@@ -120,7 +120,7 @@ public class AnalyticsAPIImplTest extends IntegrationTestBase {
     public void test_refreshAccessToken_fail_wrongIdp() throws AnalyticsException {
         analyticsCache.removeAccessToken(
             analyticsApp.getAnalyticsProperties().clientId(),
-            AnalyticsHelper.resolveAudience(analyticsApp));
+            AnalyticsHelper.get().resolveAudience(analyticsApp));
 
         AccessToken accessToken = analyticsAPI.getAccessToken(analyticsApp);
         assertNull(accessToken);
@@ -140,7 +140,7 @@ public class AnalyticsAPIImplTest extends IntegrationTestBase {
 
         analyticsCache.removeAccessToken(
             analyticsApp.getAnalyticsProperties().clientId(),
-            AnalyticsHelper.resolveAudience(analyticsApp));
+            AnalyticsHelper.get().resolveAudience(analyticsApp));
 
         AccessToken accessToken = analyticsAPI.getAccessToken(analyticsApp);
         assertNull(accessToken);
@@ -189,7 +189,7 @@ public class AnalyticsAPIImplTest extends IntegrationTestBase {
         analyticsAPI.getAnalyticsKey(host);
         analyticsAPI.resetAnalyticsKey(analyticsApp);
 
-        analyticsApp = AnalyticsHelper.appFromHost(host);
+        analyticsApp = AnalyticsHelper.get().appFromHost(host);
         assertNotNull(analyticsApp.getAnalyticsProperties().analyticsKey());
     }
 
