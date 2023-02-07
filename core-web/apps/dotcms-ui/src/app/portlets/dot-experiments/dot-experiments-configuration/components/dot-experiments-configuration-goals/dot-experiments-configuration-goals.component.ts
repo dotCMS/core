@@ -14,11 +14,11 @@ import { UiDotIconButtonTooltipModule } from '@components/_common/dot-icon-butto
 import { DotMessagePipe } from '@dotcms/app/view/pipes';
 import { DotMessageService } from '@dotcms/data-access';
 import {
+    ComponentStatus,
     ExperimentSteps,
     Goals,
     GOALS_METADATA_MAP,
     GoalsLevels,
-    Status,
     StepStatus
 } from '@dotcms/dotcms-models';
 import { DotIconModule } from '@dotcms/ui';
@@ -108,7 +108,7 @@ export class DotExperimentsConfigurationGoalsComponent {
     }
 
     private loadSidebarComponent(status: StepStatus): void {
-        if (status && status.isOpen && status.status != Status.SAVING) {
+        if (status && status.isOpen && status.status != ComponentStatus.SAVING) {
             this.sidebarHost.viewContainerRef.clear();
             this.componentRef =
                 this.sidebarHost.viewContainerRef.createComponent<DotExperimentsConfigurationGoalSelectComponent>(

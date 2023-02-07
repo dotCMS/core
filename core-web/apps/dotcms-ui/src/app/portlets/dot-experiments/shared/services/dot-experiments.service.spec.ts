@@ -41,9 +41,14 @@ describe('DotExperimentsService', () => {
         spectator.expectOne(`${API_ENDPOINT}/${EXPERIMENT_ID}`, HttpMethod.GET);
     });
 
-    it('should archive a experiment with experimentId', () => {
+    it('should archive an experiment with experimentId', () => {
         spectator.service.archive(EXPERIMENT_ID).subscribe();
         spectator.expectOne(`${API_ENDPOINT}/${EXPERIMENT_ID}/_archive`, HttpMethod.PUT);
+    });
+
+    it('should start an experiment with experimentId as param', () => {
+        spectator.service.start(EXPERIMENT_ID).subscribe();
+        spectator.expectOne(`${API_ENDPOINT}/${EXPERIMENT_ID}/_start`, HttpMethod.POST);
     });
 
     it('should delete a experiment with experimentId', () => {

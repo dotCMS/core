@@ -23,7 +23,7 @@ export class DotExperimentsService {
     /**
      * Add a new experiment
      * @param  experiment
-     * @returns Observable<DotExperiment[]>
+     * @returns Observable<DotExperiment>
      * @memberof DotExperimentsService
      */
     add(
@@ -61,24 +61,36 @@ export class DotExperimentsService {
     /**
      * Archive an experiment with its experimentId
      * @param {string} experimentId
-     * @returns Observable<DotExperiment[]>
+     * @returns Observable<DotExperiment>
      * @memberof DotExperimentsService
      */
-    archive(experimentId: string): Observable<DotExperiment[]> {
+    archive(experimentId: string): Observable<DotExperiment> {
         return this.http
-            .put<DotCMSResponse<DotExperiment[]>>(`${API_ENDPOINT}/${experimentId}/_archive`, {})
+            .put<DotCMSResponse<DotExperiment>>(`${API_ENDPOINT}/${experimentId}/_archive`, {})
             .pipe(pluck('entity'));
     }
 
     /**
      * Delete an experiment with its experimentId
      * @param {string} experimentId
-     * @returns Observable<string | DotExperiment[]>
+     * @returns Observable<string | DotExperiment>
      * @memberof DotExperimentsService
      */
-    delete(experimentId: string): Observable<string | DotExperiment[]> {
+    delete(experimentId: string): Observable<string | DotExperiment> {
         return this.http
-            .delete<DotCMSResponse<DotExperiment[]>>(`${API_ENDPOINT}/${experimentId}`)
+            .delete<DotCMSResponse<DotExperiment>>(`${API_ENDPOINT}/${experimentId}`)
+            .pipe(pluck('entity'));
+    }
+
+    /**
+     * Start experiment
+     * @param {string} experimentId
+     * @returns Observable<DotExperiment>
+     * @memberof DotExperimentsService
+     */
+    start(experimentId: string): Observable<DotExperiment> {
+        return this.http
+            .post<DotCMSResponse<DotExperiment>>(`${API_ENDPOINT}/${experimentId}/_start`, {})
             .pipe(pluck('entity'));
     }
 

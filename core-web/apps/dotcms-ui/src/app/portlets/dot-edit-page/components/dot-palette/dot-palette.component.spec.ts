@@ -10,7 +10,7 @@ import { NoopAnimationsModule } from '@angular/platform-browser/animations';
 
 import { DotESContentService, PaginatorService } from '@dotcms/data-access';
 import { CoreWebService, CoreWebServiceMock } from '@dotcms/dotcms-js';
-import { LoadingState } from '@dotcms/dotcms-models';
+import { ComponentStatus } from '@dotcms/dotcms-models';
 import { dotcmsContentTypeBasicMock } from '@dotcms/utils-testing';
 
 import { contentletProductDataMock } from './dot-palette-contentlets/dot-palette-contentlets.component.spec';
@@ -119,7 +119,7 @@ const storeMock = jasmine.createSpyObj(
             loading: false,
             totalRecords: 20,
             viewContentlet: 'contentlet:out',
-            callState: LoadingState.LOADED
+            callState: ComponentStatus.LOADED
         })
     }
 );
