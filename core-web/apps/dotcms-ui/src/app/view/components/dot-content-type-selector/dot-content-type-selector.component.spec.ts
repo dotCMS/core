@@ -6,7 +6,6 @@ import { By } from '@angular/platform-browser';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 
 import { SelectItem } from 'primeng/api';
-
 import { Dropdown, DropdownModule } from 'primeng/dropdown';
 
 import { DotContentTypeService, DotMessageService } from '@dotcms/data-access';
