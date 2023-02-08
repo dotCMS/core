@@ -7,6 +7,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.StringWriter;
 import java.net.URL;
+import java.util.List;
 import java.util.Properties;
 import org.apache.felix.framework.util.FelixConstants;
 import org.apache.felix.main.AutoProcessor;
@@ -118,7 +119,8 @@ public class OSGISystem {
 
             // Setting the OSGI extra packages property
             felixProps.setProperty(PROPERTY_OSGI_PACKAGES_EXTRA,  getExtraOSGIPackages());
-
+System.out.println("PROPERTY_OSGI_PACKAGES_EXTRA:" + getExtraOSGIPackages());
+            
             // before init we have to check if any new bundle has been upload
             // Create an instance and initialize the framework.
             final FrameworkFactory factory = this.getFrameworkFactory();
@@ -138,6 +140,22 @@ public class OSGISystem {
 
     }
 
+    final String[] requiredExports = {
+            "org.slf4j.api;version=2.0.6",
+            "org.slf4j;version=2.0.6",
+            "osgi.serviceloader.processor",
+            "jcl.over.slf4j",
+            "org.slf4j.spi;version=1.7.25",
+            "org.slf4j;version=1.7.25",
+            "osgi.serviceloader.processor;version=1.0.0",
+            "com.fasterxml.jackson.core",
+            "org.osgi.dto;version=1.1.0",
+            "org.osgi.framework;version=1.1.0"
+            
+    
+    };
+    
+    
     /**
      * Returns the packages inside the <strong>osgi-extra.conf</strong> and the osgi-extra-generate.conf
      * files If neither of those files are there, it will generate the osgi-extra-generate.conf based
@@ -164,9 +182,13 @@ public class OSGISystem {
 
             writer.flush();
         }
+        
+        
+        String exports = writer.toString().replaceAll("\\\n", "").replaceAll("\\\r", "").replaceAll("\\\\", "");
+        exports = exports +"," + String.join(",", requiredExports);
 
         // Clean up the properties, it is better to keep it simple and in a standard format
-        return writer.toString().replaceAll("\\\n", "").replaceAll("\\\r", "").replaceAll("\\\\", "");
+        return exports;
     }
 
     /**
@@ -197,7 +219,7 @@ public class OSGISystem {
 
 
 
-    private Framework getFelixFramework() {
+    public Framework getFelixFramework() {
         return this.felixFramework;
     }
 
@@ -250,6 +272,8 @@ public class OSGISystem {
         return osgiBundleService;
     }
 
+
+    
     /**
      * Finds a bundle by bundle name
      *
@@ -267,7 +291,11 @@ public class OSGISystem {
                 break;
             }
         }
-
+        if(foundBundle==null) {
+            foundBundle = OSGIUtil.getInstance().findBundle(bundleName);
+        }
+        
+        
         return foundBundle;
     }
 

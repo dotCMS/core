@@ -94,17 +94,6 @@ public interface FileAssetAPI {
 	 */
 	boolean isFileAsset(Contentlet c);
 
-	/**
-	 * This method takes a file and uses tika to parse the metadata from it. It
-	 * returns a Map of the metadata and creates a metadata file for the given
-	 * Contentlet if does not already exist, if already exist only the metadata is returned and no
-	 * file is override.
-	 *
-	 * @param contentlet Contentlet owner of the file to parse
-	 * @param binFile File to parse the metadata from it
-	 */
-	@Deprecated
-	Map<String, String> getMetaDataMap(Contentlet contentlet, File binFile) throws DotDataException;
 
 	/**
 	 * Checks if the File Name already exists. Important: This method doesn't check for language of the File Asset and do not double check identifier.

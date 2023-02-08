@@ -61,7 +61,7 @@ public class Task210321RemoveOldMetadataFilesTest {
             final Contentlet contentlet = getFileAssetContent(true, langId, TestFile.PDF);
             //And the metaData/content structure too
             APILocator.getFileMetadataAPI().generateContentletMetadata(contentlet);
-            new TikaUtils().generateMetaData(contentlet, true);
+            //new TikaUtils().generateMetaData(contentlet, true);
 
             final Task210321RemoveOldMetadataFiles task = new Task210321RemoveOldMetadataFiles();
             assertTrue(task.forceRun());

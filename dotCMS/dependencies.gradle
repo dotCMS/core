@@ -82,6 +82,10 @@ dependencies {
 
     implementation group: 'com.fasterxml.jackson.module', name: 'jackson-module-parameter-names', version: '2.13.2'
 
+    implementation (group: 'org.apache.tika', name: 'tika-core', version: '2.7.0') {
+        transitive = false
+    }
+
     implementation (group: 'com.fasterxml.jackson.jaxrs', name: 'jackson-jaxrs-base', version: '2.11.1'){
         transitive = false
     }
@@ -421,19 +425,18 @@ dependencies {
         exclude(group: 'commons-logging')
         exclude(group: 'org.slf4j')
     }
-    implementation(group: 'org.apache.felix', name: 'org.apache.felix.http.proxy', version: '3.0.2') {
+
+    implementation(group: 'org.apache.felix', name: 'org.apache.felix.scr', version: '2.2.6') {
         exclude(group: 'commons-logging')
         exclude(group: 'org.slf4j')
     }
+
     implementation(group: 'org.apache.felix', name: 'org.apache.felix.http.bundle', version: '3.0.0') {
         exclude(group: 'commons-logging')
         exclude(group: 'org.slf4j')
 //        exclude(group: 'javax.servlet')
     }
-    implementation(group: 'org.apache.felix', name: 'org.apache.felix.http.bridge', version: '3.0.18') {
-        exclude(module: 'commons-logging')
-        exclude(module: 'org.slf4j')
-    }
+
     implementation(group: 'org.apache.felix', name: 'org.apache.felix.http.api', version: '3.0.0') {
         exclude(group: 'commons-logging')
         exclude(group: 'org.slf4j')
@@ -442,10 +445,7 @@ dependencies {
         exclude(group: 'commons-logging')
         exclude(group: 'org.slf4j')
     }
-    implementation(group: 'org.apache.felix', name: 'org.apache.felix.http.whiteboard', version: '3.0.0') {
-        exclude(group: 'commons-logging')
-        exclude(group: 'org.slf4j')
-    }
+
     implementation(group: 'org.apache.felix', name: 'org.apache.felix.http.servlet-api', version: '1.1.2') {
         exclude(group: 'commons-logging')
         exclude(group: 'org.slf4j')
