@@ -463,7 +463,7 @@ export class DotExperimentsConfigurationStore extends ComponentStore<DotExperime
             return trafficAllocation$.pipe(
                 tap(() => {
                     this.setSidebarStatus({
-                        status: Status.SAVING,
+                        status: ComponentStatus.SAVING,
                         experimentStep: ExperimentSteps.TRAFFIC
                     });
                 }),
@@ -484,7 +484,7 @@ export class DotExperimentsConfigurationStore extends ComponentStore<DotExperime
                                         )
                                     });
                                     this.setSidebarStatus({
-                                        status: Status.DONE,
+                                        status: ComponentStatus.IDLE,
                                         experimentStep: ExperimentSteps.TRAFFIC,
                                         isOpen: false
                                     });
@@ -492,7 +492,7 @@ export class DotExperimentsConfigurationStore extends ComponentStore<DotExperime
                                 (response: HttpErrorResponse) => {
                                     this.dotHttpErrorManagerService.handle(response);
                                     this.setSidebarStatus({
-                                        status: Status.DONE,
+                                        status: ComponentStatus.IDLE,
                                         experimentStep: ExperimentSteps.TRAFFIC
                                     });
                                 }
@@ -570,7 +570,7 @@ export class DotExperimentsConfigurationStore extends ComponentStore<DotExperime
         trafficAllocation: number;
         status: StepStatus;
     }> = this.select(
-        this.getExperimentId,
+        this.getExperimentId$,
         this.trafficProportion$,
         this.trafficAllocation$,
         this.trafficStatus$,

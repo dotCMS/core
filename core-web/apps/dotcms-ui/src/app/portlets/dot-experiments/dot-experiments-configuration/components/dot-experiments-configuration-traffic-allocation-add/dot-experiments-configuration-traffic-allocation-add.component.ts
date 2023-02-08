@@ -18,7 +18,7 @@ import { SliderModule } from 'primeng/slider';
 import { take } from 'rxjs/operators';
 
 import { DotFieldValidationMessageModule } from '@components/_common/dot-field-validation-message/dot-file-validation-message.module';
-import { Status, StepStatus, TrafficProportion } from '@dotcms/dotcms-models';
+import { ComponentStatus, StepStatus, TrafficProportion } from '@dotcms/dotcms-models';
 import { DotMessagePipeModule } from '@pipes/dot-message/dot-message-pipe.module';
 import { DotExperimentsConfigurationStore } from '@portlets/dot-experiments/dot-experiments-configuration/store/dot-experiments-configuration-store';
 import { DotSidebarDirective } from '@portlets/shared/directives/dot-sidebar.directive';
@@ -49,7 +49,7 @@ import { DotSidebarHeaderComponent } from '@shared/dot-sidebar-header/dot-sideba
 export class DotExperimentsConfigurationTrafficAllocationAddComponent implements OnInit {
     form: FormGroup;
     trafficAllocation: string;
-    stepStatus = Status;
+    stepStatus = ComponentStatus;
 
     vm$: Observable<{
         experimentId: string;

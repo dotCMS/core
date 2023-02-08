@@ -10,7 +10,7 @@ import { tap } from 'rxjs/operators';
 
 import {
     ExperimentSteps,
-    Status,
+    ComponentStatus,
     StepStatus,
     TrafficProportion,
     TrafficProportionTypes
@@ -73,7 +73,7 @@ export class DotExperimentsConfigurationTrafficComponent {
     }
 
     private loadSidebarComponent(status: StepStatus): void {
-        if (status && status.isOpen && status.status != Status.SAVING) {
+        if (status && status.isOpen && status.status != ComponentStatus.SAVING) {
             this.sidebarHost.viewContainerRef.clear();
             this.componentRef =
                 this.sidebarHost.viewContainerRef.createComponent<DotExperimentsConfigurationTrafficAllocationAddComponent>(

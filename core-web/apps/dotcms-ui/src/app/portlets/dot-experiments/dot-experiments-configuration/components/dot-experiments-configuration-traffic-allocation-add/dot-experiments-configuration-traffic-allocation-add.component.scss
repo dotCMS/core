@@ -2,7 +2,7 @@
 
 h5 {
     font-weight: $font-weight-semi-bold;
-    margin: 0 0 $spacing-3 0;
+    margin: 0;
     font-size: $font-size-large;
 }
 
@@ -12,6 +12,10 @@ h5 {
     label {
         font-weight: $font-weight-semi-bold;
         font-size: $font-size-large;
+    }
+
+    p {
+        margin-bottom: $spacing-8;
     }
 }
 
