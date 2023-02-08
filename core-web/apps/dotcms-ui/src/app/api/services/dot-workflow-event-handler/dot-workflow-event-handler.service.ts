@@ -1,4 +1,3 @@
-/* eslint-disable no-console */
 import { Observable } from 'rxjs';
 
 import { Injectable } from '@angular/core';
@@ -261,10 +260,7 @@ export class DotWorkflowEventHandlerService {
                     )
                     .subscribe(() => {
                         this.displayNotification(event.workflow.name);
-                        console.log('+++ pre VIEW_CONTENT_CALLBACK_FUNCTION,', event.workflow.name);
-
                         if (event.callback === VIEW_CONTENT_CALLBACK_FUNCTION) {
-                            console.log('+++VIEW_CONTENT_CALLBACK_FUNCTION');
                             this.dotIframeService.run({ name: event.callback });
                         }
                     });

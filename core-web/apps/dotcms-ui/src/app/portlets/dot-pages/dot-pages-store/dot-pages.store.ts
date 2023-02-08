@@ -1,4 +1,3 @@
-/* eslint-disable no-console */
 import { ComponentStore, tapResponse } from '@ngrx/component-store';
 import { forkJoin, Observable } from 'rxjs';
 
@@ -28,7 +27,7 @@ import {
     DotWorkflowsActionsService,
     ESOrderDirection
 } from '@dotcms/data-access';
-import { DotPushPublishDialogService } from '@dotcms/dotcms-js';
+import { DotPushPublishDialogService, SiteService } from '@dotcms/dotcms-js';
 import {
     DotCMSContentlet,
     DotCMSWorkflowAction,
@@ -78,7 +77,6 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
         ({ languages }: DotPagesState) => {
             const languageOptions: SelectItem[] = [];
             languageOptions.push({
-                // label: `${language.languageCode}_${language.countryCode}`,
                 label: this.dotMessageService.get('All'),
                 value: null
             });
@@ -88,7 +86,6 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
                     value: language.id
                 });
             });
-            console.log('***lang', languageOptions);
 
             return languageOptions;
         }
@@ -124,14 +121,6 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
 
     readonly setPages = this.updater<DotCMSContentlet[]>(
         (state: DotPagesState, pages: DotCMSContentlet[]) => {
-            console.log('***set pages', {
-                ...state,
-                pages: {
-                    ...state.pages,
-                    items: [...pages]
-                }
-            });
-
             return {
                 ...state,
                 pages: {
@@ -176,15 +165,6 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
     });
 
     readonly clearMenuActions = this.updater((state: DotPagesState) => {
-        console.log('***clear', {
-            ...state,
-            pages: {
-                items: [...state.pages.items],
-                actionMenuDomId: null,
-                menuActions: []
-            }
-        });
-
         return {
             ...state,
             pages: {
@@ -200,15 +180,6 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
             state: DotPagesState,
             { actions, actionMenuDomId }: { actions: MenuItem[]; actionMenuDomId: string }
         ) => {
-            console.log('===setMenuActions', {
-                ...state,
-                pages: {
-                    ...state.pages,
-                    menuActions: actions,
-                    actionMenuDomId
-                }
-            });
-
             return {
                 ...state,
                 pages: {
@@ -221,14 +192,6 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
     );
 
     readonly showAddToBundle = this.updater((state: DotPagesState, addToBundleCTId: string) => {
-        console.log('***showAddToBundle', addToBundleCTId, {
-            ...state,
-            pages: {
-                ...state.pages,
-                addToBundleCTId
-            }
-        });
-
         return {
             ...state,
             pages: {
@@ -264,18 +227,11 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
         );
     });
 
-    // TODO: ver si
-    // - meter template para rows al mostrar data
-    // - meter doc
-    // - hacer lo del hamburguer button
-    // - meter const para LIMIT de 40
-    // - meter const para QUERY de getPages()
     readonly getPages = this.effect(
         (params$: Observable<{ offset: number; sortField?: string; sortOrder?: number }>) => {
             return params$.pipe(
                 switchMap((params) => {
                     const { offset, sortField, sortOrder } = params;
-                    console.log('sortOrder', sortOrder);
 
                     return this.dotESContentService
                         .get({
@@ -289,15 +245,8 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
                         .pipe(
                             tapResponse(
                                 (items) => {
-                                    console.log('===items.resultsSize', items.resultsSize);
-
                                     const dateFormattedPages = this.formatRelativeDates(
                                         items.jsonObjectView.contentlets
-                                    );
-                                    console.log(
-                                        '**tempPages format',
-                                        this.formatRelativeDates(items.jsonObjectView.contentlets)
-                                        // tempPages
                                     );
 
                                     let currentPages = this.get().pages.items;
@@ -311,15 +260,7 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
                                         ...dateFormattedPages
                                     ]);
 
-                                    // console.log('**tempPages', tempPages);
-
                                     this.setPages(currentPages);
-                                    // this.patchState({
-                                    //     pages: {
-                                    //         items: [...items.jsonObjectView.contentlets],
-                                    //         total: items.resultsSize
-                                    //     }
-                                    // });
                                 },
                                 (error: HttpErrorResponse) => {
                                     return this.httpErrorManagerService.handle(error);
@@ -340,8 +281,6 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
                         .pipe(
                             take(1),
                             map((actions: DotCMSWorkflowAction[]) => {
-                                console.log(actions);
-
                                 return {
                                     actions: this.getSelectActions(actions, item),
                                     actionMenuDomId
@@ -386,13 +325,14 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
 
     private getESQuery() {
         const { keyword, languageId, archived } = this.get().pages;
+        const hostId = this.siteService.currentSite.identifier;
         const langQuery = languageId ? `+languageId:${languageId}` : '';
         const archivedQuery = archived ? `+archived:${archived}` : '';
         const keywordQuery = keyword
             ? `+(title:${keyword}* OR path:${keyword}* OR urlmap:${keyword}*)`
             : '';
 
-        return `+conhost:48190c8c-42c4-46af-8d1a-0cd5db894797 +deleted:false  +(urlmap:* OR basetype:5) ${langQuery} ${archivedQuery} ${keywordQuery} `;
+        return `+conhost:${hostId} +deleted:false  +(urlmap:* OR basetype:5) ${langQuery} ${archivedQuery} ${keywordQuery} `;
     }
 
     private formatRelativeDates(pages: DotCMSContentlet[]): DotCMSContentlet[] {
@@ -440,7 +380,6 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
                         ? this.dotMessageService.get('Edit')
                         : this.dotMessageService.get('View'),
                 command: () => {
-                    console.log('===EDIT', item);
                     this.dotRouterService.goToEditContentlet(item.inode);
                 }
             });
@@ -451,7 +390,6 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
             selectItems.push({
                 label: `${this.dotMessageService.get(action.name)}`,
                 command: () => {
-                    console.log('===getSelectActions coommand', item);
                     if (action.actionInputs?.length > 0) {
                         const wfActionEvent: DotCMSWorkflowActionEvent = {
                             workflow: action,
@@ -459,13 +397,11 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
                             inode: item.inode,
                             selectedInodes: null
                         };
-                        console.log('**MOVE', wfActionEvent);
                         this.dotWorkflowEventHandlerService.open(wfActionEvent);
                     } else {
                         this.dotWorkflowActionsFireService
                             .fireTo(item.inode, action.id)
-                            .subscribe((data) => {
-                                console.log('===fireTo', data);
+                            .subscribe(() => {
                                 this.dotEventsService.notify<DotGlobalMessage>(
                                     'dot-global-message',
                                     {
@@ -517,7 +453,8 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
         private dotWorkflowActionsFireService: DotWorkflowActionsFireService,
         private dotLicenseService: DotLicenseService,
         private dotEventsService: DotEventsService,
-        private pushPublishService: PushPublishService
+        private pushPublishService: PushPublishService,
+        private siteService: SiteService
     ) {
         super(null);
     }
@@ -595,7 +532,6 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
                         pages: {
                             items: [],
                             keyword: ''
-                            // items: Array.from({ length: 124 }),
                         }
                     });
                 }

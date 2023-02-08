@@ -1,12 +1,7 @@
-/* eslint-disable no-console */
-
 import { Subject } from 'rxjs';
 
 import { Component, ElementRef, OnDestroy, OnInit, ViewChild } from '@angular/core';
 
-import { MenuItem, SelectItem } from 'primeng/api';
-import { LazyLoadEvent } from 'primeng/api/lazyloadevent';
-import { DialogService } from 'primeng/dynamicdialog';
 import { Menu } from 'primeng/menu';
 
 import { Observable } from 'rxjs/internal/Observable';
@@ -15,15 +10,19 @@ import { takeUntil } from 'rxjs/operators';
 import { DotMessageSeverity, DotMessageType } from '@components/dot-message-display/model';
 import { DotMessageDisplayService } from '@components/dot-message-display/services';
 import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
-import { DataTableColumn } from '@dotcms/app/shared/models/data-table';
-import { DotEventsService, DotMessageService } from '@dotcms/data-access';
+import { DotEventsService } from '@dotcms/data-access';
 import { DotCMSContentlet } from '@dotcms/dotcms-models';
 
 import { DotPagesState, DotPageStore } from './dot-pages-store/dot-pages.store';
 
-import { DotFavoritePageComponent } from '../dot-edit-page/components/dot-favorite-page/dot-favorite-page.component';
+export const FAVORITE_PAGE_LIMIT = 5;
 
-const FAVORITE_PAGE_LIMIT = 5;
+export interface DotActionsMenuEventParams {
+    event: MouseEvent;
+    actionMenuDomId: string;
+    item: DotCMSContentlet;
+}
+
 @Component({
     selector: 'dot-pages',
     templateUrl: './dot-pages.component.html',
@@ -34,31 +33,12 @@ export class DotPagesComponent implements OnInit, OnDestroy {
     @ViewChild('menu') menu: Menu;
     vm$: Observable<DotPagesState> = this.store.vm$;
 
-    langOptions: SelectItem[];
-
-    cols: DataTableColumn[];
-    dotStateLabels = {
-        archived: this.dotMessageService.get('Archived'),
-        published: this.dotMessageService.get('Published'),
-        revision: this.dotMessageService.get('Revision'),
-        draft: this.dotMessageService.get('Draft')
-    };
-
-    actions: { [key: string]: MenuItem[] };
-
     private domIdMenuAttached = '';
     private destroy$: Subject<boolean> = new Subject<boolean>();
 
-    // Needed to avoid browser to cache thumbnail img when reloaded, since it's fetched from the same URL
-    timeStamp = this.getTimeStamp();
-
-    private currentLimitSize = FAVORITE_PAGE_LIMIT;
-
     constructor(
         private store: DotPageStore,
-        private dialogService: DialogService,
         private dotRouterService: DotRouterService,
-        private dotMessageService: DotMessageService,
         private dotMessageDisplayService: DotMessageDisplayService,
         private dotEventsService: DotEventsService,
         private element: ElementRef
@@ -67,33 +47,12 @@ export class DotPagesComponent implements OnInit, OnDestroy {
     }
 
     /**
-     * Event to load more/less Favorite page data
-     *
-     * @param {boolean} areAllFavoritePagesLoaded
-     * @param {number} [favoritePagesToLoad]
-     * @memberof DotPagesComponent
-     */
-    toggleFavoritePagesData(
-        areAllFavoritePagesLoaded: boolean,
-        favoritePagesToLoad?: number
-    ): void {
-        if (areAllFavoritePagesLoaded) {
-            this.store.limitFavoritePages(FAVORITE_PAGE_LIMIT);
-        } else {
-            this.store.getFavoritePages(favoritePagesToLoad);
-        }
-
-        this.currentLimitSize = FAVORITE_PAGE_LIMIT;
-    }
-
-    /**
-     * Event to redirect to Edit Page with selected Favorite Page
+     * Event to redirect to Edit Page when Page selected
      *
      * @param {string} url
      * @memberof DotPagesComponent
      */
-    goToUrl(url: string) {
-        console.log('***url', url);
+    goToUrl(url: string): void {
         const splittedUrl = url.split('?');
         const urlParams = { url: splittedUrl[0] };
         const searchParams = new URLSearchParams(splittedUrl[1]);
@@ -105,29 +64,13 @@ export class DotPagesComponent implements OnInit, OnDestroy {
         this.dotRouterService.goToEditPage(urlParams);
     }
 
-    filterData(keyword: string) {
-        console.log('***filterData', keyword);
-        this.store.setKeyword(keyword);
-        this.store.getPages({ offset: 0 });
-    }
-
-    onRowSelect(event: Event) {
-        this.goToUrl(event['data'].urlMap || event['data'].url);
-    }
-
-    setPagesLanguage(languageId: string) {
-        console.log('===langid', languageId);
-        this.store.setLanguageId(languageId);
-        this.store.getPages({ offset: 0 });
-    }
-
-    setPagesArchived(archived: string) {
-        console.log('===archived', archived);
-        this.store.setArchived(archived);
-        this.store.getPages({ offset: 0 });
-    }
-
-    showActionsMenu(event: MouseEvent, actionMenuDomId: string, item: DotCMSContentlet) {
+    /**
+     * Event to show/hide actions menu when each contentlet is clicked
+     *
+     * @param {DotActionsMenuEventParams} params
+     * @memberof DotPagesComponent
+     */
+    showActionsMenu({ event, actionMenuDomId, item }: DotActionsMenuEventParams): void {
         event.stopPropagation();
 
         if (event.currentTarget['id'] === this.domIdMenuAttached) {
@@ -140,18 +83,14 @@ export class DotPagesComponent implements OnInit, OnDestroy {
         }
     }
 
-    closedActionsMenu(event: Event) {
-        console.log(event);
+    /**
+     * Event to reset status of menu actions when closed
+     *
+     * @memberof DotPagesComponent
+     */
+    closedActionsMenu() {
         this.store.clearMenuActions();
         this.domIdMenuAttached = '';
-    }
-
-    loadPagesLazy(event: LazyLoadEvent) {
-        this.store.getPages({
-            offset: event.first >= 0 ? event.first : 0,
-            sortField: event.sortField || '',
-            sortOrder: event.sortOrder || null
-        });
     }
 
     ngOnInit(): void {
@@ -160,7 +99,6 @@ export class DotPagesComponent implements OnInit, OnDestroy {
             .subscribe((actionMenuDomId: string) => {
                 if (actionMenuDomId !== undefined) {
                     const target = this.element.nativeElement.querySelector(`#${actionMenuDomId}`);
-                    console.log('***rowIndex', actionMenuDomId, target);
                     this.domIdMenuAttached = actionMenuDomId;
                     this.menu.show({ currentTarget: target });
                 }
@@ -170,8 +108,6 @@ export class DotPagesComponent implements OnInit, OnDestroy {
             .listen('dot-global-message')
             .pipe(takeUntil(this.destroy$))
             .subscribe((evt) => {
-                console.log('---- dot-global-message', evt);
-
                 this.store.getPages({ offset: 0 });
 
                 this.dotMessageDisplayService.push({
@@ -186,36 +122,5 @@ export class DotPagesComponent implements OnInit, OnDestroy {
     ngOnDestroy(): void {
         this.destroy$.next(true);
         this.destroy$.complete();
-    }
-
-    /**
-     * Event that opens dialog to edit/delete Favorite Page
-     *
-     * @param {DotCMSContentlet} favoritePage
-     * @memberof DotPagesComponent
-     */
-    editFavoritePage(favoritePage: DotCMSContentlet) {
-        this.dialogService.open(DotFavoritePageComponent, {
-            header: this.dotMessageService.get('favoritePage.dialog.header.add.page'),
-            width: '80rem',
-            data: {
-                page: {
-                    favoritePageUrl: favoritePage.url,
-                    favoritePage: favoritePage
-                },
-                onSave: () => {
-                    this.timeStamp = this.getTimeStamp();
-                    this.store.getFavoritePages(this.currentLimitSize);
-                },
-                onDelete: () => {
-                    this.timeStamp = this.getTimeStamp();
-                    this.store.getFavoritePages(this.currentLimitSize);
-                }
-            }
-        });
-    }
-
-    private getTimeStamp() {
-        return new Date().getTime().toString();
     }
 }

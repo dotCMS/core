@@ -1,4 +1,3 @@
-/* eslint-disable no-console */
 import { Component, EventEmitter, Input, Output } from '@angular/core';
 import { Title } from '@angular/platform-browser';
 
@@ -83,7 +82,6 @@ export class DotContentletWrapperComponent {
                     this.isContentletModified = e.detail.payload;
                 },
                 'save-page': (data: DotCSMSavePageEvent) => {
-                    console.log('***dot-contentlet-wrapper', data);
                     if (this.shouldRefresh(data)) {
                         this.dotIframeService.reload();
                     }

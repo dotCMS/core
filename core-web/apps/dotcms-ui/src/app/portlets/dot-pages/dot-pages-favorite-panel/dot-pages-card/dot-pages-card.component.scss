@@ -34,6 +34,9 @@
 
     .dot-pages-favorite-card-content__title {
         font-weight: bold;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
     }
 
     .dot-pages-favorite-card-content__subtitle {

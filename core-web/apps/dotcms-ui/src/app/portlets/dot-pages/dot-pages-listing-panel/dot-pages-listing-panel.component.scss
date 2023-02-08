@@ -1,0 +1,36 @@
+@use "variables" as *;
+
+::ng-deep {
+    .p-datatable .p-datatable-tbody tr td {
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        max-width: 0;
+
+        &:last-child {
+            text-overflow: unset;
+        }
+    }
+
+    .p-datatable .p-datatable-header {
+        background-color: $gray-lighter;
+        padding: $spacing-3;
+    }
+}
+
+.dot-pages-listing-header__inputs {
+    display: flex;
+    align-items: center;
+
+    p-dropdown,
+    p-checkbox {
+        font-weight: $font-weight-regular-bold;
+        margin-left: $spacing-3;
+    }
+}
+
+.dot-pages-table__status-field {
+    align-items: center;
+    display: flex;
+    justify-content: space-evenly;
+}
