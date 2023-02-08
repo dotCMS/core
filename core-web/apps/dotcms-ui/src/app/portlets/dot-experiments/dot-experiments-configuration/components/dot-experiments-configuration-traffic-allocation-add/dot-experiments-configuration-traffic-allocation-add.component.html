@@ -5,14 +5,30 @@
             dotTitle="{{ 'experiments.configure.traffic.allocation' | dm }}"
         ></dot-sidebar-header>
         <div class="experiment-traffic-allocation-add__form-wrapper flex flex-column">
-            <form class="p-fluid" [formGroup]="form" data-testId="add-scheduling-form" novalidate>
+            <h5>{{ 'experiments.configure.traffic.allocation' | dm }}</h5>
+            <p>{{ 'experiments.configure.traffic.allocation.add.description' | dm }}</p>
+            <form class="p-fluid" [formGroup]="form" novalidate>
                 <div class="field">
-                    <label class="p-label-input-required">
-                        {{ 'experiments.configure.traffic.allocation' | dm }}
-                    </label>
-                    <p>{{ 'experiments.configure.traffic.allocation.add.description' | dm }}</p>
-                    <p-slider [min]="0" [max]="100" formControlName="trafficAllocation"></p-slider>
-                    <input type="text" pInputText formControlName="trafficAllocation" />
+                    <p-slider
+                        [min]="0"
+                        [max]="100"
+                        [ngModel]="form.value.trafficAllocation"
+                        formControlName="trafficAllocation"
+                    ></p-slider>
+                    <div class="flex justify-content-end align-items-baseline gap-2">
+                        <input
+                            [value]="form.value.trafficAllocation"
+                            [min]="0"
+                            [max]="100"
+                            (keyup)="checkAllocationRange()"
+                            formControlName="trafficAllocation"
+                            maxlength="3"
+                            pInputText
+                            type="number"
+                            data-testId="traffic-allocation-input"
+                        />
+                        <label class="p-label-input">%</label>
+                    </div>
                 </div>
             </form>
         </div>
@@ -23,7 +39,7 @@
             [disabled]="!form.valid"
             [loading]="vm.status.status === stepStatus.SAVING"
             (click)="save(vm.experimentId)"
-            data-testId="add-scheduling-button"
+            data-testId="add-trafficAllocation-button"
             label="{{ 'Done' | dm }}"
             pButton
             pRipple

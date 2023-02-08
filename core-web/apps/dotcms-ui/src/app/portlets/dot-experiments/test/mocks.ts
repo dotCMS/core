@@ -34,7 +34,7 @@ export const ExperimentMocks: Array<DotExperiment> = [
         readyToStart: false,
         description: 'Praesent at molestie mauris, quis vulputate augue.',
         name: 'Praesent at molestie mauris',
-        trafficAllocation: '100.0',
+        trafficAllocation: 98,
         scheduling: { startDate: 1674861424000, endDate: 1677107824000 },
         trafficProportion: {
             type: TrafficProportionTypes.SPLIT_EVENLY,
@@ -53,7 +53,7 @@ export const ExperimentMocks: Array<DotExperiment> = [
         readyToStart: false,
         description: 'Praesent at molestie mauris, quis vulputate augue.',
         name: 'Praesent at molestie mauris',
-        trafficAllocation: '100.0',
+        trafficAllocation: 100,
         scheduling: null,
         trafficProportion: {
             type: TrafficProportionTypes.SPLIT_EVENLY,

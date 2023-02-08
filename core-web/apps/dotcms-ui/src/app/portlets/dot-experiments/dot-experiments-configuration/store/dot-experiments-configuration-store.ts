@@ -78,7 +78,7 @@ export class DotExperimentsConfigurationStore extends ComponentStore<DotExperime
     readonly trafficProportion$: Observable<TrafficProportion> = this.select(({ experiment }) =>
         experiment.trafficProportion ? experiment.trafficProportion : null
     );
-    readonly trafficAllocation$: Observable<string> = this.select(({ experiment }) =>
+    readonly trafficAllocation$: Observable<number> = this.select(({ experiment }) =>
         experiment.trafficAllocation ? experiment.trafficAllocation : null
     );
 
@@ -133,7 +133,7 @@ export class DotExperimentsConfigurationStore extends ComponentStore<DotExperime
         experiment: { ...state.experiment, scheduling }
     }));
 
-    readonly setTrafficAllocation = this.updater((state, trafficAllocation: string) => ({
+    readonly setTrafficAllocation = this.updater((state, trafficAllocation: number) => ({
         ...state,
         experiment: { ...state.experiment, trafficAllocation }
     }));
@@ -393,7 +393,7 @@ export class DotExperimentsConfigurationStore extends ComponentStore<DotExperime
     );
 
     readonly setSelectedAllocation = this.effect(
-        (trafficAllocation$: Observable<{ trafficAllocation: string; experimentId: string }>) => {
+        (trafficAllocation$: Observable<{ trafficAllocation: number; experimentId: string }>) => {
             return trafficAllocation$.pipe(
                 tap(() => {
                     this.setSidebarStatus({
@@ -483,7 +483,7 @@ export class DotExperimentsConfigurationStore extends ComponentStore<DotExperime
     readonly trafficStepVm$: Observable<{
         experimentId: string;
         trafficProportion: TrafficProportion;
-        trafficAllocation: string;
+        trafficAllocation: number;
         status: StepStatus;
     }> = this.select(
         this.getExperimentId,

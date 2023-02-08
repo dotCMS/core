@@ -41,7 +41,7 @@ export class DotExperimentsConfigurationTrafficComponent {
     vm$: Observable<{
         experimentId: string;
         trafficProportion: TrafficProportion;
-        trafficAllocation: string;
+        trafficAllocation: number;
         status: StepStatus;
     }> = this.dotExperimentsConfigurationStore.trafficStepVm$.pipe(
         tap(({ status }) => this.handleSidebar(status))

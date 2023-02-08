@@ -171,7 +171,7 @@ export class DotExperimentsService {
      */
     setTrafficAllocation(
         experimentId: string,
-        trafficAllocation: string
+        trafficAllocation: number
     ): Observable<DotExperiment> {
         return this.http
             .patch<DotCMSResponse<DotExperiment>>(`${API_ENDPOINT}/${experimentId}`, {

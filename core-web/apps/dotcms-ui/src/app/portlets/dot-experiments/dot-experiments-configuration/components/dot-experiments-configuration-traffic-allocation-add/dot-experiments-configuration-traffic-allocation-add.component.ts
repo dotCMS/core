@@ -2,12 +2,16 @@ import { Observable } from 'rxjs';
 
 import { CommonModule } from '@angular/common';
 import { ChangeDetectionStrategy, Component, OnInit } from '@angular/core';
-import { FormControl, FormGroup, FormsModule, ReactiveFormsModule } from '@angular/forms';
+import {
+    FormControl,
+    FormGroup,
+    FormsModule,
+    ReactiveFormsModule,
+    Validators
+} from '@angular/forms';
 
 import { ButtonModule } from 'primeng/button';
-import { CardModule } from 'primeng/card';
 import { InputTextModule } from 'primeng/inputtext';
-import { SelectButtonModule } from 'primeng/selectbutton';
 import { SidebarModule } from 'primeng/sidebar';
 import { SliderModule } from 'primeng/slider';
 
@@ -34,8 +38,6 @@ import { DotSidebarHeaderComponent } from '@shared/dot-sidebar-header/dot-sideba
         //PrimeNg
         SidebarModule,
         ButtonModule,
-        SelectButtonModule,
-        CardModule,
         SliderModule,
         InputTextModule,
         FormsModule
@@ -52,7 +54,7 @@ export class DotExperimentsConfigurationTrafficAllocationAddComponent implements
     vm$: Observable<{
         experimentId: string;
         trafficProportion: TrafficProportion;
-        trafficAllocation: string;
+        trafficAllocation: number;
         status: StepStatus;
     }> = this.dotExperimentsConfigurationStore.trafficStepVm$;
 
@@ -87,10 +89,25 @@ export class DotExperimentsConfigurationTrafficAllocationAddComponent implements
         this.dotExperimentsConfigurationStore.closeSidebar();
     }
 
+    /**
+     * Check allocation is higher than 100
+     * @returns void
+     * @memberof DotExperimentsConfigurationTrafficAllocationAddComponent
+     */
+    checkAllocationRange() {
+        this.form.setValue({
+            trafficAllocation:
+                this.form.value.trafficAllocation > 100 ? 100 : this.form.value.trafficAllocation
+        });
+    }
+
     private initForm() {
         this.vm$.pipe(take(1)).subscribe((data) => {
             this.form = new FormGroup({
-                trafficAllocation: new FormControl<string>(data.trafficAllocation)
+                trafficAllocation: new FormControl<number>(data.trafficAllocation, {
+                    nonNullable: true,
+                    validators: [Validators.required]
+                })
             });
         });
     }
