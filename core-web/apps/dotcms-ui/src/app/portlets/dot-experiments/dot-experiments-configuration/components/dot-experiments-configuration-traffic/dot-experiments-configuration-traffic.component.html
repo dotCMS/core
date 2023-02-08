@@ -14,12 +14,15 @@
                     }}</span>
                 </div>
 
-                <p-button
-                    (onClick)="changeTrafficAllocation()"
+                <button
+                    class="p-button-sm p-button-link"
+                    (click)="changeTrafficAllocation()"
                     data-testId="traffic-allocation-button"
-                    label=" {{ vm.trafficAllocation }}%"
-                    styleClass="p-button-sm p-button-link"
-                ></p-button>
+                    pButton
+                    pRipple
+                >
+                    {{ vm.trafficAllocation }}%
+                </button>
             </div>
         </p-card>
         <p-card styleClass="card-split">
