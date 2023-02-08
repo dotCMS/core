@@ -1,5 +1,7 @@
 @use "variables" as *;
 
+$slider-core-transition: background-color 0.2s, color 0.2s, border-color 0.2s, box-shadow 0.2s;
+
 .p-slider {
     background: $gray-lighter;
     border: 0 none;
@@ -25,7 +27,7 @@
     background: $white;
     border: 2px solid $brand-primary;
     border-radius: 50%;
-    transition: background-color 0.2s, color 0.2s, border-color 0.2s, box-shadow 0.2s;
+    transition: $slider-core-transition;
 }
 .p-slider .p-slider-handle:focus {
     outline: 0 none;
@@ -41,13 +43,13 @@
     border-color: $brand-primary;
 }
 .p-slider.p-slider-animate.p-slider-horizontal .p-slider-handle {
-    transition: background-color 0.2s, color 0.2s, border-color 0.2s, box-shadow 0.2s, left 0.2s;
+    transition: $slider-core-transition, left 0.2s;
 }
 .p-slider.p-slider-animate.p-slider-horizontal .p-slider-range {
     transition: width 0.2s;
 }
 .p-slider.p-slider-animate.p-slider-vertical .p-slider-handle {
-    transition: background-color 0.2s, color 0.2s, border-color 0.2s, box-shadow 0.2s, bottom 0.2s;
+    transition: $slider-core-transition, bottom 0.2s;
 }
 .p-slider.p-slider-animate.p-slider-vertical .p-slider-range {
     transition: height 0.2s;

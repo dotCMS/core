@@ -177,7 +177,7 @@ export class DotExperimentsService {
     /**
      * Set traffic allocation to an experiment
      * @param {string} experimentId
-     * @param {string} trafficAllocation
+     * @param {number} trafficAllocation
      * @returns Observable<DotExperiment>
      * @memberof DotExperimentsService
      */
