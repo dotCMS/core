@@ -1,5 +1,7 @@
+@use "variables" as *;
+
 .p-slider {
-    background: #dee2e6;
+    background: $gray-lighter;
     border: 0 none;
     border-radius: 6px;
 }
@@ -20,22 +22,23 @@
 .p-slider .p-slider-handle {
     height: 1.143rem;
     width: 1.143rem;
-    background: #ffffff;
-    border: 2px solid #3b82f6;
+    background: $white;
+    border: 2px solid $brand-primary;
     border-radius: 50%;
     transition: background-color 0.2s, color 0.2s, border-color 0.2s, box-shadow 0.2s;
 }
 .p-slider .p-slider-handle:focus {
     outline: 0 none;
     outline-offset: 0;
-    box-shadow: 0 0 0 0.2rem #bfdbfe;
+    box-shadow: 0 0 0 0.2rem $brand-primary_mod;
 }
 .p-slider .p-slider-range {
-    background: #3b82f6;
+    background: $brand-primary;
 }
+
 .p-slider:not(.p-disabled) .p-slider-handle:hover {
-    background: #3b82f6;
-    border-color: #3b82f6;
+    background: $brand-primary;
+    border-color: $brand-primary;
 }
 .p-slider.p-slider-animate.p-slider-horizontal .p-slider-handle {
     transition: background-color 0.2s, color 0.2s, border-color 0.2s, box-shadow 0.2s, left 0.2s;
