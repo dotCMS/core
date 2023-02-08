@@ -510,7 +510,6 @@ dojo.declare("dotcms.dijit.image.ImageEditor", dijit._Widget,{
         dojo.style(target, "opacity", 0);
         dojo.xhrGet({
             url:url,
-            target:target,
              preventCache:true,
              sync:true,
              load:function(data){
