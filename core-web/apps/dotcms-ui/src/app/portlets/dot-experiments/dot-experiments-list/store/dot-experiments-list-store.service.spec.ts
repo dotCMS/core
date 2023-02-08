@@ -9,10 +9,10 @@ import { MessageService } from 'primeng/api';
 
 import { DotMessageService } from '@dotcms/data-access';
 import {
+    ComponentStatus,
     DotExperiment,
     DotExperimentStatusList,
     GroupedExperimentByStatus,
-    LoadingState,
     TrafficProportionTypes
 } from '@dotcms/dotcms-models';
 import { MockDotMessageService } from '@dotcms/utils-testing';
@@ -81,7 +81,7 @@ describe('DotExperimentsListStore', () => {
                 DotExperimentStatusList.SCHEDULED,
                 DotExperimentStatusList.ARCHIVED
             ],
-            status: LoadingState.INIT
+            status: ComponentStatus.INIT
         };
 
         store.state$.subscribe((state) => {
@@ -92,14 +92,14 @@ describe('DotExperimentsListStore', () => {
 
     it('should have getState$ from the store', () => {
         store.getStatus$.subscribe((data) => {
-            expect(data).toEqual(LoadingState.INIT);
+            expect(data).toEqual(ComponentStatus.INIT);
         });
     });
 
     it('should update status to the store', () => {
-        store.setComponentStatus(LoadingState.LOADED);
+        store.setComponentStatus(ComponentStatus.LOADED);
         store.getStatus$.subscribe((status) => {
-            expect(status).toEqual(LoadingState.LOADED);
+            expect(status).toEqual(ComponentStatus.LOADED);
         });
     });
     it('should update experiments to the store', () => {
@@ -118,7 +118,7 @@ describe('DotExperimentsListStore', () => {
 
     it('should delete experiment by id of the store', () => {
         const ID_TO_DELETE = '222';
-        const expected: DotExperiment[] = [ExperimentMocks[0]];
+        const expected: DotExperiment[] = [ExperimentMocks[0], ExperimentMocks[2]];
 
         store.setExperiments(ExperimentMocks);
         store.deleteExperimentById(ID_TO_DELETE);
@@ -200,7 +200,7 @@ describe('DotExperimentsListStore', () => {
             dotExperimentsService.getAll.and.returnValue(of(ExperimentMocks));
 
             store.initStore();
-            store.loadExperiments();
+            store.loadExperiments(routerParamsPageId);
         });
         it('should load experiments to store', (done) => {
             expect(dotExperimentsService.getAll).toHaveBeenCalledWith(routerParamsPageId);
@@ -213,7 +213,7 @@ describe('DotExperimentsListStore', () => {
         it('should delete experiment from the store', (done) => {
             dotExperimentsService.delete.and.returnValue(of('deleted'));
 
-            const expectedExperimentsInStore = [ExperimentMocks[1]];
+            const expectedExperimentsInStore = [ExperimentMocks[1], ExperimentMocks[2]];
             const experimentToDelete = ExperimentMocks[0];
 
             store.deleteExperiment(experimentToDelete);
@@ -231,7 +231,7 @@ describe('DotExperimentsListStore', () => {
 
             expectedExperimentsInStore[0].status = DotExperimentStatusList.ARCHIVED;
 
-            dotExperimentsService.archive.and.returnValue(of([expectedExperimentsInStore[0]]));
+            dotExperimentsService.archive.and.returnValue(of(expectedExperimentsInStore[0]));
 
             const experimentToArchive = ExperimentMocks[0];
 

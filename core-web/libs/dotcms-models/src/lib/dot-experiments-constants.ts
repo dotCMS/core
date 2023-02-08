@@ -27,6 +27,32 @@ export enum DotExperimentStatusList {
     ARCHIVED = 'ARCHIVED'
 }
 
+export const DOT_EXPERIMENT_STATUS_METADATA_MAP: Record<
+    DotExperimentStatusList,
+    { classz: string; label: string }
+> = {
+    [DotExperimentStatusList.RUNNING]: {
+        label: 'experimentspage.experiment.status.running',
+        classz: 'running'
+    },
+    [DotExperimentStatusList.ENDED]: {
+        label: 'experimentspage.experiment.status.ended',
+        classz: 'ended'
+    },
+    [DotExperimentStatusList.DRAFT]: {
+        label: 'experimentspage.experiment.status.draft',
+        classz: 'draft'
+    },
+    [DotExperimentStatusList.ARCHIVED]: {
+        label: 'experimentspage.experiment.status.archived',
+        classz: 'archived'
+    },
+    [DotExperimentStatusList.SCHEDULED]: {
+        label: 'experimentspage.experiment.status.scheduled',
+        classz: 'scheduled'
+    }
+};
+
 export const ExperimentsStatusList = [
     {
         label: 'experimentspage.experiment.status.draft',

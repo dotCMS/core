@@ -41,6 +41,9 @@ inputs:
   tests_results_report_location:
     description: 'Tests report location'
     required: true
+  tests_results_location:
+    description: 'Tests results location'
+    required: true
   cicd_github_token:
     description: 'Token to use when it comes to push to results repo'
     required: true
@@ -67,6 +70,8 @@ outputs:
     description: 'MSSQL test results commit url'
   test_logs_url:
     description: 'Test logs url'
+  tests_results_location:
+    description: 'Test results location'
 runs:
   using: 'docker'
   image: 'Dockerfile'

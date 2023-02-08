@@ -13,7 +13,7 @@ import { SidebarModule } from 'primeng/sidebar';
 import { take } from 'rxjs/operators';
 
 import { DotFieldValidationMessageModule } from '@components/_common/dot-field-validation-message/dot-file-validation-message.module';
-import { RangeOfDateAndTime, Status, StepStatus } from '@dotcms/dotcms-models';
+import { ComponentStatus, RangeOfDateAndTime, StepStatus } from '@dotcms/dotcms-models';
 import { DotMessagePipeModule } from '@pipes/dot-message/dot-message-pipe.module';
 import { DotExperimentsConfigurationStore } from '@portlets/dot-experiments/dot-experiments-configuration/store/dot-experiments-configuration-store';
 import { DotSidebarDirective } from '@portlets/shared/directives/dot-sidebar.directive';
@@ -44,7 +44,7 @@ import { DotSidebarHeaderComponent } from '@shared/dot-sidebar-header/dot-sideba
 export class DotExperimentsConfigurationSchedulingAddComponent implements OnInit {
     form: FormGroup;
     scheduling: RangeOfDateAndTime;
-    stepStatus = Status;
+    stepStatus = ComponentStatus;
 
     today = new Date();
 

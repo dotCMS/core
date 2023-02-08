@@ -1,6 +1,6 @@
 {
 	"info": {
-		"_postman_id": "27680e39-328c-463b-b69b-5b65b5091a36",
+		"_postman_id": "baa5cd8a-ee19-4f3e-9398-f28dcc176d02",
 		"name": "UserResource",
 		"description": "Verifies that commonly-used routines for interacting with User data are working as expected. Most of these are related to filtering operations and for back-end use only.",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
@@ -84,7 +84,7 @@
 				"method": "GET",
 				"header": [],
 				"url": {
-					"raw": "{{serverURL}}/api/v1/users/filter/limit/100/includeanonymous/true/includedefault/true",
+					"raw": "{{serverURL}}/api/v1/users/filter?per_page=100&includeanonymous=true&includedefault=true",
 					"host": [
 						"{{serverURL}}"
 					],
@@ -92,13 +92,21 @@
 						"api",
 						"v1",
 						"users",
-						"filter",
-						"limit",
-						"100",
-						"includeanonymous",
-						"true",
-						"includedefault",
-						"true"
+						"filter"
+					],
+					"query": [
+						{
+							"key": "per_page",
+							"value": "100"
+						},
+						{
+							"key": "includeanonymous",
+							"value": "true"
+						},
+						{
+							"key": "includedefault",
+							"value": "true"
+						}
 					]
 				}
 			},
@@ -231,7 +239,7 @@
 				"method": "GET",
 				"header": [],
 				"url": {
-					"raw": "{{serverURL}}/api/v1/users/filter/limit/100/includeanonymous/true/includedefault/false",
+					"raw": "{{serverURL}}/api/v1/users/filter?per_page=100&includeanonymous=true&includedefault=false",
 					"host": [
 						"{{serverURL}}"
 					],
@@ -239,13 +247,21 @@
 						"api",
 						"v1",
 						"users",
-						"filter",
-						"limit",
-						"100",
-						"includeanonymous",
-						"true",
-						"includedefault",
-						"false"
+						"filter"
+					],
+					"query": [
+						{
+							"key": "per_page",
+							"value": "100"
+						},
+						{
+							"key": "includeanonymous",
+							"value": "true"
+						},
+						{
+							"key": "includedefault",
+							"value": "false"
+						}
 					]
 				}
 			},
@@ -306,7 +322,7 @@
 				"method": "GET",
 				"header": [],
 				"url": {
-					"raw": "{{serverURL}}/api/v1/users/filter/limit/100/includeanonymous/false/includedefault/false",
+					"raw": "{{serverURL}}/api/v1/users/filter?per_page=100&includeanonymous=false&includedefault=false",
 					"host": [
 						"{{serverURL}}"
 					],
@@ -314,13 +330,21 @@
 						"api",
 						"v1",
 						"users",
-						"filter",
-						"limit",
-						"100",
-						"includeanonymous",
-						"false",
-						"includedefault",
-						"false"
+						"filter"
+					],
+					"query": [
+						{
+							"key": "per_page",
+							"value": "100"
+						},
+						{
+							"key": "includeanonymous",
+							"value": "false"
+						},
+						{
+							"key": "includedefault",
+							"value": "false"
+						}
 					]
 				}
 			},
@@ -377,7 +401,7 @@
 				"method": "GET",
 				"header": [],
 				"url": {
-					"raw": "{{serverURL}}/api/v1/users/filter/",
+					"raw": "{{serverURL}}/api/v1/users/filter",
 					"host": [
 						"{{serverURL}}"
 					],
@@ -385,8 +409,7 @@
 						"api",
 						"v1",
 						"users",
-						"filter",
-						""
+						"filter"
 					]
 				},
 				"description": "* <b>Given scenario:</b> Get All the Users from the system.\n     * <b>Expected result:</b> The Total field should be greaterThan 0, so at least 1 user must be returned."

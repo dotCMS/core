@@ -116,7 +116,10 @@ const PULL_OPEN_DISTRO_CMD = {
 };
 const PULL_DB_CMD = {
     cmd: 'docker',
-    args: ['pull', `${dbType === 'mssql' ? 'ghcr.io/dotcms/mssqlserver:2017-latest' : 'ghcr.io/dotcms/postgres:13-alpine'}`],
+    args: [
+        'pull',
+        `${dbType === 'mssql' ? 'ghcr.io/dotcms/mssqlserver:2017-latest' : 'ghcr.io/dotcms/postgres:13-alpine'}`
+    ],
     workingDir: dockerFolder,
     env: DEPS_ENV[dbType]
 };

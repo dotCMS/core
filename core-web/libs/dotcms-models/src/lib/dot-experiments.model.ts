@@ -1,4 +1,8 @@
-import { DotExperimentStatusList, Status, TrafficProportionTypes } from '@dotcms/dotcms-models';
+import {
+    ComponentStatus,
+    DotExperimentStatusList,
+    TrafficProportionTypes
+} from '@dotcms/dotcms-models';
 
 export interface DotExperiment {
     id: string;
@@ -53,7 +57,7 @@ export interface RangeOfDateAndTime {
 export type GroupedExperimentByStatus = Partial<Record<DotExperimentStatusList, DotExperiment[]>>;
 
 export interface StepStatus {
-    status: Status;
+    status: ComponentStatus;
     isOpen: boolean;
     experimentStep: ExperimentSteps | null;
 }
