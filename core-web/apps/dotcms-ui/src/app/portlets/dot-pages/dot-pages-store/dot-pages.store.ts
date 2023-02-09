@@ -102,11 +102,6 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
         }
     );
 
-    /** A function that updates the Favorite Pages Items in the state of the store.
-     * @param DotPagesState state
-     * @param DotCMSContentlet[] favoritePages
-     * @memberof DotPageStore
-     */
     readonly setFavoritePages = this.updater<DotCMSContentlet[]>(
         (state: DotPagesState, favoritePages: DotCMSContentlet[]) => {
             return {
@@ -418,7 +413,6 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
         if (isEnterprise) {
             selectItems.push({
                 label: this.dotMessageService.get('contenttypes.content.add_to_bundle'),
-                // command: (item) => this.addToBundleContentType(item)
                 command: () => this.showAddToBundle(item.identifier)
             });
         }

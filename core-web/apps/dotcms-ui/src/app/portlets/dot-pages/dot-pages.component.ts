@@ -72,13 +72,9 @@ export class DotPagesComponent implements OnInit, OnDestroy {
      */
     showActionsMenu({ event, actionMenuDomId, item }: DotActionsMenuEventParams): void {
         event.stopPropagation();
+        this.menu.hide();
 
-        if (event.currentTarget['id'] === this.domIdMenuAttached) {
-            this.menu.hide();
-        }
-
-        if (event.currentTarget['id'] !== this.domIdMenuAttached) {
-            this.menu.hide();
+        if (event?.currentTarget['id'] !== this.domIdMenuAttached) {
             this.store.showActionsMenu({ item, actionMenuDomId });
         }
     }
@@ -97,10 +93,10 @@ export class DotPagesComponent implements OnInit, OnDestroy {
         this.store.actionMenuDomId$
             .pipe(takeUntil(this.destroy$))
             .subscribe((actionMenuDomId: string) => {
-                if (actionMenuDomId !== undefined) {
+                if (actionMenuDomId) {
                     const target = this.element.nativeElement.querySelector(`#${actionMenuDomId}`);
-                    this.domIdMenuAttached = actionMenuDomId;
                     this.menu.show({ currentTarget: target });
+                    this.domIdMenuAttached = actionMenuDomId;
                 }
             });
 
@@ -109,7 +105,6 @@ export class DotPagesComponent implements OnInit, OnDestroy {
             .pipe(takeUntil(this.destroy$))
             .subscribe((evt) => {
                 this.store.getPages({ offset: 0 });
-
                 this.dotMessageDisplayService.push({
                     life: 3000,
                     message: evt.data['value'],

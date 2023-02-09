@@ -1,5 +1,6 @@
-import { DotTimeZone } from '@dotcms/dotcms-js';
 import { Observable, of } from 'rxjs';
+
+import { DotTimeZone } from '@dotcms/dotcms-js';
 
 export const mockDotTimeZones = [
     {
@@ -22,5 +23,9 @@ export const mockDotTimeZones = [
 export class DotcmsConfigServiceMock {
     getTimeZones(): Observable<DotTimeZone[]> {
         return of(mockDotTimeZones);
+    }
+
+    getSystemTimeZone(): Observable<DotTimeZone> {
+        return of(mockDotTimeZones[1]);
     }
 }
