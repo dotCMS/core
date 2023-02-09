@@ -1,4 +1,4 @@
-import { Subject } from 'rxjs';
+import { Subject, from } from 'rxjs';
 
 import { Component, Injector, Input, OnDestroy, OnInit, ViewContainerRef } from '@angular/core';
 
@@ -39,6 +39,21 @@ function toTitleCase(str) {
     });
 }
 
+type Actions = {
+    command: string;
+    menuLabel: string;
+    icon: string;
+};
+
+type Block = {
+    url: string;
+    actions: Array<Actions>;
+};
+
+type CustomBlock = {
+    extensions: Array<Block>;
+};
+
 @Component({
     selector: 'dot-block-editor',
     templateUrl: './dot-block-editor.component.html',
@@ -51,6 +66,7 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy {
     @Input() displayCountBar: boolean | string = true;
     @Input() charLimit: number;
     @Input() content: Content;
+    @Input() customBlocks: string;
 
     @Input() set allowedBlocks(blocks: string) {
         this._allowedBlocks = [
@@ -89,15 +105,29 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy {
 
     constructor(private injector: Injector, public viewContainerRef: ViewContainerRef) {}
 
-    ngOnInit() {
-        this.editor = new Editor({
-            extensions: this.setEditorExtensions()
-        });
+    async loadCustomBlocks(url: string) {
+        const { CustomNode, CustomExtension, HighlightCustom } = await import(
+            /* webpackIgnore: true */ url
+        );
 
-        this.editor.on('create', () => this.updateChartCount());
-        this.subject
-            .pipe(takeUntil(this.destroy$), debounceTime(250))
-            .subscribe(() => this.updateChartCount());
+        return {
+            CustomNode,
+            CustomExtension,
+            HighlightCustom
+        };
+    }
+
+    ngOnInit() {
+        from(this.setEditorExtensions()).subscribe((extensions) => {
+            this.editor = new Editor({
+                extensions
+            });
+
+            this.editor.on('create', () => this.updateChartCount());
+            this.subject
+                .pipe(takeUntil(this.destroy$), debounceTime(250))
+                .subscribe(() => this.updateChartCount());
+        });
     }
 
     ngOnDestroy() {
@@ -113,7 +143,7 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy {
         this.editor.view.dispatch(tr);
     }
 
-    private setEditorExtensions(): AnyExtension[] {
+    private async setEditorExtensions(): Promise<AnyExtension[]> {
         const defaultExtensions: AnyExtension[] = [
             DotConfigExtension({
                 lang: this.lang,
@@ -147,10 +177,20 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy {
             DotTableHeaderExtension(),
             TableRow
         ];
+        const data = JSON.parse(
+            this.customBlocks.replace(/('[\w]+')(:)/g, '"$1"$2').replace(/'"|"'|'/g, '"')
+        );
+
+        const { CustomNode, CustomExtension, HighlightCustom } = await this.loadCustomBlocks(
+            (data as CustomBlock).extensions[0].url
+        );
         const customExtensions: Map<string, AnyExtension> = new Map([
             ['contentlets', ContentletBlock(this.injector)],
             ['table', DotTableExtension()],
-            ['image', ImageNode]
+            ['image', ImageNode],
+            ['customNode', CustomNode],
+            ['customExtension', CustomExtension],
+            ['highlightCustom', HighlightCustom]
         ]);
 
         return [
