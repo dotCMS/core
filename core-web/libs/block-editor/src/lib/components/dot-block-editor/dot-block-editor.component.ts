@@ -1,6 +1,15 @@
 import { Subject, from } from 'rxjs';
 
-import { Component, Injector, Input, OnDestroy, OnInit, ViewContainerRef } from '@angular/core';
+import {
+    Component,
+    EventEmitter,
+    Injector,
+    Input,
+    OnDestroy,
+    OnInit,
+    Output,
+    ViewContainerRef
+} from '@angular/core';
 
 import { debounceTime, takeUntil } from 'rxjs/operators';
 
@@ -51,7 +60,7 @@ type Block = {
 };
 
 type CustomBlock = {
-    extensions: Array<Block>;
+    extension: Array<Block>;
 };
 
 @Component({
@@ -78,6 +87,7 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy {
     @Input() set value(content: Content) {
         this.content = typeof content === 'string' ? formatHTML(content) : content;
     }
+    @Output() updateEditorEvent = new EventEmitter<string>();
 
     editor: Editor;
     subject = new Subject();
@@ -106,6 +116,7 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy {
     constructor(private injector: Injector, public viewContainerRef: ViewContainerRef) {}
 
     async loadCustomBlocks(url: string) {
+        // get module
         const { CustomNode, CustomExtension, HighlightCustom } = await import(
             /* webpackIgnore: true */ url
         );
@@ -127,6 +138,10 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy {
             this.subject
                 .pipe(takeUntil(this.destroy$), debounceTime(250))
                 .subscribe(() => this.updateChartCount());
+
+            this.editor.on('update', ({ editor }) => {
+                this.updateEditorEvent.emit(JSON.stringify(editor.getJSON()));
+            });
         });
     }
 
@@ -177,12 +192,9 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy {
             DotTableHeaderExtension(),
             TableRow
         ];
-        const data = JSON.parse(
-            this.customBlocks.replace(/('[\w]+')(:)/g, '"$1"$2').replace(/'"|"'|'/g, '"')
-        );
-
+        const data = JSON.parse(this.customBlocks);
         const { CustomNode, CustomExtension, HighlightCustom } = await this.loadCustomBlocks(
-            (data as CustomBlock).extensions[0].url
+            (data as CustomBlock).extension[0].url
         );
         const customExtensions: Map<string, AnyExtension> = new Map([
             ['contentlets', ContentletBlock(this.injector)],
