@@ -120,15 +120,12 @@
           //console.log("error",err)
       }
     }
+setTimeout(loadPermissions, 0);
+setTimeout(loadPermissions, 500);
+setTimeout(loadPermissions, 1000);
     var permissionsLoaded = false;
 	//Initialization
 	dojo.addOnLoad(preloadingPermissions);
-
-require(['dojo/_base/window', 'dojo/on'], function(baseWin, on) {
-    on(baseWin.global, 'load', function() {
-        loadPermissions();
-    });
-});
     
     
     
