@@ -9,3 +9,4 @@ This maintenance release includes the following code fixes:
 3. https://github.com/dotCMS/core/issues/23440 : Categories being removed from content items when updating content via CSV file upload #23440
 4. https://github.com/dotCMS/core/issues/23761 : Unable to start LTS release using MSSQL #23761
 5. https://github.com/dotCMS/core/issues/23810 : Asset download missing directories 8 and 9 #23810
+6. https://github.com/dotCMS/core/issues/24075 : dotcache - Make Velocity Context caching optional
