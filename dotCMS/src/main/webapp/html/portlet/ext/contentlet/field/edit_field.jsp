@@ -207,8 +207,7 @@
                 display-count-bar="<%=displayCountBar%>"
                 char-limit="<%=charLimit%>"
                 lang="<%=contentLanguage%>"
-                custom-blocks="<%=customBlocks%>">
-            
+                custom-blocks='<%=customBlocks%>'>
             </dotcms-block-editor>
             <input type="hidden" name="<%=field.getFieldContentlet()%>" id="<%=field.getVelocityVarName()%>"/>
 
