@@ -18,6 +18,12 @@ export class DotContentletThumbnail {
     @Prop({ reflect: true })
     iconSize = '';
 
+    @Prop({ reflect: true })
+    cover = true;
+
+    @Prop({ reflect: true })
+    videoThumbnailWidth: number;
+
     @Prop()
     contentlet: DotContentletItem;
 
@@ -29,33 +35,38 @@ export class DotContentletThumbnail {
         if (typeof hasTitleImage === 'boolean' && hasTitleImage) {
             this.renderImage = hasTitleImage;
         } else {
-            this.renderImage = hasTitleImage === 'true' || mimeType === 'application/pdf';
+            this.renderImage =
+                hasTitleImage === 'true' ||
+                mimeType === 'application/pdf' ||
+                this.isVideoContentlet();
         }
     }
 
     render() {
-        const image = this.contentlet ? `url(${this.getImageURL()})` : '';
+        const image = this.contentlet && this.cover ? `url(${this.getImageURL()})` : '';
 
         return (
             <Host>
-                {this.renderImage ? (
-                    <div class="thumbnail" style={{ 'background-image': image }}>
+                {this.isVideoContentlet() ? (
+                    <dot-video-thumbnail
+                        contentlet={this.contentlet}
+                        width={this.videoThumbnailWidth}
+                    />
+                ) : this.renderImage ? (
+                    <div
+                        class={`thumbnail ${this.cover && 'cover'}`}
+                        style={{ 'background-image': image }}
+                    >
                         <img
                             src={this.getImageURL()}
                             alt={this.alt}
                             aria-label={this.alt}
-                            onError={() => {
-                                this.switchToIcon();
-                            }}
+                            onError={() => this.switchToIcon()}
                         />
                     </div>
                 ) : (
                     <dot-contentlet-icon
-                        icon={
-                            this.contentlet?.baseType !== 'FILEASSET'
-                                ? this.contentlet?.contentTypeIcon
-                                : this.contentlet?.__icon__
-                        }
+                        icon={this.getIcon()}
                         size={this.iconSize}
                         aria-label={this.alt}
                     />
@@ -72,5 +83,15 @@ export class DotContentletThumbnail {
 
     private switchToIcon(): any {
         this.renderImage = false;
+    }
+
+    private getIcon() {
+        return this.contentlet?.baseType !== 'FILEASSET'
+            ? this.contentlet?.contentTypeIcon
+            : this.contentlet?.__icon__;
+    }
+
+    private isVideoContentlet() {
+        return this.contentlet.mimeType.includes('video');
     }
 }
