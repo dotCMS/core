@@ -22,7 +22,7 @@ import com.dotmarketing.util.PageMode;
 import io.vavr.Lazy;
 import io.vavr.control.Try;
 
-public class CacheBlockDirective extends Directive {
+public class DotCacheDirective extends Directive {
 
     private static final long serialVersionUID = 1L;
 
