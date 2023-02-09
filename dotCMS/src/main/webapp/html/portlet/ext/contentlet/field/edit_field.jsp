@@ -244,9 +244,9 @@
                         field.value = JSON.stringify(block.editor.getJSON());
                     }
 
-                    block.editor.on('update', ({ editor }) => {
-                        field.value = JSON.stringify(editor.getJSON());
-                    })
+                    blockEditor.addEventListener('updateEditorEvent', (event) => {
+                        field.value = event.detail;
+                    });
                 })();
 
             </script>
