@@ -72,7 +72,6 @@ jobs:
           done
 
           echo "discovered_tags=${formatted}" >> $GITHUB_OUTPUT
-        env:
         if: env.jobRun == 'true'
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v2.1.0
