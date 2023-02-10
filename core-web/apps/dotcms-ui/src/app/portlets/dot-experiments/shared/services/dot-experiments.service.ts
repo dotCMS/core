@@ -175,6 +175,24 @@ export class DotExperimentsService {
     }
 
     /**
+     * Set traffic allocation to an experiment
+     * @param {string} experimentId
+     * @param {number} trafficAllocation
+     * @returns Observable<DotExperiment>
+     * @memberof DotExperimentsService
+     */
+    setTrafficAllocation(
+        experimentId: string,
+        trafficAllocation: number
+    ): Observable<DotExperiment> {
+        return this.http
+            .patch<DotCMSResponse<DotExperiment>>(`${API_ENDPOINT}/${experimentId}`, {
+                trafficAllocation
+            })
+            .pipe(pluck('entity'));
+    }
+
+    /**
      * Delete a goal of an experiment
      * @returns Observable<DotExperiment>
      * @memberof DotExperimentsService

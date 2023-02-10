@@ -866,15 +866,15 @@ public class ContainerFactoryImpl implements ContainerFactory {
 
 			if (null != foundContentType && InodeUtils.isSet(foundContentType.inode())) {
 				query.append(
-						" where asset.inode = inode.inode and asset.identifier = identifier.id")
+								" where asset.inode = inode.inode and asset.identifier = identifier.id")
 						.append(
 								" and exists (select * from container_structures cs where cs.container_id = asset.identifier")
 						.append(" and cs.structure_id = '")
-						.append(searchParams.contentTypeIdOrVar())
+						.append(foundContentType.inode())
 						.append("' ) ");
 			}else {
 				query.append(
-						" ,tree where asset.inode = inode.inode and asset.identifier = identifier.id")
+								" ,tree where asset.inode = inode.inode and asset.identifier = identifier.id")
 						.append(" and tree.parent = '")
 						.append(searchParams.contentTypeIdOrVar())
 						.append("' and tree.child=asset.inode");
