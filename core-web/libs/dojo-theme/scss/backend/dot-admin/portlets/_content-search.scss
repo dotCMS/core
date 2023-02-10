@@ -24,8 +24,13 @@
     height: 100%;
 }
 
-#queryResults {
-    padding: 16px;
+.content-search__show-query-dialog {
+    .dijitDialogPaneContent {
+        padding: 0;
+    }
+    #queryResults {
+        padding: 16px;
+    }
 }
 
 .content-search__key-fields {
