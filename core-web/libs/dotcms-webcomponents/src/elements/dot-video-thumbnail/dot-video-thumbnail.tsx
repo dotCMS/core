@@ -16,9 +16,19 @@ export class DotVideoThumbnail {
      */
     @Prop() contentlet: DotContentletItem;
 
+    /**
+     *
+     *
+     * @type {boolean}
+     * @memberof DotVideoThumbnail
+     */
+    @Prop() cover: boolean = true;
+
     render() {
-        // If there is a static `width`, there's not need for the image to cover the wrapper
-        return <Host>{this.src && <img src={this.src} alt={this.contentlet.title} />}</Host>;
+        const style = this.cover ? { objectFit: 'cover' } : {};
+        const { title } = this.contentlet;
+
+        return <Host>{this.src && <img style={style} src={this.src} alt={title} />}</Host>;
     }
 
     componentDidLoad() {
@@ -41,6 +51,13 @@ export class DotVideoThumbnail {
         video.src = `/dA/${this.contentlet.inode}#t=0.1`;
     }
 
+    /**
+     * Create a thumbnail usint the first frame of a video.
+     *
+     * @private
+     * @param {HTMLVideoElement} video
+     * @memberof DotVideoThumbnail
+     */
     private createVideoImage(video: HTMLVideoElement) {
         const { videoWidth, videoHeight } = video;
 

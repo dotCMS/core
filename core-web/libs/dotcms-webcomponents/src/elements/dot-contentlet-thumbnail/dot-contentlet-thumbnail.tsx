@@ -41,16 +41,14 @@ export class DotContentletThumbnail {
 
     render() {
         const image = this.contentlet && this.cover ? `url(${this.getImageURL()})` : '';
+        const imgClass = this.cover ? 'cover' : '';
 
         return (
             <Host>
                 {this.isVideoContentlet() ? (
-                    <dot-video-thumbnail contentlet={this.contentlet} />
+                    <dot-video-thumbnail contentlet={this.contentlet} cover={this.cover} />
                 ) : this.renderImage ? (
-                    <div
-                        class={`thumbnail ${this.cover && 'cover'}`}
-                        style={{ 'background-image': image }}
-                    >
+                    <div class={`thumbnail ${imgClass}`} style={{ 'background-image': image }}>
                         <img
                             src={this.getImageURL()}
                             alt={this.alt}
