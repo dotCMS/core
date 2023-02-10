@@ -30,7 +30,6 @@ import {
     BubbleAssetFormExtension,
     ImageUpload
 } from '../../extensions';
-
 import { ContentletBlock, ImageNode, VideoNode } from '../../nodes';
 import { formatHTML, removeInvalidNodes, SetDocAttrStep } from '../../shared/utils';
 
