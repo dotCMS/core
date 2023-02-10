@@ -133,9 +133,14 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy {
     }
 
     ngOnInit() {
-        from(this.getEditorNodes()).subscribe((nodes) => {
+        from(this.getCustomBlocks()).subscribe((nodes) => {
             this.editor = new Editor({
-                extensions: [...this.getEditorExtensions(), ...this.getEditorMarks(), ...nodes]
+                extensions: [
+                    ...this.getEditorExtensions(),
+                    ...this.getEditorMarks(),
+                    ...this.getEditorNodes(),
+                    ...nodes
+                ]
             });
 
             this.editor.on('create', () => this.updateChartCount());
@@ -162,16 +167,12 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy {
         this.editor.view.dispatch(tr);
     }
 
-    private async getEditorNodes(): Promise<AnyExtension[]> {
-        // If you have more than one allow block (other than the parragrph),
-        // we customize the starterkit.
-        const starterkit =
-            this._allowedBlocks?.length > 1
-                ? StarterKit.configure(this.starterConfig())
-                : StarterKit;
+    /**
+     * This methods get the customBlocks variable to retrieve the custom modules as Objects.
+     *
+     */
 
-        const customNodes = this.getAllowedCustomNodes();
-
+    private async getCustomBlocks(): Promise<AnyExtension[]> {
         const data = JSON.parse(this.customBlocks);
         const extensionUrls = (data as CustomBlock).extensions.map((extension) => extension.url);
         const customModules = await this.loadCustomBlocks(extensionUrls);
@@ -186,7 +187,20 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy {
             {}
         );
 
-        return [starterkit, ...customNodes, ...blockNames.map((block) => moduleObj[block])];
+        return blockNames.map((block) => moduleObj[block]);
+    }
+
+    private getEditorNodes(): AnyExtension[] {
+        // If you have more than one allow block (other than the parragrph),
+        // we customize the starterkit.
+        const starterkit =
+            this._allowedBlocks?.length > 1
+                ? StarterKit.configure(this.starterConfig())
+                : StarterKit;
+
+        const customNodes = this.getAllowedCustomNodes();
+
+        return [starterkit, ...customNodes];
     }
 
     /**
