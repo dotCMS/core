@@ -12,8 +12,8 @@ import { DotMessagePipeModule } from '@dotcms/app/view/pipes/dot-message/dot-mes
 import { DotESContentService, DotPageRenderService } from '@dotcms/data-access';
 import { DotIconModule } from '@dotcms/ui';
 
-import { DotPagesCardEmptyModule } from './dot-pages-card-empty/dot-pages-card-empty.module';
 import { DotPagesCardModule } from './dot-pages-card/dot-pages-card.module';
+import { DotPagesCardEmptyModule } from './dot-pages-card-empty/dot-pages-card-empty.module';
 import { DotPagesRoutingModule } from './dot-pages-routing.module';
 import { DotPagesComponent } from './dot-pages.component';
 
