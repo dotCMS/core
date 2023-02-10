@@ -86,7 +86,7 @@ exports.COMMANDS = {
     gradle: [
         {
             cmd: './gradlew',
-            args: ['integrationTest', `-PdatabaseType=${dbType}`],
+            args: ['integrationTest', `-PdatabaseType=${dbType}`, '--stacktrace'],
             workingDir: dotCmsRoot
         }
     ],
@@ -116,7 +116,10 @@ const PULL_OPEN_DISTRO_CMD = {
 };
 const PULL_DB_CMD = {
     cmd: 'docker',
-    args: ['pull', `${dbType === 'mssql' ? 'ghcr.io/dotcms/mssqlserver:2017-latest' : 'ghcr.io/dotcms/postgres:13-alpine'}`],
+    args: [
+        'pull',
+        `${dbType === 'mssql' ? 'ghcr.io/dotcms/mssqlserver:2017-latest' : 'ghcr.io/dotcms/postgres:13-alpine'}`
+    ],
     workingDir: dockerFolder,
     env: DEPS_ENV[dbType]
 };

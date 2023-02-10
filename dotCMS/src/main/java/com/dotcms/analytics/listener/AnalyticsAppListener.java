@@ -4,7 +4,6 @@ package com.dotcms.analytics.listener;
 import com.dotcms.analytics.AnalyticsAPI;
 import com.dotcms.analytics.app.AnalyticsApp;
 import com.dotcms.analytics.helper.AnalyticsHelper;
-import com.dotcms.analytics.model.AccessToken;
 import com.dotcms.analytics.model.AnalyticsAppProperty;
 import com.dotcms.api.system.event.SystemEventType;
 import com.dotcms.api.system.event.message.MessageSeverity;
@@ -66,12 +65,12 @@ public final class AnalyticsAppListener implements EventSubscriber<AppSecretSave
     @Override
     public void notify(final AppSecretSavedEvent event) {
         if (Objects.isNull(event)) {
-            Logger.info(this, "Missing event, aborting");
+            Logger.debug(this, "Missing event, aborting");
             return;
         }
 
         if (StringUtils.isBlank(event.getHostIdentifier())) {
-            Logger.info(this, "Missing event's host id, aborting");
+            Logger.debug(this, "Missing event's host id, aborting");
             return;
         }
 
@@ -84,7 +83,7 @@ public final class AnalyticsAppListener implements EventSubscriber<AppSecretSave
                     .of(() -> hostAPI.find(event.getHostIdentifier(), APILocator.systemUser(), false))
                     .getOrElse((Host) null);
                 Optional.ofNullable(host)
-                    .map(AnalyticsHelper::appFromHost)
+                    .map(site -> AnalyticsHelper.get().appFromHost(site))
                     .ifPresent(app -> {
                         try {
                             // reset analytics key
@@ -92,12 +91,12 @@ public final class AnalyticsAppListener implements EventSubscriber<AppSecretSave
 
                             // reset access token when is NOOP, is this the right place?
                             Optional.ofNullable(analyticsAPI.getAccessToken(app))
-                                .filter(AnalyticsHelper::isTokenNoop)
+                                .filter(appplication -> AnalyticsHelper.get().isTokenNoop(appplication))
                                 .ifPresent(token -> analyticsAPI.resetAccessToken(app));
                         } catch (AnalyticsException e) {
                             Logger.error(
                                 this,
-                                String.format("Cannot process event %s due to: %s", event, e.getMessage()), e);
+                                String.format("Cannot process event for app update due to: %s", e.getMessage()), e);
                         }
                     });
             });

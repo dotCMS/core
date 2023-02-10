@@ -1,0 +1,35 @@
+<div class="tabview-container">
+    <p-tabView>
+        <p-tabPanel [cache]="false" header="dotCMS" leftIcon="pi pi-images">
+            <ng-template pTemplate="content">
+                <div class="wrapper">
+                    <dot-asset-search
+                        [type]="type"
+                        [languageId]="languageId"
+                        (addAsset)="onSelectAsset($event)"
+                    ></dot-asset-search>
+                </div>
+            </ng-template>
+        </p-tabPanel>
+        <p-tabPanel [cache]="false" [header]="'Upload ' + type" leftIcon="pi pi-folder">
+            <ng-template pTemplate="content">
+                <div class="wrapper">
+                    <dot-upload-asset
+                        [type]="type"
+                        (uploadedFile)="onSelectAsset($event)"
+                    ></dot-upload-asset>
+                </div>
+            </ng-template>
+        </p-tabPanel>
+        <p-tabPanel [cache]="false" [header]="type + ' URL'" leftIcon="pi pi-link">
+            <ng-template pTemplate="content">
+                <div class="wrapper">
+                    <dot-external-asset
+                        [type]="type"
+                        (addAsset)="onSelectAsset($event)"
+                    ></dot-external-asset>
+                </div>
+            </ng-template>
+        </p-tabPanel>
+    </p-tabView>
+</div>

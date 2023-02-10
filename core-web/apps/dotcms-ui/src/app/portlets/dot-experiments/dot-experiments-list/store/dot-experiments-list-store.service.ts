@@ -1,5 +1,5 @@
 import { ComponentStore, OnStoreInit, tapResponse } from '@ngrx/component-store';
-import { EMPTY, Observable, pipe, throwError } from 'rxjs';
+import { EMPTY, Observable, throwError } from 'rxjs';
 
 import { HttpErrorResponse } from '@angular/common/http';
 import { Injectable } from '@angular/core';
@@ -7,14 +7,14 @@ import { ActivatedRoute } from '@angular/router';
 
 import { MessageService } from 'primeng/api';
 
-import { catchError, switchMap, tap, withLatestFrom } from 'rxjs/operators';
+import { catchError, switchMap, tap } from 'rxjs/operators';
 
 import { DotMessageService } from '@dotcms/data-access';
 import {
+    ComponentStatus,
     DotExperiment,
     DotExperimentStatusList,
-    GroupedExperimentByStatus,
-    LoadingState
+    GroupedExperimentByStatus
 } from '@dotcms/dotcms-models';
 import { DotExperimentsService } from '@portlets/dot-experiments/shared/services/dot-experiments.service';
 
@@ -25,7 +25,7 @@ export interface DotExperimentsState {
     };
     experiments: DotExperiment[];
     filterStatus: Array<string>;
-    status: LoadingState;
+    status: ComponentStatus;
 }
 
 const initialState: DotExperimentsState = {
@@ -41,7 +41,7 @@ const initialState: DotExperimentsState = {
         DotExperimentStatusList.SCHEDULED,
         DotExperimentStatusList.ARCHIVED
     ],
-    status: LoadingState.INIT
+    status: ComponentStatus.INIT
 };
 
 // Vm Interfaces
@@ -84,13 +84,13 @@ export class DotExperimentsListStore
     );
 
     readonly isLoading$: Observable<boolean> = this.select(
-        (state) => state.status === LoadingState.LOADING || state.status === LoadingState.INIT
+        (state) => state.status === ComponentStatus.LOADING || state.status === ComponentStatus.INIT
     );
 
     //Updater
     readonly initStore = this.updater((state) => ({
         ...state,
-        status: LoadingState.INIT
+        status: ComponentStatus.INIT
     }));
 
     readonly setPageId = this.updater((state, pageId: string) => ({
@@ -98,20 +98,20 @@ export class DotExperimentsListStore
         pageId
     }));
 
-    readonly setComponentStatus = this.updater((state, status: LoadingState) => ({
+    readonly setComponentStatus = this.updater((state, status: ComponentStatus) => ({
         ...state,
         status
     }));
 
     readonly setExperiments = this.updater((state, experiments: DotExperiment[]) => ({
         ...state,
-        status: LoadingState.LOADED,
+        status: ComponentStatus.LOADED,
         experiments
     }));
 
     readonly addExperiment = this.updater((state, experiments: DotExperiment[]) => ({
         ...state,
-        status: LoadingState.LOADED,
+        status: ComponentStatus.LOADED,
         experiments: [...state.experiments, ...experiments]
     }));
 
@@ -132,26 +132,24 @@ export class DotExperimentsListStore
         )
     }));
 
-    // Effects
-    readonly loadExperiments = this.effect<void>(
-        pipe(
-            tap(() => this.setComponentStatus(LoadingState.LOADING)),
-            withLatestFrom(this.getPage$),
-            switchMap(([, { pageId }]) =>
+    readonly loadExperiments = this.effect((pageId$: Observable<string>) => {
+        return pageId$.pipe(
+            tap(() => this.setComponentStatus(ComponentStatus.LOADING)),
+            switchMap((pageId) =>
                 this.dotExperimentsService.getAll(pageId).pipe(
                     tapResponse(
                         (experiments) => this.setExperiments(experiments),
                         (error: HttpErrorResponse) => throwError(error),
-                        () => this.setComponentStatus(LoadingState.LOADED)
+                        () => this.setComponentStatus(ComponentStatus.LOADED)
                     )
                 )
             )
-        )
-    );
+        );
+    });
 
     readonly deleteExperiment = this.effect((experiment$: Observable<DotExperiment>) => {
         return experiment$.pipe(
-            tap(() => this.setComponentStatus(LoadingState.LOADING)),
+            tap(() => this.setComponentStatus(ComponentStatus.LOADING)),
             switchMap((experiment) =>
                 this.dotExperimentsService.delete(experiment.id).pipe(
                     tapResponse(
@@ -169,7 +167,7 @@ export class DotExperimentsListStore
                             this.deleteExperimentById(experiment.id);
                         },
                         (error) => throwError(error),
-                        () => this.setComponentStatus(LoadingState.LOADED)
+                        () => this.setComponentStatus(ComponentStatus.LOADED)
                     ),
                     catchError(() => EMPTY)
                 )
@@ -179,7 +177,7 @@ export class DotExperimentsListStore
 
     readonly archiveExperiment = this.effect((experiment$: Observable<DotExperiment>) => {
         return experiment$.pipe(
-            tap(() => this.setComponentStatus(LoadingState.LOADING)),
+            tap(() => this.setComponentStatus(ComponentStatus.LOADING)),
             switchMap((experiment) =>
                 this.dotExperimentsService.archive(experiment.id).pipe(
                     tapResponse(
@@ -197,7 +195,7 @@ export class DotExperimentsListStore
                             this.archiveExperimentById(experiment.id);
                         },
                         (error) => throwError(error),
-                        () => this.setComponentStatus(LoadingState.LOADED)
+                        () => this.setComponentStatus(ComponentStatus.LOADED)
                     ),
                     catchError(() => EMPTY)
                 )
@@ -236,6 +234,7 @@ export class DotExperimentsListStore
     }
 
     ngrxOnStoreInit() {
-        this.loadExperiments();
+        const pageId = this.route.snapshot.params.pageId;
+        this.loadExperiments(pageId);
     }
 }

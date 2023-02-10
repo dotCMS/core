@@ -22,5 +22,5 @@ export class DotExperimentsUiHeaderComponent {
     isLoading: boolean;
 
     @Output()
-    goBack = new EventEmitter<void>();
+    goBack = new EventEmitter<boolean>();
 }
