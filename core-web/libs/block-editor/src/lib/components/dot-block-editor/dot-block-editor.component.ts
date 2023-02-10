@@ -169,11 +169,17 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy {
 
     /**
      * This methods get the customBlocks variable to retrieve the custom modules as Objects.
-     *
+     * Validates that there is customBlocks defined.
      */
 
     private async getCustomBlocks(): Promise<AnyExtension[]> {
-        const data = JSON.parse(this.customBlocks);
+        let data = {};
+        try {
+            data = JSON.parse(this.customBlocks);
+        } catch (e) {
+            return [];
+        }
+
         const extensionUrls = (data as CustomBlock).extensions.map((extension) => extension.url);
         const customModules = await this.loadCustomBlocks(extensionUrls);
         const blockNames = [];
