@@ -9,9 +9,10 @@ import { of } from 'rxjs';
 
 import { MessageService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
-import { Calendar } from 'primeng/calendar';
 import { CardModule } from 'primeng/card';
+import { InputTextModule } from 'primeng/inputtext';
 import { Sidebar } from 'primeng/sidebar';
+import { Slider, SliderModule } from 'primeng/slider';
 
 import { DotMessageService } from '@dotcms/data-access';
 import { ExperimentSteps } from '@dotcms/dotcms-models';
@@ -21,26 +22,22 @@ import { DotExperimentsService } from '@portlets/dot-experiments/shared/services
 import { ExperimentMocks } from '@portlets/dot-experiments/test/mocks';
 import { DotHttpErrorManagerService } from '@services/dot-http-error-manager/dot-http-error-manager.service';
 
-import { DotExperimentsConfigurationSchedulingAddComponent } from './dot-experiments-configuration-scheduling-add.component';
+import { DotExperimentsConfigurationTrafficAllocationAddComponent } from './dot-experiments-configuration-traffic-allocation-add.component';
 
 const messageServiceMock = new MockDotMessageService({
-    Done: 'Done',
-    'experiments.configure.scheduling.start.time': 'Start Time',
-    'experiments.configure.scheduling.end.time': 'End Time',
-    'experiments.configure.scheduling.name': 'Scheduling'
+    Done: 'Done'
 });
 
 const EXPERIMENT_ID = ExperimentMocks[0].id;
-
-describe('DotExperimentsConfigurationSchedulingAddComponent', () => {
-    let spectator: Spectator<DotExperimentsConfigurationSchedulingAddComponent>;
+describe('DotExperimentsConfigurationTrafficAllocationAddComponent', () => {
+    let spectator: Spectator<DotExperimentsConfigurationTrafficAllocationAddComponent>;
     let store: DotExperimentsConfigurationStore;
     let dotExperimentsService: SpyObject<DotExperimentsService>;
     let sidebar: Sidebar;
 
     const createComponent = createComponentFactory({
-        imports: [ButtonModule, CardModule],
-        component: DotExperimentsConfigurationSchedulingAddComponent,
+        imports: [ButtonModule, CardModule, SliderModule, InputTextModule],
+        component: DotExperimentsConfigurationTrafficAllocationAddComponent,
         componentProviders: [],
         providers: [
             DotExperimentsConfigurationStore,
@@ -65,38 +62,24 @@ describe('DotExperimentsConfigurationSchedulingAddComponent', () => {
 
         store.loadExperiment(EXPERIMENT_ID);
         store.setSidebarStatus({
-            experimentStep: ExperimentSteps.SCHEDULING,
+            experimentStep: ExperimentSteps.TRAFFIC,
             isOpen: true
         });
         spectator.detectChanges();
     });
 
-    it('should load scheduling current values', () => {
-        const startDateCalendar: Calendar = spectator.query(Calendar);
-        const endDateCalendar: Calendar = spectator.queryLast(Calendar);
+    it('should load allocation value', () => {
+        const slider: Slider = spectator.query(Slider);
+        const input: HTMLInputElement = spectator.query(byTestId('traffic-allocation-input'));
 
-        expect(startDateCalendar.value.getTime()).toEqual(ExperimentMocks[0].scheduling.startDate);
-        expect(endDateCalendar.value.getTime()).toEqual(ExperimentMocks[0].scheduling.endDate);
+        expect(slider.value).toEqual(ExperimentMocks[0].trafficAllocation);
+        expect(parseInt(input.value)).toEqual(ExperimentMocks[0].trafficAllocation);
     });
 
-    it('should have set the props correctly', () => {
-        const startDateCalendar: Calendar = spectator.query(Calendar);
-        const endDateCalendar: Calendar = spectator.queryLast(Calendar);
-
-        expect(startDateCalendar.stepMinute).toEqual(30);
-        expect(startDateCalendar.readonlyInput).toEqual(true);
-        expect(startDateCalendar.showIcon).toEqual(true);
-        expect(startDateCalendar.showClear).toEqual(true);
-        expect(endDateCalendar.stepMinute).toEqual(30);
-        expect(endDateCalendar.readonlyInput).toEqual(true);
-        expect(endDateCalendar.showIcon).toEqual(true);
-        expect(endDateCalendar.showClear).toEqual(true);
-    });
-
-    it('should save form when is valid', () => {
-        spyOn(store, 'setSelectedScheduling');
+    it('should save form when is valid ', () => {
+        spyOn(store, 'setSelectedAllocation');
         const submitButton = spectator.query(
-            byTestId('add-scheduling-button')
+            byTestId('add-trafficAllocation-button')
         ) as HTMLButtonElement;
 
         expect(submitButton.disabled).toBeFalse();
@@ -104,21 +87,17 @@ describe('DotExperimentsConfigurationSchedulingAddComponent', () => {
         expect(spectator.component.form.valid).toBeTrue();
 
         spectator.click(submitButton);
-        expect(store.setSelectedScheduling).toHaveBeenCalledWith({
-            scheduling: ExperimentMocks[0].scheduling,
+        expect(store.setSelectedAllocation).toHaveBeenCalledWith({
+            trafficAllocation: ExperimentMocks[0].trafficAllocation,
             experimentId: EXPERIMENT_ID
         });
     });
 
-    it('should close sidebar', () => {
+    it('should close sidebar ', () => {
         spyOn(store, 'closeSidebar');
         sidebar = spectator.query(Sidebar);
         sidebar.hide();
 
         expect(store.closeSidebar).toHaveBeenCalledTimes(1);
     });
-
-    //TODO: Will be tested once defined the rules of edit.
-    // eslint-disable-next-line
-    xit('should not submit the form when invalid', () => {});
 });
