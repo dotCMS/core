@@ -16,17 +16,9 @@ export class DotVideoThumbnail {
      */
     @Prop() contentlet: DotContentletItem;
 
-    /**
-     *
-     *
-     * @type {string}
-     * @memberof DotVideoThumbnail
-     */
-    @Prop({ reflect: true }) width: number = null;
-
     render() {
         // If there is a static `width`, there's not need for the image to cover the wrapper
-        return <Host>{this.src && <img class={!this.width && 'cover'} src={this.src} />}</Host>;
+        return <Host>{this.src && <img src={this.src} alt={this.contentlet.title} />}</Host>;
     }
 
     componentDidLoad() {
@@ -38,24 +30,23 @@ export class DotVideoThumbnail {
      * @private
      * @memberof DotVideoThumbnail
      */
-    setVideoThumbnail() {
+    private setVideoThumbnail() {
         const video = document.createElement('video') as HTMLVideoElement;
         video.preload = 'metadata';
-        // The `#t=0.1` is to only download the first frame of the video.
-        // https://stackoverflow.com/questions/7323053/dynamically-using-the-first-frame-as-poster-in-html5-video
-        video.src = `/dA/${this.contentlet.inode}#t=0.1`;
         video.addEventListener('canplaythrough', () => this.createVideoImage(video));
+        /**
+         * The `#t=0.1` is to only download the first frame of the video.
+         * See more about it here: https://stackoverflow.com/questions/7323053/dynamically-using-the-first-frame-as-poster-in-html5-video
+         */
+        video.src = `/dA/${this.contentlet.inode}#t=0.1`;
     }
 
     private createVideoImage(video: HTMLVideoElement) {
         const { videoWidth, videoHeight } = video;
-        // The image thumbnail component is limited to a 500 with
-        const width = this.width ?? (videoWidth < 500 ? videoWidth : 500);
-        const height = this.determineNewHeight(videoHeight, videoWidth, width);
 
-        console.log('this.width', this.width);
-        console.log('width', width);
-        console.log('height', height);
+        // The image thumbnail component is limited to a 500 with
+        const width = videoWidth < 500 ? videoWidth : 500;
+        const height = this.determineNewHeight(videoHeight, videoWidth, width);
 
         const canvas = document.createElement('canvas') as HTMLCanvasElement;
         canvas.width = width;
@@ -74,7 +65,7 @@ export class DotVideoThumbnail {
      * @param originalWidth
      * @param newWidth
      */
-    determineNewHeight(originalHeight, originalWidth, newWidth) {
+    private determineNewHeight(originalHeight, originalWidth, newWidth) {
         return (originalHeight / originalWidth) * newWidth;
     }
 }

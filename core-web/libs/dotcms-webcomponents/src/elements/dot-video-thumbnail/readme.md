@@ -7,7 +7,6 @@
 | Property     | Attribute | Description | Type                | Default     |
 | ------------ | --------- | ----------- | ------------------- | ----------- |
 | `contentlet` | --        |             | `DotContentletItem` | `undefined` |
-| `width`      | `width`   |             | `number`            | `null`      |
 
 ## Dependencies
 

@@ -21,9 +21,6 @@ export class DotContentletThumbnail {
     @Prop({ reflect: true })
     cover = true;
 
-    @Prop({ reflect: true })
-    videoThumbnailWidth: number;
-
     @Prop()
     contentlet: DotContentletItem;
 
@@ -48,10 +45,7 @@ export class DotContentletThumbnail {
         return (
             <Host>
                 {this.isVideoContentlet() ? (
-                    <dot-video-thumbnail
-                        contentlet={this.contentlet}
-                        width={this.videoThumbnailWidth}
-                    />
+                    <dot-video-thumbnail contentlet={this.contentlet} />
                 ) : this.renderImage ? (
                     <div
                         class={`thumbnail ${this.cover && 'cover'}`}
@@ -92,6 +86,6 @@ export class DotContentletThumbnail {
     }
 
     private isVideoContentlet() {
-        return this.contentlet.mimeType.includes('video');
+        return this.contentlet?.mimeType.includes('video');
     }
 }
