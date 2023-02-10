@@ -103,6 +103,7 @@ node_modules/
 /core-web/karma_html
 /core-web/installs
 /core-web/target
+/core-web/~/dotcms/*
 
 # misc
 /core-web/.angular/cache
@@ -134,4 +135,3 @@ dist-docs/
 installs/
 target/
 
-core-web/~/dotcms/*
