@@ -1,16 +1,20 @@
-package com.dotcms.cli.command;
+package com.dotcms.cli.command.contenttype;
 
 import com.dotcms.api.ContentTypeAPI;
 import com.dotcms.api.client.RestClientFactory;
-import com.dotcms.api.provider.ClientObjectMapper;
+import com.dotcms.cli.common.FilterOptionsMixin;
 import com.dotcms.cli.common.OutputOptionMixin;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.model.ResponseEntityView;
-import com.dotcms.model.contenttype.FilterContentTypesRequest;
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableMap;
+import org.apache.commons.lang3.BooleanUtils;
+import org.apache.commons.lang3.StringUtils;
+import picocli.CommandLine;
+import picocli.CommandLine.ArgGroup;
+import picocli.CommandLine.ExitCode;
+import javax.enterprise.context.control.ActivateRequestContext;
+import javax.inject.Inject;
+import javax.ws.rs.NotFoundException;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -18,14 +22,6 @@ import java.text.SimpleDateFormat;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.Callable;
-import javax.enterprise.context.control.ActivateRequestContext;
-import javax.inject.Inject;
-import javax.ws.rs.NotFoundException;
-import org.apache.commons.lang3.BooleanUtils;
-import org.apache.commons.lang3.StringUtils;
-import picocli.CommandLine;
-import picocli.CommandLine.ArgGroup;
-import picocli.CommandLine.ExitCode;
 
 @ActivateRequestContext
 @CommandLine.Command(
@@ -62,7 +58,8 @@ public class ContentTypeCommand implements Callable<Integer> {
         ListOptions list;
 
         @ArgGroup(exclusive = false, order = 40, heading = "\nFilter/Search available Content-Types\n")
-        FilterOptions filter;
+        FilterOptionsMixin filterOptionsMixin;
+        //FilterOptions filter;
 
         @ArgGroup(exclusive = false, order = 50, heading = "\nRemove Unwanted Content-types\n")
         RemoveOptions remove;
@@ -121,6 +118,7 @@ public class ContentTypeCommand implements Callable<Integer> {
      * Here we encapsulate Filter endpoint options
      * This maps directly to POST /api/v1/contenttype/_filter
      */
+    /*
     static class FilterOptions {
 
         @CommandLine.Option(names = {"-f","--filter"},
@@ -148,7 +146,7 @@ public class ContentTypeCommand implements Callable<Integer> {
                 description = "Items per page.", defaultValue = "25")
         Integer pageSize;
 
-    }
+    }*/
 
     static class RemoveOptions {
         @CommandLine.Option(names = {"-rm","--remove"}, order = 51, description = "Remove Content-type by id or var-name", required = true)
@@ -167,29 +165,28 @@ public class ContentTypeCommand implements Callable<Integer> {
     public Integer call() {
 
         final ContentTypeAPI contentTypeAPI = clientFactory.getClient(ContentTypeAPI.class);
-        final ObjectMapper objectMapper = new ClientObjectMapper().getContext(null);
 
         if (isListOptionOn(options.list)) {
             return executeList(contentTypeAPI, options.list);
         }
 
         if (isPullOptionOn(options.pull)) {
-            return executePull(contentTypeAPI, objectMapper, options.pull);
+            return executePull(contentTypeAPI, options.pull);
         }
 
         if (isPushOptionOn(options.push)) {
-            return executePush(contentTypeAPI, objectMapper, options.push);
+            return executePush(contentTypeAPI, options.push);
         }
 
-        if (isFilterOptionOn(options.filter)) {
-            return executeFilter(contentTypeAPI, options.filter);
-        }
+       // if (isFilterOptionOn(options.filter)) {
+         //   return executeFilter(contentTypeAPI, options.filter);
+        //}
 
         if(isRemoveOptionOn(options.remove)){
             return executeRemove(contentTypeAPI, options.remove);
         }
 
-        //We're not supposed to get this far here unless our params are messed up
+        //We're not supposed to get this far unless our params are messed up
         return ExitCode.USAGE;
     }
 
@@ -199,6 +196,7 @@ public class ContentTypeCommand implements Callable<Integer> {
      * @param filter
      * @return
      */
+    /*
     private int executeFilter(final ContentTypeAPI contentTypeAPI, final FilterOptions filter) {
 
         final ResponseEntityView<List<ContentType>> responseEntityView = contentTypeAPI.getContentTypes(
@@ -214,23 +212,25 @@ public class ContentTypeCommand implements Callable<Integer> {
             }
         }
         return ExitCode.OK;
-    }
+    }*/
 
     /**
      * Executes Push option-subcommand
      * @param contentTypeAPI
-     * @param objectMapper
-     * @param pushOptions
+     *
+     * @param options
      * @return
      */
-    private int executePush(final ContentTypeAPI contentTypeAPI, final ObjectMapper objectMapper, final PushOptions pushOptions) {
-        final File file = pushOptions.contentTypeFile;
+    private int executePush(final ContentTypeAPI contentTypeAPI, final PushOptions options) {
+        final File file = options.contentTypeFile;
         if (!file.exists() || !file.canRead()) {
             output.error(String.format(
                     "Unable to read the input file [%s] check that it does exist and that you have read permissions on it.",
-                    pushOptions.contentTypeFile.getAbsolutePath()));
+                    options.contentTypeFile.getAbsolutePath()));
             return ExitCode.SOFTWARE;
         }
+
+        final ObjectMapper objectMapper = output.objectMapper();
 
         try {
 
@@ -266,7 +266,7 @@ public class ContentTypeCommand implements Callable<Integer> {
                         "ContentType identified by @|bold,green [%s]|@ does not exist. Attempting to create it. ",
                         contentType.variable()));
                 final ResponseEntityView<List<ContentType>> responseEntityView = contentTypeAPI.createContentTypes(
-                        ImmutableList.of(contentType));
+                        List.of(contentType));
 
                 output.info(String.format("Content-Type @|bold,green [%s]|@ successfully created.",varNameOrId));
 
@@ -291,30 +291,25 @@ public class ContentTypeCommand implements Callable<Integer> {
     /**
      * Executes Pull option-subcommand
      * @param contentTypeAPI
-     * @param objectMapper
-     * @param pull
+     * @param options
      * @return
      */
-    private int executePull(final ContentTypeAPI contentTypeAPI, final ObjectMapper objectMapper, final PullOptions pull) {
+    private int executePull(final ContentTypeAPI contentTypeAPI, final PullOptions options) {
         try {
-            final ResponseEntityView<ContentType> responseEntityView = contentTypeAPI.getContentType(pull.idOrVar, pull.lang, pull.live);
+            final ResponseEntityView<ContentType> responseEntityView = contentTypeAPI.getContentType(options.idOrVar, options.lang, options.live);
             final ContentType contentType = responseEntityView.entity();
-
+            final ObjectMapper objectMapper = output.objectMapper();
             final String asString = objectMapper.writeValueAsString(contentType);
             output.info(asString);
-            final File saveAs = pull.saveAs;
+            final File saveAs = options.saveAs;
             if(null != saveAs){
-                try {
-                    Files.write( saveAs.toPath(), asString.getBytes());
-                } catch (IOException e) {
-                    output.error(String.format("Error occurred saving the output to the specified file [%s]",saveAs));
-                }
+                Files.write( saveAs.toPath(), asString.getBytes());
             }
 
-        } catch (NotFoundException | JsonProcessingException e) {
+        } catch (IOException | NotFoundException  e) {
             output.error(String.format(
                     "Error occurred while pulling ContentType: [%s] with message: [%s].",
-                    pull.idOrVar, e.getMessage()));
+                    options.idOrVar, e.getMessage()));
             return ExitCode.SOFTWARE;
         }
         return ExitCode.OK;
@@ -365,7 +360,7 @@ public class ContentTypeCommand implements Callable<Integer> {
         try {
             final ResponseEntityView<ContentType> found = contentTypeAPI.getContentType(varNameOrId, null, false);
             return Optional.of(found.entity());
-        }catch (NotFoundException e){
+        }catch ( NotFoundException e){
              //Not relevant
         }
         return Optional.empty();
@@ -385,23 +380,23 @@ public class ContentTypeCommand implements Callable<Integer> {
         );
     }
 
-    private boolean isListOptionOn(final ListOptions list){
-        return list != null && list.list;
+    private boolean isListOptionOn(final ListOptions options){
+        return options != null && options.list;
     }
 
     private boolean isPullOptionOn(final PullOptions options) {
-        return options != null && StringUtils.isNotEmpty(options.idOrVar);
+        return options != null && !options.idOrVar.isEmpty();
     }
 
     private boolean isPushOptionOn(final PushOptions options) {
         return null != options && options.contentTypeFile != null;
     }
-
+/*
     private boolean isFilterOptionOn(final FilterOptions options){
        return options != null && null != options.typeName;
     }
-
+*/
     private boolean isRemoveOptionOn(final RemoveOptions options){
-        return null != options && StringUtils.isNotEmpty(options.idOrVar);
+        return null != options && !options.idOrVar.isEmpty();
     }
 }

@@ -2,6 +2,8 @@ package com.dotcms.cli.command;
 
 import com.dotcms.api.AuthenticationContext;
 import com.dotcms.api.provider.ClientObjectMapper;
+import com.dotcms.api.provider.YAMLMapperSupplier;
+import com.dotcms.cli.command.contenttype.ContentTypeCommand;
 import com.dotcms.contenttype.model.field.DataTypes;
 import com.dotcms.contenttype.model.field.ImmutableBinaryField;
 import com.dotcms.contenttype.model.type.BaseContentType;
@@ -15,6 +17,7 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.Date;
 import javax.inject.Inject;
 import org.junit.jupiter.api.AfterAll;
@@ -51,10 +54,9 @@ public class ContentTypeCommandTest extends CommandTest{
 
     /**
      * Pull single CT by varName
-     * @throws JsonProcessingException
      */
     @Test
-    void Test_Command_Content_List_Option() throws JsonProcessingException {
+    void Test_Command_Content_List_Option() {
 
         final CommandLine commandLine = factory.create();
         final StringWriter writer = new StringWriter();
@@ -87,6 +89,38 @@ public class ContentTypeCommandTest extends CommandTest{
             final ContentType contentType = objectMapper.readValue(output, ContentType.class);
             Assertions.assertNotNull(contentType.variable());
 
+            try {
+                Files.delete(Path.of(fileName));
+            } catch (IOException e) {
+                // Quite
+            }
+        }
+    }
+
+    @Test
+    void Test_Command_Content_Type_Pass_Pull_Then_Push_YML() throws JsonProcessingException {
+
+        final CommandLine commandLine = factory.create();
+        final StringWriter writer = new StringWriter();
+        try (PrintWriter out = new PrintWriter(writer)) {
+            commandLine.setOut(out);
+            final String fileName = String.format("./fileAsset%d.yml", System.currentTimeMillis());
+            int status = commandLine.execute(ContentTypeCommand.NAME, "--pull", "fileAsset", "--saveTo", fileName, "--format","YML");
+            Assertions.assertEquals(ExitCode.OK, status);
+            final String output = writer.toString();
+            //System.out.println(output);
+            final ObjectMapper objectMapper = new YAMLMapperSupplier().get();
+            final ContentType contentType = objectMapper.readValue(output, ContentType.class);
+            Assertions.assertNotNull(contentType.variable());
+
+            status = commandLine.execute(ContentTypeCommand.NAME, "--push", fileName, "--format", "YML");
+            Assertions.assertEquals(ExitCode.OK, status);
+
+            try {
+                Files.delete(Path.of(fileName));
+            } catch (IOException e) {
+                // Quite
+            }
         }
     }
 
