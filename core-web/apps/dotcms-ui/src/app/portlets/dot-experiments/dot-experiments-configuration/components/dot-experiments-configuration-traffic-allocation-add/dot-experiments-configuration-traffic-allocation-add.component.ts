@@ -25,7 +25,7 @@ import { DotSidebarDirective } from '@portlets/shared/directives/dot-sidebar.dir
 import { DotSidebarHeaderComponent } from '@shared/dot-sidebar-header/dot-sidebar-header.component';
 
 @Component({
-    selector: 'dot-dot-experiments-configuration-traffic-allocation-add',
+    selector: 'dot-experiments-configuration-traffic-allocation-add',
     standalone: true,
     imports: [
         CommonModule,
