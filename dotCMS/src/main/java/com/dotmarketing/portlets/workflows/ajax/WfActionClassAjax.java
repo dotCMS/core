@@ -1,14 +1,5 @@
 package com.dotmarketing.portlets.workflows.ajax;
 
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-
-import javax.servlet.ServletException;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.web.UserWebAPI;
 import com.dotmarketing.business.web.WebAPILocator;
@@ -20,6 +11,15 @@ import com.dotmarketing.portlets.workflows.model.WorkflowActionClassParameter;
 import com.dotmarketing.portlets.workflows.model.WorkflowActionletParameter;
 import com.dotmarketing.util.Logger;
 import com.liferay.portal.model.User;
+
+import javax.servlet.ServletException;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 @Deprecated
 public class WfActionClassAjax extends WfBaseAction {
@@ -134,6 +134,17 @@ public class WfActionClassAjax extends WfBaseAction {
 			Logger.error(this.getClass(), e.getMessage(), e);
 			writeError(response, e.getMessage());
 		}
+	}
+
+	/**
+	 * Security check demanded by Sonar
+	 * We register all the allowed methods down here
+	 *
+	 * @return allowed method names
+	 */
+	@Override
+	protected Set<String> getAllowedCommands() {
+		return Set.of("save","add","delete","reorder","action");
 	}
 }
 

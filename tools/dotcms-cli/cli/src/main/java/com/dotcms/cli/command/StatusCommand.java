@@ -6,15 +6,17 @@ import com.dotcms.api.client.DotCmsClientConfig;
 import com.dotcms.api.client.RestClientFactory;
 import com.dotcms.api.client.ServiceManager;
 import com.dotcms.cli.common.OutputOptionMixin;
+import com.dotcms.model.annotation.SecuredPassword;
 import com.dotcms.model.config.ServiceBean;
 import com.dotcms.model.user.User;
+import picocli.CommandLine;
+import picocli.CommandLine.ExitCode;
+
+import javax.enterprise.context.control.ActivateRequestContext;
+import javax.inject.Inject;
 import java.net.URI;
 import java.util.Optional;
 import java.util.concurrent.Callable;
-import javax.enterprise.context.control.ActivateRequestContext;
-import javax.inject.Inject;
-import picocli.CommandLine;
-import picocli.CommandLine.ExitCode;
 
 @ActivateRequestContext
 @CommandLine.Command(
@@ -31,20 +33,20 @@ public class StatusCommand implements Callable<Integer> {
     protected OutputOptionMixin output;
 
     @Inject
+    @SecuredPassword
+    ServiceManager serviceManager;
+
+    @Inject
     RestClientFactory clientFactory;
 
     @Inject
     AuthenticationContext authenticationContext;
 
     @Inject
-    ServiceManager serviceManager;
-
-    @Inject
     DotCmsClientConfig clientConfig;
 
     @Override
     public Integer call() {
-
         final Optional<ServiceBean> optional = serviceManager.services().stream()
                 .filter(ServiceBean::active).findFirst();
 

@@ -1,21 +1,32 @@
+
 package com.dotcms.contenttype.model.field;
 
+import com.dotcms.api.provider.ClientObjectMapper;
+import com.dotcms.contenttype.model.field.Field.ClassNameAliasResolver;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonSubTypes.Type;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.annotation.JsonTypeInfo.Id;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.DatabindContext;
+import com.fasterxml.jackson.databind.JavaType;
+import com.fasterxml.jackson.databind.annotation.JsonTypeIdResolver;
+import com.fasterxml.jackson.databind.jsontype.impl.ClassNameIdResolver;
+import com.fasterxml.jackson.databind.type.TypeFactory;
+import java.io.IOException;
 import java.util.Date;
 import java.util.List;
 import javax.annotation.Nullable;
+import org.immutables.value.Value.Default;
 
 @JsonTypeInfo(
         use = Id.CLASS,
-        include = JsonTypeInfo.As.PROPERTY,
         property = "clazz"
 )
+@JsonTypeIdResolver(value = ClassNameAliasResolver.class)
 @JsonSubTypes({
         @Type(value = StoryBlockField.class),
-        @Type(value = BinaryField.class,name = "BinaryField"),
+        @Type(value = BinaryField.class),
         @Type(value = CategoryField.class),
         @Type(value = CheckboxField.class),
         @Type(value = ConstantField.class),
@@ -46,17 +57,23 @@ import javax.annotation.Nullable;
 })
 public abstract class Field {
 
-    public abstract boolean searchable();
+    @Nullable
+    public abstract Boolean searchable();
 
-    public abstract boolean unique();
+    @Nullable
+    public abstract Boolean unique();
 
-    public abstract boolean indexed();
+    @Nullable
+    public abstract Boolean indexed();
 
-    public abstract boolean listed();
+    @Nullable
+    public abstract Boolean listed();
 
-    public abstract boolean readOnly();
+    @Nullable
+    public abstract Boolean readOnly();
 
-    public abstract boolean forceIncludeInApi();
+    @Nullable
+    public abstract Boolean forceIncludeInApi();
 
     @Nullable
     public abstract String owner();
@@ -67,18 +84,24 @@ public abstract class Field {
     @Nullable
     public abstract String inode();
 
+    @Nullable
     public abstract Date modDate();
 
-    public abstract String name();
+    @Default
+    public String name() {
+        return variable();
+    }
+
+    public abstract String variable();
 
     @Nullable
     public abstract String relationType();
 
-    public abstract boolean required();
+    @Nullable
+    public abstract Boolean required();
 
-    public abstract String variable();
-
-    public abstract int sortOrder();
+    @Nullable
+    public abstract Integer sortOrder();
 
     @Nullable
     public abstract String values();
@@ -92,7 +115,8 @@ public abstract class Field {
     @Nullable
     public abstract String defaultValue();
 
-    public abstract boolean fixed();
+    @Nullable
+    public abstract Boolean fixed();
 
     public abstract DataTypes dataType();
 
@@ -113,5 +137,25 @@ public abstract class Field {
 
     @Nullable
     public abstract List<ContentTypeFieldProperties> fieldContentTypeProperties();
+
+    static class ClassNameAliasResolver extends ClassNameIdResolver {
+
+        static TypeFactory typeFactory = TypeFactory.defaultInstance();
+
+        public ClassNameAliasResolver() {
+            super(typeFactory.constructType(new TypeReference<Field>() {}), typeFactory, ClientObjectMapper.defaultPolymorphicTypeValidator());
+        }
+
+        @Override
+        public JavaType typeFromId(final DatabindContext context, final String id) throws IOException {
+            final String packageName = Field.class.getPackage().getName();
+            if( !id.contains(".") && !id.startsWith(packageName)){
+                final String className = String.format("%s.Immutable%s",packageName,id);
+                return super.typeFromId(context, className);
+            }
+            return super.typeFromId(context, id);
+        }
+
+    }
 
 }

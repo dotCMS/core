@@ -108,7 +108,7 @@ dojo.declare("dotcms.dijit.image.ResizeHandle",
 
 		this.ie =window.top._dotImageEditor;
 		// summary: setup our one major listener upon creation
-		this.connect(this.resizeHandle, "onmousedown", "_beginSizing");
+		this.connect(this.resizeHandle, "pointerdown", "_beginSizing");
 		if(!this.activeResize){ 
 			// there shall be only a single resize rubberbox that at the top
 			// level so that we can overlay it on anything whenever the user
@@ -156,7 +156,6 @@ dojo.declare("dotcms.dijit.image.ResizeHandle",
 
 	_beginSizing: function(/*Event*/ e){
 		// summary: setup movement listeners and calculate initial size
-		
 		if(this._isSizing){ return false; }
 
 		dojo.publish(this.startTopic, [ this ]);
@@ -193,8 +192,8 @@ dojo.declare("dotcms.dijit.image.ResizeHandle",
 		}
 
 		this._pconnects = []; 
-		this._pconnects.push(dojo.connect(this.ie.iframe.dojo.doc,"onmousemove",this,"_updateSizing")); 
-		this._pconnects.push(dojo.connect(this.ie.iframe.dojo.doc,"onmouseup", this, "_endSizing"));
+		this._pconnects.push(dojo.connect(this.ie.iframe.dojo.doc,"pointermove",this,"_updateSizing")); 
+		this._pconnects.push(dojo.connect(this.ie.iframe.dojo.doc,"pointerup", this, "_endSizing"));
 		
 		dojo.stopEvent(e); 
 	},

@@ -133,3 +133,5 @@ dist-docs/
 # Maven
 installs/
 target/
+
+core-web/~/dotcms/*

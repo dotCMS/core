@@ -18,6 +18,7 @@ import { MockDotMessageService } from '@dotcms/utils-testing';
 import { DotExperimentsConfigurationStore } from '@portlets/dot-experiments/dot-experiments-configuration/store/dot-experiments-configuration-store';
 import { DotExperimentsService } from '@portlets/dot-experiments/shared/services/dot-experiments.service';
 import { ExperimentMocks } from '@portlets/dot-experiments/test/mocks';
+import { DotHttpErrorManagerService } from '@services/dot-http-error-manager/dot-http-error-manager.service';
 
 import { DotExperimentsConfigurationGoalSelectComponent } from './dot-experiments-configuration-goal-select.component';
 
@@ -25,6 +26,7 @@ const messageServiceMock = new MockDotMessageService({
     'experiments.configure.goals.sidebar.header': 'Select a goal',
     'experiments.configure.goals.sidebar.header.button': 'Add'
 });
+
 const EXPERIMENT_ID = ExperimentMocks[0].id;
 describe('DotExperimentsConfigurationGoalSelectComponent', () => {
     let spectator: Spectator<DotExperimentsConfigurationGoalSelectComponent>;
@@ -43,7 +45,8 @@ describe('DotExperimentsConfigurationGoalSelectComponent', () => {
             {
                 provide: DotMessageService,
                 useValue: messageServiceMock
-            }
+            },
+            mockProvider(DotHttpErrorManagerService)
         ]
     });
     beforeEach(() => {

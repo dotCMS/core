@@ -3,6 +3,7 @@ import { Observable } from 'rxjs';
 import { ChangeDetectionStrategy, Component, OnInit } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 
+import { DotMessagePipe } from '@dotcms/app/view/pipes';
 import { DotSessionStorageService } from '@dotcms/data-access';
 import {
     DotExperiment,
@@ -20,7 +21,7 @@ import {
     selector: 'dot-experiments-configuration',
     templateUrl: './dot-experiments-configuration.component.html',
     styleUrls: ['./dot-experiments-configuration.component.scss'],
-    providers: [DotExperimentsConfigurationStore],
+    providers: [DotExperimentsConfigurationStore, DotMessagePipe],
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotExperimentsConfigurationComponent implements OnInit {
@@ -50,11 +51,21 @@ export class DotExperimentsConfigurationComponent implements OnInit {
         this.router.navigate(['/edit-page/experiments/', pageId], {
             queryParams: {
                 editPageTab: null,
-                variationName: null,
+                variantName: null,
                 experimentId: null
             },
             queryParamsHandling: 'merge'
         });
+    }
+
+    /**
+     * Run the Experiment
+     * @param {DotExperiment} experiment
+     * @returns void
+     * @memberof DotExperimentsConfigurationVariantsComponent
+     */
+    runExperiment(experiment: DotExperiment) {
+        this.dotExperimentsConfigurationStore.startExperiment(experiment);
     }
 
     /**
@@ -126,7 +137,7 @@ export class DotExperimentsConfigurationComponent implements OnInit {
         this.router.navigate(['edit-page/content'], {
             queryParams: {
                 editPageTab: variant.mode,
-                variationName: variant.variant.id,
+                variantName: variant.variant.id,
                 experimentId: this.route.snapshot.params.experimentId
             },
             queryParamsHandling: 'merge'

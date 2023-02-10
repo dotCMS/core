@@ -22,8 +22,11 @@ const CACHE_CONFIGURATION: CacheConfiguration = {
     dependencies: [path.join(GRADLE_FOLDER, 'caches'), path.join(GRADLE_FOLDER, 'wrapper')],
     buildOutput: [
       path.join(DOTCMS_ROOT, '.gradle'),
+      path.join(DOTCMS_ROOT, 'gradle'),
       path.join(DOTCMS_ROOT, 'build', 'classes'),
-      path.join(DOTCMS_ROOT, 'build', 'resources')
+      path.join(DOTCMS_ROOT, 'build', 'generated'),
+      path.join(DOTCMS_ROOT, 'build', 'resources'),
+      path.join(PROJECT_ROOT, 'dist', 'dotserver')
     ]
   },
   maven: {
@@ -36,9 +39,6 @@ const EMPTY_CACHE_LOCATIONS: CacheLocations = {
   dependencies: [],
   buildOutput: []
 }
-
-//const BUILD_OUTPUT = 'buildOutput'
-//const CACHE_FOLDER = path.join(path.dirname(core.getInput('project_root')), 'cache')
 
 /**
  * Resolves locations to be cached after building core.
@@ -111,11 +111,3 @@ const resolveLocations = (
   core.info(`Resolved ${key} locations: ${resolvedLocations}`)
   cacheLocations[locationKey] = resolvedLocations
 }
-
-/**
- * Decoration function for build output
- *
- * @param location location
- * @returns decorated string
- */
-//const decorateBuildOutput = (location: string): string => path.join(CACHE_FOLDER, location)

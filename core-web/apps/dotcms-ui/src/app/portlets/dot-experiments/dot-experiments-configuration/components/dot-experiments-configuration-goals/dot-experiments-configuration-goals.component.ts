@@ -11,13 +11,14 @@ import { ConfirmPopupModule } from 'primeng/confirmpopup';
 import { tap } from 'rxjs/operators';
 
 import { UiDotIconButtonTooltipModule } from '@components/_common/dot-icon-button-tooltip/dot-icon-button-tooltip.module';
+import { DotMessagePipe } from '@dotcms/app/view/pipes';
 import { DotMessageService } from '@dotcms/data-access';
 import {
+    ComponentStatus,
     ExperimentSteps,
     Goals,
     GOALS_METADATA_MAP,
     GoalsLevels,
-    Status,
     StepStatus
 } from '@dotcms/dotcms-models';
 import { DotIconModule } from '@dotcms/ui';
@@ -46,6 +47,7 @@ import { DotDynamicDirective } from '@portlets/shared/directives/dot-dynamic.dir
     ],
     templateUrl: './dot-experiments-configuration-goals.component.html',
     styleUrls: ['./dot-experiments-configuration-goals.component.scss'],
+    providers: [DotMessagePipe],
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotExperimentsConfigurationGoalsComponent {
@@ -62,7 +64,8 @@ export class DotExperimentsConfigurationGoalsComponent {
     constructor(
         private readonly dotExperimentsConfigurationStore: DotExperimentsConfigurationStore,
         private readonly dotMessageService: DotMessageService,
-        private readonly confirmationService: ConfirmationService
+        private readonly confirmationService: ConfirmationService,
+        private readonly dotMessagePipe: DotMessagePipe
     ) {}
 
     /**
@@ -85,10 +88,12 @@ export class DotExperimentsConfigurationGoalsComponent {
     deleteGoal(event: Event, goalLevel: GoalsLevels, experimentId: string) {
         this.confirmationService.confirm({
             target: event.target,
-            message: this.dotMessageService.get(
+            message: this.dotMessagePipe.transform(
                 'experiments.configure.action.delete.confirm-question'
             ),
             icon: 'pi pi-exclamation-triangle',
+            acceptLabel: this.dotMessagePipe.transform('delete'),
+            rejectLabel: this.dotMessagePipe.transform('dot.common.dialog.reject'),
             accept: () =>
                 this.dotExperimentsConfigurationStore.deleteGoal({ goalLevel, experimentId })
         });
@@ -103,7 +108,7 @@ export class DotExperimentsConfigurationGoalsComponent {
     }
 
     private loadSidebarComponent(status: StepStatus): void {
-        if (status && status.isOpen && status.status != Status.SAVING) {
+        if (status && status.isOpen && status.status != ComponentStatus.SAVING) {
             this.sidebarHost.viewContainerRef.clear();
             this.componentRef =
                 this.sidebarHost.viewContainerRef.createComponent<DotExperimentsConfigurationGoalSelectComponent>(

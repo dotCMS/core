@@ -102,6 +102,7 @@
                                 #variantName
                                 [required]="true"
                                 [value]="variant.name"
+                                (keydown.enter)="editVariantName(variantName.value, variant)"
                                 data-testId="inplace-input"
                                 dotAutofocus
                                 pInputText
