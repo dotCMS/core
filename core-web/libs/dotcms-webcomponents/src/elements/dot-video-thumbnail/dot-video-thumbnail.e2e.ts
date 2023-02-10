@@ -1,7 +1,7 @@
 import { newE2EPage, E2EPage, E2EElement } from '@stencil/core/testing';
 import { contentletMock } from '../../test/mocks';
 
-fdescribe('dot-video-thumbnail', () => {
+describe('dot-video-thumbnail', () => {
     let page: E2EPage;
 
     beforeEach(async () => {
