@@ -11,7 +11,7 @@ import {
     ViewContainerRef
 } from '@angular/core';
 
-import { debounceTime, takeUntil } from 'rxjs/operators';
+import { debounceTime, take, takeUntil } from 'rxjs/operators';
 
 import { AnyExtension, Content, Editor } from '@tiptap/core';
 import CharacterCount, { CharacterCountStorage } from '@tiptap/extension-character-count';
@@ -93,7 +93,7 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy {
 
         this.setEditorJSONContent(content);
     }
-    @Output() updateEditorEvent = new EventEmitter<string>();
+    @Output() valueChange = new EventEmitter<string>();
 
     editor: Editor;
     subject = new Subject();
@@ -133,25 +133,27 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy {
     }
 
     ngOnInit() {
-        from(this.getCustomBlocks()).subscribe((nodes) => {
-            this.editor = new Editor({
-                extensions: [
-                    ...this.getEditorExtensions(),
-                    ...this.getEditorMarks(),
-                    ...this.getEditorNodes(),
-                    ...nodes
-                ]
-            });
+        from(this.getCustomBlocks())
+            .pipe(take(1))
+            .subscribe((nodes) => {
+                this.editor = new Editor({
+                    extensions: [
+                        ...this.getEditorExtensions(),
+                        ...this.getEditorMarks(),
+                        ...this.getEditorNodes(),
+                        ...nodes
+                    ]
+                });
 
-            this.editor.on('create', () => this.updateChartCount());
-            this.subject
-                .pipe(takeUntil(this.destroy$), debounceTime(250))
-                .subscribe(() => this.updateChartCount());
+                this.editor.on('create', () => this.updateChartCount());
+                this.subject
+                    .pipe(takeUntil(this.destroy$), debounceTime(250))
+                    .subscribe(() => this.updateChartCount());
 
-            this.editor.on('update', ({ editor }) => {
-                this.updateEditorEvent.emit(JSON.stringify(editor.getJSON()));
+                this.editor.on('update', ({ editor }) => {
+                    this.valueChange.emit(JSON.stringify(editor.getJSON()));
+                });
             });
-        });
     }
 
     ngOnDestroy() {
@@ -177,6 +179,8 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy {
         try {
             data = JSON.parse(this.customBlocks);
         } catch (e) {
+            console.warn('JSON parse fails, please check the JSON format.');
+
             return [];
         }
 
