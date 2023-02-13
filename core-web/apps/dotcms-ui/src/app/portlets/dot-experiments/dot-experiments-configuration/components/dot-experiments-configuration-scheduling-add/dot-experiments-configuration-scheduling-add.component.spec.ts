@@ -79,6 +79,20 @@ describe('DotExperimentsConfigurationSchedulingAddComponent', () => {
         expect(endDateCalendar.value.getTime()).toEqual(ExperimentMocks[0].scheduling.endDate);
     });
 
+    it('should have set the props correctly', () => {
+        const startDateCalendar: Calendar = spectator.query(Calendar);
+        const endDateCalendar: Calendar = spectator.queryLast(Calendar);
+
+        expect(startDateCalendar.stepMinute).toEqual(30);
+        expect(startDateCalendar.readonlyInput).toEqual(true);
+        expect(startDateCalendar.showIcon).toEqual(true);
+        expect(startDateCalendar.showClear).toEqual(true);
+        expect(endDateCalendar.stepMinute).toEqual(30);
+        expect(endDateCalendar.readonlyInput).toEqual(true);
+        expect(endDateCalendar.showIcon).toEqual(true);
+        expect(endDateCalendar.showClear).toEqual(true);
+    });
+
     it('should save form when is valid', () => {
         spyOn(store, 'setSelectedScheduling');
         const submitButton = spectator.query(

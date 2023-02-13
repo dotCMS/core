@@ -43,9 +43,16 @@ public class Task230119MigrateContentToProperPersonaTagAndRemoveDupTagsTest {
         APILocator.getTagAPI().addContentletTagInode(fakeHipster,
                 bannerWithTag.getInode(), "tags");
 
+        // let's now create a second content but add the good and bad tag to it. The upgrade task shouldn't fail
+        final Contentlet anotherContentWithTag = TestDataUtils.getBannerLikeContent(true, 1);
+        APILocator.getTagAPI().addContentletTagInode(realHipster,
+                anotherContentWithTag.getInode(), "tags");
+        APILocator.getTagAPI().addContentletTagInode(fakeHipster,
+                anotherContentWithTag.getInode(), "tags");
+
         List<Map<String, Object>> resultsBeforeUT = new DotConnect().setSQL("SELECT tagname\n"
                 + "FROM tag_inode JOIN tag t ON tag_inode.tag_id = t.tag_id\n"
-                + "WHERE inode = '" + bannerWithTag.getInode() + "'").loadObjectResults();
+                + "WHERE inode = '" + bannerWithTag.getInode() + "' ORDER BY tagname DESC").loadObjectResults();
 
         // get(1) since get(0) is a test tag created by the TestDataUtils
         Assert.assertEquals(fakeHipsterName, resultsBeforeUT.get(1).get("tagname"));
@@ -54,7 +61,7 @@ public class Task230119MigrateContentToProperPersonaTagAndRemoveDupTagsTest {
 
         List<Map<String, Object>> resultsAfterUT = new DotConnect().setSQL("SELECT tagname\n"
                 + "FROM tag_inode JOIN tag t ON tag_inode.tag_id = t.tag_id\n"
-                + "WHERE inode = '" + bannerWithTag.getInode() + "'").loadObjectResults();
+                + "WHERE inode = '" + bannerWithTag.getInode() + "' ORDER BY tagname DESC").loadObjectResults();
 
         Assert.assertEquals(realHipsterName, resultsAfterUT.get(1).get("tagname"));
 

@@ -8,4 +8,14 @@
         margin-bottom: $spacing-3;
         font-size: $font-size-large;
     }
+
+    ::ng-deep .p-calendar {
+        .p-calendar-clear-icon {
+            padding-left: $spacing-1;
+        }
+
+        .p-inputtext {
+            padding-left: $spacing-5;
+        }
+    }
 }
