@@ -163,6 +163,7 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
         return {
             ...state,
             pages: {
+                ...state.pages,
                 items: [...state.pages.items],
                 actionMenuDomId: null,
                 menuActions: []

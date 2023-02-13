@@ -41,10 +41,10 @@
 
     .p-toggleable-content .p-panel-content {
         column-gap: $font-size-x-large;
-        row-gap: $font-size-x-large;
+        row-gap: $spacing-5;
         display: grid;
         grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-        height: 250px;
+        height: 266px;
         overflow: hidden;
         position: relative;
     }
@@ -66,7 +66,6 @@
     dot-pages-card,
     dot-pages-card-empty {
         min-height: 250px;
-        max-width: 233px;
 
         p-card {
             cursor: pointer;

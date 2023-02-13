@@ -5,7 +5,7 @@ import { Component, ElementRef, OnDestroy, OnInit, ViewChild } from '@angular/co
 import { Menu } from 'primeng/menu';
 
 import { Observable } from 'rxjs/internal/Observable';
-import { takeUntil } from 'rxjs/operators';
+import { filter, takeUntil } from 'rxjs/operators';
 
 import { DotMessageSeverity, DotMessageType } from '@components/dot-message-display/model';
 import { DotMessageDisplayService } from '@components/dot-message-display/services';
@@ -91,10 +91,13 @@ export class DotPagesComponent implements OnInit, OnDestroy {
 
     ngOnInit(): void {
         this.store.actionMenuDomId$
-            .pipe(takeUntil(this.destroy$))
+            .pipe(
+                takeUntil(this.destroy$),
+                filter((actionMenuDomId) => !!actionMenuDomId)
+            )
             .subscribe((actionMenuDomId: string) => {
-                if (actionMenuDomId) {
-                    const target = this.element.nativeElement.querySelector(`#${actionMenuDomId}`);
+                const target = this.element.nativeElement.querySelector(`#${actionMenuDomId}`);
+                if (target) {
                     this.menu.show({ currentTarget: target });
                     this.domIdMenuAttached = actionMenuDomId;
                 }

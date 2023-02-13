@@ -159,14 +159,14 @@ describe('DotPagesListingPanelComponent', () => {
             const elem = de.query(By.css('p-table')).componentInstance;
             expect(elem.scrollable).toBe(true);
             expect(elem.virtualScroll).toBe(true);
-            expect(elem.virtualScrollItemSize).toBe(26);
+            expect(elem.virtualScrollItemSize).toBe(65);
             expect(elem.lazy).toBe(true);
             expect(elem.selectionMode).toBe('single');
             expect(elem.scrollHeight).toBe('flex');
         });
 
         it('should contain header with filter for keyword, language and archived', () => {
-            const elem = de.query(By.css('.dot-pages-listing-header__inputs input'));
+            const elem = de.query(By.css('[data-testId="dot-pages-listing-header__keyword-input"'));
             expect(elem.attributes.dotAutofocus).toBeDefined();
             expect(elem.attributes.placeholder).toBe('Type-To-Search');
             expect(de.query(By.css('.dot-pages-listing-header__inputs p-dropdown'))).toBeTruthy();

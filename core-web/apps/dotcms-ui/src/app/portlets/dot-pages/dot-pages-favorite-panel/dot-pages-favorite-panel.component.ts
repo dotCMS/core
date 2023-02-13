@@ -1,6 +1,6 @@
-import { Observable, Subject } from 'rxjs';
+import { Observable } from 'rxjs';
 
-import { OnDestroy, Component, EventEmitter, Output } from '@angular/core';
+import { Component, EventEmitter, Output } from '@angular/core';
 
 import { DialogService } from 'primeng/dynamicdialog';
 
@@ -16,7 +16,7 @@ import { DotActionsMenuEventParams, FAVORITE_PAGE_LIMIT } from '../dot-pages.com
     templateUrl: './dot-pages-favorite-panel.component.html',
     styleUrls: ['./dot-pages-favorite-panel.component.scss']
 })
-export class DotPagesFavoritePanelComponent implements OnDestroy {
+export class DotPagesFavoritePanelComponent {
     @Output() goToUrl = new EventEmitter<string>();
     @Output() showActionsMenu = new EventEmitter<DotActionsMenuEventParams>();
 
@@ -25,8 +25,6 @@ export class DotPagesFavoritePanelComponent implements OnDestroy {
     timeStamp = this.getTimeStamp();
 
     private currentLimitSize = FAVORITE_PAGE_LIMIT;
-
-    private destroy$: Subject<boolean> = new Subject<boolean>();
 
     constructor(
         private store: DotPageStore,
@@ -79,11 +77,6 @@ export class DotPagesFavoritePanelComponent implements OnDestroy {
                 }
             }
         });
-    }
-
-    ngOnDestroy(): void {
-        this.destroy$.next(true);
-        this.destroy$.complete();
     }
 
     private getTimeStamp() {

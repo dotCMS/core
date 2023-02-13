@@ -2,7 +2,7 @@ import { Observable } from 'rxjs';
 
 import { Component, EventEmitter, Output } from '@angular/core';
 
-import { LazyLoadEvent } from 'primeng/api/lazyloadevent';
+import { LazyLoadEvent } from 'primeng/api';
 
 import { DotMessageService } from '@dotcms/data-access';
 

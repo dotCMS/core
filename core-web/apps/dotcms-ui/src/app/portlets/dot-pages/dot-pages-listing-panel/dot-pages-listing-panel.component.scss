@@ -16,6 +16,10 @@
         background-color: $gray-lighter;
         padding: $spacing-3;
     }
+
+    .p-datatable .p-datatable-tbody tr.dot-pages-listing-content__row {
+        height: 26px;
+    }
 }
 
 .dot-pages-listing-header__inputs {

@@ -132,7 +132,6 @@ describe('DotPagesFavoritePanelComponent', () => {
             expect(
                 elem.nativeElement.classList.contains('dot-pages-panel__empty-state')
             ).toBeTruthy();
-            expect(de.query(By.css('.dot-pages-panel-action__button'))).toBeFalsy();
         });
 
         it('should load empty pages cards container', () => {
@@ -143,9 +142,9 @@ describe('DotPagesFavoritePanelComponent', () => {
             expect(de.query(By.css('.dot-pages-empty__header')).nativeElement.outerText).toBe(
                 'favoritePage.listing.empty.header'
             );
-            expect(de.query(By.css('.dot-pages-empty__container p')).nativeElement.outerText).toBe(
-                'favoritePage.listing.empty.content'
-            );
+            expect(
+                de.query(By.css('[data-testId="dot-pages-empty__content"')).nativeElement.outerText
+            ).toBe('favoritePage.listing.empty.content');
         });
     });
 

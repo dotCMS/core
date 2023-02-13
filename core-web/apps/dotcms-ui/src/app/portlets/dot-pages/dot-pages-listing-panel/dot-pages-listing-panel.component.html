@@ -3,7 +3,7 @@
     [value]="vm.pages.items"
     [scrollable]="true"
     [virtualScroll]="true"
-    [virtualScrollItemSize]="26"
+    [virtualScrollItemSize]="65"
     [lazy]="true"
     (onLazyLoad)="loadPagesLazy($event)"
     (onRowSelect)="onRowSelect($event)"
@@ -16,6 +16,7 @@
                 <input
                     [placeholder]="'Type-To-Search' | dm"
                     (input)="filterData($event.target.value)"
+                    data-testid="dot-pages-listing-header__keyword-input"
                     type="text"
                     pInputText
                     dotAutofocus
@@ -63,10 +64,8 @@
         </tr>
     </ng-template>
     <ng-template pTemplate="body" let-rowData let-columns="columns" let-rowIndex="rowIndex">
-        <tr [pSelectableRow]="rowData" style="height: 26px">
-            <td>
-                {{ rowData['title'] }}
-            </td>
+        <tr class="dot-pages-listing-content__row" [pSelectableRow]="rowData">
+            <td>{{ rowData['title'] }}</td>
             <td [pTooltip]="rowData['urlMap'] || rowData['url']" tooltipPosition="bottom">
                 {{ rowData['urlMap'] || rowData['url'] }}
             </td>
@@ -111,7 +110,7 @@
         </tr>
     </ng-template>
     <ng-template pTemplate="loadingbody">
-        <tr style="height: 26px">
+        <tr>
             <td><p-skeleton [ngStyle]="{ width: '25%' }"></p-skeleton></td>
             <td><p-skeleton [ngStyle]="{ width: '20%' }"></p-skeleton></td>
             <td><p-skeleton [ngStyle]="{ width: '12%' }"></p-skeleton></td>
