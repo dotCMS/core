@@ -1,6 +1,6 @@
 import { Component, Input, ViewEncapsulation } from '@angular/core';
 
-import { LoadingState } from '@dotcms/dotcms-models';
+import { ComponentStatus } from '@dotcms/dotcms-models';
 import { DotLoadingIndicatorService } from '@dotcms/utils';
 
 @Component({
@@ -13,14 +13,14 @@ export class DotLoadingIndicatorComponent {
     @Input()
     fullscreen: boolean;
 
+    constructor(public dotLoadingIndicatorService: DotLoadingIndicatorService) {}
+
     @Input()
-    set show(status: LoadingState) {
-        if (status === LoadingState.LOADING || status === LoadingState.INIT) {
+    set show(status: ComponentStatus) {
+        if (status === ComponentStatus.LOADING || status === ComponentStatus.INIT) {
             this.dotLoadingIndicatorService.show();
         } else {
             this.dotLoadingIndicatorService.hide();
         }
     }
-
-    constructor(public dotLoadingIndicatorService: DotLoadingIndicatorService) {}
 }

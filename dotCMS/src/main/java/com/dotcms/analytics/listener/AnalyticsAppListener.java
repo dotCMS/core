@@ -83,7 +83,7 @@ public final class AnalyticsAppListener implements EventSubscriber<AppSecretSave
                     .of(() -> hostAPI.find(event.getHostIdentifier(), APILocator.systemUser(), false))
                     .getOrElse((Host) null);
                 Optional.ofNullable(host)
-                    .map(AnalyticsHelper::appFromHost)
+                    .map(site -> AnalyticsHelper.get().appFromHost(site))
                     .ifPresent(app -> {
                         try {
                             // reset analytics key
@@ -91,7 +91,7 @@ public final class AnalyticsAppListener implements EventSubscriber<AppSecretSave
 
                             // reset access token when is NOOP, is this the right place?
                             Optional.ofNullable(analyticsAPI.getAccessToken(app))
-                                .filter(AnalyticsHelper::isTokenNoop)
+                                .filter(appplication -> AnalyticsHelper.get().isTokenNoop(appplication))
                                 .ifPresent(token -> analyticsAPI.resetAccessToken(app));
                         } catch (AnalyticsException e) {
                             Logger.error(

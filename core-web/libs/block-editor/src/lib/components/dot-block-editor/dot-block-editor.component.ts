@@ -1,8 +1,17 @@
-import { Subject } from 'rxjs';
+import { Subject, from } from 'rxjs';
 
-import { Component, Injector, Input, OnDestroy, OnInit, ViewContainerRef } from '@angular/core';
+import {
+    Component,
+    EventEmitter,
+    Injector,
+    Input,
+    OnDestroy,
+    OnInit,
+    Output,
+    ViewContainerRef
+} from '@angular/core';
 
-import { debounceTime, takeUntil } from 'rxjs/operators';
+import { debounceTime, take, takeUntil } from 'rxjs/operators';
 
 import { AnyExtension, Content, Editor } from '@tiptap/core';
 import CharacterCount, { CharacterCountStorage } from '@tiptap/extension-character-count';
@@ -14,6 +23,8 @@ import { TableRow } from '@tiptap/extension-table-row';
 import { TextAlign } from '@tiptap/extension-text-align';
 import { Underline } from '@tiptap/extension-underline';
 import StarterKit, { StarterKitOptions } from '@tiptap/starter-kit';
+
+import { CustomBlock } from '@dotcms/dotcms-models';
 
 import {
     ActionsMenu,
@@ -30,7 +41,6 @@ import {
     BubbleAssetFormExtension,
     ImageUpload
 } from '../../extensions';
-
 import { ContentletBlock, ImageNode, VideoNode } from '../../nodes';
 import { formatHTML, removeInvalidNodes, SetDocAttrStep } from '../../shared/utils';
 
@@ -51,6 +61,7 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy {
     @Input() customStyles: string;
     @Input() displayCountBar: boolean | string = true;
     @Input() charLimit: number;
+    @Input() customBlocks: string;
     @Input() content: Content = '';
 
     @Input() set allowedBlocks(blocks: string) {
@@ -68,6 +79,7 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy {
 
         this.setEditorJSONContent(content);
     }
+    @Output() valueChange = new EventEmitter<string>();
 
     editor: Editor;
     subject = new Subject();
@@ -102,19 +114,32 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy {
 
     constructor(private injector: Injector, public viewContainerRef: ViewContainerRef) {}
 
-    ngOnInit() {
-        this.editor = new Editor({
-            extensions: [
-                ...this.getEditorExtensions(),
-                ...this.getEditorMarks(),
-                ...this.getEditorNodes()
-            ]
-        });
+    async loadCustomBlocks(urls: string[]) {
+        return Promise.all(urls.map(async (url) => import(/* webpackIgnore: true */ url)));
+    }
 
-        this.editor.on('create', () => this.updateChartCount());
-        this.subject
-            .pipe(takeUntil(this.destroy$), debounceTime(250))
-            .subscribe(() => this.updateChartCount());
+    ngOnInit() {
+        from(this.getCustomBlocks())
+            .pipe(take(1))
+            .subscribe((nodes) => {
+                this.editor = new Editor({
+                    extensions: [
+                        ...this.getEditorExtensions(),
+                        ...this.getEditorMarks(),
+                        ...this.getEditorNodes(),
+                        ...nodes
+                    ]
+                });
+
+                this.editor.on('create', () => this.updateChartCount());
+                this.subject
+                    .pipe(takeUntil(this.destroy$), debounceTime(250))
+                    .subscribe(() => this.updateChartCount());
+
+                this.editor.on('update', ({ editor }) => {
+                    this.valueChange.emit(JSON.stringify(editor.getJSON()));
+                });
+            });
     }
 
     ngOnDestroy() {
@@ -128,6 +153,37 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy {
             .step(new SetDocAttrStep('wordCount', this.characterCount.words()))
             .step(new SetDocAttrStep('readingTime', this.readingTime));
         this.editor.view.dispatch(tr);
+    }
+
+    /**
+     * This methods get the customBlocks variable to retrieve the custom modules as Objects.
+     * Validates that there is customBlocks defined.
+     */
+
+    private async getCustomBlocks(): Promise<AnyExtension[]> {
+        let data: CustomBlock;
+        try {
+            data = JSON.parse(this.customBlocks);
+        } catch (e) {
+            console.warn('JSON parse fails, please check the JSON format.');
+
+            return [];
+        }
+
+        const extensionUrls = data.extensions.map((extension) => extension.url);
+        const customModules = await this.loadCustomBlocks(extensionUrls);
+        const blockNames = [];
+
+        data.extensions.forEach((extension) => {
+            blockNames.push(...extension.actions.map((item) => item.name));
+        });
+
+        const moduleObj = customModules.reduce(
+            (prevModule, module) => ({ ...prevModule, ...module }),
+            {}
+        );
+
+        return blockNames.map((block) => moduleObj[block]);
     }
 
     private getEditorNodes(): AnyExtension[] {

@@ -44,7 +44,7 @@ public class AnalyticsTestUtils {
                 Config.getStringProperty(ANALYTICS_APP_READ_URL_KEY, "http://localhost"))
             .build();
         APILocator.getAppsAPI().saveSecrets(appSecrets, host, APILocator.systemUser());
-        return AnalyticsHelper.appFromHost(host);
+        return AnalyticsHelper.get().appFromHost(host);
     }
 
     public static AnalyticsApp prepareAnalyticsApp(final Host host) throws Exception {

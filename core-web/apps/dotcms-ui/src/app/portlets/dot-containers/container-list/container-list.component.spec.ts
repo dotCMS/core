@@ -193,10 +193,10 @@ class ActivatedRouteMock {
 }
 
 @Component({
-    selector: 'dot-base-type-selector',
+    selector: 'dot-content-type-selector',
     template: ''
 })
-class MockDotBaseTypeSelectorComponent {
+class MockDotContentTypeSelectorComponent {
     @Input() value: SelectItem;
     @Output() selected = new EventEmitter<string>();
 }
@@ -212,14 +212,14 @@ describe('ContainerListComponent', () => {
     let unPublishContainer: DotActionMenuButtonComponent;
     let publishContainer: DotActionMenuButtonComponent;
     let archivedContainer: DotActionMenuButtonComponent;
-    let baseTypesSelector: MockDotBaseTypeSelectorComponent;
+    let contentTypesSelector: MockDotContentTypeSelectorComponent;
     let dotContainersService: DotContainersService;
 
     const messageServiceMock = new MockDotMessageService(messages);
 
     beforeEach(async () => {
         await TestBed.configureTestingModule({
-            declarations: [ContainerListComponent, MockDotBaseTypeSelectorComponent],
+            declarations: [ContainerListComponent, MockDotContentTypeSelectorComponent],
             providers: [
                 { provide: DotMessageService, useValue: messageServiceMock },
                 {
@@ -357,16 +357,19 @@ describe('ContainerListComponent', () => {
         });
     });
 
-    it('should emit changes in base types selector', () => {
+    it('should emit changes in content types selector', () => {
         fixture.detectChanges();
-        baseTypesSelector = fixture.debugElement.query(
-            By.css('dot-base-type-selector')
+        contentTypesSelector = fixture.debugElement.query(
+            By.css('dot-content-type-selector')
         ).componentInstance;
         spyOn(comp.listing.paginatorService, 'setExtraParams');
         spyOn(comp.listing, 'loadFirstPage');
-        baseTypesSelector.selected.emit('test');
+        contentTypesSelector.selected.emit('test');
 
-        expect(comp.listing.paginatorService.setExtraParams).toHaveBeenCalledWith('type', 'test');
+        expect(comp.listing.paginatorService.setExtraParams).toHaveBeenCalledWith(
+            'content_type',
+            'test'
+        );
         expect(comp.listing.loadFirstPage).toHaveBeenCalledWith();
     });
 

@@ -13,7 +13,7 @@ import { SidebarModule } from 'primeng/sidebar';
 import { take } from 'rxjs/operators';
 
 import { DotFieldValidationMessageModule } from '@components/_common/dot-field-validation-message/dot-file-validation-message.module';
-import { RangeOfDateAndTime, Status, StepStatus } from '@dotcms/dotcms-models';
+import { ComponentStatus, RangeOfDateAndTime, StepStatus } from '@dotcms/dotcms-models';
 import { DotMessagePipeModule } from '@pipes/dot-message/dot-message-pipe.module';
 import { DotExperimentsConfigurationStore } from '@portlets/dot-experiments/dot-experiments-configuration/store/dot-experiments-configuration-store';
 import { DotSidebarDirective } from '@portlets/shared/directives/dot-sidebar.directive';
@@ -44,9 +44,10 @@ import { DotSidebarHeaderComponent } from '@shared/dot-sidebar-header/dot-sideba
 export class DotExperimentsConfigurationSchedulingAddComponent implements OnInit {
     form: FormGroup;
     scheduling: RangeOfDateAndTime;
-    stepStatus = Status;
+    stepStatus = ComponentStatus;
 
     today = new Date();
+    initialDate = new Date();
 
     vm$: Observable<{ experimentId: string; scheduling: RangeOfDateAndTime; status: StepStatus }> =
         this.dotExperimentsConfigurationStore.schedulingStepVm$;
@@ -56,6 +57,7 @@ export class DotExperimentsConfigurationSchedulingAddComponent implements OnInit
     ) {}
 
     ngOnInit(): void {
+        this.setInitialDate();
         this.initForm();
     }
 
@@ -96,5 +98,14 @@ export class DotExperimentsConfigurationSchedulingAddComponent implements OnInit
                 )
             });
         });
+    }
+
+    private setInitialDate(): void {
+        if (this.initialDate.getMinutes() > 30) {
+            this.initialDate.setMinutes(0);
+            this.initialDate.setHours(this.initialDate.getHours() + 1);
+        } else {
+            this.initialDate.setMinutes(30);
+        }
     }
 }

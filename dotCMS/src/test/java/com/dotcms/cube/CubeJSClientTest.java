@@ -115,7 +115,7 @@ public class CubeJSClientTest {
 
         try {
             IPUtils.disabledIpPrivateSubnet(true);
-
+            
             final CubeJSQuery cubeJSQuery = new Builder()
                     .dimensions("Events.experiment", "Events.variant")
                     .build();

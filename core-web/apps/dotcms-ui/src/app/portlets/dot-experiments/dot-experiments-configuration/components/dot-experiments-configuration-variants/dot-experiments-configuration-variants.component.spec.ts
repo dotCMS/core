@@ -12,11 +12,11 @@ import { DotCopyButtonComponent } from '@components/dot-copy-button/dot-copy-but
 import { DotCopyButtonModule } from '@components/dot-copy-button/dot-copy-button.module';
 import { DotMessageService } from '@dotcms/data-access';
 import {
+    ComponentStatus,
     DEFAULT_VARIANT_ID,
     DEFAULT_VARIANT_NAME,
     ExperimentSteps,
     SidebarStatus,
-    Status,
     Variant
 } from '@dotcms/dotcms-models';
 import { MockDotMessageService } from '@dotcms/utils-testing';
@@ -72,7 +72,7 @@ describe('DotExperimentsConfigurationVariantsComponent', () => {
         it('a DEFAULT variant', () => {
             const variantsVm = {
                 stepStatus: {
-                    status: Status.IDLE,
+                    status: ComponentStatus.IDLE,
                     experimentStep: ExperimentSteps.VARIANTS,
                     isOpen: false
                 },
@@ -95,7 +95,7 @@ describe('DotExperimentsConfigurationVariantsComponent', () => {
         it('should load the variant(s)', () => {
             const variantsVm = {
                 stepStatus: {
-                    status: Status.IDLE,
+                    status: ComponentStatus.IDLE,
                     experimentStep: ExperimentSteps.VARIANTS,
                     isOpen: false
                 },
@@ -160,7 +160,7 @@ describe('DotExperimentsConfigurationVariantsComponent', () => {
     describe('interactions', () => {
         const variantsVm = {
             stepStatus: {
-                status: Status.IDLE,
+                status: ComponentStatus.IDLE,
                 experimentStep: ExperimentSteps.VARIANTS,
                 isOpen: false
             },
@@ -226,7 +226,7 @@ describe('DotExperimentsConfigurationVariantsComponent', () => {
         it('should edit output emit the new name', () => {
             spectator.component.vm$ = of({
                 status: {
-                    status: Status.IDLE,
+                    status: ComponentStatus.IDLE,
                     isOpen: false,
                     experimentStep: ExperimentSteps.GOAL
                 }
@@ -272,7 +272,7 @@ describe('DotExperimentsConfigurationVariantsComponent', () => {
 
             spectator.component.vm$ = of({
                 status: {
-                    status: Status.IDLE,
+                    status: ComponentStatus.IDLE,
                     isOpen: false,
                     experimentStep: ExperimentSteps.GOAL
                 }
@@ -310,7 +310,7 @@ describe('DotExperimentsConfigurationVariantsComponent', () => {
 
             spectator.component.vm$ = of({
                 status: {
-                    status: Status.SAVING,
+                    status: ComponentStatus.SAVING,
                     isOpen: false,
                     experimentStep: ExperimentSteps.GOAL
                 }

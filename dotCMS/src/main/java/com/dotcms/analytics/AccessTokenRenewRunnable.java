@@ -77,7 +77,7 @@ public class AccessTokenRenewRunnable implements Runnable {
 
         boolean restore = false;
         final AccessToken found = analyticsAPI.getAccessToken(analyticsApp);
-        final AccessToken blocked = AnalyticsHelper.createBlockedToken(
+        final AccessToken blocked = AnalyticsHelper.get().createBlockedToken(
             analyticsApp,
             "ACCESS_TOKEN is blocked due to access token renew");
         if (tokenStatus == TokenStatus.EXPIRED) {
@@ -94,7 +94,7 @@ public class AccessTokenRenewRunnable implements Runnable {
                     this,
                     String.format("Unrecoverable error while renewing ACCESS_TOKEN for clientId %s", clientId),
                     e);
-                final AccessToken noop = AnalyticsHelper.createNoopToken(
+                final AccessToken noop = AnalyticsHelper.get().createNoopToken(
                     analyticsApp,
                     String.format("Setting NOOP ACCESS_TOKEN for clientId %s due to %s", clientId, e.getMessage()));
                 analyticsCache.putAccessToken(noop);

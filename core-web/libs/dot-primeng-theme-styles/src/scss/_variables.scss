@@ -1,13 +1,59 @@
 @use "sass:math";
 
-/*
-* Variable names convention:
-* element-property-state
-*/
+// NEW COLORS WIP
 
-// COLORS
+$color-primary-800: var(--color-background);
+$color-primary-700: #34408b;
+$color-primary-600: #4656ba;
+$color-primary-500: var(--color-main); // brand primary
+$color-primary-400: #819eee;
+$color-primary-300: #bccbf6;
+$color-primary-200: #edf3ff;
+$color-primary-100: #f7f9fe;
+
+$color-secondary-700: #5b2b99;
+$color-secondary-600: #7939cc;
+$color-secondary-500: var(--color-sec); // brand secondary
+$color-secondary-400: #b175ff;
+$color-secondary-300: #cba3ff;
+$color-secondary-200: #e5d1ff;
+$color-secondary-100: #f5edff;
+$color-secondary-000: #faf6ff;
+
+$color-gray-600: #4d5062;
+$color-gray-500: #888a97;
+$color-gray-400: #c3c5cb;
+$color-gray-300: #e7e8ea;
+$color-gray-200: #f3f3f4;
+$color-gray-100: #fafafb;
+
+$color-alert-blue: $color-primary-500;
+$color-alert-blue-light: $color-primary-100;
+$color-alert-yellow: #ffb444;
+$color-alert-yellow-light: #fff8ec;
+$color-alert-green: #3ed97a;
+$color-alert-green-light: #f5fdf8;
+$color-alert-red: #f65446;
+$color-alert-red-light: #fff6f6;
+
+$color-accessible-text-red: #d82b2e;
+$color-accessible-text-red-bg: $color-alert-green-light;
+$color-accessible-text-green: #0b6948;
+$color-accessible-text-green-bg: $color-alert-green-light;
+$color-accessible-text-purple: $color-secondary-600;
+$color-accessible-text-purple-bg: $color-secondary-000;
+$color-accessible-text-blue: $color-primary-600;
+$color-accessible-text-blue-bg: $color-primary-200;
+$color-accessible-text-yellow: #bc5b0d;
+$color-accessible-text-yellow-bg: $color-alert-yellow-light;
+$color-accessible-text-gray: $color-gray-600;
+$color-accessible-text-gray-bg: $color-gray-100;
+
+// END OF NEW COLORS
+
+// OLD COLORS
 $dark: #1b3359;
-$black: #0a0725;
+$black: #11152e;
 $orange: #f3762a;
 $white: #ffffff;
 $red: #c93926;
@@ -27,8 +73,7 @@ $white_rgb: var(--color-white_rgb);
 $brand-primary: var(--color-main);
 $brand-primary_mod: var(--color-main_mod);
 $brand-primary_rgb: var(--color-main_rgb);
-$brand-primary-100: #e9ebfc;
-$brand-primary-100-hover: #d2d6f9;
+
 $brand-secondary: var(--color-sec);
 $brand-secondary_rgb: var(--color-sec_rgb);
 $brand-background: var(--color-background);
@@ -106,6 +151,7 @@ $body-font-color: $black;
 $md-icon-size-normal: 18px;
 $md-icon-size-tiny: 14px;
 $md-icon-size-big: 24px;
+$md-icon-size-extra-big: 2rem;
 
 // ANIMATION
 $basic-speed: 150ms;
@@ -118,6 +164,7 @@ $navigation-item-height: 48px;
 $navigation-width: 200px;
 $navigation-width-collased: 70px;
 $content-palette-width: 16rem;
+$experiment-header-height: 68px;
 
 //Dot Secondary Toolbar
 $dot-secondary-toolbar-height: 52px;
@@ -170,3 +217,6 @@ $card-min-height: 42px;
 
 // TabView
 $tabView-scroll-btn-width: 40px;
+
+// Tag
+$tag-radius-md: 7px;
