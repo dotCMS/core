@@ -839,6 +839,7 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 	 * Returns a map of the contentlet properties based on the fields of the structure
 	 * The keys used in the map will be the velocity variables names
 	 */
+	@JsonIgnore
 	public Map<String, Object> getMap() throws DotRuntimeException {
 
         try {
