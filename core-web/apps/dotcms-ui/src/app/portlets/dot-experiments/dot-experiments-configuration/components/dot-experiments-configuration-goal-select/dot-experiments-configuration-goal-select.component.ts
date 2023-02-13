@@ -11,11 +11,11 @@ import { SidebarModule } from 'primeng/sidebar';
 
 import { DotFieldValidationMessageModule } from '@components/_common/dot-field-validation-message/dot-file-validation-message.module';
 import {
+    ComponentStatus,
     DefaultGoalConfiguration,
     ExperimentsGoalsList,
     Goals,
     GoalSelectOption,
-    Status,
     StepStatus
 } from '@dotcms/dotcms-models';
 import { DotMessagePipeModule } from '@pipes/dot-message/dot-message-pipe.module';
@@ -47,7 +47,7 @@ import { DotSidebarHeaderComponent } from '@shared/dot-sidebar-header/dot-sideba
 export class DotExperimentsConfigurationGoalSelectComponent implements OnInit {
     form: FormGroup;
     goalsList: Array<GoalSelectOption> = ExperimentsGoalsList;
-    statusList = Status;
+    statusList = ComponentStatus;
 
     vm$: Observable<{ experimentId: string; goals: Goals; status: StepStatus }> =
         this.dotExperimentsConfigurationStore.goalsStepVm$;

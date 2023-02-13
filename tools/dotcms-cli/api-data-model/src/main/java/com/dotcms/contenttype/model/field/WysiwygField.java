@@ -9,4 +9,10 @@ import org.immutables.value.Value;
 @JsonDeserialize(as = ImmutableWysiwygField.class)
 public abstract class WysiwygField extends Field {
 
+    @Value.Default
+    @Override
+    public DataTypes dataType() {
+        return DataTypes.LONG_TEXT;
+    };
+
 }

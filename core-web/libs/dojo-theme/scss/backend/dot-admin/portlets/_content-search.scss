@@ -25,9 +25,11 @@
 }
 
 .content-search__show-query-dialog {
-    .dijitDialogTitleBar {
-        height: 0px;
-        z-index: 1;
+    .dijitDialogPaneContent {
+        padding: 0;
+    }
+    #queryResults {
+        padding: 16px;
     }
 }
 

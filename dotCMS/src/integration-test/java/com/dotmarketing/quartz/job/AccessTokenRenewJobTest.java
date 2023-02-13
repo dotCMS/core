@@ -153,7 +153,7 @@ public class AccessTokenRenewJobTest extends IntegrationTestBase {
     public void test_accessTokenRenew_whenNoop() throws Exception {
         final String reason = "some-reason";
         final String clientId = analyticsApp.getAnalyticsProperties().clientId();
-        analyticsCache.putAccessToken(AnalyticsHelper.createNoopToken(analyticsApp, reason).withClientId(clientId));
+        analyticsCache.putAccessToken(AnalyticsHelper.get().createNoopToken(analyticsApp, reason).withClientId(clientId));
 
         accessTokenRenewJob.execute(getJobContext());
         Thread.sleep(2000);
@@ -172,7 +172,7 @@ public class AccessTokenRenewJobTest extends IntegrationTestBase {
     public void test_accessTokenRenew_whenBlocked() throws Exception {
         final String reason = "some-reason";
         final String clientId = analyticsApp.getAnalyticsProperties().clientId();
-        analyticsCache.putAccessToken(AnalyticsHelper.createBlockedToken(analyticsApp, reason).withClientId(clientId));
+        analyticsCache.putAccessToken(AnalyticsHelper.get().createBlockedToken(analyticsApp, reason).withClientId(clientId));
 
         accessTokenRenewJob.execute(getJobContext());
         Thread.sleep(2000);

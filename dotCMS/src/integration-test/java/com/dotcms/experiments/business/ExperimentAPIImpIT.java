@@ -1,40 +1,84 @@
 package com.dotcms.experiments.business;
 
 import static com.dotcms.experiments.model.AbstractExperimentVariant.ORIGINAL_VARIANT;
+import static com.dotcms.util.CollectionsUtils.list;
+import static com.dotcms.util.CollectionsUtils.map;
 import static com.dotcms.variant.VariantAPI.DEFAULT_VARIANT;
 import static junit.framework.TestCase.assertEquals;
 import static junit.framework.TestCase.assertTrue;
 import static org.junit.Assert.assertFalse;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
+import com.dotcms.analytics.app.AnalyticsApp;
+import com.dotcms.analytics.helper.AnalyticsHelper;
+import com.dotcms.analytics.metrics.AbstractCondition.Operator;
+import com.dotcms.analytics.metrics.Condition;
+import com.dotcms.analytics.metrics.EventType;
+import com.dotcms.analytics.metrics.Metric;
+import com.dotcms.analytics.metrics.MetricType;
+import com.dotcms.analytics.model.AbstractAnalyticsProperties;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.datagen.ContainerDataGen;
 import com.dotcms.datagen.ContentTypeDataGen;
 import com.dotcms.datagen.ContentletDataGen;
 import com.dotcms.datagen.ExperimentDataGen;
+import com.dotcms.datagen.HTMLPageDataGen;
 import com.dotcms.datagen.MultiTreeDataGen;
-import com.dotcms.datagen.TestDataUtils;
+import com.dotcms.datagen.SiteDataGen;
+import com.dotcms.datagen.TemplateDataGen;
+import com.dotcms.exception.NotAllowedException;
+import com.dotcms.experiments.business.result.BrowserSession;
+import com.dotcms.experiments.business.result.ExperimentResults;
+import com.dotcms.experiments.business.result.ExperimentResults.VariantResult;
+import com.dotcms.experiments.business.result.ExperimentResult;
+import com.dotcms.experiments.business.result.ExperimentResult.GoalResult;
 import com.dotcms.experiments.model.AbstractExperiment.Status;
 import com.dotcms.experiments.model.Experiment;
 import com.dotcms.experiments.model.ExperimentVariant;
+import com.dotcms.experiments.model.Goals;
+import com.dotcms.http.server.mock.MockHttpServer;
+import com.dotcms.http.server.mock.MockHttpServerContext;
 import com.dotcms.util.IntegrationTestInitService;
+import com.dotcms.util.JsonUtil;
+import com.dotcms.util.network.IPUtils;
 import com.dotcms.variant.model.Variant;
+import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
+import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
-import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
+import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.UtilMethods;
+import com.google.common.collect.ImmutableList;
+
 import com.liferay.portal.model.User;
+import com.liferay.util.StringPool;
 import io.vavr.control.Try;
+import java.net.HttpURLConnection;
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
+import java.util.ArrayList;
+
+import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
+import net.bytebuddy.utility.RandomString;
+import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
+/**
+ * Test of {@link ExperimentsAPIImpl}
+ */
 public class ExperimentAPIImpIT {
 
     @BeforeClass
@@ -152,8 +196,9 @@ public class ExperimentAPIImpIT {
 
             List<Contentlet> experimentContentlets = APILocator.getContentletAPI()
                     .getAllContentByVariants(APILocator.systemUser(),
-                            false, newExperiment.trafficProportion().variants()
-                                    .stream().map(ExperimentVariant::id).toArray(String[]::new));
+                            false, newExperiment.trafficProportion().variants().stream()
+                                    .map(ExperimentVariant::id).filter((id) -> !id.equals(DEFAULT_VARIANT.name()))
+                                    .toArray(String[]::new));
 
             experimentContentlets.forEach((contentlet -> {
                 assertTrue(Try.of(contentlet::isLive).getOrElse(false));
@@ -167,59 +212,6 @@ public class ExperimentAPIImpIT {
                     , APILocator.systemUser());
         }
 
-    }
-
-    /**
-     * Method to test: {@link ExperimentsAPI#addVariant(String, String, User)} (String, User)}
-     * When: The {@link com.dotcms.experiments.model.AbstractExperimentVariant#ORIGINAL_VARIANT} variant is created
-     * Should: copy the page and the contentlet related to the page in the new variant
-     */
-    @Test
-    public void testAddOriginalVariant_shouldCopyPageAndContentletToVariant()
-            throws DotDataException, DotSecurityException {
-        final HTMLPageAsset page = APILocator.getHTMLPageAssetAPI().fromContentlet(
-                TestDataUtils.getPageContent(true, 1));
-        ContentletDataGen.publish(page);
-
-        final Container container = new ContainerDataGen().nextPersisted();
-
-        final ContentType contentType = new ContentTypeDataGen().nextPersisted();
-
-        final Contentlet content1 = new ContentletDataGen(contentType)
-                .nextPersisted();
-        ContentletDataGen.publish(content1);
-
-        final Contentlet content2 = new ContentletDataGen(contentType)
-                .nextPersisted();
-        ContentletDataGen.publish(content2);
-
-        final Contentlet content3 = new ContentletDataGen(contentType)
-                .nextPersisted();
-        ContentletDataGen.publish(content3);
-
-        new MultiTreeDataGen().setPage(page).setContainer(container)
-                .setContentlet(content1).nextPersisted();
-
-        new MultiTreeDataGen().setPage(page).setContainer(container)
-                .setContentlet(content2).nextPersisted();
-
-        new MultiTreeDataGen().setPage(page).setContainer(container)
-                .setContentlet(content3).nextPersisted();
-
-        final Experiment newExperiment = new ExperimentDataGen()
-                .page(page)
-                .addVariant("Test Gray Button")
-                .nextPersisted();
-
-        final ExperimentVariant originalVariant = newExperiment.
-                trafficProportion().variants().first();
-
-        List<Contentlet> experimentContentlets = APILocator.getContentletAPI()
-                .getAllContentByVariants(APILocator.systemUser(),
-                        false, originalVariant.id());
-
-        // expecting the page + the 3 contentlets
-        assertEquals(4, experimentContentlets.size());
     }
 
     /*
@@ -239,10 +231,10 @@ public class ExperimentAPIImpIT {
 
     /**
      * Method to test: {@link ExperimentsAPI#deleteVariant(String, String, User)} (String, User)}
-     * When: an {@link com.dotcms.experiments.model.AbstractExperimentVariant#ORIGINAL_VARIANT} is provided
-     * Should: publish all the contents in the variants created for the experiment.
+     * When: Try to delete the Experiment Original variant
+     * Should: throw a NotAllowedException
      */
-    @Test(expected = IllegalArgumentException.class)
+    @Test(expected = NotAllowedException.class)
     public void testADeleteOriginalVariant_shouldFail() throws DotDataException, DotSecurityException {
         final Experiment newExperiment = new ExperimentDataGen()
                 .addVariant("Test Green Button")
@@ -256,4 +248,1053 @@ public class ExperimentAPIImpIT {
         APILocator.getExperimentsAPI().deleteVariant(newExperiment.id().orElse(""), originalVariant.id(),
                 APILocator.systemUser());
     }
+
+    /**
+     * Method to test: {@link ExperimentsAPIImpl#getEvents(Experiment)}
+     * When: You have 4 pages let call them: A, B, C and D and:
+     * - We create a Experiment with the B page.
+     * - We mock in the test 4 Browser Session with different lookBackWindows, each of this session
+     * navigate by the follow pages.
+     * Session 1: A, B, D and C
+     * Session 2: D and C
+     * Session 3: A and B
+     * Session 4: A, B D and C
+     *
+     * All these navigation cases trigger a pageview Event for each page, so we should got these number
+     * of events for each session:
+     *
+     * Session 1: 4
+     * Session 2: 2
+     * Session 3: 2
+     * Session 4: 4
+     *
+     * If we call the {@link ExperimentsAPIImpl#getEvents(Experiment)} now
+     *
+     * Should: Return 4 {@link BrowserSession} each one with the right numbers of {@link com.dotcms.experiments.business.result.Event}
+     *
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    @Test
+    public void getEvents() throws DotDataException, DotSecurityException {
+        final String cubeServerIp = "127.0.0.1";
+        final int cubeJsServerPort = 5000;
+
+        final Host host = new SiteDataGen().nextPersisted();
+        final Template template = new TemplateDataGen().host(host).nextPersisted();
+
+        final HTMLPageAsset pageA = new HTMLPageDataGen(host, template).nextPersisted();
+        final HTMLPageAsset pageB = new HTMLPageDataGen(host, template).nextPersisted();
+        final HTMLPageAsset pageC = new HTMLPageDataGen(host, template).nextPersisted();
+        final HTMLPageAsset pageD = new HTMLPageDataGen(host, template).nextPersisted();
+
+        final String variantName_1 = "experiment_page_reach+testing_1_variant_1";
+        final String variantName_2 = "experiment_page_reach+testing_1_variant_2";
+
+        final Experiment experiment = createExperimentWithReachPageGoalAndVariant("experiment_events_testing_1",
+                pageB, pageD);
+
+        final List<Map<String, String>> events_1 = createPageViewEvents(experiment, variantName_1, pageA,
+                pageB, pageD, pageC);
+
+        final List<Map<String, String>> events_2 = createPageViewEvents(experiment, variantName_1, pageD, pageC);
+
+        final List<Map<String, String>> events_3 = createPageViewEvents(experiment, variantName_2, pageA, pageB);
+
+        final List<Map<String, String>> events_4 = createPageViewEvents(experiment, variantName_2, pageA,
+                pageB, pageD, pageC);
+
+        final Map<String, List<Map<String, String>>> sessions = new LinkedHashMap<>();
+        sessions.put(events_1.get(0).get("Events.lookBackWindow"), events_1);
+        sessions.put(events_2.get(0).get("Events.lookBackWindow"), events_2);
+        sessions.put(events_3.get(0).get("Events.lookBackWindow"), events_3);
+        sessions.put(events_4.get(0).get("Events.lookBackWindow"), events_4);
+
+
+        final List<Map<String, String>> cubeJsQueryData = new ArrayList();
+        cubeJsQueryData.addAll(events_1);
+        cubeJsQueryData.addAll(events_2);
+        cubeJsQueryData.addAll(events_3);
+        cubeJsQueryData.addAll(events_4);
+
+        final Map<String, List<Map<String, String>>> cubeJsQueryResult =  map("data", cubeJsQueryData);
+
+        APILocator.getExperimentsAPI()
+                .start(experiment.getIdentifier(), APILocator.systemUser());
+
+        IPUtils.disabledIpPrivateSubnet(true);
+        final String cubeJSQueryExpected = getExpectedPageReachQuery(experiment);
+
+        final MockHttpServer mockHttpServer = createMockHttpServerAndStart(cubeServerIp,
+                cubeJsServerPort, cubeJSQueryExpected, JsonUtil.getJsonStringFromObject(cubeJsQueryResult));
+
+        IPUtils.disabledIpPrivateSubnet(true);
+
+        try {
+            final AnalyticsHelper mockAnalyticsHelper = mockAnalyticsHelper(
+                    String.format("http://%s:%s", cubeServerIp, cubeJsServerPort));
+
+            final ExperimentsAPIImpl experimentsAPIImpl = new ExperimentsAPIImpl(mockAnalyticsHelper);
+            final List<BrowserSession> browserSessions = experimentsAPIImpl.getEvents(experiment);
+
+            mockHttpServer.validate();
+
+            assertEquals(4, browserSessions.size());
+
+            for (final BrowserSession browserSession : browserSessions) {
+                final List<Map<String, String>> expected = sessions.get(
+                        browserSession.getLookBackWindow());
+                assertEquals(expected.size(), browserSession.getEvents().size());
+                int i = 0;
+                for (Map<String, String> expectedMap : expected) {
+                    for (String key : expectedMap.keySet()) {
+                        final String eventKey = key.replace("Events.", "");
+                        assertEquals(expectedMap.get(key),
+                                browserSession.getEvents().get(i).get(eventKey).get());
+                    }
+
+                    i++;
+                }
+            }
+
+        } finally {
+            APILocator.getExperimentsAPI().end(experiment.getIdentifier(), APILocator.systemUser());
+
+            IPUtils.disabledIpPrivateSubnet(false);
+            mockHttpServer.stop();
+        }
+    }
+
+    private static Experiment createExperimentWithReachPageGoalAndVariant(final String experimentName,
+             final HTMLPageAsset experimentPage, final HTMLPageAsset reachPage) {
+        final Metric metric = Metric.builder()
+                .name("Testing Metric")
+                .type(MetricType.REACH_PAGE)
+                .addConditions(getUrlCondition(reachPage.getPageUrl()),
+                        getRefererCondition(experimentPage.getPageUrl()))
+                .build();
+
+        return createExperiment(experimentName, experimentPage, metric);
+    }
+
+    private static Experiment createExperiment(final String experimentName, final HTMLPageAsset pageB,
+            final Metric metric) {
+
+        final Goals goal = Goals.builder().primary(metric).build();
+
+        final Experiment experiment = new ExperimentDataGen()
+                .addVariant(experimentName)
+                .page(pageB)
+                .addVariant("description")
+                .addGoal(goal)
+                .nextPersisted();
+        return experiment;
+    }
+
+    private static Condition getUrlCondition(final String url) {
+        return Condition.builder()
+                .parameter("url")
+                .value(url)
+                .operator(Operator.CONTAINS)
+                .build();
+    }
+
+    private static Condition getRefererCondition(final String referer) {
+        return Condition.builder()
+                .parameter("referer")
+                .value(referer)
+                .operator(Operator.CONTAINS)
+                .build();
+    }
+
+    /**
+     * Method to test: {@link ExperimentsAPIImpl#getResults(Experiment)}
+     * When:
+     * - You have four pages: A, B, C and D
+     * - You create an {@link Experiment} using the B page with a PAGE_REACH Goal: url EQUALS TO PAge D .
+     * - You have the follow page_view to the pages order by timestamp: A, B, D and C
+     *
+     * Should:  get a Success PAGE_REACH
+     */
+    @Test
+    public void pageReachDirectReferer() throws DotDataException, DotSecurityException {
+        final String cubeServerIp = "127.0.0.1";
+        final int cubeJsServerPort = 5000;
+
+        final Host host = new SiteDataGen().nextPersisted();
+        final Template template = new TemplateDataGen().host(host).nextPersisted();
+
+        final HTMLPageAsset pageA = new HTMLPageDataGen(host, template).nextPersisted();
+        final HTMLPageAsset pageB = new HTMLPageDataGen(host, template).nextPersisted();
+        final HTMLPageAsset pageC = new HTMLPageDataGen(host, template).nextPersisted();
+        final HTMLPageAsset pageD = new HTMLPageDataGen(host, template).nextPersisted();
+
+        final Experiment experiment = createExperimentWithReachPageGoalAndVariant("experiment_page_reach_testing_1",
+                pageB, pageD);
+
+        final String variantName = experiment.trafficProportion().variants().stream()
+                .filter(experimentVariant -> !experimentVariant.id().equals("DEFAULT"))
+                .map(experimentVariant -> experimentVariant.id())
+                .limit(1)
+                .findFirst()
+                .orElseThrow(() -> new AssertionError("Must have a not DEFAULT variant"));
+
+        final List<Map<String, String>> cubeJsQueryData = createPageViewEvents(experiment, variantName, pageA,
+                pageB, pageD, pageC);
+
+        final Map<String, List<Map<String, String>>> cubeJsQueryResult =  map("data", cubeJsQueryData);
+
+        APILocator.getExperimentsAPI()
+                .start(experiment.getIdentifier(), APILocator.systemUser());
+
+        IPUtils.disabledIpPrivateSubnet(true);
+        final String cubeJSQueryExpected = getExpectedPageReachQuery(experiment);
+
+        final MockHttpServer mockhttpServer = createMockHttpServerAndStart(cubeServerIp,
+                cubeJsServerPort, cubeJSQueryExpected, JsonUtil.getJsonStringFromObject(cubeJsQueryResult));
+
+        try {
+            final AnalyticsHelper mockAnalyticsHelper = mockAnalyticsHelper(
+                    String.format("http://%s:%s", cubeServerIp, cubeJsServerPort));
+
+            final ExperimentsAPIImpl experimentsAPIImpl = new ExperimentsAPIImpl(mockAnalyticsHelper);
+
+            final ExperimentResults experimentResults = experimentsAPIImpl.getResults(experiment);
+
+            mockhttpServer.validate();
+
+            assertEquals(1, experimentResults.getTotalSessions());
+
+            for (VariantResult variantResult : experimentResults.getGoalResults().get(0).getVariants().values()) {
+
+                if (variantResult.getVariantName().equals(variantName)) {
+
+                    Assert.assertEquals(1, variantResult.totalUniqueBySession());
+                    Assert.assertEquals(1, variantResult.totalMultiBySession());
+                } else {
+                    Assert.assertEquals(0, variantResult.totalUniqueBySession());
+                    Assert.assertEquals(0, variantResult.totalMultiBySession());
+                }
+            }
+        } finally {
+            APILocator.getExperimentsAPI().end(experiment.getIdentifier(), APILocator.systemUser());
+
+            IPUtils.disabledIpPrivateSubnet(false);
+            mockhttpServer.stop();
+        }
+    }
+
+    /**
+     * Method to test: {@link ExperimentsAPIImpl#getResults(Experiment)}
+     * When:
+     * - You have four pages: A, B, C and D
+     * - You create an {@link Experiment} using the B page with a PAGE_REACH Goal: url EQUALS TO PAge D .
+     * - You have the follow page_view to the pages order by timestamp: A, C, D and B
+     *
+     * Should:  get a Failed PAGE_REACH
+     */
+    @Test
+    public void pageReachNotDirectReferer() throws DotDataException, DotSecurityException {
+        final String cubeServerIp = "127.0.0.1";
+        final int cubeJsServerPort = 5000;
+
+        final Host host = new SiteDataGen().nextPersisted();
+        final Template template = new TemplateDataGen().host(host).nextPersisted();
+
+        final HTMLPageAsset pageA = new HTMLPageDataGen(host, template).nextPersisted();
+        final HTMLPageAsset pageB = new HTMLPageDataGen(host, template).nextPersisted();
+        final HTMLPageAsset pageC = new HTMLPageDataGen(host, template).nextPersisted();
+        final HTMLPageAsset pageD = new HTMLPageDataGen(host, template).nextPersisted();
+
+        final Experiment experiment = createExperimentWithReachPageGoalAndVariant("experiment_page_reach_testing_1",
+                pageB, pageD);
+
+        final String variantName = experiment.trafficProportion().variants().stream()
+                .filter(experimentVariant -> !experimentVariant.id().equals("DEFAULT"))
+                .map(experimentVariant -> experimentVariant.id())
+                .limit(1)
+                .findFirst()
+                .orElseThrow(() -> new AssertionError("Must have a not DEFAULT variant"));
+
+        final List<Map<String, String>> cubeJsQueryData = createPageViewEvents(experiment, variantName, pageA,
+                pageC, pageD, pageB );
+
+        final Map<String, List<Map<String, String>>> cubeJsQueryResult =  map("data", cubeJsQueryData);
+
+        APILocator.getExperimentsAPI()
+                .start(experiment.getIdentifier(), APILocator.systemUser());
+
+        IPUtils.disabledIpPrivateSubnet(true);
+        final String cubeJSQueryExpected = getExpectedPageReachQuery(experiment);
+
+        final MockHttpServer mockhttpServer = createMockHttpServerAndStart(cubeServerIp,
+                cubeJsServerPort, cubeJSQueryExpected, JsonUtil.getJsonStringFromObject(cubeJsQueryResult));
+
+        try {
+            final AnalyticsHelper mockAnalyticsHelper = mockAnalyticsHelper(
+                    String.format("http://%s:%s", cubeServerIp, cubeJsServerPort));
+
+            final ExperimentsAPIImpl experimentsAPIImpl = new ExperimentsAPIImpl(mockAnalyticsHelper);
+            final ExperimentResults experimentResults = experimentsAPIImpl.getResults(experiment);
+
+            mockhttpServer.validate();
+
+            assertEquals(1, experimentResults.getTotalSessions());
+
+            for (VariantResult variantResult : experimentResults.getGoalResults().get(0).getVariants().values()) {
+
+                if (variantResult.getVariantName().equals(variantName)) {
+
+                    Assert.assertEquals(0, variantResult.totalUniqueBySession());
+                    Assert.assertEquals(0, variantResult.totalMultiBySession());
+                } else {
+                    Assert.assertEquals(0, variantResult.totalUniqueBySession());
+                    Assert.assertEquals(0, variantResult.totalMultiBySession());
+                }
+            }
+        } finally {
+            APILocator.getExperimentsAPI().end(experiment.getIdentifier(), APILocator.systemUser());
+
+            IPUtils.disabledIpPrivateSubnet(false);
+            mockhttpServer.stop();
+        }
+    }
+
+    /**
+     * Method to test: {@link ExperimentsAPIImpl#getResults(Experiment)}
+     * When:
+     * - You have four pages: A, B, C and D
+     * - You create an {@link Experiment} using the B page with a PAGE_REACH Goal: url EQUALS TO PAge D .
+     * - You have the follow page_view to the pages order by timestamp: A and C
+     *
+     * Should:  get a Failed PAGE_REACH
+     */
+    @Test
+    public void pageNotReachButExperimentPageWasView() throws DotDataException, DotSecurityException {
+        final String cubeServerIp = "127.0.0.1";
+        final int cubeJsServerPort = 5000;
+
+        final Host host = new SiteDataGen().nextPersisted();
+        final Template template = new TemplateDataGen().host(host).nextPersisted();
+
+        final HTMLPageAsset pageA = new HTMLPageDataGen(host, template).nextPersisted();
+        final HTMLPageAsset pageB = new HTMLPageDataGen(host, template).nextPersisted();
+        final HTMLPageAsset pageC = new HTMLPageDataGen(host, template).nextPersisted();
+        final HTMLPageAsset pageD = new HTMLPageDataGen(host, template).nextPersisted();
+
+        final Experiment experiment = createExperimentWithReachPageGoalAndVariant("experiment_page_reach_testing_1",
+                pageB, pageD);
+
+        final String variantName = experiment.trafficProportion().variants().stream()
+                .filter(experimentVariant -> !experimentVariant.id().equals("DEFAULT"))
+                .map(experimentVariant -> experimentVariant.id())
+                .limit(1)
+                .findFirst()
+                .orElseThrow(() -> new AssertionError("Must have a not DEFAULT variant"));
+
+        final List<Map<String, String>> cubeJsQueryData = createPageViewEvents(experiment, variantName, pageA,
+                pageC );
+
+        final Map<String, List<Map<String, String>>> cubeJsQueryResult =  map("data", cubeJsQueryData);
+
+        APILocator.getExperimentsAPI()
+                .start(experiment.getIdentifier(), APILocator.systemUser());
+
+        IPUtils.disabledIpPrivateSubnet(true);
+        final String cubeJSQueryExpected = getExpectedPageReachQuery(experiment);
+
+        final MockHttpServer mockhttpServer = createMockHttpServerAndStart(cubeServerIp,
+                cubeJsServerPort, cubeJSQueryExpected, JsonUtil.getJsonStringFromObject(cubeJsQueryResult));
+
+        try {
+            final AnalyticsHelper mockAnalyticsHelper = mockAnalyticsHelper(
+                    String.format("http://%s:%s", cubeServerIp, cubeJsServerPort));
+
+            final ExperimentsAPIImpl experimentsAPIImpl = new ExperimentsAPIImpl(mockAnalyticsHelper);
+
+            final ExperimentResults experimentResults = experimentsAPIImpl.getResults(experiment);
+
+            mockhttpServer.validate();
+
+            assertEquals(0, experimentResults.getTotalSessions());
+
+            for (VariantResult variantResult : experimentResults.getGoalResults().get(0).getVariants().values()) {
+
+                if (variantResult.getVariantName().equals(variantName)) {
+
+                    Assert.assertEquals(0, variantResult.totalUniqueBySession());
+                    Assert.assertEquals(0, variantResult.totalMultiBySession());
+                } else {
+                    Assert.assertEquals(0, variantResult.totalUniqueBySession());
+                    Assert.assertEquals(0, variantResult.totalMultiBySession());
+                }
+            }
+        } finally {
+            APILocator.getExperimentsAPI().end(experiment.getIdentifier(), APILocator.systemUser());
+
+            IPUtils.disabledIpPrivateSubnet(false);
+            mockhttpServer.stop();
+        }
+    }
+
+    /**
+     * Method to test: {@link ExperimentsAPIImpl#getResults(Experiment)}
+     * When:
+     * - You have four pages: A, B, C and D
+     * - You create an {@link Experiment} using the B page with a PAGE_REACH Goal: url EQUALS TO PAge D .
+     * - You have the follow page_view to the pages order by timestamp: A, C and D
+     *
+     * Should:  get a Failed PAGE_REACH
+     */
+    @Test
+    public void pageReachButExperimentPageWasNotView() throws DotDataException, DotSecurityException {
+        final String cubeServerIp = "127.0.0.1";
+        final int cubeJsServerPort = 5000;
+
+        final Host host = new SiteDataGen().nextPersisted();
+        final Template template = new TemplateDataGen().host(host).nextPersisted();
+
+        final HTMLPageAsset pageA = new HTMLPageDataGen(host, template).nextPersisted();
+        final HTMLPageAsset pageB = new HTMLPageDataGen(host, template).nextPersisted();
+        final HTMLPageAsset pageC = new HTMLPageDataGen(host, template).nextPersisted();
+        final HTMLPageAsset pageD = new HTMLPageDataGen(host, template).nextPersisted();
+
+        final Experiment experiment = createExperimentWithReachPageGoalAndVariant("experiment_page_reach_testing_1",
+                pageB, pageD);
+
+        final String variantName = experiment.trafficProportion().variants().stream()
+                .filter(experimentVariant -> !experimentVariant.id().equals("DEFAULT"))
+                .map(experimentVariant -> experimentVariant.id())
+                .limit(1)
+                .findFirst()
+                .orElseThrow(() -> new AssertionError("Must have a not DEFAULT variant"));
+
+        final List<Map<String, String>> cubeJsQueryData = createPageViewEvents(experiment, variantName, pageA,
+                pageC, pageD );
+
+        final Map<String, List<Map<String, String>>> cubeJsQueryResult =  map("data", cubeJsQueryData);
+
+        APILocator.getExperimentsAPI()
+                .start(experiment.getIdentifier(), APILocator.systemUser());
+
+        IPUtils.disabledIpPrivateSubnet(true);
+        final String cubeJSQueryExpected = getExpectedPageReachQuery(experiment);
+
+        final MockHttpServer mockhttpServer = createMockHttpServerAndStart(cubeServerIp,
+                cubeJsServerPort, cubeJSQueryExpected, JsonUtil.getJsonStringFromObject(cubeJsQueryResult));
+
+        try {
+            final AnalyticsHelper mockAnalyticsHelper = mockAnalyticsHelper(
+                    String.format("http://%s:%s", cubeServerIp, cubeJsServerPort));
+
+            final ExperimentsAPIImpl experimentsAPIImpl = new ExperimentsAPIImpl(mockAnalyticsHelper);
+
+            final ExperimentResults experimentResults = experimentsAPIImpl.getResults(experiment);
+
+            mockhttpServer.validate();
+
+            assertEquals(0, experimentResults.getTotalSessions());
+
+            for (VariantResult variantResult : experimentResults.getGoalResults().get(0).getVariants().values()) {
+
+                if (variantResult.getVariantName().equals(variantName)) {
+
+                    Assert.assertEquals(0, variantResult.totalUniqueBySession());
+                    Assert.assertEquals(0, variantResult.totalMultiBySession());
+                } else {
+                    Assert.assertEquals(0, variantResult.totalUniqueBySession());
+                    Assert.assertEquals(0, variantResult.totalMultiBySession());
+                }
+            }
+        } finally {
+            APILocator.getExperimentsAPI().end(experiment.getIdentifier(), APILocator.systemUser());
+
+            IPUtils.disabledIpPrivateSubnet(false);
+            mockhttpServer.stop();
+        }
+    }
+
+    /**
+     * Method to test: {@link ExperimentsAPIImpl#getResults(Experiment)}
+     * When:
+     * - You have four pages: A, B, C and D
+     * - You create an {@link Experiment} using the B page with a PAGE_REACH Goal: url EQUALS TO PAge D .
+     * - You have the follow page_view to the pages order by timestamp: A, B, C and D
+     *
+     * Should:  get a Faliled PAGE_REACH
+     */
+    @Test
+    public void pageReachAfterExperimentPageButNotDirectReferer() throws DotDataException, DotSecurityException {
+        final String cubeServerIp = "127.0.0.1";
+        final int cubeJsServerPort = 5000;
+
+        final Host host = new SiteDataGen().nextPersisted();
+        final Template template = new TemplateDataGen().host(host).nextPersisted();
+
+        final HTMLPageAsset pageA = new HTMLPageDataGen(host, template).nextPersisted();
+        final HTMLPageAsset pageB = new HTMLPageDataGen(host, template).nextPersisted();
+        final HTMLPageAsset pageC = new HTMLPageDataGen(host, template).nextPersisted();
+        final HTMLPageAsset pageD = new HTMLPageDataGen(host, template).nextPersisted();
+
+        final Experiment experiment = createExperimentWithReachPageGoalAndVariant("experiment_page_reach_testing_1",
+                pageB, pageD);
+
+        final String variantName = experiment.trafficProportion().variants().stream()
+                .filter(experimentVariant -> !experimentVariant.id().equals("DEFAULT"))
+                .map(experimentVariant -> experimentVariant.id())
+                .limit(1)
+                .findFirst()
+                .orElseThrow(() -> new AssertionError("Must have a not DEFAULT variant"));
+
+        final List<Map<String, String>> cubeJsQueryData = createPageViewEvents(experiment, variantName, pageA,
+                pageB, pageC, pageD);
+
+        final Map<String, List<Map<String, String>>> cubeJsQueryResult =  map("data", cubeJsQueryData);
+
+        APILocator.getExperimentsAPI()
+                .start(experiment.getIdentifier(), APILocator.systemUser());
+
+        IPUtils.disabledIpPrivateSubnet(true);
+        final String cubeJSQueryExpected = getExpectedPageReachQuery(experiment);
+
+        final MockHttpServer mockhttpServer = createMockHttpServerAndStart(cubeServerIp,
+                cubeJsServerPort, cubeJSQueryExpected, JsonUtil.getJsonStringFromObject(cubeJsQueryResult));
+
+        try {
+            final AnalyticsHelper mockAnalyticsHelper = mockAnalyticsHelper(
+                    String.format("http://%s:%s", cubeServerIp, cubeJsServerPort));
+
+            final ExperimentsAPIImpl experimentsAPIImpl = new ExperimentsAPIImpl(mockAnalyticsHelper);
+
+            final ExperimentResults experimentResults = experimentsAPIImpl.getResults(experiment);
+
+            mockhttpServer.validate();
+
+            assertEquals(1, experimentResults.getTotalSessions());
+
+            for (VariantResult variantResult : experimentResults.getGoalResults().get(0).getVariants().values()) {
+
+                if (variantResult.getVariantName().equals(variantName)) {
+
+                    Assert.assertEquals(0, variantResult.totalUniqueBySession());
+                    Assert.assertEquals(0, variantResult.totalMultiBySession());
+                } else {
+                    Assert.assertEquals(0, variantResult.totalUniqueBySession());
+                    Assert.assertEquals(0, variantResult.totalMultiBySession());
+                }
+            }
+        } finally {
+            APILocator.getExperimentsAPI().end(experiment.getIdentifier(), APILocator.systemUser());
+
+            IPUtils.disabledIpPrivateSubnet(false);
+            mockhttpServer.stop();
+        }
+    }
+
+
+    /**
+     * Method to test: {@link ExperimentsAPIImpl#getResults(Experiment)}
+     * When:
+     * - You have 3 pages: A, B and C
+     * - You create an {@link Experiment} using the B page with a BOUNCE_RATE Goal: url EQUALS TO PAge B .
+     * - You have the follow page_view to the pages order by timestamp: A, C and B
+     *
+     * Should:  count 1 Bounce Rate
+     */
+    @Test
+    public void bounceRate() throws DotDataException, DotSecurityException {
+        final String cubeServerIp = "127.0.0.1";
+        final int cubeJsServerPort = 5000;
+
+        final Host host = new SiteDataGen().nextPersisted();
+        final Template template = new TemplateDataGen().host(host).nextPersisted();
+
+        final HTMLPageAsset pageA = new HTMLPageDataGen(host, template).nextPersisted();
+        final HTMLPageAsset pageB = new HTMLPageDataGen(host, template).nextPersisted();
+        final HTMLPageAsset pageC = new HTMLPageDataGen(host, template).nextPersisted();
+
+        final Experiment experiment = createExperimentWithBounceRateGoalAndVariant("experiment_page_reach_testing_1",
+                pageB);
+
+        final String variantName = experiment.trafficProportion().variants().stream()
+                .filter(experimentVariant -> !experimentVariant.id().equals("DEFAULT"))
+                .map(experimentVariant -> experimentVariant.id())
+                .limit(1)
+                .findFirst()
+                .orElseThrow(() -> new AssertionError("Must have a not DEFAULT variant"));
+
+        final List<Map<String, String>> cubeJsQueryData = createPageViewEvents(experiment, variantName, pageA,
+                pageC, pageB);
+
+        final Map<String, List<Map<String, String>>> cubeJsQueryResult =  map("data", cubeJsQueryData);
+
+        APILocator.getExperimentsAPI()
+                .start(experiment.getIdentifier(), APILocator.systemUser());
+
+        IPUtils.disabledIpPrivateSubnet(true);
+        final String cubeJSQueryExpected = getExpectedBounceRateQuery(experiment);
+
+        final MockHttpServer mockhttpServer = createMockHttpServerAndStart(cubeServerIp,
+                cubeJsServerPort, cubeJSQueryExpected, JsonUtil.getJsonStringFromObject(cubeJsQueryResult));
+
+        try {
+            final AnalyticsHelper mockAnalyticsHelper = mockAnalyticsHelper(
+                    String.format("http://%s:%s", cubeServerIp, cubeJsServerPort));
+
+            final ExperimentsAPIImpl experimentsAPIImpl = new ExperimentsAPIImpl(mockAnalyticsHelper);
+            final ExperimentResults experimentResult = experimentsAPIImpl.getResults(experiment);
+
+            mockhttpServer.validate();
+
+            assertEquals(1, experimentResult.getTotalSessions());
+
+            for (VariantResult variantResult : experimentResult.getGoalResults().get(0).getVariants().values()) {
+                if (variantResult.getVariantName().equals(variantName)) {
+
+                    Assert.assertEquals(1, variantResult.totalUniqueBySession());
+                    Assert.assertEquals(1, variantResult.totalMultiBySession());
+                } else {
+                    Assert.assertEquals(0, variantResult.totalUniqueBySession());
+                    Assert.assertEquals(0, variantResult.totalMultiBySession());
+                }
+            }
+        } finally {
+            APILocator.getExperimentsAPI().end(experiment.getIdentifier(), APILocator.systemUser());
+
+            IPUtils.disabledIpPrivateSubnet(false);
+            mockhttpServer.stop();
+        }
+    }
+
+    /**
+     * Method to test: {@link ExperimentsAPIImpl#getResults(Experiment)}
+     * When:
+     * - You have 3 pages: A, B and C
+     * - You create an {@link Experiment} using the B page with a BOUNCE_RATE Goal: url EQUALS TO PAge B .
+     * - You have the follow page_view to the pages order by timestamp: A, B and  C
+     *
+     * Should:  not count any Bounce Rate
+     */
+    @Test
+    public void notBounceRate() throws DotDataException, DotSecurityException {
+        final String cubeServerIp = "127.0.0.1";
+        final int cubeJsServerPort = 5000;
+
+        final Host host = new SiteDataGen().nextPersisted();
+        final Template template = new TemplateDataGen().host(host).nextPersisted();
+
+        final HTMLPageAsset pageA = new HTMLPageDataGen(host, template).nextPersisted();
+        final HTMLPageAsset pageB = new HTMLPageDataGen(host, template).nextPersisted();
+        final HTMLPageAsset pageC = new HTMLPageDataGen(host, template).nextPersisted();
+
+        final Experiment experiment = createExperimentWithBounceRateGoalAndVariant("experiment_page_reach_testing_1",
+                pageB);
+
+        final String variantName = experiment.trafficProportion().variants().stream()
+                .filter(experimentVariant -> !experimentVariant.id().equals("DEFAULT"))
+                .map(experimentVariant -> experimentVariant.id())
+                .limit(1)
+                .findFirst()
+                .orElseThrow(() -> new AssertionError("Must have a not DEFAULT variant"));
+
+        final List<Map<String, String>> cubeJsQueryData = createPageViewEvents(experiment, variantName, pageA,
+                pageB, pageC);
+
+        final Map<String, List<Map<String, String>>> cubeJsQueryResult =  map("data", cubeJsQueryData);
+
+        APILocator.getExperimentsAPI()
+                .start(experiment.getIdentifier(), APILocator.systemUser());
+
+        IPUtils.disabledIpPrivateSubnet(true);
+        final String cubeJSQueryExpected = getExpectedBounceRateQuery(experiment);
+
+        final MockHttpServer mockhttpServer = createMockHttpServerAndStart(cubeServerIp,
+                cubeJsServerPort, cubeJSQueryExpected, JsonUtil.getJsonStringFromObject(cubeJsQueryResult));
+
+        try {
+            final AnalyticsHelper mockAnalyticsHelper = mockAnalyticsHelper(
+                    String.format("http://%s:%s", cubeServerIp, cubeJsServerPort));
+
+            final ExperimentsAPIImpl experimentsAPIImpl = new ExperimentsAPIImpl(mockAnalyticsHelper);
+            final ExperimentResults experimentResults = experimentsAPIImpl.getResults(experiment);
+
+            mockhttpServer.validate();
+
+            assertEquals(1, experimentResults.getTotalSessions());
+
+            for (VariantResult variantResult : experimentResults.getGoalResults().get(0).getVariants().values()) {
+
+                if (variantResult.getVariantName().equals(variantName)) {
+
+                    Assert.assertEquals(0, variantResult.totalUniqueBySession());
+                    Assert.assertEquals(0, variantResult.totalMultiBySession());
+                } else {
+                    Assert.assertEquals(0, variantResult.totalUniqueBySession());
+                    Assert.assertEquals(0, variantResult.totalMultiBySession());
+                }
+            }
+        } finally {
+            APILocator.getExperimentsAPI().end(experiment.getIdentifier(), APILocator.systemUser());
+
+            IPUtils.disabledIpPrivateSubnet(false);
+            mockhttpServer.stop();
+        }
+    }
+
+    /**
+     * Method to test: {@link ExperimentsAPIImpl#getResults(Experiment)}
+     * When:
+     * - You have 3 pages: A, B and C
+     * - You create an {@link Experiment} using the B page with a BOUNCE_RATE Goal: url EQUALS TO PAge B .
+     * - You have the follow page_view to the pages order by timestamp: A and C
+     *
+     * Should:  Not Sessions into Experiment
+     */
+    @Test
+    public void notBounceRateSession() throws DotDataException, DotSecurityException {
+        final String cubeServerIp = "127.0.0.1";
+        final int cubeJsServerPort = 5000;
+
+        final Host host = new SiteDataGen().nextPersisted();
+        final Template template = new TemplateDataGen().host(host).nextPersisted();
+
+        final HTMLPageAsset pageA = new HTMLPageDataGen(host, template).nextPersisted();
+        final HTMLPageAsset pageB = new HTMLPageDataGen(host, template).nextPersisted();
+        final HTMLPageAsset pageC = new HTMLPageDataGen(host, template).nextPersisted();
+
+        final Experiment experiment = createExperimentWithBounceRateGoalAndVariant("experiment_page_reach_testing_1",
+                pageB);
+
+        final String variantName = experiment.trafficProportion().variants().stream()
+                .filter(experimentVariant -> !experimentVariant.id().equals("DEFAULT"))
+                .map(experimentVariant -> experimentVariant.id())
+                .limit(1)
+                .findFirst()
+                .orElseThrow(() -> new AssertionError("Must have a not DEFAULT variant"));
+
+        final List<Map<String, String>> cubeJsQueryData = createPageViewEvents(experiment, variantName, pageA,
+                pageC);
+
+        final Map<String, List<Map<String, String>>> cubeJsQueryResult =  map("data", cubeJsQueryData);
+
+        APILocator.getExperimentsAPI()
+                .start(experiment.getIdentifier(), APILocator.systemUser());
+
+        IPUtils.disabledIpPrivateSubnet(true);
+        final String cubeJSQueryExpected = getExpectedBounceRateQuery(experiment);
+
+        final MockHttpServer mockhttpServer = createMockHttpServerAndStart(cubeServerIp,
+                cubeJsServerPort, cubeJSQueryExpected, JsonUtil.getJsonStringFromObject(cubeJsQueryResult));
+
+        try {
+            final AnalyticsHelper mockAnalyticsHelper = mockAnalyticsHelper(
+                    String.format("http://%s:%s", cubeServerIp, cubeJsServerPort));
+
+            final ExperimentsAPIImpl experimentsAPIImpl = new ExperimentsAPIImpl(mockAnalyticsHelper);
+            final ExperimentResults experimentResult = experimentsAPIImpl.getResults(experiment);
+
+            mockhttpServer.validate();
+
+            assertEquals(0, experimentResult.getTotalSessions());
+
+            for (VariantResult variantResult : experimentResult.getGoalResults().get(0).getVariants().values()) {
+                if (variantResult.getVariantName().equals(variantName)) {
+
+                    Assert.assertEquals(0, variantResult.totalUniqueBySession());
+                    Assert.assertEquals(0, variantResult.totalMultiBySession());
+                } else {
+                    Assert.assertEquals(0, variantResult.totalUniqueBySession());
+                    Assert.assertEquals(0, variantResult.totalMultiBySession());
+                }
+            }
+        } finally {
+            APILocator.getExperimentsAPI().end(experiment.getIdentifier(), APILocator.systemUser());
+
+            IPUtils.disabledIpPrivateSubnet(false);
+            mockhttpServer.stop();
+        }
+    }
+
+    private Experiment createExperimentWithBounceRateGoalAndVariant(
+            final String experimentName, final HTMLPageAsset experimentPage) {
+        final Metric metric = Metric.builder()
+                .name("Testing Metric")
+                .type(MetricType.BOUNCE_RATE)
+                .addConditions(getUrlCondition(experimentPage.getPageUrl()))
+                .build();
+
+        return createExperiment(experimentName, experimentPage, metric);
+    }
+
+    private List<Map<String, String>> createPageViewEvents(final Experiment experiment,
+            final String variantName,
+            final HTMLPageAsset... pages) {
+
+        final String lookBackWindows = new RandomString(20).nextString();
+        final List<Map<String, String>> dataList = new ArrayList<>();
+        Instant nextEventTriggerTime = Instant.now();
+        HTMLPageAsset previousPage = null;
+
+        for (final HTMLPageAsset page : pages) {
+            dataList.add(map(
+                    "Events.experiment", experiment.getIdentifier(),
+                    "Events.variant", variantName,
+                    "Events.utcTime", nextEventTriggerTime.toString(),
+                    "Events.referer", UtilMethods.isSet(previousPage) ?
+                            "http://127.0.0.1:5000/" + previousPage.getPageUrl() : StringPool.BLANK,
+                    "Events.url", "http://127.0.0.1:5000/" + page.getPageUrl(),
+                    "Events.lookBackWindow", lookBackWindows,
+                    "Events.eventType", EventType.PAGE_VIEW.getName()
+            ));
+
+            nextEventTriggerTime = nextEventTriggerTime.plus(1, ChronoUnit.MILLIS);
+            previousPage = page;
+        }
+        return dataList;
+    }
+
+    private static String getExpectedPageReachQuery(Experiment experiment) {
+        final String cubeJSQueryExpected ="{"
+                +   "\"filters\":["
+                +       "{"
+                +           "\"values\":["
+                +               "\"pageview\""
+                +           "],"
+                +           "\"member\":\"Events.eventType\","
+                +           "\"operator\":\"equals\""
+                +       "},"
+                +       "{"
+                +           "\"values\":["
+                +               "\"" + experiment.getIdentifier() + "\""
+                +           "],"
+                +           "\"member\":\"Events.experiment\","
+                +           "\"operator\":\"equals\""
+                +       "}"
+                +   "],"
+                +   "\"dimensions\":["
+                +       "\"Events.referer\","
+                +       "\"Events.experiment\","
+                +       "\"Events.variant\","
+                +       "\"Events.utcTime\","
+                +       "\"Events.url\","
+                +       "\"Events.lookBackWindow\","
+                +       "\"Events.eventType\""
+                +   "],"
+                +   "\"order\":{"
+                +       "\"Events.lookBackWindow\":\"asc\","
+                +       "\"Events.utcTime\":\"asc\""
+                +   "}"
+                + "}";
+        return cubeJSQueryExpected;
+    }
+
+    private static String getExpectedBounceRateQuery(Experiment experiment) {
+        final String cubeJSQueryExpected ="{"
+                +   "\"filters\":["
+                +       "{"
+                +           "\"values\":["
+                +               "\"pageview\""
+                +           "],"
+                +           "\"member\":\"Events.eventType\","
+                +           "\"operator\":\"equals\""
+                +       "},"
+                +       "{"
+                +           "\"values\":["
+                +               "\"" + experiment.getIdentifier() + "\""
+                +           "],"
+                +           "\"member\":\"Events.experiment\","
+                +           "\"operator\":\"equals\""
+                +       "}"
+                +   "],"
+                +   "\"dimensions\":["
+                +       "\"Events.experiment\","
+                +       "\"Events.variant\","
+                +       "\"Events.utcTime\","
+                +       "\"Events.url\","
+                +       "\"Events.lookBackWindow\","
+                +       "\"Events.eventType\""
+                +   "],"
+                +   "\"order\":{"
+                +       "\"Events.lookBackWindow\":\"asc\","
+                +       "\"Events.utcTime\":\"asc\""
+                +   "}"
+                + "}";
+        return cubeJSQueryExpected;
+    }
+
+    private static AnalyticsHelper mockAnalyticsHelper(final String analyticsReadUrl)
+            throws DotDataException, DotSecurityException {
+
+        final Host currentHost = WebAPILocator.getHostWebAPI().getCurrentHost();
+
+        final AbstractAnalyticsProperties mockAnalyticsProperties = mock(AbstractAnalyticsProperties.class);
+        when(mockAnalyticsProperties.analyticsReadUrl())
+                .thenReturn(analyticsReadUrl);
+
+        final AnalyticsApp mockAnalyticsApp = mock(AnalyticsApp.class);
+        when(mockAnalyticsApp.getAnalyticsProperties()).thenReturn(mockAnalyticsProperties);
+
+        final AnalyticsHelper mockAnalyticsHelper = mock(AnalyticsHelper.class);
+        when(mockAnalyticsHelper.appFromHost(currentHost)).thenReturn(mockAnalyticsApp);
+        return mockAnalyticsHelper;
+    }
+
+    private static MockHttpServer createMockHttpServerAndStart(final String cubeServerIp,
+            final int cubeJsServerPort, final String expectedQuery, final String responseBody) {
+        final MockHttpServer mockhttpServer = new MockHttpServer(cubeServerIp, cubeJsServerPort);
+
+        final MockHttpServerContext mockHttpServerContext = new  MockHttpServerContext.Builder()
+                .uri("/cubejs-api/v1/load")
+                .requestCondition("Cube JS Query is not right",
+                        context -> context.getRequestParameter("query")
+                                .orElse(StringPool.BLANK)
+                                .equals(expectedQuery))
+                .responseStatus(HttpURLConnection.HTTP_OK)
+                .mustBeCalled()
+                .responseBody(responseBody)
+                .build();
+
+        mockhttpServer.addContext(mockHttpServerContext);
+        mockhttpServer.start();
+
+        return mockhttpServer;
+    }
+
+    /**
+     * Method to test: {@link ExperimentsAPIImpl#save(Experiment, User)}
+     * When: Try to save a Experiment with a REACh PAGE goal and it does not have ane referer parameter set
+     * Should: set this parameter automatically to be CONTAINS the Experiment's page URL
+     *
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    @Test
+    public void addRefererConditionToReachPageGoal() throws DotDataException, DotSecurityException {
+        final Host host = new SiteDataGen().nextPersisted();
+        final Template template = new TemplateDataGen().host(host).nextPersisted();
+
+        final HTMLPageAsset experimentPage = new HTMLPageDataGen(host, template).nextPersisted();
+        final HTMLPageAsset reachPage = new HTMLPageDataGen(host, template).nextPersisted();
+
+        final Metric metric = Metric.builder()
+                .name("Testing Metric")
+                .type(MetricType.REACH_PAGE)
+                .addConditions(getUrlCondition(reachPage.getPageUrl()))
+                .build();
+
+        final Goals goal = Goals.builder().primary(metric).build();
+
+        final Experiment experiment = new ExperimentDataGen()
+                .addVariant("Experiment Variant")
+                .page(experimentPage)
+                .addVariant("description")
+                .addGoal(goal)
+                .nextPersisted();
+
+        final Experiment experimentFromDataBase = APILocator.getExperimentsAPI()
+                .find(experiment.id().orElseThrow(), APILocator.systemUser())
+                .orElseThrow();
+
+        final Goals goals = experimentFromDataBase.goals().orElseThrow();
+        final ImmutableList<Condition> conditions = goals.primary().conditions();
+
+        assertEquals(2, conditions.size());
+
+        for (final Condition condition : conditions) {
+            if (condition.parameter().equals("url")) {
+                assertEquals(reachPage.getPageUrl(), condition.value());
+                assertEquals(Operator.CONTAINS, condition.operator());
+            } else if (condition.parameter().equals("referer")) {
+                assertEquals(experimentPage.getPageUrl(), condition.value());
+                assertEquals(Operator.CONTAINS, condition.operator());
+            }
+        }
+    }
+
+    /**
+     * Method to test: {@link ExperimentsAPIImpl#getResults(Experiment)}
+     * When: Try to get the result from a not starting {@link Experiment}
+     * Should: Throw a {@link IllegalArgumentException}
+     */
+    @Test(expected = IllegalArgumentException.class)
+    public void tryToGetResultFromExperimentNotStarted()
+            throws DotDataException, DotSecurityException {
+        final Host host = new SiteDataGen().nextPersisted();
+        final Template template = new TemplateDataGen().host(host).nextPersisted();
+
+        final HTMLPageAsset experimentPage = new HTMLPageDataGen(host, template).nextPersisted();
+
+        final Experiment experiment = new ExperimentDataGen()
+                .addVariant("Experiment Variant")
+                .page(experimentPage)
+                .addVariant("description")
+                .nextPersisted();
+        APILocator.getExperimentsAPI().getResults(experiment);
+    }
+
+    /**
+     * Method to test: {@link ExperimentsAPIImpl#getResults(Experiment)}
+     * When: Try to get the result from a not saved {@link Experiment}
+     * Should: Throw a {@link IllegalArgumentException}
+     */
+    @Test(expected = IllegalArgumentException.class)
+    public void tryToGetResultFromExperimentNotSaved()
+            throws DotDataException, DotSecurityException {
+        final Host host = new SiteDataGen().nextPersisted();
+        final Template template = new TemplateDataGen().host(host).nextPersisted();
+
+        final HTMLPageAsset experimentPage = new HTMLPageDataGen(host, template).nextPersisted();
+
+        final Experiment experiment = new ExperimentDataGen()
+                .addVariant("Experiment Variant")
+                .page(experimentPage)
+                .addVariant("description")
+                .next();
+        APILocator.getExperimentsAPI().getResults(experiment);
+    }
+    
+    /**
+     * Method to test: {@link ExperimentsAPIImpl#save(Experiment, User)}
+     * When: Try to save a Experiment with a Bounce Rate goal and it does not have ane url parameter set
+     * Should: set this parameter automatically to be CONTAINS the Experiment's page URL
+     *
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    @Test
+    public void addUrlConditionToBounceRateCondition() throws DotDataException, DotSecurityException {
+        final Host host = new SiteDataGen().nextPersisted();
+        final Template template = new TemplateDataGen().host(host).nextPersisted();
+
+        final HTMLPageAsset experimentPage = new HTMLPageDataGen(host, template).nextPersisted();
+        final HTMLPageAsset reachPage = new HTMLPageDataGen(host, template).nextPersisted();
+
+        final Metric metric = Metric.builder()
+                .name("Testing Metric")
+                .type(MetricType.BOUNCE_RATE)
+                .build();
+
+        final Goals goal = Goals.builder().primary(metric).build();
+
+        final Experiment experiment = new ExperimentDataGen()
+                .addVariant("Experiment Variant")
+                .page(experimentPage)
+                .addVariant("description")
+                .addGoal(goal)
+                .nextPersisted();
+
+        final Experiment experimentFromDataBase = APILocator.getExperimentsAPI()
+                .find(experiment.id().orElseThrow(), APILocator.systemUser())
+                .orElseThrow();
+
+        final Goals goals = experimentFromDataBase.goals().orElseThrow();
+        final ImmutableList<Condition> conditions = goals.primary().conditions();
+
+        assertEquals(1,  conditions.size());
+
+        assertEquals("url", conditions.get(0).parameter());
+        assertEquals(experimentPage.getPageUrl(), conditions.get(0).value());
+        assertEquals(Operator.CONTAINS, conditions.get(0).operator());
+    }
+
 }

@@ -12,8 +12,9 @@ import { ButtonModule } from 'primeng/button';
 import { Card, CardModule } from 'primeng/card';
 import { ConfirmPopup, ConfirmPopupModule } from 'primeng/confirmpopup';
 
+import { DotMessagePipe } from '@dotcms/app/view/pipes';
 import { DotMessageService } from '@dotcms/data-access';
-import { ExperimentSteps, Goals, Status, StepStatus } from '@dotcms/dotcms-models';
+import { ComponentStatus, ExperimentSteps, Goals, StepStatus } from '@dotcms/dotcms-models';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 import { DotExperimentsConfigurationGoalSelectComponent } from '@portlets/dot-experiments/dot-experiments-configuration/components/dot-experiments-configuration-goal-select/dot-experiments-configuration-goal-select.component';
 import { DotExperimentsConfigurationGoalsComponent } from '@portlets/dot-experiments/dot-experiments-configuration/components/dot-experiments-configuration-goals/dot-experiments-configuration-goals.component';
@@ -21,6 +22,7 @@ import { DotExperimentsConfigurationStore } from '@portlets/dot-experiments/dot-
 import { DotExperimentsService } from '@portlets/dot-experiments/shared/services/dot-experiments.service';
 import { ExperimentMocks, GoalsMock } from '@portlets/dot-experiments/test/mocks';
 import { DotDynamicDirective } from '@portlets/shared/directives/dot-dynamic.directive';
+import { DotHttpErrorManagerService } from '@services/dot-http-error-manager/dot-http-error-manager.service';
 
 const messageServiceMock = new MockDotMessageService({
     'experiments.configure.goals.name': 'Goals',
@@ -54,7 +56,9 @@ describe('DotExperimentsConfigurationGoalsComponent', () => {
                 useValue: messageServiceMock
             },
             mockProvider(DotExperimentsService),
-            mockProvider(MessageService)
+            mockProvider(MessageService),
+            mockProvider(DotMessagePipe),
+            mockProvider(DotHttpErrorManagerService)
         ]
     });
     beforeEach(() => {
@@ -93,7 +97,7 @@ describe('DotExperimentsConfigurationGoalsComponent', () => {
             experimentId: EXPERIMENT_ID,
             goals: GoalsMock,
             status: {
-                status: Status.IDLE,
+                status: ComponentStatus.IDLE,
                 isOpen: false,
                 experimentStep: null
             }
@@ -138,7 +142,7 @@ describe('DotExperimentsConfigurationGoalsComponent', () => {
             experimentId: EXPERIMENT_ID,
             goals: GoalsMock,
             status: {
-                status: Status.IDLE,
+                status: ComponentStatus.IDLE,
                 isOpen: false,
                 experimentStep: null
             }

@@ -76,7 +76,7 @@ public class Task220912UpdateCorrectShowOnMenuProperty implements StartupTask {
      * @return The SQL code used to read the value of the existing 'Show On Menu' value.
      */
     private String getExpectedColumnReference(String columnName) {
-        String columnReference = columnName + " = " + getDBTrue();
+        String columnReference = columnName + " = 'true'";
         if (APILocator.getContentletJsonAPI().isJsonSupportedDatabase()) {
             if (isPostgres()) {
                 columnReference += " OR " + ContentletJsonAPI.CONTENTLET_AS_JSON + "->'fields'->'" + VELOCITY_VAR_NAME + "'->>'value' = 'true'";

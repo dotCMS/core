@@ -100,6 +100,7 @@ import com.dotcms.security.multipart.ContentDispositionFileNameParserTest;
 import com.dotcms.security.multipart.SecureFileValidatorTest;
 import com.dotcms.storage.FileMetadataAPITest;
 import com.dotcms.storage.StoragePersistenceAPITest;
+import com.dotcms.storage.repository.HashedLocalFileRepositoryManagerTest;
 import com.dotcms.translate.GoogleTranslationServiceIntegrationTest;
 import com.dotcms.uuid.shorty.LegacyShortyIdApiTest;
 import com.dotcms.variant.VariantAPITest;
@@ -158,6 +159,7 @@ import com.dotmarketing.portlets.workflows.util.WorkflowEmailUtilTest;
 import com.dotmarketing.quartz.DotStatefulJobTest;
 import com.dotmarketing.quartz.job.CleanUpFieldReferencesJobTest;
 import com.dotmarketing.quartz.job.IntegrityDataGenerationJobTest;
+import com.dotmarketing.quartz.job.StartEndScheduledExperimentsJobTest;
 import com.dotmarketing.startup.StartupTasksExecutorTest;
 import com.dotmarketing.startup.runalways.Task00050LoadAppsSecretsTest;
 import com.dotmarketing.startup.runonce.Task05195CreatesDestroyActionAndAssignDestroyDefaultActionsToTheSystemWorkflowTest;
@@ -225,6 +227,7 @@ import org.junit.runners.Suite.SuiteClasses;
 
 @RunWith(MainBaseSuite.class)
 @SuiteClasses({
+        StartEndScheduledExperimentsJobTest.class,
         RulesAPIImplIntegrationTest.class,
         Task220825CreateVariantFieldTest.class,
 //        AnalyticsAPIImplTest.class,
@@ -631,25 +634,7 @@ import org.junit.runners.Suite.SuiteClasses;
         StoryBlockAPITest.class,
         UtilMethodsITest.class,
         Task220912UpdateCorrectShowOnMenuPropertyTest.class,
-        PersonaActionletTest.class,
-        SendRedirectActionletTest.class,
-        SetRequestAttributeActionletTest.class,
-        StopProcessingActionletTest.class,
-        DateTimeConditionletTest.class,
-        HttpMethodConditionletTest.class,
-        PagesViewedConditionletTest.class,
-        PersonaConditionletTest.class,
-        ReferrerURLConditionletTest.class,
-        RequestAttributeConditionletTest.class,
-        RequestParameterConditionletTest.class,
-        RequestHeaderConditionletTest.class,
-        RequestParameterConditionletTest.class,
-        SessionAttributeConditionletTest.class,
-        UsersBrowserConditionletTest.class,
-        UsersCountryConditionletTest.class,
-        UsersPlatformConditionletTest.class,
-        VisitorsCurrentURLConditionletTest.class,
-        VisitorsGeolocationConditionletTest.class,
+        HashedLocalFileRepositoryManagerTest.class,
         ManifestUtilTest.class,
         ZipUtilTest.class,
         Task230110MakeSomeSystemFieldsRemovableByBaseTypeTest.class

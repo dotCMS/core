@@ -34,8 +34,8 @@ export const ExperimentMocks: Array<DotExperiment> = [
         readyToStart: false,
         description: 'Praesent at molestie mauris, quis vulputate augue.',
         name: 'Praesent at molestie mauris',
-        trafficAllocation: '100.0',
-        scheduling: null,
+        trafficAllocation: 98,
+        scheduling: { startDate: 1674861424000, endDate: 1677107824000 },
         trafficProportion: {
             type: TrafficProportionTypes.SPLIT_EVENLY,
             variants: [{ id: '111', name: 'DEFAULT', weight: '100.0' }]
@@ -53,7 +53,7 @@ export const ExperimentMocks: Array<DotExperiment> = [
         readyToStart: false,
         description: 'Praesent at molestie mauris, quis vulputate augue.',
         name: 'Praesent at molestie mauris',
-        trafficAllocation: '100.0',
+        trafficAllocation: 100,
         scheduling: null,
         trafficProportion: {
             type: TrafficProportionTypes.SPLIT_EVENLY,
@@ -62,6 +62,28 @@ export const ExperimentMocks: Array<DotExperiment> = [
         creationDate: new Date('2022-08-21 14:50:03'),
         modDate: new Date('2022-08-21 18:50:03'),
         goals: null
+    },
+    {
+        id: '333',
+        identifier: '3333-3333-3333-3333',
+        pageId: '456',
+        status: DotExperimentStatusList.DRAFT,
+        archived: false,
+        readyToStart: false,
+        description: 'Praesent at molestie mauris, quis vulputate augue.',
+        name: 'Praesent at molestie mauris',
+        trafficAllocation: 100,
+        scheduling: null,
+        trafficProportion: {
+            type: TrafficProportionTypes.SPLIT_EVENLY,
+            variants: [
+                { id: '111', name: 'DEFAULT', weight: '50.0' },
+                { id: '222', name: 'Variant A', weight: '50.0' }
+            ]
+        },
+        creationDate: new Date('2022-08-21 14:50:03'),
+        modDate: new Date('2022-08-21 18:50:03'),
+        goals: { ...GoalsMock }
     }
 ];
 
@@ -98,6 +120,13 @@ export const DotExperimentsConfigurationStoreMock = {
     }),
     goalsStepVm$: of({
         goals: '',
+        status: ''
+    }),
+    schedulingStepVm$: of({}),
+    trafficStepVm$: of({
+        experimentId: '',
+        trafficProportion: '',
+        trafficAllocation: '',
         status: ''
     })
 };

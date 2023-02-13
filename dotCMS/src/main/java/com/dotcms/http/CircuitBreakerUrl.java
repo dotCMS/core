@@ -381,6 +381,13 @@ public class CircuitBreakerUrl {
             return statusCode;
         }
 
+        @Override
+        public String toString() {
+            return "Response{" +
+                "response=" + response +
+                ", statusCode=" + statusCode +
+                '}';
+        }
     }
 
     public static Response<String> EMPTY_RESPONSE = new Response<>(StringPool.BLANK, 0);

@@ -1,4 +1,4 @@
-import { Component, Input } from '@angular/core';
+import { Component, EventEmitter, Input, Output } from '@angular/core';
 
 @Component({
     selector: 'dot-pages-card',
@@ -10,4 +10,7 @@ export class DotPagesCardComponent {
     @Input() title: string;
     @Input() url: string;
     @Input() ownerPage: boolean;
+
+    @Output() edit = new EventEmitter<boolean>();
+    @Output() goTo = new EventEmitter<boolean>();
 }
