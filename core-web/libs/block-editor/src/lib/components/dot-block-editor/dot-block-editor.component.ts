@@ -174,7 +174,7 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy {
         const customModules = await this.loadCustomBlocks(extensionUrls);
         const blockNames = [];
 
-        (data as CustomBlock).extensions.forEach((extension) => {
+        data.extensions.forEach((extension) => {
             blockNames.push(...extension.actions.map((item) => item.name));
         });
 
