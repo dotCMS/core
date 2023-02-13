@@ -1,11 +1,9 @@
 import {
     ChangeDetectorRef,
     Component,
-    EventEmitter,
     HostListener,
     Input,
     OnInit,
-    Output,
     ViewChild
 } from '@angular/core';
 import { SafeUrl } from '@angular/platform-browser';
@@ -18,7 +16,6 @@ import { DotCMSContentlet, DotCMSContentType } from '@dotcms/dotcms-models';
 
 import { DEFAULT_LANG_ID } from '../../../extensions';
 import { DotLanguageService, Languages, SuggestionsService } from '../../services';
-import { suggestionOptions } from '../../utils/suggestion.utils';
 import { SuggestionListComponent } from '../suggestion-list/suggestion-list.component';
 export interface SuggestionsCommandProps {
     payload?: DotCMSContentlet;
@@ -46,15 +43,14 @@ export enum ItemsType {
 export class SuggestionsComponent implements OnInit {
     @ViewChild('list', { static: false }) list: SuggestionListComponent;
 
-    @Input() onSelection: (props: SuggestionsCommandProps) => void;
+    // onSelectContentlet
+    // SuggestionsCommandProps
+    @Input() onSelectContentlet: (props: SuggestionsCommandProps) => void;
     @Input() items: DotMenuItem[] = [];
     @Input() title = 'Select a block';
     @Input() noResultsMessage = 'No Results';
     @Input() currentLanguage = DEFAULT_LANG_ID;
     @Input() allowedContentTypes = '';
-    @Input() allowedBlocks = [];
-
-    @Output() clearFilter: EventEmitter<string> = new EventEmitter<string>();
 
     private itemsLoaded: ItemsType;
     private selectedContentType: DotCMSContentType;
@@ -81,24 +77,6 @@ export class SuggestionsComponent implements OnInit {
     ) {}
 
     ngOnInit(): void {
-        if (this.items?.length === 0) {
-            // assign the default suggestions options.
-            this.items = this.allowedBlocks.length
-                ? suggestionOptions.filter((item) => this.allowedBlocks.includes(item.id))
-                : suggestionOptions;
-            // Extra this to an function
-            this.items.forEach((item) => {
-                item.command = () => {
-                    this.clearFilter.emit(ItemsType.BLOCK);
-                    item.id.includes('heading')
-                        ? this.onSelection({
-                              type: { name: 'heading', ...item.attributes }
-                          })
-                        : this.onSelection({ type: { name: item.id } });
-                };
-            });
-        }
-
         this.initialItems = this.items;
         this.itemsLoaded = ItemsType.BLOCK;
         this.dotLanguageService
@@ -117,10 +95,7 @@ export class SuggestionsComponent implements OnInit {
             {
                 label: 'Contentlets',
                 icon: 'receipt',
-                command: () => {
-                    this.clearFilter.emit(ItemsType.CONTENTTYPE);
-                    this.loadContentTypes();
-                }
+                command: () => this.loadContentTypes()
             },
             ...this.items
         ];
@@ -202,7 +177,6 @@ export class SuggestionsComponent implements OnInit {
                                 this.selectedContentType = item;
                                 this.itemsLoaded = ItemsType.CONTENT;
                                 this.loadContentlets(item);
-                                this.clearFilter.emit(ItemsType.CONTENT);
                             }
                         };
                     });
@@ -241,7 +215,7 @@ export class SuggestionsComponent implements OnInit {
                             contentlet: contentlet
                         },
                         command: () => {
-                            this.onSelection({
+                            this.onSelectContentlet({
                                 payload: contentlet,
                                 type: {
                                     name: 'dotContent'

@@ -4,7 +4,7 @@ import tippy, { GetReferenceClientRect } from 'tippy.js';
 
 import { ComponentRef, ViewContainerRef } from '@angular/core';
 
-import { filter, take, takeUntil } from 'rxjs/operators';
+import { filter, take } from 'rxjs/operators';
 
 import { Editor, Extension, Range } from '@tiptap/core';
 import { FloatingMenuPluginProps } from '@tiptap/extension-floating-menu';
@@ -23,7 +23,9 @@ import {
     ItemsType,
     FloatingActionsKeydownProps,
     FloatingActionsPlugin,
-    findParentNode
+    findParentNode,
+    DotMenuItem,
+    suggestionOptions
 } from '../../shared';
 import { NodeTypes } from '../bubble-menu/models';
 
@@ -208,17 +210,19 @@ export const ActionsMenu = (viewContainerRef: ViewContainerRef) => {
     }
 
     function setUpSuggestionComponent(editor: Editor, range: Range) {
+        /* Empezamos Aqui */
         const { allowedBlocks, allowedContentTypes, lang } = editor.storage.dotConfig;
+        const editorAllowedBlocks = allowedBlocks.length > 1 ? allowedBlocks : [];
+        const items = getItems({ allowedBlocks: editorAllowedBlocks, editor, range });
         suggestionsComponent = viewContainerRef.createComponent(SuggestionsComponent);
 
         // Setting Inputs
+        suggestionsComponent.instance.items = [...items, ...[]];
         suggestionsComponent.instance.currentLanguage = lang;
         suggestionsComponent.instance.allowedContentTypes = allowedContentTypes;
-        suggestionsComponent.instance.allowedBlocks = allowedBlocks.length > 1 ? allowedBlocks : [];
-        suggestionsComponent.instance.onSelection = (item) => {
-            const suggestionQuery = suggestionKey.getState(editor.view.state).query?.length || 0;
-            range.to = range.to + suggestionQuery;
-            execCommand({ editor: editor, range: range, props: item });
+        suggestionsComponent.instance.onSelectContentlet = (props) => {
+            clearFilter({ type: ItemsType.CONTENT, editor, range });
+            onSelection({ editor, range, props });
         };
 
         // Needs to be called after settings the component Inputs
@@ -228,16 +232,44 @@ export const ActionsMenu = (viewContainerRef: ViewContainerRef) => {
         if (allowedBlocks.length <= 1 || allowedBlocks.includes(CONTENT_SUGGESTION_ID)) {
             suggestionsComponent.instance.addContentletItem();
         }
-
-        // Subscribe to @Output
-        suggestionsComponent.instance.clearFilter.pipe(takeUntil(destroy$)).subscribe((type) => {
-            const queryRange = {
-                to: range.to + suggestionKey.getState(editor.view.state).query?.length,
-                from: type === ItemsType.BLOCK ? range.from : range.from + 1
-            };
-            editor.chain().deleteRange(queryRange).run();
-        });
     }
+
+    /* New Functions */
+    function getItems({ allowedBlocks = [], editor, range }): DotMenuItem[] {
+        const items = allowedBlocks.length
+            ? suggestionOptions.filter((item) => this.allowedBlocks.includes(item.id))
+            : suggestionOptions;
+
+        items.forEach((item) => (item.command = () => onCommand({ item, editor, range })));
+
+        return items;
+    }
+
+    function onCommand({ item, editor, range }) {
+        const { id, attributes } = item;
+        const props = {
+            type: { name: id.includes('heading') ? 'heading' : id, ...attributes }
+        };
+
+        clearFilter({ type: ItemsType.BLOCK, editor, range });
+        onSelection({ editor, range, props });
+    }
+
+    function onSelection({ editor, range, props }) {
+        const suggestionQuery = suggestionKey.getState(editor.view.state).query?.length || 0;
+        range.to = range.to + suggestionQuery;
+        execCommand({ editor: editor, range: range, props });
+    }
+
+    // TODO: Move this to an util
+    function clearFilter({ type, editor, range }) {
+        const queryRange = {
+            to: range.to + suggestionKey.getState(editor.view.state).query?.length,
+            from: type === ItemsType.BLOCK ? range.from : range.from + 1
+        };
+        editor.chain().deleteRange(queryRange).run();
+    }
+    /* End new Functions */
 
     /**
      * Handle the keyboard events when the suggestion are opened

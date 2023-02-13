@@ -129,7 +129,8 @@ export const CONTENT_SUGGESTION_ID = 'dotContent';
 const FORBIDDEN_CHANGE_TO_BLOCKS = {
     horizontalRule: true,
     table: true,
-    image: true
+    image: true,
+    video: true
 };
 
 export const changeToItems: DotMenuItem[] = [
