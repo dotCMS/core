@@ -1,8 +1,5 @@
 package com.dotmarketing.portlets.htmlpageasset.model;
 
-import com.fasterxml.jackson.databind.annotation.JsonSerialize;
-import java.util.Map;
-
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
@@ -15,8 +12,12 @@ import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.htmlpageasset.business.HTMLPageAssetAPI;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.NumberUtil;
 import com.dotmarketing.util.UtilMethods;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.liferay.portal.model.User;
+
+import java.util.Map;
 
 /**
  * This class represents an HTML Page as a {@link Contentlet}, which is the new 
@@ -35,7 +36,7 @@ public class HTMLPageAsset extends Contentlet implements IHTMLPage {
 
     @Override
     public long getCacheTTL() {
-        return Long.parseLong(getStringProperty(HTMLPageAssetAPI.CACHE_TTL_FIELD));
+        return NumberUtil.toLong(getStringProperty(HTMLPageAssetAPI.CACHE_TTL_FIELD), () -> Long.valueOf("0"));
     }
 
     @Override
