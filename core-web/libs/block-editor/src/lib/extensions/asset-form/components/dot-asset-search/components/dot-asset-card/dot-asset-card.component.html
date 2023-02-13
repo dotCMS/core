@@ -1,15 +1,11 @@
 <p-card>
     <ng-template pTemplate="header">
         <div class="thumbnail-container">
-            <img
-                *ngIf="contentlet.hasTitleImage; else icon"
-                [src]="getImage(contentlet.inode)"
-                [alt]="contentlet?.fileName || contentlet?.title"
-            />
-            <ng-template #icon>
-                <dot-contentlet-icon [icon]="getContentletIcon()" [size]="'72px'">
-                </dot-contentlet-icon>
-            </ng-template>
+            <dot-contentlet-thumbnail
+                [contentlet]="contentlet"
+                [cover]="false"
+                [iconSize]="'72px'"
+            ></dot-contentlet-thumbnail>
         </div>
     </ng-template>
     <h2 class="title" *pTemplate="'title'">{{ contentlet?.fileName || contentlet?.title }}</h2>
