@@ -62,12 +62,16 @@ boolean canUserWriteToContentlet = conPerAPI.doesUserHavePermission(contentlet,P
 
 String previewUrl = null;
 if(contentlet.isHTMLPage() && UtilMethods.isSet(contentlet.getIdentifier())){
-    previewUrl= APILocator.getIdentifierAPI().find(contentlet.getIdentifier()).getURI();
+    previewUrl= "/dotAdmin/#/edit-page/content?url=" + APILocator.getIdentifierAPI().find(contentlet.getIdentifier()).getURI() + "&language_id=" + contentlet.getLanguageId();
 }else{
 
-previewUrl = APILocator.getContentletAPI().getUrlMapForContentlet(contentlet, user, PageMode.get(request).respectAnonPerms);
-   
+	previewUrl = "/dotAdmin/#/edit-page/content?url=" + APILocator.getContentletAPI().getUrlMapForContentlet(contentlet, user, PageMode.get(request).respectAnonPerms) + "&language_id=" + contentlet.getLanguageId();  
 }
+
+if(myHost.getIdentifier() != null){
+	previewUrl += "&host_id=" + myHost.getIdentifier();
+}
+
    
 %>
 
@@ -146,7 +150,7 @@ function jumpToContentType(){
 
 <%if(!"edit-page".equals(request.getParameter("angularCurrentPortlet")) && UtilMethods.isSet(previewUrl)) {%>
    <div class="content-edit-actions" >
-       <a style="border:0px;" onClick="editPage('<%= previewUrl %>', '<%= contentlet.getLanguageId() %>')">
+       <a style="border:0px;" href="<%= previewUrl %>" target="_blank">
            <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "editpage.toolbar.preview.page")) %>
            <div style="display:inline-block;float:right;">&rarr;</div>
        </a>
