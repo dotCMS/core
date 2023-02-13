@@ -24,6 +24,8 @@ import { TextAlign } from '@tiptap/extension-text-align';
 import { Underline } from '@tiptap/extension-underline';
 import StarterKit, { StarterKitOptions } from '@tiptap/starter-kit';
 
+import { CustomBlock } from '@dotcms/dotcms-models';
+
 import {
     ActionsMenu,
     BubbleFormExtension,
@@ -47,22 +49,6 @@ function toTitleCase(str) {
         return txt.charAt(0).toUpperCase() + txt.slice(1);
     });
 }
-
-type Actions = {
-    command: string;
-    menuLabel: string;
-    icon: string;
-    name: string;
-};
-
-type Block = {
-    url: string;
-    actions: Array<Actions>;
-};
-
-type CustomBlock = {
-    extensions: Block[];
-};
 
 @Component({
     selector: 'dot-block-editor',
@@ -175,7 +161,7 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy {
      */
 
     private async getCustomBlocks(): Promise<AnyExtension[]> {
-        let data = {};
+        let data: CustomBlock;
         try {
             data = JSON.parse(this.customBlocks);
         } catch (e) {
@@ -184,7 +170,7 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy {
             return [];
         }
 
-        const extensionUrls = (data as CustomBlock).extensions.map((extension) => extension.url);
+        const extensionUrls = data.extensions.map((extension) => extension.url);
         const customModules = await this.loadCustomBlocks(extensionUrls);
         const blockNames = [];
 
