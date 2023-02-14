@@ -1,10 +1,7 @@
-/**
- * 
- */
 package com.dotmarketing.util;
 
-import java.util.zip.ZipInputStream;
 import org.apache.commons.io.IOUtils;
+
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.File;
@@ -15,6 +12,7 @@ import java.nio.file.Files;
 import java.util.Enumeration;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
+import java.util.zip.ZipInputStream;
 import java.util.zip.ZipOutputStream;
 
 /**
@@ -196,6 +194,32 @@ public class ZipUtil {
 			throw new SecurityException("Illegal unzip attempt");
 		}
 		return true;
+	}
+
+	/**
+	 * Adds a file entry in the form of an Input Stream to the specified ZIP file.
+	 *
+	 * @param zip            The contents of the ZIP file represented as the {@link ZipOutputStream}
+	 * @param entryName      The Zip's entry name, i.e.; the file name.
+	 * @param inputStream    The contents of the entry as an {@link InputStream}
+	 * @param flushZipStream If the contents of the {@link ZipOutputStream} need to be flushed as soon as an entry is
+	 *                       added to the ZIP file, set this to {@code true}.
+	 *
+	 * @throws IOException An error occurred when adding an entry to the ZIP file, or handling streams.
+	 */
+	public static void addZipEntry(final ZipOutputStream zip, final String entryName, final InputStream inputStream,
+								   final boolean flushZipStream) throws IOException {
+		if (inputStream != null) {
+			final ZipEntry zipEntry = new ZipEntry(entryName);
+			zip.putNextEntry(zipEntry);
+			// Write data into zip
+			IOUtils.copy(inputStream, zip);
+			zip.closeEntry();
+			inputStream.close();
+			if (flushZipStream) {
+				zip.flush();
+			}
+		}
 	}
 
 }
