@@ -160,7 +160,6 @@ public class BrowserQuery {
         private String hostIdSystemFolder = null;
         private List<String> mimeTypes = new ArrayList<>();
         private List<String> extensions = new ArrayList<>();
-        private final String imageMimetype = "image";
         private Builder() {
         }
 
@@ -299,8 +298,8 @@ public class BrowserQuery {
             return this;
         }
 
-        public Builder showImages(@Nonnull List<String> mimeTypes) {
-            if(mimeTypes.contains(imageMimetype)){
+        public Builder showImages(@Nonnull boolean showImages) {
+            if(showImages){
                 baseTypes.add(BaseContentType.FILEASSET);
             }
             return this;

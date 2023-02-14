@@ -276,9 +276,10 @@ public class BrowserAPIImpl implements BrowserAPI {
             parameters.add(browserQuery.folder.getPath());
         }
         if (UtilMethods.isSet(browserQuery.luceneQuery)) {
-            final String[] spliter = browserQuery.luceneQuery.split(" ");
+            final String filterText = browserQuery.luceneQuery.toLowerCase();
+            final String[] spliter = filterText.split(" ");
             for (final String token : spliter) {
-                sqlQuery.append(" and c.title like ?");
+                sqlQuery.append(" and LOWER(c.title) like ?");
                 parameters.add("%" + token + "%");
             }
         }
