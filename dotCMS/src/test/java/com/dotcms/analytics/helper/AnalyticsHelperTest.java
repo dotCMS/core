@@ -52,11 +52,11 @@ public class AnalyticsHelperTest {
      */
     @Test
     public void test_isSuccesStatusCode() {
-        assertTrue(AnalyticsHelper.isSuccessResponse(HttpStatus.SC_ACCEPTED));
-        assertTrue(AnalyticsHelper.isSuccessResponse(HttpStatus.SC_OK));
-        assertFalse(AnalyticsHelper.isSuccessResponse(HttpStatus.SC_BAD_REQUEST));
-        assertFalse(AnalyticsHelper.isSuccessResponse(HttpStatus.SC_FORBIDDEN));
-        assertFalse(AnalyticsHelper.isSuccessResponse(HttpStatus.SC_INTERNAL_SERVER_ERROR));
+        assertTrue(AnalyticsHelper.get().isSuccessResponse(HttpStatus.SC_ACCEPTED));
+        assertTrue(AnalyticsHelper.get().isSuccessResponse(HttpStatus.SC_OK));
+        assertFalse(AnalyticsHelper.get().isSuccessResponse(HttpStatus.SC_BAD_REQUEST));
+        assertFalse(AnalyticsHelper.get().isSuccessResponse(HttpStatus.SC_FORBIDDEN));
+        assertFalse(AnalyticsHelper.get().isSuccessResponse(HttpStatus.SC_INTERNAL_SERVER_ERROR));
     }
 
     /**
@@ -65,15 +65,15 @@ public class AnalyticsHelperTest {
      */
     @Test
     public void test_isSuccessResponse() {
-        assertTrue(AnalyticsHelper.isSuccessResponse(response));
+        assertTrue(AnalyticsHelper.get().isSuccessResponse(response));
         when(response.getStatusCode()).thenReturn(HttpStatus.SC_ACCEPTED);
-        assertTrue(AnalyticsHelper.isSuccessResponse(response));
+        assertTrue(AnalyticsHelper.get().isSuccessResponse(response));
         when(response.getStatusCode()).thenReturn(HttpStatus.SC_BAD_REQUEST);
-        assertFalse(AnalyticsHelper.isSuccessResponse(response));
+        assertFalse(AnalyticsHelper.get().isSuccessResponse(response));
         when(response.getStatusCode()).thenReturn(HttpStatus.SC_FORBIDDEN);
-        assertFalse(AnalyticsHelper.isSuccessResponse(response));
+        assertFalse(AnalyticsHelper.get().isSuccessResponse(response));
         when(response.getStatusCode()).thenReturn(HttpStatus.SC_INTERNAL_SERVER_ERROR);
-        assertFalse(AnalyticsHelper.isSuccessResponse(response));
+        assertFalse(AnalyticsHelper.get().isSuccessResponse(response));
     }
 
     /**
@@ -84,7 +84,7 @@ public class AnalyticsHelperTest {
     public void test_extractToken() {
         final AccessToken accessToken = createAccessToken();
         when(response.getResponse()).thenReturn(accessToken);
-        AnalyticsHelper
+        AnalyticsHelper.get()
             .extractToken(response)
             .ifPresentOrElse(token -> assertEquals(accessToken, token), Assert::fail);
     }
@@ -96,7 +96,7 @@ public class AnalyticsHelperTest {
     @Test
     public void test_extractToken_empty() {
         when(response.getResponse()).thenReturn(null);
-        AnalyticsHelper.extractToken(response).ifPresent(token -> fail("Token should not be present"));
+        AnalyticsHelper.get().extractToken(response).ifPresent(token -> fail("Token should not be present"));
     }
 
     /**
@@ -107,7 +107,7 @@ public class AnalyticsHelperTest {
     public void test_extractAnalyticsKey() {
         final AnalyticsKey analyticsKey = createAnalyticsKey();
         when(response.getResponse()).thenReturn(analyticsKey);
-        AnalyticsHelper.extractAnalyticsKey(response)
+        AnalyticsHelper.get().extractAnalyticsKey(response)
             .ifPresentOrElse(key -> assertEquals(analyticsKey, key), Assert::fail);
     }
 
@@ -118,7 +118,7 @@ public class AnalyticsHelperTest {
     @Test
     public void test_extractAnalyticsKey_empty() {
         when(response.getResponse()).thenReturn(null);
-        AnalyticsHelper.extractAnalyticsKey(response).ifPresent(key -> fail());
+        AnalyticsHelper.get().extractAnalyticsKey(response).ifPresent(key -> fail());
     }
 
     /**
@@ -129,7 +129,7 @@ public class AnalyticsHelperTest {
     @Test
     public void test_isExpired_noIssueDate() {
         final AccessToken accessToken = createAccessToken();
-        assertTrue(AnalyticsHelper.hasTokenExpired(accessToken));
+        assertTrue(AnalyticsHelper.get().hasTokenExpired(accessToken));
     }
 
     /**
@@ -140,10 +140,10 @@ public class AnalyticsHelperTest {
     @Test
     public void test_isTokenExpired() {
         AccessToken accessToken = createFreshAccessToken();
-        assertFalse(AnalyticsHelper.hasTokenExpired(accessToken));
+        assertFalse(AnalyticsHelper.get().hasTokenExpired(accessToken));
 
         accessToken = accessToken.withIssueDate(Instant.now().minusSeconds(ANALYTICS_ACCESS_TOKEN_TTL));
-        assertTrue(AnalyticsHelper.hasTokenExpired(accessToken));
+        assertTrue(AnalyticsHelper.get().hasTokenExpired(accessToken));
     }
 
     /**
@@ -154,16 +154,16 @@ public class AnalyticsHelperTest {
     @Test
     public void test_iisTokenInWindow() {
         AccessToken accessToken = createFreshAccessToken();
-        assertFalse(AnalyticsHelper.isTokenInWindow(accessToken));
+        assertFalse(AnalyticsHelper.get().isTokenInWindow(accessToken));
 
         accessToken = accessToken.withIssueDate(Instant.now().minusSeconds(3600 - 60));
-        assertTrue(AnalyticsHelper.isTokenInWindow(accessToken));
+        assertTrue(AnalyticsHelper.get().isTokenInWindow(accessToken));
 
         accessToken = accessToken.withIssueDate(Instant.now().minusSeconds(3600 - 61));
-        assertFalse(AnalyticsHelper.isTokenInWindow(accessToken));
+        assertFalse(AnalyticsHelper.get().isTokenInWindow(accessToken));
 
         accessToken = accessToken.withIssueDate(Instant.now().minusSeconds(3600 - 1));
-        assertTrue(AnalyticsHelper.isTokenInWindow(accessToken));
+        assertTrue(AnalyticsHelper.get().isTokenInWindow(accessToken));
     }
 
     /**
@@ -177,7 +177,7 @@ public class AnalyticsHelperTest {
         final String toEncode = String.format("%s:%s", clientId, clientSecret);
         assertEquals(
             toEncode,
-            new String(Base64.getDecoder().decode(AnalyticsHelper.encodeClientIdAndSecret(clientId, clientSecret))));
+            new String(Base64.getDecoder().decode(AnalyticsHelper.get().encodeClientIdAndSecret(clientId, clientSecret))));
     }
 
     /**
@@ -186,23 +186,23 @@ public class AnalyticsHelperTest {
      */
     @Test
     public void test_resolveTokenStatus() {
-        assertSame(TokenStatus.NONE, AnalyticsHelper.resolveTokenStatus(null));
+        assertSame(TokenStatus.NONE, AnalyticsHelper.get().resolveTokenStatus(null));
 
         AccessToken accessToken = createAccessToken().withStatus(null);
-        assertSame(TokenStatus.NONE, AnalyticsHelper.resolveTokenStatus(accessToken));
+        assertSame(TokenStatus.NONE, AnalyticsHelper.get().resolveTokenStatus(accessToken));
 
          accessToken = createFreshAccessToken();
-        assertSame(TokenStatus.OK, AnalyticsHelper.resolveTokenStatus(accessToken));
+        assertSame(TokenStatus.OK, AnalyticsHelper.get().resolveTokenStatus(accessToken));
 
         accessToken = createAccessToken(TokenStatus.NOOP);
-        assertSame(TokenStatus.NOOP, AnalyticsHelper.resolveTokenStatus(accessToken));
+        assertSame(TokenStatus.NOOP, AnalyticsHelper.get().resolveTokenStatus(accessToken));
 
         accessToken = createAccessToken(TokenStatus.BLOCKED);
-        assertSame(TokenStatus.BLOCKED, AnalyticsHelper.resolveTokenStatus(accessToken));
+        assertSame(TokenStatus.BLOCKED, AnalyticsHelper.get().resolveTokenStatus(accessToken));
 
         accessToken = createAccessToken()
             .withIssueDate(Instant.now().minusSeconds(ANALYTICS_ACCESS_TOKEN_TTL));
-        assertSame(TokenStatus.EXPIRED, AnalyticsHelper.resolveTokenStatus(accessToken));
+        assertSame(TokenStatus.EXPIRED, AnalyticsHelper.get().resolveTokenStatus(accessToken));
     }
 
     /**
@@ -256,7 +256,7 @@ public class AnalyticsHelperTest {
     @Test(expected = AnalyticsException.class)
     public void test_formatBearer_fail() throws AnalyticsException {
         final AccessToken accessToken = createAccessToken(TokenStatus.NOOP);
-        AnalyticsHelper.formatBearer(accessToken);
+        AnalyticsHelper.get().formatBearer(accessToken);
     }
 
     /**
@@ -266,7 +266,7 @@ public class AnalyticsHelperTest {
     @Test
     public void test_formatBearer() throws AnalyticsException {
         final AccessToken accessToken = createFreshAccessToken();
-        assertEquals(BEARER + accessToken.accessToken(), AnalyticsHelper.formatBearer(accessToken));
+        assertEquals(BEARER + accessToken.accessToken(), AnalyticsHelper.get().formatBearer(accessToken));
     }
 
     /**
@@ -277,7 +277,7 @@ public class AnalyticsHelperTest {
     public void test_formatBasic() throws AnalyticsException {
         final String key = "this-is-a-key";
         final AnalyticsKey analyticsKey = AnalyticsKey.builder().jsKey(key).build();
-        assertEquals(WebResource.BASIC + key, AnalyticsHelper.formatBasic(analyticsKey));
+        assertEquals(WebResource.BASIC + key, AnalyticsHelper.get().formatBasic(analyticsKey));
     }
 
     /**
@@ -288,7 +288,7 @@ public class AnalyticsHelperTest {
     @Test
     public void test_throwFromResponse_success() {
         try {
-            AnalyticsHelper.throwFromResponse(response, null);
+            AnalyticsHelper.get().throwFromResponse(response, null);
         } catch (AnalyticsException e) {
             fail("When response is success exception should NOT be thrown");
         }
@@ -302,7 +302,7 @@ public class AnalyticsHelperTest {
     @Test(expected = UnrecoverableAnalyticsException.class)
     public void test_throwFromResponse_badRequest() throws AnalyticsException {
         when(response.getStatusCode()).thenReturn(HttpStatus.SC_BAD_REQUEST);
-        AnalyticsHelper.throwFromResponse(response, null);
+        AnalyticsHelper.get().throwFromResponse(response, null);
     }
 
     /**
@@ -313,7 +313,7 @@ public class AnalyticsHelperTest {
     @Test(expected = UnrecoverableAnalyticsException.class)
     public void test_throwFromResponse_unauthorized() throws AnalyticsException {
         when(response.getStatusCode()).thenReturn(HttpStatus.SC_UNAUTHORIZED);
-        AnalyticsHelper.throwFromResponse(response, null);
+        AnalyticsHelper.get().throwFromResponse(response, null);
     }
 
     /**
@@ -324,7 +324,7 @@ public class AnalyticsHelperTest {
     @Test(expected = AnalyticsException.class)
     public void test_throwFromResponse_notFound() throws AnalyticsException {
         when(response.getStatusCode()).thenReturn(HttpStatus.SC_NOT_FOUND);
-        AnalyticsHelper.throwFromResponse(response, null);
+        AnalyticsHelper.get().throwFromResponse(response, null);
     }
 
     /**
@@ -335,7 +335,7 @@ public class AnalyticsHelperTest {
     @Test
     public void test_createNoopToken() {
         final String message = "some-message";
-        final AccessToken accessToken = AnalyticsHelper.createNoopToken(null, message);
+        final AccessToken accessToken = AnalyticsHelper.get().createNoopToken(null, message);
         assertSame(TokenStatus.NOOP, accessToken.status().tokenStatus());
         assertSame(AccessTokenErrorType.PERMANENT_ERROR, accessToken.status().errorType());
         assertEquals(message, accessToken.status().reason());
@@ -349,7 +349,7 @@ public class AnalyticsHelperTest {
     @Test
     public void test_createBlockedToken() {
         final String message = "some-message";
-        final AccessToken accessToken = AnalyticsHelper.createBlockedToken(null, message);
+        final AccessToken accessToken = AnalyticsHelper.get().createBlockedToken(null, message);
         assertSame(TokenStatus.BLOCKED, accessToken.status().tokenStatus());
         assertSame(AccessTokenErrorType.TEMPORARY_ERROR, accessToken.status().errorType());
         assertEquals(message, accessToken.status().reason());
@@ -362,7 +362,7 @@ public class AnalyticsHelperTest {
     @Test
     public void test_isTokenOk() {
         final AccessToken accessToken = createAccessToken();
-        assertTrue(AnalyticsHelper.isTokenOk(accessToken));
+        assertTrue(AnalyticsHelper.get().isTokenOk(accessToken));
     }
 
     /**
@@ -372,7 +372,7 @@ public class AnalyticsHelperTest {
     @Test
     public void test_isTokenNoop() {
         final AccessToken accessToken = createAccessToken(TokenStatus.NOOP);
-        assertTrue(AnalyticsHelper.isTokenNoop(accessToken));
+        assertTrue(AnalyticsHelper.get().isTokenNoop(accessToken));
     }
 
     /**
@@ -382,7 +382,7 @@ public class AnalyticsHelperTest {
     @Test
     public void test_isTokenBlocked() {
         final AccessToken accessToken = createAccessToken(TokenStatus.BLOCKED);
-        assertTrue(AnalyticsHelper.isTokenBlocked(accessToken));
+        assertTrue(AnalyticsHelper.get().isTokenBlocked(accessToken));
     }
 
     /**
@@ -392,7 +392,7 @@ public class AnalyticsHelperTest {
      */
     @Test
     public void test_resolveAudience() {
-        assertNull(AnalyticsHelper.resolveAudience(null));
+        assertNull(AnalyticsHelper.get().resolveAudience(null));
     }
 
     /**
@@ -403,26 +403,26 @@ public class AnalyticsHelperTest {
     public void test_resolveStatusMessage() {
         AccessToken accessToken = createAccessToken().withStatus(null);
         String message = "ACCESS_TOKEN for clientId " + accessToken.clientId();
-        assertEquals(message, AnalyticsHelper.resolveStatusMessage(accessToken));
+        assertEquals(message, AnalyticsHelper.get().resolveStatusMessage(accessToken));
 
         accessToken = createAccessToken(TokenStatus.NOOP);
         message += " is currently " + accessToken.status().tokenStatus();
-        assertEquals(message, AnalyticsHelper.resolveStatusMessage(accessToken));
+        assertEquals(message, AnalyticsHelper.get().resolveStatusMessage(accessToken));
 
         AccessTokenStatus status = accessToken.status().withErrorType(AccessTokenErrorType.TEMPORARY_ERROR);
         accessToken = accessToken.withStatus(status);
         message += " due to " + accessToken.status().errorType();
-        assertEquals(message, AnalyticsHelper.resolveStatusMessage(accessToken));
+        assertEquals(message, AnalyticsHelper.get().resolveStatusMessage(accessToken));
 
         String reason = "some-reason";
         status = accessToken.status().withReason(reason);
         accessToken = accessToken.withStatus(status);
         message += " (" + reason + ")";
-        assertEquals(message, AnalyticsHelper.resolveStatusMessage(accessToken));
+        assertEquals(message, AnalyticsHelper.get().resolveStatusMessage(accessToken));
     }
 
     private void checkStatusThrowing(final AccessToken accessToken) throws AnalyticsException {
-        AnalyticsHelper.checkAccessToken(accessToken);
+        AnalyticsHelper.get().checkAccessToken(accessToken);
     }
 
     private void checkStatusThrowing(final TokenStatus tokenStatus) throws AnalyticsException {

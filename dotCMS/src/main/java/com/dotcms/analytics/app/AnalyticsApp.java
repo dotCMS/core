@@ -1,6 +1,7 @@
 package com.dotcms.analytics.app;
 
 import com.dotcms.analytics.helper.AnalyticsHelper;
+import com.dotcms.analytics.model.AbstractAnalyticsProperties;
 import com.dotcms.analytics.model.AnalyticsKey;
 import com.dotcms.analytics.model.AnalyticsProperties;
 import com.dotcms.analytics.model.AnalyticsAppProperty;
@@ -46,7 +47,7 @@ public class AnalyticsApp {
     /**
      * @return {@link AnalyticsProperties} holding information about analytics configuration based on App secrets
      */
-    public AnalyticsProperties getAnalyticsProperties() {
+    public AbstractAnalyticsProperties getAnalyticsProperties() {
         return analyticsProperties;
     }
 
@@ -65,7 +66,7 @@ public class AnalyticsApp {
      * @return encoded representation of clientId:clientSecret
      */
     public String clientIdAndSecret() {
-        return AnalyticsHelper.encodeClientIdAndSecret(
+        return AnalyticsHelper.get().encodeClientIdAndSecret(
             getAnalyticsProperties().clientId(),
             getAnalyticsProperties().clientSecret());
     }

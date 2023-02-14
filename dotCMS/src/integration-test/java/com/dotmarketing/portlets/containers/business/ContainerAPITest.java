@@ -7,6 +7,7 @@ import com.dotcms.datagen.SiteDataGen;
 import com.dotcms.datagen.TestDataUtils;
 import com.dotmarketing.beans.ContainerStructure;
 import com.dotmarketing.beans.Host;
+import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.Inode;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.db.HibernateUtil;
@@ -202,13 +203,13 @@ public class ContainerAPITest extends ContentletBaseTest {
 
         final ContentType contentType = TestDataUtils.getBlogLikeContentType();
         final Container container = new ContainerDataGen().withContentType(contentType, "").nextPersisted();
-
+        final Identifier identifier = APILocator.getIdentifierAPI().find(container.getIdentifier());
 
         final List<Container> results = containerAPI
-                .findContainers(user, false, null, defaultHost.getIdentifier(), null, null,
+                .findContainers(user, false, null, identifier.getHostId(), null, null,
                         contentType.id(), 0,
                         -1, null);
-        assertTrue(UtilMethods.isSet(results));
+        assertTrue(container.toString(), UtilMethods.isSet(results));
     }
 
     private Container createContainer()

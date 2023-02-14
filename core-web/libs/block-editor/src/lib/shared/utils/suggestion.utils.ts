@@ -25,11 +25,22 @@ const headings: DotMenuItem[] = [...Array(3).keys()].map((level) => {
     };
 });
 
+const dotContentet: DotMenuItem = {
+    label: 'Contentlet',
+    icon: 'receipt',
+    id: 'dotContent'
+};
+
 const image: DotMenuItem[] = [
     {
         label: 'Image',
         icon: 'image',
         id: 'image'
+    },
+    {
+        label: 'Video',
+        icon: 'movie',
+        id: 'video'
     }
 ];
 
@@ -41,13 +52,11 @@ const table: DotMenuItem[] = [
     }
 ];
 
-const paragraph: DotMenuItem[] = [
-    {
-        label: 'Paragraph',
-        icon: sanitizeUrl(pIcon),
-        id: 'paragraph'
-    }
-];
+const paragraph: DotMenuItem = {
+    label: 'Paragraph',
+    icon: sanitizeUrl(pIcon),
+    id: 'paragraph'
+};
 
 const list: DotMenuItem[] = [
     {
@@ -80,6 +89,16 @@ const block: DotMenuItem[] = [
     }
 ];
 
+export const getEditorBlockOptions = () => {
+    return (
+        [...suggestionOptions, dotContentet]
+            // get all blocks except the Paragraph
+            .filter(({ id }) => id != paragraph.id)
+            .map(({ label, id }) => ({ label, code: id }))
+            .sort((a, b) => a.label.localeCompare(b.label))
+    );
+};
+
 export function sanitizeUrl(url: string): SafeUrl {
     return domSanitizer.bypassSecurityTrustUrl(url);
 }
@@ -88,12 +107,12 @@ export const suggestionOptions: DotMenuItem[] = [
     ...image,
     ...headings,
     ...table,
-    ...paragraph,
     ...list,
-    ...block
+    ...block,
+    paragraph
 ];
 
-export const tableChangeToItems: DotMenuItem[] = [...headings, ...paragraph, ...list];
+export const tableChangeToItems: DotMenuItem[] = [...headings, paragraph, ...list];
 
 export const SuggestionPopperModifiers = [
     {
@@ -111,10 +130,10 @@ export const SuggestionPopperModifiers = [
     }
 ];
 
-export const CONTENT_SUGGESTION_ID = 'contentlets';
+export const CONTENT_SUGGESTION_ID = 'dotContent';
 
 const FORBIDDEN_CHANGE_TO_BLOCKS = {
-    horizontalLine: true,
+    horizontalRule: true,
     table: true,
     image: true
 };

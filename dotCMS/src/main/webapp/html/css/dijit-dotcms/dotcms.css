@@ -10466,8 +10466,11 @@ a.category_higlighted, a.tag_higlighted {
   height: 100%;
 }
 
-.content-search__show-query-dialog .dijitDialogTitleBar {
-  z-index: 1;
+.content-search__show-query-dialog .dijitDialogPaneContent {
+  padding: 0;
+}
+.content-search__show-query-dialog #queryResults {
+  padding: 16px;
 }
 
 .content-search__key-fields {
@@ -11775,6 +11778,14 @@ Resize Handle
   border: none;
   background: none;
   height: 18px;
+  padding: 0;
+}
+
+.dijitDialogTitleBar {
+  padding: 0;
+}
+.dijitDialogTitleBar .dijitDialogTitle {
+  padding-left: 16px;
 }
 
 .input-text-naked {
