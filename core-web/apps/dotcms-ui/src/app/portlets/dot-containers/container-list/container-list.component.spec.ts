@@ -294,7 +294,7 @@ describe('ContainerListComponent', () => {
         dotSiteBrowserService = TestBed.inject(DotSiteBrowserService);
     });
 
-    fdescribe('with data', () => {
+    describe('with data', () => {
         beforeEach(fakeAsync(() => {
             spyOn<CoreWebService>(coreWebService, 'requestView').and.returnValue(
                 of({
