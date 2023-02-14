@@ -76,7 +76,7 @@ describe('DotExperimentsConfigurationVariantsComponent', () => {
                     experimentStep: ExperimentSteps.VARIANTS,
                     isOpen: false
                 },
-                variants: [{ id: DEFAULT_VARIANT_ID, name: DEFAULT_VARIANT_NAME, weight: '100' }]
+                variants: [{ id: DEFAULT_VARIANT_ID, name: DEFAULT_VARIANT_NAME, weight: 100 }]
             };
 
             spectator.setInput(variantsVm);
@@ -100,9 +100,9 @@ describe('DotExperimentsConfigurationVariantsComponent', () => {
                     isOpen: false
                 },
                 variants: [
-                    { id: '0000000', name: DEFAULT_VARIANT_NAME, weight: '33.33', url: 'link1' },
-                    { id: '1111111', name: 'b', weight: '33.33', url: 'link2' },
-                    { id: '2222222', name: 'c', weight: '33.33', url: 'link3' }
+                    { id: '0000000', name: DEFAULT_VARIANT_NAME, weight: 33.33, url: 'link1' },
+                    { id: '1111111', name: 'b', weight: 33.33, url: 'link2' },
+                    { id: '2222222', name: 'c', weight: 33.33, url: 'link3' }
                 ]
             };
 
@@ -123,9 +123,9 @@ describe('DotExperimentsConfigurationVariantsComponent', () => {
             expect(spectator.queryAll(Inplace).length).toBe(2);
 
             const variantsWeight = spectator.queryAll(byTestId('variant-weight'));
-            expect(variantsWeight[0]).toContainText(variantsVm.variants[0].weight);
-            expect(variantsWeight[1]).toContainText(variantsVm.variants[1].weight);
-            expect(variantsWeight[2]).toContainText(variantsVm.variants[2].weight);
+            expect(variantsWeight[0]).toContainText(variantsVm.variants[0].weight.toString());
+            expect(variantsWeight[1]).toContainText(variantsVm.variants[1].weight.toString());
+            expect(variantsWeight[2]).toContainText(variantsVm.variants[2].weight.toString());
 
             const variantsViewButton = spectator.queryAll(
                 byTestId('variant-preview-button')
@@ -168,10 +168,10 @@ describe('DotExperimentsConfigurationVariantsComponent', () => {
                 {
                     id: DEFAULT_VARIANT_ID,
                     name: DEFAULT_VARIANT_NAME,
-                    weight: '33.33',
+                    weight: 33.33,
                     url: 'link1'
                 },
-                { id: '1111111', name: 'b', weight: '33.33', url: 'link2' }
+                { id: '1111111', name: 'b', weight: 33.33, url: 'link2' }
             ]
         };
         beforeEach(() => {
@@ -234,8 +234,8 @@ describe('DotExperimentsConfigurationVariantsComponent', () => {
 
             const newVariantName = 'new name';
             const variants: Variant[] = [
-                { id: '1', name: DEFAULT_VARIANT_NAME, weight: '50.00', url: 'url' },
-                { id: '2', name: 'to edit', weight: '50.00', url: 'url' }
+                { id: '1', name: DEFAULT_VARIANT_NAME, weight: 50, url: 'url' },
+                { id: '2', name: 'to edit', weight: 50, url: 'url' }
             ];
 
             let output;
@@ -279,8 +279,8 @@ describe('DotExperimentsConfigurationVariantsComponent', () => {
             });
 
             const variants: Variant[] = [
-                { id: '1', name: DEFAULT_VARIANT_NAME, weight: '50.00', url: 'url' },
-                { id: '2', name: 'to edit', weight: '50.00', url: 'url' }
+                { id: '1', name: DEFAULT_VARIANT_NAME, weight: 50, url: 'url' },
+                { id: '2', name: 'to edit', weight: 50, url: 'url' }
             ];
 
             spectator.setInput({
