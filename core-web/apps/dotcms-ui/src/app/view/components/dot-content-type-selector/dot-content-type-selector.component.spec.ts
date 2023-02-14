@@ -23,7 +23,7 @@ class MockDotContentTypeService {
     );
 }
 
-fdescribe('DotContentTypeSelectorComponent', () => {
+describe('DotContentTypeSelectorComponent', () => {
     let component: DotContentTypeSelectorComponent;
     let fixture: ComponentFixture<DotContentTypeSelectorComponent>;
     let de: DebugElement;
