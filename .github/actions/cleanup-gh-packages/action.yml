@@ -1,0 +1,30 @@
+# action.yml
+name: 'Cleanup Github packages'
+description: 'Deletes old Github packages'
+author: 'victoralfaro-dotcms'
+inputs:
+  package_type:
+    description: 'Package type'
+    type: choice
+    options:
+    - container
+    - docker
+    - maven
+    - npm
+    - nuget
+    - rubygems
+    required: true
+    default: 'container'
+  package_name: 
+    description: 'Name of the package to clean up'
+    required: true
+    default: 'core'
+  delete_version:
+    description: 'Specific version to delete'
+    required: false
+  access_token:
+    description: 'Access token'
+    required: true
+runs:
+  using: 'node16'
+  main: 'dist/index.js'

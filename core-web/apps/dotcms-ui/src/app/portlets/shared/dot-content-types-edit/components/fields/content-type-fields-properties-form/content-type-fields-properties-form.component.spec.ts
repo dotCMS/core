@@ -84,7 +84,7 @@ class TestFieldPropertiesService {
     }
 }
 
-xdescribe('ContentTypeFieldsPropertiesFormComponent', () => {
+describe('ContentTypeFieldsPropertiesFormComponent', () => {
     let hostComp: DotHostTesterComponent;
     let hostFixture: ComponentFixture<DotHostTesterComponent>;
 
@@ -142,7 +142,6 @@ xdescribe('ContentTypeFieldsPropertiesFormComponent', () => {
             providers: [
                 UntypedFormBuilder,
                 ComponentFactoryResolver,
-                FieldPropertyService,
                 { provide: FieldPropertyService, useClass: TestFieldPropertiesService },
                 { provide: DotMessageService, useValue: messageServiceMock }
             ]
@@ -255,6 +254,32 @@ xdescribe('ContentTypeFieldsPropertiesFormComponent', () => {
 
             expect(comp.form.get('indexed')).toBe(null);
             expect(comp.form.get('required')).toBe(null);
+        });
+    });
+
+    describe('form fields', () => {
+        beforeEach(() => {
+            spyOn(mockFieldPropertyService, 'getProperties').and.returnValue([
+                'property1',
+                'searchable',
+                'unique',
+                'listed'
+            ]);
+            spyOn(mockFieldPropertyService, 'existsComponent').and.returnValue(true);
+        });
+
+        beforeEach(async () => await startHostComponent());
+
+        it('should only be disabled when isDisabledInEditMode is true', () => {
+            const formProperties = Object.keys(comp.form.controls);
+            formProperties.forEach((property) => {
+                if (
+                    comp.form.controls[property].disabled &&
+                    !mockFieldPropertyService.isDisabledInEditMode(property)
+                ) {
+                    fail();
+                }
+            });
         });
     });
 });

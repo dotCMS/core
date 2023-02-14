@@ -9,6 +9,21 @@ import com.dotcms.cube.filters.SimpleFilter.Operator;
 import com.dotcms.cube.filters.Filter;
 import com.dotcms.util.JsonUtil;
 import com.dotmarketing.util.UtilMethods;
+import com.google.common.collect.Iterables;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
+import java.util.TreeSet;
+import java.util.stream.Collectors;
+import org.jetbrains.annotations.NotNull;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -16,6 +31,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+
 
 /**
  * Represents a Cube JS Query
@@ -76,6 +92,10 @@ public class CubeJSQuery {
 
     @Override
     public String toString() {
+        if (!UtilMethods.isSet(dimensions) && !UtilMethods.isSet(measures)) {
+            throw new IllegalStateException("Must set dimensions or measures");
+        }
+
         try {
             return JsonUtil.getJsonAsString(getMap());
         } catch (IOException e) {
@@ -106,7 +126,8 @@ public class CubeJSQuery {
     }
 
     private Map<String, String> getOrdersAsMap() {
-        final Map<String, String> resultMap = new HashMap();
+
+        final Map<String, String> resultMap = new LinkedHashMap<>();
 
         for (final OrderItem order : orders) {
             resultMap.put(order.orderBy, order.order.name().toLowerCase());
@@ -123,8 +144,120 @@ public class CubeJSQuery {
     public static class Builder {
         private String[] dimensions;
         private String[] measures;
-        private List<Filter> filters = new ArrayList<>();
-        private List<OrderItem> orders = new ArrayList<>();
+
+        private Collection<Filter> filters = new ArrayList<>();
+        private Collection<OrderItem> orders = new ArrayList<>();
+
+        /**
+         * Merge two {@link CubeJSQuery}, each section of the Query is merge ignoring duplicated values
+         * for example If we have:
+         *
+         * Query 1:
+         * <code>
+         *     {
+         *         "dimensions": [
+         *              "Events.Experiment",
+         *              "Events.variant"
+         *         ]
+         *     }
+         * </code>
+         *
+         * * Query 2:
+         * Query 1:
+         * <code>
+         *     {
+         *         "dimensions": [
+         *              "Events.Experiment",
+         *              "Events.eventType"
+         *         ]
+         *     }
+         * </code>
+         *
+         * The result is going to be:
+         *
+         * <code>
+         *     {
+         *         "dimensions": [
+         *              "Events.Experiment",
+         *              "Events.variant",
+         *              "Events.eventType"
+         *         ]
+         *     }
+         * </code>
+         *
+         * The same happens with others section like: measures, filters and order.
+         *
+         * @param cubeJSQuery1
+         * @param cubeJSQuery2
+         * @return
+         */
+        public static CubeJSQuery merge(final CubeJSQuery cubeJSQuery1, final CubeJSQuery cubeJSQuery2) {
+            final Collection<String> dimensionsMerged = merge(
+                    getEmptyIfIsNotSet(cubeJSQuery1.dimensions),
+                    getEmptyIfIsNotSet(cubeJSQuery2.dimensions)
+            );
+
+            final Collection<String> measuresMerged = merge(
+                    getEmptyIfIsNotSet(cubeJSQuery1.measures),
+                    getEmptyIfIsNotSet(cubeJSQuery2.measures)
+            );
+
+            final Collection<Filter> filtersMerged = merge(
+                    getEmptyIfIsNotSet(cubeJSQuery1.filters),
+                    getEmptyIfIsNotSet(cubeJSQuery2.filters)
+            );
+
+            final Collection<OrderItem> ordersMerged = merge(
+                    getEmptyIfIsNotSet(cubeJSQuery1.orders),
+                    getEmptyIfIsNotSet(cubeJSQuery2.orders)
+            );
+
+            return new Builder()
+                    .dimensions(dimensionsMerged)
+                    .measures(measuresMerged)
+                    .filters(filtersMerged)
+                    .orders(ordersMerged)
+                    .build();
+        }
+
+        @NotNull
+        private static <T> List<T> getEmptyIfIsNotSet(T[] array) {
+            return UtilMethods.isSet(array) ? Arrays.asList(array) : Collections.emptyList();
+        }
+
+        private Builder dimensions(final Collection<String> dimensions) {
+            this.dimensions = dimensions.toArray(new String[dimensions.size()]);
+            return this;
+        }
+
+        private Builder measures(final Collection<String> measures) {
+            this.measures = measures.toArray(new String[measures.size()]);
+            return this;
+        }
+
+        private Builder orders(final Collection<OrderItem> orders) {
+            this.orders = orders;
+            return this;
+        }
+
+        private Builder filters(final Collection<Filter> filters) {
+            this.filters = filters;
+            return this;
+        }
+
+        private static <T> Collection<T> merge(final Collection<T> collection1, final Collection<T> collection2) {
+            final Map<T, Boolean> map = new LinkedHashMap<>();
+
+            final Iterable<T> all =
+                    Iterables.unmodifiableIterable(
+                            Iterables.concat(collection1, collection2));
+
+            for (T item : all) {
+                map.put(item, Boolean.TRUE);
+            }
+
+            return map.keySet();
+        }
 
         public CubeJSQuery build(){
             if (!UtilMethods.isSet(dimensions) && !UtilMethods.isSet(measures)) {
@@ -177,6 +310,23 @@ public class CubeJSQuery {
 
         public Order getOrder() {
             return order;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) {
+                return true;
+            }
+            if (o == null || getClass() != o.getClass()) {
+                return false;
+            }
+            OrderItem orderItem = (OrderItem) o;
+            return Objects.equals(orderBy, orderItem.orderBy) && order == orderItem.order;
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(orderBy, order);
         }
     }
 }

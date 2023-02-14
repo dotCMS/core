@@ -44,25 +44,13 @@ public class AccessTokenRenewRunnable implements Runnable {
      */
     @Override
     public void run() {
-        final String clientIds = appsWithStatus
-            .stream()
-            .map(app -> app.getAnalyticsApp().getAnalyticsProperties().clientId())
-            .collect(Collectors.joining(StringPool.COMMA));
-
         synchronized (this) {
             if (callerJob.isRenewRunning()) {
-                Logger.info(
-                    this,
-                    String.format(
-                        "Renewing thread for clientIds [%s] is already running, skipping this execution",
-                        clientIds));
                 return;
             }
 
             try {
                 callerJob.setRenewRunning(true);
-
-                Logger.info(this, String.format("Starting access token renew thread for clientIds [%s]", clientIds));
                 appsWithStatus.forEach(this::renewToken);
             } finally {
                 callerJob.setRenewRunning(false);
@@ -80,7 +68,7 @@ public class AccessTokenRenewRunnable implements Runnable {
         final AnalyticsApp analyticsApp = appWithStatus.getAnalyticsApp();
         final String clientId = analyticsApp.getAnalyticsProperties().clientId();
         final TokenStatus tokenStatus = appWithStatus.getTokenStatus();
-        Logger.info(
+        Logger.debug(
             this,
             String.format(
                 "Starting access token renew thread for clientId %s and tokenStatus %s",
@@ -89,7 +77,7 @@ public class AccessTokenRenewRunnable implements Runnable {
 
         boolean restore = false;
         final AccessToken found = analyticsAPI.getAccessToken(analyticsApp);
-        final AccessToken blocked = AnalyticsHelper.createBlockedToken(
+        final AccessToken blocked = AnalyticsHelper.get().createBlockedToken(
             analyticsApp,
             "ACCESS_TOKEN is blocked due to access token renew");
         if (tokenStatus == TokenStatus.EXPIRED) {
@@ -98,6 +86,7 @@ public class AccessTokenRenewRunnable implements Runnable {
 
         try {
             analyticsAPI.refreshAccessToken(analyticsApp);
+            Logger.info(this, String.format("ACCESS_TOKEN for clientId %s has been successfully renewed", clientId));
         } catch (AnalyticsException e) {
             Logger.error(this, String.format("Could not renew token for clientId %s", clientId), e);
             if (e instanceof UnrecoverableAnalyticsException) {
@@ -105,7 +94,7 @@ public class AccessTokenRenewRunnable implements Runnable {
                     this,
                     String.format("Unrecoverable error while renewing ACCESS_TOKEN for clientId %s", clientId),
                     e);
-                final AccessToken noop = AnalyticsHelper.createNoopToken(
+                final AccessToken noop = AnalyticsHelper.get().createNoopToken(
                     analyticsApp,
                     String.format("Setting NOOP ACCESS_TOKEN for clientId %s due to %s", clientId, e.getMessage()));
                 analyticsCache.putAccessToken(noop);
@@ -117,7 +106,7 @@ public class AccessTokenRenewRunnable implements Runnable {
                 Optional.ofNullable(found)
                     .ifPresentOrElse(
                         token -> {
-                            Logger.info(this, String.format("Restoring ACCESS_TOKEN for clientId %s", clientId));
+                            Logger.debug(this, String.format("Restoring ACCESS_TOKEN for clientId %s", clientId));
                             analyticsCache.putAccessToken(token);
                             },
                         () -> analyticsCache.removeAccessToken(blocked));
