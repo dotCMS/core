@@ -3,6 +3,7 @@ package com.dotcms.experiments.business;
 import static com.dotcms.experiments.model.AbstractExperiment.Status.DRAFT;
 import static com.dotcms.experiments.model.AbstractExperiment.Status.ENDED;
 import static com.dotcms.experiments.model.AbstractExperiment.Status.RUNNING;
+import static com.dotcms.experiments.model.AbstractExperiment.Status.SCHEDULED;
 import static com.dotcms.experiments.model.AbstractExperimentVariant.EXPERIMENT_VARIANT_NAME_PREFIX;
 import static com.dotcms.experiments.model.AbstractExperimentVariant.EXPERIMENT_VARIANT_NAME_SUFFIX;
 
@@ -31,8 +32,6 @@ import com.dotcms.experiments.business.result.Event;
 import com.dotcms.experiments.business.result.ExperimentAnalyzerUtil;
 import com.dotcms.experiments.business.result.ExperimentResults;
 import com.dotcms.experiments.business.result.ExperimentResultsQueryFactory;
-import com.dotcms.experiments.business.result.ExperimentResult;
-import com.dotcms.experiments.business.result.ExperimentResultQueryFactory;
 import com.dotcms.exception.NotAllowedException;
 import com.dotcms.experiments.model.AbstractExperiment.Status;
 import com.dotcms.experiments.model.AbstractTrafficProportion.Type;
@@ -445,7 +444,7 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
                         + "Experiment Id: " + persistedExperiment.id());
 
         DotPreconditions.isTrue(persistedExperiment.status()!=Status.RUNNING ||
-                        persistedExperiment.status() == Status.SCHEDULED,()-> "Cannot start an already started Experiment.",
+                        persistedExperiment.status() != Status.SCHEDULED,()-> "Cannot start an already started Experiment.",
                 DotStateException.class);
 
         DotPreconditions.isTrue(persistedExperiment.status()== DRAFT
@@ -458,24 +457,46 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
         DotPreconditions.checkState(persistedExperiment.goals().isPresent(), "The Experiment needs to "
                 + "have the Goal set.");
 
-        final Experiment experimentToStart;
+        Experiment toReturn;
 
         if(persistedExperiment.scheduling().isEmpty()) {
             final Scheduling scheduling = startNowScheduling(persistedExperiment);
-            experimentToStart = persistedExperiment.withScheduling(scheduling);
+            toReturn = save(persistedExperiment.withScheduling(scheduling).withStatus(RUNNING), user);
+            publishContentOnExperimentVariants(user, toReturn);
         } else {
             Scheduling scheduling = validateScheduling(persistedExperiment.scheduling().get());
-            experimentToStart = persistedExperiment.withScheduling(scheduling);
+            toReturn = save(persistedExperiment.withScheduling(scheduling).withStatus(SCHEDULED)
+                    ,user);
         }
 
-        Experiment running = experimentToStart.withStatus(Status.RUNNING);
-        running = save(running, user);
+        return toReturn;
+    }
 
+    @Override
+    public Experiment startScheduled(String experimentId, User user)
+            throws DotDataException, DotSecurityException {
+        DotPreconditions.isTrue(hasValidLicense(), InvalidLicenseException.class,
+                invalidLicenseMessageSupplier);
+        DotPreconditions.checkArgument(UtilMethods.isSet(experimentId), "experiment Id must be provided.");
+
+        final Experiment persistedExperiment =  find(experimentId, user).orElseThrow(
+                ()-> new IllegalArgumentException("Experiment with provided id not found")
+        );
+
+        validatePermissions(user, persistedExperiment,
+                "You don't have permission to start the Experiment. "
+                        + "Experiment Id: " + persistedExperiment.id());
+
+        DotPreconditions.isTrue(persistedExperiment.status() == Status.SCHEDULED,()-> "Cannot start an already started Experiment.",
+                DotStateException.class);
+
+        Experiment running = save(persistedExperiment.withStatus(RUNNING), user);
         publishContentOnExperimentVariants(user, running);
 
         return running;
-
     }
+
+
     private void publishContentOnExperimentVariants(final User user,
             final Experiment runningExperiment)
             throws DotDataException, DotSecurityException {
@@ -866,12 +887,12 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
     @Override
     public void startScheduledToStartExperiments(final User user) throws DotDataException {
         final List<Experiment> scheduledToStartExperiments = list(ExperimentFilter.builder()
-                .statuses(CollectionsUtils.set(DRAFT)).build(), user).stream()
+                .statuses(CollectionsUtils.set(SCHEDULED)).build(), user).stream()
                 .filter((experiment -> experiment.scheduling().isPresent() && experiment.scheduling().get().startDate().orElseThrow()
                         .isAfter(Instant.now()))).collect(Collectors.toList());
 
         scheduledToStartExperiments.forEach((experiment ->
-                Try.of(()->start(experiment.id().orElseThrow(), user)).getOrElseThrow((e)->
+                Try.of(()->startScheduled(experiment.id().orElseThrow(), user)).getOrElseThrow((e)->
                         new DotStateException("Unable to start Experiment. Cause:" + e))));
     }
     
