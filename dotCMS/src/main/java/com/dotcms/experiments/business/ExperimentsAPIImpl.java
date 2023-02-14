@@ -13,7 +13,11 @@ import static com.dotcms.variant.VariantAPI.DEFAULT_VARIANT;
 
 import com.dotcms.analytics.app.AnalyticsApp;
 import com.dotcms.analytics.helper.AnalyticsHelper;
+
+import com.dotcms.analytics.metrics.AbstractCondition.Operator;
 import com.dotcms.analytics.metrics.EventType;
+import com.dotcms.analytics.metrics.Metric;
+import com.dotcms.analytics.metrics.MetricType;
 import com.dotcms.analytics.metrics.MetricsUtil;
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
@@ -25,16 +29,24 @@ import com.dotcms.enterprise.rules.RulesAPI;
 import com.dotcms.experiments.business.result.BrowserSession;
 import com.dotcms.experiments.business.result.Event;
 import com.dotcms.experiments.business.result.ExperimentAnalyzerUtil;
+import com.dotcms.experiments.business.result.ExperimentResults;
+import com.dotcms.experiments.business.result.ExperimentResultsQueryFactory;
 import com.dotcms.experiments.business.result.ExperimentResult;
 import com.dotcms.experiments.business.result.ExperimentResultQueryFactory;
 import com.dotcms.exception.NotAllowedException;
 import com.dotcms.experiments.model.AbstractExperiment.Status;
 import com.dotcms.experiments.model.AbstractTrafficProportion.Type;
 import com.dotcms.experiments.model.Experiment;
+import com.dotcms.experiments.model.Experiment.Builder;
 import com.dotcms.experiments.model.ExperimentVariant;
+import com.dotcms.experiments.model.Goals;
 import com.dotcms.experiments.model.Scheduling;
 import com.dotcms.experiments.model.TargetingCondition;
+
 import com.dotcms.experiments.model.TrafficProportion;
+
+
+import com.dotcms.rest.exception.NotFoundException;
 import com.dotcms.util.CollectionsUtils;
 import com.dotcms.util.DotPreconditions;
 import com.dotcms.util.LicenseValiditySupplier;
@@ -88,6 +100,8 @@ import java.util.TreeSet;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import io.vavr.Lazy;
+import org.jetbrains.annotations.NotNull;
+
 public class ExperimentsAPIImpl implements ExperimentsAPI {
 
     private Lazy<Boolean> isExperimentEnabled =
@@ -150,7 +164,12 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
         builder.lastModifiedBy(user.getUserId());
         
         if(experiment.goals().isPresent()) {
-            MetricsUtil.INSTANCE.validateGoals(experiment.goals().get());
+            final Goals goals = experiment.goals().orElseThrow();
+            MetricsUtil.INSTANCE.validateGoals(goals);
+
+            addConditionIfIsNeed(goals,
+                    APILocator.getHTMLPageAssetAPI().fromContentlet(pageAsContent), builder);
+
         }
 
         if(experiment.targetingConditions().isPresent()) {
@@ -185,6 +204,57 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
         }
 
         return savedExperiment.get();
+    }
+
+    private void addConditionIfIsNeed(final Goals goals, final HTMLPageAsset page,
+            final Builder builder) {
+
+        if (goals.primary().type() == MetricType.REACH_PAGE && !hasCondition(goals, "referer")) {
+            addRefererCondition(page, builder, goals);
+        } else if (goals.primary().type() == MetricType.BOUNCE_RATE && !hasCondition(goals, "url")) {
+            addUrlCondition(page, builder, goals);
+        }
+    }
+
+    private void addRefererCondition(final HTMLPageAsset page, final Builder builder, final Goals goals) {
+
+        final com.dotcms.analytics.metrics.Condition refererCondition = createConditionWithUrlValue(
+                page, "referer");
+
+        final Goals newGoal = createNewGoals(goals, refererCondition);
+        builder.goals(newGoal);
+    }
+
+    private void addUrlCondition(final HTMLPageAsset page, final Builder builder, final Goals goals) {
+
+        final com.dotcms.analytics.metrics.Condition refererCondition = createConditionWithUrlValue(
+                page, "url");
+
+        final Goals newGoal = createNewGoals(goals, refererCondition);
+        builder.goals(newGoal);
+    }
+
+    @NotNull
+    private static Goals createNewGoals(final Goals oldGoals,
+            final com.dotcms.analytics.metrics.Condition newConditionToAdd) {
+        final Metric newMetric = Metric.builder().from(oldGoals.primary())
+                .addConditions(newConditionToAdd).build();
+        return Goals.builder().from(oldGoals).primary(newMetric).build();
+    }
+
+    private boolean hasCondition(final Goals goals, final String conditionName){
+        return goals.primary().conditions()
+                .stream()
+                .anyMatch(condition ->conditionName .equals(condition.parameter()));
+    }
+    private com.dotcms.analytics.metrics.Condition createConditionWithUrlValue(final HTMLPageAsset page,
+            final String conditionName) {
+
+        return com.dotcms.analytics.metrics.Condition.builder()
+                .parameter(conditionName)
+                .operator(Operator.CONTAINS)
+                .value(page.getPageUrl())
+                .build();
     }
 
     private void saveTargetingConditions(final Experiment experiment, final User user)
@@ -714,7 +784,20 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
      * @return
      */
     @Override
-    public ExperimentResult getResult(final Experiment experiment) {
+    public ExperimentResults getResults(final Experiment experiment)
+            throws DotDataException, DotSecurityException {
+
+        final String experimentId = experiment.id().orElseThrow(
+                () -> new IllegalArgumentException("The Experiment must have an Identifier"));
+
+        final Experiment experimentFromDataBase = APILocator.getExperimentsAPI()
+                .find(experimentId, APILocator.systemUser())
+                .orElseThrow(() -> new NotFoundException("Experiment not found: " + experimentId));
+
+        DotPreconditions.isTrue(experimentFromDataBase.status() == RUNNING,
+                "The Experiment must be RUNNING");
+
+
         final List<BrowserSession> events = getEvents(experiment);
         return ExperimentAnalyzerUtil.INSTANCE.getExperimentResult(experiment, events);
     }
@@ -729,7 +812,7 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
             final CubeJSClient cubeClient = new CubeJSClient(
                     analyticsApp.getAnalyticsProperties().analyticsReadUrl());
 
-            final CubeJSQuery cubeJSQuery = ExperimentResultQueryFactory.INSTANCE
+            final CubeJSQuery cubeJSQuery = ExperimentResultsQueryFactory.INSTANCE
                     .create(experiment);
 
             final CubeJSResultSet cubeJSResultSet = cubeClient.send(cubeJSQuery);

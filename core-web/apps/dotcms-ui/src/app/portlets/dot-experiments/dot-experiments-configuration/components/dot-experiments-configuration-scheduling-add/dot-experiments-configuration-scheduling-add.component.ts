@@ -47,6 +47,7 @@ export class DotExperimentsConfigurationSchedulingAddComponent implements OnInit
     stepStatus = ComponentStatus;
 
     today = new Date();
+    initialDate = new Date();
 
     vm$: Observable<{ experimentId: string; scheduling: RangeOfDateAndTime; status: StepStatus }> =
         this.dotExperimentsConfigurationStore.schedulingStepVm$;
@@ -56,6 +57,7 @@ export class DotExperimentsConfigurationSchedulingAddComponent implements OnInit
     ) {}
 
     ngOnInit(): void {
+        this.setInitialDate();
         this.initForm();
     }
 
@@ -96,5 +98,14 @@ export class DotExperimentsConfigurationSchedulingAddComponent implements OnInit
                 )
             });
         });
+    }
+
+    private setInitialDate(): void {
+        if (this.initialDate.getMinutes() > 30) {
+            this.initialDate.setMinutes(0);
+            this.initialDate.setHours(this.initialDate.getHours() + 1);
+        } else {
+            this.initialDate.setMinutes(30);
+        }
     }
 }

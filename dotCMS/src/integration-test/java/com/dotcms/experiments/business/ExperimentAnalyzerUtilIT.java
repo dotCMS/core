@@ -9,7 +9,9 @@ import com.dotcms.analytics.metrics.Condition;
 import com.dotcms.analytics.metrics.EventType;
 import com.dotcms.analytics.metrics.Metric;
 import com.dotcms.analytics.metrics.MetricType;
+
 import com.dotcms.cube.CubeJSResultSet;
+
 import com.dotcms.datagen.ExperimentDataGen;
 import com.dotcms.datagen.HTMLPageDataGen;
 import com.dotcms.datagen.SiteDataGen;
@@ -17,8 +19,10 @@ import com.dotcms.datagen.TemplateDataGen;
 import com.dotcms.experiments.business.result.BrowserSession;
 import com.dotcms.experiments.business.result.Event;
 import com.dotcms.experiments.business.result.ExperimentAnalyzerUtil;
+
+import com.dotcms.experiments.business.result.ExperimentResults;
+import com.dotcms.experiments.business.result.ExperimentResults.VariantResult;
 import com.dotcms.experiments.business.result.ExperimentResult;
-import com.dotcms.experiments.business.result.ExperimentResult.VariantResult;
 import com.dotcms.experiments.model.Experiment;
 import com.dotcms.experiments.model.ExperimentVariant;
 import com.dotcms.experiments.model.Goals;
@@ -33,6 +37,7 @@ import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 import java.util.SortedSet;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -135,14 +140,14 @@ public class ExperimentAnalyzerUtilIT {
                 browserSession_5.get(0).get("Events.lookBackWindow").toString(),
                 browserSession_5.stream().map(eventMap -> new Event(eventMap, EventType.PAGE_VIEW)).collect(Collectors.toList())));
 
-        final ExperimentResult experimentResult = ExperimentAnalyzerUtil.INSTANCE
+        final ExperimentResults experimentResults = ExperimentAnalyzerUtil.INSTANCE
                 .getExperimentResult(experiment, browserSessions);
 
-        assertEquals(3, experimentResult.getTotalSessions());
+        assertEquals(3, experimentResults.getTotalSessions());
 
-       assertEquals(1, experimentResult.getGoalResults().size());
+       assertEquals(1, experimentResults.getGoalResults().size());
 
-        final Map<String, VariantResult> variants = experimentResult.getGoalResults().get(0)
+        final Map<String, VariantResult> variants = experimentResults.getGoalResults().get(0)
                 .getVariants();
 
         assertEquals(2, variants.size());
@@ -158,6 +163,104 @@ public class ExperimentAnalyzerUtilIT {
             if (!resultVariant.getVariantName().equals("DEFAULT")) {
                 assertEquals(2, resultVariant.totalUniqueBySession());
                 assertEquals(3, resultVariant.totalMultiBySession());
+            } else {
+                assertEquals(0, resultVariant.totalUniqueBySession());
+                assertEquals(0, resultVariant.totalMultiBySession());
+            }
+        }
+
+    }
+
+    /**
+     * Method to test: {@link ExperimentAnalyzerUtil#getExperimentResult(Experiment, List)}
+     * When:
+     * - You have 4 pages: A, B, and C
+     * - Create a Experiment with a BOUNCE_RATE goal where:
+     *      - Page B is the Experiment's Page and also if the page to be check for BOUNCE_RATE
+     * -  Now different users navigate by the site (triggering pageview Events)
+     *      - A, B: Count as a Bounce Rate.
+     *      - A, C and D: Not count as session into the Experiment.
+     *      - A, B, C: not count as a Bounce Rate
+     * Should:
+     * - Total Session: 2
+     * - Unique Session Bounce Rate: 1
+     * - Multi Session: 1 (Really we can not have more than one Bounce Rate by session)
+     */
+    @Test
+    public void analyzerDataBounceRate(){
+        final Host host = new SiteDataGen().nextPersisted();
+        final Template template = new TemplateDataGen().host(host).nextPersisted();
+
+        final HTMLPageAsset pageA = new HTMLPageDataGen(host, template).nextPersisted();
+        final HTMLPageAsset pageB = new HTMLPageDataGen(host, template).nextPersisted();
+        final HTMLPageAsset pageC = new HTMLPageDataGen(host, template).nextPersisted();
+
+        final Metric metric = Metric.builder()
+                .name("Testing Metric")
+                .type(MetricType.BOUNCE_RATE)
+                .addConditions(getUrlCondition(pageB.getPageUrl()))
+                .build();
+
+        final Goals goal = Goals.builder().primary(metric).build();
+
+        final Experiment experiment = new ExperimentDataGen()
+                .addVariant("Testing Variant")
+                .page(pageB)
+                .addGoal(goal)
+                .nextPersisted();
+
+        final ExperimentVariant anotherVariant = experiment.trafficProportion().variants().stream()
+                .filter(experimentVariant -> !experimentVariant.id().equals("DEFAULT"))
+                .limit(1)
+                .findFirst()
+                .orElseThrow(() -> new AssertionError("Must a Variant diffrent from DEFAULT"));
+
+        final List<Map<String, Object>> browserSession_1 = createPageViewEvents(experiment,
+                anotherVariant.id(), pageA, pageB);
+
+        final List<Map<String, Object>> browserSession_2 = createPageViewEvents(experiment,
+                anotherVariant.id(), pageA, pageC);
+
+        final List<Map<String, Object>> browserSession_3 = createPageViewEvents(experiment,
+                anotherVariant.id(), pageA, pageB, pageC);
+
+
+        final List<BrowserSession> browserSessions = new ArrayList<>();
+        browserSessions.add(new BrowserSession(
+                browserSession_1.get(0).get("Events.lookBackWindow").toString(),
+                browserSession_1.stream().map(eventMap -> new Event(eventMap, EventType.PAGE_VIEW)).collect(Collectors.toList())));
+
+        browserSessions.add(new BrowserSession(
+                browserSession_2.get(0).get("Events.lookBackWindow").toString(),
+                browserSession_2.stream().map(eventMap -> new Event(eventMap, EventType.PAGE_VIEW)).collect(Collectors.toList())));
+
+        browserSessions.add(new BrowserSession(
+                browserSession_3.get(0).get("Events.lookBackWindow").toString(),
+                browserSession_3.stream().map(eventMap -> new Event(eventMap, EventType.PAGE_VIEW)).collect(Collectors.toList())));
+
+        final ExperimentResults experimentResult = ExperimentAnalyzerUtil.INSTANCE
+                .getExperimentResult(experiment, browserSessions);
+
+        assertEquals(2, experimentResult.getTotalSessions());
+
+        assertEquals(1, experimentResult.getGoalResults().size());
+
+        final Map<String, VariantResult> variants = experimentResult.getGoalResults().get(0)
+                .getVariants();
+
+        assertEquals(2, variants.size());
+
+        final List<String> expectedVariants = experiment.trafficProportion().variants().stream()
+                .map(experimentVariant -> experimentVariant.id())
+                .collect(Collectors.toList());
+
+        for (VariantResult resultVariant : variants.values()) {
+
+            assertTrue(expectedVariants.contains(resultVariant.getVariantName()));
+
+            if (!resultVariant.getVariantName().equals("DEFAULT")) {
+                assertEquals(1, resultVariant.totalUniqueBySession());
+                assertEquals(1, resultVariant.totalMultiBySession());
             } else {
                 assertEquals(0, resultVariant.totalUniqueBySession());
                 assertEquals(0, resultVariant.totalMultiBySession());

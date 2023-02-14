@@ -4,7 +4,9 @@ import static com.dotcms.util.CollectionsUtils.map;
 
 import com.dotcms.analytics.metrics.Metric;
 import com.dotcms.analytics.metrics.MetricType;
+
 import com.dotcms.cube.CubeJSResultSet;
+
 import com.dotcms.experiments.model.Experiment;
 import com.dotcms.experiments.model.ExperimentVariant;
 import com.dotcms.experiments.model.Goals;
@@ -17,12 +19,14 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.SortedSet;
+
 import java.util.stream.Collectors;
+
 
 /**
  * Analyze the {@link Event} into an {@link Experiment} to realize when the {@link com.dotcms.experiments.model.Goals}
  * was success into the {@link Experiment}, to put it in another way analyze a set of  {@link BrowserSession}
- * to retur the {@link ExperimentResult}.
+ * to return the {@link ExperimentResult}.
  *
  */
 public enum ExperimentAnalyzerUtil {
@@ -35,18 +39,20 @@ public enum ExperimentAnalyzerUtil {
 
     private static Map<MetricType, MetricExperimentAnalyzer> createHelpersMap() {
         return map(
-                MetricType.REACH_PAGE, new ReachPageExperimentAnalyzer()
+                MetricType.REACH_PAGE, new ReachPageExperimentAnalyzer(),
+                MetricType.BOUNCE_RATE, new BounceRateExperimentAnalyzer()
         );
     }
 
     /**
-     * Return the {@link ExperimentResult} from a set of {@link BrowserSession} and an {@link Experiment}
+     * Return the {@link ExperimentResults} from a set of {@link BrowserSession} and an {@link Experiment}
      *
      * @param experiment
      * @param browserSessions
      * @return
      */
-    public ExperimentResult getExperimentResult(final Experiment experiment,
+    public ExperimentResults getExperimentResult(final Experiment experiment,
+
             final List<BrowserSession> browserSessions)  {
         final Goals goals = experiment.goals()
                 .orElseThrow(() -> new IllegalArgumentException("The Experiment must have a Goal"));
@@ -55,7 +61,8 @@ public enum ExperimentAnalyzerUtil {
         final MetricExperimentAnalyzer metricExperimentAnalyzer = experimentResultQueryHelpers.get()
                 .get(goalMetricType);
 
-        final  ExperimentResult.Builder builder = new ExperimentResult.Builder();
+        final  ExperimentResults.Builder builder = new ExperimentResults.Builder();
+
 
         final SortedSet<ExperimentVariant> variants = experiment.trafficProportion().variants();
         builder.addVariants(variants);
@@ -81,11 +88,6 @@ public enum ExperimentAnalyzerUtil {
         }
 
         builder.setSessionTotal(experimentSessions.size());
-        builder.setTotalEvents(experimentSessions.stream()
-                .map(browserSession -> browserSession.getEvents())
-                .map(events -> events.size())
-                .collect(Collectors.summingInt(Integer::intValue))
-        );
 
         return builder.build();
     }
