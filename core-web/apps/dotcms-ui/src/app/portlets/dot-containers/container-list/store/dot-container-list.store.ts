@@ -427,13 +427,13 @@ export class DotContainerListStore extends ComponentStore<DotContainerListState>
     }
 
     /**
-     * Identify if is a container as File based on the identifier path.
+     * Identify if is a container as File based on the identifier pathname.
      * @param {DotContainer} identifier
      * @returns boolean
      * @memberof DotContainerListComponent
      */
-    private isContainerAsFile({ path }: DotContainer): boolean {
-        return !!path;
+    private isContainerAsFile({ pathName }: DotContainer): boolean {
+        return !!pathName;
     }
 
     /**
@@ -444,7 +444,7 @@ export class DotContainerListStore extends ComponentStore<DotContainerListState>
     editContainer(container: DotContainer): void {
         this.isContainerAsFile(container)
             ? this.dotSiteBrowserService
-                  .setSelectedFolder(container.path)
+                  .setSelectedFolder(container.pathName)
                   .pipe(take(1))
                   .subscribe(() => {
                       this.dotRouterService.goToSiteBrowser();

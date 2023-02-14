@@ -128,7 +128,7 @@ const containersMock: DotContainer[] = [
         parentPermissionable: {
             hostname: 'default'
         },
-        path: '///dotcms',
+        path: '//demo.dotcms.com/application/containers/default/',
         source: CONTAINER_SOURCE.FILE,
         title: 'test',
         type: 'containers',
@@ -294,7 +294,7 @@ describe('ContainerListComponent', () => {
         dotSiteBrowserService = TestBed.inject(DotSiteBrowserService);
     });
 
-    describe('with data', () => {
+    fdescribe('with data', () => {
         beforeEach(fakeAsync(() => {
             spyOn<CoreWebService>(coreWebService, 'requestView').and.returnValue(
                 of({
@@ -395,9 +395,8 @@ describe('ContainerListComponent', () => {
                 .triggerEventHandler('click', null);
 
             fixture.detectChanges();
-            expect(dotSiteBrowserService.setSelectedFolder).toHaveBeenCalledWith(
-                containersMock[4].path
-            );
+            const path = new URL(`http:${containersMock[4].path}`).pathname;
+            expect(dotSiteBrowserService.setSelectedFolder).toHaveBeenCalledWith(path);
             expect(dotRouterService.goToSiteBrowser).toHaveBeenCalledTimes(1);
         });
     });

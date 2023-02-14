@@ -139,6 +139,10 @@ export class ContainerListComponent implements OnDestroy {
                 container.identifier === 'SYSTEM_CONTAINER' ||
                 container.source === CONTAINER_SOURCE.FILE;
 
+            if (container.path) {
+                container.pathName = new URL(`http:${container.path}`).pathname;
+            }
+
             return container;
         });
     }
