@@ -22,5 +22,5 @@ jobs:
           stale-pr-message: 'This PR is stale because it has been open 30 days with no activity. Remove stale label or comment or this will be closed in 7 days.'
           close-issue-message: 'This issue was closed because it has been stalled with no activity.'
           close-pr-message: 'This PR was closed because it has been stalled with no activity.'
-          exempt-issue-labels: 'OKR : Application Performance,OKR : Cloud Engineering,OKR : Code Maintenance,OKR : Core Features,OKR : Customer Success,OKR : Documentation,OKR : Integrations,OKR : Marketing,OKR : Quality Assurance,OKR : Reliability,OKR : Sales,OKR : Security & Privacy,OKR : Technical User Experience,OKR : User Experience,OKR: Customer Support,Priority : 1 Show Stopper,Priority : 2 High,Severity : CS Priority,Severity : Support Priority,Type : Defect'
+          exempt-issue-labels: 'Priority : 1 Show Stopper,Priority : 2 High,Severity : CS Priority,Severity : Support Priority,Type : Defect'
           exempt-all-assignees: true
