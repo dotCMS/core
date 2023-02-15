@@ -77,6 +77,7 @@ describe('DotContentTypeSelectorComponent', () => {
         expect(pDropDown.filter).toBeDefined();
         expect(pDropDown.filterBy).toBeDefined();
         expect(pDropDown.showClear).toBeDefined();
+        expect(pDropDown.resetFilterOnHide).toBeDefined();
         expect(pDropDown.style).toEqual({ width: '155px' });
     });
 });
