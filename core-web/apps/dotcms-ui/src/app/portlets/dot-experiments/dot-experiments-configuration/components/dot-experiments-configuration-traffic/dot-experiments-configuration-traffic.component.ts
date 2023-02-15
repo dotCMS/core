@@ -66,11 +66,21 @@ export class DotExperimentsConfigurationTrafficComponent {
         private readonly dotExperimentsConfigurationStore: DotExperimentsConfigurationStore
     ) {}
 
+    /**
+     * Open sidebar to set Traffic Allocation
+     * @returns void
+     * @memberof DotExperimentsConfigurationTrafficComponent
+     */
     changeTrafficAllocation() {
         this.trafficConfig = TrafficConfig.ALLOCATION;
         this.dotExperimentsConfigurationStore.openSidebar(ExperimentSteps.TRAFFIC);
     }
 
+    /**
+     * Open sidebar to set Traffic Proportion
+     * @returns void
+     * @memberof DotExperimentsConfigurationTrafficComponent
+     */
     changeTrafficProportion() {
         this.trafficConfig = TrafficConfig.SPLIT;
         this.dotExperimentsConfigurationStore.openSidebar(ExperimentSteps.TRAFFIC);

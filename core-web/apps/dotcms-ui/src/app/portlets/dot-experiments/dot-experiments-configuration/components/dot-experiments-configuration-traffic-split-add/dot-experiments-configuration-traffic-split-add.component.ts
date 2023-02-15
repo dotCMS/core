@@ -57,6 +57,8 @@ import { DotSidebarHeaderComponent } from '@shared/dot-sidebar-header/dot-sideba
 export class DotExperimentsConfigurationTrafficSplitAddComponent implements OnInit {
     form: FormGroup;
     stepStatus = ComponentStatus;
+    splitEvenly = TrafficProportionTypes.SPLIT_EVENLY;
+    customPercentages = TrafficProportionTypes.CUSTOM_PERCENTAGES;
 
     vm$: Observable<{
         experimentId: string;
@@ -101,7 +103,7 @@ export class DotExperimentsConfigurationTrafficSplitAddComponent implements OnIn
      * @returns void
      * @memberof DotExperimentsConfigurationTrafficSplitAddComponent
      */
-    splitEvenly() {
+    splitVariantsEvenly() {
         const amountOfVariants = this.variants.length;
         this.variants.controls.forEach((variant) => {
             variant.get('weight').setValue(Math.trunc((100 / amountOfVariants) * 100) / 100);

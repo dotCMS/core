@@ -18,14 +18,14 @@
                     </label>
                     <p-radioButton
                         [label]="'experiments.configure.traffic.split.evenly' | dm"
-                        (click)="splitEvenly()"
-                        value="SPLIT_EVENLY"
+                        [value]="splitEvenly"
+                        (click)="splitVariantsEvenly()"
                         formControlName="type"
                     >
                     </p-radioButton>
                     <p-radioButton
                         [label]="'experiments.configure.traffic.split.custom' | dm"
-                        value="CUSTOM_PERCENTAGES"
+                        [value]="customPercentages"
                         formControlName="type"
                     >
                     </p-radioButton>
@@ -50,7 +50,10 @@
                             </span>
                             <p-inputNumber
                                 class="experiment-traffic-split__variants-weight"
-                                *ngIf="form.value.type === 'CUSTOM_PERCENTAGES'; else splitEven"
+                                *ngIf="
+                                    form.value.type === customPercentages;
+                                    else splitEvenTemplate
+                                "
                                 [maxFractionDigits]="2"
                                 [min]="0"
                                 [max]="100"
@@ -59,7 +62,7 @@
                             >
                             </p-inputNumber>
 
-                            <ng-template #splitEven>
+                            <ng-template #splitEvenTemplate>
                                 <span
                                     class="experiment-traffic-split__variants-weight"
                                     data-testId="variant-weight"
