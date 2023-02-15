@@ -194,12 +194,8 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
                     ORIGINAL_VARIANT, user));
         }
 
-        if(savedExperiment.get().scheduling().isEmpty()) {
-            final Scheduling scheduling = startNowScheduling(savedExperiment.get());
-            savedExperiment = Optional.of(savedExperiment.get().withScheduling(scheduling));
-        } else if(experiment.status()!=ENDED) {
-            Scheduling scheduling = validateScheduling(savedExperiment.get().scheduling().get());
-            savedExperiment = Optional.of(savedExperiment.get().withScheduling(scheduling));
+        if(!savedExperiment.get().scheduling().isEmpty()) {
+            validateScheduling(savedExperiment.get().scheduling().get());
         }
 
         return savedExperiment.get();
