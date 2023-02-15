@@ -55,7 +55,7 @@ pull_dotcms_backups () {
         AUTH_HEADER="Authorization: Bearer $DOTCMS_API_TOKEN"
     else
         echo "Using Auth: Basic"
-        AUTH_HEADER="Authorization: Basic $(echo $DOTCMS_USERNAME_PASSWORD | base64)" 
+        AUTH_HEADER="Authorization: Basic $(echo -n $DOTCMS_USERNAME_PASSWORD | base64)" 
     fi
 
     # GET Backup
@@ -63,7 +63,7 @@ pull_dotcms_backups () {
     DB_FILE=/data/shared/dotcms_db.sql.gz
     rm -f $ASSETS_FILE $DB_FILE
 
-    # echo "Using Auth Header: $AUTH_HEADER"
+    echo "Using Auth Header: $AUTH_HEADER"
 
     echo "Pulling Environment from $DOTCMS_SOURCE_ENVIRONMENT"
     mkdir -p /data/shared/assets
