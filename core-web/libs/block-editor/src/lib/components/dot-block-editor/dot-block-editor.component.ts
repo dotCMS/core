@@ -155,6 +155,10 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy {
         this.editor.view.dispatch(tr);
     }
 
+    private getParsedCustomBlocks(): CustomBlock {
+        return JSON.parse(this.customBlocks);
+    }
+
     /**
      * This methods get the customBlocks variable to retrieve the custom modules as Objects.
      * Validates that there is customBlocks defined.
@@ -163,7 +167,7 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy {
     private async getCustomBlocks(): Promise<AnyExtension[]> {
         let data: CustomBlock;
         try {
-            data = JSON.parse(this.customBlocks);
+            data = this.getParsedCustomBlocks();
         } catch (e) {
             console.warn('JSON parse fails, please check the JSON format.');
 
@@ -272,7 +276,7 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy {
                 allowedBlocks: this._allowedBlocks
             }),
             Placeholder.configure({ placeholder: this.placeholder }),
-            ActionsMenu(this.viewContainerRef),
+            ActionsMenu(this.viewContainerRef, this.getParsedCustomBlocks()),
             DragHandler(this.viewContainerRef),
             ImageUpload(this.injector, this.viewContainerRef),
             BubbleLinkFormExtension(this.viewContainerRef),

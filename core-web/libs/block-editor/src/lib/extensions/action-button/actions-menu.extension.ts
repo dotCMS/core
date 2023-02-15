@@ -11,6 +11,8 @@ import { FloatingMenuPluginProps } from '@tiptap/extension-floating-menu';
 import { Level } from '@tiptap/extension-heading';
 import Suggestion, { SuggestionOptions, SuggestionProps } from '@tiptap/suggestion';
 
+import { CustomBlock } from '@dotcms/dotcms-models';
+
 import { ActionButtonComponent } from './action-button.component';
 
 import {
@@ -164,20 +166,26 @@ function execCommand({
             editor.chain().deleteRange(range).setHorizontalRule().focus().run();
         },
         image: () => editor.commands.openAssetForm({ type: 'image' }),
-        video: () => editor.commands.openAssetForm({ type: 'video' })
+        video: () => editor.commands.openAssetForm({ type: 'video' }),
+        CustomNode: () => editor.commands['addHelloWorld']()
     };
+
+    // eslint-disable-next-line no-console
+    console.log(props.type.name);
 
     whatToDo[props.type.name]
         ? whatToDo[props.type.name]()
         : editor.chain().setTextSelection(range).focus().run();
 }
 
-export const ActionsMenu = (viewContainerRef: ViewContainerRef) => {
+export const ActionsMenu = (viewContainerRef: ViewContainerRef, customBlocks: CustomBlock) => {
     let myTippy;
     let suggestionsComponent: ComponentRef<SuggestionsComponent>;
     const suggestionKey = new PluginKey('suggestionPlugin');
     const destroy$: Subject<boolean> = new Subject<boolean>();
     let shouldShow = true;
+    // eslint-disable-next-line no-console
+    console.log('From Actions Menu', customBlocks);
 
     /**
      * Get's called on button click or suggestion char
@@ -213,7 +221,10 @@ export const ActionsMenu = (viewContainerRef: ViewContainerRef) => {
         /* Empezamos Aqui */
         const { allowedBlocks, allowedContentTypes, lang } = editor.storage.dotConfig;
         const editorAllowedBlocks = allowedBlocks.length > 1 ? allowedBlocks : [];
-        const items = getItems({ allowedBlocks: editorAllowedBlocks, editor, range });
+        const items = getItems({ allowedBlocks: editorAllowedBlocks, editor, range, customBlocks });
+        // eslint-disable-next-line no-console
+        console.log('sup items:', items);
+
         suggestionsComponent = viewContainerRef.createComponent(SuggestionsComponent);
 
         // Setting Inputs
@@ -234,15 +245,28 @@ export const ActionsMenu = (viewContainerRef: ViewContainerRef) => {
         }
     }
 
-    /* New Functions */
-    function getItems({ allowedBlocks = [], editor, range }): DotMenuItem[] {
+    function getItems({ allowedBlocks = [], editor, range, customBlocks }): DotMenuItem[] {
         const items = allowedBlocks.length
             ? suggestionOptions.filter((item) => this.allowedBlocks.includes(item.id))
             : suggestionOptions;
 
-        items.forEach((item) => (item.command = () => onCommand({ item, editor, range })));
+        const customItems = [
+            ...items,
+            ...customBlocks.extensions
+                .map((extension) =>
+                    extension.actions.map((action) => ({
+                        icon: action.icon,
+                        label: action.menuLabel,
+                        command: action.command,
+                        id: action.name
+                    }))
+                )
+                .flat()
+        ];
 
-        return items;
+        customItems.forEach((item) => (item.command = () => onCommand({ item, editor, range })));
+
+        return customItems;
     }
 
     function onCommand({ item, editor, range }) {
