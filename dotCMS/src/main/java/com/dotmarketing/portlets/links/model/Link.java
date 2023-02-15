@@ -28,6 +28,7 @@ import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.liferay.portal.model.User;
 
 /** @author Hibernate CodeGenerator */
@@ -302,6 +303,7 @@ public class Link extends WebAsset implements Serializable, Comparable, Manifest
 	}
 
 	@Override
+	@JsonIgnore
 	public Permissionable getParentPermissionable() throws DotDataException {
 
 		try {

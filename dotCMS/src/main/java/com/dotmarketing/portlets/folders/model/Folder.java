@@ -21,6 +21,7 @@ import com.dotmarketing.portlets.folders.struts.FolderForm;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
@@ -328,6 +329,7 @@ public class Folder implements Serializable, Permissionable, Treeable, Ruleable,
 	}
 
 	@Override
+	@JsonIgnore
 	public Permissionable getParentPermissionable() throws DotDataException {
 
 		User systemUser = APILocator.getUserAPI().getSystemUser();

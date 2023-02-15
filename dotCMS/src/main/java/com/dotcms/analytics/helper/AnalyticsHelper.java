@@ -15,6 +15,7 @@ import com.dotcms.rest.WebResource;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.util.Logger;
 import com.liferay.util.StringPool;
+import io.vavr.Lazy;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.HttpStatus;
 
@@ -34,6 +35,12 @@ import java.util.function.BiPredicate;
  */
 public class AnalyticsHelper {
 
+    private static Lazy<AnalyticsHelper> analyticsHelper = Lazy.of(() -> new AnalyticsHelper());
+
+    public static AnalyticsHelper get(){
+        return analyticsHelper.get();
+    }
+
     private  AnalyticsHelper() {}
 
     /**
@@ -42,7 +49,7 @@ public class AnalyticsHelper {
      * @param statusCode http status code
      * @return true if the response http status is considered tobe successful, otherwise false
      */
-    public static boolean isSuccessResponse(final int statusCode) {
+    public boolean isSuccessResponse(final int statusCode) {
         return Response.Status.Family.familyOf(statusCode) == Response.Status.Family.SUCCESSFUL;
     }
 
@@ -52,7 +59,7 @@ public class AnalyticsHelper {
      * @param response http response representation
      * @return true if the response http status is considered tobe successful, otherwise false
      */
-    public static boolean isSuccessResponse(@NotNull final CircuitBreakerUrl.Response<?> response) {
+    public boolean isSuccessResponse(@NotNull final CircuitBreakerUrl.Response<?> response) {
         return isSuccessResponse(response.getStatusCode());
     }
 
@@ -63,7 +70,7 @@ public class AnalyticsHelper {
      * @param response http response representation
      * @return an {@link Optional<AccessToken>} instance holding the access token data
      */
-    public static Optional<AccessToken> extractToken(final CircuitBreakerUrl.Response<AccessToken> response) {
+    public Optional<AccessToken> extractToken(final CircuitBreakerUrl.Response<AccessToken> response) {
         Objects.requireNonNull(response, "ACCESS_TOKEN response is missing");
         return Optional.ofNullable(response.getResponse());
     }
@@ -74,7 +81,7 @@ public class AnalyticsHelper {
      * @param response http response representation
      * @return an {@link Optional<AnalyticsKey>} instance holding the analytics key data
      */
-    public static Optional<AnalyticsKey> extractAnalyticsKey(final CircuitBreakerUrl.Response<AnalyticsKey> response) {
+    public Optional<AnalyticsKey> extractAnalyticsKey(final CircuitBreakerUrl.Response<AnalyticsKey> response) {
         Objects.requireNonNull(response, "ANALYTICS_KEY response is missing");
         return Optional.ofNullable(response.getResponse());
     }
@@ -85,7 +92,7 @@ public class AnalyticsHelper {
      * @param accessToken provided access token
      * @return true if current time is in the TTL window
      */
-    private static boolean filterIssueDate(final AccessToken accessToken, final BiPredicate<Instant, Instant> filter) {
+    private boolean filterIssueDate(final AccessToken accessToken, final BiPredicate<Instant, Instant> filter) {
         return Optional.ofNullable(accessToken.issueDate())
             .map(issuedAt -> {
                 final Instant now = Instant.now();
@@ -104,7 +111,7 @@ public class AnalyticsHelper {
      * @param accessToken provided access token
      * @return true if current time is in the TTL window
      */
-    public static boolean hasTokenExpired(final AccessToken accessToken) {
+    public boolean hasTokenExpired(final AccessToken accessToken) {
         return !filterIssueDate(accessToken, null);
     }
 
@@ -114,7 +121,7 @@ public class AnalyticsHelper {
      * @param accessToken provided access token
      * @return true if access token is not expired and if it's after the initial mark of the expiring window
      */
-    public static boolean isTokenInWindow(final AccessToken accessToken) {
+    public boolean isTokenInWindow(final AccessToken accessToken) {
         return filterIssueDate(
             accessToken,
             (now, expireDate) -> now.isAfter(expireDate.minusSeconds(AnalyticsAPI.ANALYTICS_ACCESS_TOKEN_TTL_WINDOW)));
@@ -127,7 +134,7 @@ public class AnalyticsHelper {
      * @param clientSecret client secret
      * @return String representation of base 64 bytes
      */
-    public static String encodeClientIdAndSecret(final String clientId, final String clientSecret) {
+    public String encodeClientIdAndSecret(final String clientId, final String clientSecret) {
         return Base64.getEncoder()
             .encodeToString(
                 String
@@ -146,7 +153,7 @@ public class AnalyticsHelper {
      * @param accessToken provided access token
      * @return resolved token status
      */
-    public static TokenStatus resolveTokenStatus(final AccessToken accessToken) {
+    public TokenStatus resolveTokenStatus(final AccessToken accessToken) {
         if (accessToken == null) {
             return TokenStatus.NONE;
         }
@@ -170,7 +177,7 @@ public class AnalyticsHelper {
      *
      * @param accessToken provided access token
      */
-    public static void checkAccessToken(final AccessToken accessToken) throws AnalyticsException {
+    public void checkAccessToken(final AccessToken accessToken) throws AnalyticsException {
         final TokenStatus tokenStatus = resolveTokenStatus(accessToken);
 
         if (!canUseToken(tokenStatus)) {
@@ -200,7 +207,7 @@ public class AnalyticsHelper {
      * @return the actual string value of token for header usage
      * @throws AnalyticsException when validating token
      */
-    public static String formatBearer(final AccessToken accessToken) throws AnalyticsException {
+    public String formatBearer(final AccessToken accessToken) throws AnalyticsException {
         checkAccessToken(accessToken);
         return JsonWebTokenAuthCredentialProcessor.BEARER + accessToken.accessToken();
     }
@@ -212,7 +219,7 @@ public class AnalyticsHelper {
      * @param analyticsKey the analytics key
      * @return the actual string value of key for header usage
      */
-    public static String formatBasic(final AnalyticsKey analyticsKey) {
+    public String formatBasic(final AnalyticsKey analyticsKey) {
         return WebResource.BASIC + analyticsKey.jsKey();
     }
 
@@ -222,7 +229,7 @@ public class AnalyticsHelper {
      * @param host provided host
      * @return associated host app
      */
-    public static AnalyticsApp appFromHost(final Host host) {
+    public AnalyticsApp appFromHost(final Host host) {
         return new AnalyticsApp(host);
     }
 
@@ -233,7 +240,7 @@ public class AnalyticsHelper {
      * @param response {@link CircuitBreakerUrl.Response} instance to evaluate
      * @throws AnalyticsException when not a successful response is detected
      */
-    public static void throwFromResponse(final CircuitBreakerUrl.Response<AccessToken> response,
+    public void throwFromResponse(final CircuitBreakerUrl.Response<AccessToken> response,
                                          final String message) throws AnalyticsException {
         if (isSuccessResponse(response)) {
             return;
@@ -263,7 +270,7 @@ public class AnalyticsHelper {
      * @param reason error message
      * @return noop access token
      */
-    public static AccessToken createNoopToken(final AnalyticsApp analyticsApp, final String reason) {
+    public AccessToken createNoopToken(final AnalyticsApp analyticsApp, final String reason) {
         return AccessToken.builder()
             .accessToken(StringPool.BLANK)
             .tokenType(StringPool.BLANK)
@@ -272,7 +279,7 @@ public class AnalyticsHelper {
             .clientId(Optional.ofNullable(analyticsApp)
                 .map(app -> app.getAnalyticsProperties().clientId())
                 .orElse(null))
-            .aud(AnalyticsHelper.resolveAudience(analyticsApp))
+            .aud(AnalyticsHelper.get().resolveAudience(analyticsApp))
             .status(
                 AccessTokenStatus.builder()
                     .tokenStatus(TokenStatus.NOOP)
@@ -290,7 +297,7 @@ public class AnalyticsHelper {
      * @param reason error message
      * @return blocked access token
      */
-    public static AccessToken createBlockedToken(final AnalyticsApp analyticsApp, final String reason) {
+    public AccessToken createBlockedToken(final AnalyticsApp analyticsApp, final String reason) {
         return AccessToken.builder()
             .accessToken(StringPool.BLANK)
             .tokenType(StringPool.BLANK)
@@ -299,7 +306,7 @@ public class AnalyticsHelper {
             .clientId(Optional.ofNullable(analyticsApp)
                 .map(app -> app.getAnalyticsProperties().clientId())
                 .orElse(null))
-            .aud(AnalyticsHelper.resolveAudience(analyticsApp))
+            .aud(AnalyticsHelper.get().resolveAudience(analyticsApp))
             .status(
                 AccessTokenStatus.builder()
                     .tokenStatus(TokenStatus.BLOCKED)
@@ -315,7 +322,7 @@ public class AnalyticsHelper {
      * @param accessToken provided access token
      * @return true if access token status is NOOP, otherwise false
      */
-    public static boolean isTokenOk(final AccessToken accessToken) {
+    public boolean isTokenOk(final AccessToken accessToken) {
         return accessTokenHasStatus(accessToken, TokenStatus.OK);
     }
 
@@ -325,7 +332,7 @@ public class AnalyticsHelper {
      * @param accessToken provided access token
      * @return true if access token status is NOOP, otherwise false
      */
-    public static boolean isTokenNoop(final AccessToken accessToken) {
+    public boolean isTokenNoop(final AccessToken accessToken) {
         return accessTokenHasStatus(accessToken, TokenStatus.NOOP);
     }
 
@@ -335,7 +342,7 @@ public class AnalyticsHelper {
      * @param accessToken provided access token
      * @return true if access token status is BLOCKED, otherwise false
      */
-    public static boolean isTokenBlocked(final AccessToken accessToken) {
+    public boolean isTokenBlocked(final AccessToken accessToken) {
         return accessTokenHasStatus(accessToken, TokenStatus.BLOCKED);
     }
 
@@ -346,7 +353,7 @@ public class AnalyticsHelper {
      * @param tokenStatus provided token status
      * @return true if the access token has the token status, otherwise the false
      */
-    private static boolean accessTokenHasStatus(final AccessToken accessToken, final TokenStatus tokenStatus) {
+    private boolean accessTokenHasStatus(final AccessToken accessToken, final TokenStatus tokenStatus) {
         return Optional
             .ofNullable(accessToken.status())
             .map(s -> s.tokenStatus() == tokenStatus)
@@ -360,7 +367,7 @@ public class AnalyticsHelper {
      * @param accessToken provided access token
      * @return status text
      */
-    public static String resolveStatusMessage(final AccessToken accessToken) {
+    public String resolveStatusMessage(final AccessToken accessToken) {
         final StringBuilder sb = new StringBuilder("ACCESS_TOKEN for clientId ").append(accessToken.clientId());
         Optional
             .ofNullable(accessToken.status())
@@ -384,7 +391,7 @@ public class AnalyticsHelper {
      * @param analyticsApp analytics app to get the aud from
      * @return audience value
      */
-    public static String resolveAudience(final AnalyticsApp analyticsApp) {
+    public String resolveAudience(final AnalyticsApp analyticsApp) {
         return null;
     }
 

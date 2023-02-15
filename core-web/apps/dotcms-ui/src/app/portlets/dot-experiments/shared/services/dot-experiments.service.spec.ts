@@ -41,9 +41,14 @@ describe('DotExperimentsService', () => {
         spectator.expectOne(`${API_ENDPOINT}/${EXPERIMENT_ID}`, HttpMethod.GET);
     });
 
-    it('should archive a experiment with experimentId', () => {
+    it('should archive an experiment with experimentId', () => {
         spectator.service.archive(EXPERIMENT_ID).subscribe();
         spectator.expectOne(`${API_ENDPOINT}/${EXPERIMENT_ID}/_archive`, HttpMethod.PUT);
+    });
+
+    it('should start an experiment with experimentId as param', () => {
+        spectator.service.start(EXPERIMENT_ID).subscribe();
+        spectator.expectOne(`${API_ENDPOINT}/${EXPERIMENT_ID}/_start`, HttpMethod.POST);
     });
 
     it('should delete a experiment with experimentId', () => {
@@ -102,5 +107,14 @@ describe('DotExperimentsService', () => {
         const req = spectator.expectOne(`${API_ENDPOINT}/${EXPERIMENT_ID}`, HttpMethod.PATCH);
 
         expect(req.request.body['scheduling']).toEqual(newScheduling);
+    });
+
+    it('should set traffic allocation to experiment', () => {
+        const newValue = 50;
+        spectator.service.setTrafficAllocation(EXPERIMENT_ID, newValue).subscribe();
+
+        const req = spectator.expectOne(`${API_ENDPOINT}/${EXPERIMENT_ID}`, HttpMethod.PATCH);
+
+        expect(req.request.body['trafficAllocation']).toEqual(newValue);
     });
 });
