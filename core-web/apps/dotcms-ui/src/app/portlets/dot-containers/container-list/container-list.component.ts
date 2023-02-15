@@ -134,16 +134,17 @@ export class ContainerListComponent implements OnDestroy {
      */
     getContainersWithDisabledEntities(containers: DotContainer[]): DotContainer[] {
         return containers.map((container) => {
-            container.disableInteraction =
-                container.identifier.includes('/') ||
-                container.identifier === 'SYSTEM_CONTAINER' ||
-                container.source === CONTAINER_SOURCE.FILE;
+            const copyContainer = structuredClone(container);
+            copyContainer.disableInteraction =
+                copyContainer.identifier.includes('/') ||
+                copyContainer.identifier === 'SYSTEM_CONTAINER' ||
+                copyContainer.source === CONTAINER_SOURCE.FILE;
 
-            if (container.path) {
-                container.pathName = new URL(`http:${container.path}`).pathname;
+            if (copyContainer.path) {
+                copyContainer.pathName = new URL(`http:${container.path}`).pathname;
             }
 
-            return container;
+            return copyContainer;
         });
     }
 
