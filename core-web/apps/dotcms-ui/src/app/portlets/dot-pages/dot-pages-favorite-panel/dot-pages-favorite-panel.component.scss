@@ -40,8 +40,8 @@
     }
 
     .p-toggleable-content .p-panel-content {
-        column-gap: $font-size-x-large;
-        row-gap: $spacing-5;
+        column-gap: $spacing-4;
+        row-gap: $spacing-4;
         display: grid;
         grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
         height: 266px;

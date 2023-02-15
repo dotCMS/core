@@ -13,7 +13,7 @@
     }
 
     .p-datatable .p-datatable-header {
-        background-color: $gray-lighter;
+        background-color: $gray-bg;
         padding: $spacing-3;
     }
 
@@ -34,7 +34,9 @@
 }
 
 .dot-pages-table__status-field {
-    align-items: center;
+    dot-badge,
+    dot-contentlet-lock-icon {
+        margin-left: $spacing-1;
+    }
     display: flex;
-    justify-content: space-evenly;
 }

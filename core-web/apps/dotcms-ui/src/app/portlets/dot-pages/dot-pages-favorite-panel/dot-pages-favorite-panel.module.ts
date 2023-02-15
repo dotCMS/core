@@ -5,6 +5,7 @@ import { ButtonModule } from 'primeng/button';
 import { PanelModule } from 'primeng/panel';
 
 import { DotMessagePipeModule } from '@dotcms/app/view/pipes/dot-message/dot-message-pipe.module';
+import { DotIconModule } from '@dotcms/ui';
 
 import { DotPagesCardEmptyModule } from './dot-pages-card-empty/dot-pages-card-empty.module';
 import { DotPagesCardModule } from './dot-pages-card/dot-pages-card.module';
@@ -13,6 +14,7 @@ import { DotPagesFavoritePanelComponent } from './dot-pages-favorite-panel.compo
 @NgModule({
     imports: [
         CommonModule,
+        DotIconModule,
         DotMessagePipeModule,
         DotPagesCardModule,
         DotPagesCardEmptyModule,
