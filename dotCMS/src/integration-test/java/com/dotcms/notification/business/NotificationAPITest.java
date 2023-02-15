@@ -22,6 +22,7 @@ import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.business.Role;
 import com.dotmarketing.business.RoleAPI;
 import com.dotmarketing.db.HibernateUtil;
+import com.dotmarketing.db.LocalTransaction;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.util.Logger;
@@ -31,21 +32,21 @@ import java.util.Collection;
 import java.util.Date;
 import java.util.List;
 import java.util.Locale;
+import java.util.concurrent.atomic.AtomicReference;
 import org.apache.commons.lang.StringUtils;
+import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
 /**
- *
  * @author Daniel Silva
  * @version 3.0, 3.7
  * @since Feb 5, 2014
- *
  */
-public class NotificationAPITest extends IntegrationTestBase  {
+public class NotificationAPITest extends IntegrationTestBase {
 
     @BeforeClass
-    public static void prepare() throws Exception{
+    public static void prepare() throws Exception {
         //Setting web app environment
         IntegrationTestInitService.getInstance().init();
     }
@@ -60,36 +61,35 @@ public class NotificationAPITest extends IntegrationTestBase  {
         APILocator.getNotificationAPI().deleteNotifications(systemUser.getUserId());
 
         //Create a new notification for this system user
-        NotificationDTO notificationDTO = new NotificationDTO(StringUtils.EMPTY, "Notification message",
-            NotificationType.GENERIC.name(), NotificationLevel.ERROR.name(), systemUser.getUserId(), new Date(),
-            Boolean.FALSE);
+        NotificationDTO notificationDTO = new NotificationDTO(StringUtils.EMPTY,
+                "Notification message",
+                NotificationType.GENERIC.name(), NotificationLevel.ERROR.name(),
+                systemUser.getUserId(), new Date(),
+                Boolean.FALSE);
 
-        try {
-            HibernateUtil.startTransaction();
+        Notification latest = LocalTransaction.wrapReturn(() ->
+        {
 
             //Save the notification
             FactoryLocator.getNotificationFactory().saveNotification(notificationDTO);
 
             //Make sure is there
-            Notification latest = APILocator.getNotificationAPI().findNotification(systemUser.getUserId(), notificationDTO.getGroupId());
-            assertTrue(notificationDTO.getMessage().equals(latest.getMessage().getKey()));
+            return APILocator.getNotificationAPI()
+                    .findNotification(systemUser.getUserId(), notificationDTO.getGroupId());
 
-            //Delete it
-            APILocator.getNotificationAPI().deleteNotification(latest.getUserId(), latest.getGroupId());
 
-            HibernateUtil.closeAndCommitTransaction();
+        });
 
-            //Make sure it was deleted
-            assertNull(APILocator.getNotificationAPI().findNotification(systemUser.getUserId(), latest.getGroupId()));
-        } catch (DotDataException e) {
-            try {
-                HibernateUtil.rollbackTransaction();
-            } catch (DotHibernateException e1) {
-                Logger.error(getClass(), "Could not rollback transaction", e);
-            }
+        assertTrue(notificationDTO.getMessage().equals(latest.getMessage().getKey()));
 
-            throw new Exception("Error in NotificationAPITest.testSaveDeleteNotification", e);
-        }
+        //Delete it
+        APILocator.getNotificationAPI().deleteNotification(latest.getUserId(), latest.getGroupId());
+
+        Assert.assertNotNull(latest);
+        //Make sure it was deleted
+        assertNull(APILocator.getNotificationAPI()
+                .findNotification(systemUser.getUserId(), latest.getGroupId()));
+
     }
 
     @Test
@@ -101,35 +101,33 @@ public class NotificationAPITest extends IntegrationTestBase  {
         //Cleaning up the notifications in order to prepare them for the test
         APILocator.getNotificationAPI().deleteNotifications(systemUser.getUserId());
 
-        try {
-            HibernateUtil.startTransaction();
+        LocalTransaction.wrap(() ->
+        {
 
-            for(int i=0; i<10; i++) {
+            for (int i = 0; i < 10; i++) {
                 //Creating the new notification
-                NotificationDTO notificationDTO = new NotificationDTO(StringUtils.EMPTY, "Notification message #" + i,
-                    NotificationType.GENERIC.name(), NotificationLevel.ERROR.name(), systemUser.getUserId(), new Date(),
-                    Boolean.FALSE);
+                NotificationDTO notificationDTO = new NotificationDTO(StringUtils.EMPTY,
+                        "Notification message #" + i,
+                        NotificationType.GENERIC.name(), NotificationLevel.ERROR.name(),
+                        systemUser.getUserId(), new Date(),
+                        Boolean.FALSE);
                 //Saving it
                 FactoryLocator.getNotificationFactory().saveNotification(notificationDTO);
             }
             //Make sure the count is returning the proper value
-            assertTrue(APILocator.getNotificationAPI().getNewNotificationsCount(systemUser.getUserId()) == 10);
+            assertTrue(
+                    APILocator.getNotificationAPI().getNewNotificationsCount(systemUser.getUserId())
+                            == 10);
 
             //Delete all the notifications for this user
             APILocator.getNotificationAPI().deleteNotifications(systemUser.getUserId());
 
-            //Make sure the count is returning the proper value
-            assertTrue(APILocator.getNotificationAPI().getNewNotificationsCount(systemUser.getUserId()) == 0);
+        });
 
-        } catch (DotDataException e) {
-            try {
-                HibernateUtil.rollbackTransaction();
-            } catch (DotHibernateException e1) {
-                Logger.error(getClass(), "Could not rollback transaction", e);
-            }
+        //Make sure the count is returning the proper value
+        assertTrue(APILocator.getNotificationAPI().getNewNotificationsCount(systemUser.getUserId())
+                == 0);
 
-            throw new Exception("Error in NotificationAPITest.testNewNotificationsCount", e);
-        }
 
     }
 
@@ -143,20 +141,26 @@ public class NotificationAPITest extends IntegrationTestBase  {
         APILocator.getNotificationAPI().deleteNotifications(systemUser.getUserId());
 
         try {
-            HibernateUtil.startTransaction();
+            LocalTransaction.wrap(() ->
+            {
 
-            for(int i=0; i<10; i++) {
-                //Creating the new notification
-                NotificationDTO notificationDTO = new NotificationDTO(StringUtils.EMPTY, "Notification message #" + i,
-                    NotificationType.GENERIC.name(), NotificationLevel.ERROR.name(), systemUser.getUserId(), new Date(),
-                    Boolean.FALSE);
-                //Saving it
-                FactoryLocator.getNotificationFactory().saveNotification(notificationDTO);
-            }
+                for (int i = 0; i < 10; i++) {
+                    //Creating the new notification
+                    NotificationDTO notificationDTO = new NotificationDTO(StringUtils.EMPTY,
+                            "Notification message #" + i,
+                            NotificationType.GENERIC.name(), NotificationLevel.ERROR.name(),
+                            systemUser.getUserId(), new Date(),
+                            Boolean.FALSE);
+                    //Saving it
+                    FactoryLocator.getNotificationFactory().saveNotification(notificationDTO);
+                }
 
-            //Make sure the pagination is working properly
-            List<Notification> notifications = APILocator.getNotificationAPI().getNotifications(systemUser.getUserId(), 0, 5);
-            assertTrue(notifications.size()==5);
+                //Make sure the pagination is working properly
+                List<Notification> notifications = APILocator.getNotificationAPI()
+                        .getNotifications(systemUser.getUserId(), 0, 5);
+                assertTrue(notifications.size() == 5);
+
+            });
 
             //Delete all the notifications for this user
             APILocator.getNotificationAPI().deleteNotifications(systemUser.getUserId());
@@ -173,8 +177,10 @@ public class NotificationAPITest extends IntegrationTestBase  {
     }
 
     /**
-     * The idea of this method is to test the {@link com.dotcms.notifications.business.NotificationFactory#saveNotificationsForUsers(NotificationDTO, Collection)}
-     * and the concept of the groups ids.
+     * The idea of this method is to test the
+     * {@link
+     * com.dotcms.notifications.business.NotificationFactory#saveNotificationsForUsers(NotificationDTO,
+     * Collection)} and the concept of the groups ids.
      *
      * @throws Exception
      */
@@ -208,62 +214,63 @@ public class NotificationAPITest extends IntegrationTestBase  {
         testUsers.add(newUser2);
 
         //Create a new notification for this system user
-        NotificationDTO notificationDTO = new NotificationDTO(StringUtils.EMPTY, "Notification test message",
-            NotificationType.GENERIC.name(), NotificationLevel.ERROR.name(), systemUser.getUserId(), new Date(),
-            Boolean.FALSE);
+        NotificationDTO notificationDTO = new NotificationDTO(StringUtils.EMPTY,
+                "Notification test message",
+                NotificationType.GENERIC.name(), NotificationLevel.ERROR.name(),
+                systemUser.getUserId(), new Date(),
+                Boolean.FALSE);
 
         try {
-            HibernateUtil.startTransaction();
+            LocalTransaction.wrap(() ->
+            {
 
-            //Save the notification
-            notificationFactory.saveNotificationsForUsers(notificationDTO, testUsers);
+                //Save the notification
+                notificationFactory.saveNotificationsForUsers(notificationDTO, testUsers);
 
-            //Make sure is there for all the users
-            Notification foundNotification;
-            for ( User user : testUsers ) {
+                //Make sure is there for all the users
+                Notification foundNotification;
+                for (User user : testUsers) {
 
-                foundNotification = notificationAPI.findNotification(user.getUserId(), notificationDTO.getGroupId());
+                    foundNotification = notificationAPI.findNotification(user.getUserId(),
+                            notificationDTO.getGroupId());
 
-                //Some validations
-                assertNotNull(foundNotification);
-                assertTrue(notificationDTO.getGroupId().equals(foundNotification.getGroupId()));
-                assertTrue(foundNotification.getUserId().equals(user.getUserId()));
-            }
+                    //Some validations
+                    assertNotNull(foundNotification);
+                    assertTrue(notificationDTO.getGroupId().equals(foundNotification.getGroupId()));
+                    assertTrue(foundNotification.getUserId().equals(user.getUserId()));
+                }
 
-            //Make sure all the users have unread notifications
-            for ( User user : testUsers ) {
-                assertTrue(notificationAPI.getNewNotificationsCount(user.getUserId()) == 1);
-            }
+                //Make sure all the users have unread notifications
+                for (User user : testUsers) {
+                    assertTrue(notificationAPI.getNewNotificationsCount(user.getUserId()) == 1);
+                }
 
-            //Mark as read the notifications for just one user
-            notificationAPI.markNotificationsAsRead(newUser1.getUserId());
-            assertTrue(notificationAPI.getNewNotificationsCount(systemUser.getUserId()) == 1);
-            assertTrue(notificationAPI.getNewNotificationsCount(newUser1.getUserId()) == 0);//Should not have unread notifications
-            assertTrue(notificationAPI.getNewNotificationsCount(newUser2.getUserId()) == 1);
+                //Mark as read the notifications for just one user
+                notificationAPI.markNotificationsAsRead(newUser1.getUserId());
+                assertTrue(notificationAPI.getNewNotificationsCount(systemUser.getUserId()) == 1);
+                assertTrue(notificationAPI.getNewNotificationsCount(newUser1.getUserId())
+                        == 0);//Should not have unread notifications
+                assertTrue(notificationAPI.getNewNotificationsCount(newUser2.getUserId()) == 1);
 
-            //Delete the notification for just one user
-            notificationAPI.deleteNotification(newUser2.getUserId(), notificationDTO.getGroupId());
-            assertTrue(notificationAPI.getNotificationsCount(systemUser.getUserId()) == 1);
-            assertTrue(notificationAPI.getNotificationsCount(newUser1.getUserId()) == 1);
-            assertTrue(notificationAPI.getNotificationsCount(newUser2.getUserId()) == 0);
+                //Delete the notification for just one user
+                notificationAPI.deleteNotification(newUser2.getUserId(),
+                        notificationDTO.getGroupId());
+                assertTrue(notificationAPI.getNotificationsCount(systemUser.getUserId()) == 1);
+                assertTrue(notificationAPI.getNotificationsCount(newUser1.getUserId()) == 1);
+                assertTrue(notificationAPI.getNotificationsCount(newUser2.getUserId()) == 0);
 
-            //And finally delete all for clean up
-            notificationAPI.deleteNotifications(systemUser.getUserId());
-            notificationAPI.deleteNotifications(newUser1.getUserId());
-            notificationAPI.deleteNotifications(newUser2.getUserId());
+                //And finally delete all for clean up
+                notificationAPI.deleteNotifications(systemUser.getUserId());
+                notificationAPI.deleteNotifications(newUser1.getUserId());
+                notificationAPI.deleteNotifications(newUser2.getUserId());
 
-            HibernateUtil.closeAndCommitTransaction();
+            });
 
             //Make sure everything is clean
             assertTrue(notificationAPI.getNotificationsCount(systemUser.getUserId()) == 0);
             assertTrue(notificationAPI.getNotificationsCount(newUser1.getUserId()) == 0);
             assertTrue(notificationAPI.getNotificationsCount(newUser2.getUserId()) == 0);
         } catch (DotDataException e) {
-            try {
-                HibernateUtil.rollbackTransaction();
-            } catch (DotHibernateException e1) {
-                Logger.error(getClass(), "Could not rollback transaction", e);
-            }
 
             throw new Exception("Error in NotificationAPITest.testSaveDeleteNotification", e);
         }
@@ -271,8 +278,9 @@ public class NotificationAPITest extends IntegrationTestBase  {
 
     /**
      * The idea of this method is to test the
-     * {@link com.dotcms.notifications.business.NotificationAPI#generateNotification(String, String, List, NotificationLevel, NotificationType, Visibility, String, String, Locale)}
-     * method using the {@link Visibility#ROLE}
+     * {@link com.dotcms.notifications.business.NotificationAPI#generateNotification(String, String,
+     * List, NotificationLevel, NotificationType, Visibility, String, String, Locale)} method using
+     * the {@link Visibility#ROLE}
      *
      * @throws Exception
      */
@@ -285,8 +293,9 @@ public class NotificationAPITest extends IntegrationTestBase  {
         //Get the system user for testing
         User systemUser = APILocator.getUserAPI().getSystemUser();
 
-        try {
-            HibernateUtil.startTransaction();
+        List<User> testUsers = new ArrayList<>();
+        Role newRoleRet = LocalTransaction.wrapReturn(() ->
+        {
 
             //Create a role for testing
             Role newRole = new Role();
@@ -324,7 +333,6 @@ public class NotificationAPITest extends IntegrationTestBase  {
             APILocator.getUserAPI().save(newUser3, systemUser, false);
             roleAPI.addRoleToUser(newRole, newUser3);
 
-            Collection<User> testUsers = new ArrayList<>();
             testUsers.add(newUser1);
             testUsers.add(newUser2);
             testUsers.add(newUser3);
@@ -333,90 +341,95 @@ public class NotificationAPITest extends IntegrationTestBase  {
             Collection<User> foundUsers = roleAPI.findUsersForRole(newRole.getId());
             assertNotNull(foundUsers);
             assertTrue(foundUsers.size() == 3);
+            return newRole;
+        });
 
-            HibernateUtil.closeAndCommitTransaction();
-
-            //Generate a notification for the new created test role
-            notificationAPI.generateNotification(
+        //Generate a notification for the new created test role
+        notificationAPI.generateNotification(
                 "Test notification title",
                 "Test notification message",
                 null, // no actions
                 NotificationLevel.INFO,
                 NotificationType.GENERIC,
-                Visibility.ROLE,
-                newRole.getId(),
+                Visibility.ROLE, newRoleRet.getId(),
                 systemUser.getUserId(),
                 systemUser.getLocale()
-            );
+        );
 
-            //Sleep some time in order to make sure the thread had time to start
+        //Sleep some time in order to make sure the thread had time to start
+
+        try {
             Thread.sleep(2000);
-
-            //Using the DotSubmitter in order to know when the generation of the notification finished
-            DotSubmitter dotSubmitter = DotConcurrentFactory.getInstance().
-                getSubmitter(NotificationAPIImpl.NOTIFICATIONS_THREAD_POOL_SUBMITTER_NAME);
-            while ( dotSubmitter.getActiveCount() > 0 ) {
-                //Do nothing...., just wait the notification thread to finish it execution
-                Thread.sleep(2000);
-            }
-
-            //Make sure the notification are there for all the users
-            for ( User user : testUsers ) {
-                assertTrue(notificationAPI.getNotificationsCount(user.getUserId()) == 1);
-            }
-
-            //Make sure all the users have unread notifications
-            for ( User user : testUsers ) {
-                assertTrue(notificationAPI.getNewNotificationsCount(user.getUserId()) == 1);
-            }
-
-            String groupId = null;
-            //Make all the notifications share the same group id
-            for ( User user : testUsers ) {
-
-                //First get all the notifications for this user --> Should have only one
-                List<Notification> foundNotifications = notificationAPI.getAllNotifications(user.getUserId());
-                assertNotNull(foundNotifications);
-                assertTrue(foundNotifications.size() == 1);
-
-                Notification foundNotification = foundNotifications.get(0);
-                if ( groupId == null ) {
-                    groupId = foundNotification.getGroupId();//First notification we read
-                } else {
-                    assertEquals(groupId, foundNotification.getGroupId());
-                }
-            }
-
-            //Mark as read the notifications for just one user
-            notificationAPI.markNotificationsAsRead(newUser1.getUserId());
-            assertTrue(notificationAPI.getNewNotificationsCount(newUser1.getUserId()) == 0);//Should not have unread notifications
-            assertTrue(notificationAPI.getNewNotificationsCount(newUser2.getUserId()) == 1);
-            assertTrue(notificationAPI.getNewNotificationsCount(newUser3.getUserId()) == 1);
-
-            //Delete the notification for just one user
-            notificationAPI.deleteNotification(newUser2.getUserId(), groupId);
-            assertTrue(notificationAPI.getNotificationsCount(newUser1.getUserId()) == 1);
-            assertTrue(notificationAPI.getNotificationsCount(newUser2.getUserId()) == 0);
-            assertTrue(notificationAPI.getNotificationsCount(newUser3.getUserId()) == 1);
-
-            //And finally delete all for clean up
-            notificationAPI.deleteNotifications(newUser1.getUserId());
-            notificationAPI.deleteNotifications(newUser2.getUserId());
-            notificationAPI.deleteNotifications(newUser3.getUserId());
-
-            //Make sure everything is clean
-            assertTrue(notificationAPI.getNotificationsCount(newUser1.getUserId()) == 0);
-            assertTrue(notificationAPI.getNotificationsCount(newUser2.getUserId()) == 0);
-            assertTrue(notificationAPI.getNotificationsCount(newUser3.getUserId()) == 0);
-        } catch (DotDataException e) {
-            try {
-                HibernateUtil.rollbackTransaction();
-            } catch (DotHibernateException e1) {
-                Logger.error(getClass(), "Could not rollback transaction", e);
-            }
-
-            throw new Exception("Error in NotificationAPITest.testSaveDeleteNotification", e);
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
         }
+
+        //Using the DotSubmitter in order to know when the generation of the notification finished
+        DotSubmitter dotSubmitter = DotConcurrentFactory.getInstance().
+                getSubmitter(NotificationAPIImpl.NOTIFICATIONS_THREAD_POOL_SUBMITTER_NAME);
+        while (dotSubmitter.getActiveCount() > 0) {
+            //Do nothing...., just wait the notification thread to finish it execution
+            try {
+                Thread.sleep(2000);
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
+            }
+        }
+
+        //Make sure the notification are there for all the users
+        for (User user : testUsers) {
+            assertTrue(notificationAPI.getNotificationsCount(user.getUserId()) == 1);
+        }
+
+        //Make sure all the users have unread notifications
+        for (User user : testUsers) {
+            assertTrue(notificationAPI.getNewNotificationsCount(user.getUserId()) == 1);
+        }
+
+        String groupId = null;
+        //Make all the notifications share the same group id
+        for (User user : testUsers) {
+
+            //First get all the notifications for this user --> Should have only one
+            List<Notification> foundNotifications = notificationAPI.getAllNotifications(
+                    user.getUserId());
+            assertNotNull(foundNotifications);
+            assertTrue(foundNotifications.size() == 1);
+
+            Notification foundNotification = foundNotifications.get(0);
+            if (groupId == null) {
+                groupId = foundNotification.getGroupId();//First notification we read
+            } else {
+                assertEquals(groupId, foundNotification.getGroupId());
+            }
+        }
+
+        User newUser1 = testUsers.get(0);
+        User newUser2 = testUsers.get(1);
+        User newUser3 = testUsers.get(2);
+        //Mark as read the notifications for just one user
+        notificationAPI.markNotificationsAsRead(newUser1.getUserId());
+        assertTrue(notificationAPI.getNewNotificationsCount(newUser1.getUserId())
+                == 0);//Should not have unread notifications
+        assertTrue(notificationAPI.getNewNotificationsCount(newUser2.getUserId()) == 1);
+        assertTrue(notificationAPI.getNewNotificationsCount(newUser3.getUserId()) == 1);
+
+        //Delete the notification for just one user
+        notificationAPI.deleteNotification(newUser2.getUserId(), groupId);
+        assertTrue(notificationAPI.getNotificationsCount(newUser1.getUserId()) == 1);
+        assertTrue(notificationAPI.getNotificationsCount(newUser2.getUserId()) == 0);
+        assertTrue(notificationAPI.getNotificationsCount(newUser3.getUserId()) == 1);
+
+        //And finally delete all for clean up
+        notificationAPI.deleteNotifications(newUser1.getUserId());
+        notificationAPI.deleteNotifications(newUser2.getUserId());
+        notificationAPI.deleteNotifications(newUser3.getUserId());
+
+        //Make sure everything is clean
+        assertTrue(notificationAPI.getNotificationsCount(newUser1.getUserId()) == 0);
+        assertTrue(notificationAPI.getNotificationsCount(newUser2.getUserId()) == 0);
+        assertTrue(notificationAPI.getNotificationsCount(newUser3.getUserId()) == 0);
+
     }
 
 }
