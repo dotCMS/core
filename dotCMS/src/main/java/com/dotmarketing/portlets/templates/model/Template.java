@@ -308,7 +308,7 @@ public class Template extends WebAsset implements Serializable, Comparable, Mani
 				PermissionAPI.PERMISSION_EDIT_PERMISSIONS));
 		return accepted;
 	}
-
+	@JsonIgnore
 	public Permissionable getParentPermissionable() throws DotDataException {
 
 		try {

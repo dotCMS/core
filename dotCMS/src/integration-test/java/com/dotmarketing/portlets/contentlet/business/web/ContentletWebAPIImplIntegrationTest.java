@@ -125,7 +125,8 @@ public class ContentletWebAPIImplIntegrationTest extends IntegrationTestBase {
 
         final IHTMLPage updatedPage = APILocator.getHTMLPageAssetAPI().findPage(htmlPageAsset.getInode(),user,false);
 
-        assertTrue(updatedPage.getTemplateId().contains(newHostname));
+        assertTrue("Template ID: " + updatedPage.getTemplateId() + ", newHostname: " +  newHostname + ", oldHostName: " + oldHostName
+                ,updatedPage.getTemplateId().contains(newHostname));
         assertFalse(updatedPage.getTemplateId().contains(oldHostName));
     }
 

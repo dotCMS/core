@@ -281,6 +281,8 @@ public class NavToolTest extends IntegrationTestBase{
         final Language spanishLanguage = TestDataUtils.getSpanishLanguage();
 
         final FileAsset fileAssetInSpanish = new FileAsset();
+        fileAssetInSpanish.setContentType(APILocator.getContentTypeAPI(APILocator.systemUser())
+                .find("FileAsset"));
         fileAssetInSpanish.setIdentifier("mutiLangFileAsset");
         fileAssetInSpanish.setLanguageId(spanishLanguage.getId());
 
@@ -297,6 +299,8 @@ public class NavToolTest extends IntegrationTestBase{
         case2.expectedResult = false;
 
         final FileAsset fileAssetInEnglish = new FileAsset();
+        fileAssetInEnglish.setContentType(APILocator.getContentTypeAPI(APILocator.systemUser())
+                .find("FileAsset"));
         fileAssetInEnglish.setIdentifier("mutiLangFileAsset");
         fileAssetInEnglish.setLanguageId(1);
 
@@ -328,8 +332,8 @@ public class NavToolTest extends IntegrationTestBase{
     }
 
     private static class NavToolTestCase {
-        List<IFileAsset> menuItems;
-        FileAsset itemFile;
+        List<Contentlet> menuItems;
+        Contentlet itemFile;
         Long selectedLang;
         Boolean expectedResult;
     }
@@ -339,7 +343,8 @@ public class NavToolTest extends IntegrationTestBase{
     public void testShouldAddFileInAnotherLang(final NavToolTestCase testCase) {
 
         final NavTool navTool = new NavTool();
-        assertEquals(testCase.expectedResult, navTool.shouldAddFileInAnotherLang(testCase.menuItems, testCase.itemFile,
+        final IFileAsset itemFile = APILocator.getFileAssetAPI().fromContentlet(Contentlet.class.cast(testCase.itemFile));
+        assertEquals(testCase.expectedResult, navTool.shouldAddFileInAnotherLang(testCase.menuItems, itemFile,
             testCase.selectedLang));
 
     }
@@ -588,5 +593,37 @@ public class NavToolTest extends IntegrationTestBase{
     @DataProvider
     public static Object[] editAndPreviewModes() {
         return new Object[]{PageMode.EDIT_MODE,PageMode.PREVIEW_MODE};
+    }
+
+    /**
+     * Method to test: NavTool.getNav
+     * Given scenario: get navigation for a folder where it contains a multilingual page, only request the nav for the
+     * non-default language
+     * Expected result: getting the navigation should only return the page of the non-default language
+     * @throws Exception exception
+     */
+    @Test
+    public void test_getNav_multilingualPage_shouldOnlyReturnOne() throws Exception {
+        //Create Folder
+        folder = new FolderDataGen().site(site).showOnMenu(true).nextPersisted();
+
+        //New template
+        final Template template = new TemplateDataGen().nextPersisted();
+
+        //Create a multilingual page with show on menu true
+        final HTMLPageAsset pageAssetEng = new HTMLPageDataGen(folder, template).showOnMenu(true).languageId(1).nextPersisted();
+        pageAssetEng.setIndexPolicy(IndexPolicy.FORCE);
+        APILocator.getContentletAPI().publish(pageAssetEng, user, false);
+        final Contentlet pageAssetSpa = APILocator.getContentletAPI().checkout(pageAssetEng.getInode(),user,false);
+        pageAssetSpa.setProperty("title","SPA Version");
+        pageAssetSpa.setLanguageId(spanishLanguage.getId());
+        APILocator.getContentletAPI().checkin(pageAssetSpa,user,false);
+        APILocator.getContentletAPI().publish(pageAssetSpa,user,false);
+
+        //get the nav
+        final NavResult navResult = new NavTool().getNav(site,folder.getPath(),spanishLanguage.getId(),user);
+        assertNotNull(navResult);
+        assertEquals(1,navResult.getChildren().size());
+        assertEquals("SPA Version", navResult.getChildren().get(0).getTitle());
     }
 }

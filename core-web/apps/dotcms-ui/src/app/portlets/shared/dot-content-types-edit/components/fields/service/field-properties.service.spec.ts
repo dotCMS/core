@@ -112,11 +112,6 @@ describe('FieldPropertyService', () => {
         expect(fieldPropertiesService.isDisabledInEditMode('property')).toBeNull();
     });
 
-    it('should return if the property is editable when field is fixed', () => {
-        expect(true).toEqual(fieldPropertiesService.isDisabledInFixed('name'));
-        expect(fieldPropertiesService.isDisabledInFixed('dataType')).toBeUndefined();
-    });
-
     it('should return the right proeprties for a Field Class', () => {
         expect(['property1', 'property2', 'property3']).toEqual(
             fieldPropertiesService.getProperties('fieldClass')

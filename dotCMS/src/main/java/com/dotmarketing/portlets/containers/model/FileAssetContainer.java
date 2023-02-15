@@ -162,11 +162,21 @@ public class FileAssetContainer extends Container {
         this.host = host;
     }
 
+    @JsonIgnore
     public Host getHost() {
         return host;
     }
 
+    public String getHostId() {
+        return host.getIdentifier();
+    }
+    public String getHostName() {
+        return host.getHostname();
+    }
+    
+
     @Override
+    @JsonIgnore
     public ManifestInfo getManifestInfo(){
         return ManifestInfoBuilder.merge(super.getManifestInfo(),
                 new ManifestInfoBuilder()
