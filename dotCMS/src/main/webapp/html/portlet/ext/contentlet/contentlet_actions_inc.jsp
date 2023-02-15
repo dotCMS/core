@@ -61,11 +61,13 @@ boolean canUserWriteToContentlet = conPerAPI.doesUserHavePermission(contentlet,P
 
 
 String previewUrl = null;
+String contentUrl = null;
 if(contentlet.isHTMLPage() && UtilMethods.isSet(contentlet.getIdentifier())){
-    previewUrl= "/dotAdmin/#/edit-page/content?url=" + APILocator.getIdentifierAPI().find(contentlet.getIdentifier()).getURI() + "&language_id=" + contentlet.getLanguageId();
+	contentUrl = APILocator.getIdentifierAPI().find(contentlet.getIdentifier()).getURI();
+    previewUrl= "/dotAdmin/#/edit-page/content?url=" + contentUrl + "&language_id=" + contentlet.getLanguageId();
 }else{
-
-	previewUrl = "/dotAdmin/#/edit-page/content?url=" + APILocator.getContentletAPI().getUrlMapForContentlet(contentlet, user, PageMode.get(request).respectAnonPerms) + "&language_id=" + contentlet.getLanguageId();  
+	contentUrl = APILocator.getContentletAPI().getUrlMapForContentlet(contentlet, user, PageMode.get(request).respectAnonPerms);
+	previewUrl = "/dotAdmin/#/edit-page/content?url=" + contentUrl + "&language_id=" + contentlet.getLanguageId();  
 }
 
 if(myHost.getIdentifier() != null){
@@ -148,7 +150,7 @@ function jumpToContentType(){
 
 <%--check permissions to display the save and publish button or not--%>
 
-<%if(!"edit-page".equals(request.getParameter("angularCurrentPortlet")) && UtilMethods.isSet(previewUrl)) {%>
+<%if(!"edit-page".equals(request.getParameter("angularCurrentPortlet")) && UtilMethods.isSet(contentUrl)) {%>
    <div class="content-edit-actions" >
        <a style="border:0px;" href="<%= previewUrl %>" target="_blank">
            <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "editpage.toolbar.preview.page")) %>
