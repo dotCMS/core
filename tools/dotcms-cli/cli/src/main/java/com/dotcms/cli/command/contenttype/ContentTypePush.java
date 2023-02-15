@@ -2,7 +2,6 @@ package com.dotcms.cli.command.contenttype;
 
 import com.dotcms.api.ContentTypeAPI;
 import com.dotcms.api.client.RestClientFactory;
-import com.dotcms.cli.command.LoginCommand;
 import com.dotcms.cli.common.OutputOptionMixin;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.model.ResponseEntityView;
@@ -12,21 +11,19 @@ import picocli.CommandLine;
 
 import javax.enterprise.context.control.ActivateRequestContext;
 import javax.inject.Inject;
-import javax.ws.rs.NotFoundException;
 import java.io.File;
 import java.io.IOException;
 import java.util.List;
-import java.util.Optional;
 import java.util.concurrent.Callable;
 
 @ActivateRequestContext
 @CommandLine.Command(
         name = ContentTypePush.NAME,
-        description = "@|bold,green Push / Create a Content-type from a given file definition.|@"
+        description = "@|bold,green Push / Create a Content-type from a given file definition.|@ @|bold,cyan --file|@ to send the descriptor. "
 )
-public class ContentTypePush implements Callable<Integer> {
+public class ContentTypePush extends ContentTypeCommand implements Callable<Integer> {
 
-    static final String NAME = "content-type-pull";
+    static final String NAME = "content-type-push";
 
     @CommandLine.Mixin(name = "output")
     OutputOptionMixin output;
@@ -34,7 +31,7 @@ public class ContentTypePush implements Callable<Integer> {
     @Inject
     RestClientFactory clientFactory;
 
-    @CommandLine.Option(names = { "-f", "--file" }, order = 21,required = true, description = " The json formatted content-type descriptor file to be pushed. ")
+    @CommandLine.Option(names = { "-f", "--file" }, order = 1,required = true, description = " The json/yml formatted content-type descriptor file to be pushed. ")
     File file;
 
     @Override
@@ -105,15 +102,5 @@ public class ContentTypePush implements Callable<Integer> {
         }
         return CommandLine.ExitCode.OK;
 
-    }
-
-    public Optional<ContentType> findExistingContentType(final ContentTypeAPI contentTypeAPI, final String varNameOrId ){
-        try {
-            final ResponseEntityView<ContentType> found = contentTypeAPI.getContentType(varNameOrId, null, false);
-            return Optional.of(found.entity());
-        }catch ( NotFoundException e){
-            //Not relevant
-        }
-        return Optional.empty();
     }
 }

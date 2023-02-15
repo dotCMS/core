@@ -41,9 +41,11 @@ public interface SiteAPI {
     @Operation(
             summary = " Returns the Site that matches the specified search criteria"
     )
-    ResponseEntityView<List<Site>> getSites(@QueryParam("filter") String filter,
-            @QueryParam("showArchived") Boolean showArchived,
-            @QueryParam("showLive") Boolean showLive, @QueryParam("showSystem") Boolean showSystem,
+    ResponseEntityView<List<Site>> getSites(
+            @QueryParam("filter") String filter,
+            @QueryParam("archive") Boolean showArchived,
+            @QueryParam("live") Boolean showLive,
+            @QueryParam("system") Boolean showSystem,
             @QueryParam("page") Integer page, @QueryParam("perPage") Integer perPage);
 
     @POST
@@ -79,7 +81,7 @@ public interface SiteAPI {
     @Operation(
             summary = " Returns the Site that is currently selected"
     )
-    ResponseEntityView<Site>switchSite(@PathParam("id") String id);
+    ResponseEntityView<Boolean>switchSite(@PathParam("id") String id);
 
     @POST
     @Operation(
