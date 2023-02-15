@@ -228,6 +228,7 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
             return params$.pipe(
                 switchMap((params) => {
                     const { offset, sortField, sortOrder } = params;
+                    const sortOrderValue = this.getSortOrderValue(sortField, sortOrder);
 
                     return this.dotESContentService
                         .get({
@@ -235,8 +236,7 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
                             offset: offset.toString(),
                             query: this.getESQuery(),
                             sortField: sortField || 'modDate',
-                            sortOrder:
-                                sortOrder === -1 ? ESOrderDirection.DESC : ESOrderDirection.ASC
+                            sortOrder: sortOrderValue
                         })
                         .pipe(
                             tapResponse(
@@ -318,6 +318,17 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
             languageLabels
         })
     );
+
+    private getSortOrderValue(sortField: string, sortOrder: number) {
+        let sortOrderValue: ESOrderDirection;
+        if ((sortOrder === 1 && !sortField) || (!sortOrder && !sortField)) {
+            sortOrderValue = ESOrderDirection.DESC;
+        } else {
+            sortOrderValue = sortOrder === -1 ? ESOrderDirection.DESC : ESOrderDirection.ASC;
+        }
+
+        return sortOrderValue;
+    }
 
     private getESQuery() {
         const { keyword, languageId, archived } = this.get().pages;
