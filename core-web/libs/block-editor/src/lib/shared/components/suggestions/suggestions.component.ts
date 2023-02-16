@@ -27,6 +27,7 @@ export interface DotMenuItem extends Omit<MenuItem, 'icon'> {
     isActive?: () => boolean;
     attributes?: Record<string, unknown>;
     data?: Record<string, unknown>;
+    commandKey?: string;
 }
 
 export enum ItemsType {

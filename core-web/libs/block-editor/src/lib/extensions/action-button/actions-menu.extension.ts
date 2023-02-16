@@ -1,3 +1,4 @@
+import { flatten } from 'lodash';
 import { PluginKey } from 'prosemirror-state';
 import { Subject } from 'rxjs';
 import tippy, { GetReferenceClientRect } from 'tippy.js';
@@ -82,11 +83,13 @@ function getTippyInstance({
 function execCommand({
     editor,
     range,
-    props
+    props,
+    customBlocks
 }: {
     editor: Editor;
     range: Range;
     props: SuggestionsCommandProps;
+    customBlocks: CustomBlock;
 }) {
     const whatToDo = {
         dotContent: () => {
@@ -166,16 +169,35 @@ function execCommand({
             editor.chain().deleteRange(range).setHorizontalRule().focus().run();
         },
         image: () => editor.commands.openAssetForm({ type: 'image' }),
-        video: () => editor.commands.openAssetForm({ type: 'video' }),
-        CustomNode: () => editor.commands['addHelloWorld']()
+        video: () => editor.commands.openAssetForm({ type: 'video' })
     };
 
-    // eslint-disable-next-line no-console
-    console.log(props.type.name);
+    getCustomActions(customBlocks).forEach((option) => {
+        whatToDo[option.id] = () => {
+            try {
+                editor.commands[option.commandKey]();
+            } catch {
+                console.warn('Custom command does not exists.');
+            }
+        };
+    });
 
     whatToDo[props.type.name]
         ? whatToDo[props.type.name]()
         : editor.chain().setTextSelection(range).focus().run();
+}
+
+function mapCustomActions(actions) {
+    return actions.map((action) => ({
+        icon: action.icon,
+        label: action.menuLabel,
+        commandKey: action.command,
+        id: action.name
+    }));
+}
+
+function getCustomActions(customBlocks): Array<DotMenuItem> {
+    return flatten(customBlocks.extensions.map((extension) => mapCustomActions(extension.actions)));
 }
 
 export const ActionsMenu = (viewContainerRef: ViewContainerRef, customBlocks: CustomBlock) => {
@@ -184,8 +206,6 @@ export const ActionsMenu = (viewContainerRef: ViewContainerRef, customBlocks: Cu
     const suggestionKey = new PluginKey('suggestionPlugin');
     const destroy$: Subject<boolean> = new Subject<boolean>();
     let shouldShow = true;
-    // eslint-disable-next-line no-console
-    console.log('From Actions Menu', customBlocks);
 
     /**
      * Get's called on button click or suggestion char
@@ -221,9 +241,7 @@ export const ActionsMenu = (viewContainerRef: ViewContainerRef, customBlocks: Cu
         /* Empezamos Aqui */
         const { allowedBlocks, allowedContentTypes, lang } = editor.storage.dotConfig;
         const editorAllowedBlocks = allowedBlocks.length > 1 ? allowedBlocks : [];
-        const items = getItems({ allowedBlocks: editorAllowedBlocks, editor, range, customBlocks });
-        // eslint-disable-next-line no-console
-        console.log('sup items:', items);
+        const items = getItems({ allowedBlocks: editorAllowedBlocks, editor, range });
 
         suggestionsComponent = viewContainerRef.createComponent(SuggestionsComponent);
 
@@ -245,24 +263,12 @@ export const ActionsMenu = (viewContainerRef: ViewContainerRef, customBlocks: Cu
         }
     }
 
-    function getItems({ allowedBlocks = [], editor, range, customBlocks }): DotMenuItem[] {
+    function getItems({ allowedBlocks = [], editor, range }): DotMenuItem[] {
         const items = allowedBlocks.length
             ? suggestionOptions.filter((item) => this.allowedBlocks.includes(item.id))
             : suggestionOptions;
 
-        const customItems = [
-            ...items,
-            ...customBlocks.extensions
-                .map((extension) =>
-                    extension.actions.map((action) => ({
-                        icon: action.icon,
-                        label: action.menuLabel,
-                        command: action.command,
-                        id: action.name
-                    }))
-                )
-                .flat()
-        ];
+        const customItems = [...items, ...getCustomActions(customBlocks)];
 
         customItems.forEach((item) => (item.command = () => onCommand({ item, editor, range })));
 
@@ -282,7 +288,7 @@ export const ActionsMenu = (viewContainerRef: ViewContainerRef, customBlocks: Cu
     function onSelection({ editor, range, props }) {
         const suggestionQuery = suggestionKey.getState(editor.view.state).query?.length || 0;
         range.to = range.to + suggestionQuery;
-        execCommand({ editor: editor, range: range, props });
+        execCommand({ editor: editor, range: range, props, customBlocks });
     }
 
     // TODO: Move this to an util

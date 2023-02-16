@@ -121,13 +121,13 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy {
     ngOnInit() {
         from(this.getCustomBlocks())
             .pipe(take(1))
-            .subscribe((nodes) => {
+            .subscribe((blocks) => {
                 this.editor = new Editor({
                     extensions: [
                         ...this.getEditorExtensions(),
                         ...this.getEditorMarks(),
                         ...this.getEditorNodes(),
-                        ...nodes
+                        ...blocks
                     ]
                 });
 
@@ -156,7 +156,15 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy {
     }
 
     private getParsedCustomBlocks(): CustomBlock {
-        return JSON.parse(this.customBlocks);
+        try {
+            return JSON.parse(this.customBlocks);
+        } catch {
+            console.warn('JSON parse fails, please check the JSON format.');
+
+            return {
+                extensions: []
+            };
+        }
     }
 
     /**
@@ -165,14 +173,7 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy {
      */
 
     private async getCustomBlocks(): Promise<AnyExtension[]> {
-        let data: CustomBlock;
-        try {
-            data = this.getParsedCustomBlocks();
-        } catch (e) {
-            console.warn('JSON parse fails, please check the JSON format.');
-
-            return [];
-        }
+        const data: CustomBlock = this.getParsedCustomBlocks();
 
         const extensionUrls = data.extensions.map((extension) => extension.url);
         const customModules = await this.loadCustomBlocks(extensionUrls);
@@ -191,7 +192,7 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy {
     }
 
     private getEditorNodes(): AnyExtension[] {
-        // If you have more than one allow block (other than the parragrph),
+        // If you have more than one allow block (other than the paragraph),
         // we customize the starterkit.
         const starterkit =
             this._allowedBlocks?.length > 1
