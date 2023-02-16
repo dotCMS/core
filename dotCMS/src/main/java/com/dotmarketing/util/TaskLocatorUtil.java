@@ -228,6 +228,7 @@ import com.dotmarketing.startup.runonce.Task220912UpdateCorrectShowOnMenuPropert
 import com.dotmarketing.startup.runonce.Task220928AddLookbackWindowColumnToExperiment;
 import com.dotmarketing.startup.runonce.Task221007AddVariantIntoPrimaryKey;
 import com.dotmarketing.startup.runonce.Task221018CreateVariantFieldInMultiTree;
+import com.dotmarketing.startup.runonce.Task230110MakeSomeSystemFieldsRemovableByBaseType;
 import com.google.common.collect.ImmutableList;
 
 import java.util.ArrayList;
@@ -249,7 +250,7 @@ import java.util.stream.Collectors;
  */
 public class TaskLocatorUtil {
 
-	private static List<Class<?>> userfixTasks = new CopyOnWriteArrayList<>();
+	private static final List<Class<?>> userfixTasks = new CopyOnWriteArrayList<>();
 
 	/**
 	 * Returns the list of tasks that are run to solve internal conflicts
@@ -257,7 +258,7 @@ public class TaskLocatorUtil {
 	 *
 	 * @return The list of Fix Tasks.
 	 */
-	private static List<Class<?>> systemfixTasks = ImmutableList.of(
+	private static final List<Class<?>> systemfixTasks = ImmutableList.of(
 			FixTask00001CheckAssetsMissingIdentifiers.class,
 			FixTask00003CheckContainersInconsistencies.class,
 			FixTask00006CheckLinksInconsistencies.class,
@@ -531,6 +532,7 @@ public class TaskLocatorUtil {
 		.add(Task220928AddLookbackWindowColumnToExperiment.class)
 		.add(Task221007AddVariantIntoPrimaryKey.class)
 		.add(Task221018CreateVariantFieldInMultiTree.class)
+	    .add(Task230110MakeSomeSystemFieldsRemovableByBaseType.class)
 		.build();
         return ret.stream().sorted(classNameComparator).collect(Collectors.toList());
 	}
@@ -562,10 +564,14 @@ public class TaskLocatorUtil {
 		ret.add(Task00050LoadAppsSecrets.class);
         return ret.stream().sorted(classNameComparator).collect(Collectors.toList());
 	}
-	
-		//UT that were backported to LTS
+
+	/**
+	 * Handles Upgrade Tasks that must be back-ported to a given LTS release.
+	 *
+	 * @return The back-ported UTs.
+	 */
 	public static List<Class<?>> getBackportedUpgradeTaskClasses() {
-		final List<Class<?>> ret = new ArrayList<Class<?>>();
+		final List<Class<?>> ret = new ArrayList<>();
 		return ret.stream().sorted(classNameComparator).collect(Collectors.toList());
 	}
 

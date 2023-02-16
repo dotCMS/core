@@ -36,7 +36,7 @@ public class HTMLPageAsset extends Contentlet implements IHTMLPage {
 
     @Override
     public long getCacheTTL() {
-        return NumberUtil.toLong(getStringProperty(HTMLPageAssetAPI.CACHE_TTL_FIELD), () -> Long.valueOf("0"));
+        return NumberUtil.toLong(getStringProperty(HTMLPageAssetAPI.CACHE_TTL_FIELD), () -> 0L);
     }
 
     @Override
