@@ -15,3 +15,11 @@ export type Block = {
 export type CustomBlock = {
     extensions: Block[];
 };
+
+export interface EDITOR_DOTMARKETING_CONFIG {
+    SHOW_VIDEO_THUMBNAIL: boolean;
+}
+
+export enum EDITOR_MARKETING_KEYS {
+    SHOW_VIDEO_THUMBNAIL = 'SHOW_VIDEO_THUMBNAIL'
+}

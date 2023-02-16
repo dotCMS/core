@@ -25,6 +25,12 @@ const headings: DotMenuItem[] = [...Array(3).keys()].map((level) => {
     };
 });
 
+const dotContentet: DotMenuItem = {
+    label: 'Contentlet',
+    icon: 'receipt',
+    id: 'dotContent'
+};
+
 const image: DotMenuItem[] = [
     {
         label: 'Image',
@@ -85,7 +91,7 @@ const block: DotMenuItem[] = [
 
 export const getEditorBlockOptions = () => {
     return (
-        suggestionOptions
+        [...suggestionOptions, dotContentet]
             // get all blocks except the Paragraph
             .filter(({ id }) => id != paragraph.id)
             .map(({ label, id }) => ({ label, code: id }))

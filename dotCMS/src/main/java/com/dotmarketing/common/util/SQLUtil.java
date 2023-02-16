@@ -227,6 +227,10 @@ public class SQLUtil {
 				.replaceAll(_DESC, StringPool.BLANK)
 				.replaceAll("-", StringPool.BLANK).toLowerCase();
 
+		if(testParam.equals(StringPool.BLANK)){
+			return testParam;
+		}
+
 		testParam = com.dotmarketing.util.StringUtils.convertCamelToSnake(testParam);
 		testParam = translateSortBy(testParam);
 
