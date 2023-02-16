@@ -1,9 +1,9 @@
 {
 	"info": {
-		"_postman_id": "5e17ba52-ac1b-48d7-b724-b3bb46b78d11",
+		"_postman_id": "cbba7b98-cbab-4f76-a787-3eae34b58268",
 		"name": "Experiments Resource",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
-		"_exporter_id": "1549189"
+		"_exporter_id": "4500400"
 	},
 	"item": [
 		{
@@ -4046,7 +4046,7 @@
 									"",
 									"pm.test(\"Status code should be ok 400\", function () {",
 									"    pm.response.to.have.status(400);",
-									"    pm.expect(jsonData.message).equal(\"Cannot start an already started Experiment.\");",
+									"    pm.expect(jsonData.message).equal(\"Only DRAFT experiments can be started\");",
 									"});",
 									"",
 									"",

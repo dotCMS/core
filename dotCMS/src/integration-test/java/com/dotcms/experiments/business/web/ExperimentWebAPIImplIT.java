@@ -290,13 +290,13 @@ public class ExperimentWebAPIImplIT {
                 .operator(LogicalOperator.AND)
                 .build();
 
-        final Experiment experiment = new ExperimentDataGen()
+        Experiment experiment = new ExperimentDataGen()
                 .trafficAllocation(100)
                 .addTargetingConditions(targetingCondition)
                 .nextPersisted();
 
         try{
-            ExperimentDataGen.start(experiment);
+            experiment = ExperimentDataGen.start(experiment);
 
             final HttpServletRequest request = mock(HttpServletRequest.class);
 
@@ -313,6 +313,7 @@ public class ExperimentWebAPIImplIT {
                 assertTrue(selectedExperiments.getIncludedExperimentIds().contains(experiment.id().get()));
                 assertTrue(selectedExperiments.getExcludedExperimentIds().isEmpty());
             }
+
         } finally {
             ExperimentDataGen.end(experiment);
         }
@@ -335,7 +336,7 @@ public class ExperimentWebAPIImplIT {
                 .operator(LogicalOperator.AND)
                 .build();
 
-        final Experiment experiment = new ExperimentDataGen()
+        Experiment experiment = new ExperimentDataGen()
                 .trafficAllocation(100)
                 .addTargetingConditions(targetingCondition)
                 .nextPersisted();
@@ -343,7 +344,7 @@ public class ExperimentWebAPIImplIT {
         final HTMLPageAsset htmlPageAsset = getExperimentPage(experiment);
 
         try{
-            ExperimentDataGen.start(experiment);
+            experiment = ExperimentDataGen.start(experiment);
 
             final HttpServletRequest request = mock(HttpServletRequest.class);
             when(request.getAttribute("testing-attribute")).thenReturn("testing");
@@ -383,13 +384,13 @@ public class ExperimentWebAPIImplIT {
                 .operator(LogicalOperator.AND)
                 .build();
 
-        final Experiment experiment_1 = new ExperimentDataGen()
+        Experiment experiment_1 = new ExperimentDataGen()
                 .trafficAllocation(100)
                 .addTargetingConditions(targetingCondition)
                 .nextPersisted();
 
 
-        final Experiment experiment_2 = new ExperimentDataGen()
+        Experiment experiment_2 = new ExperimentDataGen()
                 .trafficAllocation(100)
                 .addTargetingConditions(targetingCondition)
                 .nextPersisted();
@@ -398,8 +399,8 @@ public class ExperimentWebAPIImplIT {
         final HTMLPageAsset htmlPageAsset_2 = getExperimentPage(experiment_2);
 
         try{
-            ExperimentDataGen.start(experiment_1);
-            ExperimentDataGen.start(experiment_2);
+            experiment_1 = ExperimentDataGen.start(experiment_1);
+            experiment_2 = ExperimentDataGen.start(experiment_2);
 
             final HttpServletRequest request = mock(HttpServletRequest.class);
             when(request.getAttribute("testing-attribute")).thenReturn("testing");
@@ -425,6 +426,7 @@ public class ExperimentWebAPIImplIT {
                 assertTrue(selectedExperiments.getIncludedExperimentIds().contains(experiment_2.id().get()));
                 assertTrue(selectedExperiments.getExcludedExperimentIds().isEmpty());
             }
+
         } finally {
             ExperimentDataGen.end(experiment_1);
             ExperimentDataGen.end(experiment_2);
