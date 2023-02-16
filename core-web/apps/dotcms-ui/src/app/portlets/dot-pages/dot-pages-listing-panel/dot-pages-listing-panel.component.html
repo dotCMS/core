@@ -3,7 +3,7 @@
     [value]="vm.pages.items"
     [scrollable]="true"
     [virtualScroll]="true"
-    [virtualScrollItemSize]="65"
+    [virtualScrollItemSize]="47"
     [lazy]="true"
     (onLazyLoad)="loadPagesLazy($event)"
     (onRowSelect)="onRowSelect($event)"
@@ -40,7 +40,7 @@
             ></button>
         </div>
     </ng-template>
-    <ng-template pTemplate="header" let-columns>
+    <ng-template pTemplate="header">
         <tr>
             <th pSortableColumn="title" style="width: 25%">
                 {{ 'title' | dm }}<p-sortIcon field="title"></p-sortIcon>
@@ -51,7 +51,7 @@
             <th pSortableColumn="contentType" style="width: 12%">
                 {{ 'type' | dm }}<p-sortIcon field="contentType"></p-sortIcon>
             </th>
-            <th pSortableColumn="languageId" style="text-align: center; width: 12%">
+            <th pSortableColumn="languageId" style="width: 12%">
                 {{ 'status' | dm }}<p-sortIcon field="languageId"></p-sortIcon>
             </th>
             <th style="width: 13%">
@@ -63,7 +63,7 @@
             <th style="width: 5%"></th>
         </tr>
     </ng-template>
-    <ng-template pTemplate="body" let-rowData let-columns="columns" let-rowIndex="rowIndex">
+    <ng-template pTemplate="body" let-rowData let-rowIndex="rowIndex">
         <tr class="dot-pages-listing-content__row" [pSelectableRow]="rowData">
             <td>{{ rowData['title'] }}</td>
             <td [pTooltip]="rowData['urlMap'] || rowData['url']" tooltipPosition="bottom">

@@ -159,7 +159,7 @@ describe('DotPagesListingPanelComponent', () => {
             const elem = de.query(By.css('p-table')).componentInstance;
             expect(elem.scrollable).toBe(true);
             expect(elem.virtualScroll).toBe(true);
-            expect(elem.virtualScrollItemSize).toBe(65);
+            expect(elem.virtualScrollItemSize).toBe(47);
             expect(elem.lazy).toBe(true);
             expect(elem.selectionMode).toBe('single');
             expect(elem.scrollHeight).toBe('flex');

@@ -8,6 +8,8 @@
         max-width: 0;
 
         &:last-child {
+            padding-right: $spacing-2;
+            text-align: right;
             text-overflow: unset;
         }
     }
@@ -18,7 +20,7 @@
     }
 
     .p-datatable .p-datatable-tbody tr.dot-pages-listing-content__row {
-        height: 26px;
+        height: 47px;
     }
 }
 

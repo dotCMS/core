@@ -226,7 +226,7 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
     readonly getPages = this.effect(
         (params$: Observable<{ offset: number; sortField?: string; sortOrder?: number }>) => {
             return params$.pipe(
-                switchMap((params) => {
+                mergeMap((params) => {
                     const { offset, sortField, sortOrder } = params;
                     const sortOrderValue = this.getSortOrderValue(sortField, sortOrder);
 
