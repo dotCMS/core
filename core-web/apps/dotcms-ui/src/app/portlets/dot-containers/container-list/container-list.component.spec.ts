@@ -313,7 +313,7 @@ describe('ContainerListComponent', () => {
 
         it('should set attributes of dotListingDataTable', () => {
             expect(dotListingDataTable.columns).toEqual(columnsMock);
-            expect(dotListingDataTable.url).toEqual('v1/containers?system=true');
+            expect(dotListingDataTable.url).toEqual('v1/containers');
             expect(dotListingDataTable.actions).toEqual([]);
             expect(dotListingDataTable.checkbox).toEqual(true);
             expect(dotListingDataTable.dataKey).toEqual('inode');
