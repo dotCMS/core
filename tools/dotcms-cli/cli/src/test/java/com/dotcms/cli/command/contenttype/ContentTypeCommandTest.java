@@ -1,7 +1,9 @@
-package com.dotcms.cli.command;
+package com.dotcms.cli.command.contenttype;
 
 import com.dotcms.api.AuthenticationContext;
 import com.dotcms.api.provider.ClientObjectMapper;
+import com.dotcms.api.provider.YAMLMapperSupplier;
+import com.dotcms.cli.command.CommandTest;
 import com.dotcms.contenttype.model.field.DataTypes;
 import com.dotcms.contenttype.model.field.ImmutableBinaryField;
 import com.dotcms.contenttype.model.type.BaseContentType;
@@ -10,23 +12,21 @@ import com.dotcms.contenttype.model.type.ImmutableSimpleContentType;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.quarkus.test.junit.QuarkusTest;
+import org.junit.jupiter.api.*;
+import picocli.CommandLine;
+import picocli.CommandLine.ExitCode;
+
+import javax.inject.Inject;
 import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.Date;
-import javax.inject.Inject;
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import picocli.CommandLine;
-import picocli.CommandLine.ExitCode;
 
 @QuarkusTest
-public class ContentTypeCommandTest extends CommandTest{
+public class ContentTypeCommandTest extends CommandTest {
 
     @Inject
     AuthenticationContext authenticationContext;
@@ -51,35 +51,16 @@ public class ContentTypeCommandTest extends CommandTest{
 
     /**
      * Pull single CT by varName
-     * @throws JsonProcessingException
      */
     @Test
-    void Test_Command_Content_List_Option() throws JsonProcessingException {
+    void Test_Command_Content_Type_Pull_Option() throws JsonProcessingException {
 
-        final CommandLine commandLine = factory.create();
-        final StringWriter writer = new StringWriter();
-        try (PrintWriter out = new PrintWriter(writer)) {
-            commandLine.setOut(out);
-            final int status = commandLine.execute(ContentTypeCommand.NAME, "--list", "--interactive=false");
-            Assertions.assertEquals(ExitCode.OK, status);
-            final String output = writer.toString();
-            Assertions.assertTrue(output.startsWith("varName:"));
-        }
-    }
-
-    /**
-     * Pull single CT by varName
-     * @throws JsonProcessingException
-     */
-    @Test
-    void Test_Command_Content_Type_Pass_Pull_Option() throws JsonProcessingException {
-
-        final CommandLine commandLine = factory.create();
+        final CommandLine commandLine = getFactory().create();
         final StringWriter writer = new StringWriter();
         try (PrintWriter out = new PrintWriter(writer)) {
             commandLine.setOut(out);
             final String fileName = String.format("./fileAsset%d.json", System.currentTimeMillis());
-            final int status = commandLine.execute(ContentTypeCommand.NAME, "--pull", "fileAsset", "--saveTo", fileName);
+            final int status = commandLine.execute(ContentTypePull.NAME, "--idOrVar", "fileAsset", "--verbose" , "--saveTo", fileName);
             Assertions.assertEquals(ExitCode.OK, status);
             final String output = writer.toString();
             //System.out.println(output);
@@ -87,34 +68,71 @@ public class ContentTypeCommandTest extends CommandTest{
             final ContentType contentType = objectMapper.readValue(output, ContentType.class);
             Assertions.assertNotNull(contentType.variable());
 
+            try {
+                Files.delete(Path.of(fileName));
+            } catch (IOException e) {
+                // Quite
+            }
         }
     }
 
-    /**
-     * Simple filter test
-     */
     @Test
-    void Test_Command_Content_Type_Pass_Filter_Short_View_Option() {
+    void Test_Command_Content_Type_Pull_Then_Push_YML() throws JsonProcessingException {
 
-        final CommandLine commandLine = factory.create();
+        final CommandLine commandLine = getFactory().create();
         final StringWriter writer = new StringWriter();
         try (PrintWriter out = new PrintWriter(writer)) {
             commandLine.setOut(out);
-            final int status = commandLine.execute(ContentTypeCommand.NAME, "--filter", "FileAsset");
+            final String fileName = String.format("./fileAsset%d.yml", System.currentTimeMillis());
+            int status = commandLine.execute(ContentTypePull.NAME, "--idOrVar", "fileAsset", "--saveTo", fileName,  "--verbose", "--format","YML");
             Assertions.assertEquals(ExitCode.OK, status);
             final String output = writer.toString();
-            Assertions.assertTrue(output.startsWith("varName: [FileAsset]"));
+            //System.out.println(output);
+            final ObjectMapper objectMapper = new YAMLMapperSupplier().get();
+            final ContentType contentType = objectMapper.readValue(output, ContentType.class);
+            Assertions.assertNotNull(contentType.variable());
+
+            status = commandLine.execute(ContentTypePush.NAME, "--file", fileName, "--format", "YML");
+            Assertions.assertEquals(ExitCode.OK, status);
+
+            try {
+                Files.delete(Path.of(fileName));
+            } catch (IOException e) {
+                // Quite
+            }
         }
     }
 
     /**
-     * Test invalid combination to verify group of options are mutually exclusive
+     * List all CT
      */
     @Test
-    void Test_Command_Content_Type_Pass_Filter_Invalid_Options() {
-        final CommandLine commandLine = factory.create();
-        final int status = commandLine.execute(ContentTypeCommand.NAME, "--filter", "-ls");
-        Assertions.assertEquals(ExitCode.USAGE, status);
+    void Test_Command_Content_List_Option() {
+        final CommandLine commandLine = getFactory().create();
+        final StringWriter writer = new StringWriter();
+        try (PrintWriter out = new PrintWriter(writer)) {
+            commandLine.setOut(out);
+            final int status = commandLine.execute(ContentTypeFind.NAME, "--all", "--interactive=false");
+            Assertions.assertEquals(CommandLine.ExitCode.OK, status);
+            final String output = writer.toString();
+            Assertions.assertTrue(output.startsWith("varName:"));
+        }
+    }
+
+    /**
+     * Test Filter options
+     */
+    @Test
+    void Test_Command_Content_Filter_Option() {
+        final CommandLine commandLine = getFactory().create();
+        final StringWriter writer = new StringWriter();
+        try (PrintWriter out = new PrintWriter(writer)) {
+            commandLine.setOut(out);
+            final int status = commandLine.execute(ContentTypeFind.NAME, "--name", "FileAsset", "--page", "0", "--pageSize", "10");
+            Assertions.assertEquals(CommandLine.ExitCode.OK, status);
+            final String output = writer.toString();
+            Assertions.assertTrue(output.startsWith("varName:"));
+        }
     }
 
     /**
@@ -160,20 +178,20 @@ public class ContentTypeCommandTest extends CommandTest{
         final File jsonFile = File.createTempFile("temp", ".json");
         Files.writeString(jsonFile.toPath(), asString);
 
-        final CommandLine commandLine = factory.create();
+        final CommandLine commandLine = getFactory().create();
         final StringWriter writer = new StringWriter();
         try (PrintWriter out = new PrintWriter(writer)) {
             commandLine.setOut(out);
-            final int status = commandLine.execute(ContentTypeCommand.NAME, "--push", jsonFile.getAbsolutePath() );
+            final int status = commandLine.execute(ContentTypePush.NAME, "--file", jsonFile.getAbsolutePath() );
             Assertions.assertEquals(ExitCode.OK, status);
             final String output = writer.toString();
             System.out.println(output);
         }
 
-        final int status = commandLine.execute(ContentTypeCommand.NAME, "--remove", varName );
+        final int status = commandLine.execute(ContentTypeRemove.NAME, "--idOrVar", varName );
         Assertions.assertEquals(ExitCode.OK, status);
 
-        final int status2 = commandLine.execute(ContentTypeCommand.NAME, "--pull", varName );
+        final int status2 = commandLine.execute(ContentTypePull.NAME, "--idOrVar", varName );
         Assertions.assertEquals(ExitCode.SOFTWARE, status2);
     }
 

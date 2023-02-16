@@ -24,7 +24,7 @@ import { TextAlign } from '@tiptap/extension-text-align';
 import { Underline } from '@tiptap/extension-underline';
 import StarterKit, { StarterKitOptions } from '@tiptap/starter-kit';
 
-import { CustomBlock } from '@dotcms/dotcms-models';
+import { CustomBlock, EDITOR_MARKETING_KEYS } from '@dotcms/dotcms-models';
 
 import {
     ActionsMenu,
@@ -42,7 +42,12 @@ import {
     ImageUpload
 } from '../../extensions';
 import { ContentletBlock, ImageNode, VideoNode } from '../../nodes';
-import { formatHTML, removeInvalidNodes, SetDocAttrStep } from '../../shared/utils';
+import {
+    formatHTML,
+    removeInvalidNodes,
+    SetDocAttrStep,
+    DotMarketingConfigService
+} from '../../shared';
 
 function toTitleCase(str) {
     return str.replace(/\p{L}+('\p{L}+)?/gu, function (txt) {
@@ -63,6 +68,12 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy {
     @Input() charLimit: number;
     @Input() customBlocks: string;
     @Input() content: Content = '';
+    @Input() set showVideoThumbnail(value) {
+        this.dotMarketingConfigService.setProperty(
+            EDITOR_MARKETING_KEYS.SHOW_VIDEO_THUMBNAIL,
+            value
+        );
+    }
 
     @Input() set allowedBlocks(blocks: string) {
         const allowedBlocks = blocks ? blocks.replace(/ /g, '').split(',').filter(Boolean) : [];
@@ -112,7 +123,11 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy {
         return Math.ceil(this.characterCount.words() / 265);
     }
 
-    constructor(private injector: Injector, public viewContainerRef: ViewContainerRef) {}
+    constructor(
+        private injector: Injector,
+        public viewContainerRef: ViewContainerRef,
+        private dotMarketingConfigService: DotMarketingConfigService
+    ) {}
 
     async loadCustomBlocks(urls: string[]) {
         return Promise.all(urls.map(async (url) => import(/* webpackIgnore: true */ url)));

@@ -1,11 +1,11 @@
 package com.dotcms.api.client;
 
+import com.dotcms.api.provider.YAMLMapperSupplier;
 import com.dotcms.model.config.ServiceBean;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import com.google.errorprone.annotations.CanIgnoreReturnValue;
-import io.quarkus.arc.DefaultBean;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 
 import javax.enterprise.context.ApplicationScoped;
@@ -21,10 +21,9 @@ import java.util.List;
 
 //@DefaultBean
 @ApplicationScoped
-public class YamlFactoryServiceManagerImpl implements ServiceManager {
+public class YAMLFactoryServiceManagerImpl implements ServiceManager {
 
-    private static final ObjectMapper ymlMapper = new ObjectMapper(new YAMLFactory())
-            .findAndRegisterModules();
+    private static final ObjectMapper mapper = new YAMLMapperSupplier().get();
 
     //for testing purposes Overridable
     @ConfigProperty(name = "com.dotcms.service.config", defaultValue = "dot-service.yml")
@@ -36,7 +35,7 @@ public class YamlFactoryServiceManagerImpl implements ServiceManager {
         final List<ServiceBean> beans = services();
         final List<ServiceBean> merged = mergeServiceBeans(beans, service);
         try (OutputStream outputStream = Files.newOutputStream(filePath())) {
-            ymlMapper.writeValue(outputStream, merged);
+            mapper.writeValue(outputStream, merged);
         }
         cached = null;
         return this;
@@ -55,7 +54,7 @@ public class YamlFactoryServiceManagerImpl implements ServiceManager {
             return List.of();
         }
         try (InputStream inputStream = Files.newInputStream(path)) {
-            cached = ymlMapper.readValue(inputStream, new TypeReference<>() {
+            cached = mapper.readValue(inputStream, new TypeReference<>() {
             });
         } catch (IOException e){
             throw new IllegalStateException(e);

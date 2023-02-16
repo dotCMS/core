@@ -333,7 +333,7 @@ class ContentTypeAPITest {
     void Test_Send_Invalid_Host_And_Folder_Verify_Defaults() {
 
         final SiteAPI siteAPI = apiClientFactory.getClient(SiteAPI.class);
-        final ResponseEntityView<SiteView> siteResponse = siteAPI.findHostByName(
+        final ResponseEntityView<SiteView> siteResponse = siteAPI.findByName(
                 GetSiteByNameRequest.builder().siteName("default").build());
 
         final long timeStamp = System.currentTimeMillis();
@@ -418,7 +418,7 @@ class ContentTypeAPITest {
     void Test_Create_Content_Type_Out_Of_Folder_Path() {
 
         final SiteAPI siteAPI = apiClientFactory.getClient(SiteAPI.class);
-        final ResponseEntityView<SiteView> siteResponse = siteAPI.findHostByName(
+        final ResponseEntityView<SiteView> siteResponse = siteAPI.findByName(
                 GetSiteByNameRequest.builder().siteName("default").build()
         );
 
