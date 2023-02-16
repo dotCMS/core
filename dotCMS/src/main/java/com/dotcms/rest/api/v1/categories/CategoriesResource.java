@@ -287,9 +287,10 @@ public class CategoriesResource {
     @Path("/{idOrKey}")
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
-    public final CategoryView getCategoryByIdOrKey(@Context final HttpServletRequest httpRequest,
+    public final Response getCategoryByIdOrKey(@Context final HttpServletRequest httpRequest,
             @Context final HttpServletResponse httpResponse,
-            @PathParam("idOrKey") final String idOrKey)
+            @PathParam("idOrKey") final String idOrKey,
+            @QueryParam("showChildrenCount") final boolean showChildrenCount)
             throws DotSecurityException, DotDataException {
 
         final InitDataObject initData = new WebResource.InitBuilder(webResource)
@@ -316,7 +317,9 @@ public class CategoriesResource {
             throw new DoesNotExistException(
                     "Category with idOrKey: " + idOrKey + " does not exist");
         }
-        return this.categoryHelper.toCategoryView(category, user);
+
+        return showChildrenCount ? this.categoryHelper.toCategoryWithChildCountView(category, user) :
+                this.categoryHelper.toCategoryView(category, user);
     }
 
     /**
@@ -333,7 +336,7 @@ public class CategoriesResource {
     @JSONP
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
-    public final CategoryView saveNew(@Context final HttpServletRequest httpRequest,
+    public final Response saveNew(@Context final HttpServletRequest httpRequest,
             @Context final HttpServletResponse httpResponse,
             final CategoryForm categoryForm)
             throws DotDataException, DotSecurityException {
@@ -375,7 +378,7 @@ public class CategoriesResource {
     @JSONP
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
-    public final CategoryView save(@Context final HttpServletRequest httpRequest,
+    public final Response save(@Context final HttpServletRequest httpRequest,
             @Context final HttpServletResponse httpResponse,
             final CategoryForm categoryForm) throws DotDataException, DotSecurityException {
 
