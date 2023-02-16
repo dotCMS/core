@@ -141,7 +141,7 @@ describe('DotBlockEditorSidebarComponent', () => {
         expect(component).toBeTruthy();
     });
 
-    fit('should set inputs to the block editor', async () => {
+    it('should set inputs to the block editor', async () => {
         spyOn(dotContentTypeService, 'getContentType').and.callThrough();
         spyOn(dotPropertiesService, 'getKey').and.returnValue(of('true'));
         dotEventsService.notify('edit-block-editor', clickEvent);
