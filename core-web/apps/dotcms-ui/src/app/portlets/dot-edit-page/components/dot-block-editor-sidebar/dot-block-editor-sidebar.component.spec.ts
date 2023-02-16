@@ -10,11 +10,13 @@ import { ConfirmationService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
 import { Sidebar, SidebarModule } from 'primeng/sidebar';
 
+import { MockDotPropertiesService } from '@dotcms/app/portlets/dot-edit-page/main/dot-edit-page-nav/dot-edit-page-nav.component.spec';
 import {
     DotAlertConfirmService,
     DotContentTypeService,
     DotEventsService,
     DotMessageService,
+    DotPropertiesService,
     DotWorkflowActionsFireService
 } from '@dotcms/data-access';
 import { CoreWebService } from '@dotcms/dotcms-js';
@@ -33,6 +35,7 @@ export class MockDotBlockEditorComponent {
     @Input() allowedContentTypes = '';
     @Input() customStyles = '';
     @Input() allowedBlocks = '';
+    @Input() showVideoThumbnail = false;
     @Input() value: { [key: string]: string } | string = '';
 
     editor = {
@@ -87,6 +90,7 @@ describe('DotBlockEditorSidebarComponent', () => {
     let dotAlertConfirmService: DotAlertConfirmService;
     let dotContentTypeService: DotContentTypeService;
     let de: DebugElement;
+    let dotPropertiesService: DotPropertiesService;
 
     beforeEach(async () => {
         await TestBed.configureTestingModule({
@@ -102,6 +106,7 @@ describe('DotBlockEditorSidebarComponent', () => {
                 { provide: CoreWebService, useClass: CoreWebServiceMock },
                 { provide: DotMessageService, useValue: messageServiceMock },
                 { provide: DotContentTypeService, useClass: MockDotContentTypeService },
+                { provide: DotPropertiesService, useClass: MockDotPropertiesService },
                 DotWorkflowActionsFireService,
                 DotEventsService,
                 DotAlertConfirmService,
@@ -112,6 +117,7 @@ describe('DotBlockEditorSidebarComponent', () => {
         dotWorkflowActionsFireService = TestBed.inject(DotWorkflowActionsFireService);
         dotAlertConfirmService = TestBed.inject(DotAlertConfirmService);
         dotContentTypeService = TestBed.inject(DotContentTypeService);
+        dotPropertiesService = TestBed.inject(DotPropertiesService);
     });
 
     beforeEach(() => {
@@ -133,6 +139,7 @@ describe('DotBlockEditorSidebarComponent', () => {
 
     it('should set inputs to the block editor', async () => {
         spyOn(dotContentTypeService, 'getContentType').and.callThrough();
+        spyOn(dotPropertiesService, 'getKey').and.returnValue(of('true'));
         dotEventsService.notify('edit-block-editor', clickEvent);
 
         await fixture.whenRenderingDone();
@@ -144,6 +151,7 @@ describe('DotBlockEditorSidebarComponent', () => {
 
         expect(dotContentTypeService.getContentType).toHaveBeenCalledWith('Blog');
         expect(blockEditor.lang).toEqual(clickEvent.dataset.language);
+        expect(blockEditor.showVideoThumbnail).toBeTruthy();
         expect(blockEditor.allowedBlocks).toEqual('heading1');
         expect(blockEditor.allowedContentTypes).toEqual('Activity');
         expect(blockEditor.value).toEqual(JSON.parse(clickEvent.dataset.blockEditorContent));
