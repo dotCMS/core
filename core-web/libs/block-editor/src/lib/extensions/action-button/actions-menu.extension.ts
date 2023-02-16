@@ -28,7 +28,8 @@ import {
     FloatingActionsPlugin,
     findParentNode,
     DotMenuItem,
-    suggestionOptions
+    suggestionOptions,
+    clearFilter
 } from '../../shared';
 import { NodeTypes } from '../bubble-menu/models';
 
@@ -238,7 +239,6 @@ export const ActionsMenu = (viewContainerRef: ViewContainerRef, customBlocks: Cu
     }
 
     function setUpSuggestionComponent(editor: Editor, range: Range) {
-        /* Empezamos Aqui */
         const { allowedBlocks, allowedContentTypes, lang } = editor.storage.dotConfig;
         const editorAllowedBlocks = allowedBlocks.length > 1 ? allowedBlocks : [];
         const items = getItems({ allowedBlocks: editorAllowedBlocks, editor, range });
@@ -250,7 +250,7 @@ export const ActionsMenu = (viewContainerRef: ViewContainerRef, customBlocks: Cu
         suggestionsComponent.instance.currentLanguage = lang;
         suggestionsComponent.instance.allowedContentTypes = allowedContentTypes;
         suggestionsComponent.instance.onSelectContentlet = (props) => {
-            clearFilter({ type: ItemsType.CONTENT, editor, range });
+            clearFilter({ type: ItemsType.CONTENT, editor, range, suggestionKey, ItemsType });
             onSelection({ editor, range, props });
         };
 
@@ -281,7 +281,7 @@ export const ActionsMenu = (viewContainerRef: ViewContainerRef, customBlocks: Cu
             type: { name: id.includes('heading') ? 'heading' : id, ...attributes }
         };
 
-        clearFilter({ type: ItemsType.BLOCK, editor, range });
+        clearFilter({ type: ItemsType.BLOCK, editor, range, suggestionKey, ItemsType });
         onSelection({ editor, range, props });
     }
 
@@ -291,14 +291,6 @@ export const ActionsMenu = (viewContainerRef: ViewContainerRef, customBlocks: Cu
         execCommand({ editor: editor, range: range, props, customBlocks });
     }
 
-    // TODO: Move this to an util
-    function clearFilter({ type, editor, range }) {
-        const queryRange = {
-            to: range.to + suggestionKey.getState(editor.view.state).query?.length,
-            from: type === ItemsType.BLOCK ? range.from : range.from + 1
-        };
-        editor.chain().deleteRange(queryRange).run();
-    }
     /* End new Functions */
 
     /**

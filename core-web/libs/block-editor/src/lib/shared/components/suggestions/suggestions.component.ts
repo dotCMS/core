@@ -44,8 +44,6 @@ export enum ItemsType {
 export class SuggestionsComponent implements OnInit {
     @ViewChild('list', { static: false }) list: SuggestionListComponent;
 
-    // onSelectContentlet
-    // SuggestionsCommandProps
     @Input() onSelectContentlet: (props: SuggestionsCommandProps) => void;
     @Input() items: DotMenuItem[] = [];
     @Input() title = 'Select a block';
