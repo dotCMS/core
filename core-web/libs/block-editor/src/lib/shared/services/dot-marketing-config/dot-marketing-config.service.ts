@@ -12,18 +12,38 @@ export const INITIAL_STATE = {
 export class DotMarketingConfigService {
     private config: EDITOR_DOTMARKETING_CONFIG = INITIAL_STATE;
 
-    setProperty(property: keyof EDITOR_DOTMARKETING_CONFIG, value: boolean): void {
+    /**
+     * Get the config object
+     *
+     * @return {*}  {EDITOR_DOTMARKETING_CONFIG}
+     * @memberof DotMarketingConfigService
+     */
+    get configObject(): EDITOR_DOTMARKETING_CONFIG {
+        return this.config;
+    }
+
+    /**
+     * Set a property in the config object
+     *
+     * @param {keyof EDITOR_DOTMARKETING_CONFIG} key
+     * @param {boolean} value
+     * @memberof DotMarketingConfigService
+     */
+    setProperty(key: keyof EDITOR_DOTMARKETING_CONFIG, value: boolean): void {
         this.config = {
             ...this.config,
-            [property]: value
+            [key]: value
         };
     }
 
-    getProperty(property: keyof EDITOR_DOTMARKETING_CONFIG): boolean {
-        return this.config[property] || false;
-    }
-
-    getConfigObject(): EDITOR_DOTMARKETING_CONFIG {
-        return this.config;
+    /**
+     * Get a property from the config object base on a key
+     *
+     * @param {keyof EDITOR_DOTMARKETING_CONFIG} key
+     * @return {*}  {boolean}
+     * @memberof DotMarketingConfigService
+     */
+    getProperty(key: keyof EDITOR_DOTMARKETING_CONFIG): boolean {
+        return this.config[key] || false;
     }
 }

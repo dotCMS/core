@@ -64,7 +64,7 @@ export class DotBlockEditorSidebarComponent implements OnInit, OnDestroy {
             EDITOR_MARKETING_KEYS.SHOW_VIDEO_THUMBNAIL
         );
 
-        combineLatest([content$, propery$]).subscribe(([eventData, property = true]) => {
+        combineLatest([content$, propery$]).subscribe(([eventData, property = 'true']) => {
             this.blockEditorInput = eventData;
             this.showVideoThumbnail = property === 'true' || property === 'NOT_FOUND';
         });

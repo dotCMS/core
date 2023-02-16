@@ -10,7 +10,6 @@ import { ConfirmationService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
 import { Sidebar, SidebarModule } from 'primeng/sidebar';
 
-import { MockDotPropertiesService } from '@dotcms/app/portlets/dot-edit-page/main/dot-edit-page-nav/dot-edit-page-nav.component.spec';
 import {
     DotAlertConfirmService,
     DotContentTypeService,
@@ -106,7 +105,12 @@ describe('DotBlockEditorSidebarComponent', () => {
                 { provide: CoreWebService, useClass: CoreWebServiceMock },
                 { provide: DotMessageService, useValue: messageServiceMock },
                 { provide: DotContentTypeService, useClass: MockDotContentTypeService },
-                { provide: DotPropertiesService, useClass: MockDotPropertiesService },
+                {
+                    provide: DotPropertiesService,
+                    useValue: {
+                        getKey: () => of('true')
+                    }
+                },
                 DotWorkflowActionsFireService,
                 DotEventsService,
                 DotAlertConfirmService,
@@ -137,7 +141,7 @@ describe('DotBlockEditorSidebarComponent', () => {
         expect(component).toBeTruthy();
     });
 
-    it('should set inputs to the block editor', async () => {
+    fit('should set inputs to the block editor', async () => {
         spyOn(dotContentTypeService, 'getContentType').and.callThrough();
         spyOn(dotPropertiesService, 'getKey').and.returnValue(of('true'));
         dotEventsService.notify('edit-block-editor', clickEvent);

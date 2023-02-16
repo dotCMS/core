@@ -15,7 +15,7 @@ describe('DotEditorMarketingService', () => {
     });
 
     test('should has initial state', () => {
-        expect(service.getConfigObject()).toEqual(INITIAL_STATE);
+        expect(service.configObject).toEqual(INITIAL_STATE);
     });
 
     test('should set a config property', () => {
@@ -31,6 +31,6 @@ describe('DotEditorMarketingService', () => {
     });
 
     test('should return the config object', () => {
-        expect(service.getConfigObject()).toBeDefined();
+        expect(service.configObject).toBeDefined();
     });
 });
