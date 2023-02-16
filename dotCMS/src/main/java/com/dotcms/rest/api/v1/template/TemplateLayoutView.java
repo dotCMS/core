@@ -109,6 +109,10 @@ public class TemplateLayoutView {
     }
 
 
+    /**
+     * Represent a set of UUID change when a Template's Layout is updated
+     *
+     */
     public static class ContainerUUIDChanges {
         final Map<String, Map<String, String>> changes = new HashMap();
         final Map<String, Collection<String>> newValues = new HashMap<>();
@@ -126,6 +130,30 @@ public class TemplateLayoutView {
             }
         }
 
+        /**
+         * Return all the UUID that was lost in the Template's Layout update, for Example, if
+         * we have a Template with a Layout equals to:
+         *
+         * <code>
+         * {
+         *     rows: [
+         *      columns: [
+         *          containers: [
+         *              {
+         *                  id: "...",
+         *                  uuid: "109839"
+         *              }
+         *          ]
+         *       ]
+         *     ]
+         * }
+         * </code>
+         *
+         *  The UUID equals to 109839 is not valid for this reason if the Layout is updated this UUID
+         *  is changed by 1, and then the 109839 is lost.
+         *
+         * @return
+         */
         public Collection<ContainerUUIDChanged> lostUUIDValues(){
             final List<ContainerUUIDChanged> result = new ArrayList<>();
 
@@ -148,6 +176,9 @@ public class TemplateLayoutView {
         }
     }
 
+    /**
+     * Represent a Change in just one UUID into the Template's Layout
+     */
     public static class ContainerUUIDChanged {
         final String containerId;
         final String newValue;
