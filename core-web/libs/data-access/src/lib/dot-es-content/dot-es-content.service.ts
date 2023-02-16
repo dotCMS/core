@@ -72,7 +72,7 @@ export class DotESContentService {
         [key: string]: string | number;
     } {
         const query = {
-            query: `${params.query} ${JSON.stringify(extraParams).replace(/"|{|}|,/g, ' ')}`,
+            query: `${params.query} ${JSON.stringify(extraParams).replace(/["{},]/g, ' ')}`,
             sort: `${this._sortField || ''} ${this._sortOrder || ''}`,
             limit: this._paginationPerPage,
             offset: this._offset
