@@ -66,7 +66,7 @@ export class DotBlockEditorSidebarComponent implements OnInit, OnDestroy {
 
         combineLatest([content$, propery$]).subscribe(([eventData, property = true]) => {
             this.blockEditorInput = eventData;
-            this.showVideoThumbnail = typeof property === 'string' ? property === 'true' : property;
+            this.showVideoThumbnail = property === 'true' || property === 'NOT_FOUND';
         });
     }
 
