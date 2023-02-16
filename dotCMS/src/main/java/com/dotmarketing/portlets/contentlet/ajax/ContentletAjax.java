@@ -974,6 +974,7 @@ public class ContentletAjax {
 		lastSearchMap.put("orderBy", orderBy);
 
 		luceneQuery.append(" +working:true");
+		luceneQuery.append(" +variant:default");
         final String luceneQueryToShow= luceneQuery.toString().replaceAll("\\s+", " ");
 
 		//Executing the query
