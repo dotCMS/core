@@ -1,13 +1,13 @@
 import { TestBed } from '@angular/core/testing';
 
-import { DotEditorConfigService, INITIAL_STATE } from './dot-editor-config.service';
+import { DotMarketingConfigService, INITIAL_STATE } from './dot-marketing-config.service';
 
-describe('DotEditorConfigService', () => {
-    let service: DotEditorConfigService;
+describe('DotEditorMarketingService', () => {
+    let service: DotMarketingConfigService;
 
     beforeEach(() => {
         TestBed.configureTestingModule({ teardown: { destroyAfterEach: false } });
-        service = TestBed.inject(DotEditorConfigService);
+        service = TestBed.inject(DotMarketingConfigService);
     });
 
     test('should be created', () => {

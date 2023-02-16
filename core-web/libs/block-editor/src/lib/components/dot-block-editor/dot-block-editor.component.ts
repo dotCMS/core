@@ -46,7 +46,7 @@ import {
     formatHTML,
     removeInvalidNodes,
     SetDocAttrStep,
-    DotEditorConfigService
+    DotMarketingConfigService
 } from '../../shared';
 
 function toTitleCase(str) {
@@ -69,7 +69,10 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy {
     @Input() customBlocks: string;
     @Input() content: Content = '';
     @Input() set showVideoThumbnail(value) {
-        this.dotEditorConfigService.setProperty(EDITOR_MARKETING_KEYS.SHOW_VIDEO_THUMBNAIL, value);
+        this.dotMarketingConfigService.setProperty(
+            EDITOR_MARKETING_KEYS.SHOW_VIDEO_THUMBNAIL,
+            value
+        );
     }
 
     @Input() set allowedBlocks(blocks: string) {
@@ -123,7 +126,7 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy {
     constructor(
         private injector: Injector,
         public viewContainerRef: ViewContainerRef,
-        private dotEditorConfigService: DotEditorConfigService
+        private dotMarketingConfigService: DotMarketingConfigService
     ) {}
 
     async loadCustomBlocks(urls: string[]) {

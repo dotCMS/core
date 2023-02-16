@@ -2,7 +2,7 @@ import { ChangeDetectionStrategy, Component, Input, OnInit } from '@angular/core
 
 import { DotCMSContentlet, EDITOR_MARKETING_KEYS } from '@dotcms/dotcms-models';
 
-import { DotEditorConfigService } from '../../../../../../shared';
+import { DotMarketingConfigService } from '../../../../../../shared';
 
 @Component({
     selector: 'dot-asset-card',
@@ -15,10 +15,10 @@ export class DotAssetCardComponent implements OnInit {
 
     @Input() contentlet: DotCMSContentlet;
 
-    constructor(private dotEditorConfigService: DotEditorConfigService) {}
+    constructor(private dotMarketingConfigService: DotMarketingConfigService) {}
 
     ngOnInit() {
-        this.showVideoThumbnail = this.dotEditorConfigService.getProperty(
+        this.showVideoThumbnail = this.dotMarketingConfigService.getProperty(
             EDITOR_MARKETING_KEYS.SHOW_VIDEO_THUMBNAIL
         );
     }

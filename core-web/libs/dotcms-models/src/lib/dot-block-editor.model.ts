@@ -16,7 +16,7 @@ export type CustomBlock = {
     extensions: Block[];
 };
 
-export interface EditorConfig {
+export interface EDITOR_DOTMARKETING_CONFIG {
     SHOW_VIDEO_THUMBNAIL: boolean;
 }
 
