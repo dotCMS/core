@@ -1,7 +1,11 @@
 package com.dotcms.rest.api.v1.categories;
 
 import java.util.Date;
-
+/**
+ * Data transferring object for any category along with children categories count
+ *
+ * @author Hassan Mustafa Baig
+ */
 public class CategoryWithChildCountView {
 
     private final String inode;

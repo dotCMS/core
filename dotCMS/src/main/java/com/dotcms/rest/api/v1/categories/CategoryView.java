@@ -1,7 +1,11 @@
 package com.dotcms.rest.api.v1.categories;
 
 import java.util.Date;
-
+/**
+ * Data transferring object for any category
+ *
+ * @author Hassan Mustafa Baig
+ */
 public class CategoryView {
 
     private final String inode;

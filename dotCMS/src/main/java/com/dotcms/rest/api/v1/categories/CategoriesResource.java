@@ -318,8 +318,8 @@ public class CategoriesResource {
                     "Category with idOrKey: " + idOrKey + " does not exist");
         }
 
-        return showChildrenCount ? this.categoryHelper.toCategoryWithChildCountView(category, user) :
-                this.categoryHelper.toCategoryView(category, user);
+        return showChildrenCount ? Response.ok(new ResponseEntityView(this.categoryHelper.toCategoryWithChildCountView(category, user))).build() :
+                Response.ok(new ResponseEntityView(this.categoryHelper.toCategoryView(category, user))).build();
     }
 
     /**
@@ -355,8 +355,8 @@ public class CategoriesResource {
                 "The category name is required");
 
         try {
-            return this.categoryHelper.toCategoryView(
-                    this.fillAndSave(categoryForm, user, host, pageMode, new Category()), user);
+           return Response.ok(new ResponseEntityView(this.categoryHelper.toCategoryView(
+                   this.fillAndSave(categoryForm, user, host, pageMode, new Category()), user))).build();
         } catch (InvocationTargetException | IllegalAccessException e) {
             Logger.error(this, e.getMessage(), e);
             throw new RuntimeException(e);
@@ -404,9 +404,9 @@ public class CategoriesResource {
         }
 
         try {
-            return this.categoryHelper.toCategoryView(
+           return Response.ok(new ResponseEntityView(this.categoryHelper.toCategoryView(
                     this.fillAndSave(categoryForm, user, host, pageMode, oldCategory,
-                            new Category()), user);
+                            new Category()), user))).build();
         } catch (InvocationTargetException | IllegalAccessException e) {
             Logger.error(this, e.getMessage(), e);
             throw new RuntimeException(e);

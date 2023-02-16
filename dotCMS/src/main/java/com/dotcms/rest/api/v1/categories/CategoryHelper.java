@@ -16,6 +16,7 @@ import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.VelocityUtil;
 import com.google.common.annotations.VisibleForTesting;
 import com.liferay.portal.model.User;
+import com.liferay.util.StringPool;
 import io.vavr.control.Try;
 
 import javax.ws.rs.core.Response;
@@ -54,9 +55,9 @@ public class CategoryHelper {
         return hostSupplier.get();
     }
 
-    public Response toCategoryView(final Category category, final User user) throws DotDataException, DotSecurityException {
+    public CategoryView toCategoryView(final Category category, final User user) throws DotDataException, DotSecurityException {
 
-       final CategoryView categoryView = new CategoryView.Builder()
+       return new CategoryView.Builder()
                 .inode(category.getInode())
                 .description(category.getDescription())
                 .keywords(category.getKeywords())
@@ -66,17 +67,14 @@ public class CategoryHelper {
                 .sortOrder(category.getSortOrder())
                 .categoryVelocityVarName(category.getCategoryVelocityVarName())
                 .build();
-
-
-        return Response.ok(new ResponseEntityView(categoryView)).build();
     }
 
-    public Response toCategoryWithChildCountView(final Category category, final User user) throws DotDataException, DotSecurityException {
+    public CategoryWithChildCountView toCategoryWithChildCountView(final Category category, final User user) throws DotDataException, DotSecurityException {
 
         final Integer childrenCategoriesCount = this.categoryAPI.findChildren(user, category.getInode(),
-                    false, "").size();
+                    false, StringPool.BLANK).size();
 
-       final CategoryWithChildCountView categoryWithChildCountView = new CategoryWithChildCountView.Builder()
+       return new CategoryWithChildCountView.Builder()
                 .inode(category.getInode())
                 .description(category.getDescription())
                 .keywords(category.getKeywords())
@@ -87,8 +85,6 @@ public class CategoryHelper {
                 .categoryVelocityVarName(category.getCategoryVelocityVarName())
                 .childrenCount(childrenCategoriesCount)
                 .build();
-
-        return Response.ok(new ResponseEntityView(categoryWithChildCountView)).build();
     }
 
     public void addOrUpdateCategory(final User user, final String contextInode,
