@@ -16,9 +16,9 @@ import java.util.concurrent.Callable;
 @CommandLine.Command(name = SiteStop.NAME,
      description = "@|bold,green Stop Site |@ Option params @|bold,cyan --idOrName|@ site name or site id."
 )
-public class SiteStop extends SiteCommand implements Callable<Integer> {
+public class SiteStop extends AbstractSiteCommand implements Callable<Integer> {
 
-    static final String NAME = "site-stop";
+    static final String NAME = "stop";
 
     @CommandLine.Mixin(name = "output")
     protected OutputOptionMixin output;

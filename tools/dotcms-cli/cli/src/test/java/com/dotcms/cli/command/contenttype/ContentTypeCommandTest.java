@@ -60,7 +60,7 @@ public class ContentTypeCommandTest extends CommandTest {
         try (PrintWriter out = new PrintWriter(writer)) {
             commandLine.setOut(out);
             final String fileName = String.format("./fileAsset%d.json", System.currentTimeMillis());
-            final int status = commandLine.execute(ContentTypePull.NAME, "--idOrVar", "fileAsset", "--verbose" , "--saveTo", fileName);
+            final int status = commandLine.execute(ContentTypeCommand.NAME, ContentTypePull.NAME, "--idOrVar", "fileAsset", "--verbose" , "--saveTo", fileName);
             Assertions.assertEquals(ExitCode.OK, status);
             final String output = writer.toString();
             //System.out.println(output);
@@ -84,7 +84,7 @@ public class ContentTypeCommandTest extends CommandTest {
         try (PrintWriter out = new PrintWriter(writer)) {
             commandLine.setOut(out);
             final String fileName = String.format("./fileAsset%d.yml", System.currentTimeMillis());
-            int status = commandLine.execute(ContentTypePull.NAME, "--idOrVar", "fileAsset", "--saveTo", fileName,  "--verbose", "--format","YML");
+            int status = commandLine.execute(ContentTypeCommand.NAME, ContentTypePull.NAME, "--idOrVar", "fileAsset", "--saveTo", fileName,  "--verbose", "--format","YML");
             Assertions.assertEquals(ExitCode.OK, status);
             final String output = writer.toString();
             //System.out.println(output);
@@ -92,7 +92,7 @@ public class ContentTypeCommandTest extends CommandTest {
             final ContentType contentType = objectMapper.readValue(output, ContentType.class);
             Assertions.assertNotNull(contentType.variable());
 
-            status = commandLine.execute(ContentTypePush.NAME, "--file", fileName, "--format", "YML");
+            status = commandLine.execute(ContentTypeCommand.NAME, ContentTypePush.NAME, "--file", fileName, "--format", "YML");
             Assertions.assertEquals(ExitCode.OK, status);
 
             try {
@@ -112,7 +112,7 @@ public class ContentTypeCommandTest extends CommandTest {
         final StringWriter writer = new StringWriter();
         try (PrintWriter out = new PrintWriter(writer)) {
             commandLine.setOut(out);
-            final int status = commandLine.execute(ContentTypeFind.NAME, "--all", "--interactive=false");
+            final int status = commandLine.execute(ContentTypeCommand.NAME, ContentTypeFind.NAME, "--all", "--interactive=false");
             Assertions.assertEquals(CommandLine.ExitCode.OK, status);
             final String output = writer.toString();
             Assertions.assertTrue(output.startsWith("varName:"));
@@ -128,7 +128,7 @@ public class ContentTypeCommandTest extends CommandTest {
         final StringWriter writer = new StringWriter();
         try (PrintWriter out = new PrintWriter(writer)) {
             commandLine.setOut(out);
-            final int status = commandLine.execute(ContentTypeFind.NAME, "--name", "FileAsset", "--page", "0", "--pageSize", "10");
+            final int status = commandLine.execute(ContentTypeCommand.NAME, ContentTypeFind.NAME, "--name", "FileAsset", "--page", "0", "--pageSize", "10");
             Assertions.assertEquals(CommandLine.ExitCode.OK, status);
             final String output = writer.toString();
             Assertions.assertTrue(output.startsWith("varName:"));
@@ -182,16 +182,16 @@ public class ContentTypeCommandTest extends CommandTest {
         final StringWriter writer = new StringWriter();
         try (PrintWriter out = new PrintWriter(writer)) {
             commandLine.setOut(out);
-            final int status = commandLine.execute(ContentTypePush.NAME, "--file", jsonFile.getAbsolutePath() );
+            final int status = commandLine.execute(ContentTypeCommand.NAME, ContentTypePush.NAME, "--file", jsonFile.getAbsolutePath() );
             Assertions.assertEquals(ExitCode.OK, status);
             final String output = writer.toString();
             System.out.println(output);
         }
 
-        final int status = commandLine.execute(ContentTypeRemove.NAME, "--idOrVar", varName );
+        final int status = commandLine.execute(ContentTypeCommand.NAME, ContentTypeRemove.NAME, "--idOrVar", varName );
         Assertions.assertEquals(ExitCode.OK, status);
 
-        final int status2 = commandLine.execute(ContentTypePull.NAME, "--idOrVar", varName );
+        final int status2 = commandLine.execute(ContentTypeCommand.NAME, ContentTypePull.NAME, "--idOrVar", varName );
         Assertions.assertEquals(ExitCode.SOFTWARE, status2);
     }
 

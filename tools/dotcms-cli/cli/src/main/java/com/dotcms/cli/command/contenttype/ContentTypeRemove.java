@@ -17,10 +17,10 @@ import java.util.concurrent.Callable;
         description = "@|bold,green Remove a Content-type from a given file definition.|@ @|bold,cyan --file|@ to send the descriptor. ",
         sortOptions = false
 )
-public class ContentTypeRemove extends ContentTypeCommand implements Callable<Integer> {
+public class ContentTypeRemove extends AbstractContentTypeCommand implements Callable<Integer> {
 
 
-    static final String NAME = "content-type-remove";
+    static final String NAME = "remove";
 
     @CommandLine.Mixin(name = "output")
     OutputOptionMixin output;

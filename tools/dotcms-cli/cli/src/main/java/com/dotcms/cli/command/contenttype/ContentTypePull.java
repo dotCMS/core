@@ -21,9 +21,9 @@ import java.util.concurrent.Callable;
         name = ContentTypePull.NAME,
         description = "@|bold,green Get a Content-type from a given  idOrVar |@ Use @|bold,cyan --idOrVar|@ to pass the CT identifier or var name."
 )
-public class ContentTypePull extends ContentTypeCommand implements Callable<Integer> {
+public class ContentTypePull extends AbstractContentTypeCommand implements Callable<Integer> {
 
-    static final String NAME = "content-type-pull";
+    static final String NAME = "pull";
 
     @CommandLine.Mixin(name = "output")
     OutputOptionMixin output;

@@ -18,9 +18,9 @@ import java.util.concurrent.Callable;
         name = ContentTypeFind.NAME,
         description = "@|bold,green Search or Get a List with all available Content-types  |@  Use @|bold,cyan --all|@ to get a complete list. @|bold,cyan --name|@ To specify a search criteria."
 )
-public class ContentTypeFind extends ContentTypeCommand implements Callable<Integer> {
+public class ContentTypeFind extends AbstractContentTypeCommand implements Callable<Integer> {
 
-    static final String NAME = "content-type-find";
+    static final String NAME = "find";
 
     @CommandLine.Mixin(name = "output")
     OutputOptionMixin output;

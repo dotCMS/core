@@ -21,9 +21,9 @@ import java.util.concurrent.Callable;
 @CommandLine.Command(name = SitePush.NAME,
      description = "@|bold,green Retrieves Sites info.|@ Option params @|bold,cyan -n|@"
 )
-public class SitePush extends SiteCommand implements Callable<Integer>{
+public class SitePush extends AbstractSiteCommand implements Callable<Integer>{
 
-    static final String NAME = "site-push";
+    static final String NAME = "push";
 
     @CommandLine.Mixin(name = "output")
     OutputOptionMixin output;

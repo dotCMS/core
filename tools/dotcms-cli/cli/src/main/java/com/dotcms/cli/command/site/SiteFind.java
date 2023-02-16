@@ -10,15 +10,13 @@ import picocli.CommandLine;
 import javax.enterprise.context.control.ActivateRequestContext;
 import java.util.List;
 import java.util.concurrent.Callable;
-import java.util.function.Function;
-import java.util.function.Supplier;
 
 @ActivateRequestContext
 @CommandLine.Command(name = SiteFind.NAME,
      description = "@|bold,green Retrieves Sites info.|@  @|bold,cyan --all|@ Brings them all.  Use in conjunction params @|bold,cyan -n|@ to filter by name. @|bold,cyan -a|@ Shows archived sites. @|bold,cyan -l|@ Shows live Sites. @|bold,cyan -p|@ (Page) @|bold,cyan -ps|@ (PageSize) Can be used combined for pagination."
 )
-public class SiteFind extends SiteCommand implements Callable<Integer> {
-    static final String NAME = "site-find";
+public class SiteFind extends AbstractSiteCommand implements Callable<Integer> {
+    static final String NAME = "find";
 
     @CommandLine.Mixin(name = "output")
      OutputOptionMixin output;

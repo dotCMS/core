@@ -16,9 +16,8 @@ import java.util.concurrent.Callable;
 @CommandLine.Command(name = SiteUnarchive.NAME,
         description = "@|bold,green Archive Site |@ Option params @|bold,cyan --idOrName|@ site name or site id."
 )
-public class SiteUnarchive extends SiteCommand implements Callable<Integer> {
-
-    static final String NAME = "site-archive";
+public class SiteUnarchive extends AbstractSiteCommand implements Callable<Integer> {
+    static final String NAME = "unarchive";
 
     @CommandLine.Mixin(name = "output")
     protected OutputOptionMixin output;

@@ -41,7 +41,7 @@ public class SiteCommandTest extends CommandTest {
         final StringWriter writer = new StringWriter();
         try (PrintWriter out = new PrintWriter(writer)) {
             commandLine.setOut(out);
-            final int status = commandLine.execute(SiteCurrent.NAME);
+            final int status = commandLine.execute(SiteCommand.NAME, SiteCurrent.NAME);
             Assertions.assertEquals(CommandLine.ExitCode.OK, status);
             final String output = writer.toString();
             Assertions.assertTrue(output.startsWith("Current Site is "));
@@ -54,7 +54,7 @@ public class SiteCommandTest extends CommandTest {
         final StringWriter writer = new StringWriter();
         try (PrintWriter out = new PrintWriter(writer)) {
             commandLine.setOut(out);
-            final int status = commandLine.execute(SiteFind.NAME, "--all", "--interactive=false");
+            final int status = commandLine.execute(SiteCommand.NAME, SiteFind.NAME, "--all", "--interactive=false");
             Assertions.assertEquals(CommandLine.ExitCode.OK, status);
             final String output = writer.toString();
             Assertions.assertTrue(output.startsWith("name:"));
@@ -67,7 +67,7 @@ public class SiteCommandTest extends CommandTest {
         final StringWriter writer = new StringWriter();
         try (PrintWriter out = new PrintWriter(writer)) {
             commandLine.setOut(out);
-            final int status = commandLine.execute(SiteFind.NAME, "--name", "default");
+            final int status = commandLine.execute(SiteCommand.NAME, SiteFind.NAME, "--name", "default");
             Assertions.assertEquals(CommandLine.ExitCode.OK, status);
             final String output = writer.toString();
             Assertions.assertTrue(output.startsWith("name:"));
@@ -84,26 +84,25 @@ public class SiteCommandTest extends CommandTest {
         final StringWriter writer = new StringWriter();
         try (PrintWriter out = new PrintWriter(writer)) {
             commandLine.setOut(out);
-            int status = commandLine.execute(SitePush.NAME, "--create", newSiteName);
+            int status = commandLine.execute(SiteCommand.NAME, SitePush.NAME, "--create", newSiteName);
             Assertions.assertEquals(CommandLine.ExitCode.OK, status);
 
-            status = commandLine.execute(SiteStart.NAME, "--idOrName", newSiteName);
+            status = commandLine.execute(SiteCommand.NAME, SiteStart.NAME, "--idOrName", newSiteName);
             Assertions.assertEquals(CommandLine.ExitCode.OK, status);
 
-            status = commandLine.execute(SiteStop.NAME, "--idOrName", newSiteName);
+            status = commandLine.execute(SiteCommand.NAME, SiteStop.NAME, "--idOrName", newSiteName);
             Assertions.assertEquals(CommandLine.ExitCode.OK, status);
 
-            status = commandLine.execute(SiteArchive.NAME, "--idOrName", newSiteName);
+            status = commandLine.execute(SiteCommand.NAME, SiteArchive.NAME, "--idOrName", newSiteName);
             Assertions.assertEquals(CommandLine.ExitCode.OK, status);
 
-            status = commandLine.execute(SiteUnarchive.NAME, "--idOrName", newSiteName);
+            status = commandLine.execute(SiteCommand.NAME, SiteUnarchive.NAME, "--idOrName", newSiteName);
             Assertions.assertEquals(CommandLine.ExitCode.OK, status);
 
-            status = commandLine.execute(SitePull.NAME, "--idOrName", newSiteName);
+            status = commandLine.execute(SiteCommand.NAME, SitePull.NAME, "--idOrName", newSiteName);
             Assertions.assertEquals(CommandLine.ExitCode.OK, status);
         }
     }
-
 
     @Test
     void Test_Command_Copy() {
@@ -111,7 +110,7 @@ public class SiteCommandTest extends CommandTest {
         final StringWriter writer = new StringWriter();
         try (PrintWriter out = new PrintWriter(writer)) {
             commandLine.setOut(out);
-            final int status = commandLine.execute(SiteCopy.NAME, "--idOrName", "default");
+            final int status = commandLine.execute(SiteCommand.NAME, SiteCopy.NAME, "--idOrName", "default");
             Assertions.assertEquals(CommandLine.ExitCode.OK, status);
             final String output = writer.toString();
             Assertions.assertTrue(output.startsWith("New Copy Site is"));

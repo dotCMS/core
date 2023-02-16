@@ -16,9 +16,9 @@ import java.util.concurrent.Callable;
 @CommandLine.Command(name = SitePull.NAME,
         description = "@|bold,green Retrieves Sites info.|@ Option params @|bold,cyan idOrName|@ to get a site by name or id. @|bold,cyan -l|@ Shows live Sites. "
 )
-public class SitePull extends SiteCommand implements Callable<Integer> {
+public class SitePull extends AbstractSiteCommand implements Callable<Integer> {
 
-    static final String NAME = "site-pull";
+    static final String NAME = "pull";
 
     @CommandLine.Mixin(name = "output")
     OutputOptionMixin output;

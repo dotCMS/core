@@ -21,9 +21,9 @@ import java.util.concurrent.Callable;
         name = ContentTypePush.NAME,
         description = "@|bold,green Push / Create a Content-type from a given file definition.|@ @|bold,cyan --file|@ to send the descriptor. "
 )
-public class ContentTypePush extends ContentTypeCommand implements Callable<Integer> {
+public class ContentTypePush extends AbstractContentTypeCommand implements Callable<Integer> {
 
-    static final String NAME = "content-type-push";
+    static final String NAME = "push";
 
     @CommandLine.Mixin(name = "output")
     OutputOptionMixin output;
