@@ -93,14 +93,20 @@ describe('DotExperimentsConfigurationGoalsComponent', () => {
     });
 
     it('should disable the button of add goal if a goal was selected already', () => {
-        const vmMock$: { experimentId: string; goals: Goals; status: StepStatus } = {
+        const vmMock$: {
+            experimentId: string;
+            goals: Goals;
+            status: StepStatus;
+            isExperimentADraft: boolean;
+        } = {
             experimentId: EXPERIMENT_ID,
             goals: GoalsMock,
             status: {
                 status: ComponentStatus.IDLE,
                 isOpen: false,
                 experimentStep: null
-            }
+            },
+            isExperimentADraft: true
         };
 
         spectator.component.vm$ = of(vmMock$);
@@ -138,14 +144,20 @@ describe('DotExperimentsConfigurationGoalsComponent', () => {
 
     it('should show a confirmation to delete a goal', () => {
         spyOn(store, 'deleteGoal');
-        const vmMock$: { experimentId: string; goals: Goals; status: StepStatus } = {
+        const vmMock$: {
+            experimentId: string;
+            goals: Goals;
+            status: StepStatus;
+            isExperimentADraft: boolean;
+        } = {
             experimentId: EXPERIMENT_ID,
             goals: GoalsMock,
             status: {
                 status: ComponentStatus.IDLE,
                 isOpen: false,
                 experimentStep: null
-            }
+            },
+            isExperimentADraft: true
         };
 
         spectator.component.vm$ = of(vmMock$);

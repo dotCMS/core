@@ -38,13 +38,20 @@
 
                     <span class="separator">|</span>
 
-                    <p-button
-                        data-testId="variant-weight"
-                        label="{{ variant.weight | number : '2.2-2' }}% {{
-                            'experiments.configure.variants.weight' | dm
-                        }}"
-                        styleClass="p-button-sm p-button-link"
-                    ></p-button>
+                    <div
+                        [pTooltip]="'experiment.configure.edit.only.draft.status' | dm"
+                        [tooltipDisabled]="vm.isExperimentADraft"
+                        tooltipPosition="bottom"
+                    >
+                        <p-button
+                            [disabled]="!vm.isExperimentADraft"
+                            data-testId="variant-weight"
+                            label="{{ variant.weight | number : '2.2-2' }}% {{
+                                'experiments.configure.variants.weight' | dm
+                            }}"
+                            styleClass="p-button-sm p-button-link"
+                        ></p-button>
+                    </div>
 
                     <ng-container
                         *ngIf="variant.name === defaultVariantName; else editableButtonTpl"
@@ -60,16 +67,26 @@
                         ></button>
                     </ng-container>
 
-                    <button
-                        class="p-button-sm p-button-danger p-button-text"
-                        [disabled]="variant.name === defaultVariantName"
-                        (click)="delete.emit(variant)"
-                        data-testId="variant-delete-button"
-                        label="{{ 'experiments.configure.variants.delete' | dm }}"
-                        pButton
-                        pRipple
-                        type="button"
-                    ></button>
+                    <div
+                        [pTooltip]="'experiment.configure.edit.only.draft.status' | dm"
+                        [tooltipDisabled]="
+                            vm.isExperimentADraft || variant.name === defaultVariantName
+                        "
+                        tooltipPosition="bottom"
+                    >
+                        <button
+                            class="p-button-sm p-button-danger p-button-text"
+                            [disabled]="
+                                variant.name === defaultVariantName || !vm.isExperimentADraft
+                            "
+                            (click)="delete.emit(variant)"
+                            data-testId="variant-delete-button"
+                            label="{{ 'experiments.configure.variants.delete' | dm }}"
+                            pButton
+                            pRipple
+                            type="button"
+                        ></button>
+                    </div>
                 </div>
             </p-card>
 
@@ -124,16 +141,22 @@
         </ng-container>
 
         <ng-template pTemplate="footer">
-            <button
-                class="p-button-sm p-button-link"
-                [disabled]="variants.length >= maxVariantsAllowed"
-                (click)="sidebarStatusChanged.emit(sidebarStatusList.OPEN)"
-                data-testId="variant-add-button"
-                label="{{ 'experiments.configure.variants.add' | dm }}"
-                pButton
-                pRipple
-                type="button"
-            ></button>
+            <div
+                [pTooltip]="'experiment.configure.edit.only.draft.status' | dm"
+                [tooltipDisabled]="vm.isExperimentADraft || variants.length <= maxVariantsAllowed"
+                tooltipPosition="bottom"
+            >
+                <button
+                    class="p-button-sm p-button-link"
+                    [disabled]="variants.length >= maxVariantsAllowed || !vm.isExperimentADraft"
+                    (click)="sidebarStatusChanged.emit(sidebarStatusList.OPEN)"
+                    data-testId="variant-add-button"
+                    label="{{ 'experiments.configure.variants.add' | dm }}"
+                    pButton
+                    pRipple
+                    type="button"
+                ></button>
+            </div>
         </ng-template>
     </p-card>
 
