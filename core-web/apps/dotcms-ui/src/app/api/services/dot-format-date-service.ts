@@ -104,9 +104,10 @@ export class DotFormatDateService {
     }
 
     /**
-     * Gets relative strict time from on a specific date passed
+     * Gets relative strict time from on a specific date passed.
+     * Date Passed must be formatted as unix timestamp ==> New Date().getTime()
      *
-     * @param {string} time
+     * @param {string} time Formatted as unix timestamp
      * @param {Date} baseDate
      * @returns {string}
      * @memberof DotFormatDateService

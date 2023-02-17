@@ -30,4 +30,11 @@
             tooltipPosition="bottom"
         ></div>
     </div>
+
+    <dot-icon-button
+        id="{{ actionButtonId }}"
+        (click)="showActionMenu.emit($event)"
+        icon="more_vert"
+        size="32"
+    ></dot-icon-button>
 </p-card>
