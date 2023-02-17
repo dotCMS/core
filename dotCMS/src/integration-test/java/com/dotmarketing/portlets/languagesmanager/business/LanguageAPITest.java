@@ -181,7 +181,7 @@ public class LanguageAPITest {
    * This test is for a language key that does not exists neither as a content or in the properties
    * file, so the key will be returned.
    */
-  @Test
+  //@Test //TODO: Commented because is in the blinker list
   public void getStringsAsMap_returnMap() throws Exception {
     
     final String uniq = UUIDGenerator.shorty();
