@@ -25,10 +25,19 @@ export class DotVideoThumbnail {
     @Prop() cover: boolean = true;
 
     render() {
-        const style = this.cover ? { objectFit: 'cover' } : {};
+        const cssClass = this.cover ? 'cover' : '';
+        const bgImage = this.cover ? { 'background-image': `url(${this.src})` } : {};
         const { title } = this.contentlet;
 
-        return <Host>{this.src && <img style={style} src={this.src} alt={title} />}</Host>;
+        return (
+            <Host>
+                {this.src && (
+                    <div class={`thumbnail ${cssClass}`} style={bgImage}>
+                        <img src={this.src} alt={title} />
+                    </div>
+                )}
+            </Host>
+        );
     }
 
     componentDidLoad() {

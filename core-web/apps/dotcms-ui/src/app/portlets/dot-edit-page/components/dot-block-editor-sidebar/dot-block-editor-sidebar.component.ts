@@ -1,4 +1,4 @@
-import { Observable, of, Subject } from 'rxjs';
+import { combineLatest, Observable, of, Subject } from 'rxjs';
 
 import { HttpErrorResponse } from '@angular/common/http';
 import { Component, OnDestroy, OnInit, ViewChild } from '@angular/core';
@@ -11,9 +11,14 @@ import {
     DotContentTypeService,
     DotEventsService,
     DotMessageService,
+    DotPropertiesService,
     DotWorkflowActionsFireService
 } from '@dotcms/data-access';
-import { DotCMSContentTypeField, DotCMSContentTypeFieldVariable } from '@dotcms/dotcms-models';
+import {
+    DotCMSContentTypeField,
+    DotCMSContentTypeFieldVariable,
+    EDITOR_MARKETING_KEYS
+} from '@dotcms/dotcms-models';
 
 export interface BlockEditorInput {
     content: { [key: string]: string };
@@ -36,6 +41,7 @@ export class DotBlockEditorSidebarComponent implements OnInit, OnDestroy {
     @ViewChild('blockEditor') blockEditor: DotBlockEditorComponent;
 
     blockEditorInput: BlockEditorInput;
+    showVideoThumbnail: boolean;
     saving = false;
     private destroy$: Subject<boolean> = new Subject<boolean>();
 
@@ -44,19 +50,24 @@ export class DotBlockEditorSidebarComponent implements OnInit, OnDestroy {
         private dotEventsService: DotEventsService,
         private dotMessageService: DotMessageService,
         private dotAlertConfirmService: DotAlertConfirmService,
-        private dotContentTypeService: DotContentTypeService
+        private dotContentTypeService: DotContentTypeService,
+        private dotPropertiesService: DotPropertiesService
     ) {}
 
     ngOnInit(): void {
-        this.dotEventsService
-            .listen<HTMLDivElement>('edit-block-editor')
-            .pipe(
-                takeUntil(this.destroy$),
-                switchMap((event) => this.extractBlockEditorData(event.data.dataset))
-            )
-            .subscribe((eventData: BlockEditorInput) => {
-                this.blockEditorInput = eventData;
-            });
+        const content$ = this.dotEventsService.listen<HTMLDivElement>('edit-block-editor').pipe(
+            takeUntil(this.destroy$),
+            switchMap((event) => this.extractBlockEditorData(event.data.dataset))
+        );
+
+        const propery$ = this.dotPropertiesService.getKey(
+            EDITOR_MARKETING_KEYS.SHOW_VIDEO_THUMBNAIL
+        );
+
+        combineLatest([content$, propery$]).subscribe(([eventData, property = 'true']) => {
+            this.blockEditorInput = eventData;
+            this.showVideoThumbnail = property === 'true' || property === 'NOT_FOUND';
+        });
     }
 
     /**
