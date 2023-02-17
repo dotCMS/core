@@ -22,6 +22,9 @@ export class DotContentletThumbnail {
     cover = true;
 
     @Prop()
+    showVideoThumbnail = true;
+
+    @Prop()
     contentlet: DotContentletItem;
 
     @State() renderImage: boolean;
@@ -35,7 +38,7 @@ export class DotContentletThumbnail {
             this.renderImage =
                 hasTitleImage === 'true' ||
                 mimeType === 'application/pdf' ||
-                this.isVideoContentlet();
+                this.shouldShowVideoThumbnail();
         }
     }
 
@@ -45,7 +48,7 @@ export class DotContentletThumbnail {
 
         return (
             <Host>
-                {this.isVideoContentlet() ? (
+                {this.shouldShowVideoThumbnail() ? (
                     <dot-video-thumbnail contentlet={this.contentlet} cover={this.cover} />
                 ) : this.renderImage ? (
                     <div class={`thumbnail ${imgClass}`} style={{ 'background-image': image }}>
@@ -83,7 +86,7 @@ export class DotContentletThumbnail {
             : this.contentlet?.__icon__;
     }
 
-    private isVideoContentlet() {
-        return this.contentlet?.mimeType.includes('video');
+    private shouldShowVideoThumbnail() {
+        return this.contentlet?.mimeType?.includes('video') && this.showVideoThumbnail;
     }
 }

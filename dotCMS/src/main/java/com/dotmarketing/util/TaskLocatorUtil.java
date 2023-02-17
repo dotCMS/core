@@ -534,7 +534,7 @@ public class TaskLocatorUtil {
 		.add(Task221007AddVariantIntoPrimaryKey.class)
 		.add(Task221018CreateVariantFieldInMultiTree.class)
 		.add(Task230119MigrateContentToProperPersonaTagAndRemoveDupTags.class)
-	  .add(Task230110MakeSomeSystemFieldsRemovableByBaseType.class)
+	    .add(Task230110MakeSomeSystemFieldsRemovableByBaseType.class)
 		.build();
         return ret.stream().sorted(classNameComparator).collect(Collectors.toList());
 	}
@@ -566,8 +566,12 @@ public class TaskLocatorUtil {
 		ret.add(Task00050LoadAppsSecrets.class);
         return ret.stream().sorted(classNameComparator).collect(Collectors.toList());
 	}
-	
-		//UT that were backported to LTS
+
+	/**
+	 * Handles Upgrade Tasks that must be back-ported to a given LTS release.
+	 *
+	 * @return The back-ported UTs.
+	 */
 	public static List<Class<?>> getBackportedUpgradeTaskClasses() {
 		final List<Class<?>> ret = new ArrayList<>();
 		return ret.stream().sorted(classNameComparator).collect(Collectors.toList());

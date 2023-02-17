@@ -1,19 +1,24 @@
 import { CommonModule } from '@angular/common';
 import { NgModule } from '@angular/core';
 
-import { ButtonModule } from 'primeng/button';
 import { DialogService } from 'primeng/dynamicdialog';
-import { PanelModule } from 'primeng/panel';
-import { TabViewModule } from 'primeng/tabview';
+import { MenuModule } from 'primeng/menu';
 
+import { DotAddToBundleModule } from '@components/_common/dot-add-to-bundle';
 import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
 import { DotTempFileUploadService } from '@dotcms/app/api/services/dot-temp-file-upload/dot-temp-file-upload.service';
-import { DotMessagePipeModule } from '@dotcms/app/view/pipes/dot-message/dot-message-pipe.module';
-import { DotESContentService, DotPageRenderService } from '@dotcms/data-access';
-import { DotIconModule } from '@dotcms/ui';
+import { DotWorkflowEventHandlerService } from '@dotcms/app/api/services/dot-workflow-event-handler/dot-workflow-event-handler.service';
+import {
+    DotESContentService,
+    DotLanguagesService,
+    DotWorkflowActionsFireService,
+    DotWorkflowsActionsService,
+    DotPageRenderService
+} from '@dotcms/data-access';
+import { SiteService } from '@dotcms/dotcms-js';
 
-import { DotPagesCardEmptyModule } from './dot-pages-card-empty/dot-pages-card-empty.module';
-import { DotPagesCardModule } from './dot-pages-card/dot-pages-card.module';
+import { DotPagesFavoritePanelModule } from './dot-pages-favorite-panel/dot-pages-favorite-panel.module';
+import { DotPagesListingPanelModule } from './dot-pages-listing-panel/dot-pages-listing-panel.module';
 import { DotPagesRoutingModule } from './dot-pages-routing.module';
 import { DotPagesComponent } from './dot-pages.component';
 
@@ -21,21 +26,23 @@ import { DotPagesComponent } from './dot-pages.component';
     declarations: [DotPagesComponent],
     imports: [
         CommonModule,
+        DotAddToBundleModule,
+        DotPagesFavoritePanelModule,
+        DotPagesListingPanelModule,
         DotPagesRoutingModule,
-        DotPagesCardModule,
-        DotPagesCardEmptyModule,
-        DotMessagePipeModule,
-        DotIconModule,
-        PanelModule,
-        ButtonModule,
-        TabViewModule
+        MenuModule
     ],
     providers: [
-        DotESContentService,
-        DotRouterService,
         DialogService,
+        DotESContentService,
+        DotLanguagesService,
         DotPageRenderService,
-        DotTempFileUploadService
+        DotTempFileUploadService,
+        DotWorkflowsActionsService,
+        DotWorkflowActionsFireService,
+        DotWorkflowEventHandlerService,
+        DotRouterService,
+        SiteService
     ]
 })
 export class DotPagesModule {}

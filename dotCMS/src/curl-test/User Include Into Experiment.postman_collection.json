@@ -1,9 +1,9 @@
 {
 	"info": {
-		"_postman_id": "41bd0de1-555f-4acd-8cfb-ad307d624d71",
+		"_postman_id": "664cad7d-390b-495a-a2cf-f8d027406924",
 		"name": "User Include Into Experiment",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
-		"_exporter_id": "1549189"
+		"_exporter_id": "4500400"
 	},
 	"item": [
 		{
@@ -182,7 +182,7 @@
 						"header": [],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"name\": \"Variant to Add/Remove contentlet test\"\n}",
+							"raw": "{\n    \"description\": \"Variant to Add/Remove contentlet test\"\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -621,7 +621,7 @@
 						"header": [],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"name\": \"Variant to Add/Remove contentlet test\"\n}",
+							"raw": "{\n    \"description\": \"Variant to Add/Remove contentlet test\"\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -1050,7 +1050,7 @@
 						"header": [],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"name\": \"Variant to First Experiment\"\n}",
+							"raw": "{\n    \"description\": \"Variant to First Experiment\"\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -1301,7 +1301,7 @@
 						"header": [],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"name\": \"Variant to Second Experiment\"\n}",
+							"raw": "{\n    \"description\": \"Variant to Second Experiment\"\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -1608,7 +1608,7 @@
 						"header": [],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"name\": \"Variant to First Experiment\"\n}",
+							"raw": "{\n    \"description\": \"Variant to First Experiment\"\n}",
 							"options": {
 								"raw": {
 									"language": "json"

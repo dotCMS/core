@@ -25,6 +25,8 @@ export class DotMessageDisplayServiceMock {
         return this.messages$.asObservable();
     }
 
+    push(_message: DotMessage): void {}
+
     unsubscribe(): void {}
 }
 

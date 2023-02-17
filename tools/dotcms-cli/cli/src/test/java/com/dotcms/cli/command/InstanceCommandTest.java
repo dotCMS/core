@@ -86,7 +86,7 @@ public class InstanceCommandTest extends CommandTest {
     @Test
     @Order(3)
     void Test_Command_Instance_Pass_Activate_Param_No_Profile() {
-        final String[] options = {"-a", "--activate"};
+        final String[] options = {"-act", "--activate"};
         for (final String option : options) {
             final CommandLine commandLine = factory.create();
             final StringWriter writer = new StringWriter();
@@ -108,7 +108,7 @@ public class InstanceCommandTest extends CommandTest {
     @Order(4)
     void Test_Command_Instance_Pass_Activate_Param_Include_Invalid_Instance() {
         final String instance = "lol";
-        final String[] options = {"-a", "--activate"};
+        final String[] options = {"-act", "--activate"};
         for (final String option : options) {
             final CommandLine commandLine = factory.create();
             final StringWriter writer = new StringWriter();
@@ -144,7 +144,7 @@ public class InstanceCommandTest extends CommandTest {
                 .filter(serviceBean -> !serviceBean.active()).findFirst();
         Assertions.assertTrue(inactive.isPresent());
 
-        final String[] options = {"-a", "--activate"};
+        final String[] options = {"-act", "--activate"};
         for (final String option : options) {
             final CommandLine commandLine = factory.create();
             final StringWriter writer = new StringWriter();

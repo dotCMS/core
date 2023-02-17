@@ -1,12 +1,23 @@
 dot-video-thumbnail {
     width: 100%;
     height: 100%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
 
+    .thumbnail,
     img {
         width: 100%;
         height: 100%;
+    }
+}
+
+.cover {
+    position: absolute;
+    background-size: cover;
+    background-position: center center;
+    background-repeat: no-repeat;
+
+    img {
+        width: 0px;
+        height: 0px;
+        position: absolute;
     }
 }

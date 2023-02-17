@@ -344,11 +344,11 @@ describe('DotExperimentsConfigurationVariantsComponent', () => {
             let output;
             spectator.output('save').subscribe((result) => (output = result));
 
-            configurationVariantsAddComponent.form.patchValue({ name: 'value' });
+            configurationVariantsAddComponent.form.patchValue({ description: 'value' });
             configurationVariantsAddComponent.saveForm();
             spectator.detectChanges();
 
-            expect(output).toEqual({ name: 'value' });
+            expect(output).toEqual({ description: 'value' });
         });
     });
 });
