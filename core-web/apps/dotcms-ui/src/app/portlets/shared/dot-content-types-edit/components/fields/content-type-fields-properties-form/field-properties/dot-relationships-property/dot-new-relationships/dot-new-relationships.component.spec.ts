@@ -268,10 +268,10 @@ describe('DotNewRelationshipsComponent', () => {
         it('should set the correct labels', () => {
             fixtureHostComponent.detectChanges();
             const labels = de.queryAll(By.css('label'));
-            const contentTypeLabel = labels[0].nativeElement.textContent;
+            const contentTypeLabel = labels[0].nativeElement;
             const relationshipsLabel = labels[1].nativeElement.textContent;
-
-            expect(contentTypeLabel).toEqual('Content Type*');
+            expect(contentTypeLabel.textContent).toEqual('Content Type');
+            expect(contentTypeLabel.classList.contains('p-label-input-required')).toBeTruthy();
             expect(relationshipsLabel).toEqual('Relationship');
         });
 

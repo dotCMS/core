@@ -91,9 +91,10 @@ export class RegexCheckPropertyComponent implements OnInit {
      * @memberof DotRelationshipsPropertyComponent
      */
     get isRequired(): boolean {
-        const validator = this.group.get(this.property.name).validator({} as AbstractControl);
-        if (validator && validator.required) {
-            return true;
+        const validatorFunc = this.group.get(this.property.name).validator;
+        if (validatorFunc) {
+            const validator = validatorFunc({} as AbstractControl);
+            return validator && validator.required;
         }
 
         return false;

@@ -145,10 +145,9 @@ describe('DotAppsConfigurationDetailFormComponent', () => {
             expect(row.query(By.css('markdown'))).toBeTruthy();
             expect(row.query(By.css('label')).nativeElement.textContent).toBe(secrets[0].label);
             expect(
-                row.query(By.css('label')).nativeElement.classList.contains('form__label')
-            ).toBeTruthy();
-            expect(
-                row.query(By.css('label')).nativeElement.classList.contains('required')
+                row
+                    .query(By.css('label'))
+                    .nativeElement.classList.contains('p-label-input-required')
             ).toBeTruthy();
             expect(row.query(By.css('textarea')).nativeElement.attributes.id.value).toBe(
                 secrets[0].name
@@ -179,12 +178,6 @@ describe('DotAppsConfigurationDetailFormComponent', () => {
             const row = de.query(By.css('[data-testid="select"]'));
             expect(row.query(By.css('markdown'))).toBeTruthy();
             expect(row.query(By.css('label')).nativeElement.textContent).toBe(secrets[3].label);
-            expect(
-                row.query(By.css('label')).nativeElement.classList.contains('form__label')
-            ).toBeTruthy();
-            expect(
-                row.query(By.css('label')).nativeElement.classList.contains('required')
-            ).toBeTruthy();
             expect(row.query(By.css('p-dropdown')).nativeElement.id).toBe(secrets[3].name);
             expect(row.query(By.css('p-dropdown')).componentInstance.options).toBe(
                 secrets[3].options
@@ -200,9 +193,6 @@ describe('DotAppsConfigurationDetailFormComponent', () => {
         it('should load Label, Button & Hint with right attributes', () => {
             const row = de.query(By.css('[data-testid="integration"]'));
             expect(row.query(By.css('label')).nativeElement.textContent).toBe(secrets[4].label);
-            expect(
-                row.query(By.css('label')).nativeElement.classList.contains('form__label')
-            ).toBeTruthy();
             expect(row.query(By.css('button')).nativeElement.id).toBe(secrets[4].name);
             expect(row.query(By.css('.form__group-hint')).nativeElement.textContent).toBe(
                 secrets[4].hint
