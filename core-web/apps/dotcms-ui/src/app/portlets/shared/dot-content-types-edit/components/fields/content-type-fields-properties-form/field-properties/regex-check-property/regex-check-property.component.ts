@@ -94,6 +94,7 @@ export class RegexCheckPropertyComponent implements OnInit {
         const validatorFunc = this.group.get(this.property.name).validator;
         if (validatorFunc) {
             const validator = validatorFunc({} as AbstractControl);
+
             return validator && validator.required;
         }
 
