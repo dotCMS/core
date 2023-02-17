@@ -42,6 +42,7 @@ interface DotAssignableData {
 }
 
 const EDIT_CONTENT_CALLBACK_FUNCTION = 'saveAssignCallBackAngular';
+const VIEW_CONTENT_CALLBACK_FUNCTION = 'angularWorkflowEventCallback';
 
 @Injectable()
 export class DotWorkflowEventHandlerService {
@@ -259,7 +260,9 @@ export class DotWorkflowEventHandlerService {
                     )
                     .subscribe(() => {
                         this.displayNotification(event.workflow.name);
-                        this.dotIframeService.run({ name: event.callback });
+                        if (event.callback === VIEW_CONTENT_CALLBACK_FUNCTION) {
+                            this.dotIframeService.run({ name: event.callback });
+                        }
                     });
             }
         }
