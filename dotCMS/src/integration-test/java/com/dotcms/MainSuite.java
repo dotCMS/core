@@ -485,7 +485,7 @@ import org.junit.runners.Suite.SuiteClasses;
         PushPublishFilterResourceTest.class,
         PushNowActionletTest.class,
         Task05305AddPushPublishFilterColumnTest.class,
-        CMSMaintenanceFactoryTest.class,
+        //CMSMaintenanceFactoryTest.class, //TODO: comment because the only one test there was commented by now
         Task05350AddDotSaltClusterColumnTest.class,
         PostgresPubSubImplTest.class,
         DotParseTest.class,
