@@ -10,12 +10,15 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.util.DateUtil;
+import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UUIDGenerator;
 import com.liferay.portal.model.User;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -76,14 +79,23 @@ public class BundleFactoryTest {
             for (int i = 0; i < 5; i++) {
                 bundleIdsAdmin.add(insertPublishingBundle(newUserId, new Date()));
             }
+            TestDataUtils.assertEmptyQueue();
+            int bundleLimit = 100;
+            int bundleOffset = 0;
+            Set<String> unfoundBundleIds = new HashSet<>(bundleIdsAdmin);
 
-            final List<Bundle> bundlesSent = bundleFactory.findSentBundles(100, 0);
-            final List<String> bundlesSentIds = bundlesSent.stream().map(Bundle::getId).collect(Collectors.toList());
+            List<Bundle> sentBundles = bundleFactory.findSentBundles(bundleLimit, bundleOffset);
+            for (; !sentBundles.isEmpty(); bundleOffset += bundleLimit, sentBundles = bundleFactory.findSentBundles(bundleLimit, bundleOffset)) {
+                sentBundles.stream()
+                        .map(Bundle::getId)
+                        .forEach(unfoundBundleIds::remove);
 
-            //All bundles should be returned since the Admin can see all the bundles
-            for (final String bundleId : bundleIdsAdmin) {
-                assertTrue(bundlesSentIds.contains(bundleId));
+                Logger.warn(BundleFactoryTest.class, "test_findSentBundles_byAdminUser: " +
+                        "Paginating bundles, offset: " + bundleOffset + ", limit: " + bundleLimit);
             }
+
+            assertTrue(unfoundBundleIds.isEmpty());
+
         } finally {
 
             deletePublishingBundle(bundleIdsAdmin);
