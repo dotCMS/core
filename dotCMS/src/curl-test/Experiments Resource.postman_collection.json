@@ -643,7 +643,7 @@
 						"header": [],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"name\": \"My first Variant\"\n}",
+							"raw": "{\n    \"description\": \"My first Variant\"\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -717,7 +717,7 @@
 						"header": [],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"name\": \"My second Variant\"\n}",
+							"raw": "{\n    \"description\": \"My second Variant\"\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -1150,7 +1150,7 @@
 						"header": [],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"name\": \"My first Variant\"\n}",
+							"raw": "{\n    \"description\": \"My first Variant\"\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -1426,7 +1426,7 @@
 						"header": [],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"name\": \"My first Variant\"\n}",
+							"raw": "{\n    \"description\": \"My first Variant\"\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -1500,7 +1500,7 @@
 						"header": [],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"name\": \"My second Variant\"\n}",
+							"raw": "{\n    \"description\": \"My second Variant\"\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -1718,7 +1718,7 @@
 						"header": [],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"name\": \"My third Variant\"\n}",
+							"raw": "{\n    \"description\": \"My third Variant\"\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -3805,7 +3805,7 @@
 						"header": [],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"name\": \"Some other Variant\"\n}",
+							"raw": "{\n    \"description\": \"Some other Variant\"\n}",
 							"options": {
 								"raw": {
 									"language": "json"
