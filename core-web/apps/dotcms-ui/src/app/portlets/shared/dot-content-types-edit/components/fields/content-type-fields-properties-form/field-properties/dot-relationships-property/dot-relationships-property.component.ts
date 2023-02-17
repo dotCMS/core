@@ -1,7 +1,7 @@
 import * as _ from 'lodash';
 
 import { Component, OnInit } from '@angular/core';
-import { UntypedFormGroup } from '@angular/forms';
+import { AbstractControl, UntypedFormGroup } from '@angular/forms';
 
 import { DotMessageService } from '@dotcms/data-access';
 
@@ -39,6 +39,21 @@ export class DotRelationshipsPropertyComponent implements OnInit {
     ngOnInit() {
         this.beforeValue = _.cloneDeep(this.group.get(this.property.name).value);
         this.editing = !!this.group.get(this.property.name).value.velocityVar;
+    }
+
+    /**
+     * check field is required or not
+     * @readonly
+     * @type {boolean}
+     * @memberof DotRelationshipsPropertyComponent
+     */
+    get isRequired(): boolean {
+        const validator = this.group.get(this.property.name).validator({} as AbstractControl);
+        if (validator && validator.required) {
+            return true;
+        }
+
+        return false;
     }
 
     /**

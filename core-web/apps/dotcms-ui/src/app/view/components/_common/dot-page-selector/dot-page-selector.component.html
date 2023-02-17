@@ -1,19 +1,18 @@
 <div class="field">
-    <label class="form__label">{{ label }}</label>
     <p-autoComplete
         #autoComplete
-        appendTo="body"
-        data-testId="p-autoComplete"
+        [minLength]="2"
+        [ngModel]="val"
+        [suggestions]="suggestions$ | async"
+        [placeholder]="'page.selector.placeholder' | dm"
         (completeMethod)="search($event)"
         (keydown.enter)="onKeyEnter($event)"
         (keydown.tab)="$event.preventDefault()"
         (onClear)="onClear()"
         (onSelect)="onSelect($event)"
-        [minLength]="2"
+        appendTo="body"
+        data-testId="p-autoComplete"
         field="label"
-        [ngModel]="val"
-        [suggestions]="suggestions$ | async"
-        [placeholder]="'page.selector.placeholder' | dm"
     >
         <ng-template let-item pTemplate="item">
             <div class="dot-page-selector__item">
@@ -30,9 +29,9 @@
         </ng-template>
     </p-autoComplete>
     <small
-        data-testId="message"
         [class]="isError ? 'p-invalid' : 'p-info'"
         [textContent]="message"
+        data-testId="message"
     ></small>
     <dot-field-helper
         [message]="(folderSearch ? 'page.selector.folder.hint' : 'page.selector.hint') | dm"

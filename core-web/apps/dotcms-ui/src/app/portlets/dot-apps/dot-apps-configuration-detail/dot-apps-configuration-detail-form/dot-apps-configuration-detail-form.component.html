@@ -10,16 +10,15 @@
 <ng-template #labelField let-field="field">
     <label
         [for]="field.name"
-        class="form__label"
         [ngClass]="{
-            required: field.required
+            'p-label-input-required': field.required
         }"
         >{{ field.label }}</label
     >
 </ng-template>
 
-<form #form="ngForm" [formGroup]="myFormGroup" class="p-fluid" novalidate>
-    <div #formContainer class="dot-apps-configuration-detail__form">
+<form class="p-fluid" #form="ngForm" [formGroup]="myFormGroup" novalidate>
+    <div class="dot-apps-configuration-detail__form" #formContainer>
         <div
             class="field"
             *ngFor="let field of formFields"
@@ -31,12 +30,12 @@
                     *ngTemplateOutlet="labelField; context: { field: field }"
                 ></ng-container>
                 <button
-                    pButton
-                    type="button"
-                    (click)="onIntegrate(field.value)"
                     [id]="field.name"
                     [label]="field.label"
                     [disabled]="!appConfigured"
+                    (click)="onIntegrate(field.value)"
+                    pButton
+                    type="button"
                 ></button>
                 <ng-container
                     *ngTemplateOutlet="warningIcon; context: { field: field }"
@@ -54,11 +53,11 @@
                 ></ng-container>
                 <textarea
                     #inputTextarea
-                    pInputTextarea
-                    autoResize="autoResize"
-                    (click)="field.hidden ? $event.target.select() : null"
                     [id]="field.name"
                     [formControlName]="field.name"
+                    (click)="field.hidden ? $event.target.select() : null"
+                    pInputTextarea
+                    autoResize="autoResize"
                 ></textarea>
                 <span class="p-field-hint"
                     ><markdown>{{ field.hint }}</markdown></span
@@ -66,7 +65,6 @@
             </ng-container>
             <ng-container *ngSwitchCase="'BOOL'">
                 <p-checkbox
-                    binary="true"
                     [ngClass]="{
                         required: field.required
                     }"
@@ -74,6 +72,7 @@
                     [label]="field.label"
                     [formControlName]="field.name"
                     [value]="field.value"
+                    binary="true"
                 ></p-checkbox>
                 <ng-container
                     *ngTemplateOutlet="warningIcon; context: { field: field }"

@@ -1,5 +1,5 @@
 import { Component, OnInit } from '@angular/core';
-import { UntypedFormGroup } from '@angular/forms';
+import { AbstractControl, UntypedFormGroup } from '@angular/forms';
 
 import { DotMessageService } from '@dotcms/data-access';
 
@@ -82,6 +82,21 @@ export class RegexCheckPropertyComponent implements OnInit {
                 value: '^[^<><|>]+$'
             }
         ];
+    }
+
+    /**
+     * check field is required or not
+     * @readonly
+     * @type {boolean}
+     * @memberof DotRelationshipsPropertyComponent
+     */
+    get isRequired(): boolean {
+        const validator = this.group.get(this.property.name).validator({} as AbstractControl);
+        if (validator && validator.required) {
+            return true;
+        }
+
+        return false;
     }
 
     templateSelect(event): void {

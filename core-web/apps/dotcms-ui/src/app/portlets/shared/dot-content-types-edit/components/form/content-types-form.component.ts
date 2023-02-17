@@ -129,7 +129,7 @@ export class ContentTypesFormComponent implements OnInit, OnDestroy {
 
         return `${this.dotMessageService.get(
             `contenttypes.content.${type}`
-        )} ${this.dotMessageService.get('contenttypes.form.name')} *`;
+        )} ${this.dotMessageService.get('contenttypes.form.name')}`;
     }
 
     private bindActionButtonState(): void {

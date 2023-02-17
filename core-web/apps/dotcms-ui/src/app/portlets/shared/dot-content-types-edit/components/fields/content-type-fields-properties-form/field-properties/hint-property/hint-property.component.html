@@ -1,4 +1,4 @@
-<div [formGroup]="group" class="field">
-    <label class="form__label">{{ 'contenttypes.field.properties.hint.label' | dm }}</label>
-    <input pInputText type="text" [formControlName]="property.name" />
+<div class="field" [formGroup]="group">
+    <label [for]="property.name">{{ 'contenttypes.field.properties.hint.label' | dm }}</label>
+    <input [formControlName]="property.name" pInputText type="text" />
 </div>
