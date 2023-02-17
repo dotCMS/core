@@ -24,7 +24,7 @@ import { TextAlign } from '@tiptap/extension-text-align';
 import { Underline } from '@tiptap/extension-underline';
 import StarterKit, { StarterKitOptions } from '@tiptap/starter-kit';
 
-import { CustomBlock, EDITOR_MARKETING_KEYS } from '@dotcms/dotcms-models';
+import { RemoteCustomExtentions, EDITOR_MARKETING_KEYS } from '@dotcms/dotcms-models';
 
 import {
     ActionsMenu,
@@ -134,15 +134,15 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy {
     }
 
     ngOnInit() {
-        from(this.getCustomBlocks())
+        from(this.getCustomRemoteExtensions())
             .pipe(take(1))
-            .subscribe((blocks) => {
+            .subscribe((extensions) => {
                 this.editor = new Editor({
                     extensions: [
                         ...this.getEditorExtensions(),
                         ...this.getEditorMarks(),
                         ...this.getEditorNodes(),
-                        ...blocks
+                        ...extensions
                     ]
                 });
 
@@ -170,10 +170,12 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy {
         this.editor.view.dispatch(tr);
     }
 
-    private getParsedCustomBlocks(): CustomBlock {
+    private getParsedCustomBlocks(): RemoteCustomExtentions {
         try {
             return JSON.parse(this.customBlocks);
-        } catch {
+        } catch (e) {
+            // eslint-disable-next-line no-console
+            console.log('Parsed customBlocks error:', e);
             console.warn('JSON parse fails, please check the JSON format.');
 
             return {
@@ -187,8 +189,8 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy {
      * Validates that there is customBlocks defined.
      */
 
-    private async getCustomBlocks(): Promise<AnyExtension[]> {
-        const data: CustomBlock = this.getParsedCustomBlocks();
+    private async getCustomRemoteExtensions(): Promise<AnyExtension[]> {
+        const data: RemoteCustomExtentions = this.getParsedCustomBlocks();
 
         const extensionUrls = data.extensions.map((extension) => extension.url);
         const customModules = await this.loadCustomBlocks(extensionUrls);

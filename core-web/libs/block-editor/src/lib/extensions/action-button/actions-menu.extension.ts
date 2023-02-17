@@ -12,7 +12,7 @@ import { FloatingMenuPluginProps } from '@tiptap/extension-floating-menu';
 import { Level } from '@tiptap/extension-heading';
 import Suggestion, { SuggestionOptions, SuggestionProps } from '@tiptap/suggestion';
 
-import { CustomBlock } from '@dotcms/dotcms-models';
+import { RemoteCustomExtentions } from '@dotcms/dotcms-models';
 
 import { ActionButtonComponent } from './action-button.component';
 
@@ -90,7 +90,7 @@ function execCommand({
     editor: Editor;
     range: Range;
     props: SuggestionsCommandProps;
-    customBlocks: CustomBlock;
+    customBlocks: RemoteCustomExtentions;
 }) {
     const whatToDo = {
         dotContent: () => {
@@ -178,7 +178,7 @@ function execCommand({
             try {
                 editor.commands[option.commandKey]();
             } catch {
-                console.warn('Custom command does not exists.');
+                console.warn(`Custom command ${option.commandKey} does not exists.`);
             }
         };
     });
@@ -188,7 +188,7 @@ function execCommand({
         : editor.chain().setTextSelection(range).focus().run();
 }
 
-function mapCustomActions(actions) {
+function mapCustomActions(actions): Array<DotMenuItem> {
     return actions.map((action) => ({
         icon: action.icon,
         label: action.menuLabel,
@@ -201,7 +201,10 @@ function getCustomActions(customBlocks): Array<DotMenuItem> {
     return flatten(customBlocks.extensions.map((extension) => mapCustomActions(extension.actions)));
 }
 
-export const ActionsMenu = (viewContainerRef: ViewContainerRef, customBlocks: CustomBlock) => {
+export const ActionsMenu = (
+    viewContainerRef: ViewContainerRef,
+    customBlocks: RemoteCustomExtentions
+) => {
     let myTippy;
     let suggestionsComponent: ComponentRef<SuggestionsComponent>;
     const suggestionKey = new PluginKey('suggestionPlugin');
@@ -246,7 +249,7 @@ export const ActionsMenu = (viewContainerRef: ViewContainerRef, customBlocks: Cu
         suggestionsComponent = viewContainerRef.createComponent(SuggestionsComponent);
 
         // Setting Inputs
-        suggestionsComponent.instance.items = [...items, ...[]];
+        suggestionsComponent.instance.items = [...items];
         suggestionsComponent.instance.currentLanguage = lang;
         suggestionsComponent.instance.allowedContentTypes = allowedContentTypes;
         suggestionsComponent.instance.onSelectContentlet = (props) => {

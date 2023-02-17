@@ -12,7 +12,7 @@ export type Block = {
     actions: Array<Action>;
 };
 
-export type CustomBlock = {
+export type RemoteCustomExtentions = {
     extensions: Block[];
 };
 
