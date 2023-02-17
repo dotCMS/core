@@ -40,7 +40,7 @@ public class ContentTypeCommand implements Callable<Integer> {
         spec.commandLine().usage(output.out());
         return CommandLine.ExitCode.OK;
         */
-        //Up on not proving a sub command exec the default
+        //Upon not proving a sub command exec the default
         output.info("Listing content-types (default action, see --help).");
         CommandLine.ParseResult result = spec.commandLine().getParseResult();
         List<String> args = result.originalArgs().stream().filter(x -> !NAME.equals(x) && !ALIAS.equals(x)).collect(Collectors.toList());

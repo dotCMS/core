@@ -29,26 +29,6 @@ public class ContentTypeFind extends AbstractContentTypeCommand implements Calla
     RestClientFactory clientFactory;
 
     /**
-     * Here we encapsulate List Options
-     * This maps directly to GET: /api/v1/contenttype
-     */
-    static class ListOptions {
-
-        @CommandLine.Option(names = { "-a", "--all" },
-                order = 10,
-                description = {"Quick way to visualize all available content-types. for more detailed view see options pull and filter"},
-                defaultValue = "false",
-                required = true)
-        boolean all;
-
-        @CommandLine.Option(names = { "-i", "--interactive" },
-                order = 20,
-                description = {"Allows loading items in batches of 10"},
-                defaultValue = "true")
-        boolean interactive = true;
-    }
-
-    /**
      * Here we encapsulate Filter endpoint options
      * This maps directly to POST /api/v1/contenttype/_filter
      */
@@ -84,34 +64,20 @@ public class ContentTypeFind extends AbstractContentTypeCommand implements Calla
     /**
      * Here we tell PicoCli that we want each individual Option to act as a separate functionality
      */
-    static class MutuallyExclusiveOptions {
 
-       @CommandLine.ArgGroup(exclusive = false, order = 80, heading = "\nList-All available Content-Types\n")
-       ListOptions list;
-
-       @CommandLine.ArgGroup(exclusive = false, order = 90, heading = "\nFilter/Search available Content-Types\n")
-       FilterOptions filter;
-
-    }
-
-    @CommandLine.ArgGroup(exclusive = true, multiplicity = "1")
-    MutuallyExclusiveOptions options;
+   @CommandLine.ArgGroup(exclusive = false, order = 10, heading = "\nFilter/Search available Content-Types\n")
+   FilterOptions filter;
 
     @Override
     public Integer call() throws Exception {
-
-        if(null != options.list){
-           return list(options.list);
+        if(null != filter){
+            return list(filter);
         }
 
-        if(null != options.filter){
-           return list(options.filter);
-        }
-
-        return CommandLine.ExitCode.USAGE;
+        return list();
     }
 
-    private int list(final ListOptions list) {
+    private int list() {
         final ContentTypeAPI contentTypeAPI = clientFactory.getClient(ContentTypeAPI.class);
         final int pageSize = 10;
         int page = 0;
@@ -127,7 +93,7 @@ public class ContentTypeFind extends AbstractContentTypeCommand implements Calla
             }
             page++;
 
-            if(list.interactive && !BooleanUtils.toBoolean(System.console().readLine("Load next page? y/n:"))){
+            if(output.isInteractive() && !BooleanUtils.toBoolean(System.console().readLine("Load next page? y/n:"))){
                 break;
             }
 

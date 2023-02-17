@@ -7,7 +7,10 @@ import com.dotcms.api.provider.ClientObjectMapper;
 import com.dotcms.api.provider.YAMLMapperSupplier;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.quarkus.devtools.messagewriter.MessageWriter;
+
+import java.io.File;
 import java.io.PrintWriter;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
@@ -24,6 +27,9 @@ public class OutputOptionMixin implements MessageWriter {
 
     @CommandLine.Option(names = { "--verbose" }, description = "Verbose mode.")
     boolean verbose;
+
+    @CommandLine.Option(names = {"-s","--shorten"},  description = "Pulled Content is shown in shorten format.")
+    boolean shortenOutput;
 
     @CommandLine.Option(names = {
             "--cli-test" }, hidden = true, description = "Manually set output streams for unit test purposes.")
@@ -43,6 +49,11 @@ public class OutputOptionMixin implements MessageWriter {
     @CommandLine.Option(names = {"-fmt", "--format"}, description = "Enum values: ${COMPLETION-CANDIDATES}")
     InputOutputFormat inputOutputFormat = InputOutputFormat.defaultFormat();
 
+    @CommandLine.Option(names = { "-i", "--interactive" },
+            order = 20,
+            description = {"Use to break down a long process into stages"},
+            defaultValue = "true")
+    boolean interactive = true;
 
     ObjectMapper objectMapper;
 
@@ -96,12 +107,24 @@ public class OutputOptionMixin implements MessageWriter {
         return verbose || picocliDebugEnabled;
     }
 
+    public boolean isShortenOutput() {
+        return shortenOutput;
+    }
+
     public boolean isCliTest() {
         return cliTestMode;
     }
 
     public boolean isAnsiEnabled() {
         return CommandLine.Help.Ansi.AUTO.enabled();
+    }
+
+    public boolean isInteractive() {
+        return interactive;
+    }
+
+    public InputOutputFormat getInputOutputFormat() {
+        return inputOutputFormat;
     }
 
     public void printText(String... text) {
@@ -173,6 +196,26 @@ public class OutputOptionMixin implements MessageWriter {
         error(message);
         return cmd.getExitCodeExceptionMapper() != null ? cmd.getExitCodeExceptionMapper().getExitCode(ex)
                 : mixee.exitCodeOnInvalidInput();
+    }
+
+    public Path nextFileName(final String in){
+
+        String fileName = in;
+        String extension = "";
+        String name = "";
+
+        int idxOfDot = fileName.lastIndexOf('.');   //Get the last index of . to separate extension
+        extension = fileName.substring(idxOfDot + 1);
+        name = fileName.substring(0, idxOfDot);
+
+        Path path = Paths.get(fileName);
+        int counter = 1;
+        while(Files.exists(path)){
+            fileName = name+"("+counter+")."+extension;
+            path = Paths.get(fileName);
+            counter++;
+        }
+        return Path.of(fileName);
     }
 
     @Override

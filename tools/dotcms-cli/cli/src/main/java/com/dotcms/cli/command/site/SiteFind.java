@@ -21,23 +21,6 @@ public class SiteFind extends AbstractSiteCommand implements Callable<Integer> {
     @CommandLine.Mixin(name = "output")
      OutputOptionMixin output;
 
-    static class ListOptions {
-
-        @CommandLine.Option(names = { "-a", "--all" },
-                order = 31,
-                description = {"Quick way to visualize all available sites. for more detailed view see options pull and filter"},
-                defaultValue = "false",
-                required = true)
-        boolean all;
-
-        @CommandLine.Option(names = { "-i", "--interactive" },
-                order = 32,
-                description = {"Allows to load Sites in batches of 10"},
-                defaultValue = "true")
-        boolean interactive = true;
-
-    }
-
     static class FilterOptions {
         @CommandLine.Option(names = {"-n", "--name"}, arity = "1" ,description = "Filter by site name.")
         String name;
@@ -56,33 +39,21 @@ public class SiteFind extends AbstractSiteCommand implements Callable<Integer> {
 
     }
 
-    static class MutuallyExclusiveOptions {
-
-        @CommandLine.ArgGroup(exclusive = false, order = 1, heading = "\nList all Sites\n")
-        ListOptions list;
-
-        @CommandLine.ArgGroup(exclusive = false, order = 1, heading = "\nSearch Sites\n")
-        FilterOptions filter;
-    }
-
-    @CommandLine.ArgGroup(exclusive = true, multiplicity = "1")
-    MutuallyExclusiveOptions options;
+    @CommandLine.ArgGroup(exclusive = false, order = 1, heading = "\nSearch Sites\n")
+    FilterOptions filter;
 
     @Override
     public Integer call() {
 
-        if(null != options.filter){
-           return executeFilter(options.filter);
+        if(null != filter){
+           return filter(filter);
         }
 
-        if(options.list.all){
-            return executeList(options.list);
-        }
+        return list();
 
-        return CommandLine.ExitCode.USAGE;
     }
 
-    private int executeList(final ListOptions options) {
+    private int list() {
         final SiteAPI siteAPI = clientFactory.getClient(SiteAPI.class);
 
         final int pageSize = 10;
@@ -117,14 +88,14 @@ public class SiteFind extends AbstractSiteCommand implements Callable<Integer> {
                 }
                 page++;
             }
-            if(options.interactive && !BooleanUtils.toBoolean(System.console().readLine("Load next page? y/n:"))){
+            if(output.isInteractive() && !BooleanUtils.toBoolean(System.console().readLine("Load next page? y/n:"))){
                 break;
             }
         }
         return CommandLine.ExitCode.OK;
     }
 
-    private int executeFilter( final FilterOptions options) {
+    private int filter(final FilterOptions options) {
             final SiteAPI siteAPI = clientFactory.getClient(SiteAPI.class);
             final ResponseEntityView<List<Site>> response = siteAPI.getSites(options.name, options.archived, options.live, false, options.page, options.pageSize);
             final List<Site> sites = response.entity();

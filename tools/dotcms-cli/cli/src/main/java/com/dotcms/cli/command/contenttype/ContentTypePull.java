@@ -7,13 +7,14 @@ import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.model.ResponseEntityView;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import picocli.CommandLine;
-
+import picocli.CommandLine.Parameters;
 import javax.enterprise.context.control.ActivateRequestContext;
 import javax.inject.Inject;
 import javax.ws.rs.NotFoundException;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.concurrent.Callable;
 
 @ActivateRequestContext
@@ -31,39 +32,28 @@ public class ContentTypePull extends AbstractContentTypeCommand implements Calla
     @Inject
     RestClientFactory clientFactory;
 
-    @CommandLine.Option(names = {"-iv","--idOrVar"}, order = 1, description = "Pull Content-type by id or var-name", required = true)
+    @Parameters(index = "0", arity = "1", description = "")
     String idOrVar;
 
-    @CommandLine.Option(names = {"-lg", "--lang"}, order = 2, description = "Content-type Language.", defaultValue = "1")
-    Long lang;
-
-    @CommandLine.Option(names = {"-l", "--live"}, order = 3, description = "live content if omitted then working will be used.", defaultValue = "true")
-    Boolean live;
-
-    @CommandLine.Option(names = {"-to", "--saveTo"}, order = 4, description = "Save to.")
-    File saveAs;
 
     @Override
     public Integer call() {
 
         final ContentTypeAPI contentTypeAPI = clientFactory.getClient(ContentTypeAPI.class);
             try {
-                final ResponseEntityView<ContentType> responseEntityView = contentTypeAPI.getContentType(idOrVar, lang, live);
+                final ResponseEntityView<ContentType> responseEntityView = contentTypeAPI.getContentType(idOrVar, null, null);
                 final ContentType contentType = responseEntityView.entity();
                 final ObjectMapper objectMapper = output.objectMapper();
 
-                if(output.isVerbose()) {
-                    final String asString = objectMapper.writeValueAsString(contentType);
-                    output.info(asString);
-                    if (null != saveAs) {
-                        Files.writeString(saveAs.toPath(), asString);
-                    }
-                } else {
+                if(output.isShortenOutput()) {
                     final String asString = shortFormat(contentType);
                     output.info(asString);
-                    if (null != saveAs) {
-                        Files.writeString(saveAs.toPath(), asString);
-                    }
+                } else {
+                    final String fileName = String.format("%s.%s",contentType.variable(),output.getInputOutputFormat().getExtension());
+                    final Path saveAs = output.nextFileName(fileName);
+                    final String asString = objectMapper.writeValueAsString(contentType);
+                    output.info(asString);
+                    Files.writeString(saveAs, asString);
                 }
             } catch (IOException | NotFoundException e) {
                 output.error(String.format(

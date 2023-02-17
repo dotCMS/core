@@ -9,6 +9,7 @@ import javax.enterprise.context.control.ActivateRequestContext;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.Optional;
 import java.util.concurrent.Callable;
 
@@ -23,8 +24,7 @@ public class SitePull extends AbstractSiteCommand implements Callable<Integer> {
     @CommandLine.Mixin(name = "output")
     OutputOptionMixin output;
 
-    @CommandLine.Option(names = {"-in", "--idOrName"},
-            order = 2, description = "Pull Site by id or name", required = true)
+    @CommandLine.Parameters(index = "0", arity = "1", description = "Site name Or Id.")
     String siteNameOrId;
 
     @CommandLine.Option(names = {"-to", "--saveTo"}, order = 5, description = "Save to.")
@@ -32,7 +32,6 @@ public class SitePull extends AbstractSiteCommand implements Callable<Integer> {
 
     @Override
     public Integer call() {
-
         return pull();
     }
 
@@ -48,18 +47,22 @@ public class SitePull extends AbstractSiteCommand implements Callable<Integer> {
 
         final SiteView siteView = site.get();
         try {
-            if (output.isVerbose()) {
+            if (output.isShortenOutput()) {
+                final String shortFormat = shortFormat(siteView);
+                output.info(shortFormat);
+                if (null != saveAs) {
+                    Files.writeString(saveAs.toPath(), shortFormat);
+                }
+            } else {
                 ObjectMapper objectMapper = output.objectMapper();
                 final String valueAsString = objectMapper.writeValueAsString(siteView);
                 output.info(valueAsString);
                 if (null != saveAs) {
                     Files.writeString(saveAs.toPath(), valueAsString);
-                }
-            } else {
-                final String shortFormat = shortFormat(siteView);
-                output.info(shortFormat);
-                if (null != saveAs) {
-                    Files.writeString(saveAs.toPath(), shortFormat);
+                } else {
+                    final String fileName = String.format("%s.%s",siteView.hostName(),output.getInputOutputFormat().getExtension());
+                    final Path path = output.nextFileName(fileName);
+                    Files.writeString(path, valueAsString);
                 }
             }
         } catch (IOException e) {

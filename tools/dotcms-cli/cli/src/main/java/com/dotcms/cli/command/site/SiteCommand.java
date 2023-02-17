@@ -42,7 +42,7 @@ public class SiteCommand implements Callable<Integer> {
     @Override
     public Integer call() throws Exception {
 
-        //Up on not proving a sub command exec the default
+        //Upon not proving a sub command exec the default
         output.info("Listing sites (default action, see --help).");
         CommandLine.ParseResult result = spec.commandLine().getParseResult();
         List<String> args = result.originalArgs().stream().filter(x -> !NAME.equals(x) && !ALIAS.equals(x)).collect(Collectors.toList());

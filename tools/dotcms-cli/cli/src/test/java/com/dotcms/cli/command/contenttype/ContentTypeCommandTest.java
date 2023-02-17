@@ -112,7 +112,7 @@ public class ContentTypeCommandTest extends CommandTest {
         final StringWriter writer = new StringWriter();
         try (PrintWriter out = new PrintWriter(writer)) {
             commandLine.setOut(out);
-            final int status = commandLine.execute(ContentTypeCommand.NAME, ContentTypeFind.NAME, "--all", "--interactive=false");
+            final int status = commandLine.execute(ContentTypeCommand.NAME, ContentTypeFind.NAME,  "--interactive=false");
             Assertions.assertEquals(CommandLine.ExitCode.OK, status);
             final String output = writer.toString();
             Assertions.assertTrue(output.startsWith("varName:"));
