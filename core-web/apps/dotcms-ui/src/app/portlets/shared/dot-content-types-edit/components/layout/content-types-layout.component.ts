@@ -39,7 +39,7 @@ export class ContentTypesLayoutComponent implements OnChanges, OnInit {
     relationshipURL: string;
     contentTypeNameInputSize: number;
     showPermissionsTab: Observable<boolean>;
-    addToMenuContentType: boolean = false;
+    addToMenuContentType = false;
 
     actions: MenuItem[];
 
