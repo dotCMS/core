@@ -10,7 +10,7 @@ import { DotContainerContentletService } from './dot-container-contentlet.servic
 
 import { DotPageContent } from '../../shared/models';
 
-fdescribe('DotContainerContentletService', () => {
+describe('DotContainerContentletService', () => {
     let injector: TestBed;
     let dotContainerContentletService: DotContainerContentletService;
     let httpMock: HttpTestingController;
@@ -136,9 +136,6 @@ fdescribe('DotContainerContentletService', () => {
 
     afterEach(() => {
         httpMock.verify();
-    });
-
-    afterEach(() => {
         window.sessionStorage.removeItem('variantName');
     });
 });
