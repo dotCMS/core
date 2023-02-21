@@ -143,7 +143,7 @@ export class BubbleFormView extends BubbleMenuView {
 
         this.tippy = tippy(editorElement.parentElement, {
             ...this.tippyOptions,
-            duration: 250,
+            duration: [250, 0],
             content: this.element,
             interactive: true,
             maxWidth: 'none',

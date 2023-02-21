@@ -498,9 +498,11 @@ export class DotBubbleMenuPluginView extends BubbleMenuView {
                 this.editor.storage.bubbleMenu.changeToIsOpen = false;
                 this.changeTo.instance.items = [];
                 this.changeTo.changeDetectorRef.detectChanges();
+                this.editor.commands.freezeScroll(false);
             },
             onShow: () => {
                 this.editor.storage.bubbleMenu.changeToIsOpen = true;
+                this.editor.commands.freezeScroll(true);
                 this.updateChangeTo();
             }
         });
