@@ -1,4 +1,3 @@
-import { flatten } from 'lodash';
 import { PluginKey } from 'prosemirror-state';
 import { Subject } from 'rxjs';
 import tippy, { GetReferenceClientRect } from 'tippy.js';
@@ -198,7 +197,7 @@ function mapCustomActions(actions): Array<DotMenuItem> {
 }
 
 function getCustomActions(customBlocks): Array<DotMenuItem> {
-    return flatten(customBlocks.extensions.map((extension) => mapCustomActions(extension.actions)));
+    return customBlocks.extensions.map((extension) => mapCustomActions(extension.actions)).flat();
 }
 
 export const ActionsMenu = (
