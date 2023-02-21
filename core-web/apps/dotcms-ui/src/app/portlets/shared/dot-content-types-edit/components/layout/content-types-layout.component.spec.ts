@@ -107,7 +107,8 @@ describe('ContentTypesLayoutComponent', () => {
             'contenttypes.content.variable': 'Variable',
             'contenttypes.form.identifier': 'Identifier',
             'contenttypes.dropzone.rows.add': 'Add Row',
-            'contenttypes.content.row': 'Row'
+            'contenttypes.content.row': 'Row',
+            'contenttypes.content.add_to_menu': 'Add To Menu'
         });
 
         TestBed.configureTestingModule({
@@ -231,6 +232,7 @@ describe('ContentTypesLayoutComponent', () => {
             expect(de.query(By.css('.main-toolbar-left .content-type__title'))).toBeDefined();
             expect(de.query(By.css('.main-toolbar-left .content-type__info'))).toBeDefined();
             expect(de.query(By.css('.main-toolbar-right #form-edit-button'))).toBeDefined();
+            expect(de.query(By.css('.main-toolbar-right #add-to-menu-button'))).toBeDefined();
         });
 
         it('should set and emit change name of Content Type', () => {
@@ -285,6 +287,15 @@ describe('ContentTypesLayoutComponent', () => {
             expect(editButton.nativeElement.textContent).toBe('Edit');
             expect(editButton.nativeElement.disabled).toBe(false);
             expect(editButton).toBeTruthy();
+        });
+
+        it('should have Add To Menu button', () => {
+            const addToMenuButton: DebugElement = fixture.debugElement.query(
+                By.css('#add-to-menu-button')
+            );
+            expect(addToMenuButton.nativeElement.textContent).toBe('Add To Menu');
+            expect(addToMenuButton.nativeElement.disabled).toBe(false);
+            expect(addToMenuButton).toBeTruthy();
         });
     });
 

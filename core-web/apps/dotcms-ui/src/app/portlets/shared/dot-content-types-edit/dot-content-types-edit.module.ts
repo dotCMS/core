@@ -79,6 +79,7 @@ import { ContentTypesFormComponent } from './components/form/content-types-form.
 import { ContentTypesLayoutComponent } from './components/layout/content-types-layout.component';
 import { DotContentTypesEditRoutingModule } from './dot-content-types-edit-routing.module';
 import { DotContentTypesEditComponent } from './dot-content-types-edit.component';
+import { DotAddToMenuModule } from '../dot-content-types-listing/components/dot-add-to-menu/dot-add-to-menu.module';
 
 @NgModule({
     declarations: [
@@ -151,7 +152,8 @@ import { DotContentTypesEditComponent } from './dot-content-types-edit.component
         TabViewModule,
         DotRelationshipTreeModule,
         DotPortletBoxModule,
-        DotMdIconSelectorModule
+        DotMdIconSelectorModule,
+        DotAddToMenuModule
     ],
     providers: [
         DotContentTypesInfoService,
