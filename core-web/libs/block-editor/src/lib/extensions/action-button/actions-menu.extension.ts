@@ -248,7 +248,7 @@ export const ActionsMenu = (
         suggestionsComponent = viewContainerRef.createComponent(SuggestionsComponent);
 
         // Setting Inputs
-        suggestionsComponent.instance.items = [...items];
+        suggestionsComponent.instance.items = items;
         suggestionsComponent.instance.currentLanguage = lang;
         suggestionsComponent.instance.allowedContentTypes = allowedContentTypes;
         suggestionsComponent.instance.onSelectContentlet = (props) => {
