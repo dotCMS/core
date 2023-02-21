@@ -55,15 +55,17 @@ public class SitePull extends AbstractSiteCommand implements Callable<Integer> {
                 }
             } else {
                 ObjectMapper objectMapper = output.objectMapper();
-                final String valueAsString = objectMapper.writeValueAsString(siteView);
-                output.info(valueAsString);
+                final String asString = objectMapper.writeValueAsString(siteView);
+                output.info(asString);
+                Path path;
                 if (null != saveAs) {
-                    Files.writeString(saveAs.toPath(), valueAsString);
+                    path = saveAs.toPath();
                 } else {
                     final String fileName = String.format("%s.%s",siteView.hostName(),output.getInputOutputFormat().getExtension());
-                    final Path path = output.nextFileName(fileName);
-                    Files.writeString(path, valueAsString);
+                    path = output.nextFileName(fileName);
                 }
+                Files.writeString(path, asString);
+                output.info(String.format("Output has been written to file [%s].",path));
             }
         } catch (IOException e) {
             output.error("Error occurred transforming the response: ", e.getMessage());

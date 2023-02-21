@@ -14,11 +14,10 @@ import java.util.concurrent.Callable;
 @CommandLine.Command(
         name = ContentTypeRemove.NAME,
         header = "@|bold,green Use his command to remove Content-types.|@",
-        description = "@|bold,green Remove a Content-type from a given file definition.|@ @|bold,cyan --file|@ to send the descriptor. ",
+        description = "@|bold,green Remove a Content-type from a given CT name or Id.|@.",
         sortOptions = false
 )
 public class ContentTypeRemove extends AbstractContentTypeCommand implements Callable<Integer> {
-
 
     static final String NAME = "remove";
 
@@ -28,7 +27,7 @@ public class ContentTypeRemove extends AbstractContentTypeCommand implements Cal
     @Inject
     RestClientFactory clientFactory;
 
-    @CommandLine.Option(names = {"-iv","--idOrVar"}, order = 1, description = "Pull Content-type by id or var-name", required = true)
+    @CommandLine.Parameters(index = "0", arity = "1", description = "CT name Or Id.")
     String idOrVar;
 
     /**
@@ -37,13 +36,10 @@ public class ContentTypeRemove extends AbstractContentTypeCommand implements Cal
      */
     @Override
     public Integer call() {
-
         final ContentTypeAPI contentTypeAPI = clientFactory.getClient(ContentTypeAPI.class);
         final ResponseEntityView<String> responseEntityView = contentTypeAPI.delete(idOrVar);
         final String entity = responseEntityView.entity();
         output.info(entity);
-
-        //We're not supposed to get this far unless our params are messed up
         return ExitCode.OK;
     }
 }

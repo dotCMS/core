@@ -28,7 +28,7 @@ public class OutputOptionMixin implements MessageWriter {
     @CommandLine.Option(names = { "--verbose" }, description = "Verbose mode.")
     boolean verbose;
 
-    @CommandLine.Option(names = {"-s","--shorten"},  description = "Pulled Content is shown in shorten format.")
+    @CommandLine.Option(names = {"-sh","--short"},  description = "Pulled Content is shown in shorten format.")
     boolean shortenOutput;
 
     @CommandLine.Option(names = {

@@ -32,9 +32,11 @@ public class ContentTypePull extends AbstractContentTypeCommand implements Calla
     @Inject
     RestClientFactory clientFactory;
 
-    @Parameters(index = "0", arity = "1", description = "")
+    @Parameters(index = "0", arity = "1", description = "CT Identifier or varName.")
     String idOrVar;
 
+    @CommandLine.Option(names = {"-to", "--saveTo"}, order = 5, description = "Save Pulled CT to a file.")
+    File saveAs;
 
     @Override
     public Integer call() {
@@ -49,11 +51,20 @@ public class ContentTypePull extends AbstractContentTypeCommand implements Calla
                     final String asString = shortFormat(contentType);
                     output.info(asString);
                 } else {
-                    final String fileName = String.format("%s.%s",contentType.variable(),output.getInputOutputFormat().getExtension());
-                    final Path saveAs = output.nextFileName(fileName);
                     final String asString = objectMapper.writeValueAsString(contentType);
                     output.info(asString);
-                    Files.writeString(saveAs, asString);
+
+                    //By default, We'll always save pulled CT as file using CT's var name
+                    final Path path;
+                    if (null != saveAs) {
+                       path = saveAs.toPath();
+                    } else {
+                        //But this behavior can be modified if we explicitly add a file name
+                        final String fileName = String.format("./%s.%s",contentType.variable(),output.getInputOutputFormat().getExtension());
+                        path = output.nextFileName(fileName);
+                    }
+                    Files.writeString(path, asString);
+                    output.info(String.format("Output has been written to file [%s].",path));
                 }
             } catch (IOException | NotFoundException e) {
                 output.error(String.format(

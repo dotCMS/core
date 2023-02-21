@@ -60,7 +60,7 @@ public class ContentTypeCommandTest extends CommandTest {
         try (PrintWriter out = new PrintWriter(writer)) {
             commandLine.setOut(out);
             final String fileName = String.format("./fileAsset%d.json", System.currentTimeMillis());
-            final int status = commandLine.execute(ContentTypeCommand.NAME, ContentTypePull.NAME, "--idOrVar", "fileAsset", "--verbose" , "--saveTo", fileName);
+            final int status = commandLine.execute(ContentTypeCommand.NAME, ContentTypePull.NAME, "fileAsset", "--saveTo", fileName);
             Assertions.assertEquals(ExitCode.OK, status);
             final String output = writer.toString();
             //System.out.println(output);
@@ -78,25 +78,24 @@ public class ContentTypeCommandTest extends CommandTest {
 
     @Test
     void Test_Command_Content_Type_Pull_Then_Push_YML() throws JsonProcessingException {
-
         final CommandLine commandLine = getFactory().create();
         final StringWriter writer = new StringWriter();
         try (PrintWriter out = new PrintWriter(writer)) {
             commandLine.setOut(out);
             final String fileName = String.format("./fileAsset%d.yml", System.currentTimeMillis());
-            int status = commandLine.execute(ContentTypeCommand.NAME, ContentTypePull.NAME, "--idOrVar", "fileAsset", "--saveTo", fileName,  "--verbose", "--format","YML");
+            int status = commandLine.execute(ContentTypeCommand.NAME, ContentTypePull.NAME, "fileAsset", "--saveTo", fileName, "--format", "YML");
             Assertions.assertEquals(ExitCode.OK, status);
             final String output = writer.toString();
             //System.out.println(output);
-            final ObjectMapper objectMapper = new YAMLMapperSupplier().get();
-            final ContentType contentType = objectMapper.readValue(output, ContentType.class);
-            Assertions.assertNotNull(contentType.variable());
-
-            status = commandLine.execute(ContentTypeCommand.NAME, ContentTypePush.NAME, "--file", fileName, "--format", "YML");
-            Assertions.assertEquals(ExitCode.OK, status);
-
-            try {
-                Files.delete(Path.of(fileName));
+            try{
+                final Path path = Path.of(fileName);
+                byte[] bytes = Files.readAllBytes(path);
+                final ObjectMapper objectMapper = new YAMLMapperSupplier().get();
+                final ContentType contentType = objectMapper.readValue(bytes, ContentType.class);
+                Assertions.assertNotNull(contentType.variable());
+                status = commandLine.execute(ContentTypeCommand.NAME, ContentTypePush.NAME, "--file", fileName, "--format", "YML");
+                Assertions.assertEquals(ExitCode.OK, status);
+                Files.delete(path);
             } catch (IOException e) {
                 // Quite
             }
@@ -188,10 +187,10 @@ public class ContentTypeCommandTest extends CommandTest {
             System.out.println(output);
         }
 
-        final int status = commandLine.execute(ContentTypeCommand.NAME, ContentTypeRemove.NAME, "--idOrVar", varName );
+        final int status = commandLine.execute(ContentTypeCommand.NAME, ContentTypeRemove.NAME, varName );
         Assertions.assertEquals(ExitCode.OK, status);
 
-        final int status2 = commandLine.execute(ContentTypeCommand.NAME, ContentTypePull.NAME, "--idOrVar", varName );
+        final int status2 = commandLine.execute(ContentTypeCommand.NAME, ContentTypePull.NAME, varName );
         Assertions.assertEquals(ExitCode.SOFTWARE, status2);
     }
 
