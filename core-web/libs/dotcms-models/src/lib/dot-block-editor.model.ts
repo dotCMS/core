@@ -1,6 +1,6 @@
 export type EditorAssetTypes = 'image' | 'video';
 
-export type Actions = {
+export type Action = {
     command: string;
     menuLabel: string;
     icon: string;
@@ -9,10 +9,10 @@ export type Actions = {
 
 export type Block = {
     url: string;
-    actions: Array<Actions>;
+    actions: Array<Action>;
 };
 
-export type CustomBlock = {
+export type RemoteCustomExtentions = {
     extensions: Block[];
 };
 
