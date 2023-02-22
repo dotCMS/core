@@ -981,13 +981,8 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
         }
 
         final Table<String, String, Set<PersonalizedContentlet>> pageContents = HashBasedTable.create();
-        final List<MultiTree> multiTreesByVariant    = this.getMultiTreesByVariant(page.getIdentifier(),
+        final Collection<MultiTree> multiTrees = this.getMultiTreesByVariant(page.getIdentifier(),
                 variantName);
-        final List<MultiTree> multiTreesByDefault    = this.getMultiTreesByVariant(page.getIdentifier(),
-                VariantAPI.DEFAULT_VARIANT.name());
-
-        final Collection<MultiTree> multiTrees = Stream.concat(multiTreesByDefault.stream(), multiTreesByVariant.stream())
-                .collect(Collectors.toSet());
 
         final ContainerAPI    containerAPI  = APILocator.getContainerAPI();
         final ContentletAPI   contentletAPI = APILocator.getContentletAPI();
@@ -1016,7 +1011,7 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
 
             Contentlet contentlet = null;
             try {
-                contentlet = contentletAPI.findContentletByIdentifierAnyLanguage(multiTree.getContentlet(), multiTree.getVariantId());
+                contentlet = contentletAPI.findContentletByIdentifierAnyLanguageAndVariant(multiTree.getContentlet());
             } catch (DotDataException  | DotContentletStateException e) {
                 Logger.debug(this.getClass(), "invalid contentlet on multitree:" + multiTree
                         + ", msg: " + e.getMessage(), e);
