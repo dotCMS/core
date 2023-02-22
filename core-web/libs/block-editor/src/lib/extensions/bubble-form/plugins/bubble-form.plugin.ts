@@ -186,7 +186,7 @@ export class BubbleFormView extends BubbleMenuView {
     }
 
     private hanlderScroll(e: Event) {
-        if (this.tippy?.popper && this.tippy?.popper.contains(e.target as HTMLElement)) {
+        if (!this.shouldHideOnScroll(e.target as HTMLElement)) {
             return true;
         }
 
@@ -200,6 +200,10 @@ export class BubbleFormView extends BubbleMenuView {
         const domRect = document.querySelector('#bubble-menu')?.getBoundingClientRect();
 
         return domRect || getNodePosition(node, type);
+    }
+
+    private shouldHideOnScroll(node: HTMLElement): boolean {
+        return this.tippy?.state.isMounted && this.tippy?.popper.contains(node);
     }
 }
 
