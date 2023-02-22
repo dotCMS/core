@@ -57,21 +57,5 @@ export const FreezeScrollPlugin = new Plugin({
             // keep the old state in case we do not receive a new one.
             return state || value;
         }
-    },
-    props: {
-        handleClick: (view) => {
-            const state = FREEZE_SCROLL_KEY?.getState(view.state);
-            if (state.freezeScroll) {
-                view.dispatch(view.state.tr.setMeta(FREEZE_SCROLL_KEY, { freezeScroll: false }));
-            }
-        },
-        handleKeyDown: (view, event) => {
-            const state = FREEZE_SCROLL_KEY?.getState(view.state);
-            const { code } = event;
-
-            if (code === 'Escape' && state.freezeScroll) {
-                view.dispatch(view.state.tr.setMeta(FREEZE_SCROLL_KEY, { freezeScroll: false }));
-            }
-        }
     }
 });

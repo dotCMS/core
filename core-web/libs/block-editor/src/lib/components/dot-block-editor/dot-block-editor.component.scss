@@ -35,6 +35,8 @@
         display: block;
         height: 100%;
         overflow-y: auto;
+        /* To avoid jupms whe the scroll is hidden*/
+        scrollbar-gutter: stable;
         width: 100%;
 
         .ProseMirror {

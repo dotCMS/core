@@ -52,12 +52,14 @@ function getTippyInstance({
     element,
     content,
     rect,
-    onHide
+    onHide,
+    onShown
 }: {
     element: Element;
     content: Element;
     rect: GetReferenceClientRect;
     onHide?: () => void;
+    onShown?: () => void;
 }) {
     return tippy(element, {
         content: content,
@@ -71,6 +73,7 @@ function getTippyInstance({
         offset: [120, 10],
         trigger: 'manual',
         maxWidth: 'none',
+        onShown,
         onHide
     });
 }
@@ -85,7 +88,13 @@ function execCommand({
     props: SuggestionsCommandProps;
 }) {
     const { type, payload } = props;
-    const formToOpen = {
+    const whatToDo = {
+        dotContent: () => {
+            editor.chain().addContentletBlock({ range, payload }).addNextLine().run();
+        },
+        heading: () => {
+            editor.chain().addHeading({ range, type }).run();
+        },
         table: () => {
             editor.commands
                 .openForm(
@@ -137,36 +146,28 @@ function execCommand({
                     });
                 });
         },
+        orderedList: () => {
+            editor.chain().deleteRange(range).toggleOrderedList().focus().run();
+        },
+        bulletList: () => {
+            editor.chain().deleteRange(range).toggleBulletList().focus().run();
+        },
+        blockquote: () => {
+            editor.chain().deleteRange(range).setBlockquote().focus().run();
+        },
+        codeBlock: () => {
+            editor.chain().deleteRange(range).setCodeBlock().focus().run();
+        },
+        horizontalRule: () => {
+            editor.chain().deleteRange(range).setHorizontalRule().focus().run();
+        },
         image: () => editor.commands.openAssetForm({ type: 'image' }),
         video: () => editor.commands.openAssetForm({ type: 'video' })
     };
 
-    const whatToDo = {
-        dotContent: () => {
-            return editor.chain().addContentletBlock({ range, payload }).addNextLine();
-        },
-        heading: () => {
-            return editor.chain().addHeading({ range, type });
-        },
-        orderedList: () => {
-            return editor.chain().deleteRange(range).toggleOrderedList().focus();
-        },
-        bulletList: () => {
-            return editor.chain().deleteRange(range).toggleBulletList().focus();
-        },
-        blockquote: () => {
-            return editor.chain().deleteRange(range).setBlockquote().focus();
-        },
-        codeBlock: () => {
-            return editor.chain().deleteRange(range).setCodeBlock().focus();
-        },
-        horizontalRule: () => {
-            return editor.chain().deleteRange(range).setHorizontalRule().focus();
-        },
-        ...formToOpen
-    };
-
-    formToOpen[type.name] ? whatToDo[type.name]() : whatToDo[type.name]().freezeScroll(false).run();
+    whatToDo[type.name]
+        ? whatToDo[type.name]()
+        : editor.chain().setTextSelection(range).focus().run();
 }
 
 export const ActionsMenu = (viewContainerRef: ViewContainerRef) => {
@@ -270,8 +271,9 @@ export const ActionsMenu = (viewContainerRef: ViewContainerRef) => {
         return false;
     }
 
-    function onExit(): void {
+    function onExit({ editor }): void {
         myTippy?.destroy();
+        editor.commands.freezeScroll(false);
         suggestionsComponent?.destroy();
         suggestionsComponent = null;
         destroy$.next(true);

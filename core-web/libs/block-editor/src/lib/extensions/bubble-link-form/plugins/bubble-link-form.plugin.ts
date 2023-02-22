@@ -123,7 +123,7 @@ export class BubbleLinkFormView {
 
         this.tippy = tippy(editorElement.parentElement, {
             ...this.tippyOptions,
-            duration: 250,
+            duration: [250, 0],
             getReferenceClientRect: () => this.setTippyPosition(),
             content: this.element,
             interactive: true,
@@ -138,6 +138,9 @@ export class BubbleLinkFormView {
                         options: { fallbackPlacements: ['top-start'] }
                     }
                 ]
+            },
+            onHide: () => {
+                this.editor.commands.closeLinkForm();
             }
         });
     }
