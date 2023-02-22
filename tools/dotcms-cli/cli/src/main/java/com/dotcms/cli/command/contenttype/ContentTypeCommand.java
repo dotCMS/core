@@ -1,5 +1,6 @@
 package com.dotcms.cli.command.contenttype;
 
+import com.dotcms.cli.common.HelpOption;
 import com.dotcms.cli.common.OutputOptionMixin;
 import picocli.CommandLine;
 
@@ -25,6 +26,9 @@ public class ContentTypeCommand implements Callable<Integer> {
 
     @CommandLine.Mixin(name = "output")
     protected OutputOptionMixin output;
+
+    @CommandLine.Mixin
+    protected HelpOption helpOption;
 
     @CommandLine.Spec
     protected CommandLine.Model.CommandSpec spec;
