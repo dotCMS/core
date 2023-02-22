@@ -73,9 +73,6 @@ public class IndiciesFactory {
       try {
         conn = DbConnectionFactory.getDataSource().getConnection();
         conn.setAutoCommit(false);
-        if (DbConnectionFactory.isMySql()) {
-          conn.setTransactionIsolation(conn.TRANSACTION_READ_COMMITTED);
-        }
         if(newInfo==null || newInfo.equals(loadIndicies(conn))) {
             return;
         }
