@@ -1,5 +1,16 @@
-<%String contents =UtilMethods.htmlifyString(FileUtils.readFileToString(contentlet.getBinary(field.getVelocityVarName()))); %>
+<%@ page import="java.io.File" %>
+<%@ page import="com.dotmarketing.portlets.contentlet.model.Contentlet" %>
+<%@ page import="org.apache.commons.io.FileUtils" %>
 
+<%
+	final File file = contentlet.getBinary(field.getVelocityVarName());
+	String contents = "";
+	String fileExtension = "txt";
+	if (null != file) {
+		contents = UtilMethods.htmlifyString(FileUtils.readFileToString(file));
+		fileExtension = UtilMethods.getFileExtension(file.getName());
+	}
+%>
 
 <style type="text/css">
     #editor {
@@ -72,31 +83,72 @@
 			aceAreaParser(parser);
      }
 
+	 let tempFileId = "new";
 
 	function saveText(){
 		if(!changed) {
 			return;
 		}
 		var text = aceEditor.getValue();
-		
-		
-		FileAssetAjax.saveFileText(contentletInode.value, text, '<%=field.getVelocityVarName()%>', {
-			async: false,
-			callback:function(data) {
-			console.log("savedText");
-			console.log(data);
-		   }
-		});
+
+		if (contentletInode.value == '') {
+			let fileName = dojo.byId("fileName").value;
+			//alert(fileName);
+			if (fileName) {
+				/*const url = "/api/v1/temp?maxFileLength=-1";
+				let formData = new FormData();
+				formData.append("files", text);
+				formData.append("filename", fileName);
+
+				fetch(url, {
+					method: "PUT",
+					body: formData,
+				}).then(
+						response => console.log(response.json())// .json(), etc.
+						// same as function(response) {return response.text();}
+				).then(
+						html => console.log(html)
+				);*/
+				var data = JSON.stringify({
+					"fileName": fileName,
+					"fileContent": text
+				});
+				var xhr = new XMLHttpRequest();
+
+				xhr.addEventListener("readystatechange", function() {
+					if(this.readyState === 4) {
+						console.log(this.responseText);
+					}
+				});
+
+				xhr.onload = function() {
+					let jsonData = JSON.parse(xhr.response);
+					//alert(jsonData);
+					tempFileId = jsonData.tempFiles[0].id;
+					var elements = document.getElementsByName("<%= field.getFieldContentlet() %>");
+					for (var i = 0; i < elements.length; i++) {
+						if (elements[i].tagName.toLowerCase() == "input") {
+							elements[i].value = tempFileId;
+						}
+					}
+				};
+
+				xhr.open("PUT", "/api/v1/temp/id/" + tempFileId);
+				xhr.setRequestHeader("Content-Type", "application/json");
+				xhr.send(data);
+			}
+		} else {
+			FileAssetAjax.saveFileText(contentletInode.value, text, '<%=field.getVelocityVarName()%>', {
+				async: false,
+				callback: function (data) {
+					console.log("savedText");
+					console.log(data);
+				}
+			});
+		}
 	}
 
 </script>
-
-
-<%@page import="org.apache.commons.io.FileUtils"%>
-<%@page import="java.nio.file.Paths"%>
-<%@page import="java.nio.file.Files"%>
-<%@page import="com.dotmarketing.portlets.contentlet.model.Contentlet"%>
-<%@page import="com.dotmarketing.util.UtilMethods"%>
 
 <div id="fileTextEditorDiv">
     <div style="height:600px;max-width:900px;border:1px solid silver" 
@@ -112,5 +164,5 @@
 <input type="hidden" id="<%=field.getVelocityVarName()%>_hidden_field" value="<%=contents %>">
 
 <script>
-loadAce("<%=UtilMethods.getFileExtension(contentlet.getBinary(field.getVelocityVarName()).getName())%>")
+loadAce("<%= fileExtension %>")
 </script>
