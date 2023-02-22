@@ -1,29 +1,8 @@
 package com.dotcms.rest.api.v1.temp;
 
-import static com.dotcms.storage.FileMetadataAPIImpl.*;
-
-import com.dotcms.rest.exception.BadRequestException;
-import com.dotcms.storage.FileMetadataAPIImpl;
-import java.io.File;
-import java.io.FileFilter;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.net.InetAddress;
-import java.net.URL;
-import java.nio.file.Files;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Objects;
-import java.util.Optional;
-
-import javax.servlet.http.HttpServletRequest;
-import org.xbill.DNS.Address;
-import org.xbill.DNS.ExtendedResolver;
-import org.xbill.DNS.Resolver;
 import com.dotcms.http.CircuitBreakerUrl;
 import com.dotcms.http.CircuitBreakerUrl.Method;
+import com.dotcms.rest.exception.BadRequestException;
 import com.dotcms.util.CloseUtils;
 import com.dotcms.util.ConversionUtils;
 import com.dotcms.util.SecurityUtils;
@@ -35,7 +14,6 @@ import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.util.Config;
-import com.dotmarketing.util.DNSUtil;
 import com.dotmarketing.util.FileUtil;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.SecurityLogger;
@@ -50,8 +28,23 @@ import com.liferay.portal.util.PortalUtil;
 import com.liferay.portal.util.WebKeys;
 import com.liferay.util.Encryptor;
 import com.liferay.util.StringPool;
-
 import io.vavr.control.Try;
+
+import javax.servlet.http.HttpServletRequest;
+import java.io.File;
+import java.io.FileFilter;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.net.URL;
+import java.nio.file.Files;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
+
+import static com.dotcms.storage.FileMetadataAPIImpl.META_TMP;
 
 public class TempFileAPI {
 
@@ -250,6 +243,34 @@ public class TempFileAPI {
 
       return dotTempFile;
 
+  }
+
+  public DotTempFile updateTempFile(final String tempFileId, final String incomingFileName,
+                                    final HttpServletRequest request, final InputStream inputStream) throws DotSecurityException {
+    if ("new".equalsIgnoreCase(tempFileId)) {
+      return this.createTempFile(incomingFileName, request, inputStream);
+    }
+    final Optional<DotTempFile> dotTempFile = this.getTempFile(tempFileId);
+    if (dotTempFile.isEmpty()) {
+      return this.createTempFile(incomingFileName, request, inputStream);
+    }
+    final File tempFile = dotTempFile.get().file;
+    final long maxLength = maxFileSize(request);
+    try (final OutputStream out = new BoundedOutputStream(maxLength,Files.newOutputStream(tempFile.toPath()))) {
+      int read;
+      final byte[] bytes = new byte[4096];
+      while ((read = inputStream.read(bytes)) != -1) {
+        out.write(bytes, 0, read);
+      }
+      return dotTempFile.get();
+    } catch (final IOException e) {
+      final String message = APILocator.getLanguageAPI().getStringKey(WebAPILocator.getLanguageWebAPI().getLanguage(request), "temp.file.max.file.size.error").replace("{0}", UtilMethods.prettyByteify(maxLength));
+      throw new DotStateException(message, e);
+    } catch (final Exception e) {
+      throw new DotRuntimeException(e.getMessage(), e);
+    } finally {
+      CloseUtils.closeQuietly(inputStream);
+    }
   }
 
   /**
