@@ -67,9 +67,9 @@ import static com.dotmarketing.util.UtilMethods.isSet;
  */
 public class SAMLHelper {
 
-    private static final String DO_HASH_KEY = "hash.userid";
+    protected static final String DO_HASH_KEY = "hash.userid";
     // when on, look for an user by id, if the email is repeated on the system just fakes coming email to avoid the email constraint
-    private static final String ALLOW_USERS_DIFF_ID_REPEATED_EMAIL_KEY = "allowusers.diffid.repeatedemail";
+    protected static final String ALLOW_USERS_DIFF_ID_REPEATED_EMAIL_KEY = "allowusers.diffid.repeatedemail";
 
     private final HostWebAPI hostWebAPI;
     private final UserAPI    userAPI;
