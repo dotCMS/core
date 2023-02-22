@@ -234,7 +234,7 @@ public class NavTool implements ViewTool {
         return new NavResultHydrated(result, this.context);
     }
 
-    private List<?> filterNonLiveItems(final List<?> menuItems) {//aca hay un bug, deberia si filtrar los unpublish pero puede ser que tenga version unpublish y publish, y aun lo esta eliminando
+    private List<?> filterNonLiveItems(final List<?> menuItems) {
         if (!menuItems.isEmpty()) {
             final List<Contentlet> nonLiveContentlets = menuItems.stream()
                     .filter(item -> item instanceof Contentlet)
