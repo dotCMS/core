@@ -93,7 +93,7 @@ public class ContentTypeCommandTest extends CommandTest {
                 final ObjectMapper objectMapper = new YAMLMapperSupplier().get();
                 final ContentType contentType = objectMapper.readValue(bytes, ContentType.class);
                 Assertions.assertNotNull(contentType.variable());
-                status = commandLine.execute(ContentTypeCommand.NAME, ContentTypePush.NAME, "--file", fileName, "--format", "YML");
+                status = commandLine.execute(ContentTypeCommand.NAME, ContentTypePush.NAME, fileName, "--format", "YML");
                 Assertions.assertEquals(ExitCode.OK, status);
                 Files.delete(path);
             } catch (IOException e) {
@@ -181,7 +181,7 @@ public class ContentTypeCommandTest extends CommandTest {
         final StringWriter writer = new StringWriter();
         try (PrintWriter out = new PrintWriter(writer)) {
             commandLine.setOut(out);
-            final int status = commandLine.execute(ContentTypeCommand.NAME, ContentTypePush.NAME, "--file", jsonFile.getAbsolutePath() );
+            final int status = commandLine.execute(ContentTypeCommand.NAME, ContentTypePush.NAME, jsonFile.getAbsolutePath() );
             Assertions.assertEquals(ExitCode.OK, status);
             final String output = writer.toString();
             System.out.println(output);

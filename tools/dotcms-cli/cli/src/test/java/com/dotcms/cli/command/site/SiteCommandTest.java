@@ -2,6 +2,7 @@ package com.dotcms.cli.command.site;
 
 import com.dotcms.api.AuthenticationContext;
 import com.dotcms.cli.command.CommandTest;
+import com.dotcms.cli.common.InputOutputFormat;
 import io.quarkus.test.junit.QuarkusTest;
 import org.junit.jupiter.api.*;
 import picocli.CommandLine;
@@ -10,6 +11,8 @@ import javax.inject.Inject;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.nio.file.Files;
+import java.nio.file.Path;
 
 @QuarkusTest
 public class SiteCommandTest extends CommandTest {
@@ -54,7 +57,7 @@ public class SiteCommandTest extends CommandTest {
         final StringWriter writer = new StringWriter();
         try (PrintWriter out = new PrintWriter(writer)) {
             commandLine.setOut(out);
-            final int status = commandLine.execute(SiteCommand.NAME, SiteFind.NAME, "--all", "--interactive=false");
+            final int status = commandLine.execute(SiteCommand.NAME, SiteFind.NAME, "--interactive=false");
             Assertions.assertEquals(CommandLine.ExitCode.OK, status);
             final String output = writer.toString();
             Assertions.assertTrue(output.startsWith("name:"));
@@ -76,31 +79,33 @@ public class SiteCommandTest extends CommandTest {
 
 
     @Test
-    void Test_Command_Site_Push_Publish_UnPublish_Then_Archive() {
+    void Test_Command_Site_Push_Publish_UnPublish_Then_Archive() throws IOException {
 
-        final String newSiteName = String.format("new.dotcms.site%d",System.currentTimeMillis());
-
+        final String newSiteName = String.format("new.dotcms.site%d", System.currentTimeMillis());
         final CommandLine commandLine = getFactory().create();
         final StringWriter writer = new StringWriter();
         try (PrintWriter out = new PrintWriter(writer)) {
             commandLine.setOut(out);
-            int status = commandLine.execute(SiteCommand.NAME, SitePush.NAME, "--create", newSiteName);
+            int status = commandLine.execute(SiteCommand.NAME, SiteCreate.NAME, newSiteName);
             Assertions.assertEquals(CommandLine.ExitCode.OK, status);
 
-            status = commandLine.execute(SiteCommand.NAME, SiteStart.NAME, "--idOrName", newSiteName);
+            status = commandLine.execute(SiteCommand.NAME, SiteStart.NAME, newSiteName);
             Assertions.assertEquals(CommandLine.ExitCode.OK, status);
 
-            status = commandLine.execute(SiteCommand.NAME, SiteStop.NAME, "--idOrName", newSiteName);
+            status = commandLine.execute(SiteCommand.NAME, SiteStop.NAME, newSiteName);
             Assertions.assertEquals(CommandLine.ExitCode.OK, status);
 
-            status = commandLine.execute(SiteCommand.NAME, SiteArchive.NAME, "--idOrName", newSiteName);
+            status = commandLine.execute(SiteCommand.NAME, SiteArchive.NAME, newSiteName);
             Assertions.assertEquals(CommandLine.ExitCode.OK, status);
 
-            status = commandLine.execute(SiteCommand.NAME, SiteUnarchive.NAME, "--idOrName", newSiteName);
+            status = commandLine.execute(SiteCommand.NAME, SiteUnarchive.NAME, newSiteName);
             Assertions.assertEquals(CommandLine.ExitCode.OK, status);
 
-            status = commandLine.execute(SiteCommand.NAME, SitePull.NAME, "--idOrName", newSiteName);
+            status = commandLine.execute(SiteCommand.NAME, SitePull.NAME, newSiteName);
             Assertions.assertEquals(CommandLine.ExitCode.OK, status);
+
+        } finally {
+            Files.deleteIfExists(Path.of(".", String.format("%s.%s", newSiteName, InputOutputFormat.defaultFormat().getExtension())));
         }
     }
 

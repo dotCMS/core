@@ -22,13 +22,13 @@ public class OutputOptionMixin implements MessageWriter {
 
     static final boolean picocliDebugEnabled = "DEBUG".equalsIgnoreCase(System.getProperty("picocli.trace"));
 
-    @CommandLine.Option(names = { "-e", "--errors" }, description = "Display error messages.")
+    @CommandLine.Option(names = { "-e", "--errors" }, description = "Display error messages.", hidden = true)
     boolean showErrors;
 
-    @CommandLine.Option(names = { "--verbose" }, description = "Verbose mode.")
+    @CommandLine.Option(names = { "--verbose" }, description = "Verbose mode.", hidden = true)
     boolean verbose;
 
-    @CommandLine.Option(names = {"-sh","--short"},  description = "Pulled Content is shown in shorten format.")
+    @CommandLine.Option(names = {"-sh","--short"},  description = "Pulled Content is shown in shorten format.", hidden = true)
     boolean shortenOutput;
 
     @CommandLine.Option(names = {
@@ -196,26 +196,6 @@ public class OutputOptionMixin implements MessageWriter {
         error(message);
         return cmd.getExitCodeExceptionMapper() != null ? cmd.getExitCodeExceptionMapper().getExitCode(ex)
                 : mixee.exitCodeOnInvalidInput();
-    }
-
-    public Path nextFileName(final String in){
-
-        String fileName = in;
-        String extension = "";
-        String name = "";
-
-        int idxOfDot = fileName.lastIndexOf('.');   //Get the last index of . to separate extension
-        extension = fileName.substring(idxOfDot + 1);
-        name = fileName.substring(0, idxOfDot);
-
-        Path path = Paths.get(fileName);
-        int counter = 1;
-        while(Files.exists(path)){
-            fileName = name+"("+counter+")."+extension;
-            path = Paths.get(fileName);
-            counter++;
-        }
-        return Path.of(fileName);
     }
 
     @Override

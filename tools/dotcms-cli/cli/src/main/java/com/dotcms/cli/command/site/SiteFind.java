@@ -82,13 +82,13 @@ public class SiteFind extends AbstractSiteCommand implements Callable<Integer> {
                     page++;
                 }
               //At some point we run out of live sites time to show 'working' sites
-            }  else {
+            } else {
                 if (sites.size() < pageSize) {
                     break;
                 }
                 page++;
             }
-            if(output.isInteractive() && !BooleanUtils.toBoolean(System.console().readLine("Load next page? y/n:"))){
+            if(output.isInteractive() && !BooleanUtils.toBoolean(System.console().readLine("Load next page? y/n:" ))){
                 break;
             }
         }

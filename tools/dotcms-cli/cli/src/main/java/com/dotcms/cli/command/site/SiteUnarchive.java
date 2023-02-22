@@ -25,8 +25,7 @@ public class SiteUnarchive extends AbstractSiteCommand implements Callable<Integ
     @Inject
     RestClientFactory clientFactory;
 
-    @CommandLine.Option(names = { "-in", "--idOrName" },
-            order = 2, arity = "1", description = "Site by id or name", required = true)
+    @CommandLine.Parameters(index = "0", arity = "1", description = "Site name Or Id.")
     String siteNameOrId;
 
     @Override

@@ -1,6 +1,7 @@
 package com.dotcms.cli.command.site;
 
 import com.dotcms.cli.common.OutputOptionMixin;
+import com.dotcms.cli.common.Utils;
 import com.dotcms.model.site.SiteView;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import picocli.CommandLine;
@@ -12,6 +13,8 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Optional;
 import java.util.concurrent.Callable;
+
+import static com.dotcms.cli.common.Utils.nextFileName;
 
 @ActivateRequestContext
 @CommandLine.Command(name = SitePull.NAME,
@@ -62,7 +65,8 @@ public class SitePull extends AbstractSiteCommand implements Callable<Integer> {
                     path = saveAs.toPath();
                 } else {
                     final String fileName = String.format("%s.%s",siteView.hostName(),output.getInputOutputFormat().getExtension());
-                    path = output.nextFileName(fileName);
+                    final Path next = Path.of(".", fileName);
+                    path = nextFileName(next);
                 }
                 Files.writeString(path, asString);
                 output.info(String.format("Output has been written to file [%s].",path));

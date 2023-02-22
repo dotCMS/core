@@ -15,6 +15,7 @@ import java.util.stream.Collectors;
                 SiteFind.class,
                 SitePull.class,
                 SitePush.class,
+                SiteCreate.class,
                 SiteRemove.class,
                 SiteCopy.class,
                 SiteStart.class,

@@ -31,7 +31,7 @@ public class ContentTypePush extends AbstractContentTypeCommand implements Calla
     @Inject
     RestClientFactory clientFactory;
 
-    @CommandLine.Option(names = { "-f", "--file" }, order = 1,required = true, description = " The json/yml formatted content-type descriptor file to be pushed. ")
+    @CommandLine.Parameters(index = "0", arity = "1", description = "The json/yml formatted content-type descriptor file to be pushed. ")
     File file;
 
     @Override
