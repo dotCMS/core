@@ -203,7 +203,7 @@ public class ImageFilterApiImpl implements ImageFilterAPI {
 
         // resample huge images to a maxSize (prevents OOM)
         if ((originalSize.width > MAX_SIZE || originalSize.height  > MAX_SIZE)) {
-            final Map<String, String[]> params = Map.of(
+            final Map<String, String[]> params = ImmutableMap.of(
                     "subsample_w", new String[] {String.valueOf(MAX_SIZE)},
                     "subsample_h", new String[] {String.valueOf(MAX_SIZE)},
                     "subsample_hash", new String[] {hash},
