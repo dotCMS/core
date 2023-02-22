@@ -14,7 +14,7 @@ import { DotMenuService } from '@dotcms/app/api/services/dot-menu.service';
 import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
 import { DotUiColorsService } from '@dotcms/app/api/services/dot-ui-colors/dot-ui-colors.service';
 import { dotEventSocketURLFactory, MockDotUiColorsService } from '@dotcms/app/test/dot-test-bed';
-import { DotAlertConfirmService } from '@dotcms/data-access';
+import { DotAlertConfirmService, DotEventsService } from '@dotcms/data-access';
 import {
     ApiRoot,
     CoreWebService,
@@ -59,6 +59,7 @@ describe('DotAddContentletComponent', () => {
                     useClass: LoginServiceMock
                 },
                 DotAlertConfirmService,
+                DotEventsService,
                 ConfirmationService,
                 DotFormatDateService,
                 DotHttpErrorManagerService,

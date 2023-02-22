@@ -1,5 +1,6 @@
 package com.dotmarketing.startup.runalways;
 
+import com.dotcms.business.WrapInTransaction;
 import org.quartz.SchedulerException;
 
 import com.dotmarketing.common.db.DotConnect;
@@ -19,7 +20,8 @@ public class Task00007RemoveSitesearchQuartzJob implements StartupTask {
 	
 	private final String deleteJobDetails = "DELETE FROM qrtz_excl_job_details WHERE job_name = 'site-search-execute-once'";
 	
-
+	@Override
+	@WrapInTransaction
 	public void executeUpgrade() throws DotDataException, DotRuntimeException {
 		
 		try {

@@ -1,6 +1,6 @@
 export type EditorAssetTypes = 'image' | 'video';
 
-export type Actions = {
+export type Action = {
     command: string;
     menuLabel: string;
     icon: string;
@@ -9,9 +9,17 @@ export type Actions = {
 
 export type Block = {
     url: string;
-    actions: Array<Actions>;
+    actions: Array<Action>;
 };
 
-export type CustomBlock = {
+export type RemoteCustomExtentions = {
     extensions: Block[];
 };
+
+export interface EDITOR_DOTMARKETING_CONFIG {
+    SHOW_VIDEO_THUMBNAIL: boolean;
+}
+
+export enum EDITOR_MARKETING_KEYS {
+    SHOW_VIDEO_THUMBNAIL = 'SHOW_VIDEO_THUMBNAIL'
+}

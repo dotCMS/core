@@ -30,6 +30,7 @@ import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.RelationshipAPI;
 import com.dotmarketing.business.Treeable;
+import com.dotmarketing.common.reindex.ReindexQueueAPI;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.image.focalpoint.FocalPointAPITest;
 import com.dotmarketing.portlets.categories.business.CategoryAPI;
@@ -49,6 +50,10 @@ import com.google.common.io.Files;
 import com.liferay.portal.model.User;
 import com.liferay.util.FileUtil;
 import io.vavr.control.Try;
+import org.awaitility.Awaitility;
+import org.awaitility.core.ConditionTimeoutException;
+import org.junit.Assert;
+
 import java.io.File;
 import java.io.IOException;
 import java.net.URISyntaxException;
@@ -61,8 +66,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+
+import static org.hamcrest.Matchers.equalTo;
 
 /**
  * @author Jonathan Gamba 2019-04-16
@@ -83,7 +91,7 @@ public class TestDataUtils {
 
     public static ContentType getBlogLikeContentType(final String contentTypeName,
             final Host site) {
-            return getBlogLikeContentType(contentTypeName, site,null);
+        return getBlogLikeContentType(contentTypeName, site, null);
     }
 
     public static ContentType getBlogLikeContentType(final Host site) {
@@ -92,7 +100,7 @@ public class TestDataUtils {
 
     @WrapInTransaction
     public static ContentType getBlogLikeContentType(final String contentTypeName,
-            final Host site, final Set <String> workflowIds) {
+            final Host site, final Set<String> workflowIds) {
 
         ContentType blogType = null;
         try {
@@ -205,12 +213,13 @@ public class TestDataUtils {
         return getCommentsLikeContentType("Comments" + System.currentTimeMillis());
     }
 
-    public static ContentType getCommentsLikeContentType(final String contentTypeName){
+    public static ContentType getCommentsLikeContentType(final String contentTypeName) {
         return getCommentsLikeContentType(contentTypeName, null);
     }
 
     @WrapInTransaction
-    public static ContentType getCommentsLikeContentType(final String contentTypeName, final Set<String> workflowIds) {
+    public static ContentType getCommentsLikeContentType(final String contentTypeName,
+            final Set<String> workflowIds) {
 
         ContentType commentsType = null;
         try {
@@ -265,13 +274,13 @@ public class TestDataUtils {
     }
 
     public static ContentType getEmployeeLikeContentType(final String contentTypeName,
-    final Host site) {
+            final Host site) {
         return getEmployeeLikeContentType(contentTypeName, site, null);
     }
 
     @WrapInTransaction
     public static ContentType getEmployeeLikeContentType(final String contentTypeName,
-            final Host site,  final Set<String> workflowIds) {
+            final Host site, final Set<String> workflowIds) {
 
         ContentType employeeType = null;
         try {
@@ -364,31 +373,35 @@ public class TestDataUtils {
     }
 
     public static ContentType getNewsLikeContentType() {
-        return getNewsLikeContentType("News" + System.currentTimeMillis(), null, null, null, null,null);
+        return getNewsLikeContentType("News" + System.currentTimeMillis(), null, null, null, null,
+                null);
     }
 
     public static ContentType getNewsLikeContentType(final String contentTypeName) {
-        return getNewsLikeContentType(contentTypeName, null, null, null, null,null);
+        return getNewsLikeContentType(contentTypeName, null, null, null, null, null);
     }
 
-    public static ContentType getNewsLikeContentType(final String contentTypeName, final String parentCategoryInode) {
-        return getNewsLikeContentType(contentTypeName, null, null, null, null,parentCategoryInode);
+    public static ContentType getNewsLikeContentType(final String contentTypeName,
+            final String parentCategoryInode) {
+        return getNewsLikeContentType(contentTypeName, null, null, null, null, parentCategoryInode);
     }
 
     public static ContentType getNewsLikeContentType(final String contentTypeName,
             final Host site) {
-        return getNewsLikeContentType(contentTypeName, site, null, null, null,null);
+        return getNewsLikeContentType(contentTypeName, site, null, null, null, null);
     }
 
     public static ContentType getNewsLikeContentType(final Host site) {
-        return getNewsLikeContentType("News" + System.currentTimeMillis(), site, null, null, null,null);
+        return getNewsLikeContentType("News" + System.currentTimeMillis(), site, null, null, null,
+                null);
     }
 
     public static ContentType getNewsLikeContentType(final String contentTypeName,
             final Host site,
             final String detailPageIdentifier,
             final String urlMapPattern) {
-        return getNewsLikeContentType(contentTypeName, site, detailPageIdentifier, urlMapPattern, null,null);
+        return getNewsLikeContentType(contentTypeName, site, detailPageIdentifier, urlMapPattern,
+                null, null);
     }
 
     @WrapInTransaction
@@ -480,7 +493,7 @@ public class TestDataUtils {
                                 .indexed(true)
                                 .next()
                 );
-                if(!UtilMethods.isSet(parentCategoryInode)) {
+                if (!UtilMethods.isSet(parentCategoryInode)) {
                     parentCategoryInode = new CategoryDataGen().nextPersisted().getInode();
                 }
                 fields.add(
@@ -524,91 +537,92 @@ public class TestDataUtils {
 
     @WrapInTransaction
     public static Contentlet getDotAssetLikeContentlet() {
-        return getDotAssetLikeContentlet(APILocator.getLanguageAPI().getDefaultLanguage().getId(), Try.of(()->APILocator.getHostAPI().findSystemHost()).getOrNull());
-        
+        return getDotAssetLikeContentlet(APILocator.getLanguageAPI().getDefaultLanguage().getId(),
+                Try.of(() -> APILocator.getHostAPI().findSystemHost()).getOrNull());
+
     }
-    
+
     @WrapInTransaction
     public static Contentlet getDotAssetLikeContentlet(final Treeable hostOrFolder) {
-        return getDotAssetLikeContentlet(APILocator.getLanguageAPI().getDefaultLanguage().getId(), hostOrFolder);
-        
+        return getDotAssetLikeContentlet(APILocator.getLanguageAPI().getDefaultLanguage().getId(),
+                hostOrFolder);
+
     }
 
     @WrapInTransaction
-    public static Contentlet getDotAssetLikeContentlet(long languageId, final Treeable hostOrFolder) {
+    public static Contentlet getDotAssetLikeContentlet(long languageId,
+            final Treeable hostOrFolder) {
 
-        Host host=null;
-        Folder folder=null;
+        Host host = null;
+        Folder folder = null;
 
-        host = Try.of(()->APILocator.getHostAPI().find(hostOrFolder.getIdentifier(), APILocator.systemUser(), false)).getOrNull();
-        if(host==null) {
-            folder = Try.of(()->APILocator.getFolderAPI().find(hostOrFolder.getInode(), APILocator.systemUser(), false)).getOrNull();
-            if(folder==null) {
-                folder = Try.of(()->APILocator.getFolderAPI().find(hostOrFolder.getInode(), APILocator.systemUser(), false)).getOrNull();
+        host = Try.of(() -> APILocator.getHostAPI()
+                .find(hostOrFolder.getIdentifier(), APILocator.systemUser(), false)).getOrNull();
+        if (host == null) {
+            folder = Try.of(() -> APILocator.getFolderAPI()
+                    .find(hostOrFolder.getInode(), APILocator.systemUser(), false)).getOrNull();
+            if (folder == null) {
+                folder = Try.of(() -> APILocator.getFolderAPI()
+                        .find(hostOrFolder.getInode(), APILocator.systemUser(), false)).getOrNull();
             }
-            if(folder!=null) {
+            if (folder != null) {
                 final Folder finalFolder = folder;
-                host =  Try.of(()->APILocator.getHostAPI().find(finalFolder.getHostId(),APILocator.systemUser(), false)).getOrNull();
+                host = Try.of(() -> APILocator.getHostAPI()
+                        .find(finalFolder.getHostId(), APILocator.systemUser(), false)).getOrNull();
             }
         }
-        
-        if(host==null) {
-            host = Try.of(()->APILocator.getHostAPI().findSystemHost()).getOrNull();
+
+        if (host == null) {
+            host = Try.of(() -> APILocator.getHostAPI().findSystemHost()).getOrNull();
         }
-            
 
-        ContentType dotAssetType = getDotAssetLikeContentType("dotAsset" + UUIDGenerator.shorty(), host);
+        ContentType dotAssetType = getDotAssetLikeContentType("dotAsset" + UUIDGenerator.shorty(),
+                host);
 
-        
-        
         URL url = FocalPointAPITest.class.getResource("/images/test.jpg");
 
         File testImage = new File(url.getFile());
-        
-        
+
         ContentletDataGen contentletDataGen = new ContentletDataGen(dotAssetType.id())
-                        .languageId(languageId)
-                        .setProperty("asset", testImage)
-                        .setProperty("hostFolder", folder!=null ? folder.getInode() : host.getIdentifier())
-                        .setProperty("tags", "tag1, tag2");
-                        
-        
-        if(folder!=null) {
+                .languageId(languageId)
+                .setProperty("asset", testImage)
+                .setProperty("hostFolder",
+                        folder != null ? folder.getInode() : host.getIdentifier())
+                .setProperty("tags", "tag1, tag2");
+
+        if (folder != null) {
             contentletDataGen.folder(folder);
         }
-        if(host!=null) {
+        if (host != null) {
             contentletDataGen.host(host);
         }
-        
+
         return contentletDataGen.nextPersisted();
 
 
-
     }
-    
-    
+
+
     @WrapInTransaction
     public static ContentType getDotAssetLikeContentType(final String contentTypeVar,
-                    final Host host) {
+            final Host host) {
 
-
-
-        ContentType dotAssetType = Try.of(()->APILocator.getContentTypeAPI(APILocator.systemUser())
+        ContentType dotAssetType = Try.of(
+                () -> APILocator.getContentTypeAPI(APILocator.systemUser())
                         .find(contentTypeVar)).getOrNull();
 
-            if (dotAssetType == null) {
-                ContentTypeDataGen dataGen = new ContentTypeDataGen()
-                                .name(contentTypeVar)
-                                .host(host)
-                                .velocityVarName(contentTypeVar)
-                                .baseContentType(BaseContentType.DOTASSET);
+        if (dotAssetType == null) {
+            ContentTypeDataGen dataGen = new ContentTypeDataGen()
+                    .name(contentTypeVar)
+                    .host(host)
+                    .velocityVarName(contentTypeVar)
+                    .baseContentType(BaseContentType.DOTASSET);
 
-                if(host!=null) {
-                    dataGen.host(host);
-                }
-                dotAssetType = dataGen.nextPersisted();
+            if (host != null) {
+                dataGen.host(host);
             }
-
+            dotAssetType = dataGen.nextPersisted();
+        }
 
         return dotAssetType;
     }
@@ -618,7 +632,8 @@ public class TestDataUtils {
     }
 
     @WrapInTransaction
-    public static ContentType getRichTextLikeContentType(final String contentTypeName, final Set<String> workflowIds) {
+    public static ContentType getRichTextLikeContentType(final String contentTypeName,
+            final Set<String> workflowIds) {
 
         ContentType richTextLike = null;
         try {
@@ -675,56 +690,58 @@ public class TestDataUtils {
      * @param contentTypeName The name of the test Content Type.
      * @param site            The Site where this Content Type will live in.
      * @param workflowIds     The workflows assigned to this type. This can be null.
-     *
      * @return The new test Content Type.
      */
     @WrapInTransaction
-    public static ContentType getWysiwygLikeContentType(final String contentTypeName, final Host site,
-                                                        final Set<String> workflowIds) {
+    public static ContentType getWysiwygLikeContentType(final String contentTypeName,
+            final Host site,
+            final Set<String> workflowIds) {
         ContentType wysiwygType = Try.of(() -> APILocator.getContentTypeAPI(APILocator.systemUser())
-                                                       .find(contentTypeName)).getOrNull();
+                .find(contentTypeName)).getOrNull();
         try {
             if (wysiwygType == null) {
                 final List<com.dotcms.contenttype.model.field.Field> fields = new ArrayList<>();
                 if (null != site) {
                     fields.add(new FieldDataGen()
-                                       .sortOrder(1)
-                                       .name("Site or Folder")
-                                       .velocityVarName("hostfolder")
-                                       .required(Boolean.TRUE)
-                                       .type(HostFolderField.class).next());
+                            .sortOrder(1)
+                            .name("Site or Folder")
+                            .velocityVarName("hostfolder")
+                            .required(Boolean.TRUE)
+                            .type(HostFolderField.class).next());
                 }
                 fields.add(new FieldDataGen()
-                                   .sortOrder(2)
-                                   .name("Title")
-                                   .velocityVarName("title").next());
+                        .sortOrder(2)
+                        .name("Title")
+                        .velocityVarName("title").next());
                 fields.add(new FieldDataGen()
-                                   .sortOrder(3)
-                                   .name("Description")
-                                   .velocityVarName("description")
-                                   .type(WysiwygField.class).next());
+                        .sortOrder(3)
+                        .name("Description")
+                        .velocityVarName("description")
+                        .type(WysiwygField.class).next());
                 final ContentTypeDataGen contentTypeDataGen = new ContentTypeDataGen()
-                                                                .name(contentTypeName)
-                                                                .velocityVarName(contentTypeName)
-                                                                .workflowId(workflowIds)
-                                                                .fields(fields);
+                        .name(contentTypeName)
+                        .velocityVarName(contentTypeName)
+                        .workflowId(workflowIds)
+                        .fields(fields);
                 if (null != site) {
                     contentTypeDataGen.host(site);
                 }
                 wysiwygType = contentTypeDataGen.nextPersisted();
             }
         } catch (final Exception e) {
-            throw new DotRuntimeException(String.format("Error creating test type '%s'", contentTypeName), e);
+            throw new DotRuntimeException(
+                    String.format("Error creating test type '%s'", contentTypeName), e);
         }
         return wysiwygType;
     }
-    
+
     public static ContentType getWikiLikeContentType() {
         return getWikiLikeContentType("Wiki" + System.currentTimeMillis(), null);
     }
 
     @WrapInTransaction
-    public static ContentType getWikiLikeContentType(final String contentTypeName, final Set<String> workflowIds) {
+    public static ContentType getWikiLikeContentType(final String contentTypeName,
+            final Set<String> workflowIds) {
 
         ContentType wikiType = null;
         try {
@@ -789,7 +806,8 @@ public class TestDataUtils {
     }
 
     @WrapInTransaction
-    public static ContentType getWidgetLikeContentType(final String contentTypeName, final Set<String> workflowIds) {
+    public static ContentType getWidgetLikeContentType(final String contentTypeName,
+            final Set<String> workflowIds) {
 
         ContentType simpleWidgetContentType = null;
         try {
@@ -830,7 +848,8 @@ public class TestDataUtils {
     }
 
     @WrapInTransaction
-    public static ContentType getFormLikeContentType(final String contentTypeName, final Set<String> workflowIds) {
+    public static ContentType getFormLikeContentType(final String contentTypeName,
+            final Set<String> workflowIds) {
 
         ContentType formContentType = null;
         try {
@@ -857,11 +876,12 @@ public class TestDataUtils {
     }
 
     public static ContentType getFormWithRequiredFieldsLikeContentType() {
-            return getFormWithRequiredFieldsLikeContentType("Form" + System.currentTimeMillis(), null);
+        return getFormWithRequiredFieldsLikeContentType("Form" + System.currentTimeMillis(), null);
     }
 
     @WrapInTransaction
-    public static ContentType getFormWithRequiredFieldsLikeContentType(final String contentTypeName, Set<String> workFlowsId) {
+    public static ContentType getFormWithRequiredFieldsLikeContentType(final String contentTypeName,
+            Set<String> workFlowsId) {
 
         ContentType formContentType = null;
         try {
@@ -1052,7 +1072,8 @@ public class TestDataUtils {
             return relationship;
         } else {
             relationship = new Relationship();
-            if ((parentContentType == childContentType) || (parentContentType.id().equals(childContentType.id()))) {
+            if ((parentContentType == childContentType) || (parentContentType.id()
+                    .equals(childContentType.id()))) {
                 relationship.setParentRelationName("Child " + parentContentType.name());
                 relationship.setChildRelationName("Parent " + childContentType.name());
             } else {
@@ -1079,7 +1100,8 @@ public class TestDataUtils {
         return getFileAssetContent(persist, languageId, TestFile.SVG);
     }
 
-    public static Contentlet getFileAssetContent(final Boolean persist, final long languageId, final TestFile testFile) {
+    public static Contentlet getFileAssetContent(final Boolean persist, final long languageId,
+            final TestFile testFile) {
 
         try {
             final Folder folder = new FolderDataGen().nextPersisted();
@@ -1112,7 +1134,8 @@ public class TestDataUtils {
         }
     }
 
-    private static Contentlet createFileAsset(final String testImagePath, final Folder folder, final long languageId, final boolean persist) throws Exception{
+    private static Contentlet createFileAsset(final String testImagePath, final Folder folder,
+            final long languageId, final boolean persist) throws Exception {
         //Test file
         final String extension = UtilMethods.getFileExtension(testImagePath);
         final File originalTestImage = new File(
@@ -1224,7 +1247,7 @@ public class TestDataUtils {
     }
 
     public static Contentlet getNewsContent(Boolean persist, long languageId,
-                                            String contentTypeId, Host site) {
+            String contentTypeId, Host site) {
         return getNewsContent(persist, languageId, contentTypeId, site, new Date());
     }
 
@@ -1276,7 +1299,7 @@ public class TestDataUtils {
 
     public static Contentlet getPageContent(Boolean persist, long languageId) {
 
-        return getPageContent(persist,languageId, null);
+        return getPageContent(persist, languageId, null);
     }
 
     public static Contentlet getPageContent(Boolean persist, long languageId, Folder folder) {
@@ -1290,15 +1313,15 @@ public class TestDataUtils {
             Template template = new TemplateDataGen().withContainer(container.getIdentifier())
                     .nextPersisted();
 
-            if(null == folder) {
-               final Host defaultHost = APILocator.getHostAPI()
-                       .findDefaultHost(APILocator.systemUser(), false);
-               final User systemUser = APILocator.systemUser();
+            if (null == folder) {
+                final Host defaultHost = APILocator.getHostAPI()
+                        .findDefaultHost(APILocator.systemUser(), false);
+                final User systemUser = APILocator.systemUser();
 
-               //Create the html page
-               folder = APILocator.getFolderAPI()
-                       .createFolders("/folder" + System.currentTimeMillis() + "/",
-                               defaultHost, systemUser, false);
+                //Create the html page
+                folder = APILocator.getFolderAPI()
+                        .createFolders("/folder" + System.currentTimeMillis() + "/",
+                                defaultHost, systemUser, false);
             }
             ContentletDataGen contentletDataGen = new HTMLPageDataGen(folder, template)
                     .languageId(languageId);
@@ -1329,16 +1352,18 @@ public class TestDataUtils {
     }
 
     public static ContentType getDocumentLikeContentType() {
-       return getDocumentLikeContentType("Document" + System.currentTimeMillis(), null);
+        return getDocumentLikeContentType("Document" + System.currentTimeMillis(), null);
     }
 
     @WrapInTransaction
-    public static ContentType getDocumentLikeContentType(final String contentTypeName, Set<String> workflowIds) {
+    public static ContentType getDocumentLikeContentType(final String contentTypeName,
+            Set<String> workflowIds) {
 
         ContentType simpleWidgetContentType = null;
         try {
             try {
-                simpleWidgetContentType = APILocator.getContentTypeAPI(APILocator.systemUser()).find(contentTypeName);
+                simpleWidgetContentType = APILocator.getContentTypeAPI(APILocator.systemUser())
+                        .find(contentTypeName);
             } catch (NotFoundInDbException e) {
                 //Do nothing...
             }
@@ -1347,8 +1372,8 @@ public class TestDataUtils {
                 final WorkflowScheme documentWorkflow = TestWorkflowUtils.getDocumentWorkflow();
                 final Set<String> collectedWorkflowIds = new HashSet<>();
                 collectedWorkflowIds.add(documentWorkflow.getId());
-                if(null != workflowIds){
-                   collectedWorkflowIds.addAll(workflowIds);
+                if (null != workflowIds) {
+                    collectedWorkflowIds.addAll(workflowIds);
                 }
 
                 List<com.dotcms.contenttype.model.field.Field> fields = new ArrayList<>();
@@ -1467,7 +1492,8 @@ public class TestDataUtils {
     }
 
 
-    public static ContentType getBannerLikeContentType(final String contentTypeName, final Host site) {
+    public static ContentType getBannerLikeContentType(final String contentTypeName,
+            final Host site) {
         return getBannerLikeContentType(contentTypeName, site, null);
     }
 
@@ -1617,8 +1643,9 @@ public class TestDataUtils {
         }
     }
 
-    public static ContentType getProductLikeContentType(){
-        return  getProductLikeContentType("Product" + System.currentTimeMillis(), APILocator.systemHost(),null);
+    public static ContentType getProductLikeContentType() {
+        return getProductLikeContentType("Product" + System.currentTimeMillis(),
+                APILocator.systemHost(), null);
     }
 
     @WrapInTransaction
@@ -1772,8 +1799,9 @@ public class TestDataUtils {
     }
 
 
-    public static ContentType getYoutubeLikeContentType(){
-        return  getYoutubeLikeContentType("Youtube" + System.currentTimeMillis(), APILocator.systemHost(),null);
+    public static ContentType getYoutubeLikeContentType() {
+        return getYoutubeLikeContentType("Youtube" + System.currentTimeMillis(),
+                APILocator.systemHost(), null);
     }
 
     @WrapInTransaction
@@ -1925,16 +1953,18 @@ public class TestDataUtils {
                 newsPatternPrefix + "{urlTitle}");
 
         return getNewsContent(true, languageId,
-                        newsContentType.id(), host, sysPublishDate);
+                newsContentType.id(), host, sysPublishDate);
     }
 
     public static ContentType getMultipleBinariesContentType() {
-        return getMultipleBinariesContentType("MultipleBinaries" + System.currentTimeMillis(), APILocator.systemHost(),null);
+        return getMultipleBinariesContentType("MultipleBinaries" + System.currentTimeMillis(),
+                APILocator.systemHost(), null);
     }
 
     /**
-     * This will give you a CT that has 3 non-required binaries.
-     * The default metadata generated gets removed.
+     * This will give you a CT that has 3 non-required binaries. The default metadata generated gets
+     * removed.
+     *
      * @param contentTypeName
      * @param site
      * @param workflowIds
@@ -2018,7 +2048,6 @@ public class TestDataUtils {
                                 .next()
                 );
 
-
                 final ContentTypeDataGen contentTypeDataGen = new ContentTypeDataGen()
                         .name(contentTypeName)
                         .velocityVarName(contentTypeName)
@@ -2066,34 +2095,34 @@ public class TestDataUtils {
     }
 
     private static Contentlet persistBinaries(final Boolean persist, final long languageId,
-            final String contentTypeId, final Map<String, Object> files ) {
+            final String contentTypeId, final Map<String, Object> files) {
         try {
 
             final ContentletDataGen contentletDataGen = new ContentletDataGen(contentTypeId)
                     .languageId(languageId)
                     .setProperty("title", "blah");
 
-                   files.forEach((fileName, file) ->{
-                               try {
-                                     if(file instanceof TestFile) {
-                                         final TestFile testFile = (TestFile) file;
-                                         contentletDataGen.setProperty(fileName, nextBinaryFile(testFile));
-                                     } else {
-                                         contentletDataGen.setProperty(fileName, file);
-                                     }
+            files.forEach((fileName, file) -> {
+                        try {
+                            if (file instanceof TestFile) {
+                                final TestFile testFile = (TestFile) file;
+                                contentletDataGen.setProperty(fileName, nextBinaryFile(testFile));
+                            } else {
+                                contentletDataGen.setProperty(fileName, file);
+                            }
 
-                               } catch (Exception e) {
-                                   Logger.error(TestDataUtils.class,e);
-                               }
-                           }
-                   );
+                        } catch (Exception e) {
+                            Logger.error(TestDataUtils.class, e);
+                        }
+                    }
+            );
 
             if (persist) {
                 final Contentlet persisted = contentletDataGen.nextPersisted();
                 files.forEach((fileName, testFile) -> {
                     final Object file = persisted.get(fileName);
-                    if(file instanceof File) {
-                        removeAnyMetadata((File)file);
+                    if (file instanceof File) {
+                        removeAnyMetadata((File) file);
                     }
                 });
                 return persisted;
@@ -2107,12 +2136,14 @@ public class TestDataUtils {
 
     /**
      * This will use one of the internal test-files to generate a temp copy
+     *
      * @param testFile
      * @return
      * @throws IOException
      * @throws URISyntaxException
      */
-    public static File nextBinaryFile(final TestFile testFile) throws IOException, URISyntaxException {
+    public static File nextBinaryFile(final TestFile testFile)
+            throws IOException, URISyntaxException {
         final String testImagePath = testFile.filePath;
         final String ext = UtilMethods.getFileExtension(testImagePath);
         final File originalTestImage = new File(
@@ -2124,16 +2155,18 @@ public class TestDataUtils {
     }
 
     /**
-     * Test data's generated with medata. This removes it.
-     * For the new Api to be able to generate new
+     * Test data's generated with medata. This removes it. For the new Api to be able to generate
+     * new
+     *
      * @param binary
      */
-    public static void removeAnyMetadata(final File binary){
+    public static void removeAnyMetadata(final File binary) {
         final File immediateParent = new File(binary.getParent());
         //delete any previously generated json
         final File[] files = new File(immediateParent.getParent()).listFiles();
-        if(null != files){
-            final List<File> jsonFiles = Stream.of(files).filter(file -> file.getName().endsWith("json"))
+        if (null != files) {
+            final List<File> jsonFiles = Stream.of(files)
+                    .filter(file -> file.getName().endsWith("json"))
                     .collect(Collectors.toList());
             jsonFiles.forEach(file -> file.delete());
         }
@@ -2141,28 +2174,36 @@ public class TestDataUtils {
 
 
     public static ContentType newContentTypeFieldTypesGalore() {
-        final String contentTypeName = String.format("WithAllAvailableFieldTypes%s",System.nanoTime());
-        return newContentTypeFieldTypesGalore(contentTypeName,null);
+        final String contentTypeName = String.format("WithAllAvailableFieldTypes%s",
+                System.nanoTime());
+        return newContentTypeFieldTypesGalore(contentTypeName, null);
     }
 
     public static ContentType newContentTypeFieldTypesGalore(final Category parent) {
-        final String contentTypeName = String.format("WithAllAvailableFieldTypes%s",System.nanoTime());
-        return newContentTypeFieldTypesGalore(contentTypeName,null, parent);
+        final String contentTypeName = String.format("WithAllAvailableFieldTypes%s",
+                System.nanoTime());
+        return newContentTypeFieldTypesGalore(contentTypeName, null, parent);
     }
 
-    public static ContentType newContentTypeFieldTypesGalore(final String contentTypeName, final Set<String> workflowIds) {
+    public static ContentType newContentTypeFieldTypesGalore(final String contentTypeName,
+            final Set<String> workflowIds) {
         final CategoryAPI categoryAPI = APILocator.getCategoryAPI();
-        final Optional<Category> anyTopLevelCategory = Try.of(()->categoryAPI.findTopLevelCategories(APILocator.systemUser(), false).stream().findAny()).get();
-        return newContentTypeFieldTypesGalore(contentTypeName,workflowIds, anyTopLevelCategory.orElse(null));
+        final Optional<Category> anyTopLevelCategory = Try.of(
+                () -> categoryAPI.findTopLevelCategories(APILocator.systemUser(), false).stream()
+                        .findAny()).get();
+        return newContentTypeFieldTypesGalore(contentTypeName, workflowIds,
+                anyTopLevelCategory.orElse(null));
     }
 
     @WrapInTransaction
-    public static ContentType newContentTypeFieldTypesGalore(final String contentTypeName, Set<String> workflowIds, final Category parent) {
+    public static ContentType newContentTypeFieldTypesGalore(final String contentTypeName,
+            Set<String> workflowIds, final Category parent) {
 
         ContentType contentType = null;
         try {
             try {
-                contentType = APILocator.getContentTypeAPI(APILocator.systemUser()).find(contentTypeName);
+                contentType = APILocator.getContentTypeAPI(APILocator.systemUser())
+                        .find(contentTypeName);
             } catch (NotFoundInDbException e) {
                 //Do nothing...
             }
@@ -2171,7 +2212,7 @@ public class TestDataUtils {
                 final WorkflowScheme systemWorkflow = TestWorkflowUtils.getSystemWorkflow();
                 final Set<String> collectedWorkflowIds = new HashSet<>();
                 collectedWorkflowIds.add(systemWorkflow.getId());
-                if(null != workflowIds){
+                if (null != workflowIds) {
                     collectedWorkflowIds.addAll(workflowIds);
                 }
 
@@ -2325,7 +2366,7 @@ public class TestDataUtils {
                 );
 
                 //Category field
-                if(null != parent) {
+                if (null != parent) {
                     fields.add(new FieldDataGen()
                             .name("categoryField")
                             .velocityVarName("categoryField")
@@ -2358,19 +2399,21 @@ public class TestDataUtils {
     }
 
     @WrapInTransaction
-    public static ContentType newContentTypeWithMultipleCategoryFields(final String contentTypeName, Set<String> workflowIds, final List<Category> parents) {
+    public static ContentType newContentTypeWithMultipleCategoryFields(final String contentTypeName,
+            Set<String> workflowIds, final List<Category> parents) {
 
         ContentType contentType;
         try {
 
-            contentType = Try.of(()->APILocator.getContentTypeAPI(APILocator.systemUser()).find(contentTypeName)).getOrNull();
+            contentType = Try.of(() -> APILocator.getContentTypeAPI(APILocator.systemUser())
+                    .find(contentTypeName)).getOrNull();
 
             if (contentType == null) {
 
                 final WorkflowScheme systemWorkflow = TestWorkflowUtils.getSystemWorkflow();
                 final Set<String> collectedWorkflowIds = new HashSet<>();
                 collectedWorkflowIds.add(systemWorkflow.getId());
-                if(null != workflowIds){
+                if (null != workflowIds) {
                     collectedWorkflowIds.addAll(workflowIds);
                 }
 
@@ -2387,13 +2430,13 @@ public class TestDataUtils {
 
                 //Category field
                 int i = 0;
-                for(Category parent:parents){
-                    final String name = "categoryField"+i;
+                for (Category parent : parents) {
+                    final String name = "categoryField" + i;
                     fields.add(new FieldDataGen()
-                          .name(name)
-                          .velocityVarName(name)
-                          .type(CategoryField.class)
-                          .values(parent.getInode()).next());
+                            .name(name)
+                            .velocityVarName(name)
+                            .type(CategoryField.class)
+                            .values(parent.getInode()).next());
                     i++;
                 }
 
@@ -2414,11 +2457,13 @@ public class TestDataUtils {
 
     /**
      * This method creates a parent category and a couple of child categories.
+     *
      * @return the parent category
      */
-    public static Category createCategories(){
+    public static Category createCategories() {
 
-        final String parentCategoryName = String.format("Parent-Category-[%d]", System.currentTimeMillis());
+        final String parentCategoryName = String.format("Parent-Category-[%d]",
+                System.currentTimeMillis());
         final Category parentCategory = new CategoryDataGen()
                 .setCategoryName(parentCategoryName)
                 .setKey(parentCategoryName + "Key")
@@ -2426,8 +2471,9 @@ public class TestDataUtils {
                 .setSortOrder(1)
                 .nextPersisted();
 
-        for(int i=0; i<=2; i++) {
-            final String childCategoryName = String.format("Child-Category-[%d]-[%d]", i, System.currentTimeMillis());
+        for (int i = 0; i <= 2; i++) {
+            final String childCategoryName = String.format("Child-Category-[%d]-[%d]", i,
+                    System.currentTimeMillis());
 
             new CategoryDataGen()
                     .setCategoryName(childCategoryName)
@@ -2439,6 +2485,28 @@ public class TestDataUtils {
         }
 
         return parentCategory;
+    }
+
+    /**
+     * This method waits for the reindex queue to be empty.
+     *
+     * @return the parent category
+     */
+    public static boolean waitForEmptyQueue() {
+        final ReindexQueueAPI reindexQueueAPI = APILocator.getReindexQueueAPI();
+        try {
+            Awaitility.await().atMost(120, TimeUnit.SECONDS)
+                    .pollInterval(1, TimeUnit.SECONDS)
+                    .until(reindexQueueAPI::areRecordsLeftToIndex, equalTo(false));
+            return true;
+        } catch (ConditionTimeoutException e) {
+            Logger.warn(TestWorkflowUtils.class, "Reindex Queue is not empty after 120 seconds");
+            return false;
+        }
+    }
+
+    public static void assertEmptyQueue() {
+        Assert.assertTrue("Queue should be empty", waitForEmptyQueue());
     }
 
 }

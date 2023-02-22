@@ -5,6 +5,7 @@ import com.dotcms.analytics.metrics.Condition;
 import com.dotcms.analytics.metrics.Metric;
 import com.dotcms.analytics.metrics.MetricType;
 import com.dotcms.cache.DotJSONCacheAddTestCase;
+import com.dotcms.experiments.model.AbstractExperiment.Status;
 import com.dotcms.experiments.model.Experiment;
 import com.dotcms.experiments.model.Experiment.Builder;
 import com.dotcms.experiments.model.Goals;
@@ -35,6 +36,8 @@ public class ExperimentDataGen  extends AbstractDataGen<Experiment> {
     private User user = APILocator.systemUser();
     private List<TargetingCondition> targetingConditions = new ArrayList<>();
     private Scheduling scheduling;
+
+    private Status status = Status.DRAFT;
 
     private Goals goal;
 
@@ -68,6 +71,11 @@ public class ExperimentDataGen  extends AbstractDataGen<Experiment> {
         return this;
     }
 
+    public ExperimentDataGen status(final Status status) {
+        this.status = status;
+        return this;
+    }
+
     @Override
     public Experiment next() {
         final String innerName = UtilMethods.isSet(name) ? name : getRandomName();
@@ -84,7 +92,8 @@ public class ExperimentDataGen  extends AbstractDataGen<Experiment> {
                 .lastModifiedBy(user.getUserId())
                 .pageId(page.getIdentifier())
                 .goals(innerGoal)
-                .trafficAllocation(trafficAllocation);
+                .trafficAllocation(trafficAllocation)
+                .status(status);
 
         return UtilMethods.isSet(scheduling) ? experimentBuilder.scheduling(scheduling).build() :
                 experimentBuilder.build();
