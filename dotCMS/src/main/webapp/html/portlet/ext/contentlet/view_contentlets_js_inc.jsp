@@ -1,6 +1,7 @@
 <%@page import="com.dotcms.enterprise.LicenseUtil"%>
 <%@page import="com.dotcms.enterprise.license.LicenseLevel" %>
 <%@page import="com.dotcms.repackage.javax.portlet.WindowState"%>
+<%@page import="com.dotmarketing.util.Config"%>
 <%@page import="com.dotmarketing.business.APILocator"%>
 <%@page import="com.dotmarketing.business.PermissionAPI"%>
 <%@page import="com.dotmarketing.business.Role"%>
@@ -11,9 +12,7 @@
 <%@page import="java.util.List"%>
 <%@ page import="io.vavr.control.Try" %>
 
-
 <script language="JavaScript"><!--
-
 
 <%boolean canReindex= APILocator.getRoleAPI().doesUserHaveRole(user,APILocator.getRoleAPI().loadRoleByKey(Role.CMS_POWER_USER))|| com.dotmarketing.business.APILocator.getRoleAPI().doesUserHaveRole(user,com.dotmarketing.business.APILocator.getRoleAPI().loadCMSAdminRole());%>
 
@@ -58,6 +57,7 @@ final String calendarEventInode = null!=calendarEventSt ? calendarEventSt.inode(
         var cbContentInodeList = new Array();
         var totalContents = 0;
         var perPage = <%= com.dotmarketing.util.Config.getIntProperty("PER_PAGE") %>;
+        var showVideoThumbnail = <%= Config.getBooleanProperty("SHOW_VIDEO_THUMBNAIL", true) %>
         var headerLength = 0;
         var headers;
         var userRolesIds = new Array ();
@@ -1859,6 +1859,7 @@ final String calendarEventInode = null!=calendarEventSt ? calendarEventSt.inode(
           }
 
           viewCard.items = content;
+          viewCard.showVideoThumbnail = showVideoThumbnail;
         };
 
 		function openEditModal(data){

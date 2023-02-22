@@ -62,7 +62,7 @@ describe('DotExperimentsConfigurationVariantsAddComponent', () => {
         let formValuesOutput;
 
         const formValues = {
-            name: 'name'
+            description: 'name'
         };
 
         spectator.component.form.setValue(formValues);
@@ -83,7 +83,7 @@ describe('DotExperimentsConfigurationVariantsAddComponent', () => {
 
     it('should disable submit button if the form is invalid', () => {
         const invalidFormValues = {
-            name: ''
+            description: ''
         };
 
         spectator.component.form.setValue(invalidFormValues);

@@ -1,0 +1,101 @@
+@use "variables" as *;
+
+::ng-deep {
+    .p-panel-toggleable {
+        border: 1px solid $gray-lighter;
+
+        &.p-panel-expanded {
+            border-color: $white;
+        }
+    }
+
+    .p-panel-header {
+        font-size: $font-size-x-large;
+        margin: $spacing-1 0;
+        padding: $spacing-3 0;
+        position: relative;
+
+        .p-panel-icons span {
+            color: $brand-primary;
+            font-size: $font-size-x-large;
+            margin-left: $spacing-1;
+            margin-right: $spacing-2;
+        }
+    }
+
+    .dot-pages-panel-action__button {
+        display: none;
+        position: absolute;
+        right: $spacing-3;
+        top: $spacing-1;
+
+        span.p-button-label {
+            font-size: $font-size-medium;
+        }
+    }
+
+    .p-panel-expanded .dot-pages-panel-action__button {
+        display: block;
+        position: absolute;
+    }
+
+    .p-toggleable-content .p-panel-content {
+        column-gap: $spacing-4;
+        row-gap: $spacing-4;
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+        height: 266px;
+        overflow: hidden;
+        position: relative;
+    }
+
+    .dot-pages-panel__expanded .p-toggleable-content .p-panel-content {
+        overflow: unset;
+        height: unset;
+    }
+
+    .dot-pages-panel__empty-state .p-toggleable-content .p-panel-content {
+        height: 250px;
+    }
+
+    .dot-pages-panel__empty-state .p-toggleable-content .p-panel-content {
+        max-width: 1280px;
+        overflow: hidden;
+    }
+
+    dot-pages-card,
+    dot-pages-card-empty {
+        min-height: 250px;
+
+        p-card {
+            cursor: pointer;
+        }
+    }
+
+    .dot-pages-empty__container {
+        align-items: center;
+        display: flex;
+        flex-direction: column;
+        left: 0;
+        margin-left: auto;
+        margin-right: auto;
+        position: absolute;
+        right: 0;
+        top: 45px;
+        width: max-content;
+
+        dot-icon {
+            color: $brand-primary;
+            margin-bottom: $spacing-3;
+        }
+    }
+}
+
+.dot-pages-empty__header {
+    font-size: large;
+}
+
+p-panel {
+    display: block;
+    margin-bottom: $spacing-5;
+}

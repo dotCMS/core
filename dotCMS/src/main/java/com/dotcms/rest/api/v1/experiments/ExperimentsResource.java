@@ -318,7 +318,7 @@ public class ExperimentsResource {
         final InitDataObject initData = getInitData(request, response);
         final User user = initData.getUser();
         final Experiment updatedExperiment =  experimentsAPI.addVariant(experimentId,
-                addVariantForm.getName(), user);
+                addVariantForm.getDescription(), user);
         return new ResponseEntitySingleExperimentView(updatedExperiment);
     }
 

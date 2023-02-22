@@ -3,6 +3,7 @@
 package com.dotmarketing.startup.runonce;
 
 import com.dotcms.business.CloseDBIfOpened;
+import com.dotcms.business.WrapInTransaction;
 import com.dotcms.util.CollectionsUtils;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.common.db.DotDatabaseMetaData;
@@ -55,6 +56,7 @@ public class Task05160MultiTreeAddPersonalizationColumnAndChangingPK extends Abs
     }
 
     @Override
+    @WrapInTransaction
     public void executeUpgrade() throws DotDataException {
 
         if (DbConnectionFactory.isMsSql() && !DbConnectionFactory.getAutoCommit()) {

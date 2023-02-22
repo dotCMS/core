@@ -24,7 +24,7 @@ import { TextAlign } from '@tiptap/extension-text-align';
 import { Underline } from '@tiptap/extension-underline';
 import StarterKit, { StarterKitOptions } from '@tiptap/starter-kit';
 
-import { CustomBlock } from '@dotcms/dotcms-models';
+import { RemoteCustomExtentions, EDITOR_MARKETING_KEYS } from '@dotcms/dotcms-models';
 
 import {
     ActionsMenu,
@@ -42,7 +42,12 @@ import {
     ImageUpload
 } from '../../extensions';
 import { ContentletBlock, ImageNode, VideoNode } from '../../nodes';
-import { formatHTML, removeInvalidNodes, SetDocAttrStep } from '../../shared/utils';
+import {
+    formatHTML,
+    removeInvalidNodes,
+    SetDocAttrStep,
+    DotMarketingConfigService
+} from '../../shared';
 
 function toTitleCase(str) {
     return str.replace(/\p{L}+('\p{L}+)?/gu, function (txt) {
@@ -63,6 +68,12 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy {
     @Input() charLimit: number;
     @Input() customBlocks: string;
     @Input() content: Content = '';
+    @Input() set showVideoThumbnail(value) {
+        this.dotMarketingConfigService.setProperty(
+            EDITOR_MARKETING_KEYS.SHOW_VIDEO_THUMBNAIL,
+            value
+        );
+    }
 
     @Input() set allowedBlocks(blocks: string) {
         const allowedBlocks = blocks ? blocks.replace(/ /g, '').split(',').filter(Boolean) : [];
@@ -112,22 +123,26 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy {
         return Math.ceil(this.characterCount.words() / 265);
     }
 
-    constructor(private injector: Injector, public viewContainerRef: ViewContainerRef) {}
+    constructor(
+        private injector: Injector,
+        public viewContainerRef: ViewContainerRef,
+        private dotMarketingConfigService: DotMarketingConfigService
+    ) {}
 
     async loadCustomBlocks(urls: string[]) {
         return Promise.all(urls.map(async (url) => import(/* webpackIgnore: true */ url)));
     }
 
     ngOnInit() {
-        from(this.getCustomBlocks())
+        from(this.getCustomRemoteExtensions())
             .pipe(take(1))
-            .subscribe((nodes) => {
+            .subscribe((extensions) => {
                 this.editor = new Editor({
                     extensions: [
                         ...this.getEditorExtensions(),
                         ...this.getEditorMarks(),
                         ...this.getEditorNodes(),
-                        ...nodes
+                        ...extensions
                     ]
                 });
 
@@ -155,20 +170,27 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy {
         this.editor.view.dispatch(tr);
     }
 
+    private getParsedCustomBlocks(): RemoteCustomExtentions {
+        try {
+            return JSON.parse(this.customBlocks);
+        } catch (e) {
+            console.warn('JSON parse fails, please check the JSON format.', e);
+
+            return {
+                extensions: []
+            };
+        }
+    }
+
     /**
      * This methods get the customBlocks variable to retrieve the custom modules as Objects.
      * Validates that there is customBlocks defined.
+     * @private
+     * @return {*}  {Promise<AnyExtension[]>}
+     * @memberof DotBlockEditorComponent
      */
-
-    private async getCustomBlocks(): Promise<AnyExtension[]> {
-        let data: CustomBlock;
-        try {
-            data = JSON.parse(this.customBlocks);
-        } catch (e) {
-            console.warn('JSON parse fails, please check the JSON format.');
-
-            return [];
-        }
+    private async getCustomRemoteExtensions(): Promise<AnyExtension[]> {
+        const data: RemoteCustomExtentions = this.getParsedCustomBlocks();
 
         const extensionUrls = data.extensions.map((extension) => extension.url);
         const customModules = await this.loadCustomBlocks(extensionUrls);
@@ -187,7 +209,7 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy {
     }
 
     private getEditorNodes(): AnyExtension[] {
-        // If you have more than one allow block (other than the parragrph),
+        // If you have more than one allow block (other than the paragraph),
         // we customize the starterkit.
         const starterkit =
             this._allowedBlocks?.length > 1
@@ -272,7 +294,7 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy {
                 allowedBlocks: this._allowedBlocks
             }),
             Placeholder.configure({ placeholder: this.placeholder }),
-            ActionsMenu(this.viewContainerRef),
+            ActionsMenu(this.viewContainerRef, this.getParsedCustomBlocks()),
             DragHandler(this.viewContainerRef),
             ImageUpload(this.injector, this.viewContainerRef),
             BubbleLinkFormExtension(this.viewContainerRef),

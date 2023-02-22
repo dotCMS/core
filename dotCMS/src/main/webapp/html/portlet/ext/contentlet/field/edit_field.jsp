@@ -3,6 +3,7 @@
 <%@page import="com.dotmarketing.image.focalpoint.FocalPointAPIImpl"%>
 <%@page import="com.dotcms.enterprise.LicenseUtil"%>
 <%@page import="com.dotcms.enterprise.license.LicenseLevel"%>
+<%@page import="com.dotmarketing.util.Config"%>
 <%@page import="com.dotmarketing.business.APILocator"%>
 <%@page import="com.dotmarketing.business.PermissionAPI"%>
 <%@page import="com.dotmarketing.exception.DotSecurityException"%>
@@ -163,6 +164,7 @@
             String displayCountBar = "";
             String charLimit = "";
             String customBlocks = "";
+            Boolean showVideoThumbnail = Config.getBooleanProperty("SHOW_VIDEO_THUMBNAIL", true);
 
             // By default this is an empty JSON `{}`.
             JSONObject JSONValue = new JSONObject();
@@ -247,6 +249,8 @@
                     blockEditor.addEventListener('updateEditorEvent', (event) => {
                         field.value = event.detail;
                     });
+
+                    blockEditor.showVideoThumbnail = <%=showVideoThumbnail%>;
                 })();
 
             </script>
