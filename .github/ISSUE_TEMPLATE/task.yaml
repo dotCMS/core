@@ -15,7 +15,7 @@ body:
     id: parent-issue
     attributes:
       label: "Parent Issue"
-      description: "Please include a GitHub issue link to the parent issue."
+      description: "If this work is part of another epic or story, please please include a GitHub issue link to the parent issue."
       placeholder:
       value: 
     validations:
@@ -99,6 +99,16 @@ body:
       description: "List relevant assumptions, pre-requisite steps, or issues that need to be completed before this issue can be worked on."
       placeholder:
       value: 
+    validations:
+      required: false
+
+  - type: textarea
+    id: qa-note
+    attributes:
+      label: "Quality Assurance Notes & Workarounds"
+      description: ""
+      placeholder:
+      value:
     validations:
       required: false
 

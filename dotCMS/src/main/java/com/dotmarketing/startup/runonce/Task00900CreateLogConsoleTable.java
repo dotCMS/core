@@ -1,5 +1,6 @@
 package com.dotmarketing.startup.runonce;
 
+import com.dotcms.business.WrapInTransaction;
 import java.sql.SQLException;
 
 import com.dotmarketing.common.db.DotConnect;
@@ -15,7 +16,8 @@ public class Task00900CreateLogConsoleTable implements StartupTask {
 	public boolean forceRun() {
 		return true;
 	}
-
+	@Override
+	@WrapInTransaction
 	public void executeUpgrade() throws DotDataException, DotRuntimeException {
 		try {
 			DbConnectionFactory.getConnection().setAutoCommit(true);
