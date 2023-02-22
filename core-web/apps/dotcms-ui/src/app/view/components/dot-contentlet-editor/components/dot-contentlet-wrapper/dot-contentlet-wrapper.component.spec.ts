@@ -17,7 +17,7 @@ import { DotMenuService } from '@dotcms/app/api/services/dot-menu.service';
 import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
 import { DotUiColorsService } from '@dotcms/app/api/services/dot-ui-colors/dot-ui-colors.service';
 import { dotEventSocketURLFactory, MockDotUiColorsService } from '@dotcms/app/test/dot-test-bed';
-import { DotAlertConfirmService, DotMessageService } from '@dotcms/data-access';
+import { DotAlertConfirmService, DotEventsService, DotMessageService } from '@dotcms/data-access';
 import {
     CoreWebService,
     DotcmsConfigService,
@@ -64,6 +64,7 @@ describe('DotContentletWrapperComponent', () => {
                 DotContentletEditorService,
                 DotIframeService,
                 DotAlertConfirmService,
+                DotEventsService,
                 ConfirmationService,
                 DotcmsEventsService,
                 DotEventsSocket,

@@ -4,8 +4,16 @@ import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.content.model.FieldValueBuilder;
 import com.dotcms.contenttype.model.component.FieldFormRenderer;
 import com.dotcms.contenttype.model.component.FieldValueRenderer;
+import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.repackage.com.google.common.base.Preconditions;
 import com.dotmarketing.util.Logger;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.DatabindContext;
+import com.fasterxml.jackson.databind.JavaType;
+import com.fasterxml.jackson.databind.annotation.JsonTypeIdResolver;
+import com.fasterxml.jackson.databind.jsontype.BasicPolymorphicTypeValidator;
+import com.fasterxml.jackson.databind.jsontype.impl.ClassNameIdResolver;
+import com.fasterxml.jackson.databind.type.TypeFactory;
 import com.google.common.collect.ImmutableList;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.FactoryLocator;
@@ -16,6 +24,8 @@ import com.fasterxml.jackson.annotation.JsonSubTypes.Type;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.annotation.JsonTypeInfo.Id;
 import com.google.common.collect.ImmutableMap;
+
+import java.io.IOException;
 import java.io.Serializable;
 import java.util.*;
 
@@ -31,6 +41,7 @@ import org.immutables.value.Value.Derived;
 	include = JsonTypeInfo.As.PROPERTY,
 	property = "clazz"
 )
+@JsonTypeIdResolver(value = Field.ClassNameAliasResolver.class)
 @JsonSubTypes({
 	@Type(value = StoryBlockField.class),
     @Type(value = BinaryField.class),
@@ -319,4 +330,25 @@ public abstract class Field implements FieldIf, Serializable {
             .map(fieldVariable -> fieldVariable.value())
             .findFirst();
   }
+
+  static class ClassNameAliasResolver extends ClassNameIdResolver {
+    static TypeFactory typeFactory = TypeFactory.defaultInstance();
+    public ClassNameAliasResolver() {
+      super(typeFactory.constructType(new TypeReference<Field>() {
+              }), typeFactory,
+              BasicPolymorphicTypeValidator.builder().allowIfSubType(Field.class).build()
+      );
+    }
+
+    @Override
+    public JavaType typeFromId(final DatabindContext context, final String id) throws IOException {
+      final String packageName = Field.class.getPackageName();
+      if( !id.contains(".") && !id.startsWith(packageName)){
+        final String className = String.format("%s.Immutable%s",packageName,id);
+        return super.typeFromId(context, className);
+      }
+      return super.typeFromId(context, id);
+    }
+  }
+
 }

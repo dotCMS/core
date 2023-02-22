@@ -1,9 +1,11 @@
 package com.dotcms.rest.api.v1.page;
 
 import com.dotcms.content.elasticsearch.business.ESSearchResults;
+import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.ema.EMAWebInterceptor;
+import com.dotcms.exception.ExceptionUtil;
 import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.WebResource;
@@ -18,6 +20,7 @@ import com.dotcms.security.apps.AppsAPI;
 import com.dotcms.util.ConversionUtils;
 import com.dotcms.util.HttpRequestDataUtil;
 import com.dotcms.util.PaginationUtil;
+import com.dotcms.util.pagination.ContentTypesPaginator;
 import com.dotcms.util.pagination.OrderDirection;
 import com.dotcms.variant.VariantAPI;
 import com.dotmarketing.beans.Host;
@@ -47,10 +50,12 @@ import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
 import com.google.common.annotations.VisibleForTesting;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.liferay.portal.PortalException;
 import com.liferay.portal.SystemException;
 import com.liferay.portal.model.User;
+import com.liferay.util.StringPool;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.apache.commons.collections.keyvalue.MultiKey;
 import org.glassfish.jersey.server.JSONP;
@@ -84,6 +89,8 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
+
+import static com.liferay.util.StringPool.COMMA;
 
 /**
  * Provides different methods to access information about HTML Pages in dotCMS. For example,
@@ -954,4 +961,47 @@ public class PageResource {
         return new ResponseEntityView<>(new DotTransformerBuilder().defaultOptions().content(copiedContentlet).build()
                 .toMaps().stream().findFirst().orElse(Collections.emptyMap()));
     } // deepCopyPage.
+
+    /**
+     * Returns all content types associated to page (base type page + all content type with url map)
+     *
+     * @param originalRequest The {@link HttpServletRequest} object.
+     * @param response The {@link HttpServletResponse} object.
+     * @param page {@link Integer} number of pages
+     * @param perPage @{@link Integer} how many pages
+     * @param orderbyParam {@link String} order by (default title)
+     * @param direction {@link String} ASC
+     * @return All the content types that match
+     */
+    @NoCache
+    @GET
+    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    @Path("/types")
+    public Response getPageTypes(@Context final HttpServletRequest originalRequest,
+                             @Context final HttpServletResponse response,
+                             @DefaultValue("") @QueryParam(PaginationUtil.FILTER)   final String filter,
+                             @QueryParam(PaginationUtil.PAGE)     final int page,
+                             @QueryParam(PaginationUtil.PER_PAGE) final int perPage,
+                             @DefaultValue("UPPER(name)") @QueryParam(PaginationUtil.ORDER_BY) final String orderbyParam,
+                             @DefaultValue("ASC") @QueryParam(PaginationUtil.DIRECTION)  final String direction) throws DotSecurityException, DotDataException {
+
+        final InitDataObject auth = webResource.init(originalRequest, response, true);
+        final User user = auth.getUser();
+        final ContentTypeAPI contentTypeAPI = APILocator.getContentTypeAPI(user);
+
+        Logger.debug(this, ()-> "Getting page types, page: " +page + ",per page: " + perPage +
+                ",order by" + orderbyParam + ", direction: " + direction);
+
+
+        final List<ContentType> pageTypes    = contentTypeAPI.findByBaseType(BaseContentType.HTMLPAGE, "mod_date", 100, 0);
+        final List<String> typeVarNames = new ImmutableList.Builder<String>()
+                .addAll(pageTypes.stream().map(ContentType::variable).collect(Collectors.toList()))
+                .addAll(contentTypeAPI.findUrlMapped().stream().map(ContentType::variable).collect(Collectors.toList())).build();
+        final Map<String, Object> extraParams = new HashMap<>();
+        extraParams.put(ContentTypesPaginator.TYPES_PARAMETER_NAME, typeVarNames);
+            final PaginationUtil paginationUtil =
+                    new PaginationUtil(new ContentTypesPaginator(contentTypeAPI));
+        return paginationUtil.getPage(originalRequest, user, filter, page, perPage, orderbyParam,
+                    OrderDirection.valueOf(direction), extraParams);
+    }
 } // E:O:F:PageResource

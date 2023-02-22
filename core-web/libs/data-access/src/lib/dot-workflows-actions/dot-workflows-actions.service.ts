@@ -7,6 +7,11 @@ import { pluck } from 'rxjs/operators';
 import { CoreWebService } from '@dotcms/dotcms-js';
 import { DotCMSWorkflowAction, DotCMSWorkflow } from '@dotcms/dotcms-models';
 
+export enum DotRenderMode {
+    LISTING = 'LISTING',
+    EDITING = 'EDITING'
+}
+
 @Injectable()
 export class DotWorkflowsActionsService {
     constructor(private coreWebService: CoreWebService) {}
@@ -34,13 +39,16 @@ export class DotWorkflowsActionsService {
      * Returns the workflow actions of the passed inode
      *
      * @param {string} inode
+     * @param {DotRenderMode} [renderMode]
      * @returns {Observable<DotCMSWorkflowAction[]>}
      * @memberof DotWorkflowsActionsService
      */
-    getByInode(inode: string): Observable<DotCMSWorkflowAction[]> {
+    getByInode(inode: string, renderMode?: DotRenderMode): Observable<DotCMSWorkflowAction[]> {
+        const renderModeQuery = renderMode ? `?renderMode=${renderMode}` : '';
+
         return this.coreWebService
             .requestView({
-                url: `v1/workflow/contentlet/${inode}/actions`
+                url: `v1/workflow/contentlet/${inode}/actions${renderModeQuery}`
             })
             .pipe(pluck('entity'));
     }
