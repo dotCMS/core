@@ -318,8 +318,8 @@ public class CategoriesResource {
                     "Category with idOrKey: " + idOrKey + " does not exist");
         }
 
-        return showChildrenCount ? Response.ok(new ResponseEntityView(this.categoryHelper.toCategoryWithChildCountView(category, user))).build() :
-                Response.ok(new ResponseEntityView(this.categoryHelper.toCategoryView(category, user))).build();
+        return showChildrenCount ? Response.ok(new ResponseEntityView<CategoryWithChildCountView>(this.categoryHelper.toCategoryWithChildCountView(category, user))).build() :
+                Response.ok(new ResponseEntityView<CategoryView>(this.categoryHelper.toCategoryView(category, user))).build();
     }
 
     /**
