@@ -41,7 +41,7 @@ public class LanguageDataGen extends AbstractDataGen<Language> {
     while(count>0) {
       country = RandomStringUtils.randomAlphabetic(10);
       language = RandomStringUtils.randomAlphabetic(10);
-      count = new DotConnect().setSQL("select count(*) as test from language where language_code=? and country_code=?").addParam(language.substring(0, 2)).addParam(country.substring(0,2)).getInt("test");
+      count = new DotConnect().setSQL("select count(*) as test from language where language_code=? or country_code=?").addParam(language.substring(0, 2)).addParam(country.substring(0,2)).getInt("test");
 
     }
     
