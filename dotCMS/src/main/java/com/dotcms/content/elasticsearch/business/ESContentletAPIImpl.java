@@ -39,6 +39,7 @@ import com.dotcms.rendering.velocity.services.PageLoader;
 import com.dotcms.rest.AnonymousAccess;
 import com.dotcms.rest.api.v1.temp.DotTempFile;
 import com.dotcms.rest.api.v1.temp.TempFileAPI;
+import com.dotcms.rest.exception.NotFoundException;
 import com.dotcms.storage.FileMetadataAPI;
 import com.dotcms.storage.model.Metadata;
 import com.dotcms.system.event.local.business.LocalSystemEventsAPI;
@@ -384,6 +385,28 @@ public class ESContentletAPIImpl implements ContentletAPI {
         }
     }
 
+    @CloseDBIfOpened
+    @Override
+    public Contentlet find(final String inode, final User user, final String variantName, final boolean respectFrontendRoles)
+        throws DotDataException, DotSecurityException {
+        final Contentlet contentlet = contentFactory.find(inode, variantName);
+        if (contentlet == null) {
+            return null;
+        }
+
+        if (this.permissionAPI.doesUserHavePermission(contentlet, PermissionAPI.PERMISSION_READ,
+                user,
+                respectFrontendRoles)) {
+            return contentlet;
+        } else {
+            final String userId = (user == null) ? "Unknown" : user.getUserId();
+            throw new DotSecurityException(
+                    String.format("User '%s' does not have READ permissions on %s", userId,
+                            ContentletUtil
+                                    .toShortString(contentlet)));
+        }
+    }
+
     @Override
     public Contentlet move(final Contentlet contentlet, final User user,
             final String hostAndFolderPath,
@@ -705,6 +728,21 @@ public class ESContentletAPIImpl implements ContentletAPI {
         try {
             return contentFactory.findContentletByIdentifierAnyLanguage(identifier);
 
+        } catch (Exception e) {
+            throw new DotContentletStateException("Can't find contentlet: " + identifier, e);
+        }
+    }
+
+    @CloseDBIfOpened
+    @Override
+    public Contentlet findContentletByIdentifierAnyLanguageAndVariant(final String identifier) throws DotDataException{
+
+        try {
+            final ContentletVersionInfo anyContentletVersionInfoAnyVariant = FactoryLocator.getVersionableFactory()
+                    .findAnyContentletVersionInfoAnyVariant(identifier, false)
+                    .orElseThrow(() -> new NotFoundInDbException("Contentlet does not exists"));
+
+            return contentFactory.find(anyContentletVersionInfoAnyVariant.getWorkingInode());
         } catch (Exception e) {
             throw new DotContentletStateException("Can't find contentlet: " + identifier, e);
         }
