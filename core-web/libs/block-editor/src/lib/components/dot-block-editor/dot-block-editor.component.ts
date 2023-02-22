@@ -174,9 +174,7 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy {
         try {
             return JSON.parse(this.customBlocks);
         } catch (e) {
-            // eslint-disable-next-line no-console
-            console.log('Parsed customBlocks error:', e);
-            console.warn('JSON parse fails, please check the JSON format.');
+            console.warn('JSON parse fails, please check the JSON format.', e);
 
             return {
                 extensions: []
