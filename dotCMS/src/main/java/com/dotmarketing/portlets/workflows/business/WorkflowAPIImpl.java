@@ -133,6 +133,7 @@ import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
+import com.rainerhahnekamp.sneakythrow.Sneaky;
 import io.vavr.control.Try;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -159,6 +160,7 @@ import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import javax.annotation.Nullable;
@@ -597,11 +599,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 
 		final String schemeId = this.getLongId(id, ShortyIdAPI.ShortyInputType.WORKFLOW_SCHEME);
 
-		if (!SYSTEM_WORKFLOW_ID.equals(schemeId)) {
-			if (!hasValidLicense() && !this.getFriendClass().isFriend()) {
-				throw new InvalidLicenseException("Workflow-Schemes-License-required");
-			}
-		}
+		validateWorkflowLicense(schemeId, "Workflow-Schemes-License-required");
 
 		return workFlowFactory.findScheme(schemeId);
 	}
@@ -721,12 +719,8 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 	@CloseDBIfOpened
 	public List<ContentType> findContentTypesForScheme(final WorkflowScheme workflowScheme) {
 
-		if (!SYSTEM_WORKFLOW_ID.equals(workflowScheme.getId())) {
-			if (!hasValidLicense() && !this.getFriendClass().isFriend()) {
-				throw new InvalidLicenseException("Workflow-Schemes-License-required");
-			}
-		}
-        try {
+		validateWorkflowLicense(workflowScheme.getId(), "Workflow-Schemes-License-required");
+		try {
 			return workFlowFactory.findContentTypesByScheme(workflowScheme);
 		}catch(Exception e){
 			Logger.debug(this,e.getMessage(),e);
@@ -1547,18 +1541,37 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 	@Override
 	@CloseDBIfOpened
 	public List<WorkflowAction> findActions(final WorkflowScheme scheme, final User user)
-			throws DotDataException,
-			DotSecurityException {
-		if (!SYSTEM_WORKFLOW_ID.equals(scheme.getId())) {
-			if (!hasValidLicense() && !this.getFriendClass().isFriend()) {
-				throw new InvalidLicenseException("Workflow-Actions-License-required");
-			}
-		}
+		throws DotDataException, DotSecurityException {
+
+		validateWorkflowLicense(scheme.getId(), "Workflow-Actions-License-required");
 
 		final List<WorkflowAction> actions = workFlowFactory.findActions(scheme);
 		return permissionAPI.filterCollection(actions,
 				PermissionAPI.PERMISSION_USE, RESPECT_FRONTEND_ROLES, user);
 	} // findActions.
+
+	@Override
+	@CloseDBIfOpened
+	public List<WorkflowAction> findActions(final WorkflowScheme scheme, final User user, final Contentlet contentlet)
+		throws DotDataException, DotSecurityException {
+
+		validateWorkflowLicense(scheme.getId(), "Workflow-Actions-License-required");
+
+		return permissionAPI.filterCollection(
+			workFlowFactory.findActions(scheme),
+			PermissionAPI.PERMISSION_USE,
+			RESPECT_FRONTEND_ROLES,
+			user,
+			contentlet);
+	} // findActions.
+
+	private void validateWorkflowLicense(String scheme, String message) {
+		if (!SYSTEM_WORKFLOW_ID.equals(scheme)) {
+			if (!hasValidLicense() && !this.getFriendClass().isFriend()) {
+				throw new InvalidLicenseException(message);
+			}
+		}
+	}
 
 	@Override
     @CloseDBIfOpened
@@ -1817,11 +1830,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 
 		final WorkflowAction workflowAction = this.workFlowFactory.findAction(this.getLongId(id, ShortyIdAPI.ShortyInputType.WORKFLOW_ACTION));
 		if(null != workflowAction){
-			if (!SYSTEM_WORKFLOW_ID.equals(workflowAction.getSchemeId())) {
-				if (!hasValidLicense() && !this.getFriendClass().isFriend()) {
-					throw new InvalidLicenseException("Workflow-Actions-License-required");
-				}
-			}
+			validateWorkflowLicense(workflowAction.getSchemeId(), "Workflow-Actions-License-required");
 		}
 
 		if (null != workflowAction) {
@@ -1842,11 +1851,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 				.findAction(this.getLongId(actionId, ShortyIdAPI.ShortyInputType.WORKFLOW_ACTION),
 						this.getLongId(stepId, ShortyIdAPI.ShortyInputType.WORKFLOW_STEP));
 		if (null != workflowAction) {
-			if (!SYSTEM_WORKFLOW_ID.equals(workflowAction.getSchemeId())) {
-				if (!hasValidLicense() && !this.getFriendClass().isFriend()) {
-					throw new InvalidLicenseException("Workflow-Actions-License-required");
-				}
-			}
+			validateWorkflowLicense(workflowAction.getSchemeId(), "Workflow-Actions-License-required");
 		}
 
 		if (null != workflowAction) {
@@ -2014,13 +2019,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 	public WorkflowStep findStep(final String id) throws DotDataException {
 
 		final WorkflowStep step = workFlowFactory.findStep(this.getLongId(id, ShortyIdAPI.ShortyInputType.WORKFLOW_STEP));
-		if (!SYSTEM_WORKFLOW_ID.equals(step.getSchemeId())) {
-			if (!hasValidLicense() && !this.getFriendClass().isFriend()) {
-
-				throw new InvalidLicenseException(
-						"You must have a valid license to see any available step.");
-			}
-		}
+		validateWorkflowLicense(step.getSchemeId(), "You must have a valid license to see any available step.");
 		return step;
 	}
 
