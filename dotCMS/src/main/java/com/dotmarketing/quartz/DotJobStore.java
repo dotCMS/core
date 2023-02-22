@@ -78,9 +78,6 @@ public class DotJobStore extends JobStoreCMT {
 				new ConnectionProvider() {
 					public Connection getConnection() throws SQLException {
 						Connection c = nonTxDataSourceToUse.getConnection();
-						if (ISQLServerConnection.TRANSACTION_READ_COMMITTED != c.getTransactionIsolation()) {
-							c.setTransactionIsolation(ISQLServerConnection.TRANSACTION_READ_COMMITTED);
-						}
 						return  c;
 					}
 					public void shutdown() {

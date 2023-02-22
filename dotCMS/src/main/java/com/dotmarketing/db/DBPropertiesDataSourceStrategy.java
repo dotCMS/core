@@ -79,6 +79,7 @@ public class DBPropertiesDataSourceStrategy implements DotDataSourceStrategy {
     @VisibleForTesting
     HikariConfig getHikariConfig() {
         final HikariConfig config = new HikariConfig(propertiesFile.getPath());
+        DbConnectionUtil.setHikariTransactionIsolation(config);
         config.setPoolName(Constants.DATABASE_DEFAULT_DATASOURCE);
         return config;
     }

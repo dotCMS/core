@@ -232,10 +232,6 @@ public class DbConnectionFactory {
                         DATABASE_DEFAULT_DATASOURCE);
             }
 
-            // _dbType would only be null until the getDbType was called, then it is static
-            if (_dbType != null && MSSQL.equals(getDBType())) {
-                connection.setTransactionIsolation(ISQLServerConnection.TRANSACTION_SNAPSHOT);
-            }
 
             return connection;
         } catch (Exception e) {
