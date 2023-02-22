@@ -131,7 +131,7 @@ export class DotContainerPropertiesComponent implements OnInit, AfterViewInit {
                 ({ code, structureId, containerId, containerInode, contentTypeVar }) => {
                     (this.form.get('containerStructures') as FormArray).push(
                         this.fb.group({
-                            code: new FormControl(code, [Validators.required]),
+                            code: new FormControl(code),
                             structureId: new FormControl(structureId, [Validators.required]),
                             containerId: new FormControl(containerId),
                             containerInode: new FormControl(containerInode),
@@ -212,10 +212,7 @@ export class DotContainerPropertiesComponent implements OnInit, AfterViewInit {
                     structureId: new FormControl(state.contentType.variable ?? '', [
                         Validators.required
                     ]),
-                    code: new FormControl(state?.code || '', [
-                        Validators.required,
-                        Validators.minLength(2)
-                    ])
+                    code: new FormControl(state?.code || '')
                 })
             );
         });
