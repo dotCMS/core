@@ -10,3 +10,5 @@ This maintenance release includes the following code fixes:
 4. https://github.com/dotCMS/core/issues/23761 : Unable to start LTS release using MSSQL #23761
 5. https://github.com/dotCMS/core/issues/23810 : Asset download missing directories 8 and 9 #23810
 6. https://github.com/dotCMS/core/issues/24075 : dotcache - Make Velocity Context caching optional
+7. https://github.com/dotCMS/core/issues/24158 : CMSFilter updating language param #24158
+8. https://github.com/dotCMS/core/issues/24059 : We are not respecting the widget language when you have a multilingual page have a working version in non-default language #24059

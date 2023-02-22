@@ -234,14 +234,14 @@ public class NavTool implements ViewTool {
         return new NavResultHydrated(result, this.context);
     }
 
-    private List<?> filterNonLiveItems(final List<?> menuItems) {
+    private List<?> filterNonLiveItems(final List<?> menuItems) {//aca hay un bug, deberia si filtrar los unpublish pero puede ser que tenga version unpublish y publish, y aun lo esta eliminando
         if (!menuItems.isEmpty()) {
-            final List<Versionable> nonLive = menuItems.stream()
-                    .filter(o -> o instanceof Versionable)
-                    .map(o -> (Versionable) o)
-                    .filter(versionable -> Try.of(() -> !versionable.isLive()).getOrElse(false))
+            final List<Contentlet> nonLiveContentlets = menuItems.stream()
+                    .filter(item -> item instanceof Contentlet)
+                    .map(o -> (Contentlet) o)
+                    .filter(item -> Try.of(() -> !item.hasLiveVersion()).getOrElse(false))
                     .collect(Collectors.toList());
-            menuItems.removeAll(nonLive);
+            menuItems.removeAll(nonLiveContentlets);
         }
         return menuItems;
     }
