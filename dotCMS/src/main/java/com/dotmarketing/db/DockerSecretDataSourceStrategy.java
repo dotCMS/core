@@ -97,6 +97,7 @@ public class DockerSecretDataSourceStrategy implements DotDataSourceStrategy {
         config.setTransactionIsolation(
                     dockerSecretsMap.get(
                             DataSourceStrategyProvider.CONNECTION_DB_DEFAULT_TRANSACTION_ISOLATION));
+        DbConnectionUtil.setHikariTransactionIsolation(config);
         return config;
     }
 }

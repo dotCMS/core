@@ -2,9 +2,12 @@ package com.dotmarketing.db;
 
 import com.dotmarketing.util.Logger;
 
+import com.zaxxer.hikari.HikariConfig;
+import com.zaxxer.hikari.util.IsolationLevel;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.sql.Statement;
+import org.apache.commons.lang.StringUtils;
 
 /**
  * @author Jonathan Gamba
@@ -130,4 +133,15 @@ public class DbConnectionUtil {
         }
     }
 
+    /**
+     * Updates the HikariConfig to Set the correct transaction isolation level
+     *
+     * @param config the HikariConfig to update
+     */
+    public static void setHikariTransactionIsolation(HikariConfig config) {
+        String isolationLevel = config.getTransactionIsolation();
+        if (StringUtils.isEmpty(isolationLevel) || isolationLevel.equalsIgnoreCase("default")) {
+            config.setTransactionIsolation(IsolationLevel.TRANSACTION_READ_COMMITTED.name());
+        }
+    }
 }
