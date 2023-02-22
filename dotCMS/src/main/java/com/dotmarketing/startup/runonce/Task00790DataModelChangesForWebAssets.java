@@ -1,5 +1,6 @@
 package com.dotmarketing.startup.runonce;
 
+import com.dotcms.business.WrapInTransaction;
 import java.sql.SQLException;
 import java.util.List;
 import java.util.Map;
@@ -415,6 +416,8 @@ public class Task00790DataModelChangesForWebAssets implements StartupTask {
 		}
 	}
 
+	@Override
+	@WrapInTransaction
 	public void executeUpgrade() throws DotHibernateException {
 		DotConnect dc = new DotConnect();
 		HibernateUtil.startTransaction();

@@ -1,5 +1,6 @@
 package com.dotmarketing.startup.runonce;
 
+import com.dotcms.business.WrapInTransaction;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.exception.DotDataException;
@@ -21,6 +22,7 @@ import java.util.UUID;
 public class Task03525LowerTagsTagname extends AbstractJDBCStartupTask {
 
     @Override
+    @WrapInTransaction
     public void executeUpgrade() throws DotDataException, DotRuntimeException {
         try {
             DbConnectionFactory.getConnection().setAutoCommit(true);
