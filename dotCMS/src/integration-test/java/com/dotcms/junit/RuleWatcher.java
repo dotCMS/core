@@ -114,7 +114,6 @@ public class RuleWatcher extends TestWatcher {
                     } else {
                         HibernateUtil.rollbackTransaction();
                     }
-                    HibernateUtil.rollbackTransaction();
                 } catch (DotHibernateException e) {
                     Logger.error(RuleWatcher.class,
                             "Error force " + responseAction + " back transaction");

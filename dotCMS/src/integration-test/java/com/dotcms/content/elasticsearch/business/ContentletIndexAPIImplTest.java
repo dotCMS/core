@@ -903,7 +903,7 @@ public class ContentletIndexAPIImplTest extends IntegrationTestBase {
 
     }
 
-    public void waitForEmptyQueue() {
+    private void waitForEmptyQueue() {
         final ReindexQueueAPI reindexQueueAPI = APILocator.getReindexQueueAPI();
         Awaitility.await().atMost(600, TimeUnit.SECONDS)
                 .pollInterval(5, TimeUnit.SECONDS)
@@ -911,7 +911,7 @@ public class ContentletIndexAPIImplTest extends IntegrationTestBase {
                 .until(reindexQueueAPI::areRecordsLeftToIndex, equalTo(false));
     }
 
-    public List<ContentletSearch> pollSearchIndex(int expectedCount, String identifier, String id,
+    private List<ContentletSearch> pollSearchIndex(int expectedCount, String identifier, String id,
             boolean live, int limit, int offset, String sortBy, User user) {
         return Awaitility.await().atMost(10, TimeUnit.SECONDS)
                 .until(() -> {
@@ -920,7 +920,7 @@ public class ContentletIndexAPIImplTest extends IntegrationTestBase {
                 }, hasSize(expectedCount));
     }
 
-    public List<ContentletSearch> searchIndex(String identifier, String id, boolean live, int limit,
+    private List<ContentletSearch> searchIndex(String identifier, String id, boolean live, int limit,
             int offset, String sortBy, User user) throws DotDataException, DotSecurityException {
         StringBuilder luceneQuery = new StringBuilder();
         if (identifier != null) {
