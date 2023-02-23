@@ -24,7 +24,7 @@
     "@actions/exec": "^1.1.1",
     "@types/newman": "^5.3.0",
     "newman": "^5.3.2",
-    "node-fetch": "^3.2.3",
+    "node-fetch": "^3.2.10",
     "shelljs": "^0.8.5"
   },
   "devDependencies": {
