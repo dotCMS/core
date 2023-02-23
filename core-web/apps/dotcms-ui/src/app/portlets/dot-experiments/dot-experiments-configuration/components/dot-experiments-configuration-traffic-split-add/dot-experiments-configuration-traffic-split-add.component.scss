@@ -20,7 +20,7 @@
     .experiment-traffic-split__variants {
         margin-top: $spacing-5;
 
-        > div {
+        > * {
             display: flex;
             justify-content: space-between;
             align-items: center;

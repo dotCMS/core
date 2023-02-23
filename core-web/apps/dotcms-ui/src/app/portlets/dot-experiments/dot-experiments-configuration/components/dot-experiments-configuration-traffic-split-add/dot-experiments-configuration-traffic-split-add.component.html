@@ -32,10 +32,10 @@
                 </div>
 
                 <div class="experiment-traffic-split__variants">
-                    <div class="experiment-traffic-split__variants-header">
-                        <div>{{ 'variant' | dm }}</div>
-                        <div class="experiment-traffic-split__variants-weight">%</div>
-                    </div>
+                    <header class="experiment-traffic-split__variants-header">
+                        <span>{{ 'variant' | dm }}</span>
+                        <span class="experiment-traffic-split__variants-weight">%</span>
+                    </header>
                     <ng-container formArrayName="variants">
                         <div
                             class="experiment-traffic-split__variants-item"
