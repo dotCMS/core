@@ -38,6 +38,7 @@ import { DotPortletBoxModule } from '@components/dot-portlet-base/components/dot
 import { DotRelationshipTreeModule } from '@components/dot-relationship-tree/dot-relationship-tree.module';
 import { DotSecondaryToolbarModule } from '@components/dot-secondary-toolbar';
 import { DotAutofocusModule } from '@directives/dot-autofocus/dot-autofocus.module';
+import { DotFieldRequiredDirective } from '@directives/dot-field-required/dot-field-required.directive';
 import { DotMaxlengthModule } from '@directives/dot-maxlength/dot-maxlength.module';
 import { DotMdIconSelectorModule } from '@dotcms/app/view/components/_common/dot-md-icon-selector/dot-md-icon-selector.module';
 import { DotContentTypesInfoService, DotWorkflowService } from '@dotcms/data-access';
@@ -79,7 +80,6 @@ import { ContentTypesFormComponent } from './components/form/content-types-form.
 import { ContentTypesLayoutComponent } from './components/layout/content-types-layout.component';
 import { DotContentTypesEditRoutingModule } from './dot-content-types-edit-routing.module';
 import { DotContentTypesEditComponent } from './dot-content-types-edit.component';
-import { DotFieldRequiredDirective } from '@directives/dot-field-required/dot-field-required.directive';
 
 @NgModule({
     declarations: [
