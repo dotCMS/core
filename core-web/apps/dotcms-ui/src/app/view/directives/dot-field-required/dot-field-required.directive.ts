@@ -1,10 +1,10 @@
-import { Directive, ElementRef, Input, Renderer2 } from '@angular/core';
+import { Directive, ElementRef, Input, OnInit, Renderer2 } from '@angular/core';
 import { FormGroupDirective } from '@angular/forms';
 
 @Directive({
     selector: '[dotFieldRequired]'
 })
-export class DotFieldRequiredDirective {
+export class DotFieldRequiredDirective implements OnInit {
     @Input() for: string;
 
     constructor(
