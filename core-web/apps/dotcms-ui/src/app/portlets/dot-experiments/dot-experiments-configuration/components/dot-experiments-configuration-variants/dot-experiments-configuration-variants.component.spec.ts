@@ -1,4 +1,10 @@
-import { byTestId, createComponentFactory, mockProvider, Spectator } from '@ngneat/spectator';
+import {
+    byTestId,
+    createComponentFactory,
+    mockProvider,
+    Spectator,
+    SpyObject
+} from '@ngneat/spectator';
 import { of } from 'rxjs';
 
 import { DecimalPipe } from '@angular/common';
@@ -23,6 +29,7 @@ import { MockDotMessageService } from '@dotcms/utils-testing';
 import { DotExperimentsConfigurationVariantsAddComponent } from '@portlets/dot-experiments/dot-experiments-configuration/components/dot-experiments-configuration-variants-add/dot-experiments-configuration-variants-add.component';
 import { DotExperimentsConfigurationStore } from '@portlets/dot-experiments/dot-experiments-configuration/store/dot-experiments-configuration-store';
 import { DotExperimentsService } from '@portlets/dot-experiments/shared/services/dot-experiments.service';
+import { ExperimentMocks } from '@portlets/dot-experiments/test/mocks';
 import { DotHttpErrorManagerService } from '@services/dot-http-error-manager/dot-http-error-manager.service';
 
 import { DotExperimentsConfigurationVariantsComponent } from './dot-experiments-configuration-variants.component';
@@ -35,8 +42,11 @@ const messageServiceMock = new MockDotMessageService({
     'experiments.configure.variants.add': 'Add new variant'
 });
 
+const EXPERIMENT_ID = ExperimentMocks[0].id;
 describe('DotExperimentsConfigurationVariantsComponent', () => {
     let spectator: Spectator<DotExperimentsConfigurationVariantsComponent>;
+    let store: DotExperimentsConfigurationStore;
+    let dotExperimentsService: SpyObject<DotExperimentsService>;
 
     let configurationVariantsAddComponent: DotExperimentsConfigurationVariantsAddComponent;
 
@@ -66,16 +76,18 @@ describe('DotExperimentsConfigurationVariantsComponent', () => {
         spectator = createComponent({
             detectChanges: false
         });
+
+        store = spectator.inject(DotExperimentsConfigurationStore);
+        dotExperimentsService = spectator.inject(DotExperimentsService);
+        dotExperimentsService.getById.and.returnValue(of(ExperimentMocks[0]));
+
+        store.loadExperiment(EXPERIMENT_ID);
+        spectator.detectChanges();
     });
 
     describe('should render', () => {
         it('a DEFAULT variant', () => {
             const variantsVm = {
-                stepStatus: {
-                    status: ComponentStatus.IDLE,
-                    experimentStep: ExperimentSteps.VARIANTS,
-                    isOpen: false
-                },
                 variants: [{ id: DEFAULT_VARIANT_ID, name: DEFAULT_VARIANT_NAME, weight: '100' }]
             };
 
@@ -94,11 +106,6 @@ describe('DotExperimentsConfigurationVariantsComponent', () => {
 
         it('should load the variant(s)', () => {
             const variantsVm = {
-                stepStatus: {
-                    status: ComponentStatus.IDLE,
-                    experimentStep: ExperimentSteps.VARIANTS,
-                    isOpen: false
-                },
                 variants: [
                     { id: '0000000', name: DEFAULT_VARIANT_NAME, weight: '33.33', url: 'link1' },
                     { id: '1111111', name: 'b', weight: '33.33', url: 'link2' },
@@ -159,11 +166,6 @@ describe('DotExperimentsConfigurationVariantsComponent', () => {
 
     describe('interactions', () => {
         const variantsVm = {
-            stepStatus: {
-                status: ComponentStatus.IDLE,
-                experimentStep: ExperimentSteps.VARIANTS,
-                isOpen: false
-            },
             variants: [
                 {
                     id: DEFAULT_VARIANT_ID,
@@ -229,7 +231,8 @@ describe('DotExperimentsConfigurationVariantsComponent', () => {
                     status: ComponentStatus.IDLE,
                     isOpen: false,
                     experimentStep: ExperimentSteps.GOAL
-                }
+                },
+                isExperimentADraft: true
             });
 
             const newVariantName = 'new name';
@@ -275,7 +278,8 @@ describe('DotExperimentsConfigurationVariantsComponent', () => {
                     status: ComponentStatus.IDLE,
                     isOpen: false,
                     experimentStep: ExperimentSteps.GOAL
-                }
+                },
+                isExperimentADraft: true
             });
 
             const variants: Variant[] = [
@@ -313,7 +317,8 @@ describe('DotExperimentsConfigurationVariantsComponent', () => {
                     status: ComponentStatus.SAVING,
                     isOpen: false,
                     experimentStep: ExperimentSteps.GOAL
-                }
+                },
+                isExperimentADraft: true
             });
 
             spectator.detectComponentChanges();

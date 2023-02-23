@@ -39,7 +39,6 @@
             </p-card>
 
             <dot-experiments-configuration-variants
-                [stepStatus]="vm.stepStatusSidebar"
                 [variants]="vm.experiment.trafficProportion.variants"
                 (delete)="deleteVariant($event, vm.experiment.id)"
                 (edit)="editVariant($event, vm.experiment.id)"

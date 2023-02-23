@@ -5,14 +5,14 @@
                 <h2 class="flex align-items-center gap-1 uppercase">
                     {{ 'experiments.configure.variants.name' | dm }}
                     <dot-icon
-                        [ngClass]="{ isDone: variants.length > 1 }"
+                        [ngClass]="{ isDone: variants?.length > 1 }"
                         data-testId="variant-title-step-done"
                         name="check_circle"
                         size="16"
                     ></dot-icon>
                 </h2>
                 <dot-experiments-configuration-items-count
-                    [count]="variants.length"
+                    [count]="variants?.length"
                     [maxLength]="maxVariantsAllowed"
                 >
                 </dot-experiments-configuration-items-count>
@@ -143,12 +143,12 @@
         <ng-template pTemplate="footer">
             <div
                 [pTooltip]="'experiment.configure.edit.only.draft.status' | dm"
-                [tooltipDisabled]="vm.isExperimentADraft || variants.length <= maxVariantsAllowed"
+                [tooltipDisabled]="vm.isExperimentADraft || variants?.length <= maxVariantsAllowed"
                 tooltipPosition="bottom"
             >
                 <button
                     class="p-button-sm p-button-link"
-                    [disabled]="variants.length >= maxVariantsAllowed || !vm.isExperimentADraft"
+                    [disabled]="variants?.length >= maxVariantsAllowed || !vm.isExperimentADraft"
                     (click)="sidebarStatusChanged.emit(sidebarStatusList.OPEN)"
                     data-testId="variant-add-button"
                     label="{{ 'experiments.configure.variants.add' | dm }}"
@@ -162,10 +162,10 @@
 
     <dot-experiments-configuration-variants-add
         [isSaving]="
-            experimentStepName === stepStatus.experimentStep &&
-            stepStatus.status === statusList.SAVING
+            experimentStepName === vm.status?.experimentStep &&
+            vm.status.status === statusList.SAVING
         "
-        [isSidebarOpen]="experimentStepName === stepStatus.experimentStep && stepStatus.isOpen"
+        [isSidebarOpen]="experimentStepName === vm.status?.experimentStep && vm.status.isOpen"
         (closedSidebar)="sidebarStatusChanged.emit(sidebarStatusList.CLOSE)"
         (formValues)="save.emit($event)"
     ></dot-experiments-configuration-variants-add>

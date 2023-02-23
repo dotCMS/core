@@ -62,7 +62,6 @@ export class DotExperimentsConfigurationVariantsComponent {
     defaultVariantName = DEFAULT_VARIANT_NAME;
     experimentStepName = ExperimentSteps.VARIANTS;
 
-    @Input() stepStatus: StepStatus;
     @Input() variants: Variant[];
     @Output() sidebarStatusChanged = new EventEmitter<SidebarStatus>();
     @Output() delete = new EventEmitter<Variant>();
