@@ -5,7 +5,6 @@ description: I need to report a bug or issue with dotCMS.
 labels: ['Type : Defect',Triage]
 
 body:
-
   - type: markdown
     attributes:
       value: |
@@ -124,7 +123,7 @@ body:
     id: qa-note
     attributes:
       label: "Quality Assurance Notes & Workarounds"
-      description: ""
+      description: "Add any additional notes for QA you would like; this field is also for use by the QA Team once the issue is in progress."
       placeholder:
       value:
     validations:
@@ -141,3 +140,4 @@ body:
       value:
     validations:
       required: false
+
