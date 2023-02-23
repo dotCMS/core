@@ -1,6 +1,6 @@
 {
   "name": "dotcms-ui",
-  "version": "23.3.0-next.16",
+  "version": "23.4.0-next.17",
   "license": "MIT",
   "engines": {
     "node": ">=16.13.2"
@@ -105,7 +105,7 @@
     "node-fetch": "^2.6.1",
     "primeflex": "^3.1.2",
     "primeicons": "^6.0.1",
-    "primeng": "^14.1.2",
+    "primeng": "14.2.2",
     "prosemirror-model": "^1.16.1",
     "prosemirror-view": "^1.23.12",
     "react": "^18.2.0",

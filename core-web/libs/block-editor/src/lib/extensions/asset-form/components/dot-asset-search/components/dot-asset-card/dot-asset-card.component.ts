@@ -1,6 +1,8 @@
-import { ChangeDetectionStrategy, Component, Input } from '@angular/core';
+import { ChangeDetectionStrategy, Component, Input, OnInit } from '@angular/core';
 
-import { DotCMSContentlet } from '@dotcms/dotcms-models';
+import { DotCMSContentlet, EDITOR_MARKETING_KEYS } from '@dotcms/dotcms-models';
+
+import { DotMarketingConfigService } from '../../../../../../shared';
 
 @Component({
     selector: 'dot-asset-card',
@@ -8,8 +10,18 @@ import { DotCMSContentlet } from '@dotcms/dotcms-models';
     styleUrls: ['./dot-asset-card.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class DotAssetCardComponent {
+export class DotAssetCardComponent implements OnInit {
+    showVideoThumbnail = true;
+
     @Input() contentlet: DotCMSContentlet;
+
+    constructor(private dotMarketingConfigService: DotMarketingConfigService) {}
+
+    ngOnInit() {
+        this.showVideoThumbnail = this.dotMarketingConfigService.getProperty(
+            EDITOR_MARKETING_KEYS.SHOW_VIDEO_THUMBNAIL
+        );
+    }
 
     /**
      * Return the contentlet Thumbanil based in the inode

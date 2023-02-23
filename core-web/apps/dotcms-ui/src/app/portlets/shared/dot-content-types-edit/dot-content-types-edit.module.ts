@@ -80,6 +80,8 @@ import { ContentTypesLayoutComponent } from './components/layout/content-types-l
 import { DotContentTypesEditRoutingModule } from './dot-content-types-edit-routing.module';
 import { DotContentTypesEditComponent } from './dot-content-types-edit.component';
 
+import { DotAddToMenuModule } from '../dot-content-types-listing/components/dot-add-to-menu/dot-add-to-menu.module';
+
 @NgModule({
     declarations: [
         DotConvertToBlockInfoComponent,
@@ -151,7 +153,8 @@ import { DotContentTypesEditComponent } from './dot-content-types-edit.component
         TabViewModule,
         DotRelationshipTreeModule,
         DotPortletBoxModule,
-        DotMdIconSelectorModule
+        DotMdIconSelectorModule,
+        DotAddToMenuModule
     ],
     providers: [
         DotContentTypesInfoService,

@@ -4,10 +4,8 @@ import com.dotcms.api.provider.ClientObjectMapper;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.FieldLayoutRow;
 import com.dotcms.contenttype.model.type.ContentType.ClassNameAliasResolver;
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import com.fasterxml.jackson.annotation.JsonSubTypes;
+import com.fasterxml.jackson.annotation.*;
 import com.fasterxml.jackson.annotation.JsonSubTypes.Type;
-import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.annotation.JsonTypeInfo.Id;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.DatabindContext;
@@ -130,6 +128,8 @@ public abstract class ContentType {
      */
     static class ClassNameAliasResolver extends ClassNameIdResolver {
 
+        static final String IMMUTABLE = "Immutable";
+
         static TypeFactory typeFactory = TypeFactory.defaultInstance();
 
         public ClassNameAliasResolver() {
@@ -137,8 +137,17 @@ public abstract class ContentType {
         }
 
         @Override
+        public String idFromValue(Object value) {
+            final String simpleName = value.getClass().getSimpleName();
+            if(simpleName.startsWith(IMMUTABLE)){
+                return simpleName.replace(IMMUTABLE,"");
+            }
+            return super.idFromValue(value);
+        }
+
+        @Override
         public JavaType typeFromId(final DatabindContext context, final String id) throws IOException {
-           final String packageName = ContentType.class.getPackage().getName();
+           final String packageName = ContentType.class.getPackageName();
            if( !id.contains(".") && !id.startsWith(packageName)){
                final String className = String.format("%s.Immutable%s",packageName,id);
                return super.typeFromId(context, className);

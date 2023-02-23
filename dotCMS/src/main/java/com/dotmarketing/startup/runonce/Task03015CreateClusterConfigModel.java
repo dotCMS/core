@@ -1,5 +1,6 @@
 package com.dotmarketing.startup.runonce;
 
+import com.dotcms.business.WrapInTransaction;
 import java.sql.SQLException;
 
 import com.dotcms.enterprise.cluster.ClusterFactory;
@@ -41,6 +42,7 @@ public class Task03015CreateClusterConfigModel implements StartupTask {
 	}
 
 	@Override
+	@WrapInTransaction
 	public void executeUpgrade() throws DotDataException, DotRuntimeException {
 		try {
 			DbConnectionFactory.getConnection().setAutoCommit(true);

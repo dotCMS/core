@@ -2,6 +2,7 @@ package com.dotcms.enterprise.publishing.remote;
 
 import com.dotcms.IntegrationTestBase;
 import com.dotcms.LicenseTestUtil;
+import com.dotcms.datagen.TestDataUtils;
 import com.dotcms.enterprise.publishing.remote.bundler.HostBundler;
 import com.dotcms.enterprise.publishing.remote.handler.HostHandler;
 import com.dotcms.publisher.pusher.PushPublisherConfig;
@@ -12,6 +13,7 @@ import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.db.HibernateUtil;
+import com.dotmarketing.db.LocalTransaction;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.contentlet.model.IndexPolicy;
 import com.dotmarketing.util.Config;
@@ -45,8 +47,9 @@ public class HostBundlerHandlerTest extends IntegrationTestBase {
     }
 
     /**
-     * This test creates a host and add it to a bundle as an unpublish operation (push-remove option).
-     * After a couple of seconds, the HostHandler handle this bundle and apply the operation (removes the host)
+     * This test creates a host and add it to a bundle as an unpublish operation (push-remove
+     * option). After a couple of seconds, the HostHandler handle this bundle and apply the
+     * operation (removes the host)
      */
     @Test
     public void testBundlerHandler_UnpublishHost_Success() throws Exception {
@@ -60,22 +63,22 @@ public class HostBundlerHandlerTest extends IntegrationTestBase {
         try {
 
             contentSet = new HashSet();
-            Host host = new Host();
             hostBundler = new HostBundler();
             status = new BundlerStatus(HostBundler.class.getName());
 
-            //Creating host
-            host.setHostname("hostUnpublish" + System.currentTimeMillis() + ".dotcms.com");
-            host.setDefault(false);
+            Host host2 = LocalTransaction.wrapReturn(() -> {
+                Host host = new Host();
+                //Creating host
+                host.setHostname("hostUnpublish" + System.currentTimeMillis() + ".dotcms.com");
+                host.setDefault(false);
+                host.setIndexPolicy(IndexPolicy.FORCE);
+                return APILocator.getHostAPI().save(host, user, false);
+            });
 
-            HibernateUtil.startTransaction();
-            host.setIndexPolicy(IndexPolicy.FORCE);
-            host = APILocator.getHostAPI().save(host, user, false);
-            HibernateUtil.closeAndCommitTransaction();
+            Assert.assertEquals(originalHostSize + 1,
+                    APILocator.getHostAPI().findAllFromDB(user, false).size());
 
-            Assert.assertEquals(originalHostSize + 1, APILocator.getHostAPI().findAllFromDB(user, false).size());
-
-            contentSet.add(host.getIdentifier());
+            contentSet.add(host2.getIdentifier());
 
             //Mocking Push Publish configuration
             config = Mockito.mock(PushPublisherConfig.class);
@@ -85,7 +88,8 @@ public class HostBundlerHandlerTest extends IntegrationTestBase {
             Mockito.when(config.getId()).thenReturn(UUIDGenerator.generateUuid());
             hostBundler.setConfig(config);
 
-            final DirectoryBundleOutput directoryBundleOutput = new DirectoryBundleOutput(config, tempDir);
+            final DirectoryBundleOutput directoryBundleOutput = new DirectoryBundleOutput(config,
+                    tempDir);
 
             //Creating temp bundle dir
 
@@ -96,13 +100,16 @@ public class HostBundlerHandlerTest extends IntegrationTestBase {
             hostBundler.generate(directoryBundleOutput, status);
             Assert.assertEquals(1, status.getCount()); //Only 1 content in the bundler
 
-            Thread.sleep(5000); //Let's wait a couple of seconds before running the Hanlder
+            TestDataUtils.assertEmptyQueue();
 
             //Handler
             final HostHandler hostHandler = new HostHandler(config);
             hostHandler.handle(tempDir);
 
-            Assert.assertEquals(originalHostSize, APILocator.getHostAPI().findAllFromDB(user, false).size());
+            Assert.assertEquals(originalHostSize,
+                    APILocator.getHostAPI().findAllFromDB(user, false).size());
+
+            TestDataUtils.assertEmptyQueue();
         } finally {
             tempDir.delete();
         }
@@ -130,11 +137,18 @@ public class HostBundlerHandlerTest extends IntegrationTestBase {
             host.setDefault(false);
 
             HibernateUtil.startTransaction();
-            host.setIndexPolicy(IndexPolicy.FORCE);
-            host = APILocator.getHostAPI().save(host, user, false);
-            HibernateUtil.closeAndCommitTransaction();
+            try {
+                host.setIndexPolicy(IndexPolicy.FORCE);
+                host = APILocator.getHostAPI().save(host, user, false);
+            } catch (Exception e) {
+                HibernateUtil.rollbackTransaction();
+                throw e;
+            } finally {
+                HibernateUtil.closeAndCommitTransaction();
+            }
 
-            Assert.assertEquals(originalHostSize + 1, APILocator.getHostAPI().findAllFromDB(user, false).size());
+            Assert.assertEquals(originalHostSize + 1,
+                    APILocator.getHostAPI().findAllFromDB(user, false).size());
 
             contentSet.add(host.getIdentifier());
 
@@ -145,7 +159,8 @@ public class HostBundlerHandlerTest extends IntegrationTestBase {
             Mockito.when(config.getOperation()).thenReturn(Operation.PUBLISH);
             hostBundler.setConfig(config);
 
-            final DirectoryBundleOutput directoryBundleOutput = new DirectoryBundleOutput(config, tempDir);
+            final DirectoryBundleOutput directoryBundleOutput = new DirectoryBundleOutput(config,
+                    tempDir);
 
             //Creating temp bundle dir
 
