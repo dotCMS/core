@@ -314,7 +314,7 @@ describe('ContentTypesLayoutComponent', () => {
             fixture.detectChanges();
             expect(de.componentInstance.addContentInMenu).toHaveBeenCalled();
             expect(de.componentInstance.addToMenuContentType).toBe(true);
-            let AddToMenuDialog: MockDotAddToMenuComponent = de.query(
+            const AddToMenuDialog: MockDotAddToMenuComponent = de.query(
                 By.css('dot-add-to-menu')
             ).componentInstance;
             expect(de.query(By.css('dot-add-to-menu'))).toBeTruthy();
