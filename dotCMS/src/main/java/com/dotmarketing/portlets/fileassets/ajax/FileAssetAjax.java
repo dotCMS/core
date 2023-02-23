@@ -12,14 +12,12 @@ import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.fileassets.business.FileAsset;
 import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
 import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
 import com.liferay.portal.PortalException;
 import com.liferay.portal.SystemException;
 import com.liferay.portal.model.User;
 
 import javax.servlet.http.HttpServletRequest;
-import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -70,41 +68,39 @@ public class FileAssetAjax {
 		final Contentlet contentlet        = APILocator.getContentletAPI().find(contentletInode, user, respectFrontendRoles);
 		String incomingFileName            = null;
 		String binaryFieldName             = binField;
-		if (UtilMethods.isSet(contentletInode)) {
-			if (contentlet.isFileAsset()) {
 
-				final FileAsset fileAsset = APILocator.getFileAssetAPI().fromContentlet(contentlet);
-				incomingFileName = fileAsset.getFileAsset().getName();
-				binaryFieldName = FileAssetAPI.BINARY_FIELD;
-			} else if (contentlet.isDotAsset()) {
+		if (contentlet.isFileAsset()) {
 
-				incomingFileName = contentlet.getBinary(DotAssetContentType.ASSET_FIELD_VAR).getName();
-				binaryFieldName = DotAssetContentType.ASSET_FIELD_VAR;
-			} else {
+			final FileAsset fileAsset = APILocator.getFileAssetAPI().fromContentlet(contentlet);
+			incomingFileName = fileAsset.getFileAsset().getName();
+			binaryFieldName  = FileAssetAPI.BINARY_FIELD;
+		} else if (contentlet.isDotAsset()) {
 
-				incomingFileName = contentlet.getBinary(binField).getName();
-			}
-
-			final File tempDir = new File(APILocator.getFileAssetAPI().getRealAssetPathTmpBinary() + File.separator + contentletInode.charAt(0) + File.separator + contentletInode.charAt(1) + File.separator + contentletInode + File.separator + binaryFieldName);
-
-			if (!tempDir.exists()) {
-				tempDir.mkdirs();
-			}
-
-			final File fileData = new File(tempDir.getAbsoluteFile() + File.separator + WebKeys.TEMP_FILE_PREFIX + incomingFileName);
-
-			fileData.deleteOnExit();
-
-			try (OutputStream os = Files.newOutputStream(fileData.toPath())) {
-
-				os.write(newText.getBytes());
-			} catch (Exception e) {
-
-				Logger.error(getClass(), "Error writing to file", e);
-			}
+			incomingFileName = contentlet.getBinary(DotAssetContentType.ASSET_FIELD_VAR).getName();
+			binaryFieldName  = DotAssetContentType.ASSET_FIELD_VAR;
 		} else {
-			final InputStream inputStream = new ByteArrayInputStream(newText.getBytes());
-			APILocator.getTempFileAPI().createTempFile(incomingFileName, request, inputStream);
+
+			incomingFileName = contentlet.getBinary(binField).getName();
+		}
+
+		final File tempDir =  new File(APILocator.getFileAssetAPI().getRealAssetPathTmpBinary() + File.separator + contentletInode.charAt(0)
+				+ File.separator + contentletInode.charAt(1) + File.separator + contentletInode
+				+ File.separator + binaryFieldName);
+
+		if(!tempDir.exists()) {
+			tempDir.mkdirs();
+		}
+
+		final File fileData = new File(tempDir.getAbsoluteFile() + File.separator + WebKeys.TEMP_FILE_PREFIX + incomingFileName);
+
+		fileData.deleteOnExit();
+
+		try (OutputStream os = Files.newOutputStream(fileData.toPath())) {
+
+			os.write(newText.getBytes());
+		} catch(Exception e) {
+
+			Logger.error(getClass(), "Error writing to file", e);
 		}
 	}
 
