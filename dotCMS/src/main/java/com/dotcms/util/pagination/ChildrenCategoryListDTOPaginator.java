@@ -19,6 +19,9 @@ import java.util.List;
 import java.util.Map;
 import javax.ws.rs.core.Response;
 
+import static com.dotmarketing.common.util.SQLUtil._ASC;
+import static com.dotmarketing.common.util.SQLUtil._DESC;
+
 /**
  * Category paginator
  */
@@ -73,7 +76,7 @@ public class ChildrenCategoryListDTOPaginator implements PaginatorOrdered<Catego
                         category.getInode(), category.getIdentifier(),
                         this.categoryAPI.findChildren(user, category.getInode(),
                                 false, page, perPage, filter,
-                                direction.toString()).getTotalCount());
+                                direction.toString().toLowerCase().equals("asc") ? _ASC : _DESC).getTotalCount());
 
                 result.add(categoryListDTO);
             }

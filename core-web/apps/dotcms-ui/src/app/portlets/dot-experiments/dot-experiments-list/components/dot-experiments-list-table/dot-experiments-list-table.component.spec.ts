@@ -34,7 +34,7 @@ const draftExperiments: DotExperiment[] = [
         readyToStart: false,
         description: 'Praesent at molestie mauris, quis vulputate augue.',
         name: 'Praesent at molestie mauris',
-        trafficAllocation: '100.0',
+        trafficAllocation: 100,
         scheduling: null,
         trafficProportion: {
             type: TrafficProportionTypes.SPLIT_EVENLY,
@@ -55,7 +55,7 @@ const endedExperiments: DotExperiment[] = [
         readyToStart: false,
         description: 'Praesent at molestie mauris, quis vulputate augue.',
         name: 'Praesent at molestie mauris',
-        trafficAllocation: '100.0',
+        trafficAllocation: 100,
         scheduling: null,
         trafficProportion: {
             type: TrafficProportionTypes.SPLIT_EVENLY,
@@ -76,7 +76,7 @@ const archivedExperiments: DotExperiment[] = [
         readyToStart: false,
         description: 'Praesent at molestie mauris, quis vulputate augue.',
         name: 'Praesent at molestie mauris',
-        trafficAllocation: '100.0',
+        trafficAllocation: 100,
         scheduling: null,
         trafficProportion: {
             type: TrafficProportionTypes.SPLIT_EVENLY,
@@ -97,7 +97,7 @@ const scheduledExperiments: DotExperiment[] = [
         readyToStart: false,
         description: 'Praesent at molestie mauris, quis vulputate augue.',
         name: 'Praesent at molestie mauris',
-        trafficAllocation: '100.0',
+        trafficAllocation: 100,
         scheduling: null,
         trafficProportion: {
             type: TrafficProportionTypes.SPLIT_EVENLY,

@@ -66,20 +66,17 @@ public class StartEndScheduledExperimentsJobTest extends IntegrationTestBase {
     @Test
     public void testJob()
             throws SchedulerException, InterruptedException, DotDataException, DotSecurityException {
-        final ExperimentDataGen experimentDataGen = new ExperimentDataGen();
         final Instant NOW_PLUS_TWO_MINUTES = Instant.now().plus(2, ChronoUnit.MINUTES);
 
         // create experiment that will end soon
-        Experiment scheduledToEndExperiment = experimentDataGen
+        Experiment scheduledToEndExperiment = new ExperimentDataGen()
                 .scheduling(Scheduling.builder().endDate(NOW_PLUS_TWO_MINUTES).build())
+                .status(Status.RUNNING)
                 .nextPersisted();
 
         Experiment scheduledToStartExperiment = null;
 
         try {
-
-            scheduledToEndExperiment = experimentsAPI.start(
-                    scheduledToEndExperiment.id().orElseThrow(), APILocator.systemUser());
 
             assertEquals(Status.RUNNING, scheduledToEndExperiment.status());
             // wait some minutes for its end date to be reached
@@ -88,11 +85,14 @@ public class StartEndScheduledExperimentsJobTest extends IntegrationTestBase {
             // create experiment that should have started
             final Instant NOW_PLUS_ONE_MINUTE = Instant.now().plus(1, ChronoUnit.MINUTES);
 
-            scheduledToStartExperiment = experimentDataGen
+            scheduledToStartExperiment = new ExperimentDataGen()
                     .scheduling(Scheduling.builder().startDate(NOW_PLUS_ONE_MINUTE).build())
                     .nextPersisted();
 
-            assertEquals(Status.DRAFT, scheduledToStartExperiment.status());
+            scheduledToStartExperiment = experimentsAPI.start(scheduledToStartExperiment.id().orElseThrow(),
+                    APILocator.systemUser());
+
+            assertEquals(Status.SCHEDULED, scheduledToStartExperiment.status());
 
             new StartEndScheduledExperimentsJob().run(null);
 

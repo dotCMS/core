@@ -1,5 +1,6 @@
 package com.dotmarketing.startup.runonce;
 
+import com.dotcms.business.WrapInTransaction;
 import java.util.List;
 import java.util.Map;
 
@@ -104,7 +105,8 @@ public class Task03100HTMLPageAsContentChanges implements StartupTask {
         return results==null || results.size()<1;
     }
 
-    @Override
+	@Override
+	@WrapInTransaction
     public void executeUpgrade() throws DotDataException, DotRuntimeException {
     	
     	try{

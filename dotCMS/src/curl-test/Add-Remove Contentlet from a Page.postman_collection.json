@@ -1,9 +1,9 @@
 {
 	"info": {
-		"_postman_id": "a82d6d0d-696b-4e94-85a3-2f56c720a821",
+		"_postman_id": "a23d7cfd-b23a-47df-aa00-123309c61292",
 		"name": "Add/Remove Contentlet from a Page",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
-		"_exporter_id": "1549189"
+		"_exporter_id": "4500400"
 	},
 	"item": [
 		{
@@ -617,7 +617,7 @@
 						"header": [],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"name\": \"Variant to Add/Remove contentlet test\"\n}",
+							"raw": "{\n    \"description\": \"Variant to Add/Remove contentlet test\"\n}",
 							"options": {
 								"raw": {
 									"language": "json"

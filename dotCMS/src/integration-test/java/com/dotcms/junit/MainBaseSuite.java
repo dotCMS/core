@@ -2,11 +2,8 @@ package com.dotcms.junit;
 
 import com.dotcms.business.bytebuddy.ByteBuddyFactory;
 import com.dotcms.util.StdOutErrLog;
-import com.dotmarketing.db.DbConnectionFactory;
 import java.util.LinkedList;
 import java.util.List;
-
-import com.dotmarketing.util.Logger;
 import org.junit.runner.Description;
 import org.junit.runner.Runner;
 import org.junit.runner.notification.RunNotifier;
@@ -34,7 +31,6 @@ public class MainBaseSuite extends Suite {
 
     private static List<Runner> getRunners(Class<?>[] classes) throws InitializationError {
 
-        System.out.println("Register ByteBuddy");
         ByteBuddyFactory.init();
         List<Runner> runners = new LinkedList<>();
 
@@ -61,16 +57,7 @@ public class MainBaseSuite extends Suite {
 
         @Override
         public void run(RunNotifier notifier) {
-            try {
-                this.runner.run(notifier);
-            } finally {
-                if (DbConnectionFactory.inTransaction())
-                    Logger.error(DotRunner.class,"Test "+this.getDescription()+" has open transaction after");
-
-                if (DbConnectionFactory.connectionExists())
-                    Logger.error(DotRunner.class,"Test "+this.getDescription()+" has open connection after");
-                DbConnectionFactory.closeSilently();
-            }
+            this.runner.run(notifier);
         }
     }
 }

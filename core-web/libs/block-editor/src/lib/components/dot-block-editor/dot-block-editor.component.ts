@@ -1,8 +1,17 @@
-import { Subject } from 'rxjs';
+import { Subject, from } from 'rxjs';
 
-import { Component, Injector, Input, OnDestroy, OnInit, ViewContainerRef } from '@angular/core';
+import {
+    Component,
+    EventEmitter,
+    Injector,
+    Input,
+    OnDestroy,
+    OnInit,
+    Output,
+    ViewContainerRef
+} from '@angular/core';
 
-import { debounceTime, takeUntil } from 'rxjs/operators';
+import { debounceTime, take, takeUntil } from 'rxjs/operators';
 
 import { AnyExtension, Content, Editor } from '@tiptap/core';
 import CharacterCount, { CharacterCountStorage } from '@tiptap/extension-character-count';
@@ -14,6 +23,8 @@ import { TableRow } from '@tiptap/extension-table-row';
 import { TextAlign } from '@tiptap/extension-text-align';
 import { Underline } from '@tiptap/extension-underline';
 import StarterKit, { StarterKitOptions } from '@tiptap/starter-kit';
+
+import { RemoteCustomExtentions, EDITOR_MARKETING_KEYS } from '@dotcms/dotcms-models';
 
 import {
     ActionsMenu,
@@ -31,7 +42,12 @@ import {
     ImageUpload
 } from '../../extensions';
 import { ContentletBlock, ImageNode, VideoNode } from '../../nodes';
-import { formatHTML, removeInvalidNodes, SetDocAttrStep } from '../../shared/utils';
+import {
+    formatHTML,
+    removeInvalidNodes,
+    SetDocAttrStep,
+    DotMarketingConfigService
+} from '../../shared';
 
 function toTitleCase(str) {
     return str.replace(/\p{L}+('\p{L}+)?/gu, function (txt) {
@@ -50,7 +66,14 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy {
     @Input() customStyles: string;
     @Input() displayCountBar: boolean | string = true;
     @Input() charLimit: number;
+    @Input() customBlocks: string;
     @Input() content: Content = '';
+    @Input() set showVideoThumbnail(value) {
+        this.dotMarketingConfigService.setProperty(
+            EDITOR_MARKETING_KEYS.SHOW_VIDEO_THUMBNAIL,
+            value
+        );
+    }
 
     @Input() set allowedBlocks(blocks: string) {
         const allowedBlocks = blocks ? blocks.replace(/ /g, '').split(',').filter(Boolean) : [];
@@ -67,6 +90,7 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy {
 
         this.setEditorJSONContent(content);
     }
+    @Output() valueChange = new EventEmitter<string>();
 
     editor: Editor;
     subject = new Subject();
@@ -99,21 +123,38 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy {
         return Math.ceil(this.characterCount.words() / 265);
     }
 
-    constructor(private injector: Injector, public viewContainerRef: ViewContainerRef) {}
+    constructor(
+        private injector: Injector,
+        public viewContainerRef: ViewContainerRef,
+        private dotMarketingConfigService: DotMarketingConfigService
+    ) {}
+
+    async loadCustomBlocks(urls: string[]) {
+        return Promise.all(urls.map(async (url) => import(/* webpackIgnore: true */ url)));
+    }
 
     ngOnInit() {
-        this.editor = new Editor({
-            extensions: [
-                ...this.getEditorExtensions(),
-                ...this.getEditorMarks(),
-                ...this.getEditorNodes()
-            ]
-        });
+        from(this.getCustomRemoteExtensions())
+            .pipe(take(1))
+            .subscribe((extensions) => {
+                this.editor = new Editor({
+                    extensions: [
+                        ...this.getEditorExtensions(),
+                        ...this.getEditorMarks(),
+                        ...this.getEditorNodes(),
+                        ...extensions
+                    ]
+                });
 
-        this.editor.on('create', () => this.updateChartCount());
-        this.subject
-            .pipe(takeUntil(this.destroy$), debounceTime(250))
-            .subscribe(() => this.updateChartCount());
+                this.editor.on('create', () => this.updateChartCount());
+                this.subject
+                    .pipe(takeUntil(this.destroy$), debounceTime(250))
+                    .subscribe(() => this.updateChartCount());
+
+                this.editor.on('update', ({ editor }) => {
+                    this.valueChange.emit(JSON.stringify(editor.getJSON()));
+                });
+            });
     }
 
     ngOnDestroy() {
@@ -129,8 +170,46 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy {
         this.editor.view.dispatch(tr);
     }
 
+    private getParsedCustomBlocks(): RemoteCustomExtentions {
+        try {
+            return JSON.parse(this.customBlocks);
+        } catch (e) {
+            console.warn('JSON parse fails, please check the JSON format.', e);
+
+            return {
+                extensions: []
+            };
+        }
+    }
+
+    /**
+     * This methods get the customBlocks variable to retrieve the custom modules as Objects.
+     * Validates that there is customBlocks defined.
+     * @private
+     * @return {*}  {Promise<AnyExtension[]>}
+     * @memberof DotBlockEditorComponent
+     */
+    private async getCustomRemoteExtensions(): Promise<AnyExtension[]> {
+        const data: RemoteCustomExtentions = this.getParsedCustomBlocks();
+
+        const extensionUrls = data.extensions.map((extension) => extension.url);
+        const customModules = await this.loadCustomBlocks(extensionUrls);
+        const blockNames = [];
+
+        data.extensions.forEach((extension) => {
+            blockNames.push(...extension.actions.map((item) => item.name));
+        });
+
+        const moduleObj = customModules.reduce(
+            (prevModule, module) => ({ ...prevModule, ...module }),
+            {}
+        );
+
+        return blockNames.map((block) => moduleObj[block]);
+    }
+
     private getEditorNodes(): AnyExtension[] {
-        // If you have more than one allow block (other than the parragrph),
+        // If you have more than one allow block (other than the paragraph),
         // we customize the starterkit.
         const starterkit =
             this._allowedBlocks?.length > 1
@@ -215,7 +294,7 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy {
                 allowedBlocks: this._allowedBlocks
             }),
             Placeholder.configure({ placeholder: this.placeholder }),
-            ActionsMenu(this.viewContainerRef),
+            ActionsMenu(this.viewContainerRef, this.getParsedCustomBlocks()),
             DragHandler(this.viewContainerRef),
             ImageUpload(this.injector, this.viewContainerRef),
             BubbleLinkFormExtension(this.viewContainerRef),

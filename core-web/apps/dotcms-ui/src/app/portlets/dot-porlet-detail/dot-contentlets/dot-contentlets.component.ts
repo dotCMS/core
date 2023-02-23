@@ -37,7 +37,12 @@ export class DotContentletsComponent implements AfterViewInit {
      * @memberof DotContentletsComponent
      */
     onCloseEditor(): void {
-        this.dotRouterService.gotoPortlet(`/c/${this.dotRouterService.currentPortlet.id}`);
+        const portletUrl = this.dotRouterService.currentPortlet.url
+            .split('/')
+            .slice(0, -1)
+            .join('/');
+
+        this.dotRouterService.gotoPortlet(portletUrl);
         this.dotIframeService.reloadData(this.dotRouterService.currentPortlet.id);
     }
 

@@ -1,6 +1,7 @@
 package com.dotmarketing.startup.runonce;
 
 import com.dotcms.business.CloseDBIfOpened;
+import com.dotcms.business.WrapInTransaction;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.common.db.DotDatabaseMetaData;
 import com.dotmarketing.db.DbConnectionFactory;
@@ -79,6 +80,7 @@ public class Task05165CreateContentTypeWorkflowActionMappingTable extends Abstra
     }
 
     @Override
+    @WrapInTransaction
     public void executeUpgrade() throws DotDataException {
 
         if (DbConnectionFactory.isMsSql() && !DbConnectionFactory.getAutoCommit()) {

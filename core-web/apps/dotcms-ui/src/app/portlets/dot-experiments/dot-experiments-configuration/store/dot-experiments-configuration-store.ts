@@ -109,6 +109,18 @@ export class DotExperimentsConfigurationStore extends ComponentStore<DotExperime
         stepStatusSidebar.experimentStep === ExperimentSteps.SCHEDULING ? stepStatusSidebar : null
     );
 
+    //Traffic Step
+    readonly trafficProportion$: Observable<TrafficProportion> = this.select(({ experiment }) =>
+        experiment.trafficProportion ? experiment.trafficProportion : null
+    );
+    readonly trafficAllocation$: Observable<number> = this.select(({ experiment }) =>
+        experiment.trafficAllocation ? experiment.trafficAllocation : null
+    );
+
+    readonly trafficStatus$ = this.select(this.state$, ({ stepStatusSidebar }) =>
+        stepStatusSidebar.experimentStep === ExperimentSteps.TRAFFIC ? stepStatusSidebar : null
+    );
+
     // Updaters
     readonly setExperiment = this.updater((state, experiment: DotExperiment) => ({
         ...state,
@@ -159,6 +171,11 @@ export class DotExperimentsConfigurationStore extends ComponentStore<DotExperime
     readonly setScheduling = this.updater((state, scheduling: RangeOfDateAndTime) => ({
         ...state,
         experiment: { ...state.experiment, scheduling }
+    }));
+
+    readonly setTrafficAllocation = this.updater((state, trafficAllocation: number) => ({
+        ...state,
+        experiment: { ...state.experiment, trafficAllocation }
     }));
 
     // Effects
@@ -441,6 +458,51 @@ export class DotExperimentsConfigurationStore extends ComponentStore<DotExperime
         }
     );
 
+    readonly setSelectedAllocation = this.effect(
+        (trafficAllocation$: Observable<{ trafficAllocation: number; experimentId: string }>) => {
+            return trafficAllocation$.pipe(
+                tap(() => {
+                    this.setSidebarStatus({
+                        status: ComponentStatus.SAVING,
+                        experimentStep: ExperimentSteps.TRAFFIC
+                    });
+                }),
+                switchMap((data) => {
+                    return this.dotExperimentsService
+                        .setTrafficAllocation(data.experimentId, data.trafficAllocation)
+                        .pipe(
+                            tapResponse(
+                                (experiment) => {
+                                    this.setTrafficAllocation(experiment.trafficAllocation);
+                                    this.messageService.add({
+                                        severity: 'info',
+                                        summary: this.dotMessageService.get(
+                                            'experiments.configure.traffic.allocation.add.confirm.title'
+                                        ),
+                                        detail: this.dotMessageService.get(
+                                            'experiments.configure.traffic.allocation.add.confirm.message'
+                                        )
+                                    });
+                                    this.setSidebarStatus({
+                                        status: ComponentStatus.IDLE,
+                                        experimentStep: ExperimentSteps.TRAFFIC,
+                                        isOpen: false
+                                    });
+                                },
+                                (response: HttpErrorResponse) => {
+                                    this.dotHttpErrorManagerService.handle(response);
+                                    this.setSidebarStatus({
+                                        status: ComponentStatus.IDLE,
+                                        experimentStep: ExperimentSteps.TRAFFIC
+                                    });
+                                }
+                            )
+                        );
+                })
+            );
+        }
+    );
+
     readonly vm$: Observable<ConfigurationViewModel> = this.select(
         this.state$,
         this.canStartExperiment$,
@@ -498,6 +560,24 @@ export class DotExperimentsConfigurationStore extends ComponentStore<DotExperime
         (experimentId, scheduling, status) => ({
             experimentId,
             scheduling,
+            status
+        })
+    );
+
+    readonly trafficStepVm$: Observable<{
+        experimentId: string;
+        trafficProportion: TrafficProportion;
+        trafficAllocation: number;
+        status: StepStatus;
+    }> = this.select(
+        this.getExperimentId$,
+        this.trafficProportion$,
+        this.trafficAllocation$,
+        this.trafficStatus$,
+        (experimentId, trafficProportion, trafficAllocation, status) => ({
+            experimentId,
+            trafficProportion,
+            trafficAllocation,
             status
         })
     );
