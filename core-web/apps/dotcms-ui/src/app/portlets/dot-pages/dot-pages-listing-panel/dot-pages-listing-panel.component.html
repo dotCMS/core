@@ -34,7 +34,7 @@
             <button
                 class="p-button-primary"
                 [label]="'create.page' | dm"
-                routerLink="/c/content/new/htmlpageasset"
+                (click)="createPage.emit()"
                 data-testid="createPageButton"
                 pButton
             ></button>
