@@ -97,17 +97,15 @@ export class DotExperimentsConfigurationTrafficComponent {
     private loadSidebarComponent(status: StepStatus): void {
         if (status && status.isOpen && status.status != ComponentStatus.SAVING) {
             this.sidebarHost.viewContainerRef.clear();
-            if (this.trafficConfig == TrafficConfig.SPLIT) {
-                this.componentRef =
-                    this.sidebarHost.viewContainerRef.createComponent<DotExperimentsConfigurationTrafficSplitAddComponent>(
-                        DotExperimentsConfigurationTrafficSplitAddComponent
-                    );
-            } else {
-                this.componentRef =
-                    this.sidebarHost.viewContainerRef.createComponent<DotExperimentsConfigurationTrafficAllocationAddComponent>(
-                        DotExperimentsConfigurationTrafficAllocationAddComponent
-                    );
-            }
+
+            this.componentRef =
+                this.trafficConfig == TrafficConfig.SPLIT
+                    ? this.sidebarHost.viewContainerRef.createComponent<DotExperimentsConfigurationTrafficSplitAddComponent>(
+                          DotExperimentsConfigurationTrafficSplitAddComponent
+                      )
+                    : this.sidebarHost.viewContainerRef.createComponent<DotExperimentsConfigurationTrafficAllocationAddComponent>(
+                          DotExperimentsConfigurationTrafficAllocationAddComponent
+                      );
         }
     }
 
