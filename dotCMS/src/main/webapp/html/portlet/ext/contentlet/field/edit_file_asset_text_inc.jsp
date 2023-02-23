@@ -83,37 +83,30 @@
 			aceAreaParser(parser);
      }
 
-	 let tempFileId = "new";
+	let tempFileId = "new";
 
+	/**
+	 * For text File Assets, creates a temporary file with the changes that the user made. Once the User saves/publishes
+	 * the Contentlet, these new changes will overwrite the existing file so that they can be persisted.
+	 */
 	function saveText(){
 		if(!changed) {
 			return;
 		}
-		var text = aceEditor.getValue();
+		let text = aceEditor.getValue();
 
 		if (contentletInode.value == '') {
 			let fileName = dojo.byId("fileName").value;
-			//alert(fileName);
 			if (fileName) {
-				/*const url = "/api/v1/temp?maxFileLength=-1";
-				let formData = new FormData();
-				formData.append("files", text);
-				formData.append("filename", fileName);
-
-				fetch(url, {
-					method: "PUT",
-					body: formData,
-				}).then(
-						response => console.log(response.json())// .json(), etc.
-						// same as function(response) {return response.text();}
-				).then(
-						html => console.log(html)
-				);*/
-				var data = JSON.stringify({
+				let fileExtension = fileName.split('.').pop();
+				if (fileExtension) {
+					loadAce(fileExtension);
+				}
+				let data = JSON.stringify({
 					"fileName": fileName,
 					"fileContent": text
 				});
-				var xhr = new XMLHttpRequest();
+				let xhr = new XMLHttpRequest();
 
 				xhr.addEventListener("readystatechange", function() {
 					if(this.readyState === 4) {
@@ -123,10 +116,9 @@
 
 				xhr.onload = function() {
 					let jsonData = JSON.parse(xhr.response);
-					//alert(jsonData);
 					tempFileId = jsonData.tempFiles[0].id;
-					var elements = document.getElementsByName("<%= field.getFieldContentlet() %>");
-					for (var i = 0; i < elements.length; i++) {
+					let elements = document.getElementsByName("<%= field.getFieldContentlet() %>");
+					for (let i = 0; i < elements.length; i++) {
 						if (elements[i].tagName.toLowerCase() == "input") {
 							elements[i].value = tempFileId;
 						}
