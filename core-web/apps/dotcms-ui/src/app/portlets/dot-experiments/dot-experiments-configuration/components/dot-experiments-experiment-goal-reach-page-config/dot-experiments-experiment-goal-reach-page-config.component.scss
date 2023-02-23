@@ -5,14 +5,18 @@
 }
 
 .field {
-    //gap: $spacing-1;
+
     margin: $spacing-0;
 
-    //label {
-    //    font-weight: $font-weight-semi-bold;
-    //    margin-bottom: $spacing-0;
-    //    font-size: $font-size-medium;
-    //}
+
+    gap: $spacing-1;
+    margin: $spacing-0;
+
+    label {
+        font-weight: $font-weight-semi-bold;
+        margin-bottom: $spacing-0;
+        font-size: $font-size-medium;
+    }
 
     p {
         margin: $spacing-0;
@@ -30,7 +34,7 @@
 .condition {
     gap: $spacing-3;
 
-    //label {
-    //    font-weight: $font-weight-regular-bold;
-    //}
+    label {
+        font-weight: $font-weight-regular-bold;
+    }
 }

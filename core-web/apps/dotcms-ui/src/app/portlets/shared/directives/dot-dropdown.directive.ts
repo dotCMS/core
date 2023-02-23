@@ -34,7 +34,7 @@ export class DotDropdownDirective {
     }
 
     /**
-     *Array of option to translate LABEL_NAME and assign to Dropdown
+     *Array of options to translate LABEL_NAME and assign to Dropdown
      *
      * @param {Array<ExperimentsSelectOption<string>>} options - Options of Dropdown
      * @memberof DotDropdownDirective
