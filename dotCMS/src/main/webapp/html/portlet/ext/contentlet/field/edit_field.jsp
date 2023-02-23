@@ -3,6 +3,7 @@
 <%@page import="com.dotmarketing.image.focalpoint.FocalPointAPIImpl"%>
 <%@page import="com.dotcms.enterprise.LicenseUtil"%>
 <%@page import="com.dotcms.enterprise.license.LicenseLevel"%>
+<%@page import="com.dotmarketing.util.Config"%>
 <%@page import="com.dotmarketing.business.APILocator"%>
 <%@page import="com.dotmarketing.business.PermissionAPI"%>
 <%@page import="com.dotmarketing.exception.DotSecurityException"%>
@@ -162,6 +163,8 @@
             String allowedBlocks = "";
             String displayCountBar = "";
             String charLimit = "";
+            String customBlocks = "";
+            Boolean showVideoThumbnail = Config.getBooleanProperty("SHOW_VIDEO_THUMBNAIL", true);
 
             // By default this is an empty JSON `{}`.
             JSONObject JSONValue = new JSONObject();
@@ -170,6 +173,7 @@
             } catch(Exception e) {
                 // Need it in case the value contains Single quote/backtick.
                 textValue = "`" + textValue.replaceAll("`", "&#96;") + "`";
+              
             }
 
             List<FieldVariable> acceptTypes=APILocator.getFieldAPI().getFieldVariablesForField(field.getInode(), user, false);
@@ -190,6 +194,9 @@
                 if("charLimit".equalsIgnoreCase(fv.getKey())){
                     charLimit = fv.getValue();
                 }
+                if("customBlocks".equalsIgnoreCase(fv.getKey())){
+                    customBlocks = fv.getValue();
+                }
             }
             %>
 
@@ -201,7 +208,8 @@
                 custom-styles="<%=customStyles%>"
                 display-count-bar="<%=displayCountBar%>"
                 char-limit="<%=charLimit%>"
-                lang="<%=contentLanguage%>">
+                lang="<%=contentLanguage%>"
+                custom-blocks='<%=customBlocks%>'>
             </dotcms-block-editor>
             <input type="hidden" name="<%=field.getFieldContentlet()%>" id="<%=field.getVelocityVarName()%>"/>
 
@@ -238,9 +246,11 @@
                         field.value = JSON.stringify(block.editor.getJSON());
                     }
 
-                    block.editor.on('update', ({ editor }) => {
-                        field.value = JSON.stringify(editor.getJSON());
-                    })
+                    blockEditor.addEventListener('updateEditorEvent', (event) => {
+                        field.value = event.detail;
+                    });
+
+                    blockEditor.showVideoThumbnail = <%=showVideoThumbnail%>;
                 })();
 
             </script>

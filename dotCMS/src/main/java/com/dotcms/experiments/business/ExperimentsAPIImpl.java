@@ -3,6 +3,7 @@ package com.dotcms.experiments.business;
 import static com.dotcms.experiments.model.AbstractExperiment.Status.DRAFT;
 import static com.dotcms.experiments.model.AbstractExperiment.Status.ENDED;
 import static com.dotcms.experiments.model.AbstractExperiment.Status.RUNNING;
+import static com.dotcms.experiments.model.AbstractExperiment.Status.SCHEDULED;
 import static com.dotcms.experiments.model.AbstractExperimentVariant.EXPERIMENT_VARIANT_NAME_PREFIX;
 import static com.dotcms.experiments.model.AbstractExperimentVariant.EXPERIMENT_VARIANT_NAME_SUFFIX;
 
@@ -13,7 +14,11 @@ import static com.dotcms.variant.VariantAPI.DEFAULT_VARIANT;
 
 import com.dotcms.analytics.app.AnalyticsApp;
 import com.dotcms.analytics.helper.AnalyticsHelper;
+
+import com.dotcms.analytics.metrics.AbstractCondition.Operator;
 import com.dotcms.analytics.metrics.EventType;
+import com.dotcms.analytics.metrics.Metric;
+import com.dotcms.analytics.metrics.MetricType;
 import com.dotcms.analytics.metrics.MetricsUtil;
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
@@ -25,16 +30,22 @@ import com.dotcms.enterprise.rules.RulesAPI;
 import com.dotcms.experiments.business.result.BrowserSession;
 import com.dotcms.experiments.business.result.Event;
 import com.dotcms.experiments.business.result.ExperimentAnalyzerUtil;
-import com.dotcms.experiments.business.result.ExperimentResult;
-import com.dotcms.experiments.business.result.ExperimentResultQueryFactory;
+import com.dotcms.experiments.business.result.ExperimentResults;
+import com.dotcms.experiments.business.result.ExperimentResultsQueryFactory;
 import com.dotcms.exception.NotAllowedException;
 import com.dotcms.experiments.model.AbstractExperiment.Status;
 import com.dotcms.experiments.model.AbstractTrafficProportion.Type;
 import com.dotcms.experiments.model.Experiment;
+import com.dotcms.experiments.model.Experiment.Builder;
 import com.dotcms.experiments.model.ExperimentVariant;
+import com.dotcms.experiments.model.Goals;
 import com.dotcms.experiments.model.Scheduling;
 import com.dotcms.experiments.model.TargetingCondition;
+
 import com.dotcms.experiments.model.TrafficProportion;
+
+
+import com.dotcms.rest.exception.NotFoundException;
 import com.dotcms.util.CollectionsUtils;
 import com.dotcms.util.DotPreconditions;
 import com.dotcms.util.LicenseValiditySupplier;
@@ -88,6 +99,8 @@ import java.util.TreeSet;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import io.vavr.Lazy;
+import org.jetbrains.annotations.NotNull;
+
 public class ExperimentsAPIImpl implements ExperimentsAPI {
 
     private Lazy<Boolean> isExperimentEnabled =
@@ -150,7 +163,12 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
         builder.lastModifiedBy(user.getUserId());
         
         if(experiment.goals().isPresent()) {
-            MetricsUtil.INSTANCE.validateGoals(experiment.goals().get());
+            final Goals goals = experiment.goals().orElseThrow();
+            MetricsUtil.INSTANCE.validateGoals(goals);
+
+            addConditionIfIsNeed(goals,
+                    APILocator.getHTMLPageAssetAPI().fromContentlet(pageAsContent), builder);
+
         }
 
         if(experiment.targetingConditions().isPresent()) {
@@ -176,15 +194,62 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
                     ORIGINAL_VARIANT, user));
         }
 
-        if(savedExperiment.get().scheduling().isEmpty()) {
-            final Scheduling scheduling = startNowScheduling(savedExperiment.get());
-            savedExperiment = Optional.of(savedExperiment.get().withScheduling(scheduling));
-        } else if(experiment.status()!=ENDED) {
-            Scheduling scheduling = validateScheduling(savedExperiment.get().scheduling().get());
-            savedExperiment = Optional.of(savedExperiment.get().withScheduling(scheduling));
+        if(!savedExperiment.get().scheduling().isEmpty()) {
+            validateScheduling(savedExperiment.get().scheduling().get());
         }
 
         return savedExperiment.get();
+    }
+
+    private void addConditionIfIsNeed(final Goals goals, final HTMLPageAsset page,
+            final Builder builder) {
+
+        if (goals.primary().type() == MetricType.REACH_PAGE && !hasCondition(goals, "referer")) {
+            addRefererCondition(page, builder, goals);
+        } else if (goals.primary().type() == MetricType.BOUNCE_RATE && !hasCondition(goals, "url")) {
+            addUrlCondition(page, builder, goals);
+        }
+    }
+
+    private void addRefererCondition(final HTMLPageAsset page, final Builder builder, final Goals goals) {
+
+        final com.dotcms.analytics.metrics.Condition refererCondition = createConditionWithUrlValue(
+                page, "referer");
+
+        final Goals newGoal = createNewGoals(goals, refererCondition);
+        builder.goals(newGoal);
+    }
+
+    private void addUrlCondition(final HTMLPageAsset page, final Builder builder, final Goals goals) {
+
+        final com.dotcms.analytics.metrics.Condition refererCondition = createConditionWithUrlValue(
+                page, "url");
+
+        final Goals newGoal = createNewGoals(goals, refererCondition);
+        builder.goals(newGoal);
+    }
+
+    @NotNull
+    private static Goals createNewGoals(final Goals oldGoals,
+            final com.dotcms.analytics.metrics.Condition newConditionToAdd) {
+        final Metric newMetric = Metric.builder().from(oldGoals.primary())
+                .addConditions(newConditionToAdd).build();
+        return Goals.builder().from(oldGoals).primary(newMetric).build();
+    }
+
+    private boolean hasCondition(final Goals goals, final String conditionName){
+        return goals.primary().conditions()
+                .stream()
+                .anyMatch(condition ->conditionName .equals(condition.parameter()));
+    }
+    private com.dotcms.analytics.metrics.Condition createConditionWithUrlValue(final HTMLPageAsset page,
+            final String conditionName) {
+
+        return com.dotcms.analytics.metrics.Condition.builder()
+                .parameter(conditionName)
+                .operator(Operator.CONTAINS)
+                .value(page.getPageUrl())
+                .build();
     }
 
     private void saveTargetingConditions(final Experiment experiment, final User user)
@@ -375,7 +440,7 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
                         + "Experiment Id: " + persistedExperiment.id());
 
         DotPreconditions.isTrue(persistedExperiment.status()!=Status.RUNNING ||
-                        persistedExperiment.status() == Status.SCHEDULED,()-> "Cannot start an already started Experiment.",
+                        persistedExperiment.status() != Status.SCHEDULED,()-> "Cannot start an already started Experiment.",
                 DotStateException.class);
 
         DotPreconditions.isTrue(persistedExperiment.status()== DRAFT
@@ -388,24 +453,46 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
         DotPreconditions.checkState(persistedExperiment.goals().isPresent(), "The Experiment needs to "
                 + "have the Goal set.");
 
-        final Experiment experimentToStart;
+        Experiment toReturn;
 
         if(persistedExperiment.scheduling().isEmpty()) {
             final Scheduling scheduling = startNowScheduling(persistedExperiment);
-            experimentToStart = persistedExperiment.withScheduling(scheduling);
+            toReturn = save(persistedExperiment.withScheduling(scheduling).withStatus(RUNNING), user);
+            publishContentOnExperimentVariants(user, toReturn);
         } else {
             Scheduling scheduling = validateScheduling(persistedExperiment.scheduling().get());
-            experimentToStart = persistedExperiment.withScheduling(scheduling);
+            toReturn = save(persistedExperiment.withScheduling(scheduling).withStatus(SCHEDULED)
+                    ,user);
         }
 
-        Experiment running = experimentToStart.withStatus(Status.RUNNING);
-        running = save(running, user);
+        return toReturn;
+    }
 
+    @Override
+    public Experiment startScheduled(String experimentId, User user)
+            throws DotDataException, DotSecurityException {
+        DotPreconditions.isTrue(hasValidLicense(), InvalidLicenseException.class,
+                invalidLicenseMessageSupplier);
+        DotPreconditions.checkArgument(UtilMethods.isSet(experimentId), "experiment Id must be provided.");
+
+        final Experiment persistedExperiment =  find(experimentId, user).orElseThrow(
+                ()-> new IllegalArgumentException("Experiment with provided id not found")
+        );
+
+        validatePermissions(user, persistedExperiment,
+                "You don't have permission to start the Experiment. "
+                        + "Experiment Id: " + persistedExperiment.id());
+
+        DotPreconditions.isTrue(persistedExperiment.status() == Status.SCHEDULED,()-> "Cannot start an already started Experiment.",
+                DotStateException.class);
+
+        Experiment running = save(persistedExperiment.withStatus(RUNNING), user);
         publishContentOnExperimentVariants(user, running);
 
         return running;
-
     }
+
+
     private void publishContentOnExperimentVariants(final User user,
             final Experiment runningExperiment)
             throws DotDataException, DotSecurityException {
@@ -714,7 +801,20 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
      * @return
      */
     @Override
-    public ExperimentResult getResult(final Experiment experiment) {
+    public ExperimentResults getResults(final Experiment experiment)
+            throws DotDataException, DotSecurityException {
+
+        final String experimentId = experiment.id().orElseThrow(
+                () -> new IllegalArgumentException("The Experiment must have an Identifier"));
+
+        final Experiment experimentFromDataBase = APILocator.getExperimentsAPI()
+                .find(experimentId, APILocator.systemUser())
+                .orElseThrow(() -> new NotFoundException("Experiment not found: " + experimentId));
+
+        DotPreconditions.isTrue(experimentFromDataBase.status() == RUNNING,
+                "The Experiment must be RUNNING");
+
+
         final List<BrowserSession> events = getEvents(experiment);
         return ExperimentAnalyzerUtil.INSTANCE.getExperimentResult(experiment, events);
     }
@@ -729,7 +829,7 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
             final CubeJSClient cubeClient = new CubeJSClient(
                     analyticsApp.getAnalyticsProperties().analyticsReadUrl());
 
-            final CubeJSQuery cubeJSQuery = ExperimentResultQueryFactory.INSTANCE
+            final CubeJSQuery cubeJSQuery = ExperimentResultsQueryFactory.INSTANCE
                     .create(experiment);
 
             final CubeJSResultSet cubeJSResultSet = cubeClient.send(cubeJSQuery);
@@ -783,12 +883,12 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
     @Override
     public void startScheduledToStartExperiments(final User user) throws DotDataException {
         final List<Experiment> scheduledToStartExperiments = list(ExperimentFilter.builder()
-                .statuses(CollectionsUtils.set(DRAFT)).build(), user).stream()
+                .statuses(CollectionsUtils.set(SCHEDULED)).build(), user).stream()
                 .filter((experiment -> experiment.scheduling().isPresent() && experiment.scheduling().get().startDate().orElseThrow()
                         .isAfter(Instant.now()))).collect(Collectors.toList());
 
         scheduledToStartExperiments.forEach((experiment ->
-                Try.of(()->start(experiment.id().orElseThrow(), user)).getOrElseThrow((e)->
+                Try.of(()->startScheduled(experiment.id().orElseThrow(), user)).getOrElseThrow((e)->
                         new DotStateException("Unable to start Experiment. Cause:" + e))));
     }
     

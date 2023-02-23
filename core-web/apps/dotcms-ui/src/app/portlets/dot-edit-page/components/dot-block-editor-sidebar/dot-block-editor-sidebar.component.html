@@ -2,16 +2,17 @@
     #sidebar
     [blockScroll]="true"
     [visible]="!!blockEditorInput"
-    position="right"
     [dismissible]="false"
     [showCloseIcon]="false"
     [closeOnEscape]="false"
     (onHide)="sidebar.destroyModal(); closeSidebar()"
+    position="right"
     data-testid="sidebar"
 >
     <div class="container" *ngIf="blockEditorInput">
         <dot-block-editor
             #blockEditor
+            [showVideoThumbnail]="showVideoThumbnail"
             [lang]="blockEditorInput.language"
             [allowedBlocks]="blockEditorInput.fieldVariables.allowedBlocks"
             [allowedContentTypes]="blockEditorInput.fieldVariables.allowedContentTypes"
@@ -21,20 +22,20 @@
         </dot-block-editor>
         <footer>
             <button
-                pButton
                 class="p-button-secondary"
-                type="button"
-                (click)="closeSidebar()"
                 [label]="'Cancel' | dm"
+                (click)="closeSidebar()"
+                pButton
+                type="button"
                 data-testid="cancelBtn"
             ></button>
             <button
                 [disabled]="saving"
                 [loading]="saving"
+                [label]="'Update' | dm"
+                (click)="saveEditorChanges()"
                 pButton
                 type="button"
-                (click)="saveEditorChanges()"
-                [label]="'Update' | dm"
                 data-testid="updateBtn"
             ></button>
         </footer>

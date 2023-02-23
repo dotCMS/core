@@ -49,10 +49,10 @@ public class InstanceCommand implements Callable<Integer> {
     //This combination should give me one or both but at least one selection needs to be made
     static class RequireOneOrBothNotNoneGroup {
 
-        @CommandLine.Option(names = {"-ls", "--list"}, description = "Prints out a list of Content-types")
-        Boolean list;
+        @CommandLine.Option(names = {"-ls", "--list"}, description = "Prints out a list of available dotCMS Instance")
+        boolean list;
 
-        @CommandLine.Option(names = {"-a", "--activate"}, arity = "1", description = "Activate a profile by entering it's name.")
+        @CommandLine.Option(names = {"-act", "--activate"}, arity = "1", description = "Activate a profile by entering it's name.")
         String activate;
     }
 
@@ -78,7 +78,7 @@ public class InstanceCommand implements Callable<Integer> {
                     .collect(Collectors.toMap(ServiceBean::name, Function.identity(),
                             (serviceBean1, serviceBean2) -> serviceBean1));
 
-            if (Boolean.TRUE.equals(options.list)) {
+            if (options.list) {
 
                 output.info("Available registered dotCMS servers.");
 

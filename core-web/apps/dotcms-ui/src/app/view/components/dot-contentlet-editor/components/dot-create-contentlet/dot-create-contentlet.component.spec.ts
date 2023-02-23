@@ -14,7 +14,7 @@ import { ConfirmationService } from 'primeng/api';
 import { DotIframeService } from '@components/_common/iframe/service/dot-iframe/dot-iframe.service';
 import { DotFormatDateService } from '@dotcms/app/api/services/dot-format-date-service';
 import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
-import { DotAlertConfirmService } from '@dotcms/data-access';
+import { DotAlertConfirmService, DotEventsService } from '@dotcms/data-access';
 import { CoreWebService, LoginService } from '@dotcms/dotcms-js';
 import { CoreWebServiceMock, LoginServiceMock, MockDotRouterService } from '@dotcms/utils-testing';
 
@@ -60,6 +60,7 @@ describe('DotCreateContentletComponent', () => {
             ],
             providers: [
                 DotIframeService,
+                DotEventsService,
                 DotFormatDateService,
                 DotAlertConfirmService,
                 ConfirmationService,

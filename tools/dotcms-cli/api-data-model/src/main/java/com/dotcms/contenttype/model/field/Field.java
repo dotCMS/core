@@ -23,7 +23,7 @@ import org.immutables.value.Value.Default;
         use = Id.CLASS,
         property = "clazz"
 )
-@JsonTypeIdResolver(value = ClassNameAliasResolver.class)
+@JsonTypeIdResolver(value = Field.ClassNameAliasResolver.class)
 @JsonSubTypes({
         @Type(value = StoryBlockField.class),
         @Type(value = BinaryField.class),
@@ -140,6 +140,8 @@ public abstract class Field {
 
     static class ClassNameAliasResolver extends ClassNameIdResolver {
 
+        static final String IMMUTABLE = "Immutable";
+
         static TypeFactory typeFactory = TypeFactory.defaultInstance();
 
         public ClassNameAliasResolver() {
@@ -147,10 +149,19 @@ public abstract class Field {
         }
 
         @Override
+        public String idFromValue(Object value) {
+            final String simpleName = value.getClass().getSimpleName();
+            if(simpleName.startsWith(IMMUTABLE)){
+               return simpleName.replace(IMMUTABLE,"");
+            }
+            return super.idFromValue(value);
+        }
+
+        @Override
         public JavaType typeFromId(final DatabindContext context, final String id) throws IOException {
-            final String packageName = Field.class.getPackage().getName();
+            final String packageName = Field.class.getPackageName();
             if( !id.contains(".") && !id.startsWith(packageName)){
-                final String className = String.format("%s.Immutable%s",packageName,id);
+                final String className = String.format("%s.Immutable%s", packageName,id);
                 return super.typeFromId(context, className);
             }
             return super.typeFromId(context, id);

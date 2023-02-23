@@ -25,7 +25,7 @@ const permissionsData: DotPermissionsType = {
     TEMPLATES: { canRead: true, canWrite: true },
     CONTENTLETS: { canRead: true, canWrite: true }
 };
-class DotCurrentUserServiceMock {
+export class DotCurrentUserServiceMock {
     getCurrentUser() {
         return of(CurrentUserDataMock);
     }

@@ -14,7 +14,7 @@ export interface DotExperiment {
     readyToStart: boolean;
     archived: boolean;
     trafficProportion: TrafficProportion;
-    trafficAllocation: string;
+    trafficAllocation: number;
     scheduling: RangeOfDateAndTime | null;
     creationDate: Date;
     modDate: Date;

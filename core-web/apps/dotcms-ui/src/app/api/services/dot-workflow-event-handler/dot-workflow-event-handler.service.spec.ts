@@ -58,7 +58,7 @@ import { MockPushPublishService } from '@portlets/shared/dot-content-types-listi
 
 const mockWAEvent: DotCMSWorkflowActionEvent = {
     workflow: mockWorkflowsActions[0],
-    callback: 'test',
+    callback: 'angularWorkflowEventCallback',
     inode: '123Inode',
     selectedInodes: []
 };
@@ -197,7 +197,6 @@ describe('DotWorkflowEventHandlerService', () => {
             expect(dotGlobalMessageService.display).toHaveBeenCalledWith(
                 `The action "${mockWorkflowsActions[0].name}" was executed correctly`
             );
-
             expect(dotIframeService.run).toHaveBeenCalledWith({ name: mockWAEvent.callback });
         });
 
