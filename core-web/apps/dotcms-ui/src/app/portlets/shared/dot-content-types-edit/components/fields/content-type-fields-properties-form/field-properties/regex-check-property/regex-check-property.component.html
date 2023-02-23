@@ -1,11 +1,7 @@
 <div class="field" [formGroup]="group">
-    <label
-        [for]="property.name"
-        [ngClass]="{
-            'p-label-input-required': isRequired
-        }"
-        >{{ 'contenttypes.field.properties.validation_regex.label' | dm }}</label
-    >
+    <label [for]="property.name" dotFieldRequired>{{
+        'contenttypes.field.properties.validation_regex.label' | dm
+    }}</label>
     <div class="form__validation-input-container">
         <input [id]="property.name" [formControlName]="property.name" pInputText type="text" />
         <p-dropdown

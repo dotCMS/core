@@ -1,5 +1,5 @@
 import { Component, ViewChild } from '@angular/core';
-import { AbstractControl, UntypedFormGroup } from '@angular/forms';
+import { UntypedFormGroup } from '@angular/forms';
 
 import { DotTextareaContentComponent } from '@components/_common/dot-textarea-content/dot-textarea-content.component';
 
@@ -22,23 +22,6 @@ export class ValuesPropertyComponent {
         'com.dotcms.contenttype.model.field.ImmutableMultiSelectField',
         'com.dotcms.contenttype.model.field.ImmutableSelectField'
     ];
-
-    /**
-     * check field is required or not
-     * @readonly
-     * @type {boolean}
-     * @memberof DefaultValuePropertyComponent
-     */
-    get isRequired(): boolean {
-        const validatorFunc = this.group.get(this.property.name).validator;
-        if (validatorFunc) {
-            const validator = validatorFunc({} as AbstractControl);
-
-            return validator && validator.required;
-        }
-
-        return false;
-    }
 
     /**
      * Checks if helper should show, based on the clazz property.

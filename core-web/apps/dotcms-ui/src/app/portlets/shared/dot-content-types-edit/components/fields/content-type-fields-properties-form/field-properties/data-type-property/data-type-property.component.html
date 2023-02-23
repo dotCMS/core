@@ -1,5 +1,7 @@
 <div class="field" *ngIf="radioInputs" [formGroup]="group">
-    <label>{{ 'contenttypes.field.properties.data_type.label' | dm }}</label>
+    <label [for]="property.name" dotFieldRequired>{{
+        'contenttypes.field.properties.data_type.label' | dm
+    }}</label>
 
     <div class="formgroup-inline">
         <div class="field-checkbox" *ngFor="let radio of radioInputs">

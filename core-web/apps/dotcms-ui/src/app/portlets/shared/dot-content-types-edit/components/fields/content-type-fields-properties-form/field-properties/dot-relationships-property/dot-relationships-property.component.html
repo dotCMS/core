@@ -29,16 +29,10 @@
 
     <ng-template #existing>
         <div class="field">
-            <label
-                [ngClass]="{
-                    'p-label-input-required': isRequired
-                }"
-                for="editrelationships"
-                >Relationship</label
-            >
+            <label [for]="property.name" dotFieldRequired>Relationship</label>
             <dot-edit-relationships
                 class="relationships__existing"
-                id="editrelationships"
+                [id]="property.name"
                 (switch)="handleChange($event)"
             >
             </dot-edit-relationships>

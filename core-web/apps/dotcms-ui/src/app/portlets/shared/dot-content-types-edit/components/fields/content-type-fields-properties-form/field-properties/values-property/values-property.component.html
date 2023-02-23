@@ -3,13 +3,9 @@
         *ngIf="helpText && isValidHelperClass()"
         [message]="helpText"
     ></dot-field-helper>
-    <label
-        [for]="property.name"
-        [ngClass]="{
-            'p-label-input-required': isRequired
-        }"
-        >{{ 'contenttypes.field.properties.value.label' | dm }}</label
-    >
+    <label [for]="property.name" dotFieldRequired>{{
+        'contenttypes.field.properties.value.label' | dm
+    }}</label>
     <dot-textarea-content
         #value
         [id]="property.name"
@@ -19,7 +15,7 @@
     ></dot-textarea-content>
     <dot-field-validation-message
         [field]="group.controls[property.name]"
-        message="Values is required"
+        message="{{ 'contenttypes.field.properties.value.message' | dm }}"
     >
     </dot-field-validation-message>
 </div>

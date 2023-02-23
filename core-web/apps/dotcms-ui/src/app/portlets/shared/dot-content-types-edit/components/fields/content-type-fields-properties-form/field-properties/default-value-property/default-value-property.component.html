@@ -1,11 +1,7 @@
 <div class="field" [formGroup]="group">
-    <label
-        [ngClass]="{
-            'p-label-input-required': isRequired
-        }"
-        for="property.name"
-        >{{ 'contenttypes.field.properties.default_value.label' | dm }}</label
-    >
+    <label [for]="property.name" dotFieldRequired>{{
+        'contenttypes.field.properties.default_value.label' | dm
+    }}</label>
     <input [id]="property.name" [formControlName]="property.name" pInputText type="text" />
     <dot-field-validation-message
         [field]="group.controls[property.name]"

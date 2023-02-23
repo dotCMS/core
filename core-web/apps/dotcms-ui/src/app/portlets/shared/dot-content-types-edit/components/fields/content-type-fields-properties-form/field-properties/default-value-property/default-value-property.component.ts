@@ -1,5 +1,5 @@
 import { Component, OnInit } from '@angular/core';
-import { AbstractControl, UntypedFormGroup } from '@angular/forms';
+import { UntypedFormGroup } from '@angular/forms';
 
 import { DotMessageService } from '@dotcms/data-access';
 
@@ -20,23 +20,6 @@ export class DefaultValuePropertyComponent implements OnInit {
     ngOnInit(): void {
         this.setErrorLabelMap();
         this.errorLabel = this.getErrorLabel(this.property.field.clazz);
-    }
-
-    /**
-     * check field is required or not
-     * @readonly
-     * @type {boolean}
-     * @memberof DefaultValuePropertyComponent
-     */
-    get isRequired(): boolean {
-        const validatorFunc = this.group.get(this.property.name).validator;
-        if (validatorFunc) {
-            const validator = validatorFunc({} as AbstractControl);
-
-            return validator && validator.required;
-        }
-
-        return false;
     }
 
     private getErrorLabel(clazz: string): string {

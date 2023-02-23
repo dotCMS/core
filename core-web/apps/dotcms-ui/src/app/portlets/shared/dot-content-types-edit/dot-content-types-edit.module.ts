@@ -79,6 +79,7 @@ import { ContentTypesFormComponent } from './components/form/content-types-form.
 import { ContentTypesLayoutComponent } from './components/layout/content-types-layout.component';
 import { DotContentTypesEditRoutingModule } from './dot-content-types-edit-routing.module';
 import { DotContentTypesEditComponent } from './dot-content-types-edit.component';
+import { DotFieldRequiredDirective } from '@directives/dot-field-required/dot-field-required.directive';
 
 @NgModule({
     declarations: [
@@ -102,7 +103,8 @@ import { DotContentTypesEditComponent } from './dot-content-types-edit.component
         NamePropertyComponent,
         RegexCheckPropertyComponent,
         ValuesPropertyComponent,
-        DotBlockEditorSettingsComponent
+        DotBlockEditorSettingsComponent,
+        DotFieldRequiredDirective
     ],
     exports: [DotContentTypesEditComponent],
     imports: [
