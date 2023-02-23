@@ -203,3 +203,4 @@ This maintenance release includes the following code fixes:
 
 **Release-21.06.14**
 
+125. https://github.com/dotCMS/core/issues/22840 : Add relationship is broken in many to one relationship #22840
