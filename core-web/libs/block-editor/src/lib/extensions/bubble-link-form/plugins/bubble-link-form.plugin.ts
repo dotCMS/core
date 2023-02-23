@@ -104,6 +104,11 @@ export class BubbleLinkFormView {
         const { state } = this.editor;
         const { to } = state.selection;
         const { openOnClick } = LINK_FORM_PLUGIN_KEY.getState(state);
+        const pluginState = this.pluginKey.getState(state);
+
+        if (!pluginState.isOpen) {
+            return;
+        }
 
         if (openOnClick) {
             this.editor.commands.closeLinkForm();

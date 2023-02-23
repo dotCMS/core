@@ -52,14 +52,12 @@ function getTippyInstance({
     element,
     content,
     rect,
-    onHide,
-    onShown
+    onHide
 }: {
     element: Element;
     content: Element;
     rect: GetReferenceClientRect;
     onHide?: () => void;
-    onShown?: () => void;
 }) {
     return tippy(element, {
         content: content,
@@ -73,7 +71,6 @@ function getTippyInstance({
         offset: [120, 10],
         trigger: 'manual',
         maxWidth: 'none',
-        onShown,
         onHide
     });
 }
@@ -194,6 +191,7 @@ export const ActionsMenu = (viewContainerRef: ViewContainerRef) => {
                         open: false
                     });
                     editor.view.dispatch(transaction);
+                    editor.commands.freezeScroll(false);
                 }
             });
         }

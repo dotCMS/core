@@ -3,7 +3,7 @@
         <tiptap-editor
             [(ngModel)]="content"
             [editor]="editor"
-            [ngStyle]="{ overflow: freezeScroll ? 'hidden' : 'auto' }"
+            [ngClass]="{ 'overflow-hidden': freezeScroll }"
             (keyup)="subject.next()"
         ></tiptap-editor>
     </div>
