@@ -2,6 +2,7 @@
 	"info": {
 		"_postman_id": "b65639a1-cec6-4b6c-b8b6-ab483db33b5b",
 		"name": "TempAPI",
+		"description": "Verifies that the Temp File API is working as expected. It allows users to create temporary files in the dotCMS assets folder.",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
 		"_exporter_id": "5403727"
 	},
@@ -243,14 +244,36 @@
 					"listen": "test",
 					"script": {
 						"exec": [
-							"var jsonData = pm.response.json();",
+							"pm.test(\"Checking file names and operation status code\", function () {",
+							"    var jsonData = pm.response.json();",
+							"    let found = false;",
+							"    jsonData.tempFiles.forEach((item) => {",
 							"",
-							"pm.test(\"File name check\", function () {",
-							"    pm.expect(jsonData.tempFiles[0].fileName).to.eql('Landscape_2009_romantic_country_garden.jpeg');",
-							"    pm.expect(jsonData.tempFiles[1].fileName).to.eql('16475687531_eac8a30914_b.jpeg');",
-							"    pm.expect(jsonData.tempFiles[2].errorCode).to.eql('400');",
+							"        if (item.fileName == \"Landscape_2009_romantic_country_garden.jpeg\") {",
+							"            found = true;",
+							"        }",
+							"",
+							"    });",
+							"    pm.expect(found).to.eq(true, \"Expected image 'Landscape_2009_romantic_country_garden.jpeg' was not found.\")",
+							"    found = false;",
+							"    jsonData.tempFiles.forEach((item) => {",
+							"",
+							"        if (item.fileName == \"16475687531_eac8a30914_b.jpeg\") {",
+							"            found = true;",
+							"        }",
+							"",
+							"    });",
+							"    pm.expect(found).to.eq(true, \"Expected image '16475687531_eac8a30914_b.jpeg' was not found.\")",
+							"    found = false;",
+							"    jsonData.tempFiles.forEach((item) => {",
+							"",
+							"        if (item.errorCode == \"400\") {",
+							"            found = true;",
+							"        }",
+							"",
+							"    });",
+							"    pm.expect(found).to.eq(true, \"Expected error code '400' not found.\")",
 							"});",
-							"",
 							""
 						],
 						"type": "text/javascript"
@@ -386,6 +409,26 @@
 				}
 			},
 			"response": []
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
 		}
 	],
 	"variable": [
