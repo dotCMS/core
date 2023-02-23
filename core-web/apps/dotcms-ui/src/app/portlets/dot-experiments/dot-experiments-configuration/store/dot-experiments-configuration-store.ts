@@ -70,15 +70,6 @@ export class DotExperimentsConfigurationStore extends ComponentStore<DotExperime
         ({ experiment }) => experiment?.trafficProportion.variants.length < 2 || !experiment?.goals
     );
 
-    // readonly getStatusExperiment$: Observable<{ label: string; classz: string }> = this.select(
-    //     ({ experiment }) => {
-    //         return {
-    //             ...DOT_EXPERIMENT_STATUS_METADATA_MAP[experiment?.status],
-    //             label: DOT_EXPERIMENT_STATUS_METADATA_MAP[experiment?.status]?.label
-    //         };
-    //     }
-    // );
-
     readonly getExperimentStatus$: Observable<DotExperimentStatusList> = this.select(
         ({ experiment }) => experiment?.status
     );

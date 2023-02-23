@@ -12,6 +12,7 @@ import { ButtonModule } from 'primeng/button';
 import { Card, CardModule } from 'primeng/card';
 
 import { DotMessageService } from '@dotcms/data-access';
+import { DotExperimentStatusList } from '@dotcms/dotcms-models';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 import { DotExperimentsConfigurationStore } from '@portlets/dot-experiments/dot-experiments-configuration/store/dot-experiments-configuration-store';
 import { DotExperimentsService } from '@portlets/dot-experiments/shared/services/dot-experiments.service';
@@ -58,5 +59,24 @@ describe('DotExperimentsConfigurationTargetingComponent', () => {
         expect(spectator.queryAll(Card).length).toEqual(1);
         expect(spectator.query(byTestId('targeting-card-name'))).toHaveText('Targeting');
         expect(spectator.query(byTestId('targeting-add-button'))).toExist();
+    });
+
+    it('should disable button and show tooltip when experiment is nos on draft', () => {
+        dotExperimentsService.getById.and.returnValue(
+            of({
+                ...ExperimentMocks[0],
+                ...{ status: DotExperimentStatusList.RUNNING }
+            })
+        );
+
+        store.loadExperiment(ExperimentMocks[0].id);
+
+        spectator.detectChanges();
+
+        expect(spectator.query(byTestId('targeting-add-button'))).toHaveAttribute('disabled');
+        expect(spectator.query(byTestId('tooltip-on-disabled'))).toHaveAttribute(
+            'ng-reflect-disabled',
+            'false'
+        );
     });
 });

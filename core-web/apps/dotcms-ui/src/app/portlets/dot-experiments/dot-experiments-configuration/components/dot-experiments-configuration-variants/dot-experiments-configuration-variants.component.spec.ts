@@ -21,6 +21,7 @@ import {
     ComponentStatus,
     DEFAULT_VARIANT_ID,
     DEFAULT_VARIANT_NAME,
+    DotExperimentStatusList,
     ExperimentSteps,
     SidebarStatus,
     Variant
@@ -354,6 +355,29 @@ describe('DotExperimentsConfigurationVariantsComponent', () => {
             spectator.detectChanges();
 
             expect(output).toEqual({ name: 'value' });
+        });
+
+        it('should disable button and show tooltip when experiment is nos on draft', () => {
+            dotExperimentsService.getById.and.returnValue(
+                of({
+                    ...ExperimentMocks[2],
+                    ...{ status: DotExperimentStatusList.RUNNING }
+                })
+            );
+
+            store.loadExperiment(ExperimentMocks[2].id);
+
+            spectator.detectChanges();
+
+            expect(spectator.queryAll(byTestId('variant-weight'))).toHaveAttribute('disabled');
+            expect(spectator.queryAll(byTestId('variant-delete-button'))).toHaveAttribute(
+                'disabled'
+            );
+            expect(spectator.query(byTestId('variant-add-button'))).toHaveAttribute('disabled');
+            expect(spectator.queryAll(byTestId('tooltip-on-disabled'))).toHaveAttribute(
+                'ng-reflect-disabled',
+                'false'
+            );
         });
     });
 });

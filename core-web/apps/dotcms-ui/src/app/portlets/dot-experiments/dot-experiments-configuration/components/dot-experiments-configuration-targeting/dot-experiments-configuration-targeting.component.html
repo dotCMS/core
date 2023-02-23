@@ -12,14 +12,18 @@
                 [pTooltip]="'experiment.configure.edit.only.draft.status' | dm"
                 [tooltipDisabled]="vm.isExperimentADraft"
                 tooltipPosition="bottom"
+                data-testId="tooltip-on-disabled"
             >
-                <p-button
+                <button
+                    class="p-button-sm p-button-link"
                     [disabled]="!vm.isExperimentADraft"
-                    (onClick)="setupTargeting()"
+                    (click)="setupTargeting()"
                     data-testId="targeting-add-button"
+                    pButton
+                    pRipple
                     label="{{ 'experiments.configure.targeting.add' | dm }}"
                     styleClass="p-button-sm p-button-link"
-                ></p-button>
+                ></button>
             </div>
         </ng-template>
     </p-card>

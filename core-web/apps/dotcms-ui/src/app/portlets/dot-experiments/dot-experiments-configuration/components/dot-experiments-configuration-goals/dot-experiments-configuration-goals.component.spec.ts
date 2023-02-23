@@ -11,6 +11,7 @@ import { ConfirmationService, MessageService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
 import { Card, CardModule } from 'primeng/card';
 import { ConfirmPopup, ConfirmPopupModule } from 'primeng/confirmpopup';
+import { TooltipModule } from 'primeng/tooltip';
 
 import { DotMessagePipe } from '@dotcms/app/view/pipes';
 import { DotMessageService } from '@dotcms/data-access';
@@ -44,7 +45,8 @@ describe('DotExperimentsConfigurationGoalsComponent', () => {
             CardModule,
             DotExperimentsConfigurationGoalSelectComponent,
             DotDynamicDirective,
-            ConfirmPopupModule
+            ConfirmPopupModule,
+            TooltipModule
         ],
         component: DotExperimentsConfigurationGoalsComponent,
         componentProviders: [],
@@ -113,7 +115,6 @@ describe('DotExperimentsConfigurationGoalsComponent', () => {
         spectator.detectComponentChanges();
 
         const addButton = spectator.query(byTestId('goals-add-button')) as HTMLButtonElement;
-
         expect(addButton.disabled).toBe(true);
     });
 
@@ -173,5 +174,33 @@ describe('DotExperimentsConfigurationGoalsComponent', () => {
         confirmPopupComponent.accept();
 
         expect(store.deleteGoal).toHaveBeenCalled();
+    });
+
+    it('should disable button and show tooltip when experiment is nos on draft', () => {
+        const vmMock$: {
+            experimentId: string;
+            goals: Goals;
+            status: StepStatus;
+            isExperimentADraft: boolean;
+        } = {
+            experimentId: EXPERIMENT_ID,
+            goals: null,
+            status: {
+                status: ComponentStatus.IDLE,
+                isOpen: false,
+                experimentStep: null
+            },
+            isExperimentADraft: false
+        };
+
+        spectator.component.vm$ = of(vmMock$);
+
+        spectator.detectComponentChanges();
+
+        expect(spectator.query(byTestId('goals-add-button'))).toHaveAttribute('disabled');
+        expect(spectator.query(byTestId('tooltip-on-disabled'))).toHaveAttribute(
+            'ng-reflect-disabled',
+            'false'
+        );
     });
 });

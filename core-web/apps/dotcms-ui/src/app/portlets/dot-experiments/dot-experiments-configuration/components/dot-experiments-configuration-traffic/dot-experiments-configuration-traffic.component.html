@@ -17,6 +17,7 @@
                     [pTooltip]="'experiment.configure.edit.only.draft.status' | dm"
                     [tooltipDisabled]="vm.isExperimentADraft"
                     tooltipPosition="bottom"
+                    data-testId="tooltip-on-disabled"
                 >
                     <button
                         class="p-button-sm p-button-link"
@@ -42,10 +43,12 @@
                     [pTooltip]="'experiment.configure.edit.only.draft.status' | dm"
                     [tooltipDisabled]="vm.isExperimentADraft"
                     tooltipPosition="bottom"
+                    data-testId="tooltip-on-disabled"
                 >
-                    <p-button
+                    <button
+                        class="p-button-sm p-button-link"
                         [disabled]="!vm.isExperimentADraft"
-                        (onClick)="changeTrafficProportion()"
+                        (click)="changeTrafficProportion()"
                         data-testId="traffic-split-change-button"
                         label=" {{
                             (vm.trafficProportion.type === splitEvenly
@@ -53,8 +56,9 @@
                                 : 'experiments.configure.traffic.split.custom'
                             ) | dm
                         }}"
-                        styleClass="p-button-sm p-button-link"
-                    ></p-button>
+                        pButton
+                        pRipple
+                    ></button>
                 </div>
             </div>
         </p-card>
