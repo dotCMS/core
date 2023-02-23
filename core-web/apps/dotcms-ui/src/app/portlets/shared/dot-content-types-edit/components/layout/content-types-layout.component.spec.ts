@@ -71,6 +71,15 @@ class TestHostComponent {
 })
 class TestContentTypesRelationshipListingComponent {}
 
+@Component({
+    selector: 'dot-add-to-menu',
+    template: ``
+})
+class MockDotAddToMenuComponent {
+    @Input() contentType: DotCMSContentType;
+    @Output() cancel = new EventEmitter<boolean>();
+}
+
 @Injectable()
 export class MockDotMenuService {
     getDotMenuId(): Observable<string> {
@@ -118,7 +127,8 @@ describe('ContentTypesLayoutComponent', () => {
                 TestContentTypeFieldsRowListComponent,
                 TestDotIframeComponent,
                 TestContentTypesRelationshipListingComponent,
-                TestHostComponent
+                TestHostComponent,
+                MockDotAddToMenuComponent
             ],
             imports: [
                 TabViewModule,
@@ -296,6 +306,22 @@ describe('ContentTypesLayoutComponent', () => {
             expect(addToMenuButton.nativeElement.textContent).toBe('Add To Menu');
             expect(addToMenuButton.nativeElement.disabled).toBe(false);
             expect(addToMenuButton).toBeTruthy();
+        });
+
+        it('should have open Add to Menu Dialog and close', () => {
+            spyOn(de.componentInstance, 'addContentInMenu').and.callThrough();
+            fixture.debugElement.query(By.css('#add-to-menu-button')).triggerEventHandler('click');
+            fixture.detectChanges();
+            expect(de.componentInstance.addContentInMenu).toHaveBeenCalled();
+            expect(de.componentInstance.addToMenuContentType).toBe(true);
+            let AddToMenuDialog: MockDotAddToMenuComponent = de.query(
+                By.css('dot-add-to-menu')
+            ).componentInstance;
+            expect(de.query(By.css('dot-add-to-menu'))).toBeTruthy();
+            AddToMenuDialog.cancel.emit();
+            fixture.detectChanges();
+            expect(de.query(By.css('dot-add-to-menu'))).toBeFalsy();
+            expect(de.componentInstance.addToMenuContentType).toBe(false);
         });
     });
 
