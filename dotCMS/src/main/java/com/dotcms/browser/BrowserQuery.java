@@ -40,7 +40,6 @@ import java.util.Set;
  */
 @JsonDeserialize(builder = BrowserQuery.Builder.class)
 public class BrowserQuery {
-
     private static final int MAX_FETCH_PER_REQUEST = Config.getIntProperty("BROWSER_MAX_FETCH_PER_REQUEST", 300);
     final User user;
     final String  filter, sortBy;
@@ -161,7 +160,6 @@ public class BrowserQuery {
         private String hostIdSystemFolder = null;
         private List<String> mimeTypes = new ArrayList<>();
         private List<String> extensions = new ArrayList<>();
-
         private Builder() {
         }
 
@@ -296,6 +294,13 @@ public class BrowserQuery {
         public Builder showDotAssets(@Nonnull boolean dotAssets) {
             if (dotAssets) {
                 baseTypes.add(BaseContentType.DOTASSET);
+            }
+            return this;
+        }
+
+        public Builder showImages(@Nonnull boolean showImages) {
+            if(showImages){
+                baseTypes.add(BaseContentType.FILEASSET);
             }
             return this;
         }

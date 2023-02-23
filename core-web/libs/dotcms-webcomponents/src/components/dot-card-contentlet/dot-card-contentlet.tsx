@@ -29,6 +29,8 @@ export class DotCardContentlet {
     })
     checked: boolean;
 
+    @Prop() showVideoThumbnail = false;
+
     @Event() checkboxChange: EventEmitter<DotCardContentletEvent>;
     @Event() contextMenuClick: EventEmitter<MouseEvent>;
 
@@ -57,6 +59,7 @@ export class DotCardContentlet {
         return (
             <dot-card>
                 <dot-contentlet-thumbnail
+                    showVideoThumbnail={this.showVideoThumbnail}
                     contentlet={contentlet}
                     width={this.thumbnailSize}
                     height={this.thumbnailSize}

@@ -15,7 +15,7 @@ const mouseoverEvent = new MouseEvent('mouseover', {
     cancelable: true
 });
 @Injectable()
-class DotLicenseServiceMock {
+export class DotLicenseServiceMock {
     isEnterprise(): Observable<boolean> {
         return observableOf(true);
     }

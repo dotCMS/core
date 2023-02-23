@@ -1,5 +1,6 @@
 package com.dotmarketing.startup.runonce;
 
+import com.dotcms.business.WrapInTransaction;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.startup.AbstractJDBCStartupTask;
@@ -112,6 +113,7 @@ public class Task220825MakeSomeSystemFieldsRemovable extends AbstractJDBCStartup
     }
 
     @Override
+    @WrapInTransaction
     public void executeUpgrade() throws DotDataException {
         if (isPostgres() || isMsSql()) {
             for (final String baseType : newBaseTypes.keySet()) {

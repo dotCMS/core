@@ -8,7 +8,6 @@ import org.immutables.value.Value;
 @Value.Immutable
 @JsonDeserialize(as = GetSiteByNameRequest.class)
 public interface AbstractGetSiteByNameRequest {
-
     String siteName();
 
 }
