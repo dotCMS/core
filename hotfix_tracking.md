@@ -200,3 +200,6 @@ This maintenance release includes the following code fixes:
 122. https://github.com/dotCMS/core/issues/23280 : Unable to assign contentlets in a secondary language from the task screen if there is a working version of the default language #23280
 123. https://github.com/dotCMS/core/issues/23384 : Thumbnailing Large/Complex pdfs can blow heap #23384
 124. https://github.com/dotCMS/core/issues/21415 : Prevent XMLTool from fetching embedded entities #21415
+
+**Release-21.06.14**
+
