@@ -19,10 +19,10 @@
                 <input
                     id="name"
                     [tabindex]="1"
-                    data-testId="add-experiment-name-input"
+                    data-testId="add-experiment-description-input"
                     dotAutofocus
-                    formControlName="name"
-                    name="name"
+                    formControlName="description"
+                    name="description"
                     pInputText
                     placeholder="{{
                         'experiments.configure.variant.add.form.name.placeholder' | dm
@@ -31,7 +31,7 @@
                     type="text"
                 />
                 <dot-field-validation-message
-                    [field]="form.controls.name"
+                    [field]="form.controls.description"
                 ></dot-field-validation-message>
             </div>
         </form>

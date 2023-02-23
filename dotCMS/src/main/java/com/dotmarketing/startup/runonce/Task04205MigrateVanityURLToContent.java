@@ -2,6 +2,7 @@ package com.dotmarketing.startup.runonce;
 
 import static com.dotcms.util.CollectionsUtils.map;
 
+import com.dotcms.business.WrapInTransaction;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.common.db.DotConnect;
@@ -85,6 +86,7 @@ public class Task04205MigrateVanityURLToContent extends AbstractJDBCStartupTask 
     private Map<String, String> siteIds = new HashMap<>();
 
     @Override
+    @WrapInTransaction
     public void executeUpgrade() throws DotDataException {
 
         Connection conn =null;
