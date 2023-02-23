@@ -101,7 +101,7 @@ public class SystemEnvDataSourceStrategy implements DotDataSourceStrategy {
 
         config.setTransactionIsolation(systemEnvironmentProperties
                 .getVariable(CONNECTION_DB_DEFAULT_TRANSACTION_ISOLATION));
-
+        DbConnectionUtil.setHikariTransactionIsolation(config);
         return new HikariDataSource(config);
     }
 }
