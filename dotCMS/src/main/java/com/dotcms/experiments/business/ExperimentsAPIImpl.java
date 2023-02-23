@@ -455,7 +455,9 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
 
         Experiment toReturn;
 
-        if(persistedExperiment.scheduling().isEmpty()) {
+        if(persistedExperiment.scheduling().isEmpty() ||
+                (persistedExperiment.scheduling().get().startDate()).isEmpty()
+                        && persistedExperiment.scheduling().get().endDate().isEmpty()) {
             final Scheduling scheduling = startNowScheduling(persistedExperiment);
             toReturn = save(persistedExperiment.withScheduling(scheduling).withStatus(RUNNING), user);
             publishContentOnExperimentVariants(user, toReturn);
@@ -946,6 +948,10 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
     }
 
     public Scheduling validateScheduling(final Scheduling scheduling) {
+        if(scheduling==null || (scheduling.startDate().isEmpty() && scheduling.endDate().isEmpty())) {
+            return scheduling;
+        }
+
         Scheduling toReturn = scheduling;
         final Instant NOW = Instant.now().minus(1, ChronoUnit.MINUTES);
 
