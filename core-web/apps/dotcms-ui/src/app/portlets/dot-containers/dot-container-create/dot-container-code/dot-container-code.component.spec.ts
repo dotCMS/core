@@ -338,6 +338,15 @@ describe('DotContentEditorComponent', () => {
             }));
         });
 
+        it('shoud not have required code field on default content type', () => {
+            expect(
+                (hostComponent.form.get('containerStructures') as FormArray).controls[0]
+                    .get('code')
+                    .hasValidator(Validators.required)
+            ).toEqual(false);
+            expect(hostComponent.form.valid).toEqual(true);
+        });
+
         it('shoud have add loader on content types', () => {
             // remove all content types
             comp.contentTypes = [];
