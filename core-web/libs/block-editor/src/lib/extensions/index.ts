@@ -38,3 +38,4 @@ export * from './image-uploader/image-uploader.extension';
 export * from './image-uploader/services/dot-image/dot-image.service';
 
 export * from './asset-form/asset-form.component';
+export * from './freeze-scroll/freeze-scroll.extension';
