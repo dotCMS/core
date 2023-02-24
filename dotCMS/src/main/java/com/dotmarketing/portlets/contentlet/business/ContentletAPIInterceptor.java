@@ -703,22 +703,6 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 	}
 
 	@Override
-	public Contentlet find(String inode, User user, String variantName, boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
-		for(ContentletAPIPreHook pre : preHooks){
-			boolean preResult = pre.find(inode, user, respectFrontendRoles);
-			if(!preResult){
-				Logger.error(this, "The following prehook failed " + pre.getClass().getName());
-				throw new DotRuntimeException("The following prehook failed " + pre.getClass().getName());
-			}
-		}
-		Contentlet c = conAPI.find(inode, user, variantName, respectFrontendRoles);
-		for(ContentletAPIPostHook post : postHooks){
-			post.find(inode, user, respectFrontendRoles,c);
-		}
-		return c;
-	}
-
-	@Override
 	public List<Contentlet> find(Category category, long languageId, boolean live, String orderBy, User user, boolean respectFrontendRoles) throws DotDataException,	DotContentletStateException, DotSecurityException {
 		for(ContentletAPIPreHook pre : preHooks){
 			boolean preResult = pre.find(category, languageId, live, orderBy, user, respectFrontendRoles);
