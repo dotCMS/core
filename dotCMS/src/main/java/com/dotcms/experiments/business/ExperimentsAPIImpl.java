@@ -194,7 +194,9 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
                     ORIGINAL_VARIANT, user));
         }
 
-        if(!savedExperiment.get().scheduling().isEmpty()) {
+        if(savedExperiment.get().status() != RUNNING &&
+                savedExperiment.get().status() != ENDED &&
+                !savedExperiment.get().scheduling().isEmpty()) {
             validateScheduling(savedExperiment.get().scheduling().get());
         }
 
@@ -462,9 +464,9 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
             toReturn = save(persistedExperiment.withScheduling(scheduling).withStatus(RUNNING), user);
             publishContentOnExperimentVariants(user, toReturn);
         } else {
-            Scheduling scheduling = validateScheduling(persistedExperiment.scheduling().get());
-            toReturn = save(persistedExperiment.withScheduling(scheduling).withStatus(SCHEDULED)
-                    ,user);
+            //Scheduling scheduling = validateScheduling(persistedExperiment.scheduling().get());
+            Scheduling scheduling = persistedExperiment.scheduling().get();
+            toReturn = save(persistedExperiment.withScheduling(scheduling).withStatus(SCHEDULED),user);
         }
 
         return toReturn;
@@ -874,6 +876,7 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
     @Override
     public void endFinalizedExperiments(final User user) throws DotDataException {
         final List<Experiment> finalizedExperiments = getRunningExperiments().stream()
+                .filter(experiment -> experiment.scheduling().orElseThrow().endDate().isPresent())
                 .filter((experiment -> experiment.scheduling().orElseThrow().endDate().orElseThrow()
                         .isBefore(Instant.now()))).collect(Collectors.toList());
 
@@ -887,7 +890,7 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
         final List<Experiment> scheduledToStartExperiments = list(ExperimentFilter.builder()
                 .statuses(CollectionsUtils.set(SCHEDULED)).build(), user).stream()
                 .filter((experiment -> experiment.scheduling().isPresent() && experiment.scheduling().get().startDate().orElseThrow()
-                        .isAfter(Instant.now()))).collect(Collectors.toList());
+                        .isBefore(Instant.now()))).collect(Collectors.toList());
 
         scheduledToStartExperiments.forEach((experiment ->
                 Try.of(()->startScheduled(experiment.id().orElseThrow(), user)).getOrElseThrow((e)->
