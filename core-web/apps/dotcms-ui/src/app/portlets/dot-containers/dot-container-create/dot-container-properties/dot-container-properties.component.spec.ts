@@ -342,9 +342,9 @@ describe('DotContainerPropertiesComponent', () => {
             tick();
             fixture.detectChanges();
             const preLoopComponent = de.query(By.css('dot-loop-editor'));
-            const codeEditoromponent = de.query(By.css('dot-container-code'));
+            const codeEditorComponent = de.query(By.css('dot-container-code'));
             expect(preLoopComponent).toBeDefined();
-            expect(codeEditoromponent).toBeDefined();
+            expect(codeEditorComponent).toBeDefined();
             expect(fixture.componentInstance.showContentTypeAndCode).toHaveBeenCalled();
         }));
 
