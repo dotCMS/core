@@ -11,6 +11,7 @@ import { takeUntil } from 'rxjs/operators';
 import { Editor, posToDOMRect } from '@tiptap/core';
 import { BubbleMenuView } from '@tiptap/extension-bubble-menu';
 
+import { BASIC_TIPPY_OPTIONS } from '../../../shared';
 import { getNodePosition } from '../../bubble-menu/utils';
 import { BubbleFormComponent } from '../bubble-form.component';
 import { BUBBLE_FORM_PLUGIN_KEY } from '../bubble-form.extension';
@@ -143,22 +144,8 @@ export class BubbleFormView extends BubbleMenuView {
 
         this.tippy = tippy(editorElement.parentElement, {
             ...this.tippyOptions,
-            duration: [250, 0],
+            ...BASIC_TIPPY_OPTIONS,
             content: this.element,
-            interactive: true,
-            maxWidth: 'none',
-            trigger: 'manual',
-            placement: 'bottom-start',
-            hideOnClick: 'toggle',
-            popperOptions: {
-                modifiers: [
-                    {
-                        name: 'flip',
-                        options: { fallbackPlacements: ['top-start'] }
-                    }
-                ]
-            },
-
             onShow: () => {
                 requestAnimationFrame(() => {
                     this.component.instance.inputs.first.nativeElement.focus();

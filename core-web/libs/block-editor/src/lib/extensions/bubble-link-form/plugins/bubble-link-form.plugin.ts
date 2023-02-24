@@ -11,7 +11,7 @@ import { takeUntil } from 'rxjs/operators';
 import { Editor, posToDOMRect } from '@tiptap/core';
 
 import { ImageNode } from '../../../nodes';
-import { getPosAtDocCoords } from '../../../shared';
+import { BASIC_TIPPY_OPTIONS, getPosAtDocCoords } from '../../../shared';
 import { isValidURL } from '../../bubble-menu/utils';
 import { BubbleLinkFormComponent, NodeProps } from '../bubble-link-form.component';
 import { LINK_FORM_PLUGIN_KEY } from '../bubble-link-form.extension';
@@ -128,22 +128,9 @@ export class BubbleLinkFormView {
 
         this.tippy = tippy(editorElement.parentElement, {
             ...this.tippyOptions,
-            duration: [250, 0],
+            ...BASIC_TIPPY_OPTIONS,
             getReferenceClientRect: () => this.setTippyPosition(),
             content: this.element,
-            interactive: true,
-            maxWidth: 'none',
-            trigger: 'manual',
-            placement: 'bottom-start',
-            hideOnClick: 'toggle',
-            popperOptions: {
-                modifiers: [
-                    {
-                        name: 'flip',
-                        options: { fallbackPlacements: ['top-start'] }
-                    }
-                ]
-            },
             onHide: () => {
                 this.editor.commands.closeLinkForm();
             }
