@@ -63,16 +63,14 @@ import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.WebKeys;
 import com.liferay.portal.model.User;
-import com.tngtech.java.junit.dataprovider.DataProvider;
-import com.tngtech.java.junit.dataprovider.DataProviderRunner;
-import com.tngtech.java.junit.dataprovider.UseDataProvider;
+
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
-import org.junit.runner.RunWith;
+
 
 
 public class HTMLPageAssetRenderedAPIImplIntegrationTest extends IntegrationTestBase {
@@ -1487,6 +1485,13 @@ public class HTMLPageAssetRenderedAPIImplIntegrationTest extends IntegrationTest
 
     private Container createAndPublishContainer(final Host host, final ContentType contentType)
             throws WebAssetException, DotSecurityException, DotDataException {
+
+        return createAndPublishContainer(host, contentType, "$!{title}");
+    }
+
+    private Container createAndPublishContainer(final Host host, final ContentType contentType,
+            final String structureCode) throws WebAssetException, DotSecurityException, DotDataException {
+
         Container container = new ContainerDataGen()
                 .site(host)
                 .nextPersisted();
@@ -1494,7 +1499,7 @@ public class HTMLPageAssetRenderedAPIImplIntegrationTest extends IntegrationTest
 
         final ContainerStructure containerStructure = new ContainerStructure();
         containerStructure.setStructureId(contentType.id());
-        containerStructure.setCode("$!{title}");
+        containerStructure.setCode(structureCode);
 
         container = APILocator.getContainerAPI().save(container,
                 list(containerStructure), host, APILocator.systemUser(), false);
@@ -1949,7 +1954,7 @@ public class HTMLPageAssetRenderedAPIImplIntegrationTest extends IntegrationTest
     /**
      * Method to test: {@link HTMLPageAssetRenderedAPI#getPageHtml(PageContext, HttpServletRequest, HttpServletResponse)}
      * When: Try to render a page with a specific {@link Variant}} and a specific {@link Language}
-     * and the page had a Contentlet that has a versio in the variant but not in the DEFAULT Variant
+     * and the page had a Contentlet that has a version in the variant but not in the DEFAULT Variant
      * Should: render the page with the Contentlet
      *
      * @throws WebAssetException
@@ -2004,6 +2009,116 @@ public class HTMLPageAssetRenderedAPIImplIntegrationTest extends IntegrationTest
         Assert.assertEquals(
                 getNotExperimentJsCode() +
                         "<div>" + contentletTitle + "</div>", html);
+    }
+
+    /**
+     * Method to test: {@link HTMLPageAssetRenderedAPI#getPageHtml(PageContext, HttpServletRequest, HttpServletResponse)}
+     * When: Try to render a page with a specific {@link Variant}} using the SYSTEM_CONTAINER
+     * Should: render the page
+     *
+     * @throws WebAssetException
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    @Test
+    public void renderVariantPageWithSystemContainer() throws WebAssetException, DotDataException, DotSecurityException {
+        final Language language = new LanguageDataGen().nextPersisted();
+        final Variant variant = new VariantDataGen().nextPersisted();
+        final Host host = new SiteDataGen().nextPersisted();
+
+        final ContentType contentType = createContentType();
+        final Container systemContainer = APILocator.getContainerAPI().systemContainer();
+        final HTMLPageAsset page = createHtmlPageAsset(language, host, systemContainer, VariantAPI.DEFAULT_VARIANT);
+
+        final Contentlet contentlet = new ContentletDataGen(contentType)
+                .languageId(language.getId())
+                .host(host)
+                .setProperty("title", "DEFAULT")
+                .variant(VariantAPI.DEFAULT_VARIANT)
+                .nextPersistedAndPublish();
+
+        createNewVersion(contentlet, language, variant, "title", "VARIANT" + language.getId());
+
+        new MultiTreeDataGen()
+                .setPage(page)
+                .setContentlet(contentlet)
+                .setInstanceID(ContainerUUID.UUID_START_VALUE)
+                .setTreeOrder(0)
+                .setContainer(systemContainer)
+                .setVariant(variant)
+                .nextPersisted();
+
+        final HttpServletRequest mockRequest = createHttpServletRequest(language, host,
+                variant, page);
+
+        final HttpServletResponse mockResponse = mock(HttpServletResponse.class);
+        final HttpSession session = createHttpSession(mockRequest);
+        when(session.getAttribute(WebKeys.VISITOR)).thenReturn(null);
+
+        final String html = APILocator.getHTMLPageAssetRenderedAPI().getPageHtml(
+                PageContextBuilder.builder()
+                        .setUser(APILocator.systemUser())
+                        .setPageUri(page.getURI())
+                        .setPageMode(PageMode.LIVE)
+                        .build(),
+                mockRequest, mockResponse);
+
+        Assert.assertTrue(html.contains("VARIANT" + language.getId()));
+    }
+
+    /**
+     * Method to test: {@link HTMLPageAssetRenderedAPI#getPageHtml(PageContext, HttpServletRequest, HttpServletResponse)}
+     * When: Try to render a page with a specific {@link Variant}} using a {@link Container} thar is using the dotContentMap
+     * Should: render the page
+     *
+     * @throws WebAssetException
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    @Test
+    public void renderVariantPageWithDotContentMap() throws WebAssetException, DotDataException, DotSecurityException {
+        final Language language = new LanguageDataGen().nextPersisted();
+        final Variant variant = new VariantDataGen().nextPersisted();
+        final Host host = new SiteDataGen().nextPersisted();
+
+        final ContentType contentType = createContentType();
+        final Container systemContainer = createAndPublishContainer(host, contentType, "$!{dotContentMap.title}");
+        final HTMLPageAsset page = createHtmlPageAsset(language, host, systemContainer, VariantAPI.DEFAULT_VARIANT);
+
+        final Contentlet contentlet = new ContentletDataGen(contentType)
+                .languageId(language.getId())
+                .host(host)
+                .setProperty("title", "DEFAULT")
+                .variant(VariantAPI.DEFAULT_VARIANT)
+                .nextPersistedAndPublish();
+
+        createNewVersion(contentlet, language, variant, "title", "VARIANT" + language.getId());
+
+        new MultiTreeDataGen()
+                .setPage(page)
+                .setContentlet(contentlet)
+                .setInstanceID(ContainerUUID.UUID_START_VALUE)
+                .setTreeOrder(0)
+                .setContainer(systemContainer)
+                .setVariant(variant)
+                .nextPersisted();
+
+        final HttpServletRequest mockRequest = createHttpServletRequest(language, host,
+                variant, page);
+
+        final HttpServletResponse mockResponse = mock(HttpServletResponse.class);
+        final HttpSession session = createHttpSession(mockRequest);
+        when(session.getAttribute(WebKeys.VISITOR)).thenReturn(null);
+
+        final String html = APILocator.getHTMLPageAssetRenderedAPI().getPageHtml(
+                PageContextBuilder.builder()
+                        .setUser(APILocator.systemUser())
+                        .setPageUri(page.getURI())
+                        .setPageMode(PageMode.LIVE)
+                        .build(),
+                mockRequest, mockResponse);
+
+        Assert.assertTrue(html.contains("<div>VARIANT" + language.getId()+ "</div>"));
     }
 
     /**

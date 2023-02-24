@@ -1,5 +1,6 @@
 package com.dotcms.variant.business.web;
 
+import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
 import com.dotmarketing.util.PageMode;
 import com.liferay.portal.model.User;
 
@@ -26,6 +27,9 @@ public interface VariantWebAPI {
      * @return
      */
     RenderContext getRenderContext(final long tryingLang, final String identifier,
+            final PageMode pageMode, final User user);
+
+    ContentletVersionInfo getContentletVersionInfoByFallback(final long tryingLang, final String identifier,
             final PageMode pageMode, final User user);
 
     class RenderContext {
