@@ -1,6 +1,6 @@
 package com.dotmarketing.startup.runonce;
 
-import com.dotmarketing.beans.Inode;
+import com.dotcms.business.WrapInTransaction;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.exception.DotDataException;
@@ -72,6 +72,7 @@ public class Task03120AddInodeToContainerStructure implements StartupTask {
      * @throws com.dotmarketing.exception.DotRuntimeException
      */
     @Override
+    @WrapInTransaction
     public void executeUpgrade() throws DotDataException, DotRuntimeException {
 
         try {

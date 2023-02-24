@@ -4,7 +4,6 @@ import com.dotcms.api.SiteAPI;
 import com.dotcms.api.client.RestClientFactory;
 import com.dotcms.cli.common.OutputOptionMixin;
 import com.dotcms.model.ResponseEntityView;
-import com.dotcms.model.site.Site;
 import com.dotcms.model.site.SiteView;
 import picocli.CommandLine;
 
@@ -17,9 +16,9 @@ import java.util.concurrent.Callable;
 @CommandLine.Command(name = SiteSwitch.NAME,
      description = "@|bold,green Switch Site |@ Option params @|bold,cyan --idOrName|@ site name or site id."
 )
-public class SiteSwitch extends SiteCommand implements Callable<Integer> {
+public class SiteSwitch extends AbstractSiteCommand implements Callable<Integer> {
 
-    static final String NAME = "site-switch";
+    static final String NAME = "switch";
 
     @CommandLine.Mixin(name = "output")
     protected OutputOptionMixin output;
