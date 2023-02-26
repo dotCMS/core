@@ -90,7 +90,7 @@
         },
         "test": {
             "executor": "@nrwl/jest:jest",
-            "outputs": ["coverage/apps/dotcdn"],
+            "outputs": ["{workspaceRoot}/coverage/apps/dotcdn"],
             "options": {
                 "jestConfig": "apps/dotcdn/jest.config.ts",
                 "passWithNoTests": true,
