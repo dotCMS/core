@@ -330,7 +330,7 @@ public class BrowserAPIImpl implements BrowserAPI {
      *
      * @return The appropriate database column for the Asset Name field.
      */
-    private static String getAssetNameColumn(final String baseQuery) {
+    public static String getAssetNameColumn(final String baseQuery) {
         String sql = baseQuery;
         if (APILocator.getContentletJsonAPI().isJsonSupportedDatabase()) {
             if (DbConnectionFactory.isPostgres()) {
