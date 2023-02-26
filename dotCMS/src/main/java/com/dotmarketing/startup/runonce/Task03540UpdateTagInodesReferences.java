@@ -1,5 +1,6 @@
 package com.dotmarketing.startup.runonce;
 
+import com.dotcms.business.WrapInTransaction;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.DbConnectionFactory;
@@ -39,6 +40,7 @@ public class Task03540UpdateTagInodesReferences extends AbstractJDBCStartupTask 
 	 * Update/fix the contentlets tags references in the tag_inode table 
 	 */
 	@Override
+	@WrapInTransaction
 	public void executeUpgrade() throws DotDataException, DotRuntimeException  {
 		if (DbConnectionFactory.isPostgres()){
 			executeUpgradeForPostgres();

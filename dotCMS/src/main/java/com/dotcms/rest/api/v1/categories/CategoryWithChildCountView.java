@@ -2,11 +2,11 @@ package com.dotcms.rest.api.v1.categories;
 
 import java.util.Date;
 /**
- * Data transferring object for any category
+ * Data transferring object for any category along with children categories count
  *
  * @author Hassan Mustafa Baig
  */
-public class CategoryView {
+public class CategoryWithChildCountView {
 
     private final String inode;
     private final String parent;
@@ -18,8 +18,10 @@ public class CategoryView {
     private final int sortOrder;
     private final String categoryVelocityVarName;
     private final Date modDate;
+    private final Integer childrenCount;
 
-    private CategoryView(final Builder builder) {
+
+    private CategoryWithChildCountView(final Builder builder) {
 
         this.inode = builder.inode;
         this.parent = builder.parent;
@@ -31,6 +33,7 @@ public class CategoryView {
         this.sortOrder = builder.sortOrder;
         this.categoryVelocityVarName = builder.categoryVelocityVarName;
         this.modDate = builder.modDate;
+        this.childrenCount = builder.childrenCount;
     }
 
     public String getInode() {
@@ -71,6 +74,10 @@ public class CategoryView {
 
     public Date getModDate() {
         return modDate;
+    }
+
+    public Integer getChildrenCount() {
+        return childrenCount;
     }
 
     public static final class Builder {
@@ -137,9 +144,14 @@ public class CategoryView {
             return this;
         }
 
-        public CategoryView build() {
+        public Builder childrenCount(final Integer childrenCount) {
+            this.childrenCount = childrenCount;
+            return this;
+        }
 
-            return new CategoryView(this);
+        public CategoryWithChildCountView build() {
+
+            return new CategoryWithChildCountView(this);
         }
     }
 }

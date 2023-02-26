@@ -1,5 +1,7 @@
 package com.dotmarketing.portlets.workflows.actionlet;
 
+import static com.dotmarketing.util.WebKeys.DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE;
+
 import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.model.field.DataTypes;
 import com.dotcms.contenttype.model.field.Field;
@@ -152,8 +154,10 @@ public class FourEyeApproverActionletTest extends BaseWorkflowIntegrationTest {
 
         Contentlet contentletToCleanUp = null;
 
+        final boolean defaultContentToDefaultLanguage = Config.getBooleanProperty(
+                DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE, false);
         try {
-            Config.setProperty("DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE", true);
+            Config.setProperty(DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE, true);
             // Create a contentlet first and save it
             final long languageId = languageAPI.getDefaultLanguage().getId();
             final Contentlet cont = new Contentlet();
@@ -238,6 +242,8 @@ public class FourEyeApproverActionletTest extends BaseWorkflowIntegrationTest {
 
                 contentletAPI.destroy(contentletToCleanUp, systemUser, false);
             }
+            Config.setProperty(DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE,
+                    defaultContentToDefaultLanguage);
         }
 
     }

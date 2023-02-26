@@ -3,6 +3,7 @@ package com.dotmarketing.startup;
 import static com.dotcms.util.CollectionsUtils.getMapValue;
 import static com.dotcms.util.CollectionsUtils.map;
 
+import com.dotcms.business.WrapInTransaction;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.common.util.SQLUtil;
 import com.dotmarketing.db.DbConnectionFactory;
@@ -704,6 +705,7 @@ public abstract class AbstractJDBCStartupTask implements StartupTask {
 	}
 
 	@Override
+	@WrapInTransaction
 	public void executeUpgrade() throws DotDataException, DotRuntimeException{
 		DotConnect dc = new DotConnect();
 		Connection conn = null;

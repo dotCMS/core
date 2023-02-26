@@ -1,6 +1,6 @@
 {
 	"info": {
-		"_postman_id": "c6c3cf4a-0157-40d4-988f-9abf7877d393",
+		"_postman_id": "cd61fd14-c09a-45be-8d96-1759b1e0b294",
 		"name": "Category",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
 	},
@@ -23,10 +23,10 @@
 									"",
 									"pm.test(\"Information Saved Correctly\", function () {",
 									"    ",
-									"    pm.expect(jsonData.categoryName).to.eql(\"Parent category name\");",
+									"    pm.expect(jsonData.entity.categoryName).to.eql(\"Parent category name\");",
 									"});",
 									"",
-									"pm.collectionVariables.set(\"deleteParentCategoryId\", jsonData.inode);"
+									"pm.collectionVariables.set(\"deleteParentCategoryId\", jsonData.entity.inode);"
 								],
 								"type": "text/javascript"
 							}
@@ -172,10 +172,10 @@
 									"",
 									"pm.test(\"Information Saved Correctly\", function () {",
 									"    ",
-									"    pm.expect(jsonData.categoryName).to.eql(\"Parent category name\");",
+									"    pm.expect(jsonData.entity.categoryName).to.eql(\"Parent category name\");",
 									"});",
 									"",
-									"pm.collectionVariables.set(\"deleteParentCategoryId\", jsonData.inode);",
+									"pm.collectionVariables.set(\"deleteParentCategoryId\", jsonData.entity.inode);",
 									""
 								],
 								"type": "text/javascript"
@@ -247,7 +247,7 @@
 									"",
 									"pm.test(\"Information Saved Correctly\", function () {",
 									"    ",
-									"    pm.expect(jsonData.categoryName).to.eql(\"Child 1 category name\");",
+									"    pm.expect(jsonData.entity.categoryName).to.eql(\"Child 1 category name\");",
 									"});",
 									""
 								],
@@ -320,7 +320,7 @@
 									"",
 									"pm.test(\"Information Saved Correctly\", function () {",
 									"    ",
-									"    pm.expect(jsonData.categoryName).to.eql(\"Child 2 category name\");",
+									"    pm.expect(jsonData.entity.categoryName).to.eql(\"Child 2 category name\");",
 									"});",
 									""
 								],
@@ -548,10 +548,10 @@
 									"",
 									"pm.test(\"Information Saved Correctly\", function () {",
 									"    ",
-									"    pm.expect(jsonData.categoryName).to.eql(\"Top level category 1\");",
+									"    pm.expect(jsonData.entity.categoryName).to.eql(\"Top level category 1\");",
 									"});",
 									"",
-									"pm.collectionVariables.set(\"categoryToSortId1\", jsonData.inode);"
+									"pm.collectionVariables.set(\"categoryToSortId1\", jsonData.entity.inode);"
 								],
 								"type": "text/javascript"
 							}
@@ -622,10 +622,10 @@
 									"",
 									"pm.test(\"Information Saved Correctly\", function () {",
 									"    ",
-									"    pm.expect(jsonData.categoryName).to.eql(\"Top level category 2\");",
+									"    pm.expect(jsonData.entity.categoryName).to.eql(\"Top level category 2\");",
 									"});",
 									"",
-									"pm.collectionVariables.set(\"categoryToSortId2\", jsonData.inode);"
+									"pm.collectionVariables.set(\"categoryToSortId2\", jsonData.entity.inode);"
 								],
 								"type": "text/javascript"
 							}
@@ -917,10 +917,10 @@
 									"",
 									"pm.test(\"Information Saved Correctly\", function () {",
 									"    ",
-									"    pm.expect(jsonData.categoryName).to.eql(\"Parent category name\");",
+									"    pm.expect(jsonData.entity.categoryName).to.eql(\"Parent category name\");",
 									"});",
 									"",
-									"pm.collectionVariables.set(\"parentCategoryId\", jsonData.inode);",
+									"pm.collectionVariables.set(\"parentCategoryId\", jsonData.entity.inode);",
 									""
 								],
 								"type": "text/javascript"
@@ -992,10 +992,10 @@
 									"",
 									"pm.test(\"Information Saved Correctly\", function () {",
 									"    ",
-									"    pm.expect(jsonData.categoryName).to.eql(\"Child 1 category name\");",
+									"    pm.expect(jsonData.entity.categoryName).to.eql(\"Child 1 category name\");",
 									"});",
 									"",
-									"pm.collectionVariables.set(\"categoryToSortId1\", jsonData.inode);"
+									"pm.collectionVariables.set(\"categoryToSortId1\", jsonData.entity.inode);"
 								],
 								"type": "text/javascript"
 							}
@@ -1066,10 +1066,10 @@
 									"",
 									"pm.test(\"Information Saved Correctly\", function () {",
 									"    ",
-									"    pm.expect(jsonData.categoryName).to.eql(\"Child 2 category name\");",
+									"    pm.expect(jsonData.entity.categoryName).to.eql(\"Child 2 category name\");",
 									"});",
 									"",
-									"pm.collectionVariables.set(\"categoryToSortId2\", jsonData.inode);"
+									"pm.collectionVariables.set(\"categoryToSortId2\", jsonData.entity.inode);"
 								],
 								"type": "text/javascript"
 							}
@@ -1628,7 +1628,7 @@
 									"",
 									"pm.test(\"Information Saved Correctly\", function () {",
 									"    ",
-									"    pm.expect(jsonData.categoryName).to.eql(\"SO1\");",
+									"    pm.expect(jsonData.entity.categoryName).to.eql(\"SO1\");",
 									"});"
 								],
 								"type": "text/javascript"
@@ -1700,7 +1700,7 @@
 									"",
 									"pm.test(\"Information Saved Correctly\", function () {",
 									"    ",
-									"    pm.expect(jsonData.categoryName).to.eql(\"SO2\");",
+									"    pm.expect(jsonData.entity.categoryName).to.eql(\"SO2\");",
 									"});"
 								],
 								"type": "text/javascript"
@@ -1772,7 +1772,7 @@
 									"",
 									"pm.test(\"Information Saved Correctly\", function () {",
 									"    ",
-									"    pm.expect(jsonData.categoryName).to.eql(\"SO3\");",
+									"    pm.expect(jsonData.entity.categoryName).to.eql(\"SO3\");",
 									"});"
 								],
 								"type": "text/javascript"
@@ -2482,12 +2482,12 @@
 							"",
 							"pm.test(\"Information Saved Correctly\", function () {",
 							"    ",
-							"    pm.expect(jsonData.categoryName).to.eql(\"Test Category\");",
+							"    pm.expect(jsonData.entity.categoryName).to.eql(\"Test Category\");",
 							"});",
 							"",
-							"pm.collectionVariables.set(\"inode\", jsonData.inode);",
-							"pm.collectionVariables.set(\"categoryINodeId\", jsonData.inode);",
-							"pm.collectionVariables.set(\"categoryINodeIdToUpdate\", jsonData.inode);",
+							"pm.collectionVariables.set(\"inode\", jsonData.entity.inode);",
+							"pm.collectionVariables.set(\"categoryINodeId\", jsonData.entity.inode);",
+							"pm.collectionVariables.set(\"categoryINodeIdToUpdate\", jsonData.entity.inode);",
 							""
 						],
 						"type": "text/javascript"
@@ -2559,7 +2559,7 @@
 							"",
 							"pm.test(\"Information Saved Correctly\", function () {",
 							"    ",
-							"    pm.expect(jsonData.categoryName).to.eql(\"Child Test Category\");",
+							"    pm.expect(jsonData.entity.categoryName).to.eql(\"Child Test Category\");",
 							"});",
 							""
 						],
@@ -2881,7 +2881,7 @@
 							"",
 							"pm.test(\"Information Saved Correctly\", function () {",
 							"    ",
-							"    pm.expect(jsonData.categoryName).to.eql(\"Updated name\");",
+							"    pm.expect(jsonData.entity.categoryName).to.eql(\"Updated name\");",
 							"});"
 						],
 						"type": "text/javascript"
@@ -3367,11 +3367,11 @@
 							"",
 							"pm.test(\"Information Saved Correctly\", function () {",
 							"    ",
-							"    pm.expect(jsonData.categoryName).to.eql(\"Parent Category\");",
+							"    pm.expect(jsonData.entity.categoryName).to.eql(\"Parent Category\");",
 							"});",
 							"",
-							"pm.collectionVariables.set(\"inode\", jsonData.inode);",
-							"pm.collectionVariables.set(\"categoryINodeId\", jsonData.inode);"
+							"pm.collectionVariables.set(\"inode\", jsonData.entity.inode);",
+							"pm.collectionVariables.set(\"categoryINodeId\", jsonData.entity.inode);"
 						],
 						"type": "text/javascript"
 					}
@@ -3442,7 +3442,7 @@
 							"",
 							"pm.test(\"Information Saved Correctly\", function () {",
 							"    ",
-							"    pm.expect(jsonData.categoryName).to.eql(\"Child 1 Category\");",
+							"    pm.expect(jsonData.entity.categoryName).to.eql(\"Child 1 Category\");",
 							"});",
 							""
 						],
@@ -3515,7 +3515,7 @@
 							"",
 							"pm.test(\"Information Saved Correctly\", function () {",
 							"    ",
-							"    pm.expect(jsonData.categoryName).to.eql(\"Child 2 Category\");",
+							"    pm.expect(jsonData.entity.categoryName).to.eql(\"Child 2 Category\");",
 							"});",
 							""
 						],
@@ -4255,11 +4255,11 @@
 							"",
 							"pm.test(\"Information Saved Correctly\", function () {",
 							"    ",
-							"    pm.expect(jsonData.categoryName).to.eql(\"Test category for getById\");",
+							"    pm.expect(jsonData.entity.categoryName).to.eql(\"Test category for getById\");",
 							"});",
 							"",
-							"pm.collectionVariables.set(\"categoryInode\", jsonData.inode);",
-							"pm.collectionVariables.set(\"categoryKey\", jsonData.key);",
+							"pm.collectionVariables.set(\"categoryInode\", jsonData.entity.inode);",
+							"pm.collectionVariables.set(\"categoryKey\", jsonData.entity.key);",
 							""
 						],
 						"type": "text/javascript"
@@ -4330,7 +4330,7 @@
 							"var jsonData = pm.response.json();",
 							"",
 							"pm.test(\"Comparing input parameter with retrived inode\", function () {",
-							"    pm.expect(jsonData.inode).to.eql(pm.collectionVariables.get(('categoryInode')));",
+							"    pm.expect(jsonData.entity.inode).to.eql(pm.collectionVariables.get(('categoryInode')));",
 							"});"
 						],
 						"type": "text/javascript"
@@ -4456,7 +4456,7 @@
 							"var jsonData = pm.response.json();",
 							"",
 							"pm.test(\"Comparing input parameter with retrived key\", function () {",
-							"    pm.expect(jsonData.key).to.eql(pm.collectionVariables.get(('categoryKey')));",
+							"    pm.expect(jsonData.entity.key).to.eql(pm.collectionVariables.get(('categoryKey')));",
 							"});"
 						],
 						"type": "text/javascript"

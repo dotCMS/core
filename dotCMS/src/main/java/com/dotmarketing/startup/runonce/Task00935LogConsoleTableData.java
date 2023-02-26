@@ -1,5 +1,6 @@
 package com.dotmarketing.startup.runonce;
 
+import com.dotcms.business.WrapInTransaction;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.exception.DotDataException;
@@ -16,7 +17,8 @@ public class Task00935LogConsoleTableData implements StartupTask {
     public boolean forceRun () {
         return true;
     }
-
+    @Override
+    @WrapInTransaction
     public void executeUpgrade () throws DotDataException, DotRuntimeException {
 
         try {
