@@ -2123,8 +2123,6 @@ public class HTMLPageAssetRenderedAPIImplIntegrationTest extends IntegrationTest
 
     /**
      * Method to test: {@link HTMLPageAssetRenderedAPI#getPageHtml(PageContext, HttpServletRequest, HttpServletResponse)}
-=======
->>>>>>> origin/master
      * When: Try to render a page with a specific {@link Variant}} and a specific {@link Language}
      * and the page had a Contentlet that has a versio in the variant but not in the DEFAULT Variant
      * and DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE set to true
