@@ -14,7 +14,7 @@
         },
         "test": {
             "executor": "@angular-devkit/build-angular:karma",
-            "outputs": ["coverage/libs/dotcms-js"],
+            "outputs": ["{workspaceRoot}/coverage/libs/dotcms-js"],
             "options": {
                 "main": "libs/dotcms-js/src/test.ts",
                 "karmaConfig": "libs/dotcms-js/karma.conf.js",

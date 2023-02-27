@@ -35,7 +35,7 @@ export const ExperimentMocks: Array<DotExperiment> = [
         description: 'Praesent at molestie mauris, quis vulputate augue.',
         name: 'Praesent at molestie mauris',
         trafficAllocation: 98,
-        scheduling: { startDate: 1674861424000, endDate: 1677107824000 },
+        scheduling: { startDate: 1, endDate: 2 },
         trafficProportion: {
             type: TrafficProportionTypes.SPLIT_EVENLY,
             variants: [{ id: '111', name: 'DEFAULT', weight: '100.0' }]

@@ -1762,6 +1762,37 @@ public class ESContentletAPIImplTest extends IntegrationTestBase {
     }
 
     /**
+     * Method to test: {@link ESContentletAPIImpl#findContentletByIdentifierAnyLanguageAndVariant(String)} (String)}
+     * When: The contentlet had just one version not in the DEFAULT variant
+     * Should: return the {@link Contentlet} anyway
+     *
+     * @throws WebAssetException
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    @Test
+    public void findContentletByIdentifierAnyLanguageAndVariant() throws DotDataException {
+        final Variant variant = new VariantDataGen().nextPersisted();
+        final Language language = new LanguageDataGen().nextPersisted();
+        final Host host = new SiteDataGen().nextPersisted();
+
+        final ContentType contentType = new ContentTypeDataGen().nextPersisted();
+        final Contentlet contentlet = new ContentletDataGen(contentType)
+                .languageId(language.getId())
+                .host(host)
+                .variant(variant)
+                .nextPersisted();
+
+        final Contentlet contentletByIdentifierAnyLanguage = APILocator.getContentletAPI()
+                .findContentletByIdentifierAnyLanguageAndVariant(contentlet.getIdentifier());
+
+        assertNotNull(contentletByIdentifierAnyLanguage);
+        assertEquals(contentlet.getIdentifier(), contentletByIdentifierAnyLanguage.getIdentifier());
+        assertEquals(contentlet.getInode(), contentletByIdentifierAnyLanguage.getInode());
+    }
+
+
+    /**
      * Method to test: {@link ESContentletAPIImpl#findContentletByIdentifierAnyLanguage(String)}
      * When: The contentlet had just one version not in the DEFAULT variant but it was archived
      * Should: return {@link Optional#empty()}
