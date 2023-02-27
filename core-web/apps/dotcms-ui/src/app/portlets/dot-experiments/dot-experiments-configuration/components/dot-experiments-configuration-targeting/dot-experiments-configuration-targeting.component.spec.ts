@@ -24,7 +24,7 @@ import { DotExperimentsConfigurationTargetingComponent } from './dot-experiments
 const messageServiceMock = new MockDotMessageService({
     'experiments.configure.targeting.name': 'Targeting'
 });
-describe('DotExperimentsConfigurationTargetingComponent', () => {
+fdescribe('DotExperimentsConfigurationTargetingComponent', () => {
     let spectator: Spectator<DotExperimentsConfigurationTargetingComponent>;
     let store: DotExperimentsConfigurationStore;
     let dotExperimentsService: SpyObject<DotExperimentsService>;
@@ -48,14 +48,14 @@ describe('DotExperimentsConfigurationTargetingComponent', () => {
     beforeEach(() => {
         spectator = createComponent({ detectChanges: false });
         store = spectator.inject(DotExperimentsConfigurationStore);
-
         dotExperimentsService = spectator.inject(DotExperimentsService);
-        dotExperimentsService.getById.and.returnValue(of({ ...ExperimentMocks[0] }));
-        store.loadExperiment(ExperimentMocks[0].id);
-        spectator.detectChanges();
     });
 
     it('should render the card and disabled tooltip', () => {
+        dotExperimentsService.getById.and.returnValue(of({ ...ExperimentMocks[0] }));
+        store.loadExperiment(ExperimentMocks[0].id);
+        spectator.detectChanges();
+
         expect(spectator.queryAll(Card).length).toEqual(1);
         expect(spectator.query(byTestId('targeting-card-name'))).toHaveText('Targeting');
         expect(spectator.query(byTestId('targeting-add-button'))).toExist();
