@@ -2013,7 +2013,6 @@ public class HTMLPageAssetRenderedAPIImplIntegrationTest extends IntegrationTest
 
     /**
      * Method to test: {@link HTMLPageAssetRenderedAPI#getPageHtml(PageContext, HttpServletRequest, HttpServletResponse)}
-<<<<<<< HEAD
      * When: Try to render a page with a specific {@link Variant}} using the SYSTEM_CONTAINER
      * Should: render the page
      *
