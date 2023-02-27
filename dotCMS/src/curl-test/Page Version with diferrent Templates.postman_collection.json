@@ -1,10 +1,10 @@
 {
 	"info": {
-		"_postman_id": "90b2b31c-326d-4514-bc3f-ec1cdd6b6235",
+		"_postman_id": "ceff4e40-0e76-4963-b742-5f7bd2470b7f",
 		"name": "Page Version with diferrent Templates",
 		"description": "Create two Templates with:\n\n- First\n    \n\nName: page_version_different_template_1\n\nBody: Template 1\n\n- Second\n    \n\nName: page_version_different_template_2\n\nBody: Template 2\n\nThese are going to be used later.",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
-		"_exporter_id": "1549189"
+		"_exporter_id": "4500400"
 	},
 	"item": [
 		{
@@ -307,7 +307,7 @@
 						"header": [],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"name\": \"Variant to Test Different Page Version Using Different Templates\"\n}",
+							"raw": "{\n    \"description\": \"Variant to Test Different Page Version Using Different Templates\"\n}",
 							"options": {
 								"raw": {
 									"language": "json"

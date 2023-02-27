@@ -1,7 +1,9 @@
 package com.dotcms.experiments.business;
 
 import com.dotcms.business.WrapInTransaction;
-import com.dotcms.experiments.model.AbstractExperiment;
+import com.dotcms.experiments.business.result.BrowserSession;
+import com.dotcms.experiments.business.result.ExperimentResults;
+import com.dotcms.experiments.business.result.ExperimentResult;
 import com.dotcms.experiments.model.AbstractExperiment.Status;
 import com.dotcms.experiments.model.Experiment;
 import com.dotcms.experiments.model.Scheduling;
@@ -81,6 +83,17 @@ public interface ExperimentsAPI {
             throws DotDataException, DotSecurityException;
 
     /**
+     * Starts the SCHEDULED Experiment with the given id
+     * @param experimentId the id
+     * @param user the user
+     * @return
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    Experiment startScheduled(String experimentId, User user)
+            throws DotDataException, DotSecurityException;
+
+    /**
      * Ends an already started {@link Experiment}. The Experiment needs to be in
      * {@link Status#RUNNING} status to be able to end it.
      */
@@ -92,6 +105,13 @@ public interface ExperimentsAPI {
      */
     Experiment addVariant(String experimentId, String variantName, User user)
             throws DotDataException, DotSecurityException;
+
+    /**
+     * Only starts Experiments in the SCHEDULED status whose startDate is in the past 
+     * @param user
+     * @throws DotDataException
+     */
+    void startScheduledToStartExperiments(User user) throws DotDataException;
 
     /**
      * Validates a {@link Scheduling} by the following:
@@ -149,4 +169,28 @@ public interface ExperimentsAPI {
      * @return
      */
     boolean isAnyExperimentRunning() throws DotDataException;
+
+    /**
+     * Return the Experiment partial or total result.
+     *
+     * @param experiment
+     * @return
+     */
+    ExperimentResults getResults(final Experiment experiment)
+            throws DotDataException, DotSecurityException;
+
+    /**
+     * Return a list of the Events into an Experiment group by {@link BrowserSession}
+     * @param experiment
+     * @return
+     */
+    List<BrowserSession> getEvents(final Experiment experiment);
+
+    /*
+     * Ends finalized {@link com.dotcms.experiments.model.Experiment}s
+     * <p>
+     *     A finalized Experiment is an Experiment that is in the {@link com.dotcms.experiments.model.Experiment.Status#RUNNING}
+     *     state and whose {@link  Scheduling#endDate()} is in the past
+     */
+    void endFinalizedExperiments(final User user) throws DotDataException;
 }

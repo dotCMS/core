@@ -1,5 +1,6 @@
 package com.dotmarketing.startup.runonce;
 
+import com.dotcms.business.WrapInTransaction;
 import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.Map;
@@ -29,6 +30,7 @@ public class Task03735UpdatePortletsIds implements StartupTask {
 	}
 
 	@Override
+	@WrapInTransaction
 	public void executeUpgrade() throws DotDataException, DotRuntimeException {
 		try {
 			DbConnectionFactory.getConnection().setAutoCommit(true);

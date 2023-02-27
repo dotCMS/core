@@ -2,6 +2,7 @@
 
 package com.dotmarketing.startup.runonce;
 
+import com.dotcms.business.WrapInTransaction;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.common.db.DotDatabaseMetaData;
 import com.dotmarketing.db.DbConnectionFactory;
@@ -53,6 +54,7 @@ public class Task04355SystemEventAddServerIdColumn extends AbstractJDBCStartupTa
     }
 
     @Override
+    @WrapInTransaction
     public void executeUpgrade() throws DotDataException {
 
         this.addServerIdColumn();

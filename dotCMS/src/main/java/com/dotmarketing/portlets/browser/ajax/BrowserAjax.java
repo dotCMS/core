@@ -112,6 +112,7 @@ public class BrowserAjax {
 
     String lastSortBy = "name";
     boolean lastSortDirectionDesc = false;
+	private final String imageMimetype = "image";
 
 	final static private Comparator<Map> nameComparator = new Comparator<Map>() {
 		public int compare(Map o1, Map o2) {
@@ -503,6 +504,7 @@ public class BrowserAjax {
 						   .maxResults(maxResults)
 						   .withFilter(filter)
 						   .showMimeTypes(mimeTypes)
+						   .showImages(mimeTypes.contains(imageMimetype))
 						   .showExtensions(extensions)
 						   .showWorking(true)
 						   .showArchived(showArchived)

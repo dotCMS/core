@@ -8,17 +8,17 @@ import { CardModule } from 'primeng/card';
 import { InplaceModule } from 'primeng/inplace';
 import { InputTextModule } from 'primeng/inputtext';
 
-import { UiDotIconButtonTooltipModule } from '@components/_common/dot-icon-button-tooltip/dot-icon-button-tooltip.module';
 import { UiDotIconButtonModule } from '@components/_common/dot-icon-button/dot-icon-button.module';
+import { UiDotIconButtonTooltipModule } from '@components/_common/dot-icon-button-tooltip/dot-icon-button-tooltip.module';
 import { DotCopyButtonModule } from '@components/dot-copy-button/dot-copy-button.module';
 import {
+    ComponentStatus,
     DEFAULT_VARIANT_NAME,
     DotExperiment,
     EditPageTabs,
     ExperimentSteps,
     MAX_VARIANTS_ALLOWED,
     SidebarStatus,
-    Status,
     StepStatus,
     Variant
 } from '@dotcms/dotcms-models';
@@ -53,7 +53,7 @@ import { DotExperimentsConfigurationStore } from '@portlets/dot-experiments/dot-
 })
 export class DotExperimentsConfigurationVariantsComponent {
     vm$: Observable<{ status: StepStatus }> = this.dotExperimentsConfigurationStore.variantsStepVm$;
-    statusList = Status;
+    statusList = ComponentStatus;
     sidebarStatusList = SidebarStatus;
     maxVariantsAllowed = MAX_VARIANTS_ALLOWED;
     defaultVariantName = DEFAULT_VARIANT_NAME;

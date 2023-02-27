@@ -17,7 +17,7 @@
         },
         "test": {
             "executor": "@nrwl/jest:jest",
-            "outputs": ["coverage/libs/block-editor"],
+            "outputs": ["{workspaceRoot}/coverage/libs/block-editor"],
             "options": {
                 "jestConfig": "libs/block-editor/jest.config.ts",
                 "passWithNoTests": true

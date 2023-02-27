@@ -25,6 +25,12 @@ const headings: DotMenuItem[] = [...Array(3).keys()].map((level) => {
     };
 });
 
+const dotContentet: DotMenuItem = {
+    label: 'Contentlet',
+    icon: 'receipt',
+    id: 'dotContent'
+};
+
 const image: DotMenuItem[] = [
     {
         label: 'Image',
@@ -85,7 +91,7 @@ const block: DotMenuItem[] = [
 
 export const getEditorBlockOptions = () => {
     return (
-        suggestionOptions
+        [...suggestionOptions, dotContentet]
             // get all blocks except the Paragraph
             .filter(({ id }) => id != paragraph.id)
             .map(({ label, id }) => ({ label, code: id }))
@@ -124,14 +130,23 @@ export const SuggestionPopperModifiers = [
     }
 ];
 
-export const CONTENT_SUGGESTION_ID = 'contentlets';
+export const CONTENT_SUGGESTION_ID = 'dotContent';
 
 const FORBIDDEN_CHANGE_TO_BLOCKS = {
-    horizontalLine: true,
+    horizontalRule: true,
     table: true,
-    image: true
+    image: true,
+    video: true
 };
 
 export const changeToItems: DotMenuItem[] = [
     ...suggestionOptions.filter((item) => !FORBIDDEN_CHANGE_TO_BLOCKS[item.id])
 ];
+
+export const clearFilter = function ({ type, editor, range, suggestionKey, ItemsType }) {
+    const queryRange = {
+        to: range.to + suggestionKey.getState(editor.view.state).query?.length,
+        from: type === ItemsType.BLOCK ? range.from : range.from + 1
+    };
+    editor.chain().deleteRange(queryRange).run();
+};

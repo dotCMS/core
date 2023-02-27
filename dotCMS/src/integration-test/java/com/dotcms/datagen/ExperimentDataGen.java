@@ -5,6 +5,7 @@ import com.dotcms.analytics.metrics.Condition;
 import com.dotcms.analytics.metrics.Metric;
 import com.dotcms.analytics.metrics.MetricType;
 import com.dotcms.cache.DotJSONCacheAddTestCase;
+import com.dotcms.experiments.model.AbstractExperiment.Status;
 import com.dotcms.experiments.model.Experiment;
 import com.dotcms.experiments.model.Experiment.Builder;
 import com.dotcms.experiments.model.Goals;
@@ -36,6 +37,10 @@ public class ExperimentDataGen  extends AbstractDataGen<Experiment> {
     private List<TargetingCondition> targetingConditions = new ArrayList<>();
     private Scheduling scheduling;
 
+    private Status status = Status.DRAFT;
+
+    private Goals goal;
+
     public ExperimentDataGen name(final String name){
         this.name = name;
         return this;
@@ -66,6 +71,11 @@ public class ExperimentDataGen  extends AbstractDataGen<Experiment> {
         return this;
     }
 
+    public ExperimentDataGen status(final Status status) {
+        this.status = status;
+        return this;
+    }
+
     @Override
     public Experiment next() {
         final String innerName = UtilMethods.isSet(name) ? name : getRandomName();
@@ -73,6 +83,23 @@ public class ExperimentDataGen  extends AbstractDataGen<Experiment> {
 
         final HTMLPageAsset page = UtilMethods.isSet(experimentPage) ? experimentPage : createPage();
 
+        final Goals innerGoal = UtilMethods.isSet(goal) ? goal : createDefaultGoal(page);
+
+        final Builder experimentBuilder = Experiment.builder()
+                .name(innerName)
+                .description(innerDescription)
+                .createdBy(user.getUserId())
+                .lastModifiedBy(user.getUserId())
+                .pageId(page.getIdentifier())
+                .goals(innerGoal)
+                .trafficAllocation(trafficAllocation)
+                .status(status);
+
+        return UtilMethods.isSet(scheduling) ? experimentBuilder.scheduling(scheduling).build() :
+                experimentBuilder.build();
+    }
+
+    private static Goals createDefaultGoal(HTMLPageAsset page) {
         final Metric metric = Metric.builder()
                 .name("Testing Metric")
                 .type(MetricType.REACH_PAGE)
@@ -83,19 +110,7 @@ public class ExperimentDataGen  extends AbstractDataGen<Experiment> {
                         .build())
                 .build();
 
-        final Goals goal = Goals.builder().primary(metric).build();
-
-        final Builder experimentBuilder = Experiment.builder()
-                .name(innerName)
-                .description(innerDescription)
-                .createdBy(user.getUserId())
-                .lastModifiedBy(user.getUserId())
-                .pageId(page.getIdentifier())
-                .goals(goal)
-                .trafficAllocation(trafficAllocation);
-
-        return UtilMethods.isSet(scheduling) ? experimentBuilder.scheduling(scheduling).build() :
-                experimentBuilder.build();
+        return Goals.builder().primary(metric).build();
     }
 
     private HTMLPageAsset createPage() {
@@ -163,6 +178,11 @@ public class ExperimentDataGen  extends AbstractDataGen<Experiment> {
 
     public ExperimentDataGen scheduling(final Scheduling scheduling) {
         this.scheduling = scheduling;
+        return this;
+    }
+
+    public ExperimentDataGen addGoal(final Goals goal) {
+        this.goal = goal;
         return this;
     }
 }

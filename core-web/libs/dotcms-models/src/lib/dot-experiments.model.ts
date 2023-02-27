@@ -1,4 +1,8 @@
-import { DotExperimentStatusList, Status, TrafficProportionTypes } from '@dotcms/dotcms-models';
+import {
+    ComponentStatus,
+    DotExperimentStatusList,
+    TrafficProportionTypes
+} from '@dotcms/dotcms-models';
 
 export interface DotExperiment {
     id: string;
@@ -10,7 +14,7 @@ export interface DotExperiment {
     readyToStart: boolean;
     archived: boolean;
     trafficProportion: TrafficProportion;
-    trafficAllocation: string;
+    trafficAllocation: number;
     scheduling: RangeOfDateAndTime | null;
     creationDate: Date;
     modDate: Date;
@@ -45,15 +49,15 @@ export interface GoalCondition {
     value: string;
 }
 
-interface RangeOfDateAndTime {
-    startDate: Date;
-    endDate: Date;
+export interface RangeOfDateAndTime {
+    startDate: number;
+    endDate: number;
 }
 
 export type GroupedExperimentByStatus = Partial<Record<DotExperimentStatusList, DotExperiment[]>>;
 
 export interface StepStatus {
-    status: Status;
+    status: ComponentStatus;
     isOpen: boolean;
     experimentStep: ExperimentSteps | null;
 }

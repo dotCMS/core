@@ -31,10 +31,19 @@ import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonSubTypes.Type;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.annotation.JsonTypeInfo.Id;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.DatabindContext;
+import com.fasterxml.jackson.databind.JavaType;
+import com.fasterxml.jackson.databind.annotation.JsonTypeIdResolver;
+import com.fasterxml.jackson.databind.jsontype.BasicPolymorphicTypeValidator;
+import com.fasterxml.jackson.databind.jsontype.impl.ClassNameIdResolver;
+import com.fasterxml.jackson.databind.type.TypeFactory;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.liferay.util.StringPool;
 import io.vavr.control.Try;
+
+import java.io.IOException;
 import java.io.Serializable;
 import java.util.Calendar;
 import java.util.Date;
@@ -54,6 +63,7 @@ import org.immutables.value.Value.Default;
         include = JsonTypeInfo.As.PROPERTY,
         property = "clazz"
 )
+@JsonTypeIdResolver(value = ContentType.ClassNameAliasResolver.class)
 @JsonSubTypes({
         @Type(value = FileAssetContentType.class),
         @Type(value = FormContentType.class),
@@ -472,5 +482,27 @@ public abstract class ContentType implements Serializable, Permissionable, Conte
     }
     return this.hasStoryBlockFields;
   }
+
+  static class ClassNameAliasResolver extends ClassNameIdResolver {
+    static TypeFactory typeFactory = TypeFactory.defaultInstance();
+    public ClassNameAliasResolver() {
+      super(typeFactory.constructType(new TypeReference<ContentType>() {
+      }), typeFactory,
+       BasicPolymorphicTypeValidator.builder().allowIfSubType(ContentType.class).build()
+      );
+    }
+
+    @Override
+    public JavaType typeFromId(final DatabindContext context, final String id) throws IOException {
+      final String packageName = ContentType.class.getPackageName();
+      if( !id.contains(".") && !id.startsWith(packageName)){
+        final String className = String.format("%s.Immutable%s",packageName,id);
+        return super.typeFromId(context, className);
+      }
+      return super.typeFromId(context, id);
+    }
+
+  }
+
 
 }

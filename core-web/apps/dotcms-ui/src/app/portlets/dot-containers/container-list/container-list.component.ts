@@ -15,7 +15,8 @@ import {
     DotActionBulkResult,
     DotBulkFailItem,
     DotContainer,
-    DotContentState
+    DotContentState,
+    CONTAINER_SOURCE
 } from '@dotcms/dotcms-models';
 import { DotActionMenuItem } from '@models/dot-action-menu/dot-action-menu-item.model';
 import { DotContainerListStore } from '@portlets/dot-containers/container-list/store/dot-container-list.store';
@@ -54,14 +55,14 @@ export class ContainerListComponent implements OnDestroy {
     }
 
     /**
-     * Change base type to the selected one
+     * Change content type to the selected one
      * @param {string} value
      * @memberof ContainerListComponent
      */
-    changeBaseTypeSelector(value: string) {
-        value !== ''
-            ? this.listing.paginatorService.setExtraParams('type', value)
-            : this.listing.paginatorService.deleteExtraParams('type');
+    changeContentTypeSelector(value: string) {
+        value
+            ? this.listing.paginatorService.setExtraParams('content_type', value)
+            : this.listing.paginatorService.deleteExtraParams('content_type');
         this.listing.loadFirstPage();
     }
 
@@ -105,7 +106,9 @@ export class ContainerListComponent implements OnDestroy {
      */
     updateSelectedContainers(containers: DotContainer[]): void {
         const filterContainers = containers.filter(
-            (container: DotContainer) => container.identifier !== 'SYSTEM_CONTAINER'
+            (container: DotContainer) =>
+                container.identifier !== 'SYSTEM_CONTAINER' &&
+                container.source !== CONTAINER_SOURCE.FILE
         );
         this.store.updateSelectedContainers(filterContainers);
     }
@@ -131,10 +134,17 @@ export class ContainerListComponent implements OnDestroy {
      */
     getContainersWithDisabledEntities(containers: DotContainer[]): DotContainer[] {
         return containers.map((container) => {
-            container.disableInteraction =
-                container.identifier.includes('/') || container.identifier === 'SYSTEM_CONTAINER';
+            const copyContainer = structuredClone(container);
+            copyContainer.disableInteraction =
+                copyContainer.identifier.includes('/') ||
+                copyContainer.identifier === 'SYSTEM_CONTAINER' ||
+                copyContainer.source === CONTAINER_SOURCE.FILE;
 
-            return container;
+            if (copyContainer.path) {
+                copyContainer.pathName = new URL(`http:${container.path}`).pathname;
+            }
+
+            return copyContainer;
         });
     }
 

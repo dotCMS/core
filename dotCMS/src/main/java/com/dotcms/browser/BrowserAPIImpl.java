@@ -39,6 +39,7 @@ import io.vavr.control.Try;
 import java.util.*;
 import java.util.stream.Collectors;
 
+import static com.dotcms.variant.VariantAPI.DEFAULT_VARIANT;
 import static com.dotmarketing.business.PermissionAPI.PERMISSION_READ;
 
 /**
@@ -256,7 +257,7 @@ public class BrowserAPIImpl implements BrowserAPI {
         final StringBuilder sqlQuery = new StringBuilder("select cvi." + workingLiveInode + " as inode "
                 + " from contentlet_version_info cvi, identifier id, structure struc, contentlet c "
                 + " where cvi.identifier = id.id and struc.velocity_var_name = id.asset_subtype and  "
-                + " c.inode = cvi." + workingLiveInode);
+                + " c.inode = cvi." + workingLiveInode + " and cvi.variant_id='"+DEFAULT_VARIANT.name()+"' ");
 
         if (!showAllBaseTypes) {
             List<String> baseTypes =
@@ -275,10 +276,11 @@ public class BrowserAPIImpl implements BrowserAPI {
             sqlQuery.append(" and id.parent_path=? ");
             parameters.add(browserQuery.folder.getPath());
         }
-        if (UtilMethods.isSet(browserQuery.filter)) {
-            final String[] spliter = browserQuery.filter.split(" ");
+        if (UtilMethods.isSet(browserQuery.luceneQuery)) {
+            final String filterText = browserQuery.luceneQuery.toLowerCase();
+            final String[] spliter = filterText.split(" ");
             for (final String token : spliter) {
-                sqlQuery.append(" and c.title like ?");
+                sqlQuery.append(" and LOWER(c.title) like ?");
                 parameters.add("%" + token + "%");
             }
         }
