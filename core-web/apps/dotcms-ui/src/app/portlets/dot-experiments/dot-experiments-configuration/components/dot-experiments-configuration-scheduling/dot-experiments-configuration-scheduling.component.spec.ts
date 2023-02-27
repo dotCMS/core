@@ -87,13 +87,15 @@ describe('DotExperimentsConfigurationSchedulingComponent', () => {
         expect(store.openSidebar).toHaveBeenCalledOnceWith(ExperimentSteps.SCHEDULING);
     });
 
-    //TODO: Will test this in the edit scheduling task since need to define the time zone handling.
-    xit('should render the date range in the button when present', () => {
+    it('should render the date range in the button when present', () => {
         dotExperimentsService.getById.and.returnValue(of(ExperimentMocks[0]));
         store.loadExperiment(ExperimentMocks[0].id);
         spectator.detectChanges();
         expect(spectator.query(byTestId('scheduling-setup-button'))).toContainText(
-            'Start: Fri, Jan 27, 2023, 5:17 PM GMT-6 - End: Wed, Feb 22, 2023, 5:17 PM GMT-6'
+            'Start: Wed, Dec 31, 1970'
+        );
+        expect(spectator.query(byTestId('scheduling-setup-button'))).toContainText(
+            'End: Wed, Dec 31, 1970'
         );
     });
 });

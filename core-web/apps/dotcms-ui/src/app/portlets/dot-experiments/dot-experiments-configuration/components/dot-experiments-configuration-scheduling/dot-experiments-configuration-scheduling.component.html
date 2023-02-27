@@ -21,7 +21,12 @@
                     pButton
                     pRipple
                 >
-                    <ng-container *ngIf="!vm.scheduling; else dateRange">
+                    <ng-container
+                        *ngIf="
+                            !(!!vm.scheduling?.endDate || !!vm.scheduling?.startDate);
+                            else dateRange
+                        "
+                    >
                         {{ 'experiments.configure.scheduling.setup' | dm }}
                     </ng-container>
                 </button>
@@ -30,10 +35,19 @@
     </p-card>
 
     <ng-template #dateRange>
-        {{ 'start' | dm | titlecase }}:
-        <span>{{ vm.scheduling.startDate | date : 'EEE, LLL dd, Y, h:mm aa zz' }}</span> -
-        {{ 'end' | dm | titlecase }}:
-        <span>{{ vm.scheduling.endDate | date : 'EEE, LLL dd, Y, h:mm aa zz' }}</span>
+        <span *ngIf="!!vm.scheduling?.startDate">
+            {{ 'start' | dm | titlecase }}:
+            <span>{{ vm.scheduling.startDate | date : 'EEE, LLL dd, Y, h:mm aa zz' }}</span>
+        </span>
+        <span
+            class="scheduling-setup-date-spacing"
+            *ngIf="vm.scheduling?.startDate && vm.scheduling.endDate"
+            >-</span
+        >
+        <span *ngIf="!!vm.scheduling?.endDate">
+            {{ 'end' | dm | titlecase }}:
+            <span>{{ vm.scheduling.endDate | date : 'EEE, LLL dd, Y, h:mm aa zz' }}</span>
+        </span>
     </ng-template>
 </ng-container>
 
