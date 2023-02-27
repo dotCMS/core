@@ -98,10 +98,11 @@ describe('DotLanguageSelectorComponent', () => {
     });
 
     describe('disabled', () => {
-        it('should set disable when no lang options present', () => {
+        it('should set disable when no lang options present', async () => {
             spyOn(dotLanguagesService, 'get').and.returnValue(of([]));
 
             fixtureHost.detectChanges();
+            await fixtureHost.whenStable();
 
             expect(dotLanguagesService.get).toHaveBeenCalledTimes(1);
             const pDropDown: DebugElement = de.query(By.css('p-dropdown'));

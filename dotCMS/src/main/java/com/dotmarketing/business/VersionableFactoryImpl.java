@@ -405,6 +405,23 @@ public class VersionableFactoryImpl extends VersionableFactory {
 	}
 
 	@Override
+	public Optional<ContentletVersionInfo> findAnyContentletVersionInfoAnyVariant(final String identifier, final boolean deleted)
+			throws DotDataException {
+		final DotConnect dotConnect = new DotConnect()
+				.setSQL("SELECT * FROM contentlet_version_info WHERE identifier=  ? AND deleted = ?")
+				.addParam(identifier)
+				.addParam(deleted)
+				.setMaxRows(1);
+
+		final List<ContentletVersionInfo> versionInfos = TransformerLocator
+				.createContentletVersionInfoTransformer(dotConnect.loadObjectResults()).asList();
+
+		return versionInfos == null || versionInfos.isEmpty()
+				? Optional.empty()
+				: Optional.of(versionInfos.get(0));
+	}
+
+	@Override
 	public Optional<ContentletVersionInfo> findAnyContentletVersionInfo(final String identifier,
 			final String variant, final boolean deleted)
 			throws DotDataException {

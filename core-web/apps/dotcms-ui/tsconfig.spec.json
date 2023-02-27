@@ -3,7 +3,9 @@
     "compilerOptions": {
         "module": "commonjs",
         "outDir": "../out-tsc/spec",
-        "types": ["jasmine", "node"]
+        "types": ["jasmine", "node"],
+        "target": "ES2022",
+        "useDefineForClassFields": false
     },
     "files": ["src/test.ts", "src/polyfills.ts"],
     "include": ["**/*.spec.ts", "**/*.d.ts"]
