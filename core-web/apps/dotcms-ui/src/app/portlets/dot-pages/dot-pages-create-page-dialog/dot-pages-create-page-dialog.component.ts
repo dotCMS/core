@@ -1,7 +1,14 @@
 import { fromEvent, Observable, Subject } from 'rxjs';
 
 import { CommonModule } from '@angular/common';
-import { Component, ElementRef, OnDestroy, OnInit, ViewChild } from '@angular/core';
+import {
+    ChangeDetectionStrategy,
+    Component,
+    ElementRef,
+    OnDestroy,
+    OnInit,
+    ViewChild
+} from '@angular/core';
 
 import { DynamicDialogRef } from 'primeng/dynamicdialog';
 import { InputTextModule } from 'primeng/inputtext';
@@ -38,7 +45,8 @@ import { DotPagesState, DotPageStore } from '../dot-pages-store/dot-pages.store'
         DotWorkflowsActionsService
     ],
     templateUrl: './dot-pages-create-page-dialog.component.html',
-    styleUrls: ['./dot-pages-create-page-dialog.component.scss']
+    styleUrls: ['./dot-pages-create-page-dialog.component.scss'],
+    changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotPagesCreatePageDialogComponent implements OnInit, OnDestroy {
     @ViewChild('searchInput', { static: true }) searchInput: ElementRef;
