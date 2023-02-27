@@ -38,7 +38,7 @@ export const ExperimentMocks: Array<DotExperiment> = [
         scheduling: { startDate: 1, endDate: 2 },
         trafficProportion: {
             type: TrafficProportionTypes.SPLIT_EVENLY,
-            variants: [{ id: '111', name: 'DEFAULT', weight: '100.0' }]
+            variants: [{ id: '111', name: 'DEFAULT', weight: 100 }]
         },
         creationDate: new Date('2022-08-21 14:50:03'),
         modDate: new Date('2022-08-21 18:50:03'),
@@ -57,7 +57,10 @@ export const ExperimentMocks: Array<DotExperiment> = [
         scheduling: null,
         trafficProportion: {
             type: TrafficProportionTypes.SPLIT_EVENLY,
-            variants: [{ id: '222', name: 'DEFAULT', weight: '100.0' }]
+            variants: [
+                { id: '222', name: 'DEFAULT', weight: 50, url: 'test/1' },
+                { id: '111', name: 'variant a', weight: 50, url: 'test/2' }
+            ]
         },
         creationDate: new Date('2022-08-21 14:50:03'),
         modDate: new Date('2022-08-21 18:50:03'),
@@ -77,8 +80,8 @@ export const ExperimentMocks: Array<DotExperiment> = [
         trafficProportion: {
             type: TrafficProportionTypes.SPLIT_EVENLY,
             variants: [
-                { id: '111', name: 'DEFAULT', weight: '50.0' },
-                { id: '222', name: 'Variant A', weight: '50.0' }
+                { id: '111', name: 'DEFAULT', weight: 50 },
+                { id: '222', name: 'Variant A', weight: 50 }
             ]
         },
         creationDate: new Date('2022-08-21 14:50:03'),

@@ -503,6 +503,56 @@ export class DotExperimentsConfigurationStore extends ComponentStore<DotExperime
         }
     );
 
+    readonly setSelectedTrafficProportion = this.effect(
+        (
+            trafficProportion$: Observable<{
+                trafficProportion: TrafficProportion;
+                experimentId: string;
+            }>
+        ) => {
+            return trafficProportion$.pipe(
+                tap(() => {
+                    this.setSidebarStatus({
+                        status: ComponentStatus.SAVING,
+                        experimentStep: ExperimentSteps.TRAFFIC
+                    });
+                }),
+                switchMap((data) => {
+                    return this.dotExperimentsService
+                        .setTrafficProportion(data.experimentId, data.trafficProportion)
+                        .pipe(
+                            tapResponse(
+                                (experiment) => {
+                                    this.setTrafficProportion(experiment.trafficProportion);
+                                    this.messageService.add({
+                                        severity: 'info',
+                                        summary: this.dotMessageService.get(
+                                            'experiments.configure.traffic.split.add.confirm.title'
+                                        ),
+                                        detail: this.dotMessageService.get(
+                                            'experiments.configure.traffic.split.add.confirm.message'
+                                        )
+                                    });
+                                    this.setSidebarStatus({
+                                        status: ComponentStatus.IDLE,
+                                        experimentStep: ExperimentSteps.TRAFFIC,
+                                        isOpen: false
+                                    });
+                                },
+                                (response: HttpErrorResponse) => {
+                                    this.dotHttpErrorManagerService.handle(response);
+                                    this.setSidebarStatus({
+                                        status: ComponentStatus.IDLE,
+                                        experimentStep: ExperimentSteps.TRAFFIC
+                                    });
+                                }
+                            )
+                        );
+                })
+            );
+        }
+    );
+
     readonly vm$: Observable<ConfigurationViewModel> = this.select(
         this.state$,
         this.canStartExperiment$,

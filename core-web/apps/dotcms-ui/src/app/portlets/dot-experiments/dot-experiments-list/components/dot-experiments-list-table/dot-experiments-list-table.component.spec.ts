@@ -38,7 +38,7 @@ const draftExperiments: DotExperiment[] = [
         scheduling: null,
         trafficProportion: {
             type: TrafficProportionTypes.SPLIT_EVENLY,
-            variants: [{ id: '111', name: 'DEFAULT', weight: '100.0' }]
+            variants: [{ id: '111', name: 'DEFAULT', weight: 100 }]
         },
         creationDate: new Date('2022-08-21 14:50:03'),
         modDate: new Date('2022-08-21 18:50:03'),
@@ -59,7 +59,7 @@ const endedExperiments: DotExperiment[] = [
         scheduling: null,
         trafficProportion: {
             type: TrafficProportionTypes.SPLIT_EVENLY,
-            variants: [{ id: '222', name: 'DEFAULT', weight: '100.0' }]
+            variants: [{ id: '222', name: 'DEFAULT', weight: 100 }]
         },
         creationDate: new Date('2022-08-21 14:50:03'),
         modDate: new Date('2022-08-21 18:50:03'),
@@ -80,7 +80,7 @@ const archivedExperiments: DotExperiment[] = [
         scheduling: null,
         trafficProportion: {
             type: TrafficProportionTypes.SPLIT_EVENLY,
-            variants: [{ id: '333', name: 'DEFAULT', weight: '100.0' }]
+            variants: [{ id: '333', name: 'DEFAULT', weight: 100 }]
         },
         creationDate: new Date('2022-08-21 14:50:03'),
         modDate: new Date('2022-08-21 18:50:03'),
@@ -101,7 +101,7 @@ const scheduledExperiments: DotExperiment[] = [
         scheduling: null,
         trafficProportion: {
             type: TrafficProportionTypes.SPLIT_EVENLY,
-            variants: [{ id: '4444', name: 'DEFAULT', weight: '100.0' }]
+            variants: [{ id: '4444', name: 'DEFAULT', weight: 100 }]
         },
         creationDate: new Date('2022-08-21 14:50:03'),
         modDate: new Date('2022-08-21 18:50:03'),
