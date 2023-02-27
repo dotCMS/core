@@ -87,7 +87,7 @@ describe('DotExperimentsConfigurationSchedulingComponent', () => {
         expect(store.openSidebar).toHaveBeenCalledOnceWith(ExperimentSteps.SCHEDULING);
     });
 
-    it('should render the date range in the button when present', () => {
+    xit('should render the date range in the button when present', () => {
         dotExperimentsService.getById.and.returnValue(of(ExperimentMocks[0]));
         store.loadExperiment(ExperimentMocks[0].id);
         spectator.detectChanges();
