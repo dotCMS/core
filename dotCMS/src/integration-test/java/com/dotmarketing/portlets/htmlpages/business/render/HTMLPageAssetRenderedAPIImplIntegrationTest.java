@@ -2068,7 +2068,7 @@ public class HTMLPageAssetRenderedAPIImplIntegrationTest extends IntegrationTest
 
     /**
      * Method to test: {@link HTMLPageAssetRenderedAPI#getPageHtml(PageContext, HttpServletRequest, HttpServletResponse)}
-     * When: Try to render a page with a specific {@link Variant}} using a {@link Container} thar is using the dotContentMap
+     * When: Try to render a page with a specific {@link Variant}} using a {@link Container} that is using the dotContentMap
      * Should: render the page
      *
      * @throws WebAssetException
