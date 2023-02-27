@@ -176,6 +176,13 @@ describe('DotExperimentsConfigurationGoalsComponent', () => {
         expect(store.deleteGoal).toHaveBeenCalled();
     });
 
+    it('should disable tooltip if is on draft', () => {
+        expect(spectator.query(byTestId('tooltip-on-disabled'))).toHaveAttribute(
+            'ng-reflect-disabled',
+            'true'
+        );
+    });
+
     it('should disable button and show tooltip when experiment is nos on draft', () => {
         const vmMock$: {
             experimentId: string;

@@ -77,6 +77,13 @@ describe('DotExperimentsConfigurationTrafficComponent', () => {
         expect(store.openSidebar).toHaveBeenCalledOnceWith(ExperimentSteps.TRAFFIC);
     });
 
+    it('should disable tooltip if is on draft', () => {
+        expect(spectator.query(byTestId('tooltip-on-disabled'))).toHaveAttribute(
+            'ng-reflect-disabled',
+            'true'
+        );
+    });
+
     it('should disable button and show tooltip when experiment is nos on draft', () => {
         dotExperimentsService.getById.and.returnValue(
             of({

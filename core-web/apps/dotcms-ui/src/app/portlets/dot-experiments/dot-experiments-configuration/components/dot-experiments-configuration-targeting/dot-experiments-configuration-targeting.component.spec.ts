@@ -55,13 +55,17 @@ describe('DotExperimentsConfigurationTargetingComponent', () => {
         spectator.detectChanges();
     });
 
-    it('should render the card', () => {
+    it('should render the card and disabled tooltip', () => {
         expect(spectator.queryAll(Card).length).toEqual(1);
         expect(spectator.query(byTestId('targeting-card-name'))).toHaveText('Targeting');
         expect(spectator.query(byTestId('targeting-add-button'))).toExist();
+        expect(spectator.query(byTestId('tooltip-on-disabled'))).toHaveAttribute(
+            'ng-reflect-disabled',
+            'true'
+        );
     });
 
-    it('should disable button and show tooltip when experiment is nos on draft', () => {
+    it('should disable button and show tooltip when experiment is not on draft', () => {
         dotExperimentsService.getById.and.returnValue(
             of({
                 ...ExperimentMocks[0],
