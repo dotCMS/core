@@ -24,7 +24,7 @@ import { DotExperimentsConfigurationTargetingComponent } from './dot-experiments
 const messageServiceMock = new MockDotMessageService({
     'experiments.configure.targeting.name': 'Targeting'
 });
-fdescribe('DotExperimentsConfigurationTargetingComponent', () => {
+describe('DotExperimentsConfigurationTargetingComponent', () => {
     let spectator: Spectator<DotExperimentsConfigurationTargetingComponent>;
     let store: DotExperimentsConfigurationStore;
     let dotExperimentsService: SpyObject<DotExperimentsService>;
