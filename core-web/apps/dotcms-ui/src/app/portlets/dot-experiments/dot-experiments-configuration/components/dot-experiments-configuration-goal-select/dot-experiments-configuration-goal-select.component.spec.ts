@@ -134,7 +134,7 @@ describe('DotExperimentsConfigurationGoalSelectComponent', () => {
         expect(applyBtn.disabled).toBeFalse();
     });
 
-    it('should call saveForm() when a item is selected and the button of apply is valid', () => {
+    it('should call setSelectedGoal from the store when a item is selected and the button of apply is clicked', () => {
         spyOn(store, 'setSelectedGoal');
         const expectedGoal = {
             experimentId: EXPERIMENT_ID,

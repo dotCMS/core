@@ -6,11 +6,13 @@ import { DotMessagePipe } from '@dotcms/app/view/pipes';
 import { ExperimentsSelectOption } from '@dotcms/dotcms-models';
 
 const DEFAULT_LABEL_NAME_INDEX = 'label';
+const DEFAULT_VALUE_NAME_INDEX = 'value';
 
 /**
- * Directive to set a default configuration of Dropdown (PrimeNG) and
- * translate the label of the options
+ * Directive to set a default configuration of Dropdown (PrimeNG) and translate the label of the options
  *
+ * @export
+ * @class DotDropdownDirective
  */
 @Directive({
     standalone: true,
@@ -24,7 +26,7 @@ export class DotDropdownDirective {
     ) {
         if (primeDropdown) {
             primeDropdown.optionLabel = DEFAULT_LABEL_NAME_INDEX;
-            primeDropdown.optionValue = 'value';
+            primeDropdown.optionValue = DEFAULT_VALUE_NAME_INDEX;
             primeDropdown.showClear = true;
         } else {
             console.warn('DotDropdownDirective is for use with PrimeNg Dropdown');
@@ -32,8 +34,10 @@ export class DotDropdownDirective {
     }
 
     /**
-     * Input of options to translate LABEL_NAME and assign to Dropdown
-     * @param {Array<ExperimentsSelectOption<string>>} options
+     *Array of option to translate LABEL_NAME and assign to Dropdown
+     *
+     * @param {Array<ExperimentsSelectOption<string>>} options - Options of Dropdown
+     * @memberof DotDropdownDirective
      */
     @Input()
     set dotOptions(options: Array<ExperimentsSelectOption<string>>) {

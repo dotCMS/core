@@ -21,10 +21,7 @@
     </div>
 
     <div class="field flex-auto flex flex-column">
-        <label class="p-label-input-required">{{
-            'experiments.goal.reach_page.form.conditions.label' | dm
-        }}</label>
-        <p>{{ 'experiments.goal.reach_page.form.conditions.description' | dm }}</p>
+        <h3>{{ 'experiments.goal.reach_page.form.conditions.label' | dm }}</h3>
 
         <ng-container
             *ngFor="let condition of conditionsFormArray.controls; let i = index"

@@ -51,6 +51,7 @@ export class DotExperimentOptionsComponent implements ControlValueAccessor {
     /**
      * Toggle the option selected
      * @param index
+     * @memberOf DotExperimentOptionsComponent
      */
     toggleOption = (index: number) => {
         if (this.expanded.has(index)) {
@@ -64,6 +65,7 @@ export class DotExperimentOptionsComponent implements ControlValueAccessor {
     /**
      * Set the value selected to the control
      * @param {string} value
+     * @memberOf DotExperimentOptionsComponent
      */
     setOptionSelected(value: string) {
         this.value = value;
@@ -80,17 +82,19 @@ export class DotExperimentOptionsComponent implements ControlValueAccessor {
 
     /**
      * Registers a callback function that is called when the control's value changes in the UI.
-     * @param fn
+     * @param onChangefn
+     * @memberOf DotExperimentOptionsComponent
      */
-    registerOnChange(fn: never) {
-        this.onChange = fn;
+    registerOnChange(onChangefn: never) {
+        this.onChange = onChangefn;
     }
 
     /**
      * Registers a callback function that is called by the forms API on initialization to update the form model on blur.
-     * @param fn
+     * @param onTouchedfn
+     * @memberOf DotExperimentOptionsComponent
      */
-    registerOnTouched(fn: never) {
-        this.onTouched = fn;
+    registerOnTouched(onTouchedfn: never) {
+        this.onTouched = onTouchedfn;
     }
 }

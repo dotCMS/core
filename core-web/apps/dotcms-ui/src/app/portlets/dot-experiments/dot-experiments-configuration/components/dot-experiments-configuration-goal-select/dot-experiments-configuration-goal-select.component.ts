@@ -78,6 +78,7 @@ export class DotExperimentsConfigurationGoalSelectComponent implements OnInit, O
     /**
      * Get the conditions FormArray
      *
+     * @memberOf DotExperimentsConfigurationGoalSelectComponent
      * @return FormArray
      */
     get conditionsFormArray() {
@@ -91,6 +92,9 @@ export class DotExperimentsConfigurationGoalSelectComponent implements OnInit, O
 
     /**
      * Close the sidebar
+     *
+     * @memberOf DotExperimentsConfigurationGoalSelectComponent
+     * @return void
      */
     closeSidebar(): void {
         this.dotExperimentsConfigurationStore.closeSidebar();
@@ -98,7 +102,9 @@ export class DotExperimentsConfigurationGoalSelectComponent implements OnInit, O
 
     /**
      * Save the selected Goal
+     *
      * @param {string} experimentId
+     * @memberOf DotExperimentsConfigurationGoalSelectComponent
      */
     save(experimentId: string): void {
         this.dotExperimentsConfigurationStore.setSelectedGoal({

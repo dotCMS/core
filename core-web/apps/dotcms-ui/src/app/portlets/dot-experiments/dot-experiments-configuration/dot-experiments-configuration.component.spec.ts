@@ -85,6 +85,7 @@ describe('DotExperimentsConfigurationComponent', () => {
             DotMessagePipe
         ],
         component: DotExperimentsConfigurationComponent,
+
         componentProviders: [
             mockProvider(DotExperimentsConfigurationStore, DotExperimentsConfigurationStoreMock)
         ],
@@ -103,8 +104,7 @@ describe('DotExperimentsConfigurationComponent', () => {
             mockProvider(MessageService),
             mockProvider(Router),
             mockProvider(DotHttpErrorManagerService),
-            mockProvider(Title),
-            mockProvider(DotMessagePipe)
+            mockProvider(Title)
         ]
     });
 
