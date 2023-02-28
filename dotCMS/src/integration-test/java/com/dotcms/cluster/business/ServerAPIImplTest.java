@@ -2,7 +2,6 @@ package com.dotcms.cluster.business;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
 
 import java.util.ArrayList;
 import java.util.Date;
@@ -24,6 +23,10 @@ public class ServerAPIImplTest {
     final static List<Server> fakeServers= new ArrayList<>();
     static ServerAPI serverApi;
 
+    private static final String TEST_SERVER_PREFIX="serverServerAPIImplTest";
+
+    private static final String TEST_LICENCE_PREFIX="FAKE-ServerAPIImplTest:";
+
     
     @BeforeClass
     public static void prepare() throws Exception {
@@ -38,7 +41,7 @@ public class ServerAPIImplTest {
                     .withEsHttpPort(i)
                     .withIpAddress("10.0.0." + i)
                     .withLastHeartBeat(System.currentTimeMillis() + (i * 1000))
-                    .withName("serverName" + i)
+                    .withName(TEST_SERVER_PREFIX + i)
                     .withClusterId(ClusterFactory.getClusterId())
                     .withServerId(UUIDGenerator.generateUuid())
                     .build();
@@ -53,7 +56,7 @@ public class ServerAPIImplTest {
             dc.setSQL("INSERT INTO sitelic(id,serverid,license,lastping,startup_time) VALUES(?,?,?,?,?)")
                 .addParam(UUIDGenerator.generateUuid())
                 .addParam(server.getServerId())
-                .addParam("FAKE_LICENSE:" + System.currentTimeMillis())
+                .addParam(TEST_LICENCE_PREFIX + System.currentTimeMillis())
                 .addParam(new Date())
                 .addParam(new Random().nextInt(30000000))
                 .getResult();
@@ -71,11 +74,17 @@ public class ServerAPIImplTest {
     @AfterClass
     public static void cleanupAfter() throws Exception {
         DotConnect dc = new DotConnect();
-        dc.setSQL("delete from sitelic where license like 'FAKE_LICENSE:%'").loadResult();
-        fakeServers.forEach(server->{      
-           Try.run(()-> serverApi.removeServerFromClusterTable(server.getServerId()));
-        });
-        
+        dc.setSQL("delete from sitelic where license like '" + TEST_LICENCE_PREFIX + "%'")
+                .loadResult();
+        fakeServers.stream()
+                .filter(server -> server.getName().startsWith(TEST_SERVER_PREFIX))
+                .forEach(server -> Try.run(
+                        () -> serverApi.removeServerFromClusterTable(server.getServerId())));
+
+        // Need to reset server list in singleton
+        serverApi.getReindexingServers().clear();
+
+
     }
     
     /**

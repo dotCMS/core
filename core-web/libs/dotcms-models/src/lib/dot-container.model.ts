@@ -30,6 +30,7 @@ export interface DotContainer {
         hostname: string;
     };
     disableInteraction?: boolean;
+    pathName?: string;
 }
 
 export interface DotContainerPayload {
