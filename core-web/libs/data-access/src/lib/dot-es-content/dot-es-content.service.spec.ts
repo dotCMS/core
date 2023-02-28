@@ -38,8 +38,8 @@ describe('DotESContentService', () => {
 
         const req = httpMock.expectOne('/api/content/_search');
         expect(req.request.method).toBe('POST');
-        expect(req.request.body).toBe(
-            '{"query":"  +deleted : false   +working : true   +contentType :  blog   +title : *  ","sort":"modDate DESC","limit":40,"offset":"0"}'
+        expect(req.request.body).toEqual(
+            '{"query":"+contentType: blog   ","sort":"modDate DESC","limit":40,"offset":"0"}'
         );
         req.flush({ entity: responseData });
     });
@@ -62,7 +62,7 @@ describe('DotESContentService', () => {
         const req = httpMock.expectOne('/api/content/_search');
         expect(req.request.method).toBe('POST');
         expect(req.request.body).toBe(
-            '{"query":"  +deleted : false   +working : true   +contentType :  blog   +languageId : 2   +title : test*  ","sort":"name ASC","limit":5,"offset":"10"}'
+            '{"query":"+contentType: blog   +languageId : 2  ","sort":"name ASC","limit":5,"offset":"10"}'
         );
         req.flush({ entity: responseData });
     });

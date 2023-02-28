@@ -4,7 +4,12 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
+import com.dotcms.datagen.ContentletDataGen;
+import com.dotcms.datagen.TemplateDataGen;
+import com.dotcms.datagen.VariantDataGen;
+import com.dotcms.variant.model.Variant;
 import com.dotmarketing.exception.DotRuntimeException;
+import com.dotmarketing.portlets.contentlet.model.Contentlet.ContentletHashMap;
 import java.io.File;
 import java.io.IOException;
 import java.net.URL;
@@ -553,6 +558,49 @@ public class BrowserAPITest extends IntegrationTestBase {
         List<Map<String, Object>> results = (List<Map<String, Object>>)parentFolderContent.get("list");
         assertEquals(childFolder1.getIdentifier(),results.get(0).get("identifier"));
         assertEquals(childFolder2.getIdentifier(),results.get(1).get("identifier"));
+
+    }
+
+    /**
+     * Method to test: browserAPI.getFolderContent
+     * Given scenario: One page in DEFAULT variant and one page in a second variant living under the same folder
+     * Expected result: calling the method for the mentioned folder should return only the page in the DEFAULT variant
+     */
+    @Test
+    public void test_getFolderContent_pageWithTwoVariants()
+            throws DotDataException, DotSecurityException {
+        final User user = APILocator.systemUser();
+
+        final Host site = new SiteDataGen().nextPersisted();
+        final Folder folder = new FolderDataGen().site(site).nextPersisted();
+        final Template template_A = new TemplateDataGen().host(site).nextPersisted();
+
+        final Variant secondVariant = new VariantDataGen().nextPersisted();
+
+        final HTMLPageAsset pageInDefaultVariant = new HTMLPageDataGen(site, template_A).folder(folder)
+                .nextPersisted();
+
+        final HTMLPageAsset pageInSecondVariant = (HTMLPageAsset) new HTMLPageDataGen(site, template_A)
+                .folder(folder)
+                .variant(secondVariant)
+                .nextPersisted();
+
+        final BrowserQuery browserQuery = BrowserQuery.builder()
+                .showDotAssets(Boolean.FALSE)
+                .showLinks(Boolean.TRUE)
+                .withHostOrFolderId(folder.getIdentifier())
+                .showFiles(true)
+                .showPages(true)
+                .showFolders(false)
+                .showArchived(false)
+                .showWorking(Boolean.TRUE)
+                .sortByDesc(false)
+                .withUser(user).build();
+
+        final Map<String, Object> results = browserAPI.getFolderContent(browserQuery);
+        assertEquals(1, ((int) results.get("total")));
+        assertEquals(pageInDefaultVariant.getIdentifier(),
+                ((ContentletHashMap)((List) results.get("list")).get(0)).get("identifier"));
 
     }
     
