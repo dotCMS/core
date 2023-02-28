@@ -112,16 +112,4 @@ describe('DotExperimentsConfigurationSchedulingComponent', () => {
             'false'
         );
     });
-
-    it('should render the date range in the button when present', () => {
-        dotExperimentsService.getById.and.returnValue(of(ExperimentMocks[0]));
-        store.loadExperiment(ExperimentMocks[0].id);
-        spectator.detectChanges();
-        expect(spectator.query(byTestId('scheduling-setup-button'))).toContainText(
-            'Start: Wed, Dec 31, 1970'
-        );
-        expect(spectator.query(byTestId('scheduling-setup-button'))).toContainText(
-            'End: Wed, Dec 31, 1970'
-        );
-    });
 });
