@@ -2,8 +2,7 @@ package com.dotmarketing.common.reindex;
 
 
 import com.dotmarketing.beans.Host;
-import com.dotmarketing.db.DbConnectionFactory;
-import com.dotmarketing.db.HibernateUtil;
+import com.dotmarketing.business.CacheLocator;
 import com.google.common.collect.ImmutableList;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
@@ -66,6 +65,7 @@ public class BulkProcessorListener implements BulkProcessor.Listener {
 
     @Override
     public void afterBulk(final long executionId, final BulkRequest request, final BulkResponse response) {
+        Logger.debug(this.getClass(), "Bulk process completed");
         final List<ReindexEntry> successful = new ArrayList<>();
         float totalResponses=0;
         for (BulkItemResponse bulkItemResponse : response) {
@@ -128,6 +128,7 @@ public class BulkProcessorListener implements BulkProcessor.Listener {
         try {
             if (!successful.isEmpty()) {
                 APILocator.getReindexQueueAPI().deleteReindexEntry(successful);
+                CacheLocator.getESQueryCache().clearCache();
             }
         } catch (DotDataException e) {
             Logger.warnAndDebug(this.getClass(), "unable to delete indexjournal:" + e.getMessage(), e);
