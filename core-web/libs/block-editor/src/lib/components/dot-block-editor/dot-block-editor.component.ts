@@ -24,7 +24,7 @@ import { TextAlign } from '@tiptap/extension-text-align';
 import { Underline } from '@tiptap/extension-underline';
 import StarterKit, { StarterKitOptions } from '@tiptap/starter-kit';
 
-import { CustomBlock, EDITOR_MARKETING_KEYS } from '@dotcms/dotcms-models';
+import { RemoteCustomExtentions, EDITOR_MARKETING_KEYS } from '@dotcms/dotcms-models';
 
 import {
     ActionsMenu,
@@ -39,7 +39,9 @@ import {
     DragHandler,
     DotFloatingButton,
     BubbleAssetFormExtension,
-    ImageUpload
+    ImageUpload,
+    FreezeScroll,
+    FREEZE_SCROLL_KEY
 } from '../../extensions';
 import { ContentletBlock, ImageNode, VideoNode } from '../../nodes';
 import {
@@ -94,6 +96,7 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy {
 
     editor: Editor;
     subject = new Subject();
+    freezeScroll = true;
 
     private _allowedBlocks: string[] = ['paragraph']; //paragraph should be always.
     private _customNodes: Map<string, AnyExtension> = new Map([
@@ -134,15 +137,15 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy {
     }
 
     ngOnInit() {
-        from(this.getCustomBlocks())
+        from(this.getCustomRemoteExtensions())
             .pipe(take(1))
-            .subscribe((nodes) => {
+            .subscribe((extensions) => {
                 this.editor = new Editor({
                     extensions: [
                         ...this.getEditorExtensions(),
                         ...this.getEditorMarks(),
                         ...this.getEditorNodes(),
-                        ...nodes
+                        ...extensions
                     ]
                 });
 
@@ -153,6 +156,10 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy {
 
                 this.editor.on('update', ({ editor }) => {
                     this.valueChange.emit(JSON.stringify(editor.getJSON()));
+                });
+
+                this.editor.on('transaction', ({ editor }) => {
+                    this.freezeScroll = FREEZE_SCROLL_KEY.getState(editor.view.state)?.freezeScroll;
                 });
             });
     }
@@ -170,20 +177,27 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy {
         this.editor.view.dispatch(tr);
     }
 
+    private getParsedCustomBlocks(): RemoteCustomExtentions {
+        try {
+            return JSON.parse(this.customBlocks);
+        } catch (e) {
+            console.warn('JSON parse fails, please check the JSON format.', e);
+
+            return {
+                extensions: []
+            };
+        }
+    }
+
     /**
      * This methods get the customBlocks variable to retrieve the custom modules as Objects.
      * Validates that there is customBlocks defined.
+     * @private
+     * @return {*}  {Promise<AnyExtension[]>}
+     * @memberof DotBlockEditorComponent
      */
-
-    private async getCustomBlocks(): Promise<AnyExtension[]> {
-        let data: CustomBlock;
-        try {
-            data = JSON.parse(this.customBlocks);
-        } catch (e) {
-            console.warn('JSON parse fails, please check the JSON format.');
-
-            return [];
-        }
+    private async getCustomRemoteExtensions(): Promise<AnyExtension[]> {
+        const data: RemoteCustomExtentions = this.getParsedCustomBlocks();
 
         const extensionUrls = data.extensions.map((extension) => extension.url);
         const customModules = await this.loadCustomBlocks(extensionUrls);
@@ -202,7 +216,7 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy {
     }
 
     private getEditorNodes(): AnyExtension[] {
-        // If you have more than one allow block (other than the parragrph),
+        // If you have more than one allow block (other than the paragraph),
         // we customize the starterkit.
         const starterkit =
             this._allowedBlocks?.length > 1
@@ -287,7 +301,7 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy {
                 allowedBlocks: this._allowedBlocks
             }),
             Placeholder.configure({ placeholder: this.placeholder }),
-            ActionsMenu(this.viewContainerRef),
+            ActionsMenu(this.viewContainerRef, this.getParsedCustomBlocks()),
             DragHandler(this.viewContainerRef),
             ImageUpload(this.injector, this.viewContainerRef),
             BubbleLinkFormExtension(this.viewContainerRef),
@@ -298,6 +312,7 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy {
             BubbleAssetFormExtension(this.viewContainerRef),
             DotTableHeaderExtension(),
             TableRow,
+            FreezeScroll,
             CharacterCount
         ];
     }

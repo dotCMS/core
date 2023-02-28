@@ -517,7 +517,7 @@ public class PageResource {
             for (final String contentletId : contentletIdList) {
                 final Contentlet contentlet;
                 try {
-                    contentlet = APILocator.getContentletAPI().findContentletByIdentifierAnyLanguage(contentletId);
+                    contentlet = APILocator.getContentletAPI().findContentletByIdentifierAnyLanguageAndVariant(contentletId);
                     if (null == contentlet) {
 
                         throw new BadRequestException("The contentlet: " + contentletId + " does not exists!");

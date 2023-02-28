@@ -32,7 +32,7 @@ public class Task04230FixVanityURLInconsistencies extends AbstractJDBCStartupTas
     }
 
     @Override
-    @CloseDBIfOpened
+    @WrapInTransaction
     public void executeUpgrade() throws DotDataException {
 
         final DotConnect dc = new DotConnect();

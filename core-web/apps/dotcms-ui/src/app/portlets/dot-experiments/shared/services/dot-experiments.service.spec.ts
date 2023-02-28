@@ -5,6 +5,7 @@ import {
     DotExperiment,
     Goals,
     GoalsLevels,
+    TrafficProportionTypes,
     Variant
 } from '@dotcms/dotcms-models';
 import { DotExperimentsService } from '@portlets/dot-experiments/shared/services/dot-experiments.service';
@@ -116,5 +117,17 @@ describe('DotExperimentsService', () => {
         const req = spectator.expectOne(`${API_ENDPOINT}/${EXPERIMENT_ID}`, HttpMethod.PATCH);
 
         expect(req.request.body['trafficAllocation']).toEqual(newValue);
+    });
+
+    it('should set traffic proportion to experiment', () => {
+        const newValue = {
+            type: TrafficProportionTypes.SPLIT_EVENLY,
+            variants: [{ id: '111', name: 'DEFAULT', weight: 100 }]
+        };
+        spectator.service.setTrafficProportion(EXPERIMENT_ID, newValue).subscribe();
+
+        const req = spectator.expectOne(`${API_ENDPOINT}/${EXPERIMENT_ID}`, HttpMethod.PATCH);
+
+        expect(req.request.body['trafficProportion']).toEqual(newValue);
     });
 });

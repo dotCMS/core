@@ -1,4 +1,4 @@
-<div [ngGrid]="gridConfig" (onDragStop)="updateModel()" (onResizeStop)="updateModel()">
+<div (config)="(gridConfig)" (onDragStop)="updateModel()" (onResizeStop)="updateModel()" ngGrid>
     <div
         class="box__add-row-class-button"
         *ngFor="let rowClass of rowClass; let i = index"

@@ -1,5 +1,6 @@
 package com.dotmarketing.startup.runonce;
 
+import com.dotcms.business.WrapInTransaction;
 import java.util.List;
 import java.util.Map;
 
@@ -14,6 +15,8 @@ import com.dotmarketing.util.UUIDGenerator;
 
 public class Task00800CreateTemplateContainers implements StartupTask{
 
+	@Override
+	@WrapInTransaction
 	public void executeUpgrade() throws DotDataException, DotRuntimeException {
 		
 		DotConnect dc = new DotConnect();

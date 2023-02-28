@@ -1,5 +1,6 @@
 package com.dotmarketing.startup.runonce;
 
+import com.dotcms.business.WrapInTransaction;
 import com.dotcms.util.DataSourceAttributes;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.common.db.DotDatabaseMetaData;
@@ -124,6 +125,7 @@ public class Task210901UpdateDateTimezones extends AbstractJDBCStartupTask {
     }
 
     @Override
+    @WrapInTransaction
     public void executeUpgrade() throws DotDataException, DotRuntimeException {
         tablesCount = 0;
         try {
