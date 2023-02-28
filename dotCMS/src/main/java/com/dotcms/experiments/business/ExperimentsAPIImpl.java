@@ -11,6 +11,7 @@ import static com.dotcms.util.CollectionsUtils.set;
 
 import static com.dotcms.experiments.model.AbstractExperimentVariant.ORIGINAL_VARIANT;
 import static com.dotcms.variant.VariantAPI.DEFAULT_VARIANT;
+import static com.dotmarketing.util.DateUtil.isTimeReach;
 
 import com.dotcms.analytics.app.AnalyticsApp;
 import com.dotcms.analytics.helper.AnalyticsHelper;
@@ -895,11 +896,6 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
         scheduledToStartExperiments.forEach((experiment ->
                 Try.of(()->startScheduled(experiment.id().orElseThrow(), user)).getOrElseThrow((e)->
                         new DotStateException("Unable to start Experiment. Cause:" + e))));
-    }
-
-    private static boolean isTimeReach(final Instant time) {
-        final Instant now = Instant.now();
-        return time != null && (time.isBefore(now) || time.equals(now));
     }
 
     private TreeSet<ExperimentVariant> redistributeWeights(final Set<ExperimentVariant> variants) {
