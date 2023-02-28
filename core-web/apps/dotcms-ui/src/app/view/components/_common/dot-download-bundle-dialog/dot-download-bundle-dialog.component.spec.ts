@@ -18,8 +18,8 @@ import {
     DotPushPublishFilter,
     DotPushPublishFiltersService
 } from '@dotcms/data-access';
-import { MockDotMessageService } from '@dotcms/utils-testing';
 import * as dotUtils from '@dotcms/utils/lib/dot-utils';
+import { MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotDownloadBundleDialogComponent } from './dot-download-bundle-dialog.component';
 

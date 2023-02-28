@@ -1,6 +1,6 @@
 import { DotPageRender, DotPageRenderState } from '@dotcms/dotcms-models';
-import { mockDotRenderedPage, mockUser } from '@dotcms/utils-testing';
 import * as dotUtils from '@dotcms/utils/lib/dot-utils';
+import { mockDotRenderedPage, mockUser } from '@dotcms/utils-testing';
 
 describe('Dot Utils', () => {
     it('should return anchor with the correct values', () => {

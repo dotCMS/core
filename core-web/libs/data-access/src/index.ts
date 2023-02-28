@@ -31,7 +31,3 @@ export * from './lib/dot-messages/dot-messages.service';
 export * from './lib/dot-tags/dot-tags.service';
 export * from './lib/paginator/paginator.service';
 export * from './lib/dot-session-storage/dot-session-storage.service';
-
-export function hello() {
-    return 'a';
-}
