@@ -2,7 +2,7 @@ name: Feature
 
 description: I need to change the way something works, or create new functionality. 
 
-labels: ['Type : Feature',Triage]
+labels: ['Type : New Functionality',Triage]
 
 body:
 
@@ -104,7 +104,7 @@ body:
     id: qa-note
     attributes:
       label: "Quality Assurance Notes & Workarounds"
-      description: ""
+      description: "Add any additional notes for QA you would like; this field is also for use by the QA Team once the issue is in progress."
       placeholder:
       value:
     validations:
@@ -121,3 +121,4 @@ body:
       value:
     validations:
       required: false
+

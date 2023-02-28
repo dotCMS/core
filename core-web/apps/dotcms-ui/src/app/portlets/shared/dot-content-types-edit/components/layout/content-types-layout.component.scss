@@ -155,4 +155,8 @@ $top-height: ($toolbar-height + $tabview-nav-height + $dot-secondary-toolbar-mai
             margin-left: 0.25rem;
         }
     }
+
+    .content-type__add-to-menu {
+        margin-right: $spacing-2;
+    }
 }

@@ -16,9 +16,9 @@ import java.util.concurrent.Callable;
 @CommandLine.Command(name = SiteArchive.NAME,
      description = "@|bold,green Archive Site |@ Option params @|bold,cyan --idOrName|@ site name or site id."
 )
-public class SiteArchive extends SiteCommand implements Callable<Integer> {
+public class SiteArchive extends AbstractSiteCommand implements Callable<Integer> {
 
-    static final String NAME = "site-archive";
+    static final String NAME = "archive";
 
     @CommandLine.Mixin(name = "output")
     protected OutputOptionMixin output;
@@ -26,8 +26,7 @@ public class SiteArchive extends SiteCommand implements Callable<Integer> {
     @Inject
     RestClientFactory clientFactory;
 
-    @CommandLine.Option(names = { "-in", "--idOrName" },
-            order = 2, arity = "1", description = "Site by id or name", required = true)
+    @CommandLine.Parameters(index = "0", arity = "1", description = "Site name Or Id.")
     String siteNameOrId;
 
     @Override
