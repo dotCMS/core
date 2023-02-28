@@ -39,7 +39,9 @@ import {
     DragHandler,
     DotFloatingButton,
     BubbleAssetFormExtension,
-    ImageUpload
+    ImageUpload,
+    FreezeScroll,
+    FREEZE_SCROLL_KEY
 } from '../../extensions';
 import { ContentletBlock, ImageNode, VideoNode } from '../../nodes';
 import {
@@ -94,6 +96,7 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy {
 
     editor: Editor;
     subject = new Subject();
+    freezeScroll = true;
 
     private _allowedBlocks: string[] = ['paragraph']; //paragraph should be always.
     private _customNodes: Map<string, AnyExtension> = new Map([
@@ -153,6 +156,10 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy {
 
                 this.editor.on('update', ({ editor }) => {
                     this.valueChange.emit(JSON.stringify(editor.getJSON()));
+                });
+
+                this.editor.on('transaction', ({ editor }) => {
+                    this.freezeScroll = FREEZE_SCROLL_KEY.getState(editor.view.state)?.freezeScroll;
                 });
             });
     }
@@ -305,6 +312,7 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy {
             BubbleAssetFormExtension(this.viewContainerRef),
             DotTableHeaderExtension(),
             TableRow,
+            FreezeScroll,
             CharacterCount
         ];
     }
