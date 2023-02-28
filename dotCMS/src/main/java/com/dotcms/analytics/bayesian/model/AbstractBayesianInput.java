@@ -1,16 +1,17 @@
 package com.dotcms.analytics.bayesian.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import org.immutables.value.Value;
 
 
 /**
  * Bayesian inference calculation input. It consists in 6 known parameters:
  *  <ul>
- *      <li>prior alpha: prior data for alpha</li>
- *      <li>prior beta: prior data for beta </li>
+ *      <li>priors data tp define previous data</li>
  *      <li>control successes: number of successes for control (A)</li>
- *      <li><control failures: number of failures for control (A)/li>
+ *      <li>control failures: number of failures for control (A)</li>
  *      <li>test successes: number of </li>
  *      <li>test failures:</li>
  *  </ul>
@@ -19,24 +20,23 @@ import org.immutables.value.Value;
  */
 @Value.Style(typeImmutable="*", typeAbstract="Abstract*")
 @Value.Immutable
+@JsonDeserialize(as = BayesianInput.class)
+@JsonIgnoreProperties(ignoreUnknown = true)
 public interface AbstractBayesianInput {
 
-    @JsonProperty("priorAlpha")
-    double priorAlpha();
-
-    @JsonProperty("priorBeta")
-    double priorBeta();
+    @JsonProperty("priors")
+    BayesianPriors priors();
 
     @JsonProperty("controlSuccesses")
-    int controlSuccesses();
+    long controlSuccesses();
 
     @JsonProperty("controlFailures")
-    int controlFailures();
+    long controlFailures();
 
     @JsonProperty("testSuccesses")
-    int testSuccesses();
+    long testSuccesses();
 
     @JsonProperty("testFailures")
-    int testFailures();
+    long testFailures();
 
 }

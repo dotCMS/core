@@ -2,6 +2,7 @@ package com.dotcms.analytics.bayesian;
 
 
 import com.dotcms.analytics.bayesian.model.BayesianInput;
+import com.dotcms.analytics.bayesian.model.BayesianPriors;
 import com.dotcms.analytics.bayesian.model.BayesianResult;
 
 /**
@@ -10,6 +11,8 @@ import com.dotcms.analytics.bayesian.model.BayesianResult;
  * @author vico
  */
 public interface BayesianAPI {
+
+    BayesianPriors NULL_PRIORS = BayesianPriors.builder().alpha(null).beta(null).build();
 
     /**
      * Calculates probability that B (Test) beats A (Control) based on this pseudo (Julia) code:
@@ -35,6 +38,6 @@ public interface BayesianAPI {
      *
      * @param input {@link BayesianInput} instance
      */
-    BayesianResult calcABTesting(BayesianInput input);
+    BayesianResult calcProbBOverA(BayesianInput input);
 
 }
