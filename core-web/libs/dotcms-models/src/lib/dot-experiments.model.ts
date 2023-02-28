@@ -29,7 +29,7 @@ export interface TrafficProportion {
 export interface Variant {
     id: string;
     name: string;
-    weight: string;
+    weight: number;
     url?: string;
 }
 
