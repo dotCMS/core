@@ -100,7 +100,7 @@ describe('AddToBundleService', () => {
                 'DotAjaxDirector/com.dotcms.publisher.ajax.RemotePublishAjaxAction/cmd/addToBundle'
             )
         ).toBeGreaterThan(-1);
-        expect(req.request.method).toEqual('WHAT');
+        expect(req.request.method).toEqual('POST');
         expect(req.request.body).toEqual(
             `assetIdentifier=${assetIdentifier}&bundleName=${mockBundleData.name}&bundleSelect=${mockBundleData.id}`
         );
