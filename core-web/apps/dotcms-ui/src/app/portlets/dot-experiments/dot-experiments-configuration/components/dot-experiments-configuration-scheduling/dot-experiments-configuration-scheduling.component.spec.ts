@@ -12,7 +12,7 @@ import { ButtonModule } from 'primeng/button';
 import { Card, CardModule } from 'primeng/card';
 
 import { DotMessageService } from '@dotcms/data-access';
-import { ExperimentSteps } from '@dotcms/dotcms-models';
+import { DotExperimentStatusList, ExperimentSteps } from '@dotcms/dotcms-models';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 import { DotExperimentsConfigurationSchedulingAddComponent } from '@portlets/dot-experiments/dot-experiments-configuration/components/dot-experiments-configuration-scheduling-add/dot-experiments-configuration-scheduling-add.component';
 import { DotExperimentsConfigurationStore } from '@portlets/dot-experiments/dot-experiments-configuration/store/dot-experiments-configuration-store';
@@ -87,15 +87,29 @@ describe('DotExperimentsConfigurationSchedulingComponent', () => {
         expect(store.openSidebar).toHaveBeenCalledOnceWith(ExperimentSteps.SCHEDULING);
     });
 
-    xit('should render the date range in the button when present', () => {
-        dotExperimentsService.getById.and.returnValue(of(ExperimentMocks[0]));
-        store.loadExperiment(ExperimentMocks[0].id);
-        spectator.detectChanges();
-        expect(spectator.query(byTestId('scheduling-setup-button'))).toContainText(
-            'Start: Wed, Dec 31, 1970'
+    it('should disable tooltip if is on draft', () => {
+        expect(spectator.query(byTestId('tooltip-on-disabled'))).toHaveAttribute(
+            'ng-reflect-disabled',
+            'true'
         );
-        expect(spectator.query(byTestId('scheduling-setup-button'))).toContainText(
-            'End: Wed, Dec 31, 1970'
+    });
+
+    it('should disable button and show tooltip when experiment is nos on draft', () => {
+        dotExperimentsService.getById.and.returnValue(
+            of({
+                ...ExperimentMocks[0],
+                ...{ scheduling: null, status: DotExperimentStatusList.RUNNING }
+            })
+        );
+
+        store.loadExperiment(ExperimentMocks[0].id);
+
+        spectator.detectChanges();
+
+        expect(spectator.query(byTestId('scheduling-setup-button'))).toHaveAttribute('disabled');
+        expect(spectator.query(byTestId('tooltip-on-disabled'))).toHaveAttribute(
+            'ng-reflect-disabled',
+            'false'
         );
     });
 });

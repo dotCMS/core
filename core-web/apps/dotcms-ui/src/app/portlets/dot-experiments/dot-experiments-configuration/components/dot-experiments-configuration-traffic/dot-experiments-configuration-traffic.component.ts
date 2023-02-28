@@ -5,6 +5,7 @@ import { ChangeDetectionStrategy, Component, ComponentRef, ViewChild } from '@an
 
 import { ButtonModule } from 'primeng/button';
 import { CardModule } from 'primeng/card';
+import { TooltipModule } from 'primeng/tooltip';
 
 import { tap } from 'rxjs/operators';
 
@@ -37,7 +38,8 @@ enum TrafficConfig {
         // PrimeNg
         CardModule,
         ButtonModule,
-        DotIconModule
+        DotIconModule,
+        TooltipModule
     ],
     templateUrl: './dot-experiments-configuration-traffic.component.html',
     styleUrls: ['./dot-experiments-configuration-traffic.component.scss'],
@@ -49,6 +51,7 @@ export class DotExperimentsConfigurationTrafficComponent {
         trafficProportion: TrafficProportion;
         trafficAllocation: number;
         status: StepStatus;
+        isExperimentADraft: boolean;
     }> = this.dotExperimentsConfigurationStore.trafficStepVm$.pipe(
         tap(({ status }) => this.handleSidebar(status))
     );

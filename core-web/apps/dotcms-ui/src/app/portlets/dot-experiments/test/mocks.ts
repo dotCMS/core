@@ -131,7 +131,12 @@ export const DotExperimentsConfigurationStoreMock = {
         trafficProportion: '',
         trafficAllocation: '',
         status: ''
-    })
+    }),
+    variantsStepVm$: of({
+        status: '',
+        isExperimentADraft: true
+    }),
+    targetStepVm$: of({})
 };
 
 export const DotExperimentsServiceMock = {

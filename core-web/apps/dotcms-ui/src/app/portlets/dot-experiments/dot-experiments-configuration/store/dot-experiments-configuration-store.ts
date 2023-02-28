@@ -12,7 +12,6 @@ import { switchMap, tap } from 'rxjs/operators';
 import { DotMessageService } from '@dotcms/data-access';
 import {
     ComponentStatus,
-    DOT_EXPERIMENT_STATUS_METADATA_MAP,
     DotExperiment,
     DotExperimentStatusList,
     ExperimentSteps,
@@ -46,10 +45,10 @@ export interface ConfigurationViewModel {
     experiment: DotExperiment;
     stepStatusSidebar: StepStatus;
     isLoading: boolean;
-    canStartExperiment: boolean;
+    isExperimentADraft: boolean;
     disabledStartExperiment: boolean;
     showExperimentSummary: boolean;
-    statusExperiment: { classz: string; label: string };
+    experimentStatus: DotExperimentStatusList;
     isSaving: boolean;
 }
 
@@ -64,20 +63,15 @@ export class DotExperimentsConfigurationStore extends ComponentStore<DotExperime
     );
     readonly getExperimentId$: Observable<string> = this.select(({ experiment }) => experiment.id);
 
-    readonly canStartExperiment$: Observable<boolean> = this.select(
+    readonly isExperimentADraft$: Observable<boolean> = this.select(
         ({ experiment }) => experiment?.status === DotExperimentStatusList.DRAFT
     );
     readonly disabledStartExperiment$: Observable<boolean> = this.select(
         ({ experiment }) => experiment?.trafficProportion.variants.length < 2 || !experiment?.goals
     );
 
-    readonly getStatusExperiment$: Observable<{ label: string; classz: string }> = this.select(
-        ({ experiment }) => {
-            return {
-                ...DOT_EXPERIMENT_STATUS_METADATA_MAP[experiment?.status],
-                label: DOT_EXPERIMENT_STATUS_METADATA_MAP[experiment?.status]?.label
-            };
-        }
+    readonly getExperimentStatus$: Observable<DotExperimentStatusList> = this.select(
+        ({ experiment }) => experiment?.status
     );
 
     readonly showExperimentSummary$: Observable<boolean> = this.select(({ experiment }) =>
@@ -555,62 +549,92 @@ export class DotExperimentsConfigurationStore extends ComponentStore<DotExperime
 
     readonly vm$: Observable<ConfigurationViewModel> = this.select(
         this.state$,
-        this.canStartExperiment$,
+        this.isExperimentADraft$,
         this.isLoading$,
         this.disabledStartExperiment$,
         this.showExperimentSummary$,
         this.isSaving$,
-        this.getStatusExperiment$,
+        this.getExperimentStatus$,
         (
             { experiment, stepStatusSidebar },
-            canStartExperiment,
+            isExperimentADraft,
             isLoading,
             disabledStartExperiment,
             showExperimentSummary,
             isSaving,
-            statusExperiment
+            experimentStatus
         ) => ({
             experiment,
             stepStatusSidebar,
-            canStartExperiment,
+            isExperimentADraft,
             isLoading,
             disabledStartExperiment,
             showExperimentSummary,
             isSaving,
-            statusExperiment
+            experimentStatus
         })
     );
 
     readonly variantsStepVm$: Observable<{
         status: StepStatus;
-    }> = this.select(this.variantsStatus$, (status) => ({
-        status
-    }));
+        isExperimentADraft: boolean;
+    }> = this.select(
+        this.variantsStatus$,
+        this.isExperimentADraft$,
+        (status, isExperimentADraft) => ({
+            status,
+            isExperimentADraft
+        })
+    );
 
-    readonly goalsStepVm$: Observable<{ experimentId: string; goals: Goals; status: StepStatus }> =
-        this.select(
-            this.getExperimentId$,
-            this.goals$,
-            this.goalsStatus$,
-            (experimentId, goals, status) => ({
-                experimentId,
-                goals,
-                status
-            })
-        );
+    readonly goalsStepVm$: Observable<{
+        experimentId: string;
+        goals: Goals;
+        status: StepStatus;
+        isExperimentADraft: boolean;
+    }> = this.select(
+        this.getExperimentId$,
+        this.goals$,
+        this.goalsStatus$,
+        this.isExperimentADraft$,
+        (experimentId, goals, status, isExperimentADraft) => ({
+            experimentId,
+            goals,
+            status,
+            isExperimentADraft
+        })
+    );
 
     readonly schedulingStepVm$: Observable<{
         experimentId: string;
         scheduling: RangeOfDateAndTime;
         status: StepStatus;
+        isExperimentADraft: boolean;
     }> = this.select(
         this.getExperimentId$,
         this.scheduling$,
         this.schedulingStatus$,
-        (experimentId, scheduling, status) => ({
+        this.isExperimentADraft$,
+        (experimentId, scheduling, status, isExperimentADraft) => ({
             experimentId,
             scheduling,
-            status
+            status,
+            isExperimentADraft
+        })
+    );
+
+    readonly targetStepVm$: Observable<{
+        experimentId: string;
+        status: StepStatus;
+        isExperimentADraft: boolean;
+    }> = this.select(
+        this.getExperimentId$,
+        this.trafficStatus$,
+        this.isExperimentADraft$,
+        (experimentId, status, isExperimentADraft) => ({
+            experimentId,
+            status,
+            isExperimentADraft
         })
     );
 
@@ -619,16 +643,19 @@ export class DotExperimentsConfigurationStore extends ComponentStore<DotExperime
         trafficProportion: TrafficProportion;
         trafficAllocation: number;
         status: StepStatus;
+        isExperimentADraft: boolean;
     }> = this.select(
         this.getExperimentId$,
         this.trafficProportion$,
         this.trafficAllocation$,
         this.trafficStatus$,
-        (experimentId, trafficProportion, trafficAllocation, status) => ({
+        this.isExperimentADraft$,
+        (experimentId, trafficProportion, trafficAllocation, status, isExperimentADraft) => ({
             experimentId,
             trafficProportion,
             trafficAllocation,
-            status
+            status,
+            isExperimentADraft
         })
     );
 

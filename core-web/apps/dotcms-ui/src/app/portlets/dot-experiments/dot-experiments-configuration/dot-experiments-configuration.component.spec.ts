@@ -60,11 +60,11 @@ const defaultVmMock: ConfigurationViewModel = {
         experimentStep: null
     },
     isLoading: false,
-    canStartExperiment: false,
+    isExperimentADraft: false,
     disabledStartExperiment: false,
     showExperimentSummary: false,
     isSaving: false,
-    statusExperiment: { classz: '', label: '' }
+    experimentStatus: null
 };
 
 describe('DotExperimentsConfigurationComponent', () => {
@@ -136,19 +136,19 @@ describe('DotExperimentsConfigurationComponent', () => {
         expect(spectator.query(DotExperimentsConfigurationSchedulingComponent)).toExist();
     });
 
-    it('should show Start Experiment button if canStartExperiment true', () => {
+    it('should show Start Experiment button if isExperimentADraft true', () => {
         spectator.component.vm$ = of({
             ...defaultVmMock,
-            canStartExperiment: true
+            isExperimentADraft: true
         });
         spectator.detectChanges();
         expect(spectator.query(byTestId('start-experiment-button'))).toExist();
     });
 
-    it("shouldn't show Start Experiment button if canStartExperiment false", () => {
+    it("shouldn't show Start Experiment button if isExperimentADraft false", () => {
         spectator.component.vm$ = of({
             ...defaultVmMock,
-            canStartExperiment: false
+            isExperimentADraft: false
         });
         spectator.detectChanges();
 
@@ -158,7 +158,7 @@ describe('DotExperimentsConfigurationComponent', () => {
     it('should show Start Experiment button disabled if disabledStartExperiment true', () => {
         spectator.component.vm$ = of({
             ...defaultVmMock,
-            canStartExperiment: true,
+            isExperimentADraft: true,
             disabledStartExperiment: true
         });
         spectator.detectChanges();

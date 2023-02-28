@@ -7,6 +7,7 @@ import { ConfirmationService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
 import { CardModule } from 'primeng/card';
 import { ConfirmPopupModule } from 'primeng/confirmpopup';
+import { TooltipModule } from 'primeng/tooltip';
 
 import { tap } from 'rxjs/operators';
 
@@ -43,7 +44,8 @@ import { DotDynamicDirective } from '@portlets/shared/directives/dot-dynamic.dir
         // PrimeNg
         ButtonModule,
         CardModule,
-        ConfirmPopupModule
+        ConfirmPopupModule,
+        TooltipModule
     ],
     templateUrl: './dot-experiments-configuration-goals.component.html',
     styleUrls: ['./dot-experiments-configuration-goals.component.scss'],
@@ -51,10 +53,14 @@ import { DotDynamicDirective } from '@portlets/shared/directives/dot-dynamic.dir
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotExperimentsConfigurationGoalsComponent {
-    vm$: Observable<{ experimentId: string; goals: Goals; status: StepStatus }> =
-        this.dotExperimentsConfigurationStore.goalsStepVm$.pipe(
-            tap(({ status }) => this.handleSidebar(status))
-        );
+    vm$: Observable<{
+        experimentId: string;
+        goals: Goals;
+        status: StepStatus;
+        isExperimentADraft: boolean;
+    }> = this.dotExperimentsConfigurationStore.goalsStepVm$.pipe(
+        tap(({ status }) => this.handleSidebar(status))
+    );
 
     goalTypeMap = GOALS_METADATA_MAP;
     destroy$: Subject<boolean> = new Subject<boolean>();
