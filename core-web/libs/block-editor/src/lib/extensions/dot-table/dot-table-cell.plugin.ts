@@ -62,9 +62,10 @@ export const DotTableCellPlugin = (options) => {
             // eslint-disable-next-line
             apply: () => {},
             init: () => {
-                const component = options.viewContainerRef.createComponent(SuggestionsComponent);
+                const { editor, viewContainerRef } = options;
+                const component = viewContainerRef.createComponent(SuggestionsComponent);
                 const element = component.location.nativeElement;
-                component.instance.currentLanguage = options.editor.storage.dotConfig.lang;
+                component.instance.currentLanguage = editor.storage.dotConfig.lang;
 
                 const defaultTippyOptions: Partial<Props> = {
                     duration: 500,
@@ -74,7 +75,7 @@ export const DotTableCellPlugin = (options) => {
                     interactive: true
                 };
 
-                const { element: editorElement } = options.editor.options;
+                const { element: editorElement } = editor.options;
                 tippyCellOptions = tippy(editorElement, {
                     ...defaultTippyOptions,
                     appendTo: document.body,
@@ -87,6 +88,7 @@ export const DotTableCellPlugin = (options) => {
                         modifiers: popperModifiers
                     },
                     onShow: () => {
+                        editor.commands.freezeScroll(true);
                         const mergeCellsOption = component.instance.items.find(
                             (item) => item.id == 'mergeCells'
                         );
@@ -94,12 +96,13 @@ export const DotTableCellPlugin = (options) => {
                             (item) => item.id == 'splitCells'
                         );
 
-                        mergeCellsOption.disabled = !options.editor.can().mergeCells();
-                        splitCellsOption.disabled = !options.editor.can().splitCell();
+                        mergeCellsOption.disabled = !editor.can().mergeCells();
+                        splitCellsOption.disabled = !editor.can().splitCell();
                         setTimeout(() => {
                             component.changeDetectorRef.detectChanges();
                         });
-                    }
+                    },
+                    onHide: () => editor.commands.freezeScroll(false)
                 });
 
                 component.instance.items = getCellsOptions(options.editor, tippyCellOptions);

@@ -68,6 +68,7 @@ export const BubbleFormExtension = (viewContainerRef: ViewContainerRef) => {
 
                                 return true;
                             })
+                            .freezeScroll(true)
                             .run();
 
                         return formValue$;
@@ -83,6 +84,7 @@ export const BubbleFormExtension = (viewContainerRef: ViewContainerRef) => {
 
                                 return true;
                             })
+                            .freezeScroll(false)
                             .run();
                     },
                 updateValue:

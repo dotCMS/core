@@ -13,12 +13,12 @@ import java.util.Optional;
 import java.util.concurrent.Callable;
 
 @ActivateRequestContext
-@CommandLine.Command(name = SiteDelete.NAME,
-     description = "@|bold,green Delete Site |@ Option params @|bold,cyan --idOrName|@ site name or site id."
+@CommandLine.Command(name = SiteRemove.NAME,
+     description = "@|bold,green Remove/Delete Site |@ Option params @|bold,cyan --idOrName|@ site name or site id."
 )
-public class SiteDelete extends SiteCommand implements Callable<Integer> {
+public class SiteRemove extends AbstractSiteCommand implements Callable<Integer> {
 
-    static final String NAME = "site-remove";
+    static final String NAME = "remove";
 
     @CommandLine.Mixin(name = "output")
     OutputOptionMixin output;
@@ -26,8 +26,7 @@ public class SiteDelete extends SiteCommand implements Callable<Integer> {
     @Inject
     RestClientFactory clientFactory;
 
-    @CommandLine.Option(names = { "-in", "--idOrName" },
-            order = 2, arity = "1", description = "Site by id or name", required = true)
+    @CommandLine.Parameters(index = "0", arity = "1", description = "Site name Or Id.")
     String siteNameOrId;
 
     @Override

@@ -7,7 +7,10 @@ import com.dotcms.api.provider.ClientObjectMapper;
 import com.dotcms.api.provider.YAMLMapperSupplier;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.quarkus.devtools.messagewriter.MessageWriter;
+
+import java.io.File;
 import java.io.PrintWriter;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
@@ -19,11 +22,14 @@ public class OutputOptionMixin implements MessageWriter {
 
     static final boolean picocliDebugEnabled = "DEBUG".equalsIgnoreCase(System.getProperty("picocli.trace"));
 
-    @CommandLine.Option(names = { "-e", "--errors" }, description = "Display error messages.")
+    @CommandLine.Option(names = { "-e", "--errors" }, description = "Display error messages.", hidden = true)
     boolean showErrors;
 
-    @CommandLine.Option(names = { "--verbose" }, description = "Verbose mode.")
+    @CommandLine.Option(names = { "--verbose" }, description = "Verbose mode.", hidden = true)
     boolean verbose;
+
+    @CommandLine.Option(names = {"-sh","--short"},  description = "Pulled Content is shown in shorten format.", hidden = true)
+    boolean shortenOutput;
 
     @CommandLine.Option(names = {
             "--cli-test" }, hidden = true, description = "Manually set output streams for unit test purposes.")
@@ -43,6 +49,11 @@ public class OutputOptionMixin implements MessageWriter {
     @CommandLine.Option(names = {"-fmt", "--format"}, description = "Enum values: ${COMPLETION-CANDIDATES}")
     InputOutputFormat inputOutputFormat = InputOutputFormat.defaultFormat();
 
+    @CommandLine.Option(names = { "-i", "--interactive" },
+            order = 20,
+            description = {"Use to break down a long process into stages"},
+            defaultValue = "true")
+    boolean interactive = true;
 
     ObjectMapper objectMapper;
 
@@ -96,12 +107,24 @@ public class OutputOptionMixin implements MessageWriter {
         return verbose || picocliDebugEnabled;
     }
 
+    public boolean isShortenOutput() {
+        return shortenOutput;
+    }
+
     public boolean isCliTest() {
         return cliTestMode;
     }
 
     public boolean isAnsiEnabled() {
         return CommandLine.Help.Ansi.AUTO.enabled();
+    }
+
+    public boolean isInteractive() {
+        return interactive;
+    }
+
+    public InputOutputFormat getInputOutputFormat() {
+        return inputOutputFormat;
     }
 
     public void printText(String... text) {
