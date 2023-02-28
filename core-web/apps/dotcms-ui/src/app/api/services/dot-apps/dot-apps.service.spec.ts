@@ -9,7 +9,6 @@ import { ConfirmationService } from 'primeng/api';
 import { DotAlertConfirmService } from '@dotcms/data-access';
 import { CoreWebService, LoginService } from '@dotcms/dotcms-js';
 import { DotApps, DotAppsImportConfiguration, DotAppsSaveData } from '@dotcms/dotcms-models';
-import * as dotUtils from '@dotcms/utils/lib/dot-utils';
 import {
     CoreWebServiceMock,
     DotFormatDateServiceMock,
@@ -17,6 +16,7 @@ import {
     MockDotRouterService,
     mockResponseView
 } from '@dotcms/utils-testing';
+import * as dotUtils from '@dotcms/utils/lib/dot-utils';
 
 import { DotAppsService } from './dot-apps.service';
 
