@@ -1261,38 +1261,55 @@ final String calendarEventInode = null!=calendarEventSt ? calendarEventSt.inode(
             return selectedInodes;
         }
 
-
+        /**
+         * Renders the UI components -- i.e., text fields, radio buttons, dropdowns, etc. -- that represent each
+         * user-searchable field for a given Content Type.
+         *
+         * @param data The object array with the information of every field that must be rendered.
+         */
         function fillFields (data) {
-                currentStructureFields = data;
-                var htmlstr = "";
-                var hasHostField = false;
-                for(var i = 0; i < data.length; i++) {
-                        var type = data[i]["fieldFieldType"];
-                        if(type=='category' || type=='hidden'){
-                                continue;
-                        }
-                        if(type=='host or folder'){
-                           hasHostField = true;
-                        }
-
-                        htmlstr += "<dl class='vertical'>";
-                        htmlstr += "<dt><label>" + fieldName(data[i]) + "</label></dt>";
-                        htmlstr += "<dd style='min-height:0px'>" + renderSearchField(data[i]) + "</dd>";
-                        htmlstr += "</dl>";
-                        htmlstr += "<div class='clear'></div>";
+            currentStructureFields = data;
+            var htmlstr = "";
+            var hasSiteFolderField = false;
+            for (var i = 0; i < data.length; i++) {
+                var type = data[i]["fieldFieldType"];
+                if (type=='category' || type=='hidden') {
+                        continue;
                 }
-                $('search_fields_table').update(htmlstr);
-                <%if(APILocator.getPermissionAPI().doesUserHavePermission(APILocator.getHostAPI().findSystemHost(), PermissionAPI.PERMISSION_READ, user, true)){%>
-                  if(hasHostField){
-                     dojo.byId("filterSystemHostTable").style.display = "";
-                  }else{
-                     dojo.byId("filterSystemHostTable").style.display = "none";
-                  }
-           <%}%>
+                if (type == '<%= com.dotmarketing.portlets.structure.model.Field.FieldType.HOST_OR_FOLDER.toString() %>') {
+                   hasSiteFolderField = true;
+                }
 
-                dojo.parser.parse(dojo.byId("search_fields_table"));
-                eval(setDotFieldTypeStr);
-                loadingSearchFields = false;
+                htmlstr += "<dl class='vertical'>";
+                htmlstr += "<dt><label>" + fieldName(data[i]) + "</label></dt>";
+                htmlstr += "<dd style='min-height:0px'>" + renderSearchField(data[i]) + "</dd>";
+                htmlstr += "</dl>";
+                htmlstr += "<div class='clear'></div>";
+            }
+            if (!hasSiteFolderField) {
+                let siteFolderFieldHtml = "";
+                let defaultSiteFolderField = {
+                    "fieldName": "<%= LanguageUtil.get(pageContext, "Host-Folder") %>",
+                    "fieldFieldType": "<%= com.dotmarketing.portlets.structure.model.Field.FieldType.HOST_OR_FOLDER.toString() %>",
+                    "fieldVelocityVarName": "siteOrFolder",
+                    "fieldValues": "",
+                    "fieldContentlet": "system_field",
+                    "fieldStructureInode": structureInode
+                };
+                siteFolderFieldHtml += "<dl class='vertical'>";
+                siteFolderFieldHtml += "<dt><label>" + fieldName(defaultSiteFolderField) + "</label></dt>";
+                siteFolderFieldHtml += "<dd style='min-height:0px'>" + renderSearchField(defaultSiteFolderField) + "</dd>";
+                siteFolderFieldHtml += "</dl>";
+                siteFolderFieldHtml += "<div class='clear'></div>";
+                htmlstr = siteFolderFieldHtml + htmlstr;
+            }
+            $('search_fields_table').update(htmlstr);
+            <% if (APILocator.getPermissionAPI().doesUserHavePermission(APILocator.getHostAPI().findSystemHost(), PermissionAPI.PERMISSION_READ, user, true)) { %>
+                    dojo.byId("filterSystemHostTable").style.display = "";
+            <% } %>
+            dojo.parser.parse(dojo.byId("search_fields_table"));
+            eval(setDotFieldTypeStr);
+            loadingSearchFields = false;
         }
 
 
