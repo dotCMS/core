@@ -465,7 +465,6 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
             toReturn = save(persistedExperiment.withScheduling(scheduling).withStatus(RUNNING), user);
             publishContentOnExperimentVariants(user, toReturn);
         } else {
-            //Scheduling scheduling = validateScheduling(persistedExperiment.scheduling().get());
             Scheduling scheduling = persistedExperiment.scheduling().get();
             toReturn = save(persistedExperiment.withScheduling(scheduling).withStatus(SCHEDULED),user);
         }
