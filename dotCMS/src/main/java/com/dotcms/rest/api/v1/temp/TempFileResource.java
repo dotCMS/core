@@ -215,7 +215,7 @@ public class TempFileResource {
                                              @Context final HttpServletResponse response,
                                              @PathParam("tempFileId") final String tempFileId,
                                              final PlainTextFileForm form) {
-        this.checkEndpointAccess(request, response);
+        this.checkEndpointAccess(request, response, false);
         final StreamingOutput streamingOutput = output -> {
 
             final ObjectMapper objectMapper = DotObjectMapperProvider.getInstance().getDefaultObjectMapper();
@@ -352,15 +352,40 @@ public class TempFileResource {
      *     <li>Whether Anonymous Users can submit Temporary Files or not.</li>
      *     <li>The origin or referer must be valid for the current HTTP Request.</li>
      * </ul>
+     *
+     * @param request       The current instance of the {@link HttpServletRequest}.
+     * @param response      The current instance of the {@link HttpServletResponse}.
      */
-    private void checkEndpointAccess(final HttpServletRequest request, final HttpServletResponse response){
+    private void checkEndpointAccess(final HttpServletRequest request, final HttpServletResponse response) {
+        this.checkEndpointAccess(request, response, true);
+    }
+
+    /**
+     * Utility method that checks that this REST Endpoint can be safely accessed under given circumstances. For
+     * instance:
+     * <ul>
+     *     <li>The Temp File Resources is enabled.</li>
+     *     <li>The origin or referer must be valid for the current HTTP Request.</li>
+     * </ul>
+     * You can explicitly restrict Temp File API access for Anonymous Users as well.
+     *
+     * @param request              The current instance of the {@link HttpServletRequest}.
+     * @param response             The current instance of the {@link HttpServletResponse}.
+     * @param allowAnonymousAccess If Anonymous Users are NOT supposed to access a method in this REST Endpoint, set
+     *                             this to {@code false}. Otherwise, this method will access the current dotCMS
+     *                             configuration to determine if Anonymous Users are able to call a given endpoint
+     *                             action or not -- see {@link TempFileAPI#TEMP_RESOURCE_ALLOW_ANONYMOUS}.
+     */
+    private void checkEndpointAccess(final HttpServletRequest request, final HttpServletResponse response,
+                                     final boolean allowAnonymousAccess) {
         if (!Config.getBooleanProperty(TempFileAPI.TEMP_RESOURCE_ENABLED, true)) {
-            final String message = "Temp Files Resource is not enabled, please change the TEMP_RESOURCE_ENABLED to true in your properties file";
+            final String message = "Temp Files Resource is not enabled, please change the TEMP_RESOURCE_ENABLED to " +
+                                           "true in your properties file";
             Logger.error(this, message);
             throw new DoesNotExistException(message);
         }
-        final boolean allowAnonToUseTempFiles = Config.getBooleanProperty(TempFileAPI.TEMP_RESOURCE_ALLOW_ANONYMOUS,
-                true);
+        final boolean allowAnonToUseTempFiles =
+                allowAnonymousAccess && Config.getBooleanProperty(TempFileAPI.TEMP_RESOURCE_ALLOW_ANONYMOUS, true);
         new WebResource.InitBuilder(request, response).requiredAnonAccess(AnonymousAccess.WRITE).rejectWhenNoUser(!allowAnonToUseTempFiles).init();
         if (!new SecurityUtils().validateReferer(request)) {
             throw new BadRequestException("Invalid Origin or referer");
