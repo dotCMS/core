@@ -99,7 +99,9 @@ describe('DotExperimentsConfigurationGoalSelectComponent', () => {
         expect(store.setSelectedGoal).toHaveBeenCalledWith(expectedGoal);
     });
 
-    it('should emit closedSidebar when the sidebar its closed', (done) => {
+    it('should emit closedSidebar when the sidebar its closed', async () => {
+        sidebar = spectator.query(Sidebar);
+
         spyOn(spectator.component, 'closeSidebar');
         store.setSidebarStatus({
             experimentStep: ExperimentSteps.GOAL,
@@ -107,12 +109,12 @@ describe('DotExperimentsConfigurationGoalSelectComponent', () => {
         });
 
         spectator.detectComponentChanges();
-        sidebar = spectator.query(Sidebar);
+        await spectator.fixture.whenStable();
+
         expect(sidebar.visible).toEqual(false);
 
         sidebar.onHide.subscribe(() => {
             expect(spectator.component.closeSidebar).toHaveBeenCalled();
-            done();
         });
     });
 });
