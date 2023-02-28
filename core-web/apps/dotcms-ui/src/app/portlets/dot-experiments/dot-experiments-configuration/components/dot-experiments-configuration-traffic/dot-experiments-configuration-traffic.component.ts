@@ -18,8 +18,14 @@ import {
 import { DotIconModule } from '@dotcms/ui';
 import { DotMessagePipeModule } from '@pipes/dot-message/dot-message-pipe.module';
 import { DotExperimentsConfigurationTrafficAllocationAddComponent } from '@portlets/dot-experiments/dot-experiments-configuration/components/dot-experiments-configuration-traffic-allocation-add/dot-experiments-configuration-traffic-allocation-add.component';
+import { DotExperimentsConfigurationTrafficSplitAddComponent } from '@portlets/dot-experiments/dot-experiments-configuration/components/dot-experiments-configuration-traffic-split-add/dot-experiments-configuration-traffic-split-add.component';
 import { DotExperimentsConfigurationStore } from '@portlets/dot-experiments/dot-experiments-configuration/store/dot-experiments-configuration-store';
 import { DotDynamicDirective } from '@portlets/shared/directives/dot-dynamic.directive';
+
+enum TrafficConfig {
+    ALLOCATION = 'ALLOCATION',
+    SPLIT = 'SPLIT'
+}
 
 @Component({
     selector: 'dot-experiments-configuration-traffic',
@@ -50,18 +56,34 @@ export class DotExperimentsConfigurationTrafficComponent {
     splitEvenly = TrafficProportionTypes.SPLIT_EVENLY;
 
     @ViewChild(DotDynamicDirective, { static: true }) sidebarHost!: DotDynamicDirective;
-    private componentRef: ComponentRef<DotExperimentsConfigurationTrafficAllocationAddComponent>;
+    private componentRef: ComponentRef<
+        | DotExperimentsConfigurationTrafficAllocationAddComponent
+        | DotExperimentsConfigurationTrafficSplitAddComponent
+    >;
+    private trafficConfig: TrafficConfig;
 
     constructor(
         private readonly dotExperimentsConfigurationStore: DotExperimentsConfigurationStore
     ) {}
 
+    /**
+     * Open sidebar to set Traffic Allocation
+     * @returns void
+     * @memberof DotExperimentsConfigurationTrafficComponent
+     */
     changeTrafficAllocation() {
+        this.trafficConfig = TrafficConfig.ALLOCATION;
         this.dotExperimentsConfigurationStore.openSidebar(ExperimentSteps.TRAFFIC);
     }
 
+    /**
+     * Open sidebar to set Traffic Proportion
+     * @returns void
+     * @memberof DotExperimentsConfigurationTrafficComponent
+     */
     changeTrafficProportion() {
-        //to be implemented
+        this.trafficConfig = TrafficConfig.SPLIT;
+        this.dotExperimentsConfigurationStore.openSidebar(ExperimentSteps.TRAFFIC);
     }
 
     private handleSidebar(status: StepStatus) {
@@ -75,10 +97,15 @@ export class DotExperimentsConfigurationTrafficComponent {
     private loadSidebarComponent(status: StepStatus): void {
         if (status && status.isOpen && status.status != ComponentStatus.SAVING) {
             this.sidebarHost.viewContainerRef.clear();
+
             this.componentRef =
-                this.sidebarHost.viewContainerRef.createComponent<DotExperimentsConfigurationTrafficAllocationAddComponent>(
-                    DotExperimentsConfigurationTrafficAllocationAddComponent
-                );
+                this.trafficConfig == TrafficConfig.SPLIT
+                    ? this.sidebarHost.viewContainerRef.createComponent<DotExperimentsConfigurationTrafficSplitAddComponent>(
+                          DotExperimentsConfigurationTrafficSplitAddComponent
+                      )
+                    : this.sidebarHost.viewContainerRef.createComponent<DotExperimentsConfigurationTrafficAllocationAddComponent>(
+                          DotExperimentsConfigurationTrafficAllocationAddComponent
+                      );
         }
     }
 
