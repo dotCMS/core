@@ -1,9 +1,9 @@
 import {
+    ExperimentsSelectOption,
     GOAL_OPERATORS,
     GOAL_PARAMETERS,
     GOAL_TYPES,
-    Goals,
-    GoalSelectOption
+    Goals
 } from './dot-experiments.model';
 
 export const MAX_VARIANTS_ALLOWED = 3;
@@ -76,24 +76,24 @@ export const ExperimentsStatusList = [
     }
 ];
 
-export const ExperimentsGoalsList: Array<GoalSelectOption> = [
+export const GoalsConditionsParametersList: Array<ExperimentsSelectOption<GOAL_PARAMETERS>> = [
     {
-        label: 'experiments.goal.reach_page.name',
-        value: GOAL_TYPES.REACH_PAGE,
-        description: 'experiments.goal.reach_page.description',
+        label: 'experiments.goal.conditions.params.url.label',
+        value: GOAL_PARAMETERS.URL,
+        inactive: false
+    }
+];
+
+export const GoalsConditionsOperatorsList: Array<ExperimentsSelectOption<GOAL_OPERATORS>> = [
+    {
+        label: 'experiments.goal.conditions.operators.contains.label',
+        value: GOAL_OPERATORS.CONTAINS,
         inactive: false
     },
     {
-        label: 'experiments.goal.bounce_rate.name',
-        value: GOAL_TYPES.BOUNCE_RATE,
-        description: 'experiments.goal.bounce_rate.description',
+        label: 'experiments.goal.conditions.operators.equals.label',
+        value: GOAL_OPERATORS.EQUALS,
         inactive: false
-    },
-    {
-        label: 'experiments.goal.click_on_element.name',
-        value: GOAL_TYPES.CLICK_ON_ELEMENT,
-        description: 'experiments.goal.click_on_element.description',
-        inactive: true
     }
 ];
 
@@ -130,3 +130,5 @@ export const GOALS_METADATA_MAP: Record<GOAL_TYPES, { label: string; description
         description: 'experiments.goal.click_on_element.description'
     }
 };
+
+export const DEFAULT_GOAL_NAME = 'default';
