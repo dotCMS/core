@@ -288,8 +288,8 @@ public class BrowserAPIImpl implements BrowserAPI {
             sqlQuery.append(" and id.parent_path=? ");
             parameters.add(browserQuery.folder.getPath());
         }
-        if (UtilMethods.isSet(browserQuery.luceneQuery)) {
-            final String filterText = browserQuery.luceneQuery.toLowerCase().trim();
+        if (UtilMethods.isSet(browserQuery.filter)) {
+            final String filterText = browserQuery.filter.toLowerCase().trim();
             final String[] spliter = filterText.split(" ");
 
             sqlQuery.append(" and (");
