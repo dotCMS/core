@@ -33,13 +33,21 @@ if(clipboard ==null){
 
 <style>
 
+body {
+	margin: 0;
+}
+
+.mainContainer {
+	margin: 15px;
+}
+
 #imageContainer{
 	width:520px;
 	height:300px;
 	overflow: auto;
 	background: white;
 	border:1px solid gray;
-	margin: auto;
+	box-sizing: border-box;
 }
 .thumbContainer{
 	cursor:pointer;
@@ -69,9 +77,9 @@ if(clipboard ==null){
 	<script type="text/javascript" src="js/dialog.js"></script>
 </head>
 <body>
-<h2><%=LanguageUtil.get(pageContext, "Clipboard") %></h2>
-<%=LanguageUtil.get(pageContext, "Select-an-image-below") %>
-
+<div class="mainContainer">
+	<h2><%=LanguageUtil.get(pageContext, "Clipboard") %></h2>
+	<p><%=LanguageUtil.get(pageContext, "Select-an-image-below") %></p>
 
 
 <div id="imageContainer">
@@ -140,6 +148,8 @@ if(clipboard ==null){
 	
 	
 </div>
+</div>
+
 
 </body>
 </html>
