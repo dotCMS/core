@@ -19,6 +19,8 @@ import {
     Goals,
     GoalsLevels,
     RangeOfDateAndTime,
+    TrafficProportion,
+    TrafficProportionTypes,
     Variant
 } from '@dotcms/dotcms-models';
 import {
@@ -162,7 +164,7 @@ describe('DotExperimentsConfigurationStore', () => {
                         {
                             ...newVariant.data,
                             id: '222',
-                            weight: '100.0'
+                            weight: 100
                         }
                     ]
                 }
@@ -184,12 +186,12 @@ describe('DotExperimentsConfigurationStore', () => {
 
         it('should edit a variant name of an experiment', (done) => {
             const variants: Variant[] = [
-                { id: '111', name: DEFAULT_VARIANT_NAME, weight: '50.00', url: 'url' },
-                { id: '222', name: 'name to edit', weight: '50.00', url: 'url' }
+                { id: '111', name: DEFAULT_VARIANT_NAME, weight: 50, url: 'url' },
+                { id: '222', name: 'name to edit', weight: 50, url: 'url' }
             ];
             const variantEdited: Variant[] = [
-                { id: '111', name: DEFAULT_VARIANT_NAME, weight: '50.00', url: 'url' },
-                { id: '222', name: 'new name', weight: '50.00', url: 'url' }
+                { id: '111', name: DEFAULT_VARIANT_NAME, weight: 50, url: 'url' },
+                { id: '222', name: 'new name', weight: 50, url: 'url' }
             ];
 
             dotExperimentsService.getById.and.callThrough().and.returnValue(
@@ -228,11 +230,11 @@ describe('DotExperimentsConfigurationStore', () => {
 
         it('should delete a variant from an experiment', (done) => {
             const variants: Variant[] = [
-                { id: 'DEFAULT', name: 'DEFAULT', weight: 'xxx' },
+                { id: 'DEFAULT', name: 'DEFAULT', weight: 50 },
                 {
                     id: '111',
                     name: '1111',
-                    weight: 'xxx'
+                    weight: 50
                 }
             ];
 
@@ -247,7 +249,7 @@ describe('DotExperimentsConfigurationStore', () => {
                 ...ExperimentMocks[1],
                 trafficProportion: {
                     ...ExperimentMocks[1].trafficProportion,
-                    variants: [{ id: 'DEFAULT', name: 'DEFAULT', weight: 'xxx' }]
+                    variants: [{ id: 'DEFAULT', name: 'DEFAULT', weight: 50 }]
                 }
             };
 
@@ -355,6 +357,88 @@ describe('DotExperimentsConfigurationStore', () => {
 
             store.setSelectedScheduling({
                 scheduling: null,
+                experimentId: EXPERIMENT_ID
+            });
+
+            expect(dotHttpErrorManagerService.handle).toHaveBeenCalledOnceWith(
+                'error' as unknown as HttpErrorResponse
+            );
+        });
+
+        it('should set Traffic Allocation to the experiment', (done) => {
+            const expectedTrafficAllocation = 10;
+
+            dotExperimentsService.setTrafficAllocation.and.callThrough().and.returnValue(
+                of({
+                    ...ExperimentMocks[0],
+                    trafficAllocation: expectedTrafficAllocation
+                })
+            );
+
+            store.setSelectedAllocation({
+                trafficAllocation: expectedTrafficAllocation,
+                experimentId: EXPERIMENT_ID
+            });
+
+            store.state$.pipe(take(1)).subscribe(({ experiment }) => {
+                expect(experiment.trafficAllocation).toEqual(expectedTrafficAllocation);
+                expect(dotExperimentsService.setTrafficAllocation).toHaveBeenCalledOnceWith(
+                    EXPERIMENT_ID,
+                    expectedTrafficAllocation
+                );
+                done();
+            });
+        });
+
+        it('should throw an error if update Traffic Allocation fails', () => {
+            dotExperimentsService.setTrafficAllocation.and.returnValue(throwError('error'));
+
+            store.setSelectedAllocation({
+                trafficAllocation: 120,
+                experimentId: EXPERIMENT_ID
+            });
+
+            expect(dotHttpErrorManagerService.handle).toHaveBeenCalledOnceWith(
+                'error' as unknown as HttpErrorResponse
+            );
+        });
+
+        it('should set Traffic Proportion to the experiment', (done) => {
+            const expectedTrafficProportion: TrafficProportion = {
+                type: TrafficProportionTypes.SPLIT_EVENLY,
+                variants: [
+                    { id: '111', name: 'DEFAULT', weight: 50 },
+                    { id: '111', name: 'A', weight: 50 }
+                ]
+            };
+
+            dotExperimentsService.setTrafficProportion.and.callThrough().and.returnValue(
+                of({
+                    ...ExperimentMocks[0],
+                    trafficProportion: expectedTrafficProportion
+                })
+            );
+
+            store.setSelectedTrafficProportion({
+                trafficProportion: expectedTrafficProportion,
+                experimentId: EXPERIMENT_ID
+            });
+
+            store.state$.pipe(take(1)).subscribe(({ experiment }) => {
+                expect(experiment.trafficProportion).toEqual(expectedTrafficProportion);
+                expect(dotExperimentsService.setTrafficProportion).toHaveBeenCalledOnceWith(
+                    EXPERIMENT_ID,
+                    expectedTrafficProportion
+                );
+                done();
+            });
+        });
+
+        it('should throw an error if update Traffic Proportion fails', () => {
+            dotExperimentsService.setTrafficProportion.and.returnValue(throwError('error'));
+
+            store.setSelectedTrafficProportion({
+                trafficProportion: null,
                 experimentId: EXPERIMENT_ID
             });
 
