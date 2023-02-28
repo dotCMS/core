@@ -24,7 +24,7 @@ import { TextAlign } from '@tiptap/extension-text-align';
 import { Underline } from '@tiptap/extension-underline';
 import StarterKit, { StarterKitOptions } from '@tiptap/starter-kit';
 
-import { RemoteCustomExtentions, EDITOR_MARKETING_KEYS } from '@dotcms/dotcms-models';
+import { CustomBlock, EDITOR_MARKETING_KEYS } from '@dotcms/dotcms-models';
 
 import {
     ActionsMenu,
@@ -134,15 +134,15 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy {
     }
 
     ngOnInit() {
-        from(this.getCustomRemoteExtensions())
+        from(this.getCustomBlocks())
             .pipe(take(1))
-            .subscribe((extensions) => {
+            .subscribe((nodes) => {
                 this.editor = new Editor({
                     extensions: [
                         ...this.getEditorExtensions(),
                         ...this.getEditorMarks(),
                         ...this.getEditorNodes(),
-                        ...extensions
+                        ...nodes
                     ]
                 });
 
@@ -170,27 +170,20 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy {
         this.editor.view.dispatch(tr);
     }
 
-    private getParsedCustomBlocks(): RemoteCustomExtentions {
-        try {
-            return JSON.parse(this.customBlocks);
-        } catch (e) {
-            console.warn('JSON parse fails, please check the JSON format.', e);
-
-            return {
-                extensions: []
-            };
-        }
-    }
-
     /**
      * This methods get the customBlocks variable to retrieve the custom modules as Objects.
      * Validates that there is customBlocks defined.
-     * @private
-     * @return {*}  {Promise<AnyExtension[]>}
-     * @memberof DotBlockEditorComponent
      */
-    private async getCustomRemoteExtensions(): Promise<AnyExtension[]> {
-        const data: RemoteCustomExtentions = this.getParsedCustomBlocks();
+
+    private async getCustomBlocks(): Promise<AnyExtension[]> {
+        let data: CustomBlock;
+        try {
+            data = JSON.parse(this.customBlocks);
+        } catch (e) {
+            console.warn('JSON parse fails, please check the JSON format.');
+
+            return [];
+        }
 
         const extensionUrls = data.extensions.map((extension) => extension.url);
         const customModules = await this.loadCustomBlocks(extensionUrls);
@@ -209,7 +202,7 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy {
     }
 
     private getEditorNodes(): AnyExtension[] {
-        // If you have more than one allow block (other than the paragraph),
+        // If you have more than one allow block (other than the parragrph),
         // we customize the starterkit.
         const starterkit =
             this._allowedBlocks?.length > 1
@@ -294,7 +287,7 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy {
                 allowedBlocks: this._allowedBlocks
             }),
             Placeholder.configure({ placeholder: this.placeholder }),
-            ActionsMenu(this.viewContainerRef, this.getParsedCustomBlocks()),
+            ActionsMenu(this.viewContainerRef),
             DragHandler(this.viewContainerRef),
             ImageUpload(this.injector, this.viewContainerRef),
             BubbleLinkFormExtension(this.viewContainerRef),

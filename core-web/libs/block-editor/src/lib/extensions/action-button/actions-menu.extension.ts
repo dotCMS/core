@@ -4,14 +4,12 @@ import tippy, { GetReferenceClientRect } from 'tippy.js';
 
 import { ComponentRef, ViewContainerRef } from '@angular/core';
 
-import { filter, take } from 'rxjs/operators';
+import { filter, take, takeUntil } from 'rxjs/operators';
 
 import { Editor, Extension, Range } from '@tiptap/core';
 import { FloatingMenuPluginProps } from '@tiptap/extension-floating-menu';
 import { Level } from '@tiptap/extension-heading';
 import Suggestion, { SuggestionOptions, SuggestionProps } from '@tiptap/suggestion';
-
-import { RemoteCustomExtentions } from '@dotcms/dotcms-models';
 
 import { ActionButtonComponent } from './action-button.component';
 
@@ -25,10 +23,7 @@ import {
     ItemsType,
     FloatingActionsKeydownProps,
     FloatingActionsPlugin,
-    findParentNode,
-    DotMenuItem,
-    suggestionOptions,
-    clearFilter
+    findParentNode
 } from '../../shared';
 import { NodeTypes } from '../bubble-menu/models';
 
@@ -89,13 +84,11 @@ function getTippyInstance({
 function execCommand({
     editor,
     range,
-    props,
-    customBlocks
+    props
 }: {
     editor: Editor;
     range: Range;
     props: SuggestionsCommandProps;
-    customBlocks: RemoteCustomExtentions;
 }) {
     const whatToDo = {
         dotContent: () => {
@@ -178,38 +171,12 @@ function execCommand({
         video: () => editor.commands.openAssetForm({ type: 'video' })
     };
 
-    getCustomActions(customBlocks).forEach((option) => {
-        whatToDo[option.id] = () => {
-            try {
-                editor.commands[option.commandKey]();
-            } catch {
-                console.warn(`Custom command ${option.commandKey} does not exists.`);
-            }
-        };
-    });
-
     whatToDo[props.type.name]
         ? whatToDo[props.type.name]()
         : editor.chain().setTextSelection(range).focus().run();
 }
 
-function mapCustomActions(actions): Array<DotMenuItem> {
-    return actions.map((action) => ({
-        icon: action.icon,
-        label: action.menuLabel,
-        commandKey: action.command,
-        id: action.name
-    }));
-}
-
-function getCustomActions(customBlocks): Array<DotMenuItem> {
-    return customBlocks.extensions.map((extension) => mapCustomActions(extension.actions)).flat();
-}
-
-export const ActionsMenu = (
-    viewContainerRef: ViewContainerRef,
-    customBlocks: RemoteCustomExtentions
-) => {
+export const ActionsMenu = (viewContainerRef: ViewContainerRef) => {
     let myTippy;
     let suggestionsComponent: ComponentRef<SuggestionsComponent>;
     const suggestionKey = new PluginKey('suggestionPlugin');
@@ -248,18 +215,16 @@ export const ActionsMenu = (
 
     function setUpSuggestionComponent(editor: Editor, range: Range) {
         const { allowedBlocks, allowedContentTypes, lang } = editor.storage.dotConfig;
-        const editorAllowedBlocks = allowedBlocks.length > 1 ? allowedBlocks : [];
-        const items = getItems({ allowedBlocks: editorAllowedBlocks, editor, range });
-
         suggestionsComponent = viewContainerRef.createComponent(SuggestionsComponent);
 
         // Setting Inputs
-        suggestionsComponent.instance.items = items;
         suggestionsComponent.instance.currentLanguage = lang;
         suggestionsComponent.instance.allowedContentTypes = allowedContentTypes;
-        suggestionsComponent.instance.onSelectContentlet = (props) => {
-            clearFilter({ type: ItemsType.CONTENT, editor, range, suggestionKey, ItemsType });
-            onSelection({ editor, range, props });
+        suggestionsComponent.instance.allowedBlocks = allowedBlocks.length > 1 ? allowedBlocks : [];
+        suggestionsComponent.instance.onSelection = (item) => {
+            const suggestionQuery = suggestionKey.getState(editor.view.state).query?.length || 0;
+            range.to = range.to + suggestionQuery;
+            execCommand({ editor: editor, range: range, props: item });
         };
 
         // Needs to be called after settings the component Inputs
@@ -269,37 +234,16 @@ export const ActionsMenu = (
         if (allowedBlocks.length <= 1 || allowedBlocks.includes(CONTENT_SUGGESTION_ID)) {
             suggestionsComponent.instance.addContentletItem();
         }
+
+        // Subscribe to @Output
+        suggestionsComponent.instance.clearFilter.pipe(takeUntil(destroy$)).subscribe((type) => {
+            const queryRange = {
+                to: range.to + suggestionKey.getState(editor.view.state).query?.length,
+                from: type === ItemsType.BLOCK ? range.from : range.from + 1
+            };
+            editor.chain().deleteRange(queryRange).run();
+        });
     }
-
-    function getItems({ allowedBlocks = [], editor, range }): DotMenuItem[] {
-        const items = allowedBlocks.length
-            ? suggestionOptions.filter((item) => this.allowedBlocks.includes(item.id))
-            : suggestionOptions;
-
-        const customItems = [...items, ...getCustomActions(customBlocks)];
-
-        customItems.forEach((item) => (item.command = () => onCommand({ item, editor, range })));
-
-        return customItems;
-    }
-
-    function onCommand({ item, editor, range }) {
-        const { id, attributes } = item;
-        const props = {
-            type: { name: id.includes('heading') ? 'heading' : id, ...attributes }
-        };
-
-        clearFilter({ type: ItemsType.BLOCK, editor, range, suggestionKey, ItemsType });
-        onSelection({ editor, range, props });
-    }
-
-    function onSelection({ editor, range, props }) {
-        const suggestionQuery = suggestionKey.getState(editor.view.state).query?.length || 0;
-        range.to = range.to + suggestionQuery;
-        execCommand({ editor: editor, range: range, props, customBlocks });
-    }
-
-    /* End new Functions */
 
     /**
      * Handle the keyboard events when the suggestion are opened
