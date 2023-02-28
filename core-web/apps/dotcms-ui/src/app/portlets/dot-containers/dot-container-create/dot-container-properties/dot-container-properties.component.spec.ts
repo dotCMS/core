@@ -338,6 +338,10 @@ describe('DotContainerPropertiesComponent', () => {
         it('should render content types when max-content greater then zero', fakeAsync(() => {
             spyOn(fixture.componentInstance, 'showContentTypeAndCode');
             fixture.componentInstance.form.get('maxContentlets').setValue(0);
+            fixture.componentInstance.form.get('maxContentlets').valueChanges.subscribe((value) => {
+                expect(value).toBe(5);
+            });
+            expect(fixture.componentInstance.form.get('maxContentlets').updateOn).toBe('change');
             fixture.componentInstance.form.get('maxContentlets').setValue(5);
             tick();
             fixture.detectChanges();

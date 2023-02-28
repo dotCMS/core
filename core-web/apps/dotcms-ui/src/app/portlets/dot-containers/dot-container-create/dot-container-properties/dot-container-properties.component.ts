@@ -54,8 +54,7 @@ export class DotContainerPropertiesComponent implements OnInit, AfterViewInit {
                     title: new FormControl(container?.title ?? '', [Validators.required]),
                     friendlyName: new FormControl(container?.friendlyName ?? ''),
                     maxContentlets: new FormControl(container?.maxContentlets ?? 0, {
-                        validators: [Validators.required],
-                        updateOn: 'blur'
+                        validators: [Validators.required]
                     }),
                     code: new FormControl(
                         container?.code ?? '',
