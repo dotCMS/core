@@ -88,8 +88,8 @@ describe('DotLanguageSelectorComponent', () => {
         fixtureHost.detectChanges();
         const pDropDown: DebugElement = de.query(By.css('p-dropdown'));
 
-        spyOn(component.selected, 'emit');
-        spyOn(component, 'change').and.callThrough();
+        jest.spyOn(component.selected, 'emit').mockImplementation(() => {});
+        jest.spyOn(component, 'change');
 
         pDropDown.triggerEventHandler('onChange', { value: mockDotLanguage });
 
@@ -99,7 +99,7 @@ describe('DotLanguageSelectorComponent', () => {
 
     describe('disabled', () => {
         it('should set disable when no lang options present', async () => {
-            spyOn(dotLanguagesService, 'get').and.returnValue(of([]));
+            jest.spyOn(dotLanguagesService, 'get').mockReturnValue(of([]));
 
             fixtureHost.detectChanges();
             await fixtureHost.whenStable();
@@ -110,7 +110,7 @@ describe('DotLanguageSelectorComponent', () => {
         });
 
         it('should add class to the host when disabled', () => {
-            spyOn(dotLanguagesService, 'get').and.returnValue(of([]));
+            jest.spyOn(dotLanguagesService, 'get').mockReturnValue(of([]));
             fixtureHost.detectChanges();
             expect(de.nativeElement.classList.contains('disabled')).toBe(true);
         });

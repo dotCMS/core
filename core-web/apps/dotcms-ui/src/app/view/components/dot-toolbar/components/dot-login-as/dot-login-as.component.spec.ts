@@ -164,7 +164,7 @@ describe('DotLoginAsComponent', () => {
         dotEventsService = de.injector.get(DotEventsService);
         dotNavigationService = de.injector.get(DotNavigationService);
 
-        spyOn(paginatorService, 'getWithOffset').and.returnValue(observableOf([...users]));
+        jest.spyOn(paginatorService, 'getWithOffset').mockReturnValue(observableOf([...users]));
     }));
 
     it('should load the first page', () => {
@@ -202,8 +202,8 @@ describe('DotLoginAsComponent', () => {
     });
 
     it('should call "loginAs" in "LoginService"', () => {
-        spyOn(loginService, 'loginAs').and.callThrough();
-        spyOn(dotEventsService, 'notify');
+        jest.spyOn(loginService, 'loginAs');
+        jest.spyOn(dotEventsService, 'notify').mockImplementation(() => {});
 
         comp.visible = true;
         fixture.detectChanges();
@@ -215,7 +215,9 @@ describe('DotLoginAsComponent', () => {
     });
 
     it('should focus on password input after an error haapens in "loginAs" in "LoginService"', () => {
-        spyOn(loginService, 'loginAs').and.returnValue(observableThrowError({ message: 'Error' }));
+        jest.spyOn(loginService, 'loginAs').mockReturnValue(
+            observableThrowError({ message: 'Error' })
+        );
         comp.visible = true;
         comp.needPassword = true;
         fixture.detectChanges();
@@ -225,7 +227,7 @@ describe('DotLoginAsComponent', () => {
         fixture.detectChanges();
 
         const passwordInputElem = de.query(By.css('#dot-login-as-password'));
-        spyOn(passwordInputElem.nativeElement, 'focus');
+        jest.spyOn(passwordInputElem.nativeElement, 'focus').mockImplementation(() => {});
 
         comp.dialogActions.accept.action();
 
@@ -233,13 +235,13 @@ describe('DotLoginAsComponent', () => {
     });
 
     it('should reload the page on login as', async () => {
-        spyOn(dotNavigationService, 'goToFirstPortlet').and.returnValue(
+        jest.spyOn(dotNavigationService, 'goToFirstPortlet').mockReturnValue(
             new Promise((resolve) => {
                 resolve(true);
             })
         );
-        spyOn(loginService, 'logoutAs').and.callThrough();
-        spyOn(locationService, 'reload');
+        jest.spyOn(loginService, 'logoutAs');
+        jest.spyOn(locationService, 'reload').mockImplementation(() => {});
 
         comp.visible = true;
         fixture.detectChanges();
@@ -256,7 +258,7 @@ describe('DotLoginAsComponent', () => {
     });
 
     it('should show error message', () => {
-        spyOn(loginService, 'loginAs').and.returnValue(observableThrowError({}));
+        jest.spyOn(loginService, 'loginAs').mockReturnValue(observableThrowError({}));
 
         comp.visible = true;
         comp.needPassword = true;

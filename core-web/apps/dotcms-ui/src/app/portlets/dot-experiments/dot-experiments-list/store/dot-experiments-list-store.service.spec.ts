@@ -41,13 +41,13 @@ describe('DotExperimentsListStore', () => {
     let dotExperimentsService: jasmine.SpyObj<DotExperimentsService>;
 
     beforeEach(() => {
-        const dotExperimentsServiceSpy = jasmine.createSpyObj('DotExperimentsService', [
-            'add',
-            'getAll',
-            'getById',
-            'archive',
-            'delete'
-        ]);
+        const dotExperimentsServiceSpy = {
+            add: jest.fn(),
+            getAll: jest.fn(),
+            getById: jest.fn(),
+            archive: jest.fn(),
+            delete: jest.fn()
+        };
 
         TestBed.configureTestingModule({
             imports: [HttpClientTestingModule, DotMessagePipeModule, RouterTestingModule],
@@ -197,7 +197,7 @@ describe('DotExperimentsListStore', () => {
 
     describe('Effects', () => {
         beforeEach(() => {
-            dotExperimentsService.getAll.and.returnValue(of(ExperimentMocks));
+            dotExperimentsService.getAll.mockReturnValue(of(ExperimentMocks));
 
             store.initStore();
             store.loadExperiments(routerParamsPageId);
@@ -211,7 +211,7 @@ describe('DotExperimentsListStore', () => {
         });
 
         it('should delete experiment from the store', (done) => {
-            dotExperimentsService.delete.and.returnValue(of('deleted'));
+            dotExperimentsService.delete.mockReturnValue(of('deleted'));
 
             const expectedExperimentsInStore = [ExperimentMocks[1], ExperimentMocks[2]];
             const experimentToDelete = ExperimentMocks[0];
@@ -231,7 +231,7 @@ describe('DotExperimentsListStore', () => {
 
             expectedExperimentsInStore[0].status = DotExperimentStatusList.ARCHIVED;
 
-            dotExperimentsService.archive.and.returnValue(of(expectedExperimentsInStore[0]));
+            dotExperimentsService.archive.mockReturnValue(of(expectedExperimentsInStore[0]));
 
             const experimentToArchive = ExperimentMocks[0];
 

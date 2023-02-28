@@ -84,22 +84,19 @@ describe('DotPageStateService', () => {
         dotESContentService = injector.inject(DotESContentService);
         loginService = injector.get(LoginService);
 
-        dotPageRenderServiceGetSpy = spyOn(dotPageRenderService, 'get').and.returnValue(
-            of(mockDotRenderedPage())
-        );
+        dotPageRenderServiceGetSpy = jest
+            .spyOn(dotPageRenderService, 'get')
+            .mockReturnValue(of(mockDotRenderedPage()));
 
-        dotHttpErrorManagerServiceHandle = spyOn(
-            dotHttpErrorManagerService,
-            'handle'
-        ).and.callThrough();
+        dotHttpErrorManagerServiceHandle = jest.spyOn(dotHttpErrorManagerService, 'handle');
 
         service = injector.get(DotPageStateService);
 
-        spyOnProperty(dotRouterService, 'queryParams', 'get').and.returnValue({
+        spyOnProperty(dotRouterService, 'queryParams', 'get').mockReturnValue({
             url: '/an/url/test/form/query/params'
         });
 
-        spyOn(dotESContentService, 'get').and.returnValue(
+        jest.spyOn(dotESContentService, 'get').mockReturnValue(
             of({
                 contentTook: 0,
                 jsonObjectView: {
@@ -117,7 +114,11 @@ describe('DotPageStateService', () => {
                 url: 'some/url/test'
             });
 
-            expect(dotPageRenderServiceGetSpy.calls.mostRecent().args).toEqual([
+            expect(
+                dotPageRenderServiceGetSpy.mock.calls[
+                    dotPageRenderServiceGetSpy.mock.calls.length - 1
+                ].args
+            ).toEqual([
                 {
                     url: 'some/url/test'
                 },
@@ -128,7 +129,11 @@ describe('DotPageStateService', () => {
         it('should get with url from queryParams', () => {
             service.get();
 
-            expect(dotPageRenderServiceGetSpy.calls.mostRecent().args).toEqual([
+            expect(
+                dotPageRenderServiceGetSpy.mock.calls[
+                    dotPageRenderServiceGetSpy.mock.calls.length - 1
+                ].args
+            ).toEqual([
                 {
                     url: '/an/url/test/form/query/params'
                 },
@@ -153,7 +158,11 @@ describe('DotPageStateService', () => {
                 url: '/an/url/test/form/query/params'
             });
             service.reload();
-            expect(dotPageRenderServiceGetSpy.calls.mostRecent().args).toEqual([
+            expect(
+                dotPageRenderServiceGetSpy.mock.calls[
+                    dotPageRenderServiceGetSpy.mock.calls.length - 1
+                ].args
+            ).toEqual([
                 {
                     mode: 'PREVIEW_MODE',
                     url: '/an/url/test/form/query/params'
@@ -172,7 +181,7 @@ describe('DotPageStateService', () => {
 
         describe('setLock', () => {
             it('should lock', () => {
-                spyOn(dotContentletLockerService, 'lock').and.returnValue(
+                jest.spyOn(dotContentletLockerService, 'lock').mockReturnValue(
                     of({
                         id: '',
                         inode: '',
@@ -187,7 +196,11 @@ describe('DotPageStateService', () => {
                 );
 
                 expect(dotContentletLockerService.lock).toHaveBeenCalledWith('2');
-                expect(dotPageRenderServiceGetSpy.calls.mostRecent().args).toEqual([
+                expect(
+                    dotPageRenderServiceGetSpy.mock.calls[
+                        dotPageRenderServiceGetSpy.mock.calls.length - 1
+                    ].args
+                ).toEqual([
                     {
                         mode: 'ADMIN_MODE',
                         url: '/an/url/test/form/query/params'
@@ -197,7 +210,7 @@ describe('DotPageStateService', () => {
             });
 
             it('should unlock', () => {
-                spyOn(dotContentletLockerService, 'unlock').and.returnValue(
+                jest.spyOn(dotContentletLockerService, 'unlock').mockReturnValue(
                     of({
                         id: '',
                         inode: '',
@@ -212,7 +225,11 @@ describe('DotPageStateService', () => {
                 );
 
                 expect(dotContentletLockerService.unlock).toHaveBeenCalledWith('2');
-                expect(dotPageRenderServiceGetSpy.calls.mostRecent().args).toEqual([
+                expect(
+                    dotPageRenderServiceGetSpy.mock.calls[
+                        dotPageRenderServiceGetSpy.mock.calls.length - 1
+                    ].args
+                ).toEqual([
                     {
                         mode: 'PREVIEW_MODE',
                         url: '/an/url/test/form/query/params'
@@ -233,7 +250,11 @@ describe('DotPageStateService', () => {
                 };
                 service.setDevice(device);
 
-                expect(dotPageRenderServiceGetSpy.calls.mostRecent().args).toEqual(
+                expect(
+                    dotPageRenderServiceGetSpy.mock.calls[
+                        dotPageRenderServiceGetSpy.mock.calls.length - 1
+                    ].args
+                ).toEqual(
                     [
                         {
                             viewAs: {
@@ -283,7 +304,11 @@ describe('DotPageStateService', () => {
                 };
                 service.setPersona(persona);
 
-                expect(dotPageRenderServiceGetSpy.calls.mostRecent().args).toEqual([
+                expect(
+                    dotPageRenderServiceGetSpy.mock.calls[
+                        dotPageRenderServiceGetSpy.mock.calls.length - 1
+                    ].args
+                ).toEqual([
                     {
                         viewAs: {
                             persona: persona
@@ -299,8 +324,8 @@ describe('DotPageStateService', () => {
     describe('errors', () => {
         it('should show error 300 message and redirect to site browser', () => {
             const error300 = mockResponseView(300);
-            dotPageRenderServiceGetSpy.and.returnValue(throwError(error300));
-            dotHttpErrorManagerServiceHandle.and.returnValue(
+            dotPageRenderServiceGetSpy.mockReturnValue(throwError(error300));
+            dotHttpErrorManagerServiceHandle.mockReturnValue(
                 of({
                     redirected: false,
                     status: HttpCode.FORBIDDEN
@@ -319,8 +344,8 @@ describe('DotPageStateService', () => {
 
         it('should show error 404 message and redirect to site browser', () => {
             const error404 = mockResponseView(400);
-            dotPageRenderServiceGetSpy.and.returnValue(throwError(error404));
-            dotHttpErrorManagerServiceHandle.and.returnValue(
+            dotPageRenderServiceGetSpy.mockReturnValue(throwError(error404));
+            dotHttpErrorManagerServiceHandle.mockReturnValue(
                 of({
                     redirected: false,
                     status: HttpCode.NOT_FOUND
@@ -338,10 +363,10 @@ describe('DotPageStateService', () => {
         });
 
         it('should show error 500 and reload', () => {
-            spyOn(service, 'reload');
+            jest.spyOn(service, 'reload').mockImplementation(() => {});
             const error500 = mockResponseView(500);
-            dotPageRenderServiceGetSpy.and.returnValue(throwError(error500));
-            dotHttpErrorManagerServiceHandle.and.returnValue(
+            dotPageRenderServiceGetSpy.mockReturnValue(throwError(error500));
+            dotHttpErrorManagerServiceHandle.mockReturnValue(
                 of({
                     redirected: false,
                     status: HttpCode.SERVER_ERROR
@@ -388,7 +413,7 @@ describe('DotPageStateService', () => {
 
     describe('login as user', () => {
         beforeEach(() => {
-            spyOnProperty(loginService, 'auth', 'get').and.returnValue(mockUserAuth);
+            spyOnProperty(loginService, 'auth', 'get').mockReturnValue(mockUserAuth);
         });
 
         it('should set lockedByAnotherUser', () => {
@@ -409,7 +434,7 @@ describe('DotPageStateService', () => {
                 const renderedPage = getDotPageRenderStateMock(dotcmsContentletMock);
                 service.setLocalState(renderedPage);
 
-                const subscribeCallback = jasmine.createSpy('spy');
+                const subscribeCallback = jest.fn();
                 service.haveContent$.subscribe(subscribeCallback);
 
                 expect(subscribeCallback).toHaveBeenCalledWith(true);
@@ -432,7 +457,7 @@ describe('DotPageStateService', () => {
                 });
                 service.setLocalState(renderedPage);
 
-                const subscribeCallback = jasmine.createSpy('spy');
+                const subscribeCallback = jest.fn();
                 service.haveContent$.subscribe(subscribeCallback);
 
                 expect(subscribeCallback).toHaveBeenCalledWith(false);
@@ -460,7 +485,7 @@ describe('DotPageStateService', () => {
                 });
                 service.setLocalState(renderedPage);
 
-                const subscribeCallback = jasmine.createSpy('spy');
+                const subscribeCallback = jest.fn();
                 service.haveContent$.subscribe(subscribeCallback);
 
                 expect(subscribeCallback).toHaveBeenCalledWith(false);
@@ -488,7 +513,7 @@ describe('DotPageStateService', () => {
                 });
                 service.setLocalState(renderedPage);
 
-                const subscribeCallback = jasmine.createSpy('spy');
+                const subscribeCallback = jest.fn();
                 service.haveContent$.subscribe(subscribeCallback);
 
                 expect(subscribeCallback).toHaveBeenCalledWith(false);

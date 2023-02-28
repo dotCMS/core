@@ -143,7 +143,7 @@ xdescribe('DotKeyValueTableRowComponent', () => {
             hostComponent.variableIndex = 1;
             hostComponent.variable = { key: 'TestKey', value: 'TestValue' };
             hostComponentfixture.detectChanges();
-            spyOn(comp.valueCell.nativeElement, 'click');
+            jest.spyOn(comp.valueCell.nativeElement, 'click').mockImplementation(() => {});
             const button = de.queryAll(
                 By.css('.dot-key-value-table-row__variables-actions dot-icon-button')
             )[1];
@@ -172,7 +172,7 @@ xdescribe('DotKeyValueTableRowComponent', () => {
         it('should emit cancel event when press "Escape"', () => {
             hostComponent.variable = mockKeyValue[0];
             hostComponentfixture.detectChanges();
-            spyOn(comp.cancel, 'emit');
+            jest.spyOn(comp.cancel, 'emit').mockImplementation(() => {});
             hostComponentfixture.detectChanges();
             de.query(By.css('.field-value-input')).nativeElement.dispatchEvent(
                 new KeyboardEvent('keydown', { key: 'Escape' })
@@ -184,7 +184,7 @@ xdescribe('DotKeyValueTableRowComponent', () => {
         it('should emit save event when button clicked', async () => {
             hostComponent.variable = { key: 'Key1', value: 'Value1' };
             hostComponentfixture.detectChanges();
-            spyOn(comp.save, 'emit');
+            jest.spyOn(comp.save, 'emit').mockImplementation(() => {});
             de.query(By.css('.field-value-input')).triggerEventHandler('focus', {});
             hostComponentfixture.detectChanges();
 
@@ -201,9 +201,9 @@ xdescribe('DotKeyValueTableRowComponent', () => {
         it('should emit cancel event when button clicked', () => {
             hostComponent.variable = { key: 'Key1', value: 'Value1' };
             hostComponentfixture.detectChanges();
-            spyOn(comp.save, 'emit');
+            jest.spyOn(comp.save, 'emit').mockImplementation(() => {});
             de.query(By.css('.field-value-input')).triggerEventHandler('focus', {});
-            spyOn(comp.cancel, 'emit');
+            jest.spyOn(comp.cancel, 'emit').mockImplementation(() => {});
             hostComponentfixture.detectChanges();
             de.query(
                 By.css('.dot-key-value-table-row__variables-actions-edit-cancel')
@@ -218,7 +218,7 @@ xdescribe('DotKeyValueTableRowComponent', () => {
 
         it('should emit delete event when button clicked', () => {
             hostComponent.variable = { key: 'TestKey', value: 'TestValue' };
-            spyOn(comp.delete, 'emit');
+            jest.spyOn(comp.delete, 'emit').mockImplementation(() => {});
             hostComponentfixture.detectChanges();
             de.queryAll(
                 By.css('.dot-key-value-table-row__variables-actions dot-icon-button')

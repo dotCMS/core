@@ -298,7 +298,7 @@ describe('ContentTypesFormComponent', () => {
 
     // tslint:disable-next-line:max-line-length
     it('should set canSave property false when the form value is updated and then gets back to the original content (no community license)', () => {
-        spyOn(dotLicenseService, 'isEnterprise').and.returnValue(of(false));
+        jest.spyOn(dotLicenseService, 'isEnterprise').mockReturnValue(of(false));
 
         comp.data = {
             ...dotcmsContentTypeBasicMock,
@@ -320,7 +320,7 @@ describe('ContentTypesFormComponent', () => {
 
     // eslint-disable-next-line max-len
     it('should set canSave property false when the form value is updated and then gets back to the original content (community license)', () => {
-        spyOn(dotLicenseService, 'isEnterprise').and.returnValue(of(true));
+        jest.spyOn(dotLicenseService, 'isEnterprise').mockReturnValue(of(true));
 
         comp.data = {
             ...dotcmsContentTypeBasicMock,
@@ -441,7 +441,7 @@ describe('ContentTypesFormComponent', () => {
     });
 
     it('should set value to the form', () => {
-        spyOn(dotLicenseService, 'isEnterprise').and.returnValue(of(true));
+        jest.spyOn(dotLicenseService, 'isEnterprise').mockReturnValue(of(true));
 
         const base = {
             icon: null,
@@ -476,8 +476,8 @@ describe('ContentTypesFormComponent', () => {
             workflows: [
                 {
                     ...mockWorkflows[2],
-                    creationDate: jasmine.any(Date),
-                    modDate: jasmine.any(Date)
+                    creationDate: expect.any(Date),
+                    modDate: expect.any(Date)
                 }
             ]
         });
@@ -485,7 +485,7 @@ describe('ContentTypesFormComponent', () => {
 
     describe('systemActionMappings', () => {
         beforeEach(() => {
-            spyOn(dotLicenseService, 'isEnterprise').and.returnValue(of(true));
+            jest.spyOn(dotLicenseService, 'isEnterprise').mockReturnValue(of(true));
         });
 
         it('should set value to the form with systemActionMappings', () => {
@@ -617,7 +617,7 @@ describe('ContentTypesFormComponent', () => {
         fixture.detectChanges();
 
         let data = null;
-        spyOn(comp, 'submitForm').and.callThrough();
+        jest.spyOn(comp, 'submitForm');
 
         comp.send.subscribe((res) => (data = res));
         comp.submitForm();
@@ -633,8 +633,8 @@ describe('ContentTypesFormComponent', () => {
         };
         comp.layout = layout;
         fixture.detectChanges();
-        spyOn(comp, 'submitForm').and.callThrough();
-        spyOn(comp.send, 'emit');
+        jest.spyOn(comp, 'submitForm');
+        jest.spyOn(comp.send, 'emit').mockImplementation(() => {});
 
         comp.submitForm();
 
@@ -658,14 +658,14 @@ describe('ContentTypesFormComponent', () => {
         let data;
 
         beforeEach(() => {
-            spyOn(dotLicenseService, 'isEnterprise').and.returnValue(of(true));
+            jest.spyOn(dotLicenseService, 'isEnterprise').mockReturnValue(of(true));
             comp.data = {
                 ...dotcmsContentTypeBasicMock,
                 baseType: 'CONTENT'
             };
             fixture.detectChanges();
             data = null;
-            spyOn(comp, 'submitForm').and.callThrough();
+            jest.spyOn(comp, 'submitForm');
             comp.send.subscribe((res) => (data = res));
             comp.form.controls.name.setValue('A content type name');
             fixture.detectChanges();
@@ -687,13 +687,13 @@ describe('ContentTypesFormComponent', () => {
                 workflows: [
                     {
                         id: 'd61a59e1-a49c-46f2-a929-db2b4bfa88b2',
-                        creationDate: jasmine.any(Date),
+                        creationDate: expect.any(Date),
                         name: 'System Workflow',
                         description: '',
                         archived: false,
                         mandatory: false,
                         defaultScheme: false,
-                        modDate: jasmine.any(Date),
+                        modDate: expect.any(Date),
                         entryActionId: null,
                         system: true
                     }
@@ -716,7 +716,7 @@ describe('ContentTypesFormComponent', () => {
 
             describe('community license true', () => {
                 beforeEach(() => {
-                    spyOn(dotLicenseService, 'isEnterprise').and.returnValue(of(false));
+                    jest.spyOn(dotLicenseService, 'isEnterprise').mockReturnValue(of(false));
                     fixture.detectChanges();
                 });
 
@@ -733,7 +733,7 @@ describe('ContentTypesFormComponent', () => {
 
             describe('community license true', () => {
                 beforeEach(() => {
-                    spyOn(dotLicenseService, 'isEnterprise').and.returnValue(of(true));
+                    jest.spyOn(dotLicenseService, 'isEnterprise').mockReturnValue(of(true));
                     fixture.detectChanges();
                 });
 
@@ -768,7 +768,7 @@ describe('ContentTypesFormComponent', () => {
                         }
                     ]
                 };
-                spyOn(dotLicenseService, 'isEnterprise').and.returnValue(of(false));
+                jest.spyOn(dotLicenseService, 'isEnterprise').mockReturnValue(of(false));
                 fixture.detectChanges();
                 expect(comp.form.get('workflows').value).toEqual([
                     {
@@ -790,7 +790,7 @@ describe('ContentTypesFormComponent', () => {
                     baseType: 'CONTENT',
                     id: '123'
                 };
-                spyOn(dotLicenseService, 'isEnterprise').and.returnValue(of(false));
+                jest.spyOn(dotLicenseService, 'isEnterprise').mockReturnValue(of(false));
                 fixture.detectChanges();
                 expect(comp.form.get('workflows').value).toEqual([]);
             });

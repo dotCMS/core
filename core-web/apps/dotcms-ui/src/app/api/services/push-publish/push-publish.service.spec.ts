@@ -56,7 +56,7 @@ describe('PushPublishService', () => {
     });
 
     it('should get push publish environments', () => {
-        spyOn<any>(dotCurrentUserService, 'getCurrentUser').and.returnValue(
+        jest.spyOn<any>(dotCurrentUserService, 'getCurrentUser').mockReturnValue(
             of({
                 roleId: '1234'
             })

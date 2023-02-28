@@ -176,15 +176,15 @@ describe('DotWorkflowEventHandlerService', () => {
 
     describe('wizard', () => {
         it('should open with the correct data', () => {
-            spyOn(dotWizardService, 'open').and.callThrough();
+            jest.spyOn(dotWizardService, 'open');
             dotWorkflowEventHandlerService.open({ ...mockWAEvent });
             expect(dotWizardService.open).toHaveBeenCalledWith(mockWizardInput);
         });
         it('should fire the workflow action with the correct data, execute the callback and send a message on output', () => {
-            spyOn<any>(dotWorkflowActionsFireService, 'fireTo').and.returnValue(of({}));
+            jest.spyOn<any>(dotWorkflowActionsFireService, 'fireTo').mockReturnValue(of({}));
 
-            spyOn(dotGlobalMessageService, 'display');
-            spyOn(dotIframeService, 'run');
+            jest.spyOn(dotGlobalMessageService, 'display').mockImplementation(() => {});
+            jest.spyOn(dotIframeService, 'run').mockImplementation(() => {});
             dotWorkflowEventHandlerService.open({ ...mockWAEvent });
             dotWizardService.output$({ ...mockWizardOutputData });
 
@@ -201,7 +201,7 @@ describe('DotWorkflowEventHandlerService', () => {
         });
 
         it('should run iframe function for legacy call', () => {
-            spyOn(dotIframeService, 'run');
+            jest.spyOn(dotIframeService, 'run').mockImplementation(() => {});
             dotWorkflowEventHandlerService.open({
                 ...mockWAEvent,
                 callback: 'saveAssignCallBackAngular'
@@ -243,10 +243,12 @@ describe('DotWorkflowEventHandlerService', () => {
                 query: 'query'
             };
 
-            spyOn(dotWorkflowActionsFireService, 'bulkFire').and.returnValue(of(mockBulkResponse));
+            jest.spyOn(dotWorkflowActionsFireService, 'bulkFire').mockReturnValue(
+                of(mockBulkResponse)
+            );
 
-            spyOn(dotGlobalMessageService, 'display');
-            spyOn(dotIframeService, 'run');
+            jest.spyOn(dotGlobalMessageService, 'display').mockImplementation(() => {});
+            jest.spyOn(dotIframeService, 'run').mockImplementation(() => {});
             dotWorkflowEventHandlerService.open({ ...mockWAEvent, selectedInodes: 'query' });
             dotWizardService.output$({ ...mockWizardOutputData });
 
@@ -270,8 +272,8 @@ describe('DotWorkflowEventHandlerService', () => {
             });
         });
         it('should return false and display a notification is there are no environments ', () => {
-            spyOn(pushPublishService, 'getEnvironments').and.returnValue(of([]));
-            spyOn(dotMessageDisplayService, 'push');
+            jest.spyOn(pushPublishService, 'getEnvironments').mockReturnValue(of([]));
+            jest.spyOn(dotMessageDisplayService, 'push').mockImplementation(() => {});
 
             dotWorkflowEventHandlerService.checkPublishEnvironments().subscribe((flag: boolean) => {
                 expect(flag).toEqual(false);

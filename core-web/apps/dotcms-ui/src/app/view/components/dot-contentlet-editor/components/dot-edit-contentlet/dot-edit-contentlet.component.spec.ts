@@ -53,7 +53,7 @@ describe('DotEditContentletComponent', () => {
         component = de.componentInstance;
         dotContentletEditorService = de.injector.get(DotContentletEditorService);
 
-        spyOn(component.shutdown, 'emit');
+        jest.spyOn(component.shutdown, 'emit').mockImplementation(() => {});
 
         fixture.detectChanges();
 

@@ -106,7 +106,7 @@ describe('DotKeyValueComponent', () => {
     });
 
     it('should save an existing variable', () => {
-        spyOn(component.save, 'emit');
+        jest.spyOn(component.save, 'emit').mockImplementation(() => {});
 
         fixtureHost.detectChanges();
 
@@ -117,7 +117,7 @@ describe('DotKeyValueComponent', () => {
     });
 
     it('should save a new variable', () => {
-        spyOn(component.save, 'emit');
+        jest.spyOn(component.save, 'emit').mockImplementation(() => {});
 
         fixtureHost.detectChanges();
 
@@ -127,7 +127,7 @@ describe('DotKeyValueComponent', () => {
     });
 
     it('should delete a variable from the server', () => {
-        spyOn(component.delete, 'emit');
+        jest.spyOn(component.delete, 'emit').mockImplementation(() => {});
         fixtureHost.detectChanges();
 
         tableRow = de.query(By.css('dot-key-value-table-row')).componentInstance;
@@ -147,7 +147,7 @@ describe('DotKeyValueComponent', () => {
 
     it('should stop propagation of keydown.enter event in the datatable', () => {
         fixtureHost.detectChanges();
-        const stopPropagationSpy = jasmine.createSpy('spy');
+        const stopPropagationSpy = jest.fn();
         const dataTable = de.query(By.css('p-table'));
         dataTable.triggerEventHandler('keydown.enter', {
             stopPropagation: stopPropagationSpy
@@ -168,7 +168,7 @@ describe('DotKeyValueComponent', () => {
     });
 
     it('should save a hidden variable', () => {
-        spyOn(component.save, 'emit');
+        jest.spyOn(component.save, 'emit').mockImplementation(() => {});
 
         fixtureHost.detectChanges();
 

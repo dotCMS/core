@@ -70,10 +70,10 @@ describe('DotWorkflowTaskDetailComponent', () => {
                 id: '123'
             });
 
-            spyOn(component, 'onClose').and.callThrough();
-            spyOn(dotWorkflowTaskDetailService, 'clear');
-            spyOn(component.shutdown, 'emit');
-            spyOn(component.custom, 'emit');
+            jest.spyOn(component, 'onClose');
+            jest.spyOn(dotWorkflowTaskDetailService, 'clear').mockImplementation(() => {});
+            jest.spyOn(component.shutdown, 'emit').mockImplementation(() => {});
+            jest.spyOn(component.custom, 'emit').mockImplementation(() => {});
             fixture.detectChanges();
         });
 

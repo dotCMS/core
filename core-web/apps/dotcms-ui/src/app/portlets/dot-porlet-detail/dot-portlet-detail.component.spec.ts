@@ -106,7 +106,7 @@ describe('DotPortletDetailComponent', () => {
 
     it('should not have dot-workflow-task', () => {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        spyOnProperty<any>(router, 'parent', 'get').and.returnValue({
+        spyOnProperty<any>(router, 'parent', 'get').mockReturnValue({
             parent: {
                 snapshot: {
                     params: {
@@ -123,7 +123,7 @@ describe('DotPortletDetailComponent', () => {
 
     it('should have dot-workflow-task', () => {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        spyOnProperty<any>(router, 'parent', 'get').and.returnValue({
+        spyOnProperty<any>(router, 'parent', 'get').mockReturnValue({
             parent: {
                 snapshot: {
                     params: {
@@ -140,7 +140,7 @@ describe('DotPortletDetailComponent', () => {
 
     it('should have dot-contentlets', () => {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        spyOnProperty<any>(router, 'parent', 'get').and.returnValue({
+        spyOnProperty<any>(router, 'parent', 'get').mockReturnValue({
             parent: {
                 snapshot: {
                     params: {

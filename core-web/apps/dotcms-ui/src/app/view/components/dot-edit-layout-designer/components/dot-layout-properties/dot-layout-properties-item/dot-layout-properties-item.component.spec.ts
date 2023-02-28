@@ -47,7 +47,7 @@ describe('DotLayoutPropertiesItemComponent', () => {
         comp.value = false;
         expect(comp.value).toEqual(false);
 
-        spyOn(comp, 'propagateChange');
+        jest.spyOn(comp, 'propagateChange').mockImplementation(() => {});
         de.nativeElement.click();
 
         expect(comp.value).toEqual(true);
@@ -78,7 +78,7 @@ describe('DotLayoutPropertiesItemComponent', () => {
         const component: DotLayoutPropertiesItemComponent = de.componentInstance;
         comp.value = false;
 
-        spyOn(component, 'writeValue');
+        jest.spyOn(component, 'writeValue').mockImplementation(() => {});
         fixture.debugElement.nativeElement.click();
         hostComponentfixture.detectChanges();
 

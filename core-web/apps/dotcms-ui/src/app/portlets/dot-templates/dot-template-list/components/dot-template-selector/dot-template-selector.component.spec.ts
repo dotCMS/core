@@ -42,7 +42,7 @@ describe('DotTemplateSelectorComponent', () => {
                 {
                     provide: DynamicDialogRef,
                     useValue: {
-                        close: jasmine.createSpy()
+                        close: jest.fn()
                     }
                 }
             ],

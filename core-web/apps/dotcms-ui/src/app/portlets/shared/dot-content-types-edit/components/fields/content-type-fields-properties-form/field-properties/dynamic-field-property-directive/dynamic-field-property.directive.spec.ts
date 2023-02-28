@@ -75,11 +75,13 @@ xdescribe('Directive: DynamicFieldPropertyDirective', () => {
         const fieldPropertyService = new TestFieldPropertyService();
         componentFactory = {};
 
-        getComponent = spyOn(fieldPropertyService, 'getComponent').and.returnValue(TestComponent);
-        resolveComponentFactory = spyOn(resolver, 'resolveComponentFactory').and.returnValue(
-            componentFactory
-        );
-        createComponent = spyOn(viewContainerRef, 'createComponent').and.returnValue({
+        getComponent = jest
+            .spyOn(fieldPropertyService, 'getComponent')
+            .mockReturnValue(TestComponent);
+        resolveComponentFactory = jest
+            .spyOn(resolver, 'resolveComponentFactory')
+            .mockReturnValue(componentFactory);
+        createComponent = jest.spyOn(viewContainerRef, 'createComponent').mockReturnValue({
             instance: testComponent
         });
 

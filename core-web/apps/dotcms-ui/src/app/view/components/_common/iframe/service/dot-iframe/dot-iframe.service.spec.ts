@@ -57,7 +57,7 @@ describe('DotIframeService', () => {
 
     describe('reload portlet data', () => {
         beforeEach(() => {
-            spyOn(service, 'run');
+            jest.spyOn(service, 'run').mockImplementation(() => {});
         });
 
         it('should reload data for content', () => {

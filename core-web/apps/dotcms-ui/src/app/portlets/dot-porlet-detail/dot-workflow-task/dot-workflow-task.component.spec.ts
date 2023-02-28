@@ -56,7 +56,7 @@ import {
 import { DotWorkflowTaskComponent } from './dot-workflow-task.component';
 @Injectable()
 class MockDotWorkflowTaskDetailService {
-    view = jasmine.createSpy('view');
+    view = jest.fn();
 }
 
 const messageServiceMock = new MockDotMessageService({
@@ -144,7 +144,7 @@ describe('DotWorkflowTaskComponent', () => {
         dotRouterService = TestBed.get(DotRouterService);
         dotIframeService = TestBed.get(DotIframeService);
         dotCustomEventHandlerService = TestBed.get(DotCustomEventHandlerService);
-        spyOn(dotIframeService, 'reloadData');
+        jest.spyOn(dotIframeService, 'reloadData').mockImplementation(() => {});
         fixture.detectChanges();
         taskDetail = de.query(By.css('dot-workflow-task-detail'));
     });
@@ -165,7 +165,7 @@ describe('DotWorkflowTaskComponent', () => {
     });
 
     it('should redirect to /workflow when edit-task-executed-workflow event is triggered', () => {
-        spyOn(component, 'onCloseWorkflowTaskEditor');
+        jest.spyOn(component, 'onCloseWorkflowTaskEditor').mockImplementation(() => {});
         taskDetail.triggerEventHandler('custom', {
             detail: {
                 name: 'edit-task-executed-workflow'
@@ -185,7 +185,7 @@ describe('DotWorkflowTaskComponent', () => {
     });
 
     it('should call to dotCustomEventHandlerService with the correct callbaack', () => {
-        spyOn(dotCustomEventHandlerService, 'handle');
+        jest.spyOn(dotCustomEventHandlerService, 'handle').mockImplementation(() => {});
         const mockEvent = {
             detail: {
                 name: 'workflow-wizard',

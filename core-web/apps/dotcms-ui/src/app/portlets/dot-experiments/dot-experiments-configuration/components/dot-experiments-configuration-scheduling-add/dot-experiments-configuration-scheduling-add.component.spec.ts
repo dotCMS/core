@@ -61,7 +61,7 @@ describe('DotExperimentsConfigurationSchedulingAddComponent', () => {
 
         store = spectator.inject(DotExperimentsConfigurationStore);
         dotExperimentsService = spectator.inject(DotExperimentsService);
-        dotExperimentsService.getById.and.returnValue(of(ExperimentMocks[0]));
+        dotExperimentsService.getById.mockReturnValue(of(ExperimentMocks[0]));
 
         store.loadExperiment(EXPERIMENT_ID);
         store.setSidebarStatus({
@@ -94,7 +94,7 @@ describe('DotExperimentsConfigurationSchedulingAddComponent', () => {
     });
 
     it('should save form when is valid', () => {
-        spyOn(store, 'setSelectedScheduling');
+        jest.spyOn(store, 'setSelectedScheduling').mockImplementation(() => {});
         const submitButton = spectator.query(
             byTestId('add-scheduling-button')
         ) as HTMLButtonElement;
@@ -111,7 +111,7 @@ describe('DotExperimentsConfigurationSchedulingAddComponent', () => {
     });
 
     it('should close sidebar', () => {
-        spyOn(store, 'closeSidebar');
+        jest.spyOn(store, 'closeSidebar').mockImplementation(() => {});
         sidebar = spectator.query(Sidebar);
         sidebar.hide();
 

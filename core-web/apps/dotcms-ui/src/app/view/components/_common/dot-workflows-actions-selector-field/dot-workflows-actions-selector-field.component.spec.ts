@@ -117,8 +117,8 @@ describe('DotWorkflowsActionsSelectorFieldComponent', () => {
             DotWorkflowsActionsSelectorFieldService
         );
 
-        spyOn(dotWorkflowsActionsSelectorFieldService, 'get').and.callThrough();
-        spyOn(dotWorkflowsActionsSelectorFieldService, 'load').and.callThrough();
+        jest.spyOn(dotWorkflowsActionsSelectorFieldService, 'get');
+        jest.spyOn(dotWorkflowsActionsSelectorFieldService, 'load');
     });
 
     describe('initialization', () => {
@@ -242,7 +242,7 @@ describe('DotWorkflowsActionsSelectorFieldComponent', () => {
                 componentHost.workfows = mock;
                 fixtureHost.detectChanges();
                 expect(dotWorkflowsActionsSelectorFieldService.load).toHaveBeenCalledWith(
-                    jasmine.arrayContaining(mock)
+                    expect.arrayContaining(mock)
                 );
             });
         });

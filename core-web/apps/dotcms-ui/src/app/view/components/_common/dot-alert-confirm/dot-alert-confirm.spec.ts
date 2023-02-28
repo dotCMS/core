@@ -51,7 +51,7 @@ describe('DotAlertConfirmComponent', () => {
             });
 
             fixture.detectChanges();
-            spyOn(component.confirmBtn.nativeElement, 'focus');
+            jest.spyOn(component.confirmBtn.nativeElement, 'focus').mockImplementation(() => {});
             const confirm = de.query(By.css('p-confirmDialog'));
             expect(confirm === null).toBe(false);
             setTimeout(() => {
@@ -73,7 +73,7 @@ describe('DotAlertConfirmComponent', () => {
         });
 
         it('should bind correctly to buttons', fakeAsync(() => {
-            spyOn(component, 'onClickConfirm');
+            jest.spyOn(component, 'onClickConfirm').mockImplementation(() => {});
 
             dialogService.confirm({
                 header: '',
@@ -93,13 +93,13 @@ describe('DotAlertConfirmComponent', () => {
         }));
 
         it('should handle accept click correctly', fakeAsync(() => {
-            spyOn(dialogService, 'clearConfirm');
+            jest.spyOn(dialogService, 'clearConfirm').mockImplementation(() => {});
 
             const model = {
                 header: '',
                 message: '',
-                accept: jasmine.createSpy('accept'),
-                reject: jasmine.createSpy('reject')
+                accept: jest.fn(),
+                reject: jest.fn()
             };
             dialogService.confirm(model);
 
@@ -114,13 +114,13 @@ describe('DotAlertConfirmComponent', () => {
         }));
 
         it('should handle reject click correctly', fakeAsync(() => {
-            spyOn(dialogService, 'clearConfirm');
+            jest.spyOn(dialogService, 'clearConfirm').mockImplementation(() => {});
 
             const model = {
                 header: '',
                 message: '',
-                accept: jasmine.createSpy('accept'),
-                reject: jasmine.createSpy('reject')
+                accept: jest.fn(),
+                reject: jest.fn()
             };
             dialogService.confirm(model);
 
@@ -143,7 +143,7 @@ describe('DotAlertConfirmComponent', () => {
             });
 
             fixture.detectChanges();
-            spyOn(component.acceptBtn.nativeElement, 'focus');
+            jest.spyOn(component.acceptBtn.nativeElement, 'focus').mockImplementation(() => {});
             const confirm = de.query(By.css('p-dialog'));
             expect(confirm === null).toBe(false);
             setTimeout(() => {
@@ -209,8 +209,8 @@ describe('DotAlertConfirmComponent', () => {
         });
 
         it('should bind accept and reject button events', () => {
-            spyOn(dialogService, 'alertAccept');
-            spyOn(dialogService, 'alertReject');
+            jest.spyOn(dialogService, 'alertAccept').mockImplementation(() => {});
+            jest.spyOn(dialogService, 'alertReject').mockImplementation(() => {});
 
             dialogService.alert({
                 header: '',

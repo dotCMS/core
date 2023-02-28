@@ -70,7 +70,7 @@ describe('DotGravatarComponent', () => {
 
     it('should set dot-avatar label', () => {
         fixture.componentInstance.email = 'a@a.com';
-        spyOn(dotGravatarService, 'getPhoto').and.callThrough();
+        jest.spyOn(dotGravatarService, 'getPhoto');
 
         fixture.detectChanges();
         expect(avatarComponent.componentInstance.url).toEqual('/avatar_url');

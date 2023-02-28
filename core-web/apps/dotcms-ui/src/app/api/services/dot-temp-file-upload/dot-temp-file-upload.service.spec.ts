@@ -25,7 +25,7 @@ describe('DotTempFileUploadService', () => {
                 {
                     provide: DotHttpErrorManagerService,
                     useValue: {
-                        handle: jasmine.createSpy().and.returnValue(
+                        handle: jest.fn(() =>
                             of({
                                 status: {
                                     toString: () => ''
@@ -103,7 +103,7 @@ describe('DotTempFileUploadService', () => {
 
         const req = httpMock.expectOne('/api/v1/temp');
         expect(req.request.method).toBe('POST');
-        expect(req.request.body).toEqual(jasmine.any(FormData));
+        expect(req.request.body).toEqual(expect.any(FormData));
 
         req.flush({
             tempFiles: [
@@ -128,7 +128,7 @@ describe('DotTempFileUploadService', () => {
         req.flush('deliberate 404 error', { status: 404, statusText: 'Not Found' });
 
         expect(dotHttpErrorManagerService.handle).toHaveBeenCalledWith(
-            jasmine.any(HttpErrorResponse)
+            expect.any(HttpErrorResponse)
         );
     });
 });

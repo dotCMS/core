@@ -206,7 +206,7 @@ describe('DotContentTypesPortletComponent', () => {
             DotPushPublishDialogService
         );
 
-        spyOn(dotContentletService, 'getAllContentTypes').and.returnValue(
+        jest.spyOn(dotContentletService, 'getAllContentTypes').mockReturnValue(
             observableOf([
                 { name: 'CONTENT', label: 'Content', types: [] },
                 { name: 'WIDGET', label: 'Widget', types: [] },
@@ -264,11 +264,11 @@ describe('DotContentTypesPortletComponent', () => {
         };
 
         const dotDialogService = fixture.debugElement.injector.get(DotAlertConfirmService);
-        spyOn(dotDialogService, 'confirm').and.callFake((conf) => {
+        jest.spyOn(dotDialogService, 'confirm').mockImplementation((conf) => {
             conf.accept();
         });
 
-        spyOn(crudService, 'delete').and.returnValue(observableOf(mockContentType));
+        jest.spyOn(crudService, 'delete').mockReturnValue(observableOf(mockContentType));
         comp.rowActions[DELETE_MENU_ITEM_INDEX].menuItem.command(mockContentType);
 
         fixture.detectChanges();
@@ -289,7 +289,7 @@ describe('DotContentTypesPortletComponent', () => {
     });
 
     it('should have ONLY remove action because is community license', () => {
-        spyOn(dotLicenseService, 'isEnterprise').and.returnValue(observableOf(false));
+        jest.spyOn(dotLicenseService, 'isEnterprise').mockReturnValue(observableOf(false));
 
         fixture.detectChanges();
         expect(
@@ -308,7 +308,7 @@ describe('DotContentTypesPortletComponent', () => {
     });
 
     it('should have remove and add to bundle actions if is not community license and no publish environments are created', () => {
-        spyOn(pushPublishService, 'getEnvironments').and.returnValue(observableOf([]));
+        jest.spyOn(pushPublishService, 'getEnvironments').mockReturnValue(observableOf([]));
         fixture.detectChanges();
 
         expect(comp.rowActions.map((action) => action.menuItem.label)).toEqual([
@@ -321,7 +321,7 @@ describe('DotContentTypesPortletComponent', () => {
 
     it('should open push publish dialog', () => {
         fixture.detectChanges();
-        spyOn(dotPushPublishDialogService, 'open').and.callThrough();
+        jest.spyOn(dotPushPublishDialogService, 'open');
         const mockContentType: DotCMSContentType = {
             ...dotcmsContentTypeBasicMock,
             clazz: 'com.dotcms.contenttype.model.type.ImmutableSimpleContentType',
@@ -410,7 +410,7 @@ describe('DotContentTypesPortletComponent', () => {
     it('should emit changes in base types selector', () => {
         fixture.detectChanges();
         baseTypesSelector = de.query(By.css('dot-base-type-selector')).componentInstance;
-        spyOn(comp, 'changeBaseTypeSelector');
+        jest.spyOn(comp, 'changeBaseTypeSelector').mockImplementation(() => {});
         baseTypesSelector.selected.emit('test');
 
         expect(comp.changeBaseTypeSelector).toHaveBeenCalledWith('test');
@@ -443,12 +443,12 @@ describe('DotContentTypesPortletComponent', () => {
         };
 
         const dotDialogService = fixture.debugElement.injector.get(DotAlertConfirmService);
-        spyOn(dotDialogService, 'confirm').and.callFake((conf) => {
+        jest.spyOn(dotDialogService, 'confirm').mockImplementation((conf) => {
             conf.accept();
         });
 
-        spyOn(dotHttpErrorManagerService, 'handle').and.callThrough();
-        spyOn(crudService, 'delete').and.returnValue(observableThrowError(forbiddenError));
+        jest.spyOn(dotHttpErrorManagerService, 'handle');
+        jest.spyOn(crudService, 'delete').mockReturnValue(observableThrowError(forbiddenError));
         comp.rowActions[DELETE_MENU_ITEM_INDEX].menuItem.command(mockContentType);
 
         fixture.detectChanges();

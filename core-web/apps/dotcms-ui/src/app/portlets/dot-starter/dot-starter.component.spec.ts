@@ -124,7 +124,7 @@ describe('DotStarterComponent', () => {
 
     describe('With user permissions', () => {
         beforeEach(() => {
-            spyOnProperty(activatedRoute, 'data').and.returnValue(of(routeDatamock));
+            spyOnProperty(activatedRoute, 'data').mockReturnValue(of(routeDatamock));
             fixture.detectChanges();
         });
 
@@ -304,8 +304,8 @@ describe('DotStarterComponent', () => {
             const checkBox: Checkbox = de.query(By.css('p-checkbox')).componentInstance;
             const boxEl = fixture.nativeElement.querySelector('.p-checkbox-box');
 
-            spyOn(dotAccountService, 'addStarterPage').and.callThrough();
-            spyOn(dotAccountService, 'removeStarterPage').and.callThrough();
+            jest.spyOn(dotAccountService, 'addStarterPage');
+            jest.spyOn(dotAccountService, 'removeStarterPage');
 
             expect(checkBox.label).toEqual(messageServiceMock.get('starter.dont.show'));
             boxEl.click();
@@ -317,7 +317,7 @@ describe('DotStarterComponent', () => {
 
     describe('Without user permissions', () => {
         beforeEach(() => {
-            spyOnProperty(activatedRoute, 'data').and.returnValue(
+            spyOnProperty(activatedRoute, 'data').mockReturnValue(
                 of({
                     userData: {
                         user: {

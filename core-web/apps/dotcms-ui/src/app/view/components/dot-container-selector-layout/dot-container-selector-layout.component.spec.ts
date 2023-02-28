@@ -182,7 +182,7 @@ describe('DotContainerSelectorLayoutComponent', () => {
     it('should set container list replacing the identifier for the path, if needed', () => {
         fixture.detectChanges();
         const paginatorService: PaginatorService = de.injector.get(PaginatorService);
-        spyOn(paginatorService, 'getWithOffset').and.returnValue(observableOf(containers));
+        jest.spyOn(paginatorService, 'getWithOffset').mockReturnValue(observableOf(containers));
         comp.handleFilterChange('');
 
         expect(comp.currentContainers[0].identifier).toEqual('427c47a4-c380-439f');

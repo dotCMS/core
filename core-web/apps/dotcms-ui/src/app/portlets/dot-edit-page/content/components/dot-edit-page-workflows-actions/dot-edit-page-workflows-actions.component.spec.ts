@@ -152,13 +152,15 @@ describe('DotEditPageWorkflowsActionsComponent', () => {
             DotWorkflowActionsFireService
         );
         dotWorkflowsActionsService = workflowActionDebugEl.injector.get(DotWorkflowsActionsService);
-        spyOn(dotWorkflowActionsFireService, 'fireTo').and.returnValue(of(dotcmsContentletMock));
+        jest.spyOn(dotWorkflowActionsFireService, 'fireTo').mockReturnValue(
+            of(dotcmsContentletMock)
+        );
     });
 
     describe('dot-icon-button', () => {
         describe('enabled', () => {
             beforeEach(() => {
-                spyOn(dotWorkflowsActionsService, 'getByInode').and.returnValue(
+                jest.spyOn(dotWorkflowsActionsService, 'getByInode').mockReturnValue(
                     of(mockWorkflowsActions)
                 );
                 component.page = {
@@ -246,7 +248,10 @@ describe('DotEditPageWorkflowsActionsComponent', () => {
                     });
 
                     it('should fire actions after wizard data was collected', () => {
-                        spyOn(dotWorkflowEventHandlerService, 'setWizardInput');
+                        jest.spyOn(
+                            dotWorkflowEventHandlerService,
+                            'setWizardInput'
+                        ).mockImplementation(() => {});
                         firstButton.click();
                         dotWizardService.output$(mockData);
 
@@ -263,8 +268,8 @@ describe('DotEditPageWorkflowsActionsComponent', () => {
                     });
 
                     it('should show and alert when there is no environments and push publish action', () => {
-                        spyOn(pushPublishService, 'getEnvironments').and.returnValue(of([]));
-                        spyOn(dotMessageDisplayService, 'push');
+                        jest.spyOn(pushPublishService, 'getEnvironments').mockReturnValue(of([]));
+                        jest.spyOn(dotMessageDisplayService, 'push').mockImplementation(() => {});
 
                         firstButton.click();
                         expect(dotWorkflowActionsFireService.fireTo).not.toHaveBeenCalled();
@@ -296,7 +301,7 @@ describe('DotEditPageWorkflowsActionsComponent', () => {
                 });
 
                 it('should show success message after fired action in the menu items', () => {
-                    spyOn(dotGlobalMessageService, 'display');
+                    jest.spyOn(dotGlobalMessageService, 'display').mockImplementation(() => {});
                     secondButton.click();
                     fixture.detectChanges();
                     expect(dotGlobalMessageService.display).toHaveBeenCalledWith(
@@ -310,7 +315,7 @@ describe('DotEditPageWorkflowsActionsComponent', () => {
                 });
 
                 it('should emit event after action was fired', () => {
-                    spyOn(workflowActionComponent.fired, 'emit');
+                    jest.spyOn(workflowActionComponent.fired, 'emit').mockImplementation(() => {});
                     secondButton.click();
                     fixture.detectChanges();
                     expect(
@@ -322,7 +327,7 @@ describe('DotEditPageWorkflowsActionsComponent', () => {
 
         describe('disabled', () => {
             beforeEach(() => {
-                spyOn(dotWorkflowsActionsService, 'getByInode').and.returnValue(of([]));
+                jest.spyOn(dotWorkflowsActionsService, 'getByInode').mockReturnValue(of([]));
                 fixture.detectChanges();
             });
 
@@ -336,7 +341,7 @@ describe('DotEditPageWorkflowsActionsComponent', () => {
         let menu: Menu;
 
         beforeEach(() => {
-            spyOn(dotWorkflowsActionsService, 'getByInode').and.returnValue(
+            jest.spyOn(dotWorkflowsActionsService, 'getByInode').mockReturnValue(
                 of(mockWorkflowsActions)
             );
             fixture.detectChanges();

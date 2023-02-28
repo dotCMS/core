@@ -101,8 +101,8 @@ describe('SiteSelectorComponent', () => {
 
     it('should send notification when login-as/logout-as', fakeAsync(() => {
         const dotEventsService = de.injector.get(DotEventsService);
-        spyOn(comp, 'getSitesList');
-        spyOn(comp, 'handleSitesRefresh');
+        jest.spyOn(comp, 'getSitesList').mockImplementation(() => {});
+        jest.spyOn(comp, 'handleSitesRefresh').mockImplementation(() => {});
         fixtureHost.detectChanges();
         dotEventsService.notify('login-as');
         tick(0);
@@ -137,8 +137,8 @@ describe('SiteSelectorComponent', () => {
     });
 
     it('should call getSitesList', () => {
-        spyOn<any>(siteService, 'switchSite$').and.returnValue(observableOf(sites[0]));
-        spyOn(paginatorService, 'getWithOffset').and.returnValue(observableOf(sites));
+        jest.spyOn<any>(siteService, 'switchSite$').mockReturnValue(observableOf(sites[0]));
+        jest.spyOn(paginatorService, 'getWithOffset').mockReturnValue(observableOf(sites));
 
         fixtureHost.detectChanges();
 
@@ -146,8 +146,8 @@ describe('SiteSelectorComponent', () => {
     });
 
     it('should call refresh if a event happen', () => {
-        spyOn<any>(siteService, 'refreshSites$').and.returnValue(observableOf(sites[0]));
-        spyOn(comp, 'handleSitesRefresh').and.callThrough();
+        jest.spyOn<any>(siteService, 'refreshSites$').mockReturnValue(observableOf(sites[0]));
+        jest.spyOn(comp, 'handleSitesRefresh');
 
         fixtureHost.detectChanges();
 
@@ -159,8 +159,8 @@ describe('SiteSelectorComponent', () => {
         const page = 1;
 
         paginatorService.totalRecords = 2;
-        spyOn(paginatorService, 'getWithOffset').and.returnValue(observableOf(sites));
-        spyOn<any>(siteService, 'switchSite$').and.returnValue(observableOf({}));
+        jest.spyOn(paginatorService, 'getWithOffset').mockReturnValue(observableOf(sites));
+        jest.spyOn<any>(siteService, 'switchSite$').mockReturnValue(observableOf({}));
 
         fixtureHost.detectChanges();
 
@@ -183,8 +183,8 @@ describe('SiteSelectorComponent', () => {
     it('should paginate when the filter change', () => {
         const filter = 'filter';
 
-        spyOn(paginatorService, 'getWithOffset').and.returnValue(observableOf(sites));
-        spyOn<any>(siteService, 'switchSite$').and.returnValue(observableOf({}));
+        jest.spyOn(paginatorService, 'getWithOffset').mockReturnValue(observableOf(sites));
+        jest.spyOn<any>(siteService, 'switchSite$').mockReturnValue(observableOf({}));
 
         fixtureHost.detectChanges();
 
@@ -202,7 +202,7 @@ describe('SiteSelectorComponent', () => {
     it('should pass class name to searchable dropdown', () => {
         paginatorService.filter = 'filter';
         paginatorService.totalRecords = 2;
-        spyOn(paginatorService, 'getWithOffset').and.returnValue(observableOf(sites));
+        jest.spyOn(paginatorService, 'getWithOffset').mockReturnValue(observableOf(sites));
         componentHost.cssClass = 'hello';
         fixtureHost.detectChanges();
 
@@ -213,7 +213,7 @@ describe('SiteSelectorComponent', () => {
     it('should be assign to filter if empty', () => {
         paginatorService.filter = 'filter';
         paginatorService.totalRecords = 2;
-        spyOn(paginatorService, 'getWithOffset').and.returnValue(observableOf(sites));
+        jest.spyOn(paginatorService, 'getWithOffset').mockReturnValue(observableOf(sites));
 
         fixtureHost.detectChanges();
 
@@ -229,8 +229,8 @@ describe('SiteSelectorComponent', () => {
     it('should emit switch event', () => {
         paginatorService.filter = 'filter';
         paginatorService.totalRecords = 2;
-        spyOn(paginatorService, 'getWithOffset').and.returnValue(observableOf(sites));
-        spyOn(comp, 'handleSitesRefresh');
+        jest.spyOn(paginatorService, 'getWithOffset').mockReturnValue(observableOf(sites));
+        jest.spyOn(comp, 'handleSitesRefresh').mockImplementation(() => {});
         fixtureHost.detectChanges();
         const searchableDropdownComponent: DebugElement = de.query(
             By.css('dot-searchable-dropdown')
@@ -245,8 +245,8 @@ describe('SiteSelectorComponent', () => {
     it('should set current site correctly', () => {
         paginatorService.filter = 'filter';
         paginatorService.totalRecords = 2;
-        spyOn(siteService, 'getSiteById').and.returnValue(observableOf(mockSites[1]));
-        spyOn(paginatorService, 'getCurrentPage').and.returnValue(observableOf(mockSites));
+        jest.spyOn(siteService, 'getSiteById').mockReturnValue(observableOf(mockSites[1]));
+        jest.spyOn(paginatorService, 'getCurrentPage').mockReturnValue(observableOf(mockSites));
         fixtureHost.detectChanges();
         expect(comp.currentSite).toEqual(siteService.currentSite);
     });
@@ -254,9 +254,9 @@ describe('SiteSelectorComponent', () => {
     it('should set site based on passed id', () => {
         paginatorService.filter = 'filter';
         paginatorService.totalRecords = 2;
-        spyOn(paginatorService, 'getWithOffset').and.returnValue(observableOf(mockSites));
-        spyOn(siteService, 'getSiteById').and.returnValue(observableOf(mockSites[1]));
-        spyOnProperty(siteService, 'currentSite', 'get').and.returnValue(mockSites[0]);
+        jest.spyOn(paginatorService, 'getWithOffset').mockReturnValue(observableOf(mockSites));
+        jest.spyOn(siteService, 'getSiteById').mockReturnValue(observableOf(mockSites[1]));
+        spyOnProperty(siteService, 'currentSite', 'get').mockReturnValue(mockSites[0]);
         fixtureHost.detectChanges();
         componentHost.id = mockSites[1].identifier;
         fixtureHost.detectChanges();
@@ -277,7 +277,7 @@ describe('SiteSelectorComponent', () => {
         };
 
         it('should update until site is not present after archived', fakeAsync(() => {
-            spyOn(paginatorService, 'getCurrentPage').and.callFake(() =>
+            jest.spyOn(paginatorService, 'getCurrentPage').mockImplementation(() =>
                 mockFunction(2, sites.slice(0, 2), sites)
             );
             comp.handleSitesRefresh(sites[2]);
@@ -288,7 +288,7 @@ describe('SiteSelectorComponent', () => {
 
         it('should update until site is present after add', fakeAsync(() => {
             const subSites = sites.slice(0, 2);
-            spyOn(paginatorService, 'getCurrentPage').and.callFake(() =>
+            jest.spyOn(paginatorService, 'getCurrentPage').mockImplementation(() =>
                 mockFunction(3, subSites, [])
             );
             comp.handleSitesRefresh(sites[0]);
@@ -298,7 +298,7 @@ describe('SiteSelectorComponent', () => {
     });
 
     it('should display as field', () => {
-        spyOn(paginatorService, 'getWithOffset').and.returnValue(observableOf(sites));
+        jest.spyOn(paginatorService, 'getWithOffset').mockReturnValue(observableOf(sites));
         fixtureHost.detectChanges();
         const searchableDropdownComponent: DebugElement = de.query(
             By.css('dot-searchable-dropdown')
@@ -308,7 +308,7 @@ describe('SiteSelectorComponent', () => {
 
     it('should display only one result as field', () => {
         comp.asField = true;
-        spyOn(paginatorService, 'getWithOffset').and.returnValue(observableOf([sites[0]]));
+        jest.spyOn(paginatorService, 'getWithOffset').mockReturnValue(observableOf([sites[0]]));
         fixtureHost.detectChanges();
         const searchableDropdownComponent: DebugElement = de.query(
             By.css('dot-searchable-dropdown')
@@ -317,7 +317,7 @@ describe('SiteSelectorComponent', () => {
     });
 
     it('should display as text if only one result', () => {
-        spyOn(paginatorService, 'getWithOffset').and.returnValue(observableOf([sites[0]]));
+        jest.spyOn(paginatorService, 'getWithOffset').mockReturnValue(observableOf([sites[0]]));
         fixtureHost.detectChanges();
         const siteTitle: DebugElement = de.query(By.css('.site-selector__title'));
         expect(siteTitle).not.toBeNull();

@@ -73,7 +73,7 @@ describe('DotHttpErrorManagerService', () => {
     });
 
     it('should handle 401 error when user is login we use 403', () => {
-        spyOn(dotDialogService, 'alert');
+        jest.spyOn(dotDialogService, 'alert').mockImplementation(() => {});
 
         service.handle(mockResponseView(401)).subscribe((res) => {
             result = res;
@@ -91,7 +91,7 @@ describe('DotHttpErrorManagerService', () => {
 
     it('should handle 401 error when user is logout and redirect to login', () => {
         loginService.auth.user = null;
-        spyOn(dotDialogService, 'alert');
+        jest.spyOn(dotDialogService, 'alert').mockImplementation(() => {});
 
         service.handle(mockResponseView(401)).subscribe((res) => {
             result = res;
@@ -106,7 +106,7 @@ describe('DotHttpErrorManagerService', () => {
     });
 
     it('should handle 403 error', () => {
-        spyOn(dotDialogService, 'alert');
+        jest.spyOn(dotDialogService, 'alert').mockImplementation(() => {});
 
         service.handle(mockResponseView(403)).subscribe((res) => {
             result = res;
@@ -123,7 +123,7 @@ describe('DotHttpErrorManagerService', () => {
     });
 
     it('should handle 500 error', () => {
-        spyOn(dotDialogService, 'alert');
+        jest.spyOn(dotDialogService, 'alert').mockImplementation(() => {});
         const headers = new HttpHeaders({
             error: 'error'
         });
@@ -146,7 +146,7 @@ describe('DotHttpErrorManagerService', () => {
     });
 
     it('should handle license error', () => {
-        spyOn(dotDialogService, 'alert');
+        jest.spyOn(dotDialogService, 'alert').mockImplementation(() => {});
         const headers = new HttpHeaders({
             'error-key': 'dotcms.api.error.license.required'
         });
@@ -168,7 +168,7 @@ describe('DotHttpErrorManagerService', () => {
     });
 
     it('should handle 400 error on message', () => {
-        spyOn(dotDialogService, 'alert');
+        jest.spyOn(dotDialogService, 'alert').mockImplementation(() => {});
 
         const responseView: HttpErrorResponse = mockResponseView(400, null, null, {
             message: 'Error'
@@ -189,7 +189,7 @@ describe('DotHttpErrorManagerService', () => {
     });
 
     it('should handle 400 error on errors[0]', () => {
-        spyOn(dotDialogService, 'alert');
+        jest.spyOn(dotDialogService, 'alert').mockImplementation(() => {});
 
         const responseView: HttpErrorResponse = mockResponseView(400, null, null, [
             { message: 'Server Error' }
@@ -210,7 +210,7 @@ describe('DotHttpErrorManagerService', () => {
     });
 
     it('should handle 400 error on error.errors[0]', () => {
-        spyOn(dotDialogService, 'alert');
+        jest.spyOn(dotDialogService, 'alert').mockImplementation(() => {});
 
         const responseView: HttpErrorResponse = mockResponseView(400, null, null, {
             errors: [{ message: 'Server Error' }]
@@ -231,7 +231,7 @@ describe('DotHttpErrorManagerService', () => {
     });
 
     it('should handle 400 error and show reponse message', () => {
-        spyOn(dotDialogService, 'alert');
+        jest.spyOn(dotDialogService, 'alert').mockImplementation(() => {});
 
         service.handle(mockResponseView(400)).subscribe((res) => {
             result = res;
@@ -248,7 +248,7 @@ describe('DotHttpErrorManagerService', () => {
     });
 
     it('should handle 204 error', () => {
-        spyOn(dotDialogService, 'alert');
+        jest.spyOn(dotDialogService, 'alert').mockImplementation(() => {});
 
         service.handle(mockResponseView(204)).subscribe((res) => {
             result = res;

@@ -106,10 +106,10 @@ describe('DotFavoritePageStore', () => {
         dotWorkflowActionsFireService = TestBed.inject(DotWorkflowActionsFireService);
         dotHttpErrorManagerService = TestBed.inject(DotHttpErrorManagerService);
 
-        spyOn(dotRolesService, 'search').and.callThrough();
-        spyOn(dotCurrentUser, 'getCurrentUser').and.callThrough();
-        spyOn(dotPageRenderService, 'get').and.returnValue(of(mockDotRenderedPage()));
-        spyOn(dotContentletService, 'getContentletPermissions').and.returnValue(
+        jest.spyOn(dotRolesService, 'search');
+        jest.spyOn(dotCurrentUser, 'getCurrentUser');
+        jest.spyOn(dotPageRenderService, 'get').mockReturnValue(of(mockDotRenderedPage()));
+        jest.spyOn(dotContentletService, 'getContentletPermissions').mockReturnValue(
             of({ READ: ['a1', 'b1'] })
         );
     });
@@ -195,11 +195,13 @@ describe('DotFavoritePageStore', () => {
 
         // Effects
         it('should create a Favorite Page', (done) => {
-            spyOn(dotTempFileUploadService, 'upload').and.returnValue(of([mockDotCMSTempFile]));
-            spyOn(
+            jest.spyOn(dotTempFileUploadService, 'upload').mockReturnValue(
+                of([mockDotCMSTempFile])
+            );
+            jest.spyOn(
                 dotWorkflowActionsFireService,
                 'publishContentletAndWaitForIndex'
-            ).and.returnValue(of(null));
+            ).mockReturnValue(of(null));
 
             const file = new File(
                 [
@@ -243,10 +245,10 @@ describe('DotFavoritePageStore', () => {
         });
 
         it('should Edit a Favorite Page', (done) => {
-            spyOn(
+            jest.spyOn(
                 dotWorkflowActionsFireService,
                 'publishContentletAndWaitForIndex'
-            ).and.returnValue(of(null));
+            ).mockReturnValue(of(null));
 
             dotFavoritePageStore.saveFavoritePage({
                 currentUserRoleId: CurrentUserDataMock.roleId,
@@ -283,11 +285,14 @@ describe('DotFavoritePageStore', () => {
         });
 
         it('should handle error when create/save Favorite Page', (done) => {
-            spyOn(dotTempFileUploadService, 'upload').and.returnValue(of([mockDotCMSTempFile]));
-            spyOn(dotWorkflowActionsFireService, 'publishContentletAndWaitForIndex').and.throwError(
-                'error'
+            jest.spyOn(dotTempFileUploadService, 'upload').mockReturnValue(
+                of([mockDotCMSTempFile])
             );
-            spyOn(dotHttpErrorManagerService, 'handle').and.callThrough();
+            jest.spyOn(
+                dotWorkflowActionsFireService,
+                'publishContentletAndWaitForIndex'
+            ).and.throwError('error');
+            jest.spyOn(dotHttpErrorManagerService, 'handle');
 
             dotFavoritePageStore.saveFavoritePage({
                 currentUserRoleId: CurrentUserDataMock.roleId,
@@ -321,7 +326,7 @@ describe('DotFavoritePageStore', () => {
         });
 
         it('should delete Favorite Page', (done) => {
-            spyOn(dotWorkflowActionsFireService, 'deleteContentlet').and.returnValue(of(null));
+            jest.spyOn(dotWorkflowActionsFireService, 'deleteContentlet').mockReturnValue(of(null));
 
             dotFavoritePageStore.deleteFavoritePage('abc123');
 
@@ -338,8 +343,8 @@ describe('DotFavoritePageStore', () => {
         });
 
         it('should handle error when delete Favorite Page', (done) => {
-            spyOn(dotWorkflowActionsFireService, 'deleteContentlet').and.throwError('error');
-            spyOn(dotHttpErrorManagerService, 'handle').and.callThrough();
+            jest.spyOn(dotWorkflowActionsFireService, 'deleteContentlet').and.throwError('error');
+            jest.spyOn(dotHttpErrorManagerService, 'handle');
 
             dotFavoritePageStore.deleteFavoritePage('abc123');
 

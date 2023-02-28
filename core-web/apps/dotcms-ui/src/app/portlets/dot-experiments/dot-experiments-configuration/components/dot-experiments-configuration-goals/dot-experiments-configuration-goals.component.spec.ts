@@ -69,7 +69,7 @@ describe('DotExperimentsConfigurationGoalsComponent', () => {
         store = spectator.inject(DotExperimentsConfigurationStore);
 
         dotExperimentsService = spectator.inject(DotExperimentsService);
-        dotExperimentsService.getById.and.returnValue(of(ExperimentMocks[0]));
+        dotExperimentsService.getById.mockReturnValue(of(ExperimentMocks[0]));
 
         store.loadExperiment(ExperimentMocks[0].id);
 
@@ -112,7 +112,7 @@ describe('DotExperimentsConfigurationGoalsComponent', () => {
     });
 
     it('should call openSelectGoalSidebar if you click the add goal button', () => {
-        spyOn(spectator.component, 'openSelectGoalSidebar');
+        jest.spyOn(spectator.component, 'openSelectGoalSidebar').mockImplementation(() => {});
 
         const addButton = spectator.query(byTestId('goals-add-button')) as HTMLButtonElement;
         spectator.click(addButton);
@@ -137,7 +137,7 @@ describe('DotExperimentsConfigurationGoalsComponent', () => {
     });
 
     it('should show a confirmation to delete a goal', () => {
-        spyOn(store, 'deleteGoal');
+        jest.spyOn(store, 'deleteGoal').mockImplementation(() => {});
         const vmMock$: { experimentId: string; goals: Goals; status: StepStatus } = {
             experimentId: EXPERIMENT_ID,
             goals: GoalsMock,

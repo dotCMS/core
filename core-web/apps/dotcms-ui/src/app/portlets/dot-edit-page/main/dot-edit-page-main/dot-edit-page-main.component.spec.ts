@@ -210,7 +210,7 @@ describe('DotEditPageMainComponent', () => {
         titleService = fixture.debugElement.injector.get(Title);
         fixture.detectChanges();
 
-        spyOn<any>(route, 'queryParams').and.returnValue(of({}));
+        jest.spyOn<any>(route, 'queryParams').mockReturnValue(of({}));
     });
 
     it('should have router-outlet', () => {
@@ -229,7 +229,7 @@ describe('DotEditPageMainComponent', () => {
     });
 
     it('should not call goToEditPage if the dialog is closed without new page properties', () => {
-        spyOn(dotPageStateService, 'get').and.callThrough();
+        jest.spyOn(dotPageStateService, 'get');
 
         dotContentletEditorService.close$.next(true);
         expect(dotRouterService.goToEditPage).not.toHaveBeenCalled();
@@ -237,7 +237,7 @@ describe('DotEditPageMainComponent', () => {
     });
 
     it('should call goToEditPage if page properties were saved with different URLs', () => {
-        spyOn(dotPageStateService, 'get').and.callThrough();
+        jest.spyOn(dotPageStateService, 'get');
         editContentlet.custom.emit({
             detail: {
                 name: 'save-page',
@@ -258,7 +258,7 @@ describe('DotEditPageMainComponent', () => {
     });
 
     it('should call get if page properties were saved with equal URLs', () => {
-        spyOn(dotPageStateService, 'get').and.callThrough();
+        jest.spyOn(dotPageStateService, 'get');
         editContentlet.custom.emit({
             detail: {
                 name: 'save-page',
@@ -276,7 +276,7 @@ describe('DotEditPageMainComponent', () => {
     });
 
     it('should set the page title correctly', () => {
-        spyOn(titleService, 'getTitle').and.callThrough();
+        jest.spyOn(titleService, 'getTitle');
         const initialTitle = titleService.getTitle().split(' - ');
         const res: DotPageRender = new DotPageRender(mockDotRenderedPage());
         const subtTitle = initialTitle.length > 1 ? initialTitle[initialTitle.length - 1] : '';
@@ -315,7 +315,7 @@ describe('DotEditPageMainComponent', () => {
         });
 
         it('should call dotCustomEventHandlerService on customEvent', () => {
-            spyOn(dotCustomEventHandlerService, 'handle');
+            jest.spyOn(dotCustomEventHandlerService, 'handle').mockImplementation(() => {});
             editContentlet.custom.emit({
                 detail: {
                     name: 'random'

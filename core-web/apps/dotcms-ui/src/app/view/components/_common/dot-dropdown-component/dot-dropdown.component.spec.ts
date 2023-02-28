@@ -103,7 +103,7 @@ describe('DotDropdownComponent', () => {
         let gravatar: DebugElement;
 
         beforeEach(() => {
-            spyOn(comp.toggle, 'emit');
+            jest.spyOn(comp.toggle, 'emit').mockImplementation(() => {});
             hostComp.disabled = false;
             hostFixture.detectChanges();
             button = de.query(By.css('dot-icon-button'));
@@ -130,7 +130,7 @@ describe('DotDropdownComponent', () => {
         let titleButton: DebugElement;
 
         beforeEach(() => {
-            spyOn(comp.toggle, 'emit');
+            jest.spyOn(comp.toggle, 'emit').mockImplementation(() => {});
             hostComp.disabled = true;
             hostFixture.detectChanges();
             button = de.query(By.css('dot-icon-button'));

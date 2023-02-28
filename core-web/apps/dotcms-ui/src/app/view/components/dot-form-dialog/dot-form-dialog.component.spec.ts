@@ -49,7 +49,7 @@ describe('DotFormDialogComponent', () => {
                 {
                     provide: DynamicDialogRef,
                     useValue: {
-                        close: jasmine.createSpy()
+                        close: jest.fn()
                     }
                 }
             ],
@@ -58,7 +58,7 @@ describe('DotFormDialogComponent', () => {
     });
 
     beforeEach(() => {
-        spyOn(document, 'querySelector').and.returnValue(document.createElement('div'));
+        jest.spyOn(document, 'querySelector').mockReturnValue(document.createElement('div'));
         fixture = TestBed.createComponent(DotFormDialogComponent);
         component = fixture.componentInstance;
         de = fixture.debugElement;
@@ -84,8 +84,8 @@ describe('DotFormDialogComponent', () => {
 
     describe('buttons', () => {
         beforeEach(() => {
-            spyOn(component.save, 'emit');
-            spyOn(component.cancel, 'emit');
+            jest.spyOn(component.save, 'emit').mockImplementation(() => {});
+            jest.spyOn(component.cancel, 'emit').mockImplementation(() => {});
         });
 
         it('should have save button', () => {

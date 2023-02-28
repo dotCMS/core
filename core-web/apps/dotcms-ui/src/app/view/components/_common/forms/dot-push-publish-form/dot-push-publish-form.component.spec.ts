@@ -151,17 +151,17 @@ xdescribe('DotPushPublishFormComponent', () => {
     });
 
     beforeEach(() => {
-        spyOn<any>(Intl, 'DateTimeFormat').and.returnValue({
+        jest.spyOn<any>(Intl, 'DateTimeFormat').mockReturnValue({
             resolvedOptions: () => ({ timeZone: localTZ })
         });
-        jasmine.clock().install();
+        jest.useFakeTimers();
         jasmine.clock().mockDate(mockDate);
         fixture = TestBed.createComponent(TestHostComponent);
         dotPushPublishFiltersService = fixture.debugElement.injector.get(
             DotPushPublishFiltersService
         );
         hostComponent = fixture.componentInstance;
-        spyOn(dotPushPublishFiltersService, 'get').and.returnValue(of(mockFilters));
+        jest.spyOn(dotPushPublishFiltersService, 'get').mockReturnValue(of(mockFilters));
         hostComponent.data = mockPublishFormData;
         fixture.detectChanges();
         pushPublishForm = fixture.debugElement.query(
@@ -171,7 +171,7 @@ xdescribe('DotPushPublishFormComponent', () => {
     });
 
     afterEach(() => {
-        jasmine.clock().uninstall();
+        jest.useRealTimers();
     });
 
     it('should load filters on load', () => {
@@ -321,7 +321,7 @@ xdescribe('DotPushPublishFormComponent', () => {
 
     it('should load custom code', () => {
         const dotParseHtmlService = fixture.debugElement.injector.get(DotParseHtmlService);
-        spyOn(dotParseHtmlService, 'parse').and.callThrough();
+        jest.spyOn(dotParseHtmlService, 'parse');
         const mockCustomCode: DotPushPublishDialogData = {
             customCode: '<h1>Code</h1>',
             ...mockPublishFormData

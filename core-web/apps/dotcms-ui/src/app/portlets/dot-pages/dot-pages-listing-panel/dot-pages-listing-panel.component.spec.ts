@@ -145,11 +145,11 @@ describe('DotPagesListingPanelComponent', () => {
             de = fixture.debugElement;
             component = fixture.componentInstance;
 
-            spyOn(store, 'getPages');
-            spyOn(store, 'setKeyword');
-            spyOn(store, 'setLanguageId');
-            spyOn(store, 'setArchived');
-            spyOn(component.goToUrl, 'emit');
+            jest.spyOn(store, 'getPages').mockImplementation(() => {});
+            jest.spyOn(store, 'setKeyword').mockImplementation(() => {});
+            jest.spyOn(store, 'setLanguageId').mockImplementation(() => {});
+            jest.spyOn(store, 'setArchived').mockImplementation(() => {});
+            jest.spyOn(component.goToUrl, 'emit').mockImplementation(() => {});
 
             fixture.detectChanges();
             await fixture.whenStable();

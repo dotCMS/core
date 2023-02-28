@@ -76,7 +76,7 @@ describe('DotContentletWrapperComponent', () => {
                 {
                     provide: DotHttpErrorManagerService,
                     useValue: {
-                        handle: jasmine.createSpy().and.returnValue(of({}))
+                        handle: jest.fn(() => of({}))
                     }
                 },
                 {
@@ -121,13 +121,13 @@ describe('DotContentletWrapperComponent', () => {
         titleService = de.injector.get(Title);
         dotIframeService = de.injector.get(DotIframeService);
 
-        spyOn(titleService, 'setTitle').and.callThrough();
-        spyOn(dotIframeService, 'reload');
-        spyOn(dotAddContentletService, 'clear');
-        spyOn(dotAddContentletService, 'load');
-        spyOn(dotAddContentletService, 'keyDown');
-        spyOn(component.shutdown, 'emit');
-        spyOn(component.custom, 'emit');
+        jest.spyOn(titleService, 'setTitle');
+        jest.spyOn(dotIframeService, 'reload').mockImplementation(() => {});
+        jest.spyOn(dotAddContentletService, 'clear').mockImplementation(() => {});
+        jest.spyOn(dotAddContentletService, 'load').mockImplementation(() => {});
+        jest.spyOn(dotAddContentletService, 'keyDown').mockImplementation(() => {});
+        jest.spyOn(component.shutdown, 'emit').mockImplementation(() => {});
+        jest.spyOn(component.custom, 'emit').mockImplementation(() => {});
     });
 
     afterEach(() => {
@@ -210,7 +210,7 @@ describe('DotContentletWrapperComponent', () => {
             });
 
             it('should set last Page title on close', () => {
-                spyOn(titleService, 'getTitle').and.callThrough();
+                jest.spyOn(titleService, 'getTitle');
                 titleService.setTitle('TESTHOME - dotCMS platform');
 
                 const params = {
@@ -247,7 +247,7 @@ describe('DotContentletWrapperComponent', () => {
                 });
 
                 it('should show confirmation dialog and handle accept', () => {
-                    spyOn(dotAlertConfirmService, 'confirm').and.callFake((conf) => {
+                    jest.spyOn(dotAlertConfirmService, 'confirm').mockImplementation((conf) => {
                         conf.accept();
                     });
 
@@ -265,8 +265,8 @@ describe('DotContentletWrapperComponent', () => {
                     });
 
                     expect<any>(dotAlertConfirmService.confirm).toHaveBeenCalledWith({
-                        accept: jasmine.any(Function),
-                        reject: jasmine.any(Function),
+                        accept: expect.any(Function),
+                        reject: expect.any(Function),
                         header: 'Header',
                         message: 'Message',
                         footerLabel: {
@@ -279,7 +279,7 @@ describe('DotContentletWrapperComponent', () => {
                 });
 
                 it('should show confirmation dialog and handle reject', () => {
-                    spyOn(dotAlertConfirmService, 'confirm').and.callFake((conf) => {
+                    jest.spyOn(dotAlertConfirmService, 'confirm').mockImplementation((conf) => {
                         conf.reject();
                     });
 
@@ -297,8 +297,8 @@ describe('DotContentletWrapperComponent', () => {
                     });
 
                     expect<any>(dotAlertConfirmService.confirm).toHaveBeenCalledWith({
-                        accept: jasmine.any(Function),
-                        reject: jasmine.any(Function),
+                        accept: expect.any(Function),
+                        reject: expect.any(Function),
                         header: 'Header',
                         message: 'Message',
                         footerLabel: {
@@ -334,7 +334,7 @@ describe('DotContentletWrapperComponent', () => {
                         }
                     };
 
-                    spyOnProperty(dotRouterService, 'currentPortlet').and.returnValue({
+                    spyOnProperty(dotRouterService, 'currentPortlet').mockReturnValue({
                         url: '/test/inode123',
                         id: '123'
                     });
@@ -353,7 +353,7 @@ describe('DotContentletWrapperComponent', () => {
                             }
                         }
                     };
-                    spyOn(titleService, 'getTitle').and.returnValue(' - dotCMS platform');
+                    jest.spyOn(titleService, 'getTitle').mockReturnValue(' - dotCMS platform');
                     dotIframeDialog.triggerEventHandler('custom', params);
 
                     expect(component.header).toBe('Blog');
@@ -370,7 +370,7 @@ describe('DotContentletWrapperComponent', () => {
                             }
                         }
                     };
-                    spyOn(titleService, 'getTitle').and.returnValue(' - dotCMS platform');
+                    jest.spyOn(titleService, 'getTitle').mockReturnValue(' - dotCMS platform');
                     dotIframeDialog.triggerEventHandler('custom', params);
 
                     expect(component.header).toBe('Blog');

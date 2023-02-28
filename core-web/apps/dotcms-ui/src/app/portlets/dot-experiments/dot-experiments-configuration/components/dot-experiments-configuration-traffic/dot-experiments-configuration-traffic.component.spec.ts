@@ -54,7 +54,7 @@ describe('DotExperimentsConfigurationTrafficComponent', () => {
         store = spectator.inject(DotExperimentsConfigurationStore);
 
         dotExperimentsService = spectator.inject(DotExperimentsService);
-        dotExperimentsService.getById.and.returnValue(
+        dotExperimentsService.getById.mockReturnValue(
             of({ ...ExperimentMocks[0], ...{ scheduling: null } })
         );
 
@@ -71,7 +71,7 @@ describe('DotExperimentsConfigurationTrafficComponent', () => {
     });
 
     it('should open sidebar of traffic allocation', () => {
-        spyOn(store, 'openSidebar');
+        jest.spyOn(store, 'openSidebar').mockImplementation(() => {});
         spectator.click(byTestId('traffic-allocation-button'));
 
         expect(store.openSidebar).toHaveBeenCalledOnceWith(ExperimentSteps.TRAFFIC);

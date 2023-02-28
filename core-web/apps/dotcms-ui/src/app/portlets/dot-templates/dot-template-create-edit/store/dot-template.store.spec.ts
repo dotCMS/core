@@ -63,7 +63,7 @@ function getTemplate({ identifier, name, body }) {
     };
 }
 
-const cacheSetSpy = jasmine.createSpy();
+const cacheSetSpy = jest.fn();
 
 const BASIC_PROVIDERS = [
     DotTemplateStore,
@@ -71,13 +71,13 @@ const BASIC_PROVIDERS = [
     {
         provide: DotHttpErrorManagerService,
         useValue: {
-            handle: jasmine.createSpy().and.returnValue(of({}))
+            handle: jest.fn(() => of({}))
         }
     },
     {
         provide: DotTemplatesService,
         useValue: {
-            create: jasmine.createSpy().and.returnValue(
+            create: jest.fn(() =>
                 of(
                     getTemplate({
                         identifier: '222-3000-333---30303-394',
@@ -86,7 +86,7 @@ const BASIC_PROVIDERS = [
                     })
                 )
             ),
-            update: jasmine.createSpy().and.returnValue(
+            update: jest.fn(() =>
                 of(
                     getTemplate({
                         identifier: '222-3000-333---30303-394',
@@ -95,7 +95,7 @@ const BASIC_PROVIDERS = [
                     })
                 )
             ),
-            saveAndPublish: jasmine.createSpy().and.returnValue(
+            saveAndPublish: jest.fn(() =>
                 of(
                     getTemplate({
                         identifier: '222-3000-333---30303-394',
@@ -109,8 +109,8 @@ const BASIC_PROVIDERS = [
     {
         provide: DotRouterService,
         useValue: {
-            goToEditTemplate: jasmine.createSpy(),
-            gotoPortlet: jasmine.createSpy()
+            goToEditTemplate: jest.fn(),
+            gotoPortlet: jest.fn()
         }
     },
     {
@@ -126,9 +126,9 @@ const BASIC_PROVIDERS = [
     {
         provide: DotGlobalMessageService,
         useValue: {
-            loading: jasmine.createSpy(),
-            success: jasmine.createSpy(),
-            error: jasmine.createSpy()
+            loading: jest.fn(),
+            success: jest.fn(),
+            error: jest.fn()
         }
     }
 ];
@@ -171,7 +171,7 @@ describe('DotTemplateStore', () => {
             dotTemplatesService = TestBed.inject(DotTemplatesService);
             dotHttpErrorManagerService = TestBed.inject(DotHttpErrorManagerService);
             dotEditLayoutService = TestBed.inject(DotEditLayoutService);
-            dotTemplatesService.update = jasmine.createSpy().and.returnValue(
+            dotTemplatesService.update = jest.fn(() =>
                 of(
                     getTemplate({
                         identifier: '222-3000-333---30303-394',
@@ -273,7 +273,7 @@ describe('DotTemplateStore', () => {
             dotGlobalMessageService = TestBed.inject(DotGlobalMessageService);
             dotHttpErrorManagerService = TestBed.inject(DotHttpErrorManagerService);
             dotEditLayoutService = TestBed.inject(DotEditLayoutService);
-            dotTemplatesService.update = jasmine.createSpy().and.returnValue(
+            dotTemplatesService.update = jest.fn(() =>
                 of(
                     getTemplate({
                         identifier: '222-3000-333---30303-394',
@@ -602,8 +602,8 @@ describe('DotTemplateStore', () => {
             });
 
             it('should call updateWorkingTemplate and call saveTemplateDebounce when is a design template', () => {
-                spyOn(service, 'updateWorkingTemplate');
-                spyOn(service, 'saveTemplateDebounce');
+                jest.spyOn(service, 'updateWorkingTemplate').mockImplementation(() => {});
+                jest.spyOn(service, 'saveTemplateDebounce').mockImplementation(() => {});
                 service.saveWorkingTemplate({
                     type: 'design',
                     layout: {
@@ -624,8 +624,8 @@ describe('DotTemplateStore', () => {
                 expect(service.saveTemplateDebounce).toHaveBeenCalled();
             });
             it('should call updateWorkingTemplate and not call saveTemplateDebounce when is a advanced template', () => {
-                spyOn(service, 'updateWorkingTemplate');
-                spyOn(service, 'saveTemplateDebounce');
+                jest.spyOn(service, 'updateWorkingTemplate').mockImplementation(() => {});
+                jest.spyOn(service, 'saveTemplateDebounce').mockImplementation(() => {});
                 service.saveWorkingTemplate({
                     type: 'advanced',
                     body: '',
@@ -640,7 +640,7 @@ describe('DotTemplateStore', () => {
 
             it('should handler error on update template', (done) => {
                 const error = throwError(new HttpErrorResponse(mockResponseView(400)));
-                dotTemplatesService.update = jasmine.createSpy().and.returnValue(error);
+                dotTemplatesService.update = jest.fn(() => error);
                 service.saveTemplate({
                     body: 'string',
                     friendlyName: 'string',

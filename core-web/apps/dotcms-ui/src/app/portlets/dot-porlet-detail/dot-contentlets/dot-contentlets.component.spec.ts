@@ -50,7 +50,7 @@ import { dotEventSocketURLFactory, MockDotUiColorsService } from '../../../test/
 
 @Injectable()
 class MockDotContentletEditorService {
-    edit = jasmine.createSpy('edit');
+    edit = jest.fn();
 }
 
 describe('DotContentletsComponent', () => {
@@ -128,7 +128,7 @@ describe('DotContentletsComponent', () => {
         dotContentletEditorService = de.injector.get(DotContentletEditorService);
         dotCustomEventHandlerService = de.injector.get(DotCustomEventHandlerService);
 
-        spyOn(dotIframeService, 'reloadData');
+        jest.spyOn(dotIframeService, 'reloadData').mockImplementation(() => {});
         fixture.detectChanges();
     });
 
@@ -150,7 +150,7 @@ describe('DotContentletsComponent', () => {
     });
 
     it('should call dotCustomEventHandlerService on customEvent', () => {
-        spyOn(dotCustomEventHandlerService, 'handle');
+        jest.spyOn(dotCustomEventHandlerService, 'handle').mockImplementation(() => {});
         const edit = de.query(By.css('dot-edit-contentlet'));
         edit.triggerEventHandler('custom', { data: 'test' });
         expect<any>(dotCustomEventHandlerService.handle).toHaveBeenCalledWith({ data: 'test' });

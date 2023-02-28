@@ -22,7 +22,7 @@ describe('DotContainerService', () => {
                 {
                     provide: DotContainersService,
                     useValue: {
-                        getById: jasmine.createSpy().and.returnValue(
+                        getById: jest.fn(() =>
                             of({
                                 this: {
                                     is: 'a page'

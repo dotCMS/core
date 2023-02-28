@@ -175,7 +175,7 @@ describe('MainLegacyComponent', () => {
         });
 
         it('should call dotCustomEventHandlerService on customEvent', () => {
-            spyOn(dotCustomEventHandlerService, 'handle');
+            jest.spyOn(dotCustomEventHandlerService, 'handle').mockImplementation(() => {});
             createContentlet.triggerEventHandler('custom', { data: 'test' });
 
             expect<any>(dotCustomEventHandlerService.handle).toHaveBeenCalledWith({ data: 'test' });

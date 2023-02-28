@@ -36,7 +36,7 @@ describe('DotWorkflowsActionsSelectorFieldService', () => {
                 {
                     provide: DotHttpErrorManagerService,
                     useValue: {
-                        handle: jasmine.createSpy().and.returnValue(of({}))
+                        handle: jest.fn(() => of({}))
                     }
                 }
             ]
@@ -47,7 +47,7 @@ describe('DotWorkflowsActionsSelectorFieldService', () => {
         dotHttpErrorManagerService = TestBed.get(DotHttpErrorManagerService);
         dotWorkflowsActionsService = TestBed.get(DotWorkflowsActionsService);
         service = TestBed.get(DotWorkflowsActionsSelectorFieldService);
-        spy = spyOn(dotWorkflowsActionsService, 'getByWorkflows').and.callThrough();
+        spy = jest.spyOn(dotWorkflowsActionsService, 'getByWorkflows');
 
         service.get().subscribe((actions: SelectItemGroup[]) => {
             result = actions;
@@ -58,7 +58,7 @@ describe('DotWorkflowsActionsSelectorFieldService', () => {
         service.load(mockWorkflows);
 
         expect(dotWorkflowsActionsService.getByWorkflows).toHaveBeenCalledWith(
-            jasmine.arrayContaining(mockWorkflows)
+            expect.arrayContaining(mockWorkflows)
         );
 
         expect(result).toEqual([
@@ -92,7 +92,7 @@ describe('DotWorkflowsActionsSelectorFieldService', () => {
                 url: ''
             })
         );
-        spy.and.returnValue(throwError(mock));
+        spy.mockReturnValue(throwError(mock));
         service.load(mockWorkflows);
 
         expect<any>(dotHttpErrorManagerService.handle).toHaveBeenCalledWith(mock);

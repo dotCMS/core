@@ -49,7 +49,7 @@ fdescribe('AppComponent', () => {
         dotUiColorsService = de.injector.get(DotUiColorsService);
         dotMessageService = de.injector.get(DotMessageService);
 
-        spyOn<any>(dotCmsConfigService, 'getConfig').and.returnValue(
+        jest.spyOn<any>(dotCmsConfigService, 'getConfig').mockReturnValue(
             of({
                 colors: {
                     primary: '#123',
@@ -61,8 +61,8 @@ fdescribe('AppComponent', () => {
                 }
             })
         );
-        spyOn(dotUiColorsService, 'setColors');
-        spyOn(dotMessageService, 'init');
+        jest.spyOn(dotUiColorsService, 'setColors').mockImplementation(() => {});
+        jest.spyOn(dotMessageService, 'init').mockImplementation(() => {});
     });
 
     it('should init message service', () => {
@@ -77,7 +77,7 @@ fdescribe('AppComponent', () => {
 
     it('should set ui colors', () => {
         fixture.detectChanges();
-        expect(dotUiColorsService.setColors).toHaveBeenCalledWith(jasmine.any(HTMLElement), {
+        expect(dotUiColorsService.setColors).toHaveBeenCalledWith(expect.any(HTMLElement), {
             primary: '#123',
             secondary: '#456',
             background: '#789'

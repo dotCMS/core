@@ -114,7 +114,7 @@ describe('DotExperimentsConfigurationComponent', () => {
             detectChanges: false
         });
         dotExperimentsService = spectator.inject(DotExperimentsService);
-        dotExperimentsService.getById.and.returnValue(of(ExperimentMocks[0]));
+        dotExperimentsService.getById.mockReturnValue(of(ExperimentMocks[0]));
     });
 
     it('should show the skeleton component when is loading', () => {

@@ -123,20 +123,20 @@ describe('DotEditLayoutDesignerComponent', () => {
                 {
                     provide: DotRouterService,
                     useValue: {
-                        goToSiteBrowser: jasmine.createSpy()
+                        goToSiteBrowser: jest.fn()
                     }
                 },
                 {
                     provide: DotEventsService,
                     useValue: {
-                        notify: jasmine.createSpy(),
-                        listen: jasmine.createSpy().and.returnValue(of({}))
+                        notify: jest.fn(),
+                        listen: jest.fn(() => of({}))
                     }
                 },
                 {
                     provide: DotHttpErrorManagerService,
                     useValue: {
-                        handle: jasmine.createSpy().and.returnValue(of({}))
+                        handle: jest.fn(() => of({}))
                     }
                 },
                 {
@@ -148,9 +148,9 @@ describe('DotEditLayoutDesignerComponent', () => {
                 {
                     provide: DotGlobalMessageService,
                     useValue: {
-                        display: jasmine.createSpy(),
-                        loading: jasmine.createSpy(),
-                        customDisplay: jasmine.createSpy()
+                        display: jest.fn(),
+                        loading: jest.fn(),
+                        customDisplay: jest.fn()
                     }
                 }
             ]
@@ -213,7 +213,7 @@ describe('DotEditLayoutDesignerComponent', () => {
         });
 
         it('should emit pushAndPublish event when button clicked', () => {
-            spyOn(component.saveAndPublish, 'emit').and.callThrough();
+            jest.spyOn(component.saveAndPublish, 'emit');
             fixture.detectChanges();
             const publishButton = fixture.debugElement.query(By.css('[data-testId="publishBtn"]'));
             publishButton.triggerEventHandler('click', null);
@@ -222,14 +222,14 @@ describe('DotEditLayoutDesignerComponent', () => {
         });
 
         it('should save changes when closeEditLayout is true', () => {
-            spyOn(component.save, 'emit');
+            jest.spyOn(component.save, 'emit').mockImplementation(() => {});
             dotEditLayoutService.changeCloseEditLayoutState(true);
             fixture.detectChanges();
             expect(component.save.emit).toHaveBeenCalledTimes(1);
         });
 
         it('should save changes when editing the form.', () => {
-            spyOn(component.updateTemplate, 'emit');
+            jest.spyOn(component.updateTemplate, 'emit').mockImplementation(() => {});
             component.form.get('title').setValue('Hello');
             fixture.detectChanges();
             expect(component.updateTemplate.emit).toHaveBeenCalledTimes(1);
@@ -313,7 +313,7 @@ describe('DotEditLayoutDesignerComponent', () => {
         });
 
         it('should Theme button be disabled', () => {
-            spyOn(dotThemesService, 'get').and.returnValue(observableOf(null));
+            jest.spyOn(dotThemesService, 'get').mockReturnValue(observableOf(null));
             fixture.detectChanges();
             const themeSelectorBtn = fixture.debugElement.query(
                 By.css('.dot-edit-layout__toolbar-action-themes')
@@ -323,7 +323,7 @@ describe('DotEditLayoutDesignerComponent', () => {
         });
 
         it('should get the emitted value from themes and trigger a save', () => {
-            spyOn(component, 'changeThemeHandler').and.callThrough();
+            jest.spyOn(component, 'changeThemeHandler');
             fixture.detectChanges();
             themeButton = fixture.debugElement.query(
                 By.css('.dot-edit-layout__toolbar-action-themes')

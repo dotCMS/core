@@ -53,7 +53,7 @@ describe('DotFormBuilderComponent', () => {
     });
 
     it('should show unlicense portlet', () => {
-        spyOnProperty(router, 'data').and.returnValue(
+        spyOnProperty(router, 'data').mockReturnValue(
             of({
                 unlicensed: {
                     title: 'Title',
@@ -84,7 +84,7 @@ describe('DotFormBuilderComponent', () => {
     });
 
     it('should show dot-content-types', () => {
-        spyOnProperty(router, 'data').and.returnValue(
+        spyOnProperty(router, 'data').mockReturnValue(
             of({
                 unlicensed: null
             })

@@ -167,10 +167,10 @@ describe('DotPaletteStore', () => {
     // Effects
     it('should load contentTypes to store', (done) => {
         const sortedDataMock = contentTypeDataMock.sort((a, b) => a.name.localeCompare(b.name));
-        spyOn(dotContentTypeService, 'filterContentTypes').and.returnValues(
+        jest.spyOn(dotContentTypeService, 'filterContentTypes').and.returnValues(
             of(sortedDataMock as DotCMSContentType[])
         );
-        spyOn(dotContentTypeService, 'getContentTypes').and.returnValues(of([]));
+        jest.spyOn(dotContentTypeService, 'getContentTypes').and.returnValues(of([]));
         dotPaletteStore.loadContentTypes(['blog', 'banner']);
         dotPaletteStore.vm$.subscribe((data) => {
             expect(data.contentTypes).toEqual(sortedDataMock as DotCMSContentType[]);
@@ -180,8 +180,8 @@ describe('DotPaletteStore', () => {
 
     it('should load inly widgets to store if allowedContent is empty', (done) => {
         const sortedDataMock = contentTypeDataMock.sort((a, b) => a.name.localeCompare(b.name));
-        spyOn(dotContentTypeService, 'filterContentTypes').and.returnValues(of([]));
-        spyOn(dotContentTypeService, 'getContentTypes').and.returnValues(
+        jest.spyOn(dotContentTypeService, 'filterContentTypes').and.returnValues(of([]));
+        jest.spyOn(dotContentTypeService, 'getContentTypes').and.returnValues(
             of(sortedDataMock as DotCMSContentType[])
         );
         dotPaletteStore.loadContentTypes([]);
@@ -195,7 +195,7 @@ describe('DotPaletteStore', () => {
     });
 
     it('should load Forms contentlets to store', (done) => {
-        spyOn(paginatorService, 'getWithOffset').and.returnValue(of([contentletFormDataMock]));
+        jest.spyOn(paginatorService, 'getWithOffset').mockReturnValue(of([contentletFormDataMock]));
         dotPaletteStore.loadContentlets('forms');
 
         expect(paginatorService.url).toBe('v1/contenttype');
@@ -215,7 +215,7 @@ describe('DotPaletteStore', () => {
     });
 
     it('should load Product contentlets to store', (done) => {
-        spyOn(dotESContentService, 'get').and.returnValue(
+        jest.spyOn(dotESContentService, 'get').mockReturnValue(
             of({
                 contentTook: 0,
                 jsonObjectView: {
@@ -246,7 +246,7 @@ describe('DotPaletteStore', () => {
     });
 
     it('should set filter value in store', (done) => {
-        spyOn(dotESContentService, 'get').and.returnValue(
+        jest.spyOn(dotESContentService, 'get').mockReturnValue(
             of({
                 contentTook: 0,
                 jsonObjectView: {
@@ -264,8 +264,8 @@ describe('DotPaletteStore', () => {
     });
 
     it('should filter contenttypes in stores', fakeAsync(() => {
-        spyOn(dotContentTypeService, 'filterContentTypes').and.returnValue(of(responseData));
-        spyOn(dotContentTypeService, 'getContentTypes').and.returnValue(of(responseData));
+        jest.spyOn(dotContentTypeService, 'filterContentTypes').mockReturnValue(of(responseData));
+        jest.spyOn(dotContentTypeService, 'getContentTypes').mockReturnValue(of(responseData));
 
         const allowedContent = ['banner', 'blog'];
         const filter = 'blog';
@@ -289,8 +289,8 @@ describe('DotPaletteStore', () => {
     }));
 
     it('should not call filterContentTypes is filter values es shoter than 3 caracteres', fakeAsync(() => {
-        spyOn(dotContentTypeService, 'filterContentTypes').and.returnValue(of(responseData));
-        spyOn(dotContentTypeService, 'getContentTypes').and.returnValue(of(responseData));
+        jest.spyOn(dotContentTypeService, 'filterContentTypes').mockReturnValue(of(responseData));
+        jest.spyOn(dotContentTypeService, 'getContentTypes').mockReturnValue(of(responseData));
 
         const allowedContent = ['banner', 'blog'];
         const filter = 'bo';

@@ -16,7 +16,7 @@ import { mockLoginFormResponse } from '@dotcms/utils-testing';
 
 @Injectable()
 class MockLoginPageStateService {
-    get = jasmine.createSpy('get').and.returnValue(of(mockLoginFormResponse));
+    get = jest.fn(() => of(mockLoginFormResponse));
 }
 
 describe('DotLoginPageComponent', () => {

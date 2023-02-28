@@ -83,16 +83,16 @@ const storeMock = {
     get renderThumbnail$() {
         return of(true);
     },
-    saveFavoritePage: jasmine.createSpy(),
+    saveFavoritePage: jest.fn(),
     get closeDialog$() {
         return of(false);
     },
     get actionState$() {
         return of(null);
     },
-    setLoading: jasmine.createSpy(),
-    setLoaded: jasmine.createSpy(),
-    setInitialStateData: jasmine.createSpy(),
+    setLoading: jest.fn(),
+    setLoaded: jest.fn(),
+    setInitialStateData: jest.fn(),
     vm$: of({
         pageRenderedHtml: '',
         roleOptions: [],
@@ -148,7 +148,7 @@ describe('DotFavoritePageComponent', () => {
                 {
                     provide: DynamicDialogRef,
                     useValue: {
-                        close: jasmine.createSpy()
+                        close: jest.fn()
                     }
                 },
                 {
@@ -159,8 +159,8 @@ describe('DotFavoritePageComponent', () => {
                                 pageState: mockRenderedPageState,
                                 pageRenderedHtml: '<p>test</p>'
                             },
-                            onSave: jasmine.createSpy(),
-                            onDelete: jasmine.createSpy()
+                            onSave: jest.fn(),
+                            onDelete: jest.fn()
                         }
                     }
                 }
@@ -368,13 +368,13 @@ describe('DotFavoritePageComponent', () => {
 
         describe('Store state changes', () => {
             it('should call close ref event when closeDialog event is executed from store', () => {
-                spyOnProperty(store, 'closeDialog$', 'get').and.returnValue(of(true));
+                spyOnProperty(store, 'closeDialog$', 'get').mockReturnValue(of(true));
                 fixture.detectChanges();
                 expect(dialogRef.close).toHaveBeenCalledWith(true);
             });
 
             it('should call onSave ref event when actionState event is executed from store with Saved value', () => {
-                spyOnProperty(store, 'actionState$', 'get').and.returnValue(
+                spyOnProperty(store, 'actionState$', 'get').mockReturnValue(
                     of(DotFavoritePageActionState.SAVED)
                 );
                 fixture.detectChanges();
@@ -382,7 +382,7 @@ describe('DotFavoritePageComponent', () => {
             });
 
             it('should call onDelete ref event when actionState event is executed from store with Deleted value', () => {
-                spyOnProperty(store, 'actionState$', 'get').and.returnValue(
+                spyOnProperty(store, 'actionState$', 'get').mockReturnValue(
                     of(DotFavoritePageActionState.DELETED)
                 );
                 fixture.detectChanges();
@@ -403,18 +403,18 @@ describe('DotFavoritePageComponent', () => {
                 get renderThumbnail$() {
                     return of(false);
                 },
-                setRenderThumbnail: jasmine.createSpy(),
-                saveFavoritePage: jasmine.createSpy(),
-                deleteFavoritePage: jasmine.createSpy(),
+                setRenderThumbnail: jest.fn(),
+                saveFavoritePage: jest.fn(),
+                deleteFavoritePage: jest.fn(),
                 get closeDialog$() {
                     return of(false);
                 },
                 get actionState$() {
                     return of(null);
                 },
-                setLoading: jasmine.createSpy(),
-                setLoaded: jasmine.createSpy(),
-                setInitialStateData: jasmine.createSpy(),
+                setLoading: jest.fn(),
+                setLoaded: jest.fn(),
+                setInitialStateData: jest.fn(),
                 vm$: of({
                     pageRenderedHtml: '',
                     roleOptions: [],

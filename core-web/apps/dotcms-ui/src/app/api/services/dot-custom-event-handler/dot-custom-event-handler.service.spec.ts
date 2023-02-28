@@ -114,7 +114,7 @@ describe('DotCustomEventHandlerService', () => {
     });
 
     it('should show loading indicator and go to edit page when event is emited by iframe', () => {
-        spyOn(dotLoadingIndicatorService, 'show');
+        jest.spyOn(dotLoadingIndicatorService, 'show').mockImplementation(() => {});
 
         service.handle(
             new CustomEvent('ng-event', {
@@ -138,7 +138,7 @@ describe('DotCustomEventHandlerService', () => {
     });
 
     it('should create a contentlet', () => {
-        spyOn(dotContentletEditorService, 'create');
+        jest.spyOn(dotContentletEditorService, 'create').mockImplementation(() => {});
         service.handle(
             new CustomEvent('ng-event', {
                 detail: {
@@ -184,9 +184,9 @@ describe('DotCustomEventHandlerService', () => {
     });
 
     it('should set colors in the ui', () => {
-        spyOn(dotUiColorsService, 'setColors');
+        jest.spyOn(dotUiColorsService, 'setColors').mockImplementation(() => {});
         const fakeHtmlEl = { hello: 'html' };
-        spyOn<any>(document, 'querySelector').and.returnValue(fakeHtmlEl);
+        jest.spyOn<any>(document, 'querySelector').mockReturnValue(fakeHtmlEl);
 
         service.handle(
             new CustomEvent('ng-event', {
@@ -214,7 +214,7 @@ describe('DotCustomEventHandlerService', () => {
             password: '123'
         };
 
-        spyOn(dotGenerateSecurePasswordService, 'open');
+        jest.spyOn(dotGenerateSecurePasswordService, 'open').mockImplementation(() => {});
         service.handle(
             new CustomEvent('ng-event', {
                 detail: {
@@ -235,7 +235,7 @@ describe('DotCustomEventHandlerService', () => {
             isBundle: false
         };
 
-        spyOn(dotPushPublishDialogService, 'open');
+        jest.spyOn(dotPushPublishDialogService, 'open').mockImplementation(() => {});
         service.handle(
             new CustomEvent('ng-event', {
                 detail: {
@@ -249,7 +249,7 @@ describe('DotCustomEventHandlerService', () => {
     });
 
     it('should notify to open download bundle dialog', () => {
-        spyOn(dotDownloadBundleDialogService, 'open');
+        jest.spyOn(dotDownloadBundleDialogService, 'open').mockImplementation(() => {});
         service.handle(
             new CustomEvent('ng-event', {
                 detail: {
@@ -262,7 +262,7 @@ describe('DotCustomEventHandlerService', () => {
     });
 
     it('should notify to open download bundle dialog', () => {
-        spyOn(dotWorkflowEventHandlerService, 'open');
+        jest.spyOn(dotWorkflowEventHandlerService, 'open').mockImplementation(() => {});
         service.handle(
             new CustomEvent('ng-event', {
                 detail: {
@@ -275,7 +275,7 @@ describe('DotCustomEventHandlerService', () => {
     });
 
     it('should notify to open contnt compare dialog', () => {
-        spyOn(dotEventsService, 'notify');
+        jest.spyOn(dotEventsService, 'notify').mockImplementation(() => {});
         service.handle(
             new CustomEvent('ng-event', {
                 detail: {

@@ -115,7 +115,7 @@ describe('DotTemplatePropsComponent', () => {
                 {
                     provide: DynamicDialogRef,
                     useValue: {
-                        close: jasmine.createSpy()
+                        close: jest.fn()
                     }
                 },
                 {
@@ -128,8 +128,8 @@ describe('DotTemplatePropsComponent', () => {
                                 theme: '',
                                 image: ''
                             },
-                            onSave: jasmine.createSpy(),
-                            onCancel: jasmine.createSpy()
+                            onSave: jest.fn(),
+                            onCancel: jest.fn()
                         }
                     }
                 }

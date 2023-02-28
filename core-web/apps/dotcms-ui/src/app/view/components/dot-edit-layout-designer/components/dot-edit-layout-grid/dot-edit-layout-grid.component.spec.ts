@@ -160,7 +160,7 @@ describe('DotEditLayoutGridComponent', () => {
     });
 
     it('should subscribe to layour service and call addBox', () => {
-        spyOn(component, 'addBox');
+        jest.spyOn(component, 'addBox').mockImplementation(() => {});
         dotEditLayoutService.addBox();
         expect(component.addBox).toHaveBeenCalledTimes(1);
     });
@@ -227,7 +227,7 @@ describe('DotEditLayoutGridComponent', () => {
         component.addBox();
         const dotDialogService =
             hostComponentfixture.debugElement.injector.get(DotAlertConfirmService);
-        spyOn(dotDialogService, 'confirm').and.callFake((conf) => {
+        jest.spyOn(dotDialogService, 'confirm').mockImplementation((conf) => {
             conf.accept();
         });
         component.onRemoveContainer(1);
@@ -275,16 +275,16 @@ describe('DotEditLayoutGridComponent', () => {
         component.addBox();
         const dotDialogService =
             hostComponentfixture.debugElement.injector.get(DotAlertConfirmService);
-        spyOn(dotDialogService, 'confirm').and.callFake((conf) => {
+        jest.spyOn(dotDialogService, 'confirm').mockImplementation((conf) => {
             conf.accept();
         });
-        spyOn(component, 'propagateChange');
+        jest.spyOn(component, 'propagateChange').mockImplementation(() => {});
         component.onRemoveContainer(1);
         expect(component.propagateChange).toHaveBeenCalledWith(fakeValue);
     });
 
     it('should Propagate Change after a grid box is moved', () => {
-        spyOn(component, 'propagateChange');
+        jest.spyOn(component, 'propagateChange').mockImplementation(() => {});
         component.updateModel();
         expect(component.propagateChange).toHaveBeenCalledWith(fakeValue);
     });
@@ -295,14 +295,14 @@ describe('DotEditLayoutGridComponent', () => {
             leftOffset: 3,
             width: 3
         });
-        spyOn(component, 'propagateChange');
+        jest.spyOn(component, 'propagateChange').mockImplementation(() => {});
         component.addBox();
         expect(component.propagateChange).toHaveBeenCalled();
     });
 
     it('should resize the grid when the left menu is toggle', fakeAsync(() => {
         const dotEventsService = hostComponentfixture.debugElement.injector.get(DotEventsService);
-        spyOn(component.ngGrid, 'triggerResize');
+        jest.spyOn(component.ngGrid, 'triggerResize').mockImplementation(() => {});
         dotEventsService.notify('dot-side-nav-toggle');
         tick(210);
         expect(component.ngGrid.triggerResize).toHaveBeenCalled();
@@ -310,7 +310,7 @@ describe('DotEditLayoutGridComponent', () => {
 
     it('should resize the grid when the layout sidebar change', fakeAsync(() => {
         const dotEventsService = hostComponentfixture.debugElement.injector.get(DotEventsService);
-        spyOn(component.ngGrid, 'triggerResize');
+        jest.spyOn(component.ngGrid, 'triggerResize').mockImplementation(() => {});
         dotEventsService.notify('layout-sidebar-change');
         tick(0);
         expect(component.ngGrid.triggerResize).toHaveBeenCalled();
@@ -393,7 +393,7 @@ describe('DotEditLayoutGridComponent', () => {
 
     it('should trigger change when row class is added', () => {
         const dotDialog = hostComponentfixture.debugElement.query(By.css('dot-dialog'));
-        spyOn(dotDialog.componentInstance, 'close').and.callThrough();
+        jest.spyOn(dotDialog.componentInstance, 'close');
 
         const addRowClassButtons = hostComponentfixture.debugElement.query(
             By.css('.box__add-row-class-button dot-icon-button-tooltip')
@@ -420,7 +420,7 @@ describe('DotEditLayoutGridComponent', () => {
         hostComponentfixture.detectChanges();
 
         const dotDialog = hostComponentfixture.debugElement.query(By.css('dot-dialog'));
-        spyOn(dotDialog.componentInstance, 'close').and.callThrough();
+        jest.spyOn(dotDialog.componentInstance, 'close');
 
         const addRowClassButtons = hostComponentfixture.debugElement.query(
             By.css('.box__add-row-class-button dot-icon-button-tooltip')
@@ -499,7 +499,7 @@ describe('DotEditLayoutGridComponent', () => {
 
     it('should trigger change when column class is added', () => {
         const dotDialog = hostComponentfixture.debugElement.query(By.css('dot-dialog'));
-        spyOn(dotDialog.componentInstance, 'close').and.callThrough();
+        jest.spyOn(dotDialog.componentInstance, 'close');
 
         const addRowClassButtons = hostComponentfixture.debugElement.query(
             By.css('.box__add-box-class-button')
@@ -528,7 +528,7 @@ describe('DotEditLayoutGridComponent', () => {
         hostComponentfixture.detectChanges();
 
         const dotDialog = hostComponentfixture.debugElement.query(By.css('dot-dialog'));
-        spyOn(dotDialog.componentInstance, 'close').and.callThrough();
+        jest.spyOn(dotDialog.componentInstance, 'close');
 
         const addRowClassButtons = hostComponentfixture.debugElement.query(
             By.css('.box__add-box-class-button')

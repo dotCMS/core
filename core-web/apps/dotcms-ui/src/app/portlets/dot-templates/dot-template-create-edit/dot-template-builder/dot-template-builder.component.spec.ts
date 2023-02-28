@@ -144,9 +144,9 @@ describe('DotTemplateBuilderComponent', () => {
         fixture = TestBed.createComponent(DotTemplateBuilderComponent);
         de = fixture.debugElement;
         component = fixture.componentInstance;
-        spyOn(component.save, 'emit');
-        spyOn(component.updateTemplate, 'emit');
-        spyOn(component.cancel, 'emit');
+        jest.spyOn(component.save, 'emit').mockImplementation(() => {});
+        jest.spyOn(component.updateTemplate, 'emit').mockImplementation(() => {});
+        jest.spyOn(component.cancel, 'emit').mockImplementation(() => {});
     });
 
     describe('design', () => {
@@ -196,7 +196,7 @@ describe('DotTemplateBuilderComponent', () => {
         });
 
         it('should emit save and publish event from dot-edit-layout-designer', () => {
-            spyOn(component.saveAndPublish, 'emit');
+            jest.spyOn(component.saveAndPublish, 'emit').mockImplementation(() => {});
             const builder = de.query(By.css('dot-edit-layout-designer'));
             builder.triggerEventHandler('saveAndPublish', EMPTY_TEMPLATE_DESIGN);
             expect(component.saveAndPublish.emit).toHaveBeenCalledWith(EMPTY_TEMPLATE_DESIGN);
@@ -276,7 +276,7 @@ describe('DotTemplateBuilderComponent', () => {
                     nativeElement: {
                         contentWindow: {
                             location: {
-                                reload: jasmine.createSpy('reload')
+                                reload: jest.fn()
                             }
                         }
                     }
@@ -294,7 +294,7 @@ describe('DotTemplateBuilderComponent', () => {
         });
 
         it('should handle custom event', () => {
-            spyOn(component.custom, 'emit');
+            jest.spyOn(component.custom, 'emit').mockImplementation(() => {});
             const permissions: IframeMockComponent = de.query(
                 By.css('[data-testId="historyIframe"]')
             ).componentInstance;

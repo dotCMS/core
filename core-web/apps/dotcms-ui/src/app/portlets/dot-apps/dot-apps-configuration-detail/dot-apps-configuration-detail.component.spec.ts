@@ -182,12 +182,12 @@ describe('DotAppsConfigurationDetailComponent', () => {
         appsServices = TestBed.inject(DotAppsService);
         routerService = TestBed.inject(DotRouterService);
         activatedRoute = TestBed.inject(ActivatedRoute);
-        spyOn(appsServices, 'saveSiteConfiguration').and.callThrough();
+        jest.spyOn(appsServices, 'saveSiteConfiguration');
     }));
 
     describe('Without dynamic params', () => {
         beforeEach(() => {
-            spyOnProperty(activatedRoute, 'data').and.returnValue(of(routeDatamock));
+            spyOnProperty(activatedRoute, 'data').mockReturnValue(of(routeDatamock));
             fixture.detectChanges();
         });
 
@@ -315,7 +315,7 @@ describe('DotAppsConfigurationDetailComponent', () => {
                 allowExtraParams: true,
                 sites: sitesDynamic
             };
-            spyOnProperty(activatedRoute, 'data').and.returnValue(of(mockRoute));
+            spyOnProperty(activatedRoute, 'data').mockReturnValue(of(mockRoute));
 
             fixture.detectChanges();
         });

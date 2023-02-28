@@ -96,7 +96,7 @@ describe('ContentTypeFieldsAddRowComponent', () => {
     });
 
     it('should bind send notification after click on Add Tab button', () => {
-        spyOn(dotEventsService, 'notify');
+        jest.spyOn(dotEventsService, 'notify').mockImplementation(() => {});
         fixture.detectChanges();
         de.queryAll(By.css('button'))[1].nativeElement.click();
         fixture.detectChanges();
@@ -129,7 +129,7 @@ describe('ContentTypeFieldsAddRowComponent', () => {
 
     it('should call setColumnSelect when "add-row" event received', fakeAsync(() => {
         fixture.detectChanges();
-        spyOn(comp, 'setColumnSelect');
+        jest.spyOn(comp, 'setColumnSelect').mockImplementation(() => {});
         dotEventsService.notify('add-row');
         tick();
         expect(comp.setColumnSelect).toHaveBeenCalled();

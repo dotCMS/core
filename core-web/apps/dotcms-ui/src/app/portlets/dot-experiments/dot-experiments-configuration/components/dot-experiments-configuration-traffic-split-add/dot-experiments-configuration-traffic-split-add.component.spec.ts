@@ -57,7 +57,7 @@ describe('DotExperimentsConfigurationTrafficSplitAddComponent', () => {
         });
         store = spectator.inject(DotExperimentsConfigurationStore);
         dotExperimentsService = spectator.inject(DotExperimentsService);
-        dotExperimentsService.getById.and.returnValue(of(ExperimentMocks[1]));
+        dotExperimentsService.getById.mockReturnValue(of(ExperimentMocks[1]));
         store.loadExperiment(EXPERIMENT_ID);
         store.setSidebarStatus({
             experimentStep: ExperimentSteps.TRAFFIC,
@@ -80,7 +80,7 @@ describe('DotExperimentsConfigurationTrafficSplitAddComponent', () => {
     });
 
     it('should save form when is valid ', () => {
-        spyOn(store, 'setSelectedTrafficProportion');
+        jest.spyOn(store, 'setSelectedTrafficProportion').mockImplementation(() => {});
         const submitButton = spectator.query(
             byTestId('add-traffic-split-button')
         ) as HTMLButtonElement;
@@ -104,7 +104,7 @@ describe('DotExperimentsConfigurationTrafficSplitAddComponent', () => {
     });
 
     it('should close sidebar ', () => {
-        spyOn(store, 'closeSidebar');
+        jest.spyOn(store, 'closeSidebar').mockImplementation(() => {});
         sidebar = spectator.query(Sidebar);
         sidebar.hide();
 

@@ -83,8 +83,8 @@ describe('DotAddToMenuService', () => {
 
     it('should throw null on create custom tool error 400', () => {
         const error404 = mockResponseView(400);
-        spyOn(dotHttpErrorManagerService, 'handle').and.callThrough();
-        spyOn(coreWebService, 'requestView').and.returnValue(throwError(error404));
+        jest.spyOn(dotHttpErrorManagerService, 'handle');
+        jest.spyOn(coreWebService, 'requestView').mockReturnValue(throwError(error404));
 
         dotAddToMenuService.createCustomTool(customToolData).subscribe((response: string) => {
             expect(response).toEqual(null);
@@ -94,8 +94,8 @@ describe('DotAddToMenuService', () => {
 
     it('should throw error 500 on create custom tool error', () => {
         const error404 = mockResponseView(500);
-        spyOn(dotHttpErrorManagerService, 'handle').and.callThrough();
-        spyOn(coreWebService, 'requestView').and.returnValue(throwError(error404));
+        jest.spyOn(dotHttpErrorManagerService, 'handle');
+        jest.spyOn(coreWebService, 'requestView').mockReturnValue(throwError(error404));
 
         dotAddToMenuService.createCustomTool(customToolData).subscribe((response: string) => {
             expect(response).toEqual(null);
@@ -125,8 +125,8 @@ describe('DotAddToMenuService', () => {
 
     it('should throw error 400 on add to layout custom portlet', () => {
         const error404 = mockResponseView(400);
-        spyOn(dotHttpErrorManagerService, 'handle').and.callThrough();
-        spyOn(coreWebService, 'requestView').and.returnValue(throwError(error404));
+        jest.spyOn(dotHttpErrorManagerService, 'handle');
+        jest.spyOn(coreWebService, 'requestView').mockReturnValue(throwError(error404));
 
         dotAddToMenuService
             .addToLayout({

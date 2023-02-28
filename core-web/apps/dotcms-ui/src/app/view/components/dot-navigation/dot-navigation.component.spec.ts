@@ -123,9 +123,9 @@ describe('DotNavigationComponent', () => {
 
         dotNavigationService = de.injector.get(DotNavigationService);
 
-        spyOn(dotNavigationService, 'goTo');
-        spyOn(dotNavigationService, 'reloadCurrentPortlet');
-        spyOn(dotNavigationService, 'setOpen').and.callThrough();
+        jest.spyOn(dotNavigationService, 'goTo').mockImplementation(() => {});
+        jest.spyOn(dotNavigationService, 'reloadCurrentPortlet').mockImplementation(() => {});
+        jest.spyOn(dotNavigationService, 'setOpen');
 
         fixture.detectChanges();
         navItem = de.query(By.css('dot-nav-item'));
@@ -148,8 +148,8 @@ describe('DotNavigationComponent', () => {
 
     it('should close on document click', () => {
         const collapsed$: BehaviorSubject<boolean> = new BehaviorSubject(true);
-        spyOnProperty(dotNavigationService, 'collapsed$', 'get').and.returnValue(collapsed$);
-        spyOn(dotNavigationService, 'closeAllSections');
+        spyOnProperty(dotNavigationService, 'collapsed$', 'get').mockReturnValue(collapsed$);
+        jest.spyOn(dotNavigationService, 'closeAllSections').mockImplementation(() => {});
         document.dispatchEvent(new MouseEvent('click'));
         expect(dotNavigationService.closeAllSections).toHaveBeenCalledTimes(1);
     });
@@ -159,9 +159,9 @@ describe('DotNavigationComponent', () => {
         let iframeOverlayService: IframeOverlayService;
 
         beforeEach(() => {
-            stopProp = jasmine.createSpy('stopProp');
+            stopProp = jest.fn();
             iframeOverlayService = de.injector.get(IframeOverlayService);
-            spyOn(iframeOverlayService, 'hide');
+            jest.spyOn(iframeOverlayService, 'hide').mockImplementation(() => {});
         });
 
         it('should reload portlet and hide overlay', () => {
@@ -198,7 +198,7 @@ describe('DotNavigationComponent', () => {
         describe('collapsed', () => {
             beforeEach(() => {
                 const collapsed$: BehaviorSubject<boolean> = new BehaviorSubject(true);
-                spyOnProperty(dotNavigationService, 'collapsed$', 'get').and.returnValue(
+                spyOnProperty(dotNavigationService, 'collapsed$', 'get').mockReturnValue(
                     collapsed$
                 );
                 navItem.triggerEventHandler('menuClick', {
@@ -220,7 +220,7 @@ describe('DotNavigationComponent', () => {
         describe('expanded', () => {
             beforeEach(() => {
                 const collapsed$: BehaviorSubject<boolean> = new BehaviorSubject(false);
-                spyOnProperty(dotNavigationService, 'collapsed$', 'get').and.returnValue(
+                spyOnProperty(dotNavigationService, 'collapsed$', 'get').mockReturnValue(
                     collapsed$
                 );
                 navItem.triggerEventHandler('menuClick', {

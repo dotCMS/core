@@ -119,10 +119,10 @@ describe('DotAppsConfigurationItemComponent', () => {
         });
 
         it('should emit export action with a site', () => {
-            const stopPropagationSpy = jasmine.createSpy('spy');
+            const stopPropagationSpy = jest.fn();
             const exportBtn = fixture.debugElement.queryAll(By.css('dot-icon-button'))[0];
 
-            spyOn(component.export, 'emit');
+            jest.spyOn(component.export, 'emit').mockImplementation(() => {});
 
             exportBtn.triggerEventHandler('click', {
                 stopPropagation: stopPropagationSpy,
@@ -133,14 +133,14 @@ describe('DotAppsConfigurationItemComponent', () => {
         });
 
         it('should emit delete action', () => {
-            const stopPropagationSpy = jasmine.createSpy('spy');
+            const stopPropagationSpy = jest.fn();
             const deleteBtn = fixture.debugElement.queryAll(By.css('dot-icon-button'))[1];
 
-            spyOn(dialogService, 'confirm').and.callFake((conf) => {
+            jest.spyOn(dialogService, 'confirm').mockImplementation((conf) => {
                 conf.accept();
             });
 
-            spyOn(component.delete, 'emit');
+            jest.spyOn(component.delete, 'emit').mockImplementation(() => {});
 
             deleteBtn.triggerEventHandler('click', {
                 stopPropagation: stopPropagationSpy,
@@ -152,10 +152,10 @@ describe('DotAppsConfigurationItemComponent', () => {
         });
 
         it('should emit edit action with a site', () => {
-            const stopPropagationSpy = jasmine.createSpy('spy');
+            const stopPropagationSpy = jest.fn();
             const editBtn = fixture.debugElement.queryAll(By.css('dot-icon-button'))[2];
 
-            spyOn(component.edit, 'emit');
+            jest.spyOn(component.edit, 'emit').mockImplementation(() => {});
 
             editBtn.triggerEventHandler('click', {
                 stopPropagation: stopPropagationSpy,
@@ -166,7 +166,7 @@ describe('DotAppsConfigurationItemComponent', () => {
         });
 
         it('should emit edit action when host component clicked', () => {
-            spyOn(component.edit, 'emit');
+            jest.spyOn(component.edit, 'emit').mockImplementation(() => {});
             fixture.debugElement.triggerEventHandler('click', {
                 stopPropagation: () => {
                     //
@@ -176,7 +176,7 @@ describe('DotAppsConfigurationItemComponent', () => {
         });
 
         it('should not emit edit action when host label clicked', () => {
-            spyOn(component.edit, 'emit');
+            jest.spyOn(component.edit, 'emit').mockImplementation(() => {});
             fixture.debugElement.query(By.css('dot-copy-link')).nativeElement.click();
             expect(component.edit.emit).toHaveBeenCalledTimes(0);
         });
@@ -201,10 +201,10 @@ describe('DotAppsConfigurationItemComponent', () => {
         });
 
         it('should emit edit action with No site', () => {
-            const stopPropagationSpy = jasmine.createSpy('spy');
+            const stopPropagationSpy = jest.fn();
             const createBtn = fixture.debugElement.queryAll(By.css('dot-icon-button'))[0];
 
-            spyOn(component.edit, 'emit');
+            jest.spyOn(component.edit, 'emit').mockImplementation(() => {});
 
             createBtn.triggerEventHandler('click', {
                 stopPropagation: stopPropagationSpy,

@@ -97,7 +97,9 @@ describe('DotEditLayoutSidebarComponent', () => {
             .query(By.css('dot-edit-layout-sidebar'))
             .injector.get(DotEditLayoutService);
 
-        spyOn(dotEditLayoutService, 'getDotLayoutSidebar').and.returnValue(processedContainers);
+        jest.spyOn(dotEditLayoutService, 'getDotLayoutSidebar').mockReturnValue(
+            processedContainers
+        );
 
         hostComponentfixture.detectChanges();
         expect(dotEditLayoutService.getDotLayoutSidebar).toHaveBeenCalled();
@@ -123,8 +125,8 @@ describe('DotEditLayoutSidebarComponent', () => {
             location: 'left',
             width: 'small'
         };
-        spyOn(component, 'updateAndPropagate').and.callThrough();
-        spyOn(component, 'propagateChange');
+        jest.spyOn(component, 'updateAndPropagate');
+        jest.spyOn(component, 'propagateChange').mockImplementation(() => {});
         containerSelector.triggerEventHandler('change', processedContainers);
         component.updateAndPropagate(processedContainers);
         expect(component.updateAndPropagate).toHaveBeenCalled();
@@ -135,8 +137,8 @@ describe('DotEditLayoutSidebarComponent', () => {
         const sidebarProperties: DebugElement = hostComponentfixture.debugElement.query(
             By.css('dot-sidebar-properties')
         );
-        spyOn(component, 'updateAndPropagate').and.callThrough();
-        spyOn(component, 'propagateChange');
+        jest.spyOn(component, 'updateAndPropagate');
+        jest.spyOn(component, 'propagateChange').mockImplementation(() => {});
         sidebarProperties.triggerEventHandler('change', '');
         component.updateAndPropagate();
         expect(component.updateAndPropagate).toHaveBeenCalled();

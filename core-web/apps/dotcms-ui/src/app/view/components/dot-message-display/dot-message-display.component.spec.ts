@@ -97,7 +97,7 @@ describe('DotMessageDisplayComponent', () => {
 
     it('should add a new message', () => {
         const messageService = fixture.componentRef.injector.get(MessageService);
-        spyOn(messageService, 'add');
+        jest.spyOn(messageService, 'add').mockImplementation(() => {});
 
         dotMessageDisplayServiceMock.messages$.next({
             life: 300,
@@ -115,7 +115,7 @@ describe('DotMessageDisplayComponent', () => {
     });
 
     it('should unsubscribe', () => {
-        spyOn(dotMessageDisplayServiceMock, 'unsubscribe');
+        jest.spyOn(dotMessageDisplayServiceMock, 'unsubscribe').mockImplementation(() => {});
         component.ngOnDestroy();
         expect(dotMessageDisplayServiceMock.unsubscribe).toHaveBeenCalled();
     });

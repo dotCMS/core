@@ -80,8 +80,8 @@ describe('DotExperimentsCreateStore', () => {
             name: 'Experiment name',
             description: 'description or goal'
         };
-        const spydotExperimentsService = spyOn(dotExperimentsService, 'add').and.callThrough();
-        const spyMessageService = spyOn(MessageServiceMock, 'add').and.callThrough();
+        const spydotExperimentsService = jest.spyOn(dotExperimentsService, 'add');
+        const spyMessageService = jest.spyOn(MessageServiceMock, 'add');
 
         spectator.service.isSaving$.subscribe((isSaving) => {
             isSavingSatuses.push(isSaving);

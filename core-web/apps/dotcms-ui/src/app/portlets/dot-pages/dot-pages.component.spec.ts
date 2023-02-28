@@ -74,12 +74,12 @@ const storeMock = {
     get languageLabels$() {
         return of({});
     },
-    clearMenuActions: jasmine.createSpy(),
-    getFavoritePages: jasmine.createSpy(),
-    getPages: jasmine.createSpy(),
-    showActionsMenu: jasmine.createSpy(),
-    setInitialStateData: jasmine.createSpy(),
-    limitFavoritePages: jasmine.createSpy(),
+    clearMenuActions: jest.fn(),
+    getFavoritePages: jest.fn(),
+    getPages: jest.fn(),
+    showActionsMenu: jest.fn(),
+    setInitialStateData: jest.fn(),
+    limitFavoritePages: jest.fn(),
     vm$: of({
         favoritePages: {
             items: [],
@@ -139,8 +139,8 @@ describe('DotPagesComponent', () => {
         component = fixture.componentInstance;
 
         fixture.detectChanges();
-        spyOn(component.menu, 'hide');
-        spyOn(dotMessageDisplayService, 'push');
+        jest.spyOn(component.menu, 'hide').mockImplementation(() => {});
+        jest.spyOn(dotMessageDisplayService, 'push').mockImplementation(() => {});
     });
 
     it('should init store', () => {

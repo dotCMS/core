@@ -119,8 +119,8 @@ describe('DotAppsConfigurationDetailFormComponent', () => {
             de = fixture.debugElement;
             component = de.componentInstance;
             component.formFields = secrets;
-            spyOn(component.data, 'emit');
-            spyOn(component.valid, 'emit');
+            jest.spyOn(component.data, 'emit').mockImplementation(() => {});
+            jest.spyOn(component.valid, 'emit').mockImplementation(() => {});
             fixture.detectChanges();
         });
 
@@ -134,7 +134,7 @@ describe('DotAppsConfigurationDetailFormComponent', () => {
 
         it('should focus on first input when loaded', async () => {
             const focusField = component.formContainer.nativeElement.querySelector('#name');
-            spyOn(focusField, 'focus');
+            jest.spyOn(focusField, 'focus').mockImplementation(() => {});
             fixture.detectChanges();
             await fixture.whenStable();
             expect(focusField.focus).toHaveBeenCalledTimes(1);
@@ -218,7 +218,7 @@ describe('DotAppsConfigurationDetailFormComponent', () => {
         it('should Button open link on new tab when clicked on a configured app', () => {
             component.appConfigured = true;
             fixture.detectChanges();
-            const openMock = jasmine.createSpy();
+            const openMock = jest.fn();
             window.open = openMock;
             const row = de.query(By.css('[data-testid="integration"]'));
             const button = row.query(By.css('button')).nativeElement;

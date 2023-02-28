@@ -43,25 +43,21 @@ describe('DotWhatsChangedComponent', () => {
                 {
                     provide: DotEditPageService,
                     useValue: {
-                        whatChange: jasmine
-                            .createSpy()
-                            .and.returnValue(
-                                of({ diff: true, renderLive: 'ABC', renderWorking: 'ABC DEF' })
-                            )
+                        whatChange: jest.fn(() =>
+                            of({ diff: true, renderLive: 'ABC', renderWorking: 'ABC DEF' })
+                        )
                     }
                 },
                 {
                     provide: DotDOMHtmlUtilService,
                     useValue: {
-                        createStyleElement: jasmine
-                            .createSpy()
-                            .and.returnValue(document.createElement('style'))
+                        createStyleElement: jest.fn(() => document.createElement('style'))
                     }
                 },
                 {
                     provide: DotHttpErrorManagerService,
                     useValue: {
-                        handle: jasmine.createSpy()
+                        handle: jest.fn()
                     }
                 }
             ],

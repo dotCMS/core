@@ -60,14 +60,14 @@ describe('DotSidebarPropertiesComponent', () => {
 
     it('should toggle overlay panel', () => {
         const button = fixture.debugElement.query(By.css('button'));
-        spyOn(component.overlay, 'toggle');
+        jest.spyOn(component.overlay, 'toggle').mockImplementation(() => {});
 
         button.nativeElement.click();
         expect(component.overlay.toggle).toHaveBeenCalledTimes(1);
     });
 
     it('should hide overlay panel when a sidebar size property is clicked', () => {
-        spyOn(component.overlay, 'hide');
+        jest.spyOn(component.overlay, 'hide').mockImplementation(() => {});
         const radioButtons = fixture.debugElement.queryAll(
             By.css('.dot-sidebar-properties__radio-buttons-container p-radioButton')
         );
@@ -76,8 +76,8 @@ describe('DotSidebarPropertiesComponent', () => {
     });
 
     it('should send a layout-sidebar-change notification when a sidebar size property is updated', () => {
-        spyOn(component.switch, 'emit');
-        spyOn(dotEventsService, 'notify');
+        jest.spyOn(component.switch, 'emit').mockImplementation(() => {});
+        jest.spyOn(dotEventsService, 'notify').mockImplementation(() => {});
         const radioButtons = fixture.debugElement.queryAll(
             By.css('.dot-sidebar-properties__radio-buttons-container p-radioButton')
         );

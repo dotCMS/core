@@ -71,7 +71,7 @@ const fakeEvent = () => {
     return {
         target: {
             contentWindow: {
-                focus: jasmine.createSpy('focus')
+                focus: jest.fn()
             }
         }
     };
@@ -166,12 +166,12 @@ describe('DotIframeDialogComponent', () => {
 
             describe('events', () => {
                 beforeEach(() => {
-                    spyOn(component.beforeClose, 'emit');
-                    spyOn(component.shutdown, 'emit');
-                    spyOn(component.custom, 'emit');
-                    spyOn(component.keyWasDown, 'emit');
-                    spyOn(component.charge, 'emit');
-                    spyOn(dialog.componentInstance, 'close');
+                    jest.spyOn(component.beforeClose, 'emit').mockImplementation(() => {});
+                    jest.spyOn(component.shutdown, 'emit').mockImplementation(() => {});
+                    jest.spyOn(component.custom, 'emit').mockImplementation(() => {});
+                    jest.spyOn(component.keyWasDown, 'emit').mockImplementation(() => {});
+                    jest.spyOn(component.charge, 'emit').mockImplementation(() => {});
+                    jest.spyOn(dialog.componentInstance, 'close').mockImplementation(() => {});
                 });
 
                 describe('dot-iframe', () => {
@@ -249,7 +249,7 @@ describe('DotIframeDialogComponent', () => {
             hostFixture.detectChanges();
             dialog = de.query(By.css('dot-dialog'));
             dialogComponent = dialog.componentInstance;
-            spyOn(component.beforeClose, 'emit');
+            jest.spyOn(component.beforeClose, 'emit').mockImplementation(() => {});
         });
 
         it('should emit beforeClose when a observer is set', () => {

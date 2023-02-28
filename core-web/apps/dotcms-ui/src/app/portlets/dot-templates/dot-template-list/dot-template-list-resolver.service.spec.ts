@@ -58,8 +58,8 @@ describe('DotTemplateListResolverService', () => {
     });
 
     it('should set pagination params, get first page, check license and publish environments', () => {
-        spyOn(dotLicenseService, 'isEnterprise').and.returnValue(of(true));
-        spyOn(pushPublishService, 'getEnvironments').and.returnValue(
+        jest.spyOn(dotLicenseService, 'isEnterprise').mockReturnValue(of(true));
+        jest.spyOn(pushPublishService, 'getEnvironments').mockReturnValue(
             of([
                 {
                     id: '1',

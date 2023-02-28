@@ -20,7 +20,7 @@ class RouterMock {
         }
     };
 
-    navigate = jasmine.createSpy('navigate').and.callFake(() => {
+    navigate = jest.fn(() => {
         return new Promise((resolve) => {
             resolve(true);
         });
@@ -88,7 +88,7 @@ describe('DotRouterService', () => {
     });
 
     it('should get queryParams from Router', () => {
-        spyOn<any>(router, 'getCurrentNavigation').and.returnValue({
+        jest.spyOn<any>(router, 'getCurrentNavigation').mockReturnValue({
             finalUrl: {
                 queryParams: {
                     hola: 'mundo'
@@ -101,7 +101,7 @@ describe('DotRouterService', () => {
     });
 
     it('should get queryParams from ActivatedRoute', () => {
-        spyOn(router, 'getCurrentNavigation').and.returnValue(null);
+        jest.spyOn(router, 'getCurrentNavigation').mockReturnValue(null);
         expect(service.queryParams).toEqual({
             hello: 'world'
         });
@@ -113,7 +113,7 @@ describe('DotRouterService', () => {
     });
 
     it('should go to edit page', () => {
-        spyOn(service, 'goToEditPage');
+        jest.spyOn(service, 'goToEditPage').mockImplementation(() => {});
         service.goToMain('/about/us');
         expect(service.goToEditPage).toHaveBeenCalledWith({ url: '/about/us' });
     });
@@ -249,7 +249,7 @@ describe('DotRouterService', () => {
     describe('go to login', () => {
         beforeEach(() => {
             const mockDate = new Date(1466424490000);
-            jasmine.clock().install();
+            jest.useFakeTimers();
             jasmine.clock().mockDate(mockDate);
         });
 
@@ -258,7 +258,7 @@ describe('DotRouterService', () => {
             expect(router.navigate).toHaveBeenCalledWith(['/public/login'], {
                 queryParams: { r: 1466424490000 }
             });
-            jasmine.clock().uninstall();
+            jest.useRealTimers();
         });
 
         it('should go to login with cache busting', () => {
@@ -268,14 +268,14 @@ describe('DotRouterService', () => {
             expect(router.navigate).toHaveBeenCalledWith(['/public/login'], {
                 queryParams: { test: 'test', r: 1466424490000 }
             });
-            jasmine.clock().uninstall();
+            jest.useRealTimers();
         });
     });
 
     describe('go to logout', () => {
         beforeEach(() => {
             const mockDate = new Date(1466424490000);
-            jasmine.clock().install();
+            jest.useFakeTimers();
             jasmine.clock().mockDate(mockDate);
         });
 
@@ -284,7 +284,7 @@ describe('DotRouterService', () => {
             expect(router.navigate).toHaveBeenCalledWith(['/dotAdmin/logout'], {
                 queryParams: { r: 1466424490000 }
             });
-            jasmine.clock().uninstall();
+            jest.useRealTimers();
         });
     });
 });

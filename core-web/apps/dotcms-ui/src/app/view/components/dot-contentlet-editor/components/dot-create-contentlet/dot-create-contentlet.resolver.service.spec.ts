@@ -10,10 +10,9 @@ import { DotContentletEditorService } from '@components/dot-contentlet-editor/se
 
 import { DotCreateContentletResolver } from './dot-create-contentlet.resolver.service';
 
-const activatedRouteSnapshotMock: any = jasmine.createSpyObj<ActivatedRouteSnapshot>(
-    'ActivatedRouteSnapshot',
-    ['toString']
-);
+const activatedRouteSnapshotMock: any = {
+    toString: jest.fn()
+};
 activatedRouteSnapshotMock.paramMap = {};
 
 class DotContentletEditorServiceMock {
@@ -40,7 +39,7 @@ describe('DotCreateContentletResolver', () => {
 
     it('should get and return apps with configurations', () => {
         activatedRouteSnapshotMock.paramMap.get = () => '123';
-        spyOn<any>(dotContentletEditorService, 'getActionUrl').and.returnValue(of('urlTest'));
+        jest.spyOn<any>(dotContentletEditorService, 'getActionUrl').mockReturnValue(of('urlTest'));
 
         dotCreateContentletResolver.resolve(activatedRouteSnapshotMock).subscribe((url: string) => {
             expect(url).toEqual('urlTest');

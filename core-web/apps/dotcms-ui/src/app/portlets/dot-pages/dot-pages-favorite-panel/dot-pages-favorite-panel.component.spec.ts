@@ -202,10 +202,10 @@ describe('DotPagesFavoritePanelComponent', () => {
             de = fixture.debugElement;
             component = fixture.componentInstance;
 
-            spyOn(store, 'getFavoritePages');
-            spyOn(dialogService, 'open');
-            spyOn(component.goToUrl, 'emit');
-            spyOn(component.showActionsMenu, 'emit');
+            jest.spyOn(store, 'getFavoritePages').mockImplementation(() => {});
+            jest.spyOn(dialogService, 'open').mockImplementation(() => {});
+            jest.spyOn(component.goToUrl, 'emit').mockImplementation(() => {});
+            jest.spyOn(component.showActionsMenu, 'emit').mockImplementation(() => {});
 
             fixture.detectChanges();
         });
@@ -342,10 +342,10 @@ describe('DotPagesFavoritePanelComponent', () => {
             de = fixture.debugElement;
             component = fixture.componentInstance;
 
-            spyOn(store, 'getFavoritePages');
-            spyOn(store, 'limitFavoritePages');
-            spyOn(dialogService, 'open');
-            spyOn(component.goToUrl, 'emit');
+            jest.spyOn(store, 'getFavoritePages').mockImplementation(() => {});
+            jest.spyOn(store, 'limitFavoritePages').mockImplementation(() => {});
+            jest.spyOn(dialogService, 'open').mockImplementation(() => {});
+            jest.spyOn(component.goToUrl, 'emit').mockImplementation(() => {});
 
             fixture.detectChanges();
         });

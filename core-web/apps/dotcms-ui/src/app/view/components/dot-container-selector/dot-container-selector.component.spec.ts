@@ -108,7 +108,7 @@ describe('ContainerSelectorComponent', () => {
     });
 
     it('should set onInit Pagination Service with right values', () => {
-        spyOn(paginatorService, 'setExtraParams');
+        jest.spyOn(paginatorService, 'setExtraParams').mockImplementation(() => {});
         comp.ngOnInit();
         expect(paginatorService.setExtraParams).toHaveBeenCalled();
     });
@@ -117,7 +117,7 @@ describe('ContainerSelectorComponent', () => {
         fixture.detectChanges();
         const searchable = de.query(By.css('[data-testId="searchableDropdown"]'));
         expect(searchable.attributes).toEqual(
-            jasmine.objectContaining({
+            expect.objectContaining({
                 'ng-reflect-label-property-name': 'name,parentPermissionable.host',
                 'ng-reflect-multiple': 'true',
                 'ng-reflect-page-link-size': '5',
@@ -140,7 +140,7 @@ describe('ContainerSelectorComponent', () => {
         fixture.detectChanges();
 
         paginatorService.totalRecords = 2;
-        spyOn(paginatorService, 'getWithOffset').and.returnValue(observableOf([]));
+        jest.spyOn(paginatorService, 'getWithOffset').mockReturnValue(observableOf([]));
 
         fixture.detectChanges();
 
@@ -162,7 +162,7 @@ describe('ContainerSelectorComponent', () => {
         fixture.detectChanges();
 
         paginatorService.totalRecords = 2;
-        spyOn(paginatorService, 'getWithOffset').and.returnValue(observableOf([]));
+        jest.spyOn(paginatorService, 'getWithOffset').mockReturnValue(observableOf([]));
 
         fixture.detectChanges();
 
@@ -175,7 +175,7 @@ describe('ContainerSelectorComponent', () => {
 
     it('should set container list replacing the identifier for the path, if needed', () => {
         fixture.detectChanges();
-        spyOn(paginatorService, 'getWithOffset').and.returnValue(observableOf(containers));
+        jest.spyOn(paginatorService, 'getWithOffset').mockReturnValue(observableOf(containers));
         const searchable: SearchableDropdownComponent = de.query(
             By.css('[data-testId="searchableDropdown"]')
         ).componentInstance;

@@ -33,9 +33,9 @@ import { DotEditPageResolver } from './dot-edit-page-resolver.service';
 
 import { DotPageStateService } from '../../../content/services/dot-page-state/dot-page-state.service';
 
-const route: any = jasmine.createSpyObj<ActivatedRouteSnapshot>('ActivatedRouteSnapshot', [
-    'toString'
-]);
+const route: any = {
+    toString: jest.fn()
+};
 
 route.queryParams = {};
 
@@ -77,10 +77,10 @@ describe('DotEditPageResolver', () => {
         dotEditPageResolver = injector.get(DotEditPageResolver);
         dotHttpErrorManagerService = injector.get(DotHttpErrorManagerService);
         dotPageStateService = injector.get(DotPageStateService);
-        dotPageStateServiceRequestPageSpy = spyOn(dotPageStateService, 'requestPage');
+        dotPageStateServiceRequestPageSpy = jest.spyOn(dotPageStateService, 'requestPage');
         dotRouterService = injector.get(DotRouterService);
 
-        spyOn(dotHttpErrorManagerService, 'handle').and.callThrough();
+        jest.spyOn(dotHttpErrorManagerService, 'handle');
     });
 
     beforeEach(() => {
@@ -99,7 +99,7 @@ describe('DotEditPageResolver', () => {
 
     it('should return a DotRenderedPageState', () => {
         const mock = new DotPageRenderState(mockUser(), new DotPageRender(mockDotRenderedPage()));
-        dotPageStateServiceRequestPageSpy.and.returnValue(of(mock));
+        dotPageStateServiceRequestPageSpy.mockReturnValue(of(mock));
 
         dotEditPageResolver.resolve(route).subscribe((state: DotPageRenderState) => {
             expect(state).toEqual(mock);
@@ -116,7 +116,7 @@ describe('DotEditPageResolver', () => {
     it('should redirect to site-browser when request fail', () => {
         const fake403Response = mockResponseView(403);
 
-        dotPageStateServiceRequestPageSpy.and.returnValue(throwError(fake403Response));
+        dotPageStateServiceRequestPageSpy.mockReturnValue(throwError(fake403Response));
 
         dotEditPageResolver.resolve(route).subscribe();
         expect(dotRouterService.goToSiteBrowser).toHaveBeenCalledTimes(1);
@@ -151,7 +151,7 @@ describe('DotEditPageResolver', () => {
                 mockUser(),
                 new DotPageRender(mockDotRenderedPage())
             );
-            dotPageStateServiceRequestPageSpy.and.returnValue(of(mock));
+            dotPageStateServiceRequestPageSpy.mockReturnValue(of(mock));
 
             dotEditPageResolver.resolve(route).subscribe((state: DotPageRenderState) => {
                 expect(state).toEqual(mock);
@@ -170,7 +170,7 @@ describe('DotEditPageResolver', () => {
                     }
                 })
             );
-            dotPageStateServiceRequestPageSpy.and.returnValue(of(mock));
+            dotPageStateServiceRequestPageSpy.mockReturnValue(of(mock));
 
             dotEditPageResolver.resolve(route).subscribe((state: DotPageRenderState) => {
                 expect(state).toBeNull();
@@ -196,7 +196,7 @@ describe('DotEditPageResolver', () => {
                     layout: null
                 })
             );
-            dotPageStateServiceRequestPageSpy.and.returnValue(of(mock));
+            dotPageStateServiceRequestPageSpy.mockReturnValue(of(mock));
 
             dotEditPageResolver.resolve(route).subscribe((state: DotPageRenderState) => {
                 expect(state).toBeNull();

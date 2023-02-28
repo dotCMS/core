@@ -6,7 +6,7 @@ describe('Dot Utils', () => {
     it('should return anchor with the correct values', () => {
         const blobMock = new Blob(['']);
         const fileName = 'doc.txt';
-        spyOn(window.URL, 'createObjectURL');
+        jest.spyOn(window.URL, 'createObjectURL').mockImplementation(() => {});
         const anchor = dotUtils.getDownloadLink(blobMock, fileName);
 
         expect(anchor.download).toEqual(fileName);

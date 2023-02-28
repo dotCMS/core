@@ -141,7 +141,7 @@ describe('DotThemeSelectorComponent', () => {
                 accept: {
                     label: 'Apply',
                     disabled: true,
-                    action: jasmine.any(Function)
+                    action: expect.any(Function)
                 },
                 cancel: {
                     label: 'Cancel'
@@ -153,8 +153,8 @@ describe('DotThemeSelectorComponent', () => {
     describe('On Init', () => {
         it('should set url, the page size and hostid for the pagination service', () => {
             paginatorService.searchParam = 'test';
-            spyOn(paginatorService, 'setExtraParams');
-            spyOn(paginatorService, 'deleteExtraParams');
+            jest.spyOn(paginatorService, 'setExtraParams').mockImplementation(() => {});
+            jest.spyOn(paginatorService, 'deleteExtraParams').mockImplementation(() => {});
             fixture.detectChanges();
             expect(paginatorService.paginationPerPage).toBe(8);
             expect(paginatorService.url).toBe('v1/themes');
@@ -173,8 +173,8 @@ describe('DotThemeSelectorComponent', () => {
         });
 
         it('should call pagination service with offset of 0 ', () => {
-            spyOn(component.cd, 'detectChanges').and.callThrough();
-            spyOn(paginatorService, 'getWithOffset').and.returnValue(of([...mockDotThemes]));
+            jest.spyOn(component.cd, 'detectChanges');
+            jest.spyOn(paginatorService, 'getWithOffset').mockReturnValue(of([...mockDotThemes]));
             fixture.detectChanges();
 
             expect(paginatorService.getWithOffset).toHaveBeenCalledWith(0);
@@ -201,7 +201,7 @@ describe('DotThemeSelectorComponent', () => {
                 }
             };
 
-            spyOn(paginatorService, 'getWithOffset').and.returnValue(
+            jest.spyOn(paginatorService, 'getWithOffset').mockReturnValue(
                 of([...mockDotThemes, systemTheme])
             );
             component.siteChange(mockSites[0]);
@@ -216,12 +216,12 @@ describe('DotThemeSelectorComponent', () => {
 
     describe('User interaction', () => {
         beforeEach(() => {
-            spyOn(paginatorService, 'getWithOffset').and.returnValue(of(mockDotThemes));
+            jest.spyOn(paginatorService, 'getWithOffset').mockReturnValue(of(mockDotThemes));
         });
 
         it('should set pagination, call endpoint and clear search field on site change ', () => {
-            spyOn(component, 'paginate');
-            spyOn(paginatorService, 'setExtraParams');
+            jest.spyOn(component, 'paginate').mockImplementation(() => {});
+            jest.spyOn(paginatorService, 'setExtraParams').mockImplementation(() => {});
             component.siteChange(mockSites[0]);
             fixture.detectChanges();
 
@@ -235,7 +235,7 @@ describe('DotThemeSelectorComponent', () => {
         });
 
         it('should set the current value when the user click a specific theme', () => {
-            spyOn(component, 'selectTheme').and.callThrough();
+            jest.spyOn(component, 'selectTheme');
             component.paginate({ first: 0 });
             fixture.detectChanges();
             const themes: DebugElement[] = fixture.debugElement.queryAll(By.css('.dot-theme-item'));
@@ -256,7 +256,7 @@ describe('DotThemeSelectorComponent', () => {
         });
 
         it('should call theme enpoint on search', fakeAsync(() => {
-            spyOn(component, 'paginate');
+            jest.spyOn(component, 'paginate').mockImplementation(() => {});
             fixture.detectChanges();
             component.searchInput.nativeElement.value = 'test';
             component.searchInput.nativeElement.dispatchEvent(new Event('keyup'));
@@ -272,17 +272,17 @@ describe('DotThemeSelectorComponent', () => {
 
         beforeEach(() => {
             siteService = TestBed.inject(SiteService);
-            spyOn(paginatorService, 'getWithOffset').and.returnValue(of([]));
+            jest.spyOn(paginatorService, 'getWithOffset').mockReturnValue(of([]));
         });
 
         it(' should set system host ', () => {
-            spyOn(siteService, 'getSiteById').and.returnValue(of({} as Site));
+            jest.spyOn(siteService, 'getSiteById').mockReturnValue(of({} as Site));
             fixture.detectChanges();
             expect(siteService.getSiteById).toHaveBeenCalledOnceWith('SYSTEM_HOST');
         });
 
         it(' should set system host just once ', () => {
-            spyOn(siteService, 'getSiteById').and.returnValue(of({} as Site));
+            jest.spyOn(siteService, 'getSiteById').mockReturnValue(of({} as Site));
             fixture.detectChanges();
             setTimeout(() => component.siteChange({ identifier: '123' } as Site), 0); // simulate user site change.
             expect(siteService.getSiteById).toHaveBeenCalledOnceWith('SYSTEM_HOST');

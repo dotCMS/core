@@ -111,7 +111,7 @@ describe('DotToolbarUserComponent', () => {
         });
 
         const mockDate = new Date(1466424490000);
-        jasmine.clock().install();
+        jest.useFakeTimers();
         jasmine.clock().mockDate(mockDate);
 
         fixture = TestBed.createComponent(DotToolbarUserComponent);
@@ -124,7 +124,7 @@ describe('DotToolbarUserComponent', () => {
     });
 
     afterEach(() => {
-        jasmine.clock().uninstall();
+        jest.useRealTimers();
     });
 
     it('should have correct href in logout link', () => {
@@ -144,13 +144,13 @@ describe('DotToolbarUserComponent', () => {
 
     it('should call "logoutAs" in "LoginService" on logout click', async () => {
         comp.auth = mockAuth;
-        spyOn(dotNavigationService, 'goToFirstPortlet').and.returnValue(
+        jest.spyOn(dotNavigationService, 'goToFirstPortlet').mockReturnValue(
             new Promise((resolve) => {
                 resolve(true);
             })
         );
-        spyOn(locationService, 'reload');
-        spyOn(loginService, 'logoutAs').and.callThrough();
+        jest.spyOn(locationService, 'reload').mockImplementation(() => {});
+        jest.spyOn(loginService, 'logoutAs');
 
         fixture.detectChanges();
 
@@ -173,7 +173,7 @@ describe('DotToolbarUserComponent', () => {
 
     it('should hide login as link', () => {
         comp.auth = mockAuth;
-        spyOn(loginService, 'getCurrentUser').and.returnValue(
+        jest.spyOn(loginService, 'getCurrentUser').mockReturnValue(
             of({
                 email: 'admin@dotcms.com',
                 givenName: 'Admin',

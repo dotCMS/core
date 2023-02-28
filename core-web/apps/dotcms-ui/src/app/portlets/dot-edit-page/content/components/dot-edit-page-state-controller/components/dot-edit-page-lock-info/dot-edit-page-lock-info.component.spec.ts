@@ -83,8 +83,12 @@ describe('DotEditPageLockInfoComponent', () => {
             });
 
             it('should blink', fakeAsync(() => {
-                spyOn(lockedMessage.nativeElement.classList, 'add');
-                spyOn(lockedMessage.nativeElement.classList, 'remove');
+                jest.spyOn(lockedMessage.nativeElement.classList, 'add').mockImplementation(
+                    () => {}
+                );
+                jest.spyOn(lockedMessage.nativeElement.classList, 'remove').mockImplementation(
+                    () => {}
+                );
                 component.blinkLockMessage();
 
                 expect(lockedMessage.nativeElement.classList.add).toHaveBeenCalledWith(

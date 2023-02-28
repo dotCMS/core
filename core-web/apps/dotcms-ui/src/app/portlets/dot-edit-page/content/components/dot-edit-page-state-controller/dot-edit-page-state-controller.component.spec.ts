@@ -106,9 +106,9 @@ describe('DotEditPageStateControllerComponent', () => {
         dialogService = de.injector.get(DotAlertConfirmService);
         personalizeService = de.injector.get(DotPersonalizeService);
 
-        spyOn(component.modeChange, 'emit');
-        spyOn(dotPageStateService, 'setLock');
-        spyOn(personalizeService, 'personalized').and.returnValue(of(null));
+        jest.spyOn(component.modeChange, 'emit').mockImplementation(() => {});
+        jest.spyOn(dotPageStateService, 'setLock').mockImplementation(() => {});
+        jest.spyOn(personalizeService, 'personalized').mockReturnValue(of(null));
     });
 
     describe('elements', () => {
@@ -235,7 +235,7 @@ describe('DotEditPageStateControllerComponent', () => {
         });
 
         it('should update pageState service when confirmation dialog Success', async () => {
-            spyOn(dialogService, 'confirm').and.callFake((conf) => {
+            jest.spyOn(dialogService, 'confirm').mockImplementation((conf) => {
                 conf.accept();
             });
 
@@ -258,7 +258,7 @@ describe('DotEditPageStateControllerComponent', () => {
         });
 
         it('should update LOCK and MODE when confirmation dialog Canceled', () => {
-            spyOn<any>(dialogService, 'confirm').and.callFake((conf) => {
+            jest.spyOn<any>(dialogService, 'confirm').mockImplementation((conf) => {
                 conf.cancel();
             });
 
@@ -297,7 +297,7 @@ describe('DotEditPageStateControllerComponent', () => {
             );
 
             fixtureHost.componentInstance.pageState = _.cloneDeep(pageRenderStateMocked);
-            spyOn(dialogService, 'confirm').and.callFake((conf) => {
+            jest.spyOn(dialogService, 'confirm').mockImplementation((conf) => {
                 conf.accept();
             });
 

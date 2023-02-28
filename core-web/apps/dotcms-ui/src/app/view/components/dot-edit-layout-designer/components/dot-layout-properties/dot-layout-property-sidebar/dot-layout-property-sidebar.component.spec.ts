@@ -72,7 +72,7 @@ describe('DotLayoutSidebarComponent', () => {
 
         dotLayoutPropertiesItem.switch.subscribe((value) => (res = value));
         layoutPropertyItemEl.click();
-        spyOn(comp, 'propagateChange');
+        jest.spyOn(comp, 'propagateChange').mockImplementation(() => {});
         comp.setValue(true, 'left');
 
         expect(res).toEqual(true);
@@ -91,8 +91,8 @@ describe('DotLayoutSidebarComponent', () => {
         dotLayoutPropertiesItem.switch.subscribe((value) => (res = value));
         layoutPropertyItemEl.click();
 
-        spyOn(comp.propertyItemLeft, 'setChecked');
-        spyOn(comp.propertyItemRight, 'setUnchecked');
+        jest.spyOn(comp.propertyItemLeft, 'setChecked').mockImplementation(() => {});
+        jest.spyOn(comp.propertyItemRight, 'setUnchecked').mockImplementation(() => {});
         comp.setValue(true, 'left');
 
         expect(res).toEqual(true);
@@ -112,8 +112,8 @@ describe('DotLayoutSidebarComponent', () => {
         dotLayoutPropertiesItem.switch.subscribe((value) => (res = value));
         layoutPropertyItemEl.click();
 
-        spyOn(comp.propertyItemLeft, 'setUnchecked');
-        spyOn(comp.propertyItemRight, 'setChecked');
+        jest.spyOn(comp.propertyItemLeft, 'setUnchecked').mockImplementation(() => {});
+        jest.spyOn(comp.propertyItemRight, 'setChecked').mockImplementation(() => {});
         comp.setValue(true, 'right');
 
         expect(res).toEqual(true);
@@ -131,7 +131,7 @@ describe('DotLayoutSidebarComponent', () => {
             width: ''
         };
 
-        spyOn(component, 'writeValue');
+        jest.spyOn(component, 'writeValue').mockImplementation(() => {});
         comp.setValue(true, 'left');
         hostComponentfixture.detectChanges();
 

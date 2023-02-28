@@ -464,14 +464,14 @@ describe('DotContentCompareTableComponent', () => {
 
     describe('events', () => {
         it('should emit changeVersion', () => {
-            spyOn(hostComponent.changeVersion, 'emit');
+            jest.spyOn(hostComponent.changeVersion, 'emit').mockImplementation(() => {});
             const dropdown: Dropdown = de.query(By.css('p-dropdown')).componentInstance;
             dropdown.onChange.emit({ value: 'test' });
 
             expect(hostComponent.changeVersion.emit).toHaveBeenCalledOnceWith('test');
         });
         it('should emit changeDiff', () => {
-            spyOn(hostComponent.changeDiff, 'emit');
+            jest.spyOn(hostComponent.changeDiff, 'emit').mockImplementation(() => {});
             const select: SelectButton = de.query(By.css('p-selectButton')).componentInstance;
             select.onChange.emit({ value: true });
 
@@ -479,7 +479,7 @@ describe('DotContentCompareTableComponent', () => {
         });
 
         it('should emit bring back', () => {
-            spyOn(hostComponent.bringBack, 'emit');
+            jest.spyOn(hostComponent.bringBack, 'emit').mockImplementation(() => {});
             const button = de.query(By.css('[data-testId="table-bring-back"]'));
 
             button.triggerEventHandler('click', '');

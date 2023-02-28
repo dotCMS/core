@@ -85,7 +85,7 @@ describe('DotKeyValueTableInputRowComponent', () => {
         });
 
         it('should focus on "Key" input when loaded', async () => {
-            spyOn(comp.keyCell.nativeElement, 'focus');
+            jest.spyOn(comp.keyCell.nativeElement, 'focus').mockImplementation(() => {});
 
             hostComponentfixture.detectChanges();
             hostComponentfixture.whenStable();
@@ -94,14 +94,14 @@ describe('DotKeyValueTableInputRowComponent', () => {
 
         it('should not focus on "Key" input when loaded', async () => {
             hostComponent.autoFocus = false;
-            spyOn(comp.keyCell.nativeElement, 'focus');
+            jest.spyOn(comp.keyCell.nativeElement, 'focus').mockImplementation(() => {});
             hostComponentfixture.detectChanges();
             await hostComponentfixture.whenStable();
             expect(comp.keyCell.nativeElement.focus).toHaveBeenCalledTimes(0);
         });
 
         it('should focus on "Value" field, if entered valid "Key"', async () => {
-            spyOn(comp.valueCell.nativeElement, 'focus');
+            jest.spyOn(comp.valueCell.nativeElement, 'focus').mockImplementation(() => {});
             comp.variable = { key: 'test', value: '' };
             hostComponentfixture.detectChanges();
             de.query(By.css('.field-key-input')).nativeElement.dispatchEvent(
@@ -113,7 +113,7 @@ describe('DotKeyValueTableInputRowComponent', () => {
         });
 
         it('should focus on "Key" field, if entered invalid "Key"', async () => {
-            spyOn(comp.keyCell.nativeElement, 'focus');
+            jest.spyOn(comp.keyCell.nativeElement, 'focus').mockImplementation(() => {});
             comp.variable = { key: '', value: '' };
             hostComponentfixture.detectChanges();
             de.query(By.css('.field-key-input')).nativeElement.dispatchEvent(
@@ -140,7 +140,7 @@ describe('DotKeyValueTableInputRowComponent', () => {
             comp.variable = { key: 'name', value: '' };
             comp.variablesList = [comp.variable, ...mockKeyValue];
             hostComponentfixture.detectChanges();
-            spyOn(dotMessageDisplayService, 'push');
+            jest.spyOn(dotMessageDisplayService, 'push').mockImplementation(() => {});
             de.query(By.css('.field-key-input')).triggerEventHandler('blur', {
                 type: 'blur',
                 target: { value: 'Key1' }
@@ -156,8 +156,8 @@ describe('DotKeyValueTableInputRowComponent', () => {
 
         it('should emit save event when button clicked', async () => {
             comp.variable = { key: 'Key1', value: 'Value1' };
-            spyOn(comp.save, 'emit');
-            spyOn(comp.keyCell.nativeElement, 'focus');
+            jest.spyOn(comp.save, 'emit').mockImplementation(() => {});
+            jest.spyOn(comp.keyCell.nativeElement, 'focus').mockImplementation(() => {});
 
             hostComponentfixture.detectChanges();
             await hostComponentfixture.whenStable();
@@ -172,8 +172,8 @@ describe('DotKeyValueTableInputRowComponent', () => {
 
         it('should emit cancel event when button clicked', async () => {
             comp.variable = { key: 'Key1', value: 'Value1' };
-            spyOn(comp.save, 'emit');
-            spyOn(comp.keyCell.nativeElement, 'focus');
+            jest.spyOn(comp.save, 'emit').mockImplementation(() => {});
+            jest.spyOn(comp.keyCell.nativeElement, 'focus').mockImplementation(() => {});
             hostComponentfixture.detectChanges();
             await hostComponentfixture.whenStable();
 

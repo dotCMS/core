@@ -56,7 +56,7 @@ const wizardInput: DotWizardInput = {
     steps: mockSteps
 };
 
-const stopImmediatePropagation = jasmine.createSpy('');
+const stopImmediatePropagation = jest.fn();
 
 const enterEvent = {
     stopImmediatePropagation: stopImmediatePropagation
@@ -147,7 +147,7 @@ describe('DotWizardComponent', () => {
             expect(acceptButton.nativeElement.disabled).toEqual(false);
         });
         it('should focus next/send action, after tab in the last item of the form', () => {
-            const preventDefaultSpy = jasmine.createSpy('spy');
+            const preventDefaultSpy = jest.fn();
             const mockEvent = {
                 target: 'match',
                 composedPath: () => [
@@ -164,7 +164,7 @@ describe('DotWizardComponent', () => {
                 ],
                 preventDefault: preventDefaultSpy
             };
-            spyOn(acceptButton.nativeElement, 'focus');
+            jest.spyOn(acceptButton.nativeElement, 'focus').mockImplementation(() => {});
             formsContainer.triggerEventHandler('keydown.tab', { ...mockEvent });
             expect(preventDefaultSpy).toHaveBeenCalled();
             expect(acceptButton.nativeElement.focus).toHaveBeenCalled();
@@ -179,7 +179,7 @@ describe('DotWizardComponent', () => {
             expect(acceptButton.nativeElement.disabled).toEqual(false);
         });
         it('should consolidate forms values and send them on send ', () => {
-            spyOn(dotWizardService, 'output$');
+            jest.spyOn(dotWizardService, 'output$').mockImplementation(() => {});
 
             const formValue1 = { id: '123' };
             const formValue2 = { name: 'Jose' };
@@ -194,7 +194,7 @@ describe('DotWizardComponent', () => {
         });
 
         it('should change step on enter if form is valid', () => {
-            spyOn(component.dialog, 'acceptAction');
+            jest.spyOn(component.dialog, 'acceptAction').mockImplementation(() => {});
             form1.valid.emit(true);
             formsContainer.triggerEventHandler('keydown.enter', enterEvent);
             expect(stopImmediatePropagation).toHaveBeenCalled();
@@ -202,7 +202,7 @@ describe('DotWizardComponent', () => {
         });
 
         it('should NOT change step on enter if form is invalid', () => {
-            spyOn(component.dialogActions.accept, 'action');
+            jest.spyOn(component.dialogActions.accept, 'action').mockImplementation(() => {});
             form1.valid.emit(false);
             formsContainer.triggerEventHandler('keydown.enter', enterEvent);
 
@@ -245,7 +245,7 @@ describe('DotWizardComponent', () => {
             const dotDialog: DotDialogComponent = fixture.debugElement.query(
                 By.css('dot-dialog')
             ).componentInstance;
-            spyOn(component, 'close');
+            jest.spyOn(component, 'close').mockImplementation(() => {});
             dotDialog.actions.cancel.action();
             expect(component.dialogActions.cancel.label).toEqual('cancel');
             expect(component.close).toHaveBeenCalled();

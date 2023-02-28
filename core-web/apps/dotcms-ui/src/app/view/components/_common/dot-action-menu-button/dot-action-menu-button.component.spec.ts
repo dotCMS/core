@@ -115,7 +115,7 @@ describe('ActionMenuButtonComponent', () => {
         comp.item = mockContentType;
         fixture.detectChanges();
 
-        spyOn(fakeActions[0].menuItem, 'command');
+        jest.spyOn(fakeActions[0].menuItem, 'command').mockImplementation(() => {});
 
         const actionButtonTooltip = de.query(By.css('dot-icon-button-tooltip'));
         actionButtonTooltip.nativeElement.click();
@@ -212,7 +212,7 @@ describe('ActionMenuButtonComponent', () => {
     });
 
     it('should call menu option actions with item passed', () => {
-        const fakeCommand = jasmine.createSpy('fakeCommand');
+        const fakeCommand = jest.fn();
 
         const fakeActions: DotActionMenuItem[] = [
             {

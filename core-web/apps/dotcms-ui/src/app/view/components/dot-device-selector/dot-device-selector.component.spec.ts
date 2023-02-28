@@ -85,8 +85,8 @@ describe('DotDeviceSelectorComponent', () => {
     it('should emmit the selected Device', () => {
         const pDropDown: DebugElement = de.query(By.css('p-dropdown'));
 
-        spyOn(component.selected, 'emit');
-        spyOn(component, 'change').and.callThrough();
+        jest.spyOn(component.selected, 'emit').mockImplementation(() => {});
+        jest.spyOn(component, 'change');
 
         pDropDown.triggerEventHandler('onChange', { value: mockDotDevices });
 
@@ -110,7 +110,7 @@ describe('DotDeviceSelectorComponent', () => {
     });
 
     it('should reload options when value change', () => {
-        spyOn(dotDeviceService, 'get').and.callThrough();
+        jest.spyOn(dotDeviceService, 'get');
 
         componentHost.value = {
             ...mockDotDevices[1]
@@ -121,7 +121,7 @@ describe('DotDeviceSelectorComponent', () => {
 
     describe('disabled', () => {
         beforeEach(() => {
-            spyOn(dotDeviceService, 'get').and.returnValue(of([]));
+            jest.spyOn(dotDeviceService, 'get').mockReturnValue(of([]));
             fixtureHost.detectChanges();
         });
         it('should disabled dropdown when just have just one device', () => {

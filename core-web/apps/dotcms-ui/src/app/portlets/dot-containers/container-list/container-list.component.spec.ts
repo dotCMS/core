@@ -249,9 +249,9 @@ describe('ContainerListComponent', () => {
                 {
                     provide: DotRouterService,
                     useValue: {
-                        gotoPortlet: jasmine.createSpy(),
-                        goToEditContainer: jasmine.createSpy(),
-                        goToSiteBrowser: jasmine.createSpy()
+                        gotoPortlet: jest.fn(),
+                        goToEditContainer: jest.fn(),
+                        goToSiteBrowser: jest.fn()
                     }
                 },
                 StringUtils,
@@ -296,7 +296,7 @@ describe('ContainerListComponent', () => {
 
     describe('with data', () => {
         beforeEach(fakeAsync(() => {
-            spyOn<CoreWebService>(coreWebService, 'requestView').and.returnValue(
+            jest.spyOn<CoreWebService>(coreWebService, 'requestView').mockReturnValue(
                 of({
                     entity: containersMock,
                     header: (type) => (type === 'Link' ? 'test;test=test' : '10')
@@ -308,7 +308,7 @@ describe('ContainerListComponent', () => {
             dotListingDataTable = fixture.debugElement.query(
                 By.css('dot-listing-data-table')
             ).componentInstance;
-            spyOn(dotPushPublishDialogService, 'open');
+            jest.spyOn(dotPushPublishDialogService, 'open').mockImplementation(() => {});
         }));
 
         it('should set attributes of dotListingDataTable', () => {
@@ -332,8 +332,8 @@ describe('ContainerListComponent', () => {
                 By.css('[data-testid="123Published"]')
             ).componentInstance;
             const actions = setBasicOptions();
-            actions.push({ menuItem: { label: 'Unpublish', command: jasmine.any(Function) } });
-            actions.push({ menuItem: { label: 'Duplicate', command: jasmine.any(Function) } });
+            actions.push({ menuItem: { label: 'Unpublish', command: expect.any(Function) } });
+            actions.push({ menuItem: { label: 'Duplicate', command: expect.any(Function) } });
 
             expect(publishContainer.actions).toEqual(actions);
         });
@@ -343,8 +343,8 @@ describe('ContainerListComponent', () => {
                 By.css('[data-testid="123Unpublish"]')
             ).componentInstance;
             const actions = setBasicOptions();
-            actions.push({ menuItem: { label: 'Archive', command: jasmine.any(Function) } });
-            actions.push({ menuItem: { label: 'Duplicate', command: jasmine.any(Function) } });
+            actions.push({ menuItem: { label: 'Archive', command: expect.any(Function) } });
+            actions.push({ menuItem: { label: 'Duplicate', command: expect.any(Function) } });
 
             expect(unPublishContainer.actions).toEqual(actions);
         });
@@ -355,8 +355,8 @@ describe('ContainerListComponent', () => {
             ).componentInstance;
 
             const actions = [
-                { menuItem: { label: 'Unarchive', command: jasmine.any(Function) } },
-                { menuItem: { label: 'Delete', command: jasmine.any(Function) } }
+                { menuItem: { label: 'Unarchive', command: expect.any(Function) } },
+                { menuItem: { label: 'Delete', command: expect.any(Function) } }
             ];
             expect(archivedContainer.actions).toEqual(actions);
         });
@@ -365,7 +365,9 @@ describe('ContainerListComponent', () => {
             const menu: Menu = fixture.debugElement.query(
                 By.css('.container-listing__header-options p-menu')
             ).componentInstance;
-            spyOn(dotContainersService, 'publish').and.returnValue(of(mockBulkResponseSuccess));
+            jest.spyOn(dotContainersService, 'publish').mockReturnValue(
+                of(mockBulkResponseSuccess)
+            );
             comp.updateSelectedContainers(containersMock);
             menu.model[0].command();
             expect(dotContainersService.publish).toHaveBeenCalledWith([
@@ -389,7 +391,7 @@ describe('ContainerListComponent', () => {
         });
 
         it('should click on file container and move on Browser Screen', () => {
-            spyOn(dotSiteBrowserService, 'setSelectedFolder').and.returnValue(of(null));
+            jest.spyOn(dotSiteBrowserService, 'setSelectedFolder').mockReturnValue(of(null));
             fixture.debugElement
                 .query(By.css('[data-testrowid="FILE_CONTAINER"]'))
                 .triggerEventHandler('click', null);
@@ -406,8 +408,8 @@ describe('ContainerListComponent', () => {
         contentTypesSelector = fixture.debugElement.query(
             By.css('dot-content-type-selector')
         ).componentInstance;
-        spyOn(comp.listing.paginatorService, 'setExtraParams');
-        spyOn(comp.listing, 'loadFirstPage');
+        jest.spyOn(comp.listing.paginatorService, 'setExtraParams').mockImplementation(() => {});
+        jest.spyOn(comp.listing, 'loadFirstPage').mockImplementation(() => {});
         contentTypesSelector.selected.emit('test');
 
         expect(comp.listing.paginatorService.setExtraParams).toHaveBeenCalledWith(
@@ -419,10 +421,10 @@ describe('ContainerListComponent', () => {
 
     function setBasicOptions() {
         return [
-            { menuItem: { label: 'Edit', command: jasmine.any(Function) } },
-            { menuItem: { label: 'Publish', command: jasmine.any(Function) } },
-            { menuItem: { label: 'Push Publish', command: jasmine.any(Function) } },
-            { menuItem: { label: 'Add To Bundle', command: jasmine.any(Function) } }
+            { menuItem: { label: 'Edit', command: expect.any(Function) } },
+            { menuItem: { label: 'Publish', command: expect.any(Function) } },
+            { menuItem: { label: 'Push Publish', command: expect.any(Function) } },
+            { menuItem: { label: 'Add To Bundle', command: expect.any(Function) } }
         ];
     }
 });

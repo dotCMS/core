@@ -91,8 +91,8 @@ describe('DotAddContentletComponent', () => {
         component = de.componentInstance;
         dotContentletEditorService = de.injector.get(DotContentletEditorService);
 
-        spyOn(component.shutdown, 'emit');
-        spyOn(component.custom, 'emit');
+        jest.spyOn(component.shutdown, 'emit').mockImplementation(() => {});
+        jest.spyOn(component.custom, 'emit').mockImplementation(() => {});
 
         fixture.detectChanges();
 
@@ -127,8 +127,8 @@ describe('DotAddContentletComponent', () => {
                     baseTypes: 'content,form'
                 },
                 events: {
-                    load: jasmine.createSpy('load'),
-                    keyDown: jasmine.createSpy('keyDown')
+                    load: jest.fn(),
+                    keyDown: jest.fn()
                 }
             });
 

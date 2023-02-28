@@ -178,7 +178,7 @@ describe('DotAddVariableComponent', () => {
                 {
                     provide: DynamicDialogRef,
                     useValue: {
-                        close: jasmine.createSpy()
+                        close: jest.fn()
                     }
                 },
                 {
@@ -186,7 +186,7 @@ describe('DotAddVariableComponent', () => {
                     useValue: {
                         data: {
                             contentTypeVariable: 'contentType',
-                            onSave: jasmine.createSpy()
+                            onSave: jest.fn()
                         }
                     }
                 },
@@ -225,7 +225,7 @@ describe('DotAddVariableComponent', () => {
 
     describe('dot-add-variable-dialog', () => {
         beforeEach(fakeAsync(() => {
-            spyOn<CoreWebService>(coreWebService, 'requestView').and.returnValue(
+            jest.spyOn<CoreWebService>(coreWebService, 'requestView').mockReturnValue(
                 of({
                     entity: mockContentTypes
                 })

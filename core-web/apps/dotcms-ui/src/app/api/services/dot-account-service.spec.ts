@@ -79,8 +79,8 @@ describe('DotAccountService', () => {
 
     it('should throw error on get apps and handle it', () => {
         const error404 = mockResponseView(400);
-        spyOn(dotHttpErrorManagerService, 'handle').and.callThrough();
-        spyOn(coreWebService, 'requestView').and.returnValue(throwError(error404));
+        jest.spyOn(dotHttpErrorManagerService, 'handle');
+        jest.spyOn(coreWebService, 'requestView').mockReturnValue(throwError(error404));
 
         service.addStarterPage().subscribe();
         expect(dotHttpErrorManagerService.handle).toHaveBeenCalledWith(mockResponseView(400));
@@ -98,8 +98,8 @@ describe('DotAccountService', () => {
 
     it('should throw error on get apps and handle it', () => {
         const error404 = mockResponseView(400);
-        spyOn(dotHttpErrorManagerService, 'handle').and.callThrough();
-        spyOn(coreWebService, 'requestView').and.returnValue(throwError(error404));
+        jest.spyOn(dotHttpErrorManagerService, 'handle');
+        jest.spyOn(coreWebService, 'requestView').mockReturnValue(throwError(error404));
 
         service.removeStarterPage().subscribe();
         expect(dotHttpErrorManagerService.handle).toHaveBeenCalledWith(mockResponseView(400));

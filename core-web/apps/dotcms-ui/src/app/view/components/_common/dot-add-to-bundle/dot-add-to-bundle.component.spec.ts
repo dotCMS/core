@@ -65,8 +65,8 @@ xdescribe('DotAddToBundleComponent', () => {
         de = fixture.debugElement.query(By.css('dot-add-to-bundle'));
         comp = de.componentInstance;
 
-        spyOn(addToBundleServiceMock, 'addToBundle').and.callThrough();
-        spyOn(comp, 'submitBundle').and.callThrough();
+        jest.spyOn(addToBundleServiceMock, 'addToBundle');
+        jest.spyOn(comp, 'submitBundle');
     });
 
     it('should have a form', () => {
@@ -94,7 +94,7 @@ xdescribe('DotAddToBundleComponent', () => {
         );
         expect(cancelButton).toBeDefined();
 
-        spyOn(comp, 'close');
+        jest.spyOn(comp, 'close').mockImplementation(() => {});
 
         cancelButton.nativeElement.click();
         expect(comp.close).toHaveBeenCalledTimes(1);
@@ -165,7 +165,7 @@ xdescribe('DotAddToBundleComponent', () => {
     }));
 
     it('should set placeholder "Select or type bundle" if bundles exist', async(() => {
-        spyOn(addToBundleServiceMock, 'getBundles').and.returnValue(
+        jest.spyOn(addToBundleServiceMock, 'getBundles').mockReturnValue(
             observableOf([
                 {
                     id: '1234',
@@ -180,7 +180,7 @@ xdescribe('DotAddToBundleComponent', () => {
     }));
 
     it('should set as default Bundle previously selected', () => {
-        spyOn(addToBundleServiceMock, 'getBundles').and.returnValue(
+        jest.spyOn(addToBundleServiceMock, 'getBundles').mockReturnValue(
             observableOf([
                 {
                     id: '1234',

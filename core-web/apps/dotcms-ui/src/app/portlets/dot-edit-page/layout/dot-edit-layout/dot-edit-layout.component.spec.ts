@@ -79,7 +79,7 @@ describe('DotEditLayoutComponent', () => {
                 {
                     provide: DotHttpErrorManagerService,
                     useValue: {
-                        handle: jasmine.createSpy().and.returnValue(of({}))
+                        handle: jest.fn(() => of({}))
                     }
                 },
                 {
@@ -89,9 +89,9 @@ describe('DotEditLayoutComponent', () => {
                 {
                     provide: DotGlobalMessageService,
                     useValue: {
-                        loading: jasmine.createSpy(),
-                        success: jasmine.createSpy(),
-                        error: jasmine.createSpy()
+                        loading: jest.fn(),
+                        success: jest.fn(),
+                        error: jest.fn()
                     }
                 },
                 {
@@ -105,13 +105,13 @@ describe('DotEditLayoutComponent', () => {
                 {
                     provide: DotTemplateContainersCacheService,
                     useValue: {
-                        set: jasmine.createSpy()
+                        set: jest.fn()
                     }
                 },
                 {
                     provide: DotRouterService,
                     useValue: {
-                        goToEditPage: jasmine.createSpy()
+                        goToEditPage: jest.fn()
                     }
                 },
                 {
@@ -174,7 +174,7 @@ describe('DotEditLayoutComponent', () => {
     describe('save', () => {
         it('should save the layout', () => {
             const res: DotPageRender = new DotPageRender(mockDotRenderedPage());
-            spyOn(dotPageLayoutService, 'save').and.returnValue(of(res));
+            jest.spyOn(dotPageLayoutService, 'save').mockReturnValue(of(res));
 
             layoutDesignerDe.triggerEventHandler('save', fakeLayout);
 
@@ -195,7 +195,7 @@ describe('DotEditLayoutComponent', () => {
 
         it('should save the layout after 10000', fakeAsync(() => {
             const res: DotPageRender = new DotPageRender(mockDotRenderedPage());
-            spyOn(dotPageLayoutService, 'save').and.returnValue(of(res));
+            jest.spyOn(dotPageLayoutService, 'save').mockReturnValue(of(res));
 
             layoutDesignerDe.triggerEventHandler('updateTemplate', fakeLayout);
 
@@ -217,7 +217,7 @@ describe('DotEditLayoutComponent', () => {
 
         it('should not save the layout when observable is destroy', fakeAsync(() => {
             const res: DotPageRender = new DotPageRender(mockDotRenderedPage());
-            spyOn(dotPageLayoutService, 'save').and.returnValue(of(res));
+            jest.spyOn(dotPageLayoutService, 'save').mockReturnValue(of(res));
 
             // Destroy should be true.
             component.destroy$.subscribe((value) => expect(value).toBeTruthy());
@@ -234,7 +234,7 @@ describe('DotEditLayoutComponent', () => {
         }));
 
         it('should handle error when save fail', (done) => {
-            spyOn(dotPageLayoutService, 'save').and.returnValue(
+            jest.spyOn(dotPageLayoutService, 'save').mockReturnValue(
                 throwError(
                     new ResponseView(
                         new HttpResponse<DotCMSResponse<unknown>>(
@@ -254,14 +254,14 @@ describe('DotEditLayoutComponent', () => {
         });
 
         it('should remove variant key from session storage on destoy', () => {
-            spyOn(dotSessionStorageService, 'removeVariantId');
+            jest.spyOn(dotSessionStorageService, 'removeVariantId').mockImplementation(() => {});
             component.ngOnDestroy();
             expect(dotSessionStorageService.removeVariantId).toHaveBeenCalledTimes(1);
         });
 
         it('should keep variant key from session storage if going to Edit content portlet', () => {
             router.routerState.snapshot.url = '/edit-page/content';
-            spyOn(dotSessionStorageService, 'removeVariantId');
+            jest.spyOn(dotSessionStorageService, 'removeVariantId').mockImplementation(() => {});
             component.ngOnDestroy();
             expect(dotSessionStorageService.removeVariantId).toHaveBeenCalledTimes(0);
         });

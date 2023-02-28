@@ -63,7 +63,7 @@ describe('DotExperimentsConfigurationSchedulingComponent', () => {
         store = spectator.inject(DotExperimentsConfigurationStore);
 
         dotExperimentsService = spectator.inject(DotExperimentsService);
-        dotExperimentsService.getById.and.returnValue(
+        dotExperimentsService.getById.mockReturnValue(
             of({ ...ExperimentMocks[0], ...{ scheduling: null } })
         );
 
@@ -81,14 +81,14 @@ describe('DotExperimentsConfigurationSchedulingComponent', () => {
     });
 
     it('should open sidebar on button click', () => {
-        spyOn(store, 'openSidebar');
+        jest.spyOn(store, 'openSidebar').mockImplementation(() => {});
         spectator.click(byTestId('scheduling-setup-button'));
 
         expect(store.openSidebar).toHaveBeenCalledOnceWith(ExperimentSteps.SCHEDULING);
     });
 
     it('should render the date range in the button when present', () => {
-        dotExperimentsService.getById.and.returnValue(of(ExperimentMocks[0]));
+        dotExperimentsService.getById.mockReturnValue(of(ExperimentMocks[0]));
         store.loadExperiment(ExperimentMocks[0].id);
         spectator.detectChanges();
         expect(spectator.query(byTestId('scheduling-setup-button'))).toContainText(

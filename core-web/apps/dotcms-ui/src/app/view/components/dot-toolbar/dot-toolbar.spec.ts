@@ -130,7 +130,7 @@ describe('DotToolbarComponent', () => {
         dotRouterService = de.injector.get(DotRouterService);
         dotNavigationService = de.injector.get(DotNavigationService);
         dotNavLogoService = TestBed.inject(DotNavLogoService);
-        spyOn(comp, 'siteChange').and.callThrough();
+        jest.spyOn(comp, 'siteChange');
     }));
 
     it(`should has a crumbtrail`, () => {
@@ -141,7 +141,7 @@ describe('DotToolbarComponent', () => {
     });
 
     it(`should NOT go to site browser when site change in any portlet but edit page`, () => {
-        spyOn(dotRouterService, 'isEditPage').and.returnValue(false);
+        jest.spyOn(dotRouterService, 'isEditPage').mockReturnValue(false);
         const siteSelector: DebugElement = fixture.debugElement.query(By.css('dot-site-selector'));
         fixture.detectChanges();
         siteSelector.triggerEventHandler('switch', { value: siteMock });
@@ -151,11 +151,11 @@ describe('DotToolbarComponent', () => {
 
     it(`should go to site-browser when site change on edit page url`, () => {
         const siteSelector: DebugElement = fixture.debugElement.query(By.css('dot-site-selector'));
-        spyOnProperty(dotRouterService, 'currentPortlet', 'get').and.returnValue({
+        spyOnProperty(dotRouterService, 'currentPortlet', 'get').mockReturnValue({
             id: 'edit-page',
             url: ''
         });
-        spyOn(dotRouterService, 'isEditPage').and.returnValue(true);
+        jest.spyOn(dotRouterService, 'isEditPage').mockReturnValue(true);
         siteSelector.triggerEventHandler('switch', { value: siteMock });
 
         expect(dotRouterService.goToSiteBrowser).toHaveBeenCalled();
@@ -169,7 +169,7 @@ describe('DotToolbarComponent', () => {
     });
 
     it('should toggle menu and update icon on click', () => {
-        spyOn(dotNavigationService, 'toggle').and.callThrough();
+        jest.spyOn(dotNavigationService, 'toggle');
         fixture.detectChanges();
 
         const button: DebugElement = de.query(By.css('dot-icon-button'));

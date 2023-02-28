@@ -130,7 +130,7 @@ describe('DotPageStore', () => {
     });
 
     it('should limit Favorite Pages', () => {
-        spyOn(dotPageStore, 'setFavoritePages').and.callThrough();
+        jest.spyOn(dotPageStore, 'setFavoritePages');
         dotPageStore.limitFavoritePages(5);
         expect(dotPageStore.setFavoritePages).toHaveBeenCalledWith(
             favoritePagesInitialTestData.slice(0, 5)
@@ -219,7 +219,7 @@ describe('DotPageStore', () => {
             ...favoritePagesInitialTestData,
             ...favoritePagesInitialTestData
         ];
-        spyOn(dotESContentService, 'get').and.returnValue(
+        jest.spyOn(dotESContentService, 'get').mockReturnValue(
             of({
                 contentTook: 0,
                 jsonObjectView: {
@@ -260,7 +260,7 @@ describe('DotPageStore', () => {
                 modDate: relativeDate(favoritePagesInitialTestData[1].modDate)
             }
         ];
-        spyOn(dotESContentService, 'get').and.returnValue(
+        jest.spyOn(dotESContentService, 'get').mockReturnValue(
             of({
                 contentTook: 0,
                 jsonObjectView: {
@@ -279,7 +279,9 @@ describe('DotPageStore', () => {
     });
 
     it('should get all Workflow actions and static actions from a contentlet', () => {
-        spyOn(dotWorkflowsActionsService, 'getByInode').and.returnValue(of(mockWorkflowsActions));
+        jest.spyOn(dotWorkflowsActionsService, 'getByInode').mockReturnValue(
+            of(mockWorkflowsActions)
+        );
         dotPageStore.showActionsMenu({
             item: favoritePagesInitialTestData[0],
             actionMenuDomId: 'test1'

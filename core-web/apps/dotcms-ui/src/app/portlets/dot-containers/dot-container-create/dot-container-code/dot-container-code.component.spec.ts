@@ -196,7 +196,7 @@ describe('DotContentEditorComponent', () => {
 
     describe('with data', () => {
         beforeEach(fakeAsync(() => {
-            spyOn<CoreWebService>(coreWebService, 'requestView').and.returnValue(
+            jest.spyOn<CoreWebService>(coreWebService, 'requestView').mockReturnValue(
                 of({
                     entity: mockContentTypes
                 })
@@ -211,8 +211,8 @@ describe('DotContentEditorComponent', () => {
 
         it('should set labels', () => {
             const actions = [
-                { label: 'Activity', command: jasmine.any(Function) },
-                { label: 'Activity 2', command: jasmine.any(Function) }
+                { label: 'Activity', command: expect.any(Function) },
+                { label: 'Activity 2', command: expect.any(Function) }
             ];
 
             expect(menu.model).toEqual(actions);
@@ -243,7 +243,7 @@ describe('DotContentEditorComponent', () => {
                 code.triggerEventHandler('monacoInit', {
                     name: menu.model[0].label,
                     editor: {
-                        focus: jasmine.createSpy()
+                        focus: jest.fn()
                     }
                 });
                 hostFixture.detectChanges();
@@ -267,14 +267,14 @@ describe('DotContentEditorComponent', () => {
                 code.triggerEventHandler('monacoInit', {
                     name: mockContentTypes[0].id,
                     editor: {
-                        focus: jasmine.createSpy()
+                        focus: jest.fn()
                     }
                 });
                 const code2 = de.query(By.css(`[data-testid="${mockContentTypes[1].id}"]`));
                 code2.triggerEventHandler('monacoInit', {
                     name: mockContentTypes[1].id,
                     editor: {
-                        focus: jasmine.createSpy()
+                        focus: jest.fn()
                     }
                 });
                 hostFixture.detectChanges();
@@ -301,14 +301,14 @@ describe('DotContentEditorComponent', () => {
                 code.triggerEventHandler('monacoInit', {
                     name: mockContentTypes[0].id,
                     editor: {
-                        focus: jasmine.createSpy()
+                        focus: jest.fn()
                     }
                 });
                 const code2 = de.query(By.css(`[data-testid="${mockContentTypes[1].id}"]`));
                 code2.triggerEventHandler('monacoInit', {
                     name: mockContentTypes[1].id,
                     editor: {
-                        focus: jasmine.createSpy()
+                        focus: jest.fn()
                     }
                 });
                 hostFixture.detectChanges();

@@ -90,7 +90,7 @@ describe('DotNavItemComponent', () => {
     });
 
     it('should emit menuClick when nav__item is clicked', () => {
-        spyOn(component.menuClick, 'emit');
+        jest.spyOn(component.menuClick, 'emit').mockImplementation(() => {});
         navItem.nativeElement.dispatchEvent(new MouseEvent('click', {}));
         expect(component.menuClick.emit).toHaveBeenCalledTimes(1);
     });
@@ -115,7 +115,7 @@ describe('DotNavItemComponent', () => {
             await fixtureHost.whenStable();
 
             expect(subNav.styles).not.toEqual({});
-            spyOnProperty(window, 'innerHeight').and.returnValue(1760);
+            spyOnProperty(window, 'innerHeight').mockReturnValue(1760);
             navItem.triggerEventHandler('mouseenter', {});
             fixtureHost.detectChanges();
             expect(subNav.styles).toBeDefined();
@@ -152,7 +152,7 @@ describe('DotNavItemComponent', () => {
         });
 
         it('should emit itemClick on dot-sub-nav itemClick', () => {
-            spyOn(component.itemClick, 'emit');
+            jest.spyOn(component.itemClick, 'emit').mockImplementation(() => {});
             subNav.nativeElement.dispatchEvent(new CustomEvent('itemClick', {}));
             expect(component.itemClick.emit).toHaveBeenCalledTimes(1);
         });

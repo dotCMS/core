@@ -154,7 +154,7 @@ describe('SiteSelectorFieldComponent', () => {
     });
 
     it('should not set current site when already hava a value and current site request is getting after onInit', () => {
-        spyOnProperty(siteServiceMock, 'currentSite', 'get').and.returnValue(null);
+        spyOnProperty(siteServiceMock, 'currentSite', 'get').mockReturnValue(null);
         component.form.get('site').setValue('1234');
         fixture.detectChanges();
 

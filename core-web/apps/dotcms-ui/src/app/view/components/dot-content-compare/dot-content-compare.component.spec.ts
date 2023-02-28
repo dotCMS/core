@@ -73,7 +73,7 @@ describe('DotContentCompareComponent', () => {
                 {
                     provide: DotIframeService,
                     useValue: {
-                        run: jasmine.createSpy()
+                        run: jest.fn()
                     }
                 },
                 DotFormatDateService,
@@ -125,16 +125,16 @@ describe('DotContentCompareComponent', () => {
     });
 
     it('should bring back version after confirm and emit shutdown', () => {
-        spyOn(dotAlertConfirmService, 'confirm').and.callFake((conf) => {
+        jest.spyOn(dotAlertConfirmService, 'confirm').mockImplementation((conf) => {
             conf.accept();
         });
-        spyOn(hostComponent.shutdown, 'emit');
+        jest.spyOn(hostComponent.shutdown, 'emit').mockImplementation(() => {});
 
         contentCompareTableComponent.bringBack.emit('123');
 
         expect<any>(dotAlertConfirmService.confirm).toHaveBeenCalledWith({
-            accept: jasmine.any(Function),
-            reject: jasmine.any(Function),
+            accept: expect.any(Function),
+            reject: expect.any(Function),
             header: 'Confirm',
             message:
                 'Are you sure you would like to replace your working version with this contentlet version?'

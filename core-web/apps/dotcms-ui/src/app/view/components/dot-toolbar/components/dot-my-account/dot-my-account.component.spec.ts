@@ -182,7 +182,7 @@ describe('DotMyAccountComponent', () => {
     });
 
     it(`should form be valid and load starter page data`, async () => {
-        spyOn<any>(dotMenuService, 'isPortletInMenu').and.returnValue(of(true));
+        jest.spyOn<any>(dotMenuService, 'isPortletInMenu').mockReturnValue(of(true));
         fixture.detectChanges();
         await fixture.whenStable();
 
@@ -254,9 +254,9 @@ describe('DotMyAccountComponent', () => {
     });
 
     it(`should call to add starter method in account service`, async () => {
-        spyOn<any>(dotMenuService, 'isPortletInMenu').and.returnValue(of(false));
-        spyOn<any>(dotAccountService, 'addStarterPage').and.returnValue(of({ entity: {} }));
-        spyOn<any>(dotAccountService, 'updateUser').and.returnValue(
+        jest.spyOn<any>(dotMenuService, 'isPortletInMenu').mockReturnValue(of(false));
+        jest.spyOn<any>(dotAccountService, 'addStarterPage').mockReturnValue(of({ entity: {} }));
+        jest.spyOn<any>(dotAccountService, 'updateUser').mockReturnValue(
             of({ entity: { user: mockUser() } })
         );
         fixture.detectChanges();
@@ -280,9 +280,9 @@ describe('DotMyAccountComponent', () => {
     });
 
     it(`should call to remove starter method in account service`, async () => {
-        spyOn<any>(dotMenuService, 'isPortletInMenu').and.returnValue(of(true));
-        spyOn<any>(dotAccountService, 'removeStarterPage').and.returnValue(of({ entity: {} }));
-        spyOn<any>(dotAccountService, 'updateUser').and.returnValue(
+        jest.spyOn<any>(dotMenuService, 'isPortletInMenu').mockReturnValue(of(true));
+        jest.spyOn<any>(dotAccountService, 'removeStarterPage').mockReturnValue(of({ entity: {} }));
+        jest.spyOn<any>(dotAccountService, 'updateUser').mockReturnValue(
             of({ entity: { user: mockUser() } })
         );
         fixture.detectChanges();
@@ -306,13 +306,13 @@ describe('DotMyAccountComponent', () => {
     });
 
     it(`should SAVE form and sethAuth when no reauthentication`, async () => {
-        spyOn<any>(dotAccountService, 'addStarterPage').and.returnValue(of({}));
-        spyOn<any>(dotAccountService, 'removeStarterPage').and.returnValue(of({}));
-        spyOn<any>(dotAccountService, 'updateUser').and.returnValue(
+        jest.spyOn<any>(dotAccountService, 'addStarterPage').mockReturnValue(of({}));
+        jest.spyOn<any>(dotAccountService, 'removeStarterPage').mockReturnValue(of({}));
+        jest.spyOn<any>(dotAccountService, 'updateUser').mockReturnValue(
             of({ entity: { user: mockUser() } })
         );
-        spyOn(loginService, 'setAuth');
-        spyOn(comp.shutdown, 'emit');
+        jest.spyOn(loginService, 'setAuth').mockImplementation(() => {});
+        jest.spyOn(comp.shutdown, 'emit').mockImplementation(() => {});
 
         fixture.detectChanges();
         await fixture.whenStable();
@@ -345,13 +345,13 @@ describe('DotMyAccountComponent', () => {
     });
 
     it(`should SAVE form and reauthenticate`, async () => {
-        spyOn<any>(dotAccountService, 'addStarterPage').and.returnValue(of({}));
-        spyOn<any>(dotAccountService, 'removeStarterPage').and.returnValue(of({}));
-        spyOn<any>(dotAccountService, 'updateUser').and.returnValue(
+        jest.spyOn<any>(dotAccountService, 'addStarterPage').mockReturnValue(of({}));
+        jest.spyOn<any>(dotAccountService, 'removeStarterPage').mockReturnValue(of({}));
+        jest.spyOn<any>(dotAccountService, 'updateUser').mockReturnValue(
             of({ entity: { reauthenticate: true } })
         );
-        spyOn(dotAlertConfirmService, 'alert');
-        spyOn(comp.shutdown, 'emit');
+        jest.spyOn(dotAlertConfirmService, 'alert').mockImplementation(() => {});
+        jest.spyOn(comp.shutdown, 'emit').mockImplementation(() => {});
 
         fixture.detectChanges();
         await fixture.whenStable();
@@ -396,7 +396,7 @@ describe('DotMyAccountComponent', () => {
                 ]
             }
         };
-        spyOn(dotAccountService, 'updateUser').and.returnValue(throwError(errorResponse));
+        jest.spyOn(dotAccountService, 'updateUser').mockReturnValue(throwError(errorResponse));
 
         fixture.detectChanges();
         await fixture.whenStable();
@@ -440,7 +440,7 @@ describe('DotMyAccountComponent', () => {
                 ]
             }
         };
-        spyOn(dotAccountService, 'updateUser').and.returnValue(throwError(errorResponse));
+        jest.spyOn(dotAccountService, 'updateUser').mockReturnValue(throwError(errorResponse));
 
         fixture.detectChanges();
         await fixture.whenStable();
@@ -483,8 +483,8 @@ describe('DotMyAccountComponent', () => {
                 ]
             }
         };
-        spyOn(dotAccountService, 'updateUser').and.returnValue(throwError(errorResponse));
-        spyOn(httpErrorManagerService, 'handle').and.returnValue(of(null));
+        jest.spyOn(dotAccountService, 'updateUser').mockReturnValue(throwError(errorResponse));
+        jest.spyOn(httpErrorManagerService, 'handle').mockReturnValue(of(null));
 
         fixture.detectChanges();
         await fixture.whenStable();

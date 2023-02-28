@@ -58,7 +58,7 @@ describe('DotExperimentsConfigurationTrafficAllocationAddComponent', () => {
 
         store = spectator.inject(DotExperimentsConfigurationStore);
         dotExperimentsService = spectator.inject(DotExperimentsService);
-        dotExperimentsService.getById.and.returnValue(of(ExperimentMocks[0]));
+        dotExperimentsService.getById.mockReturnValue(of(ExperimentMocks[0]));
 
         store.loadExperiment(EXPERIMENT_ID);
         store.setSidebarStatus({
@@ -77,7 +77,7 @@ describe('DotExperimentsConfigurationTrafficAllocationAddComponent', () => {
     });
 
     it('should save form when is valid ', () => {
-        spyOn(store, 'setSelectedAllocation');
+        jest.spyOn(store, 'setSelectedAllocation').mockImplementation(() => {});
         const submitButton = spectator.query(
             byTestId('add-trafficAllocation-button')
         ) as HTMLButtonElement;
@@ -94,7 +94,7 @@ describe('DotExperimentsConfigurationTrafficAllocationAddComponent', () => {
     });
 
     it('should close sidebar ', () => {
-        spyOn(store, 'closeSidebar');
+        jest.spyOn(store, 'closeSidebar').mockImplementation(() => {});
         sidebar = spectator.query(Sidebar);
         sidebar.hide();
 

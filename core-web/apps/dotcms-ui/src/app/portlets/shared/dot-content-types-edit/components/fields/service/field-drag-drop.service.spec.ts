@@ -64,7 +64,7 @@ describe('FieldDragDropService', () => {
                 {
                     provide: DotAlertConfirmService,
                     useValue: {
-                        alert: jasmine.createSpy('alert')
+                        alert: jest.fn()
                     }
                 },
                 {
@@ -86,7 +86,7 @@ describe('FieldDragDropService', () => {
 
     describe('Setting FieldBagOptions', () => {
         it('should set name', () => {
-            const findSpy = spyOn(dragulaService, 'find').and.returnValue(null);
+            const findSpy = jest.spyOn(dragulaService, 'find').mockReturnValue(null);
 
             fieldDragDropService.setFieldBagOptions();
 
@@ -221,7 +221,7 @@ describe('FieldDragDropService', () => {
 
                     expect(dotAlertConfirmService.alert).toHaveBeenCalledTimes(1);
                     expect(dotAlertConfirmService.alert).toHaveBeenCalledWith(
-                        jasmine.objectContaining({
+                        expect.objectContaining({
                             header: 'This row is full',
                             message: 'The maximum number of columns per row is limited to four.',
                             footerLabel: {
@@ -236,7 +236,7 @@ describe('FieldDragDropService', () => {
 
     describe('Setting FieldRowBagOptions', () => {
         it('should set name', () => {
-            const findSpy = spyOn(dragulaService, 'find').and.returnValue(null);
+            const findSpy = jest.spyOn(dragulaService, 'find').mockReturnValue(null);
 
             fieldDragDropService.setFieldRowBagOptions();
 
@@ -262,8 +262,8 @@ describe('FieldDragDropService', () => {
     });
 
     it('should set bag options for fields and rows', () => {
-        spyOn(fieldDragDropService, 'setFieldRowBagOptions');
-        spyOn(fieldDragDropService, 'setFieldBagOptions');
+        jest.spyOn(fieldDragDropService, 'setFieldRowBagOptions').mockImplementation(() => {});
+        jest.spyOn(fieldDragDropService, 'setFieldBagOptions').mockImplementation(() => {});
 
         fieldDragDropService.setBagOptions();
 

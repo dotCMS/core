@@ -66,13 +66,13 @@ describe('DotContentTypeFieldsVariablesComponent', () => {
     });
 
     it('should load the component with one empty row', () => {
-        spyOn(dotFieldVariableService, 'load').and.returnValue(of([]));
+        jest.spyOn(dotFieldVariableService, 'load').mockReturnValue(of([]));
         fixtureHost.detectChanges();
         expect(comp.fieldVariables.length).toBe(0);
     });
 
     it('should save a variable', () => {
-        spyOn(dotFieldVariableService, 'save').and.returnValue(of(mockFieldVariables[0]));
+        jest.spyOn(dotFieldVariableService, 'save').mockReturnValue(of(mockFieldVariables[0]));
         const response = mockFieldVariables[0];
 
         fixtureHost.detectChanges();
@@ -88,7 +88,7 @@ describe('DotContentTypeFieldsVariablesComponent', () => {
 
     it('should delete a variable from the server', () => {
         const variableToDelete = mockFieldVariables[0];
-        spyOn<any>(dotFieldVariableService, 'delete').and.returnValue(of([]));
+        jest.spyOn<any>(dotFieldVariableService, 'delete').mockReturnValue(of([]));
         const deletedCollection = mockFieldVariables.filter(
             (item: DotFieldVariable) => variableToDelete.key !== item.key
         );
@@ -112,7 +112,7 @@ describe('DotContentTypeFieldsVariablesComponent', () => {
         });
 
         it('should set variable correctly', () => {
-            spyOn<DotFieldVariablesService>(dotFieldVariableService, 'load').and.returnValue(
+            jest.spyOn<DotFieldVariablesService>(dotFieldVariableService, 'load').mockReturnValue(
                 of(mockFieldVariables)
             );
             fixtureHost.detectChanges();
@@ -123,7 +123,7 @@ describe('DotContentTypeFieldsVariablesComponent', () => {
         });
 
         it('should not set allowedBlocks variable', () => {
-            spyOn<DotFieldVariablesService>(dotFieldVariableService, 'load').and.returnValue(
+            jest.spyOn<DotFieldVariablesService>(dotFieldVariableService, 'load').mockReturnValue(
                 of([
                     {
                         clazz: 'com.dotcms.contenttype.model.field.ImmutableFieldVariable',

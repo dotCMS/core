@@ -268,7 +268,7 @@ describe('DotExperimentsConfigurationVariantsComponent', () => {
         });
 
         it('should save when press enter', () => {
-            spyOn(spectator.component, 'editVariantName');
+            jest.spyOn(spectator.component, 'editVariantName').mockImplementation(() => {});
 
             spectator.component.vm$ = of({
                 status: {

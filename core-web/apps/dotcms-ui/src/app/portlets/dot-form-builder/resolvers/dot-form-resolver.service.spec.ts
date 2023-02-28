@@ -11,9 +11,9 @@ import { MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotFormResolver, DotUnlicensedPortlet } from './dot-form-resolver.service';
 
-const route: any = jasmine.createSpyObj<ActivatedRouteSnapshot>('ActivatedRouteSnapshot', [
-    'toString'
-]);
+const route: any = {
+    toString: jest.fn()
+};
 
 const messageServiceMock = new MockDotMessageService({
     'Forms-and-Form-Builder': 'Form',
@@ -44,14 +44,14 @@ describe('DotFormResolver', () => {
     }));
 
     it('should return resolve null when license is enterprise', () => {
-        spyOn(dotLicenseService, 'isEnterprise').and.returnValue(of(true));
+        jest.spyOn(dotLicenseService, 'isEnterprise').mockReturnValue(of(true));
         service.resolve(route).subscribe((result: DotUnlicensedPortlet) => {
             expect(result).toBe(null);
         });
     });
 
     it('should return resolve data when no license', () => {
-        spyOn(dotLicenseService, 'isEnterprise').and.returnValue(of(false));
+        jest.spyOn(dotLicenseService, 'isEnterprise').mockReturnValue(of(false));
         service.resolve(route).subscribe((result: DotUnlicensedPortlet) => {
             expect(result).toEqual({
                 title: 'Form',

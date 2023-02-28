@@ -14,14 +14,14 @@ describe('DotUiColorsService', () => {
 
         service = injector.get(DotUiColorsService);
 
-        setPropertySpy = jasmine.createSpy('setProperty');
-        spyOn(document as Document, 'querySelector').and.returnValue({
+        setPropertySpy = jest.fn();
+        jest.spyOn(document as Document, 'querySelector').mockReturnValue({
             style: {
                 setProperty: setPropertySpy
             }
         } as HTMLElement);
 
-        spyOn(window as Window, 'getComputedStyle').and.returnValue({
+        jest.spyOn(window as Window, 'getComputedStyle').mockReturnValue({
             getPropertyValue: (cssVar: string) => {
                 const map = {
                     '--color-main': '#C336E5',

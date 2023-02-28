@@ -117,7 +117,7 @@ describe('DotExperimentsCreateComponent', () => {
 
     it('submit should call handleSubmit()', () => {
         const submitButton = spectator.query<HTMLButtonElement>(byTestId('add-experiment-button'));
-        spyOn(spectator.component, 'handleSubmit');
+        jest.spyOn(spectator.component, 'handleSubmit').mockImplementation(() => {});
 
         spectator.component.handleSubmit();
 
@@ -148,7 +148,7 @@ describe('DotExperimentsCreateComponent', () => {
             expect(submitButton).toContainText('Add');
             expect(spectator.component.form.valid).toBeTrue();
 
-            const handleSubmitSpy = spyOn(spectator.component, 'handleSubmit');
+            const handleSubmitSpy = jest.spyOn(spectator.component, 'handleSubmit');
             spectator.click(submitButton);
             spectator.detectComponentChanges();
 

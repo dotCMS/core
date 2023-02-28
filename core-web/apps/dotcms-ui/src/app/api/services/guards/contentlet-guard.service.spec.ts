@@ -18,7 +18,7 @@ class MockDotContentTypeService {
 
 @Injectable()
 class MockDotNavigationService {
-    goToFirstPortlet = jasmine.createSpy('goToFirstPortlet');
+    goToFirstPortlet = jest.fn();
 }
 
 describe('ValidContentletGuardService', () => {
@@ -46,19 +46,18 @@ describe('ValidContentletGuardService', () => {
         contentletGuardService = TestBed.inject(ContentletGuardService);
         dotContentletService = TestBed.inject(DotContentTypeService);
         dotNavigationService = TestBed.inject(DotNavigationService);
-        mockRouterStateSnapshot = jasmine.createSpyObj<RouterStateSnapshot>('RouterStateSnapshot', [
-            'toString'
-        ]);
-        mockActivatedRouteSnapshot = jasmine.createSpyObj<ActivatedRouteSnapshot>(
-            'ActivatedRouteSnapshot',
-            ['toString']
-        );
+        mockRouterStateSnapshot = {
+            toString: jest.fn()
+        };
+        mockActivatedRouteSnapshot = {
+            toString: jest.fn()
+        };
     });
 
     it('should allow children access to Content Types Portlets', () => {
         let result: boolean;
         mockActivatedRouteSnapshot.params = { id: 'banner' };
-        spyOn(dotContentletService, 'isContentTypeInMenu').and.returnValue(of(true));
+        jest.spyOn(dotContentletService, 'isContentTypeInMenu').mockReturnValue(of(true));
         contentletGuardService
             .canActivateChild(mockActivatedRouteSnapshot, mockRouterStateSnapshot)
             .subscribe((res) => (result = res));
@@ -69,7 +68,7 @@ describe('ValidContentletGuardService', () => {
     it('should prevent children access to Content Types Portlets', () => {
         let result: boolean;
         mockActivatedRouteSnapshot.params = { id: 'banner' };
-        spyOn(dotContentletService, 'isContentTypeInMenu').and.returnValue(of(false));
+        jest.spyOn(dotContentletService, 'isContentTypeInMenu').mockReturnValue(of(false));
         contentletGuardService
             .canActivateChild(mockActivatedRouteSnapshot, mockRouterStateSnapshot)
             .subscribe((res) => (result = res));

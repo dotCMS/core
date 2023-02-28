@@ -166,7 +166,7 @@ describe('DotTemplateCreateEditComponent', () => {
                 {
                     provide: DotTempFileUploadService,
                     useValue: {
-                        upload: jasmine.createSpy().and.returnValue(
+                        upload: jest.fn(() =>
                             of([
                                 {
                                     assetVersion: '',
@@ -180,7 +180,7 @@ describe('DotTemplateCreateEditComponent', () => {
                 {
                     provide: DotWorkflowActionsFireService,
                     useValue: {
-                        publishContentletAndWaitForIndex: jasmine.createSpy().and.returnValue(
+                        publishContentletAndWaitForIndex: jest.fn(() =>
                             of({
                                 identifier: ''
                             })
@@ -190,7 +190,7 @@ describe('DotTemplateCreateEditComponent', () => {
                 {
                     provide: DotCrudService,
                     useValue: {
-                        getDataById: jasmine.createSpy().and.returnValue(
+                        getDataById: jest.fn(() =>
                             of([
                                 {
                                     identifier: ''
@@ -242,18 +242,18 @@ describe('DotTemplateCreateEditComponent', () => {
                 {
                     provide: DotThemesService,
                     useValue: {
-                        get: jasmine.createSpy().and.returnValue(of(mockDotThemes[1]))
+                        get: jest.fn(() => of(mockDotThemes[1]))
                     }
                 }
             ]
         });
 
         templateStoreValue = {
-            createTemplate: jasmine.createSpy(),
-            goToEditTemplate: jasmine.createSpy(),
-            goToTemplateList: jasmine.createSpy(),
-            saveTemplate: jasmine.createSpy(),
-            saveWorkingTemplate: jasmine.createSpy()
+            createTemplate: jest.fn(),
+            goToEditTemplate: jest.fn(),
+            goToTemplateList: jest.fn(),
+            saveTemplate: jest.fn(),
+            saveWorkingTemplate: jest.fn()
         };
     });
 
@@ -283,7 +283,7 @@ describe('DotTemplateCreateEditComponent', () => {
 
                 dialogService = fixture.debugElement.injector.get(DialogService);
                 store = fixture.debugElement.injector.get(DotTemplateStore);
-                spyOn(dialogService, 'open').and.callThrough();
+                jest.spyOn(dialogService, 'open');
 
                 fixture.detectChanges();
             });
@@ -301,7 +301,7 @@ describe('DotTemplateCreateEditComponent', () => {
             });
 
             it('should open create dialog', async () => {
-                expect(dialogService.open).toHaveBeenCalledWith(jasmine.any(Function), {
+                expect(dialogService.open).toHaveBeenCalledWith(expect.any(Function), {
                     header: 'Create new template',
                     width: '40rem',
                     closable: false,
@@ -323,7 +323,7 @@ describe('DotTemplateCreateEditComponent', () => {
                             theme: '',
                             image: ''
                         },
-                        onSave: jasmine.any(Function)
+                        onSave: expect.any(Function)
                     }
                 });
             });
@@ -383,13 +383,13 @@ describe('DotTemplateCreateEditComponent', () => {
 
                 dialogService = fixture.debugElement.injector.get(DialogService);
                 store = fixture.debugElement.injector.get(DotTemplateStore);
-                spyOn(dialogService, 'open').and.callThrough();
+                jest.spyOn(dialogService, 'open');
 
                 fixture.detectChanges();
             });
 
             it('should open create dialog', async () => {
-                expect(dialogService.open).toHaveBeenCalledWith(jasmine.any(Function), {
+                expect(dialogService.open).toHaveBeenCalledWith(expect.any(Function), {
                     header: 'Create new template',
                     width: '40rem',
                     closable: false,
@@ -403,7 +403,7 @@ describe('DotTemplateCreateEditComponent', () => {
                             friendlyName: '',
                             image: ''
                         },
-                        onSave: jasmine.any(Function)
+                        onSave: expect.any(Function)
                     }
                 });
             });
@@ -452,10 +452,10 @@ describe('DotTemplateCreateEditComponent', () => {
                 };
                 const storeMock = {
                     ...templateStoreValue,
-                    saveTemplate: jasmine.createSpy(),
-                    saveAndPublishTemplate: jasmine.createSpy(),
-                    goToTemplateList: jasmine.createSpy(),
-                    goToEditTemplate: jasmine.createSpy(),
+                    saveTemplate: jest.fn(),
+                    saveAndPublishTemplate: jest.fn(),
+                    goToTemplateList: jest.fn(),
+                    goToEditTemplate: jest.fn(),
                     vm$: of({
                         working: template,
                         original: template,
@@ -469,7 +469,7 @@ describe('DotTemplateCreateEditComponent', () => {
 
                 dialogService = fixture.debugElement.injector.get(DialogService);
                 store = fixture.debugElement.injector.get(DotTemplateStore);
-                spyOn(dialogService, 'open').and.callThrough();
+                jest.spyOn(dialogService, 'open');
 
                 fixture.detectChanges();
             });
@@ -639,7 +639,7 @@ describe('DotTemplateCreateEditComponent', () => {
                     const button = de.query(By.css('[data-testId="editTemplateButton"]'));
                     button.nativeElement.click();
 
-                    expect(dialogService.open).toHaveBeenCalledWith(jasmine.any(Function), {
+                    expect(dialogService.open).toHaveBeenCalledWith(expect.any(Function), {
                         header: 'Template Properties',
                         width: '30rem',
 
@@ -660,7 +660,7 @@ describe('DotTemplateCreateEditComponent', () => {
                                 theme: '',
                                 image: ''
                             },
-                            onSave: jasmine.any(Function)
+                            onSave: expect.any(Function)
                         }
                     });
                 });
@@ -689,7 +689,7 @@ describe('DotTemplateCreateEditComponent', () => {
 
                 dialogService = fixture.debugElement.injector.get(DialogService);
                 store = fixture.debugElement.injector.get(DotTemplateStore);
-                spyOn(dialogService, 'open').and.callThrough();
+                jest.spyOn(dialogService, 'open');
 
                 fixture.detectChanges();
             });
@@ -745,7 +745,7 @@ describe('DotTemplateCreateEditComponent', () => {
 
             dialogService = fixture.debugElement.injector.get(DialogService);
             store = fixture.debugElement.injector.get(DotTemplateStore);
-            spyOn(dialogService, 'open').and.callThrough();
+            jest.spyOn(dialogService, 'open');
 
             subject.next({
                 working: EMPTY_TEMPLATE_ADVANCED,

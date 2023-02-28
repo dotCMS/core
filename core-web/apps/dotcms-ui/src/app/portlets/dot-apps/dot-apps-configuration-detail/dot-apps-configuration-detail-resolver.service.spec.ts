@@ -14,10 +14,9 @@ class AppsServicesMock {
     }
 }
 
-const activatedRouteSnapshotMock: any = jasmine.createSpyObj<ActivatedRouteSnapshot>(
-    'ActivatedRouteSnapshot',
-    ['toString']
-);
+const activatedRouteSnapshotMock: any = {
+    toString: jest.fn()
+};
 activatedRouteSnapshotMock.paramMap = {};
 
 describe('DotAppsConfigurationDetailResolver', () => {
@@ -64,7 +63,7 @@ describe('DotAppsConfigurationDetailResolver', () => {
             return param === 'appKey' ? queryParams.appKey : queryParams.id;
         };
 
-        spyOn<any>(dotAppsServices, 'getConfiguration').and.returnValue(of(response));
+        jest.spyOn<any>(dotAppsServices, 'getConfiguration').mockReturnValue(of(response));
 
         dotAppsConfigurationDetailResolver
             .resolve(activatedRouteSnapshotMock)

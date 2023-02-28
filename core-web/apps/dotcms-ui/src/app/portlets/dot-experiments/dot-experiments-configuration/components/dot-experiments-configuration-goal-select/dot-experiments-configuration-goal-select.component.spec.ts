@@ -56,7 +56,7 @@ describe('DotExperimentsConfigurationGoalSelectComponent', () => {
 
         store = spectator.inject(DotExperimentsConfigurationStore);
         dotExperimentsService = spectator.inject(DotExperimentsService);
-        dotExperimentsService.getById.and.returnValue(of(ExperimentMocks[0]));
+        dotExperimentsService.getById.mockReturnValue(of(ExperimentMocks[0]));
 
         store.loadExperiment(ExperimentMocks[0].id);
         store.setSidebarStatus({
@@ -80,7 +80,7 @@ describe('DotExperimentsConfigurationGoalSelectComponent', () => {
                 }
             }
         };
-        spyOn(store, 'setSelectedGoal');
+        jest.spyOn(store, 'setSelectedGoal').mockImplementation(() => {});
 
         const formValues = {
             goal: selectedGoal
@@ -102,7 +102,7 @@ describe('DotExperimentsConfigurationGoalSelectComponent', () => {
     it('should emit closedSidebar when the sidebar its closed', async () => {
         sidebar = spectator.query(Sidebar);
 
-        spyOn(spectator.component, 'closeSidebar');
+        jest.spyOn(spectator.component, 'closeSidebar').mockImplementation(() => {});
         store.setSidebarStatus({
             experimentStep: ExperimentSteps.GOAL,
             isOpen: false

@@ -56,7 +56,7 @@ describe('DotReorderMenuComponent', () => {
         });
 
         it('should emit shutdown', () => {
-            spyOn(component.shutdown, 'emit');
+            jest.spyOn(component.shutdown, 'emit').mockImplementation(() => {});
             fixture.detectChanges();
             const dotIframeDialogElement = de.query(By.css('dot-iframe-dialog')).componentInstance;
             dotIframeDialogElement.shutdown.emit();

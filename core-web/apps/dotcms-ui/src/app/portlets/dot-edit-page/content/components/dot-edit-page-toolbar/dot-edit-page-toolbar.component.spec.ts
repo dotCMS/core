@@ -277,7 +277,7 @@ describe('DotEditPageToolbarComponent', () => {
         });
 
         it('should emit on click', () => {
-            spyOn(component.actionFired, 'emit');
+            jest.spyOn(component.actionFired, 'emit').mockImplementation(() => {});
             fixtureHost.detectChanges();
             const dotEditWorkflowActions = de.query(By.css('dot-edit-page-workflows-actions'));
             dotEditWorkflowActions.triggerEventHandler('fired', {});
@@ -304,7 +304,7 @@ describe('DotEditPageToolbarComponent', () => {
     describe("what's change", () => {
         describe('no license', () => {
             beforeEach(() => {
-                spyOn(dotLicenseService, 'isEnterprise').and.returnValue(of(false));
+                jest.spyOn(dotLicenseService, 'isEnterprise').mockReturnValue(of(false));
                 fixtureHost.detectChanges();
             });
 
@@ -373,10 +373,10 @@ describe('DotEditPageToolbarComponent', () => {
     describe('events', () => {
         let whatsChangedElem: DebugElement;
         beforeEach(() => {
-            spyOn(component.whatschange, 'emit');
-            spyOn(dotMessageDisplayService, 'push');
-            spyOn(dotDialogService, 'open');
-            spyOn(component.favoritePage, 'emit');
+            jest.spyOn(component.whatschange, 'emit').mockImplementation(() => {});
+            jest.spyOn(dotMessageDisplayService, 'push').mockImplementation(() => {});
+            jest.spyOn(dotDialogService, 'open').mockImplementation(() => {});
+            jest.spyOn(component.favoritePage, 'emit').mockImplementation(() => {});
 
             componentHost.pageState.state.mode = DotPageMode.PREVIEW;
             delete componentHost.pageState.viewAs.persona;
