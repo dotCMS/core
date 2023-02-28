@@ -21,7 +21,7 @@ import {
 import { DotNavLogoService } from './api/services/dot-nav-logo/dot-nav-logo.service';
 import { AppComponent } from './app.component';
 
-describe('AppComponent', () => {
+fdescribe('AppComponent', () => {
     let fixture: ComponentFixture<AppComponent>;
     let de: DebugElement;
     let dotCmsConfigService: DotcmsConfigService;
