@@ -13,7 +13,6 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { ConfirmationService, MessageService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
 
-import { DotMessagePipe } from '@dotcms/app/view/pipes';
 import { DotMessageService, DotSessionStorageService } from '@dotcms/data-access';
 import { ComponentStatus } from '@dotcms/dotcms-models';
 import { MockDotMessageService } from '@dotcms/utils-testing';
@@ -35,7 +34,7 @@ import {
     ExperimentMocks
 } from '@portlets/dot-experiments/test/mocks';
 import { DotHttpErrorManagerService } from '@services/dot-http-error-manager/dot-http-error-manager.service';
-import { DotMessageMockPipe } from '@tests/dot-message-mock.pipe';
+import { DotMessagePipe } from '@tests/dot-message-mock.pipe';
 
 import { DotExperimentsConfigurationComponent } from './dot-experiments-configuration.component';
 
@@ -83,9 +82,10 @@ describe('DotExperimentsConfigurationComponent', () => {
             DotExperimentsConfigurationSchedulingComponent,
             DotExperimentsConfigurationSkeletonComponent,
             DotExperimentsExperimentSummaryComponent,
-            DotMessageMockPipe
+            DotMessagePipe
         ],
         component: DotExperimentsConfigurationComponent,
+
         componentProviders: [
             mockProvider(DotExperimentsConfigurationStore, DotExperimentsConfigurationStoreMock)
         ],
@@ -104,8 +104,7 @@ describe('DotExperimentsConfigurationComponent', () => {
             mockProvider(MessageService),
             mockProvider(Router),
             mockProvider(DotHttpErrorManagerService),
-            mockProvider(Title),
-            mockProvider(DotMessagePipe)
+            mockProvider(Title)
         ]
     });
 

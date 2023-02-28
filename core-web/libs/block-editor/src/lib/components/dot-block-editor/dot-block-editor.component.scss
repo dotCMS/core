@@ -260,4 +260,12 @@
             margin-bottom: $spacing-3;
         }
     }
+
+    tiptap-editor {
+        /* To avoid jumps in the content when the scroll is hidden */
+        scrollbar-gutter: stable;
+    }
+    .overflow-hidden {
+        overflow-y: hidden;
+    }
 }

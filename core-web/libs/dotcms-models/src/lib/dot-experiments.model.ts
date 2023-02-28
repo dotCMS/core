@@ -38,7 +38,7 @@ export type GoalsLevels = 'primary';
 export interface Goal {
     name: string;
     type: GOAL_TYPES;
-    conditions: Array<GoalCondition>;
+    conditions?: Array<GoalCondition>;
 }
 
 export type Goals = Record<GoalsLevels, Goal>;
@@ -62,11 +62,11 @@ export interface StepStatus {
     experimentStep: ExperimentSteps | null;
 }
 
-export type GoalSelectOption = {
+export type ExperimentsSelectOption<T> = {
     label: string;
-    value: string;
+    value: T;
     inactive: boolean;
-    description: string;
+    description?: string;
 };
 
 export type EditPageTabs = 'edit' | 'preview';
