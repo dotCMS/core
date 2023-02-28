@@ -423,6 +423,7 @@ export class DotEditContentHtmlService {
 
     private getCurrentContentlet(target: HTMLElement): DotPageContent {
         try {
+            /* Get contentlet Data HERE */
             const contentlet = <HTMLElement>target.closest('[data-dot-object="contentlet"]');
 
             return {
@@ -812,7 +813,6 @@ export class DotEditContentHtmlService {
     private loadCodeIntoIframe(pageState: DotPageRenderState): void {
         const doc = this.getEditPageDocument();
         const html = this.updateHtml(pageState);
-
         doc.open();
         doc.write(html);
         doc.close();

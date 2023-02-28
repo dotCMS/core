@@ -86,6 +86,7 @@ export class DotEditContentComponent implements OnInit, OnDestroy {
     paletteCollapsed = false;
     isEnterpriseLicense = false;
     variantData: Observable<DotVariantData>;
+    showDialog = false;
 
     private readonly customEventsHandler;
     private destroy$: Subject<boolean> = new Subject<boolean>();
@@ -480,17 +481,25 @@ export class DotEditContentComponent implements OnInit, OnDestroy {
     }
 
     private editContentlet($event: DotIframeEditEvent): void {
-        this.dotContentletEditorService.edit({
-            data: {
-                inode: $event.dataset.dotInode
-            },
-            events: {
-                load: (event) => {
-                    (event.target as HTMLIFrameElement).contentWindow['ngEditContentletEvents'] =
-                        this.dotEditContentHtmlService.contentletEvents$;
+        const onNumberPages = +$event.dataset.onNumberOfPage;
+        const isInMultiplePages = onNumberPages > 1 || true;
+
+        if (isInMultiplePages) {
+            this.showDialog = true;
+        } else {
+            this.dotContentletEditorService.edit({
+                data: {
+                    inode: $event.dataset.dotInode
+                },
+                events: {
+                    load: (event) => {
+                        (event.target as HTMLIFrameElement).contentWindow[
+                            'ngEditContentletEvents'
+                        ] = this.dotEditContentHtmlService.contentletEvents$;
+                    }
                 }
-            }
-        });
+            });
+        }
     }
 
     private iframeActionsHandler(event: string): (contentlet: DotIframeEditEvent) => void {
@@ -681,5 +690,9 @@ export class DotEditContentComponent implements OnInit, OnDestroy {
                 } as DotVariantData;
             })
         );
+    }
+
+    hideDialog(): void {
+        this.showDialog = false;
     }
 }

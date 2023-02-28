@@ -208,6 +208,8 @@ export class DotPageStateService {
             catchError((err) => this.handleSetPageStateFailed(err)),
             take(1),
             switchMap((page: DotPageRenderParameters) => {
+                /* HERE: We ge the Page Data */
+
                 if (page) {
                     const urlParam = generateDotFavoritePageUrl(page);
 

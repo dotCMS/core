@@ -1,0 +1,43 @@
+@use "variables" as *;
+
+.dialog__message {
+    margin-bottom: $spacing-5;
+}
+
+.dialog__container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 1rem;
+
+    .dialog__container__options {
+        background-color: $gray-lighter;
+        width: 145px;
+        height: 145px;
+        border-radius: 7px;
+        padding: $spacing-5;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        gap: 1rem;
+        cursor: pointer;
+
+        span {
+            color: $gray-dark;
+        }
+
+        &.active {
+            border: 1px solid #4e65f1;
+            background-color: #e9ebfc;
+
+            span {
+                color: #4e65f1;
+            }
+        }
+    }
+}
+
+.material-icons {
+    font-size: 4rem;
+}

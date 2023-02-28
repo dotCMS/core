@@ -11,3 +11,13 @@ export interface DotPageContainer {
 export interface DotPageContainerPersonalized extends DotPageContainer {
     personaTag?: string;
 }
+
+export interface DotCopyContentInPage {
+    containerId: string;
+    contentId: string;
+    pageId: string;
+    personalization: string;
+    relationType: string;
+    treeOrder: string;
+    variantId: string;
+}

@@ -30,6 +30,7 @@ import { DotEditPageStateControllerModule } from './components/dot-edit-page-sta
 import { DotEditPageToolbarModule } from './components/dot-edit-page-toolbar/dot-edit-page-toolbar.module';
 import { DotEditPageViewAsControllerModule } from './components/dot-edit-page-view-as-controller/dot-edit-page-view-as-controller.module';
 import { DotFormSelectorModule } from './components/dot-form-selector/dot-form-selector.module';
+import { DotSelectEditContentletComponent } from './components/dot-select-edit-contentlet/dot-select-edit-contentlet.component';
 import { DotWhatsChangedModule } from './components/dot-whats-changed/dot-whats-changed.module';
 import { DotEditContentComponent } from './dot-edit-content.component';
 import { DotContainerContentletService } from './services/dot-container-contentlet.service';
@@ -66,7 +67,8 @@ const routes: Routes = [
         DotEditPageStateControllerModule,
         DotOverlayMaskModule,
         DotPaletteModule,
-        DotIconModule
+        DotIconModule,
+        DotSelectEditContentletComponent
     ],
     exports: [DotEditContentComponent],
     providers: [

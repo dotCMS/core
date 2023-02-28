@@ -1,0 +1,35 @@
+<dot-dialog
+    *ngIf="show"
+    [header]="'Editor Content'"
+    [visible]="show"
+    [actions]="dialogActions"
+    [appendToBody]="true"
+    [bindEvents]="false"
+    (hide)="hideDialog.emit()"
+    width="500px"
+>
+    <div class="dialog__message">
+        <strong>Several Pages are using this content.</strong> You can edit it either for the page
+        or for all of them.
+    </div>
+
+    <div class="dialog__container">
+        <div
+            class="dialog__container__options"
+            [ngClass]="{ active: selected === options.CURRENT }"
+            (click)="changeSelection(options.CURRENT)"
+        >
+            <span class="material-icons"> article </span>
+            <span>This Page</span>
+        </div>
+
+        <div
+            class="dialog__container__options"
+            [ngClass]="{ active: selected === options.ALL }"
+            (click)="changeSelection(options.ALL)"
+        >
+            <span class="material-icons"> dynamic_feed </span>
+            <span>All Pages</span>
+        </div>
+    </div>
+</dot-dialog>
