@@ -1,3 +1,4 @@
+import { Props } from 'tippy.js';
 import { SafeUrl, ɵDomSanitizerImpl } from '@angular/platform-browser';
 
 // Assets
@@ -149,4 +150,21 @@ export const clearFilter = function ({ type, editor, range, suggestionKey, Items
         from: type === ItemsType.BLOCK ? range.from : range.from + 1
     };
     editor.chain().deleteRange(queryRange).run();
+};
+
+export const BASIC_TIPPY_OPTIONS: Partial<Props> = {
+    duration: [250, 0],
+    interactive: true,
+    maxWidth: 'none',
+    trigger: 'manual',
+    placement: 'bottom-start',
+    hideOnClick: 'toggle',
+    popperOptions: {
+        modifiers: [
+            {
+                name: 'flip',
+                options: { fallbackPlacements: ['top-start'] }
+            }
+        ]
+    }
 };
