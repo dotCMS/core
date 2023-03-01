@@ -637,7 +637,9 @@
                     </dl>
                
                     <div id="advancedSearchOptions" style="height:0px;overflow: hidden">
-
+                        
+                        <!-- Ajax built search fields  --->
+                        <div id="search_fields_table"></div>
                         <dl class="vertical">
                             <dt><label><%= LanguageUtil.get(pageContext, "Workflow-Schemes") %>:</label></dt>
                             <dd><span id="schemeSelectBox"></span></dd>
@@ -668,8 +670,6 @@
                         <% } %>
 
 
-                        <!-- Ajax built search fields  --->
-                        <div id="search_fields_table"></div>
                         <div class="clear"></div>
                         <!-- /Ajax built search fields  --->
 

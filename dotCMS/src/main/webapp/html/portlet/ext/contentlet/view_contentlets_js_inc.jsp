@@ -1269,23 +1269,24 @@ final String calendarEventInode = null!=calendarEventSt ? calendarEventSt.inode(
          */
         function fillFields (data) {
             currentStructureFields = data;
-            var htmlstr = "";
-            var hasSiteFolderField = false;
-            for (var i = 0; i < data.length; i++) {
-                var type = data[i]["fieldFieldType"];
-                if (type=='category' || type=='hidden') {
+            let htmlstr = "";
+            let hasSiteFolderField = false;
+               for (let i = 0; i < data.length; i++) {
+                const { fieldFieldType } = data[i];
+                if (fieldFieldType === 'category' || fieldFieldType === 'hidden') {
                         continue;
                 }
-                if (type == '<%= com.dotmarketing.portlets.structure.model.Field.FieldType.HOST_OR_FOLDER.toString() %>') {
+                if (fieldFieldType == '<%= com.dotmarketing.portlets.structure.model.Field.FieldType.HOST_OR_FOLDER.toString() %>') {
                    hasSiteFolderField = true;
                 }
-
-                htmlstr += "<dl class='vertical'>";
-                htmlstr += "<dt><label>" + fieldName(data[i]) + "</label></dt>";
-                htmlstr += "<dd style='min-height:0px'>" + renderSearchField(data[i]) + "</dd>";
-                htmlstr += "</dl>";
-                htmlstr += "<div class='clear'></div>";
-            }
+                htmlstr += `<dl class='vertical'>
+                        <dt>
+                        <label>${fieldName(data[i])}</label>
+                        </dt>
+                        <dd style='min-height:0px'>${renderSearchField(data[i])}</dd>
+                        </dl>
+                        <div class='clear'></div>`;
+            }  
             if (!hasSiteFolderField) {
                 let siteFolderFieldHtml = "";
                 let defaultSiteFolderField = {
@@ -1296,18 +1297,18 @@ final String calendarEventInode = null!=calendarEventSt ? calendarEventSt.inode(
                     "fieldContentlet": "system_field",
                     "fieldStructureInode": structureInode
                 };
-                siteFolderFieldHtml += "<dl class='vertical'>";
-                siteFolderFieldHtml += "<dt><label>" + fieldName(defaultSiteFolderField) + "</label></dt>";
-                siteFolderFieldHtml += "<dd style='min-height:0px'>" + renderSearchField(defaultSiteFolderField) + "</dd>";
-                siteFolderFieldHtml += "</dl>";
-                siteFolderFieldHtml += "<div class='clear'></div>";
+                siteFolderFieldHtml = `<dl class='vertical'>
+                        <dt><label> ${fieldName(defaultSiteFolderField)}</label></dt>
+                        <dd style='min-height:0px'> ${renderSearchField(defaultSiteFolderField) }</dd>
+                        </dl>
+                 <div class='clear'></div>`;
                 htmlstr = siteFolderFieldHtml + htmlstr;
-            }
-            $('search_fields_table').update(htmlstr);
+            }  
+           $('search_fields_table').update(htmlstr);
             <% if (APILocator.getPermissionAPI().doesUserHavePermission(APILocator.getHostAPI().findSystemHost(), PermissionAPI.PERMISSION_READ, user, true)) { %>
                     dojo.byId("filterSystemHostTable").style.display = "";
             <% } %>
-            dojo.parser.parse(dojo.byId("search_fields_table"));
+           dojo.parser.parse(dojo.byId("search_fields_table"));
             eval(setDotFieldTypeStr);
             loadingSearchFields = false;
         }
