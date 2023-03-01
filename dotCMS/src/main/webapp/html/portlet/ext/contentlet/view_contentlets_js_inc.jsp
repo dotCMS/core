@@ -1281,7 +1281,7 @@ final String calendarEventInode = null!=calendarEventSt ? calendarEventSt.inode(
                 }
                 htmlstr += `<dl class='vertical'>
                         <dt>
-                        <label>${fieldName(data[i])}</label>
+                         <label>${fieldName(data[i])}</label>
                         </dt>
                         <dd style='min-height:0px'>${renderSearchField(data[i])}</dd>
                         </dl>
@@ -1298,7 +1298,9 @@ final String calendarEventInode = null!=calendarEventSt ? calendarEventSt.inode(
                     "fieldStructureInode": structureInode
                 };
                 siteFolderFieldHtml = `<dl class='vertical'>
-                        <dt><label> ${fieldName(defaultSiteFolderField)}</label></dt>
+                        <dt>
+                         <label>${fieldName(defaultSiteFolderField)}</label>
+                        </dt>
                         <dd style='min-height:0px'> ${renderSearchField(defaultSiteFolderField) }</dd>
                         </dl>
                  <div class='clear'></div>`;
