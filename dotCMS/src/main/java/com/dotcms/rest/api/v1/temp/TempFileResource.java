@@ -51,6 +51,7 @@ import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.CompletionService;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorCompletionService;
@@ -117,81 +118,84 @@ public class TempFileResource {
 
         private MultipleBinaryStreamingOutput(final FormDataMultiPart body,
                                                   final HttpServletRequest request) {
-
             this.body    = body;
             this.request = request;
         }
 
         @Override
         public void write(final OutputStream output) throws IOException, WebApplicationException {
-
             final ObjectMapper objectMapper = DotObjectMapperProvider.getInstance().getDefaultObjectMapper();
-            TempFileResource.this.saveMultipleBinaryFiles(body, request, output, objectMapper);
+            saveMultipleBinaryFiles(body, request, output, objectMapper);
         }
-    }
 
-    /**
-     * Saves the binary file or files that are being submitted by the user. A Completion Service is used to improve the
-     * time it takes to save every Temporary File.
-     *
-     * @param body          The {@link FormDataMultiPart} containing the file or files that will be saved.
-     * @param request       The current instance of the {@link HttpServletRequest}.
-     * @param outputStream  The streaming output of the response.
-     * @param objectMapper  The {@link ObjectMapper} that transforms the response into a JSON object.
-     */
-    private void saveMultipleBinaryFiles(final FormDataMultiPart body, final HttpServletRequest request,
-                                         final OutputStream outputStream, final ObjectMapper objectMapper) {
-        final CompletionService<Object> completionService = this.createCompletionService(2, 5, 100000);
-        final List<Future<Object>> futures = new ArrayList<>();
-        final HttpServletRequest statelessRequest = RequestUtil.INSTANCE.createStatelessRequest(request);
+        /**
+         * Saves the binary file or files that are being submitted by the user. A Completion Service is used to improve the
+         * time it takes to save every Temporary File.
+         *
+         * @param body          The {@link FormDataMultiPart} containing the file or files that will be saved.
+         * @param request       The current instance of the {@link HttpServletRequest}.
+         * @param outputStream  The streaming output of the response.
+         * @param objectMapper  The {@link ObjectMapper} that transforms the response into a JSON object.
+         */
+        private void saveMultipleBinaryFiles(final FormDataMultiPart body, final HttpServletRequest request,
+                                             final OutputStream outputStream, final ObjectMapper objectMapper) {
+            final CompletionService<Object> completionService = createCompletionService(2, 5, 100000);
+            final List<Future<Object>> futures = new ArrayList<>();
+            final HttpServletRequest statelessRequest = RequestUtil.INSTANCE.createStatelessRequest(request);
+            int index = 1;
+            for (final BodyPart part : body.getBodyParts()) {
+                // this triggers the save
+                final int futureIndex = index;
+                final Future<Object> future = completionService.submit(() -> {
 
-        int index = 1;
-        for (final BodyPart part : body.getBodyParts()) {
-
-            // this triggers the save
-            final int futureIndex = index;
-            final Future<Object> future = completionService.submit(() -> {
-
-                try {
-                    final InputStream in = (part.getEntity() instanceof InputStream) ?
-                            InputStream.class.cast(part.getEntity())
-                            : Try.of(() -> part.getEntityAs(InputStream.class)).getOrNull();
-
-                    if (in == null) {
-
-                        return new ErrorEntity(String.valueOf(HttpServletResponse.SC_BAD_REQUEST), "Invalid Binary Part, index: " + futureIndex,
+                    try {
+                        final InputStream in = (part.getEntity() instanceof InputStream) ? (InputStream) part.getEntity() :
+                                                       Try.of(() -> part.getEntityAs(InputStream.class)).getOrNull();
+                        final ContentDisposition meta = part.getContentDisposition();
+                        final Optional<ErrorEntity> errorEntity = validateFileData(in, meta, futureIndex);
+                        return errorEntity.isPresent() ? errorEntity.get() :
+                                       tempApi.createTempFile(meta.getFileName(), statelessRequest, in);
+                    } catch (final Exception e) {
+                        final String errorMsg =
+                                "Invalid Binary Part, Message: " + e.getMessage() + ", index: " + futureIndex;
+                        Logger.error(this, errorMsg, e);
+                        return new ErrorEntity(String.valueOf(HttpServletResponse.SC_BAD_REQUEST), errorMsg,
                                 String.valueOf(futureIndex));
                     }
 
-                    final ContentDisposition meta = part.getContentDisposition();
-                    if (meta == null) {
-
-                        return new ErrorEntity(String.valueOf(HttpServletResponse.SC_BAD_REQUEST), "Invalid Binary Part, index: " + futureIndex,
-                                String.valueOf(futureIndex));
-                    }
-
-                    final String fileName = meta.getFileName();
-                    if (fileName == null || fileName.startsWith(".") || fileName.contains("/.")) {
-
-                        return new ErrorEntity(String.valueOf(HttpServletResponse.SC_BAD_REQUEST),
-                                "Invalid Binary Part, Name: " + fileName + ", index: " + futureIndex,
-                                String.valueOf(futureIndex));
-                    }
-
-                    return this.tempApi.createTempFile(fileName, statelessRequest, in);
-                } catch (final Exception e) {
-
-                    Logger.error(this, e.getMessage(), e);
-                    return new ErrorEntity(String.valueOf(HttpServletResponse.SC_BAD_REQUEST),
-                            "Invalid Binary Part, Message: " + e.getMessage() + ", index: " + futureIndex,
-                            String.valueOf(futureIndex));
-                }
-            });
-
-            ++index;
-            futures.add(future);
+                });
+                ++index;
+                futures.add(future);
+            }
+            printResponseEntityViewResult(outputStream, objectMapper, completionService, futures);
         }
-        this.printResponseEntityViewResult(outputStream, objectMapper, completionService, futures);
+
+        /**
+         * Verifies that the information retrieved for the uploaded binary file is correct and readable.
+         *
+         * @param inputStream The content of the binary file as an {@link InputStream} object.
+         * @param meta        The {@link ContentDisposition} containing the file's metadata.
+         * @param futureIndex The index representing the order in which this file is being processed.
+         *
+         * @return An {@link Optional} with the result of the validation. An empty optional means that no errors were
+         * found.
+         */
+        private Optional<ErrorEntity> validateFileData(final InputStream inputStream, final ContentDisposition meta,
+                                                       final int futureIndex) {
+            if (null == inputStream) {
+                return Optional.of(new ErrorEntity(String.valueOf(HttpServletResponse.SC_BAD_REQUEST), "Invalid inout" +
+                                                                                                               " stream Binary Part, index: " + futureIndex, String.valueOf(futureIndex)));
+            }
+            if (null == meta) {
+                return Optional.of(new ErrorEntity(String.valueOf(HttpServletResponse.SC_BAD_REQUEST), "Invalid metadata Binary Part, index: " + futureIndex, String.valueOf(futureIndex)));
+            }
+            final String fileName = meta.getFileName();
+            if (UtilMethods.isNotSet(fileName) || fileName.startsWith(StringPool.PERIOD) || fileName.contains("/.")) {
+                return Optional.of(new ErrorEntity(String.valueOf(HttpServletResponse.SC_BAD_REQUEST), "Invalid Binary Part, Name: " + fileName + ", index: " + futureIndex, String.valueOf(futureIndex)));
+            }
+            return Optional.empty();
+        }
+
     }
 
     /**
@@ -299,12 +303,15 @@ public class TempFileResource {
             // now recover the N results
             for (int i = 0; i < futures.size(); i++) {
                 try {
-                    Logger.debug(this, "Recovering the result " + (i + 1) + " of " + futures.size());
+                    Logger.debug(this, "Recovering result " + (i + 1) + " of " + futures.size());
                     objectMapper.writeValue(outputStream, completionService.take().get());
                     if (i < futures.size()-1) {
                         outputStream.write(StringPool.COMMA.getBytes(StandardCharsets.UTF_8));
                     }
-                } catch (final InterruptedException | ExecutionException | IOException e) {
+                } catch (final InterruptedException e) {
+                    Logger.error(this, "Thread has been interrupted" + e.getMessage(), e);
+                    Thread.currentThread().interrupt();
+                } catch (final ExecutionException | IOException e) {
                     Logger.error(this, e.getMessage(), e);
                 }
             }
