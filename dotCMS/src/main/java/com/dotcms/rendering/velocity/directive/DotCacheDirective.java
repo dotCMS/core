@@ -40,14 +40,14 @@ public class DotCacheDirective extends Directive {
         HttpServletRequest request = (HttpServletRequest) context.get("request");
         boolean shouldCache = shouldCache(request);
         boolean refreshCache = refreshCache(request);
-        if (!shouldCache) {
+        final int ttl = (Integer) node.jjtGetChild(1).value(context);
+        if (!shouldCache || ttl <= 0) {
             node.jjtGetChild(2).render(context, writer);
             return true;
         }
 
 
         final String key = String.valueOf(node.jjtGetChild(0).value(context));
-        final int ttl = (Integer) node.jjtGetChild(1).value(context);
         if (refreshCache) {
             CacheLocator.getBlockDirectiveCache().remove(key);
         }
@@ -59,11 +59,13 @@ public class DotCacheDirective extends Directive {
             return true;
         }
 
-        final StringWriter blockContent = STRINGWRITER.get();
-        blockContent.getBuffer().setLength(0);
-        node.jjtGetChild(2).render(context, blockContent);
-        writer.write(blockContent.toString());
-        CacheLocator.getBlockDirectiveCache().add(key, Map.of(BlockDirectiveCache.PAGE_CONTENT_KEY, blockContent.toString()),
+//        final StringWriter blockContent = STRINGWRITER.get();
+//        blockContent.getBuffer().setLength(0);
+
+        final StringWriter content = new StringWriter();
+        node.jjtGetChild(2).render(context, content);
+        writer.write(content.toString());
+        CacheLocator.getBlockDirectiveCache().add(key, Map.of(BlockDirectiveCache.PAGE_CONTENT_KEY, content.toString()),
                 ttl);
         return true;
 
