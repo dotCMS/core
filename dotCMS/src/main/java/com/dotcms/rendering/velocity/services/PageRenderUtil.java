@@ -292,6 +292,10 @@ public class PageRenderUtil implements Serializable {
                     final Contentlet contentlet = transformer.hydrate().get(0);
                     this.addContentletPageReferenceCount(contentlet);
 
+                    if(contentlet.getMap().containsKey(Contentlet.ON_NUMBER_OF_PAGES)) {
+                        contextMap.put(Contentlet.ON_NUMBER_OF_PAGES, contentlet.getMap().get(Contentlet.ON_NUMBER_OF_PAGES));
+                    }
+
                     final long contentsSize = containerUuidPersona
                             .getSize(container, uniqueUUIDForRender, personalizedContentlet);
 

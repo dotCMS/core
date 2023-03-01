@@ -15,6 +15,8 @@ import com.dotmarketing.portlets.containers.business.ContainerExceptionNotifier;
 import com.dotmarketing.portlets.containers.business.FileAssetContainerUtil;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.containers.model.FileAssetContainer;
+import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
+import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.fileassets.business.FileAsset;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.templates.design.bean.ContainerUUID;
@@ -22,6 +24,7 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.util.StringPool;
+import io.vavr.control.Try;
 import org.apache.velocity.runtime.resource.ResourceManager;
 
 import java.io.InputStream;
@@ -162,7 +165,6 @@ public class ContainerLoader implements DotLoader {
                 container.getIdentifier();
 
     }
-
 
     private InputStream buildVelocity(final Container container, final String uuid,
                                       final PageMode mode,
