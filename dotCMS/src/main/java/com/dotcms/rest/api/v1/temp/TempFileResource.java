@@ -309,7 +309,7 @@ public class TempFileResource {
                         outputStream.write(StringPool.COMMA.getBytes(StandardCharsets.UTF_8));
                     }
                 } catch (final InterruptedException e) {
-                    Logger.error(this, "Thread has been interrupted" + e.getMessage(), e);
+                    Logger.error(this, "Thread has been interrupted: " + e.getMessage(), e);
                     Thread.currentThread().interrupt();
                 } catch (final ExecutionException | IOException e) {
                     Logger.error(this, e.getMessage(), e);
