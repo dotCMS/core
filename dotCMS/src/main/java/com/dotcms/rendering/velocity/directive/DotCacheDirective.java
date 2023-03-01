@@ -59,9 +59,6 @@ public class DotCacheDirective extends Directive {
             return true;
         }
 
-//        final StringWriter blockContent = STRINGWRITER.get();
-//        blockContent.getBuffer().setLength(0);
-
         final StringWriter content = new StringWriter();
         node.jjtGetChild(2).render(context, content);
         writer.write(content.toString());
