@@ -318,6 +318,8 @@ public class ContainerLoader implements DotLoader {
                     velocityCodeBuilder.append("<div")
                         .append(" data-dot-object=")
                         .append("\"contentlet\"")
+                        .append(" data-dot-on-number-of-pages=")
+                        .append("\"$onNumberOfPages\"")
                         .append(" data-dot-inode=")
                         .append("\"$CONTENT_INODE\"")
                         .append(" data-dot-identifier=")
