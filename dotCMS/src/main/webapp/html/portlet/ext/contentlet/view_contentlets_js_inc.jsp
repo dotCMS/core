@@ -1270,6 +1270,7 @@ final String calendarEventInode = null!=calendarEventSt ? calendarEventSt.inode(
         function fillFields (data) {
             currentStructureFields = data;
             let htmlstr = "";
+            let siteFolderFieldHtml = "";
             let hasSiteFolderField = false;
                for (let i = 0; i < data.length; i++) {
                 const { fieldFieldType } = data[i];
@@ -1288,7 +1289,6 @@ final String calendarEventInode = null!=calendarEventSt ? calendarEventSt.inode(
                         <div class='clear'></div>`;
             }  
             if (!hasSiteFolderField) {
-                let siteFolderFieldHtml = "";
                 let defaultSiteFolderField = {
                     "fieldName": "<%= LanguageUtil.get(pageContext, "Host-Folder") %>",
                     "fieldFieldType": "<%= com.dotmarketing.portlets.structure.model.Field.FieldType.HOST_OR_FOLDER.toString() %>",
@@ -1304,13 +1304,15 @@ final String calendarEventInode = null!=calendarEventSt ? calendarEventSt.inode(
                         <dd style='min-height:0px'> ${renderSearchField(defaultSiteFolderField) }</dd>
                         </dl>
                  <div class='clear'></div>`;
-                htmlstr = siteFolderFieldHtml + htmlstr;
             }  
+
            $('search_fields_table').update(htmlstr);
+           $('site_folder_field').update(siteFolderFieldHtml);
             <% if (APILocator.getPermissionAPI().doesUserHavePermission(APILocator.getHostAPI().findSystemHost(), PermissionAPI.PERMISSION_READ, user, true)) { %>
                     dojo.byId("filterSystemHostTable").style.display = "";
             <% } %>
            dojo.parser.parse(dojo.byId("search_fields_table"));
+           dojo.parser.parse(dojo.byId("site_folder_field"));
             eval(setDotFieldTypeStr);
             loadingSearchFields = false;
         }

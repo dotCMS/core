@@ -635,11 +635,13 @@
                            <div class="clear"></div>
                        <%} %>
                     </dl>
+
+                    <!-- site_folder_field fields  --->
+                    <div id="site_folder_field"></div>
                
                     <div id="advancedSearchOptions" style="height:0px;overflow: hidden">
                         
-                        <!-- Ajax built search fields  --->
-                        <div id="search_fields_table"></div>
+                       
                         <dl class="vertical">
                             <dt><label><%= LanguageUtil.get(pageContext, "Workflow-Schemes") %>:</label></dt>
                             <dd><span id="schemeSelectBox"></span></dd>
@@ -671,7 +673,8 @@
 
 
                         <div class="clear"></div>
-                        <!-- /Ajax built search fields  --->
+                         <!-- Ajax built search fields  --->
+                         <div id="search_fields_table"></div>
 
                         <!-- Ajax built Categories   --->
                         <dl class="vertical" id="search_categories_list"></dl>
