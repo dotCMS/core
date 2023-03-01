@@ -3,11 +3,14 @@ package com.dotcms.browser;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.Mockito.mock;
+import static org.powermock.api.mockito.PowerMockito.when;
 
 import com.dotcms.datagen.ContentletDataGen;
 import com.dotcms.datagen.TemplateDataGen;
 import com.dotcms.datagen.VariantDataGen;
 import com.dotcms.variant.model.Variant;
+import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet.ContentletHashMap;
 import java.io.File;
@@ -76,7 +79,7 @@ public class BrowserAPITest extends IntegrationTestBase {
     static FileAsset testFileAsset, testFileAsset2, testFileAsset3Archived, testFileAsset2MultiLingual;
 
     static Link testlink;
-
+    private static BrowserAPIImpl browserAPIImpl;
     @BeforeClass
     public static void prepare() throws Exception {
         //Setting web app environment
@@ -120,7 +123,7 @@ public class BrowserAPITest extends IntegrationTestBase {
         testPage = APILocator.getHTMLPageAssetAPI().fromContentlet(HTMLPageDataGen.checkin(page, IndexPolicy.FORCE));
 
         testlink = new LinkDataGen().hostId(testHost.getIdentifier()).title("testLink").parent(testFolder).target("https://google.com").linkType("EXTERNAL").nextPersisted();
-
+        browserAPIImpl = (BrowserAPIImpl) APILocator.getBrowserAPI();
     }
 
     /**
@@ -603,5 +606,53 @@ public class BrowserAPITest extends IntegrationTestBase {
                 ((ContentletHashMap)((List) results.get("list")).get(0)).get("identifier"));
 
     }
-    
+
+    @Test
+    public void getAssetNameColumn_providedBaseQuery_shouldGenerateCorrectSQLForDB() throws DotDataException, DotSecurityException {
+
+        final String sql = browserAPIImpl.getAssetNameColumn("LOWER(%s) LIKE ? ");
+
+        assertNotNull(sql);
+        if (DbConnectionFactory.isPostgres()) {
+            assertTrue(sql.contains("-> 'fields' -> 'asset' -> 'metadata' ->> 'name'"));
+        }
+        else{
+            assertTrue(sql.contains("$.fields.asset.metadata.name"));
+        }
+    }
+
+    @Test
+    public void getFolderContent_searchDotAssetWithFilter_shouldReturnNotNull() throws DotDataException, DotSecurityException {
+        final String filterText = "company_logo.png";
+        final User user = APILocator.systemUser();
+        final List<String> mimeTypes = List.of("image");
+
+        final BrowserQuery browserQuery = BrowserQuery.builder()
+                .withUser(user)
+                .withHostOrFolderId("SYSTEM_HOST")
+                .offset(0)
+                .maxResults(1)
+                .withFilter(filterText)
+                .showMimeTypes(mimeTypes)
+                .showImages(mimeTypes.contains(mimeTypes.get(0)))
+                .showExtensions(null)
+                .showWorking(true)
+                .showArchived(false)
+                .showFolders(false)
+                .showFiles(true)
+                .showShorties(false)
+                .showContent(true)
+                .sortBy("modDate")
+                .sortByDesc(true)
+                .showLinks(false)
+                .withLanguageId(1)
+                .showDotAssets(true)
+                .build();
+
+        final List<Contentlet> contentletList = browserAPI.getContentUnderParentFromDB(browserQuery);
+        final Map<String, Object> result = browserAPI.getFolderContent(browserQuery);
+
+        assertNotNull(contentletList);
+        assertNotNull(result);
+    }
 }
