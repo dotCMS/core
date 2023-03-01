@@ -1306,13 +1306,13 @@ final String calendarEventInode = null!=calendarEventSt ? calendarEventSt.inode(
                  <div class='clear'></div>`;
             }  
 
-           $('search_fields_table').update(htmlstr);
-           $('site_folder_field').update(siteFolderFieldHtml);
+            $('search_fields_table').update(htmlstr);
+            $('site_folder_field').update(siteFolderFieldHtml);
             <% if (APILocator.getPermissionAPI().doesUserHavePermission(APILocator.getHostAPI().findSystemHost(), PermissionAPI.PERMISSION_READ, user, true)) { %>
                     dojo.byId("filterSystemHostTable").style.display = "";
             <% } %>
-           dojo.parser.parse(dojo.byId("search_fields_table"));
-           dojo.parser.parse(dojo.byId("site_folder_field"));
+            dojo.parser.parse(dojo.byId("search_fields_table"));
+            dojo.parser.parse(dojo.byId("site_folder_field"));
             eval(setDotFieldTypeStr);
             loadingSearchFields = false;
         }
