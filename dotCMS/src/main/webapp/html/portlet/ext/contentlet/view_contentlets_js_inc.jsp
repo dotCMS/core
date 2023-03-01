@@ -1272,7 +1272,7 @@ final String calendarEventInode = null!=calendarEventSt ? calendarEventSt.inode(
             let htmlstr = "";
             let siteFolderFieldHtml = "";
             let hasSiteFolderField = false;
-               for (let i = 0; i < data.length; i++) {
+            for (let i = 0; i < data.length; i++) {
                 const { fieldFieldType } = data[i];
                 if (fieldFieldType === 'category' || fieldFieldType === 'hidden') {
                         continue;
