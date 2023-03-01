@@ -57,7 +57,7 @@ describe('DotExperimentsConfigurationTrafficSplitAddComponent', () => {
         });
         store = spectator.inject(DotExperimentsConfigurationStore);
         dotExperimentsService = spectator.inject(DotExperimentsService);
-        dotExperimentsService.getById.and.returnValue(of(ExperimentMocks[1]));
+        dotExperimentsService.getById.and.returnValue(of({ ...ExperimentMocks[1] }));
         store.loadExperiment(EXPERIMENT_ID);
         store.setSidebarStatus({
             experimentStep: ExperimentSteps.TRAFFIC,

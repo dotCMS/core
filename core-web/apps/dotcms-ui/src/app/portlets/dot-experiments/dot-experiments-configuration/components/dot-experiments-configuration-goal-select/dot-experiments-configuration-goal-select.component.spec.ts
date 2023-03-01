@@ -66,7 +66,7 @@ describe('DotExperimentsConfigurationGoalSelectComponent', () => {
 
         store = spectator.inject(DotExperimentsConfigurationStore);
         dotExperimentsService = spectator.inject(DotExperimentsService);
-        dotExperimentsService.getById.and.returnValue(of(ExperimentMocks[0]));
+        dotExperimentsService.getById.and.returnValue(of({ ...ExperimentMocks[0] }));
 
         store.loadExperiment(ExperimentMocks[0].id);
         store.setSidebarStatus({

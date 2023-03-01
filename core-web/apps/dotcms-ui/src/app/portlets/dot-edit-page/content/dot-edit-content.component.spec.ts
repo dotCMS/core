@@ -61,6 +61,7 @@ import {
     UserModel
 } from '@dotcms/dotcms-js';
 import {
+    DEFAULT_VARIANT_NAME,
     DotCMSContentlet,
     DotCMSContentType,
     DotPageContainer,
@@ -83,6 +84,7 @@ import {
     processedContainers,
     SiteServiceMock
 } from '@dotcms/utils-testing';
+import { ExperimentMocks } from '@portlets/dot-experiments/test/mocks';
 
 import { DotEditPageWorkflowsActionsModule } from './components/dot-edit-page-workflows-actions/dot-edit-page-workflows-actions.module';
 import {
@@ -286,13 +288,16 @@ describe('DotEditContentComponent', () => {
                         parent: {
                             parent: {
                                 data: of({
-                                    content: mockRenderedPageState
+                                    content: mockRenderedPageState,
+                                    experiment: { ...ExperimentMocks[1] }
                                 })
                             }
                         },
                         snapshot: {
                             queryParams: {
-                                url: '/an/url/test'
+                                url: '/an/url/test',
+                                variantName: ExperimentMocks[1].trafficProportion.variants[1].id,
+                                editPageTab: 'preview'
                             }
                         },
                         data: of({})
@@ -416,6 +421,24 @@ describe('DotEditContentComponent', () => {
 
             it('should pass pageState', () => {
                 expect(toolbarElement.componentInstance.pageState).toEqual(mockRenderedPageState);
+            });
+
+            it('should pass variant information', () => {
+                const variant = ExperimentMocks[1].trafficProportion.variants[1];
+
+                expect(toolbarElement.componentInstance.variant).toEqual({
+                    variant: {
+                        id: variant.id,
+                        url: variant.url,
+                        title: variant.name,
+                        isOriginal: variant.name === DEFAULT_VARIANT_NAME
+                    },
+                    pageId: ExperimentMocks[1].pageId,
+                    experimentId: ExperimentMocks[1].id,
+                    experimentStatus: ExperimentMocks[1].status,
+                    experimentName: ExperimentMocks[1].name,
+                    mode: 'preview'
+                });
             });
 
             describe('events', () => {

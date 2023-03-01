@@ -53,7 +53,7 @@ const messageServiceMock = new MockDotMessageService({
 });
 
 const defaultVmMock: ConfigurationViewModel = {
-    experiment: ExperimentMocks[0],
+    experiment: { ...ExperimentMocks[0] },
     stepStatusSidebar: {
         status: ComponentStatus.IDLE,
         isOpen: false,
@@ -113,7 +113,7 @@ describe('DotExperimentsConfigurationComponent', () => {
             detectChanges: false
         });
         dotExperimentsService = spectator.inject(DotExperimentsService);
-        dotExperimentsService.getById.and.returnValue(of(ExperimentMocks[0]));
+        dotExperimentsService.getById.and.returnValue(of({ ...ExperimentMocks[0] }));
     });
 
     it('should show the skeleton component when is loading', () => {

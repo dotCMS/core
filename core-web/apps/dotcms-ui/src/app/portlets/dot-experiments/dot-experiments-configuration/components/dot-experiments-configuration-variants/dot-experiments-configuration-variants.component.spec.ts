@@ -80,7 +80,7 @@ describe('DotExperimentsConfigurationVariantsComponent', () => {
 
         store = spectator.inject(DotExperimentsConfigurationStore);
         dotExperimentsService = spectator.inject(DotExperimentsService);
-        dotExperimentsService.getById.and.returnValue(of(ExperimentMocks[0]));
+        dotExperimentsService.getById.and.returnValue(of({ ...ExperimentMocks[0] }));
 
         store.loadExperiment(EXPERIMENT_ID);
         spectator.detectChanges();
@@ -385,6 +385,25 @@ describe('DotExperimentsConfigurationVariantsComponent', () => {
                 'ng-reflect-disabled',
                 'false'
             );
+        });
+
+        it('should view button on all variants when experiment is nos on draft', () => {
+            dotExperimentsService.getById.and.returnValue(
+                of({
+                    ...ExperimentMocks[2],
+                    ...{ status: DotExperimentStatusList.RUNNING }
+                })
+            );
+
+            store.loadExperiment(ExperimentMocks[2].id);
+
+            spectator.detectChanges();
+
+            const variantsViewButton = spectator.queryAll(
+                byTestId('variant-preview-button')
+            ) as HTMLButtonElement[];
+
+            expect(variantsViewButton.length).toBe(2);
         });
     });
 });

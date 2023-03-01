@@ -77,7 +77,7 @@ describe('DotExperimentsConfigurationStore', () => {
         spectator.service.loadExperiment(EXPERIMENT_ID);
 
         const expectedInitialState: DotExperimentsConfigurationState = {
-            experiment: ExperimentMocks[0],
+            experiment: { ...ExperimentMocks[0] },
             status: ComponentStatus.IDLE,
             stepStatusSidebar: {
                 status: ComponentStatus.IDLE,
