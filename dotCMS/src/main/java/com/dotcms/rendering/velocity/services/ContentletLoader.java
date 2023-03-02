@@ -116,9 +116,11 @@ public class ContentletLoader implements DotLoader {
         sb.append("#set($CONTENT_TYPE_ID='").append(contentTypeId).append("' )");
         sb.append("#set($CONTENT_LANGUAGE='").append(content.getLanguageId()).append("' )");
 
-        final Optional<Integer> pageReferences =
-                Try.of(() -> conAPI.getAllContentletReferencesCount(content.getIdentifier())).getOrElse(Optional.empty());
-        pageReferences.ifPresent(integer -> sb.append("#set($ON_NUMBER_OF_PAGES='").append(integer).append("' )"));
+        if(mode == PageMode.EDIT_MODE) {
+            final Optional<Integer> pageReferences =
+                    Try.of(() -> conAPI.getAllContentletReferencesCount(content.getIdentifier())).getOrElse(Optional.empty());
+            pageReferences.ifPresent(integer -> sb.append("#set($ON_NUMBER_OF_PAGES='").append(integer).append("' )"));
+        }
 
         // set all properties from the contentlet
         sb.append("#set($ContentInode='")
