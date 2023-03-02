@@ -1272,8 +1272,8 @@ final String calendarEventInode = null!=calendarEventSt ? calendarEventSt.inode(
             let htmlstr = "";
             let siteFolderFieldHtml = "";
             let hasSiteFolderField = false;
-            for (let i = 0; i < data.length; i++) {
-                const { fieldFieldType } = data[i];
+            for (const element of data) {
+                const { fieldFieldType } = element;
                 if (fieldFieldType === 'category' || fieldFieldType === 'hidden') {
                         continue;
                 }
@@ -1282,9 +1282,9 @@ final String calendarEventInode = null!=calendarEventSt ? calendarEventSt.inode(
                 }
                 htmlstr += `<dl class='vertical'>
                         <dt>
-                         <label>${fieldName(data[i])}</label>
+                         <label>${fieldName(element)}</label>
                         </dt>
-                        <dd style='min-height:0px'>${renderSearchField(data[i])}</dd>
+                        <dd style='min-height:0px'>${renderSearchField(element)}</dd>
                         </dl>
                         <div class='clear'></div>`;
             }  
