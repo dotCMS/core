@@ -12,7 +12,7 @@ import { switchMap, tap } from 'rxjs/operators';
 import { DotMessageService } from '@dotcms/data-access';
 import {
     ComponentStatus,
-    DOT_EXPERIMENT_STATUS_METADATA_MAP,
+    ConditionDefaultByTypeOfGoal,
     DotExperiment,
     DotExperimentStatusList,
     ExperimentSteps,
