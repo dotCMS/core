@@ -60,7 +60,7 @@ public class HostAjax {
 		//Make sure that if we are not using a filter the System Host is on top
 		if ( includeSystemHost && !UtilMethods.isSet(filter) ) {
 			final Host systemSite = this.hostAPI.findSystemHost();
-			if ( APILocator.getPermissionAPI().doesUserHavePermission(systemSite, PermissionAPI.PERMISSION_READ, user) ) {
+			if ( APILocator.getPermissionAPI().doesUserHavePermission(systemSite, PermissionAPI.PERMISSION_CAN_ADD_CHILDREN, user) ) {
 				siteResults.add(systemSite.getMap());
 				addedSystemSite = true;
 			}
