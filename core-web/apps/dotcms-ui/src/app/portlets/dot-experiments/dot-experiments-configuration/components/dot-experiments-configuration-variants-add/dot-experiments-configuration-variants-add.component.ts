@@ -80,7 +80,7 @@ export class DotExperimentsConfigurationVariantsAddComponent implements OnInit {
 
     private initForm() {
         this.form = new FormGroup({
-            description: new FormControl<string>('', {
+            name: new FormControl<string>('', {
                 nonNullable: true,
                 validators: [Validators.required, Validators.maxLength(255)]
             })
