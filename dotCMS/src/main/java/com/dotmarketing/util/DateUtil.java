@@ -748,4 +748,15 @@ public class DateUtil {
 				.replaceAll("(\\d[HMS])(?!$)", "$1 ")
 				.toLowerCase();
 	}
+
+	/**
+	 * Return true if time is equals o before to now.
+	 *
+	 * @param time
+	 * @return
+	 */
+	public static boolean isTimeReach(final Instant time) {
+		final Instant now = Instant.now();
+		return time != null && (time.isBefore(now) || time.equals(now));
+	}
 }

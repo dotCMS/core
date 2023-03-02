@@ -11,6 +11,7 @@ import static com.dotcms.util.CollectionsUtils.set;
 
 import static com.dotcms.experiments.model.AbstractExperimentVariant.ORIGINAL_VARIANT;
 import static com.dotcms.variant.VariantAPI.DEFAULT_VARIANT;
+import static com.dotmarketing.util.DateUtil.isTimeReach;
 
 import com.dotcms.analytics.app.AnalyticsApp;
 import com.dotcms.analytics.helper.AnalyticsHelper;
@@ -194,7 +195,9 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
                     ORIGINAL_VARIANT, user));
         }
 
-        if(!savedExperiment.get().scheduling().isEmpty()) {
+        if(savedExperiment.get().status() != RUNNING &&
+                savedExperiment.get().status() != ENDED &&
+                !savedExperiment.get().scheduling().isEmpty()) {
             validateScheduling(savedExperiment.get().scheduling().get());
         }
 
@@ -462,9 +465,8 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
             toReturn = save(persistedExperiment.withScheduling(scheduling).withStatus(RUNNING), user);
             publishContentOnExperimentVariants(user, toReturn);
         } else {
-            Scheduling scheduling = validateScheduling(persistedExperiment.scheduling().get());
-            toReturn = save(persistedExperiment.withScheduling(scheduling).withStatus(SCHEDULED)
-                    ,user);
+            Scheduling scheduling = persistedExperiment.scheduling().get();
+            toReturn = save(persistedExperiment.withScheduling(scheduling).withStatus(SCHEDULED),user);
         }
 
         return toReturn;
@@ -874,8 +876,9 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
     @Override
     public void endFinalizedExperiments(final User user) throws DotDataException {
         final List<Experiment> finalizedExperiments = getRunningExperiments().stream()
-                .filter((experiment -> experiment.scheduling().orElseThrow().endDate().orElseThrow()
-                        .isBefore(Instant.now()))).collect(Collectors.toList());
+                .filter(experiment -> experiment.scheduling().orElseThrow().endDate().isPresent())
+                .filter(experiment -> isTimeReach(experiment.scheduling().orElseThrow().endDate().orElseThrow()))
+                .collect(Collectors.toList());
 
         finalizedExperiments.forEach((experiment ->
                 Try.of(()->end(experiment.id().orElseThrow(), user)).getOrElseThrow((e)->
@@ -886,14 +889,14 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
     public void startScheduledToStartExperiments(final User user) throws DotDataException {
         final List<Experiment> scheduledToStartExperiments = list(ExperimentFilter.builder()
                 .statuses(CollectionsUtils.set(SCHEDULED)).build(), user).stream()
-                .filter((experiment -> experiment.scheduling().isPresent() && experiment.scheduling().get().startDate().orElseThrow()
-                        .isAfter(Instant.now()))).collect(Collectors.toList());
+                .filter((experiment -> isTimeReach(experiment.scheduling().get().startDate().orElseThrow())))
+                .collect(Collectors.toList());
 
         scheduledToStartExperiments.forEach((experiment ->
                 Try.of(()->startScheduled(experiment.id().orElseThrow(), user)).getOrElseThrow((e)->
                         new DotStateException("Unable to start Experiment. Cause:" + e))));
     }
-    
+
     private TreeSet<ExperimentVariant> redistributeWeights(final Set<ExperimentVariant> variants) {
 
         final int count = variants.size();

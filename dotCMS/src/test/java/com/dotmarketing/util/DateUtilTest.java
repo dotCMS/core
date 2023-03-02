@@ -19,11 +19,13 @@ import com.tngtech.java.junit.dataprovider.UseDataProvider;
 import java.text.MessageFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.Month;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
@@ -481,5 +483,20 @@ public class DateUtilTest extends UnitTestBase {
         assertNotNull(date1);
         assertEquals("Year should be 2015", 115,date1.getYear());
         assertEquals("Month should be Feb", Calendar.FEBRUARY, date1.getMonth());
+    }
+
+    @Test
+    public void timeReach(){
+        //Now must be Reach
+        assertTrue(DateUtil.isTimeReach(Instant.now()));
+
+        //Tomorrow must not be reach
+        assertFalse(DateUtil.isTimeReach(Instant.now().plus(1, ChronoUnit.DAYS)));
+
+        //Yesterday must be reach
+        assertTrue(DateUtil.isTimeReach(Instant.now().plus(-1, ChronoUnit.DAYS)));
+
+        //Null must retur false
+        assertFalse(DateUtil.isTimeReach(null));
     }
 }
