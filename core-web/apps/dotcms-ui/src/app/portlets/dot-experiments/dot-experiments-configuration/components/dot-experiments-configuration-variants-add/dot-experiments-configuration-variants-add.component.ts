@@ -65,8 +65,8 @@ export class DotExperimentsConfigurationVariantsAddComponent implements OnInit {
 
     saveForm(): void {
         const formValues = this.form.value as Pick<DotExperiment, 'name'>;
-
         this.formValues.emit(formValues);
+        this.closedSidebarEvent();
     }
 
     ngOnInit(): void {
