@@ -47,6 +47,7 @@ export interface GoalCondition {
     parameter: GOAL_PARAMETERS;
     operator: GOAL_OPERATORS;
     value: string;
+    isDefault?: boolean;
 }
 
 export interface RangeOfDateAndTime {
@@ -91,5 +92,12 @@ export enum GOAL_OPERATORS {
 }
 
 export enum GOAL_PARAMETERS {
-    URL = 'url'
+    URL = 'url',
+    REFERER = 'referer'
 }
+
+export const ConditionDefaultByTypeOfGoal: Record<GOAL_TYPES, GOAL_PARAMETERS> = {
+    [GOAL_TYPES.BOUNCE_RATE]: GOAL_PARAMETERS.URL,
+    [GOAL_TYPES.REACH_PAGE]: GOAL_PARAMETERS.REFERER,
+    [GOAL_TYPES.CLICK_ON_ELEMENT]: GOAL_PARAMETERS.URL
+};

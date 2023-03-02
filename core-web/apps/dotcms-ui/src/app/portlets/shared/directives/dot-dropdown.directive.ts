@@ -41,13 +41,15 @@ export class DotDropdownDirective {
      */
     @Input()
     set dotOptions(options: Array<ExperimentsSelectOption<string>>) {
-        this.primeDropdown.options = options.map((opt) => {
-            return {
-                ...opt,
-                [DEFAULT_LABEL_NAME_INDEX]: this.dotMessagePipe.transform(
-                    opt[DEFAULT_LABEL_NAME_INDEX]
-                )
-            };
-        });
+        if (options) {
+            this.primeDropdown.options = options.map((opt) => {
+                return {
+                    ...opt,
+                    [DEFAULT_LABEL_NAME_INDEX]: this.dotMessagePipe.transform(
+                        opt[DEFAULT_LABEL_NAME_INDEX]
+                    )
+                };
+            });
+        }
     }
 }

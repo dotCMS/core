@@ -1,0 +1,41 @@
+<div class="flex flex-column wrapper">
+    <div class="title align-items-center flex-grow-1 flex">
+        <h3 class="flex-grow-1 flex" data-testId="goal-label">
+            {{ goalTypeMap[goal.type].label | dm }} -
+            {{ goal.name | dm }}
+        </h3>
+        <div class="flex-none flex align-items-center delete">
+            <ng-content></ng-content>
+        </div>
+    </div>
+
+    <div class="content flex flex-column">
+        <div class="flex flex-row titles">
+            <p class="w-18rem">{{ 'experiments.goal.conditions.parameter' | dm }}</p>
+            <p class="w-18rem">{{ 'experiments.goal.conditions.operator' | dm }}</p>
+            <p class="flex-grow-1 flex">{{ 'experiments.goal.conditions.value' | dm }}</p>
+        </div>
+
+        <div class="conditions">
+            <div
+                class="flex flex-row condition-row"
+                *ngFor="let condition of goal.conditions"
+                data-testId="goal-condition"
+            >
+                <p class="w-18rem parameter" data-testId="goal-parameter">
+                    <ng-container *ngIf="condition.isDefault"
+                        ><span data-testId="goal-default-parameter">{{
+                            'experiments.goal.conditions.default' | dm
+                        }}</span>
+                        -
+                    </ng-container>
+                    {{ condition.parameter }}
+                </p>
+                <p class="w-18rem operator" data-testId="goal-operator">
+                    {{ condition.operator | lowercase }}
+                </p>
+                <p class="flex-grow-1 flex" data-testId="goal-value">{{ condition.value }}</p>
+            </div>
+        </div>
+    </div>
+</div>

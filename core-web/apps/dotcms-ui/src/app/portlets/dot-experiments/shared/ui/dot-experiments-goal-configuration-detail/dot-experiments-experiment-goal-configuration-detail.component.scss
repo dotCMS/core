@@ -1,0 +1,48 @@
+@use "variables" as *;
+
+.wrapper {
+    gap: $spacing-1;
+
+    h3,
+    p {
+        margin: $spacing-0;
+    }
+
+    h3 {
+        font-size: $font-size-large;
+        font-weight: $font-weight-bold;
+    }
+
+    .content {
+        gap: $spacing-1;
+
+        .titles {
+            padding: $spacing-1 $spacing-3;
+            gap: $spacing-3;
+
+            font-size: $font-size-medium;
+            font-weight: $font-weight-semi-bold;
+            color: $color-gray-600;
+
+            background-color: $color-gray-100;
+            border-radius: $border-radius-md;
+        }
+
+        .conditions {
+            background-color: $color-gray-100;
+            border-radius: $border-radius-md;
+            font-weight: $font-weight-semi-bold;
+
+            .condition-row {
+                padding: $spacing-1 $spacing-3;
+                gap: $spacing-3;
+                font-weight: $font-weight-regular-bold;
+
+                .parameter,
+                .operator {
+                    text-transform: capitalize;
+                }
+            }
+        }
+    }
+}

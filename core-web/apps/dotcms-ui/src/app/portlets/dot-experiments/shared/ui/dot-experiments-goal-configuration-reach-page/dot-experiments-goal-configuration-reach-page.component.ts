@@ -15,7 +15,7 @@ import { DotDropdownDirective } from '@portlets/shared/directives/dot-dropdown.d
  * Component with all the inputs of the configuration of Goal Type REACH PAGE
  */
 @Component({
-    selector: 'dot-experiments-experiment-goal-reach-page-config',
+    selector: 'dot-experiments-goal-configuration-reach-page',
     standalone: true,
     imports: [
         CommonModule,
@@ -28,11 +28,11 @@ import { DotDropdownDirective } from '@portlets/shared/directives/dot-dropdown.d
         DropdownModule,
         InputTextModule
     ],
-    templateUrl: './dot-experiments-experiment-goal-reach-page-config.component.html',
-    styleUrls: ['./dot-experiments-experiment-goal-reach-page-config.component.scss'],
+    templateUrl: './dot-experiments-goal-configuration-reach-page.component.html',
+    styleUrls: ['./dot-experiments-goal-configuration-reach-page.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class DotExperimentsExperimentGoalReachPageConfigComponent implements OnInit {
+export class DotExperimentsGoalConfigurationReachPageComponent implements OnInit {
     parametersList = GoalsConditionsParametersList;
     operatorsList = GoalsConditionsOperatorsList;
 
