@@ -877,7 +877,11 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
     public void endFinalizedExperiments(final User user) throws DotDataException {
         final List<Experiment> finalizedExperiments = getRunningExperiments().stream()
                 .filter(experiment -> experiment.scheduling().orElseThrow().endDate().isPresent())
-                .filter(experiment -> isTimeReach(experiment.scheduling().orElseThrow().endDate().orElseThrow()))
+                .filter(experiment -> {
+                    final Instant endDate = experiment.scheduling().orElseThrow().endDate()
+                            .orElseThrow();
+                    return isTimeReach(endDate, ChronoUnit.MINUTES);
+                })
                 .collect(Collectors.toList());
 
         finalizedExperiments.forEach((experiment ->
@@ -889,7 +893,10 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
     public void startScheduledToStartExperiments(final User user) throws DotDataException {
         final List<Experiment> scheduledToStartExperiments = list(ExperimentFilter.builder()
                 .statuses(CollectionsUtils.set(SCHEDULED)).build(), user).stream()
-                .filter((experiment -> isTimeReach(experiment.scheduling().get().startDate().orElseThrow())))
+                .filter((experiment -> {
+                    final Instant startDate = experiment.scheduling().get().startDate().orElseThrow();
+                    return isTimeReach(startDate, ChronoUnit.MINUTES);
+                }))
                 .collect(Collectors.toList());
 
         scheduledToStartExperiments.forEach((experiment ->
