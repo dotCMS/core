@@ -133,11 +133,9 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy {
     ) {}
 
     async loadCustomBlocks(urls: string[]) {
-        return Promise.all(
-            urls
-                .map(async (url) => import(/* webpackIgnore: true */ url))
-                .map((p) => p.catch((e) => console.warn('Error loading the customBlocks file:', e)))
-        );
+        return Promise.allSettled(urls.map(async (url) => import(/* webpackIgnore: true */ url)));
+        //  .map((p) => p.catch((e) => console.warn('Error loading the customBlocks file:', e)))
+        // );
     }
 
     ngOnInit() {
@@ -182,6 +180,12 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy {
     }
 
     private getParsedCustomBlocks(): RemoteCustomExtentions {
+        if (!this.customBlocks.length) {
+            return {
+                extensions: []
+            };
+        }
+
         try {
             return JSON.parse(this.customBlocks);
         } catch (e) {
@@ -215,6 +219,13 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy {
         const moduleObj = customModules.reduce(
             (prevModule, module) => ({ ...prevModule, ...module }),
             {}
+        );
+
+        console.log('data.extensions', blockNames);
+        // eslint-disable-next-line no-console
+        console.log(
+            'blockNames v2:',
+            blockNames.map((block) => moduleObj[block])
         );
 
         return blockNames.map((block) => moduleObj[block]);

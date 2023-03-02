@@ -10,7 +10,7 @@
         "importHelpers": true,
         "target": "es2015",
         "module": "esnext",
-        "lib": ["es2017", "dom", "dom.iterable"],
+        "lib": ["es2017", "es2020", "dom", "dom.iterable"],
         "skipLibCheck": true,
         "skipDefaultLibCheck": true,
         "baseUrl": ".",
