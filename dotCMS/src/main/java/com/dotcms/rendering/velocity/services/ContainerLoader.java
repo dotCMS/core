@@ -308,6 +308,7 @@ public class ContainerLoader implements DotLoader {
                 velocityCodeBuilder.append("#set($ContentletTitle = '')");
                 velocityCodeBuilder.append("#set($CONTENT_TYPE_ID = '')");
                 velocityCodeBuilder.append("#set($CONTENT_TYPE = '')");
+                velocityCodeBuilder.append("#set($ON_NUMBER_OF_PAGES = '')");
                 
                 // read in the content
                 velocityCodeBuilder.append("#if($contentletId != '')");
@@ -321,7 +322,7 @@ public class ContainerLoader implements DotLoader {
                         .append(" data-dot-object=")
                         .append("\"contentlet\"")
                         .append(" data-dot-on-number-of-pages=")
-                        .append("\"$onNumberOfPages\"")
+                        .append("\"$ON_NUMBER_OF_PAGES\"")
                         .append(" data-dot-inode=")
                         .append("\"$CONTENT_INODE\"")
                         .append(" data-dot-identifier=")
