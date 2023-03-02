@@ -109,7 +109,8 @@ export class DotPagesComponent implements OnInit, OnDestroy {
             .listen('dot-global-message')
             .pipe(takeUntil(this.destroy$))
             .subscribe((evt) => {
-                this.store.getPages({ offset: 0 });
+                this.store.getPagesRetry({ offset: 0 });
+
                 this.dotMessageDisplayService.push({
                     life: 3000,
                     message: evt.data['value'],

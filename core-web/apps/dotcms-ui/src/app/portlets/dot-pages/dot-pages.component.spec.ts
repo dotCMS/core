@@ -80,6 +80,7 @@ const storeMock = {
     clearMenuActions: jasmine.createSpy(),
     getFavoritePages: jasmine.createSpy(),
     getPages: jasmine.createSpy(),
+    getPagesRetry: jasmine.createSpy(),
     showActionsMenu: jasmine.createSpy(),
     setInitialStateData: jasmine.createSpy(),
     limitFavoritePages: jasmine.createSpy(),
@@ -255,7 +256,7 @@ describe('DotPagesComponent', () => {
             severity: DotMessageSeverity.SUCCESS,
             type: DotMessageType.SIMPLE_MESSAGE
         });
-        expect(store.getPages).toHaveBeenCalledWith({ offset: 0 });
+        expect(store.getPagesRetry).toHaveBeenCalledWith({ offset: 0 });
     });
 
     it('should reload portlet only when the site change', () => {

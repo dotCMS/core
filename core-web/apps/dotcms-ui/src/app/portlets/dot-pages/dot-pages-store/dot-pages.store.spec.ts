@@ -24,7 +24,8 @@ import {
     DotLicenseService,
     DotRenderMode,
     DotWorkflowActionsFireService,
-    DotWorkflowsActionsService
+    DotWorkflowsActionsService,
+    ESOrderDirection
 } from '@dotcms/data-access';
 import {
     CoreWebService,
@@ -71,6 +72,16 @@ class MockESPaginatorService {
         });
     }
 }
+
+const relativeDate = (date: string) => {
+    return formatDistanceStrict(
+        new Date(parseInt(new Date(date).getTime().toString(), 10)),
+        new Date(),
+        {
+            addSuffix: true
+        }
+    );
+};
 
 describe('DotPageStore', () => {
     let dotPageStore: DotPageStore;
@@ -189,6 +200,13 @@ describe('DotPageStore', () => {
         });
     });
 
+    it('should update Loading', () => {
+        dotPageStore.setLoading(true);
+        dotPageStore.state$.subscribe((data) => {
+            expect(data.loading).toEqual(true);
+        });
+    });
+
     it('should clear Menu Actions', () => {
         dotPageStore.clearMenuActions();
         dotPageStore.state$.subscribe((data) => {
@@ -240,16 +258,6 @@ describe('DotPageStore', () => {
     });
 
     it('should set all Pages value in store', () => {
-        const relativeDate = (date: string) => {
-            return formatDistanceStrict(
-                new Date(parseInt(new Date(date).getTime().toString(), 10)),
-                new Date(),
-                {
-                    addSuffix: true
-                }
-            );
-        };
-
         const expectedInputArray = [
             {
                 ...favoritePagesInitialTestData[0],
@@ -275,6 +283,29 @@ describe('DotPageStore', () => {
         dotPageStore.state$.subscribe((data) => {
             expect(data.pages.items).toEqual(expectedInputArray);
         });
+        expect(dotESContentService.get).toHaveBeenCalledTimes(1);
+        expect(dotESContentService.get).toHaveBeenCalledWith({
+            itemsPerPage: 40,
+            offset: '0',
+            query: '+conhost:123-xyz-567-xxl +deleted:false  +(urlmap:* OR basetype:5)    ',
+            sortField: 'title',
+            sortOrder: ESOrderDirection.ASC
+        });
+    });
+
+    it('should keep fetching Pages data until new value comes from the DB in store', () => {
+        spyOn(dotESContentService, 'get').and.returnValue(
+            of({
+                contentTook: 0,
+                jsonObjectView: {
+                    contentlets: favoritePagesInitialTestData as unknown as DotCMSContentlet[]
+                },
+                queryTook: 1,
+                resultsSize: 4
+            })
+        );
+        dotPageStore.getPagesRetry({ offset: 0 });
+        // TODO: find a way to test "retryWhen" operator
         expect(dotESContentService.get).toHaveBeenCalledTimes(1);
     });
 

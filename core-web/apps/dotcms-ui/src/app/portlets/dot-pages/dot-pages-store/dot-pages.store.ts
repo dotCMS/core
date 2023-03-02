@@ -6,7 +6,7 @@ import { Injectable } from '@angular/core';
 
 import { MenuItem, SelectItem } from 'primeng/api';
 
-import { filter, map, mergeMap, switchMap, take, tap } from 'rxjs/operators';
+import { delay, filter, map, mergeMap, retryWhen, switchMap, take, tap } from 'rxjs/operators';
 
 import { DotFormatDateService } from '@dotcms/app/api/services/dot-format-date-service';
 import { DotHttpErrorManagerService } from '@dotcms/app/api/services/dot-http-error-manager/dot-http-error-manager.service';
@@ -49,6 +49,7 @@ export interface DotPagesState {
     environments: boolean;
     isEnterprise: boolean;
     languages: DotLanguage[];
+    loading: boolean;
     loggedUser: {
         id: string;
         canRead: { contentlets: boolean; htmlPages: boolean };
@@ -159,6 +160,13 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
         };
     });
 
+    readonly setLoading = this.updater<boolean>((state: DotPagesState, loading: boolean) => {
+        return {
+            ...state,
+            loading
+        };
+    });
+
     readonly clearMenuActions = this.updater((state: DotPagesState) => {
         return {
             ...state,
@@ -230,43 +238,64 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
                     const { offset, sortField, sortOrder } = params;
                     const sortOrderValue = this.getSortOrderValue(sortField, sortOrder);
 
-                    return this.dotESContentService
-                        .get({
-                            itemsPerPage: 40,
-                            offset: offset.toString(),
-                            query: this.getESQuery(),
-                            sortField: sortField || 'modDate',
-                            sortOrder: sortOrderValue
-                        })
-                        .pipe(
-                            tapResponse(
-                                (items) => {
-                                    const dateFormattedPages = this.formatRelativeDates(
-                                        items.jsonObjectView.contentlets
-                                    );
-
-                                    let currentPages = this.get().pages.items;
-
-                                    if (currentPages.length === 0) {
-                                        currentPages = Array.from({ length: items.resultsSize });
-                                    }
-
-                                    Array.prototype.splice.apply(currentPages, [
-                                        ...[offset, 40],
-                                        ...dateFormattedPages
-                                    ]);
-
-                                    this.setPages(currentPages);
-                                },
-                                (error: HttpErrorResponse) => {
-                                    return this.httpErrorManagerService.handle(error);
-                                }
-                            )
-                        );
+                    return this.getPagesData(offset, sortOrderValue, sortField).pipe(
+                        tapResponse(
+                            (items) => {
+                                const formatedPages = this.formatPagesData(items, offset);
+                                this.setPages(formatedPages);
+                            },
+                            (error: HttpErrorResponse) => {
+                                return this.httpErrorManagerService.handle(error);
+                            }
+                        )
+                    );
                 })
             );
         }
     );
+
+    readonly getPagesRetry = this.effect((params$: Observable<{ offset: number }>) => {
+        return params$.pipe(
+            mergeMap((params) => {
+                const { offset } = params;
+                const sortOrderValue = this.getSortOrderValue();
+
+                let initialData = '';
+                let retries = 0;
+
+                return this.getPagesData(offset, sortOrderValue)
+                    .pipe(
+                        tap(
+                            (items) => {
+                                retries++;
+
+                                // First fetch to grab initial data to compare
+                                if (!initialData) {
+                                    initialData = JSON.stringify(items.jsonObjectView);
+                                    this.setLoading(true);
+                                    throw false;
+                                } else if (
+                                    // Will continue repeating fetch until data has changed or limit fetch reached
+                                    initialData === JSON.stringify(items.jsonObjectView) &&
+                                    retries < 10
+                                ) {
+                                    throw false;
+                                } else {
+                                    // Terminated fetch loop and will proceed to set data on store
+                                    const formatedPages = this.formatPagesData(items, offset);
+                                    this.setPages(formatedPages);
+                                    this.setLoading(false);
+                                }
+                            },
+                            (error: HttpErrorResponse) => {
+                                return this.httpErrorManagerService.handle(error);
+                            }
+                        )
+                    )
+                    .pipe(retryWhen((errors) => errors.pipe(delay(1000))));
+            })
+        );
+    });
 
     readonly showActionsMenu = this.effect(
         (params$: Observable<{ item: DotCMSContentlet; actionMenuDomId: string }>) => {
@@ -304,7 +333,7 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
         this.languageOptions$,
         this.languageLabels$,
         (
-            { favoritePages, isEnterprise, environments, languages, loggedUser, pages },
+            { favoritePages, isEnterprise, environments, languages, loading, loggedUser, pages },
             languageOptions,
             languageLabels
         ) => ({
@@ -312,6 +341,7 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
             isEnterprise,
             environments,
             languages,
+            loading,
             loggedUser,
             pages,
             languageOptions,
@@ -319,7 +349,7 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
         })
     );
 
-    private getSortOrderValue(sortField: string, sortOrder: number) {
+    private getSortOrderValue(sortField?: string, sortOrder?: number) {
         let sortOrderValue: ESOrderDirection;
         if ((sortOrder === 1 && !sortField) || (!sortOrder && !sortField)) {
             sortOrderValue = ESOrderDirection.DESC;
@@ -336,7 +366,7 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
         const langQuery = languageId ? `+languageId:${languageId}` : '';
         const archivedQuery = archived ? `+archived:${archived}` : '';
         const keywordQuery = keyword
-            ? `+(title:${keyword}* OR path:${keyword}* OR urlmap:${keyword}*)`
+            ? `+(title:${keyword}* OR path:*${keyword}* OR urlmap:*${keyword}*)`
             : '';
 
         return `+conhost:${hostId} +deleted:false  +(urlmap:* OR basetype:5) ${langQuery} ${archivedQuery} ${keywordQuery} `;
@@ -357,6 +387,34 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
 
         return data;
     }
+
+    private getPagesData = (
+        offset: number,
+        sortOrderValue?: ESOrderDirection,
+        sortField?: string
+    ) => {
+        return this.dotESContentService.get({
+            itemsPerPage: 40,
+            offset: offset.toString(),
+            query: this.getESQuery(),
+            sortField: sortField || 'modDate',
+            sortOrder: sortOrderValue
+        });
+    };
+
+    private formatPagesData = (items: ESContent, offset: number) => {
+        const dateFormattedPages = this.formatRelativeDates(items.jsonObjectView.contentlets);
+
+        let currentPages = this.get().pages.items;
+
+        if (currentPages.length === 0) {
+            currentPages = Array.from({ length: items.resultsSize });
+        }
+
+        Array.prototype.splice.apply(currentPages, [...[offset, 40], ...dateFormattedPages]);
+
+        return currentPages;
+    };
 
     private getFavoritePagesData = (limit: number) => {
         return this.dotESContentService.get({
@@ -524,6 +582,7 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
                         isEnterprise,
                         environments,
                         languages,
+                        loading: false,
                         loggedUser: {
                             id: currentUser.userId,
                             canRead: {
