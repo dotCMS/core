@@ -206,7 +206,6 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy {
      */
     private async getCustomRemoteExtensions(): Promise<AnyExtension[]> {
         const data: RemoteCustomExtentions = this.getParsedCustomBlocks();
-
         const extensionUrls = data?.extensions.map((extension) => extension.url);
         const customModules = await this.loadCustomBlocks(extensionUrls);
 
@@ -217,15 +216,11 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy {
         });
 
         const moduleObj = customModules.reduce(
-            (prevModule, module) => ({ ...prevModule, ...module }),
+            (prevModule, module: PromiseFulfilledResult<AnyExtension>) => ({
+                ...prevModule,
+                ...module?.value
+            }),
             {}
-        );
-
-        console.log('data.extensions', blockNames);
-        // eslint-disable-next-line no-console
-        console.log(
-            'blockNames v2:',
-            blockNames.map((block) => moduleObj[block])
         );
 
         return blockNames.map((block) => moduleObj[block]);

@@ -169,8 +169,6 @@ function execCommand({
         video: () => editor.commands.openAssetForm({ type: 'video' })
     };
 
-    console.log('getCustomActions', getCustomActions(customBlocks));
-
     getCustomActions(customBlocks).forEach((option) => {
         whatToDo[option.id] = () => {
             try {
@@ -275,7 +273,6 @@ export const ActionsMenu = (
 
         const customItems = [...items, ...getCustomActions(customBlocks)];
 
-        console.log('customItems', customItems);
         customItems.forEach((item) => (item.command = () => onCommand({ item, editor, range })));
 
         return customItems;
@@ -292,7 +289,6 @@ export const ActionsMenu = (
     }
 
     function onSelection({ editor, range, props }) {
-        console.log('sup onSelection');
         const suggestionQuery = suggestionKey.getState(editor.view.state).query?.length || 0;
         range.to = range.to + suggestionQuery;
         execCommand({ editor: editor, range: range, props, customBlocks });
