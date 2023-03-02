@@ -653,4 +653,5 @@ public class BrowserAPITest extends IntegrationTestBase {
         assertNotNull(contentletList);
         assertNotNull(result);
     }
+
 }
