@@ -6,14 +6,14 @@
     >
         <div class="flex flex-grow-1 align-items-center justify-content-between">
             <p-tag
-                styleClass="{{ vm.statusExperiment?.classz }}"
-                value="{{ vm.statusExperiment?.label | dm }} "
+                styleClass="{{ vm.experimentStatus | lowercase }}"
+                value="{{ vm.experimentStatus | lowercase | dm }} "
             >
             </p-tag>
 
             <button
                 class="p-button-outlined"
-                *ngIf="vm.canStartExperiment"
+                *ngIf="vm.isExperimentADraft"
                 [disabled]="vm.disabledStartExperiment"
                 [loading]="vm.isSaving"
                 (click)="runExperiment(vm.experiment)"
@@ -39,7 +39,6 @@
             </p-card>
 
             <dot-experiments-configuration-variants
-                [stepStatus]="vm.stepStatusSidebar"
                 [variants]="vm.experiment.trafficProportion.variants"
                 (delete)="deleteVariant($event, vm.experiment.id)"
                 (edit)="editVariant($event, vm.experiment.id)"

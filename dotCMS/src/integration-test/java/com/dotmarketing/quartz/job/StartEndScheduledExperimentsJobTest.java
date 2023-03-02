@@ -79,8 +79,6 @@ public class StartEndScheduledExperimentsJobTest extends IntegrationTestBase {
         try {
 
             assertEquals(Status.RUNNING, scheduledToEndExperiment.status());
-            // wait some minutes for its end date to be reached
-            Thread.sleep(2 * 60 * 1000);
 
             // create experiment that should have started
             final Instant NOW_PLUS_ONE_MINUTE = Instant.now().plus(1, ChronoUnit.MINUTES);
@@ -91,6 +89,9 @@ public class StartEndScheduledExperimentsJobTest extends IntegrationTestBase {
 
             scheduledToStartExperiment = experimentsAPI.start(scheduledToStartExperiment.id().orElseThrow(),
                     APILocator.systemUser());
+
+            // wait some minutes for its end date to be reached
+            Thread.sleep(2 * 60 * 1000);
 
             assertEquals(Status.SCHEDULED, scheduledToStartExperiment.status());
 
