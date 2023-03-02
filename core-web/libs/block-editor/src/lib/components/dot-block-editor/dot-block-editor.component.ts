@@ -195,6 +195,22 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy {
         }
     }
 
+    private parsedCustomModules(
+        prevModule,
+        module: PromiseFulfilledResult<AnyExtension> | PromiseRejectedResult
+    ) {
+        if (module.status === 'rejected') {
+            console.warn('Failed to load the module', module.reason);
+        }
+
+        return module.status === 'fulfilled'
+            ? {
+                  ...prevModule,
+                  ...module?.value
+              }
+            : { ...prevModule };
+    }
+
     /**
      * This methods get the customBlocks variable to retrieve the custom modules as Objects.
      * Validates that there is customBlocks defined.
@@ -212,13 +228,7 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy {
             blockNames.push(...(extension.actions?.map((item) => item.name) || []));
         });
 
-        const moduleObj = customModules.reduce(
-            (prevModule, module: PromiseFulfilledResult<AnyExtension>) => ({
-                ...prevModule,
-                ...module?.value
-            }),
-            {}
-        );
+        const moduleObj = customModules.reduce(this.parsedCustomModules, {});
 
         return blockNames.map((block) => moduleObj[block]);
     }
