@@ -8,8 +8,9 @@
                     [id]="control.key"
                 ></p-checkbox>
                 <label
-                    [ngClass]="{ 'p-label-input-required': control.required }"
+                    [checkIsRequiredControl]="control.key"
                     [for]="control.key"
+                    dotFieldRequired
                     >{{ control.label | titlecase }}</label
                 >
             </ng-container>

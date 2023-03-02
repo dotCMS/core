@@ -1,8 +1,6 @@
 <form class="p-fluid" [formGroup]="form">
     <div class="field">
-        <label class="p-label-input-required" for="content-type-form-host">{{
-            'modes.persona.host' | dm
-        }}</label>
+        <label dotFieldRequired for="content-type-form-host">{{ 'modes.persona.host' | dm }}</label>
         <dot-site-selector-field
             id="content-type-form-host"
             [system]="true"
@@ -11,9 +9,7 @@
     </div>
 
     <div class="field">
-        <label class="p-label-input-required" for="persona-name">{{
-            'modes.persona.name' | dm
-        }}</label>
+        <label dotFieldRequired for="persona-name">{{ 'modes.persona.name' | dm }}</label>
         <input
             id="persona-name"
             (keyup)="setKeyTag()"
@@ -31,9 +27,7 @@
     </div>
 
     <div class="field">
-        <label class="p-label-input-required" for="persona-keyTag">{{
-            'modes.persona.key.tag' | dm
-        }}</label>
+        <label dotFieldRequired for="persona-keyTag">{{ 'modes.persona.key.tag' | dm }}</label>
         <input id="persona-keyTag" type="text" formControlName="keyTag" name="keyTag" pInputText />
     </div>
 

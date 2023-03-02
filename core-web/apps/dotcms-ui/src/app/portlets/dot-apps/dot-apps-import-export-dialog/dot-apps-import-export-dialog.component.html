@@ -11,9 +11,7 @@
     <form [formGroup]="form" [ngSwitch]="action" novalidate>
         <ng-container *ngSwitchCase="'Export'">
             <div class="field">
-                <label class="p-label-input-required" for="export-password">{{
-                    'Password' | dm
-                }}</label>
+                <label dotFieldRequired for="export-password">{{ 'Password' | dm }}</label>
                 <input
                     class="dot-apps-export-dialog__password"
                     id="export-password"
@@ -29,9 +27,7 @@
         </ng-container>
         <ng-container *ngSwitchCase="'Import'">
             <div class="field">
-                <label class="p-label-input-required" for="import-file">{{
-                    'Upload-File' | dm
-                }}</label>
+                <label dotFieldRequired for="import-file">{{ 'Upload-File' | dm }}</label>
                 <input
                     id="import-file"
                     #importFile
@@ -41,9 +37,7 @@
                 />
             </div>
             <div class="field">
-                <label class="p-label-input-required" for="import-password">{{
-                    'Password' | dm
-                }}</label>
+                <label dotFieldRequired for="import-password">{{ 'Password' | dm }}</label>
                 <input
                     class="dot-apps-import-dialog__password"
                     id="import-password"

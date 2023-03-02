@@ -11,6 +11,7 @@ import { InputTextModule } from 'primeng/inputtext';
 import { InputTextareaModule } from 'primeng/inputtextarea';
 import { TooltipModule } from 'primeng/tooltip';
 
+import { DotFieldRequiredDirective } from '@directives/dot-field-required/dot-field-required.directive';
 import { DotIconModule } from '@dotcms/ui';
 
 import { DotAppsConfigurationDetailFormComponent } from './dot-apps-configuration-detail-form.component';
@@ -26,7 +27,8 @@ import { DotAppsConfigurationDetailFormComponent } from './dot-apps-configuratio
         InputTextModule,
         ReactiveFormsModule,
         TooltipModule,
-        MarkdownModule.forChild()
+        MarkdownModule.forChild(),
+        DotFieldRequiredDirective
     ],
     declarations: [DotAppsConfigurationDetailFormComponent],
     exports: [DotAppsConfigurationDetailFormComponent],

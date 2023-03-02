@@ -18,8 +18,8 @@ import { TabViewModule } from 'primeng/tabview';
 
 import { DotAddToBundleModule } from '@components/_common/dot-add-to-bundle';
 import { DotFieldValidationMessageModule } from '@components/_common/dot-field-validation-message/dot-file-validation-message.module';
-import { UiDotIconButtonModule } from '@components/_common/dot-icon-button/dot-icon-button.module';
 import { UiDotIconButtonTooltipModule } from '@components/_common/dot-icon-button-tooltip/dot-icon-button-tooltip.module';
+import { UiDotIconButtonModule } from '@components/_common/dot-icon-button/dot-icon-button.module';
 import { DotInlineEditModule } from '@components/_common/dot-inline-edit/dot-inline-edit.module';
 import { DotMenuModule } from '@components/_common/dot-menu/dot-menu.module';
 import { DotPageSelectorModule } from '@components/_common/dot-page-selector/dot-page-selector.module';
@@ -105,8 +105,7 @@ import { DotAddToMenuModule } from '../dot-content-types-listing/components/dot-
         NamePropertyComponent,
         RegexCheckPropertyComponent,
         ValuesPropertyComponent,
-        DotBlockEditorSettingsComponent,
-        DotFieldRequiredDirective
+        DotBlockEditorSettingsComponent
     ],
     exports: [DotContentTypesEditComponent],
     imports: [
@@ -156,7 +155,8 @@ import { DotAddToMenuModule } from '../dot-content-types-listing/components/dot-
         DotRelationshipTreeModule,
         DotPortletBoxModule,
         DotMdIconSelectorModule,
-        DotAddToMenuModule
+        DotAddToMenuModule,
+        DotFieldRequiredDirective
     ],
     providers: [
         DotContentTypesInfoService,

@@ -7,6 +7,7 @@ import { InputTextModule } from 'primeng/inputtext';
 import { PasswordModule } from 'primeng/password';
 
 import { DotDialogModule } from '@components/dot-dialog/dot-dialog.module';
+import { DotFieldRequiredDirective } from '@directives/dot-field-required/dot-field-required.directive';
 import { DotAlertConfirmService } from '@dotcms/data-access';
 import { DotPipesModule } from '@pipes/dot-pipes.module';
 
@@ -20,7 +21,8 @@ import { DotMyAccountComponent } from './dot-my-account.component';
         DotDialogModule,
         CommonModule,
         CheckboxModule,
-        DotPipesModule
+        DotPipesModule,
+        DotFieldRequiredDirective
     ],
     exports: [DotMyAccountComponent],
     declarations: [DotMyAccountComponent],

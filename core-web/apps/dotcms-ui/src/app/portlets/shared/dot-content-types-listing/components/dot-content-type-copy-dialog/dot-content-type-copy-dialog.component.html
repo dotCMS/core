@@ -9,9 +9,7 @@
 >
     <form class="p-fluid" #formEl="ngForm" [formGroup]="form" novalidate>
         <div class="field form__group--validation">
-            <label class="p-label-input-required" for="content-type-form-name">{{
-                inputNameWithType
-            }}</label>
+            <label dotFieldRequired for="content-type-form-name">{{ inputNameWithType }}</label>
             <input
                 id="content-type-form-name"
                 [tabindex]="1"

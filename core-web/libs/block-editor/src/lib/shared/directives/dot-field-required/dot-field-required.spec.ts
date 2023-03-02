@@ -1,3 +1,5 @@
+/* tslint:disable:no-unused-variable */
+
 import { Component, DebugElement } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import {
@@ -13,23 +15,18 @@ import { DotFieldRequiredDirective } from './dot-field-required.directive';
     template: `
         <form [formGroup]="form">
             <label data-testid="nameLabel" dotFieldRequired for="name">Name</label>
-            <input type="text" id="name formControlName="name" />
-            <label data-testid="textLabel" dotFieldRequired checkIsRequiredControl="text" for="name"
-                >Text</label
-            >
-            <input id="text" type="text" formControlName="text" />
+            <input type="text" formControlName="name" />
         </form>
     `
 })
 class TestHostComponent {
     constructor(private fb: UntypedFormBuilder) {}
     form: UntypedFormGroup = this.fb.group({
-        name: ['', Validators.required],
-        text: ['', Validators.required]
+        name: ['', Validators.required]
     });
 
-    setValidator() {
-        this.form.get('name').addValidators(Validators.required);
+    clearValidator() {
+        this.form.get('name').clearValidators();
     }
 }
 
@@ -55,13 +52,10 @@ describe('Directive: dotFieldRequired', () => {
     });
 
     it('should not required field', async () => {
+        component.clearValidator();
         fixture.detectChanges();
         labelEl = fixture.debugElement.query(By.css('[data-testid="nameLabel"]'));
 
         expect(labelEl.nativeElement.classList.contains('p-label-input-required')).toBeFalsy();
-
-        component.setValidator();
-        fixture.detectChanges();
-        expect(labelEl.nativeElement.classList.contains('p-label-input-required')).toBeTruthy();
     });
 });

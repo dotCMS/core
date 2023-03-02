@@ -1,5 +1,5 @@
 <div class="field" [formGroup]="group">
-    <label class="p-label-input-required" [for]="property.name">
+    <label [for]="property.name" dotFieldRequired>
         {{ 'contenttypes.field.properties.name.label' | dm }}</label
     >
     <input

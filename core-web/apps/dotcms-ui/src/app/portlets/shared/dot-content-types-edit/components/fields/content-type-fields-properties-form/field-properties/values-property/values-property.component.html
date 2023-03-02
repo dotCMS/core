@@ -3,7 +3,7 @@
         *ngIf="helpText && isValidHelperClass()"
         [message]="helpText"
     ></dot-field-helper>
-    <label [for]="property.name" dotFieldRequired>{{
+    <label [for]="property.name" [checkIsRequiredControl]="property.name" dotFieldRequired>{{
         'contenttypes.field.properties.value.label' | dm
     }}</label>
     <dot-textarea-content

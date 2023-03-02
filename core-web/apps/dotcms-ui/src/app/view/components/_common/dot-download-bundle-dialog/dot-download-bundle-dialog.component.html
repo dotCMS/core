@@ -12,9 +12,7 @@
         (keyup.enter)="handleSubmit()"
     >
         <div class="field">
-            <label class="p-label-input-required" for="download-btn">{{
-                'download.bundle.i.want' | dm
-            }}</label>
+            <label dotFieldRequired for="download-btn">{{ 'download.bundle.i.want' | dm }}</label>
             <p-selectButton
                 class="p-button-tabbed"
                 id="download-btn"

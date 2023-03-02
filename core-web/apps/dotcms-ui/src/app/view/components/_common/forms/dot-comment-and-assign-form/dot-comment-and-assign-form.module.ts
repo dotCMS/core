@@ -7,6 +7,7 @@ import { InputTextareaModule } from 'primeng/inputtextarea';
 
 import { DotPageSelectorModule } from '@components/_common/dot-page-selector/dot-page-selector.module';
 import { DotCommentAndAssignFormComponent } from '@components/_common/forms/dot-comment-and-assign-form/dot-comment-and-assign-form.component';
+import { DotFieldRequiredDirective } from '@directives/dot-field-required/dot-field-required.directive';
 import { DotRolesService } from '@dotcms/data-access';
 import { DotPipesModule } from '@pipes/dot-pipes.module';
 
@@ -18,7 +19,8 @@ import { DotPipesModule } from '@pipes/dot-pipes.module';
         DotPipesModule,
         InputTextareaModule,
         DropdownModule,
-        DotPageSelectorModule
+        DotPageSelectorModule,
+        DotFieldRequiredDirective
     ],
     declarations: [DotCommentAndAssignFormComponent],
     exports: [DotCommentAndAssignFormComponent],

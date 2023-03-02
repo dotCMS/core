@@ -1,8 +1,6 @@
 <form class="content-type__form p-fluid" id="content-type-form" [formGroup]="form" novalidate>
     <div class="field form__group--validation">
-        <label class="p-label-input-required" for="content-type-form-name">{{
-            nameFieldLabel
-        }}</label>
+        <label dotFieldRequired for="content-type-form-name">{{ nameFieldLabel }}</label>
         <input
             id="content-type-form-name"
             #name

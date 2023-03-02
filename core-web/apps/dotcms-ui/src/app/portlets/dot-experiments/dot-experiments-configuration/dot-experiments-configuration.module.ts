@@ -5,6 +5,7 @@ import { ButtonModule } from 'primeng/button';
 import { CardModule } from 'primeng/card';
 import { TagModule } from 'primeng/tag';
 
+import { DotFieldRequiredDirective } from '@directives/dot-field-required/dot-field-required.directive';
 import { DotSessionStorageService } from '@dotcms/data-access';
 import { DotPipesModule } from '@pipes/dot-pipes.module';
 import { DotExperimentsConfigurationGoalsComponent } from '@portlets/dot-experiments/dot-experiments-configuration/components/dot-experiments-configuration-goals/dot-experiments-configuration-goals.component';
@@ -39,7 +40,8 @@ import { DotExperimentsConfigurationComponent } from './dot-experiments-configur
         // PrimeNg
         ButtonModule,
         TagModule,
-        CardModule
+        CardModule,
+        DotFieldRequiredDirective
     ],
     providers: [DotSessionStorageService]
 })

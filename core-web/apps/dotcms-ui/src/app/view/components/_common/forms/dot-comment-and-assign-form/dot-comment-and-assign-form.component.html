@@ -30,7 +30,7 @@
     </div>
 
     <div class="field" *ngIf="data['moveable']">
-        <label class="p-label-input-required" for="move">{{ 'Move' | dm }}</label>
+        <label dotFieldRequired for="move">{{ 'Move' | dm }}</label>
         <dot-page-selector
             id="move"
             [folderSearch]="true"

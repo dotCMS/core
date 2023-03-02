@@ -8,13 +8,9 @@
 </ng-template>
 
 <ng-template #labelField let-field="field">
-    <label
-        [for]="field.name"
-        [ngClass]="{
-            'p-label-input-required': field.required
-        }"
-        >{{ field.label }}</label
-    >
+    <label [for]="field.name" [checkIsRequiredControl]="field.name" dotFieldRequired>{{
+        field.label
+    }}</label>
 </ng-template>
 
 <form class="p-fluid" #form="ngForm" [formGroup]="myFormGroup" novalidate>

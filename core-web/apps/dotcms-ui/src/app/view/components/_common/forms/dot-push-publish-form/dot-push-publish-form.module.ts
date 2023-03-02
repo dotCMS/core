@@ -11,6 +11,7 @@ import { DotFieldValidationMessageModule } from '@components/_common/dot-field-v
 import { PushPublishEnvSelectorModule } from '@components/_common/dot-push-publish-env-selector/dot-push-publish-env-selector.module';
 import { DotPushPublishFormComponent } from '@components/_common/forms/dot-push-publish-form/dot-push-publish-form.component';
 import { DotDialogModule } from '@components/dot-dialog/dot-dialog.module';
+import { DotFieldRequiredDirective } from '@directives/dot-field-required/dot-field-required.directive';
 import { DotParseHtmlService } from '@dotcms/app/api/services/dot-parse-html/dot-parse-html.service';
 import { PushPublishService } from '@dotcms/app/api/services/push-publish/push-publish.service';
 import { DotcmsConfigService } from '@dotcms/dotcms-js';
@@ -30,7 +31,8 @@ import { DotPipesModule } from '@pipes/dot-pipes.module';
         DropdownModule,
         DotFieldValidationMessageModule,
         SelectButtonModule,
-        DotPipesModule
+        DotPipesModule,
+        DotFieldRequiredDirective
     ],
     providers: [PushPublishService, DotParseHtmlService, DotcmsConfigService]
 })

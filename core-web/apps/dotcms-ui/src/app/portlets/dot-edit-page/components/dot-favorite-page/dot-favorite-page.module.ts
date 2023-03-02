@@ -10,6 +10,7 @@ import { MultiSelectModule } from 'primeng/multiselect';
 import { DotFieldValidationMessageModule } from '@components/_common/dot-field-validation-message/dot-file-validation-message.module';
 import { DotFormDialogModule } from '@components/dot-form-dialog/dot-form-dialog.module';
 import { DotAutofocusModule } from '@directives/dot-autofocus/dot-autofocus.module';
+import { DotFieldRequiredDirective } from '@directives/dot-field-required/dot-field-required.directive';
 import { DotTempFileUploadService } from '@dotcms/app/api/services/dot-temp-file-upload/dot-temp-file-upload.service';
 import { DotRolesService, DotWorkflowActionsFireService } from '@dotcms/data-access';
 import { DotPipesModule } from '@pipes/dot-pipes.module';
@@ -29,7 +30,8 @@ import { DotFavoritePageComponent } from './dot-favorite-page.component';
         DropdownModule,
         InputTextModule,
         ReactiveFormsModule,
-        MultiSelectModule
+        MultiSelectModule,
+        DotFieldRequiredDirective
     ],
     providers: [DotTempFileUploadService, DotWorkflowActionsFireService, DotRolesService]
 })
