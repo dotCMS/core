@@ -11,6 +11,7 @@ import {
     Goals,
     GoalsLevels,
     RangeOfDateAndTime,
+    TrafficProportion,
     Variant
 } from '@dotcms/dotcms-models';
 
@@ -188,6 +189,24 @@ export class DotExperimentsService {
         return this.http
             .patch<DotCMSResponse<DotExperiment>>(`${API_ENDPOINT}/${experimentId}`, {
                 trafficAllocation
+            })
+            .pipe(pluck('entity'));
+    }
+
+    /**
+     * Set traffic portion to an experiment
+     * @param {string} experimentId
+     * @param {TrafficProportion} trafficProportion
+     * @returns Observable<DotExperiment>
+     * @memberof DotExperimentsService
+     */
+    setTrafficProportion(
+        experimentId: string,
+        trafficProportion: TrafficProportion
+    ): Observable<DotExperiment> {
+        return this.http
+            .patch<DotCMSResponse<DotExperiment>>(`${API_ENDPOINT}/${experimentId}`, {
+                trafficProportion
             })
             .pipe(pluck('entity'));
     }

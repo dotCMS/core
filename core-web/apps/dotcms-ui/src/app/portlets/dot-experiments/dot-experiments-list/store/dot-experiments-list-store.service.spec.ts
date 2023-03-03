@@ -154,7 +154,7 @@ describe('DotExperimentsListStore', () => {
                 scheduling: null,
                 trafficProportion: {
                     type: TrafficProportionTypes.SPLIT_EVENLY,
-                    variants: [{ id: '111', name: 'DEFAULT', weight: '100.0' }]
+                    variants: [{ id: '111', name: 'DEFAULT', weight: 100.0 }]
                 },
                 creationDate: new Date('2022-08-21 14:50:03'),
                 modDate: new Date('2022-08-21 18:50:03'),
@@ -175,7 +175,7 @@ describe('DotExperimentsListStore', () => {
                 scheduling: null,
                 trafficProportion: {
                     type: TrafficProportionTypes.SPLIT_EVENLY,
-                    variants: [{ id: '222', name: 'DEFAULT', weight: '100.0' }]
+                    variants: [{ id: '222', name: 'DEFAULT', weight: 100.0 }]
                 },
                 creationDate: new Date('2022-08-21 14:50:03'),
                 modDate: new Date('2022-08-21 18:50:03'),

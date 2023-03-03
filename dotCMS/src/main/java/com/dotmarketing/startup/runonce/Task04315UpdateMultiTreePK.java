@@ -1,5 +1,6 @@
 package com.dotmarketing.startup.runonce;
 
+import com.dotcms.business.WrapInTransaction;
 import com.google.common.collect.ImmutableList;
 
 import com.dotmarketing.beans.MultiTree;
@@ -54,6 +55,7 @@ public class Task04315UpdateMultiTreePK extends AbstractJDBCStartupTask{
     }
 
     @Override
+    @WrapInTransaction
     public void executeUpgrade() throws DotDataException {
         
         try {

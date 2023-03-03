@@ -1,5 +1,6 @@
 package com.dotmarketing.startup.runalways;
 
+import com.dotcms.business.WrapInTransaction;
 import com.dotmarketing.startup.runonce.Task04355SystemEventAddServerIdColumn;
 import java.util.ArrayList;
 import java.util.List;
@@ -14,6 +15,9 @@ import com.dotmarketing.util.Logger;
 
 public class Task00006CreateSystemLayout implements StartupTask {
 	List<String> missingPortlets=new ArrayList<String>();
+
+	@Override
+	@WrapInTransaction
 	public void executeUpgrade() throws DotDataException, DotRuntimeException {
 		try {
 			Layout layout=getAdminLayout();

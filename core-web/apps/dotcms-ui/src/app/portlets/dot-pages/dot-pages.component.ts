@@ -1,68 +1,58 @@
-import { Component } from '@angular/core';
+import { Subject } from 'rxjs';
 
-import { DialogService } from 'primeng/dynamicdialog';
+import { Component, ElementRef, OnDestroy, OnInit, ViewChild } from '@angular/core';
+
+import { Menu } from 'primeng/menu';
 
 import { Observable } from 'rxjs/internal/Observable';
+import { filter, takeUntil } from 'rxjs/operators';
 
+import { DotMessageSeverity, DotMessageType } from '@components/dot-message-display/model';
+import { DotMessageDisplayService } from '@components/dot-message-display/services';
 import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
-import { DotMessageService } from '@dotcms/data-access';
+import { DotEventsService } from '@dotcms/data-access';
 import { DotCMSContentlet } from '@dotcms/dotcms-models';
 
 import { DotPagesState, DotPageStore } from './dot-pages-store/dot-pages.store';
 
-import { DotFavoritePageComponent } from '../dot-edit-page/components/dot-favorite-page/dot-favorite-page.component';
+export const FAVORITE_PAGE_LIMIT = 5;
 
-const FAVORITE_PAGE_LIMIT = 5;
+export interface DotActionsMenuEventParams {
+    event: MouseEvent;
+    actionMenuDomId: string;
+    item: DotCMSContentlet;
+}
+
 @Component({
     selector: 'dot-pages',
     templateUrl: './dot-pages.component.html',
     styleUrls: ['./dot-pages.component.scss'],
     providers: [DotPageStore]
 })
-export class DotPagesComponent {
+export class DotPagesComponent implements OnInit, OnDestroy {
+    @ViewChild('menu') menu: Menu;
     vm$: Observable<DotPagesState> = this.store.vm$;
 
-    // Needed to avoid browser to cache thumbnail img when reloaded, since it's fetched from the same URL
-    timeStamp = this.getTimeStamp();
-
-    private currentLimitSize = FAVORITE_PAGE_LIMIT;
+    private domIdMenuAttached = '';
+    private destroy$: Subject<boolean> = new Subject<boolean>();
 
     constructor(
         private store: DotPageStore,
         private dotRouterService: DotRouterService,
-        private dialogService: DialogService,
-        private dotMessageService: DotMessageService
+        private dotMessageDisplayService: DotMessageDisplayService,
+        private dotEventsService: DotEventsService,
+        private element: ElementRef
     ) {
         this.store.setInitialStateData(FAVORITE_PAGE_LIMIT);
     }
 
     /**
-     * Event to load more/less Favorite page data
-     *
-     * @param {boolean} areAllFavoritePagesLoaded
-     * @param {number} [favoritePagesToLoad]
-     * @memberof DotPagesComponent
-     */
-    toggleFavoritePagesData(
-        areAllFavoritePagesLoaded: boolean,
-        favoritePagesToLoad?: number
-    ): void {
-        if (areAllFavoritePagesLoaded) {
-            this.store.limitFavoritePages(FAVORITE_PAGE_LIMIT);
-        } else {
-            this.store.getFavoritePages(favoritePagesToLoad);
-        }
-
-        this.currentLimitSize = FAVORITE_PAGE_LIMIT;
-    }
-
-    /**
-     * Event to redirect to Edit Page with selected Favorite Page
+     * Event to redirect to Edit Page when Page selected
      *
      * @param {string} url
      * @memberof DotPagesComponent
      */
-    goToUrl(url: string) {
+    goToUrl(url: string): void {
         const splittedUrl = url.split('?');
         const urlParams = { url: splittedUrl[0] };
         const searchParams = new URLSearchParams(splittedUrl[1]);
@@ -75,33 +65,60 @@ export class DotPagesComponent {
     }
 
     /**
-     * Event that opens dialog to edit/delete Favorite Page
+     * Event to show/hide actions menu when each contentlet is clicked
      *
-     * @param {DotCMSContentlet} favoritePage
+     * @param {DotActionsMenuEventParams} params
      * @memberof DotPagesComponent
      */
-    editFavoritePage(favoritePage: DotCMSContentlet) {
-        this.dialogService.open(DotFavoritePageComponent, {
-            header: this.dotMessageService.get('favoritePage.dialog.header.add.page'),
-            width: '80rem',
-            data: {
-                page: {
-                    favoritePageUrl: favoritePage.url,
-                    favoritePage: favoritePage
-                },
-                onSave: () => {
-                    this.timeStamp = this.getTimeStamp();
-                    this.store.getFavoritePages(this.currentLimitSize);
-                },
-                onDelete: () => {
-                    this.timeStamp = this.getTimeStamp();
-                    this.store.getFavoritePages(this.currentLimitSize);
-                }
-            }
-        });
+    showActionsMenu({ event, actionMenuDomId, item }: DotActionsMenuEventParams): void {
+        event.stopPropagation();
+        this.menu.hide();
+
+        if (event?.currentTarget['id'] !== this.domIdMenuAttached) {
+            this.store.showActionsMenu({ item, actionMenuDomId });
+        }
     }
 
-    private getTimeStamp() {
-        return new Date().getTime().toString();
+    /**
+     * Event to reset status of menu actions when closed
+     *
+     * @memberof DotPagesComponent
+     */
+    closedActionsMenu() {
+        this.store.clearMenuActions();
+        this.domIdMenuAttached = '';
+    }
+
+    ngOnInit(): void {
+        this.store.actionMenuDomId$
+            .pipe(
+                takeUntil(this.destroy$),
+                filter((actionMenuDomId) => !!actionMenuDomId)
+            )
+            .subscribe((actionMenuDomId: string) => {
+                const target = this.element.nativeElement.querySelector(`#${actionMenuDomId}`);
+                if (target) {
+                    this.menu.show({ currentTarget: target });
+                    this.domIdMenuAttached = actionMenuDomId;
+                }
+            });
+
+        this.dotEventsService
+            .listen('dot-global-message')
+            .pipe(takeUntil(this.destroy$))
+            .subscribe((evt) => {
+                this.store.getPages({ offset: 0 });
+                this.dotMessageDisplayService.push({
+                    life: 3000,
+                    message: evt.data['value'],
+                    severity: DotMessageSeverity.SUCCESS,
+                    type: DotMessageType.SIMPLE_MESSAGE
+                });
+            });
+    }
+
+    ngOnDestroy(): void {
+        this.destroy$.next(true);
+        this.destroy$.complete();
     }
 }

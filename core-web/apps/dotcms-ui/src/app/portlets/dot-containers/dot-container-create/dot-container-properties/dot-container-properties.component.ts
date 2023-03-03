@@ -4,8 +4,6 @@ import { animate, style, transition, trigger } from '@angular/animations';
 import { AfterViewInit, Component, OnInit } from '@angular/core';
 import { FormArray, FormBuilder, FormControl, FormGroup, Validators } from '@angular/forms';
 
-import { MenuItem } from 'primeng/api';
-
 import { pairwise, startWith, take, takeUntil } from 'rxjs/operators';
 
 import { DotAlertConfirmService, DotMessageService } from '@dotcms/data-access';
@@ -54,8 +52,7 @@ export class DotContainerPropertiesComponent implements OnInit, AfterViewInit {
                     title: new FormControl(container?.title ?? '', [Validators.required]),
                     friendlyName: new FormControl(container?.friendlyName ?? ''),
                     maxContentlets: new FormControl(container?.maxContentlets ?? 0, {
-                        validators: [Validators.required],
-                        updateOn: 'blur'
+                        validators: [Validators.required]
                     }),
                     code: new FormControl(
                         container?.code ?? '',
@@ -65,7 +62,9 @@ export class DotContainerPropertiesComponent implements OnInit, AfterViewInit {
                     postLoop: container?.postLoop ?? '',
                     containerStructures: this.fb.array(
                         [],
-                        containerStructures.length ? [Validators.minLength(1)] : null
+                        containerStructures.length
+                            ? [Validators.required, Validators.minLength(1)]
+                            : null
                     )
                 });
 
@@ -131,7 +130,7 @@ export class DotContainerPropertiesComponent implements OnInit, AfterViewInit {
                 ({ code, structureId, containerId, containerInode, contentTypeVar }) => {
                     (this.form.get('containerStructures') as FormArray).push(
                         this.fb.group({
-                            code: new FormControl(code, [Validators.required]),
+                            code: new FormControl(code),
                             structureId: new FormControl(structureId, [Validators.required]),
                             containerId: new FormControl(containerId),
                             containerInode: new FormControl(containerInode),
@@ -193,33 +192,6 @@ export class DotContainerPropertiesComponent implements OnInit, AfterViewInit {
             delete formValues.identifier;
             this.store.saveContainer(formValues);
         }
-    }
-
-    /**
-     * Updates containerStructures based on tab data
-     *
-     * @param {MenuItem[]} containerStructures
-     * @return {void}
-     * @memberof DotContainerPropertiesComponent
-     */
-    updateContainerStructure(containerStructures: MenuItem[]): void {
-        const addInContainerStructure = this.form.get('containerStructures') as FormArray;
-        // clear containerStructures array
-        (this.form.get('containerStructures') as FormArray).clear();
-        containerStructures.forEach(({ state }: MenuItem) => {
-            addInContainerStructure.push(
-                this.fb.group({
-                    structureId: new FormControl(state.contentType.variable ?? '', [
-                        Validators.required
-                    ]),
-                    code: new FormControl(state?.code || '', [
-                        Validators.required,
-                        Validators.minLength(2)
-                    ])
-                })
-            );
-        });
-        this.form.updateValueAndValidity();
     }
 
     /**

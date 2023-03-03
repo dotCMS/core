@@ -1,5 +1,6 @@
 package com.dotmarketing.startup.runonce;
 
+import com.dotcms.business.WrapInTransaction;
 import java.math.BigDecimal;
 import java.sql.SQLException;
 
@@ -194,6 +195,7 @@ public class Task00945AddTableContentPublishing implements StartupTask {
 	}	
 	
 	@Override
+	@WrapInTransaction
 	public void executeUpgrade() throws DotDataException, DotRuntimeException {
         try {
             DbConnectionFactory.getConnection().setAutoCommit(true);

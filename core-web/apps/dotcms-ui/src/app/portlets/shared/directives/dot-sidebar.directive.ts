@@ -1,4 +1,4 @@
-import { Directive, Optional, Self } from '@angular/core';
+import { Directive, Input, Optional, Self } from '@angular/core';
 
 import { Sidebar } from 'primeng/sidebar';
 
@@ -6,9 +6,10 @@ export const enum SIDEBAR_PLACEMENT {
     RIGHT = 'right'
 }
 
-export const enum SIDEBAR_SIZES {
+export enum SIDEBAR_SIZES {
     SM = 'p-sidebar-sm',
-    MD = 'p-sidebar-md'
+    MD = 'p-sidebar-md',
+    LG = 'p-sidebar-lg'
 }
 
 /**
@@ -29,6 +30,19 @@ export class DotSidebarDirective {
             primeSidebar.closeOnEscape = false;
         } else {
             console.warn('DotSidebarDirective is for use with PrimeNg Sidebar');
+        }
+    }
+
+    /**
+     * Change the default width of the sidebar
+     * @param {SIDEBAR_SIZES} size
+     */
+    @Input()
+    set dotSize(size: SIDEBAR_SIZES) {
+        if (size === SIDEBAR_SIZES.LG) {
+            this.primeSidebar.style = { width: '60%' };
+        } else {
+            this.primeSidebar.styleClass = size;
         }
     }
 }

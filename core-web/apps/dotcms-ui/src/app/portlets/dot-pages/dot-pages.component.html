@@ -1,60 +1,26 @@
 <div class="dot-pages__container" *ngIf="vm$ | async as vm">
-    <p-panel
-        [ngClass]="{
-            'dot-pages-panel__expanded': vm.favoritePages.total === vm.favoritePages.items.length,
-            'dot-pages-panel__hide-panel-actions': !vm.favoritePages.showLoadMoreButton,
-            'dot-pages-panel__empty-state': vm.favoritePages?.items?.length === 0
-        }"
-        [toggleable]="true"
-        [header]="'favorites' | dm"
-        iconPos="start"
-        expandIcon="pi pi-angle-down"
-        collapseIcon="pi pi-angle-up"
-    >
-        <ng-template *ngIf="vm.favoritePages.showLoadMoreButton" pTemplate="icons">
-            <button
-                class="p-button-secondary dot-pages-panel-action__button"
-                [label]="
-                    vm.favoritePages.total > vm.favoritePages.items.length
-                        ? ('see.all' | dm)
-                        : ('see.less' | dm)
-                "
-                (click)="
-                    toggleFavoritePagesData(
-                        vm.favoritePages.total === vm.favoritePages.items.length,
-                        vm.favoritePages.total
-                    )
-                "
-                pButton
-                type="button"
-                data-testid="seeAllBtn"
-            ></button>
-        </ng-template>
+    <dot-pages-favorite-panel
+        (goToUrl)="goToUrl($event)"
+        (showActionsMenu)="showActionsMenu($event)"
+    ></dot-pages-favorite-panel>
 
-        <ng-template [ngIf]="vm.favoritePages?.items?.length !== 0" [ngIfElse]="emptyState">
-            <dot-pages-card
-                *ngFor="let item of vm.favoritePages.items"
-                [imageUri]="item.screenshot + '?' + timeStamp"
-                [title]="item.title"
-                [url]="item.url"
-                [ownerPage]="item.owner === vm.loggedUserId"
-                (edit)="editFavoritePage(item)"
-                (goTo)="goToUrl(item.url)"
-            ></dot-pages-card>
-        </ng-template>
+    <p-menu
+        #menu
+        [popup]="true"
+        [model]="vm.pages.menuActions"
+        (onHide)="closedActionsMenu($event)"
+    ></p-menu>
 
-        <ng-template #emptyState>
-            <dot-pages-card-empty *ngFor="let item of [1, 2, 3, 4, 5]"></dot-pages-card-empty>
+    <dot-pages-listing-panel
+        (goToUrl)="goToUrl($event)"
+        (showActionsMenu)="showActionsMenu($event)"
+    ></dot-pages-listing-panel>
 
-            <div class="dot-pages-empty__container">
-                <dot-icon name="library_add" size="40"></dot-icon>
-                <div class="dot-pages-empty__header">
-                    {{ 'favoritePage.listing.empty.header' | dm }}
-                </div>
-                <p>
-                    {{ 'favoritePage.listing.empty.content' | dm }}
-                </p>
-            </div>
-        </ng-template>
-    </p-panel>
+    <dot-add-to-bundle
+        *ngIf="vm.pages.addToBundleCTId"
+        [assetIdentifier]="vm.pages.addToBundleCTId"
+        (cancel)="vm.pages.addToBundleCTId = null"
+    ></dot-add-to-bundle>
 </div>
+
+<router-outlet></router-outlet>
