@@ -33,8 +33,22 @@ if(clipboard ==null){
 
 <style>
 
+/* roboto-regular - vietnamese_latin-ext_latin_greek-ext_greek_cyrillic-ext_cyrillic */
+@font-face {
+    font-family: 'Roboto';
+    font-style: normal;
+    font-weight: 400;
+    font-display: swap;
+    src: local(''),
+        url('/dotAdmin/assets/roboto-v27-vietnamese_latin-ext_latin_greek-ext_greek_cyrillic-ext_cyrillic-regular.woff2')
+            format('woff2'),
+        url('/dotAdmin/assets/roboto-v27-vietnamese_latin-ext_latin_greek-ext_greek_cyrillic-ext_cyrillic-regular.woff')
+            format('woff'); /* Chrome 6+, Firefox 3.6+, IE 9+, Safari 5.1+ */
+}
+
 body {
 	margin: 0;
+	font-family: 'Roboto', 'Helvetica Neue', Helvetica, Arial, 'Lucida Grande', sans-serif;
 }
 
 .mainContainer {
