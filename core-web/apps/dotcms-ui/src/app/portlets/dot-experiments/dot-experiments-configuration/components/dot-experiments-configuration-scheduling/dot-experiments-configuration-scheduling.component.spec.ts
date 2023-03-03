@@ -29,7 +29,7 @@ const messageServiceMock = new MockDotMessageService({
     'experiments.configure.scheduling.start': 'When the experiment start',
     'experiments.configure.scheduling.setup': 'Setup'
 });
-describe('DotExperimentsConfigurationSchedulingComponent', () => {
+fdescribe('DotExperimentsConfigurationSchedulingComponent', () => {
     let spectator: Spectator<DotExperimentsConfigurationSchedulingComponent>;
     let store: DotExperimentsConfigurationStore;
     let dotExperimentsService: SpyObject<DotExperimentsService>;

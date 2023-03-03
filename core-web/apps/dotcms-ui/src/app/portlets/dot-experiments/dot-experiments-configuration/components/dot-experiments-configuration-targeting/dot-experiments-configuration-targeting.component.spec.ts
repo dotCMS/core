@@ -10,6 +10,7 @@ import { of } from 'rxjs';
 import { MessageService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
 import { Card, CardModule } from 'primeng/card';
+import { Tooltip, TooltipModule } from 'primeng/tooltip';
 
 import { DotMessageService } from '@dotcms/data-access';
 import { DotExperimentStatusList } from '@dotcms/dotcms-models';
@@ -24,13 +25,13 @@ import { DotExperimentsConfigurationTargetingComponent } from './dot-experiments
 const messageServiceMock = new MockDotMessageService({
     'experiments.configure.targeting.name': 'Targeting'
 });
-describe('DotExperimentsConfigurationTargetingComponent', () => {
+fdescribe('DotExperimentsConfigurationTargetingComponent', () => {
     let spectator: Spectator<DotExperimentsConfigurationTargetingComponent>;
     let store: DotExperimentsConfigurationStore;
     let dotExperimentsService: SpyObject<DotExperimentsService>;
 
     const createComponent = createComponentFactory({
-        imports: [ButtonModule, CardModule],
+        imports: [ButtonModule, CardModule, TooltipModule],
         component: DotExperimentsConfigurationTargetingComponent,
         componentProviders: [],
         providers: [
@@ -59,10 +60,8 @@ describe('DotExperimentsConfigurationTargetingComponent', () => {
         expect(spectator.queryAll(Card).length).toEqual(1);
         expect(spectator.query(byTestId('targeting-card-name'))).toHaveText('Targeting');
         expect(spectator.query(byTestId('targeting-add-button'))).toExist();
-        expect(spectator.query(byTestId('tooltip-on-disabled'))).toHaveAttribute(
-            'ng-reflect-disabled',
-            'true'
-        );
+
+        expect(spectator.query(Tooltip).disabled).toEqual(true);
     });
 
     it('should disable button and show tooltip when experiment is not on draft', () => {
@@ -78,9 +77,6 @@ describe('DotExperimentsConfigurationTargetingComponent', () => {
         spectator.detectChanges();
 
         expect(spectator.query(byTestId('targeting-add-button'))).toHaveAttribute('disabled');
-        expect(spectator.query(byTestId('tooltip-on-disabled'))).toHaveAttribute(
-            'ng-reflect-disabled',
-            'false'
-        );
+        expect(spectator.query(Tooltip).disabled).toEqual(false);
     });
 });

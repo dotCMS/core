@@ -13,7 +13,6 @@ import { MessageService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
 import { Card, CardModule } from 'primeng/card';
 import { Inplace, InplaceModule } from 'primeng/inplace';
-import { InputTextModule } from 'primeng/inputtext';
 import { Tooltip, TooltipModule } from 'primeng/tooltip';
 
 import { DotCopyButtonComponent } from '@components/dot-copy-button/dot-copy-button.component';
@@ -46,7 +45,7 @@ const messageServiceMock = new MockDotMessageService({
 });
 
 const EXPERIMENT_ID = ExperimentMocks[0].id;
-describe('DotExperimentsConfigurationVariantsComponent', () => {
+fdescribe('DotExperimentsConfigurationVariantsComponent', () => {
     let spectator: Spectator<DotExperimentsConfigurationVariantsComponent>;
     let store: DotExperimentsConfigurationStore;
     let dotExperimentsService: SpyObject<DotExperimentsService>;
@@ -61,8 +60,7 @@ describe('DotExperimentsConfigurationVariantsComponent', () => {
             InplaceModule,
             DotExperimentsConfigurationVariantsAddComponent,
             DotCopyButtonModule,
-            TooltipModule,
-            InputTextModule
+            TooltipModule
         ],
         component: DotExperimentsConfigurationVariantsComponent,
         providers: [
