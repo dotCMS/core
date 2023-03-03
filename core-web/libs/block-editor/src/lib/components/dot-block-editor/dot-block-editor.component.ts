@@ -185,8 +185,9 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy {
     /**
      * assert call throws a detailed error
      * @param data
-     * @returns if the schema is valid to use
+     * @throws if the schema is not valid to use
      */
+
     private isValidSchema(data: RemoteCustomExtensions): void {
         const RemoteExtensionsSchema = object({
             extensions: array(
