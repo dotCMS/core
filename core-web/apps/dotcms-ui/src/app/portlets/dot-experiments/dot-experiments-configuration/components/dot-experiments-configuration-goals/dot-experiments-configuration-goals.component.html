@@ -28,6 +28,7 @@
 
                                 <i
                                     class="pi pi-trash delete cursor-pointer"
+                                    *ngIf="vm.isExperimentADraft"
                                     (click)="deleteGoal($event, 'primary', vm.experimentId)"
                                     data-testId="goal-delete-button"
                                 ></i>
@@ -41,16 +42,23 @@
             </div>
         </ng-container>
         <ng-template pTemplate="footer">
-            <button
-                class="p-button-sm p-button-link"
-                [disabled]="!!vm.goals"
-                (click)="openSelectGoalSidebar()"
-                data-testId="goals-add-button"
-                label="{{ 'experiments.configure.goals.add' | dm }}"
-                pButton
-                pRipple
-                type="submit"
-            ></button>
+            <div
+                [pTooltip]="'experiment.configure.edit.only.draft.status' | dm"
+                [tooltipDisabled]="vm.isExperimentADraft || !!vm.goals"
+                tooltipPosition="bottom"
+                data-testId="tooltip-on-disabled"
+            >
+                <button
+                    class="p-button-sm p-button-link"
+                    [disabled]="!!vm.goals || !vm.isExperimentADraft"
+                    (click)="openSelectGoalSidebar()"
+                    data-testId="goals-add-button"
+                    label="{{ 'experiments.configure.goals.add' | dm }}"
+                    pButton
+                    pRipple
+                    type="submit"
+                ></button>
+            </div>
         </ng-template>
     </p-card>
 </ng-container>

@@ -12,7 +12,7 @@ import { ButtonModule } from 'primeng/button';
 import { Card, CardModule } from 'primeng/card';
 
 import { DotMessageService } from '@dotcms/data-access';
-import { ExperimentSteps } from '@dotcms/dotcms-models';
+import { DotExperimentStatusList, ExperimentSteps } from '@dotcms/dotcms-models';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 import { DotExperimentsConfigurationStore } from '@portlets/dot-experiments/dot-experiments-configuration/store/dot-experiments-configuration-store';
 import { DotExperimentsService } from '@portlets/dot-experiments/shared/services/dot-experiments.service';
@@ -75,5 +75,34 @@ describe('DotExperimentsConfigurationTrafficComponent', () => {
         spectator.click(byTestId('traffic-allocation-button'));
 
         expect(store.openSidebar).toHaveBeenCalledOnceWith(ExperimentSteps.TRAFFIC);
+    });
+
+    it('should disable tooltip if is on draft', () => {
+        expect(spectator.query(byTestId('tooltip-on-disabled'))).toHaveAttribute(
+            'ng-reflect-disabled',
+            'true'
+        );
+    });
+
+    it('should disable button and show tooltip when experiment is nos on draft', () => {
+        dotExperimentsService.getById.and.returnValue(
+            of({
+                ...ExperimentMocks[0],
+                ...{ status: DotExperimentStatusList.RUNNING }
+            })
+        );
+
+        store.loadExperiment(ExperimentMocks[0].id);
+
+        spectator.detectChanges();
+
+        expect(spectator.query(byTestId('traffic-allocation-button'))).toHaveAttribute('disabled');
+        expect(spectator.query(byTestId('traffic-split-change-button'))).toHaveAttribute(
+            'disabled'
+        );
+        expect(spectator.queryAll(byTestId('tooltip-on-disabled'))).toHaveAttribute(
+            'ng-reflect-disabled',
+            'false'
+        );
     });
 });

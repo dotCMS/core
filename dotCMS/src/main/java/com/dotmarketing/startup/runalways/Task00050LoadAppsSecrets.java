@@ -11,6 +11,7 @@ import static com.dotcms.security.apps.AppsUtil.validateForSave;
 import static com.dotmarketing.util.UtilMethods.isSet;
 import static com.liferay.util.StringPool.BLANK;
 
+import com.dotcms.business.WrapInTransaction;
 import com.dotcms.security.apps.AppDescriptor;
 import com.dotcms.security.apps.AppDescriptorHelper;
 import com.dotcms.security.apps.AppSecrets;
@@ -87,6 +88,7 @@ public class Task00050LoadAppsSecrets implements StartupTask {
     }
 
     @Override
+    @WrapInTransaction
     public void executeUpgrade() throws DotDataException, DotRuntimeException {
         final DotConnect dotConnect = new DotConnect();
         final Map<String, AppDescriptor> descriptorsMap = getAppDescriptors();

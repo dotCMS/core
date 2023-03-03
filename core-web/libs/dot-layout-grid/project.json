@@ -17,7 +17,7 @@
         },
         "test": {
             "executor": "@angular-devkit/build-angular:karma",
-            "outputs": ["coverage/libs/dot-layout-grid"],
+            "outputs": ["{workspaceRoot}/coverage/libs/dot-layout-grid"],
             "options": {
                 "main": "libs/dot-layout-grid/src/test.ts",
                 "karmaConfig": "libs/dot-layout-grid/karma.conf.js",
