@@ -1,4 +1,5 @@
 import { Subject, from } from 'rxjs';
+import { assert, object, string, array } from 'superstruct';
 
 import {
     Component,
@@ -25,7 +26,7 @@ import { Underline } from '@tiptap/extension-underline';
 import StarterKit, { StarterKitOptions } from '@tiptap/starter-kit';
 
 import {
-    RemoteCustomExtentions,
+    RemoteCustomExtensions,
     EDITOR_MARKETING_KEYS,
     IMPORT_RESULTS
 } from '@dotcms/dotcms-models';
@@ -181,15 +182,46 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy {
         this.editor.view.dispatch(tr);
     }
 
-    private getParsedCustomBlocks(): RemoteCustomExtentions {
+    /**
+     * assert call throws a detailed error
+     * @param data
+     * @returns if the schema is valid to use
+     */
+    private isValidSchema(data: RemoteCustomExtensions): void {
+        const RemoteExtensionsSchema = object({
+            extensions: array(
+                object({
+                    url: string(),
+                    actions: array(
+                        object({
+                            name: string(),
+                            command: string(),
+                            menuLabel: string(),
+                            icon: string()
+                        })
+                    )
+                })
+            )
+        });
+
+        assert(data, RemoteExtensionsSchema);
+    }
+
+    private getParsedCustomBlocks(): RemoteCustomExtensions {
+        const defaultExtentions = {
+            extensions: []
+        };
+
         if (!this.customBlocks.length) {
-            return {
-                extensions: []
-            };
+            return defaultExtentions;
         }
 
         try {
-            return JSON.parse(this.customBlocks);
+            const data = JSON.parse(this.customBlocks);
+
+            this.isValidSchema(data);
+
+            return data;
         } catch (e) {
             console.warn('JSON parse fails, please check the JSON format.', e);
 
@@ -223,8 +255,8 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy {
      * @memberof DotBlockEditorComponent
      */
     private async getCustomRemoteExtensions(): Promise<AnyExtension[]> {
-        const data: RemoteCustomExtentions = this.getParsedCustomBlocks();
-        const extensionUrls = data?.extensions.map((extension) => extension.url);
+        const data: RemoteCustomExtensions = this.getParsedCustomBlocks();
+        const extensionUrls = data?.extensions?.map((extension) => extension.url);
         const customModules = await this.loadCustomBlocks(extensionUrls);
         const blockNames = [];
 
