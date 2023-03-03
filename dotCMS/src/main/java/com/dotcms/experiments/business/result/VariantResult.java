@@ -3,6 +3,19 @@ package com.dotcms.experiments.business.result;
 import java.util.Map;
 import java.util.Map.Entry;
 
+/**
+ * Represent a partial or total Result for a specific {@link com.dotcms.experiments.model.ExperimentVariant}
+ * into a {@link com.dotcms.experiments.model.Experiment}.
+ *
+ * The VariantResult include the follow data for a specific variant:
+ *
+ * <ul>
+ *     <li>How many Sessions the {@link com.dotcms.experiments.model.Experiment}'s Goal was success</li>
+ *     <li>How many times the {@link com.dotcms.experiments.model.Experiment}'s Goal was success no matter
+ *     if it was success several times in the sae session</li>
+ * </ul>
+ *
+ */
 public class VariantResult {
 
     private String variantName;

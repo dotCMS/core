@@ -18,6 +18,9 @@ import java.util.Map;
 import java.util.Map.Entry;
 import org.jetbrains.annotations.NotNull;
 
+/**
+ * Builder of {@link VariantResult}
+ */
 public class VariantResultBuilder {
     private final DateTimeFormatter FORMATTER = DateTimeFormatter.ofPattern("MM/dd/yyyy")
             .withZone(ZoneId.systemDefault());

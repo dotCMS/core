@@ -8,6 +8,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+/**
+ * Builder of {@link GoalResult}
+ */
 public class GoalResultBuilder {
     final Metric goal;
     final Map<String, VariantResultBuilder> variants;
