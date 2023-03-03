@@ -1,6 +1,6 @@
 <small
     class="p-invalid"
-    *ngIf="_field.enabled && _field.dirty && !_field.valid"
+    *ngIf="_field &&_field.enabled && _field.dirty && !_field.valid"
     data-testId="dotErrorMsg"
 >
     {{ errorMsg | dm }}
