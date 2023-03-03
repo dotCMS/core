@@ -1,19 +1,12 @@
-import { fromEvent, Observable, Subject } from 'rxjs';
+import { fromEvent, Subject } from 'rxjs';
 
 import { CommonModule } from '@angular/common';
-import {
-    ChangeDetectionStrategy,
-    Component,
-    ElementRef,
-    OnDestroy,
-    OnInit,
-    ViewChild
-} from '@angular/core';
+import { Component, ElementRef, OnDestroy, OnInit, ViewChild } from '@angular/core';
 
-import { DynamicDialogRef } from 'primeng/dynamicdialog';
+import { DynamicDialogConfig, DynamicDialogRef } from 'primeng/dynamicdialog';
 import { InputTextModule } from 'primeng/inputtext';
 
-import { debounceTime, takeUntil } from 'rxjs/operators';
+import { takeUntil } from 'rxjs/operators';
 
 import { DotAutofocusModule } from '@directives/dot-autofocus/dot-autofocus.module';
 import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
@@ -24,9 +17,8 @@ import {
     DotPageTypesService,
     DotWorkflowsActionsService
 } from '@dotcms/data-access';
+import { DotCMSContentType } from '@dotcms/dotcms-models';
 import { DotIconModule } from '@dotcms/ui';
-
-import { DotPagesState, DotPageStore } from '../dot-pages-store/dot-pages.store';
 
 @Component({
     selector: 'dot-pages-create-page-dialog',
@@ -45,22 +37,23 @@ import { DotPagesState, DotPageStore } from '../dot-pages-store/dot-pages.store'
         DotWorkflowsActionsService
     ],
     templateUrl: './dot-pages-create-page-dialog.component.html',
-    styleUrls: ['./dot-pages-create-page-dialog.component.scss'],
-    changeDetection: ChangeDetectionStrategy.OnPush
+    styleUrls: ['./dot-pages-create-page-dialog.component.scss']
 })
 export class DotPagesCreatePageDialogComponent implements OnInit, OnDestroy {
     @ViewChild('searchInput', { static: true }) searchInput: ElementRef;
 
-    vm$: Observable<DotPagesState> = this.store.vm$;
+    pageTypes: DotCMSContentType[];
+    pageTypesBackup: DotCMSContentType[];
 
     private destroy$: Subject<boolean> = new Subject<boolean>();
 
     constructor(
-        private store: DotPageStore,
         private dotRouterService: DotRouterService,
-        private ref: DynamicDialogRef
+        private ref: DynamicDialogRef,
+        public config: DynamicDialogConfig
     ) {
-        this.store.getPageTypes('');
+        this.pageTypes = this.config.data;
+        this.pageTypesBackup = [...this.pageTypes];
     }
 
     /**
@@ -76,9 +69,17 @@ export class DotPagesCreatePageDialogComponent implements OnInit, OnDestroy {
 
     ngOnInit(): void {
         fromEvent(this.searchInput.nativeElement, 'keyup')
-            .pipe(debounceTime(400), takeUntil(this.destroy$))
+            .pipe(takeUntil(this.destroy$))
             .subscribe(({ target }: Event) => {
-                this.store.getPageTypes(target['value']);
+                if (target['value'].length) {
+                    this.pageTypes = this.pageTypesBackup.filter((pageType: DotCMSContentType) =>
+                        pageType.name
+                            .toLocaleLowerCase()
+                            .includes(target['value'].toLocaleLowerCase())
+                    );
+                } else {
+                    this.pageTypes = [...this.pageTypesBackup];
+                }
             });
     }
 

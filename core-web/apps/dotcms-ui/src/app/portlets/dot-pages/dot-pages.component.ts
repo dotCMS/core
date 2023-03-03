@@ -13,7 +13,7 @@ import { DotMessageDisplayService } from '@components/dot-message-display/servic
 import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
 import { DotEventsService, DotMessageService } from '@dotcms/data-access';
 import { SiteService } from '@dotcms/dotcms-js';
-import { DotCMSContentlet } from '@dotcms/dotcms-models';
+import { DotCMSContentlet, DotCMSContentType } from '@dotcms/dotcms-models';
 
 import { DotPagesCreatePageDialogComponent } from './dot-pages-create-page-dialog/dot-pages-create-page-dialog.component';
 import { DotPagesState, DotPageStore } from './dot-pages-store/dot-pages.store';
@@ -27,9 +27,10 @@ export interface DotActionsMenuEventParams {
 }
 
 @Component({
+    providers: [DotPageStore],
     selector: 'dot-pages',
-    templateUrl: './dot-pages.component.html',
-    styleUrls: ['./dot-pages.component.scss']
+    styleUrls: ['./dot-pages.component.scss'],
+    templateUrl: './dot-pages.component.html'
 })
 export class DotPagesComponent implements OnInit, OnDestroy {
     @ViewChild('menu') menu: Menu;
@@ -100,10 +101,7 @@ export class DotPagesComponent implements OnInit, OnDestroy {
      * @memberof DotPagesComponent
      */
     showCreatePageDialog(): void {
-        this.dialogService.open(DotPagesCreatePageDialogComponent, {
-            header: this.dotMessageService.get('create.page'),
-            width: '800px'
-        });
+        this.store.getPageTypes();
     }
 
     ngOnInit(): void {
@@ -136,6 +134,19 @@ export class DotPagesComponent implements OnInit, OnDestroy {
         this.dotSiteService.switchSite$.pipe(takeUntil(this.destroy$), skip(1)).subscribe(() => {
             this.store.getPages({ offset: 0 });
         });
+
+        this.store.pageTypes$
+            .pipe(
+                takeUntil(this.destroy$),
+                filter((val) => !!val)
+            )
+            .subscribe((pageTypes: DotCMSContentType[]) => {
+                this.dialogService.open(DotPagesCreatePageDialogComponent, {
+                    header: this.dotMessageService.get('create.page'),
+                    width: '58rem',
+                    data: pageTypes
+                });
+            });
     }
 
     ngOnDestroy(): void {

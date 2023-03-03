@@ -12,8 +12,7 @@ export class DotPageTypesService {
     constructor(private coreWebService: CoreWebService) {}
 
     /**
-     * Get the value of specific key
-     * from the dotmarketing-config.properties
+     * Returns Content Type data of type page and urlMap
      *
      * @param string keyword
      * @returns {Observable<DotCMSContentType[]>}

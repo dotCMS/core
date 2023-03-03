@@ -48,11 +48,12 @@ describe('DotESContentService', () => {
         dotESContentService
             .get({
                 itemsPerPage: 5,
+                filter: 'test',
                 lang: '2',
                 offset: '10',
                 sortField: 'name',
                 sortOrder: ESOrderDirection.ASC,
-                query: '+contentType: blog +title: test'
+                query: '+contentType: blog'
             })
             .subscribe((res) => {
                 expect(res).toEqual(responseData);

@@ -250,12 +250,12 @@ describe('DotPageStore', () => {
         spyOn(dotPageTypesService, 'getPages').and.returnValue(
             of(expectedInputArray as unknown as DotCMSContentType[])
         );
-        dotPageStore.getPageTypes('test');
+        dotPageStore.getPageTypes();
 
         dotPageStore.state$.subscribe((data) => {
             expect(data.pageTypes).toEqual(expectedInputArray);
         });
-        expect(dotPageTypesService.getPages).toHaveBeenCalledWith('test');
+        expect(dotPageTypesService.getPages).toHaveBeenCalledTimes(1);
     });
 
     it('should set all Pages value in store', () => {

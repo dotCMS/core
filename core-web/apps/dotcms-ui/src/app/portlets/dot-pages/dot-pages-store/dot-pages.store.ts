@@ -105,6 +105,8 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
         }
     );
 
+    readonly pageTypes$ = this.select(({ pageTypes }) => pageTypes);
+
     readonly setFavoritePages = this.updater<DotCMSContentlet[]>(
         (state: DotPagesState, favoritePages: DotCMSContentlet[]) => {
             return {
@@ -226,10 +228,10 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
         );
     });
 
-    readonly getPageTypes = this.effect((keyword$: Observable<string>) => {
-        return keyword$.pipe(
-            switchMap((keyword: string) => {
-                return this.dotPageTypesService.getPages(keyword).pipe(
+    readonly getPageTypes = this.effect<void>((trigger$) =>
+        trigger$.pipe(
+            switchMap(() => {
+                return this.dotPageTypesService.getPages().pipe(
                     take(1),
                     tapResponse(
                         (pageTypes: DotCMSContentType[]) => {
@@ -243,8 +245,8 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
                     )
                 );
             })
-        );
-    });
+        )
+    );
 
     readonly getPages = this.effect(
         (params$: Observable<{ offset: number; sortField?: string; sortOrder?: number }>) => {
@@ -326,10 +328,12 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
         this.state$,
         this.languageOptions$,
         this.languageLabels$,
+        this.pageTypes$,
         (
-            { favoritePages, isEnterprise, environments, languages, loggedUser, pages, pageTypes },
+            { favoritePages, isEnterprise, environments, languages, loggedUser, pages },
             languageOptions,
-            languageLabels
+            languageLabels,
+            pageTypes
         ) => ({
             favoritePages,
             isEnterprise,
@@ -337,9 +341,9 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
             languages,
             loggedUser,
             pages,
-            pageTypes,
             languageOptions,
-            languageLabels
+            languageLabels,
+            pageTypes
         })
     );
 

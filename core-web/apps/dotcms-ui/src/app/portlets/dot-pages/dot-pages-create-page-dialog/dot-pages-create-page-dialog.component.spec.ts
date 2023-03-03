@@ -2,7 +2,7 @@ import { of } from 'rxjs';
 
 import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { DebugElement } from '@angular/core';
-import { ComponentFixture, fakeAsync, TestBed, tick } from '@angular/core/testing';
+import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import { ActivatedRoute } from '@angular/router';
 
@@ -102,6 +102,12 @@ describe('DotPagesCreatePageDialogComponent', () => {
                         }
                     }
                 },
+                {
+                    provide: DynamicDialogConfig,
+                    useValue: {
+                        data: [{ ...mockContentType }]
+                    }
+                },
                 { provide: DotPageStore, useClass: storeMock },
                 {
                     provide: ActivatedRoute,
@@ -122,12 +128,12 @@ describe('DotPagesCreatePageDialogComponent', () => {
 
     it('should have html components with attributes', () => {
         expect(
-            de.query(By.css(`.dot-pages-create-page-dialog__search-container dot-icon`))
-                .componentInstance.name
+            de.query(By.css(`[data-testId="dot-pages-create-page-filter-icon"]`)).componentInstance
+                .name
         ).toBe('search');
         expect(
-            de.query(By.css(`.dot-pages-create-page-dialog__search-container dot-icon`))
-                .componentInstance.size
+            de.query(By.css(`[data-testId="dot-pages-create-page-filter-icon"]`)).componentInstance
+                .size
         ).toBe('24');
         expect(
             de.query(By.css(`[data-testId="dot-pages-create-page-dialog__keyword-input"]`))
@@ -148,8 +154,9 @@ describe('DotPagesCreatePageDialogComponent', () => {
         ).toBe('18');
     });
 
-    it('should load pages types data when init', () => {
-        expect(store.getPageTypes).toHaveBeenCalledWith('');
+    it('should set pages types data when init', () => {
+        expect(fixture.componentInstance.pageTypes).toEqual([{ ...mockContentType }]);
+        expect(fixture.componentInstance.pageTypesBackup).toEqual([{ ...mockContentType }]);
     });
 
     it('should redirect url when click on page', () => {
@@ -159,13 +166,12 @@ describe('DotPagesCreatePageDialogComponent', () => {
         expect(dialogRef.close).toHaveBeenCalled();
     });
 
-    it('should call App filter on search', fakeAsync(() => {
+    it('should call App filter on search', () => {
         const input = de.query(
             By.css(`[data-testId="dot-pages-create-page-dialog__keyword-input"]`)
         );
         input.nativeElement.value = 'test';
         input.nativeElement.dispatchEvent(new Event('keyup'));
-        tick(550);
-        expect(store.getPageTypes).toHaveBeenCalledWith('test');
-    }));
+        expect(fixture.componentInstance.pageTypes).toEqual([]);
+    });
 });

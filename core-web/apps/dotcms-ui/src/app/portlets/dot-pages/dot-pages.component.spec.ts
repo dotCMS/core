@@ -16,9 +16,12 @@ import { DotMessageDisplayService } from '@components/dot-message-display/servic
 import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
 import { DotEventsService } from '@dotcms/data-access';
 import { CoreWebService, CoreWebServiceMock, mockSites, SiteService } from '@dotcms/dotcms-js';
-import { dotcmsContentletMock, MockDotRouterService } from '@dotcms/utils-testing';
+import {
+    dotcmsContentletMock,
+    dotcmsContentTypeBasicMock,
+    MockDotRouterService
+} from '@dotcms/utils-testing';
 
-import { DotPagesCreatePageDialogComponent } from './dot-pages-create-page-dialog/dot-pages-create-page-dialog.component';
 import { DotPageStore } from './dot-pages-store/dot-pages.store';
 import { DotActionsMenuEventParams, DotPagesComponent } from './dot-pages.component';
 
@@ -80,9 +83,13 @@ const storeMock = {
     get languageLabels$() {
         return of({});
     },
+    get pageTypes$() {
+        return of([{ ...dotcmsContentTypeBasicMock }]);
+    },
     clearMenuActions: jasmine.createSpy(),
     getFavoritePages: jasmine.createSpy(),
     getPages: jasmine.createSpy(),
+    getPageTypes: jasmine.createSpy(),
     showActionsMenu: jasmine.createSpy(),
     setInitialStateData: jasmine.createSpy(),
     limitFavoritePages: jasmine.createSpy(),
@@ -104,7 +111,8 @@ const storeMock = {
             actionMenuDomId: '',
             items: [],
             addToBundleCTId: 'test1'
-        }
+        },
+        pageTypes: []
     })
 };
 @Injectable()
@@ -173,7 +181,7 @@ describe('DotPagesComponent', () => {
         fixture.detectChanges();
         spyOn(component.menu, 'hide');
         spyOn(dotMessageDisplayService, 'push');
-        spyOn(dialogService, 'open');
+        spyOn(dialogService, 'open').and.callThrough();
     });
 
     it('should init store', () => {
@@ -223,11 +231,7 @@ describe('DotPagesComponent', () => {
     it('should call createPage method from DotPagesListingPanel', () => {
         const elem = de.query(By.css('dot-pages-listing-panel'));
         elem.triggerEventHandler('createPage');
-
-        expect(dialogService.open).toHaveBeenCalledWith(DotPagesCreatePageDialogComponent, {
-            header: 'create.page',
-            width: '800px'
-        });
+        expect(store.getPageTypes).toHaveBeenCalledTimes(1);
     });
 
     it('should call goToUrl method from DotPagesListingPanel', () => {

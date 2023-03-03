@@ -22,7 +22,6 @@ import { DotPagesCreatePageDialogComponent } from './dot-pages-create-page-dialo
 import { DotPagesFavoritePanelModule } from './dot-pages-favorite-panel/dot-pages-favorite-panel.module';
 import { DotPagesListingPanelModule } from './dot-pages-listing-panel/dot-pages-listing-panel.module';
 import { DotPagesRoutingModule } from './dot-pages-routing.module';
-import { DotPageStore } from './dot-pages-store/dot-pages.store';
 import { DotPagesComponent } from './dot-pages.component';
 
 @NgModule({
@@ -47,8 +46,7 @@ import { DotPagesComponent } from './dot-pages.component';
         DotWorkflowActionsFireService,
         DotWorkflowEventHandlerService,
         DotRouterService,
-        SiteService,
-        DotPageStore
+        SiteService
     ]
 })
 export class DotPagesModule {}
