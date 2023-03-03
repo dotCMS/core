@@ -198,7 +198,6 @@ describe('DotExperimentsConfigurationVariantsComponent', () => {
 
             expect(addButton.disabled).not.toBe(true);
             spectator.click(addButton);
-            spectator.detectChanges();
             expect(output).toEqual(SidebarStatus.OPEN);
         });
 

@@ -10,6 +10,7 @@ import { of } from 'rxjs';
 import { MessageService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
 import { Card, CardModule } from 'primeng/card';
+import { Tooltip } from 'primeng/tooltip';
 
 import { DotMessageService } from '@dotcms/data-access';
 import { DotExperimentStatusList, ExperimentSteps } from '@dotcms/dotcms-models';
@@ -78,10 +79,7 @@ describe('DotExperimentsConfigurationTrafficComponent', () => {
     });
 
     it('should disable tooltip if is on draft', () => {
-        expect(spectator.query(byTestId('tooltip-on-disabled'))).toHaveAttribute(
-            'ng-reflect-disabled',
-            'true'
-        );
+        expect(spectator.query(Tooltip).disabled).toEqual(true);
     });
 
     it('should disable button and show tooltip when experiment is nos on draft', () => {
@@ -100,9 +98,6 @@ describe('DotExperimentsConfigurationTrafficComponent', () => {
         expect(spectator.query(byTestId('traffic-split-change-button'))).toHaveAttribute(
             'disabled'
         );
-        expect(spectator.queryAll(byTestId('tooltip-on-disabled'))).toHaveAttribute(
-            'ng-reflect-disabled',
-            'false'
-        );
+        expect(spectator.query(Tooltip).disabled).toEqual(false);
     });
 });

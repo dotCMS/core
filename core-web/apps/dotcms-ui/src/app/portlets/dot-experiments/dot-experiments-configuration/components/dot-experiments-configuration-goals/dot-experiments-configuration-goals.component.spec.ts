@@ -11,7 +11,7 @@ import { ConfirmationService, MessageService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
 import { Card, CardModule } from 'primeng/card';
 import { ConfirmPopup, ConfirmPopupModule } from 'primeng/confirmpopup';
-import { TooltipModule } from 'primeng/tooltip';
+import { Tooltip, TooltipModule } from 'primeng/tooltip';
 
 import { DotMessagePipe } from '@dotcms/app/view/pipes';
 import { DotMessageService } from '@dotcms/data-access';
@@ -177,10 +177,7 @@ describe('DotExperimentsConfigurationGoalsComponent', () => {
     });
 
     it('should disable tooltip if is on draft', () => {
-        expect(spectator.query(byTestId('tooltip-on-disabled'))).toHaveAttribute(
-            'ng-reflect-disabled',
-            'true'
-        );
+        expect(spectator.query(Tooltip).disabled).toEqual(true);
     });
 
     it('should disable button and show tooltip when experiment is nos on draft', () => {
@@ -205,9 +202,6 @@ describe('DotExperimentsConfigurationGoalsComponent', () => {
         spectator.detectComponentChanges();
 
         expect(spectator.query(byTestId('goals-add-button'))).toHaveAttribute('disabled');
-        expect(spectator.query(byTestId('tooltip-on-disabled'))).toHaveAttribute(
-            'ng-reflect-disabled',
-            'false'
-        );
+        expect(spectator.query(Tooltip).disabled).toEqual(false);
     });
 });
