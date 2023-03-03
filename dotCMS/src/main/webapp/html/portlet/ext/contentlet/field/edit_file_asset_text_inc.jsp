@@ -83,6 +83,18 @@
 			aceAreaParser(parser);
      }
 
+	/**
+	 * Adds the on-blur event to the "File Name" field so that it automatically fills the "Title", if required.
+	 */
+	function addAutoFillTitleEvent() {
+		dojo.byId("fileName").addEventListener("blur", (event) => {
+			const titleField = dojo.byId("title");
+			if (titleField && !titleField.value) {
+				titleField.value = dojo.byId("fileName").value;
+			}
+		});
+	}
+
 	let tempFileId = "new";
 
 	/**
@@ -93,20 +105,20 @@
 		if(!changed) {
 			return;
 		}
-		let text = aceEditor.getValue();
+		const text = aceEditor.getValue();
 
 		if (contentletInode.value == '') {
-			let fileName = dojo.byId("fileName").value;
+			const fileName = dojo.byId("fileName").value;
 			if (fileName) {
-				let fileExtension = fileName.split('.').pop();
+				const fileExtension = fileName.split('.').pop();
 				if (fileExtension) {
 					loadAce(fileExtension);
 				}
-				let data = JSON.stringify({
+				const data = JSON.stringify({
 					"fileName": fileName,
 					"fileContent": text
 				});
-				let xhr = new XMLHttpRequest();
+				const xhr = new XMLHttpRequest();
 
 				xhr.addEventListener("readystatechange", function() {
 					if(this.readyState === 4) {
@@ -115,9 +127,9 @@
 				});
 
 				xhr.onload = function() {
-					let jsonData = JSON.parse(xhr.response);
+					const jsonData = JSON.parse(xhr.response);
 					tempFileId = jsonData.tempFiles[0].id;
-					let elements = document.getElementsByName("<%= field.getFieldContentlet() %>");
+					const elements = document.getElementsByName("<%= field.getFieldContentlet() %>");
 					for (let i = 0; i < elements.length; i++) {
 						if (elements[i].tagName.toLowerCase() == "input") {
 							elements[i].value = tempFileId;
@@ -156,5 +168,8 @@
 <input type="hidden" id="<%=field.getVelocityVarName()%>_hidden_field" value="<%=contents %>">
 
 <script>
-loadAce("<%= fileExtension %>")
+	loadAce("<%= fileExtension %>");
+	document.addEventListener("DOMContentLoaded", function(event) {
+		addAutoFillTitleEvent();
+	});
 </script>
