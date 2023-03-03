@@ -53,17 +53,19 @@ const mockDotMessageService = new MockDotMessageService({
     'editpage.toolbar.page.locked.by.user': 'Page locked by {0}'
 });
 
+const experiment = { ...ExperimentMocks[1] };
+
 const dotVariantDataMock: DotVariantData = {
     variant: {
-        id: ExperimentMocks[1].trafficProportion.variants[1].id,
-        url: ExperimentMocks[1].trafficProportion.variants[1].url,
-        title: ExperimentMocks[1].trafficProportion.variants[1].name,
-        isOriginal: ExperimentMocks[1].trafficProportion.variants[1].name === DEFAULT_VARIANT_NAME
+        id: experiment.trafficProportion.variants[1].id,
+        url: experiment.trafficProportion.variants[1].url,
+        title: experiment.trafficProportion.variants[1].name,
+        isOriginal: experiment.trafficProportion.variants[1].name === DEFAULT_VARIANT_NAME
     },
-    pageId: ExperimentMocks[1].pageId,
-    experimentId: ExperimentMocks[1].id,
-    experimentStatus: ExperimentMocks[1].status,
-    experimentName: ExperimentMocks[1].name,
+    pageId: experiment.pageId,
+    experimentId: experiment.id,
+    experimentStatus: experiment.status,
+    experimentName: experiment.name,
     mode: 'preview'
 };
 
