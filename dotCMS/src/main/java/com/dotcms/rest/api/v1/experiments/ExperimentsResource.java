@@ -433,7 +433,7 @@ public class ExperimentsResource {
     @NoCache
     @Path("/{id}/result")
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
-    public ResponseEntityView<ExperimentResults> getResult(@Context final HttpServletRequest request,
+    public ResponseEntityExperimentResults getResult(@Context final HttpServletRequest request,
             @Context final HttpServletResponse response, @PathParam("id") String id
     ) throws DotDataException, DotSecurityException {
         final InitDataObject initData = getInitData(request, response);
@@ -445,7 +445,7 @@ public class ExperimentsResource {
 
         final ExperimentResults experimentResults = APILocator.getExperimentsAPI().getResults(experiment);
 
-        return new ResponseEntityView<>(experimentResults);
+        return new ResponseEntityExperimentResults(experimentResults);
     }
 
     private Experiment patchExperiment(final Experiment experimentToUpdate,
