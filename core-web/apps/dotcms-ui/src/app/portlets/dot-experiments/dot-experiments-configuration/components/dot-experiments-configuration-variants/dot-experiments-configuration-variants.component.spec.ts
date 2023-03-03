@@ -7,8 +7,6 @@ import {
 } from '@ngneat/spectator';
 import { of } from 'rxjs';
 
-import { CommonModule } from '@angular/common';
-
 import { MessageService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
 import { Card, CardModule } from 'primeng/card';
@@ -54,7 +52,6 @@ fdescribe('DotExperimentsConfigurationVariantsComponent', () => {
 
     const createComponent = createComponentFactory({
         imports: [
-            CommonModule,
             ButtonModule,
             CardModule,
             InplaceModule,
