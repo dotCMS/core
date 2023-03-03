@@ -4,7 +4,6 @@ import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 
 // DotCMS JS
 import { LoggerService, StringUtils } from '@dotcms/dotcms-js';
-
 import { DotFieldRequiredDirective } from '@dotcms/ui';
 
 //Editor
