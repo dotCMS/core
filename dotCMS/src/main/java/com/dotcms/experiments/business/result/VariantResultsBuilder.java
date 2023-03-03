@@ -1,16 +1,12 @@
 package com.dotcms.experiments.business.result;
 
-import com.dotcms.experiments.business.result.VariantResult.ResultResumeItem;
+import com.dotcms.experiments.business.result.VariantResults.ResultResumeItem;
 
 import com.dotcms.experiments.model.ExperimentVariant;
 import com.dotmarketing.util.UtilMethods;
 
-import java.text.SimpleDateFormat;
-import java.time.Instant;
-
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
-import java.time.temporal.TemporalAccessor;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -19,9 +15,9 @@ import java.util.Map.Entry;
 import org.jetbrains.annotations.NotNull;
 
 /**
- * Builder of {@link VariantResult}
+ * Builder of {@link VariantResults}
  */
-public class VariantResultBuilder {
+public class VariantResultsBuilder {
     private final DateTimeFormatter FORMATTER = DateTimeFormatter.ofPattern("MM/dd/yyyy")
             .withZone(ZoneId.systemDefault());
 
@@ -32,7 +28,7 @@ public class VariantResultBuilder {
     private long totalSessions;
     private long totalVariantSessions;
 
-    VariantResultBuilder(final ExperimentVariant experimentVariant) {
+    VariantResultsBuilder(final ExperimentVariant experimentVariant) {
         this.experimentVariant = experimentVariant;
     }
 
@@ -62,15 +58,15 @@ public class VariantResultBuilder {
         return events.size();
     }
 
-    public VariantResult build() {
-        final VariantResult.UniqueBySessionResume uniqueBySessionResume = new VariantResult.UniqueBySessionResume(
+    public VariantResults build() {
+        final VariantResults.UniqueBySessionResume uniqueBySessionResume = new VariantResults.UniqueBySessionResume(
                 totalUniqueBySession(eventsByLookBackWindow),
                 totalVariantSessions,
                 totalSessions);
 
         final Map<String, ResultResumeItem> details = getDetails();
 
-        return new VariantResult(experimentVariant.id(),
+        return new VariantResults(experimentVariant.id(),
                 totalMultiBySession(eventsByLookBackWindow),
                 uniqueBySessionResume,
                 details);

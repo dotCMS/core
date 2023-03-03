@@ -1,11 +1,7 @@
 package com.dotcms.experiments.business.result;
 
 import com.dotcms.analytics.metrics.Metric;
-import com.dotcms.analytics.metrics.MetricType;
-import com.dotcms.experiments.model.ExperimentVariant;
-import java.util.Collection;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 /**
  * Represent a partial or total Result for a specific Goal into a {@link com.dotcms.experiments.model.Experiment}.
@@ -18,11 +14,11 @@ import java.util.stream.Collectors;
  * </ul>
  *
  */
-public class GoalResult {
+public class GoalResults {
 
     private Metric goal;
-    final Map<String, VariantResult> variants;
-    public GoalResult(final Metric metric, final Map<String, VariantResult> variants) {
+    final Map<String, VariantResults> variants;
+    public GoalResults(final Metric metric, final Map<String, VariantResults> variants) {
         this.goal = metric;
         this.variants = variants;
     }
@@ -31,7 +27,7 @@ public class GoalResult {
         return goal;
     }
 
-    public Map<String, VariantResult> getVariants() {
+    public Map<String, VariantResults> getVariants() {
         return variants;
     }
 }

@@ -1,7 +1,6 @@
 package com.dotcms.experiments.business.result;
 
 import java.util.Map;
-import java.util.Map.Entry;
 
 /**
  * Represent a partial or total Result for a specific {@link com.dotcms.experiments.model.ExperimentVariant}
@@ -16,14 +15,14 @@ import java.util.Map.Entry;
  * </ul>
  *
  */
-public class VariantResult {
+public class VariantResults {
 
     private String variantName;
     private long multiBySession;
     private UniqueBySessionResume uniqueBySession;
     private Map<String, ResultResumeItem> details;
 
-    public VariantResult(final String variantName, final long multiBySession,
+    public VariantResults(final String variantName, final long multiBySession,
             final UniqueBySessionResume uniqueBySession, final Map<String, ResultResumeItem> details) {
         this.variantName = variantName;
         this.multiBySession = multiBySession;

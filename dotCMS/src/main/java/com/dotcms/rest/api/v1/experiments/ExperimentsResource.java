@@ -431,7 +431,7 @@ public class ExperimentsResource {
      */
     @GET
     @NoCache
-    @Path("/{id}/result")
+    @Path("/{id}/results")
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     public ResponseEntityExperimentResults getResult(@Context final HttpServletRequest request,
             @Context final HttpServletResponse response, @PathParam("id") String id

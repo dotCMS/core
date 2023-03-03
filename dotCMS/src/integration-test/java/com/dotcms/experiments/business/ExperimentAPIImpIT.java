@@ -32,8 +32,8 @@ import com.dotcms.datagen.TemplateDataGen;
 import com.dotcms.exception.NotAllowedException;
 import com.dotcms.experiments.business.result.BrowserSession;
 import com.dotcms.experiments.business.result.ExperimentResults;
-import com.dotcms.experiments.business.result.VariantResult;
-import com.dotcms.experiments.business.result.VariantResult.ResultResumeItem;
+import com.dotcms.experiments.business.result.VariantResults;
+import com.dotcms.experiments.business.result.VariantResults.ResultResumeItem;
 import com.dotcms.experiments.model.AbstractExperiment.Status;
 import com.dotcms.experiments.model.Experiment;
 import com.dotcms.experiments.model.ExperimentVariant;
@@ -56,8 +56,6 @@ import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableList;
 
 import com.liferay.portal.model.User;
@@ -478,7 +476,7 @@ public class ExperimentAPIImpIT {
 
             assertEquals(1, experimentResults.getSessions().getTotal());
 
-            for (VariantResult variantResult : experimentResults.getGoals().get("primary").getVariants().values()) {
+            for (VariantResults variantResult : experimentResults.getGoals().get("primary").getVariants().values()) {
                 final int sessionExpected = variantResult.getVariantName().equals(variantName) ? 1 : 0;
 
                 Assert.assertEquals(sessionExpected, variantResult.getUniqueBySession().getCount());
@@ -564,7 +562,7 @@ public class ExperimentAPIImpIT {
 
             assertEquals(1, experimentResults.getSessions().getTotal());
 
-            for (VariantResult variantResult : experimentResults.getGoals().get("primary").getVariants().values()) {
+            for (VariantResults variantResult : experimentResults.getGoals().get("primary").getVariants().values()) {
                 if (variantResult.getVariantName().equals(variantName)) {
                     Assert.assertEquals(1, (long) experimentResults.getSessions().getVariants().get(variantName));
                 } else {
@@ -645,7 +643,7 @@ public class ExperimentAPIImpIT {
 
             assertEquals(0, experimentResults.getSessions().getTotal());
 
-            for (VariantResult variantResult : experimentResults.getGoals().get("primary").getVariants().values()) {
+            for (VariantResults variantResult : experimentResults.getGoals().get("primary").getVariants().values()) {
 
                 Assert.assertEquals(0, variantResult.getUniqueBySession().getCount());
                 Assert.assertEquals(0, variantResult.getMultiBySession());
@@ -722,7 +720,7 @@ public class ExperimentAPIImpIT {
 
             assertEquals(0, experimentResults.getSessions().getTotal());
 
-            for (VariantResult variantResult : experimentResults.getGoals().get("primary").getVariants().values()) {
+            for (VariantResults variantResult : experimentResults.getGoals().get("primary").getVariants().values()) {
 
                 Assert.assertEquals(0, variantResult.getUniqueBySession().getCount());
                 Assert.assertEquals(0, variantResult.getMultiBySession());
@@ -799,7 +797,7 @@ public class ExperimentAPIImpIT {
 
             assertEquals(1, experimentResults.getSessions().getTotal());
 
-            for (VariantResult variantResult : experimentResults.getGoals().get("primary").getVariants().values()) {
+            for (VariantResults variantResult : experimentResults.getGoals().get("primary").getVariants().values()) {
 
                 if (variantResult.getVariantName().equals(variantName)) {
                     Assert.assertEquals(1, (long) experimentResults.getSessions().getVariants().get(variantResult.getVariantName()));
@@ -880,7 +878,7 @@ public class ExperimentAPIImpIT {
 
             assertEquals(1, experimentResult.getSessions().getTotal());
 
-            for (VariantResult variantResult : experimentResult.getGoals().get("primary").getVariants().values()) {
+            for (VariantResults variantResult : experimentResult.getGoals().get("primary").getVariants().values()) {
                 final int sessionExpected =
                         variantResult.getVariantName().equals(variantName) ? 1 : 0;
 
@@ -968,7 +966,7 @@ public class ExperimentAPIImpIT {
 
             assertEquals(1, experimentResults.getSessions().getTotal());
 
-            for (VariantResult variantResult : experimentResults.getGoals().get("primary").getVariants().values()) {
+            for (VariantResults variantResult : experimentResults.getGoals().get("primary").getVariants().values()) {
 
                 if (variantResult.getVariantName().equals(variantName)) {
                     Assert.assertEquals(1, (long) experimentResults.getSessions().getVariants().get(variantResult.getVariantName()));
@@ -1049,7 +1047,7 @@ public class ExperimentAPIImpIT {
 
             assertEquals(0, experimentResult.getSessions().getTotal());
 
-            for (VariantResult variantResult : experimentResult.getGoals().get("primary").getVariants().values()) {
+            for (VariantResults variantResult : experimentResult.getGoals().get("primary").getVariants().values()) {
 
                 Assert.assertEquals(0, variantResult.getUniqueBySession().getCount());
                 Assert.assertEquals(0, variantResult.getMultiBySession());
@@ -1135,7 +1133,7 @@ public class ExperimentAPIImpIT {
 
             assertEquals(2, experimentResults.getSessions().getTotal());
 
-            for (VariantResult variantResult : experimentResults.getGoals().get("primary").getVariants().values()) {
+            for (VariantResults variantResult : experimentResults.getGoals().get("primary").getVariants().values()) {
                 final int totalSessionExpected = variantResult.getVariantName().equals(variantName) ? 2 : 0;
 
                 Assert.assertEquals(totalSessionExpected, variantResult.getUniqueBySession().getCount());

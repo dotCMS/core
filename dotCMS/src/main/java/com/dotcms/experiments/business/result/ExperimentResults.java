@@ -26,9 +26,9 @@ import java.util.stream.Collectors;
 public class ExperimentResults {
     private TotalSession sessions;
 
-    private Map<String, GoalResult> goals;
+    private Map<String, GoalResults> goals;
 
-    private ExperimentResults(final TotalSession sessions, final Map<String, GoalResult> goalResults) {
+    private ExperimentResults(final TotalSession sessions, final Map<String, GoalResults> goalResults) {
         this.sessions = sessions;
         this.goals = goalResults;
     }
@@ -49,14 +49,14 @@ public class ExperimentResults {
      *
      * @return
      */
-    public Map<String, GoalResult> getGoals() {
+    public Map<String, GoalResults> getGoals() {
         return goals;
     }
 
     public static class Builder {
 
         private TotalSessionBuilder totalSessionsBuilder;
-        private Map<String, GoalResultBuilder> goals = new HashMap<>();
+        private Map<String, GoalResultsBuilder> goals = new HashMap<>();
         private Collection<ExperimentVariant> variants;
 
         public Builder(final Collection<ExperimentVariant> variants){
@@ -65,14 +65,14 @@ public class ExperimentResults {
         }
 
         public Builder addPrimaryGoal(final Metric goal) {
-            this.goals.put("primary", new GoalResultBuilder(goal, variants));
+            this.goals.put("primary", new GoalResultsBuilder(goal, variants));
             return this;
         }
 
         public ExperimentResults build() {
             final TotalSession totalSessions = totalSessionsBuilder.build();
 
-            final Map<String, GoalResult> goalResultMap = goals.entrySet().stream()
+            final Map<String, GoalResults> goalResultMap = goals.entrySet().stream()
                     .collect(Collectors.toMap(Entry::getKey,
                             entry -> entry.getValue().build(totalSessions)));
 
@@ -80,13 +80,13 @@ public class ExperimentResults {
         }
 
         public Builder success(final Metric goal, final String lookBackWindow, final Event event) {
-            final GoalResultBuilder goalResultBuilder = this.goals.values().stream()
+            final GoalResultsBuilder goalResultsBuilder = this.goals.values().stream()
                     .filter(builder -> builder.goal.name().equals(goal.name()))
                     .limit(1)
                     .findFirst()
                     .orElseThrow(() -> new IllegalArgumentException("Goal does not exists"));
 
-            goalResultBuilder.success(lookBackWindow, event);
+            goalResultsBuilder.success(lookBackWindow, event);
             return this;
         }
 

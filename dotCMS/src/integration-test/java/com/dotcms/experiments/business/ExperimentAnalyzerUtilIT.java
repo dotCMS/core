@@ -19,7 +19,7 @@ import com.dotcms.experiments.business.result.Event;
 import com.dotcms.experiments.business.result.ExperimentAnalyzerUtil;
 
 import com.dotcms.experiments.business.result.ExperimentResults;
-import com.dotcms.experiments.business.result.VariantResult;
+import com.dotcms.experiments.business.result.VariantResults;
 import com.dotcms.experiments.model.Experiment;
 import com.dotcms.experiments.model.ExperimentVariant;
 import com.dotcms.experiments.model.Goals;
@@ -141,7 +141,7 @@ public class ExperimentAnalyzerUtilIT {
 
        assertEquals(1, experimentResults.getGoals().size());
 
-        final Map<String, VariantResult> variants = experimentResults.getGoals().get(0)
+        final Map<String, VariantResults> variants = experimentResults.getGoals().get(0)
                 .getVariants();
 
         assertEquals(2, variants.size());
@@ -150,7 +150,7 @@ public class ExperimentAnalyzerUtilIT {
                 .map(experimentVariant -> experimentVariant.id())
                 .collect(Collectors.toList());
 
-        for (VariantResult resultVariant : variants.values()) {
+        for (VariantResults resultVariant : variants.values()) {
 
             assertTrue(expectedVariants.contains(resultVariant.getVariantName()));
 
@@ -239,7 +239,7 @@ public class ExperimentAnalyzerUtilIT {
 
         assertEquals(1, experimentResult.getGoals().size());
 
-        final Map<String, VariantResult> variants = experimentResult.getGoals().get(0)
+        final Map<String, VariantResults> variants = experimentResult.getGoals().get(0)
                 .getVariants();
 
         assertEquals(2, variants.size());
@@ -248,7 +248,7 @@ public class ExperimentAnalyzerUtilIT {
                 .map(experimentVariant -> experimentVariant.id())
                 .collect(Collectors.toList());
 
-        for (VariantResult resultVariant : variants.values()) {
+        for (VariantResults resultVariant : variants.values()) {
 
             assertTrue(expectedVariants.contains(resultVariant.getVariantName()));
 
