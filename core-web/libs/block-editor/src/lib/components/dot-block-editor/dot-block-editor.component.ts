@@ -208,12 +208,12 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy {
     }
 
     private getParsedCustomBlocks(): RemoteCustomExtensions {
-        const defaultExtentions = {
+        const emptyExtentions = {
             extensions: []
         };
 
         if (!this.customBlocks.length) {
-            return defaultExtentions;
+            return emptyExtentions;
         }
 
         try {
