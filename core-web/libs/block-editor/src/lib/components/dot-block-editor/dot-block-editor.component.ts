@@ -24,7 +24,11 @@ import { TextAlign } from '@tiptap/extension-text-align';
 import { Underline } from '@tiptap/extension-underline';
 import StarterKit, { StarterKitOptions } from '@tiptap/starter-kit';
 
-import { RemoteCustomExtentions, EDITOR_MARKETING_KEYS } from '@dotcms/dotcms-models';
+import {
+    RemoteCustomExtentions,
+    EDITOR_MARKETING_KEYS,
+    IMPORT_RESULTS
+} from '@dotcms/dotcms-models';
 
 import {
     ActionsMenu,
@@ -199,11 +203,11 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy {
         prevModule,
         module: PromiseFulfilledResult<AnyExtension> | PromiseRejectedResult
     ) {
-        if (module.status === 'rejected') {
+        if (module.status === IMPORT_RESULTS.REJECTED) {
             console.warn('Failed to load the module', module.reason);
         }
 
-        return module.status === 'fulfilled'
+        return module.status === IMPORT_RESULTS.FULFILLED
             ? {
                   ...prevModule,
                   ...module?.value
