@@ -22,7 +22,7 @@ export class DotFieldRequiredDirective {
     }
 
     private isRequiredControl(controlName: string): boolean {
-        const formControl = this.formGroupDirective.control.get(controlName);
+        const formControl = this.formGroupDirective.control?.get(controlName);
 
         return formControl && formControl.hasValidator(Validators.required) ? true : false;
     }

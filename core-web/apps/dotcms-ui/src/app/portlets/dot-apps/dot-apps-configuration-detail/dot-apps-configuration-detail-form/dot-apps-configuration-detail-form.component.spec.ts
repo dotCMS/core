@@ -2,9 +2,9 @@ import { MarkdownService } from 'ngx-markdown';
 
 import { CommonModule } from '@angular/common';
 import { HttpClientTestingModule } from '@angular/common/http/testing';
-import { DebugElement } from '@angular/core';
+import { Component, DebugElement } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { ReactiveFormsModule } from '@angular/forms';
+import { FormGroupDirective, ReactiveFormsModule } from '@angular/forms';
 import { By } from '@angular/platform-browser';
 
 import { ButtonModule } from 'primeng/button';
@@ -14,7 +14,7 @@ import { InputTextModule } from 'primeng/inputtext';
 import { InputTextareaModule } from 'primeng/inputtextarea';
 import { TooltipModule } from 'primeng/tooltip';
 
-import { DotIconModule } from '@dotcms/ui';
+import { DotIconModule, DotFieldRequiredDirective } from '@dotcms/ui';
 
 import { DotAppsConfigurationDetailFormComponent } from './dot-apps-configuration-detail-form.component';
 
@@ -89,6 +89,13 @@ const formState = {
     integration: secrets[4].value
 };
 
+@Component({
+    // eslint-disable-next-line @angular-eslint/component-selector
+    selector: 'markdown',
+    template: `<ng-content></ng-content>`
+})
+class MockMarkdownComponent {}
+
 describe('DotAppsConfigurationDetailFormComponent', () => {
     beforeEach(() => {
         TestBed.configureTestingModule({
@@ -102,10 +109,11 @@ describe('DotAppsConfigurationDetailFormComponent', () => {
                 InputTextareaModule,
                 InputTextModule,
                 ReactiveFormsModule,
-                TooltipModule
+                TooltipModule,
+                DotFieldRequiredDirective
             ],
-            declarations: [DotAppsConfigurationDetailFormComponent],
-            providers: [MarkdownService]
+            declarations: [DotAppsConfigurationDetailFormComponent, MockMarkdownComponent],
+            providers: [MarkdownService, FormGroupDirective]
         });
     });
 

@@ -18,8 +18,8 @@ import { TabViewModule } from 'primeng/tabview';
 
 import { DotAddToBundleModule } from '@components/_common/dot-add-to-bundle';
 import { DotFieldValidationMessageModule } from '@components/_common/dot-field-validation-message/dot-file-validation-message.module';
-import { UiDotIconButtonTooltipModule } from '@components/_common/dot-icon-button-tooltip/dot-icon-button-tooltip.module';
 import { UiDotIconButtonModule } from '@components/_common/dot-icon-button/dot-icon-button.module';
+import { UiDotIconButtonTooltipModule } from '@components/_common/dot-icon-button-tooltip/dot-icon-button-tooltip.module';
 import { DotInlineEditModule } from '@components/_common/dot-inline-edit/dot-inline-edit.module';
 import { DotMenuModule } from '@components/_common/dot-menu/dot-menu.module';
 import { DotPageSelectorModule } from '@components/_common/dot-page-selector/dot-page-selector.module';
@@ -38,11 +38,10 @@ import { DotPortletBoxModule } from '@components/dot-portlet-base/components/dot
 import { DotRelationshipTreeModule } from '@components/dot-relationship-tree/dot-relationship-tree.module';
 import { DotSecondaryToolbarModule } from '@components/dot-secondary-toolbar';
 import { DotAutofocusModule } from '@directives/dot-autofocus/dot-autofocus.module';
-import { DotFieldRequiredDirective } from '@directives/dot-field-required/dot-field-required.directive';
 import { DotMaxlengthModule } from '@directives/dot-maxlength/dot-maxlength.module';
 import { DotMdIconSelectorModule } from '@dotcms/app/view/components/_common/dot-md-icon-selector/dot-md-icon-selector.module';
 import { DotContentTypesInfoService, DotWorkflowService } from '@dotcms/data-access';
-import { DotIconModule } from '@dotcms/ui';
+import { DotFieldRequiredDirective, DotIconModule } from '@dotcms/ui';
 import { DotPipesModule } from '@pipes/dot-pipes.module';
 import {
     ContentTypeFieldsAddRowModule,

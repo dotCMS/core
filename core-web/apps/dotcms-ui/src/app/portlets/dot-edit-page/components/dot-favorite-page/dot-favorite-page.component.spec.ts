@@ -15,6 +15,7 @@ import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router
 import { DotMessageService } from '@dotcms/data-access';
 import { CoreWebService, CoreWebServiceMock, LoginService } from '@dotcms/dotcms-js';
 import { DotPageRender, DotPageRenderState } from '@dotcms/dotcms-models';
+import { DotFieldRequiredDirective } from '@dotcms/ui';
 import {
     LoginServiceMock,
     MockDotMessageService,
@@ -131,7 +132,8 @@ describe('DotFavoritePageComponent', () => {
                 MultiSelectModule,
                 ReactiveFormsModule,
                 DotFieldValidationMessageModule,
-                HttpClientTestingModule
+                HttpClientTestingModule,
+                DotFieldRequiredDirective
             ],
             providers: [
                 { provide: DotRouterService, useClass: MockDotRouterService },

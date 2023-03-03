@@ -10,9 +10,9 @@ import { DotFieldValidationMessageModule } from '@components/_common/dot-field-v
 import { DotDialogModule } from '@components/dot-dialog/dot-dialog.module';
 import { DotNavigationService } from '@components/dot-navigation/services/dot-navigation.service';
 import { DotAutofocusModule } from '@directives/dot-autofocus/dot-autofocus.module';
-import { DotFieldRequiredDirective } from '@directives/dot-field-required/dot-field-required.directive';
 import { DotAddToMenuService } from '@dotcms/app/api/services/add-to-menu/add-to-menu.service';
 import { DotMenuService } from '@dotcms/app/api/services/dot-menu.service';
+import { DotFieldRequiredDirective } from '@dotcms/ui';
 import { DotPipesModule } from '@pipes/dot-pipes.module';
 
 import { DotAddToMenuComponent } from './dot-add-to-menu.component';

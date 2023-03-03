@@ -10,8 +10,8 @@ import { UiDotIconButtonTooltipModule } from '@components/_common/dot-icon-butto
 import { DotContainerSelectorLayoutModule } from '@components/dot-container-selector-layout/dot-container-selector-layout.module';
 import { DotDialogModule } from '@components/dot-dialog/dot-dialog.module';
 import { DotAutofocusModule } from '@directives/dot-autofocus/dot-autofocus.module';
-import { DotFieldRequiredDirective } from '@directives/dot-field-required/dot-field-required.directive';
 import { NgGridModule } from '@dotcms/dot-layout-grid';
+import { DotFieldRequiredDirective } from '@dotcms/ui';
 import { DotPipesModule } from '@pipes/dot-pipes.module';
 
 import { DotEditLayoutGridComponent } from './dot-edit-layout-grid.component';

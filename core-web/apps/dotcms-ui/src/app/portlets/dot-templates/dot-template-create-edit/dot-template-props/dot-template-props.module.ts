@@ -8,6 +8,7 @@ import { InputTextareaModule } from 'primeng/inputtextarea';
 import { DotFieldValidationMessageModule } from '@components/_common/dot-field-validation-message/dot-file-validation-message.module';
 import { DotFormDialogModule } from '@components/dot-form-dialog/dot-form-dialog.module';
 import { DotThemeSelectorDropdownModule } from '@components/dot-theme-selector-dropdown/dot-theme-selector-dropdown.module';
+import { DotFieldRequiredDirective } from '@dotcms/ui';
 import { DotMessagePipeModule } from '@pipes/dot-message/dot-message-pipe.module';
 
 import { DotTemplatePropsComponent } from './dot-template-props.component';
@@ -25,7 +26,8 @@ import { DotTemplateThumbnailFieldModule } from './dot-template-thumbnail-field/
         ReactiveFormsModule,
         DotMessagePipeModule,
         DotTemplateThumbnailFieldModule,
-        DotThemeSelectorDropdownModule
+        DotThemeSelectorDropdownModule,
+        DotFieldRequiredDirective
     ]
 })
 export class DotTemplatePropsModule {}

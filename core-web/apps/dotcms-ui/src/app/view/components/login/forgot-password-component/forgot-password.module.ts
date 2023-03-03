@@ -8,7 +8,7 @@ import { InputTextModule } from 'primeng/inputtext';
 
 import { DotFieldValidationMessageModule } from '@components/_common/dot-field-validation-message/dot-file-validation-message.module';
 import { DotAutofocusModule } from '@directives/dot-autofocus/dot-autofocus.module';
-import { DotFieldRequiredDirective } from '@directives/dot-field-required/dot-field-required.directive';
+import { DotFieldRequiredDirective } from '@dotcms/ui';
 
 import { ForgotPasswordComponent } from './forgot-password.component';
 
