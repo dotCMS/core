@@ -220,7 +220,7 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy {
         try {
             const data = JSON.parse(this.customBlocks);
 
-            this.isValidSchema(data);
+            // this.isValidSchema(data);
 
             return data;
         } catch (e) {
@@ -267,7 +267,7 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy {
 
         const moduleObj = customModules.reduce(this.parsedCustomModules, {});
 
-        return blockNames.map((block) => moduleObj[block]);
+        return Object.values(moduleObj);
     }
 
     private getEditorNodes(): AnyExtension[] {
