@@ -1,3 +1,5 @@
+import { Props } from 'tippy.js';
+
 import { SafeUrl, ɵDomSanitizerImpl } from '@angular/platform-browser';
 
 // Assets
@@ -142,6 +144,23 @@ const FORBIDDEN_CHANGE_TO_BLOCKS = {
 export const changeToItems: DotMenuItem[] = [
     ...suggestionOptions.filter((item) => !FORBIDDEN_CHANGE_TO_BLOCKS[item.id])
 ];
+
+export const BASIC_TIPPY_OPTIONS: Partial<Props> = {
+    duration: [250, 0],
+    interactive: true,
+    maxWidth: 'none',
+    trigger: 'manual',
+    placement: 'bottom-start',
+    hideOnClick: 'toggle',
+    popperOptions: {
+        modifiers: [
+            {
+                name: 'flip',
+                options: { fallbackPlacements: ['top-start'] }
+            }
+        ]
+    }
+};
 
 export const clearFilter = function ({ type, editor, range, suggestionKey, ItemsType }) {
     const queryRange = {

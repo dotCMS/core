@@ -125,6 +125,7 @@ export const BubbleAssetFormExtension = (viewContainerRef: ViewContainerRef) => 
 
                                 return true;
                             })
+                            .freezeScroll(true)
                             .run();
                     },
                 closeAssetForm:
@@ -136,6 +137,7 @@ export const BubbleAssetFormExtension = (viewContainerRef: ViewContainerRef) => 
 
                                 return true;
                             })
+                            .freezeScroll(false)
                             .run();
                     },
                 insertAsset:

@@ -11,6 +11,7 @@ import { takeUntil } from 'rxjs/operators';
 import { Editor, posToDOMRect } from '@tiptap/core';
 import { BubbleMenuView } from '@tiptap/extension-bubble-menu';
 
+import { BASIC_TIPPY_OPTIONS } from '../../../shared';
 import { getNodePosition } from '../../bubble-menu/utils';
 import { BubbleFormComponent } from '../bubble-form.component';
 import { BUBBLE_FORM_PLUGIN_KEY } from '../bubble-form.extension';
@@ -143,22 +144,8 @@ export class BubbleFormView extends BubbleMenuView {
 
         this.tippy = tippy(editorElement.parentElement, {
             ...this.tippyOptions,
-            duration: 250,
+            ...BASIC_TIPPY_OPTIONS,
             content: this.element,
-            interactive: true,
-            maxWidth: 'none',
-            trigger: 'manual',
-            placement: 'bottom-start',
-            hideOnClick: 'toggle',
-            popperOptions: {
-                modifiers: [
-                    {
-                        name: 'flip',
-                        options: { fallbackPlacements: ['top-start'] }
-                    }
-                ]
-            },
-
             onShow: () => {
                 requestAnimationFrame(() => {
                     this.component.instance.inputs.first.nativeElement.focus();
@@ -186,7 +173,7 @@ export class BubbleFormView extends BubbleMenuView {
     }
 
     private hanlderScroll(e: Event) {
-        if (this.tippy?.popper && this.tippy?.popper.contains(e.target as HTMLElement)) {
+        if (!this.shouldHideOnScroll(e.target as HTMLElement)) {
             return true;
         }
 
@@ -200,6 +187,10 @@ export class BubbleFormView extends BubbleMenuView {
         const domRect = document.querySelector('#bubble-menu')?.getBoundingClientRect();
 
         return domRect || getNodePosition(node, type);
+    }
+
+    private shouldHideOnScroll(node: HTMLElement): boolean {
+        return this.tippy?.state.isMounted && this.tippy?.popper.contains(node);
     }
 }
 

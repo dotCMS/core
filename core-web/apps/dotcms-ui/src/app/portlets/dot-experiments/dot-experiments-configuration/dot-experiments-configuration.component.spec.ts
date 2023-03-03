@@ -13,7 +13,6 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { ConfirmationService, MessageService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
 
-import { DotMessagePipe } from '@dotcms/app/view/pipes';
 import { DotMessageService, DotSessionStorageService } from '@dotcms/data-access';
 import { ComponentStatus } from '@dotcms/dotcms-models';
 import { MockDotMessageService } from '@dotcms/utils-testing';
@@ -35,7 +34,7 @@ import {
     ExperimentMocks
 } from '@portlets/dot-experiments/test/mocks';
 import { DotHttpErrorManagerService } from '@services/dot-http-error-manager/dot-http-error-manager.service';
-import { DotMessageMockPipe } from '@tests/dot-message-mock.pipe';
+import { DotMessagePipe } from '@tests/dot-message-mock.pipe';
 
 import { DotExperimentsConfigurationComponent } from './dot-experiments-configuration.component';
 
@@ -61,11 +60,11 @@ const defaultVmMock: ConfigurationViewModel = {
         experimentStep: null
     },
     isLoading: false,
-    canStartExperiment: false,
+    isExperimentADraft: false,
     disabledStartExperiment: false,
     showExperimentSummary: false,
     isSaving: false,
-    statusExperiment: { classz: '', label: '' }
+    experimentStatus: null
 };
 
 describe('DotExperimentsConfigurationComponent', () => {
@@ -83,9 +82,10 @@ describe('DotExperimentsConfigurationComponent', () => {
             DotExperimentsConfigurationSchedulingComponent,
             DotExperimentsConfigurationSkeletonComponent,
             DotExperimentsExperimentSummaryComponent,
-            DotMessageMockPipe
+            DotMessagePipe
         ],
         component: DotExperimentsConfigurationComponent,
+
         componentProviders: [
             mockProvider(DotExperimentsConfigurationStore, DotExperimentsConfigurationStoreMock)
         ],
@@ -104,8 +104,7 @@ describe('DotExperimentsConfigurationComponent', () => {
             mockProvider(MessageService),
             mockProvider(Router),
             mockProvider(DotHttpErrorManagerService),
-            mockProvider(Title),
-            mockProvider(DotMessagePipe)
+            mockProvider(Title)
         ]
     });
 
@@ -137,19 +136,19 @@ describe('DotExperimentsConfigurationComponent', () => {
         expect(spectator.query(DotExperimentsConfigurationSchedulingComponent)).toExist();
     });
 
-    it('should show Start Experiment button if canStartExperiment true', () => {
+    it('should show Start Experiment button if isExperimentADraft true', () => {
         spectator.component.vm$ = of({
             ...defaultVmMock,
-            canStartExperiment: true
+            isExperimentADraft: true
         });
         spectator.detectChanges();
         expect(spectator.query(byTestId('start-experiment-button'))).toExist();
     });
 
-    it("shouldn't show Start Experiment button if canStartExperiment false", () => {
+    it("shouldn't show Start Experiment button if isExperimentADraft false", () => {
         spectator.component.vm$ = of({
             ...defaultVmMock,
-            canStartExperiment: false
+            isExperimentADraft: false
         });
         spectator.detectChanges();
 
@@ -159,7 +158,7 @@ describe('DotExperimentsConfigurationComponent', () => {
     it('should show Start Experiment button disabled if disabledStartExperiment true', () => {
         spectator.component.vm$ = of({
             ...defaultVmMock,
-            canStartExperiment: true,
+            isExperimentADraft: true,
             disabledStartExperiment: true
         });
         spectator.detectChanges();

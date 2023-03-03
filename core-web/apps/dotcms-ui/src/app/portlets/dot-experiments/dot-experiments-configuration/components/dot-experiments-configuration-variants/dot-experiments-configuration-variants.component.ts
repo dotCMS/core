@@ -7,6 +7,7 @@ import { ButtonModule } from 'primeng/button';
 import { CardModule } from 'primeng/card';
 import { InplaceModule } from 'primeng/inplace';
 import { InputTextModule } from 'primeng/inputtext';
+import { TooltipModule } from 'primeng/tooltip';
 
 import { UiDotIconButtonModule } from '@components/_common/dot-icon-button/dot-icon-button.module';
 import { UiDotIconButtonTooltipModule } from '@components/_common/dot-icon-button-tooltip/dot-icon-button-tooltip.module';
@@ -45,21 +46,22 @@ import { DotExperimentsConfigurationStore } from '@portlets/dot-experiments/dot-
         CardModule,
         InplaceModule,
         ButtonModule,
-        InputTextModule
+        InputTextModule,
+        TooltipModule
     ],
     templateUrl: './dot-experiments-configuration-variants.component.html',
     styleUrls: ['./dot-experiments-configuration-variants.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotExperimentsConfigurationVariantsComponent {
-    vm$: Observable<{ status: StepStatus }> = this.dotExperimentsConfigurationStore.variantsStepVm$;
+    vm$: Observable<{ status: StepStatus; isExperimentADraft: boolean }> =
+        this.dotExperimentsConfigurationStore.variantsStepVm$;
     statusList = ComponentStatus;
     sidebarStatusList = SidebarStatus;
     maxVariantsAllowed = MAX_VARIANTS_ALLOWED;
     defaultVariantName = DEFAULT_VARIANT_NAME;
     experimentStepName = ExperimentSteps.VARIANTS;
 
-    @Input() stepStatus: StepStatus;
     @Input() variants: Variant[];
     @Output() sidebarStatusChanged = new EventEmitter<SidebarStatus>();
     @Output() delete = new EventEmitter<Variant>();
