@@ -7,12 +7,14 @@ import {
 } from '@ngneat/spectator';
 import { of } from 'rxjs';
 
-import { DecimalPipe } from '@angular/common';
+import { CommonModule } from '@angular/common';
 
 import { MessageService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
 import { Card, CardModule } from 'primeng/card';
 import { Inplace, InplaceModule } from 'primeng/inplace';
+import { InputTextModule } from 'primeng/inputtext';
+import { Tooltip, TooltipModule } from 'primeng/tooltip';
 
 import { DotCopyButtonComponent } from '@components/dot-copy-button/dot-copy-button.component';
 import { DotCopyButtonModule } from '@components/dot-copy-button/dot-copy-button.module';
@@ -53,12 +55,14 @@ describe('DotExperimentsConfigurationVariantsComponent', () => {
 
     const createComponent = createComponentFactory({
         imports: [
+            CommonModule,
             ButtonModule,
             CardModule,
             InplaceModule,
-            DecimalPipe,
             DotExperimentsConfigurationVariantsAddComponent,
-            DotCopyButtonModule
+            DotCopyButtonModule,
+            TooltipModule,
+            InputTextModule
         ],
         component: DotExperimentsConfigurationVariantsComponent,
         providers: [
@@ -194,7 +198,7 @@ describe('DotExperimentsConfigurationVariantsComponent', () => {
 
             expect(addButton.disabled).not.toBe(true);
             spectator.click(addButton);
-
+            spectator.detectChanges();
             expect(output).toEqual(SidebarStatus.OPEN);
         });
 
@@ -358,10 +362,14 @@ describe('DotExperimentsConfigurationVariantsComponent', () => {
         });
 
         it('should disable tooltip if is on draft', () => {
-            expect(spectator.query(byTestId('tooltip-on-disabled'))).toHaveAttribute(
-                'ng-reflect-disabled',
-                'true'
-            );
+            spectator.detectChanges();
+
+            spectator
+                .queryAll(Tooltip)
+                .filter((tooltip) => tooltip.disabled != undefined)
+                .forEach((tooltip) => {
+                    expect(tooltip.disabled).toEqual(true);
+                });
         });
 
         it('should disable button and show tooltip when experiment is nos on draft', () => {
@@ -373,7 +381,6 @@ describe('DotExperimentsConfigurationVariantsComponent', () => {
             );
 
             store.loadExperiment(ExperimentMocks[2].id);
-
             spectator.detectChanges();
 
             expect(spectator.queryAll(byTestId('variant-weight'))).toHaveAttribute('disabled');
@@ -381,10 +388,15 @@ describe('DotExperimentsConfigurationVariantsComponent', () => {
                 'disabled'
             );
             expect(spectator.query(byTestId('variant-add-button'))).toHaveAttribute('disabled');
-            expect(spectator.queryAll(byTestId('tooltip-on-disabled'))).toHaveAttribute(
-                'ng-reflect-disabled',
-                'false'
-            );
+
+            const enableTooltips = spectator
+                .queryAll(Tooltip)
+                .filter((tooltip) => tooltip.disabled == false);
+
+            // Two: variant weight
+            // One: Delete variant
+            // One: Add New Variant.
+            expect(enableTooltips.length).toEqual(4);
         });
 
         it('should view button on all variants when experiment is nos on draft', () => {
