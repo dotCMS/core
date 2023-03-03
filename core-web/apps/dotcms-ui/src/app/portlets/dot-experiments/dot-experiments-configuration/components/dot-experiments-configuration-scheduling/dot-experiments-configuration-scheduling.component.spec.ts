@@ -10,6 +10,7 @@ import { of } from 'rxjs';
 import { ConfirmationService, MessageService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
 import { Card, CardModule } from 'primeng/card';
+import { TooltipModule } from 'primeng/tooltip';
 
 import { DotMessageService } from '@dotcms/data-access';
 import { DotExperimentStatusList, ExperimentSteps } from '@dotcms/dotcms-models';
@@ -37,6 +38,7 @@ describe('DotExperimentsConfigurationSchedulingComponent', () => {
         imports: [
             ButtonModule,
             CardModule,
+            TooltipModule,
             DotExperimentsConfigurationSchedulingAddComponent,
             DotDynamicDirective
         ],
