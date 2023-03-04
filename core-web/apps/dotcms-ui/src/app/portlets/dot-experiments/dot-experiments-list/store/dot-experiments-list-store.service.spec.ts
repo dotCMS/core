@@ -204,7 +204,7 @@ describe('DotExperimentsListStore', () => {
 
     describe('Effects', () => {
         beforeEach(() => {
-            dotExperimentsService.getAll.and.returnValue(of(EXPERIMENT_MOCK_ALL));
+            dotExperimentsService.getAll.and.returnValue(of([...EXPERIMENT_MOCK_ALL]));
 
             store.initStore();
             store.loadExperiments(routerParamsPageId);
