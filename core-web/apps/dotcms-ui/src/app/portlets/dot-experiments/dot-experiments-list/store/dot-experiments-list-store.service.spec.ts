@@ -112,7 +112,7 @@ describe('DotExperimentsListStore', () => {
         });
     });
     it('should update experiments to the store', () => {
-        store.setExperiments(EXPERIMENT_MOCK_ALL);
+        store.setExperiments([...EXPERIMENT_MOCK_ALL]);
         store.getExperiments$.subscribe((experiments) => {
             expect(experiments).toEqual(EXPERIMENT_MOCK_ALL);
         });
@@ -126,23 +126,21 @@ describe('DotExperimentsListStore', () => {
     });
 
     it('should delete experiment by id of the store', () => {
-        const ID_TO_DELETE = '222';
         const expected: DotExperiment[] = [EXPERIMENT_MOCK, EXPERIMENT_MOCK_2];
 
-        store.setExperiments(EXPERIMENT_MOCK_ALL);
-        store.deleteExperimentById(ID_TO_DELETE);
+        store.setExperiments([...EXPERIMENT_MOCK_ALL]);
+        store.deleteExperimentById(EXPERIMENT_MOCK_1.id);
         store.getExperiments$.subscribe((experiments) => {
             expect(experiments).toEqual(expected);
         });
     });
 
     it('should change status to archived status by experiment id of the store', () => {
-        const ID_TO_ARCHIVE = '222';
-        const expected: DotExperiment[] = EXPERIMENT_MOCK_ALL;
+        const expected: DotExperiment[] = [...EXPERIMENT_MOCK_ALL];
         expected[1].status = DotExperimentStatusList.ARCHIVED;
 
-        store.setExperiments(EXPERIMENT_MOCK_ALL);
-        store.archiveExperimentById(ID_TO_ARCHIVE);
+        store.setExperiments([...EXPERIMENT_MOCK_ALL]);
+        store.archiveExperimentById(EXPERIMENT_MOCK_1.id);
         store.getExperiments$.subscribe((exp) => {
             expect(exp).toEqual(expected);
         });
@@ -242,7 +240,7 @@ describe('DotExperimentsListStore', () => {
 
             dotExperimentsService.archive.and.returnValue(of(expectedExperimentsInStore[0]));
 
-            const experimentToArchive = { ...EXPERIMENT_MOCK };
+            const experimentToArchive = EXPERIMENT_MOCK;
 
             store.archiveExperiment(experimentToArchive);
 
