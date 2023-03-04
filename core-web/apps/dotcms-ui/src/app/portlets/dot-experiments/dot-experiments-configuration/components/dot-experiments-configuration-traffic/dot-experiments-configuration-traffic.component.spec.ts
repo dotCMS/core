@@ -59,7 +59,7 @@ describe('DotExperimentsConfigurationTrafficComponent', () => {
 
         dotExperimentsService = spectator.inject(DotExperimentsService);
         dotExperimentsService.getById.and.returnValue(
-            of({ EXPERIMENT_MOCK, ...{ scheduling: null } })
+            of({ ...EXPERIMENT_MOCK, ...{ scheduling: null } })
         );
 
         store.loadExperiment(EXPERIMENT_MOCK.id);

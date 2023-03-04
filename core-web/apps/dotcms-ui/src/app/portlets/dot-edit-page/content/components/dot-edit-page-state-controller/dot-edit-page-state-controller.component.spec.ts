@@ -53,7 +53,7 @@ const mockDotMessageService = new MockDotMessageService({
     'editpage.toolbar.page.locked.by.user': 'Page locked by {0}'
 });
 
-const EXPERIMENT_MOCK = getExperimentMock(0);
+const EXPERIMENT_MOCK = getExperimentMock(1);
 
 const dotVariantDataMock: DotVariantData = {
     variant: {

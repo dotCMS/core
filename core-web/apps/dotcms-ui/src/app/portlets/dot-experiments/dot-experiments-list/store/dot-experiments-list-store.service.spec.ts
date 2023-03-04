@@ -37,8 +37,8 @@ const ActivatedRouteMock = {
 };
 
 const EXPERIMENT_MOCK = getExperimentMock(0);
-const EXPERIMENT_MOCK_1 = getExperimentMock(0);
-const EXPERIMENT_MOCK_2 = getExperimentMock(0);
+const EXPERIMENT_MOCK_1 = getExperimentMock(1);
+const EXPERIMENT_MOCK_2 = getExperimentMock(2);
 const EXPERIMENT_MOCK_ALL = getExperimentAllMocks();
 
 const messageServiceMock = new MockDotMessageService({
