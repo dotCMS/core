@@ -21,7 +21,7 @@ import { DotExperimentsConfigurationGoalSelectComponent } from '@portlets/dot-ex
 import { DotExperimentsConfigurationGoalsComponent } from '@portlets/dot-experiments/dot-experiments-configuration/components/dot-experiments-configuration-goals/dot-experiments-configuration-goals.component';
 import { DotExperimentsConfigurationStore } from '@portlets/dot-experiments/dot-experiments-configuration/store/dot-experiments-configuration-store';
 import { DotExperimentsService } from '@portlets/dot-experiments/shared/services/dot-experiments.service';
-import { ExperimentMocks, GoalsMock } from '@portlets/dot-experiments/test/mocks';
+import { getExperimentMock, GoalsMock } from '@portlets/dot-experiments/test/mocks';
 import { DotDynamicDirective } from '@portlets/shared/directives/dot-dynamic.directive';
 import { DotHttpErrorManagerService } from '@services/dot-http-error-manager/dot-http-error-manager.service';
 
@@ -32,7 +32,7 @@ const messageServiceMock = new MockDotMessageService({
     'experiments.goal.reach_page.description': 'description',
     'experiments.configure.goals.no.seleted.goal.message': 'empty message'
 });
-const EXPERIMENT_ID = ExperimentMocks[0].id;
+const EXPERIMENT_MOCK = getExperimentMock(0);
 describe('DotExperimentsConfigurationGoalsComponent', () => {
     let spectator: Spectator<DotExperimentsConfigurationGoalsComponent>;
     let store: DotExperimentsConfigurationStore;
@@ -71,9 +71,9 @@ describe('DotExperimentsConfigurationGoalsComponent', () => {
         store = spectator.inject(DotExperimentsConfigurationStore);
 
         dotExperimentsService = spectator.inject(DotExperimentsService);
-        dotExperimentsService.getById.and.returnValue(of({ ...ExperimentMocks[0] }));
+        dotExperimentsService.getById.and.returnValue(of(EXPERIMENT_MOCK));
 
-        store.loadExperiment(ExperimentMocks[0].id);
+        store.loadExperiment(EXPERIMENT_MOCK.id);
 
         spectator.detectChanges();
     });
@@ -101,7 +101,7 @@ describe('DotExperimentsConfigurationGoalsComponent', () => {
             status: StepStatus;
             isExperimentADraft: boolean;
         } = {
-            experimentId: EXPERIMENT_ID,
+            experimentId: EXPERIMENT_MOCK.id,
             goals: GoalsMock,
             status: {
                 status: ComponentStatus.IDLE,
@@ -151,7 +151,7 @@ describe('DotExperimentsConfigurationGoalsComponent', () => {
             status: StepStatus;
             isExperimentADraft: boolean;
         } = {
-            experimentId: EXPERIMENT_ID,
+            experimentId: EXPERIMENT_MOCK.id,
             goals: GoalsMock,
             status: {
                 status: ComponentStatus.IDLE,
@@ -187,7 +187,7 @@ describe('DotExperimentsConfigurationGoalsComponent', () => {
             status: StepStatus;
             isExperimentADraft: boolean;
         } = {
-            experimentId: EXPERIMENT_ID,
+            experimentId: EXPERIMENT_MOCK.id,
             goals: null,
             status: {
                 status: ComponentStatus.IDLE,

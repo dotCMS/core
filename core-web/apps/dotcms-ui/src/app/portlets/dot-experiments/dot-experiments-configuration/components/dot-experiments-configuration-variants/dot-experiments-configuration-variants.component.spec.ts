@@ -29,7 +29,7 @@ import { MockDotMessageService } from '@dotcms/utils-testing';
 import { DotExperimentsConfigurationVariantsAddComponent } from '@portlets/dot-experiments/dot-experiments-configuration/components/dot-experiments-configuration-variants-add/dot-experiments-configuration-variants-add.component';
 import { DotExperimentsConfigurationStore } from '@portlets/dot-experiments/dot-experiments-configuration/store/dot-experiments-configuration-store';
 import { DotExperimentsService } from '@portlets/dot-experiments/shared/services/dot-experiments.service';
-import { ExperimentMocks } from '@portlets/dot-experiments/test/mocks';
+import { getExperimentMock } from '@portlets/dot-experiments/test/mocks';
 import { DotHttpErrorManagerService } from '@services/dot-http-error-manager/dot-http-error-manager.service';
 
 import { DotExperimentsConfigurationVariantsComponent } from './dot-experiments-configuration-variants.component';
@@ -42,8 +42,10 @@ const messageServiceMock = new MockDotMessageService({
     'experiments.configure.variants.add': 'Add new variant'
 });
 
-const EXPERIMENT_ID = ExperimentMocks[0].id;
-fdescribe('DotExperimentsConfigurationVariantsComponent', () => {
+const EXPERIMENT_MOCK = getExperimentMock(0);
+const EXPERIMENT_MOCK_2 = getExperimentMock(2);
+
+describe('DotExperimentsConfigurationVariantsComponent', () => {
     let spectator: Spectator<DotExperimentsConfigurationVariantsComponent>;
     let store: DotExperimentsConfigurationStore;
     let dotExperimentsService: SpyObject<DotExperimentsService>;
@@ -79,9 +81,9 @@ fdescribe('DotExperimentsConfigurationVariantsComponent', () => {
 
         store = spectator.inject(DotExperimentsConfigurationStore);
         dotExperimentsService = spectator.inject(DotExperimentsService);
-        dotExperimentsService.getById.and.returnValue(of({ ...ExperimentMocks[0] }));
+        dotExperimentsService.getById.and.returnValue(of(EXPERIMENT_MOCK));
 
-        store.loadExperiment(EXPERIMENT_ID);
+        store.loadExperiment(EXPERIMENT_MOCK.id);
         spectator.detectChanges();
     });
 
@@ -369,12 +371,12 @@ fdescribe('DotExperimentsConfigurationVariantsComponent', () => {
         it('should disable button and show tooltip when experiment is nos on draft', () => {
             dotExperimentsService.getById.and.returnValue(
                 of({
-                    ...ExperimentMocks[2],
+                    ...EXPERIMENT_MOCK_2,
                     ...{ status: DotExperimentStatusList.RUNNING }
                 })
             );
 
-            store.loadExperiment(ExperimentMocks[2].id);
+            store.loadExperiment(EXPERIMENT_MOCK_2.id);
             spectator.detectChanges();
 
             expect(spectator.queryAll(byTestId('variant-weight'))).toHaveAttribute('disabled');
@@ -396,12 +398,12 @@ fdescribe('DotExperimentsConfigurationVariantsComponent', () => {
         it('should view button on all variants when experiment is nos on draft', () => {
             dotExperimentsService.getById.and.returnValue(
                 of({
-                    ...ExperimentMocks[2],
+                    ...EXPERIMENT_MOCK_2,
                     ...{ status: DotExperimentStatusList.RUNNING }
                 })
             );
 
-            store.loadExperiment(ExperimentMocks[2].id);
+            store.loadExperiment(EXPERIMENT_MOCK_2.id);
 
             spectator.detectChanges();
 

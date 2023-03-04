@@ -84,7 +84,7 @@ import {
     processedContainers,
     SiteServiceMock
 } from '@dotcms/utils-testing';
-import { ExperimentMocks } from '@portlets/dot-experiments/test/mocks';
+import { getExperimentMock } from '@portlets/dot-experiments/test/mocks';
 
 import { DotEditPageWorkflowsActionsModule } from './components/dot-edit-page-workflows-actions/dot-edit-page-workflows-actions.module';
 import {
@@ -101,6 +101,8 @@ import { DotEditContentToolbarHtmlService } from './services/html/dot-edit-conte
 
 import { DotEditPageInfoModule } from '../components/dot-edit-page-info/dot-edit-page-info.module';
 import { DotPageContent } from '../shared/models';
+
+const EXPERIMENT_MOCK = getExperimentMock(1);
 
 @Component({
     selector: 'dot-global-message',
@@ -289,14 +291,14 @@ describe('DotEditContentComponent', () => {
                             parent: {
                                 data: of({
                                     content: mockRenderedPageState,
-                                    experiment: { ...ExperimentMocks[1] }
+                                    experiment: EXPERIMENT_MOCK
                                 })
                             }
                         },
                         snapshot: {
                             queryParams: {
                                 url: '/an/url/test',
-                                variantName: ExperimentMocks[1].trafficProportion.variants[1].id,
+                                variantName: EXPERIMENT_MOCK.trafficProportion.variants[1].id,
                                 editPageTab: 'preview'
                             }
                         },
@@ -424,7 +426,7 @@ describe('DotEditContentComponent', () => {
             });
 
             it('should pass variant information', () => {
-                const variant = ExperimentMocks[1].trafficProportion.variants[1];
+                const variant = EXPERIMENT_MOCK.trafficProportion.variants[1];
 
                 expect(toolbarElement.componentInstance.variant).toEqual({
                     variant: {
@@ -433,10 +435,10 @@ describe('DotEditContentComponent', () => {
                         title: variant.name,
                         isOriginal: variant.name === DEFAULT_VARIANT_NAME
                     },
-                    pageId: ExperimentMocks[1].pageId,
-                    experimentId: ExperimentMocks[1].id,
-                    experimentStatus: ExperimentMocks[1].status,
-                    experimentName: ExperimentMocks[1].name,
+                    pageId: EXPERIMENT_MOCK.pageId,
+                    experimentId: EXPERIMENT_MOCK.id,
+                    experimentStatus: EXPERIMENT_MOCK.status,
+                    experimentName: EXPERIMENT_MOCK.name,
                     mode: 'preview'
                 });
             });

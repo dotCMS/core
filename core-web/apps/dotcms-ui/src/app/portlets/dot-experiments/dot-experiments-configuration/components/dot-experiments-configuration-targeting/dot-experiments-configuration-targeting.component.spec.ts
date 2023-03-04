@@ -17,7 +17,7 @@ import { DotExperimentStatusList } from '@dotcms/dotcms-models';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 import { DotExperimentsConfigurationStore } from '@portlets/dot-experiments/dot-experiments-configuration/store/dot-experiments-configuration-store';
 import { DotExperimentsService } from '@portlets/dot-experiments/shared/services/dot-experiments.service';
-import { ExperimentMocks } from '@portlets/dot-experiments/test/mocks';
+import { getExperimentMock } from '@portlets/dot-experiments/test/mocks';
 import { DotHttpErrorManagerService } from '@services/dot-http-error-manager/dot-http-error-manager.service';
 
 import { DotExperimentsConfigurationTargetingComponent } from './dot-experiments-configuration-targeting.component';
@@ -25,7 +25,10 @@ import { DotExperimentsConfigurationTargetingComponent } from './dot-experiments
 const messageServiceMock = new MockDotMessageService({
     'experiments.configure.targeting.name': 'Targeting'
 });
-fdescribe('DotExperimentsConfigurationTargetingComponent', () => {
+
+const EXPERIMENT_MOCK = getExperimentMock(0);
+
+describe('DotExperimentsConfigurationTargetingComponent', () => {
     let spectator: Spectator<DotExperimentsConfigurationTargetingComponent>;
     let store: DotExperimentsConfigurationStore;
     let dotExperimentsService: SpyObject<DotExperimentsService>;
@@ -53,8 +56,8 @@ fdescribe('DotExperimentsConfigurationTargetingComponent', () => {
     });
 
     it('should render the card and disabled tooltip', () => {
-        dotExperimentsService.getById.and.returnValue(of({ ...ExperimentMocks[0] }));
-        store.loadExperiment(ExperimentMocks[0].id);
+        dotExperimentsService.getById.and.returnValue(of(EXPERIMENT_MOCK));
+        store.loadExperiment(EXPERIMENT_MOCK.id);
         spectator.detectChanges();
 
         expect(spectator.queryAll(Card).length).toEqual(1);
@@ -67,12 +70,12 @@ fdescribe('DotExperimentsConfigurationTargetingComponent', () => {
     it('should disable button and show tooltip when experiment is not on draft', () => {
         dotExperimentsService.getById.and.returnValue(
             of({
-                ...ExperimentMocks[0],
+                ...EXPERIMENT_MOCK,
                 ...{ status: DotExperimentStatusList.RUNNING }
             })
         );
 
-        store.loadExperiment(ExperimentMocks[0].id);
+        store.loadExperiment(EXPERIMENT_MOCK.id);
 
         spectator.detectChanges();
 

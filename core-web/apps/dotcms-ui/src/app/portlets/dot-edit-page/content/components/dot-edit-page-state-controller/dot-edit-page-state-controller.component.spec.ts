@@ -34,7 +34,7 @@ import {
     mockUser
 } from '@dotcms/utils-testing';
 import { DotPipesModule } from '@pipes/dot-pipes.module';
-import { ExperimentMocks } from '@portlets/dot-experiments/test/mocks';
+import { getExperimentMock } from '@portlets/dot-experiments/test/mocks';
 
 import { DotEditPageLockInfoComponent } from './components/dot-edit-page-lock-info/dot-edit-page-lock-info.component';
 import { DotEditPageStateControllerComponent } from './dot-edit-page-state-controller.component';
@@ -53,19 +53,19 @@ const mockDotMessageService = new MockDotMessageService({
     'editpage.toolbar.page.locked.by.user': 'Page locked by {0}'
 });
 
-const experiment = { ...ExperimentMocks[1] };
+const EXPERIMENT_MOCK = getExperimentMock(0);
 
 const dotVariantDataMock: DotVariantData = {
     variant: {
-        id: experiment.trafficProportion.variants[1].id,
-        url: experiment.trafficProportion.variants[1].url,
-        title: experiment.trafficProportion.variants[1].name,
-        isOriginal: experiment.trafficProportion.variants[1].name === DEFAULT_VARIANT_NAME
+        id: EXPERIMENT_MOCK.trafficProportion.variants[1].id,
+        url: EXPERIMENT_MOCK.trafficProportion.variants[1].url,
+        title: EXPERIMENT_MOCK.trafficProportion.variants[1].name,
+        isOriginal: EXPERIMENT_MOCK.trafficProportion.variants[1].name === DEFAULT_VARIANT_NAME
     },
-    pageId: experiment.pageId,
-    experimentId: experiment.id,
-    experimentStatus: experiment.status,
-    experimentName: experiment.name,
+    pageId: EXPERIMENT_MOCK.pageId,
+    experimentId: EXPERIMENT_MOCK.id,
+    experimentStatus: EXPERIMENT_MOCK.status,
+    experimentName: EXPERIMENT_MOCK.name,
     mode: 'preview'
 };
 
