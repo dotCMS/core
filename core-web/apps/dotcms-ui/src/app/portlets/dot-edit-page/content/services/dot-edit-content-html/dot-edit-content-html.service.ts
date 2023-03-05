@@ -16,6 +16,7 @@ import {
     DotWorkflowActionsFireService
 } from '@dotcms/data-access';
 import {
+    DotCopyContent,
     DotIframeEditEvent,
     DotPage,
     DotPageContainer,
@@ -41,6 +42,7 @@ import { DotDOMHtmlUtilService } from '../html/dot-dom-html-util.service';
 import { DotDragDropAPIHtmlService } from '../html/dot-drag-drop-api-html.service';
 import { DotEditContentToolbarHtmlService } from '../html/dot-edit-content-toolbar-html.service';
 import { getEditPageCss } from '../html/libraries/iframe-edit-mode.css';
+
 export enum DotContentletAction {
     EDIT,
     ADD
@@ -423,7 +425,6 @@ export class DotEditContentHtmlService {
 
     private getCurrentContentlet(target: HTMLElement): DotPageContent {
         try {
-            /* Get contentlet Data HERE */
             const contentlet = <HTMLElement>target.closest('[data-dot-object="contentlet"]');
 
             return {
@@ -615,7 +616,8 @@ export class DotEditContentHtmlService {
         this.iframeActions$.next({
             name: type,
             dataset: target.dataset,
-            container: container ? container.dataset : null
+            container: container ? container.dataset : null,
+            copyContent: this.getCopyContentData(target)
         });
     }
 
@@ -883,5 +885,31 @@ export class DotEditContentHtmlService {
         `;
 
         return <HTMLElement>div.children[0];
+    }
+
+    private getCopyContentData(target: HTMLElement): DotCopyContent {
+        try {
+            /* Get contentlet Data HERE */
+            const contentlet = <HTMLElement>target.closest('[data-dot-object="contentlet"]');
+            const container = <HTMLElement>target.closest('[data-dot-object="container"]');
+
+            const { dotIdentifier: contentId, dotVariant: variantId } = contentlet.dataset;
+            const { dotUuid: relationType, dotIdentifier: containerId } = container.dataset;
+
+            return {
+                pageId: this.currentPage.identifier,
+                treeOrder: this.getTreeOrder(contentlet).toString(),
+                containerId,
+                contentId,
+                relationType,
+                variantId
+            };
+        } catch {
+            return null;
+        }
+    }
+
+    private getTreeOrder(element: HTMLElement): number {
+        return Array.from(element.parentElement.children).indexOf(element);
     }
 }

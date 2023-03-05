@@ -5,7 +5,7 @@ import { Injectable } from '@angular/core';
 import { pluck } from 'rxjs/operators';
 
 import { CoreWebService, DotRequestOptionsArgs } from '@dotcms/dotcms-js';
-import { DotPageContainer, DotWhatChanged, DotCopyContentInPage } from '@dotcms/dotcms-models';
+import { DotPageContainer, DotWhatChanged } from '@dotcms/dotcms-models';
 
 import { DotSessionStorageService } from '../dot-session-storage/dot-session-storage.service';
 
@@ -56,22 +56,5 @@ export class DotEditPageService {
                 url: `v1/page/${pageId}/render/versions?langId=${languageId}`
             })
             .pipe(pluck('entity'));
-    }
-
-    /**
-     *
-     *
-     * @param string pageId
-     * @return {*}
-     * @memberof DotEditPageService
-     */
-    copyContentInPage(data: DotCopyContentInPage): Observable<unknown> {
-        const requestOptions: DotRequestOptionsArgs = {
-            method: 'POST',
-            body: data,
-            url: `api/v1/page/copyContent`
-        };
-
-        return this.coreWebService.requestView(requestOptions).pipe(pluck('entity'));
     }
 }

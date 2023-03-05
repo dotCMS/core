@@ -32,6 +32,7 @@ import {
     DotCMSContentlet,
     DotCMSContentType,
     DotContainerStructure,
+    DotCopyContent,
     DotExperiment,
     DotIframeEditEvent,
     DotPageContainer,
@@ -87,6 +88,8 @@ export class DotEditContentComponent implements OnInit, OnDestroy {
     isEnterpriseLicense = false;
     variantData: Observable<DotVariantData>;
     showDialog = false;
+    copyContent: DotCopyContent;
+    currentEditInode: string;
 
     private readonly customEventsHandler;
     private destroy$: Subject<boolean> = new Subject<boolean>();
@@ -480,31 +483,28 @@ export class DotEditContentComponent implements OnInit, OnDestroy {
         }
     }
 
-    private editContentlet($event: DotIframeEditEvent): void {
-        const onNumberPages = +$event.dataset.onNumberOfPage;
-        const isInMultiplePages = onNumberPages > 1 || true;
-
-        if (isInMultiplePages) {
-            this.showDialog = true;
-        } else {
-            this.dotContentletEditorService.edit({
-                data: {
-                    inode: $event.dataset.dotInode
-                },
-                events: {
-                    load: (event) => {
-                        (event.target as HTMLIFrameElement).contentWindow[
-                            'ngEditContentletEvents'
-                        ] = this.dotEditContentHtmlService.contentletEvents$;
-                    }
+    editContentlet(inode: string): void {
+        this.dotContentletEditorService.edit({
+            data: {
+                inode
+            },
+            events: {
+                load: (event) => {
+                    (event.target as HTMLIFrameElement).contentWindow['ngEditContentletEvents'] =
+                        this.dotEditContentHtmlService.contentletEvents$;
                 }
-            });
-        }
+            }
+        });
     }
 
     private iframeActionsHandler(event: string): (contentlet: DotIframeEditEvent) => void {
         const eventsHandlerMap = {
-            edit: this.editContentlet.bind(this),
+            edit: ({ copyContent, dataset }) => {
+                const { dotInode, onNumberPages = 2 } = dataset;
+                this.currentEditInode = dotInode;
+                this.setCopyContentProps(copyContent);
+                onNumberPages > 1 ? (this.showDialog = true) : this.editContentlet(dotInode);
+            },
             code: this.editContentlet.bind(this),
             add: this.searchContentlet.bind(this),
             remove: this.removeContentlet.bind(this),
@@ -690,6 +690,13 @@ export class DotEditContentComponent implements OnInit, OnDestroy {
                 } as DotVariantData;
             })
         );
+    }
+
+    private setCopyContentProps(props: DotCopyContent): void {
+        this.copyContent = {
+            ...props,
+            personalization: this.dotPageStateService.pagePersonalization
+        };
     }
 
     hideDialog(): void {

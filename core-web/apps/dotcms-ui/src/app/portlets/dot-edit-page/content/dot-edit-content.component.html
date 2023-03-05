@@ -91,6 +91,10 @@
 </ng-container>
 
 <dot-select-edit-contentlet
+    [copyContent]="copyContent"
+    [inode]="currentEditInode"
     [show]="showDialog"
-    (hideDialog)="hideDialog()"
+    (hide)="hideDialog()"
+    (cancel)="hideDialog()"
+    (accept)="editContentlet($event.inode)"
 ></dot-select-edit-contentlet>
