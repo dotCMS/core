@@ -9,6 +9,7 @@
     justify-content: center;
     align-items: center;
     gap: 1rem;
+    margin-bottom: $spacing-5;
 
     .dialog__container__options {
         background-color: $gray-lighter;
@@ -36,6 +37,13 @@
             }
         }
     }
+}
+
+.dialog__container__actions {
+    display: flex;
+    gap: 1rem;
+    justify-content: flex-end;
+    text-transform: uppercase;
 }
 
 .material-icons {

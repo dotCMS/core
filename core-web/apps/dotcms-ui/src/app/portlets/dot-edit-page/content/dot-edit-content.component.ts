@@ -45,6 +45,7 @@ import {
 } from '@dotcms/dotcms-models';
 import { DotLoadingIndicatorService, generateDotFavoritePageUrl } from '@dotcms/utils';
 
+import { DotSelectEditContentletComponent } from './components/dot-select-edit-contentlet/dot-select-edit-contentlet.component';
 import { DotEditContentHtmlService } from './services/dot-edit-content-html/dot-edit-content-html.service';
 import {
     PageModelChangeEvent,
@@ -87,9 +88,6 @@ export class DotEditContentComponent implements OnInit, OnDestroy {
     paletteCollapsed = false;
     isEnterpriseLicense = false;
     variantData: Observable<DotVariantData>;
-    showDialog = false;
-    copyContent: DotCopyContent;
-    currentEditInode: string;
 
     private readonly customEventsHandler;
     private destroy$: Subject<boolean> = new Subject<boolean>();
@@ -500,10 +498,10 @@ export class DotEditContentComponent implements OnInit, OnDestroy {
     private iframeActionsHandler(event: string): (contentlet: DotIframeEditEvent) => void {
         const eventsHandlerMap = {
             edit: ({ copyContent, dataset }) => {
-                const { dotInode, onNumberPages = 2 } = dataset;
-                this.currentEditInode = dotInode;
-                this.setCopyContentProps(copyContent);
-                onNumberPages > 1 ? (this.showDialog = true) : this.editContentlet(dotInode);
+                const { dotInode: inode, onNumberPages = 2 } = dataset;
+                onNumberPages > 1
+                    ? this.openContentletEditModeSelector({ copyContent, inode })
+                    : this.editContentlet(inode);
             },
             code: this.editContentlet.bind(this),
             add: this.searchContentlet.bind(this),
@@ -691,15 +689,35 @@ export class DotEditContentComponent implements OnInit, OnDestroy {
             })
         );
     }
+    /**
+     * Open the Dot EditContentletModeSelector component and subscribe to the onClose event
+     *
+     * @param boolean openDialog
+     * @memberof openContentletEditModeSelector
+     */
+    private openContentletEditModeSelector({
+        copyContent,
+        inode
+    }: {
+        copyContent: DotCopyContent;
+        inode: string;
+    }): void {
+        const ref = this.dialogService.open(DotSelectEditContentletComponent, {
+            header: this.dotMessageService.get('modes.Edit-Content'),
+            width: '30rem',
+            data: {
+                copyContent: {
+                    ...copyContent,
+                    personalization: this.dotPageStateService.pagePersonalization
+                },
+                inode
+            }
+        });
 
-    private setCopyContentProps(props: DotCopyContent): void {
-        this.copyContent = {
-            ...props,
-            personalization: this.dotPageStateService.pagePersonalization
-        };
-    }
-
-    hideDialog(): void {
-        this.showDialog = false;
+        ref.onClose.pipe(take(1)).subscribe(({ inode } = {}) => {
+            if (inode) {
+                this.editContentlet(inode);
+            }
+        });
     }
 }

@@ -1,12 +1,8 @@
 import { CommonModule } from '@angular/common';
-import {
-    ChangeDetectionStrategy,
-    ChangeDetectorRef,
-    Component,
-    EventEmitter,
-    Input,
-    Output
-} from '@angular/core';
+import { ChangeDetectionStrategy, ChangeDetectorRef, Component, OnInit } from '@angular/core';
+
+import { ButtonModule } from 'primeng/button';
+import { DynamicDialogConfig, DynamicDialogRef, DynamicDialogModule } from 'primeng/dynamicdialog';
 
 import { catchError } from 'rxjs/operators';
 
@@ -16,90 +12,106 @@ import { DotMessagePipeModule } from '@dotcms/app/view/pipes/dot-message/dot-mes
 import { DotCopyContentService } from '@dotcms/data-access';
 import { DotCMSContentlet, DotCopyContent } from '@dotcms/dotcms-models';
 
-enum SELECT_OPTIONS {
+enum CONTENTLET_EDIT_MODE {
     CURRENT = 'CURRENT',
     ALL = 'ALL'
 }
 
+/**
+ * Allow the user to select whether the edit will affect the main contentlet or the current page contentlet.
+ * Create a copy of the contentlet if necessary and return the inode.
+ *
+ * @export
+ * @class DotSelectEditContentletComponent
+ * @implements {OnInit}
+ */
 @Component({
     selector: 'dot-select-edit-contentlet',
     templateUrl: './dot-select-edit-contentlet.component.html',
     styleUrls: ['./dot-select-edit-contentlet.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush,
-    imports: [CommonModule, DotDialogModule, DotMessagePipeModule],
+    imports: [
+        CommonModule,
+        ButtonModule,
+        DynamicDialogModule,
+        DotDialogModule,
+        DotMessagePipeModule
+    ],
     standalone: true
 })
-export class DotSelectEditContentletComponent {
-    @Input()
-    inode: string;
+export class DotSelectEditContentletComponent implements OnInit {
+    private inode: string;
+    private copyContent: DotCopyContent;
 
-    @Input()
-    copyContent: DotCopyContent;
-
-    @Input()
-    show = false;
-
-    @Output()
-    hide = new EventEmitter<void>();
-
-    @Output()
-    accept = new EventEmitter<{ inode: string }>();
-
-    @Output()
-    cancel = new EventEmitter<void>();
-
-    public selected = SELECT_OPTIONS.CURRENT;
-    public readonly options = SELECT_OPTIONS;
-
-    dialogActions = {
-        accept: {
-            label: 'Accept',
-            disabled: false,
-            action: () => this.copyAndEditAction()
-        },
-        cancel: {
-            label: 'Cancel',
-            disabled: false,
-            action: this.cancel.emit()
-        }
-    };
+    public mode = CONTENTLET_EDIT_MODE.CURRENT;
+    public readonly EDIT_MODES = CONTENTLET_EDIT_MODE;
 
     constructor(
+        private readonly ref: DynamicDialogRef,
+        private readonly config: DynamicDialogConfig,
         private readonly dotCopyContentService: DotCopyContentService,
         private readonly httpErrorManagerService: DotHttpErrorManagerService,
         private readonly cd: ChangeDetectorRef
     ) {}
 
-    changeSelection(selected: SELECT_OPTIONS) {
-        this.selected = selected;
+    ngOnInit(): void {
+        const { inode, copyContent } = this.config.data || {};
 
-        this.dialogActions = {
-            ...this.dialogActions,
-            accept: {
-                ...this.dialogActions.accept,
-                action: () => {
-                    selected === SELECT_OPTIONS.ALL
-                        ? this.globalEditAction()
-                        : this.copyAndEditAction();
-                }
-            }
-        };
+        this.inode = inode;
+        this.copyContent = copyContent;
+    }
 
+    /**
+     * Change Contentlet edit mode.
+     *
+     * @param {CONTENTLET_EDIT_MODE} mode
+     * @memberof DotSelectEditContentletComponent
+     */
+    changeMode(mode: CONTENTLET_EDIT_MODE) {
+        this.mode = mode;
         this.cd.markForCheck();
     }
 
-    private copyAndEditAction(): void {
+    /**
+     * Choose the contentlet edit mode based on the current option.
+     *
+     * @memberof DotSelectEditContentletComponent
+     */
+    editContentlet() {
+        this.mode === CONTENTLET_EDIT_MODE.ALL
+            ? this.editMasterContentlet()
+            : this.editPageContentlet();
+    }
+
+    /**
+     * Close Dialog without emiting an inode.
+     *
+     * @memberof DotSelectEditContentletComponent
+     */
+    closeDialog() {
+        this.ref.close({});
+    }
+
+    /**
+     * Create a copy of the content and close the Dialog emiting the new inode.
+     *
+     * @private
+     * @memberof DotSelectEditContentletComponent
+     */
+    private editPageContentlet(): void {
         this.dotCopyContentService
             .copyContentInPage(this.copyContent)
             .pipe(catchError((error) => this.httpErrorManagerService.handle(error)))
-            .subscribe(({ inode }: DotCMSContentlet) => {
-                this.hide.emit();
-                this.accept.emit({ inode });
-            });
+            .subscribe(({ inode }: DotCMSContentlet) => this.ref.close({ inode }));
     }
 
-    private globalEditAction(): void {
-        this.hide.emit();
-        this.accept.emit({ inode: this.inode });
+    /**
+     * Close the Dialog emiting the contenntlet inode.
+     *
+     * @private
+     * @memberof DotSelectEditContentletComponent
+     */
+    private editMasterContentlet(): void {
+        this.ref.close({ inode: this.inode });
     }
 }
