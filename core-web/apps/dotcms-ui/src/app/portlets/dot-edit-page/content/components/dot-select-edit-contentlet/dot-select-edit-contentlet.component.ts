@@ -12,7 +12,7 @@ import { DotMessagePipeModule } from '@dotcms/app/view/pipes/dot-message/dot-mes
 import { DotCopyContentService } from '@dotcms/data-access';
 import { DotCMSContentlet, DotCopyContent } from '@dotcms/dotcms-models';
 
-enum CONTENTLET_EDIT_MODE {
+export enum CONTENTLET_EDIT_MODE {
     CURRENT = 'CURRENT',
     ALL = 'ALL'
 }
@@ -102,7 +102,10 @@ export class DotSelectEditContentletComponent implements OnInit {
         this.dotCopyContentService
             .copyContentInPage(this.copyContent)
             .pipe(catchError((error) => this.httpErrorManagerService.handle(error)))
-            .subscribe(({ inode }: DotCMSContentlet) => this.ref.close({ inode }));
+            .subscribe(
+                ({ inode }: DotCMSContentlet) => this.ref.close({ inode }),
+                () => this.closeDialog()
+            );
     }
 
     /**

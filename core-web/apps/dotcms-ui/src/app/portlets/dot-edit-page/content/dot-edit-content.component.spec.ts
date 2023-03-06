@@ -14,7 +14,7 @@ import { RouterTestingModule } from '@angular/router/testing';
 import { ConfirmationService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
 import { DialogModule } from 'primeng/dialog';
-import { DialogService } from 'primeng/dynamicdialog';
+import { DialogService, DynamicDialogRef } from 'primeng/dynamicdialog';
 
 import { DotGlobalMessageService } from '@components/_common/dot-global-message/dot-global-message.service';
 import { DotOverlayMaskModule } from '@components/_common/dot-overlay-mask/dot-overlay-mask.module';
@@ -1048,6 +1048,32 @@ describe('DotEditContentComponent', () => {
                                 }
                             }
                         });
+                    });
+
+                    it('should open dialog if onNumberPages is greater than 1 ', () => {
+                        spyOn(dialogService, 'open').and.returnValue({
+                            onClose: of({})
+                        } as DynamicDialogRef);
+
+                        spyOn(dotContentletEditorService, 'edit');
+
+                        fixture.detectChanges();
+
+                        dotEditContentHtmlService.iframeActions$.next({
+                            name: 'edit',
+                            dataset: {
+                                dotInode: 'test_inode',
+                                onNumberPages: '2'
+                            },
+                            target: {
+                                contentWindow: {
+                                    ngEditContentletEvents: null
+                                }
+                            }
+                        });
+
+                        expect(dialogService.open).toHaveBeenCalledTimes(1);
+                        expect(dotContentletEditorService.edit).not.toHaveBeenCalled();
                     });
 
                     it('should handle code event', (done) => {

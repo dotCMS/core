@@ -481,7 +481,7 @@ export class DotEditContentComponent implements OnInit, OnDestroy {
         }
     }
 
-    editContentlet(inode: string): void {
+    private editContentlet(inode: string): void {
         this.dotContentletEditorService.edit({
             data: {
                 inode
@@ -498,12 +498,12 @@ export class DotEditContentComponent implements OnInit, OnDestroy {
     private iframeActionsHandler(event: string): (contentlet: DotIframeEditEvent) => void {
         const eventsHandlerMap = {
             edit: ({ copyContent, dataset }) => {
-                const { dotInode: inode, onNumberPages = 2 } = dataset;
-                onNumberPages > 1
+                const { dotInode: inode, onNumberPages } = dataset;
+                +onNumberPages > 1
                     ? this.openContentletEditModeSelector({ copyContent, inode })
                     : this.editContentlet(inode);
             },
-            code: this.editContentlet.bind(this),
+            code: ({ dataset }) => this.editContentlet(dataset.dotInode),
             add: this.searchContentlet.bind(this),
             remove: this.removeContentlet.bind(this),
             'add-content': this.addContentType.bind(this),

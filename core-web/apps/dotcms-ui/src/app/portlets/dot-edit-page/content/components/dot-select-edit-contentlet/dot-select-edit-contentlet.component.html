@@ -16,6 +16,7 @@
     <div
         class="dialog__container__options"
         [ngClass]="{ active: mode === EDIT_MODES.ALL }"
+        [attr.data-testid]="EDIT_MODES.ALL"
         (click)="changeMode(EDIT_MODES.ALL)"
     >
         <span class="material-icons"> dynamic_feed </span>
@@ -26,13 +27,14 @@
 <div class="dialog__container__actions">
     <button
         class="p-button-outlined p-button-secondary"
+        [attr.data-testid]="'cancel'"
         (click)="closeDialog()"
         pButton
         type="button"
     >
         {{ 'dot.common.dialog.reject' | dm }}
     </button>
-    <button (click)="editContentlet()" pButton type="button">
+    <button [attr.data-testid]="'accept'" (click)="editContentlet()" pButton type="button">
         {{ 'dot.common.dialog.accept' | dm }}
     </button>
 </div>
