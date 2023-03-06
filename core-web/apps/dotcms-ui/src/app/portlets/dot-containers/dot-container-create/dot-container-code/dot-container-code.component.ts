@@ -183,7 +183,7 @@ export class DotContentEditorComponent implements OnInit, OnChanges {
         if (this.getcontainerStructures.length === 0) {
             this.getcontainerStructures.push(
                 new FormGroup({
-                    code: new FormControl('', [Validators.required]),
+                    code: new FormControl(''),
                     structureId: new FormControl(this.contentTypes[0].id, [Validators.required])
                 })
             );
@@ -207,7 +207,7 @@ export class DotContentEditorComponent implements OnInit, OnChanges {
                     if (!this.checkIfAlreadyExists(contentType)) {
                         this.getcontainerStructures.push(
                             new FormGroup({
-                                code: new FormControl('', [Validators.required]),
+                                code: new FormControl(''),
                                 structureId: new FormControl(contentType.id, [Validators.required])
                             })
                         );
