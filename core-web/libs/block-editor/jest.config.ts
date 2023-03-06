@@ -1,3 +1,4 @@
+/* eslint-disable */
 export default {
     displayName: 'block-editor',
     preset: '../../jest.preset.js',

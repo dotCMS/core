@@ -42,7 +42,13 @@ declare module '@tiptap/core' {
                 range: Range;
                 type: { name: string; level?: number };
             }) => ReturnType;
-            addContentletBlock: (data: { range: Range; payload: unknown }) => ReturnType;
+            addContentletBlock: ({
+                range,
+                payload
+            }: {
+                range: Range;
+                payload: unknown;
+            }) => ReturnType;
             addNextLine: () => ReturnType;
         };
     }
@@ -91,16 +97,13 @@ function execCommand({
     props: SuggestionsCommandProps;
     customBlocks: RemoteCustomExtentions;
 }) {
+    const { type, payload } = props;
     const whatToDo = {
         dotContent: () => {
-            editor
-                .chain()
-                .addContentletBlock({ range, payload: props.payload })
-                .addNextLine()
-                .run();
+            editor.chain().addContentletBlock({ range, payload }).addNextLine().run();
         },
         heading: () => {
-            editor.chain().addHeading({ range, type: props.type }).run();
+            editor.chain().addHeading({ range, type }).run();
         },
         table: () => {
             editor.commands
@@ -227,12 +230,14 @@ export const ActionsMenu = (
                         open: false
                     });
                     editor.view.dispatch(transaction);
+                    editor.commands.freezeScroll(false);
                 }
             });
         }
     }
 
     function onBeforeStart({ editor }): void {
+        editor.commands.freezeScroll(true);
         const isTableCell =
             findParentNode(editor.view.state.selection.$from, [NodeTypes.TABLE_CELL])?.type.name ===
             NodeTypes.TABLE_CELL;
@@ -326,8 +331,9 @@ export const ActionsMenu = (
         return false;
     }
 
-    function onExit() {
+    function onExit({ editor }): void {
         myTippy?.destroy();
+        editor.commands.freezeScroll(false);
         suggestionsComponent?.destroy();
         suggestionsComponent = null;
         destroy$.next(true);
