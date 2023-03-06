@@ -196,7 +196,6 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy {
                     actions: optional(
                         array(
                             object({
-                                name: string(),
                                 command: string(),
                                 menuLabel: string(),
                                 icon: string()
@@ -221,8 +220,7 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy {
 
         try {
             const data = JSON.parse(this.customBlocks);
-
-            // this.isValidSchema(data);
+            this.isValidSchema(data);
 
             return data;
         } catch (e) {
