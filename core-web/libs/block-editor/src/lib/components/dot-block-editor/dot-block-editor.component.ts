@@ -137,7 +137,7 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy {
         private dotMarketingConfigService: DotMarketingConfigService
     ) {}
 
-    async loadCustomBlocks(urls: string[]) {
+    async loadCustomBlocks(urls: string[]): Promise<PromiseSettledResult<AnyExtension>[]> {
         return Promise.allSettled(urls.map(async (url) => import(/* webpackIgnore: true */ url)));
     }
 
@@ -186,8 +186,8 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy {
      * assert call throws a detailed error
      * @param data
      * @throws if the schema is not valid to use
+     *
      */
-
     private isValidSchema(data: RemoteCustomExtensions): void {
         const RemoteExtensionsSchema = object({
             extensions: array(
