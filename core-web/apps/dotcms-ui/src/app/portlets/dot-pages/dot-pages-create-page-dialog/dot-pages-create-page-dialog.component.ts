@@ -1,4 +1,4 @@
-import { fromEvent, Subject } from 'rxjs';
+import { fromEvent, Observable, of, Subject } from 'rxjs';
 
 import { CommonModule } from '@angular/common';
 import { Component, ElementRef, OnDestroy, OnInit, ViewChild } from '@angular/core';
@@ -6,7 +6,7 @@ import { Component, ElementRef, OnDestroy, OnInit, ViewChild } from '@angular/co
 import { DynamicDialogConfig, DynamicDialogRef } from 'primeng/dynamicdialog';
 import { InputTextModule } from 'primeng/inputtext';
 
-import { takeUntil } from 'rxjs/operators';
+import { distinctUntilChanged, map, startWith, switchMap, takeUntil } from 'rxjs/operators';
 
 import { DotAutofocusModule } from '@directives/dot-autofocus/dot-autofocus.module';
 import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
@@ -42,8 +42,7 @@ import { DotIconModule } from '@dotcms/ui';
 export class DotPagesCreatePageDialogComponent implements OnInit, OnDestroy {
     @ViewChild('searchInput', { static: true }) searchInput: ElementRef;
 
-    pageTypes: DotCMSContentType[];
-    pageTypesBackup: DotCMSContentType[];
+    pageTypes$: Observable<DotCMSContentType[]>;
 
     private destroy$: Subject<boolean> = new Subject<boolean>();
 
@@ -51,10 +50,7 @@ export class DotPagesCreatePageDialogComponent implements OnInit, OnDestroy {
         private dotRouterService: DotRouterService,
         private ref: DynamicDialogRef,
         public config: DynamicDialogConfig
-    ) {
-        this.pageTypes = this.config.data;
-        this.pageTypesBackup = [...this.pageTypes];
-    }
+    ) {}
 
     /**
      * Redirect to Create content page
@@ -68,19 +64,25 @@ export class DotPagesCreatePageDialogComponent implements OnInit, OnDestroy {
     }
 
     ngOnInit(): void {
-        fromEvent(this.searchInput.nativeElement, 'keyup')
-            .pipe(takeUntil(this.destroy$))
-            .subscribe(({ target }: Event) => {
-                if (target['value'].length) {
-                    this.pageTypes = this.pageTypesBackup.filter((pageType: DotCMSContentType) =>
-                        pageType.name
-                            .toLocaleLowerCase()
-                            .includes(target['value'].toLocaleLowerCase())
+        this.pageTypes$ = fromEvent(this.searchInput.nativeElement, 'keyup').pipe(
+            takeUntil(this.destroy$),
+            map(({ target }: Event) => target['value']),
+            distinctUntilChanged(),
+            switchMap((searchValue: string) => {
+                if (searchValue.length) {
+                    return of(
+                        this.config.data.filter((pageType: DotCMSContentType) =>
+                            pageType.name
+                                .toLocaleLowerCase()
+                                .includes(searchValue.toLocaleLowerCase())
+                        )
                     );
                 } else {
-                    this.pageTypes = [...this.pageTypesBackup];
+                    return of(this.config.data);
                 }
-            });
+            }),
+            startWith(this.config.data)
+        );
     }
 
     ngOnDestroy(): void {

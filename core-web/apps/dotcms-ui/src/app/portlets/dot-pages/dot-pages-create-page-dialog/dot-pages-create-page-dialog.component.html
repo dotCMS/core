@@ -13,7 +13,7 @@
 <div class="dot-pages-create-page-dialog__page-types-container">
     <div
         class="dot-pages-create-page-dialog__page-item"
-        *ngFor="let item of pageTypes; let i = index"
+        *ngFor="let item of pageTypes$ | async"
         (click)="goToCreatePage(item.variable)"
     >
         <dot-icon [name]="item.icon" size="18"></dot-icon>

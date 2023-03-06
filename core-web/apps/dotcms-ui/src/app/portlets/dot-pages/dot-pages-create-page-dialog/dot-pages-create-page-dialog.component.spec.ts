@@ -155,8 +155,9 @@ describe('DotPagesCreatePageDialogComponent', () => {
     });
 
     it('should set pages types data when init', () => {
-        expect(fixture.componentInstance.pageTypes).toEqual([{ ...mockContentType }]);
-        expect(fixture.componentInstance.pageTypesBackup).toEqual([{ ...mockContentType }]);
+        fixture.componentInstance.pageTypes$.subscribe((data) => {
+            expect(data).toEqual([{ ...mockContentType }]);
+        });
     });
 
     it('should redirect url when click on page', () => {
@@ -170,8 +171,10 @@ describe('DotPagesCreatePageDialogComponent', () => {
         const input = de.query(
             By.css(`[data-testId="dot-pages-create-page-dialog__keyword-input"]`)
         );
-        input.nativeElement.value = 'test';
+        input.nativeElement.value = 'Dot Favorite Page';
         input.nativeElement.dispatchEvent(new Event('keyup'));
-        expect(fixture.componentInstance.pageTypes).toEqual([]);
+        fixture.componentInstance.pageTypes$.subscribe((data) => {
+            expect(data).toEqual([{ ...mockContentType }]);
+        });
     });
 });

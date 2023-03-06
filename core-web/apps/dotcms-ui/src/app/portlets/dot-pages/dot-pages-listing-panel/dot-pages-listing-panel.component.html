@@ -34,7 +34,7 @@
             <button
                 class="p-button-primary"
                 [label]="'create.page' | dm"
-                (click)="createPage.emit()"
+                (click)="store.getPageTypes()"
                 data-testid="createPageButton"
                 pButton
             ></button>

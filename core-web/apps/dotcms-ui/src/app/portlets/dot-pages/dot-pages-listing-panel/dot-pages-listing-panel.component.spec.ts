@@ -102,6 +102,9 @@ describe('DotPagesListingPanelComponent', () => {
         getPages(): void {
             /* */
         }
+        getPageTypes(): void {
+            /* */
+        }
         setKeyword(): void {
             /* */
         }
@@ -146,10 +149,11 @@ describe('DotPagesListingPanelComponent', () => {
             component = fixture.componentInstance;
 
             spyOn(store, 'getPages');
+            spyOn(store, 'getPageTypes');
             spyOn(store, 'setKeyword');
             spyOn(store, 'setLanguageId');
             spyOn(store, 'setArchived');
-            spyOn(component.createPage, 'emit');
+            // spyOn(component.createPage, 'emit');
             spyOn(component.goToUrl, 'emit');
 
             fixture.detectChanges();
@@ -189,7 +193,7 @@ describe('DotPagesListingPanelComponent', () => {
             const elem = de.query(By.css('[data-testId="createPageButton"'));
             elem.triggerEventHandler('click', {});
 
-            expect(component.createPage.emit).toHaveBeenCalledTimes(1);
+            expect(store.getPageTypes).toHaveBeenCalledTimes(1);
         });
 
         it('should send event to filter keyword', () => {

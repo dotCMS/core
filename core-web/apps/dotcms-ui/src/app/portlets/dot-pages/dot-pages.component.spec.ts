@@ -228,12 +228,6 @@ describe('DotPagesComponent', () => {
         });
     });
 
-    it('should call createPage method from DotPagesListingPanel', () => {
-        const elem = de.query(By.css('dot-pages-listing-panel'));
-        elem.triggerEventHandler('createPage');
-        expect(store.getPageTypes).toHaveBeenCalledTimes(1);
-    });
-
     it('should call goToUrl method from DotPagesListingPanel', () => {
         const elem = de.query(By.css('dot-pages-listing-panel'));
         elem.triggerEventHandler('goToUrl', '/page/1?lang=1');

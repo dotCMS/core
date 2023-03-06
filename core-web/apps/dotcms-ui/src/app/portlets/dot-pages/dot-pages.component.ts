@@ -95,15 +95,6 @@ export class DotPagesComponent implements OnInit, OnDestroy {
         this.domIdMenuAttached = '';
     }
 
-    /**
-     * Event to instantiate dialog with Create Page component
-     *
-     * @memberof DotPagesComponent
-     */
-    showCreatePageDialog(): void {
-        this.store.getPageTypes();
-    }
-
     ngOnInit(): void {
         this.store.actionMenuDomId$
             .pipe(

@@ -15,7 +15,6 @@ import { DotActionsMenuEventParams } from '../dot-pages.component';
     styleUrls: ['./dot-pages-listing-panel.component.scss']
 })
 export class DotPagesListingPanelComponent {
-    @Output() createPage = new EventEmitter();
     @Output() goToUrl = new EventEmitter<string>();
     @Output() showActionsMenu = new EventEmitter<DotActionsMenuEventParams>();
 
