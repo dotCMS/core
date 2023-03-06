@@ -34,6 +34,7 @@ import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
 import io.vavr.Tuple;
 import io.vavr.Tuple2;
+import io.vavr.Tuple3;
 import io.vavr.control.Try;
 
 import java.util.*;
@@ -66,12 +67,12 @@ public class BrowserAPIImpl implements BrowserAPI {
     @CloseDBIfOpened
     public List<Contentlet> getContentUnderParentFromDB(final BrowserQuery browserQuery) {
 
-        final Tuple2<String, List<Object>> sqlQuery = this.selectQuery(browserQuery);
+        final Tuple3<String, String, List<Object>> sqlQuery = this.selectQuery(browserQuery);
 
 
         final DotConnect dc = new DotConnect().setSQL(sqlQuery._1);
 
-        sqlQuery._2.forEach(o -> dc.addParam(o));
+        sqlQuery._3.forEach(o -> dc.addParam(o));
 
         try {
             final List<Map<String,String>> inodesMapList =  dc.loadResults();
@@ -145,7 +146,7 @@ public class BrowserAPIImpl implements BrowserAPI {
         //Get Content
         final List<Contentlet> contentlets = browserQuery.showContent ? getContentUnderParentFromDB(browserQuery)
                 : Collections.emptyList();
-
+        
         for (final Contentlet contentlet : contentlets) {
             Map<String, Object> contentMap;
             if (contentlet.getBaseType().get() == BaseContentType.FILEASSET) {
@@ -247,7 +248,7 @@ public class BrowserAPIImpl implements BrowserAPI {
         return filteredList;
     }
 
-    private Tuple2<String, List<Object>> selectQuery(final BrowserQuery browserQuery) {
+    private Tuple3<String,String, List<Object>> selectQuery(final BrowserQuery browserQuery) {
 
         final String workingLiveInode = browserQuery.showWorking || browserQuery.showArchived ? "working_inode" : "live_inode";
 
@@ -259,31 +260,42 @@ public class BrowserAPIImpl implements BrowserAPI {
                 + " where cvi.identifier = id.id and struc.velocity_var_name = id.asset_subtype and  "
                 + " c.inode = cvi." + workingLiveInode + " and cvi.variant_id='"+DEFAULT_VARIANT.name()+"' ");
 
+        
+        final StringBuilder luceneQuery = UtilMethods.isSet(browserQuery.luceneQuery) ? new  StringBuilder(browserQuery.luceneQuery) : new  StringBuilder();
+        
+        if(browserQuery.showWorking || browserQuery.showArchived) {
+            luceneQuery.append("+working:true ");
+        }
+        else {
+            luceneQuery.append("+live:true ");
+        }
+        if(browserQuery.showArchived ) luceneQuery.append("+deleted:true ");
+        
+        
+        
         if (!showAllBaseTypes) {
             List<String> baseTypes =
                     browserQuery.baseTypes.stream().map(t -> String.valueOf(t.getType())).collect(Collectors.toList());
             sqlQuery.append(" and struc.structuretype in (" + String.join(" , ", baseTypes) + ") ");
+            
+            luceneQuery.append("+baseType:(" + String.join(" ", baseTypes)+ ") ");
         }
         if (browserQuery.languageId > 0) {
             sqlQuery.append(" and cvi.lang = ? ");
             parameters.add(browserQuery.languageId);
+            luceneQuery.append("+languageId:" + browserQuery.languageId + " ");
         }
         if (browserQuery.site != null) {
             sqlQuery.append(" and id.host_inode = ? ");
             parameters.add(browserQuery.site.getIdentifier());
+            luceneQuery.append("+conhost:" + browserQuery.site.getIdentifier() + " ");
         }
         if (browserQuery.folder != null) {
             sqlQuery.append(" and id.parent_path=? ");
             parameters.add(browserQuery.folder.getPath());
+            luceneQuery.append("+path:" + browserQuery.folder.getPath() + " ");
         }
-        if (UtilMethods.isSet(browserQuery.luceneQuery)) {
-            final String filterText = browserQuery.luceneQuery.toLowerCase();
-            final String[] spliter = filterText.split(" ");
-            for (final String token : spliter) {
-                sqlQuery.append(" and LOWER(c.title) like ?");
-                parameters.add("%" + token + "%");
-            }
-        }
+
 
         if(browserQuery.showMenuItemsOnly) {
             sqlQuery.append(" and c.show_on_menu = " + DbConnectionFactory.getDBTrue());
@@ -293,7 +305,7 @@ public class BrowserAPIImpl implements BrowserAPI {
             sqlQuery.append(" and cvi.deleted = " + DbConnectionFactory.getDBFalse());
         }
 
-        return Tuple.of(sqlQuery.toString(), parameters);
+        return Tuple.of(sqlQuery.toString(),luceneQuery.toString(), parameters);
     }
 
     private List<Map<String, Object>> includeLinks(final BrowserQuery browserQuery)
