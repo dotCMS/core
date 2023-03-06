@@ -144,7 +144,9 @@ describe('DotEditPageStateControllerComponent', () => {
             it('should have mode selector', async () => {
                 componentHost.variant = null;
                 fixtureHost.detectChanges();
-                const selectButton = de.query(By.css('p-selectButton')).componentInstance;
+                const selectButton = de.query(
+                    By.css('[data-testId="selectButton"]')
+                ).componentInstance;
                 await fixtureHost.whenRenderingDone();
 
                 expect(selectButton).toBeDefined();
@@ -179,7 +181,7 @@ describe('DotEditPageStateControllerComponent', () => {
 
             it('should have lock info', () => {
                 fixtureHost.detectChanges();
-                const message = de.query(By.css('dot-edit-page-lock-info')).componentInstance;
+                const message = de.query(By.css('[data-testId="lockInfo"]')).componentInstance;
                 expect(message.pageState).toEqual(pageRenderStateMock);
             });
         });
@@ -189,7 +191,9 @@ describe('DotEditPageStateControllerComponent', () => {
                 componentHost.pageState.page.canRead = false;
                 componentHost.variant = null;
                 fixtureHost.detectChanges();
-                const selectButton = de.query(By.css('p-selectButton')).componentInstance;
+                const selectButton = de.query(
+                    By.css('[data-testId="selectButton"]')
+                ).componentInstance;
 
                 fixtureHost.whenRenderingDone();
 
@@ -207,7 +211,9 @@ describe('DotEditPageStateControllerComponent', () => {
                 componentHost.pageState.page.canLock = false;
                 componentHost.variant = null;
                 fixtureHost.detectChanges();
-                const selectButton = de.query(By.css('p-selectButton')).componentInstance;
+                const selectButton = de.query(
+                    By.css('[data-testId="selectButton"]')
+                ).componentInstance;
 
                 await fixtureHost.whenRenderingDone();
 
@@ -224,7 +230,9 @@ describe('DotEditPageStateControllerComponent', () => {
                 componentHost.variant = null;
                 componentHost.pageState.page.liveInode = null;
                 fixtureHost.detectChanges();
-                const selectButton = de.query(By.css('p-selectButton')).componentInstance;
+                const selectButton = de.query(
+                    By.css('[data-testId="selectButton"]')
+                ).componentInstance;
 
                 await fixtureHost.whenRenderingDone();
 
@@ -240,7 +248,9 @@ describe('DotEditPageStateControllerComponent', () => {
             it('should enable edit and preview when variant id different than original and draft', async () => {
                 fixtureHost.detectChanges();
                 componentHost.variant = dotVariantDataMock;
-                const selectButton = de.query(By.css('p-selectButton')).componentInstance;
+                const selectButton = de.query(
+                    By.css('[data-testId="selectButton"]')
+                ).componentInstance;
 
                 await fixtureHost.whenRenderingDone();
 
@@ -262,7 +272,9 @@ describe('DotEditPageStateControllerComponent', () => {
                 };
                 fixtureHost.detectChanges();
 
-                const selectButton = de.query(By.css('p-selectButton')).componentInstance;
+                const selectButton = de.query(
+                    By.css('[data-testId="selectButton"]')
+                ).componentInstance;
 
                 await fixtureHost.whenRenderingDone();
 
@@ -283,7 +295,9 @@ describe('DotEditPageStateControllerComponent', () => {
                 };
                 fixtureHost.detectChanges();
 
-                const selectButton = de.query(By.css('p-selectButton')).componentInstance;
+                const selectButton = de.query(
+                    By.css('[data-testId="selectButton"]')
+                ).componentInstance;
 
                 await fixtureHost.whenRenderingDone();
 
