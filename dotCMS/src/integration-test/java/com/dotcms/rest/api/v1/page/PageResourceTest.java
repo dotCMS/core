@@ -1118,11 +1118,8 @@ public class PageResourceTest {
     /**
      * <ul>
      *     <li><b>Method to Test:</b> {@link PageResource#render(HttpServletRequest, HttpServletResponse, String, String, String, String, String)}</li>
-     *     <li><b>Given Scenario:</b> In Edit Mode, creates an HTML Page with a Contentlet in it using the dotCMS APIs.
-     *     Then, the very same Contentlet is added to another page. In both cases, the data returned by dotCMS is read
-     *     by calling the {@code render} endpoint.</li>
-     *     <li><b>Expected Result:</b> The {@link Contentlet#ON_NUMBER_OF_PAGES} property of the Contentlet added to the
-     *     page must be 2 at the end of the test because it's present on two pages.</li>
+     *     <li><b>Given Scenario:</b> In Edit Mode, test the rest API</li>
+     *     <li><b>Expected Result:</b> Receive the on-number-of-pages data attribute for the contentlet object inside rendered element.</li>
      * </ul>
      */
     @Test
