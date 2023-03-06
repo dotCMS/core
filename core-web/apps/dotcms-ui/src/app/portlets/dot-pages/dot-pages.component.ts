@@ -5,12 +5,13 @@ import { Component, ElementRef, OnDestroy, OnInit, ViewChild } from '@angular/co
 import { Menu } from 'primeng/menu';
 
 import { Observable } from 'rxjs/internal/Observable';
-import { filter, takeUntil } from 'rxjs/operators';
+import { filter, skip, takeUntil } from 'rxjs/operators';
 
 import { DotMessageSeverity, DotMessageType } from '@components/dot-message-display/model';
 import { DotMessageDisplayService } from '@components/dot-message-display/services';
 import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
 import { DotEventsService } from '@dotcms/data-access';
+import { SiteService } from '@dotcms/dotcms-js';
 import { DotCMSContentlet } from '@dotcms/dotcms-models';
 
 import { DotPagesState, DotPageStore } from './dot-pages-store/dot-pages.store';
@@ -41,6 +42,7 @@ export class DotPagesComponent implements OnInit, OnDestroy {
         private dotRouterService: DotRouterService,
         private dotMessageDisplayService: DotMessageDisplayService,
         private dotEventsService: DotEventsService,
+        private dotSiteService: SiteService,
         private element: ElementRef
     ) {
         this.store.setInitialStateData(FAVORITE_PAGE_LIMIT);
@@ -115,6 +117,10 @@ export class DotPagesComponent implements OnInit, OnDestroy {
                     type: DotMessageType.SIMPLE_MESSAGE
                 });
             });
+
+        this.dotSiteService.switchSite$.pipe(takeUntil(this.destroy$), skip(1)).subscribe(() => {
+            this.store.getPages({ offset: 0 });
+        });
     }
 
     ngOnDestroy(): void {
