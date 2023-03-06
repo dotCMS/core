@@ -6990,7 +6990,6 @@ public class ESContentletAPIImpl implements ContentletAPI {
                                     || property.getValue() instanceof BigDecimal
                                     || property.getValue() instanceof Short
                                     || property.getValue() instanceof Double
-                                    || property.getValue() instanceof ContentletRelationships
                     )
             ) {
                 throw new DotContentletStateException(
