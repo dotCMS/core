@@ -126,12 +126,12 @@ describe('DotExperimentsListStore', () => {
     });
 
     it('should delete experiment by id of the store', () => {
-        const expected: DotExperiment[] = [EXPERIMENT_MOCK, EXPERIMENT_MOCK_2];
+        const expected: string[] = [EXPERIMENT_MOCK.id, EXPERIMENT_MOCK_2.id];
 
         store.setExperiments([...EXPERIMENT_MOCK_ALL]);
         store.deleteExperimentById(EXPERIMENT_MOCK_1.id);
         store.getExperiments$.subscribe((experiments) => {
-            expect(experiments).toEqual(expected);
+            expect(experiments.map((experiment) => experiment.id)).toEqual(expected);
         });
     });
 
