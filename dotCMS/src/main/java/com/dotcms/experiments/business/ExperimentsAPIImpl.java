@@ -877,8 +877,8 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
     public void endFinalizedExperiments(final User user) throws DotDataException {
         final List<Experiment> finalizedExperiments = getRunningExperiments().stream()
                 .filter(experiment -> experiment.scheduling().orElseThrow().endDate().isPresent())
-                .filter((experiment -> experiment.scheduling().orElseThrow().endDate().orElseThrow()
-                        .isBefore(Instant.now()))).collect(Collectors.toList());
+                .filter(experiment -> isTimeReach(experiment.scheduling().orElseThrow().endDate().orElseThrow()))
+                .collect(Collectors.toList());
 
         finalizedExperiments.forEach((experiment ->
                 Try.of(()->end(experiment.id().orElseThrow(), user)).getOrElseThrow((e)->
@@ -889,14 +889,19 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
     public void startScheduledToStartExperiments(final User user) throws DotDataException {
         final List<Experiment> scheduledToStartExperiments = list(ExperimentFilter.builder()
                 .statuses(CollectionsUtils.set(SCHEDULED)).build(), user).stream()
-                .filter((experiment -> experiment.scheduling().isPresent() && experiment.scheduling().get().startDate().orElseThrow()
-                        .isBefore(Instant.now()))).collect(Collectors.toList());
+                .filter((experiment -> isTimeReach(experiment.scheduling().get().startDate().orElseThrow())))
+                .collect(Collectors.toList());
 
         scheduledToStartExperiments.forEach((experiment ->
                 Try.of(()->startScheduled(experiment.id().orElseThrow(), user)).getOrElseThrow((e)->
                         new DotStateException("Unable to start Experiment. Cause:" + e))));
     }
-    
+
+    private static boolean isTimeReach(final Instant time) {
+        final Instant now = Instant.now();
+        return time != null && (time.isBefore(now) || time.equals(now));
+    }
+
     private TreeSet<ExperimentVariant> redistributeWeights(final Set<ExperimentVariant> variants) {
 
         final int count = variants.size();
