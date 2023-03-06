@@ -1,6 +1,7 @@
 import { byTestId, createComponentFactory, Spectator } from '@ngneat/spectator';
 
 import { Pipe, PipeTransform } from '@angular/core';
+import { RouterTestingModule } from '@angular/router/testing';
 
 import { ConfirmationService, MessageService } from 'primeng/api';
 import { ConfirmPopup, ConfirmPopupModule } from 'primeng/confirmpopup';
@@ -137,7 +138,8 @@ describe('DotExperimentsListTableComponent', () => {
             UiDotIconButtonTooltipModule,
             ConfirmPopupModule,
             ToastModule,
-            DotMessagePipeModule
+            DotMessagePipeModule,
+            RouterTestingModule
         ],
         component: DotExperimentsListTableComponent,
         componentMocks: [ConfirmPopup],
