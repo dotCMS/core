@@ -189,7 +189,7 @@ function mapCustomActions(actions): Array<DotMenuItem> {
         icon: action.icon,
         label: action.menuLabel,
         commandKey: action.command,
-        id: action.name
+        id: `${action.command}-id`
     }));
 }
 
