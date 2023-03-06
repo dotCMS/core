@@ -10,7 +10,6 @@ import static org.mockito.Mockito.when;
 import com.dotcms.IntegrationTestBase;
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.contenttype.model.field.Field;
-import com.dotcms.contenttype.model.field.TextField;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.datagen.ContainerDataGen;
 import com.dotcms.datagen.ContentTypeDataGen;
@@ -24,12 +23,10 @@ import com.dotcms.datagen.MultiTreeDataGen;
 import com.dotcms.datagen.RoleDataGen;
 import com.dotcms.datagen.SiteDataGen;
 import com.dotcms.datagen.TemplateDataGen;
-import com.dotcms.datagen.ThemeDataGen;
 import com.dotcms.datagen.UserDataGen;
 import com.dotcms.datagen.VariantDataGen;
 import com.dotcms.experiments.model.Experiment;
-import com.dotcms.rendering.velocity.directive.ParseContainer;
-import com.dotcms.util.CollectionsUtils;
+
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotcms.variant.VariantAPI;
 import com.dotcms.variant.model.Variant;
@@ -64,12 +61,15 @@ import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.WebKeys;
 import com.liferay.portal.model.User;
 
+
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
+
+
 
 
 
@@ -1954,7 +1954,11 @@ public class HTMLPageAssetRenderedAPIImplIntegrationTest extends IntegrationTest
     /**
      * Method to test: {@link HTMLPageAssetRenderedAPI#getPageHtml(PageContext, HttpServletRequest, HttpServletResponse)}
      * When: Try to render a page with a specific {@link Variant}} and a specific {@link Language}
+<<<<<<< HEAD
      * and the page had a Contentlet that has a version in the variant but not in the DEFAULT Variant
+=======
+     * and the page had a Contentlet that has a versio in the variant but not in the DEFAULT Variant
+>>>>>>> origin/master
      * Should: render the page with the Contentlet
      *
      * @throws WebAssetException
@@ -2013,6 +2017,7 @@ public class HTMLPageAssetRenderedAPIImplIntegrationTest extends IntegrationTest
 
     /**
      * Method to test: {@link HTMLPageAssetRenderedAPI#getPageHtml(PageContext, HttpServletRequest, HttpServletResponse)}
+<<<<<<< HEAD
      * When: Try to render a page with a specific {@link Variant}} using the SYSTEM_CONTAINER
      * Should: render the page
      *
@@ -2123,6 +2128,8 @@ public class HTMLPageAssetRenderedAPIImplIntegrationTest extends IntegrationTest
 
     /**
      * Method to test: {@link HTMLPageAssetRenderedAPI#getPageHtml(PageContext, HttpServletRequest, HttpServletResponse)}
+=======
+>>>>>>> origin/master
      * When: Try to render a page with a specific {@link Variant}} and a specific {@link Language}
      * and the page had a Contentlet that has a versio in the variant but not in the DEFAULT Variant
      * and DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE set to true
