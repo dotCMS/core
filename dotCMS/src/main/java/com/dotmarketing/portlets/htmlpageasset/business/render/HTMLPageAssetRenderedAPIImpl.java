@@ -646,6 +646,6 @@ public class HTMLPageAssetRenderedAPIImpl implements HTMLPageAssetRenderedAPI {
     }
 
     private String getLocalServerName(HttpServletRequest request) {
-        return request.getServerName() + ":" + request.getLocalPort();
+        return request.getServerName() + ":" + request.getServerPort();
     }
 }
