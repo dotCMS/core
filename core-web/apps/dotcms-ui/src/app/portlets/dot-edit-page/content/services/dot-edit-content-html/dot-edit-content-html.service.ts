@@ -48,6 +48,13 @@ export enum DotContentletAction {
     ADD
 }
 
+export enum DotContentletMenuAction {
+    add = 'ADD',
+    code = 'CODE',
+    edit = 'EDIT',
+    remove = 'REMOVE'
+}
+
 export const CONTENTLET_PLACEHOLDER_SELECTOR = '#contentletPlaceholder';
 
 @Injectable()
@@ -72,6 +79,7 @@ export class DotEditContentHtmlService {
 
     private inlineCurrentContent: { [key: string]: string } = {};
     private currentAction: DotContentletAction;
+    private currentMenuAction: DotContentletMenuAction;
     private docClickSubscription: Subscription;
     private updateContentletInode = false;
     private remoteRendered: boolean;
@@ -193,7 +201,7 @@ export class DotEditContentHtmlService {
      * @param * contentlet
      * @memberof DotEditContentHtmlService
      */
-    renderEditedContentlet(contentlet: DotPageContent): void {
+    renderEditedContentlet(contentlet: DotPageContent, newContentlet?: DotPageContent): void {
         if (this.remoteRendered || !contentlet) {
             this.iframeActions$.next({
                 name: 'save'
@@ -214,8 +222,10 @@ export class DotEditContentHtmlService {
                     uuid: containerEl.dataset.dotUuid
                 };
 
+                const contentletInContainer = newContentlet || contentlet;
+
                 this.dotContainerContentletService
-                    .getContentletToContainer(container, contentlet, this.currentPage)
+                    .getContentletToContainer(container, contentletInContainer, this.currentPage)
                     .pipe(take(1))
                     .subscribe((contentletHtml: string) => {
                         const contentletEl: HTMLElement =
@@ -611,13 +621,21 @@ export class DotEditContentHtmlService {
 
     private buttonClickHandler(target: HTMLElement, type: string) {
         this.updateContentletInode = this.shouldUpdateContentletInode(target);
+        this.currentMenuAction = DotContentletMenuAction[type];
 
         const container = <HTMLElement>target.closest('[data-dot-object="container"]');
+        const contentlet = <HTMLElement>target.closest('[data-dot-object="contentlet"]');
+
+        const dataset = {
+            ...target.dataset,
+            onNumberPages: this.getContentletNumberOfPages(contentlet)
+        };
+
         this.iframeActions$.next({
             name: type,
-            dataset: target.dataset,
+            dataset,
             container: container ? container.dataset : null,
-            copyContent: this.getCopyContentData(target)
+            copyContent: this.getCopyContentData(contentlet, container)
         });
     }
 
@@ -718,7 +736,9 @@ export class DotEditContentHtmlService {
                     // because: https://github.com/dotCMS/core/issues/21818
 
                     setTimeout(() => {
-                        this.renderEditedContentlet(this.currentContentlet);
+                        this.currentMenuAction === DotContentletMenuAction.edit
+                            ? this.renderEditedContentlet(this.currentContentlet, contentlet)
+                            : this.renderEditedContentlet(this.currentContentlet);
                     }, 1800);
                 }
             },
@@ -887,12 +907,9 @@ export class DotEditContentHtmlService {
         return <HTMLElement>div.children[0];
     }
 
-    private getCopyContentData(target: HTMLElement): DotCopyContent {
+    private getCopyContentData(contentlet: HTMLElement, container: HTMLElement): DotCopyContent {
         try {
-            /* Get contentlet Data HERE */
-            const contentlet = <HTMLElement>target.closest('[data-dot-object="contentlet"]');
-            const container = <HTMLElement>target.closest('[data-dot-object="container"]');
-
+            /* Get Copy content Data from the contentlet and Container*/
             const { dotIdentifier: contentId, dotVariant: variantId } = contentlet.dataset;
             const { dotUuid: relationType, dotIdentifier: containerId } = container.dataset;
 
@@ -911,5 +928,9 @@ export class DotEditContentHtmlService {
 
     private getTreeOrder(element: HTMLElement): number {
         return Array.from(element.parentElement.children).indexOf(element);
+    }
+
+    private getContentletNumberOfPages(contentlet: HTMLElement): string {
+        return contentlet?.dataset?.dotOnNumberPages || '0';
     }
 }

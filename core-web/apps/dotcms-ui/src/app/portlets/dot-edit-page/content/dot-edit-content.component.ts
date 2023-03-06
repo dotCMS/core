@@ -499,7 +499,7 @@ export class DotEditContentComponent implements OnInit, OnDestroy {
         const eventsHandlerMap = {
             edit: ({ copyContent, dataset }) => {
                 const { dotInode: inode, onNumberPages } = dataset;
-                +onNumberPages > 1
+                onNumberPages > 1
                     ? this.openContentletEditModeSelector({ copyContent, inode })
                     : this.editContentlet(inode);
             },

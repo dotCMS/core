@@ -1107,12 +1107,18 @@ xdescribe('DotEditContentHtmlService', () => {
 
             const doc: HTMLElement = <HTMLElement>fakeDocument.querySelector('html');
             expect(doc.id).toContain('iframeId');
-            expect(service.renderEditedContentlet).toHaveBeenCalledWith({
-                identifier: '456',
-                inode: '999',
-                type: 'NewsWidgets',
-                baseType: 'CONTENT'
-            });
+            expect(service.renderEditedContentlet).toHaveBeenCalledWith(
+                {
+                    identifier: '456',
+                    inode: '999',
+                    type: 'NewsWidgets',
+                    baseType: 'CONTENT'
+                },
+                {
+                    identifier: '456',
+                    inode: '999'
+                }
+            );
         });
 
         it('should render edit vtl', () => {
@@ -1148,12 +1154,18 @@ xdescribe('DotEditContentHtmlService', () => {
                 }
             });
 
-            expect(service.renderEditedContentlet).toHaveBeenCalledWith({
-                identifier: '456',
-                inode: '456',
-                type: 'NewsWidgets',
-                baseType: 'CONTENT'
-            });
+            expect(service.renderEditedContentlet).toHaveBeenCalledWith(
+                {
+                    identifier: '456',
+                    inode: '456',
+                    type: 'NewsWidgets',
+                    baseType: 'CONTENT'
+                },
+                {
+                    identifier: '456',
+                    inode: '888'
+                }
+            );
         });
 
         it('should render internal contentlet edit', () => {
@@ -1191,12 +1203,18 @@ xdescribe('DotEditContentHtmlService', () => {
                 }
             });
 
-            expect(service.renderEditedContentlet).toHaveBeenCalledWith({
-                identifier: '456',
-                inode: '67789',
-                type: 'NewsWidgets',
-                baseType: 'CONTENT'
-            });
+            expect(service.renderEditedContentlet).toHaveBeenCalledWith(
+                {
+                    identifier: '456',
+                    inode: '67789',
+                    type: 'NewsWidgets',
+                    baseType: 'CONTENT'
+                },
+                {
+                    identifier: '34345',
+                    inode: '67789'
+                }
+            );
         });
     });
 

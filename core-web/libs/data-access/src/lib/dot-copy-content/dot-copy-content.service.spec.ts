@@ -2,11 +2,11 @@ import { HttpClientTestingModule, HttpTestingController } from '@angular/common/
 import { TestBed } from '@angular/core/testing';
 
 import { CoreWebService, CoreWebServiceMock } from '@dotcms/dotcms-js';
-import { DotCopyContentInPageProps } from '@dotcms/dotcms-models';
+import { DotCopyContent } from '@dotcms/dotcms-models';
 
 import { DotCopyContentService, DEFAULT_PERSONALIZATION } from './dot-copy-content.service';
 
-fdescribe('DotCopyContentService', () => {
+describe('DotCopyContentService', () => {
     let service: DotCopyContentService;
     let httpMock: HttpTestingController;
 
@@ -25,7 +25,7 @@ fdescribe('DotCopyContentService', () => {
 
     describe('copyContentInPage', () => {
         it('should do the request correctly', () => {
-            const contentToCopy: DotCopyContentInPageProps = {
+            const contentToCopy: DotCopyContent = {
                 containerId: '',
                 contentId: '',
                 pageId: '',
@@ -44,7 +44,7 @@ fdescribe('DotCopyContentService', () => {
         });
 
         it('should set the DEFAULT_PERSONALIZATION and do the request', () => {
-            const contentToCopy: DotCopyContentInPageProps = {
+            const contentToCopy: DotCopyContent = {
                 containerId: '',
                 contentId: '',
                 pageId: '',
