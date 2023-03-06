@@ -1954,11 +1954,7 @@ public class HTMLPageAssetRenderedAPIImplIntegrationTest extends IntegrationTest
     /**
      * Method to test: {@link HTMLPageAssetRenderedAPI#getPageHtml(PageContext, HttpServletRequest, HttpServletResponse)}
      * When: Try to render a page with a specific {@link Variant}} and a specific {@link Language}
-<<<<<<< HEAD
      * and the page had a Contentlet that has a version in the variant but not in the DEFAULT Variant
-=======
-     * and the page had a Contentlet that has a versio in the variant but not in the DEFAULT Variant
->>>>>>> origin/master
      * Should: render the page with the Contentlet
      *
      * @throws WebAssetException
