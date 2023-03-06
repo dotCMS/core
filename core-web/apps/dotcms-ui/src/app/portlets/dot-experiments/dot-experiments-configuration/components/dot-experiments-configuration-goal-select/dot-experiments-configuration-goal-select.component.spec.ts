@@ -89,6 +89,9 @@ describe('DotExperimentsConfigurationGoalSelectComponent', () => {
     it('should be a form valid in case of click on a No content option item', () => {
         const bounceRateOption = spectator.query(byTestId('dot-options-item-header'));
 
+        spectator.component.form.get('primary.name').setValue('default');
+        spectator.component.form.updateValueAndValidity();
+
         spectator.click(bounceRateOption);
 
         const applyBtn = spectator.query(byTestId('add-goal-button')) as HTMLButtonElement;
@@ -145,6 +148,11 @@ describe('DotExperimentsConfigurationGoalSelectComponent', () => {
                 }
             }
         };
+
+        spectator.component.form.get('primary.name').setValue('default');
+        spectator.component.form.updateValueAndValidity();
+
+        spectator.detectComponentChanges();
 
         const bounceRateOption = spectator.query(byTestId('dot-options-item-header'));
 
