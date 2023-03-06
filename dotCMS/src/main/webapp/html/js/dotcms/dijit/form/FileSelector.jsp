@@ -1,21 +1,9 @@
 <%@ page import="com.liferay.portal.language.LanguageUtil" %>
 <div dojoAttachPoint="widgetRootNode" style="${style}">
 	
-    <div dojoAttachPoint="thumbnailWrapper" style="display: none;" class="thumbnailSliderWrapper">
+    <div dojoAttachPoint="thumbnailWrapper" class="thumbnailSliderWrapper">
 	     <!-- display -->
 	    <img dojoAttachPoint="thumbnailImage" src="/html/images/shim.gif" border="1" class="imageFieldThumbnail" />
-
-		<div dojoType="dijit.form.VerticalSlider"
-			maximum="100"
-			minimum="350"
-			showButtons="true"
-			intermediateChanges="true"
-			style="width:20px; height: 80px;"
-			discreteValues="6"
-			dojoAttachPoint="thumbnailSizeSlider">
-
-			<div dojoType="dijit.form.VerticalRule" count="6" style="height:5px;"></div>
-		</div>
 	</div>
 		
 	<div class="fileSelectorControls">
