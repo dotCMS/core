@@ -1,5 +1,5 @@
 import { Subject, from } from 'rxjs';
-import { assert, object, string, array } from 'superstruct';
+import { assert, object, string, array, optional } from 'superstruct';
 
 import {
     Component,
@@ -193,13 +193,15 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy {
             extensions: array(
                 object({
                     url: string(),
-                    actions: array(
-                        object({
-                            name: string(),
-                            command: string(),
-                            menuLabel: string(),
-                            icon: string()
-                        })
+                    actions: optional(
+                        array(
+                            object({
+                                name: string(),
+                                command: string(),
+                                menuLabel: string(),
+                                icon: string()
+                            })
+                        )
                     )
                 })
             )
