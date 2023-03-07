@@ -2,11 +2,14 @@ package com.dotcms.rest;
 
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.business.CloseDBIfOpened;
+import com.dotcms.contenttype.model.field.BinaryField;
 import com.dotcms.contenttype.model.field.CategoryField;
+import com.dotcms.contenttype.model.field.LegacyFieldTypes;
 import com.dotcms.contenttype.model.field.RelationshipField;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.transform.field.LegacyFieldTransformer;
+import com.dotcms.rest.api.v1.temp.DotTempFile;
 import com.dotcms.util.DotPreconditions;
 import com.dotcms.util.RelationshipUtil;
 import com.dotmarketing.beans.Host;
@@ -38,9 +41,12 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.liferay.portal.model.User;
 import io.vavr.control.Try;
+import org.apache.tools.ant.filters.StringInputStream;
+import org.apache.tools.ant.util.ReaderInputStream;
 import org.jetbrains.annotations.NotNull;
 
 import javax.servlet.http.HttpServletRequest;
+import java.io.StringReader;
 import java.util.*;
 import java.util.Map.Entry;
 import java.util.function.LongSupplier;
@@ -231,6 +237,11 @@ public class MapToContentletPopulator  {
                        ) {
 
                     this.processFileOrImageField(contentlet, value, field);
+                } else if ((BinaryField.class.getName().equals(field.getFieldType()) ||
+                        LegacyFieldTypes.BINARY.legacyValue().equals(field.getFieldType()))
+                        && null != value && value instanceof String) {
+
+                    this.processPlainValueForBinaryField(map, field, value, contentlet);
                 } else {
                     APILocator.getContentletAPI()
                             .setContentletProperty(contentlet, field, value);
@@ -238,6 +249,30 @@ public class MapToContentletPopulator  {
             }
         }
     } // fillFields.
+
+    private static void processPlainValueForBinaryField(final Map<String, Object> map,
+                                                        final Field field,
+                                                        final Object value,
+                                                        final Contentlet contentlet) {
+
+        final HttpServletRequest request = HttpServletRequestThreadLocal.INSTANCE.getRequest();
+        if (null != request) {
+
+            try {
+
+                final String fileName = (String) map.getOrDefault("fileName",
+                        map.getOrDefault("title","unknown"));
+                final DotTempFile dotTempFile = APILocator.getTempFileAPI().createTempFile(fileName, request,
+                        new ReaderInputStream(new StringReader(value.toString()), UtilMethods.getCharsetConfiguration()));
+                if(null != dotTempFile) {
+                    APILocator.getContentletAPI()
+                            .setContentletProperty(contentlet, field, dotTempFile.id);
+                }
+            } catch (DotSecurityException e) {
+                throw new RuntimeException(e);
+            }
+        }
+    }
 
     private void processFileOrImageField(final Contentlet contentlet,
                                          final Object value,
