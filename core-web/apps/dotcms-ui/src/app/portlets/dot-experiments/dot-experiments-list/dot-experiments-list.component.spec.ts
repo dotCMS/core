@@ -26,7 +26,7 @@ import {
 import {
     ActivatedRouteListStoreMock,
     DotExperimentsListStoreMock,
-    ExperimentMocks
+    getExperimentAllMocks
 } from '@portlets/dot-experiments/test/mocks';
 
 import { DotExperimentsListComponent } from './dot-experiments-list.component';
@@ -120,7 +120,7 @@ describe('ExperimentsListComponent', () => {
                 pageId: '1111',
                 pageTitle: 'title'
             },
-            experiments: ExperimentMocks,
+            experiments: getExperimentAllMocks(),
             filterStatus: [],
             experimentsFiltered: {},
             isLoading: false

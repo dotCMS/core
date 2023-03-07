@@ -17,6 +17,10 @@
                 margin: $spacing-0;
                 color: $color-gray-500;
             }
+
+            input {
+                border-color: $color-gray-300;
+            }
         }
 
         .condition {
@@ -31,5 +35,12 @@
     .option-wrapper {
         padding: $spacing-3;
         gap: $spacing-3;
+    }
+}
+
+::ng-deep {
+    dot-field-validation-message {
+        display: flex;
+        margin-top: $spacing-1;
     }
 }
