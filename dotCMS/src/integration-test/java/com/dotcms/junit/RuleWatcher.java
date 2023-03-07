@@ -3,6 +3,7 @@ package com.dotcms.junit;
 import com.dotcms.IntegrationTestBase;
 import com.dotcms.datagen.TestDataUtils;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.common.reindex.ReindexQueueAPI;
 import com.dotmarketing.common.reindex.ReindexThread;
 import com.dotmarketing.db.DbConnectionFactory;
@@ -66,8 +67,8 @@ public class RuleWatcher extends TestWatcher {
                     boolean queueEmpty = TestDataUtils.waitForEmptyQueue();
                     Logger.info(MainBaseSuite.class, "Indexer Complete=" + queueEmpty);
                     if (!queueEmpty) {
-                        APILocator.getReindexQueueAPI().deleteReindexRecords();
-                        Logger.info(MainBaseSuite.class, "Reindex Records Cleared=");
+                        new DotConnect().setSQL("delete from dist_reindex_journal").loadResult();
+                        Logger.info(MainBaseSuite.class, "Reindex Records Cleared");
                     }
                 }
             } catch (DotDataException e) {
