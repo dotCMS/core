@@ -15,14 +15,11 @@
         user-select: none;
 
         &:not(.p-disabled):hover {
-            background: rgba($brand-secondary_rgb, .12);
+            background: rgba($brand-secondary_rgb, 0.12);
         }
     }
 
     &.p-tieredmenu-overlay {
         box-shadow: $md-shadow-3;
     }
-
-
 }
-
