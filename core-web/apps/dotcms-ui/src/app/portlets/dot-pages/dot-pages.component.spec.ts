@@ -1,3 +1,5 @@
+import { Subject } from 'rxjs';
+
 import { Component, DebugElement, EventEmitter, Input, Output } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
@@ -11,6 +13,7 @@ import { DotMessageSeverity, DotMessageType } from '@components/dot-message-disp
 import { DotMessageDisplayService } from '@components/dot-message-display/services';
 import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
 import { DotEventsService } from '@dotcms/data-access';
+import { mockSites, SiteService } from '@dotcms/dotcms-js';
 import { dotcmsContentletMock, MockDotRouterService } from '@dotcms/utils-testing';
 
 import { DotPageStore } from './dot-pages-store/dot-pages.store';
@@ -110,6 +113,8 @@ describe('DotPagesComponent', () => {
     let dotRouterService: DotRouterService;
     let dotMessageDisplayService: DotMessageDisplayService;
 
+    const switchSiteSubject = new Subject();
+
     beforeEach(() => {
         TestBed.configureTestingModule({
             declarations: [
@@ -122,7 +127,19 @@ describe('DotPagesComponent', () => {
             providers: [
                 DotEventsService,
                 { provide: DotMessageDisplayService, useClass: DotMessageDisplayServiceMock },
-                { provide: DotRouterService, useClass: MockDotRouterService }
+                { provide: DotRouterService, useClass: MockDotRouterService },
+                {
+                    provide: SiteService,
+                    useValue: {
+                        get currentSite() {
+                            return undefined;
+                        },
+
+                        get switchSite$() {
+                            return switchSiteSubject.asObservable();
+                        }
+                    }
+                }
             ]
         }).compileComponents();
     });
@@ -238,6 +255,12 @@ describe('DotPagesComponent', () => {
             severity: DotMessageSeverity.SUCCESS,
             type: DotMessageType.SIMPLE_MESSAGE
         });
+        expect(store.getPages).toHaveBeenCalledWith({ offset: 0 });
+    });
+
+    it('should reload portlet only when the site change', () => {
+        switchSiteSubject.next(mockSites[0]); // setting the site
+        switchSiteSubject.next(mockSites[1]); // switching the site
         expect(store.getPages).toHaveBeenCalledWith({ offset: 0 });
     });
 });
