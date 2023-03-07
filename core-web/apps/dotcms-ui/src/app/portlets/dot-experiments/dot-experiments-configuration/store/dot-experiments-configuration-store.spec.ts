@@ -152,8 +152,8 @@ describe('DotExperimentsConfigurationStore', () => {
 
         it('should add a variant to the store', (done) => {
             dotExperimentsService.getById.and.callThrough().and.returnValue(of(EXPERIMENT_MOCK_1));
-            const newVariant: { experimentId: string; data: Pick<DotExperiment, 'name'> } = {
-                data: { name: '333' },
+            const newVariant: { experimentId: string; name: string } = {
+                name: '333',
                 experimentId: EXPERIMENT_MOCK_1.id
             };
 
@@ -164,7 +164,7 @@ describe('DotExperimentsConfigurationStore', () => {
                     variants: [
                         ...EXPERIMENT_MOCK_1.trafficProportion.variants,
                         {
-                            ...newVariant.data,
+                            name: newVariant.name,
                             id: '222',
                             weight: 100
                         }
