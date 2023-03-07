@@ -63,9 +63,12 @@ public class RuleWatcher extends TestWatcher {
                         Logger.info(MainBaseSuite.class, "Indexer was not running, unpausing now");
                         ReindexThread.unpause();
                     }
-                    TestDataUtils.waitForEmptyQueue();
                     boolean queueEmpty = TestDataUtils.waitForEmptyQueue();
                     Logger.info(MainBaseSuite.class, "Indexer Complete=" + queueEmpty);
+                    if (!queueEmpty) {
+                        APILocator.getReindexQueueAPI().deleteReindexRecords();
+                        Logger.info(MainBaseSuite.class, "Reindex Records Cleared=");
+                    }
                 }
             } catch (DotDataException e) {
                 throw new RuntimeException("Error accessing Index", e);

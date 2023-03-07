@@ -2495,12 +2495,12 @@ public class TestDataUtils {
     public static boolean waitForEmptyQueue() {
         final ReindexQueueAPI reindexQueueAPI = APILocator.getReindexQueueAPI();
         try {
-            Awaitility.await().atMost(120, TimeUnit.SECONDS)
+            Awaitility.await().atMost(10, TimeUnit.SECONDS)
                     .pollInterval(1, TimeUnit.SECONDS)
                     .until(reindexQueueAPI::areRecordsLeftToIndex, equalTo(false));
             return true;
         } catch (ConditionTimeoutException e) {
-            Logger.warn(TestWorkflowUtils.class, "Reindex Queue is not empty after 120 seconds");
+            Logger.warn(TestWorkflowUtils.class, "Reindex Queue is not empty after 10 seconds");
             return false;
         }
     }

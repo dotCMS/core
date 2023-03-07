@@ -3,6 +3,7 @@
  */
 package com.dotmarketing.common.reindex;
 
+import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.content.elasticsearch.business.ElasticReadOnlyCommand;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
@@ -58,8 +59,9 @@ public class ReindexQueueAPIImpl implements ReindexQueueAPI {
         try {
             start();
             CompletableFuture<T> future = new CompletableFuture<>();
-            if (isExecuting.get()) {
+            if (Boolean.TRUE.equals(isExecuting.get())) {
                 // execute the task directly if the current thread is from the executor
+                // Prevents recursive calls causing deadlocks
                 try {
                     T response = task.execute();
                     future.complete(response);
@@ -193,14 +195,16 @@ public class ReindexQueueAPIImpl implements ReindexQueueAPI {
     }
 
     @Override
+    @CloseDBIfOpened
     public Map<String, ReindexEntry> findContentToReindex() throws DotDataException {
         return this.findContentToReindex(
                             ReindexQueueFactory.REINDEX_RECORDS_TO_FETCH);
     }
 
     @Override
+    @CloseDBIfOpened
     public Map<String, ReindexEntry> findContentToReindex(final int recordsToReturn) throws DotDataException {
-        return executeInTransaction(() -> reindexQueueFactory.findContentToReindex(recordsToReturn));
+        return reindexQueueFactory.findContentToReindex(recordsToReturn);
     }
 
     @Override
@@ -209,27 +213,31 @@ public class ReindexQueueAPIImpl implements ReindexQueueAPI {
     }
 
     @Override
+    @CloseDBIfOpened
     public boolean areRecordsLeftToIndex() throws DotDataException {
-        return executeInTransaction(reindexQueueFactory::areRecordsLeftToIndex);
+        return reindexQueueFactory.areRecordsLeftToIndex();
     }
 
     @Override
+    @CloseDBIfOpened
     public long recordsInQueue() throws DotDataException {
         return recordsInQueue(DbConnectionFactory.getConnection());
     }
     
     @Override
+    @CloseDBIfOpened
     public long failedRecordCount() throws DotDataException {
-        return executeInTransaction(reindexQueueFactory::failedRecordCount);
+        return reindexQueueFactory.failedRecordCount();
     }
     @Override
+    @CloseDBIfOpened
     public boolean hasReindexRecords() throws DotDataException {
-        return executeInTransaction(reindexQueueFactory::hasReindexRecords);
+        return reindexQueueFactory.hasReindexRecords();
     }
 
     @Override
     public long recordsInQueue(Connection conn) throws DotDataException {
-        return executeInTransaction(()->reindexQueueFactory.recordsInQueue(conn));
+        return reindexQueueFactory.recordsInQueue(conn);
     }
 
     @Override
@@ -266,7 +274,7 @@ public class ReindexQueueAPIImpl implements ReindexQueueAPI {
 
     @Override
     public List<ReindexEntry> getFailedReindexRecords() throws DotDataException {
-        return executeInTransaction(reindexQueueFactory::getFailedReindexRecords);
+        return reindexQueueFactory.getFailedReindexRecords();
     }
 
     @Override
