@@ -24,7 +24,15 @@ export const GoalsMock: Goals = {
     }
 };
 
-export const ExperimentMocks: Array<DotExperiment> = [
+export const getExperimentMock = (index: number): DotExperiment => {
+    return { ...ExperimentMocks[index] };
+};
+
+export const getExperimentAllMocks = (): Array<DotExperiment> => {
+    return [...ExperimentMocks];
+};
+
+const ExperimentMocks: Array<DotExperiment> = [
     {
         id: '111',
         identifier: '1111-1111-1111-1111',

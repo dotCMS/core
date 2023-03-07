@@ -18,7 +18,7 @@ import { ExperimentSteps } from '@dotcms/dotcms-models';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 import { DotExperimentsConfigurationStore } from '@portlets/dot-experiments/dot-experiments-configuration/store/dot-experiments-configuration-store';
 import { DotExperimentsService } from '@portlets/dot-experiments/shared/services/dot-experiments.service';
-import { ExperimentMocks } from '@portlets/dot-experiments/test/mocks';
+import { getExperimentMock } from '@portlets/dot-experiments/test/mocks';
 import { DotHttpErrorManagerService } from '@services/dot-http-error-manager/dot-http-error-manager.service';
 
 import { DotExperimentsConfigurationSchedulingAddComponent } from './dot-experiments-configuration-scheduling-add.component';
@@ -30,7 +30,7 @@ const messageServiceMock = new MockDotMessageService({
     'experiments.configure.scheduling.name': 'Scheduling'
 });
 
-const EXPERIMENT_ID = ExperimentMocks[0].id;
+const EXPERIMENT_MOCK = getExperimentMock(0);
 
 describe('DotExperimentsConfigurationSchedulingAddComponent', () => {
     let spectator: Spectator<DotExperimentsConfigurationSchedulingAddComponent>;
@@ -61,9 +61,9 @@ describe('DotExperimentsConfigurationSchedulingAddComponent', () => {
 
         store = spectator.inject(DotExperimentsConfigurationStore);
         dotExperimentsService = spectator.inject(DotExperimentsService);
-        dotExperimentsService.getById.and.returnValue(of(ExperimentMocks[0]));
+        dotExperimentsService.getById.and.returnValue(of(EXPERIMENT_MOCK));
 
-        store.loadExperiment(EXPERIMENT_ID);
+        store.loadExperiment(EXPERIMENT_MOCK.id);
         store.setSidebarStatus({
             experimentStep: ExperimentSteps.SCHEDULING,
             isOpen: true
@@ -75,8 +75,8 @@ describe('DotExperimentsConfigurationSchedulingAddComponent', () => {
         const startDateCalendar: Calendar = spectator.query(Calendar);
         const endDateCalendar: Calendar = spectator.queryLast(Calendar);
 
-        expect(startDateCalendar.value.getTime()).toEqual(ExperimentMocks[0].scheduling.startDate);
-        expect(endDateCalendar.value.getTime()).toEqual(ExperimentMocks[0].scheduling.endDate);
+        expect(startDateCalendar.value.getTime()).toEqual(EXPERIMENT_MOCK.scheduling.startDate);
+        expect(endDateCalendar.value.getTime()).toEqual(EXPERIMENT_MOCK.scheduling.endDate);
     });
 
     it('should have set the props correctly', () => {
@@ -105,8 +105,8 @@ describe('DotExperimentsConfigurationSchedulingAddComponent', () => {
 
         spectator.click(submitButton);
         expect(store.setSelectedScheduling).toHaveBeenCalledWith({
-            scheduling: ExperimentMocks[0].scheduling,
-            experimentId: EXPERIMENT_ID
+            scheduling: EXPERIMENT_MOCK.scheduling,
+            experimentId: EXPERIMENT_MOCK.id
         });
     });
 

@@ -104,5 +104,3 @@ export const GOALS_METADATA_MAP: Record<GOAL_TYPES, { label: string; description
         description: 'experiments.goal.click_on_element.description'
     }
 };
-
-export const DEFAULT_GOAL_NAME = 'default';

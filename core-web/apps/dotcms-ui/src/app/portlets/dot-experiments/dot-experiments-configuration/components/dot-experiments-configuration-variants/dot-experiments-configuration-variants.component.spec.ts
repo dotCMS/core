@@ -7,12 +7,11 @@ import {
 } from '@ngneat/spectator';
 import { of } from 'rxjs';
 
-import { DecimalPipe } from '@angular/common';
-
 import { MessageService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
 import { Card, CardModule } from 'primeng/card';
 import { Inplace, InplaceModule } from 'primeng/inplace';
+import { Tooltip, TooltipModule } from 'primeng/tooltip';
 
 import { DotCopyButtonComponent } from '@components/dot-copy-button/dot-copy-button.component';
 import { DotCopyButtonModule } from '@components/dot-copy-button/dot-copy-button.module';
@@ -30,7 +29,7 @@ import { MockDotMessageService } from '@dotcms/utils-testing';
 import { DotExperimentsConfigurationVariantsAddComponent } from '@portlets/dot-experiments/dot-experiments-configuration/components/dot-experiments-configuration-variants-add/dot-experiments-configuration-variants-add.component';
 import { DotExperimentsConfigurationStore } from '@portlets/dot-experiments/dot-experiments-configuration/store/dot-experiments-configuration-store';
 import { DotExperimentsService } from '@portlets/dot-experiments/shared/services/dot-experiments.service';
-import { ExperimentMocks } from '@portlets/dot-experiments/test/mocks';
+import { getExperimentMock } from '@portlets/dot-experiments/test/mocks';
 import { DotHttpErrorManagerService } from '@services/dot-http-error-manager/dot-http-error-manager.service';
 
 import { DotExperimentsConfigurationVariantsComponent } from './dot-experiments-configuration-variants.component';
@@ -43,7 +42,9 @@ const messageServiceMock = new MockDotMessageService({
     'experiments.configure.variants.add': 'Add new variant'
 });
 
-const EXPERIMENT_ID = ExperimentMocks[0].id;
+const EXPERIMENT_MOCK = getExperimentMock(0);
+const EXPERIMENT_MOCK_2 = getExperimentMock(2);
+
 describe('DotExperimentsConfigurationVariantsComponent', () => {
     let spectator: Spectator<DotExperimentsConfigurationVariantsComponent>;
     let store: DotExperimentsConfigurationStore;
@@ -56,9 +57,9 @@ describe('DotExperimentsConfigurationVariantsComponent', () => {
             ButtonModule,
             CardModule,
             InplaceModule,
-            DecimalPipe,
             DotExperimentsConfigurationVariantsAddComponent,
-            DotCopyButtonModule
+            DotCopyButtonModule,
+            TooltipModule
         ],
         component: DotExperimentsConfigurationVariantsComponent,
         providers: [
@@ -80,9 +81,9 @@ describe('DotExperimentsConfigurationVariantsComponent', () => {
 
         store = spectator.inject(DotExperimentsConfigurationStore);
         dotExperimentsService = spectator.inject(DotExperimentsService);
-        dotExperimentsService.getById.and.returnValue(of(ExperimentMocks[0]));
+        dotExperimentsService.getById.and.returnValue(of(EXPERIMENT_MOCK));
 
-        store.loadExperiment(EXPERIMENT_ID);
+        store.loadExperiment(EXPERIMENT_MOCK.id);
         spectator.detectChanges();
     });
 
@@ -194,7 +195,6 @@ describe('DotExperimentsConfigurationVariantsComponent', () => {
 
             expect(addButton.disabled).not.toBe(true);
             spectator.click(addButton);
-
             expect(output).toEqual(SidebarStatus.OPEN);
         });
 
@@ -358,22 +358,25 @@ describe('DotExperimentsConfigurationVariantsComponent', () => {
         });
 
         it('should disable tooltip if is on draft', () => {
-            expect(spectator.query(byTestId('tooltip-on-disabled'))).toHaveAttribute(
-                'ng-reflect-disabled',
-                'true'
-            );
+            spectator.detectChanges();
+
+            spectator
+                .queryAll(Tooltip)
+                .filter((tooltip) => tooltip.disabled != undefined)
+                .forEach((tooltip) => {
+                    expect(tooltip.disabled).toEqual(true);
+                });
         });
 
         it('should disable button and show tooltip when experiment is nos on draft', () => {
             dotExperimentsService.getById.and.returnValue(
                 of({
-                    ...ExperimentMocks[2],
+                    ...EXPERIMENT_MOCK_2,
                     ...{ status: DotExperimentStatusList.RUNNING }
                 })
             );
 
-            store.loadExperiment(ExperimentMocks[2].id);
-
+            store.loadExperiment(EXPERIMENT_MOCK_2.id);
             spectator.detectChanges();
 
             expect(spectator.queryAll(byTestId('variant-weight'))).toHaveAttribute('disabled');
@@ -381,10 +384,34 @@ describe('DotExperimentsConfigurationVariantsComponent', () => {
                 'disabled'
             );
             expect(spectator.query(byTestId('variant-add-button'))).toHaveAttribute('disabled');
-            expect(spectator.queryAll(byTestId('tooltip-on-disabled'))).toHaveAttribute(
-                'ng-reflect-disabled',
-                'false'
+
+            const enableTooltips = spectator
+                .queryAll(Tooltip)
+                .filter((tooltip) => tooltip.disabled == false);
+
+            // Two: variant weight
+            // One: Delete variant
+            // One: Add New Variant.
+            expect(enableTooltips.length).toEqual(4);
+        });
+
+        it('should view button on all variants when experiment is nos on draft', () => {
+            dotExperimentsService.getById.and.returnValue(
+                of({
+                    ...EXPERIMENT_MOCK_2,
+                    ...{ status: DotExperimentStatusList.RUNNING }
+                })
             );
+
+            store.loadExperiment(EXPERIMENT_MOCK_2.id);
+
+            spectator.detectChanges();
+
+            const variantsViewButton = spectator.queryAll(
+                byTestId('variant-preview-button')
+            ) as HTMLButtonElement[];
+
+            expect(variantsViewButton.length).toBe(2);
         });
     });
 });
