@@ -145,7 +145,7 @@ export class DotExperimentsConfigurationTrafficSplitAddComponent implements OnIn
                 weight: [Math.trunc(variant.weight * 100) / 100, [Validators.required]],
                 url: variant.url
             },
-            { nonNullable: true, updateOn: '', validators: [this.trafficSplitCheck()] }
+            { nonNullable: true, validators: [this.trafficSplitCheck()] }
         );
     }
 
