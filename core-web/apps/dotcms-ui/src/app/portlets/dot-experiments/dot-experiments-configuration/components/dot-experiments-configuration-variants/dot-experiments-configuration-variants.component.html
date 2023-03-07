@@ -24,7 +24,10 @@
                 <div class="flex flex-row align-items-center align-content-between gap-2">
                     <div class="title flex flex-grow-1 flex-row align-items-center gap-2">
                         <ng-container
-                            *ngIf="variant.name === defaultVariantName; else editVariantNameTpl"
+                            *ngIf="
+                                variant.name === defaultVariantName || !vm.isExperimentADraft;
+                                else editVariantNameTpl
+                            "
                         >
                             <span data-testId="variant-name"> {{ variant.name }} </span>
                         </ng-container>
@@ -57,7 +60,10 @@
                     </div>
 
                     <ng-container
-                        *ngIf="variant.name === defaultVariantName; else editableButtonTpl"
+                        *ngIf="
+                            variant.name === defaultVariantName || !vm.isExperimentADraft;
+                            else editableButtonTpl
+                        "
                     >
                         <button
                             class="p-button-sm p-button-outlined no-padding"
@@ -146,8 +152,9 @@
 
         <ng-template pTemplate="footer">
             <div
+                class="inline-block"
                 [pTooltip]="'experiment.configure.edit.only.draft.status' | dm"
-                [tooltipDisabled]="vm.isExperimentADraft || variants?.length <= maxVariantsAllowed"
+                [tooltipDisabled]="vm.isExperimentADraft || variants?.length >= maxVariantsAllowed"
                 tooltipPosition="bottom"
                 data-testId="tooltip-on-disabled"
             >
