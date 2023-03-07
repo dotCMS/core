@@ -221,7 +221,7 @@ export class DotExperimentsConfigurationStore extends ComponentStore<DotExperime
 
     // Variants
     readonly addVariant = this.effect(
-        (variant$: Observable<{ experimentId: string; data: Pick<DotExperiment, 'name'> }>) => {
+        (variant$: Observable<{ experimentId: string; name: string }>) => {
             return variant$.pipe(
                 tap(() =>
                     this.setSidebarStatus({
@@ -230,7 +230,7 @@ export class DotExperimentsConfigurationStore extends ComponentStore<DotExperime
                     })
                 ),
                 switchMap((variant) =>
-                    this.dotExperimentsService.addVariant(variant.experimentId, variant.data).pipe(
+                    this.dotExperimentsService.addVariant(variant.experimentId, variant.name).pipe(
                         tapResponse(
                             (experiment) => {
                                 this.messageService.add({
@@ -240,7 +240,7 @@ export class DotExperimentsConfigurationStore extends ComponentStore<DotExperime
                                     ),
                                     detail: this.dotMessageService.get(
                                         'experiments.configure.variant.add.confirm-message',
-                                        experiment.name
+                                        variant.name
                                     )
                                 });
 

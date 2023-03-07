@@ -92,7 +92,7 @@ export class DotExperimentsConfigurationComponent implements OnInit {
      */
     saveVariant(data: Pick<DotExperiment, 'name'>, experimentId: string) {
         this.dotExperimentsConfigurationStore.addVariant({
-            data,
+            name: data.name,
             experimentId
         });
     }
