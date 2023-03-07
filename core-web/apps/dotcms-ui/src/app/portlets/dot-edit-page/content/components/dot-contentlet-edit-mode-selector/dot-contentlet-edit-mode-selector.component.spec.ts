@@ -14,9 +14,9 @@ import { DotCMSContentlet } from '@dotcms/dotcms-models';
 import { MockDotMessageService, dotcmsContentletMock } from '@dotcms/utils-testing';
 
 import {
-    DotSelectEditContentletComponent,
+    DotContentletEditModeSelectorComponent,
     CONTENTLET_EDIT_MODE
-} from './dot-select-edit-contentlet.component';
+} from './dot-contentlet-edit-mode-selector.component';
 
 const messageServiceMock = new MockDotMessageService({
     'editpage.content.contentlet.several.pages': '',
@@ -45,9 +45,9 @@ const CONTENTLET_MOCK: DotCMSContentlet = {
     inode: '1234567890'
 };
 
-describe('DotSelectEditContentletComponent', () => {
-    let component: DotSelectEditContentletComponent;
-    let fixture: ComponentFixture<DotSelectEditContentletComponent>;
+describe('DotContentletEditModeSelectorComponent', () => {
+    let component: DotContentletEditModeSelectorComponent;
+    let fixture: ComponentFixture<DotContentletEditModeSelectorComponent>;
     let de: DebugElement;
 
     /**
@@ -59,7 +59,7 @@ describe('DotSelectEditContentletComponent', () => {
 
     beforeEach(async () => {
         await TestBed.configureTestingModule({
-            imports: [DotSelectEditContentletComponent, DotMessagePipeModule],
+            imports: [DotContentletEditModeSelectorComponent, DotMessagePipeModule],
             providers: [
                 {
                     provide: DotMessageService,
@@ -100,7 +100,7 @@ describe('DotSelectEditContentletComponent', () => {
             ]
         }).compileComponents();
 
-        fixture = TestBed.createComponent(DotSelectEditContentletComponent);
+        fixture = TestBed.createComponent(DotContentletEditModeSelectorComponent);
         component = fixture.componentInstance;
         de = fixture.debugElement;
 

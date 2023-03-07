@@ -26,9 +26,9 @@ export enum CONTENTLET_EDIT_MODE {
  * @implements {OnInit}
  */
 @Component({
-    selector: 'dot-select-edit-contentlet',
-    templateUrl: './dot-select-edit-contentlet.component.html',
-    styleUrls: ['./dot-select-edit-contentlet.component.scss'],
+    selector: 'dot-contentlet-edit-mode-selector',
+    templateUrl: './dot-contentlet-edit-mode-selector.component.html',
+    styleUrls: ['./dot-contentlet-edit-mode-selector.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush,
     imports: [
         CommonModule,
@@ -39,7 +39,7 @@ export enum CONTENTLET_EDIT_MODE {
     ],
     standalone: true
 })
-export class DotSelectEditContentletComponent implements OnInit {
+export class DotContentletEditModeSelectorComponent implements OnInit {
     private inode: string;
     private copyContent: DotCopyContent;
 

@@ -45,7 +45,7 @@ import {
 } from '@dotcms/dotcms-models';
 import { DotLoadingIndicatorService, generateDotFavoritePageUrl } from '@dotcms/utils';
 
-import { DotSelectEditContentletComponent } from './components/dot-select-edit-contentlet/dot-select-edit-contentlet.component';
+import { DotContentletEditModeSelectorComponent } from './components/dot-contentlet-edit-mode-selector/dot-contentlet-edit-mode-selector.component';
 import { DotEditContentHtmlService } from './services/dot-edit-content-html/dot-edit-content-html.service';
 import {
     PageModelChangeEvent,
@@ -702,7 +702,7 @@ export class DotEditContentComponent implements OnInit, OnDestroy {
         copyContent: DotCopyContent;
         inode: string;
     }): void {
-        const ref = this.dialogService.open(DotSelectEditContentletComponent, {
+        const ref = this.dialogService.open(DotContentletEditModeSelectorComponent, {
             header: this.dotMessageService.get('modes.Edit-Content'),
             width: '30rem',
             data: {

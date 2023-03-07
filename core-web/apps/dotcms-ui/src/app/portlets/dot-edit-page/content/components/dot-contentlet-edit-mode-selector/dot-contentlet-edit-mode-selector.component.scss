@@ -29,11 +29,11 @@
         }
 
         &.active {
-            border: 1px solid #4e65f1;
-            background-color: #e9ebfc;
+            border: 1px solid $color-primary-500;
+            background-color: $color-primary-100;
 
             span {
-                color: #4e65f1;
+                color: $color-primary-500;
             }
         }
     }

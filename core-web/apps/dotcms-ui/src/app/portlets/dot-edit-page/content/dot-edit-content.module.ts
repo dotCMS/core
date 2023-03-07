@@ -26,11 +26,11 @@ import { DotIconModule } from '@dotcms/ui';
 import { DotPipesModule } from '@pipes/dot-pipes.module';
 import { DotDirectivesModule } from '@shared/dot-directives.module';
 
+import { DotContentletEditModeSelectorComponent } from './components/dot-contentlet-edit-mode-selector/dot-contentlet-edit-mode-selector.component';
 import { DotEditPageStateControllerModule } from './components/dot-edit-page-state-controller/dot-edit-page-state-controller.module';
 import { DotEditPageToolbarModule } from './components/dot-edit-page-toolbar/dot-edit-page-toolbar.module';
 import { DotEditPageViewAsControllerModule } from './components/dot-edit-page-view-as-controller/dot-edit-page-view-as-controller.module';
 import { DotFormSelectorModule } from './components/dot-form-selector/dot-form-selector.module';
-import { DotSelectEditContentletComponent } from './components/dot-select-edit-contentlet/dot-select-edit-contentlet.component';
 import { DotWhatsChangedModule } from './components/dot-whats-changed/dot-whats-changed.module';
 import { DotEditContentComponent } from './dot-edit-content.component';
 import { DotContainerContentletService } from './services/dot-container-contentlet.service';
@@ -68,7 +68,7 @@ const routes: Routes = [
         DotOverlayMaskModule,
         DotPaletteModule,
         DotIconModule,
-        DotSelectEditContentletComponent
+        DotContentletEditModeSelectorComponent
     ],
     exports: [DotEditContentComponent],
     providers: [
