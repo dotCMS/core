@@ -3,12 +3,15 @@ import { Observable } from 'rxjs';
 import { CommonModule } from '@angular/common';
 import { ChangeDetectionStrategy, Component, OnInit } from '@angular/core';
 import {
+    AbstractControl,
     FormArray,
     FormBuilder,
     FormControl,
     FormGroup,
     FormsModule,
     ReactiveFormsModule,
+    ValidationErrors,
+    ValidatorFn,
     Validators
 } from '@angular/forms';
 
@@ -114,6 +117,10 @@ export class DotExperimentsConfigurationTrafficSplitAddComponent implements OnIn
         return this.form.get('variants') as FormArray;
     }
 
+    variantsHasErrors(): boolean {
+        return this.variants.controls.some((variant) => !!variant.errors);
+    }
+
     private initForm() {
         this.vm$.pipe(take(1)).subscribe((data) => {
             this.form = this.fb.group({
@@ -131,11 +138,26 @@ export class DotExperimentsConfigurationTrafficSplitAddComponent implements OnIn
     }
 
     private addVariantToForm(variant: Variant): FormGroup {
-        return this.fb.group({
-            id: variant.id,
-            name: variant.name,
-            weight: [Math.trunc(variant.weight * 100) / 100, [Validators.required]],
-            url: variant.url
-        });
+        return this.fb.group(
+            {
+                id: variant.id,
+                name: variant.name,
+                weight: [Math.trunc(variant.weight * 100) / 100, [Validators.required]],
+                url: variant.url
+            },
+            { nonNullable: true, updateOn: '', validators: [this.trafficSplitCheck()] }
+        );
+    }
+
+    private trafficSplitCheck(): ValidatorFn {
+        return (_control: AbstractControl): ValidationErrors | null => {
+            let sum = 0;
+            this.variants.controls.forEach((variant) => {
+                sum += variant.get('weight').value;
+                variant.setErrors(null);
+            });
+
+            return Math.round(sum) == 100 ? null : { trafficSplit: 'invalid' };
+        };
     }
 }
