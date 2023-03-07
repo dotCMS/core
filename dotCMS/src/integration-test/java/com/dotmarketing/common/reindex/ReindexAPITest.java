@@ -208,7 +208,8 @@ public class ReindexAPITest extends IntegrationTestBase {
                     .setProperty("title", "contentTest " + System.currentTimeMillis()).next();
             APILocator.getContentletAPI().checkin(contentlet, APILocator.systemUser(), false);
 
-            assertTrue(reindexQueueAPI.recordsInQueue() > 0);
+            // Items added to the queue in the commit listener, not available
+            assertTrue(reindexQueueAPI.recordsInQueue() == 0);
 
             try {
 
@@ -221,7 +222,7 @@ public class ReindexAPITest extends IntegrationTestBase {
                 throw new DotRuntimeException(e);
             }
 
-            assertTrue(reindexQueueAPI.recordsInQueue() > 0);
+            assertTrue(reindexQueueAPI.recordsInQueue()==0);
 
         });
 

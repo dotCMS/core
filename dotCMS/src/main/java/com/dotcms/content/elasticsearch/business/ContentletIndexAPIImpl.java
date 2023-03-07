@@ -519,7 +519,13 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
         }
 
         if (parentContenlet.getIndexPolicy() == IndexPolicy.DEFER) {
-            queueApi.addContentletsReindex(contentToIndex);
+            HibernateUtil.addCommitListener(() -> {
+                try {
+                    queueApi.addContentletsReindex(contentToIndex);
+                } catch (DotDataException e) {
+                    throw new RuntimeException(e);
+                }
+            });
         } else if (!DbConnectionFactory.inTransaction()) {
             addContentToIndex(contentToIndex);
         } else {

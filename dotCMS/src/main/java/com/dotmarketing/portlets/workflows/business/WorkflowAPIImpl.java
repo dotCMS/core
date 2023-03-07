@@ -2445,7 +2445,13 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 					UtilMethods.isSet(processor.getContentlet().getIdentifier())) {
 
 				try {
-					this.reindexQueueAPI.addIdentifierReindex(processor.getContentlet().getIdentifier());
+					HibernateUtil.addCommitListener(() -> {
+						try {
+							this.reindexQueueAPI.addIdentifierReindex(processor.getContentlet().getIdentifier());
+						} catch (DotDataException e) {
+							throw new RuntimeException(e);
+						}
+					});
 				} catch (DotDataException e) {
 					Logger.error(WorkflowAPIImpl.class, e.getMessage(), e);
 				}
