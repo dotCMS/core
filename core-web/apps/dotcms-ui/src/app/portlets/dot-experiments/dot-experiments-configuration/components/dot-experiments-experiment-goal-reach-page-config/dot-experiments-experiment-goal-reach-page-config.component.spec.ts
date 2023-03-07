@@ -8,7 +8,6 @@ import { DotFieldValidationMessageComponent } from '@components/_common/dot-fiel
 import { DotFieldValidationMessageModule } from '@components/_common/dot-field-validation-message/dot-file-validation-message.module';
 import { DotMessageService } from '@dotcms/data-access';
 import {
-    DEFAULT_GOAL_NAME,
     DefaultGoalConfiguration,
     GOAL_OPERATORS,
     GOAL_PARAMETERS,
@@ -26,7 +25,7 @@ const messageServiceMock = new MockDotMessageService({
 
 const formMock = new FormGroup({
     primary: new FormGroup({
-        name: new FormControl(DEFAULT_GOAL_NAME, {
+        name: new FormControl('', {
             nonNullable: true,
             validators: [Validators.required]
         }),

@@ -682,7 +682,7 @@ export class DotEditContentComponent implements OnInit, OnDestroy {
                     },
                     pageId: experiment.pageId,
                     experimentId: experiment.id,
-
+                    experimentStatus: experiment.status,
                     experimentName: experiment.name,
                     mode: editPageTab
                 } as DotVariantData;
