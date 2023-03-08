@@ -75,6 +75,10 @@ export class DotExperimentsConfigurationTrafficSplitAddComponent implements OnIn
         private fb: FormBuilder
     ) {}
 
+    get variants(): FormArray {
+        return this.form.get('variants') as FormArray;
+    }
+
     ngOnInit(): void {
         this.initForm();
     }
@@ -113,10 +117,11 @@ export class DotExperimentsConfigurationTrafficSplitAddComponent implements OnIn
         });
     }
 
-    get variants(): FormArray {
-        return this.form.get('variants') as FormArray;
-    }
-
+    /**
+     * Check if any of the variants has an error.
+     * @returns boolean
+     * @memberof DotExperimentsConfigurationTrafficSplitAddComponent
+     */
     variantsHasErrors(): boolean {
         return this.variants.controls.some((variant) => !!variant.errors);
     }
