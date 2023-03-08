@@ -1,9 +1,8 @@
 {
 	"info": {
-		"_postman_id": "d38f5254-5d30-47a4-aa50-612742acb23d",
+		"_postman_id": "8501a46e-413d-49cc-ad7f-7546df7614c1",
 		"name": "Page API - [api/v1/page]",
-		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
-		"_exporter_id": "781456"
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
 	},
 	"item": [
 		{
@@ -4486,11 +4485,11 @@
 									"    pm.expect(contentletList.length).to.eql(1);",
 									"});",
 									"",
-									"pm.test(\"The value of the 'onNumberOfPages' property must be 1\", function() {",
+									"pm.test(\"The rendered section should contain data attribute 'data-dot-on-number-of-pages' for the contentlet object\", function() {",
 									"    var entity = pm.response.json().entity;",
-									"    var contentletData = entity.containers.SYSTEM_CONTAINER.contentlets[\"uuid-1\"][0];",
+									"    var contentletData = entity.containers.SYSTEM_CONTAINER.rendered[\"uuid-1\"];",
 									"    console.log(contentletData);",
-									"    pm.expect(contentletData.onNumberOfPages).to.eql(1);",
+									"    pm.expect(contentletData).includes(\"data-dot-on-number-of-pages\");",
 									"});"
 								],
 								"type": "text/javascript"
@@ -4706,11 +4705,11 @@
 									"    pm.expect(contentletList.length).to.eql(1);",
 									"});",
 									"",
-									"pm.test(\"The value of the 'onNumberOfPages' property must be 2\", function() {",
+									"pm.test(\"The rendered section should contain data attribute 'data-dot-on-number-of-pages' for the contentlet object\", function() {",
 									"    var entity = pm.response.json().entity;",
-									"    var contentletData = entity.containers.SYSTEM_CONTAINER.contentlets[\"uuid-1\"][0];",
+									"    var contentletData = entity.containers.SYSTEM_CONTAINER.rendered[\"uuid-1\"];",
 									"    console.log(contentletData);",
-									"    pm.expect(contentletData.onNumberOfPages).to.eql(2);",
+									"    pm.expect(contentletData).includes(\"data-dot-on-number-of-pages\");",
 									"});"
 								],
 								"type": "text/javascript"
