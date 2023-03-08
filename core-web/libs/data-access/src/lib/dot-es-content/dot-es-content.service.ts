@@ -91,8 +91,8 @@ export class DotESContentService {
         if (params.lang) this.setExtraParams('+languageId', params.lang);
 
         let filterValue = params.filter || '';
-        if (params.filter && params.filter.indexOf(' ') > 0) {
-            filterValue = `'${params.filter.replace(/'/g, "\\'")}'`;
+        if (filterValue && filterValue.indexOf(' ') > 0) {
+            filterValue = `'${filterValue.replace(/'/g, "\\'")}'`;
         }
 
         if (filterValue) this.setExtraParams('+title', `${filterValue}*`);
