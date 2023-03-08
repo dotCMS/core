@@ -1,7 +1,13 @@
 import { Observable, Subject } from 'rxjs';
 
 import { CommonModule } from '@angular/common';
-import { ChangeDetectionStrategy, Component, OnDestroy, OnInit } from '@angular/core';
+import {
+    ChangeDetectionStrategy,
+    ChangeDetectorRef,
+    Component,
+    OnDestroy,
+    OnInit
+} from '@angular/core';
 import { FormArray, FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 
 import { ButtonModule } from 'primeng/button';
@@ -16,7 +22,6 @@ import { takeUntil } from 'rxjs/operators';
 import { DotFieldValidationMessageModule } from '@components/_common/dot-field-validation-message/dot-file-validation-message.module';
 import {
     ComponentStatus,
-    DEFAULT_GOAL_NAME,
     GOAL_TYPES,
     Goals,
     GOALS_METADATA_MAP,
@@ -65,14 +70,13 @@ export class DotExperimentsConfigurationGoalSelectComponent implements OnInit, O
     goals = GOALS_METADATA_MAP;
     goalsTypes = GOAL_TYPES;
     statusList = ComponentStatus;
-
     vm$: Observable<{ experimentId: string; goals: Goals; status: StepStatus }> =
         this.dotExperimentsConfigurationStore.goalsStepVm$;
-
     private destroy$: Subject<boolean> = new Subject<boolean>();
 
     constructor(
-        private readonly dotExperimentsConfigurationStore: DotExperimentsConfigurationStore
+        private readonly dotExperimentsConfigurationStore: DotExperimentsConfigurationStore,
+        private readonly cdr: ChangeDetectorRef
     ) {}
 
     /**
@@ -85,9 +89,8 @@ export class DotExperimentsConfigurationGoalSelectComponent implements OnInit, O
         return this.form.get('primary.conditions') as FormArray;
     }
 
-    ngOnInit(): void {
-        this.initForm();
-        this.listenGoalTypeSelection();
+    get goalNameControl(): FormControl {
+        return this.form.get('primary.name') as FormControl;
     }
 
     /**
@@ -120,6 +123,11 @@ export class DotExperimentsConfigurationGoalSelectComponent implements OnInit, O
         this.destroy$.complete();
     }
 
+    ngOnInit(): void {
+        this.initForm();
+        this.listenGoalTypeSelection();
+    }
+
     private listenGoalTypeSelection(): void {
         this.form
             .get('primary.type')
@@ -136,7 +144,7 @@ export class DotExperimentsConfigurationGoalSelectComponent implements OnInit, O
     private initForm(): void {
         this.form = new FormGroup({
             primary: new FormGroup({
-                name: new FormControl(DEFAULT_GOAL_NAME, {
+                name: new FormControl('', {
                     nonNullable: true,
                     validators: [Validators.required]
                 }),
@@ -153,7 +161,6 @@ export class DotExperimentsConfigurationGoalSelectComponent implements OnInit, O
     }
 
     private addConditionsControlValidations(): void {
-        this.form.get('primary.name').reset('');
         Object.values(this.conditionsFormArray.controls).forEach((controlArray: FormArray) => {
             Object.values(controlArray.controls).forEach((control) => {
                 control.setValidators([Validators.required]);
@@ -164,7 +171,6 @@ export class DotExperimentsConfigurationGoalSelectComponent implements OnInit, O
     }
 
     private removeConditionsControlValidations(): void {
-        this.form.get('primary.name').reset(DEFAULT_GOAL_NAME);
         Object.values(this.conditionsFormArray.controls).forEach((controlArray: FormArray) => {
             Object.values(controlArray.controls).forEach((control) => {
                 control.reset('');

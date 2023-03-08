@@ -29,7 +29,7 @@ export const getExperimentMock = (index: number): DotExperiment => {
 };
 
 export const getExperimentAllMocks = (): Array<DotExperiment> => {
-    return [...ExperimentMocks];
+    return [{ ...getExperimentMock(0) }, { ...getExperimentMock(1) }, { ...getExperimentMock(2) }];
 };
 
 const ExperimentMocks: Array<DotExperiment> = [

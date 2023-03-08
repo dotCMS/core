@@ -5,8 +5,7 @@ import {
     DotExperiment,
     Goals,
     GoalsLevels,
-    TrafficProportionTypes,
-    Variant
+    TrafficProportionTypes
 } from '@dotcms/dotcms-models';
 import { DotExperimentsService } from '@portlets/dot-experiments/shared/services/dot-experiments.service';
 import { getExperimentMock } from '@portlets/dot-experiments/test/mocks';
@@ -59,10 +58,7 @@ describe('DotExperimentsService', () => {
     });
 
     it('should add a variant', () => {
-        const variant: Pick<Variant, 'name'> = {
-            name: 'cool name'
-        };
-        spectator.service.addVariant(EXPERIMENT_ID, variant).subscribe();
+        spectator.service.addVariant(EXPERIMENT_ID, 'cool name').subscribe();
         spectator.expectOne(`${API_ENDPOINT}/${EXPERIMENT_ID}/variants`, HttpMethod.POST);
     });
 

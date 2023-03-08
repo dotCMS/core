@@ -11,8 +11,7 @@ import {
     Goals,
     GoalsLevels,
     RangeOfDateAndTime,
-    TrafficProportion,
-    Variant
+    TrafficProportion
 } from '@dotcms/dotcms-models';
 
 const API_ENDPOINT = '/api/v1/experiments';
@@ -98,16 +97,15 @@ export class DotExperimentsService {
     /**
      * Add variant to experiment
      * @param  {number} experimentId
-     * @param {Variant} variant
+     * @param {string} name
      * @returns Observable<DotExperiment>
      * @memberof DotExperimentsService
      */
-    addVariant(experimentId: string, variant: Pick<Variant, 'name'>): Observable<DotExperiment> {
+    addVariant(experimentId: string, name: string): Observable<DotExperiment> {
         return this.http
-            .post<DotCMSResponse<DotExperiment>>(
-                `${API_ENDPOINT}/${experimentId}/variants`,
-                variant
-            )
+            .post<DotCMSResponse<DotExperiment>>(`${API_ENDPOINT}/${experimentId}/variants`, {
+                description: name
+            })
             .pipe(pluck('entity'));
     }
 
