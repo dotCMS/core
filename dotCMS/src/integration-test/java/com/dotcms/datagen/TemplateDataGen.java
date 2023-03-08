@@ -287,7 +287,30 @@ public class TemplateDataGen extends AbstractDataGen<Template> {
 
     private String createDrawedBody() {
 
-        final String drawedBodyTemplate = "{\"title\":\"\",\"header\":true,\"footer\":true,\"body\":{\"rows\":[{\"columns\":[{\"containers\":[%s],\"widthPercent\":100,\"leftOffset\":1,\"styleClass\":\"\",\"preview\":false,\"width\":12,\"left\":0}],\"styleClass\":\"\"}]},\"sidebar\":{\"containers\":[],\"location\":\"\",\"width\":\"small\",\"widthPercent\":20,\"preview\":false}}";
+        final String drawedBodyTemplate = "{"
+                + "\"title\":\"\","
+                + "\"header\":true,"
+                + "\"footer\":true,"
+                + "\"body\":{"
+                    + "\"rows\":["
+                        + "{"
+                            + "\"columns\":["
+                                + "{"
+                                    + "\"containers\":[%s],"
+                                    + "\"widthPercent\":100,"
+                                    + "\"leftOffset\":1,"
+                                    + "\"styleClass\":\"\","
+                                    + "\"preview\":false,"
+                                    + "\"width\":12,"
+                                    + "\"left\":0"
+                                + "}"
+                            + "],"
+                            + "\"styleClass\":\"\""
+                        + "}"
+                    + "]"
+                + "}"
+            + "}";
+
         //final String drawedBodyTemplate = "{\"body\":{\"rows\":[{\"columns\":[{\"containers\":[%s]}";
         return String.format(drawedBodyTemplate, containers.stream()
                 .map(map -> String.format("{\"identifier\":\"%s\",\"uuid\":\"%s\"}",
