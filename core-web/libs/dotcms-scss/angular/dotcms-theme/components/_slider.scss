@@ -25,7 +25,7 @@ $slider-core-transition: background-color 0.2s, color 0.2s, border-color 0.2s, b
     height: 1.143rem;
     width: 1.143rem;
     background: $white;
-    border: 2px solid $brand-primary;
+    border: 2px solid $color-palette-primary;
     border-radius: 50%;
     transition: $slider-core-transition;
 }
@@ -35,12 +35,12 @@ $slider-core-transition: background-color 0.2s, color 0.2s, border-color 0.2s, b
     box-shadow: 0 0 0 0.2rem $brand-primary_mod;
 }
 .p-slider .p-slider-range {
-    background: $brand-primary;
+    background: $color-palette-primary;
 }
 
 .p-slider:not(.p-disabled) .p-slider-handle:hover {
-    background: $brand-primary;
-    border-color: $brand-primary;
+    background: $color-palette-primary;
+    border-color: $color-palette-primary;
 }
 .p-slider.p-slider-animate.p-slider-horizontal .p-slider-handle {
     transition: $slider-core-transition, left 0.2s;

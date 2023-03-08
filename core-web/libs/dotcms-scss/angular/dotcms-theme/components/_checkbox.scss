@@ -57,17 +57,17 @@ p-checkbox.ng-dirty.ng-invalid > .p-checkbox > .p-checkbox-box {
     outline: 0 none;
     outline-offset: 0;
     box-shadow: none;
-    border-color: $brand-primary;
+    border-color: $color-palette-primary;
 }
 
 .p-checkbox .p-checkbox-box.p-highlight {
-    border-color: $brand-primary;
-    background: $brand-primary; // needs to be the primary color
+    border-color: $color-palette-primary;
+    background: $color-palette-primary; // needs to be the primary color
 }
 
 .p-checkbox .p-checkbox-box.p-highlight:not(.p-disabled):hover {
-    border-color: $brand-primary;
-    background: $brand-primary;
+    border-color: $color-palette-primary;
+    background: $color-palette-primary;
     color: $white;
 }
 
@@ -86,7 +86,7 @@ p-checkbox.ng-dirty.ng-invalid > .p-checkbox > .p-checkbox-box {
 }
 
 .p-checkbox .p-checkbox-box.p-highlight:not(.p-disabled).p-focus {
-    border-color: $brand-primary;
+    border-color: $color-palette-primary;
 }
 
 .p-checkbox .p-checkbox-box.p-highlight .p-checkbox-icon:before {

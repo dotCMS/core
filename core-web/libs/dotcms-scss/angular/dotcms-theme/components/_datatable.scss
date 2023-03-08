@@ -74,7 +74,7 @@ $datatable-bg-hover: rgba($brand-secondary_rgb, 0.05);
     height: 1.143rem;
     min-width: 1.143rem;
     line-height: 1.143rem;
-    color: $brand-primary;
+    color: $color-palette-primary;
     background: $bg-highlight;
     margin-left: $spacing-1;
 }
@@ -187,7 +187,7 @@ $datatable-bg-hover: rgba($brand-secondary_rgb, 0.05);
 }
 
 .p-datatable .p-column-resizer-helper {
-    background: $brand-primary;
+    background: $color-palette-primary;
 }
 
 .p-datatable .p-datatable-scrollable-header,

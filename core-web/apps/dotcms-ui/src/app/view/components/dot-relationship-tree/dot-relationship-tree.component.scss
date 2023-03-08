@@ -10,7 +10,7 @@
         .dot-tree--active {
             position: relative;
             &::after {
-                background: $brand-primary;
+                background: $color-palette-primary;
                 width: $spacing-1;
                 height: $spacing-1;
                 position: absolute;

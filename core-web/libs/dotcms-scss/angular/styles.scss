@@ -1,4 +1,5 @@
 @use "variables" as *;
+
 @import "forms";
 @import "mixins";
 @import "typography";
@@ -120,7 +121,7 @@ body {
 }
 
 a {
-    color: $brand-primary;
+    color: $color-palette-primary;
 
     &:hover {
         text-decoration: none;

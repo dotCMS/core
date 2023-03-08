@@ -67,7 +67,7 @@ select[multiple] {
     $action-button-size: $field-height + $basic-padding;
 
     &DropDownActionButton {
-        background-color: $color-main;
+        background-color: $color-palette-primary;
         border: none;
         border-radius: calc($action-button-size / 2);
         height: $action-button-size;
@@ -112,7 +112,7 @@ select[multiple] {
         border: 0;
         background-color: transparent;
         box-shadow: none;
-        color: $color-main;
+        color: $color-palette-primary;
 
         &.dijitButtonHover {
             background-color: $gray-ligther;
@@ -131,7 +131,7 @@ select[multiple] {
 
     &ButtonAction {
         border: solid 1px transparent;
-        background-color: $color-main;
+        background-color: $color-palette-primary;
         color: $white;
 
         &.dijitButtonHover {

@@ -53,7 +53,7 @@
         &:focus.p-highlight,
         &.p-highlight {
             color: $gray-dark;
-            box-shadow: 0px -4px 0px 0px $brand-primary inset;
+            box-shadow: 0px -4px 0px 0px $color-palette-primary inset;
         }
     }
 }
@@ -65,10 +65,10 @@
 
         &.p-highlight {
             &:focus {
-                background-color: $brand-primary;
+                background-color: $color-palette-primary;
                 color: $white;
             }
-            background-color: $brand-primary;
+            background-color: $color-palette-primary;
             color: $white;
         }
     }

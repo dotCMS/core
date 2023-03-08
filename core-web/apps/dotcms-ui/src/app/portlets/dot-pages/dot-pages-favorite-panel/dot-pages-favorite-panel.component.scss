@@ -16,7 +16,7 @@
         position: relative;
 
         .p-panel-icons span {
-            color: $brand-primary;
+            color: $color-palette-primary;
             font-size: $font-size-x-large;
             margin-left: $spacing-1;
             margin-right: $spacing-2;
@@ -85,7 +85,7 @@
         width: max-content;
 
         dot-icon {
-            color: $brand-primary;
+            color: $color-palette-primary;
             margin-bottom: $spacing-3;
         }
     }

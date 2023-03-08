@@ -49,8 +49,8 @@ input[type="radio"] {
     position: absolute;
 
     &:checked + .item {
-        border-color: $brand-primary;
-        color: $brand-primary;
+        border-color: $color-palette-primary;
+        color: $color-palette-primary;
         background-color: rgba($brand-secondary_rgb, 0.1);
     }
 }

@@ -75,7 +75,7 @@ $number-link-icon-size: 2.28rem;
 
         span {
             align-items: center;
-            background-color: $brand-primary;
+            background-color: $color-palette-primary;
             border-radius: 50%;
             color: $white;
             counter-increment: css-counter 1;
@@ -96,7 +96,7 @@ $number-link-icon-size: 2.28rem;
         flex-grow: 1;
 
         h4 {
-            color: $brand-primary;
+            color: $color-palette-primary;
             font-size: $font-size-large;
             font-weight: bold;
             margin: 0;
@@ -136,14 +136,14 @@ $number-link-icon-size: 2.28rem;
         padding-top: 0;
 
         span {
-            color: $brand-primary;
-            fill: $brand-primary;
+            color: $color-palette-primary;
+            fill: $color-palette-primary;
             display: inline-flex;
             width: $number-link-icon-size;
         }
 
         svg {
-            fill: $brand-primary;
+            fill: $color-palette-primary;
             height: 1.71rem;
             width: $md-icon-size-normal;
         }
@@ -192,7 +192,7 @@ $number-link-icon-size: 2.28rem;
         text-align: center;
 
         span {
-            color: $brand-primary;
+            color: $color-palette-primary;
             display: inline-flex;
         }
     }

@@ -24,7 +24,7 @@ $field-hover-border-color: $field-border-color;
 $field-active-bgcolor: $field-bgcolor;
 $field-active-color: $body-font-color;
 $field-active-border-size: 2px;
-$field-active-border-color: $brand-primary;
+$field-active-border-color: $color-palette-primary;
 
 $field-disabled-bgcolor: #dedee1;
 $field-disabled-color: $gray-light;
@@ -44,7 +44,7 @@ $button-tiny-text-size: 11px;
 
 $button-main: (
     normal: (
-        background: $brand-primary,
+        background: $color-palette-primary,
         color: $white,
         border: $button-border
     ),
@@ -78,17 +78,17 @@ $button-sec: (
     ),
     hover: (
         background: $white,
-        color: $brand-primary,
-        border: solid 1px $brand-primary
+        color: $color-palette-primary,
+        border: solid 1px $color-palette-primary
     ),
     focus: (
         background: rgba($brand-primary_rgb, $button-hover-background-opacity),
-        color: $brand-primary,
+        color: $color-palette-primary,
         border: $button-border
     ),
     active: (
         background: rgba($brand-primary_rgb, 0.26),
-        color: $brand-primary,
+        color: $color-palette-primary,
         border: $button-border
     ),
     disabled: (
@@ -129,8 +129,8 @@ $check-border-width: 1px;
 $check-radius: 2px;
 $check-size: 14px;
 
-$check-checked-bgcolor: $brand-primary;
-$check-checked-border: solid $check-border-width $brand-primary;
+$check-checked-bgcolor: $color-palette-primary;
+$check-checked-border: solid $check-border-width $color-palette-primary;
 $check-checked-color: $white;
 
 $check-disabled-border: solid $check-border-width $gray-light;
@@ -144,8 +144,8 @@ $check-normal-border: solid $field-border-size $black;
 $radio-size: $check-size;
 
 $radio-checked-bgcolor: $white;
-$radio-checked-border: solid $check-border-width $brand-primary;
-$radio-checked-color: $brand-primary;
+$radio-checked-border: solid $check-border-width $color-palette-primary;
+$radio-checked-color: $color-palette-primary;
 
 $radio-disabled-border: solid $check-border-width $gray-light;
 $radio-disabled-bgcolor: $field-disabled-bgcolor;
@@ -176,8 +176,8 @@ $table-head-bgcolor: $gray-bg;
 $table-head-color: $gray;
 
 // PAGINATOR
-$paginator-page-selected-bgcolor: $brand-primary;
-$paginator-page-selected-border-color: $brand-primary;
+$paginator-page-selected-bgcolor: $color-palette-primary;
+$paginator-page-selected-border-color: $color-palette-primary;
 $paginator-page-hover-bgcolor: $gray;
 $paginator-page-border-radius: 10px;
 $paginator-page-size: 21px;
@@ -210,7 +210,7 @@ $inputswitch-normal-track-color: rgba($black, 0.1);
 $inputswitch-checked-track-color: rgba($brand-primary_rgb, 0.38);
 
 $inputswitch-normal-thumb-color: $white;
-$inputswitch-checked-thumb-color: $brand-primary;
+$inputswitch-checked-thumb-color: $color-palette-primary;
 
 $inputswitch-warn-normal-track-color: rgba($orange, 0.38);
 $inputswitch-warn-checked-track-color: rgba($orange, 0.38);

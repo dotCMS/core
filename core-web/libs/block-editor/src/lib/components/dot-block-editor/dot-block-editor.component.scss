@@ -23,7 +23,7 @@
 
     // If a child is focused, set this style to the parent
     &:focus-within {
-        outline-color: $brand-primary;
+        outline-color: $color-palette-primary;
     }
 
     tiptap-editor ::ng-deep {

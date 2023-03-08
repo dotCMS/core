@@ -53,14 +53,14 @@
     }
 
     .dot-secondary-toolbar__main.edit-page-variant-mode {
-        background-color: $brand-primary;
+        background-color: $color-palette-primary;
 
         dot-icon-button {
             button.dot-icon-button {
                 background-color: $white;
 
                 i {
-                    color: $brand-primary;
+                    color: $color-palette-primary;
                 }
             }
         }
@@ -82,7 +82,7 @@
             color: $white;
 
             &:hover {
-                color: $brand-primary;
+                color: $color-palette-primary;
                 background-color: $white;
             }
         }

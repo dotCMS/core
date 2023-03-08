@@ -33,7 +33,7 @@ Styles for commons fields along the backend
     }
 
     input[type="file"]::-webkit-file-upload-button {
-        background-color: $color-main;
+        background-color: $color-palette-primary;
         height: 36px;
         border: 0;
         color: $white;
@@ -295,7 +295,7 @@ $key-val-width: 500px;
     }
 
     &:hover {
-        border: 1px solid $color-main;
+        border: 1px solid $color-palette-primary;
     }
 }
 

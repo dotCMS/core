@@ -1,7 +1,7 @@
 @use "variables" as *;
 
 .p-badge {
-    background: $brand-primary;
+    background: $color-palette-primary;
     color: $white;
     font-size: $font-size-x-small;
     font-weight: 700;

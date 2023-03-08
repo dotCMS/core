@@ -12,7 +12,7 @@ $foreground-active: #848484;
 
 $text-emphasis: #fc7e1c;
 $warn: #cb3927;
-$brand-primary-one: #209021;
+$color-palette-primary-one: #209021;
 $black: #0a0725;
 $gray: #7e7a86;
 $gray-light: #b3b1b8;
@@ -26,7 +26,7 @@ $font-size-medium: 14px;
 
 $action-button-height: 48px;
 
-$brand-primary: var(--color-main);
+$color-palette-primary: var(--color-main);
 $brand-primary_mod: var(--color-main_mod);
 
 $md-shadow-1: 0 1px 3px rgba(0, 0, 0, 0.12), 0 1px 2px rgba(0, 0, 0, 0.24);
@@ -115,7 +115,7 @@ $finder-s-input: ".ui.input input";
     .cw-saved {
         .ui.checkbox input:checked ~ .box:after,
         .ui.checkbox input:checked ~ label:after {
-            background-color: $brand-primary-one;
+            background-color: $color-palette-primary-one;
             border: 0.5em solid white;
         }
         .cw-rule-status-text {
@@ -455,7 +455,7 @@ $finder-s-input: ".ui.input input";
     }
 
     .cw-button-add-item i {
-        color: $brand-primary-one;
+        color: $color-palette-primary-one;
     }
 
     .cw-spacer.cw-condition-operator {
@@ -571,7 +571,7 @@ $finder-s-input: ".ui.input input";
         display: inline-flex;
         justify-content: center;
         border: none;
-        background-color: $brand-primary;
+        background-color: $color-palette-primary;
         box-shadow: $md-shadow-1;
         outline: none;
         align-items: center;
