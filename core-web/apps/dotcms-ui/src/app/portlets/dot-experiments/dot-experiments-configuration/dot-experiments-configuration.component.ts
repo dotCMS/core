@@ -122,18 +122,19 @@ export class DotExperimentsConfigurationComponent implements OnInit {
      * @returns void
      * @memberof DotExperimentsConfigurationComponent
      */
-    deleteVariant(variant: Variant, experimentId: string) {
+    deleteVariant(event: { $event: MouseEvent; variant: Variant }, experimentId: string) {
         this.confirmationService.confirm({
-            target: event.target,
+            target: event.$event.target,
             message: this.dotMessagePipe.transform('experiments.configure.variant.delete.confirm'),
             icon: 'pi pi-exclamation-triangle',
             acceptLabel: this.dotMessagePipe.transform('delete'),
             rejectLabel: this.dotMessagePipe.transform('dot.common.dialog.reject'),
-            accept: () =>
+            accept: () => {
                 this.dotExperimentsConfigurationStore.deleteVariant({
                     experimentId,
-                    variant
-                })
+                    variant: event.variant
+                });
+            }
         });
     }
 
