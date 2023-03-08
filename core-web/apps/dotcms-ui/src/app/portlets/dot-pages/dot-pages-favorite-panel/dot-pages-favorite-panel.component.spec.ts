@@ -48,6 +48,7 @@ export const favoritePagesInitialTestData = [
         ...dotcmsContentletMock,
         live: true,
         baseType: 'CONTENT',
+        languageId: '1',
         modDate: '2020-09-02 16:45:15.569',
         title: 'preview1',
         screenshot: 'test1',
@@ -57,6 +58,7 @@ export const favoritePagesInitialTestData = [
     {
         ...dotcmsContentletMock,
         title: 'preview2',
+        languageId: '1',
         modDate: '2020-09-02 16:45:15.569',
         screenshot: 'test2',
         url: '/index2',
@@ -230,7 +232,7 @@ describe('DotPagesFavoritePanelComponent', () => {
             expect(elem.length).toBe(2);
             expect(
                 elem[0].componentInstance.imageUri.includes(
-                    favoritePagesInitialTestData[0].screenshot
+                    `${favoritePagesInitialTestData[0].screenshot}?language_id=${favoritePagesInitialTestData[0].languageId}`
                 )
             ).toBe(true);
             expect(elem[0].componentInstance.title).toBe(favoritePagesInitialTestData[0].title);

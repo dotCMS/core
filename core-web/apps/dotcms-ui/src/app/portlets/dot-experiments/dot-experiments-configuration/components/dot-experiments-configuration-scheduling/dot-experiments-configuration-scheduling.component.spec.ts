@@ -10,6 +10,7 @@ import { of } from 'rxjs';
 import { ConfirmationService, MessageService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
 import { Card, CardModule } from 'primeng/card';
+import { Tooltip, TooltipModule } from 'primeng/tooltip';
 
 import { DotMessageService } from '@dotcms/data-access';
 import { DotExperimentStatusList, ExperimentSteps } from '@dotcms/dotcms-models';
@@ -17,7 +18,7 @@ import { MockDotMessageService } from '@dotcms/utils-testing';
 import { DotExperimentsConfigurationSchedulingAddComponent } from '@portlets/dot-experiments/dot-experiments-configuration/components/dot-experiments-configuration-scheduling-add/dot-experiments-configuration-scheduling-add.component';
 import { DotExperimentsConfigurationStore } from '@portlets/dot-experiments/dot-experiments-configuration/store/dot-experiments-configuration-store';
 import { DotExperimentsService } from '@portlets/dot-experiments/shared/services/dot-experiments.service';
-import { ExperimentMocks } from '@portlets/dot-experiments/test/mocks';
+import { getExperimentMock } from '@portlets/dot-experiments/test/mocks';
 import { DotDynamicDirective } from '@portlets/shared/directives/dot-dynamic.directive';
 import { DotHttpErrorManagerService } from '@services/dot-http-error-manager/dot-http-error-manager.service';
 
@@ -28,6 +29,8 @@ const messageServiceMock = new MockDotMessageService({
     'experiments.configure.scheduling.start': 'When the experiment start',
     'experiments.configure.scheduling.setup': 'Setup'
 });
+
+const EXPERIMENT_MOCK = getExperimentMock(0);
 describe('DotExperimentsConfigurationSchedulingComponent', () => {
     let spectator: Spectator<DotExperimentsConfigurationSchedulingComponent>;
     let store: DotExperimentsConfigurationStore;
@@ -37,6 +40,7 @@ describe('DotExperimentsConfigurationSchedulingComponent', () => {
         imports: [
             ButtonModule,
             CardModule,
+            TooltipModule,
             DotExperimentsConfigurationSchedulingAddComponent,
             DotDynamicDirective
         ],
@@ -64,10 +68,10 @@ describe('DotExperimentsConfigurationSchedulingComponent', () => {
 
         dotExperimentsService = spectator.inject(DotExperimentsService);
         dotExperimentsService.getById.and.returnValue(
-            of({ ...ExperimentMocks[0], ...{ scheduling: null } })
+            of({ ...EXPERIMENT_MOCK, ...{ scheduling: null } })
         );
 
-        store.loadExperiment(ExperimentMocks[0].id);
+        store.loadExperiment(EXPERIMENT_MOCK.id);
         spectator.detectChanges();
     });
 
@@ -88,28 +92,22 @@ describe('DotExperimentsConfigurationSchedulingComponent', () => {
     });
 
     it('should disable tooltip if is on draft', () => {
-        expect(spectator.query(byTestId('tooltip-on-disabled'))).toHaveAttribute(
-            'ng-reflect-disabled',
-            'true'
-        );
+        expect(spectator.query(Tooltip).disabled).toEqual(true);
     });
 
     it('should disable button and show tooltip when experiment is nos on draft', () => {
         dotExperimentsService.getById.and.returnValue(
             of({
-                ...ExperimentMocks[0],
+                EXPERIMENT_MOCK,
                 ...{ scheduling: null, status: DotExperimentStatusList.RUNNING }
             })
         );
 
-        store.loadExperiment(ExperimentMocks[0].id);
+        store.loadExperiment(EXPERIMENT_MOCK.id);
 
         spectator.detectChanges();
 
         expect(spectator.query(byTestId('scheduling-setup-button'))).toHaveAttribute('disabled');
-        expect(spectator.query(byTestId('tooltip-on-disabled'))).toHaveAttribute(
-            'ng-reflect-disabled',
-            'false'
-        );
+        expect(spectator.query(Tooltip).disabled).toEqual(false);
     });
 });
