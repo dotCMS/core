@@ -13,6 +13,9 @@ import com.liferay.util.StringPool;
 import javax.servlet.http.HttpServletRequest;
 import org.apache.velocity.tools.view.tools.ViewTool;
 
+/**
+ * ViewTool to inject the JS/HTML Experiment Code
+ */
 public class ExperimentCodeInjecterViewTool implements ViewTool {
 
     @Override
