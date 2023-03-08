@@ -29,94 +29,94 @@ public class ResponseEntityView <T> implements EntityView<T>, Serializable {
 
     public ResponseEntityView(final List<ErrorEntity> errors) {
         this.errors          = errors;
-        this.messages        = Collections.EMPTY_LIST;
+        this.messages        = Collections.emptyList();
         this.entity          = (T)EMPTY_ENTITY;
-        this.i18nMessagesMap = Collections.EMPTY_MAP;
-        this.permissions     = Collections.EMPTY_LIST;
+        this.i18nMessagesMap = Collections.emptyMap();
+        this.permissions     = Collections.emptyList();
         this.pagination = null;
     }
 
     public ResponseEntityView(final List<ErrorEntity> errors, final Map<String, String> i18nMessagesMap) {
         this.errors          = errors;
-        this.messages        = Collections.EMPTY_LIST;
+        this.messages        = Collections.emptyList();
         this.entity          = (T)EMPTY_ENTITY;
         this.i18nMessagesMap = i18nMessagesMap;
-        this.permissions     = Collections.EMPTY_LIST;
+        this.permissions     = Collections.emptyList();
         this.pagination = null;
     }
 
     public ResponseEntityView(final List<ErrorEntity> errors, final T entity) {
         this.errors = errors;
-        this.messages = Collections.EMPTY_LIST;
+        this.messages = Collections.emptyList();
         this.entity = entity;
-        this.i18nMessagesMap = Collections.EMPTY_MAP;
-        this.permissions     = Collections.EMPTY_LIST;
+        this.i18nMessagesMap = Collections.emptyMap();
+        this.permissions     = Collections.emptyList();
         this.pagination = null;
     }
 
     public ResponseEntityView(final List<ErrorEntity> errors, final T entity, final Map<String, String> i18nMessagesMap) {
         this.errors = errors;
-        this.messages = Collections.EMPTY_LIST;
+        this.messages = Collections.emptyList();
         this.entity = entity;
         this.i18nMessagesMap = i18nMessagesMap;
-        this.permissions     = Collections.EMPTY_LIST;
+        this.permissions     = Collections.emptyList();
         this.pagination = null;
     }
 
     public ResponseEntityView(final T entity) {
-        this.errors = Collections.EMPTY_LIST;
-        this.messages = Collections.EMPTY_LIST;
+        this.errors = Collections.emptyList();
+        this.messages = Collections.emptyList();
         this.entity = entity;
-        this.i18nMessagesMap = Collections.EMPTY_MAP;
-        this.permissions     = Collections.EMPTY_LIST;
+        this.i18nMessagesMap = Collections.emptyMap();
+        this.permissions     = Collections.emptyList();
         this.pagination = null;
     }
 
     public ResponseEntityView(final T entity, final Pagination pagination) {
-        this.errors = Collections.EMPTY_LIST;
-        this.messages = Collections.EMPTY_LIST;
+        this.errors = Collections.emptyList();
+        this.messages = Collections.emptyList();
         this.entity = entity;
-        this.i18nMessagesMap = Collections.EMPTY_MAP;
-        this.permissions     = Collections.EMPTY_LIST;
+        this.i18nMessagesMap = Collections.emptyMap();
+        this.permissions     = Collections.emptyList();
         this.pagination = pagination;
     }
 
     public ResponseEntityView(final T entity, final String... permissions) {
-        this.errors          = Collections.EMPTY_LIST;
-        this.messages        = Collections.EMPTY_LIST;
+        this.errors          = Collections.emptyList();
+        this.messages        = Collections.emptyList();
         this.entity          = entity;
-        this.i18nMessagesMap = Collections.EMPTY_MAP;
+        this.i18nMessagesMap = Collections.emptyMap();
         this.permissions     = Arrays.asList(permissions);
         this.pagination = null;
     }
 
     public ResponseEntityView(final T entity, final Map<String, String> i18nMessagesMap) {
-        this.errors = Collections.EMPTY_LIST;
-        this.messages = Collections.EMPTY_LIST;
+        this.errors = Collections.emptyList();
+        this.messages = Collections.emptyList();
         this.entity = entity;
         this.i18nMessagesMap = i18nMessagesMap;
-        this.permissions     = Collections.EMPTY_LIST;
+        this.permissions     = Collections.emptyList();
         this.pagination = null;
     }
 
     public ResponseEntityView(final T entity,
                               final List<MessageEntity> messages) {
-        this.errors = Collections.EMPTY_LIST;
+        this.errors = Collections.emptyList();
         this.messages = messages;
         this.entity = entity;
-        this.i18nMessagesMap = Collections.EMPTY_MAP;
-        this.permissions     = Collections.EMPTY_LIST;
+        this.i18nMessagesMap = Collections.emptyMap();
+        this.permissions     = Collections.emptyList();
         this.pagination = null;
     }
 
     public ResponseEntityView(final T entity,
                               final List<MessageEntity> messages,
                               final Map<String, String> i18nMessagesMap) {
-        this.errors = Collections.EMPTY_LIST;
+        this.errors = Collections.emptyList();
         this.messages = messages;
         this.entity = entity;
         this.i18nMessagesMap = i18nMessagesMap;
-        this.permissions     = Collections.EMPTY_LIST;
+        this.permissions     = Collections.emptyList();
         this.pagination = null;
     }
 
@@ -125,8 +125,8 @@ public class ResponseEntityView <T> implements EntityView<T>, Serializable {
         this.errors = errors;
         this.messages = messages;
         this.entity = entity;
-        this.i18nMessagesMap = Collections.EMPTY_MAP;
-        this.permissions     = Collections.EMPTY_LIST;
+        this.i18nMessagesMap = Collections.emptyMap();
+        this.permissions     = Collections.emptyList();
         this.pagination = null;
     }
 
@@ -136,7 +136,7 @@ public class ResponseEntityView <T> implements EntityView<T>, Serializable {
         this.messages = messages;
         this.entity = entity;
         this.i18nMessagesMap = i18nMessagesMap;
-        this.permissions     = Collections.EMPTY_LIST;
+        this.permissions     = Collections.emptyList();
         this.pagination = null;
     }
 

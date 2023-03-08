@@ -60,10 +60,6 @@ public class Pagination implements Serializable {
         @JsonProperty
         private long totalEntries;
 
-        public Builder() {
-
-        }
-
         /**
          * Returns the currently selected results page, or the first one if not specified.
          *
