@@ -12,6 +12,7 @@ import com.dotcms.contenttype.transform.field.LegacyFieldTransformer;
 import com.dotcms.rest.api.v1.temp.DotTempFile;
 import com.dotcms.util.DotPreconditions;
 import com.dotcms.util.RelationshipUtil;
+import com.dotcms.util.SecurityUtils;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
@@ -32,6 +33,7 @@ import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Field.FieldType;
 import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.portlets.structure.transform.ContentletRelationshipsTransformer;
+import com.dotmarketing.util.FileUtil;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
@@ -46,6 +48,7 @@ import org.apache.tools.ant.util.ReaderInputStream;
 import org.jetbrains.annotations.NotNull;
 
 import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import java.io.StringReader;
 import java.util.*;
 import java.util.Map.Entry;
@@ -65,6 +68,7 @@ import static com.liferay.util.StringPool.COMMA;
 public class MapToContentletPopulator  {
 
     public  static final MapToContentletPopulator INSTANCE = new MapToContentletPopulator();
+    private static final SecurityUtils securityUtils = new SecurityUtils();
     private static final String RELATIONSHIP_KEY           = Contentlet.RELATIONSHIP_KEY;
     private static final String LANGUAGE_ID                = "languageId";
     private static final String IDENTIFIER                 = "identifier";
@@ -239,7 +243,7 @@ public class MapToContentletPopulator  {
                     this.processFileOrImageField(contentlet, value, field);
                 } else if ((BinaryField.class.getName().equals(field.getFieldType()) ||
                         LegacyFieldTypes.BINARY.legacyValue().equals(field.getFieldType()))
-                        && null != value && value instanceof String) {
+                        && null != value && value instanceof Map) {
 
                     this.processPlainValueForBinaryField(map, field, value, contentlet);
                 } else {
@@ -260,13 +264,26 @@ public class MapToContentletPopulator  {
 
             try {
 
-                final String fileName = (String) map.getOrDefault("fileName",
-                        map.getOrDefault("title","unknown"));
-                final DotTempFile dotTempFile = APILocator.getTempFileAPI().createTempFile(fileName, request,
-                        new ReaderInputStream(new StringReader(value.toString()), UtilMethods.getCharsetConfiguration()));
-                if(null != dotTempFile) {
-                    APILocator.getContentletAPI()
-                            .setContentletProperty(contentlet, field, dotTempFile.id);
+                final Map valueMap = (Map) value;
+
+                if (valueMap.containsKey("content")) {
+
+                    final String fileName = (String) valueMap.getOrDefault("fileName", map.getOrDefault("fileName",
+                            map.getOrDefault("title", "unknown")));
+                    if (fileName == null || fileName.startsWith(".") || fileName.contains("/.")) {
+
+                        throw new IllegalArgumentException("Invalid FileName: " + fileName);
+                    }
+
+                    securityUtils.validateFileName(fileName);
+
+                    final String content  = valueMap.get("content").toString(); // todo: we need to discuss how to validate the file content
+                    final DotTempFile dotTempFile = APILocator.getTempFileAPI().createTempFile(FileUtil.sanitizeFileName(fileName), request,
+                            new ReaderInputStream(new StringReader(content), UtilMethods.getCharsetConfiguration()));
+                    if (null != dotTempFile) {
+                        APILocator.getContentletAPI()
+                                .setContentletProperty(contentlet, field, dotTempFile.id);
+                    }
                 }
             } catch (DotSecurityException e) {
                 throw new RuntimeException(e);
