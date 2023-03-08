@@ -13,3 +13,4 @@ This maintenance release includes the following code fixes:
 7. https://github.com/dotCMS/core/issues/24158 : CMSFilter updating language param #24158
 8. https://github.com/dotCMS/core/issues/24059 : We are not respecting the widget language when you have a multilingual page have a working version in non-default language #24059
 9. https://github.com/dotCMS/core/issues/24247 : Nested dotcache causes issues #24247
+10. https://github.com/dotCMS/core/issues/24138 : SAML Allow Users with repeat email addresses #24138
