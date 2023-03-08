@@ -5,16 +5,16 @@ import {
     DotExperiment,
     Goals,
     GoalsLevels,
-    TrafficProportionTypes,
-    Variant
+    TrafficProportionTypes
 } from '@dotcms/dotcms-models';
 import { DotExperimentsService } from '@portlets/dot-experiments/shared/services/dot-experiments.service';
-import { ExperimentMocks } from '@portlets/dot-experiments/test/mocks';
+import { getExperimentMock } from '@portlets/dot-experiments/test/mocks';
 
 const API_ENDPOINT = '/api/v1/experiments';
 const PAGE_Id = '123';
-const EXPERIMENT_ID = ExperimentMocks[0].id;
-const VARIANT_ID = ExperimentMocks[0].trafficProportion.variants[0].id;
+const EXPERIMENT_MOCK = getExperimentMock(0);
+const EXPERIMENT_ID = EXPERIMENT_MOCK.id;
+const VARIANT_ID = EXPERIMENT_MOCK.trafficProportion.variants[0].id;
 
 describe('DotExperimentsService', () => {
     let spectator: SpectatorHttp<DotExperimentsService>;
@@ -58,10 +58,7 @@ describe('DotExperimentsService', () => {
     });
 
     it('should add a variant', () => {
-        const variant: Pick<Variant, 'name'> = {
-            name: 'cool name'
-        };
-        spectator.service.addVariant(EXPERIMENT_ID, variant).subscribe();
+        spectator.service.addVariant(EXPERIMENT_ID, 'cool name').subscribe();
         spectator.expectOne(`${API_ENDPOINT}/${EXPERIMENT_ID}/variants`, HttpMethod.POST);
     });
 

@@ -12,6 +12,8 @@ import { ActivatedRoute, Router } from '@angular/router';
 
 import { ConfirmationService, MessageService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
+import { CardModule } from 'primeng/card';
+import { TagModule } from 'primeng/tag';
 
 import { DotMessageService, DotSessionStorageService } from '@dotcms/data-access';
 import { ComponentStatus } from '@dotcms/dotcms-models';
@@ -31,7 +33,7 @@ import { DotExperimentsExperimentSummaryComponent } from '@portlets/dot-experime
 import { DotExperimentsUiHeaderComponent } from '@portlets/dot-experiments/shared/ui/dot-experiments-header/dot-experiments-ui-header.component';
 import {
     DotExperimentsConfigurationStoreMock,
-    ExperimentMocks
+    getExperimentMock
 } from '@portlets/dot-experiments/test/mocks';
 import { DotHttpErrorManagerService } from '@services/dot-http-error-manager/dot-http-error-manager.service';
 import { DotMessagePipe } from '@tests/dot-message-mock.pipe';
@@ -52,8 +54,10 @@ const messageServiceMock = new MockDotMessageService({
     'experiments.configure.scheduling.start': 'When the experiment start'
 });
 
+const EXPERIMENT_MOCK = getExperimentMock(0);
+
 const defaultVmMock: ConfigurationViewModel = {
-    experiment: ExperimentMocks[0],
+    experiment: EXPERIMENT_MOCK,
     stepStatusSidebar: {
         status: ComponentStatus.IDLE,
         isOpen: false,
@@ -82,7 +86,9 @@ describe('DotExperimentsConfigurationComponent', () => {
             DotExperimentsConfigurationSchedulingComponent,
             DotExperimentsConfigurationSkeletonComponent,
             DotExperimentsExperimentSummaryComponent,
-            DotMessagePipe
+            DotMessagePipe,
+            TagModule,
+            CardModule
         ],
         component: DotExperimentsConfigurationComponent,
 
@@ -113,7 +119,7 @@ describe('DotExperimentsConfigurationComponent', () => {
             detectChanges: false
         });
         dotExperimentsService = spectator.inject(DotExperimentsService);
-        dotExperimentsService.getById.and.returnValue(of(ExperimentMocks[0]));
+        dotExperimentsService.getById.and.returnValue(of(EXPERIMENT_MOCK));
     });
 
     it('should show the skeleton component when is loading', () => {
