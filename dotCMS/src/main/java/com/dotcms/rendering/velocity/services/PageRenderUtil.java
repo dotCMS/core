@@ -290,7 +290,6 @@ public class PageRenderUtil implements Serializable {
                     final DotContentletTransformer transformer = new DotTransformerBuilder()
                             .defaultOptions().content(nonHydratedContentlet).build();
                     final Contentlet contentlet = transformer.hydrate().get(0);
-                    this.addContentletPageReferenceCount(contentlet);
 
                     final long contentsSize = containerUuidPersona
                             .getSize(container, uniqueUUIDForRender, personalizedContentlet);
@@ -345,22 +344,6 @@ public class PageRenderUtil implements Serializable {
         }
 
         return contentlet;
-    }
-
-    /**
-     * When <b>in Edit Mode only</b>, we need to read the number of Containers in any HTML Page in the repository that
-     * might be referencing a given Contentlet. This piece of information will be added to the Contentlet's map so that
-     * the UI can let the editing User choose whether they want to edit just that piece of Content, or if they want to
-     * edit the "global" content. This new property is specified in {@link Contentlet#ON_NUMBER_OF_PAGES}.
-     *
-     * @param contentlet The {@link Contentlet} whose HTML Page references will be counted.
-     */
-    private void addContentletPageReferenceCount(final Contentlet contentlet) {
-        if (this.mode.isEditMode()) {
-            final Optional<Integer> pageReferences =
-                    Try.of(() -> this.contentletAPI.getAllContentletReferencesCount(contentlet.getIdentifier())).getOrElse(Optional.empty());
-            pageReferences.ifPresent(integer -> contentlet.getMap().put(Contentlet.ON_NUMBER_OF_PAGES, integer));
-        }
     }
 
     /**
