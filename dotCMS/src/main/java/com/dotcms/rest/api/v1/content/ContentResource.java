@@ -186,7 +186,9 @@ public class ContentResource {
         if (UtilMethods.isSet(inode)) {
             Logger.debug(this, () -> "Looking for content by inode: " + inode);
             final Contentlet existentContentlet = this.contentletAPI.find(inode, user, mode.respectAnonPerms);
-            DotPreconditions.notNull(existentContentlet, () -> "contentlet-was-not-found", DoesNotExistException.class);
+            DotPreconditions.notNull(existentContentlet, () -> String.format("Contentlet with Inode '%s' was not " +
+                                                                                     "found", inode),
+                    DoesNotExistException.class);
             return this.populateContentlet(contentForm, existentContentlet, user, mode);
         } else if (UtilMethods.isSet(identifier)) {
             Logger.debug(this,
@@ -194,8 +196,9 @@ public class ContentResource {
             mode = PageMode.EDIT_MODE; // when asking for identifier it is always edit
             final Optional<Contentlet> existentContentlet = languageByParam <= 0 ?
                                                                     Optional.ofNullable(this.contentletAPI.findContentletByIdentifier(identifier, mode.showLive, sessionLanguage.get(), user, mode.respectAnonPerms)) : this.contentletAPI.findContentletByIdentifierOrFallback(identifier, mode.showLive, languageByParam, user, mode.respectAnonPerms);
-            DotPreconditions.isTrue(existentContentlet.isPresent(), () -> "contentlet-was-not-found",
-                    DoesNotExistException.class);
+            DotPreconditions.isTrue(existentContentlet.isPresent(), () -> String.format("Contentlet with ID '%s' was " +
+                                                                                                "not found",
+                    identifier), DoesNotExistException.class);
             return this.populateContentlet(contentForm, existentContentlet.get(), user, mode);
         }
         throw new DotContentletValidationException(String.format("Contentlet with ID '%s' [%s] could not be " +
@@ -225,7 +228,7 @@ public class ContentResource {
         if (null == mergedContentlet || null == mergedContentlet.getContentType()) {
             throw new DotContentletValidationException(String.format("Contentlet '%s' does not have a specified " +
                                                                              "Content Type",
-                    mergedContentlet.getIdentifier()));
+                    tempContentlet.getIdentifier()));
         }
         try {
             if (!APILocator.getPermissionAPI().doesUserHavePermission(mergedContentlet.getContentType(),
@@ -384,8 +387,8 @@ public class ContentResource {
                 contentlet = contentletOpt.get();
             }
         }
-
-        DotPreconditions.notNull(contentlet, ()-> "contentlet-was-not-found", DoesNotExistException.class);
+        DotPreconditions.notNull(contentlet, () -> String.format("Contentlet with ID '%s' was not found", identifier)
+                , DoesNotExistException.class);
         return contentlet;
     }
 
