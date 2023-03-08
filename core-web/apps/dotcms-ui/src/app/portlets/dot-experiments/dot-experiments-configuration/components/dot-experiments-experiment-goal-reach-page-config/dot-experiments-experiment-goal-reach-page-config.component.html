@@ -1,26 +1,5 @@
 <div class="flex flex-column wrapper" [formGroup]="primaryFormGroup">
     <div class="field flex-auto flex flex-column">
-        <label class="p-label-input-required">{{
-            'experiments.goal.reach_page.form.name.label' | dm
-        }}</label>
-        <input
-            id="name"
-            data-testId="goal-name-input"
-            dotAutofocus
-            formControlName="name"
-            name="name"
-            pInputText
-            placeholder="{{ 'experiments.goal.reach_page.form.name.placeholder' | dm }}"
-            required
-            type="text"
-        />
-
-        <dot-field-validation-message
-            [field]="primaryFormGroup.controls.name"
-        ></dot-field-validation-message>
-    </div>
-
-    <div class="field flex-auto flex flex-column">
         <h3>{{ 'experiments.goal.reach_page.form.conditions.label' | dm }}</h3>
 
         <ng-container

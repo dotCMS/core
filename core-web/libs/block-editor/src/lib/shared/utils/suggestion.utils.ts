@@ -145,6 +145,14 @@ export const changeToItems: DotMenuItem[] = [
     ...suggestionOptions.filter((item) => !FORBIDDEN_CHANGE_TO_BLOCKS[item.id])
 ];
 
+export const clearFilter = function ({ type, editor, range, suggestionKey, ItemsType }) {
+    const queryRange = {
+        to: range.to + suggestionKey.getState(editor.view.state).query?.length,
+        from: type === ItemsType.BLOCK ? range.from : range.from + 1
+    };
+    editor.chain().deleteRange(queryRange).run();
+};
+
 export const BASIC_TIPPY_OPTIONS: Partial<Props> = {
     duration: [250, 0],
     interactive: true,
@@ -160,12 +168,4 @@ export const BASIC_TIPPY_OPTIONS: Partial<Props> = {
             }
         ]
     }
-};
-
-export const clearFilter = function ({ type, editor, range, suggestionKey, ItemsType }) {
-    const queryRange = {
-        to: range.to + suggestionKey.getState(editor.view.state).query?.length,
-        from: type === ItemsType.BLOCK ? range.from : range.from + 1
-    };
-    editor.chain().deleteRange(queryRange).run();
 };
