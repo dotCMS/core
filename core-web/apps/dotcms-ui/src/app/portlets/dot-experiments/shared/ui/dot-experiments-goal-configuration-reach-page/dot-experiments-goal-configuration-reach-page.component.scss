@@ -5,15 +5,13 @@
 }
 
 .field {
-
     margin: $spacing-0;
-
 
     gap: $spacing-1;
     margin: $spacing-0;
 
     label {
-        font-weight: $font-weight-semi-bold;
+        font-weight: $font-weight-bold;
         margin-bottom: $spacing-0;
         font-size: $font-size-medium;
     }
@@ -27,7 +25,7 @@
         font-size: $font-size-medium;
         margin: $spacing-0;
         margin-bottom: $spacing-1;
-        font-weight: $font-weight-semi-bold;
+        font-weight: $font-weight-bold;
     }
 }
 
@@ -35,6 +33,6 @@
     gap: $spacing-3;
 
     label {
-        font-weight: $font-weight-regular-bold;
+        font-weight: $font-weight-bold;
     }
 }

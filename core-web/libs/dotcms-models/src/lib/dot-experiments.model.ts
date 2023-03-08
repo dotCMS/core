@@ -63,13 +63,6 @@ export interface StepStatus {
     experimentStep: ExperimentSteps | null;
 }
 
-export type ExperimentsSelectOption<T> = {
-    label: string;
-    value: T;
-    inactive: boolean;
-    description?: string;
-};
-
 export type EditPageTabs = 'edit' | 'preview';
 
 export enum ExperimentSteps {

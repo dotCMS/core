@@ -35,6 +35,7 @@ describe('DotExperimentsExperimentGoalConfigurationDetailComponent', () => {
     });
 
     it('should render the goal and conditions of type REACH_PAGE', () => {
+        const TYPE_OF_GOAL_TRANSLATED = 'Reach page';
         const goalMock: Goal = {
             name: 'default',
             type: GOAL_TYPES.REACH_PAGE,
@@ -58,9 +59,13 @@ describe('DotExperimentsExperimentGoalConfigurationDetailComponent', () => {
 
         spectator.detectChanges();
 
-        expect(spectator.query(byTestId('goal-label'))).toContainText('Reach page');
-        expect(spectator.query(byTestId('goal-label'))).toContainText(goalMock.name);
-        expect(spectator.queryAll(byTestId('goal-condition')).length).toBe(2);
+        expect(spectator.query(byTestId('goal-label-type-goal'))).toContainText(
+            TYPE_OF_GOAL_TRANSLATED
+        );
+        expect(spectator.query(byTestId('goal-label-name-goal'))).toContainText(goalMock.name);
+        expect(spectator.queryAll(byTestId('goal-condition')).length).toBe(
+            goalMock.conditions.length
+        );
         expect(spectator.query(byTestId('goal-default-parameter'))).toExist();
         expect(spectator.queryLast(byTestId('goal-parameter'))).toContainText(
             'Default -  ' + goalMock.conditions[1].parameter
@@ -74,6 +79,7 @@ describe('DotExperimentsExperimentGoalConfigurationDetailComponent', () => {
     });
 
     it('should render the goal and conditions of type BOUNCE_RATE', () => {
+        const TYPE_OF_GOAL_TRANSLATED = 'Bounce rate';
         const goalMock: Goal = {
             name: 'default',
             type: GOAL_TYPES.BOUNCE_RATE,
@@ -92,9 +98,13 @@ describe('DotExperimentsExperimentGoalConfigurationDetailComponent', () => {
 
         spectator.detectChanges();
 
-        expect(spectator.query(byTestId('goal-label'))).toContainText('Bounce rate');
-        expect(spectator.query(byTestId('goal-label'))).toContainText(goalMock.name);
-        expect(spectator.queryAll(byTestId('goal-condition')).length).toBe(1);
+        expect(spectator.query(byTestId('goal-label-type-goal'))).toContainText(
+            TYPE_OF_GOAL_TRANSLATED
+        );
+        expect(spectator.query(byTestId('goal-label-name-goal'))).toContainText(goalMock.name);
+        expect(spectator.queryAll(byTestId('goal-condition')).length).toBe(
+            goalMock.conditions.length
+        );
         expect(spectator.query(byTestId('goal-default-parameter'))).toExist();
         expect(spectator.queryLast(byTestId('goal-parameter'))).toContainText(
             'Default -  ' + goalMock.conditions[0].parameter

@@ -22,11 +22,12 @@
 
         <ng-container *ngIf="vm.goals">
             <div class="grid">
-                <div class="col-12 primary">
+                <div class="col-12">
                     <dot-experiments-experiment-goal-configuration-detail [goal]="vm.goals.primary">
                         <button
                             class="p-button-rounded p-button-text p-button-plain"
-                            *ngIf="vm.isExperimentADraft"(click)="deleteGoal($event, 'primary', vm.experimentId)"
+                            *ngIf="vm.isExperimentADraft"
+                            (click)="deleteGoal($event, 'primary', vm.experimentId)"
                             data-testId="goal-delete-button"
                             icon="pi pi-trash delete"
                             pButton
@@ -41,8 +42,8 @@
             <div
                 [pTooltip]="'experiment.configure.edit.only.draft.status' | dm"
                 [tooltipDisabled]="vm.isExperimentADraft || !!vm.goals"
-                tooltipPosition="bottom"
                 data-testId="tooltip-on-disabled"
+                tooltipPosition="bottom"
             >
                 <button
                     class="p-button-sm p-button-link"
