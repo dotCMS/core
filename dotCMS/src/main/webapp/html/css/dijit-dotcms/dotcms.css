@@ -9698,14 +9698,6 @@ dd .buttonCaption {
   margin-bottom: 24px;
   position: relative;
 }
-.fieldName > a {
-  position: absolute;
-  left: 0;
-  top: -2px;
-}
-.fieldName > a + span + span {
-  padding-left: 20px;
-}
 .fieldName .hintIcon {
   color: #161616;
 }
