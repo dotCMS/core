@@ -1,4 +1,4 @@
-@use "libs/dot-primeng-theme-styles/src/scss/variables" as *;
+@use "variables" as *;
 
 :host {
     width: $content-palette-width;
@@ -66,5 +66,3 @@
     padding: $spacing-1 0;
     margin: $spacing-4;
 }
-
-
