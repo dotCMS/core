@@ -38,6 +38,7 @@ import com.dotmarketing.portlets.personas.model.IPersona;
 import com.dotmarketing.portlets.personas.model.Persona;
 import com.dotmarketing.portlets.rules.business.RulesEngine;
 import com.dotmarketing.portlets.rules.model.Rule.FireOn;
+import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.UUIDUtil;
@@ -619,7 +620,8 @@ public class HTMLPageAssetRenderedAPIImpl implements HTMLPageAssetRenderedAPI {
         try {
             final String analyticsKey = getAnalyticsKey(host);
             final String jsJitsuCode =  getFileContentFromResourceContext("experiment/html/experiment_head.html")
-                    .replaceAll("\\$\\{jitsu_key}", analyticsKey);
+                    .replaceAll("\\$\\{jitsu_key}", analyticsKey)
+                    .replaceAll("\\$\\{site}", getLocalServerName(request));
 
             final String runningExperimentsId = APILocator.getExperimentsAPI().getRunningExperiments().stream()
                     .map(experiment -> "'" + experiment.id().get() + "'")
@@ -642,5 +644,10 @@ public class HTMLPageAssetRenderedAPIImpl implements HTMLPageAssetRenderedAPI {
         } catch (IllegalStateException e) {
             return StringPool.BLANK;
         }
+    }
+
+    private String getLocalServerName(HttpServletRequest request) {
+        final String port = Config.getStringProperty("DOT_ANALYTICS_APP_PORT", "8080");
+        return request.getServerName() + ":" + port;
     }
 }
