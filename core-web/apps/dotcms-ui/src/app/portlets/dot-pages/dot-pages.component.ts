@@ -110,10 +110,12 @@ export class DotPagesComponent implements OnInit, OnDestroy {
             });
 
         this.dotEventsService
-            .listen('dot-global-message')
+            .listen('save-page')
             .pipe(takeUntil(this.destroy$))
             .subscribe((evt) => {
-                this.store.getPagesRetry({ offset: 0 });
+                evt.data['retryLoading']
+                    ? this.store.getPagesRetry({ offset: 0 })
+                    : this.store.getPages({ offset: 0 });
 
                 this.dotMessageDisplayService.push({
                     life: 3000,

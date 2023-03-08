@@ -3,7 +3,7 @@ import { Observable, of } from 'rxjs';
 
 import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { Injectable } from '@angular/core';
-import { TestBed } from '@angular/core/testing';
+import { fakeAsync, TestBed, tick } from '@angular/core/testing';
 
 import { DotGlobalMessageService } from '@components/_common/dot-global-message/dot-global-message.service';
 import { PushPublishServiceMock } from '@components/_common/dot-push-publish-env-selector/dot-push-publish-env-selector.component.spec';
@@ -39,7 +39,12 @@ import {
     SiteServiceMock,
     StringUtils
 } from '@dotcms/dotcms-js';
-import { DotCMSContentlet, DotCMSContentType, ESContent } from '@dotcms/dotcms-models';
+import {
+    ComponentStatus,
+    DotCMSContentlet,
+    DotCMSContentType,
+    ESContent
+} from '@dotcms/dotcms-models';
 import {
     DotcmsConfigServiceMock,
     dotcmsContentTypeBasicMock,
@@ -170,6 +175,18 @@ describe('DotPageStore', () => {
         });
     });
 
+    it('should get pages status', () => {
+        dotPageStore.getStatus$.subscribe((data) => {
+            expect(data).toEqual(ComponentStatus.INIT);
+        });
+    });
+
+    it('should get pages loading status', () => {
+        dotPageStore.isPagesLoading$.subscribe((data) => {
+            expect(data).toEqual(true);
+        });
+    });
+
     // Updaters
     it('should update Favorite Pages', () => {
         dotPageStore.setFavoritePages(favoritePagesInitialTestData);
@@ -206,10 +223,10 @@ describe('DotPageStore', () => {
         });
     });
 
-    it('should update Loading', () => {
-        dotPageStore.setLoading(true);
+    it('should update Pages Status', () => {
+        dotPageStore.setPagesStatus(ComponentStatus.LOADING);
         dotPageStore.state$.subscribe((data) => {
-            expect(data.loading).toEqual(true);
+            expect(data.pages.status).toEqual(ComponentStatus.LOADING);
         });
     });
 
@@ -312,21 +329,68 @@ describe('DotPageStore', () => {
         });
     });
 
-    it('should keep fetching Pages data until new value comes from the DB in store', () => {
-        spyOn(dotESContentService, 'get').and.returnValue(
-            of({
-                contentTook: 0,
-                jsonObjectView: {
-                    contentlets: favoritePagesInitialTestData as unknown as DotCMSContentlet[]
-                },
-                queryTook: 1,
-                resultsSize: 4
-            })
-        );
+    it('should keep fetching Pages data until new value comes from the DB in store', fakeAsync(() => {
+        const old = {
+            contentTook: 0,
+            jsonObjectView: {
+                contentlets: favoritePagesInitialTestData as unknown as DotCMSContentlet[]
+            },
+            queryTook: 1,
+            resultsSize: 2
+        };
+
+        const updated = {
+            contentTook: 0,
+            jsonObjectView: {
+                contentlets: [
+                    ...favoritePagesInitialTestData,
+                    ...favoritePagesInitialTestData
+                ] as unknown as DotCMSContentlet[]
+            },
+            queryTook: 1,
+            resultsSize: 4
+        };
+
+        const mockFunction = (times) => {
+            let count = 1;
+
+            return Observable.create((observer) => {
+                if (count++ > times) {
+                    observer.next(updated);
+                } else {
+                    observer.next(old);
+                }
+            });
+        };
+
+        spyOn(dotESContentService, 'get').and.returnValue(mockFunction(3));
+        spyOn(dotPageStore, 'setPagesStatus').and.callThrough();
+
         dotPageStore.getPagesRetry({ offset: 0 });
-        // TODO: find a way to test "retryWhen" operator
+
+        tick(3000);
+
+        // dotESContentService.get only is called 1 time, but "retryWhen" operator makes several request to the SpyOn
         expect(dotESContentService.get).toHaveBeenCalledTimes(1);
-    });
+
+        // Testing to setPagesStatus to LOADING on the first fetch
+        expect((dotPageStore.setPagesStatus as jasmine.Spy).calls.argsFor(0).toString()).toBe(
+            ComponentStatus.LOADING
+        );
+
+        // Testing to pages.status to be LOADED on the last fetch (there can only be 2 calls during the whole process)
+        dotPageStore.state$.subscribe((data) => {
+            expect(data.pages.status).toBe(ComponentStatus.LOADED);
+        });
+
+        // Since dotESContentService.get can only be called 1 time (and once called the data will be changed on "mockFunction"),
+        // we test that the last fetch contains the updated data
+        (dotESContentService.get as jasmine.Spy).calls
+            .mostRecent()
+            .returnValue.subscribe((data) => {
+                expect(data).toEqual(updated);
+            });
+    }));
 
     it('should get all Workflow actions and static actions from a contentlet', () => {
         spyOn(dotWorkflowsActionsService, 'getByInode').and.returnValue(of(mockWorkflowsActions));

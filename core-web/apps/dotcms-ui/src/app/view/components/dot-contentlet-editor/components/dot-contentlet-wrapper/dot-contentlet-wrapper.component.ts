@@ -3,7 +3,6 @@ import { Title } from '@angular/platform-browser';
 
 import { DotIframeService } from '@components/_common/iframe/service/dot-iframe/dot-iframe.service';
 import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
-import { DotGlobalMessage } from '@dotcms/app/shared/models/dot-global-message/dot-global-message.model';
 import { DotAlertConfirmService, DotEventsService, DotMessageService } from '@dotcms/data-access';
 
 import { DotContentletEditorService } from '../../services/dot-contentlet-editor.service';
@@ -86,8 +85,10 @@ export class DotContentletWrapperComponent {
                         this.dotIframeService.reload();
                     }
 
-                    this.dotEventsService.notify<DotGlobalMessage>('dot-global-message', {
-                        value: this.dotMessageService.get('message.content.saved')
+                    // Message emitted to notify DotPagesComponent
+                    this.dotEventsService.notify('save-page', {
+                        value: this.dotMessageService.get('message.content.saved'),
+                        retryLoading: true
                     });
 
                     this.isContentletModified = false;

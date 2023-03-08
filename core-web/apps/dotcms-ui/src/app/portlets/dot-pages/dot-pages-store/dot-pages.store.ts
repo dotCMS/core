@@ -14,7 +14,6 @@ import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router
 import { DotWorkflowEventHandlerService } from '@dotcms/app/api/services/dot-workflow-event-handler/dot-workflow-event-handler.service';
 import { PushPublishService } from '@dotcms/app/api/services/push-publish/push-publish.service';
 import { DotEnvironment } from '@dotcms/app/shared/models/dot-environment/dot-environment';
-import { DotGlobalMessage } from '@dotcms/app/shared/models/dot-global-message/dot-global-message.model';
 import {
     DotCurrentUserService,
     DotESContentService,
@@ -30,6 +29,7 @@ import {
 } from '@dotcms/data-access';
 import { DotPushPublishDialogService, SiteService } from '@dotcms/dotcms-js';
 import {
+    ComponentStatus,
     DotCMSContentlet,
     DotCMSContentType,
     DotCMSWorkflowAction,
@@ -51,20 +51,20 @@ export interface DotPagesState {
     environments: boolean;
     isEnterprise: boolean;
     languages: DotLanguage[];
-    loading: boolean;
     loggedUser: {
-        id: string;
         canRead: { contentlets: boolean; htmlPages: boolean };
         canWrite: { contentlets: boolean; htmlPages: boolean };
+        id: string;
     };
     pages?: {
-        addToBundleCTId?: string;
         actionMenuDomId?: string;
-        menuActions?: MenuItem[];
+        addToBundleCTId?: string;
+        archived?: boolean;
         items: DotCMSContentlet[];
         keyword?: string;
         languageId?: string;
-        archived?: boolean;
+        menuActions?: MenuItem[];
+        status: ComponentStatus;
     };
     pageTypes?: DotCMSContentType[];
 }
@@ -73,6 +73,14 @@ const FAVORITE_PAGES_ES_QUERY = `+contentType:dotFavoritePage +deleted:false +wo
 
 @Injectable()
 export class DotPageStore extends ComponentStore<DotPagesState> {
+    readonly getStatus$ = this.select((state) => state.pages.status);
+
+    readonly isPagesLoading$: Observable<boolean> = this.select(
+        (state) =>
+            state.pages.status === ComponentStatus.LOADING ||
+            state.pages.status === ComponentStatus.INIT
+    );
+
     readonly actionMenuDomId$: Observable<string> = this.select(
         ({ pages }) => pages.actionMenuDomId
     ).pipe(filter((i) => i !== null));
@@ -126,7 +134,8 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
                 ...state,
                 pages: {
                     ...state.pages,
-                    items: [...pages]
+                    items: [...pages],
+                    status: ComponentStatus.LOADED
                 }
             };
         }
@@ -165,12 +174,17 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
         };
     });
 
-    readonly setLoading = this.updater<boolean>((state: DotPagesState, loading: boolean) => {
-        return {
-            ...state,
-            loading
-        };
-    });
+    readonly setPagesStatus = this.updater<ComponentStatus>(
+        (state: DotPagesState, status: ComponentStatus) => {
+            return {
+                ...state,
+                pages: {
+                    ...state.pages,
+                    status
+                }
+            };
+        }
+    );
 
     readonly clearMenuActions = this.updater((state: DotPagesState) => {
         return {
@@ -297,7 +311,7 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
                                 // First fetch to grab initial data to compare
                                 if (!initialData) {
                                     initialData = JSON.stringify(items.jsonObjectView);
-                                    this.setLoading(true);
+                                    this.setPagesStatus(ComponentStatus.LOADING);
                                     throw false;
                                 } else if (
                                     // Will continue repeating fetch until data has changed or limit fetch reached
@@ -309,7 +323,6 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
                                     // Terminated fetch loop and will proceed to set data on store
                                     const formatedPages = this.formatPagesData(items, offset);
                                     this.setPages(formatedPages);
-                                    this.setLoading(false);
                                 }
                             },
                             (error: HttpErrorResponse) => {
@@ -355,11 +368,13 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
 
     readonly vm$: Observable<DotPagesState> = this.select(
         this.state$,
+        this.isPagesLoading$,
         this.languageOptions$,
         this.languageLabels$,
         this.pageTypes$,
         (
-            { favoritePages, isEnterprise, environments, languages, loading, loggedUser, pages },
+            { favoritePages, isEnterprise, environments, languages, loggedUser, pages },
+            isPagesLoading,
             languageOptions,
             languageLabels,
             pageTypes
@@ -368,9 +383,9 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
             isEnterprise,
             environments,
             languages,
-            loading,
             loggedUser,
             pages,
+            isPagesLoading,
             languageOptions,
             languageLabels,
             pageTypes
@@ -495,12 +510,9 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
                         this.dotWorkflowActionsFireService
                             .fireTo(item.inode, action.id)
                             .subscribe(() => {
-                                this.dotEventsService.notify<DotGlobalMessage>(
-                                    'dot-global-message',
-                                    {
-                                        value: this.dotMessageService.get('Workflow-executed')
-                                    }
-                                );
+                                this.dotEventsService.notify('save-page', {
+                                    value: this.dotMessageService.get('Workflow-executed')
+                                });
                             });
                     }
                 }
@@ -611,7 +623,6 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
                         isEnterprise,
                         environments,
                         languages,
-                        loading: false,
                         loggedUser: {
                             id: currentUser.userId,
                             canRead: {
@@ -625,7 +636,8 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
                         },
                         pages: {
                             items: [],
-                            keyword: ''
+                            keyword: '',
+                            status: ComponentStatus.INIT
                         }
                     });
                 }

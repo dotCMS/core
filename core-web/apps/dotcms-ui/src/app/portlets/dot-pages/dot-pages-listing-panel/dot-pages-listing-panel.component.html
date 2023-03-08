@@ -1,7 +1,7 @@
 <p-table
     *ngIf="vm$ | async as vm"
     [value]="vm.pages.items"
-    [loading]="vm.loading"
+    [loading]="vm.isPagesLoading"
     [scrollable]="true"
     [virtualScroll]="true"
     [virtualScrollItemSize]="47"

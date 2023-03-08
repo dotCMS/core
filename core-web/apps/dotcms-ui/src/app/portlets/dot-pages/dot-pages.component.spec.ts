@@ -269,10 +269,10 @@ describe('DotPagesComponent', () => {
         expect(store.clearMenuActions).toHaveBeenCalledTimes(1);
     });
 
-    it('should call push method in dotMessageDisplayService once a dot-global-message is received', () => {
+    it('should call push method in dotMessageDisplayService once a save-page is received', () => {
         const dotEventsService: DotEventsService = de.injector.get(DotEventsService);
 
-        dotEventsService.notify('dot-global-message', { value: 'test3' });
+        dotEventsService.notify('save-page', { value: 'test3' });
 
         expect(dotMessageDisplayService.push).toHaveBeenCalledWith({
             life: 3000,
@@ -280,6 +280,14 @@ describe('DotPagesComponent', () => {
             severity: DotMessageSeverity.SUCCESS,
             type: DotMessageType.SIMPLE_MESSAGE
         });
+        expect(store.getPages).toHaveBeenCalledWith({ offset: 0 });
+    });
+
+    it('should try to reload a page when a dotEventsService message save-page is received with retryLoading = true', () => {
+        const dotEventsService: DotEventsService = de.injector.get(DotEventsService);
+
+        dotEventsService.notify('save-page', { value: 'test3', retryLoading: true });
+
         expect(store.getPagesRetry).toHaveBeenCalledWith({ offset: 0 });
     });
 
