@@ -117,15 +117,6 @@ export class DotExperimentsConfigurationTrafficSplitAddComponent implements OnIn
         });
     }
 
-    /**
-     * Check if any of the variants has an error.
-     * @returns boolean
-     * @memberof DotExperimentsConfigurationTrafficSplitAddComponent
-     */
-    variantsHasErrors(): boolean {
-        return this.variants.controls.some((variant) => !!variant.errors);
-    }
-
     private initForm() {
         this.vm$.pipe(take(1)).subscribe((data) => {
             this.form = this.fb.group({

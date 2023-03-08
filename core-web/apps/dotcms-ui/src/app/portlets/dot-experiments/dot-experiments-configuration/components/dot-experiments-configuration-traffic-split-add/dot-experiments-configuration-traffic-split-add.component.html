@@ -75,7 +75,7 @@
 
                 <small
                     class="p-invalid align-self-end"
-                    *ngIf="variantsHasErrors()"
+                    *ngIf="variants.invalid"
                     data-testId="dotErrorMsg"
                 >
                     {{ 'experiments.configure.traffic.split.variants.error' | dm }}
