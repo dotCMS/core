@@ -67,15 +67,10 @@ describe('DotESContentService', () => {
         req.flush({ entity: responseData });
     });
 
-    it('should get Blogs with custom values wrap filter values into single quote if it is contain space', () => {
+    it('should get Blogs with filter values and wrap into single quote if it is contain space', () => {
         dotESContentService
             .get({
-                itemsPerPage: 5,
                 filter: 'test one',
-                lang: '2',
-                offset: '10',
-                sortField: 'name',
-                sortOrder: ESOrderDirection.ASC,
                 query: '+contentType: blog'
             })
             .subscribe((res) => {
@@ -86,10 +81,10 @@ describe('DotESContentService', () => {
         expect(req.request.method).toBe('POST');
         expect(req.request.body).toEqual(
             JSON.stringify({
-                query: "+contentType: blog   +languageId : 2   +title : 'test one'*  ",
-                sort: 'name ASC',
-                limit: 5,
-                offset: '10'
+                query: "+contentType: blog   +title : 'test one'*  ",
+                sort: 'modDate DESC',
+                limit: 40,
+                offset: '0'
             })
         );
         req.flush({ entity: responseData });
