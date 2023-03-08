@@ -294,8 +294,9 @@ public class SAMLHelper {
                     this.createNewUser(systemUser,
                             allowUsersDiffIdWithRepeatedEmailOn? checkRepeatedEmail(attributes):attributes,
                             identityProviderConfiguration):  // if user does not exist, create a new one.
-
-                    this.updateUser(user, systemUser, attributes, identityProviderConfiguration); // update it, since exists
+                    this.updateUser(user, systemUser,
+                            allowUsersDiffIdWithRepeatedEmailOn? keepCurrentEmail(attributes, user):attributes,
+                            identityProviderConfiguration); // update it, since exists
 
             if (user.isActive()) {
 
@@ -329,6 +330,19 @@ public class SAMLHelper {
         }
 
         return attributes;
+    }
+
+    protected Attributes keepCurrentEmail(Attributes attributes, User user) {
+
+        return
+                new Attributes.Builder()
+                        .nameID(attributes.getNameID())
+                        .firstName(attributes.getFirstName())
+                        .lastName(attributes.getLastName())
+                        .addRoles(attributes.isAddRoles())
+                        .roles(attributes.getRoles())
+                        .sessionIndex(attributes.getSessionIndex())
+                        .email(user.getEmailAddress()).build();
     }
 
     private String makeEmailUnique(final String email) {
