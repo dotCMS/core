@@ -2952,7 +2952,6 @@ body {
 .toggleOpenIcon,
 .dijitIconCopy,
 #dijit-icon,
-.required:before,
 .tagLink.persona:before,
 .wmaIcon,
 .wavIcon,
@@ -3147,7 +3146,6 @@ body {
 }
 
 #dijit-icon,
-.required:before,
 .tagLink.persona:before,
 .wmaIcon,
 .wavIcon,
@@ -4588,7 +4586,10 @@ body {
 .dijitDialogCloseIcon:after {
     transform: rotate(-45deg);
 }
-
+.dijitDialogPaneActionBar,
+.dijitDialogPaneContent {
+    padding: 16px;
+}
 .dijitDialogPaneActionBar {
     padding-top: 0;
 }
@@ -4601,6 +4602,7 @@ body {
     font-weight: bold;
     height: 50px;
     line-height: 50px;
+    padding: 0 16px;
     position: relative;
 }
 
@@ -7366,7 +7368,6 @@ select[multiple]:hover {
 #listing-table th,
 .listingTable th,
 .dojoxUploaderFileListTable th {
-    font-weight: bold;
     background-color: #fafafa;
 }
 
@@ -10077,7 +10078,7 @@ Styles for commons fields along the backend
 #label,
 .fieldName,
 dl.vertical dt label {
-    color: #5b5b5b;
+    color: #161616;
     display: block;
     font-size: 12px;
     margin-bottom: 4px;
@@ -10097,13 +10098,10 @@ dl.vertical dt label {
     margin-right: 4px;
 }
 
-.required:before {
-    content: '\f069';
-    color: #d0021b;
-    font-size: 9px;
-    position: relative;
-    top: -4px;
-    left: 2px;
+.required::after {
+    padding-left: 2px;
+    content: '*';
+    color: #cb3927;
 }
 
 #inline-form,
@@ -11089,9 +11087,11 @@ a.tag_higlighted {
     height: 100%;
 }
 
-.content-search__show-query-dialog .dijitDialogTitleBar {
-    height: 0px;
-    z-index: 1;
+.content-search__show-query-dialog .dijitDialogPaneContent {
+    padding: 0;
+}
+.content-search__show-query-dialog #queryResults {
+    padding: 16px;
 }
 
 .content-search__key-fields {
@@ -12408,9 +12408,13 @@ Resize Handle
     border: none;
     background: none;
     height: 18px;
+    padding: 0;
 }
 
-.dijitDialogTitle {
+.dijitDialogTitleBar {
+    padding: 0;
+}
+.dijitDialogTitleBar .dijitDialogTitle {
     padding-left: 16px;
 }
 
