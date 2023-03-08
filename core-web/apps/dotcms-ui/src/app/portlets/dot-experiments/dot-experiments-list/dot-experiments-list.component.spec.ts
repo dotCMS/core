@@ -8,8 +8,8 @@ import { ConfirmationService, MessageService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
 import { SkeletonModule } from 'primeng/skeleton';
 
-import { UiDotIconButtonTooltipModule } from '@components/_common/dot-icon-button-tooltip/dot-icon-button-tooltip.module';
 import { UiDotIconButtonModule } from '@components/_common/dot-icon-button/dot-icon-button.module';
+import { UiDotIconButtonTooltipModule } from '@components/_common/dot-icon-button-tooltip/dot-icon-button-tooltip.module';
 import { DotMessagePipe } from '@dotcms/app/view/pipes';
 import { DotMessageService } from '@dotcms/data-access';
 import { DotIconModule } from '@dotcms/ui';
@@ -26,7 +26,7 @@ import {
 import {
     ActivatedRouteListStoreMock,
     DotExperimentsListStoreMock,
-    ExperimentMocks
+    getExperimentAllMocks
 } from '@portlets/dot-experiments/test/mocks';
 
 import { DotExperimentsListComponent } from './dot-experiments-list.component';
@@ -120,7 +120,7 @@ describe('ExperimentsListComponent', () => {
                 pageId: '1111',
                 pageTitle: 'title'
             },
-            experiments: ExperimentMocks,
+            experiments: getExperimentAllMocks(),
             filterStatus: [],
             experimentsFiltered: {},
             isLoading: false

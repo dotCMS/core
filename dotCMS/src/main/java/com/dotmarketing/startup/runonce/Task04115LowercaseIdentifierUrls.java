@@ -2,6 +2,7 @@ package com.dotmarketing.startup.runonce;
 
 import static com.dotmarketing.portlets.folders.business.FolderAPI.SYSTEM_FOLDER_PARENT_PATH;
 
+import com.dotcms.business.WrapInTransaction;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.common.util.SQLUtil;
 import com.dotmarketing.db.DbConnectionFactory;
@@ -52,7 +53,8 @@ public class Task04115LowercaseIdentifierUrls implements StartupTask {
 		return true;
 	}
 
-	@Override
+    @Override
+    @WrapInTransaction
 	public void executeUpgrade() throws DotDataException, DotRuntimeException {
         try {
             DbConnectionFactory.getConnection().setAutoCommit(true);

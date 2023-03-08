@@ -38,7 +38,7 @@ describe('DotESContentService', () => {
 
         const req = httpMock.expectOne('/api/content/_search');
         expect(req.request.method).toBe('POST');
-        expect(req.request.body).toBe(
+        expect(req.request.body).toEqual(
             '{"query":"+contentType: blog   ","sort":"modDate DESC","limit":40,"offset":"0"}'
         );
         req.flush({ entity: responseData });

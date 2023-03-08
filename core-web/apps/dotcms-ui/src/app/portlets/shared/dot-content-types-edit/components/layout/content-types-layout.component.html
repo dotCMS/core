@@ -45,6 +45,14 @@
     </div>
     <div class="main-toolbar-right">
         <button
+            class="p-button-secondary content-type__add-to-menu"
+            id="add-to-menu-button"
+            (click)="addContentInMenu()"
+            label="{{ 'contenttypes.content.add_to_menu' | dm }}"
+            pButton
+            type="button"
+        ></button>
+        <button
             class="p-button-secondary"
             id="form-edit-button"
             (click)="openEditDialog.next()"
@@ -115,3 +123,8 @@
         </ng-template>
     </p-tabPanel>
 </p-tabView>
+<dot-add-to-menu
+    *ngIf="addToMenuContentType"
+    [contentType]="contentType"
+    (cancel)="addToMenuContentType = false"
+></dot-add-to-menu>

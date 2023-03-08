@@ -1,6 +1,6 @@
 {
 	"info": {
-		"_postman_id": "00245393-fcf4-4a81-95ce-b1c3505d8352",
+		"_postman_id": "01ed6da7-d832-4ebf-96cb-67918bb807ff",
 		"name": "Experiment Result",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
 		"_exporter_id": "1549189"
@@ -166,7 +166,7 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "{{serverURL}}/api/v1/experiments/{{getResultFromNotStartedExperimentId}}/result",
+							"raw": "{{serverURL}}/api/v1/experiments/{{getResultFromNotStartedExperimentId}}/results",
 							"host": [
 								"{{serverURL}}"
 							],
@@ -175,7 +175,7 @@
 								"v1",
 								"experiments",
 								"{{getResultFromNotStartedExperimentId}}",
-								"result"
+								"results"
 							]
 						}
 					},
@@ -208,7 +208,7 @@
 				"method": "GET",
 				"header": [],
 				"url": {
-					"raw": "{{serverURL}}/api/v1/experiments/not_exists_id/result",
+					"raw": "{{serverURL}}/api/v1/experiments/not_exists_id/results",
 					"host": [
 						"{{serverURL}}"
 					],
@@ -217,7 +217,7 @@
 						"v1",
 						"experiments",
 						"not_exists_id",
-						"result"
+						"results"
 					]
 				}
 			},

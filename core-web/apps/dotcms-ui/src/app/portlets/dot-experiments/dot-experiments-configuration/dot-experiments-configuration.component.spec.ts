@@ -12,8 +12,9 @@ import { ActivatedRoute, Router } from '@angular/router';
 
 import { ConfirmationService, MessageService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
+import { CardModule } from 'primeng/card';
+import { TagModule } from 'primeng/tag';
 
-import { DotMessagePipe } from '@dotcms/app/view/pipes';
 import { DotMessageService, DotSessionStorageService } from '@dotcms/data-access';
 import { ComponentStatus } from '@dotcms/dotcms-models';
 import { MockDotMessageService } from '@dotcms/utils-testing';
@@ -32,10 +33,10 @@ import { DotExperimentsExperimentSummaryComponent } from '@portlets/dot-experime
 import { DotExperimentsUiHeaderComponent } from '@portlets/dot-experiments/shared/ui/dot-experiments-header/dot-experiments-ui-header.component';
 import {
     DotExperimentsConfigurationStoreMock,
-    ExperimentMocks
+    getExperimentMock
 } from '@portlets/dot-experiments/test/mocks';
 import { DotHttpErrorManagerService } from '@services/dot-http-error-manager/dot-http-error-manager.service';
-import { DotMessageMockPipe } from '@tests/dot-message-mock.pipe';
+import { DotMessagePipe } from '@tests/dot-message-mock.pipe';
 
 import { DotExperimentsConfigurationComponent } from './dot-experiments-configuration.component';
 
@@ -53,19 +54,21 @@ const messageServiceMock = new MockDotMessageService({
     'experiments.configure.scheduling.start': 'When the experiment start'
 });
 
+const EXPERIMENT_MOCK = getExperimentMock(0);
+
 const defaultVmMock: ConfigurationViewModel = {
-    experiment: ExperimentMocks[0],
+    experiment: EXPERIMENT_MOCK,
     stepStatusSidebar: {
         status: ComponentStatus.IDLE,
         isOpen: false,
         experimentStep: null
     },
     isLoading: false,
-    canStartExperiment: false,
+    isExperimentADraft: false,
     disabledStartExperiment: false,
     showExperimentSummary: false,
     isSaving: false,
-    statusExperiment: { classz: '', label: '' }
+    experimentStatus: null
 };
 
 describe('DotExperimentsConfigurationComponent', () => {
@@ -83,9 +86,12 @@ describe('DotExperimentsConfigurationComponent', () => {
             DotExperimentsConfigurationSchedulingComponent,
             DotExperimentsConfigurationSkeletonComponent,
             DotExperimentsExperimentSummaryComponent,
-            DotMessageMockPipe
+            DotMessagePipe,
+            TagModule,
+            CardModule
         ],
         component: DotExperimentsConfigurationComponent,
+
         componentProviders: [
             mockProvider(DotExperimentsConfigurationStore, DotExperimentsConfigurationStoreMock)
         ],
@@ -104,8 +110,7 @@ describe('DotExperimentsConfigurationComponent', () => {
             mockProvider(MessageService),
             mockProvider(Router),
             mockProvider(DotHttpErrorManagerService),
-            mockProvider(Title),
-            mockProvider(DotMessagePipe)
+            mockProvider(Title)
         ]
     });
 
@@ -114,7 +119,7 @@ describe('DotExperimentsConfigurationComponent', () => {
             detectChanges: false
         });
         dotExperimentsService = spectator.inject(DotExperimentsService);
-        dotExperimentsService.getById.and.returnValue(of(ExperimentMocks[0]));
+        dotExperimentsService.getById.and.returnValue(of(EXPERIMENT_MOCK));
     });
 
     it('should show the skeleton component when is loading', () => {
@@ -137,19 +142,19 @@ describe('DotExperimentsConfigurationComponent', () => {
         expect(spectator.query(DotExperimentsConfigurationSchedulingComponent)).toExist();
     });
 
-    it('should show Start Experiment button if canStartExperiment true', () => {
+    it('should show Start Experiment button if isExperimentADraft true', () => {
         spectator.component.vm$ = of({
             ...defaultVmMock,
-            canStartExperiment: true
+            isExperimentADraft: true
         });
         spectator.detectChanges();
         expect(spectator.query(byTestId('start-experiment-button'))).toExist();
     });
 
-    it("shouldn't show Start Experiment button if canStartExperiment false", () => {
+    it("shouldn't show Start Experiment button if isExperimentADraft false", () => {
         spectator.component.vm$ = of({
             ...defaultVmMock,
-            canStartExperiment: false
+            isExperimentADraft: false
         });
         spectator.detectChanges();
 
@@ -159,7 +164,7 @@ describe('DotExperimentsConfigurationComponent', () => {
     it('should show Start Experiment button disabled if disabledStartExperiment true', () => {
         spectator.component.vm$ = of({
             ...defaultVmMock,
-            canStartExperiment: true,
+            isExperimentADraft: true,
             disabledStartExperiment: true
         });
         spectator.detectChanges();
