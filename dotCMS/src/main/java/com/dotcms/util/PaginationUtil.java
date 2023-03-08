@@ -396,7 +396,6 @@ public class PaginationUtil {
 				new Pagination.Builder()
 						.currentPage(pageValue)
 						.perPage(perPageValue)
-						.linkPages(nLinks)
 						.totalEntries(totalRecords).build();
 		return Response.ok(new ResponseEntityView<>(paginatedItems, pagination))
 					   .header(LINK_HEADER_NAME, linkHeaderValue)

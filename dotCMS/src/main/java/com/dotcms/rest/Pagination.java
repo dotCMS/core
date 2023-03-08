@@ -17,7 +17,6 @@ import java.io.Serializable;
 public class Pagination implements Serializable {
 
     private final int currentPage;
-    private final int linkPages;
     private final int perPage;
     private final long totalEntries;
 
@@ -28,17 +27,12 @@ public class Pagination implements Serializable {
      */
     private Pagination(final Builder builder) {
         this.currentPage = builder.currentPage;
-        this.linkPages = builder.linkPages;
         this.perPage = builder.perPage;
         this.totalEntries = builder.totalEntries;
     }
 
     public int getCurrentPage() {
         return this.currentPage;
-    }
-
-    public int getLinkPages() {
-        return this.linkPages;
     }
 
     public int getPerPage() {
@@ -51,7 +45,7 @@ public class Pagination implements Serializable {
 
     @Override
     public String toString() {
-        return "Pagination{" + "currentPage=" + this.currentPage + ", linkPages=" + this.linkPages + ", perPage=" + this.perPage + ", totalEntries=" + this.totalEntries + '}';
+        return "Pagination{" + "currentPage=" + this.currentPage + ", perPage=" + this.perPage + ", totalEntries=" + this.totalEntries + '}';
     }
 
     /**
@@ -61,8 +55,6 @@ public class Pagination implements Serializable {
 
         @JsonProperty
         private int currentPage;
-        @JsonProperty
-        private int linkPages;
         @JsonProperty
         private int perPage;
         @JsonProperty
@@ -81,11 +73,6 @@ public class Pagination implements Serializable {
          */
         public Builder currentPage(int currentPage) {
             this.currentPage = currentPage;
-            return this;
-        }
-
-        public Builder linkPages(int linkPages) {
-            this.linkPages = linkPages;
             return this;
         }
 
