@@ -22,6 +22,7 @@ import {
     DotLanguagesService,
     DotLicenseService,
     DotMessageService,
+    DotPageTypesService,
     DotRenderMode,
     DotWorkflowActionsFireService,
     DotWorkflowsActionsService,
@@ -30,6 +31,7 @@ import {
 import { DotPushPublishDialogService, SiteService } from '@dotcms/dotcms-js';
 import {
     DotCMSContentlet,
+    DotCMSContentType,
     DotCMSWorkflowAction,
     DotCMSWorkflowActionEvent,
     DotCurrentUser,
@@ -63,6 +65,7 @@ export interface DotPagesState {
         languageId?: string;
         archived?: boolean;
     };
+    pageTypes?: DotCMSContentType[];
 }
 
 const FAVORITE_PAGES_ES_QUERY = `+contentType:dotFavoritePage +deleted:false +working:true`;
@@ -101,6 +104,8 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
             return langLabels;
         }
     );
+
+    readonly pageTypes$ = this.select(({ pageTypes }) => pageTypes);
 
     readonly setFavoritePages = this.updater<DotCMSContentlet[]>(
         (state: DotPagesState, favoritePages: DotCMSContentlet[]) => {
@@ -223,6 +228,26 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
         );
     });
 
+    readonly getPageTypes = this.effect<void>((trigger$) =>
+        trigger$.pipe(
+            switchMap(() => {
+                return this.dotPageTypesService.getPages().pipe(
+                    take(1),
+                    tapResponse(
+                        (pageTypes: DotCMSContentType[]) => {
+                            this.patchState({
+                                pageTypes
+                            });
+                        },
+                        (error: HttpErrorResponse) => {
+                            return this.httpErrorManagerService.handle(error);
+                        }
+                    )
+                );
+            })
+        )
+    );
+
     readonly getPages = this.effect(
         (params$: Observable<{ offset: number; sortField?: string; sortOrder?: number }>) => {
             return params$.pipe(
@@ -303,10 +328,12 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
         this.state$,
         this.languageOptions$,
         this.languageLabels$,
+        this.pageTypes$,
         (
             { favoritePages, isEnterprise, environments, languages, loggedUser, pages },
             languageOptions,
-            languageLabels
+            languageLabels,
+            pageTypes
         ) => ({
             favoritePages,
             isEnterprise,
@@ -315,7 +342,8 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
             loggedUser,
             pages,
             languageOptions,
-            languageLabels
+            languageLabels,
+            pageTypes
         })
     );
 
@@ -450,6 +478,7 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
         private dotRouterService: DotRouterService,
         private httpErrorManagerService: DotHttpErrorManagerService,
         private dotESContentService: DotESContentService,
+        private dotPageTypesService: DotPageTypesService,
         private dotFormatDateService: DotFormatDateService,
         private dotMessageService: DotMessageService,
         private dotLanguagesService: DotLanguagesService,
