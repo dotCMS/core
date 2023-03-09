@@ -117,7 +117,7 @@ export class DotExperimentsConfigurationComponent implements OnInit {
 
     /**
      * Delete a specific variant
-     * @param {Variant} variant
+     * @param {{ variant: Variant; mode: EditPageTabs }} variant
      * @param {string} experimentId
      * @returns void
      * @memberof DotExperimentsConfigurationComponent
@@ -140,7 +140,7 @@ export class DotExperimentsConfigurationComponent implements OnInit {
 
     /**
      * Go to Edit Page / Content, set the VariantId to SessionStorage
-     * @param {Variant} variant
+     * @param {{ variant: Variant; mode: EditPageTabs }} variant
      * @param {EditPageTabs} tab
      * @returns void
      * @memberof DotExperimentsConfigurationVariantsComponent
