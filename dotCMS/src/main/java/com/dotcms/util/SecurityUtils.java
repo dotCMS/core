@@ -292,10 +292,10 @@ public class SecurityUtils {
 
 
   /**
-   * Validate if the fileName is secure and valid
+   * Validate if the fileName and path are secure and valid
    * @param fileName  {@link String}
    */
-  public void validateFileName (final String fileName) {
+  public void validateFile (final String fileName) {
 
     for (final SecureFileValidator secureFileValidator : secureFileValidatorList) {
 

@@ -268,14 +268,14 @@ public class MapToContentletPopulator  {
 
                 if (valueMap.containsKey("content")) {
 
-                    final String fileName = (String) valueMap.getOrDefault("fileName", map.getOrDefault("fileName",
-                            map.getOrDefault("title", "unknown")));
+                    final String fileName = FileUtil.sanitizeFileName((String) valueMap.getOrDefault("fileName", map.getOrDefault("fileName",
+                            map.getOrDefault("title", "unknown"))));
                     if (fileName == null || fileName.startsWith(".") || fileName.contains("/.")) {
 
                         throw new IllegalArgumentException("Invalid FileName: " + fileName);
                     }
 
-                    securityUtils.validateFileName(fileName);
+                    securityUtils.validateFile(fileName);
 
                     final String content  = valueMap.get("content").toString(); // todo: we need to discuss how to validate the file content
                     final DotTempFile dotTempFile = APILocator.getTempFileAPI().createTempFile(FileUtil.sanitizeFileName(fileName), request,
@@ -283,9 +283,14 @@ public class MapToContentletPopulator  {
                     if (null != dotTempFile) {
                         APILocator.getContentletAPI()
                                 .setContentletProperty(contentlet, field, dotTempFile.id);
+                    } else {
+
+                        Logger.debug(MapToContentletPopulator.class, ()-> "The file: " + fileName + "couldn't be created");
                     }
                 }
             } catch (DotSecurityException e) {
+
+                Logger.debug(MapToContentletPopulator.class, e.getMessage(), e);
                 throw new RuntimeException(e);
             }
         }
