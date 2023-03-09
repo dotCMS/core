@@ -38,6 +38,7 @@ public class PublishingEndPointTest extends IntegrationTestBase {
         try {
             endPoint.validatePublishingEndPoint();
         } catch (PublishingEndPointValidationException e) {
+            System.out.println(e.getMessage());
             exceptionCatched = true;
             Assert.assertTrue(e.getI18nmessages().contains("publisher_Endpoint_awss3_authKey_missing_properties"));
         }
@@ -57,7 +58,11 @@ public class PublishingEndPointTest extends IntegrationTestBase {
 
         try {
             endPoint.validatePublishingEndPoint();
+            
+            
+            
         } catch (Exception e) {
+
             exceptionCatched = true;
 
         }
@@ -78,6 +83,7 @@ public class PublishingEndPointTest extends IntegrationTestBase {
         try {
             endPoint.validatePublishingEndPoint();
         } catch (Exception e) {
+            System.out.println(e.getMessage());
             exceptionCatched = true;
 
         }
