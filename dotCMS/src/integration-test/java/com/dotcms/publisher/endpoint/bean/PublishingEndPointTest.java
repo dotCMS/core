@@ -1,5 +1,8 @@
 package com.dotcms.publisher.endpoint.bean;
 
+import org.junit.Assert;
+import org.junit.BeforeClass;
+import org.junit.Test;
 import com.dotcms.IntegrationTestBase;
 import com.dotcms.LicenseTestUtil;
 import com.dotcms.enterprise.publishing.staticpublishing.AWSS3Publisher;
@@ -7,12 +10,7 @@ import com.dotcms.enterprise.publishing.staticpublishing.StaticPublisher;
 import com.dotcms.publisher.endpoint.bean.factory.PublishingEndPointFactory;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.cms.factories.PublicEncryptionFactory;
-import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.PublishingEndPointValidationException;
-
-import org.junit.Assert;
-import org.junit.BeforeClass;
-import org.junit.Test;
 
 public class PublishingEndPointTest extends IntegrationTestBase {
 
@@ -83,9 +81,7 @@ public class PublishingEndPointTest extends IntegrationTestBase {
         try {
             endPoint.validatePublishingEndPoint();
         } catch (Exception e) {
-            System.out.println(e.getMessage());
             exceptionCatched = true;
-
         }
 
         Assert.assertTrue(exceptionCatched);
