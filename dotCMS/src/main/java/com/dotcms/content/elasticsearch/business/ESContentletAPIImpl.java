@@ -2738,7 +2738,8 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
             final Contentlet contentlet = contentletIterator.next();
             contentlet.getMap().put(Contentlet.DONT_VALIDATE_ME, true);
-            //this.forceUnpublishArchiveOnDestroy(user, contentlet);
+            //TODO: this needs to called conditionally if called from the tearDown method
+            this.forceUnpublishArchiveOnDestroy(user, contentlet);
             APILocator.getWorkflowAPI()
                     .deleteWorkflowTaskByContentletIdAnyLanguage(contentlet, user);
 
