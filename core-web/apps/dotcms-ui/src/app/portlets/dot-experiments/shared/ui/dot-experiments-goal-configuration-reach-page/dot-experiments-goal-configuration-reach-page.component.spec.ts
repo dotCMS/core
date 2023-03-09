@@ -16,7 +16,7 @@ import {
 } from '@dotcms/dotcms-models';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 
-import { DotExperimentsExperimentGoalReachPageConfigComponent } from './dot-experiments-experiment-goal-reach-page-config.component';
+import { DotExperimentsGoalConfigurationReachPageComponent } from './dot-experiments-goal-configuration-reach-page.component';
 
 const messageServiceMock = new MockDotMessageService({
     'experiments.configure.goals.sidebar.header': 'Select a goal',
@@ -43,11 +43,11 @@ const formGroupDirectiveMock = new FormGroupDirective([], []);
 formGroupDirectiveMock.form = formMock;
 
 describe('DotExperimentsExperimentGoalReachPageConfigComponent', () => {
-    let spectator: Spectator<DotExperimentsExperimentGoalReachPageConfigComponent>;
+    let spectator: Spectator<DotExperimentsGoalConfigurationReachPageComponent>;
 
     const createComponent = createComponentFactory({
         imports: [DropdownModule, DotFieldValidationMessageModule],
-        component: DotExperimentsExperimentGoalReachPageConfigComponent,
+        component: DotExperimentsGoalConfigurationReachPageComponent,
 
         providers: [
             {

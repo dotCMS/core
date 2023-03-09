@@ -28,9 +28,9 @@ import {
     StepStatus
 } from '@dotcms/dotcms-models';
 import { DotMessagePipeModule } from '@pipes/dot-message/dot-message-pipe.module';
-import { DotExperimentsExperimentGoalReachPageConfigComponent } from '@portlets/dot-experiments/dot-experiments-configuration/components/dot-experiments-experiment-goal-reach-page-config/dot-experiments-experiment-goal-reach-page-config.component';
 import { DotExperimentsConfigurationStore } from '@portlets/dot-experiments/dot-experiments-configuration/store/dot-experiments-configuration-store';
 import { DotExperimentsOptionsModule } from '@portlets/dot-experiments/shared/ui/dot-experiment-options/dot-experiments-options.module';
+import { DotExperimentsGoalConfigurationReachPageComponent } from '@portlets/dot-experiments/shared/ui/dot-experiments-goal-configuration-reach-page/dot-experiments-goal-configuration-reach-page.component';
 import { DotDropdownDirective } from '@portlets/shared/directives/dot-dropdown.directive';
 import {
     DotSidebarDirective,
@@ -58,7 +58,7 @@ import { DotSidebarHeaderComponent } from '@shared/dot-sidebar-header/dot-sideba
         CardModule,
         InputTextModule,
         DropdownModule,
-        DotExperimentsExperimentGoalReachPageConfigComponent
+        DotExperimentsGoalConfigurationReachPageComponent
     ],
     templateUrl: './dot-experiments-configuration-goal-select.component.html',
     styleUrls: ['./dot-experiments-configuration-goal-select.component.scss'],

@@ -1,10 +1,5 @@
-import {
-    ExperimentsSelectOption,
-    GOAL_OPERATORS,
-    GOAL_PARAMETERS,
-    GOAL_TYPES,
-    Goals
-} from './dot-experiments.model';
+import { GOAL_OPERATORS, GOAL_PARAMETERS, GOAL_TYPES, Goals } from './dot-experiments.model';
+import { DotDropdownSelectOption } from './shared-models';
 
 export const MAX_VARIANTS_ALLOWED = 3;
 
@@ -50,7 +45,7 @@ export const ExperimentsStatusList = [
     }
 ];
 
-export const GoalsConditionsParametersList: Array<ExperimentsSelectOption<GOAL_PARAMETERS>> = [
+export const GoalsConditionsParametersList: Array<DotDropdownSelectOption<GOAL_PARAMETERS>> = [
     {
         label: 'experiments.goal.conditions.params.url.label',
         value: GOAL_PARAMETERS.URL,
@@ -58,7 +53,7 @@ export const GoalsConditionsParametersList: Array<ExperimentsSelectOption<GOAL_P
     }
 ];
 
-export const GoalsConditionsOperatorsList: Array<ExperimentsSelectOption<GOAL_OPERATORS>> = [
+export const GoalsConditionsOperatorsList: Array<DotDropdownSelectOption<GOAL_OPERATORS>> = [
     {
         label: 'experiments.goal.conditions.operators.contains.label',
         value: GOAL_OPERATORS.CONTAINS,
