@@ -1663,4 +1663,9 @@ public interface ContentletAPIPostHook {
 	default void getAllContentByVariants(User user, boolean respectFrontendRoles, String[] variantNames) {
 
 	}
+
+	default void markContentletsForDeletion(ContentType type) throws DotDataException {
+
+	}
+
 }

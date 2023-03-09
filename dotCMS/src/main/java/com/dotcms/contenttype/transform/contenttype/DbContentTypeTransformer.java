@@ -145,6 +145,11 @@ public class DbContentTypeTransformer implements ContentTypeTransformer{
 						DbConnectionFactory.getInt(map.get("sort_order").toString()) : 0;
 			}
 
+			@Override
+			public boolean markedForDeletion() {
+				return DbConnectionFactory.isDBTrue(map.get("marked_for_deletion").toString());
+			}
+
 			private Date convertSQLDate(Date d){
 				Date javaDate = new Date();
 				if(d!=null) javaDate.setTime(d.getTime());

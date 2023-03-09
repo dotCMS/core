@@ -1,5 +1,7 @@
 package com.dotcms.contenttype.business;
 
+import com.dotcms.business.CloseDBIfOpened;
+import com.dotcms.business.WrapInTransaction;
 import com.dotcms.contenttype.business.sql.ContentTypeSql;
 import com.dotcms.contenttype.exception.NotFoundInDbException;
 import com.dotcms.contenttype.model.field.*;
@@ -11,6 +13,7 @@ import com.dotcms.repackage.javax.validation.constraints.NotNull;
 import com.dotmarketing.business.*;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.common.util.SQLUtil;
+import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
@@ -20,13 +23,19 @@ import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.portlets.workflows.business.WorkFlowFactory;
 import com.dotmarketing.util.*;
 import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Lists;
+import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
 import io.vavr.Lazy;
 import io.vavr.control.Try;
 import org.apache.commons.lang.time.DateUtils;
+import org.apache.commons.lang3.BooleanUtils;
 
 import java.util.Calendar;
 import java.util.*;
+import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import static com.dotcms.contenttype.business.ContentTypeAPIImpl.TYPES_AND_FIELDS_VALID_VARIABLE_REGEX;
@@ -282,14 +291,14 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
 
 
   private ContentType dbSelectDefaultType() throws DotDataException {
-    DotConnect dc = new DotConnect().setSQL(this.contentTypeSql.SELECT_DEFAULT_TYPE);
+    DotConnect dc = new DotConnect().setSQL(ContentTypeSql.SELECT_DEFAULT_TYPE);
 
     return new DbContentTypeTransformer(dc.loadObjectResults()).from();
   }
 
   private ContentType dbUpdateDefaultToTrue(ContentType type) throws DotDataException {
 
-    new DotConnect().setSQL(this.contentTypeSql.UPDATE_ALL_DEFAULT).addParam(false).loadResult();
+    new DotConnect().setSQL(ContentTypeSql.UPDATE_ALL_DEFAULT).addParam(false).loadResult();
     type = ContentTypeBuilder.builder(type).defaultType(true).build();
     return save(type);
 
@@ -298,7 +307,7 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
 
   private List<ContentType> dbByType(int type) throws DotDataException {
     DotConnect dc = new DotConnect();
-    String sql = this.contentTypeSql.SELECT_BY_TYPE;
+    String sql = ContentTypeSql.SELECT_BY_TYPE;
     dc.setSQL(String.format(sql, "mod_date desc")).addParam(type);
 
     return new DbContentTypeTransformer(dc.loadObjectResults()).asList();
@@ -307,7 +316,7 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
 
   private List<ContentType> dbAll(String orderBy) throws DotDataException {
     DotConnect dc = new DotConnect();
-    String sql = this.contentTypeSql.SELECT_ALL;
+    String sql = ContentTypeSql.SELECT_ALL;
     orderBy = SQLUtil.sanitizeSortBy(orderBy);
     dc.setSQL(String.format(sql, orderBy));
 
@@ -317,7 +326,7 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
 
   private ContentType dbById(@NotNull String id) throws DotDataException {
     DotConnect dc = new DotConnect();
-    dc.setSQL(this.contentTypeSql.SELECT_BY_INODE);
+    dc.setSQL(ContentTypeSql.SELECT_BY_INODE);
     dc.addParam(id);
     List<Map<String, Object>> results;
 
@@ -336,7 +345,7 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
     final String suggestedVarName = VelocityUtil.convertToVelocityVariable(tryVar, true);
     String varName = suggestedVarName;
     for (int i = 1; i < 100000; i++) {
-      dc.setSQL(this.contentTypeSql.SELECT_COUNT_VAR);
+      dc.setSQL(ContentTypeSql.SELECT_COUNT_VAR);
       dc.addParam(varName.toLowerCase());
       if (dc.getInt("test") == 0 && !reservedContentTypeVars.contains(varName.toLowerCase())) {
         return varName;
@@ -526,7 +535,7 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
 
   private void dbInodeUpdate(final ContentType type) throws DotDataException {
     DotConnect dc = new DotConnect();
-    dc.setSQL(this.contentTypeSql.UPDATE_TYPE_INODE);
+    dc.setSQL(ContentTypeSql.UPDATE_TYPE_INODE);
     dc.addParam(type.owner());
     dc.addParam(type.id());
     dc.loadResult();
@@ -534,7 +543,7 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
 
   private void dbInodeInsert(final ContentType type) throws DotDataException {
     DotConnect dc = new DotConnect();
-    dc.setSQL(this.contentTypeSql.INSERT_TYPE_INODE);
+    dc.setSQL(ContentTypeSql.INSERT_TYPE_INODE);
     dc.addParam(type.id());
     dc.addParam(type.iDate());
     dc.addParam(type.owner());
@@ -543,7 +552,7 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
 
   private void dbUpdate(ContentType type) throws DotDataException {
     DotConnect dc = new DotConnect();
-    dc.setSQL(this.contentTypeSql.UPDATE_TYPE);
+    dc.setSQL(ContentTypeSql.UPDATE_TYPE);
     dc.addParam(type.name());
     dc.addParam(type.description());
     dc.addParam(type.defaultType());
@@ -569,7 +578,7 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
 
 
     DotConnect dc = new DotConnect();
-    dc.setSQL(this.contentTypeSql.INSERT_TYPE);
+    dc.setSQL(ContentTypeSql.INSERT_TYPE);
     dc.addParam(type.id());
     dc.addParam(type.name());
     dc.addParam(type.description());
@@ -633,10 +642,42 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
 
     // remove structure itself
     DotConnect dc = new DotConnect();
-    dc.setSQL(this.contentTypeSql.DELETE_TYPE_BY_INODE).addParam(dbType.id()).loadResult();
-    dc.setSQL(this.contentTypeSql.DELETE_INODE_BY_INODE).addParam(dbType.id()).loadResult();
+    dc.setSQL(ContentTypeSql.DELETE_TYPE_BY_INODE).addParam(dbType.id()).loadResult();
+    dc.setSQL(ContentTypeSql.DELETE_INODE_BY_INODE).addParam(dbType.id()).loadResult();
     return true;
   }
+
+
+    @CloseDBIfOpened
+    public void tearDown(final ContentType type) throws  DotDataException {
+
+        // default structure can't be deleted
+        if (type.defaultType()) {
+            throw new DotDataException("contenttype.delete.cannot.delete.default.type");
+        }
+        if (type.system()) {
+            throw new DotDataException("contenttype.delete.cannot.delete.system.type");
+        }
+
+        //Refresh prior to delete
+        final ContentType dbType = Try.of(()->dbById(type.id())).getOrNull();
+        if(null == dbType){
+            Logger.warn(ContentTypeFactoryImpl.class,String.format("The ContentType with id `%s` does not exist ",type.id()));
+            return;
+        }
+
+        if(!dbType.markedForDeletion()){
+            Logger.warn(ContentTypeFactoryImpl.class,String.format("The ContentType with id `%s` isn't marked for deletion ",type.id()));
+            return;
+        }
+
+        try {
+            internalTearDown(dbType);
+        } catch (DotDataException | DotSecurityException e) {
+            Logger.error(getClass(),String.format("Error Tearing down ContentType [%s]",dbType.variable()),e);
+        }
+
+    }
 
   final Lazy<Boolean> LOAD_FROM_CACHE=Lazy.of(()->Config.getBooleanProperty(
           LOAD_CONTENTTYPE_DETAILS_FROM_CACHE, true));
@@ -661,9 +702,9 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
     DotConnect dc = new DotConnect();
 
     if(LOAD_FROM_CACHE.get()) {
-        dc.setSQL( String.format( this.contentTypeSql.SELECT_INODE_ONLY_QUERY_CONDITION, SQLUtil.sanitizeCondition( searchCondition.condition ), orderBy ) );
+        dc.setSQL( String.format(ContentTypeSql.SELECT_INODE_ONLY_QUERY_CONDITION, SQLUtil.sanitizeCondition( searchCondition.condition ), orderBy ) );
     }else {
-        dc.setSQL( String.format( this.contentTypeSql.SELECT_QUERY_CONDITION, SQLUtil.sanitizeCondition( searchCondition.condition ), orderBy ) );
+        dc.setSQL( String.format(ContentTypeSql.SELECT_QUERY_CONDITION, SQLUtil.sanitizeCondition( searchCondition.condition ), orderBy ) );
     }
     dc.setMaxRows(limit);
     dc.setStartRow(offset);
@@ -701,7 +742,7 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
     SearchCondition searchCondition = new SearchCondition(search);
 
     DotConnect dc = new DotConnect();
-    dc.setSQL( String.format( this.contentTypeSql.SELECT_COUNT_CONDITION, SQLUtil.sanitizeCondition( searchCondition.condition ) ) );
+    dc.setSQL( String.format(ContentTypeSql.SELECT_COUNT_CONDITION, SQLUtil.sanitizeCondition( searchCondition.condition ) ) );
     dc.addParam( searchCondition.search );
     dc.addParam( searchCondition.search.toLowerCase());
     dc.addParam( searchCondition.search );
@@ -744,7 +785,138 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
     }
   }
 
-  private void deleteRelationships(ContentType type) throws DotDataException {
+   @CloseDBIfOpened
+    private int countByType(ContentType type){
+       return FactoryLocator.getContentletFactory().countByType(type, false);
+    }
+
+    @CloseDBIfOpened
+    private void internalTearDown(ContentType type) throws DotSecurityException, DotDataException {
+
+        final long t1 = System.currentTimeMillis();
+        final User systemUser = APILocator.systemUser();
+        final int maxThreads = Config.getIntProperty("CT_DELETE_THREADS", 2);
+        final ExecutorService pool = Executors.newFixedThreadPool(maxThreads);
+        final CompletionService<Boolean> service = new ExecutorCompletionService<>(pool);
+        final long allCount = countByType(type);
+        final int limit = Config.getIntProperty("CT_DELETE_BATCH_SIZE", 600);
+        Logger.info(getClass(), String.format("There are (%d) contents. Will attack using (%d) batchSize & (%d) threads. ", allCount, limit, maxThreads));
+        ContentletAPI conAPI = APILocator.getContentletAPI();
+        int futures = 0;
+        int offset = 0;
+        try {
+            while (!pool.isTerminated()) {
+
+                List<Contentlet> contents = conAPI.findByStructure(type.inode(), systemUser, false, limit, offset);
+                if (contents.isEmpty()) {
+                    //We're done lets get out of here
+                    Logger.info(getClass(), "We're done collecting contents!");
+                    break;
+                }
+
+                final List<List<Contentlet>> partitions = partitionInput(contents, maxThreads);
+                Logger.info(getClass(), String.format(" ::: Partitions size %d ", partitions.size()));
+                for (List<Contentlet> partition : partitions) {
+                    service.submit(() -> {
+                        try {
+                            return destroy(partition, conAPI, systemUser);
+                        } finally {
+                            DateUtil.sleep(400);
+                        }
+                    });
+                    futures++;
+                }
+
+                offset += limit;
+                Logger.info(getClass(), String.format(" Offset is (%d) of (%d) total. ", offset, allCount));
+            }
+
+            for (int i = 0; i < futures; i++) {
+                try {
+                    service.take().get();
+                } catch (InterruptedException | ExecutionException e) {
+                    Logger.error(getClass(), "Failure ", e);
+                    Thread.currentThread().interrupt();
+                }
+            }
+            pool.shutdown();
+        } finally {
+
+            final int failuresCount = countByType(type);
+            if (failuresCount > 0) {
+                Logger.info(getClass(), String.format(" There were still (%d) that failed getting removed. ", failuresCount));
+                deleteContentletsByType(type);
+            }
+
+            destroy(type);
+
+            final long t2 = System.currentTimeMillis();
+            long diff = t2 - t1;
+            final long hours = TimeUnit.MILLISECONDS.toHours(diff);
+            final long minutes = TimeUnit.MILLISECONDS.toMinutes(diff);
+            final long seconds = TimeUnit.MILLISECONDS.toSeconds(diff);
+            String timeInHHMMSS = String.format("%02d:%02d:%02d", hours, minutes, seconds);
+            Logger.info(getClass(), String.format(" it took me (%s) to tear down (%d) of CT (%s) ", timeInHHMMSS, allCount, type));
+        }
+    }
+
+    @WrapInTransaction
+    private boolean destroy(List<Contentlet> contents, ContentletAPI conAPI, User systemUser){
+        try {
+            return conAPI.destroy(contents, systemUser, false);
+        } catch (DotDataException | DotSecurityException e) {
+            Logger.error(this, "Error destroying contents", e);
+        }
+        return false;
+    }
+
+    @WrapInTransaction
+    private void destroy(ContentType type) {
+            try {
+                Logger.info(getClass(), String.format("Destroying Content-Type with inode: [%s] and var: [%s].", type.inode(), type.variable()));
+
+                updateFolderFileAssetReferences(type);
+
+                // delete container structures
+                APILocator.getContainerAPI().deleteContainerStructureByContentType(type);
+
+                // delete workflow schema references
+                deleteWorkflowSchemeReference(type);
+
+                // remove structure permissions
+                APILocator.getPermissionAPI().removePermissions(type);
+
+                // delete relationships
+                deleteRelationships(type);
+
+                FactoryLocator.getFieldFactory().deleteByContentType(type);
+                // remove structure itself
+                DotConnect dc = new DotConnect();
+                dc.setSQL(ContentTypeSql.DELETE_TYPE_BY_INODE).addParam(type.id()).loadResult();
+                dc.setSQL(ContentTypeSql.DELETE_INODE_BY_INODE).addParam(type.id()).loadResult();
+                Logger.info(getClass(), String.format("We're done with Content-Type [%s],[%s].", type.inode(), type.variable()));
+
+            } catch (DotDataException e) {
+                Logger.error(getClass(), String.format("Error Removing CT [%s],[%s].", type.inode(), type.variable()), e);
+            }
+    }
+
+    private List<List<Contentlet>> partitionInput(final List<Contentlet> contents, final int maxThreads) {
+        final int partitionSize = Math
+                .max((contents.size() / maxThreads), 10);
+
+        Logger.info(getClass(),
+                String.format(
+                        "Number of threads is limited to %d. Number of Contentlets to process is %d. Load will be distributed in groups of %d ",
+                        maxThreads, contents.size(),
+                        partitionSize)
+        );
+        return Lists.partition(contents, partitionSize);
+
+    }
+
+
+    private void deleteRelationships(ContentType type) throws DotDataException {
 
       final RelationshipAPI relationshipAPI = APILocator.getRelationshipAPI();
       final FieldAPI contentTypeFieldAPI = APILocator.getContentTypeFieldAPI();
@@ -868,12 +1040,28 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
 	 cache.remove(type);
  }
 
- private void dbUpdateModDate(ContentType type) throws DotDataException{
+ private void dbUpdateModDate(ContentType type) throws DotDataException {
 	 DotConnect dc = new DotConnect();
-	 dc.setSQL(this.contentTypeSql.UPDATE_TYPE_MOD_DATE_BY_INODE);
+	 dc.setSQL(ContentTypeSql.UPDATE_TYPE_MOD_DATE_BY_INODE);
 	 dc.addParam(type.modDate());
 	 dc.addParam(type.id());
 	 dc.loadResult();
  }
+
+    /**
+     * This could be considered putting a shallow mark on the CT
+     * This way we can immediately exclude it from any process that might want to use it
+     * @param type
+     * @throws DotDataException
+     */
+   @WrapInTransaction
+   @Override
+   public void markForDeletion(ContentType type) throws DotDataException {
+       final DotConnect dotConnect = new DotConnect();
+       dotConnect.setSQL(ContentTypeSql.MARK_FOR_DELETION);
+       dotConnect.addParam(type.inode());
+       dotConnect.loadResult();
+       cache.remove(type);
+    }
 
 }

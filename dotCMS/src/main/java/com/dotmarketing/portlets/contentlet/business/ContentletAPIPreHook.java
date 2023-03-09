@@ -1929,4 +1929,8 @@ public interface ContentletAPIPreHook {
 	default boolean getAllContentByVariants(User user, boolean respectFrontendRoles, String[] variantNames) {
     	return true;
 	}
+
+	default void markContentletsForDeletion(ContentType type) throws DotDataException {
+
+	}
 }

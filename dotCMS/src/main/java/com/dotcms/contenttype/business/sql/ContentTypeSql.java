@@ -27,7 +27,7 @@ public abstract class ContentTypeSql {
 
     public static String SELECT_ALL_STRUCTURE_FIELDS = "select  inode.inode as inode, owner, idate as idate, name, "
         + "description, default_structure, page_detail, structuretype, system, fixed, velocity_var_name , "
-        + "url_map_pattern , host, folder, expire_date_var , publish_date_var , mod_date, icon, sort_order "
+        + "url_map_pattern , host, folder, expire_date_var , publish_date_var , mod_date, icon, marked_for_deletion, sort_order "
         + "from inode, structure  where inode.type='structure' and inode.inode = structure.inode  ";
     
     public static String SELECT_ONLY_INODE_FIELD = "select  inode.inode as inode from inode, structure  where inode.type='structure' and inode.inode = structure.inode  ";
@@ -97,5 +97,7 @@ public abstract class ContentTypeSql {
 	public static String UPDATE_TYPE_MOD_DATE_BY_INODE = "update structure set mod_date = ? where inode = ?";
 
 	public static String ORDER_BY = " ORDER BY %s";
+
+	public static String MARK_FOR_DELETION = "update structure set marked_for_deletion = true where inode = ?";
 
 }

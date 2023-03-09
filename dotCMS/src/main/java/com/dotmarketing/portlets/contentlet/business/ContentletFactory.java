@@ -1,7 +1,7 @@
 package com.dotmarketing.portlets.contentlet.business; 
 
-import com.dotcms.content.business.DotMappingException;
 import com.dotcms.content.elasticsearch.util.RestHighLevelClientProvider;
+import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.repackage.net.sf.hibernate.ObjectNotFoundException;
 import com.dotcms.util.transform.TransformerLocator;
 import com.dotmarketing.beans.Identifier;
@@ -27,7 +27,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import java.util.function.Consumer;
 
 /**
  * Provides utility methods to interact with {@link Contentlet} objects in
@@ -40,6 +39,8 @@ import java.util.function.Consumer;
  *
  */
 public abstract class ContentletFactory {
+
+	public static final String DELETE_ME = "%s_DELETE_ME";
 
 	/**
 	 * Use to get all contentlets live/working contentlets
@@ -207,7 +208,16 @@ public abstract class ContentletFactory {
      */
     protected abstract List<Contentlet> findByStructure(String structureInode, Date maxDate,
             int limit, int offset) throws DotDataException, DotStateException, DotSecurityException;
-	
+
+	/**
+	 * select count contentlet by ContentType
+	 *
+	 * @param contentType
+	 * @param includeAllVersion when true all inode-versions versions are counted too
+	 * @return
+	 */
+	public abstract int countByType(ContentType contentType, boolean includeAllVersion);
+
 	/**
 	 * Saves a Contentlet
 	 * @param contentlet
@@ -499,5 +509,18 @@ public abstract class ContentletFactory {
 		if(e != null && e.getMessage().contains("reactor status: STOPPED")) {
 			RestHighLevelClientProvider.getInstance().rebuildClient();
 		}
+	}
+
+	public ContentType markContentForDeletion(final ContentType type) throws DotDataException {
+
+		final DotConnect dotConnect = new DotConnect();
+		final String recycleBinInode = "RECYCLE";
+		final String newVarName = String.format(DELETE_ME,type.variable());
+       //Relocate all contents under the "RECYCLE" CT.
+		dotConnect.setSQL("update contentlet c set structure_inode = ? from structure s where c.structure_inode = s.inode and s.inode = ? ").addParam(recycleBinInode).addParam(type.inode()).loadResult();
+        //Now free up the original CT BY Resetting the varName and setting an inode ending with _DELETE_ME
+		//Also we free-up the var-name
+		dotConnect.setSQL(" update structure set velocity_var_name = ? WHERE inode = ?").addParam(newVarName).addParam(type.inode()).loadResult();
+		return type;
 	}
 }

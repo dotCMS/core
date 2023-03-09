@@ -10,12 +10,7 @@ import com.dotcms.repackage.com.google.common.base.Preconditions;
 import com.dotcms.util.CollectionsUtils;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.PermissionableProxy;
-import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.DotStateException;
-import com.dotmarketing.business.PermissionAPI;
-import com.dotmarketing.business.PermissionSummary;
-import com.dotmarketing.business.Permissionable;
-import com.dotmarketing.business.RelatedPermissionableGroup;
+import com.dotmarketing.business.*;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
@@ -42,21 +37,17 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.liferay.util.StringPool;
 import io.vavr.control.Try;
-
-import java.io.IOException;
-import java.io.Serializable;
-import java.util.Calendar;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
-import javax.annotation.Nullable;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.time.DateUtils;
 import org.immutables.value.Value;
 import org.immutables.value.Value.Auxiliary;
 import org.immutables.value.Value.Default;
+
+import javax.annotation.Nullable;
+import java.io.IOException;
+import java.io.Serializable;
+import java.util.*;
+import java.util.stream.Collectors;
 
 @JsonTypeInfo(
         use = Id.CLASS,
@@ -482,6 +473,10 @@ public abstract class ContentType implements Serializable, Permissionable, Conte
     }
     return this.hasStoryBlockFields;
   }
+
+  @JsonIgnore
+  @Default
+  public boolean markedForDeletion() { return false; }
 
   static class ClassNameAliasResolver extends ClassNameIdResolver {
     static TypeFactory typeFactory = TypeFactory.defaultInstance();

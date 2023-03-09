@@ -59,6 +59,7 @@ public interface ContentTypeAPI {
    */
   void delete(ContentType st) throws DotSecurityException, DotDataException;
 
+  void bulkDelete(ContentType type) throws DotSecurityException, DotDataException;
   /**
    * Find a Content Type given the inode
    * 

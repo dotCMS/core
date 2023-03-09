@@ -60,6 +60,8 @@ public interface ContentTypeBuilder {
 	ContentTypeBuilder icon(String variable);
 
 	ContentTypeBuilder sortOrder(int variable);
+
+	ContentTypeBuilder markedForDeletion(boolean mark);
 	
 	public static ContentTypeBuilder builder(ContentType type) throws DotStateException {
 		return builder(type.getClass()).from(type);

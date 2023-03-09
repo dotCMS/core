@@ -83,5 +83,9 @@ public interface ContentTypeFactory {
   	void validateFields(ContentType type);
   
   	void updateModDate(ContentType type) throws DotDataException;
+
+	void markForDeletion(ContentType type) throws DotDataException;
+
+	void tearDown(final ContentType type) throws DotDataException ;
 	
 }

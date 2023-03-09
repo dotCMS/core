@@ -2611,7 +2611,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
     private boolean internalDestroy(final List<Contentlet> contentlets, final User user,
             final boolean respectFrontendRoles) throws DotSecurityException, DotDataException {
 
-        this.logContentletActivity(contentlets, "Destroying Content", user);
+        //this.logContentletActivity(contentlets, "Destroying Content", user);
 
         for (final Contentlet contentlet : contentlets) {
 
@@ -2738,7 +2738,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
             final Contentlet contentlet = contentletIterator.next();
             contentlet.getMap().put(Contentlet.DONT_VALIDATE_ME, true);
-            this.forceUnpublishArchiveOnDestroy(user, contentlet);
+            //this.forceUnpublishArchiveOnDestroy(user, contentlet);
             APILocator.getWorkflowAPI()
                     .deleteWorkflowTaskByContentletIdAnyLanguage(contentlet, user);
 
@@ -2767,7 +2767,8 @@ public class ESContentletAPIImpl implements ContentletAPI {
                     contentlet.getIndexPolicy()));
             // Remove page contents (if the content is a Content Page)
             this.deleteMultitrees(contentlet, user);
-            this.logContentletActivity(contentlet, "Content Destroyed", user);
+            //this.logContentletActivity(contentlet, "Content Destroyed :::", user);
+            Logger.warn(this, String.format(" :: Contentlet Destroyed (%s) ::",contentlet.getInode()));
         }
 
         this.backupDestroyedContentlets(contentlets, user);
@@ -3693,6 +3694,12 @@ public class ESContentletAPIImpl implements ContentletAPI {
             throw new DotReindexStateException("Unable to complete reindex: " + e.getMessage(), e);
         }
 
+    }
+
+    @WrapInTransaction
+    @Override
+    public ContentType markContentsForDeletion(ContentType type) throws DotDataException{
+         return contentFactory.markContentForDeletion(type);
     }
 
     /**

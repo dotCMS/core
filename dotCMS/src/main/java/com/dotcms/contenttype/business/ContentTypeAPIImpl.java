@@ -33,21 +33,22 @@ import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.PermissionLevel;
 import com.dotmarketing.business.Permissionable;
+import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.exception.InvalidLicenseException;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.structure.model.SimpleStructureURLMap;
+import com.dotmarketing.quartz.job.ContentTypeDeleteJob;
 import com.dotmarketing.quartz.job.IdentifierDateJob;
-import com.dotmarketing.util.ActivityLogger;
-import com.dotmarketing.util.AdminLogger;
-import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.UtilMethods;
+import com.dotmarketing.util.*;
 import com.dotmarketing.util.json.JSONArray;
 import com.dotmarketing.util.json.JSONObject;
 import com.google.common.collect.ImmutableList;
 import com.liferay.portal.model.User;
+
+import java.sql.Connection;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
@@ -106,11 +107,19 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
         APILocator.getPermissionAPI(), APILocator.getContentTypeFieldAPI(), APILocator.getLocalSystemEventsAPI());
   }
 
-  @WrapInTransaction
+
   @Override
   public void delete(ContentType type) throws DotSecurityException, DotDataException {
-    perms.checkPermission(type, PermissionLevel.EDIT_PERMISSIONS, user);
+    if(Config.getBooleanProperty("CT_DELETE_JOB",true)){
+       bulkDelete(type);
+    } else {
+      transactionalDelete(type);
+    }
+  }
 
+  @WrapInTransaction
+  private void transactionalDelete(ContentType type)throws DotSecurityException, DotDataException {
+    perms.checkPermission(type, PermissionLevel.EDIT_PERMISSIONS, user);
     try {
       contentTypeFactory.delete(type);
     } catch (DotStateException | DotDataException e) {
@@ -121,7 +130,7 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
       String actionUrl = ContentTypeUtil.getInstance().getActionUrl(type, user);
       ContentTypePayloadDataWrapper contentTypePayloadDataWrapper = new ContentTypePayloadDataWrapper(actionUrl, type);
       APILocator.getSystemEventsAPI().pushAsync(SystemEventType.DELETE_BASE_CONTENT_TYPE, new Payload(
-          contentTypePayloadDataWrapper, Visibility.PERMISSION, String.valueOf(PermissionAPI.PERMISSION_READ)));
+              contentTypePayloadDataWrapper, Visibility.PERMISSION, String.valueOf(PermissionAPI.PERMISSION_READ)));
     } catch (DotStateException | DotDataException e) {
       Logger.error(ContentType.class, e.getMessage(), e);
       throw new BaseRuntimeInternationalizationException(e);
@@ -130,7 +139,16 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
     HibernateUtil.addCommitListener(()-> {
       localSystemEventsAPI.notify(new ContentTypeDeletedEvent(type.variable()));
     });
+  }
 
+
+  @Override
+  @CloseDBIfOpened
+  public void bulkDelete(ContentType type) throws DotSecurityException, DotDataException {
+    perms.checkPermission(type, PermissionLevel.EDIT_PERMISSIONS, user);
+    contentTypeFactory.markForDeletion(type);
+    APILocator.getContentletIndexAPI().removeContentFromIndexByStructureInode(type.inode());
+    ContentTypeDeleteJob.triggerContentTypeDeletion(type);
   }
 
   @Override

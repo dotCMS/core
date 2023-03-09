@@ -1679,8 +1679,22 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
             post.refresh(type);
         }
     }
-	
-	
+
+	@Override
+	public ContentType markContentsForDeletion(ContentType type) throws DotDataException {
+		for(ContentletAPIPreHook pre : preHooks){
+			pre.markContentletsForDeletion(type);
+		}
+
+		ContentType ct = conAPI.markContentsForDeletion(type);
+
+		for(ContentletAPIPostHook post : postHooks){
+			post.markContentletsForDeletion(type);
+		}
+		return ct;
+	}
+
+
 	@Override
 	public void refresh(Contentlet contentlet) throws DotReindexStateException,
 			DotDataException {
