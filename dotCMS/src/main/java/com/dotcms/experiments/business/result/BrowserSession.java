@@ -4,6 +4,7 @@ import com.dotcms.util.DotPreconditions;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 /**
  * Represent a Session into a n Experiment define by the value of the {@link com.dotcms.experiments.model.Experiment#lookbackWindow}.
@@ -31,5 +32,13 @@ public class BrowserSession {
 
     public String getLookBackWindow() {
         return lookBackWindow;
+    }
+
+    public Optional<String> getVariant() {
+        if (!events.isEmpty()) {
+            return events.get(0).getVariant();
+        }
+
+        return Optional.empty();
     }
 }
