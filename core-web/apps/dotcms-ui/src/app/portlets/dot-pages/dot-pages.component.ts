@@ -113,6 +113,8 @@ export class DotPagesComponent implements OnInit, OnDestroy {
             .listen('save-page')
             .pipe(takeUntil(this.destroy$))
             .subscribe((evt) => {
+                this.store.getFavoritePages(FAVORITE_PAGE_LIMIT);
+
                 evt.data['retryLoading']
                     ? this.store.getPagesRetry({ offset: 0 })
                     : this.store.getPages({ offset: 0 });

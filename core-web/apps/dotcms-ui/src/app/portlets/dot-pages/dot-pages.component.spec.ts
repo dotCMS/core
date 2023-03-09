@@ -23,7 +23,11 @@ import {
 } from '@dotcms/utils-testing';
 
 import { DotPageStore } from './dot-pages-store/dot-pages.store';
-import { DotActionsMenuEventParams, DotPagesComponent } from './dot-pages.component';
+import {
+    DotActionsMenuEventParams,
+    DotPagesComponent,
+    FAVORITE_PAGE_LIMIT
+} from './dot-pages.component';
 
 @Component({
     selector: 'dot-pages-favorite-panel',
@@ -280,6 +284,7 @@ describe('DotPagesComponent', () => {
             severity: DotMessageSeverity.SUCCESS,
             type: DotMessageType.SIMPLE_MESSAGE
         });
+        expect(store.getFavoritePages).toHaveBeenCalledWith(FAVORITE_PAGE_LIMIT);
         expect(store.getPages).toHaveBeenCalledWith({ offset: 0 });
     });
 
@@ -294,6 +299,7 @@ describe('DotPagesComponent', () => {
     it('should reload portlet only when the site change', () => {
         switchSiteSubject.next(mockSites[0]); // setting the site
         switchSiteSubject.next(mockSites[1]); // switching the site
+        expect(store.getFavoritePages).toHaveBeenCalledWith(FAVORITE_PAGE_LIMIT);
         expect(store.getPages).toHaveBeenCalledWith({ offset: 0 });
     });
 });
