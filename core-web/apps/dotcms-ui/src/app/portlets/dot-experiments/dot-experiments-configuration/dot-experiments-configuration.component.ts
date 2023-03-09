@@ -117,7 +117,7 @@ export class DotExperimentsConfigurationComponent implements OnInit {
 
     /**
      * Delete a specific variant
-     * @param {{ variant: Variant; mode: EditPageTabs }} variant
+     * @param {{ $event: MouseEvent; variant: Variant }} event
      * @param {string} experimentId
      * @returns void
      * @memberof DotExperimentsConfigurationComponent
