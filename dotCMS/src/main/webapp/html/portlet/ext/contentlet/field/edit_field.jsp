@@ -243,7 +243,6 @@
 
                     if (content) {
                         blockEditor.value = content;
-                        field.value = JSON.stringify(block.editor.getJSON());
                     }
 
                     blockEditor.addEventListener('valueChange', (event) => {

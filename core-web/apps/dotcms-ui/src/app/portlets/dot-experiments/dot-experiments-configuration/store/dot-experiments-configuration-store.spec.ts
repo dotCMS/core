@@ -16,6 +16,9 @@ import {
     DotExperiment,
     DotExperimentStatusList,
     ExperimentSteps,
+    GOAL_OPERATORS,
+    GOAL_PARAMETERS,
+    GOAL_TYPES,
     Goals,
     GoalsLevels,
     RangeOfDateAndTime,
@@ -295,6 +298,73 @@ describe('DotExperimentsConfigurationStore', () => {
 
             store.state$.subscribe(({ experiment }) => {
                 expect(experiment.goals).toEqual(expectedGoals);
+                done();
+            });
+        });
+
+        it('should get a isDefault true to the default conditions of type REACH_PAGE', (done) => {
+            const experimentMock = {
+                ...EXPERIMENT_MOCK,
+                goals: {
+                    primary: {
+                        name: 'default',
+                        type: GOAL_TYPES.REACH_PAGE,
+                        conditions: [
+                            {
+                                parameter: GOAL_PARAMETERS.URL,
+                                operator: GOAL_OPERATORS.EQUALS,
+                                value: 'index'
+                            },
+                            {
+                                parameter: GOAL_PARAMETERS.REFERER,
+                                operator: GOAL_OPERATORS.CONTAINS,
+                                value: 'index'
+                            }
+                        ]
+                    }
+                }
+            };
+
+            dotExperimentsService.getById.and
+                .callThrough()
+                .and.returnValue(of({ ...experimentMock }));
+
+            store.loadExperiment(EXPERIMENT_MOCK.id);
+
+            store.goals$.subscribe(({ primary }) => {
+                expect(primary.conditions[0].isDefault).toBeFalse();
+                expect(primary.conditions[1].parameter).toBe(GOAL_PARAMETERS.REFERER);
+                expect(primary.conditions[1].isDefault).toBeTrue();
+                done();
+            });
+        });
+        it('should get a isDefault true to the default conditions of type BOUNCE_RATE', (done) => {
+            const experimentMock = {
+                ...EXPERIMENT_MOCK,
+                goals: {
+                    primary: {
+                        name: 'default',
+                        type: GOAL_TYPES.BOUNCE_RATE,
+                        conditions: [
+                            {
+                                parameter: GOAL_PARAMETERS.URL,
+                                operator: GOAL_OPERATORS.CONTAINS,
+                                value: 'index'
+                            }
+                        ]
+                    }
+                }
+            };
+
+            dotExperimentsService.getById.and
+                .callThrough()
+                .and.returnValue(of({ ...experimentMock }));
+
+            store.loadExperiment(EXPERIMENT_MOCK.id);
+
+            store.goals$.subscribe(({ primary }) => {
+                expect(primary.conditions[0].parameter).toBe(GOAL_PARAMETERS.URL);
+                expect(primary.conditions[0].isDefault).toBeTrue();
                 done();
             });
         });

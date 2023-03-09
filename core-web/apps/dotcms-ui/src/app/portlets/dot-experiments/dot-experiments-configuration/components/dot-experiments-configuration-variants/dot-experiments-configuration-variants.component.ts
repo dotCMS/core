@@ -64,7 +64,7 @@ export class DotExperimentsConfigurationVariantsComponent {
 
     @Input() variants: Variant[];
     @Output() sidebarStatusChanged = new EventEmitter<SidebarStatus>();
-    @Output() delete = new EventEmitter<Variant>();
+    @Output() delete = new EventEmitter<{ $event: MouseEvent; variant: Variant }>();
     @Output() edit = new EventEmitter<Pick<DotExperiment, 'name' | 'id'>>();
     @Output() save = new EventEmitter<Pick<DotExperiment, 'name'>>();
     @Output() goToEditPage = new EventEmitter<{ variant: Variant; mode: EditPageTabs }>();

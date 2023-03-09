@@ -1,9 +1,11 @@
 import { Subject } from 'rxjs';
 
-import { Component, DebugElement, EventEmitter, Input, Output } from '@angular/core';
+import { HttpClient, HttpHandler } from '@angular/common/http';
+import { Component, DebugElement, EventEmitter, Injectable, Input, Output } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 
+import { DialogService } from 'primeng/dynamicdialog';
 import { MenuModule } from 'primeng/menu';
 
 import { of } from 'rxjs/internal/observable/of';
@@ -13,8 +15,12 @@ import { DotMessageSeverity, DotMessageType } from '@components/dot-message-disp
 import { DotMessageDisplayService } from '@components/dot-message-display/services';
 import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
 import { DotEventsService } from '@dotcms/data-access';
-import { mockSites, SiteService } from '@dotcms/dotcms-js';
-import { dotcmsContentletMock, MockDotRouterService } from '@dotcms/utils-testing';
+import { CoreWebService, CoreWebServiceMock, mockSites, SiteService } from '@dotcms/dotcms-js';
+import {
+    dotcmsContentletMock,
+    dotcmsContentTypeBasicMock,
+    MockDotRouterService
+} from '@dotcms/utils-testing';
 
 import { DotPageStore } from './dot-pages-store/dot-pages.store';
 import { DotActionsMenuEventParams, DotPagesComponent } from './dot-pages.component';
@@ -77,9 +83,13 @@ const storeMock = {
     get languageLabels$() {
         return of({});
     },
+    get pageTypes$() {
+        return of([{ ...dotcmsContentTypeBasicMock }]);
+    },
     clearMenuActions: jasmine.createSpy(),
     getFavoritePages: jasmine.createSpy(),
     getPages: jasmine.createSpy(),
+    getPageTypes: jasmine.createSpy(),
     showActionsMenu: jasmine.createSpy(),
     setInitialStateData: jasmine.createSpy(),
     limitFavoritePages: jasmine.createSpy(),
@@ -101,15 +111,23 @@ const storeMock = {
             actionMenuDomId: '',
             items: [],
             addToBundleCTId: 'test1'
-        }
+        },
+        pageTypes: []
     })
 };
+@Injectable()
+export class DialogServiceMock {
+    open(): void {
+        /* */
+    }
+}
 
 describe('DotPagesComponent', () => {
     let fixture: ComponentFixture<DotPagesComponent>;
     let component: DotPagesComponent;
     let de: DebugElement;
     let store: DotPageStore;
+    let dialogService: DialogService;
     let dotRouterService: DotRouterService;
     let dotMessageDisplayService: DotMessageDisplayService;
 
@@ -126,8 +144,12 @@ describe('DotPagesComponent', () => {
             imports: [MenuModule],
             providers: [
                 DotEventsService,
+                HttpClient,
+                HttpHandler,
+                { provide: CoreWebService, useClass: CoreWebServiceMock },
                 { provide: DotMessageDisplayService, useClass: DotMessageDisplayServiceMock },
                 { provide: DotRouterService, useClass: MockDotRouterService },
+                { provide: DialogService, useClass: DialogServiceMock },
                 {
                     provide: SiteService,
                     useValue: {
@@ -149,6 +171,7 @@ describe('DotPagesComponent', () => {
             useValue: storeMock
         });
         store = TestBed.inject(DotPageStore);
+        dialogService = TestBed.inject(DialogService);
         dotRouterService = TestBed.inject(DotRouterService);
         dotMessageDisplayService = TestBed.inject(DotMessageDisplayService);
         fixture = TestBed.createComponent(DotPagesComponent);
@@ -158,6 +181,7 @@ describe('DotPagesComponent', () => {
         fixture.detectChanges();
         spyOn(component.menu, 'hide');
         spyOn(dotMessageDisplayService, 'push');
+        spyOn(dialogService, 'open').and.callThrough();
     });
 
     it('should init store', () => {

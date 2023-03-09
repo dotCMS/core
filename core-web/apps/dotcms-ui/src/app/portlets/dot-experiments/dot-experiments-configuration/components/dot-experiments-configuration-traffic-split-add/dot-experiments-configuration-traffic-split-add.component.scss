@@ -3,8 +3,13 @@
 .experiment-traffic-split__form-wrapper {
     padding: $spacing-5;
 
+    form {
+        display: flex;
+        flex-direction: column;
+    }
+
     label {
-        font-weight: $font-weight-semi-bold;
+        font-weight: $font-weight-bold;
         margin-bottom: $spacing-3;
         font-size: $font-size-large;
     }
@@ -30,7 +35,7 @@
                 font-size: $font-size-large;
                 color: $gray;
                 text-transform: uppercase;
-                font-weight: $font-weight-semi-bold;
+                font-weight: $font-weight-bold;
             }
         }
 
