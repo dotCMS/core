@@ -3,6 +3,11 @@
 .experiment-traffic-split__form-wrapper {
     padding: $spacing-5;
 
+    form {
+        display: flex;
+        flex-direction: column;
+    }
+
     label {
         font-weight: $font-weight-semi-bold;
         margin-bottom: $spacing-3;
