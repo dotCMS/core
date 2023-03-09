@@ -12,9 +12,11 @@ import { switchMap, tap } from 'rxjs/operators';
 import { DotMessageService } from '@dotcms/data-access';
 import {
     ComponentStatus,
+    ConditionDefaultByTypeOfGoal,
     DotExperiment,
     DotExperimentStatusList,
     ExperimentSteps,
+    Goal,
     Goals,
     GoalsLevels,
     RangeOfDateAndTime,
@@ -88,9 +90,17 @@ export class DotExperimentsConfigurationStore extends ComponentStore<DotExperime
     );
 
     // Goals Step //
-    readonly goals$: Observable<Goals> = this.select(({ experiment }) =>
-        experiment.goals ? experiment.goals : null
-    );
+    readonly goals$: Observable<Goals> = this.select(({ experiment }) => {
+        return experiment.goals
+            ? {
+                  ...experiment.goals,
+                  primary: {
+                      ...experiment.goals.primary,
+                      ...this.setDefaultGoalCondition(experiment.goals.primary)
+                  }
+              }
+            : null;
+    });
     readonly goalsStatus$ = this.select(this.state$, ({ stepStatusSidebar }) =>
         stepStatusSidebar.experimentStep === ExperimentSteps.GOAL ? stepStatusSidebar : null
     );
@@ -671,5 +681,21 @@ export class DotExperimentsConfigurationStore extends ComponentStore<DotExperime
 
     private updateTabTitle(experiment: DotExperiment) {
         this.title.setTitle(`${experiment.name} - ${this.title.getTitle()}`);
+    }
+
+    private setDefaultGoalCondition(goal: Goal): Goal {
+        const { type, conditions } = goal;
+
+        return {
+            ...goal,
+            conditions: [
+                ...conditions.map((condition) => {
+                    return {
+                        ...condition,
+                        isDefault: ConditionDefaultByTypeOfGoal[type] === condition.parameter
+                    };
+                })
+            ]
+        };
     }
 }
