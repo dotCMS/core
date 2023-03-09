@@ -57,11 +57,13 @@ export class DotFieldValidationMessageComponent implements OnDestroy {
      */
     @Input()
     set field(control: UntypedFormControl | AbstractControl) {
-        this._field = control;
-        control.statusChanges.pipe(takeUntil(this.destroy$)).subscribe(() => {
-            this.errorMsg = this.getErrors(control.errors);
-            this.cd.detectChanges();
-        });
+        if (control) {
+            this._field = control;
+            control.statusChanges.pipe(takeUntil(this.destroy$)).subscribe(() => {
+                this.errorMsg = this.getErrors(control.errors);
+                this.cd.detectChanges();
+            });
+        }
     }
 
     ngOnDestroy(): void {
