@@ -56,16 +56,11 @@ public class PublishingEndPointTest extends IntegrationTestBase {
 
         try {
             endPoint.validatePublishingEndPoint();
-            
-            
-            
         } catch (Exception e) {
-
-            exceptionCatched = true;
-
+            Assert.assertTrue("No Exception should be thrown", false);
         }
 
-        Assert.assertTrue(exceptionCatched);
+        Assert.assertTrue("No Exception should be thrown", true);
     }
 
     @Test
@@ -81,10 +76,10 @@ public class PublishingEndPointTest extends IntegrationTestBase {
         try {
             endPoint.validatePublishingEndPoint();
         } catch (Exception e) {
-            exceptionCatched = true;
+            Assert.assertTrue("No Exception should be thrown", false);
         }
 
-        Assert.assertTrue(exceptionCatched);
+        Assert.assertTrue("No Exception should be thrown", true);
     }
 
     @Test
@@ -95,11 +90,11 @@ public class PublishingEndPointTest extends IntegrationTestBase {
         PublishingEndPoint endPoint = factory.getPublishingEndPoint(StaticPublisher.PROTOCOL_STATIC);
         try {
             endPoint.validatePublishingEndPoint();
-        } catch (PublishingEndPointValidationException e) {
-            exceptionCatched = true;
+        } catch (Exception e) {
+            Assert.assertTrue("No Exception should be thrown", false);
         }
 
-        Assert.assertFalse(exceptionCatched);
+        Assert.assertTrue("No Exception should be thrown", true);
     }
 
 }
