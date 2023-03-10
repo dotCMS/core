@@ -7,6 +7,7 @@ import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.ema.EMAWebInterceptor;
 import com.dotcms.exception.ExceptionUtil;
 import com.dotcms.rest.InitDataObject;
+import com.dotcms.rest.ResponseEntityBooleanView;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.NoCache;
@@ -57,6 +58,7 @@ import com.liferay.portal.SystemException;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import io.vavr.control.Try;
 import org.apache.commons.collections.keyvalue.MultiKey;
 import org.glassfish.jersey.server.JSONP;
 
@@ -1004,4 +1006,42 @@ public class PageResource {
         return paginationUtil.getPage(originalRequest, user, filter, page, perPage, orderbyParam,
                     OrderDirection.valueOf(direction), extraParams);
     }
+
+    /**
+     * Returns true if the page exist and the current user has 'type' permission over it
+     * Parameters:
+     * - type: is optional, by default is READ
+     * - path: page path
+     *
+     * @param originalRequest The {@link HttpServletRequest} object.
+     * @param response The {@link HttpServletResponse} object.
+     * @param type {@link String} type: READ by default @see {@link PermissionLevel}
+     * @param path {@link String} page path
+     * @return All the content types that match
+     */
+    @NoCache
+    @GET
+    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    @Path("/_check-permission")
+    public ResponseEntityBooleanView checkPagePermission(@Context final HttpServletRequest request,
+                                                         @Context final HttpServletResponse response,
+                                                         @DefaultValue("READ") @QueryParam("type") final String type,
+                                                         @DefaultValue("-1") @QueryParam("languageId") final long languageId,
+                                                         @QueryParam("path") final String path) throws DotSecurityException, DotDataException {
+
+        final User user = webResource.init(request, response, true).getUser();
+        final PageMode mode = PageMode.get(request);
+        Logger.debug(this, ()-> "Checking Page Permission type" + type +" for the page path: " + path);
+
+        final Host currentHost = WebAPILocator.getHostWebAPI().getCurrentHostNoThrow(request);
+        final IHTMLPage page = APILocator.getHTMLPageAssetAPI().getPageByPath(
+                path, currentHost, -1 != languageId? languageId:
+                        WebAPILocator.getLanguageWebAPI().getLanguage(request).getId(), mode.showLive);
+
+        return null != page?
+                new ResponseEntityBooleanView(APILocator.getPermissionAPI().
+                    doesUserHavePermission(page, Try.of(() -> PermissionLevel.valueOf(type)).getOrElse(PermissionLevel.READ).getType(),
+                            user, false)):
+                new ResponseEntityBooleanView(false);
+    } // checkPagePermission.
 } // E:O:F:PageResource
