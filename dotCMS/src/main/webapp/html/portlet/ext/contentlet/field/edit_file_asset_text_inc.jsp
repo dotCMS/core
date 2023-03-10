@@ -130,9 +130,9 @@
 					const jsonData = JSON.parse(xhr.response);
 					tempFileId = jsonData.tempFiles[0].id;
 					const elements = document.getElementsByName("<%= field.getFieldContentlet() %>");
-					for (let i = 0; i < elements.length; i++) {
-						if (elements[i].tagName.toLowerCase() == "input") {
-							elements[i].value = tempFileId;
+					for (const element of elements) {
+						if (element.tagName.toLowerCase() === "input") {
+							element.value = tempFileId;
 						}
 					}
 				};
