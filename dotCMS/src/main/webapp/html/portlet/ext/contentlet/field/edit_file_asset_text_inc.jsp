@@ -120,12 +120,6 @@
 				});
 				const xhr = new XMLHttpRequest();
 
-				xhr.addEventListener("readystatechange", function() {
-					if(this.readyState === 4) {
-						console.log(this.responseText);
-					}
-				});
-
 				xhr.onload = function() {
 					const jsonData = JSON.parse(xhr.response);
 					tempFileId = jsonData.tempFiles[0].id;
@@ -143,11 +137,7 @@
 			}
 		} else {
 			FileAssetAjax.saveFileText(contentletInode.value, text, '<%=field.getVelocityVarName()%>', {
-				async: false,
-				callback: function (data) {
-					console.log("savedText");
-					console.log(data);
-				}
+				async: false
 			});
 		}
 	}
