@@ -22,6 +22,7 @@ import {
     DotEventsService,
     DotLanguagesService,
     DotLicenseService,
+    DotPageTypesService,
     DotRenderMode,
     DotWorkflowActionsFireService,
     DotWorkflowsActionsService
@@ -37,9 +38,10 @@ import {
     SiteServiceMock,
     StringUtils
 } from '@dotcms/dotcms-js';
-import { DotCMSContentlet, ESContent } from '@dotcms/dotcms-models';
+import { DotCMSContentlet, DotCMSContentType, ESContent } from '@dotcms/dotcms-models';
 import {
     DotcmsConfigServiceMock,
+    dotcmsContentTypeBasicMock,
     DotcmsEventsServiceMock,
     DotLanguagesServiceMock,
     LoginServiceMock,
@@ -50,6 +52,7 @@ import {
 
 import { DotPageStore } from './dot-pages.store';
 
+import { contentTypeDataMock } from '../../dot-edit-page/components/dot-palette/dot-palette-content-type/dot-palette-content-type.component.spec';
 import { DotLicenseServiceMock } from '../../dot-edit-page/content/services/html/dot-edit-content-toolbar-html.service.spec';
 import {
     CurrentUserDataMock,
@@ -75,6 +78,7 @@ class MockESPaginatorService {
 describe('DotPageStore', () => {
     let dotPageStore: DotPageStore;
     let dotESContentService: DotESContentService;
+    let dotPageTypesService: DotPageTypesService;
     let dotWorkflowsActionsService: DotWorkflowsActionsService;
 
     beforeEach(() => {
@@ -85,6 +89,7 @@ describe('DotPageStore', () => {
                 DotGlobalMessageService,
                 DotIframeService,
                 DotPageStore,
+                DotPageTypesService,
                 DotWizardService,
                 DotWorkflowActionsFireService,
                 DotWorkflowsActionsService,
@@ -108,6 +113,7 @@ describe('DotPageStore', () => {
         });
         dotPageStore = TestBed.inject(DotPageStore);
         dotESContentService = TestBed.inject(DotESContentService);
+        dotPageTypesService = TestBed.inject(DotPageTypesService);
         dotWorkflowsActionsService = TestBed.inject(DotWorkflowsActionsService);
 
         dotPageStore.setInitialStateData(5);
@@ -237,6 +243,19 @@ describe('DotPageStore', () => {
             expect(data.favoritePages.total).toEqual(expectedInputArray.length);
         });
         expect(dotESContentService.get).toHaveBeenCalledTimes(1);
+    });
+
+    it('should get all Page Types value in store', () => {
+        const expectedInputArray = [{ ...dotcmsContentTypeBasicMock, ...contentTypeDataMock[0] }];
+        spyOn(dotPageTypesService, 'getPages').and.returnValue(
+            of(expectedInputArray as unknown as DotCMSContentType[])
+        );
+        dotPageStore.getPageTypes();
+
+        dotPageStore.state$.subscribe((data) => {
+            expect(data.pageTypes).toEqual(expectedInputArray);
+        });
+        expect(dotPageTypesService.getPages).toHaveBeenCalledTimes(1);
     });
 
     it('should set all Pages value in store', () => {

@@ -3,7 +3,7 @@ import { Directive, Input, Optional, Self } from '@angular/core';
 import { Dropdown } from 'primeng/dropdown';
 
 import { DotMessagePipe } from '@dotcms/app/view/pipes';
-import { ExperimentsSelectOption } from '@dotcms/dotcms-models';
+import { DotDropdownSelectOption } from '@dotcms/dotcms-models';
 
 const DEFAULT_LABEL_NAME_INDEX = 'label';
 const DEFAULT_VALUE_NAME_INDEX = 'value';
@@ -34,20 +34,22 @@ export class DotDropdownDirective {
     }
 
     /**
-     *Array of option to translate LABEL_NAME and assign to Dropdown
+     *Array of options to translate LABEL_NAME and assign to Dropdown
      *
-     * @param {Array<ExperimentsSelectOption<string>>} options - Options of Dropdown
+     * @param {Array<DotDropdownSelectOption<string>>} options - Options of Dropdown
      * @memberof DotDropdownDirective
      */
     @Input()
-    set dotOptions(options: Array<ExperimentsSelectOption<string>>) {
-        this.primeDropdown.options = options.map((opt) => {
-            return {
-                ...opt,
-                [DEFAULT_LABEL_NAME_INDEX]: this.dotMessagePipe.transform(
-                    opt[DEFAULT_LABEL_NAME_INDEX]
-                )
-            };
-        });
+    set dotOptions(options: Array<DotDropdownSelectOption<string>>) {
+        if (options) {
+            this.primeDropdown.options = options.map((opt) => {
+                return {
+                    ...opt,
+                    [DEFAULT_LABEL_NAME_INDEX]: this.dotMessagePipe.transform(
+                        opt[DEFAULT_LABEL_NAME_INDEX]
+                    )
+                };
+            });
+        }
     }
 }

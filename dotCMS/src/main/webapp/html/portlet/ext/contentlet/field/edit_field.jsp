@@ -243,10 +243,9 @@
 
                     if (content) {
                         blockEditor.value = content;
-                        field.value = JSON.stringify(block.editor.getJSON());
                     }
 
-                    blockEditor.addEventListener('updateEditorEvent', (event) => {
+                    blockEditor.addEventListener('valueChange', (event) => {
                         field.value = event.detail;
                     });
 
