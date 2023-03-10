@@ -107,7 +107,7 @@ export class DotEditContentComponent implements OnInit, OnDestroy {
     private destroy$: Subject<boolean> = new Subject<boolean>();
     private pageStateInternal: DotPageRenderState;
 
-    private readonly EDIT_SCOPE_OPTIONS: BINARY_OPTION = {
+    private readonly CONTENT_EDIT_OPTIONS: BINARY_OPTION = {
         option1: {
             value: 'current',
             message: 'editpage.content.edit.content.in.this.page.message',
@@ -530,8 +530,8 @@ export class DotEditContentComponent implements OnInit, OnDestroy {
     private iframeActionsHandler(event: string): (contentlet: DotIframeEditEvent) => void {
         const eventsHandlerMap = {
             edit: ({ copyContent, dataset }) => {
-                const { dotInode: inode, onNumberPages } = dataset;
-                onNumberPages > 1
+                const { dotInode: inode, onNumberOfPages } = dataset;
+                onNumberOfPages > 1
                     ? this.openContentletEditModeSelector({ copyContent, inode })
                     : this.editContentlet(inode);
             },
@@ -737,7 +737,7 @@ export class DotEditContentComponent implements OnInit, OnDestroy {
         const ref = this.dialogService.open(DotBinaryOptionSelectorComponent, {
             header: this.dotMessageService.get('Edit-Content'),
             width: '37rem',
-            data: { options: this.EDIT_SCOPE_OPTIONS }
+            data: { options: this.CONTENT_EDIT_OPTIONS }
         });
 
         ref.onClose.pipe(take(1)).subscribe((value) => {
@@ -745,7 +745,7 @@ export class DotEditContentComponent implements OnInit, OnDestroy {
                 return;
             }
 
-            this.EDIT_SCOPE_OPTIONS.option1.value === value
+            this.CONTENT_EDIT_OPTIONS.option1.value === value
                 ? this.copyContentAndEdit(copyContent)
                 : this.editContentlet(inode);
         });

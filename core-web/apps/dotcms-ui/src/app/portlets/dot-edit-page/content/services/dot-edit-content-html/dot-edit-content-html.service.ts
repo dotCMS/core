@@ -628,7 +628,7 @@ export class DotEditContentHtmlService {
 
         const dataset = {
             ...target.dataset,
-            onNumberPages: this.getContentletNumberOfPages(contentlet)
+            onNumberOfPages: this.getContentletNumberOfPages(contentlet)
         };
 
         this.iframeActions$.next({
@@ -931,6 +931,6 @@ export class DotEditContentHtmlService {
     }
 
     private getContentletNumberOfPages(contentlet: HTMLElement): string {
-        return contentlet?.dataset?.dotOnNumberPages || '0';
+        return contentlet?.dataset?.dotOnNumberOfPages || '0';
     }
 }

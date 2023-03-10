@@ -1077,7 +1077,7 @@ describe('DotEditContentComponent', () => {
 
                     it('should open dialog if onNumberPages is greater than 1 ', () => {
                         spyOn(dialogService, 'open').and.returnValue({
-                            onClose: of({})
+                            onClose: of('')
                         } as DynamicDialogRef);
 
                         spyOn(dotContentletEditorService, 'edit');
@@ -1088,7 +1088,7 @@ describe('DotEditContentComponent', () => {
                             name: 'edit',
                             dataset: {
                                 dotInode: 'test_inode',
-                                onNumberPages: '2'
+                                onNumberOfPages: '2'
                             },
                             target: {
                                 contentWindow: {
