@@ -1,6 +1,7 @@
 import { Component } from '@angular/core';
-import { FieldProperty } from '../field-properties.model';
 import { UntypedFormGroup } from '@angular/forms';
+
+import { FieldProperty } from '../field-properties.model';
 
 @Component({
     selector: 'dot-checkbox-property',

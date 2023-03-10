@@ -3,6 +3,7 @@ import * as exec from '@actions/exec'
 import * as fs from 'fs'
 import * as path from 'path'
 import * as shelljs from 'shelljs'
+import fetch, {Response} from 'node-fetch'
 
 const projectRoot = core.getInput('project_root')
 const builtImageName = core.getInput('built_image_name')
@@ -10,6 +11,8 @@ const waitForDeps = core.getInput('wait_for_deps')
 const dbType = core.getInput('db_type')
 const licenseKey = core.getInput('license_key')
 const customStarterUrl = core.getInput('custom_starter_url')
+const parallelCollections: ParallelCollections[] = JSON.parse(core.getInput('parallel_collections'))
+const parallelCollection = core.getInput('parallel_collection')
 const tests = core.getInput('tests')
 const exportReport = core.getBooleanInput('export_report')
 const includeAnalytics = core.getBooleanInput('include_analytics')
@@ -18,7 +21,6 @@ const resourcesFolder = path.join(cicdFolder, 'resources', 'postman')
 const dockerFolder = path.join(cicdFolder, 'docker')
 const licenseFolder = path.join(dockerFolder, 'license')
 const dotCmsRoot = path.join(projectRoot, 'dotCMS')
-const logFile = path.join(dotCmsRoot, 'dotcms.log')
 const volumes = [licenseFolder, path.join(dockerFolder, 'cms-shared'), path.join(dockerFolder, 'cms-local')]
 const postmanTestsPath = path.join(dotCmsRoot, 'src', 'curl-test')
 const postmanEnvFile = 'postman_environment.json'
@@ -41,6 +43,28 @@ export interface Command {
   env?: {[key: string]: string}
 }
 
+interface AccessToken {
+  access_token: string
+  token_type: string
+  issueDate: string
+  expires_in: number
+  refresh_expires_in: number
+  refresh_token: string
+  scope: string
+  clientId: string
+  aud: string
+}
+
+interface AnalyticsKey {
+  jsKey: string
+  m2mKey: string
+}
+
+interface ParallelCollections {
+  name: string
+  collections: string[]
+}
+
 const DEPS_ENV: {[key: string]: string} = {
   DOTCMS_IMAGE: builtImageName,
   TEST_TYPE: 'postman',
@@ -61,7 +85,6 @@ const DEPS_ENV: {[key: string]: string} = {
 export const runTests = async (): Promise<PostmanTestsResult> => {
   await setup()
   await startDeps()
-  printInfo()
 
   try {
     return await runPostmanCollections()
@@ -82,11 +105,15 @@ export const runTests = async (): Promise<PostmanTestsResult> => {
  * Copies logs from docker volume to standard DotCMS location.
  */
 const copyOutputs = async () => {
-  printInfo()
+  const logFile = path.join(dotCmsRoot, `${normalize(parallelCollection)}.log`)
   await execCmd(
     toCommand('docker', ['cp', 'docker_dotcms-app_1:/srv/dotserver/tomcat-9.0.60/logs/dotcms.log', logFile])
   )
-  await execCmd(toCommand('ls', ['-las', dotCmsRoot]))
+}
+
+const copyHeaderAndFooter = async () => {
+  await execCmd(toCommand('cp', [path.join(resourcesFolder, 'postman-results-header.html'), reportFolder]))
+  await execCmd(toCommand('cp', [path.join(resourcesFolder, 'postman-results-footer.html'), reportFolder]))
 }
 
 /**
@@ -96,15 +123,6 @@ const setup = async () => {
   await installDeps()
   createFolders()
   await prepareLicense()
-  await printInfo()
-}
-
-/**
- * Prints docker command info
- */
-const printInfo = async () => {
-  await execCmd(toCommand('docker', ['images']))
-  await execCmd(toCommand('docker', ['ps']))
 }
 
 /**
@@ -131,8 +149,13 @@ const startDeps = async () => {
 
   if (includeAnalytics) {
     execCmdAsync(toCommand('docker-compose', ['-f', 'analytics-compose.yml', 'up'], dockerFolder))
-    await waitFor(140, 'Analytics Infrastructure')
+    await waitFor(160, 'Analytics Infrastructure')
+    await warmUpAnalytics()
   }
+
+  await execCmd(toCommand('docker', ['pull', 'ghcr.io/dotcms/elasticsearch:7.9.1'], dockerFolder))
+  await execCmd(toCommand('docker', ['pull', 'ghcr.io/dotcms/postgres:13-alpine'], dockerFolder))
+  await execCmd(toCommand('docker', ['pull', builtImageName], dockerFolder))
 
   execCmdAsync(
     toCommand(
@@ -175,44 +198,35 @@ const stopDeps = async () => {
   }
 }
 
+const normalize = (provided: string): string => {
+  return !provided || provided === '*' ? 'postman' : provided.replace(/ /g, '_').replace('.json', '')
+}
+
 /**
  * Run postman tests.
  *
  * @returns an overall ivew of the tests results
  */
 const runPostmanCollections = async (): Promise<PostmanTestsResult> => {
-  await waitFor(150, `DotCMS instance`)
+  await waitFor(120, `DotCMS instance`)
 
   // Executes Postman tests
   core.info(`
     ===========================================
     Running postman tests against ${dbType}
     ===========================================`)
+  const collectionRuns = new Map<string, number>()
   const foundCollections = shelljs
     .ls(postmanTestsPath)
     .filter(file => file.endsWith('.json') && file !== postmanEnvFile)
-  core.info(`Postman collections:\n${foundCollections.join(',')}`)
-
-  const resolvedTests = resolveSpecific()
-  const filtered =
-    resolvedTests.length === 0
-      ? foundCollections
-      : resolvedTests.filter(resolved => !!foundCollections.find(collection => collection === resolved))
-  core.info(`Detected Postman collections:\n${filtered.join(',')}`)
-
+  core.info(`Current parallel collection: ${parallelCollection}`)
+  const resolved = resolveCollections(foundCollections)
+  core.info(`Resolved collections ${resolved.join(', ')}`)
   const htmlResults: string[] = []
-  const header = fs.readFileSync(path.join(resourcesFolder, 'postman-results-header.html'), {
-    encoding: 'utf8',
-    flag: 'r'
-  })
-  const footer = fs.readFileSync(path.join(resourcesFolder, 'postman-results-footer.html'), {
-    encoding: 'utf8',
-    flag: 'r'
-  })
-  const collectionRuns = new Map<string, number>()
+  const normalizedParallel = normalize(parallelCollection)
 
-  for (const collection of filtered) {
-    const normalized = collection.replace(/ /g, '_').replace('.json', '')
+  for (const collection of resolved) {
+    const normalized = normalize(collection)
     let rc: number
     const start = new Date().getTime()
 
@@ -231,26 +245,62 @@ const runPostmanCollections = async (): Promise<PostmanTestsResult> => {
 
     if (exportReport) {
       const passed = rc === 0
-      htmlResults.push(
-        `<tr><td><a href="./${normalized}.html">${collection}</a></td><td style="color: #ffffff; background-color: ${
-          passed ? '#28a745' : '#dc3545'
-        }; font-weight: bold;">${passed ? PASSED : FAILED}</td>
-        <td>${duration}</td>
-        </tr>`
-      )
+
+      const content = `<tr><td><a href="./${normalized}.html">${collection}</a></td><td style="color: #ffffff; background-color: ${
+        passed ? '#28a745' : '#dc3545'
+      }; font-weight: bold;">${passed ? PASSED : FAILED}</td>
+      <td>${duration}</td></tr>`
+      htmlResults.push(content)
+
+      fs.writeFileSync(path.join(reportFolder, `${normalized}.inc`), content, {
+        encoding: 'utf8',
+        flag: 'a+',
+        mode: 0o666
+      })
+
+      core.setOutput('normalized_parallel_collection', normalizedParallel)
     }
   }
 
   if (exportReport) {
+    const header = fs.readFileSync(path.join(resourcesFolder, 'postman-results-header.html'), {
+      encoding: 'utf8',
+      flag: 'r'
+    })
+    const footer = fs.readFileSync(path.join(resourcesFolder, 'postman-results-footer.html'), {
+      encoding: 'utf8',
+      flag: 'r'
+    })
     const contents = [header, ...htmlResults, footer]
-    fs.writeFileSync(path.join(reportFolder, 'index.html'), `${contents.join('\n')}`, {
+    fs.writeFileSync(path.join(reportFolder, `${normalizedParallel}.html`), `${contents.join('\n')}`, {
       encoding: 'utf8',
       flag: 'a+',
       mode: 0o666
     })
   }
 
+  await copyHeaderAndFooter()
+
   return handleResults(collectionRuns)
+}
+
+const resolveCollections = (foundCollections: string[]): string[] => {
+  const parallel = parallelCollection?.trim() || '*'
+  const all = parallel === '*'
+  const resolved = (
+    all ? resolveSpecific() : parallelCollections.find(pc => pc.name === parallel)?.collections || []
+  ).map(collection => trimAndExt(collection))
+
+  if (resolved.length > 0) {
+    return resolved.filter(collection => foundCollections.includes(collection))
+  }
+
+  if (all) {
+    const allParallel = parallelCollections.flatMap(pc => pc.collections).map(collection => trimAndExt(collection))
+    return foundCollections.filter(collection => !allParallel.includes(collection))
+  }
+
+  return all ? foundCollections : []
 }
 
 /**
@@ -261,7 +311,7 @@ const runPostmanCollections = async (): Promise<PostmanTestsResult> => {
  * @returns promise with process return code
  */
 const runPostmanCollection = async (collection: string, normalized: string): Promise<number> => {
-  core.info(`Running Postman collection: ${collection}`)
+  core.info(`Running Postman collection: "${collection}"`)
   const resultFile = path.join(resultsFolder, `${normalized}.xml`)
   const page = `${normalized}.html`
   const reportFile = path.join(reportFolder, page)
@@ -353,7 +403,7 @@ const prepareLicense = async () => {
   const licenseFile = path.join(licenseFolder, 'license.dat')
   core.info(`Adding license to ${licenseFile}`)
   fs.writeFileSync(licenseFile, licenseKey, {encoding: 'utf8', flag: 'a+', mode: 0o777})
-  await execCmd(toCommand('ls', ['-las', licenseFile]))
+  //await execCmd(toCommand('ls', ['-las', licenseFile]))
 }
 
 /**
@@ -363,9 +413,10 @@ const prepareLicense = async () => {
  */
 const resolveSpecific = (): string[] => {
   const extracted = extractFromMessg(tests)
+  core.info(`Extracted from message: [${extracted.join(', ')}]`)
 
   if (extracted.length === 0) {
-    core.info('No specific postman tests found')
+    core.info('No specific postman tests found, returning empty')
     return []
   }
 
@@ -373,14 +424,16 @@ const resolveSpecific = (): string[] => {
   for (const line of extracted) {
     const testLine = line.slice(runtTestsPrefix.length).trim()
     for (const collection of testLine.trim().split(',')) {
-      const trimmed = collection.trim()
-      const normalized = trimmed.endsWith('.json') ? trimmed : `${trimmed}.json`
-      resolved.push(normalized)
+      resolved.push(trimAndExt(collection))
     }
   }
 
-  core.info(`Resolved specific collections:\n${resolved.join(',')}`)
   return resolved
+}
+
+const trimAndExt = (collection: string) => {
+  const trimmed = collection.trim()
+  return trimmed.endsWith('.json') ? trimmed : `${trimmed}.json`
 }
 
 /**
@@ -397,7 +450,7 @@ const extractFromMessg = (message: string): string[] => {
   const extracted: string[] = []
   for (const l of tests.split('\n')) {
     const trimmed = l.trim()
-    const line = trimmed.toLocaleLowerCase()
+    const line = trimmed.toLowerCase()
     if (line.startsWith(runtTestsPrefix)) {
       extracted.push(trimmed)
     }
@@ -459,4 +512,56 @@ const execCmd = async (cmd: Command): Promise<number> => {
 const execCmdAsync = (cmd: Command) => {
   printCmd(cmd)
   exec.exec(cmd.cmd, cmd.args || [], {cwd: cmd.workingDir, env: cmd.env})
+}
+
+const fetchAccessToken = async (): Promise<Response> => {
+  const idpUrl = 'http://localhost:61111/realms/dotcms/protocol/openid-connect/token'
+  const authPayload = 'client_id=analytics-customer-customer1&client_secret=testsecret&grant_type=client_credentials'
+  core.info(`Sending POST to ${idpUrl} the payload:\n${authPayload}`)
+
+  return fetch(idpUrl, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/x-www-form-urlencoded'
+    },
+    body: authPayload
+  })
+}
+
+const warmUpIdp = async (): Promise<AccessToken> => {
+  await fetchAccessToken()
+  waitFor(1000, 'IDP warmup')
+  const response = await fetchAccessToken()
+  const accessToken = (await response.json()) as AccessToken
+  return accessToken
+}
+
+const fetchAnalyticsKey = async (accessToken: string): Promise<Response> => {
+  const configUrl = 'http://localhost:8088/c/customer1/cluster1/keys'
+  core.info(`Sending GET to ${configUrl}`)
+  return fetch(configUrl, {
+    method: 'GET',
+    headers: {
+      Accept: 'application/json',
+      Authorization: `Bearer ${accessToken}`
+    }
+  })
+}
+
+const warmUpConfig = async (accessToken: string): Promise<AnalyticsKey> => {
+  await fetchAnalyticsKey(accessToken)
+  waitFor(1000, 'Config warmup')
+  const response = await fetchAnalyticsKey(accessToken)
+  const analyticsKey = (await response.json()) as AnalyticsKey
+  return analyticsKey
+}
+
+const warmUpAnalytics = async () => {
+  const accessToken = await warmUpIdp()
+  const token = accessToken.access_token
+  accessToken.access_token = ''
+  core.info(`Got response:\n${JSON.stringify(accessToken, null, 2)}`)
+
+  const analyticsKey = await warmUpConfig(token)
+  core.info(`Got response:\n${JSON.stringify(analyticsKey, null, 2)}`)
 }

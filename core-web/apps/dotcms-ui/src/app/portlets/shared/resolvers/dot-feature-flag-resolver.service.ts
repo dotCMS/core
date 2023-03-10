@@ -1,8 +1,11 @@
-import { Injectable } from '@angular/core';
 import { Observable, of } from 'rxjs';
+
+import { Injectable } from '@angular/core';
 import { ActivatedRouteSnapshot, Resolve } from '@angular/router';
-import { DotPropertiesService } from '@services/dot-properties/dot-properties.service';
+
 import { map } from 'rxjs/operators';
+
+import { DotPropertiesService } from '@dotcms/data-access';
 
 /**
  * Return if the Feature flag exist or not
@@ -23,11 +26,9 @@ export class DotFeatureFlagResolver implements Resolve<Observable<boolean>> {
 
     resolve(route: ActivatedRouteSnapshot) {
         if (route.data.featuredFlagToCheck) {
-            return this.dotConfigurationService.getKey(route.data.featuredFlagToCheck).pipe(
-                map((result) => {
-                    return result && result === 'true';
-                })
-            );
+            return this.dotConfigurationService
+                .getKey(route.data.featuredFlagToCheck)
+                .pipe(map((result) => result && result === 'true'));
         }
 
         return of(false);

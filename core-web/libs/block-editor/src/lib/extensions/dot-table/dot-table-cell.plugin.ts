@@ -1,10 +1,11 @@
 import { Plugin, PluginKey } from 'prosemirror-state';
 import { Decoration, DecorationSet } from 'prosemirror-view';
-
 import tippy, { Instance, Props } from 'tippy.js';
 
-import { popperModifiers, SuggestionsComponent } from '@dotcms/block-editor';
 import { getCellsOptions } from './utils';
+
+import { SuggestionsComponent } from '../../shared';
+import { popperModifiers } from '../bubble-menu/utils';
 
 class DotTableCellPluginView {
     public tippy: Instance | undefined;
@@ -27,15 +28,11 @@ class DotTableCellPluginView {
 export const DotTableCellPlugin = (options) => {
     let tippyCellOptions;
 
-    // dynamic selection to capture table cells, works with text nodes.
-    function setFocusDecoration(selection, node): Decoration {
-        return Decoration.node(
-            selection.from - (selection.$from.parentOffset + 2),
-            selection.to + (node.textContent.length - selection.$to.parentOffset + 2),
-            {
-                class: 'focus'
-            }
-        );
+    function setFocusDecoration(selection): Decoration {
+        // get the before and after position of the parent cell where the selection is.
+        return Decoration.node(selection.$to.before(3), selection.$to.after(3), {
+            class: 'focus'
+        });
     }
 
     function displayTableOptions(event: MouseEvent): void {
@@ -65,9 +62,10 @@ export const DotTableCellPlugin = (options) => {
             // eslint-disable-next-line
             apply: () => {},
             init: () => {
-                const component = options.viewContainerRef.createComponent(SuggestionsComponent);
+                const { editor, viewContainerRef } = options;
+                const component = viewContainerRef.createComponent(SuggestionsComponent);
                 const element = component.location.nativeElement;
-                component.instance.currentLanguage = options.editor.storage.dotConfig.lang;
+                component.instance.currentLanguage = editor.storage.dotConfig.lang;
 
                 const defaultTippyOptions: Partial<Props> = {
                     duration: 500,
@@ -77,7 +75,7 @@ export const DotTableCellPlugin = (options) => {
                     interactive: true
                 };
 
-                const { element: editorElement } = options.editor.options;
+                const { element: editorElement } = editor.options;
                 tippyCellOptions = tippy(editorElement, {
                     ...defaultTippyOptions,
                     appendTo: document.body,
@@ -90,6 +88,7 @@ export const DotTableCellPlugin = (options) => {
                         modifiers: popperModifiers
                     },
                     onShow: () => {
+                        editor.commands.freezeScroll(true);
                         const mergeCellsOption = component.instance.items.find(
                             (item) => item.id == 'mergeCells'
                         );
@@ -97,12 +96,13 @@ export const DotTableCellPlugin = (options) => {
                             (item) => item.id == 'splitCells'
                         );
 
-                        mergeCellsOption.disabled = !options.editor.can().mergeCells();
-                        splitCellsOption.disabled = !options.editor.can().splitCell();
+                        mergeCellsOption.disabled = !editor.can().mergeCells();
+                        splitCellsOption.disabled = !editor.can().splitCell();
                         setTimeout(() => {
                             component.changeDetectorRef.detectChanges();
                         });
-                    }
+                    },
+                    onHide: () => editor.commands.freezeScroll(false)
                 });
 
                 component.instance.items = getCellsOptions(options.editor, tippyCellOptions);
@@ -114,17 +114,15 @@ export const DotTableCellPlugin = (options) => {
         view: (view) => new DotTableCellPluginView(view, tippyCellOptions),
         props: {
             decorations(state) {
-                // get grandparent of the state selection.
-                const grandpaSelectedNode = state.selection.$from.node(
-                    state.selection.$from.depth - 1
-                );
+                // Table cells deep is 3, this approach will work while we don't allow nested tables.
+                const parentCell =
+                    state.selection.$from.depth > 3 ? state.selection.$from.node(3) : null;
+
                 if (
-                    grandpaSelectedNode?.type?.name == 'tableCell' ||
-                    grandpaSelectedNode?.type?.name == 'tableHeader'
+                    parentCell?.type?.name == 'tableCell' ||
+                    parentCell?.type?.name == 'tableHeader'
                 ) {
-                    return DecorationSet.create(state.doc, [
-                        setFocusDecoration(state.selection, grandpaSelectedNode)
-                    ]);
+                    return DecorationSet.create(state.doc, [setFocusDecoration(state.selection)]);
                 }
 
                 return null;

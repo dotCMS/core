@@ -42,8 +42,11 @@ const RESTORE_CONFIGURATION: RestoreConfiguration = {
     dependencies: [path.join(GRADLE_FOLDER, 'caches'), path.join(GRADLE_FOLDER, 'wrapper')],
     buildOutput: [
       path.join(DOTCMS_ROOT, '.gradle'),
+      path.join(DOTCMS_ROOT, 'gradle'),
       path.join(DOTCMS_ROOT, 'build', 'classes'),
-      path.join(DOTCMS_ROOT, 'build', 'resources')
+      path.join(DOTCMS_ROOT, 'build', 'generated'),
+      path.join(DOTCMS_ROOT, 'build', 'resources'),
+      path.join(PROJECT_ROOT, 'dist', 'dotserver')
     ]
   },
   maven: {
@@ -88,7 +91,7 @@ export const restoreLocations = async (cacheMetadata: CacheMetadata): Promise<Ca
     const cacheKey = await cache.restoreCache(locationMetadata.cacheLocations, locationMetadata.cacheKey)
     core.info(`Locations restored with key ${cacheKey}`)
     for (const location of locationMetadata.cacheLocations) {
-      ls(location)
+      du(location)
     }
 
     const type = locationMetadata.type as keyof CacheLocations
@@ -152,17 +155,17 @@ const relocate = (
 
       core.info(`Relocating cache from ${location} to ${newLocation}`)
       fs.renameSync(location, newLocation)
-      ls(newLocation)
+      du(newLocation)
 
       return newLocation
     })
     .filter(location => location !== '')
 }
 
-const ls = async (location: string) => {
+const du = async (location: string) => {
   core.info(`Listing folder ${location}`)
   try {
-    await exec.exec('ls', ['-las', location])
+    await exec.exec('du', ['-hs', location])
   } catch (err) {
     core.info(`Cannot list folder ${location}`)
   }

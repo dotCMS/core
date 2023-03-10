@@ -1,37 +1,35 @@
-import { waitForAsync, ComponentFixture, TestBed } from '@angular/core/testing';
-import { By } from '@angular/platform-browser';
 import { DebugElement } from '@angular/core';
+import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing';
+import { By } from '@angular/platform-browser';
 
 import { DotApiLinkModule } from '@components/dot-api-link/dot-api-link.module';
 import { DotCopyButtonModule } from '@components/dot-copy-button/dot-copy-button.module';
-import { DotEditPageInfoComponent } from './dot-edit-page-info.component';
-
+import { DotMessageService } from '@dotcms/data-access';
 import { DotMessagePipe } from '@pipes/dot-message/dot-message.pipe';
-import { DotMessageService } from '@services/dot-message/dot-messages.service';
+
+import { DotEditPageInfoComponent } from './dot-edit-page-info.component';
 
 describe('DotEditPageInfoComponent', () => {
     let component: DotEditPageInfoComponent;
     let fixture: ComponentFixture<DotEditPageInfoComponent>;
     let de: DebugElement;
 
-    beforeEach(
-        waitForAsync(() => {
-            TestBed.configureTestingModule({
-                declarations: [DotEditPageInfoComponent, DotMessagePipe],
-                imports: [DotApiLinkModule, DotCopyButtonModule],
-                providers: [
-                    {
-                        provide: DotMessageService,
-                        useValue: {
-                            get() {
-                                return 'Copy url page';
-                            }
+    beforeEach(waitForAsync(() => {
+        TestBed.configureTestingModule({
+            declarations: [DotEditPageInfoComponent, DotMessagePipe],
+            imports: [DotApiLinkModule, DotCopyButtonModule],
+            providers: [
+                {
+                    provide: DotMessageService,
+                    useValue: {
+                        get() {
+                            return 'Copy url page';
                         }
                     }
-                ]
-            }).compileComponents();
-        })
-    );
+                }
+            ]
+        }).compileComponents();
+    }));
 
     beforeEach(() => {
         fixture = TestBed.createComponent(DotEditPageInfoComponent);

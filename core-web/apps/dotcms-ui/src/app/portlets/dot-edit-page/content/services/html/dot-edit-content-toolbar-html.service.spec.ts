@@ -1,11 +1,13 @@
-import { of as observableOf, Observable } from 'rxjs';
-import { TestBed } from '@angular/core/testing';
-import { DotEditContentToolbarHtmlService } from './dot-edit-content-toolbar-html.service';
-import { DotMessageService } from '@services/dot-message/dot-messages.service';
-import { MockDotMessageService } from '../../../../../test/dot-message-service.mock';
-import { DotDOMHtmlUtilService } from './dot-dom-html-util.service';
-import { DotLicenseService } from '@services/dot-license/dot-license.service';
+import { Observable, of as observableOf } from 'rxjs';
+
 import { Injectable } from '@angular/core';
+import { TestBed } from '@angular/core/testing';
+
+import { DotLicenseService, DotMessageService } from '@dotcms/data-access';
+import { MockDotMessageService } from '@dotcms/utils-testing';
+
+import { DotDOMHtmlUtilService } from './dot-dom-html-util.service';
+import { DotEditContentToolbarHtmlService } from './dot-edit-content-toolbar-html.service';
 
 const mouseoverEvent = new MouseEvent('mouseover', {
     view: window,
@@ -13,7 +15,7 @@ const mouseoverEvent = new MouseEvent('mouseover', {
     cancelable: true
 });
 @Injectable()
-class DotLicenseServiceMock {
+export class DotLicenseServiceMock {
     isEnterprise(): Observable<boolean> {
         return observableOf(true);
     }
@@ -152,9 +154,8 @@ describe('DotEditContentToolbarHtmlService', () => {
                     it('should have content, widget and form', () => {
                         dummyContainer.innerHTML =
                             '<div data-dot-object="container" data-dot-can-add="CONTENT,WIDGET,FORM"></div>';
-                        const htmlElement: HTMLHtmlElement = testDoc.getElementsByTagName(
-                            'html'
-                        )[0];
+                        const htmlElement: HTMLHtmlElement =
+                            testDoc.getElementsByTagName('html')[0];
                         htmlElement.appendChild(dummyContainer);
                         service.addContainerToolbar(testDoc);
                         menuItems = testDoc.querySelectorAll('.dotedit-menu__item ');
@@ -182,9 +183,8 @@ describe('DotEditContentToolbarHtmlService', () => {
                                 </div>
                             </div>
                         `;
-                        const htmlElement: HTMLHtmlElement = testDoc.getElementsByTagName(
-                            'html'
-                        )[0];
+                        const htmlElement: HTMLHtmlElement =
+                            testDoc.getElementsByTagName('html')[0];
                         htmlElement.appendChild(dummyContainer);
                         service.addContainerToolbar(testDoc);
                     });

@@ -1,9 +1,12 @@
-import { Injectable } from '@angular/core';
-import { DotCategory } from '@dotcms/app/shared/models/dot-categories/dot-categories.model';
-import { CoreWebService } from '@dotcms/dotcms-js';
-import { LazyLoadEvent } from 'primeng/api';
 import { Observable } from 'rxjs';
-import { OrderDirection, PaginatorService } from '../paginator';
+
+import { Injectable } from '@angular/core';
+
+import { LazyLoadEvent } from 'primeng/api';
+
+import { DotCategory } from '@dotcms/app/shared/models/dot-categories/dot-categories.model';
+import { OrderDirection, PaginatorService } from '@dotcms/data-access';
+import { CoreWebService } from '@dotcms/dotcms-js';
 
 export const CATEGORY_API_URL = 'v1/categories';
 

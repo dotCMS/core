@@ -548,7 +548,7 @@ td {font-size: 100%;}
         <div class="form-horizontal">
             <dl>
                 <dt>
-                    <label for=""><%= LanguageUtil.get(pageContext, "tag") %>:</label>
+                    <label class="required" for="tagName"><%= LanguageUtil.get(pageContext, "tag") %></label>
                 </dt>
                 <dd>
                     <input id="tagName" type="text" required="true" invalidMessage="Required." dojoType="dijit.form.ValidationTextBox" style="width: 200px" />
@@ -556,7 +556,7 @@ td {font-size: 100%;}
             </dl>
             <dl>
                 <dt>
-                    <label for=""><%= LanguageUtil.get(pageContext, "Host") %>:</label>
+                    <label class="required" for="tagStorage_dropDown"><%= LanguageUtil.get(pageContext, "Host") %></label>
                 </dt>
                 <dd>
                     <input id="tagId" type="hidden" value=" " />

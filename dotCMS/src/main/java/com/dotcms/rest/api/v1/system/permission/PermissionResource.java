@@ -1,5 +1,6 @@
 package com.dotcms.rest.api.v1.system.permission;
 
+import com.dotcms.contenttype.exception.NotFoundInDbException;
 import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.WebResource;
@@ -13,7 +14,9 @@ import com.dotmarketing.business.Role;
 import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.UtilMethods;
 import com.google.common.annotations.VisibleForTesting;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
@@ -36,8 +39,10 @@ import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -162,13 +167,83 @@ public class PermissionResource {
         PermissionAPI.Type permissionType = "ALL".equalsIgnoreCase(type)?
                 null:PermissionAPI.Type.valueOf(type);
 
-        final List<Permission> permissions = APILocator.getPermissionAPI().getPermissions(
-                APILocator.getContentletAPI().findContentletByIdentifierAnyLanguage(contentletId));
+        final Contentlet contentlet = APILocator.getContentletAPI().findContentletByIdentifierAnyLanguage(contentletId);
+        if(null == contentlet){
+             return Response.status(Response.Status.NOT_FOUND).build();
+        }
+        final List<Permission> permissions = APILocator.getPermissionAPI().getPermissions(contentlet);
 
         return Response.ok(new ResponseEntityPermissionView(permissions.stream()
                 .filter(permission -> this.filter(permissionType, permission))
                 .map(PermissionResource::from)
                 .collect(Collectors.toList()))).build();
+    }
+
+    /**
+     * Return a map of roles group by permission type
+     * @param request     {@link HttpServletRequest}
+     * @param response    {@link HttpServletResponse}
+     * @param contentletId {@link String}
+     * @param type      {@link String}
+     * @return Response
+     * @throws DotDataException
+     */
+    @GET
+    @Path("/_bycontent/_groupbytype")
+    @JSONP
+    @NoCache
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    @Operation(summary = "Get permissions roles group by type for a Contentlet",
+            responses = {
+                    @ApiResponse(
+                            responseCode = "200",
+                            content = @Content(mediaType = "application/json",
+                                    schema = @Schema(implementation = ResponseEntityPermissionView.class))),
+                    @ApiResponse(responseCode = "403", description = "If not admin user"),})
+    public Response getByContentletGroupByType(final @Context HttpServletRequest request,
+                                    final @Context HttpServletResponse response,
+                                    final @QueryParam("contentletId")   String contentletId)
+            throws DotDataException, DotSecurityException {
+
+        if (!UtilMethods.isSet(contentletId)) {
+
+            Logger.error(this, "The parameter contentletId is required");
+            throw new IllegalArgumentException("The parameter contentletId is required");
+        }
+
+        final User userInvoker = new WebResource.InitBuilder(webResource)
+                .requiredBackendUser(true)
+                .requiredFrontendUser(false)
+                .requestAndResponse(request, response)
+                .rejectWhenNoUser(true).init().getUser();
+
+        Logger.debug(this, ()-> "getByContentletGroupByType, contentlet: " + contentletId);
+
+        final Contentlet contentlet = APILocator.getContentletAPI().findContentletByIdentifierAnyLanguage(contentletId);
+        if (null == contentlet) {
+
+            Logger.error(this, "The contentletId:" + contentletId + ", does not exist");
+            throw new NotFoundInDbException("The contentletId:" + contentletId + ", does not exist");
+        }
+
+        if (!userInvoker.isAdmin() || !contentlet.getOwner().equals(userInvoker.getUserId())) {
+
+            Logger.error(this, "Only admin user can retrieve other users permissions");
+            throw new DotSecurityException("Only admin user can retrieve other users permissions");
+        }
+
+        final List<Permission> permissions = APILocator.getPermissionAPI().getPermissions(contentlet);
+
+        final Map<String, List<String>> permissionsRoleGroupByTypeMap = new HashMap<>();
+        for (final Permission permission : permissions) {
+
+            permissionsRoleGroupByTypeMap.computeIfAbsent(
+                    PermissionAPI.Type.findById(permission.getPermission()).name(),
+                    k -> new ArrayList<>()).add(permission.getRoleId());
+        }
+
+        return Response.ok(new ResponseEntityPermissionGroupByTypeView(permissionsRoleGroupByTypeMap)).build();
     }
 
     private boolean filter(final PermissionAPI.Type permissionType, final Permission permission) {

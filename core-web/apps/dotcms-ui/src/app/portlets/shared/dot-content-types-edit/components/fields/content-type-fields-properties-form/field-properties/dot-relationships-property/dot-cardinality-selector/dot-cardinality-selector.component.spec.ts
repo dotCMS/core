@@ -1,12 +1,18 @@
-import { Component, Input, Output, EventEmitter, Injectable, DebugElement } from '@angular/core';
-import { DotCardinalitySelectorComponent } from './dot-cardinality-selector.component';
-import { DotMessageService } from '@services/dot-message/dot-messages.service';
-import { MockDotMessageService } from '@dotcms/app/test/dot-message-service.mock';
-import { DotRelationshipCardinality } from '@portlets/shared/dot-content-types-edit/components/fields/content-type-fields-properties-form/field-properties/dot-relationships-property/model/dot-relationship-cardinality.model';
 import { Observable, of } from 'rxjs';
-import { DotRelationshipService } from '@portlets/shared/dot-content-types-edit/components/fields/content-type-fields-properties-form/field-properties/dot-relationships-property/services/dot-relationship.service';
+
+import { Component, DebugElement, EventEmitter, Injectable, Input, Output } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { FormsModule } from '@angular/forms';
 import { By } from '@angular/platform-browser';
+
+import { DropdownModule } from 'primeng/dropdown';
+
+import { DotMessageService } from '@dotcms/data-access';
+import { MockDotMessageService } from '@dotcms/utils-testing';
+import { DotRelationshipCardinality } from '@portlets/shared/dot-content-types-edit/components/fields/content-type-fields-properties-form/field-properties/dot-relationships-property/model/dot-relationship-cardinality.model';
+import { DotRelationshipService } from '@portlets/shared/dot-content-types-edit/components/fields/content-type-fields-properties-form/field-properties/dot-relationships-property/services/dot-relationship.service';
+
+import { DotCardinalitySelectorComponent } from './dot-cardinality-selector.component';
 
 const cardinalities: DotRelationshipCardinality[] = [
     {
@@ -57,7 +63,7 @@ describe('DotCardinalitySelectorComponent', () => {
     beforeEach(() => {
         TestBed.configureTestingModule({
             declarations: [DotCardinalitySelectorComponent, HostTestComponent],
-            imports: [],
+            imports: [DropdownModule, FormsModule],
             providers: [
                 { provide: DotMessageService, useValue: messageServiceMock },
                 { provide: DotRelationshipService, useClass: MockRelationshipService }
@@ -82,11 +88,7 @@ describe('DotCardinalitySelectorComponent', () => {
     });
 
     it('should load cardinalities', () => {
-        const options: Observable<DotRelationshipCardinality[]> =
-            dropdown.componentInstance.options;
-        options.subscribe((options) => {
-            expect(options).toEqual(cardinalities);
-        });
+        expect(dropdown.componentInstance.options).toEqual(cardinalities);
     });
 
     it('should trigger a change event p-dropdown', (done) => {

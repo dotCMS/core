@@ -1,12 +1,13 @@
-import { CheckboxPropertyComponent } from '.';
-import { ComponentFixture, waitForAsync } from '@angular/core/testing';
 import { DebugElement } from '@angular/core';
-import { DOTTestBed } from '@tests/dot-test-bed';
-import { DotMessageService } from '@services/dot-message/dot-messages.service';
+import { ComponentFixture, waitForAsync } from '@angular/core/testing';
+import { UntypedFormControl, UntypedFormGroup } from '@angular/forms';
 import { By } from '@angular/platform-browser';
-import { MockDotMessageService } from '@tests/dot-message-service.mock';
-import { UntypedFormGroup, UntypedFormControl } from '@angular/forms';
-import { dotcmsContentTypeFieldBasicMock } from '@tests/dot-content-types.mock';
+
+import { DOTTestBed } from '@dotcms/app/test/dot-test-bed';
+import { DotMessageService } from '@dotcms/data-access';
+import { dotcmsContentTypeFieldBasicMock, MockDotMessageService } from '@dotcms/utils-testing';
+
+import { CheckboxPropertyComponent } from '.';
 
 describe('CheckboxPropertyComponent', () => {
     let comp: CheckboxPropertyComponent;
@@ -19,18 +20,16 @@ describe('CheckboxPropertyComponent', () => {
         'contenttypes.field.properties.unique.label': 'unique'
     });
 
-    beforeEach(
-        waitForAsync(() => {
-            DOTTestBed.configureTestingModule({
-                declarations: [CheckboxPropertyComponent],
-                imports: [],
-                providers: [{ provide: DotMessageService, useValue: messageServiceMock }]
-            });
+    beforeEach(waitForAsync(() => {
+        DOTTestBed.configureTestingModule({
+            declarations: [CheckboxPropertyComponent],
+            imports: [],
+            providers: [{ provide: DotMessageService, useValue: messageServiceMock }]
+        });
 
-            fixture = DOTTestBed.createComponent(CheckboxPropertyComponent);
-            comp = fixture.componentInstance;
-        })
-    );
+        fixture = DOTTestBed.createComponent(CheckboxPropertyComponent);
+        comp = fixture.componentInstance;
+    }));
 
     it('should have a form', () => {
         const group = new UntypedFormGroup({});

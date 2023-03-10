@@ -2,6 +2,7 @@ package com.dotcms.rest.api.v1.experiments;
 
 import com.dotcms.experiments.business.ExperimentFilter;
 import com.dotcms.experiments.business.ExperimentsAPI;
+import com.dotcms.experiments.business.result.ExperimentResults;
 import com.dotcms.experiments.model.AbstractExperiment.Status;
 import com.dotcms.experiments.model.Experiment;
 import com.dotcms.experiments.model.Scheduling;
@@ -317,7 +318,7 @@ public class ExperimentsResource {
         final InitDataObject initData = getInitData(request, response);
         final User user = initData.getUser();
         final Experiment updatedExperiment =  experimentsAPI.addVariant(experimentId,
-                addVariantForm.getName(), user);
+                addVariantForm.getDescription(), user);
         return new ResponseEntitySingleExperimentView(updatedExperiment);
     }
 
@@ -338,6 +339,38 @@ public class ExperimentsResource {
         final User user = initData.getUser();
         final Experiment updatedExperiment =  experimentsAPI.deleteVariant(experimentId, variantName, user);
         return new ResponseEntitySingleExperimentView(updatedExperiment);
+    }
+
+    /**
+     * Updates an existing experiment accepting partial updates (PATCH). This means it is not needed to send
+     * the entire Experiment information but only what it is desired to update only. The rest
+     * of the information will remain as previously persisted.
+     *
+     * Returns the updated version of the Experiment.
+     */
+    @PUT
+    @Path("/{experimentId}/variants/{name}")
+    @JSONP
+    @NoCache
+    @Consumes({MediaType.APPLICATION_JSON, "application/javascript"})
+    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    public ResponseEntitySingleExperimentView updateVariant(@Context final HttpServletRequest request,
+            @Context final HttpServletResponse response,
+            @PathParam("experimentId") final String experimentId,
+            @PathParam("name") final String variantName,
+            ExperimentVariantForm experimentVariantForm) throws DotDataException, DotSecurityException {
+        final InitDataObject initData = getInitData(request, response);
+        final User user = initData.getUser();
+
+        final Optional<Experiment> experimentToUpdate =  experimentsAPI.find(experimentId, user);
+
+        if(experimentToUpdate.isEmpty()) {
+            throw new NotFoundException("Experiment with id: " + experimentId + " not found.");
+        }
+
+        final Experiment persistedExperiment = experimentsAPI.editVariantDescription(experimentId,
+                variantName, experimentVariantForm.getDescription(), user);
+        return new ResponseEntitySingleExperimentView(persistedExperiment);
     }
 
     /**
@@ -391,6 +424,28 @@ public class ExperimentsResource {
                         UtilMethods.isSet(excludedExperimentListForm) ? excludedExperimentListForm.getExclude()
                                 : Collections.emptyList())
         );
+    }
+
+    /**
+     * Returns the partoal or total Result of a {@link Experiment}
+     */
+    @GET
+    @NoCache
+    @Path("/{id}/results")
+    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    public ResponseEntityExperimentResults getResult(@Context final HttpServletRequest request,
+            @Context final HttpServletResponse response, @PathParam("id") String id
+    ) throws DotDataException, DotSecurityException {
+        final InitDataObject initData = getInitData(request, response);
+        final User user = initData.getUser();
+
+        final Experiment experiment = experimentsAPI.find(id, user)
+                .orElseThrow(
+                        () -> new NotFoundException("Experiment with id: " + id + " not found."));
+
+        final ExperimentResults experimentResults = APILocator.getExperimentsAPI().getResults(experiment);
+
+        return new ResponseEntityExperimentResults(experimentResults);
     }
 
     private Experiment patchExperiment(final Experiment experimentToUpdate,

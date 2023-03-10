@@ -1,27 +1,34 @@
+import { Subject } from 'rxjs';
+
 import {
     Component,
     EventEmitter,
+    Input,
+    OnChanges,
     OnDestroy,
     OnInit,
     Output,
-    Input,
-    SimpleChanges,
-    OnChanges
+    SimpleChanges
 } from '@angular/core';
 import { UntypedFormBuilder, UntypedFormGroup } from '@angular/forms';
 
-import { Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
 
-import { DotContainer } from '@shared/models/container/dot-container.model';
-import { DotTemplateItem } from '../store/dot-template.store';
+import { DotMessageService } from '@dotcms/data-access';
+import { DotContainer } from '@dotcms/dotcms-models';
 import { DotPortletToolbarActions } from '@models/dot-portlet-toolbar.model/dot-portlet-toolbar-actions.model';
-import { DotMessageService } from '@services/dot-message/dot-messages.service';
+
+import { DotTemplateItem } from '../store/dot-template.store';
 
 interface MonacoEditorOperation {
     range: number;
     text: string;
     forceMoveMarkers: boolean;
+}
+
+interface MonacoEditorInfo {
+    name: string;
+    editor: MonacoEditor;
 }
 
 interface MonacoEditor {
@@ -74,11 +81,11 @@ export class DotTemplateAdvancedComponent implements OnInit, OnDestroy, OnChange
     /**
      * This method initializes the monaco editor
      *
-     * @param {*} editor
+     * @param {MonacoEditorInfo} editorInfo
      * @memberof DotTemplateComponent
      */
-    initEditor(editor: MonacoEditor): void {
-        this.editor = editor;
+    initEditor(editorInfo: MonacoEditorInfo): void {
+        this.editor = editorInfo.editor;
     }
 
     /**

@@ -1,30 +1,35 @@
 /* eslint-disable @typescript-eslint/no-empty-function */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { ComponentFixture, waitForAsync } from '@angular/core/testing';
-import { DotPersonaSelectorComponent } from './dot-persona-selector.component';
-import { DebugElement, Component, Input } from '@angular/core';
-import { MockDotMessageService } from '../../../test/dot-message-service.mock';
-import { DOTTestBed } from '../../../test/dot-test-bed';
-import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
-import { DotMessageService } from '@services/dot-message/dot-messages.service';
-import { By } from '@angular/platform-browser';
-import { DotPersona } from '@models/dot-persona/dot-persona.model';
-import { mockDotPersona } from '@tests/dot-persona.mock';
-import { DotPersonaSelectedItemModule } from '@components/dot-persona-selected-item/dot-persona-selected-item.module';
-import { SearchableDropDownModule } from '@components/_common/searchable-dropdown';
-import { DotPersonaSelectorOptionModule } from '@components/dot-persona-selector-option/dot-persona-selector-option.module';
 import { of } from 'rxjs';
-import { PaginatorService } from '@services/paginator';
-import { DotAddPersonaDialogModule } from '@components/dot-add-persona-dialog/dot-add-persona-dialog.module';
-import { IframeOverlayService } from '@components/_common/iframe/service/iframe-overlay.service';
-import { LoginServiceMock } from '@tests/login-service.mock';
-import { LoginService, SiteService } from '@dotcms/dotcms-js';
-import { DotAddPersonaDialogComponent } from '@components/dot-add-persona-dialog/dot-add-persona-dialog.component';
-import { SiteServiceMock } from '@tests/site-service.mock';
-import { DotPipesModule } from '@pipes/dot-pipes.module';
+
+import { Component, DebugElement, Input } from '@angular/core';
+import { ComponentFixture, waitForAsync } from '@angular/core/testing';
+import { By } from '@angular/platform-browser';
+import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
+
 import { TooltipModule } from 'primeng/tooltip';
-import cleanUpDialog from '@tests/clean-up-dialog';
+
+import { IframeOverlayService } from '@components/_common/iframe/service/iframe-overlay.service';
+import { SearchableDropDownModule } from '@components/_common/searchable-dropdown';
+import { DotAddPersonaDialogComponent } from '@components/dot-add-persona-dialog/dot-add-persona-dialog.component';
+import { DotAddPersonaDialogModule } from '@components/dot-add-persona-dialog/dot-add-persona-dialog.module';
+import { DotPersonaSelectedItemModule } from '@components/dot-persona-selected-item/dot-persona-selected-item.module';
+import { DotPersonaSelectorOptionModule } from '@components/dot-persona-selector-option/dot-persona-selector-option.module';
+import { DOTTestBed } from '@dotcms/app/test/dot-test-bed';
+import { DotMessageService, PaginatorService } from '@dotcms/data-access';
+import { LoginService, SiteService } from '@dotcms/dotcms-js';
+import { DotPersona } from '@dotcms/dotcms-models';
+import {
+    cleanUpDialog,
+    LoginServiceMock,
+    MockDotMessageService,
+    mockDotPersona,
+    SiteServiceMock
+} from '@dotcms/utils-testing';
+import { DotPipesModule } from '@pipes/dot-pipes.module';
+
+import { DotPersonaSelectorComponent } from './dot-persona-selector.component';
 
 @Component({
     selector: 'dot-host-component',

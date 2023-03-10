@@ -1,16 +1,16 @@
-import { pluck, map, withLatestFrom, mergeMap, takeUntil, skip } from 'rxjs/operators';
-import { Component, OnInit, OnDestroy } from '@angular/core';
-import { ActivatedRoute, UrlSegment } from '@angular/router';
-
 import { BehaviorSubject, Subject } from 'rxjs';
 
-import { SiteService, LoggerService } from '@dotcms/dotcms-js';
+import { Component, OnDestroy, OnInit } from '@angular/core';
+import { ActivatedRoute, UrlSegment } from '@angular/router';
 
-import { DotLoadingIndicatorService } from '../dot-loading-indicator/dot-loading-indicator.service';
-import { DotMenuService } from '@services/dot-menu.service';
-import { DotRouterService } from '@services/dot-router/dot-router.service';
-import { DotContentTypeService } from '@services/dot-content-type/dot-content-type.service';
-import { DotCustomEventHandlerService } from '@services/dot-custom-event-handler/dot-custom-event-handler.service';
+import { map, mergeMap, pluck, skip, takeUntil, withLatestFrom } from 'rxjs/operators';
+
+import { DotCustomEventHandlerService } from '@dotcms/app/api/services/dot-custom-event-handler/dot-custom-event-handler.service';
+import { DotMenuService } from '@dotcms/app/api/services/dot-menu.service';
+import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
+import { DotContentTypeService } from '@dotcms/data-access';
+import { LoggerService, SiteService } from '@dotcms/dotcms-js';
+import { DotLoadingIndicatorService } from '@dotcms/utils';
 
 @Component({
     selector: 'dot-iframe-porlet',

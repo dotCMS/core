@@ -1,9 +1,12 @@
 import { Observable } from 'rxjs';
+
 import { Injectable } from '@angular/core';
-import { Resolve, ActivatedRouteSnapshot } from '@angular/router';
+import { ActivatedRouteSnapshot, Resolve } from '@angular/router';
+
 import { take } from 'rxjs/operators';
-import { DotApps } from '@shared/models/dot-apps/dot-apps.model';
-import { DotAppsService } from '@services/dot-apps/dot-apps.service';
+
+import { DotAppsService } from '@dotcms/app/api/services/dot-apps/dot-apps.service';
+import { DotApps } from '@dotcms/dotcms-models';
 
 /**
  * Returns apps list from the system

@@ -6,9 +6,10 @@ import { ButtonModule } from 'primeng/button';
 import { MenuModule } from 'primeng/menu';
 import { ToolbarModule } from 'primeng/toolbar';
 
+import { DotMessageService } from '@dotcms/data-access';
+import { MockDotMessageService } from '@dotcms/utils-testing';
 import { DotMessagePipeModule } from '@pipes/dot-message/dot-message-pipe.module';
-import { DotMessageService } from '@services/dot-message/dot-messages.service';
-import { MockDotMessageService } from '@tests/dot-message-service.mock';
+
 import { DotPortletToolbarComponent } from './dot-portlet-toolbar.component';
 
 @Component({

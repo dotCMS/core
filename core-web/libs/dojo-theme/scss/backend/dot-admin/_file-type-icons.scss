@@ -1,0 +1,221 @@
+#file-type-icons {
+    @include inline-block(top);
+    background: url($dotcms-sprite) no-repeat;
+    height: 18px;
+    width: 18px;
+}
+
+.uknIcon {
+    @extend #file-type-icons;
+    background-position: -21px -2000px;
+}
+
+.pageIcon {
+    @extend #file-type-icons;
+    background-position: -1px -400px;
+}
+
+.linkIcon {
+    @extend #file-type-icons;
+    background-position: -1px -660px;
+}
+
+.bmpIcon,
+.imageIcon,
+.jpegIcon,
+.jpgIcon,
+.pctIcon {
+    @extend #file-type-icons;
+    background-position: -1px -1540px;
+}
+
+.giffIcon,
+.gifIcon,
+.pctIcon,
+.pngIcon {
+    @extend #file-type-icons;
+    background-position: -21px -1540px;
+}
+
+.flaIcon,
+.flvIcon,
+.swfIcon {
+    @extend #file-type-icons;
+    background-position: -1px -1560px;
+}
+
+.epsIcon,
+.psdIcon,
+.pxrIcon,
+.tiffIcon,
+.tifIcon {
+    @extend #file-type-icons;
+    background-position: -21px -1560px;
+}
+
+.airIcon,
+.pdfIcon {
+    @extend #file-type-icons;
+    background-position: -1px -1580px;
+}
+
+.aiIcon,
+.drwIcon,
+.epsIcon,
+.graffleIcon,
+.psIcon,
+.svgIcon,
+.vdxIcon {
+    @extend #file-type-icons;
+    background-position: -21px -1580px;
+}
+
+.docIcon,
+.docxIcon {
+    @extend #file-type-icons;
+    background-position: -1px -1600px;
+}
+
+.appIcon,
+.batIcon,
+.cgiIcon,
+.comIcon,
+.exeIcon,
+.jarIcon,
+.pifIcon,
+.vbIcon,
+.wsfIcon {
+    @extend #file-type-icons;
+    background-position: -21px -1600px;
+}
+
+.csvIcon,
+.numbersIcon,
+.wksIcon,
+.xlsIcon,
+.xlsxIcon {
+    @extend #file-type-icons;
+    background-position: -1px -1620px;
+}
+
+.accdbIcon,
+.dbIcon,
+.mdbIcon,
+.pdbIcon,
+.sqlIcon {
+    @extend #file-type-icons;
+    background-position: -21px -1620px;
+}
+
+.keynote,
+.pptIcon,
+.pptxIcon {
+    @extend #file-type-icons;
+    background-position: -1px -1640px;
+}
+
+.asxIcon,
+.wmvIcon {
+    @extend #file-type-icons;
+    background-position: -21px -1640px;
+}
+
+.asfIcon,
+.aviIcon,
+.movIcon,
+.mp4Icon,
+.mpgIcon,
+.oggIcon,
+.ogvIcon,
+.rmIcon,
+.vobIcon {
+    @extend #file-type-icons;
+    background-position: -1px -1660px;
+}
+
+.aacIcon,
+.aifIcon,
+.iffIcon,
+.m3uIcon,
+.midIcon,
+.mp3Icon,
+.mpaIcon,
+.raIcon,
+.wavIcon,
+.wmaIcon {
+    @extend #file-type-icons;
+    background-position: -21px -1660px;
+}
+
+.cssIcon {
+    @extend #file-type-icons;
+    background-position: -1px -1680px;
+}
+
+.vtlIcon {
+    @extend #file-type-icons;
+    background-position: -21px -1680px;
+}
+
+.aspIcon,
+.gyIcon,
+.jsIcon,
+.jsonIcon,
+.jspIcon,
+.phpIcon,
+.pyIcon,
+.rbIcon,
+.xmlIcon {
+    @extend #file-type-icons;
+    background-position: -1px -1700px;
+}
+
+.htmIcon,
+.htmlIcon,
+.rssIcon {
+    @extend #file-type-icons;
+    background-position: -21px -1700px;
+}
+
+.datIcon,
+.pagesIcon,
+.rtfIcon,
+.sdfIcon,
+.txtIcon {
+    @extend #file-type-icons;
+    background-position: -1px -1720px;
+}
+
+.debIcon,
+.gzIcon,
+.pkgIcon,
+.rarIcon,
+.sitIcon,
+.sitxIcon,
+.zipIcon,
+.zipxIcon {
+    @extend #file-type-icons;
+    background-position: -21px -1720px;
+}
+
+.eotIcon,
+.otfIcon,
+.svgIcon,
+.ttfIcon,
+.woffIcon {
+    @extend #file-type-icons;
+    background-position: -21px -1840px;
+}
+
+.icoIcon {
+    @extend #file-type-icons;
+    background-position: -21px -1920px;
+}
+
+.azwIcon,
+.epubIcon,
+.ibooksIcon,
+.kf8Icon {
+    @extend #file-type-icons;
+    background-position: -21px -100px;
+}

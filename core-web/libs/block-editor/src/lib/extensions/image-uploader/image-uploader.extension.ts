@@ -1,18 +1,20 @@
+import { Plugin, PluginKey } from 'prosemirror-state';
+import { EditorView } from 'prosemirror-view';
+
 import { ComponentRef, Injector, ViewContainerRef } from '@angular/core';
+
 import { take } from 'rxjs/operators';
 
-import { EditorView } from 'prosemirror-view';
-import { Plugin, PluginKey } from 'prosemirror-state';
 import { Extension } from '@tiptap/core';
 
 import { DotCMSContentlet } from '@dotcms/dotcms-models';
 
-import { LoaderComponent, MessageType } from '@dotcms/block-editor';
-
+import { LoaderComponent, MessageType } from './components/loader/loader.component';
+import { PlaceholderPlugin } from './plugins/placeholder.plugin';
 import { DotImageService } from './services/dot-image/dot-image.service';
 
-import { PlaceholderPlugin } from './plugins/placeholder.plugin';
-import { ImageNode, deselectCurrentNode } from '@dotcms/block-editor';
+import { ImageNode } from '../../nodes';
+import { deselectCurrentNode } from '../../shared';
 
 function checkImageURL(url) {
     return url.match(/\.(jpeg|jpg|gif|png)$/) != null;

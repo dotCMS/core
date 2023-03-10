@@ -1,9 +1,11 @@
 import { DebugElement } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
-import { DotMessageService } from '@dotcms/app/api/services/dot-message/dot-messages.service';
-import { MockDotMessageService } from '@dotcms/app/test/dot-message-service.mock';
+
 import { DotMessagePipeModule } from '@dotcms/app/view/pipes/dot-message/dot-message-pipe.module';
+import { DotMessageService } from '@dotcms/data-access';
+import { MockDotMessageService } from '@dotcms/utils-testing';
+
 import { DotConvertWysiwygToBlockComponent } from './dot-convert-wysiwyg-to-block.component';
 
 const messageServiceMock = new MockDotMessageService({

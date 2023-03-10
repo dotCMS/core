@@ -1,13 +1,38 @@
-import { waitForAsync, ComponentFixture, TestBed } from '@angular/core/testing';
-import { By } from '@angular/platform-browser';
+import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { DebugElement } from '@angular/core';
+import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing';
+import { By } from '@angular/platform-browser';
+import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
+import { ActivatedRoute } from '@angular/router';
+import { RouterTestingModule } from '@angular/router/testing';
 
-import { DotPortletDetailComponent } from './dot-portlet-detail.component';
-import { DotWorkflowTaskModule } from './dot-workflow-task/dot-workflow-task.module';
-import { DotMenuService } from '@services/dot-menu.service';
+import { ConfirmationService } from 'primeng/api';
+
+import { DotDownloadBundleDialogModule } from '@components/_common/dot-download-bundle-dialog/dot-download-bundle-dialog.module';
+import { DotGlobalMessageService } from '@components/_common/dot-global-message/dot-global-message.service';
+import { DotIframeService } from '@components/_common/iframe/service/dot-iframe/dot-iframe.service';
+import { DotMessageDisplayService } from '@components/dot-message-display/services';
+import { DotCustomEventHandlerService } from '@dotcms/app/api/services/dot-custom-event-handler/dot-custom-event-handler.service';
+import { DotFormatDateService } from '@dotcms/app/api/services/dot-format-date-service';
+import { DotHttpErrorManagerService } from '@dotcms/app/api/services/dot-http-error-manager/dot-http-error-manager.service';
+import { DotMenuService } from '@dotcms/app/api/services/dot-menu.service';
+import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
+import { DotUiColorsService } from '@dotcms/app/api/services/dot-ui-colors/dot-ui-colors.service';
+import { DotWizardService } from '@dotcms/app/api/services/dot-wizard/dot-wizard.service';
+import { DotWorkflowEventHandlerService } from '@dotcms/app/api/services/dot-workflow-event-handler/dot-workflow-event-handler.service';
+import { PushPublishService } from '@dotcms/app/api/services/push-publish/push-publish.service';
+import { dotEventSocketURLFactory, MockDotUiColorsService } from '@dotcms/app/test/dot-test-bed';
+import {
+    DotAlertConfirmService,
+    DotCurrentUserService,
+    DotEventsService,
+    DotGenerateSecurePasswordService,
+    DotWorkflowActionsFireService
+} from '@dotcms/data-access';
 import {
     ApiRoot,
     CoreWebService,
+    CoreWebServiceMock,
     DotcmsConfigService,
     DotcmsEventsService,
     DotEventsSocket,
@@ -17,33 +42,11 @@ import {
     StringUtils,
     UserModel
 } from '@dotcms/dotcms-js';
-import { LoginServiceMock } from '../../test/login-service.mock';
-import { RouterTestingModule } from '@angular/router/testing';
-import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
+import { LoginServiceMock, MockDotRouterService } from '@dotcms/utils-testing';
+
 import { DotContentletsModule } from './dot-contentlets/dot-contentlets.module';
-import { ActivatedRoute } from '@angular/router';
-import { DotCustomEventHandlerService } from '@services/dot-custom-event-handler/dot-custom-event-handler.service';
-import { DotRouterService } from '@services/dot-router/dot-router.service';
-import { MockDotRouterService } from '@tests/dot-router-service.mock';
-import { DotIframeService } from '@components/_common/iframe/service/dot-iframe/dot-iframe.service';
-import { DotUiColorsService } from '@services/dot-ui-colors/dot-ui-colors.service';
-import { dotEventSocketURLFactory, MockDotUiColorsService } from '@tests/dot-test-bed';
-import { DotDownloadBundleDialogModule } from '@components/_common/dot-download-bundle-dialog/dot-download-bundle-dialog.module';
-import { CoreWebServiceMock } from '../../test/core-web.service.mock';
-import { DotWorkflowEventHandlerService } from '@services/dot-workflow-event-handler/dot-workflow-event-handler.service';
-import { PushPublishService } from '@services/push-publish/push-publish.service';
-import { DotFormatDateService } from '@services/dot-format-date-service';
-import { DotCurrentUserService } from '@services/dot-current-user/dot-current-user.service';
-import { DotMessageDisplayService } from '@components/dot-message-display/services';
-import { DotWizardService } from '@services/dot-wizard/dot-wizard.service';
-import { DotHttpErrorManagerService } from '@services/dot-http-error-manager/dot-http-error-manager.service';
-import { DotAlertConfirmService } from '@services/dot-alert-confirm';
-import { ConfirmationService } from 'primeng/api';
-import { DotWorkflowActionsFireService } from '@services/dot-workflow-actions-fire/dot-workflow-actions-fire.service';
-import { DotGlobalMessageService } from '@components/_common/dot-global-message/dot-global-message.service';
-import { DotEventsService } from '@services/dot-events/dot-events.service';
-import { HttpClientTestingModule } from '@angular/common/http/testing';
-import { DotGenerateSecurePasswordService } from '@services/dot-generate-secure-password/dot-generate-secure-password.service';
+import { DotPortletDetailComponent } from './dot-portlet-detail.component';
+import { DotWorkflowTaskModule } from './dot-workflow-task/dot-workflow-task.module';
 
 describe('DotPortletDetailComponent', () => {
     let fixture: ComponentFixture<DotPortletDetailComponent>;

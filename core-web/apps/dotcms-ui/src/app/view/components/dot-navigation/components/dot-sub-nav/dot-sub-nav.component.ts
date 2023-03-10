@@ -1,13 +1,14 @@
+import { animate, state, style, transition, trigger } from '@angular/animations';
 import {
     Component,
-    Input,
-    Output,
+    ElementRef,
     EventEmitter,
     HostBinding,
-    ElementRef,
+    Input,
+    Output,
     ViewChild
 } from '@angular/core';
-import { trigger, state, style, transition, animate } from '@angular/animations';
+
 import { DotMenu, DotMenuItem } from '@models/navigation';
 
 @Component({
@@ -47,7 +48,6 @@ export class DotSubNavComponent {
     @HostBinding('@expandAnimation') get getAnimation(): string {
         return !this.collapsed && this.data.isOpen ? 'expanded' : 'collapsed';
     }
-
 
     /**
      * Handle click event in a menu sub item

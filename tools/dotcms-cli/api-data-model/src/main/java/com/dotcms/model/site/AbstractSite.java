@@ -20,23 +20,24 @@ public interface AbstractSite {
     @Nullable
     String aliases();
 
-    String hostname();
+    @JsonProperty("hostname")
+    String hostName();
 
     String folder();
 
-    boolean systemHost();
+    Boolean systemHost();
 
     @JsonProperty("default")
-    boolean isDefault();
+    Boolean isDefault();
 
     @JsonProperty("archived")
-    boolean isArchived();
+    Boolean isArchived();
 
     @JsonProperty("live")
-    boolean isLive();
+    Boolean isLive();
 
     @JsonProperty("working")
-    boolean isWorking();
+    Boolean isWorking();
 
 
 }

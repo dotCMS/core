@@ -1,9 +1,10 @@
-import { Component, AfterViewInit } from '@angular/core';
-import { DotContentletEditorService } from '@components/dot-contentlet-editor/services/dot-contentlet-editor.service';
+import { AfterViewInit, Component } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
-import { DotRouterService } from '@services/dot-router/dot-router.service';
+
 import { DotIframeService } from '@components/_common/iframe/service/dot-iframe/dot-iframe.service';
-import { DotCustomEventHandlerService } from '@services/dot-custom-event-handler/dot-custom-event-handler.service';
+import { DotContentletEditorService } from '@components/dot-contentlet-editor/services/dot-contentlet-editor.service';
+import { DotCustomEventHandlerService } from '@dotcms/app/api/services/dot-custom-event-handler/dot-custom-event-handler.service';
+import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
 
 @Component({
     providers: [],
@@ -36,7 +37,12 @@ export class DotContentletsComponent implements AfterViewInit {
      * @memberof DotContentletsComponent
      */
     onCloseEditor(): void {
-        this.dotRouterService.gotoPortlet(`/c/${this.dotRouterService.currentPortlet.id}`);
+        const portletUrl = this.dotRouterService.currentPortlet.url
+            .split('/')
+            .slice(0, -1)
+            .join('/');
+
+        this.dotRouterService.gotoPortlet(portletUrl);
         this.dotIframeService.reloadData(this.dotRouterService.currentPortlet.id);
     }
 

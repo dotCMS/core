@@ -9,4 +9,10 @@ import org.immutables.value.Value;
 @JsonDeserialize(as = ImmutableConstantField.class)
 public abstract class ConstantField extends Field {
 
+    @Value.Default
+    @Override
+    public DataTypes dataType(){
+        return DataTypes.SYSTEM;
+    };
+
 }

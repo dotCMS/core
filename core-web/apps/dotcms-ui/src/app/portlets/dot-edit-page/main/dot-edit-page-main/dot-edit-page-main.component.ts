@@ -1,14 +1,17 @@
-import { Observable, Subject, merge } from 'rxjs';
+import { merge, Observable, Subject } from 'rxjs';
+
+import { Component, OnDestroy, OnInit } from '@angular/core';
+import { Title } from '@angular/platform-browser';
+import { ActivatedRoute } from '@angular/router';
 
 import { pluck, takeUntil, tap } from 'rxjs/operators';
-import { Component, OnInit, OnDestroy } from '@angular/core';
-import { ActivatedRoute } from '@angular/router';
-import { DotPageRenderState } from '../../shared/models/dot-rendered-page-state.model';
-import { DotPageStateService } from '../../content/services/dot-page-state/dot-page-state.service';
+
 import { DotContentletEditorService } from '@components/dot-contentlet-editor/services/dot-contentlet-editor.service';
-import { DotRouterService } from '@services/dot-router/dot-router.service';
-import { DotCustomEventHandlerService } from '@services/dot-custom-event-handler/dot-custom-event-handler.service';
-import { Title } from '@angular/platform-browser';
+import { DotCustomEventHandlerService } from '@dotcms/app/api/services/dot-custom-event-handler/dot-custom-event-handler.service';
+import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
+import { DotPageRenderState } from '@dotcms/dotcms-models';
+
+import { DotPageStateService } from '../../content/services/dot-page-state/dot-page-state.service';
 
 @Component({
     selector: 'dot-edit-page-main',

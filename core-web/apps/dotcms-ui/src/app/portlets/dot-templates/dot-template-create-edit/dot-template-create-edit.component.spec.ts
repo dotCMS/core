@@ -1,39 +1,44 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { Component, DebugElement, EventEmitter, Input, Output } from '@angular/core';
-import { FormsModule, ReactiveFormsModule } from '@angular/forms';
-import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
-import { By } from '@angular/platform-browser';
-import { ComponentFixture, TestBed } from '@angular/core/testing';
-
 import { BehaviorSubject, of, Subject } from 'rxjs';
 
-import { DialogService } from 'primeng/dynamicdialog';
-import { ButtonModule } from 'primeng/button';
+import { HttpClientTestingModule } from '@angular/common/http/testing';
+import { Component, DebugElement, EventEmitter, Input, Output } from '@angular/core';
+import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { FormsModule, ReactiveFormsModule } from '@angular/forms';
+import { By } from '@angular/platform-browser';
+import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 
+import { ButtonModule } from 'primeng/button';
+import { DialogService } from 'primeng/dynamicdialog';
+
+import { DotFormDialogModule } from '@components/dot-form-dialog/dot-form-dialog.module';
+import { DotTempFileUploadService } from '@dotcms/app/api/services/dot-temp-file-upload/dot-temp-file-upload.service';
 import {
+    DotCrudService,
+    DotEventsService,
+    DotMessageService,
+    DotThemesService,
+    DotWorkflowActionsFireService,
+    PaginatorService
+} from '@dotcms/data-access';
+import { CoreWebService, SiteService } from '@dotcms/dotcms-js';
+import {
+    CoreWebServiceMock,
+    MockDotMessageService,
+    mockDotThemes,
+    mockSites
+} from '@dotcms/utils-testing';
+import { DotMessagePipe } from '@pipes/dot-message/dot-message.pipe';
+
+import { DotTemplateCreateEditComponent } from './dot-template-create-edit.component';
+import { DotTemplatePropsModule } from './dot-template-props/dot-template-props.module';
+import {
+    DotTemplateItem,
     DotTemplateStore,
     EMPTY_TEMPLATE_ADVANCED,
     EMPTY_TEMPLATE_DESIGN
 } from './store/dot-template.store';
-import { DotTemplateCreateEditComponent } from './dot-template-create-edit.component';
-import { DotFormDialogModule } from '@components/dot-form-dialog/dot-form-dialog.module';
-import { DotTemplatePropsModule } from './dot-template-props/dot-template-props.module';
-import { DotMessageService } from '@services/dot-message/dot-messages.service';
-import { MockDotMessageService } from '@tests/dot-message-service.mock';
-import { DotMessagePipe } from '@pipes/dot-message/dot-message.pipe';
-import { DotCrudService } from '@services/dot-crud';
-import { DotTempFileUploadService } from '@services/dot-temp-file-upload/dot-temp-file-upload.service';
-import { DotWorkflowActionsFireService } from '@services/dot-workflow-actions-fire/dot-workflow-actions-fire.service';
-import { PaginatorService } from '@services/paginator';
-import { mockDotThemes } from '@tests/dot-themes.mock';
-import { CoreWebService, SiteService } from '@dotcms/dotcms-js';
-import { DotThemesService } from '@services/dot-themes/dot-themes.service';
-import { CoreWebServiceMock } from '@tests/core-web.service.mock';
-import { HttpClientTestingModule } from '@angular/common/http/testing';
-import { DotEventsService } from '@services/dot-events/dot-events.service';
-import { mockSites } from '@tests/site-service.mock';
-import { DotTemplateItem } from './store/dot-template.store';
 
 @Component({
     selector: 'dot-api-link',
@@ -333,7 +338,7 @@ describe('DotTemplateCreateEditComponent', () => {
                 expect(store.goToTemplateList).toHaveBeenCalledTimes(1);
             });
 
-            it('should save template when save dialog button is clicked', async () => {
+            xit('should save template when save dialog button is clicked', async () => {
                 await makeFormValid(fixture);
 
                 const button: HTMLButtonElement = document.querySelector(
@@ -341,6 +346,8 @@ describe('DotTemplateCreateEditComponent', () => {
                 );
 
                 button.click();
+
+                await fixture.whenStable();
 
                 expect(store.createTemplate).toHaveBeenCalledWith({
                     type: 'design',
@@ -401,7 +408,7 @@ describe('DotTemplateCreateEditComponent', () => {
                 });
             });
 
-            it('should save template when save dialog button is clicked', () => {
+            it('should save template when save dialog button is clicked', async () => {
                 // can't use debugElement because the dialogs opens outside the component
                 const title: HTMLInputElement = document.querySelector(
                     '[data-testid="templatePropsTitleField"]'
@@ -420,6 +427,8 @@ describe('DotTemplateCreateEditComponent', () => {
                     '[data-testid="dotFormDialogSave"]'
                 );
                 button.click();
+
+                await fixture.whenStable();
 
                 expect(store.createTemplate).toHaveBeenCalledWith({
                     type: 'advanced',

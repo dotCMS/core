@@ -83,7 +83,7 @@
 
     function validateEmail() {
 
-       let senderAndEmail = prompt("An e-mail will be sent to from the input address to the current logged-in user address.", dijit.byId("companyEmailAddress").getValue());
+       let senderAndEmail = prompt("An e-mail will be sent from the input address to the current logged-in user address.", dijit.byId("companyEmailAddress").getValue());
 
        const data = {
           "senderAndEmail": senderAndEmail

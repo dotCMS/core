@@ -1,6 +1,7 @@
 package com.dotcms.contenttype.model.type;
 
-
+import com.dotcms.contenttype.model.component.ImmutableSiteAndFolder;
+import com.dotcms.contenttype.model.component.SiteAndFolder;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.StoryBlockField;
 import com.dotcms.publisher.util.PusheableAsset;
@@ -17,25 +18,32 @@ import com.dotmarketing.business.Permissionable;
 import com.dotmarketing.business.RelatedPermissionableGroup;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
+import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.UUIDUtil;
 import com.dotmarketing.util.UtilMethods;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonSubTypes.Type;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.annotation.JsonTypeInfo.Id;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.DatabindContext;
+import com.fasterxml.jackson.databind.JavaType;
+import com.fasterxml.jackson.databind.annotation.JsonTypeIdResolver;
+import com.fasterxml.jackson.databind.jsontype.BasicPolymorphicTypeValidator;
+import com.fasterxml.jackson.databind.jsontype.impl.ClassNameIdResolver;
+import com.fasterxml.jackson.databind.type.TypeFactory;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
-import org.apache.commons.lang.StringUtils;
-import org.apache.commons.lang.time.DateUtils;
-import org.immutables.value.Value;
-import org.immutables.value.Value.Default;
+import com.liferay.util.StringPool;
+import io.vavr.control.Try;
 
-import javax.annotation.Nullable;
+import java.io.IOException;
 import java.io.Serializable;
 import java.util.Calendar;
 import java.util.Date;
@@ -43,12 +51,19 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+import javax.annotation.Nullable;
+import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang.time.DateUtils;
+import org.immutables.value.Value;
+import org.immutables.value.Value.Auxiliary;
+import org.immutables.value.Value.Default;
 
 @JsonTypeInfo(
         use = Id.CLASS,
         include = JsonTypeInfo.As.PROPERTY,
         property = "clazz"
 )
+@JsonTypeIdResolver(value = ContentType.ClassNameAliasResolver.class)
 @JsonSubTypes({
         @Type(value = FileAssetContentType.class),
         @Type(value = FormContentType.class),
@@ -168,8 +183,43 @@ public abstract class ContentType implements Serializable, Permissionable, Conte
 
   @Value.Default
   public String host() {
+    hostDefaultNotChanged = true;
     return Host.SYSTEM_HOST;
   }
+
+  //This property help me determine if I'm seeing the default value or something explicitly set
+  private boolean hostDefaultNotChanged = false;
+
+  /**
+   * by default our site name is the same as SYSTEM_HOST
+   * @return
+   */
+  @Nullable
+  @Value.Default
+  public String siteName() {
+    siteNameDefaultNotChanged = true;
+    return canonicalSiteName();
+  }
+
+  private boolean siteNameDefaultNotChanged = false;
+
+  private String canonicalSiteName(){
+
+    final String host = host();
+
+    if (UtilMethods.isNotSet(host) || Host.SYSTEM_HOST.equals(host)) {
+      return Host.SYSTEM_HOST_NAME;
+    }
+    if (UUIDUtil.isUUID(host)) {
+      return Try.of(() -> APILocator.getHostAPI().find(host, APILocator.systemUser(), false)
+              .getHostname()).getOrNull();
+    }
+    return Try.of(
+            () -> APILocator.getHostAPI().resolveHostName(host, APILocator.systemUser(), false)
+                    .getHostname()).getOrNull();
+
+  }
+
 
   @Nullable
   @Value.Default
@@ -239,7 +289,61 @@ public abstract class ContentType implements Serializable, Permissionable, Conte
 
   @Value.Default
   public String folder() {
+    folderDefaultNotChanged = true;
     return Folder.SYSTEM_FOLDER;
+  }
+
+  //This property help me determine if I'm seeing the default value or something explicitly set
+  private boolean folderDefaultNotChanged = false;
+
+  /**
+   * By default, our system folder is "/"
+   * @return
+   */
+  @Nullable
+  @Value.Default
+  public String folderPath() {
+    folderPathDefaultNotChanged = true;
+    return canonicalFolderPath();
+  }
+
+  private boolean folderPathDefaultNotChanged = false;
+
+  private String canonicalFolderPath(){
+    final String folder = folder();
+    if (Folder.SYSTEM_FOLDER.equals(folder)) {
+        return Folder.SYSTEM_FOLDER_PATH;
+    }
+
+    final String host = host();
+    final FolderAPI folderAPI = APILocator.getFolderAPI();
+    final HostAPI hostAPI = APILocator.getHostAPI();
+    return Try.of(() -> {
+              final String hostName =
+                      UUIDUtil.isUUID(host) ?
+                              hostAPI.find(host, APILocator.systemUser(), false).getHostname() :
+                              hostAPI.resolveHostName(host, APILocator.systemUser(), false).getHostname();
+              final String path = folderAPI.find(folder, APILocator.systemUser(), false).getPath();
+              return String.format("%s%s%s", hostName, StringPool.COLON, path);
+            }
+    ).getOrNull();
+  }
+
+  /**
+   * The code below serves as
+   * @return
+   */
+  @JsonIgnore
+  @Auxiliary
+  public SiteAndFolder siteAndFolder() {
+    return ImmutableSiteAndFolder.builder()
+            //Here we need to know if we're looking at the default value or a value set
+            .host( hostDefaultNotChanged ? null : host())
+            .folder( folderDefaultNotChanged ? null : folder())
+            // These are calculated fields
+            .folderPath( folderPathDefaultNotChanged ? null : folderPath())
+            .siteName( siteNameDefaultNotChanged ? null : siteName())
+            .build();
   }
 
   @JsonIgnore
@@ -378,5 +482,27 @@ public abstract class ContentType implements Serializable, Permissionable, Conte
     }
     return this.hasStoryBlockFields;
   }
+
+  static class ClassNameAliasResolver extends ClassNameIdResolver {
+    static TypeFactory typeFactory = TypeFactory.defaultInstance();
+    public ClassNameAliasResolver() {
+      super(typeFactory.constructType(new TypeReference<ContentType>() {
+      }), typeFactory,
+       BasicPolymorphicTypeValidator.builder().allowIfSubType(ContentType.class).build()
+      );
+    }
+
+    @Override
+    public JavaType typeFromId(final DatabindContext context, final String id) throws IOException {
+      final String packageName = ContentType.class.getPackageName();
+      if( !id.contains(".") && !id.startsWith(packageName)){
+        final String className = String.format("%s.Immutable%s",packageName,id);
+        return super.typeFromId(context, className);
+      }
+      return super.typeFromId(context, id);
+    }
+
+  }
+
 
 }

@@ -1,5 +1,5 @@
+import { Component, EventEmitter, forwardRef, HostListener, Input, Output } from '@angular/core';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
-import { Component, Input, Output, EventEmitter, forwardRef, HostListener } from '@angular/core';
 
 @Component({
     selector: 'dot-layout-properties-item',

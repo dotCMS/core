@@ -1,25 +1,32 @@
-import { Component, OnInit } from '@angular/core';
-import { FormArray, FormBuilder, FormControl, FormGroup, Validators } from '@angular/forms';
-import {
-    DotContainerPropertiesStore,
-    DotContainerPropertiesState
-} from '@portlets/dot-containers/dot-container-create/dot-container-properties/store/dot-container-properties.store';
-import { MonacoEditor } from '@models/monaco-editor';
-import { DotAlertConfirmService } from '@dotcms/app/api/services/dot-alert-confirm';
-import { DotMessageService } from '@dotcms/app/api/services/dot-message/dot-messages.service';
-import { DotRouterService } from '@services/dot-router/dot-router.service';
-import { take, takeUntil } from 'rxjs/operators';
-import { MenuItem } from 'primeng/api';
 import { Subject } from 'rxjs';
-import { DotContainerStructure } from '@dotcms/app/shared/models/container/dot-container.model';
+
+import { animate, style, transition, trigger } from '@angular/animations';
+import { AfterViewInit, Component, OnInit } from '@angular/core';
+import { FormArray, FormBuilder, FormControl, FormGroup, Validators } from '@angular/forms';
+
+import { pairwise, startWith, take, takeUntil } from 'rxjs/operators';
+
+import { DotAlertConfirmService, DotMessageService } from '@dotcms/data-access';
+import { DotContainerPayload, DotContainerStructure } from '@dotcms/dotcms-models';
+import { MonacoEditor } from '@models/monaco-editor';
+import {
+    DotContainerPropertiesState,
+    DotContainerPropertiesStore
+} from '@portlets/dot-containers/dot-container-create/dot-container-properties/store/dot-container-properties.store';
+import { DotRouterService } from '@services/dot-router/dot-router.service';
 
 @Component({
+    animations: [
+        trigger('contentTypeAnimation', [
+            transition(':enter', [style({ opacity: 0 }), animate(500, style({ opacity: 1 }))])
+        ])
+    ],
     selector: 'dot-container-properties',
     templateUrl: './dot-container-properties.component.html',
     styleUrls: ['./dot-container-properties.component.scss'],
     providers: [DotContainerPropertiesStore]
 })
-export class DotContainerPropertiesComponent implements OnInit {
+export class DotContainerPropertiesComponent implements OnInit, AfterViewInit {
     vm$ = this.store.vm$;
     editor: MonacoEditor;
     form: FormGroup;
@@ -44,9 +51,9 @@ export class DotContainerPropertiesComponent implements OnInit {
                     identifier: new FormControl(container?.identifier ?? ''),
                     title: new FormControl(container?.title ?? '', [Validators.required]),
                     friendlyName: new FormControl(container?.friendlyName ?? ''),
-                    maxContentlets: new FormControl(container?.maxContentlets ?? 0, [
-                        Validators.required
-                    ]),
+                    maxContentlets: new FormControl(container?.maxContentlets ?? 0, {
+                        validators: [Validators.required]
+                    }),
                     code: new FormControl(
                         container?.code ?? '',
                         containerStructures.length === 0 ? [Validators.required] : null
@@ -55,15 +62,61 @@ export class DotContainerPropertiesComponent implements OnInit {
                     postLoop: container?.postLoop ?? '',
                     containerStructures: this.fb.array(
                         [],
-                        containerStructures.length ? [Validators.minLength(1)] : null
+                        containerStructures.length
+                            ? [Validators.required, Validators.minLength(1)]
+                            : null
                     )
                 });
 
                 this.addContainerFormControl(containerStructures);
+                if (this.form.value.identifier) {
+                    this.store.updateOriginalFormState(this.form.value);
+                }
             });
-        this.form.valueChanges.pipe(takeUntil(this.destroy$)).subscribe((values) => {
-            this.store.updateIsContentTypeButtonEnabled(values.maxContentlets > 0);
-        });
+
+        this.form.valueChanges
+            .pipe(takeUntil(this.destroy$), startWith(this.form.value), pairwise())
+            .subscribe(([prevValue, currValue]) => {
+                this.store.updateFormStatus({
+                    invalidForm: !this.form.valid,
+                    container: currValue
+                });
+                if (this.IsShowContentTypes(prevValue, currValue)) {
+                    this.showContentTypeAndCode();
+                } else if (this.IsShowClearConfirmationModal(prevValue, currValue)) {
+                    this.clearContentConfirmationModal(prevValue.maxContentlets || 1);
+                }
+            });
+    }
+
+    ngAfterViewInit(): void {
+        this.store.loadContentTypesAndUpdateVisibility();
+    }
+
+    /**
+     * check prev value and current value for showing the content type
+     * @param {DotContainerPayload} prevValue
+     * @param {DotContainerPayload} currValue
+     * @memberof DotContainerPropertiesComponent
+     */
+    IsShowContentTypes(prevValue: DotContainerPayload, currValue: DotContainerPayload) {
+        return (
+            (prevValue.maxContentlets === 0 || prevValue.maxContentlets === null) &&
+            currValue.maxContentlets > 0
+        );
+    }
+
+    /**
+     * check prev value and current value for showing confirmation modal
+     * @param {DotContainerPayload} prevValue
+     * @param {DotContainerPayload} currValue
+     * @memberof DotContainerPropertiesComponent
+     */
+    IsShowClearConfirmationModal(prevValue: DotContainerPayload, currValue: DotContainerPayload) {
+        return (
+            (prevValue.maxContentlets > 0 || prevValue.maxContentlets === null) &&
+            currValue.maxContentlets === 0
+        );
     }
 
     /**
@@ -77,7 +130,7 @@ export class DotContainerPropertiesComponent implements OnInit {
                 ({ code, structureId, containerId, containerInode, contentTypeVar }) => {
                     (this.form.get('containerStructures') as FormArray).push(
                         this.fb.group({
-                            code: new FormControl(code, [Validators.required]),
+                            code: new FormControl(code),
                             structureId: new FormControl(structureId, [Validators.required]),
                             containerId: new FormControl(containerId),
                             containerInode: new FormControl(containerInode),
@@ -109,10 +162,13 @@ export class DotContainerPropertiesComponent implements OnInit {
     showContentTypeAndCode(): void {
         const values = this.form.value;
         if (values.maxContentlets > 0) {
+            (this.form.get('containerStructures') as FormArray).setValidators([
+                Validators.required,
+                Validators.minLength(1)
+            ]);
             this.form.get('code').clearValidators();
-            this.form.get('code').reset();
-            this.form.get('containerStructures').setValidators(Validators.minLength(1));
-            this.store.loadContentTypesAndUpdateVisibility();
+            this.form.get('code').reset('');
+            this.store.updateContentTypeVisibility(true);
         } else {
             this.form.get('code').setValidators(Validators.required);
             this.form.get('containerStructures').clearValidators();
@@ -130,37 +186,12 @@ export class DotContainerPropertiesComponent implements OnInit {
         const formValues = this.form.value;
         if (formValues.identifier) {
             this.store.editContainer(formValues);
+            this.store.updateOriginalFormState(formValues);
+            this.form.updateValueAndValidity();
         } else {
             delete formValues.identifier;
             this.store.saveContainer(formValues);
         }
-    }
-
-    /**
-     * Updates containerStructures based on tab data
-     *
-     * @param {MenuItem[]} containerStructures
-     * @return {void}
-     * @memberof DotContainerPropertiesComponent
-     */
-    updateContainerStructure(containerStructures: MenuItem[]): void {
-        const addInContainerStructure = this.form.get('containerStructures') as FormArray;
-        // clear containerStructures array
-        (this.form.get('containerStructures') as FormArray).clear();
-        containerStructures.forEach(({ state }: MenuItem) => {
-            addInContainerStructure.push(
-                this.fb.group({
-                    structureId: new FormControl(state.contentType.variable ?? '', [
-                        Validators.required
-                    ]),
-                    code: new FormControl(state?.code || '', [
-                        Validators.required,
-                        Validators.minLength(2)
-                    ])
-                })
-            );
-        });
-        this.form.updateValueAndValidity();
     }
 
     /**
@@ -173,24 +204,19 @@ export class DotContainerPropertiesComponent implements OnInit {
     }
 
     /**
-     * Opens modal on clear content button click.
-     * @return void
+     * Opens modal for confirmation.
+     * @param {number} lastValue
      * @memberof DotContainerPropertiesComponent
      */
-    clearContent(): void {
+    clearContentConfirmationModal(lastValue: number): void {
         this.dotAlertConfirmService.confirm({
             accept: () => {
-                this.store.updateContentTypeVisibility(false);
-                this.form.reset();
-                this.form.get('containerStructures').clearValidators();
-                this.form.get('containerStructures').reset();
-                // clear containerStructures array
-                (this.form.get('containerStructures') as FormArray).clear();
-                this.form.get('code').addValidators(Validators.required);
-                this.form.updateValueAndValidity();
+                this.clearContentTypesAndCode();
             },
             reject: () => {
-                //
+                if (this.form.value.maxContentlets === 0 || !this.form.value.maxContentlets) {
+                    this.form.get('maxContentlets').setValue(lastValue);
+                }
             },
             header: this.dotMessageService.get(
                 'message.container.properties.confirm.clear.content.title'
@@ -198,6 +224,28 @@ export class DotContainerPropertiesComponent implements OnInit {
             message: this.dotMessageService.get(
                 'message.container.properties.confirm.clear.content.message'
             )
+        });
+    }
+
+    /**
+     * Clear content types and code and update visibility
+     * @private
+     * @memberof DotContainerPropertiesComponent
+     */
+    private clearContentTypesAndCode(): void {
+        this.form.get('containerStructures').clearValidators();
+        this.form.get('containerStructures').reset();
+        this.form.get('preLoop').reset();
+        this.form.get('postLoop').reset();
+        // clear containerStructures array
+        (this.form.get('containerStructures') as FormArray).clear();
+        this.form.get('code').addValidators(Validators.required);
+        this.form.get('maxContentlets').setValue(0);
+        this.form.updateValueAndValidity();
+
+        this.store.updateContentTypeAndPrePostLoopVisibility({
+            isContentTypeVisible: false,
+            showPrePostLoopInput: false
         });
     }
 

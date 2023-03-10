@@ -1,59 +1,63 @@
-import { Component, Input, Injectable, DebugElement } from '@angular/core';
+import { Subject } from 'rxjs';
+
+import { HttpClient, HttpHandler } from '@angular/common/http';
+import { Component, DebugElement, EventEmitter, Injectable, Input, Output } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { DotMessageService } from '@services/dot-message/dot-messages.service';
-import { MockDotMessageService } from '@tests/dot-message-service.mock';
-import { of } from 'rxjs/internal/observable/of';
-import { dotcmsContentletMock } from '@dotcms/app/test/dotcms-contentlet.mock';
-import { DotPageStore } from './dot-pages-store/dot-pages.store';
-import { CommonModule } from '@angular/common';
-import { DotPipesModule } from '@dotcms/app/view/pipes/dot-pipes.module';
-import { DotIconModule } from '@dotcms/ui';
-import { ButtonModule } from 'primeng/button';
-import { TabViewModule } from 'primeng/tabview';
-import { DotPagesCardModule } from './dot-pages-card/dot-pages-card.module';
-import { DotPagesComponent } from './dot-pages.component';
-import { DotESContentService } from '@dotcms/app/api/services/dot-es-content/dot-es-content.service';
-import { Observable } from 'rxjs';
-import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { By } from '@angular/platform-browser';
-import { PanelModule } from 'primeng/panel';
-import { DotPagesCardEmptyModule } from './dot-pages-card-empty/dot-pages-card-empty.module';
+
+import { DialogService } from 'primeng/dynamicdialog';
+import { MenuModule } from 'primeng/menu';
+
+import { of } from 'rxjs/internal/observable/of';
+
+import { DotMessageDisplayServiceMock } from '@components/dot-message-display/dot-message-display.component.spec';
+import { DotMessageSeverity, DotMessageType } from '@components/dot-message-display/model';
+import { DotMessageDisplayService } from '@components/dot-message-display/services';
 import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
-import { MockDotRouterService } from '@dotcms/app/test/dot-router-service.mock';
+import { DotEventsService } from '@dotcms/data-access';
+import { CoreWebService, CoreWebServiceMock, mockSites, SiteService } from '@dotcms/dotcms-js';
+import {
+    dotcmsContentletMock,
+    dotcmsContentTypeBasicMock,
+    MockDotRouterService
+} from '@dotcms/utils-testing';
+
+import { DotPageStore } from './dot-pages-store/dot-pages.store';
+import { DotActionsMenuEventParams, DotPagesComponent } from './dot-pages.component';
 
 @Component({
-    selector: 'dot-pages-card',
-    template: '<ng-content></ng-content>',
-    styleUrls: []
+    selector: 'dot-pages-favorite-panel',
+    template: ''
 })
-export class DotPagesCardMockComponent {
-    @Input() ownerPage: boolean;
-    @Input() imageUri: string;
-    @Input() title: string;
-    @Input() url: string;
+class MockDotPagesFavoritePanelComponent {
+    @Output() goToUrl = new EventEmitter<string>();
+    @Output() showActionsMenu = new EventEmitter<DotActionsMenuEventParams>();
 }
 
-const messageServiceMock = new MockDotMessageService({
-    favorites: 'Favorites',
-    'see.all': 'See All',
-    'see.less': 'See Less',
-    'favoritePage.listing.empty.header': 'Header',
-    'favoritePage.listing.empty.content': 'Content'
-});
-
-@Injectable()
-class MockESPaginatorService {
-    paginationPerPage = 4;
-    totalRecords = 4;
-
-    public get(): Observable<unknown[]> {
-        return null;
-    }
+@Component({
+    selector: 'dot-pages-listing-panel',
+    template: ''
+})
+class MockDotPagesListingPanelComponent {
+    @Output() goToUrl = new EventEmitter<string>();
+    @Output() showActionsMenu = new EventEmitter<DotActionsMenuEventParams>();
 }
 
-export const pagesInitialTestData = [
+@Component({
+    selector: 'dot-add-to-bundle',
+    template: ''
+})
+class MockDotAddToBundleComponent {
+    @Input() assetIdentifier: string;
+    @Output() cancel = new EventEmitter<boolean>();
+}
+
+export const favoritePagesInitialTestData = [
     {
         ...dotcmsContentletMock,
+        live: true,
+        baseType: 'CONTENT',
+        modDate: '2020-09-02 16:45:15.569',
         title: 'preview1',
         screenshot: 'test1',
         url: '/index1?host_id=A&language_id=1&device_inode=123',
@@ -62,217 +66,225 @@ export const pagesInitialTestData = [
     {
         ...dotcmsContentletMock,
         title: 'preview2',
+        modDate: '2020-09-02 16:45:15.569',
         screenshot: 'test2',
         url: '/index2',
         owner: 'admin2'
     }
 ];
 
+const storeMock = {
+    get actionMenuDomId$() {
+        return of('');
+    },
+    get languageOptions$() {
+        return of([]);
+    },
+    get languageLabels$() {
+        return of({});
+    },
+    get pageTypes$() {
+        return of([{ ...dotcmsContentTypeBasicMock }]);
+    },
+    clearMenuActions: jasmine.createSpy(),
+    getFavoritePages: jasmine.createSpy(),
+    getPages: jasmine.createSpy(),
+    getPageTypes: jasmine.createSpy(),
+    showActionsMenu: jasmine.createSpy(),
+    setInitialStateData: jasmine.createSpy(),
+    limitFavoritePages: jasmine.createSpy(),
+    vm$: of({
+        favoritePages: {
+            items: [],
+            showLoadMoreButton: false,
+            total: 0
+        },
+        isEnterprise: true,
+        environments: true,
+        languages: [],
+        loggedUser: {
+            id: 'admin',
+            canRead: { contentlets: true, htmlPages: true },
+            canWrite: { contentlets: true, htmlPages: true }
+        },
+        pages: {
+            actionMenuDomId: '',
+            items: [],
+            addToBundleCTId: 'test1'
+        },
+        pageTypes: []
+    })
+};
+@Injectable()
+export class DialogServiceMock {
+    open(): void {
+        /* */
+    }
+}
+
 describe('DotPagesComponent', () => {
     let fixture: ComponentFixture<DotPagesComponent>;
+    let component: DotPagesComponent;
     let de: DebugElement;
     let store: DotPageStore;
+    let dialogService: DialogService;
     let dotRouterService: DotRouterService;
+    let dotMessageDisplayService: DotMessageDisplayService;
+
+    const switchSiteSubject = new Subject();
 
     beforeEach(() => {
         TestBed.configureTestingModule({
-            declarations: [DotPagesComponent],
-            imports: [
-                BrowserAnimationsModule,
-                CommonModule,
-                DotPagesCardModule,
-                DotPagesCardEmptyModule,
-                DotPipesModule,
-                DotIconModule,
-                PanelModule,
-                ButtonModule,
-                TabViewModule
+            declarations: [
+                MockDotPagesFavoritePanelComponent,
+                MockDotPagesListingPanelComponent,
+                MockDotAddToBundleComponent,
+                DotPagesComponent
             ],
+            imports: [MenuModule],
             providers: [
+                DotEventsService,
+                HttpClient,
+                HttpHandler,
+                { provide: CoreWebService, useClass: CoreWebServiceMock },
+                { provide: DotMessageDisplayService, useClass: DotMessageDisplayServiceMock },
                 { provide: DotRouterService, useClass: MockDotRouterService },
+                { provide: DialogService, useClass: DialogServiceMock },
                 {
-                    provide: DotMessageService,
-                    useValue: messageServiceMock
-                },
-                { provide: DotESContentService, useClass: MockESPaginatorService }
+                    provide: SiteService,
+                    useValue: {
+                        get currentSite() {
+                            return undefined;
+                        },
+
+                        get switchSite$() {
+                            return switchSiteSubject.asObservable();
+                        }
+                    }
+                }
             ]
         }).compileComponents();
     });
 
-    describe('Empty State', () => {
-        beforeEach(() => {
-            TestBed.overrideProvider(DotPageStore, {
-                useValue: {
-                    getFavoritePages: jasmine.createSpy(),
-                    setInitialStateData: jasmine.createSpy(),
-                    limitFavoritePages: jasmine.createSpy(),
-                    vm$: of({
-                        favoritePages: {
-                            items: [],
-                            showLoadMoreButton: false,
-                            total: 0
-                        },
-                        loggedUserId: 'admin'
-                    })
-                }
-            });
-            store = TestBed.inject(DotPageStore);
-            fixture = TestBed.createComponent(DotPagesComponent);
-            de = fixture.debugElement;
-            fixture.detectChanges();
+    beforeEach(() => {
+        TestBed.overrideProvider(DotPageStore, {
+            useValue: storeMock
         });
+        store = TestBed.inject(DotPageStore);
+        dialogService = TestBed.inject(DialogService);
+        dotRouterService = TestBed.inject(DotRouterService);
+        dotMessageDisplayService = TestBed.inject(DotMessageDisplayService);
+        fixture = TestBed.createComponent(DotPagesComponent);
+        de = fixture.debugElement;
+        component = fixture.componentInstance;
 
-        it('should init store', () => {
-            expect(store.setInitialStateData).toHaveBeenCalledWith(5);
-        });
+        fixture.detectChanges();
+        spyOn(component.menu, 'hide');
+        spyOn(dotMessageDisplayService, 'push');
+        spyOn(dialogService, 'open').and.callThrough();
+    });
 
-        it('should set panel with empty state class', () => {
-            const elem = de.query(By.css('p-panel'));
-            expect(
-                elem.nativeElement.classList.contains('dot-pages-panel__empty-state')
-            ).toBeTruthy();
-            expect(de.query(By.css('.dot-pages-panel-action__button'))).toBeFalsy();
-        });
+    it('should init store', () => {
+        expect(store.setInitialStateData).toHaveBeenCalledWith(5);
+    });
 
-        it('should load empty pages cards container', () => {
-            expect(de.queryAll(By.css('dot-pages-card-empty')).length).toBe(5);
-            expect(
-                de.query(By.css('.dot-pages-empty__container dot-icon')).componentInstance.name
-            ).toBe('library_add');
-            expect(de.query(By.css('.dot-pages-empty__header')).nativeElement.outerText).toBe(
-                'Header'
-            );
-            expect(de.query(By.css('.dot-pages-empty__container p')).nativeElement.outerText).toBe(
-                'Content'
-            );
+    it('should have favorite page panel, menu, pages panel and DotAddToBundle components', () => {
+        expect(de.query(By.css('dot-pages-favorite-panel'))).toBeTruthy();
+        expect(de.query(By.css('p-menu'))).toBeTruthy();
+        expect(de.query(By.css('dot-pages-listing-panel'))).toBeTruthy();
+        expect(de.query(By.css('dot-add-to-bundle'))).toBeTruthy();
+    });
+
+    it('should call goToUrl method from DotPagesFavoritePanel', () => {
+        const elem = de.query(By.css('dot-pages-favorite-panel'));
+        elem.triggerEventHandler('goToUrl', '/page/1?lang=1');
+
+        expect(dotRouterService.goToEditPage).toHaveBeenCalledWith({
+            lang: '1',
+            url: '/page/1'
         });
     });
 
-    describe('Loading 2 of 4 items', () => {
-        beforeEach(() => {
-            TestBed.overrideProvider(DotPageStore, {
-                useValue: {
-                    getFavoritePages: jasmine.createSpy(),
-                    setInitialStateData: jasmine.createSpy(),
-                    limitFavoritePages: jasmine.createSpy(),
-                    vm$: of({
-                        favoritePages: {
-                            items: pagesInitialTestData,
-                            showLoadMoreButton: true,
-                            total: 4
-                        },
-                        loggedUserId: 'admin'
-                    })
-                }
-            });
-            store = TestBed.inject(DotPageStore);
-            dotRouterService = TestBed.inject(DotRouterService);
-            fixture = TestBed.createComponent(DotPagesComponent);
-            de = fixture.debugElement;
-            fixture.detectChanges();
+    it('should call showActionsMenu method from DotPagesFavoritePanel', () => {
+        const eventMock = new MouseEvent('click');
+        Object.defineProperty(eventMock, 'currentTarget', {
+            value: { id: 'test' },
+            enumerable: true
         });
 
-        it('should init store', () => {
-            expect(store.setInitialStateData).toHaveBeenCalledWith(5);
-        });
+        const actionMenuParam = {
+            event: eventMock,
+            actionMenuDomId: 'test1',
+            item: dotcmsContentletMock
+        };
 
-        it('should set panel inputs and attributes', () => {
-            const elem = de.query(By.css('p-panel'));
-            expect(elem.nativeElement.classList.contains('dot-pages-panel__expanded')).toBeFalse();
-            expect(elem.componentInstance['iconPos']).toBe('start');
-            expect(elem.componentInstance['expandIcon']).toBe('pi pi-angle-down');
-            expect(elem.componentInstance['collapseIcon']).toBe('pi pi-angle-up');
-            expect(elem.componentInstance['header']).toBe('Favorites');
-            expect(elem.componentInstance['toggleable']).toBe(true);
-        });
+        const elem = de.query(By.css('dot-pages-favorite-panel'));
+        elem.triggerEventHandler('showActionsMenu', actionMenuParam);
 
-        it('should set secondary button in panel', () => {
-            const elem = de.query(By.css('.dot-pages-panel-action__button span'));
-            expect(elem.nativeElement.outerText.toUpperCase()).toBe('See All'.toUpperCase());
-        });
-
-        it('should load pages cards with attributes', () => {
-            const elem = de.queryAll(By.css('dot-pages-card'));
-            expect(elem.length).toBe(2);
-            expect(elem[0].componentInstance.imageUri).toBe(pagesInitialTestData[0].screenshot);
-            expect(elem[0].componentInstance.title).toBe(pagesInitialTestData[0].title);
-            expect(elem[0].componentInstance.url).toBe(pagesInitialTestData[0].url);
-            expect(elem[0].componentInstance.ownerPage).toBe(true);
-            expect(elem[1].componentInstance.ownerPage).toBe(false);
-        });
-
-        describe('Events', () => {
-            it('should call event to load all items', () => {
-                const elem = de.query(By.css('[data-testId="seeAllBtn"]'));
-                elem.triggerEventHandler('click', {
-                    stopPropagation: () => {
-                        //
-                    }
-                });
-                expect(store.getFavoritePages).toHaveBeenCalledWith(4);
-            });
-
-            it('should call redirect method in DotRouterService', () => {
-                const elem = de.query(By.css('dot-pages-card'));
-                elem.triggerEventHandler('click', {
-                    stopPropagation: () => {
-                        //
-                    }
-                });
-
-                expect(dotRouterService.goToEditPage).toHaveBeenCalledWith({
-                    device_inode: '123',
-                    host_id: 'A',
-                    language_id: '1',
-                    url: '/index1'
-                });
-            });
+        expect(component.menu.hide).toHaveBeenCalledTimes(1);
+        expect(store.showActionsMenu).toHaveBeenCalledWith({
+            item: dotcmsContentletMock,
+            actionMenuDomId: 'test1'
         });
     });
 
-    describe('Loading all items', () => {
-        beforeEach(() => {
-            TestBed.overrideProvider(DotPageStore, {
-                useValue: {
-                    getFavoritePages: jasmine.createSpy(),
-                    setInitialStateData: jasmine.createSpy(),
-                    limitFavoritePages: jasmine.createSpy(),
-                    vm$: of({
-                        favoritePages: {
-                            items: [...pagesInitialTestData, ...pagesInitialTestData],
-                            showLoadMoreButton: true,
-                            total: 4
-                        },
-                        loggedUserId: 'admin'
-                    })
-                }
-            });
-            store = TestBed.inject(DotPageStore);
-            fixture = TestBed.createComponent(DotPagesComponent);
-            de = fixture.debugElement;
-            fixture.detectChanges();
+    it('should call goToUrl method from DotPagesListingPanel', () => {
+        const elem = de.query(By.css('dot-pages-listing-panel'));
+        elem.triggerEventHandler('goToUrl', '/page/1?lang=1');
+
+        expect(dotRouterService.goToEditPage).toHaveBeenCalledWith({
+            lang: '1',
+            url: '/page/1'
+        });
+    });
+
+    it('should call showActionsMenu method from DotPagesListingPanel', () => {
+        const eventMock = new MouseEvent('click');
+        Object.defineProperty(eventMock, 'currentTarget', {
+            value: { id: 'test' },
+            enumerable: true
         });
 
-        it('should set panel inputs and attributes', () => {
-            const elem = de.query(By.css('p-panel'));
-            expect(elem.nativeElement.classList.contains('dot-pages-panel__expanded')).toBeTrue();
-        });
+        const actionMenuParam = {
+            event: eventMock,
+            actionMenuDomId: 'test1',
+            item: dotcmsContentletMock
+        };
 
-        it('should set secondary button in panel', () => {
-            const elem = de.query(By.css('.dot-pages-panel-action__button span'));
-            expect(elem.nativeElement.outerText.toUpperCase()).toBe('See Less'.toUpperCase());
-        });
+        const elem = de.query(By.css('dot-pages-listing-panel'));
+        elem.triggerEventHandler('showActionsMenu', actionMenuParam);
 
-        describe('Show less items', () => {
-            it('should call event to show less items', () => {
-                const elem = de.query(By.css('[data-testId="seeAllBtn"]'));
-                elem.triggerEventHandler('click', {
-                    stopPropagation: () => {
-                        //
-                    }
-                });
-                expect(store.limitFavoritePages).toHaveBeenCalledWith(5);
-            });
+        expect(component.menu.hide).toHaveBeenCalledTimes(1);
+        expect(store.showActionsMenu).toHaveBeenCalledWith({
+            item: dotcmsContentletMock,
+            actionMenuDomId: 'test1'
         });
+    });
+
+    it('should call closedActionsMenu method from p-menu', () => {
+        const elem = de.query(By.css('p-menu'));
+        elem.triggerEventHandler('onHide', {});
+
+        expect(store.clearMenuActions).toHaveBeenCalledTimes(1);
+    });
+
+    it('should call push method in dotMessageDisplayService once a dot-global-message is received', () => {
+        const dotEventsService: DotEventsService = de.injector.get(DotEventsService);
+
+        dotEventsService.notify('dot-global-message', { value: 'test3' });
+
+        expect(dotMessageDisplayService.push).toHaveBeenCalledWith({
+            life: 3000,
+            message: 'test3',
+            severity: DotMessageSeverity.SUCCESS,
+            type: DotMessageType.SIMPLE_MESSAGE
+        });
+        expect(store.getPages).toHaveBeenCalledWith({ offset: 0 });
+    });
+
+    it('should reload portlet only when the site change', () => {
+        switchSiteSubject.next(mockSites[0]); // setting the site
+        switchSiteSubject.next(mockSites[1]); // switching the site
+        expect(store.getPages).toHaveBeenCalledWith({ offset: 0 });
     });
 });

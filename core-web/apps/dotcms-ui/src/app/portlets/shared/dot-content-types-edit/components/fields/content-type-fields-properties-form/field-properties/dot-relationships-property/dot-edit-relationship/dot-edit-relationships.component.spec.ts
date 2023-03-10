@@ -1,21 +1,22 @@
 /* eslint-disable @typescript-eslint/no-empty-function */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { DOTTestBed } from '@dotcms/app/test/dot-test-bed';
-import { DotEditRelationshipsComponent } from './dot-edit-relationships.component';
-import { Component, Input, Output, EventEmitter, Injectable, DebugElement } from '@angular/core';
-import { DotMessageService } from '@services/dot-message/dot-messages.service';
-import { PaginationEvent } from '@components/_common/searchable-dropdown/component';
-import { MockDotMessageService } from '@dotcms/app/test/dot-message-service.mock';
-import { DotEditContentTypeCacheService } from '@portlets/shared/dot-content-types-edit/components/fields/content-type-fields-properties-form/field-properties/dot-relationships-property/services/dot-edit-content-type-cache.service';
-import { PaginatorService } from '@services/paginator';
-import { DotRelationshipService } from '@portlets/shared/dot-content-types-edit/components/fields/content-type-fields-properties-form/field-properties/dot-relationships-property/services/dot-relationship.service';
+import { Observable, of } from 'rxjs';
+
+import { Component, DebugElement, EventEmitter, Injectable, Input, Output } from '@angular/core';
 import { ComponentFixture, waitForAsync } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
-import { Observable, of } from 'rxjs';
-import { DotRelationshipCardinality } from '@portlets/shared/dot-content-types-edit/components/fields/content-type-fields-properties-form/field-properties/dot-relationships-property/model/dot-relationship-cardinality.model';
+
+import { PaginationEvent } from '@components/_common/searchable-dropdown/component';
+import { DOTTestBed } from '@dotcms/app/test/dot-test-bed';
+import { DotMessageService, PaginatorService } from '@dotcms/data-access';
 import { DotCMSContentType } from '@dotcms/dotcms-models';
-import { dotcmsContentTypeBasicMock } from '@tests/dot-content-types.mock';
+import { dotcmsContentTypeBasicMock, MockDotMessageService } from '@dotcms/utils-testing';
+import { DotRelationshipCardinality } from '@portlets/shared/dot-content-types-edit/components/fields/content-type-fields-properties-form/field-properties/dot-relationships-property/model/dot-relationship-cardinality.model';
+import { DotEditContentTypeCacheService } from '@portlets/shared/dot-content-types-edit/components/fields/content-type-fields-properties-form/field-properties/dot-relationships-property/services/dot-edit-content-type-cache.service';
+import { DotRelationshipService } from '@portlets/shared/dot-content-types-edit/components/fields/content-type-fields-properties-form/field-properties/dot-relationships-property/services/dot-relationship.service';
+
+import { DotEditRelationshipsComponent } from './dot-edit-relationships.component';
 
 const mockRelationships = [
     {
@@ -115,30 +116,28 @@ describe('DotEditRelationshipsComponent', () => {
         'contenttypes.field.properties.relationship.existing.placeholder': 'Select Relationship'
     });
 
-    beforeEach(
-        waitForAsync(() => {
-            DOTTestBed.configureTestingModule({
-                declarations: [DotEditRelationshipsComponent, MockSearchableDropdownComponent],
-                imports: [],
-                providers: [
-                    DotEditContentTypeCacheService,
-                    { provide: DotMessageService, useValue: messageServiceMock },
-                    { provide: PaginatorService, useClass: MockPaginatorService },
-                    { provide: DotRelationshipService, useClass: MockRelationshipService }
-                ]
-            });
+    beforeEach(waitForAsync(() => {
+        DOTTestBed.configureTestingModule({
+            declarations: [DotEditRelationshipsComponent, MockSearchableDropdownComponent],
+            imports: [],
+            providers: [
+                DotEditContentTypeCacheService,
+                { provide: DotMessageService, useValue: messageServiceMock },
+                { provide: PaginatorService, useClass: MockPaginatorService },
+                { provide: DotRelationshipService, useClass: MockRelationshipService }
+            ]
+        });
 
-            fixture = DOTTestBed.createComponent(DotEditRelationshipsComponent);
-            comp = fixture.componentInstance;
-            de = fixture.debugElement;
+        fixture = DOTTestBed.createComponent(DotEditRelationshipsComponent);
+        comp = fixture.componentInstance;
+        de = fixture.debugElement;
 
-            paginatorService = de.injector.get(PaginatorService);
-            spyOn(paginatorService, 'setExtraParams').and.callThrough();
-            spyOn(paginatorService, 'getWithOffset').and.returnValue(of(mockRelationships));
+        paginatorService = de.injector.get(PaginatorService);
+        spyOn(paginatorService, 'setExtraParams').and.callThrough();
+        spyOn(paginatorService, 'getWithOffset').and.returnValue(of(mockRelationships));
 
-            dotEditContentTypeCacheService = de.injector.get(DotEditContentTypeCacheService);
-        })
-    );
+        dotEditContentTypeCacheService = de.injector.get(DotEditContentTypeCacheService);
+    }));
 
     it('should set url to get relationships', () => {
         fixture.detectChanges();

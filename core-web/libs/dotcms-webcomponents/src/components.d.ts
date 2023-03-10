@@ -119,6 +119,11 @@ export namespace Components {
         color: string;
         size: string;
     }
+    /**
+     * Represent a dotcms binary file control.
+     * @export
+     * @class DotBinaryFileComponent
+     */
     interface DotBinaryFile {
         /**
          * (optional) Text that be shown when the URL is not valid
@@ -193,6 +198,11 @@ export namespace Components {
          */
         validationMessage: string;
     }
+    /**
+     * Represent a dotcms text field for the binary file preview.
+     * @export
+     * @class DotBinaryFilePreviewComponent
+     */
     interface DotBinaryFilePreview {
         /**
          * (optional) Delete button's label
@@ -207,6 +217,11 @@ export namespace Components {
          */
         previewUrl: string;
     }
+    /**
+     * Represent a dotcms text field for the binary file element.
+     * @export
+     * @class DotBinaryFile
+     */
     interface DotBinaryTextField {
         /**
          * (optional) Describes a type of file that may be selected by the user, separated by comma  eg: .pdf,.jpg
@@ -233,6 +248,11 @@ export namespace Components {
          */
         value: any;
     }
+    /**
+     * Represent a dotcms text field for the binary file element.
+     * @export
+     * @class DotBinaryFile
+     */
     interface DotBinaryUploadButton {
         /**
          * (optional) Describes a type of file that may be selected by the user, separated by comma  eg: .pdf,.jpg
@@ -266,12 +286,14 @@ export namespace Components {
         iconSize: string;
         item: DotCardContentletItem;
         showMenu: (x: number, y: number) => Promise<void>;
+        showVideoThumbnail: boolean;
         thumbnailSize: string;
     }
     interface DotCardView {
         clearValue: () => Promise<void>;
         getValue: () => Promise<DotContentletItem[]>;
         items: DotCardContentletItem[];
+        showVideoThumbnail: boolean;
         value: string;
     }
     interface DotCheckbox {
@@ -327,6 +349,11 @@ export namespace Components {
          */
         label: string;
     }
+    /**
+     * Represent a mapping of legacy icons if DotCMS
+     * @export
+     * @class DotFileIcon
+     */
     interface DotContentletIcon {
         icon: string;
         size: string;
@@ -338,8 +365,10 @@ export namespace Components {
     interface DotContentletThumbnail {
         alt: string;
         contentlet: DotContentletItem;
+        cover: boolean;
         height: string;
         iconSize: string;
+        showVideoThumbnail: boolean;
         width: string;
     }
     interface DotContextMenu {
@@ -673,6 +702,11 @@ export namespace Components {
          */
         whiteListEmptyOptionLabel: string;
     }
+    /**
+     * Represent a dotcms label control.
+     * @export
+     * @class DotLabelComponent
+     */
     interface DotLabel {
         /**
          * (optional) Text to be rendered
@@ -721,6 +755,11 @@ export namespace Components {
          */
         value: string;
     }
+    /**
+     * Represent a dotcms multi select control.
+     * @export
+     * @class DotSelectComponent
+     */
     interface DotMultiSelect {
         /**
          * (optional) Disables field's interaction
@@ -764,6 +803,11 @@ export namespace Components {
          */
         value: string;
     }
+    /**
+     * Represent a dotCMS DotProgressBar control.
+     * @export
+     * @class DotProgressBar
+     */
     interface DotProgressBar {
         /**
          * indicates the progress to be show, a value 1 to 100
@@ -774,6 +818,11 @@ export namespace Components {
          */
         text: string;
     }
+    /**
+     * Represent a dotcms radio control.
+     * @export
+     * @class DotRadioComponent
+     */
     interface DotRadio {
         /**
          * (optional) Disables field's interaction
@@ -812,6 +861,11 @@ export namespace Components {
          */
         value: string;
     }
+    /**
+     * Represent a dotcms select control.
+     * @export
+     * @class DotSelectComponent
+     */
     interface DotSelect {
         /**
          * (optional) Disables field's interaction
@@ -910,6 +964,11 @@ export namespace Components {
          */
         value: string;
     }
+    /**
+     * Represent a dotcms textarea control.
+     * @export
+     * @class DotTextareaComponent
+     */
     interface DotTextarea {
         /**
          * (optional) Disables field's interaction
@@ -953,6 +1012,11 @@ export namespace Components {
          */
         value: string;
     }
+    /**
+     * Represent a dotcms input control.
+     * @export
+     * @class DotTextfieldComponent
+     */
     interface DotTextfield {
         /**
          * (optional) Disables field's interaction
@@ -1058,6 +1122,18 @@ export namespace Components {
         delay: number;
         for: string;
         position: string;
+    }
+    interface DotVideoThumbnail {
+        /**
+         * @type {DotContentletItem}
+         * @memberof DotVideoThumbnail
+         */
+        contentlet: DotContentletItem;
+        /**
+         * @type {boolean}
+         * @memberof DotVideoThumbnail
+         */
+        cover: boolean;
     }
     interface KeyValueForm {
         /**
@@ -1240,11 +1316,21 @@ declare global {
         prototype: HTMLDotBadgeElement;
         new (): HTMLDotBadgeElement;
     };
+    /**
+     * Represent a dotcms binary file control.
+     * @export
+     * @class DotBinaryFileComponent
+     */
     interface HTMLDotBinaryFileElement extends Components.DotBinaryFile, HTMLStencilElement {}
     var HTMLDotBinaryFileElement: {
         prototype: HTMLDotBinaryFileElement;
         new (): HTMLDotBinaryFileElement;
     };
+    /**
+     * Represent a dotcms text field for the binary file preview.
+     * @export
+     * @class DotBinaryFilePreviewComponent
+     */
     interface HTMLDotBinaryFilePreviewElement
         extends Components.DotBinaryFilePreview,
             HTMLStencilElement {}
@@ -1252,6 +1338,11 @@ declare global {
         prototype: HTMLDotBinaryFilePreviewElement;
         new (): HTMLDotBinaryFilePreviewElement;
     };
+    /**
+     * Represent a dotcms text field for the binary file element.
+     * @export
+     * @class DotBinaryFile
+     */
     interface HTMLDotBinaryTextFieldElement
         extends Components.DotBinaryTextField,
             HTMLStencilElement {}
@@ -1259,6 +1350,11 @@ declare global {
         prototype: HTMLDotBinaryTextFieldElement;
         new (): HTMLDotBinaryTextFieldElement;
     };
+    /**
+     * Represent a dotcms text field for the binary file element.
+     * @export
+     * @class DotBinaryFile
+     */
     interface HTMLDotBinaryUploadButtonElement
         extends Components.DotBinaryUploadButton,
             HTMLStencilElement {}
@@ -1293,6 +1389,11 @@ declare global {
         prototype: HTMLDotChipElement;
         new (): HTMLDotChipElement;
     };
+    /**
+     * Represent a mapping of legacy icons if DotCMS
+     * @export
+     * @class DotFileIcon
+     */
     interface HTMLDotContentletIconElement
         extends Components.DotContentletIcon,
             HTMLStencilElement {}
@@ -1376,6 +1477,11 @@ declare global {
         prototype: HTMLDotKeyValueElement;
         new (): HTMLDotKeyValueElement;
     };
+    /**
+     * Represent a dotcms label control.
+     * @export
+     * @class DotLabelComponent
+     */
     interface HTMLDotLabelElement extends Components.DotLabel, HTMLStencilElement {}
     var HTMLDotLabelElement: {
         prototype: HTMLDotLabelElement;
@@ -1388,21 +1494,41 @@ declare global {
         prototype: HTMLDotMaterialIconPickerElement;
         new (): HTMLDotMaterialIconPickerElement;
     };
+    /**
+     * Represent a dotcms multi select control.
+     * @export
+     * @class DotSelectComponent
+     */
     interface HTMLDotMultiSelectElement extends Components.DotMultiSelect, HTMLStencilElement {}
     var HTMLDotMultiSelectElement: {
         prototype: HTMLDotMultiSelectElement;
         new (): HTMLDotMultiSelectElement;
     };
+    /**
+     * Represent a dotCMS DotProgressBar control.
+     * @export
+     * @class DotProgressBar
+     */
     interface HTMLDotProgressBarElement extends Components.DotProgressBar, HTMLStencilElement {}
     var HTMLDotProgressBarElement: {
         prototype: HTMLDotProgressBarElement;
         new (): HTMLDotProgressBarElement;
     };
+    /**
+     * Represent a dotcms radio control.
+     * @export
+     * @class DotRadioComponent
+     */
     interface HTMLDotRadioElement extends Components.DotRadio, HTMLStencilElement {}
     var HTMLDotRadioElement: {
         prototype: HTMLDotRadioElement;
         new (): HTMLDotRadioElement;
     };
+    /**
+     * Represent a dotcms select control.
+     * @export
+     * @class DotSelectComponent
+     */
     interface HTMLDotSelectElement extends Components.DotSelect, HTMLStencilElement {}
     var HTMLDotSelectElement: {
         prototype: HTMLDotSelectElement;
@@ -1423,11 +1549,21 @@ declare global {
         prototype: HTMLDotTagsElement;
         new (): HTMLDotTagsElement;
     };
+    /**
+     * Represent a dotcms textarea control.
+     * @export
+     * @class DotTextareaComponent
+     */
     interface HTMLDotTextareaElement extends Components.DotTextarea, HTMLStencilElement {}
     var HTMLDotTextareaElement: {
         prototype: HTMLDotTextareaElement;
         new (): HTMLDotTextareaElement;
     };
+    /**
+     * Represent a dotcms input control.
+     * @export
+     * @class DotTextfieldComponent
+     */
     interface HTMLDotTextfieldElement extends Components.DotTextfield, HTMLStencilElement {}
     var HTMLDotTextfieldElement: {
         prototype: HTMLDotTextfieldElement;
@@ -1442,6 +1578,13 @@ declare global {
     var HTMLDotTooltipElement: {
         prototype: HTMLDotTooltipElement;
         new (): HTMLDotTooltipElement;
+    };
+    interface HTMLDotVideoThumbnailElement
+        extends Components.DotVideoThumbnail,
+            HTMLStencilElement {}
+    var HTMLDotVideoThumbnailElement: {
+        prototype: HTMLDotVideoThumbnailElement;
+        new (): HTMLDotVideoThumbnailElement;
     };
     interface HTMLKeyValueFormElement extends Components.KeyValueForm, HTMLStencilElement {}
     var HTMLKeyValueFormElement: {
@@ -1494,6 +1637,7 @@ declare global {
         'dot-textfield': HTMLDotTextfieldElement;
         'dot-time': HTMLDotTimeElement;
         'dot-tooltip': HTMLDotTooltipElement;
+        'dot-video-thumbnail': HTMLDotVideoThumbnailElement;
         'key-value-form': HTMLKeyValueFormElement;
         'key-value-table': HTMLKeyValueTableElement;
     }
@@ -1602,6 +1746,11 @@ declare namespace LocalJSX {
         color?: string;
         size?: string;
     }
+    /**
+     * Represent a dotcms binary file control.
+     * @export
+     * @class DotBinaryFileComponent
+     */
     interface DotBinaryFile {
         /**
          * (optional) Text that be shown when the URL is not valid
@@ -1670,6 +1819,11 @@ declare namespace LocalJSX {
          */
         validationMessage?: string;
     }
+    /**
+     * Represent a dotcms text field for the binary file preview.
+     * @export
+     * @class DotBinaryFilePreviewComponent
+     */
     interface DotBinaryFilePreview {
         /**
          * (optional) Delete button's label
@@ -1688,6 +1842,11 @@ declare namespace LocalJSX {
          */
         previewUrl?: string;
     }
+    /**
+     * Represent a dotcms text field for the binary file element.
+     * @export
+     * @class DotBinaryFile
+     */
     interface DotBinaryTextField {
         /**
          * (optional) Describes a type of file that may be selected by the user, separated by comma  eg: .pdf,.jpg
@@ -1716,6 +1875,11 @@ declare namespace LocalJSX {
          */
         value?: any;
     }
+    /**
+     * Represent a dotcms text field for the binary file element.
+     * @export
+     * @class DotBinaryFile
+     */
     interface DotBinaryUploadButton {
         /**
          * (optional) Describes a type of file that may be selected by the user, separated by comma  eg: .pdf,.jpg
@@ -1750,12 +1914,14 @@ declare namespace LocalJSX {
         item?: DotCardContentletItem;
         onCheckboxChange?: (event: DotCardContentletCustomEvent<DotCardContentletEvent>) => void;
         onContextMenuClick?: (event: DotCardContentletCustomEvent<MouseEvent>) => void;
+        showVideoThumbnail?: boolean;
         thumbnailSize?: string;
     }
     interface DotCardView {
         items?: DotCardContentletItem[];
         onCardClick?: (event: DotCardViewCustomEvent<any>) => void;
         onSelected?: (event: DotCardViewCustomEvent<any>) => void;
+        showVideoThumbnail?: boolean;
         value?: string;
     }
     interface DotCheckbox {
@@ -1809,6 +1975,11 @@ declare namespace LocalJSX {
         label?: string;
         onRemove?: (event: DotChipCustomEvent<String>) => void;
     }
+    /**
+     * Represent a mapping of legacy icons if DotCMS
+     * @export
+     * @class DotFileIcon
+     */
     interface DotContentletIcon {
         icon?: string;
         size?: string;
@@ -1820,8 +1991,10 @@ declare namespace LocalJSX {
     interface DotContentletThumbnail {
         alt?: string;
         contentlet?: DotContentletItem;
+        cover?: boolean;
         height?: string;
         iconSize?: string;
+        showVideoThumbnail?: boolean;
         width?: string;
     }
     interface DotContextMenu {
@@ -2155,6 +2328,11 @@ declare namespace LocalJSX {
          */
         whiteListEmptyOptionLabel?: string;
     }
+    /**
+     * Represent a dotcms label control.
+     * @export
+     * @class DotLabelComponent
+     */
     interface DotLabel {
         /**
          * (optional) Text to be rendered
@@ -2210,6 +2388,11 @@ declare namespace LocalJSX {
          */
         value?: string;
     }
+    /**
+     * Represent a dotcms multi select control.
+     * @export
+     * @class DotSelectComponent
+     */
     interface DotMultiSelect {
         /**
          * (optional) Disables field's interaction
@@ -2250,6 +2433,11 @@ declare namespace LocalJSX {
          */
         value?: string;
     }
+    /**
+     * Represent a dotCMS DotProgressBar control.
+     * @export
+     * @class DotProgressBar
+     */
     interface DotProgressBar {
         /**
          * indicates the progress to be show, a value 1 to 100
@@ -2260,6 +2448,11 @@ declare namespace LocalJSX {
          */
         text?: string;
     }
+    /**
+     * Represent a dotcms radio control.
+     * @export
+     * @class DotRadioComponent
+     */
     interface DotRadio {
         /**
          * (optional) Disables field's interaction
@@ -2296,6 +2489,11 @@ declare namespace LocalJSX {
          */
         value?: string;
     }
+    /**
+     * Represent a dotcms select control.
+     * @export
+     * @class DotSelectComponent
+     */
     interface DotSelect {
         /**
          * (optional) Disables field's interaction
@@ -2390,6 +2588,11 @@ declare namespace LocalJSX {
          */
         value?: string;
     }
+    /**
+     * Represent a dotcms textarea control.
+     * @export
+     * @class DotTextareaComponent
+     */
     interface DotTextarea {
         /**
          * (optional) Disables field's interaction
@@ -2430,6 +2633,11 @@ declare namespace LocalJSX {
          */
         value?: string;
     }
+    /**
+     * Represent a dotcms input control.
+     * @export
+     * @class DotTextfieldComponent
+     */
     interface DotTextfield {
         /**
          * (optional) Disables field's interaction
@@ -2531,6 +2739,18 @@ declare namespace LocalJSX {
         delay?: number;
         for?: string;
         position?: string;
+    }
+    interface DotVideoThumbnail {
+        /**
+         * @type {DotContentletItem}
+         * @memberof DotVideoThumbnail
+         */
+        contentlet?: DotContentletItem;
+        /**
+         * @type {boolean}
+         * @memberof DotVideoThumbnail
+         */
+        cover?: boolean;
     }
     interface KeyValueForm {
         /**
@@ -2645,6 +2865,7 @@ declare namespace LocalJSX {
         'dot-textfield': DotTextfield;
         'dot-time': DotTime;
         'dot-tooltip': DotTooltip;
+        'dot-video-thumbnail': DotVideoThumbnail;
         'key-value-form': KeyValueForm;
         'key-value-table': KeyValueTable;
     }
@@ -2658,12 +2879,32 @@ declare module '@stencil/core' {
             'dot-autocomplete': LocalJSX.DotAutocomplete &
                 JSXBase.HTMLAttributes<HTMLDotAutocompleteElement>;
             'dot-badge': LocalJSX.DotBadge & JSXBase.HTMLAttributes<HTMLDotBadgeElement>;
+            /**
+             * Represent a dotcms binary file control.
+             * @export
+             * @class DotBinaryFileComponent
+             */
             'dot-binary-file': LocalJSX.DotBinaryFile &
                 JSXBase.HTMLAttributes<HTMLDotBinaryFileElement>;
+            /**
+             * Represent a dotcms text field for the binary file preview.
+             * @export
+             * @class DotBinaryFilePreviewComponent
+             */
             'dot-binary-file-preview': LocalJSX.DotBinaryFilePreview &
                 JSXBase.HTMLAttributes<HTMLDotBinaryFilePreviewElement>;
+            /**
+             * Represent a dotcms text field for the binary file element.
+             * @export
+             * @class DotBinaryFile
+             */
             'dot-binary-text-field': LocalJSX.DotBinaryTextField &
                 JSXBase.HTMLAttributes<HTMLDotBinaryTextFieldElement>;
+            /**
+             * Represent a dotcms text field for the binary file element.
+             * @export
+             * @class DotBinaryFile
+             */
             'dot-binary-upload-button': LocalJSX.DotBinaryUploadButton &
                 JSXBase.HTMLAttributes<HTMLDotBinaryUploadButtonElement>;
             'dot-card': LocalJSX.DotCard & JSXBase.HTMLAttributes<HTMLDotCardElement>;
@@ -2672,6 +2913,11 @@ declare module '@stencil/core' {
             'dot-card-view': LocalJSX.DotCardView & JSXBase.HTMLAttributes<HTMLDotCardViewElement>;
             'dot-checkbox': LocalJSX.DotCheckbox & JSXBase.HTMLAttributes<HTMLDotCheckboxElement>;
             'dot-chip': LocalJSX.DotChip & JSXBase.HTMLAttributes<HTMLDotChipElement>;
+            /**
+             * Represent a mapping of legacy icons if DotCMS
+             * @export
+             * @class DotFileIcon
+             */
             'dot-contentlet-icon': LocalJSX.DotContentletIcon &
                 JSXBase.HTMLAttributes<HTMLDotContentletIconElement>;
             'dot-contentlet-lock-icon': LocalJSX.DotContentletLockIcon &
@@ -2697,25 +2943,62 @@ declare module '@stencil/core' {
             'dot-input-calendar': LocalJSX.DotInputCalendar &
                 JSXBase.HTMLAttributes<HTMLDotInputCalendarElement>;
             'dot-key-value': LocalJSX.DotKeyValue & JSXBase.HTMLAttributes<HTMLDotKeyValueElement>;
+            /**
+             * Represent a dotcms label control.
+             * @export
+             * @class DotLabelComponent
+             */
             'dot-label': LocalJSX.DotLabel & JSXBase.HTMLAttributes<HTMLDotLabelElement>;
             'dot-material-icon-picker': LocalJSX.DotMaterialIconPicker &
                 JSXBase.HTMLAttributes<HTMLDotMaterialIconPickerElement>;
+            /**
+             * Represent a dotcms multi select control.
+             * @export
+             * @class DotSelectComponent
+             */
             'dot-multi-select': LocalJSX.DotMultiSelect &
                 JSXBase.HTMLAttributes<HTMLDotMultiSelectElement>;
+            /**
+             * Represent a dotCMS DotProgressBar control.
+             * @export
+             * @class DotProgressBar
+             */
             'dot-progress-bar': LocalJSX.DotProgressBar &
                 JSXBase.HTMLAttributes<HTMLDotProgressBarElement>;
+            /**
+             * Represent a dotcms radio control.
+             * @export
+             * @class DotRadioComponent
+             */
             'dot-radio': LocalJSX.DotRadio & JSXBase.HTMLAttributes<HTMLDotRadioElement>;
+            /**
+             * Represent a dotcms select control.
+             * @export
+             * @class DotSelectComponent
+             */
             'dot-select': LocalJSX.DotSelect & JSXBase.HTMLAttributes<HTMLDotSelectElement>;
             'dot-select-button': LocalJSX.DotSelectButton &
                 JSXBase.HTMLAttributes<HTMLDotSelectButtonElement>;
             'dot-state-icon': LocalJSX.DotStateIcon &
                 JSXBase.HTMLAttributes<HTMLDotStateIconElement>;
             'dot-tags': LocalJSX.DotTags & JSXBase.HTMLAttributes<HTMLDotTagsElement>;
+            /**
+             * Represent a dotcms textarea control.
+             * @export
+             * @class DotTextareaComponent
+             */
             'dot-textarea': LocalJSX.DotTextarea & JSXBase.HTMLAttributes<HTMLDotTextareaElement>;
+            /**
+             * Represent a dotcms input control.
+             * @export
+             * @class DotTextfieldComponent
+             */
             'dot-textfield': LocalJSX.DotTextfield &
                 JSXBase.HTMLAttributes<HTMLDotTextfieldElement>;
             'dot-time': LocalJSX.DotTime & JSXBase.HTMLAttributes<HTMLDotTimeElement>;
             'dot-tooltip': LocalJSX.DotTooltip & JSXBase.HTMLAttributes<HTMLDotTooltipElement>;
+            'dot-video-thumbnail': LocalJSX.DotVideoThumbnail &
+                JSXBase.HTMLAttributes<HTMLDotVideoThumbnailElement>;
             'key-value-form': LocalJSX.KeyValueForm &
                 JSXBase.HTMLAttributes<HTMLKeyValueFormElement>;
             'key-value-table': LocalJSX.KeyValueTable &

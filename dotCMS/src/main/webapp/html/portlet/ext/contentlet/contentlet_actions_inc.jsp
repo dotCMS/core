@@ -11,6 +11,8 @@
 <%@ page import="com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo" %>
 <%@ page import="com.dotmarketing.util.Logger" %>
 <%@ page import="com.dotmarketing.util.PageMode" %>
+<%@ page import="com.dotmarketing.business.web.WebAPILocator"%>
+<%@ page import="java.util.Optional" %>
 <%
 
 if(user == null){
@@ -24,8 +26,7 @@ WorkflowTask wfTask = APILocator.getWorkflowAPI().findTaskByContentlet(contentle
 
 
 boolean canEditContentType=contentlet.getContentType()!=null && APILocator.getPermissionAPI().doesUserHavePermission(contentlet.getContentType(),2, user);
-
-com.dotmarketing.beans.Host myHost =  WebAPILocator.getHostWebAPI().getCurrentHost(request); 
+com.dotmarketing.beans.Host myHost =  WebAPILocator.getHostWebAPI().getCurrentHost(request);
 
 List<WorkflowStep> wfSteps = null;
 WorkflowStep wfStep = null;
@@ -53,12 +54,45 @@ catch(Exception e){
 					APILocator.getWorkflowAPI().findScheme(action.getSchemeId()).getName());
 		}
 	}
+   
+   
+boolean canUserWriteToContentlet = conPerAPI.doesUserHavePermission(contentlet,PermissionAPI.PERMISSION_WRITE,user, PageMode.get(request).respectAnonPerms);
+
+
+
+String previewUrl = null;
+String contentUrl = null;
+if(contentlet.isHTMLPage() && UtilMethods.isSet(contentlet.getIdentifier())){
+	contentUrl = APILocator.getIdentifierAPI().find(contentlet.getIdentifier()).getURI();
+    previewUrl= "/dotAdmin/#/edit-page/content?url=" + contentUrl + "&language_id=" + contentlet.getLanguageId();
+}else{
+	contentUrl = APILocator.getContentletAPI().getUrlMapForContentlet(contentlet, user, PageMode.get(request).respectAnonPerms);
+	previewUrl = "/dotAdmin/#/edit-page/content?url=" + contentUrl + "&language_id=" + contentlet.getLanguageId();  
+}
+
+if(myHost.getIdentifier() != null){
+	previewUrl += "&host_id=" + myHost.getIdentifier();
+}
+
+   
 %>
-<%@page import="com.dotmarketing.business.web.WebAPILocator"%>
-<%@ page import="java.util.Optional" %>
+
 
 
 <script>
+function setLinkToContentType(){
+
+   const URLLength = window.parent.location.hash.split('/').length;
+   const contentTypeLink = document.getElementById('contentTypeLink');
+
+  //URL has inode, example: #/c/content/87edb0d5-99aa-4d18-a50d-60eef7c74954
+   if (URLLength>3 && contentTypeLink) {
+        contentTypeLink.addEventListener('click', jumpToContentType);
+        contentTypeLink.setAttribute('href','#');
+   }
+}
+
+setTimeout(setLinkToContentType, 300);
 
 var myHostId = '<%= (myHost != null) ? myHost.getIdentifier() : "" %>';
 
@@ -92,16 +126,10 @@ function editPage(url, languageId) {
 }
 
 function jumpToContentType(){
-    if(!_hasUserChanged || confirm("Content has changed, proceed?")){
+    if(!_hasUserChanged || confirm('<%=LanguageUtil.get(pageContext, "content.has.change")%>')){
         parent.window.location="/dotAdmin/#/content-types-angular/edit/<%=structure.getVelocityVarName()%>";
-        return true;
     }
-    return false;
 }
-
-
-
-
 
 </script>
 
@@ -121,11 +149,10 @@ function jumpToContentType(){
 <%}%>
 
 <%--check permissions to display the save and publish button or not--%>
-<%boolean canUserWriteToContentlet = conPerAPI.doesUserHavePermission(contentlet,PermissionAPI.PERMISSION_WRITE,user, PageMode.get(request).respectAnonPerms);%>
 
-<%if(!"edit-page".equals(request.getParameter("angularCurrentPortlet")) && contentlet.isHTMLPage() && contentlet.getIdentifier() != "" && (canUserWriteToContentlet)) {%>
+<%if(!"edit-page".equals(request.getParameter("angularCurrentPortlet")) && UtilMethods.isSet(contentUrl)) {%>
    <div class="content-edit-actions" >
-       <a style="border:0px;" onClick="editPage('<%= APILocator.getIdentifierAPI().find(contentlet.getIdentifier()).getURI() %>', '<%= contentlet.getLanguageId() %>')">
+       <a style="border:0px;" href="<%= previewUrl %>" target="_blank">
            <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "editpage.toolbar.preview.page")) %>
            <div style="display:inline-block;float:right;">&rarr;</div>
        </a>
@@ -232,7 +259,7 @@ function jumpToContentType(){
      <tr>
             <th style="vertical-align: top"><%= LanguageUtil.get(pageContext, "Content-Type") %>:</th>
             <td>
-                <%if(!contentlet.isNew() && canEditContentType){%><a onclick="return jumpToContentType()" href="/dotAdmin/#/content-types-angular/edit/<%=contentlet.getContentType().variable()%>" target="_parent"><%}%>
+                <%if(canEditContentType){%><a id="contentTypeLink" ><%}%>
                 <%=contentlet!=null && contentlet.getContentType()!=null ? contentlet.getContentType().name() : LanguageUtil.get(pageContext, "not-available") %>
                 <%if(canEditContentType){%></a><%}%>
             </td>

@@ -1,9 +1,6 @@
 package com.dotcms.rest.api.v1.system.permission;
 
-import com.dotcms.rest.api.v1.user.RestUser;
 import com.dotmarketing.business.PermissionAPI;
-
-import java.util.List;
 
 public class PermissionView {
 

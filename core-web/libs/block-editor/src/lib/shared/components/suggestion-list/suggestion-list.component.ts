@@ -1,22 +1,25 @@
+import { Subject } from 'rxjs';
+
+import { FocusKeyManager } from '@angular/cdk/a11y';
 import {
+    AfterViewInit,
     Component,
+    ContentChildren,
+    HostBinding,
     HostListener,
     Input,
-    QueryList,
-    AfterViewInit,
-    ContentChildren,
     OnDestroy,
-    HostBinding
+    QueryList
 } from '@angular/core';
-import { FocusKeyManager } from '@angular/cdk/a11y';
 
 // Components
+import { takeUntil } from 'rxjs/operators';
+
 import { SuggestionsListItemComponent } from './components/suggestions-list-item/suggestions-list-item.component';
 
 // Interfaces
+
 import { DotMenuItem } from '../suggestions/suggestions.component';
-import { Subject } from 'rxjs';
-import { takeUntil } from 'rxjs/operators';
 
 @Component({
     selector: 'dot-suggestion-list',

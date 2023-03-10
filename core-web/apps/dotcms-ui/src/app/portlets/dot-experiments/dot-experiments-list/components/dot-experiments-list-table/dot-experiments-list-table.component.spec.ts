@@ -1,25 +1,29 @@
 import { byTestId, createComponentFactory, Spectator } from '@ngneat/spectator';
+
 import { Pipe, PipeTransform } from '@angular/core';
-import { DotExperimentsListTableComponent } from './dot-experiments-list-table.component';
-import { DotMessageService } from '@services/dot-message/dot-messages.service';
+import { RouterTestingModule } from '@angular/router/testing';
+
 import { ConfirmationService, MessageService } from 'primeng/api';
 import { ConfirmPopup, ConfirmPopupModule } from 'primeng/confirmpopup';
-import { DotExperimentsEmptyExperimentsComponent } from '../dot-experiments-empty-experiments/dot-experiments-empty-experiments.component';
+import { Table, TableModule } from 'primeng/table';
+import { ToastModule } from 'primeng/toast';
+
+import { UiDotIconButtonTooltipComponent } from '@components/_common/dot-icon-button-tooltip/dot-icon-button-tooltip.component';
+import { UiDotIconButtonTooltipModule } from '@components/_common/dot-icon-button-tooltip/dot-icon-button-tooltip.module';
+import { DotMessageService } from '@dotcms/data-access';
 import {
     DotExperiment,
-    GroupedExperimentByStatus
-} from '@portlets/dot-experiments/shared/models/dot-experiments.model';
-import { Table, TableModule } from 'primeng/table';
-import { DotIconModule } from '@dotcms/ui';
-import { UiDotIconButtonTooltipModule } from '@components/_common/dot-icon-button-tooltip/dot-icon-button-tooltip.module';
-import { UiDotIconButtonTooltipComponent } from '@components/_common/dot-icon-button-tooltip/dot-icon-button-tooltip.component';
-import { ToastModule } from 'primeng/toast';
-import {
     DotExperimentStatusList,
+    GroupedExperimentByStatus,
     TrafficProportionTypes
-} from '@portlets/dot-experiments/shared/models/dot-experiments-constants';
+} from '@dotcms/dotcms-models';
+import { DotIconModule } from '@dotcms/ui';
+import { MockDotMessageService } from '@dotcms/utils-testing';
 import { DotMessagePipeModule } from '@pipes/dot-message/dot-message-pipe.module';
-import { MockDotMessageService } from '@tests/dot-message-service.mock';
+
+import { DotExperimentsListTableComponent } from './dot-experiments-list-table.component';
+
+import { DotExperimentsEmptyExperimentsComponent } from '../dot-experiments-empty-experiments/dot-experiments-empty-experiments.component';
 
 const draftExperiments: DotExperiment[] = [
     {
@@ -31,14 +35,15 @@ const draftExperiments: DotExperiment[] = [
         readyToStart: false,
         description: 'Praesent at molestie mauris, quis vulputate augue.',
         name: 'Praesent at molestie mauris',
-        trafficAllocation: '100.0',
+        trafficAllocation: 100,
         scheduling: null,
         trafficProportion: {
             type: TrafficProportionTypes.SPLIT_EVENLY,
-            variants: [{ id: '111', name: 'DEFAULT', weight: '100.0' }]
+            variants: [{ id: '111', name: 'DEFAULT', weight: 100 }]
         },
         creationDate: new Date('2022-08-21 14:50:03'),
-        modDate: new Date('2022-08-21 18:50:03')
+        modDate: new Date('2022-08-21 18:50:03'),
+        goals: null
     }
 ];
 const endedExperiments: DotExperiment[] = [
@@ -51,14 +56,15 @@ const endedExperiments: DotExperiment[] = [
         readyToStart: false,
         description: 'Praesent at molestie mauris, quis vulputate augue.',
         name: 'Praesent at molestie mauris',
-        trafficAllocation: '100.0',
+        trafficAllocation: 100,
         scheduling: null,
         trafficProportion: {
             type: TrafficProportionTypes.SPLIT_EVENLY,
-            variants: [{ id: '222', name: 'DEFAULT', weight: '100.0' }]
+            variants: [{ id: '222', name: 'DEFAULT', weight: 100 }]
         },
         creationDate: new Date('2022-08-21 14:50:03'),
-        modDate: new Date('2022-08-21 18:50:03')
+        modDate: new Date('2022-08-21 18:50:03'),
+        goals: null
     }
 ];
 const archivedExperiments: DotExperiment[] = [
@@ -71,14 +77,15 @@ const archivedExperiments: DotExperiment[] = [
         readyToStart: false,
         description: 'Praesent at molestie mauris, quis vulputate augue.',
         name: 'Praesent at molestie mauris',
-        trafficAllocation: '100.0',
+        trafficAllocation: 100,
         scheduling: null,
         trafficProportion: {
             type: TrafficProportionTypes.SPLIT_EVENLY,
-            variants: [{ id: '333', name: 'DEFAULT', weight: '100.0' }]
+            variants: [{ id: '333', name: 'DEFAULT', weight: 100 }]
         },
         creationDate: new Date('2022-08-21 14:50:03'),
-        modDate: new Date('2022-08-21 18:50:03')
+        modDate: new Date('2022-08-21 18:50:03'),
+        goals: null
     }
 ];
 const scheduledExperiments: DotExperiment[] = [
@@ -91,14 +98,15 @@ const scheduledExperiments: DotExperiment[] = [
         readyToStart: false,
         description: 'Praesent at molestie mauris, quis vulputate augue.',
         name: 'Praesent at molestie mauris',
-        trafficAllocation: '100.0',
+        trafficAllocation: 100,
         scheduling: null,
         trafficProportion: {
             type: TrafficProportionTypes.SPLIT_EVENLY,
-            variants: [{ id: '4444', name: 'DEFAULT', weight: '100.0' }]
+            variants: [{ id: '4444', name: 'DEFAULT', weight: 100 }]
         },
         creationDate: new Date('2022-08-21 14:50:03'),
-        modDate: new Date('2022-08-21 18:50:03')
+        modDate: new Date('2022-08-21 18:50:03'),
+        goals: null
     }
 ];
 
@@ -130,7 +138,8 @@ describe('DotExperimentsListTableComponent', () => {
             UiDotIconButtonTooltipModule,
             ConfirmPopupModule,
             ToastModule,
-            DotMessagePipeModule
+            DotMessagePipeModule,
+            RouterTestingModule
         ],
         component: DotExperimentsListTableComponent,
         componentMocks: [ConfirmPopup],

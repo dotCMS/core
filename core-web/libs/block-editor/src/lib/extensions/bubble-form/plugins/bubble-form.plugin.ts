@@ -1,17 +1,21 @@
-import { ComponentRef } from '@angular/core';
-import { Observable, Subject } from 'rxjs';
-import { takeUntil } from 'rxjs/operators';
-
-import { EditorState, Plugin, PluginKey, Transaction, NodeSelection } from 'prosemirror-state';
-import { EditorView } from 'prosemirror-view';
 import { Node } from 'prosemirror-model';
+import { EditorState, NodeSelection, Plugin, PluginKey, Transaction } from 'prosemirror-state';
+import { EditorView } from 'prosemirror-view';
+import { Observable, Subject } from 'rxjs';
+import tippy, { Instance, Props } from 'tippy.js';
+
+import { ComponentRef } from '@angular/core';
+
+import { takeUntil } from 'rxjs/operators';
 
 import { Editor, posToDOMRect } from '@tiptap/core';
 import { BubbleMenuView } from '@tiptap/extension-bubble-menu';
-import tippy, { Instance, Props } from 'tippy.js';
-import { imageFormControls } from '../utils';
 
-import { getNodePosition, BUBBLE_FORM_PLUGIN_KEY, BubbleFormComponent } from '@dotcms/block-editor';
+import { BASIC_TIPPY_OPTIONS } from '../../../shared';
+import { getNodePosition } from '../../bubble-menu/utils';
+import { BubbleFormComponent } from '../bubble-form.component';
+import { BUBBLE_FORM_PLUGIN_KEY } from '../bubble-form.extension';
+import { imageFormControls } from '../utils';
 
 export interface BubbleFormProps {
     pluginKey: PluginKey;
@@ -140,22 +144,8 @@ export class BubbleFormView extends BubbleMenuView {
 
         this.tippy = tippy(editorElement.parentElement, {
             ...this.tippyOptions,
-            duration: 250,
+            ...BASIC_TIPPY_OPTIONS,
             content: this.element,
-            interactive: true,
-            maxWidth: 'none',
-            trigger: 'manual',
-            placement: 'bottom-start',
-            hideOnClick: 'toggle',
-            popperOptions: {
-                modifiers: [
-                    {
-                        name: 'flip',
-                        options: { fallbackPlacements: ['top-start'] }
-                    }
-                ]
-            },
-
             onShow: () => {
                 requestAnimationFrame(() => {
                     this.component.instance.inputs.first.nativeElement.focus();
@@ -183,7 +173,7 @@ export class BubbleFormView extends BubbleMenuView {
     }
 
     private hanlderScroll(e: Event) {
-        if (this.tippy?.popper && this.tippy?.popper.contains(e.target as HTMLElement)) {
+        if (!this.shouldHideOnScroll(e.target as HTMLElement)) {
             return true;
         }
 
@@ -197,6 +187,10 @@ export class BubbleFormView extends BubbleMenuView {
         const domRect = document.querySelector('#bubble-menu')?.getBoundingClientRect();
 
         return domRect || getNodePosition(node, type);
+    }
+
+    private shouldHideOnScroll(node: HTMLElement): boolean {
+        return this.tippy?.state.isMounted && this.tippy?.popper.contains(node);
     }
 }
 

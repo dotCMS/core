@@ -1,4 +1,5 @@
-import { Injectable } from '@angular/core';
+import { Observable } from 'rxjs';
+
 import {
     HttpErrorResponse,
     HttpEvent,
@@ -6,9 +7,11 @@ import {
     HttpInterceptor,
     HttpRequest
 } from '@angular/common/http';
-import { Observable } from 'rxjs';
+import { Injectable } from '@angular/core';
+
 import { catchError, map, take } from 'rxjs/operators';
-import { DotHttpErrorManagerService } from '@services/dot-http-error-manager/dot-http-error-manager.service';
+
+import { DotHttpErrorManagerService } from '@dotcms/app/api/services/dot-http-error-manager/dot-http-error-manager.service';
 
 @Injectable()
 export class ServerErrorInterceptor implements HttpInterceptor {

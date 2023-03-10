@@ -1,24 +1,29 @@
-import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { DotBlockEditorSidebarComponent } from '@portlets/dot-edit-page/components/dot-block-editor-sidebar/dot-block-editor-sidebar.component';
-import { DotEventsService } from '@services/dot-events/dot-events.service';
-import { CoreWebService } from '@dotcms/dotcms-js';
-import { CoreWebServiceMock } from '@tests/core-web.service.mock';
-import { DotWorkflowActionsFireService } from '@services/dot-workflow-actions-fire/dot-workflow-actions-fire.service';
-import { Component, DebugElement, Injectable, Input } from '@angular/core';
-import { DEFAULT_LANG_ID } from '@dotcms/block-editor';
-import { By } from '@angular/platform-browser';
-import { Sidebar, SidebarModule } from 'primeng/sidebar';
-import { HttpClientTestingModule } from '@angular/common/http/testing';
-import { DotMessagePipeModule } from '@pipes/dot-message/dot-message-pipe.module';
-import { ButtonModule } from 'primeng/button';
-import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { of, throwError } from 'rxjs';
-import { MockDotMessageService } from '@tests/dot-message-service.mock';
-import { DotMessageService } from '@services/dot-message/dot-messages.service';
-import { mockResponseView } from '@tests/response-view.mock';
-import { DotContentTypeService } from '@services/dot-content-type';
-import { DotAlertConfirmService } from '@services/dot-alert-confirm';
+
+import { HttpClientTestingModule } from '@angular/common/http/testing';
+import { Component, DebugElement, Injectable, Input } from '@angular/core';
+import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { By } from '@angular/platform-browser';
+import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
+
 import { ConfirmationService } from 'primeng/api';
+import { ButtonModule } from 'primeng/button';
+import { Sidebar, SidebarModule } from 'primeng/sidebar';
+
+import {
+    DotAlertConfirmService,
+    DotContentTypeService,
+    DotEventsService,
+    DotMessageService,
+    DotPropertiesService,
+    DotWorkflowActionsFireService
+} from '@dotcms/data-access';
+import { CoreWebService } from '@dotcms/dotcms-js';
+import { CoreWebServiceMock, MockDotMessageService, mockResponseView } from '@dotcms/utils-testing';
+import { DotMessagePipeModule } from '@pipes/dot-message/dot-message-pipe.module';
+import { DotBlockEditorSidebarComponent } from '@portlets/dot-edit-page/components/dot-block-editor-sidebar/dot-block-editor-sidebar.component';
+
+const DEFAULT_LANG_ID = 1;
 
 @Component({
     selector: 'dot-block-editor',
@@ -29,6 +34,7 @@ export class MockDotBlockEditorComponent {
     @Input() allowedContentTypes = '';
     @Input() customStyles = '';
     @Input() allowedBlocks = '';
+    @Input() showVideoThumbnail = false;
     @Input() value: { [key: string]: string } | string = '';
 
     editor = {
@@ -83,6 +89,7 @@ describe('DotBlockEditorSidebarComponent', () => {
     let dotAlertConfirmService: DotAlertConfirmService;
     let dotContentTypeService: DotContentTypeService;
     let de: DebugElement;
+    let dotPropertiesService: DotPropertiesService;
 
     beforeEach(async () => {
         await TestBed.configureTestingModule({
@@ -98,6 +105,12 @@ describe('DotBlockEditorSidebarComponent', () => {
                 { provide: CoreWebService, useClass: CoreWebServiceMock },
                 { provide: DotMessageService, useValue: messageServiceMock },
                 { provide: DotContentTypeService, useClass: MockDotContentTypeService },
+                {
+                    provide: DotPropertiesService,
+                    useValue: {
+                        getKey: () => of('true')
+                    }
+                },
                 DotWorkflowActionsFireService,
                 DotEventsService,
                 DotAlertConfirmService,
@@ -108,6 +121,7 @@ describe('DotBlockEditorSidebarComponent', () => {
         dotWorkflowActionsFireService = TestBed.inject(DotWorkflowActionsFireService);
         dotAlertConfirmService = TestBed.inject(DotAlertConfirmService);
         dotContentTypeService = TestBed.inject(DotContentTypeService);
+        dotPropertiesService = TestBed.inject(DotPropertiesService);
     });
 
     beforeEach(() => {
@@ -129,6 +143,7 @@ describe('DotBlockEditorSidebarComponent', () => {
 
     it('should set inputs to the block editor', async () => {
         spyOn(dotContentTypeService, 'getContentType').and.callThrough();
+        spyOn(dotPropertiesService, 'getKey').and.returnValue(of('true'));
         dotEventsService.notify('edit-block-editor', clickEvent);
 
         await fixture.whenRenderingDone();
@@ -140,6 +155,7 @@ describe('DotBlockEditorSidebarComponent', () => {
 
         expect(dotContentTypeService.getContentType).toHaveBeenCalledWith('Blog');
         expect(blockEditor.lang).toEqual(clickEvent.dataset.language);
+        expect(blockEditor.showVideoThumbnail).toBeTruthy();
         expect(blockEditor.allowedBlocks).toEqual('heading1');
         expect(blockEditor.allowedContentTypes).toEqual('Activity');
         expect(blockEditor.value).toEqual(JSON.parse(clickEvent.dataset.blockEditorContent));

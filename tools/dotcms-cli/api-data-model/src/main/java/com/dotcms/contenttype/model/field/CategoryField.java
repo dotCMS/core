@@ -9,5 +9,11 @@ import org.immutables.value.Value;
 @JsonDeserialize(as = ImmutableCategoryField.class)
 public abstract class CategoryField extends Field {
 
+    @Value.Default
+    @Override
+    public DataTypes dataType(){
+        return DataTypes.SYSTEM;
+    };
+
 }
 

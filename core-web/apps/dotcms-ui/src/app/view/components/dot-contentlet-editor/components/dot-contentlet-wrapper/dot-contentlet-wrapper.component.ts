@@ -1,10 +1,12 @@
-import { Component, Input, EventEmitter, Output } from '@angular/core';
-import { DotContentletEditorService } from '../../services/dot-contentlet-editor.service';
-import { DotMessageService } from '@services/dot-message/dot-messages.service';
-import { DotAlertConfirmService } from '@services/dot-alert-confirm';
-import { DotRouterService } from '@services/dot-router/dot-router.service';
-import { DotIframeService } from '@components/_common/iframe/service/dot-iframe/dot-iframe.service';
+import { Component, EventEmitter, Input, Output } from '@angular/core';
 import { Title } from '@angular/platform-browser';
+
+import { DotIframeService } from '@components/_common/iframe/service/dot-iframe/dot-iframe.service';
+import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
+import { DotGlobalMessage } from '@dotcms/app/shared/models/dot-global-message/dot-global-message.model';
+import { DotAlertConfirmService, DotEventsService, DotMessageService } from '@dotcms/data-access';
+
+import { DotContentletEditorService } from '../../services/dot-contentlet-editor.service';
 
 export interface DotCMSEditPageEvent {
     name: string;
@@ -49,6 +51,7 @@ export class DotContentletWrapperComponent {
     constructor(
         private dotContentletEditorService: DotContentletEditorService,
         private dotAlertConfirmService: DotAlertConfirmService,
+        private dotEventsService: DotEventsService,
         private dotMessageService: DotMessageService,
         private dotRouterService: DotRouterService,
         private dotIframeService: DotIframeService,
@@ -82,6 +85,10 @@ export class DotContentletWrapperComponent {
                     if (this.shouldRefresh(data)) {
                         this.dotIframeService.reload();
                     }
+
+                    this.dotEventsService.notify<DotGlobalMessage>('dot-global-message', {
+                        value: this.dotMessageService.get('message.content.saved')
+                    });
 
                     this.isContentletModified = false;
                 },

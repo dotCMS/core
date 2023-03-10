@@ -1,16 +1,18 @@
-import { waitForAsync, ComponentFixture } from '@angular/core/testing';
-import { DOTTestBed } from '@tests/dot-test-bed';
 import { DebugElement } from '@angular/core';
-import { ContentTypesFieldDragabbleItemComponent } from './content-type-field-dragabble-item.component';
+import { ComponentFixture, waitForAsync } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
-import { DotCMSContentTypeField } from '@dotcms/dotcms-models';
+
 import { UiDotIconButtonTooltipModule } from '@components/_common/dot-icon-button-tooltip/dot-icon-button-tooltip.module';
-import { MockDotMessageService } from '@tests/dot-message-service.mock';
-import { DotMessageService } from '@services/dot-message/dot-messages.service';
-import { FieldService } from '../service';
-import { DotIconModule } from '@dotcms/ui';
 import { DotCopyLinkModule } from '@components/dot-copy-link/dot-copy-link.module';
-import { dotcmsContentTypeFieldBasicMock } from '@tests/dot-content-types.mock';
+import { DOTTestBed } from '@dotcms/app/test/dot-test-bed';
+import { DotMessageService } from '@dotcms/data-access';
+import { DotCMSContentTypeField } from '@dotcms/dotcms-models';
+import { DotIconModule } from '@dotcms/ui';
+import { dotcmsContentTypeFieldBasicMock, MockDotMessageService } from '@dotcms/utils-testing';
+
+import { ContentTypesFieldDragabbleItemComponent } from './content-type-field-dragabble-item.component';
+
+import { FieldService } from '../service';
 
 describe('ContentTypesFieldDragabbleItemComponent', () => {
     let comp: ContentTypesFieldDragabbleItemComponent;
@@ -25,22 +27,17 @@ describe('ContentTypesFieldDragabbleItemComponent', () => {
         'contenttypes.field.atributes.listed': 'Show on list'
     });
 
-    beforeEach(
-        waitForAsync(() => {
-            DOTTestBed.configureTestingModule({
-                declarations: [ContentTypesFieldDragabbleItemComponent],
-                imports: [UiDotIconButtonTooltipModule, DotIconModule, DotCopyLinkModule],
-                providers: [
-                    { provide: DotMessageService, useValue: messageServiceMock },
-                    FieldService
-                ]
-            });
+    beforeEach(waitForAsync(() => {
+        DOTTestBed.configureTestingModule({
+            declarations: [ContentTypesFieldDragabbleItemComponent],
+            imports: [UiDotIconButtonTooltipModule, DotIconModule, DotCopyLinkModule],
+            providers: [{ provide: DotMessageService, useValue: messageServiceMock }, FieldService]
+        });
 
-            fixture = DOTTestBed.createComponent(ContentTypesFieldDragabbleItemComponent);
-            comp = fixture.componentInstance;
-            de = fixture.debugElement;
-        })
-    );
+        fixture = DOTTestBed.createComponent(ContentTypesFieldDragabbleItemComponent);
+        comp = fixture.componentInstance;
+        de = fixture.debugElement;
+    }));
 
     it('should have a name & variable', () => {
         const field = {

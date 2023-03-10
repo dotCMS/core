@@ -1,21 +1,22 @@
+import { CommonModule } from '@angular/common';
+import { Component } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 
-import { DotBulkInformationComponent } from './dot-bulk-information.component';
 import {
     DialogService,
     DynamicDialogConfig,
     DynamicDialogModule,
     DynamicDialogRef
 } from 'primeng/dynamicdialog';
-import { DotMessagePipeModule } from '@pipes/dot-message/dot-message-pipe.module';
-import { MockDotMessageService } from '@tests/dot-message-service.mock';
 
-import { DotMessageService } from '@services/dot-message/dot-messages.service';
-import { DotActionBulkResult } from '@models/dot-action-bulk-result/dot-action-bulk-result.model';
-import { Component } from '@angular/core';
-import { CommonModule } from '@angular/common';
-import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
-import { DotFormatDateService } from '@services/dot-format-date-service';
+import { DotFormatDateService } from '@dotcms/app/api/services/dot-format-date-service';
+import { DotMessageService } from '@dotcms/data-access';
+import { DotActionBulkResult } from '@dotcms/dotcms-models';
+import { MockDotMessageService } from '@dotcms/utils-testing';
+import { DotMessagePipeModule } from '@pipes/dot-message/dot-message-pipe.module';
+
+import { DotBulkInformationComponent } from './dot-bulk-information.component';
 
 const messageServiceMock = new MockDotMessageService({
     'message.template.archived': 'archived',

@@ -1,4 +1,5 @@
 import { UntypedFormControl } from '@angular/forms';
+
 import { noWhitespaceValidator } from './no-whitespace-validator';
 
 describe('validateRelationship', () => {

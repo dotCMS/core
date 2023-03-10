@@ -46,6 +46,8 @@ export class DotCardView {
     })
     value: string;
 
+    @Prop() showVideoThumbnail = true;
+
     @Event() selected: EventEmitter;
     @Event() cardClick: EventEmitter;
 
@@ -135,6 +137,7 @@ export class DotCardView {
                             this.setValue(originalTarget, item.data);
                         }}
                         item={item}
+                        showVideoThumbnail={this.showVideoThumbnail}
                     />
                 ))}
             </Host>

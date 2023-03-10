@@ -1,9 +1,10 @@
-import { Component, OnInit, ViewChild, forwardRef, Output, EventEmitter } from '@angular/core';
+import { Component, EventEmitter, forwardRef, OnInit, Output, ViewChild } from '@angular/core';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
 
-import { DotEventsService } from '@services/dot-events/dot-events.service';
-import { DotLayoutSideBar } from '@models/dot-edit-layout-designer';
 import { OverlayPanel } from 'primeng/overlaypanel';
+
+import { DotEventsService } from '@dotcms/data-access';
+import { DotLayoutSideBar } from '@dotcms/dotcms-models';
 
 @Component({
     selector: 'dot-sidebar-properties',

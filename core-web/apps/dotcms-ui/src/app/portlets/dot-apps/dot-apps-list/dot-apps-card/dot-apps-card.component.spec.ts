@@ -1,14 +1,17 @@
+import { Component } from '@angular/core';
 import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing';
-import { MockDotMessageService } from '@tests/dot-message-service.mock';
-import { DotMessageService } from '@services/dot-message/dot-messages.service';
 import { By } from '@angular/platform-browser';
-import { DotAppsCardComponent } from './dot-apps-card.component';
-import { DotAvatarModule } from '@components/_common/dot-avatar/dot-avatar.module';
-import { DotIconModule } from '@dotcms/ui';
-import { DotPipesModule } from '@pipes/dot-pipes.module';
+
 import { CardModule } from 'primeng/card';
 import { TooltipModule } from 'primeng/tooltip';
-import { Component } from '@angular/core';
+
+import { DotAvatarModule } from '@components/_common/dot-avatar/dot-avatar.module';
+import { DotMessageService } from '@dotcms/data-access';
+import { DotIconModule } from '@dotcms/ui';
+import { MockDotMessageService } from '@dotcms/utils-testing';
+import { DotPipesModule } from '@pipes/dot-pipes.module';
+
+import { DotAppsCardComponent } from './dot-apps-card.component';
 
 @Component({
     // eslint-disable-next-line @angular-eslint/component-selector
@@ -27,21 +30,13 @@ describe('DotAppsCardComponent', () => {
         'apps.invalid.configurations': 'Invalid Configurations'
     });
 
-    beforeEach(
-        waitForAsync(() => {
-            TestBed.configureTestingModule({
-                imports: [
-                    CardModule,
-                    DotAvatarModule,
-                    DotIconModule,
-                    TooltipModule,
-                    DotPipesModule
-                ],
-                declarations: [DotAppsCardComponent, MockMarkdownComponent],
-                providers: [{ provide: DotMessageService, useValue: messageServiceMock }]
-            }).compileComponents();
-        })
-    );
+    beforeEach(waitForAsync(() => {
+        TestBed.configureTestingModule({
+            imports: [CardModule, DotAvatarModule, DotIconModule, TooltipModule, DotPipesModule],
+            declarations: [DotAppsCardComponent, MockMarkdownComponent],
+            providers: [{ provide: DotMessageService, useValue: messageServiceMock }]
+        }).compileComponents();
+    }));
 
     beforeEach(() => {
         fixture = TestBed.createComponent(DotAppsCardComponent);

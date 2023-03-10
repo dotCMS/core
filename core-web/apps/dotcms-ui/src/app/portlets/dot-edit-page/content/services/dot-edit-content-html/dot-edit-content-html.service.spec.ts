@@ -1,42 +1,52 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { Injectable } from '@angular/core';
+import { Observable, of, throwError } from 'rxjs';
 
+import { HttpErrorResponse, HttpResponse } from '@angular/common/http';
 import { HttpClientTestingModule } from '@angular/common/http/testing';
+import { Injectable } from '@angular/core';
 import { TestBed, waitForAsync } from '@angular/core/testing';
 
-import { of, Observable, throwError } from 'rxjs';
 import { ConfirmationService } from 'primeng/api';
+
+import { DotHttpErrorManagerService } from '@dotcms/app/api/services/dot-http-error-manager/dot-http-error-manager.service';
+import { DotGlobalMessageService } from '@dotcms/app/view/components/_common/dot-global-message/dot-global-message.service';
+import {
+    DotAlertConfirmService,
+    DotEventsService,
+    DotLicenseService,
+    DotMessageService,
+    DotWorkflowActionsFireService
+} from '@dotcms/data-access';
+import { CoreWebService, HttpCode, LoggerService, StringUtils } from '@dotcms/dotcms-js';
+import {
+    DotCMSContentType,
+    DotPageContainer,
+    DotPageRender,
+    DotPageRenderState
+} from '@dotcms/dotcms-models';
+import {
+    CoreWebServiceMock,
+    dotcmsContentTypeBasicMock,
+    mockDotLayout,
+    MockDotMessageService,
+    mockDotPage,
+    mockDotRenderedPage,
+    mockResponseView,
+    mockUser
+} from '@dotcms/utils-testing';
+import { DotPageContent } from '@portlets/dot-edit-page/shared/models';
 
 import {
     CONTENTLET_PLACEHOLDER_SELECTOR,
     DotEditContentHtmlService
 } from './dot-edit-content-html.service';
-import { DotEditContentToolbarHtmlService } from '../html/dot-edit-content-toolbar-html.service';
-import { DotContainerContentletService } from '../dot-container-contentlet.service';
-import { DotDragDropAPIHtmlService } from '../html/dot-drag-drop-api-html.service';
-import { DotDOMHtmlUtilService } from '../html/dot-dom-html-util.service';
-import { DotMessageService } from '@services/dot-message/dot-messages.service';
-import { MockDotMessageService } from '@tests/dot-message-service.mock';
-import { LoggerService, StringUtils, CoreWebService, HttpCode } from '@dotcms/dotcms-js';
-import { DotAlertConfirmService } from '@services/dot-alert-confirm/dot-alert-confirm.service';
-import { mockDotLayout, mockDotRenderedPage, mockDotPage } from '@tests/dot-page-render.mock';
-import { DotCMSContentType } from '@dotcms/dotcms-models';
-import { DotLicenseService } from '@services/dot-license/dot-license.service';
-import { DotPageRenderState } from '@portlets/dot-edit-page/shared/models/dot-rendered-page-state.model';
-import { mockUser } from '@tests/login-service.mock';
 import { PageModelChangeEventType } from './models';
-import { dotcmsContentTypeBasicMock } from '@tests/dot-content-types.mock';
-import { DotPageContent } from '@portlets/dot-edit-page/shared/models';
-import { CoreWebServiceMock } from '@tests/core-web.service.mock';
-import { DotPageContainer } from '@models/dot-page-container/dot-page-container.model';
-import { DotPageRender } from '@models/dot-page/dot-rendered-page.model';
-import { DotGlobalMessageService } from '@dotcms/app/view/components/_common/dot-global-message/dot-global-message.service';
-import { DotEventsService } from '@services/dot-events/dot-events.service';
-import { DotWorkflowActionsFireService } from '@services/dot-workflow-actions-fire/dot-workflow-actions-fire.service';
-import { mockResponseView } from '@dotcms/app/test/response-view.mock';
-import { HttpErrorResponse, HttpResponse } from '@angular/common/http';
-import { DotHttpErrorManagerService } from '@services/dot-http-error-manager/dot-http-error-manager.service';
+
+import { DotContainerContentletService } from '../dot-container-contentlet.service';
+import { DotDOMHtmlUtilService } from '../html/dot-dom-html-util.service';
+import { DotDragDropAPIHtmlService } from '../html/dot-drag-drop-api-html.service';
+import { DotEditContentToolbarHtmlService } from '../html/dot-edit-content-toolbar-html.service';
 
 @Injectable()
 class MockDotLicenseService {

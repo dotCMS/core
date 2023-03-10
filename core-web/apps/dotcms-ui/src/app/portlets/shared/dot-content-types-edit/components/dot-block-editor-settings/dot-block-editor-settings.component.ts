@@ -1,42 +1,29 @@
+import { forkJoin, of, Subject } from 'rxjs';
+
+import { HttpErrorResponse } from '@angular/common/http';
 import {
+    ChangeDetectionStrategy,
     Component,
     EventEmitter,
     Input,
+    OnChanges,
     OnDestroy,
     OnInit,
     Output,
-    ChangeDetectionStrategy
+    SimpleChanges
 } from '@angular/core';
-import { FormGroup, FormBuilder } from '@angular/forms';
-import { HttpErrorResponse } from '@angular/common/http';
+import { FormBuilder, FormGroup } from '@angular/forms';
 
-import { forkJoin, Subject, of } from 'rxjs';
-import { catchError, take, takeUntil } from 'rxjs/operators';
+import { catchError, take, takeUntil, tap } from 'rxjs/operators';
 
 // Services
-import { DotHttpErrorManagerService } from '@services/dot-http-error-manager/dot-http-error-manager.service';
-import { DotFieldVariablesService } from '../fields/dot-content-type-fields-variables/services/dot-field-variables.service';
-
-// Interfaces
-import { DotCMSContentTypeField } from '@dotcms/dotcms-models';
-import { DotFieldVariable } from '../fields/dot-content-type-fields-variables/models/dot-field-variable.interface';
 import { DotDialogActions } from '@components/dot-dialog/dot-dialog.component';
-import { DotMessageService } from '@dotcms/app/api/services/dot-message/dot-messages.service';
-import { OnChanges, SimpleChanges } from '@angular/core';
+import { getEditorBlockOptions } from '@dotcms/block-editor';
+import { DotMessageService } from '@dotcms/data-access';
+import { DotCMSContentTypeField, DotFieldVariable } from '@dotcms/dotcms-models';
+import { DotHttpErrorManagerService } from '@services/dot-http-error-manager/dot-http-error-manager.service';
 
-export const BLOCK_EDITOR_BLOCKS = [
-    { label: 'Block Quote', code: 'blockquote' },
-    { label: 'Bullet List', code: 'bulletList' },
-    { label: 'Code Block', code: 'codeBlock' },
-    { label: 'Contentlet', code: 'contentlets' },
-    { label: 'Heading 1', code: 'heading1' },
-    { label: 'Heading 2', code: 'heading2' },
-    { label: 'Heading 3', code: 'heading3' },
-    { label: 'Horizontal Line', code: 'horizontalRule' },
-    { label: 'Image', code: 'image' },
-    { label: 'Ordered List', code: 'orderedList' },
-    { label: 'Tables', code: 'tables' }
-];
+import { DotFieldVariablesService } from '../fields/dot-content-type-fields-variables/services/dot-field-variables.service';
 
 /* Uncomment this when Content Assets variable is ready
 const BLOCK_EDITOR_ASSETS = [
@@ -65,9 +52,9 @@ export class DotBlockEditorSettingsComponent implements OnInit, OnDestroy, OnCha
     public form: FormGroup;
     public settingsMap = {
         allowedBlocks: {
-            label: 'Allowed Content',
+            label: 'Allowed Blocks',
             placeholder: 'Select Blocks',
-            options: BLOCK_EDITOR_BLOCKS,
+            options: getEditorBlockOptions(),
             key: 'allowedBlocks',
             variable: null
         }
@@ -149,9 +136,11 @@ export class DotBlockEditorSettingsComponent implements OnInit, OnDestroy, OnCha
                     return of({});
                 }
 
-                return value
-                    ? this.fieldVariablesService.save(this.field, fieldVariable)
-                    : this.fieldVariablesService.delete(this.field, fieldVariable);
+                return (
+                    value
+                        ? this.fieldVariablesService.save(this.field, fieldVariable)
+                        : this.fieldVariablesService.delete(this.field, fieldVariable)
+                ).pipe(tap((variable) => (this.settingsMap[key].variable = variable))); // Update Variable Reference
             })
         )
             .pipe(
@@ -160,7 +149,10 @@ export class DotBlockEditorSettingsComponent implements OnInit, OnDestroy, OnCha
                     this.dotHttpErrorManagerService.handle(err).pipe(take(1))
                 )
             )
-            .subscribe((value: DotFieldVariable[]) => this.save.emit(value));
+            .subscribe((value: DotFieldVariable[]) => {
+                this.save.emit(value);
+                this.form.markAsPristine();
+            });
     }
 
     private dialogActions() {

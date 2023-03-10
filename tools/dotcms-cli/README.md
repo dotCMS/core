@@ -11,7 +11,9 @@ making sure that dependencies have been installed first
 ./mvnw clean install
 ```
 
-To run cli. 
+To run cli.
+
+You might use [quarkus cli](https://es.quarkus.io/guides/cli-tooling) and [maven](https://maven.apache.org/install.html) 
 
 First Start a dotCMS instance locally
 
@@ -23,12 +25,11 @@ cd cli
 # ../mvnw quarkus:dev 
 quarkus dev
 ```
-NOTE:  To reduce duplication in the multi module project mvnw is not included in each submodule. 
+NOTE:  To reduce duplication in the multi-module project mvnw is not included in each submodule. 
 The quarkus command finds the executable
 
-
 To run mvnw from a submodule just use a relative path to the parent mvn
-if running from the submodule folder all dependencies will need to be up to date and instlled to the local mvn with maven install
+if running from the submodule folder all dependencies will need to be up to date and installed to the local mvn with maven install
 
 Alternatively you can specify the sub project from the parent folder
 ```shell script

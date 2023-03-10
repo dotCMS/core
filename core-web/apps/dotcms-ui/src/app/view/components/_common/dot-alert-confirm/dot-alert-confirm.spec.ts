@@ -1,13 +1,14 @@
-import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
-import { DotAlertConfirmService } from '@services/dot-alert-confirm/dot-alert-confirm.service';
 import { DebugElement } from '@angular/core';
-import { LoginServiceMock } from '../../../../test/login-service.mock';
-import { LoginService } from '@dotcms/dotcms-js';
-import { DOTTestBed } from '../../../../test/dot-test-bed';
-import { DotAlertConfirmComponent } from './dot-alert-confirm';
-import { ComponentFixture, fakeAsync, waitForAsync } from '@angular/core/testing';
+import { ComponentFixture, fakeAsync, tick, waitForAsync } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
-import { tick } from '@angular/core/testing';
+import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
+
+import { DOTTestBed } from '@dotcms/app/test/dot-test-bed';
+import { DotAlertConfirmService } from '@dotcms/data-access';
+import { LoginService } from '@dotcms/dotcms-js';
+import { LoginServiceMock } from '@dotcms/utils-testing';
+
+import { DotAlertConfirmComponent } from './dot-alert-confirm';
 
 describe('DotAlertConfirmComponent', () => {
     let component: DotAlertConfirmComponent;

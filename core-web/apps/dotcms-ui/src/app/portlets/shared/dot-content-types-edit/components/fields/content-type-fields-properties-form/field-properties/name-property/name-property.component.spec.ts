@@ -1,13 +1,19 @@
-import { NamePropertyComponent } from './index';
-import { ComponentFixture, waitForAsync, TestBed } from '@angular/core/testing';
-import { DebugElement, Component, Input } from '@angular/core';
-import { MockDotMessageService } from '@tests/dot-message-service.mock';
-import { DotMessageService } from '@services/dot-message/dot-messages.service';
-import { UntypedFormGroup, UntypedFormControl, NgControl, ReactiveFormsModule } from '@angular/forms';
+import { Component, DebugElement, Input } from '@angular/core';
+import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing';
+import {
+    NgControl,
+    ReactiveFormsModule,
+    UntypedFormControl,
+    UntypedFormGroup
+} from '@angular/forms';
 import { By } from '@angular/platform-browser';
+
 import { DotCopyLinkModule } from '@components/dot-copy-link/dot-copy-link.module';
-import { dotcmsContentTypeFieldBasicMock } from '@tests/dot-content-types.mock';
+import { DotMessageService } from '@dotcms/data-access';
+import { dotcmsContentTypeFieldBasicMock, MockDotMessageService } from '@dotcms/utils-testing';
 import { DotPipesModule } from '@pipes/dot-pipes.module';
+
+import { NamePropertyComponent } from './index';
 
 @Component({
     selector: 'dot-field-validation-message',
@@ -29,27 +35,25 @@ describe('NamePropertyComponent', () => {
         'Default-Value': 'Default-Value'
     });
 
-    beforeEach(
-        waitForAsync(() => {
-            TestBed.configureTestingModule({
-                declarations: [NamePropertyComponent, TestFieldValidationMessageComponent],
-                imports: [DotCopyLinkModule, ReactiveFormsModule, DotPipesModule],
-                providers: [{ provide: DotMessageService, useValue: messageServiceMock }]
-            }).compileComponents();
+    beforeEach(waitForAsync(() => {
+        TestBed.configureTestingModule({
+            declarations: [NamePropertyComponent, TestFieldValidationMessageComponent],
+            imports: [DotCopyLinkModule, ReactiveFormsModule, DotPipesModule],
+            providers: [{ provide: DotMessageService, useValue: messageServiceMock }]
+        }).compileComponents();
 
-            fixture = TestBed.createComponent(NamePropertyComponent);
-            de = fixture.debugElement;
-            comp = fixture.componentInstance;
+        fixture = TestBed.createComponent(NamePropertyComponent);
+        de = fixture.debugElement;
+        comp = fixture.componentInstance;
 
-            comp.property = {
-                name: 'name',
-                value: 'value',
-                field: {
-                    ...dotcmsContentTypeFieldBasicMock
-                }
-            };
-        })
-    );
+        comp.property = {
+            name: 'name',
+            value: 'value',
+            field: {
+                ...dotcmsContentTypeFieldBasicMock
+            }
+        };
+    }));
 
     it('should have a form', () => {
         const group = new UntypedFormGroup({});

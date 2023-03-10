@@ -1,19 +1,24 @@
-import { DotHttpErrorManagerService } from '@services/dot-http-error-manager/dot-http-error-manager.service';
-import { CoreWebService, LoginService } from '@dotcms/dotcms-js';
-import { LoginServiceMock } from '@tests/login-service.mock';
-import { TestBed, getTestBed } from '@angular/core/testing';
-import { HttpTestingController, HttpClientTestingModule } from '@angular/common/http/testing';
-import { CoreWebServiceMock } from '@tests/core-web.service.mock';
-import { DotAlertConfirmService } from '@services/dot-alert-confirm';
+import { throwError } from 'rxjs';
+
+import { HttpClientTestingModule, HttpTestingController } from '@angular/common/http/testing';
+import { getTestBed, TestBed } from '@angular/core/testing';
+
 import { ConfirmationService } from 'primeng/api';
+
+import { DotAlertConfirmService } from '@dotcms/data-access';
+import { CoreWebService, LoginService } from '@dotcms/dotcms-js';
+import {
+    CoreWebServiceMock,
+    DotFormatDateServiceMock,
+    LoginServiceMock,
+    MockDotRouterService,
+    mockResponseView
+} from '@dotcms/utils-testing';
 import { DotFormatDateService } from '@services/dot-format-date-service';
-import { MockDotRouterService } from '@tests/dot-router-service.mock';
+import { DotHttpErrorManagerService } from '@services/dot-http-error-manager/dot-http-error-manager.service';
 import { DotRouterService } from '@services/dot-router/dot-router.service';
 
-import { DotFormatDateServiceMock } from '@dotcms/app/test/format-date-service.mock';
 import { DotAddToMenuService, DotCreateCustomTool } from './add-to-menu.service';
-import { mockResponseView } from '@dotcms/app/test/response-view.mock';
-import { throwError } from 'rxjs';
 
 const customToolData: DotCreateCustomTool = {
     contentTypes: 'Blog',

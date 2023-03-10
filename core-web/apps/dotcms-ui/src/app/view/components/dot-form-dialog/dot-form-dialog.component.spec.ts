@@ -110,6 +110,18 @@ describe('DotFormDialogComponent', () => {
             expect(component.save.emit).toHaveBeenCalledTimes(1);
         });
 
+        it('should have not emit save event when status Loading', () => {
+            component.saveButtonLoading = true;
+            dispatchKeydownEvent(de.nativeElement, 'Enter', true);
+            fixture.detectChanges();
+            expect(component.save.emit).toHaveBeenCalledTimes(0);
+
+            const saveButton = de.query(By.css('[data-testId="dotFormDialogSave"]'));
+            const event = new MouseEvent('click');
+            saveButton.triggerEventHandler('click', event);
+            expect(component.save.emit).not.toHaveBeenCalledWith(event);
+        });
+
         it('should have cancel button', () => {
             const cancelButton = de.query(By.css('[data-testId="dotFormDialogCancel"]'));
 

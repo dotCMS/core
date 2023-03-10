@@ -7,11 +7,13 @@ import com.dotcms.job.system.event.SystemEventsJob;
 import com.dotcms.publisher.business.PublisherQueueJob;
 import com.dotcms.workflow.EscalationThread;
 import com.dotmarketing.quartz.QuartzUtils;
+import com.dotmarketing.quartz.job.AccessTokenRenewJob;
 import com.dotmarketing.quartz.job.BinaryCleanupJob;
 import com.dotmarketing.quartz.job.CleanUnDeletedUsersJob;
 import com.dotmarketing.quartz.job.ContentReindexerThread;
 import com.dotmarketing.quartz.job.DeleteInactiveLiveWorkingIndicesJob;
 import com.dotmarketing.quartz.job.DeleteOldClickstreams;
+import com.dotmarketing.quartz.job.StartEndScheduledExperimentsJob;
 import com.dotmarketing.quartz.job.EsReadOnlyMonitorJob;
 import com.dotmarketing.quartz.job.FreeServerFromClusterJob;
 import com.dotmarketing.quartz.job.ServerHeartbeatJob;
@@ -46,7 +48,7 @@ import static com.dotmarketing.util.WebKeys.DOTCMS_DISABLE_WEBSOCKET_PROTOCOL;
  */
 public class DotInitScheduler {
 
-	private static final String DOTCMS_JOB_GROUP_NAME = "dotcms_jobs";
+	public static final String DOTCMS_JOB_GROUP_NAME = "dotcms_jobs";
 
 	public static final String CRON_EXPRESSION_EVERY_5_MINUTES = "0 */5 * ? * *";
 
@@ -470,6 +472,10 @@ public class DotInitScheduler {
 
 			addDeleteOldESIndicesJob(sched);
 
+			AccessTokenRenewJob.AccessTokensRenewJobScheduler.schedule();
+
+			addStartEndScheduledExperimentsJob(sched);
+
             //Starting the sequential and standard Schedulers
 	        QuartzUtils.startSchedulers();
 		} catch (SchedulerException e) {
@@ -500,6 +506,7 @@ public class DotInitScheduler {
 				sched.deleteJob(DOSEjobName, DOTCMS_JOB_GROUP_NAME);
 			}
 		}
+
 	} // addDeleteOldSystemEvents.
 
 	private static void addSystemEventsJob () {
@@ -628,6 +635,33 @@ public class DotInitScheduler {
 		} catch (Exception e) {
 			Logger.error(DotInitScheduler.class, "An error occurred when initializing the '" + jobBuilder.jobName + "': "
 					+ e.getMessage(), e);
+		}
+	}
+
+	private static void addStartEndScheduledExperimentsJob(final Scheduler scheduler) {
+		try {
+			final String jobName      = "StartEndScheduledExperimentsJob";
+			final String triggerName  = "trigger32";
+			final String triggerGroup = "group32";
+
+			if (Config.getBooleanProperty( "ENABLE_START_END_SCHEDULED_EXPERIMENTS_JOB", true)) {
+				final JobBuilder endFinalizedExperimentsJob = new JobBuilder().setJobClass(
+								StartEndScheduledExperimentsJob.class)
+						.setJobName(jobName)
+						.setJobGroup(DOTCMS_JOB_GROUP_NAME)
+						.setTriggerName(triggerName)
+						.setTriggerGroup(triggerGroup)
+						.setCronExpressionProp("START_END_SCHEDULED_EXPERIMENTS_JOB_CRON_EXPRESSION")
+						.setCronExpressionPropDefault("0 /30 * ? * *")
+						.setCronMissfireInstruction(CronTrigger.MISFIRE_INSTRUCTION_FIRE_ONCE_NOW);
+				scheduleJob(endFinalizedExperimentsJob);
+			} else {
+				if ((scheduler.getJobDetail(jobName, DOTCMS_JOB_GROUP_NAME)) != null) {
+					scheduler.deleteJob(jobName, DOTCMS_JOB_GROUP_NAME);
+				}
+			}
+		} catch (Exception e) {
+			Logger.info(DotInitScheduler.class, e.toString());
 		}
 	}
 

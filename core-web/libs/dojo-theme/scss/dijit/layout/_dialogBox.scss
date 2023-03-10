@@ -1,0 +1,59 @@
+.dijitDialog {
+    background-color: $dialog-normal-bgcolor;
+    border-radius: $menu-radius;
+    border: $dialog-normal-border;
+    box-shadow: $menu-shadow;
+
+    &CloseIcon {
+        width: 17px;
+        height: 18px;
+        background-color: $dialog-closeicon-bgcolor;
+        position: absolute;
+        right: 0;
+        top: 0;
+        margin-left: 0;
+
+        &:before,
+        &:after {
+            background-color: $dialog-closeicon-color;
+            content: "";
+            display: block;
+            font-size: 0;
+            height: 10px;
+            left: 8px;
+            position: absolute;
+            top: 4px;
+            width: 1px;
+        }
+
+        &:before {
+            transform: rotate(45deg);
+        }
+
+        &:after {
+            transform: rotate(-45deg);
+        }
+    }
+
+    &PaneActionBar,
+    &PaneContent {
+        padding: $dialog-padding;
+    }
+
+    &PaneActionBar {
+        padding-top: 0;
+    }
+
+    &TitleBar {
+        background-color: $dialog-normal-title-bgcolor;
+        border-color: $dialog-normal-title-border-color;
+        border-style: $dialog-normal-title-border-style;
+        border-width: $dialog-normal-title-border-width;
+        color: $dialog-normal-title-textcolor;
+        font-weight: bold;
+        height: $dialog-normal-title-height;
+        line-height: $dialog-normal-title-height;
+        padding: 0 $dialog-padding;
+        position: relative;
+    }
+}

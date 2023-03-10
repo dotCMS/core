@@ -1,16 +1,18 @@
-import { ContentTypeFieldsAddRowComponent } from './content-type-fields-add-row.component';
-import { DotMessageService } from '@services/dot-message/dot-messages.service';
-import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
-import { TooltipModule } from 'primeng/tooltip';
-import { SplitButtonModule } from 'primeng/splitbutton';
-import { ComponentFixture, fakeAsync, tick } from '@angular/core/testing';
-import { DOTTestBed } from '@tests/dot-test-bed';
 import { DebugElement } from '@angular/core';
+import { ComponentFixture, fakeAsync, tick } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
-import { MockDotMessageService } from '@tests/dot-message-service.mock';
-import { UiDotIconButtonModule } from '@components/_common/dot-icon-button/dot-icon-button.module';
-import { DotEventsService } from '@services/dot-events/dot-events.service';
+import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { RouterTestingModule } from '@angular/router/testing';
+
+import { SplitButtonModule } from 'primeng/splitbutton';
+import { TooltipModule } from 'primeng/tooltip';
+
+import { UiDotIconButtonModule } from '@components/_common/dot-icon-button/dot-icon-button.module';
+import { DOTTestBed } from '@dotcms/app/test/dot-test-bed';
+import { DotEventsService, DotMessageService } from '@dotcms/data-access';
+import { MockDotMessageService } from '@dotcms/utils-testing';
+
+import { ContentTypeFieldsAddRowComponent } from './content-type-fields-add-row.component';
 
 describe('ContentTypeFieldsAddRowComponent', () => {
     let comp: ContentTypeFieldsAddRowComponent;

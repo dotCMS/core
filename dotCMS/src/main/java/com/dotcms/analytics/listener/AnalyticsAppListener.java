@@ -9,6 +9,7 @@ import com.dotcms.api.system.event.SystemEventType;
 import com.dotcms.api.system.event.message.MessageSeverity;
 import com.dotcms.api.system.event.message.SystemMessageEventUtil;
 import com.dotcms.api.system.event.message.builder.SystemMessageBuilder;
+import com.dotcms.exception.AnalyticsException;
 import com.dotcms.security.apps.AbstractProperty;
 import com.dotcms.security.apps.AppSecretSavedEvent;
 import com.dotcms.security.apps.Secret;
@@ -78,14 +79,26 @@ public final class AnalyticsAppListener implements EventSubscriber<AppSecretSave
             .map(AbstractProperty::getString)
             .filter(StringUtils::isWhitespace)
             .ifPresent(analyticsKey -> {
-                try {
-                    final Host host = hostAPI.find(event.getHostIdentifier(), APILocator.systemUser(), false);
-                    if (Objects.nonNull(host)) {
-                        analyticsAPI.resetAnalyticsKey(AnalyticsHelper.getHostApp(host));
-                    }
-                } catch (Exception e) {
-                    Logger.error(this, String.format("Cannot process event %s due to: %s", event, e.getMessage()), e);
-                }
+                final Host host = Try
+                    .of(() -> hostAPI.find(event.getHostIdentifier(), APILocator.systemUser(), false))
+                    .getOrElse((Host) null);
+                Optional.ofNullable(host)
+                    .map(site -> AnalyticsHelper.get().appFromHost(site))
+                    .ifPresent(app -> {
+                        try {
+                            // reset analytics key
+                            analyticsAPI.resetAnalyticsKey(app, true);
+
+                            // reset access token when is NOOP, is this the right place?
+                            Optional.ofNullable(analyticsAPI.getAccessToken(app))
+                                .filter(appplication -> AnalyticsHelper.get().isTokenNoop(appplication))
+                                .ifPresent(token -> analyticsAPI.resetAccessToken(app));
+                        } catch (AnalyticsException e) {
+                            Logger.error(
+                                this,
+                                String.format("Cannot process event for app update due to: %s", e.getMessage()), e);
+                        }
+                    });
             });
 
         // detect is there are properties set through env vars

@@ -1,20 +1,22 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { ComponentFixture, fakeAsync, TestBed, tick, waitForAsync } from '@angular/core/testing';
-import { DotWizardComponent } from './dot-wizard.component';
-import { DotMessageService } from '@services/dot-message/dot-messages.service';
-import { MockDotMessageService } from '@tests/dot-message-service.mock';
-import { DotWizardService } from '@services/dot-wizard/dot-wizard.service';
-import { Component, DebugElement, EventEmitter, Input, Output } from '@angular/core';
-import { DotDialogModule } from '@components/dot-dialog/dot-dialog.module';
-import { DotPushPublishDialogData } from '@dotcms/dotcms-models';
-import { DotWizardStep } from '@models/dot-wizard-step/dot-wizard-step.model';
 import { CommonModule } from '@angular/common';
-import { DotContainerReferenceModule } from '@directives/dot-container-reference/dot-container-reference.module';
-import { BrowserDynamicTestingModule } from '@angular/platform-browser-dynamic/testing';
+import { Component, DebugElement, EventEmitter, Input, Output } from '@angular/core';
+import { ComponentFixture, fakeAsync, TestBed, tick, waitForAsync } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
-import { DotWizardInput } from '@models/dot-wizard-input/dot-wizard-input.model';
+import { BrowserDynamicTestingModule } from '@angular/platform-browser-dynamic/testing';
+
 import { DotDialogComponent } from '@components/dot-dialog/dot-dialog.component';
+import { DotDialogModule } from '@components/dot-dialog/dot-dialog.module';
+import { DotContainerReferenceModule } from '@directives/dot-container-reference/dot-container-reference.module';
+import { DotWizardService } from '@dotcms/app/api/services/dot-wizard/dot-wizard.service';
+import { DotMessageService } from '@dotcms/data-access';
+import { DotPushPublishDialogData } from '@dotcms/dotcms-models';
+import { MockDotMessageService } from '@dotcms/utils-testing';
+import { DotWizardInput } from '@models/dot-wizard-input/dot-wizard-input.model';
+import { DotWizardStep } from '@models/dot-wizard-step/dot-wizard-step.model';
+
+import { DotWizardComponent } from './dot-wizard.component';
 
 const messageServiceMock = new MockDotMessageService({
     send: 'Send',
@@ -73,25 +75,23 @@ describe('DotWizardComponent', () => {
     let form2: FormTwoComponent;
     let formsContainer: DebugElement;
 
-    beforeEach(
-        waitForAsync(() => {
-            TestBed.configureTestingModule({
-                declarations: [DotWizardComponent, FormOneComponent, FormTwoComponent],
-                imports: [DotDialogModule, CommonModule, DotContainerReferenceModule],
-                providers: [
-                    { provide: DotMessageService, useValue: messageServiceMock },
-                    DotWizardService
-                ]
-            }).compileComponents();
+    beforeEach(waitForAsync(() => {
+        TestBed.configureTestingModule({
+            declarations: [DotWizardComponent, FormOneComponent, FormTwoComponent],
+            imports: [DotDialogModule, CommonModule, DotContainerReferenceModule],
+            providers: [
+                { provide: DotMessageService, useValue: messageServiceMock },
+                DotWizardService
+            ]
+        }).compileComponents();
 
-            TestBed.overrideModule(BrowserDynamicTestingModule, {
-                set: {
-                    entryComponents: [FormOneComponent, FormTwoComponent]
-                }
-            });
-            TestBed.compileComponents();
-        })
-    );
+        TestBed.overrideModule(BrowserDynamicTestingModule, {
+            set: {
+                entryComponents: [FormOneComponent, FormTwoComponent]
+            }
+        });
+        TestBed.compileComponents();
+    }));
 
     describe('multiple steps', () => {
         beforeEach(fakeAsync(() => {
@@ -112,8 +112,9 @@ describe('DotWizardComponent', () => {
         }));
 
         it('should set dialog params', () => {
-            const dotDialog: DotDialogComponent = fixture.debugElement.query(By.css('dot-dialog'))
-                .componentInstance;
+            const dotDialog: DotDialogComponent = fixture.debugElement.query(
+                By.css('dot-dialog')
+            ).componentInstance;
 
             expect(dotDialog.bindEvents).toEqual(false);
             expect(dotDialog.header).toEqual(wizardInput.title);
@@ -241,8 +242,9 @@ describe('DotWizardComponent', () => {
         }));
 
         it('should set cancel button correctly', () => {
-            const dotDialog: DotDialogComponent = fixture.debugElement.query(By.css('dot-dialog'))
-                .componentInstance;
+            const dotDialog: DotDialogComponent = fixture.debugElement.query(
+                By.css('dot-dialog')
+            ).componentInstance;
             spyOn(component, 'close');
             dotDialog.actions.cancel.action();
             expect(component.dialogActions.cancel.label).toEqual('cancel');

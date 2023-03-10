@@ -510,7 +510,6 @@ dojo.declare("dotcms.dijit.image.ImageEditor", dijit._Widget,{
         dojo.style(target, "opacity", 0);
         dojo.xhrGet({
             url:url,
-            target:target,
              preventCache:true,
              sync:true,
              load:function(data){
@@ -639,7 +638,7 @@ dojo.declare("dotcms.dijit.image.ImageEditor", dijit._Widget,{
 
         var aj =this.iframe.dojo.byId("actionJackson");
 
-        url = (x.indexOf("?")>-1) ? x + "&"  : x + "?";
+        url = (url.indexOf("?")>-1) ? url + "&"  : url + "?";
         url = url + "r=" +_rand()+ "&force_download=true";
         aj.src=url;
 

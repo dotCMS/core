@@ -1,6 +1,7 @@
 package com.dotcms.analytics.app;
 
 import com.dotcms.analytics.helper.AnalyticsHelper;
+import com.dotcms.analytics.model.AbstractAnalyticsProperties;
 import com.dotcms.analytics.model.AnalyticsKey;
 import com.dotcms.analytics.model.AnalyticsProperties;
 import com.dotcms.analytics.model.AnalyticsAppProperty;
@@ -36,19 +37,17 @@ public class AnalyticsApp {
     public static final String ANALYTICS_APP_OVERRIDE_NOT_ALLOWED_KEY = "analytics.app.override.not.allowed";
 
     private final Host host;
-    private final AppsAPI appsAPI;
     private final AnalyticsProperties analyticsProperties;
 
     public AnalyticsApp(final Host host) {
         this.host = Objects.requireNonNullElse(host, APILocator.systemHost());
-        appsAPI = APILocator.getAppsAPI();
         analyticsProperties = resolveProperties(getSecrets());
     }
 
     /**
      * @return {@link AnalyticsProperties} holding information about analytics configuration based on App secrets
      */
-    public AnalyticsProperties getAnalyticsProperties() {
+    public AbstractAnalyticsProperties getAnalyticsProperties() {
         return analyticsProperties;
     }
 
@@ -58,7 +57,8 @@ public class AnalyticsApp {
      * @return if required properties are set.
      */
     public boolean isConfigValid() {
-        return Stream.of(analyticsProperties.clientId(), analyticsProperties.clientSecret())
+        return Stream
+            .of(analyticsProperties.clientId(), analyticsProperties.clientSecret())
             .allMatch(StringUtils::isNotBlank);
     }
 
@@ -66,7 +66,7 @@ public class AnalyticsApp {
      * @return encoded representation of clientId:clientSecret
      */
     public String clientIdAndSecret() {
-        return AnalyticsHelper.encodeClientIdAndSecret(
+        return AnalyticsHelper.get().encodeClientIdAndSecret(
             getAnalyticsProperties().clientId(),
             getAnalyticsProperties().clientSecret());
     }
@@ -83,7 +83,7 @@ public class AnalyticsApp {
             return;
         }
 
-        appsAPI.saveSecret(
+        APILocator.getAppsAPI().saveSecret(
             ANALYTICS_APP_KEY,
             new Tuple2<>(
                 AnalyticsAppProperty.ANALYTICS_KEY.getPropertyName(),
@@ -119,10 +119,23 @@ public class AnalyticsApp {
      * @return app secrets
      */
     private AppSecrets getSecrets() {
+        final AppsAPI appsAPI = APILocator.getAppsAPI();
         return Try.of(
             () -> appsAPI.getSecrets(ANALYTICS_APP_KEY, true, host, APILocator.systemUser()))
                 .getOrElseGet(e -> Optional.empty())
             .orElse(AppSecrets.empty());
     }
 
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        AnalyticsApp that = (AnalyticsApp) o;
+        return analyticsProperties.clientId().equals(that.analyticsProperties.clientId());
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(analyticsProperties.clientId());
+    }
 }

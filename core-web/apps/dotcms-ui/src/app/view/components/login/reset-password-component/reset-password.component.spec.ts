@@ -1,23 +1,28 @@
-import { ResetPasswordComponent } from '@components/login/reset-password-component/reset-password.component';
-import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { throwError } from 'rxjs';
+
 import { DebugElement } from '@angular/core';
-import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
-import { LoginService } from '@dotcms/dotcms-js';
-import { LoginServiceMock } from '@tests/login-service.mock';
-import { By } from '@angular/platform-browser';
+import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
+import { By } from '@angular/platform-browser';
+import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
+import { ActivatedRoute } from '@angular/router';
+import { RouterTestingModule } from '@angular/router/testing';
+
 import { ButtonModule } from 'primeng/button';
 import { InputTextModule } from 'primeng/inputtext';
+
 import { DotFieldValidationMessageModule } from '@components/_common/dot-field-validation-message/dot-file-validation-message.module';
-import { DotLoginPageStateService } from '@components/login/shared/services/dot-login-page-state.service';
-import { RouterTestingModule } from '@angular/router/testing';
-import { ActivatedRoute } from '@angular/router';
-import { DotRouterService } from '@services/dot-router/dot-router.service';
 import { MockDotLoginPageStateService } from '@components/login/dot-login-page-resolver.service.spec';
-import { MockDotRouterService } from '@tests/dot-router-service.mock';
-import { MockDotMessageService } from '@tests/dot-message-service.mock';
-import { DotMessageService } from '@services/dot-message/dot-messages.service';
-import { throwError } from 'rxjs';
+import { ResetPasswordComponent } from '@components/login/reset-password-component/reset-password.component';
+import { DotLoginPageStateService } from '@components/login/shared/services/dot-login-page-state.service';
+import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
+import { DotMessageService } from '@dotcms/data-access';
+import { LoginService } from '@dotcms/dotcms-js';
+import {
+    LoginServiceMock,
+    MockDotMessageService,
+    MockDotRouterService
+} from '@dotcms/utils-testing';
 
 const messageServiceMock = new MockDotMessageService({
     required: 'Required'

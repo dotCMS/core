@@ -82,10 +82,10 @@ public class HTMLPageAssetRenderedTest {
 
     private static ContentType contentGenericType;
     private static User systemUser;
-    private static final String contentFallbackProperty = "DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE";
-    private static final String pageFallbackProperty = "DEFAULT_PAGE_TO_DEFAULT_LANGUAGE";
-    private static final boolean contentFallbackDefaultValue = Config.getBooleanProperty(contentFallbackProperty,false);
-    private static final boolean pageFallbackDefaultValue =Config.getBooleanProperty(pageFallbackProperty,true);
+    private static final String DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE = "DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE";
+    private static final String DEFAULT_PAGE_TO_DEFAULT_LANGUAGE = "DEFAULT_PAGE_TO_DEFAULT_LANGUAGE";
+    private static boolean contentFallbackDefaultValue;
+    private static boolean pageFallbackDefaultValue;
     private static Folder folder;
     private static final List<String> contentletsIds = new ArrayList<>();
     private static ContentletAPI contentletAPI;
@@ -95,6 +95,14 @@ public class HTMLPageAssetRenderedTest {
     private static Host site;
     private static Persona persona;
     private static Visitor visitor;
+
+    @BeforeClass
+    public static void setConfigVariable() {
+        contentFallbackDefaultValue = Config.getBooleanProperty(DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE,
+                false);
+        pageFallbackDefaultValue = Config.getBooleanProperty(DEFAULT_PAGE_TO_DEFAULT_LANGUAGE,
+                true);
+    }
 
     @DataProvider
     public static Object[][] cases() throws Exception {
@@ -108,23 +116,26 @@ public class HTMLPageAssetRenderedTest {
         final Container fileContainer = createFileContainer();
         final Template templateFileContainer = createTemplate(fileContainer);
 
-        return new Object[][] {
-                { container, templateContainer },
-                { fileContainer, templateFileContainer}
+        return new Object[][]{
+                {container, templateContainer},
+                {fileContainer, templateFileContainer}
         };
     }
 
-    private static Template createTemplate(final Container container) throws DotSecurityException, WebAssetException, DotDataException {
+    private static Template createTemplate(final Container container)
+            throws DotSecurityException, WebAssetException, DotDataException {
         return createTemplate(new TestContainerUUID(container, UUID));
     }
 
-    private static Template createTemplate(final TestContainerUUID... containers) throws DotSecurityException, WebAssetException, DotDataException {
+    private static Template createTemplate(final TestContainerUUID... containers)
+            throws DotSecurityException, WebAssetException, DotDataException {
         final TemplateDataGen templateDataGen = new TemplateDataGen()
                 .title("PageContextBuilderTemplate" + System.currentTimeMillis())
                 .host(site);
 
         for (TestContainerUUID testContainerUUID : containers) {
-            templateDataGen.withContainer(testContainerUUID.container, testContainerUUID.UUID).nextPersisted();
+            templateDataGen.withContainer(testContainerUUID.container, testContainerUUID.UUID)
+                    .nextPersisted();
         }
 
         final Template template = templateDataGen.nextPersisted();
@@ -133,11 +144,13 @@ public class HTMLPageAssetRenderedTest {
         return template;
     }
 
-    private static Container createContainer() throws DotSecurityException, DotDataException, WebAssetException {
+    private static Container createContainer()
+            throws DotSecurityException, DotDataException, WebAssetException {
         return createContainer(5);
     }
 
-    private static Container createContainer(final int maxContentlet) throws DotSecurityException, DotDataException, WebAssetException {
+    private static Container createContainer(final int maxContentlet)
+            throws DotSecurityException, DotDataException, WebAssetException {
         Container container = new Container();
         final String containerName = "containerHTMLPageRenderedTest" + System.currentTimeMillis();
 
@@ -146,7 +159,7 @@ public class HTMLPageAssetRenderedTest {
         container.setOwner(systemUser.getUserId());
         container.setMaxContentlets(maxContentlet);
 
-        final List<ContainerStructure> csList = new ArrayList<ContainerStructure>();
+        final List<ContainerStructure> csList = new ArrayList<>();
         final ContainerStructure cs = new ContainerStructure();
         cs.setStructureId(contentGenericType.id());
         cs.setCode("$!{body}");
@@ -158,7 +171,8 @@ public class HTMLPageAssetRenderedTest {
         return container;
     }
 
-    private static FileAssetContainer createFileContainer() throws DotSecurityException, DotDataException, WebAssetException {
+    private static FileAssetContainer createFileContainer()
+            throws DotSecurityException, DotDataException, WebAssetException {
         return createFileContainer(site);
     }
 
@@ -172,9 +186,11 @@ public class HTMLPageAssetRenderedTest {
                 .contentType(contentGenericType, "$!{body}")
                 .nextPersisted();
 
-        container = (FileAssetContainer) APILocator.getContainerAPI().find(container.getInode(), systemUser, true);
+        container = (FileAssetContainer) APILocator.getContainerAPI()
+                .find(container.getInode(), systemUser, true);
 
-        final Folder folder = APILocator.getFolderAPI().findFolderByPath(container.getPath(), host, systemUser, true);
+        final Folder folder = APILocator.getFolderAPI()
+                .findFolderByPath(container.getPath(), host, systemUser, true);
         final List<FileAsset> containerFiles =
                 APILocator.getFileAssetAPI().findFileAssetsByFolder(folder, systemUser, true);
 
@@ -200,15 +216,16 @@ public class HTMLPageAssetRenderedTest {
 
         IntegrationTestInitService.getInstance().mockStrutsActionModule();
 
-        final Host  host = APILocator.getHostAPI().findDefaultHost(APILocator.systemUser(), false);
+        final Host host = APILocator.getHostAPI().findDefaultHost(APILocator.systemUser(), false);
 
-        persona = new PersonaDataGen().keyTag("persona"+System.currentTimeMillis()).hostFolder(host.getIdentifier()).nextPersisted();
+        persona = new PersonaDataGen().keyTag("persona" + System.currentTimeMillis())
+                .hostFolder(host.getIdentifier()).nextPersisted();
 
         visitor = mock(Visitor.class);
         when(visitor.getPersona()).thenReturn(persona);
     }
 
-    private static void createTestPage() throws Exception{
+    private static void createTestPage() throws Exception {
 
         site = new SiteDataGen().nextPersisted();
         //Create test folder
@@ -252,9 +269,10 @@ public class HTMLPageAssetRenderedTest {
         contentlet2English.setBoolProperty(Contentlet.IS_TEST_MODE, true);
         contentletAPI.publish(contentlet2English, systemUser, false);
 
-        Contentlet contentlet2Spanish = contentletAPI.checkout(contentlet2English.getInode(), systemUser, false);
-        contentlet2Spanish.setProperty("title","content2Spa");
-        contentlet2Spanish.setProperty("body","content2Spa");
+        Contentlet contentlet2Spanish = contentletAPI.checkout(contentlet2English.getInode(),
+                systemUser, false);
+        contentlet2Spanish.setProperty("title", "content2Spa");
+        contentlet2Spanish.setProperty("body", "content2Spa");
         contentlet2Spanish.setLanguageId(spanishLanguage.getId());
         contentlet2Spanish.setIndexPolicy(IndexPolicy.WAIT_FOR);
         contentlet2Spanish.setIndexPolicyDependencies(IndexPolicy.WAIT_FOR);
@@ -303,83 +321,90 @@ public class HTMLPageAssetRenderedTest {
     }
 
 
-    private void  createMultiTree(final String pageId, final String containerId) throws DotDataException {
+    private void createMultiTree(final String pageId, final String containerId)
+            throws DotDataException {
         createMultiTree(pageId, containerId, UUID);
     }
 
 
-    private void  createMultiTree(final String pageId, final String containerId, final String UUID)
+    private void createMultiTree(final String pageId, final String containerId, final String UUID)
             throws DotDataException {
 
         final List<MultiTree> mTrees = new ArrayList<>();
         // english - content1
-        MultiTree multiTree = new MultiTree(pageId, containerId, contentletsIds.get(0),UUID,0);
+        MultiTree multiTree = new MultiTree(pageId, containerId, contentletsIds.get(0), UUID, 0);
         mTrees.add(multiTree);
 
         // english and spanish - content2/content2Spa
-        multiTree = new MultiTree(pageId, containerId, contentletsIds.get(1),UUID,0);
+        multiTree = new MultiTree(pageId, containerId, contentletsIds.get(1), UUID, 0);
         mTrees.add(multiTree);
 
         // spanish  - content3Spa
-        multiTree = new MultiTree(pageId, containerId, contentletsIds.get(2),UUID,0);
+        multiTree = new MultiTree(pageId, containerId, contentletsIds.get(2), UUID, 0);
         mTrees.add(multiTree);
 
         // english, custom persona - content4
-        final String personaTag  = persona.getKeyTag();
-        final String personalization = Persona.DOT_PERSONA_PREFIX_SCHEME + StringPool.COLON + personaTag;
+        final String personaTag = persona.getKeyTag();
+        final String personalization =
+                Persona.DOT_PERSONA_PREFIX_SCHEME + StringPool.COLON + personaTag;
 
-        multiTree = new MultiTree(pageId, containerId, contentletsIds.get(3),UUID,0, personalization);
+        multiTree = new MultiTree(pageId, containerId, contentletsIds.get(3), UUID, 0,
+                personalization);
         mTrees.add(multiTree);
 
         APILocator.getMultiTreeAPI().saveMultiTrees(mTrees);
     }
 
     @AfterClass
-    public static void restore() throws Exception{
+    public static void restore() throws Exception {
 
-        Config.setProperty(contentFallbackProperty, contentFallbackDefaultValue);
-        Config.setProperty(pageFallbackProperty, pageFallbackDefaultValue);
+        Config.setProperty(DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE, contentFallbackDefaultValue);
+        Config.setProperty(DEFAULT_PAGE_TO_DEFAULT_LANGUAGE, pageFallbackDefaultValue);
 
         //Deleting the folder will delete all the pages inside it
-        if(folder != null){
-            APILocator.getFolderAPI().delete(folder,systemUser,false);
+        if (folder != null) {
+            APILocator.getFolderAPI().delete(folder, systemUser, false);
         }
 
-        for(final String contentletId : contentletsIds){
-            final Contentlet contentlet = contentletAPI.findContentletByIdentifierAnyLanguage(contentletId);
-            if(null == contentlet){
-               continue;
+        for (final String contentletId : contentletsIds) {
+            final Contentlet contentlet = contentletAPI.findContentletByIdentifierAnyLanguage(
+                    contentletId);
+            if (null == contentlet) {
+                continue;
             }
 
             contentlet.setIndexPolicy(IndexPolicy.WAIT_FOR);
             contentlet.setIndexPolicyDependencies(IndexPolicy.WAIT_FOR);
             contentlet.setBoolProperty(Contentlet.IS_TEST_MODE, true);
-            contentletAPI.destroy(contentlet, systemUser, false );
+            contentletAPI.destroy(contentlet, systemUser, false);
         }
 
     }
 
     /**
-     * Method to test: {@link HTMLPageAssetRenderedAPI#getPageHtml(PageContext, HttpServletRequest, HttpServletResponse)}
-     * When: DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE is set to false and DEFAULT_PAGE_TO_DEFAULT_LANGUAGE is set to true
-     *       And the page have version just in ENG
-     *       And the page have tree content, where: content1 is just in ENG version, content2 is in ENG and ESP version, content 3 is just in ESP version
-     * Should: Since the page is requests in ENG version it should be render with content1 and content2
+     * Method to test:
+     * {@link HTMLPageAssetRenderedAPI#getPageHtml(PageContext, HttpServletRequest,
+     * HttpServletResponse)} When: DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE is set to false and
+     * DEFAULT_PAGE_TO_DEFAULT_LANGUAGE is set to true And the page have version just in ENG And the
+     * page have tree content, where: content1 is just in ENG version, content2 is in ENG and ESP
+     * version, content 3 is just in ESP version Should: Since the page is requests in ENG version
+     * it should be render with content1 and content2
      */
     @Test
     @UseDataProvider("cases")
     public void ContentFallbackFalse_PageFallbackTrue_PageEnglish_ViewEnglishContent1And2_ViewSpanishContent2And3(
-            final Container container, final Template template) throws Exception{
+            final Container container, final Template template) throws Exception {
 
-        Config.setProperty(contentFallbackProperty,false);
-        Config.setProperty(pageFallbackProperty,true);
+        Config.setProperty(DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE, false);
+        Config.setProperty(DEFAULT_PAGE_TO_DEFAULT_LANGUAGE, true);
 
-        final String pageName = "test1Page-"+System.currentTimeMillis();
+        final String pageName = "test1Page-" + System.currentTimeMillis();
         final HTMLPageAsset pageEnglishVersion = createHtmlPageAsset(template, pageName, 1);
 
         createMultiTree(pageEnglishVersion.getIdentifier(), container.getIdentifier());
 
-        final List<MultiTree>  multiTrees = APILocator.getMultiTreeAPI().getMultiTrees(pageEnglishVersion, container);
+        final List<MultiTree> multiTrees = APILocator.getMultiTreeAPI()
+                .getMultiTrees(pageEnglishVersion, container);
         Assert.assertNotNull(multiTrees);
         Assert.assertEquals(4, multiTrees.size());
 
@@ -387,19 +412,23 @@ public class HTMLPageAssetRenderedTest {
         for (final MultiTree multiTree : multiTrees) {
             try {
 
-                final Contentlet contentletSpa = APILocator.getContentletAPI().findContentletByIdentifier(
-                        multiTree.getContentlet(), true, spanishLanguage.getId(), systemUser, false);
+                final Contentlet contentletSpa = APILocator.getContentletAPI()
+                        .findContentletByIdentifier(
+                                multiTree.getContentlet(), true, spanishLanguage.getId(),
+                                systemUser, false);
                 if (null != contentletSpa) {
                     contentletSpaCount += 1;
                 }
-            } catch (DotContentletStateException e) {}
+            } catch (DotContentletStateException e) {
+            }
         }
 
         Assert.assertEquals(2, contentletSpaCount);
 
         //request page ENG version
         HttpServletRequest mockRequest = new MockSessionRequest(
-                new MockAttributeRequest(new MockHttpRequestIntegrationTest("localhost", "/").request()).request())
+                new MockAttributeRequest(
+                        new MockHttpRequestIntegrationTest("localhost", "/").request()).request())
                 .request();
         when(mockRequest.getParameter("host_id")).thenReturn(site.getIdentifier());
         mockRequest.setAttribute(WebKeys.HTMLPAGE_LANGUAGE, "1");
@@ -407,37 +436,41 @@ public class HTMLPageAssetRenderedTest {
         final HttpServletResponse mockResponse = mock(HttpServletResponse.class);
         String html = APILocator.getHTMLPageAssetRenderedAPI().getPageHtml(
                 PageContextBuilder.builder()
-                    .setUser(systemUser)
-                    .setPageUri(pageEnglishVersion.getURI())
-                    .setPageMode(PageMode.LIVE)
-                    .build(),
+                        .setUser(systemUser)
+                        .setPageUri(pageEnglishVersion.getURI())
+                        .setPageMode(PageMode.LIVE)
+                        .build(),
                 mockRequest, mockResponse);
-        assertTrue("ENG = "+html , html.contains("content1") && html.contains("content2"));
+        assertTrue("ENG = " + html, html.contains("content1") && html.contains("content2"));
     }
 
     ///////
+
     /**
-     * Method to test: {@link HTMLPageAssetRenderedAPI#getPageHtml(PageContext, HttpServletRequest, HttpServletResponse)}
-     * Given Scenario: DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE is set to false and DEFAULT_PAGE_TO_DEFAULT_LANGUAGE is set to true
-     *       And the page have version just in ENG
-     *       And the page have tree content, where: content1 is just in ENG version, content2 is in ENG and ESP version, content 3 is just in ESP version
-     *       And the current language (the request language, is spanish)
-     * ExpectedResult: Since the lang is spanish, the contents rendered will be only spanish content on the page.
+     * Method to test:
+     * {@link HTMLPageAssetRenderedAPI#getPageHtml(PageContext, HttpServletRequest,
+     * HttpServletResponse)} Given Scenario: DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE is set to false and
+     * DEFAULT_PAGE_TO_DEFAULT_LANGUAGE is set to true And the page have version just in ENG And the
+     * page have tree content, where: content1 is just in ENG version, content2 is in ENG and ESP
+     * version, content 3 is just in ESP version And the current language (the request language, is
+     * spanish) ExpectedResult: Since the lang is spanish, the contents rendered will be only
+     * spanish content on the page.
      */
     @Test
     @UseDataProvider("cases")
     public void render_spanish_contentlets_on_english_page(
-            final Container container, final Template template) throws Exception{
+            final Container container, final Template template) throws Exception {
 
-        Config.setProperty(contentFallbackProperty,false);
-        Config.setProperty(pageFallbackProperty,true);
+        Config.setProperty(DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE, false);
+        Config.setProperty(DEFAULT_PAGE_TO_DEFAULT_LANGUAGE, true);
 
-        final String pageName = "test1Page-"+System.currentTimeMillis();
+        final String pageName = "test1Page-" + System.currentTimeMillis();
         final HTMLPageAsset pageEnglishVersion = createHtmlPageAsset(template, pageName, 1);
 
         createMultiTree(pageEnglishVersion.getIdentifier(), container.getIdentifier());
 
-        final List<MultiTree>  multiTrees = APILocator.getMultiTreeAPI().getMultiTrees(pageEnglishVersion, container);
+        final List<MultiTree> multiTrees = APILocator.getMultiTreeAPI()
+                .getMultiTrees(pageEnglishVersion, container);
         Assert.assertNotNull(multiTrees);
         Assert.assertEquals(4, multiTrees.size());
 
@@ -445,12 +478,15 @@ public class HTMLPageAssetRenderedTest {
         for (final MultiTree multiTree : multiTrees) {
             try {
 
-                final Contentlet contentletSpa = APILocator.getContentletAPI().findContentletByIdentifier(
-                        multiTree.getContentlet(), true, spanishLanguage.getId(), systemUser, false);
+                final Contentlet contentletSpa = APILocator.getContentletAPI()
+                        .findContentletByIdentifier(
+                                multiTree.getContentlet(), true, spanishLanguage.getId(),
+                                systemUser, false);
                 if (null != contentletSpa) {
                     contentletSpaCount += 1;
                 }
-            } catch (DotContentletStateException e) {}
+            } catch (DotContentletStateException e) {
+            }
         }
 
         Assert.assertEquals(2, contentletSpaCount);
@@ -458,14 +494,17 @@ public class HTMLPageAssetRenderedTest {
         //request page ESP version
         final HttpServletResponse mockResponse = mock(HttpServletResponse.class);
         HttpServletRequest mockRequest = new MockSessionRequest(
-                new MockAttributeRequest(new MockHttpRequestIntegrationTest("localhost", "/").request()).request())
+                new MockAttributeRequest(
+                        new MockHttpRequestIntegrationTest("localhost", "/").request()).request())
                 .request();
         final HttpSession httpSession = mockRequest.getSession();
         when(mockRequest.getParameter("host_id")).thenReturn(site.getIdentifier());
         mockRequest
                 .setAttribute(WebKeys.HTMLPAGE_LANGUAGE, String.valueOf(spanishLanguage.getId()));
-        httpSession.setAttribute(WebKeys.HTMLPAGE_LANGUAGE, String.valueOf(spanishLanguage.getId()));
-        httpSession.setAttribute(WebKeys.HTMLPAGE_LANGUAGE + ".current", String.valueOf(spanishLanguage.getId()));
+        httpSession.setAttribute(WebKeys.HTMLPAGE_LANGUAGE,
+                String.valueOf(spanishLanguage.getId()));
+        httpSession.setAttribute(WebKeys.HTMLPAGE_LANGUAGE + ".current",
+                String.valueOf(spanishLanguage.getId()));
         HttpServletRequestThreadLocal.INSTANCE.setRequest(mockRequest);
 
         CacheLocator.getBlockPageCache().clearCache();
@@ -479,13 +518,13 @@ public class HTMLPageAssetRenderedTest {
                         .setPageMode(PageMode.LIVE)
                         .build(),
                 mockRequest, mockResponse);
-        assertTrue("ESP = "+html , html.contains("content2Spa") && html.contains("content3Spa"));
+        assertTrue("ESP = " + html, html.contains("content2Spa") && html.contains("content3Spa"));
     }
     ///////
 
     @NotNull
     private HTMLPageAsset createHtmlPageAsset(
-           final Template template,
+            final Template template,
             final String pageName,
             final long languageId)
 
@@ -502,7 +541,7 @@ public class HTMLPageAssetRenderedTest {
             throws DotSecurityException, DotDataException {
 
         final Folder folder = new FolderDataGen().site(host).nextPersisted();
-        final HTMLPageAsset pageEnglishVersion = new HTMLPageDataGen(folder,template)
+        final HTMLPageAsset pageEnglishVersion = new HTMLPageDataGen(folder, template)
                 .languageId(languageId)
                 .pageURL(pageName)
                 .title(pageName)
@@ -518,40 +557,45 @@ public class HTMLPageAssetRenderedTest {
     }
 
     /**
-     * Method to test: {@link HTMLPageAssetRenderedAPI#getPageHtml(PageContext, HttpServletRequest, HttpServletResponse)}
-     * When: DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE is set to false and DEFAULT_PAGE_TO_DEFAULT_LANGUAGE is set to true
-     *       And the page have version in ENG and ESP
-     *       And the page have tree content, where: content1 is just in ENG version, content2 is in ENG and ESP version, content 3 is just in ESP version
-     * Should: If the page is requests in ENG version it should be render with content1 and content2
-     *         If the page is requests in ESP version it should be render with content3 and content2 (both in ESP version)
+     * Method to test:
+     * {@link HTMLPageAssetRenderedAPI#getPageHtml(PageContext, HttpServletRequest,
+     * HttpServletResponse)} When: DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE is set to false and
+     * DEFAULT_PAGE_TO_DEFAULT_LANGUAGE is set to true And the page have version in ENG and ESP And
+     * the page have tree content, where: content1 is just in ENG version, content2 is in ENG and
+     * ESP version, content 3 is just in ESP version Should: If the page is requests in ENG version
+     * it should be render with content1 and content2 If the page is requests in ESP version it
+     * should be render with content3 and content2 (both in ESP version)
      */
     @Test
     @UseDataProvider("cases")
-    public void ContentFallbackFalse_PageFallbackTrue_PageEnglishAndSpanish_ViewEnglishContent1And2_ViewSpanishContent2And3(final Container container, final Template template) throws Exception{
+    public void ContentFallbackFalse_PageFallbackTrue_PageEnglishAndSpanish_ViewEnglishContent1And2_ViewSpanishContent2And3(
+            final Container container, final Template template) throws Exception {
 
-        Config.setProperty(contentFallbackProperty,false);
-        Config.setProperty(pageFallbackProperty,true);
+        Config.setProperty(DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE, false);
+        Config.setProperty(DEFAULT_PAGE_TO_DEFAULT_LANGUAGE, true);
 
-        final String pageName = "test2Page-"+System.currentTimeMillis();
+        final String pageName = "test2Page-" + System.currentTimeMillis();
         final HTMLPageAsset pageEnglishVersion = createHtmlPageAsset(template, pageName, 1);
 
-        Contentlet pageSpanishVersion = contentletAPI.checkout(pageEnglishVersion.getInode(),systemUser,false);
+        Contentlet pageSpanishVersion = contentletAPI.checkout(pageEnglishVersion.getInode(),
+                systemUser, false);
         pageSpanishVersion.setLanguageId(spanishLanguage.getId());
         pageSpanishVersion.setIndexPolicy(IndexPolicy.WAIT_FOR);
         pageSpanishVersion.setIndexPolicyDependencies(IndexPolicy.WAIT_FOR);
         pageSpanishVersion.setBoolProperty(Contentlet.IS_TEST_MODE, true);
-        pageSpanishVersion = contentletAPI.checkin(pageSpanishVersion,systemUser,false);
+        pageSpanishVersion = contentletAPI.checkin(pageSpanishVersion, systemUser, false);
 
         pageSpanishVersion.setIndexPolicy(IndexPolicy.WAIT_FOR);
         pageSpanishVersion.setIndexPolicyDependencies(IndexPolicy.WAIT_FOR);
         pageSpanishVersion.setBoolProperty(Contentlet.IS_TEST_MODE, true);
-        contentletAPI.publish(pageSpanishVersion,systemUser,false);
+        contentletAPI.publish(pageSpanishVersion, systemUser, false);
         addAnonymousPermissions(pageSpanishVersion);
 
         createMultiTree(pageEnglishVersion.getIdentifier(), container.getIdentifier());
 
         HttpServletRequest mockRequest = new MockSessionRequest(
-                new MockAttributeRequest(new MockHttpRequestIntegrationTest("localhost", "/").request()).request())
+                new MockAttributeRequest(
+                        new MockHttpRequestIntegrationTest("localhost", "/").request()).request())
                 .request();
         when(mockRequest.getParameter("host_id")).thenReturn(site.getIdentifier());
         mockRequest.setAttribute(WebKeys.HTMLPAGE_LANGUAGE, "1");
@@ -564,10 +608,11 @@ public class HTMLPageAssetRenderedTest {
                         .setPageMode(PageMode.LIVE)
                         .build(),
                 mockRequest, mockResponse);
-        assertTrue("ENG = "+html , html.contains("content1") && html.contains("content2"));
+        assertTrue("ENG = " + html, html.contains("content1") && html.contains("content2"));
 
         mockRequest = new MockSessionRequest(
-                new MockAttributeRequest(new MockHttpRequestIntegrationTest("localhost", "/").request()).request())
+                new MockAttributeRequest(
+                        new MockHttpRequestIntegrationTest("localhost", "/").request()).request())
                 .request();
         when(mockRequest.getParameter("host_id")).thenReturn(site.getIdentifier());
         mockRequest
@@ -580,31 +625,36 @@ public class HTMLPageAssetRenderedTest {
                         .setPageMode(PageMode.LIVE)
                         .build(),
                 mockRequest, mockResponse);
-        assertTrue("ESP = "+html , html.contains("content2Spa") && html.contains("content3Spa"));
+        assertTrue("ESP = " + html, html.contains("content2Spa") && html.contains("content3Spa"));
 
     }
 
     /**
-     * Method to test: {@link HTMLPageAssetRenderedAPI#getPageHtml(PageContext, HttpServletRequest, HttpServletResponse)}
-     * When: DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE is set to false and DEFAULT_PAGE_TO_DEFAULT_LANGUAGE is set to true
-     *       And the page have version in ESP
-     *       And the page have tree content, where: content1 is just in ENG version, content2 is in ENG and ESP version, content 3 is just in ESP version
-     * Should: If the page is requests in ENG version it should be thrown a {@link HTMLPageAssetNotFoundException}
-     *         If the page is requests in ESP version it should be render with content3 and content2 (both in ESP version)
+     * Method to test:
+     * {@link HTMLPageAssetRenderedAPI#getPageHtml(PageContext, HttpServletRequest,
+     * HttpServletResponse)} When: DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE is set to false and
+     * DEFAULT_PAGE_TO_DEFAULT_LANGUAGE is set to true And the page have version in ESP And the page
+     * have tree content, where: content1 is just in ENG version, content2 is in ENG and ESP
+     * version, content 3 is just in ESP version Should: If the page is requests in ENG version it
+     * should be thrown a {@link HTMLPageAssetNotFoundException} If the page is requests in ESP
+     * version it should be render with content3 and content2 (both in ESP version)
      */
     @UseDataProvider("cases")
-    public void ContentFallbackFalse_PageFallbackTrue_PageSpanish_ViewEnglish404_ViewSpanishContent2And3(final Container container, final Template template) throws Exception{
+    public void ContentFallbackFalse_PageFallbackTrue_PageSpanish_ViewEnglish404_ViewSpanishContent2And3(
+            final Container container, final Template template) throws Exception {
 
-        Config.setProperty(contentFallbackProperty,false);
-        Config.setProperty(pageFallbackProperty,true);
+        Config.setProperty(DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE, false);
+        Config.setProperty(DEFAULT_PAGE_TO_DEFAULT_LANGUAGE, true);
 
-        final String pageName = "test3Page-"+System.currentTimeMillis();
-        final HTMLPageAsset pageSpanishVersion = createHtmlPageAsset(template, pageName, spanishLanguage.getId());
+        final String pageName = "test3Page-" + System.currentTimeMillis();
+        final HTMLPageAsset pageSpanishVersion = createHtmlPageAsset(template, pageName,
+                spanishLanguage.getId());
 
         createMultiTree(pageSpanishVersion.getIdentifier(), container.getIdentifier());
 
         HttpServletRequest mockRequest = new MockSessionRequest(
-                new MockAttributeRequest(new MockHttpRequestIntegrationTest("localhost", "/").request()).request())
+                new MockAttributeRequest(
+                        new MockHttpRequestIntegrationTest("localhost", "/").request()).request())
                 .request();
         mockRequest
                 .setAttribute(WebKeys.HTMLPAGE_LANGUAGE, String.valueOf(spanishLanguage.getId()));
@@ -617,10 +667,11 @@ public class HTMLPageAssetRenderedTest {
                         .setPageMode(PageMode.LIVE)
                         .build(),
                 mockRequest, mockResponse);
-        assertTrue("ESP = "+html , html.contains("content3Spacontent2Spa"));
+        assertTrue("ESP = " + html, html.contains("content3Spacontent2Spa"));
 
         mockRequest = new MockSessionRequest(
-                new MockAttributeRequest(new MockHttpRequestIntegrationTest("localhost", "/").request()).request())
+                new MockAttributeRequest(
+                        new MockHttpRequestIntegrationTest("localhost", "/").request()).request())
                 .request();
         when(mockRequest.getParameter("host_id")).thenReturn(site.getIdentifier());
         mockRequest.setAttribute(WebKeys.HTMLPAGE_LANGUAGE, "1");
@@ -636,32 +687,36 @@ public class HTMLPageAssetRenderedTest {
                     mockRequest, mockResponse);
 
             throw new AssertionError("HTMLPageAssetNotFoundException expected");
-        }catch(HTMLPageAssetNotFoundException e) {
+        } catch (HTMLPageAssetNotFoundException e) {
             //expected
         }
     }
 
     /**
-     * Method to test: {@link HTMLPageAssetRenderedAPI#getPageHtml(PageContext, HttpServletRequest, HttpServletResponse)}
-     * When: DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE is set to false and DEFAULT_PAGE_TO_DEFAULT_LANGUAGE is set to false
-     *       And the page have version in ENG
-     *       And the page have tree content, where: content1 is just in ENG version, content2 is in ENG and ESP version, content 3 is just in ESP version
-     * Should: If the page is requests in ENG version it should be render with content1 and content2
-     *         If the page is requests in ESP version it should be thrown a {@link HTMLPageAssetNotFoundException}
+     * Method to test:
+     * {@link HTMLPageAssetRenderedAPI#getPageHtml(PageContext, HttpServletRequest,
+     * HttpServletResponse)} When: DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE is set to false and
+     * DEFAULT_PAGE_TO_DEFAULT_LANGUAGE is set to false And the page have version in ENG And the
+     * page have tree content, where: content1 is just in ENG version, content2 is in ENG and ESP
+     * version, content 3 is just in ESP version Should: If the page is requests in ENG version it
+     * should be render with content1 and content2 If the page is requests in ESP version it should
+     * be thrown a {@link HTMLPageAssetNotFoundException}
      */
     @UseDataProvider("cases")
-    public void ContentFallbackFalse_PageFallbackFalse_PageEnglish_ViewEnglishContent1And2_ViewSpanish404(final Container container, final Template template) throws Exception{
+    public void ContentFallbackFalse_PageFallbackFalse_PageEnglish_ViewEnglishContent1And2_ViewSpanish404(
+            final Container container, final Template template) throws Exception {
 
-        Config.setProperty(contentFallbackProperty,false);
-        Config.setProperty(pageFallbackProperty,false);
+        Config.setProperty(DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE, false);
+        Config.setProperty(DEFAULT_PAGE_TO_DEFAULT_LANGUAGE, false);
 
-        final String pageName = "test4Page-"+System.currentTimeMillis();
+        final String pageName = "test4Page-" + System.currentTimeMillis();
         final HTMLPageAsset pageEnglishVersion = createHtmlPageAsset(template, pageName, 1);
 
         createMultiTree(pageEnglishVersion.getIdentifier(), container.getIdentifier());
 
         HttpServletRequest mockRequest = new MockSessionRequest(
-                new MockAttributeRequest(new MockHttpRequestIntegrationTest("localhost", "/").request()).request())
+                new MockAttributeRequest(
+                        new MockHttpRequestIntegrationTest("localhost", "/").request()).request())
                 .request();
         when(mockRequest.getParameter("host_id")).thenReturn(site.getIdentifier());
         mockRequest.setAttribute(WebKeys.HTMLPAGE_LANGUAGE, "1");
@@ -674,10 +729,11 @@ public class HTMLPageAssetRenderedTest {
                         .setPageMode(PageMode.LIVE)
                         .build(),
                 mockRequest, mockResponse);
-        assertTrue("ENG = "+html , html.contains("content2content1"));
+        assertTrue("ENG = " + html, html.contains("content2content1"));
 
         mockRequest = new MockSessionRequest(
-                new MockAttributeRequest(new MockHttpRequestIntegrationTest("localhost", "/").request()).request())
+                new MockAttributeRequest(
+                        new MockHttpRequestIntegrationTest("localhost", "/").request()).request())
                 .request();
         mockRequest
                 .setAttribute(WebKeys.HTMLPAGE_LANGUAGE, String.valueOf(spanishLanguage.getId()));
@@ -685,22 +741,24 @@ public class HTMLPageAssetRenderedTest {
 
         try {
             APILocator.getHTMLPageAssetRenderedAPI().getPageHtml(
-                PageContextBuilder.builder()
-                        .setUser(systemUser)
-                        .setPageUri(pageEnglishVersion.getURI())
-                        .setPageMode(PageMode.LIVE)
-                        .build(),
-                mockRequest, mockResponse);
+                    PageContextBuilder.builder()
+                            .setUser(systemUser)
+                            .setPageUri(pageEnglishVersion.getURI())
+                            .setPageMode(PageMode.LIVE)
+                            .build(),
+                    mockRequest, mockResponse);
             throw new AssertionError("HTMLPageAssetNotFoundException expected");
-        }catch(HTMLPageAssetNotFoundException e) {
+        } catch (HTMLPageAssetNotFoundException e) {
             //expected
         }
     }
 
     /**
-     * Method to test: {@link HTMLPageAssetRenderedAPI#getPageHtml(PageContext, HttpServletRequest, HttpServletResponse)}
-     * When: A Page has a content that have a Image field and this content is using a FileAsset Image
-     * Should: the [field_variable]ImageURI variable should be equals to /contentAsset/raw-data/[content_id]/fileAsset?language_id=1
+     * Method to test:
+     * {@link HTMLPageAssetRenderedAPI#getPageHtml(PageContext, HttpServletRequest,
+     * HttpServletResponse)} When: A Page has a content that have a Image field and this content is
+     * using a FileAsset Image Should: the [field_variable]ImageURI variable should be equals to
+     * /contentAsset/raw-data/[content_id]/fileAsset?language_id=1
      */
     @Test
     public void renderPageWithFileAssetImage()
@@ -754,7 +812,7 @@ public class HTMLPageAssetRenderedTest {
                 .nextPersisted();
         TemplateDataGen.publish(template);
 
-        final String pageName = "renderPageWithFileAssetImage-"+System.currentTimeMillis();
+        final String pageName = "renderPageWithFileAssetImage-" + System.currentTimeMillis();
         final HTMLPageAsset page = createHtmlPageAsset(template, pageName, 1);
 
         new MultiTreeDataGen()
@@ -765,7 +823,8 @@ public class HTMLPageAssetRenderedTest {
                 .nextPersisted();
 
         HttpServletRequest mockRequest = new MockSessionRequest(
-                new MockAttributeRequest(new MockHttpRequestIntegrationTest("localhost", "/").request()).request())
+                new MockAttributeRequest(
+                        new MockHttpRequestIntegrationTest("localhost", "/").request()).request())
                 .request();
         when(mockRequest.getParameter("host_id")).thenReturn(site.getIdentifier());
         mockRequest.setAttribute(WebKeys.HTMLPAGE_LANGUAGE, "1");
@@ -783,14 +842,16 @@ public class HTMLPageAssetRenderedTest {
                 "/contentAsset/raw-data/%s/fileAsset?language_id=1",
                 imageContentlet.getIdentifier()
         );
-        assertTrue(html , html.contains(String.format("Image URI: %s", imageURIExpected)));
+        assertTrue(html, html.contains(String.format("Image URI: %s", imageURIExpected)));
     }
 
 
     /**
-     * Method to test: {@link HTMLPageAssetRenderedAPI#getPageHtml(PageContext, HttpServletRequest, HttpServletResponse)}
-     * When: A Page has a content that have a Image field and this content is using a DotAsset Image
-     * Should: the [field_variable]ImageURI variable should be equals to /contentAsset/raw-data/[content_id]/fileAsset?language_id=1
+     * Method to test:
+     * {@link HTMLPageAssetRenderedAPI#getPageHtml(PageContext, HttpServletRequest,
+     * HttpServletResponse)} When: A Page has a content that have a Image field and this content is
+     * using a DotAsset Image Should: the [field_variable]ImageURI variable should be equals to
+     * /contentAsset/raw-data/[content_id]/fileAsset?language_id=1
      */
     @Test
     public void renderPageWithDotAssetImage()
@@ -810,17 +871,18 @@ public class HTMLPageAssetRenderedTest {
         final File image = new File(Thread.currentThread().getContextClassLoader()
                 .getResource("images/test.jpg").getFile());
 
-        final ContentType dotAssetContentType = APILocator.getContentTypeAPI(APILocator.systemUser())
+        final ContentType dotAssetContentType = APILocator.getContentTypeAPI(
+                        APILocator.systemUser())
                 .save(ContentTypeBuilder.builder(DotAssetContentType.class)
-                .folder(FolderAPI.SYSTEM_FOLDER)
-                .host(Host.SYSTEM_HOST)
-                .name("name" + System.currentTimeMillis())
-                .owner(APILocator.systemUser().getUserId())
-                .build());
+                        .folder(FolderAPI.SYSTEM_FOLDER)
+                        .host(Host.SYSTEM_HOST)
+                        .name("name" + System.currentTimeMillis())
+                        .owner(APILocator.systemUser().getUserId())
+                        .build());
 
         final Contentlet imageContentlet = new ContentletDataGen(dotAssetContentType)
-            .setProperty(DotAssetContentType.ASSET_FIELD_VAR, image)
-            .nextPersisted();
+                .setProperty(DotAssetContentType.ASSET_FIELD_VAR, image)
+                .nextPersisted();
         ContentletDataGen.publish(imageContentlet);
 
         Contentlet contentlet = new ContentletDataGen(contentType)
@@ -852,7 +914,7 @@ public class HTMLPageAssetRenderedTest {
                 .nextPersisted();
         TemplateDataGen.publish(template);
 
-        final String pageName = "renderPageWithFileAssetImage-"+System.currentTimeMillis();
+        final String pageName = "renderPageWithFileAssetImage-" + System.currentTimeMillis();
         final HTMLPageAsset page = createHtmlPageAsset(template, pageName, 1);
 
         new MultiTreeDataGen()
@@ -863,7 +925,8 @@ public class HTMLPageAssetRenderedTest {
                 .nextPersisted();
 
         HttpServletRequest mockRequest = new MockSessionRequest(
-                new MockAttributeRequest(new MockHttpRequestIntegrationTest("localhost", "/").request()).request())
+                new MockAttributeRequest(
+                        new MockHttpRequestIntegrationTest("localhost", "/").request()).request())
                 .request();
         when(mockRequest.getParameter("host_id")).thenReturn(site.getIdentifier());
         mockRequest.setAttribute(WebKeys.HTMLPAGE_LANGUAGE, "1");
@@ -881,43 +944,48 @@ public class HTMLPageAssetRenderedTest {
                 "dA/%s",
                 imageContentlet.getIdentifier()
         );
-        assertTrue(html , html.contains(String.format("Image URI: %s", imageURIExpected)));
+        assertTrue(html, html.contains(String.format("Image URI: %s", imageURIExpected)));
     }
 
     /**
-     * Method to test: {@link HTMLPageAssetRenderedAPI#getPageHtml(PageContext, HttpServletRequest, HttpServletResponse)}
-     * When: DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE is set to false and DEFAULT_PAGE_TO_DEFAULT_LANGUAGE is set to false
-     *       And the page have version in ENG and ESP
-     *       And the page have tree content, where: content1 is just in ENG version, content2 is in ENG and ESP version, content 3 is just in ESP version
-     * Should: If the page is requests in ENG version it should be render with content1 and content2
-     *         If the page is requests in ESP version it should be render with content3 and content2 (both in ESP version)
+     * Method to test:
+     * {@link HTMLPageAssetRenderedAPI#getPageHtml(PageContext, HttpServletRequest,
+     * HttpServletResponse)} When: DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE is set to false and
+     * DEFAULT_PAGE_TO_DEFAULT_LANGUAGE is set to false And the page have version in ENG and ESP And
+     * the page have tree content, where: content1 is just in ENG version, content2 is in ENG and
+     * ESP version, content 3 is just in ESP version Should: If the page is requests in ENG version
+     * it should be render with content1 and content2 If the page is requests in ESP version it
+     * should be render with content3 and content2 (both in ESP version)
      */
     @Test
     @UseDataProvider("cases")
-    public void ContentFallbackFalse_PageFallbackFalse_PageEnglishAndSpanish_ViewEnglishContent1And2_ViewSpanishContent2And3(final Container container, final Template template) throws Exception{
+    public void ContentFallbackFalse_PageFallbackFalse_PageEnglishAndSpanish_ViewEnglishContent1And2_ViewSpanishContent2And3(
+            final Container container, final Template template) throws Exception {
 
-        Config.setProperty(contentFallbackProperty,false);
-        Config.setProperty(pageFallbackProperty,false);
+        Config.setProperty(DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE, false);
+        Config.setProperty(DEFAULT_PAGE_TO_DEFAULT_LANGUAGE, false);
 
-        final String pageName = "test5Page-"+System.currentTimeMillis();
+        final String pageName = "test5Page-" + System.currentTimeMillis();
         final HTMLPageAsset pageEnglishVersion = createHtmlPageAsset(template, pageName, 1);
 
-        Contentlet pageSpanishVersion = contentletAPI.checkout(pageEnglishVersion.getInode(),systemUser,false);
+        Contentlet pageSpanishVersion = contentletAPI.checkout(pageEnglishVersion.getInode(),
+                systemUser, false);
         pageSpanishVersion.setLanguageId(spanishLanguage.getId());
         pageSpanishVersion.setIndexPolicy(IndexPolicy.WAIT_FOR);
         pageSpanishVersion.setIndexPolicyDependencies(IndexPolicy.WAIT_FOR);
         pageSpanishVersion.setBoolProperty(Contentlet.IS_TEST_MODE, true);
-        pageSpanishVersion = contentletAPI.checkin(pageSpanishVersion,systemUser,false);
+        pageSpanishVersion = contentletAPI.checkin(pageSpanishVersion, systemUser, false);
         pageSpanishVersion.setIndexPolicy(IndexPolicy.WAIT_FOR);
         pageSpanishVersion.setIndexPolicyDependencies(IndexPolicy.WAIT_FOR);
         pageSpanishVersion.setBoolProperty(Contentlet.IS_TEST_MODE, true);
-        contentletAPI.publish(pageSpanishVersion,systemUser,false);
+        contentletAPI.publish(pageSpanishVersion, systemUser, false);
         addAnonymousPermissions(pageSpanishVersion);
 
         createMultiTree(pageEnglishVersion.getIdentifier(), container.getIdentifier());
 
         HttpServletRequest mockRequest = new MockSessionRequest(
-                new MockAttributeRequest(new MockHttpRequestIntegrationTest("localhost", "/").request()).request())
+                new MockAttributeRequest(
+                        new MockHttpRequestIntegrationTest("localhost", "/").request()).request())
                 .request();
         when(mockRequest.getParameter("host_id")).thenReturn(site.getIdentifier());
         mockRequest.setAttribute(WebKeys.HTMLPAGE_LANGUAGE, "1");
@@ -930,10 +998,11 @@ public class HTMLPageAssetRenderedTest {
                         .setPageMode(PageMode.LIVE)
                         .build(),
                 mockRequest, mockResponse);
-        assertTrue("ENG = "+html , html.contains("content1") && html.contains("content2"));
+        assertTrue("ENG = " + html, html.contains("content1") && html.contains("content2"));
 
         mockRequest = new MockSessionRequest(
-                new MockAttributeRequest(new MockHttpRequestIntegrationTest("localhost", "/").request()).request())
+                new MockAttributeRequest(
+                        new MockHttpRequestIntegrationTest("localhost", "/").request()).request())
                 .request();
         when(mockRequest.getParameter("host_id")).thenReturn(site.getIdentifier());
         mockRequest
@@ -946,44 +1015,49 @@ public class HTMLPageAssetRenderedTest {
                         .setPageMode(PageMode.LIVE)
                         .build(),
                 mockRequest, mockResponse);
-        assertTrue("ESP = "+html , html.contains("content2Spa") && html.contains("content3Spa"));
+        assertTrue("ESP = " + html, html.contains("content2Spa") && html.contains("content3Spa"));
     }
 
     /**
-     * Method to test: {@link HTMLPageAssetRenderedAPI#getPageHtml(PageContext, HttpServletRequest, HttpServletResponse)}
-     * When: DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE is set to true and DEFAULT_PAGE_TO_DEFAULT_LANGUAGE is set to true
-     *       And the page have version in ENG and ESP
-     *       And the page have tree content, where: content1 is just in ENG version, content2 is in ENG and ESP version, content 3 is just in ESP version
-     * Should: If the page is requests in ENG version it should be render with content1 and content2
-     *         If the page is requests in ESP version it should be render with content1 (ENG version), content3 and content2 (both in ESP version)
+     * Method to test:
+     * {@link HTMLPageAssetRenderedAPI#getPageHtml(PageContext, HttpServletRequest,
+     * HttpServletResponse)} When: DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE is set to true and
+     * DEFAULT_PAGE_TO_DEFAULT_LANGUAGE is set to true And the page have version in ENG and ESP And
+     * the page have tree content, where: content1 is just in ENG version, content2 is in ENG and
+     * ESP version, content 3 is just in ESP version Should: If the page is requests in ENG version
+     * it should be render with content1 and content2 If the page is requests in ESP version it
+     * should be render with content1 (ENG version), content3 and content2 (both in ESP version)
      */
     @Test
     @UseDataProvider("cases")
-    public void ContentFallbackTrue_PageFallbackTrue_PageEnglishAndSpanish_ViewEnglishContent1And2_ViewSpanishContent1And2And3(final Container container, final Template template) throws Exception{
+    public void ContentFallbackTrue_PageFallbackTrue_PageEnglishAndSpanish_ViewEnglishContent1And2_ViewSpanishContent1And2And3(
+            final Container container, final Template template) throws Exception {
 
-        Config.setProperty(contentFallbackProperty,true);
-        Config.setProperty(pageFallbackProperty,true);
+        Config.setProperty(DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE, true);
+        Config.setProperty(DEFAULT_PAGE_TO_DEFAULT_LANGUAGE, true);
 
-        final String pageName = "test6Page-"+System.currentTimeMillis();
+        final String pageName = "test6Page-" + System.currentTimeMillis();
         final HTMLPageAsset pageEnglishVersion = createHtmlPageAsset(template, pageName, 1);
-        Contentlet pageSpanishVersion = contentletAPI.checkout(pageEnglishVersion.getInode(),systemUser,false);
+        Contentlet pageSpanishVersion = contentletAPI.checkout(pageEnglishVersion.getInode(),
+                systemUser, false);
 
         pageSpanishVersion.setLanguageId(spanishLanguage.getId());
         pageSpanishVersion.setIndexPolicy(IndexPolicy.WAIT_FOR);
         pageSpanishVersion.setIndexPolicyDependencies(IndexPolicy.WAIT_FOR);
         pageEnglishVersion.setBoolProperty(Contentlet.IS_TEST_MODE, true);
-        pageSpanishVersion = contentletAPI.checkin(pageSpanishVersion,systemUser,false);
+        pageSpanishVersion = contentletAPI.checkin(pageSpanishVersion, systemUser, false);
 
         pageSpanishVersion.setIndexPolicy(IndexPolicy.WAIT_FOR);
         pageSpanishVersion.setIndexPolicyDependencies(IndexPolicy.WAIT_FOR);
         pageEnglishVersion.setBoolProperty(Contentlet.IS_TEST_MODE, true);
-        contentletAPI.publish(pageSpanishVersion,systemUser,false);
+        contentletAPI.publish(pageSpanishVersion, systemUser, false);
         addAnonymousPermissions(pageSpanishVersion);
 
         createMultiTree(pageEnglishVersion.getIdentifier(), container.getIdentifier());
 
         HttpServletRequest mockRequest = new MockSessionRequest(
-                new MockAttributeRequest(new MockHttpRequestIntegrationTest("localhost", "/").request()).request())
+                new MockAttributeRequest(
+                        new MockHttpRequestIntegrationTest("localhost", "/").request()).request())
                 .request();
         when(mockRequest.getParameter("host_id")).thenReturn(site.getIdentifier());
         mockRequest.setAttribute(WebKeys.HTMLPAGE_LANGUAGE, "1");
@@ -996,10 +1070,11 @@ public class HTMLPageAssetRenderedTest {
                         .setPageMode(PageMode.LIVE)
                         .build(),
                 mockRequest, mockResponse);
-        assertTrue("ENG = "+html , html.contains("content1") && html.contains("content2"));
+        assertTrue("ENG = " + html, html.contains("content1") && html.contains("content2"));
 
         mockRequest = new MockSessionRequest(
-                new MockAttributeRequest(new MockHttpRequestIntegrationTest("localhost", "/").request()).request())
+                new MockAttributeRequest(
+                        new MockHttpRequestIntegrationTest("localhost", "/").request()).request())
                 .request();
         when(mockRequest.getParameter("host_id")).thenReturn(site.getIdentifier());
         mockRequest
@@ -1012,31 +1087,35 @@ public class HTMLPageAssetRenderedTest {
                         .setPageMode(PageMode.LIVE)
                         .build(),
                 mockRequest, mockResponse);
-        assertTrue("ESP = "+html , html.contains("content3Spa")
+        assertTrue("ESP = " + html, html.contains("content3Spa")
                 && html.contains("content2Spa") && html.contains("content1"));
     }
 
     /**
-     * Method to test: {@link HTMLPageAssetRenderedAPI#getPageHtml(PageContext, HttpServletRequest, HttpServletResponse)}
-     * When: DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE is set to true and DEFAULT_PAGE_TO_DEFAULT_LANGUAGE is set to false
-     *       And the page have version just in ENG
-     *       And the page have tree content, where: content1 is just in ENG version, content2 is in ENG and ESP version, content 3 is just in ESP version
-     * Should: If the page is requests in ENG version it should be render with content1 and content2
-     *         If the page is requests in ESP version it should be thrown a {@link HTMLPageAssetNotFoundException}
+     * Method to test:
+     * {@link HTMLPageAssetRenderedAPI#getPageHtml(PageContext, HttpServletRequest,
+     * HttpServletResponse)} When: DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE is set to true and
+     * DEFAULT_PAGE_TO_DEFAULT_LANGUAGE is set to false And the page have version just in ENG And
+     * the page have tree content, where: content1 is just in ENG version, content2 is in ENG and
+     * ESP version, content 3 is just in ESP version Should: If the page is requests in ENG version
+     * it should be render with content1 and content2 If the page is requests in ESP version it
+     * should be thrown a {@link HTMLPageAssetNotFoundException}
      */
     @UseDataProvider("cases")
-    public void ContentFallbackTrue_PageFallbackFalse_PageEnglish_ViewEnglishContent1And2_ViewSpanish404(final Container container, final Template template) throws Exception{
+    public void ContentFallbackTrue_PageFallbackFalse_PageEnglish_ViewEnglishContent1And2_ViewSpanish404(
+            final Container container, final Template template) throws Exception {
 
-        Config.setProperty(contentFallbackProperty,true);
-        Config.setProperty(pageFallbackProperty,false);
+        Config.setProperty(DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE, true);
+        Config.setProperty(DEFAULT_PAGE_TO_DEFAULT_LANGUAGE, false);
 
-        final String pageName = "test7Page-"+System.currentTimeMillis();
+        final String pageName = "test7Page-" + System.currentTimeMillis();
         final HTMLPageAsset pageEnglishVersion = createHtmlPageAsset(template, pageName, 1);
 
         createMultiTree(pageEnglishVersion.getIdentifier(), container.getIdentifier());
 
         HttpServletRequest mockRequest = new MockSessionRequest(
-                new MockAttributeRequest(new MockHttpRequestIntegrationTest("localhost", "/").request()).request())
+                new MockAttributeRequest(
+                        new MockHttpRequestIntegrationTest("localhost", "/").request()).request())
                 .request();
         when(mockRequest.getParameter("host_id")).thenReturn(site.getIdentifier());
         mockRequest.setAttribute(WebKeys.HTMLPAGE_LANGUAGE, "1");
@@ -1049,16 +1128,17 @@ public class HTMLPageAssetRenderedTest {
                         .setPageMode(PageMode.LIVE)
                         .build(),
                 mockRequest, mockResponse);
-        assertTrue("ENG = "+html , html.contains("content2content1"));
+        assertTrue("ENG = " + html, html.contains("content2content1"));
 
         mockRequest = new MockSessionRequest(
-                new MockAttributeRequest(new MockHttpRequestIntegrationTest("localhost", "/").request()).request())
+                new MockAttributeRequest(
+                        new MockHttpRequestIntegrationTest("localhost", "/").request()).request())
                 .request();
         mockRequest
                 .setAttribute(WebKeys.HTMLPAGE_LANGUAGE, String.valueOf(spanishLanguage.getId()));
         HttpServletRequestThreadLocal.INSTANCE.setRequest(mockRequest);
 
-        try{
+        try {
             APILocator.getHTMLPageAssetRenderedAPI().getPageHtml(
                     PageContextBuilder.builder()
                             .setUser(systemUser)
@@ -1068,21 +1148,22 @@ public class HTMLPageAssetRenderedTest {
                     mockRequest, mockResponse);
 
             throw new AssertionError("HTMLPageAssetNotFoundException expected");
-        }catch(HTMLPageAssetNotFoundException e) {
+        } catch (HTMLPageAssetNotFoundException e) {
             //expected
         }
     }
 
     /**
-     * This test creates a widget content type, sets a value for the widget code,
-     * creates a contentlet of this new widget and add it to a page.
-     * If you update the value widget code, and hit again the page the new value should show up.
+     * This test creates a widget content type, sets a value for the widget code, creates a
+     * contentlet of this new widget and add it to a page. If you update the value widget code, and
+     * hit again the page the new value should show up.
      *
      * @throws Exception
      */
     @Test
     @UseDataProvider("cases")
-    public void constantField_notUpdatedCache_whenChanged(final Container container, final Template template) throws Exception{
+    public void constantField_notUpdatedCache_whenChanged(final Container container,
+            final Template template) throws Exception {
 
         ContentType contentType = ContentTypeBuilder
                 .builder(BaseContentType.WIDGET.immutableClass())
@@ -1111,7 +1192,8 @@ public class HTMLPageAssetRenderedTest {
             addAnonymousPermissions(contentlet);
 
             final HTMLPageAsset pageEnglishVersion = new HTMLPageDataGen(folder, template)
-                    .languageId(1).pageURL("testPageWidget"+ System.currentTimeMillis()).title("testPageWidget")
+                    .languageId(1).pageURL("testPageWidget" + System.currentTimeMillis())
+                    .title("testPageWidget")
                     .nextPersisted();
             pageEnglishVersion.setIndexPolicy(IndexPolicy.WAIT_FOR);
             pageEnglishVersion.setIndexPolicyDependencies(IndexPolicy.WAIT_FOR);
@@ -1119,12 +1201,14 @@ public class HTMLPageAssetRenderedTest {
             contentletAPI.publish(pageEnglishVersion, systemUser, false);
             addAnonymousPermissions(pageEnglishVersion);
 
-            final MultiTree multiTree = new MultiTree(pageEnglishVersion.getIdentifier(), container.getIdentifier(),
+            final MultiTree multiTree = new MultiTree(pageEnglishVersion.getIdentifier(),
+                    container.getIdentifier(),
                     contentlet.getIdentifier(), UUID, 0);
             APILocator.getMultiTreeAPI().saveMultiTree(multiTree);
 
             HttpServletRequest mockRequest = new MockSessionRequest(
-                    new MockAttributeRequest(new MockHttpRequestIntegrationTest("localhost", "/").request())
+                    new MockAttributeRequest(
+                            new MockHttpRequestIntegrationTest("localhost", "/").request())
                             .request())
                     .request();
             when(mockRequest.getParameter("host_id")).thenReturn(site.getIdentifier());
@@ -1150,7 +1234,8 @@ public class HTMLPageAssetRenderedTest {
             contentType = APILocator.getContentTypeAPI(systemUser).save(contentType);
 
             mockRequest = new MockSessionRequest(
-                    new MockAttributeRequest(new MockHttpRequestIntegrationTest("localhost", "/").request())
+                    new MockAttributeRequest(
+                            new MockHttpRequestIntegrationTest("localhost", "/").request())
                             .request())
                     .request();
             when(mockRequest.getParameter("host_id")).thenReturn(site.getIdentifier());
@@ -1165,16 +1250,15 @@ public class HTMLPageAssetRenderedTest {
                                     .build(),
                             mockRequest, mockResponse);
             assertTrue(html, html.contains("this has been changed"));
-        }finally {
+        } finally {
             APILocator.getContentTypeAPI(systemUser).delete(contentType);
         }
     }
 
     /**
-     * This test is for when you archived a container that is being used on page,
-     * the page needs to be resolved without issues. And when you unarchived and
-     * publish the container, the page needs to show the content related to the container.
-     *
+     * This test is for when you archived a container that is being used on page, the page needs to
+     * be resolved without issues. And when you unarchived and publish the container, the page needs
+     * to show the content related to the container.
      */
     @Test
     public void containerArchived_PageShouldResolve() throws Exception {
@@ -1195,7 +1279,8 @@ public class HTMLPageAssetRenderedTest {
             createMultiTree(pageEnglishVersion.getIdentifier(), container.getIdentifier());
 
             HttpServletRequest mockRequest = new MockSessionRequest(
-                    new MockAttributeRequest(new MockHttpRequestIntegrationTest("localhost", "/").request())
+                    new MockAttributeRequest(
+                            new MockHttpRequestIntegrationTest("localhost", "/").request())
                             .request())
                     .request();
             when(mockRequest.getParameter("host_id")).thenReturn(site.getIdentifier());
@@ -1217,7 +1302,8 @@ public class HTMLPageAssetRenderedTest {
             CacheLocator.getVeloctyResourceCache().clearCache();
 
             mockRequest = new MockSessionRequest(
-                    new MockAttributeRequest(new MockHttpRequestIntegrationTest("localhost", "/").request())
+                    new MockAttributeRequest(
+                            new MockHttpRequestIntegrationTest("localhost", "/").request())
                             .request())
                     .request();
             when(mockRequest.getParameter("host_id")).thenReturn(site.getIdentifier());
@@ -1231,14 +1317,15 @@ public class HTMLPageAssetRenderedTest {
                                     .setPageMode(PageMode.LIVE)
                                     .build(),
                             mockRequest, mockResponse);
-            assertTrue(html, html.isEmpty());
+            assertTrue(html, html.replace(getNotExperimentJsCode(), "").isEmpty());
 
             WebAssetFactory.unArchiveAsset(container);
             WebAssetFactory.publishAsset(container, systemUser);
             CacheLocator.getVeloctyResourceCache().clearCache();
 
             mockRequest = new MockSessionRequest(
-                    new MockAttributeRequest(new MockHttpRequestIntegrationTest("localhost", "/").request())
+                    new MockAttributeRequest(
+                            new MockHttpRequestIntegrationTest("localhost", "/").request())
                             .request())
                     .request();
             when(mockRequest.getParameter("host_id")).thenReturn(site.getIdentifier());
@@ -1253,7 +1340,7 @@ public class HTMLPageAssetRenderedTest {
                                     .build(),
                             mockRequest, mockResponse);
             assertTrue(html, html.contains("content1") && html.contains("content2"));
-        }finally {
+        } finally {
             if (!(container instanceof FileAssetContainer)) {
                 WebAssetFactory.unArchiveAsset(container);
                 WebAssetFactory.publishAsset(container, systemUser);
@@ -1262,18 +1349,21 @@ public class HTMLPageAssetRenderedTest {
     }
 
     /**
-     * Method to test: {@link com.dotmarketing.portlets.htmlpageasset.business.render.HTMLPageAssetRenderedAPIImpl#getPageHtml(PageContext, HttpServletRequest, HttpServletResponse)}
-     * Given Scenario: Create a page with three contents for default persona, and 1 content to another persona
-     * ExpectedResult: The page should return the content according to the persona set into the request
+     * Method to test:
+     * {@link
+     * com.dotmarketing.portlets.htmlpageasset.business.render.HTMLPageAssetRenderedAPIImpl#getPageHtml(PageContext,
+     * HttpServletRequest, HttpServletResponse)} Given Scenario: Create a page with three contents
+     * for default persona, and 1 content to another persona ExpectedResult: The page should return
+     * the content according to the persona set into the request
      *
      * @throws Exception
      */
     @Test
     @UseDataProvider("cases")
-    public void shouldReturnPageHTMLForPersona(final Container container, final Template template) throws Exception{
+    public void shouldReturnPageHTMLForPersona(final Container container, final Template template)
+            throws Exception {
 
-
-        final String pageName = "test5Page-"+System.currentTimeMillis();
+        final String pageName = "test5Page-" + System.currentTimeMillis();
         final HTMLPageAsset pageEnglishVersion = createHtmlPageAsset(template, pageName, 1);
 
         createMultiTree(pageEnglishVersion.getIdentifier(), container.getIdentifier());
@@ -1297,7 +1387,7 @@ public class HTMLPageAssetRenderedTest {
                         .setPageMode(PageMode.LIVE)
                         .build(),
                 mockRequest, mockResponse);
-        assertTrue(html , html.contains("content4"));
+        assertTrue(html, html.contains("content4"));
 
         when(session.getAttribute(WebKeys.VISITOR)).thenReturn(null);
 
@@ -1308,7 +1398,7 @@ public class HTMLPageAssetRenderedTest {
                         .setPageMode(PageMode.LIVE)
                         .build(),
                 mockRequest, mockResponse);
-        assertTrue(html , html.contains("content1") &&  html.contains("content2"));
+        assertTrue(html, html.contains("content1") && html.contains("content2"));
 
     }
 
@@ -1321,35 +1411,42 @@ public class HTMLPageAssetRenderedTest {
     }
 
     /**
-     * Method to test: {@link com.dotmarketing.portlets.htmlpageasset.business.render.HTMLPageAssetRenderedAPIImpl#getPageHtml(PageContext, HttpServletRequest, HttpServletResponse)}
-     * Given Scenario: Create a page with legacy UUID
+     * Method to test:
+     * {@link
+     * com.dotmarketing.portlets.htmlpageasset.business.render.HTMLPageAssetRenderedAPIImpl#getPageHtml(PageContext,
+     * HttpServletRequest, HttpServletResponse)} Given Scenario: Create a page with legacy UUID
      * ExpectedResult: The page should return the right HTML
      *
      * @throws Exception
      */
     @Test
     @UseDataProvider("cases")
-    public void shouldReturnPageHTMLForLegacyUUID(final Container container, final Template templateTestCase) throws Exception {
+    public void shouldReturnPageHTMLForLegacyUUID(final Container container,
+            final Template templateTestCase) throws Exception {
 
         final String containerId = container.getIdentifier();
 
         //Create a Template
-        final Template template = new TemplateDataGen().title("PageContextBuilderTemplate"+System.currentTimeMillis())
+        final Template template = new TemplateDataGen().title(
+                        "PageContextBuilderTemplate" + System.currentTimeMillis())
                 .withContainer(containerId, ContainerUUID.UUID_LEGACY_VALUE).nextPersisted();
         PublishFactory.publishAsset(template, systemUser, false, false);
 
-        final String pageName = "testPage-"+System.currentTimeMillis();
-        final HTMLPageAsset page = new HTMLPageDataGen(folder,template).languageId(1).pageURL(pageName).title(pageName).nextPersisted();
+        final String pageName = "testPage-" + System.currentTimeMillis();
+        final HTMLPageAsset page = new HTMLPageDataGen(folder, template).languageId(1)
+                .pageURL(pageName).title(pageName).nextPersisted();
         page.setIndexPolicy(IndexPolicy.WAIT_FOR);
         page.setIndexPolicyDependencies(IndexPolicy.WAIT_FOR);
         page.setBoolProperty(Contentlet.IS_TEST_MODE, true);
         contentletAPI.publish(page, systemUser, false);
 
         final String pageId = page.getIdentifier();
-        MultiTree multiTree = new MultiTree(pageId, containerId, contentletsIds.get(0), ContainerUUID.UUID_START_VALUE,0);
+        MultiTree multiTree = new MultiTree(pageId, containerId, contentletsIds.get(0),
+                ContainerUUID.UUID_START_VALUE, 0);
         APILocator.getMultiTreeAPI().saveMultiTreeAndReorder(multiTree);
 
-        multiTree = new MultiTree(pageId, containerId, contentletsIds.get(1), ContainerUUID.UUID_START_VALUE,0);
+        multiTree = new MultiTree(pageId, containerId, contentletsIds.get(1),
+                ContainerUUID.UUID_START_VALUE, 0);
         APILocator.getMultiTreeAPI().saveMultiTreeAndReorder(multiTree);
 
         final HttpServletRequest mockRequest = mock(HttpServletRequest.class);
@@ -1371,38 +1468,45 @@ public class HTMLPageAssetRenderedTest {
                         .setPageMode(PageMode.LIVE)
                         .build(),
                 mockRequest, mockResponse);
-        Assert.assertEquals("content2content1", html);
+        Assert.assertEquals(getNotExperimentJsCode() + "content2content1", html);
     }
 
     /**
-     * Method to test: {@link com.dotmarketing.portlets.htmlpageasset.business.render.HTMLPageAssetRenderedAPIImpl#getPageHtml(PageContext, HttpServletRequest, HttpServletResponse)}
-     * Given Scenario: Create a page with legacy UUID and MultiTree
-     * ExpectedResult: The page should return the right HTML
+     * Method to test:
+     * {@link
+     * com.dotmarketing.portlets.htmlpageasset.business.render.HTMLPageAssetRenderedAPIImpl#getPageHtml(PageContext,
+     * HttpServletRequest, HttpServletResponse)} Given Scenario: Create a page with legacy UUID and
+     * MultiTree ExpectedResult: The page should return the right HTML
      *
      * @throws Exception
      */
     @Test
     @UseDataProvider("cases")
-    public void shouldReturnPageHTMLForLegacyUUIDAndMultiTree(final Container container, final Template templateTestCase) throws Exception {
+    public void shouldReturnPageHTMLForLegacyUUIDAndMultiTree(final Container container,
+            final Template templateTestCase) throws Exception {
         final String containerId = container.getIdentifier();
 
         //Create a Template
-        final Template template = new TemplateDataGen().title("PageContextBuilderTemplate"+System.currentTimeMillis())
+        final Template template = new TemplateDataGen().title(
+                        "PageContextBuilderTemplate" + System.currentTimeMillis())
                 .withContainer(containerId, ContainerUUID.UUID_LEGACY_VALUE).nextPersisted();
         PublishFactory.publishAsset(template, systemUser, false, false);
 
-        final String pageName = "testPage-"+System.currentTimeMillis();
-        final HTMLPageAsset page = new HTMLPageDataGen(folder,template).languageId(1).pageURL(pageName).title(pageName).nextPersisted();
+        final String pageName = "testPage-" + System.currentTimeMillis();
+        final HTMLPageAsset page = new HTMLPageDataGen(folder, template).languageId(1)
+                .pageURL(pageName).title(pageName).nextPersisted();
         page.setIndexPolicy(IndexPolicy.WAIT_FOR);
         page.setIndexPolicyDependencies(IndexPolicy.WAIT_FOR);
         page.setBoolProperty(Contentlet.IS_TEST_MODE, true);
         contentletAPI.publish(page, systemUser, false);
 
         final String pageId = page.getIdentifier();
-        MultiTree multiTree = new MultiTree(pageId, containerId, contentletsIds.get(0), ContainerUUID.UUID_LEGACY_VALUE,0);
+        MultiTree multiTree = new MultiTree(pageId, containerId, contentletsIds.get(0),
+                ContainerUUID.UUID_LEGACY_VALUE, 0);
         APILocator.getMultiTreeAPI().saveMultiTreeAndReorder(multiTree);
 
-        multiTree = new MultiTree(pageId, containerId, contentletsIds.get(1), ContainerUUID.UUID_LEGACY_VALUE,0);
+        multiTree = new MultiTree(pageId, containerId, contentletsIds.get(1),
+                ContainerUUID.UUID_LEGACY_VALUE, 0);
         APILocator.getMultiTreeAPI().saveMultiTreeAndReorder(multiTree);
 
         final HttpServletRequest mockRequest = mock(HttpServletRequest.class);
@@ -1424,52 +1528,63 @@ public class HTMLPageAssetRenderedTest {
                         .setPageMode(PageMode.LIVE)
                         .build(),
                 mockRequest, mockResponse);
-        Assert.assertEquals("content2content1", html);
+        Assert.assertEquals(getNotExperimentJsCode() + "content2content1", html);
     }
 
     /**
-     * Method to test: {@link com.dotmarketing.portlets.htmlpageasset.business.render.HTMLPageAssetRenderedAPIImpl#getPageHtml(PageContext, HttpServletRequest, HttpServletResponse)}
-     * Given Scenario: Create a page with parseContainer directive into its template, and request the HTML in EDIT_MODE
-     * ExpectedResult: should return a UUID with the 'dotParser_' prefix
+     * Method to test:
+     * {@link
+     * com.dotmarketing.portlets.htmlpageasset.business.render.HTMLPageAssetRenderedAPIImpl#getPageHtml(PageContext,
+     * HttpServletRequest, HttpServletResponse)} Given Scenario: Create a page with parseContainer
+     * directive into its template, and request the HTML in EDIT_MODE ExpectedResult: should return
+     * a UUID with the 'dotParser_' prefix
      *
      * @throws Exception
      */
     @Test
     @UseDataProvider("cases")
-    public void shouldReturnParserContainerUUID(final Container container, final Template template) throws Exception {
+    public void shouldReturnParserContainerUUID(final Container container, final Template template)
+            throws Exception {
 
-        Config.setProperty("DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE", true);
-        final String pageName = "test5Page-"+System.currentTimeMillis();
-        final HTMLPageAsset pageEnglishVersion = createHtmlPageAsset(template, pageName, 1);
+        boolean defaultContentToDefaultLangOriginalValue =
+                Config.getBooleanProperty(DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE, false);
+        try {
+            Config.setProperty(DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE, true);
+            final String pageName = "test5Page-" + System.currentTimeMillis();
+            final HTMLPageAsset pageEnglishVersion = createHtmlPageAsset(template, pageName, 1);
 
-        createMultiTree(pageEnglishVersion.getIdentifier(), container.getIdentifier());
+            createMultiTree(pageEnglishVersion.getIdentifier(), container.getIdentifier());
 
-        final HttpServletRequest mockRequest = createHttpServletRequest(pageEnglishVersion);
+            final HttpServletRequest mockRequest = createHttpServletRequest(pageEnglishVersion);
 
-        final HttpServletResponse mockResponse = mock(HttpServletResponse.class);
+            final HttpServletResponse mockResponse = mock(HttpServletResponse.class);
 
-        final HttpSession session = createHttpSession(mockRequest);
+            final HttpSession session = createHttpSession(mockRequest);
 
-        when(session.getAttribute(WebKeys.VISITOR)).thenReturn(null);
+            when(session.getAttribute(WebKeys.VISITOR)).thenReturn(null);
 
-        systemUser.isBackendUser();
+            systemUser.isBackendUser();
 
-        final String html = APILocator.getHTMLPageAssetRenderedAPI().getPageHtml(
-                PageContextBuilder.builder()
-                        .setUser(systemUser)
-                        .setPageUri(pageEnglishVersion.getURI())
-                        .setPageMode(PageMode.EDIT_MODE)
-                        .build(),
-                mockRequest, mockResponse);
+            final String html = APILocator.getHTMLPageAssetRenderedAPI().getPageHtml(
+                    PageContextBuilder.builder()
+                            .setUser(systemUser)
+                            .setPageUri(pageEnglishVersion.getURI())
+                            .setPageMode(PageMode.EDIT_MODE)
+                            .build(),
+                    mockRequest, mockResponse);
 
-        final String regexExpected =
-                "<div data-dot-object=\"container\" .* data-dot-uuid=\"dotParser_.*\" .*>" +
-                    "<div data-dot-object=\"contentlet\" .*>.*</div>" +
-                    "<div data-dot-object=\"contentlet\" .*>.*</div>" +
-                    "<div data-dot-object=\"contentlet\" .*>.*</div>" +
-                "</div>";
+            final String regexExpected =
+                    "<div data-dot-object=\"container\" .* data-dot-uuid=\"dotParser_.*\" .*>" +
+                            "<div data-dot-object=\"contentlet\" .*>.*</div>" +
+                            "<div data-dot-object=\"contentlet\" .*>.*</div>" +
+                            "<div data-dot-object=\"contentlet\" .*>.*</div>" +
+                            "</div>";
 
-        assertTrue(html.matches(regexExpected));
+            assertTrue(html.replace(getNotExperimentJsCode(), "").matches(regexExpected));
+        } finally {
+            Config.setProperty(DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE,
+                    defaultContentToDefaultLangOriginalValue);
+        }
     }
 
 
@@ -1482,55 +1597,59 @@ public class HTMLPageAssetRenderedTest {
         final Function2<FileAssetContainer, Host, String> relativePath =
                 (FileAssetContainer container, Host host) -> container.getPath();
         final Function2<FileAssetContainer, Host, String> absolutePath =
-                (FileAssetContainer container, Host host) -> "//" + host.getName()  + container.getPath();
+                (FileAssetContainer container, Host host) -> "//" + host.getName()
+                        + container.getPath();
 
         final Function2<Host, String, Template> advanceTemplate =
-                (final Host templateHost, final String containerPath) -> createAdvancedTemplate(templateHost, containerPath);
+                (final Host templateHost, final String containerPath) -> createAdvancedTemplate(
+                        templateHost, containerPath);
         final Function2<Host, String, Template> drawedTemplate =
-                (final Host templateHost, final String containerPath) -> createDrawedTemplate(templateHost, containerPath);
+                (final Host templateHost, final String containerPath) -> createDrawedTemplate(
+                        templateHost, containerPath);
 
         final Host anotherHost = new SiteDataGen().nextPersisted();
-        final Host defaultHost = APILocator.getHostAPI().findDefaultHost(APILocator.systemUser(), true);
+        final Host defaultHost = APILocator.getHostAPI()
+                .findDefaultHost(APILocator.systemUser(), true);
         final Host currentHost = site;
 
         final HttpServletRequest request = mock(HttpServletRequest.class);
         HttpServletRequestThreadLocal.INSTANCE.setRequest(request);
         when(request.getAttribute(WebKeys.CURRENT_HOST)).thenReturn(currentHost);
 
-        return new Object[][] {
-                { currentHost, currentHost, currentHost, relativePath, advanceTemplate, true},
-                { currentHost, currentHost, anotherHost, relativePath, advanceTemplate, false},
-                { currentHost, anotherHost, anotherHost, relativePath, advanceTemplate, false},
-                { currentHost, currentHost, defaultHost, relativePath, advanceTemplate, true},
-                { currentHost, anotherHost, defaultHost, relativePath, advanceTemplate, true},
+        return new Object[][]{
+                {currentHost, currentHost, currentHost, relativePath, advanceTemplate, true},
+                {currentHost, currentHost, anotherHost, relativePath, advanceTemplate, false},
+                {currentHost, anotherHost, anotherHost, relativePath, advanceTemplate, false},
+                {currentHost, currentHost, defaultHost, relativePath, advanceTemplate, true},
+                {currentHost, anotherHost, defaultHost, relativePath, advanceTemplate, true},
 
-                { currentHost, currentHost, currentHost, absolutePath, advanceTemplate, true},
-                { currentHost, currentHost, anotherHost, absolutePath, advanceTemplate, true},
-                { currentHost, anotherHost, anotherHost, absolutePath, advanceTemplate, true},
-                { currentHost, currentHost, defaultHost, absolutePath, advanceTemplate, true},
-                { currentHost, anotherHost, defaultHost, absolutePath, advanceTemplate, true},
+                {currentHost, currentHost, currentHost, absolutePath, advanceTemplate, true},
+                {currentHost, currentHost, anotherHost, absolutePath, advanceTemplate, true},
+                {currentHost, anotherHost, anotherHost, absolutePath, advanceTemplate, true},
+                {currentHost, currentHost, defaultHost, absolutePath, advanceTemplate, true},
+                {currentHost, anotherHost, defaultHost, absolutePath, advanceTemplate, true},
 
-                { currentHost, currentHost, currentHost, relativePath, drawedTemplate, true},
-                { currentHost, currentHost, anotherHost, relativePath, drawedTemplate, false},
-                { currentHost, anotherHost, anotherHost, relativePath, drawedTemplate, false},
-                { currentHost, currentHost, defaultHost, relativePath, drawedTemplate, true},
-                { currentHost, anotherHost, defaultHost, relativePath, drawedTemplate, true},
+                {currentHost, currentHost, currentHost, relativePath, drawedTemplate, true},
+                {currentHost, currentHost, anotherHost, relativePath, drawedTemplate, false},
+                {currentHost, anotherHost, anotherHost, relativePath, drawedTemplate, false},
+                {currentHost, currentHost, defaultHost, relativePath, drawedTemplate, true},
+                {currentHost, anotherHost, defaultHost, relativePath, drawedTemplate, true},
 
-                { currentHost, currentHost, currentHost, absolutePath, drawedTemplate, true},
-                { currentHost, currentHost, anotherHost, absolutePath, drawedTemplate, true},
-                { currentHost, anotherHost, anotherHost, absolutePath, drawedTemplate, true},
-                { currentHost, currentHost, defaultHost, absolutePath, drawedTemplate, true},
-                { currentHost, anotherHost, defaultHost, absolutePath, drawedTemplate, true}
+                {currentHost, currentHost, currentHost, absolutePath, drawedTemplate, true},
+                {currentHost, currentHost, anotherHost, absolutePath, drawedTemplate, true},
+                {currentHost, anotherHost, anotherHost, absolutePath, drawedTemplate, true},
+                {currentHost, currentHost, defaultHost, absolutePath, drawedTemplate, true},
+                {currentHost, anotherHost, defaultHost, absolutePath, drawedTemplate, true}
         };
     }
 
     /**
-     * Method to test: {@link com.dotmarketing.portlets.htmlpageasset.business.render.HTMLPageAssetRenderedAPIImpl#getPageHtml(PageContext, HttpServletRequest, HttpServletResponse)}
-     * Given Scenario:
-     *  - Template, FileContainer and Page in the same site or different site
-     *  - Using Advance Template or not Advance Template
-     *  - Using relative or absolute path
-     * ExpectedResult: should work
+     * Method to test:
+     * {@link
+     * com.dotmarketing.portlets.htmlpageasset.business.render.HTMLPageAssetRenderedAPIImpl#getPageHtml(PageContext,
+     * HttpServletRequest, HttpServletResponse)} Given Scenario: - Template, FileContainer and Page
+     * in the same site or different site - Using Advance Template or not Advance Template - Using
+     * relative or absolute path ExpectedResult: should work
      *
      * @throws Exception
      */
@@ -1550,15 +1669,17 @@ public class HTMLPageAssetRenderedTest {
         final Template template = templateCreator.apply(templateHost, path);
         PublishFactory.publishAsset(template, systemUser, false, false);
 
-        final String pageName = "testPage-"+System.currentTimeMillis();
-        final HTMLPageAsset pageEnglishVersion = createHtmlPageAsset(pageHost, template, pageName, 1);
+        final String pageName = "testPage-" + System.currentTimeMillis();
+        final HTMLPageAsset pageEnglishVersion = createHtmlPageAsset(pageHost, template, pageName,
+                1);
 
         createMultiTree(pageEnglishVersion.getIdentifier(), container.getIdentifier(),
                 template.isDrawed() ? ContainerUUID.UUID_START_VALUE :
                         ParseContainer.getDotParserContainerUUID(ContainerUUID.UUID_START_VALUE));
 
         final HttpServletRequest mockRequest = createHttpServletRequest(pageEnglishVersion);
-        when(mockRequest.getParameter(WebKeys.PAGE_MODE_PARAMETER)).thenReturn(PageMode.LIVE.toString());
+        when(mockRequest.getParameter(WebKeys.PAGE_MODE_PARAMETER)).thenReturn(
+                PageMode.LIVE.toString());
 
         final HttpServletResponse mockResponse = mock(HttpServletResponse.class);
         final HttpSession session = createHttpSession(mockRequest);
@@ -1575,12 +1696,14 @@ public class HTMLPageAssetRenderedTest {
 
         if (shouldWork) {
             assertTrue(
-                    String.format("Should has content: using %s path and %s Template", path, template.isDrawed() ? "Drawed" : "Advanced"),
-                     html.contains("content1") && html.contains("content2")
+                    String.format("Should has content: using %s path and %s Template", path,
+                            template.isDrawed() ? "Drawed" : "Advanced"),
+                    html.contains("content1") && html.contains("content2")
             );
         } else {
             Assert.assertFalse(
-                    String.format("Should has content: using %s path and %s Template", path, template.isDrawed() ? "Drawed" : "Advanced"),
+                    String.format("Should has content: using %s path and %s Template", path,
+                            template.isDrawed() ? "Drawed" : "Advanced"),
                     html.contains("content1") && html.contains("content2")
             );
         }
@@ -1590,10 +1713,11 @@ public class HTMLPageAssetRenderedTest {
             final Host templateHost,
             final String containerPath) {
 
-        return new TemplateDataGen().title("PageContextBuilderTemplate"+System.currentTimeMillis())
-                    .host(templateHost)
-                    .withContainer(containerPath, ContainerUUID.UUID_START_VALUE)
-                    .nextPersisted();
+        return new TemplateDataGen().title(
+                        "PageContextBuilderTemplate" + System.currentTimeMillis())
+                .host(templateHost)
+                .withContainer(containerPath, ContainerUUID.UUID_START_VALUE)
+                .nextPersisted();
     }
 
     private static Template createDrawedTemplate(final Host host, final String containerPath) {
@@ -1603,7 +1727,7 @@ public class HTMLPageAssetRenderedTest {
 
         final Contentlet contentlet = new ThemeDataGen().nextPersisted();
         return new TemplateDataGen()
-                .title("PageContextBuilderTemplate"+System.currentTimeMillis())
+                .title("PageContextBuilderTemplate" + System.currentTimeMillis())
                 .host(host)
                 .drawedBody(templateLayout)
                 .theme(contentlet)
@@ -1613,7 +1737,7 @@ public class HTMLPageAssetRenderedTest {
     //Data Provider for the Widget Pre-execute code test
     @DataProvider
     public static Object[] dataProviderWidgetPreExecuteCode() {
-        return new Object[] {
+        return new Object[]{
                 new WidgetPreExecuteCodeTestCase(PageMode.EDIT_MODE),
                 new WidgetPreExecuteCodeTestCase(PageMode.PREVIEW_MODE),
                 new WidgetPreExecuteCodeTestCase(PageMode.LIVE),
@@ -1621,6 +1745,7 @@ public class HTMLPageAssetRenderedTest {
     }
 
     private static class WidgetPreExecuteCodeTestCase {
+
         final PageMode pageMode;
 
         public WidgetPreExecuteCodeTestCase(final PageMode pageMode) {
@@ -1630,62 +1755,80 @@ public class HTMLPageAssetRenderedTest {
 
     @Test
     @UseDataProvider("dataProviderWidgetPreExecuteCode")
-    public void test_WidgetPreExecuteCodeShowRegardlessPageMode(final WidgetPreExecuteCodeTestCase testCase) throws Exception {
+    public void test_WidgetPreExecuteCodeShowRegardlessPageMode(
+            final WidgetPreExecuteCodeTestCase testCase) throws Exception {
 
-        Config.setProperty("DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE", true);
-        //Update the Preexecute Field to have some code in it
-        final String preExcuteCode = "PreExecute Code Displayed";
-        ContentType contentType = TestDataUtils.getWidgetLikeContentType();
-        final Field preExecuteField = APILocator.getContentTypeFieldAPI().byContentTypeIdAndVar(contentType.id(),WidgetContentType.WIDGET_PRE_EXECUTE_FIELD_VAR);
-        APILocator.getContentTypeFieldAPI()
-                .save(FieldBuilder.builder(preExecuteField).values(preExcuteCode).build(), systemUser);
-        // Assert that the widget has set the pre-execute field
-        assertTrue(APILocator.getContentTypeFieldAPI()
-                .byContentTypeIdAndVar(contentType.id(),WidgetContentType.WIDGET_PRE_EXECUTE_FIELD_VAR)
-                .values().equals(preExcuteCode));
+        boolean defaultContentToDefaultLangOriginalValue =
+                Config.getBooleanProperty(DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE, false);
+        try {
 
-        //Create Contentlet
-        final Contentlet widgetContentlet = TestDataUtils.getWidgetContent(true,1,contentType.id());
-        addAnonymousPermissions(widgetContentlet);
+            Config.setProperty(DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE, true);
+            //Update the Preexecute Field to have some code in it
+            final String preExcuteCode = "PreExecute Code Displayed";
+            ContentType contentType = TestDataUtils.getWidgetLikeContentType();
+            final Field preExecuteField = APILocator.getContentTypeFieldAPI()
+                    .byContentTypeIdAndVar(contentType.id(),
+                            WidgetContentType.WIDGET_PRE_EXECUTE_FIELD_VAR);
+            APILocator.getContentTypeFieldAPI()
+                    .save(FieldBuilder.builder(preExecuteField).values(preExcuteCode).build(),
+                            systemUser);
+            // Assert that the widget has set the pre-execute field
+            assertTrue(APILocator.getContentTypeFieldAPI()
+                    .byContentTypeIdAndVar(contentType.id(),
+                            WidgetContentType.WIDGET_PRE_EXECUTE_FIELD_VAR)
+                    .values().equals(preExcuteCode));
 
-        //Create Container, Template and Page
-        final Container container = createContainer();
-        final Template template = createTemplate(container);
+            //Create Contentlet
+            final Contentlet widgetContentlet = TestDataUtils.getWidgetContent(true, 1,
+                    contentType.id());
+            addAnonymousPermissions(widgetContentlet);
 
-        final String pageName = "testPage-"+System.currentTimeMillis();
-        final HTMLPageAsset page = createHtmlPageAsset(template, pageName, 1);
+            //Create Container, Template and Page
+            final Container container = createContainer();
+            final Template template = createTemplate(container);
 
-        //Add contentlet to the page
-        MultiTree multiTree = new MultiTree(page.getIdentifier(), container.getIdentifier(),widgetContentlet.getIdentifier() ,UUID,0);
-        APILocator.getMultiTreeAPI().saveMultiTree(multiTree);
+            final String pageName = "testPage-" + System.currentTimeMillis();
+            final HTMLPageAsset page = createHtmlPageAsset(template, pageName, 1);
 
-        //Request page
-        final HttpServletRequest mockRequest = createHttpServletRequest(page);
-        final HttpServletResponse mockResponse = mock(HttpServletResponse.class);
-        final HttpSession session = createHttpSession(mockRequest);
-        when(session.getAttribute(WebKeys.VISITOR)).thenReturn(null);
-        when(session.getAttribute(WebKeys.CMS_USER)).thenReturn(systemUser);
-        final String html = APILocator.getHTMLPageAssetRenderedAPI().getPageHtml(
-                PageContextBuilder.builder()
-                        .setUser(systemUser)
-                        .setPageUri(page.getURI())
-                        .setPageMode(testCase.pageMode)
-                        .build(),
-                mockRequest, mockResponse);
+            //Add contentlet to the page
+            MultiTree multiTree = new MultiTree(page.getIdentifier(), container.getIdentifier(),
+                    widgetContentlet.getIdentifier(), UUID, 0);
+            APILocator.getMultiTreeAPI().saveMultiTree(multiTree);
 
-        //Page html must contains the pre-execute code
-        assertTrue("Page Mode: " + testCase.pageMode + " html: " + html,html.contains(preExcuteCode));
+            //Request page
+            final HttpServletRequest mockRequest = createHttpServletRequest(page);
+            final HttpServletResponse mockResponse = mock(HttpServletResponse.class);
+            final HttpSession session = createHttpSession(mockRequest);
+            when(session.getAttribute(WebKeys.VISITOR)).thenReturn(null);
+            when(session.getAttribute(WebKeys.CMS_USER)).thenReturn(systemUser);
+            final String html = APILocator.getHTMLPageAssetRenderedAPI().getPageHtml(
+                    PageContextBuilder.builder()
+                            .setUser(systemUser)
+                            .setPageUri(page.getURI())
+                            .setPageMode(testCase.pageMode)
+                            .build(),
+                    mockRequest, mockResponse);
+
+            //Page html must contains the pre-execute code
+            assertTrue("Page Mode: " + testCase.pageMode + " html: " + html,
+                    html.contains(preExcuteCode));
+        } finally {
+            Config.setProperty("DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE",
+                    defaultContentToDefaultLangOriginalValue);
+        }
     }
 
     @NotNull
-    private HttpServletRequest createHttpServletRequest(HTMLPageAsset pageEnglishVersion) throws DotDataException {
+    private HttpServletRequest createHttpServletRequest(HTMLPageAsset pageEnglishVersion)
+            throws DotDataException {
         final HttpServletRequest mockRequest = mock(HttpServletRequest.class);
         when(mockRequest.getParameter("host_id")).thenReturn(site.getIdentifier());
         mockRequest.setAttribute(WebKeys.HTMLPAGE_LANGUAGE, "1");
         HttpServletRequestThreadLocal.INSTANCE.setRequest(mockRequest);
         when(mockRequest.getAttribute(WebKeys.CURRENT_HOST)).thenReturn(site);
         when(mockRequest.getRequestURI()).thenReturn(pageEnglishVersion.getURI());
-        when(mockRequest.getParameter(WebKeys.PAGE_MODE_PARAMETER)).thenReturn(PageMode.EDIT_MODE.toString());
+        when(mockRequest.getParameter(WebKeys.PAGE_MODE_PARAMETER)).thenReturn(
+                PageMode.EDIT_MODE.toString());
         when(mockRequest.getAttribute(com.liferay.portal.util.WebKeys.USER)).thenReturn(systemUser);
         return mockRequest;
     }
@@ -1702,12 +1845,12 @@ public class HTMLPageAssetRenderedTest {
     }
 
     /**
-     * Method to test: {@link HTMLPageAssetRenderedAPI#getPageHtml(PageContext, HttpServletRequest, HttpServletResponse)}
-     * When: A container is add twice in a page
-     * Should: render the pge
+     * Method to test:
+     * {@link HTMLPageAssetRenderedAPI#getPageHtml(PageContext, HttpServletRequest,
+     * HttpServletResponse)} When: A container is add twice in a page Should: render the pge
      */
     @Test
-    public void containerTwiceIntoPage() throws Exception{
+    public void containerTwiceIntoPage() throws Exception {
 
         final Container container = createFileContainer();
         final Template template = createTemplate(
@@ -1715,23 +1858,24 @@ public class HTMLPageAssetRenderedTest {
                 new TestContainerUUID(container, "2")
         );
 
-        Config.setProperty(contentFallbackProperty,false);
-        Config.setProperty(pageFallbackProperty,true);
+        Config.setProperty(DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE, false);
+        Config.setProperty(DEFAULT_PAGE_TO_DEFAULT_LANGUAGE, true);
 
-        final String pageName = "test1Page-"+System.currentTimeMillis();
+        final String pageName = "test1Page-" + System.currentTimeMillis();
         final HTMLPageAsset pageEnglishVersion = createHtmlPageAsset(template, pageName, 1);
 
         createMultiTree(pageEnglishVersion.getIdentifier(), container.getIdentifier(), "1");
         createMultiTree(pageEnglishVersion.getIdentifier(), container.getIdentifier(), "2");
 
-        final List<MultiTree>  multiTrees = APILocator.getMultiTreeAPI().getContainerMultiTrees(container.getIdentifier());
+        final List<MultiTree> multiTrees = APILocator.getMultiTreeAPI()
+                .getContainerMultiTrees(container.getIdentifier());
         Assert.assertNotNull(multiTrees);
         Assert.assertEquals(8, multiTrees.size());
 
-
         //request page ENG version
         HttpServletRequest mockRequest = new MockSessionRequest(
-                new MockAttributeRequest(new MockHttpRequestIntegrationTest("localhost", "/").request()).request())
+                new MockAttributeRequest(
+                        new MockHttpRequestIntegrationTest("localhost", "/").request()).request())
                 .request();
         when(mockRequest.getParameter("host_id")).thenReturn(site.getIdentifier());
         mockRequest.setAttribute(WebKeys.HTMLPAGE_LANGUAGE, "1");
@@ -1744,16 +1888,17 @@ public class HTMLPageAssetRenderedTest {
                         .setPageMode(PageMode.LIVE)
                         .build(),
                 mockRequest, mockResponse);
-        Assert.assertEquals(html , "content1content2content1content2");
+        Assert.assertEquals(html, getNotExperimentJsCode() + "content1content2content1content2");
     }
 
     /**
-     * Method to test: {@link HTMLPageAssetRenderedAPI#getPageHtml(PageContext, HttpServletRequest, HttpServletResponse)}
-     * When: A container is add twice in a page using a TemplateLayout
-     * Should: render the pge
+     * Method to test:
+     * {@link HTMLPageAssetRenderedAPI#getPageHtml(PageContext, HttpServletRequest,
+     * HttpServletResponse)} When: A container is add twice in a page using a TemplateLayout Should:
+     * render the pge
      */
     @Test
-    public void containerTwiceIntoPageAndTemplateLayout() throws Exception{
+    public void containerTwiceIntoPageAndTemplateLayout() throws Exception {
 
         final FileAssetContainer container = createFileContainer();
         final TemplateLayout templateLayout = new TemplateLayoutDataGen()
@@ -1768,23 +1913,24 @@ public class HTMLPageAssetRenderedTest {
                 .theme(theme)
                 .nextPersisted();
 
-        Config.setProperty(contentFallbackProperty,false);
-        Config.setProperty(pageFallbackProperty,true);
+        Config.setProperty(DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE, false);
+        Config.setProperty(DEFAULT_PAGE_TO_DEFAULT_LANGUAGE, true);
 
-        final String pageName = "test1Page-"+System.currentTimeMillis();
+        final String pageName = "test1Page-" + System.currentTimeMillis();
         final HTMLPageAsset pageEnglishVersion = createHtmlPageAsset(template, pageName, 1);
 
         createMultiTree(pageEnglishVersion.getIdentifier(), container.getIdentifier(), "1");
         createMultiTree(pageEnglishVersion.getIdentifier(), container.getIdentifier(), "2");
 
-        final List<MultiTree>  multiTrees = APILocator.getMultiTreeAPI().getContainerMultiTrees(container.getIdentifier());
+        final List<MultiTree> multiTrees = APILocator.getMultiTreeAPI()
+                .getContainerMultiTrees(container.getIdentifier());
         Assert.assertNotNull(multiTrees);
         Assert.assertEquals(8, multiTrees.size());
 
-
         //request page ENG version
         HttpServletRequest mockRequest = new MockSessionRequest(
-                new MockAttributeRequest(new MockHttpRequestIntegrationTest("localhost", "/").request()).request())
+                new MockAttributeRequest(
+                        new MockHttpRequestIntegrationTest("localhost", "/").request()).request())
                 .request();
         when(mockRequest.getParameter("host_id")).thenReturn(site.getIdentifier());
         mockRequest.setAttribute(WebKeys.HTMLPAGE_LANGUAGE, "1");
@@ -1801,7 +1947,7 @@ public class HTMLPageAssetRenderedTest {
     }
 
     @Test
-    public void pageWithSidebarShouldRender() throws Exception{
+    public void pageWithSidebarShouldRender() throws Exception {
 
         final FileAssetContainer container = createFileContainer();
         final TemplateLayout templateLayout = new TemplateLayoutDataGen()
@@ -1816,7 +1962,7 @@ public class HTMLPageAssetRenderedTest {
                 .theme(theme)
                 .nextPersisted();
 
-        final String pageName = "test_page_with_sidebar-"+System.currentTimeMillis();
+        final String pageName = "test_page_with_sidebar-" + System.currentTimeMillis();
         final HTMLPageAsset pageEnglishVersion = createHtmlPageAsset(template, pageName, 1);
 
         createMultiTree(pageEnglishVersion.getIdentifier(), container.getIdentifier(), "1");
@@ -1824,7 +1970,8 @@ public class HTMLPageAssetRenderedTest {
 
         //request page ENG version
         HttpServletRequest mockRequest = new MockSessionRequest(
-                new MockAttributeRequest(new MockHttpRequestIntegrationTest("localhost", "/").request()).request())
+                new MockAttributeRequest(
+                        new MockHttpRequestIntegrationTest("localhost", "/").request()).request())
                 .request();
         when(mockRequest.getParameter("host_id")).thenReturn(site.getIdentifier());
         mockRequest.setAttribute(WebKeys.HTMLPAGE_LANGUAGE, "1");
@@ -1844,28 +1991,32 @@ public class HTMLPageAssetRenderedTest {
         final int secondIndex = html.indexOf(toFind, firstIndex + toFind.length());
         final int thirdIndex = html.indexOf(toFind, secondIndex + toFind.length());
 
-        assertTrue(firstIndex != -1 && secondIndex != -1 && firstIndex != secondIndex && thirdIndex == -1);
+        assertTrue(firstIndex != -1 && secondIndex != -1 && firstIndex != secondIndex
+                && thirdIndex == -1);
     }
 
     /**
-     * Method to test: {@link HTMLPageAssetRenderedAPI#getPageHtml(PageContext, HttpServletRequest, HttpServletResponse)}
-     * When: A page has a template that is a file template design
-     * Should: render the page
+     * Method to test:
+     * {@link HTMLPageAssetRenderedAPI#getPageHtml(PageContext, HttpServletRequest,
+     * HttpServletResponse)} When: A page has a template that is a file template design Should:
+     * render the page
      */
     @Test
-    public void pageWithFileTemplateDesignShouldRender() throws Exception{
+    public void pageWithFileTemplateDesignShouldRender() throws Exception {
         final Host host = new SiteDataGen().nextPersisted();
 
         final FileAssetTemplate fileAssetTemplate = new TemplateAsFileDataGen()
                 .host(host)
                 .nextPersisted();
 
-        final String pageName = "test_page_with_filetemplatedesign-"+System.currentTimeMillis();
-        final HTMLPageAsset pageEnglishVersion = createHtmlPageAsset(host,fileAssetTemplate, pageName, 1);
+        final String pageName = "test_page_with_filetemplatedesign-" + System.currentTimeMillis();
+        final HTMLPageAsset pageEnglishVersion = createHtmlPageAsset(host, fileAssetTemplate,
+                pageName, 1);
 
         //request page ENG version
         HttpServletRequest mockRequest = new MockSessionRequest(
-                new MockAttributeRequest(new MockHttpRequestIntegrationTest("localhost", "/").request()).request())
+                new MockAttributeRequest(
+                        new MockHttpRequestIntegrationTest("localhost", "/").request()).request())
                 .request();
         when(mockRequest.getParameter("host_id")).thenReturn(host.getIdentifier());
         mockRequest.setAttribute(WebKeys.HTMLPAGE_LANGUAGE, "1");
@@ -1883,12 +2034,13 @@ public class HTMLPageAssetRenderedTest {
     }
 
     /**
-     * Method to test: {@link HTMLPageAssetRenderedAPI#getPageHtml(PageContext, HttpServletRequest, HttpServletResponse)}
-     * When: A page has a template that is a file template advanced
-     * Should: render the page
+     * Method to test:
+     * {@link HTMLPageAssetRenderedAPI#getPageHtml(PageContext, HttpServletRequest,
+     * HttpServletResponse)} When: A page has a template that is a file template advanced Should:
+     * render the page
      */
     @Test
-    public void pageWithFileTemplateAdvancedShouldRender() throws Exception{
+    public void pageWithFileTemplateAdvancedShouldRender() throws Exception {
         final Host host = new SiteDataGen().nextPersisted();
 
         final FileAssetTemplate fileAssetTemplate = new TemplateAsFileDataGen()
@@ -1896,12 +2048,14 @@ public class HTMLPageAssetRenderedTest {
                 .host(host)
                 .nextPersisted();
 
-        final String pageName = "test_page_with_filetemplateadvanced-"+System.currentTimeMillis();
-        final HTMLPageAsset pageEnglishVersion = createHtmlPageAsset(host,fileAssetTemplate, pageName, 1);
+        final String pageName = "test_page_with_filetemplateadvanced-" + System.currentTimeMillis();
+        final HTMLPageAsset pageEnglishVersion = createHtmlPageAsset(host, fileAssetTemplate,
+                pageName, 1);
 
         //request page ENG version
         HttpServletRequest mockRequest = new MockSessionRequest(
-                new MockAttributeRequest(new MockHttpRequestIntegrationTest("localhost", "/").request()).request())
+                new MockAttributeRequest(
+                        new MockHttpRequestIntegrationTest("localhost", "/").request()).request())
                 .request();
         when(mockRequest.getParameter("host_id")).thenReturn(host.getIdentifier());
         mockRequest.setAttribute(WebKeys.HTMLPAGE_LANGUAGE, "1");
@@ -1919,12 +2073,13 @@ public class HTMLPageAssetRenderedTest {
     }
 
     /**
-     * Method to test: {@link HTMLPageAssetRenderedAPI#getPageHtml(PageContext, HttpServletRequest, HttpServletResponse)}
-     * When: A page has multiple personas version, and the container has a MAx contentlet equals to 1
-     * Should: render the page
+     * Method to test:
+     * {@link HTMLPageAssetRenderedAPI#getPageHtml(PageContext, HttpServletRequest,
+     * HttpServletResponse)} When: A page has multiple personas version, and the container has a MAx
+     * contentlet equals to 1 Should: render the page
      */
     @Test
-    public void pageWithMultiplePersona() throws Exception{
+    public void pageWithMultiplePersona() throws Exception {
 
         final Container container = createContainer(1);
 
@@ -1939,7 +2094,7 @@ public class HTMLPageAssetRenderedTest {
                 .theme(theme)
                 .nextPersisted();
 
-        final String pageName = "test1Page-"+System.currentTimeMillis();
+        final String pageName = "test1Page-" + System.currentTimeMillis();
         final HTMLPageAsset page = createHtmlPageAsset(template, pageName, 1);
 
         final Persona defaultPersona = APILocator.getPersonaAPI().getDefaultPersona();
@@ -1953,7 +2108,8 @@ public class HTMLPageAssetRenderedTest {
                 .setProperty("body", defaultPersona.getKeyTag())
                 .nextPersisted();
 
-        final Contentlet notDefaultPersonaContentlet = new ContentletDataGen(contentGenericType.id())
+        final Contentlet notDefaultPersonaContentlet = new ContentletDataGen(
+                contentGenericType.id())
                 .languageId(1)
                 .folder(folder)
                 .host(site)
@@ -1980,12 +2136,11 @@ public class HTMLPageAssetRenderedTest {
                 .setInstanceID("1")
                 .nextPersisted();
 
-
         //request page ENG version
         HttpServletRequest mockRequest = new MockSessionRequest(
                 new MockAttributeRequest(
                         new MockHttpRequestIntegrationTest("localhost", "/").request()).request()
-            ).request();
+        ).request();
 
         when(mockRequest.getParameter("host_id")).thenReturn(site.getIdentifier());
         mockRequest.setAttribute(WebKeys.HTMLPAGE_LANGUAGE, "1");
@@ -2005,17 +2160,19 @@ public class HTMLPageAssetRenderedTest {
         visitor.setPersona(notDefaultPersona);
         mockRequest.getSession().setAttribute(WebKeys.VISITOR, visitor);
 
-        final String htmlWithNoDefaultPersona = APILocator.getHTMLPageAssetRenderedAPI().getPageHtml(
-                PageContextBuilder.builder()
-                        .setUser(systemUser)
-                        .setPageUri(page.getURI())
-                        .setPageMode(PageMode.LIVE)
-                        .build(),
-                mockRequest, mockResponse);
+        final String htmlWithNoDefaultPersona = APILocator.getHTMLPageAssetRenderedAPI()
+                .getPageHtml(
+                        PageContextBuilder.builder()
+                                .setUser(systemUser)
+                                .setPageUri(page.getURI())
+                                .setPageMode(PageMode.LIVE)
+                                .build(),
+                        mockRequest, mockResponse);
         assertTrue(htmlWithNoDefaultPersona.contains(notDefaultPersona.getKeyTag()));
     }
 
-    private static class TestContainerUUID{
+    private static class TestContainerUUID {
+
         Container container;
         String UUID;
 
@@ -2023,5 +2180,9 @@ public class HTMLPageAssetRenderedTest {
             this.container = container;
             this.UUID = UUID;
         }
+    }
+
+    private String getNotExperimentJsCode() {
+        return "<SCRIPT>localStorage.removeItem('experiment_data');</SCRIPT>\n";
     }
 }

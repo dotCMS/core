@@ -1,6 +1,7 @@
 import { TestBed } from '@angular/core/testing';
 import { UrlSegment } from '@angular/router';
-import { DotRouterService } from '@services/dot-router/dot-router.service';
+
+import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
 
 import { DotTemplateGuard } from './dot-template.guard';
 

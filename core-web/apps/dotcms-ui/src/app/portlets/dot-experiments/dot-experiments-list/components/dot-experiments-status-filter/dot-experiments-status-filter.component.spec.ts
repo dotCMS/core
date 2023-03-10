@@ -1,15 +1,15 @@
-import { DotExperimentsStatusFilterComponent } from './dot-experiments-status-filter.component';
 import { createComponentFactory, Spectator } from '@ngneat/spectator';
 
-import { MultiSelect, MultiSelectModule } from 'primeng/multiselect';
-import { DotMessageService } from '@services/dot-message/dot-messages.service';
 import { FormsModule } from '@angular/forms';
-import {
-    DotExperimentStatusList,
-    ExperimentsStatusList
-} from '@portlets/dot-experiments/shared/models/dot-experiments-constants';
+
+import { MultiSelect, MultiSelectModule } from 'primeng/multiselect';
+
+import { DotMessageService } from '@dotcms/data-access';
+import { DotExperimentStatusList, ExperimentsStatusList } from '@dotcms/dotcms-models';
+import { MockDotMessageService } from '@dotcms/utils-testing';
 import { DotMessagePipeModule } from '@pipes/dot-message/dot-message-pipe.module';
-import { MockDotMessageService } from '@tests/dot-message-service.mock';
+
+import { DotExperimentsStatusFilterComponent } from './dot-experiments-status-filter.component';
 
 const messageServiceMock = new MockDotMessageService({
     'experimentspage.experiment.status.placeholder': 'Select one Filter'

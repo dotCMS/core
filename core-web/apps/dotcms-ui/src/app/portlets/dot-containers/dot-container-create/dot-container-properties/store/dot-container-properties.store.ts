@@ -1,22 +1,25 @@
-import { Injectable } from '@angular/core';
 import { ComponentStore } from '@ngrx/component-store';
+import * as _ from 'lodash';
 import { Observable, of, pipe } from 'rxjs';
-import { catchError, filter, pluck, switchMap, take, tap } from 'rxjs/operators';
+
 import { HttpErrorResponse } from '@angular/common/http';
+import { Injectable } from '@angular/core';
+import { ActivatedRoute } from '@angular/router';
+
+import { catchError, filter, pluck, switchMap, take, tap } from 'rxjs/operators';
+
+import { DotGlobalMessageService } from '@components/_common/dot-global-message/dot-global-message.service';
+import { DotHttpErrorManagerService } from '@dotcms/app/api/services/dot-http-error-manager/dot-http-error-manager.service';
+import { DotContentTypeService, DotMessageService } from '@dotcms/data-access';
 import {
+    DotCMSContentType,
     DotContainer,
     DotContainerEntity,
     DotContainerPayload,
     DotContainerStructure
-} from '@dotcms/app/shared/models/container/dot-container.model';
-import { DotMessageService } from '@services/dot-message/dot-messages.service';
-import { DotGlobalMessageService } from '@components/_common/dot-global-message/dot-global-message.service';
+} from '@dotcms/dotcms-models';
 import { DotContainersService } from '@services/dot-containers/dot-containers.service';
-import { DotHttpErrorManagerService } from '@dotcms/app/api/services/dot-http-error-manager/dot-http-error-manager.service';
 import { DotRouterService } from '@services/dot-router/dot-router.service';
-import { ActivatedRoute } from '@angular/router';
-import { DotCMSContentType } from '@dotcms/dotcms-models';
-import { DotContentTypeService } from '@dotcms/app/api/services/dot-content-type';
 
 export interface DotContainerPropertiesState {
     showPrePostLoopInput: boolean;
@@ -25,7 +28,9 @@ export interface DotContainerPropertiesState {
     container: DotContainer;
     containerStructures: DotContainerStructure[];
     contentTypes: DotCMSContentType[];
+    originalForm: DotContainerPayload;
     apiLink: string;
+    invalidForm: boolean;
 }
 
 @Injectable()
@@ -46,7 +51,9 @@ export class DotContainerPropertiesStore extends ComponentStore<DotContainerProp
             containerStructures: [],
             contentTypes: [],
             container: null,
-            apiLink: ''
+            originalForm: null,
+            apiLink: '',
+            invalidForm: true
         });
         this.activatedRoute.data
             .pipe(
@@ -56,9 +63,9 @@ export class DotContainerPropertiesStore extends ComponentStore<DotContainerProp
             )
             .subscribe((containerEntity: DotContainerEntity) => {
                 const { container, contentTypes } = containerEntity;
-                if (container && (container.preLoop || container.postLoop)) {
+                if (container && contentTypes?.length > 0) {
                     this.updatePrePostLoopAndContentTypeVisibility({
-                        showPrePostLoopInput: true,
+                        showPrePostLoopInput: !!container.preLoop || !!container.postLoop,
                         isContentTypeVisible: true,
                         container: container,
                         containerStructures: contentTypes ?? []
@@ -118,20 +125,59 @@ export class DotContainerPropertiesStore extends ComponentStore<DotContainerProp
         }
     );
 
-    readonly updateIsContentTypeButtonEnabled = this.updater<boolean>(
-        (state: DotContainerPropertiesState, isContentTypeButtonEnabled: boolean) => {
-            return {
-                ...state,
-                isContentTypeButtonEnabled
-            };
-        }
-    );
-
     readonly updateContentTypeVisibility = this.updater<boolean>(
         (state: DotContainerPropertiesState, isContentTypeVisible: boolean) => {
             return {
                 ...state,
                 isContentTypeVisible
+            };
+        }
+    );
+
+    /**
+     * Update form status
+     * @memberof DotContainerPropertiesStore
+     */
+    readonly updateFormStatus = this.updater<{
+        invalidForm: boolean;
+        container: DotContainerPayload;
+    }>((state: DotContainerPropertiesState, { invalidForm, container }) => {
+        return {
+            ...state,
+            isContentTypeButtonEnabled: container.maxContentlets > 0,
+            invalidForm: _.isEqual(state.originalForm, container) || invalidForm
+        };
+    });
+
+    /**
+     * Update Original Form
+     * @memberof DotContainerPropertiesStore
+     */
+    readonly updateOriginalFormState = this.updater<DotContainerPayload>(
+        (state: DotContainerPropertiesState, originalForm: DotContainerPayload) => {
+            return {
+                ...state,
+                originalForm: originalForm
+            };
+        }
+    );
+
+    /**
+     * Update Content Type and PrePost loop visibility
+     * @memberof DotContainerPropertiesStore
+     */
+    readonly updateContentTypeAndPrePostLoopVisibility = this.updater<{
+        isContentTypeVisible: boolean;
+        showPrePostLoopInput: boolean;
+    }>(
+        (
+            state: DotContainerPropertiesState,
+            { isContentTypeVisible, showPrePostLoopInput }: DotContainerPropertiesState
+        ) => {
+            return {
+                ...state,
+                isContentTypeVisible,
+                showPrePostLoopInput
             };
         }
     );
@@ -171,7 +217,6 @@ export class DotContainerPropertiesStore extends ComponentStore<DotContainerProp
             }),
             tap((contentTypes: DotCMSContentType[]) => {
                 this.updateContentTypes(contentTypes);
-                this.updateContentTypeVisibility(true);
             }),
             catchError((err: HttpErrorResponse) => {
                 this.dotHttpErrorManagerService.handle(err);
@@ -216,6 +261,7 @@ export class DotContainerPropertiesStore extends ComponentStore<DotContainerProp
                     this.dotMessageService.get('message.container.updated')
                 );
                 this.updateContainerState(container);
+                this.dotRouterService.goToURL('/containers');
             }),
             catchError((err: HttpErrorResponse) => {
                 this.dotGlobalMessageService.error(err.statusText);
@@ -232,6 +278,8 @@ export class DotContainerPropertiesStore extends ComponentStore<DotContainerProp
      * @returns The API link for the container.
      */
     private getApiLink(identifier: string): string {
-        return identifier ? `/api/v1/containers/${identifier}/working` : '';
+        return identifier
+            ? `/api/v1/containers/working?containerId=${identifier}&includeContentType=true`
+            : '';
     }
 }

@@ -1,4 +1,5 @@
 import { Directive, ElementRef, Input, OnDestroy, OnInit } from '@angular/core';
+
 import { Editor } from '@tiptap/core';
 import { FloatingMenuPlugin, FloatingMenuPluginProps } from '@tiptap/extension-floating-menu';
 

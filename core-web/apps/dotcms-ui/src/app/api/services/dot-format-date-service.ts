@@ -1,11 +1,10 @@
-import { Injectable } from '@angular/core';
-import { differenceInCalendarDays, isValid, format, formatDistanceStrict, parse } from 'date-fns';
-import { utcToZonedTime, format as formatTZ } from 'date-fns-tz';
-import { DotcmsConfigService, DotTimeZone } from '@dotcms/dotcms-js';
+import { differenceInCalendarDays, format, formatDistanceStrict, isValid, parse } from 'date-fns';
+import { format as formatTZ, utcToZonedTime } from 'date-fns-tz';
 
-export interface DotLocaleOptions {
-    locale: Locale;
-}
+import { Injectable } from '@angular/core';
+
+import { DotcmsConfigService, DotTimeZone } from '@dotcms/dotcms-js';
+import { DotLocaleOptions } from '@dotcms/dotcms-models';
 
 // Created outside of the service so it can be used on date.validator.ts
 export function _isValid(date: string, formatPattern: string) {
@@ -105,9 +104,10 @@ export class DotFormatDateService {
     }
 
     /**
-     * Gets relative strict time from on a specific date passed
+     * Gets relative strict time from on a specific date passed.
+     * Date Passed must be formatted as unix timestamp ==> New Date().getTime()
      *
-     * @param {string} time
+     * @param {string} time Formatted as unix timestamp
      * @param {Date} baseDate
      * @returns {string}
      * @memberof DotFormatDateService

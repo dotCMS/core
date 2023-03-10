@@ -1,23 +1,27 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { RouterTestingModule } from '@angular/router/testing';
-import { IframeOverlayService } from './../service/iframe-overlay.service';
-import { DotLoadingIndicatorService } from './../dot-loading-indicator/dot-loading-indicator.service';
-import { ComponentFixture, waitForAsync, fakeAsync, tick } from '@angular/core/testing';
 import { Component, DebugElement } from '@angular/core';
+import { ComponentFixture, fakeAsync, TestBed, tick, waitForAsync } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
-import { MockDotUiColorsService } from '../../../../../test/dot-test-bed';
-import { IframeComponent } from './iframe.component';
-import { DotcmsEventsService, LoggerService, LoginService, StringUtils } from '@dotcms/dotcms-js';
-import { DotIframeService } from '../service/dot-iframe/dot-iframe.service';
-import { DotUiColorsService } from '@services/dot-ui-colors/dot-ui-colors.service';
+import { RouterTestingModule } from '@angular/router/testing';
+
 import { DotOverlayMaskModule } from '@components/_common/dot-overlay-mask/dot-overlay-mask.module';
-import { DotcmsEventsServiceMock } from '@tests/dotcms-events-service.mock';
-import { TestBed } from '@angular/core/testing';
+import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
+import { DotUiColorsService } from '@dotcms/app/api/services/dot-ui-colors/dot-ui-colors.service';
+import { DotcmsEventsService, LoggerService, LoginService, StringUtils } from '@dotcms/dotcms-js';
+import { DotLoadingIndicatorService } from '@dotcms/utils';
+import {
+    DotcmsEventsServiceMock,
+    LoginServiceMock,
+    MockDotRouterService
+} from '@dotcms/utils-testing';
 import { DotPipesModule } from '@pipes/dot-pipes.module';
-import { DotRouterService } from '@services/dot-router/dot-router.service';
-import { MockDotRouterService } from '@tests/dot-router-service.mock';
-import { LoginServiceMock } from '@tests/login-service.mock';
+
+import { IframeOverlayService } from './../service/iframe-overlay.service';
+import { IframeComponent } from './iframe.component';
+
+import { MockDotUiColorsService } from '../../../../../test/dot-test-bed';
+import { DotIframeService } from '../service/dot-iframe/dot-iframe.service';
 
 const fakeHtmlEl = {
     hello: 'html'
@@ -39,25 +43,23 @@ describe('IframeComponent', () => {
     const dotcmsEventsService = new DotcmsEventsServiceMock();
     let dotRouterService: DotRouterService;
 
-    beforeEach(
-        waitForAsync(() => {
-            TestBed.configureTestingModule({
-                declarations: [IframeComponent, MockDotLoadingIndicatorComponent],
-                imports: [RouterTestingModule, DotOverlayMaskModule, DotPipesModule],
-                providers: [
-                    DotLoadingIndicatorService,
-                    IframeOverlayService,
-                    DotIframeService,
-                    { provide: LoginService, useClass: LoginServiceMock },
-                    { provide: DotcmsEventsService, useValue: dotcmsEventsService },
-                    { provide: DotRouterService, useClass: MockDotRouterService },
-                    { provide: DotUiColorsService, useClass: MockDotUiColorsService },
-                    LoggerService,
-                    StringUtils
-                ]
-            });
-        })
-    );
+    beforeEach(waitForAsync(() => {
+        TestBed.configureTestingModule({
+            declarations: [IframeComponent, MockDotLoadingIndicatorComponent],
+            imports: [RouterTestingModule, DotOverlayMaskModule, DotPipesModule],
+            providers: [
+                DotLoadingIndicatorService,
+                IframeOverlayService,
+                DotIframeService,
+                { provide: LoginService, useClass: LoginServiceMock },
+                { provide: DotcmsEventsService, useValue: dotcmsEventsService },
+                { provide: DotRouterService, useClass: MockDotRouterService },
+                { provide: DotUiColorsService, useClass: MockDotUiColorsService },
+                LoggerService,
+                StringUtils
+            ]
+        });
+    }));
 
     beforeEach(() => {
         fixture = TestBed.createComponent(IframeComponent);

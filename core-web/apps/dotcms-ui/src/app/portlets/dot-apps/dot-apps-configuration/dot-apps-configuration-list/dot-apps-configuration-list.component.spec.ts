@@ -1,15 +1,17 @@
-import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing';
-import { MockDotMessageService } from '@tests/dot-message-service.mock';
-import { DotMessageService } from '@services/dot-message/dot-messages.service';
 import { CommonModule } from '@angular/common';
+import { HttpClientTestingModule } from '@angular/common/http/testing';
+import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
+
+import { ConfirmationService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
+
+import { DotAlertConfirmService, DotMessageService } from '@dotcms/data-access';
+import { MockDotMessageService } from '@dotcms/utils-testing';
+import { DotPipesModule } from '@pipes/dot-pipes.module';
+
 import { DotAppsConfigurationItemModule } from './dot-apps-configuration-item/dot-apps-configuration-item.module';
 import { DotAppsConfigurationListComponent } from './dot-apps-configuration-list.component';
-import { HttpClientTestingModule } from '@angular/common/http/testing';
-import { DotPipesModule } from '@pipes/dot-pipes.module';
-import { DotAlertConfirmService } from '@services/dot-alert-confirm';
-import { ConfirmationService } from 'primeng/api';
 
 const messages = {
     'apps.configurations.show.more': 'SHOW MORE'
@@ -34,30 +36,28 @@ describe('DotAppsConfigurationListComponent', () => {
 
     const messageServiceMock = new MockDotMessageService(messages);
 
-    beforeEach(
-        waitForAsync(() => {
-            TestBed.configureTestingModule({
-                imports: [
-                    CommonModule,
-                    ButtonModule,
-                    DotAppsConfigurationItemModule,
-                    HttpClientTestingModule,
-                    DotPipesModule
-                ],
-                declarations: [DotAppsConfigurationListComponent],
-                providers: [
-                    { provide: DotMessageService, useValue: messageServiceMock },
-                    DotAlertConfirmService,
-                    ConfirmationService
-                ]
-            });
+    beforeEach(waitForAsync(() => {
+        TestBed.configureTestingModule({
+            imports: [
+                CommonModule,
+                ButtonModule,
+                DotAppsConfigurationItemModule,
+                HttpClientTestingModule,
+                DotPipesModule
+            ],
+            declarations: [DotAppsConfigurationListComponent],
+            providers: [
+                { provide: DotMessageService, useValue: messageServiceMock },
+                DotAlertConfirmService,
+                ConfirmationService
+            ]
+        });
 
-            fixture = TestBed.createComponent(DotAppsConfigurationListComponent);
-            component = fixture.debugElement.componentInstance;
-            component.itemsPerPage = 40;
-            component.siteConfigurations = sites;
-        })
-    );
+        fixture = TestBed.createComponent(DotAppsConfigurationListComponent);
+        component = fixture.debugElement.componentInstance;
+        component.itemsPerPage = 40;
+        component.siteConfigurations = sites;
+    }));
 
     describe('With more data to load', () => {
         beforeEach(() => {

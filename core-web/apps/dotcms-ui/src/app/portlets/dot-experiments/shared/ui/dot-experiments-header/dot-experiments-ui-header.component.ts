@@ -1,8 +1,10 @@
-import { ChangeDetectionStrategy, Component, EventEmitter, Input, Output } from '@angular/core';
-import { DotIconModule } from '@dotcms/ui';
-import { SkeletonModule } from 'primeng/skeleton';
 import { CommonModule } from '@angular/common';
-import { RouterLinkWithHref } from '@angular/router';
+import { ChangeDetectionStrategy, Component, EventEmitter, Input, Output } from '@angular/core';
+import { RouterLink } from '@angular/router';
+
+import { SkeletonModule } from 'primeng/skeleton';
+
+import { DotIconModule } from '@dotcms/ui';
 
 @Component({
     standalone: true,
@@ -10,7 +12,7 @@ import { RouterLinkWithHref } from '@angular/router';
     templateUrl: './dot-experiments-ui-header.component.html',
     styleUrls: ['./dot-experiments-ui-header.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush,
-    imports: [DotIconModule, SkeletonModule, CommonModule, RouterLinkWithHref]
+    imports: [DotIconModule, SkeletonModule, CommonModule, RouterLink]
 })
 export class DotExperimentsUiHeaderComponent {
     @Input()
@@ -20,5 +22,5 @@ export class DotExperimentsUiHeaderComponent {
     isLoading: boolean;
 
     @Output()
-    goBack = new EventEmitter<void>();
+    goBack = new EventEmitter<boolean>();
 }

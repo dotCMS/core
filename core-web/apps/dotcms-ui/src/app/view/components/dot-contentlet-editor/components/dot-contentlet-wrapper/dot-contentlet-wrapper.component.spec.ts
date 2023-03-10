@@ -1,12 +1,23 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { of } from 'rxjs';
-import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
-import { By, Title } from '@angular/platform-browser';
-import { DebugElement } from '@angular/core';
-import { RouterTestingModule } from '@angular/router/testing';
-import { waitForAsync, ComponentFixture, TestBed } from '@angular/core/testing';
 
+import { HttpClientTestingModule } from '@angular/common/http/testing';
+import { DebugElement } from '@angular/core';
+import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing';
+import { By, Title } from '@angular/platform-browser';
+import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
+import { RouterTestingModule } from '@angular/router/testing';
+
+import { ConfirmationService } from 'primeng/api';
+
+import { DotIframeService } from '@components/_common/iframe/service/dot-iframe/dot-iframe.service';
+import { DotHttpErrorManagerService } from '@dotcms/app/api/services/dot-http-error-manager/dot-http-error-manager.service';
+import { DotMenuService } from '@dotcms/app/api/services/dot-menu.service';
+import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
+import { DotUiColorsService } from '@dotcms/app/api/services/dot-ui-colors/dot-ui-colors.service';
+import { dotEventSocketURLFactory, MockDotUiColorsService } from '@dotcms/app/test/dot-test-bed';
+import { DotAlertConfirmService, DotEventsService, DotMessageService } from '@dotcms/data-access';
 import {
     CoreWebService,
     DotcmsConfigService,
@@ -17,24 +28,17 @@ import {
     LoginService,
     StringUtils
 } from '@dotcms/dotcms-js';
+import {
+    CoreWebServiceMock,
+    LoginServiceMock,
+    MockDotMessageService,
+    MockDotRouterService
+} from '@dotcms/utils-testing';
 
-import { DotContentletEditorService } from '../../services/dot-contentlet-editor.service';
 import { DotContentletWrapperComponent } from './dot-contentlet-wrapper.component';
+
 import { DotIframeDialogModule } from '../../../dot-iframe-dialog/dot-iframe-dialog.module';
-import { DotMenuService } from '@services/dot-menu.service';
-import { DotMessageService } from '@services/dot-message/dot-messages.service';
-import { LoginServiceMock } from '../../../../../test/login-service.mock';
-import { MockDotMessageService } from '../../../../../test/dot-message-service.mock';
-import { DotAlertConfirmService } from '@services/dot-alert-confirm';
-import { DotRouterService } from '@services/dot-router/dot-router.service';
-import { DotIframeService } from '@components/_common/iframe/service/dot-iframe/dot-iframe.service';
-import { CoreWebServiceMock } from '@tests/core-web.service.mock';
-import { HttpClientTestingModule } from '@angular/common/http/testing';
-import { DotHttpErrorManagerService } from '@services/dot-http-error-manager/dot-http-error-manager.service';
-import { ConfirmationService } from 'primeng/api';
-import { MockDotRouterService } from '@tests/dot-router-service.mock';
-import { DotUiColorsService } from '@services/dot-ui-colors/dot-ui-colors.service';
-import { dotEventSocketURLFactory, MockDotUiColorsService } from '@tests/dot-test-bed';
+import { DotContentletEditorService } from '../../services/dot-contentlet-editor.service';
 
 const messageServiceMock = new MockDotMessageService({
     'editcontentlet.lose.dialog.header': 'Header',
@@ -53,60 +57,59 @@ describe('DotContentletWrapperComponent', () => {
     let titleService: Title;
     let dotIframeService: DotIframeService;
 
-    beforeEach(
-        waitForAsync(() => {
-            TestBed.configureTestingModule({
-                declarations: [DotContentletWrapperComponent],
-                providers: [
-                    DotContentletEditorService,
-                    DotIframeService,
-                    DotAlertConfirmService,
-                    ConfirmationService,
-                    DotcmsEventsService,
-                    DotEventsSocket,
-                    DotcmsConfigService,
-                    LoggerService,
-                    StringUtils,
-                    Title,
-                    { provide: DotEventsSocketURL, useFactory: dotEventSocketURLFactory },
-                    {
-                        provide: DotHttpErrorManagerService,
-                        useValue: {
-                            handle: jasmine.createSpy().and.returnValue(of({}))
+    beforeEach(waitForAsync(() => {
+        TestBed.configureTestingModule({
+            declarations: [DotContentletWrapperComponent],
+            providers: [
+                DotContentletEditorService,
+                DotIframeService,
+                DotAlertConfirmService,
+                DotEventsService,
+                ConfirmationService,
+                DotcmsEventsService,
+                DotEventsSocket,
+                DotcmsConfigService,
+                LoggerService,
+                StringUtils,
+                Title,
+                { provide: DotEventsSocketURL, useFactory: dotEventSocketURLFactory },
+                {
+                    provide: DotHttpErrorManagerService,
+                    useValue: {
+                        handle: jasmine.createSpy().and.returnValue(of({}))
+                    }
+                },
+                {
+                    provide: LoginService,
+                    useClass: LoginServiceMock
+                },
+                {
+                    provide: DotMenuService,
+                    useValue: {
+                        getDotMenuId() {
+                            return of('999');
                         }
-                    },
-                    {
-                        provide: LoginService,
-                        useClass: LoginServiceMock
-                    },
-                    {
-                        provide: DotMenuService,
-                        useValue: {
-                            getDotMenuId() {
-                                return of('999');
-                            }
-                        }
-                    },
-                    {
-                        provide: DotMessageService,
-                        useValue: messageServiceMock
-                    },
-                    {
-                        provide: CoreWebService,
-                        useClass: CoreWebServiceMock
-                    },
-                    { provide: DotRouterService, useClass: MockDotRouterService },
-                    { provide: DotUiColorsService, useClass: MockDotUiColorsService }
-                ],
-                imports: [
-                    DotIframeDialogModule,
-                    RouterTestingModule,
-                    BrowserAnimationsModule,
-                    HttpClientTestingModule
-                ]
-            });
-        })
-    );
+                    }
+                },
+                {
+                    provide: DotMessageService,
+                    useValue: messageServiceMock
+                },
+                {
+                    provide: CoreWebService,
+                    useClass: CoreWebServiceMock
+                },
+                { provide: DotRouterService, useClass: MockDotRouterService },
+                { provide: DotUiColorsService, useClass: MockDotUiColorsService }
+            ],
+            imports: [
+                DotIframeDialogModule,
+                RouterTestingModule,
+                BrowserAnimationsModule,
+                HttpClientTestingModule
+            ]
+        });
+    }));
 
     beforeEach(() => {
         fixture = TestBed.createComponent(DotContentletWrapperComponent);

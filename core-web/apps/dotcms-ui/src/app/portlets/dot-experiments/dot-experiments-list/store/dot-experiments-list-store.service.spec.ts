@@ -1,26 +1,30 @@
-import { TestBed } from '@angular/core/testing';
-
-import { DotExperimentsListStore, DotExperimentsState } from './dot-experiments-list-store.service';
-
-import { LoadingState } from '@portlets/shared/models/shared-models';
-import {
-    DotExperiment,
-    GroupedExperimentByStatus
-} from '../../shared/models/dot-experiments.model';
-import { DotExperimentsService } from '@portlets/dot-experiments/shared/services/dot-experiments.service';
 import { of } from 'rxjs';
+
 import { HttpClientTestingModule } from '@angular/common/http/testing';
-import {
-    DotExperimentStatusList,
-    TrafficProportionTypes
-} from '@portlets/dot-experiments/shared/models/dot-experiments-constants';
-import { DotMessagePipeModule } from '@pipes/dot-message/dot-message-pipe.module';
-import { MockDotMessageService } from '@tests/dot-message-service.mock';
-import { DotMessageService } from '@services/dot-message/dot-messages.service';
-import { MessageService } from 'primeng/api';
+import { TestBed } from '@angular/core/testing';
 import { ActivatedRoute } from '@angular/router';
 import { RouterTestingModule } from '@angular/router/testing';
-import { ExperimentMocks } from '@portlets/dot-experiments/test/mocks';
+
+import { MessageService } from 'primeng/api';
+
+import { DotMessageService } from '@dotcms/data-access';
+import {
+    ComponentStatus,
+    DotExperiment,
+    DotExperimentStatusList,
+    GroupedExperimentByStatus,
+    TrafficProportionTypes
+} from '@dotcms/dotcms-models';
+import { MockDotMessageService } from '@dotcms/utils-testing';
+import { DotMessagePipeModule } from '@pipes/dot-message/dot-message-pipe.module';
+import { DotExperimentsService } from '@portlets/dot-experiments/shared/services/dot-experiments.service';
+import {
+    getExperimentAllMocks,
+    getExperimentMock,
+    GoalsMock
+} from '@portlets/dot-experiments/test/mocks';
+
+import { DotExperimentsListStore, DotExperimentsState } from './dot-experiments-list-store.service';
 
 const routerParamsPageId = '1111-1111-111';
 const ActivatedRouteMock = {
@@ -31,6 +35,11 @@ const ActivatedRouteMock = {
         parent: { parent: { parent: { parent: { data: { content: { page: { title: '' } } } } } } }
     }
 };
+
+const EXPERIMENT_MOCK = getExperimentMock(0);
+const EXPERIMENT_MOCK_1 = getExperimentMock(1);
+const EXPERIMENT_MOCK_2 = getExperimentMock(2);
+const EXPERIMENT_MOCK_ALL = getExperimentAllMocks();
 
 const messageServiceMock = new MockDotMessageService({
     'experimentspage.add.new.experiment': 'Add a new experiment'
@@ -81,7 +90,7 @@ describe('DotExperimentsListStore', () => {
                 DotExperimentStatusList.SCHEDULED,
                 DotExperimentStatusList.ARCHIVED
             ],
-            status: LoadingState.INIT
+            status: ComponentStatus.INIT
         };
 
         store.state$.subscribe((state) => {
@@ -92,20 +101,20 @@ describe('DotExperimentsListStore', () => {
 
     it('should have getState$ from the store', () => {
         store.getStatus$.subscribe((data) => {
-            expect(data).toEqual(LoadingState.INIT);
+            expect(data).toEqual(ComponentStatus.INIT);
         });
     });
 
     it('should update status to the store', () => {
-        store.setComponentStatus(LoadingState.LOADED);
+        store.setComponentStatus(ComponentStatus.LOADED);
         store.getStatus$.subscribe((status) => {
-            expect(status).toEqual(LoadingState.LOADED);
+            expect(status).toEqual(ComponentStatus.LOADED);
         });
     });
     it('should update experiments to the store', () => {
-        store.setExperiments(ExperimentMocks);
+        store.setExperiments([...EXPERIMENT_MOCK_ALL]);
         store.getExperiments$.subscribe((experiments) => {
-            expect(experiments).toEqual(ExperimentMocks);
+            expect(experiments).toEqual(EXPERIMENT_MOCK_ALL);
         });
     });
     it('should update status filtered to the store', () => {
@@ -117,25 +126,20 @@ describe('DotExperimentsListStore', () => {
     });
 
     it('should delete experiment by id of the store', () => {
-        const ID_TO_DELETE = '222';
-        const expected: DotExperiment[] = [ExperimentMocks[0]];
+        const expected: string[] = [EXPERIMENT_MOCK.id, EXPERIMENT_MOCK_2.id];
 
-        store.setExperiments(ExperimentMocks);
-        store.deleteExperimentById(ID_TO_DELETE);
+        store.setExperiments([...EXPERIMENT_MOCK_ALL]);
+        store.deleteExperimentById(EXPERIMENT_MOCK_1.id);
         store.getExperiments$.subscribe((experiments) => {
-            expect(experiments).toEqual(expected);
+            expect(experiments.map((experiment) => experiment.id)).toEqual(expected);
         });
     });
 
     it('should change status to archived status by experiment id of the store', () => {
-        const ID_TO_ARCHIVE = '222';
-        const expected: DotExperiment[] = [...ExperimentMocks];
-        expected[1].status = DotExperimentStatusList.ARCHIVED;
-
-        store.setExperiments(ExperimentMocks);
-        store.archiveExperimentById(ID_TO_ARCHIVE);
+        store.setExperiments([{ ...getExperimentMock(1) }]);
+        store.archiveExperimentById(EXPERIMENT_MOCK_1.id);
         store.getExperiments$.subscribe((exp) => {
-            expect(exp).toEqual(expected);
+            expect(exp[0].status).toEqual(DotExperimentStatusList.ARCHIVED);
         });
     });
 
@@ -150,14 +154,15 @@ describe('DotExperimentsListStore', () => {
                 readyToStart: false,
                 description: 'Praesent at molestie mauris, quis vulputate augue.',
                 name: 'Praesent at molestie mauris',
-                trafficAllocation: '100.0',
+                trafficAllocation: 100,
                 scheduling: null,
                 trafficProportion: {
                     type: TrafficProportionTypes.SPLIT_EVENLY,
-                    variants: [{ id: '111', name: 'DEFAULT', weight: '100.0' }]
+                    variants: [{ id: '111', name: 'DEFAULT', weight: 100.0 }]
                 },
                 creationDate: new Date('2022-08-21 14:50:03'),
-                modDate: new Date('2022-08-21 18:50:03')
+                modDate: new Date('2022-08-21 18:50:03'),
+                goals: { ...GoalsMock }
             }
         ];
         const archivedExperiments: DotExperiment[] = [
@@ -170,14 +175,15 @@ describe('DotExperimentsListStore', () => {
                 readyToStart: false,
                 description: 'Praesent at molestie mauris, quis vulputate augue.',
                 name: 'Praesent at molestie mauris',
-                trafficAllocation: '100.0',
+                trafficAllocation: 100,
                 scheduling: null,
                 trafficProportion: {
                     type: TrafficProportionTypes.SPLIT_EVENLY,
-                    variants: [{ id: '222', name: 'DEFAULT', weight: '100.0' }]
+                    variants: [{ id: '222', name: 'DEFAULT', weight: 100.0 }]
                 },
                 creationDate: new Date('2022-08-21 14:50:03'),
-                modDate: new Date('2022-08-21 18:50:03')
+                modDate: new Date('2022-08-21 18:50:03'),
+                goals: { ...GoalsMock }
             }
         ];
 
@@ -195,15 +201,15 @@ describe('DotExperimentsListStore', () => {
 
     describe('Effects', () => {
         beforeEach(() => {
-            dotExperimentsService.getAll.and.returnValue(of(ExperimentMocks));
+            dotExperimentsService.getAll.and.returnValue(of([...EXPERIMENT_MOCK_ALL]));
 
             store.initStore();
-            store.loadExperiments();
+            store.loadExperiments(routerParamsPageId);
         });
         it('should load experiments to store', (done) => {
             expect(dotExperimentsService.getAll).toHaveBeenCalledWith(routerParamsPageId);
             store.getExperiments$.subscribe((exp) => {
-                expect(exp).toEqual(ExperimentMocks);
+                expect(exp).toEqual(EXPERIMENT_MOCK_ALL);
                 done();
             });
         });
@@ -211,13 +217,13 @@ describe('DotExperimentsListStore', () => {
         it('should delete experiment from the store', (done) => {
             dotExperimentsService.delete.and.returnValue(of('deleted'));
 
-            const expectedExperimentsInStore = [ExperimentMocks[1]];
-            const experimentToDelete = ExperimentMocks[0];
+            const expectedExperimentsInStore = [EXPERIMENT_MOCK_1, EXPERIMENT_MOCK_2];
+            const experimentToDelete = { ...EXPERIMENT_MOCK };
 
             store.deleteExperiment(experimentToDelete);
 
             expect(dotExperimentsService.delete).toHaveBeenCalled();
-            expect(dotExperimentsService.delete).toHaveBeenCalledWith(ExperimentMocks[0].id);
+            expect(dotExperimentsService.delete).toHaveBeenCalledWith(EXPERIMENT_MOCK.id);
             store.getExperiments$.subscribe((experiments) => {
                 expect(experiments).toEqual(expectedExperimentsInStore);
                 done();
@@ -225,13 +231,13 @@ describe('DotExperimentsListStore', () => {
         });
 
         it('should change experiment status to archive in the store', (done) => {
-            const expectedExperimentsInStore = [...ExperimentMocks];
+            const expectedExperimentsInStore = [...EXPERIMENT_MOCK_ALL];
 
             expectedExperimentsInStore[0].status = DotExperimentStatusList.ARCHIVED;
 
-            dotExperimentsService.archive.and.returnValue(of([expectedExperimentsInStore[0]]));
+            dotExperimentsService.archive.and.returnValue(of(expectedExperimentsInStore[0]));
 
-            const experimentToArchive = ExperimentMocks[0];
+            const experimentToArchive = EXPERIMENT_MOCK;
 
             store.archiveExperiment(experimentToArchive);
 

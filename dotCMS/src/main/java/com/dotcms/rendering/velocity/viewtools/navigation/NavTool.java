@@ -236,12 +236,12 @@ public class NavTool implements ViewTool {
 
     private List<?> filterNonLiveItems(final List<?> menuItems) {
         if (!menuItems.isEmpty()) {
-            final List<Versionable> nonLive = menuItems.stream()
-                    .filter(o -> o instanceof Versionable)
-                    .map(o -> (Versionable) o)
-                    .filter(versionable -> Try.of(() -> !versionable.isLive()).getOrElse(false))
+            final List<Contentlet> nonLiveContentlets = menuItems.stream()
+                    .filter(item -> item instanceof Contentlet)
+                    .map(o -> (Contentlet) o)
+                    .filter(item -> Try.of(() -> !item.hasLiveVersion()).getOrElse(false))
                     .collect(Collectors.toList());
-            menuItems.removeAll(nonLive);
+            menuItems.removeAll(nonLiveContentlets);
         }
         return menuItems;
     }
@@ -379,13 +379,13 @@ public class NavTool implements ViewTool {
     }
 
     private boolean doesHTMLPageInRequestedLanguageExists(final List<?> items, final String identifier, final long language){
-        return items.stream().anyMatch((item)->(item instanceof IHTMLPage
-                && ((IHTMLPage) item).getIdentifier().equals(identifier) && ((IHTMLPage) item).getLanguageId() == language));
+        return items.stream().anyMatch((item)->(item instanceof Contentlet && (Contentlet.class.cast(item)).isHTMLPage()
+                && (Contentlet.class.cast(item)).getIdentifier().equals(identifier) && (Contentlet.class.cast(item)).getLanguageId() == language));
     }
 
     private boolean doesFileAssetInRequestedLanguageExists(final List<?> items, final String identifier, final long language){
-        return items.stream().anyMatch((item)->(item instanceof IFileAsset
-                && ((IFileAsset) item).getPermissionId().equals(identifier) && ((IFileAsset) item).getLanguageId() == language));
+        return items.stream().anyMatch((item)->(item instanceof Contentlet && (Contentlet.class.cast(item)).isFileAsset()
+                && (Contentlet.class.cast(item)).getPermissionId().equals(identifier) && (Contentlet.class.cast(item)).getLanguageId() == language));
     }
 
 }

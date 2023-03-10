@@ -1,23 +1,25 @@
 import { Observable, Subject } from 'rxjs';
+
 import {
-    Component,
-    Input,
-    Output,
-    EventEmitter,
-    ViewChild,
     AfterViewInit,
+    Component,
+    EventEmitter,
+    Input,
+    OnDestroy,
     OnInit,
-    OnDestroy
+    Output,
+    ViewChild
 } from '@angular/core';
-import { UntypedFormGroup, UntypedFormBuilder, Validators } from '@angular/forms';
-import { DotMessageService } from '@services/dot-message/dot-messages.service';
-import { LoggerService } from '@dotcms/dotcms-js';
-import { AddToBundleService } from '@services/add-to-bundle/add-to-bundle.service';
-import { DotBundle } from '@models/dot-bundle/dot-bundle';
+import { UntypedFormBuilder, UntypedFormGroup, Validators } from '@angular/forms';
+
 import { Dropdown } from 'primeng/dropdown';
-import { map, tap, take, takeUntil } from 'rxjs/operators';
+
+import { map, take, takeUntil, tap } from 'rxjs/operators';
+
 import { DotDialogActions } from '@components/dot-dialog/dot-dialog.component';
-import { DotAjaxActionResponseView } from '@models/ajax-action-response/dot-ajax-action-response';
+import { AddToBundleService, DotMessageService } from '@dotcms/data-access';
+import { LoggerService } from '@dotcms/dotcms-js';
+import { DotAjaxActionResponseView, DotBundle } from '@dotcms/dotcms-models';
 
 const LAST_BUNDLE_USED = 'lastSelectedBundle';
 

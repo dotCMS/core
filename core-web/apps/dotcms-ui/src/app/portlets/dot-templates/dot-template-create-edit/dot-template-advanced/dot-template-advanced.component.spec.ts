@@ -2,16 +2,17 @@
 
 import { Component, DebugElement, EventEmitter, forwardRef, Input, Output } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { By } from '@angular/platform-browser';
 import {
     ControlValueAccessor,
     FormsModule,
     NG_VALUE_ACCESSOR,
     ReactiveFormsModule
 } from '@angular/forms';
+import { By } from '@angular/platform-browser';
 
-import { DotMessageService } from '@services/dot-message/dot-messages.service';
-import { MockDotMessageService } from '@tests/dot-message-service.mock';
+import { DotMessageService } from '@dotcms/data-access';
+import { MockDotMessageService } from '@dotcms/utils-testing';
+
 import { DotTemplateAdvancedComponent } from './dot-template-advanced.component';
 
 @Component({
@@ -116,7 +117,6 @@ describe('DotTemplateAdvancedComponent', () => {
     });
 
     beforeEach(() => {
-
         fixture = TestBed.createComponent(DotTemplateAdvancedComponent);
         component = fixture.componentInstance;
         de = fixture.debugElement;
@@ -125,8 +125,8 @@ describe('DotTemplateAdvancedComponent', () => {
 
         const code = de.query(By.css('dot-textarea-content'));
         code.triggerEventHandler('monacoInit', {
-            executeEdits: jasmine.createSpy(),
-            getSelection: () => 100
+            name: 'testEditor',
+            editor: { executeEdits: jasmine.createSpy(), getSelection: () => 100 }
         });
     });
 
@@ -170,7 +170,6 @@ describe('DotTemplateAdvancedComponent', () => {
     });
 
     describe('events', () => {
-
         it('should emit updateTemplate event when the form changes', () => {
             const updateTemplate = spyOn(component.updateTemplate, 'emit');
             component.form.get('body').setValue('<body></body>');

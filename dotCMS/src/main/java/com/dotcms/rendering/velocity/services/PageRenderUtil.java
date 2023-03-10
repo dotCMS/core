@@ -9,6 +9,7 @@ import com.dotcms.publisher.endpoint.bean.PublishingEndPoint;
 import com.dotcms.rendering.velocity.directive.ParseContainer;
 import com.dotcms.rendering.velocity.viewtools.DotTemplateTool;
 import com.dotcms.repackage.com.google.common.collect.Lists;
+import com.dotcms.variant.VariantAPI;
 import com.dotcms.visitor.domain.Visitor;
 import com.dotmarketing.beans.ContainerStructure;
 import com.dotmarketing.beans.Host;
@@ -279,7 +280,8 @@ public class PageRenderUtil implements Serializable {
 
                 for (final PersonalizedContentlet personalizedContentlet : personalizedContentletSet) {
 
-                    final Contentlet nonHydratedContentlet = this.getContentlet(personalizedContentlet);
+                    final Contentlet nonHydratedContentlet = getContentletByVariantFallback(currentVariantId,
+                            personalizedContentlet);
 
                     if (nonHydratedContentlet == null) {
                         continue;
@@ -288,7 +290,6 @@ public class PageRenderUtil implements Serializable {
                     final DotContentletTransformer transformer = new DotTransformerBuilder()
                             .defaultOptions().content(nonHydratedContentlet).build();
                     final Contentlet contentlet = transformer.hydrate().get(0);
-                    this.addContentletPageReferenceCount(contentlet);
 
                     final long contentsSize = containerUuidPersona
                             .getSize(container, uniqueUUIDForRender, personalizedContentlet);
@@ -332,20 +333,17 @@ public class PageRenderUtil implements Serializable {
         return raws;
     }
 
-    /**
-     * When <b>in Edit Mode only</b>, we need to read the number of Containers in any HTML Page in the repository that
-     * might be referencing a given Contentlet. This piece of information will be added to the Contentlet's map so that
-     * the UI can let the editing User choose whether they want to edit just that piece of Content, or if they want to
-     * edit the "global" content. This new property is specified in {@link Contentlet#ON_NUMBER_OF_PAGES}.
-     *
-     * @param contentlet The {@link Contentlet} whose HTML Page references will be counted.
-     */
-    private void addContentletPageReferenceCount(final Contentlet contentlet) {
-        if (this.mode.isEditMode()) {
-            final Optional<Integer> pageReferences =
-                    Try.of(() -> this.contentletAPI.getAllContentletReferencesCount(contentlet.getIdentifier())).getOrElse(Optional.empty());
-            pageReferences.ifPresent(integer -> contentlet.getMap().put(Contentlet.ON_NUMBER_OF_PAGES, integer));
+    private Contentlet getContentletByVariantFallback(final String currentVariantId,
+            final PersonalizedContentlet personalizedContentlet) {
+
+        final Contentlet contentlet = this.getContentlet(personalizedContentlet,
+                currentVariantId);
+
+        if (!UtilMethods.isSet(contentlet)) {
+            return this.getContentlet(personalizedContentlet, VariantAPI.DEFAULT_VARIANT.name());
         }
+
+        return contentlet;
     }
 
     /**
@@ -447,24 +445,29 @@ public class PageRenderUtil implements Serializable {
     }
 
     /**
-     * Returns the Contentlet specified in the {@link PersonalizedContentlet} object, which comes from the {@code
-     * multi_tree} table that determines how HTML Pages, Containers, Contentlets, and Personalization are associated.
-     * Depending on the current configuration in your dotCMS instance, the {@link Contentlet} being returned will be
-     * either the one in the current language, or the version in the default language.
+     * Returns the Contentlet specified in the {@link PersonalizedContentlet} object, which comes
+     * from the {@code multi_tree} table that determines how HTML Pages, Containers, Contentlets,
+     * and Personalization are associated. Depending on the current configuration in your dotCMS
+     * instance, the {@link Contentlet} being returned will be either the one in the current
+     * language, or the version in the default language.
      *
-     * <p>Now, for HTML Page editing purposes ONLY, if the current User does not have {@code READ} permission on the
-     * specified Contentlet, the Anonymous User will be used to retrieve it. This way, limited Users can still open and
-     * edit the HTML Page without any problems.</p>
+     * <p>Now, for HTML Page editing purposes ONLY, if the current User does not have {@code READ}
+     * permission on the
+     * specified Contentlet, the Anonymous User will be used to retrieve it. This way, limited Users
+     * can still open and edit the HTML Page without any problems.</p>
      *
      * @param personalizedContentlet The Personalized Content object.
-     *
-     * @return An instance of the {@link Contentlet} represented by the Identifier in the Personalized Contentlet
-     * object.
+     * @param variantName
+     * @return An instance of the {@link Contentlet} represented by the Identifier in the
+     * Personalized Contentlet object.
      */
-    private Contentlet getContentlet(final PersonalizedContentlet personalizedContentlet) {
+    private Contentlet getContentlet(final PersonalizedContentlet personalizedContentlet,
+            final String variantName) {
+
         try {
             return Config.getBooleanProperty("DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE", false) ?
-                    getContentletOrFallback(personalizedContentlet) : getSpecificContentlet(personalizedContentlet);
+                    getContentletOrFallback(personalizedContentlet, variantName) :
+                    getSpecificContentlet(personalizedContentlet, variantName);
         } catch (final DotSecurityException se) {
             if (this.mode == PageMode.EDIT_MODE || this.mode == PageMode.PREVIEW_MODE) {
                 // In Edit Mode, allow Users who cannot edit a specific piece of content to be able to edit the HTML
@@ -502,22 +505,25 @@ public class PageRenderUtil implements Serializable {
     }
 
     /**
-     * Returns the Contentlet specified in the {@link PersonalizedContentlet} object, which comes from the {@code
-     * multi_tree} table that determines how HTML Pages, Containers, Contentlets, and Personalization are associated.
+     * Returns the Contentlet specified in the {@link PersonalizedContentlet} object, which comes
+     * from the {@code multi_tree} table that determines how HTML Pages, Containers, Contentlets,
+     * and Personalization are associated.
      *
      * @param personalizedContentlet - The Personalized Content object.
-     *
-     * @return An instance of the {@link Contentlet} represented by the Identifier in the Personalized Contentlet
-     * object.
-     *
-     * @throws DotSecurityException The specified User does not have {@code READ} permission on the specified Content
+     * @param variantName
+     * @return An instance of the {@link Contentlet} represented by the Identifier in the
+     * Personalized Contentlet object.
+     * @throws DotSecurityException The specified User does not have {@code READ} permission on the
+     *                              specified Content
      */
-    private Contentlet getSpecificContentlet(final PersonalizedContentlet personalizedContentlet) throws
+    private Contentlet getSpecificContentlet(final PersonalizedContentlet personalizedContentlet,
+            String variantName) throws
             DotSecurityException {
         try {
 
             final Contentlet contentlet = contentletAPI.findContentletByIdentifier
-                    (personalizedContentlet.getContentletId(), mode.showLive, this.resolveLanguageId(), user, mode.respectAnonPerms);
+                    (personalizedContentlet.getContentletId(), mode.showLive, this.resolveLanguageId(),
+                            variantName, user, mode.respectAnonPerms);
 
             return contentlet;
         } catch (final DotContentletStateException e) {
@@ -553,26 +559,29 @@ public class PageRenderUtil implements Serializable {
     }
 
     /**
-     * Returns the Contentlet specified in the {@link PersonalizedContentlet} object, which comes from the {@code
-     * multi_tree} table that determines how HTML Pages, Containers, Contentlets, and Personalization are associated. If
-     * the {@link Contentlet} being returned is NOT available in the current language, the version in the default
-     * language will be returned instead.
+     * Returns the Contentlet specified in the {@link PersonalizedContentlet} object, which comes
+     * from the {@code multi_tree} table that determines how HTML Pages, Containers, Contentlets,
+     * and Personalization are associated. If the {@link Contentlet} being returned is NOT available
+     * in the current language, the version in the default language will be returned instead.
      *
-     * <p>Now, for HTML Page editing purposes ONLY, if the current User does not have {@code READ} permission on the
-     * specified Contentlet, the Anonymous User will be used to retrieve it. This way, limited Users can still open and
-     * edit the HTML Page without any problems.</p>
+     * <p>Now, for HTML Page editing purposes ONLY, if the current User does not have {@code READ}
+     * permission on the
+     * specified Contentlet, the Anonymous User will be used to retrieve it. This way, limited Users
+     * can still open and edit the HTML Page without any problems.</p>
      *
      * @param personalizedContentlet The Personalized Content object.
-     *
-     * @return An instance of the {@link Contentlet} represented by the Identifier in the Personalized Contentlet
-     * object.
+     * @param variantName
+     * @return An instance of the {@link Contentlet} represented by the Identifier in the
+     * Personalized Contentlet object.
      */
-    private Contentlet getContentletOrFallback(final PersonalizedContentlet personalizedContentlet) {
+    private Contentlet getContentletOrFallback(final PersonalizedContentlet personalizedContentlet,
+            String variantName) {
         try {
             final Optional<Contentlet> contentletOpt = contentletAPI.findContentletByIdentifierOrFallback
                     (personalizedContentlet.getContentletId(), mode.showLive, languageId, user, true);
             final Contentlet contentlet = contentletOpt.isPresent()
-                    ? contentletOpt.get() : contentletAPI.findContentletByIdentifierAnyLanguage(personalizedContentlet.getContentletId());
+                    ? contentletOpt.get() : contentletAPI.findContentletByIdentifierAnyLanguage(personalizedContentlet.getContentletId(),
+                    variantName);
             return contentlet;
         } catch (final DotContentletStateException e) {
             // Expected behavior, DotContentletState Exception is used for flow control

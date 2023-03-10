@@ -1,26 +1,30 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
+import { throwError } from 'rxjs';
+
+import { HttpClientTestingModule, HttpTestingController } from '@angular/common/http/testing';
+import { fakeAsync, getTestBed, TestBed, tick } from '@angular/core/testing';
+
+import { ConfirmationService } from 'primeng/api';
+
+import { DotAlertConfirmService } from '@dotcms/data-access';
+import { CoreWebService, LoginService } from '@dotcms/dotcms-js';
+import { DotApps, DotAppsImportConfiguration, DotAppsSaveData } from '@dotcms/dotcms-models';
+import * as dotUtils from '@dotcms/utils/lib/dot-utils';
+import {
+    CoreWebServiceMock,
+    DotFormatDateServiceMock,
+    LoginServiceMock,
+    MockDotRouterService,
+    mockResponseView
+} from '@dotcms/utils-testing';
 
 import { DotAppsService } from './dot-apps.service';
-import {
-    DotApps,
-    DotAppsImportConfiguration,
-    DotAppsSaveData
-} from '@shared/models/dot-apps/dot-apps.model';
-import { DotHttpErrorManagerService } from '@services/dot-http-error-manager/dot-http-error-manager.service';
-import { CoreWebService, LoginService } from '@dotcms/dotcms-js';
-import { LoginServiceMock } from '@tests/login-service.mock';
-import { TestBed, getTestBed, fakeAsync, tick } from '@angular/core/testing';
-import { HttpTestingController, HttpClientTestingModule } from '@angular/common/http/testing';
-import { CoreWebServiceMock } from '@tests/core-web.service.mock';
-import { DotAlertConfirmService } from '@services/dot-alert-confirm';
-import { ConfirmationService } from 'primeng/api';
-import { DotFormatDateService } from '@services/dot-format-date-service';
-import { MockDotRouterService } from '@tests/dot-router-service.mock';
-import { DotRouterService } from '@services/dot-router/dot-router.service';
-import { mockResponseView } from '@tests/response-view.mock';
-import { throwError } from 'rxjs';
-import * as dotUtils from '@shared/dot-utils';
-import { DotFormatDateServiceMock } from '@dotcms/app/test/format-date-service.mock';
+
+import { DotFormatDateService } from '../dot-format-date-service';
+import { DotHttpErrorManagerService } from '../dot-http-error-manager/dot-http-error-manager.service';
+import { DotRouterService } from '../dot-router/dot-router.service';
+
+// INFO: needs to import this way so we can spy on.
 
 const mockDotApps = [
     {

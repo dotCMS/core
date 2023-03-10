@@ -1,20 +1,20 @@
-import { ComponentRef } from '@angular/core';
+import isEqual from 'lodash.isequal';
+import { EditorState, Plugin, PluginKey, Transaction } from 'prosemirror-state';
+import { EditorView } from 'prosemirror-view';
 import { Subject } from 'rxjs';
+import tippy, { Instance, Props } from 'tippy.js';
+
+import { ComponentRef } from '@angular/core';
+
 import { takeUntil } from 'rxjs/operators';
 
 import { Editor, posToDOMRect } from '@tiptap/core';
-import { EditorState, Plugin, PluginKey, Transaction } from 'prosemirror-state';
-import { EditorView } from 'prosemirror-view';
-import tippy, { Instance, Props } from 'tippy.js';
 
-import isEqual from 'lodash.isequal';
-
-// Interface
+import { ImageNode } from '../../../nodes';
+import { BASIC_TIPPY_OPTIONS, getPosAtDocCoords } from '../../../shared';
+import { isValidURL } from '../../bubble-menu/utils';
 import { BubbleLinkFormComponent, NodeProps } from '../bubble-link-form.component';
 import { LINK_FORM_PLUGIN_KEY } from '../bubble-link-form.extension';
-
-// Utils
-import { getPosAtDocCoords, isValidURL, ImageNode } from '@dotcms/block-editor';
 import { openFormLinkOnclik } from '../utils';
 
 interface PluginState {
@@ -104,6 +104,11 @@ export class BubbleLinkFormView {
         const { state } = this.editor;
         const { to } = state.selection;
         const { openOnClick } = LINK_FORM_PLUGIN_KEY.getState(state);
+        const pluginState = this.pluginKey.getState(state);
+
+        if (!pluginState.isOpen) {
+            return;
+        }
 
         if (openOnClick) {
             this.editor.commands.closeLinkForm();
@@ -123,21 +128,11 @@ export class BubbleLinkFormView {
 
         this.tippy = tippy(editorElement.parentElement, {
             ...this.tippyOptions,
-            duration: 250,
+            ...BASIC_TIPPY_OPTIONS,
             getReferenceClientRect: () => this.setTippyPosition(),
             content: this.element,
-            interactive: true,
-            maxWidth: 'none',
-            trigger: 'manual',
-            placement: 'bottom-start',
-            hideOnClick: 'toggle',
-            popperOptions: {
-                modifiers: [
-                    {
-                        name: 'flip',
-                        options: { fallbackPlacements: ['top-start'] }
-                    }
-                ]
+            onHide: () => {
+                this.editor.commands.closeLinkForm();
             }
         });
     }

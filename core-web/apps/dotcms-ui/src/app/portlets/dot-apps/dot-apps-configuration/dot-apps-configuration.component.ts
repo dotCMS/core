@@ -1,15 +1,17 @@
-import { Component, OnInit, ViewChild, ElementRef, OnDestroy } from '@angular/core';
-import { dialogAction, DotApps, DotAppsSites } from '@shared/models/dot-apps/dot-apps.model';
-import { ActivatedRoute } from '@angular/router';
-import { pluck, take, debounceTime, takeUntil } from 'rxjs/operators';
-import { DotAlertConfirmService } from '@services/dot-alert-confirm';
-import { DotAppsService } from '@services/dot-apps/dot-apps.service';
 import { fromEvent as observableFromEvent, Subject } from 'rxjs';
-import { DotRouterService } from '@services/dot-router/dot-router.service';
+
+import { Component, ElementRef, OnDestroy, OnInit, ViewChild } from '@angular/core';
+import { ActivatedRoute } from '@angular/router';
 
 import { LazyLoadEvent } from 'primeng/api';
-import { PaginatorService } from '@services/paginator';
-import { DotMessageService } from '@services/dot-message/dot-messages.service';
+
+import { debounceTime, pluck, take, takeUntil } from 'rxjs/operators';
+
+import { DotAppsService } from '@dotcms/app/api/services/dot-apps/dot-apps.service';
+import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
+import { DotAlertConfirmService, DotMessageService, PaginatorService } from '@dotcms/data-access';
+import { dialogAction, DotApps, DotAppsSites } from '@dotcms/dotcms-models';
+
 import { DotAppsImportExportDialogComponent } from '../dot-apps-import-export-dialog/dot-apps-import-export-dialog.component';
 
 @Component({

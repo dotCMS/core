@@ -1,13 +1,14 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { DebugElement, Pipe, PipeTransform } from '@angular/core';
-
 import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing';
-import { DotFieldValidationMessageComponent } from './dot-field-validation-message';
-import { By } from '@angular/platform-browser';
 import { UntypedFormControl, Validators } from '@angular/forms';
-import { MockDotMessageService } from '@tests/dot-message-service.mock';
-import { DotMessageService } from '@services/dot-message/dot-messages.service';
+import { By } from '@angular/platform-browser';
+
+import { DotMessageService } from '@dotcms/data-access';
+import { MockDotMessageService } from '@dotcms/utils-testing';
+
+import { DotFieldValidationMessageComponent } from './dot-field-validation-message';
 
 @Pipe({
     name: 'dm'
@@ -29,19 +30,17 @@ describe('FieldValidationComponent', () => {
     let fixture: ComponentFixture<DotFieldValidationMessageComponent>;
     let component: DotFieldValidationMessageComponent;
 
-    beforeEach(
-        waitForAsync(() => {
-            TestBed.configureTestingModule({
-                declarations: [DotFieldValidationMessageComponent, DotMessageMockPipe],
-                providers: [
-                    {
-                        provide: DotMessageService,
-                        useValue: messageServiceMock
-                    }
-                ]
-            }).compileComponents();
-        })
-    );
+    beforeEach(waitForAsync(() => {
+        TestBed.configureTestingModule({
+            declarations: [DotFieldValidationMessageComponent, DotMessageMockPipe],
+            providers: [
+                {
+                    provide: DotMessageService,
+                    useValue: messageServiceMock
+                }
+            ]
+        }).compileComponents();
+    }));
 
     beforeEach(() => {
         fixture = TestBed.createComponent(DotFieldValidationMessageComponent);

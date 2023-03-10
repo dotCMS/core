@@ -1,3 +1,5 @@
+import { Observable } from 'rxjs';
+
 import {
     Component,
     ElementRef,
@@ -8,16 +10,17 @@ import {
     Output,
     ViewChild
 } from '@angular/core';
-import { DotMessageService } from '@services/dot-message/dot-messages.service';
-import { DotMenuService } from '@services/dot-menu.service';
-import { FieldDragDropService } from '../fields/service';
-import { take } from 'rxjs/operators';
+
 import { MenuItem } from 'primeng/api';
-import { DotEventsService } from '@services/dot-events/dot-events.service';
-import { DotCMSContentType } from '@dotcms/dotcms-models';
-import { DotCurrentUserService } from '@services/dot-current-user/dot-current-user.service';
-import { Observable } from 'rxjs';
+
+import { take } from 'rxjs/operators';
+
 import { DotInlineEditComponent } from '@components/_common/dot-inline-edit/dot-inline-edit.component';
+import { DotMenuService } from '@dotcms/app/api/services/dot-menu.service';
+import { DotCurrentUserService, DotEventsService, DotMessageService } from '@dotcms/data-access';
+import { DotCMSContentType } from '@dotcms/dotcms-models';
+
+import { FieldDragDropService } from '../fields/service';
 
 @Component({
     selector: 'dot-content-type-layout',
@@ -36,6 +39,7 @@ export class ContentTypesLayoutComponent implements OnChanges, OnInit {
     relationshipURL: string;
     contentTypeNameInputSize: number;
     showPermissionsTab: Observable<boolean>;
+    addToMenuContentType = false;
 
     actions: MenuItem[];
 
@@ -130,5 +134,13 @@ export class ContentTypesLayoutComponent implements OnChanges, OnInit {
                 }
             }
         ];
+    }
+
+    /**
+     * Show Dialog of Add To Menu
+     * @memberof ContentTypesLayoutComponent
+     */
+    addContentInMenu() {
+        this.addToMenuContentType = true;
     }
 }

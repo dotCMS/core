@@ -4,6 +4,7 @@ import com.dotcms.IntegrationTestBase;
 import com.dotcms.datagen.ContainerDataGen;
 import com.dotcms.datagen.ContentletDataGen;
 import com.dotcms.datagen.HTMLPageDataGen;
+import com.dotcms.datagen.LanguageDataGen;
 import com.dotcms.datagen.MultiTreeDataGen;
 import com.dotcms.datagen.SiteDataGen;
 import com.dotcms.datagen.TemplateAsFileDataGen;
@@ -12,8 +13,11 @@ import com.dotcms.datagen.TestDataUtils;
 import com.dotcms.datagen.TestUserUtils;
 import com.dotcms.datagen.ThemeDataGen;
 import com.dotcms.datagen.UserDataGen;
+import com.dotcms.datagen.VariantDataGen;
 import com.dotcms.rest.api.v1.template.TemplateView;
 import com.dotcms.util.IntegrationTestInitService;
+import com.dotcms.variant.VariantAPI;
+import com.dotcms.variant.model.Variant;
 import com.dotmarketing.beans.ContainerStructure;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
@@ -34,11 +38,15 @@ import com.dotmarketing.portlets.containers.business.ContainerAPI;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
 import com.dotmarketing.portlets.fileassets.business.FileAssetAPIImpl;
 import com.dotmarketing.portlets.folders.model.Folder;
+import com.dotmarketing.portlets.htmlpageasset.business.HTMLPageAssetAPI;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
+import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.structure.model.Structure;
+import com.dotmarketing.portlets.templates.business.TemplateFactory.HTMLPageVersion;
 import com.dotmarketing.portlets.templates.design.bean.ContainerUUID;
 import com.dotmarketing.portlets.templates.model.FileAssetTemplate;
 import com.dotmarketing.portlets.templates.model.Template;
@@ -49,6 +57,7 @@ import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 import java.util.Map;
+import java.util.stream.Collectors;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -1213,5 +1222,175 @@ public class TemplateAPITest extends IntegrationTestBase {
 
         ((TemplateAPIImpl) APILocator.getTemplateAPI()).setThemeName(template, APILocator.systemUser(), false);
         assertNull(template.getThemeName());
+    }
+
+    /**
+     * Method to test: {@link TemplateAPIImpl#getPages(String)}
+     * When: A Template is used by one Page's Version
+     * Should: Return the Inode of this page
+     */
+    @Test
+    public void justOnePageVersion() throws DotDataException, DotSecurityException {
+        final Host host = new SiteDataGen().nextPersisted();
+        final Template template = new TemplateDataGen().host(host).nextPersisted();
+
+        final HTMLPageAsset htmlPageAsset = new HTMLPageDataGen(host, template).nextPersisted();
+
+        final List<HTMLPageVersion> pages = APILocator.getTemplateAPI().getPages(template.getIdentifier());
+
+        assertFalse(pages.isEmpty());
+        assertEquals(1, pages.size());
+        assertEquals(htmlPageAsset.getInode(), pages.get(0).getInode());
+        assertEquals(htmlPageAsset.getLanguageId(), pages.get(0).getLanguageId());
+        assertEquals(htmlPageAsset.getVariantId(), pages.get(0).getVariantName());
+        assertEquals(htmlPageAsset.getIdentifier(), pages.get(0).getIdentifier());
+    }
+
+    /**
+     * Method to test: {@link TemplateAPIImpl#getPages(String)}
+     * When: Create three different version of the same page but in different languages
+     * - 2 of them are going to use the same Template
+     * - and the last one is going to use a different template
+     * Should:
+     * - Return the 2 firsts inodes for the first Template.
+     * - Return 3 Inodes for the second Template: The third Page's version ans two more create for the
+     * first two languages.
+     */
+    @Test
+    public void severalPageVersionLang() throws DotDataException, DotSecurityException {
+        final Host host = new SiteDataGen().nextPersisted();
+        final Template template_1 = new TemplateDataGen().host(host).nextPersisted();
+        final Template template_2 = new TemplateDataGen().host(host).nextPersisted();
+
+        final Language language_1 = new LanguageDataGen().nextPersisted();
+        final Language language_2 = new LanguageDataGen().nextPersisted();
+
+        final HTMLPageAsset htmlPageAsset_1 = new HTMLPageDataGen(host, template_1).nextPersisted();
+        final HTMLPageAsset htmlPageAsset_2 = createNewVersion(language_1, htmlPageAsset_1, template_1);
+        final HTMLPageAsset htmlPageAsset_3 = createNewVersion(language_2, htmlPageAsset_1, template_2);
+
+        final List<HTMLPageVersion> pagesTemplate1 = APILocator.getTemplateAPI().getPages(template_1.getIdentifier());
+        checkFor(pagesTemplate1, htmlPageAsset_1, htmlPageAsset_2);
+
+
+        final List<HTMLPageVersion> pagesTemplate2 = APILocator.getTemplateAPI().getPages(template_2.getIdentifier());
+        final HTMLPageAsset lastWorkingVersion1 = getLastWorkingVersion(htmlPageAsset_1);
+        final HTMLPageAsset lastWorkingVersion2 = getLastWorkingVersion(htmlPageAsset_2);
+        checkFor(pagesTemplate2, htmlPageAsset_3, lastWorkingVersion1, lastWorkingVersion2);
+    }
+
+
+    /**
+     * Method to test: {@link TemplateAPIImpl#getPages(String)}
+     * When: Create three different version of the same page but in different {@link com.dotcms.variant.model.Variant}
+     * - 2 of them are going to use the same Template
+     * - and the last one is going to use a different template
+     * Should:
+     * - Return the 2 firsts inodes for the first Template.
+     * - Return the last inodes for the second {@link Template}
+     */
+    @Test
+    public void severalPageVersionVariant() throws DotDataException, DotSecurityException {
+        final Host host = new SiteDataGen().nextPersisted();
+        final Template template_1 = new TemplateDataGen().host(host).nextPersisted();
+        final Template template_2 = new TemplateDataGen().host(host).nextPersisted();
+
+        final Variant variant_1 = new VariantDataGen().nextPersisted();
+        final Variant variant_2 = new VariantDataGen().nextPersisted();
+
+        final HTMLPageAsset htmlPageAsset_1 = new HTMLPageDataGen(host, template_1).nextPersisted();
+        final HTMLPageAsset htmlPageAsset_2 = createNewVersion(variant_1, htmlPageAsset_1, template_1);
+        final HTMLPageAsset htmlPageAsset_3 = createNewVersion(variant_2, htmlPageAsset_1, template_2);
+
+        final List<HTMLPageVersion> pagesTemplate1 = APILocator.getTemplateAPI().getPages(template_1.getIdentifier());
+        checkFor(pagesTemplate1, htmlPageAsset_1, htmlPageAsset_2);
+
+        final List<HTMLPageVersion> pagesTemplate2 = APILocator.getTemplateAPI().getPages(template_2.getIdentifier());
+        checkFor(pagesTemplate2, htmlPageAsset_3);
+    }
+
+    /**
+     * Method to test: {@link TemplateAPIImpl#getPages(String)}
+     * When: Create three different pages no matter the lang, all of them are going to use the same
+     * {@link Template}.
+     * Should:
+     * - Return all the pages.
+     */
+    @Test
+    public void severalPages() throws DotDataException, DotSecurityException {
+        final Host host = new SiteDataGen().nextPersisted();
+        final Template template = new TemplateDataGen().host(host).nextPersisted();
+
+        final Language language_1 = new LanguageDataGen().nextPersisted();
+        final Language language_2 = new LanguageDataGen().nextPersisted();
+
+        final HTMLPageAsset htmlPageAsset_1 = new HTMLPageDataGen(host, template)
+                .languageId(language_1.getId())
+                .nextPersisted();
+
+        final HTMLPageAsset htmlPageAsset_2 = new HTMLPageDataGen(host, template)
+                .languageId(language_2.getId())
+                .nextPersisted();
+
+        final List<HTMLPageVersion> pagesTemplate1 = APILocator.getTemplateAPI().getPages(template.getIdentifier());
+        checkFor(pagesTemplate1, htmlPageAsset_1, htmlPageAsset_2);
+
+    }
+
+    private void checkFor(final List<HTMLPageVersion> pagesTemplate, final HTMLPageAsset... htmlPageAssets) {
+        assertFalse(pagesTemplate.isEmpty());
+        assertEquals(htmlPageAssets.length, pagesTemplate.size());
+
+        final List<String> inodesFromTemplate = pagesTemplate.stream()
+                .map(pageVersion -> pageVersion.getInode()).collect(Collectors.toList());
+
+        for (final HTMLPageAsset htmlPageAsset : htmlPageAssets) {
+            assertTrue(inodesFromTemplate.contains(htmlPageAsset.getInode()));
+        }
+    }
+
+    private HTMLPageAsset getLastWorkingVersion(final HTMLPageAsset htmlPageAsset) {
+        final ContentletVersionInfo contentletVersionInfo = APILocator.getVersionableAPI()
+                .getContentletVersionInfo(htmlPageAsset.getIdentifier(),
+                        htmlPageAsset.getLanguageId(),
+                        VariantAPI.DEFAULT_VARIANT.name())
+                .orElseThrow(() -> new AssertionError());
+        final HTMLPageAsset htmlPageAssetFromDataBase = getFromDataBase(
+                contentletVersionInfo.getWorkingInode());
+        return htmlPageAssetFromDataBase;
+    }
+
+    private HTMLPageAsset getFromDataBase(final String inode) {
+
+        final Contentlet contentlet = FactoryLocator.getContentletFactory()
+                .findInDb(inode).orElseThrow(() -> new AssertionError("Contentlet should exists:" + inode));
+
+        return APILocator.getHTMLPageAssetAPI().fromContentlet(contentlet);
+    }
+
+    private HTMLPageAsset createNewVersion(final Language language, final HTMLPageAsset htmlPageAsset,
+            final Template template) {
+
+        final Contentlet checkout = HTMLPageDataGen.checkout(htmlPageAsset);
+
+        checkout.setLanguageId(language.getId());
+        checkout.setStringProperty(HTMLPageAssetAPI.TEMPLATE_FIELD, template.getIdentifier());
+
+        final Contentlet checking = HTMLPageDataGen.checkin(checkout);
+        return APILocator.getHTMLPageAssetAPI()
+                .fromContentlet(checking);
+    }
+
+    private HTMLPageAsset createNewVersion(final Variant variant, final HTMLPageAsset htmlPageAsset,
+            final Template template) {
+
+        final Contentlet checkout = HTMLPageDataGen.checkout(htmlPageAsset);
+
+        checkout.setVariantId(variant.name());
+        checkout.setStringProperty(HTMLPageAssetAPI.TEMPLATE_FIELD, template.getIdentifier());
+
+        final Contentlet checking = HTMLPageDataGen.checkin(checkout);
+        return APILocator.getHTMLPageAssetAPI()
+                .fromContentlet(checking);
     }
 }

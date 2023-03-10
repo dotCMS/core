@@ -1,14 +1,5 @@
 package com.dotmarketing.portlets.workflows.ajax;
 
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-
-import javax.servlet.ServletException;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.web.UserWebAPI;
 import com.dotmarketing.business.web.WebAPILocator;
@@ -20,6 +11,15 @@ import com.dotmarketing.portlets.workflows.model.WorkflowActionClassParameter;
 import com.dotmarketing.portlets.workflows.model.WorkflowActionletParameter;
 import com.dotmarketing.util.Logger;
 import com.liferay.portal.model.User;
+
+import javax.servlet.ServletException;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 @Deprecated
 public class WfActionClassAjax extends WfBaseAction {
@@ -42,8 +42,8 @@ public class WfActionClassAjax extends WfBaseAction {
 				this.workflowAPI.reorderActionClass(actionClass, order, user);
 			}
 		} catch (Exception e) {
-			
-			// dojo sends this Ajax method "reorder Actions" calls, which fail.  Not sure why 
+
+			// dojo sends this Ajax method "reorder Actions" calls, which fail.  Not sure why
 			//Logger.error(this.getClass(), e.getMessage(), e);
 			//writeError(response, e.getMessage());
 		}
@@ -65,7 +65,7 @@ public class WfActionClassAjax extends WfBaseAction {
 	}
 
 	public void add(final HttpServletRequest request,
-					final HttpServletResponse response) throws ServletException, IOException {
+			final HttpServletResponse response) throws ServletException, IOException {
 
 		final User   user     						  = this.userWebAPI.getUser(request);
 		final String actionId						  = request.getParameter("actionId");
@@ -74,12 +74,12 @@ public class WfActionClassAjax extends WfBaseAction {
 		final WorkflowActionClass workflowActionClass = new WorkflowActionClass();
 
 		try {
-			// We don't need to get "complete" action object from the database 
+			// We don't need to get "complete" action object from the database
 			// to retrieve all action classes from him. So, we can create simple action object
 			// with the "action id" contain in actionClass parameter.
 			final WorkflowAction action = new WorkflowAction();
 			action.setId(actionId);
-			
+
 			final List<WorkflowActionClass> classes = this.workflowAPI.findActionClasses(action);
 			if (classes != null) {
 				workflowActionClass.setOrder(classes.size());
@@ -88,8 +88,8 @@ public class WfActionClassAjax extends WfBaseAction {
 			workflowActionClass.setName(actionName);
 			workflowActionClass.setActionId(actionId);
 			this.workflowAPI.saveActionClass(workflowActionClass, user);
-
-			response.getWriter().println(workflowActionClass.getId() + ":" + workflowActionClass.getName());
+			response.setContentType("text/plain");
+			response.getWriter().println(String.format("%s:%s",workflowActionClass.getId(),workflowActionClass.getName()));
 		} catch (Exception e) {
 			Logger.error(this.getClass(), e.getMessage(), e);
 			writeError(response, e.getMessage());
@@ -125,7 +125,7 @@ public class WfActionClassAjax extends WfBaseAction {
 				if(errors != null){
 					writeError(response, errors);
 					return;
-				}		
+				}
 			}
 
 			this.workflowAPI.saveWorkflowActionClassParameters(newParams, user);
@@ -135,6 +135,16 @@ public class WfActionClassAjax extends WfBaseAction {
 			writeError(response, e.getMessage());
 		}
 	}
-}
 
+	/**
+	 * Security check demanded by Sonar
+	 * We register all the allowed methods down here
+	 *
+	 * @return allowed method names
+	 */
+	@Override
+	protected Set<String> getAllowedCommands() {
+		return Set.of("save","add","delete","reorder","action");
+	}
+}
 

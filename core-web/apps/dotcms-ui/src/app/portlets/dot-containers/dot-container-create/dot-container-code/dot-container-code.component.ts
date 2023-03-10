@@ -1,10 +1,14 @@
-import { Component, Input, OnInit } from '@angular/core';
-import { DialogService } from 'primeng/dynamicdialog';
-import { DotAddVariableComponent } from './dot-add-variable/dot-add-variable.component';
-import { DotMessageService } from '@dotcms/app/api/services/dot-message/dot-messages.service';
-import { DotCMSContentType } from '@dotcms/dotcms-models';
+import { trigger, transition, style, animate } from '@angular/animations';
+import { Component, Input, OnChanges, OnInit, SimpleChanges } from '@angular/core';
 import { FormArray, FormControl, FormGroup, Validators } from '@angular/forms';
+
 import { MenuItem } from 'primeng/api';
+import { DialogService } from 'primeng/dynamicdialog';
+
+import { DotMessageService } from '@dotcms/data-access';
+import { DotCMSContentType } from '@dotcms/dotcms-models';
+
+import { DotAddVariableComponent } from './dot-add-variable/dot-add-variable.component';
 
 interface DotContainerContent extends DotCMSContentType {
     code: string;
@@ -15,16 +19,21 @@ interface DotContainerContent extends DotCMSContentType {
 }
 
 @Component({
+    animations: [
+        trigger('contentCodeAnimation', [
+            transition(':enter', [style({ opacity: 0 }), animate(500, style({ opacity: 1 }))])
+        ])
+    ],
     selector: 'dot-container-code',
     templateUrl: './dot-container-code.component.html',
     styleUrls: ['./dot-container-code.component.scss']
 })
-export class DotContentEditorComponent implements OnInit {
+export class DotContentEditorComponent implements OnInit, OnChanges {
     @Input() fg: FormGroup;
     @Input() contentTypes: DotCMSContentType[];
 
     menuItems: MenuItem[];
-    activeTabIndex = 1;
+    activeTabIndex = 0;
     monacoEditors = {};
     contentTypeNamesById = {};
 
@@ -39,10 +48,25 @@ export class DotContentEditorComponent implements OnInit {
         });
 
         this.init();
+        this.updateActiveTabIndex(this.getcontainerStructures.length);
+    }
+
+    ngOnChanges(changes: SimpleChanges) {
+        changes.contentTypes.currentValue.map(({ id, name }: DotCMSContentType) => {
+            this.contentTypeNamesById[id] = name;
+        });
+
+        this.init();
+        this.updateActiveTabIndex(this.getcontainerStructures.length);
+        if (changes.contentTypes.currentValue.length > 0) {
+            Object.keys(this.monacoEditors).forEach((editorId) => {
+                this.monacoEditors[editorId].updateOptions({ readOnly: false });
+            });
+        }
     }
 
     /**
-     * Get ContainerStrcuture as FormArray
+     * Get ContainerStructure as FormArray
      * @readonly
      * @type {FormArray}
      * @memberof DotContentEditorComponent
@@ -64,20 +88,52 @@ export class DotContentEditorComponent implements OnInit {
             e.stopPropagation();
         } else {
             this.updateActiveTabIndex(index);
+            this.focusCurrentEditor(index);
         }
 
         return false;
     }
 
     /**
-     * It removes the form control at the index of the form array, and then closes the modal
+     * It removes the form control at the index of the form array
      * @param {number} [index=null] - number = null
-     * @param close - This is the function that closes the modal.
      * @memberof DotContentEditorComponent
      */
-    removeItem(index: number = null, close: () => void): void {
-        this.getcontainerStructures.removeAt(index - 1);
-        close();
+    removeItem(index: number = null): void {
+        if (this.contentTypes.length > 0) {
+            this.getcontainerStructures.removeAt(index - 1);
+            const currentTabIndex = this.findCurrentTabIndex(index);
+            this.updateActiveTabIndex(currentTabIndex);
+            this.focusCurrentEditor(currentTabIndex);
+        }
+    }
+
+    /**
+     * Focus current editor
+     * @param {number} tabIdx
+     * @memberof DotContentEditorComponent
+     */
+    focusCurrentEditor(tabIdx: number) {
+        if (tabIdx > 0) {
+            const contentTypeId =
+                this.getcontainerStructures.controls[tabIdx - 1].get('structureId').value;
+            // Tab Panel does not trigger any event after completely rendered.
+            // Tab Panel and Monaco-Editor take sometime to render it completely.
+            requestAnimationFrame(() => {
+                this.monacoEditors[contentTypeId].focus();
+            });
+        }
+    }
+
+    /**
+     * Find current tab after deleting content type
+     * @param {*} index
+     * @return {*}  {number}
+     * @memberof DotContentEditorComponent
+     */
+    findCurrentTabIndex(index): number {
+        // -1 in condition because if it is first tab then no need to minus
+        return index - 1 > 0 ? index - 1 : this.getcontainerStructures.length > 0 ? index : 0;
     }
 
     /**
@@ -90,8 +146,10 @@ export class DotContentEditorComponent implements OnInit {
      */
     handleAddVariable(contentType: DotContainerContent) {
         this.dialogService.open(DotAddVariableComponent, {
-            header: this.dotMessageService.get('containers.properties.add.variable.title'),
-            width: '50rem',
+            width: '25rem',
+            contentStyle: { padding: '0' },
+            closable: true,
+            header: this.dotMessageService.get('Add-Variables'),
             data: {
                 contentTypeVariable: contentType.structureId,
                 onSave: (variable) => {
@@ -111,11 +169,25 @@ export class DotContentEditorComponent implements OnInit {
      */
     monacoInit(monacoEditor) {
         this.monacoEditors[monacoEditor.name] = monacoEditor.editor;
-        this.monacoEditors[monacoEditor.name].focus();
+        if (this.contentTypes.length === 0) {
+            this.monacoEditors[monacoEditor.name].updateOptions({ readOnly: true });
+        }
+
+        requestAnimationFrame(() => this.monacoEditors[monacoEditor.name].focus());
     }
 
     private init(): void {
         this.menuItems = this.getMenuItems(this.contentTypes);
+
+        // default content type if content type does not exist
+        if (this.getcontainerStructures.length === 0) {
+            this.getcontainerStructures.push(
+                new FormGroup({
+                    code: new FormControl(''),
+                    structureId: new FormControl(this.contentTypes[0].id, [Validators.required])
+                })
+            );
+        }
     }
 
     /**
@@ -135,12 +207,15 @@ export class DotContentEditorComponent implements OnInit {
                     if (!this.checkIfAlreadyExists(contentType)) {
                         this.getcontainerStructures.push(
                             new FormGroup({
-                                code: new FormControl('', [Validators.required]),
+                                code: new FormControl(''),
                                 structureId: new FormControl(contentType.id, [Validators.required])
                             })
                         );
 
-                        this.updateActiveTabIndex(this.getcontainerStructures.length);
+                        // Waiting for primeng to add the tabPanel
+                        requestAnimationFrame(() => {
+                            this.updateActiveTabIndex(this.getcontainerStructures.length);
+                        });
                     }
                 }
             };

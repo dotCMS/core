@@ -1,17 +1,19 @@
-import { waitForAsync, ComponentFixture, TestBed } from '@angular/core/testing';
-import { MockDotMessageService } from '@tests/dot-message-service.mock';
-import { DotMessageService } from '@services/dot-message/dot-messages.service';
-import { DotAlertConfirmService } from '@services/dot-alert-confirm/dot-alert-confirm.service';
 import { CommonModule } from '@angular/common';
-import { DotAppsConfigurationItemComponent } from './dot-apps-configuration-item.component';
-import { UiDotIconButtonModule } from '@components/_common/dot-icon-button/dot-icon-button.module';
-import { By } from '@angular/platform-browser';
-import { DotIconModule } from '@dotcms/ui';
-import { TooltipModule } from 'primeng/tooltip';
 import { HttpClientTestingModule } from '@angular/common/http/testing';
+import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing';
+import { By } from '@angular/platform-browser';
+
 import { ConfirmationService } from 'primeng/api';
-import { DotPipesModule } from '@pipes/dot-pipes.module';
+import { TooltipModule } from 'primeng/tooltip';
+
+import { UiDotIconButtonModule } from '@components/_common/dot-icon-button/dot-icon-button.module';
 import { DotCopyLinkModule } from '@dotcms/app/view/components/dot-copy-link/dot-copy-link.module';
+import { DotAlertConfirmService, DotMessageService } from '@dotcms/data-access';
+import { DotIconModule } from '@dotcms/ui';
+import { MockDotMessageService } from '@dotcms/utils-testing';
+import { DotPipesModule } from '@pipes/dot-pipes.module';
+
+import { DotAppsConfigurationItemComponent } from './dot-apps-configuration-item.component';
 
 const messages = {
     'apps.key': 'Key',
@@ -48,31 +50,29 @@ describe('DotAppsConfigurationItemComponent', () => {
 
     const messageServiceMock = new MockDotMessageService(messages);
 
-    beforeEach(
-        waitForAsync(() => {
-            TestBed.configureTestingModule({
-                imports: [
-                    CommonModule,
-                    DotCopyLinkModule,
-                    UiDotIconButtonModule,
-                    DotIconModule,
-                    TooltipModule,
-                    HttpClientTestingModule,
-                    DotPipesModule
-                ],
-                declarations: [DotAppsConfigurationItemComponent],
-                providers: [
-                    { provide: DotMessageService, useValue: messageServiceMock },
-                    DotAlertConfirmService,
-                    ConfirmationService
-                ]
-            });
+    beforeEach(waitForAsync(() => {
+        TestBed.configureTestingModule({
+            imports: [
+                CommonModule,
+                DotCopyLinkModule,
+                UiDotIconButtonModule,
+                DotIconModule,
+                TooltipModule,
+                HttpClientTestingModule,
+                DotPipesModule
+            ],
+            declarations: [DotAppsConfigurationItemComponent],
+            providers: [
+                { provide: DotMessageService, useValue: messageServiceMock },
+                DotAlertConfirmService,
+                ConfirmationService
+            ]
+        });
 
-            fixture = TestBed.createComponent(DotAppsConfigurationItemComponent);
-            component = fixture.debugElement.componentInstance;
-            dialogService = TestBed.inject(DotAlertConfirmService);
-        })
-    );
+        fixture = TestBed.createComponent(DotAppsConfigurationItemComponent);
+        component = fixture.debugElement.componentInstance;
+        dialogService = TestBed.inject(DotAlertConfirmService);
+    }));
 
     describe('With configuration', () => {
         beforeEach(() => {

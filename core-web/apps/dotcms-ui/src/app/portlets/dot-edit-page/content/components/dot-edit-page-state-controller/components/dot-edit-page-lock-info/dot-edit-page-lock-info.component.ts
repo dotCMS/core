@@ -1,5 +1,6 @@
-import { Component, Input, ElementRef, ViewChild } from '@angular/core';
-import { DotPageRenderState } from '@portlets/dot-edit-page/shared/models';
+import { Component, ElementRef, Input, ViewChild } from '@angular/core';
+
+import { DotPageRenderState } from '@dotcms/dotcms-models';
 
 /**
  * Basic page information for edit mode

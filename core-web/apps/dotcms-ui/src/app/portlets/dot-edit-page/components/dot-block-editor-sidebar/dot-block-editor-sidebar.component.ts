@@ -1,14 +1,24 @@
-import { Component, OnDestroy, OnInit, ViewChild } from '@angular/core';
-import { switchMap, take, takeUntil } from 'rxjs/operators';
-import { DotWorkflowActionsFireService } from '@services/dot-workflow-actions-fire/dot-workflow-actions-fire.service';
-import { DotEventsService } from '@services/dot-events/dot-events.service';
-import { Observable, of, Subject } from 'rxjs';
-import { DotBlockEditorComponent } from '@dotcms/block-editor';
+import { combineLatest, Observable, of, Subject } from 'rxjs';
+
 import { HttpErrorResponse } from '@angular/common/http';
-import { DotMessageService } from '@services/dot-message/dot-messages.service';
-import { DotContentTypeService } from '@services/dot-content-type';
-import { DotCMSContentTypeField, DotCMSContentTypeFieldVariable } from '@dotcms/dotcms-models';
-import { DotAlertConfirmService } from '@dotcms/app/api/services/dot-alert-confirm';
+import { Component, OnDestroy, OnInit, ViewChild } from '@angular/core';
+
+import { switchMap, take, takeUntil } from 'rxjs/operators';
+
+import { DotBlockEditorComponent } from '@dotcms/block-editor';
+import {
+    DotAlertConfirmService,
+    DotContentTypeService,
+    DotEventsService,
+    DotMessageService,
+    DotPropertiesService,
+    DotWorkflowActionsFireService
+} from '@dotcms/data-access';
+import {
+    DotCMSContentTypeField,
+    DotCMSContentTypeFieldVariable,
+    EDITOR_MARKETING_KEYS
+} from '@dotcms/dotcms-models';
 
 export interface BlockEditorInput {
     content: { [key: string]: string };
@@ -31,6 +41,7 @@ export class DotBlockEditorSidebarComponent implements OnInit, OnDestroy {
     @ViewChild('blockEditor') blockEditor: DotBlockEditorComponent;
 
     blockEditorInput: BlockEditorInput;
+    showVideoThumbnail: boolean;
     saving = false;
     private destroy$: Subject<boolean> = new Subject<boolean>();
 
@@ -39,19 +50,24 @@ export class DotBlockEditorSidebarComponent implements OnInit, OnDestroy {
         private dotEventsService: DotEventsService,
         private dotMessageService: DotMessageService,
         private dotAlertConfirmService: DotAlertConfirmService,
-        private dotContentTypeService: DotContentTypeService
+        private dotContentTypeService: DotContentTypeService,
+        private dotPropertiesService: DotPropertiesService
     ) {}
 
     ngOnInit(): void {
-        this.dotEventsService
-            .listen<HTMLDivElement>('edit-block-editor')
-            .pipe(
-                takeUntil(this.destroy$),
-                switchMap((event) => this.extractBlockEditorData(event.data.dataset))
-            )
-            .subscribe((eventData: BlockEditorInput) => {
-                this.blockEditorInput = eventData;
-            });
+        const content$ = this.dotEventsService.listen<HTMLDivElement>('edit-block-editor').pipe(
+            takeUntil(this.destroy$),
+            switchMap((event) => this.extractBlockEditorData(event.data.dataset))
+        );
+
+        const propery$ = this.dotPropertiesService.getKey(
+            EDITOR_MARKETING_KEYS.SHOW_VIDEO_THUMBNAIL
+        );
+
+        combineLatest([content$, propery$]).subscribe(([eventData, property = 'true']) => {
+            this.blockEditorInput = eventData;
+            this.showVideoThumbnail = property === 'true' || property === 'NOT_FOUND';
+        });
     }
 
     /**
@@ -94,7 +110,7 @@ export class DotBlockEditorSidebarComponent implements OnInit, OnDestroy {
     }
 
     /**
-     *  Clear the date to close the sideber.
+     *  Clear the date to close the sidebar.
      *
      * @memberof DotBlockEditorSidebarComponent
      */

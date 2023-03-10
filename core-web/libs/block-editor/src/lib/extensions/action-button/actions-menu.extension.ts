@@ -1,32 +1,36 @@
-import { ComponentRef, ViewContainerRef } from '@angular/core';
-import { Subject } from 'rxjs';
-import { filter, take, takeUntil } from 'rxjs/operators';
-
 import { PluginKey } from 'prosemirror-state';
+import { Subject } from 'rxjs';
+import tippy, { GetReferenceClientRect } from 'tippy.js';
+
+import { ComponentRef, ViewContainerRef } from '@angular/core';
+
+import { filter, take } from 'rxjs/operators';
+
 import { Editor, Extension, Range } from '@tiptap/core';
 import { FloatingMenuPluginProps } from '@tiptap/extension-floating-menu';
 import { Level } from '@tiptap/extension-heading';
 import Suggestion, { SuggestionOptions, SuggestionProps } from '@tiptap/suggestion';
-import tippy, { GetReferenceClientRect } from 'tippy.js';
 
-import {
-    // Floating Menu
-    FLOATING_ACTIONS_MENU_KEYBOARD,
-    FloatingActionsKeydownProps,
-    FloatingActionsPlugin,
-    FloatingActionsProps,
-    // Suggestions
-    ItemsType,
-    SuggestionsCommandProps,
-    SuggestionsComponent,
-    CONTENT_SUGGESTION_ID,
-    suggestionOptions,
-    SuggestionPopperModifiers,
-    findParentNode,
-    NodeTypes
-} from '@dotcms/block-editor';
+import { RemoteCustomExtensions } from '@dotcms/dotcms-models';
 
 import { ActionButtonComponent } from './action-button.component';
+
+import {
+    SuggestionPopperModifiers,
+    SuggestionsCommandProps,
+    SuggestionsComponent,
+    FloatingActionsProps,
+    FLOATING_ACTIONS_MENU_KEYBOARD,
+    CONTENT_SUGGESTION_ID,
+    ItemsType,
+    FloatingActionsKeydownProps,
+    FloatingActionsPlugin,
+    findParentNode,
+    DotMenuItem,
+    suggestionOptions,
+    clearFilter
+} from '../../shared';
+import { NodeTypes } from '../bubble-menu/models';
 
 declare module '@tiptap/core' {
     interface Commands<ReturnType> {
@@ -38,7 +42,13 @@ declare module '@tiptap/core' {
                 range: Range;
                 type: { name: string; level?: number };
             }) => ReturnType;
-            addContentletBlock: ({ range: Range, payload: unknown }) => ReturnType;
+            addContentletBlock: ({
+                range,
+                payload
+            }: {
+                range: Range;
+                payload: unknown;
+            }) => ReturnType;
             addNextLine: () => ReturnType;
         };
     }
@@ -48,13 +58,6 @@ export type FloatingMenuOptions = Omit<FloatingMenuPluginProps, 'editor' | 'elem
     element: HTMLElement | null;
     suggestion: Omit<SuggestionOptions, 'editor'>;
 };
-
-function getSuggestionComponent(viewContainerRef: ViewContainerRef) {
-    const component = viewContainerRef.createComponent(SuggestionsComponent);
-    component.changeDetectorRef.detectChanges();
-
-    return component;
-}
 
 function getTippyInstance({
     element,
@@ -86,22 +89,21 @@ function getTippyInstance({
 function execCommand({
     editor,
     range,
-    props
+    props,
+    customBlocks
 }: {
     editor: Editor;
     range: Range;
     props: SuggestionsCommandProps;
+    customBlocks: RemoteCustomExtensions;
 }) {
+    const { type, payload } = props;
     const whatToDo = {
         dotContent: () => {
-            editor
-                .chain()
-                .addContentletBlock({ range, payload: props.payload })
-                .addNextLine()
-                .run();
+            editor.chain().addContentletBlock({ range, payload }).addNextLine().run();
         },
         heading: () => {
-            editor.chain().addHeading({ range, type: props.type }).run();
+            editor.chain().addHeading({ range, type }).run();
         },
         table: () => {
             editor.commands
@@ -166,17 +168,47 @@ function execCommand({
         codeBlock: () => {
             editor.chain().deleteRange(range).setCodeBlock().focus().run();
         },
-        horizontalLine: () => {
+        horizontalRule: () => {
             editor.chain().deleteRange(range).setHorizontalRule().focus().run();
-        }
+        },
+        image: () => editor.commands.openAssetForm({ type: 'image' }),
+        video: () => editor.commands.openAssetForm({ type: 'video' })
     };
+
+    getCustomActions(customBlocks).forEach((option) => {
+        whatToDo[option.id] = () => {
+            try {
+                editor.commands[option.commandKey]();
+            } catch {
+                console.warn(`Custom command ${option.commandKey} does not exists.`);
+            }
+        };
+    });
 
     whatToDo[props.type.name]
         ? whatToDo[props.type.name]()
         : editor.chain().setTextSelection(range).focus().run();
 }
 
-export const ActionsMenu = (viewContainerRef: ViewContainerRef) => {
+function mapCustomActions(actions): Array<DotMenuItem> {
+    return actions.map((action) => ({
+        icon: action.icon,
+        label: action.menuLabel,
+        commandKey: action.command,
+        id: `${action.command}-id`
+    }));
+}
+
+function getCustomActions(customBlocks): Array<DotMenuItem> {
+    return customBlocks.extensions
+        .map((extension) => mapCustomActions(extension.actions || []))
+        .flat();
+}
+
+export const ActionsMenu = (
+    viewContainerRef: ViewContainerRef,
+    customBlocks: RemoteCustomExtensions
+) => {
     let myTippy;
     let suggestionsComponent: ComponentRef<SuggestionsComponent>;
     const suggestionKey = new PluginKey('suggestionPlugin');
@@ -200,12 +232,14 @@ export const ActionsMenu = (viewContainerRef: ViewContainerRef) => {
                         open: false
                     });
                     editor.view.dispatch(transaction);
+                    editor.commands.freezeScroll(false);
                 }
             });
         }
     }
 
     function onBeforeStart({ editor }): void {
+        editor.commands.freezeScroll(true);
         const isTableCell =
             findParentNode(editor.view.state.selection.$from, [NodeTypes.TABLE_CELL])?.type.name ===
             NodeTypes.TABLE_CELL;
@@ -214,36 +248,59 @@ export const ActionsMenu = (viewContainerRef: ViewContainerRef) => {
     }
 
     function setUpSuggestionComponent(editor: Editor, range: Range) {
-        const allowedBlocks: string[] = editor.storage.dotConfig.allowedBlocks;
-        suggestionsComponent = getSuggestionComponent(viewContainerRef);
-        suggestionsComponent.instance.currentLanguage = editor.storage.dotConfig.lang;
-        suggestionsComponent.instance.allowedContentTypes =
-            editor.storage.dotConfig.allowedContentTypes;
-        if (allowedBlocks.length > 1) {
-            suggestionsComponent.instance.items = suggestionOptions.filter((item) =>
-                allowedBlocks.includes(item.id)
-            );
-            if (allowedBlocks.includes(CONTENT_SUGGESTION_ID)) {
-                suggestionsComponent.instance.addContentletItem();
-            }
-        } else {
-            suggestionsComponent.instance.addContentletItem();
-        }
+        const { allowedBlocks, allowedContentTypes, lang } = editor.storage.dotConfig;
+        const editorAllowedBlocks = allowedBlocks.length > 1 ? allowedBlocks : [];
+        const items = getItems({ allowedBlocks: editorAllowedBlocks, editor, range });
 
-        suggestionsComponent.instance.onSelection = (item) => {
-            const suggestionQuery = suggestionKey.getState(editor.view.state).query?.length || 0;
-            range.to = range.to + suggestionQuery;
-            execCommand({ editor: editor, range: range, props: item });
+        suggestionsComponent = viewContainerRef.createComponent(SuggestionsComponent);
+
+        // Setting Inputs
+        suggestionsComponent.instance.items = items;
+        suggestionsComponent.instance.currentLanguage = lang;
+        suggestionsComponent.instance.allowedContentTypes = allowedContentTypes;
+        suggestionsComponent.instance.onSelectContentlet = (props) => {
+            clearFilter({ type: ItemsType.CONTENT, editor, range, suggestionKey, ItemsType });
+            onSelection({ editor, range, props });
         };
 
-        suggestionsComponent.instance.clearFilter.pipe(takeUntil(destroy$)).subscribe((type) => {
-            const queryRange = {
-                to: range.to + suggestionKey.getState(editor.view.state).query?.length,
-                from: type === ItemsType.BLOCK ? range.from : range.from + 1
-            };
-            editor.chain().deleteRange(queryRange).run();
-        });
+        // Needs to be called after settings the component Inputs
+        // To avoid calling the `onInit` hook before the Inputs are initialized
+        suggestionsComponent.changeDetectorRef.detectChanges();
+
+        if (allowedBlocks.length <= 1 || allowedBlocks.includes(CONTENT_SUGGESTION_ID)) {
+            suggestionsComponent.instance.addContentletItem();
+        }
     }
+
+    function getItems({ allowedBlocks = [], editor, range }): DotMenuItem[] {
+        const items = allowedBlocks.length
+            ? suggestionOptions.filter((item) => this.allowedBlocks.includes(item.id))
+            : suggestionOptions;
+
+        const customItems = [...items, ...getCustomActions(customBlocks)];
+
+        customItems.forEach((item) => (item.command = () => onCommand({ item, editor, range })));
+
+        return customItems;
+    }
+
+    function onCommand({ item, editor, range }) {
+        const { id, attributes } = item;
+        const props = {
+            type: { name: id.includes('heading') ? 'heading' : id, ...attributes }
+        };
+
+        clearFilter({ type: ItemsType.BLOCK, editor, range, suggestionKey, ItemsType });
+        onSelection({ editor, range, props });
+    }
+
+    function onSelection({ editor, range, props }) {
+        const suggestionQuery = suggestionKey.getState(editor.view.state).query?.length || 0;
+        range.to = range.to + suggestionQuery;
+        execCommand({ editor: editor, range: range, props, customBlocks });
+    }
+
+    /* End new Functions */
 
     /**
      * Handle the keyboard events when the suggestion are opened
@@ -276,8 +333,9 @@ export const ActionsMenu = (viewContainerRef: ViewContainerRef) => {
         return false;
     }
 
-    function onExit() {
+    function onExit({ editor }): void {
         myTippy?.destroy();
+        editor.commands.freezeScroll(false);
         suggestionsComponent?.destroy();
         suggestionsComponent = null;
         destroy$.next(true);

@@ -1,0 +1,9 @@
+@use "variables" as *;
+
+:host {
+    padding: $spacing-1;
+
+    .readonly {
+        cursor: text;
+    }
+}

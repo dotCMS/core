@@ -1,18 +1,20 @@
+import { Component, DebugElement } from '@angular/core';
+import { ComponentFixture, waitForAsync } from '@angular/core/testing';
+import { UntypedFormBuilder, UntypedFormGroup } from '@angular/forms';
 import { By } from '@angular/platform-browser';
-import { ComponentFixture } from '@angular/core/testing';
-import { DebugElement, Component } from '@angular/core';
-import { waitForAsync } from '@angular/core/testing';
+import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
+
+import { MultiSelect } from 'primeng/multiselect';
+
+import { DOTTestBed } from '@dotcms/app/test/dot-test-bed';
+import { DotMessageService, DotWorkflowService } from '@dotcms/data-access';
+import {
+    DotWorkflowServiceMock,
+    MockDotMessageService,
+    mockWorkflows
+} from '@dotcms/utils-testing';
 
 import { DotWorkflowsSelectorFieldComponent } from './dot-workflows-selector-field.component';
-
-import { DotWorkflowService } from '@dotcms/app/api/services/dot-workflow/dot-workflow.service';
-import { MultiSelect } from 'primeng/multiselect';
-import { DotMessageService } from '@services/dot-message/dot-messages.service';
-import { UntypedFormGroup, UntypedFormBuilder } from '@angular/forms';
-import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
-import { MockDotMessageService } from '@tests/dot-message-service.mock';
-import { mockWorkflows, DotWorkflowServiceMock } from '@tests/dot-workflow-service.mock';
-import { DOTTestBed } from '@tests/dot-test-bed';
 
 const messageServiceMock = new MockDotMessageService({
     'dot.common.select.workflows': 'Pick it up',
@@ -197,9 +199,10 @@ describe('DotWorkflowsSelectorFieldComponent', () => {
             expect(innerMultiselect.componentInstance.disabled).toBe(false);
         });
 
-        it('should set disabled', () => {
+        it('should set disabled', async () => {
             fixtureHost.componentInstance.form.get('workflows').disable();
             fixtureHost.detectChanges();
+            await fixtureHost.whenStable();
             expect(innerMultiselect.componentInstance.disabled).toBe(true);
         });
     });

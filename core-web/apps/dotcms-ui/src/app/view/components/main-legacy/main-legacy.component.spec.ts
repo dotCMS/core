@@ -1,9 +1,31 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
+import { HttpClientTestingModule } from '@angular/common/http/testing';
+import { Component, DebugElement, Input } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { DebugElement, Component, Input } from '@angular/core';
-import { MainComponentLegacyComponent } from './main-legacy.component';
+import { By } from '@angular/platform-browser';
 import { RouterTestingModule } from '@angular/router/testing';
+
+import { ConfirmationService } from 'primeng/api';
+
+import { DotDownloadBundleDialogModule } from '@components/_common/dot-download-bundle-dialog/dot-download-bundle-dialog.module';
+import { DotGlobalMessageService } from '@components/_common/dot-global-message/dot-global-message.service';
+import { DotWizardModule } from '@components/_common/dot-wizard/dot-wizard.module';
+import { DotMessageDisplayService } from '@components/dot-message-display/services';
+import { DotCustomEventHandlerService } from '@dotcms/app/api/services/dot-custom-event-handler/dot-custom-event-handler.service';
+import { DotFormatDateService } from '@dotcms/app/api/services/dot-format-date-service';
+import { DotHttpErrorManagerService } from '@dotcms/app/api/services/dot-http-error-manager/dot-http-error-manager.service';
+import { DotMenuService } from '@dotcms/app/api/services/dot-menu.service';
+import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
+import { DotUiColorsService } from '@dotcms/app/api/services/dot-ui-colors/dot-ui-colors.service';
+import { DotWorkflowEventHandlerService } from '@dotcms/app/api/services/dot-workflow-event-handler/dot-workflow-event-handler.service';
+import { dotEventSocketURLFactory, MockDotUiColorsService } from '@dotcms/app/test/dot-test-bed';
+import {
+    DotAlertConfirmService,
+    DotEventsService,
+    DotGenerateSecurePasswordService,
+    DotWorkflowActionsFireService
+} from '@dotcms/data-access';
 import {
     ApiRoot,
     CoreWebService,
@@ -16,30 +38,12 @@ import {
     StringUtils,
     UserModel
 } from '@dotcms/dotcms-js';
-import { LoginServiceMock } from '../../../test/login-service.mock';
-import { By } from '@angular/platform-browser';
+import { CoreWebServiceMock, LoginServiceMock, MockDotRouterService } from '@dotcms/utils-testing';
+
+import { MainComponentLegacyComponent } from './main-legacy.component';
+
 import { DotIframeService } from '../_common/iframe/service/dot-iframe/dot-iframe.service';
 import { DotContentletEditorModule } from '../dot-contentlet-editor/dot-contentlet-editor.module';
-import { DotMenuService } from '@services/dot-menu.service';
-import { DotRouterService } from '@services/dot-router/dot-router.service';
-import { DotCustomEventHandlerService } from '@services/dot-custom-event-handler/dot-custom-event-handler.service';
-import { DotDownloadBundleDialogModule } from '@components/_common/dot-download-bundle-dialog/dot-download-bundle-dialog.module';
-import { DotWizardModule } from '@components/_common/dot-wizard/dot-wizard.module';
-import { MockDotRouterService } from '@tests/dot-router-service.mock';
-import { DotUiColorsService } from '@services/dot-ui-colors/dot-ui-colors.service';
-import { dotEventSocketURLFactory, MockDotUiColorsService } from '@tests/dot-test-bed';
-import { CoreWebServiceMock } from '@tests/core-web.service.mock';
-import { DotAlertConfirmService } from '@services/dot-alert-confirm';
-import { ConfirmationService } from 'primeng/api';
-import { HttpClientTestingModule } from '@angular/common/http/testing';
-import { DotWorkflowEventHandlerService } from '@services/dot-workflow-event-handler/dot-workflow-event-handler.service';
-import { DotMessageDisplayService } from '@components/dot-message-display/services';
-import { DotHttpErrorManagerService } from '@services/dot-http-error-manager/dot-http-error-manager.service';
-import { DotWorkflowActionsFireService } from '@services/dot-workflow-actions-fire/dot-workflow-actions-fire.service';
-import { DotGlobalMessageService } from '@components/_common/dot-global-message/dot-global-message.service';
-import { DotEventsService } from '@services/dot-events/dot-events.service';
-import { DotFormatDateService } from '@services/dot-format-date-service';
-import { DotGenerateSecurePasswordService } from '@services/dot-generate-secure-password/dot-generate-secure-password.service';
 
 @Component({
     selector: 'dot-alert-confirm',

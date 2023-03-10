@@ -1,24 +1,28 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { By } from '@angular/platform-browser';
+import * as _ from 'lodash';
+
+import { Component, DebugElement, Input } from '@angular/core';
 import {
     ComponentFixture,
-    waitForAsync,
     fakeAsync,
-    tick,
+    flush,
     TestBed,
-    flush
+    tick,
+    waitForAsync
 } from '@angular/core/testing';
-import { DebugElement, Component, Input } from '@angular/core';
-import { DotMessageService } from '@services/dot-message/dot-messages.service';
-import { MockDotMessageService } from '../../../../../test/dot-message-service.mock';
-import { SEARCHABLE_NGFACES_MODULES } from '../searchable-dropdown.module';
-import { SearchableDropdownComponent } from './searchable-dropdown.component';
+import { By } from '@angular/platform-browser';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
-import { DotIconModule } from '@dotcms/ui';
-import * as _ from 'lodash';
+
 import { UiDotIconButtonModule } from '@components/_common/dot-icon-button/dot-icon-button.module';
+import { DotMessageService } from '@dotcms/data-access';
+import { DotIconModule } from '@dotcms/ui';
+import { MockDotMessageService } from '@dotcms/utils-testing';
 import { DotPipesModule } from '@pipes/dot-pipes.module';
+
+import { SearchableDropdownComponent } from './searchable-dropdown.component';
+
+import { SEARCHABLE_NGFACES_MODULES } from '../searchable-dropdown.module';
 @Component({
     selector: 'dot-host-component',
     template: ` <dot-searchable-dropdown

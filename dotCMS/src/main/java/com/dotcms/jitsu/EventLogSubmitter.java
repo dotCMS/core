@@ -27,11 +27,10 @@ public class EventLogSubmitter {
             .rejectedExecutionHandler(new ThreadPoolExecutor.DiscardOldestPolicy())
             .build();
         this.submitter = DotConcurrentFactory.getInstance().getSubmitter("event-log-posting", config);
-
     }
 
-    void logEvent(Host host, final String jsonEvent) {
-        this.submitter.execute(new EventLogRunnable(host, jsonEvent));
+    void logEvent(Host host, final EventsPayload eventPayload) {
+        this.submitter.execute(new EventLogRunnable(host, eventPayload));
     }
 
 }

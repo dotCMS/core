@@ -1,0 +1,22 @@
+.dijitCheckBox {
+    border-radius: $check-radius;
+    border: $check-normal-border;
+    background-color: $check-normal-bgcolor;
+    width: $check-size;
+    height: $check-size;
+
+    &Checked {
+        border: $check-checked-border;
+        background: $check-checked-bgcolor url($check-checked-icon) center center no-repeat;
+    }
+
+    &Disabled {
+        border: $check-disabled-border;
+        background: $check-disabled-bgcolor;
+    }
+
+    &CheckedDisabled {
+        border: $check-disabled-border;
+        background: $check-disabled-bgcolor url($check-disabled-icon) center center no-repeat;
+    }
+}

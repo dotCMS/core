@@ -1,6 +1,6 @@
-import { SafeUrl, ɵDomSanitizerImpl } from '@angular/platform-browser';
+import { Props } from 'tippy.js';
 
-import { DotMenuItem } from '@dotcms/block-editor';
+import { SafeUrl, ɵDomSanitizerImpl } from '@angular/platform-browser';
 
 // Assets
 import {
@@ -12,10 +12,11 @@ import {
     quoteIcon,
     ulIcon
 } from '../components/suggestions/suggestion-icons';
+import { DotMenuItem } from '../components/suggestions/suggestions.component';
 
 const domSanitizer = new ɵDomSanitizerImpl(document);
 
-const headings = [...Array(3).keys()].map((level) => {
+const headings: DotMenuItem[] = [...Array(3).keys()].map((level) => {
     const size = level + 1;
 
     return {
@@ -26,7 +27,26 @@ const headings = [...Array(3).keys()].map((level) => {
     };
 });
 
-const table = [
+const dotContentet: DotMenuItem = {
+    label: 'Contentlet',
+    icon: 'receipt',
+    id: 'dotContent'
+};
+
+const image: DotMenuItem[] = [
+    {
+        label: 'Image',
+        icon: 'image',
+        id: 'image'
+    },
+    {
+        label: 'Video',
+        icon: 'movie',
+        id: 'video'
+    }
+];
+
+const table: DotMenuItem[] = [
     {
         label: 'Table',
         icon: 'table_view',
@@ -34,15 +54,13 @@ const table = [
     }
 ];
 
-const paragraph = [
-    {
-        label: 'Paragraph',
-        icon: sanitizeUrl(pIcon),
-        id: 'paragraph'
-    }
-];
+const paragraph: DotMenuItem = {
+    label: 'Paragraph',
+    icon: sanitizeUrl(pIcon),
+    id: 'paragraph'
+};
 
-const list = [
+const list: DotMenuItem[] = [
     {
         label: 'List Ordered',
         icon: sanitizeUrl(olIcon),
@@ -55,7 +73,7 @@ const list = [
     }
 ];
 
-const block = [
+const block: DotMenuItem[] = [
     {
         label: 'Blockquote',
         icon: sanitizeUrl(quoteIcon),
@@ -69,27 +87,34 @@ const block = [
     {
         label: 'Horizontal Line',
         icon: sanitizeUrl(lineIcon),
-        id: 'horizontalLine'
+        id: 'horizontalRule'
     }
 ];
 
-function sanitizeUrl(url: string): SafeUrl {
+export const getEditorBlockOptions = () => {
+    return (
+        [...suggestionOptions, dotContentet]
+            // get all blocks except the Paragraph
+            .filter(({ id }) => id != paragraph.id)
+            .map(({ label, id }) => ({ label, code: id }))
+            .sort((a, b) => a.label.localeCompare(b.label))
+    );
+};
+
+export function sanitizeUrl(url: string): SafeUrl {
     return domSanitizer.bypassSecurityTrustUrl(url);
 }
 
 export const suggestionOptions: DotMenuItem[] = [
+    ...image,
     ...headings,
     ...table,
-    ...paragraph,
     ...list,
-    ...block
+    ...block,
+    paragraph
 ];
 
-export const changeToItems: DotMenuItem[] = [
-    ...suggestionOptions.filter((item) => !(item.id == 'horizontalLine' || item.id == 'table'))
-];
-
-export const tableChangeToItems: DotMenuItem[] = [...headings, ...paragraph, ...list];
+export const tableChangeToItems: DotMenuItem[] = [...headings, paragraph, ...list];
 
 export const SuggestionPopperModifiers = [
     {
@@ -107,4 +132,40 @@ export const SuggestionPopperModifiers = [
     }
 ];
 
-export const CONTENT_SUGGESTION_ID = 'contentlets';
+export const CONTENT_SUGGESTION_ID = 'dotContent';
+
+const FORBIDDEN_CHANGE_TO_BLOCKS = {
+    horizontalRule: true,
+    table: true,
+    image: true,
+    video: true
+};
+
+export const changeToItems: DotMenuItem[] = [
+    ...suggestionOptions.filter((item) => !FORBIDDEN_CHANGE_TO_BLOCKS[item.id])
+];
+
+export const clearFilter = function ({ type, editor, range, suggestionKey, ItemsType }) {
+    const queryRange = {
+        to: range.to + suggestionKey.getState(editor.view.state).query?.length,
+        from: type === ItemsType.BLOCK ? range.from : range.from + 1
+    };
+    editor.chain().deleteRange(queryRange).run();
+};
+
+export const BASIC_TIPPY_OPTIONS: Partial<Props> = {
+    duration: [250, 0],
+    interactive: true,
+    maxWidth: 'none',
+    trigger: 'manual',
+    placement: 'bottom-start',
+    hideOnClick: 'toggle',
+    popperOptions: {
+        modifiers: [
+            {
+                name: 'flip',
+                options: { fallbackPlacements: ['top-start'] }
+            }
+        ]
+    }
+};

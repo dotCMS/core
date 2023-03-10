@@ -1,8 +1,6 @@
 package com.dotcms;
 
 import com.dotcms.analytics.bayesian.BayesianAPIImplTest;
-import com.dotcms.auth.providers.jwt.JsonWebTokenUtilsIntegrationTest;
-import com.dotcms.auth.providers.jwt.factories.ApiTokenAPITest;
 import com.dotcms.auth.providers.saml.v1.DotSamlResourceTest;
 import com.dotcms.auth.providers.saml.v1.SAMLHelperTest;
 import com.dotcms.cache.lettuce.DotObjectCodecTest;
@@ -10,7 +8,6 @@ import com.dotcms.cache.lettuce.LettuceCacheTest;
 import com.dotcms.cache.lettuce.RedisClientTest;
 import com.dotcms.content.business.ObjectMapperTest;
 import com.dotcms.content.business.json.ContentletJsonAPITest;
-import com.dotcms.content.elasticsearch.business.ESContentFactoryImplTest;
 import com.dotcms.content.elasticsearch.business.ESContentletAPIImplTest;
 import com.dotcms.content.elasticsearch.business.ESIndexAPITest;
 import com.dotcms.content.elasticsearch.business.ElasticsearchUtilTest;
@@ -18,6 +15,7 @@ import com.dotcms.content.elasticsearch.util.ESMappingUtilHelperTest;
 import com.dotcms.content.model.hydration.MetadataDelegateTest;
 import com.dotcms.contenttype.business.ContentTypeInitializerTest;
 import com.dotcms.contenttype.business.DotAssetBaseTypeToContentTypeStrategyImplTest;
+import com.dotcms.contenttype.business.SiteAndFolderResolverImplTest;
 import com.dotcms.contenttype.business.StoryBlockAPITest;
 import com.dotcms.contenttype.test.DotAssetAPITest;
 import com.dotcms.csspreproc.CSSCacheTest;
@@ -102,6 +100,7 @@ import com.dotcms.security.multipart.ContentDispositionFileNameParserTest;
 import com.dotcms.security.multipart.SecureFileValidatorTest;
 import com.dotcms.storage.FileMetadataAPITest;
 import com.dotcms.storage.StoragePersistenceAPITest;
+import com.dotcms.storage.repository.HashedLocalFileRepositoryManagerTest;
 import com.dotcms.translate.GoogleTranslationServiceIntegrationTest;
 import com.dotcms.uuid.shorty.LegacyShortyIdApiTest;
 import com.dotcms.variant.VariantAPITest;
@@ -161,6 +160,7 @@ import com.dotmarketing.portlets.workflows.util.WorkflowEmailUtilTest;
 import com.dotmarketing.quartz.DotStatefulJobTest;
 import com.dotmarketing.quartz.job.CleanUpFieldReferencesJobTest;
 import com.dotmarketing.quartz.job.IntegrityDataGenerationJobTest;
+import com.dotmarketing.quartz.job.StartEndScheduledExperimentsJobTest;
 import com.dotmarketing.startup.StartupTasksExecutorTest;
 import com.dotmarketing.startup.runalways.Task00050LoadAppsSecretsTest;
 import com.dotmarketing.startup.runonce.Task05195CreatesDestroyActionAndAssignDestroyDefaultActionsToTheSystemWorkflowTest;
@@ -209,6 +209,7 @@ import com.dotmarketing.startup.runonce.Task220829CreateExperimentsTableTest;
 import com.dotmarketing.startup.runonce.Task220912UpdateCorrectShowOnMenuPropertyTest;
 import com.dotmarketing.startup.runonce.Task220928AddLookbackWindowColumnToExperimentTest;
 import com.dotmarketing.startup.runonce.Task221007AddVariantIntoPrimaryKeyTest;
+import com.dotmarketing.startup.runonce.Task230110MakeSomeSystemFieldsRemovableByBaseTypeTest;
 import com.dotmarketing.util.ConfigTest;
 import com.dotmarketing.util.HashBuilderTest;
 import com.dotmarketing.util.MaintenanceUtilTest;
@@ -225,16 +226,20 @@ import org.junit.runners.Suite.SuiteClasses;
 /* grep -l -r "@Test" dotCMS/src/integration-test */
 /* ./gradlew integrationTest -Dtest.single=com.dotcms.MainSuite */
 
-
 @RunWith(MainBaseSuite.class)
 @SuiteClasses({
+        StartEndScheduledExperimentsJobTest.class,
         RulesAPIImplIntegrationTest.class,
+        Task220825CreateVariantFieldTest.class,
+//        AnalyticsAPIImplTest.class,
+        Task221007AddVariantIntoPrimaryKeyTest.class,
+        ESContentletAPIImplTest.class,
         ExperimentAPIImpIT.class,
         ExperimentWebAPIImplIT.class,
-        Task220825CreateVariantFieldTest.class,
-        Task221007AddVariantIntoPrimaryKeyTest.class,
+//        AccessTokenRenewJobTest.class,
         ContentletWebAPIImplIntegrationTest.class, // moved to top because of failures on GHA
         DependencyBundlerTest.class, // moved to top because of failures on GHA
+        SiteAndFolderResolverImplTest.class, //Moved up to avoid conflicts with CT deletion
         FolderCacheImplIntegrationTest.class,
         StaticPublisherIntegrationTest.class,
         com.dotcms.publishing.PublisherAPIImplTest.class,
@@ -452,7 +457,6 @@ import org.junit.runners.Suite.SuiteClasses;
         Task05195CreatesDestroyActionAndAssignDestroyDefaultActionsToTheSystemWorkflowTest.class,
         Task05210CreateDefaultDotAssetTest.class,
         CleanUpFieldReferencesJobTest.class,
-        ESContentletAPIImplTest.class,
         CachedParameterDecoratorTest.class,
         ContainerFactoryImplTest.class,
         TemplateFactoryImplTest.class,
@@ -649,12 +653,12 @@ import org.junit.runners.Suite.SuiteClasses;
         UsersPlatformConditionletTest.class,
         VisitorsCurrentURLConditionletTest.class,
         VisitorsGeolocationConditionletTest.class,
+        HashedLocalFileRepositoryManagerTest.class,
         ManifestUtilTest.class,
-        ZipUtilTest.class
-
+        ZipUtilTest.class,
+        Task230110MakeSomeSystemFieldsRemovableByBaseTypeTest.class
 })
+
 public class MainSuite {
 
 }
-
-

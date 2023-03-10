@@ -1,4 +1,5 @@
 {
+    "name": "dot-rules",
     "$schema": "../../node_modules/nx/schemas/project-schema.json",
     "projectType": "library",
     "sourceRoot": "libs/dot-rules/src",
@@ -13,7 +14,7 @@
         },
         "test": {
             "executor": "@angular-devkit/build-angular:karma",
-            "outputs": ["coverage/libs/dot-rules"],
+            "outputs": ["{workspaceRoot}/coverage/libs/dot-rules"],
             "options": {
                 "main": "libs/dot-rules/src/test.ts",
                 "karmaConfig": "libs/dot-rules/karma.conf.js",

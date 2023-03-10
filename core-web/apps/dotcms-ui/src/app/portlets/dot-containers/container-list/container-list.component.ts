@@ -1,20 +1,25 @@
+import { Subject } from 'rxjs';
+
 import { Component, OnDestroy, ViewChild } from '@angular/core';
+
+import { DialogService } from 'primeng/dynamicdialog';
+
+import { takeUntil } from 'rxjs/operators';
+
+import { DotBulkInformationComponent } from '@components/_common/dot-bulk-information/dot-bulk-information.component';
 import { DotListingDataTableComponent } from '@components/dot-listing-data-table/dot-listing-data-table.component';
-import { DotContainer } from '@models/container/dot-container.model';
-import { DotContentState } from '@dotcms/dotcms-models';
-import { DotContainerListStore } from '@portlets/dot-containers/container-list/store/dot-container-list.store';
-import { DotActionMenuItem } from '@models/dot-action-menu/dot-action-menu-item.model';
+import { DotMessageSeverity, DotMessageType } from '@components/dot-message-display/model';
+import { DotMessageDisplayService } from '@components/dot-message-display/services';
+import { DotMessageService } from '@dotcms/data-access';
 import {
     DotActionBulkResult,
-    DotBulkFailItem
-} from '@models/dot-action-bulk-result/dot-action-bulk-result.model';
-import { DotMessageSeverity, DotMessageType } from '@components/dot-message-display/model';
-import { DotBulkInformationComponent } from '@components/_common/dot-bulk-information/dot-bulk-information.component';
-import { DotMessageService } from '@services/dot-message/dot-messages.service';
-import { DotMessageDisplayService } from '@components/dot-message-display/services';
-import { DialogService } from 'primeng/dynamicdialog';
-import { takeUntil } from 'rxjs/operators';
-import { Subject } from 'rxjs';
+    DotBulkFailItem,
+    DotContainer,
+    DotContentState,
+    CONTAINER_SOURCE
+} from '@dotcms/dotcms-models';
+import { DotActionMenuItem } from '@models/dot-action-menu/dot-action-menu-item.model';
+import { DotContainerListStore } from '@portlets/dot-containers/container-list/store/dot-container-list.store';
 import { DotRouterService } from '@services/dot-router/dot-router.service';
 
 @Component({
@@ -50,14 +55,14 @@ export class ContainerListComponent implements OnDestroy {
     }
 
     /**
-     * Change base type to the selected one
+     * Change content type to the selected one
      * @param {string} value
      * @memberof ContainerListComponent
      */
-    changeBaseTypeSelector(value: string) {
-        value !== ''
-            ? this.listing.paginatorService.setExtraParams('type', value)
-            : this.listing.paginatorService.deleteExtraParams('type');
+    changeContentTypeSelector(value: string) {
+        value
+            ? this.listing.paginatorService.setExtraParams('content_type', value)
+            : this.listing.paginatorService.deleteExtraParams('content_type');
         this.listing.loadFirstPage();
     }
 
@@ -101,7 +106,9 @@ export class ContainerListComponent implements OnDestroy {
      */
     updateSelectedContainers(containers: DotContainer[]): void {
         const filterContainers = containers.filter(
-            (container: DotContainer) => container.identifier !== 'SYSTEM_CONTAINER'
+            (container: DotContainer) =>
+                container.identifier !== 'SYSTEM_CONTAINER' &&
+                container.source !== CONTAINER_SOURCE.FILE
         );
         this.store.updateSelectedContainers(filterContainers);
     }
@@ -127,10 +134,17 @@ export class ContainerListComponent implements OnDestroy {
      */
     getContainersWithDisabledEntities(containers: DotContainer[]): DotContainer[] {
         return containers.map((container) => {
-            container.disableInteraction =
-                container.identifier.includes('/') || container.identifier === 'SYSTEM_CONTAINER';
+            const copyContainer = structuredClone(container);
+            copyContainer.disableInteraction =
+                copyContainer.identifier.includes('/') ||
+                copyContainer.identifier === 'SYSTEM_CONTAINER' ||
+                copyContainer.source === CONTAINER_SOURCE.FILE;
 
-            return container;
+            if (copyContainer.path) {
+                copyContainer.pathName = new URL(`http:${container.path}`).pathname;
+            }
+
+            return copyContainer;
         });
     }
 

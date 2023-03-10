@@ -1,20 +1,24 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { DotPipesModule } from '@pipes/dot-pipes.module';
-import { DotIconModule, DotSpinnerModule } from '@dotcms/ui';
-import { By } from '@angular/platform-browser';
-import { Component, DebugElement, EventEmitter, Injectable, Input, Output } from '@angular/core';
-import { DotContentletEditorService } from '@components/dot-contentlet-editor/services/dot-contentlet-editor.service';
-import { DotFilterPipeModule } from '@pipes/dot-filter/dot-filter-pipe.module';
-import { FormsModule } from '@angular/forms';
-import { DotPaletteInputFilterModule } from '../dot-palette-input-filter/dot-palette-input-filter.module';
 import { HttpClientTestingModule } from '@angular/common/http/testing';
-import { CoreWebService, CoreWebServiceMock } from '@dotcms/dotcms-js';
-import { DotPaletteContentletsComponent } from './dot-palette-contentlets.component';
-import { PaginatorModule } from 'primeng/paginator';
-import { DotCMSContentlet } from '@dotcms/dotcms-models';
+import { Component, DebugElement, EventEmitter, Injectable, Input, Output } from '@angular/core';
+import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { FormsModule } from '@angular/forms';
+import { By } from '@angular/platform-browser';
+
 import { LazyLoadEvent } from 'primeng/api';
+import { PaginatorModule } from 'primeng/paginator';
+
+import { DotContentletEditorService } from '@components/dot-contentlet-editor/services/dot-contentlet-editor.service';
+import { CoreWebService, CoreWebServiceMock } from '@dotcms/dotcms-js';
+import { DotCMSContentlet } from '@dotcms/dotcms-models';
+import { DotIconModule, DotSpinnerModule } from '@dotcms/ui';
+import { DotFilterPipeModule } from '@pipes/dot-filter/dot-filter-pipe.module';
+import { DotPipesModule } from '@pipes/dot-pipes.module';
+
+import { DotPaletteContentletsComponent } from './dot-palette-contentlets.component';
+
+import { DotPaletteInputFilterModule } from '../dot-palette-input-filter/dot-palette-input-filter.module';
 
 export const contentletFormDataMock = {
     baseType: 'FORM',

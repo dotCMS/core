@@ -1,33 +1,38 @@
-import { ComponentRef } from '@angular/core';
+import { EditorState, NodeSelection, Plugin, PluginKey } from 'prosemirror-state';
 import { EditorView } from 'prosemirror-view';
-import { posToDOMRect } from '@tiptap/core';
-import { EditorState, Plugin, PluginKey, NodeSelection } from 'prosemirror-state';
-import { BubbleMenuView } from '@tiptap/extension-bubble-menu';
 import tippy, { Instance } from 'tippy.js';
 
+import { ComponentRef } from '@angular/core';
+
+import { filter, take } from 'rxjs/operators';
+
+import { posToDOMRect } from '@tiptap/core';
+import { BubbleMenuView } from '@tiptap/extension-bubble-menu';
+
+import { ImageNode } from '../../../nodes';
 import {
-    // Bubble Menu
+    changeToItems,
+    deleteByNode,
+    deleteByRange,
+    findParentNode,
+    SuggestionsComponent,
+    tableChangeToItems
+} from '../../../shared';
+import { BUBBLE_FORM_PLUGIN_KEY } from '../../bubble-form/bubble-form.extension';
+import { LINK_FORM_PLUGIN_KEY } from '../../bubble-link-form/bubble-link-form.extension';
+import {
     BubbleMenuComponentProps,
     BubbleMenuItem,
     DotBubbleMenuPluginProps,
-    DotBubbleMenuViewProps,
-    // Suggestions
-    changeToItems,
-    SuggestionsComponent,
-    // Utils
-    setBubbleMenuCoords,
+    DotBubbleMenuViewProps
+} from '../models';
+import {
+    getBubbleMenuItem,
     getNodeCoords,
-    deleteByRange,
-    deleteByNode,
-    ImageNode,
-    findParentNode,
-    tableChangeToItems
-} from '@dotcms/block-editor';
-
-import { LINK_FORM_PLUGIN_KEY, BUBBLE_FORM_PLUGIN_KEY } from '@dotcms/block-editor';
-
-import { getBubbleMenuItem, isListNode, popperModifiers } from '../utils';
-import { filter, take } from 'rxjs/operators';
+    isListNode,
+    popperModifiers,
+    setBubbleMenuCoords
+} from '../utils';
 
 export const DotBubbleMenuPlugin = (options: DotBubbleMenuPluginProps) => {
     const component = options.component.instance;
@@ -493,9 +498,11 @@ export class DotBubbleMenuPluginView extends BubbleMenuView {
                 this.editor.storage.bubbleMenu.changeToIsOpen = false;
                 this.changeTo.instance.items = [];
                 this.changeTo.changeDetectorRef.detectChanges();
+                this.editor.commands.freezeScroll(false);
             },
             onShow: () => {
                 this.editor.storage.bubbleMenu.changeToIsOpen = true;
+                this.editor.commands.freezeScroll(true);
                 this.updateChangeTo();
             }
         });

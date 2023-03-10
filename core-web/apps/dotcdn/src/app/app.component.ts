@@ -1,12 +1,16 @@
-import { Component, OnInit, ViewChild } from '@angular/core';
-import { DotCDNState, ChartPeriod, CdnChartOptions } from './app.models';
-import { UntypedFormGroup, UntypedFormBuilder } from '@angular/forms';
-import { DotCDNStore } from './dotcdn.component.store';
-import { Observable } from 'rxjs';
-import { SelectItem } from 'primeng/api';
-import { take } from 'rxjs/operators';
-import { UIChart } from 'primeng/chart';
 import { ChartOptions } from 'chart.js';
+import { Observable } from 'rxjs';
+
+import { Component, OnInit, ViewChild } from '@angular/core';
+import { UntypedFormBuilder, UntypedFormGroup } from '@angular/forms';
+
+import { SelectItem } from 'primeng/api';
+import { UIChart } from 'primeng/chart';
+
+import { take } from 'rxjs/operators';
+
+import { CdnChartOptions, ChartPeriod, DotCDNState } from './app.models';
+import { DotCDNStore } from './dotcdn.component.store';
 
 @Component({
     selector: 'dotcms-root',
@@ -22,16 +26,10 @@ export class AppComponent implements OnInit {
         { label: 'Last 60 days', value: ChartPeriod.Last60Days }
     ];
     selectedPeriod: SelectItem<string> = { value: ChartPeriod.Last15Days };
-    vm$: Observable<
-        Omit<
-            DotCDNState,
-            | 'isPurgeUrlsLoading'
-            | 'isPurgeZoneLoading'
-        >
-    > = this.dotCdnStore.vm$;
-    vmPurgeLoaders$: Observable<
-        Pick<DotCDNState, 'isPurgeUrlsLoading' | 'isPurgeZoneLoading'>
-    > = this.dotCdnStore.vmPurgeLoaders$;
+    vm$: Observable<Omit<DotCDNState, 'isPurgeUrlsLoading' | 'isPurgeZoneLoading'>> =
+        this.dotCdnStore.vm$;
+    vmPurgeLoaders$: Observable<Pick<DotCDNState, 'isPurgeUrlsLoading' | 'isPurgeZoneLoading'>> =
+        this.dotCdnStore.vmPurgeLoaders$;
     chartHeight = '25rem';
     options: CdnChartOptions;
 
@@ -39,6 +37,7 @@ export class AppComponent implements OnInit {
 
     ngOnInit(): void {
         this.setChartOptions();
+
         this.purgeZoneForm = this.fb.group({
             purgeUrlsTextArea: ''
         });
@@ -85,59 +84,55 @@ export class AppComponent implements OnInit {
     private setChartOptions(): void {
         const defaultOptions: ChartOptions = {
             responsive: true,
-            tooltips: {
-                callbacks: {
-                    label: function (context, data): string {
-                        return `${data.datasets[0].label}: ${context.value}MB`;
+            plugins: {
+                tooltip: {
+                    callbacks: {
+                        label: function (context) {
+                            return `${context.dataset.label}: ${context.formattedValue}MB`;
+                        }
                     }
                 }
             },
             scales: {
-                xAxes: [
-                    {
-                        ticks: {
-                            maxTicksLimit: 15
+                x: {
+                    ticks: {
+                        maxTicksLimit: 15
+                    }
+                },
+                'y-axis-1': {
+                    type: 'linear',
+                    display: true,
+                    position: 'left',
+                    ticks: {
+                        callback: function (value: number): string {
+                            return value.toString() + 'MB';
                         }
                     }
-                ],
-                yAxes: [
-                    {
-                        type: 'linear',
-                        display: true,
-                        position: 'left',
-                        id: 'y-axis-1',
-                        ticks: {
-                            callback: function (value: number): string {
-                                return value.toString() + 'MB';
-                            }
-                        }
-                    }
-                ]
+                }
             }
         };
 
         const requestOptions: ChartOptions = {
             ...defaultOptions,
-            tooltips: {
-                callbacks: {
-                    label: function (context, data): string {
-                        return `${data.datasets[0].label}: ${context.value}`;
+            plugins: {
+                tooltip: {
+                    callbacks: {
+                        label: function (context) {
+                            return `${context.dataset.label}: ${context.formattedValue}MB`;
+                        }
                     }
                 }
             },
             scales: {
                 ...defaultOptions.scales,
-                yAxes: [
-                    ...defaultOptions.scales.yAxes,
-                    {
-                        ...defaultOptions.scales.yAxes[0],
-                        ticks: {
-                            callback: (value: number): string => {
-                                return Math.round(value).toString();
-                            }
+                x: {
+                    ...defaultOptions.scales.x,
+                    ticks: {
+                        callback: (value: number): string => {
+                            return Math.round(value).toString();
                         }
                     }
-                ]
+                }
             }
         };
 
