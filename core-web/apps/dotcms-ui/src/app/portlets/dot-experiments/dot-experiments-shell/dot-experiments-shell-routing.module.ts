@@ -29,6 +29,13 @@ const routes: Routes = [
                             '../dot-experiments-configuration/dot-experiments-configuration.module'
                         )
                     ).DotExperimentsConfigurationModule
+            },
+            {
+                path: 'reports',
+                title: 'Experiment Reports',
+                loadChildren: async () =>
+                    (await import('../dot-experiments-reports/dot-experiments-reports.routes'))
+                        .DotExperimentsReportsRoutes
             }
         ]
     }

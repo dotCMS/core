@@ -30,6 +30,7 @@
                 [experiments]="vm.experimentsFiltered"
                 (archiveItem)="archiveExperiment($event)"
                 (deleteItem)="deleteExperiment($event)"
+                (reportItem)="goToViewExperimentReport($event)"
             ></dot-experiments-list-table>
         </ng-container>
     </div>

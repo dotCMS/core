@@ -166,6 +166,10 @@ export const DotExperimentsConfigurationStoreMock = {
     targetStepVm$: of({})
 };
 
+export const DotExperimentsReportsStoreMock = {
+    loadExperiment: () => of([])
+};
+
 export const DotExperimentsServiceMock = {
     add: () => of({}),
     get: () => of({}),
