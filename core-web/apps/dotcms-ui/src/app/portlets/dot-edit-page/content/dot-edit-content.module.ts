@@ -26,7 +26,6 @@ import { DotIconModule } from '@dotcms/ui';
 import { DotPipesModule } from '@pipes/dot-pipes.module';
 import { DotDirectivesModule } from '@shared/dot-directives.module';
 
-import { DotContentletEditModeSelectorComponent } from './components/dot-contentlet-edit-mode-selector/dot-contentlet-edit-mode-selector.component';
 import { DotEditPageStateControllerModule } from './components/dot-edit-page-state-controller/dot-edit-page-state-controller.module';
 import { DotEditPageToolbarModule } from './components/dot-edit-page-toolbar/dot-edit-page-toolbar.module';
 import { DotEditPageViewAsControllerModule } from './components/dot-edit-page-view-as-controller/dot-edit-page-view-as-controller.module';
@@ -67,8 +66,7 @@ const routes: Routes = [
         DotEditPageStateControllerModule,
         DotOverlayMaskModule,
         DotPaletteModule,
-        DotIconModule,
-        DotContentletEditModeSelectorComponent
+        DotIconModule
     ],
     exports: [DotEditContentComponent],
     providers: [

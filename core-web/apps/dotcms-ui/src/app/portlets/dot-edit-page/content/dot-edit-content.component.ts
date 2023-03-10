@@ -7,7 +7,17 @@ import { ActivatedRoute, Router } from '@angular/router';
 
 import { DialogService } from 'primeng/dynamicdialog';
 
-import { catchError, filter, map, pluck, skip, take, takeUntil, tap } from 'rxjs/operators';
+import {
+    catchError,
+    filter,
+    finalize,
+    map,
+    pluck,
+    skip,
+    take,
+    takeUntil,
+    tap
+} from 'rxjs/operators';
 
 import { DotGlobalMessageService } from '@components/_common/dot-global-message/dot-global-message.service';
 import { IframeOverlayService } from '@components/_common/iframe/service/iframe-overlay.service';
@@ -18,6 +28,7 @@ import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router
 import { DotUiColorsService } from '@dotcms/app/api/services/dot-ui-colors/dot-ui-colors.service';
 import {
     DotAlertConfirmService,
+    DotCopyContentService,
     DotEditPageService,
     DotESContentService,
     DotEventsService,
@@ -44,8 +55,11 @@ import {
     ESContent
 } from '@dotcms/dotcms-models';
 import { DotLoadingIndicatorService, generateDotFavoritePageUrl } from '@dotcms/utils';
+import {
+    DotBinaryOptionSelectorComponent,
+    BINARY_OPTION
+} from '@portlets/shared/dot-binary-option-selector/dot-binary-option-selector.component';
 
-import { DotContentletEditModeSelectorComponent } from './components/dot-contentlet-edit-mode-selector/dot-contentlet-edit-mode-selector.component';
 import { DotEditContentHtmlService } from './services/dot-edit-content-html/dot-edit-content-html.service';
 import {
     PageModelChangeEvent,
@@ -93,6 +107,21 @@ export class DotEditContentComponent implements OnInit, OnDestroy {
     private destroy$: Subject<boolean> = new Subject<boolean>();
     private pageStateInternal: DotPageRenderState;
 
+    private readonly EDIT_SCOPE_OPTIONS: BINARY_OPTION = {
+        option1: {
+            value: 'current',
+            message: 'editpage.content.edit.content.in.this.pages.message',
+            icon: 'article',
+            label: 'editpage.content.edit.content.in.this.pages'
+        },
+        option2: {
+            value: 'all',
+            message: 'editpage.content.edit.content.in.all.pages.message',
+            icon: 'dynamic_feed',
+            label: 'editpage.content.edit.content.in.all.pages'
+        }
+    };
+
     constructor(
         private dialogService: DialogService,
         private dotContentletEditorService: DotContentletEditorService,
@@ -117,7 +146,8 @@ export class DotEditContentComponent implements OnInit, OnDestroy {
         private dotLicenseService: DotLicenseService,
         private dotEventsService: DotEventsService,
         private dotESContentService: DotESContentService,
-        private dotSessionStorageService: DotSessionStorageService
+        private dotSessionStorageService: DotSessionStorageService,
+        private readonly dotCopyContentService: DotCopyContentService
     ) {
         if (!this.customEventsHandler) {
             this.customEventsHandler = {
@@ -702,22 +732,39 @@ export class DotEditContentComponent implements OnInit, OnDestroy {
         copyContent: DotCopyContent;
         inode: string;
     }): void {
-        const ref = this.dialogService.open(DotContentletEditModeSelectorComponent, {
-            header: this.dotMessageService.get('modes.Edit-Content'),
-            width: '30rem',
-            data: {
-                copyContent: {
-                    ...copyContent,
-                    personalization: this.dotPageStateService.pagePersonalization
-                },
-                inode
-            }
+        const ref = this.dialogService.open(DotBinaryOptionSelectorComponent, {
+            header: this.dotMessageService.get('Edit-Content'),
+            width: '37rem',
+            data: { options: this.EDIT_SCOPE_OPTIONS }
         });
 
-        ref.onClose.pipe(take(1)).subscribe(({ inode } = {}) => {
-            if (inode) {
-                this.editContentlet(inode);
+        ref.onClose.pipe(take(1)).subscribe((value) => {
+            if (!value) {
+                return;
             }
+
+            this.EDIT_SCOPE_OPTIONS.option1.value === value
+                ? this.copyContentAndEdit(copyContent)
+                : this.editContentlet(inode);
         });
+    }
+
+    /**
+     *
+     *
+     * @private
+     * @param {DotCopyContent} copyContent
+     * @memberof DotEditContentComponent
+     */
+    private copyContentAndEdit(copyContent: DotCopyContent): void {
+        this.dotCopyContentService
+            .copyContentInPage(copyContent)
+            .pipe(
+                take(1),
+                tap(() => this.dotLoadingIndicatorService.show()),
+                catchError((error) => this.httpErrorManagerService.handle(error)),
+                finalize(() => this.dotLoadingIndicatorService.hide())
+            )
+            .subscribe(({ inode }: DotCMSContentlet) => this.editContentlet(inode));
     }
 }

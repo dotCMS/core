@@ -1,0 +1,106 @@
+@use "variables" as *;
+
+// .dialog__message {
+//     margin-bottom: $spacing-5;
+// }
+
+// .dialog__container {
+//     display: flex;
+//     justify-content: center;
+//     align-items: center;
+//     gap: 1rem;
+//     margin-bottom: $spacing-5;
+
+//     .dialog__container__options {
+//         background-color: $gray-lighter;
+//         width: 145px;
+//         height: 145px;
+//         border-radius: 7px;
+//         padding: $spacing-5;
+//         display: flex;
+//         flex-direction: column;
+//         justify-content: center;
+//         align-items: center;
+//         gap: 1rem;
+//         cursor: pointer;
+
+//         span {
+//             color: $gray-dark;
+//         }
+
+//         &.active {
+//             border: 1px solid $color-primary-500;
+//             background-color: $color-primary-100;
+
+//             span {
+//                 color: $color-primary-500;
+//             }
+//         }
+//     }
+// }
+
+// .dialog__container__actions {
+//     display: flex;
+//     gap: 1rem;
+//     justify-content: flex-end;
+//     text-transform: uppercase;
+// }
+
+:host {
+    display: block;
+    max-width: 40rem;
+    text-align: right;
+}
+
+.wrapper {
+    display: block;
+    max-width: 24rem;
+    margin: 1rem auto 3rem;
+    text-align: left;
+}
+
+.options {
+    display: flex;
+    justify-content: space-between;
+}
+
+p {
+    line-height: 1.5;
+    color: $gray-dark;
+}
+
+.item {
+    align-items: center;
+    background-color: $gray-bg;
+    border: solid 2px $gray-bg;
+    border-radius: $border-radius;
+    color: $gray-light;
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    padding: $spacing-5 $spacing-6;
+    transition: border-color $basic-speed ease, color $basic-speed ease;
+
+    &:hover {
+        color: $gray;
+    }
+
+    span {
+        font-size: $font-size-large;
+    }
+
+    .material-icons {
+        font-size: 4rem;
+    }
+}
+
+input[type="radio"] {
+    appearance: none;
+    position: absolute;
+
+    &:checked + .item {
+        border-color: $brand-primary;
+        color: $brand-primary;
+        background-color: rgba($brand-secondary_rgb, 0.1);
+    }
+}

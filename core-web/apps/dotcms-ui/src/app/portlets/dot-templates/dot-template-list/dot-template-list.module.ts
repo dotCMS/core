@@ -18,8 +18,8 @@ import { DotTemplatesService } from '@dotcms/app/api/services/dot-templates/dot-
 import { DotSiteBrowserService } from '@dotcms/data-access';
 import { DotMessagePipeModule } from '@pipes/dot-message/dot-message-pipe.module';
 import { DotTemplateListResolver } from '@portlets/dot-templates/dot-template-list/dot-template-list-resolver.service';
+import { DotBinaryOptionSelectorComponent } from '@portlets/shared/dot-binary-option-selector/dot-binary-option-selector.component';
 
-import { DotTemplateSelectorModule } from './components/dot-template-selector/dot-template-selector.module';
 import { DotTemplateListComponent } from './dot-template-list.component';
 
 @NgModule({
@@ -37,7 +37,7 @@ import { DotTemplateListComponent } from './dot-template-list.component';
         DotAddToBundleModule,
         DynamicDialogModule,
         DotBulkInformationModule,
-        DotTemplateSelectorModule,
+        DotBinaryOptionSelectorComponent,
         DotEmptyStateModule,
         AutoFocusModule
     ],

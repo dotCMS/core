@@ -3,7 +3,7 @@
         <img [src]="src || file.objectURL" [alt]="file.name" />
     </ng-container>
     <ng-container *ngSwitchCase="'video'">
-        <video controls preload="metadata">
+        <video controls preload="auto">
             <source [src]="src || file.objectURL" [type]="file.type" />
         </video>
     </ng-container>
