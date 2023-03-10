@@ -9,6 +9,7 @@ import { DotMessagePipe } from '@dotcms/app/view/pipes';
 import { DotSessionStorageService } from '@dotcms/data-access';
 import {
     DotExperiment,
+    DotExperimentStatusList,
     EditPageTabs,
     ExperimentSteps,
     SidebarStatus,
@@ -29,6 +30,7 @@ import {
 export class DotExperimentsConfigurationComponent implements OnInit {
     vm$: Observable<ConfigurationViewModel> = this.dotExperimentsConfigurationStore.vm$;
     experimentSteps = ExperimentSteps;
+    experimentStatus = DotExperimentStatusList;
 
     constructor(
         private readonly dotExperimentsConfigurationStore: DotExperimentsConfigurationStore,
@@ -70,6 +72,16 @@ export class DotExperimentsConfigurationComponent implements OnInit {
      */
     runExperiment(experiment: DotExperiment) {
         this.dotExperimentsConfigurationStore.startExperiment(experiment);
+    }
+
+    /**
+     * Stop the Experiment
+     * @param {DotExperiment} experiment
+     * @returns void
+     * @memberof DotExperimentsConfigurationVariantsComponent
+     */
+    stopExperiment(experiment: DotExperiment) {
+        this.dotExperimentsConfigurationStore.stopExperiment(experiment);
     }
 
     /**
