@@ -12,6 +12,7 @@ export interface OPTION {
     message: string;
     icon: string;
     label: string;
+    buttonLabel?: string;
 }
 
 export interface BINARY_OPTION {
@@ -30,6 +31,7 @@ export interface BINARY_OPTION {
 export class DotBinaryOptionSelectorComponent {
     value: string;
     private options: BINARY_OPTION;
+    private readonly defaultBtnLabel = 'next';
 
     constructor(
         private readonly ref: DynamicDialogRef,
@@ -52,6 +54,15 @@ export class DotBinaryOptionSelectorComponent {
         return this.value === this.firstOption.value
             ? this.firstOption.message
             : this.secondOption.message;
+    }
+
+    get btnLabel() {
+        const label =
+            this.value === this.firstOption.value
+                ? this.firstOption.buttonLabel
+                : this.secondOption.buttonLabel;
+
+        return label || this.defaultBtnLabel;
     }
 
     onSelect() {

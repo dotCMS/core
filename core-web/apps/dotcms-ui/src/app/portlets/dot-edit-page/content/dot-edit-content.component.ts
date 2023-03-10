@@ -110,15 +110,17 @@ export class DotEditContentComponent implements OnInit, OnDestroy {
     private readonly EDIT_SCOPE_OPTIONS: BINARY_OPTION = {
         option1: {
             value: 'current',
-            message: 'editpage.content.edit.content.in.this.pages.message',
+            message: 'editpage.content.edit.content.in.this.page.message',
             icon: 'article',
-            label: 'editpage.content.edit.content.in.this.pages'
+            label: 'editpage.content.edit.content.in.this.page',
+            buttonLabel: 'editpage.content.edit.content.in.this.page.button.label'
         },
         option2: {
             value: 'all',
             message: 'editpage.content.edit.content.in.all.pages.message',
             icon: 'dynamic_feed',
-            label: 'editpage.content.edit.content.in.all.pages'
+            label: 'editpage.content.edit.content.in.all.pages',
+            buttonLabel: 'editpage.content.edit.content.in.all.pages.button.label'
         }
     };
 

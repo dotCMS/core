@@ -28,13 +28,13 @@
         </label>
     </div>
 
-    <p [innerHTML]="message | dm" data-testId="description"></p>
+    <p class="message" [innerHTML]="message | dm" data-testId="description"></p>
 </div>
 
 <div class="dialog__container__actions">
     <button
         [autofocus]="true"
-        [label]="'next' | dm"
+        [label]="btnLabel | dm"
         (click)="onSelect()"
         pButton
         pAutoFocus
