@@ -246,7 +246,15 @@
                     }
 
                     blockEditor.addEventListener('valueChange', (event) => {
-                        field.value = event.detail;
+                        // https://tiptap.dev/api/commands/clear-content
+                        // https://github.com/ueberdosis/tiptap/issues/154
+                        // By default Editor Initialize with default node p even if you clear nodes
+                        // block.editor.isEmpty not working in our block editor
+                        if(block.editor.getHTML().toLowerCase() === "<p></p>"){
+                            field.value = null;
+                        } else {
+                            field.value = event.detail;
+                        }
                     });
 
                     blockEditor.showVideoThumbnail = <%=showVideoThumbnail%>;
