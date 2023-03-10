@@ -88,6 +88,29 @@ const archivedExperiments: DotExperiment[] = [
         goals: null
     }
 ];
+
+const runningExperiments: DotExperiment[] = [
+    {
+        id: '333',
+        identifier: '3333-3333-3333-3333',
+        pageId: '456',
+        status: DotExperimentStatusList.RUNNING,
+        archived: false,
+        readyToStart: false,
+        description: 'Praesent at molestie mauris, quis vulputate augue.',
+        name: 'Praesent at molestie mauris',
+        trafficAllocation: 100,
+        scheduling: null,
+        trafficProportion: {
+            type: TrafficProportionTypes.SPLIT_EVENLY,
+            variants: [{ id: '333', name: 'DEFAULT', weight: 100 }]
+        },
+        creationDate: new Date('2022-08-21 14:50:03'),
+        modDate: new Date('2022-08-21 18:50:03'),
+        goals: null
+    }
+];
+
 const scheduledExperiments: DotExperiment[] = [
     {
         id: '444',
@@ -247,6 +270,17 @@ describe('DotExperimentsListTableComponent', () => {
 
                 uiDotIconButtonTooltipComponent = spectator.query(UiDotIconButtonTooltipComponent);
                 expect(uiDotIconButtonTooltipComponent).not.toExist();
+            });
+
+            it('should the row  has REPORTS icon when is RUNNING', () => {
+                const groupedExperimentByStatus: GroupedExperimentByStatus = {
+                    [DotExperimentStatusList.RUNNING]: [...runningExperiments]
+                };
+
+                spectator.setInput('experiments', groupedExperimentByStatus);
+
+                uiDotIconButtonTooltipComponent = spectator.query(UiDotIconButtonTooltipComponent);
+                expect(uiDotIconButtonTooltipComponent.icon).toBe('bar_chart');
             });
         });
     });
