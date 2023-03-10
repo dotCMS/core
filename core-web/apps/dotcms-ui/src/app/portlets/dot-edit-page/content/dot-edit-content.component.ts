@@ -737,7 +737,9 @@ export class DotEditContentComponent implements OnInit, OnDestroy {
         const ref = this.dialogService.open(DotBinaryOptionSelectorComponent, {
             header: this.dotMessageService.get('Edit-Content'),
             width: '37rem',
-            data: { options: this.CONTENT_EDIT_OPTIONS }
+            data: { options: this.CONTENT_EDIT_OPTIONS },
+            style: { 'border-radius': '16px' },
+            contentStyle: { padding: '0px' }
         });
 
         ref.onClose.pipe(take(1)).subscribe((value) => {

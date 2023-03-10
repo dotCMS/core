@@ -58,6 +58,8 @@ describe('DotTemplateNewComponent', () => {
         expect(dialogService.open).toHaveBeenCalledWith(jasmine.any(Function), {
             header: 'Create a template',
             width: '37rem',
+            style: { 'border-radius': '16px' },
+            contentStyle: { padding: '0px' },
             data: {
                 options: {
                     option1: {

@@ -42,7 +42,9 @@ export class DotTemplateNewComponent implements OnInit {
         const ref = this.dialogService.open(DotBinaryOptionSelectorComponent, {
             header: this.dotMessageService.get('templates.select.template.title'),
             width: '37rem',
-            data: { options: this.options }
+            data: { options: this.options },
+            style: { 'border-radius': '16px' },
+            contentStyle: { padding: '0px' }
         });
 
         ref.onClose.pipe(take(1)).subscribe((value) => {

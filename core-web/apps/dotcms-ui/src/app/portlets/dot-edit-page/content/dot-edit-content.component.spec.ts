@@ -104,6 +104,23 @@ import { DotPageContent } from '../shared/models';
 
 const EXPERIMENT_MOCK = getExperimentMock(1);
 
+const CONTENT_EDIT_OPTIONS = {
+    option1: {
+        value: 'current',
+        message: 'editpage.content.edit.content.in.this.page.message',
+        icon: 'article',
+        label: 'editpage.content.edit.content.in.this.page',
+        buttonLabel: 'editpage.content.edit.content.in.this.page.button.label'
+    },
+    option2: {
+        value: 'all',
+        message: 'editpage.content.edit.content.in.all.pages.message',
+        icon: 'dynamic_feed',
+        label: 'editpage.content.edit.content.in.all.pages',
+        buttonLabel: 'editpage.content.edit.content.in.all.pages.button.label'
+    }
+};
+
 @Component({
     selector: 'dot-global-message',
     template: ''
@@ -216,7 +233,8 @@ describe('DotEditContentComponent', () => {
             'dot.common.content.search': 'Content Search',
             'an-unexpected-system-error-occurred': 'Error msg',
             'editpage.content.contentlet.remove.confirmation_message.header': 'header',
-            'editpage.content.contentlet.remove.confirmation_message.message': 'message'
+            'editpage.content.contentlet.remove.confirmation_message.message': 'message',
+            'Edit-Content': 'Edit Content'
         });
 
         TestBed.configureTestingModule({
@@ -1098,6 +1116,13 @@ describe('DotEditContentComponent', () => {
                         });
 
                         expect(dialogService.open).toHaveBeenCalledTimes(1);
+                        expect(dialogService.open).toHaveBeenCalledWith(jasmine.any(Function), {
+                            header: 'Edit Content',
+                            width: '37rem',
+                            data: { options: CONTENT_EDIT_OPTIONS },
+                            style: { 'border-radius': '16px' },
+                            contentStyle: { padding: '0px' }
+                        });
                         expect(dotContentletEditorService.edit).not.toHaveBeenCalled();
                     });
 

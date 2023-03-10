@@ -2,25 +2,7 @@
 
 :host {
     max-width: 40rem;
-}
-
-::ng-deep {
-    .p-dynamic-dialog {
-        border-radius: $border-radius-xl;
-        overflow: hidden;
-    }
-
-    .p-dialog-header-icons {
-        background-color: $gray-bg;
-
-        span {
-            color: $brand-primary;
-        }
-    }
-
-    .p-dialog .p-dialog-content {
-        padding: 0;
-    }
+    background: #000;
 }
 
 .wrapper {
