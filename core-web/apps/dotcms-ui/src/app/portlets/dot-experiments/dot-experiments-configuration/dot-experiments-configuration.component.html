@@ -28,7 +28,7 @@
                 *ngIf="vm.experimentStatus === experimentStatus.RUNNING"
                 [disabled]="vm.disabledStartExperiment"
                 [loading]="vm.isSaving"
-                (click)="stopExperiment(vm.experiment)"
+                (click)="stopExperiment($event, vm.experiment)"
                 data-testId="stop-experiment-button"
                 label="{{ 'experiments.action.stop-experiment' | dm }}"
                 pButton

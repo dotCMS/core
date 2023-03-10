@@ -80,8 +80,17 @@ export class DotExperimentsConfigurationComponent implements OnInit {
      * @returns void
      * @memberof DotExperimentsConfigurationVariantsComponent
      */
-    stopExperiment(experiment: DotExperiment) {
-        this.dotExperimentsConfigurationStore.stopExperiment(experiment);
+    stopExperiment($event: MouseEvent, experiment: DotExperiment) {
+        this.confirmationService.confirm({
+            target: $event.target,
+            message: this.dotMessagePipe.transform('experiments.action.stop.delete-confirm'),
+            icon: 'pi pi-exclamation-triangle',
+            acceptLabel: this.dotMessagePipe.transform('stop'),
+            rejectLabel: this.dotMessagePipe.transform('dot.common.dialog.reject'),
+            accept: () => {
+                this.dotExperimentsConfigurationStore.stopExperiment(experiment);
+            }
+        });
     }
 
     /**

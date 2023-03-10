@@ -171,7 +171,7 @@ describe('DotExperimentsConfigurationComponent', () => {
         expect(spectator.query(byTestId('start-experiment-button'))).not.toExist();
     });
 
-    it('should show Stop Experiment button if experiment status is running and call stopExperiment', () => {
+    it('should show Stop Experiment button if experiment status is running and call stopExperiment after confirmation', () => {
         spyOn(dotExperimentsConfigurationStore, 'stopExperiment');
         spectator.component.vm$ = of({
             ...defaultVmMock,
@@ -180,6 +180,7 @@ describe('DotExperimentsConfigurationComponent', () => {
         spectator.detectChanges();
 
         spectator.click(byTestId('stop-experiment-button'));
+        spectator.query(ConfirmPopup).accept();
 
         expect(dotExperimentsConfigurationStore.stopExperiment).toHaveBeenCalledWith(
             EXPERIMENT_MOCK
