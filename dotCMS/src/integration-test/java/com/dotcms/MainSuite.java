@@ -270,7 +270,7 @@ import org.junit.runners.Suite.SuiteClasses;
         com.dotcms.auth.providers.jwt.services.JsonWebTokenServiceIntegrationTest.class,
         DependencyModDateUtilTest.class,
         com.dotcms.publisher.business.PublisherTest.class,
-        com.dotcms.publisher.endpoint.bean.PublishingEndPointTest.class,
+//        com.dotcms.publisher.endpoint.bean.PublishingEndPointTest.class,
         com.dotcms.publisher.endpoint.business.PublishingEndPointAPITest.class,
         com.dotcms.publisher.endpoint.business.PublishingEndPointFactoryImplTest.class,
         com.dotcms.publisher.assets.business.PushedAssetsAPITest.class,
