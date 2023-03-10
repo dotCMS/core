@@ -5,14 +5,16 @@
 }
 
 .field {
-    //gap: $spacing-1;
     margin: $spacing-0;
 
-    //label {
-    //    font-weight: $font-weight-semi-bold;
-    //    margin-bottom: $spacing-0;
-    //    font-size: $font-size-medium;
-    //}
+    gap: $spacing-1;
+    margin: $spacing-0;
+
+    label {
+        font-weight: $font-weight-bold;
+        margin-bottom: $spacing-0;
+        font-size: $font-size-medium;
+    }
 
     p {
         margin: $spacing-0;
@@ -23,14 +25,14 @@
         font-size: $font-size-medium;
         margin: $spacing-0;
         margin-bottom: $spacing-1;
-        font-weight: $font-weight-semi-bold;
+        font-weight: $font-weight-bold;
     }
 }
 
 .condition {
     gap: $spacing-3;
 
-    //label {
-    //    font-weight: $font-weight-regular-bold;
-    //}
+    label {
+        font-weight: $font-weight-bold;
+    }
 }

@@ -12,10 +12,15 @@ import { ActivatedRoute, Router } from '@angular/router';
 
 import { ConfirmationService, MessageService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
+import { CardModule } from 'primeng/card';
+import { ConfirmPopup, ConfirmPopupModule } from 'primeng/confirmpopup';
+import { TagModule } from 'primeng/tag';
 
+import { DotMessagePipe } from '@dotcms/app/view/pipes';
 import { DotMessageService, DotSessionStorageService } from '@dotcms/data-access';
 import { ComponentStatus } from '@dotcms/dotcms-models';
 import { MockDotMessageService } from '@dotcms/utils-testing';
+import { DotMessagePipeModule } from '@pipes/dot-message/dot-message-pipe.module';
 import { DotExperimentsConfigurationGoalsComponent } from '@portlets/dot-experiments/dot-experiments-configuration/components/dot-experiments-configuration-goals/dot-experiments-configuration-goals.component';
 import { DotExperimentsConfigurationSchedulingComponent } from '@portlets/dot-experiments/dot-experiments-configuration/components/dot-experiments-configuration-scheduling/dot-experiments-configuration-scheduling.component';
 import { DotExperimentsConfigurationSkeletonComponent } from '@portlets/dot-experiments/dot-experiments-configuration/components/dot-experiments-configuration-skeleton/dot-experiments-configuration-skeleton.component';
@@ -31,10 +36,9 @@ import { DotExperimentsExperimentSummaryComponent } from '@portlets/dot-experime
 import { DotExperimentsUiHeaderComponent } from '@portlets/dot-experiments/shared/ui/dot-experiments-header/dot-experiments-ui-header.component';
 import {
     DotExperimentsConfigurationStoreMock,
-    ExperimentMocks
+    getExperimentMock
 } from '@portlets/dot-experiments/test/mocks';
 import { DotHttpErrorManagerService } from '@services/dot-http-error-manager/dot-http-error-manager.service';
-import { DotMessagePipe } from '@tests/dot-message-mock.pipe';
 
 import { DotExperimentsConfigurationComponent } from './dot-experiments-configuration.component';
 
@@ -49,11 +53,16 @@ const ActivatedRouteMock = {
 
 const messageServiceMock = new MockDotMessageService({
     'experiments.configure.scheduling.name': 'Scheduling',
-    'experiments.configure.scheduling.start': 'When the experiment start'
+    'experiments.configure.scheduling.start': 'When the experiment start',
+    'experiments.configure.variant.delete.confirm': 'Are you sure you want to delete this variant?',
+    delete: 'Delete',
+    'dot.common.dialog.reject': 'Cancel'
 });
 
+const EXPERIMENT_MOCK = getExperimentMock(0);
+
 const defaultVmMock: ConfigurationViewModel = {
-    experiment: ExperimentMocks[0],
+    experiment: EXPERIMENT_MOCK,
     stepStatusSidebar: {
         status: ComponentStatus.IDLE,
         isOpen: false,
@@ -70,6 +79,7 @@ const defaultVmMock: ConfigurationViewModel = {
 describe('DotExperimentsConfigurationComponent', () => {
     let spectator: Spectator<DotExperimentsConfigurationComponent>;
     let dotExperimentsService: SpyObject<DotExperimentsService>;
+    let dotExperimentsConfigurationStore: SpyObject<DotExperimentsConfigurationStore>;
 
     const createComponent = createComponentFactory({
         imports: [
@@ -82,7 +92,10 @@ describe('DotExperimentsConfigurationComponent', () => {
             DotExperimentsConfigurationSchedulingComponent,
             DotExperimentsConfigurationSkeletonComponent,
             DotExperimentsExperimentSummaryComponent,
-            DotMessagePipe
+            TagModule,
+            CardModule,
+            DotMessagePipeModule,
+            ConfirmPopupModule
         ],
         component: DotExperimentsConfigurationComponent,
 
@@ -99,12 +112,14 @@ describe('DotExperimentsConfigurationComponent', () => {
                 provide: DotMessageService,
                 useValue: messageServiceMock
             },
+
             mockProvider(DotExperimentsService),
             mockProvider(DotSessionStorageService),
             mockProvider(MessageService),
             mockProvider(Router),
             mockProvider(DotHttpErrorManagerService),
-            mockProvider(Title)
+            mockProvider(Title),
+            DotMessagePipe
         ]
     });
 
@@ -113,7 +128,8 @@ describe('DotExperimentsConfigurationComponent', () => {
             detectChanges: false
         });
         dotExperimentsService = spectator.inject(DotExperimentsService);
-        dotExperimentsService.getById.and.returnValue(of(ExperimentMocks[0]));
+        dotExperimentsConfigurationStore = spectator.inject(DotExperimentsConfigurationStore, true);
+        dotExperimentsService.getById.and.returnValue(of(EXPERIMENT_MOCK));
     });
 
     it('should show the skeleton component when is loading', () => {
@@ -186,5 +202,27 @@ describe('DotExperimentsConfigurationComponent', () => {
         });
         spectator.detectChanges();
         expect(spectator.query(DotExperimentsExperimentSummaryComponent)).not.toExist();
+    });
+
+    it('should confirm before delete a variant', () => {
+        spectator.component.vm$ = of({
+            ...defaultVmMock
+        });
+        spectator.detectChanges();
+
+        spyOn(dotExperimentsConfigurationStore, 'deleteVariant');
+
+        spectator.click(byTestId('variant-delete-button'));
+
+        const confirmPopup = spectator.query(ConfirmPopup);
+
+        spectator.detectChanges();
+
+        confirmPopup.accept();
+
+        expect(dotExperimentsConfigurationStore.deleteVariant).toHaveBeenCalledWith({
+            experimentId: '111',
+            variant: { id: '111', name: 'DEFAULT', weight: 100 }
+        });
     });
 });

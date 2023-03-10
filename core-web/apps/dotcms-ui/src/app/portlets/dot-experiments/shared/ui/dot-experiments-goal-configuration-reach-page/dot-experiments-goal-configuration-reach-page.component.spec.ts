@@ -8,7 +8,6 @@ import { DotFieldValidationMessageComponent } from '@components/_common/dot-fiel
 import { DotFieldValidationMessageModule } from '@components/_common/dot-field-validation-message/dot-file-validation-message.module';
 import { DotMessageService } from '@dotcms/data-access';
 import {
-    DEFAULT_GOAL_NAME,
     DefaultGoalConfiguration,
     GOAL_OPERATORS,
     GOAL_PARAMETERS,
@@ -17,7 +16,7 @@ import {
 } from '@dotcms/dotcms-models';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 
-import { DotExperimentsExperimentGoalReachPageConfigComponent } from './dot-experiments-experiment-goal-reach-page-config.component';
+import { DotExperimentsGoalConfigurationReachPageComponent } from './dot-experiments-goal-configuration-reach-page.component';
 
 const messageServiceMock = new MockDotMessageService({
     'experiments.configure.goals.sidebar.header': 'Select a goal',
@@ -26,7 +25,7 @@ const messageServiceMock = new MockDotMessageService({
 
 const formMock = new FormGroup({
     primary: new FormGroup({
-        name: new FormControl(DEFAULT_GOAL_NAME, {
+        name: new FormControl('', {
             nonNullable: true,
             validators: [Validators.required]
         }),
@@ -44,11 +43,11 @@ const formGroupDirectiveMock = new FormGroupDirective([], []);
 formGroupDirectiveMock.form = formMock;
 
 describe('DotExperimentsExperimentGoalReachPageConfigComponent', () => {
-    let spectator: Spectator<DotExperimentsExperimentGoalReachPageConfigComponent>;
+    let spectator: Spectator<DotExperimentsGoalConfigurationReachPageComponent>;
 
     const createComponent = createComponentFactory({
         imports: [DropdownModule, DotFieldValidationMessageModule],
-        component: DotExperimentsExperimentGoalReachPageConfigComponent,
+        component: DotExperimentsGoalConfigurationReachPageComponent,
 
         providers: [
             {

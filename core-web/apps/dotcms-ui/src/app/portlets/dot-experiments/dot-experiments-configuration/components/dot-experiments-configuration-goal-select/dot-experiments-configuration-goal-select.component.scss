@@ -8,7 +8,7 @@
             gap: $spacing-3;
 
             label {
-                font-weight: $font-weight-semi-bold;
+                font-weight: $font-weight-bold;
                 margin-bottom: $spacing-0;
                 font-size: $font-size-medium;
             }
@@ -17,19 +17,17 @@
                 margin: $spacing-0;
                 color: $color-gray-500;
             }
-        }
 
-        .condition {
-            gap: $spacing-3;
-
-            label {
-                font-weight: $font-weight-regular-bold;
+            input {
+                border-color: $color-gray-300;
             }
         }
     }
+}
 
-    .option-wrapper {
-        padding: $spacing-3;
-        gap: $spacing-3;
+::ng-deep {
+    dot-field-validation-message {
+        display: flex;
+        margin-top: $spacing-1;
     }
 }

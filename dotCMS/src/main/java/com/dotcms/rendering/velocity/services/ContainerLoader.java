@@ -159,7 +159,6 @@ public class ContainerLoader implements DotLoader {
 
     }
 
-
     private InputStream buildVelocity(final Container container, final String uuid,
                                       final PageMode mode,
                                       final String filePath) throws DotDataException, DotSecurityException {
@@ -302,6 +301,7 @@ public class ContainerLoader implements DotLoader {
                 velocityCodeBuilder.append("#set($CONTENT_TYPE_ID = '')");
                 velocityCodeBuilder.append("#set($CONTENT_TYPE = '')");
                 velocityCodeBuilder.append("#set($CONTENT_VARIANT = '')");
+                velocityCodeBuilder.append("#set($ON_NUMBER_OF_PAGES = '')");
                 
                 // read in the content
                 velocityCodeBuilder.append("#if($contentletId != '')");
@@ -314,6 +314,8 @@ public class ContainerLoader implements DotLoader {
                     velocityCodeBuilder.append("<div")
                         .append(" data-dot-object=")
                         .append("\"contentlet\"")
+                        .append(" data-dot-on-number-of-pages=")
+                        .append("\"$ON_NUMBER_OF_PAGES\"")
                         .append(" data-dot-inode=")
                         .append("\"$CONTENT_INODE\"")
                         .append(" data-dot-identifier=")
