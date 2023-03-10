@@ -34,7 +34,7 @@
             <button
                 class="p-button-primary"
                 [label]="'create.page' | dm"
-                routerLink="/c/content/new/htmlpageasset"
+                (click)="store.getPageTypes()"
                 data-testid="createPageButton"
                 pButton
             ></button>
@@ -58,7 +58,7 @@
                 {{ 'Last-Editor' | dm }}
             </th>
             <th pSortableColumn="modDate" style="width: 13%">
-                {{ 'last.edited' | dm }}<p-sortIcon field="modDate"></p-sortIcon>
+                {{ 'Last-Edited' | dm }}<p-sortIcon field="modDate"></p-sortIcon>
             </th>
             <th style="width: 5%"></th>
         </tr>
