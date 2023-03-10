@@ -25,8 +25,7 @@ public class ContentTypeDeleteJob extends DotStatefulJob {
         final String varName = (String)map.get("varName");
 
         try {
-            ContentType contentType = APILocator.getContentTypeAPI(APILocator.systemUser()).find(inode);
-            //contentType = APILocator.getContentletAPI().markContentsForDeletion(contentType);
+            final ContentType contentType = APILocator.getContentTypeAPI(APILocator.systemUser()).find(inode);
             //Kick-off deletion
             FactoryLocator.getContentTypeFactory().tearDown(contentType);
         } catch (DotDataException | DotSecurityException e) {

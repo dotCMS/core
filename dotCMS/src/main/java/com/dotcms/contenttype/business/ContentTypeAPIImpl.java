@@ -1,39 +1,21 @@
 package com.dotcms.contenttype.business;
 
-import com.dotcms.api.system.event.ContentTypePayloadDataWrapper;
-import com.dotcms.api.system.event.Payload;
-import com.dotcms.api.system.event.SystemEventType;
-import com.dotcms.api.system.event.Visibility;
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.contenttype.exception.NotFoundInDbException;
-import com.dotcms.contenttype.model.event.ContentTypeDeletedEvent;
 import com.dotcms.contenttype.model.event.ContentTypeSavedEvent;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.FieldBuilder;
 import com.dotcms.contenttype.model.field.FieldVariable;
 import com.dotcms.contenttype.model.field.ImmutableFieldVariable;
-import com.dotcms.contenttype.model.type.BaseContentType;
-import com.dotcms.contenttype.model.type.ContentType;
-import com.dotcms.contenttype.model.type.ContentTypeBuilder;
-import com.dotcms.contenttype.model.type.EnterpriseType;
-import com.dotcms.contenttype.model.type.UrlMapable;
+import com.dotcms.contenttype.model.type.*;
 import com.dotcms.enterprise.LicenseUtil;
 import com.dotcms.enterprise.license.LicenseLevel;
 import com.dotcms.enterprise.license.LicenseManager;
-import com.dotcms.exception.BaseRuntimeInternationalizationException;
 import com.dotcms.system.event.local.business.LocalSystemEventsAPI;
-import com.dotcms.util.ContentTypeUtil;
 import com.dotcms.util.DotPreconditions;
 import com.dotcms.util.LowerKeyMap;
-import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.CacheLocator;
-import com.dotmarketing.business.DotStateException;
-import com.dotmarketing.business.FactoryLocator;
-import com.dotmarketing.business.PermissionAPI;
-import com.dotmarketing.business.PermissionLevel;
-import com.dotmarketing.business.Permissionable;
-import com.dotmarketing.db.DbConnectionFactory;
+import com.dotmarketing.business.*;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -42,22 +24,18 @@ import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.structure.model.SimpleStructureURLMap;
 import com.dotmarketing.quartz.job.ContentTypeDeleteJob;
 import com.dotmarketing.quartz.job.IdentifierDateJob;
-import com.dotmarketing.util.*;
+import com.dotmarketing.util.ActivityLogger;
+import com.dotmarketing.util.AdminLogger;
+import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.json.JSONArray;
 import com.dotmarketing.util.json.JSONObject;
 import com.google.common.collect.ImmutableList;
 import com.liferay.portal.model.User;
-
-import java.sql.Connection;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.UUID;
-import java.util.stream.Collectors;
 import org.elasticsearch.action.search.SearchResponse;
+
+import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * Implementation class for the {@link ContentTypeAPI}. Each content item in dotCMS is an instance of a Content Type. The
@@ -110,45 +88,27 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
 
   @Override
   public void delete(ContentType type) throws DotSecurityException, DotDataException {
-    if(Config.getBooleanProperty("CT_DELETE_JOB",true)){
-       bulkDelete(type);
-    } else {
-      transactionalDelete(type);
-    }
+     bulkDelete(type);
   }
-
-  @WrapInTransaction
-  private void transactionalDelete(ContentType type)throws DotSecurityException, DotDataException {
-    perms.checkPermission(type, PermissionLevel.EDIT_PERMISSIONS, user);
-    try {
-      contentTypeFactory.delete(type);
-    } catch (DotStateException | DotDataException e) {
-      Logger.error(ContentType.class, e.getMessage(), e);
-      throw new BaseRuntimeInternationalizationException(e);
-    }
-    try {
-      String actionUrl = ContentTypeUtil.getInstance().getActionUrl(type, user);
-      ContentTypePayloadDataWrapper contentTypePayloadDataWrapper = new ContentTypePayloadDataWrapper(actionUrl, type);
-      APILocator.getSystemEventsAPI().pushAsync(SystemEventType.DELETE_BASE_CONTENT_TYPE, new Payload(
-              contentTypePayloadDataWrapper, Visibility.PERMISSION, String.valueOf(PermissionAPI.PERMISSION_READ)));
-    } catch (DotStateException | DotDataException e) {
-      Logger.error(ContentType.class, e.getMessage(), e);
-      throw new BaseRuntimeInternationalizationException(e);
-    }
-
-    HibernateUtil.addCommitListener(()-> {
-      localSystemEventsAPI.notify(new ContentTypeDeletedEvent(type.variable()));
-    });
-  }
-
 
   @Override
-  @CloseDBIfOpened
+  @WrapInTransaction
   public void bulkDelete(ContentType type) throws DotSecurityException, DotDataException {
     perms.checkPermission(type, PermissionLevel.EDIT_PERMISSIONS, user);
-    contentTypeFactory.markForDeletion(type);
+    //If we're ok permissions wise, we need to remove the content from the index
     APILocator.getContentletIndexAPI().removeContentFromIndexByStructureInode(type.inode());
-    ContentTypeDeleteJob.triggerContentTypeDeletion(type);
+    //Then this quickly hides the content from the front end and APIS
+    contentTypeFactory.markForDeletion(type);
+    //Now we need a copy of the CT that basically makes it possible relocating content for asynchronous deletion
+    final String newName =  String.format("%s_%s",type.name(),System.currentTimeMillis());
+    final ContentType copy = copyFrom(new CopyContentTypeBean.Builder().sourceContentType(type).name(newName).newVariable(newName).build());
+    Logger.info(getClass(),"Created copy  with name " + type.name() + " and inode " + copy.inode());
+    APILocator.getContentletAPI().relocateContentletsForDeletion(type, copy);
+    //Now that all the content is relocated, we're ready to destroy the original structure that held all content
+    contentTypeFactory.delete(type);
+    //and destroy all associated content under the copy
+    contentTypeFactory.markForDeletion(copy);
+    ContentTypeDeleteJob.triggerContentTypeDeletion(copy);
   }
 
   @Override

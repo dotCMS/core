@@ -2611,7 +2611,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
     private boolean internalDestroy(final List<Contentlet> contentlets, final User user,
             final boolean respectFrontendRoles) throws DotSecurityException, DotDataException {
 
-        //this.logContentletActivity(contentlets, "Destroying Content", user);
+        this.logContentletActivity(contentlets, "Destroying Content", user);
 
         for (final Contentlet contentlet : contentlets) {
 
@@ -2768,8 +2768,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                     contentlet.getIndexPolicy()));
             // Remove page contents (if the content is a Content Page)
             this.deleteMultitrees(contentlet, user);
-            //this.logContentletActivity(contentlet, "Content Destroyed :::", user);
-            Logger.warn(this, String.format(" :: Contentlet Destroyed (%s) ::",contentlet.getInode()));
+            this.logContentletActivity(contentlet, "Content Destroyed", user);
         }
 
         this.backupDestroyedContentlets(contentlets, user);
@@ -3699,8 +3698,8 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
     @WrapInTransaction
     @Override
-    public ContentType markContentsForDeletion(ContentType type) throws DotDataException{
-         return contentFactory.markContentForDeletion(type);
+    public void relocateContentletsForDeletion(ContentType source, ContentType target) throws DotDataException{
+          contentFactory.relocateContentletsForDeletion(source, target);
     }
 
     /**

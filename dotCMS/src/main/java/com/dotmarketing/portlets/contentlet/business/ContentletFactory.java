@@ -5,6 +5,7 @@ import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.repackage.net.sf.hibernate.ObjectNotFoundException;
 import com.dotcms.util.transform.TransformerLocator;
 import com.dotmarketing.beans.Identifier;
+import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.query.GenericQueryFactory.Query;
 import com.dotmarketing.business.query.ValidationException;
@@ -22,11 +23,7 @@ import org.elasticsearch.ElasticsearchException;
 import org.elasticsearch.search.SearchHits;
 
 import java.io.Serializable;
-import java.util.Date;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 
 /**
  * Provides utility methods to interact with {@link Contentlet} objects in
@@ -511,16 +508,24 @@ public abstract class ContentletFactory {
 		}
 	}
 
-	public ContentType markContentForDeletion(final ContentType type) throws DotDataException {
+	public void relocateContentletsForDeletion(ContentType source, ContentType target) throws DotDataException {
+
+		//TODO: need to match old fields with the new fiedls created in the new structure
 
 		final DotConnect dotConnect = new DotConnect();
-		final String recycleBinInode = "RECYCLE";
-		final String newVarName = String.format(DELETE_ME,type.variable());
-       //Relocate all contents under the "RECYCLE" CT.
-		dotConnect.setSQL("update contentlet c set structure_inode = ? from structure s where c.structure_inode = s.inode and s.inode = ? ").addParam(recycleBinInode).addParam(type.inode()).loadResult();
-        //Now free up the original CT BY Resetting the varName and setting an inode ending with _DELETE_ME
-		//Also we free-up the var-name
-		dotConnect.setSQL(" update structure set velocity_var_name = ? WHERE inode = ?").addParam(newVarName).addParam(type.inode()).loadResult();
-		return type;
+
+		final List<?> list = dotConnect.setSQL("select c.inode " +
+				" from contentlet c, structure s  " +
+				" where c.structure_inode = s.inode and " +
+				" s.inode =  ? ").addParam(source.inode()).loadResults();
+
+		dotConnect.setSQL("update contentlet c set structure_inode = ? from structure s where c.structure_inode = s.inode and s.inode = ? ").addParam(target.inode()).addParam(source.inode()).loadResult();
+
+
+		final ContentletCache contentletCache = CacheLocator.getContentletCache();
+		for (final Object o : list) {
+			final Map<?,?> map = (Map<?,?>) o;
+			contentletCache.remove((String)map.get("inode"));
+		}
 	}
 }

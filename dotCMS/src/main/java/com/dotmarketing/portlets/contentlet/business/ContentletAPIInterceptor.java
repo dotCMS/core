@@ -1681,17 +1681,17 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
     }
 
 	@Override
-	public ContentType markContentsForDeletion(ContentType type) throws DotDataException {
+	public void relocateContentletsForDeletion(ContentType source, ContentType target) throws DotDataException {
 		for(ContentletAPIPreHook pre : preHooks){
-			pre.markContentletsForDeletion(type);
+			pre.relocateContentletsForDeletion(source,target);
 		}
 
-		ContentType ct = conAPI.markContentsForDeletion(type);
+		conAPI.relocateContentletsForDeletion(source, target);
 
 		for(ContentletAPIPostHook post : postHooks){
-			post.markContentletsForDeletion(type);
+			post.relocateContentletsForDeletion(source, target);
 		}
-		return ct;
+
 	}
 
 

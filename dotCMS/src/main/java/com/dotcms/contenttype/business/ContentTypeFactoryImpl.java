@@ -4,17 +4,20 @@ import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.contenttype.business.sql.ContentTypeSql;
 import com.dotcms.contenttype.exception.NotFoundInDbException;
+import com.dotcms.contenttype.model.event.ContentTypeDeletedEvent;
 import com.dotcms.contenttype.model.field.*;
 import com.dotcms.contenttype.model.type.*;
 import com.dotcms.contenttype.transform.contenttype.DbContentTypeTransformer;
 import com.dotcms.contenttype.transform.contenttype.ImplClassContentTypeTransformer;
 import com.dotcms.enterprise.license.LicenseManager;
 import com.dotcms.repackage.javax.validation.constraints.NotNull;
+import com.dotcms.system.event.local.business.LocalSystemEventsAPI;
 import com.dotmarketing.business.*;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.common.util.SQLUtil;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
@@ -29,13 +32,10 @@ import com.liferay.util.StringPool;
 import io.vavr.Lazy;
 import io.vavr.control.Try;
 import org.apache.commons.lang.time.DateUtils;
-import org.apache.commons.lang3.BooleanUtils;
 
 import java.util.Calendar;
 import java.util.*;
 import java.util.concurrent.*;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import static com.dotcms.contenttype.business.ContentTypeAPIImpl.TYPES_AND_FIELDS_VALID_VARIABLE_REGEX;
@@ -51,6 +51,8 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
     private static final String LOAD_CONTENTTYPE_DETAILS_FROM_CACHE = "LOAD_CONTENTTYPE_DETAILS_FROM_CACHE";
     final ContentTypeSql contentTypeSql;
   final ContentTypeCache2 cache;
+
+  final LocalSystemEventsAPI localSystemEventsAPI;
 
   public static final Set<String> reservedContentTypeVars = ImmutableSet.<String>builder()
                   .add("basetype")
@@ -103,6 +105,7 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
   public ContentTypeFactoryImpl() {
     this.contentTypeSql = ContentTypeSql.getInstance();
     this.cache = CacheLocator.getContentTypeCache2();
+    this.localSystemEventsAPI = APILocator.getLocalSystemEventsAPI();
   }
 
     @Override
@@ -871,7 +874,7 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
     }
 
     @WrapInTransaction
-    private void destroy(ContentType type) {
+    private void destroy(ContentType type) throws DotHibernateException {
             try {
                 Logger.info(getClass(), String.format("Destroying Content-Type with inode: [%s] and var: [%s].", type.inode(), type.variable()));
 
@@ -896,9 +899,12 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
                 dc.setSQL(ContentTypeSql.DELETE_INODE_BY_INODE).addParam(type.id()).loadResult();
                 Logger.info(getClass(), String.format("We're done with Content-Type [%s],[%s].", type.inode(), type.variable()));
 
+                HibernateUtil.addCommitListener(()-> localSystemEventsAPI.notify(new ContentTypeDeletedEvent(type.variable())));
+
             } catch (DotDataException e) {
                 Logger.error(getClass(), String.format("Error Removing CT [%s],[%s].", type.inode(), type.variable()), e);
             }
+
     }
 
     private List<List<Contentlet>> partitionInput(final List<Contentlet> contents, final int maxThreads) {

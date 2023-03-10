@@ -2246,8 +2246,10 @@ public interface ContentletAPI {
 
 	/**
 	 * Massive update on Content-Type and all contents changing the structure-inode appending the postfix _DELETE_ME
-	 * @param type
+	 *
+	 * @param source
+	 * @param target
 	 * @throws DotDataException
 	 */
-	ContentType markContentsForDeletion(ContentType type) throws DotDataException;
+	void relocateContentletsForDeletion(ContentType source, ContentType target) throws DotDataException;
 }

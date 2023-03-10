@@ -1930,7 +1930,7 @@ public interface ContentletAPIPreHook {
     	return true;
 	}
 
-	default void markContentletsForDeletion(ContentType type) throws DotDataException {
+	default void relocateContentletsForDeletion(ContentType source, ContentType target) throws DotDataException {
 
 	}
 }

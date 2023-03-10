@@ -1664,7 +1664,7 @@ public interface ContentletAPIPostHook {
 
 	}
 
-	default void markContentletsForDeletion(ContentType type) throws DotDataException {
+	default void relocateContentletsForDeletion(ContentType source, ContentType target) throws DotDataException {
 
 	}
 
