@@ -87,8 +87,8 @@ export class DotContentletWrapperComponent {
 
                     // Message emitted to notify DotPagesComponent
                     this.dotEventsService.notify('save-page', {
-                        value: this.dotMessageService.get('message.content.saved'),
-                        retryLoading: true
+                        payload: data.detail.payload,
+                        value: this.dotMessageService.get('message.content.saved')
                     });
 
                     this.isContentletModified = false;

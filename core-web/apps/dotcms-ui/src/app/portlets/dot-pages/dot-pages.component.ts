@@ -113,9 +113,14 @@ export class DotPagesComponent implements OnInit, OnDestroy {
             .listen('save-page')
             .pipe(takeUntil(this.destroy$))
             .subscribe((evt) => {
-                evt.data['retryLoading']
-                    ? this.store.getPagesRetry({ offset: 0 })
-                    : this.store.getPages({ offset: 0 });
+                const identifier =
+                    evt.data['payload']?.identifier || evt.data['payload']?.contentletIdentifier;
+
+                const isFavoritePage =
+                    evt.data['payload']?.contentType === 'dotFavoritePage' ||
+                    evt.data['payload']?.contentletType === 'dotFavoritePage';
+
+                this.store.updateSinglePageData({ identifier, isFavoritePage });
 
                 this.dotMessageDisplayService.push({
                     life: 3000,

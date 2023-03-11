@@ -270,8 +270,87 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
         )
     );
 
+    readonly updateSinglePageData = this.effect(
+        (
+            params$: Observable<{
+                identifier: string;
+                isFavoritePage: boolean;
+            }>
+        ) => {
+            return params$.pipe(
+                mergeMap((params) => {
+                    let localPageData: DotCMSContentlet;
+                    let retries = 0;
+                    const { identifier, isFavoritePage } = params;
+                    const sortOrderValue = this.getSortOrderValue();
+
+                    if (isFavoritePage) {
+                        localPageData = this.get().favoritePages.items.filter(
+                            (item) => item.identifier === identifier
+                        )[0];
+                    } else {
+                        localPageData = this.get().pages.items.filter(
+                            (item) => item.identifier === identifier
+                        )[0];
+                        this.setPagesStatus(ComponentStatus.LOADING);
+                    }
+
+                    return this.getPagesDataFn(isFavoritePage, sortOrderValue, identifier)
+                        .pipe(
+                            tap(
+                                (items) => {
+                                    retries++;
+
+                                    // Will continue repeating fetch until data has changed or limit fetch reached
+                                    if (
+                                        localPageData?.modDate ===
+                                            items.jsonObjectView.contentlets[0]?.modDate &&
+                                        retries < 10
+                                    ) {
+                                        throw false;
+                                    } else {
+                                        // Finished fetch loop and will proceed to set data on store
+
+                                        if (isFavoritePage) {
+                                            const pagesData = this.get().favoritePages.items.map(
+                                                (page) => {
+                                                    return page.identifier === identifier
+                                                        ? items.jsonObjectView.contentlets[0]
+                                                        : page;
+                                                }
+                                            );
+
+                                            this.setFavoritePages(pagesData);
+                                        } else {
+                                            const pagesData = this.get().pages.items.map((page) => {
+                                                return page.identifier === identifier
+                                                    ? items.jsonObjectView.contentlets[0]
+                                                    : page;
+                                            });
+
+                                            this.setPages(pagesData);
+                                        }
+                                    }
+                                },
+                                (error: HttpErrorResponse) => {
+                                    return this.httpErrorManagerService.handle(error);
+                                }
+                            )
+                        )
+                        .pipe(retryWhen((errors) => errors.pipe(delay(1000))));
+                })
+            );
+        }
+    );
+
     readonly getPages = this.effect(
-        (params$: Observable<{ offset: number; sortField?: string; sortOrder?: number }>) => {
+        (
+            params$: Observable<{
+                offset: number;
+                sortField?: string;
+                sortOrder?: number;
+            }>
+        ) => {
             return params$.pipe(
                 mergeMap((params) => {
                     const { offset, sortField, sortOrder } = params;
@@ -280,8 +359,17 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
                     return this.getPagesData(offset, sortOrderValue, sortField).pipe(
                         tapResponse(
                             (items) => {
-                                const formatedPages = this.formatPagesData(items, offset);
-                                this.setPages(formatedPages);
+                                let currentPages = this.get().pages.items;
+
+                                if (currentPages.length === 0) {
+                                    currentPages = Array.from({ length: items.resultsSize });
+                                }
+
+                                Array.prototype.splice.apply(currentPages, [
+                                    ...[offset, 40],
+                                    ...items.jsonObjectView.contentlets
+                                ]);
+                                this.setPages(currentPages);
                             },
                             (error: HttpErrorResponse) => {
                                 return this.httpErrorManagerService.handle(error);
@@ -292,48 +380,6 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
             );
         }
     );
-
-    readonly getPagesRetry = this.effect((params$: Observable<{ offset: number }>) => {
-        return params$.pipe(
-            mergeMap((params) => {
-                const { offset } = params;
-                const sortOrderValue = this.getSortOrderValue();
-
-                let initialData = '';
-                let retries = 0;
-
-                return this.getPagesData(offset, sortOrderValue)
-                    .pipe(
-                        tap(
-                            (items) => {
-                                retries++;
-
-                                // First fetch to grab initial data to compare
-                                if (!initialData) {
-                                    initialData = JSON.stringify(items.jsonObjectView);
-                                    this.setPagesStatus(ComponentStatus.LOADING);
-                                    throw false;
-                                } else if (
-                                    // Will continue repeating fetch until data has changed or limit fetch reached
-                                    initialData === JSON.stringify(items.jsonObjectView) &&
-                                    retries < 10
-                                ) {
-                                    throw false;
-                                } else {
-                                    // Terminated fetch loop and will proceed to set data on store
-                                    const formatedPages = this.formatPagesData(items, offset);
-                                    this.setPages(formatedPages);
-                                }
-                            },
-                            (error: HttpErrorResponse) => {
-                                return this.httpErrorManagerService.handle(error);
-                            }
-                        )
-                    )
-                    .pipe(retryWhen((errors) => errors.pipe(delay(1000))));
-            })
-        );
-    });
 
     readonly showActionsMenu = this.effect(
         (params$: Observable<{ item: DotCMSContentlet; actionMenuDomId: string }>) => {
@@ -403,67 +449,51 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
         return sortOrderValue;
     }
 
-    private getESQuery() {
+    private getESQuery(identifier?: string) {
         const { keyword, languageId, archived } = this.get().pages;
         const hostId = this.siteService.currentSite.identifier;
         const langQuery = languageId ? `+languageId:${languageId}` : '';
         const archivedQuery = archived ? `+archived:${archived}` : '';
+        const identifierQuery = identifier ? `+identifier:${identifier}` : '';
         const keywordQuery = keyword
             ? `+(title:${keyword}* OR path:*${keyword}* OR urlmap:*${keyword}*)`
             : '';
 
-        return `+conhost:${hostId} +deleted:false  +(urlmap:* OR basetype:5) ${langQuery} ${archivedQuery} ${keywordQuery} `;
+        return `+conhost:${hostId} +deleted:false  +(urlmap:* OR basetype:5) ${langQuery} ${archivedQuery} ${keywordQuery} ${identifierQuery}`;
     }
 
-    private formatRelativeDates(pages: DotCMSContentlet[]): DotCMSContentlet[] {
-        const data = pages.map((page: DotCMSContentlet) => {
-            return page
-                ? {
-                      ...page,
-                      modDate: this.dotFormatDateService.getRelative(
-                          new Date(page.modDate).getTime().toString(),
-                          new Date()
-                      )
-                  }
-                : undefined;
-        });
-
-        return data;
+    private getPagesDataFn(
+        isFavoritePage: boolean,
+        sortOrderValue: ESOrderDirection,
+        identifier: string
+    ) {
+        return isFavoritePage
+            ? this.getFavoritePagesData(1, identifier)
+            : this.getPagesData(0, sortOrderValue, '', identifier);
     }
 
     private getPagesData = (
         offset: number,
         sortOrderValue?: ESOrderDirection,
-        sortField?: string
+        sortField?: string,
+        identifier?: string
     ) => {
         return this.dotESContentService.get({
             itemsPerPage: 40,
             offset: offset.toString(),
-            query: this.getESQuery(),
+            query: this.getESQuery(identifier),
             sortField: sortField || 'modDate',
             sortOrder: sortOrderValue
         });
     };
 
-    private formatPagesData = (items: ESContent, offset: number) => {
-        const dateFormattedPages = this.formatRelativeDates(items.jsonObjectView.contentlets);
+    private getFavoritePagesData = (limit: number, identifier?: string) => {
+        const identifierQuery = identifier ? `+identifier:${identifier}` : '';
 
-        let currentPages = this.get().pages.items;
-
-        if (currentPages.length === 0) {
-            currentPages = Array.from({ length: items.resultsSize });
-        }
-
-        Array.prototype.splice.apply(currentPages, [...[offset, 40], ...dateFormattedPages]);
-
-        return currentPages;
-    };
-
-    private getFavoritePagesData = (limit: number) => {
         return this.dotESContentService.get({
             itemsPerPage: limit,
             offset: '0',
-            query: FAVORITE_PAGES_ES_QUERY,
+            query: `${FAVORITE_PAGES_ES_QUERY} ${identifierQuery}`,
             sortField: 'dotFavoritePage.order',
             sortOrder: ESOrderDirection.ASC
         });
@@ -509,8 +539,9 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
                     } else {
                         this.dotWorkflowActionsFireService
                             .fireTo(item.inode, action.id)
-                            .subscribe(() => {
+                            .subscribe((item) => {
                                 this.dotEventsService.notify('save-page', {
+                                    payload: item,
                                     value: this.dotMessageService.get('Workflow-executed')
                                 });
                             });
