@@ -15,6 +15,7 @@ import com.dotmarketing.exception.PublishingEndPointValidationException;
 public class PublishingEndPointTest extends IntegrationTestBase {
 
     static PublishingEndPointFactory factory;
+    static User user;
 
     @BeforeClass
     public static void prepare() throws Exception {
@@ -25,6 +26,7 @@ public class PublishingEndPointTest extends IntegrationTestBase {
         LicenseTestUtil.getLicense();
 
         factory = new PublishingEndPointFactory();
+        user = APILocator.systemUser();
     }
 
     @Test
@@ -36,9 +38,8 @@ public class PublishingEndPointTest extends IntegrationTestBase {
         try {
             endPoint.validatePublishingEndPoint();
         } catch (PublishingEndPointValidationException e) {
-            System.out.println(e.getMessage());
             exceptionCatched = true;
-            Assert.assertTrue(e.getI18nmessages().contains("publisher_Endpoint_awss3_authKey_missing_properties"));
+            Assert.assertTrue(e.getMessage(user).contains(LanguageUtil.get(user, "publisher_Endpoint_awss3_authKey_missing_properties")));
         }
 
         Assert.assertTrue(exceptionCatched);
