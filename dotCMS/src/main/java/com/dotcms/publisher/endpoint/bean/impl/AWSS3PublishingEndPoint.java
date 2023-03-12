@@ -21,6 +21,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.util.PortalUtil;
+import io.vavr.control.Try;
 
 import java.io.IOException;
 import java.io.StringReader;
@@ -93,7 +94,11 @@ public class AWSS3PublishingEndPoint extends PublishingEndPoint {
             final SystemMessageBuilder systemMessageBuilder = new SystemMessageBuilder();
             SystemMessage systemMessage = systemMessageBuilder.setMessage("Unable to verify S3 Endpoint. Please check your configuration:" + e.getMessage()).setType(MessageType.SIMPLE_MESSAGE)
                     .setSeverity(MessageSeverity.WARNING).setLife(100000).create();
-            SystemMessageEventUtil.getInstance().pushMessage(systemMessage, ImmutableList.of(PortalUtil.getUser().getUserId()));
+            final String userId = Try.of(()->PortalUtil.getUser().getUserId()).getOrNull();
+
+            if (userId != null) {
+                SystemMessageEventUtil.getInstance().pushMessage(systemMessage, List.of(userId));
+            }
 
         }
 
