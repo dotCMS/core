@@ -25,6 +25,7 @@ import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.RestUtilTest;
 import com.dotcms.rest.WebResource;
+import com.dotcms.rest.api.v1.content.ContentResource;
 import com.dotcms.rest.api.v1.personalization.PersonalizationPersonaPageView;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotcms.variant.VariantAPI;
@@ -109,6 +110,7 @@ public class PageResourceTest {
     private ContentletAPI esapi;
     private PageResource pageResource;
     private PageResource pageResourceWithHelper;
+    private ContentResource contentResource;
     private User user;
     private HttpServletRequest request;
     private HttpServletResponse response;
@@ -156,6 +158,7 @@ public class PageResourceTest {
         when(initDataObject.getUser()).thenReturn(user);
         pageResource = new PageResource(pageResourceHelper, webResource, htmlPageAssetRenderedAPI, esapi);
         this.pageResourceWithHelper = new PageResource(PageResourceHelper.getInstance(), webResource, htmlPageAssetRenderedAPI, this.esapi);
+        contentResource = new ContentResource(webResource, APILocator.getContentletAPI(), APILocator.getIdentifierAPI());
 
         when(request.getRequestURI()).thenReturn("/test");
         when(request.getSession()).thenReturn(session);
@@ -1144,5 +1147,52 @@ public class PageResourceTest {
         final ContainerRaw containerRaw = htmlPageAssetRendered.getContainers().stream().findFirst().orElse(null);
         // Assertions
         assertTrue(containerRaw.toString().contains("data-dot-on-number-of-pages="));
+    }
+
+    @Test
+    public void getReferenceCount_addContent_shouldReturnReferencesCount() throws DotDataException, DotSecurityException,
+            SystemException, PortalException {
+        // Initialization
+        final Language defaultLang = APILocator.getLanguageAPI().getDefaultLanguage();
+        final long languageId = defaultLang.getId();
+
+        // Test data generation
+        final Contentlet testContentlet = TestDataUtils.getGenericContentContent(true, languageId, this.host);
+        PageRenderTestUtil.PageRenderTest testData = PageRenderTestUtil.createPage(1, this.host);
+        HTMLPageAsset testPage = testData.getPage();
+        Container container = testData.getFirstContainer();
+        PageContainerForm pageContainerForm = this.createPageContainerForm(container.getIdentifier(),
+                List.of(testContentlet.getIdentifier()), "uuid-1");
+        Response saveResponse = this.pageResourceWithHelper.addContent(this.request, this.response,
+                testPage.getIdentifier(), VariantAPI.DEFAULT_VARIANT.name(), pageContainerForm);
+
+        // Assertion
+        assertEquals("Test Contentlet could not be saved.", HttpServletResponse.SC_OK, saveResponse.getStatus());
+
+        Response contentletReferencesResponse = contentResource.getContentletReferencesCount(this.request, this.response, testContentlet.getIdentifier());
+
+        Map<String, Integer> map = (Map<String, Integer>) ((ResponseEntityView) contentletReferencesResponse.getEntity()).getEntity();
+
+        // Assertions
+        assertEquals("There must be only ONE reference to the Contentlet at this point", 1, (Object)map.get("noOfPages"));
+
+        // Test data generation
+        testData = PageRenderTestUtil.createPage(1, this.host);
+        testPage = testData.getPage();
+        container = testData.getFirstContainer();
+        pageContainerForm = this.createPageContainerForm(container.getIdentifier(),
+                List.of(testContentlet.getIdentifier()), "uuid-1");
+        saveResponse = this.pageResourceWithHelper.addContent(this.request, this.response, testPage.getIdentifier(),
+                VariantAPI.DEFAULT_VARIANT.name(), pageContainerForm);
+
+        // Assertion
+        assertEquals("Test Contentlet could not be saved.", HttpServletResponse.SC_OK, saveResponse.getStatus());
+
+        contentletReferencesResponse = contentResource.getContentletReferencesCount(this.request, this.response, testContentlet.getIdentifier());
+
+        map = (Map<String, Integer>) ((ResponseEntityView) contentletReferencesResponse.getEntity()).getEntity();
+
+        // Assertions
+        assertEquals("Now, there must be TWO references to the Contentlet at this point", 2, (Object)map.get("noOfPages"));
     }
 }

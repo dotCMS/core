@@ -51,10 +51,7 @@ import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
@@ -308,5 +305,37 @@ public class ContentResource {
 
         Logger.debug(this, ()-> "The field:" + pullRelatedForm.getFieldVariable() + " is not a relationship");
         throw new IllegalArgumentException("The field:" + pullRelatedForm.getFieldVariable() + " is not a relationship");
+    }
+
+    /**
+     * Retrieves a count of the contentlet references on pages. If exists then return count
+     * otherwise 404 not found error
+     * @param request
+     * @param response
+     * @return Returns a contentlet's references on pages
+     */
+    @GET
+    @Path("/references/{identifier}")
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response getContentletReferencesCount(@Context HttpServletRequest request,
+                               @Context final HttpServletResponse response,
+                               @PathParam("identifier") final String identifier)
+            throws DotDataException, DotSecurityException {
+
+        final InitDataObject initDataObject =
+                new WebResource.InitBuilder(this.webResource)
+                        .requestAndResponse(request, response)
+                        .requiredAnonAccess(AnonymousAccess.READ)
+                        .init();
+
+        Logger.debug(this, () -> "Finding the contentlet references on pages: " + identifier);
+
+        final Map<String, Integer> result = new TreeMap<>();
+
+        final Optional<Integer> pageReferences =
+                Try.of(() -> contentletAPI.getAllContentletReferencesCount(identifier)).getOrElse(Optional.empty());
+        pageReferences.ifPresentOrElse((count) -> result.put("noOfPages", count), () -> result.put("noOfPages", 0));
+
+        return Response.ok(new ResponseEntityView(result)).build();
     }
 }
