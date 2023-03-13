@@ -2,6 +2,7 @@ package com.dotcms.experiments.model;
 
 import static com.dotcms.variant.VariantAPI.DEFAULT_VARIANT;
 
+import com.dotcms.experiments.business.ConfigExperimentUtil;
 import com.dotcms.publisher.util.PusheableAsset;
 import com.dotcms.publishing.manifest.ManifestItem;
 import com.dotcms.util.TimeUtil;
@@ -95,7 +96,7 @@ public interface AbstractExperiment extends Serializable, ManifestItem, Ruleable
     @JsonProperty("lookBackWindowExpireTime")
     @Value.Default
     default long lookBackWindowExpireTime() {
-        return TimeUnit.MINUTES.toMillis(30);
+        return ConfigExperimentUtil.INSTANCE.lookBackWindowDefaultExpireTime();
     }
 
     // Beginning Permissionable methods

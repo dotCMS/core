@@ -122,7 +122,7 @@ public class SelectedExperiment implements Serializable {
     }
 
 
-    private static class LookBackWindow {
+    public static class LookBackWindow {
         final String value;
         final long expireMillis;
 

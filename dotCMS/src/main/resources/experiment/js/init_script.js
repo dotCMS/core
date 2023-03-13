@@ -14,24 +14,17 @@ function setJitsuExperimentData (experimentData) {
 
 window.addEventListener("experiment_loaded", function (event) {
     let experimentData = event.detail;
-    console.log("experiment_loaded", experimentData);
     setJitsuExperimentData(experimentData);
 
     if (!window.location.href.includes("redirect=true")) {
-        console.log("trying redirect");
         for (let i = 0; i < experimentData.experiments.length; i++) {
             let pageUrl = experimentData.experiments[i].pageUrl;
 
             let alternativePageUrl = experimentData.experiments[i].pageUrl.endsWith(
                 "/index") ?
                 experimentData.experiments[i].pageUrl.replace("index", "")
-                :
-                experimentData.experiments[i].pageUrl;
-            console.log("Should", window.location.href.includes(pageUrl)
-                || window.location.href.includes(alternativePageUrl));
-            console.log(' window.location.href',  window.location.href);
-            console.log(' pageUrl',  pageUrl);
-            console.log(' alternativePageUrl',  alternativePageUrl);
+                : experimentData.experiments[i].pageUrl;
+
             if (window.location.href.includes(pageUrl)
                 || window.location.href.endsWith(alternativePageUrl)) {
 
@@ -72,9 +65,7 @@ if (!experimentAlreadyCheck) {
             let experimentData = JSON.parse(experimentDataAsString);
 
             var now = Date.now();
-            console.log('now', now);
-            console.log('expireTime',  experimentData.experiments[0].lookBackWindow.expireTime);
-            console.log('now',  experimentData.experiments[0].lookBackWindow.expireTime > now);
+
             experimentData.experiments = experimentData.experiments
             .filter(experiment => currentRunningExperimentsId.includes(experiment.id))
             .filter(experiment => experiment.lookBackWindow.expireTime > now);
@@ -155,7 +146,7 @@ if (!experimentAlreadyCheck) {
 
     if (experimentDataAsString) {
         let experimentData = JSON.parse(experimentDataAsString);
-        console.log('experimentData 1', experimentData);
+
         const event = new CustomEvent('experiment_loaded',
             {detail: experimentData});
         window.dispatchEvent(event);
@@ -164,7 +155,7 @@ if (!experimentAlreadyCheck) {
     sessionStorage.setItem("experimentAlreadyCheck", true);
 } else {
     let experimentData = JSON.parse(localStorage.getItem('experiment_data'));
-    console.log('experimentData 2', experimentData);
+
     const event = new CustomEvent('experiment_loaded',
         {detail: experimentData});
     window.dispatchEvent(event);
