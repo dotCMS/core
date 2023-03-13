@@ -16,6 +16,7 @@ import com.dotcms.system.event.local.business.LocalSystemEventsAPI;
 import com.dotcms.util.DotPreconditions;
 import com.dotcms.util.LowerKeyMap;
 import com.dotmarketing.business.*;
+import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -88,13 +89,16 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
 
   @Override
   public void delete(ContentType type) throws DotSecurityException, DotDataException {
-     bulkDelete(type);
+    perms.checkPermission(type, PermissionLevel.EDIT_PERMISSIONS, user);
+    final ContentType copy = prepAsyncDelete(type);
+    int count =  new DotConnect().setSQL("select count(*) as x from contentlet c, structure s where c.structure_inode = s.inode and s.inode = ? ").addParam(copy.inode()).getInt("x");
+    System.out.println(count);
+    ContentTypeDeleteJob.triggerContentTypeDeletion(copy);
   }
 
   @Override
   @WrapInTransaction
-  public void bulkDelete(ContentType type) throws DotSecurityException, DotDataException {
-    perms.checkPermission(type, PermissionLevel.EDIT_PERMISSIONS, user);
+  public ContentType prepAsyncDelete(ContentType type) throws DotSecurityException, DotDataException {
     //If we're ok permissions wise, we need to remove the content from the index
     APILocator.getContentletIndexAPI().removeContentFromIndexByStructureInode(type.inode());
     //Then this quickly hides the content from the front end and APIS
@@ -108,7 +112,7 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
     contentTypeFactory.delete(type);
     //and destroy all associated content under the copy
     contentTypeFactory.markForDeletion(copy);
-    ContentTypeDeleteJob.triggerContentTypeDeletion(copy);
+    return copy;
   }
 
   @Override

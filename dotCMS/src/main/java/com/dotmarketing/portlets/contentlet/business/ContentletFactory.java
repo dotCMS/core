@@ -24,6 +24,7 @@ import org.elasticsearch.search.SearchHits;
 
 import java.io.Serializable;
 import java.util.*;
+import java.util.function.Function;
 
 /**
  * Provides utility methods to interact with {@link Contentlet} objects in
@@ -513,14 +514,33 @@ public abstract class ContentletFactory {
 		//TODO: need to match old fields with the new fiedls created in the new structure
 
 		final DotConnect dotConnect = new DotConnect();
-
+/*
+		final Map<String, com.dotcms.contenttype.model.field.Field> targetMappedByVar = target.fields().stream().collect(Collectors.toMap(com.dotcms.contenttype.model.field.Field::variable, Function.identity()));
+		for (final com.dotcms.contenttype.model.field.Field field : source.fields()) {
+			final com.dotcms.contenttype.model.field.Field targetField = targetMappedByVar.get(field.variable());
+			if (null == targetField) {
+				throw new DotDataException("Unable to match field " + field.variable() + " in target structure " + target.name());
+			}
+			if (!field.dataType().equals(targetField.dataType())) {
+				throw new DotDataException("Unable to match field " + field.variable() + " in target structure " + target.name() + " because the data type is different");
+			}
+			//dotConnect.setSQL("update fields set velocity_var_name = ? where inode = ?").addParam(targetField.variable()).addParam(field.inode()).loadResult();
+		}
+*/
 		final List<?> list = dotConnect.setSQL("select c.inode " +
 				" from contentlet c, structure s  " +
 				" where c.structure_inode = s.inode and " +
 				" s.inode =  ? ").addParam(source.inode()).loadResults();
 
-		dotConnect.setSQL("update contentlet c set structure_inode = ? from structure s where c.structure_inode = s.inode and s.inode = ? ").addParam(target.inode()).addParam(source.inode()).loadResult();
+		//dotConnect.setSQL("update contentlet c set structure_inode = ? from structure s where c.structure_inode = s.inode and s.inode = ? ").addParam(target.inode()).addParam(source.inode()).loadResult();
 
+		String updateContentlet = String.format(
+				"update contentlet c set structure_inode = ?, \n" +
+				" contentlet_as_json = jsonb_set(contentlet_as_json,'{contentType}', '\"%s\"'::jsonb, false)  \n" +
+				" where c.structure_inode =  ? ", target.inode()
+		);
+
+		dotConnect.setSQL(updateContentlet).addParam(target.inode()).addParam(source.inode()).loadResult();
 
 		final ContentletCache contentletCache = CacheLocator.getContentletCache();
 		for (final Object o : list) {
