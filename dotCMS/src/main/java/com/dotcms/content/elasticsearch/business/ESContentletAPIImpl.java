@@ -9600,16 +9600,21 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 // if we are the latest and greatest and are a draft
                 if (working.getInode().equals(contentlet.getInode())) {
 
-                    return checkin(contentlet, contentletRelationships, cats,
+                    final Contentlet contentletReturned = checkin(contentlet, contentletRelationships, cats,
                             user, respectFrontendRoles, false, false);
 
+                    this.handlePermissions(permissions, user, respectFrontendRoles, contentletReturned);
+                    return contentletReturned;
                 } else {
                     final String workingInode = working.getInode();
                     copyProperties(working, contentlet.getMap());
                     working.setInode(workingInode);
                     working.setModUser(user.getUserId());
-                    return checkin(contentlet, contentletRelationships, cats,
+                    final Contentlet contentletReturned =  checkin(contentlet, contentletRelationships, cats,
                             user, respectFrontendRoles, false, false);
+
+                    this.handlePermissions(permissions, user, respectFrontendRoles, contentletReturned);
+                    return contentletReturned;
                 }
             }
 
