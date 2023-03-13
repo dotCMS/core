@@ -16,4 +16,8 @@ export class DotApiLinkComponent {
     private getFixedLink(link: string): string {
         return link.startsWith('/') ? link : `/${link}`;
     }
+
+    openLink() {
+        window.open(this.link, '_blank');
+    }
 }
