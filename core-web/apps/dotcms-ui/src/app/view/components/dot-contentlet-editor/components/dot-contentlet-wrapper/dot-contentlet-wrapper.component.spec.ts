@@ -325,8 +325,10 @@ describe('DotContentletWrapperComponent', () => {
                     dotIframeDialog.triggerEventHandler('custom', params);
                     expect(component.custom.emit).toHaveBeenCalledWith(params);
                     expect(dotEventsService.notify).toHaveBeenCalledWith('save-page', {
-                        value: 'Page Saved',
-                        retryLoading: true
+                        payload: {
+                            hello: 'world'
+                        },
+                        value: 'Page Saved'
                     });
                 });
 

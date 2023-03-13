@@ -1,4 +1,3 @@
-import { formatDistanceStrict } from 'date-fns';
 import { Observable, of } from 'rxjs';
 
 import { HttpClientTestingModule } from '@angular/common/http/testing';
@@ -80,16 +79,6 @@ class MockESPaginatorService {
         });
     }
 }
-
-const relativeDate = (date: string) => {
-    return formatDistanceStrict(
-        new Date(parseInt(new Date(date).getTime().toString(), 10)),
-        new Date(),
-        {
-            addSuffix: true
-        }
-    );
-};
 
 describe('DotPageStore', () => {
     let dotPageStore: DotPageStore;
@@ -296,12 +285,10 @@ describe('DotPageStore', () => {
     it('should set all Pages value in store', () => {
         const expectedInputArray = [
             {
-                ...favoritePagesInitialTestData[0],
-                modDate: relativeDate(favoritePagesInitialTestData[0].modDate)
+                ...favoritePagesInitialTestData[0]
             },
             {
-                ...favoritePagesInitialTestData[1],
-                modDate: relativeDate(favoritePagesInitialTestData[1].modDate)
+                ...favoritePagesInitialTestData[1]
             }
         ];
         spyOn(dotESContentService, 'get').and.returnValue(
@@ -330,6 +317,7 @@ describe('DotPageStore', () => {
     });
 
     it('should keep fetching Pages data until new value comes from the DB in store', fakeAsync(() => {
+        dotPageStore.setPages(favoritePagesInitialTestData);
         const old = {
             contentTook: 0,
             jsonObjectView: {
@@ -343,8 +331,8 @@ describe('DotPageStore', () => {
             contentTook: 0,
             jsonObjectView: {
                 contentlets: [
-                    ...favoritePagesInitialTestData,
-                    ...favoritePagesInitialTestData
+                    { ...favoritePagesInitialTestData[0], modDate: '2020-09-02 16:50:15.569' },
+                    { ...favoritePagesInitialTestData[1] }
                 ] as unknown as DotCMSContentlet[]
             },
             queryTook: 1,
@@ -366,7 +354,7 @@ describe('DotPageStore', () => {
         spyOn(dotESContentService, 'get').and.returnValue(mockFunction(3));
         spyOn(dotPageStore, 'setPagesStatus').and.callThrough();
 
-        dotPageStore.getPagesRetry({ offset: 0 });
+        dotPageStore.updateSinglePageData({ identifier: '123', isFavoritePage: false });
 
         tick(3000);
 
