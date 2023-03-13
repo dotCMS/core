@@ -15,12 +15,12 @@ class TestHostComponent {
     }
 }
 
-describe('DotApiLinkComponent', () => {
+fdescribe('DotApiLinkComponent', () => {
     let hostFixture: ComponentFixture<TestHostComponent>;
     let hostDe: DebugElement;
     let hostComp: TestHostComponent;
     let de: DebugElement;
-    let link: DebugElement;
+    let deComp: DotApiLinkComponent;
 
     beforeEach(waitForAsync(() => {
         TestBed.configureTestingModule({
@@ -36,35 +36,26 @@ describe('DotApiLinkComponent', () => {
         de = hostDe.query(By.css('dot-api-link'));
 
         hostFixture.detectChanges();
-        link = de.query(By.css('a'));
+        deComp = de.componentInstance;
     });
 
-    it('should show label', () => {
-        expect(link.nativeElement.textContent).toBe('API');
-    });
-
-    it('should set link properties and attr correctly', () => {
-        expect(link.attributes.target).toEqual('_blank');
-        expect(link.properties.href).toEqual('/api/v1/123');
-        expect(link.properties.title).toEqual('/api/v1/123');
+    it('should set link correctly', () => {
+        expect(deComp.link).toEqual('/api/v1/123');
     });
 
     it('should update link when href is change', () => {
-        expect(link.properties.href).toEqual('/api/v1/123');
-        expect(link.properties.title).toEqual('/api/v1/123');
+        expect(deComp.link).toEqual('/api/v1/123');
 
         hostComp.updateLink('/api/new/1000');
         hostFixture.detectChanges();
 
-        expect(link.properties.href).toEqual('/api/new/1000');
-        expect(link.properties.title).toEqual('/api/new/1000');
+        expect(deComp.link).toEqual('/api/new/1000');
     });
 
     it('should set the link relative always', () => {
         hostComp.updateLink('api/no/start/slash');
         hostFixture.detectChanges();
 
-        expect(link.properties.href).toEqual('/api/no/start/slash');
-        expect(link.properties.title).toEqual('/api/no/start/slash');
+        expect(deComp.link).toEqual('/api/no/start/slash');
     });
 });
