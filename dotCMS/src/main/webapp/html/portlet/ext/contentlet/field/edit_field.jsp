@@ -37,7 +37,7 @@
 <%@ page import="com.dotcms.contenttype.model.field.HostFolderField" %>
 <%@ page import="com.dotmarketing.beans.Host" %>
 <%@ page import="com.dotcms.contenttype.model.field.JSONField" %>
-
+<%@ page import="org.apache.commons.lang.StringEscapeUtils" %>
 
 <%
     long defaultLang = APILocator.getLanguageAPI().getDefaultLanguage().getId();
@@ -172,8 +172,7 @@
                 JSONValue = new JSONObject(textValue);
             } catch(Exception e) {
                 // Need it in case the value contains Single quote/backtick.
-                textValue = "`" + textValue.replaceAll("`", "&#96;") + "`";
-              
+                textValue = "`" + StringEscapeUtils.escapeJavaScript(textValue.replaceAll("`", "&#96;").replaceAll("\\$", "&#36;")) + "`"; 
             }
 
             List<FieldVariable> acceptTypes=APILocator.getFieldAPI().getFieldVariablesForField(field.getInode(), user, false);
@@ -201,6 +200,8 @@
             %>
 
             <script src="/html/dotcms-block-editor.js"></script>
+            
+
             <dotcms-block-editor
                 id="block-editor-<%=field.getVelocityVarName()%>"
                 allowed-content-types="<%=allowedContentTypes%>"

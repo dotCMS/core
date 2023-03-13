@@ -1,4 +1,5 @@
 import { Subject, from } from 'rxjs';
+import showdown from 'showdown';
 import { assert, object, string, array, optional } from 'superstruct';
 
 import {
@@ -90,7 +91,7 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy {
 
     @Input() set value(content: Content) {
         if (typeof content === 'string') {
-            this.content = formatHTML(content);
+            this.content = formatHTML(this.getMarkdownHtml(content));
 
             return;
         }
@@ -180,6 +181,13 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy {
             .step(new SetDocAttrStep('wordCount', this.characterCount.words()))
             .step(new SetDocAttrStep('readingTime', this.readingTime));
         this.editor.view.dispatch(tr);
+    }
+
+    private getMarkdownHtml(content: string): string {
+        const converter = new showdown.Converter();
+        const decodeHtmlContent = content.replace(/&#96;/g, '`').replace(/&#36;/g, '$');
+
+        return converter.makeHtml(decodeHtmlContent);
     }
 
     /**
