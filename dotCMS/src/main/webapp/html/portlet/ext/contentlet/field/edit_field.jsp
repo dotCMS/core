@@ -200,8 +200,6 @@
             %>
 
             <script src="/html/dotcms-block-editor.js"></script>
-            
-
             <dotcms-block-editor
                 id="block-editor-<%=field.getVelocityVarName()%>"
                 allowed-content-types="<%=allowedContentTypes%>"
