@@ -66,8 +66,6 @@ dojo.provide("dotcms.dijit.form.FileSelector");
 
 dojo.require("dijit._Widget");
 dojo.require("dijit._Templated");
-dojo.require("dijit.form.VerticalSlider");
-dojo.require("dijit.form.VerticalRule");
 dojo.require("dijit.form.Button");
 dojo.require("dotcms.dijit.FileBrowserDialog");
 
@@ -148,7 +146,6 @@ dojo.declare("dotcms.dijit.form.FileSelector", [dijit._Widget, dijit._Templated]
 			dojo.style(this.removeFileButton.domNode, { display: '' });
 		}
 		
-		dojo.connect(this.thumbnailSizeSlider, 'onChange', dojo.hitch(this, this._changeThumbnailSize));
 		this.fileBrowser.onFileSelected = dojo.hitch(this, this._browserFileSelected);
 		this.fileBrowser.fileExtensions = this.fileExtensions;
 		this.fileBrowser.mimeTypes = this.mimeTypes;
@@ -179,12 +176,7 @@ dojo.declare("dotcms.dijit.form.FileSelector", [dijit._Widget, dijit._Templated]
 				this.thumbnailSize = thumbSize;
 			}
 
-			if(fileInfo.mimeType.indexOf('image/svg') <0 && fileInfo.mimeType.indexOf('image/x-icon')<0) {
-				this.thumbnailImage.src = "/dA/" + fileInfo.inode + "/" + this.thumbnailSize + "w/20q/rand/" + Math.random()+"?language_id="+this.contentLanguage;
-				this.thumbnailSizeSlider.attr('value', this.thumbnailSize);
-			}else{
-			    this.thumbnailImage.src = "/dA/" + fileInfo.inode + "/" + this.thumbnailSize + "w/20q/rand/" + Math.random()+"?language_id="+this.contentLanguage;
-			}
+			this.thumbnailImage.src = "/dA/" + fileInfo.inode + "/" + this.thumbnailSize + "w/20q/rand/" + Math.random()+"?language_id="+this.contentLanguage;
 
 	        dojo.style(this.thumbnailWrapper, { display : "" });
 		} else {
@@ -218,16 +210,6 @@ dojo.declare("dotcms.dijit.form.FileSelector", [dijit._Widget, dijit._Templated]
 	_browserFileSelected: function (file) {
 		this._setFile(file);
 		this.onFileSelected(file);
-	},
-	
-	_changeThumbnailSize: function (newValue) {
-		this.thumbnailSize = newValue;
-
-		if (this.thumbnailImage.src.indexOf("Thumbnail")>0) {
-			this.thumbnailImage.src = "/contentAsset/image/" + this.value + "/fileAsset/filter/Thumbnail/thumbnail_w/" + newValue + "/rand/" + Math.random()+"?language_id="+this.contentLanguage;
-		}
-
-		dojo.cookie(this.id + '-thumbsize', new String(newValue));
 	},
 	
 	_browseClicked: function () {

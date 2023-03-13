@@ -39,6 +39,7 @@ import com.dotcms.rendering.velocity.services.PageLoader;
 import com.dotcms.rest.AnonymousAccess;
 import com.dotcms.rest.api.v1.temp.DotTempFile;
 import com.dotcms.rest.api.v1.temp.TempFileAPI;
+import com.dotcms.rest.exception.NotFoundException;
 import com.dotcms.storage.FileMetadataAPI;
 import com.dotcms.storage.model.Metadata;
 import com.dotcms.system.event.local.business.LocalSystemEventsAPI;
@@ -727,8 +728,22 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
     @CloseDBIfOpened
     @Override
-    public Contentlet findContentletByIdentifierAnyLanguage(final String identifier,
-            final String variant) throws DotDataException {
+    public Contentlet findContentletByIdentifierAnyLanguageAndVariant(final String identifier) throws DotDataException{
+
+        try {
+            final ContentletVersionInfo anyContentletVersionInfoAnyVariant = FactoryLocator.getVersionableFactory()
+                    .findAnyContentletVersionInfoAnyVariant(identifier, false)
+                    .orElseThrow(() -> new NotFoundInDbException("Contentlet does not exists"));
+
+            return contentFactory.find(anyContentletVersionInfoAnyVariant.getWorkingInode());
+        } catch (Exception e) {
+            throw new DotContentletStateException("Can't find contentlet: " + identifier, e);
+        }
+    }
+
+    @CloseDBIfOpened
+    @Override
+    public Contentlet findContentletByIdentifierAnyLanguage(final String identifier, final String variant) throws DotDataException {
         try {
             return contentFactory.findContentletByIdentifierAnyLanguage(identifier, variant);
         } catch (Exception e) {

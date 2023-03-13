@@ -125,7 +125,6 @@
                     "includePaths": ["libs/dot-primeng-theme-styles/src/scss"]
                 }
             },
-
             "configurations": {
                 "development": {
                     "watch": true,

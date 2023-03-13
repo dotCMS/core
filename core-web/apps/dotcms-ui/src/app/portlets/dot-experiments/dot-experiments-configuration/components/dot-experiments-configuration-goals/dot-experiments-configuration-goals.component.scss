@@ -1,24 +1,20 @@
 @use "variables" as *;
 
+h2,
+h3 {
+    margin: $spacing-0;
+}
+
 h2 {
-    margin: 0;
     font-size: $font-size-large;
-    font-weight: 500;
+    font-weight: $font-weight-bold;
     text-transform: uppercase;
+    margin-bottom: $spacing-3;
 }
 
 h3 {
-    margin: 0;
-    font-size: $font-size-large;
-    font-weight: 400;
-}
-
-i {
-    transition-duration: $basic-speed;
-
-    &.delete:hover {
-        color: $warn;
-    }
+    font-weight: $font-weight-regular-bold;
+    font-size: $font-size-medium;
 }
 
 :host ::ng-deep {
@@ -32,5 +28,11 @@ i {
 
     p-card .p-card-footer .p-button-link {
         padding: $spacing-0;
+    }
+
+    button {
+        .p-button-icon {
+            color: $color-primary-500;
+        }
     }
 }

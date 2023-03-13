@@ -4,6 +4,10 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
+import com.dotcms.datagen.TemplateDataGen;
+import com.dotcms.datagen.VariantDataGen;
+import com.dotcms.variant.model.Variant;
+import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.exception.DotRuntimeException;
 import java.io.File;
 import java.io.IOException;
@@ -72,6 +76,8 @@ public class BrowserAPITest extends IntegrationTestBase {
 
     static Link testlink;
 
+    private static BrowserAPIImpl browserAPIImpl;
+
     @BeforeClass
     public static void prepare() throws Exception {
         //Setting web app environment
@@ -115,7 +121,7 @@ public class BrowserAPITest extends IntegrationTestBase {
         testPage = APILocator.getHTMLPageAssetAPI().fromContentlet(HTMLPageDataGen.checkin(page, IndexPolicy.FORCE));
 
         testlink = new LinkDataGen().hostId(testHost.getIdentifier()).title("testLink").parent(testFolder).target("https://google.com").linkType("EXTERNAL").nextPersisted();
-
+        browserAPIImpl = (BrowserAPIImpl) APILocator.getBrowserAPI();
     }
 
     /**
@@ -555,5 +561,97 @@ public class BrowserAPITest extends IntegrationTestBase {
         assertEquals(childFolder2.getIdentifier(),results.get(1).get("identifier"));
 
     }
-    
+
+    /**
+     * Method to test: browserAPI.getFolderContent
+     * Given scenario: One page in DEFAULT variant and one page in a second variant living under the same folder
+     * Expected result: calling the method for the mentioned folder should return only the page in the DEFAULT variant
+     */
+    @Test
+    public void test_getFolderContent_pageWithTwoVariants()
+            throws DotDataException, DotSecurityException {
+        final User user = APILocator.systemUser();
+
+        final Host site = new SiteDataGen().nextPersisted();
+        final Folder folder = new FolderDataGen().site(site).nextPersisted();
+        final Template template_A = new TemplateDataGen().host(site).nextPersisted();
+
+        final Variant secondVariant = new VariantDataGen().nextPersisted();
+
+        final HTMLPageAsset pageInDefaultVariant = new HTMLPageDataGen(site, template_A).folder(folder)
+                                                           .nextPersisted();
+
+        final HTMLPageAsset pageInSecondVariant = (HTMLPageAsset) new HTMLPageDataGen(site, template_A)
+                                                                          .folder(folder)
+                                                                          .variant(secondVariant)
+                                                                          .nextPersisted();
+
+        final BrowserQuery browserQuery = BrowserQuery.builder()
+                                                  .showDotAssets(Boolean.FALSE)
+                                                  .showLinks(Boolean.TRUE)
+                                                  .withHostOrFolderId(folder.getIdentifier())
+                                                  .showFiles(true)
+                                                  .showPages(true)
+                                                  .showFolders(false)
+                                                  .showArchived(false)
+                                                  .showWorking(Boolean.TRUE)
+                                                  .sortByDesc(false)
+                                                  .withUser(user).build();
+
+        final Map<String, Object> results = browserAPI.getFolderContent(browserQuery);
+        assertEquals(1, ((int) results.get("total")));
+        assertEquals(pageInDefaultVariant.getIdentifier(),
+                ((Contentlet.ContentletHashMap)((List) results.get("list")).get(0)).get("identifier"));
+
+    }
+
+    @Test
+    public void getAssetNameColumn_providedBaseQuery_shouldGenerateCorrectSQLForDB() throws DotDataException, DotSecurityException {
+
+        final String sql = browserAPIImpl.getAssetNameColumn("LOWER(%s) LIKE ? ");
+
+        assertNotNull(sql);
+        if (DbConnectionFactory.isPostgres()) {
+            assertTrue(sql.contains("-> 'fields' -> 'asset' -> 'metadata' ->> 'name'"));
+        }
+        else{
+            assertTrue(sql.contains("$.fields.asset.metadata.name"));
+        }
+    }
+
+    @Test
+    public void getFolderContent_searchDotAssetWithFilter_shouldReturnNotNull() throws DotDataException, DotSecurityException {
+        final String filterText = "company_logo.png";
+        final User user = APILocator.systemUser();
+        final List<String> mimeTypes = List.of("image");
+
+        final BrowserQuery browserQuery = BrowserQuery.builder()
+                .withUser(user)
+                .withHostOrFolderId("SYSTEM_HOST")
+                .offset(0)
+                .maxResults(1)
+                .withFilter(filterText)
+                .showMimeTypes(mimeTypes)
+                .showImages(mimeTypes.contains(mimeTypes.get(0)))
+                .showExtensions(null)
+                .showWorking(true)
+                .showArchived(false)
+                .showFolders(false)
+                .showFiles(true)
+                .showShorties(false)
+                .showContent(true)
+                .sortBy("modDate")
+                .sortByDesc(true)
+                .showLinks(false)
+                .withLanguageId(1)
+                .showDotAssets(true)
+                .build();
+
+        final List<Contentlet> contentletList = browserAPI.getContentUnderParentFromDB(browserQuery);
+        final Map<String, Object> result = browserAPI.getFolderContent(browserQuery);
+
+        assertNotNull(contentletList);
+        assertNotNull(result);
+    }
+
 }

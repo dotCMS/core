@@ -50,6 +50,7 @@ export const BubbleLinkFormExtension = (viewContainerRef: ViewContainerRef) => {
 
                                 return true;
                             })
+                            .freezeScroll(true)
                             .run();
                     },
                 closeLinkForm:
@@ -66,6 +67,7 @@ export const BubbleLinkFormExtension = (viewContainerRef: ViewContainerRef) => {
 
                                 return true;
                             })
+                            .freezeScroll(false)
                             .run();
                     }
             };

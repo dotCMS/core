@@ -11,7 +11,7 @@ import { FloatingMenuPluginProps } from '@tiptap/extension-floating-menu';
 import { Level } from '@tiptap/extension-heading';
 import Suggestion, { SuggestionOptions, SuggestionProps } from '@tiptap/suggestion';
 
-import { RemoteCustomExtentions } from '@dotcms/dotcms-models';
+import { RemoteCustomExtensions } from '@dotcms/dotcms-models';
 
 import { ActionButtonComponent } from './action-button.component';
 
@@ -42,7 +42,13 @@ declare module '@tiptap/core' {
                 range: Range;
                 type: { name: string; level?: number };
             }) => ReturnType;
-            addContentletBlock: (data: { range: Range; payload: unknown }) => ReturnType;
+            addContentletBlock: ({
+                range,
+                payload
+            }: {
+                range: Range;
+                payload: unknown;
+            }) => ReturnType;
             addNextLine: () => ReturnType;
         };
     }
@@ -89,18 +95,15 @@ function execCommand({
     editor: Editor;
     range: Range;
     props: SuggestionsCommandProps;
-    customBlocks: RemoteCustomExtentions;
+    customBlocks: RemoteCustomExtensions;
 }) {
+    const { type, payload } = props;
     const whatToDo = {
         dotContent: () => {
-            editor
-                .chain()
-                .addContentletBlock({ range, payload: props.payload })
-                .addNextLine()
-                .run();
+            editor.chain().addContentletBlock({ range, payload }).addNextLine().run();
         },
         heading: () => {
-            editor.chain().addHeading({ range, type: props.type }).run();
+            editor.chain().addHeading({ range, type }).run();
         },
         table: () => {
             editor.commands
@@ -192,17 +195,19 @@ function mapCustomActions(actions): Array<DotMenuItem> {
         icon: action.icon,
         label: action.menuLabel,
         commandKey: action.command,
-        id: action.name
+        id: `${action.command}-id`
     }));
 }
 
 function getCustomActions(customBlocks): Array<DotMenuItem> {
-    return customBlocks.extensions.map((extension) => mapCustomActions(extension.actions)).flat();
+    return customBlocks.extensions
+        .map((extension) => mapCustomActions(extension.actions || []))
+        .flat();
 }
 
 export const ActionsMenu = (
     viewContainerRef: ViewContainerRef,
-    customBlocks: RemoteCustomExtentions
+    customBlocks: RemoteCustomExtensions
 ) => {
     let myTippy;
     let suggestionsComponent: ComponentRef<SuggestionsComponent>;
@@ -227,12 +232,14 @@ export const ActionsMenu = (
                         open: false
                     });
                     editor.view.dispatch(transaction);
+                    editor.commands.freezeScroll(false);
                 }
             });
         }
     }
 
     function onBeforeStart({ editor }): void {
+        editor.commands.freezeScroll(true);
         const isTableCell =
             findParentNode(editor.view.state.selection.$from, [NodeTypes.TABLE_CELL])?.type.name ===
             NodeTypes.TABLE_CELL;
@@ -326,8 +333,9 @@ export const ActionsMenu = (
         return false;
     }
 
-    function onExit() {
+    function onExit({ editor }): void {
         myTippy?.destroy();
+        editor.commands.freezeScroll(false);
         suggestionsComponent?.destroy();
         suggestionsComponent = null;
         destroy$.next(true);
