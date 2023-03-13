@@ -23,11 +23,11 @@
                     [inlineEditDisplayTemplate]="inlineEditDisplayTemplate"
                 >
                 </dot-inline-edit>
-                <dot-api-link href="api/v1/contenttype/id/{{ contentType.id }}"></dot-api-link>
             </header>
         </div>
 
         <div class="content-type__info">
+            <dot-api-link href="api/v1/contenttype/id/{{ contentType.id }}"></dot-api-link>
             {{ 'contenttypes.content.variable' | dm }}:
             <dot-copy-link
                 [copy]="contentType.variable"
