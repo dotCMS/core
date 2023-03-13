@@ -34,7 +34,7 @@ public class PublishingEndPointTest extends IntegrationTestBase {
     }
 
     @Test
-    public void validatePublishingEndPoint_whenAWSS3PublishWithoutProperties_returnException() {
+    public void validatePublishingEndPoint_whenAWSS3PublishWithoutProperties_returnException() throws LanguageException {
 
         boolean exceptionCatched = false;
 
