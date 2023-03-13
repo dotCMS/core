@@ -527,14 +527,14 @@ public abstract class ContentletFactory {
 			//dotConnect.setSQL("update fields set velocity_var_name = ? where inode = ?").addParam(targetField.variable()).addParam(field.inode()).loadResult();
 		}
 */
-		final List<?> list = dotConnect.setSQL("select c.inode " +
-				" from contentlet c, structure s  " +
-				" where c.structure_inode = s.inode and " +
-				" s.inode =  ? ").addParam(source.inode()).loadResults();
+		//final List<?> list = dotConnect.setSQL("select c.inode " +
+		//		" from contentlet c, structure s  " +
+		//		" where c.structure_inode = s.inode and " +
+		//		" s.inode =  ? ").addParam(source.inode()).loadResults();
 
 		//dotConnect.setSQL("update contentlet c set structure_inode = ? from structure s where c.structure_inode = s.inode and s.inode = ? ").addParam(target.inode()).addParam(source.inode()).loadResult();
 
-		String updateContentlet = String.format(
+		final String updateContentlet = String.format(
 				"update contentlet c set structure_inode = ?, \n" +
 				" contentlet_as_json = jsonb_set(contentlet_as_json,'{contentType}', '\"%s\"'::jsonb, false)  \n" +
 				" where c.structure_inode =  ? ", target.inode()
@@ -542,10 +542,10 @@ public abstract class ContentletFactory {
 
 		dotConnect.setSQL(updateContentlet).addParam(target.inode()).addParam(source.inode()).loadResult();
 
-		final ContentletCache contentletCache = CacheLocator.getContentletCache();
-		for (final Object o : list) {
-			final Map<?,?> map = (Map<?,?>) o;
-			contentletCache.remove((String)map.get("inode"));
-		}
+		//final ContentletCache contentletCache = CacheLocator.getContentletCache();
+		//for (final Object o : list) {
+		//	final Map<?,?> map = (Map<?,?>) o;
+		//	contentletCache.remove((String)map.get("inode"));
+		//}
 	}
 }
