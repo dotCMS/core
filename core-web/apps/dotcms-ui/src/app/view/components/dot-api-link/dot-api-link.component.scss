@@ -10,13 +10,13 @@ button {
     padding: 0.25rem $spacing-1;
     gap: 0.25rem;
 
-    font-size: $font-size-small;
-
     .p-button-label {
         color: $color-gray-500 !important;
+        font-size: $font-size-small;
     }
 
     .material-icons {
         color: $color-primary-500;
+        font-size: $font-size-medium;
     }
 }
