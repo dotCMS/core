@@ -122,6 +122,7 @@ export const DotExperimentsConfigurationStoreMock = {
     openSidebar: () => of([]),
     closeSidebar: () => of([]),
     loadExperiment: () => of([]),
+    stopExperiment: () => of([]),
     getExperimentId$: of('1111111'),
     vm$: of({
         pageId: '',
