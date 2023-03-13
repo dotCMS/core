@@ -32,6 +32,7 @@ import { DotPipesModule } from '@pipes/dot-pipes.module';
 
 import { ContentTypesLayoutComponent } from './content-types-layout.component';
 
+import { DotCopyContentComponent } from '../dot-copy-content/dot-copy-content.component';
 import { FieldDragDropService } from '../fields/service';
 
 @Component({
@@ -128,7 +129,8 @@ describe('ContentTypesLayoutComponent', () => {
                 TestDotIframeComponent,
                 TestContentTypesRelationshipListingComponent,
                 TestHostComponent,
-                MockDotAddToMenuComponent
+                MockDotAddToMenuComponent,
+                DotCopyContentComponent
             ],
             imports: [
                 TabViewModule,
