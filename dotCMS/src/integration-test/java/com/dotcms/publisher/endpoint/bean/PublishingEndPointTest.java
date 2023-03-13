@@ -11,6 +11,10 @@ import com.dotcms.publisher.endpoint.bean.factory.PublishingEndPointFactory;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.cms.factories.PublicEncryptionFactory;
 import com.dotmarketing.exception.PublishingEndPointValidationException;
+import com.liferay.portal.language.LanguageException;
+import com.liferay.portal.language.LanguageUtil;
+import com.liferay.portal.model.User;
+import com.dotmarketing.business.APILocator;
 
 public class PublishingEndPointTest extends IntegrationTestBase {
 
