@@ -17,6 +17,7 @@
                     <dot-upload-asset
                         [type]="type"
                         (uploadedFile)="onSelectAsset($event)"
+                        (preventClose)="preventClose($event)"
                     ></dot-upload-asset>
                 </div>
             </ng-template>

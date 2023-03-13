@@ -10,6 +10,13 @@
     align-items: center;
     flex-direction: column;
 
+    .error {
+        color: $error;
+        font-size: $font-size-large;
+        max-width: 100%;
+        white-space: pre-wrap;
+    }
+
     .preview-container {
         align-items: center;
         display: flex;

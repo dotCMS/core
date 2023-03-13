@@ -1,3 +1,6 @@
+import { throwError } from 'rxjs';
+
+import { HttpErrorResponse } from '@angular/common/http';
 import {
     Component,
     EventEmitter,
@@ -8,6 +11,8 @@ import {
 } from '@angular/core';
 import { DomSanitizer } from '@angular/platform-browser';
 
+import { catchError } from 'rxjs/operators';
+
 import { DotCMSContentlet, EditorAssetTypes } from '@dotcms/dotcms-models';
 
 import { DotImageService } from '../../../image-uploader/services/dot-image/dot-image.service';
@@ -15,7 +20,8 @@ import { DotImageService } from '../../../image-uploader/services/dot-image/dot-
 export enum STATUS {
     SELECT = 'SELECT',
     PREVIEW = 'PREVIEW',
-    UPLOAD = 'UPLOAD'
+    UPLOAD = 'UPLOAD',
+    ERROR = 'ERROR'
 }
 
 @Component({
@@ -28,12 +34,16 @@ export class DotUploadAssetComponent {
     @Output()
     uploadedFile = new EventEmitter<DotCMSContentlet>();
 
+    @Output()
+    preventClose = new EventEmitter<boolean>();
+
     @Input()
     type: EditorAssetTypes;
 
     public status = STATUS.SELECT;
     public file: File;
     public src: string | ArrayBuffer;
+    public error: string;
 
     constructor(
         private readonly sanitizer: DomSanitizer,
@@ -51,7 +61,6 @@ export class DotUploadAssetComponent {
         const file = files[0];
         const reader = new FileReader();
         reader.onload = (e) => this.setFile(file, e.target.result);
-        // Allows us to get a secure url without usin the Angular bypasssecuritytrusthtml
         reader.readAsDataURL(file);
     }
 
@@ -72,11 +81,25 @@ export class DotUploadAssetComponent {
      */
     uploadFile() {
         this.status = STATUS.UPLOAD;
-        this.imageService.publishContent({ data: this.file }).subscribe((data) => {
-            const contentlet = data[0];
-            this.uploadedFile.emit(contentlet[Object.keys(contentlet)[0]]);
-            this.status = STATUS.SELECT;
-        });
+        this.preventClose.emit(true);
+        this.imageService
+            .publishContent({ data: this.file })
+            .pipe(
+                catchError((error: HttpErrorResponse) => {
+                    this.status = STATUS.ERROR;
+                    this.preventClose.emit(false);
+                    this.error = error?.error?.errors[0] || error.error;
+
+                    console.error(error);
+
+                    return throwError(error);
+                })
+            )
+            .subscribe((data) => {
+                const contentlet = data[0];
+                this.uploadedFile.emit(contentlet[Object.keys(contentlet)[0]]);
+                this.status = STATUS.SELECT;
+            });
     }
 
     /**
