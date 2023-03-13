@@ -3,6 +3,7 @@ package com.dotcms.experiments.business.result;
 import com.dotcms.analytics.metrics.Metric;
 import com.dotcms.experiments.business.result.ExperimentResults.TotalSession;
 import com.dotcms.experiments.model.ExperimentVariant;
+import java.time.Instant;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -34,15 +35,16 @@ public class GoalResultsBuilder {
     }
 
     public GoalResults build(final TotalSession totalSessions) {
+        final List<Instant> allDates = variants.values().stream()
+                .map(variantResultsBuilder -> variantResultsBuilder.getEventDates())
+                .flatMap(variantDates -> variantDates.stream())
+                .sorted()
+                .distinct()
+                .collect(Collectors.toList());
+
         final List<VariantResults> variantResults = variants.values().stream()
-                .map(variantResultsBuilder -> {
-                    final String variantId = variantResultsBuilder.experimentVariant.id();
-                    variantResultsBuilder.setTotalSession(totalSessions.getTotal());
-                    variantResultsBuilder.setTotalSessionToVariant(
-                            totalSessions.getVariants().get(variantId));
-                    return variantResultsBuilder;
-                })
-                .map(variantResultsBuilder -> variantResultsBuilder.build())
+                .map(variantResultsBuilder -> populateVariantBuilder(totalSessions, variantResultsBuilder))
+                .map(variantResultsBuilder -> variantResultsBuilder.build(allDates))
                 .collect(Collectors.toList());
 
         final Map<String, VariantResults> variantResultMap = variantResults.stream()
@@ -50,5 +52,14 @@ public class GoalResultsBuilder {
                         variantResult -> variantResult));
 
         return new GoalResults(goal, variantResultMap);
+    }
+
+    private static VariantResultsBuilder populateVariantBuilder(TotalSession totalSessions,
+            VariantResultsBuilder variantResultsBuilder) {
+        final String variantId = variantResultsBuilder.experimentVariant.id();
+        variantResultsBuilder.setTotalSession(totalSessions.getTotal());
+        variantResultsBuilder.setTotalSessionToVariant(
+                totalSessions.getVariants().get(variantId));
+        return variantResultsBuilder;
     }
 }
