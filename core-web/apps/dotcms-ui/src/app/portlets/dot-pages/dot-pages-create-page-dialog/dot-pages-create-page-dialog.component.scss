@@ -1,0 +1,48 @@
+@use "variables" as *;
+
+.dot-pages-create-page-dialog__search-container {
+    margin-bottom: $spacing-3;
+    width: 100%;
+
+    input {
+        border-radius: $border-radius-md;
+        width: 100%;
+    }
+
+    dot-icon {
+        position: absolute;
+        right: $spacing-1;
+        top: $spacing-1;
+    }
+}
+
+.dot-pages-create-page-dialog__page-types-container {
+    border: 1px solid $gray-lighter;
+    border-radius: $border-radius-md;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+
+    ::ng-deep dot-icon i {
+        color: $color-primary-500;
+    }
+
+    dot-icon {
+        margin-right: $spacing-1;
+    }
+
+    .dot-pages-create-page-dialog__page-item {
+        border-left: 1px solid $gray-lighter;
+        cursor: pointer;
+        display: flex;
+        padding: $spacing-3;
+
+        &:hover {
+            background-color: $color-gray-200;
+        }
+
+        &:first-child,
+        &:nth-child(3n + 1) {
+            border-left: none;
+        }
+    }
+}

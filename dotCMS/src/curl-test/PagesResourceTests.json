@@ -1,9 +1,8 @@
 {
 	"info": {
-		"_postman_id": "5c99a77b-bdc9-41d4-9d20-9424cb3c2e8f",
+		"_postman_id": "8501a46e-413d-49cc-ad7f-7546df7614c1",
 		"name": "Page API - [api/v1/page]",
-		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
-		"_exporter_id": "5403727"
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
 	},
 	"item": [
 		{
@@ -4486,11 +4485,11 @@
 									"    pm.expect(contentletList.length).to.eql(1);",
 									"});",
 									"",
-									"pm.test(\"The value of the 'onNumberOfPages' property must be 1\", function() {",
+									"pm.test(\"The rendered section should contain data attribute 'data-dot-on-number-of-pages' for the contentlet object\", function() {",
 									"    var entity = pm.response.json().entity;",
-									"    var contentletData = entity.containers.SYSTEM_CONTAINER.contentlets[\"uuid-1\"][0];",
+									"    var contentletData = entity.containers.SYSTEM_CONTAINER.rendered[\"uuid-1\"];",
 									"    console.log(contentletData);",
-									"    pm.expect(contentletData.onNumberOfPages).to.eql(1);",
+									"    pm.expect(contentletData).includes(\"data-dot-on-number-of-pages\");",
 									"});"
 								],
 								"type": "text/javascript"
@@ -4706,11 +4705,11 @@
 									"    pm.expect(contentletList.length).to.eql(1);",
 									"});",
 									"",
-									"pm.test(\"The value of the 'onNumberOfPages' property must be 2\", function() {",
+									"pm.test(\"The rendered section should contain data attribute 'data-dot-on-number-of-pages' for the contentlet object\", function() {",
 									"    var entity = pm.response.json().entity;",
-									"    var contentletData = entity.containers.SYSTEM_CONTAINER.contentlets[\"uuid-1\"][0];",
+									"    var contentletData = entity.containers.SYSTEM_CONTAINER.rendered[\"uuid-1\"];",
 									"    console.log(contentletData);",
-									"    pm.expect(contentletData.onNumberOfPages).to.eql(2);",
+									"    pm.expect(contentletData).includes(\"data-dot-on-number-of-pages\");",
 									"});"
 								],
 								"type": "text/javascript"
@@ -4785,6 +4784,250 @@
 							""
 						]
 					}
+				}
+			]
+		},
+		{
+			"name": "Get Page Types",
+			"item": [
+				{
+					"name": "Create new UrlMap Page",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"",
+									"pm.test(\"No errors\", function () {",
+									"    ",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.errors.length).to.eql(0);",
+									"});",
+									"",
+									"pm.collectionVariables.set(\"pageid\", jsonData.entity.identifier);",
+									"pm.collectionVariables.set(\"pagepath\", jsonData.entity.path);"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n\t\n\t\"contentlet\": {\n\t\t\"contentType\":\"htmlpageasset\",\n        \"title\":\"testPageCopy\",\n        \"url\":\"testPageCopy\",\n        \"hostFolder\":\"default\",\n        \"template\":\"SYSTEM_TEMPLATE\",\n        \"friendlyName\":\"testPageCopy\",\n        \"cachettl\":0\n\t\t\n\t}\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/workflow/actions/default/fire/PUBLISH?indexPolicy=WAIT_FOR",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"workflow",
+								"actions",
+								"default",
+								"fire",
+								"PUBLISH"
+							],
+							"query": [
+								{
+									"key": "indexPolicy",
+									"value": "WAIT_FOR"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "CreateNewTypeWithUrlMap",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n\t\"clazz\": \"com.dotcms.contenttype.model.type.SimpleContentType\",\n    \"detailPage\": \"{{pageid}}\",\n    \"urlMapPattern\": \"/blog/wasabi/{urlTitle}\",\n\t\"description\": \"My Structure\",\n\t\"defaultType\": false,\n\t\"system\": false,\n\t\"folder\": \"SYSTEM_FOLDER\",\n\t\"name\": \"TestTypeUrlMap{{$randomBankAccount}}\",\n\t\"variable\": \"TestTypeUrlMap{{$randomBankAccount}}\",\n\t\"host\": \"SYSTEM_HOST\",\n\t\"fixed\": false,\n    \"icon\": \"testIcon\",\n    \"sortOrder\": 3,\n\t\"fields\": [\n\t\t{\n\t\t\t\"clazz\": \"com.dotcms.contenttype.model.field.TextField\",\n\t\t\t\"indexed\": true,\n\t\t\t\"dataType\": \"TEXT\",\n\t\t\t\"readOnly\": false,\n\t\t\t\"required\": true,\n\t\t\t\"searchable\": true,\n\t\t\t\"listed\": true,\n\t\t\t\"sortOrder\": 2,\n\t\t\t\"unique\": false,\n\t\t\t\"name\": \"Name\",\n\t\t\t\"variable\": \"name\",\n\t\t\t\"fixed\": true\n\t\t}\n\t],\n    \"workflow\":[\"d61a59e1-a49c-46f2-a929-db2b4bfa88b2\"]\n}\n",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/contenttype",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"contenttype"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Create New Page Type",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"defaultType\": false,\n    \"icon\": null,\n    \"fixed\": false,\n    \"system\": false,\n    \"clazz\": \"com.dotcms.contenttype.model.type.ImmutablePageContentType\",\n    \"description\": \"\",\n    \"host\": \"8a7d5e23-da1e-420a-b4f0-471e7da8ea2d\",\n    \"folder\": \"SYSTEM_FOLDER\",\n    \"name\": \"TestTypePage{{$randomBankAccount}}\",\n    \"variable\": \"TestTypePage{{$randomBankAccount}}\"\n}\n",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/contenttype",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"contenttype"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Types",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"",
+									"pm.test(\"No errors\", function () {",
+									"    ",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.entity.length).to.greaterThan(2);",
+									"",
+									"    const urlMapType = jsonData.entity.filter(item => item.variable.startsWith('TestTypeUrlMap'))",
+									"    const pageType = jsonData.entity.filter(item => item.variable.startsWith('TestTypePage'))",
+									"",
+									"    pm.expect(urlMapType).to.not.eql(null);",
+									"    pm.expect(pageType).to.not.eql(null);",
+									"});",
+									"",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:8080/api/v1/page/types",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"api",
+								"v1",
+								"page",
+								"types"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Types Filtered",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"",
+									"pm.test(\"No errors\", function () {",
+									"    ",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.entity.length).to.greaterThan(2);",
+									"",
+									"});",
+									"",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:8080/api/v1/page/types?filter=test",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"api",
+								"v1",
+								"page",
+								"types"
+							],
+							"query": [
+								{
+									"key": "filter",
+									"value": "test"
+								}
+							]
+						}
+					},
+					"response": []
 				}
 			]
 		},
@@ -5064,6 +5307,18 @@
 		},
 		{
 			"key": "defaultSiteId",
+			"value": ""
+		},
+		{
+			"key": "path",
+			"value": ""
+		},
+		{
+			"key": "pageid",
+			"value": ""
+		},
+		{
+			"key": "pagepath",
 			"value": ""
 		}
 	]

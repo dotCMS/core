@@ -24,7 +24,15 @@ export const GoalsMock: Goals = {
     }
 };
 
-export const ExperimentMocks: Array<DotExperiment> = [
+export const getExperimentMock = (index: number): DotExperiment => {
+    return { ...ExperimentMocks[index] };
+};
+
+export const getExperimentAllMocks = (): Array<DotExperiment> => {
+    return [{ ...getExperimentMock(0) }, { ...getExperimentMock(1) }, { ...getExperimentMock(2) }];
+};
+
+const ExperimentMocks: Array<DotExperiment> = [
     {
         id: '111',
         identifier: '1111-1111-1111-1111',
@@ -35,10 +43,10 @@ export const ExperimentMocks: Array<DotExperiment> = [
         description: 'Praesent at molestie mauris, quis vulputate augue.',
         name: 'Praesent at molestie mauris',
         trafficAllocation: 98,
-        scheduling: { startDate: 1674861424000, endDate: 1677107824000 },
+        scheduling: { startDate: 1, endDate: 2 },
         trafficProportion: {
             type: TrafficProportionTypes.SPLIT_EVENLY,
-            variants: [{ id: '111', name: 'DEFAULT', weight: '100.0' }]
+            variants: [{ id: '111', name: 'DEFAULT', weight: 100 }]
         },
         creationDate: new Date('2022-08-21 14:50:03'),
         modDate: new Date('2022-08-21 18:50:03'),
@@ -57,7 +65,10 @@ export const ExperimentMocks: Array<DotExperiment> = [
         scheduling: null,
         trafficProportion: {
             type: TrafficProportionTypes.SPLIT_EVENLY,
-            variants: [{ id: '222', name: 'DEFAULT', weight: '100.0' }]
+            variants: [
+                { id: '222', name: 'DEFAULT', weight: 50, url: 'test/1' },
+                { id: '111', name: 'variant a', weight: 50, url: 'test/2' }
+            ]
         },
         creationDate: new Date('2022-08-21 14:50:03'),
         modDate: new Date('2022-08-21 18:50:03'),
@@ -77,8 +88,8 @@ export const ExperimentMocks: Array<DotExperiment> = [
         trafficProportion: {
             type: TrafficProportionTypes.SPLIT_EVENLY,
             variants: [
-                { id: '111', name: 'DEFAULT', weight: '50.0' },
-                { id: '222', name: 'Variant A', weight: '50.0' }
+                { id: '111', name: 'DEFAULT', weight: 50 },
+                { id: '222', name: 'Variant A', weight: 50 }
             ]
         },
         creationDate: new Date('2022-08-21 14:50:03'),
@@ -128,7 +139,12 @@ export const DotExperimentsConfigurationStoreMock = {
         trafficProportion: '',
         trafficAllocation: '',
         status: ''
-    })
+    }),
+    variantsStepVm$: of({
+        status: '',
+        isExperimentADraft: true
+    }),
+    targetStepVm$: of({})
 };
 
 export const DotExperimentsServiceMock = {

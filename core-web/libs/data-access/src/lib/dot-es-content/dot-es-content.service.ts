@@ -47,7 +47,8 @@ export class DotESContentService {
      */
     public get(params: queryEsParams): Observable<ESContent> {
         this.setBaseParams(params);
-        const queryParams = this.getESQuery(this.getObjectFromMap(this._extraParams));
+
+        const queryParams = this.getESQuery(params, this.getObjectFromMap(this._extraParams));
 
         return this.coreWebService
             .requestView<ESContent>({
@@ -64,15 +65,14 @@ export class DotESContentService {
         }
     }
 
-    private deleteExtraParams(name: string): void {
-        this._extraParams.delete(name);
-    }
-
-    private getESQuery(params: { [key: string]: string | number }): {
+    private getESQuery(
+        params: queryEsParams,
+        extraParams: { [key: string]: string | number }
+    ): {
         [key: string]: string | number;
     } {
         const query = {
-            query: JSON.stringify(params).replace(/"|{|}|,/g, ' '),
+            query: `${params.query} ${JSON.stringify(extraParams).replace(/["{},]/g, ' ')}`,
             sort: `${this._sortField || ''} ${this._sortOrder || ''}`,
             limit: this._paginationPerPage,
             offset: this._offset
@@ -82,31 +82,20 @@ export class DotESContentService {
     }
 
     private setBaseParams(params: queryEsParams): void {
+        this._extraParams.clear();
         this._paginationPerPage = params.itemsPerPage || this._paginationPerPage;
         this._sortField = params.sortField || this._sortField;
         this._sortOrder = params.sortOrder || this._sortOrder;
         this._offset = params.offset || this._offset;
-        this.deleteExtraParams('+languageId');
-        this.deleteExtraParams('+title');
-
-        // Getting values from Query string param
-        const queryParamsArray = params.query.split('+').map((item) => {
-            return item.split(':');
-        });
-
-        // Populating ExtraParams map
-        queryParamsArray.forEach(([param, value]) => {
-            if (param.length > 1) this.setExtraParams(`+${param}`, value);
-        });
 
         if (params.lang) this.setExtraParams('+languageId', params.lang);
 
-        let filterValue = '';
-        if (params.filter && params.filter.indexOf(' ') > 0) {
-            filterValue = `'${params.filter.replace(/'/g, "\\'")}'`;
+        let filterValue = params.filter || '';
+        if (filterValue && filterValue.indexOf(' ') > 0) {
+            filterValue = `'${filterValue.replace(/'/g, "\\'")}'`;
         }
 
-        this.setExtraParams('+title', `${filterValue || params.filter || ''}*`);
+        if (filterValue) this.setExtraParams('+title', `${filterValue}*`);
     }
 
     private getObjectFromMap(map: Map<string, string>): { [key: string]: string | number } {

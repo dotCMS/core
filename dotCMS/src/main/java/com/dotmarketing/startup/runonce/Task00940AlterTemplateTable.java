@@ -1,5 +1,6 @@
 package com.dotmarketing.startup.runonce;
 
+import com.dotcms.business.WrapInTransaction;
 import java.sql.SQLException;
 
 import com.dotmarketing.beans.Inode;
@@ -57,7 +58,8 @@ public class Task00940AlterTemplateTable implements StartupTask {
         }
     }
 
-
+    @Override
+    @WrapInTransaction
     public void executeUpgrade() throws DotDataException, DotRuntimeException {
         try {
             DbConnectionFactory.getConnection().setAutoCommit(true);

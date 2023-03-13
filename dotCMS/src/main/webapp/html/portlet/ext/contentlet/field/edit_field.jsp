@@ -3,6 +3,7 @@
 <%@page import="com.dotmarketing.image.focalpoint.FocalPointAPIImpl"%>
 <%@page import="com.dotcms.enterprise.LicenseUtil"%>
 <%@page import="com.dotcms.enterprise.license.LicenseLevel"%>
+<%@page import="com.dotmarketing.util.Config"%>
 <%@page import="com.dotmarketing.business.APILocator"%>
 <%@page import="com.dotmarketing.business.PermissionAPI"%>
 <%@page import="com.dotmarketing.exception.DotSecurityException"%>
@@ -163,6 +164,7 @@
             String displayCountBar = "";
             String charLimit = "";
             String customBlocks = "";
+            Boolean showVideoThumbnail = Config.getBooleanProperty("SHOW_VIDEO_THUMBNAIL", true);
 
             // By default this is an empty JSON `{}`.
             JSONObject JSONValue = new JSONObject();
@@ -241,12 +243,13 @@
 
                     if (content) {
                         blockEditor.value = content;
-                        field.value = JSON.stringify(block.editor.getJSON());
                     }
 
-                    blockEditor.addEventListener('updateEditorEvent', (event) => {
+                    blockEditor.addEventListener('valueChange', (event) => {
                         field.value = event.detail;
                     });
+
+                    blockEditor.showVideoThumbnail = <%=showVideoThumbnail%>;
                 })();
 
             </script>
@@ -807,26 +810,13 @@
 
     </script>
 
-
-    <%
-
-        if(UtilMethods.isSet(value) && UtilMethods.isSet(resourceLink)){
-
-          boolean canUserWriteToContentlet = APILocator.getPermissionAPI().doesUserHavePermission(contentlet,PermissionAPI.PERMISSION_WRITE, user);
-
-    %>
-
-        <%if(canUserWriteToContentlet){%>
-            <% if (resourceLink.isEditableAsText()) { %>
-                <%
-                    if (InodeUtils.isSet(binInode) && canUserWriteToContentlet) {
-
-                %>
-                    <%@ include file="/html/portlet/ext/contentlet/field/edit_file_asset_text_inc.jsp"%>
-                <%  } %>
-            <% } %>
-
-        <% } %>
+    <% if (UtilMethods.isSet(value)) {
+            final boolean canUserWriteToContentlet = APILocator.getPermissionAPI().doesUserHavePermission(contentlet, PermissionAPI.PERMISSION_WRITE, user);
+            if (canUserWriteToContentlet && resourceLink.isEditableAsText() && InodeUtils.isSet(binInode)) { %>
+                <%@ include file="/html/portlet/ext/contentlet/field/edit_file_asset_text_inc.jsp"%>
+         <% } %>
+    <% } else { %>
+            <%@ include file="/html/portlet/ext/contentlet/field/edit_file_asset_text_inc.jsp"%>
     <% } %>
 
     <!--  END display -->

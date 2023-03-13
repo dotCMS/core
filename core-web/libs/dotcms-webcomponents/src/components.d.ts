@@ -286,12 +286,14 @@ export namespace Components {
         iconSize: string;
         item: DotCardContentletItem;
         showMenu: (x: number, y: number) => Promise<void>;
+        showVideoThumbnail: boolean;
         thumbnailSize: string;
     }
     interface DotCardView {
         clearValue: () => Promise<void>;
         getValue: () => Promise<DotContentletItem[]>;
         items: DotCardContentletItem[];
+        showVideoThumbnail: boolean;
         value: string;
     }
     interface DotCheckbox {
@@ -363,8 +365,10 @@ export namespace Components {
     interface DotContentletThumbnail {
         alt: string;
         contentlet: DotContentletItem;
+        cover: boolean;
         height: string;
         iconSize: string;
+        showVideoThumbnail: boolean;
         width: string;
     }
     interface DotContextMenu {
@@ -1119,6 +1123,18 @@ export namespace Components {
         for: string;
         position: string;
     }
+    interface DotVideoThumbnail {
+        /**
+         * @type {DotContentletItem}
+         * @memberof DotVideoThumbnail
+         */
+        contentlet: DotContentletItem;
+        /**
+         * @type {boolean}
+         * @memberof DotVideoThumbnail
+         */
+        cover: boolean;
+    }
     interface KeyValueForm {
         /**
          * (optional) Label for the add item button
@@ -1563,6 +1579,13 @@ declare global {
         prototype: HTMLDotTooltipElement;
         new (): HTMLDotTooltipElement;
     };
+    interface HTMLDotVideoThumbnailElement
+        extends Components.DotVideoThumbnail,
+            HTMLStencilElement {}
+    var HTMLDotVideoThumbnailElement: {
+        prototype: HTMLDotVideoThumbnailElement;
+        new (): HTMLDotVideoThumbnailElement;
+    };
     interface HTMLKeyValueFormElement extends Components.KeyValueForm, HTMLStencilElement {}
     var HTMLKeyValueFormElement: {
         prototype: HTMLKeyValueFormElement;
@@ -1614,6 +1637,7 @@ declare global {
         'dot-textfield': HTMLDotTextfieldElement;
         'dot-time': HTMLDotTimeElement;
         'dot-tooltip': HTMLDotTooltipElement;
+        'dot-video-thumbnail': HTMLDotVideoThumbnailElement;
         'key-value-form': HTMLKeyValueFormElement;
         'key-value-table': HTMLKeyValueTableElement;
     }
@@ -1890,12 +1914,14 @@ declare namespace LocalJSX {
         item?: DotCardContentletItem;
         onCheckboxChange?: (event: DotCardContentletCustomEvent<DotCardContentletEvent>) => void;
         onContextMenuClick?: (event: DotCardContentletCustomEvent<MouseEvent>) => void;
+        showVideoThumbnail?: boolean;
         thumbnailSize?: string;
     }
     interface DotCardView {
         items?: DotCardContentletItem[];
         onCardClick?: (event: DotCardViewCustomEvent<any>) => void;
         onSelected?: (event: DotCardViewCustomEvent<any>) => void;
+        showVideoThumbnail?: boolean;
         value?: string;
     }
     interface DotCheckbox {
@@ -1965,8 +1991,10 @@ declare namespace LocalJSX {
     interface DotContentletThumbnail {
         alt?: string;
         contentlet?: DotContentletItem;
+        cover?: boolean;
         height?: string;
         iconSize?: string;
+        showVideoThumbnail?: boolean;
         width?: string;
     }
     interface DotContextMenu {
@@ -2712,6 +2740,18 @@ declare namespace LocalJSX {
         for?: string;
         position?: string;
     }
+    interface DotVideoThumbnail {
+        /**
+         * @type {DotContentletItem}
+         * @memberof DotVideoThumbnail
+         */
+        contentlet?: DotContentletItem;
+        /**
+         * @type {boolean}
+         * @memberof DotVideoThumbnail
+         */
+        cover?: boolean;
+    }
     interface KeyValueForm {
         /**
          * (optional) Label for the add item button
@@ -2825,6 +2865,7 @@ declare namespace LocalJSX {
         'dot-textfield': DotTextfield;
         'dot-time': DotTime;
         'dot-tooltip': DotTooltip;
+        'dot-video-thumbnail': DotVideoThumbnail;
         'key-value-form': KeyValueForm;
         'key-value-table': KeyValueTable;
     }
@@ -2956,6 +2997,8 @@ declare module '@stencil/core' {
                 JSXBase.HTMLAttributes<HTMLDotTextfieldElement>;
             'dot-time': LocalJSX.DotTime & JSXBase.HTMLAttributes<HTMLDotTimeElement>;
             'dot-tooltip': LocalJSX.DotTooltip & JSXBase.HTMLAttributes<HTMLDotTooltipElement>;
+            'dot-video-thumbnail': LocalJSX.DotVideoThumbnail &
+                JSXBase.HTMLAttributes<HTMLDotVideoThumbnailElement>;
             'key-value-form': LocalJSX.KeyValueForm &
                 JSXBase.HTMLAttributes<HTMLKeyValueFormElement>;
             'key-value-table': LocalJSX.KeyValueTable &

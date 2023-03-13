@@ -1,5 +1,6 @@
 package com.dotmarketing.startup.runonce;
 
+import com.dotcms.business.WrapInTransaction;
 import com.dotcms.rest.api.v1.DotObjectMapperProvider;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.common.db.DotDatabaseMetaData;
@@ -32,6 +33,7 @@ public class Task210218MigrateUserProxyTable implements StartupTask {
     private static final String MSSQL_SCRIPT = "alter table user_ add additional_info NVARCHAR(MAX) NULL;";
 
     @Override
+    @WrapInTransaction
     public void executeUpgrade() throws DotDataException, DotRuntimeException {
 
         try{

@@ -6,9 +6,10 @@ on:
       - '.github/**'
       - 'cicd/**'
       - 'docker/**'
-      - 'dotCMS/**'
-      - 'pom.xml'
       - '!docker/dotcms-compose-examples/**'
+      - 'dotCMS/**'
+      - '!dotCMS/src/main/webapp/html'
+      - 'pom.xml'
       - 'tools/**'
   push:
     branches:
