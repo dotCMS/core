@@ -75,6 +75,7 @@ import { DotDirectivesModule } from '@shared/dot-directives.module';
 import { DotBlockEditorSettingsComponent } from './components/dot-block-editor-settings/dot-block-editor-settings.component';
 import { DotConvertToBlockInfoComponent } from './components/dot-convert-to-block-info/dot-convert-to-block-info.component';
 import { DotConvertWysiwygToBlockComponent } from './components/dot-convert-wysiwyg-to-block/dot-convert-wysiwyg-to-block.component';
+import { DotCopyContentComponent } from './components/dot-copy-content/dot-copy-content.component';
 import { ContentTypesFormComponent } from './components/form/content-types-form.component';
 import { ContentTypesLayoutComponent } from './components/layout/content-types-layout.component';
 import { DotContentTypesEditRoutingModule } from './dot-content-types-edit-routing.module';
@@ -104,7 +105,8 @@ import { DotAddToMenuModule } from '../dot-content-types-listing/components/dot-
         NamePropertyComponent,
         RegexCheckPropertyComponent,
         ValuesPropertyComponent,
-        DotBlockEditorSettingsComponent
+        DotBlockEditorSettingsComponent,
+        DotCopyContentComponent
     ],
     exports: [DotContentTypesEditComponent],
     imports: [
