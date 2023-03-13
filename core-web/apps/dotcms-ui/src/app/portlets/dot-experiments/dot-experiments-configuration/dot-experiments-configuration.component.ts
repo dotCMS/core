@@ -76,6 +76,7 @@ export class DotExperimentsConfigurationComponent implements OnInit {
 
     /**
      * Stop the Experiment
+     * @param {MouseEvent} $event
      * @param {DotExperiment} experiment
      * @returns void
      * @memberof DotExperimentsConfigurationVariantsComponent
