@@ -4833,7 +4833,7 @@
 						"header": [],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n\t\n\t\"contentlet\": {\n\t\t\"contentType\":\"htmlpageasset\",\n        \"title\":\"testPageCopy\",\n        \"url\":\"testPageCopy\",\n        \"hostFolder\":\"default\",\n        \"template\":\"SYSTEM_TEMPLATE\",\n        \"friendlyName\":\"testPageCopy\",\n        \"cachettl\":0\n\t\t\n\t}\n}",
+							"raw": "{\n\t\n\t\"contentlet\": {\n\t\t\"contentType\":\"htmlpageasset\",\n        \"title\":\"testPageCopy{{$randomBankAccount}}\",\n        \"url\":\"testPageCopy{{$randomBankAccount}}\",\n        \"hostFolder\":\"default\",\n        \"template\":\"SYSTEM_TEMPLATE\",\n        \"friendlyName\":\"testPageCopy{{$randomBankAccount}}\",\n        \"cachettl\":0\n\t\t\n\t}\n}",
 							"options": {
 								"raw": {
 									"language": "json"
