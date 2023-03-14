@@ -20,7 +20,7 @@
         width: 100%;
         input[type="text"] {
             background: $white;
-            border: 1px solid $gray-light;
+            border: 1px solid $color-palette-gray-500;
             &:focus {
                 outline: none;
                 box-shadow: none;
@@ -67,7 +67,7 @@
 
 .divider {
     border: 0;
-    border-top: 1px solid $gray-lighter;
+    border-top: 1px solid $color-palette-gray-300;
     width: 100%;
     margin: 0;
 }

@@ -1,7 +1,7 @@
 @use "variables" as *;
 
 .bulk-information__success-message {
-    color: $gray;
+    color: $color-palette-gray-700;
     font-size: $font-size-large;
     text-align: center;
     padding-top: $spacing-3;

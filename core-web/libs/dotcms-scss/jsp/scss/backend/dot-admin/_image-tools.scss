@@ -190,7 +190,7 @@
 }
 
 .thumbnailDiv {
-    border: solid 2px $gray-ligther;
+    border: solid 2px $color-palette-gray-400;
     box-sizing: content-box;
     cursor: pointer;
     min-height: 120px;
@@ -199,7 +199,7 @@
     position: relative;
 
     &Hover {
-        border: solid 2px $gray-ligth;
+        border: solid 2px $color-palette-gray-500;
         box-sizing: content-box;
         padding: $basic-padding * 2;
         position: relative;
@@ -213,7 +213,7 @@
 .editImageText {
     background: white;
     border-radius: $border-radius;
-    border: $field-border-size solid $gray;
+    border: $field-border-size solid $color-palette-gray-700;
     bottom: $basic-padding;
     cursor: pointer;
     opacity: 0.5;

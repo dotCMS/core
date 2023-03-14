@@ -2,7 +2,7 @@
 
 ::ng-deep {
     .p-panel-toggleable {
-        border: 1px solid $gray-lighter;
+        border: 1px solid $color-palette-gray-300;
 
         &.p-panel-expanded {
             border-color: $white;

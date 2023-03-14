@@ -52,7 +52,7 @@
             margin-bottom: $spacing-1;
         }
         .dot-theme-item__date {
-            color: $gray-dark;
+            color: $color-palette-gray-800;
             font-size: $font-size-small;
         }
         & > span {
@@ -79,12 +79,12 @@ dot-searchable-dropdown {
         ::ng-deep {
             .site-selector__title {
                 display: block;
-                background: $gray-lighter;
-                border: 1px solid $gray-light;
+                background: $color-palette-gray-300;
+                border: 1px solid $color-palette-gray-500;
                 border-radius: $border-radius;
                 padding: $spacing-2;
                 font-size: $font-size-medium;
-                color: $gray-dark;
+                color: $color-palette-gray-800;
                 text-overflow: ellipsis;
                 min-width: 10rem;
                 white-space: nowrap;
@@ -104,7 +104,7 @@ dot-searchable-dropdown {
 }
 
 .searchable-dropdown__search-icon {
-    color: $gray;
+    color: $color-palette-gray-700;
     position: absolute;
     right: $spacing-1;
     top: 9px;

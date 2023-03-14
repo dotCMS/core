@@ -13,7 +13,7 @@
 
 @mixin mouse {
     font-size: 11px; // TODO: set a variable
-    color: $gray-ligth;
+    color: $color-palette-gray-500;
 }
 
 @mixin create-arrow($arrow-size, $arrow-color, $direction: "bottom") {

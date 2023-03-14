@@ -2,7 +2,7 @@
     background-color: $white !important;
 
     .dojoxGridMasterHeader .dojoxGridHeader {
-        background-color: $gray-ligthest;
+        background-color: $color-palette-gray-200;
 
         .dojoxGridRowTable .dojoxGridCell {
             background: none;
@@ -11,7 +11,7 @@
         }
 
         .dojoxGridRowTable {
-            border-bottom: 1px solid $gray-ligther;
+            border-bottom: 1px solid $color-palette-gray-400;
         }
 
         .dojoxGridArrowButtonChar {
@@ -30,10 +30,10 @@
 
     .dojoxGridMasterView .dojoxGridRow {
         background-color: $white;
-        border-bottom: 1px solid $gray-ligther;
+        border-bottom: 1px solid $color-palette-gray-400;
 
         &.dojoxGridRowOdd {
-            background-color: $gray-ligthest;
+            background-color: $color-palette-gray-200;
         }
 
         &.dojoxGridRowOver .dojoxGridCell {
@@ -55,7 +55,7 @@
     }
 
     .dojoxGridPaginator {
-        background-color: $gray-ligther;
+        background-color: $color-palette-gray-400;
         border: 0px;
 
         td {

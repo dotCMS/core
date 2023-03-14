@@ -20,13 +20,13 @@
     border-radius: $border-radius;
 
     &:hover {
-        background: $gray-bg;
+        background: $color-palette-gray-200;
     }
 
     &.btn-active {
-        background: $gray-bg;
+        background: $color-palette-gray-200;
         color: $black;
-        border: 1px solid $gray-light;
+        border: 1px solid $color-palette-gray-500;
     }
 }
 

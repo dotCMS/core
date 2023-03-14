@@ -9,7 +9,7 @@ $number-link-icon-size: 2.28rem;
     overflow: auto;
 
     hr {
-        border-top: 1px solid $gray-lighter;
+        border-top: 1px solid $color-palette-gray-300;
     }
 
     a {
@@ -33,7 +33,7 @@ $number-link-icon-size: 2.28rem;
     }
 
     .dot-starter-description {
-        color: $gray;
+        color: $color-palette-gray-700;
         margin: 0 $spacing-3 $spacing-5 $spacing-3;
     }
 
@@ -57,7 +57,7 @@ $number-link-icon-size: 2.28rem;
 
     .dot-starter-top-main__block {
         align-content: space-between;
-        border-bottom: 1px solid $gray-lighter;
+        border-bottom: 1px solid $color-palette-gray-300;
         display: flex;
         margin: 0;
         padding: $spacing-5 0;
@@ -102,7 +102,7 @@ $number-link-icon-size: 2.28rem;
             margin: 0;
         }
         p {
-            color: $gray;
+            color: $color-palette-gray-700;
             margin: 0;
         }
     }
@@ -111,7 +111,7 @@ $number-link-icon-size: 2.28rem;
         align-self: center;
 
         i {
-            color: $gray-light;
+            color: $color-palette-gray-500;
             font-size: $font-size-x-large;
             margin-right: $spacing-3;
         }
@@ -158,7 +158,7 @@ $number-link-icon-size: 2.28rem;
             margin: 0;
         }
         p {
-            color: $gray;
+            color: $color-palette-gray-700;
             margin: 0;
         }
     }
@@ -171,7 +171,7 @@ $number-link-icon-size: 2.28rem;
 
     .dot-starter-bottom__block {
         background-color: $white;
-        border-bottom: 1px solid $gray-lighter;
+        border-bottom: 1px solid $color-palette-gray-300;
         box-shadow: $md-shadow-4;
         display: flex;
         flex-grow: 1;
@@ -208,7 +208,7 @@ $number-link-icon-size: 2.28rem;
             margin: 0;
         }
         p {
-            color: $gray;
+            color: $color-palette-gray-700;
             margin: 0;
         }
     }

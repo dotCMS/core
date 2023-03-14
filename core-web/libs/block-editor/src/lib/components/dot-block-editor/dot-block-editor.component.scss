@@ -18,7 +18,7 @@
         overflow: hidden;
         position: relative;
         resize: vertical;
-        outline: $gray-light solid 1px;
+        outline: $color-palette-gray-500 solid 1px;
     }
 
     // If a child is focused, set this style to the parent
@@ -49,10 +49,10 @@
 
                 &:before {
                     align-items: center;
-                    background: $gray-bg;
+                    background: $color-palette-gray-200;
                     border-radius: 3px;
-                    border: 1px solid $gray-light;
-                    color: $gray;
+                    border: 1px solid $color-palette-gray-500;
+                    color: $color-palette-gray-700;
                     content: "The image URL " attr(src)
                         " seems to be broken, please double check the URL.";
                     display: flex;
@@ -147,7 +147,7 @@
 
             // Placeholder styling
             .is-empty::before {
-                color: $gray-light;
+                color: $color-palette-gray-500;
                 content: attr(data-placeholder);
                 float: left;
                 height: 0;
@@ -163,7 +163,7 @@
 
                 td,
                 th {
-                    border: 2px solid $gray-light;
+                    border: 2px solid $color-palette-gray-500;
                     box-sizing: border-box;
                     min-width: $spacing-3;
                     padding: 3px 20px 3px 5px;
@@ -181,13 +181,13 @@
                 }
 
                 th {
-                    background-color: $gray-bg;
+                    background-color: $color-palette-gray-200;
                     font-weight: 700;
                     text-align: left;
                 }
 
                 .selectedCell {
-                    background-color: $gray-lighter;
+                    background-color: $color-palette-gray-300;
                 }
 
                 .selectedCell:after {

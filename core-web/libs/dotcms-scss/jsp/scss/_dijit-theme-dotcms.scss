@@ -1,11 +1,6 @@
 @use "../../shared/colors" as *;
 
 // COLORS
-$gray-dark: #5b5b5b;
-$gray: #8a8a8a;
-$gray-ligth: #c5c5c5;
-$gray-ligther: #ecedee;
-$gray-ligthest: #fafafa;
 $green-ligth: #e7e7e7;
 $green: #4a9d51;
 $orange: #f3762a;
@@ -38,24 +33,24 @@ $basic-padding: 8px;
 
 // Common
 $field-animation-speed: 0.1s;
-$field-border-color: $gray-ligther;
+$field-border-color: $color-palette-gray-400;
 $field-border-radius: $border-radius;
 $field-border-size: 1px;
 $field-height: 36px;
 $field-padding: $basic-padding;
-$field-placeholder-color: $gray-ligth;
+$field-placeholder-color: $color-palette-gray-500;
 
-$field-normal-bgcolor: $gray-ligther;
+$field-normal-bgcolor: $color-palette-gray-400;
 $field-normal-textcolor: $text-color;
-$field-normal-border: solid $field-border-size $gray-ligth;
-$field-normal-arrow-color: $gray;
+$field-normal-border: solid $field-border-size $color-palette-gray-500;
+$field-normal-arrow-color: $color-palette-gray-700;
 
-$field-hover-bgcolor: $gray-ligthest;
+$field-hover-bgcolor: $color-palette-gray-200;
 $field-hover-textcolor: $text-color;
 $field-hover-border: solid $field-border-size $color-palette-secondary;
 $field-hover-arrow-color: $color-palette-primary;
 $field-hoverarrow-arrow-color: $color-palette-secondary;
-$field-hoverarrow-arrow-border: solid $field-border-size $gray-dark;
+$field-hoverarrow-arrow-border: solid $field-border-size $color-palette-gray-800;
 $field-hoverarrow-arrow-bgcolor: rgba(var(--color-sec_rgb), 0.2);
 
 $field-active-bgcolor: $white;
@@ -67,11 +62,11 @@ $field-activearrow-arrow-border: solid $field-border-size $color-palette-primary
 $field-activearrow-arrow-bgcolor: $color-palette-primary;
 
 $field-disabled-bgcolor: $white;
-$field-disabled-textcolor: $gray-ligth;
+$field-disabled-textcolor: $color-palette-gray-500;
 $field-disabled-border: solid $field-border-size #e3e4e6;
-$field-disabled-arrow-color: $gray-ligth;
+$field-disabled-arrow-color: $color-palette-gray-500;
 
-$field-focused-bgcolor: $gray-ligther;
+$field-focused-bgcolor: $color-palette-gray-400;
 $field-focused-textcolor: $text-color;
 $field-focused-border: $field-hover-border;
 $field-focused-arrow-color: $color-palette-primary;
@@ -99,9 +94,9 @@ $button-active-textcolor: $color-palette-primary;
 $button-active-border: solid 1px $color-palette-primary;
 $button-active-shadow: 0;
 
-$button-disabled-bgcolor: $gray-ligther;
+$button-disabled-bgcolor: $color-palette-gray-400;
 $button-disabled-textcolor: $field-disabled-textcolor;
-$button-disabled-border: solid 1px $gray-ligther;
+$button-disabled-border: solid 1px $color-palette-gray-400;
 $button-disabled-shadow: $button-normal-shadow;
 
 // Only for Drodown and ComboButton
@@ -142,7 +137,7 @@ $dropdownbutton-focused-border: $button-focused-border;
 $dropdownbutton-focused-shadow: $button-normal-shadow;
 $dropdownbutton-focused-arrow-bgcolor: transparent;
 $dropdownbutton-focused-arrow-url: false;
-$dropdownbutton-focused-arrow-color: $gray-dark;
+$dropdownbutton-focused-arrow-color: $color-palette-gray-800;
 
 $dropdownbutton-disabled-bgcolor: $button-disabled-bgcolor;
 $dropdownbutton-disabled-textcolor: $button-disabled-textcolor;
@@ -229,14 +224,14 @@ $textbox-arrow-size: 5px;
 $textbox-normal-bgcolor: $white;
 $textbox-normal-border: $field-normal-border;
 $textbox-normal-textcolor: $field-normal-textcolor;
-$textbox-normal-arrow-color: $gray-dark;
+$textbox-normal-arrow-color: $color-palette-gray-800;
 $textbox-normal-arrow-border: $textbox-normal-border;
 $textbox-normal-arrow-bgcolor: $white;
 
 $textbox-hover-bgcolor: $white;
 $textbox-hover-border: $field-hover-border;
 $textbox-hover-textcolor: $field-hover-textcolor;
-$textbox-hover-arrow-color: $gray-dark;
+$textbox-hover-arrow-color: $color-palette-gray-800;
 $textbox-hover-arrow-border: $textbox-hover-border;
 $textbox-hover-arrow-bgcolor: $white;
 // Hover the field and hover the arrow
@@ -262,7 +257,7 @@ $textbox-activearrow-arrow-bgcolor: $field-activearrow-arrow-bgcolor;
 $textbox-disabled-border: $field-disabled-border;
 $textbox-disabled-bgcolor: $field-disabled-bgcolor;
 $textbox-disabled-textcolor: $field-disabled-textcolor;
-$textbox-disabled-arrow-color: $gray-ligth;
+$textbox-disabled-arrow-color: $color-palette-gray-500;
 $textbox-disabled-arrow-border: $textbox-disabled-border;
 
 // TextArea
@@ -316,8 +311,8 @@ $spinner-activearrow-arrow-border: $field-activearrow-arrow-border;
 $spinner-activearrow-arrow-bgcolor: $field-activearrow-arrow-bgcolor;
 
 $spinner-disabled-border: $field-disabled-border;
-$spinner-disabled-bgcolor: $gray-ligthest;
-$spinner-disabled-textcolor: $gray-ligther;
+$spinner-disabled-bgcolor: $color-palette-gray-200;
+$spinner-disabled-textcolor: $color-palette-gray-400;
 $spinner-disabled-arrow-color: $field-disabled-arrow-color;
 $spinner-disabled-arrow-border: $spinner-disabled-border;
 $spinner-disabled-arrow-bgcolor: $spinner-disabled-bgcolor;
@@ -390,8 +385,8 @@ $combobox-activearrow-arrow-border: $field-activearrow-arrow-border;
 $combobox-activearrow-arrow-bgcolor: $field-activearrow-arrow-bgcolor;
 
 $combobox-disabled-border: $field-disabled-border;
-$combobox-disabled-bgcolor: $gray-ligthest;
-$combobox-disabled-textcolor: $gray-ligth;
+$combobox-disabled-bgcolor: $color-palette-gray-200;
+$combobox-disabled-textcolor: $color-palette-gray-500;
 $combobox-disabled-arrow-color: $field-disabled-arrow-color;
 $combobox-disabled-arrow-border: $combobox-disabled-border;
 
@@ -405,7 +400,7 @@ $check-checked-border: solid 1px $color-palette-primary;
 $check-checked-bgcolor: $color-palette-primary;
 $check-checked-icon: "data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiPz48c3ZnIHdpZHRoPSIxMHB4IiBoZWlnaHQ9IjhweCIgdmlld0JveD0iMCAwIDEwIDgiIHZlcnNpb249IjEuMSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB4bWxuczp4bGluaz0iaHR0cDovL3d3dy53My5vcmcvMTk5OS94bGluayI+ICAgICAgICA8dGl0bGU+U2hhcGU8L3RpdGxlPiAgICA8ZGVzYz5DcmVhdGVkIHdpdGggU2tldGNoLjwvZGVzYz4gICAgPGRlZnM+PC9kZWZzPiAgICA8ZyBpZD0iU3ltYm9scyIgc3Ryb2tlPSJub25lIiBzdHJva2Utd2lkdGg9IjEiIGZpbGw9Im5vbmUiIGZpbGwtcnVsZT0iZXZlbm9kZCI+ICAgICAgICA8ZyBpZD0iY2hlY2tib3gtYWN0aXZlIiB0cmFuc2Zvcm09InRyYW5zbGF0ZSgtNC4wMDAwMDAsIC01LjAwMDAwMCkiIGZpbGw9IiNGRkZGRkYiPiAgICAgICAgICAgIDxwb2x5Z29uIGlkPSJTaGFwZSIgcG9pbnRzPSI3LjMxMDcyMDMyIDExLjQyMjQ0NDkgNC45ODYxOTU2MyA5LjA5NzkyMDE5IDQuMTk0NjMwODcgOS44ODM5MTA1NSA3LjMxMDcyMDMyIDEzIDE0IDYuMzEwNzIwMzIgMTMuMjE0MDA5NiA1LjUyNDcyOTk2Ij48L3BvbHlnb24+ICAgICAgICA8L2c+ICAgIDwvZz48L3N2Zz4=";
 $check-disabled-border: solid $check-border-width transparent;
-$check-disabled-bgcolor: $gray-ligth;
+$check-disabled-bgcolor: $color-palette-gray-500;
 $check-disabled-icon: $check-checked-icon;
 
 // RadioButtons
@@ -417,43 +412,43 @@ $radio-normal-bgcolor: $white;
 $radio-checked-color: $color-palette-primary;
 $radio-checked-border: solid $radio-border-width $radio-checked-color;
 $radio-checked-bgcolor: $white;
-$radio-checked-disabled-color: $gray-ligth;
-$radio-disabled-border: solid $radio-border-width $gray-ligther;
+$radio-checked-disabled-color: $color-palette-gray-500;
+$radio-disabled-border: solid $radio-border-width $color-palette-gray-400;
 $radio-disabled-bgcolor: transparent;
 
 // Sliders
 $slider-bar-size: 6px;
 
 $slider-handle-size: 13px;
-$slider-handle-normal-border: solid $field-border-size $gray-ligther;
+$slider-handle-normal-border: solid $field-border-size $color-palette-gray-400;
 $slider-handle-normal-bgcolor: $white;
-$slider-handle-hover-border: solid $field-border-size $gray-dark;
+$slider-handle-hover-border: solid $field-border-size $color-palette-gray-800;
 $slider-handle-hover-bgcolor: $white;
-$slider-handle-focused-border: solid $field-border-size $gray-dark;
-$slider-handle-focused-bgcolor: $gray-dark;
-$slider-handle-disabled-border: solid $field-border-size $gray-ligthest;
-$slider-handle-disabled-bgcolor: $gray-ligthest;
+$slider-handle-focused-border: solid $field-border-size $color-palette-gray-800;
+$slider-handle-focused-bgcolor: $color-palette-gray-800;
+$slider-handle-disabled-border: solid $field-border-size $color-palette-gray-200;
+$slider-handle-disabled-bgcolor: $color-palette-gray-200;
 
-$slider-rule-label-normal-color: $gray-dark;
-$slider-rule-label-hover-color: $gray-dark;
-$slider-rule-label-disabled-color: $gray-ligther;
+$slider-rule-label-normal-color: $color-palette-gray-800;
+$slider-rule-label-hover-color: $color-palette-gray-800;
+$slider-rule-label-disabled-color: $color-palette-gray-400;
 
-$slider-rule-mark-normal: solid 1px $gray-ligther;
-$slider-rule-mark-hover: solid 1px $gray-dark;
-$slider-rule-mark-disabled: solid 1px $gray-ligther;
+$slider-rule-mark-normal: solid 1px $color-palette-gray-400;
+$slider-rule-mark-hover: solid 1px $color-palette-gray-800;
+$slider-rule-mark-disabled: solid 1px $color-palette-gray-400;
 
-$slider-progress-normal-border-color: $gray-ligther;
+$slider-progress-normal-border-color: $color-palette-gray-400;
 $slider-progress-normal-color: $color-palette-primary;
-$slider-progress-hover-border-color: $gray-dark;
+$slider-progress-hover-border-color: $color-palette-gray-800;
 $slider-progress-hover-color: $color-palette-primary;
-$slider-progress-disabled-border-color: $gray-ligthest;
-$slider-progress-disabled-color: $gray-ligthest;
+$slider-progress-disabled-border-color: $color-palette-gray-200;
+$slider-progress-disabled-color: $color-palette-gray-200;
 
-$slider-remaining-normal-border-color: $gray-ligther;
+$slider-remaining-normal-border-color: $color-palette-gray-400;
 $slider-remaining-normal-color: $white;
-$slider-remaining-hover-border-color: $gray-dark;
+$slider-remaining-hover-border-color: $color-palette-gray-800;
 $slider-remaining-hover-color: $white;
-$slider-remaining-disabled-border-color: $gray-ligthest;
+$slider-remaining-disabled-border-color: $color-palette-gray-200;
 $slider-remaining-disabled-color: $white;
 
 // Menus
@@ -462,42 +457,42 @@ $menu-border: none;
 $menu-shadow: $md-shadow-1;
 $menu-item-bgcolor: $menu-bgcolor;
 $menu-item-separator: none;
-$menu-item-hover-bgcolor: $gray-ligther;
-$menu-item-hover-textcolor: $gray-dark;
+$menu-item-hover-bgcolor: $color-palette-gray-400;
+$menu-item-hover-textcolor: $color-palette-gray-800;
 $menu-item-selected-bgcolor: $menu-item-hover-bgcolor;
 $menu-item-selected-textcolor: $menu-item-hover-textcolor;
 $menu-item-height: $field-height;
-$menu-item-color: $gray-dark;
+$menu-item-color: $color-palette-gray-800;
 
 //TimePicker menu
 $timepicker-bgcolor: $white;
-$timepicker-marker-bgcolor: $gray-ligthest;
-$timepicker-border: solid $field-border-size $gray-ligther;
+$timepicker-marker-bgcolor: $color-palette-gray-200;
+$timepicker-border: solid $field-border-size $color-palette-gray-400;
 $timepicker-item-bgcolor: $menu-bgcolor;
 $timepicker-item-separator: none;
-$timepicker-item-hover-bgcolor: $gray-ligthest;
-$timepicker-item-hover-textcolor: $gray-dark;
+$timepicker-item-hover-bgcolor: $color-palette-gray-200;
+$timepicker-item-hover-textcolor: $color-palette-gray-800;
 $timepicker-item-selected-bgcolor: $red;
 $timepicker-item-selected-textcolor: $white;
 
 // Calendar
 $calendar-item-size: $field-height;
-$calendar-month-bgcolor: $gray-dark;
+$calendar-month-bgcolor: $color-palette-gray-800;
 $calendar-month-textcolor: $white;
 $calendar-weekday-label-bgcolor: $white;
 $calendar-weekday-label-textcolor: $black;
 $calendar-date-bgcolor: $white;
-$calendar-date-textcolor: $gray-dark;
-$calendar-date-hover-bgcolor: $gray-ligther;
+$calendar-date-textcolor: $color-palette-gray-800;
+$calendar-date-hover-bgcolor: $color-palette-gray-400;
 $calendar-date-hover-textcolor: $text-color;
 $calendar-date-seleted-bgcolor: $color-palette-primary;
-$calendar-date-current-bgcolor: $gray-ligth;
+$calendar-date-current-bgcolor: $color-palette-gray-500;
 $calendar-date-seleted-textcolor: $white;
-$calendar-prev-next-month-date-bgcolor: $gray-ligthest;
-$calendar-prev-next-month-date-textcolor: $gray-ligther;
-$calendar-prev-next-month-date-hover-bgcolor: $gray-ligthest;
-$calendar-prev-next-month-date-hover-textcolor: $gray;
-$calendar-year-label-bgcolor: $gray-dark;
+$calendar-prev-next-month-date-bgcolor: $color-palette-gray-200;
+$calendar-prev-next-month-date-textcolor: $color-palette-gray-400;
+$calendar-prev-next-month-date-hover-bgcolor: $color-palette-gray-200;
+$calendar-prev-next-month-date-hover-textcolor: $color-palette-gray-700;
+$calendar-year-label-bgcolor: $color-palette-gray-800;
 $calendar-year-label-textcolor: $white;
 $calendar-dropdown-color: $white;
 $calendar-dropdown-arrow-color: $calendar-dropdown-color;
@@ -523,9 +518,9 @@ $panel-open-title-textcolor: $text-color;
 
 // Progress Bar
 $progressbar-border-size: $field-border-size;
-$progressbar-border-color: $gray-dark;
+$progressbar-border-color: $color-palette-gray-800;
 $progressbar-bgcolor: $white;
-$progressbar-tile-bgcolor: $gray-ligther;
+$progressbar-tile-bgcolor: $color-palette-gray-400;
 $progressbar-heigth: 30px;
 
 // Inline Edit Box
@@ -540,15 +535,16 @@ $tab-padding: $field-padding * 3;
 
 $tab-border-style: solid;
 $tab-border-width: 5px 1px 0 0;
-$tab-border-color: $gray-ligther;
+$tab-border-color: $color-palette-gray-400;
 
 $tab-checked-border-style: solid;
 $tab-checked-border-width: 5px 1px 0 0;
-$tab-checked-border-color: $color-palette-primary $gray-ligther transparent $gray-ligther;
+$tab-checked-border-color: $color-palette-primary $color-palette-gray-400 transparent
+    $color-palette-gray-400;
 
 $tab-list-container-border-style: solid;
 $tab-list-container-border-width: 0 0 1px;
-$tab-list-container-border-color: $gray-ligther;
+$tab-list-container-border-color: $color-palette-gray-400;
 
 $tab-container-border-style: solid;
 $tab-container-border-width: 0;
@@ -562,47 +558,47 @@ $tab-disabled-bgcolor: $field-disabled-bgcolor;
 $tab-disabled-textcolor: $field-disabled-textcolor;
 $tab-active-bgcolor: $field-active-bgcolor;
 $tab-active-textcolor: $field-active-textcolor;
-$tab-nested-active-border: solid 1px $gray-dark;
+$tab-nested-active-border: solid 1px $color-palette-gray-800;
 
 $tab-strip-arrow-size: 5px;
 $tab-strip-normal-bgcolor: $white;
 $tab-strip-normal-arrow-color: $field-normal-textcolor;
-$tab-strip-hover-bgcolor: $gray-ligther;
+$tab-strip-hover-bgcolor: $color-palette-gray-400;
 $tab-strip-hover-arrow-color: $field-hover-textcolor;
 $tab-strip-disabled-bgcolor: $field-disabled-bgcolor;
 $tab-strip-disabled-arrow-color: $field-disabled-textcolor;
 $tab-strip-active-bgcolor: $field-focusedarrow-arrow-bgcolor;
 $tab-strip-active-arrow-color: $field-focusedarrow-arrow-color;
 
-$tab-closeicon-bgcolor: $gray-ligther;
+$tab-closeicon-bgcolor: $color-palette-gray-400;
 $tab-closeicon-color: $black;
 
 // Accordion
 $accordion-title-heigth: $field-height;
-$accordion-title-border: solid 1px $gray-ligther;
-$accordion-title-normal-bgcolor: $gray-ligthest;
-$accordion-title-hover-bgcolor: $gray-ligther;
-$accordion-title-selected-bgcolor: $gray-ligther;
+$accordion-title-border: solid 1px $color-palette-gray-400;
+$accordion-title-normal-bgcolor: $color-palette-gray-200;
+$accordion-title-hover-bgcolor: $color-palette-gray-400;
+$accordion-title-selected-bgcolor: $color-palette-gray-400;
 
 // Dialog Box
 $menu-shadow: $md-shadow-2;
 $menu-radius: 0px;
 
-$dialog-closeicon-bgcolor: $gray-dark;
+$dialog-closeicon-bgcolor: $color-palette-gray-800;
 $dialog-closeicon-color: $white;
 $dialog-normal-bgcolor: $white;
 $dialog-normal-border: none;
-$dialog-normal-title-bgcolor: $gray-ligthest;
-$dialog-normal-title-border-color: transparent transparent $gray-ligther transparent;
+$dialog-normal-title-bgcolor: $color-palette-gray-200;
+$dialog-normal-title-border-color: transparent transparent $color-palette-gray-400 transparent;
 $dialog-normal-title-border-style: solid;
 $dialog-normal-title-border-width: 0 0 1px 0;
 $dialog-normal-title-height: 50px;
-$dialog-normal-title-textcolor: $gray-dark;
+$dialog-normal-title-textcolor: $color-palette-gray-800;
 $dialog-padding: $basic-padding * 2;
 
 // ToolTip
 $tooltip-normal-bgcolor: $white;
-$tooltip-normal-border: solid 1px $gray;
+$tooltip-normal-border: solid 1px $color-palette-gray-700;
 $tooltop-normal-padding: $basic-padding;
 
 // Popup

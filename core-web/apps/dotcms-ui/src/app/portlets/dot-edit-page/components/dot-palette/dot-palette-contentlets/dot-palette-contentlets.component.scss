@@ -2,7 +2,7 @@
 
 :host {
     background: $white;
-    border-left: 1px solid $gray-lighter;
+    border-left: 1px solid $color-palette-gray-300;
     display: flex;
     flex-direction: column;
     height: 100%;
@@ -28,7 +28,7 @@
         text-align: center;
 
         &:hover {
-            background: $gray-bg;
+            background: $color-palette-gray-200;
         }
 
         img {

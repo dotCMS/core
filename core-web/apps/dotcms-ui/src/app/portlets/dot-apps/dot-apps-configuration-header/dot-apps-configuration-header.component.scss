@@ -2,7 +2,7 @@
 
 :host {
     background-color: $white;
-    border-bottom: 1px solid $gray-lighter;
+    border-bottom: 1px solid $color-palette-gray-300;
     display: flex;
     padding: $spacing-4 $spacing-4 $spacing-4 0;
     position: sticky;
@@ -37,7 +37,7 @@
 }
 
 .dot-apps-configuration__service-key {
-    color: $gray;
+    color: $color-palette-gray-700;
     display: inline-block;
     font-size: $font-size-large;
     margin-left: $spacing-3;
@@ -50,7 +50,7 @@
 }
 
 .dot-apps-configuration__configurations {
-    color: $gray;
+    color: $color-palette-gray-700;
     display: block;
     margin-bottom: $spacing-3;
     margin-top: $spacing-1;

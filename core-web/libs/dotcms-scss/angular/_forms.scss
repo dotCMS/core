@@ -56,7 +56,7 @@
 
 .p-field-hint,
 .form__group-hint {
-    color: $gray;
+    color: $color-palette-gray-700;
     display: block;
     font-size: $font-size-small;
     margin-top: 0.25rem;
@@ -71,7 +71,7 @@
 .form__hint-icon {
     border-radius: 50%;
     border: solid 1px;
-    color: $gray;
+    color: $color-palette-gray-700;
     cursor: pointer;
     margin-left: $spacing-3;
     text-align: center;

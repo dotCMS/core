@@ -32,9 +32,9 @@ $datatable-bg-hover: rgba($color-palette-secondary, 0.05);
 
 .p-datatable .p-datatable-thead > tr > th {
     background: $white;
-    border: 1px solid $gray-lighter;
+    border: 1px solid $color-palette-gray-300;
     border-width: 0 0 1px 0;
-    color: $gray;
+    color: $color-palette-gray-700;
     font-size: $font-size-small;
     font-weight: $font-weight-semi-bold;
     padding: $spacing-2 $spacing-2;
@@ -65,7 +65,7 @@ $datatable-bg-hover: rgba($color-palette-secondary, 0.05);
 }
 
 .p-datatable .p-sortable-column .p-sortable-column-icon {
-    color: $gray;
+    color: $color-palette-gray-700;
     margin-left: $spacing-1;
 }
 
@@ -109,7 +109,7 @@ $datatable-bg-hover: rgba($color-palette-secondary, 0.05);
 
 .p-datatable .p-datatable-tbody > tr > td {
     text-align: left;
-    border: 1px solid $gray-lighter;
+    border: 1px solid $color-palette-gray-300;
     border-width: 0 0 1px 0;
     padding: $spacing-1 $spacing-2;
 
@@ -163,8 +163,8 @@ $datatable-bg-hover: rgba($color-palette-secondary, 0.05);
 }
 
 .p-datatable .p-datatable-tbody > tr.disabled-row {
-    background: $gray-bg;
-    color: $gray;
+    background: $color-palette-gray-200;
+    color: $color-palette-gray-700;
     cursor: default;
 }
 
@@ -182,8 +182,8 @@ $datatable-bg-hover: rgba($color-palette-secondary, 0.05);
 }
 
 .p-datatable.p-datatable-hoverable-rows .p-datatable-tbody > tr.disabled-row:hover {
-    background: $gray-bg;
-    color: $gray;
+    background: $color-palette-gray-200;
+    color: $color-palette-gray-700;
 }
 
 .p-datatable .p-column-resizer-helper {

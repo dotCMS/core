@@ -1,7 +1,7 @@
 @use "variables" as *;
 
 :host {
-    border: 1px solid $gray-light;
+    border: 1px solid $color-palette-gray-500;
     display: block;
     border-radius: $border-radius;
     padding: $spacing-3;
@@ -30,14 +30,14 @@
     position: relative;
 
     & > li::after {
-        background: $gray-light;
+        background: $color-palette-gray-500;
         width: 1px;
         height: 1.3rem;
         content: "•";
         position: absolute;
         top: 1.4rem;
         left: 0.8rem;
-        color: $gray-light;
+        color: $color-palette-gray-500;
         display: flex;
         justify-content: space-evenly;
         align-items: flex-end;
@@ -53,7 +53,7 @@
     }
 
     & > li::after {
-        background: $gray-light;
+        background: $color-palette-gray-500;
         width: 1.3rem;
         height: 1px;
         content: "";
@@ -76,7 +76,7 @@
     }
 
     code {
-        color: $gray;
+        color: $color-palette-gray-700;
     }
 }
 

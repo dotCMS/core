@@ -20,15 +20,15 @@
 
 p {
     line-height: 1.5;
-    color: $gray-dark;
+    color: $color-palette-gray-800;
 }
 
 .item {
     align-items: center;
-    background-color: $gray-bg;
-    border: solid 2px $gray-bg;
+    background-color: $color-palette-gray-200;
+    border: solid 2px $color-palette-gray-200;
     border-radius: $border-radius;
-    color: $gray-light;
+    color: $color-palette-gray-500;
     cursor: pointer;
     display: flex;
     flex-direction: column;
@@ -36,7 +36,7 @@ p {
     transition: border-color $basic-speed ease, color $basic-speed ease;
 
     &:hover {
-        color: $gray;
+        color: $color-palette-gray-700;
     }
 
     span {

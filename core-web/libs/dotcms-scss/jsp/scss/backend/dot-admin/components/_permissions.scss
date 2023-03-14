@@ -50,9 +50,9 @@
 }
 
 .permissions__bar-user-role {
-    background-color: $gray-ligthest;
+    background-color: $color-palette-gray-200;
     border-radius: $border-radius;
-    border: solid 1px $gray-ligther;
+    border: solid 1px $color-palette-gray-400;
     display: flex;
     justify-content: space-between;
     margin-bottom: $basic-padding * 2;

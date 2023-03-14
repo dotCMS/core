@@ -25,7 +25,7 @@
 
 .calendar-events__list-items,
 .calendar-events__list-ongoing {
-    border: 1px solid $gray-ligther;
+    border: 1px solid $color-palette-gray-400;
 }
 
 .calendar-events__list-items {
@@ -39,8 +39,8 @@
 }
 
 .calendar-events__recurence-box {
-    background-color: $gray-ligthest;
-    border: solid 1px $gray-ligther;
+    background-color: $color-palette-gray-200;
+    border: solid 1px $color-palette-gray-400;
     border-radius: $field-border-radius;
     display: inline-block;
     margin-top: $basic-padding;
@@ -69,9 +69,9 @@
 #dailyEvents,
 #ongoingEvents {
     h3 {
-        background: $gray-ligthest;
+        background: $color-palette-gray-200;
         padding: $basic-padding;
-        border-bottom: 1px solid $gray-ligther;
+        border-bottom: 1px solid $color-palette-gray-400;
         margin: 0;
     }
 
@@ -87,7 +87,7 @@
     li {
         padding: $basic-padding;
         margin: 0;
-        border-bottom: 1px solid $gray-ligther;
+        border-bottom: 1px solid $color-palette-gray-400;
 
         [class$="Icon"],
         [class*="Icon"] {
@@ -105,12 +105,12 @@
     height: 100px;
     vertical-align: top;
     padding: 0;
-    border: 1px solid $gray-ligther;
+    border: 1px solid $color-palette-gray-400;
     border-collapse: collapse;
 }
 
 .emptyDay {
-    background-color: $gray-ligthest;
+    background-color: $color-palette-gray-200;
 }
 
 .selectedDay {
@@ -269,7 +269,7 @@
     width: 400px;
     -moz-border-radius: 5px;
     -webkit-border-radius: 5px;
-    border: 1px solid $gray-ligther;
+    border: 1px solid $color-palette-gray-400;
 }
 
 #categoriesFilterBox,

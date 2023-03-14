@@ -14,7 +14,7 @@
 
     &::ng-deep {
         .material-icons {
-            color: $gray;
+            color: $color-palette-gray-700;
             transform: scale(1.2);
         }
     }
@@ -52,7 +52,7 @@
 }
 
 .dot-persona-selector__label {
-    color: $gray;
+    color: $color-palette-gray-700;
     flex: 1;
     font-size: $font-size-small;
     line-height: $spacing-3;

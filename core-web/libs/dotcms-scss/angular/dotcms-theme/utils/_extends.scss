@@ -44,7 +44,7 @@
 }
 
 #ui-hover-state {
-    background: $gray-bg;
+    background: $color-palette-gray-200;
     color: $field-hover-color;
 }
 
@@ -71,7 +71,7 @@
 // EDIT PAGE
 
 #edit-page-selector-label {
-    color: $gray;
+    color: $color-palette-gray-700;
     font-size: $font-size-small;
     position: absolute;
     top: 0;

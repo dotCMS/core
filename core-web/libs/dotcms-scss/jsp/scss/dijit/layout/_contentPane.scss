@@ -44,7 +44,7 @@
             width: $panel-title-height;
 
             &:before {
-                @include create-arrow(5px, $gray-dark);
+                @include create-arrow(5px, $color-palette-gray-800);
             }
         }
 

@@ -1,6 +1,6 @@
 .advanced-search-button {
     display: block;
-    background: $gray-ligther;
+    background: $color-palette-gray-400;
     padding: $basic-padding;
     text-align: center;
     text-decoration: none;
@@ -8,7 +8,7 @@
 }
 
 .contentlet-results {
-    color: $gray;
+    color: $color-palette-gray-700;
 }
 
 .contentlet-selection {

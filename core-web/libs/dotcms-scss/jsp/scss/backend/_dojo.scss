@@ -99,11 +99,11 @@ select[multiple] {
         }
 
         &.dijitDropDownButtonDisabled {
-            background-color: $gray-ligther;
+            background-color: $color-palette-gray-400;
 
             .actionIcon,
             .fa-plus {
-                color: $gray;
+                color: $color-palette-gray-700;
             }
         }
     }
@@ -115,7 +115,7 @@ select[multiple] {
         color: $color-palette-primary;
 
         &.dijitButtonHover {
-            background-color: $gray-ligther;
+            background-color: $color-palette-gray-400;
         }
     }
 

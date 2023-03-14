@@ -53,13 +53,13 @@
 }
 
 .view-actions__permissions {
-    border-left: 1px solid $gray-ligther;
+    border-left: 1px solid $color-palette-gray-400;
     position: relative;
     padding-left: $basic-padding * 3;
 }
 
 .view-actions__sub-actions {
-    border-left: 1px solid $gray-ligther;
+    border-left: 1px solid $color-palette-gray-400;
 
     .listingTable {
         width: 100%;
@@ -67,14 +67,14 @@
     }
 
     tr:first-child td {
-        border-top: 1px solid $gray-ligther;
+        border-top: 1px solid $color-palette-gray-400;
     }
 }
 
 .view-actions__permissions,
 .view-actions__sub-actions {
     h3 {
-        background-color: $gray-ligther;
+        background-color: $color-palette-gray-400;
         line-height: 40px;
         padding-left: $basic-padding * 2;
         margin-bottom: $basic-padding * 4;
@@ -89,7 +89,7 @@
 }
 
 .view-actions__workflow-actions {
-    border-left: 1px solid $gray-ligther;
+    border-left: 1px solid $color-palette-gray-400;
     height: 100%;
 }
 
@@ -99,7 +99,7 @@
     left: -7px;
     top: 10px;
     background: $white;
-    color: $gray-ligth;
+    color: $color-palette-gray-500;
 }
 
 @media only screen and (max-width: $screen-sm) {

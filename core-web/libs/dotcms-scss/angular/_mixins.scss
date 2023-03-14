@@ -82,7 +82,7 @@
 }
 
 @mixin form-field-secondary {
-    border: 1px solid $gray-light;
+    border: 1px solid $color-palette-gray-500;
     border-radius: $border-radius;
     box-shadow: none;
 }

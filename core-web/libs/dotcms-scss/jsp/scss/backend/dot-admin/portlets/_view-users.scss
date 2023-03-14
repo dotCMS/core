@@ -60,7 +60,7 @@
     }
 
     .view-user__form {
-        border-bottom: solid 1px $gray-ligther;
+        border-bottom: solid 1px $color-palette-gray-400;
         margin-bottom: $basic-padding * 3;
         padding-bottom: $basic-padding * 3;
     }
@@ -92,7 +92,7 @@
 
 .view-users__roles-container-item {
     border-radius: $border-radius;
-    border: solid 1px $gray-ligth;
+    border: solid 1px $color-palette-gray-500;
     height: 300px;
     overflow: auto;
 
@@ -122,11 +122,11 @@
     .view-users__users-list {
         .dojoxGridRow {
             &:nth-child(even) {
-                background-color: $gray-ligther;
+                background-color: $color-palette-gray-400;
             }
         }
         .dojoxGridHeader {
-            background-color: $gray-ligther;
+            background-color: $color-palette-gray-400;
         }
         .dojoxGridRow,
         .dojoxGridHeader {

@@ -13,7 +13,7 @@
 }
 
 .dot-apps-card__disabled {
-    background-color: $gray-bg;
+    background-color: $color-palette-gray-200;
     display: block;
     height: 100%;
 
@@ -39,16 +39,16 @@
 
     ::ng-deep {
         .p-card {
-            background: $gray-bg;
+            background: $color-palette-gray-200;
         }
         .avatar__img {
             filter: grayscale(1);
         }
         .p-widget-content {
-            background-color: $gray-bg;
+            background-color: $color-palette-gray-200;
         }
         .dot-apps-card__name {
-            color: $gray;
+            color: $color-palette-gray-700;
         }
     }
 }
@@ -89,7 +89,7 @@ dot-avatar {
 }
 
 .dot-apps-card__configurations {
-    color: $gray;
+    color: $color-palette-gray-700;
     display: block;
     font-size: $font-size-medium;
     line-height: $spacing-3;
@@ -107,7 +107,7 @@ dot-avatar {
         height: 100%;
 
         .p-card-body {
-            color: $gray;
+            color: $color-palette-gray-700;
 
             .p-card-content > p {
                 line-height: 1.5rem;

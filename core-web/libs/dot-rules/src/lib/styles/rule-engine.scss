@@ -12,9 +12,9 @@ $text-emphasis: #fc7e1c;
 $warn: #cb3927;
 $color-palette-primary-one: #209021;
 $black: #0a0725;
-$gray: #7e7a86;
-$gray-light: #b3b1b8;
-$gray-bg: #f1f3f4;
+$color-palette-gray-700: #7e7a86;
+$color-palette-gray-500: #b3b1b8;
+$color-palette-gray-200: #f1f3f4;
 $white: #fff;
 $md-shadow-4: 0 2px 4px 0 rgba(0, 0, 0, 0.1);
 
@@ -538,7 +538,7 @@ $finder-s-input: ".ui.input input";
 
         i {
             font-size: 120px;
-            color: $gray-light;
+            color: $color-palette-gray-500;
             border: 7px solid;
             border-radius: 10px;
             margin-bottom: $spacing-4;
@@ -547,7 +547,7 @@ $finder-s-input: ".ui.input input";
         h2 {
             font-size: $font-size-xx-large;
             margin: 0;
-            color: $gray;
+            color: $color-palette-gray-700;
         }
 
         span {

@@ -2,17 +2,17 @@
     box-shadow: $menu-shadow;
     position: absolute;
     background: $white;
-    border: 1px solid $gray-ligther;
+    border: 1px solid $color-palette-gray-400;
     min-width: 200px;
 
     .pop_divider {
-        border-bottom: 1px solid $gray-ligther;
+        border-bottom: 1px solid $color-palette-gray-400;
         background-color: $white;
     }
 }
 
 .context-menu__item {
-    color: $gray-dark;
+    color: $color-palette-gray-800;
     cursor: pointer;
     display: block;
     font-size: $font-size-medium;
@@ -23,7 +23,7 @@
     text-decoration: none;
 
     &:hover {
-        background-color: $gray-ligthest;
+        background-color: $color-palette-gray-200;
     }
 
     [class$="Icon"],

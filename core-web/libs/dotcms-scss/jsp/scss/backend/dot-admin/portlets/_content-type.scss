@@ -22,13 +22,13 @@
 
     &__fields-list-header,
     &__fields-list-row {
-        border-bottom: 1px solid $gray-ligther;
+        border-bottom: 1px solid $color-palette-gray-400;
         display: flex;
         justify-content: space-between;
     }
 
     &__fields-list-header {
-        background: $gray-ligthest;
+        background: $color-palette-gray-200;
         font-weight: bold;
         width: 100%;
     }

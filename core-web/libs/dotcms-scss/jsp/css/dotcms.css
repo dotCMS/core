@@ -2933,7 +2933,7 @@ body {
     top: 50%;
     border-left: 5px solid transparent;
     border-right: 5px solid transparent;
-    border-bottom: 5px solid #fff;
+    border-bottom: 5px solid #ffffff;
     content: '';
     height: 0;
     width: 0;
@@ -3417,7 +3417,7 @@ body {
 }
 
 .dijitPlaceHolder {
-    color: #c5c5c5;
+    color: #afb3c0;
     font-style: normal;
     line-height: 34px;
 }
@@ -3430,7 +3430,7 @@ body {
 }
 .dijitValidationContainer:before {
     border-radius: 2px;
-    background-color: #fff;
+    background-color: #ffffff;
     content: '';
     height: 13px;
     left: 5px;
@@ -3439,7 +3439,7 @@ body {
     width: 2px;
 }
 .dijitValidationContainer:after {
-    background-color: #fff;
+    background-color: #ffffff;
     content: '';
     height: 2px;
     left: 50%;
@@ -3452,15 +3452,15 @@ body {
 }
 
 .dijitTextBox {
-    background-color: #fff;
-    border: solid 1px #c5c5c5;
+    background-color: #ffffff;
+    border: solid 1px #afb3c0;
     padding: 0 8px;
 }
 .dijitTextBox .dijitArrowButton {
     height: 34px;
     width: 36px;
-    background-color: #fff;
-    border-left: solid 1px #c5c5c5;
+    background-color: #ffffff;
+    border-left: solid 1px #afb3c0;
 }
 .dijitTextBox .dijitArrowButton:before {
     left: 50%;
@@ -3470,20 +3470,20 @@ body {
     top: 50%;
     border-left: 5px solid transparent;
     border-right: 5px solid transparent;
-    border-top: 5px solid #5b5b5b;
+    border-top: 5px solid #515667;
     content: '';
     height: 0;
     width: 0;
 }
 .dijitTextBoxHover {
-    background-color: #fff;
+    background-color: #ffffff;
     border: solid 1px #9747ff;
 }
 .dijitTextBoxHover .dijitInputInner {
     color: #14151a;
 }
 .dijitTextBoxHover .dijitArrowButton {
-    background-color: #fff;
+    background-color: #ffffff;
     border-left: solid 1px #9747ff;
 }
 .dijitTextBoxHover .dijitArrowButton:before {
@@ -3491,20 +3491,20 @@ body {
 }
 .dijitTextBoxHover .dijitDownArrowButtonHover {
     background-color: rgba(var(--color-sec_rgb), 0.2);
-    border-left: solid 1px #5b5b5b;
+    border-left: solid 1px #515667;
 }
 .dijitTextBoxHover .dijitDownArrowButtonHover:before {
     border-top-color: #9747ff;
 }
 .dijitTextBoxFocused {
     border: solid 1px #9747ff;
-    background-color: #fff;
+    background-color: #ffffff;
 }
 .dijitTextBoxFocused .dijitInputInner {
     color: #14151a;
 }
 .dijitTextBoxFocused .dijitArrowButton {
-    background-color: #fff;
+    background-color: #ffffff;
     border-left: solid 1px #9747ff;
 }
 .dijitTextBoxFocused .dijitArrowButton:before {
@@ -3539,10 +3539,10 @@ body {
 }
 .dijitTextBoxDisabled {
     border: solid 1px #e3e4e6;
-    background-color: #fff;
+    background-color: #ffffff;
 }
 .dijitTextBoxDisabled .dijitArrowButton {
-    background-color: #fff;
+    background-color: #ffffff;
     border-left: solid 1px #e3e4e6;
 }
 .dijitTextBoxDisabled .dijitArrowButton:before {
@@ -3553,16 +3553,16 @@ body {
     top: 50%;
     border-left: 5px solid transparent;
     border-right: 5px solid transparent;
-    border-top: 5px solid #c5c5c5;
+    border-top: 5px solid #afb3c0;
     content: '';
     height: 0;
     width: 0;
 }
 .dijitTextBoxDisabled .dijitPlaceHolder {
-    color: #c5c5c5;
+    color: #afb3c0;
 }
 .dijitTextBoxDisabled .dijitInputInner {
-    color: #c5c5c5;
+    color: #afb3c0;
 }
 .dijitTextBoxError {
     border: solid 1px #d0021b;
@@ -3581,48 +3581,48 @@ body {
     border-left: solid 1px #426bf0;
 }
 .dijitTextBox .dijitDownArrowButtonActive:before {
-    border-top-color: #fff;
+    border-top-color: #ffffff;
 }
 
 .dijitTextArea {
-    background-color: #fff;
-    border: solid 1px #c5c5c5;
+    background-color: #ffffff;
+    border: solid 1px #afb3c0;
     color: #14151a;
     font-family: 'Roboto', 'Helvetica Neue', Helvetica, Arial, 'Lucida Grande', sans-serif;
     padding: 8px;
 }
 .dijitTextAreaHover {
-    background-color: #fff;
+    background-color: #ffffff;
     border: solid 1px #9747ff;
     color: #14151a;
 }
 .dijitTextAreaFocused {
     border: solid 1px #9747ff;
-    background-color: #fff;
+    background-color: #ffffff;
     color: #14151a;
 }
 .dijitTextAreaDisabled {
     border: solid 1px #e3e4e6;
-    background-color: #fff;
-    color: #c5c5c5;
+    background-color: #ffffff;
+    color: #afb3c0;
 }
 
 .dijitSpinner {
-    background-color: #fff;
-    border: solid 1px #c5c5c5;
+    background-color: #ffffff;
+    border: solid 1px #afb3c0;
     padding: 0 0 0 8px;
 }
 .dijitSpinner .dijitSpinnerButtonContainer {
-    border-left: solid 1px #c5c5c5;
+    border-left: solid 1px #afb3c0;
     width: 36px;
 }
 .dijitSpinner .dijitSpinnerButtonContainer .dijitDownArrowButton {
-    border-top: solid 1px #c5c5c5 !important;
+    border-top: solid 1px #afb3c0 !important;
 }
 .dijitSpinner .dijitArrowButton {
     height: 18px;
-    border-left: solid 1px #c5c5c5;
-    background-color: #fff;
+    border-left: solid 1px #afb3c0;
+    background-color: #ffffff;
 }
 .dijitSpinner .dijitArrowButton:before {
     left: 50%;
@@ -3632,7 +3632,7 @@ body {
     top: 50%;
     border-left: 5px solid transparent;
     border-right: 5px solid transparent;
-    border-top: 5px solid #8a8a8a;
+    border-top: 5px solid #6c7389;
     content: '';
     height: 0;
     width: 0;
@@ -3641,7 +3641,7 @@ body {
     transform: rotate(180deg);
 }
 .dijitSpinnerHover {
-    background-color: #fff;
+    background-color: #ffffff;
     border: solid 1px #9747ff;
 }
 .dijitSpinnerHover .dijitSpinnerButtonContainer {
@@ -3659,14 +3659,14 @@ body {
 .dijitSpinnerHover .dijitDownArrowButtonHover,
 .dijitSpinnerHover .dijitUpArrowButtonHover {
     background-color: rgba(var(--color-sec_rgb), 0.2);
-    border-left: solid 1px #5b5b5b;
+    border-left: solid 1px #515667;
 }
 .dijitSpinnerHover .dijitDownArrowButtonHover:before,
 .dijitSpinnerHover .dijitUpArrowButtonHover:before {
     border-top-color: #9747ff;
 }
 .dijitSpinnerFocused {
-    background-color: #fff;
+    background-color: #ffffff;
     border: solid 1px #9747ff;
 }
 .dijitSpinnerFocused .dijitSpinnerButtonContainer {
@@ -3691,7 +3691,7 @@ body {
     border-top-color: #426bf0;
 }
 .dijitSpinnerDisabled {
-    background-color: #fafafa;
+    background-color: #f3f3f4;
     border: solid 1px #e3e4e6;
 }
 .dijitSpinnerDisabled .dijitSpinnerButtonContainer {
@@ -3702,13 +3702,13 @@ body {
 }
 .dijitSpinnerDisabled .dijitArrowButton {
     border-left: solid 1px #e3e4e6;
-    background-color: #fafafa;
+    background-color: #f3f3f4;
 }
 .dijitSpinnerDisabled .dijitArrowButton:before {
-    border-top-color: #c5c5c5;
+    border-top-color: #afb3c0;
 }
 .dijitSpinnerDisabled .dijitInputInner {
-    color: #ecedee;
+    color: #d1d4db;
 }
 .dijitSpinnerError {
     border: solid 1px #d0021b;
@@ -3732,7 +3732,7 @@ body {
 }
 .dijitSpinner .dijitDownArrowButtonActive:before,
 .dijitSpinner .dijitUpArrowButtonActive:before {
-    border-top-color: #fff;
+    border-top-color: #ffffff;
 }
 
 .dijitButton .dijitButtonNode,
@@ -3755,7 +3755,7 @@ body {
 }
 
 .dijitButton {
-    background-color: #fff;
+    background-color: #ffffff;
     border: solid 1px #9747ff;
     color: #9747ff;
     box-shadow: 0;
@@ -3767,25 +3767,25 @@ body {
     border: none;
 }
 .dijitButtonHover {
-    background-color: #fff;
+    background-color: #ffffff;
     border: solid 1px #426bf0;
     color: #426bf0;
     box-shadow: 0;
 }
 .dijitButtonFocused {
-    background-color: #fff;
+    background-color: #ffffff;
     border: solid 1px #426bf0;
     color: #426bf0;
     box-shadow: 0;
 }
 .dijitButtonDisabled {
-    background-color: #ecedee;
-    border: solid 1px #ecedee;
-    color: #c5c5c5;
+    background-color: #d1d4db;
+    border: solid 1px #d1d4db;
+    color: #afb3c0;
     box-shadow: 0;
 }
 .dijitDropDownButton {
-    background-color: #fff;
+    background-color: #ffffff;
     border: solid 1px #9747ff;
     color: #9747ff;
     box-shadow: 0;
@@ -3811,7 +3811,7 @@ body {
     width: 0;
 }
 .dijitDropDownButtonHover {
-    background-color: #fff;
+    background-color: #ffffff;
     border: solid 1px #426bf0;
     color: #426bf0;
     box-shadow: 0;
@@ -3833,7 +3833,7 @@ body {
     width: 0;
 }
 .dijitDropDownButtonActive {
-    background-color: #fff;
+    background-color: #ffffff;
     border: solid 1px #426bf0;
     color: #426bf0;
     box-shadow: 0;
@@ -3849,21 +3849,21 @@ body {
     top: 50%;
     border-left: 5px solid transparent;
     border-right: 5px solid transparent;
-    border-top: 5px solid #fff;
+    border-top: 5px solid #ffffff;
     content: '';
     height: 0;
     width: 0;
 }
 .dijitDropDownButtonFocused {
-    background-color: #fff;
+    background-color: #ffffff;
     border: solid 1px #426bf0;
     color: #426bf0;
     box-shadow: 0;
 }
 .dijitDropDownButtonDisabled {
-    background-color: #ecedee;
-    border: solid 1px #ecedee;
-    color: #c5c5c5;
+    background-color: #d1d4db;
+    border: solid 1px #d1d4db;
+    color: #afb3c0;
     box-shadow: 0;
 }
 .dijitDropDownButtonDisabled .dijitArrowButtonInner {
@@ -3877,13 +3877,13 @@ body {
     top: 50%;
     border-left: 5px solid transparent;
     border-right: 5px solid transparent;
-    border-top: 5px solid #c5c5c5;
+    border-top: 5px solid #afb3c0;
     content: '';
     height: 0;
     width: 0;
 }
 .dijitComboButton {
-    background-color: #fff;
+    background-color: #ffffff;
     border: solid 1px #9747ff;
     color: #9747ff;
     box-shadow: 0;
@@ -3912,7 +3912,7 @@ body {
     padding-left: 0;
 }
 .dijitComboButtonHover {
-    background-color: #fff;
+    background-color: #ffffff;
     border: solid 1px #426bf0;
     color: #426bf0;
     box-shadow: 0;
@@ -3934,7 +3934,7 @@ body {
     width: 0;
 }
 .dijitComboButtonActive {
-    background-color: #fff;
+    background-color: #ffffff;
     border: solid 1px #426bf0;
     color: #426bf0;
     box-shadow: 0;
@@ -3957,7 +3957,7 @@ body {
 }
 .dijitComboButtonFocused,
 .dijitComboButtonHoverFocused {
-    background-color: #fff;
+    background-color: #ffffff;
     border: solid 1px #426bf0;
     color: #426bf0;
     box-shadow: 0;
@@ -3981,13 +3981,13 @@ body {
     width: 0;
 }
 .dijitComboButtonDisabled {
-    background-color: #ecedee;
-    border: solid 1px #ecedee;
-    color: #c5c5c5;
+    background-color: #d1d4db;
+    border: solid 1px #d1d4db;
+    color: #afb3c0;
     box-shadow: 0;
 }
 .dijitComboButtonDisabled .dijitArrowButtonInner {
-    border-left: solid 1px #ecedee;
+    border-left: solid 1px #d1d4db;
     background-color: transparent;
 }
 .dijitComboButtonDisabled .dijitArrowButtonInner:before {
@@ -3998,13 +3998,13 @@ body {
     top: 50%;
     border-left: 5px solid transparent;
     border-right: 5px solid transparent;
-    border-top: 5px solid #c5c5c5;
+    border-top: 5px solid #afb3c0;
     content: '';
     height: 0;
     width: 0;
 }
 .dijitToggleButton {
-    background-color: #fff;
+    background-color: #ffffff;
     border: solid 1px #9747ff;
     color: #9747ff;
     box-shadow: 0;
@@ -4017,7 +4017,7 @@ body {
 }
 .dijitToggleButtonFocused,
 .dijitToggleButtonChecked {
-    background-color: #fff;
+    background-color: #ffffff;
     border: solid 1px #426bf0;
     color: #426bf0;
     box-shadow: 0;
@@ -4025,22 +4025,22 @@ body {
 .dijitToggleButtonHover,
 .dijitToggleButtonHoverFocused,
 .dijitToggleButtonCheckedHover {
-    background-color: #fff;
+    background-color: #ffffff;
     border: solid 1px #426bf0;
     color: #426bf0;
     box-shadow: 0;
 }
 .dijitToggleButtonDisabled {
-    background-color: #ecedee;
-    border: solid 1px #ecedee;
-    color: #c5c5c5;
+    background-color: #d1d4db;
+    border: solid 1px #d1d4db;
+    color: #afb3c0;
     box-shadow: 0;
 }
 
 .dijitCheckBox {
     border-radius: 2px;
     border: solid 1px #14151a;
-    background-color: #fff;
+    background-color: #ffffff;
     width: 14px;
     height: 14px;
 }
@@ -4052,18 +4052,18 @@ body {
 }
 .dijitCheckBoxDisabled {
     border: solid 1px transparent;
-    background: #c5c5c5;
+    background: #afb3c0;
 }
 .dijitCheckBoxCheckedDisabled {
     border: solid 1px transparent;
-    background: #c5c5c5
+    background: #afb3c0
         url('data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiPz48c3ZnIHdpZHRoPSIxMHB4IiBoZWlnaHQ9IjhweCIgdmlld0JveD0iMCAwIDEwIDgiIHZlcnNpb249IjEuMSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB4bWxuczp4bGluaz0iaHR0cDovL3d3dy53My5vcmcvMTk5OS94bGluayI+ICAgICAgICA8dGl0bGU+U2hhcGU8L3RpdGxlPiAgICA8ZGVzYz5DcmVhdGVkIHdpdGggU2tldGNoLjwvZGVzYz4gICAgPGRlZnM+PC9kZWZzPiAgICA8ZyBpZD0iU3ltYm9scyIgc3Ryb2tlPSJub25lIiBzdHJva2Utd2lkdGg9IjEiIGZpbGw9Im5vbmUiIGZpbGwtcnVsZT0iZXZlbm9kZCI+ICAgICAgICA8ZyBpZD0iY2hlY2tib3gtYWN0aXZlIiB0cmFuc2Zvcm09InRyYW5zbGF0ZSgtNC4wMDAwMDAsIC01LjAwMDAwMCkiIGZpbGw9IiNGRkZGRkYiPiAgICAgICAgICAgIDxwb2x5Z29uIGlkPSJTaGFwZSIgcG9pbnRzPSI3LjMxMDcyMDMyIDExLjQyMjQ0NDkgNC45ODYxOTU2MyA5LjA5NzkyMDE5IDQuMTk0NjMwODcgOS44ODM5MTA1NSA3LjMxMDcyMDMyIDEzIDE0IDYuMzEwNzIwMzIgMTMuMjE0MDA5NiA1LjUyNDcyOTk2Ij48L3BvbHlnb24+ICAgICAgICA8L2c+ICAgIDwvZz48L3N2Zz4=')
         center center no-repeat;
 }
 
 .dijitRadio {
     border-radius: 7px;
-    background-color: #fff;
+    background-color: #ffffff;
     border: solid 1px #14151a;
     height: 14px;
     width: 14px;
@@ -4086,11 +4086,11 @@ body {
 }
 .dijitRadioDisabled {
     background-color: transparent;
-    border: solid 1px #ecedee;
+    border: solid 1px #d1d4db;
     position: relative;
 }
 .dijitRadioDisabled:before {
-    background-color: #c5c5c5;
+    background-color: #afb3c0;
 }
 
 #select-arrow,
@@ -4105,8 +4105,8 @@ body {
 }
 
 .dijitSelect {
-    background-color: #fff;
-    border: solid 1px #c5c5c5;
+    background-color: #ffffff;
+    border: solid 1px #afb3c0;
     color: #14151a;
 }
 .dijitSelect .dijitButtonContents {
@@ -4117,7 +4117,7 @@ body {
     width: auto;
 }
 .dijitSelect .dijitArrowButton {
-    border-left: solid 1px #c5c5c5;
+    border-left: solid 1px #afb3c0;
     width: 36px;
     background-color: transparent;
 }
@@ -4129,7 +4129,7 @@ body {
     top: 50%;
     border-left: 5px solid transparent;
     border-right: 5px solid transparent;
-    border-top: 5px solid #8a8a8a;
+    border-top: 5px solid #6c7389;
     content: '';
     height: 0;
     width: 0;
@@ -4138,7 +4138,7 @@ body {
     width: 36px;
 }
 .dijitSelectHover {
-    background-color: #fff;
+    background-color: #ffffff;
     border: solid 1px #9747ff;
     color: #14151a;
 }
@@ -4161,7 +4161,7 @@ body {
 }
 .dijitSelectActive,
 .dijitSelectOpened {
-    background-color: #fff;
+    background-color: #ffffff;
     border: solid 1px #9747ff;
     color: #14151a;
 }
@@ -4185,27 +4185,27 @@ body {
     width: 0;
 }
 .dijitSelectDisabled {
-    background-color: #fff;
+    background-color: #ffffff;
     border: solid 1px #e3e4e6;
-    color: #c5c5c5;
+    color: #afb3c0;
 }
 .dijitSelectDisabled .dijitButtonContents {
     opacity: 0.5;
 }
 .dijitSelectDisabled .dijitArrowButton {
     border-left: solid 1px #e3e4e6;
-    background-color: #fff;
+    background-color: #ffffff;
 }
 .dijitSelectDisabled .dijitArrowButton:before {
-    border-top-color: #c5c5c5;
+    border-top-color: #afb3c0;
 }
 .dijitSelect.dijitSelectFixedWidth .dijitButtonContents {
     width: auto;
 }
 
 .dijitComboBox {
-    background-color: #fff;
-    border: solid 1px #c5c5c5;
+    background-color: #ffffff;
+    border: solid 1px #afb3c0;
     padding: 0 0 0 8px;
 }
 .dijitComboBox input {
@@ -4216,15 +4216,15 @@ body {
 .dijitComboBox .dijitArrowButton {
     height: 34px;
     width: 36px;
-    background-color: #fff;
-    border-left: solid 1px #c5c5c5;
+    background-color: #ffffff;
+    border-left: solid 1px #afb3c0;
 }
 .dijitComboBoxHover {
-    background-color: #fff;
+    background-color: #ffffff;
     border: solid 1px #9747ff;
 }
 .dijitComboBoxHover .dijitArrowButton {
-    background-color: #fff;
+    background-color: #ffffff;
     border-left: solid 1px #9747ff;
 }
 .dijitComboBoxHover .dijitArrowButton:before {
@@ -4232,17 +4232,17 @@ body {
 }
 .dijitComboBoxHover .dijitDownArrowButtonHover {
     background-color: rgba(var(--color-sec_rgb), 0.2);
-    border-left: solid 1px #5b5b5b;
+    border-left: solid 1px #515667;
 }
 .dijitComboBoxHover .dijitDownArrowButtonHover:before {
     border-top-color: #9747ff;
 }
 .dijitComboBoxFocused {
     border: solid 1px #9747ff;
-    background-color: #fff;
+    background-color: #ffffff;
 }
 .dijitComboBoxFocused .dijitArrowButton {
-    background-color: #fff;
+    background-color: #ffffff;
     border-left: solid 1px #9747ff;
 }
 .dijitComboBoxFocused .dijitDownArrowButtonHover {
@@ -4251,17 +4251,17 @@ body {
 }
 .dijitComboBoxDisabled {
     border: solid 1px #e3e4e6;
-    background-color: #fafafa;
+    background-color: #f3f3f4;
 }
 .dijitComboBoxDisabled .dijitArrowButton {
-    background-color: #fafafa;
+    background-color: #f3f3f4;
     border-left: solid 1px #e3e4e6;
 }
 .dijitComboBoxDisabled .dijitPlaceHolder {
-    color: #c5c5c5;
+    color: #afb3c0;
 }
 .dijitComboBoxDisabled .dijitInputInner {
-    color: #c5c5c5;
+    color: #afb3c0;
 }
 .dijitComboBoxError {
     border: solid 1px #d0021b;
@@ -4280,7 +4280,7 @@ body {
     border-left: solid 1px #426bf0;
 }
 .dijitComboBox .dijitDownArrowButtonActive:before {
-    border-top-color: #fff;
+    border-top-color: #ffffff;
 }
 
 .dijitSliderBarH,
@@ -4293,23 +4293,23 @@ body {
 }
 .dijitRuleLabel {
     transition: color 0.1s;
-    color: #5b5b5b;
+    color: #515667;
 }
 .dijitRuleMark {
     transition: border-color 0.1s;
-    border: solid 1px #ecedee;
+    border: solid 1px #d1d4db;
 }
 .dijitSliderProgressBar,
 .dijitSliderBottomBumper,
 .dijitSliderLeftBumper {
     background: #426bf0;
-    border-color: #ecedee;
+    border-color: #d1d4db;
 }
 .dijitSliderRemainingBar,
 .dijitSliderTopBumper,
 .dijitSliderRightBumper {
-    background: #fff;
-    border-color: #ecedee;
+    background: #ffffff;
+    border-color: #d1d4db;
 }
 .dijitSliderLeftBumper {
     border-left-width: 1px;
@@ -4331,7 +4331,7 @@ body {
     width: 20px;
     height: 16px;
     border: solid 1px #9747ff;
-    background-color: #fff;
+    background-color: #ffffff;
     position: relative;
 }
 .dijitSliderDecrementIconH .dijitSliderButtonInner,
@@ -4355,7 +4355,7 @@ body {
     top: 50%;
     border-left: 5px solid transparent;
     border-right: 5px solid transparent;
-    border-bottom: 5px solid #8a8a8a;
+    border-bottom: 5px solid #6c7389;
     content: '';
     height: 0;
     width: 0;
@@ -4371,14 +4371,14 @@ body {
     top: 50%;
     border-left: 5px solid transparent;
     border-right: 5px solid transparent;
-    border-top: 5px solid #8a8a8a;
+    border-top: 5px solid #6c7389;
     content: '';
     height: 0;
     width: 0;
 }
 .dijitSliderDecrementButtonActive,
 .dijitSliderIncrementButtonActive {
-    background-color: #fff;
+    background-color: #ffffff;
     border: solid 1px #426bf0;
 }
 .dijitSliderIncrementButtonActive:before {
@@ -4390,109 +4390,109 @@ body {
 .dijitSliderImageHandle {
     transition: all 0.1s;
     border-radius: 6.5px;
-    background-color: #fff;
-    border: solid 1px #ecedee;
+    background-color: #ffffff;
+    border: solid 1px #d1d4db;
     height: 13px;
     top: -5px;
     width: 13px;
 }
 .dijitSliderHover .dijitRuleLabel {
-    color: #5b5b5b;
+    color: #515667;
 }
 .dijitSliderHover .dijitRuleMark {
-    border: solid 1px #5b5b5b;
+    border: solid 1px #515667;
 }
 .dijitSliderHover .dijitSliderBottomBumper,
 .dijitSliderHover .dijitSliderProgressBar,
 .dijitSliderHover .dijitSliderLeftBumper {
     background: #426bf0;
-    border-color: #5b5b5b;
+    border-color: #515667;
 }
 .dijitSliderHover .dijitSliderRemainingBar,
 .dijitSliderHover .dijitSliderTopBumper,
 .dijitSliderHover .dijitSliderRightBumper {
-    background: #fff;
-    border-color: #5b5b5b;
+    background: #ffffff;
+    border-color: #515667;
 }
 .dijitSliderHover .dijitSliderImageHandle {
-    background-color: #fff;
-    border: solid 1px #5b5b5b;
+    background-color: #ffffff;
+    border: solid 1px #515667;
 }
 .dijitSliderHover .dijitSliderThumbFocused {
-    background: #5b5b5b;
-    border: solid 1px #5b5b5b;
+    background: #515667;
+    border: solid 1px #515667;
 }
 .dijitSliderDisabled .dijitRuleLabel {
-    color: #ecedee;
+    color: #d1d4db;
 }
 .dijitSliderDisabled .dijitRuleMark {
-    border: solid 1px #ecedee;
+    border: solid 1px #d1d4db;
 }
 .dijitSliderDisabled .dijitSliderBottomBumper,
 .dijitSliderDisabled .dijitSliderProgressBar,
 .dijitSliderDisabled .dijitSliderLeftBumper {
-    background: #fafafa;
-    border-color: #fafafa;
+    background: #f3f3f4;
+    border-color: #f3f3f4;
 }
 .dijitSliderDisabled .dijitSliderRemainingBar,
 .dijitSliderDisabled .dijitSliderTopBumper,
 .dijitSliderDisabled .dijitSliderRightBumper {
-    background: #fff;
-    border-color: #fafafa;
+    background: #ffffff;
+    border-color: #f3f3f4;
 }
 .dijitSliderDisabled .dijitSliderImageHandle {
-    background-color: #fafafa;
-    border: solid 1px #fafafa;
+    background-color: #f3f3f4;
+    border: solid 1px #f3f3f4;
 }
 .dijitSliderDisabled .dijitSliderDecrementIconH,
 .dijitSliderDisabled .dijitSliderIncrementIconH,
 .dijitSliderDisabled .dijitSliderDecrementIconV,
 .dijitSliderDisabled .dijitSliderIncrementIconV {
-    border: solid 1px #ecedee;
+    border: solid 1px #d1d4db;
 }
 .dijitSliderDisabled .dijitSliderDecrementIconV:before {
-    border-top-color: #c5c5c5;
+    border-top-color: #afb3c0;
 }
 .dijitSliderDisabled .dijitSliderIncrementIconV:before {
-    border-bottom-color: #c5c5c5;
+    border-bottom-color: #afb3c0;
 }
 
 .dijitTimePicker .dijitDownArrowButton,
 .dijitTimePicker .dijitUpArrowButton {
-    background-color: #fafafa;
+    background-color: #f3f3f4;
     padding: 4px;
 }
 .dijitTimePicker .dijitDownArrowHover,
 .dijitTimePicker .dijitUpArrowHover {
-    background-color: #ecedee;
+    background-color: #d1d4db;
 }
 
 .dijitAccordionContainer {
-    border: solid 1px #ecedee;
+    border: solid 1px #d1d4db;
 }
 .dijitAccordionContainer .dijitAccordionContainer-child {
     padding: 8px;
 }
 .dijitAccordionInnerContainerSelected .dijitAccordionTitleHover {
-    background-color: #ecedee;
+    background-color: #d1d4db;
 }
 .dijitAccordionTitle {
     transition: all 0.1s;
-    background-color: #fafafa;
-    border-top: solid 1px #ecedee;
+    background-color: #f3f3f4;
+    border-top: solid 1px #d1d4db;
     border-bottom: none;
     height: 36px;
     line-height: 36px;
     padding: 0 8px;
 }
 .dijitAccordionTitle:last-child {
-    border-bottom: solid 1px #ecedee;
+    border-bottom: solid 1px #d1d4db;
 }
 .dijitAccordionTitleHover {
-    background-color: #ecedee;
+    background-color: #d1d4db;
 }
 .dijitAccordionTitleSelected {
-    background-color: #ecedee;
+    background-color: #d1d4db;
     font-weight: bold;
 }
 
@@ -4540,7 +4540,7 @@ body {
     top: 50%;
     border-left: 5px solid transparent;
     border-right: 5px solid transparent;
-    border-top: 5px solid #5b5b5b;
+    border-top: 5px solid #515667;
     content: '';
     height: 0;
     width: 0;
@@ -4554,7 +4554,7 @@ body {
 }
 
 .dijitDialog {
-    background-color: #fff;
+    background-color: #ffffff;
     border-radius: 0px;
     border: none;
     box-shadow: 0 3px 6px rgba(0, 0, 0, 0.16), 0 3px 6px rgba(0, 0, 0, 0.23);
@@ -4562,7 +4562,7 @@ body {
 .dijitDialogCloseIcon {
     width: 17px;
     height: 18px;
-    background-color: #5b5b5b;
+    background-color: #515667;
     position: absolute;
     right: 0;
     top: 0;
@@ -4570,7 +4570,7 @@ body {
 }
 .dijitDialogCloseIcon:before,
 .dijitDialogCloseIcon:after {
-    background-color: #fff;
+    background-color: #ffffff;
     content: '';
     display: block;
     font-size: 0;
@@ -4594,11 +4594,11 @@ body {
     padding-top: 0;
 }
 .dijitDialogTitleBar {
-    background-color: #fafafa;
-    border-color: transparent transparent #ecedee transparent;
+    background-color: #f3f3f4;
+    border-color: transparent transparent #d1d4db transparent;
     border-style: solid;
     border-width: 0 0 1px 0;
-    color: #5b5b5b;
+    color: #515667;
     font-weight: bold;
     height: 50px;
     line-height: 50px;
@@ -4615,22 +4615,22 @@ body {
 }
 
 .dijitSplitter {
-    background: rgba(250, 250, 250, 0.25);
+    background: rgba(243, 243, 244, 0.25);
 }
 .dijitSplitterHover {
-    background: rgba(250, 250, 250, 0.5);
+    background: rgba(243, 243, 244, 0.5);
 }
 .dijitSplitterHover .dijitSplitterThumb {
-    background: #8a8a8a;
+    background: #6c7389;
 }
 .dijitSplitterActive {
-    background-color: rgba(138, 138, 138, 0.2);
+    background-color: rgba(108, 115, 137, 0.2);
 }
 .dijitSplitterActive .dijitSplitterThumb {
-    background: #8a8a8a;
+    background: #6c7389;
 }
 .dijitSplitterThumb {
-    background-color: #ecedee;
+    background-color: #d1d4db;
 }
 .dijitSplitterV {
     width: 6px;
@@ -4657,13 +4657,13 @@ body {
 
 .dijitTab {
     height: 42px;
-    background-color: #fff;
+    background-color: #ffffff;
     color: #14151a;
     padding: 0 24px;
     position: relative;
     border-width: 5px 1px 0 0;
     border-style: solid;
-    border-color: #ecedee;
+    border-color: #d1d4db;
 }
 .dijitTab .tabLabel {
     line-height: 37px;
@@ -4680,16 +4680,16 @@ body {
 }
 .dijitTabChecked,
 .dijitTabChecked.dijitTabCheckedHover {
-    background-color: #fff;
+    background-color: #ffffff;
     border-width: 5px 1px 0 0;
     border-style: solid;
-    border-color: #426bf0 #ecedee transparent #ecedee;
+    border-color: #426bf0 #d1d4db transparent #d1d4db;
     height: 43px;
 }
 .dijitTabCloseIcon {
     width: 13px;
     height: 13px;
-    background-color: #ecedee;
+    background-color: #d1d4db;
     position: absolute;
     right: 0;
     top: 0;
@@ -4714,17 +4714,17 @@ body {
     transform: rotate(-45deg);
 }
 .dijitTabHover {
-    background-color: #fff;
+    background-color: #ffffff;
     color: #14151a;
 }
 .dijitTabDisabled {
-    background-color: #fff;
-    color: #c5c5c5;
+    background-color: #ffffff;
+    color: #afb3c0;
 }
 .dijitTab.tabStripButton {
     height: 42px !important;
     width: 42px;
-    background-color: #fff;
+    background-color: #ffffff;
 }
 .dijitTab.tabStripButton .dijitTabStripSlideLeftIcon:before {
     left: 50%;
@@ -4766,7 +4766,7 @@ body {
     width: 0;
 }
 .dijitTab.tabStripButtonHover {
-    background-color: #fff;
+    background-color: #ffffff;
 }
 .dijitTab.tabStripButtonHover .dijitTabStripSlideLeftIcon:before {
     border-right-color: #14151a;
@@ -4790,17 +4790,17 @@ body {
     border-top-color: #426bf0;
 }
 .dijitTab.tabStripButtonDisabled {
-    background-color: #fff;
-    color: #c5c5c5;
+    background-color: #ffffff;
+    color: #afb3c0;
 }
 .dijitTab.tabStripButtonDisabled .dijitTabStripSlideLeftIcon:before {
-    border-right-color: #c5c5c5;
+    border-right-color: #afb3c0;
 }
 .dijitTab.tabStripButtonDisabled .dijitTabStripSlideRightIcon:before {
-    border-left-color: #c5c5c5;
+    border-left-color: #afb3c0;
 }
 .dijitTab.tabStripButtonDisabled .dijitTabStripMenuIcon:before {
-    border-top-color: #c5c5c5;
+    border-top-color: #afb3c0;
 }
 .dijitTabContainerBottom-container,
 .dijitTabContainerTop-container,
@@ -4829,7 +4829,7 @@ body {
     box-sizing: 'content-box';
     border-width: 0 0 1px;
     border-style: solid;
-    border-color: #ecedee;
+    border-color: #d1d4db;
     height: 42px !important;
     overflow: visible;
 }
@@ -4846,7 +4846,7 @@ body {
 }
 .dijitTabContainerNested .dijitTab.dijitTabChecked {
     height: 44px;
-    border-bottom: solid 1px #5b5b5b;
+    border-bottom: solid 1px #515667;
 }
 .dijitTabContainerNested .dijitTabContainerTop-container {
     border: none;
@@ -4857,8 +4857,8 @@ body {
     max-width: 300px;
 }
 .dijitTooltipContainer {
-    background: #fff;
-    border: solid 1px #8a8a8a;
+    background: #ffffff;
+    border: solid 1px #6c7389;
     color: inherit;
     font-size: inherit;
     padding: 8px;
@@ -4874,8 +4874,8 @@ body {
     left: 3px;
     transform: rotate(-45deg);
     background: #fff;
-    border-left: 1px solid #8a8a8a;
-    border-top: 1px solid #8a8a8a;
+    border-left: 1px solid #6c7389;
+    border-top: 1px solid #6c7389;
 }
 .dijitTooltipFocusNode {
     padding: 8px;
@@ -5014,7 +5014,7 @@ body {
     top: 50%;
     border-left: 5px solid transparent;
     border-right: 5px solid transparent;
-    border-bottom: 5px solid #fff;
+    border-bottom: 5px solid #ffffff;
     content: '';
     height: 0;
     width: 0;
@@ -5033,19 +5033,19 @@ body {
 .dijitCalendarDayLabelTemplate,
 .dijitCalendarDateTemplate {
     transition: background-color 0.1s;
-    background-color: #fff;
-    color: #5b5b5b;
+    background-color: #ffffff;
+    color: #515667;
     height: 36px;
     text-align: center;
     width: 36px;
 }
 .dijitCalendarDayLabelTemplate {
-    background-color: #fff;
+    background-color: #ffffff;
     color: #14151a;
     font-weight: bold;
 }
 .dijitCalendarHoveredDate {
-    background-color: #ecedee;
+    background-color: #d1d4db;
     color: #14151a;
 }
 .dijitCalendarIncrementControl {
@@ -5060,7 +5060,7 @@ body {
     top: 50%;
     border-top: 5px solid transparent;
     border-bottom: 5px solid transparent;
-    border-right: 5px solid #fff;
+    border-right: 5px solid #ffffff;
     content: '';
     height: 0;
     width: 0;
@@ -5073,14 +5073,14 @@ body {
     top: 50%;
     border-top: 5px solid transparent;
     border-bottom: 5px solid transparent;
-    border-left: 5px solid #fff;
+    border-left: 5px solid #ffffff;
     content: '';
     height: 0;
     width: 0;
 }
 .dijitCalendarMonthContainer {
-    background-color: #5b5b5b;
-    color: #fff;
+    background-color: #515667;
+    color: #ffffff;
     height: 36px;
 }
 .dijitCalendarMonthContainer .dijitCalendarMonthLabel,
@@ -5092,8 +5092,8 @@ body {
     border-radius: 0;
     background-color: transparent;
     height: 28px;
-    border: solid 1px #fff;
-    color: #fff;
+    border: solid 1px #ffffff;
+    color: #ffffff;
 }
 .dijitCalendarMonthContainer .dijitDropDownButton .dijitSpacer {
     height: 0;
@@ -5102,7 +5102,7 @@ body {
     width: 26px;
 }
 .dijitCalendarMonthContainer .dijitDropDownButton .dijitArrowButtonInner:before {
-    border-top-color: #fff;
+    border-top-color: #ffffff;
 }
 .dijitCalendarMonthContainer .dijitDropDownButton .dijitArrowButtonInner .dijitButtonText {
     height: 36px;
@@ -5116,20 +5116,20 @@ body {
     line-height: 36px;
 }
 .dijitCalendarMonthLabelHover {
-    background-color: #fafafa;
+    background-color: #f3f3f4;
 }
 .dijitCalendarMonthLabel:last-child {
     border-bottom: none;
 }
 .dijitCalendarPreviousMonth,
 .dijitCalendarNextMonth {
-    background-color: #fafafa;
-    color: #ecedee;
+    background-color: #f3f3f4;
+    color: #d1d4db;
 }
 .dijitCalendarPreviousMonth.dijitCalendarHoveredDate,
 .dijitCalendarNextMonth.dijitCalendarHoveredDate {
-    background-color: #fafafa;
-    color: #8a8a8a;
+    background-color: #f3f3f4;
+    color: #6c7389;
 }
 .dijitCalendarNextYear,
 .dijitCalendarPreviousYear {
@@ -5138,22 +5138,22 @@ body {
 .dijitCalendarSelectedDate .dijitCalendarDateLabel {
     border-radius: 2px;
     background-color: #426bf0;
-    color: #fff;
+    color: #ffffff;
     display: block;
     height: 36px;
     line-height: 36px;
     width: 36px;
 }
 .dijitCalendarSelectedYear {
-    color: #fff;
+    color: #ffffff;
     font-weight: bold;
 }
 .dijitCalendarCurrentDate {
-    background-color: #c5c5c5;
-    color: #fff;
+    background-color: #afb3c0;
+    color: #ffffff;
 }
 .dijitCalendarYearLabel {
-    background-color: #5b5b5b;
+    background-color: #515667;
     display: table;
     height: 36px;
     width: 100%;
@@ -5166,7 +5166,7 @@ body {
 
 .dijitMenu {
     box-shadow: 0 3px 6px rgba(0, 0, 0, 0.16), 0 3px 6px rgba(0, 0, 0, 0.23);
-    background-color: #fff;
+    background-color: #ffffff;
     border: none;
 }
 .dijitMenu .dijitMenuItem {
@@ -5177,12 +5177,12 @@ body {
     border-bottom: none;
 }
 .dijitMenu .dijitMenuItemHover {
-    background-color: #ecedee;
-    color: #5b5b5b;
+    background-color: #d1d4db;
+    color: #515667;
 }
 .dijitMenu .dijitMenuItemSelected {
-    background-color: #ecedee;
-    color: #5b5b5b;
+    background-color: #d1d4db;
+    color: #515667;
 }
 .dijitMenu .dijitMenuItem .dijitMenuItemIconCell {
     padding-left: 8px;
@@ -5200,7 +5200,7 @@ body {
 .dijitMenuSeparatorTop {
     height: auto;
     margin-top: 1px;
-    border-bottom: 1px solid #ecedee;
+    border-bottom: 1px solid #d1d4db;
 }
 
 .dijitComboBoxMenuPopup .dijitMenuItem {
@@ -5217,7 +5217,7 @@ body {
 }
 
 .dijitTimePicker {
-    background-color: #fff;
+    background-color: #ffffff;
     margin-top: 1px;
 }
 .dijitTimePickerItem {
@@ -5227,28 +5227,28 @@ body {
     border-bottom: none;
 }
 .dijitTimePickerItemHover {
-    background-color: #fafafa;
-    color: #5b5b5b;
+    background-color: #f3f3f4;
+    color: #515667;
 }
 .dijitTimePickerItemSelected .dijitTimePickerItemInner {
     background-color: #cb3927;
-    color: #fff;
+    color: #ffffff;
 }
 .dijitTimePickerItemInner {
     padding: 0;
 }
 .dijitTimePickerMarker {
     font-weight: bold;
-    background-color: #fafafa;
+    background-color: #f3f3f4;
 }
 
 .dijitProgressBar {
     border-radius: 2px;
-    background-color: #fff;
+    background-color: #ffffff;
     height: 30px;
 }
 .dijitProgressBarEmpty {
-    border: solid 1px #5b5b5b;
+    border: solid 1px #515667;
 }
 .dijitProgressBarFull {
     background: none;
@@ -5258,7 +5258,7 @@ body {
     line-height: 28px;
 }
 .dijitProgressBarTile {
-    background-color: #ecedee;
+    background-color: #d1d4db;
     height: 100%;
 }
 
@@ -5283,17 +5283,17 @@ body {
 .dijitInlineEditBoxDisplayModeHover {
     border-radius: 2px;
     border: solid 1px solid 1px #9747ff;
-    background: #fff;
+    background: #ffffff;
 }
 .dijitInlineEditBoxDisplayMode.dijitOffScreen {
     display: none;
 }
 
 .dojoxGrid {
-    background-color: #fff !important;
+    background-color: #ffffff !important;
 }
 .dojoxGrid .dojoxGridMasterHeader .dojoxGridHeader {
-    background-color: #fafafa;
+    background-color: #f3f3f4;
 }
 .dojoxGrid .dojoxGridMasterHeader .dojoxGridHeader .dojoxGridRowTable .dojoxGridCell {
     background: none;
@@ -5301,7 +5301,7 @@ body {
     font-weight: bold;
 }
 .dojoxGrid .dojoxGridMasterHeader .dojoxGridHeader .dojoxGridRowTable {
-    border-bottom: 1px solid #ecedee;
+    border-bottom: 1px solid #d1d4db;
 }
 .dojoxGrid .dojoxGridMasterHeader .dojoxGridHeader .dojoxGridArrowButtonChar {
     float: left;
@@ -5314,11 +5314,11 @@ body {
     border: 0px;
 }
 .dojoxGrid .dojoxGridMasterView .dojoxGridRow {
-    background-color: #fff;
-    border-bottom: 1px solid #ecedee;
+    background-color: #ffffff;
+    border-bottom: 1px solid #d1d4db;
 }
 .dojoxGrid .dojoxGridMasterView .dojoxGridRow.dojoxGridRowOdd {
-    background-color: #fafafa;
+    background-color: #f3f3f4;
 }
 .dojoxGrid .dojoxGridMasterView .dojoxGridRow.dojoxGridRowOver .dojoxGridCell {
     color: #14151a;
@@ -5333,7 +5333,7 @@ body {
     padding: 10px 8px;
 }
 .dojoxGrid .dojoxGridPaginator {
-    background-color: #ecedee;
+    background-color: #d1d4db;
     border: 0px;
 }
 .dojoxGrid .dojoxGridPaginator td {
@@ -5341,7 +5341,7 @@ body {
 }
 
 .dojoxUploaderFileList {
-    border: solid 1px #ecedee;
+    border: solid 1px #d1d4db;
 }
 
 .container {
@@ -6887,9 +6887,9 @@ acronym {
 }
 
 hr {
-    background-color: #ecedee;
+    background-color: #d1d4db;
     height: 1px;
-    color: #ecedee;
+    color: #d1d4db;
     border: 0;
     margin: 24px 0;
 }
@@ -6950,7 +6950,7 @@ hr {
 }
 
 select[multiple] {
-    border: solid 1px #c5c5c5;
+    border: solid 1px #afb3c0;
     min-height: 80px;
     width: 100%;
 }
@@ -6959,7 +6959,7 @@ select[multiple]:hover {
 }
 
 .fakeDojoButton {
-    background-color: #fff;
+    background-color: #ffffff;
     border: solid 1px #9747ff;
     color: #9747ff;
     box-shadow: 0;
@@ -6973,7 +6973,7 @@ select[multiple]:hover {
     text-transform: uppercase;
 }
 .fakeDojoButton:hover {
-    background-color: #fff;
+    background-color: #ffffff;
     border: solid 1px #426bf0;
     color: #426bf0;
     box-shadow: 0;
@@ -6985,11 +6985,11 @@ select[multiple]:hover {
 
 .fakeDojoButtonDanger {
     background-color: #cb3927;
-    color: #fff;
+    color: #ffffff;
 }
 .fakeDojoButtonDanger:hover {
     background-color: #a02d1f;
-    color: #fff;
+    color: #ffffff;
 }
 
 .dijitDropDownActionButton {
@@ -7001,7 +7001,7 @@ select[multiple]:hover {
 }
 .dijitDropDownActionButton .actionIcon,
 .dijitDropDownActionButton .fa-plus {
-    color: #fff;
+    color: #ffffff;
     line-height: 44px;
     margin: 0;
     font-size: 16px;
@@ -7020,11 +7020,11 @@ select[multiple]:hover {
     background-color: #819eee;
 }
 .dijitDropDownActionButton.dijitDropDownButtonDisabled {
-    background-color: #ecedee;
+    background-color: #d1d4db;
 }
 .dijitDropDownActionButton.dijitDropDownButtonDisabled .actionIcon,
 .dijitDropDownActionButton.dijitDropDownButtonDisabled .fa-plus {
-    color: #8a8a8a;
+    color: #6c7389;
 }
 .dijitButtonFlat {
     border: 0;
@@ -7033,12 +7033,12 @@ select[multiple]:hover {
     color: #426bf0;
 }
 .dijitButtonFlat.dijitButtonHover {
-    background-color: #ecedee;
+    background-color: #d1d4db;
 }
 .dijitButtonDanger {
     border: 0;
     background-color: #cb3927;
-    color: #fff;
+    color: #ffffff;
 }
 .dijitButtonDanger.dijitButtonHover {
     background-color: #a02d1f;
@@ -7046,7 +7046,7 @@ select[multiple]:hover {
 .dijitButtonAction {
     border: solid 1px transparent;
     background-color: #426bf0;
-    color: #fff;
+    color: #ffffff;
 }
 .dijitButtonAction.dijitButtonHover {
     background-color: #819eee;
@@ -7168,7 +7168,7 @@ select[multiple]:hover {
     top: 34px;
     width: 225px;
     font-size: 85%;
-    border: 1px solid #ecedee;
+    border: 1px solid #d1d4db;
     border-top: 0;
     background: #fff;
     z-index: 9998;
@@ -7198,8 +7198,8 @@ select[multiple]:hover {
 .account-flyout .login-out {
     background: #eee;
     margin: 15px 0 0 0;
-    border-top: 1px solid #ecedee;
-    border-bottom: 1px solid #ecedee;
+    border-top: 1px solid #d1d4db;
+    border-bottom: 1px solid #d1d4db;
 }
 
 .account-flyout .login-out table {
@@ -7318,7 +7318,7 @@ select[multiple]:hover {
 #listing-table,
 .listingTable,
 .dojoxUploaderFileListTable {
-    border-bottom: 1px solid #ecedee;
+    border-bottom: 1px solid #d1d4db;
     border-collapse: collapse;
     font-size: 13px;
     margin: 0 auto 16px auto;
@@ -7346,7 +7346,7 @@ select[multiple]:hover {
 .listingTable td,
 .dojoxUploaderFileListTable td {
     padding: 10px 8px;
-    border-bottom: 1px solid #ecedee;
+    border-bottom: 1px solid #d1d4db;
     vertical-align: middle;
 }
 #listing-table th:first-child,
@@ -7368,7 +7368,7 @@ select[multiple]:hover {
 #listing-table th,
 .listingTable th,
 .dojoxUploaderFileListTable th {
-    background-color: #fafafa;
+    background-color: #f3f3f4;
 }
 
 .listingTable table,
@@ -7395,7 +7395,7 @@ select[multiple]:hover {
 
 /* CONTENT TYPE TABLE */
 .sTypeTable {
-    border: 1px solid #ecedee;
+    border: 1px solid #d1d4db;
     border-collapse: collapse;
     margin: 0 auto;
 }
@@ -7405,15 +7405,15 @@ select[multiple]:hover {
     min-width: 225px;
     white-space: nowrap;
     padding: 0;
-    border: 1px solid #ecedee;
+    border: 1px solid #d1d4db;
 }
 
 .sTypeHeader {
     font-weight: bold;
     padding: 3px 10px;
-    background: #fafafa;
-    border-bottom: 1px solid #ecedee;
-    border-top: 1px solid #ecedee;
+    background: #f3f3f4;
+    border-bottom: 1px solid #d1d4db;
+    border-top: 1px solid #d1d4db;
 }
 .sTypeHeader:first-child {
     border-top: 0;
@@ -7433,7 +7433,7 @@ select[multiple]:hover {
 }
 
 .myVarTable {
-    border: 1px solid #ecedee;
+    border: 1px solid #d1d4db;
     border-collapse: collapse;
     width: 100%;
 }
@@ -8828,7 +8828,7 @@ div#_dotHelpMenu {
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     content: '\f054';
-    color: #c5c5c5;
+    color: #afb3c0;
     font-size: 9px;
     position: absolute;
     right: 5px;
@@ -9780,7 +9780,7 @@ div#_dotHelpMenu {
 
 .greyDotIcon {
     opacity: 1 !important;
-    color: #ecedee;
+    color: #d1d4db;
 }
 
 .archivedIcon {
@@ -9796,7 +9796,7 @@ div#_dotHelpMenu {
 }
 
 .hostStoppedIcon {
-    color: #c5c5c5;
+    color: #afb3c0;
 }
 
 .filter-tasks-frm {
@@ -9813,9 +9813,9 @@ Styles for commons fields along the backend
 */
 .glossaryTermPopup {
     border-radius: 2px;
-    background-color: #fafafa;
+    background-color: #f3f3f4;
     padding: 4px 8px;
-    border: solid 1px #ecedee;
+    border: solid 1px #d1d4db;
     position: absolute;
 }
 
@@ -9831,14 +9831,14 @@ Styles for commons fields along the backend
     height: 36px;
 }
 .fileAjaxUploader .fileAjaxUploaderForm {
-    border: solid 1px #c5c5c5;
+    border: solid 1px #afb3c0;
     width: 100%;
 }
 .fileAjaxUploader input[type='file']::-webkit-file-upload-button {
     background-color: #426bf0;
     height: 36px;
     border: 0;
-    color: #fff;
+    color: #ffffff;
     cursor: pointer;
     padding: 0 1rem;
 }
@@ -9868,18 +9868,18 @@ Styles for commons fields along the backend
 }
 
 .catPreview {
-    background-color: #fff;
+    background-color: #ffffff;
     border-radius: 2px;
-    border: solid 1px #c5c5c5;
+    border: solid 1px #afb3c0;
     margin-top: 8px;
     max-width: 1100px;
     min-height: 38px;
     padding: 4px;
 }
 .catPreview li {
-    background: #fafafa;
+    background: #f3f3f4;
     border-radius: 2px;
-    border: solid 1px #c5c5c5;
+    border: solid 1px #afb3c0;
     display: inline-block;
     font-size: 12px;
     margin: 2px 5px 2px 0px;
@@ -9900,9 +9900,9 @@ Styles for commons fields along the backend
 }
 
 .lineDividerTitle {
-    color: #8a8a8a;
+    color: #6c7389;
     font-size: 24px;
-    border-bottom: 1px solid #ecedee;
+    border-bottom: 1px solid #d1d4db;
     padding-bottom: 16px;
     margin: 48px 0 24px;
 }
@@ -9963,17 +9963,17 @@ Styles for commons fields along the backend
 }
 
 .tagsOptions {
-    background: #fff;
-    border: solid 1px #c5c5c5;
+    background: #ffffff;
+    border: solid 1px #afb3c0;
     min-width: 175px;
     padding-top: 7px;
     position: absolute;
     z-index: 1;
 }
 .tagsOptions:before {
-    background-color: #fff;
-    border-left: solid 1px #c5c5c5;
-    border-top: solid 1px #c5c5c5;
+    background-color: #ffffff;
+    border-left: solid 1px #afb3c0;
+    border-top: solid 1px #afb3c0;
     content: '';
     height: 10px;
     left: 5px;
@@ -9988,13 +9988,13 @@ Styles for commons fields along the backend
     opacity: 0.7;
 }
 .tagsOptions h3 {
-    background-color: #c5c5c5;
-    border-bottom: solid 1px #c5c5c5;
+    background-color: #afb3c0;
+    border-bottom: solid 1px #afb3c0;
     margin-bottom: 0;
     padding: 5px 10px;
 }
 .tagsOptions a {
-    border-bottom: solid 1px #c5c5c5;
+    border-bottom: solid 1px #afb3c0;
     cursor: pointer;
     display: block;
     padding: 5px 10px;
@@ -10002,21 +10002,21 @@ Styles for commons fields along the backend
     white-space: nowrap;
 }
 .tagsOptions a:hover {
-    background-color: #ecedee;
+    background-color: #d1d4db;
 }
 .tagsOptions a:last-child {
     border-bottom: none;
 }
 .tagsOptions .suggestedTagFocus {
-    background-color: #ecedee;
+    background-color: #d1d4db;
     box-shadow: none;
     outline: 0;
 }
 
 .tagLink {
-    background: #fafafa;
+    background: #f3f3f4;
     border-radius: 2px;
-    border: solid 1px #c5c5c5;
+    border: solid 1px #afb3c0;
     display: inline-block;
     font-size: 12px;
     margin: 2px 5px 2px 0px;
@@ -10036,7 +10036,7 @@ Styles for commons fields along the backend
     top: 2px;
 }
 .tagLink:after {
-    color: #8a8a8a;
+    color: #6c7389;
     content: '✕';
     font-size: 10px;
     line-height: 21px;
@@ -10355,7 +10355,7 @@ dd .buttonCaption {
 }
 
 .who-can-use {
-    border: solid 1px #c5c5c5;
+    border: solid 1px #afb3c0;
     height: 90px;
     margin-top: 8px;
     padding: 8px;
@@ -10378,8 +10378,8 @@ dd .buttonCaption {
     padding: 24px 16px 0 16px;
 }
 .portlet-sidebar-wrapper {
-    background-color: #fafafa;
-    border-right: solid 1px #ecedee;
+    background-color: #f3f3f4;
+    border-right: solid 1px #d1d4db;
 }
 .portlet-wrapper {
     height: 100%;
@@ -10448,9 +10448,9 @@ dd .buttonCaption {
 }
 
 .hintBox {
-    background-color: #fafafa;
+    background-color: #f3f3f4;
     border-radius: 2px;
-    border: solid 1px #c5c5c5;
+    border: solid 1px #afb3c0;
     padding: 16px;
     position: absolute;
     right: 16px;
@@ -10468,9 +10468,9 @@ dd .buttonCaption {
 }
 
 .callOutBox2 {
-    background-color: #ecedee;
+    background-color: #d1d4db;
     border-radius: 2px;
-    border: 1px solid #c5c5c5;
+    border: 1px solid #afb3c0;
     padding: 8px;
     text-align: center;
 }
@@ -10482,7 +10482,7 @@ dd .buttonCaption {
 }
 
 .calendar-events .portlet-sidebar .listingTable {
-    background-color: #fff;
+    background-color: #ffffff;
 }
 .calendar-events .portlet-toolbar__actions-primary,
 .calendar-events .portlet-toolbar__actions-secondary {
@@ -10500,7 +10500,7 @@ dd .buttonCaption {
 
 .calendar-events__list-items,
 .calendar-events__list-ongoing {
-    border: 1px solid #ecedee;
+    border: 1px solid #d1d4db;
 }
 
 .calendar-events__list-items {
@@ -10514,8 +10514,8 @@ dd .buttonCaption {
 }
 
 .calendar-events__recurence-box {
-    background-color: #fafafa;
-    border: solid 1px #ecedee;
+    background-color: #f3f3f4;
+    border: solid 1px #d1d4db;
     border-radius: 2px;
     display: inline-block;
     margin-top: 8px;
@@ -10539,9 +10539,9 @@ dd .buttonCaption {
 /* DAY VIEW STYLES */
 #dailyEvents h3,
 #ongoingEvents h3 {
-    background: #fafafa;
+    background: #f3f3f4;
     padding: 8px;
-    border-bottom: 1px solid #ecedee;
+    border-bottom: 1px solid #d1d4db;
     margin: 0;
 }
 #dailyEvents ul,
@@ -10557,7 +10557,7 @@ dd .buttonCaption {
 #ongoingEvents li {
     padding: 8px;
     margin: 0;
-    border-bottom: 1px solid #ecedee;
+    border-bottom: 1px solid #d1d4db;
 }
 #dailyEvents li [class$='Icon'],
 #dailyEvents li [class*='Icon'],
@@ -10574,12 +10574,12 @@ dd .buttonCaption {
     height: 100px;
     vertical-align: top;
     padding: 0;
-    border: 1px solid #ecedee;
+    border: 1px solid #d1d4db;
     border-collapse: collapse;
 }
 
 .emptyDay {
-    background-color: #fafafa;
+    background-color: #f3f3f4;
 }
 
 .selectedDay {
@@ -10729,7 +10729,7 @@ dd .buttonCaption {
     width: 400px;
     -moz-border-radius: 5px;
     -webkit-border-radius: 5px;
-    border: 1px solid #ecedee;
+    border: 1px solid #d1d4db;
 }
 
 #categoriesFilterBox,
@@ -10787,7 +10787,7 @@ dd .buttonCaption {
 
 #navMonthYearName {
     background-color: #426bf0;
-    color: #fff;
+    color: #ffffff;
     cursor: pointer;
     text-align: center;
 }
@@ -10808,8 +10808,8 @@ a.tag_higlighted {
 }
 
 .network-action {
-    background: #fff;
-    border: 1px solid #ecedee;
+    background: #ffffff;
+    border: 1px solid #d1d4db;
     bottom: 0;
     position: fixed;
     right: 0;
@@ -10823,7 +10823,7 @@ a.tag_higlighted {
 
 .network-action__title {
     background-color: #426bf0;
-    color: #fff;
+    color: #ffffff;
     margin: -16px -16px 16px;
     height: 39px;
     line-height: 39px;
@@ -10856,8 +10856,8 @@ a.tag_higlighted {
 }
 
 .network-action {
-    background: #fff;
-    border: 1px solid #ecedee;
+    background: #ffffff;
+    border: 1px solid #d1d4db;
     bottom: 0;
     position: fixed;
     right: 0;
@@ -10871,7 +10871,7 @@ a.tag_higlighted {
 
 .network-action__title {
     background-color: #426bf0;
-    color: #fff;
+    color: #ffffff;
     margin: -16px -16px 16px;
     height: 39px;
     line-height: 39px;
@@ -10904,7 +10904,7 @@ a.tag_higlighted {
 }
 
 .aceText {
-    border: 1px solid #c5c5c5;
+    border: 1px solid #afb3c0;
     max-width: 1100px;
     width: 100%;
     height: 100%;
@@ -10921,7 +10921,7 @@ a.tag_higlighted {
 }
 
 .widgetAceText {
-    border: 1px solid #c5c5c5;
+    border: 1px solid #afb3c0;
     max-height: 600px;
     min-height: 300px;
     max-width: 900px;
@@ -10955,8 +10955,8 @@ a.tag_higlighted {
 }
 
 .content-edit__sidebar {
-    background-color: #fafafa;
-    border-left: solid 1px #ecedee;
+    background-color: #f3f3f4;
+    border-left: solid 1px #d1d4db;
     height: 100%;
     padding: 16px;
     position: fixed;
@@ -10977,8 +10977,8 @@ a.tag_higlighted {
 }
 
 .content-edit-actions {
-    border: solid 1px #c5c5c5;
-    background-color: #fff;
+    border: solid 1px #afb3c0;
+    background-color: #ffffff;
     border-radius: 2px;
 }
 .content-edit-actions .content-edit-actions {
@@ -10999,7 +10999,7 @@ a.tag_higlighted {
     display: none;
 }
 .content-edit-actions a:hover {
-    background-color: #ecedee;
+    background-color: #d1d4db;
     color: #14151a;
 }
 .content-edit-actions a:last-of-type {
@@ -11022,11 +11022,11 @@ a.tag_higlighted {
     padding-right: 8px;
 }
 .content-edit-workflow table tr {
-    border-bottom: solid 1px #ecedee;
+    border-bottom: solid 1px #d1d4db;
 }
 
 .content-edit__dialog-error {
-    background: #fff;
+    background: #ffffff;
     padding: 0px;
     border: 0px;
     width: 300px;
@@ -11063,7 +11063,7 @@ a.tag_higlighted {
 
 .advanced-search-button {
     display: block;
-    background: #ecedee;
+    background: #d1d4db;
     padding: 8px;
     text-align: center;
     text-decoration: none;
@@ -11071,7 +11071,7 @@ a.tag_higlighted {
 }
 
 .contentlet-results {
-    color: #8a8a8a;
+    color: #6c7389;
 }
 
 .contentlet-selection {
@@ -11124,14 +11124,14 @@ a.tag_higlighted {
 .import-preview {
     margin: 50px auto;
     border: solid 1px #9747ff;
-    border-color: #ecedee;
+    border-color: #d1d4db;
     border-radius: 4px;
 }
 .import-preview .import-preview__heading {
-    background-color: #ecedee;
-    border-color: #ecedee;
+    background-color: #d1d4db;
+    border-color: #d1d4db;
     padding: 10px 16px;
-    border-bottom: 1px solid #ecedee;
+    border-bottom: 1px solid #d1d4db;
 }
 .import-preview .import-preview__body {
     padding: 16px;
@@ -11150,12 +11150,12 @@ a.tag_higlighted {
 }
 .content-type__fields-list-header,
 .content-type__fields-list-row {
-    border-bottom: 1px solid #ecedee;
+    border-bottom: 1px solid #d1d4db;
     display: flex;
     justify-content: space-between;
 }
 .content-type__fields-list-header {
-    background: #fafafa;
+    background: #f3f3f4;
     font-weight: bold;
     width: 100%;
 }
@@ -11233,7 +11233,7 @@ a.tag_higlighted {
 }
 
 .log-files__iframe {
-    border: 1px solid #c5c5c5;
+    border: 1px solid #afb3c0;
     overflow: auto;
     height: 100%;
     width: 100%;
@@ -11279,9 +11279,9 @@ a.tag_higlighted {
 }
 
 .view-roles__heading {
-    background-color: #fafafa;
+    background-color: #f3f3f4;
     border-radius: 2px;
-    border: solid 1px #ecedee;
+    border: solid 1px #d1d4db;
     display: flex;
     justify-content: space-between;
     margin-bottom: 32px;
@@ -11308,7 +11308,7 @@ a.tag_higlighted {
 }
 
 .view-roles__portlets-list {
-    border: solid 1px #ecedee;
+    border: solid 1px #d1d4db;
     border-radius: 2px;
     margin: 0 0 8px;
     height: 175px;
@@ -11322,7 +11322,7 @@ a.tag_higlighted {
     display: flex;
     justify-content: space-between;
     padding: 8px;
-    border-bottom: solid 1px #ecedee;
+    border-bottom: solid 1px #d1d4db;
     align-items: center;
 }
 
@@ -11389,7 +11389,7 @@ a.tag_higlighted {
     text-align: center;
 }
 .view-users__additional-info .view-user__form {
-    border-bottom: solid 1px #ecedee;
+    border-bottom: solid 1px #d1d4db;
     margin-bottom: 24px;
     padding-bottom: 24px;
 }
@@ -11418,7 +11418,7 @@ a.tag_higlighted {
 
 .view-users__roles-container-item {
     border-radius: 2px;
-    border: solid 1px #c5c5c5;
+    border: solid 1px #afb3c0;
     height: 300px;
     overflow: auto;
 }
@@ -11443,10 +11443,10 @@ a.tag_higlighted {
 }
 
 .view-users .view-users__users-list .dojoxGridRow:nth-child(even) {
-    background-color: #ecedee;
+    background-color: #d1d4db;
 }
 .view-users .view-users__users-list .dojoxGridHeader {
-    background-color: #ecedee;
+    background-color: #d1d4db;
 }
 .view-users .view-users__users-list .dojoxGridRow .dojoxGridRowTable .dojoxGridCell,
 .view-users .view-users__users-list .dojoxGridHeader .dojoxGridRowTable .dojoxGridCell {
@@ -11504,25 +11504,25 @@ a.tag_higlighted {
 }
 
 .view-actions__permissions {
-    border-left: 1px solid #ecedee;
+    border-left: 1px solid #d1d4db;
     position: relative;
     padding-left: 24px;
 }
 
 .view-actions__sub-actions {
-    border-left: 1px solid #ecedee;
+    border-left: 1px solid #d1d4db;
 }
 .view-actions__sub-actions .listingTable {
     width: 100%;
     margin: 32px 0;
 }
 .view-actions__sub-actions tr:first-child td {
-    border-top: 1px solid #ecedee;
+    border-top: 1px solid #d1d4db;
 }
 
 .view-actions__permissions h3,
 .view-actions__sub-actions h3 {
-    background-color: #ecedee;
+    background-color: #d1d4db;
     line-height: 40px;
     padding-left: 16px;
     margin-bottom: 32px;
@@ -11534,7 +11534,7 @@ a.tag_higlighted {
 }
 
 .view-actions__workflow-actions {
-    border-left: 1px solid #ecedee;
+    border-left: 1px solid #d1d4db;
     height: 100%;
 }
 
@@ -11543,8 +11543,8 @@ a.tag_higlighted {
     font-size: 16px;
     left: -7px;
     top: 10px;
-    background: #fff;
-    color: #c5c5c5;
+    background: #ffffff;
+    color: #afb3c0;
 }
 
 @media only screen and (max-width: 768px) {
@@ -11598,17 +11598,17 @@ a.tag_higlighted {
 .context-menu {
     box-shadow: 0 3px 6px rgba(0, 0, 0, 0.16), 0 3px 6px rgba(0, 0, 0, 0.23);
     position: absolute;
-    background: #fff;
-    border: 1px solid #ecedee;
+    background: #ffffff;
+    border: 1px solid #d1d4db;
     min-width: 200px;
 }
 .context-menu .pop_divider {
-    border-bottom: 1px solid #ecedee;
-    background-color: #fff;
+    border-bottom: 1px solid #d1d4db;
+    background-color: #ffffff;
 }
 
 .context-menu__item {
-    color: #5b5b5b;
+    color: #515667;
     cursor: pointer;
     display: block;
     font-size: 13px;
@@ -11619,7 +11619,7 @@ a.tag_higlighted {
     text-decoration: none;
 }
 .context-menu__item:hover {
-    background-color: #fafafa;
+    background-color: #f3f3f4;
 }
 .context-menu__item [class$='Icon'],
 .context-menu__item [class*='Icon'] {
@@ -11732,7 +11732,7 @@ a.tag_higlighted {
 }
 
 .file-selector-tree__toolbar {
-    background-color: #ecedee;
+    background-color: #d1d4db;
     margin: 0;
     padding: 16px;
 }
@@ -11818,7 +11818,7 @@ a.tag_higlighted {
     color: #426bf0;
 }
 .host-list__item .hostStoppedIcon + a {
-    color: #c5c5c5;
+    color: #afb3c0;
 }
 
 .permission__host-selector {
@@ -11868,9 +11868,9 @@ a.tag_higlighted {
 }
 
 .permissions__bar-user-role {
-    background-color: #fafafa;
+    background-color: #f3f3f4;
     border-radius: 2px;
-    border: solid 1px #ecedee;
+    border: solid 1px #d1d4db;
     display: flex;
     justify-content: space-between;
     margin-bottom: 16px;
@@ -12004,7 +12004,7 @@ a.tag_higlighted {
 }
 .related-content-form .portlet-toolbar {
     background-color: white;
-    border-bottom: 1px solid #ecedee;
+    border-bottom: 1px solid #d1d4db;
     margin: 0;
     padding: 24px 16px 16px;
     position: sticky;
@@ -12023,17 +12023,17 @@ a.tag_higlighted {
 .context-menu {
     box-shadow: 0 3px 6px rgba(0, 0, 0, 0.16), 0 3px 6px rgba(0, 0, 0, 0.23);
     position: absolute;
-    background: #fff;
-    border: 1px solid #ecedee;
+    background: #ffffff;
+    border: 1px solid #d1d4db;
     min-width: 200px;
 }
 .context-menu .pop_divider {
-    border-bottom: 1px solid #ecedee;
-    background-color: #fff;
+    border-bottom: 1px solid #d1d4db;
+    background-color: #ffffff;
 }
 
 .context-menu__item {
-    color: #5b5b5b;
+    color: #515667;
     cursor: pointer;
     display: block;
     font-size: 13px;
@@ -12044,7 +12044,7 @@ a.tag_higlighted {
     text-decoration: none;
 }
 .context-menu__item:hover {
-    background-color: #fafafa;
+    background-color: #f3f3f4;
 }
 .context-menu__item [class$='Icon'],
 .context-menu__item [class*='Icon'] {
@@ -12062,7 +12062,7 @@ a.tag_higlighted {
     font-weight: bold;
 }
 .history .history__divider {
-    background-color: #ecedee;
+    background-color: #d1d4db;
     margin: 24px 0;
 }
 .history .history__status {
@@ -12280,7 +12280,7 @@ a.tag_higlighted {
 }
 
 .thumbnailDiv {
-    border: solid 2px #ecedee;
+    border: solid 2px #d1d4db;
     box-sizing: content-box;
     cursor: pointer;
     min-height: 120px;
@@ -12289,7 +12289,7 @@ a.tag_higlighted {
     position: relative;
 }
 .thumbnailDivHover {
-    border: solid 2px #c5c5c5;
+    border: solid 2px #afb3c0;
     box-sizing: content-box;
     padding: 16px;
     position: relative;
@@ -12301,7 +12301,7 @@ a.tag_higlighted {
 .editImageText {
     background: white;
     border-radius: 2px;
-    border: 1px solid #8a8a8a;
+    border: 1px solid #6c7389;
     bottom: 8px;
     cursor: pointer;
     opacity: 0.5;
@@ -12363,7 +12363,7 @@ Resize Handle
 }
 
 .dijitMenuItemSeparator {
-    border-bottom: solid 1px #eeeeee;
+    border-bottom: solid 1px #ebecef;
     margin: 0 -8px;
     padding: 0 8px;
 }

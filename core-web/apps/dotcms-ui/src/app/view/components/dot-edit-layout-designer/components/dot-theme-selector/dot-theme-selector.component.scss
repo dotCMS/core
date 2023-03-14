@@ -78,7 +78,7 @@ $theme-item-dimension: 240px;
 
 .dot-theme-item {
     align-items: center;
-    background: $gray-bg;
+    background: $color-palette-gray-200;
     border-radius: 4px;
     cursor: pointer;
     display: flex;
@@ -90,7 +90,7 @@ $theme-item-dimension: 240px;
     width: $theme-item-dimension;
 
     svg {
-        fill: $gray;
+        fill: $color-palette-gray-700;
         border-radius: 6px;
     }
 

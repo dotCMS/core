@@ -1,7 +1,7 @@
 @use "variables" as *;
 
 dot-material-icon-picker {
-    border: solid 1px $gray-light;
+    border: solid 1px $color-palette-gray-500;
     border-radius: $border-radius;
     transition: border-color $basic-speed ease-in;
 

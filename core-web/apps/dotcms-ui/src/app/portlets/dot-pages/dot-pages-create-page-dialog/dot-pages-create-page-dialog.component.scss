@@ -17,7 +17,7 @@
 }
 
 .dot-pages-create-page-dialog__page-types-container {
-    border: 1px solid $gray-lighter;
+    border: 1px solid $color-palette-gray-300;
     border-radius: $border-radius-md;
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
@@ -31,7 +31,7 @@
     }
 
     .dot-pages-create-page-dialog__page-item {
-        border-left: 1px solid $gray-lighter;
+        border-left: 1px solid $color-palette-gray-300;
         cursor: pointer;
         display: flex;
         padding: $spacing-3;

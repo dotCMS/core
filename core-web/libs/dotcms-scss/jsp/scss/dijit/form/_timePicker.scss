@@ -2,13 +2,13 @@
     &TimePicker {
         .dijitDownArrowButton,
         .dijitUpArrowButton {
-            background-color: $gray-ligthest;
+            background-color: $color-palette-gray-200;
             padding: calc($basic-padding / 2);
         }
 
         .dijitDownArrowHover,
         .dijitUpArrowHover {
-            background-color: $gray-ligther;
+            background-color: $color-palette-gray-400;
         }
     }
 }

@@ -106,13 +106,13 @@
 }
 
 .p-button-rounded.p-button.p-button-icon-only {
-    color: $gray-dark;
+    color: $color-palette-gray-800;
     padding: 0.571rem;
     min-width: auto;
 
     &:enabled {
         &:hover {
-            color: $gray-dark;
+            color: $color-palette-gray-800;
         }
     }
 
@@ -376,8 +376,8 @@
 
 .p-button:disabled.p-button-outlined {
     background-color: transparent !important;
-    border-color: $gray-light;
-    color: $gray-light;
+    border-color: $color-palette-gray-500;
+    color: $color-palette-gray-500;
 }
 
 .p-button.p-button-raised:enabled:focus {

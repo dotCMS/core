@@ -34,12 +34,6 @@ $dark: #1b3359;
 $orange: #f3762a;
 $red: #c93926;
 $green: #29c175;
-$gray-dark: #524e5c;
-$gray: #7e7a86;
-$gray-light: #b3b1b8;
-$gray-lighter: #e2e2e2;
-$gray-bg: #f1f3f4;
-$gray-hover: #eee;
 $deleted-content-color: #fdb8c0;
 $new-content-color: #ddffdd;
 $tr-hover-color: #e0e9f6;
@@ -52,10 +46,10 @@ $brand-background: var(--color-background);
 $input-border-color-hover: $color-palette-primary;
 $input-inset-shadow: inset 0 0 0 1px $color-palette-primary, inset 0 0 0 1px $color-palette-primary,
     inset 0 0 0 1px $color-palette-primary, inset 0 0 0 1px $color-palette-primary;
-$input-border-color: $gray-light;
-$input-border-color-focus: $gray-light;
-$input-bg-color: $gray-light;
-$input-bg-color-hover: $gray-light;
+$input-border-color: $color-palette-gray-500;
+$input-border-color-focus: $color-palette-gray-500;
+$input-bg-color: $color-palette-gray-500;
+$input-bg-color-hover: $color-palette-gray-500;
 
 $bg-highlight: rgba($color-palette-secondary, 0.12);
 $text-color-highlight: $color-palette-primary;
@@ -68,13 +62,13 @@ $bg-hover: rgba($color-palette-secondary, 0.12);
 $text-color-hover: $black;
 $border-color-hover: $color-palette-primary;
 
-$button-text-color-disabled: $gray-light;
-$button-text-color: $gray-light;
+$button-text-color-disabled: $color-palette-gray-500;
+$button-text-color: $color-palette-gray-500;
 $button-shadow-focus: 0 0 0 4px rgba(var(--color-sec_rgb), 0.2);
 
 // Tables
-$th-text-color: $gray-light;
-$table-border-color: $gray-light;
+$th-text-color: $color-palette-gray-500;
+$table-border-color: $color-palette-gray-500;
 
 // Spacing
 $spacing-0: 0;
@@ -172,7 +166,7 @@ $md-shadow-4: 0 2px 4px 0 rgba(0, 0, 0, 0.1);
 $md-shadow-5: 0 10px 20px 0 rgba(0, 0, 0, 0.15);
 
 // FORMS
-$label-color: rgba($gray-dark, 0.6);
+$label-color: rgba($color-palette-gray-800, 0.6);
 $label-font-size: $font-size-small;
 $form-field-spacing: $spacing-3;
 $form-width: 400px;

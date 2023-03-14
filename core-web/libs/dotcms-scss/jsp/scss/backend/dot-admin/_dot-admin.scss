@@ -98,7 +98,7 @@
     top: 34px;
     width: 225px;
     font-size: 85%;
-    border: 1px solid $gray-ligther;
+    border: 1px solid $color-palette-gray-400;
     border-top: 0;
     background: #fff;
     z-index: 9998;
@@ -124,8 +124,8 @@
 .account-flyout .login-out {
     background: #eee;
     margin: 15px 0 0 0;
-    border-top: 1px solid $gray-ligther;
-    border-bottom: 1px solid $gray-ligther;
+    border-top: 1px solid $color-palette-gray-400;
+    border-bottom: 1px solid $color-palette-gray-400;
 }
 .account-flyout .login-out table {
     width: 100%;
@@ -234,7 +234,7 @@
 }
 
 /* TABLE STYLES 2.0 */
-$table-border: 1px solid $gray-ligther;
+$table-border: 1px solid $color-palette-gray-400;
 
 #listing-table {
     border-bottom: $table-border;
@@ -259,7 +259,7 @@ $table-border: 1px solid $gray-ligther;
         // }
 
         // &:not(.trIdxActive, .trIdxNothing):nth-child(even) {
-        //   background-color: $gray-ligthest;
+        //   background-color: $color-palette-gray-200;
         // }
     }
 
@@ -279,7 +279,7 @@ $table-border: 1px solid $gray-ligther;
     }
 
     th {
-        background-color: $gray-ligthest;
+        background-color: $color-palette-gray-200;
     }
 }
 
@@ -326,7 +326,7 @@ $table-border: 1px solid $gray-ligther;
 /* CONTENT TYPE TABLE */
 
 .sTypeTable {
-    border: 1px solid $gray-ligther;
+    border: 1px solid $color-palette-gray-400;
     border-collapse: collapse;
     margin: 0 auto;
 }
@@ -335,14 +335,14 @@ $table-border: 1px solid $gray-ligther;
     min-width: 225px;
     white-space: nowrap;
     padding: 0;
-    border: 1px solid $gray-ligther;
+    border: 1px solid $color-palette-gray-400;
 }
 .sTypeHeader {
     font-weight: bold;
     padding: 3px 10px;
-    background: $gray-ligthest;
-    border-bottom: 1px solid $gray-ligther;
-    border-top: 1px solid $gray-ligther;
+    background: $color-palette-gray-200;
+    border-bottom: 1px solid $color-palette-gray-400;
+    border-top: 1px solid $color-palette-gray-400;
 
     &:first-child {
         border-top: 0;
@@ -362,7 +362,7 @@ $table-border: 1px solid $gray-ligther;
     border: 0px;
 }
 .myVarTable {
-    border: 1px solid $gray-ligther;
+    border: 1px solid $color-palette-gray-400;
     border-collapse: collapse;
     width: 100%;
 }

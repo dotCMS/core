@@ -6,10 +6,10 @@
     background-color: $white;
     color: $black;
     font-size: $font-size-x-large;
-    border-bottom: 1px solid $gray-lighter;
+    border-bottom: 1px solid $color-palette-gray-300;
 
     a {
-        color: $gray;
+        color: $color-palette-gray-700;
         font-weight: $font-weight-regular-bold;
 
         i {

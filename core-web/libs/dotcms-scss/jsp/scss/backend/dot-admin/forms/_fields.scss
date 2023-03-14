@@ -8,9 +8,9 @@ Styles for commons fields along the backend
 
 .glossaryTermPopup {
     border-radius: $border-radius;
-    background-color: $gray-ligthest;
+    background-color: $color-palette-gray-200;
     padding: (calc($field-padding / 2)) $field-padding;
-    border: solid 1px $gray-ligther;
+    border: solid 1px $color-palette-gray-400;
     position: absolute;
 }
 
@@ -28,7 +28,7 @@ Styles for commons fields along the backend
     height: 36px;
 
     .fileAjaxUploaderForm {
-        border: solid 1px $gray-ligth;
+        border: solid 1px $color-palette-gray-500;
         width: 100%;
     }
 
@@ -78,14 +78,14 @@ Styles for commons fields along the backend
 .catPreview {
     background-color: $white;
     border-radius: $border-radius;
-    border: solid 1px $gray-ligth;
+    border: solid 1px $color-palette-gray-500;
     margin-top: $basic-padding;
     max-width: $content-edit-field-max-width;
     min-height: 38px;
     padding: calc($basic-padding / 2);
 
     li {
-        background: $gray-ligthest;
+        background: $color-palette-gray-200;
         border-radius: $border-radius;
         border: $field-normal-border;
         display: inline-block;
@@ -120,9 +120,9 @@ Styles for commons fields along the backend
 // LINE DIVIDER
 
 .lineDividerTitle {
-    color: $gray;
+    color: $color-palette-gray-700;
     font-size: $font-size-x-large;
-    border-bottom: 1px solid $gray-ligther;
+    border-bottom: 1px solid $color-palette-gray-400;
     padding-bottom: $basic-padding * 2;
     margin: $basic-padding * 6 0 $basic-padding * 3;
 }
@@ -228,7 +228,7 @@ $key-val-width: 500px;
     }
 
     h3 {
-        background-color: $gray-ligth;
+        background-color: $color-palette-gray-500;
         border-bottom: $field-normal-border;
         margin-bottom: 0;
         padding: 5px 10px;
@@ -243,7 +243,7 @@ $key-val-width: 500px;
         white-space: nowrap;
 
         &:hover {
-            background-color: $gray-ligther;
+            background-color: $color-palette-gray-400;
         }
 
         &:last-child {
@@ -251,14 +251,14 @@ $key-val-width: 500px;
         }
     }
     .suggestedTagFocus {
-        background-color: $gray-ligther;
+        background-color: $color-palette-gray-400;
         box-shadow: none;
         outline: 0;
     }
 }
 
 .tagLink {
-    background: $gray-ligthest;
+    background: $color-palette-gray-200;
     border-radius: $border-radius;
     border: $field-normal-border;
     display: inline-block;
@@ -283,7 +283,7 @@ $key-val-width: 500px;
     }
 
     &:after {
-        color: $gray;
+        color: $color-palette-gray-700;
         content: "\2715";
         font-size: 10px;
         line-height: 21px;

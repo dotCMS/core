@@ -108,7 +108,7 @@ $dropdown-size: $field-height - 10;
         line-height: $calendar-item-size;
 
         &Hover {
-            background-color: $gray-ligthest;
+            background-color: $color-palette-gray-200;
         }
 
         &:last-child {

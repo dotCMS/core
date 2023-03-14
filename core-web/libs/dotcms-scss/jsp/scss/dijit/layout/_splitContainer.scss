@@ -1,26 +1,26 @@
 .dijit {
     &Splitter {
-        background: rgba($gray-ligthest, 0.25);
+        background: rgba($color-palette-gray-200, 0.25);
 
         &Hover {
-            background: rgba($gray-ligthest, 0.5);
+            background: rgba($color-palette-gray-200, 0.5);
 
             .dijitSplitterThumb {
-                background: $gray;
+                background: $color-palette-gray-700;
             }
         }
 
         &Active {
-            background-color: rgba($gray, 0.2);
+            background-color: rgba($color-palette-gray-700, 0.2);
 
             .dijitSplitterThumb {
-                background: $gray;
+                background: $color-palette-gray-700;
             }
         }
     }
 
     &SplitterThumb {
-        background-color: $gray-ligther;
+        background-color: $color-palette-gray-400;
     }
 
     &SplitterV {
