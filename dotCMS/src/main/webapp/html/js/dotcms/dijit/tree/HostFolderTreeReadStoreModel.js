@@ -115,6 +115,10 @@ dojo.declare("dotcms.dijit.tree.HostFolderTreeReadStoreModel", null, {
 		}
 	},
 
+	getFullPath: function(/*dojo.data.Item*/ item){
+		return item.fullPath
+	},
+
 	newItem: function(/* dojo.dnd.Item */ args, /*Item*/ parent, /*int?*/ insertIndex){
 		throw "Unsupported operation this a read only store";
 	},
