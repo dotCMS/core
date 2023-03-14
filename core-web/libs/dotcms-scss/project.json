@@ -10,7 +10,7 @@
             "options": {
                 "commands": [
                     "npx http-server -p 3333 ./libs/dotcms-scss/jsp -P https://demo.dotcms.com --proxy-options.changeOrigin true",
-                    "sass libs/dotcms-scss/jsp/scss/:libs/dotcms-scss/jsp/css libs/dotcms-scss/shared/:libs/dotcms-scss/shared/css --watch",
+                    "sass libs/dotcms-scss/jsp/scss/:libs/dotcms-scss/jsp/css --watch",
                     "open http://localhost:3333"
                 ]
             }
