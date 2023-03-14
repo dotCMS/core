@@ -75,7 +75,6 @@ $blue-link: #1d4ed8;
 
 $white_rgb: var(--color-white_rgb);
 
-$brand-secondary_rgb: var(--color-sec_rgb);
 $brand-background: var(--color-background);
 
 $input-border-color-hover: $color-palette-primary;
@@ -86,14 +85,14 @@ $input-border-color-focus: $gray-light;
 $input-bg-color: $gray-light;
 $input-bg-color-hover: $gray-light;
 
-$bg-highlight: rgba($brand-secondary_rgb, 0.12);
+$bg-highlight: rgba($color-palette-secondary, 0.12);
 $text-color-highlight: $color-palette-primary;
-$border-color-highlight: rgba($brand-secondary_rgb, 0.12);
+$border-color-highlight: rgba($color-palette-secondary, 0.12);
 
-$focus-bg: rgba($brand-secondary_rgb, 0.12);
+$focus-bg: rgba($color-palette-secondary, 0.12);
 $focus-text-color: $black;
 
-$bg-hover: rgba($brand-secondary_rgb, 0.12);
+$bg-hover: rgba($color-palette-secondary, 0.12);
 $text-color-hover: $black;
 $border-color-hover: $color-palette-primary;
 

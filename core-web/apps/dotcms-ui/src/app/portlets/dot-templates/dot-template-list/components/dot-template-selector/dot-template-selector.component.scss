@@ -51,6 +51,6 @@ input[type="radio"] {
     &:checked + .item {
         border-color: $color-palette-primary;
         color: $color-palette-primary;
-        background-color: rgba($brand-secondary_rgb, 0.1);
+        background-color: rgba($color-palette-secondary, 0.1);
     }
 }

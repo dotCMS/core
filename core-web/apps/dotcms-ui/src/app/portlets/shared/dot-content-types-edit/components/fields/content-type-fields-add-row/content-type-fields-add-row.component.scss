@@ -65,7 +65,7 @@ $row-height: 70px;
     }
 
     &.active {
-        background-color: rgba($brand-secondary_rgb, 0.25);
+        background-color: rgba($color-palette-secondary, 0.25);
 
         .dot-add-rows-columns-list__item-col {
             background-color: $gray-bg;
