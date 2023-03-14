@@ -1,5 +1,3 @@
-@use "../../shared/colors" as *;
-
 // COLORS
 $orange: #f3762a;
 $error: #d0021b;
@@ -18,7 +16,6 @@ $font-size-large: 18px;
 $font-size-medium: 13px;
 $font-size-small: 12px;
 
-$body-size: $font-size-medium;
 $body-text: "Roboto", "Helvetica Neue", Helvetica, Arial, "Lucida Grande", sans-serif;
 $text-color: $black;
 
@@ -128,6 +125,7 @@ $dropdownbutton-active-border: $button-active-border;
 $dropdownbutton-active-arrow-bgcolor: transparent;
 $dropdownbutton-active-arrow-url: false;
 $dropdownbutton-active-arrow-color: $white;
+$dropdownbutton-active-shadow: $button-hover-shadow;
 
 $dropdownbutton-focused-bgcolor: $button-focused-bgcolor;
 $dropdownbutton-focused-textcolor: $button-focused-textcolor;
