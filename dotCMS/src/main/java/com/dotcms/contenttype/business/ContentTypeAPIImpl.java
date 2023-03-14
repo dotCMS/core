@@ -16,7 +16,6 @@ import com.dotcms.system.event.local.business.LocalSystemEventsAPI;
 import com.dotcms.util.DotPreconditions;
 import com.dotcms.util.LowerKeyMap;
 import com.dotmarketing.business.*;
-import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -91,8 +90,6 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
   public void delete(ContentType type) throws DotSecurityException, DotDataException {
     perms.checkPermission(type, PermissionLevel.EDIT_PERMISSIONS, user);
     final ContentType copy = prepAsyncDelete(type);
-    int count =  new DotConnect().setSQL("select count(*) as x from contentlet c, structure s where c.structure_inode = s.inode and s.inode = ? ").addParam(copy.inode()).getInt("x");
-    System.out.println(count);
     ContentTypeDeleteJob.triggerContentTypeDeletion(copy);
   }
 
