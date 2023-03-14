@@ -339,6 +339,51 @@ describe('SearchableDropdownComponent', () => {
         hostFixture.detectChanges();
         expect(hostComp.placeholder).toEqual(comp.valueString);
     });
+
+    describe('star class', () => {
+        it('should add the star css class when item has default property set to true', () => {
+            hostComp.data = [
+                {
+                    id: 1,
+                    label: `label`,
+                    name: `label`,
+                    parentPermissionable: {
+                        hostname: 'demo.dotcms.com'
+                    },
+                    default: true
+                }
+            ];
+
+            hostFixture.detectChanges();
+
+            const item = de.query(
+                By.css('p-dataview .p-dataview-content .searchable-dropdown__data-list-item')
+            );
+
+            expect(item.classes['star']).toBeTruthy();
+        });
+        it('should not add css star class when item default property is set to false', () => {
+            hostComp.data = [
+                {
+                    id: 1,
+                    label: `label`,
+                    name: `label`,
+                    parentPermissionable: {
+                        hostname: 'demo.dotcms.com'
+                    },
+                    default: false
+                }
+            ];
+
+            hostFixture.detectChanges();
+
+            const item = de.query(
+                By.css('p-dataview .p-dataview-content .searchable-dropdown__data-list-item')
+            );
+
+            expect(item.classes['star']).toBeFalsy();
+        });
+    });
 });
 
 @Component({

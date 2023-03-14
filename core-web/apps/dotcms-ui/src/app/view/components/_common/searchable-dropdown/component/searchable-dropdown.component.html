@@ -2,7 +2,7 @@
     <span
         class="searchable-dropdown__data-list-item"
         [class.selected]="item[labelPropertyName] === valueString"
-        [class.highlight]="item.label === selectedOptionValue"
+        [class.star]="item.default"
         (click)="handleClick(item)"
         >{{ item.label }}</span
     >
