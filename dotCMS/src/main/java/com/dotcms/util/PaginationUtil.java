@@ -1,5 +1,6 @@
 package com.dotcms.util;
 
+import com.dotcms.rest.Pagination;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.util.pagination.OrderDirection;
 import com.dotcms.util.pagination.Paginator;
@@ -193,16 +194,8 @@ public class PaginationUtil {
 				new LinkHeader.Builder().baseUrl(req.getRequestURI()).filter(sanitizeFilter).page(pageValue)
 						.perPage(perPageValue).totalRecords(totalRecords).orderBy(orderBy).direction(direction)
 						.extraParams(extraParams).build();
-		final String linkHeaderValue = this.getHeaderValue(linkHeader);
 		final Object paginatedItems = null != function ? function.apply(items) : items;
-		return Response.
-				ok(new ResponseEntityView<>(paginatedItems))
-				.header(LINK_HEADER_NAME, linkHeaderValue)
-				.header(PAGINATION_PER_PAGE_HEADER_NAME, perPageValue)
-				.header(PAGINATION_CURRENT_PAGE_HEADER_NAME, pageValue)
-				.header(PAGINATION_MAX_LINK_PAGES_HEADER_NAME, nLinks)
-				.header(PAGINATION_TOTAL_ENTRIES_HEADER_NAME, totalRecords)
-				.build();
+		return this.createResponse(paginatedItems, linkHeader, pageValue, perPageValue, totalRecords);
 	}
 
 	/**
@@ -383,7 +376,49 @@ public class PaginationUtil {
 	}
 
 	/**
-	 * Contains the required information for generating the value of the {@code Link} header.
+	 * Creates an instance of the {@link Response} class including both the Entity -- i.e., the list of queried
+	 * objects -- and an additional attribute containing the pagination attributes for the UI layer to handle it. This
+	 * is meant to solve a problem in which certain proxies may remove the already existing pagination headers.
+	 *
+	 * @param paginatedItems The list of results that are being returned based on the specified pagination parameters.
+	 * @param linkHeader     The {@link LinkHeader} object with the information for generating the main navigation
+	 *                       links.
+	 * @param pageValue      The currently selected page.
+	 * @param perPageValue   The maximum number of items returned in a given page.
+	 * @param totalRecords   The total number of unfiltered items returned by the query.
+	 *
+	 * @return The expected {@link Response} object.
+	 */
+	private Response createResponse(final Object paginatedItems, final LinkHeader linkHeader, final int pageValue,
+									final int perPageValue, final long totalRecords) {
+		final String linkHeaderValue = this.getHeaderValue(linkHeader);
+		final Pagination pagination =
+				new Pagination.Builder()
+						.currentPage(pageValue)
+						.perPage(perPageValue)
+						.totalEntries(totalRecords).build();
+		return Response.ok(new ResponseEntityView<>(paginatedItems, pagination))
+					   .header(LINK_HEADER_NAME, linkHeaderValue)
+					   .header(PAGINATION_PER_PAGE_HEADER_NAME, perPageValue)
+					   .header(PAGINATION_CURRENT_PAGE_HEADER_NAME, pageValue)
+					   .header(PAGINATION_MAX_LINK_PAGES_HEADER_NAME, nLinks)
+					   .header(PAGINATION_TOTAL_ENTRIES_HEADER_NAME, totalRecords).build();
+	}
+
+	/**
+	 * Contains the required information for generating the value of the {@code Link} HTTP Header used by the UI layer.
+	 * There are three values that can be generated:
+	 * <ul>
+	 *     <li>The link to get the <b>first</b> results page.</li>
+	 *     <li>The link to get the <b>last</b> results page.</li>
+	 *     <li>The link to get the <b>a specific</b> results page.</li>
+	 * </ul>
+	 * For instance, the value of this header may look like this:
+	 * <br/><br/>{@code
+	 *     </api/v1/templates?per_page=40&host={SITE-ID}&orderby=modDate&archive=false&page=1&direction=DESC>;rel="first",
+	 *     </api/v1/templates?per_page=40&host={SITE-ID}&orderby=modDate&archive=false&page=1&direction=DESC>;rel="last",
+	 *     </api/v1/templates?per_page=40&host={SITE-ID}&orderby=modDate&archive=false&page=pageValue&direction=DESC>;rel="x-page"
+	 * }
 	 */
 	protected static class LinkHeader {
 

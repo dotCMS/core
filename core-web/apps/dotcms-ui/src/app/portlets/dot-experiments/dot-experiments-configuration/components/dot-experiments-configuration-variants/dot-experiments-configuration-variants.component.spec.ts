@@ -340,10 +340,12 @@ describe('DotExperimentsConfigurationVariantsComponent', () => {
 
             expect(deleteButtons[0].disabled).toBe(true);
             expect(deleteButtons[1].disabled).not.toBe(true);
-
             spectator.click(deleteButtons[1]);
 
-            expect(output).toEqual(variantsVm.variants[1]);
+            expect(output).toEqual({
+                $event: new PointerEvent('click'),
+                variant: variantsVm.variants[1]
+            });
         });
 
         it('should emit a the form values when when save', () => {
