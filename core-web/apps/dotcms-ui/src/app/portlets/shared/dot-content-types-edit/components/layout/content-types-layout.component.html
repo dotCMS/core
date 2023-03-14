@@ -28,17 +28,17 @@
 
         <div class="content-type__info">
             <dot-api-link href="api/v1/contenttype/id/{{ contentType.id }}"></dot-api-link>
-            <dot-copy-content
+            <dot-copy-button
                 [copy]="contentType.id"
                 [tooltipText]="contentType.id"
                 label="Copy ID"
                 data-testId="copyIdentifier"
-            ></dot-copy-content>
-            <dot-copy-content
+            ></dot-copy-button>
+            <dot-copy-button
                 [copy]="contentType.variable"
                 label="{{ 'contenttypes.content.variable' | dm }}: {{ contentType.variable }}"
                 data-testId="copyVariableName"
-            ></dot-copy-content>
+            ></dot-copy-button>
         </div>
     </div>
     <div class="main-toolbar-right">
