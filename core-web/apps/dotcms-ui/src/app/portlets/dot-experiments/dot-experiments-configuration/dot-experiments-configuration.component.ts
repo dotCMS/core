@@ -3,10 +3,13 @@ import { Observable } from 'rxjs';
 import { ChangeDetectionStrategy, Component, OnInit } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 
+import { ConfirmationService } from 'primeng/api';
+
 import { DotMessagePipe } from '@dotcms/app/view/pipes';
 import { DotSessionStorageService } from '@dotcms/data-access';
 import {
     DotExperiment,
+    DotExperimentStatusList,
     EditPageTabs,
     ExperimentSteps,
     SidebarStatus,
@@ -27,12 +30,15 @@ import {
 export class DotExperimentsConfigurationComponent implements OnInit {
     vm$: Observable<ConfigurationViewModel> = this.dotExperimentsConfigurationStore.vm$;
     experimentSteps = ExperimentSteps;
+    experimentStatus = DotExperimentStatusList;
 
     constructor(
         private readonly dotExperimentsConfigurationStore: DotExperimentsConfigurationStore,
         private readonly dotSessionStorageService: DotSessionStorageService,
         private readonly router: Router,
-        private readonly route: ActivatedRoute
+        private readonly route: ActivatedRoute,
+        private readonly confirmationService: ConfirmationService,
+        private readonly dotMessagePipe: DotMessagePipe
     ) {}
 
     ngOnInit(): void {
@@ -66,6 +72,26 @@ export class DotExperimentsConfigurationComponent implements OnInit {
      */
     runExperiment(experiment: DotExperiment) {
         this.dotExperimentsConfigurationStore.startExperiment(experiment);
+    }
+
+    /**
+     * Stop the Experiment
+     * @param {MouseEvent} $event
+     * @param {DotExperiment} experiment
+     * @returns void
+     * @memberof DotExperimentsConfigurationVariantsComponent
+     */
+    stopExperiment($event: MouseEvent, experiment: DotExperiment) {
+        this.confirmationService.confirm({
+            target: $event.target,
+            message: this.dotMessagePipe.transform('experiments.action.stop.delete-confirm'),
+            icon: 'pi pi-exclamation-triangle',
+            acceptLabel: this.dotMessagePipe.transform('stop'),
+            rejectLabel: this.dotMessagePipe.transform('dot.common.dialog.reject'),
+            accept: () => {
+                this.dotExperimentsConfigurationStore.stopExperiment(experiment);
+            }
+        });
     }
 
     /**
@@ -113,21 +139,30 @@ export class DotExperimentsConfigurationComponent implements OnInit {
 
     /**
      * Delete a specific variant
-     * @param {Variant} variant
+     * @param {{ $event: MouseEvent; variant: Variant }} event
      * @param {string} experimentId
      * @returns void
      * @memberof DotExperimentsConfigurationComponent
      */
-    deleteVariant(variant: Variant, experimentId: string) {
-        this.dotExperimentsConfigurationStore.deleteVariant({
-            experimentId,
-            variant
+    deleteVariant(event: { $event: MouseEvent; variant: Variant }, experimentId: string) {
+        this.confirmationService.confirm({
+            target: event.$event.target,
+            message: this.dotMessagePipe.transform('experiments.configure.variant.delete.confirm'),
+            icon: 'pi pi-exclamation-triangle',
+            acceptLabel: this.dotMessagePipe.transform('delete'),
+            rejectLabel: this.dotMessagePipe.transform('dot.common.dialog.reject'),
+            accept: () => {
+                this.dotExperimentsConfigurationStore.deleteVariant({
+                    experimentId,
+                    variant: event.variant
+                });
+            }
         });
     }
 
     /**
      * Go to Edit Page / Content, set the VariantId to SessionStorage
-     * @param {Variant} variant
+     * @param {{ variant: Variant; mode: EditPageTabs }} variant
      * @param {EditPageTabs} tab
      * @returns void
      * @memberof DotExperimentsConfigurationVariantsComponent
