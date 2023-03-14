@@ -6,7 +6,7 @@
     gap: $spacing-3;
 
     .dot-options__item {
-        border: 1px solid $color-gray-200;
+        border: 1px solid $color-palette-gray-200;
         border-radius: $border-radius-md;
         display: flex;
         flex-direction: column;
@@ -22,7 +22,7 @@
             h2,
             p {
                 margin: 0;
-                color: $color-gray-600;
+                color: $color-palette-gray-600;
             }
 
             h2 {
@@ -32,7 +32,7 @@
 
             p {
                 font-size: $font-size-medium;
-                color: $color-gray-500;
+                color: $color-palette-gray-500;
             }
         }
 

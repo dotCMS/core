@@ -183,14 +183,14 @@
 .p-buttonset.p-button-secondary > .p-button,
 .p-splitbutton.p-button-secondary > .p-button {
     color: $color-palette-secondary;
-    border-top: 1px solid $color-secondary-500;
-    border-left: 1px solid $color-secondary-500;
-    border-bottom: 1px solid $color-secondary-500;
+    border-top: 1px solid $color-palette-secondary-500;
+    border-left: 1px solid $color-palette-secondary-500;
+    border-bottom: 1px solid $color-palette-secondary-500;
     background: none;
 }
 
 .p-button.p-button-secondary {
-    border-right: 1px solid $color-secondary-500;
+    border-right: 1px solid $color-palette-secondary-500;
 
     &:hover {
         background: none;
@@ -216,7 +216,7 @@
 }
 
 .p-button-secondary.p-confirm-dialog-reject {
-    border-right: 1px solid $color-secondary-500;
+    border-right: 1px solid $color-palette-secondary-500;
 
     &:hover {
         border-color: $color-palette-primary;
@@ -388,13 +388,13 @@
 .p-button.p-button-secondary:enabled:focus,
 .p-buttonset.p-button-secondary > .p-button:enabled:focus,
 .p-splitbutton.p-button-secondary > .p-button:enabled:focus {
-    border: 1px solid $color-secondary-500;
+    border: 1px solid $color-palette-secondary-500;
 }
 
 .p-button.p-button-secondary:enabled:active,
 .p-buttonset.p-button-secondary > .p-button:enabled:active,
 .p-splitbutton.p-button-secondary > .p-button:enabled:active {
-    border: 1px solid $color-secondary-500;
+    border: 1px solid $color-palette-secondary-500;
 }
 
 .p-button.p-button-secondary.p-button-text:enabled:focus,

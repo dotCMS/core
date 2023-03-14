@@ -5,33 +5,6 @@
 
 // NEW COLORS WIP
 
-// PRIMARY
-$color-palette-primary-800: var(--color-background);
-$color-palette-primary-700: #34408b;
-$color-palette-primary-600: #4656ba;
-$color-palette-primary-500: var(--color-main); // brand primary
-
-$color-palette-primary-300: #bccbf6;
-$color-palette-primary-200: #edf3ff;
-$color-palette-primary-100: #f7f9fe;
-
-// SECONDARY
-$color-secondary-700: #5b2b99;
-$color-secondary-600: #7939cc;
-
-$color-secondary-400: #b175ff;
-$color-secondary-300: #cba3ff;
-$color-secondary-200: #e5d1ff;
-$color-secondary-100: #f5edff;
-$color-secondary-000: #faf6ff;
-
-$color-gray-600: #4d5062;
-$color-gray-500: #888a97;
-$color-gray-400: #c3c5cb;
-$color-gray-300: #e7e8ea;
-$color-gray-200: #f3f3f4;
-$color-gray-100: #fafafb;
-
 $color-alert-blue: $color-palette-primary-500;
 $color-alert-blue-light: $color-palette-primary-100;
 $color-alert-yellow: #ffb444;
@@ -45,14 +18,14 @@ $color-accessible-text-red: #d82b2e;
 $color-accessible-text-red-bg: $color-alert-green-light;
 $color-accessible-text-green: #0b6948;
 $color-accessible-text-green-bg: $color-alert-green-light;
-$color-accessible-text-purple: $color-secondary-600;
-$color-accessible-text-purple-bg: $color-secondary-000;
+$color-accessible-text-purple: $color-palette-secondary-600;
+$color-accessible-text-purple-bg: $color-palette-secondary-100;
 $color-accessible-text-blue: $color-palette-primary-600;
 $color-accessible-text-blue-bg: $color-palette-primary-200;
 $color-accessible-text-yellow: #bc5b0d;
 $color-accessible-text-yellow-bg: $color-alert-yellow-light;
-$color-accessible-text-gray: $color-gray-600;
-$color-accessible-text-gray-bg: $color-gray-100;
+$color-accessible-text-gray: $color-palette-gray-600;
+$color-accessible-text-gray-bg: $color-palette-gray-100;
 // END OF NEW COLORS
 
 // OLD COLORS
