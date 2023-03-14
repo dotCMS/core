@@ -54,7 +54,7 @@ const messageServiceMock = new MockDotMessageService({
     'experimentspage.not.experiments.found.filtered': 'Not experiments founds'
 });
 
-fdescribe('DotExperimentsListTableComponent', () => {
+describe('DotExperimentsListTableComponent', () => {
     let spectator: Spectator<DotExperimentsListTableComponent>;
     let uiDotIconButtonTooltipComponent: UiDotIconButtonTooltipComponent | null;
     let dotExperimentsEmpty: DotExperimentsEmptyExperimentsComponent | null;
