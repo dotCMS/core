@@ -71,6 +71,15 @@ class TestHostComponent {
 })
 class TestContentTypesRelationshipListingComponent {}
 
+@Component({
+    selector: 'dot-add-to-menu',
+    template: ``
+})
+class MockDotAddToMenuComponent {
+    @Input() contentType: DotCMSContentType;
+    @Output() cancel = new EventEmitter<boolean>();
+}
+
 @Injectable()
 export class MockDotMenuService {
     getDotMenuId(): Observable<string> {
@@ -107,7 +116,8 @@ describe('ContentTypesLayoutComponent', () => {
             'contenttypes.content.variable': 'Variable',
             'contenttypes.form.identifier': 'Identifier',
             'contenttypes.dropzone.rows.add': 'Add Row',
-            'contenttypes.content.row': 'Row'
+            'contenttypes.content.row': 'Row',
+            'contenttypes.content.add_to_menu': 'Add To Menu'
         });
 
         TestBed.configureTestingModule({
@@ -117,7 +127,8 @@ describe('ContentTypesLayoutComponent', () => {
                 TestContentTypeFieldsRowListComponent,
                 TestDotIframeComponent,
                 TestContentTypesRelationshipListingComponent,
-                TestHostComponent
+                TestHostComponent,
+                MockDotAddToMenuComponent
             ],
             imports: [
                 TabViewModule,
@@ -231,6 +242,7 @@ describe('ContentTypesLayoutComponent', () => {
             expect(de.query(By.css('.main-toolbar-left .content-type__title'))).toBeDefined();
             expect(de.query(By.css('.main-toolbar-left .content-type__info'))).toBeDefined();
             expect(de.query(By.css('.main-toolbar-right #form-edit-button'))).toBeDefined();
+            expect(de.query(By.css('.main-toolbar-right #add-to-menu-button'))).toBeDefined();
         });
 
         it('should set and emit change name of Content Type', () => {
@@ -285,6 +297,31 @@ describe('ContentTypesLayoutComponent', () => {
             expect(editButton.nativeElement.textContent).toBe('Edit');
             expect(editButton.nativeElement.disabled).toBe(false);
             expect(editButton).toBeTruthy();
+        });
+
+        it('should have Add To Menu button', () => {
+            const addToMenuButton: DebugElement = fixture.debugElement.query(
+                By.css('#add-to-menu-button')
+            );
+            expect(addToMenuButton.nativeElement.textContent).toBe('Add To Menu');
+            expect(addToMenuButton.nativeElement.disabled).toBe(false);
+            expect(addToMenuButton).toBeTruthy();
+        });
+
+        it('should have open Add to Menu Dialog and close', () => {
+            spyOn(de.componentInstance, 'addContentInMenu').and.callThrough();
+            fixture.debugElement.query(By.css('#add-to-menu-button')).triggerEventHandler('click');
+            fixture.detectChanges();
+            expect(de.componentInstance.addContentInMenu).toHaveBeenCalled();
+            expect(de.componentInstance.addToMenuContentType).toBe(true);
+            const AddToMenuDialog: MockDotAddToMenuComponent = de.query(
+                By.css('dot-add-to-menu')
+            ).componentInstance;
+            expect(de.query(By.css('dot-add-to-menu'))).toBeTruthy();
+            AddToMenuDialog.cancel.emit();
+            fixture.detectChanges();
+            expect(de.query(By.css('dot-add-to-menu'))).toBeFalsy();
+            expect(de.componentInstance.addToMenuContentType).toBe(false);
         });
     });
 

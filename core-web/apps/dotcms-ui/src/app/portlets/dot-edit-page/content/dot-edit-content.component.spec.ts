@@ -61,6 +61,7 @@ import {
     UserModel
 } from '@dotcms/dotcms-js';
 import {
+    DEFAULT_VARIANT_NAME,
     DotCMSContentlet,
     DotCMSContentType,
     DotPageContainer,
@@ -83,6 +84,7 @@ import {
     processedContainers,
     SiteServiceMock
 } from '@dotcms/utils-testing';
+import { getExperimentMock } from '@portlets/dot-experiments/test/mocks';
 
 import { DotEditPageWorkflowsActionsModule } from './components/dot-edit-page-workflows-actions/dot-edit-page-workflows-actions.module';
 import {
@@ -99,6 +101,8 @@ import { DotEditContentToolbarHtmlService } from './services/html/dot-edit-conte
 
 import { DotEditPageInfoModule } from '../components/dot-edit-page-info/dot-edit-page-info.module';
 import { DotPageContent } from '../shared/models';
+
+const EXPERIMENT_MOCK = getExperimentMock(1);
 
 @Component({
     selector: 'dot-global-message',
@@ -286,13 +290,16 @@ describe('DotEditContentComponent', () => {
                         parent: {
                             parent: {
                                 data: of({
-                                    content: mockRenderedPageState
+                                    content: mockRenderedPageState,
+                                    experiment: EXPERIMENT_MOCK
                                 })
                             }
                         },
                         snapshot: {
                             queryParams: {
-                                url: '/an/url/test'
+                                url: '/an/url/test',
+                                variantName: EXPERIMENT_MOCK.trafficProportion.variants[1].id,
+                                editPageTab: 'preview'
                             }
                         },
                         data: of({})
@@ -416,6 +423,24 @@ describe('DotEditContentComponent', () => {
 
             it('should pass pageState', () => {
                 expect(toolbarElement.componentInstance.pageState).toEqual(mockRenderedPageState);
+            });
+
+            it('should pass variant information', () => {
+                const variant = EXPERIMENT_MOCK.trafficProportion.variants[1];
+
+                expect(toolbarElement.componentInstance.variant).toEqual({
+                    variant: {
+                        id: variant.id,
+                        url: variant.url,
+                        title: variant.name,
+                        isOriginal: variant.name === DEFAULT_VARIANT_NAME
+                    },
+                    pageId: EXPERIMENT_MOCK.pageId,
+                    experimentId: EXPERIMENT_MOCK.id,
+                    experimentStatus: EXPERIMENT_MOCK.status,
+                    experimentName: EXPERIMENT_MOCK.name,
+                    mode: 'preview'
+                });
             });
 
             describe('events', () => {

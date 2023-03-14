@@ -117,6 +117,23 @@ const containersMock: DotContainer[] = [
         title: 'test',
         type: 'containers',
         working: true
+    },
+    {
+        archived: true,
+        categoryId: 'a443d26e-0e92-4a9e-a2ab-90a44fd1eb8d',
+        deleted: true,
+        friendlyName: '',
+        identifier: 'FILE_CONTAINER',
+        live: false,
+        name: 'test',
+        parentPermissionable: {
+            hostname: 'default'
+        },
+        path: '//demo.dotcms.com/application/containers/default/',
+        source: CONTAINER_SOURCE.FILE,
+        title: 'test',
+        type: 'containers',
+        working: true
     }
 ];
 
@@ -215,6 +232,7 @@ describe('ContainerListComponent', () => {
     let archivedContainer: DotActionMenuButtonComponent;
     let contentTypesSelector: MockDotContentTypeSelectorComponent;
     let dotContainersService: DotContainersService;
+    let dotSiteBrowserService: DotSiteBrowserService;
 
     const messageServiceMock = new MockDotMessageService(messages);
 
@@ -275,6 +293,7 @@ describe('ContainerListComponent', () => {
         coreWebService = TestBed.inject(CoreWebService);
         dotRouterService = TestBed.inject(DotRouterService);
         dotContainersService = TestBed.inject(DotContainersService);
+        dotSiteBrowserService = TestBed.inject(DotSiteBrowserService);
     });
 
     describe('with data', () => {
@@ -296,7 +315,7 @@ describe('ContainerListComponent', () => {
 
         it('should set attributes of dotListingDataTable', () => {
             expect(dotListingDataTable.columns).toEqual(columnsMock);
-            expect(dotListingDataTable.url).toEqual('v1/containers?system=true');
+            expect(dotListingDataTable.url).toEqual('v1/containers');
             expect(dotListingDataTable.actions).toEqual([]);
             expect(dotListingDataTable.checkbox).toEqual(true);
             expect(dotListingDataTable.dataKey).toEqual('inode');
@@ -344,7 +363,7 @@ describe('ContainerListComponent', () => {
             expect(archivedContainer.actions).toEqual(actions);
         });
 
-        it('should select all except system container', () => {
+        it('should select all except system and file container', () => {
             const menu: Menu = fixture.debugElement.query(
                 By.css('.container-listing__header-options p-menu')
             ).componentInstance;
@@ -356,6 +375,31 @@ describe('ContainerListComponent', () => {
                 '123Unpublish',
                 '123Archived'
             ]);
+        });
+
+        it('should hide action of file or system container', () => {
+            const systemContainerActions = fixture.debugElement
+                .query(By.css('[data-testrowid="SYSTEM_CONTAINER"]'))
+                .query(By.css('dot-content-type-selector'));
+
+            const fileContainerAction = fixture.debugElement
+                .query(By.css('[data-testrowid="FILE_CONTAINER"]'))
+                .query(By.css('dot-content-type-selector'));
+
+            expect(systemContainerActions).toBe(null);
+            expect(fileContainerAction).toBe(null);
+        });
+
+        it('should click on file container and move on Browser Screen', () => {
+            spyOn(dotSiteBrowserService, 'setSelectedFolder').and.returnValue(of(null));
+            fixture.debugElement
+                .query(By.css('[data-testrowid="FILE_CONTAINER"]'))
+                .triggerEventHandler('click', null);
+
+            fixture.detectChanges();
+            const path = new URL(`http:${containersMock[4].path}`).pathname;
+            expect(dotSiteBrowserService.setSelectedFolder).toHaveBeenCalledWith(path);
+            expect(dotRouterService.goToSiteBrowser).toHaveBeenCalledTimes(1);
         });
     });
 

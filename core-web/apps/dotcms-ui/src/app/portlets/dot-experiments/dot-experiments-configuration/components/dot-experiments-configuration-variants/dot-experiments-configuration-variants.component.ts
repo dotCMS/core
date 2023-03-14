@@ -7,9 +7,10 @@ import { ButtonModule } from 'primeng/button';
 import { CardModule } from 'primeng/card';
 import { InplaceModule } from 'primeng/inplace';
 import { InputTextModule } from 'primeng/inputtext';
+import { TooltipModule } from 'primeng/tooltip';
 
-import { UiDotIconButtonTooltipModule } from '@components/_common/dot-icon-button-tooltip/dot-icon-button-tooltip.module';
 import { UiDotIconButtonModule } from '@components/_common/dot-icon-button/dot-icon-button.module';
+import { UiDotIconButtonTooltipModule } from '@components/_common/dot-icon-button-tooltip/dot-icon-button-tooltip.module';
 import { DotCopyButtonModule } from '@components/dot-copy-button/dot-copy-button.module';
 import {
     ComponentStatus,
@@ -45,24 +46,25 @@ import { DotExperimentsConfigurationStore } from '@portlets/dot-experiments/dot-
         CardModule,
         InplaceModule,
         ButtonModule,
-        InputTextModule
+        InputTextModule,
+        TooltipModule
     ],
     templateUrl: './dot-experiments-configuration-variants.component.html',
     styleUrls: ['./dot-experiments-configuration-variants.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotExperimentsConfigurationVariantsComponent {
-    vm$: Observable<{ status: StepStatus }> = this.dotExperimentsConfigurationStore.variantsStepVm$;
+    vm$: Observable<{ status: StepStatus; isExperimentADraft: boolean }> =
+        this.dotExperimentsConfigurationStore.variantsStepVm$;
     statusList = ComponentStatus;
     sidebarStatusList = SidebarStatus;
     maxVariantsAllowed = MAX_VARIANTS_ALLOWED;
     defaultVariantName = DEFAULT_VARIANT_NAME;
     experimentStepName = ExperimentSteps.VARIANTS;
 
-    @Input() stepStatus: StepStatus;
     @Input() variants: Variant[];
     @Output() sidebarStatusChanged = new EventEmitter<SidebarStatus>();
-    @Output() delete = new EventEmitter<Variant>();
+    @Output() delete = new EventEmitter<{ $event: MouseEvent; variant: Variant }>();
     @Output() edit = new EventEmitter<Pick<DotExperiment, 'name' | 'id'>>();
     @Output() save = new EventEmitter<Pick<DotExperiment, 'name'>>();
     @Output() goToEditPage = new EventEmitter<{ variant: Variant; mode: EditPageTabs }>();

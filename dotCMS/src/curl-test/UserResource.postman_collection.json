@@ -1,6 +1,6 @@
 {
 	"info": {
-		"_postman_id": "baa5cd8a-ee19-4f3e-9398-f28dcc176d02",
+		"_postman_id": "a9eac856-e8ee-47da-96a9-f2e68e81fd72",
 		"name": "UserResource",
 		"description": "Verifies that commonly-used routines for interacting with User data are working as expected. Most of these are related to filtering operations and for back-end use only.",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
@@ -20,14 +20,6 @@
 							"",
 							"var jsonData = pm.response.json().entity;",
 							"",
-							"/*pm.test(\"Contains anonymous\", function () {",
-							"    pm.expect(containsAttrAndValue(jsonData, \"userId\" ,\"anonymous\")).to.be.true;",
-							"});",
-							"",
-							"pm.test(\"Contains default\", function () {",
-							"    pm.expect(containsAttrAndValue(jsonData, \"userId\" ,\"dotcms.org.default\")).to.be.true;",
-							"});*/",
-							"",
 							"pm.test(\"Contains anonymous\", function () {",
 							"    containsAttrAndValue = eval(pm.collectionVariables.get(\"containsAttrAndValue\", containsAttrAndValue.toString()));",
 							"    pm.expect(containsAttrAndValue(jsonData, \"userId\" ,\"anonymous\")).to.be.true;",
@@ -38,19 +30,13 @@
 							"    pm.expect(containsAttrAndValue(jsonData, \"userId\" ,\"dotcms.org.default\")).to.be.true;",
 							"});",
 							"",
-							"",
-							"/*",
-							"function _isContains(json, keyname, value) {",
-							" return Object.keys(json).some(key => {",
-							"        return typeof json[key] === 'object' ? ",
-							"        _isContains(json[key], keyname, value) : key === keyname && json[key] === value;",
-							"    });",
-							"}",
-							"",
-							"pm.test(\"Contains default\", function () {",
-							"    pm.expect(containsUserId(jsonData, \"userId\" ,\"dotcms.org.default\")).to.be.true;",
+							"pm.test(\"Check pagination data\", function () {",
+							"    var paginationData = pm.response.json().pagination;",
+							"    pm.expect(paginationData.currentPage).to.equal(1);",
+							"    pm.expect(paginationData.perPage).to.equal(100);",
+							"    pm.expect(paginationData.totalEntries).to.equal(2);",
 							"});",
-							"*/"
+							""
 						],
 						"type": "text/javascript"
 					}

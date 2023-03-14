@@ -294,11 +294,7 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 
 		// retrieve current host
 		currentHost = HostUtil.hostNameUtil(req, user);
-		//To transport PortletConfig, Layout objects using session.
-		//Needed for sendContentletPublishNotification of ContentletWebAPIImpl.java
-		ses.setAttribute(com.dotmarketing.util.WebKeys.JAVAX_PORTLET_CONFIG, config);
-		Layout layout = (Layout)req.getAttribute(com.liferay.portal.util.WebKeys.LAYOUT);
-		ses.setAttribute(com.dotmarketing.util.WebKeys.LAYOUT, layout);
+
 
 		int structureType = req.getParameter("contentStructureType") == null ? 0:Integer.valueOf(req.getParameter("contentStructureType"));
 		if(structureType==Structure.STRUCTURE_TYPE_FORM){

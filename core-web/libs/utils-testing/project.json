@@ -1,4 +1,5 @@
 {
+    "name": "utils-testing",
     "projectType": "library",
     "sourceRoot": "libs/utils-testing/src",
     "prefix": "dotcms",

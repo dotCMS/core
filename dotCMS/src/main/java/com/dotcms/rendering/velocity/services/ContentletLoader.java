@@ -41,6 +41,7 @@ import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 import com.liferay.util.FileUtil;
+import io.vavr.control.Try;
 import org.apache.velocity.exception.ResourceNotFoundException;
 
 import java.io.IOException;
@@ -115,6 +116,11 @@ public class ContentletLoader implements DotLoader {
         sb.append("#set($CONTENT_TYPE_ID='").append(contentTypeId).append("' )");
         sb.append("#set($CONTENT_LANGUAGE='").append(content.getLanguageId()).append("' )");
 
+        if(mode == PageMode.EDIT_MODE) {
+            final Optional<Integer> pageReferences =
+                    Try.of(() -> conAPI.getAllContentletReferencesCount(content.getIdentifier())).getOrElse(Optional.empty());
+            pageReferences.ifPresent(integer -> sb.append("#set($ON_NUMBER_OF_PAGES='").append(integer).append("' )"));
+        }
 
         // set all properties from the contentlet
         sb.append("#set($ContentInode='")

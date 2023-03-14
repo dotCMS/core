@@ -1,5 +1,6 @@
 package com.dotmarketing.startup.runalways;
 
+import com.dotcms.business.WrapInTransaction;
 import com.dotcms.enterprise.cluster.ClusterFactory;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.DbConnectionFactory;
@@ -47,6 +48,7 @@ public class Task00030ClusterInitialize implements StartupTask {
     }
 
     @Override
+	@WrapInTransaction
     public void executeUpgrade() throws DotDataException, DotRuntimeException {
             ClusterFactory.initialize();
     }
