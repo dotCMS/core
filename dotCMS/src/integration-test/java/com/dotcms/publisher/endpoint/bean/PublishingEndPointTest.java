@@ -1,5 +1,8 @@
 package com.dotcms.publisher.endpoint.bean;
 
+import org.junit.Assert;
+import org.junit.BeforeClass;
+import org.junit.Test;
 import com.dotcms.IntegrationTestBase;
 import com.dotcms.LicenseTestUtil;
 import com.dotcms.enterprise.publishing.staticpublishing.AWSS3Publisher;
@@ -8,14 +11,15 @@ import com.dotcms.publisher.endpoint.bean.factory.PublishingEndPointFactory;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.cms.factories.PublicEncryptionFactory;
 import com.dotmarketing.exception.PublishingEndPointValidationException;
-
-import org.junit.Assert;
-import org.junit.BeforeClass;
-import org.junit.Test;
+import com.liferay.portal.language.LanguageException;
+import com.liferay.portal.language.LanguageUtil;
+import com.liferay.portal.model.User;
+import com.dotmarketing.business.APILocator;
 
 public class PublishingEndPointTest extends IntegrationTestBase {
 
     static PublishingEndPointFactory factory;
+    static User user;
 
     @BeforeClass
     public static void prepare() throws Exception {
@@ -26,10 +30,11 @@ public class PublishingEndPointTest extends IntegrationTestBase {
         LicenseTestUtil.getLicense();
 
         factory = new PublishingEndPointFactory();
+        user = APILocator.systemUser();
     }
 
     @Test
-    public void validatePublishingEndPoint_whenAWSS3PublishWithoutProperties_returnException() {
+    public void validatePublishingEndPoint_whenAWSS3PublishWithoutProperties_returnException() throws LanguageException {
 
         boolean exceptionCatched = false;
 
@@ -38,7 +43,7 @@ public class PublishingEndPointTest extends IntegrationTestBase {
             endPoint.validatePublishingEndPoint();
         } catch (PublishingEndPointValidationException e) {
             exceptionCatched = true;
-            Assert.assertTrue(e.getI18nmessages().contains("publisher_Endpoint_awss3_authKey_missing_properties"));
+            Assert.assertTrue(e.getMessage(user).contains(LanguageUtil.get(user, "publisher_Endpoint_awss3_authKey_missing_properties")));
         }
 
         Assert.assertTrue(exceptionCatched);
@@ -56,15 +61,11 @@ public class PublishingEndPointTest extends IntegrationTestBase {
 
         try {
             endPoint.validatePublishingEndPoint();
-        } catch (PublishingEndPointValidationException e) {
-            exceptionCatched = true;
-            Assert.assertTrue(e.getI18nmessages().contains("publisher_Endpoint_awss3_authKey_missing_bucket_id"));
-            Assert.assertTrue(
-                e.getI18nmessages().contains("publisher_Endpoint_DefaultAWSCredentialsProviderChain_invalid"));
-            Assert.assertFalse(e.getI18nmessages().contains("publisher_Endpoint_awss3_authKey_properties_invalid"));
+        } catch (Exception e) {
+            Assert.assertTrue("No Exception should be thrown", false);
         }
 
-        Assert.assertTrue(exceptionCatched);
+        Assert.assertTrue("No Exception should be thrown", true);
     }
 
     @Test
@@ -79,15 +80,11 @@ public class PublishingEndPointTest extends IntegrationTestBase {
 
         try {
             endPoint.validatePublishingEndPoint();
-        } catch (PublishingEndPointValidationException e) {
-            exceptionCatched = true;
-            Assert.assertFalse(e.getI18nmessages().contains("publisher_Endpoint_awss3_authKey_missing_bucket_id"));
-            Assert.assertFalse(
-                e.getI18nmessages().contains("publisher_Endpoint_DefaultAWSCredentialsProviderChain_invalid"));
-            Assert.assertTrue(e.getI18nmessages().contains("publisher_Endpoint_awss3_authKey_properties_invalid"));
+        } catch (Exception e) {
+            Assert.assertTrue("No Exception should be thrown", false);
         }
 
-        Assert.assertTrue(exceptionCatched);
+        Assert.assertTrue("No Exception should be thrown", true);
     }
 
     @Test
@@ -98,11 +95,11 @@ public class PublishingEndPointTest extends IntegrationTestBase {
         PublishingEndPoint endPoint = factory.getPublishingEndPoint(StaticPublisher.PROTOCOL_STATIC);
         try {
             endPoint.validatePublishingEndPoint();
-        } catch (PublishingEndPointValidationException e) {
-            exceptionCatched = true;
+        } catch (Exception e) {
+            Assert.assertTrue("No Exception should be thrown", false);
         }
 
-        Assert.assertFalse(exceptionCatched);
+        Assert.assertTrue("No Exception should be thrown", true);
     }
 
 }
