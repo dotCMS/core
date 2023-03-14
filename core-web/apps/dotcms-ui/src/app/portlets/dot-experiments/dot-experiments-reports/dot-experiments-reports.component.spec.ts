@@ -80,7 +80,8 @@ describe('DotExperimentsReportsComponent', () => {
         expect(spectator.query(DotExperimentsUiHeaderComponent)).toExist();
         expect(spectator.query(DotExperimentsReportsSkeletonComponent)).toExist();
     });
-    it('should show the skeleton component when is not loading', () => {
+
+    it("shouldn't show the skeleton component when is not loading", () => {
         spectator.component.vm$ = of({ ...defaultVmMock, isLoading: false });
         spectator.detectChanges();
 
