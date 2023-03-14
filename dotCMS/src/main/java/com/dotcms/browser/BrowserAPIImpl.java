@@ -1,6 +1,7 @@
 package com.dotcms.browser;
 
 import com.dotcms.business.CloseDBIfOpened;
+import com.dotcms.content.business.json.ContentletJsonAPI;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.uuid.shorty.ShortyIdAPI;
 import com.dotmarketing.beans.Host;
@@ -55,6 +56,16 @@ public class BrowserAPIImpl implements BrowserAPI {
     private final FolderAPI folderAPI = APILocator.getFolderAPI();
     private final PermissionAPI permissionAPI = APILocator.getPermissionAPI();
     private final ShortyIdAPI shortyIdAPI = APILocator.getShortyAPI();
+    private static final StringBuilder POSTGRES_ASSETNAME_COLUMN = new StringBuilder(ContentletJsonAPI
+            .CONTENTLET_AS_JSON).append("-> 'fields' -> ").append("'asset' -> 'metadata' ->> ").append("'name' ");
+
+    private static final StringBuilder MSSQL_ASSETNAME_COLUMN = new StringBuilder("JSON_VALUE(c.").append
+            (ContentletJsonAPI.CONTENTLET_AS_JSON).append(", '$.fields.").append("asset.metadata.").append("name')" +
+            " ");
+
+    private static final StringBuilder ASSET_NAME_LIKE = new StringBuilder().append("LOWER(%s) LIKE ? ");
+
+    private final String OR = " OR ";
 
     /**
      * Returns a collection of contentlets based on diff attributes of the BrowserQuery
@@ -270,9 +281,7 @@ public class BrowserAPIImpl implements BrowserAPI {
             luceneQuery.append("+live:true ");
         }
         if(browserQuery.showArchived ) luceneQuery.append("+deleted:true ");
-        
-        
-        
+
         if (!showAllBaseTypes) {
             List<String> baseTypes =
                     browserQuery.baseTypes.stream().map(t -> String.valueOf(t.getType())).collect(Collectors.toList());
@@ -296,6 +305,29 @@ public class BrowserAPIImpl implements BrowserAPI {
             luceneQuery.append("+path:" + browserQuery.folder.getPath() + " ");
         }
 
+        if (UtilMethods.isSet(browserQuery.filter)) {
+            final String filterText = browserQuery.filter.toLowerCase().trim();
+            final String[] spliter = filterText.split(" ");
+
+                sqlQuery.append(" and (");
+                for (int indx = 0; indx < spliter.length; indx++) {
+                    final String token = spliter[indx];
+                    if(token.equals(StringPool.BLANK)){
+                        continue;
+                    }
+                    sqlQuery.append(" LOWER(c.title) like ?");
+                    parameters.add("%" + token + "%");
+                    if(indx + 1 < spliter.length){
+                        sqlQuery.append(" and");
+                    }
+                }
+
+                sqlQuery.append(OR);
+                sqlQuery.append(getAssetNameColumn(ASSET_NAME_LIKE.toString()));
+                sqlQuery.append(" ) ");
+
+                parameters.add("%" + filterText + "%");
+            }
 
         if(browserQuery.showMenuItemsOnly) {
             sqlQuery.append(" and c.show_on_menu = " + DbConnectionFactory.getDBTrue());
@@ -306,6 +338,26 @@ public class BrowserAPIImpl implements BrowserAPI {
         }
 
         return Tuple.of(sqlQuery.toString(),luceneQuery.toString(), parameters);
+    }
+
+    /**
+     * Returns the appropriate column for the {@code Asset Name} field depending on the database that dotCMS is running
+     * on. That is, if the value is inside the "Content as JSON" column, or the legacy "text" column.
+     *
+     * @param baseQuery The base SQL query whose column name will be replaced.
+     *
+     * @return The appropriate database column for the Asset Name field.
+     */
+    public static String getAssetNameColumn(final String baseQuery) {
+        String sql = baseQuery;
+        if (APILocator.getContentletJsonAPI().isJsonSupportedDatabase()) {
+            if (DbConnectionFactory.isPostgres()) {
+                sql = String.format(sql, POSTGRES_ASSETNAME_COLUMN);
+            } else {
+                sql = String.format(sql, MSSQL_ASSETNAME_COLUMN);
+            }
+        }
+        return sql;
     }
 
     private List<Map<String, Object>> includeLinks(final BrowserQuery browserQuery)
