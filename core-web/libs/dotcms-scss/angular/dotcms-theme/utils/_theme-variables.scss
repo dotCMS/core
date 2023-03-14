@@ -74,7 +74,7 @@ $button-sec: (
     normal: (
         background: $white,
         color: $color-palette-secondary,
-        border: solid 1px $brand-secondary
+        border: solid 1px $color-secondary-500
     ),
     hover: (
         background: $white,
@@ -189,7 +189,7 @@ $tabview-item-selected-color: $color-palette-secondary;
 $tabview-item-padding: $spacing-3 $spacing-4 10px; // To match the 48px height
 $tabview-item-border: 3px solid $white;
 $tabview-item-border-height: 4px;
-$tabview-item-selected-border: 5px solid $brand-secondary;
+$tabview-item-selected-border: 5px solid $color-secondary-500;
 $tabview-item-disabled-color: rgba($black, 0.2);
 $tabview-nav-height: 48px;
 
