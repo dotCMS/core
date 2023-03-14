@@ -18,6 +18,7 @@ import {
     SidebarStatus
 } from '@dotcms/dotcms-models';
 import { DotExperimentsService } from '@portlets/dot-experiments/shared/services/dot-experiments.service';
+import { DotHttpErrorManagerService } from '@services/dot-http-error-manager/dot-http-error-manager.service';
 
 export interface DotExperimentsState {
     page: {
@@ -212,7 +213,13 @@ export class DotExperimentsListStore
                                     }
                                 );
                             },
-                            (error: HttpErrorResponse) => throwError(error)
+                            (error: HttpErrorResponse) => {
+                                this.setSidebarStatus({
+                                    status: ComponentStatus.IDLE,
+                                    isOpen: true
+                                });
+                                this.dotHttpErrorManagerService.handle(error);
+                            }
                         )
                     )
                 )
@@ -305,7 +312,8 @@ export class DotExperimentsListStore
         private readonly dotMessageService: DotMessageService,
         private readonly messageService: MessageService,
         private readonly route: ActivatedRoute,
-        private readonly router: Router
+        private readonly router: Router,
+        private readonly dotHttpErrorManagerService: DotHttpErrorManagerService
     ) {
         super({
             ...initialState,

@@ -63,7 +63,7 @@
         <button
             [disabled]="!form.valid"
             [loading]="vm.isSaving"
-            (click)="handleSubmit()"
+            (click)="handleSubmit(vm.pageId)"
             data-testId="add-experiment-button"
             form="new-experiment-form"
             label="{{ 'experiments.action.add' | dm }}"

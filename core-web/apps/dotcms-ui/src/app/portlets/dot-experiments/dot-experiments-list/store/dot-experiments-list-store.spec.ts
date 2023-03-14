@@ -60,7 +60,6 @@ describe('DotExperimentsListStore', () => {
                 provide: ActivatedRoute,
                 useValue: ActivatedRouteMock
             },
-            mockProvider(DotHttpErrorManagerService),
             mockProvider(Router)
         ]
     });
@@ -72,7 +71,6 @@ describe('DotExperimentsListStore', () => {
         dotExperimentsService = spectator.inject(DotExperimentsService);
         messageService = spectator.inject(MessageService);
 
-        dotExperimentsService.getById.and.callThrough().and.returnValue(of(EXPERIMENT_MOCK));
         dotExperimentsService.getById.and.callThrough().and.returnValue(of(EXPERIMENT_MOCK));
     });
 

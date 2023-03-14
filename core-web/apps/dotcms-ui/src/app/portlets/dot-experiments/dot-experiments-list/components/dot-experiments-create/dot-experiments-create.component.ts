@@ -1,7 +1,7 @@
 import { Observable } from 'rxjs';
 
 import { CommonModule } from '@angular/common';
-import { ChangeDetectionStrategy, Component, Input, OnInit } from '@angular/core';
+import { ChangeDetectionStrategy, Component, OnInit } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 
 import { ButtonModule } from 'primeng/button';
@@ -53,30 +53,40 @@ export class DotExperimentsCreateComponent implements OnInit {
 
     form: FormGroup<CreateForm>;
 
-    @Input()
-    pageId!: string;
-
     constructor(private readonly dotExperimentsListStore: DotExperimentsListStore) {}
 
     ngOnInit(): void {
         this.initForm();
     }
 
-    handleSubmit() {
+    /**
+     * Save the experiment
+     *
+     * @param pageId
+     * @memberOf DotExperimentsCreateComponent
+     * @return void
+     */
+    handleSubmit(pageId: string) {
+        this.form.get('pageId').setValue(pageId);
         this.dotExperimentsListStore.addExperiments(
             this.form.value as Pick<DotExperiment, 'pageId' | 'name' | 'description'>
         );
     }
 
+    /**
+     * Close sidebar
+     *
+     * @memberOf DotExperimentsCreateComponent
+     * @return void
+     */
     closeSidebar() {
         this.dotExperimentsListStore.closeSidebar();
     }
 
     private initForm() {
         this.form = new FormGroup<CreateForm>({
-            pageId: new FormControl<string>(this.pageId, {
-                nonNullable: true,
-                validators: [Validators.required]
+            pageId: new FormControl<string>('', {
+                nonNullable: true
             }),
             name: new FormControl<string>('', {
                 nonNullable: true,

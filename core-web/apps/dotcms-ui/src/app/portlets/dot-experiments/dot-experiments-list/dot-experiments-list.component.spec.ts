@@ -36,6 +36,7 @@ import {
     getExperimentAllMocks
 } from '@portlets/dot-experiments/test/mocks';
 import { DotDynamicDirective } from '@portlets/shared/directives/dot-dynamic.directive';
+import { DotHttpErrorManagerService } from '@services/dot-http-error-manager/dot-http-error-manager.service';
 
 import { DotExperimentsListComponent } from './dot-experiments-list.component';
 
@@ -74,6 +75,7 @@ describe('ExperimentsListComponent', () => {
             mockProvider(DotExperimentsService),
             mockProvider(MessageService),
             mockProvider(ConfirmationService),
+            mockProvider(DotHttpErrorManagerService),
             {
                 provide: ActivatedRoute,
                 useClass: ActivatedRouteListStoreMock

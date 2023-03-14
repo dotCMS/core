@@ -109,7 +109,7 @@ describe('DotExperimentsCreateComponent', () => {
         const submitButton = spectator.query<HTMLButtonElement>(byTestId('add-experiment-button'));
         spyOn(spectator.component, 'handleSubmit');
 
-        spectator.component.handleSubmit();
+        spectator.component.handleSubmit('1111-1111-1111-111');
 
         expect(submitButton).toExist();
         expect(spectator.component.handleSubmit).toHaveBeenCalled();

@@ -66,7 +66,7 @@ export const GoalsConditionsOperatorsList: Array<DotDropdownSelectOption<GOAL_OP
     }
 ];
 
-export enum SidebarStatus {
+export enum SIDEBAR_STATUS {
     OPEN = 'OPEN',
     CLOSE = 'CLOSED'
 }

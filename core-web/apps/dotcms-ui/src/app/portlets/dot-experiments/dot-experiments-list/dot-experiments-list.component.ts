@@ -30,10 +30,9 @@ import { DotDynamicDirective } from '@portlets/shared/directives/dot-dynamic.dir
 export class DotExperimentsListComponent {
     @ViewChild(DotDynamicDirective, { static: true }) sidebarHost!: DotDynamicDirective;
     vm$: Observable<VmListExperiments> = this.dotExperimentsListStore.vm$.pipe(
-        tap(({ page, sidebar }) => this.handleSidebar(sidebar, page.pageId))
+        tap(({ sidebar }) => this.handleSidebar(sidebar))
     );
     statusOptionList = ExperimentsStatusList;
-    pageId: string;
 
     private componentRef: ComponentRef<DotExperimentsCreateComponent>;
 
@@ -98,23 +97,21 @@ export class DotExperimentsListComponent {
         });
     }
 
-    private handleSidebar(status: SidebarStatus, pageId: string) {
+    private handleSidebar(status: SidebarStatus) {
         if (status && status.isOpen) {
-            this.pageId = pageId;
-            this.loadSidebarComponent(status, this.pageId);
+            this.loadSidebarComponent(status);
         } else {
             this.removeSidebarComponent();
         }
     }
 
-    private loadSidebarComponent(status: SidebarStatus, pageId: string): void {
+    private loadSidebarComponent(status: SidebarStatus): void {
         if (status && status.isOpen && status.status != ComponentStatus.SAVING) {
             this.sidebarHost.viewContainerRef.clear();
             this.componentRef =
                 this.sidebarHost.viewContainerRef.createComponent<DotExperimentsCreateComponent>(
                     DotExperimentsCreateComponent
                 );
-            this.componentRef.setInput('pageId', pageId);
         }
     }
 
