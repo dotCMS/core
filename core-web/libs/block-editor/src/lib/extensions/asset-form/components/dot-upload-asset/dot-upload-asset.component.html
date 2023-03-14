@@ -10,7 +10,7 @@
 <ng-template #preview>
     <div class="preview-container">
         <dot-asset-preview
-            *ngIf="status === 'PREVIEW'; else status === 'LOADING' ? loading : errorTemplate"
+            *ngIf="status === 'PREVIEW'; else status === 'UPLOAD' ? loading : errorTemplate"
             [type]="type"
             [file]="file"
             [src]="src"

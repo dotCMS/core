@@ -7,9 +7,10 @@ import {
     Output,
     Input,
     ChangeDetectorRef,
-    ChangeDetectionStrategy
+    ChangeDetectionStrategy,
+    OnDestroy
 } from '@angular/core';
-import { DomSanitizer } from '@angular/platform-browser';
+import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 
 import { catchError } from 'rxjs/operators';
 
@@ -30,7 +31,7 @@ export enum STATUS {
     styleUrls: ['./dot-upload-asset.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class DotUploadAssetComponent {
+export class DotUploadAssetComponent implements OnDestroy {
     @Output()
     uploadedFile = new EventEmitter<DotCMSContentlet>();
 
@@ -42,7 +43,7 @@ export class DotUploadAssetComponent {
 
     public status = STATUS.SELECT;
     public file: File;
-    public src: string | ArrayBuffer;
+    public src: string | ArrayBuffer | SafeResourceUrl;
     public error: string;
 
     constructor(
@@ -50,6 +51,10 @@ export class DotUploadAssetComponent {
         private readonly imageService: DotImageService,
         private readonly cd: ChangeDetectorRef
     ) {}
+
+    ngOnDestroy(): void {
+        this.preventClose.emit(false);
+    }
 
     /**
      * Set Selected File
@@ -60,8 +65,15 @@ export class DotUploadAssetComponent {
     onSelectFile(files: File[]) {
         const file = files[0];
         const reader = new FileReader();
+
         reader.onload = (e) => this.setFile(file, e.target.result);
-        reader.readAsDataURL(file);
+
+        /*
+         * We can not use `reader.readDataAsUrl()` method because of this:
+         * https://stackoverflow.com/questions/40325410/filereader-is-unable-to-read-large-files
+         *
+         */
+        reader.readAsArrayBuffer(file);
     }
 
     /**
@@ -107,12 +119,17 @@ export class DotUploadAssetComponent {
      *
      * @private
      * @param {File} file
-     * @param {string | ArrayBuffer} src
+     * @param {string | ArrayBuffer} buffer
      * @memberof DotUploadAssetComponent
      */
-    private setFile(file: File, src: string | ArrayBuffer): void {
+    private setFile(file: File, buffer: string | ArrayBuffer): void {
+        // Convert the buffer to a blob:
+        const videoBlob = new Blob([new Uint8Array(buffer as ArrayBufferLike)], {
+            type: 'video/mp4'
+        });
+
+        this.src = this.sanitizer.bypassSecurityTrustResourceUrl(URL.createObjectURL(videoBlob));
         this.file = file;
-        this.src = src;
         this.status = STATUS.PREVIEW;
         this.cd.markForCheck();
     }

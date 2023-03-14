@@ -101,18 +101,19 @@ export const BubbleAssetFormExtension = (viewContainerRef: ViewContainerRef) => 
         component.instance.languageId = editor.storage.dotConfig.lang;
         component.instance.type = type;
         component.instance.onSelectAsset = (payload) => {
-            preventClose = false;
-            editor.setOptions({ editable: true });
+            onPreventClose(editor, false);
             editor.chain().insertAsset({ type, payload }).addNextLine().closeAssetForm().run();
         };
 
-        component.instance.preventClose = (value) => {
-            preventClose = value;
-            editor.setOptions({ editable: !value });
-        };
+        component.instance.preventClose = (value) => onPreventClose(editor, value);
 
         element = component.location.nativeElement;
         component.changeDetectorRef.detectChanges();
+    }
+
+    function onPreventClose(editor, value) {
+        preventClose = value;
+        editor.setOptions({ editable: !value });
     }
 
     return BubbleMenu.extend<unknown>({
