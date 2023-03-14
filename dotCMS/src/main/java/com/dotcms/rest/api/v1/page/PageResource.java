@@ -1020,31 +1020,29 @@ public class PageResource {
      * @return All the content types that match
      */
     @NoCache
-    @GET
+    @POST
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     @Path("/_check-permission")
     public ResponseEntityBooleanView checkPagePermission(@Context final HttpServletRequest request,
                                                          @Context final HttpServletResponse response,
-                                                         @DefaultValue("READ") @QueryParam("type") final String type,
-                                                         @QueryParam("host_id") final String hostId,
-                                                         @DefaultValue("-1") @QueryParam("language_id") final long languageId,
-                                                         @QueryParam("path") final String path) throws DotSecurityException, DotDataException {
+                                                         final PageCheckPermissionForm pageCheckPermissionForm) throws DotSecurityException, DotDataException {
 
         final User user = webResource.init(request, response, true).getUser();
         final PageMode mode = PageMode.get(request);
-        Logger.debug(this, ()-> "Checking Page Permission type" + type
-                +" for the page path: " + path + ", host id: " + hostId + ", lang: " + languageId);
+        Logger.debug(this, ()-> "Checking Page Permission type" + pageCheckPermissionForm.getType()
+                +" for the page path: " + pageCheckPermissionForm.getPath() + ", host id: " + pageCheckPermissionForm.getHostId()
+                + ", lang: " + pageCheckPermissionForm.getLanguageId());
 
-        final Host currentHost = UtilMethods.isSet(hostId)?
-                WebAPILocator.getHostWebAPI().find(hostId, user, PageMode.get(request).respectAnonPerms):
+        final Host currentHost = UtilMethods.isSet(pageCheckPermissionForm.getHostId())?
+                WebAPILocator.getHostWebAPI().find(pageCheckPermissionForm.getHostId(), user, PageMode.get(request).respectAnonPerms):
                 WebAPILocator.getHostWebAPI().getCurrentHostNoThrow(request);
         final IHTMLPage page = APILocator.getHTMLPageAssetAPI().getPageByPath(
-                path, currentHost, -1 != languageId? languageId:
+                pageCheckPermissionForm.getPath(), currentHost, -1 != pageCheckPermissionForm.getLanguageId()? pageCheckPermissionForm.getLanguageId():
                         WebAPILocator.getLanguageWebAPI().getLanguage(request).getId(), mode.showLive);
 
         return null != page?
                 new ResponseEntityBooleanView(APILocator.getPermissionAPI().
-                    doesUserHavePermission(page, Try.of(() -> PermissionLevel.valueOf(type)).getOrElse(PermissionLevel.READ).getType(),
+                    doesUserHavePermission(page, pageCheckPermissionForm.getType().getType(),
                             user, false)):
                 new ResponseEntityBooleanView(false);
     } // checkPagePermission.
