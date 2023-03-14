@@ -15,6 +15,7 @@ import { TabViewModule } from 'primeng/tabview';
 
 import { DotInlineEditModule } from '@components/_common/dot-inline-edit/dot-inline-edit.module';
 import { DotApiLinkModule } from '@components/dot-api-link/dot-api-link.module';
+import { DotCopyButtonModule } from '@components/dot-copy-button/dot-copy-button.module';
 import { DotCopyLinkModule } from '@components/dot-copy-link/dot-copy-link.module';
 import { DotPortletBoxModule } from '@components/dot-portlet-base/components/dot-portlet-box/dot-portlet-box.module';
 import { DotSecondaryToolbarModule } from '@components/dot-secondary-toolbar';
@@ -32,7 +33,6 @@ import { DotPipesModule } from '@pipes/dot-pipes.module';
 
 import { ContentTypesLayoutComponent } from './content-types-layout.component';
 
-import { DotCopyContentComponent } from '../dot-copy-content/dot-copy-content.component';
 import { FieldDragDropService } from '../fields/service';
 
 @Component({
@@ -129,8 +129,7 @@ describe('ContentTypesLayoutComponent', () => {
                 TestDotIframeComponent,
                 TestContentTypesRelationshipListingComponent,
                 TestHostComponent,
-                MockDotAddToMenuComponent,
-                DotCopyContentComponent
+                MockDotAddToMenuComponent
             ],
             imports: [
                 TabViewModule,
@@ -143,7 +142,8 @@ describe('ContentTypesLayoutComponent', () => {
                 SplitButtonModule,
                 DotInlineEditModule,
                 HttpClientTestingModule,
-                DotPortletBoxModule
+                DotPortletBoxModule,
+                DotCopyButtonModule
             ],
             providers: [
                 { provide: DotMessageService, useValue: messageServiceMock },
