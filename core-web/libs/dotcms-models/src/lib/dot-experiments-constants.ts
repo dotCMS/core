@@ -22,7 +22,7 @@ export enum DotExperimentStatusList {
     ARCHIVED = 'ARCHIVED'
 }
 
-export const ExperimentsStatusList = [
+export const ExperimentsStatusList: Array<DotDropdownSelectOption<string>> = [
     {
         label: 'draft',
         value: DotExperimentStatusList.DRAFT

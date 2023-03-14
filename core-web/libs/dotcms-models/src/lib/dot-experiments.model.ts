@@ -57,11 +57,14 @@ export interface RangeOfDateAndTime {
 
 export type GroupedExperimentByStatus = Partial<Record<DotExperimentStatusList, DotExperiment[]>>;
 
-export interface StepStatus {
+export interface sidebarStatus {
     status: ComponentStatus;
     isOpen: boolean;
-    experimentStep: ExperimentSteps | null;
 }
+
+export type StepStatus = sidebarStatus & {
+    experimentStep: ExperimentSteps | null;
+};
 
 export type EditPageTabs = 'edit' | 'preview';
 

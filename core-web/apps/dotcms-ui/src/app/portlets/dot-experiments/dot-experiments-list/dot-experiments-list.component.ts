@@ -1,18 +1,23 @@
 import { provideComponentStore } from '@ngrx/component-store';
 import { Observable } from 'rxjs';
 
-import { ChangeDetectionStrategy, Component, ViewChild } from '@angular/core';
+import { ChangeDetectionStrategy, Component, ComponentRef, ViewChild } from '@angular/core';
 import { Router } from '@angular/router';
 
-import { take } from 'rxjs/operators';
+import { tap } from 'rxjs/operators';
 
 import { DotMessagePipe } from '@dotcms/app/view/pipes';
-import { DotExperiment, ExperimentsStatusList } from '@dotcms/dotcms-models';
-import { DotExperimentsCreateComponent } from '@portlets/dot-experiments/dot-experiments-create/dot-experiments-create.component';
+import {
+    ComponentStatus,
+    DotExperiment,
+    ExperimentsStatusList,
+    sidebarStatus
+} from '@dotcms/dotcms-models';
+import { DotExperimentsCreateComponent } from '@portlets/dot-experiments/dot-experiments-list/components/dot-experiments-create/dot-experiments-create.component';
 import {
     DotExperimentsListStore,
     VmListExperiments
-} from '@portlets/dot-experiments/dot-experiments-list/store/dot-experiments-list-store.service';
+} from '@portlets/dot-experiments/dot-experiments-list/store/dot-experiments-list-store';
 import { DotDynamicDirective } from '@portlets/shared/directives/dot-dynamic.directive';
 
 @Component({
@@ -23,13 +28,14 @@ import { DotDynamicDirective } from '@portlets/shared/directives/dot-dynamic.dir
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotExperimentsListComponent {
-    @ViewChild(DotDynamicDirective, { static: true }) dotDynamicHost!: DotDynamicDirective;
+    @ViewChild(DotDynamicDirective, { static: true }) sidebarHost!: DotDynamicDirective;
+    vm$: Observable<VmListExperiments> = this.dotExperimentsListStore.vm$.pipe(
+        tap(({ page, sidebar }) => this.handleSidebar(sidebar, page.pageId))
+    );
+    statusOptionList = ExperimentsStatusList;
+    pageId: string;
 
-    vm$: Observable<VmListExperiments> = this.dotExperimentsListStore.vm$;
-
-    statusOptionList = ExperimentsStatusList.map(({ label, value }) => {
-        return { value, label: this.dotMessagePipe.transform(label) };
-    });
+    private componentRef: ComponentRef<DotExperimentsCreateComponent>;
 
     constructor(
         private readonly dotExperimentsListStore: DotExperimentsListStore,
@@ -49,19 +55,11 @@ export class DotExperimentsListComponent {
 
     /**
      * Add new experiment
-     * @param experiment
      * @returns void
      * @memberof DotExperimentsListComponent
      */
-    addNewExperiment() {
-        const viewContainerRef = this.dotDynamicHost.viewContainerRef;
-        viewContainerRef.clear();
-        const componentRef = viewContainerRef.createComponent<DotExperimentsCreateComponent>(
-            DotExperimentsCreateComponent
-        );
-        componentRef.instance.closedSidebar.pipe(take(1)).subscribe(() => {
-            viewContainerRef.clear();
-        });
+    addExperiment() {
+        this.dotExperimentsListStore.openSidebar();
     }
 
     /**
@@ -98,5 +96,31 @@ export class DotExperimentsListComponent {
             },
             queryParamsHandling: 'merge'
         });
+    }
+
+    private handleSidebar(status: sidebarStatus, pageId: string) {
+        if (status && status.isOpen) {
+            this.pageId = pageId;
+            this.loadSidebarComponent(status, this.pageId);
+        } else {
+            this.removeSidebarComponent();
+        }
+    }
+
+    private loadSidebarComponent(status: sidebarStatus, pageId: string): void {
+        if (status && status.isOpen && status.status != ComponentStatus.SAVING) {
+            this.sidebarHost.viewContainerRef.clear();
+            this.componentRef =
+                this.sidebarHost.viewContainerRef.createComponent<DotExperimentsCreateComponent>(
+                    DotExperimentsCreateComponent
+                );
+            this.componentRef.setInput('pageId', pageId);
+        }
+    }
+
+    private removeSidebarComponent() {
+        if (this.componentRef) {
+            this.sidebarHost.viewContainerRef.clear();
+        }
     }
 }
