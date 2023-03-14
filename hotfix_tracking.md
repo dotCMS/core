@@ -16,3 +16,4 @@ This maintenance release includes the following code fixes:
 10. https://github.com/dotCMS/core/issues/24138 : SAML Allow Users with repeat email addresses #24138
 11. https://github.com/dotCMS/core/issues/22151 : Allow greater configuration of S3Client to target additional endpoints beyond AWS #22151
 12. https://github.com/dotCMS/core/issues/24351 : Configuration of S3Client to target endpoint unable to sent css files outside AWS #24351
+13. https://github.com/dotCMS/core/issues/24358 : File Browser Only Showing Content in the Backend Language #24358

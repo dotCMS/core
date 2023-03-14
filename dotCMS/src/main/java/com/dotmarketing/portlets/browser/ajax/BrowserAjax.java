@@ -511,8 +511,7 @@ public class BrowserAjax {
 						   .sortBy(sortBy)
 						   .sortByDesc(sortByDesc)
 						   .showLinks(!excludeLinks)
-						   .withLanguageId(
-								   WebAPILocator.getLanguageWebAPI().getBackendLanguage().getId())
+						   .withLanguageId((Long) req.getSession().getAttribute(WebKeys.CONTENT_SELECTED_LANGUAGE))
 						   .showDotAssets(dotAssets)
 						   .build());
 
