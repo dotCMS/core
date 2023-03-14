@@ -55,7 +55,7 @@
                 "browserTarget": "block-editor:build-storybook",
                 "compodoc": false,
                 "stylePreprocessorOptions": {
-                    "includePaths": ["libs/dot-primeng-theme-styles/src/scss"]
+                    "includePaths": ["libs/dotcms-scss/angular"]
                 }
             },
             "configurations": {
