@@ -3070,27 +3070,27 @@ body {
 }
 .dijitTextBoxHover {
   background-color: #fff;
-  border: solid 1px #9747FF;
+  border: solid 1px #9747ff;
 }
 .dijitTextBoxHover .dijitInputInner {
   color: #161616;
 }
 .dijitTextBoxHover .dijitArrowButton {
   background-color: #fff;
-  border-left: solid 1px #9747FF;
+  border-left: solid 1px #9747ff;
 }
 .dijitTextBoxHover .dijitArrowButton:before {
-  border-top-color: #9747FF;
+  border-top-color: #9747ff;
 }
 .dijitTextBoxHover .dijitDownArrowButtonHover {
   background-color: rgba(var(--color-sec_rgb), 0.2);
   border-left: solid 1px #5b5b5b;
 }
 .dijitTextBoxHover .dijitDownArrowButtonHover:before {
-  border-top-color: #9747FF;
+  border-top-color: #9747ff;
 }
 .dijitTextBoxFocused {
-  border: solid 1px #9747FF;
+  border: solid 1px #9747ff;
   background-color: #fff;
 }
 .dijitTextBoxFocused .dijitInputInner {
@@ -3098,7 +3098,7 @@ body {
 }
 .dijitTextBoxFocused .dijitArrowButton {
   background-color: #fff;
-  border-left: solid 1px #9747FF;
+  border-left: solid 1px #9747ff;
 }
 .dijitTextBoxFocused .dijitArrowButton:before {
   left: 50%;
@@ -3108,7 +3108,7 @@ body {
   top: 50%;
   border-left: 5px solid transparent;
   border-right: 5px solid transparent;
-  border-top: 5px solid #9747FF;
+  border-top: 5px solid #9747ff;
   content: "";
   height: 0;
   width: 0;
@@ -3186,11 +3186,11 @@ body {
 }
 .dijitTextAreaHover {
   background-color: #fff;
-  border: solid 1px #9747FF;
+  border: solid 1px #9747ff;
   color: #161616;
 }
 .dijitTextAreaFocused {
-  border: solid 1px #9747FF;
+  border: solid 1px #9747ff;
   background-color: #fff;
   color: #161616;
 }
@@ -3235,16 +3235,16 @@ body {
 }
 .dijitSpinnerHover {
   background-color: #fff;
-  border: solid 1px #9747FF;
+  border: solid 1px #9747ff;
 }
 .dijitSpinnerHover .dijitSpinnerButtonContainer {
-  border-left: solid 1px #9747FF;
+  border-left: solid 1px #9747ff;
 }
 .dijitSpinnerHover .dijitSpinnerButtonContainer .dijitDownArrowButton {
-  border-top: solid 1px #9747FF !important;
+  border-top: solid 1px #9747ff !important;
 }
 .dijitSpinnerHover .dijitArrowButton {
-  border-left: solid 1px #9747FF;
+  border-left: solid 1px #9747ff;
 }
 .dijitSpinnerHover .dijitArrowButton:before {
   border-top-color: #426bf0;
@@ -3256,20 +3256,20 @@ body {
 }
 .dijitSpinnerHover .dijitDownArrowButtonHover:before,
 .dijitSpinnerHover .dijitUpArrowButtonHover:before {
-  border-top-color: #9747FF;
+  border-top-color: #9747ff;
 }
 .dijitSpinnerFocused {
   background-color: #fff;
-  border: solid 1px #9747FF;
+  border: solid 1px #9747ff;
 }
 .dijitSpinnerFocused .dijitSpinnerButtonContainer {
-  border-left: solid 1px #9747FF;
+  border-left: solid 1px #9747ff;
 }
 .dijitSpinnerFocused .dijitSpinnerButtonContainer .dijitDownArrowButton {
-  border-top: solid 1px #9747FF !important;
+  border-top: solid 1px #9747ff !important;
 }
 .dijitSpinnerFocused .dijitArrowButton {
-  border-left: solid 1px #9747FF;
+  border-left: solid 1px #9747ff;
 }
 .dijitSpinnerFocused .dijitArrowButton:before {
   border-top-color: #426bf0;
@@ -3349,8 +3349,8 @@ body {
 
 .dijitButton {
   background-color: #fff;
-  border: solid 1px #9747FF;
-  color: #9747FF;
+  border: solid 1px #9747ff;
+  color: #9747ff;
   box-shadow: 0;
 }
 .dijitButtonText {
@@ -3379,8 +3379,8 @@ body {
 }
 .dijitDropDownButton {
   background-color: #fff;
-  border: solid 1px #9747FF;
-  color: #9747FF;
+  border: solid 1px #9747ff;
+  color: #9747ff;
   box-shadow: 0;
 }
 .dijitDropDownButton .dijitButtonNode {
@@ -3398,7 +3398,7 @@ body {
   top: 50%;
   border-left: 5px solid transparent;
   border-right: 5px solid transparent;
-  border-top: 5px solid #9747FF;
+  border-top: 5px solid #9747ff;
   content: "";
   height: 0;
   width: 0;
@@ -3477,8 +3477,8 @@ body {
 }
 .dijitComboButton {
   background-color: #fff;
-  border: solid 1px #9747FF;
-  color: #9747FF;
+  border: solid 1px #9747ff;
+  color: #9747ff;
   box-shadow: 0;
 }
 .dijitComboButton .dijitArrowButtonInner {
@@ -3493,7 +3493,7 @@ body {
   top: 50%;
   border-left: 5px solid transparent;
   border-right: 5px solid transparent;
-  border-top: 5px solid #9747FF;
+  border-top: 5px solid #9747ff;
   content: "";
   height: 0;
   width: 0;
@@ -3595,8 +3595,8 @@ body {
 }
 .dijitToggleButton {
   background-color: #fff;
-  border: solid 1px #9747FF;
-  color: #9747FF;
+  border: solid 1px #9747ff;
+  color: #9747ff;
   box-shadow: 0;
 }
 .dijitToggleButton .dijitIcon {
@@ -3718,11 +3718,11 @@ body {
 }
 .dijitSelectHover {
   background-color: #fff;
-  border: solid 1px #9747FF;
+  border: solid 1px #9747ff;
   color: #161616;
 }
 .dijitSelectHover .dijitArrowButton {
-  border-left: solid 1px #9747FF;
+  border-left: solid 1px #9747ff;
   background-color: transparent;
 }
 .dijitSelectHover .dijitArrowButton > .dijitArrowButtonInner {
@@ -3740,11 +3740,11 @@ body {
 }
 .dijitSelectActive, .dijitSelectOpened {
   background-color: #fff;
-  border: solid 1px #9747FF;
+  border: solid 1px #9747ff;
   color: #161616;
 }
 .dijitSelectActive .dijitArrowButton, .dijitSelectOpened .dijitArrowButton {
-  border-left: solid 1px #9747FF;
+  border-left: solid 1px #9747ff;
   background-color: transparent;
 }
 .dijitSelectActive .dijitArrowButton > .dijitArrowButtonInner, .dijitSelectOpened .dijitArrowButton > .dijitArrowButtonInner {
@@ -3797,33 +3797,33 @@ body {
 }
 .dijitComboBoxHover {
   background-color: #fff;
-  border: solid 1px #9747FF;
+  border: solid 1px #9747ff;
 }
 .dijitComboBoxHover .dijitArrowButton {
   background-color: #fff;
-  border-left: solid 1px #9747FF;
+  border-left: solid 1px #9747ff;
 }
 .dijitComboBoxHover .dijitArrowButton:before {
-  border-top-color: #9747FF;
+  border-top-color: #9747ff;
 }
 .dijitComboBoxHover .dijitDownArrowButtonHover {
   background-color: rgba(var(--color-sec_rgb), 0.2);
   border-left: solid 1px #5b5b5b;
 }
 .dijitComboBoxHover .dijitDownArrowButtonHover:before {
-  border-top-color: #9747FF;
+  border-top-color: #9747ff;
 }
 .dijitComboBoxFocused {
-  border: solid 1px #9747FF;
+  border: solid 1px #9747ff;
   background-color: #fff;
 }
 .dijitComboBoxFocused .dijitArrowButton {
   background-color: #fff;
-  border-left: solid 1px #9747FF;
+  border-left: solid 1px #9747ff;
 }
 .dijitComboBoxFocused .dijitDownArrowButtonHover {
   background-color: rgba(var(--color-sec_rgb), 0.2);
-  border-left: solid 1px #9747FF;
+  border-left: solid 1px #9747ff;
 }
 .dijitComboBoxDisabled {
   border: solid 1px #e3e4e6;
@@ -3852,7 +3852,7 @@ body {
   border-top-color: #d0021b;
 }
 .dijitComboBox .dijitDownArrowButtonActive {
-  background-color: #9747FF;
+  background-color: #9747ff;
   border-left: solid 1px #426bf0;
 }
 .dijitComboBox .dijitDownArrowButtonActive:before {
@@ -3897,7 +3897,7 @@ body {
   border-radius: 2px;
   width: 20px;
   height: 16px;
-  border: solid 1px #9747FF;
+  border: solid 1px #9747ff;
   background-color: #fff;
   position: relative;
 }
@@ -4827,7 +4827,7 @@ body {
 }
 .dijitInlineEditBoxDisplayModeHover {
   border-radius: 2px;
-  border: solid 1px solid 1px #9747FF;
+  border: solid 1px solid 1px #9747ff;
   background: #fff;
 }
 .dijitInlineEditBoxDisplayMode.dijitOffScreen {
@@ -6248,14 +6248,14 @@ fieldset {
 }
 
 a {
-  color: #9747FF;
+  color: #9747ff;
 }
 a:hover {
   text-decoration: none;
 }
 
 .link {
-  color: #9747FF !important;
+  color: #9747ff !important;
   text-decoration: underline !important;
 }
 .link:hover {
@@ -6406,13 +6406,13 @@ select[multiple] {
   width: 100%;
 }
 select[multiple]:hover {
-  border: solid 1px #9747FF;
+  border: solid 1px #9747ff;
 }
 
 .fakeDojoButton {
   background-color: #fff;
-  border: solid 1px #9747FF;
-  color: #9747FF;
+  border: solid 1px #9747ff;
+  color: #9747ff;
   box-shadow: 0;
   transition: all 0.1s;
   border-radius: 2px;
@@ -6468,7 +6468,7 @@ select[multiple]:hover {
   padding: 0;
 }
 .dijitDropDownActionButton.dijitDropDownButtonHover {
-  background-color: var(--color-main_mod);
+  background-color: #819eee;
 }
 .dijitDropDownActionButton.dijitDropDownButtonDisabled {
   background-color: #ecedee;
@@ -6500,7 +6500,7 @@ select[multiple]:hover {
   color: #fff;
 }
 .dijitButtonAction.dijitButtonHover {
-  background-color: var(--color-main_mod);
+  background-color: #819eee;
 }
 
 .dotCMSHostFileFilteringSelect .dijitTextBox {
@@ -9278,7 +9278,7 @@ Styles for commons fields along the backend
   padding: 0 1rem;
 }
 .fileAjaxUploader input[type=file]::-webkit-file-upload-button:hover {
-  background-color: var(--color-main_mod);
+  background-color: #819eee;
 }
 .fileAjaxUploaderActions div {
   display: inline-block;
@@ -9841,9 +9841,9 @@ dd .buttonCaption {
 }
 
 .callOutBox {
-  background-color: rgba(var(--color-main_mod), 0.1);
+  background-color: rgba(129, 158, 238, 0.1);
   border-radius: 2px;
-  border: 1px solid rgba(var(--color-main_mod), 0.3);
+  border: 1px solid rgba(129, 158, 238, 0.3);
   margin: 16px 0;
   padding: 8px;
   text-align: center;
@@ -10502,7 +10502,7 @@ a.category_higlighted, a.tag_higlighted {
 
 .import-preview {
   margin: 50px auto;
-  border: solid 1px #9747FF;
+  border: solid 1px #9747ff;
   border-color: #ecedee;
   border-radius: 4px;
 }
