@@ -1,5 +1,6 @@
 import { Subject } from 'rxjs';
 
+import { HttpErrorResponse, HttpResponse } from '@angular/common/http';
 import { Component, ElementRef, OnDestroy, OnInit, ViewChild } from '@angular/core';
 
 import { DialogService } from 'primeng/dynamicdialog';
@@ -10,9 +11,10 @@ import { filter, skip, takeUntil } from 'rxjs/operators';
 
 import { DotMessageSeverity, DotMessageType } from '@components/dot-message-display/model';
 import { DotMessageDisplayService } from '@components/dot-message-display/services';
+import { DotHttpErrorManagerService } from '@dotcms/app/api/services/dot-http-error-manager/dot-http-error-manager.service';
 import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
-import { DotEventsService, DotMessageService } from '@dotcms/data-access';
-import { SiteService } from '@dotcms/dotcms-js';
+import { DotEventsService, DotMessageService, DotPageRenderService } from '@dotcms/data-access';
+import { HttpCode, SiteService } from '@dotcms/dotcms-js';
 import { DotCMSContentlet, DotCMSContentType } from '@dotcms/dotcms-models';
 
 import { DotPagesCreatePageDialogComponent } from './dot-pages-create-page-dialog/dot-pages-create-page-dialog.component';
@@ -46,7 +48,9 @@ export class DotPagesComponent implements OnInit, OnDestroy {
         private dotRouterService: DotRouterService,
         private dotMessageDisplayService: DotMessageDisplayService,
         private dotEventsService: DotEventsService,
+        private dotHttpErrorManagerService: DotHttpErrorManagerService,
         private dotSiteService: SiteService,
+        private dotPageRenderService: DotPageRenderService,
         private element: ElementRef
     ) {
         this.store.setInitialStateData(FAVORITE_PAGE_LIMIT);
@@ -59,15 +63,31 @@ export class DotPagesComponent implements OnInit, OnDestroy {
      * @memberof DotPagesComponent
      */
     goToUrl(url: string): void {
-        const splittedUrl = url.split('?');
-        const urlParams = { url: splittedUrl[0] };
-        const searchParams = new URLSearchParams(splittedUrl[1]);
+        this.dotPageRenderService
+            .checkPermission(url.replace('?', '&'))
+            .subscribe((hasPermission: boolean) => {
+                if (hasPermission) {
+                    const splittedUrl = url.split('?');
+                    const urlParams = { url: splittedUrl[0] };
+                    const searchParams = new URLSearchParams(splittedUrl[1]);
 
-        for (const entry of searchParams) {
-            urlParams[entry[0]] = entry[1];
-        }
+                    for (const entry of searchParams) {
+                        urlParams[entry[0]] = entry[1];
+                    }
 
-        this.dotRouterService.goToEditPage(urlParams);
+                    this.dotRouterService.goToEditPage(urlParams);
+                } else {
+                    const error = new HttpErrorResponse(
+                        new HttpResponse({
+                            body: null,
+                            status: HttpCode.FORBIDDEN,
+                            headers: null,
+                            url: ''
+                        })
+                    );
+                    this.dotHttpErrorManagerService.handle(error);
+                }
+            });
     }
 
     /**

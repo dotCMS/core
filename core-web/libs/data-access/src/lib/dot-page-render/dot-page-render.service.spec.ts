@@ -34,6 +34,11 @@ describe('DotPageRenderService', () => {
         httpMock = injector.get(HttpTestingController);
     });
 
+    it('should check page permissions based on url', () => {
+        dotPageRenderService.checkPermission(url).subscribe();
+        httpMock.expectOne(`v1/page/_check-permission?path=${url}`);
+    });
+
     it('should return entity', () => {
         dotPageRenderService.get({ url }).subscribe((res: DotPageRenderParameters) => {
             expect(res).toEqual(mockDotRenderedPage());

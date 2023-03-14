@@ -1,10 +1,13 @@
 import { Observable } from 'rxjs';
 
+import { HttpErrorResponse, HttpResponse } from '@angular/common/http';
 import { Component, EventEmitter, Output } from '@angular/core';
 
 import { DialogService } from 'primeng/dynamicdialog';
 
-import { DotMessageService } from '@dotcms/data-access';
+import { DotHttpErrorManagerService } from '@dotcms/app/api/services/dot-http-error-manager/dot-http-error-manager.service';
+import { DotMessageService, DotPageRenderService } from '@dotcms/data-access';
+import { HttpCode } from '@dotcms/dotcms-js';
 import { DotCMSContentlet } from '@dotcms/dotcms-models';
 
 import { DotFavoritePageComponent } from '../../dot-edit-page/components/dot-favorite-page/dot-favorite-page.component';
@@ -29,7 +32,9 @@ export class DotPagesFavoritePanelComponent {
     constructor(
         private store: DotPageStore,
         private dotMessageService: DotMessageService,
-        private dialogService: DialogService
+        private dialogService: DialogService,
+        private dotPageRenderService: DotPageRenderService,
+        private dotHttpErrorManagerService: DotHttpErrorManagerService
     ) {}
 
     /**
@@ -59,24 +64,40 @@ export class DotPagesFavoritePanelComponent {
      * @memberof DotPagesComponent
      */
     editFavoritePage(favoritePage: DotCMSContentlet) {
-        this.dialogService.open(DotFavoritePageComponent, {
-            header: this.dotMessageService.get('favoritePage.dialog.header.add.page'),
-            width: '80rem',
-            data: {
-                page: {
-                    favoritePageUrl: favoritePage.url,
-                    favoritePage: favoritePage
-                },
-                onSave: () => {
-                    this.timeStamp = this.getTimeStamp();
-                    this.store.getFavoritePages(this.currentLimitSize);
-                },
-                onDelete: () => {
-                    this.timeStamp = this.getTimeStamp();
-                    this.store.getFavoritePages(this.currentLimitSize);
+        this.dotPageRenderService
+            .checkPermission(favoritePage.url.replace('?', '&'))
+            .subscribe((hasPermission: boolean) => {
+                if (hasPermission) {
+                    this.dialogService.open(DotFavoritePageComponent, {
+                        header: this.dotMessageService.get('favoritePage.dialog.header.add.page'),
+                        width: '80rem',
+                        data: {
+                            page: {
+                                favoritePageUrl: favoritePage.url,
+                                favoritePage: favoritePage
+                            },
+                            onSave: () => {
+                                this.timeStamp = this.getTimeStamp();
+                                this.store.getFavoritePages(this.currentLimitSize);
+                            },
+                            onDelete: () => {
+                                this.timeStamp = this.getTimeStamp();
+                                this.store.getFavoritePages(this.currentLimitSize);
+                            }
+                        }
+                    });
+                } else {
+                    const error = new HttpErrorResponse(
+                        new HttpResponse({
+                            body: null,
+                            status: HttpCode.FORBIDDEN,
+                            headers: null,
+                            url: ''
+                        })
+                    );
+                    this.dotHttpErrorManagerService.handle(error);
                 }
-            }
-        });
+            });
     }
 
     private getTimeStamp() {
