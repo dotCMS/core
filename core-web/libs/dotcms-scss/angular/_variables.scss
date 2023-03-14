@@ -3,46 +3,6 @@
 
 @forward "../shared/colors";
 
-// NEW COLORS WIP
-
-$color-alert-blue: $color-palette-primary-500;
-$color-alert-blue-light: $color-palette-primary-100;
-$color-alert-yellow: #ffb444;
-$color-alert-yellow-light: #fff8ec;
-$color-alert-green: #3ed97a;
-$color-alert-green-light: #f5fdf8;
-$color-alert-red: #f65446;
-$color-alert-red-light: #fff6f6;
-
-$color-accessible-text-red: #d82b2e;
-$color-accessible-text-red-bg: $color-alert-green-light;
-$color-accessible-text-green: #0b6948;
-$color-accessible-text-green-bg: $color-alert-green-light;
-$color-accessible-text-purple: $color-palette-secondary-600;
-$color-accessible-text-purple-bg: $color-palette-secondary-100;
-$color-accessible-text-blue: $color-palette-primary-600;
-$color-accessible-text-blue-bg: $color-palette-primary-200;
-$color-accessible-text-yellow: #bc5b0d;
-$color-accessible-text-yellow-bg: $color-alert-yellow-light;
-$color-accessible-text-gray: $color-palette-gray-600;
-$color-accessible-text-gray-bg: $color-palette-gray-100;
-// END OF NEW COLORS
-
-// OLD COLORS
-$dark: #1b3359;
-
-$orange: #f3762a;
-$red: #c93926;
-$green: #29c175;
-$deleted-content-color: #fdb8c0;
-$new-content-color: #ddffdd;
-$tr-hover-color: #e0e9f6;
-$blue-link: #1d4ed8;
-
-$white: $white;
-
-$brand-background: var(--color-background);
-
 $input-border-color-hover: $color-palette-primary;
 $input-inset-shadow: inset 0 0 0 1px $color-palette-primary, inset 0 0 0 1px $color-palette-primary,
     inset 0 0 0 1px $color-palette-primary, inset 0 0 0 1px $color-palette-primary;
@@ -83,10 +43,8 @@ $spacing-8: 4rem;
 $spacing-9: 4.5rem;
 $spacing-10: 7rem;
 
-$error: #d0021b;
 $warn: $orange;
 $info: $color-palette-secondary;
-$success: $green;
 
 // Basic stuffs
 $border-radius: 2px;

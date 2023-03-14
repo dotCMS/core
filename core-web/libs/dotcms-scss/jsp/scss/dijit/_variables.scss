@@ -1,17 +1,5 @@
-// COLORS
-$black: #000000 !default;
-$blue-light: #1fa1d8 !default;
-$blue: #108ac8 !default;
-$color-palette-gray-800: #45545b !default;
-$color-palette-gray-500: #babec1 !default;
-$color-palette-gray-400: #caced0 !default;
-$color-palette-gray-200: #ecedee !default;
-$color-palette-gray-700: #68757e !default;
-$green-ligth: #77be61 !default;
-$green: #4a9d51 !default;
-$orange: #f3762a !default;
-$white: #ffffff !default;
-$error: #d0021b !default;
+@use "../../../shared/colors" as *;
+@forward "../../../shared/colors";
 
 // TYPOGRAPHY
 $body-size: 12px !default;
@@ -48,12 +36,12 @@ $field-hoverarrow-arrow-border: solid $field-border-size $color-palette-gray-800
 $field-hoverarrow-arrow-bgcolor: $color-palette-gray-400 !default;
 
 $field-active-bgcolor: $white !default;
-$field-active-textcolor: $blue !default;
-$field-active-border: solid 1px $blue !default;
-$field-active-arrow-color: $blue !default;
+$field-active-textcolor: $color-palette-primary !default;
+$field-active-border: solid 1px $color-palette-primary !default;
+$field-active-arrow-color: $color-palette-primary !default;
 $field-activearrow-arrow-color: $white !default;
-$field-activearrow-arrow-border: solid $field-border-size $blue !default;
-$field-activearrow-arrow-bgcolor: $blue !default;
+$field-activearrow-arrow-border: solid $field-border-size $color-palette-primary !default;
+$field-activearrow-arrow-bgcolor: $color-palette-primary !default;
 
 $field-disabled-bgcolor: $color-palette-gray-200 !default;
 $field-disabled-textcolor: $color-palette-gray-400 !default;
@@ -63,10 +51,10 @@ $field-disabled-arrow-color: $color-palette-gray-400 !default;
 $field-focused-bgcolor: $color-palette-gray-400 !default;
 $field-focused-textcolor: $color-palette-gray-800 !default;
 $field-focused-border: solid 1px $color-palette-gray-400 !default;
-$field-focused-arrow-color: $blue !default;
-$field-focusedarrow-arrow-color: $blue !default;
-$field-focusedarrow-arrow-border: solid $field-border-size $blue !default;
-$field-focusedarrow-arrow-bgcolor: rgba($blue, 0.2) !default;
+$field-focused-arrow-color: $color-palette-primary !default;
+$field-focusedarrow-arrow-color: $color-palette-primary !default;
+$field-focusedarrow-arrow-border: solid $field-border-size $color-palette-primary !default;
+$field-focusedarrow-arrow-bgcolor: rgba($color-palette-primary, 0.2) !default;
 $field-error-border: solid 1px $error !default;
 
 // Button
@@ -226,10 +214,10 @@ $textbox-hoverarrow-arrow-color: $field-hoverarrow-arrow-color !default;
 $textbox-hoverarrow-arrow-border: $field-hoverarrow-arrow-border !default;
 $textbox-hoverarrow-arrow-bgcolor: $field-hoverarrow-arrow-bgcolor !default;
 
-$textbox-focused-border: solid $field-border-size $blue !default;
+$textbox-focused-border: solid $field-border-size $color-palette-primary !default;
 $textbox-focused-bgcolor: $white !default;
 $textbox-focused-textcolor: $field-focused-textcolor !default;
-$textbox-focused-arrow-color: $blue !default;
+$textbox-focused-arrow-color: $color-palette-primary !default;
 $textbox-focused-arrow-border: $textbox-focused-border !default;
 $textbox-focused-arrow-bgcolor: $white !default;
 // Hover the field and hover the arrow
@@ -256,7 +244,7 @@ $textarea-hover-bgcolor: $white !default;
 $textarea-hover-border: $field-hover-border !default;
 $textarea-hover-textcolor: $field-hover-textcolor !default;
 
-$textarea-focused-border: solid $field-border-size $blue !default;
+$textarea-focused-border: solid $field-border-size $color-palette-primary !default;
 $textarea-focused-bgcolor: $white !default;
 $textarea-focused-textcolor: $field-focused-textcolor !default;
 
@@ -283,7 +271,7 @@ $spinner-hoverarrow-arrow-color: $field-hoverarrow-arrow-color !default;
 $spinner-hoverarrow-arrow-border: $field-hoverarrow-arrow-border !default;
 $spinner-hoverarrow-arrow-bgcolor: $field-hoverarrow-arrow-bgcolor !default;
 
-$spinner-focused-border: solid $field-border-size $blue !default;
+$spinner-focused-border: solid $field-border-size $color-palette-primary !default;
 $spinner-focused-bgcolor: $white !default;
 $spinner-focused-arrow-color: $field-focused-arrow-color !default;
 $spinner-focused-arrow-border: $spinner-focused-border !default;
@@ -356,9 +344,9 @@ $combobox-hoverarrow-arrow-color: $field-hoverarrow-arrow-color !default;
 $combobox-hoverarrow-arrow-border: $field-hoverarrow-arrow-border !default;
 $combobox-hoverarrow-arrow-bgcolor: $field-hoverarrow-arrow-bgcolor !default;
 
-$combobox-focused-border: solid $field-border-size $blue !default;
+$combobox-focused-border: solid $field-border-size $color-palette-primary !default;
 $combobox-focused-bgcolor: $white !default;
-$combobox-focused-arrow-color: $blue !default;
+$combobox-focused-arrow-color: $color-palette-primary !default;
 $combobox-focused-arrow-border: $combobox-focused-border !default;
 $combobox-focused-arrow-bgcolor: $white !default;
 // Hover the field and hover the arrow
@@ -424,9 +412,9 @@ $slider-rule-mark-hover: solid 1px $color-palette-gray-800 !default;
 $slider-rule-mark-disabled: solid 1px $color-palette-gray-400 !default;
 
 $slider-progress-normal-border-color: $color-palette-gray-400 !default;
-$slider-progress-normal-color: $blue !default;
+$slider-progress-normal-color: $color-palette-primary !default;
 $slider-progress-hover-border-color: $color-palette-gray-800 !default;
-$slider-progress-hover-color: $blue !default;
+$slider-progress-hover-color: $color-palette-primary !default;
 $slider-progress-disabled-border-color: $color-palette-gray-200 !default;
 $slider-progress-disabled-color: $color-palette-gray-200 !default;
 
@@ -464,11 +452,11 @@ $timepicker-item-selected-textcolor: $white !default;
 $calendar-item-size: $field-height !default;
 $calendar-month-bgcolor: $color-palette-gray-800 !default;
 $calendar-month-textcolor: $white !default;
-$calendar-weekday-label-bgcolor: $blue !default;
+$calendar-weekday-label-bgcolor: $color-palette-primary !default;
 $calendar-weekday-label-textcolor: $white !default;
 $calendar-date-bgcolor: $white !default;
 $calendar-date-textcolor: $color-palette-gray-800 !default;
-$calendar-date-hover-bgcolor: rgba($blue, 0.15) !default;
+$calendar-date-hover-bgcolor: rgba($color-palette-primary, 0.15) !default;
 $calendar-date-hover-textcolor: $text-color !default;
 $calendar-date-seleted-bgcolor: $orange !default;
 $calendar-date-seleted-textcolor: $white !default;
