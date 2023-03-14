@@ -32,7 +32,7 @@
 .property-item__icon--selected {
     rect {
         stroke: $color-palette-primary;
-        fill: rgba($brand-primary_rgb, 0.2);
+        fill: rgba($color-palette-primary, 0.2);
     }
 
     path {
