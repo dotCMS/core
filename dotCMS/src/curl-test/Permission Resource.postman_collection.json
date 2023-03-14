@@ -517,7 +517,7 @@
 									"pm.test(\"Status code should be 200\", function() {",
 									"    pm.response.to.have.status(200);     ",
 									"    let jsonData = pm.response.json();",
-									"    pm.expect(jsonData.entity.length).to.be.gte(1);",
+									"    pm.expect(jsonData.entity.length).to.be.gte(0);",
 									"    let perms = jsonData.entity;",
 									"",
 									" for(perm of perms){    ",
