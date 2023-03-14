@@ -11,7 +11,7 @@ import {
     ComponentStatus,
     DotExperiment,
     ExperimentsStatusList,
-    sidebarStatus
+    SidebarStatus
 } from '@dotcms/dotcms-models';
 import { DotExperimentsCreateComponent } from '@portlets/dot-experiments/dot-experiments-list/components/dot-experiments-create/dot-experiments-create.component';
 import {
@@ -98,7 +98,7 @@ export class DotExperimentsListComponent {
         });
     }
 
-    private handleSidebar(status: sidebarStatus, pageId: string) {
+    private handleSidebar(status: SidebarStatus, pageId: string) {
         if (status && status.isOpen) {
             this.pageId = pageId;
             this.loadSidebarComponent(status, this.pageId);
@@ -107,7 +107,7 @@ export class DotExperimentsListComponent {
         }
     }
 
-    private loadSidebarComponent(status: sidebarStatus, pageId: string): void {
+    private loadSidebarComponent(status: SidebarStatus, pageId: string): void {
         if (status && status.isOpen && status.status != ComponentStatus.SAVING) {
             this.sidebarHost.viewContainerRef.clear();
             this.componentRef =

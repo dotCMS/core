@@ -15,7 +15,7 @@ import {
     DotExperiment,
     DotExperimentStatusList,
     GroupedExperimentByStatus,
-    sidebarStatus
+    SidebarStatus
 } from '@dotcms/dotcms-models';
 import { DotExperimentsService } from '@portlets/dot-experiments/shared/services/dot-experiments.service';
 
@@ -27,7 +27,7 @@ export interface DotExperimentsState {
     experiments: DotExperiment[];
     filterStatus: Array<string>;
     status: ComponentStatus;
-    sidebar: sidebarStatus;
+    sidebar: SidebarStatus;
 }
 
 const initialState: DotExperimentsState = {
@@ -60,7 +60,7 @@ export interface VmListExperiments {
     experiments: DotExperiment[];
     experimentsFiltered: { [key: string]: DotExperiment[] };
     filterStatus: Array<string>;
-    sidebar: sidebarStatus;
+    sidebar: SidebarStatus;
 }
 
 export interface VmCreateExperiments {
@@ -111,7 +111,7 @@ export class DotExperimentsListStore
         ...state,
         status
     }));
-    readonly setSidebarStatus = this.updater((state, sidebarStatus: sidebarStatus) => ({
+    readonly setSidebarStatus = this.updater((state, sidebarStatus: SidebarStatus) => ({
         ...state,
         sidebar: {
             ...state.sidebar,
