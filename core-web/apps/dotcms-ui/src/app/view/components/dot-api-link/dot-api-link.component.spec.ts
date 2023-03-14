@@ -15,7 +15,7 @@ class TestHostComponent {
     }
 }
 
-describe('DotApiLinkComponent', () => {
+fdescribe('DotApiLinkComponent', () => {
     let hostFixture: ComponentFixture<TestHostComponent>;
     let hostDe: DebugElement;
     let hostComp: TestHostComponent;
@@ -37,6 +37,8 @@ describe('DotApiLinkComponent', () => {
 
         hostFixture.detectChanges();
         deComp = de.componentInstance;
+
+        spyOn(deComp, 'openLink');
     });
 
     it('should set link correctly', () => {
@@ -57,5 +59,13 @@ describe('DotApiLinkComponent', () => {
         hostFixture.detectChanges();
 
         expect(deComp.link).toEqual('/api/no/start/slash');
+    });
+
+    it('should trigger openLink method on click', () => {
+        const button = de.query(By.css('button'));
+
+        button.triggerEventHandler('click');
+
+        expect(deComp.openLink).toHaveBeenCalled();
     });
 });
