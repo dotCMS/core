@@ -91,9 +91,7 @@
             <td>
                 {{ rowData['modUserName'] }}
             </td>
-            <td *dotRelativeDate="rowData['modDate']; data as result">
-                {{ result }}
-            </td>
+            <td>{{ rowData['modDate'] | dotRelativeDate }}</td>
             <td>
                 <dot-icon-button
                     id="pageActionButton-{{ rowIndex }}"
