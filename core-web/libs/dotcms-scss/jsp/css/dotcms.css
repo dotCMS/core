@@ -2902,7 +2902,7 @@ html,
 body {
     font-family: 'Roboto', 'Helvetica Neue', Helvetica, Arial, 'Lucida Grande', sans-serif;
     font-size: 13px;
-    color: #161616;
+    color: #14151a;
 }
 
 *,
@@ -3480,7 +3480,7 @@ body {
     border: solid 1px #9747ff;
 }
 .dijitTextBoxHover .dijitInputInner {
-    color: #161616;
+    color: #14151a;
 }
 .dijitTextBoxHover .dijitArrowButton {
     background-color: #fff;
@@ -3501,7 +3501,7 @@ body {
     background-color: #fff;
 }
 .dijitTextBoxFocused .dijitInputInner {
-    color: #161616;
+    color: #14151a;
 }
 .dijitTextBoxFocused .dijitArrowButton {
     background-color: #fff;
@@ -3587,19 +3587,19 @@ body {
 .dijitTextArea {
     background-color: #fff;
     border: solid 1px #c5c5c5;
-    color: #161616;
+    color: #14151a;
     font-family: 'Roboto', 'Helvetica Neue', Helvetica, Arial, 'Lucida Grande', sans-serif;
     padding: 8px;
 }
 .dijitTextAreaHover {
     background-color: #fff;
     border: solid 1px #9747ff;
-    color: #161616;
+    color: #14151a;
 }
 .dijitTextAreaFocused {
     border: solid 1px #9747ff;
     background-color: #fff;
-    color: #161616;
+    color: #14151a;
 }
 .dijitTextAreaDisabled {
     border: solid 1px #e3e4e6;
@@ -4039,7 +4039,7 @@ body {
 
 .dijitCheckBox {
     border-radius: 2px;
-    border: solid 1px #161616;
+    border: solid 1px #14151a;
     background-color: #fff;
     width: 14px;
     height: 14px;
@@ -4064,7 +4064,7 @@ body {
 .dijitRadio {
     border-radius: 7px;
     background-color: #fff;
-    border: solid 1px #161616;
+    border: solid 1px #14151a;
     height: 14px;
     width: 14px;
 }
@@ -4107,7 +4107,7 @@ body {
 .dijitSelect {
     background-color: #fff;
     border: solid 1px #c5c5c5;
-    color: #161616;
+    color: #14151a;
 }
 .dijitSelect .dijitButtonContents {
     padding: 0 16px;
@@ -4140,7 +4140,7 @@ body {
 .dijitSelectHover {
     background-color: #fff;
     border: solid 1px #9747ff;
-    color: #161616;
+    color: #14151a;
 }
 .dijitSelectHover .dijitArrowButton {
     border-left: solid 1px #9747ff;
@@ -4163,7 +4163,7 @@ body {
 .dijitSelectOpened {
     background-color: #fff;
     border: solid 1px #9747ff;
-    color: #161616;
+    color: #14151a;
 }
 .dijitSelectActive .dijitArrowButton,
 .dijitSelectOpened .dijitArrowButton {
@@ -4510,7 +4510,7 @@ body {
 .dijitTitlePaneHover .dijitTitlePaneTitle {
     border: none;
     background-color: transparent;
-    color: #161616;
+    color: #14151a;
 }
 .dijitTitlePaneContentOuter {
     transition: border 0.1s;
@@ -4522,7 +4522,7 @@ body {
     transition: all 0.1s;
     border: none;
     background-color: transparent;
-    color: #161616;
+    color: #14151a;
 }
 .dijitTitlePaneTitleClosed .dijitArrowNode:before {
     transform: rotate(-90deg);
@@ -4547,7 +4547,7 @@ body {
 }
 .dijitTitlePaneTitleOpen {
     background-color: transparent;
-    color: #161616;
+    color: #14151a;
 }
 .dijitTitlePaneTitleFocus {
     padding: 0 8px 0 0;
@@ -4658,7 +4658,7 @@ body {
 .dijitTab {
     height: 42px;
     background-color: #fff;
-    color: #161616;
+    color: #14151a;
     padding: 0 24px;
     position: relative;
     border-width: 5px 1px 0 0;
@@ -4697,7 +4697,7 @@ body {
 }
 .dijitTabCloseIcon:before,
 .dijitTabCloseIcon:after {
-    background-color: #161616;
+    background-color: #14151a;
     display: block;
     content: '';
     width: 1px;
@@ -4715,7 +4715,7 @@ body {
 }
 .dijitTabHover {
     background-color: #fff;
-    color: #161616;
+    color: #14151a;
 }
 .dijitTabDisabled {
     background-color: #fff;
@@ -4734,7 +4734,7 @@ body {
     top: 50%;
     border-top: 5px solid transparent;
     border-bottom: 5px solid transparent;
-    border-right: 5px solid #161616;
+    border-right: 5px solid #14151a;
     content: '';
     height: 0;
     width: 0;
@@ -4747,7 +4747,7 @@ body {
     top: 50%;
     border-top: 5px solid transparent;
     border-bottom: 5px solid transparent;
-    border-left: 5px solid #161616;
+    border-left: 5px solid #14151a;
     content: '';
     height: 0;
     width: 0;
@@ -4760,7 +4760,7 @@ body {
     top: 50%;
     border-left: 5px solid transparent;
     border-right: 5px solid transparent;
-    border-top: 5px solid #161616;
+    border-top: 5px solid #14151a;
     content: '';
     height: 0;
     width: 0;
@@ -4769,13 +4769,13 @@ body {
     background-color: #fff;
 }
 .dijitTab.tabStripButtonHover .dijitTabStripSlideLeftIcon:before {
-    border-right-color: #161616;
+    border-right-color: #14151a;
 }
 .dijitTab.tabStripButtonHover .dijitTabStripSlideRightIcon:before {
-    border-left-color: #161616;
+    border-left-color: #14151a;
 }
 .dijitTab.tabStripButtonHover .dijitTabStripMenuIcon:before {
-    border-top-color: #161616;
+    border-top-color: #14151a;
 }
 .dijitTab.tabStripButtonActive {
     background-color: rgba(var(--color-sec_rgb), 0.2);
@@ -4983,7 +4983,7 @@ html,
 body {
     font-family: 'Roboto', 'Helvetica Neue', Helvetica, Arial, 'Lucida Grande', sans-serif;
     font-size: 13px;
-    color: #161616;
+    color: #14151a;
 }
 
 *,
@@ -5041,12 +5041,12 @@ body {
 }
 .dijitCalendarDayLabelTemplate {
     background-color: #fff;
-    color: #161616;
+    color: #14151a;
     font-weight: bold;
 }
 .dijitCalendarHoveredDate {
     background-color: #ecedee;
-    color: #161616;
+    color: #14151a;
 }
 .dijitCalendarIncrementControl {
     position: relative;
@@ -5223,7 +5223,7 @@ body {
 .dijitTimePickerItem {
     line-height: 36px;
     height: 36px;
-    color: #161616;
+    color: #14151a;
     border-bottom: none;
 }
 .dijitTimePickerItemHover {
@@ -5321,7 +5321,7 @@ body {
     background-color: #fafafa;
 }
 .dojoxGrid .dojoxGridMasterView .dojoxGridRow.dojoxGridRowOver .dojoxGridCell {
-    color: #161616;
+    color: #14151a;
 }
 .dojoxGrid .dojoxGridMasterView .dojoxGridRow .dojoxGridRowTable .dojoxGridCell {
     background: none;
@@ -7378,7 +7378,7 @@ select[multiple]:hover {
     background: none !important;
 }
 .listingTable td a {
-    color: #161616;
+    color: #14151a;
     text-decoration: none;
 }
 .listingTable td table tr {
@@ -10078,7 +10078,7 @@ Styles for commons fields along the backend
 #label,
 .fieldName,
 dl.vertical dt label {
-    color: #161616;
+    color: #14151a;
     display: block;
     font-size: 12px;
     margin-bottom: 4px;
@@ -10322,7 +10322,7 @@ dd .buttonCaption {
     padding-left: 20px;
 }
 .fieldName .hintIcon {
-    color: #161616;
+    color: #14151a;
 }
 
 .editcontentlet__row {
@@ -11000,7 +11000,7 @@ a.tag_higlighted {
 }
 .content-edit-actions a:hover {
     background-color: #ecedee;
-    color: #161616;
+    color: #14151a;
 }
 .content-edit-actions a:last-of-type {
     margin-bottom: 0px;
@@ -11582,7 +11582,7 @@ a.tag_higlighted {
     text-decoration: none;
 }
 .categories-selector__breadcrumbs a:last-child {
-    color: #161616;
+    color: #14151a;
 }
 
 .categories-selector__toolbar {
@@ -11808,7 +11808,7 @@ a.tag_higlighted {
 }
 
 .host-list__item a {
-    color: #161616;
+    color: #14151a;
     text-decoration: none;
 }
 .host-list__item .hostArchivedIcon + a {
@@ -12420,7 +12420,7 @@ Resize Handle
 
 .input-text-naked {
     border: none;
-    color: #161616;
+    color: #14151a;
     font-family: 'Roboto', 'Helvetica Neue', Helvetica, Arial, 'Lucida Grande', sans-serif;
     font-size: 13px;
     line-height: 36px;

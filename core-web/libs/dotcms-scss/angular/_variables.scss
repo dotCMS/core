@@ -30,9 +30,8 @@ $color-accessible-text-gray-bg: $color-palette-gray-100;
 
 // OLD COLORS
 $dark: #1b3359;
-$black: #11152e;
+
 $orange: #f3762a;
-$white: #ffffff;
 $red: #c93926;
 $green: #29c175;
 $gray-dark: #524e5c;
@@ -46,7 +45,7 @@ $new-content-color: #ddffdd;
 $tr-hover-color: #e0e9f6;
 $blue-link: #1d4ed8;
 
-$white_rgb: var(--color-white_rgb);
+$white: $white;
 
 $brand-background: var(--color-background);
 
