@@ -128,11 +128,11 @@ a {
     }
 
     &.link-secondary {
-        color: $brand-secondary;
+        color: $color-palette-secondary;
     }
 
     &[actionlink] {
-        color: $brand-secondary;
+        color: $color-palette-secondary;
         font-size: $button-tiny-text-size;
         text-transform: uppercase;
         cursor: pointer;

@@ -52,11 +52,11 @@
 .p-button.p-button-vertical {
     font-size: $font-size-medium;
     padding: $spacing-1 $spacing-2;
-    color: $brand-secondary;
+    color: $color-palette-secondary;
 
     &:enabled:hover,
     &:enabled:focus {
-        color: $brand-secondary;
+        color: $color-palette-secondary;
     }
 
     .p-button-icon {
@@ -182,7 +182,7 @@
 .p-button.p-button-secondary,
 .p-buttonset.p-button-secondary > .p-button,
 .p-splitbutton.p-button-secondary > .p-button {
-    color: $brand-secondary;
+    color: $color-palette-secondary;
     border-top: 1px solid $brand-secondary;
     border-left: 1px solid $brand-secondary;
     border-bottom: 1px solid $brand-secondary;
@@ -230,7 +230,7 @@
 .p-button.p-button-secondary:enabled:focus {
     background: none;
     border-color: transparent;
-    color: $brand-secondary;
+    color: $color-palette-secondary;
 }
 
 .p-button.p-button-info,

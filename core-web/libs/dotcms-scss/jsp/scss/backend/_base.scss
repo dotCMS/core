@@ -52,7 +52,7 @@ fieldset {
 }
 
 a {
-    color: $color-sec;
+    color: $color-palette-secondary;
 
     &:hover {
         text-decoration: none;
@@ -60,7 +60,7 @@ a {
 }
 
 .link {
-    color: $color-sec !important;
+    color: $color-palette-secondary !important;
     text-decoration: underline !important;
 
     &:hover {

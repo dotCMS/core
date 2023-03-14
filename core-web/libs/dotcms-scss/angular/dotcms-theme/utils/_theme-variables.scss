@@ -73,7 +73,7 @@ $button-main: (
 $button-sec: (
     normal: (
         background: $white,
-        color: $brand-secondary,
+        color: $color-palette-secondary,
         border: solid 1px $brand-secondary
     ),
     hover: (
@@ -185,7 +185,7 @@ $paginator-page-size: 21px;
 // TABVIEW
 $tabview-item-hover-bgcolor: $selectbutton-button-hover-bgcolor;
 $tabview-item-color: $gray;
-$tabview-item-selected-color: $brand-secondary;
+$tabview-item-selected-color: $color-palette-secondary;
 $tabview-item-padding: $spacing-3 $spacing-4 10px; // To match the 48px height
 $tabview-item-border: 3px solid $white;
 $tabview-item-border-height: 4px;

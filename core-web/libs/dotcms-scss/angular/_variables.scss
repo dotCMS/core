@@ -15,7 +15,7 @@ $color-primary-100: #f7f9fe;
 
 $color-secondary-700: #5b2b99;
 $color-secondary-600: #7939cc;
-$color-secondary-500: var(--color-sec); // brand secondary
+
 $color-secondary-400: #b175ff;
 $color-secondary-300: #cba3ff;
 $color-secondary-200: #e5d1ff;
@@ -120,7 +120,7 @@ $spacing-10: 7rem;
 
 $error: #d0021b;
 $warn: $orange;
-$info: $brand-secondary;
+$info: $color-palette-secondary;
 $success: $green;
 
 // Basic stuffs

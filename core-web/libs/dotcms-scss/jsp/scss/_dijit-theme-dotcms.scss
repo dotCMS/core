@@ -17,7 +17,7 @@ $red: #cb3927;
 // BRAND COLORS
 $color-main_mod: var(--color-main_mod);
 $color-main_rgb: var(--color-main_rgb);
-$color-sec: var(--color-sec);
+
 $color-sec_rgb: var(--color-sec_rgb);
 
 // MATERIAL DESIGN SHADOWS
@@ -60,9 +60,9 @@ $field-normal-arrow-color: $gray;
 
 $field-hover-bgcolor: $gray-ligthest;
 $field-hover-textcolor: $text-color;
-$field-hover-border: solid $field-border-size $color-sec;
+$field-hover-border: solid $field-border-size $color-palette-secondary;
 $field-hover-arrow-color: $color-palette-primary;
-$field-hoverarrow-arrow-color: $color-sec;
+$field-hoverarrow-arrow-color: $color-palette-secondary;
 $field-hoverarrow-arrow-border: solid $field-border-size $gray-dark;
 $field-hoverarrow-arrow-bgcolor: rgba(var(--color-sec_rgb), 0.2);
 
@@ -93,8 +93,8 @@ $field-error-border: solid 1px $error;
 
 $button-padding: $field-padding * 2;
 $button-normal-bgcolor: $white;
-$button-normal-textcolor: $color-sec;
-$button-normal-border: solid 1px $color-sec;
+$button-normal-textcolor: $color-palette-secondary;
+$button-normal-border: solid 1px $color-palette-secondary;
 $button-normal-shadow: 0;
 
 $button-hover-bgcolor: $white;
@@ -127,7 +127,7 @@ $dropdownbutton-normal-border: $button-normal-border;
 $dropdownbutton-normal-shadow: $button-normal-shadow;
 $dropdownbutton-normal-arrow-bgcolor: transparent;
 $dropdownbutton-normal-arrow-url: false;
-$dropdownbutton-normal-arrow-color: $color-sec;
+$dropdownbutton-normal-arrow-color: $color-palette-secondary;
 
 $dropdownbutton-hover-bgcolor: $button-hover-bgcolor;
 $dropdownbutton-hover-textcolor: $button-hover-textcolor;
@@ -171,7 +171,7 @@ $combobutton-normal-border: $button-normal-border;
 $combobutton-normal-shadow: $button-normal-shadow;
 $combobutton-normal-arrow-bgcolor: transparent;
 $combobutton-normal-arrow-url: false;
-$combobutton-normal-arrow-color: $color-sec;
+$combobutton-normal-arrow-color: $color-palette-secondary;
 $combobutton-normal-arrow-border: $combobutton-normal-border;
 
 $combobutton-hover-bgcolor: $button-hover-bgcolor;
