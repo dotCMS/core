@@ -18,7 +18,7 @@ import { TagModule } from 'primeng/tag';
 
 import { DotMessagePipe } from '@dotcms/app/view/pipes';
 import { DotMessageService, DotSessionStorageService } from '@dotcms/data-access';
-import { ComponentStatus } from '@dotcms/dotcms-models';
+import { ComponentStatus, DotExperimentStatusList } from '@dotcms/dotcms-models';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 import { DotMessagePipeModule } from '@pipes/dot-message/dot-message-pipe.module';
 import { DotExperimentsConfigurationGoalsComponent } from '@portlets/dot-experiments/dot-experiments-configuration/components/dot-experiments-configuration-goals/dot-experiments-configuration-goals.component';
@@ -169,6 +169,31 @@ describe('DotExperimentsConfigurationComponent', () => {
         spectator.detectChanges();
 
         expect(spectator.query(byTestId('start-experiment-button'))).not.toExist();
+    });
+
+    it('should show Stop Experiment button if experiment status is running and call stopExperiment after confirmation', () => {
+        spyOn(dotExperimentsConfigurationStore, 'stopExperiment');
+        spectator.component.vm$ = of({
+            ...defaultVmMock,
+            experimentStatus: DotExperimentStatusList.RUNNING
+        });
+        spectator.detectChanges();
+
+        spectator.click(byTestId('stop-experiment-button'));
+        spectator.query(ConfirmPopup).accept();
+
+        expect(dotExperimentsConfigurationStore.stopExperiment).toHaveBeenCalledWith(
+            EXPERIMENT_MOCK
+        );
+    });
+
+    it('should show hide stop Experiment button if experiment status is different than running', () => {
+        spectator.component.vm$ = of({
+            ...defaultVmMock,
+            experimentStatus: DotExperimentStatusList.DRAFT
+        });
+        spectator.detectChanges();
+        expect(spectator.query(byTestId('stop-experiment-button'))).not.toExist();
     });
 
     it('should show Start Experiment button disabled if disabledStartExperiment true', () => {

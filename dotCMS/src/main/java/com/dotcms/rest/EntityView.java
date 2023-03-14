@@ -9,13 +9,21 @@ import java.util.Map;
  */
 public interface EntityView <T> {
 
-    public List<ErrorEntity> getErrors();
+    List<ErrorEntity> getErrors();
 
-    public T getEntity();
+    T getEntity();
 
-    public List<MessageEntity> getMessages() ;
+    List<MessageEntity> getMessages() ;
 
-    public Map<String, String> getI18nMessagesMap();
+    Map<String, String> getI18nMessagesMap();
 
-    public List<String> getPermissions();
+    List<String> getPermissions();
+
+    /**
+     * Returns the pagination parameters associated to the current data request.
+     *
+     * @return The {@link Pagination} instance.
+     */
+    Pagination getPagination();
+
 }

@@ -9,6 +9,7 @@ import { DotMessagePipe } from '@dotcms/app/view/pipes';
 import { DotSessionStorageService } from '@dotcms/data-access';
 import {
     DotExperiment,
+    DotExperimentStatusList,
     EditPageTabs,
     ExperimentSteps,
     SidebarStatus,
@@ -29,6 +30,7 @@ import {
 export class DotExperimentsConfigurationComponent implements OnInit {
     vm$: Observable<ConfigurationViewModel> = this.dotExperimentsConfigurationStore.vm$;
     experimentSteps = ExperimentSteps;
+    experimentStatus = DotExperimentStatusList;
 
     constructor(
         private readonly dotExperimentsConfigurationStore: DotExperimentsConfigurationStore,
@@ -70,6 +72,26 @@ export class DotExperimentsConfigurationComponent implements OnInit {
      */
     runExperiment(experiment: DotExperiment) {
         this.dotExperimentsConfigurationStore.startExperiment(experiment);
+    }
+
+    /**
+     * Stop the Experiment
+     * @param {MouseEvent} $event
+     * @param {DotExperiment} experiment
+     * @returns void
+     * @memberof DotExperimentsConfigurationVariantsComponent
+     */
+    stopExperiment($event: MouseEvent, experiment: DotExperiment) {
+        this.confirmationService.confirm({
+            target: $event.target,
+            message: this.dotMessagePipe.transform('experiments.action.stop.delete-confirm'),
+            icon: 'pi pi-exclamation-triangle',
+            acceptLabel: this.dotMessagePipe.transform('stop'),
+            rejectLabel: this.dotMessagePipe.transform('dot.common.dialog.reject'),
+            accept: () => {
+                this.dotExperimentsConfigurationStore.stopExperiment(experiment);
+            }
+        });
     }
 
     /**
