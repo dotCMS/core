@@ -15,7 +15,7 @@ class TestHostComponent {
     }
 }
 
-fdescribe('DotApiLinkComponent', () => {
+describe('DotApiLinkComponent', () => {
     let hostFixture: ComponentFixture<TestHostComponent>;
     let hostDe: DebugElement;
     let hostComp: TestHostComponent;
