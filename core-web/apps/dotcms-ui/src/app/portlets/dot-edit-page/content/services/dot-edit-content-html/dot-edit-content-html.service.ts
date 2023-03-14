@@ -727,6 +727,12 @@ export class DotEditContentHtmlService {
         const contentletEventsMap = {
             // When an user create or edit a contentlet from the jsp
             save: (contentlet: DotPageContent) => {
+                /*
+                 * The Save event is triggered when the user edit a contentlet or edit the vtl code from the jsp.
+                 * When the user edit the vtl code from the jsp the data sent is the vtl code information.
+                 */
+                const contentletEdited = this.isEditAction() ? contentlet : this.currentContentlet;
+
                 if (this.currentAction === DotContentletAction.ADD) {
                     this.renderAddedContentlet(contentlet);
                 } else {
@@ -736,9 +742,7 @@ export class DotEditContentHtmlService {
                     // because: https://github.com/dotCMS/core/issues/21818
 
                     setTimeout(() => {
-                        this.currentMenuAction === DotContentletMenuAction.edit
-                            ? this.renderEditedContentlet(this.currentContentlet, contentlet)
-                            : this.renderEditedContentlet(this.currentContentlet);
+                        this.renderEditedContentlet(this.currentContentlet, contentletEdited);
                     }, 1800);
                 }
             },
@@ -932,5 +936,9 @@ export class DotEditContentHtmlService {
 
     private getContentletNumberOfPages(contentlet: HTMLElement): string {
         return contentlet?.dataset?.dotOnNumberOfPages || '0';
+    }
+
+    private isEditAction() {
+        return this.currentMenuAction === DotContentletMenuAction.edit;
     }
 }

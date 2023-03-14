@@ -43,7 +43,6 @@ export class DotTemplateNewComponent implements OnInit {
             header: this.dotMessageService.get('templates.select.template.title'),
             width: '37rem',
             data: { options: this.options },
-            style: { 'border-radius': '16px' },
             contentStyle: { padding: '0px' }
         });
 

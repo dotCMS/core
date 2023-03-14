@@ -50,6 +50,12 @@ export interface DotRequestOptionsArgs {
     };
 }
 
+/**
+ * @deprecated
+ *
+ * @export
+ * @class CoreWebService
+ */
 @Injectable()
 export class CoreWebService {
     private httpErrosSubjects: Subject<any>[] = [];

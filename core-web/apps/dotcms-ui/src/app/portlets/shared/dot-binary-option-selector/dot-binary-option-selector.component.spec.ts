@@ -7,7 +7,6 @@ import { DynamicDialogConfig, DynamicDialogRef } from 'primeng/dynamicdialog';
 
 import { DotMessagePipeModule } from '@dotcms/app/view/pipes/dot-message/dot-message-pipe.module';
 import { DotMessageService } from '@dotcms/data-access';
-// import { MockDotMessageService, dotcmsContentletMock } from '@dotcms/utils-testing';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 
 import {

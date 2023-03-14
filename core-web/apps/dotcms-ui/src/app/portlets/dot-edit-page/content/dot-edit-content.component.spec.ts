@@ -1120,7 +1120,6 @@ describe('DotEditContentComponent', () => {
                             header: 'Edit Content',
                             width: '37rem',
                             data: { options: CONTENT_EDIT_OPTIONS },
-                            style: { 'border-radius': '16px' },
                             contentStyle: { padding: '0px' }
                         });
                         expect(dotContentletEditorService.edit).not.toHaveBeenCalled();

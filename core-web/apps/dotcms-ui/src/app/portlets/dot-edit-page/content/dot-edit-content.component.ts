@@ -738,7 +738,6 @@ export class DotEditContentComponent implements OnInit, OnDestroy {
             header: this.dotMessageService.get('Edit-Content'),
             width: '37rem',
             data: { options: this.CONTENT_EDIT_OPTIONS },
-            style: { 'border-radius': '16px' },
             contentStyle: { padding: '0px' }
         });
 
@@ -766,7 +765,9 @@ export class DotEditContentComponent implements OnInit, OnDestroy {
             .pipe(
                 take(1),
                 tap(() => this.dotLoadingIndicatorService.show()),
-                catchError((error) => this.httpErrorManagerService.handle(error)),
+                catchError((error: HttpErrorResponse) =>
+                    this.httpErrorManagerService.handle(error)
+                ),
                 finalize(() => this.dotLoadingIndicatorService.hide())
             )
             .subscribe(({ inode }: DotCMSContentlet) => this.editContentlet(inode));
