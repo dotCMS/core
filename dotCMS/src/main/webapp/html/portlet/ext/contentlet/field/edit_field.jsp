@@ -198,8 +198,8 @@
                 }
             }
             %>
-
             <script src="/html/dotcms-block-editor.js"></script>
+            <script src="/html/showdown.min.js"></script>
             <dotcms-block-editor
                 id="block-editor-<%=field.getVelocityVarName()%>"
                 allowed-content-types="<%=allowedContentTypes%>"
@@ -233,7 +233,9 @@
                         // Otherwise, we try to parse the "textValue".
                         content = JSONValue || JSON.parse(<%=textValue%>);
                     } catch (error) {
-                        content = <%=textValue%>;
+                        const text = (<%=textValue%>).replace(/&#96;/g, '`').replace(/&#36;/g, '$');
+                        const converter = new showdown.Converter({tables: true});
+                        content = converter.makeHtml(text);                      
                     }
 
                     const blockEditor = document.getElementById("block-editor-<%=field.getVelocityVarName()%>");
@@ -242,6 +244,7 @@
 
                     if (content) {
                         blockEditor.value = content;
+                        field.value = content; 
                     }
 
                     blockEditor.addEventListener('valueChange', (event) => {

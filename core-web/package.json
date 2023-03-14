@@ -112,7 +112,6 @@
     "react-dom": "^18.2.0",
     "regenerator-runtime": "^0.13.9",
     "rxjs": "~6.6.3",
-    "showdown": "^2.1.0",
     "superstruct": "^1.0.3",
     "test": "^0.6.0",
     "tslib": "^2.0.0",
