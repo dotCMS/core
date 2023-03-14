@@ -95,7 +95,7 @@ select[multiple] {
         }
 
         &.dijitDropDownButtonHover {
-            background-color: $color-main_mod;
+            background-color: $color-palette-primary-400;
         }
 
         &.dijitDropDownButtonDisabled {
@@ -135,7 +135,7 @@ select[multiple] {
         color: $white;
 
         &.dijitButtonHover {
-            background-color: $color-main_mod;
+            background-color: $color-palette-primary-400;
         }
     }
 }

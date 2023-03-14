@@ -15,13 +15,13 @@
             opacity: 1;
 
             &:hover {
-                background: $brand-primary_mod;
+                background: $color-palette-primary-400;
                 box-shadow: $md-shadow-3;
             }
 
             &:active,
             &:focus {
-                background: $brand-primary_mod;
+                background: $color-palette-primary-400;
             }
         }
     }

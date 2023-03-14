@@ -4,15 +4,18 @@
 @forward "../shared/colors";
 
 // NEW COLORS WIP
-$color-primary-800: var(--color-background);
-$color-primary-700: #34408b;
-$color-primary-600: #4656ba;
-$color-primary-500: var(--color-main); // brand primary
-$color-primary-400: #819eee;
-$color-primary-300: #bccbf6;
-$color-primary-200: #edf3ff;
-$color-primary-100: #f7f9fe;
 
+// PRIMARY
+$color-palette-primary-800: var(--color-background);
+$color-palette-primary-700: #34408b;
+$color-palette-primary-600: #4656ba;
+$color-palette-primary-500: var(--color-main); // brand primary
+
+$color-palette-primary-300: #bccbf6;
+$color-palette-primary-200: #edf3ff;
+$color-palette-primary-100: #f7f9fe;
+
+// SECONDARY
 $color-secondary-700: #5b2b99;
 $color-secondary-600: #7939cc;
 
@@ -29,8 +32,8 @@ $color-gray-300: #e7e8ea;
 $color-gray-200: #f3f3f4;
 $color-gray-100: #fafafb;
 
-$color-alert-blue: $color-primary-500;
-$color-alert-blue-light: $color-primary-100;
+$color-alert-blue: $color-palette-primary-500;
+$color-alert-blue-light: $color-palette-primary-100;
 $color-alert-yellow: #ffb444;
 $color-alert-yellow-light: #fff8ec;
 $color-alert-green: #3ed97a;
@@ -44,8 +47,8 @@ $color-accessible-text-green: #0b6948;
 $color-accessible-text-green-bg: $color-alert-green-light;
 $color-accessible-text-purple: $color-secondary-600;
 $color-accessible-text-purple-bg: $color-secondary-000;
-$color-accessible-text-blue: $color-primary-600;
-$color-accessible-text-blue-bg: $color-primary-200;
+$color-accessible-text-blue: $color-palette-primary-600;
+$color-accessible-text-blue-bg: $color-palette-primary-200;
 $color-accessible-text-yellow: #bc5b0d;
 $color-accessible-text-yellow-bg: $color-alert-yellow-light;
 $color-accessible-text-gray: $color-gray-600;
@@ -71,7 +74,6 @@ $tr-hover-color: #e0e9f6;
 $blue-link: #1d4ed8;
 
 $white_rgb: var(--color-white_rgb);
-$brand-primary_mod: var(--color-main_mod);
 $brand-primary_rgb: var(--color-main_rgb);
 
 $brand-secondary: var(--color-sec);

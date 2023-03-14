@@ -32,7 +32,7 @@ $slider-core-transition: background-color 0.2s, color 0.2s, border-color 0.2s, b
 .p-slider .p-slider-handle:focus {
     outline: 0 none;
     outline-offset: 0;
-    box-shadow: 0 0 0 0.2rem $brand-primary_mod;
+    box-shadow: 0 0 0 0.2rem $color-palette-primary-400;
 }
 .p-slider .p-slider-range {
     background: $color-palette-primary;

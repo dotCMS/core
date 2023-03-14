@@ -49,17 +49,17 @@ $button-main: (
         border: $button-border
     ),
     hover: (
-        background: $brand-primary_mod,
+        background: $color-palette-primary-400,
         color: $white,
         border: $button-border
     ),
     focus: (
-        background: $brand-primary_mod,
+        background: $color-palette-primary-400,
         color: $white,
         border: $button-border
     ),
     active: (
-        background: $brand-primary_mod,
+        background: $color-palette-primary-400,
         color: $white,
         border: $button-border
     ),

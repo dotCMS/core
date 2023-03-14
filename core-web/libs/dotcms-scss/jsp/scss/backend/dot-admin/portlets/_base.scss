@@ -111,10 +111,11 @@ $panel-padding: $basic-padding * 2;
     width: 300px;
 }
 
+// TODO: fix this, rgba can't take hex values
 .callOutBox {
-    background-color: rgba($color-main_mod, 0.1);
+    background-color: rgba($color-palette-primary-400, 0.1);
     border-radius: $border-radius;
-    border: 1px solid rgba($color-main_mod, 0.3);
+    border: 1px solid rgba($color-palette-primary-400, 0.3);
     margin: $basic-padding * 2 0;
     padding: $basic-padding;
     text-align: center;

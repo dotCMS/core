@@ -23,7 +23,7 @@
     grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
 
     ::ng-deep dot-icon i {
-        color: $color-primary-500;
+        color: $color-palette-primary-500;
     }
 
     dot-icon {
