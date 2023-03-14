@@ -157,12 +157,19 @@ public class PageResourceHelper implements Serializable {
                             multiTreesMap, personalization, MultiTree.personalized(multiTree, personalization),
                             CollectionsUtils::add,
                             (String key, MultiTree multitree) -> CollectionsUtils.list(multitree));
-                    final Contentlet contentlet = this.contentletAPI.findContentletByIdentifierAnyLanguage(contentletId, variantName);
                     HibernateUtil.addCommitListener(new FlushCacheRunnable() {
 
                         @Override
                         public void run() {
-                            new ContentletLoader().invalidate(contentlet, PageMode.EDIT_MODE);
+                            try {
+                                final Contentlet contentlet =
+                                        contentletAPI.findContentletByIdentifierAnyLanguage(contentletId, variantName);
+                                new ContentletLoader().invalidate(contentlet, PageMode.EDIT_MODE);
+                            } catch (final DotDataException e) {
+                                Logger.warn(this, String.format("Contentlet with ID '%s' could not be invalidated " +
+                                                                        "from cache: %s", contentletId,
+                                        e.getMessage()));
+                            }
                         }
 
                     });
