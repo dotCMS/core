@@ -1026,14 +1026,18 @@ public class PageResource {
     public ResponseEntityBooleanView checkPagePermission(@Context final HttpServletRequest request,
                                                          @Context final HttpServletResponse response,
                                                          @DefaultValue("READ") @QueryParam("type") final String type,
-                                                         @DefaultValue("-1") @QueryParam("languageId") final long languageId,
+                                                         @QueryParam("host_id") final String hostId,
+                                                         @DefaultValue("-1") @QueryParam("language_id") final long languageId,
                                                          @QueryParam("path") final String path) throws DotSecurityException, DotDataException {
 
         final User user = webResource.init(request, response, true).getUser();
         final PageMode mode = PageMode.get(request);
-        Logger.debug(this, ()-> "Checking Page Permission type" + type +" for the page path: " + path);
+        Logger.debug(this, ()-> "Checking Page Permission type" + type
+                +" for the page path: " + path + ", host id: " + hostId + ", lang: " + languageId);
 
-        final Host currentHost = WebAPILocator.getHostWebAPI().getCurrentHostNoThrow(request);
+        final Host currentHost = UtilMethods.isSet(hostId)?
+                WebAPILocator.getHostWebAPI().find(hostId, user, PageMode.get(request).respectAnonPerms):
+                WebAPILocator.getHostWebAPI().getCurrentHostNoThrow(request);
         final IHTMLPage page = APILocator.getHTMLPageAssetAPI().getPageByPath(
                 path, currentHost, -1 != languageId? languageId:
                         WebAPILocator.getLanguageWebAPI().getLanguage(request).getId(), mode.showLive);
