@@ -44,25 +44,23 @@ $color-alert-red: #f65446;
 $color-alert-red-light: #fff6f6;
 
 $color-accessible-text-red: #d82b2e;
-$color-accessible-text-red-bg: $color-alert-green-light;
+$color-accessible-text-red-bg: $color-alert-red-light;
 $color-accessible-text-green: #0b6948;
 $color-accessible-text-green-bg: $color-alert-green-light;
 $color-accessible-text-purple: $color-palette-secondary-600;
 $color-accessible-text-purple-bg: $color-palette-secondary-100;
-$color-accessible-text-blue: $color-palette-primary-600;
+$color-accessible-text-blue: $color-palette-primary-500;
 $color-accessible-text-blue-bg: $color-palette-primary-200;
-$color-accessible-text-yellow: #bc5b0d;
+$color-accessible-text-yellow: #bc5b0d; // TODO: why?
 $color-accessible-text-yellow-bg: $color-alert-yellow-light;
 $color-accessible-text-gray: $color-palette-gray-600;
 $color-accessible-text-gray-bg: $color-palette-gray-100;
 
 // LEGACY COLORS
 $brand-background: var(--color-background);
-$dark: #1b3359;
 $deleted-content-color: #fdb8c0;
 $red: $color-accessible-text-red;
 $error: $color-accessible-text-red;
 $new-content-color: #ddffdd;
 $orange: #f3762a;
 $success: $color-accessible-text-green;
-$tr-hover-color: #e0e9f6;
