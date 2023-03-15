@@ -20,12 +20,12 @@ p {
         font-weight: $font-weight-bold;
         color: $color-palette-gray-600;
         background-color: $color-palette-gray-100;
-        border-radius: $border-radius-md;
+        border-radius: $border-radius-sm;
     }
 
     &__conditions {
         background-color: $color-palette-gray-100;
-        border-radius: $border-radius-md;
+        border-radius: $border-radius-sm;
         font-weight: $font-weight-bold;
     }
 

@@ -15,11 +15,11 @@
         border-spacing: 0;
 
         tr:last-child td:first-child {
-            border-bottom-left-radius: $border-radius-md;
+            border-bottom-left-radius: $border-radius-sm;
         }
 
         td:last-child {
-            border-bottom-right-radius: $border-radius-md;
+            border-bottom-right-radius: $border-radius-sm;
         }
 
         th,
@@ -61,7 +61,7 @@
         }
 
         .p-datatable-wrapper {
-            border-radius: $border-radius-md;
+            border-radius: $border-radius-sm;
             border: 1px solid $color-palette-gray-300;
 
             .p-datatable-tbody {
