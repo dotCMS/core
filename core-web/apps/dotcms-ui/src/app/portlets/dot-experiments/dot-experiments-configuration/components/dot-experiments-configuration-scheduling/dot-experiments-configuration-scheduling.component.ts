@@ -65,7 +65,7 @@ export class DotExperimentsConfigurationSchedulingComponent {
     }
 
     private handleSidebar(status: StepStatus) {
-        if (status && status.isOpen) {
+        if (status && status.isOpen && status.status != ComponentStatus.SAVING) {
             this.loadSidebarComponent(status);
         } else {
             this.removeSidebarComponent();

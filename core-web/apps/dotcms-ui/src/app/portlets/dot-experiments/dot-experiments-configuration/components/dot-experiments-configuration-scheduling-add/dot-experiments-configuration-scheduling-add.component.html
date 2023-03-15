@@ -1,4 +1,6 @@
 <ng-container *ngIf="vm$ | async as vm">
+    <h1>{{ vm.status | json }}</h1>
+
     <p-sidebar [(visible)]="vm.status.isOpen" (onHide)="closeSidebar()" dotSidebar>
         <dot-sidebar-header
             [actionButtonTpl]="actionHeaderBtnTpl"
