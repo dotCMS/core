@@ -163,6 +163,7 @@ describe('DotPagesListingPanelComponent', () => {
         it('should set table with params', () => {
             const elem = de.query(By.css('p-table')).componentInstance;
             expect(elem.scrollable).toBe(true);
+            expect(elem.loading).toBe(undefined);
             expect(elem.virtualScroll).toBe(true);
             expect(elem.virtualScrollItemSize).toBe(47);
             expect(elem.lazy).toBe(true);

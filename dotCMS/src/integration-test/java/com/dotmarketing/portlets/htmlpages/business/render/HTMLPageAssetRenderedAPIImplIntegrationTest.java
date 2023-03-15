@@ -1668,14 +1668,7 @@ public class HTMLPageAssetRenderedAPIImplIntegrationTest extends IntegrationTest
     }
 
     private static String getExpectedExperimentJsCode(Experiment experiment) {
-        return "<script src=\"//localhost:8080/s/lib.js\" data-key=\"\"\n"
-                + "        data-init-only=\"false\"\n"
-                + "        defer>\n"
-                + "</script>\n"
-                + "\n"
-                + "<script>window.jitsu = window.jitsu || (function(){(window.jitsuQ = window.jitsuQ || []).push(arguments);})</script>\n"
-                + "<SCRIPT>\n"
-                + "function setJitsuExperimentData (experimentData) {\n"
+        return "function setJitsuExperimentData (experimentData) {\n"
                 + "    let experimentsShortData = {\n"
                 + "        experiments: experimentData.experiments.map((experiment) => ({\n"
                 + "                experiment: experiment.id,\n"
@@ -1717,7 +1710,7 @@ public class HTMLPageAssetRenderedAPIImplIntegrationTest extends IntegrationTest
                 + "\n"
                 + "let experimentAlreadyCheck = sessionStorage.getItem(\"experimentAlreadyCheck\");\n"
                 + "\n"
-                + "if (!experimentAlreadyCheck) {\n"
+                + "if (!experimentAlreadyCheck) {"
                 + "    let currentRunningExperimentsId = ['" + experiment.id().get() + "'];\n"
                 + "\n"
                 + "    function shouldHitEndPoint() {\n"
@@ -1835,7 +1828,8 @@ public class HTMLPageAssetRenderedAPIImplIntegrationTest extends IntegrationTest
                 + "    const event = new CustomEvent('experiment_loaded',\n"
                 + "        {detail: experimentData});\n"
                 + "    window.dispatchEvent(event);\n"
-                + "}\n";
+                + "}";
+
     }
 
     /**

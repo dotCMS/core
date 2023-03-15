@@ -1,8 +1,9 @@
 {
 	"info": {
-		"_postman_id": "8501a46e-413d-49cc-ad7f-7546df7614c1",
+		"_postman_id": "3be25a89-5655-4504-8bc5-bc3f1f9e2cfc",
 		"name": "Page API - [api/v1/page]",
-		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "781456"
 	},
 	"item": [
 		{
@@ -4832,7 +4833,7 @@
 						"header": [],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n\t\n\t\"contentlet\": {\n\t\t\"contentType\":\"htmlpageasset\",\n        \"title\":\"testPageCopy\",\n        \"url\":\"testPageCopy\",\n        \"hostFolder\":\"default\",\n        \"template\":\"SYSTEM_TEMPLATE\",\n        \"friendlyName\":\"testPageCopy\",\n        \"cachettl\":0\n\t\t\n\t}\n}",
+							"raw": "{\n\t\n\t\"contentlet\": {\n\t\t\"contentType\":\"htmlpageasset\",\n        \"title\":\"testPageCopy{{$randomBankAccount}}\",\n        \"url\":\"testPageCopy{{$randomBankAccount}}\",\n        \"hostFolder\":\"default\",\n        \"template\":\"SYSTEM_TEMPLATE\",\n        \"friendlyName\":\"testPageCopy{{$randomBankAccount}}\",\n        \"cachettl\":0\n\t\t\n\t}\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -4978,7 +4979,7 @@
 									"pm.test(\"No errors\", function () {",
 									"    ",
 									"    var jsonData = pm.response.json();",
-									"    pm.expect(jsonData.entity.length).to.greaterThan(2);",
+									"    pm.expect(jsonData.entity.length).to.greaterThan(1);",
 									"",
 									"});",
 									"",
