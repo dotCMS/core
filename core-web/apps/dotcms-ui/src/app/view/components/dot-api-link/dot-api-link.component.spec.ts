@@ -20,7 +20,7 @@ describe('DotApiLinkComponent', () => {
     let hostDe: DebugElement;
     let hostComp: TestHostComponent;
     let de: DebugElement;
-    let deComp: DotApiLinkComponent;
+    let link: DebugElement;
 
     beforeEach(waitForAsync(() => {
         TestBed.configureTestingModule({
@@ -36,36 +36,35 @@ describe('DotApiLinkComponent', () => {
         de = hostDe.query(By.css('dot-api-link'));
 
         hostFixture.detectChanges();
-        deComp = de.componentInstance;
-
-        spyOn(deComp, 'openLink');
+        link = de.query(By.css('a'));
     });
 
-    it('should set link correctly', () => {
-        expect(deComp.link).toEqual('/api/v1/123');
+    it('should show label', () => {
+        expect(link.nativeElement.textContent).toBe('link API ');
+    });
+
+    it('should set link properties and attr correctly', () => {
+        expect(link.attributes.target).toEqual('_blank');
+        expect(link.properties.href).toEqual('/api/v1/123');
+        expect(link.properties.title).toEqual('/api/v1/123');
     });
 
     it('should update link when href is change', () => {
-        expect(deComp.link).toEqual('/api/v1/123');
+        expect(link.properties.href).toEqual('/api/v1/123');
+        expect(link.properties.title).toEqual('/api/v1/123');
 
         hostComp.updateLink('/api/new/1000');
         hostFixture.detectChanges();
 
-        expect(deComp.link).toEqual('/api/new/1000');
+        expect(link.properties.href).toEqual('/api/new/1000');
+        expect(link.properties.title).toEqual('/api/new/1000');
     });
 
     it('should set the link relative always', () => {
         hostComp.updateLink('api/no/start/slash');
         hostFixture.detectChanges();
 
-        expect(deComp.link).toEqual('/api/no/start/slash');
-    });
-
-    it('should trigger openLink method on click', () => {
-        const button = de.query(By.css('button'));
-
-        button.triggerEventHandler('click');
-
-        expect(deComp.openLink).toHaveBeenCalled();
+        expect(link.properties.href).toEqual('/api/no/start/slash');
+        expect(link.properties.title).toEqual('/api/no/start/slash');
     });
 });

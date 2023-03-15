@@ -3,3 +3,15 @@
 :host {
     display: inline-flex;
 }
+
+a,
+a:focus,
+a:active {
+    text-decoration: none;
+}
+
+.p-button:hover,
+.p-button:active {
+    background: rgba(96, 125, 139, 0.04);
+    border-color: $brand-secondary;
+}

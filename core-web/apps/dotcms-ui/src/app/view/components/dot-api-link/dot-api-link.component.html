@@ -1,11 +1,11 @@
 <ng-container *ngIf="link">
-    <button
-        class="p-button-sm p-button-outlined p-button-secondary"
-        (click)="openLink()"
-        pButton
-        type="button"
+    <a
+        class="p-button p-element p-button-sm p-button-outlined p-button-secondary"
+        [href]="link"
+        [title]="link"
+        target="_blank"
     >
         <i class="material-icons">link</i>
         API
-    </button>
+    </a>
 </ng-container>
