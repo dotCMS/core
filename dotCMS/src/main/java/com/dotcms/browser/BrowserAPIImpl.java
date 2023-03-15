@@ -2,6 +2,7 @@ package com.dotcms.browser;
 
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.content.business.json.ContentletJsonAPI;
+import com.dotcms.content.elasticsearch.business.ESContentletAPIImpl;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.uuid.shorty.ShortyIdAPI;
 import com.dotmarketing.beans.Host;
@@ -14,6 +15,7 @@ import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.transform.DotFolderTransformerBuilder;
 import com.dotmarketing.portlets.contentlet.transform.DotMapViewTransformer;
@@ -35,11 +37,13 @@ import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
 import io.vavr.Tuple;
 import io.vavr.Tuple2;
+import io.vavr.Tuple3;
 import io.vavr.control.Try;
 
 import java.util.*;
 import java.util.stream.Collectors;
 
+import static com.dotcms.variant.VariantAPI.DEFAULT_VARIANT;
 import static com.dotmarketing.business.PermissionAPI.PERMISSION_READ;
 
 /**
@@ -54,7 +58,7 @@ public class BrowserAPIImpl implements BrowserAPI {
     private final FolderAPI folderAPI = APILocator.getFolderAPI();
     private final PermissionAPI permissionAPI = APILocator.getPermissionAPI();
     private final ShortyIdAPI shortyIdAPI = APILocator.getShortyAPI();
-
+    private final ESContentletAPIImpl esContentletAPI = new ESContentletAPIImpl();
     private static final StringBuilder POSTGRES_ASSETNAME_COLUMN = new StringBuilder(ContentletJsonAPI
             .CONTENTLET_AS_JSON).append("-> 'fields' -> ").append("'asset' -> 'metadata' ->> ").append("'name' ");
 
@@ -77,19 +81,26 @@ public class BrowserAPIImpl implements BrowserAPI {
     @CloseDBIfOpened
     public List<Contentlet> getContentUnderParentFromDB(final BrowserQuery browserQuery) {
 
-        final Tuple2<String, List<Object>> sqlQuery = this.selectQuery(browserQuery);
-
+        final Tuple3<String, String, List<Object>> sqlQuery = this.selectQuery(browserQuery);
 
         final DotConnect dc = new DotConnect().setSQL(sqlQuery._1);
 
-        sqlQuery._2.forEach(o -> dc.addParam(o));
+        sqlQuery._3.forEach(o -> dc.addParam(o));
 
         try {
             final List<Map<String,String>> inodesMapList =  dc.loadResults();
 
+            final List<Contentlet> contentletList = esContentletAPI.search(sqlQuery._2,-1,0, null,browserQuery.user,false);
+
             final List<String> inodes = new ArrayList<>();
             for (final Map<String, String> versionInfoMap : inodesMapList) {
                 inodes.add(versionInfoMap.get("inode"));
+            }
+
+            for(final Contentlet contentlet : contentletList){
+                if(!inodes.contains(contentlet.getInode())){
+                    inodes.add(contentlet.getInode());
+                }
             }
 
             final List<Contentlet> cons  = APILocator.getContentletAPI().findContentlets(inodes);
@@ -258,7 +269,7 @@ public class BrowserAPIImpl implements BrowserAPI {
         return filteredList;
     }
 
-    private Tuple2<String, List<Object>> selectQuery(final BrowserQuery browserQuery) {
+    private Tuple3<String,String, List<Object>> selectQuery(final BrowserQuery browserQuery) {
 
         final String workingLiveInode = browserQuery.showWorking || browserQuery.showArchived ? "working_inode" : "live_inode";
 
@@ -268,25 +279,42 @@ public class BrowserAPIImpl implements BrowserAPI {
         final StringBuilder sqlQuery = new StringBuilder("select cvi." + workingLiveInode + " as inode "
                 + " from contentlet_version_info cvi, identifier id, structure struc, contentlet c "
                 + " where cvi.identifier = id.id and struc.velocity_var_name = id.asset_subtype and  "
-                + " c.inode = cvi." + workingLiveInode);
+                + " c.inode = cvi." + workingLiveInode + " and cvi.variant_id='"+DEFAULT_VARIANT.name()+"' ");
+
+
+        final StringBuilder luceneQuery = UtilMethods.isSet(browserQuery.luceneQuery) ? new  StringBuilder("+title:*" + browserQuery.luceneQuery.trim() + "* ") : new  StringBuilder();
+
+        if(browserQuery.showWorking || browserQuery.showArchived) {
+            luceneQuery.append("+working:true ");
+        }
+        else {
+            luceneQuery.append("+live:true ");
+        }
+        if(browserQuery.showArchived ) luceneQuery.append("+deleted:true ");
 
         if (!showAllBaseTypes) {
             List<String> baseTypes =
                     browserQuery.baseTypes.stream().map(t -> String.valueOf(t.getType())).collect(Collectors.toList());
             sqlQuery.append(" and struc.structuretype in (" + String.join(" , ", baseTypes) + ") ");
+
+            luceneQuery.append("+baseType:(" + String.join(" OR ", baseTypes)+ ") ");
         }
         if (browserQuery.languageId > 0) {
             sqlQuery.append(" and cvi.lang = ? ");
             parameters.add(browserQuery.languageId);
+            luceneQuery.append("+languageId:" + browserQuery.languageId + " ");
         }
         if (browserQuery.site != null) {
             sqlQuery.append(" and id.host_inode = ? ");
             parameters.add(browserQuery.site.getIdentifier());
+            luceneQuery.append("+conHost:(SYSTEM_HOST OR " + browserQuery.site.getIdentifier() + ") ");
         }
         if (browserQuery.folder != null) {
             sqlQuery.append(" and id.parent_path=? ");
             parameters.add(browserQuery.folder.getPath());
+            luceneQuery.append("+parentPath:" + browserQuery.folder.getPath() + " ");
         }
+
         if (UtilMethods.isSet(browserQuery.filter)) {
             final String filterText = browserQuery.filter.toLowerCase().trim();
             final String[] spliter = filterText.split(" ");
@@ -319,7 +347,7 @@ public class BrowserAPIImpl implements BrowserAPI {
             sqlQuery.append(" and cvi.deleted = " + DbConnectionFactory.getDBFalse());
         }
 
-        return Tuple.of(sqlQuery.toString(), parameters);
+        return Tuple.of(sqlQuery.toString(),luceneQuery.toString(), parameters);
     }
 
     /**
