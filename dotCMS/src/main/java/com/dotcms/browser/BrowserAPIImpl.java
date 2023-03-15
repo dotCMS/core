@@ -305,7 +305,7 @@ public class BrowserAPIImpl implements BrowserAPI {
             luceneQuery.append("+languageId:" + browserQuery.languageId + " ");
         }
         if (browserQuery.site != null) {
-            sqlQuery.append(" and id.host_inode = ? ");
+            sqlQuery.append(" and (id.host_inode = ? OR id.host_inode = 'SYSTEM_HOST') ");
             parameters.add(browserQuery.site.getIdentifier());
             luceneQuery.append("+conHost:(SYSTEM_HOST OR " + browserQuery.site.getIdentifier() + ") ");
         }
