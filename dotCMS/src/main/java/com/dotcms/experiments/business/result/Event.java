@@ -13,7 +13,7 @@ import java.util.Optional;
  */
 public class Event {
 
-    private final DateTimeFormatter PARSER = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.n")
+    private final static DateTimeFormatter  PARSER = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.n")
             .withZone(ZoneId.systemDefault());
     private Map<String, Object> eventAttributes;
     private EventType type;
