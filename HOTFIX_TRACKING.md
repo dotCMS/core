@@ -95,3 +95,4 @@ This maintenance release includes the following code fixes:
 78. https://github.com/dotCMS/core/issues/22667 : Cannot change date or time fields to never on an existing contentlet #22667
 79. https://github.com/dotCMS/core/issues/22729 : Image Selector Issues #22729
 80. https://github.com/dotCMS/core/issues/24272 : File Browse Not Working as Expected #24272
+81. https://github.com/dotCMS/core/issues/24358 : File Browser Only Showing Content in the Backend Language #24358
