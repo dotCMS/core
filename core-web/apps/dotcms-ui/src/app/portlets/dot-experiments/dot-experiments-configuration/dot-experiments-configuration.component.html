@@ -23,6 +23,18 @@
                 pRipple
                 type="button"
             ></button>
+            <button
+                class="p-button-outlined"
+                *ngIf="vm.experimentStatus === experimentStatus.RUNNING"
+                [disabled]="vm.disabledStartExperiment"
+                [loading]="vm.isSaving"
+                (click)="stopExperiment($event, vm.experiment)"
+                data-testId="stop-experiment-button"
+                label="{{ 'experiments.action.stop-experiment' | dm }}"
+                pButton
+                pRipple
+                type="button"
+            ></button>
         </div>
     </dot-experiments-header>
 

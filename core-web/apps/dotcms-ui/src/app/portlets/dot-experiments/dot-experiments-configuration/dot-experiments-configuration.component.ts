@@ -3,9 +3,10 @@ import { Observable } from 'rxjs';
 import { ChangeDetectionStrategy, Component, OnInit } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 
+import { ConfirmationService } from 'primeng/api';
 import { DotMessagePipe } from '@dotcms/app/view/pipes';
 import { DotSessionStorageService } from '@dotcms/data-access';
-import { DotExperiment, ExperimentSteps } from '@dotcms/dotcms-models';
+import { DotExperiment, ExperimentSteps, DotExperimentStatusList } from '@dotcms/dotcms-models';
 import {
     ConfigurationViewModel,
     DotExperimentsConfigurationStore
@@ -21,12 +22,15 @@ import {
 export class DotExperimentsConfigurationComponent implements OnInit {
     vm$: Observable<ConfigurationViewModel> = this.dotExperimentsConfigurationStore.vm$;
     experimentSteps = ExperimentSteps;
+    experimentStatus = DotExperimentStatusList;
 
     constructor(
         private readonly dotExperimentsConfigurationStore: DotExperimentsConfigurationStore,
         private readonly dotSessionStorageService: DotSessionStorageService,
         private readonly router: Router,
-        private readonly route: ActivatedRoute
+        private readonly route: ActivatedRoute,
+        private readonly confirmationService: ConfirmationService,
+        private readonly dotMessagePipe: DotMessagePipe
     ) {}
 
     ngOnInit(): void {
@@ -60,5 +64,25 @@ export class DotExperimentsConfigurationComponent implements OnInit {
      */
     runExperiment(experiment: DotExperiment) {
         this.dotExperimentsConfigurationStore.startExperiment(experiment);
+    }
+
+    /**
+     * Stop the Experiment
+     * @param {MouseEvent} $event
+     * @param {DotExperiment} experiment
+     * @returns void
+     * @memberof DotExperimentsConfigurationVariantsComponent
+     */
+    stopExperiment($event: MouseEvent, experiment: DotExperiment) {
+        this.confirmationService.confirm({
+            target: $event.target,
+            message: this.dotMessagePipe.transform('experiments.action.stop.delete-confirm'),
+            icon: 'pi pi-exclamation-triangle',
+            acceptLabel: this.dotMessagePipe.transform('stop'),
+            rejectLabel: this.dotMessagePipe.transform('dot.common.dialog.reject'),
+            accept: () => {
+                this.dotExperimentsConfigurationStore.stopExperiment(experiment);
+            }
+        });
     }
 }
