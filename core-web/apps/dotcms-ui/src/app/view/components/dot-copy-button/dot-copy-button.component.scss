@@ -3,3 +3,12 @@
 :host {
     display: inline-flex;
 }
+
+.p-button {
+    gap: 0.25rem;
+}
+
+.material-icons {
+    color: $color-primary-500;
+    font-size: $font-size-medium;
+}

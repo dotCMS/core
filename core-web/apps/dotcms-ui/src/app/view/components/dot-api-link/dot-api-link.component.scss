@@ -10,6 +10,15 @@ a:active {
     text-decoration: none;
 }
 
+.p-button {
+    gap: 0.25rem;
+}
+
+.material-icons {
+    color: $color-primary-500;
+    font-size: $font-size-medium;
+}
+
 .p-button:hover,
 .p-button:active {
     background: rgba(96, 125, 139, 0.04);

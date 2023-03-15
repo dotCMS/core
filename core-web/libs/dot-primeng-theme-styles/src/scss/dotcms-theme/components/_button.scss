@@ -621,17 +621,11 @@
     border: 1px solid;
 }
 
-.p-button-sm.p-button-outlined.p-button-secondary {
+.p-button.p-button-outlined.p-button-secondary {
     border-radius: 4px;
     border-color: $color-gray-300;
     color: $color-gray-500;
     font-size: $font-size-small;
-    gap: 0.25rem;
     height: $spacing-4;
     padding: 0.25rem $spacing-1;
-
-    .material-icons {
-        color: $color-primary-500;
-        font-size: $font-size-medium;
-    }
 }
