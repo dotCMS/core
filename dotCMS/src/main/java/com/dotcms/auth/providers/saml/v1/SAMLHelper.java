@@ -2,7 +2,6 @@ package com.dotcms.auth.providers.saml.v1;
 
 import com.dotcms.cms.login.LoginServiceAPI;
 import com.dotcms.company.CompanyAPI;
-import com.dotcms.filters.interceptor.saml.AutoLoginResult;
 import com.dotcms.filters.interceptor.saml.SamlWebInterceptor;
 import com.dotcms.saml.Attributes;
 import com.dotcms.saml.DotSamlConstants;
@@ -46,6 +45,7 @@ import io.vavr.Tuple2;
 import io.vavr.control.Try;
 import org.apache.commons.lang.BooleanUtils;
 import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.RandomUtils;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -67,7 +67,9 @@ import static com.dotmarketing.util.UtilMethods.isSet;
  */
 public class SAMLHelper {
 
-    private static final String DO_HASH_KEY = "hash.userid";
+    protected static final String DO_HASH_KEY = "hash.userid";
+    // when on, look for an user by id, if the email is repeated on the system just fakes coming email to avoid the email constraint
+    protected static final String ALLOW_USERS_DIFF_ID_REPEATED_EMAIL_KEY = "allowusers.diffid.repeatedemail";
 
     private final HostWebAPI hostWebAPI;
     private final UserAPI    userAPI;
@@ -76,6 +78,14 @@ public class SAMLHelper {
     private final SamlAuthenticationService  samlAuthenticationService;
     private static SamlConfigurationService  thirdPartySamlConfigurationService;
 
+    private static EmailGenStrategy emailGenStrategy = SAMLHelper::prefixRandomEmail;
+
+    private static String prefixRandomEmail(final String email) {
+
+        final int randomNumber = RandomUtils.nextInt();
+        return randomNumber + email;
+    }
+
     public SAMLHelper(final SamlAuthenticationService samlAuthenticationService, final CompanyAPI companyAPI) {
 
         this.userAPI      = APILocator.getUserAPI();
@@ -83,6 +93,13 @@ public class SAMLHelper {
         this.hostWebAPI   = WebAPILocator.getHostWebAPI();
         this.companyAPI   = companyAPI;
         this.samlAuthenticationService = samlAuthenticationService;
+    }
+
+    @VisibleForTesting
+    protected static void setEmailGenStrategy(final EmailGenStrategy emailGenStrategy) {
+        if (null != emailGenStrategy) {
+            SAMLHelper.emailGenStrategy = emailGenStrategy;
+        }
     }
 
     @VisibleForTesting
@@ -182,31 +199,15 @@ public class SAMLHelper {
         return user;
     }
 
+    protected User resolveUser(final User systemUser, final Attributes attributes,  final String nameId,
+                               final IdentityProviderConfiguration identityProviderConfiguration) {
 
-
-    // Gets the attributes from the Assertion, based on the attributes
-    // see if the user exists return it from the dotCMS records, if does not
-    // exist then, tries to create it.
-    // the existing or created user, will be updated the roles if they present
-    // on the assertion.
-    protected User resolveUser(final Attributes attributes,
-                             final IdentityProviderConfiguration identityProviderConfiguration) {
-
-        if (null == attributes || !UtilMethods.isSet(attributes.getNameID())) {
-
-            Logger.error(this, "Failed to resolve user because Attributes or NameID are null");
-            throw new DotSamlException("Failed to resolve user because Attributes or NameID are null");
-        }
-
-        User user       = null;
-        User systemUser = null;
-        final String nameId = Try.of(()->this.samlAuthenticationService.getValue(attributes.getNameID())).getOrNull();
+        User user = null;
 
         try {
 
             Logger.debug(this, ()-> "Validating user - " + attributes);
 
-            systemUser             = this.userAPI.getSystemUser();
             final Company company  = companyAPI.getDefaultCompany();
             final String  authType = company.getAuthType();
             final boolean doHash   = identityProviderConfiguration.containsOptionalProperty(DO_HASH_KEY)?
@@ -233,6 +234,54 @@ public class SAMLHelper {
             user = null;
         }
 
+        return user;
+    }
+
+    protected User resolveUserById(final User systemUser, final Attributes attributes, final String nameId,
+                                   final IdentityProviderConfiguration identityProviderConfiguration) {
+
+        try {
+
+            Logger.debug(this, ()-> "Looking for an user per id - " + nameId);
+
+            final boolean doHash   = identityProviderConfiguration.containsOptionalProperty(DO_HASH_KEY)?
+                    BooleanUtils.toBoolean(identityProviderConfiguration.getOptionalProperty(DO_HASH_KEY).toString()):true;
+            return  this.loadUserById(nameId, systemUser, doHash);
+        } catch (Exception e) {
+
+            Logger.error(this, String.format("An error occurred when resolving user with ID '%s': %s", nameId, e
+                    .getMessage()), e);
+            return null;
+        }
+    }
+
+    private boolean allowUsersDiffIdWithRepeatedEmailOn (final IdentityProviderConfiguration identityProviderConfiguration) {
+
+        return identityProviderConfiguration.containsOptionalProperty(ALLOW_USERS_DIFF_ID_REPEATED_EMAIL_KEY)?
+                BooleanUtils.toBoolean(identityProviderConfiguration.getOptionalProperty(ALLOW_USERS_DIFF_ID_REPEATED_EMAIL_KEY).toString()):false;
+    }
+
+    // Gets the attributes from the Assertion, based on the attributes
+    // see if the user exists return it from the dotCMS records, if does not
+    // exist then, tries to create it.
+    // the existing or created user, will be updated the roles if they present
+    // on the assertion.
+    protected User resolveUser(final Attributes attributes,
+                             final IdentityProviderConfiguration identityProviderConfiguration) {
+
+        if (null == attributes || !UtilMethods.isSet(attributes.getNameID())) {
+
+            Logger.error(this, "Failed to resolve user because Attributes or NameID are null");
+            throw new DotSamlException("Failed to resolve user because Attributes or NameID are null");
+        }
+
+        final boolean allowUsersDiffIdWithRepeatedEmailOn = allowUsersDiffIdWithRepeatedEmailOn(identityProviderConfiguration);
+        final User systemUser = APILocator.systemUser();
+        final String nameId   = Try.of(()->this.samlAuthenticationService.getValue(attributes.getNameID())).getOrNull();
+        User user             =  allowUsersDiffIdWithRepeatedEmailOn?
+                                resolveUserById(systemUser, attributes, nameId, identityProviderConfiguration):
+                                resolveUser(systemUser, attributes, nameId, identityProviderConfiguration);
+
         // check if the client wants synchronization
         final SamlConfigurationService samlConfigurationService = this.getSamlConfigurationService();
         final boolean createUserWhenDoesNotExists =
@@ -242,8 +291,12 @@ public class SAMLHelper {
         if (createUserWhenDoesNotExists) {
 
             user = null == user?
-                    this.createNewUser(systemUser,    attributes, identityProviderConfiguration):  // if user does not exists, create a new one.
-                    this.updateUser(user, systemUser, attributes, identityProviderConfiguration); // update it, since exists
+                    this.createNewUser(systemUser,
+                            allowUsersDiffIdWithRepeatedEmailOn? checkRepeatedEmail(attributes):attributes,
+                            identityProviderConfiguration):  // if user does not exist, create a new one.
+                    this.updateUser(user, systemUser,
+                            allowUsersDiffIdWithRepeatedEmailOn? keepCurrentEmail(attributes, user):attributes,
+                            identityProviderConfiguration); // update it, since exists
 
             if (user.isActive()) {
 
@@ -256,6 +309,44 @@ public class SAMLHelper {
         }
 
         return user;
+    }
+
+    protected Attributes checkRepeatedEmail (final Attributes attributes) {
+
+        final String email = this.samlAuthenticationService.getValue(attributes.getEmail());
+        final boolean emailExist = Try.of(()->null != this.userAPI.loadByUserByEmail(email,
+                APILocator.systemUser(), false)).getOrElse(false);
+        if (emailExist) {
+
+            return
+                    new Attributes.Builder()
+                            .nameID(attributes.getNameID())
+                            .firstName(attributes.getFirstName())
+                            .lastName(attributes.getLastName())
+                            .addRoles(attributes.isAddRoles())
+                            .roles(attributes.getRoles())
+                            .sessionIndex(attributes.getSessionIndex())
+                            .email(this.makeEmailUnique(email)).build();
+        }
+
+        return attributes;
+    }
+
+    protected Attributes keepCurrentEmail(Attributes attributes, User user) {
+
+        return
+                new Attributes.Builder()
+                        .nameID(attributes.getNameID())
+                        .firstName(attributes.getFirstName())
+                        .lastName(attributes.getLastName())
+                        .addRoles(attributes.isAddRoles())
+                        .roles(attributes.getRoles())
+                        .sessionIndex(attributes.getSessionIndex())
+                        .email(user.getEmailAddress()).build();
+    }
+
+    private String makeEmailUnique(final String email) {
+        return emailGenStrategy.apply(email);
     }
 
     protected User updateUser(final User user, final User systemUser,
