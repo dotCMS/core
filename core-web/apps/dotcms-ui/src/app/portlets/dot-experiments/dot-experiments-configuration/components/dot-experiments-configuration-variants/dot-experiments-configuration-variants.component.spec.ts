@@ -79,21 +79,21 @@ describe('DotExperimentsConfigurationVariantsComponent', () => {
         component: DotExperimentsConfigurationVariantsComponent,
         providers: [
             DotExperimentsConfigurationStore,
+            ConfirmationService,
+            DotMessagePipe,
             {
                 provide: DotMessageService,
                 useValue: messageServiceMock
+            },
+            {
+                provide: ActivatedRoute,
+                useValue: ActivatedRouteMock
             },
             mockProvider(DotExperimentsService),
             mockProvider(MessageService),
             mockProvider(DotHttpErrorManagerService),
             mockProvider(DotSessionStorageService),
-            mockProvider(Router),
-            {
-                provide: ActivatedRoute,
-                useValue: ActivatedRouteMock
-            },
-            DotMessagePipe,
-            ConfirmationService
+            mockProvider(Router)
         ]
     });
 
@@ -195,7 +195,7 @@ describe('DotExperimentsConfigurationVariantsComponent', () => {
                 weight: 33.33,
                 url: 'link1'
             },
-            { id: '1111111', name: 'b', weight: 33.33, url: 'link2' }
+            { id: '1111111', name: 'test', weight: 33.33, url: 'link2' }
         ];
         beforeEach(() => {
             loadExperiment(EXPERIMENT_MOCK, variants);
@@ -297,13 +297,14 @@ describe('DotExperimentsConfigurationVariantsComponent', () => {
             spyOn(store, 'deleteVariant');
 
             const button = spectator.queryLast(byTestId('variant-delete-button'));
+
             spectator.click(button);
 
             spectator.query(ConfirmPopup).accept();
 
             expect(store.deleteVariant).toHaveBeenCalledWith({
                 experimentId: '111',
-                variant: { id: '111', name: 'DEFAULT', weight: 100 }
+                variant: variants[1]
             });
         });
 
