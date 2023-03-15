@@ -4,7 +4,7 @@ import com.dotcms.analytics.app.AnalyticsApp;
 import com.dotcms.analytics.helper.AnalyticsHelper;
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.experiments.business.ConfigExperimentUtil;
-import com.dotcms.experiments.business.ExperimentCodeGenerator;
+import com.dotcms.experiments.business.web.ExperimentWebAPI;
 import com.dotcms.rendering.velocity.services.PageLoader;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.visitor.domain.Visitor;
@@ -62,6 +62,7 @@ import org.jetbrains.annotations.Nullable;
  */
 public class HTMLPageAssetRenderedAPIImpl implements HTMLPageAssetRenderedAPI {
 
+    public static final String HTML_HEAD = "<head>";
     private final HostWebAPI hostWebAPI;
     private final HTMLPageAssetAPI htmlPageAssetAPI;
     private final LanguageAPI languageAPI;
@@ -69,6 +70,7 @@ public class HTMLPageAssetRenderedAPIImpl implements HTMLPageAssetRenderedAPI {
     private final UserAPI userAPI;
     private final URLMapAPIImpl urlMapAPIImpl;
     private final LanguageWebAPI languageWebAPI;
+    private final ExperimentWebAPI experimentWebAPI;
 
     public HTMLPageAssetRenderedAPIImpl(){
         this(
@@ -100,6 +102,8 @@ public class HTMLPageAssetRenderedAPIImpl implements HTMLPageAssetRenderedAPI {
         this.htmlPageAssetAPI = htmlPageAssetAPI;
         this.urlMapAPIImpl = urlMapAPIImpl;
         this.languageWebAPI = languageWebAPI;
+
+        this.experimentWebAPI = WebAPILocator.getExperimentWebAPI();
     }
 
     @Override
@@ -286,7 +290,7 @@ public class HTMLPageAssetRenderedAPIImpl implements HTMLPageAssetRenderedAPI {
                 .getPageHTML(context.getPageMode());
 
         if (context.getPageMode() == PageMode.LIVE && ConfigExperimentUtil.INSTANCE.isExperimentAutoJsInjection()) {
-            return ExperimentCodeGenerator.INSTANCE.getCode(host, request)
+            return experimentWebAPI.getCode(host, request)
                     .map(jsCodeToBeInjected -> injectJSCode(pageHTML, jsCodeToBeInjected))
                     .orElse(pageHTML);
         } else {
@@ -296,9 +300,9 @@ public class HTMLPageAssetRenderedAPIImpl implements HTMLPageAssetRenderedAPI {
 
     private String injectJSCode(final String pageHTML, final String JsCode) {
 
-        if (StringUtils.containsIgnoreCase(pageHTML, "<head>")) {
-            final int indexOf = pageHTML.toLowerCase().indexOf("<head>".toLowerCase());
-            return pageHTML.substring(0, indexOf + 6) + JsCode + pageHTML.substring(indexOf + 6);
+        if (StringUtils.containsIgnoreCase(pageHTML, HTML_HEAD)) {
+            final int indexOf = pageHTML.toLowerCase().indexOf(HTML_HEAD);
+            return pageHTML.substring(0, indexOf + HTML_HEAD.length()) + JsCode + pageHTML.substring(indexOf + 6);
         } else {
             return JsCode + "\n" + pageHTML;
         }
