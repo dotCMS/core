@@ -16,23 +16,23 @@ window.addEventListener("experiment_loaded", function (event) {
     let experimentData = event.detail;
     setJitsuExperimentData(experimentData);
 
-    if (!window.location.href.includes("redirect=true")) {
+    if (!location.href.includes("redirect=true")) {
         for (let i = 0; i < experimentData.experiments.length; i++) {
-            let pageUrl = experimentData.experiments[i].pageUrl;
+            const pageUrl = experimentData.experiments[i].pageUrl;
 
-            let alternativePageUrl = experimentData.experiments[i].pageUrl.endsWith(
+            const alternativePageUrl = experimentData.experiments[i].pageUrl.endsWith(
                 "/index") ?
                 experimentData.experiments[i].pageUrl.replace("index", "")
                 : experimentData.experiments[i].pageUrl;
 
-            if (window.location.href.includes(pageUrl)
-                || window.location.href.endsWith(alternativePageUrl)) {
+            if (location.href.includes(pageUrl)
+                || location.href.endsWith(alternativePageUrl)) {
 
                 let url = experimentData.experiments[i].variant.url
                 const param = (url.includes("?") ? "&" : "?")
                     + "redirect=true";
 
-                window.location.href = url + param;
+                location.href = url + param;
                 break;
             }
         }
