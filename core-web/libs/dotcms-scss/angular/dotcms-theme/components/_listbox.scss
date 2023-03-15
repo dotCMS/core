@@ -4,7 +4,7 @@
     background: $white;
     color: $black;
     border: 1px solid $input-border-color;
-    border-radius: $border-radius;
+    border-radius: $border-radius-xs;
 }
 
 .p-listbox .p-listbox-header {
@@ -13,8 +13,8 @@
     color: $black;
     background: $white;
     margin: 0;
-    border-top-right-radius: $border-radius;
-    border-top-left-radius: $border-radius;
+    border-top-right-radius: $border-radius-xs;
+    border-top-left-radius: $border-radius-xs;
 }
 
 .p-listbox .p-listbox-header .p-listbox-filter {

@@ -38,8 +38,8 @@
     border-width: 0 0 1px 0;
     padding: 0.75rem 0.75rem;
     font-weight: $font-weight-semi-bold;
-    border-bottom-left-radius: $border-radius;
-    border-bottom-right-radius: $border-radius;
+    border-bottom-left-radius: $border-radius-xs;
+    border-bottom-right-radius: $border-radius-xs;
 }
 
 .p-dataview .p-dataview-loading-icon {

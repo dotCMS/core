@@ -2,7 +2,7 @@
 
 dot-material-icon-picker {
     border: solid 1px $color-palette-gray-500;
-    border-radius: $border-radius;
+    border-radius: $border-radius-xs;
     transition: border-color $basic-speed ease-in;
 
     &.is-open {

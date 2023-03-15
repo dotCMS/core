@@ -12,7 +12,7 @@
 .p-calendar-w-btn {
     border: 1px solid $input-border-color;
     background: $white;
-    border-radius: $border-radius;
+    border-radius: $border-radius-xs;
 }
 
 .p-calendar-w-btn .p-inputtext {
@@ -56,7 +56,7 @@
     background: $white;
     color: $black;
     border: 1px solid $input-border-color;
-    border-radius: $border-radius;
+    border-radius: $border-radius-xs;
 }
 
 .p-datepicker:not(.p-datepicker-inline) {
@@ -77,8 +77,8 @@
     font-weight: $font-weight-semi-bold;
     margin: 0;
     border-bottom: 1px solid $color-palette-gray-300;
-    border-top-right-radius: $border-radius;
-    border-top-left-radius: $border-radius;
+    border-top-right-radius: $border-radius-xs;
+    border-top-left-radius: $border-radius-xs;
 }
 
 .p-datepicker .p-datepicker-header .p-datepicker-prev,
@@ -233,7 +233,7 @@
 .p-datepicker .p-monthpicker .p-monthpicker-month {
     padding: $spacing-1;
     transition: none;
-    border-radius: $border-radius;
+    border-radius: $border-radius-xs;
 }
 
 .p-datepicker .p-monthpicker .p-monthpicker-month.p-highlight {

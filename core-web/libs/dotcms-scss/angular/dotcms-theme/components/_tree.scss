@@ -5,7 +5,7 @@
     background: $white;
     color: $black;
     padding: $spacing-2;
-    border-radius: $border-radius;
+    border-radius: $border-radius-xs;
 }
 
 .p-tree .p-tree-container .p-treenode {
@@ -13,7 +13,7 @@
 }
 
 .p-tree .p-tree-container .p-treenode .p-treenode-content {
-    border-radius: $border-radius;
+    border-radius: $border-radius-xs;
     transition: none;
     padding: 0.571rem;
 }
@@ -116,7 +116,7 @@
 }
 
 .p-tree.p-tree-horizontal .p-treenode .p-treenode-content {
-    border-radius: $border-radius;
+    border-radius: $border-radius-xs;
     border: 1px solid $input-border-color;
     background-color: $white;
     color: $black;

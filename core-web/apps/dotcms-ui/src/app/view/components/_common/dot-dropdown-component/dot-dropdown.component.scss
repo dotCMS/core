@@ -11,7 +11,7 @@
 
     .dropdown-content {
         @include box_shadow(2);
-        border-radius: $border-radius;
+        border-radius: $border-radius-xs;
         background-color: $white;
         color: $black;
         overflow: hidden;

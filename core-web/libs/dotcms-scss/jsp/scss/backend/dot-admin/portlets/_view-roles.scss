@@ -21,7 +21,7 @@
 
 .view-roles__heading {
     background-color: $color-palette-gray-200;
-    border-radius: $border-radius;
+    border-radius: $border-radius-xs;
     border: solid 1px $color-palette-gray-400;
     display: flex;
     justify-content: space-between;
@@ -50,7 +50,7 @@
 
 .view-roles__portlets-list {
     border: solid 1px $color-palette-gray-400;
-    border-radius: $border-radius;
+    border-radius: $border-radius-xs;
     margin: 0 0 $basic-padding;
     height: 175px;
     overflow: auto;

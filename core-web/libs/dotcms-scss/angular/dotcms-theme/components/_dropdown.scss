@@ -5,7 +5,7 @@
     border: 1px solid $input-border-color;
     transition: background-color 0.2s, border-color 0.2s, color 0.2s, box-shadow 0.2s,
         background-size 0.2s cubic-bezier(0.64, 0.09, 0.08, 1);
-    border-radius: $border-radius;
+    border-radius: $border-radius-xs;
 }
 
 .p-dropdown:not(.p-disabled):hover {
@@ -41,8 +41,8 @@
     background: transparent;
     color: $black;
     width: 2.357rem;
-    border-top-right-radius: $border-radius;
-    border-bottom-right-radius: $border-radius;
+    border-top-right-radius: $border-radius-xs;
+    border-bottom-right-radius: $border-radius-xs;
 }
 
 .p-dropdown .p-dropdown-clear-icon {
@@ -54,7 +54,7 @@
     background: $white;
     color: $black;
     border: 0 none;
-    border-radius: $border-radius;
+    border-radius: $border-radius-xs;
     box-shadow: 0 5px 5px -3px rgba(0, 0, 0, 0.2), 0 8px 10px 1px rgba(0, 0, 0, 0.14),
         0 3px 14px 2px rgba(0, 0, 0, 0.12);
 }
@@ -65,8 +65,8 @@
     color: $black;
     background: $white;
     margin: 0;
-    border-top-right-radius: $border-radius;
-    border-top-left-radius: $border-radius;
+    border-top-right-radius: $border-radius-xs;
+    border-top-left-radius: $border-radius-xs;
 }
 
 .p-dropdown-panel .p-dropdown-header .p-dropdown-filter {

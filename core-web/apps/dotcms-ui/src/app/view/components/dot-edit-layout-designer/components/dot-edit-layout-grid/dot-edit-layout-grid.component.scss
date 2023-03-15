@@ -39,7 +39,7 @@ $box-height: 206px;
         $white $box-header-height,
         $white 100%
     );
-    border-radius: $border-radius;
+    border-radius: $border-radius-xs;
     border: 1px solid $color-palette-gray-300;
     display: flex;
     height: $box-height;

@@ -102,7 +102,7 @@ $panel-padding: $basic-padding * 2;
 
 .hintBox {
     background-color: $color-palette-gray-200;
-    border-radius: $border-radius;
+    border-radius: $border-radius-xs;
     border: solid 1px $color-palette-gray-500;
     padding: $basic-padding * 2;
     position: absolute;
@@ -114,7 +114,7 @@ $panel-padding: $basic-padding * 2;
 // TODO: fix this, rgba can't take hex values
 .callOutBox {
     background-color: rgba($color-palette-primary-400, 0.1);
-    border-radius: $border-radius;
+    border-radius: $border-radius-xs;
     border: 1px solid rgba($color-palette-primary-400, 0.3);
     margin: $basic-padding * 2 0;
     padding: $basic-padding;
@@ -123,7 +123,7 @@ $panel-padding: $basic-padding * 2;
 
 .callOutBox2 {
     background-color: $color-palette-gray-400;
-    border-radius: $border-radius;
+    border-radius: $border-radius-xs;
     border: 1px solid $color-palette-gray-500;
     padding: $basic-padding;
     text-align: center;

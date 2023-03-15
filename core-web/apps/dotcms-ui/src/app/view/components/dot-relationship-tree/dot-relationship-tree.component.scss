@@ -3,7 +3,7 @@
 :host {
     border: 1px solid $color-palette-gray-500;
     display: block;
-    border-radius: $border-radius;
+    border-radius: $border-radius-xs;
     padding: $spacing-3;
 
     ::ng-deep {

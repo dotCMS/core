@@ -7,7 +7,7 @@ Styles for commons fields along the backend
 // COMMONS ELEMENTS:
 
 .glossaryTermPopup {
-    border-radius: $border-radius;
+    border-radius: $border-radius-xs;
     background-color: $color-palette-gray-200;
     padding: (calc($field-padding / 2)) $field-padding;
     border: solid 1px $color-palette-gray-400;
@@ -23,7 +23,7 @@ Styles for commons fields along the backend
 .fileAjaxUploader {
     display: flex;
     align-items: center;
-    border-radius: $border-radius;
+    border-radius: $border-radius-xs;
     position: relative;
     height: 36px;
 
@@ -77,7 +77,7 @@ Styles for commons fields along the backend
 
 .catPreview {
     background-color: $white;
-    border-radius: $border-radius;
+    border-radius: $border-radius-xs;
     border: solid 1px $color-palette-gray-500;
     margin-top: $basic-padding;
     max-width: $content-edit-field-max-width;
@@ -86,7 +86,7 @@ Styles for commons fields along the backend
 
     li {
         background: $color-palette-gray-200;
-        border-radius: $border-radius;
+        border-radius: $border-radius-xs;
         border: $field-normal-border;
         display: inline-block;
         font-size: 12px;
@@ -259,7 +259,7 @@ $key-val-width: 500px;
 
 .tagLink {
     background: $color-palette-gray-200;
-    border-radius: $border-radius;
+    border-radius: $border-radius-xs;
     border: $field-normal-border;
     display: inline-block;
     font-size: 12px;

@@ -20,7 +20,6 @@ $body-text: "Roboto", "Helvetica Neue", Helvetica, Arial, "Lucida Grande", sans-
 $text-color: $black;
 
 // Basic stuffs
-$border-radius: 2px;
 $icon-size: 16px;
 $basic-padding: 8px;
 
@@ -29,7 +28,7 @@ $basic-padding: 8px;
 // Common
 $field-animation-speed: 0.1s;
 $field-border-color: $color-palette-gray-400;
-$field-border-radius: $border-radius;
+$field-border-radius: $border-radius-xs;
 $field-border-size: 1px;
 $field-height: 36px;
 $field-padding: $basic-padding;

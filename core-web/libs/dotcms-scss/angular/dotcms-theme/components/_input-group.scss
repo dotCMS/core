@@ -33,23 +33,23 @@
 .p-inputgroup-addon:first-child,
 .p-inputgroup button:first-child,
 .p-inputgroup input:first-child {
-    border-top-left-radius: $border-radius;
-    border-bottom-left-radius: $border-radius;
+    border-top-left-radius: $border-radius-xs;
+    border-bottom-left-radius: $border-radius-xs;
 }
 
 .p-inputgroup .p-float-label:first-child input {
-    border-top-left-radius: $border-radius;
-    border-bottom-left-radius: $border-radius;
+    border-top-left-radius: $border-radius-xs;
+    border-bottom-left-radius: $border-radius-xs;
 }
 
 .p-inputgroup-addon:last-child,
 .p-inputgroup button:last-child,
 .p-inputgroup input:last-child {
-    border-top-right-radius: $border-radius;
-    border-bottom-right-radius: $border-radius;
+    border-top-right-radius: $border-radius-xs;
+    border-bottom-right-radius: $border-radius-xs;
 }
 
 .p-inputgroup .p-float-label:last-child input {
-    border-top-right-radius: $border-radius;
-    border-bottom-right-radius: $border-radius;
+    border-top-right-radius: $border-radius-xs;
+    border-bottom-right-radius: $border-radius-xs;
 }

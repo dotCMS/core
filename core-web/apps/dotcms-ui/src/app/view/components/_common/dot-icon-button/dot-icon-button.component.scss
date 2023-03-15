@@ -90,7 +90,7 @@
     }
 
     &[square] button {
-        border-radius: $border-radius;
+        border-radius: $border-radius-xs;
     }
 
     &[disabled="true"] {

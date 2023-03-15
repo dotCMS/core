@@ -24,7 +24,7 @@
 
     .dot-theme-item__image,
     .dot-theme-item__image--fallback {
-        border-radius: $border-radius;
+        border-radius: $border-radius-xs;
         width: 3.43rem;
         height: 3.43rem;
     }
@@ -81,7 +81,7 @@ dot-searchable-dropdown {
                 display: block;
                 background: $color-palette-gray-300;
                 border: 1px solid $color-palette-gray-500;
-                border-radius: $border-radius;
+                border-radius: $border-radius-xs;
                 padding: $spacing-2;
                 font-size: $font-size-medium;
                 color: $color-palette-gray-800;
