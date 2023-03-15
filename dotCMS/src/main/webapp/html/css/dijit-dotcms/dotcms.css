@@ -2931,9 +2931,9 @@ body {
 .dijitSelect,
 .dijitTextBox,
 .dijitToggleButton {
-  border-radius: 0.125rem;
+  border-radius: 0.5rem;
   font-size: 14px;
-  height: 36px;
+  height: 40px;
 }
 
 .dijitButton,
@@ -2952,7 +2952,7 @@ body {
 .dijitDropDownButton .dijitArrowButtonInner,
 .dijitSelect .dijitArrowButtonContainer,
 .dijitSpinner .dijitSpinnerButtonContainer {
-  height: 34px;
+  height: 38px;
   border: none;
   position: relative;
 }
@@ -2960,12 +2960,12 @@ body {
 .dijitPlaceHolder {
   color: #afb3c0;
   font-style: normal;
-  line-height: 34px;
+  line-height: 38px;
 }
 
 .dijitValidationContainer {
   background-color: #d0021b;
-  height: 34px;
+  height: 38px;
   position: relative;
   width: 11px;
 }
@@ -2998,8 +2998,8 @@ body {
   border: solid 1px #afb3c0;
 }
 .dijitTextBox .dijitArrowButton {
-  height: 34px;
-  width: 36px;
+  height: 38px;
+  width: 40px;
   background-color: #ffffff;
   border-left: solid 1px #afb3c0;
 }
@@ -3155,13 +3155,13 @@ body {
 }
 .dijitSpinner .dijitSpinnerButtonContainer {
   border-left: solid 1px #afb3c0;
-  width: 36px;
+  width: 40px;
 }
 .dijitSpinner .dijitSpinnerButtonContainer .dijitDownArrowButton {
   border-top: solid 1px #afb3c0 !important;
 }
 .dijitSpinner .dijitArrowButton {
-  height: 18px;
+  height: 20px;
   border-left: solid 1px #afb3c0;
   background-color: #ffffff;
 }
@@ -3291,8 +3291,8 @@ body {
 
 .dijitButton .dijitButtonText,
 .dijitToggleButton .dijitButtonText {
-  line-height: 34px;
-  height: 34px;
+  line-height: 38px;
+  height: 38px;
 }
 
 .dijitButton {
@@ -3335,7 +3335,7 @@ body {
   padding-left: 16px;
 }
 .dijitDropDownButton .dijitArrowButtonInner {
-  width: 36px;
+  width: 40px;
   background-color: transparent;
 }
 .dijitDropDownButton .dijitArrowButtonInner:before {
@@ -3424,13 +3424,14 @@ body {
   width: 0;
 }
 .dijitComboButton {
+  border-collapse: inherit;
   background-color: #ffffff;
   border: solid 1px #426bf0;
   color: #426bf0;
   box-shadow: 0;
 }
 .dijitComboButton .dijitArrowButtonInner {
-  width: 36px;
+  width: 40px;
   background-color: transparent;
 }
 .dijitComboButton .dijitArrowButtonInner:before {
@@ -3645,7 +3646,7 @@ body {
 }
 .dijitSelect .dijitArrowButton {
   border-left: solid 1px #afb3c0;
-  width: 36px;
+  width: 40px;
   background-color: transparent;
 }
 .dijitSelect .dijitArrowButton > .dijitArrowButtonInner {
@@ -3662,7 +3663,7 @@ body {
   width: 0;
 }
 .dijitSelect .dijitArrowButtonInner {
-  width: 36px;
+  width: 40px;
 }
 .dijitSelectHover {
   background-color: #ffffff;
@@ -3731,15 +3732,16 @@ body {
   background-color: #ffffff;
   border: solid 1px #afb3c0;
   padding: 0 0 0 8px;
+  overflow: hidden;
 }
 .dijitComboBox input {
   height: auto;
-  line-height: 34px;
+  line-height: 38px;
   padding: 0;
 }
 .dijitComboBox .dijitArrowButton {
-  height: 34px;
-  width: 36px;
+  height: 38px;
+  width: 40px;
   background-color: #ffffff;
   border-left: solid 1px #afb3c0;
 }
@@ -3842,7 +3844,7 @@ body {
   border-top-width: 1px;
 }
 .dijitSliderDecrementIconH, .dijitSliderIncrementIconH, .dijitSliderDecrementIconV, .dijitSliderIncrementIconV {
-  border-radius: 0.125rem;
+  border-radius: 0.5rem;
   width: 20px;
   height: 16px;
   border: solid 1px #426bf0;
@@ -3991,8 +3993,8 @@ body {
   background-color: #f3f3f4;
   border-top: solid 1px #d1d4db;
   border-bottom: none;
-  height: 36px;
-  line-height: 36px;
+  height: 40px;
+  line-height: 40px;
   padding: 0 8px;
 }
 .dijitAccordionTitle:last-child {
@@ -4038,9 +4040,9 @@ body {
   transform: rotate(-90deg);
 }
 .dijitTitlePaneTitle .dijitArrowNode {
-  height: 36px;
+  height: 40px;
   position: relative;
-  width: 36px;
+  width: 40px;
 }
 .dijitTitlePaneTitle .dijitArrowNode:before {
   left: 50%;
@@ -4364,7 +4366,7 @@ body {
   font-size: inherit;
   padding: 5px;
   margin-left: 7px;
-  border-radius: 0.125rem;
+  border-radius: 0.5rem;
 }
 .dijitTooltipContainer:before {
   width: 8px;
@@ -4531,9 +4533,9 @@ body {
   transition: background-color 0.1s;
   background-color: #ffffff;
   color: #515667;
-  height: 36px;
+  height: 40px;
   text-align: center;
-  width: 36px;
+  width: 40px;
 }
 .dijitCalendarDayLabelTemplate {
   background-color: #ffffff;
@@ -4546,7 +4548,7 @@ body {
 }
 .dijitCalendarIncrementControl {
   position: relative;
-  width: 36px;
+  width: 40px;
 }
 .dijitCalendarDecrease:before {
   left: 50%;
@@ -4577,17 +4579,17 @@ body {
 .dijitCalendarMonthContainer {
   background-color: #515667;
   color: #ffffff;
-  height: 36px;
+  height: 40px;
 }
 .dijitCalendarMonthContainer .dijitCalendarMonthLabel,
 .dijitCalendarMonthContainer .dijitDropDownButton .dijitArrowButtonInner {
-  height: 26px;
-  line-height: 26px;
+  height: 30px;
+  line-height: 30px;
 }
 .dijitCalendarMonthContainer .dijitDropDownButton {
   border-radius: 0;
   background-color: transparent;
-  height: 28px;
+  height: 32px;
   border: solid 1px #ffffff;
   color: #ffffff;
 }
@@ -4595,21 +4597,21 @@ body {
   height: 0;
 }
 .dijitCalendarMonthContainer .dijitDropDownButton .dijitArrowButtonInner {
-  width: 26px;
+  width: 30px;
 }
 .dijitCalendarMonthContainer .dijitDropDownButton .dijitArrowButtonInner:before {
   border-top-color: #ffffff;
 }
 .dijitCalendarMonthContainer .dijitDropDownButton .dijitArrowButtonInner .dijitButtonText {
-  height: 36px;
-  line-height: 36px;
+  height: 40px;
+  line-height: 40px;
 }
 .dijitCalendarMonthMenu.dijitMenu {
   margin: 0;
 }
 .dijitCalendarMonthLabel {
-  height: 36px;
-  line-height: 36px;
+  height: 40px;
+  line-height: 40px;
 }
 .dijitCalendarMonthLabelHover {
   background-color: #f3f3f4;
@@ -4629,13 +4631,13 @@ body {
   color: rgba(255, 255, 255, 0.5);
 }
 .dijitCalendarSelectedDate .dijitCalendarDateLabel {
-  border-radius: 0.125rem;
+  border-radius: 0.5rem;
   background-color: #426bf0;
   color: #ffffff;
   display: block;
-  height: 36px;
-  line-height: 36px;
-  width: 36px;
+  height: 40px;
+  line-height: 40px;
+  width: 40px;
 }
 .dijitCalendarSelectedYear {
   color: #ffffff;
@@ -4648,7 +4650,7 @@ body {
 .dijitCalendarYearLabel {
   background-color: #515667;
   display: table;
-  height: 36px;
+  height: 40px;
   width: 100%;
 }
 .dijitCalendarYearLabel span {
@@ -4664,7 +4666,7 @@ body {
 }
 .dijitMenu .dijitMenuItem {
   border-bottom: none;
-  height: 36px;
+  height: 40px;
 }
 .dijitMenu .dijitMenuItem:last-child {
   border-bottom: none;
@@ -4697,7 +4699,7 @@ body {
 }
 
 .dijitComboBoxMenuPopup .dijitMenuItem {
-  line-height: 36px;
+  line-height: 40px;
   margin-bottom: 1px;
   padding: 0 5px;
 }
@@ -4714,8 +4716,8 @@ body {
   margin-top: 1px;
 }
 .dijitTimePickerItem {
-  line-height: 36px;
-  height: 36px;
+  line-height: 40px;
+  height: 40px;
   color: #515667;
   border-bottom: none;
 }
@@ -4766,8 +4768,8 @@ body {
   line-height: normal;
 }
 .dijitInline.dijitTextBox .dijitInputInner {
-  height: 34px;
-  line-height: 34px;
+  height: 38px;
+  line-height: 38px;
   padding: 0;
 }
 .dijitInlineEditBoxDisplayMode {
@@ -6363,10 +6365,10 @@ select[multiple]:hover {
   color: #426bf0;
   box-shadow: 0;
   transition: all 0.1s;
-  border-radius: 0.125rem;
+  border-radius: 0.5rem;
   display: inline-block;
-  height: 36px;
-  line-height: 36px;
+  height: 40px;
+  line-height: 40px;
   padding: 0 16px;
   text-decoration: none;
   text-transform: uppercase;
@@ -6394,20 +6396,20 @@ select[multiple]:hover {
 .dijitDropDownActionButton {
   background-color: #426bf0;
   border: none;
-  border-radius: 22px;
-  height: 44px;
-  width: 44px;
+  border-radius: 24px;
+  height: 48px;
+  width: 48px;
 }
 .dijitDropDownActionButton .actionIcon,
 .dijitDropDownActionButton .fa-plus {
   color: #ffffff;
-  line-height: 44px;
+  line-height: 48px;
   margin: 0;
   font-size: 16px;
 }
 .dijitDropDownActionButton .dijitButtonNode {
-  height: 44px;
-  width: 44px;
+  height: 48px;
+  width: 48px;
 }
 .dijitDropDownActionButton .dijitArrowButtonInner {
   display: none;
@@ -9488,7 +9490,7 @@ Styles for commons fields along the backend
   white-space: nowrap;
 }
 #inline-form > label, .inline-form > label, .fileSelectorControls > label {
-  line-height: 36px;
+  line-height: 40px;
   align-self: baseline;
 }
 #inline-form > .checkbox, .inline-form > .checkbox, .fileSelectorControls > .checkbox, #inline-form > .radio, .inline-form > .radio, .fileSelectorControls > .radio {
@@ -9583,7 +9585,7 @@ dt {
 
 dd {
   margin: 0 0 16px 30%;
-  min-height: 36px;
+  min-height: 40px;
   padding-left: 8px;
 }
 dd .inputCaption,
@@ -9594,7 +9596,7 @@ dd .buttonCaption {
 #form-horizontal-flexbox dl, .form-horizontal dl {
   display: flex;
   margin-bottom: 8px;
-  min-height: 36px;
+  min-height: 40px;
 }
 #form-horizontal-flexbox dd, .form-horizontal dd,
 #form-horizontal-flexbox dt,
@@ -9846,7 +9848,7 @@ dd .buttonCaption {
 .calendar-events__recurence-box {
   background-color: #f3f3f4;
   border: solid 1px #d1d4db;
-  border-radius: 0.125rem;
+  border-radius: 0.5rem;
   display: inline-block;
   margin-top: 8px;
   padding: 8px;
@@ -10938,8 +10940,8 @@ a.category_higlighted, a.tag_higlighted {
   cursor: pointer;
   display: block;
   font-size: 13px;
-  height: 36px;
-  line-height: 36px;
+  height: 40px;
+  line-height: 40px;
   padding: 0px 24px;
   position: relative;
   text-decoration: none;
@@ -11363,8 +11365,8 @@ a.category_higlighted, a.tag_higlighted {
   cursor: pointer;
   display: block;
   font-size: 13px;
-  height: 36px;
-  line-height: 36px;
+  height: 40px;
+  line-height: 40px;
   padding: 0px 24px;
   position: relative;
   text-decoration: none;
@@ -11632,8 +11634,8 @@ a.category_higlighted, a.tag_higlighted {
   cursor: pointer;
   opacity: 0.5;
   padding: 0 8px;
-  height: 36px;
-  line-height: 34px;
+  height: 40px;
+  line-height: 38px;
   position: absolute;
   right: 8px;
 }
@@ -11741,7 +11743,7 @@ Resize Handle
   color: #14151a;
   font-family: "Roboto", "Helvetica Neue", Helvetica, Arial, "Lucida Grande", sans-serif;
   font-size: 14px;
-  line-height: 36px;
+  line-height: 40px;
 }
 
 :root {
@@ -11817,3 +11819,5 @@ body {
   text-rendering: optimizeLegibility;
   -moz-osx-font-smoothing: grayscale;
 }
+
+/*# sourceMappingURL=dotcms.css.map */
