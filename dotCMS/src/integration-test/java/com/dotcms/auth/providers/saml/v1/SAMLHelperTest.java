@@ -214,6 +214,69 @@ public class SAMLHelperTest extends IntegrationTestBase {
 
     }
 
+    /**
+     * Method to test: testing the resolveUser of the {@link SAMLHelper}
+     * Given Scenario: the test creates two users:
+     *                      - one by hand
+     *                      - one from the Helper, this one will have the same email of the previous one added by hand, but diff user id
+     * ExpectedResult: Since the user id is diff, the second user should be saved with a diff id
+     *
+     */
+    @Test()
+    public void testResolveUserEmailRepeated() throws DotDataException, DotSecurityException, IOException, NoSuchAlgorithmException {
+
+        final SamlAuthenticationService samlAuthenticationService         = new MockSamlAuthenticationService();
+        final IdentityProviderConfiguration identityProviderConfiguration = mock(IdentityProviderConfiguration.class);
+        final CompanyAPI companyAPI                                       = mock(CompanyAPI.class);
+        final Company    company                                          = new Company();
+        final SAMLHelper           		samlHelper                        = new SAMLHelper(samlAuthenticationService, companyAPI);
+        final String nativeLastName     = "For SAML";
+        final String nativeFirstName    = "Native User";
+        final String email              = "native.user" + UUID.randomUUID() +  "@dotcms.com";
+        final String nativeNameId       = "1" + UUID.randomUUID(); // invalid id
+
+        //// create necessary mocks
+
+        // wants login by id
+        company.setAuthType(Company.AUTH_TYPE_ID);
+        when(companyAPI.getDefaultCompany()).thenReturn(company);
+
+        when(identityProviderConfiguration.containsOptionalProperty(SAMLHelper.ALLOW_USERS_DIFF_ID_REPEATED_EMAIL_KEY)).thenReturn(true);
+        when(identityProviderConfiguration.containsOptionalProperty(SamlName.DOT_SAML_ALLOW_USER_SYNCHRONIZATION.getPropertyName())).thenReturn(true);
+        when(identityProviderConfiguration.containsOptionalProperty(SamlName.DOTCMS_SAML_BUILD_ROLES.getPropertyName())).thenReturn(true);
+        when(identityProviderConfiguration.containsOptionalProperty(SamlName.DOTCMS_SAML_LOGIN_UPDATE_EMAIL.getPropertyName())).thenReturn(true);
+        when(identityProviderConfiguration.getOptionalProperty(SamlName.DOTCMS_SAML_LOGIN_UPDATE_EMAIL.getPropertyName())).thenReturn(true);
+        when(identityProviderConfiguration.getOptionalProperty(SamlName.DOTCMS_SAML_BUILD_ROLES.getPropertyName())).thenReturn(DotSamlConstants.DOTCMS_SAML_BUILD_ROLES_NONE_VALUE);
+        when(identityProviderConfiguration.getOptionalProperty(SAMLHelper.ALLOW_USERS_DIFF_ID_REPEATED_EMAIL_KEY)).thenReturn(true);
+
+        final SamlConfigurationService samlConfigurationService  = mock(SamlConfigurationService.class);
+        SAMLHelper.setThirdPartySamlConfigurationService(samlConfigurationService);
+
+        when(samlConfigurationService.getConfigAsBoolean(identityProviderConfiguration, SamlName.DOT_SAML_ALLOW_USER_SYNCHRONIZATION)).thenReturn(true);
+        when(samlConfigurationService.getConfigAsBoolean(identityProviderConfiguration, SamlName.DOTCMS_SAML_BUILD_ROLES)).thenReturn(true);
+        when(samlConfigurationService.getConfigAsBoolean(identityProviderConfiguration, SamlName.DOTCMS_SAML_LOGIN_UPDATE_EMAIL)).thenReturn(true);
+        when(samlConfigurationService.getConfigAsBoolean(identityProviderConfiguration, SamlName.DOTCMS_SAML_LOGIN_UPDATE_EMAIL)).thenReturn(true);
+        when(samlConfigurationService.getConfigAsString(identityProviderConfiguration, SamlName.DOTCMS_SAML_BUILD_ROLES)).thenReturn(DotSamlConstants.DOTCMS_SAML_BUILD_ROLES_NONE_VALUE);
+
+        // creates a new native user
+        final User nativeUser = new UserDataGen().id(samlHelper.hashIt(nativeNameId)).active(true).lastName(nativeLastName).firstName(nativeFirstName)
+                .emailAddress(email).nextPersisted();
+
+        // creates an user from saml
+        final Attributes samlUserAttributes = new Attributes.Builder().firstName(nativeFirstName)
+                .lastName(nativeLastName).nameID("123" + nativeNameId).email(email).build(); // diff id, same email
+
+        // recover with SAML the new user
+        final User recoveredNewUser = samlHelper.resolveUser(samlUserAttributes, identityProviderConfiguration);
+
+        Assert.assertNotNull(recoveredNewUser);
+        Assert.assertNotEquals (nativeUser.getUserId(),       recoveredNewUser.getUserId());
+        Assert.assertNotEquals (nativeUser.getEmailAddress(), recoveredNewUser.getEmailAddress());
+        Assert.assertEquals(nativeUser.getFirstName(),        recoveredNewUser.getFirstName());
+        Assert.assertEquals (nativeUser.getLastName(),        recoveredNewUser.getLastName());
+        Assert.assertTrue(recoveredNewUser.getEmailAddress().contains(email));
+    }
+
 
     /**
      * Method to test: testing the resolveUser of the {@link SAMLHelper}
