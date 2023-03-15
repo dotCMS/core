@@ -2,6 +2,7 @@ package com.dotcms.browser;
 
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.content.business.json.ContentletJsonAPI;
+import com.dotcms.content.elasticsearch.business.ESContentletAPIImpl;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.uuid.shorty.ShortyIdAPI;
 import com.dotmarketing.beans.Host;
@@ -14,6 +15,7 @@ import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.transform.DotFolderTransformerBuilder;
 import com.dotmarketing.portlets.contentlet.transform.DotMapViewTransformer;
@@ -56,6 +58,7 @@ public class BrowserAPIImpl implements BrowserAPI {
     private final FolderAPI folderAPI = APILocator.getFolderAPI();
     private final PermissionAPI permissionAPI = APILocator.getPermissionAPI();
     private final ShortyIdAPI shortyIdAPI = APILocator.getShortyAPI();
+    private final ESContentletAPIImpl esContentletAPI = new ESContentletAPIImpl();
     private static final StringBuilder POSTGRES_ASSETNAME_COLUMN = new StringBuilder(ContentletJsonAPI
             .CONTENTLET_AS_JSON).append("-> 'fields' -> ").append("'asset' -> 'metadata' ->> ").append("'name' ");
 
@@ -80,7 +83,6 @@ public class BrowserAPIImpl implements BrowserAPI {
 
         final Tuple3<String, String, List<Object>> sqlQuery = this.selectQuery(browserQuery);
 
-
         final DotConnect dc = new DotConnect().setSQL(sqlQuery._1);
 
         sqlQuery._3.forEach(o -> dc.addParam(o));
@@ -88,10 +90,19 @@ public class BrowserAPIImpl implements BrowserAPI {
         try {
             final List<Map<String,String>> inodesMapList =  dc.loadResults();
 
+            final List<Contentlet> contentletList = esContentletAPI.search(sqlQuery._2,-1,0, null,browserQuery.user,false);
+
             final List<String> inodes = new ArrayList<>();
             for (final Map<String, String> versionInfoMap : inodesMapList) {
                 inodes.add(versionInfoMap.get("inode"));
             }
+
+            for(final Contentlet contentlet : contentletList){
+                if(!inodes.contains(contentlet.getInode())){
+                    inodes.add(contentlet.getInode());
+                }
+            }
+
 
             final List<Contentlet> cons  = APILocator.getContentletAPI().findContentlets(inodes);
 
@@ -272,7 +283,7 @@ public class BrowserAPIImpl implements BrowserAPI {
                 + " c.inode = cvi." + workingLiveInode + " and cvi.variant_id='"+DEFAULT_VARIANT.name()+"' ");
 
         
-        final StringBuilder luceneQuery = UtilMethods.isSet(browserQuery.luceneQuery) ? new  StringBuilder(browserQuery.luceneQuery) : new  StringBuilder();
+        final StringBuilder luceneQuery = UtilMethods.isSet(browserQuery.luceneQuery) ? new  StringBuilder("+title:*" + browserQuery.luceneQuery.trim() + "* ") : new  StringBuilder();
         
         if(browserQuery.showWorking || browserQuery.showArchived) {
             luceneQuery.append("+working:true ");
@@ -287,7 +298,7 @@ public class BrowserAPIImpl implements BrowserAPI {
                     browserQuery.baseTypes.stream().map(t -> String.valueOf(t.getType())).collect(Collectors.toList());
             sqlQuery.append(" and struc.structuretype in (" + String.join(" , ", baseTypes) + ") ");
             
-            luceneQuery.append("+baseType:(" + String.join(" ", baseTypes)+ ") ");
+            luceneQuery.append("+baseType:(" + String.join(" OR ", baseTypes)+ ") ");
         }
         if (browserQuery.languageId > 0) {
             sqlQuery.append(" and cvi.lang = ? ");
@@ -297,12 +308,13 @@ public class BrowserAPIImpl implements BrowserAPI {
         if (browserQuery.site != null) {
             sqlQuery.append(" and id.host_inode = ? ");
             parameters.add(browserQuery.site.getIdentifier());
-            luceneQuery.append("+conhost:" + browserQuery.site.getIdentifier() + " ");
+            //luceneQuery.append("+conHost:" + browserQuery.site.getIdentifier() + " ");
+            //todo above filter is not working so we need to check the issue
         }
         if (browserQuery.folder != null) {
             sqlQuery.append(" and id.parent_path=? ");
             parameters.add(browserQuery.folder.getPath());
-            luceneQuery.append("+path:" + browserQuery.folder.getPath() + " ");
+            luceneQuery.append("+parentPath:" + browserQuery.folder.getPath() + " ");
         }
 
         if (UtilMethods.isSet(browserQuery.filter)) {
