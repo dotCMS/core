@@ -38,9 +38,13 @@ export CMS_NOCOMPRESSIONSTRONGETAG=${CMS_NOCOMPRESSIONSTRONGETAG:-"false"}
 export CMS_COMPRESSIBLEMIMETYPE=${CMS_COMPRESSIBLEMIMETYPE:-"text/html,text/xml,text/csv,text/css,text/javascript,text/json,application/javascript,application/json,application/xml,application/x-javascript,font/eot,font/otf,font/ttf,image/svg+xml"}
 
 # Access Log and Remote IP Valve
+# https://tomcat.apache.org/tomcat-9.0-doc/config/valve.html#Access_Log_Valve
 export CMS_ACCESSLOG_PATTERN=${CMS_ACCESSLOG_PATTERN:-'%{Host}i %{org.apache.catalina.AccessLog.RemoteAddr}r %l %u %t "%r" %s %b %D %{Referer}i %{User-Agent}i'}
 export CMS_ACCESSLOG_FILEDATEFORMAT=${CMS_ACCESSLOG_FILEDATEFORMAT:-".yyyy-MM-dd"}
 export CMS_ACCESSLOG_MAXDAYS=${CMS_ACCESSLOG_MAXDAYS:-"-1"}
+export CMS_ACCESSLOG_DIRECTORY=${CMS_ACCESSLOG_DIRECTORY:-"logs"}
+export CMS_ACCESSLOG_RENAMEONROTATE=${CMS_ACCESSLOG_RENAMEONROTATE="false"}
+export CMS_ACCESSLOG_ROTATABLE=${CMS_ACCESSLOG_ROTATABLE="true"}
 export CMS_REMOTEIP_REMOTEIPHEADER=${CMS_REMOTEIP_REMOTEIPHEADER:-"x-forwarded-for"}
 export CMS_REMOTEIP_INTERNALPROXIES=${CMS_REMOTEIP_INTERNALPROXIES:-"10\.\d{1,3}\.\d{1,3}\.\d{1,3}|192\.168\.\d{1,3}\.\d{1,3}|169\.254\.\d{1,3}\.\d{1,3}|127\.\d{1,3}\.\d{1,3}\.\d{1,3}|172\.1[6-9]{1}\.\d{1,3}\.\d{1,3}|172\.2[0-9]{1}\.\d{1,3}\.\d{1,3}|172\.3[0-1]{1}\.\d{1,3}\.\d{1,3}|0:0:0:0:0:0:0:1"}
 
