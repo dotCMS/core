@@ -5,6 +5,7 @@ import static com.dotmarketing.business.PermissionAPI.PERMISSION_PUBLISH;
 import static com.dotmarketing.business.PermissionAPI.PERMISSION_READ;
 import static com.dotmarketing.business.PermissionAPI.PERMISSION_WRITE;
 import com.dotcms.browser.BrowserAPI;
+import com.dotcms.browser.BrowserQuery;
 import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.exception.NotFoundInDbException;
 import com.dotcms.contenttype.model.type.BaseContentType;
@@ -418,8 +419,26 @@ public class BrowserAjax {
 	        final User user              = getUser(req);
 	        final long getAllLanguages   = 0;
 
-	        final Map<String, Object> results = browserAPI.getFolderContent(user, folderId, offset, maxResults, filter, mimeTypes, extensions,
-					true, showArchived, noFolders, onlyFiles, sortBy, sortByDesc, excludeLinks, getAllLanguages, dotAssets);
+		   final Map<String, Object> results = browserAPI.getFolderContent(
+				   BrowserQuery.builder()
+						   .withUser(user)
+						   .withHostOrFolderId(folderId)
+						   .offset(offset)
+						   .maxResults(maxResults)
+						   .withFilter(filter)
+						   .showMimeTypes(mimeTypes)
+						   .showExtensions(extensions)
+						   .showWorking(true)
+						   .showArchived(showArchived)
+						   .showFolders(!noFolders)
+						   .showFiles(onlyFiles)
+						   .sortBy(sortBy)
+						   .sortByDesc(sortByDesc)
+						   .showLinks(!excludeLinks)
+						   .withLanguageId(
+								   WebAPILocator.getLanguageWebAPI().getBackendLanguage().getId())
+						   .showDotAssets(dotAssets)
+						   .build());
 
 	        listCleanup((List<Map<String, Object>>) results.get("list"), getContentSelectedLanguageId(req));
 

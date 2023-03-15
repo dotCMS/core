@@ -93,3 +93,4 @@ This maintenance release includes the following code fixes:
 76. https://github.com/dotCMS/core/issues/22323 : Relationships will get cleared if you Save a contentlet before they are loaded #22323
 77. https://github.com/dotCMS/core/issues/22840 : Add relationship is broken in many to one relationship #22840
 78. https://github.com/dotCMS/core/issues/22667 : Cannot change date or time fields to never on an existing contentlet #22667
+79. https://github.com/dotCMS/core/issues/22729 : Image Selector Issues #22729
