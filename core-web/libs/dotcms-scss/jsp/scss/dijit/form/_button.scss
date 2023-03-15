@@ -187,6 +187,8 @@
     }
 
     &ComboButton {
+        border-collapse: inherit;
+
         @include btn(
             $combobutton-normal-shadow,
             $combobutton-normal-bgcolor,

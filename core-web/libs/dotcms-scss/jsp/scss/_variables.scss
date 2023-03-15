@@ -1,8 +1,8 @@
-@use "../../../shared/colors" as *;
-@use "../../../shared/common" as *;
+@use "../../shared/colors" as *;
+@use "../../shared/common" as *;
 
-@forward "../../../shared/colors";
-@forward "../../../shared/common";
+@forward "../../shared/colors";
+@forward "../../shared/common";
 
 // TYPOGRAPHY
 $body-size: 14px !default;
@@ -12,5 +12,3 @@ $text-color: $color-palette-gray-800 !default;
 // Basic stuffs
 $icon-size: 16px !default;
 $basic-padding: 5px !default;
-
-// FORMS
