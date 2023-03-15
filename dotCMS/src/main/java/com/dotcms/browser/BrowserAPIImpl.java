@@ -308,8 +308,7 @@ public class BrowserAPIImpl implements BrowserAPI {
         if (browserQuery.site != null) {
             sqlQuery.append(" and id.host_inode = ? ");
             parameters.add(browserQuery.site.getIdentifier());
-            //luceneQuery.append("+conHost:" + browserQuery.site.getIdentifier() + " ");
-            //todo above filter is not working so we need to check the issue
+            luceneQuery.append("+conHost:(SYSTEM_HOST OR " + browserQuery.site.getIdentifier() + ") ");
         }
         if (browserQuery.folder != null) {
             sqlQuery.append(" and id.parent_path=? ");
