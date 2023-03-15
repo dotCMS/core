@@ -9,6 +9,7 @@ import com.dotcms.contenttype.model.field.*;
 import com.dotcms.contenttype.model.type.*;
 import com.dotcms.contenttype.transform.contenttype.DbContentTypeTransformer;
 import com.dotcms.contenttype.transform.contenttype.ImplClassContentTypeTransformer;
+import com.dotcms.contenttype.util.DeletionThreadLocal;
 import com.dotcms.enterprise.license.LicenseManager;
 import com.dotcms.repackage.javax.validation.constraints.NotNull;
 import com.dotcms.system.event.local.business.LocalSystemEventsAPI;
@@ -819,11 +820,14 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
 
                 final List<List<Contentlet>> partitions = partitionInput(contents, maxThreads);
                 Logger.info(getClass(), String.format(" ::: Partitions size %d ", partitions.size()));
+                final DeletionThreadLocal deletionThreadLocal = DeletionThreadLocal.INSTANCE.get();
                 for (List<Contentlet> partition : partitions) {
                     service.submit(() -> {
+                        deletionThreadLocal.set(type);
                         try {
                             return destroy(partition, conAPI, systemUser);
                         } finally {
+                            deletionThreadLocal.remove();
                             DateUtil.sleep(400);
                         }
                     });
@@ -877,6 +881,11 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
     private void destroy(ContentType type) throws DotHibernateException {
             try {
                 Logger.info(getClass(), String.format("Destroying Content-Type with inode: [%s] and var: [%s].", type.inode(), type.variable()));
+
+                // deleting fields
+                FactoryLocator.getFieldFactory().deleteByContentType(type);
+
+                // make sure folders don't refer to this structure as default fileasset structure
 
                 updateFolderFileAssetReferences(type);
 

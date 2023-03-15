@@ -778,6 +778,11 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
 
         for (final Contentlet contentlet : contentToIndexSet) {
 
+            if(contentlet.getContentType().markedForDeletion()){
+              Logger.debug(this, "Contentlet " + contentlet.getIdentifier() + " is marked for deletion. Skipping.");
+              continue;
+            }
+
             final String id = contentlet.getIdentifier() + "_" + contentlet.getLanguageId()
                     + "_" + contentlet.getVariantId();
             Logger.debug(this,

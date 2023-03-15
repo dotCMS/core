@@ -101,11 +101,17 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
     //Then this quickly hides the content from the front end and APIS
     contentTypeFactory.markForDeletion(type);
     //Now we need a copy of the CT that basically makes it possible relocating content for asynchronous deletion
-    final String newName =  String.format("%s_%s",type.name(),System.currentTimeMillis());
-    final ContentType copy = copyFrom(new CopyContentTypeBean.Builder().sourceContentType(type).name(newName).newVariable(newName).build());
-    Logger.info(getClass(),"Created copy  with name " + type.name() + " and inode " + copy.inode());
+    final String newName =  String.format("%s_%s",type.variable(),System.currentTimeMillis());
+    ContentType copy = copyFrom(new CopyContentTypeBean.Builder().sourceContentType(type).name(newName).newVariable(newName).build());
+    //A copy is made. but we need to refresh our var sine the copy returned by the method is incomplete
+    copy = contentTypeFactory.find(copy.id());
+    Logger.info(getClass(), String.format("::: CT (%s) with inode:(%s) Will be deleted shortly. A Copy Will  with  name (%s) and inode (%s) will be used to dispose all contentlet. :::",
+       type.variable(), type.inode(), copy.variable(), copy.inode())
+    );
     APILocator.getContentletAPI().relocateContentletsForDeletion(type, copy);
     //Now that all the content is relocated, we're ready to destroy the original structure that held all content
+    //But first we need to remove all fields from the original structure. Since it no longer holds any content.
+    //There's a timing problem here. Looks like this delete fires a job from a commit listener therefor when the CT is looked up it has benn already deleted from the DB.
     contentTypeFactory.delete(type);
     //and destroy all associated content under the copy
     contentTypeFactory.markForDeletion(copy);
@@ -267,36 +273,37 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
 
     final ContentType contentType    = builder.build();
     final ContentType newContentType = this.save(contentType);
-    final List<Field> sourceFields  = APILocator.getContentTypeFieldAPI().byContentTypeId(sourceContentType.id());
+    final FieldAPI contentTypeFieldAPI = APILocator.getContentTypeFieldAPI();
+    final List<Field> sourceFields  = contentTypeFieldAPI.byContentTypeId(sourceContentType.id());
     final Map<String, Field> newFieldMap = newContentType.fieldMap();
     final Map<String, Field> lowerNewFieldMap = new LowerKeyMap<>();
-    newFieldMap.entrySet().forEach(entry -> lowerNewFieldMap.put(entry.getKey(), entry.getValue()));
+    lowerNewFieldMap.putAll(newFieldMap);
 
     Logger.debug(this, ()->"Saving the fields for the the content type: " + copyContentTypeBean.getName()
             + ", from: " + copyContentTypeBean.getSourceContentType().variable());
 
     for (final Field sourceField : sourceFields) {
 
-        Field newField = lowerNewFieldMap.get(sourceField.variable().toLowerCase());
-        if (null == newField) {
+      Field newField = lowerNewFieldMap.get(sourceField.variable().toLowerCase());
+      if (null == newField) {
 
-            newField = APILocator.getContentTypeFieldAPI()
-                    .save(FieldBuilder.builder(sourceField).sortOrder(sourceField.sortOrder()).contentTypeId(newContentType.id()).id(null).build(), user);
-        } else {
+        newField = contentTypeFieldAPI
+                .save(FieldBuilder.builder(sourceField).sortOrder(sourceField.sortOrder()).contentTypeId(newContentType.id()).id(null).build(), user);
+      } else {
 
-            // if contains we just need to sort based on the source order
-          APILocator.getContentTypeFieldAPI()
-                  .save(FieldBuilder.builder(newField).sortOrder(sourceField.sortOrder()).build(), user);
+        // if contains we just need to sort based on the source order
+        contentTypeFieldAPI
+                .save(FieldBuilder.builder(newField).sortOrder(sourceField.sortOrder()).build(), user);
+      }
+
+      final List<FieldVariable> currentFieldVariables = sourceField.fieldVariables();
+      if (UtilMethods.isSet(currentFieldVariables)) {
+        for (final FieldVariable fieldVariable : currentFieldVariables) {
+
+          contentTypeFieldAPI.save(ImmutableFieldVariable.builder().from(fieldVariable).
+                  fieldId(newField.id()).id(null).userId(user.getUserId()).build(), user);
         }
-
-        final List<FieldVariable> currentFieldVariables = sourceField.fieldVariables();
-        if (UtilMethods.isSet(currentFieldVariables)) {
-          for (final FieldVariable fieldVariable : currentFieldVariables) {
-
-            APILocator.getContentTypeFieldAPI().save(ImmutableFieldVariable.builder().from(fieldVariable).
-                    fieldId(newField.id()).id(null).userId(user.getUserId()).build(), user);
-          }
-        }
+      }
     }
 
     return newContentType;

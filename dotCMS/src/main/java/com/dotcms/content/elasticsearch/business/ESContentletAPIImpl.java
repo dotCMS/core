@@ -31,6 +31,7 @@ import com.dotcms.contenttype.model.type.ContentTypeIf;
 import com.dotcms.contenttype.transform.contenttype.ContentTypeTransformer;
 import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
 import com.dotcms.contenttype.transform.field.LegacyFieldTransformer;
+import com.dotcms.contenttype.util.DeletionThreadLocal;
 import com.dotcms.notifications.bean.NotificationLevel;
 import com.dotcms.publisher.business.DotPublisherException;
 import com.dotcms.publisher.business.PublisherAPI;
@@ -39,7 +40,6 @@ import com.dotcms.rendering.velocity.services.PageLoader;
 import com.dotcms.rest.AnonymousAccess;
 import com.dotcms.rest.api.v1.temp.DotTempFile;
 import com.dotcms.rest.api.v1.temp.TempFileAPI;
-import com.dotcms.rest.exception.NotFoundException;
 import com.dotcms.storage.FileMetadataAPI;
 import com.dotcms.storage.model.Metadata;
 import com.dotcms.system.event.local.business.LocalSystemEventsAPI;
@@ -2625,7 +2625,6 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
     private boolean internalDestroy(final List<Contentlet> contentlets, final User user,
             final boolean respectFrontendRoles) throws DotSecurityException, DotDataException {
-
         this.logContentletActivity(contentlets, "Destroying Content", user);
 
         for (final Contentlet contentlet : contentlets) {
@@ -2740,7 +2739,8 @@ public class ESContentletAPIImpl implements ContentletAPI {
     private boolean destroyContentlets(final List<Contentlet> contentlets, final User user,
             final boolean respectFrontendRoles)
             throws DotDataException, DotSecurityException {
-
+        final DeletionThreadLocal deletionThreadLocal = DeletionThreadLocal.INSTANCE.get();
+        boolean forceUnpublishThenArchive = (null == deletionThreadLocal.get());
         boolean noErrors = true;
         final List<Contentlet> contentletsVersion = new ArrayList<>();
         // Log contentlet identifiers that we are going to destroy
@@ -2753,8 +2753,14 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
             final Contentlet contentlet = contentletIterator.next();
             contentlet.getMap().put(Contentlet.DONT_VALIDATE_ME, true);
-            //TODO: this needs to called conditionally if called from the tearDown method
-            this.forceUnpublishArchiveOnDestroy(user, contentlet);
+
+            // This basically says if there's a CT set in the Thread local.
+            // We're working from the TearDown method which does not need these steps for the sake of efficiency.
+            //Though, I suspect they are not needed at all.
+            if(forceUnpublishThenArchive){
+                this.forceUnpublishArchiveOnDestroy(user, contentlet);
+            }
+
             APILocator.getWorkflowAPI()
                     .deleteWorkflowTaskByContentletIdAnyLanguage(contentlet, user);
 
@@ -3713,8 +3719,8 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
     @WrapInTransaction
     @Override
-    public void relocateContentletsForDeletion(ContentType source, ContentType target) throws DotDataException{
-          contentFactory.relocateContentletsForDeletion(source, target);
+    public ContentType relocateContentletsForDeletion(ContentType source, ContentType target) throws DotDataException{
+         return contentFactory.relocateContentletsForDeletion(source, target);
     }
 
     /**

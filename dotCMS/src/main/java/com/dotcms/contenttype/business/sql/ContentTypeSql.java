@@ -70,13 +70,13 @@ public abstract class ContentTypeSql {
         + " and (inode.inode like ? or lower(name) like ? or velocity_var_name like ?) "  //search
         + " %s" //if we have a condition
 		+ " and host like ? "
-        + " and structuretype>=? and structuretype<= ? order by %s";
+        + " and structuretype>=? and structuretype<= ? and marked_for_deletion <> true order by %s";
 
     public static String SELECT_INODE_ONLY_QUERY_CONDITION = SELECT_ONLY_INODE_FIELD 
                     + " and (inode.inode like ? or lower(name) like ? or velocity_var_name like ?) "  //search
                     + " %s" //if we have a condition
 					+ " and host like ? "
-                    + " and structuretype>=? and structuretype<= ? order by %s";
+                    + " and structuretype>=? and structuretype<= ? and marked_for_deletion <> true order by %s";
 	
 	
 	
@@ -84,9 +84,9 @@ public abstract class ContentTypeSql {
         + "where inode.type='structure' and inode.inode=structure.inode and "
         + " (inode.inode like ? or lower(name) like ? or velocity_var_name like ?) "
         + " %s" //if we have a condition
-        + " and structuretype>=? and structuretype<= ? ";
+        + " and structuretype>=? and structuretype<= ? and marked_for_deletion <> true ";
 
-	public static String SELECT_COUNT_VAR="select count(*) as test from structure where lower(velocity_var_name) like ?";
+	public static String SELECT_COUNT_VAR="select count(*) as test from structure where lower(velocity_var_name) like ? and marked_for_deletion <> true ";
 
 	public static String UPDATE_ALL_DEFAULT = "update structure set default_structure=?";
 

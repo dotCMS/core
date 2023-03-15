@@ -1,11 +1,12 @@
-package com.dotmarketing.portlets.contentlet.business; 
+package com.dotmarketing.portlets.contentlet.business;
 
 import com.dotcms.content.elasticsearch.util.RestHighLevelClientProvider;
 import com.dotcms.contenttype.model.type.ContentType;
+import com.dotcms.contenttype.model.type.ContentTypeBuilder;
 import com.dotcms.repackage.net.sf.hibernate.ObjectNotFoundException;
+import com.dotcms.repackage.org.nfunk.jep.function.Str;
 import com.dotcms.util.transform.TransformerLocator;
 import com.dotmarketing.beans.Identifier;
-import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.query.GenericQueryFactory.Query;
 import com.dotmarketing.business.query.ValidationException;
@@ -25,6 +26,7 @@ import org.elasticsearch.search.SearchHits;
 import java.io.Serializable;
 import java.util.*;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 
 /**
  * Provides utility methods to interact with {@link Contentlet} objects in
@@ -37,8 +39,6 @@ import java.util.function.Function;
  *
  */
 public abstract class ContentletFactory {
-
-	public static final String DELETE_ME = "%s_DELETE_ME";
 
 	/**
 	 * Use to get all contentlets live/working contentlets
@@ -509,30 +509,40 @@ public abstract class ContentletFactory {
 		}
 	}
 
-	public void relocateContentletsForDeletion(ContentType source, ContentType target) throws DotDataException {
+	/**
+	 * This method relocates all contentlets from a given structure to another structure
+	 * And returns the new structure purged from fields
+	 * @param source
+	 * @param target
+	 * @return
+	 * @throws DotDataException
+	 */
+	public ContentType relocateContentletsForDeletion(final ContentType source, final ContentType target) throws DotDataException {
 
-		//TODO: need to match old fields with the new fiedls created in the new structure
+		if (!source.getClass().equals(target.getClass())) {
+			throw new DotDataException(
+				String.format("Incompatible source and target ContentTypes. source class is (%s) target class is (%s)",
+						source.getClass().getSimpleName(), target.getClass().getSimpleName())
+			);
+		}
 
-		final DotConnect dotConnect = new DotConnect();
-/*
+		//Avoid conflicts with CTs coming from old starters
+		final List<String> requiredFields = source.requiredFields().stream().map(com.dotcms.contenttype.model.field.Field::variable).collect(Collectors.toList());
+		final ArrayList<com.dotcms.contenttype.model.field.Field> sourceFields = new ArrayList<>(source.fields());
+		sourceFields.removeIf(field -> requiredFields.contains(field.variable()));
+
 		final Map<String, com.dotcms.contenttype.model.field.Field> targetMappedByVar = target.fields().stream().collect(Collectors.toMap(com.dotcms.contenttype.model.field.Field::variable, Function.identity()));
-		for (final com.dotcms.contenttype.model.field.Field field : source.fields()) {
+		for (final com.dotcms.contenttype.model.field.Field field : sourceFields) {
 			final com.dotcms.contenttype.model.field.Field targetField = targetMappedByVar.get(field.variable());
 			if (null == targetField) {
-				throw new DotDataException("Unable to match field " + field.variable() + " in target structure " + target.name());
+				throw new DotDataException( String.format("Unable to match field (%s) in target structure (%s) by name." , field.variable() , target.name()));
 			}
-			if (!field.dataType().equals(targetField.dataType())) {
-				throw new DotDataException("Unable to match field " + field.variable() + " in target structure " + target.name() + " because the data type is different");
-			}
-			//dotConnect.setSQL("update fields set velocity_var_name = ? where inode = ?").addParam(targetField.variable()).addParam(field.inode()).loadResult();
-		}
-*/
-		//final List<?> list = dotConnect.setSQL("select c.inode " +
-		//		" from contentlet c, structure s  " +
-		//		" where c.structure_inode = s.inode and " +
-		//		" s.inode =  ? ").addParam(source.inode()).loadResults();
 
-		//dotConnect.setSQL("update contentlet c set structure_inode = ? from structure s where c.structure_inode = s.inode and s.inode = ? ").addParam(target.inode()).addParam(source.inode()).loadResult();
+			if (!field.dataType().equals(targetField.dataType()) ) {
+				throw new DotDataException(String.format("Unable to match field (%s:%s) in target structure (%s:%s) by Data-Type ", field.variable(), field.dataType() ,targetField.variable(), targetField.dataType()));
+			}
+		}
+		final DotConnect dotConnect = new DotConnect();
 
 		final String updateContentlet = String.format(
 				"update contentlet c set structure_inode = ?, \n" +
@@ -542,10 +552,10 @@ public abstract class ContentletFactory {
 
 		dotConnect.setSQL(updateContentlet).addParam(target.inode()).addParam(source.inode()).loadResult();
 
-		//final ContentletCache contentletCache = CacheLocator.getContentletCache();
-		//for (final Object o : list) {
-		//	final Map<?,?> map = (Map<?,?>) o;
-		//	contentletCache.remove((String)map.get("inode"));
-		//}
+		//it is crucial we free the original ct from its sourceFields. so we don't attempt to clean up any further references to it and just destroy it from the table structure
+		//ContentType contentType = ContentTypeBuilder.builder(source).build();
+		//contentType.constructWithFields(List.of());
+		//return contentType;
+		return source;
 	}
 }
