@@ -2994,9 +2994,8 @@ body {
 
 .dijitTextBox {
   background-color: #ffffff;
-  outline: solid 1px #afb3c0;
   padding: 0 8px;
-  border: 0;
+  border: solid 1px #afb3c0;
 }
 .dijitTextBox .dijitArrowButton {
   height: 34px;
@@ -3019,7 +3018,7 @@ body {
 }
 .dijitTextBoxHover {
   background-color: #ffffff;
-  outline: solid 1px #426bf0;
+  border: solid 1px #426bf0;
 }
 .dijitTextBoxHover .dijitInputInner {
   color: #14151a;
@@ -3039,7 +3038,7 @@ body {
   border-top-color: #426bf0;
 }
 .dijitTextBoxFocused {
-  outline: solid 2px #426bf0;
+  border: solid 2px #426bf0;
   background-color: #ffffff;
 }
 .dijitTextBoxFocused .dijitInputInner {
@@ -3080,7 +3079,7 @@ body {
   width: 0;
 }
 .dijitTextBoxDisabled {
-  outline: solid 1px #e3e4e6;
+  border: solid 1px #e3e4e6;
   background-color: #ffffff;
 }
 .dijitTextBoxDisabled .dijitArrowButton {
@@ -3107,7 +3106,7 @@ body {
   color: #afb3c0;
 }
 .dijitTextBoxError {
-  outline: solid 1px #d0021b;
+  border: solid 1px #d0021b;
 }
 .dijitTextBoxError .dijitValidationContainer {
   margin-right: -8px;

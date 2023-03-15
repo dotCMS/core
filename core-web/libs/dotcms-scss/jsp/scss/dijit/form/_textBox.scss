@@ -1,8 +1,7 @@
 .dijitTextBox {
     background-color: $textbox-normal-bgcolor;
-    outline: $textbox-normal-border;
     padding: 0 $field-padding;
-    border: 0;
+    border: $textbox-normal-border;
 
     .dijitArrowButton {
         height: $field-height - ($field-border-size * 2);
@@ -18,7 +17,7 @@
 
     &Hover {
         background-color: $textbox-hover-bgcolor;
-        outline: $textbox-hover-border;
+        border: $textbox-hover-border;
 
         .dijitInputInner {
             color: $textbox-hover-textcolor;
@@ -44,7 +43,7 @@
     }
 
     &Focused {
-        outline: $textbox-focused-border;
+        border: $textbox-focused-border;
         background-color: $textbox-focused-bgcolor;
 
         .dijitInputInner {
@@ -71,7 +70,7 @@
     }
 
     &Disabled {
-        outline: $textbox-disabled-border;
+        border: $textbox-disabled-border;
         background-color: $textbox-disabled-bgcolor;
 
         .dijitArrowButton {
@@ -93,7 +92,7 @@
     }
 
     &Error {
-        outline: $field-error-border;
+        border: $field-error-border;
 
         .dijitValidationContainer {
             margin-right: -#{$field-padding};
