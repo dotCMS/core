@@ -13,14 +13,14 @@ $input-border-color-focus: $color-palette-gray-500;
 $input-bg-color: $color-palette-gray-500;
 $input-bg-color-hover: $color-palette-gray-500;
 
-$bg-highlight: rgba($color-palette-secondary, 0.12);
+$bg-highlight: rgba($color-palette-primary, 0.12);
 $text-color-highlight: $color-palette-primary;
-$border-color-highlight: rgba($color-palette-secondary, 0.12);
+$border-color-highlight: rgba($color-palette-primary, 0.12);
 
-$focus-bg: rgba($color-palette-secondary, 0.12);
+$focus-bg: rgba($color-palette-primary, 0.12);
 $focus-text-color: $black;
 
-$bg-hover: rgba($color-palette-secondary, 0.12);
+$bg-hover: rgba($color-palette-primary, 0.12);
 $text-color-hover: $black;
 $border-color-hover: $color-palette-primary;
 

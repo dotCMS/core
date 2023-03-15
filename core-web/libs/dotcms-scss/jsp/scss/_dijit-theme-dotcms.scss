@@ -41,9 +41,9 @@ $field-normal-arrow-color: $color-palette-gray-700;
 
 $field-hover-bgcolor: $color-palette-gray-200;
 $field-hover-textcolor: $text-color;
-$field-hover-border: solid $field-border-size $color-palette-secondary;
+$field-hover-border: solid $field-border-size $color-palette-primary;
 $field-hover-arrow-color: $color-palette-primary;
-$field-hoverarrow-arrow-color: $color-palette-secondary;
+$field-hoverarrow-arrow-color: $color-palette-primary;
 $field-hoverarrow-arrow-border: solid $field-border-size $color-palette-gray-800;
 $field-hoverarrow-arrow-bgcolor: rgba(var(--color-sec_rgb), 0.2);
 
@@ -62,7 +62,7 @@ $field-disabled-arrow-color: $color-palette-gray-500;
 
 $field-focused-bgcolor: $color-palette-gray-400;
 $field-focused-textcolor: $text-color;
-$field-focused-border: $field-hover-border;
+$field-focused-border: solid 2px $color-palette-primary;
 $field-focused-arrow-color: $color-palette-primary;
 $field-focusedarrow-arrow-color: $color-palette-primary;
 $field-focusedarrow-arrow-border: solid $field-border-size $color-palette-primary;
@@ -74,27 +74,27 @@ $field-error-border: solid 1px $error;
 
 $button-padding: $field-padding * 2;
 $button-normal-bgcolor: $white;
-$button-normal-textcolor: $color-palette-secondary;
-$button-normal-border: solid 1px $color-palette-secondary;
+$button-normal-textcolor: $color-palette-primary;
+$button-normal-border: solid 1px $color-palette-primary;
 $button-normal-shadow: 0;
 
-$button-hover-bgcolor: $white;
+$button-hover-bgcolor: $color-palette-primary-100;
 $button-hover-textcolor: $color-palette-primary;
 $button-hover-border: solid 1px $color-palette-primary;
 $button-hover-shadow: 0;
 
-$button-active-bgcolor: $white;
+$button-active-bgcolor: $color-palette-primary-200;
 $button-active-textcolor: $color-palette-primary;
 $button-active-border: solid 1px $color-palette-primary;
 $button-active-shadow: 0;
 
-$button-disabled-bgcolor: $color-palette-gray-400;
-$button-disabled-textcolor: $field-disabled-textcolor;
-$button-disabled-border: solid 1px $color-palette-gray-400;
+$button-disabled-bgcolor: $color-palette-gray-200;
+$button-disabled-textcolor: $color-palette-gray-500;
+$button-disabled-border: solid 1px $color-palette-gray-200;
 $button-disabled-shadow: $button-normal-shadow;
 
 // Only for Drodown and ComboButton
-$button-focused-bgcolor: $white;
+$button-focused-bgcolor: $color-palette-primary-200;
 $button-focused-textcolor: $color-palette-primary;
 $button-focused-border: solid 1px $color-palette-primary;
 
@@ -108,7 +108,7 @@ $dropdownbutton-normal-border: $button-normal-border;
 $dropdownbutton-normal-shadow: $button-normal-shadow;
 $dropdownbutton-normal-arrow-bgcolor: transparent;
 $dropdownbutton-normal-arrow-url: false;
-$dropdownbutton-normal-arrow-color: $color-palette-secondary;
+$dropdownbutton-normal-arrow-color: $color-palette-primary;
 
 $dropdownbutton-hover-bgcolor: $button-hover-bgcolor;
 $dropdownbutton-hover-textcolor: $button-hover-textcolor;
@@ -153,7 +153,7 @@ $combobutton-normal-border: $button-normal-border;
 $combobutton-normal-shadow: $button-normal-shadow;
 $combobutton-normal-arrow-bgcolor: transparent;
 $combobutton-normal-arrow-url: false;
-$combobutton-normal-arrow-color: $color-palette-secondary;
+$combobutton-normal-arrow-color: $color-palette-primary;
 $combobutton-normal-arrow-border: $combobutton-normal-border;
 
 $combobutton-hover-bgcolor: $button-hover-bgcolor;

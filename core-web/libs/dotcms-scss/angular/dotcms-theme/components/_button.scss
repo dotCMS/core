@@ -3,14 +3,14 @@
 
 .p-button {
     background: $color-palette-primary;
-    border-radius: $border-radius-xs;
+    border-radius: $border-radius-md;
     border: 0 none;
     border: solid 1px transparent;
     color: $white;
     font-size: $font-size-medium;
     font-weight: $font-weight-semi-bold;
     line-height: normal;
-    padding: $spacing-2 $spacing-5;
+    padding: $spacing-2 $spacing-3;
     transition: background-color 0.2s, border-color 0.2s, color 0.2s, box-shadow 0.2s,
         background-size 0.2s cubic-bezier(0.64, 0.09, 0.08, 1);
 }
@@ -18,7 +18,7 @@
 .p-button:enabled:hover,
 .p-button:enabled:active,
 .p-button:enabled:focus {
-    background: rgba($color-palette-primary, 0.72);
+    background: $color-palette-primary-600;
     border-color: transparent;
 }
 
@@ -30,7 +30,7 @@
 
 .p-button.p-button-text:enabled:hover,
 .p-button.p-button-text:enabled:focus {
-    background: $bg-hover;
+    background: $color-palette-primary-200;
     color: $color-palette-primary;
     border-color: transparent;
 }
@@ -52,11 +52,11 @@
 .p-button.p-button-vertical {
     font-size: $font-size-medium;
     padding: $spacing-1 $spacing-2;
-    color: $color-palette-secondary;
+    color: $color-palette-primary;
 
     &:enabled:hover,
     &:enabled:focus {
-        color: $color-palette-secondary;
+        color: $color-palette-primary;
     }
 
     .p-button-icon {
@@ -182,18 +182,18 @@
 .p-button.p-button-secondary,
 .p-buttonset.p-button-secondary > .p-button,
 .p-splitbutton.p-button-secondary > .p-button {
-    color: $color-palette-secondary;
-    border-top: 1px solid $color-palette-secondary-500;
-    border-left: 1px solid $color-palette-secondary-500;
-    border-bottom: 1px solid $color-palette-secondary-500;
+    color: $color-palette-primary;
+    border-top: 1px solid $color-palette-primary-500;
+    border-left: 1px solid $color-palette-primary-500;
+    border-bottom: 1px solid $color-palette-primary-500;
     background: none;
 }
 
 .p-button.p-button-secondary {
-    border-right: 1px solid $color-palette-secondary-500;
+    border-right: 1px solid $color-palette-primary-500;
 
     &:hover {
-        background: none;
+        background: $color-palette-primary-200;
         border-right: 1px solid;
     }
 
@@ -216,11 +216,11 @@
 }
 
 .p-button-secondary.p-confirm-dialog-reject {
-    border-right: 1px solid $color-palette-secondary-500;
+    border-right: 1px solid $color-palette-primary-500;
 
     &:hover {
         border-color: $color-palette-primary;
-        background: none;
+        background: $color-palette-primary-100;
     }
 }
 
@@ -228,9 +228,9 @@
 .p-buttonset.p-button-secondary > .p-button:enabled:active,
 .p-splitbutton.p-button-secondary > .p-button:enabled:active,
 .p-button.p-button-secondary:enabled:focus {
-    background: none;
+    background: $color-palette-gray-200;
     border-color: transparent;
-    color: $color-palette-secondary;
+    color: $color-palette-primary;
 }
 
 .p-button.p-button-info,
@@ -388,13 +388,13 @@
 .p-button.p-button-secondary:enabled:focus,
 .p-buttonset.p-button-secondary > .p-button:enabled:focus,
 .p-splitbutton.p-button-secondary > .p-button:enabled:focus {
-    border: 1px solid $color-palette-secondary-500;
+    border: 1px solid $color-palette-primary;
 }
 
 .p-button.p-button-secondary:enabled:active,
 .p-buttonset.p-button-secondary > .p-button:enabled:active,
 .p-splitbutton.p-button-secondary > .p-button:enabled:active {
-    border: 1px solid $color-palette-secondary-500;
+    border: 1px solid $color-palette-primary;
 }
 
 .p-button.p-button-secondary.p-button-text:enabled:focus,
