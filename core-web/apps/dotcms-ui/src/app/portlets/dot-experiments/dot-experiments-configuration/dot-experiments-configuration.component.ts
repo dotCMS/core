@@ -4,8 +4,8 @@ import { ChangeDetectionStrategy, Component, OnInit } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 
 import { ConfirmationService } from 'primeng/api';
+
 import { DotMessagePipe } from '@dotcms/app/view/pipes';
-import { DotSessionStorageService } from '@dotcms/data-access';
 import { DotExperiment, ExperimentSteps, DotExperimentStatusList } from '@dotcms/dotcms-models';
 import {
     ConfigurationViewModel,
@@ -26,7 +26,6 @@ export class DotExperimentsConfigurationComponent implements OnInit {
 
     constructor(
         private readonly dotExperimentsConfigurationStore: DotExperimentsConfigurationStore,
-        private readonly dotSessionStorageService: DotSessionStorageService,
         private readonly router: Router,
         private readonly route: ActivatedRoute,
         private readonly confirmationService: ConfirmationService,

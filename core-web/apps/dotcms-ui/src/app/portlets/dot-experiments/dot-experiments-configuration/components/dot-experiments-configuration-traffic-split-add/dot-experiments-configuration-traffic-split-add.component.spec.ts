@@ -63,7 +63,7 @@ describe('DotExperimentsConfigurationTrafficSplitAddComponent', () => {
         dotExperimentsService.getById.and.returnValue(of({ ...EXPERIMENT_MOCK }));
         store.loadExperiment(EXPERIMENT_MOCK.id);
         store.setSidebarStatus({
-            experimentStep: ExperimentSteps.TRAFFIC,
+            experimentStep: ExperimentSteps.TRAFFICS_SPLIT,
             isOpen: true
         });
         spectator.detectChanges();

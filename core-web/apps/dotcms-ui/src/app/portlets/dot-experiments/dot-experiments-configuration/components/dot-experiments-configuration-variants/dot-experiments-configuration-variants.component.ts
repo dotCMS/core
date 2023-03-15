@@ -150,17 +150,17 @@ export class DotExperimentsConfigurationVariantsComponent {
 
     /**
      * Go to Edit Page / Content, set the VariantId to SessionStorage
-     * @param {{ variant: Variant; mode: EditPageTabs }} variant
-     * @param {EditPageTabs} tab
+     * @param {Variant} variant
+     * @param {EditPageTabs} mode
      * @returns void
      * @memberof DotExperimentsConfigurationVariantsComponent
      */
-    goToEditPageVariant(variant: { variant: Variant; mode: EditPageTabs }) {
-        this.dotSessionStorageService.setVariationId(variant.variant.id);
+    goToEditPageVariant(variant: Variant, mode: EditPageTabs) {
+        this.dotSessionStorageService.setVariationId(variant.id);
         this.router.navigate(['edit-page/content'], {
             queryParams: {
-                editPageTab: variant.mode,
-                variantName: variant.variant.id,
+                editPageTab: mode,
+                variantName: variant.id,
                 experimentId: this.route.snapshot.params.experimentId
             },
             queryParamsHandling: 'merge'
@@ -169,20 +169,18 @@ export class DotExperimentsConfigurationVariantsComponent {
 
     private handleSidebar(status: StepStatus) {
         if (status && status.isOpen && status.status != ComponentStatus.SAVING) {
-            this.loadSidebarComponent(status);
+            this.loadSidebarComponent();
         } else {
             this.removeSidebarComponent();
         }
     }
 
-    private loadSidebarComponent(status: StepStatus): void {
-        if (status && status.isOpen && status.status != ComponentStatus.SAVING) {
-            this.sidebarHost.viewContainerRef.clear();
-            this.componentRef =
-                this.sidebarHost.viewContainerRef.createComponent<DotExperimentsConfigurationVariantsAddComponent>(
-                    DotExperimentsConfigurationVariantsAddComponent
-                );
-        }
+    private loadSidebarComponent(): void {
+        this.sidebarHost.viewContainerRef.clear();
+        this.componentRef =
+            this.sidebarHost.viewContainerRef.createComponent<DotExperimentsConfigurationVariantsAddComponent>(
+                DotExperimentsConfigurationVariantsAddComponent
+            );
     }
 
     private removeSidebarComponent() {

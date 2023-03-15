@@ -84,12 +84,6 @@ export class DotExperimentsConfigurationStore extends ComponentStore<DotExperime
         ]).includes(experiment?.status)
     );
 
-    // Variants Step //
-
-    // readonly variants$: Observable<Array<Variant>> = this.select(
-    //     this.state$,
-    //     ({ experiment }) => experiment.trafficProportion.variants
-    // );
     readonly variantsStatus$ = this.select(this.state$, ({ stepStatusSidebar }) =>
         stepStatusSidebar.experimentStep === ExperimentSteps.VARIANTS ? stepStatusSidebar : null
     );
