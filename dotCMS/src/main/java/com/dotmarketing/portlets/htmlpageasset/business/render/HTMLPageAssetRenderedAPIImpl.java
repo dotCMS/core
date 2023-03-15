@@ -620,8 +620,8 @@ public class HTMLPageAssetRenderedAPIImpl implements HTMLPageAssetRenderedAPI {
         try {
             final String analyticsKey = getAnalyticsKey(host);
             final String jsJitsuCode =  getFileContentFromResourceContext("experiment/html/experiment_head.html")
-                    .replaceAll("\\$\\{jitsu_key}", analyticsKey)
-                    .replaceAll("\\$\\{site}", getLocalServerName(request));
+                    .replaceAll("\\$\\{jitsu_key}", analyticsKey);
+//                    .replaceAll("\\$\\{site}", getLocalServerName(request));
 
             final String runningExperimentsId = APILocator.getExperimentsAPI().getRunningExperiments().stream()
                     .map(experiment -> "'" + experiment.id().get() + "'")
