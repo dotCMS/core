@@ -29,7 +29,7 @@
             "outputs": [],
             "options": {
                 "commands": [
-                    "sass libs/dotcms-scss/jsp/scss/dotcms.scss ../dotCMS/src/main/webapp/html/css/dijit-dotcms/dotcms.css --no-source-map --watch"
+                    "sass libs/dotcms-scss/jsp/scss/dotcms.scss ../dotCMS/src/main/webapp/html/css/dijit-dotcms/dotcms.css --watch"
                 ]
             }
         }
