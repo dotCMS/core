@@ -4,7 +4,6 @@ import com.dotcms.analytics.app.AnalyticsApp;
 import com.dotcms.analytics.helper.AnalyticsHelper;
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.experiments.business.ConfigExperimentUtil;
-import com.dotcms.experiments.business.ExperimentCodeGenerator;
 import com.dotcms.experiments.business.web.ExperimentWebAPI;
 import com.dotcms.rendering.velocity.services.PageLoader;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
