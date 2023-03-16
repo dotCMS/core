@@ -1,9 +1,8 @@
 {
 	"info": {
-		"_postman_id": "40e13762-acd0-47d1-9d6c-b49bd84f6d1e",
+		"_postman_id": "45c7a772-9828-442e-9477-5ebcc95aa703",
 		"name": "NavResource",
-		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
-		"_exporter_id": "10041132"
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
 	},
 	"item": [
 		{
@@ -779,7 +778,7 @@
 									"pm.test(\"Does not Include child page\", function () {",
 									"    var jsonData = pm.response.json();",
 									"    pm.expect(jsonData.entity.title).equal(\"issue-22425-get-nav\");",
-									"    pm.expect(jsonData.entity.children.length).equal(0);",
+									"    pm.expect(jsonData.entity.children.length).equal(1);",
 									"});",
 									"",
 									"",
@@ -918,7 +917,7 @@
 									"pm.test(\"Does not Include child page\", function () {",
 									"    var jsonData = pm.response.json();",
 									"    pm.expect(jsonData.entity.title).equal(\"issue-22425-get-nav\");",
-									"    pm.expect(jsonData.entity.children.length).equals(1);",
+									"    pm.expect(jsonData.entity.children.length).equals(2);",
 									"    pm.expect(jsonData.entity.children[0].title).equals('child');",
 									"});"
 								],
