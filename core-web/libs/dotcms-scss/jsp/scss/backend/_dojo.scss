@@ -64,7 +64,7 @@ select[multiple] {
 }
 
 .dijit {
-    $action-button-size: $field-height + $spacing-1;
+    $action-button-size: 3rem;
 
     &DropDownActionButton {
         background-color: $color-palette-primary;

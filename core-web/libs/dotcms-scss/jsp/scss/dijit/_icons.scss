@@ -9,10 +9,10 @@
 #dijit-icon {
     @extend #font-icon-base;
     display: inline-block;
-    height: $icon-size;
-    line-height: $icon-size;
+    height: $font-size-default;
+    line-height: $font-size-default;
     text-align: center;
-    width: $icon-size;
+    width: $font-size-default;
 }
 
 .dijit {
