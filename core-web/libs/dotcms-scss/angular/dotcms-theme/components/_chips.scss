@@ -15,7 +15,6 @@ p-chips.ng-dirty.ng-invalid > .p-chips > .p-inputtext {
 .p-chips .p-chips-multiple-container:not(.p-disabled).p-focus {
     outline: 0 none;
     outline-offset: 0;
-    box-shadow: none;
     border-color: $color-palette-primary;
     box-shadow: $input-inset-shadow;
 }
