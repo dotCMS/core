@@ -126,8 +126,7 @@ p-dropdown.ng-dirty.ng-invalid > .p-dropdown {
 
 .p-dropdown .p-inputtext,
 .p-dropdown .p-dropdown-trigger {
-    background-image: none;
-    background: transparent;
+    background: initial;
 }
 
 .p-dropdown .p-inputtext {

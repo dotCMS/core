@@ -20,7 +20,6 @@
         &:focus {
             outline: 0 none;
             outline-offset: 0;
-            box-shadow: none;
             border-color: $color-palette-primary;
             box-shadow: inset 0 0 0 1px $color-palette-primary,
                 inset 0 0 0 1px $color-palette-primary, inset 0 0 0 1px $color-palette-primary,
