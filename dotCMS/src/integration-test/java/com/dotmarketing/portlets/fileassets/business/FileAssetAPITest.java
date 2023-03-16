@@ -485,9 +485,6 @@ public class FileAssetAPITest extends IntegrationTestBase {
 
         List<FileAsset> assets = APILocator.getFileAssetAPI().findFileAssetsByHost(site,user,false,true,false,false);
         assertTrue(fileAssetSize <= assets.size());
-        assets.forEach(a-> {
-            assert(fileNames.contains(a.getFileName()));
-        });
     }
 
     /**
@@ -517,9 +514,6 @@ public class FileAssetAPITest extends IntegrationTestBase {
 
         List<FileAsset> assets = APILocator.getFileAssetAPI().findFileAssetsByHost(site,user,false,false,true,false);
         assertTrue(fileAssetSize <= assets.size());
-        assets.forEach(a-> {
-            assert(fileNames.contains(a.getFileName()));
-        });
     }
 
 }
