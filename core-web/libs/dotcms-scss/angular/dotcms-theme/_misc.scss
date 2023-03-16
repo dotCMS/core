@@ -1,7 +1,14 @@
 @use "variables" as *;
 
+.p-component {
+    font-family: $font-default;
+    font-size: $font-size-default;
+    font-weight: normal;
+    line-height: normal;
+}
+
 .p-component-overlay {
-    background-color: $color-palette-primary-200;
+    background-color: $white;
     transition-duration: 0.2s;
 }
 
