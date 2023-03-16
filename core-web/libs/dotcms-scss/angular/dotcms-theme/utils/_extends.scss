@@ -38,8 +38,7 @@
 }
 
 #field-disabled-state {
-    background-image: none;
-    background: $field-disabled-bgcolor;
+    background: $field-disabled-bgcolor none;
     color: $field-disabled-color;
 }
 
