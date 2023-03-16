@@ -401,6 +401,10 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy {
             return `${toTitleCase(node.type.name)} ${node.attrs.level}`;
         }
 
+        if (node.type.name === 'codeBlock') {
+            return;
+        }
+
         return 'Type "/" for commmands';
     }
 
