@@ -486,4 +486,24 @@ public class ExceptionUtil {
 
         return isPreviewOrEdit;
     }
+
+    /**
+     * Get the cause by exception
+     * @param exception {@link Throwable}
+     * @param exceptionClasses {@link Set}
+     * @return Throwable
+     */
+    public static Throwable getCauseBy (final Throwable exception,
+                                        final Set<Class<? extends Throwable>> exceptionClasses) {
+
+        Throwable throwable = exception;
+        while (throwable != null) {
+            if (exceptionClasses.contains(throwable.getClass())) {
+                return throwable;
+            }
+            throwable = throwable.getCause();
+        }
+        return exception;
+    }
+
 }

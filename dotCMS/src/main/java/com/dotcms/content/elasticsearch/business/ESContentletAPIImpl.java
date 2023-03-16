@@ -4786,6 +4786,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
             List<Permission> permissions, User user,
             boolean respectFrontendRoles)
             throws IllegalArgumentException, DotDataException, DotSecurityException, DotContentletStateException {
+
         return checkin(contentlet, (Map<Relationship, List<Contentlet>>) null, cats, permissions,
                 user,
                 respectFrontendRoles);
@@ -4796,6 +4797,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
     public Contentlet checkin(Contentlet contentlet, List<Permission> permissions, User user,
             boolean respectFrontendRoles)
             throws IllegalArgumentException, DotDataException, DotSecurityException, DotContentletStateException {
+
         return checkin(contentlet, (ContentletRelationships) null, null, permissions, user,
                 respectFrontendRoles);
     }
@@ -4843,7 +4845,12 @@ public class ESContentletAPIImpl implements ContentletAPI {
             List<Category> cats, List<Permission> permissions, User user,
             boolean respectFrontendRoles)
             throws DotDataException, DotSecurityException, DotContentletStateException, DotContentletValidationException {
-        return checkin(contentlet, contentRelationships, cats, user, respectFrontendRoles, false);
+
+        final Contentlet contentletReturned = checkin(contentlet, contentRelationships, cats, user, respectFrontendRoles, false);
+
+        this.handlePermissions(permissions, user, respectFrontendRoles, contentletReturned);
+
+        return contentletReturned;
     }
 
     /**
@@ -4878,8 +4885,14 @@ public class ESContentletAPIImpl implements ContentletAPI {
             List<Category> cats,
             List<Permission> permissions, User user, boolean respectFrontendRoles)
             throws DotDataException, DotSecurityException, DotContentletStateException {
-        return checkin(contentlet, contentRelationships, cats, user, respectFrontendRoles, true,
+
+        final Contentlet contentletReturned =
+                    checkin(contentlet, contentRelationships, cats, user, respectFrontendRoles, true,
                 false);
+
+        this.handlePermissions(permissions, user, respectFrontendRoles, contentletReturned);
+
+        return contentletReturned;
     }
 
     private ContentletRelationships getContentletRelationshipsFromMap(final Contentlet contentlet,
@@ -4894,10 +4907,15 @@ public class ESContentletAPIImpl implements ContentletAPI {
             Map<Relationship, List<Contentlet>> contentRelationships, List<Category> cats,
             List<Permission> permissions, User user, boolean respectFrontendRoles)
             throws DotDataException, DotSecurityException, DotContentletStateException, DotContentletValidationException {
-        ContentletRelationships relationshipsData = getContentletRelationshipsFromMap(contentlet,
+
+        final ContentletRelationships relationshipsData = getContentletRelationshipsFromMap(contentlet,
                 contentRelationships);
-        return checkin(contentlet, relationshipsData, cats, user, respectFrontendRoles, false,
+        final Contentlet contentletReturned = checkin(contentlet, relationshipsData, cats, user, respectFrontendRoles, false,
                 false);
+
+        this.handlePermissions(permissions, user, respectFrontendRoles, contentletReturned);
+
+        return contentletReturned;
     }
 
     @CloseDBIfOpened
@@ -9582,16 +9600,21 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 // if we are the latest and greatest and are a draft
                 if (working.getInode().equals(contentlet.getInode())) {
 
-                    return checkin(contentlet, contentletRelationships, cats,
+                    final Contentlet contentletReturned = checkin(contentlet, contentletRelationships, cats,
                             user, respectFrontendRoles, false, false);
 
+                    this.handlePermissions(permissions, user, respectFrontendRoles, contentletReturned);
+                    return contentletReturned;
                 } else {
                     final String workingInode = working.getInode();
                     copyProperties(working, contentlet.getMap());
                     working.setInode(workingInode);
                     working.setModUser(user.getUserId());
-                    return checkin(contentlet, contentletRelationships, cats,
+                    final Contentlet contentletReturned =  checkin(contentlet, contentletRelationships, cats,
                             user, respectFrontendRoles, false, false);
+
+                    this.handlePermissions(permissions, user, respectFrontendRoles, contentletReturned);
+                    return contentletReturned;
                 }
             }
 
@@ -9919,7 +9942,17 @@ public class ESContentletAPIImpl implements ContentletAPI {
         final Contentlet contentletReturned = checkin(contentlet, contentRelationships, cats, user,
                 respectFrontendRoles, true, generateSystemEvent);
 
-        if (InodeUtils.isSet(contentletReturned.getInode()) && UtilMethods.isSet(
+        handlePermissions(selectedPermissions, user, respectFrontendRoles, contentletReturned);
+
+        return contentletReturned;
+    }
+
+    private void handlePermissions(final List<Permission> selectedPermissions,
+                                   final User user,
+                                   final boolean respectFrontendRoles,
+                                   final Contentlet contentlet) {
+
+        if (InodeUtils.isSet(contentlet.getInode()) && UtilMethods.isSet(
                 selectedPermissions)) {
 
             final Runnable savePermissions = () -> {
@@ -9929,14 +9962,14 @@ public class ESContentletAPIImpl implements ContentletAPI {
                     Logger.debug(this,
                             () -> "Removing the permissions for: " + contentlet.getTitle() +
                                     ", id: " + contentlet.getIdentifier());
-                    this.permissionAPI.removePermissions(contentletReturned);
+                    this.permissionAPI.removePermissions(contentlet);
                     Logger.debug(this,
                             () -> "Saving the permissions for: " + contentlet.getTitle() +
                                     ", id: " + contentlet.getIdentifier());
                     this.permissionAPI.save(selectedPermissions.stream()
-                                    .map(permission -> new Permission(contentletReturned.getPermissionId(),
+                                    .map(permission -> new Permission(contentlet.getPermissionId(),
                                             permission.getRoleId(), permission.getPermission()))
-                                    .collect(Collectors.toList()), contentletReturned, user,
+                                    .collect(Collectors.toList()), contentlet, user,
                             respectFrontendRoles);
                 } catch (Exception e) {
 
@@ -9948,12 +9981,9 @@ public class ESContentletAPIImpl implements ContentletAPI {
             };
 
             FunctionUtils.ifOrElse(DbConnectionFactory.inTransaction(),
-                    () -> HibernateUtil.addCommitListener(contentletReturned.getInode(),
-                            savePermissions),
+                    () -> HibernateUtil.addCommitListener(contentlet.getInode(), savePermissions),
                     () -> savePermissions.run());
         }
-
-        return contentletReturned;
     }
 
     @Override

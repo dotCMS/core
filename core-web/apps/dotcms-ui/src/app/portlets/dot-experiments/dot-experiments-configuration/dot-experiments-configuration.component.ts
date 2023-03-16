@@ -9,9 +9,10 @@ import { DotMessagePipe } from '@dotcms/app/view/pipes';
 import { DotSessionStorageService } from '@dotcms/data-access';
 import {
     DotExperiment,
+    DotExperimentStatusList,
     EditPageTabs,
     ExperimentSteps,
-    SidebarStatus,
+    SIDEBAR_STATUS,
     Variant
 } from '@dotcms/dotcms-models';
 import {
@@ -29,6 +30,7 @@ import {
 export class DotExperimentsConfigurationComponent implements OnInit {
     vm$: Observable<ConfigurationViewModel> = this.dotExperimentsConfigurationStore.vm$;
     experimentSteps = ExperimentSteps;
+    experimentStatus = DotExperimentStatusList;
 
     constructor(
         private readonly dotExperimentsConfigurationStore: DotExperimentsConfigurationStore,
@@ -73,14 +75,34 @@ export class DotExperimentsConfigurationComponent implements OnInit {
     }
 
     /**
+     * Stop the Experiment
+     * @param {MouseEvent} $event
+     * @param {DotExperiment} experiment
+     * @returns void
+     * @memberof DotExperimentsConfigurationVariantsComponent
+     */
+    stopExperiment($event: MouseEvent, experiment: DotExperiment) {
+        this.confirmationService.confirm({
+            target: $event.target,
+            message: this.dotMessagePipe.transform('experiments.action.stop.delete-confirm'),
+            icon: 'pi pi-exclamation-triangle',
+            acceptLabel: this.dotMessagePipe.transform('stop'),
+            rejectLabel: this.dotMessagePipe.transform('dot.common.dialog.reject'),
+            accept: () => {
+                this.dotExperimentsConfigurationStore.stopExperiment(experiment);
+            }
+        });
+    }
+
+    /**
      * Sidebar controller
-     * @param {SidebarStatus} action
+     * @param {SIDEBAR_STATUS} action
      * @param {ExperimentSteps} step
      * @returns void
      * @memberof DotExperimentsConfigurationComponent
      */
-    sidebarStatusController(action: SidebarStatus, step?: ExperimentSteps) {
-        if (action === SidebarStatus.OPEN) {
+    sidebarStatusController(action: SIDEBAR_STATUS, step?: ExperimentSteps) {
+        if (action === SIDEBAR_STATUS.OPEN) {
             this.dotExperimentsConfigurationStore.openSidebar(step);
         } else {
             this.dotExperimentsConfigurationStore.closeSidebar();

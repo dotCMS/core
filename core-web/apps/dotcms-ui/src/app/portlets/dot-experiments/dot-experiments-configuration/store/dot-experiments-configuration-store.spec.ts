@@ -547,5 +547,37 @@ describe('DotExperimentsConfigurationStore', () => {
                 done();
             });
         });
+
+        it('should change the experiment status when Stop the experiment', (done) => {
+            dotExperimentsService.getById.and
+                .callThrough()
+                .and.returnValue(of({ ...EXPERIMENT_MOCK_2 }));
+
+            dotExperimentsService.stop.and.callThrough().and.returnValue(
+                of({
+                    ...EXPERIMENT_MOCK_2,
+                    status: DotExperimentStatusList.ENDED
+                })
+            );
+
+            spectator.service.loadExperiment(EXPERIMENT_MOCK_2.id);
+
+            store.stopExperiment(EXPERIMENT_MOCK_2);
+
+            store.state$.subscribe(({ experiment }) => {
+                expect(experiment.status).toEqual(DotExperimentStatusList.ENDED);
+                done();
+            });
+        });
+
+        it('should handle error when stopping the experiment', () => {
+            dotExperimentsService.stop.and.returnValue(throwError('error'));
+
+            store.stopExperiment(EXPERIMENT_MOCK_2);
+
+            expect(dotHttpErrorManagerService.handle).toHaveBeenCalledOnceWith(
+                'error' as unknown as HttpErrorResponse
+            );
+        });
     });
 });
