@@ -3577,7 +3577,7 @@
 html,
 body {
   font-family: Roboto, "Helvetica Neue", Helvetica, Arial, "Lucida Grande", sans-serif;
-  font-size: 1rem;
+  font-size: 14px;
   color: #14151a;
 }
 
@@ -3626,10 +3626,10 @@ body {
 
 #dijit-icon, .tagLink.persona:before, .wmaIcon, .wavIcon, .raIcon, .mpaIcon, .mp3Icon, .midIcon, .m3uIcon, .iffIcon, .aifIcon, .aacIcon, .docxIcon, .docIcon, .pptxIcon, .pptIcon, .keynoteIcon, .pdfIcon, .svgIcon, .webpIcon, .gifIcon, .pngIcon, .pctIcon, .jpgIcon, .jpegIcon, .imageIcon, .bmpIcon, .xlsxIcon, .xlsIcon, .wksIcon, .numbersIcon, .csvIcon, .vobIcon, .rmIcon, .ogvIcon, .oggIcon, .mpgIcon, .mp4Icon, .movIcon, .aviIcon, .asfIcon, .wysiwygIcon, .workStreamIcon, .workingIcon, .workflowIcon, .windowsIcon, .vtlIcon, .vanityIcon, .userIcon, .uploadIcon, .unpublishIcon, .unlockIcon, .unarchiveIcon, .trashIcon, .toggleOpenIcon, .toggleCloseIcon, .thumbnailViewIcon, .textFieldIcon, .tagIcon, .tabIcon, .stopIcon, .statisticsIcon, .sServerIcon, .splitterIcon, .spellIcon, .shrinkIcon, .selectIcon, .searchIcon, .scrollPaneIcon, .saveAssignIcon, .statusIcon, .saveIcon, .rServerIcon, .rolesIcon, .resolveWorkflowIcon, .resolveIcon, .resetIcon, .requiredIcon, .republishIcon, .repeatIcon, .reorderIcon, .reopenWorkflowIcon, .rememberIcon, .reindexIcon, .radioIcon, .queryIcon, .publishIcon, .propertyIcon, .previousIcon, .previewIcon, .plusIcon, .personaIcon, .pasteIcon, .pagePropIcon, .pageIcon, .nextIcon, .newWorkflowIcon, .newTaskIcon, .newPageIcon, .multiSelectIcon, .movePageIcon, .mobileIcon, .minusIcon, .mapPinIcon, .mailListIcon, .loginAsIcon, .loginIcon, .lockIcon, .liveIcon, .listViewIcon, .linkAddIcon, .licenseIcon, .languageVarIcon, .keyvalueIcon, .keyIcon, .infoIcon, .imageNewIcon, .hourGlassIcon, .hostStoppedIcon, .hostDefaultIcon, .hostArchivedIcon, .hostIcon, .hintIcon, .hideIcon, .helpIcon, .greyDotIcon, .gearPlusIcon, .gearPencilIcon, .gearMinusIcon, .gearIcon, .formNewIcon, .formIcon, .folderSelectedIcon, .folderOpenIcon, .folderGlobeIcon, .folderFilesIcon, .folderEditIcon, .folderDeleteIcon, .folderCopyIcon, .folderAddIcon, .folderIcon, .fixIcon, .fileNewIcon, .fileMultiIcon, .fileIcon, .femaleIcon, .exclamationIcon, .exclamation-redIcon, .encryptIcon, .editScriptIcon, .editIcon, .dropIcon, .downloadIcon, .dotAssetIcon, .documentIcon, .docTextIcon, .docNumIcon, .docCopyIcon, .docConvertIcon, .detailViewIcon, .deleteWorkflowIcon, .deleteIcon, .cutIcon, .copyIcon, .contentIcon, .colorIcon, .closeIcon, .chevronExpandIcon, .chevronIcon, .checkBoxIcon, .cartIcon, .cancelWorkflowIcon, .cancelIcon, .calWeekIcon, .calMonthIcon, .calListIcon, .calDayIcon, .calClockIcon, .bundleIcon, .bugIcon, .browseIcon, .bgIcon, .backupIcon, .assignWorkflowIcon, .arrowRightIcon, .arrowLeftIcon, .archivedIcon, .archiveIcon, .appMonitorIcon, .appleIcon, .androidIcon, .addIcon, .actionIcon, .uknIcon, .dijitIcon {
   display: inline-block;
-  height: 1rem;
-  line-height: 1rem;
+  height: 16px;
+  line-height: 16px;
   text-align: center;
-  width: 1rem;
+  width: 16px;
 }
 
 .dijitIcon {
@@ -3676,7 +3676,7 @@ body {
 .dijitTextBox,
 .dijitToggleButton {
   border-radius: 0.5rem;
-  font-size: 1rem;
+  font-size: 14px;
   height: 40px;
 }
 
@@ -3708,7 +3708,7 @@ body {
 }
 
 .dijitValidationContainer {
-  background-color: #d0021b;
+  background-color: #d82b2e;
   height: 38px;
   position: relative;
   width: 11px;
@@ -3850,16 +3850,16 @@ body {
   color: #afb3c0;
 }
 .dijitTextBoxError {
-  border: solid 1px #d0021b;
+  border: solid 1px #d82b2e;
 }
 .dijitTextBoxError .dijitValidationContainer {
   margin-right: -0.5rem;
 }
 .dijitTextBoxError .dijitArrowButton {
-  border-left: solid 1px #d0021b;
+  border-left: solid 1px #d82b2e;
 }
 .dijitTextBoxError .dijitArrowButton:before {
-  border-top-color: #d0021b;
+  border-top-color: #d82b2e;
 }
 .dijitTextBox .dijitDownArrowButtonActive {
   background-color: #426bf0;
@@ -3996,19 +3996,19 @@ body {
   color: #d1d4db;
 }
 .dijitSpinnerError {
-  border: solid 1px #d0021b;
+  border: solid 1px #d82b2e;
 }
 .dijitSpinnerError .dijitValidationContainer {
   margin-right: 0;
 }
 .dijitSpinnerError .dijitArrowButton {
-  border-left: solid 1px #d0021b;
+  border-left: solid 1px #d82b2e;
 }
 .dijitSpinnerError .dijitArrowButton:before {
-  border-top-color: #d0021b;
+  border-top-color: #d82b2e;
 }
 .dijitSpinnerError .dijitSpinnerButtonContainer .dijitDownArrowButton {
-  border-top-color: #d0021b !important;
+  border-top-color: #d82b2e !important;
 }
 .dijitSpinner .dijitDownArrowButtonActive,
 .dijitSpinner .dijitUpArrowButtonActive {
@@ -4321,8 +4321,8 @@ body {
   border-radius: 2px;
   border: solid 1px #14151a;
   background-color: #ffffff;
-  width: 14px;
-  height: 14px;
+  width: 18px;
+  height: 18px;
 }
 .dijitCheckBoxChecked {
   border: solid 1px #426bf0;
@@ -4338,27 +4338,27 @@ body {
 }
 
 .dijitRadio {
-  border-radius: 7px;
+  border-radius: 9px;
   background-color: #ffffff;
   border: solid 1px #14151a;
-  height: 14px;
-  width: 14px;
+  height: 18px;
+  width: 18px;
 }
 .dijitRadioChecked {
   border: solid 1px #426bf0;
   position: relative;
 }
 .dijitRadioChecked:before {
-  border-radius: 3px;
+  border-radius: 5px;
   background-color: #426bf0;
   content: "";
-  height: 6px;
+  height: 10px;
   left: 50%;
-  margin-left: -3px;
-  margin-top: -3px;
+  margin-left: -5px;
+  margin-top: -5px;
   position: absolute;
   top: 50%;
-  width: 6px;
+  width: 10px;
 }
 .dijitRadioDisabled {
   background-color: transparent;
@@ -4534,16 +4534,16 @@ body {
   color: #afb3c0;
 }
 .dijitComboBoxError {
-  border: solid 1px #d0021b;
+  border: solid 1px #d82b2e;
 }
 .dijitComboBoxError .dijitValidationContainer {
   margin-right: 0;
 }
 .dijitComboBoxError .dijitArrowButton {
-  border-left: solid 1px #d0021b;
+  border-left: solid 1px #d82b2e;
 }
 .dijitComboBoxError .dijitArrowButton:before {
-  border-top-color: #d0021b;
+  border-top-color: #d82b2e;
 }
 .dijitComboBox .dijitDownArrowButtonActive {
   background-color: #426bf0;
@@ -4910,17 +4910,18 @@ body {
 }
 
 .dijitTab {
-  height: 42px;
+  height: 58px;
   background-color: #ffffff;
   color: #14151a;
   padding: 0 1.5rem;
   position: relative;
-  border-width: 5px 1px 0 0;
+  border-width: 0 0 4px 0;
   border-style: solid;
-  border-color: #d1d4db;
+  border-color: transparent;
 }
 .dijitTab .tabLabel {
-  line-height: 37px;
+  line-height: 54px;
+  text-transform: uppercase;
 }
 .dijitTabContainerTop-tabs .dijitTab {
   top: -1px;
@@ -4933,11 +4934,11 @@ body {
   overflow: visible;
 }
 .dijitTabChecked, .dijitTabChecked.dijitTabCheckedHover {
-  background-color: #ffffff;
-  border-width: 5px 1px 0 0;
+  background-color: #edf3ff;
+  border-width: 0 0 4px 0;
   border-style: solid;
-  border-color: #426bf0 #d1d4db transparent #d1d4db;
-  height: 43px;
+  border-color: transparent transparent #426bf0 transparent;
+  height: 59px;
 }
 .dijitTabCloseIcon {
   width: 13px;
@@ -4974,8 +4975,8 @@ body {
   color: #afb3c0;
 }
 .dijitTab.tabStripButton {
-  height: 42px !important;
-  width: 42px;
+  height: 58px !important;
+  width: 58px;
   background-color: #ffffff;
 }
 .dijitTab.tabStripButton .dijitTabStripSlideLeftIcon:before {
@@ -5069,7 +5070,7 @@ body {
   border-bottom: none;
 }
 .dijitTabContainerTop-tabs, .dijitTabContainerBottom-tabs {
-  height: 44px;
+  height: 60px;
   border: none;
 }
 .dijitTabListContainer-top, .dijitTabListContainer-bottom {
@@ -5077,7 +5078,7 @@ body {
   border-width: 0 0 1px;
   border-style: solid;
   border-color: #d1d4db;
-  height: 42px !important;
+  height: 58px !important;
   overflow: visible;
 }
 .dijitTabListContainer-bottom .dijitTabListWrapper {
@@ -5085,14 +5086,14 @@ body {
 }
 .dijitTabListContainer-bottom .dijitTabChecked {
   top: -1px;
-  height: 44px;
+  height: 60px;
 }
 .dijitTabContainerNested .dijitTab {
   background: none;
   border: none;
 }
 .dijitTabContainerNested .dijitTab.dijitTabChecked {
-  height: 44px;
+  height: 60px;
   border-bottom: solid 1px #515667;
 }
 .dijitTabContainerNested .dijitTabContainerTop-container {
@@ -5226,7 +5227,7 @@ body {
 html,
 body {
   font-family: Roboto, "Helvetica Neue", Helvetica, Arial, "Lucida Grande", sans-serif;
-  font-size: 1rem;
+  font-size: 14px;
   color: #14151a;
 }
 
@@ -5425,7 +5426,7 @@ body {
 }
 .dijitMenu .dijitMenuItem .dijitMenuItemIconCell {
   padding-left: 0.5rem;
-  width: 1rem;
+  width: 14px;
 }
 .dijitMenuArrowCell .dijitIcon {
   margin-right: 0.5rem;
@@ -5470,7 +5471,7 @@ body {
   color: #515667;
 }
 .dijitTimePickerItemSelected .dijitTimePickerItemInner {
-  background-color: #cb3927;
+  background-color: #d82b2e;
   color: #ffffff;
 }
 .dijitTimePickerItemInner {
@@ -6385,11 +6386,11 @@ select[multiple]:hover {
 }
 
 .fakeDojoButtonDanger {
-  background-color: #cb3927;
+  background-color: #d82b2e;
   color: #ffffff;
 }
 .fakeDojoButtonDanger:hover {
-  background-color: #a02d1f;
+  background-color: #b02023;
   color: #ffffff;
 }
 
@@ -6438,11 +6439,11 @@ select[multiple]:hover {
 }
 .dijitButtonDanger {
   border: 0;
-  background-color: #cb3927;
+  background-color: #d82b2e;
   color: #ffffff;
 }
 .dijitButtonDanger.dijitButtonHover {
-  background-color: #a02d1f;
+  background-color: #b02023;
 }
 .dijitButtonAction {
   border: solid 1px transparent;
@@ -6719,7 +6720,7 @@ select[multiple]:hover {
 #listing-table, .listingTable, .dojoxUploaderFileListTable {
   border-bottom: 1px solid #d1d4db;
   border-collapse: collapse;
-  font-size: 1rem;
+  font-size: 14px;
   margin: 0 auto 1rem auto;
   width: 100%;
 }
@@ -9169,11 +9170,11 @@ div#_dotHelpMenu {
 }
 
 .archivedIcon {
-  color: #cb3927;
+  color: #d82b2e;
 }
 
 .hostArchivedIcon {
-  color: #cb3927;
+  color: #d82b2e;
 }
 
 .hostDefaultIcon {
@@ -9459,7 +9460,7 @@ Styles for commons fields along the backend
 #label, .fieldName, dl.vertical dt label {
   color: #14151a;
   display: block;
-  font-size: 0.85rem;
+  font-size: 0.875rem;
   margin-bottom: 0.25rem;
 }
 
@@ -9478,7 +9479,7 @@ Styles for commons fields along the backend
 .required::after {
   padding-left: 2px;
   content: "*";
-  color: #cb3927;
+  color: #d82b2e;
 }
 
 #inline-form, .inline-form, .fileSelectorControls {
@@ -10381,12 +10382,12 @@ a.category_higlighted, a.tag_higlighted {
 }
 
 .relationships-list .portlet-toolbar__actions-primary .required:before {
-  color: #cb3927;
+  color: #d82b2e;
   content: "* ";
 }
 
 .dijitTab .required:before {
-  color: #cb3927;
+  color: #d82b2e;
   content: "* ";
 }
 
@@ -10436,18 +10437,12 @@ a.category_higlighted, a.tag_higlighted {
 }
 
 .content-search__result-item {
-  padding-left: 20px;
+  padding-left: 24px;
   position: relative;
 }
 .content-search__result-item .dijitCheckBox {
   position: absolute;
   left: 0;
-}
-
-@media (min-width: 835px) {
-  .content-search__action-item {
-    display: none;
-  }
 }
 
 .import-preview {
@@ -10897,7 +10892,7 @@ a.category_higlighted, a.tag_higlighted {
   width: 200px;
 }
 .add-relationship .required:before {
-  color: #cb3927;
+  color: #d82b2e;
   content: "* ";
 }
 
@@ -10954,8 +10949,8 @@ a.category_higlighted, a.tag_higlighted {
   display: none;
 }
 .context-menu__item .arrowRightIcon {
-  font-size: 0.85rem;
-  margin-top: -0.425rem;
+  font-size: 0.875rem;
+  margin-top: -0.4375rem;
   position: absolute;
   right: 0.5rem;
   top: 50%;
@@ -11140,7 +11135,7 @@ a.category_higlighted, a.tag_higlighted {
   text-decoration: none;
 }
 .host-list__item .hostArchivedIcon + a {
-  color: #cb3927;
+  color: #d82b2e;
 }
 .host-list__item .hostDefaultIcon + a {
   color: #426bf0;
@@ -11379,8 +11374,8 @@ a.category_higlighted, a.tag_higlighted {
   display: none;
 }
 .context-menu__item .arrowRightIcon {
-  font-size: 0.85rem;
-  margin-top: -0.425rem;
+  font-size: 0.875rem;
+  margin-top: -0.4375rem;
   position: absolute;
   right: 0.5rem;
   top: 50%;
@@ -11742,7 +11737,7 @@ Resize Handle
   border: none;
   color: #14151a;
   font-family: Roboto, "Helvetica Neue", Helvetica, Arial, "Lucida Grande", sans-serif;
-  font-size: 1rem;
+  font-size: 14px;
   line-height: 40px;
 }
 
@@ -11801,6 +11796,9 @@ Resize Handle
 body {
   margin: 0;
   padding: 0;
+  font-family: Roboto, "Helvetica Neue", Helvetica, Arial, "Lucida Grande", sans-serif;
+  font-size: 14px;
+  color: #14151a;
 }
 
 .material-icons {

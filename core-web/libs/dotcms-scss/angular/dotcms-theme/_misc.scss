@@ -1,14 +1,7 @@
 @use "variables" as *;
 
-.p-component {
-    font-family: $font-default;
-    font-size: $font-size-md;
-    font-weight: normal;
-    line-height: normal;
-}
-
 .p-component-overlay {
-    background-color: rgba(255, 255, 255, 0.6);
+    background-color: $color-palette-primary-200;
     transition-duration: 0.2s;
 }
 
@@ -26,8 +19,6 @@
 }
 
 .p-link {
-    font-size: $font-size-md;
-    font-family: $font-default;
     border-radius: $border-radius-xs;
 }
 .p-link:focus {

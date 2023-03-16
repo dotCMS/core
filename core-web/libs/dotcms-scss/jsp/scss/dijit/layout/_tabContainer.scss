@@ -8,10 +8,11 @@
 
         border-width: $tab-border-width;
         border-style: $tab-border-style;
-        border-color: $tab-border-color;
+        border-color: transparent;
 
         .tabLabel {
             line-height: $tab-label-height;
+            text-transform: uppercase;
         }
 
         .dijitTabContainerTop-tabs & {

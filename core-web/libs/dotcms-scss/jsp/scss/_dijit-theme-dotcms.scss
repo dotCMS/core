@@ -1,8 +1,3 @@
-// COLORS
-$orange: #f3762a;
-$error: #d0021b;
-$red: #cb3927;
-
 // FORMS
 
 // Common
@@ -366,7 +361,7 @@ $combobox-disabled-arrow-border: $combobox-disabled-border;
 // Checkboxes
 $check-border-width: 1px;
 $check-radius: 2px;
-$check-size: 14px;
+$check-size: 18px;
 $check-normal-border: solid $check-border-width $font-color-base;
 $check-normal-bgcolor: $white;
 $check-checked-border: solid 1px $color-palette-primary;
@@ -379,7 +374,7 @@ $check-disabled-icon: $check-checked-icon;
 // RadioButtons
 $radio-border-width: $check-border-width;
 $radio-radius: 2px;
-$radio-size: 14px;
+$radio-size: 18px;
 $radio-normal-border: solid $radio-border-width $font-color-base;
 $radio-normal-bgcolor: $white;
 $radio-checked-color: $color-palette-primary;
@@ -502,18 +497,17 @@ $inlineeditbox-hover-border-color: $textbox-focused-border;
 $inlineeditbox-hover-bgcolor: $textbox-focused-bgcolor;
 
 // Tabs
-$tab-height: 42px;
-$tab-label-height: 37px;
+$tab-height: 58px;
+$tab-label-height: 54px;
 $tab-padding: $field-padding * 3;
 
 $tab-border-style: solid;
-$tab-border-width: 5px 1px 0 0;
+$tab-border-width: 0 0 4px 0;
 $tab-border-color: $color-palette-gray-400;
 
 $tab-checked-border-style: solid;
-$tab-checked-border-width: 5px 1px 0 0;
-$tab-checked-border-color: $color-palette-primary $color-palette-gray-400 transparent
-    $color-palette-gray-400;
+$tab-checked-border-width: 0 0 4px 0;
+$tab-checked-border-color: transparent transparent $color-palette-primary transparent;
 
 $tab-list-container-border-style: solid;
 $tab-list-container-border-width: 0 0 1px;
@@ -529,7 +523,7 @@ $tab-hover-bgcolor: $white;
 $tab-hover-textcolor: $field-hover-textcolor;
 $tab-disabled-bgcolor: $field-disabled-bgcolor;
 $tab-disabled-textcolor: $field-disabled-textcolor;
-$tab-active-bgcolor: $field-active-bgcolor;
+$tab-active-bgcolor: $color-palette-primary-200;
 $tab-active-textcolor: $field-active-textcolor;
 $tab-nested-active-border: solid 1px $color-palette-gray-800;
 

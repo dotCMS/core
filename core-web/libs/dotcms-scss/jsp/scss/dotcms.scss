@@ -96,6 +96,9 @@
 body {
     margin: 0;
     padding: 0;
+    font-family: $font-default;
+    font-size: $font-size-default;
+    color: $font-color-base;
 }
 
 .material-icons {

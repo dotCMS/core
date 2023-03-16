@@ -48,18 +48,11 @@
 }
 
 .content-search__result-item {
-    padding-left: 20px;
+    padding-left: 24px;
     position: relative;
 
     .dijitCheckBox {
         position: absolute;
         left: 0;
-    }
-}
-
-.content-search__action-item {
-    @media (min-width: 835px) {
-        //1025 - 179px tha is the width of the side nav of the angular chrome
-        display: none;
     }
 }
