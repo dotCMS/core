@@ -283,7 +283,7 @@
 	<tool>
 		<key>CASTool</key>
 		<scope>application</scope>
-		<class>com.dotcms.rendering.velocity.viewtools.CAS¬Tool</class>
+		<class>com.dotcms.rendering.velocity.viewtools.CASTool</class>
 	</tool>
 	<tool>
 		<key>estool</key>
