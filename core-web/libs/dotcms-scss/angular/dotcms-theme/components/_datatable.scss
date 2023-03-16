@@ -61,7 +61,7 @@ $datatable-bg-hover: rgba($color-palette-secondary, 0.05);
 }
 
 .p-datatable .p-sortable-column {
-    outline-color: transparent;
+    outline: 0 none;
 }
 
 .p-datatable .p-sortable-column .p-sortable-column-icon {
@@ -102,7 +102,7 @@ $datatable-bg-hover: rgba($color-palette-secondary, 0.05);
     color: $black;
     height: 4rem;
     transition: none;
-    outline-color: transparent;
+    outline: 0 none;
     cursor: pointer;
     overflow-wrap: anywhere;
 }
@@ -291,16 +291,8 @@ $datatable-bg-hover: rgba($color-palette-secondary, 0.05);
     padding: 0.9375rem 0.9375rem;
 }
 
-.p-datatable .p-sortable-column {
-    outline: 0 none;
-}
-
 .p-datatable .p-sortable-column:focus {
     background-color: $datatable-bg-hover;
-}
-
-.p-datatable .p-datatable-tbody > tr {
-    outline: 0 none;
 }
 
 .p-datatable .p-datatable-tbody > tr:not(.p-highlight):focus {
