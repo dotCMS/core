@@ -19,6 +19,7 @@ import { DotMessagePipeModule } from '@pipes/dot-message/dot-message-pipe.module
 import { DotExperimentsListRoutingModule } from '@portlets/dot-experiments/dot-experiments-list/dot-experiments-list-routing.module';
 import { DotExperimentsService } from '@portlets/dot-experiments/shared/services/dot-experiments.service';
 import { DotExperimentsUiHeaderComponent } from '@portlets/dot-experiments/shared/ui/dot-experiments-header/dot-experiments-ui-header.component';
+import { DotDropdownDirective } from '@portlets/shared/directives/dot-dropdown.directive';
 import { DotDynamicDirective } from '@portlets/shared/directives/dot-dynamic.directive';
 
 import { DotExperimentsEmptyExperimentsComponent } from './components/dot-experiments-empty-experiments/dot-experiments-empty-experiments.component';
@@ -46,6 +47,7 @@ import { DotExperimentsListComponent } from './dot-experiments-list.component';
         UiDotIconButtonModule,
         DotMessagePipeModule,
         DotExperimentsUiHeaderComponent,
+        DotDropdownDirective,
 
         // PrimeNG
         DotDynamicDirective,

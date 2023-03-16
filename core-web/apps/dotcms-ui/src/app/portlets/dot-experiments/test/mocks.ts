@@ -1,6 +1,7 @@
 import { of } from 'rxjs';
 
 import {
+    ComponentStatus,
     DotExperiment,
     DotExperimentStatusList,
     GOAL_OPERATORS,
@@ -98,21 +99,38 @@ const ExperimentMocks: Array<DotExperiment> = [
     }
 ];
 
-export const dotExperimentsCreateStoreStub = {
-    state$: () =>
-        of({
-            isSaving: false,
-            isOpenSidebar: false
-        }),
-    setCloseSidebar: () => of({}),
-    addExperiments: () => of([])
-};
-
 export const DotExperimentsListStoreMock = {
     addExperiment: () => of({}),
     setCloseSidebar: () => of({}),
     getPage$: of({
         pageId: '1111'
+    }),
+    vm$: of({
+        page: {
+            pageId: '',
+            pageTitle: ''
+        },
+        experiments: [],
+        filterStatus: [
+            DotExperimentStatusList.DRAFT,
+            DotExperimentStatusList.ENDED,
+            DotExperimentStatusList.RUNNING,
+            DotExperimentStatusList.SCHEDULED,
+            DotExperimentStatusList.ARCHIVED
+        ],
+        status: ComponentStatus.INIT,
+        sidebar: {
+            status: ComponentStatus.IDLE,
+            isOpen: false
+        }
+    }),
+    createVm$: of({
+        pageId: '',
+        sidebar: {
+            status: ComponentStatus.IDLE,
+            isOpen: true
+        },
+        isSaving: false
     })
 };
 
