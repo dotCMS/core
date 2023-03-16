@@ -58,7 +58,7 @@ public class BrowserAPIImpl implements BrowserAPI {
     private final FolderAPI folderAPI = APILocator.getFolderAPI();
     private final PermissionAPI permissionAPI = APILocator.getPermissionAPI();
     private final ShortyIdAPI shortyIdAPI = APILocator.getShortyAPI();
-    private final ESContentletAPIImpl esContentletAPI = new ESContentletAPIImpl();
+    private final ESContentletAPIImpl esContentletAPI = APILocator.getESContentletAPIImpl();
     private static final StringBuilder POSTGRES_ASSETNAME_COLUMN = new StringBuilder(ContentletJsonAPI
             .CONTENTLET_AS_JSON).append("-> 'fields' -> ").append("'asset' -> 'metadata' ->> ").append("'name' ");
 
@@ -305,9 +305,9 @@ public class BrowserAPIImpl implements BrowserAPI {
             luceneQuery.append("+languageId:" + browserQuery.languageId + " ");
         }
         if (browserQuery.site != null) {
-            sqlQuery.append(" and (id.host_inode = ? OR id.host_inode = 'SYSTEM_HOST') ");
+            sqlQuery.append(" and (id.host_inode = ? OR id.host_inode = '"+ Host.SYSTEM_HOST +"') ");
             parameters.add(browserQuery.site.getIdentifier());
-            luceneQuery.append("+conHost:(SYSTEM_HOST OR " + browserQuery.site.getIdentifier() + ") ");
+            luceneQuery.append("+conHost:("+ Host.SYSTEM_HOST +" OR " + browserQuery.site.getIdentifier() + ") ");
         }
         if (browserQuery.folder != null) {
             sqlQuery.append(" and id.parent_path=? ");

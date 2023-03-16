@@ -416,6 +416,9 @@ public class APILocator extends Locator<APIIndex> {
 		return (ContentletAPI)getInstance(APIIndex.CONTENTLET_API_INTERCEPTER);
 	}
 
+	public static ESContentletAPIImpl getESContentletAPIImpl()
+	{return (ESContentletAPIImpl)getInstance(APIIndex.CONTENTLET_API);}
+
     /**
      * This is the contentletAPI which an application should use to do ALL
      * normal {@link ContentletAPI} logic.

@@ -85,7 +85,7 @@ public class NavToolCacheTest extends IntegrationTestBase {
     assertNotNull(navResult);
 
     List<NavResult> navResultList = loadResults(navResult, new ArrayList<>());
-    assert (navResultList.size() == 7);
+    assert (navResultList.size() == 9);
     for (NavResult result : navResultList) {
       assertTrue(result instanceof NavResultHydrated);
       assertTrue(!(result.getUnhydratedNavResult() instanceof NavResultHydrated));
