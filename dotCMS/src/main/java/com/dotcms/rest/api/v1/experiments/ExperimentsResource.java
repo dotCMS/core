@@ -482,7 +482,7 @@ public class ExperimentsResource {
         }
 
         if(experimentForm.getLookbackWindow()>-1) {
-            builder.lookbackWindow(experimentForm.getLookbackWindow());
+            builder.lookBackWindowExpireTime(experimentForm.getLookbackWindow());
         }
 
         return builder.build();

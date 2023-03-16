@@ -1353,7 +1353,7 @@ public class ExperimentAPIImpIT {
                 assertEquals(reachPage.getPageUrl(), condition.value());
                 assertEquals(Operator.CONTAINS, condition.operator());
             } else if (condition.parameter().equals("referer")) {
-                assertEquals(experimentPage.getPageUrl(), condition.value());
+                assertEquals(experimentPage.getURI(), condition.value());
                 assertEquals(Operator.CONTAINS, condition.operator());
             }
         }
@@ -1441,7 +1441,7 @@ public class ExperimentAPIImpIT {
         assertEquals(1,  conditions.size());
 
         assertEquals("url", conditions.get(0).parameter());
-        assertEquals(experimentPage.getPageUrl(), conditions.get(0).value());
+        assertEquals(experimentPage.getURI(), conditions.get(0).value());
         assertEquals(Operator.CONTAINS, conditions.get(0).operator());
     }
 

@@ -10,21 +10,16 @@ import { Sidebar, SidebarModule } from 'primeng/sidebar';
 import { DotFieldValidationMessageModule } from '@components/_common/dot-field-validation-message/dot-file-validation-message.module';
 import { DotMessageService } from '@dotcms/data-access';
 import { MockDotMessageService } from '@dotcms/utils-testing';
-import { DotExperimentsCreateComponent } from '@portlets/dot-experiments/dot-experiments-create/dot-experiments-create.component';
-import { DotExperimentsListStore } from '@portlets/dot-experiments/dot-experiments-list/store/dot-experiments-list-store.service';
+import { DotExperimentsCreateComponent } from '@portlets/dot-experiments/dot-experiments-list/components/dot-experiments-create/dot-experiments-create.component';
+import { DotExperimentsListStore } from '@portlets/dot-experiments/dot-experiments-list/store/dot-experiments-list-store';
 import { DotExperimentsService } from '@portlets/dot-experiments/shared/services/dot-experiments.service';
-import {
-    dotExperimentsCreateStoreStub,
-    DotExperimentsListStoreMock
-} from '@portlets/dot-experiments/test/mocks';
+import { DotExperimentsListStoreMock } from '@portlets/dot-experiments/test/mocks';
 import {
     DotSidebarDirective,
     SIDEBAR_PLACEMENT,
     SIDEBAR_SIZES
 } from '@portlets/shared/directives/dot-sidebar.directive';
 import { DotSidebarHeaderComponent } from '@shared/dot-sidebar-header/dot-sidebar-header.component';
-
-import { DotExperimentsCreateStore } from './store/dot-experiments-create-store';
 
 const messageServiceMock = new MockDotMessageService({
     'experiments.create.form.sidebar.header': 'Add a new experiment',
@@ -71,11 +66,6 @@ describe('DotExperimentsCreateComponent', () => {
                 useValue: DotExperimentsListStoreMock
             },
 
-            {
-                provide: DotExperimentsCreateStore,
-                useValue: dotExperimentsCreateStoreStub
-            },
-
             mockProvider(DotExperimentsService, dotExperimentsServiceMock)
         ]
     });
@@ -119,7 +109,7 @@ describe('DotExperimentsCreateComponent', () => {
         const submitButton = spectator.query<HTMLButtonElement>(byTestId('add-experiment-button'));
         spyOn(spectator.component, 'handleSubmit');
 
-        spectator.component.handleSubmit();
+        spectator.component.handleSubmit('1111-1111-1111-111');
 
         expect(submitButton).toExist();
         expect(spectator.component.handleSubmit).toHaveBeenCalled();

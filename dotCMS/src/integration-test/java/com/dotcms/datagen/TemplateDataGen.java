@@ -58,6 +58,8 @@ public class TemplateDataGen extends AbstractDataGen<Template> {
     private Date modDate;
     private String bodyHead;
 
+    private boolean drawed;
+
     /**
      * Sets body property to the TemplateDataGen instance. This will be used when a new {@link
      * Template} instance is created.
@@ -257,6 +259,9 @@ public class TemplateDataGen extends AbstractDataGen<Template> {
      */
     @Override
     public Template next() {
+
+        final String innerDrawedBody = drawed && !UtilMethods.isSet(drawedBody) ? createDrawedBody() : drawedBody;
+
         // Create the new template
         Template template = new Template();
         template.setFooter(this.footer);
@@ -272,11 +277,46 @@ public class TemplateDataGen extends AbstractDataGen<Template> {
         template.setTitle(this.title);
         template.setType(type);
         template.setBody(body);
-        template.setDrawedBody(drawedBody);
+        template.setDrawedBody(innerDrawedBody);
         template.setTheme(theme);
         template.setCountAddContainer(0);
         template.setCountContainers(0);
+        template.setDrawed(drawed);
         return template;
+    }
+
+    private String createDrawedBody() {
+
+        final String drawedBodyTemplate = "{"
+                + "\"title\":\"\","
+                + "\"header\":true,"
+                + "\"footer\":true,"
+                + "\"body\":{"
+                    + "\"rows\":["
+                        + "{"
+                            + "\"columns\":["
+                                + "{"
+                                    + "\"containers\":[%s],"
+                                    + "\"widthPercent\":100,"
+                                    + "\"leftOffset\":1,"
+                                    + "\"styleClass\":\"\","
+                                    + "\"preview\":false,"
+                                    + "\"width\":12,"
+                                    + "\"left\":0"
+                                + "}"
+                            + "],"
+                            + "\"styleClass\":\"\""
+                        + "}"
+                    + "]"
+                + "}"
+            + "}";
+
+        //final String drawedBodyTemplate = "{\"body\":{\"rows\":[{\"columns\":[{\"containers\":[%s]}";
+        return String.format(drawedBodyTemplate, containers.stream()
+                .map(map -> String.format("{\"identifier\":\"%s\",\"uuid\":\"%s\"}",
+                        map.get("containerId"), map.get("uuid")))
+                .collect(Collectors.joining(","))
+        );
     }
 
     @WrapInTransaction
@@ -362,6 +402,11 @@ public class TemplateDataGen extends AbstractDataGen<Template> {
 
     public TemplateDataGen modDate(Date modDate) {
         this.modDate = modDate;
+        return this;
+    }
+
+    public TemplateDataGen drawed(boolean drawed) {
+        this.drawed = drawed;
         return this;
     }
 }
