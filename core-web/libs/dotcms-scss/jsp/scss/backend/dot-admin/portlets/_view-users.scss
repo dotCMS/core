@@ -13,6 +13,23 @@
         height: 100%;
         width: 100%;
     }
+
+    .view-users__users-list {
+        .dojoxGridRow {
+            &:nth-child(even) {
+                background-color: $color-palette-gray-400;
+            }
+        }
+        .dojoxGridHeader {
+            background-color: $color-palette-gray-400;
+        }
+        .dojoxGridRow,
+        .dojoxGridHeader {
+            .dojoxGridRowTable .dojoxGridCell {
+                padding: $spacing-1;
+            }
+        }
+    }
 }
 
 .view-users__profile-tabs-container#userTabsContainer .dijitTabPaneWrapper {
@@ -117,22 +134,4 @@
     font-weight: bold;
     margin-bottom: $spacing-1;
     padding-bottom: 0;
-}
-.view-users {
-    .view-users__users-list {
-        .dojoxGridRow {
-            &:nth-child(even) {
-                background-color: $color-palette-gray-400;
-            }
-        }
-        .dojoxGridHeader {
-            background-color: $color-palette-gray-400;
-        }
-        .dojoxGridRow,
-        .dojoxGridHeader {
-            .dojoxGridRowTable .dojoxGridCell {
-                padding: $spacing-1;
-            }
-        }
-    }
 }
