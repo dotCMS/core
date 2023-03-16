@@ -245,6 +245,8 @@
     height: 16px;
     width: 20px;
     cursor: pointer;
+    float: left;
+    margin-top: 3px;
 }
 
 .closeFilter {
@@ -255,11 +257,6 @@
     width: 24px;
     cursor: pointer;
     float: right;
-}
-
-.removeFilter {
-    float: left;
-    margin-top: 3px;
 }
 
 .filtersBox {
@@ -295,12 +292,8 @@
     &:hover {
         font-weight: normal;
         color: black;
+        text-decoration: underline;
     }
-}
-
-.tagFilterLink a:hover,
-.categoryFilterLink a:hover {
-    text-decoration: underline;
 }
 
 .statusLegend {
