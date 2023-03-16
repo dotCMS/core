@@ -60,9 +60,14 @@ public class Task221007AddVariantIntoPrimaryKeyTest {
 
     private void cleanUp() throws SQLException {
 
-        final String constraintName = DotDatabaseMetaData.getPrimaryKeyName("contentlet_version_info")
+        final String constraintName = DotDatabaseMetaData.getPrimaryKeyName(
+                        "contentlet_version_info")
                 .orElse("contentlet_version_info_pkey");
 
+        cleanUp(constraintName);
+    }
+
+    private void cleanUp(final String newName) throws SQLException {
         try {
             DotDatabaseMetaData.dropPrimaryKey("contentlet_version_info");
         } catch (Exception e) {
@@ -70,6 +75,59 @@ public class Task221007AddVariantIntoPrimaryKeyTest {
         }
 
         new DotConnect().executeStatement(String.format("ALTER TABLE contentlet_version_info "
-                + " ADD CONSTRAINT %s PRIMARY KEY (identifier, lang)", constraintName));
+                + " ADD CONSTRAINT %s PRIMARY KEY (identifier, lang)", newName));
+    }
+
+    private void removePrimaryKey() throws SQLException {
+
+        try {
+            DotDatabaseMetaData.dropPrimaryKey("contentlet_version_info");
+        } catch (Exception e) {
+            //ignore
+        }
+    }
+
+    /**
+     * Method to test: {@link Task221007AddVariantIntoPrimaryKey#executeUpgrade()}
+     * When: Run the Task221007AddVariantIntoPrimaryKey and the Primary key does not exist
+     * Should: Create the contentlet_version_info primary key to contain the variant_id
+     *
+     * @throws SQLException
+     * @throws DotDataException
+     */
+    @Test
+    public void whenThePrimaryKeyDoesNotExists() throws SQLException, DotDataException {
+        removePrimaryKey();
+
+        Task221007AddVariantIntoPrimaryKey task221007AddVariantIntoPrimaryKey =
+                new Task221007AddVariantIntoPrimaryKey();
+        assertTrue(task221007AddVariantIntoPrimaryKey.forceRun());
+
+        task221007AddVariantIntoPrimaryKey.executeUpgrade();
+
+        assertFalse(task221007AddVariantIntoPrimaryKey.forceRun());
+        checkPrimaryKey();
+    }
+
+    /**
+     * Method to test: {@link Task221007AddVariantIntoPrimaryKey#executeUpgrade()}
+     * When: Run the Task221007AddVariantIntoPrimaryKey and the Primary key has a name different that contentlet_version_info_pkey
+     * Should: Update the contentlet_version_info primary key to contain the variant_id
+     *
+     * @throws SQLException
+     * @throws DotDataException
+     */
+    @Test
+    public void primaryKeyWithNoDefaultName() throws SQLException, DotDataException {
+        cleanUp("whatever_name");
+
+        Task221007AddVariantIntoPrimaryKey task221007AddVariantIntoPrimaryKey =
+                new Task221007AddVariantIntoPrimaryKey();
+        assertTrue(task221007AddVariantIntoPrimaryKey.forceRun());
+
+        task221007AddVariantIntoPrimaryKey.executeUpgrade();
+
+        assertFalse(task221007AddVariantIntoPrimaryKey.forceRun());
+        checkPrimaryKey();
     }
 }

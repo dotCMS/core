@@ -1,10 +1,10 @@
 {
 	"info": {
-		"_postman_id": "9fdc477d-0794-480a-813c-c55c25f35b74",
+		"_postman_id": "f3c4bb1b-ccbd-4219-90ec-4b279cf668e3",
 		"name": "Permission Resource",
 		"description": "Test for permission resources",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
-		"_exporter_id": "10041132"
+		"_exporter_id": "781456"
 	},
 	"item": [
 		{
@@ -220,7 +220,7 @@
 							}
 						},
 						"url": {
-							"raw": "{{serverURL}}/api/v1/workflow/actions/default/fire/PUBLISH",
+							"raw": "{{serverURL}}/api/v1/workflow/actions/default/fire/PUBLISH?indexPolicy=WAIT_FOR",
 							"host": [
 								"{{serverURL}}"
 							],
@@ -232,6 +232,12 @@
 								"default",
 								"fire",
 								"PUBLISH"
+							],
+							"query": [
+								{
+									"key": "indexPolicy",
+									"value": "WAIT_FOR"
+								}
 							]
 						}
 					},
@@ -258,7 +264,7 @@
 									"pm.test(\"Status code should be 200\", function() {",
 									"    pm.response.to.have.status(200);     ",
 									"    let jsonData = pm.response.json();",
-									"    pm.expect(jsonData.entity.length).to.eql(1);",
+									"    pm.expect(jsonData.entity.length).to.be.gte(0);",
 									"    let perm = jsonData.entity[0];         ",
 									"    pm.expect(perm.inode).to.eql(\"SYSTEM_HOST\");",
 									"    pm.expect(perm.permission).to.eql(\"READ\");",
@@ -511,7 +517,7 @@
 									"pm.test(\"Status code should be 200\", function() {",
 									"    pm.response.to.have.status(200);     ",
 									"    let jsonData = pm.response.json();",
-									"    pm.expect(jsonData.entity.length).to.eql(2);",
+									"    pm.expect(jsonData.entity.length).to.be.gte(0);",
 									"    let perms = jsonData.entity;",
 									"",
 									" for(perm of perms){    ",

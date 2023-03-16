@@ -125,12 +125,14 @@
         <!-- Access log processes all example.  Documentation at: /docs/config/valve.html -->
         <Valve
             className="org.apache.catalina.valves.AccessLogValve" 
-            directory="logs"
+            directory="${CMS_ACCESSLOG_DIRECTORY}"
             prefix="dotcms_access" 
             suffix=".log"
             pattern="${CMS_ACCESSLOG_PATTERN}" 
             fileDateFormat="${CMS_ACCESSLOG_FILEDATEFORMAT}"
             maxDays="${CMS_ACCESSLOG_MAXDAYS}"
+            renameOnRotate="${CMS_ACCESSLOG_RENAMEONROTATE}"
+            rotatable="${CMS_ACCESSLOG_ROTATABLE}"
         />
 
       </Host>
