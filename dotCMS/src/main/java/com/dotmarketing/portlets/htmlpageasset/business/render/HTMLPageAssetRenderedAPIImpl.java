@@ -621,7 +621,6 @@ public class HTMLPageAssetRenderedAPIImpl implements HTMLPageAssetRenderedAPI {
             final String analyticsKey = getAnalyticsKey(host);
             final String jsJitsuCode =  getFileContentFromResourceContext("experiment/html/experiment_head.html")
                     .replaceAll("\\$\\{jitsu_key}", analyticsKey);
-//                    .replaceAll("\\$\\{site}", getLocalServerName(request));
 
             final String runningExperimentsId = APILocator.getExperimentsAPI().getRunningExperiments().stream()
                     .map(experiment -> "'" + experiment.id().get() + "'")
@@ -646,8 +645,4 @@ public class HTMLPageAssetRenderedAPIImpl implements HTMLPageAssetRenderedAPI {
         }
     }
 
-    private String getLocalServerName(HttpServletRequest request) {
-        final String port = Config.getStringProperty("DOT_ANALYTICS_APP_PORT", "8080");
-        return request.getServerName() + ":" + port;
-    }
 }
