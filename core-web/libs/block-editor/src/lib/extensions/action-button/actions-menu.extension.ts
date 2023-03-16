@@ -268,7 +268,7 @@ export const ActionsMenu = (
 
     function getItems({ allowedBlocks = [], editor, range }): DotMenuItem[] {
         const items = allowedBlocks.length
-            ? suggestionOptions.filter((item) => this.allowedBlocks.includes(item.id))
+            ? suggestionOptions.filter((item) => allowedBlocks.includes(item.id))
             : suggestionOptions;
 
         const customItems = [...items, ...getCustomActions(customBlocks)];
