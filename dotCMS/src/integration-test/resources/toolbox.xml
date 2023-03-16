@@ -35,6 +35,11 @@
 		<class>com.dotcms.rendering.velocity.viewtools.LanguageViewtool</class>
 	</tool>
 	<tool>
+		<key>dotsecrets</key>
+		<scope>application</scope>
+		<class>com.dotcms.rendering.velocity.viewtools.SecretTool</class>
+	</tool>
+	<tool>
 		<key>listTool</key>
 		<scope>application</scope>
 		<class>org.apache.velocity.tools.generic.ListTool</class>
@@ -278,7 +283,7 @@
 	<tool>
 		<key>CASTool</key>
 		<scope>application</scope>
-		<class>com.dotcms.rendering.velocity.viewtools.CASTool</class>
+		<class>com.dotcms.rendering.velocity.viewtools.CAS¬Tool</class>
 	</tool>
 	<tool>
 		<key>estool</key>
