@@ -2,10 +2,12 @@
 @use "../shared/common" as *;
 @use "../shared/colors" as *;
 @use "../shared/fonts" as *;
+@use "../shared/shadows" as *;
 
 @forward "../shared/common";
 @forward "../shared/colors";
 @forward "../shared/fonts";
+@forward "../shared/shadows";
 
 $input-border-color-hover: $color-palette-primary;
 $input-inset-shadow: inset 0 0 0 1px $color-palette-primary, inset 0 0 0 1px $color-palette-primary,
@@ -99,13 +101,6 @@ $screen-sm-max: $screen-md-min - 1;
 $screen-md-max: $screen-lg-min - 1;
 $screen-lg-max: $screen-xl-min - 1;
 $screen-device-container-max: 1545px;
-
-// MATERIAL DESIGN
-$md-shadow-1: 0 1px 3px rgba(0, 0, 0, 0.12), 0 1px 2px rgba(0, 0, 0, 0.24);
-$md-shadow-2: 0 3px 6px rgba(0, 0, 0, 0.16), 0 3px 6px rgba(0, 0, 0, 0.23);
-$md-shadow-3: 0 10px 24px 0 rgba(0, 0, 0, 0.2);
-$md-shadow-4: 0 2px 4px 0 rgba(0, 0, 0, 0.1);
-$md-shadow-5: 0 10px 20px 0 rgba(0, 0, 0, 0.15);
 
 // FORMS
 $label-color: rgba($color-palette-gray-800, 0.6);

@@ -1,10 +1,12 @@
 @use "../../shared/colors" as *;
 @use "../../shared/common" as *;
 @use "../../shared/fonts" as *;
+@use "../../shared/shadows" as *;
 
 @forward "../../shared/colors";
 @forward "../../shared/common";
 @forward "../../shared/fonts";
+@forward "../../shared/shadows";
 
 // Basic stuffs
 $icon-size: 16px !default;
