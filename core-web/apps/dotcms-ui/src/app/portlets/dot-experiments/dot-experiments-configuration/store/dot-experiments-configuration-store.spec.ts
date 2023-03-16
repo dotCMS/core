@@ -16,6 +16,9 @@ import {
     DotExperiment,
     DotExperimentStatusList,
     ExperimentSteps,
+    GOAL_OPERATORS,
+    GOAL_PARAMETERS,
+    GOAL_TYPES,
     Goals,
     GoalsLevels,
     RangeOfDateAndTime,
@@ -152,8 +155,8 @@ describe('DotExperimentsConfigurationStore', () => {
 
         it('should add a variant to the store', (done) => {
             dotExperimentsService.getById.and.callThrough().and.returnValue(of(EXPERIMENT_MOCK_1));
-            const newVariant: { experimentId: string; data: Pick<DotExperiment, 'name'> } = {
-                data: { name: '333' },
+            const newVariant: { experimentId: string; name: string } = {
+                name: '333',
                 experimentId: EXPERIMENT_MOCK_1.id
             };
 
@@ -164,7 +167,7 @@ describe('DotExperimentsConfigurationStore', () => {
                     variants: [
                         ...EXPERIMENT_MOCK_1.trafficProportion.variants,
                         {
-                            ...newVariant.data,
+                            name: newVariant.name,
                             id: '222',
                             weight: 100
                         }
@@ -295,6 +298,73 @@ describe('DotExperimentsConfigurationStore', () => {
 
             store.state$.subscribe(({ experiment }) => {
                 expect(experiment.goals).toEqual(expectedGoals);
+                done();
+            });
+        });
+
+        it('should get a isDefault true to the default conditions of type REACH_PAGE', (done) => {
+            const experimentMock = {
+                ...EXPERIMENT_MOCK,
+                goals: {
+                    primary: {
+                        name: 'default',
+                        type: GOAL_TYPES.REACH_PAGE,
+                        conditions: [
+                            {
+                                parameter: GOAL_PARAMETERS.URL,
+                                operator: GOAL_OPERATORS.EQUALS,
+                                value: 'index'
+                            },
+                            {
+                                parameter: GOAL_PARAMETERS.REFERER,
+                                operator: GOAL_OPERATORS.CONTAINS,
+                                value: 'index'
+                            }
+                        ]
+                    }
+                }
+            };
+
+            dotExperimentsService.getById.and
+                .callThrough()
+                .and.returnValue(of({ ...experimentMock }));
+
+            store.loadExperiment(EXPERIMENT_MOCK.id);
+
+            store.goals$.subscribe(({ primary }) => {
+                expect(primary.conditions[0].isDefault).toBeFalse();
+                expect(primary.conditions[1].parameter).toBe(GOAL_PARAMETERS.REFERER);
+                expect(primary.conditions[1].isDefault).toBeTrue();
+                done();
+            });
+        });
+        it('should get a isDefault true to the default conditions of type BOUNCE_RATE', (done) => {
+            const experimentMock = {
+                ...EXPERIMENT_MOCK,
+                goals: {
+                    primary: {
+                        name: 'default',
+                        type: GOAL_TYPES.BOUNCE_RATE,
+                        conditions: [
+                            {
+                                parameter: GOAL_PARAMETERS.URL,
+                                operator: GOAL_OPERATORS.CONTAINS,
+                                value: 'index'
+                            }
+                        ]
+                    }
+                }
+            };
+
+            dotExperimentsService.getById.and
+                .callThrough()
+                .and.returnValue(of({ ...experimentMock }));
+
+            store.loadExperiment(EXPERIMENT_MOCK.id);
+
+            store.goals$.subscribe(({ primary }) => {
+                expect(primary.conditions[0].parameter).toBe(GOAL_PARAMETERS.URL);
+                expect(primary.conditions[0].isDefault).toBeTrue();
                 done();
             });
         });
@@ -476,6 +546,38 @@ describe('DotExperimentsConfigurationStore', () => {
                 expect(experiment.status).toEqual(DotExperimentStatusList.RUNNING);
                 done();
             });
+        });
+
+        it('should change the experiment status when Stop the experiment', (done) => {
+            dotExperimentsService.getById.and
+                .callThrough()
+                .and.returnValue(of({ ...EXPERIMENT_MOCK_2 }));
+
+            dotExperimentsService.stop.and.callThrough().and.returnValue(
+                of({
+                    ...EXPERIMENT_MOCK_2,
+                    status: DotExperimentStatusList.ENDED
+                })
+            );
+
+            spectator.service.loadExperiment(EXPERIMENT_MOCK_2.id);
+
+            store.stopExperiment(EXPERIMENT_MOCK_2);
+
+            store.state$.subscribe(({ experiment }) => {
+                expect(experiment.status).toEqual(DotExperimentStatusList.ENDED);
+                done();
+            });
+        });
+
+        it('should handle error when stopping the experiment', () => {
+            dotExperimentsService.stop.and.returnValue(throwError('error'));
+
+            store.stopExperiment(EXPERIMENT_MOCK_2);
+
+            expect(dotHttpErrorManagerService.handle).toHaveBeenCalledOnceWith(
+                'error' as unknown as HttpErrorResponse
+            );
         });
     });
 });

@@ -136,13 +136,10 @@ describe('DotExperimentsListStore', () => {
     });
 
     it('should change status to archived status by experiment id of the store', () => {
-        const expected: DotExperiment[] = [...EXPERIMENT_MOCK_ALL];
-        expected[1].status = DotExperimentStatusList.ARCHIVED;
-
-        store.setExperiments([...EXPERIMENT_MOCK_ALL]);
+        store.setExperiments([{ ...getExperimentMock(1) }]);
         store.archiveExperimentById(EXPERIMENT_MOCK_1.id);
         store.getExperiments$.subscribe((exp) => {
-            expect(exp).toEqual(expected);
+            expect(exp[0].status).toEqual(DotExperimentStatusList.ARCHIVED);
         });
     });
 

@@ -494,7 +494,6 @@ public class BrowserAjax {
 	        final WebContext webContext  = WebContextFactory.get();
 	        final HttpServletRequest req = webContext.getHttpServletRequest();
 	        final User user              = getUser(req);
-	        final long getAllLanguages   = 0;
 
 		   final Map<String, Object> results = browserAPI.getFolderContent(
 				   BrowserQuery.builder()
@@ -509,12 +508,12 @@ public class BrowserAjax {
 						   .showWorking(true)
 						   .showArchived(showArchived)
 						   .showFolders(!noFolders)
-						   .showFiles(onlyFiles)
+						   .showFiles(true)
+						   .showPages(!onlyFiles)
 						   .sortBy(sortBy)
 						   .sortByDesc(sortByDesc)
 						   .showLinks(!excludeLinks)
-						   .withLanguageId(
-								   WebAPILocator.getLanguageWebAPI().getBackendLanguage().getId())
+						   .withLanguageId((Long) req.getSession().getAttribute(WebKeys.CONTENT_SELECTED_LANGUAGE))
 						   .showDotAssets(dotAssets)
 						   .build());
 

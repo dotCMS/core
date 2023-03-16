@@ -1,9 +1,11 @@
 import { Subject } from 'rxjs';
 
-import { Component, DebugElement, EventEmitter, Input, Output } from '@angular/core';
+import { HttpClient, HttpHandler } from '@angular/common/http';
+import { Component, DebugElement, EventEmitter, Injectable, Input, Output } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 
+import { DialogService } from 'primeng/dynamicdialog';
 import { MenuModule } from 'primeng/menu';
 
 import { of } from 'rxjs/internal/observable/of';
@@ -13,8 +15,12 @@ import { DotMessageSeverity, DotMessageType } from '@components/dot-message-disp
 import { DotMessageDisplayService } from '@components/dot-message-display/services';
 import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
 import { DotEventsService } from '@dotcms/data-access';
-import { mockSites, SiteService } from '@dotcms/dotcms-js';
-import { dotcmsContentletMock, MockDotRouterService } from '@dotcms/utils-testing';
+import { CoreWebService, CoreWebServiceMock, mockSites, SiteService } from '@dotcms/dotcms-js';
+import {
+    dotcmsContentletMock,
+    dotcmsContentTypeBasicMock,
+    MockDotRouterService
+} from '@dotcms/utils-testing';
 
 import { DotPageStore } from './dot-pages-store/dot-pages.store';
 import { DotActionsMenuEventParams, DotPagesComponent } from './dot-pages.component';
@@ -51,6 +57,7 @@ export const favoritePagesInitialTestData = [
         ...dotcmsContentletMock,
         live: true,
         baseType: 'CONTENT',
+        identifier: '123',
         modDate: '2020-09-02 16:45:15.569',
         title: 'preview1',
         screenshot: 'test1',
@@ -61,6 +68,7 @@ export const favoritePagesInitialTestData = [
         ...dotcmsContentletMock,
         title: 'preview2',
         modDate: '2020-09-02 16:45:15.569',
+        identifier: '456',
         screenshot: 'test2',
         url: '/index2',
         owner: 'admin2'
@@ -77,12 +85,17 @@ const storeMock = {
     get languageLabels$() {
         return of({});
     },
+    get pageTypes$() {
+        return of([{ ...dotcmsContentTypeBasicMock }]);
+    },
     clearMenuActions: jasmine.createSpy(),
     getFavoritePages: jasmine.createSpy(),
     getPages: jasmine.createSpy(),
+    getPageTypes: jasmine.createSpy(),
     showActionsMenu: jasmine.createSpy(),
     setInitialStateData: jasmine.createSpy(),
     limitFavoritePages: jasmine.createSpy(),
+    updateSinglePageData: jasmine.createSpy(),
     vm$: of({
         favoritePages: {
             items: [],
@@ -101,15 +114,23 @@ const storeMock = {
             actionMenuDomId: '',
             items: [],
             addToBundleCTId: 'test1'
-        }
+        },
+        pageTypes: []
     })
 };
+@Injectable()
+export class DialogServiceMock {
+    open(): void {
+        /* */
+    }
+}
 
 describe('DotPagesComponent', () => {
     let fixture: ComponentFixture<DotPagesComponent>;
     let component: DotPagesComponent;
     let de: DebugElement;
     let store: DotPageStore;
+    let dialogService: DialogService;
     let dotRouterService: DotRouterService;
     let dotMessageDisplayService: DotMessageDisplayService;
 
@@ -126,8 +147,12 @@ describe('DotPagesComponent', () => {
             imports: [MenuModule],
             providers: [
                 DotEventsService,
+                HttpClient,
+                HttpHandler,
+                { provide: CoreWebService, useClass: CoreWebServiceMock },
                 { provide: DotMessageDisplayService, useClass: DotMessageDisplayServiceMock },
                 { provide: DotRouterService, useClass: MockDotRouterService },
+                { provide: DialogService, useClass: DialogServiceMock },
                 {
                     provide: SiteService,
                     useValue: {
@@ -149,6 +174,7 @@ describe('DotPagesComponent', () => {
             useValue: storeMock
         });
         store = TestBed.inject(DotPageStore);
+        dialogService = TestBed.inject(DialogService);
         dotRouterService = TestBed.inject(DotRouterService);
         dotMessageDisplayService = TestBed.inject(DotMessageDisplayService);
         fixture = TestBed.createComponent(DotPagesComponent);
@@ -158,6 +184,7 @@ describe('DotPagesComponent', () => {
         fixture.detectChanges();
         spyOn(component.menu, 'hide');
         spyOn(dotMessageDisplayService, 'push');
+        spyOn(dialogService, 'open').and.callThrough();
     });
 
     it('should init store', () => {
@@ -244,10 +271,10 @@ describe('DotPagesComponent', () => {
         expect(store.clearMenuActions).toHaveBeenCalledTimes(1);
     });
 
-    it('should call push method in dotMessageDisplayService once a dot-global-message is received', () => {
+    it('should call push method in dotMessageDisplayService once a save-page is received for a non favorite page', () => {
         const dotEventsService: DotEventsService = de.injector.get(DotEventsService);
 
-        dotEventsService.notify('dot-global-message', { value: 'test3' });
+        dotEventsService.notify('save-page', { payload: { identifier: '123' }, value: 'test3' });
 
         expect(dotMessageDisplayService.push).toHaveBeenCalledWith({
             life: 3000,
@@ -255,6 +282,29 @@ describe('DotPagesComponent', () => {
             severity: DotMessageSeverity.SUCCESS,
             type: DotMessageType.SIMPLE_MESSAGE
         });
+        expect(store.updateSinglePageData).toHaveBeenCalledWith({
+            identifier: '123',
+            isFavoritePage: false
+        });
+    });
+
+    it('should update a single page once a save-page is received for a favorite page', () => {
+        const dotEventsService: DotEventsService = de.injector.get(DotEventsService);
+
+        dotEventsService.notify('save-page', {
+            payload: { contentType: 'dotFavoritePage', identifier: '123' },
+            value: 'test3'
+        });
+
+        expect(store.updateSinglePageData).toHaveBeenCalledWith({
+            identifier: '123',
+            isFavoritePage: true
+        });
+    });
+
+    it('should reload portlet only when the site change', () => {
+        switchSiteSubject.next(mockSites[0]); // setting the site
+        switchSiteSubject.next(mockSites[1]); // switching the site
         expect(store.getPages).toHaveBeenCalledWith({ offset: 0 });
     });
 

@@ -1,6 +1,7 @@
 package com.dotcms.experiments.business.result;
 
 import com.dotcms.analytics.metrics.EventType;
+import com.dotcms.util.CollectionsUtils;
 import java.util.Map;
 import java.util.Optional;
 
@@ -25,5 +26,11 @@ public class Event {
 
     public EventType getType() {
         return type;
+    }
+
+    public Optional<String> getVariant() {
+        return  Optional.of (get("variant")
+                    .map(variantObject -> variantObject.toString())
+                    .orElseThrow());
     }
 }

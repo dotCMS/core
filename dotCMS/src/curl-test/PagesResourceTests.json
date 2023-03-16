@@ -1,6 +1,6 @@
 {
 	"info": {
-		"_postman_id": "d38f5254-5d30-47a4-aa50-612742acb23d",
+		"_postman_id": "3be25a89-5655-4504-8bc5-bc3f1f9e2cfc",
 		"name": "Page API - [api/v1/page]",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
 		"_exporter_id": "781456"
@@ -4486,11 +4486,11 @@
 									"    pm.expect(contentletList.length).to.eql(1);",
 									"});",
 									"",
-									"pm.test(\"The value of the 'onNumberOfPages' property must be 1\", function() {",
+									"pm.test(\"The rendered section should contain data attribute 'data-dot-on-number-of-pages' for the contentlet object\", function() {",
 									"    var entity = pm.response.json().entity;",
-									"    var contentletData = entity.containers.SYSTEM_CONTAINER.contentlets[\"uuid-1\"][0];",
+									"    var contentletData = entity.containers.SYSTEM_CONTAINER.rendered[\"uuid-1\"];",
 									"    console.log(contentletData);",
-									"    pm.expect(contentletData.onNumberOfPages).to.eql(1);",
+									"    pm.expect(contentletData).includes(\"data-dot-on-number-of-pages\");",
 									"});"
 								],
 								"type": "text/javascript"
@@ -4706,11 +4706,11 @@
 									"    pm.expect(contentletList.length).to.eql(1);",
 									"});",
 									"",
-									"pm.test(\"The value of the 'onNumberOfPages' property must be 2\", function() {",
+									"pm.test(\"The rendered section should contain data attribute 'data-dot-on-number-of-pages' for the contentlet object\", function() {",
 									"    var entity = pm.response.json().entity;",
-									"    var contentletData = entity.containers.SYSTEM_CONTAINER.contentlets[\"uuid-1\"][0];",
+									"    var contentletData = entity.containers.SYSTEM_CONTAINER.rendered[\"uuid-1\"];",
 									"    console.log(contentletData);",
-									"    pm.expect(contentletData.onNumberOfPages).to.eql(2);",
+									"    pm.expect(contentletData).includes(\"data-dot-on-number-of-pages\");",
 									"});"
 								],
 								"type": "text/javascript"
@@ -4833,7 +4833,7 @@
 						"header": [],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n\t\n\t\"contentlet\": {\n\t\t\"contentType\":\"htmlpageasset\",\n        \"title\":\"testPageCopy\",\n        \"url\":\"testPageCopy\",\n        \"hostFolder\":\"default\",\n        \"template\":\"SYSTEM_TEMPLATE\",\n        \"friendlyName\":\"testPageCopy\",\n        \"cachettl\":0\n\t\t\n\t}\n}",
+							"raw": "{\n\t\n\t\"contentlet\": {\n\t\t\"contentType\":\"htmlpageasset\",\n        \"title\":\"testPageCopy{{$randomBankAccount}}\",\n        \"url\":\"testPageCopy{{$randomBankAccount}}\",\n        \"hostFolder\":\"default\",\n        \"template\":\"SYSTEM_TEMPLATE\",\n        \"friendlyName\":\"testPageCopy{{$randomBankAccount}}\",\n        \"cachettl\":0\n\t\t\n\t}\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -4979,7 +4979,7 @@
 									"pm.test(\"No errors\", function () {",
 									"    ",
 									"    var jsonData = pm.response.json();",
-									"    pm.expect(jsonData.entity.length).to.greaterThan(2);",
+									"    pm.expect(jsonData.entity.length).to.greaterThan(1);",
 									"",
 									"});",
 									"",

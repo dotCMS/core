@@ -340,21 +340,24 @@ describe('DotExperimentsConfigurationVariantsComponent', () => {
 
             expect(deleteButtons[0].disabled).toBe(true);
             expect(deleteButtons[1].disabled).not.toBe(true);
-
             spectator.click(deleteButtons[1]);
 
-            expect(output).toEqual(variantsVm.variants[1]);
+            expect(output).toEqual({
+                $event: new PointerEvent('click'),
+                variant: variantsVm.variants[1]
+            });
         });
 
         it('should emit a the form values when when save', () => {
             let output;
+            const variantForm = { name: 'Variant Name' };
             spectator.output('save').subscribe((result) => (output = result));
 
-            configurationVariantsAddComponent.form.patchValue({ description: 'value' });
+            configurationVariantsAddComponent.form.patchValue(variantForm);
             configurationVariantsAddComponent.saveForm();
             spectator.detectChanges();
 
-            expect(output).toEqual({ description: 'value' });
+            expect(output).toEqual(variantForm);
         });
 
         it('should disable tooltip if is on draft', () => {

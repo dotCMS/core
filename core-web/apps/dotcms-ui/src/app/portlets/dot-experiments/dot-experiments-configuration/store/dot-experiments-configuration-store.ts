@@ -12,9 +12,11 @@ import { switchMap, tap } from 'rxjs/operators';
 import { DotMessageService } from '@dotcms/data-access';
 import {
     ComponentStatus,
+    ConditionDefaultByTypeOfGoal,
     DotExperiment,
     DotExperimentStatusList,
     ExperimentSteps,
+    Goal,
     Goals,
     GoalsLevels,
     RangeOfDateAndTime,
@@ -88,9 +90,17 @@ export class DotExperimentsConfigurationStore extends ComponentStore<DotExperime
     );
 
     // Goals Step //
-    readonly goals$: Observable<Goals> = this.select(({ experiment }) =>
-        experiment.goals ? experiment.goals : null
-    );
+    readonly goals$: Observable<Goals> = this.select(({ experiment }) => {
+        return experiment.goals
+            ? {
+                  ...experiment.goals,
+                  primary: {
+                      ...experiment.goals.primary,
+                      ...this.setDefaultGoalCondition(experiment.goals.primary)
+                  }
+              }
+            : null;
+    });
     readonly goalsStatus$ = this.select(this.state$, ({ stepStatusSidebar }) =>
         stepStatusSidebar.experimentStep === ExperimentSteps.GOAL ? stepStatusSidebar : null
     );
@@ -211,7 +221,34 @@ export class DotExperimentsConfigurationStore extends ComponentStore<DotExperime
                             });
                             this.setExperiment(response);
                         },
-                        (error) => throwError(error),
+                        (error: HttpErrorResponse) => this.dotHttpErrorManagerService.handle(error),
+                        () => this.setComponentStatus(ComponentStatus.IDLE)
+                    )
+                )
+            )
+        );
+    });
+
+    readonly stopExperiment = this.effect((experiment$: Observable<DotExperiment>) => {
+        return experiment$.pipe(
+            tap(() => this.setComponentStatus(ComponentStatus.SAVING)),
+            switchMap((experiment) =>
+                this.dotExperimentsService.stop(experiment.id).pipe(
+                    tapResponse(
+                        (response) => {
+                            this.messageService.add({
+                                severity: 'info',
+                                summary: this.dotMessageService.get(
+                                    'experiments.action.stop.confirm-title'
+                                ),
+                                detail: this.dotMessageService.get(
+                                    'experiments.action.stop.confirm-message',
+                                    experiment.name
+                                )
+                            });
+                            this.setExperiment(response);
+                        },
+                        (error: HttpErrorResponse) => this.dotHttpErrorManagerService.handle(error),
                         () => this.setComponentStatus(ComponentStatus.IDLE)
                     )
                 )
@@ -221,7 +258,7 @@ export class DotExperimentsConfigurationStore extends ComponentStore<DotExperime
 
     // Variants
     readonly addVariant = this.effect(
-        (variant$: Observable<{ experimentId: string; data: Pick<DotExperiment, 'name'> }>) => {
+        (variant$: Observable<{ experimentId: string; name: string }>) => {
             return variant$.pipe(
                 tap(() =>
                     this.setSidebarStatus({
@@ -230,7 +267,7 @@ export class DotExperimentsConfigurationStore extends ComponentStore<DotExperime
                     })
                 ),
                 switchMap((variant) =>
-                    this.dotExperimentsService.addVariant(variant.experimentId, variant.data).pipe(
+                    this.dotExperimentsService.addVariant(variant.experimentId, variant.name).pipe(
                         tapResponse(
                             (experiment) => {
                                 this.messageService.add({
@@ -240,7 +277,7 @@ export class DotExperimentsConfigurationStore extends ComponentStore<DotExperime
                                     ),
                                     detail: this.dotMessageService.get(
                                         'experiments.configure.variant.add.confirm-message',
-                                        experiment.name
+                                        variant.name
                                     )
                                 });
 
@@ -671,5 +708,21 @@ export class DotExperimentsConfigurationStore extends ComponentStore<DotExperime
 
     private updateTabTitle(experiment: DotExperiment) {
         this.title.setTitle(`${experiment.name} - ${this.title.getTitle()}`);
+    }
+
+    private setDefaultGoalCondition(goal: Goal): Goal {
+        const { type, conditions } = goal;
+
+        return {
+            ...goal,
+            conditions: [
+                ...conditions.map((condition) => {
+                    return {
+                        ...condition,
+                        isDefault: ConditionDefaultByTypeOfGoal[type] === condition.parameter
+                    };
+                })
+            ]
+        };
     }
 }

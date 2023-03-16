@@ -89,7 +89,7 @@
                             [disabled]="
                                 variant.name === defaultVariantName || !vm.isExperimentADraft
                             "
-                            (click)="delete.emit(variant)"
+                            (click)="delete.emit({$event, variant})"
                             data-testId="variant-delete-button"
                             label="{{ 'experiments.configure.variants.delete' | dm }}"
                             pButton
