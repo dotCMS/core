@@ -2,7 +2,6 @@ package com.dotcms.browser;
 
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.content.business.json.ContentletJsonAPI;
-import com.dotcms.content.elasticsearch.business.ESContentletAPIImpl;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.uuid.shorty.ShortyIdAPI;
 import com.dotmarketing.beans.Host;
@@ -36,7 +35,6 @@ import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
 import io.vavr.Tuple;
-import io.vavr.Tuple2;
 import io.vavr.Tuple3;
 import io.vavr.control.Try;
 
@@ -85,8 +83,7 @@ public class BrowserAPIImpl implements BrowserAPI {
 
         final DotConnect dc = new DotConnect().setSQL(sqlQuery._1);
 
-        sqlQuery._3.forEach(o -> dc.addParam(o));
-
+        sqlQuery._3.stream().forEach(dc::addParam);
         try {
             final List<Map<String,String>> inodesMapList =  dc.loadResults();
 
