@@ -3,6 +3,7 @@ package com.dotcms.rest.api.v1.page;
 import com.dotcms.rest.api.Validated;
 import com.dotcms.workflow.form.FireActionByNameForm;
 import com.dotmarketing.business.PermissionLevel;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 
@@ -39,6 +40,7 @@ public class PageCheckPermissionForm extends Validated {
         return path;
     }
 
+    @JsonIgnoreProperties(ignoreUnknown = true)
     public static final class Builder  {
 
         @JsonProperty()
