@@ -29,14 +29,18 @@ export class DotPageRenderService {
     /**
      * Verifies if a use can access a page based on the path param
      *
-     * @param {string} url
+     * @param {Params} queryParams
      * @returns {Observable<boolean>}
      * @memberof DotPageRenderService
      */
-    checkPermission(url: string): Observable<boolean> {
+    checkPermission(queryParams: Params): Observable<boolean> {
         return this.coreWebService
             .requestView({
-                url: `v1/page/_check-permission?path=${url}`
+                body: {
+                    ...queryParams
+                },
+                method: 'POST',
+                url: `v1/page/_check-permission`
             })
             .pipe(pluck('entity'));
     }

@@ -35,8 +35,13 @@ describe('DotPageRenderService', () => {
     });
 
     it('should check page permissions based on url', () => {
-        dotPageRenderService.checkPermission(url).subscribe();
-        httpMock.expectOne(`v1/page/_check-permission?path=${url}`);
+        dotPageRenderService.checkPermission({ url, language_id: '1' }).subscribe();
+        const req = httpMock.expectOne(`v1/page/_check-permission`);
+        expect(req.request.method).toBe('POST');
+        expect(req.request.body).toEqual({ url, language_id: '1' });
+        req.flush({
+            entity: 'ok'
+        });
     });
 
     it('should return entity', () => {

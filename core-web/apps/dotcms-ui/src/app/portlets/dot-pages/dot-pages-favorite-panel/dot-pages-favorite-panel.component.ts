@@ -64,40 +64,49 @@ export class DotPagesFavoritePanelComponent {
      * @memberof DotPagesComponent
      */
     editFavoritePage(favoritePage: DotCMSContentlet) {
-        this.dotPageRenderService
-            .checkPermission(favoritePage.url.replace('?', '&'))
-            .subscribe((hasPermission: boolean) => {
-                if (hasPermission) {
-                    this.dialogService.open(DotFavoritePageComponent, {
-                        header: this.dotMessageService.get('favoritePage.dialog.header.add.page'),
-                        width: '80rem',
-                        data: {
-                            page: {
-                                favoritePageUrl: favoritePage.url,
-                                favoritePage: favoritePage
-                            },
-                            onSave: () => {
-                                this.timeStamp = this.getTimeStamp();
-                                this.store.getFavoritePages(this.currentLimitSize);
-                            },
-                            onDelete: () => {
-                                this.timeStamp = this.getTimeStamp();
-                                this.store.getFavoritePages(this.currentLimitSize);
-                            }
+        const url = `${favoritePage.urlMap || favoritePage.url}?host_id=${
+            favoritePage.host
+        }&language_id=${favoritePage.languageId}`;
+
+        const urlParams = { url: url.split('?')[0] };
+        const searchParams = new URLSearchParams(url.split('?')[1]);
+
+        for (const entry of searchParams) {
+            urlParams[entry[0]] = entry[1];
+        }
+
+        this.dotPageRenderService.checkPermission(urlParams).subscribe((hasPermission: boolean) => {
+            if (hasPermission) {
+                this.dialogService.open(DotFavoritePageComponent, {
+                    header: this.dotMessageService.get('favoritePage.dialog.header.add.page'),
+                    width: '80rem',
+                    data: {
+                        page: {
+                            favoritePageUrl: favoritePage.url,
+                            favoritePage: favoritePage
+                        },
+                        onSave: () => {
+                            this.timeStamp = this.getTimeStamp();
+                            this.store.getFavoritePages(this.currentLimitSize);
+                        },
+                        onDelete: () => {
+                            this.timeStamp = this.getTimeStamp();
+                            this.store.getFavoritePages(this.currentLimitSize);
                         }
-                    });
-                } else {
-                    const error = new HttpErrorResponse(
-                        new HttpResponse({
-                            body: null,
-                            status: HttpCode.FORBIDDEN,
-                            headers: null,
-                            url: ''
-                        })
-                    );
-                    this.dotHttpErrorManagerService.handle(error);
-                }
-            });
+                    }
+                });
+            } else {
+                const error = new HttpErrorResponse(
+                    new HttpResponse({
+                        body: null,
+                        status: HttpCode.FORBIDDEN,
+                        headers: null,
+                        url: ''
+                    })
+                );
+                this.dotHttpErrorManagerService.handle(error);
+            }
+        });
     }
 
     private getTimeStamp() {

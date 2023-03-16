@@ -18,8 +18,8 @@ import { DotMessageService, DotPageRenderService } from '@dotcms/data-access';
 import { CoreWebService, CoreWebServiceMock, HttpCode } from '@dotcms/dotcms-js';
 import { dotcmsContentletMock, MockDotMessageService } from '@dotcms/utils-testing';
 
-import { DotPagesCardModule } from './dot-pages-card/dot-pages-card.module';
 import { DotPagesCardEmptyModule } from './dot-pages-card-empty/dot-pages-card-empty.module';
+import { DotPagesCardModule } from './dot-pages-card/dot-pages-card.module';
 import { DotPagesFavoritePanelComponent } from './dot-pages-favorite-panel.component';
 
 import { DotPageStore } from '../dot-pages-store/dot-pages.store';
@@ -275,6 +275,16 @@ describe('DotPagesFavoritePanelComponent', () => {
                 const elem = de.query(By.css('dot-pages-card'));
                 elem.triggerEventHandler('edit', { ...favoritePagesInitialTestData[0] });
 
+                const urlParams = { url: favoritePagesInitialTestData[0].url.split('?')[0] };
+                const searchParams = new URLSearchParams(
+                    favoritePagesInitialTestData[0].url.split('?')[1]
+                );
+
+                for (const entry of searchParams) {
+                    urlParams[entry[0]] = entry[1];
+                }
+
+                expect(dotPageRenderService.checkPermission).toHaveBeenCalledWith(urlParams);
                 expect(dialogService.open).toHaveBeenCalledTimes(1);
             });
 

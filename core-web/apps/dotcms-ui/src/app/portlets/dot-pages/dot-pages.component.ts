@@ -63,31 +63,29 @@ export class DotPagesComponent implements OnInit, OnDestroy {
      * @memberof DotPagesComponent
      */
     goToUrl(url: string): void {
-        this.dotPageRenderService
-            .checkPermission(url.replace('?', '&'))
-            .subscribe((hasPermission: boolean) => {
-                if (hasPermission) {
-                    const splittedUrl = url.split('?');
-                    const urlParams = { url: splittedUrl[0] };
-                    const searchParams = new URLSearchParams(splittedUrl[1]);
+        const splittedUrl = url.split('?');
+        const urlParams = { url: splittedUrl[0] };
+        const searchParams = new URLSearchParams(splittedUrl[1]);
 
-                    for (const entry of searchParams) {
-                        urlParams[entry[0]] = entry[1];
-                    }
+        for (const entry of searchParams) {
+            urlParams[entry[0]] = entry[1];
+        }
 
-                    this.dotRouterService.goToEditPage(urlParams);
-                } else {
-                    const error = new HttpErrorResponse(
-                        new HttpResponse({
-                            body: null,
-                            status: HttpCode.FORBIDDEN,
-                            headers: null,
-                            url: ''
-                        })
-                    );
-                    this.dotHttpErrorManagerService.handle(error);
-                }
-            });
+        this.dotPageRenderService.checkPermission(urlParams).subscribe((hasPermission: boolean) => {
+            if (hasPermission) {
+                this.dotRouterService.goToEditPage(urlParams);
+            } else {
+                const error = new HttpErrorResponse(
+                    new HttpResponse({
+                        body: null,
+                        status: HttpCode.FORBIDDEN,
+                        headers: null,
+                        url: ''
+                    })
+                );
+                this.dotHttpErrorManagerService.handle(error);
+            }
+        });
     }
 
     /**

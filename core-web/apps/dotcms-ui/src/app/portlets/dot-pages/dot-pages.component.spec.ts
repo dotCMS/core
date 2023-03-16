@@ -221,6 +221,10 @@ describe('DotPagesComponent', () => {
         const elem = de.query(By.css('dot-pages-favorite-panel'));
         elem.triggerEventHandler('goToUrl', '/page/1?lang=1');
 
+        expect(dotPageRenderService.checkPermission).toHaveBeenCalledWith({
+            lang: '1',
+            url: '/page/1'
+        });
         expect(dotRouterService.goToEditPage).toHaveBeenCalledWith({
             lang: '1',
             url: '/page/1'
