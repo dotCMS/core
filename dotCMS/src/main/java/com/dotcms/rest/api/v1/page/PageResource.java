@@ -28,7 +28,10 @@ import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.MultiTree;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.PermissionLevel;
+import com.dotmarketing.business.Permissionable;
 import com.dotmarketing.business.web.WebAPILocator;
+import com.dotmarketing.cms.urlmap.URLMapInfo;
+import com.dotmarketing.cms.urlmap.UrlMapContextBuilder;
 import com.dotmarketing.exception.DoesNotExistException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -1033,12 +1036,25 @@ public class PageResource {
                 +" for the page path: " + pageCheckPermissionForm.getPath() + ", host id: " + pageCheckPermissionForm.getHostId()
                 + ", lang: " + pageCheckPermissionForm.getLanguageId());
 
+        final long languageId  = -1 != pageCheckPermissionForm.getLanguageId()? pageCheckPermissionForm.getLanguageId():
+                WebAPILocator.getLanguageWebAPI().getLanguage(request).getId();
         final Host currentHost = UtilMethods.isSet(pageCheckPermissionForm.getHostId())?
                 WebAPILocator.getHostWebAPI().find(pageCheckPermissionForm.getHostId(), user, PageMode.get(request).respectAnonPerms):
                 WebAPILocator.getHostWebAPI().getCurrentHostNoThrow(request);
-        final IHTMLPage page = APILocator.getHTMLPageAssetAPI().getPageByPath(
-                pageCheckPermissionForm.getPath(), currentHost, -1 != pageCheckPermissionForm.getLanguageId()? pageCheckPermissionForm.getLanguageId():
-                        WebAPILocator.getLanguageWebAPI().getLanguage(request).getId(), mode.showLive);
+
+        final Optional<URLMapInfo> urlMapInfoOptional = APILocator.getURLMapAPI().processURLMap(
+                UrlMapContextBuilder.builder()
+                        .setHost(currentHost)
+                        .setLanguageId(languageId)
+                        .setMode(mode)
+                        .setUri(pageCheckPermissionForm.getPath())
+                        .setUser(user)
+                        .setGraphQL(false)
+                        .build());
+
+        final Permissionable page = urlMapInfoOptional.isPresent()? urlMapInfoOptional.get().getContentlet():
+                 APILocator.getHTMLPageAssetAPI().getPageByPath(
+                    pageCheckPermissionForm.getPath(), currentHost, languageId, mode.showLive);
 
         return null != page?
                 new ResponseEntityBooleanView(APILocator.getPermissionAPI().
