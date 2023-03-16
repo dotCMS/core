@@ -50,7 +50,7 @@ public class PageCheckPermissionForm extends Validated {
         private String hostId;
         @JsonProperty(value = "language_id")
         private long languageId = -1;
-        @JsonProperty(required = true)
+        @JsonProperty(value = "url",required = true)
         private String path;
 
         public Builder type(final PermissionLevel type) {

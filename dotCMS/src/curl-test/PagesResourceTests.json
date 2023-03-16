@@ -5130,11 +5130,26 @@
 						}
 					],
 					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								}
+							]
+						},
 						"method": "POST",
 						"header": [],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"path\":\"/testPageCopy\",\n    \"type\":\"READ\",\n    \"language_id\":\"1\",\n    \"host_id\":\"{{host_id}}\"\n}",
+							"raw": "{\n    \"url\":\"/testPageCopy\",\n    \"type\":\"READ\",\n    \"language_id\":\"1\",\n    \"host_id\":\"{{host_id}}\"\n}",
 							"options": {
 								"raw": {
 									"language": "json"
