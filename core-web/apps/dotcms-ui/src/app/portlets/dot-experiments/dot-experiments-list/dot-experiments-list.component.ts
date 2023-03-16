@@ -48,7 +48,7 @@ export class DotExperimentsListComponent {
      * @returns void
      * @memberof DotExperimentsListComponent
      */
-    selectedStatusFilter($event: Array<string>) {
+    selectedStatusFilter($event: Array<string>): void {
         this.dotExperimentsListStore.setFilterStatus($event);
     }
 
@@ -57,7 +57,7 @@ export class DotExperimentsListComponent {
      * @returns void
      * @memberof DotExperimentsListComponent
      */
-    addExperiment() {
+    addExperiment(): void {
         this.dotExperimentsListStore.openSidebar();
     }
 
@@ -67,7 +67,7 @@ export class DotExperimentsListComponent {
      * @returns void
      * @memberof DotExperimentsListComponent
      */
-    archiveExperiment(experiment: DotExperiment) {
+    archiveExperiment(experiment: DotExperiment): void {
         this.dotExperimentsListStore.archiveExperiment(experiment);
     }
 
@@ -77,7 +77,7 @@ export class DotExperimentsListComponent {
      * @returns void
      * @memberof DotExperimentsListComponent
      */
-    deleteExperiment(experiment: DotExperiment) {
+    deleteExperiment(experiment: DotExperiment): void {
         this.dotExperimentsListStore.deleteExperiment(experiment);
     }
 
@@ -86,7 +86,7 @@ export class DotExperimentsListComponent {
      * @returns void
      * @memberof DotExperimentsShellComponent
      */
-    goToBrowserBack() {
+    goToBrowserBack(): void {
         this.router.navigate(['edit-page/content'], {
             queryParams: {
                 editPageTab: null,
@@ -97,25 +97,23 @@ export class DotExperimentsListComponent {
         });
     }
 
-    private handleSidebar(status: SidebarStatus) {
-        if (status && status.isOpen) {
-            this.loadSidebarComponent(status);
+    private handleSidebar(status: SidebarStatus): void {
+        if (status && status.isOpen && status.status != ComponentStatus.SAVING) {
+            this.loadSidebarComponent();
         } else {
             this.removeSidebarComponent();
         }
     }
 
-    private loadSidebarComponent(status: SidebarStatus): void {
-        if (status && status.isOpen && status.status != ComponentStatus.SAVING) {
-            this.sidebarHost.viewContainerRef.clear();
-            this.componentRef =
-                this.sidebarHost.viewContainerRef.createComponent<DotExperimentsCreateComponent>(
-                    DotExperimentsCreateComponent
-                );
-        }
+    private loadSidebarComponent(): void {
+        this.sidebarHost.viewContainerRef.clear();
+        this.componentRef =
+            this.sidebarHost.viewContainerRef.createComponent<DotExperimentsCreateComponent>(
+                DotExperimentsCreateComponent
+            );
     }
 
-    private removeSidebarComponent() {
+    private removeSidebarComponent(): void {
         if (this.componentRef) {
             this.sidebarHost.viewContainerRef.clear();
         }
