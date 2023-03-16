@@ -3,6 +3,10 @@
     .dijitButtonNode {
         padding: 0 $button-padding;
     }
+    .dijitButtonText {
+        line-height: $field-height - 2px;
+        height: $field-height - 2px; // Need to substract the border (top and bottom)
+    }
 }
 
 .dijitButton,
@@ -11,14 +15,6 @@
 .dijitDropDownButton,
 .dijitToggleButton {
     margin: 0;
-}
-
-.dijitButton,
-.dijitToggleButton {
-    .dijitButtonText {
-        line-height: $field-height - 2px;
-        height: $field-height - 2px; // Need to substract the border (top and bottom)
-    }
 }
 
 .dijit {
