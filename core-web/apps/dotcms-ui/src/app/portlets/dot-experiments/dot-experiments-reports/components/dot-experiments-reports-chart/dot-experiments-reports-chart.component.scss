@@ -1,0 +1,12 @@
+@use "variables" as *;
+
+.header {
+    padding: 0 $spacing-8;
+}
+
+.header-title {
+    color: $black;
+    font-size: $font-size-medium;
+    font-weight: $font-weight-bold;
+    margin: $spacing-0;
+}
