@@ -12,9 +12,9 @@
         />
     </div>
     <div class="footer">
-        <span class="error-message" [class.hide]="!form.controls['url'].invalid || form.pristine"
-            >Enter a valid url</span
-        >
-        <button [disabled]="form.invalid" type="submit" pButton>Insert</button>
+        <span class="error-message" [class.hide]="!isInvalid || form.pristine">{{
+            error || 'Enter a valid url'
+        }}</span>
+        <button [disabled]="form.invalid || disable" type="submit" pButton>Insert</button>
     </div>
 </form>
