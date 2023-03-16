@@ -30,12 +30,12 @@
 
 .calendar-events__list-items {
     flex: 3;
-    margin: 0 $basic-padding * 2;
+    margin: 0 $spacing-1 * 2;
 }
 
 .calendar-events__list-ongoing {
     flex: 1;
-    margin-right: $basic-padding * 2;
+    margin-right: $spacing-1 * 2;
 }
 
 .calendar-events__recurence-box {
@@ -43,8 +43,8 @@
     border: solid 1px $color-palette-gray-400;
     border-radius: $field-border-radius;
     display: inline-block;
-    margin-top: $basic-padding;
-    padding: $basic-padding;
+    margin-top: $spacing-1;
+    padding: $spacing-1;
 }
 
 // LEGACY CALENDAR CODE FROM: /html/portlet/ext/calendar/calendar.css
@@ -70,7 +70,7 @@
 #ongoingEvents {
     h3 {
         background: $color-palette-gray-200;
-        padding: $basic-padding;
+        padding: $spacing-1;
         border-bottom: 1px solid $color-palette-gray-400;
         margin: 0;
     }
@@ -85,13 +85,13 @@
     }
 
     li {
-        padding: $basic-padding;
+        padding: $spacing-1;
         margin: 0;
         border-bottom: 1px solid $color-palette-gray-400;
 
         [class$="Icon"],
         [class*="Icon"] {
-            margin-right: calc($basic-padding / 2);
+            margin-right: calc($spacing-1 / 2);
         }
     }
 }
@@ -206,7 +206,7 @@
     }
 
     .fakeDojoButton {
-        margin: 0 calc($basic-padding / 2);
+        margin: 0 calc($spacing-1 / 2);
     }
 
     img {

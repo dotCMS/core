@@ -45,7 +45,7 @@
         display: flex;
 
         img {
-            margin-right: calc($basic-padding / 2);
+            margin-right: calc($spacing-1 / 2);
         }
     }
 
@@ -67,7 +67,7 @@
 .file-selector-tree__pagination {
     &.portlet-pagination {
         background: #ffffff;
-        padding: $basic-padding * 2;
+        padding: $spacing-1 * 2;
         position: absolute;
         width: 100%;
         bottom: 0px;
@@ -87,14 +87,14 @@
 }
 
 .file-selector-tree__sidebar {
-    padding: $basic-padding * 2 0 $basic-padding * 2 $basic-padding * 2;
+    padding: $spacing-1 * 2 0 $spacing-1 * 2 $spacing-1 * 2;
 
     .dijitTreeContainer {
         float: none;
     }
 
     .dijitTreeNode {
-        padding: calc($basic-padding / 2) 0;
+        padding: calc($spacing-1 / 2) 0;
     }
 }
 
@@ -106,20 +106,20 @@
 .file-selector-tree__toolbar {
     background-color: $color-palette-gray-400;
     margin: 0;
-    padding: $basic-padding * 2;
+    padding: $spacing-1 * 2;
 }
 
 .file-selector-tree__views-menu {
     display: flex;
 
     span {
-        margin-right: calc($basic-padding / 2);
+        margin-right: calc($spacing-1 / 2);
         font-weight: bold;
     }
 
     img {
         cursor: pointer;
-        margin: 0 calc($basic-padding / 2);
+        margin: 0 calc($spacing-1 / 2);
     }
 }
 

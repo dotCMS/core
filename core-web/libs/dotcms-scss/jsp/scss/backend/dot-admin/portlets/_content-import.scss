@@ -7,11 +7,11 @@
     .import-preview__heading {
         background-color: $color-palette-gray-400;
         border-color: $color-palette-gray-400;
-        padding: 10px $basic-padding * 2;
+        padding: 10px $spacing-1 * 2;
         border-bottom: 1px solid $color-palette-gray-400;
     }
 
     .import-preview__body {
-        padding: $basic-padding * 2;
+        padding: $spacing-1 * 2;
     }
 }

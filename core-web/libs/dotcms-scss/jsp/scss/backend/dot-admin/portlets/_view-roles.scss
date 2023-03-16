@@ -16,7 +16,7 @@
 }
 
 .view-roles__filter {
-    margin-bottom: $basic-padding * 2;
+    margin-bottom: $spacing-1 * 2;
 }
 
 .view-roles__heading {
@@ -25,9 +25,9 @@
     border: solid 1px $color-palette-gray-400;
     display: flex;
     justify-content: space-between;
-    margin-bottom: $basic-padding * 4;
+    margin-bottom: $spacing-1 * 4;
     min-height: 50px;
-    padding: $basic-padding;
+    padding: $spacing-1;
 }
 
 .view-roles__tree {
@@ -40,18 +40,18 @@
 }
 
 .view-roles__user-filter {
-    margin-bottom: $basic-padding * 2;
+    margin-bottom: $spacing-1 * 2;
     width: 300px;
 }
 
 .view-roles__user-grid {
-    margin-bottom: $basic-padding;
+    margin-bottom: $spacing-1;
 }
 
 .view-roles__portlets-list {
     border: solid 1px $color-palette-gray-400;
     border-radius: $border-radius-xs;
-    margin: 0 0 $basic-padding;
+    margin: 0 0 $spacing-1;
     height: 175px;
     overflow: auto;
 
@@ -63,7 +63,7 @@
 .view-roles__portlets-list-item {
     display: flex;
     justify-content: space-between;
-    padding: $basic-padding;
+    padding: $spacing-1;
     border-bottom: solid 1px $color-palette-gray-400;
     align-items: center;
 }

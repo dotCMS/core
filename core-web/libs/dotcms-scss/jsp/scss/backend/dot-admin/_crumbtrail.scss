@@ -14,7 +14,7 @@
         margin: 0;
         list-style: none;
         position: relative;
-        padding-right: $basic-padding * 2;
+        padding-right: $spacing-1 * 2;
 
         &:after {
             @include fa-icon();

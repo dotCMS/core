@@ -34,7 +34,7 @@ select[multiple] {
     display: inline-block;
     height: $field-height;
     line-height: $field-height;
-    padding: 0 $basic-padding * 2;
+    padding: 0 $spacing-1 * 2;
     text-decoration: none;
     text-transform: uppercase;
 
@@ -64,7 +64,7 @@ select[multiple] {
 }
 
 .dijit {
-    $action-button-size: $field-height + $basic-padding;
+    $action-button-size: $field-height + $spacing-1;
 
     &DropDownActionButton {
         background-color: $color-palette-primary;

@@ -16,7 +16,7 @@
 
     &__fields-list-cell {
         flex: 1;
-        padding: $basic-padding;
+        padding: $spacing-1;
         white-space: nowrap;
     }
 
@@ -42,7 +42,7 @@
     }
 }
 .content-type__url-pattern-help {
-    margin-left: $basic-padding * 2;
+    margin-left: $spacing-1 * 2;
     vertical-align: -1px;
     cursor: pointer;
 }

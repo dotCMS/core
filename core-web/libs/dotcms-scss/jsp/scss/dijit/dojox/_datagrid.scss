@@ -50,7 +50,7 @@
     .dojoxGridHeader {
         .dojoxGridRowTable .dojoxGridCell {
             font-family: $font-default;
-            padding: 10px $basic-padding;
+            padding: 10px $spacing-1;
         }
     }
 
@@ -59,7 +59,7 @@
         border: 0px;
 
         td {
-            padding: $basic-padding $basic-padding;
+            padding: $spacing-1 $spacing-1;
         }
     }
 }

@@ -5,7 +5,6 @@ $red: #cb3927;
 
 // Basic stuffs
 $icon-size: 16px;
-$basic-padding: 8px;
 
 // FORMS
 
@@ -13,7 +12,7 @@ $basic-padding: 8px;
 $field-animation-speed: 0.1s;
 $field-border-color: $color-palette-gray-400;
 $field-border-size: 1px;
-$field-padding: $basic-padding;
+$field-padding: $spacing-1;
 $field-placeholder-color: $color-palette-gray-500;
 
 $field-normal-bgcolor: $color-palette-gray-400;
@@ -571,12 +570,12 @@ $dialog-normal-title-border-style: solid;
 $dialog-normal-title-border-width: 0 0 1px 0;
 $dialog-normal-title-height: 50px;
 $dialog-normal-title-textcolor: $color-palette-gray-800;
-$dialog-padding: $basic-padding * 2;
+$dialog-padding: $spacing-1 * 2;
 
 // ToolTip
 $tooltip-normal-bgcolor: $white;
 $tooltip-normal-border: solid 1px $color-palette-gray-700;
-$tooltop-normal-padding: $basic-padding;
+$tooltop-normal-padding: $spacing-1;
 
 // Popup
 $popup-shadow: $md-shadow-1;

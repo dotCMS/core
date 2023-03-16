@@ -11,17 +11,17 @@
     color: $black;
     display: block;
     font-size: $font-size-sm;
-    margin-bottom: calc($basic-padding / 2);
+    margin-bottom: calc($spacing-1 / 2);
 }
 
 #checkbox-radio {
     align-items: center;
     display: flex;
-    margin: $basic-padding 0;
+    margin: $spacing-1 0;
     white-space: nowrap;
 
     & > .dijit {
-        margin-right: calc($basic-padding / 2);
+        margin-right: calc($spacing-1 / 2);
     }
 }
 
@@ -44,7 +44,7 @@
 
     & > label,
     & > div {
-        margin-right: $basic-padding;
+        margin-right: $spacing-1;
         white-space: nowrap;
     }
 
@@ -55,7 +55,7 @@
 
     & > .checkbox,
     & > .radio {
-        margin-right: $basic-padding * 2;
+        margin-right: $spacing-1 * 2;
 
         label {
             line-height: 1;
@@ -67,7 +67,7 @@
     }
 
     .dijit {
-        margin-right: $basic-padding;
+        margin-right: $spacing-1;
 
         &:last-child {
             margin-right: 0;
@@ -76,7 +76,7 @@
 
     .dijitRadio,
     .dijitCheckBox {
-        margin-right: calc($basic-padding / 2);
+        margin-right: calc($spacing-1 / 2);
     }
 }
 
@@ -134,7 +134,7 @@ dl {
         }
 
         dd {
-            margin-bottom: $basic-padding * 2;
+            margin-bottom: $spacing-1 * 2;
         }
     }
 
@@ -143,7 +143,7 @@ dl {
         display: flex;
         flex-direction: row-reverse;
         justify-content: flex-end;
-        margin-bottom: $basic-padding * 2;
+        margin-bottom: $spacing-1 * 2;
 
         dt,
         dd {
@@ -196,7 +196,7 @@ dd {
 #form-horizontal-flexbox {
     dl {
         display: flex;
-        margin-bottom: $basic-padding;
+        margin-bottom: $spacing-1;
         min-height: $field-height;
     }
 
@@ -218,7 +218,7 @@ dd {
     dt {
         line-height: 1;
         // 9px to align correctly vertically
-        padding: 9px $basic-padding * 2 0;
+        padding: 9px $spacing-1 * 2 0;
         text-align: right;
         width: 150px;
 
@@ -270,7 +270,7 @@ dd {
 
 .field {
     &Wrapper {
-        margin-bottom: $basic-padding * 3;
+        margin-bottom: $spacing-1 * 3;
         position: relative;
     }
 
@@ -315,16 +315,16 @@ dd {
 
 .buttonRow {
     text-align: center;
-    margin: $basic-padding 0;
+    margin: $spacing-1 0;
 
     &-right {
         text-align: right;
-        margin: $basic-padding 0;
+        margin: $spacing-1 0;
     }
 
     .dijitButton,
     .fakeDojoButton {
-        margin: 0 calc($basic-padding / 2);
+        margin: 0 calc($spacing-1 / 2);
     }
 }
 
@@ -333,14 +333,14 @@ dd {
 .who-can-use {
     border: solid 1px $color-palette-gray-500;
     height: 90px;
-    margin-top: $basic-padding;
-    padding: $basic-padding;
+    margin-top: $spacing-1;
+    padding: $spacing-1;
     overflow-y: auto;
     overflow-x: hidden;
 }
 
 .who-can-use__list {
     td {
-        padding: calc($basic-padding / 2);
+        padding: calc($spacing-1 / 2);
     }
 }

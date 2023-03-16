@@ -55,16 +55,16 @@
     border: solid 1px $color-palette-gray-400;
     display: flex;
     justify-content: space-between;
-    margin-bottom: $basic-padding * 2;
-    padding: $basic-padding;
+    margin-bottom: $spacing-1 * 2;
+    padding: $spacing-1;
 
     [class$="Icon"],
     [class*="Icon"] {
-        margin-right: $basic-padding;
+        margin-right: $spacing-1;
     }
 
     .inline-form {
-        margin-right: $basic-padding * 4;
+        margin-right: $spacing-1 * 4;
     }
 }
 
@@ -77,19 +77,19 @@
 .permissions__button-row {
     display: flex;
     justify-content: center;
-    margin-top: $basic-padding * 2;
+    margin-top: $spacing-1 * 2;
 
     .applyChangesButton {
-        margin-right: $basic-padding * 3;
+        margin-right: $spacing-1 * 3;
     }
 
     .reset-permissions {
         vertical-align: middle;
-        line-height: $basic-padding * 4;
+        line-height: $spacing-1 * 4;
     }
 
     .checkbox {
-        margin-left: $basic-padding * 2;
+        margin-left: $spacing-1 * 2;
     }
 }
 
@@ -104,7 +104,7 @@
     }
 
     .dijitContentPane {
-        padding: $basic-padding * 3 0;
+        padding: $spacing-1 * 3 0;
         box-sizing: content-box;
     }
 }
@@ -118,14 +118,14 @@
 
 .permissionTableTitle {
     .folderName {
-        padding-left: $basic-padding;
+        padding-left: $spacing-1;
         text-align: left;
         vertical-align: middle;
         width: 20%;
 
         img {
             display: inline-block;
-            margin-right: calc($basic-padding / 2);
+            margin-right: calc($spacing-1 / 2);
             vertical-align: sub;
         }
     }
@@ -143,7 +143,7 @@
     }
 
     td {
-        padding: calc($basic-padding / 2);
+        padding: calc($spacing-1 / 2);
     }
 
     th {
@@ -152,7 +152,7 @@
         &.permissionType {
             width: 40%;
             font-weight: normal;
-            padding-left: $basic-padding;
+            padding-left: $spacing-1;
             text-align: left;
         }
 

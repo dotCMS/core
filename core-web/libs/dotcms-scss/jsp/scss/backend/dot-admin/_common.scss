@@ -10,7 +10,7 @@
 
 #addFileAssetDialog {
     .dijitComboBox {
-        margin-right: $basic-padding;
+        margin-right: $spacing-1;
     }
 }
 
@@ -21,8 +21,8 @@
 
 .dijitMenuItemSeparator {
     border-bottom: solid 1px $color-palette-gray-300;
-    margin: 0 -#{$basic-padding};
-    padding: 0 #{$basic-padding};
+    margin: 0 -#{$spacing-1};
+    padding: 0 #{$spacing-1};
 }
 
 .api-link {

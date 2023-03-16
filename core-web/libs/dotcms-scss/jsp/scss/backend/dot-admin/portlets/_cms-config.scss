@@ -21,27 +21,27 @@
 .network-action__title {
     background-color: $color-palette-primary;
     color: $white;
-    margin: (-$basic-padding * 2) (-$basic-padding * 2) $basic-padding * 2;
+    margin: (-$spacing-1 * 2) (-$spacing-1 * 2) $spacing-1 * 2;
     height: 39px;
     line-height: 39px;
-    padding: 0 $basic-padding * 2;
+    padding: 0 $spacing-1 * 2;
 }
 
 .network-action__content {
-    margin: $basic-padding * 2;
+    margin: $spacing-1 * 2;
 }
 
 .network-action__list {
-    margin-bottom: $basic-padding * 4;
+    margin-bottom: $spacing-1 * 4;
     width: 100%;
 
     th,
     td {
-        padding: calc($basic-padding / 2);
+        padding: calc($spacing-1 / 2);
     }
 
     tr:first-child td:first-child {
-        width: $basic-padding * 2;
+        width: $spacing-1 * 2;
     }
 }
 

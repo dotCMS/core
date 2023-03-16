@@ -1,10 +1,10 @@
 .advanced-search-button {
     display: block;
     background: $color-palette-gray-400;
-    padding: $basic-padding;
+    padding: $spacing-1;
     text-align: center;
     text-decoration: none;
-    margin: $basic-padding * 2 -#{$basic-padding * 2} 0;
+    margin: $spacing-1 * 2 -#{$spacing-1 * 2} 0;
 }
 
 .contentlet-results {
@@ -34,11 +34,11 @@
 }
 
 .content-search__key-fields {
-    margin-top: calc($basic-padding / 2);
+    margin-top: calc($spacing-1 / 2);
 }
 
 .content-search__import-content-form {
-    margin-top: $basic-padding * 3;
+    margin-top: $spacing-1 * 3;
 }
 
 .content-search__assign-workflow-form {

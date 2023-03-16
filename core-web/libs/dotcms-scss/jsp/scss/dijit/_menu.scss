@@ -22,14 +22,14 @@
         }
 
         .dijitMenuItemIconCell {
-            padding-left: $basic-padding;
+            padding-left: $spacing-1;
             width: $icon-size;
         }
     }
 
     &ArrowCell {
         .dijitIcon {
-            margin-right: $basic-padding;
+            margin-right: $spacing-1;
             text-align: right;
             vertical-align: baseline;
         }
@@ -51,7 +51,7 @@
     .dijitMenuItem {
         line-height: $field-height;
         margin-bottom: 1px;
-        padding: 0 $basic-padding;
+        padding: 0 $spacing-1;
     }
 
     .dijitComboBoxMenu {

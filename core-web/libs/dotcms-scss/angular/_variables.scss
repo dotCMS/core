@@ -3,11 +3,13 @@
 @use "../shared/colors" as *;
 @use "../shared/fonts" as *;
 @use "../shared/shadows" as *;
+@use "../shared/spacing" as *;
 
 @forward "../shared/common";
 @forward "../shared/colors";
 @forward "../shared/fonts";
 @forward "../shared/shadows";
+@forward "../shared/spacing";
 
 $input-border-color-hover: $color-palette-primary;
 $input-inset-shadow: inset 0 0 0 1px $color-palette-primary, inset 0 0 0 1px $color-palette-primary,
@@ -35,19 +37,6 @@ $button-shadow-focus: 0 0 0 4px rgba(var(--color-sec_rgb), 0.2);
 // Tables
 $th-text-color: $color-palette-gray-500;
 $table-border-color: $color-palette-gray-500;
-
-// Spacing
-$spacing-0: 0;
-$spacing-1: 0.5rem;
-$spacing-2: 0.75rem;
-$spacing-3: 1rem;
-$spacing-4: 1.5rem;
-$spacing-5: 2rem;
-$spacing-6: 2.5rem;
-$spacing-7: 3rem;
-$spacing-8: 4rem;
-$spacing-9: 4.5rem;
-$spacing-10: 7rem;
 
 $warn: $orange;
 $info: $color-palette-secondary;
