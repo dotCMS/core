@@ -114,9 +114,7 @@
         &:hover {
             color: $color-palette-gray-800;
         }
-    }
 
-    &:enabled {
         &:active,
         &:focus {
             color: $color-palette-primary;
@@ -283,6 +281,7 @@
 .p-buttonset.p-button-danger > .p-button:enabled:focus,
 .p-splitbutton.p-button-danger > .p-button:enabled:focus {
     box-shadow: none;
+    background: rgba(211, 47, 47, 0.76);
 }
 
 .p-button.p-button-danger:enabled:active,
@@ -415,28 +414,10 @@
     background-color: rgba(255, 64, 129, 0.16);
 }
 
-.p-button.p-button-danger:enabled:focus,
-.p-buttonset.p-button-danger > .p-button:enabled:focus,
-.p-splitbutton.p-button-danger > .p-button:enabled:focus {
-    background: rgba(211, 47, 47, 0.76);
-}
-
-.p-button.p-button-danger:enabled:active,
-.p-buttonset.p-button-danger > .p-button:enabled:active,
-.p-splitbutton.p-button-danger > .p-button:enabled:active {
-    background: rgba(211, 47, 47, 0.68);
-}
-
 .p-button.p-button-danger.p-button-text:enabled:focus,
 .p-buttonset.p-button-danger > .p-button.p-button-text:enabled:focus,
 .p-splitbutton.p-button-danger > .p-button.p-button-text:enabled:focus {
     background: rgba(211, 47, 47, 0.12);
-}
-
-.p-button.p-button-danger.p-button-text:enabled:active,
-.p-buttonset.p-button-danger > .p-button.p-button-text:enabled:active,
-.p-splitbutton.p-button-danger > .p-button.p-button-text:enabled:active {
-    background: rgba(211, 47, 47, 0.16);
 }
 
 .p-button.p-button-danger.p-button-text .p-ink,
