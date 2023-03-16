@@ -78,7 +78,7 @@
                     {{ rowData.friendlyName }}
                 </td>
                 <td [ngStyle]="{ 'text-align': tableColumns[3].textAlign }">
-                    {{ rowData.modDate }}
+                    {{ rowData.modDate | dotRelativeDate : true }}
                 </td>
                 <td style="width: 5%">
                     <dot-action-menu-button

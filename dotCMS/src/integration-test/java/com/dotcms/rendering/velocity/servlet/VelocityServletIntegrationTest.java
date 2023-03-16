@@ -149,7 +149,6 @@ public class VelocityServletIntegrationTest {
 
         velocityServlet.service(request, response);
 
-        verify(servletOutputStream).write(getNotExperimentJsCode().getBytes());
         verify(response, never()).sendError(HttpServletResponse.SC_NOT_FOUND);
     }
 
@@ -183,7 +182,6 @@ public class VelocityServletIntegrationTest {
 
         velocityServlet.service(request, response);
 
-        verify(servletOutputStream).write(getNotExperimentJsCode().getBytes());
         verify(response, never()).sendError(HttpServletResponse.SC_NOT_FOUND);
     }
 
@@ -240,7 +238,6 @@ public class VelocityServletIntegrationTest {
                 FORWARD_URL.replace("$1", contentlet.getStringProperty("urlTitle")));
         velocityServlet.service(request, response);
 
-        verify(servletOutputStream).write(getNotExperimentJsCode().getBytes());
         verify(response, never()).sendError(HttpServletResponse.SC_NOT_FOUND);
     }
 
@@ -363,8 +360,7 @@ public class VelocityServletIntegrationTest {
             velocityServlet.service(mockRequest, mockResponse);
 
             verify(mockResponse, never()).sendError(anyInt());
-            verify(outputStream).write(
-                    (getNotExperimentJsCode() + "<div>content1</div>").getBytes());
+            verify(outputStream).write("<div>content1</div>".getBytes());
         } finally {
             Config.setProperty("DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE",
                     defaultContentToDefaultLanguage);
@@ -407,7 +403,7 @@ public class VelocityServletIntegrationTest {
      */
     private void testServerPageFor(final User user, final LoginMode mode)
             throws IOException, DotSecurityException, DotDataException, ServletException {
-        final String pageContent = getNotExperimentJsCode() + "<html>lol</html>";
+        final String pageContent = "<html>lol</html>";
 
         VelocityRequestWrapper velocityRequest = mock(VelocityRequestWrapper.class);
         when(velocityRequest.getRequestURI()).thenReturn("/lol");
@@ -437,9 +433,5 @@ public class VelocityServletIntegrationTest {
             //Here the page never got served and a redirect occurred taking the user to EditMode
             verify(outputStream, never()).write(pageContent.getBytes());
         }
-    }
-
-    private String getNotExperimentJsCode() {
-        return "<SCRIPT>localStorage.removeItem('experiment_data');</SCRIPT>\n";
     }
 }

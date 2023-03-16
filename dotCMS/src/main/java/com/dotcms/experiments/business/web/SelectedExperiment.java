@@ -45,10 +45,11 @@ public class SelectedExperiment implements Serializable {
      * Experiment's lookBackWindows'
      */
     @JsonProperty("lookBackWindow")
-    private final String lookBackWindow;
+    private final LookBackWindow lookBackWindow;
+
 
     private SelectedExperiment(final String id, final String name, final String pageUrl,
-            final SelectedVariant variant, final String lookBackWindow) {
+            final SelectedVariant variant, final LookBackWindow lookBackWindow) {
         this.id = id;
         this.name = name;
         this.pageUrl = pageUrl;
@@ -72,7 +73,7 @@ public class SelectedExperiment implements Serializable {
         return variant;
     }
 
-    public String getLookBackWindow() {
+    public LookBackWindow getLookBackWindow() {
         return lookBackWindow;
     }
 
@@ -82,6 +83,7 @@ public class SelectedExperiment implements Serializable {
         private String pageUrl;
         private SelectedVariant variant;
         private String lookBackWindow;
+        private long expireTime;
 
         public Builder id(final String id) {
             this.id = id;
@@ -108,8 +110,33 @@ public class SelectedExperiment implements Serializable {
             return this;
         }
 
+        public Builder expireTime(final long expireTime) {
+            this.expireTime = expireTime;
+            return this;
+        }
+
         public SelectedExperiment build(){
-            return new SelectedExperiment(id, name, pageUrl, variant, lookBackWindow);
+            return new SelectedExperiment(id, name, pageUrl, variant,
+                    new LookBackWindow(lookBackWindow, expireTime));
+        }
+    }
+
+
+    public static class LookBackWindow {
+        final String value;
+        final long expireMillis;
+
+        public LookBackWindow(final String value, final long expireMillis) {
+            this.value = value;
+            this.expireMillis = expireMillis;
+        }
+
+        public String getValue() {
+            return value;
+        }
+
+        public long getExpireMillis() {
+            return expireMillis;
         }
     }
 }
