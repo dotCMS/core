@@ -15,7 +15,7 @@
 .p-dropdown:not(.p-disabled).p-focus {
     outline: 0 none;
     outline-offset: 0;
-    box-shadow: none;
+    box-shadow: $input-inset-shadow;
     border-color: $color-palette-primary;
 }
 
@@ -131,10 +131,6 @@ p-dropdown.ng-dirty.ng-invalid > .p-dropdown {
 
 .p-dropdown .p-inputtext {
     border: 0 none;
-}
-
-.p-dropdown:not(.p-disabled).p-focus {
-    box-shadow: $input-inset-shadow;
 }
 
 .p-dropdown-item .p-ink {
