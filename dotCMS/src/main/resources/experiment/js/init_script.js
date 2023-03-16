@@ -4,13 +4,40 @@ function setJitsuExperimentData (experimentData) {
         experiments: experimentData.experiments.map((experiment) => ({
                 experiment: experiment.id,
                 variant: experiment.variant.name,
-                lookBackWindow: experiment.lookBackWindow
+                lookBackWindow: experiment.lookBackWindow.value
             })
         )
     };
 
     jitsu('set', experimentsShortData);
 }
+
+window.addEventListener("experiment_loaded", function (event) {
+    let experimentData = event.detail;
+    setJitsuExperimentData(experimentData);
+
+    if (!location.href.includes("redirect=true")) {
+        for (let i = 0; i < experimentData.experiments.length; i++) {
+            const pageUrl = experimentData.experiments[i].pageUrl;
+
+            const alternativePageUrl = experimentData.experiments[i].pageUrl.endsWith(
+                "/index") ?
+                experimentData.experiments[i].pageUrl.replace("index", "")
+                : experimentData.experiments[i].pageUrl;
+
+            if (location.href.includes(pageUrl)
+                || location.href.endsWith(alternativePageUrl)) {
+
+                let url = experimentData.experiments[i].variant.url
+                const param = (url.includes("?") ? "&" : "?")
+                    + "redirect=true";
+
+                location.href = url + param;
+                break;
+            }
+        }
+    }
+});
 
 let experimentAlreadyCheck = sessionStorage.getItem("experimentAlreadyCheck");
 
@@ -36,13 +63,16 @@ if (!experimentAlreadyCheck) {
 
         if (experimentDataAsString) {
             let experimentData = JSON.parse(experimentDataAsString);
+
+            var now = Date.now();
+
             experimentData.experiments = experimentData.experiments
-            .filter(experiment => currentRunningExperimentsId.includes(
-                experiment.id));
+            .filter(experiment => currentRunningExperimentsId.includes(experiment.id))
+            .filter(experiment => experiment.lookBackWindow.expireTime > now);
+
 
             experimentData.includedExperimentIds = experimentData.includedExperimentIds
-            .filter(experimentId => currentRunningExperimentsId.includes(
-                experimentId));
+            .filter(experimentId => currentRunningExperimentsId.includes(experimentId));
 
             if (!experimentData.experiments.length) {
                 localStorage.removeItem('experiment_data');
@@ -51,34 +81,6 @@ if (!experimentAlreadyCheck) {
             }
         }
     }
-
-    window.addEventListener("experiment_loaded", function (event) {
-
-        setJitsuExperimentData(event.detail);
-
-        if (!window.location.href.includes("redirect=true")) {
-
-            for (let i = 0; i < experimentData.experiments.length; i++) {
-                let pageUrl = experimentData.experiments[i].pageUrl;
-
-                let alternativePageUrl = experimentData.experiments[i].pageUrl.endsWith(
-                    "/index") ?
-                    experimentData.experiments[i].pageUrl.replace("/index", "")
-                    :
-                    experimentData.experiments[i].pageUrl;
-
-                if (window.location.href.includes(pageUrl)
-                    || window.location.href.includes(alternativePageUrl)) {
-
-                    let url = experimentData.experiments[i].variant.url
-                    const param = (url.includes("?") ? "&" : "?")
-                        + "redirect=true";
-                    window.location.href = url + param;
-                    break;
-                }
-            }
-        }
-    });
 
     if (shouldHitEndPoint()) {
 
@@ -119,6 +121,16 @@ if (!experimentAlreadyCheck) {
                     ];
                 }
 
+                var now = Date.now();
+
+                dataToStorage.experiments = dataToStorage.experiments.map(experiment => ({
+                    ...experiment,
+                    lookBackWindow: {
+                        ...experiment.lookBackWindow,
+                        expireTime: now + experiment.lookBackWindow.expireMillis
+                    }
+                }));
+
                 localStorage.setItem('experiment_data',
                     JSON.stringify(dataToStorage));
 
@@ -143,6 +155,9 @@ if (!experimentAlreadyCheck) {
     sessionStorage.setItem("experimentAlreadyCheck", true);
 } else {
     let experimentData = JSON.parse(localStorage.getItem('experiment_data'));
-    setJitsuExperimentData(experimentData);
+
+    const event = new CustomEvent('experiment_loaded',
+        {detail: experimentData});
+    window.dispatchEvent(event);
 }
 

@@ -22,7 +22,7 @@ export enum DotExperimentStatusList {
     ARCHIVED = 'ARCHIVED'
 }
 
-export const ExperimentsStatusList = [
+export const ExperimentsStatusList: Array<DotDropdownSelectOption<string>> = [
     {
         label: 'draft',
         value: DotExperimentStatusList.DRAFT
@@ -66,7 +66,7 @@ export const GoalsConditionsOperatorsList: Array<DotDropdownSelectOption<GOAL_OP
     }
 ];
 
-export enum SidebarStatus {
+export enum SIDEBAR_STATUS {
     OPEN = 'OPEN',
     CLOSE = 'CLOSED'
 }

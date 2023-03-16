@@ -74,7 +74,17 @@ public enum ExperimentAnalyzerUtil {
 
             final boolean isIntoExperiment = browserSession.getEvents().stream()
                     .map(event -> event.get("url").map(url -> url.toString()).orElse(StringPool.BLANK))
-                    .anyMatch(url -> url.contains(page.getPageUrl()));
+                    .anyMatch(url -> {
+                        try {
+                            final String uri = page.getURI();
+                            final String alternativeURI = uri.endsWith("index") ? uri.substring(0, uri.indexOf("index")):  uri;
+                            return url.contains(uri) || url.contains(alternativeURI);
+                        } catch (DotDataException e) {
+                            throw new RuntimeException(e);
+                        }
+
+
+                    });
 
             if (isIntoExperiment) {
                 builder.addSession(browserSession);

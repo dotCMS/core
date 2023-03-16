@@ -1317,7 +1317,7 @@ public class HTMLPageAssetRenderedTest {
                                     .setPageMode(PageMode.LIVE)
                                     .build(),
                             mockRequest, mockResponse);
-            assertTrue(html, html.replace(getNotExperimentJsCode(), "").isEmpty());
+            assertTrue(html, html.isEmpty());
 
             WebAssetFactory.unArchiveAsset(container);
             WebAssetFactory.publishAsset(container, systemUser);
@@ -1468,7 +1468,7 @@ public class HTMLPageAssetRenderedTest {
                         .setPageMode(PageMode.LIVE)
                         .build(),
                 mockRequest, mockResponse);
-        Assert.assertEquals(getNotExperimentJsCode() + "content2content1", html);
+        Assert.assertEquals("content2content1", html);
     }
 
     /**
@@ -1528,7 +1528,7 @@ public class HTMLPageAssetRenderedTest {
                         .setPageMode(PageMode.LIVE)
                         .build(),
                 mockRequest, mockResponse);
-        Assert.assertEquals(getNotExperimentJsCode() + "content2content1", html);
+        Assert.assertEquals("content2content1", html);
     }
 
     /**
@@ -1580,7 +1580,7 @@ public class HTMLPageAssetRenderedTest {
                             "<div data-dot-object=\"contentlet\" .*>.*</div>" +
                             "</div>";
 
-            assertTrue(html.replace(getNotExperimentJsCode(), "").matches(regexExpected));
+            assertTrue(html.matches(regexExpected));
         } finally {
             Config.setProperty(DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE,
                     defaultContentToDefaultLangOriginalValue);
@@ -1888,7 +1888,7 @@ public class HTMLPageAssetRenderedTest {
                         .setPageMode(PageMode.LIVE)
                         .build(),
                 mockRequest, mockResponse);
-        Assert.assertEquals(html, getNotExperimentJsCode() + "content1content2content1content2");
+        Assert.assertEquals(html, "content1content2content1content2");
     }
 
     /**
@@ -2180,9 +2180,5 @@ public class HTMLPageAssetRenderedTest {
             this.container = container;
             this.UUID = UUID;
         }
-    }
-
-    private String getNotExperimentJsCode() {
-        return "<SCRIPT>localStorage.removeItem('experiment_data');</SCRIPT>\n";
     }
 }
