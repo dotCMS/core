@@ -24,6 +24,7 @@
         justify-content: center;
         overflow: hidden;
         width: 100%;
+        flex-direction: column;
 
         img {
             height: 100%;
@@ -38,5 +39,13 @@
         height: fit-content;
         justify-content: end;
         width: 100%;
+    }
+
+    .warning {
+        display: block;
+        margin-top: $spacing-3;
+        font-style: normal;
+        text-align: center;
+        color: $black;
     }
 }

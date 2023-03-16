@@ -2,6 +2,7 @@ import { of } from 'rxjs';
 
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { BrowserModule } from '@angular/platform-browser';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 
 import { ListboxModule } from 'primeng/listbox';
@@ -45,6 +46,7 @@ export const primary = () => ({
             BlockEditorModule,
             OrderListModule,
             ListboxModule,
+            BrowserModule,
             BrowserAnimationsModule
         ],
         providers: [

@@ -8,13 +8,17 @@ import {
     Input,
     ChangeDetectorRef,
     ChangeDetectionStrategy,
-    OnDestroy
+    OnDestroy,
+    HostListener,
+    ElementRef
 } from '@angular/core';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 
-import { catchError } from 'rxjs/operators';
+import { catchError, take } from 'rxjs/operators';
 
 import { DotCMSContentlet, EditorAssetTypes } from '@dotcms/dotcms-models';
+
+import { shakeAnimation } from './animations';
 
 import { DotImageService } from '../../../image-uploader/services/dot-image/dot-image.service';
 
@@ -29,7 +33,8 @@ export enum STATUS {
     selector: 'dot-upload-asset',
     templateUrl: './dot-upload-asset.component.html',
     styleUrls: ['./dot-upload-asset.component.scss'],
-    changeDetection: ChangeDetectionStrategy.OnPush
+    changeDetection: ChangeDetectionStrategy.OnPush,
+    animations: [shakeAnimation]
 })
 export class DotUploadAssetComponent implements OnDestroy {
     @Output()
@@ -45,11 +50,22 @@ export class DotUploadAssetComponent implements OnDestroy {
     public file: File;
     public src: string | ArrayBuffer | SafeResourceUrl;
     public error: string;
+    public animation = 'shakeend';
+
+    @HostListener('window:click', ['$event.target']) onClick(e) {
+        const clickedOutside = !this.el.nativeElement.contains(e);
+
+        // If it's uploading and the user click outside the component, shake the message
+        if (this.status === STATUS.UPLOAD && clickedOutside) {
+            this.shakeMe();
+        }
+    }
 
     constructor(
         private readonly sanitizer: DomSanitizer,
         private readonly imageService: DotImageService,
-        private readonly cd: ChangeDetectorRef
+        private readonly cd: ChangeDetectorRef,
+        private readonly el: ElementRef
     ) {}
 
     ngOnDestroy(): void {
@@ -97,21 +113,38 @@ export class DotUploadAssetComponent implements OnDestroy {
         this.imageService
             .publishContent({ data: this.file })
             .pipe(
-                catchError((error: HttpErrorResponse) => {
-                    this.status = STATUS.ERROR;
-                    this.preventClose.emit(false);
-                    this.error = error?.error?.errors[0] || error.error;
-
-                    console.error(error);
-
-                    return throwError(error);
-                })
+                take(1),
+                catchError((error: HttpErrorResponse) => this.handleError(error))
             )
             .subscribe((data) => {
                 const contentlet = data[0];
                 this.uploadedFile.emit(contentlet[Object.keys(contentlet)[0]]);
                 this.status = STATUS.SELECT;
             });
+    }
+
+    /**
+     * End the uploading message animation
+     *
+     * @memberof DotUploadAssetComponent
+     */
+    shakeEnd() {
+        this.animation = 'shakeend';
+    }
+
+    /**
+     * Shake the uploading message
+     *
+     * @private
+     * @return {*}
+     * @memberof DotUploadAssetComponent
+     */
+    private shakeMe() {
+        if (this.animation === 'shakestart') {
+            return; // already shaking
+        }
+
+        this.animation = 'shakestart';
     }
 
     /**
@@ -132,5 +165,23 @@ export class DotUploadAssetComponent implements OnDestroy {
         this.file = file;
         this.status = STATUS.PREVIEW;
         this.cd.markForCheck();
+    }
+
+    /**
+     * Handle error on upload file.
+     *
+     * @private
+     * @param {HttpErrorResponse} error
+     * @return {*}
+     * @memberof DotUploadAssetComponent
+     */
+    private handleError(error: HttpErrorResponse) {
+        this.status = STATUS.ERROR;
+        this.preventClose.emit(false);
+        this.error = error?.error?.errors[0] || error.error;
+
+        console.error(error);
+
+        return throwError(error);
     }
 }
