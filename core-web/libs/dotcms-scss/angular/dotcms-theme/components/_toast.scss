@@ -6,6 +6,9 @@
     margin: 0 0 $spacing-3 0;
     box-shadow: $md-shadow-1;
     border-radius: $border-radius-xs;
+    border: solid transparent;
+    border-width: 0 0 0 0;
+    color: $font-color-base;
 }
 
 .p-toast .p-toast-message .p-toast-message-content {
@@ -36,6 +39,10 @@
     border-radius: 50%;
     background: transparent;
     transition: background-color 0.2s, color 0.2s, box-shadow 0.2s;
+    color: $color-palette-gray-800;
+    position: absolute;
+    top: $spacing-2;
+    right: $spacing-2;
 }
 
 .p-toast .p-toast-message .p-toast-icon-close:hover {
@@ -48,12 +55,6 @@
     box-shadow: none;
 }
 
-.p-toast .p-toast-message {
-    border: solid transparent;
-    border-width: 0 0 0 0;
-    color: $font-color-base;
-}
-
 .p-toast .p-toast-message .p-toast-message-icon {
     color: $white;
     background: $color-palette-secondary;
@@ -63,11 +64,4 @@
     align-items: center;
     padding: 0.5rem;
     align-self: center;
-}
-
-.p-toast .p-toast-message .p-toast-icon-close {
-    color: $color-palette-gray-800;
-    position: absolute;
-    top: $spacing-2;
-    right: $spacing-2;
 }
