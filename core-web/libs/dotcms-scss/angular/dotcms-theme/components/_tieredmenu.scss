@@ -15,7 +15,7 @@
         user-select: none;
 
         &:not(.p-disabled):hover {
-            background: rgba($color-palette-secondary, 0.12);
+            background: $color-palette-gray-200;
         }
     }
 

@@ -72,7 +72,7 @@ $top-height: ($toolbar-height + $tabview-nav-height + $dot-secondary-toolbar-mai
 
     .content-type__fields-sidebar {
         border-left: solid 1px $color-palette-gray-200;
-        width: 200px;
+        width: 15rem;
         display: flex;
         flex-direction: column;
         flex-shrink: 0;

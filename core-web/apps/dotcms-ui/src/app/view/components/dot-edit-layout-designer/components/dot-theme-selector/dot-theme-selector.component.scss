@@ -16,7 +16,7 @@ $theme-item-dimension: 240px;
 
     .dialog__content {
         min-width: 77.85rem;
-        padding: $spacing-3 $spacing-4 $dialog-padding;
+        padding: $spacing-3 $spacing-4 $spacing-6;
     }
 
     @media (max-width: 1100px) {
