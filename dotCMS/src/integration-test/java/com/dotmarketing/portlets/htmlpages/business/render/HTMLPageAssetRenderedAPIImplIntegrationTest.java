@@ -27,10 +27,11 @@ import com.dotcms.datagen.ThemeDataGen;
 import com.dotcms.datagen.UserDataGen;
 import com.dotcms.datagen.VariantDataGen;
 import com.dotcms.experiments.business.ConfigExperimentUtil;
-import com.dotcms.experiments.model.Experiment;
 
+import com.dotcms.experiments.model.Experiment;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotcms.variant.VariantAPI;
+
 import com.dotcms.variant.model.Variant;
 import com.dotmarketing.beans.ContainerStructure;
 import com.dotmarketing.beans.Host;
@@ -1668,13 +1669,7 @@ public class HTMLPageAssetRenderedAPIImplIntegrationTest extends IntegrationTest
     }
 
     private static String getExpectedExperimentJsCode(Experiment experiment) {
-        return "<script src=\"//localhost:8080/s/lib.js\" data-key=\"\"\n"
-                + "        data-init-only=\"false\"\n"
-                + "        defer>\n"
-                + "</script>\n"
-                + "\n"
-                + "<script>window.jitsu = window.jitsu || (function(){(window.jitsuQ = window.jitsuQ || []).push(arguments);})</script>\n"
-                + "<SCRIPT>\n"
+        return "\n"
                 + "function setJitsuExperimentData (experimentData) {\n"
                 + "    let experimentsShortData = {\n"
                 + "        experiments: experimentData.experiments.map((experiment) => ({\n"
@@ -1692,23 +1687,22 @@ public class HTMLPageAssetRenderedAPIImplIntegrationTest extends IntegrationTest
                 + "    let experimentData = event.detail;\n"
                 + "    setJitsuExperimentData(experimentData);\n"
                 + "\n"
-                + "    if (!window.location.href.includes(\"redirect=true\")) {\n"
+                + "    if (!location.href.includes(\"redirect=true\")) {\n"
                 + "        for (let i = 0; i < experimentData.experiments.length; i++) {\n"
-                + "            let pageUrl = experimentData.experiments[i].pageUrl;\n"
+                + "            const pageUrl = experimentData.experiments[i].pageUrl;\n"
                 + "\n"
-                + "            let alternativePageUrl = experimentData.experiments[i].pageUrl.endsWith(\n"
-                + "                \"/index\") ?\n"
+                + "            const alternativePageUrl = experimentData.experiments[i].pageUrl.endsWith(\"/index\") ?\n"
                 + "                experimentData.experiments[i].pageUrl.replace(\"index\", \"\")\n"
                 + "                : experimentData.experiments[i].pageUrl;\n"
                 + "\n"
-                + "            if (window.location.href.includes(pageUrl)\n"
-                + "                || window.location.href.endsWith(alternativePageUrl)) {\n"
+                + "            if (location.href.includes(pageUrl)\n"
+                + "                || location.href.endsWith(alternativePageUrl)) {\n"
                 + "\n"
                 + "                let url = experimentData.experiments[i].variant.url\n"
                 + "                const param = (url.includes(\"?\") ? \"&\" : \"?\")\n"
                 + "                    + \"redirect=true\";\n"
                 + "\n"
-                + "                window.location.href = url + param;\n"
+                + "                location.href = url + param;\n"
                 + "                break;\n"
                 + "            }\n"
                 + "        }\n"
@@ -1717,7 +1711,7 @@ public class HTMLPageAssetRenderedAPIImplIntegrationTest extends IntegrationTest
                 + "\n"
                 + "let experimentAlreadyCheck = sessionStorage.getItem(\"experimentAlreadyCheck\");\n"
                 + "\n"
-                + "if (!experimentAlreadyCheck) {\n"
+                + "if (!experimentAlreadyCheck) {"
                 + "    let currentRunningExperimentsId = ['" + experiment.id().get() + "'];\n"
                 + "\n"
                 + "    function shouldHitEndPoint() {\n"
@@ -1835,7 +1829,8 @@ public class HTMLPageAssetRenderedAPIImplIntegrationTest extends IntegrationTest
                 + "    const event = new CustomEvent('experiment_loaded',\n"
                 + "        {detail: experimentData});\n"
                 + "    window.dispatchEvent(event);\n"
-                + "}\n";
+                + "}";
+
     }
 
     /**
