@@ -58,7 +58,7 @@ public class BrowserAPIImpl implements BrowserAPI {
     private final FolderAPI folderAPI = APILocator.getFolderAPI();
     private final PermissionAPI permissionAPI = APILocator.getPermissionAPI();
     private final ShortyIdAPI shortyIdAPI = APILocator.getShortyAPI();
-    private final ESContentletAPIImpl esContentletAPI = APILocator.getESContentletAPIImpl();
+    private final ContentletAPI contentletAPI = APILocator.getContentletAPI();
     private static final StringBuilder POSTGRES_ASSETNAME_COLUMN = new StringBuilder(ContentletJsonAPI
             .CONTENTLET_AS_JSON).append("-> 'fields' -> ").append("'asset' -> 'metadata' ->> ").append("'name' ");
 
@@ -90,7 +90,7 @@ public class BrowserAPIImpl implements BrowserAPI {
         try {
             final List<Map<String,String>> inodesMapList =  dc.loadResults();
 
-            final List<Contentlet> contentletList = esContentletAPI.search(sqlQuery._2,-1,0, null,browserQuery.user,false);
+            final List<Contentlet> contentletList = contentletAPI.search(sqlQuery._2,-1,0, null,browserQuery.user,false);
 
             final List<String> inodes = new ArrayList<>();
             for (final Map<String, String> versionInfoMap : inodesMapList) {

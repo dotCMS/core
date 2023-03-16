@@ -416,15 +416,6 @@ public class APILocator extends Locator<APIIndex> {
 		return (ContentletAPI)getInstance(APIIndex.CONTENTLET_API_INTERCEPTER);
 	}
 
-	/**
-	 * This is the contentletAPI which will be used to perform ES related operations
-	 * normal {@link ContentletAPI} logic.
-	 *
-	 * @return The {@link ContentletAPI} class.
-	 */
-	public static ESContentletAPIImpl getESContentletAPIImpl()
-	{return (ESContentletAPIImpl)getInstance(APIIndex.CONTENTLET_API);}
-
     /**
      * This is the contentletAPI which an application should use to do ALL
      * normal {@link ContentletAPI} logic.
