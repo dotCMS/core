@@ -4,6 +4,7 @@ import { Dropdown } from 'primeng/dropdown';
 import { MultiSelect } from 'primeng/multiselect';
 
 import { DotMessagePipe } from '@dotcms/app/view/pipes';
+import { DotMessageService } from '@dotcms/data-access';
 import { DotDropdownSelectOption } from '@dotcms/dotcms-models';
 
 const DEFAULT_LABEL_NAME_INDEX = 'label';
@@ -26,7 +27,7 @@ export class DotDropdownDirective {
     constructor(
         @Optional() @Self() private readonly primeDropdown: Dropdown,
         @Optional() @Self() private readonly primeMultiSelect: MultiSelect,
-        private readonly dotMessagePipe: DotMessagePipe
+        private readonly dotMessageService: DotMessageService
     ) {
         this.control = this.primeDropdown ? this.primeDropdown : this.primeMultiSelect;
 
@@ -35,7 +36,7 @@ export class DotDropdownDirective {
             this.control.optionValue = DEFAULT_VALUE_NAME_INDEX;
             this.control.showClear = this.control instanceof Dropdown ? true : false;
         } else {
-            console.warn('DotDropdownDirective is for use with PrimeNg Dropdown/MultiSelect');
+            console.warn('DotDropdownDirective is for use with PrimeNg Dropdown or MultiSelect');
         }
     }
 
@@ -56,7 +57,7 @@ export class DotDropdownDirective {
         this.control.options = options.map((opt) => {
             return {
                 ...opt,
-                [DEFAULT_LABEL_NAME_INDEX]: this.dotMessagePipe.transform(
+                [DEFAULT_LABEL_NAME_INDEX]: this.dotMessageService.get(
                     opt[DEFAULT_LABEL_NAME_INDEX]
                 )
             };
