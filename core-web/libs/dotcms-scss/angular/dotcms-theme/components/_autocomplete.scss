@@ -25,8 +25,8 @@
     .p-autocomplete-multiple-container:not(.p-disabled).p-focus {
     outline: 0 none;
     outline-offset: 0;
-    box-shadow: none;
     border-color: $color-palette-primary;
+    box-shadow: $input-inset-shadow;
 }
 
 .p-autocomplete.p-autocomplete-multiple
@@ -101,11 +101,6 @@ p-autocomplete.ng-dirty.ng-invalid > .p-autocomplete > .p-inputtext {
 .p-autocomplete-panel .p-autocomplete-items .p-autocomplete-item.p-highlight {
     color: $text-color-highlight;
     background: $bg-highlight;
-}
-
-.p-autocomplete.p-autocomplete-multiple
-    .p-autocomplete-multiple-container:not(.p-disabled).p-focus {
-    box-shadow: $input-inset-shadow;
 }
 
 .p-autocomplete-dropdown {
