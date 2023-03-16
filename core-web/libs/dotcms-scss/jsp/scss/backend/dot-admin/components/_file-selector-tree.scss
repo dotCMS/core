@@ -8,10 +8,6 @@
     margin: 0;
 }
 
-.file-selector-tree__views-menu {
-    align-items: center;
-}
-
 .file-selector-tree__table {
     margin-bottom: 80px;
     overflow-y: scroll;
@@ -101,6 +97,7 @@
 
 .file-selector-tree__views-menu {
     display: flex;
+    align-items: center;
 
     span {
         margin-right: calc($spacing-1 / 2);
