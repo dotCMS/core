@@ -20,7 +20,8 @@ window.addEventListener("experiment_loaded", function (event) {
         for (let i = 0; i < experimentData.experiments.length; i++) {
             const pageUrl = experimentData.experiments[i].pageUrl;
 
-            const alternativePageUrl = experimentData.experiments[i].pageUrl.endsWith("/index") ?
+            const alternativePageUrl = experimentData.experiments[i].pageUrl.endsWith(
+                "/index") ?
                 experimentData.experiments[i].pageUrl.replace("index", "")
                 : experimentData.experiments[i].pageUrl;
 

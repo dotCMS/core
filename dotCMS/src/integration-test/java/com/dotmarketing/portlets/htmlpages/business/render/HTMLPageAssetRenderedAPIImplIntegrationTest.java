@@ -27,11 +27,10 @@ import com.dotcms.datagen.ThemeDataGen;
 import com.dotcms.datagen.UserDataGen;
 import com.dotcms.datagen.VariantDataGen;
 import com.dotcms.experiments.business.ConfigExperimentUtil;
-
 import com.dotcms.experiments.model.Experiment;
+
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotcms.variant.VariantAPI;
-
 import com.dotcms.variant.model.Variant;
 import com.dotmarketing.beans.ContainerStructure;
 import com.dotmarketing.beans.Host;
@@ -1669,8 +1668,7 @@ public class HTMLPageAssetRenderedAPIImplIntegrationTest extends IntegrationTest
     }
 
     private static String getExpectedExperimentJsCode(Experiment experiment) {
-        return "\n"
-                + "function setJitsuExperimentData (experimentData) {\n"
+        return "function setJitsuExperimentData (experimentData) {\n"
                 + "    let experimentsShortData = {\n"
                 + "        experiments: experimentData.experiments.map((experiment) => ({\n"
                 + "                experiment: experiment.id,\n"
@@ -1691,7 +1689,8 @@ public class HTMLPageAssetRenderedAPIImplIntegrationTest extends IntegrationTest
                 + "        for (let i = 0; i < experimentData.experiments.length; i++) {\n"
                 + "            const pageUrl = experimentData.experiments[i].pageUrl;\n"
                 + "\n"
-                + "            const alternativePageUrl = experimentData.experiments[i].pageUrl.endsWith(\"/index\") ?\n"
+                + "            const alternativePageUrl = experimentData.experiments[i].pageUrl.endsWith(\n"
+                + "                \"/index\") ?\n"
                 + "                experimentData.experiments[i].pageUrl.replace(\"index\", \"\")\n"
                 + "                : experimentData.experiments[i].pageUrl;\n"
                 + "\n"

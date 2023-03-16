@@ -2,15 +2,9 @@ package com.dotcms.rendering.velocity.viewtools.experiment;
 
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
 
-import com.dotcms.experiments.business.ExperimentCodeGenerator;
-import com.dotmarketing.beans.Host;
-import com.dotmarketing.business.APILocator;
-
-
 import com.dotmarketing.beans.Host;
 
 import com.dotcms.experiments.business.web.ExperimentWebAPI;
-
 
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.exception.DotDataException;
@@ -32,7 +26,6 @@ public class ExperimentCodeInjecterViewTool implements ViewTool {
         this.experimentWebAPI = WebAPILocator.getExperimentWebAPI();
     }
 
-
     @Override
     public void init(Object initData) {
 
@@ -49,6 +42,7 @@ public class ExperimentCodeInjecterViewTool implements ViewTool {
             final HttpServletRequest request = HttpServletRequestThreadLocal.INSTANCE.getRequest();
 
             return experimentWebAPI.getCode(currentHost, request).orElse(StringPool.BLANK);
+
         } catch (DotDataException | DotSecurityException e) {
             throw new DotRuntimeException(e);
         }

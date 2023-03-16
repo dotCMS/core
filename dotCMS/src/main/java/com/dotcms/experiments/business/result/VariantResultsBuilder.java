@@ -21,7 +21,7 @@ import org.jetbrains.annotations.NotNull;
  * Builder of {@link VariantResults}
  */
 public class VariantResultsBuilder {
-    private final static DateTimeFormatter FORMATTER = DateTimeFormatter.ofPattern("MM/dd/yyyy")
+    private final DateTimeFormatter FORMATTER = DateTimeFormatter.ofPattern("MM/dd/yyyy")
             .withZone(ZoneId.systemDefault());
 
 

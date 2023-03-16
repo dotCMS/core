@@ -6,9 +6,6 @@ import com.dotmarketing.beans.Host;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import java.util.List;
-
-import java.util.concurrent.TimeUnit;
-
 import java.util.Optional;
 
 import javax.servlet.http.HttpServletRequest;
