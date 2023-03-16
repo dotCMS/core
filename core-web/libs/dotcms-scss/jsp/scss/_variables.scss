@@ -1,13 +1,10 @@
 @use "../../shared/colors" as *;
 @use "../../shared/common" as *;
+@use "../../shared/fonts" as *;
 
 @forward "../../shared/colors";
 @forward "../../shared/common";
-
-// TYPOGRAPHY
-$body-size: 14px !default;
-$body-text: "Open Sans", sans-serif !default;
-$text-color: $color-palette-gray-800 !default;
+@forward "../../shared/fonts";
 
 // Basic stuffs
 $icon-size: 16px !default;

@@ -11,17 +11,17 @@ $ui-trigger-width: $spacing-4;
 
 // FIELDS
 $field-normal-bgcolor: $field-bgcolor;
-$field-normal-color: $body-font-color;
+$field-normal-color: $font-color-base;
 $field-normal-border-size: $field-border-size;
 $field-normal-border-color: $color-palette-gray-500;
 
 $field-hover-bgcolor: $field-bgcolor;
-$field-hover-color: $body-font-color;
+$field-hover-color: $font-color-base;
 $field-hover-border-size: $field-border-size;
 $field-hover-border-color: $field-border-color;
 
 $field-active-bgcolor: $field-bgcolor;
-$field-active-color: $body-font-color;
+$field-active-color: $font-color-base;
 $field-active-border-size: 2px;
 $field-active-border-color: $color-palette-primary;
 
@@ -34,7 +34,7 @@ $field-disabled-border-color: $color-palette-gray-200;
 $button-border: solid 1px transparent;
 $button-padding: $field-padding * 3;
 $button-tiny-height: $field-tiny-height;
-$button-disabled-color: $body-font-color;
+$button-disabled-color: $font-color-base;
 $button-radius: $field-border-radius;
 $button-inverted-color: $white;
 $button-hover-background-opacity: 0.12;
@@ -198,7 +198,7 @@ $menu-link-color: $black;
 // DIALOG
 $dialog-padding: $spacing-6;
 $dialog-padding-footer: $spacing-6;
-$dialog-title-font-size: $font-size-xx-large;
+$dialog-title-font-size: $font-size-xxl;
 $dialog-message-line-height: $line-height;
 $dialog-message-warning-color: $red;
 $dialog-close-button-normal-color: rgba($black, 0.7);

@@ -40,7 +40,7 @@ a {
 }
 
 .notification-item__icon {
-    font-size: $font-size-large;
+    font-size: $font-size-lg;
     left: 0;
     position: absolute;
     top: 1rem;
@@ -48,7 +48,7 @@ a {
 }
 
 .notification-item__title {
-    font-size: $body-font-size-base;
+    font-size: $font-size-default;
 }
 
 .notification-item__title,

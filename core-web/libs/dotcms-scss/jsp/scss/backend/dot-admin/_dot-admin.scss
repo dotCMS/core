@@ -239,7 +239,7 @@ $table-border: 1px solid $color-palette-gray-400;
 #listing-table {
     border-bottom: $table-border;
     border-collapse: collapse;
-    font-size: $body-size;
+    font-size: $font-size-default;
     margin: 0 auto $basic-padding * 2 auto;
     width: 100%;
 
@@ -300,7 +300,7 @@ $table-border: 1px solid $color-palette-gray-400;
 
     td {
         a {
-            color: $text-color;
+            color: $font-color-base;
             text-decoration: none;
         }
 

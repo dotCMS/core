@@ -10,15 +10,6 @@ $md-shadow-3: 0 10px 20px rgba(0, 0, 0, 0.19), 0 6px 6px rgba(0, 0, 0, 0.23);
 $md-shadow-4: 0 14px 28px rgba(0, 0, 0, 0.25), 0 10px 10px rgba(0, 0, 0, 0.22);
 $md-shadow-5: 0 19px 38px rgba(0, 0, 0, 0.3), 0 15px 12px rgba(0, 0, 0, 0.22);
 
-// TYPOGRAPHY
-$font-size-x-large: 24px;
-$font-size-large: 18px;
-$font-size-medium: 13px;
-$font-size-small: 12px;
-
-$body-text: "Roboto", "Helvetica Neue", Helvetica, Arial, "Lucida Grande", sans-serif;
-$text-color: $black;
-
 // Basic stuffs
 $icon-size: 16px;
 $basic-padding: 8px;
@@ -33,12 +24,12 @@ $field-padding: $basic-padding;
 $field-placeholder-color: $color-palette-gray-500;
 
 $field-normal-bgcolor: $color-palette-gray-400;
-$field-normal-textcolor: $text-color;
+$field-normal-textcolor: $font-color-base;
 $field-normal-border: solid $field-border-size $color-palette-gray-500;
 $field-normal-arrow-color: $color-palette-gray-700;
 
 $field-hover-bgcolor: $color-palette-gray-200;
-$field-hover-textcolor: $text-color;
+$field-hover-textcolor: $font-color-base;
 $field-hover-border: solid $field-border-size $color-palette-primary;
 $field-hover-arrow-color: $color-palette-primary;
 $field-hoverarrow-arrow-color: $color-palette-primary;
@@ -46,7 +37,7 @@ $field-hoverarrow-arrow-border: solid $field-border-size $color-palette-gray-800
 $field-hoverarrow-arrow-bgcolor: rgba(var(--color-sec_rgb), 0.2);
 
 $field-active-bgcolor: $white;
-$field-active-textcolor: $text-color;
+$field-active-textcolor: $font-color-base;
 $field-active-border: $field-hover-border;
 $field-active-arrow-color: $color-palette-primary;
 $field-activearrow-arrow-color: $white;
@@ -59,7 +50,7 @@ $field-disabled-border: solid $field-border-size #e3e4e6;
 $field-disabled-arrow-color: $color-palette-gray-500;
 
 $field-focused-bgcolor: $color-palette-gray-400;
-$field-focused-textcolor: $text-color;
+$field-focused-textcolor: $font-color-base;
 $field-focused-border: solid 2px $color-palette-primary;
 $field-focused-arrow-color: $color-palette-primary;
 $field-focusedarrow-arrow-color: $color-palette-primary;
@@ -387,7 +378,7 @@ $combobox-disabled-arrow-border: $combobox-disabled-border;
 $check-border-width: 1px;
 $check-radius: 2px;
 $check-size: 14px;
-$check-normal-border: solid $check-border-width $text-color;
+$check-normal-border: solid $check-border-width $font-color-base;
 $check-normal-bgcolor: $white;
 $check-checked-border: solid 1px $color-palette-primary;
 $check-checked-bgcolor: $color-palette-primary;
@@ -400,7 +391,7 @@ $check-disabled-icon: $check-checked-icon;
 $radio-border-width: $check-border-width;
 $radio-radius: 2px;
 $radio-size: 14px;
-$radio-normal-border: solid $radio-border-width $text-color;
+$radio-normal-border: solid $radio-border-width $font-color-base;
 $radio-normal-bgcolor: $white;
 $radio-checked-color: $color-palette-primary;
 $radio-checked-border: solid $radio-border-width $radio-checked-color;
@@ -477,7 +468,7 @@ $calendar-weekday-label-textcolor: $black;
 $calendar-date-bgcolor: $white;
 $calendar-date-textcolor: $color-palette-gray-800;
 $calendar-date-hover-bgcolor: $color-palette-gray-400;
-$calendar-date-hover-textcolor: $text-color;
+$calendar-date-hover-textcolor: $font-color-base;
 $calendar-date-seleted-bgcolor: $color-palette-primary;
 $calendar-date-current-bgcolor: $color-palette-gray-500;
 $calendar-date-seleted-textcolor: $white;
@@ -499,15 +490,15 @@ $panel-title-height: $field-height;
 $panel-normal-border: none;
 $panel-normal-shadow: $md-shadow-1;
 $panel-normal-title-bgcolor: transparent;
-$panel-normal-title-textcolor: $text-color;
+$panel-normal-title-textcolor: $font-color-base;
 
 $panel-hover-border: none;
 $panel-hover-shadow: $md-shadow-2;
 $panel-hover-title-bgcolor: transparent;
-$panel-hover-title-textcolor: $text-color;
+$panel-hover-title-textcolor: $font-color-base;
 
 $panel-open-title-bgcolor: transparent;
-$panel-open-title-textcolor: $text-color;
+$panel-open-title-textcolor: $font-color-base;
 
 // Progress Bar
 $progressbar-border-size: $field-border-size;

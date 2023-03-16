@@ -35,7 +35,7 @@ $datatable-bg-hover: rgba($color-palette-secondary, 0.05);
     border: 1px solid $color-palette-gray-300;
     border-width: 0 0 1px 0;
     color: $color-palette-gray-700;
-    font-size: $font-size-small;
+    font-size: $font-size-sm;
     font-weight: $font-weight-semi-bold;
     padding: $spacing-2 $spacing-2;
     text-align: left;
@@ -196,7 +196,7 @@ $datatable-bg-hover: rgba($color-palette-secondary, 0.05);
 }
 
 .p-datatable .p-datatable-loading-icon {
-    font-size: $font-size-xxx-large;
+    font-size: $font-size-xxxl;
     color: $color-palette-secondary;
 }
 

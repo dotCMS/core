@@ -72,7 +72,7 @@
     &Item {
         line-height: $field-height;
         height: $field-height;
-        color: $text-color;
+        color: $font-color-base;
         border-bottom: $timepicker-item-separator;
 
         &Hover {

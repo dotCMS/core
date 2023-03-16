@@ -19,7 +19,7 @@
 }
 
 .p-toast .p-toast-message .p-toast-message-content .p-toast-message-icon {
-    font-size: $font-size-x-large;
+    font-size: $font-size-xl;
 }
 
 .p-toast .p-toast-message .p-toast-message-content .p-toast-summary {
@@ -51,7 +51,7 @@
 .p-toast .p-toast-message {
     border: solid transparent;
     border-width: 0 0 0 0;
-    color: $body-font-color;
+    color: $font-color-base;
 }
 
 .p-toast .p-toast-message .p-toast-message-icon {

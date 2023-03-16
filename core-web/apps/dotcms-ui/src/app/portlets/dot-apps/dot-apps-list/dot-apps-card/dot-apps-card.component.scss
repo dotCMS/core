@@ -68,7 +68,7 @@ dot-avatar {
     color: $black;
     display: block;
     flex: 1;
-    font-size: $font-size-large;
+    font-size: $font-size-lg;
     font-weight: bold;
     height: $spacing-3;
     line-height: $spacing-3;
@@ -91,7 +91,7 @@ dot-avatar {
 .dot-apps-card__configurations {
     color: $color-palette-gray-700;
     display: block;
-    font-size: $font-size-medium;
+    font-size: $font-size-md;
     line-height: $spacing-3;
     margin-top: $spacing-1;
     margin-right: $spacing-4;

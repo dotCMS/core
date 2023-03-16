@@ -37,8 +37,8 @@ p-chips.ng-dirty.ng-invalid > .p-chips > .p-inputtext {
 }
 
 .p-chips .p-chips-multiple-container .p-chips-input-token input {
-    font-family: $body-text;
-    font-size: $font-size-medium;
+    font-family: $font-default;
+    font-size: $font-size-md;
     color: $black;
     padding: 0;
     margin: 0;

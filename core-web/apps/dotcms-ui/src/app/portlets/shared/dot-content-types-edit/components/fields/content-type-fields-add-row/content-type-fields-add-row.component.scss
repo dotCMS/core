@@ -40,7 +40,7 @@ $row-height: 70px;
     position: relative;
 
     .dot-add-rows-columns-list__title {
-        font-size: $font-size-large;
+        font-size: $font-size-lg;
     }
 
     dot-icon-button {
@@ -74,7 +74,7 @@ $row-height: 70px;
 
     .dot-add-rows-columns-list__item-title {
         color: $color-palette-gray-700;
-        font-size: $font-size-small;
+        font-size: $font-size-sm;
     }
 
     .dot-add-rows-columns-list__item-container {

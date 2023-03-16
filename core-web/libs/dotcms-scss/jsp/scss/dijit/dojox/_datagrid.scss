@@ -37,7 +37,7 @@
         }
 
         &.dojoxGridRowOver .dojoxGridCell {
-            color: $text-color;
+            color: $font-color-base;
         }
 
         .dojoxGridRowTable .dojoxGridCell {
@@ -49,7 +49,7 @@
     .dojoxGridRow,
     .dojoxGridHeader {
         .dojoxGridRowTable .dojoxGridCell {
-            font-family: $body-text;
+            font-family: $font-default;
             padding: 10px $basic-padding;
         }
     }

@@ -7,7 +7,7 @@
     border: 0 none;
     border: solid 1px transparent;
     color: $white;
-    font-size: $font-size-medium;
+    font-size: $font-size-md;
     font-weight: $font-weight-semi-bold;
     line-height: normal;
     padding: $spacing-2 $spacing-3;
@@ -50,7 +50,7 @@
 }
 
 .p-button.p-button-vertical {
-    font-size: $font-size-medium;
+    font-size: $font-size-md;
     padding: $spacing-1 $spacing-2;
     color: $color-palette-primary;
 
@@ -61,7 +61,7 @@
 
     .p-button-icon {
         margin: 0 0 math.div($spacing-1, 2);
-        font-size: $font-size-x-large;
+        font-size: $font-size-xl;
     }
 }
 
@@ -142,21 +142,21 @@
 }
 
 .p-button.p-button-sm {
-    font-size: $font-size-small;
+    font-size: $font-size-sm;
     padding: $spacing-1 $spacing-2;
 }
 
 .p-button.p-button-sm .p-button-icon {
-    font-size: $font-size-small;
+    font-size: $font-size-sm;
 }
 
 .p-button.p-button-lg {
-    font-size: $font-size-x-large;
+    font-size: $font-size-xl;
     padding: $spacing-2 $spacing-5;
 }
 
 .p-button.p-button-lg .p-button-icon {
-    font-size: $font-size-x-large;
+    font-size: $font-size-xl;
 }
 
 .p-fluid .p-button-icon-only {

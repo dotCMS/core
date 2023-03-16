@@ -1,9 +1,11 @@
 @use "sass:math";
-@use "../shared/colors" as *;
 @use "../shared/common" as *;
+@use "../shared/colors" as *;
+@use "../shared/fonts" as *;
 
-@forward "../shared/colors";
 @forward "../shared/common";
+@forward "../shared/colors";
+@forward "../shared/fonts";
 
 $input-border-color-hover: $color-palette-primary;
 $input-inset-shadow: inset 0 0 0 1px $color-palette-primary, inset 0 0 0 1px $color-palette-primary,
@@ -52,23 +54,6 @@ $info: $color-palette-secondary;
 $field-tiny-height: 28px;
 $field-disabled-opacity: 0.7;
 $line-height: 1.5em;
-
-// TYPOGRAPHY
-$font-size-xxx-large: 3rem;
-$font-size-xx-large: 1.75rem;
-$font-size-x-large: 1.5rem;
-$font-size-large: 1.25rem;
-$font-size-medium: 1rem;
-$font-size-small: 0.85rem;
-$font-size-x-small: 0.75rem;
-$font-weight-regular-bold: 400;
-$font-weight-semi-bold: 500;
-$font-weight-bold: 700;
-
-$code-text: "Menlo", "Monaco", "Consolas";
-$body-text: Roboto, "Helvetica Neue", Helvetica, Arial, "Lucida Grande", sans-serif;
-$body-font-size-base: $font-size-medium;
-$body-font-color: $black;
 
 // ICONS
 $md-icon-size-normal: 18px;
@@ -124,7 +109,7 @@ $md-shadow-5: 0 10px 20px 0 rgba(0, 0, 0, 0.15);
 
 // FORMS
 $label-color: rgba($color-palette-gray-800, 0.6);
-$label-font-size: $font-size-small;
+$label-font-size: $font-size-sm;
 $form-field-spacing: $spacing-3;
 $form-width: 400px;
 

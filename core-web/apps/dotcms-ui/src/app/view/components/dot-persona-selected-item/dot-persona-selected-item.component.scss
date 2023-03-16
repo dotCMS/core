@@ -54,7 +54,7 @@
 .dot-persona-selector__label {
     color: $color-palette-gray-700;
     flex: 1;
-    font-size: $font-size-small;
+    font-size: $font-size-sm;
     line-height: $spacing-3;
 }
 
@@ -64,7 +64,7 @@
 
 .dot-persona-selector__name {
     color: $black;
-    font-size: $font-size-medium;
+    font-size: $font-size-md;
 
     @include truncate-text;
 }

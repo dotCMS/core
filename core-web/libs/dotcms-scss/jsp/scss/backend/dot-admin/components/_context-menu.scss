@@ -15,7 +15,7 @@
     color: $color-palette-gray-800;
     cursor: pointer;
     display: block;
-    font-size: $font-size-medium;
+    font-size: $font-size-md;
     height: $menu-item-height;
     line-height: $menu-item-height;
     padding: 0px $basic-padding * 3;
@@ -32,8 +32,8 @@
     }
 
     .arrowRightIcon {
-        font-size: $font-size-small;
-        margin-top: -(calc($font-size-small / 2));
+        font-size: $font-size-sm;
+        margin-top: -(calc($font-size-sm / 2));
         position: absolute;
         right: $basic-padding;
         top: 50%;

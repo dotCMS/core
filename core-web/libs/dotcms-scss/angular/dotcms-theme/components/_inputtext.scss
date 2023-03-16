@@ -5,11 +5,11 @@
 }
 
 .p-inputtext.p-inputtext-sm {
-    font-size: $font-size-small;
+    font-size: $font-size-sm;
     padding: $spacing-1 $spacing-2;
 }
 .p-inputtext.p-inputtext-lg {
-    font-size: $font-size-x-large;
+    font-size: $font-size-xl;
     padding: 0.9375rem 0.9375rem;
 }
 
@@ -63,6 +63,6 @@
 }
 
 .p-inputtext-lg .p-inputtext {
-    font-size: $font-size-x-large;
+    font-size: $font-size-xl;
     padding: 0.9375rem 0.9375rem;
 }

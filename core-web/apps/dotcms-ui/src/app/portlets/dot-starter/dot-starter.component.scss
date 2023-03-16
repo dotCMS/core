@@ -4,7 +4,7 @@ $number-link-icon-size: 2.28rem;
 
 :host {
     display: block;
-    font-size: $font-size-medium;
+    font-size: $font-size-md;
     height: 100%;
     overflow: auto;
 
@@ -28,7 +28,7 @@ $number-link-icon-size: 2.28rem;
 
     .dot-starter-title {
         color: $black;
-        font-size: $font-size-x-large;
+        font-size: $font-size-xl;
         margin: $spacing-5 $spacing-3 $spacing-1;
     }
 
@@ -97,7 +97,7 @@ $number-link-icon-size: 2.28rem;
 
         h4 {
             color: $color-palette-primary;
-            font-size: $font-size-large;
+            font-size: $font-size-lg;
             font-weight: bold;
             margin: 0;
         }
@@ -112,7 +112,7 @@ $number-link-icon-size: 2.28rem;
 
         i {
             color: $color-palette-gray-500;
-            font-size: $font-size-x-large;
+            font-size: $font-size-xl;
             margin-right: $spacing-3;
         }
     }
@@ -121,7 +121,7 @@ $number-link-icon-size: 2.28rem;
         margin-left: $spacing-1;
 
         h3 {
-            font-size: $font-size-large;
+            font-size: $font-size-lg;
             font-weight: $font-weight-semi-bold;
             margin: 0;
         }
@@ -154,7 +154,7 @@ $number-link-icon-size: 2.28rem;
 
         h4 {
             color: $black;
-            font-size: $font-size-large;
+            font-size: $font-size-lg;
             margin: 0;
         }
         p {
@@ -204,7 +204,7 @@ $number-link-icon-size: 2.28rem;
 
         h4 {
             color: $black;
-            font-size: $font-size-large;
+            font-size: $font-size-lg;
             margin: 0;
         }
         p {

@@ -38,8 +38,8 @@
 
 .input-text-naked {
     border: none;
-    color: $text-color;
-    font-family: $body-text;
-    font-size: $body-size;
+    color: $font-color-base;
+    font-family: $font-default;
+    font-size: $font-size-default;
     line-height: $field-height;
 }

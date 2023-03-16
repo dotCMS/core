@@ -41,11 +41,11 @@
     color: #b71c1c;
 }
 .p-inline-message .p-inline-message-icon {
-    font-size: $font-size-medium;
+    font-size: $font-size-md;
     margin-right: $spacing-1;
 }
 .p-inline-message .p-inline-message-text {
-    font-size: $font-size-medium;
+    font-size: $font-size-md;
 }
 .p-inline-message.p-inline-message-icon-only .p-inline-message-icon {
     margin-right: 0;
@@ -122,11 +122,11 @@
     color: #b71c1c;
 }
 .p-message .p-message-text {
-    font-size: $font-size-medium;
+    font-size: $font-size-md;
     font-weight: $font-weight-semi-bold;
 }
 .p-message .p-message-icon {
-    font-size: $font-size-x-large;
+    font-size: $font-size-xl;
     margin-right: $spacing-1;
 }
 .p-message .p-message-summary {
