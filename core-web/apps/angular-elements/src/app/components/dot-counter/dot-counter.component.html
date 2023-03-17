@@ -1,1 +1,8 @@
-<p>dot-counter works!</p>
+<div class="counter-container">
+    <p>Count: {{ count }}</p>
+    <div class="button-group">
+        <button (click)="decrement()">-</button>
+        <button (click)="reset()">Reset</button>
+        <button (click)="increment()">+</button>
+    </div>
+</div>
