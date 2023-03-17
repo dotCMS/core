@@ -1,0 +1,44 @@
+{
+    "name": "angular-elements",
+    "$schema": "../node_modules/nx/schemas/project-schema.json",
+    "projectType": "library",
+    "sourceRoot": "libs/angular-elements/src",
+    "prefix": "dotcms",
+    "targets": {
+        "build": {
+            "executor": "@nrwl/angular:ng-packagr-lite",
+            "outputs": ["{workspaceRoot}/dist/{projectRoot}"],
+            "options": {
+                "project": "libs/angular-elements/ng-package.json"
+            },
+            "configurations": {
+                "production": {
+                    "tsConfig": "libs/angular-elements/tsconfig.lib.prod.json"
+                },
+                "development": {
+                    "tsConfig": "libs/angular-elements/tsconfig.lib.json"
+                }
+            },
+            "defaultConfiguration": "production"
+        },
+        "test": {
+            "executor": "@angular-devkit/build-angular:karma",
+            "options": {
+                "tsConfig": "libs/angular-elements/tsconfig.spec.json",
+                "karmaConfig": "libs/angular-elements/karma.conf.js",
+                "polyfills": ["zone.js", "zone.js/testing"]
+            }
+        },
+        "lint": {
+            "executor": "@nrwl/linter:eslint",
+            "outputs": ["{options.outputFile}"],
+            "options": {
+                "lintFilePatterns": [
+                    "libs/angular-elements/**/*.ts",
+                    "libs/angular-elements/**/*.html"
+                ]
+            }
+        }
+    },
+    "tags": []
+}

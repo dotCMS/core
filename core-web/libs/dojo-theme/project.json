@@ -1,5 +1,6 @@
 {
     "name": "dojo-theme",
+    "$schema": "../../node_modules/nx/schemas/project-schema.json",
     "projectType": "library",
     "sourceRoot": "libs/dojo-theme",
     "prefix": "dotcms",
