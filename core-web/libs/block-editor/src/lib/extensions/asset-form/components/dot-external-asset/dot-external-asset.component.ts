@@ -12,7 +12,7 @@ import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 
 import { EditorAssetTypes } from '@dotcms/dotcms-models';
 
-import { handleError } from './utils';
+import { handleLoadVideoError } from './utils';
 
 const regexURL =
     '^((http|https)://)[-a-zA-Z0-9@:%._\\+~#?&//=]{2,256}\\.[a-z]{2,6}\\b([-a-zA-Z0-9@:%._\\+~#?&//=]*)$';
@@ -84,7 +84,7 @@ export class DotExternalAssetComponent {
         this.disableAction = true;
 
         video.addEventListener('error', (e) => {
-            this.form.controls.url.setErrors({ message: handleError(e) });
+            this.form.controls.url.setErrors({ message: handleLoadVideoError(e) });
             this.cd.detectChanges();
         });
 

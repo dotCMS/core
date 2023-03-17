@@ -1,12 +1,10 @@
 /**
  * Handle the error of the video
  *
- * @private
  * @param {*} e
  * @return {*}  {string}
- * @memberof DotExternalAssetComponent
  */
-export const handleError = (e): string => {
+export const handleLoadVideoError = (e): string => {
     switch (e.target.error.code) {
         case e.target.error.MEDIA_ERR_ABORTED:
             return 'You aborted the video playback.';
