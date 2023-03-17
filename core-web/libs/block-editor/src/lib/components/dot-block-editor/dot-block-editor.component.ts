@@ -215,7 +215,7 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy {
             extensions: []
         };
 
-        if (!this.customBlocks.length) {
+        if (!this.customBlocks?.length) {
             return emptyExtentions;
         }
 

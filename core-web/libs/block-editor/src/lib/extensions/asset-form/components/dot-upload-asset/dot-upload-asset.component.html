@@ -10,7 +10,7 @@
 <ng-template #preview>
     <div class="preview-container">
         <dot-asset-preview
-            *ngIf="status === 'PREVIEW'; else loading"
+            *ngIf="status === 'PREVIEW'; else status === 'UPLOAD' ? loading : errorTemplate"
             [type]="type"
             [file]="file"
             [src]="src"
@@ -18,6 +18,13 @@
 
         <ng-template #loading>
             <dot-spinner></dot-spinner>
+            <span class="warning" [@shakeit]="animation" (@shakeit.done)="shakeEnd($event)"
+                >Don't close this window while the video uploads</span
+            >
+        </ng-template>
+
+        <ng-template #errorTemplate>
+            <span class="error">{{ error }}</span>
         </ng-template>
     </div>
 
@@ -37,7 +44,7 @@
             data-test-id="upload-btn"
             pButton
         >
-            Insert
+            Upload
         </button>
     </div>
 </ng-template>
