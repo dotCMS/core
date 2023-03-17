@@ -99,3 +99,4 @@ This maintenance release includes the following code fixes:
 82. https://github.com/dotCMS/core/issues/22756 : Removing Categories through REST API #22756
 83. https://github.com/dotCMS/core/issues/22850 : Catch Throwable in PublisherJobQueue #22850
 84. https://github.com/dotCMS/core/issues/23810 : Asset download missing directories 8 and 9 #23810
+85. https://github.com/dotCMS/core/issues/23384 : Thumbnailing Large/Complex pdfs can blow heap #23384
