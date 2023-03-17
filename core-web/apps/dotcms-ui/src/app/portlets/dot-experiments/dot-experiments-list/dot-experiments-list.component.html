@@ -17,7 +17,7 @@
                 ></dot-experiments-status-filter>
 
                 <button
-                    (click)="addNewExperiment()"
+                    (click)="addExperiment()"
                     data-testId="add-experiment-button"
                     label="{{ 'experimentspage.add.new.experiment' | dm }}"
                     pButton
@@ -37,7 +37,7 @@
 
 <ng-template #noExperiments>
     <dot-experiments-empty-experiments
-        (addNew)="addNewExperiment()"
+        (addNew)="addExperiment()"
         description="{{ 'experimentspage.not.experiments.founds' | dm }}"
     ></dot-experiments-empty-experiments>
 </ng-template>

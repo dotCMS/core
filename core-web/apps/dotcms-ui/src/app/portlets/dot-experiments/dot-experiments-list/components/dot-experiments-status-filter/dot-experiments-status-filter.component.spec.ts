@@ -8,6 +8,7 @@ import { DotMessageService } from '@dotcms/data-access';
 import { DotExperimentStatusList, ExperimentsStatusList } from '@dotcms/dotcms-models';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 import { DotMessagePipeModule } from '@pipes/dot-message/dot-message-pipe.module';
+import { DotDropdownDirective } from '@portlets/shared/directives/dot-dropdown.directive';
 
 import { DotExperimentsStatusFilterComponent } from './dot-experiments-status-filter.component';
 
@@ -18,10 +19,9 @@ const messageServiceMock = new MockDotMessageService({
 const selectOptions = ExperimentsStatusList;
 describe('DotExperimentsStatusFilterComponent', () => {
     let spectator: Spectator<DotExperimentsStatusFilterComponent>;
-    let multiSelect: MultiSelect;
 
     const createComponent = createComponentFactory({
-        imports: [MultiSelectModule, FormsModule, DotMessagePipeModule],
+        imports: [MultiSelectModule, FormsModule, DotMessagePipeModule, DotDropdownDirective],
         component: DotExperimentsStatusFilterComponent,
         providers: [
             {
@@ -38,9 +38,9 @@ describe('DotExperimentsStatusFilterComponent', () => {
     it('should get a list of options', () => {
         spectator.setInput('options', selectOptions);
 
-        multiSelect = spectator.query(MultiSelect);
-        expect(spectator.component.options).toBe(multiSelect.options);
+        expect(spectator.query(MultiSelect).options).toEqual(selectOptions);
     });
+
     it('should get a list of selected options', () => {
         const selectedItems = [DotExperimentStatusList.DRAFT, DotExperimentStatusList.ENDED];
 
@@ -49,8 +49,6 @@ describe('DotExperimentsStatusFilterComponent', () => {
             selectedItems
         });
 
-        multiSelect = spectator.query(MultiSelect);
-
-        expect(spectator.component.options).toBe(multiSelect.options);
+        expect(spectator.component.options).toEqual(spectator.query(MultiSelect).options);
     });
 });
