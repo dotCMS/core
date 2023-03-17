@@ -51,20 +51,19 @@ public class SiteAndFolderResolverImpl implements SiteAndFolderResolver {
     @Override
     public ContentType resolveSiteAndFolder(final ContentType contentType)
             throws DotDataException, DotSecurityException {
-
-        final List<Field> fields = contentType.fields();
+        ///IMPORTANT: Never call contentType.fields() here
+        // it might cause a lazy load of  fields without having set a valid id
+        //fields() method depends on the id being set
+        //Calling it will cause a field-less instance to be returned
         if(contentType.fixed()){
             //CT marked as fixed are meant to live under SYSTEM_HOST
-            final ContentType build = ContentTypeBuilder.builder(contentType)
+            return ContentTypeBuilder.builder(contentType)
                     .host(Host.SYSTEM_HOST)
                     .siteName(Host.SYSTEM_HOST_NAME)
                     .folder(Folder.SYSTEM_FOLDER)
                     .folderPath(Folder.SYSTEM_FOLDER_PATH)
                     .build();
-            build.constructWithFields(fields);
-            return build;
         }
-
 
         //when lazy calculations are blocked we can get null values when nothing has been set on those fields instead of the lazy calculation
         //Immutables work in such a way that if a getter
@@ -73,12 +72,10 @@ public class SiteAndFolderResolverImpl implements SiteAndFolderResolver {
         final String resolvedSite = resolveSite(params);
         final ResolvedSiteAndFolder resolvedSiteAndFolder = resolveFolder(params, resolvedSite);
 
-        final ContentType build = ContentTypeBuilder.builder(contentType)
+        return ContentTypeBuilder.builder(contentType)
                 .host(resolvedSiteAndFolder.resolvedSite())
                 .folder(resolvedSiteAndFolder.resolvedFolder())
                 .build();
-        build.constructWithFields(fields);
-        return build;
     }
 
     /**

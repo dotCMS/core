@@ -819,7 +819,7 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
                 }
 
                 final List<List<Contentlet>> partitions = partitionInput(contents, maxThreads);
-                Logger.info(getClass(), String.format(" ::: Partitions size %d ", partitions.size()));
+                Logger.debug(getClass(), String.format(" ::: Partitions size %d ", partitions.size()));
                 final DeletionThreadLocal deletionThreadLocal = DeletionThreadLocal.INSTANCE.get();
                 for (List<Contentlet> partition : partitions) {
                     service.submit(() -> {
@@ -835,20 +835,21 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
                 }
 
                 offset += limit;
-                Logger.info(getClass(), String.format(" Offset is (%d) of (%d) total. ", offset, allCount));
+                Logger.debug(getClass(), String.format(" Offset is (%d) of (%d) total. ", offset, allCount));
             }
 
             for (int i = 0; i < futures; i++) {
                 try {
                     service.take().get();
                 } catch (InterruptedException | ExecutionException e) {
-                    Logger.error(getClass(), "Failure ", e);
+                    Logger.error(getClass(), "Failure calling future ", e);
                     Thread.currentThread().interrupt();
                 }
             }
-            pool.shutdown();
         } finally {
-
+            pool.shutdown();
+        }
+           //Fallback in case something went wrong
             final int failuresCount = countByType(type);
             if (failuresCount > 0) {
                 Logger.info(getClass(), String.format(" There were still (%d) that failed getting removed. ", failuresCount));
@@ -857,18 +858,17 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
 
             destroy(type);
 
-            final long t2 = System.currentTimeMillis();
-            long diff = t2 - t1;
+            final long diff = System.currentTimeMillis() - t1;
             final long hours = TimeUnit.MILLISECONDS.toHours(diff);
             final long minutes = TimeUnit.MILLISECONDS.toMinutes(diff);
             final long seconds = TimeUnit.MILLISECONDS.toSeconds(diff);
             String timeInHHMMSS = String.format("%02d:%02d:%02d", hours, minutes, seconds);
             Logger.info(getClass(), String.format(" it took me (%s) to tear down (%d) of CT (%s) ", timeInHHMMSS, allCount, type));
-        }
+
     }
 
     @WrapInTransaction
-    private boolean destroy(List<Contentlet> contents, ContentletAPI conAPI, User systemUser){
+    private boolean destroy(final List<Contentlet> contents,final ContentletAPI conAPI,final User systemUser){
         try {
             return conAPI.destroy(contents, systemUser, false);
         } catch (DotDataException | DotSecurityException e) {
@@ -916,13 +916,19 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
 
     }
 
+    /**
+     * This method takes an input of contentlet and partitions it into lists that can be used to feed threads as their assigned workload
+     * @param contents
+     * @param maxThreads
+     * @return partitioned list
+     */
     private List<List<Contentlet>> partitionInput(final List<Contentlet> contents, final int maxThreads) {
         final int partitionSize = Math
                 .max((contents.size() / maxThreads), 10);
 
         Logger.info(getClass(),
                 String.format(
-                        "Number of threads is limited to %d. Number of Contentlets to process is %d. Load will be distributed in groups of %d ",
+                        "Number of threads is limited to (%d). Number of Contentlets to process is (%d). Load will be distributed in groups of (%d) ",
                         maxThreads, contents.size(),
                         partitionSize)
         );

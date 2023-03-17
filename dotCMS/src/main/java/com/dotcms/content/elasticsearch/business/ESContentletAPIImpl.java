@@ -3719,8 +3719,8 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
     @WrapInTransaction
     @Override
-    public ContentType relocateContentletsForDeletion(ContentType source, ContentType target) throws DotDataException{
-         return contentFactory.relocateContentletsForDeletion(source, target);
+    public void relocateContentletsForDeletion(ContentType source, ContentType target) throws DotDataException{
+          contentFactory.relocateContentletsForDeletion(source, target);
     }
 
     /**

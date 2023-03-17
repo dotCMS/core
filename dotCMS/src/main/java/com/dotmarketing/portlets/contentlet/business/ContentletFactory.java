@@ -2,9 +2,7 @@ package com.dotmarketing.portlets.contentlet.business;
 
 import com.dotcms.content.elasticsearch.util.RestHighLevelClientProvider;
 import com.dotcms.contenttype.model.type.ContentType;
-import com.dotcms.contenttype.model.type.ContentTypeBuilder;
 import com.dotcms.repackage.net.sf.hibernate.ObjectNotFoundException;
-import com.dotcms.repackage.org.nfunk.jep.function.Str;
 import com.dotcms.util.transform.TransformerLocator;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.DotStateException;
@@ -512,12 +510,12 @@ public abstract class ContentletFactory {
 	/**
 	 * This method relocates all contentlets from a given structure to another structure
 	 * And returns the new structure purged from fields
+	 *
 	 * @param source
 	 * @param target
-	 * @return
 	 * @throws DotDataException
 	 */
-	public ContentType relocateContentletsForDeletion(final ContentType source, final ContentType target) throws DotDataException {
+	public void relocateContentletsForDeletion(final ContentType source, final ContentType target) throws DotDataException {
 
 		if (!source.getClass().equals(target.getClass())) {
 			throw new DotDataException(
@@ -551,11 +549,5 @@ public abstract class ContentletFactory {
 		);
 
 		dotConnect.setSQL(updateContentlet).addParam(target.inode()).addParam(source.inode()).loadResult();
-
-		//it is crucial we free the original ct from its sourceFields. so we don't attempt to clean up any further references to it and just destroy it from the table structure
-		//ContentType contentType = ContentTypeBuilder.builder(source).build();
-		//contentType.constructWithFields(List.of());
-		//return contentType;
-		return source;
 	}
 }

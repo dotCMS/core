@@ -14,6 +14,11 @@ import org.quartz.Trigger;
 
 import java.io.Serializable;
 import java.util.Map;
+/**
+ * This job is responsible for removing all the contentlets associated to a content type
+ * @author fabrizzio
+ *
+ */
 
 public class ContentTypeDeleteJob extends DotStatefulJob {
     @Override
@@ -35,8 +40,11 @@ public class ContentTypeDeleteJob extends DotStatefulJob {
 
     }
 
+    /**
+     * This method is responsible for scheduling the job that will remove all the contentlets associated to a content type
+     * @param type
+     */
     public static void triggerContentTypeDeletion(final ContentType type) {
-
         final Map<String, Serializable> nextExecutionData = Map.of("inode", type.inode(), "varName", type.variable());
         try {
             DotStatefulJob.enqueueTrigger(nextExecutionData, ContentTypeDeleteJob.class);

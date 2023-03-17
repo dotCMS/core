@@ -2263,8 +2263,7 @@ public interface ContentletAPI {
 	 *
 	 * @param source
 	 * @param target
-	 * @return
 	 * @throws DotDataException
 	 */
-	ContentType relocateContentletsForDeletion(ContentType source, ContentType target) throws DotDataException;
+	void relocateContentletsForDeletion(ContentType source, ContentType target) throws DotDataException;
 }

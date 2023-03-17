@@ -62,7 +62,7 @@ public class FieldFactoryImpl implements FieldFactory {
     Field field = type.fieldMap().get(var);
 
     if(field==null) {
-      throw new NotFoundInDbException("Field variable with var:" + var + " not found");
+      throw new NotFoundInDbException(  String.format("Field variable with var: (%s) not found on CT (%s).", var, type.variable()));
     }
 
     return field;

@@ -96,6 +96,15 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
   @Override
   @WrapInTransaction
   public ContentType prepAsyncDelete(ContentType type) throws DotSecurityException, DotDataException {
+
+    if(null == type.id()){
+       throw new DotDataException("ContentType must have an id set");
+    }
+
+    //sometimes we might get an instance that has been called without having set the id therefore it will be missing certain fields
+    //This prevents that scenarios from happening
+    type = contentTypeFactory.find(type.id());
+
     //If we're ok permissions wise, we need to remove the content from the index
     APILocator.getContentletIndexAPI().removeContentFromIndexByStructureInode(type.inode());
     //Then this quickly hides the content from the front end and APIS
@@ -106,7 +115,7 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
     //A copy is made. but we need to refresh our var sine the copy returned by the method is incomplete
     copy = contentTypeFactory.find(copy.id());
     Logger.info(getClass(), String.format("::: CT (%s) with inode:(%s) Will be deleted shortly. A Copy Will  with  name (%s) and inode (%s) will be used to dispose all contentlet. :::",
-       type.variable(), type.inode(), copy.variable(), copy.inode())
+            type.variable(), type.inode(), copy.variable(), copy.inode())
     );
     APILocator.getContentletAPI().relocateContentletsForDeletion(type, copy);
     //Now that all the content is relocated, we're ready to destroy the original structure that held all content
