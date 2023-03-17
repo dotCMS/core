@@ -1,12 +1,15 @@
 package com.dotcms.rest.api.v1.page;
 
 import com.dotcms.rest.api.Validated;
-import com.dotcms.workflow.form.FireActionByNameForm;
 import com.dotmarketing.business.PermissionLevel;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 
+/**
+ * Encapsulates the values for the page check permission
+ * @author jsanca
+ */
 @JsonDeserialize(builder = PageCheckPermissionForm.Builder.class)
 public class PageCheckPermissionForm extends Validated {
 

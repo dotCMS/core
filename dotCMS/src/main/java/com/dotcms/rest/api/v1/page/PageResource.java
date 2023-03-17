@@ -1030,7 +1030,9 @@ public class PageResource {
                                                          @Context final HttpServletResponse response,
                                                          final PageCheckPermissionForm pageCheckPermissionForm) throws DotSecurityException, DotDataException {
 
-        final User user = webResource.init(request, response, true).getUser();
+        final User user = new WebResource.InitBuilder(webResource).requestAndResponse(request, response)
+                .rejectWhenNoUser(true).requiredBackendUser(true).init().getUser();
+
         final PageMode mode = PageMode.get(request);
         Logger.debug(this, ()-> "Checking Page Permission type" + pageCheckPermissionForm.getType()
                 +" for the page path: " + pageCheckPermissionForm.getPath() + ", host id: " + pageCheckPermissionForm.getHostId()
