@@ -12,6 +12,8 @@ import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 
 import { EditorAssetTypes } from '@dotcms/dotcms-models';
 
+import { handleError } from './utils';
+
 const regexURL =
     '^((http|https)://)[-a-zA-Z0-9@:%._\\+~#?&//=]{2,256}\\.[a-z]{2,6}\\b([-a-zA-Z0-9@:%._\\+~#?&//=]*)$';
 
@@ -29,7 +31,7 @@ export class DotExternalAssetComponent {
     type: EditorAssetTypes;
 
     form: FormGroup;
-    disable = false;
+    disableAction = false;
 
     get placerHolder(): string {
         return `https://example.com/${this.type === 'video' ? 'video.mp4' : 'image.jpg'}`;
@@ -78,46 +80,19 @@ export class DotExternalAssetComponent {
      */
     private tryToPlayVideo(url: string): void {
         const video = document.createElement('video') as HTMLVideoElement;
-        // Mark as invalid temporarly
-        this.disable = true;
+
+        this.disableAction = true;
 
         video.addEventListener('error', (e) => {
-            this.form.controls.url.setErrors({ message: this.handleError(e) });
+            this.form.controls.url.setErrors({ message: handleError(e) });
             this.cd.detectChanges();
         });
 
         video.addEventListener('canplay', () => {
             this.form.controls.url.setErrors(null);
+            this.disableAction = false;
             this.cd.detectChanges();
-            this.disable = false;
         });
         video.src = `${url}#t=0.1`;
-    }
-
-    /**
-     * Handle the error of the video
-     *
-     * @private
-     * @param {*} e
-     * @return {*}  {string}
-     * @memberof DotExternalAssetComponent
-     */
-    private handleError(e): string {
-        switch (e.target.error.code) {
-            case e.target.error.MEDIA_ERR_ABORTED:
-                return 'You aborted the video playback.';
-
-            case e.target.error.MEDIA_ERR_NETWORK:
-                return 'A network error caused the video download to fail part-way.';
-
-            case e.target.error.MEDIA_ERR_DECODE:
-                return 'The video playback was aborted due to a corruption problem or because the video used features your browser did not support.';
-
-            case e.target.error.MEDIA_ERR_SRC_NOT_SUPPORTED:
-                return 'The video could not be loaded, either because the server or network failed or because the format is not supported.';
-
-            default:
-                return 'An unknown error occurred.';
-        }
     }
 }

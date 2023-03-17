@@ -90,24 +90,20 @@ export const VideoNode = Node.create({
         };
     },
 
-    addNodeView() {
-        return ({ HTMLAttributes }) => {
-            const { orientation = 'horizontal' } = HTMLAttributes;
-            const dom = document.createElement('div');
-            dom.className = 'node-container';
-            dom.contentEditable = 'false';
-            const video = document.createElement('video');
-            video.src = HTMLAttributes.src;
-            video.controls = true;
-            video.className = `${orientation}-video`;
-            dom.append(video);
-
-            return { dom };
-        };
-    },
-
     renderHTML({ HTMLAttributes }) {
-        return ['video', mergeAttributes(HTMLAttributes, { controls: true })];
+        const { orientation = 'horizontal' } = HTMLAttributes;
+
+        return [
+            'div',
+            { class: 'node-container' },
+            [
+                'video',
+                mergeAttributes(HTMLAttributes, {
+                    controls: true,
+                    class: `${orientation}-video`
+                })
+            ]
+        ];
     }
 });
 
