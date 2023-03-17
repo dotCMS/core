@@ -71,7 +71,7 @@ export class BubbleLinkFormComponent implements OnInit {
 
     // Getters
     get noResultsTitle() {
-        return `No resutls for <strong>${this.newLink}</strong>`;
+        return `No results for <strong>${this.newLink}</strong>`;
     }
 
     get currentLink() {
