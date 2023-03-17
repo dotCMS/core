@@ -1,0 +1,93 @@
+{
+    "name": "angular-elements",
+    "$schema": "../node_modules/nx/schemas/project-schema.json",
+    "projectType": "application",
+    "sourceRoot": "apps/angular-elements/src",
+    "prefix": "dotcms",
+    "targets": {
+        "build": {
+            "executor": "@angular-devkit/build-angular:browser-esbuild",
+            "outputs": ["{options.outputPath}"],
+            "options": {
+                "outputPath": "dist/apps/angular-elements",
+                "index": "apps/angular-elements/src/index.html",
+                "main": "apps/angular-elements/src/main.ts",
+                "polyfills": ["zone.js"],
+                "tsConfig": "apps/angular-elements/tsconfig.app.json",
+                "inlineStyleLanguage": "scss",
+                "assets": [
+                    "apps/angular-elements/src/favicon.ico",
+                    "apps/angular-elements/src/assets"
+                ],
+                "styles": ["apps/angular-elements/src/styles.scss"],
+                "scripts": []
+            },
+            "configurations": {
+                "production": {
+                    "budgets": [
+                        {
+                            "type": "initial",
+                            "maximumWarning": "500kb",
+                            "maximumError": "1mb"
+                        },
+                        {
+                            "type": "anyComponentStyle",
+                            "maximumWarning": "2kb",
+                            "maximumError": "4kb"
+                        }
+                    ],
+                    "outputHashing": "all"
+                },
+                "development": {
+                    "buildOptimizer": false,
+                    "optimization": false,
+                    "vendorChunk": true,
+                    "extractLicenses": false,
+                    "sourceMap": true,
+                    "namedChunks": true
+                }
+            },
+            "defaultConfiguration": "production"
+        },
+        "serve": {
+            "executor": "@angular-devkit/build-angular:dev-server",
+            "configurations": {
+                "production": {
+                    "browserTarget": "angular-elements:build:production"
+                },
+                "development": {
+                    "browserTarget": "angular-elements:build:development"
+                }
+            },
+            "defaultConfiguration": "development"
+        },
+        "extract-i18n": {
+            "executor": "@angular-devkit/build-angular:extract-i18n",
+            "options": {
+                "browserTarget": "angular-elements:build"
+            }
+        },
+        "lint": {
+            "executor": "@nrwl/linter:eslint",
+            "outputs": ["{options.outputFile}"],
+            "options": {
+                "lintFilePatterns": [
+                    "apps/angular-elements/**/*.ts",
+                    "apps/angular-elements/**/*.html"
+                ]
+            }
+        },
+        "test": {
+            "executor": "@angular-devkit/build-angular:karma",
+            "options": {
+                "tsConfig": "apps/angular-elements/tsconfig.spec.json",
+                "karmaConfig": "apps/angular-elements/karma.conf.js",
+                "polyfills": ["zone.js", "zone.js/testing"],
+                "styles": [],
+                "scripts": [],
+                "assets": []
+            }
+        }
+    },
+    "tags": []
+}

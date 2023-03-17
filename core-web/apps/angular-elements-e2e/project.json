@@ -1,0 +1,31 @@
+{
+    "name": "angular-elements-e2e",
+    "$schema": "../../node_modules/nx/schemas/project-schema.json",
+    "sourceRoot": "apps/angular-elements-e2e/src",
+    "projectType": "application",
+    "targets": {
+        "e2e": {
+            "executor": "@nrwl/cypress:cypress",
+            "options": {
+                "cypressConfig": "apps/angular-elements-e2e/cypress.json",
+                "devServerTarget": "angular-elements:serve:development",
+                "testingType": "e2e",
+                "tsConfig": "apps/angular-elements-e2e/tsconfig.json"
+            },
+            "configurations": {
+                "production": {
+                    "devServerTarget": "angular-elements:serve:production"
+                }
+            }
+        },
+        "lint": {
+            "executor": "@nrwl/linter:eslint",
+            "outputs": ["{options.outputFile}"],
+            "options": {
+                "lintFilePatterns": ["apps/angular-elements-e2e/**/*.{js,ts}"]
+            }
+        }
+    },
+    "tags": [],
+    "implicitDependencies": ["angular-elements"]
+}
