@@ -97,3 +97,4 @@ This maintenance release includes the following code fixes:
 80. https://github.com/dotCMS/core/issues/24272 : File Browse Not Working as Expected #24272
 81. https://github.com/dotCMS/core/issues/24358 : File Browser Only Showing Content in the Backend Language #24358
 82. https://github.com/dotCMS/core/issues/22756 : Removing Categories through REST API #22756
+83. https://github.com/dotCMS/core/issues/22850 : Catch Throwable in PublisherJobQueue #22850
