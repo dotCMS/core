@@ -14,12 +14,16 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    height: 25rem;
+    height: 100%;
     width: 100%;
 }
 
 :host::ng-deep {
     .p-tabview-nav {
         padding: 0 $spacing-5;
+    }
+
+    .p-tabview-panel {
+        height: 25rem;
     }
 }

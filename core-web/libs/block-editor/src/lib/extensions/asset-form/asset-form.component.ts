@@ -14,4 +14,12 @@ export class AssetFormComponent {
     @Input() languageId = DEFAULT_LANG_ID;
     @Input() type: EditorAssetTypes;
     @Input() onSelectAsset: (payload: DotCMSContentlet | string) => void;
+    @Input() preventClose: (value: boolean) => void;
+
+    public disableTabs = false;
+
+    public onPreventClose(value) {
+        this.preventClose(value);
+        this.disableTabs = value;
+    }
 }
