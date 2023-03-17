@@ -17,33 +17,33 @@ import {
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotCounterComponent implements OnInit, DoCheck {
-    @Input() initialValue?: number;
+    @Input() initialValue = 0;
 
-    @Input() step?: number;
+    @Input() step = 1;
 
-    @Input() flag?: number;
+    @Input() flag: number = Number.MAX_SAFE_INTEGER;
 
     @Output() flagReached: EventEmitter<number> = new EventEmitter();
 
     count = 0;
 
     ngOnInit() {
-        this.count = this.initialValue ?? 0;
+        this.count = this.initialValue;
     }
 
     ngDoCheck() {
-        if (this.flag !== undefined && this.count == this.flag) this.flagReached.emit(this.flag);
+        if (this.count == this.flag) this.flagReached.emit(this.flag);
     }
 
     increment() {
-        this.count += this.step ?? 1;
+        this.count += this.step;
     }
 
     decrement() {
-        this.count -= this.step ?? 1;
+        this.count -= this.step;
     }
 
     reset() {
-        this.count = this.initialValue ?? 0;
+        this.count = this.initialValue;
     }
 }

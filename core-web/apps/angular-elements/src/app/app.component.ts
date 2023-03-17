@@ -13,7 +13,7 @@ import { Component, CUSTOM_ELEMENTS_SCHEMA } from '@angular/core';
 export class AppComponent {
     title = 'angular-elements';
 
-    alertFlag(flag: Event) {
-        alert(`Current flag: ${flag}`);
+    alertFlag({ detail }: CustomEvent) {
+        alert(`Current flag: ${detail}`);
     }
 }
