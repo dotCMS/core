@@ -321,10 +321,10 @@ public class FileAssetAPITest extends IntegrationTestBase {
         }
 
         FileAssetSearcher searcher = FileAssetSearcher.builder().user(user)
-                        .host(APILocator.getHostAPI().findDefaultHost(user, false)).respectFrontendRoles(false).build();
+                                             .host(APILocator.getHostAPI().findDefaultHost(user, false)).respectFrontendRoles(false).build();
 
         List<String> assetNames = APILocator.getFileAssetAPI().findFileAssetsByDB(searcher).stream()
-                        .map(c -> c.getFileName()).collect(Collectors.toList());
+                                          .map(c -> c.getFileName()).collect(Collectors.toList());
 
 
         assert (assetNames.size() > -fileAssetSize);
@@ -465,7 +465,7 @@ public class FileAssetAPITest extends IntegrationTestBase {
      * ExpectedResult: list of fileAssets that working under the host
      */
     @Test
-    public void  test_findFileAssetsByHost_workingFileAssets_success()
+    public void test_findFileAssetsByHost_workingFileAssets_success()
             throws Exception {
 
         final User user = APILocator.systemUser();
@@ -484,7 +484,10 @@ public class FileAssetAPITest extends IntegrationTestBase {
         }
 
         List<FileAsset> assets = APILocator.getFileAssetAPI().findFileAssetsByHost(site,user,false,true,false,false);
-        assertTrue(fileAssetSize <= assets.size());
+        assertEquals(fileAssetSize,assets.size());
+        assets.forEach(a-> {
+            assert(fileNames.contains(a.getFileName()));
+        });
     }
 
     /**
@@ -513,7 +516,10 @@ public class FileAssetAPITest extends IntegrationTestBase {
         }
 
         List<FileAsset> assets = APILocator.getFileAssetAPI().findFileAssetsByHost(site,user,false,false,true,false);
-        assertTrue(fileAssetSize <= assets.size());
+        assertEquals(fileAssetSize,assets.size());
+        assets.forEach(a-> {
+            assert(fileNames.contains(a.getFileName()));
+        });
     }
 
 }

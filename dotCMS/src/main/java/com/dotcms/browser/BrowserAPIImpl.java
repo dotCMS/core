@@ -78,36 +78,30 @@ public class BrowserAPIImpl implements BrowserAPI {
     @Override
     @CloseDBIfOpened
     public List<Contentlet> getContentUnderParentFromDB(final BrowserQuery browserQuery) {
-
         final Tuple3<String, String, List<Object>> sqlQuery = this.selectQuery(browserQuery);
-
         final DotConnect dc = new DotConnect().setSQL(sqlQuery._1);
-
-        sqlQuery._3.stream().forEach(dc::addParam);
+        sqlQuery._3.forEach(dc::addParam);
         try {
             final List<Map<String,String>> inodesMapList =  dc.loadResults();
-
-            final List<Contentlet> contentletList = contentletAPI.search(sqlQuery._2,-1,0, null,browserQuery.user,false);
-
-            final List<String> inodes = new ArrayList<>();
-            for (final Map<String, String> versionInfoMap : inodesMapList) {
-                inodes.add(versionInfoMap.get("inode"));
-            }
-
-            for(final Contentlet contentlet : contentletList){
-                if(!inodes.contains(contentlet.getInode())){
+            final List<Contentlet> contentletList = contentletAPI.search(sqlQuery._2, -1, 0, null, browserQuery.user,
+                    false);
+            final List<String> inodes =
+                    inodesMapList.stream().map(data -> data.get("inode")).collect(Collectors.toList());
+            contentletList.forEach(contentlet -> {
+                if (!inodes.contains(contentlet.getInode())) {
                     inodes.add(contentlet.getInode());
                 }
-            }
-
-            final List<Contentlet> cons  = APILocator.getContentletAPI().findContentlets(inodes);
-
-            return permissionAPI.filterCollection(cons,
+            });
+            final List<Contentlet> contentlets = APILocator.getContentletAPI().findContentlets(inodes);
+            return permissionAPI.filterCollection(contentlets,
                     PermissionAPI.PERMISSION_READ, true, browserQuery.user);
-
-        } catch (Exception e) {
-            Logger.warnAndDebug(getClass(), "Unable to load browser" + e.getMessage(), e);
-            throw new DotRuntimeException(e);
+        } catch (final Exception e) {
+            final String folderPath = UtilMethods.isSet(browserQuery.folder) ? browserQuery.folder.getPath() : "N/A";
+            final String siteName = UtilMethods.isSet(browserQuery.site) ? browserQuery.site.getHostname() : "N/A";
+            final String errorMsg = String.format("Failed to load contents from folder '%s' in Site '%s': %s",
+                    folderPath, siteName, e.getMessage());
+            Logger.warnAndDebug(this.getClass(), errorMsg, e);
+            throw new DotRuntimeException(errorMsg, e);
         }
     }
 
@@ -266,84 +260,77 @@ public class BrowserAPIImpl implements BrowserAPI {
         return filteredList;
     }
 
+    /**
+     * Generates both the SQL query and the Lucene query that will be used to search for contents under a given folder
+     * path and filtered by the criteria specified via the {@link BrowserQuery} parameter.
+     *
+     * @param browserQuery The filtering criteria set via the {@link BrowserQuery}.
+     *
+     * @return The {@link Tuple3} object containing (1) the SQL query, (2) the Lucene query, and (3) the parameters that
+     * must be provided for the queries.
+     */
     private Tuple3<String,String, List<Object>> selectQuery(final BrowserQuery browserQuery) {
-
         final String workingLiveInode = browserQuery.showWorking || browserQuery.showArchived ? "working_inode" : "live_inode";
-
         final boolean showAllBaseTypes = browserQuery.baseTypes.contains(BaseContentType.ANY);
         final List<Object> parameters = new ArrayList<>();
-
         final StringBuilder sqlQuery = new StringBuilder("select cvi." + workingLiveInode + " as inode "
                 + " from contentlet_version_info cvi, identifier id, structure struc, contentlet c "
                 + " where cvi.identifier = id.id and struc.velocity_var_name = id.asset_subtype and  "
                 + " c.inode = cvi." + workingLiveInode + " and cvi.variant_id='"+DEFAULT_VARIANT.name()+"' ");
 
-
-        final StringBuilder luceneQuery = UtilMethods.isSet(browserQuery.luceneQuery) ? new  StringBuilder("+title:*" + browserQuery.luceneQuery.trim() + "* ") : new  StringBuilder();
-
-        if(browserQuery.showWorking || browserQuery.showArchived) {
-            luceneQuery.append("+working:true ");
-        }
-        else {
-            luceneQuery.append("+live:true ");
-        }
-        if(browserQuery.showArchived ) luceneQuery.append("+deleted:true ");
-
+        final StringBuilder luceneQuery = UtilMethods.isSet(browserQuery.luceneQuery)
+                                                  ? new StringBuilder("+title:*" + browserQuery.luceneQuery.trim() + "* ")
+                                                  : new StringBuilder();
+        luceneQuery.append(browserQuery.showWorking ? "+working:true " : "+live:true ");
+        luceneQuery.append(browserQuery.showArchived ? "+deleted:true " : "+deleted:false ");
         if (!showAllBaseTypes) {
-            List<String> baseTypes =
+            final List<String> baseTypes =
                     browserQuery.baseTypes.stream().map(t -> String.valueOf(t.getType())).collect(Collectors.toList());
-            sqlQuery.append(" and struc.structuretype in (" + String.join(" , ", baseTypes) + ") ");
-
-            luceneQuery.append("+baseType:(" + String.join(" OR ", baseTypes)+ ") ");
+            sqlQuery.append(" and struc.structuretype in (").append(String.join(" , ", baseTypes)).append(") ");
+            luceneQuery.append("+baseType:(").append(String.join(" OR ", baseTypes)).append(") ");
         }
         if (browserQuery.languageId > 0) {
             sqlQuery.append(" and cvi.lang = ? ");
             parameters.add(browserQuery.languageId);
-            luceneQuery.append("+languageId:" + browserQuery.languageId + " ");
+            luceneQuery.append("+languageId:").append(browserQuery.languageId).append(" ");
         }
         if (browserQuery.site != null) {
-            sqlQuery.append(" and (id.host_inode = ? OR id.host_inode = '"+ Host.SYSTEM_HOST +"') ");
+            sqlQuery.append(" and (id.host_inode = ? OR id.host_inode = '").append(Host.SYSTEM_HOST).append("') ");
             parameters.add(browserQuery.site.getIdentifier());
-            luceneQuery.append("+conHost:("+ Host.SYSTEM_HOST +" OR " + browserQuery.site.getIdentifier() + ") ");
+            luceneQuery.append("+conHost:(").append(Host.SYSTEM_HOST).append(" OR ").append(browserQuery.site.getIdentifier()).append(") ");
         }
         if (browserQuery.folder != null) {
             sqlQuery.append(" and id.parent_path=? ");
             parameters.add(browserQuery.folder.getPath());
-            luceneQuery.append("+parentPath:" + browserQuery.folder.getPath() + " ");
+            luceneQuery.append("+parentPath:").append(browserQuery.folder.getPath()).append(" ");
         }
-
         if (UtilMethods.isSet(browserQuery.filter)) {
             final String filterText = browserQuery.filter.toLowerCase().trim();
-            final String[] spliter = filterText.split(" ");
+            final String[] splitter = filterText.split(" ");
 
             sqlQuery.append(" and (");
-            for (int indx = 0; indx < spliter.length; indx++) {
-                final String token = spliter[indx];
+            for (int indx = 0; indx < splitter.length; indx++) {
+                final String token = splitter[indx];
                 if(token.equals(StringPool.BLANK)){
                     continue;
                 }
                 sqlQuery.append(" LOWER(c.title) like ?");
                 parameters.add("%" + token + "%");
-                if(indx + 1 < spliter.length){
+                if (indx + 1 < splitter.length) {
                     sqlQuery.append(" and");
                 }
             }
-
             sqlQuery.append(OR);
             sqlQuery.append(getAssetNameColumn(ASSET_NAME_LIKE.toString()));
             sqlQuery.append(" ) ");
-
             parameters.add("%" + filterText + "%");
         }
-
-        if(browserQuery.showMenuItemsOnly) {
-            sqlQuery.append(" and c.show_on_menu = " + DbConnectionFactory.getDBTrue());
+        if (browserQuery.showMenuItemsOnly) {
+            sqlQuery.append(" and c.show_on_menu = ").append(DbConnectionFactory.getDBTrue());
         }
-
         if (!browserQuery.showArchived) {
-            sqlQuery.append(" and cvi.deleted = " + DbConnectionFactory.getDBFalse());
+            sqlQuery.append(" and cvi.deleted = ").append(DbConnectionFactory.getDBFalse());
         }
-
         return Tuple.of(sqlQuery.toString(),luceneQuery.toString(), parameters);
     }
 
