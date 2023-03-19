@@ -286,8 +286,10 @@ public class BrowserAPIImpl implements BrowserAPI {
         if (!showAllBaseTypes) {
             final List<String> baseTypes =
                     browserQuery.baseTypes.stream().map(t -> String.valueOf(t.getType())).collect(Collectors.toList());
+            final List<String> baseTypesNames =
+                    browserQuery.baseTypes.stream().map(t -> t.name()).collect(Collectors.toList());
             sqlQuery.append(" and struc.structuretype in (").append(String.join(" , ", baseTypes)).append(") ");
-            luceneQuery.append("+baseType:(").append(String.join(" OR ", baseTypes)).append(") ");
+            luceneQuery.append("+contentType:(").append(String.join(" OR ", baseTypesNames)).append(") ");
         }
         if (browserQuery.languageId > 0) {
             sqlQuery.append(" and cvi.lang = ? ");
