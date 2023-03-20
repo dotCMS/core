@@ -1,3 +1,12 @@
 <ng-container *ngIf="link">
-    <a [href]="link" target="_blank" [title]="link">API</a>
+    <a
+        class="p-button-sm p-button-outlined p-button-secondary"
+        [href]="link"
+        [title]="link"
+        pButton
+        target="_blank"
+    >
+        <i class="material-icons">link</i>
+        API
+    </a>
 </ng-container>
