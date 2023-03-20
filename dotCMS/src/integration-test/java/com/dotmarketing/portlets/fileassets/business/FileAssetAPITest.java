@@ -479,7 +479,7 @@ public class FileAssetAPITest extends IntegrationTestBase {
             fileNames.add(file.getName());
             FileUtil.write(file, "helloworld");
             final FileAssetDataGen fileAssetDataGen = new FileAssetDataGen(site, file);
-            fileAssetDataGen.setPolicy(IndexPolicy.WAIT_FOR);
+            fileAssetDataGen.setPolicy(IndexPolicy.FORCE);
             fileAssetDataGen.nextPersisted();
         }
 
@@ -513,7 +513,7 @@ public class FileAssetAPITest extends IntegrationTestBase {
             fileNames.add(file.getName());
             FileUtil.write(file, "helloworld");
             final FileAssetDataGen fileAssetDataGen = new FileAssetDataGen(site, file);
-            fileAssetDataGen.setPolicy(IndexPolicy.WAIT_FOR);
+            fileAssetDataGen.setPolicy(IndexPolicy.FORCE);
             final Contentlet fileAsset = fileAssetDataGen.nextPersisted();
             APILocator.getContentletAPI().archive(fileAsset,user,false);
         }
