@@ -46,7 +46,8 @@ import {
     BubbleAssetFormExtension,
     ImageUpload,
     FreezeScroll,
-    FREEZE_SCROLL_KEY
+    FREEZE_SCROLL_KEY,
+    NodeTypes
 } from '../../extensions';
 import { ContentletBlock, ImageNode, VideoNode } from '../../nodes';
 import {
@@ -397,8 +398,12 @@ export class DotBlockEditorComponent implements OnInit, OnDestroy {
      * @memberof DotBlockEditorComponent
      */
     private placeholder({ node }) {
-        if (node.type.name === 'heading') {
+        if (node.type.name === NodeTypes.HEADING) {
             return `${toTitleCase(node.type.name)} ${node.attrs.level}`;
+        }
+
+        if (node.type.name === NodeTypes.CODE_BLOCK) {
+            return;
         }
 
         return 'Type "/" for commmands';
