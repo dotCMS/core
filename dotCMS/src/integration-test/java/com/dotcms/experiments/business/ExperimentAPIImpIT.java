@@ -487,14 +487,10 @@ public class ExperimentAPIImpIT {
                 final ResultResumeItem resultResumeItem = details.get(
                         SIMPLE_FORMATTER.format(firstEventStartDate));
 
-                if (sessionExpected == 1) {
-                    assertNotNull(resultResumeItem);
+                assertNotNull(resultResumeItem);
 
-                    Assert.assertEquals(sessionExpected, resultResumeItem.getUniqueBySession());
-                    Assert.assertEquals(sessionExpected, resultResumeItem.getMultiBySession());
-                } else {
-                    assertNull(resultResumeItem);
-                }
+                Assert.assertEquals(sessionExpected, resultResumeItem.getUniqueBySession());
+                Assert.assertEquals(sessionExpected, resultResumeItem.getMultiBySession());
             }
         } finally {
             APILocator.getExperimentsAPI().end(experiment.getIdentifier(), APILocator.systemUser());
@@ -891,15 +887,10 @@ public class ExperimentAPIImpIT {
                 final ResultResumeItem resultResumeItem = variantResult.getDetails()
                         .get(SIMPLE_FORMATTER.format(firstEventStartDate));
 
-                if (sessionExpected == 1) {
+                assertNotNull(resultResumeItem);
 
-                    assertNotNull(resultResumeItem);
-
-                    Assert.assertEquals(sessionExpected, resultResumeItem.getUniqueBySession());
-                    Assert.assertEquals(sessionExpected, resultResumeItem.getMultiBySession());
-                } else {
-                    assertNull(resultResumeItem);
-                }
+                Assert.assertEquals(sessionExpected, resultResumeItem.getUniqueBySession());
+                Assert.assertEquals(sessionExpected, resultResumeItem.getMultiBySession());
             }
         } finally {
             APILocator.getExperimentsAPI().end(experiment.getIdentifier(), APILocator.systemUser());
