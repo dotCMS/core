@@ -13,7 +13,7 @@ export const handleLoadVideoError = (e): string => {
             return 'A network error caused the video download to fail part-way.';
 
         case e.target.error.MEDIA_ERR_DECODE:
-            return Video playback aborted due to browser compatibility issues. Try a different browser or visit <a href="https://developer.mozilla.org/en-US/docs/Web/Media/Formats#media_file_types_and_codecs">MDN Video Support</a> for more information.';
+            return 'Video playback aborted due to browser compatibility issues. Try a different browser or visit <a href="https://developer.mozilla.org/en-US/docs/Web/Media/Formats#media_file_types_and_codecs">MDN Video Support</a> for more information.';
 
         case e.target.error.MEDIA_ERR_SRC_NOT_SUPPORTED:
             return 'Invalid URL. Please provide a URL to a .mp4, .webm, or .ogv video file. For more info, visit:  <a href="https://developer.mozilla.org/en-US/docs/Web/Media/Formats/Containers#common_container_formats" target="_blank">MDN Video Format Support</a>';
