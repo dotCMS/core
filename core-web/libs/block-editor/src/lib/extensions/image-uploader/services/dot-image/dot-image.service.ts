@@ -7,7 +7,7 @@ import { catchError, pluck, switchMap } from 'rxjs/operators';
 
 import { DotCMSContentlet, DotCMSTempFile } from '@dotcms/dotcms-models';
 
-import { DotUploadFileService } from './dot-temp-file.service';
+import { DotUploadFileService } from '../../../../shared/services/dot-temp-file/dot-temp-file.service';
 
 export enum FileStatus {
     DOWNLOAD = 'DOWNLOADING',
@@ -30,6 +30,10 @@ interface PublishContentProps {
  */
 @Injectable()
 export class DotImageService {
+    get currentXMLHttpRequest(): XMLHttpRequest {
+        return this.dotUploadFileService.currentHXHR;
+    }
+
     constructor(private http: HttpClient, private dotUploadFileService: DotUploadFileService) {}
 
     publishContent({
@@ -71,10 +75,6 @@ export class DotImageService {
             }),
             catchError((error) => throwError(error))
         );
-    }
-
-    abortCurrentUpload(): void {
-        this.dotUploadFileService.currentHXHR?.abort();
     }
 
     private setTempResource(

@@ -101,7 +101,7 @@ export class DotUploadAssetComponent implements OnDestroy {
      *
      * @memberof DotUploadAssetComponent
      */
-    removeFile() {
+    cancelAction() {
         if (this.status === STATUS.UPLOAD) {
             this.cancelUploading();
             this.hide.emit(true);
@@ -198,6 +198,6 @@ export class DotUploadAssetComponent implements OnDestroy {
 
     private cancelUploading(): void {
         this.$uploadRequestSubs.unsubscribe();
-        this.imageService.abortCurrentUpload();
+        this.imageService.currentXMLHttpRequest?.abort();
     }
 }

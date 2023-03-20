@@ -78,11 +78,7 @@ export class DotUploadFileService {
      * Return the information of tha file(s) in the server
      *
      * @private
-     * @param {(UploadTempFileProps<File | File[]>)} {
-     *         file: data,
-     *         progressCallBack,
-     *         maxSize
-     *     }
+     * @param {(UploadTempFileProps<File | File[]>)} { file: data, progressCallBack, maxSize }
      * @return {*}  {(Promise<DotCMSTempFile | DotCMSTempFile[]>)}
      * @memberof DotUploadFileService
      */
