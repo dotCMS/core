@@ -15,6 +15,7 @@ import { DotBulkInformationModule } from '@components/_common/dot-bulk-informati
 import { DotEmptyStateModule } from '@components/_common/dot-empty-state/dot-empty-state.module';
 import { DotListingDataTableModule } from '@components/dot-listing-data-table';
 import { DotTemplatesService } from '@dotcms/app/api/services/dot-templates/dot-templates.service';
+import { DotRelativeDatePipe } from '@dotcms/app/view/pipes/dot-relative-date/dot-relative-date.pipe';
 import { DotSiteBrowserService } from '@dotcms/data-access';
 import { DotMessagePipeModule } from '@pipes/dot-message/dot-message-pipe.module';
 import { DotTemplateListResolver } from '@portlets/dot-templates/dot-template-list/dot-template-list-resolver.service';
@@ -28,6 +29,7 @@ import { DotTemplateListComponent } from './dot-template-list.component';
         CommonModule,
         DotListingDataTableModule,
         DotMessagePipeModule,
+        DotRelativeDatePipe,
         SharedModule,
         CheckboxModule,
         MenuModule,

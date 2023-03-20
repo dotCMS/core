@@ -19,7 +19,7 @@ import {
     EditPageTabs,
     ExperimentSteps,
     MAX_VARIANTS_ALLOWED,
-    SidebarStatus,
+    SIDEBAR_STATUS,
     StepStatus,
     Variant
 } from '@dotcms/dotcms-models';
@@ -57,14 +57,14 @@ export class DotExperimentsConfigurationVariantsComponent {
     vm$: Observable<{ status: StepStatus; isExperimentADraft: boolean }> =
         this.dotExperimentsConfigurationStore.variantsStepVm$;
     statusList = ComponentStatus;
-    sidebarStatusList = SidebarStatus;
+    sidebarStatusList = SIDEBAR_STATUS;
     maxVariantsAllowed = MAX_VARIANTS_ALLOWED;
     defaultVariantName = DEFAULT_VARIANT_NAME;
     experimentStepName = ExperimentSteps.VARIANTS;
 
     @Input() variants: Variant[];
-    @Output() sidebarStatusChanged = new EventEmitter<SidebarStatus>();
-    @Output() delete = new EventEmitter<Variant>();
+    @Output() sidebarStatusChanged = new EventEmitter<SIDEBAR_STATUS>();
+    @Output() delete = new EventEmitter<{ $event: MouseEvent; variant: Variant }>();
     @Output() edit = new EventEmitter<Pick<DotExperiment, 'name' | 'id'>>();
     @Output() save = new EventEmitter<Pick<DotExperiment, 'name'>>();
     @Output() goToEditPage = new EventEmitter<{ variant: Variant; mode: EditPageTabs }>();

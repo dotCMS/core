@@ -95,6 +95,18 @@ export class DotExperimentsService {
     }
 
     /**
+     * Stop experiment
+     * @param {string} experimentId
+     * @returns Observable<DotExperiment>
+     * @memberof DotExperimentsService
+     */
+    stop(experimentId: string): Observable<DotExperiment> {
+        return this.http
+            .post<DotCMSResponse<DotExperiment>>(`${API_ENDPOINT}/${experimentId}/_end`, {})
+            .pipe(pluck('entity'));
+    }
+
+    /**
      * Add variant to experiment
      * @param  {number} experimentId
      * @param {string} name
