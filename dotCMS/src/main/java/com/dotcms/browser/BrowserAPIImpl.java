@@ -329,6 +329,7 @@ public class BrowserAPIImpl implements BrowserAPI {
         }
         if (browserQuery.showMenuItemsOnly) {
             sqlQuery.append(" and c.show_on_menu = ").append(DbConnectionFactory.getDBTrue());
+            luceneQuery.append(" +showOnMenu:true ");
         }
         if (!browserQuery.showArchived) {
             sqlQuery.append(" and cvi.deleted = ").append(DbConnectionFactory.getDBFalse());
