@@ -243,6 +243,11 @@
 		<class>com.dotcms.rendering.velocity.viewtools.content.ContentTool</class>
 	</tool>
 	<tool>
+		<key>dotExperiment</key>
+		<scope>request</scope>
+		<class>com.dotcms.rendering.velocity.viewtools.experiment.ExperimentCodeInjecterViewTool</class>
+	</tool>
+	<tool>
 		<key>filetool</key>
 		<scope>application</scope>
 		<class>com.dotcms.rendering.velocity.viewtools.FileTool</class>

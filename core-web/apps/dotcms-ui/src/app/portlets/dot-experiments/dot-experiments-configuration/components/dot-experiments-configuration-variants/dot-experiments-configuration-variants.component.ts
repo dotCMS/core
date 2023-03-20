@@ -25,7 +25,7 @@ import {
     EditPageTabs,
     ExperimentSteps,
     MAX_VARIANTS_ALLOWED,
-    SidebarStatus,
+    SIDEBAR_STATUS,
     StepStatus,
     TrafficProportion,
     Variant
@@ -74,7 +74,7 @@ export class DotExperimentsConfigurationVariantsComponent {
     );
 
     statusList = ComponentStatus;
-    sidebarStatusList = SidebarStatus;
+    sidebarStatusList = SIDEBAR_STATUS;
     maxVariantsAllowed = MAX_VARIANTS_ALLOWED;
     defaultVariantName = DEFAULT_VARIANT_NAME;
     experimentStepName = ExperimentSteps.VARIANTS;
