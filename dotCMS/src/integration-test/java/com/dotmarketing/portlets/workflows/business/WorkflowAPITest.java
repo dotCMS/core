@@ -14,8 +14,7 @@ import com.dotcms.business.WrapInTransaction;
 import com.dotcms.content.elasticsearch.business.event.ContentletCheckinEvent;
 import com.dotcms.contenttype.business.ContentTypeAPIImpl;
 import com.dotcms.contenttype.business.FieldAPI;
-import com.dotcms.contenttype.model.field.Field;
-import com.dotcms.contenttype.model.field.ImmutableTextField;
+import com.dotcms.contenttype.model.field.*;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.ContentTypeBuilder;
@@ -4070,4 +4069,91 @@ public class WorkflowAPITest extends IntegrationTestBase {
 
     }
 
+
+    /**
+     * This test is meant to update relationship between two contentlets     *
+     * It creates 2 content types Movie and Region and creates a one-to-many relationship between Movie and Region, then create 2 child contentlets
+     * of Region (Africa and Asia) and then finally create 1 child contentlet of Movie and update the relationship.
+     *
+     * @throws DotSecurityException
+     * @throws DotDataException
+     */
+    /*
+    @Test
+    public void createContentletsWithRelationshipOneToManyCardinality_updateRelationship_shouldCreateRelationshipSuccessfully() throws DotSecurityException, DotDataException{
+        ContentType movie = null;
+        ContentType region = null;
+        try{
+
+            //Create content types
+            movie = insertContentType("Movie", BaseContentType.CONTENT);
+            region = insertContentType("Region", BaseContentType.CONTENT);
+
+            Permission p = new Permission(region.getPermissionId(), contributor.getId(),
+                    editPermission, true);
+            permissionAPI.save(p, region, user, true);
+
+            p = new Permission(Contentlet.class.getCanonicalName(), region.getPermissionId(),
+                    contributor.getId(), editPermission, true);
+            permissionAPI.save(p, region, user, true);
+
+            p = new Permission(region.getPermissionId(), publisher.getId(), publishPermission,
+                    true);
+            permissionAPI.save(p, region, user, true);
+
+            p = new Permission(Contentlet.class.getCanonicalName(), region.getPermissionId(),
+                    publisher.getId(), publishPermission, true);
+            permissionAPI.save(p, region, user, true);
+
+
+            //Create Relationship Field
+            createRelationshipField("Regions", movie.id(),
+                    region.variable(), String.valueOf(
+                            WebKeys.Relationship.RELATIONSHIP_CARDINALITY.ONE_TO_MANY.ordinal()));
+
+            Contentlet africa = createContent("africa", region);
+            Contentlet asia = createContent("asia", region);
+
+            //As Publisher - publish
+            List<WorkflowAction> actions = workflowAPI.findAvailableActions(africa, chrisPublisher);
+            if (actions.isEmpty() || actions.size() != 2) {
+                assertTrue(INCORRECT_NUMBER_OF_ACTIONS_MESSAGE, false);
+            }
+            if (!RETURN_FOR_EDITS_ACTION_NAME.equals(actions.get(0).getName())) {
+                assertTrue(WRONG_ACTION_AVAILABLE_MESSAGE, false);
+            }
+            if (!PUBLISH_ACTION_NAME.equals(actions.get(1).getName())) {
+                assertTrue(WRONG_ACTION_AVAILABLE_MESSAGE, false);
+            }
+
+            final WorkflowAction publish = actions.get(1);
+
+            final ContentletRelationships contentletAfricaRelationships = APILocator.getContentletAPI()
+                    .getAllRelationships(africa);
+
+            //Publish
+            africa = fireWorkflowAction(africa, contentletAfricaRelationships, publish,
+                    StringPool.BLANK, StringPool.BLANK, chrisPublisher);
+
+           // assertTrue(africa.isLive());
+
+        }finally {
+            if(movie != null){
+                contentTypeAPI.delete(movie);
+            }
+            if(region != null){
+                contentTypeAPI.delete(region);
+            }
+        }
+    }
+
+    private Field createRelationshipField(final String relationshipName, final String parentTypeId,
+                                          final String childTypeVar, final String cardinality)
+            throws DotSecurityException, DotDataException {
+
+        final Field field = FieldBuilder.builder(RelationshipField.class).name(relationshipName)
+                .contentTypeId(parentTypeId).values(cardinality).relationType(childTypeVar).build();
+
+        return fieldAPI.save(field, user);
+    }*/
 }

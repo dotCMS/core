@@ -15396,7 +15396,7 @@
 			]
 		},
 		{
-			"name": "issue_24167",
+			"name": "UpdateRelationshipBetweenContentlets",
 			"item": [
 				{
 					"name": "Create ContentType - Region",
