@@ -52,7 +52,7 @@ public class SecretTool implements ViewTool {
 								   final Object defaultValue) {
 
 		final Optional<DotVelocitySecretAppConfig> config = DotVelocitySecretAppConfig.config(APILocator.systemHost());
-		return config.isPresent()? config.get().getStringOrNull(key) : defaultValue;
+		return config.isPresent()? config.get().getStringOrNull(key, null!= defaultValue? defaultValue.toString():null) : defaultValue;
 	}
 
 	public char[] getCharArray(final String key) {
@@ -71,6 +71,6 @@ public class SecretTool implements ViewTool {
 								   final char[] defaultValue) {
 
 		final Optional<DotVelocitySecretAppConfig> config = DotVelocitySecretAppConfig.config(APILocator.systemHost());
-		return config.isPresent()? config.get().getCharArrayOrNull(key) : defaultValue;
+		return config.isPresent()? config.get().getCharArrayOrNull(key, defaultValue) : defaultValue;
 	}
 }

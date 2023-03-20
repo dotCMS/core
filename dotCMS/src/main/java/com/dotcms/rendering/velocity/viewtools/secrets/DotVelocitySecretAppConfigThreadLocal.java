@@ -1,5 +1,7 @@
 package com.dotcms.rendering.velocity.viewtools.secrets;
 
+import com.dotcms.security.apps.Secret;
+
 import java.io.Serializable;
 import java.util.Map;
 import java.util.Optional;
@@ -49,9 +51,10 @@ public class DotVelocitySecretAppConfigThreadLocal implements Serializable {
             final Map<String, DotVelocitySecretAppConfig> map = configLocal.get();
             for (final String key : map.keySet()) {
 
-                Object o = map.get(key);
-                o = null;
-                map.put(key, null);
+                DotVelocitySecretAppConfig secrets = map.get(key);
+                secrets.destroySecrets();
+                secrets = null;
+                map.remove(key);
             }
             map.clear();
         }

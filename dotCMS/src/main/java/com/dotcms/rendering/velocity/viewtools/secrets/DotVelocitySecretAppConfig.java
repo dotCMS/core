@@ -27,7 +27,7 @@ public class DotVelocitySecretAppConfig implements Serializable {
     private static final long serialVersionUID = 1L;
 
     private final String title;
-    private final Map<String, char[]> extraParameters;
+    private final Map<String, Secret> extraParameters;
 
     private DotVelocitySecretAppConfig(final Builder builder) {
         this.title = builder.title;
@@ -50,7 +50,18 @@ public class DotVelocitySecretAppConfig implements Serializable {
     public String getStringOrNull (final String key) {
 
         return this.extraParameters.containsKey(key)?
-                    String.valueOf(extraParameters.get(key)): null;
+                extraParameters.get(key).getString(): null;
+    }
+
+    /**
+     * Get the secret as string (null if does not exist)
+     * @param key String
+     * @return String
+     */
+    public String getStringOrNull (final String key, final String defaultString) {
+
+        return this.extraParameters.containsKey(key)?
+                extraParameters.get(key).getString(): defaultString;
     }
 
     /**
@@ -61,9 +72,24 @@ public class DotVelocitySecretAppConfig implements Serializable {
     public char[] getCharArrayOrNull (final String key) {
 
         return this.extraParameters.containsKey(key)?
-                extraParameters.get(key): null;
+                extraParameters.get(key).getValue(): null;
     }
 
+    /**
+     * Get the secret as char array (null if does not exist)
+     * @param key String
+     * @return char []
+     */
+    public char[] getCharArrayOrNull (final String key, final char[] defaultCharArray) {
+
+        return this.extraParameters.containsKey(key)?
+                extraParameters.get(key).getValue(): defaultCharArray;
+    }
+
+    public void destroySecrets () {
+
+        this.extraParameters.values().forEach(Secret::destroy);
+    }
     public static Optional<DotVelocitySecretAppConfig> config() {
 
         return config(HttpServletRequestThreadLocal.INSTANCE.getRequest());
@@ -105,7 +131,6 @@ public class DotVelocitySecretAppConfig implements Serializable {
         }
 
         final Map<String, Secret> secrets = new HashMap<>(appSecrets.get().getSecrets());
-        final Map<String, char[]> extraParameters = new HashMap<>();
         final String title =
                 Try.of(() -> secrets.get(DotVelocitySecretAppKeys.TITLE.key).getString()).getOrNull();
 
@@ -114,13 +139,9 @@ public class DotVelocitySecretAppConfig implements Serializable {
             return Optional.empty();
         }
 
-        for (String key : secrets.keySet()) {
-            extraParameters.put(key, secrets.get(key).getValue());
-        }
-
         final DotVelocitySecretAppConfig config = DotVelocitySecretAppConfig.builder()
                 .withTitle(title)
-                .withExtraParameters(extraParameters).build();
+                .withExtraParameters(secrets).build();
 
         DotVelocitySecretAppConfigThreadLocal.INSTANCE.setConfig(host.getIdentifier(), Optional.ofNullable(config));
 
@@ -151,7 +172,7 @@ public class DotVelocitySecretAppConfig implements Serializable {
      */
     public static final class Builder {
         private String title;
-        private Map<String, char[]> extraParameters = Collections.emptyMap();
+        private Map<String, Secret> extraParameters = Collections.emptyMap();
         private Builder() {}
 
         private Builder(DotVelocitySecretAppConfig appConfig) {
@@ -164,7 +185,7 @@ public class DotVelocitySecretAppConfig implements Serializable {
             return this;
         }
 
-        public Builder withExtraParameters(final Map<String, char[]> extraParameters) {
+        public Builder withExtraParameters(final Map<String, Secret> extraParameters) {
             this.extraParameters = extraParameters;
             return this;
         }
