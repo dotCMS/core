@@ -19,7 +19,7 @@ import { MockDotMessageService } from '@dotcms/utils-testing';
 import { DotMessagePipeModule } from '@pipes/dot-message/dot-message-pipe.module';
 import { DotExperimentsConfigurationStore } from '@portlets/dot-experiments/dot-experiments-configuration/store/dot-experiments-configuration-store';
 import { DotExperimentsService } from '@portlets/dot-experiments/shared/services/dot-experiments.service';
-import { ExperimentMocks } from '@portlets/dot-experiments/test/mocks';
+import { getExperimentMock } from '@portlets/dot-experiments/test/mocks';
 import { DotDropdownDirective } from '@portlets/shared/directives/dot-dropdown.directive';
 import { DotHttpErrorManagerService } from '@services/dot-http-error-manager/dot-http-error-manager.service';
 
@@ -30,7 +30,7 @@ const messageServiceMock = new MockDotMessageService({
     'experiments.configure.goals.sidebar.header.button': 'Apply'
 });
 
-const EXPERIMENT_ID = ExperimentMocks[0].id;
+const EXPERIMENT_MOCK = getExperimentMock(0);
 
 describe('DotExperimentsConfigurationGoalSelectComponent', () => {
     let spectator: Spectator<DotExperimentsConfigurationGoalSelectComponent>;
@@ -66,9 +66,9 @@ describe('DotExperimentsConfigurationGoalSelectComponent', () => {
 
         store = spectator.inject(DotExperimentsConfigurationStore);
         dotExperimentsService = spectator.inject(DotExperimentsService);
-        dotExperimentsService.getById.and.returnValue(of(ExperimentMocks[0]));
+        dotExperimentsService.getById.and.returnValue(of(EXPERIMENT_MOCK));
 
-        store.loadExperiment(ExperimentMocks[0].id);
+        store.loadExperiment(EXPERIMENT_MOCK.id);
         store.setSidebarStatus({
             experimentStep: ExperimentSteps.GOAL,
             isOpen: true
@@ -88,6 +88,9 @@ describe('DotExperimentsConfigurationGoalSelectComponent', () => {
 
     it('should be a form valid in case of click on a No content option item', () => {
         const bounceRateOption = spectator.query(byTestId('dot-options-item-header'));
+
+        spectator.component.form.get('primary.name').setValue('default');
+        spectator.component.form.updateValueAndValidity();
 
         spectator.click(bounceRateOption);
 
@@ -137,7 +140,7 @@ describe('DotExperimentsConfigurationGoalSelectComponent', () => {
     it('should call setSelectedGoal from the store when a item is selected and the button of apply is clicked', () => {
         spyOn(store, 'setSelectedGoal');
         const expectedGoal = {
-            experimentId: EXPERIMENT_ID,
+            experimentId: EXPERIMENT_MOCK.id,
             goals: {
                 primary: {
                     name: 'default',
@@ -145,6 +148,11 @@ describe('DotExperimentsConfigurationGoalSelectComponent', () => {
                 }
             }
         };
+
+        spectator.component.form.get('primary.name').setValue('default');
+        spectator.component.form.updateValueAndValidity();
+
+        spectator.detectComponentChanges();
 
         const bounceRateOption = spectator.query(byTestId('dot-options-item-header'));
 
