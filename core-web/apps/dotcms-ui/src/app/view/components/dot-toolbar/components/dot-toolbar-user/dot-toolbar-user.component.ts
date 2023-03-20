@@ -1,13 +1,16 @@
-import { Observable } from 'rxjs';
+import { Subject } from 'rxjs';
 
-import { Component, Inject, OnInit, ViewChild } from '@angular/core';
+import { Component, Inject, OnDestroy, OnInit, ViewChild } from '@angular/core';
 
-import { map } from 'rxjs/operators';
+import { MenuItem } from 'primeng/api';
+
+import { map, takeUntil } from 'rxjs/operators';
 
 import { DotDropdownComponent } from '@components/_common/dot-dropdown-component/dot-dropdown.component';
 import { DotNavigationService } from '@components/dot-navigation/services/dot-navigation.service';
 import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
 import { LOCATION_TOKEN } from '@dotcms/app/providers';
+import { DotMessageService } from '@dotcms/data-access';
 import { Auth, CurrentUser, LoggerService, LoginService, LOGOUT_URL } from '@dotcms/dotcms-js';
 
 import { IframeOverlayService } from '../../../_common/iframe/service/iframe-overlay.service';
@@ -17,8 +20,11 @@ import { IframeOverlayService } from '../../../_common/iframe/service/iframe-ove
     styleUrls: ['./dot-toolbar-user.component.scss'],
     templateUrl: 'dot-toolbar-user.component.html'
 })
-export class DotToolbarUserComponent implements OnInit {
+export class DotToolbarUserComponent implements OnInit, OnDestroy {
     @ViewChild(DotDropdownComponent) dropdown: DotDropdownComponent;
+
+    items: MenuItem[];
+
     auth: Auth;
 
     showLoginAs = false;
@@ -26,7 +32,7 @@ export class DotToolbarUserComponent implements OnInit {
 
     logoutUrl = `${LOGOUT_URL}?r=${new Date().getTime()}`;
 
-    haveLoginAsPermission$: Observable<boolean>;
+    private destroy$: Subject<boolean> = new Subject<boolean>();
 
     constructor(
         @Inject(LOCATION_TOKEN) private location: Location,
@@ -34,7 +40,8 @@ export class DotToolbarUserComponent implements OnInit {
         private loginService: LoginService,
         public iframeOverlayService: IframeOverlayService,
         private dotNavigationService: DotNavigationService,
-        private dotRouterService: DotRouterService
+        private dotRouterService: DotRouterService,
+        private dotMessageService: DotMessageService
     ) {}
 
     ngOnInit(): void {
@@ -42,9 +49,50 @@ export class DotToolbarUserComponent implements OnInit {
             this.auth = auth;
         });
 
-        this.haveLoginAsPermission$ = this.loginService
+        this.loginService
             .getCurrentUser()
-            .pipe(map((res: CurrentUser) => res.loginAs));
+            .pipe(
+                map((res: CurrentUser) => res.loginAs),
+                takeUntil(this.destroy$)
+            )
+            .subscribe((result) => {
+                this.items = [
+                    {
+                        id: 'dot-toolbar-user-link-my-account',
+                        label: this.dotMessageService.get('my-account'),
+                        icon: 'pi pi-user-edit',
+                        visible: !this.auth.loginAsUser,
+                        command: () => this.toggleMyAccount()
+                    },
+                    {
+                        id: 'dot-toolbar-user-link-login-as',
+                        label: this.dotMessageService.get('login-as'),
+                        icon: 'pi pi-sort-alt',
+                        visible: !this.auth.loginAsUser && result,
+                        command: () => this.tooggleLoginAs()
+                    },
+                    { separator: true },
+                    {
+                        id: 'dot-toolbar-user-link-logout',
+                        label: this.dotMessageService.get('Logout'),
+                        icon: 'pi pi-sign-out',
+                        visible: !this.auth.loginAsUser,
+                        url: this.logoutUrl
+                    },
+                    {
+                        id: 'dot-toolbar-user-link-logout-as',
+                        label: this.dotMessageService.get('logout-as'),
+                        icon: 'pi pi-sign-out',
+                        visible: !!this.auth.loginAsUser,
+                        command: (event) => this.logoutAs(event.originalEvent)
+                    }
+                ];
+            });
+    }
+
+    ngOnDestroy(): void {
+        this.destroy$.next(true);
+        this.destroy$.complete();
     }
 
     /**
