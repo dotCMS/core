@@ -107,6 +107,11 @@ export const BubbleAssetFormExtension = (viewContainerRef: ViewContainerRef) => 
 
         component.instance.preventClose = (value) => onPreventClose(editor, value);
 
+        component.instance.onHide = () => {
+            onPreventClose(editor, false);
+            onHide(editor);
+        };
+
         element = component.location.nativeElement;
         component.changeDetectorRef.detectChanges();
     }

@@ -29,13 +29,7 @@
     </div>
 
     <div class="btn-container">
-        <button
-            class="p-button-outlined"
-            [disabled]="status === 'UPLOAD'"
-            (click)="removeFile()"
-            data-test-id="back-btn"
-            pButton
-        >
+        <button class="p-button-outlined" (click)="removeFile()" data-test-id="back-btn" pButton>
             Cancel
         </button>
         <button

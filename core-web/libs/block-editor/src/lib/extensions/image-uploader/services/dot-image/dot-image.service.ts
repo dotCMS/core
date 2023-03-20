@@ -6,7 +6,8 @@ import { Injectable } from '@angular/core';
 import { catchError, pluck, switchMap } from 'rxjs/operators';
 
 import { DotCMSContentlet, DotCMSTempFile } from '@dotcms/dotcms-models';
-import { uploadFile } from '@dotcms/utils';
+
+import { DotUploadFileService } from './dot-temp-file.service';
 
 export enum FileStatus {
     DOWNLOAD = 'DOWNLOADING',
@@ -29,7 +30,7 @@ interface PublishContentProps {
  */
 @Injectable()
 export class DotImageService {
-    constructor(private http: HttpClient) {}
+    constructor(private http: HttpClient, private dotUploadFileService: DotUploadFileService) {}
 
     publishContent({
         data,
@@ -72,12 +73,16 @@ export class DotImageService {
         );
     }
 
+    abortCurrentUpload(): void {
+        this.dotUploadFileService.currentHXHR?.abort();
+    }
+
     private setTempResource(
         file: string | File | File[],
         maxSize?: string
     ): Observable<DotCMSTempFile | DotCMSTempFile[]> {
         return from(
-            uploadFile({
+            this.dotUploadFileService.uploadFile({
                 file,
                 progressCallBack: () => {
                     /**/

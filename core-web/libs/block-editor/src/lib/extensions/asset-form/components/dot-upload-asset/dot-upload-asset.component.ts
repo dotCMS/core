@@ -1,4 +1,4 @@
-import { throwError } from 'rxjs';
+import { Subscription, throwError } from 'rxjs';
 
 import { HttpErrorResponse } from '@angular/common/http';
 import {
@@ -43,6 +43,9 @@ export class DotUploadAssetComponent implements OnDestroy {
     @Output()
     preventClose = new EventEmitter<boolean>();
 
+    @Output()
+    hide = new EventEmitter<boolean>();
+
     @Input()
     type: EditorAssetTypes;
 
@@ -51,6 +54,7 @@ export class DotUploadAssetComponent implements OnDestroy {
     public src: string | ArrayBuffer | SafeResourceUrl;
     public error: string;
     public animation = 'shakeend';
+    public $uploadRequestSubs: Subscription;
 
     @HostListener('window:click', ['$event.target']) onClick(e) {
         const clickedOutside = !this.el.nativeElement.contains(e);
@@ -81,7 +85,7 @@ export class DotUploadAssetComponent implements OnDestroy {
     onSelectFile(files: File[]) {
         const file = files[0];
         const reader = new FileReader();
-
+        this.preventClose.emit(true);
         reader.onload = (e) => this.setFile(file, e.target.result);
 
         /*
@@ -98,8 +102,16 @@ export class DotUploadAssetComponent implements OnDestroy {
      * @memberof DotUploadAssetComponent
      */
     removeFile() {
+        if (this.status === STATUS.UPLOAD) {
+            this.cancelUploading();
+            this.hide.emit(true);
+
+            return;
+        }
+
         this.file = null;
         this.status = STATUS.SELECT;
+        this.preventClose.emit(false);
     }
 
     /**
@@ -109,8 +121,7 @@ export class DotUploadAssetComponent implements OnDestroy {
      */
     uploadFile() {
         this.status = STATUS.UPLOAD;
-        this.preventClose.emit(true);
-        this.imageService
+        this.$uploadRequestSubs = this.imageService
             .publishContent({ data: this.file })
             .pipe(
                 take(1),
@@ -183,5 +194,10 @@ export class DotUploadAssetComponent implements OnDestroy {
         console.error(error);
 
         return throwError(error);
+    }
+
+    private cancelUploading(): void {
+        this.$uploadRequestSubs.unsubscribe();
+        this.imageService.abortCurrentUpload();
     }
 }
