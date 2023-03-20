@@ -473,7 +473,7 @@ public class FileAssetAPITest extends IntegrationTestBase {
 
         List<String> fileNames = new ArrayList<>();
         final int fileAssetSize=3;
-
+        System.out.println("-> [workingFileAssets_success] Site Name = " + site.getHostname() + " / " + site.getIdentifier());
         for(int i=0;i<fileAssetSize;i++) {
             final java.io.File file = java.io.File.createTempFile("blah" + i, ".txt");
             fileNames.add(file.getName());
@@ -484,6 +484,9 @@ public class FileAssetAPITest extends IntegrationTestBase {
         }
 
         List<FileAsset> assets = APILocator.getFileAssetAPI().findFileAssetsByHost(site,user,false,true,false,false);
+        for (final FileAsset file : assets) {
+            System.out.println("-- [workingFileAssets_success] Returned file = " + file.getURI() + " / " + file.getParent());
+        }
         assertEquals(fileAssetSize,assets.size());
         assets.forEach(a-> {
             assert(fileNames.contains(a.getFileName()));
@@ -504,7 +507,7 @@ public class FileAssetAPITest extends IntegrationTestBase {
 
         List<String> fileNames = new ArrayList<>();
         final int fileAssetSize=3;
-
+        System.out.println("-> [archivedFileAssets_success] Site Name = " + site.getHostname() + " / " + site.getIdentifier());
         for(int i=0;i<fileAssetSize;i++) {
             final java.io.File file = java.io.File.createTempFile("blah" + i, ".txt");
             fileNames.add(file.getName());
@@ -516,6 +519,9 @@ public class FileAssetAPITest extends IntegrationTestBase {
         }
 
         List<FileAsset> assets = APILocator.getFileAssetAPI().findFileAssetsByHost(site,user,false,false,true,false);
+        for (final FileAsset file : assets) {
+            System.out.println("-- [archivedFileAssets_success] Returned file = " + file.getURI() + " / " + file.getParent());
+        }
         assertEquals(fileAssetSize,assets.size());
         assets.forEach(a-> {
             assert(fileNames.contains(a.getFileName()));
