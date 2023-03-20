@@ -239,6 +239,16 @@ public interface ContentTypeAPI {
   ContentType copyFrom(CopyContentTypeBean copyContentTypeBean) throws DotDataException, DotSecurityException;
 
   /**
+   * Saves a new content type based on another existing type
+   * @param copyContentTypeBean {@link CopyContentTypeBean}
+   * @param excludeFields - fields to exclude from the copy
+   * @return ContentType
+   * @throws DotDataException
+   * @throws DotSecurityException
+   */
+  ContentType copyFrom(final CopyContentTypeBean copyContentTypeBean,final Set<String> excludeFields) throws DotDataException, DotSecurityException;
+
+  /**
    * Saves a new Content Type.
    * 
    * @param type Content Type that is going to be modified

@@ -16,6 +16,7 @@ import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.links.model.Link;
 import com.dotmarketing.portlets.structure.model.Field;
+import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 import org.elasticsearch.ElasticsearchException;
@@ -533,11 +534,12 @@ public abstract class ContentletFactory {
 		for (final com.dotcms.contenttype.model.field.Field field : sourceFields) {
 			final com.dotcms.contenttype.model.field.Field targetField = targetMappedByVar.get(field.variable());
 			if (null == targetField) {
-				throw new DotDataException( String.format("Unable to match field (%s) in target structure (%s) by name." , field.variable() , target.name()));
+				Logger.warn( this, String.format("Unable to match field (%s) in target structure (%s) by name." , field.variable() , target.name()));
+				continue;
 			}
 
 			if (!field.dataType().equals(targetField.dataType()) ) {
-				throw new DotDataException(String.format("Unable to match field (%s:%s) in target structure (%s:%s) by Data-Type ", field.variable(), field.dataType() ,targetField.variable(), targetField.dataType()));
+				Logger.warn( this, String.format("Unable to match field (%s:%s) in target structure (%s:%s) by Data-Type ", field.variable(), field.dataType() ,targetField.variable(), targetField.dataType()));
 			}
 		}
 		final DotConnect dotConnect = new DotConnect();

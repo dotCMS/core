@@ -4,10 +4,7 @@ import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.contenttype.exception.NotFoundInDbException;
 import com.dotcms.contenttype.model.event.ContentTypeSavedEvent;
-import com.dotcms.contenttype.model.field.Field;
-import com.dotcms.contenttype.model.field.FieldBuilder;
-import com.dotcms.contenttype.model.field.FieldVariable;
-import com.dotcms.contenttype.model.field.ImmutableFieldVariable;
+import com.dotcms.contenttype.model.field.*;
 import com.dotcms.contenttype.model.type.*;
 import com.dotcms.enterprise.LicenseUtil;
 import com.dotcms.enterprise.license.LicenseLevel;
@@ -101,30 +98,34 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
        throw new DotDataException("ContentType must have an id set");
     }
 
-    //sometimes we might get an instance that has been called without having set the id therefore it will be missing certain fields
-    //This prevents that scenarios from happening
-    type = contentTypeFactory.find(type.id());
+     //sometimes we might get an instance that has been called without having set the id therefore it will be missing certain fields
+     //This prevents that scenarios from happening
+      type = contentTypeFactory.find(type.id());
 
-    //If we're ok permissions wise, we need to remove the content from the index
-    APILocator.getContentletIndexAPI().removeContentFromIndexByStructureInode(type.inode());
-    //Then this quickly hides the content from the front end and APIS
-    contentTypeFactory.markForDeletion(type);
-    //Now we need a copy of the CT that basically makes it possible relocating content for asynchronous deletion
-    final String newName =  String.format("%s_%s",type.variable(),System.currentTimeMillis());
-    ContentType copy = copyFrom(new CopyContentTypeBean.Builder().sourceContentType(type).name(newName).newVariable(newName).build());
-    //A copy is made. but we need to refresh our var sine the copy returned by the method is incomplete
-    copy = contentTypeFactory.find(copy.id());
-    Logger.info(getClass(), String.format("::: CT (%s) with inode:(%s) Will be deleted shortly. A Copy Will  with  name (%s) and inode (%s) will be used to dispose all contentlet. :::",
-            type.variable(), type.inode(), copy.variable(), copy.inode())
-    );
-    APILocator.getContentletAPI().relocateContentletsForDeletion(type, copy);
-    //Now that all the content is relocated, we're ready to destroy the original structure that held all content
-    //But first we need to remove all fields from the original structure. Since it no longer holds any content.
-    //There's a timing problem here. Looks like this delete fires a job from a commit listener therefor when the CT is looked up it has benn already deleted from the DB.
-    contentTypeFactory.delete(type);
-    //and destroy all associated content under the copy
-    contentTypeFactory.markForDeletion(copy);
-    return copy;
+      //If we're ok permissions wise, we need to remove the content from the index
+      APILocator.getContentletIndexAPI().removeContentFromIndexByStructureInode(type.inode());
+      //Then this quickly hides the content from the front end and APIS
+      contentTypeFactory.markForDeletion(type);
+      //Now we need a copy of the CT that basically makes it possible relocating content for asynchronous deletion
+      final String newName = String.format("%s_%s", type.variable(), System.currentTimeMillis());
+
+      //We need to remove all the relationships from the CT and probably all other system fields as well.
+     //if we leave RelationshipFields here we might run into this https://github.com/dotCMS/core/issues/24414
+      final Set<String> relationshipFieldVars = type.fields().stream().filter(RelationshipField.class::isInstance).map(Field::variable).collect(Collectors.toSet());
+      ContentType copy = copyFrom(new CopyContentTypeBean.Builder().sourceContentType(ContentTypeBuilder.builder(type).build()).name(newName).newVariable(newName).build(), relationshipFieldVars);
+
+      //A copy is made. but we need to refresh our var since the copy returned by the method is incomplete
+      copy = contentTypeFactory.find(copy.id());
+      Logger.info(getClass(), String.format("::: CT (%s) with inode:(%s) Will be deleted shortly. A Copy Will  with  name (%s) and inode (%s) will be used to dispose all contentlet. :::",
+              type.variable(), type.inode(), copy.variable(), copy.inode())
+      );
+      APILocator.getContentletAPI().relocateContentletsForDeletion(type, copy);
+      //Now that all the content is relocated, we're ready to destroy the original structure that held all content
+      //System fields like Categories, Relationships and Containers will be deleted using the original structure
+      contentTypeFactory.delete(type);
+      //and destroy all associated content under the copy
+      contentTypeFactory.markForDeletion(copy);
+      return copy;
   }
 
   @Override
@@ -247,9 +248,13 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
     }
   }
 
-  @WrapInTransaction
   @Override
   public ContentType copyFrom(final CopyContentTypeBean copyContentTypeBean) throws DotDataException, DotSecurityException {
+    return copyFrom(copyContentTypeBean, Set.of());
+  }
+  @WrapInTransaction
+  @Override
+  public ContentType copyFrom(final CopyContentTypeBean copyContentTypeBean, final Set<String> excludeFields) throws DotDataException, DotSecurityException {
 
     if (LicenseManager.getInstance().isCommunity()) {
 
@@ -283,7 +288,7 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
     final ContentType contentType    = builder.build();
     final ContentType newContentType = this.save(contentType);
     final FieldAPI contentTypeFieldAPI = APILocator.getContentTypeFieldAPI();
-    final List<Field> sourceFields  = contentTypeFieldAPI.byContentTypeId(sourceContentType.id());
+    final List<Field> sourceFields = contentTypeFieldAPI.byContentTypeId(sourceContentType.id()).stream().filter(field -> !excludeFields.contains(field.variable())).collect(Collectors.toList());
     final Map<String, Field> newFieldMap = newContentType.fieldMap();
     final Map<String, Field> lowerNewFieldMap = new LowerKeyMap<>();
     lowerNewFieldMap.putAll(newFieldMap);

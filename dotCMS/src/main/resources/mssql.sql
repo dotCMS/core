@@ -970,6 +970,7 @@ create table structure (
    mod_date datetimeoffset(3) null,
    sort_order int null,
    icon NVARCHAR(255) null,
+   marked_for_deletion tinyint not null default 0,
    primary key (inode)
 );
 create table cms_role (

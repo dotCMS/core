@@ -13,6 +13,7 @@ import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
+import com.dotmarketing.util.StringUtils;
 import com.dotmarketing.util.UUIDUtil;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
@@ -51,18 +52,18 @@ public class SiteAndFolderResolverImpl implements SiteAndFolderResolver {
     @Override
     public ContentType resolveSiteAndFolder(final ContentType contentType)
             throws DotDataException, DotSecurityException {
-        ///IMPORTANT: Never call contentType.fields() here
-        // it might cause a lazy load of  fields without having set a valid id
-        //fields() method depends on the id being set
-        //Calling it will cause a field-less instance to be returned
+
+        final List<Field> fields = contentType.fields();
         if(contentType.fixed()){
             //CT marked as fixed are meant to live under SYSTEM_HOST
-            return ContentTypeBuilder.builder(contentType)
+            final ContentType build = ContentTypeBuilder.builder(contentType)
                     .host(Host.SYSTEM_HOST)
                     .siteName(Host.SYSTEM_HOST_NAME)
                     .folder(Folder.SYSTEM_FOLDER)
                     .folderPath(Folder.SYSTEM_FOLDER_PATH)
                     .build();
+            build.constructWithFields(fields);
+            return build;
         }
 
         //when lazy calculations are blocked we can get null values when nothing has been set on those fields instead of the lazy calculation
@@ -72,10 +73,12 @@ public class SiteAndFolderResolverImpl implements SiteAndFolderResolver {
         final String resolvedSite = resolveSite(params);
         final ResolvedSiteAndFolder resolvedSiteAndFolder = resolveFolder(params, resolvedSite);
 
-        return ContentTypeBuilder.builder(contentType)
+        final ContentType build = ContentTypeBuilder.builder(contentType)
                 .host(resolvedSiteAndFolder.resolvedSite())
                 .folder(resolvedSiteAndFolder.resolvedFolder())
                 .build();
+        build.constructWithFields(fields);
+        return build;
     }
 
     /**
