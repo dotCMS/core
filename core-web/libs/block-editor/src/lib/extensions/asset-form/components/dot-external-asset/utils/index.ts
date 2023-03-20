@@ -19,6 +19,6 @@ export const handleLoadVideoError = (e): string => {
             return 'Invalid URL. Please provide a URL to a .mp4, .webm, or .ogv video file. For more info, visit:  <a href="https://developer.mozilla.org/en-US/docs/Web/Media/Formats/Containers#common_container_formats" target="_blank">MDN Video Format Support</a>';
 
         default:
-            return 'An unknown error occurred.';
+            return 'An unknown error occurred. <a href="https://www.dotcms.com/services/support/" target="_blank">Please contact support</a>';
     }
 };
