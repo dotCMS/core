@@ -8,6 +8,9 @@ import com.liferay.util.StringPool;
 import graphql.VisibleForTesting;
 import io.vavr.Lazy;
 
+import java.util.concurrent.TimeUnit;
+
+
 /**
  * This is a Wrapper to check all the Configuration values needed to handle {@link com.dotcms.experiments.model.Experiment}.
  * Also it provide method to set these values to Testing Environment
@@ -63,6 +66,16 @@ public enum ConfigExperimentUtil {
      */
     public boolean isExperimentEnabled() {
         return this.isExperimentEnabled.get();
+    }
+
+
+    /**
+     * Return the Default lookBackWindow expire time in millis
+     *
+     * @return
+     */
+    public long lookBackWindowDefaultExpireTime() {
+        return TimeUnit.MINUTES.toMillis(30);
     }
 
 

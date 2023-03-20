@@ -249,11 +249,15 @@ public class ExperimentsAPIImpl implements ExperimentsAPI {
     private com.dotcms.analytics.metrics.Condition createConditionWithUrlValue(final HTMLPageAsset page,
             final String conditionName) {
 
-        return com.dotcms.analytics.metrics.Condition.builder()
-                .parameter(conditionName)
-                .operator(Operator.CONTAINS)
-                .value(page.getPageUrl())
-                .build();
+        try {
+            return com.dotcms.analytics.metrics.Condition.builder()
+                    .parameter(conditionName)
+                    .operator(Operator.CONTAINS)
+                    .value(page.getURI().replace("index", ""))
+                    .build();
+        } catch (DotDataException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     private void saveTargetingConditions(final Experiment experiment, final User user)

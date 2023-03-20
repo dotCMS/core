@@ -3,7 +3,7 @@ import { EMPTY, Observable, throwError } from 'rxjs';
 
 import { HttpErrorResponse } from '@angular/common/http';
 import { Injectable } from '@angular/core';
-import { ActivatedRoute } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 
 import { MessageService } from 'primeng/api';
 
@@ -14,9 +14,11 @@ import {
     ComponentStatus,
     DotExperiment,
     DotExperimentStatusList,
-    GroupedExperimentByStatus
+    GroupedExperimentByStatus,
+    SidebarStatus
 } from '@dotcms/dotcms-models';
 import { DotExperimentsService } from '@portlets/dot-experiments/shared/services/dot-experiments.service';
+import { DotHttpErrorManagerService } from '@services/dot-http-error-manager/dot-http-error-manager.service';
 
 export interface DotExperimentsState {
     page: {
@@ -26,6 +28,7 @@ export interface DotExperimentsState {
     experiments: DotExperiment[];
     filterStatus: Array<string>;
     status: ComponentStatus;
+    sidebar: SidebarStatus;
 }
 
 const initialState: DotExperimentsState = {
@@ -41,7 +44,11 @@ const initialState: DotExperimentsState = {
         DotExperimentStatusList.SCHEDULED,
         DotExperimentStatusList.ARCHIVED
     ],
-    status: ComponentStatus.INIT
+    status: ComponentStatus.INIT,
+    sidebar: {
+        status: ComponentStatus.IDLE,
+        isOpen: false
+    }
 };
 
 // Vm Interfaces
@@ -54,6 +61,16 @@ export interface VmListExperiments {
     experiments: DotExperiment[];
     experimentsFiltered: { [key: string]: DotExperiment[] };
     filterStatus: Array<string>;
+    sidebar: SidebarStatus;
+}
+
+export interface VmCreateExperiments {
+    pageId: string;
+    sidebar: {
+        status: ComponentStatus;
+        isOpen: boolean;
+    };
+    isSaving: boolean;
 }
 
 @Injectable({
@@ -64,13 +81,6 @@ export class DotExperimentsListStore
     implements OnStoreInit
 {
     // Selectors
-    readonly getPage$ = this.select((state) => state.page);
-    readonly getStatus$ = this.select((state) => state.status);
-
-    readonly getExperiments$ = this.select((state) => state.experiments);
-
-    readonly getFilterStatusList$ = this.select((state) => state.filterStatus);
-
     readonly getExperimentsFilteredAndGroupedByStatus$ = this.select(
         ({ experiments, filterStatus }) =>
             experiments
@@ -86,6 +96,11 @@ export class DotExperimentsListStore
     readonly isLoading$: Observable<boolean> = this.select(
         (state) => state.status === ComponentStatus.LOADING || state.status === ComponentStatus.INIT
     );
+    readonly isSidebarSaving$: Observable<boolean> = this.select(
+        (state) =>
+            state.sidebar.status === ComponentStatus.SAVING ||
+            state.sidebar.status === ComponentStatus.INIT
+    );
 
     //Updater
     readonly initStore = this.updater((state) => ({
@@ -93,14 +108,16 @@ export class DotExperimentsListStore
         status: ComponentStatus.INIT
     }));
 
-    readonly setPageId = this.updater((state, pageId: string) => ({
-        ...state,
-        pageId
-    }));
-
     readonly setComponentStatus = this.updater((state, status: ComponentStatus) => ({
         ...state,
         status
+    }));
+    readonly setSidebarStatus = this.updater((state, sidebarStatus: SidebarStatus) => ({
+        ...state,
+        sidebar: {
+            ...state.sidebar,
+            ...sidebarStatus
+        }
     }));
 
     readonly setExperiments = this.updater((state, experiments: DotExperiment[]) => ({
@@ -109,10 +126,13 @@ export class DotExperimentsListStore
         experiments
     }));
 
-    readonly addExperiment = this.updater((state, experiments: DotExperiment[]) => ({
+    readonly addExperiment = this.updater((state, experiment: DotExperiment) => ({
         ...state,
-        status: ComponentStatus.LOADED,
-        experiments: [...state.experiments, ...experiments]
+        experiments: [...state.experiments, experiment],
+        sidebar: {
+            status: ComponentStatus.IDLE,
+            isOpen: false
+        }
     }));
 
     readonly setFilterStatus = this.updater((state, filterStatus: Array<string>) => ({
@@ -132,6 +152,21 @@ export class DotExperimentsListStore
         )
     }));
 
+    readonly openSidebar = this.updater((state) => ({
+        ...state,
+        sidebar: {
+            status: ComponentStatus.IDLE,
+            isOpen: true
+        }
+    }));
+    readonly closeSidebar = this.updater((state) => ({
+        ...state,
+        sidebar: {
+            status: ComponentStatus.IDLE,
+            isOpen: false
+        }
+    }));
+
     readonly loadExperiments = this.effect((pageId$: Observable<string>) => {
         return pageId$.pipe(
             tap(() => this.setComponentStatus(ComponentStatus.LOADING)),
@@ -146,6 +181,51 @@ export class DotExperimentsListStore
             )
         );
     });
+
+    readonly addExperiments = this.effect(
+        (experiment$: Observable<Pick<DotExperiment, 'pageId' | 'name' | 'description'>>) => {
+            return experiment$.pipe(
+                tap(() => this.setSidebarStatus({ status: ComponentStatus.SAVING, isOpen: true })),
+                switchMap((experiment) =>
+                    this.dotExperimentsService.add(experiment).pipe(
+                        tapResponse(
+                            (experiment) => {
+                                this.messageService.add({
+                                    severity: 'info',
+                                    summary: this.dotMessageService.get(
+                                        'experiments.action.add.confirm-title'
+                                    ),
+                                    detail: this.dotMessageService.get(
+                                        'experiments.action.add.confirm-message',
+                                        experiment.name
+                                    )
+                                });
+                                this.addExperiment(experiment);
+
+                                this.router.navigate(
+                                    [
+                                        '/edit-page/experiments/configuration',
+                                        experiment.pageId,
+                                        experiment.id
+                                    ],
+                                    {
+                                        queryParamsHandling: 'preserve'
+                                    }
+                                );
+                            },
+                            (error: HttpErrorResponse) => {
+                                this.setSidebarStatus({
+                                    status: ComponentStatus.IDLE,
+                                    isOpen: true
+                                });
+                                this.dotHttpErrorManagerService.handle(error);
+                            }
+                        )
+                    )
+                )
+            );
+        }
+    );
 
     readonly deleteExperiment = this.effect((experiment$: Observable<DotExperiment>) => {
         return experiment$.pipe(
@@ -204,17 +284,26 @@ export class DotExperimentsListStore
     });
 
     readonly vm$: Observable<VmListExperiments> = this.select(
-        this.getPage$,
+        this.state$,
         this.isLoading$,
-        this.getExperiments$,
         this.getExperimentsFilteredAndGroupedByStatus$,
-        this.getFilterStatusList$,
-        (page, isLoading, experiments, experimentsFiltered, filterStatus) => ({
+        ({ page, experiments, filterStatus, sidebar }, isLoading, experimentsFiltered) => ({
             page,
-            isLoading,
             experiments,
-            experimentsFiltered,
-            filterStatus
+            filterStatus,
+            sidebar,
+            isLoading,
+            experimentsFiltered
+        })
+    );
+
+    readonly createVm$: Observable<VmCreateExperiments> = this.select(
+        this.state$,
+        this.isSidebarSaving$,
+        ({ sidebar, page }, isSaving) => ({
+            pageId: page.pageId,
+            sidebar,
+            isSaving
         })
     );
 
@@ -222,7 +311,9 @@ export class DotExperimentsListStore
         private readonly dotExperimentsService: DotExperimentsService,
         private readonly dotMessageService: DotMessageService,
         private readonly messageService: MessageService,
-        private readonly route: ActivatedRoute
+        private readonly route: ActivatedRoute,
+        private readonly router: Router,
+        private readonly dotHttpErrorManagerService: DotHttpErrorManagerService
     ) {
         super({
             ...initialState,
