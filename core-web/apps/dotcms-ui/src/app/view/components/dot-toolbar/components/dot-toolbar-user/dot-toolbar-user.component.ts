@@ -1,10 +1,10 @@
-import { Subject } from 'rxjs';
+import { Observable } from 'rxjs';
 
-import { Component, Inject, OnDestroy, OnInit, ViewChild } from '@angular/core';
+import { Component, Inject, OnInit, ViewChild } from '@angular/core';
 
 import { MenuItem } from 'primeng/api';
 
-import { map, takeUntil } from 'rxjs/operators';
+import { map } from 'rxjs/operators';
 
 import { DotDropdownComponent } from '@components/_common/dot-dropdown-component/dot-dropdown.component';
 import { DotNavigationService } from '@components/dot-navigation/services/dot-navigation.service';
@@ -20,10 +20,10 @@ import { IframeOverlayService } from '../../../_common/iframe/service/iframe-ove
     styleUrls: ['./dot-toolbar-user.component.scss'],
     templateUrl: 'dot-toolbar-user.component.html'
 })
-export class DotToolbarUserComponent implements OnInit, OnDestroy {
+export class DotToolbarUserComponent implements OnInit {
     @ViewChild(DotDropdownComponent) dropdown: DotDropdownComponent;
 
-    items: MenuItem[];
+    items$: Observable<MenuItem[]>;
 
     auth: Auth;
 
@@ -31,8 +31,6 @@ export class DotToolbarUserComponent implements OnInit, OnDestroy {
     showMyAccount = false;
 
     logoutUrl = `${LOGOUT_URL}?r=${new Date().getTime()}`;
-
-    private destroy$: Subject<boolean> = new Subject<boolean>();
 
     constructor(
         @Inject(LOCATION_TOKEN) private location: Location,
@@ -49,50 +47,42 @@ export class DotToolbarUserComponent implements OnInit, OnDestroy {
             this.auth = auth;
         });
 
-        this.loginService
-            .getCurrentUser()
-            .pipe(
-                map((res: CurrentUser) => res.loginAs),
-                takeUntil(this.destroy$)
+        this.items$ = this.loginService.getCurrentUser().pipe(
+            map(
+                ({ loginAs }: CurrentUser) =>
+                    [
+                        {
+                            id: 'dot-toolbar-user-link-my-account',
+                            label: this.dotMessageService.get('my-account'),
+                            icon: 'pi pi-user-edit',
+                            visible: !this.auth.loginAsUser,
+                            command: () => this.toggleMyAccount()
+                        },
+                        {
+                            id: 'dot-toolbar-user-link-login-as',
+                            label: this.dotMessageService.get('login-as'),
+                            icon: 'pi pi-sort-alt',
+                            visible: !this.auth.loginAsUser && loginAs,
+                            command: () => this.tooggleLoginAs()
+                        },
+                        { separator: true },
+                        {
+                            id: 'dot-toolbar-user-link-logout',
+                            label: this.dotMessageService.get('Logout'),
+                            icon: 'pi pi-sign-out',
+                            visible: !this.auth.loginAsUser,
+                            url: this.logoutUrl
+                        },
+                        {
+                            id: 'dot-toolbar-user-link-logout-as',
+                            label: this.dotMessageService.get('logout-as'),
+                            icon: 'pi pi-sign-out',
+                            visible: !!this.auth.loginAsUser,
+                            command: (event) => this.logoutAs(event.originalEvent)
+                        }
+                    ] as MenuItem[]
             )
-            .subscribe((result) => {
-                this.items = [
-                    {
-                        id: 'dot-toolbar-user-link-my-account',
-                        label: this.dotMessageService.get('my-account'),
-                        icon: 'pi pi-user-edit',
-                        visible: !this.auth.loginAsUser,
-                        command: () => this.toggleMyAccount()
-                    },
-                    {
-                        id: 'dot-toolbar-user-link-login-as',
-                        label: this.dotMessageService.get('login-as'),
-                        icon: 'pi pi-sort-alt',
-                        visible: !this.auth.loginAsUser && result,
-                        command: () => this.tooggleLoginAs()
-                    },
-                    { separator: true },
-                    {
-                        id: 'dot-toolbar-user-link-logout',
-                        label: this.dotMessageService.get('Logout'),
-                        icon: 'pi pi-sign-out',
-                        visible: !this.auth.loginAsUser,
-                        url: this.logoutUrl
-                    },
-                    {
-                        id: 'dot-toolbar-user-link-logout-as',
-                        label: this.dotMessageService.get('logout-as'),
-                        icon: 'pi pi-sign-out',
-                        visible: !!this.auth.loginAsUser,
-                        command: (event) => this.logoutAs(event.originalEvent)
-                    }
-                ];
-            });
-    }
-
-    ngOnDestroy(): void {
-        this.destroy$.next(true);
-        this.destroy$.complete();
+        );
     }
 
     /**
