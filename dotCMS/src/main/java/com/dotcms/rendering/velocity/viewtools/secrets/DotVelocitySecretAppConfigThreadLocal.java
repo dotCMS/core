@@ -14,7 +14,7 @@ public class DotVelocitySecretAppConfigThreadLocal implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
-    private static ThreadLocal<Map<String,DotVelocitySecretAppConfig>> configLocal = new ThreadLocal<>();
+    private static ThreadLocal<Map<String, DotVelocitySecretAppConfig>> configLocal = new ThreadLocal<>();
 
     public static final DotVelocitySecretAppConfigThreadLocal INSTANCE = new DotVelocitySecretAppConfigThreadLocal();
 
@@ -44,6 +44,17 @@ public class DotVelocitySecretAppConfigThreadLocal implements Serializable {
     
     public void clearConfig() {
 
+        if (null != configLocal.get()) {
+
+            final Map<String, DotVelocitySecretAppConfig> map = configLocal.get();
+            for (final String key : map.keySet()) {
+
+                Object o = map.get(key);
+                o = null;
+                map.put(key, null);
+            }
+            map.clear();
+        }
         configLocal.remove();
     }
 }

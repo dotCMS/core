@@ -19,26 +19,58 @@ public class SecretTool implements ViewTool {
 	public void init(Object initData) {
 	}
 
+	/**
+	 * Gets a secret as an object|string, based on the current host (if configured)
+	 * @param key String
+	 * @return Object
+	 */
 	public Object get(final String key) {
 
 		final HttpServletRequest request = HttpServletRequestThreadLocal.INSTANCE.getRequest();
-		Object value = null;
-
 		final Optional<DotVelocitySecretAppConfig> config = DotVelocitySecretAppConfig.config(request);
-		return config.isPresent() && config.get().extraParameters.containsKey(key)?
-			config.get().extraParameters.get(key): null;
+		return config.isPresent()? config.get().getStringOrNull(key) : null;
 	}
 
+	/**
+	 * Gets a secret as an object|string, based on the system host (if configured)
+	 * @param key String
+	 * @return Object
+	 */
 	public Object getSystemSecret (final String key) {
 
 		return getSystemSecret(key, null);
 	}
 
+	/**
+	 * Gets a secret as an object|string, based on the system host (if configured)
+	 * If not present, returns the default value
+	 * @param key String
+	 * @param defaultValue Object
+	 * @return Object
+	 */
 	public Object getSystemSecret (final String key,
 								   final Object defaultValue) {
 
 		final Optional<DotVelocitySecretAppConfig> config = DotVelocitySecretAppConfig.config(APILocator.systemHost());
-		return config.isPresent() && config.get().extraParameters.containsKey(key)?
-				config.get().extraParameters.get(key) : defaultValue;
+		return config.isPresent()? config.get().getStringOrNull(key) : defaultValue;
+	}
+
+	public char[] getCharArray(final String key) {
+
+		final HttpServletRequest request = HttpServletRequestThreadLocal.INSTANCE.getRequest();
+		final Optional<DotVelocitySecretAppConfig> config = DotVelocitySecretAppConfig.config(request);
+		return config.isPresent()? config.get().getCharArrayOrNull(key) : null;
+	}
+
+	public char[] getCharArraySystemSecret (final String key) {
+
+		return getCharArraySystemSecret(key, null);
+	}
+
+	public char[] getCharArraySystemSecret (final String key,
+								   final char[] defaultValue) {
+
+		final Optional<DotVelocitySecretAppConfig> config = DotVelocitySecretAppConfig.config(APILocator.systemHost());
+		return config.isPresent()? config.get().getCharArrayOrNull(key) : defaultValue;
 	}
 }
