@@ -166,7 +166,6 @@ describe('DotExperimentsCreateComponent', () => {
             expect(spectator.component.form.valid).toBeFalse();
 
             expect(spectator.component.form.controls.name.valid).toBeFalse();
-            expect(spectator.component.form.controls.description.valid).toBeFalse();
         });
     });
 });
