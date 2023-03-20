@@ -1,6 +1,8 @@
 import { CommonModule } from '@angular/common';
 import { NgModule } from '@angular/core';
 
+import { MenuModule } from 'primeng/menu';
+
 import { DotDropdownModule } from '@components/_common/dot-dropdown-component/dot-dropdown.module';
 import { DotPipesModule } from '@pipes/dot-pipes.module';
 
@@ -17,7 +19,8 @@ import { DotMyAccountModule } from '../dot-my-account/dot-my-account.module';
         DotGravatarModule,
         DotLoginAsModule,
         DotMyAccountModule,
-        DotPipesModule
+        DotPipesModule,
+        MenuModule
     ],
     declarations: [DotToolbarUserComponent],
     exports: [DotToolbarUserComponent]

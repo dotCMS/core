@@ -12,6 +12,7 @@ import { RouterTestingModule } from '@angular/router/testing';
 
 import { ButtonModule } from 'primeng/button';
 import { CheckboxModule } from 'primeng/checkbox';
+import { MenuModule } from 'primeng/menu';
 import { PasswordModule } from 'primeng/password';
 
 import { UiDotIconButtonModule } from '@components/_common/dot-icon-button/dot-icon-button.module';
@@ -106,7 +107,8 @@ describe('DotToolbarUserComponent', () => {
                 ReactiveFormsModule,
                 PasswordModule,
                 CheckboxModule,
-                HttpClientTestingModule
+                HttpClientTestingModule,
+                MenuModule
             ]
         });
 
