@@ -3,6 +3,8 @@
 .p-radiobutton {
     width: 20px;
     height: 20px;
+    border-radius: 50%;
+    transition: box-shadow 0.2s;
 }
 
 .p-radiobutton .p-radiobutton-box {
@@ -20,7 +22,7 @@
     outline: 0 none;
     outline-offset: 0;
     box-shadow: none;
-    border-color: $color-palette-primary;
+    border: 2px solid $border-color-highlight;
 }
 
 .p-radiobutton .p-radiobutton-box .p-radiobutton-icon {
@@ -43,15 +45,6 @@
 
 .p-radiobutton-label {
     margin-left: $spacing-1;
-}
-
-.p-radiobutton {
-    border-radius: 50%;
-    transition: box-shadow 0.2s;
-}
-
-.p-radiobutton .p-radiobutton-box:not(.p-disabled).p-focus {
-    border: 2px solid $border-color-highlight;
 }
 
 .p-radiobutton .p-radiobutton-box.p-highlight:not(.p-disabled).p-focus {

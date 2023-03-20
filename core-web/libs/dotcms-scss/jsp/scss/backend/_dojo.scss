@@ -84,14 +84,11 @@ select[multiple] {
         .dijitButtonNode {
             height: $action-button-size;
             width: $action-button-size;
+            padding: 0;
         }
 
         .dijitArrowButtonInner {
             display: none;
-        }
-
-        .dijitButtonNode {
-            padding: 0;
         }
 
         &.dijitDropDownButtonHover {

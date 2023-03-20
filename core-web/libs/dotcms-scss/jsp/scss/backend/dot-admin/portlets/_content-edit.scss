@@ -83,6 +83,7 @@ $sidebar-width: 300px;
 
     .content-edit-actions {
         border: none;
+        margin-bottom: 0;
     }
 
     a {
@@ -109,10 +110,6 @@ $sidebar-width: 300px;
             margin-bottom: 0px;
             border-bottom: none;
         }
-    }
-
-    .content-edit-actions {
-        margin-bottom: 0;
     }
 }
 

@@ -33,6 +33,8 @@ p-checkbox.ng-dirty.ng-invalid > .p-checkbox > .p-checkbox-box {
 .p-checkbox {
     width: 18px;
     height: 18px;
+    border-radius: 50%;
+    transition: box-shadow 0.2s;
 }
 
 .p-checkbox .p-checkbox-box {
@@ -78,11 +80,6 @@ p-checkbox.ng-dirty.ng-invalid > .p-checkbox > .p-checkbox-box {
 
 .p-checkbox-label {
     margin-left: $spacing-1;
-}
-
-.p-checkbox {
-    border-radius: 50%;
-    transition: box-shadow 0.2s;
 }
 
 .p-checkbox .p-checkbox-box.p-highlight:not(.p-disabled).p-focus {

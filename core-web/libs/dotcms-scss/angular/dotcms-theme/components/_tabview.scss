@@ -4,6 +4,7 @@
 .p-tabview .p-tabview-nav {
     border: solid rgba(0, 0, 0, 0.12);
     border-width: 0 0 1px 0;
+    position: relative;
 }
 
 .p-tabview .p-tabview-nav li {
@@ -18,6 +19,7 @@
     border: none;
     border-width: 0 0 0 0;
     border-color: transparent transparent transparent transparent;
+    border-radius: 0;
     color: $black;
     padding: 1.2rem $spacing-4 1.35rem;
     transition: none;
@@ -58,14 +60,6 @@
     color: $black;
     border-bottom-right-radius: $border-radius-xs;
     border-bottom-left-radius: $border-radius-xs;
-}
-
-.p-tabview .p-tabview-nav {
-    position: relative;
-}
-
-.p-tabview .p-tabview-nav li .p-tabview-nav-link {
-    border-radius: 0;
 }
 
 .p-tabview .p-tabview-nav li .p-tabview-nav-link > .p-ink {

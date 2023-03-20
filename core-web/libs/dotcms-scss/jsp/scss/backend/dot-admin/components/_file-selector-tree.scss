@@ -1,8 +1,3 @@
-.file-selector-tree .selectableFile {
-    align-items: center;
-    cursor: pointer;
-}
-
 .file-selector-tree .selectableFile .thumbnail {
     width: 48px;
     margin-right: 8px;
@@ -13,17 +8,11 @@
     margin: 0;
 }
 
-.file-selector-tree__views-menu {
-    align-items: center;
-}
-
 .file-selector-tree__table {
     margin-bottom: 80px;
     overflow-y: scroll;
-}
-
-.file-selector-tree .portlet-main {
-    overflow-y: inherit;
+    display: flex;
+    flex: 1;
 }
 
 .file-selector-tree {
@@ -43,6 +32,8 @@
 
     .selectableFile {
         display: flex;
+        align-items: center;
+        cursor: pointer;
 
         img {
             margin-right: calc($spacing-1 / 2);
@@ -98,11 +89,6 @@
     }
 }
 
-.file-selector-tree__table {
-    display: flex;
-    flex: 1;
-}
-
 .file-selector-tree__toolbar {
     background-color: $color-palette-gray-400;
     margin: 0;
@@ -111,6 +97,7 @@
 
 .file-selector-tree__views-menu {
     display: flex;
+    align-items: center;
 
     span {
         margin-right: calc($spacing-1 / 2);

@@ -7,6 +7,18 @@
         background-image: url("/html/js/dojo/custom-build/dijit/themes/dmundra/images/i.gif");
         background-repeat: repeat-y;
         zoom: 1;
+
+        .dojoDndItemBefore,
+        .dojoDndItemAfter {
+            border-bottom: none;
+            border-top: none;
+        }
+        .dojoDndItemBefore &TreeContent {
+            border-top: 2px solid #369;
+        }
+        .dojoDndItemAfter &TreeContent {
+            border-bottom: 2px solid #369;
+        }
     }
 
     &TreeIsLast {
@@ -22,7 +34,7 @@
     &TreeExpando {
         width: 18px;
         height: 18px;
-        background-position: 0 -2px;
+        background-position: 3px 1px;
     }
 
     &TreeRow {
@@ -46,12 +58,9 @@
         background-repeat: no-repeat;
     }
 
-    &TreeExpando {
-        background-position: 3px 1px;
-    }
-
     &TreeExpandoLeaf {
         background-position: 0 -2px;
+        background-image: url("/html/js/dojo/custom-build/dijit/themes/dmundra/images/treeExpand_leaf.gif");
     }
 
     &TreeLabel {
@@ -76,10 +85,6 @@
 
     &TreeExpandoClosed {
         background-image: url("/html/js/dojo/custom-build/dijit/themes/dmundra/images/treeExpand_plus.gif");
-    }
-
-    &TreeExpandoLeaf {
-        background-image: url("/html/js/dojo/custom-build/dijit/themes/dmundra/images/treeExpand_leaf.gif");
     }
 
     &TreeExpandoLoading {
@@ -108,19 +113,5 @@
 
     &Leaf {
         background: url("/html/js/dojo/custom-build/dijit/themes/dmundra/images/leaf.gif") no-repeat;
-    }
-
-    &TreeNode {
-        .dojoDndItemBefore,
-        .dojoDndItemAfter {
-            border-bottom: none;
-            border-top: none;
-        }
-        .dojoDndItemBefore &TreeContent {
-            border-top: 2px solid #369;
-        }
-        .dojoDndItemAfter &TreeContent {
-            border-bottom: 2px solid #369;
-        }
     }
 }
