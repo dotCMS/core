@@ -1,11 +1,10 @@
 import { Subject } from 'rxjs';
 
 import { HttpClient, HttpErrorResponse, HttpHandler, HttpResponse } from '@angular/common/http';
-import { Component, DebugElement, EventEmitter, Injectable, Input, Output } from '@angular/core';
+import { Component, DebugElement, EventEmitter, Input, Output } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 
-import { DialogService } from 'primeng/dynamicdialog';
 import { MenuModule } from 'primeng/menu';
 
 import { of } from 'rxjs/internal/observable/of';
@@ -126,19 +125,12 @@ const storeMock = {
         pageTypes: []
     })
 };
-@Injectable()
-export class DialogServiceMock {
-    open(): void {
-        /* */
-    }
-}
 
 describe('DotPagesComponent', () => {
     let fixture: ComponentFixture<DotPagesComponent>;
     let component: DotPagesComponent;
     let de: DebugElement;
     let store: DotPageStore;
-    let dialogService: DialogService;
     let dotRouterService: DotRouterService;
     let dotMessageDisplayService: DotMessageDisplayService;
     let dotPageRenderService: DotPageRenderService;
@@ -167,7 +159,6 @@ describe('DotPagesComponent', () => {
                 { provide: CoreWebService, useClass: CoreWebServiceMock },
                 { provide: DotMessageDisplayService, useClass: DotMessageDisplayServiceMock },
                 { provide: DotRouterService, useClass: MockDotRouterService },
-                { provide: DialogService, useClass: DialogServiceMock },
                 {
                     provide: SiteService,
                     useValue: {
@@ -189,7 +180,6 @@ describe('DotPagesComponent', () => {
             useValue: storeMock
         });
         store = TestBed.inject(DotPageStore);
-        dialogService = TestBed.inject(DialogService);
         dotRouterService = TestBed.inject(DotRouterService);
         dotMessageDisplayService = TestBed.inject(DotMessageDisplayService);
         dotPageRenderService = TestBed.inject(DotPageRenderService);
@@ -201,7 +191,6 @@ describe('DotPagesComponent', () => {
         fixture.detectChanges();
         spyOn(component.menu, 'hide');
         spyOn(dotMessageDisplayService, 'push');
-        spyOn(dialogService, 'open').and.callThrough();
         spyOn(dotPageRenderService, 'checkPermission').and.returnValue(of(true));
         spyOn(dotHttpErrorManagerService, 'handle');
     });
