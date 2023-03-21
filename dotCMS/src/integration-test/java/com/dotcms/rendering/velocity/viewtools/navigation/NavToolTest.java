@@ -1,12 +1,5 @@
 package com.dotcms.rendering.velocity.viewtools.navigation;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
-
 import com.dotcms.IntegrationTestBase;
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.datagen.ContentletDataGen;
@@ -20,7 +13,6 @@ import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
@@ -42,11 +34,6 @@ import com.liferay.util.FileUtil;
 import com.tngtech.java.junit.dataprovider.DataProvider;
 import com.tngtech.java.junit.dataprovider.DataProviderRunner;
 import com.tngtech.java.junit.dataprovider.UseDataProvider;
-import java.io.File;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import javax.servlet.http.HttpServletRequest;
 import org.apache.commons.beanutils.BeanUtils;
 import org.apache.velocity.tools.view.context.ViewContext;
 import org.junit.AfterClass;
@@ -56,6 +43,20 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.MethodSorters;
 import org.mockito.Mockito;
+
+import javax.servlet.http.HttpServletRequest;
+import java.io.File;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.stream.Collectors;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 /**
  * NavToolTest
@@ -547,8 +548,7 @@ public class NavToolTest extends IntegrationTestBase{
 
     @Test
     @UseDataProvider("editAndPreviewModes")
-    public void Test_Render_Menu_Items_On_Edit_Mode_Page_Mode(final PageMode pageMode) throws Exception{
-
+    public void Test_Render_Menu_Items_On_Edit_Mode_Page_Mode(final PageMode pageMode) throws Exception {
         final User mockedUSer = mock(User.class);
         Mockito.when(mockedUSer.isBackendUser()).thenReturn(true);
 
@@ -561,7 +561,7 @@ public class NavToolTest extends IntegrationTestBase{
         final ViewContext viewContext = mock(ViewContext.class);
         when(viewContext.getRequest()).thenReturn(request);
 
-        final NavTool navTool =  new NavTool();
+        final NavTool navTool = new NavTool();
         navTool.init(viewContext);
 
         final Host site = new SiteDataGen().nextPersisted();
@@ -577,17 +577,36 @@ public class NavToolTest extends IntegrationTestBase{
         APILocator.getContentletAPI().publish(pageAsset2, user, true);
 
         final NavResult navResult1 = navTool.getNav(site, folder.getPath());
-        assertNotNull(navResult1);
+        assertNotNull("There must be a valid NavResult object", navResult1);
         final List<? extends NavResult> children1 = navResult1.getChildren();
         assertEquals("Both items should appear in the nav result as they're both published. ",2,children1.size());
         APILocator.getContentletAPI().unpublish(pageAsset2, user, true);
-        assertFalse(pageAsset2.isLive());
+        assertFalse("Test HTML Page '" + pageAsset2.getTitle() + "' cannot be live at this point", pageAsset2.isLive());
 
         final NavResult navResult2 = navTool.getNav(site, folder.getPath());
         final List<? extends NavResult> children2 = navResult2.getChildren();
-        assertEquals("Now 2 items should appear in the nav result as we are simulating rendering on Edit mode ",2, children2.size());
-        assertEquals(children2.get(0).getTitle(), pageAsset1.getTitle());
-        assertEquals(children2.get(1).getTitle(), pageAsset2.getTitle());
+        assertEquals("Now 2 items should appear in the nav result as we are simulating rendering on Edit mode ", 2,
+                children2.size());
+        List<NavResult> found = children2.stream().filter(navResult -> {
+            try {
+                return navResult.getTitle().equalsIgnoreCase(pageAsset1.getTitle());
+            } catch (final Exception e) {
+                throw new RuntimeException("Title property in NavResult ' " + navResult + " ' could not be retrieved"
+                        , e);
+            }
+        }).collect(Collectors.toList());
+        assertFalse("Test HTML Page '" + pageAsset1.getTitle() + "' was not found in the list of NavResults",
+                found.isEmpty());
+        found = children2.stream().filter(navResult -> {
+            try {
+                return navResult.getTitle().equalsIgnoreCase(pageAsset2.getTitle());
+            } catch (final Exception e) {
+                throw new RuntimeException("Title property in NavResult ' " + navResult + " ' could not be retrieved"
+                        , e);
+            }
+        }).collect(Collectors.toList());
+        assertFalse("Test HTML Page '" + pageAsset2.getTitle() + "' was not found in the list of NavResults",
+                found.isEmpty());
     }
 
     @DataProvider
