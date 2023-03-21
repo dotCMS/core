@@ -21,6 +21,7 @@ import { SearchableDropDownModule } from '@components/_common/searchable-dropdow
 import { DotDialogModule } from '@components/dot-dialog/dot-dialog.module';
 import { DotNavigationService } from '@components/dot-navigation/services/dot-navigation.service';
 import { DotFormatDateService } from '@dotcms/app/api/services/dot-format-date-service';
+import { DotGravatarService } from '@dotcms/app/api/services/dot-gravatar-service';
 import { DotMenuService } from '@dotcms/app/api/services/dot-menu.service';
 import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
 import { DotUiColorsService } from '@dotcms/app/api/services/dot-ui-colors/dot-ui-colors.service';
@@ -49,6 +50,12 @@ import { IframeOverlayService } from '../../../_common/iframe/service/iframe-ove
 import { DotGravatarModule } from '../dot-gravatar/dot-gravatar.module';
 import { DotLoginAsComponent } from '../dot-login-as/dot-login-as.component';
 import { DotMyAccountComponent } from '../dot-my-account/dot-my-account.component';
+
+class DotGravatarServiceMock {
+    getPhoto() {
+        return of('/some_avatar_url');
+    }
+}
 
 describe('DotToolbarUserComponent', () => {
     let comp: DotToolbarUserComponent;
@@ -91,7 +98,8 @@ describe('DotToolbarUserComponent', () => {
                 DotEventsSocket,
                 { provide: DotEventsSocketURL, useFactory: dotEventSocketURLFactory },
                 DotcmsConfigService,
-                DotFormatDateService
+                DotFormatDateService,
+                { provide: DotGravatarService, useClass: DotGravatarServiceMock }
             ],
             imports: [
                 BrowserAnimationsModule,
