@@ -4,29 +4,14 @@
 :host {
     display: block;
 
-    .toolbar-user__content {
-        min-width: 250px;
-    }
-
-    .toolbar-user__email {
-        margin: 0;
-    }
-
-    .toolbar-user__header-gravatar {
-        margin-right: $spacing-1;
-    }
-
-    .user-menu__item {
-        display: block;
-        padding: 0.25rem 0;
-    }
-
     ::ng-deep .toolbar-user__user-name {
         margin: 0;
         white-space: nowrap;
         font-size: $font-size-large;
         color: $color-gray-600;
     }
+
+    //Gravatar styles were taken from dot-avatar component
 
     ::ng-deep .gravatar {
         border-radius: 50%;
@@ -35,15 +20,16 @@
     }
 
     ::ng-deep .gravatar-placeholder {
-        border-radius: 50%;
         width: 35px;
         height: 35px;
+        line-height: 35px;
+        font-size: calc(35px - (35px * 25px) / 100px);
+
+        border-radius: 50%;
         background-color: $brand-secondary;
         color: $white;
         font-family: "Helvetica Neue", Helvetica, Arial, "Lucida Grande", sans-serif;
-        line-height: 35px;
         text-align: center;
-        font-size: calc(35px - (35px * 25px) / 100px);
     }
 
     ::ng-deep #toolbar-header:hover {
