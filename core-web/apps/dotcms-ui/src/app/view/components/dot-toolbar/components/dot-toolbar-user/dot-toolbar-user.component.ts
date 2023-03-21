@@ -157,9 +157,9 @@ export class DotToolbarUserComponent implements OnInit {
     }
 
     getEmailFromAuthState() {
-        return this.auth.loginAsUser === null
-            ? this.auth.user.emailAddress
-            : this.auth.loginAsUser.emailAddress;
+        return this.auth.loginAsUser
+            ? this.auth.loginAsUser.emailAddress
+            : this.auth.user.emailAddress;
     }
 
     private getNameFromAuthState() {
