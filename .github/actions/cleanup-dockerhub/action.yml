@@ -1,0 +1,18 @@
+# action.yml
+name: 'Delete old Dockerhub Image Tags'
+description: 'This script will scour Dockerhub for old image tags to delete'
+inputs:
+  delete-this-pattern:  # id of input
+    description: 'regex of image tags to delete '
+    required: true
+    default: 'SNAPSHOT|prerelease|debug|test|master_'
+  delete-older-than-days:  # id of input
+    description: 'only tags older than this will be deleted'
+    required: true
+    default: '50'
+runs:
+  using: 'docker'
+  image: 'Dockerfile'
+  env:
+    PATTERN_TO_MATCH: ${{ inputs.delete-this-pattern }}
+    DELETE_OLDER_THAN_DAYS: ${{ inputs.delete-older-than-days }}

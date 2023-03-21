@@ -50,6 +50,12 @@ public class JsonUtil {
      * @return If the String represents JSON data and has the appropriate format, returns {@code true}.
      */
     public static boolean isValidJSON(final String fieldValue) {
+        if(fieldValue==null ) {
+            return false;
+        }
+        if( ! fieldValue.trim().startsWith("{")  && ! fieldValue.trim().startsWith("[")){
+            return false;
+        }
         try {
             JsonNode node = JSON_MAPPER.readTree(fieldValue);
             return node != null && !node.isMissingNode();
