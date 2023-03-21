@@ -103,3 +103,4 @@ This maintenance release includes the following code fixes:
 86. https://github.com/dotCMS/core/issues/23009 : Add a way to set categories on workflow #23009
 87. https://github.com/dotCMS/core/issues/23341 : Menu Nav in the BE not showing options when collapse #23341
 88. https://github.com/dotCMS/core/issues/23890 : Navigation showing duplicating results when multilingual page and requesting non-default lang #23890
+89. https://github.com/dotCMS/core/issues/24158 : CMSFilter updating language param #24158
