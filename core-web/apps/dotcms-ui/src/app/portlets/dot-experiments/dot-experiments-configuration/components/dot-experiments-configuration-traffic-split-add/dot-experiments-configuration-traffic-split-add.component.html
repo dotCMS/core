@@ -57,6 +57,7 @@
                                 [maxFractionDigits]="2"
                                 [min]="0"
                                 [max]="100"
+                                (onInput)="checkControl(i, $event.value)"
                                 formControlName="weight"
                                 mode="decimal"
                             >

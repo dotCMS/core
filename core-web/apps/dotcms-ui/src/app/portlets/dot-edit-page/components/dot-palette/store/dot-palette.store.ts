@@ -195,7 +195,7 @@ export class DotPaletteStore extends ComponentStore<DotPaletteState> {
                         lang: languageId || '1',
                         filter: filter || '',
                         offset: (event && event.first.toString()) || '0',
-                        query: `+contentType: ${this.contentTypeVarName}`
+                        query: `+contentType: ${this.contentTypeVarName} +deleted: false`
                     })
                     .pipe(take(1))
                     .subscribe((response: ESContent) => {
