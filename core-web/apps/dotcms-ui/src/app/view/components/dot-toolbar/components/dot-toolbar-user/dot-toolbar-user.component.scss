@@ -3,8 +3,19 @@
 
 :host {
     display: block;
+}
 
-    ::ng-deep .toolbar-user__user-name {
+.gravatar-button {
+    cursor: pointer;
+}
+
+::ng-deep .p-menuitem-text {
+    .toolbar-user__header {
+        display: flex;
+        align-items: center;
+        gap: $spacing-1;
+    }
+    .toolbar-user__user-name {
         margin: 0;
         white-space: nowrap;
         font-size: $font-size-large;
@@ -12,14 +23,13 @@
     }
 
     //Gravatar styles were taken from dot-avatar component
-
-    ::ng-deep .gravatar {
+    .gravatar {
         border-radius: 50%;
         width: 35px;
         height: 35px;
     }
 
-    ::ng-deep .gravatar-placeholder {
+    .gravatar-placeholder {
         width: 35px;
         height: 35px;
         line-height: 35px;
@@ -32,14 +42,8 @@
         text-align: center;
     }
 
-    ::ng-deep #toolbar-header:hover {
+    #toolbar-header:hover {
         cursor: default;
         background-color: white;
-    }
-
-    ::ng-deep .toolbar-user__header {
-        display: flex;
-        align-items: center;
-        gap: $spacing-1;
     }
 }

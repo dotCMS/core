@@ -4,10 +4,10 @@ import { Observable } from 'rxjs';
 import { Component, Inject, OnInit, ViewChild } from '@angular/core';
 
 import { MenuItem } from 'primeng/api';
+import { Menu } from 'primeng/menu';
 
 import { map, switchMap } from 'rxjs/operators';
 
-import { DotDropdownComponent } from '@components/_common/dot-dropdown-component/dot-dropdown.component';
 import { DotNavigationService } from '@components/dot-navigation/services/dot-navigation.service';
 import { DotGravatarService } from '@dotcms/app/api/services/dot-gravatar-service';
 import { DotRouterService } from '@dotcms/app/api/services/dot-router/dot-router.service';
@@ -15,15 +15,13 @@ import { LOCATION_TOKEN } from '@dotcms/app/providers';
 import { DotMessageService } from '@dotcms/data-access';
 import { Auth, CurrentUser, LoggerService, LoginService, LOGOUT_URL } from '@dotcms/dotcms-js';
 
-import { IframeOverlayService } from '../../../_common/iframe/service/iframe-overlay.service';
-
 @Component({
     selector: 'dot-toolbar-user',
     styleUrls: ['./dot-toolbar-user.component.scss'],
     templateUrl: 'dot-toolbar-user.component.html'
 })
 export class DotToolbarUserComponent implements OnInit {
-    @ViewChild(DotDropdownComponent) dropdown: DotDropdownComponent;
+    @ViewChild(Menu) menu: Menu;
 
     items$: Observable<MenuItem[]>;
 
@@ -38,7 +36,6 @@ export class DotToolbarUserComponent implements OnInit {
         @Inject(LOCATION_TOKEN) private location: Location,
         private loggerService: LoggerService,
         private loginService: LoginService,
-        public iframeOverlayService: IframeOverlayService,
         private dotNavigationService: DotNavigationService,
         private dotRouterService: DotRouterService,
         private dotMessageService: DotMessageService,
@@ -118,12 +115,12 @@ export class DotToolbarUserComponent implements OnInit {
      * @param any $event
      * @memberof To/olbarUserComponent
      */
-    logoutAs($event): void {
+    logoutAs($event: Event): void {
         $event.preventDefault();
 
         this.loginService.logoutAs().subscribe(
             () => {
-                this.dropdown.closeIt();
+                this.menu.hide();
                 this.dotNavigationService.goToFirstPortlet().then(() => {
                     this.location.reload();
                 });
@@ -141,7 +138,7 @@ export class DotToolbarUserComponent implements OnInit {
      * @memberof ToolbarUserComponent
      */
     tooggleLoginAs(): boolean {
-        this.dropdown.closeIt();
+        this.menu.hide();
         this.showLoginAs = !this.showLoginAs;
 
         return false;
@@ -159,7 +156,7 @@ export class DotToolbarUserComponent implements OnInit {
         return false;
     }
 
-    private getEmailFromAuthState() {
+    getEmailFromAuthState() {
         return this.auth.loginAsUser === null
             ? this.auth.user.emailAddress
             : this.auth.loginAsUser.emailAddress;

@@ -1,14 +1,11 @@
-<dot-dropdown-component
+<dot-gravatar
+    class="gravatar-button"
     id="dot-toolbar-user"
-    *ngIf="auth.user"
-    [gravatar]="auth.loginAsUser === null ? auth.user.emailAddress : auth.loginAsUser.emailAddress"
-    (wasOpen)="iframeOverlayService.show()"
-    (shutdown)="iframeOverlayService.hide()"
-    inverted="true"
-    position="right"
->
-    <p-menu [model]="items$ | async" appendTo="body"></p-menu>
-</dot-dropdown-component>
+    [email]="getEmailFromAuthState()"
+    [size]="32"
+    (click)="menu.toggle($event)"
+></dot-gravatar>
+<p-menu #menu [model]="items$ | async" [popup]="true" appendTo="body"></p-menu>
 
 <dot-login-as
     *ngIf="showLoginAs"

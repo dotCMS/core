@@ -3,7 +3,6 @@ import { NgModule } from '@angular/core';
 
 import { MenuModule } from 'primeng/menu';
 
-import { DotDropdownModule } from '@components/_common/dot-dropdown-component/dot-dropdown.module';
 import { DotPipesModule } from '@pipes/dot-pipes.module';
 
 import { DotToolbarUserComponent } from './dot-toolbar-user.component';
@@ -15,7 +14,6 @@ import { DotMyAccountModule } from '../dot-my-account/dot-my-account.module';
 @NgModule({
     imports: [
         CommonModule,
-        DotDropdownModule,
         DotGravatarModule,
         DotLoginAsModule,
         DotMyAccountModule,
