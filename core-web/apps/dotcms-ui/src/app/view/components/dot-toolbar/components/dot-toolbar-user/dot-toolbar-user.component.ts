@@ -175,7 +175,7 @@ export class DotToolbarUserComponent implements OnInit {
         const name = this.getNameFromAuthState();
 
         const photoTemplate = photo
-            ? `<img src=${photo} class="gravatar" />`
+            ? `<img src=${photo} alt="${name} gravatar" title="${name} gravatar" class="gravatar" />`
             : `<div class="gravatar-placeholder">${name.charAt(0)}</div>`;
 
         const nameTemplate = ` <div>
