@@ -257,7 +257,7 @@ public class ContainerResource implements Serializable {
 
             final Contentlet contentlet =
                     (contentShorty.type == ShortType.IDENTIFIER) ?
-                            this.contentletAPI.findContentletByIdentifierAnyLanguageAndVariant(contentShorty.longId):
+                            this.contentletAPI.findContentletByIdentifierAnyLanguageAnyVariant(contentShorty.longId):
                             this.contentletAPI.find(contentShorty.longId, user, mode.respectAnonPerms);
 
             final String html = this.getHTML(req, res, containerId, user, contentlet, pageInode);
