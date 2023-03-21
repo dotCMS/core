@@ -45,8 +45,7 @@ import { DotPipesModule } from '@pipes/dot-pipes.module';
 
 import { DotToolbarUserComponent } from './dot-toolbar-user.component';
 
-import { DotDropdownComponent } from '../../../_common/dot-dropdown-component/dot-dropdown.component';
-import { IframeOverlayService } from '../../../_common/iframe/service/iframe-overlay.service';
+// import { DotGravatarComponent } from '../dot-gravatar/dot-gravatar.component';
 import { DotGravatarModule } from '../dot-gravatar/dot-gravatar.module';
 import { DotLoginAsComponent } from '../dot-login-as/dot-login-as.component';
 import { DotMyAccountComponent } from '../dot-my-account/dot-my-account.component';
@@ -61,19 +60,13 @@ describe('DotToolbarUserComponent', () => {
     let comp: DotToolbarUserComponent;
     let fixture: ComponentFixture<DotToolbarUserComponent>;
     let de: DebugElement;
-    let dotDropdownComponent: DotDropdownComponent;
     let loginService: LoginService;
     let locationService: Location;
     let dotNavigationService: DotNavigationService;
 
     beforeEach(() => {
         TestBed.configureTestingModule({
-            declarations: [
-                DotDropdownComponent,
-                DotLoginAsComponent,
-                DotMyAccountComponent,
-                DotToolbarUserComponent
-            ],
+            declarations: [DotLoginAsComponent, DotMyAccountComponent, DotToolbarUserComponent],
             providers: [
                 {
                     provide: LOCATION_TOKEN,
@@ -83,7 +76,6 @@ describe('DotToolbarUserComponent', () => {
                 },
                 { provide: LoginService, useClass: LoginServiceMock },
                 DotRouterService,
-                IframeOverlayService,
                 DotcmsEventsService,
                 DotNavigationService,
                 DotMenuService,
@@ -144,8 +136,8 @@ describe('DotToolbarUserComponent', () => {
         };
         fixture.detectChanges();
 
-        dotDropdownComponent = de.query(By.css('dot-dropdown-component')).componentInstance;
-        dotDropdownComponent.onToggle();
+        const dotGravatarComponent = de.query(By.css('dot-gravatar')).nativeElement;
+        dotGravatarComponent.click();
         fixture.detectChanges();
 
         const logoutLink = de.query(By.css('#dot-toolbar-user-link-logout'));
@@ -164,8 +156,8 @@ describe('DotToolbarUserComponent', () => {
 
         fixture.detectChanges();
 
-        dotDropdownComponent = de.query(By.css('dot-dropdown-component')).componentInstance;
-        dotDropdownComponent.onToggle();
+        const dotGravatarComponent = de.query(By.css('dot-gravatar')).nativeElement;
+        dotGravatarComponent.click();
         fixture.detectChanges();
 
         const logoutAsLink = de.query(By.css('#dot-toolbar-user-link-logout-as'));
