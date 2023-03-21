@@ -1,23 +1,12 @@
 package com.dotmarketing.portlets.fileassets.business;
 
-import static junit.framework.TestCase.assertEquals;
-import static junit.framework.TestCase.assertTrue;
-import static org.junit.Assert.assertNotEquals;
-
-import com.dotcms.api.tree.Parentable;
-import com.dotcms.datagen.SiteDataGen;
-import com.dotmarketing.beans.Host;
-import com.dotmarketing.portlets.templates.business.TemplateAPI;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
-import java.util.stream.Collectors;
-import org.junit.BeforeClass;
-import org.junit.Test;
 import com.dotcms.IntegrationTestBase;
+import com.dotcms.api.tree.Parentable;
 import com.dotcms.datagen.FileAssetDataGen;
 import com.dotcms.datagen.FolderDataGen;
+import com.dotcms.datagen.SiteDataGen;
 import com.dotcms.util.IntegrationTestInitService;
+import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.exception.DotRuntimeException;
@@ -26,6 +15,17 @@ import com.dotmarketing.portlets.contentlet.model.IndexPolicy;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.liferay.portal.model.User;
 import com.liferay.util.FileUtil;
+import org.junit.BeforeClass;
+import org.junit.Test;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
+import java.util.stream.Collectors;
+
+import static junit.framework.TestCase.assertEquals;
+import static junit.framework.TestCase.assertTrue;
+import static org.junit.Assert.assertNotEquals;
 
 public class FileAssetAPITest extends IntegrationTestBase {
 
@@ -197,7 +197,7 @@ public class FileAssetAPITest extends IntegrationTestBase {
             fileNames.add(file.getName());
             FileUtil.write(file, "helloworld");
             final FileAssetDataGen fileAssetDataGen = new FileAssetDataGen(parentFolder, file);
-            fileAssetDataGen.setPolicy(IndexPolicy.DEFER);
+            fileAssetDataGen.setPolicy(IndexPolicy.FORCE);
             fileAssetDataGen.nextPersisted();
         }
         
@@ -231,7 +231,7 @@ public class FileAssetAPITest extends IntegrationTestBase {
             fileNames.add(file.getName());
             FileUtil.write(file, "helloworld");
             final FileAssetDataGen fileAssetDataGen = new FileAssetDataGen(parentFolder, file);
-            fileAssetDataGen.setPolicy(IndexPolicy.DEFER);
+            fileAssetDataGen.setPolicy(IndexPolicy.FORCE);
             fileAssetDataGen.nextPersisted();
         }
         
@@ -276,7 +276,7 @@ public class FileAssetAPITest extends IntegrationTestBase {
             fileNames.add(file.getName());
             FileUtil.write(file, "helloworld");
             final FileAssetDataGen fileAssetDataGen = new FileAssetDataGen(parentFolder, file);
-            fileAssetDataGen.setPolicy(IndexPolicy.DEFER);
+            fileAssetDataGen.setPolicy(IndexPolicy.FORCE);
             fileAssetDataGen.nextPersisted();
         }
         
@@ -316,15 +316,15 @@ public class FileAssetAPITest extends IntegrationTestBase {
             fileNames.add(file.getName());
             FileUtil.write(file, "helloworld");
             final FileAssetDataGen fileAssetDataGen = new FileAssetDataGen(parentFolder, file);
-            fileAssetDataGen.setPolicy(IndexPolicy.DEFER);
+            fileAssetDataGen.setPolicy(IndexPolicy.FORCE);
             fileAssetDataGen.nextPersisted();
         }
 
         FileAssetSearcher searcher = FileAssetSearcher.builder().user(user)
-                        .host(APILocator.getHostAPI().findDefaultHost(user, false)).respectFrontendRoles(false).build();
+                                             .host(APILocator.getHostAPI().findDefaultHost(user, false)).respectFrontendRoles(false).build();
 
         List<String> assetNames = APILocator.getFileAssetAPI().findFileAssetsByDB(searcher).stream()
-                        .map(c -> c.getFileName()).collect(Collectors.toList());
+                                          .map(c -> c.getFileName()).collect(Collectors.toList());
 
 
         assert (assetNames.size() > -fileAssetSize);
@@ -354,7 +354,7 @@ public class FileAssetAPITest extends IntegrationTestBase {
             fileNames.add(file.getName());
             FileUtil.write(file, "helloworld");
             final FileAssetDataGen fileAssetDataGen = new FileAssetDataGen(parentFolder, file);
-            fileAssetDataGen.setPolicy(IndexPolicy.DEFER);
+            fileAssetDataGen.setPolicy(IndexPolicy.FORCE);
             fileAssetDataGen.nextPersistedAndPublish();
         }
 
@@ -385,7 +385,7 @@ public class FileAssetAPITest extends IntegrationTestBase {
             fileNames.add(file.getName());
             FileUtil.write(file, "helloworld");
             final FileAssetDataGen fileAssetDataGen = new FileAssetDataGen(parentFolder, file);
-            fileAssetDataGen.setPolicy(IndexPolicy.DEFER);
+            fileAssetDataGen.setPolicy(IndexPolicy.FORCE);
             fileAssetDataGen.nextPersisted();
         }
 
@@ -416,7 +416,7 @@ public class FileAssetAPITest extends IntegrationTestBase {
             fileNames.add(file.getName());
             FileUtil.write(file, "helloworld");
             final FileAssetDataGen fileAssetDataGen = new FileAssetDataGen(parentFolder, file);
-            fileAssetDataGen.setPolicy(IndexPolicy.DEFER);
+            fileAssetDataGen.setPolicy(IndexPolicy.FORCE);
             final Contentlet fileAsset = fileAssetDataGen.nextPersisted();
             APILocator.getContentletAPI().archive(fileAsset,user,false);
         }
@@ -448,7 +448,7 @@ public class FileAssetAPITest extends IntegrationTestBase {
             fileNames.add(file.getName());
             FileUtil.write(file, "helloworld");
             final FileAssetDataGen fileAssetDataGen = new FileAssetDataGen(site, file);
-            fileAssetDataGen.setPolicy(IndexPolicy.DEFER);
+            fileAssetDataGen.setPolicy(IndexPolicy.FORCE);
             fileAssetDataGen.nextPersistedAndPublish();
         }
 
@@ -465,28 +465,27 @@ public class FileAssetAPITest extends IntegrationTestBase {
      * ExpectedResult: list of fileAssets that working under the host
      */
     @Test
-    public void test_findFileAssetsByHost_workingFileAssets_success()
-            throws Exception {
-
+    public void test_findFileAssetsByHost_workingFileAssets_success() throws Exception {
         final User user = APILocator.systemUser();
         final Host site = new SiteDataGen().nextPersisted();
 
-        List<String> fileNames = new ArrayList<>();
-        final int fileAssetSize=3;
-
-        for(int i=0;i<fileAssetSize;i++) {
-            final java.io.File file = java.io.File.createTempFile("blah" + i, ".txt");
+        final List<String> fileNames = new ArrayList<>();
+        final int EXPECTED_FILE_ASSET_COUNT = 3;
+        for (int i = 0; i < EXPECTED_FILE_ASSET_COUNT; i++) {
+            final java.io.File file = java.io.File.createTempFile("working_file_" + i + "_", ".txt");
             fileNames.add(file.getName());
             FileUtil.write(file, "helloworld");
             final FileAssetDataGen fileAssetDataGen = new FileAssetDataGen(site, file);
-            fileAssetDataGen.setPolicy(IndexPolicy.DEFER);
+            fileAssetDataGen.setPolicy(IndexPolicy.FORCE);
             fileAssetDataGen.nextPersisted();
         }
 
-        List<FileAsset> assets = APILocator.getFileAssetAPI().findFileAssetsByHost(site,user,false,true,false,false);
-        assertEquals(fileAssetSize,assets.size());
-        assets.forEach(a-> {
-            assert(fileNames.contains(a.getFileName()));
+        final List<FileAsset> assets = APILocator.getFileAssetAPI().findFileAssetsByHost(site, user, false, true, false,
+                false);
+        assertEquals("Expected count of working files does not match the resulting files: " + assets, EXPECTED_FILE_ASSET_COUNT,
+                assets.size());
+        assets.forEach(a -> {
+            assert (fileNames.contains(a.getFileName()));
         });
     }
 
@@ -496,29 +495,28 @@ public class FileAssetAPITest extends IntegrationTestBase {
      * ExpectedResult: list of fileAssets that archived under the host
      */
     @Test
-    public void test_findFileAssetsByHost_archivedFileAssets_success()
-            throws Exception {
-
+    public void test_findFileAssetsByHost_archivedFileAssets_success() throws Exception {
         final User user = APILocator.systemUser();
         final Host site = new SiteDataGen().nextPersisted();
 
-        List<String> fileNames = new ArrayList<>();
-        final int fileAssetSize=3;
-
-        for(int i=0;i<fileAssetSize;i++) {
-            final java.io.File file = java.io.File.createTempFile("blah" + i, ".txt");
+        final List<String> fileNames = new ArrayList<>();
+        final int EXPECTED_FILE_ASSET_COUNT = 3;
+        for (int i = 0; i < EXPECTED_FILE_ASSET_COUNT; i++) {
+            final java.io.File file = java.io.File.createTempFile("archived_file_" + i + "_", ".txt");
             fileNames.add(file.getName());
             FileUtil.write(file, "helloworld");
             final FileAssetDataGen fileAssetDataGen = new FileAssetDataGen(site, file);
-            fileAssetDataGen.setPolicy(IndexPolicy.DEFER);
+            fileAssetDataGen.setPolicy(IndexPolicy.FORCE);
             final Contentlet fileAsset = fileAssetDataGen.nextPersisted();
-            APILocator.getContentletAPI().archive(fileAsset,user,false);
+            APILocator.getContentletAPI().archive(fileAsset, user, false);
         }
 
-        List<FileAsset> assets = APILocator.getFileAssetAPI().findFileAssetsByHost(site,user,false,false,true,false);
-        assertEquals(fileAssetSize,assets.size());
-        assets.forEach(a-> {
-            assert(fileNames.contains(a.getFileName()));
+        final List<FileAsset> assets = APILocator.getFileAssetAPI().findFileAssetsByHost(site, user, false, false,
+                true, false);
+        assertEquals("Expected count of archived files does not match the resulting files: " + assets, EXPECTED_FILE_ASSET_COUNT,
+                assets.size());
+        assets.forEach(a -> {
+            assert (fileNames.contains(a.getFileName()));
         });
     }
 
