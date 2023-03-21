@@ -55,6 +55,7 @@ export class DotUploadAssetComponent implements OnDestroy {
     public error: string;
     public animation = 'shakeend';
     public $uploadRequestSubs: Subscription;
+    public controller: AbortController;
 
     @HostListener('window:click', ['$event.target']) onClick(e) {
         const clickedOutside = !this.el.nativeElement.contains(e);
@@ -120,9 +121,10 @@ export class DotUploadAssetComponent implements OnDestroy {
      * @memberof DotUploadAssetComponent
      */
     uploadFile() {
+        this.controller = new AbortController();
         this.status = STATUS.UPLOAD;
         this.$uploadRequestSubs = this.imageService
-            .publishContent({ data: this.file })
+            .publishContent({ data: this.file, signal: this.controller.signal })
             .pipe(
                 take(1),
                 catchError((error: HttpErrorResponse) => this.handleError(error))
@@ -198,6 +200,6 @@ export class DotUploadAssetComponent implements OnDestroy {
 
     private cancelUploading(): void {
         this.$uploadRequestSubs.unsubscribe();
-        this.imageService.currentXMLHttpRequest?.abort();
+        this.controller?.abort();
     }
 }
