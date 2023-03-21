@@ -210,7 +210,7 @@
                 lang="<%=contentLanguage%>"
                 custom-blocks='<%=customBlocks%>'>
             </dotcms-block-editor>
-            <input type="hidden" name="<%=field.getFieldContentlet()%>" id="<%=field.getVelocityVarName()%>"/>
+            <input type="hidden" name="<%=field.getFieldContentlet()%>" id="editor-input-value-<%=field.getVelocityVarName()%>"/>
 
             <script>
 
@@ -240,7 +240,7 @@
 
                     const blockEditor = document.getElementById("block-editor-<%=field.getVelocityVarName()%>");
                     const block = blockEditor.querySelector('.ProseMirror');
-                    const field = document.querySelector('#<%=field.getVelocityVarName()%>');
+                    const field = document.querySelector('#editor-input-value-<%=field.getVelocityVarName()%>');
 
                     if (content) {
                         blockEditor.value = content;
