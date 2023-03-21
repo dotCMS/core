@@ -1,11 +1,13 @@
 package com.dotcms.rest.api.v1.folder;
 
+import com.dotcms.rest.api.v1.categories.CategoryView;
 import com.dotcms.util.TreeableNameComparator;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.portlets.categories.model.Category;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
@@ -268,6 +270,10 @@ public class FolderHelper {
                                     PermissionAPI.PERMISSION_CAN_ADD_CHILDREN,user)).getOrElse(false))));
         }
         return subFolders;
+    }
+
+    public FolderParentPathView toFolderParentPathView(final Folder folder) throws DotDataException, DotSecurityException {
+        return new FolderParentPathView(folder);
     }
 
 }

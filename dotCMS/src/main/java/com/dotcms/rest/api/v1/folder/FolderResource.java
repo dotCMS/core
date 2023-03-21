@@ -21,7 +21,6 @@ import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
-import javax.servlet.http.HttpSession;
 import javax.ws.rs.DELETE;
 import javax.ws.rs.PUT;
 import org.glassfish.jersey.server.JSONP;
@@ -34,7 +33,6 @@ import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
-import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
@@ -364,4 +362,45 @@ public class FolderResource implements Serializable {
                 Response.ok(new ResponseEntityView(folder)).build(); // 200
     }
 
+
+    /**
+     * This endpoint will try to retrieve parent folder path by child folder id
+     *
+     * @return Folder
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    @GET
+    @Path("/parent/{folderId}")
+    @JSONP
+    @NoCache
+    @Produces({MediaType.APPLICATION_JSON})
+    public final Response findParentFolder(@Context final HttpServletRequest httpServletRequest,
+                                         @Context final HttpServletResponse httpServletResponse,
+                                         @PathParam("folderId") final String folderId
+    ) throws  DotDataException, DotSecurityException {
+
+        final InitDataObject initData =
+                new WebResource.InitBuilder(webResource)
+                        .rejectWhenNoUser(true)
+                        .requiredBackendUser(true)
+                        .requiredFrontendUser(false)
+                        .requestAndResponse(httpServletRequest, httpServletResponse)
+                        .init();
+
+        final User user = initData.getUser();
+
+        Logger.debug(this, () -> "Finding the parent folder by child folder id: " + folderId);
+
+        final Folder folder = APILocator.getFolderAPI().find(folderId, user,
+                PageMode.get(httpServletRequest).respectAnonPerms);
+
+        if (folder == null || !UtilMethods.isSet(folder.getIdentifier())) {
+            return Response.status(Response.Status.NOT_FOUND).build();
+        }
+
+        final Folder parentFolder = APILocator.getFolderAPI().findParentFolder(folder, user,
+                PageMode.get(httpServletRequest).respectAnonPerms);
+       return Response.ok(new ResponseEntityView<FolderParentPathView>(this.folderHelper.toFolderParentPathView(parentFolder))).build();
+    }
 }
