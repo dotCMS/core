@@ -271,9 +271,4 @@ public class FolderHelper {
         }
         return subFolders;
     }
-
-    public FolderParentPathView toFolderParentPathView(final Folder folder) throws DotDataException, DotSecurityException {
-        return new FolderParentPathView(folder);
-    }
-
 }

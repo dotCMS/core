@@ -71,7 +71,7 @@ dojo.declare("dotcms.dijit.tree.HostFolderTreeReadStoreModel", null, {
 
             if (!this.themesOnly) {
                 if (this.requiredPermissions == '') {
-                    BrowserAjax.getFolderSubfolders(parentItemId, dojo.hitch(this, this._getChildrenCallback, parentItem, onComplete, onError));
+                    BrowserAjax.getFolderSubfolders(parentItemId,true, dojo.hitch(this, this._getChildrenCallback, parentItem, onComplete, onError));
                 } else {
                     BrowserAjax.getFolderSubfoldersByPermissions(parentItemId, this.requiredPermissions, dojo.hitch(this, this._getChildrenCallback, parentItem, onComplete, onError));
                 }

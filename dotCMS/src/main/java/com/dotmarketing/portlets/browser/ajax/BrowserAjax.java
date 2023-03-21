@@ -2099,6 +2099,24 @@ public class BrowserAjax {
         return folderMap;
 	}
 
+	private Map<String, Object> folderMap(final Folder folder,final Folder parent) throws DotDataException, DotSecurityException {
+		UserWebAPI userWebAPI = WebAPILocator.getUserWebAPI();
+		HostAPI hostAPI = APILocator.getHostAPI();
+		Map<String, Object> folderMap = new HashMap<String, Object>();
+		folderMap.put("type", "folder");
+		folderMap.put("name", folder.getName());
+		folderMap.put("id", folder.getIdentifier());
+		folderMap.put("inode", folder.getInode());
+		folderMap.put("defaultFileType", folder.getDefaultFileType());
+		String currentPath = hostAPI.findParentHost(folder, userWebAPI.getSystemUser(), false).getHostname();
+		String fullPath = currentPath + ":/" + folder.getName();
+		String absolutePath = "/" + folder.getName();
+		folderMap.put("fullPath", fullPath);
+		folderMap.put("absolutePath", absolutePath);
+		folderMap.put("parentPath", parent.getPath());
+		return folderMap;
+	}
+
 	public List<Map<String, Object>> getHosts() throws PortalException, SystemException, DotDataException, DotSecurityException {
     	UserWebAPI userWebAPI = WebAPILocator.getUserWebAPI();
     	WebContext ctx = WebContextFactory.get();
@@ -2276,11 +2294,11 @@ public class BrowserAjax {
 		return foldersToReturn;
 	}
 
-	public List<Map<String, Object>> getFolderSubfolders(String parentFolderId) throws PortalException, SystemException, DotDataException, DotSecurityException {
+	public List<Map<String, Object>> getFolderSubfolders(String parentFolderId, boolean showParentPath) throws PortalException, SystemException, DotDataException, DotSecurityException {
 		UserWebAPI userWebAPI = WebAPILocator.getUserWebAPI();
 		WebContext ctx = WebContextFactory.get();
-        User user = userWebAPI.getLoggedInUser(ctx.getHttpServletRequest());
-        Role[] roles = new Role[]{};
+		User user = userWebAPI.getLoggedInUser(ctx.getHttpServletRequest());
+		Role[] roles = new Role[]{};
 		try {
 			roles = com.dotmarketing.business.APILocator.getRoleAPI().loadRolesForUser(user.getUserId()).toArray(new Role[0]);
 		} catch (DotDataException e1) {
@@ -2297,13 +2315,15 @@ public class BrowserAjax {
 			} catch (DotDataException e) {
 				Logger.error(this, "Could not load permissions : ",e);
 			}
-			if(permissions.contains(PERMISSION_READ)){
-			   foldersToReturn.add(folderMap(f));
+			if(permissions.contains(PERMISSION_READ)) {
+				if (showParentPath)
+					foldersToReturn.add(folderMap(f, parentFolder));
+				else
+					foldersToReturn.add(folderMap(f));
 			}
 		}
 		return foldersToReturn;
 	}
-
 
 	public List<Map<String, Object>> getFolderSubfoldersByPermissions(String parentFolderId, String requiredPermissions) throws PortalException, SystemException, DotDataException, DotSecurityException {
 		UserWebAPI userWebAPI = WebAPILocator.getUserWebAPI();

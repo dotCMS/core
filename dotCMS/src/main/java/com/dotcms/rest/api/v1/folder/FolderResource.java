@@ -361,46 +361,4 @@ public class FolderResource implements Serializable {
                 Response.status(Response.Status.NOT_FOUND).build():
                 Response.ok(new ResponseEntityView(folder)).build(); // 200
     }
-
-
-    /**
-     * This endpoint will try to retrieve parent folder path by child folder id
-     *
-     * @return Folder
-     * @throws DotDataException
-     * @throws DotSecurityException
-     */
-    @GET
-    @Path("/parent/{folderId}")
-    @JSONP
-    @NoCache
-    @Produces({MediaType.APPLICATION_JSON})
-    public final Response findParentFolder(@Context final HttpServletRequest httpServletRequest,
-                                         @Context final HttpServletResponse httpServletResponse,
-                                         @PathParam("folderId") final String folderId
-    ) throws  DotDataException, DotSecurityException {
-
-        final InitDataObject initData =
-                new WebResource.InitBuilder(webResource)
-                        .rejectWhenNoUser(true)
-                        .requiredBackendUser(true)
-                        .requiredFrontendUser(false)
-                        .requestAndResponse(httpServletRequest, httpServletResponse)
-                        .init();
-
-        final User user = initData.getUser();
-
-        Logger.debug(this, () -> "Finding the parent folder by child folder id: " + folderId);
-
-        final Folder folder = APILocator.getFolderAPI().find(folderId, user,
-                PageMode.get(httpServletRequest).respectAnonPerms);
-
-        if (folder == null || !UtilMethods.isSet(folder.getIdentifier())) {
-            return Response.status(Response.Status.NOT_FOUND).build();
-        }
-
-        final Folder parentFolder = APILocator.getFolderAPI().findParentFolder(folder, user,
-                PageMode.get(httpServletRequest).respectAnonPerms);
-       return Response.ok(new ResponseEntityView<FolderParentPathView>(this.folderHelper.toFolderParentPathView(parentFolder))).build();
-    }
 }
