@@ -33,17 +33,22 @@
         }
     }
 
-    .btn-container {
+    .action-container {
         display: flex;
-        gap: $spacing-3;
         height: fit-content;
-        justify-content: end;
+        justify-content: space-between;
         width: 100%;
+    }
+
+    .loading-message {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: $spacing-3;
     }
 
     .warning {
         display: block;
-        margin-top: $spacing-3;
         font-style: normal;
         text-align: center;
         color: $black;

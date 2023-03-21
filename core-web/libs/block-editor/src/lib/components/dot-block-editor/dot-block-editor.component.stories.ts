@@ -92,7 +92,7 @@ export const primary = () => ({
                                 }
                             }
                         ]).pipe(
-                            delay(1500),
+                            delay(5000000),
                             tap(() => statusCallback(FileStatus.IMPORT))
                         );
                     }
