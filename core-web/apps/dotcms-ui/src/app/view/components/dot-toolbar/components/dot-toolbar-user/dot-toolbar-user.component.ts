@@ -178,11 +178,9 @@ export class DotToolbarUserComponent implements OnInit {
             ? `<img src=${photo} alt="${name} gravatar" title="${name} gravatar" class="gravatar" />`
             : `<div class="gravatar-placeholder">${name.charAt(0)}</div>`;
 
-        const nameTemplate = ` <div>
-        <p class="toolbar-user__user-name" id="dot-toolbar-user-name">
+        const nameTemplate = `<p class="toolbar-user__user-name" id="dot-toolbar-user-name">
             ${name}
-        </p>
-    </div>`;
+        </p>`;
 
         return photoTemplate + nameTemplate;
     }
