@@ -9,6 +9,11 @@
     cursor: pointer;
 }
 
+::ng-deep #toolbar-header:hover {
+    cursor: default;
+    background-color: white;
+}
+
 ::ng-deep .p-menuitem-text {
     .toolbar-user__header {
         display: flex;
@@ -40,10 +45,5 @@
         color: $white;
         font-family: "Helvetica Neue", Helvetica, Arial, "Lucida Grande", sans-serif;
         text-align: center;
-    }
-
-    #toolbar-header:hover {
-        cursor: default;
-        background-color: white;
     }
 }
